@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, animations, responsive
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.0.44
+Stable tag: 2.0.45
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -178,6 +178,17 @@ Check the [documentation](https://designsetgoblocks.com/docs/), visit the [suppo
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.0.45 - 2026-03-23 =
+**Bug Fixes:**
+* Fix: Plugin deletion no longer causes a critical error — uninstall cleanup is now fault-tolerant with per-step error handling
+* Fix: Deactivation modal no longer auto-scans your site — shows an explanation first and lets you choose to scan or just deactivate
+* Fix: Orphan llms.txt file is now cleaned up during plugin deletion
+* Fix: Modal focus restored to deactivate link when closed (accessibility)
+
+**Improvements:**
+* Enhancement: Added plugin lifecycle smoke test (activate/deactivate/delete) to CI pipeline
+* Enhancement: Added PHPUnit integration test for uninstall cleanup logic
 
 = 2.0.44 - 2026-03-19 =
 **Bug Fixes:**
