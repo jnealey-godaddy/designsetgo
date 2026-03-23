@@ -640,6 +640,10 @@ class Block_Migrator {
 		if (overlay && overlay.parentNode) {
 			overlay.parentNode.removeChild(overlay);
 		}
+		// Restore focus to the original deactivate link for keyboard/screen-reader users.
+		if (deactivateLink) {
+			deactivateLink.focus();
+		}
 	}
 
 	function doAjax(action, extraData, onSuccess, onError) {
