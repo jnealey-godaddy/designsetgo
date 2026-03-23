@@ -530,24 +530,30 @@ $shape-divider-bleed: 3px;
 		fill: var(--dsgo-shape-color, transparent);
 	}
 
-	// Top position - extend above section edge by bleed amount
-	// Gradient covers sub-pixel SVG anti-aliasing gap at the section-facing (bottom) edge
+	// Anti-aliasing gradient covers the SVG's flat edge where gaps appear.
+	// Direction is set by --dsgo-shape-gradient-dir from ShapeDivider.js,
+	// which flips based on position + flipY.
+	//
+	// Uses background-image (not background shorthand) so that when
+	// --dsgo-shape-gradient-dir is absent (old blocks not yet re-saved),
+	// the declaration becomes invalid-at-computed-value-time and is ignored.
+	// The base background-color from .dsgo-shape-divider still applies,
+	// avoiding the visible line that the old hardcoded gradient caused on
+	// flipped shapes. New blocks with the property get the correct gradient.
 	&--top {
 		top: -#{$shape-divider-bleed};
-		background: linear-gradient(
-			to top,
+		background-image: linear-gradient(
+			var(--dsgo-shape-gradient-dir),
 			var(--dsgo-shape-color, transparent) 0,
 			var(--dsgo-shape-color, transparent) 2px,
 			var(--dsgo-shape-background, transparent) 2px
 		);
 	}
 
-	// Bottom position - extend below section edge by bleed amount
-	// Gradient covers sub-pixel SVG anti-aliasing gap at the section-facing (top) edge
 	&--bottom {
 		bottom: -#{$shape-divider-bleed};
-		background: linear-gradient(
-			to bottom,
+		background-image: linear-gradient(
+			var(--dsgo-shape-gradient-dir),
 			var(--dsgo-shape-color, transparent) 0,
 			var(--dsgo-shape-color, transparent) 2px,
 			var(--dsgo-shape-background, transparent) 2px
