@@ -380,11 +380,15 @@ jobs:
           npx wp-env run cli wp plugin deactivate designsetgo
           npx wp-env run cli wp plugin list --status=inactive | grep designsetgo
 
-          echo "=== Delete (runs uninstall.php) ==="
-          npx wp-env run cli wp plugin delete designsetgo
+          echo "=== Re-activate for dev environment ==="
+          npx wp-env run cli wp plugin activate designsetgo
+
+          echo "=== Delete on tests environment (runs uninstall.php) ==="
+          npx wp-env run tests-cli wp plugin deactivate designsetgo
+          npx wp-env run tests-cli wp plugin delete designsetgo
 
           echo "=== Verify deleted ==="
-          if npx wp-env run cli wp plugin list 2>&1 | grep -q designsetgo; then
+          if npx wp-env run tests-cli wp plugin list 2>&1 | grep -q designsetgo; then
             echo "❌ Plugin still present after delete"
             exit 1
           fi
