@@ -533,7 +533,6 @@ $shape-divider-bleed: 3px;
 	// Anti-aliasing gradient covers the SVG's flat edge where gaps appear.
 	// Direction is set by --dsgo-shape-gradient-dir from ShapeDivider.js,
 	// which flips based on position + flipY.
-	//
 	// Uses background-image (not background shorthand) so that when
 	// --dsgo-shape-gradient-dir is absent (old blocks not yet re-saved),
 	// the declaration becomes invalid-at-computed-value-time and is ignored.
