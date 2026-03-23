@@ -96,10 +96,21 @@ class Test_Uninstall extends WP_UnitTestCase {
 		$this->assertFalse( get_option( 'designsetgo_settings' ), 'designsetgo_settings should be deleted' );
 		$this->assertFalse( get_option( 'designsetgo_llms_txt_physical' ), 'designsetgo_llms_txt_physical should be deleted' );
 
-		// Transients deleted.
-		$this->assertFalse( get_transient( 'form_submit_127_0_0_1' ), 'Rate limit transients should be deleted' );
-		$this->assertFalse( get_transient( 'dsgo_has_blocks_123' ), 'Block detection transients should be deleted' );
-		$this->assertFalse( get_transient( 'dsgo_form_submissions_count' ), 'Form count transients should be deleted' );
+		// Transients deleted from database.
+		// Note: We check the options table directly because the test suite's
+		// object cache may still hold values even after the DB rows are deleted.
+		$transient_count = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->options}
+				 WHERE option_name LIKE %s
+				    OR option_name LIKE %s
+				    OR option_name LIKE %s",
+				$wpdb->esc_like( '_transient_form_submit_' ) . '%',
+				$wpdb->esc_like( '_transient_dsgo_has_blocks_' ) . '%',
+				$wpdb->esc_like( '_transient_dsgo_form_submissions_count' ) . '%'
+			)
+		);
+		$this->assertSame( 0, $transient_count, 'Plugin transients should be deleted from options table' );
 
 		// Cron cleared.
 		$this->assertFalse( wp_next_scheduled( 'designsetgo_cleanup_old_submissions' ), 'Cron job should be unscheduled' );
