@@ -419,7 +419,7 @@ class Block_Migrator {
 
 		document.addEventListener('keydown', overlay._dsgoKeydown);
 
-		deactLink.focus();
+		scanBtn.focus();
 	}
 
 	function startScan(overlay) {

@@ -78,14 +78,13 @@ try {
 	if ( $timestamp ) {
 		wp_unschedule_event( $timestamp, 'designsetgo_cleanup_old_submissions' );
 	}
+	// Log successful uninstallation for debugging.
+	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		error_log( 'DesignSetGo: Plugin data cleaned up successfully.' );
+	}
 } catch ( \Throwable $e ) {
 	// Log failure but never block plugin deletion.
 	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 		error_log( 'DesignSetGo: Uninstall cleanup error: ' . $e->getMessage() );
 	}
-}
-
-// Log successful uninstallation for debugging.
-if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-	error_log( 'DesignSetGo: Plugin data cleaned up successfully.' );
 }
