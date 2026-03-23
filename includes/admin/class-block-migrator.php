@@ -207,12 +207,15 @@ class Block_Migrator {
 				'batchSize'      => self::BATCH_SIZE,
 				'strings'        => array(
 					'title'         => __( 'Deactivate DesignSetGo', 'designsetgo' ),
-					'scanning'      => __( 'Scanning your content...', 'designsetgo' ),
+					'intro'         => __( 'If your content uses DesignSetGo blocks, we can convert them to standard WordPress blocks before deactivating. This keeps your layouts intact.', 'designsetgo' ),
+					'scanBtn'       => __( 'Scan & Convert Blocks', 'designsetgo' ),
+					'scanning'      => __( 'Scanning your content for DesignSetGo blocks...', 'designsetgo' ),
 					// translators: %blocks% is the number of blocks, %posts% is the number of posts.
 					'found'         => __( 'Found %blocks% DesignSetGo blocks in %posts% posts.', 'designsetgo' ),
+					'noBlocks'      => __( 'No DesignSetGo blocks found in your content. Safe to deactivate!', 'designsetgo' ),
 					'warning'       => __( 'Some DesignSetGo-specific features (animations, shape dividers, icons) will be removed during conversion. Post revisions are created automatically so you can undo changes.', 'designsetgo' ),
 					'convertBtn'    => __( 'Convert & Deactivate', 'designsetgo' ),
-					'deactivateBtn' => __( 'Deactivate', 'designsetgo' ),
+					'deactivateBtn' => __( 'Just Deactivate', 'designsetgo' ),
 					'cancel'        => __( 'Cancel', 'designsetgo' ),
 					'converting'    => __( 'Converting blocks...', 'designsetgo' ),
 					// translators: %converted% is the number converted so far, %total% is the total number.
@@ -301,7 +304,7 @@ class Block_Migrator {
 	private function get_modal_script() {
 		// All translatable strings are passed via wp_localize_script() as config.strings
 		// to avoid esc_js() HTML-entity encoding issues with textContent.
-		return <<<JS
+		return <<<'JS'
 (function() {
 	'use strict';
 
@@ -340,18 +343,38 @@ class Block_Migrator {
 		var body = document.createElement('div');
 		body.className = 'dsgo-modal-body';
 
-		var spinnerWrap = document.createElement('div');
-		spinnerWrap.className = 'dsgo-spinner';
+		var introP = document.createElement('p');
+		introP.textContent = config.strings.intro;
+		body.appendChild(introP);
 
-		var spinner = document.createElement('span');
-		spinner.className = 'spinner is-active';
-		spinnerWrap.appendChild(spinner);
+		var actions = document.createElement('div');
+		actions.className = 'dsgo-modal-actions';
 
-		var scanText = document.createElement('span');
-		scanText.textContent = config.strings.scanning;
-		spinnerWrap.appendChild(scanText);
+		var scanBtn = document.createElement('button');
+		scanBtn.type = 'button';
+		scanBtn.className = 'button';
+		scanBtn.textContent = config.strings.scanBtn;
+		scanBtn.addEventListener('click', function() {
+			startScan(overlay);
+		});
+		actions.appendChild(scanBtn);
 
-		body.appendChild(spinnerWrap);
+		var deactLink = document.createElement('a');
+		deactLink.href = deactivateUrl;
+		deactLink.className = 'button button-primary';
+		deactLink.textContent = config.strings.deactivateBtn;
+		actions.appendChild(deactLink);
+
+		var cancelBtn = document.createElement('button');
+		cancelBtn.type = 'button';
+		cancelBtn.className = 'button button-link';
+		cancelBtn.textContent = config.strings.cancel;
+		cancelBtn.addEventListener('click', function() {
+			closeModal(overlay);
+		});
+		actions.appendChild(cancelBtn);
+
+		body.appendChild(actions);
 		modal.appendChild(body);
 		overlay.appendChild(modal);
 		document.body.appendChild(overlay);
@@ -396,9 +419,47 @@ class Block_Migrator {
 
 		document.addEventListener('keydown', overlay._dsgoKeydown);
 
+		deactLink.focus();
+	}
+
+	function startScan(overlay) {
+		var modal = overlay.querySelector('.dsgo-deactivation-modal');
+		var body = modal.querySelector('.dsgo-modal-body');
+		body.textContent = '';
+
+		var spinnerWrap = document.createElement('div');
+		spinnerWrap.className = 'dsgo-spinner';
+
+		var spinner = document.createElement('span');
+		spinner.className = 'spinner is-active';
+		spinnerWrap.appendChild(spinner);
+
+		var scanText = document.createElement('span');
+		scanText.textContent = config.strings.scanning;
+		spinnerWrap.appendChild(scanText);
+
+		body.appendChild(spinnerWrap);
+
 		doAjax('designsetgo_scan_blocks', {}, function(data) {
 			if (data.blocks === 0) {
-				window.location.href = deactivateUrl;
+				body.textContent = '';
+
+				var noBlocksP = document.createElement('p');
+				noBlocksP.className = 'dsgo-result success';
+				noBlocksP.textContent = config.strings.noBlocks;
+				body.appendChild(noBlocksP);
+
+				var actions = document.createElement('div');
+				actions.className = 'dsgo-modal-actions';
+
+				var deactLink = document.createElement('a');
+				deactLink.href = deactivateUrl;
+				deactLink.className = 'button button-primary';
+				deactLink.textContent = config.strings.deactivateBtn;
+				actions.appendChild(deactLink);
+
+				body.appendChild(actions);
+				deactLink.focus();
 				return;
 			}
 			showSummary(overlay, data.posts, data.blocks);
@@ -772,7 +833,7 @@ JS;
 			// Depth-first: recurse into innerBlocks first.
 			if ( ! empty( $block['innerBlocks'] ) ) {
 				$blocks[ $index ]['innerBlocks'] = $this->convert_blocks_recursive( $block['innerBlocks'] );
-				$block = $blocks[ $index ];
+				$block                           = $blocks[ $index ];
 			}
 
 			switch ( $block['blockName'] ) {
@@ -805,7 +866,7 @@ JS;
 	 * @return array The converted core/group block.
 	 */
 	private function convert_section( $block ) {
-		$attrs          = $block['attrs'] ?? array();
+		$attrs           = $block['attrs'] ?? array();
 		$constrain_width = $attrs['constrainWidth'] ?? true;
 
 		if ( true === $constrain_width ) {
@@ -965,9 +1026,9 @@ JS;
 		$tag = 'a';
 
 		// Build the inner link HTML.
-		$class_attr = esc_attr( implode( ' ', $link_classes ) );
-		$style_attr = ! empty( $link_styles ) ? ' style="' . esc_attr( implode( ';', $link_styles ) ) . '"' : '';
-		$href_attr  = '';
+		$class_attr  = esc_attr( implode( ' ', $link_classes ) );
+		$style_attr  = ! empty( $link_styles ) ? ' style="' . esc_attr( implode( ';', $link_styles ) ) . '"' : '';
+		$href_attr   = '';
 		$target_attr = '';
 
 		if ( ! empty( $attrs['url'] ) ) {
@@ -982,8 +1043,8 @@ JS;
 			$target_attr .= ' rel="' . esc_attr( $attrs['rel'] ) . '"';
 		}
 
-		$content    = wp_kses_post( $attrs['text'] ?? '' );
-		$link_html  = '<' . $tag . $href_attr . ' class="' . $class_attr . '"' . $style_attr . $target_attr . '>' . $content . '</' . $tag . '>';
+		$content   = wp_kses_post( $attrs['text'] ?? '' );
+		$link_html = '<' . $tag . $href_attr . ' class="' . $class_attr . '"' . $style_attr . $target_attr . '>' . $content . '</' . $tag . '>';
 
 		// core/button wraps the link in a <div class="wp-block-button">.
 		$button_html = '<div class="wp-block-button">' . $link_html . '</div>';
@@ -1151,7 +1212,7 @@ JS;
 		$close_tag = '</' . $tag . '>';
 
 		// Build innerContent array: open tag, one null per inner block, close tag.
-		$inner_content   = array( $open_tag );
+		$inner_content    = array( $open_tag );
 		$inner_html_parts = array( $open_tag );
 
 		foreach ( $inner_blocks as $inner_block ) {
