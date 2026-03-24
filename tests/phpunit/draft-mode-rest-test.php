@@ -777,4 +777,52 @@ breaks' );
 		$result = Draft_Mode_REST::sanitize_block_content( 123 );
 		$this->assertEquals( '', $result );
 	}
+
+	/**
+	 * Test sanitize_block_content preserves block comments with nested JSON.
+	 *
+	 * Block comments often contain deeply nested JSON for style attributes.
+	 * The preservation regex must handle nested braces correctly or wp_kses
+	 * strips the comments, corrupting block content into a classic block.
+	 *
+	 * @ticket DSGO-DRAFT-NESTED-JSON
+	 */
+	public function test_sanitize_block_content_nested_json_block_comments() {
+		// Block comment with deeply nested JSON (style > spacing > padding).
+		$content = '<!-- wp:designsetgo/section {"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|80","right":"var:preset|spacing|30"}}}} -->'
+			. "\n" . '<div class="wp-block-designsetgo-section alignfull dsgo-stack">Test</div>'
+			. "\n" . '<!-- /wp:designsetgo/section -->';
+
+		$result = Draft_Mode_REST::sanitize_block_content( $content );
+
+		$this->assertStringContainsString(
+			'<!-- wp:designsetgo/section {"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|80","right":"var:preset|spacing|30"}}}} -->',
+			$result,
+			'Block comment with nested JSON braces must be preserved'
+		);
+		$this->assertStringContainsString( '<!-- /wp:designsetgo/section -->', $result );
+
+		// Block comment with 4+ levels of nesting.
+		$deep_content = '<!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700"},"spacing":{"margin":{"top":"var:preset|spacing|20"}}}} -->'
+			. "\n" . '<p>Hello</p>'
+			. "\n" . '<!-- /wp:paragraph -->';
+
+		$deep_result = Draft_Mode_REST::sanitize_block_content( $deep_content );
+
+		$this->assertStringContainsString(
+			'<!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700"},"spacing":{"margin":{"top":"var:preset|spacing|20"}}}} -->',
+			$deep_result,
+			'Block comment with 4+ levels of nested JSON must be preserved'
+		);
+		$this->assertStringContainsString(
+			'<!-- /wp:paragraph -->',
+			$deep_result,
+			'Closing block comment for deeply nested paragraph must be preserved'
+		);
+		$this->assertStringContainsString(
+			'<p>Hello</p>',
+			$deep_result,
+			'Inner HTML content for deeply nested paragraph must be preserved'
+		);
+	}
 }

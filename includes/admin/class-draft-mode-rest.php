@@ -308,9 +308,11 @@ class Draft_Mode_REST {
 		// Preserve WordPress block comment delimiters before wp_kses, which
 		// strips all HTML comments. Block delimiters (<!-- wp:name {...} -->)
 		// are required for the block editor to parse content correctly.
+		// Uses PCRE recursive subpattern (?1) to match nested JSON braces
+		// like {"style":{"spacing":{"margin":{"top":"10px"}}}}.
 		$placeholders = array();
-		$content      = preg_replace_callback(
-			'/<!--\s+\/?wp:[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)?\s*(\{[^}]*\}\s*)?\/?\s*-->/',
+		$result       = preg_replace_callback(
+			'/<!--\s+\/?wp:[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)?\s*(?:(?P<json>\{(?:[^{}]++|(?&json))*+\})\s*)?\/?\s*-->/',
 			function ( $match ) use ( &$placeholders ) {
 				$key                  = '%%DSGO_BLOCK_COMMENT_' . count( $placeholders ) . '%%';
 				$placeholders[ $key ] = $match[0];
@@ -318,6 +320,9 @@ class Draft_Mode_REST {
 			},
 			$content
 		);
+		if ( null !== $result ) {
+			$content = $result;
+		}
 
 		// Use wp_kses with our extended allowed tags.
 		// CSS property allowlisting handled globally by Plugin::allow_block_style_properties().
