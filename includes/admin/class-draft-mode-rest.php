@@ -312,7 +312,7 @@ class Draft_Mode_REST {
 		// like {"style":{"spacing":{"margin":{"top":"10px"}}}}.
 		$placeholders = array();
 		$result       = preg_replace_callback(
-			'/<!--\s+\/?wp:[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)?\s*(?:(\{(?:[^{}]++|(?1))*+\})\s*)?\/?\s*-->/',
+			'/<!--\s+\/?wp:[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)?\s*(?:(?P<json>\{(?:[^{}]++|(?&json))*+\})\s*)?\/?\s*-->/',
 			function ( $match ) use ( &$placeholders ) {
 				$key                  = '%%DSGO_BLOCK_COMMENT_' . count( $placeholders ) . '%%';
 				$placeholders[ $key ] = $match[0];

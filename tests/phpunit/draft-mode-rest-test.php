@@ -814,5 +814,15 @@ breaks' );
 			$deep_result,
 			'Block comment with 4+ levels of nested JSON must be preserved'
 		);
+		$this->assertStringContainsString(
+			'<!-- /wp:paragraph -->',
+			$deep_result,
+			'Closing block comment for deeply nested paragraph must be preserved'
+		);
+		$this->assertStringContainsString(
+			'<p>Hello</p>',
+			$deep_result,
+			'Inner HTML content for deeply nested paragraph must be preserved'
+		);
 	}
 }
