@@ -147,6 +147,7 @@
 		.dsgo-tabs__nav {
 			flex-direction: row;
 			flex-wrap: wrap;
+			overflow: visible; // Wrapping handles overflow; auto causes unwanted vertical scrollbar
 		}
 
 		// Alignment options

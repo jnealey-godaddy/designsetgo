@@ -18,6 +18,7 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { useSelect } from '@wordpress/data';
 
 /**
  * Flip Card Edit Component
@@ -28,10 +29,31 @@ import {
  * @param {Object}   props               Component props
  * @param {Object}   props.attributes    Block attributes
  * @param {Function} props.setAttributes Function to update attributes
+ * @param {string}   props.clientId      Block client ID
  * @return {JSX.Element} Edit component
  */
-export default function FlipCardEdit({ attributes, setAttributes }) {
+export default function FlipCardEdit({ attributes, setAttributes, clientId }) {
 	const { flipTrigger, flipEffect, flipDirection, flipDuration } = attributes;
+
+	// Determine which face blocks already exist to prevent duplicates
+	const allowedBlocks = useSelect(
+		(select) => {
+			const { getBlock } = select('core/block-editor');
+			const block = getBlock(clientId);
+			const childNames = (block?.innerBlocks || []).map(
+				(child) => child.name
+			);
+			const missing = [];
+			if (!childNames.includes('designsetgo/flip-card-front')) {
+				missing.push('designsetgo/flip-card-front');
+			}
+			if (!childNames.includes('designsetgo/flip-card-back')) {
+				missing.push('designsetgo/flip-card-back');
+			}
+			return missing;
+		},
+		[clientId]
+	);
 
 	// Block wrapper props
 	const blockProps = useBlockProps({
@@ -43,23 +65,22 @@ export default function FlipCardEdit({ attributes, setAttributes }) {
 	});
 
 	// Inner blocks configuration
-	// Template creates two child blocks (front and back)
-	// Template defines structure only - content comes from pattern or user input
-	// templateLock: 'insert' prevents adding/removing front/back but allows editing content
+	// Template seeds front and back faces on first insert.
+	// templateLock is false so users can delete a face and re-add it,
+	// which also allows "Attempt Recovery" to work on validation errors.
+	// allowedBlocks is computed dynamically to only permit missing faces,
+	// preventing duplicate front or back blocks.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-flip-card__container',
 		},
 		{
-			allowedBlocks: [
-				'designsetgo/flip-card-front',
-				'designsetgo/flip-card-back',
-			],
+			allowedBlocks,
 			template: [
 				['designsetgo/flip-card-front', {}],
 				['designsetgo/flip-card-back', {}],
 			],
-			templateLock: 'insert', // Prevents adding/removing but allows content editing
+			templateLock: false,
 			orientation: 'vertical',
 		}
 	);

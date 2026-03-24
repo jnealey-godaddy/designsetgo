@@ -9,10 +9,12 @@
 .dsgo-flip-card {
 	position: relative;
 	width: 100%;
+	height: 100%; // Fill parent grid cell when align-items: stretch
 
 	&__container {
 		position: relative;
 		width: 100%;
+		height: 100%; // Propagate height from parent for equal sizing in grids
 		// CRITICAL: Use CSS Grid to overlay both cards while both contribute to height
 		display: grid;
 		grid-template-columns: 1fr;

@@ -19,9 +19,8 @@
 		"anchor": false,
 		"align": false,
 		"html": false,
-		"inserter": false,
+		"inserter": true,
 		"reusable": false,
-		"lock": false,
 		"layout": {
 			"allowSwitching": false,
 			"allowInheriting": false,
