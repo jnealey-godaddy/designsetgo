@@ -29,6 +29,10 @@
 			"type": "string",
 			"default": ""
 		},
+		"overlayAutoApplied": {
+			"type": "boolean",
+			"default": false
+		},
 		"navColor": {
 			"type": "string",
 			"default": ""
