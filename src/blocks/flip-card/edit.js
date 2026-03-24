@@ -29,6 +29,7 @@ import { useSelect } from '@wordpress/data';
  * @param {Object}   props               Component props
  * @param {Object}   props.attributes    Block attributes
  * @param {Function} props.setAttributes Function to update attributes
+ * @param {string}   props.clientId      Block client ID
  * @return {JSX.Element} Edit component
  */
 export default function FlipCardEdit({ attributes, setAttributes, clientId }) {
