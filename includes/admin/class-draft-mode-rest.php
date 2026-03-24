@@ -311,7 +311,7 @@ class Draft_Mode_REST {
 		// Uses PCRE recursive subpattern (?1) to match nested JSON braces
 		// like {"style":{"spacing":{"margin":{"top":"10px"}}}}.
 		$placeholders = array();
-		$content      = preg_replace_callback(
+		$result       = preg_replace_callback(
 			'/<!--\s+\/?wp:[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)?\s*(?:(\{(?:[^{}]++|(?1))*+\})\s*)?\/?\s*-->/',
 			function ( $match ) use ( &$placeholders ) {
 				$key                  = '%%DSGO_BLOCK_COMMENT_' . count( $placeholders ) . '%%';
@@ -320,6 +320,9 @@ class Draft_Mode_REST {
 			},
 			$content
 		);
+		if ( null !== $result ) {
+			$content = $result;
+		}
 
 		// Use wp_kses with our extended allowed tags.
 		// CSS property allowlisting handled globally by Plugin::allow_block_style_properties().
