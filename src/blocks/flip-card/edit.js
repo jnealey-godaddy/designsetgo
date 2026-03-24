@@ -43,9 +43,10 @@ export default function FlipCardEdit({ attributes, setAttributes }) {
 	});
 
 	// Inner blocks configuration
-	// Template creates two child blocks (front and back)
-	// Template defines structure only - content comes from pattern or user input
-	// templateLock: 'insert' prevents adding/removing front/back but allows editing content
+	// Template seeds front and back faces on first insert.
+	// No templateLock — users can delete a face and re-add it from the inserter,
+	// which also allows "Attempt Recovery" to work on validation errors.
+	// The parent constraint on child blocks ensures they can only exist here.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-flip-card__container',
@@ -59,7 +60,7 @@ export default function FlipCardEdit({ attributes, setAttributes }) {
 				['designsetgo/flip-card-front', {}],
 				['designsetgo/flip-card-back', {}],
 			],
-			templateLock: 'insert', // Prevents adding/removing but allows content editing
+			templateLock: false,
 			orientation: 'vertical',
 		}
 	);
