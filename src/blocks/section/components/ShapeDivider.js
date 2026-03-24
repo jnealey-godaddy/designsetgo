@@ -97,12 +97,25 @@ export default function ShapeDivider({
 		.filter(Boolean)
 		.join(' ');
 
+	// Determine gradient direction for the anti-aliasing color strip.
+	// The gradient covers the SVG's flat edge (where anti-aliasing gaps appear).
+	// When flipY changes which edge faces the section, the gradient must flip too.
+	//
+	// | position | flipY | flat edge | gradient dir |
+	// |----------|-------|-----------|--------------|
+	// | top      | false | bottom    | to top       |
+	// | top      | true  | top       | to bottom    |
+	// | bottom   | false | top       | to bottom    |
+	// | bottom   | true  | bottom    | to top       |
+	const gradientDir = (position === 'top') !== flipY ? 'to top' : 'to bottom';
+
 	// Build inline styles with validated values
 	const style = {
 		'--dsgo-shape-height': `${safeHeight}px`,
 		'--dsgo-shape-width': `${safeWidth}%`,
 		'--dsgo-shape-offset': `-${widthOffset}%`,
 		'--dsgo-shape-color': safeColor || 'transparent',
+		'--dsgo-shape-gradient-dir': gradientDir,
 		...(safeBackgroundColor && {
 			'--dsgo-shape-background': safeBackgroundColor,
 		}),

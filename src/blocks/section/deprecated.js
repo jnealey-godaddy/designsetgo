@@ -5,7 +5,10 @@
  */
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
-import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	convertPresetToCSSVar,
+	convertColorToCSSVar,
+} from '../../utils/convert-preset-to-css-var';
 import { getShapeDivider } from './utils/shape-dividers';
 import { sanitizeColor } from './utils/sanitize-color';
 
@@ -261,6 +264,191 @@ function V4ShapeDivider({
 		</div>
 	);
 }
+
+// Version 5: Shape dividers before gradient direction fix.
+// The anti-aliasing gradient was always applied at the top for bottom dividers
+// and bottom for top dividers, regardless of flipY. When flipY was true, this
+// created a visible line where the wave curve didn't reach the container edge.
+// Fix: added --dsgo-shape-gradient-dir CSS custom property to ShapeDivider.
+const v5 = {
+	supports: sharedSupports,
+	attributes: {
+		align: { type: 'string', default: 'full' },
+		tagName: { type: 'string', default: 'div' },
+		constrainWidth: { type: 'boolean', default: true },
+		contentWidth: { type: 'string', default: '' },
+		style: { type: 'object' },
+		hoverBackgroundColor: { type: 'string', default: '' },
+		hoverTextColor: { type: 'string', default: '' },
+		hoverIconBackgroundColor: { type: 'string', default: '' },
+		hoverButtonBackgroundColor: { type: 'string', default: '' },
+		overlayColor: { type: 'string', default: '' },
+		shapeDividerTop: { type: 'string', default: '' },
+		shapeDividerTopColor: { type: 'string', default: '' },
+		shapeDividerTopHeight: { type: 'number', default: 100 },
+		shapeDividerTopWidth: { type: 'number', default: 100 },
+		shapeDividerTopFlipX: { type: 'boolean', default: false },
+		shapeDividerTopFlipY: { type: 'boolean', default: false },
+		shapeDividerTopFront: { type: 'boolean', default: false },
+		shapeDividerTopBackgroundColor: { type: 'string', default: '' },
+		shapeDividerBottom: { type: 'string', default: '' },
+		shapeDividerBottomColor: { type: 'string', default: '' },
+		shapeDividerBottomHeight: { type: 'number', default: 100 },
+		shapeDividerBottomWidth: { type: 'number', default: 100 },
+		shapeDividerBottomFlipX: { type: 'boolean', default: false },
+		shapeDividerBottomFlipY: { type: 'boolean', default: false },
+		shapeDividerBottomFront: { type: 'boolean', default: false },
+		shapeDividerBottomBackgroundColor: { type: 'string', default: '' },
+	},
+	isEligible(attributes) {
+		return !!(attributes.shapeDividerTop || attributes.shapeDividerBottom);
+	},
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			backgroundColor,
+			textColor,
+			constrainWidth,
+			contentWidth,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			overlayColor,
+			shapeDividerTop,
+			shapeDividerTopColor,
+			shapeDividerTopBackgroundColor,
+			shapeDividerTopHeight,
+			shapeDividerTopWidth,
+			shapeDividerTopFlipX,
+			shapeDividerTopFlipY,
+			shapeDividerTopFront,
+			shapeDividerBottom,
+			shapeDividerBottomColor,
+			shapeDividerBottomBackgroundColor,
+			shapeDividerBottomHeight,
+			shapeDividerBottomWidth,
+			shapeDividerBottomFlipX,
+			shapeDividerBottomFlipY,
+			shapeDividerBottomFront,
+		} = attributes;
+
+		const sectionBackgroundColor =
+			attributes.style?.color?.background ||
+			(backgroundColor
+				? `var(--wp--preset--color--${backgroundColor})`
+				: '');
+
+		const sectionTextColor =
+			attributes.style?.color?.text ||
+			(textColor ? `var(--wp--preset--color--${textColor})` : '');
+
+		const className = [
+			'dsgo-stack',
+			!constrainWidth && 'dsgo-no-width-constraint',
+			overlayColor && 'dsgo-stack--has-overlay',
+			(shapeDividerTop || shapeDividerBottom) &&
+				'dsgo-stack--has-shape-divider',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+		const blockProps = useBlockProps.save({
+			className,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+				...(overlayColor && {
+					'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+					'--dsgo-overlay-opacity': '0.8',
+				}),
+			},
+		});
+
+		const innerStyle = {};
+		if (constrainWidth) {
+			innerStyle.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyle.marginLeft = 'auto';
+			innerStyle.marginRight = 'auto';
+		}
+
+		if (shapeDividerTop) {
+			innerStyle.paddingTop = `${shapeDividerTopHeight || 100}px`;
+		}
+		if (shapeDividerBottom) {
+			innerStyle.paddingBottom = `${shapeDividerBottomHeight || 100}px`;
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-stack__inner',
+			style: innerStyle,
+		});
+
+		// Uses V4ShapeDivider (no --dsgo-shape-gradient-dir property)
+		return (
+			<TagName {...blockProps}>
+				<V4ShapeDivider
+					shape={shapeDividerTop}
+					color={
+						convertColorToCSSVar(shapeDividerTopColor) ||
+						sectionBackgroundColor
+					}
+					backgroundColor={
+						convertColorToCSSVar(shapeDividerTopBackgroundColor) ||
+						sectionTextColor
+					}
+					height={shapeDividerTopHeight}
+					width={shapeDividerTopWidth}
+					flipX={shapeDividerTopFlipX}
+					flipY={shapeDividerTopFlipY}
+					front={shapeDividerTopFront}
+					position="top"
+				/>
+				<div {...innerBlocksProps} />
+				<V4ShapeDivider
+					shape={shapeDividerBottom}
+					color={
+						convertColorToCSSVar(shapeDividerBottomColor) ||
+						sectionBackgroundColor
+					}
+					backgroundColor={
+						convertColorToCSSVar(
+							shapeDividerBottomBackgroundColor
+						) || sectionTextColor
+					}
+					height={shapeDividerBottomHeight}
+					width={shapeDividerBottomWidth}
+					flipX={shapeDividerBottomFlipX}
+					flipY={shapeDividerBottomFlipY}
+					front={shapeDividerBottomFront}
+					position="bottom"
+				/>
+			</TagName>
+		);
+	},
+	migrate(attributes) {
+		return attributes;
+	},
+};
 
 // Version 4: Shape dividers with background color inheritance but no text color for shape background
 const v4 = {
@@ -871,4 +1059,4 @@ const v1 = {
 };
 
 // Export deprecations in reverse chronological order (newest first)
-export default [v4, v3, v2, v1];
+export default [v5, v4, v3, v2, v1];

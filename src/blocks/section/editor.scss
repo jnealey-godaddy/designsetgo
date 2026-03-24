@@ -604,24 +604,21 @@ $shape-divider-bleed: 3px;
 		fill: var(--dsgo-shape-color, transparent);
 	}
 
-	// Top position - extend above section edge by bleed amount
-	// Gradient covers sub-pixel SVG anti-aliasing gap at the section-facing (bottom) edge
+	// Anti-aliasing gradient — see style.scss for detailed explanation.
 	&--top {
 		top: -#{$shape-divider-bleed};
-		background: linear-gradient(
-			to top,
+		background-image: linear-gradient(
+			var(--dsgo-shape-gradient-dir),
 			var(--dsgo-shape-color, transparent) 0,
 			var(--dsgo-shape-color, transparent) 2px,
 			var(--dsgo-shape-background, transparent) 2px
 		);
 	}
 
-	// Bottom position - extend below section edge by bleed amount
-	// Gradient covers sub-pixel SVG anti-aliasing gap at the section-facing (top) edge
 	&--bottom {
 		bottom: -#{$shape-divider-bleed};
-		background: linear-gradient(
-			to bottom,
+		background-image: linear-gradient(
+			var(--dsgo-shape-gradient-dir),
 			var(--dsgo-shape-color, transparent) 0,
 			var(--dsgo-shape-color, transparent) 2px,
 			var(--dsgo-shape-background, transparent) 2px
