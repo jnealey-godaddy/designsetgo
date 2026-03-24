@@ -37,6 +37,7 @@ jobs:
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SLUG: designsetgo
           DRY_RUN: ${{ inputs.dry_run }}
+          IGNORE_OTHER_FILES: true
 
   deploy-readme:
     name: Deploy readme.txt only
