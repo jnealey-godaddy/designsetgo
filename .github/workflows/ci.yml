@@ -276,7 +276,7 @@ jobs:
 
       - name: Stop wp-env
         if: always()
-        run: npm run wp-env stop
+        run: npx wp-env stop
 
       - name: Upload E2E test artifacts
         uses: actions/upload-artifact@v4
@@ -396,4 +396,4 @@ jobs:
 
       - name: Stop wp-env
         if: always()
-        run: npm run wp-env stop
+        run: npx wp-env stop
