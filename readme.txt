@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, animations, responsive
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.0.45
+Stable tag: 2.0.46
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -178,6 +178,20 @@ Check the [documentation](https://designsetgoblocks.com/docs/), visit the [suppo
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.0.46 - 2026-03-23 =
+**Bug Fixes:**
+* Fix: Flip card inner blocks no longer allow duplicate front/back faces — dynamic allowedBlocks only permits missing face types
+* Fix: Flip card now fills parent grid cells equally when align-items is stretch
+* Fix: Horizontal tabs nav no longer shows unwanted vertical scrollbar
+* Fix: Shape divider line visible on flipped shapes
+* Fix: Handle nested JSON braces in draft mode block comment preservation
+
+**New Features:**
+* Feat: Scroll slides auto-apply overlay color (#111111) when a slide gets a background image
+
+**Improvements:**
+* Enhancement: CI — use npx wp-env stop to survive plugin delete; check transients via DB query
 
 = 2.0.45 - 2026-03-23 =
 **Bug Fixes:**
