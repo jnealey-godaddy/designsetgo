@@ -14,14 +14,7 @@ import {
 	Button,
 } from '@wordpress/components';
 
-const ColorDropdownControl = ({
-	label,
-	value,
-	defaultValue,
-	onChange,
-	colors,
-	help,
-}) => {
+const ColorDropdownControl = ({ label, value, onChange, colors, help }) => {
 	return (
 		<Dropdown
 			className="designsetgo-color-dropdown"
