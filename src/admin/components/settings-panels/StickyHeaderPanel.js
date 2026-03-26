@@ -286,7 +286,6 @@ const StickyHeaderPanel = ({ settings, updateSetting }) => {
 												settings?.sticky_header
 													?.background_scroll_color
 											}
-											defaultValue="#ffffff"
 											onChange={(color) =>
 												updateSetting(
 													'sticky_header',
@@ -344,7 +343,6 @@ const StickyHeaderPanel = ({ settings, updateSetting }) => {
 												settings?.sticky_header
 													?.text_scroll_color
 											}
-											defaultValue="#000000"
 											onChange={(color) =>
 												updateSetting(
 													'sticky_header',

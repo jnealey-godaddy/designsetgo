@@ -182,24 +182,40 @@ import './sticky-header.scss';
 			settings.backgroundOnScroll ||
 			header.classList.contains('dsgo-sticky-bg-on-scroll');
 
-		if (needsBgVars && settings.backgroundScrollColor) {
-			const opacity = settings.backgroundScrollOpacity / 100;
-			// Convert hex to rgba if needed
-			let bgColor = settings.backgroundScrollColor;
-			if (bgColor.startsWith('#')) {
-				const r = parseInt(bgColor.slice(1, 3), 16);
-				const g = parseInt(bgColor.slice(3, 5), 16);
-				const b = parseInt(bgColor.slice(5, 7), 16);
-				bgColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+		if (needsBgVars) {
+			if (settings.backgroundScrollColor) {
+				const opacity = settings.backgroundScrollOpacity / 100;
+				// Convert hex to rgba if needed
+				let bgColor = settings.backgroundScrollColor;
+				if (bgColor.startsWith('#')) {
+					const r = parseInt(bgColor.slice(1, 3), 16);
+					const g = parseInt(bgColor.slice(3, 5), 16);
+					const b = parseInt(bgColor.slice(5, 7), 16);
+					bgColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+				}
+				header.style.setProperty(
+					'--dsgo-sticky-scroll-bg-color',
+					bgColor
+				);
+			} else {
+				// No color set — override CSS fallback so no background applies
+				header.style.setProperty(
+					'--dsgo-sticky-scroll-bg-color',
+					'transparent'
+				);
 			}
-			header.style.setProperty('--dsgo-sticky-scroll-bg-color', bgColor);
-		}
 
-		if (needsBgVars && settings.textScrollColor) {
-			header.style.setProperty(
-				'--dsgo-sticky-scroll-text-color',
-				settings.textScrollColor
-			);
+			if (settings.textScrollColor) {
+				header.style.setProperty(
+					'--dsgo-sticky-scroll-text-color',
+					settings.textScrollColor
+				);
+			} else {
+				header.style.setProperty(
+					'--dsgo-sticky-scroll-text-color',
+					'inherit'
+				);
+			}
 		}
 	}
 
