@@ -34,7 +34,7 @@ const ColorDropdownControl = ({
 					className="designsetgo-color-dropdown__toggle"
 					aria-expanded={isOpen}
 				>
-					<ColorIndicator colorValue={value || defaultValue} />
+					<ColorIndicator colorValue={value} />
 					<span>{label}</span>
 				</Button>
 			)}
@@ -46,7 +46,7 @@ const ColorDropdownControl = ({
 						</p>
 					)}
 					<ColorPalette
-						value={value || defaultValue}
+						value={value}
 						onChange={(color) => onChange(color || '')}
 						colors={colors}
 						clearable

@@ -32,10 +32,10 @@ import './sticky-header.scss';
 		transitionSpeed: 300,
 		scrollThreshold: 50,
 		hideOnScrollDown: false,
-		backgroundOnScroll: true,
-		backgroundScrollColor: '#ffffff',
+		backgroundOnScroll: false,
+		backgroundScrollColor: '',
 		backgroundScrollOpacity: 100,
-		textScrollColor: '#000000',
+		textScrollColor: '',
 	};
 
 	// Early exit if sticky header is disabled

@@ -109,10 +109,10 @@ class Settings {
 				'transition_speed'          => 300,
 				'scroll_threshold'          => 50,
 				'hide_on_scroll_down'       => false,
-				'background_on_scroll'      => true,
-				'background_scroll_color'   => '#ffffff',
+				'background_on_scroll'      => false,
+				'background_scroll_color'   => '',
 				'background_scroll_opacity' => 100,
-				'text_scroll_color'         => '#000000',
+				'text_scroll_color'         => '',
 			),
 			'draft_mode'         => array(
 				'enable'                 => true,
