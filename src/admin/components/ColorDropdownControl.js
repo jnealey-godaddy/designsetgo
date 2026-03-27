@@ -14,14 +14,7 @@ import {
 	Button,
 } from '@wordpress/components';
 
-const ColorDropdownControl = ({
-	label,
-	value,
-	defaultValue,
-	onChange,
-	colors,
-	help,
-}) => {
+const ColorDropdownControl = ({ label, value, onChange, colors, help }) => {
 	return (
 		<Dropdown
 			className="designsetgo-color-dropdown"
@@ -34,7 +27,7 @@ const ColorDropdownControl = ({
 					className="designsetgo-color-dropdown__toggle"
 					aria-expanded={isOpen}
 				>
-					<ColorIndicator colorValue={value || defaultValue} />
+					<ColorIndicator colorValue={value} />
 					<span>{label}</span>
 				</Button>
 			)}
@@ -46,7 +39,7 @@ const ColorDropdownControl = ({
 						</p>
 					)}
 					<ColorPalette
-						value={value || defaultValue}
+						value={value}
 						onChange={(color) => onChange(color || '')}
 						colors={colors}
 						clearable

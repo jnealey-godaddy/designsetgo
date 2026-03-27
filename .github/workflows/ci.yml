@@ -276,7 +276,7 @@ jobs:
 
       - name: Stop wp-env
         if: always()
-        run: npx wp-env stop
+        run: npx @wordpress/env stop
 
       - name: Upload E2E test artifacts
         uses: actions/upload-artifact@v4
@@ -363,32 +363,32 @@ jobs:
 
       - name: Check WordPress version
         run: |
-          npx wp-env run cli wp core version
-          npx wp-env run cli wp plugin list
+          npx @wordpress/env run cli wp core version
+          npx @wordpress/env run cli wp plugin list
 
       - name: Run PHP tests in WordPress environment
         run: |
-          npx wp-env run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit
+          npx @wordpress/env run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit
 
       - name: Check plugin lifecycle (activate → deactivate → delete)
         run: |
           echo "=== Activate ==="
-          npx wp-env run cli wp plugin activate designsetgo
-          npx wp-env run cli wp plugin list --status=active | grep designsetgo
+          npx @wordpress/env run cli wp plugin activate designsetgo
+          npx @wordpress/env run cli wp plugin list --status=active | grep designsetgo
 
           echo "=== Deactivate ==="
-          npx wp-env run cli wp plugin deactivate designsetgo
-          npx wp-env run cli wp plugin list --status=inactive | grep designsetgo
+          npx @wordpress/env run cli wp plugin deactivate designsetgo
+          npx @wordpress/env run cli wp plugin list --status=inactive | grep designsetgo
 
           echo "=== Re-activate for dev environment ==="
-          npx wp-env run cli wp plugin activate designsetgo
+          npx @wordpress/env run cli wp plugin activate designsetgo
 
           echo "=== Delete on tests environment (runs uninstall.php) ==="
-          npx wp-env run tests-cli wp plugin deactivate designsetgo
-          npx wp-env run tests-cli wp plugin delete designsetgo
+          npx @wordpress/env run tests-cli wp plugin deactivate designsetgo
+          npx @wordpress/env run tests-cli wp plugin delete designsetgo
 
           echo "=== Verify deleted ==="
-          if npx wp-env run tests-cli wp plugin list 2>&1 | grep -q designsetgo; then
+          if npx @wordpress/env run tests-cli wp plugin list 2>&1 | grep -q designsetgo; then
             echo "❌ Plugin still present after delete"
             exit 1
           fi
@@ -396,4 +396,4 @@ jobs:
 
       - name: Stop wp-env
         if: always()
-        run: npx wp-env stop
+        run: npx @wordpress/env stop
