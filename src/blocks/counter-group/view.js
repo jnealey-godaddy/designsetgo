@@ -24,7 +24,9 @@ document.addEventListener('dsgo-content-loaded', initCounterAnimations);
  * Initialize counter animations with lazy loading
  */
 function initCounterAnimations() {
-	const counterGroups = document.querySelectorAll('.dsgo-counter-group');
+	const counterGroups = document.querySelectorAll(
+		'.dsgo-counter-group:not([data-dsgo-initialized])'
+	);
 
 	if (!counterGroups.length) {
 		return;
@@ -63,6 +65,7 @@ function initCounterAnimations() {
 	);
 
 	counterGroups.forEach((group) => {
+		group.setAttribute('data-dsgo-initialized', 'true');
 		counterObserver.observe(group);
 	});
 }

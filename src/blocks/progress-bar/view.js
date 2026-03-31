@@ -55,8 +55,13 @@ function initProgressBars() {
 		});
 	}, observerOptions);
 
-	// Observe all progress bars
-	progressBars.forEach((bar) => observer.observe(bar));
+	// Observe all progress bars (skip already-initialized ones)
+	progressBars.forEach((bar) => {
+		if (!bar.hasAttribute('data-dsgo-initialized')) {
+			bar.setAttribute('data-dsgo-initialized', 'true');
+			observer.observe(bar);
+		}
+	});
 }
 
 // Initialize when DOM is ready

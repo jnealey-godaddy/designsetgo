@@ -118,10 +118,13 @@ if (document.readyState === 'loading') {
 	initIconInjection();
 }
 
-// Re-inject icons after bfcache restoration (back/forward navigation)
-window.addEventListener('pageshow', (event) => {
-	if (event.persisted) {
-		// Reset injection flags — bfcache may discard dynamically injected SVGs
+// Re-initialize when custom content-loaded event fires (bfcache, AJAX/SPA navigation)
+// On bfcache restoration, frontend.js dispatches dsgo-content-loaded via pageshow.
+document.addEventListener('dsgo-content-loaded', (event) => {
+	const container = event.detail?.container || document;
+
+	// Reset injection flags for icons missing their SVG (bfcache may discard them)
+	if (event.detail?.source === 'bfcache') {
 		document
 			.querySelectorAll('.dsgo-lazy-icon[data-icon-injected="true"]')
 			.forEach((el) => {
@@ -129,13 +132,8 @@ window.addEventListener('pageshow', (event) => {
 					el.removeAttribute('data-icon-injected');
 				}
 			});
-		initIconInjection();
 	}
-});
 
-// Re-initialize when custom content-loaded event fires (AJAX/SPA navigation)
-document.addEventListener('dsgo-content-loaded', (event) => {
-	const container = event.detail?.container || document;
 	initIconInjection(container);
 });
 
