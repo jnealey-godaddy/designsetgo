@@ -343,4 +343,10 @@ if (document.readyState === 'loading') {
 }
 
 // Re-initialize after soft navigation (bfcache, AJAX)
-document.addEventListener('dsgo-content-loaded', initParallax);
+document.addEventListener('dsgo-content-loaded', () => {
+	// Reset global guard so newly injected elements can be initialized
+	if (window.dsgoParallaxInitialized) {
+		delete window.dsgoParallaxInitialized;
+	}
+	initParallax();
+});

@@ -121,6 +121,11 @@
 	function initGrids() {
 		const gridElements = document.querySelectorAll('.dsgo-grid');
 		gridElements.forEach((element) => {
+			// Prevent duplicate initialization (avoids resize listener accumulation)
+			if (element.hasAttribute('data-dsgo-initialized')) {
+				return;
+			}
+			element.setAttribute('data-dsgo-initialized', 'true');
 			new DSGGrid(element);
 		});
 	}

@@ -12,6 +12,9 @@
 
 import { CountUp } from 'countup.js';
 
+// Track initialized groups to prevent duplicate CountUp instances on bfcache/soft nav
+const initializedGroups = new WeakSet();
+
 /**
  * Initialize counter animations on page load
  */
@@ -24,9 +27,7 @@ document.addEventListener('dsgo-content-loaded', initCounterAnimations);
  * Initialize counter animations with lazy loading
  */
 function initCounterAnimations() {
-	const counterGroups = document.querySelectorAll(
-		'.dsgo-counter-group:not([data-dsgo-initialized])'
-	);
+	const counterGroups = document.querySelectorAll('.dsgo-counter-group');
 
 	if (!counterGroups.length) {
 		return;
@@ -65,7 +66,11 @@ function initCounterAnimations() {
 	);
 
 	counterGroups.forEach((group) => {
-		group.setAttribute('data-dsgo-initialized', 'true');
+		// Prevent duplicate initialization (avoids CountUp leaks on bfcache)
+		if (initializedGroups.has(group)) {
+			return;
+		}
+		initializedGroups.add(group);
 		counterObserver.observe(group);
 	});
 }
