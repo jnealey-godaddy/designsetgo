@@ -213,6 +213,21 @@ function calculateParallaxOffset(element, settings, scrollY, viewportHeight) {
 /**
  * Initialize parallax effects
  */
+// Module-scope handler refs for teardown (prevents listener accumulation on soft nav)
+let parallaxScrollHandler = null;
+let parallaxResizeHandler = null;
+
+function teardownParallax() {
+	if (parallaxScrollHandler) {
+		window.removeEventListener('scroll', parallaxScrollHandler);
+		parallaxScrollHandler = null;
+	}
+	if (parallaxResizeHandler) {
+		window.removeEventListener('resize', parallaxResizeHandler);
+		parallaxResizeHandler = null;
+	}
+}
+
 function initParallax() {
 	// Prevent multiple initializations
 	if (window.dsgoParallaxInitialized) {
@@ -314,22 +329,23 @@ function initParallax() {
 		}
 	}
 
+	// Store handlers at module scope so they can be torn down on re-init
+	parallaxScrollHandler = requestTick;
+
+	let resizeTimeout;
+	parallaxResizeHandler = () => {
+		clearTimeout(resizeTimeout);
+		resizeTimeout = setTimeout(() => {
+			viewportHeight = window.innerHeight;
+			requestTick();
+		}, 150);
+	};
+
 	// Add scroll listener with passive flag for performance
-	window.addEventListener('scroll', requestTick, { passive: true });
+	window.addEventListener('scroll', parallaxScrollHandler, { passive: true });
 
 	// Update viewport height on resize (debounced)
-	let resizeTimeout;
-	window.addEventListener(
-		'resize',
-		() => {
-			clearTimeout(resizeTimeout);
-			resizeTimeout = setTimeout(() => {
-				viewportHeight = window.innerHeight;
-				requestTick();
-			}, 150);
-		},
-		{ passive: true }
-	);
+	window.addEventListener('resize', parallaxResizeHandler, { passive: true });
 
 	// Initial update
 	requestTick();
@@ -344,9 +360,8 @@ if (document.readyState === 'loading') {
 
 // Re-initialize after soft navigation (bfcache, AJAX)
 document.addEventListener('dsgo-content-loaded', () => {
-	// Reset global guard so newly injected elements can be initialized
-	if (window.dsgoParallaxInitialized) {
-		delete window.dsgoParallaxInitialized;
-	}
+	// Tear down previous scroll/resize listeners before re-initializing
+	teardownParallax();
+	delete window.dsgoParallaxInitialized;
 	initParallax();
 });
