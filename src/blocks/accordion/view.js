@@ -7,6 +7,7 @@
 document.addEventListener('DOMContentLoaded', function () {
 	initAccordions();
 });
+document.addEventListener('dsgo-content-loaded', initAccordions);
 
 // Check for reduced motion preference
 const prefersReducedMotion = window.matchMedia(

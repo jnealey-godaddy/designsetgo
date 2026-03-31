@@ -77,3 +77,4 @@ if (document.readyState === 'loading') {
  * Reinitialize on dynamic content changes (e.g., AJAX)
  */
 document.addEventListener('sticky-sections:reinit', initStickySections);
+document.addEventListener('dsgo-content-loaded', initStickySections);

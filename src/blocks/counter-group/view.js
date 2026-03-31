@@ -18,6 +18,7 @@ import { CountUp } from 'countup.js';
 document.addEventListener('DOMContentLoaded', () => {
 	initCounterAnimations();
 });
+document.addEventListener('dsgo-content-loaded', initCounterAnimations);
 
 /**
  * Initialize counter animations with lazy loading

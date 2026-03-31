@@ -157,6 +157,9 @@
 		initBackgroundVideos();
 	}
 
+	// Re-initialize after soft navigation (bfcache, AJAX)
+	document.addEventListener('dsgo-content-loaded', initBackgroundVideos);
+
 	// Re-initialize on window resize (for mobile hide/show)
 	let resizeTimeout;
 	window.addEventListener('resize', () => {

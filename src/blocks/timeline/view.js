@@ -9,6 +9,7 @@
 document.addEventListener('DOMContentLoaded', function () {
 	initTimelines();
 });
+document.addEventListener('dsgo-content-loaded', initTimelines);
 
 // Check for reduced motion preference
 const prefersReducedMotion = window.matchMedia(

@@ -116,6 +116,7 @@ if (document.readyState === 'loading') {
 }
 
 /**
- * Reinitialize on dynamic content changes (e.g., AJAX)
+ * Reinitialize on dynamic content changes (e.g., AJAX, soft navigation)
  */
 document.addEventListener('scroll-accordion:reinit', initScrollAccordions);
+document.addEventListener('dsgo-content-loaded', initScrollAccordions);

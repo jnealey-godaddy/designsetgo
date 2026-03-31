@@ -66,5 +66,6 @@ if (document.readyState === 'loading') {
 	initProgressBars();
 }
 
-// Re-initialize after dynamic content loads (e.g., AJAX)
+// Re-initialize after dynamic content loads (e.g., AJAX, soft navigation)
 document.addEventListener('wp-blocks-post-content-loaded', initProgressBars);
+document.addEventListener('dsgo-content-loaded', initProgressBars);

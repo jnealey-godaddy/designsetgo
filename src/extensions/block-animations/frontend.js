@@ -8,9 +8,9 @@
  */
 
 /**
- * Initialize animations on page load
+ * Initialize animations for all animated elements on the page.
  */
-document.addEventListener('DOMContentLoaded', () => {
+function initBlockAnimations() {
 	// Skip all animation setup when user prefers reduced motion
 	const prefersReducedMotion = window.matchMedia(
 		'(prefers-reduced-motion: reduce)'
@@ -30,6 +30,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Process each animated element
 	animatedElements.forEach((element) => {
+		// Prevent duplicate initialization
+		if (element.dataset.dsgoAnimationInitialized) {
+			return;
+		}
+		element.dataset.dsgoAnimationInitialized = 'true';
+
 		const trigger = element.dataset.dsgoAnimationTrigger || 'scroll';
 		const duration = element.dataset.dsgoAnimationDuration || '600';
 		const delay = element.dataset.dsgoAnimationDelay || '0';
@@ -58,7 +64,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				animateOnScroll(element);
 		}
 	});
-});
+}
+
+document.addEventListener('DOMContentLoaded', initBlockAnimations);
+document.addEventListener('dsgo-content-loaded', initBlockAnimations);
 
 /**
  * Animate element on page load

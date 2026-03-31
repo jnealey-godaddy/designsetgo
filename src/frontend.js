@@ -10,6 +10,19 @@
  * @package
  */
 
+// ===== SOFT NAVIGATION SUPPORT =====
+// Re-dispatch initialization event on bfcache restoration (back/forward nav)
+// so extensions and blocks can re-initialize without relying solely on DOMContentLoaded.
+window.addEventListener('pageshow', (event) => {
+	if (event.persisted) {
+		document.dispatchEvent(
+			new CustomEvent('dsgo-content-loaded', {
+				detail: { source: 'bfcache' },
+			})
+		);
+	}
+});
+
 // ===== UTILITIES =====
 import './utils/focus-outline.js';
 

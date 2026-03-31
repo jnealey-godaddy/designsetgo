@@ -341,3 +341,6 @@ if (document.readyState === 'loading') {
 } else {
 	initParallax();
 }
+
+// Re-initialize after soft navigation (bfcache, AJAX)
+document.addEventListener('dsgo-content-loaded', initParallax);

@@ -306,3 +306,6 @@ if (document.readyState === 'loading') {
 } else {
 	init();
 }
+
+// Re-initialize after soft navigation (bfcache, AJAX)
+document.addEventListener('dsgo-content-loaded', init);

@@ -10,7 +10,7 @@
  * @since 1.2.0
  */
 
-/* global DOMParser */
+/* global DOMParser, MutationObserver, Node, requestAnimationFrame, cancelAnimationFrame */
 
 /**
  * Initialize icon injection on page load or for specific container.
@@ -116,4 +116,67 @@ if (document.readyState === 'loading') {
 	document.addEventListener('DOMContentLoaded', () => initIconInjection());
 } else {
 	initIconInjection();
+}
+
+// Re-inject icons after bfcache restoration (back/forward navigation)
+window.addEventListener('pageshow', (event) => {
+	if (event.persisted) {
+		// Reset injection flags — bfcache may discard dynamically injected SVGs
+		document
+			.querySelectorAll('.dsgo-lazy-icon[data-icon-injected="true"]')
+			.forEach((el) => {
+				if (!el.querySelector('svg')) {
+					el.removeAttribute('data-icon-injected');
+				}
+			});
+		initIconInjection();
+	}
+});
+
+// Re-initialize when custom content-loaded event fires (AJAX/SPA navigation)
+document.addEventListener('dsgo-content-loaded', (event) => {
+	const container = event.detail?.container || document;
+	initIconInjection(container);
+});
+
+// Watch for dynamically added icon elements (client-side routing, AJAX, etc.)
+if (typeof MutationObserver !== 'undefined') {
+	let pendingInjection = null;
+
+	const observer = new MutationObserver((mutations) => {
+		for (const mutation of mutations) {
+			for (const node of mutation.addedNodes) {
+				if (node.nodeType !== Node.ELEMENT_NODE) {
+					continue;
+				}
+
+				const hasIcon =
+					(node.matches?.('.dsgo-lazy-icon[data-icon-name]') &&
+						node.dataset.iconInjected !== 'true') ||
+					node.querySelector?.(
+						'.dsgo-lazy-icon[data-icon-name]:not([data-icon-injected="true"])'
+					);
+
+				if (hasIcon) {
+					// Debounce to batch multiple additions
+					if (pendingInjection) {
+						cancelAnimationFrame(pendingInjection);
+					}
+					pendingInjection = requestAnimationFrame(() => {
+						initIconInjection();
+						pendingInjection = null;
+					});
+					return;
+				}
+			}
+		}
+	});
+
+	if (document.body) {
+		observer.observe(document.body, { childList: true, subtree: true });
+	} else {
+		document.addEventListener('DOMContentLoaded', () => {
+			observer.observe(document.body, { childList: true, subtree: true });
+		});
+	}
 }

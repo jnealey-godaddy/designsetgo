@@ -488,6 +488,9 @@
 		initTabs();
 	}
 
+	// Re-initialize after soft navigation (bfcache, AJAX)
+	document.addEventListener('dsgo-content-loaded', initTabs);
+
 	// Expose to window for external access
 	window.DSGTabs = DSGTabs;
 })();

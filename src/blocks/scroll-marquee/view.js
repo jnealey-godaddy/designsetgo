@@ -375,6 +375,9 @@ if (document.readyState === 'loading') {
 	initScrollMarquees();
 }
 
+// Re-initialize after soft navigation (bfcache, AJAX)
+document.addEventListener('dsgo-content-loaded', initScrollMarquees);
+
 // Also initialize on load event as backup (ensures all resources loaded)
 window.addEventListener('load', () => {
 	// Initialize any marquees that weren't initialized yet

@@ -132,6 +132,9 @@
 		initGrids();
 	}
 
+	// Re-initialize after soft navigation (bfcache, AJAX)
+	document.addEventListener('dsgo-content-loaded', initGrids);
+
 	// Expose for external access
 	window.DSGGrid = DSGGrid;
 })();

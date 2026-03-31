@@ -103,3 +103,4 @@ if (document.readyState === 'loading') {
  * Reinitialize on dynamic content changes (e.g., AJAX)
  */
 document.addEventListener('scroll-slides:reinit', initScrollSlides);
+document.addEventListener('dsgo-content-loaded', initScrollSlides);

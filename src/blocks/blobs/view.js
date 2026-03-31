@@ -144,6 +144,9 @@ if (document.readyState === 'loading') {
 	initBlobs();
 }
 
+// Re-initialize after soft navigation (bfcache, AJAX)
+document.addEventListener('dsgo-content-loaded', initBlobs);
+
 // Re-initialize if user changes motion preferences
 if (window.matchMedia) {
 	const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');

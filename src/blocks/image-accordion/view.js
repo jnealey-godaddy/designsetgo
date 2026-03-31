@@ -13,7 +13,7 @@
 
 /* global navigator */
 
-document.addEventListener('DOMContentLoaded', function () {
+function initImageAccordions() {
 	const accordions = document.querySelectorAll('.dsgo-image-accordion');
 
 	// Detect touch devices
@@ -21,6 +21,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 	accordions.forEach((accordion) => {
+		// Prevent duplicate initialization
+		if (accordion.dataset.dsgoInitialized) {
+			return;
+		}
+		accordion.dataset.dsgoInitialized = 'true';
+
 		const triggerType =
 			accordion.getAttribute('data-trigger-type') || 'hover';
 		const defaultExpandedIndex =
@@ -182,4 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		});
 	});
-});
+}
+
+document.addEventListener('DOMContentLoaded', initImageAccordions);
+document.addEventListener('dsgo-content-loaded', initImageAccordions);

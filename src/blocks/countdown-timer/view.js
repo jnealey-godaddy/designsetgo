@@ -216,3 +216,6 @@ if (document.readyState === 'loading') {
 } else {
 	initAllCountdownTimers();
 }
+
+// Re-initialize after soft navigation (bfcache, AJAX)
+document.addEventListener('dsgo-content-loaded', initAllCountdownTimers);
