@@ -85,12 +85,26 @@ function initClickableGroups() {
 			if (!isInteractive) {
 				// Navigate to URL
 				if (linkTarget === '_blank') {
-					const newWindow = window.open(linkUrl, '_blank');
-					if (newWindow) {
-						newWindow.opener = null; // Security: prevent window.opener access
+					const parsed = new URL(linkUrl, window.location.href);
+					if (
+						parsed.protocol === 'https:' ||
+						parsed.protocol === 'http:'
+					) {
+						const newWindow = window.open(parsed.href, '_blank');
+						if (newWindow) {
+							newWindow.opener = null;
+						}
 					}
 				} else {
-					window.location.href = linkUrl;
+					// Construct a full URL to guarantee the protocol is safe,
+					// preventing any `javascript:` injection via data attributes.
+					const parsed = new URL(linkUrl, window.location.href);
+					if (
+						parsed.protocol === 'https:' ||
+						parsed.protocol === 'http:'
+					) {
+						window.location.assign(parsed.href);
+					}
 				}
 			}
 		});
