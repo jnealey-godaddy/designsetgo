@@ -83,28 +83,24 @@ function initClickableGroups() {
 				target.closest('button');
 
 			if (!isInteractive) {
-				// Navigate to URL
+				// Parse URL to guarantee protocol safety,
+				// preventing `javascript:` injection via data attributes.
+				let parsed;
+				try {
+					parsed = new URL(linkUrl, window.location.href);
+				} catch {
+					return;
+				}
+
+				const allowedProtocols = ['https:', 'http:', 'mailto:', 'tel:'];
+				if (!allowedProtocols.includes(parsed.protocol)) {
+					return;
+				}
+
 				if (linkTarget === '_blank') {
-					const parsed = new URL(linkUrl, window.location.href);
-					if (
-						parsed.protocol === 'https:' ||
-						parsed.protocol === 'http:'
-					) {
-						const newWindow = window.open(parsed.href, '_blank');
-						if (newWindow) {
-							newWindow.opener = null;
-						}
-					}
+					window.open(parsed.href, '_blank', 'noopener,noreferrer');
 				} else {
-					// Construct a full URL to guarantee the protocol is safe,
-					// preventing any `javascript:` injection via data attributes.
-					const parsed = new URL(linkUrl, window.location.href);
-					if (
-						parsed.protocol === 'https:' ||
-						parsed.protocol === 'http:'
-					) {
-						window.location.assign(parsed.href);
-					}
+					window.location.assign(parsed.href);
 				}
 			}
 		});
