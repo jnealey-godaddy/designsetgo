@@ -213,9 +213,10 @@ function calculateParallaxOffset(element, settings, scrollY, viewportHeight) {
 /**
  * Initialize parallax effects
  */
-// Module-scope handler refs for teardown (prevents listener accumulation on soft nav)
+// Module-scope refs for teardown (prevents accumulation on soft nav)
 let parallaxScrollHandler = null;
 let parallaxResizeHandler = null;
+let parallaxObserver = null;
 
 function teardownParallax() {
 	if (parallaxScrollHandler) {
@@ -225,6 +226,10 @@ function teardownParallax() {
 	if (parallaxResizeHandler) {
 		window.removeEventListener('resize', parallaxResizeHandler);
 		parallaxResizeHandler = null;
+	}
+	if (parallaxObserver) {
+		parallaxObserver.disconnect();
+		parallaxObserver = null;
 	}
 }
 
@@ -260,8 +265,8 @@ function initParallax() {
 	// Track visible elements for performance
 	const visibleElements = new Set();
 
-	// Create IntersectionObserver to track visibility
-	const observer = new IntersectionObserver(
+	// Create IntersectionObserver to track visibility (stored at module scope for teardown)
+	parallaxObserver = new IntersectionObserver(
 		(entries) => {
 			entries.forEach((entry) => {
 				if (entry.isIntersecting) {
@@ -283,7 +288,7 @@ function initParallax() {
 	parallaxElements.forEach((element) => {
 		// Add will-change for performance
 		element.style.willChange = 'transform';
-		observer.observe(element);
+		parallaxObserver.observe(element);
 	});
 
 	/**
