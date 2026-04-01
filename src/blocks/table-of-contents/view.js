@@ -32,6 +32,7 @@ if (window.location.hash) {
 document.addEventListener('DOMContentLoaded', function () {
 	initTableOfContents();
 });
+document.addEventListener('dsgo-content-loaded', initTableOfContents);
 
 class DSGTableOfContents {
 	constructor(element) {

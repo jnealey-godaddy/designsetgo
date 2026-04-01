@@ -12,12 +12,16 @@
 
 import { CountUp } from 'countup.js';
 
+// Track initialized groups to prevent duplicate CountUp instances on bfcache/soft nav
+const initializedGroups = new WeakSet();
+
 /**
  * Initialize counter animations on page load
  */
 document.addEventListener('DOMContentLoaded', () => {
 	initCounterAnimations();
 });
+document.addEventListener('dsgo-content-loaded', initCounterAnimations);
 
 /**
  * Initialize counter animations with lazy loading
@@ -62,6 +66,11 @@ function initCounterAnimations() {
 	);
 
 	counterGroups.forEach((group) => {
+		// Prevent duplicate initialization (avoids CountUp leaks on bfcache)
+		if (initializedGroups.has(group)) {
+			return;
+		}
+		initializedGroups.add(group);
 		counterObserver.observe(group);
 	});
 }

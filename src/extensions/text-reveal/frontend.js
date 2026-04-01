@@ -265,6 +265,7 @@ function reinitTextReveal() {
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', initAllTextReveal);
+document.addEventListener('dsgo-content-loaded', reinitTextReveal);
 
 // Expose functions for external use
 window.dsgoTextReveal = {

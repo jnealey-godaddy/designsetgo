@@ -55,8 +55,13 @@ function initProgressBars() {
 		});
 	}, observerOptions);
 
-	// Observe all progress bars
-	progressBars.forEach((bar) => observer.observe(bar));
+	// Observe all progress bars (skip already-initialized ones)
+	progressBars.forEach((bar) => {
+		if (!bar.hasAttribute('data-dsgo-initialized')) {
+			bar.setAttribute('data-dsgo-initialized', 'true');
+			observer.observe(bar);
+		}
+	});
 }
 
 // Initialize when DOM is ready
@@ -66,5 +71,6 @@ if (document.readyState === 'loading') {
 	initProgressBars();
 }
 
-// Re-initialize after dynamic content loads (e.g., AJAX)
+// Re-initialize after dynamic content loads (e.g., AJAX, soft navigation)
 document.addEventListener('wp-blocks-post-content-loaded', initProgressBars);
+document.addEventListener('dsgo-content-loaded', initProgressBars);

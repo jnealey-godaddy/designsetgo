@@ -6,10 +6,16 @@
  * @since 1.0.0
  */
 
-document.addEventListener('DOMContentLoaded', function () {
+function initFlipCards() {
 	const flipCards = document.querySelectorAll('.dsgo-flip-card');
 
 	flipCards.forEach((card) => {
+		// Prevent duplicate initialization
+		if (card.dataset.dsgoInitialized) {
+			return;
+		}
+		card.dataset.dsgoInitialized = 'true';
+
 		const flipTrigger = card.getAttribute('data-flip-trigger');
 
 		if (flipTrigger === 'click') {
@@ -74,4 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			});
 		}
 	});
-});
+}
+
+document.addEventListener('DOMContentLoaded', initFlipCards);
+document.addEventListener('dsgo-content-loaded', initFlipCards);

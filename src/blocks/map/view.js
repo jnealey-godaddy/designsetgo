@@ -30,5 +30,8 @@ if (document.readyState === 'loading') {
 	initMaps();
 }
 
+// Re-initialize after soft navigation (bfcache, AJAX)
+document.addEventListener('dsgo-content-loaded', initMaps);
+
 // Expose to window for external access
 window.DSGMap = DSGMap;

@@ -477,6 +477,11 @@
 	function initTabs() {
 		const tabsElements = document.querySelectorAll('.dsgo-tabs');
 		tabsElements.forEach((element) => {
+			// Prevent duplicate initialization (avoids event listener accumulation)
+			if (element.hasAttribute('data-dsgo-initialized')) {
+				return;
+			}
+			element.setAttribute('data-dsgo-initialized', 'true');
 			new DSGTabs(element);
 		});
 	}
@@ -487,6 +492,9 @@
 	} else {
 		initTabs();
 	}
+
+	// Re-initialize after soft navigation (bfcache, AJAX)
+	document.addEventListener('dsgo-content-loaded', initTabs);
 
 	// Expose to window for external access
 	window.DSGTabs = DSGTabs;

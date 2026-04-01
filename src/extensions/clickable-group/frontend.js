@@ -34,11 +34,17 @@ function isValidHttpUrl(url) {
 	return safePattern.test(url);
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+function initClickableGroups() {
 	// Find all clickable groups
 	const clickableGroups = document.querySelectorAll('.dsgo-clickable');
 
 	clickableGroups.forEach((group) => {
+		// Prevent duplicate initialization
+		if (group.dataset.dsgoInitialized) {
+			return;
+		}
+		group.dataset.dsgoInitialized = 'true';
+
 		const linkUrl = group.getAttribute('data-link-url');
 
 		if (!linkUrl) {
@@ -89,4 +95,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		});
 	});
-});
+}
+
+document.addEventListener('DOMContentLoaded', initClickableGroups);
+document.addEventListener('dsgo-content-loaded', initClickableGroups);

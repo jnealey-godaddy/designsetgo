@@ -190,6 +190,12 @@ function initAllCountdownTimers() {
 	const timers = document.querySelectorAll('.dsgo-countdown-timer');
 
 	timers.forEach((timer) => {
+		// Prevent duplicate initialization (critical for bfcache — avoids setInterval leaks)
+		if (timer.hasAttribute('data-dsgo-initialized')) {
+			return;
+		}
+		timer.setAttribute('data-dsgo-initialized', 'true');
+
 		// Use Intersection Observer for lazy initialization
 		// eslint-disable-next-line no-undef
 		const observer = new IntersectionObserver(
@@ -216,3 +222,6 @@ if (document.readyState === 'loading') {
 } else {
 	initAllCountdownTimers();
 }
+
+// Re-initialize after soft navigation (bfcache, AJAX)
+document.addEventListener('dsgo-content-loaded', initAllCountdownTimers);

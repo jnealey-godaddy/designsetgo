@@ -306,3 +306,7 @@ if (document.readyState === 'loading') {
 } else {
 	init();
 }
+
+// Re-initialize after soft navigation (bfcache, AJAX)
+// Only re-init backgrounds, not the MutationObserver (already watching)
+document.addEventListener('dsgo-content-loaded', initExpandingBackgrounds);

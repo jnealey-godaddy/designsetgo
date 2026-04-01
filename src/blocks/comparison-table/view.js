@@ -6,7 +6,7 @@
 
 let tooltipCounter = 0;
 
-document.addEventListener('DOMContentLoaded', () => {
+function initComparisonTables() {
 	const tables = document.querySelectorAll('.dsgo-comparison-table');
 
 	tables.forEach((table) => {
@@ -17,7 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 		initTooltips(table);
 	});
-});
+}
+
+document.addEventListener('DOMContentLoaded', initComparisonTables);
+document.addEventListener('dsgo-content-loaded', initComparisonTables);
 
 /**
  * Initializes tooltip behavior for feature row info icons

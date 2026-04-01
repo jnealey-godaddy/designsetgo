@@ -213,6 +213,26 @@ function calculateParallaxOffset(element, settings, scrollY, viewportHeight) {
 /**
  * Initialize parallax effects
  */
+// Module-scope refs for teardown (prevents accumulation on soft nav)
+let parallaxScrollHandler = null;
+let parallaxResizeHandler = null;
+let parallaxObserver = null;
+
+function teardownParallax() {
+	if (parallaxScrollHandler) {
+		window.removeEventListener('scroll', parallaxScrollHandler);
+		parallaxScrollHandler = null;
+	}
+	if (parallaxResizeHandler) {
+		window.removeEventListener('resize', parallaxResizeHandler);
+		parallaxResizeHandler = null;
+	}
+	if (parallaxObserver) {
+		parallaxObserver.disconnect();
+		parallaxObserver = null;
+	}
+}
+
 function initParallax() {
 	// Prevent multiple initializations
 	if (window.dsgoParallaxInitialized) {
@@ -245,8 +265,8 @@ function initParallax() {
 	// Track visible elements for performance
 	const visibleElements = new Set();
 
-	// Create IntersectionObserver to track visibility
-	const observer = new IntersectionObserver(
+	// Create IntersectionObserver to track visibility (stored at module scope for teardown)
+	parallaxObserver = new IntersectionObserver(
 		(entries) => {
 			entries.forEach((entry) => {
 				if (entry.isIntersecting) {
@@ -268,7 +288,7 @@ function initParallax() {
 	parallaxElements.forEach((element) => {
 		// Add will-change for performance
 		element.style.willChange = 'transform';
-		observer.observe(element);
+		parallaxObserver.observe(element);
 	});
 
 	/**
@@ -314,22 +334,23 @@ function initParallax() {
 		}
 	}
 
+	// Store handlers at module scope so they can be torn down on re-init
+	parallaxScrollHandler = requestTick;
+
+	let resizeTimeout;
+	parallaxResizeHandler = () => {
+		clearTimeout(resizeTimeout);
+		resizeTimeout = setTimeout(() => {
+			viewportHeight = window.innerHeight;
+			requestTick();
+		}, 150);
+	};
+
 	// Add scroll listener with passive flag for performance
-	window.addEventListener('scroll', requestTick, { passive: true });
+	window.addEventListener('scroll', parallaxScrollHandler, { passive: true });
 
 	// Update viewport height on resize (debounced)
-	let resizeTimeout;
-	window.addEventListener(
-		'resize',
-		() => {
-			clearTimeout(resizeTimeout);
-			resizeTimeout = setTimeout(() => {
-				viewportHeight = window.innerHeight;
-				requestTick();
-			}, 150);
-		},
-		{ passive: true }
-	);
+	window.addEventListener('resize', parallaxResizeHandler, { passive: true });
 
 	// Initial update
 	requestTick();
@@ -341,3 +362,11 @@ if (document.readyState === 'loading') {
 } else {
 	initParallax();
 }
+
+// Re-initialize after soft navigation (bfcache, AJAX)
+document.addEventListener('dsgo-content-loaded', () => {
+	// Tear down previous scroll/resize listeners before re-initializing
+	teardownParallax();
+	delete window.dsgoParallaxInitialized;
+	initParallax();
+});

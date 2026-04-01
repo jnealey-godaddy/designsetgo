@@ -1067,6 +1067,9 @@ function initializeSliders() {
 // Initialize on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', initializeSliders);
 
+// Re-initialize after soft navigation (bfcache, AJAX)
+document.addEventListener('dsgo-content-loaded', initializeSliders);
+
 // Also initialize on load event as backup (ensures all resources loaded)
 window.addEventListener('load', () => {
 	// Initialize any sliders that weren't initialized yet

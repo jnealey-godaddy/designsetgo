@@ -7,6 +7,7 @@
 document.addEventListener('DOMContentLoaded', function () {
 	initBreadcrumbs();
 });
+document.addEventListener('dsgo-content-loaded', initBreadcrumbs);
 
 /**
  * Initialize all breadcrumb blocks on the page
