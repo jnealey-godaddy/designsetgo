@@ -48,31 +48,26 @@ import './sticky-header.scss';
 		settings.customSelector ||
 		'body:not(.block-editor-page) .wp-block-template-part:first-of-type, body:not(.block-editor-page) header.wp-block-template-part, body:not(.block-editor-page) .wp-block-template-part:has(.wp-block-navigation), body:not(.block-editor-page) .wp-block-template-part:has(.is-position-sticky)';
 
-	// Find sticky headers
-	const stickyHeaders = document.querySelectorAll(selector);
-
-	if (stickyHeaders.length === 0) {
-		return;
-	}
-
 	// State tracking
 	let lastScrollY = window.scrollY;
 	let ticking = false;
 
-	// Detect if overlay header mode is active for this page
-	const isOverlayPage = document.body.classList.contains(
-		'dsgo-page-overlay-header'
-	);
+	/**
+	 * Set up overlay header height measurement for a header element.
+	 * Measures the header so CSS can pull content up by the right amount.
+	 *
+	 * @param {HTMLElement} header Header element
+	 */
+	function setupOverlayHeaderHeight(header) {
+		if (!document.body.classList.contains('dsgo-page-overlay-header')) {
+			return;
+		}
 
-	// When skip-top-bar is active, only pull content up by the nav row height.
-	const isOverlaySkipTopBar = document.body.classList.contains(
-		'dsgo-page-overlay-skip-top-bar'
-	);
+		const isOverlaySkipTopBar = document.body.classList.contains(
+			'dsgo-page-overlay-skip-top-bar'
+		);
 
-	// Measure header height so CSS can pull content up by the right amount.
-	if (isOverlayPage && stickyHeaders.length > 0) {
 		const setHeaderHeight = () => {
-			const header = stickyHeaders[0];
 			let h = header.getBoundingClientRect().height;
 
 			if (isOverlaySkipTopBar) {
@@ -328,6 +323,15 @@ import './sticky-header.scss';
 	 * @param {HTMLElement} header Header element
 	 */
 	function initStickyHeader(header) {
+		// Guard against duplicate initialization (e.g. bfcache restore)
+		if (header.dataset.dsgoInitialized) {
+			return;
+		}
+		header.dataset.dsgoInitialized = 'true';
+
+		// Set up overlay header height measurement (if applicable)
+		setupOverlayHeaderHeight(header);
+
 		// Apply custom properties
 		applyCustomProperties(header);
 
@@ -357,25 +361,37 @@ import './sticky-header.scss';
 	}
 
 	/**
+	 * Initialize all sticky headers found in the DOM
+	 */
+	function initAll() {
+		const headers = document.querySelectorAll(selector);
+		headers.forEach(initStickyHeader);
+	}
+
+	/**
 	 * Initialize all sticky headers
 	 */
 	function init() {
 		// Wait for DOM to be fully loaded
 		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', () => {
-				stickyHeaders.forEach(initStickyHeader);
-			});
+			document.addEventListener('DOMContentLoaded', initAll);
 		} else {
-			stickyHeaders.forEach(initStickyHeader);
+			initAll();
 		}
 
 		// Re-run top bar offset after all resources load (images/fonts can
 		// change the top bar height measured at DOMContentLoaded)
 		window.addEventListener(
 			'load',
-			() => stickyHeaders.forEach(applyTopBarOffset),
+			() => {
+				const headers = document.querySelectorAll(selector);
+				headers.forEach(applyTopBarOffset);
+			},
 			{ once: true }
 		);
+
+		// Re-initialize on soft navigation (bfcache restore, AJAX transitions)
+		document.addEventListener('dsgo-content-loaded', initAll);
 	}
 
 	// Initialize

@@ -62,10 +62,16 @@ function loadTurnstileScript() {
 	});
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+function initFormBuilder() {
 	const forms = document.querySelectorAll('.dsgo-form-builder');
 
 	forms.forEach((formContainer) => {
+		// Guard against duplicate initialization (e.g. bfcache restore)
+		if (formContainer.dataset.dsgoInitialized) {
+			return;
+		}
+		formContainer.dataset.dsgoInitialized = 'true';
+
 		const formElement = formContainer.querySelector('.dsgo-form');
 		const submitButton = formElement?.querySelector('.dsgo-form__submit');
 		const messageContainer = formElement?.querySelector(
@@ -372,4 +378,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				(window.innerWidth || document.documentElement.clientWidth)
 		);
 	}
-});
+}
+
+document.addEventListener('DOMContentLoaded', initFormBuilder);
+document.addEventListener('dsgo-content-loaded', initFormBuilder);
