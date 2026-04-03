@@ -62,10 +62,16 @@ function loadTurnstileScript() {
 	});
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+function initFormBuilder() {
 	const forms = document.querySelectorAll('.dsgo-form-builder');
 
 	forms.forEach((formContainer) => {
+		// Guard against duplicate initialization (e.g. bfcache restore)
+		if (formContainer.dataset.dsgoInitialized) {
+			return;
+		}
+		formContainer.dataset.dsgoInitialized = 'true';
+
 		const formElement = formContainer.querySelector('.dsgo-form');
 		const submitButton = formElement?.querySelector('.dsgo-form__submit');
 		const messageContainer = formElement?.querySelector(
@@ -77,10 +83,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 
 		// Add timestamp field dynamically (not in save.js to avoid validation errors)
+		// Value is set fresh at submit time so it stays accurate after bfcache restore
 		const timestampField = document.createElement('input');
 		timestampField.type = 'hidden';
 		timestampField.name = 'dsg_timestamp';
-		timestampField.value = Date.now();
 		formElement.appendChild(timestampField);
 
 		// Turnstile state for this form
@@ -163,6 +169,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		// Handle form submission
 		formElement.addEventListener('submit', async function (e) {
 			e.preventDefault();
+
+			// Refresh timestamp so it reflects actual submit time (not init time)
+			timestampField.value = Date.now();
 
 			// Clear previous messages
 			hideMessage(messageContainer);
@@ -372,4 +381,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				(window.innerWidth || document.documentElement.clientWidth)
 		);
 	}
-});
+}
+
+document.addEventListener('DOMContentLoaded', initFormBuilder);
+document.addEventListener('dsgo-content-loaded', initFormBuilder);

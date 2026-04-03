@@ -8,13 +8,19 @@
 
 import COUNTRY_CODES from './country-codes';
 
-document.addEventListener('DOMContentLoaded', function () {
+function initPhoneFields() {
 	// Populate country-code selects rendered with data-dsgo-country-code.
 	const codeSelects = document.querySelectorAll(
 		'select.dsgo-form-field__country-code[data-dsgo-country-code]'
 	);
 
 	codeSelects.forEach((select) => {
+		// Guard against duplicate initialization (e.g. bfcache restore)
+		if (select.dataset.dsgoInitialized) {
+			return;
+		}
+		select.dataset.dsgoInitialized = 'true';
+
 		const defaultCode = select.dataset.dsgoCountryCode || '+1';
 
 		COUNTRY_CODES.forEach(({ value }) => {
@@ -34,6 +40,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	);
 
 	phoneWrappers.forEach((wrapper) => {
+		// Guard against duplicate initialization
+		if (wrapper.dataset.dsgoInitialized) {
+			return;
+		}
+		wrapper.dataset.dsgoInitialized = 'true';
+
 		const input = wrapper.querySelector('input[type="tel"]');
 		if (!input) {
 			return;
@@ -103,4 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			e.target.value = formattedValue;
 		});
 	});
-});
+}
+
+document.addEventListener('DOMContentLoaded', initPhoneFields);
+document.addEventListener('dsgo-content-loaded', initPhoneFields);
