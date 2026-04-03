@@ -32,5 +32,12 @@ export function clearDirtyState() {
  */
 export function navigateTo(url) {
 	clearDirtyState();
-	window.location.href = url;
+	try {
+		const parsed = new URL(url, window.location.href);
+		if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+			window.location.assign(parsed.href);
+		}
+	} catch {
+		// Invalid URL — do not navigate.
+	}
 }

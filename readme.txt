@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, animations, responsive
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.0.46
+Stable tag: 2.0.47
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -178,6 +178,20 @@ Check the [documentation](https://designsetgoblocks.com/docs/), visit the [suppo
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.0.47 - 2026-04-03 =
+**Bug Fixes:**
+* Fix: Soft-reload support for sticky header, form builder, and phone field — blocks now re-initialize correctly after soft page navigation
+* Fix: Re-initialize icons and scripts on soft page reload
+* Fix: Add initialization guards for countdown-timer, counter-group, and progress-bar to prevent double-init
+* Fix: Tear down parallax scroll/resize listeners and disconnect orphaned IntersectionObserver before re-init
+* Fix: Refresh form timestamp at submit time instead of init time
+* Fix: Stop setting default colors on sticky header and allow clearing color controls
+* Fix: Harden draft-mode navigateTo() — validate URL protocol before navigation (security)
+
+**Improvements:**
+* Enhancement: CI — skip wp plugin delete in lifecycle test, use @wordpress/env, allow wp-env stop to fail gracefully
+* Enhancement: Optimize screenshot-1.gif for WordPress.org 10MB limit
 
 = 2.0.46 - 2026-03-23 =
 **Bug Fixes:**
