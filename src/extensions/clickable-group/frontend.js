@@ -83,14 +83,24 @@ function initClickableGroups() {
 				target.closest('button');
 
 			if (!isInteractive) {
-				// Navigate to URL
+				// Parse URL to guarantee protocol safety,
+				// preventing `javascript:` injection via data attributes.
+				let parsed;
+				try {
+					parsed = new URL(linkUrl, window.location.href);
+				} catch {
+					return;
+				}
+
+				const allowedProtocols = ['https:', 'http:', 'mailto:', 'tel:'];
+				if (!allowedProtocols.includes(parsed.protocol)) {
+					return;
+				}
+
 				if (linkTarget === '_blank') {
-					const newWindow = window.open(linkUrl, '_blank');
-					if (newWindow) {
-						newWindow.opener = null; // Security: prevent window.opener access
-					}
+					window.open(parsed.href, '_blank', 'noopener,noreferrer');
 				} else {
-					window.location.href = linkUrl;
+					window.location.assign(parsed.href);
 				}
 			}
 		});
