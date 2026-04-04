@@ -521,6 +521,13 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/markdown/class-dsgo-handlers.php';
 		require_once DESIGNSETGO_PATH . 'includes/markdown/class-converter.php';
 
+		// HTML-to-block converter classes.
+		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-attribute-mapper.php';
+		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-element-handler.php';
+		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-core-handlers.php';
+		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-dsgo-handlers.php';
+		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-converter.php';
+
 		require_once DESIGNSETGO_PATH . 'includes/helpers.php';
 
 		// Load Composer autoloader if available.
