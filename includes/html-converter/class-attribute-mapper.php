@@ -131,7 +131,8 @@ class Attribute_Mapper {
 			}
 
 			// Text color preset: has-contrast-color, etc.
-			if ( preg_match( '/^has-([a-z-]+)-color$/', $class, $matches ) ) {
+			// Skip WordPress marker classes like has-text-color and has-background.
+			if ( preg_match( '/^has-([a-z-]+)-color$/', $class, $matches ) && 'text' !== $matches[1] ) {
 				$attrs['textColor'] = $matches[1];
 				continue;
 			}

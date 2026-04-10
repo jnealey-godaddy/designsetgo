@@ -144,6 +144,9 @@ class Insert_HTML extends Abstract_Ability {
 			);
 		}
 
+		// Sanitize input HTML to strip dangerous attributes and tags.
+		$html = wp_kses_post( $html );
+
 		// Convert HTML to blocks.
 		$converter = new Converter(
 			array(

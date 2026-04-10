@@ -51,10 +51,33 @@ class Converter {
 	 * @var array<string>
 	 */
 	private const INLINE_TAGS = array(
-		'a', 'abbr', 'b', 'bdi', 'bdo', 'br', 'cite', 'code',
-		'del', 'dfn', 'em', 'i', 'ins', 'kbd', 'mark', 'q',
-		's', 'samp', 'small', 'span', 'strong', 'sub', 'sup',
-		'time', 'u', 'var', 'wbr',
+		'a',
+		'abbr',
+		'b',
+		'bdi',
+		'bdo',
+		'br',
+		'cite',
+		'code',
+		'del',
+		'dfn',
+		'em',
+		'i',
+		'ins',
+		'kbd',
+		'mark',
+		'q',
+		's',
+		'samp',
+		'small',
+		'span',
+		'strong',
+		'sub',
+		'sup',
+		'time',
+		'u',
+		'var',
+		'wbr',
 	);
 
 	/**
@@ -128,7 +151,7 @@ class Converter {
 		}
 
 		$body   = $doc->getElementsByTagName( 'body' )->item( 0 );
-		$target = $body ?: $doc->documentElement;
+		$target = $body ? $body : $doc->documentElement;
 
 		if ( ! $target ) {
 			return array();
@@ -161,7 +184,7 @@ class Converter {
 	 */
 	public function process_node( \DOMNode $node ): ?array {
 		// Skip non-element nodes.
-		if ( $node->nodeType === XML_TEXT_NODE ) {
+		if ( XML_TEXT_NODE === $node->nodeType ) {
 			return $this->handle_text_node( $node );
 		}
 
@@ -316,7 +339,7 @@ class Converter {
 
 		foreach ( $parent->childNodes as $child ) {
 			// Accumulate text and inline elements.
-			if ( $child->nodeType === XML_TEXT_NODE ) {
+			if ( XML_TEXT_NODE === $child->nodeType ) {
 				$text_buffer .= $child->textContent;
 				continue;
 			}
@@ -356,6 +379,9 @@ class Converter {
 		if ( empty( $content ) ) {
 			return;
 		}
+
+		// Sanitize inline HTML accumulated from saveHTML() to strip event handlers.
+		$content = wp_kses( $content, wp_kses_allowed_html( 'post' ) );
 
 		$blocks[] = array(
 			'blockName'    => 'core/paragraph',
@@ -415,9 +441,10 @@ class Converter {
 	 * @param string       $closing Closing HTML (optional).
 	 * @return array<string|null> innerContent array.
 	 */
-	private function build_inner_content_for_blocks( array $blocks, string $opening = '', string $closing = '' ): array {
-		$content   = array( $opening );
-		for ( $i = 0; $i < count( $blocks ); $i++ ) {
+	public static function build_inner_content_for_blocks( array $blocks, string $opening = '', string $closing = '' ): array {
+		$content      = array( $opening );
+		$blocks_count = count( $blocks );
+		for ( $i = 0; $i < $blocks_count; $i++ ) {
 			$content[] = null;
 		}
 		$content[] = $closing;

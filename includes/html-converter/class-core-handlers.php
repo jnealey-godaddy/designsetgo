@@ -222,6 +222,9 @@ class Core_Handlers {
 			}
 		}
 
+		// Code blocks should contain escaped text only — strip any nested tags.
+		$content = esc_html( wp_strip_all_tags( $content ) );
+
 		return array(
 			'blockName'    => 'core/code',
 			'attrs'        => $attrs,
@@ -310,8 +313,8 @@ class Core_Handlers {
 	 * @return array<string, mixed> Block array.
 	 */
 	public function handle_table( \DOMElement $element, Converter $converter ): array {
-		$attrs    = $this->attribute_mapper->map_attributes( $element, 'core/table' );
-		$table_html = $converter->get_outer_html( $element );
+		$attrs      = $this->attribute_mapper->map_attributes( $element, 'core/table' );
+		$table_html = wp_kses( $converter->get_outer_html( $element ), wp_kses_allowed_html( 'post' ) );
 
 		return array(
 			'blockName'    => 'core/table',
@@ -456,20 +459,12 @@ class Core_Handlers {
 	/**
 	 * Build innerContent array with null placeholders for inner blocks.
 	 *
-	 * WordPress uses null entries in innerContent to mark where inner blocks go.
-	 *
-	 * @param string $opening    Opening HTML.
+	 * @param string $opening     Opening HTML.
 	 * @param int    $block_count Number of inner blocks.
-	 * @param string $closing    Closing HTML.
+	 * @param string $closing     Closing HTML.
 	 * @return array<string|null> innerContent array.
 	 */
 	private function build_inner_content_with_blocks( string $opening, int $block_count, string $closing ): array {
-		$content   = array( $opening );
-		for ( $i = 0; $i < $block_count; $i++ ) {
-			$content[] = null;
-		}
-		$content[] = $closing;
-
-		return $content;
+		return Converter::build_inner_content_for_blocks( array_fill( 0, $block_count, array() ), $opening, $closing );
 	}
 }

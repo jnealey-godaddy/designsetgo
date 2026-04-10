@@ -526,6 +526,9 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-element-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-core-handlers.php';
 		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-dsgo-handlers.php';
+		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-dsgo-layout-handlers.php';
+		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-dsgo-interactive-handlers.php';
+		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-dsgo-form-handlers.php';
 		require_once DESIGNSETGO_PATH . 'includes/html-converter/class-converter.php';
 
 		require_once DESIGNSETGO_PATH . 'includes/helpers.php';
