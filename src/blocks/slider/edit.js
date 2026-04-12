@@ -19,6 +19,7 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { useSelect } from '@wordpress/data';
 import classnames from 'classnames';
 import {
 	encodeColorValue,
@@ -72,6 +73,12 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 	const requiresSingleSlideEffect = SINGLE_SLIDE_EFFECTS.includes(effect);
+
+	// Get actual slide count for dynamic dot navigation
+	const slideCount = useSelect(
+		(select) => select('core/block-editor').getBlockCount(clientId),
+		[clientId]
+	);
 
 	useEffect(() => {
 		if (
@@ -1105,33 +1112,18 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 
 				{showDots && (
 					<div className="dsgo-slider__dots dsgo-slider__dots--editor-only">
-						<button
-							type="button"
-							className="dsgo-slider__dot"
-							onClick={() => scrollToSlideIndex(0)}
-						>
-							<span className="screen-reader-text">
-								{__('Slide 1', 'designsetgo')}
-							</span>
-						</button>
-						<button
-							type="button"
-							className="dsgo-slider__dot"
-							onClick={() => scrollToSlideIndex(1)}
-						>
-							<span className="screen-reader-text">
-								{__('Slide 2', 'designsetgo')}
-							</span>
-						</button>
-						<button
-							type="button"
-							className="dsgo-slider__dot"
-							onClick={() => scrollToSlideIndex(2)}
-						>
-							<span className="screen-reader-text">
-								{__('Slide 3', 'designsetgo')}
-							</span>
-						</button>
+						{Array.from({ length: slideCount }, (_, i) => (
+							<button
+								key={i}
+								type="button"
+								className="dsgo-slider__dot"
+								onClick={() => scrollToSlideIndex(i)}
+							>
+								<span className="screen-reader-text">
+									{`${__('Slide', 'designsetgo')} ${i + 1}`}
+								</span>
+							</button>
+						))}
 					</div>
 				)}
 			</div>
