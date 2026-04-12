@@ -155,12 +155,57 @@ function initFormBuilder() {
 		const ajaxEnabled =
 			formContainer.getAttribute('data-ajax-submit') === 'true';
 
-		// If AJAX is not enabled, use standard form submission
+		// Non-AJAX: set up standard form POST to admin_post
 		if (!ajaxEnabled) {
+			formElement.action = designsetgoForm.ajaxUrl.replace(
+				'admin-ajax.php',
+				'admin-post.php'
+			);
+
+			// Add required hidden fields for admin_post handler
+			const actionField = document.createElement('input');
+			actionField.type = 'hidden';
+			actionField.name = 'action';
+			actionField.value = 'designsetgo_form_submit';
+			formElement.appendChild(actionField);
+
+			const nonceField = document.createElement('input');
+			nonceField.type = 'hidden';
+			nonceField.name = '_wpnonce';
+			nonceField.value = designsetgoForm.ajaxNonce;
+			formElement.appendChild(nonceField);
+
+			// Set timestamp on submit
+			formElement.addEventListener('submit', function () {
+				timestampField.value = Date.now();
+			});
+
+			// Check for success/error query params after redirect
+			const params = new URLSearchParams(window.location.search);
+			if (params.has('dsgo_form_success')) {
+				showMessage(
+					messageContainer,
+					formContainer.getAttribute('data-success-message') ||
+						__('Form submitted successfully!', 'designsetgo'),
+					'success'
+				);
+				formElement.reset();
+			} else if (params.has('dsgo_form_error')) {
+				showMessage(
+					messageContainer,
+					formContainer.getAttribute('data-error-message') ||
+						__(
+							'An error occurred. Please try again.',
+							'designsetgo'
+						),
+					'error'
+				);
+			}
+
 			return;
 		}
 
-		// Get form settings from data attributes (only if AJAX enabled)
+		// Get form settings from data attributes (AJAX-only)
 		const formId = formContainer.getAttribute('data-form-id');
 		const successMessage = formContainer.getAttribute(
 			'data-success-message'
@@ -226,40 +271,74 @@ function initFormBuilder() {
 			let redirecting = false;
 
 			try {
-				// Make AJAX request to WordPress REST API
-				const response = await fetch(designsetgoForm.restUrl, {
+				const requestBody = JSON.stringify({
+					formId,
+					fields,
+					honeypot: honeypot || '',
+					timestamp: timestamp || Date.now(),
+					// Include Turnstile token if available (graceful degradation: empty if failed)
+					turnstile_token: turnstileToken || '',
+				});
+
+				// Try REST API first, fall back to admin-ajax.php if rate-limited.
+				let result;
+				const restResponse = await fetch(designsetgoForm.restUrl, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
 						'X-WP-Nonce': designsetgoForm.nonce,
 					},
-					body: JSON.stringify({
-						formId,
-						fields,
-						honeypot: honeypot || '',
-						timestamp: timestamp || Date.now(),
-						// Include Turnstile token if available (graceful degradation: empty if failed)
-						turnstile_token: turnstileToken || '',
-					}),
+					body: requestBody,
 				});
 
-				// Handle non-OK responses before parsing JSON.
-				// Some hosts (e.g. Cloudflare/GoDaddy) return HTML error pages
-				// with content-type: application/json, so we can't rely on headers alone.
-				if (!response.ok) {
-					if (response.status === 429) {
+				if (restResponse.status === 429) {
+					// REST API rate-limited (common on Cloudflare/GoDaddy).
+					// Retry via admin-ajax.php which is rarely rate-limited.
+					const ajaxUrl = new URL(designsetgoForm.ajaxUrl);
+					ajaxUrl.searchParams.set(
+						'action',
+						'designsetgo_form_submit'
+					);
+					ajaxUrl.searchParams.set(
+						'_ajax_nonce',
+						designsetgoForm.ajaxNonce
+					);
+
+					const ajaxResponse = await fetch(ajaxUrl.href, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: requestBody,
+					});
+
+					if (!ajaxResponse.ok) {
+						let ajaxMessage;
+						try {
+							const ajaxError = await ajaxResponse.json();
+							ajaxMessage =
+								ajaxError.data?.message || ajaxError.message;
+						} catch {
+							// Non-JSON response from admin-ajax
+						}
+
 						throw new Error(
-							__(
-								'Too many requests. Please wait a moment and try again.',
-								'designsetgo'
-							)
+							ajaxMessage ||
+								__(
+									'The server returned an unexpected response. Please try again later.',
+									'designsetgo'
+								)
 						);
 					}
 
-					// Try to parse error JSON from WordPress REST API
+					const ajaxResult = await ajaxResponse.json();
+					// wp_send_json_success wraps data in { success: true, data: {...} }
+					result = ajaxResult.data;
+				} else if (!restResponse.ok) {
+					// Non-429 error from REST API
 					let serverMessage;
 					try {
-						const errorData = await response.json();
+						const errorData = await restResponse.json();
 						serverMessage = errorData.message;
 					} catch {
 						// Response body isn't valid JSON (e.g. HTML from WAF)
@@ -272,9 +351,9 @@ function initFormBuilder() {
 								'designsetgo'
 							)
 					);
+				} else {
+					result = await restResponse.json();
 				}
-
-				const result = await response.json();
 
 				if (result.success) {
 					// Fire custom event for tracking/analytics

@@ -107,6 +107,14 @@ class Form_Handler {
 		add_action( 'rest_api_init', array( $this, 'register_rest_endpoint' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'localize_form_script' ) );
 
+		// Admin-ajax fallback for hosts that rate-limit /wp-json/ (e.g. Cloudflare/GoDaddy).
+		add_action( 'wp_ajax_designsetgo_form_submit', array( $this, 'handle_ajax_submission' ) );
+		add_action( 'wp_ajax_nopriv_designsetgo_form_submit', array( $this, 'handle_ajax_submission' ) );
+
+		// Non-AJAX form POST handler.
+		add_action( 'admin_post_designsetgo_form_submit', array( $this, 'handle_post_submission' ) );
+		add_action( 'admin_post_nopriv_designsetgo_form_submit', array( $this, 'handle_post_submission' ) );
+
 		// Register cron callback (scheduling handled by activation hook).
 		add_action( 'designsetgo_cleanup_old_submissions', array( $this, 'cleanup_old_submissions' ) );
 
@@ -350,6 +358,109 @@ class Form_Handler {
 	}
 
 	/**
+	 * Handle form submission via admin-ajax.php (fallback for rate-limited REST API).
+	 *
+	 * Wraps the REST handler by building a WP_REST_Request from $_POST data.
+	 */
+	public function handle_ajax_submission() {
+		// Verify nonce.
+		if ( ! check_ajax_referer( 'designsetgo_form_submit', '_ajax_nonce', false ) ) {
+			wp_send_json_error(
+				array( 'message' => __( 'Security verification failed. Please refresh the page and try again.', 'designsetgo' ) ),
+				403
+			);
+		}
+
+		$request = new \WP_REST_Request( 'POST' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		// Map POST params to REST request params.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by handle_form_submission.
+		$raw_body = file_get_contents( 'php://input' );
+		$data     = json_decode( $raw_body, true );
+
+		if ( ! is_array( $data ) ) {
+			wp_send_json_error(
+				array( 'message' => __( 'Invalid request data.', 'designsetgo' ) ),
+				400
+			);
+		}
+
+		$request->set_param( 'formId', isset( $data['formId'] ) ? $data['formId'] : '' );
+		$request->set_param( 'fields', isset( $data['fields'] ) ? $data['fields'] : array() );
+		$request->set_param( 'honeypot', isset( $data['honeypot'] ) ? $data['honeypot'] : '' );
+		$request->set_param( 'timestamp', isset( $data['timestamp'] ) ? $data['timestamp'] : '' );
+		$request->set_param( 'turnstile_token', isset( $data['turnstile_token'] ) ? $data['turnstile_token'] : '' );
+
+		$result = $this->handle_form_submission( $request );
+
+		if ( is_wp_error( $result ) ) {
+			$status = $result->get_error_data() && isset( $result->get_error_data()['status'] )
+				? $result->get_error_data()['status']
+				: 400;
+			wp_send_json_error(
+				array( 'message' => $result->get_error_message() ),
+				$status
+			);
+		}
+
+		wp_send_json_success( $result->get_data() );
+	}
+
+	/**
+	 * Handle non-AJAX form submission via admin_post.
+	 *
+	 * Processes standard form POST and redirects back with a status query param.
+	 */
+	public function handle_post_submission() {
+		// Verify nonce.
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'designsetgo_form_submit' ) ) {
+			wp_die( esc_html__( 'Security verification failed.', 'designsetgo' ), 403 );
+		}
+
+		$referer = wp_get_referer();
+		if ( ! $referer ) {
+			wp_die( esc_html__( 'Invalid form submission.', 'designsetgo' ), 400 );
+		}
+
+		// Build fields array from POST data.
+		$form_id = isset( $_POST['dsg_form_id'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_form_id'] ) ) : '';
+		$fields  = array();
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		foreach ( $_POST as $key => $value ) {
+			// Skip system fields.
+			if ( in_array( $key, array( 'dsg_website', 'dsg_form_id', 'dsg_timestamp', '_wpnonce', 'action' ), true ) ) {
+				continue;
+			}
+
+			$fields[] = array(
+				'name'  => $key,
+				'value' => sanitize_text_field( wp_unslash( $value ) ),
+				'type'  => 'text',
+			);
+		}
+
+		$request = new \WP_REST_Request( 'POST' );
+		$request->set_param( 'formId', $form_id );
+		$request->set_param( 'fields', $fields );
+		$request->set_param( 'honeypot', isset( $_POST['dsg_website'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_website'] ) ) : '' );
+		$request->set_param( 'timestamp', isset( $_POST['dsg_timestamp'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_timestamp'] ) ) : '' );
+		$request->set_param( 'turnstile_token', '' );
+
+		$result = $this->handle_form_submission( $request );
+
+		if ( is_wp_error( $result ) ) {
+			$redirect = add_query_arg( 'dsgo_form_error', '1', $referer );
+		} else {
+			$redirect = add_query_arg( 'dsgo_form_success', '1', $referer );
+		}
+
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
+	/**
 	 * Validate field based on type.
 	 *
 	 * @param mixed  $value Field value.
@@ -504,8 +615,10 @@ class Form_Handler {
 			$handle,
 			'designsetgoForm',
 			array(
-				'nonce'   => wp_create_nonce( 'wp_rest' ),
-				'restUrl' => rest_url( 'designsetgo/v1/form/submit' ),
+				'nonce'     => wp_create_nonce( 'wp_rest' ),
+				'restUrl'   => rest_url( 'designsetgo/v1/form/submit' ),
+				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
+				'ajaxNonce' => wp_create_nonce( 'designsetgo_form_submit' ),
 			)
 		);
 
