@@ -1,5 +1,5 @@
 import { __, sprintf } from '@wordpress/i18n';
-import { useEffect } from '@wordpress/element';
+import { useEffect, useRef } from '@wordpress/element';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
@@ -74,6 +74,8 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 	const requiresSingleSlideEffect = SINGLE_SLIDE_EFFECTS.includes(effect);
 
+	const blockRef = useRef();
+
 	// Get actual slide count for dynamic dot navigation
 	const slideCount = useSelect(
 		(select) => select('core/block-editor').getBlockCount(clientId),
@@ -103,11 +105,9 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 		setAttributes,
 	]);
 
-	// Editor navigation: scroll the track without state management
+	// Editor navigation: scroll the track using a ref (works inside iframed editor)
 	const scrollToSlide = (direction) => {
-		const track = document.querySelector(
-			`[data-block="${clientId}"] .dsgo-slider__track`
-		);
+		const track = blockRef.current?.querySelector('.dsgo-slider__track');
 		if (!track) {
 			return;
 		}
@@ -128,9 +128,7 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 	};
 
 	const scrollToSlideIndex = (index) => {
-		const track = document.querySelector(
-			`[data-block="${clientId}"] .dsgo-slider__track`
-		);
+		const track = blockRef.current?.querySelector('.dsgo-slider__track');
 		if (!track) {
 			return;
 		}
@@ -215,6 +213,7 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 	// Block wrapper props
 	// Data attributes for JavaScript configuration and CSS selectors (match save.js)
 	const blockProps = useBlockProps({
+		ref: blockRef,
 		className: sliderClasses,
 		style: customStyles,
 		'data-slides-per-view': effectiveSlidesPerView,
