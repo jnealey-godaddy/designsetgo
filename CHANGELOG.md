@@ -5,6 +5,19 @@ All notable changes to the DesignSetGo plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.48] - 2026-04-12
+
+### Fixed
+- Form submissions failing on GoDaddy and Cloudflare-hosted sites with "Unexpected token" JSON error — added admin-ajax.php fallback with three-tier submission (REST API → admin-ajax → native POST)
+- Non-AJAX form submission path was not saving submissions or showing success messages — added admin_post handler
+- Slider navigation arrows and dots not working in block editor — resolved iframe DOM scoping and pointer-events issues
+- Phone field paste handler crash when browser extensions interfere with clipboard events
+
+### Added
+- SMTP plugin compatibility notice in Email Notifications panel
+- User-friendly error messages for rate-limited form submissions
+- Form status query params cleaned from URL after displaying messages
+
 ## [Unreleased]
 
 ### Removed
