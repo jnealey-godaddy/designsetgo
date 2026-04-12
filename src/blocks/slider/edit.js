@@ -74,7 +74,7 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 	const requiresSingleSlideEffect = SINGLE_SLIDE_EFFECTS.includes(effect);
 
-	const blockRef = useRef();
+	const blockRef = useRef(null);
 
 	// Get actual slide count for dynamic dot navigation
 	const slideCount = useSelect(
@@ -118,7 +118,10 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 		}
 
 		const slideWidth = slide.offsetWidth;
-		const gapValue = parseFloat(window.getComputedStyle(track).gap) || 0;
+		const gapValue =
+			parseFloat(
+				track.ownerDocument.defaultView.getComputedStyle(track).gap
+			) || 0;
 		const scrollAmount = slideWidth + gapValue;
 
 		track.scrollBy({
@@ -139,7 +142,10 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 		}
 
 		const slideWidth = slide.offsetWidth;
-		const gapValue = parseFloat(window.getComputedStyle(track).gap) || 0;
+		const gapValue =
+			parseFloat(
+				track.ownerDocument.defaultView.getComputedStyle(track).gap
+			) || 0;
 		const scrollPosition = index * (slideWidth + gapValue);
 
 		track.scrollTo({
