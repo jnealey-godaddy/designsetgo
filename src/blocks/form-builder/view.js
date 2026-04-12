@@ -105,6 +105,14 @@ function initFormBuilder() {
 			typeof dsgoIntegrations !== 'undefined'
 				? dsgoIntegrations.turnstileSiteKey
 				: null;
+		let turnstileTokenField = null;
+
+		if (turnstileEnabled) {
+			turnstileTokenField = document.createElement('input');
+			turnstileTokenField.type = 'hidden';
+			turnstileTokenField.name = 'dsg_turnstile_token';
+			formElement.appendChild(turnstileTokenField);
+		}
 
 		// Initialize Turnstile if enabled
 		if (turnstileEnabled && turnstileContainer && turnstileSiteKey) {
@@ -123,9 +131,15 @@ function initFormBuilder() {
 							// Mode (managed/non-interactive/invisible) is configured in Cloudflare dashboard
 							callback: (token) => {
 								turnstileToken = token;
+								if (turnstileTokenField) {
+									turnstileTokenField.value = token;
+								}
 							},
 							'expired-callback': () => {
 								turnstileToken = null;
+								if (turnstileTokenField) {
+									turnstileTokenField.value = '';
+								}
 								// Reset widget for new token
 								if (
 									turnstileWidgetId !== null &&
@@ -135,6 +149,10 @@ function initFormBuilder() {
 								}
 							},
 							'error-callback': () => {
+								turnstileToken = null;
+								if (turnstileTokenField) {
+									turnstileTokenField.value = '';
+								}
 								// Graceful degradation - form will submit without Turnstile token
 								// eslint-disable-next-line no-console -- Log for debugging
 								console.warn(
@@ -145,11 +163,17 @@ function initFormBuilder() {
 					);
 				})
 				.catch((error) => {
+					turnstileToken = null;
+					if (turnstileTokenField) {
+						turnstileTokenField.value = '';
+					}
 					// Graceful degradation - form will submit without Turnstile token
 					// eslint-disable-next-line no-console -- Log for debugging
 					console.warn('Turnstile failed to load:', error.message);
 				});
 		}
+
+		const formId = formContainer.getAttribute('data-form-id');
 
 		// Check if AJAX is enabled
 		const ajaxEnabled =
@@ -182,7 +206,14 @@ function initFormBuilder() {
 
 			// Check for success/error query params after redirect
 			const params = new URLSearchParams(window.location.search);
-			if (params.has('dsgo_form_success')) {
+			const status = params.get('dsgo_form_status');
+			const statusFormId = params.get('dsgo_form_id');
+			const matchesCurrentForm = !statusFormId || statusFormId === formId;
+
+			if (
+				matchesCurrentForm &&
+				(params.has('dsgo_form_success') || status === 'success')
+			) {
 				showMessage(
 					messageContainer,
 					formContainer.getAttribute('data-success-message') ||
@@ -190,7 +221,10 @@ function initFormBuilder() {
 					'success'
 				);
 				formElement.reset();
-			} else if (params.has('dsgo_form_error')) {
+			} else if (
+				matchesCurrentForm &&
+				(params.has('dsgo_form_error') || status === 'error')
+			) {
 				showMessage(
 					messageContainer,
 					formContainer.getAttribute('data-error-message') ||
@@ -205,8 +239,6 @@ function initFormBuilder() {
 			return;
 		}
 
-		// Get form settings from data attributes (AJAX-only)
-		const formId = formContainer.getAttribute('data-form-id');
 		const successMessage = formContainer.getAttribute(
 			'data-success-message'
 		);
@@ -244,7 +276,8 @@ function initFormBuilder() {
 				if (
 					name === 'dsg_website' ||
 					name === 'dsg_form_id' ||
-					name === 'dsg_timestamp'
+					name === 'dsg_timestamp' ||
+					name === 'dsg_turnstile_token'
 				) {
 					continue;
 				}
@@ -383,6 +416,13 @@ function initFormBuilder() {
 
 					// Reset form
 					formElement.reset();
+					turnstileToken = null;
+					if (turnstileTokenField) {
+						turnstileTokenField.value = '';
+					}
+					if (turnstileWidgetId !== null && window.turnstile) {
+						window.turnstile.reset(turnstileWidgetId);
+					}
 
 					// Scroll to message if not visible
 					if (!isElementInViewport(messageContainer)) {
