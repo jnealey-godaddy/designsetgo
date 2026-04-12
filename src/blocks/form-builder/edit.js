@@ -17,6 +17,7 @@ import {
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
+	Notice,
 	TextControl,
 	TextareaControl,
 	ToggleControl,
@@ -639,6 +640,16 @@ export default function FormBuilderEdit({
 
 					{enableEmail && (
 						<>
+							<Notice
+								status="info"
+								isDismissible={false}
+								className="dsgo-form__smtp-notice"
+							>
+								{__(
+									'Emails are sent using wp_mail(). For reliable delivery, consider using an SMTP plugin like WP Mail SMTP.',
+									'designsetgo'
+								)}
+							</Notice>
 							<TextControl
 								label={__('Recipient Email', 'designsetgo')}
 								value={emailTo}
