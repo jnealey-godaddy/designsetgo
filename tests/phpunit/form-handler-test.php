@@ -566,6 +566,78 @@ class Test_Form_Handler extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test get_form_field_types reads server-side field definitions.
+	 */
+	public function test_get_form_field_types_finds_known_fields() {
+		$form_id = 'fieldtypes1';
+		$post_id = wp_insert_post(
+			array(
+				'post_type'    => 'page',
+				'post_status'  => 'publish',
+				'post_title'   => 'Test Field Types Form',
+				'post_content' => '<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '"} --><div class="wp-block-designsetgo-form-builder"><!-- wp:designsetgo/form-email-field {"fieldName":"email"} /--><!-- wp:designsetgo/form-textarea-field {"fieldName":"message"} /--><!-- wp:designsetgo/form-phone-field {"fieldName":"phone"} /--><!-- wp:designsetgo/form-checkbox-field {"fieldName":"consent"} /--></div><!-- /wp:designsetgo/form-builder -->',
+			)
+		);
+
+		$this->assertNotWPError( $post_id );
+		delete_transient( 'dsgo_form_field_types_' . md5( $form_id ) );
+
+		$field_types = $this->call_private_method( 'get_form_field_types', array( $form_id ) );
+
+		$this->assertEquals(
+			array(
+				'email'   => 'email',
+				'message' => 'textarea',
+				'phone'   => 'tel',
+				'consent' => 'checkbox',
+			),
+			$field_types
+		);
+
+		wp_delete_post( $post_id, true );
+		delete_transient( 'dsgo_form_field_types_' . md5( $form_id ) );
+	}
+
+	/**
+	 * Test server-side field definitions override client-supplied field types.
+	 */
+	public function test_server_field_types_override_client_types() {
+		$form_id = 'typedoverride1';
+		$post_id = wp_insert_post(
+			array(
+				'post_type'    => 'page',
+				'post_status'  => 'publish',
+				'post_title'   => 'Typed Override Form',
+				'post_content' => '<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '"} --><div class="wp-block-designsetgo-form-builder"><!-- wp:designsetgo/form-email-field {"fieldName":"email"} /--></div><!-- /wp:designsetgo/form-builder -->',
+			)
+		);
+
+		$this->assertNotWPError( $post_id );
+		delete_transient( 'dsgo_form_field_types_' . md5( $form_id ) );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
+		$request->set_body_params(
+			array(
+				'formId' => $form_id,
+				'fields' => array(
+					array(
+						'name'  => 'email',
+						'value' => 'not-an-email',
+						'type'  => 'text',
+					),
+				),
+			)
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 400, $response->get_status() );
+
+		wp_delete_post( $post_id, true );
+		delete_transient( 'dsgo_form_field_types_' . md5( $form_id ) );
+	}
+
+	/**
 	 * Test get_form_block_attributes uses transient cache.
 	 */
 	public function test_form_block_attributes_are_cached() {

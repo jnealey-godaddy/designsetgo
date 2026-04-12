@@ -107,6 +107,14 @@ class Form_Handler {
 		add_action( 'rest_api_init', array( $this, 'register_rest_endpoint' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'localize_form_script' ) );
 
+		// Admin-ajax fallback for hosts that rate-limit /wp-json/ (e.g. Cloudflare/GoDaddy).
+		add_action( 'wp_ajax_designsetgo_form_submit', array( $this, 'handle_ajax_submission' ) );
+		add_action( 'wp_ajax_nopriv_designsetgo_form_submit', array( $this, 'handle_ajax_submission' ) );
+
+		// Non-AJAX form POST handler.
+		add_action( 'admin_post_designsetgo_form_submit', array( $this, 'handle_post_submission' ) );
+		add_action( 'admin_post_nopriv_designsetgo_form_submit', array( $this, 'handle_post_submission' ) );
+
 		// Register cron callback (scheduling handled by activation hook).
 		add_action( 'designsetgo_cleanup_old_submissions', array( $this, 'cleanup_old_submissions' ) );
 
@@ -237,6 +245,12 @@ class Form_Handler {
 		$timestamp     = $request->get_param( 'timestamp' );
 		$form_settings = $this->get_form_settings();
 
+		// Look up per-block attributes for rate limiting and Turnstile enforcement.
+		$block_attrs      = $this->get_form_block_attributes( $form_id );
+		$rate_limit_count = isset( $block_attrs['rateLimitCount'] ) ? absint( $block_attrs['rateLimitCount'] ) : 3;
+		$rate_limit_window = isset( $block_attrs['rateLimitWindow'] ) ? absint( $block_attrs['rateLimitWindow'] ) : 60;
+		$turnstile_required = ! empty( $block_attrs['enableTurnstile'] );
+
 		// Honeypot spam check (only if enabled in settings).
 		if ( $form_settings['enable_honeypot'] ) {
 			$honeypot_check = $this->security->check_honeypot( $honeypot, $form_id );
@@ -252,17 +266,24 @@ class Form_Handler {
 		}
 
 		// Rate limiting check (only if enabled in settings).
-		// Note: We only CHECK here, not increment. Increment happens after successful submission.
+		// Uses per-block rateLimitCount/rateLimitWindow attributes as defaults for the filter.
 		if ( $form_settings['enable_rate_limiting'] ) {
-			$rate_limit_check = $this->security->check_rate_limit( $form_id );
+			$rate_limit_check = $this->security->check_rate_limit( $form_id, $rate_limit_count );
 			if ( is_wp_error( $rate_limit_check ) ) {
 				return $rate_limit_check;
 			}
 		}
 
-		// Turnstile verification (if token provided).
-		// Graceful degradation: If no token, skip verification (form submitted without Turnstile or widget failed).
+		// Turnstile verification.
+		// If the block requires Turnstile, reject submissions without a valid token.
 		$turnstile_token = $request->get_param( 'turnstile_token' );
+		if ( $turnstile_required && empty( $turnstile_token ) ) {
+			return new WP_Error(
+				'turnstile_required',
+				__( 'Security verification is required. Please complete the challenge and try again.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
+		}
 		if ( ! empty( $turnstile_token ) ) {
 			$turnstile_result = $this->security->verify_turnstile( $turnstile_token );
 			if ( is_wp_error( $turnstile_result ) ) {
@@ -280,15 +301,19 @@ class Form_Handler {
 		}
 
 		// Sanitize and validate all fields.
+		$form_field_types = $this->get_form_field_types( $form_id );
 		$sanitized_fields = array();
 		foreach ( $fields as $field ) {
 			if ( ! isset( $field['name'] ) || ! isset( $field['value'] ) ) {
 				continue;
 			}
 
-			$field_name  = sanitize_text_field( $field['name'] );
-			$field_value = $field['value'];
-			$field_type  = isset( $field['type'] ) ? sanitize_text_field( $field['type'] ) : 'text';
+			$field_name          = sanitize_text_field( $field['name'] );
+			$field_value         = $field['value'];
+			$submitted_field_type = isset( $field['type'] ) ? sanitize_text_field( $field['type'] ) : 'text';
+			$field_type          = isset( $form_field_types[ $field_name ] )
+				? $form_field_types[ $field_name ]
+				: $submitted_field_type;
 
 			// Type-specific validation.
 			$validation_result = $this->validate_field( $field_value, $field_type );
@@ -333,7 +358,7 @@ class Form_Handler {
 
 		// Increment rate limit counter ONLY after successful submission.
 		if ( $form_settings['enable_rate_limiting'] ) {
-			$this->security->increment_rate_limit( $form_id );
+			$this->security->increment_rate_limit( $form_id, $rate_limit_window );
 		}
 
 		// Trigger action hook for email notifications, integrations, etc.
@@ -347,6 +372,136 @@ class Form_Handler {
 			),
 			200
 		);
+	}
+
+	/**
+	 * Handle form submission via admin-ajax.php (fallback for rate-limited REST API).
+	 *
+	 * Wraps the REST handler by building a WP_REST_Request from $_POST data.
+	 */
+	public function handle_ajax_submission() {
+		// Verify nonce.
+		if ( ! check_ajax_referer( 'designsetgo_form_submit', '_ajax_nonce', false ) ) {
+			wp_send_json_error(
+				array( 'message' => __( 'Security verification failed. Please refresh the page and try again.', 'designsetgo' ) ),
+				403
+			);
+		}
+
+		$request = new \WP_REST_Request( 'POST' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		// Read JSON form data from the form_data POST field (form-encoded).
+		// Form-encoded is used because some hosts (GoDaddy/Cloudflare) block
+		// application/json POST requests with 429 errors.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by handle_form_submission.
+		$raw_data = isset( $_POST['form_data'] ) ? wp_unslash( $_POST['form_data'] ) : '';
+		$data     = json_decode( $raw_data, true );
+
+		if ( ! is_array( $data ) ) {
+			wp_send_json_error(
+				array( 'message' => __( 'Invalid request data.', 'designsetgo' ) ),
+				400
+			);
+		}
+
+		$request->set_param( 'formId', isset( $data['formId'] ) ? sanitize_text_field( $data['formId'] ) : '' );
+		$request->set_param( 'fields', isset( $data['fields'] ) ? $data['fields'] : array() );
+		$request->set_param( 'honeypot', isset( $data['honeypot'] ) ? $data['honeypot'] : '' );
+		$request->set_param( 'timestamp', isset( $data['timestamp'] ) ? $data['timestamp'] : '' );
+		$request->set_param( 'turnstile_token', isset( $data['turnstile_token'] ) ? sanitize_text_field( $data['turnstile_token'] ) : '' );
+
+		$result = $this->handle_form_submission( $request );
+
+		if ( is_wp_error( $result ) ) {
+			$status = $result->get_error_data() && isset( $result->get_error_data()['status'] )
+				? $result->get_error_data()['status']
+				: 400;
+			wp_send_json_error(
+				array( 'message' => $result->get_error_message() ),
+				$status
+			);
+		}
+
+		wp_send_json_success( $result->get_data() );
+	}
+
+	/**
+	 * Handle non-AJAX form submission via admin_post.
+	 *
+	 * Processes standard form POST and redirects back with a status query param.
+	 */
+	public function handle_post_submission() {
+		// Verify nonce.
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'designsetgo_form_submit' ) ) {
+			wp_die( esc_html__( 'Security verification failed.', 'designsetgo' ), '', array( 'response' => 403 ) );
+		}
+
+		$referer = wp_get_referer();
+		if ( ! $referer ) {
+			wp_die( esc_html__( 'Invalid form submission.', 'designsetgo' ), '', array( 'response' => 400 ) );
+		}
+
+		// Build fields array from POST data.
+		$form_id = isset( $_POST['dsg_form_id'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_form_id'] ) ) : '';
+		$fields  = array();
+
+		// Read field type map (JSON mapping of field name => type).
+		$field_types = array();
+		if ( isset( $_POST['dsg_field_types'] ) ) {
+			$decoded = json_decode( sanitize_text_field( wp_unslash( $_POST['dsg_field_types'] ) ), true );
+			if ( is_array( $decoded ) ) {
+				$field_types = $decoded;
+			}
+		}
+
+		$system_fields = array( 'dsg_website', 'dsg_form_id', 'dsg_timestamp', 'dsg_turnstile_token', 'dsg_field_types', '_wpnonce', 'action' );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		foreach ( $_POST as $key => $value ) {
+			// Skip system fields.
+			if ( in_array( $key, $system_fields, true ) ) {
+				continue;
+			}
+
+			$field_type = isset( $field_types[ $key ] ) ? sanitize_text_field( $field_types[ $key ] ) : 'text';
+
+			$fields[] = array(
+				'name'  => $key,
+				'value' => sanitize_text_field( wp_unslash( $value ) ),
+				'type'  => $field_type,
+			);
+		}
+
+		$request = new \WP_REST_Request( 'POST' );
+		$request->set_param( 'formId', $form_id );
+		$request->set_param( 'fields', $fields );
+		$request->set_param( 'honeypot', isset( $_POST['dsg_website'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_website'] ) ) : '' );
+		$request->set_param( 'timestamp', isset( $_POST['dsg_timestamp'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_timestamp'] ) ) : '' );
+		$request->set_param( 'turnstile_token', isset( $_POST['dsg_turnstile_token'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_turnstile_token'] ) ) : '' );
+
+		$result = $this->handle_form_submission( $request );
+
+		if ( is_wp_error( $result ) ) {
+			$redirect = add_query_arg(
+				array(
+					'dsgo_form_status' => 'error',
+					'dsgo_form_id'     => $form_id,
+				),
+				$referer
+			);
+		} else {
+			$redirect = add_query_arg(
+				array(
+					'dsgo_form_status' => 'success',
+					'dsgo_form_id'     => $form_id,
+				),
+				$referer
+			);
+		}
+
+		wp_safe_redirect( $redirect );
+		exit;
 	}
 
 	/**
@@ -504,8 +659,11 @@ class Form_Handler {
 			$handle,
 			'designsetgoForm',
 			array(
-				'nonce'   => wp_create_nonce( 'wp_rest' ),
-				'restUrl' => rest_url( 'designsetgo/v1/form/submit' ),
+				'nonce'        => wp_create_nonce( 'wp_rest' ),
+				'restUrl'      => rest_url( 'designsetgo/v1/form/submit' ),
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'adminPostUrl' => admin_url( 'admin-post.php' ),
+				'ajaxNonce'    => wp_create_nonce( 'designsetgo_form_submit' ),
 			)
 		);
 
@@ -853,6 +1011,160 @@ class Form_Handler {
 	}
 
 	/**
+	 * Look up server-defined field types for a form by form ID.
+	 *
+	 * Uses parsed block content so validation/sanitization does not rely on
+	 * client-supplied field types.
+	 *
+	 * @param string $form_id Form identifier to look up.
+	 * @return array<string, string> Field types keyed by field name.
+	 */
+	private function get_form_field_types( $form_id ) {
+		$cache_key = 'dsgo_form_field_types_' . md5( $form_id );
+		$cached    = get_transient( $cache_key );
+
+		if ( false !== $cached && is_array( $cached ) ) {
+			return $cached;
+		}
+
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached via transient above.
+		$posts = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT ID, post_content FROM {$wpdb->posts}
+				WHERE post_content LIKE %s
+				AND post_content LIKE %s
+				AND post_status IN ('publish', 'private')
+				LIMIT 5",
+				'%' . $wpdb->esc_like( 'designsetgo/form-builder' ) . '%',
+				'%' . $wpdb->esc_like( '"formId":"' . $form_id . '"' ) . '%'
+			)
+		);
+
+		if ( empty( $posts ) ) {
+			return array();
+		}
+
+		foreach ( $posts as $post ) {
+			$blocks      = parse_blocks( $post->post_content );
+			$field_types = $this->find_form_field_types( $blocks, $form_id );
+
+			if ( ! empty( $field_types ) ) {
+				set_transient( $cache_key, $field_types, HOUR_IN_SECONDS );
+				return $field_types;
+			}
+		}
+
+		return array();
+	}
+
+	/**
+	 * Recursively search parsed blocks for a form-builder block and extract field types.
+	 *
+	 * @param array  $blocks  Parsed blocks array.
+	 * @param string $form_id Form identifier to match.
+	 * @return array<string, string> Field types keyed by field name.
+	 */
+	private function find_form_field_types( $blocks, $form_id ) {
+		foreach ( $blocks as $block ) {
+			if (
+				'designsetgo/form-builder' === $block['blockName'] &&
+				isset( $block['attrs']['formId'] ) &&
+				$block['attrs']['formId'] === $form_id
+			) {
+				return $this->extract_field_types_from_blocks(
+					isset( $block['innerBlocks'] ) ? $block['innerBlocks'] : array()
+				);
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$result = $this->find_form_field_types( $block['innerBlocks'], $form_id );
+				if ( ! empty( $result ) ) {
+					return $result;
+				}
+			}
+		}
+
+		return array();
+	}
+
+	/**
+	 * Extract field types from a form block's inner blocks.
+	 *
+	 * @param array $blocks Parsed inner blocks.
+	 * @return array<string, string> Field types keyed by field name.
+	 */
+	private function extract_field_types_from_blocks( $blocks ) {
+		$field_types = array();
+
+		foreach ( $blocks as $block ) {
+			$block_name = isset( $block['blockName'] ) ? $block['blockName'] : '';
+			$field_name = isset( $block['attrs']['fieldName'] ) ? sanitize_text_field( $block['attrs']['fieldName'] ) : '';
+			$field_type = $this->map_block_name_to_field_type( $block_name );
+
+			if ( $field_name && $field_type ) {
+				$field_types[ $field_name ] = $field_type;
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$field_types = array_merge(
+					$field_types,
+					$this->extract_field_types_from_blocks( $block['innerBlocks'] )
+				);
+			}
+		}
+
+		return $field_types;
+	}
+
+	/**
+	 * Map form field block names to server-side field types.
+	 *
+	 * @param string $block_name Block name.
+	 * @return string|null Server-side field type, or null when unsupported.
+	 */
+	private function map_block_name_to_field_type( $block_name ) {
+		switch ( $block_name ) {
+			case 'designsetgo/form-text-field':
+				return 'text';
+
+			case 'designsetgo/form-email-field':
+				return 'email';
+
+			case 'designsetgo/form-textarea-field':
+				return 'textarea';
+
+			case 'designsetgo/form-number-field':
+				return 'number';
+
+			case 'designsetgo/form-phone-field':
+				return 'tel';
+
+			case 'designsetgo/form-url-field':
+				return 'url';
+
+			case 'designsetgo/form-date-field':
+				return 'date';
+
+			case 'designsetgo/form-time-field':
+				return 'time';
+
+			case 'designsetgo/form-select-field':
+				return 'select';
+
+			case 'designsetgo/form-checkbox-field':
+				return 'checkbox';
+
+			case 'designsetgo/form-hidden-field':
+				return 'hidden';
+
+			default:
+				return null;
+		}
+	}
+
+	/**
 	 * Clear cached form block attributes when a post is saved.
 	 *
 	 * Hooked to save_post to ensure email config changes take effect immediately.
@@ -881,6 +1193,7 @@ class Form_Handler {
 				isset( $block['attrs']['formId'] )
 			) {
 				delete_transient( 'dsgo_form_attrs_' . md5( $block['attrs']['formId'] ) );
+				delete_transient( 'dsgo_form_field_types_' . md5( $block['attrs']['formId'] ) );
 			}
 
 			if ( ! empty( $block['innerBlocks'] ) ) {

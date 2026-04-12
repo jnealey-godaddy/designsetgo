@@ -8,7 +8,7 @@
 
 import { __ } from '@wordpress/i18n';
 
-/* global designsetgoForm, dsgoIntegrations */
+/* global designsetgoForm, dsgoIntegrations, sessionStorage */
 
 // Track Turnstile script loading state
 let turnstileScriptLoaded = false;
@@ -105,6 +105,14 @@ function initFormBuilder() {
 			typeof dsgoIntegrations !== 'undefined'
 				? dsgoIntegrations.turnstileSiteKey
 				: null;
+		let turnstileTokenField = null;
+
+		if (turnstileEnabled) {
+			turnstileTokenField = document.createElement('input');
+			turnstileTokenField.type = 'hidden';
+			turnstileTokenField.name = 'dsg_turnstile_token';
+			formElement.appendChild(turnstileTokenField);
+		}
 
 		// Initialize Turnstile if enabled
 		if (turnstileEnabled && turnstileContainer && turnstileSiteKey) {
@@ -123,9 +131,15 @@ function initFormBuilder() {
 							// Mode (managed/non-interactive/invisible) is configured in Cloudflare dashboard
 							callback: (token) => {
 								turnstileToken = token;
+								if (turnstileTokenField) {
+									turnstileTokenField.value = token;
+								}
 							},
 							'expired-callback': () => {
 								turnstileToken = null;
+								if (turnstileTokenField) {
+									turnstileTokenField.value = '';
+								}
 								// Reset widget for new token
 								if (
 									turnstileWidgetId !== null &&
@@ -135,6 +149,10 @@ function initFormBuilder() {
 								}
 							},
 							'error-callback': () => {
+								turnstileToken = null;
+								if (turnstileTokenField) {
+									turnstileTokenField.value = '';
+								}
 								// Graceful degradation - form will submit without Turnstile token
 								// eslint-disable-next-line no-console -- Log for debugging
 								console.warn(
@@ -145,27 +163,159 @@ function initFormBuilder() {
 					);
 				})
 				.catch((error) => {
+					turnstileToken = null;
+					if (turnstileTokenField) {
+						turnstileTokenField.value = '';
+					}
 					// Graceful degradation - form will submit without Turnstile token
 					// eslint-disable-next-line no-console -- Log for debugging
 					console.warn('Turnstile failed to load:', error.message);
 				});
 		}
 
-		// Check if AJAX is enabled
-		const ajaxEnabled =
-			formContainer.getAttribute('data-ajax-submit') === 'true';
-
-		// If AJAX is not enabled, use standard form submission
-		if (!ajaxEnabled) {
-			return;
-		}
-
-		// Get form settings from data attributes (only if AJAX enabled)
 		const formId = formContainer.getAttribute('data-form-id');
 		const successMessage = formContainer.getAttribute(
 			'data-success-message'
 		);
 		const errorMessage = formContainer.getAttribute('data-error-message');
+
+		function ensureNativePostFields() {
+			formElement.action = designsetgoForm.adminPostUrl;
+			formElement.method = 'post';
+
+			let actionField = formElement.querySelector('input[name="action"]');
+			if (!actionField) {
+				actionField = document.createElement('input');
+				actionField.type = 'hidden';
+				actionField.name = 'action';
+				formElement.appendChild(actionField);
+			}
+			actionField.value = 'designsetgo_form_submit';
+			actionField.defaultValue = actionField.value;
+
+			let nonceField = formElement.querySelector(
+				'input[name="_wpnonce"]'
+			);
+			if (!nonceField) {
+				nonceField = document.createElement('input');
+				nonceField.type = 'hidden';
+				nonceField.name = '_wpnonce';
+				formElement.appendChild(nonceField);
+			}
+			nonceField.value = designsetgoForm.ajaxNonce;
+			nonceField.defaultValue = nonceField.value;
+		}
+
+		function showRedirectStatus() {
+			const params = new URLSearchParams(window.location.search);
+			const status = params.get('dsgo_form_status');
+			const statusFormId = params.get('dsgo_form_id');
+			const matchesCurrentForm = !statusFormId || statusFormId === formId;
+			let shown = false;
+
+			if (
+				matchesCurrentForm &&
+				(params.has('dsgo_form_success') || status === 'success')
+			) {
+				showMessage(
+					messageContainer,
+					successMessage ||
+						__('Form submitted successfully!', 'designsetgo'),
+					'success'
+				);
+				formElement.reset();
+				shown = true;
+			} else if (
+				matchesCurrentForm &&
+				(params.has('dsgo_form_error') || status === 'error')
+			) {
+				showMessage(
+					messageContainer,
+					errorMessage ||
+						__(
+							'An error occurred. Please try again.',
+							'designsetgo'
+						),
+					'error'
+				);
+				shown = true;
+			}
+
+			// Strip form status params from URL to prevent stale messages on refresh
+			if (shown) {
+				const cleanUrl = new URL(window.location.href);
+				cleanUrl.searchParams.delete('dsgo_form_success');
+				cleanUrl.searchParams.delete('dsgo_form_error');
+				cleanUrl.searchParams.delete('dsgo_form_status');
+				cleanUrl.searchParams.delete('dsgo_form_id');
+				window.history.replaceState(null, '', cleanUrl.href);
+			}
+
+			return shown;
+		}
+
+		function markTransportBlocked(key) {
+			try {
+				sessionStorage.setItem(key, '1');
+			} catch {
+				// sessionStorage may be unavailable
+			}
+		}
+
+		function isTransportBlocked(key) {
+			try {
+				return sessionStorage.getItem(key) === '1';
+			} catch {
+				return false;
+			}
+		}
+
+		function submitViaNativePost() {
+			ensureNativePostFields();
+			timestampField.value = Date.now();
+			if (turnstileTokenField) {
+				turnstileTokenField.value = turnstileToken || '';
+			}
+
+			// Build field type map so server can validate/sanitize correctly
+			const typeMap = {};
+			formElement.querySelectorAll('[data-field-type]').forEach((el) => {
+				if (el.name) {
+					typeMap[el.name] = el.getAttribute('data-field-type');
+				}
+			});
+			let typeMapField = formElement.querySelector(
+				'input[name="dsg_field_types"]'
+			);
+			if (!typeMapField) {
+				typeMapField = document.createElement('input');
+				typeMapField.type = 'hidden';
+				typeMapField.name = 'dsg_field_types';
+				formElement.appendChild(typeMapField);
+			}
+			typeMapField.value = JSON.stringify(typeMap);
+
+			window.HTMLFormElement.prototype.submit.call(formElement);
+		}
+
+		showRedirectStatus();
+
+		// Check if AJAX is enabled
+		const ajaxEnabled =
+			formContainer.getAttribute('data-ajax-submit') === 'true';
+
+		// Non-AJAX: set up standard form POST to admin_post
+		if (!ajaxEnabled) {
+			ensureNativePostFields();
+
+			// Set timestamp on submit
+			formElement.addEventListener('submit', function () {
+				timestampField.value = Date.now();
+			});
+
+			return;
+		}
+
 		const redirectUrl = formContainer.getAttribute('data-redirect-url');
 
 		// Handle form submission
@@ -199,7 +349,8 @@ function initFormBuilder() {
 				if (
 					name === 'dsg_website' ||
 					name === 'dsg_form_id' ||
-					name === 'dsg_timestamp'
+					name === 'dsg_timestamp' ||
+					name === 'dsg_turnstile_token'
 				) {
 					continue;
 				}
@@ -226,55 +377,117 @@ function initFormBuilder() {
 			let redirecting = false;
 
 			try {
-				// Make AJAX request to WordPress REST API
-				const response = await fetch(designsetgoForm.restUrl, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-WP-Nonce': designsetgoForm.nonce,
-					},
-					body: JSON.stringify({
-						formId,
-						fields,
-						honeypot: honeypot || '',
-						timestamp: timestamp || Date.now(),
-						// Include Turnstile token if available (graceful degradation: empty if failed)
-						turnstile_token: turnstileToken || '',
-					}),
+				const requestBody = JSON.stringify({
+					formId,
+					fields,
+					honeypot: honeypot || '',
+					timestamp: timestamp || Date.now(),
+					// Include Turnstile token if available (graceful degradation: empty if failed)
+					turnstile_token: turnstileToken || '',
 				});
 
-				// Handle non-OK responses before parsing JSON.
-				// Some hosts (e.g. Cloudflare/GoDaddy) return HTML error pages
-				// with content-type: application/json, so we can't rely on headers alone.
-				if (!response.ok) {
-					if (response.status === 429) {
+				let result;
+
+				// Submit via admin-ajax (form-encoded) or REST API.
+				// Some hosts (GoDaddy/Cloudflare) block JSON POSTs entirely,
+				// so we use admin-ajax as primary when available, with REST
+				// as fallback. sessionStorage remembers if REST failed before
+				// to avoid wasting the rate limit window on a doomed request.
+				const useAjax =
+					designsetgoForm.ajaxUrl && designsetgoForm.ajaxNonce;
+				const restBlocked =
+					useAjax && isTransportBlocked('dsgo_rest_blocked');
+				const ajaxBlocked =
+					useAjax && isTransportBlocked('dsgo_ajax_blocked');
+
+				if (ajaxBlocked) {
+					redirecting = true;
+					submitViaNativePost();
+					return;
+				}
+
+				if (!restBlocked) {
+					// Try REST API first
+					const restResponse = await fetch(designsetgoForm.restUrl, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-WP-Nonce': designsetgoForm.nonce,
+						},
+						body: requestBody,
+					});
+
+					if (restResponse.ok) {
+						result = await restResponse.json();
+					} else if (restResponse.status === 429 && useAjax) {
+						// Remember that REST is blocked for this session
+						markTransportBlocked('dsgo_rest_blocked');
+						// Fall through to admin-ajax below
+					} else {
+						// Non-429 error from REST API
+						let serverMessage;
+						try {
+							const errorData = await restResponse.json();
+							serverMessage = errorData.message;
+						} catch {
+							// Response body isn't valid JSON
+						}
+
 						throw new Error(
-							__(
-								'Too many requests. Please wait a moment and try again.',
-								'designsetgo'
-							)
+							serverMessage ||
+								__(
+									'The server returned an unexpected response. Please try again later.',
+									'designsetgo'
+								)
+						);
+					}
+				}
+
+				// Admin-ajax fallback (or primary if REST was blocked)
+				if (!result && useAjax) {
+					const ajaxBody = new URLSearchParams();
+					ajaxBody.set('action', 'designsetgo_form_submit');
+					ajaxBody.set('_ajax_nonce', designsetgoForm.ajaxNonce);
+					ajaxBody.set('form_data', requestBody);
+
+					const ajaxResponse = await fetch(designsetgoForm.ajaxUrl, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/x-www-form-urlencoded',
+						},
+						body: ajaxBody.toString(),
+					});
+
+					if (!ajaxResponse.ok) {
+						if (ajaxResponse.status === 429) {
+							markTransportBlocked('dsgo_ajax_blocked');
+							redirecting = true;
+							submitViaNativePost();
+							return;
+						}
+
+						let ajaxMessage;
+						try {
+							const ajaxError = await ajaxResponse.json();
+							ajaxMessage =
+								ajaxError.data?.message || ajaxError.message;
+						} catch {
+							// Non-JSON response
+						}
+
+						throw new Error(
+							ajaxMessage ||
+								__(
+									'The server returned an unexpected response. Please try again later.',
+									'designsetgo'
+								)
 						);
 					}
 
-					// Try to parse error JSON from WordPress REST API
-					let serverMessage;
-					try {
-						const errorData = await response.json();
-						serverMessage = errorData.message;
-					} catch {
-						// Response body isn't valid JSON (e.g. HTML from WAF)
-					}
-
-					throw new Error(
-						serverMessage ||
-							__(
-								'The server returned an unexpected response. Please try again later.',
-								'designsetgo'
-							)
-					);
+					const ajaxResult = await ajaxResponse.json();
+					// wp_send_json_success wraps in { success, data }
+					result = ajaxResult.data;
 				}
-
-				const result = await response.json();
 
 				if (result.success) {
 					// Fire custom event for tracking/analytics
@@ -304,6 +517,13 @@ function initFormBuilder() {
 
 					// Reset form
 					formElement.reset();
+					turnstileToken = null;
+					if (turnstileTokenField) {
+						turnstileTokenField.value = '';
+					}
+					if (turnstileWidgetId !== null && window.turnstile) {
+						window.turnstile.reset(turnstileWidgetId);
+					}
 
 					// Scroll to message if not visible
 					if (!isElementInViewport(messageContainer)) {

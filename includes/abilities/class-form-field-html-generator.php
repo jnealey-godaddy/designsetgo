@@ -458,7 +458,7 @@ class Form_Field_Html_Generator {
 		if ( $help_text ) {
 			$html .= ' aria-describedby="' . esc_attr( $field_id ) . '-help"';
 		}
-		$html .= ' data-field-type="phone"/>';
+		$html .= ' data-field-type="tel"/>';
 
 		$html .= self::generate_help_text( $field_id, $help_text );
 		$html .= '</div>';
