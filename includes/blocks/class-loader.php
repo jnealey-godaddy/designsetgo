@@ -180,6 +180,15 @@ class Loader {
 			);
 		}
 
+		// Form Builder block has translatable frontend strings.
+		if ( wp_script_is( 'designsetgo-form-builder-view-script', 'registered' ) ) {
+			wp_set_script_translations(
+				'designsetgo-form-builder-view-script',
+				'designsetgo',
+				DESIGNSETGO_PATH . 'languages'
+			);
+		}
+
 		// Scroll Slides block has translatable frontend strings.
 		if ( wp_script_is( 'designsetgo-scroll-slides-view-script', 'registered' ) ) {
 			wp_set_script_translations(

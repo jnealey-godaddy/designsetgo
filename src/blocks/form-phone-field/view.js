@@ -107,11 +107,12 @@ function initPhoneFields() {
 
 		// Handle paste event
 		input.addEventListener('paste', function (e) {
-			e.preventDefault();
 			const clipboard = e.clipboardData || window.clipboardData;
 			if (!clipboard) {
+				// Can't access clipboard data — allow default browser paste as fallback
 				return;
 			}
+			e.preventDefault();
 			const pastedText = clipboard.getData('text');
 			const formattedValue = formatPhoneNumber(pastedText, phoneFormat);
 			e.target.value = formattedValue;

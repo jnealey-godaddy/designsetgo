@@ -6,6 +6,8 @@
  * @since 1.0.0
  */
 
+import { __ } from '@wordpress/i18n';
+
 /* global designsetgoForm, dsgoIntegrations */
 
 // Track Turnstile script loading state
@@ -246,11 +248,17 @@ function initFormBuilder() {
 				if (!contentType.includes('application/json')) {
 					if (response.status === 429) {
 						throw new Error(
-							'Too many requests. Please wait a moment and try again.'
+							__(
+								'Too many requests. Please wait a moment and try again.',
+								'designsetgo'
+							)
 						);
 					}
 					throw new Error(
-						'The server returned an unexpected response. Please try again later.'
+						__(
+							'The server returned an unexpected response. Please try again later.',
+							'designsetgo'
+						)
 					);
 				}
 
