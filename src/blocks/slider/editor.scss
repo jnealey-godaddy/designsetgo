@@ -80,6 +80,7 @@
 
 		.dsgo-slider__arrow {
 			cursor: pointer;
+			pointer-events: auto;
 		}
 	}
 
@@ -87,6 +88,7 @@
 
 		.dsgo-slider__dot {
 			cursor: pointer;
+			pointer-events: auto;
 		}
 	}
 
