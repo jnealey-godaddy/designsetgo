@@ -108,9 +108,11 @@ function initPhoneFields() {
 		// Handle paste event
 		input.addEventListener('paste', function (e) {
 			e.preventDefault();
-			const pastedText = (
-				e.clipboardData || window.clipboardData
-			).getData('text');
+			const clipboard = e.clipboardData || window.clipboardData;
+			if (!clipboard) {
+				return;
+			}
+			const pastedText = clipboard.getData('text');
 			const formattedValue = formatPhoneNumber(pastedText, phoneFormat);
 			e.target.value = formattedValue;
 		});

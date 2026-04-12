@@ -241,6 +241,19 @@ function initFormBuilder() {
 					}),
 				});
 
+				// Check for non-JSON responses (e.g. hosting WAF returning HTML error pages)
+				const contentType = response.headers.get('content-type') || '';
+				if (!contentType.includes('application/json')) {
+					if (response.status === 429) {
+						throw new Error(
+							'Too many requests. Please wait a moment and try again.'
+						);
+					}
+					throw new Error(
+						'The server returned an unexpected response. Please try again later.'
+					);
+				}
+
 				const result = await response.json();
 
 				if (result.success) {
