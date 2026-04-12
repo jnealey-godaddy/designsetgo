@@ -77,15 +77,16 @@ class Form_Security {
 	/**
 	 * Check rate limiting for form submissions.
 	 *
-	 * @param string $form_id Form ID.
+	 * @param string $form_id   Form ID.
+	 * @param int    $block_max Max submissions from block attributes. Default 3.
 	 * @return true|WP_Error True if allowed, WP_Error if rate limited.
 	 */
-	public function check_rate_limit( string $form_id ) {
+	public function check_rate_limit( string $form_id, int $block_max = 3 ) {
 		$ip_address = $this->get_client_ip();
 		$key        = 'form_submit_' . $form_id . '_' . md5( $ip_address );
 		$count      = get_transient( $key );
 
-		$max_submissions = apply_filters( 'designsetgo_form_rate_limit_count', 3, $form_id );
+		$max_submissions = apply_filters( 'designsetgo_form_rate_limit_count', $block_max, $form_id );
 
 		if ( false !== $count && $count >= $max_submissions ) {
 			do_action( 'designsetgo_form_rate_limit_exceeded', $form_id, $ip_address, $count, $max_submissions );
@@ -103,14 +104,15 @@ class Form_Security {
 	/**
 	 * Increment rate limit counter after successful submission.
 	 *
-	 * @param string $form_id Form ID.
+	 * @param string $form_id      Form ID.
+	 * @param int    $block_window Time window in seconds from block attributes. Default 60.
 	 */
-	public function increment_rate_limit( string $form_id ): void {
+	public function increment_rate_limit( string $form_id, int $block_window = 60 ): void {
 		$ip_address = $this->get_client_ip();
 		$key        = 'form_submit_' . $form_id . '_' . md5( $ip_address );
 		$count      = get_transient( $key );
 
-		$time_window = apply_filters( 'designsetgo_form_rate_limit_window', 60, $form_id );
+		$time_window = apply_filters( 'designsetgo_form_rate_limit_window', $block_window, $form_id );
 
 		if ( false === $count ) {
 			set_transient( $key, 1, $time_window );

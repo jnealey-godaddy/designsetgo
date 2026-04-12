@@ -162,7 +162,7 @@ export default function FormBuilderEdit({
 					'designsetgo/form-date-field',
 					'designsetgo/form-time-field',
 					'designsetgo/form-select-field',
-					'designsetgo/form-checkbox',
+					'designsetgo/form-checkbox-field',
 					'designsetgo/form-hidden-field',
 				],
 				template: [
