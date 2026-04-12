@@ -1,4 +1,4 @@
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { useEffect } from '@wordpress/element';
 import {
 	useBlockProps,
@@ -1120,7 +1120,11 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 								onClick={() => scrollToSlideIndex(i)}
 							>
 								<span className="screen-reader-text">
-									{`${__('Slide', 'designsetgo')} ${i + 1}`}
+									{sprintf(
+										/* translators: %d: slide number */
+										__('Slide %d', 'designsetgo'),
+										i + 1
+									)}
 								</span>
 							</button>
 						))}
