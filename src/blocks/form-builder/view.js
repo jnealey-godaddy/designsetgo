@@ -174,37 +174,40 @@ function initFormBuilder() {
 		}
 
 		const formId = formContainer.getAttribute('data-form-id');
+		const successMessage = formContainer.getAttribute(
+			'data-success-message'
+		);
+		const errorMessage = formContainer.getAttribute('data-error-message');
 
-		// Check if AJAX is enabled
-		const ajaxEnabled =
-			formContainer.getAttribute('data-ajax-submit') === 'true';
-
-		// Non-AJAX: set up standard form POST to admin_post
-		if (!ajaxEnabled) {
+		function ensureNativePostFields() {
 			formElement.action = designsetgoForm.ajaxUrl.replace(
 				'admin-ajax.php',
 				'admin-post.php'
 			);
+			formElement.method = 'post';
 
-			// Add required hidden fields for admin_post handler
-			const actionField = document.createElement('input');
-			actionField.type = 'hidden';
-			actionField.name = 'action';
+			let actionField = formElement.querySelector('input[name="action"]');
+			if (!actionField) {
+				actionField = document.createElement('input');
+				actionField.type = 'hidden';
+				actionField.name = 'action';
+				formElement.appendChild(actionField);
+			}
 			actionField.value = 'designsetgo_form_submit';
-			formElement.appendChild(actionField);
 
-			const nonceField = document.createElement('input');
-			nonceField.type = 'hidden';
-			nonceField.name = '_wpnonce';
+			let nonceField = formElement.querySelector(
+				'input[name="_wpnonce"]'
+			);
+			if (!nonceField) {
+				nonceField = document.createElement('input');
+				nonceField.type = 'hidden';
+				nonceField.name = '_wpnonce';
+				formElement.appendChild(nonceField);
+			}
 			nonceField.value = designsetgoForm.ajaxNonce;
-			formElement.appendChild(nonceField);
+		}
 
-			// Set timestamp on submit
-			formElement.addEventListener('submit', function () {
-				timestampField.value = Date.now();
-			});
-
-			// Check for success/error query params after redirect
+		function showRedirectStatus() {
 			const params = new URLSearchParams(window.location.search);
 			const status = params.get('dsgo_form_status');
 			const statusFormId = params.get('dsgo_form_id');
@@ -216,33 +219,76 @@ function initFormBuilder() {
 			) {
 				showMessage(
 					messageContainer,
-					formContainer.getAttribute('data-success-message') ||
+					successMessage ||
 						__('Form submitted successfully!', 'designsetgo'),
 					'success'
 				);
 				formElement.reset();
-			} else if (
+				return true;
+			}
+
+			if (
 				matchesCurrentForm &&
 				(params.has('dsgo_form_error') || status === 'error')
 			) {
 				showMessage(
 					messageContainer,
-					formContainer.getAttribute('data-error-message') ||
+					errorMessage ||
 						__(
 							'An error occurred. Please try again.',
 							'designsetgo'
 						),
 					'error'
 				);
+				return true;
 			}
+
+			return false;
+		}
+
+		function markTransportBlocked(key) {
+			try {
+				sessionStorage.setItem(key, '1');
+			} catch {
+				// sessionStorage may be unavailable
+			}
+		}
+
+		function isTransportBlocked(key) {
+			try {
+				return sessionStorage.getItem(key) === '1';
+			} catch {
+				return false;
+			}
+		}
+
+		function submitViaNativePost() {
+			ensureNativePostFields();
+			timestampField.value = Date.now();
+			if (turnstileTokenField) {
+				turnstileTokenField.value = turnstileToken || '';
+			}
+			window.HTMLFormElement.prototype.submit.call(formElement);
+		}
+
+		showRedirectStatus();
+
+		// Check if AJAX is enabled
+		const ajaxEnabled =
+			formContainer.getAttribute('data-ajax-submit') === 'true';
+
+		// Non-AJAX: set up standard form POST to admin_post
+		if (!ajaxEnabled) {
+			ensureNativePostFields();
+
+			// Set timestamp on submit
+			formElement.addEventListener('submit', function () {
+				timestampField.value = Date.now();
+			});
 
 			return;
 		}
 
-		const successMessage = formContainer.getAttribute(
-			'data-success-message'
-		);
-		const errorMessage = formContainer.getAttribute('data-error-message');
 		const redirectUrl = formContainer.getAttribute('data-redirect-url');
 
 		// Handle form submission
@@ -323,9 +369,15 @@ function initFormBuilder() {
 				const useAjax =
 					designsetgoForm.ajaxUrl && designsetgoForm.ajaxNonce;
 				const restBlocked =
-					useAjax &&
-					typeof sessionStorage !== 'undefined' &&
-					sessionStorage.getItem('dsgo_rest_blocked') === '1';
+					useAjax && isTransportBlocked('dsgo_rest_blocked');
+				const ajaxBlocked =
+					useAjax && isTransportBlocked('dsgo_ajax_blocked');
+
+				if (ajaxBlocked) {
+					redirecting = true;
+					submitViaNativePost();
+					return;
+				}
 
 				if (!restBlocked) {
 					// Try REST API first
@@ -342,11 +394,7 @@ function initFormBuilder() {
 						result = await restResponse.json();
 					} else if (restResponse.status === 429 && useAjax) {
 						// Remember that REST is blocked for this session
-						try {
-							sessionStorage.setItem('dsgo_rest_blocked', '1');
-						} catch {
-							// sessionStorage may be unavailable
-						}
+						markTransportBlocked('dsgo_rest_blocked');
 						// Fall through to admin-ajax below
 					} else {
 						// Non-429 error from REST API
@@ -384,6 +432,13 @@ function initFormBuilder() {
 					});
 
 					if (!ajaxResponse.ok) {
+						if (ajaxResponse.status === 429) {
+							markTransportBlocked('dsgo_ajax_blocked');
+							redirecting = true;
+							submitViaNativePost();
+							return;
+						}
+
 						let ajaxMessage;
 						try {
 							const ajaxError = await ajaxResponse.json();
