@@ -6,6 +6,8 @@
  * @since 1.0.0
  */
 
+import { __ } from '@wordpress/i18n';
+
 /* global designsetgoForm, dsgoIntegrations */
 
 // Track Turnstile script loading state
@@ -240,6 +242,25 @@ function initFormBuilder() {
 						turnstile_token: turnstileToken || '',
 					}),
 				});
+
+				// Check for non-JSON responses (e.g. hosting WAF returning HTML error pages)
+				const contentType = response.headers.get('content-type') || '';
+				if (!contentType.includes('application/json')) {
+					if (response.status === 429) {
+						throw new Error(
+							__(
+								'Too many requests. Please wait a moment and try again.',
+								'designsetgo'
+							)
+						);
+					}
+					throw new Error(
+						__(
+							'The server returned an unexpected response. Please try again later.',
+							'designsetgo'
+						)
+					);
+				}
 
 				const result = await response.json();
 
