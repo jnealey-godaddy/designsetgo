@@ -85,11 +85,19 @@ function initFormBuilder() {
 		}
 
 		// Add timestamp field dynamically (not in save.js to avoid validation errors)
-		// Value is set fresh at submit time so it stays accurate after bfcache restore
+		// Set at init time so server can verify user spent >= 3s on page (anti-spam).
+		// Re-set on bfcache restore so stale timestamps don't cause false rejections.
 		const timestampField = document.createElement('input');
 		timestampField.type = 'hidden';
 		timestampField.name = 'dsg_timestamp';
+		timestampField.value = Date.now();
 		formElement.appendChild(timestampField);
+
+		window.addEventListener('pageshow', function (e) {
+			if (e.persisted) {
+				timestampField.value = Date.now();
+			}
+		});
 
 		// Turnstile state for this form
 		let turnstileToken = null;
@@ -272,7 +280,6 @@ function initFormBuilder() {
 
 		function submitViaNativePost() {
 			ensureNativePostFields();
-			timestampField.value = Date.now();
 			if (turnstileTokenField) {
 				turnstileTokenField.value = turnstileToken || '';
 			}
@@ -308,11 +315,6 @@ function initFormBuilder() {
 		if (!ajaxEnabled) {
 			ensureNativePostFields();
 
-			// Set timestamp on submit
-			formElement.addEventListener('submit', function () {
-				timestampField.value = Date.now();
-			});
-
 			return;
 		}
 
@@ -321,9 +323,6 @@ function initFormBuilder() {
 		// Handle form submission
 		formElement.addEventListener('submit', async function (e) {
 			e.preventDefault();
-
-			// Refresh timestamp so it reflects actual submit time (not init time)
-			timestampField.value = Date.now();
 
 			// Clear previous messages
 			hideMessage(messageContainer);
