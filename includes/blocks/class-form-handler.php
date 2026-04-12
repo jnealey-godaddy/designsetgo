@@ -405,11 +405,11 @@ class Form_Handler {
 			);
 		}
 
-		$request->set_param( 'formId', isset( $data['formId'] ) ? $data['formId'] : '' );
+		$request->set_param( 'formId', isset( $data['formId'] ) ? sanitize_text_field( $data['formId'] ) : '' );
 		$request->set_param( 'fields', isset( $data['fields'] ) ? $data['fields'] : array() );
 		$request->set_param( 'honeypot', isset( $data['honeypot'] ) ? $data['honeypot'] : '' );
 		$request->set_param( 'timestamp', isset( $data['timestamp'] ) ? $data['timestamp'] : '' );
-		$request->set_param( 'turnstile_token', isset( $data['turnstile_token'] ) ? $data['turnstile_token'] : '' );
+		$request->set_param( 'turnstile_token', isset( $data['turnstile_token'] ) ? sanitize_text_field( $data['turnstile_token'] ) : '' );
 
 		$result = $this->handle_form_submission( $request );
 
@@ -434,29 +434,42 @@ class Form_Handler {
 	public function handle_post_submission() {
 		// Verify nonce.
 		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'designsetgo_form_submit' ) ) {
-			wp_die( esc_html__( 'Security verification failed.', 'designsetgo' ), 403 );
+			wp_die( esc_html__( 'Security verification failed.', 'designsetgo' ), '', array( 'response' => 403 ) );
 		}
 
 		$referer = wp_get_referer();
 		if ( ! $referer ) {
-			wp_die( esc_html__( 'Invalid form submission.', 'designsetgo' ), 400 );
+			wp_die( esc_html__( 'Invalid form submission.', 'designsetgo' ), '', array( 'response' => 400 ) );
 		}
 
 		// Build fields array from POST data.
 		$form_id = isset( $_POST['dsg_form_id'] ) ? sanitize_text_field( wp_unslash( $_POST['dsg_form_id'] ) ) : '';
 		$fields  = array();
 
+		// Read field type map (JSON mapping of field name => type).
+		$field_types = array();
+		if ( isset( $_POST['dsg_field_types'] ) ) {
+			$decoded = json_decode( sanitize_text_field( wp_unslash( $_POST['dsg_field_types'] ) ), true );
+			if ( is_array( $decoded ) ) {
+				$field_types = $decoded;
+			}
+		}
+
+		$system_fields = array( 'dsg_website', 'dsg_form_id', 'dsg_timestamp', 'dsg_turnstile_token', 'dsg_field_types', '_wpnonce', 'action' );
+
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
 		foreach ( $_POST as $key => $value ) {
 			// Skip system fields.
-			if ( in_array( $key, array( 'dsg_website', 'dsg_form_id', 'dsg_timestamp', 'dsg_turnstile_token', '_wpnonce', 'action' ), true ) ) {
+			if ( in_array( $key, $system_fields, true ) ) {
 				continue;
 			}
+
+			$field_type = isset( $field_types[ $key ] ) ? sanitize_text_field( $field_types[ $key ] ) : 'text';
 
 			$fields[] = array(
 				'name'  => $key,
 				'value' => sanitize_text_field( wp_unslash( $value ) ),
-				'type'  => 'text',
+				'type'  => $field_type,
 			);
 		}
 
@@ -646,10 +659,11 @@ class Form_Handler {
 			$handle,
 			'designsetgoForm',
 			array(
-				'nonce'     => wp_create_nonce( 'wp_rest' ),
-				'restUrl'   => rest_url( 'designsetgo/v1/form/submit' ),
-				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
-				'ajaxNonce' => wp_create_nonce( 'designsetgo_form_submit' ),
+				'nonce'        => wp_create_nonce( 'wp_rest' ),
+				'restUrl'      => rest_url( 'designsetgo/v1/form/submit' ),
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'adminPostUrl' => admin_url( 'admin-post.php' ),
+				'ajaxNonce'    => wp_create_nonce( 'designsetgo_form_submit' ),
 			)
 		);
 

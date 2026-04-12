@@ -180,10 +180,7 @@ function initFormBuilder() {
 		const errorMessage = formContainer.getAttribute('data-error-message');
 
 		function ensureNativePostFields() {
-			formElement.action = designsetgoForm.ajaxUrl.replace(
-				'admin-ajax.php',
-				'admin-post.php'
-			);
+			formElement.action = designsetgoForm.adminPostUrl;
 			formElement.method = 'post';
 
 			let actionField = formElement.querySelector('input[name="action"]');
@@ -194,6 +191,7 @@ function initFormBuilder() {
 				formElement.appendChild(actionField);
 			}
 			actionField.value = 'designsetgo_form_submit';
+			actionField.defaultValue = actionField.value;
 
 			let nonceField = formElement.querySelector(
 				'input[name="_wpnonce"]'
@@ -205,6 +203,7 @@ function initFormBuilder() {
 				formElement.appendChild(nonceField);
 			}
 			nonceField.value = designsetgoForm.ajaxNonce;
+			nonceField.defaultValue = nonceField.value;
 		}
 
 		function showRedirectStatus() {
@@ -212,6 +211,7 @@ function initFormBuilder() {
 			const status = params.get('dsgo_form_status');
 			const statusFormId = params.get('dsgo_form_id');
 			const matchesCurrentForm = !statusFormId || statusFormId === formId;
+			let shown = false;
 
 			if (
 				matchesCurrentForm &&
@@ -224,10 +224,8 @@ function initFormBuilder() {
 					'success'
 				);
 				formElement.reset();
-				return true;
-			}
-
-			if (
+				shown = true;
+			} else if (
 				matchesCurrentForm &&
 				(params.has('dsgo_form_error') || status === 'error')
 			) {
@@ -240,10 +238,20 @@ function initFormBuilder() {
 						),
 					'error'
 				);
-				return true;
+				shown = true;
 			}
 
-			return false;
+			// Strip form status params from URL to prevent stale messages on refresh
+			if (shown) {
+				const cleanUrl = new URL(window.location.href);
+				cleanUrl.searchParams.delete('dsgo_form_success');
+				cleanUrl.searchParams.delete('dsgo_form_error');
+				cleanUrl.searchParams.delete('dsgo_form_status');
+				cleanUrl.searchParams.delete('dsgo_form_id');
+				window.history.replaceState(null, '', cleanUrl.href);
+			}
+
+			return shown;
 		}
 
 		function markTransportBlocked(key) {
@@ -268,6 +276,25 @@ function initFormBuilder() {
 			if (turnstileTokenField) {
 				turnstileTokenField.value = turnstileToken || '';
 			}
+
+			// Build field type map so server can validate/sanitize correctly
+			const typeMap = {};
+			formElement.querySelectorAll('[data-field-type]').forEach((el) => {
+				if (el.name) {
+					typeMap[el.name] = el.getAttribute('data-field-type');
+				}
+			});
+			let typeMapField = formElement.querySelector(
+				'input[name="dsg_field_types"]'
+			);
+			if (!typeMapField) {
+				typeMapField = document.createElement('input');
+				typeMapField.type = 'hidden';
+				typeMapField.name = 'dsg_field_types';
+				formElement.appendChild(typeMapField);
+			}
+			typeMapField.value = JSON.stringify(typeMap);
+
 			window.HTMLFormElement.prototype.submit.call(formElement);
 		}
 
