@@ -8,7 +8,7 @@
 
 import { __ } from '@wordpress/i18n';
 
-/* global designsetgoForm, dsgoIntegrations */
+/* global designsetgoForm, dsgoIntegrations, sessionStorage */
 
 // Track Turnstile script loading state
 let turnstileScriptLoaded = false;
@@ -313,36 +313,69 @@ function initFormBuilder() {
 					turnstile_token: turnstileToken || '',
 				});
 
-				// Try REST API first, fall back to admin-ajax.php if rate-limited.
 				let result;
-				const restResponse = await fetch(designsetgoForm.restUrl, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-WP-Nonce': designsetgoForm.nonce,
-					},
-					body: requestBody,
-				});
 
-				if (restResponse.status === 429) {
-					// REST API rate-limited (common on Cloudflare/GoDaddy).
-					// Retry via admin-ajax.php which is rarely rate-limited.
-					const ajaxUrl = new URL(designsetgoForm.ajaxUrl);
-					ajaxUrl.searchParams.set(
-						'action',
-						'designsetgo_form_submit'
-					);
-					ajaxUrl.searchParams.set(
-						'_ajax_nonce',
-						designsetgoForm.ajaxNonce
-					);
+				// Submit via admin-ajax (form-encoded) or REST API.
+				// Some hosts (GoDaddy/Cloudflare) block JSON POSTs entirely,
+				// so we use admin-ajax as primary when available, with REST
+				// as fallback. sessionStorage remembers if REST failed before
+				// to avoid wasting the rate limit window on a doomed request.
+				const useAjax =
+					designsetgoForm.ajaxUrl && designsetgoForm.ajaxNonce;
+				const restBlocked =
+					useAjax &&
+					typeof sessionStorage !== 'undefined' &&
+					sessionStorage.getItem('dsgo_rest_blocked') === '1';
 
-					// Use form-encoded POST — GoDaddy's gateway blocks
-					// application/json POSTs but allows form-encoded.
+				if (!restBlocked) {
+					// Try REST API first
+					const restResponse = await fetch(designsetgoForm.restUrl, {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-WP-Nonce': designsetgoForm.nonce,
+						},
+						body: requestBody,
+					});
+
+					if (restResponse.ok) {
+						result = await restResponse.json();
+					} else if (restResponse.status === 429 && useAjax) {
+						// Remember that REST is blocked for this session
+						try {
+							sessionStorage.setItem('dsgo_rest_blocked', '1');
+						} catch {
+							// sessionStorage may be unavailable
+						}
+						// Fall through to admin-ajax below
+					} else {
+						// Non-429 error from REST API
+						let serverMessage;
+						try {
+							const errorData = await restResponse.json();
+							serverMessage = errorData.message;
+						} catch {
+							// Response body isn't valid JSON
+						}
+
+						throw new Error(
+							serverMessage ||
+								__(
+									'The server returned an unexpected response. Please try again later.',
+									'designsetgo'
+								)
+						);
+					}
+				}
+
+				// Admin-ajax fallback (or primary if REST was blocked)
+				if (!result && useAjax) {
 					const ajaxBody = new URLSearchParams();
+					ajaxBody.set('action', 'designsetgo_form_submit');
+					ajaxBody.set('_ajax_nonce', designsetgoForm.ajaxNonce);
 					ajaxBody.set('form_data', requestBody);
 
-					const ajaxResponse = await fetch(ajaxUrl.href, {
+					const ajaxResponse = await fetch(designsetgoForm.ajaxUrl, {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/x-www-form-urlencoded',
@@ -357,7 +390,7 @@ function initFormBuilder() {
 							ajaxMessage =
 								ajaxError.data?.message || ajaxError.message;
 						} catch {
-							// Non-JSON response from admin-ajax
+							// Non-JSON response
 						}
 
 						throw new Error(
@@ -370,27 +403,8 @@ function initFormBuilder() {
 					}
 
 					const ajaxResult = await ajaxResponse.json();
-					// wp_send_json_success wraps data in { success: true, data: {...} }
+					// wp_send_json_success wraps in { success, data }
 					result = ajaxResult.data;
-				} else if (!restResponse.ok) {
-					// Non-429 error from REST API
-					let serverMessage;
-					try {
-						const errorData = await restResponse.json();
-						serverMessage = errorData.message;
-					} catch {
-						// Response body isn't valid JSON (e.g. HTML from WAF)
-					}
-
-					throw new Error(
-						serverMessage ||
-							__(
-								'The server returned an unexpected response. Please try again later.',
-								'designsetgo'
-							)
-					);
-				} else {
-					result = await restResponse.json();
 				}
 
 				if (result.success) {
