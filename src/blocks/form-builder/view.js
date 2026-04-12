@@ -337,12 +337,17 @@ function initFormBuilder() {
 						designsetgoForm.ajaxNonce
 					);
 
+					// Use form-encoded POST — GoDaddy's gateway blocks
+					// application/json POSTs but allows form-encoded.
+					const ajaxBody = new URLSearchParams();
+					ajaxBody.set('form_data', requestBody);
+
 					const ajaxResponse = await fetch(ajaxUrl.href, {
 						method: 'POST',
 						headers: {
-							'Content-Type': 'application/json',
+							'Content-Type': 'application/x-www-form-urlencoded',
 						},
-						body: requestBody,
+						body: ajaxBody.toString(),
 					});
 
 					if (!ajaxResponse.ok) {

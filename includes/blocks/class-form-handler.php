@@ -391,10 +391,12 @@ class Form_Handler {
 		$request = new \WP_REST_Request( 'POST' );
 		$request->set_header( 'Content-Type', 'application/json' );
 
-		// Map POST params to REST request params.
+		// Read JSON form data from the form_data POST field (form-encoded).
+		// Form-encoded is used because some hosts (GoDaddy/Cloudflare) block
+		// application/json POST requests with 429 errors.
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by handle_form_submission.
-		$raw_body = file_get_contents( 'php://input' );
-		$data     = json_decode( $raw_body, true );
+		$raw_data = isset( $_POST['form_data'] ) ? wp_unslash( $_POST['form_data'] ) : '';
+		$data     = json_decode( $raw_data, true );
 
 		if ( ! is_array( $data ) ) {
 			wp_send_json_error(
