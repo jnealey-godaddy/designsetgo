@@ -243,9 +243,10 @@ function initFormBuilder() {
 					}),
 				});
 
-				// Check for non-JSON responses (e.g. hosting WAF returning HTML error pages)
-				const contentType = response.headers.get('content-type') || '';
-				if (!contentType.includes('application/json')) {
+				// Handle non-OK responses before parsing JSON.
+				// Some hosts (e.g. Cloudflare/GoDaddy) return HTML error pages
+				// with content-type: application/json, so we can't rely on headers alone.
+				if (!response.ok) {
 					if (response.status === 429) {
 						throw new Error(
 							__(
@@ -254,11 +255,22 @@ function initFormBuilder() {
 							)
 						);
 					}
+
+					// Try to parse error JSON from WordPress REST API
+					let serverMessage;
+					try {
+						const errorData = await response.json();
+						serverMessage = errorData.message;
+					} catch {
+						// Response body isn't valid JSON (e.g. HTML from WAF)
+					}
+
 					throw new Error(
-						__(
-							'The server returned an unexpected response. Please try again later.',
-							'designsetgo'
-						)
+						serverMessage ||
+							__(
+								'The server returned an unexpected response. Please try again later.',
+								'designsetgo'
+							)
 					);
 				}
 
