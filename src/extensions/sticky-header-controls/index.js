@@ -39,8 +39,8 @@ function addStickyHeaderAttributes(settings, name) {
 			...settings.attributes,
 			dsgoStickyEnabled: { type: 'boolean', default: false },
 			dsgoStickyShadow: { type: 'string', default: 'medium' },
-			dsgoStickyShrink: { type: 'boolean', default: false },
-			dsgoStickyShrinkAmount: { type: 'number', default: 15 },
+			dsgoStickyShrink: { type: 'boolean', default: true },
+			dsgoStickyShrinkAmount: { type: 'number', default: 50 },
 			dsgoStickyHideOnScroll: { type: 'boolean', default: false },
 			dsgoStickyBackground: { type: 'boolean', default: false },
 			dsgoStickySkipTopBar: { type: 'boolean', default: true },
@@ -114,7 +114,7 @@ function applyStickyHeaderClasses(extraProps, blockType, attributes) {
 	}
 
 	if (attributes.dsgoStickyShrink) {
-		classes.push('dsgo-sticky-shrink');
+		classes.push('dsgo-sticky-shrink-logo');
 	}
 
 	if (attributes.dsgoStickyHideOnScroll) {
@@ -132,7 +132,7 @@ function applyStickyHeaderClasses(extraProps, blockType, attributes) {
 	return {
 		...extraProps,
 		className: `${extraProps.className || ''} ${classes.join(' ')}`.trim(),
-		'data-dsgo-shrink-amount': attributes.dsgoStickyShrinkAmount || 15,
+		'data-dsgo-shrink-amount': attributes.dsgoStickyShrinkAmount || 50,
 	};
 }
 

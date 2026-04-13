@@ -22,11 +22,11 @@ return array(
 		),
 		'dsgoStickyShrink'       => array(
 			'type'    => 'boolean',
-			'default' => false,
+			'default' => true,
 		),
 		'dsgoStickyShrinkAmount' => array(
 			'type'    => 'number',
-			'default' => 15,
+			'default' => 50,
 		),
 		'dsgoStickyHideOnScroll' => array(
 			'type'    => 'boolean',
