@@ -940,7 +940,9 @@ class Form_Handler {
 	 */
 	private function get_form_block_attributes( $form_id ) {
 		// Check transient cache first to avoid LIKE queries on every submission.
-		$cache_key = 'dsgo_form_attrs_' . md5( $form_id );
+		// v2 prefix invalidates older caches that were stored before block-type
+		// defaults were merged into parsed attributes.
+		$cache_key = 'dsgo_form_attrs_v2_' . md5( $form_id );
 		$cached    = get_transient( $cache_key );
 
 		if ( false !== $cached ) {
@@ -996,7 +998,12 @@ class Form_Handler {
 				isset( $block['attrs']['formId'] ) &&
 				$block['attrs']['formId'] === $form_id
 			) {
-				return $block['attrs'];
+				// parse_blocks() returns only the attributes that were serialized into
+				// the block comment. The editor omits attributes that equal their
+				// declared default, so booleans like `enableEmail` (default true) and
+				// similar may be missing here. Merge in the block-type defaults so
+				// server-side consumers see the same attribute set the editor does.
+				return $this->apply_form_block_defaults( $block['attrs'] );
 			}
 
 			if ( ! empty( $block['innerBlocks'] ) ) {
@@ -1008,6 +1015,34 @@ class Form_Handler {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Merge registered block-type attribute defaults into a parsed attributes array.
+	 *
+	 * @param array $attrs Parsed block attributes from parse_blocks().
+	 * @return array Attributes with block.json defaults filled in for missing keys.
+	 */
+	private function apply_form_block_defaults( $attrs ) {
+		if ( ! class_exists( '\WP_Block_Type_Registry' ) ) {
+			return $attrs;
+		}
+
+		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( 'designsetgo/form-builder' );
+		if ( ! $block_type || ! is_array( $block_type->attributes ) ) {
+			return $attrs;
+		}
+
+		foreach ( $block_type->attributes as $key => $schema ) {
+			if ( array_key_exists( $key, $attrs ) ) {
+				continue;
+			}
+			if ( is_array( $schema ) && array_key_exists( 'default', $schema ) ) {
+				$attrs[ $key ] = $schema['default'];
+			}
+		}
+
+		return $attrs;
 	}
 
 	/**
@@ -1192,7 +1227,7 @@ class Form_Handler {
 				'designsetgo/form-builder' === $block['blockName'] &&
 				isset( $block['attrs']['formId'] )
 			) {
-				delete_transient( 'dsgo_form_attrs_' . md5( $block['attrs']['formId'] ) );
+				delete_transient( 'dsgo_form_attrs_v2_' . md5( $block['attrs']['formId'] ) );
 				delete_transient( 'dsgo_form_field_types_' . md5( $block['attrs']['formId'] ) );
 			}
 
