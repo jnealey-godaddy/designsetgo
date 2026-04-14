@@ -502,6 +502,47 @@ class Test_Form_Handler extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that block.json defaults are merged into parsed attributes.
+	 *
+	 * parse_blocks() only returns attributes serialized into the block comment.
+	 * The editor omits attributes whose value equals the block.json default, so
+	 * server-side consumers must merge defaults back in. Regression guard for
+	 * the "emails never send" bug where enableEmail (default true) was absent
+	 * from $block_attrs and the empty() guard bailed before wp_mail().
+	 */
+	public function test_get_form_block_attributes_merges_block_json_defaults() {
+		$form_id = 'defaults1';
+		$post_id = wp_insert_post(
+			array(
+				'post_type'    => 'page',
+				'post_status'  => 'publish',
+				'post_title'   => 'Test Defaults Form',
+				// Bare formId only — no enableEmail, no emailSubject, etc.
+				'post_content' => '<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '"} --><div class="wp-block-designsetgo-form-builder"></div><!-- /wp:designsetgo/form-builder -->',
+			)
+		);
+
+		$this->assertNotWPError( $post_id );
+		delete_transient( 'dsgo_form_attrs_v2_' . md5( $form_id ) );
+
+		$attrs = $this->call_private_method( 'get_form_block_attributes', array( $form_id ) );
+
+		$this->assertNotNull( $attrs );
+		$this->assertArrayHasKey( 'enableEmail', $attrs, 'enableEmail default must be filled in when absent from block comment' );
+		$this->assertTrue( $attrs['enableEmail'], 'enableEmail default per block.json is true' );
+		$this->assertArrayHasKey( 'emailSubject', $attrs );
+		$this->assertEquals( 'New Form Submission', $attrs['emailSubject'] );
+		$this->assertArrayHasKey( 'enableHoneypot', $attrs );
+		$this->assertTrue( $attrs['enableHoneypot'] );
+		$this->assertArrayHasKey( 'enableTurnstile', $attrs );
+		$this->assertFalse( $attrs['enableTurnstile'], 'false defaults must also be filled in (not just truthy ones)' );
+
+		// Cleanup.
+		wp_delete_post( $post_id, true );
+		delete_transient( 'dsgo_form_attrs_v2_' . md5( $form_id ) );
+	}
+
+	/**
 	 * Test get_form_block_attributes returns null for non-existent form.
 	 */
 	public function test_get_form_block_attributes_returns_null_for_missing() {
@@ -519,13 +560,16 @@ class Test_Form_Handler extends WP_UnitTestCase {
 	public function test_client_email_params_are_ignored() {
 		$form_id = 'noemail1';
 
-		// Create form WITHOUT email enabled.
+		// Create form with email explicitly disabled. enableEmail must be set to
+		// false on the block because its block.json default is true, and
+		// apply_form_block_defaults() now fills the default in server-side when
+		// the attribute is omitted from the serialized block comment.
 		$post_id = wp_insert_post(
 			array(
 				'post_type'    => 'page',
 				'post_status'  => 'publish',
 				'post_title'   => 'Test No Email Form',
-				'post_content' => '<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '"} --><div class="wp-block-designsetgo-form-builder"></div><!-- /wp:designsetgo/form-builder -->',
+				'post_content' => '<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '","enableEmail":false} --><div class="wp-block-designsetgo-form-builder"></div><!-- /wp:designsetgo/form-builder -->',
 			)
 		);
 
@@ -555,7 +599,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		$this->assertEquals( 200, $response->get_status() );
 		$this->assertTrue( $data['success'] );
 
-		// Email should NOT have been sent (enableEmail is not set in block attrs).
+		// Email should NOT have been sent (enableEmail is explicitly false in block attrs).
 		$email_sent = get_post_meta( $data['submissionId'], '_dsg_email_sent', true );
 		$this->assertEmpty( $email_sent, 'Email must not be sent when enableEmail is false in block attributes' );
 
