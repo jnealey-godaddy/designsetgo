@@ -487,7 +487,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		$this->assertNotWPError( $post_id );
 
 		// Clear any cached transient from the insert.
-		delete_transient( 'dsgo_form_attrs_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_attrs_v2_' . md5( $form_id ) );
 
 		$attrs = $this->call_private_method( 'get_form_block_attributes', array( $form_id ) );
 
@@ -498,7 +498,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 
 		// Cleanup.
 		wp_delete_post( $post_id, true );
-		delete_transient( 'dsgo_form_attrs_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_attrs_v2_' . md5( $form_id ) );
 	}
 
 	/**
@@ -530,7 +530,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		);
 
 		$this->assertNotWPError( $post_id );
-		delete_transient( 'dsgo_form_attrs_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_attrs_v2_' . md5( $form_id ) );
 
 		// Submit with client-supplied email params (should be ignored by server).
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
@@ -562,7 +562,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		// Cleanup.
 		wp_delete_post( $post_id, true );
 		wp_delete_post( $data['submissionId'], true );
-		delete_transient( 'dsgo_form_attrs_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_attrs_v2_' . md5( $form_id ) );
 	}
 
 	/**
@@ -642,7 +642,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 	 */
 	public function test_form_block_attributes_are_cached() {
 		$form_id   = 'cachetest';
-		$cache_key = 'dsgo_form_attrs_' . md5( $form_id );
+		$cache_key = 'dsgo_form_attrs_v2_' . md5( $form_id );
 
 		// Seed the transient cache directly.
 		$fake_attrs = array(
