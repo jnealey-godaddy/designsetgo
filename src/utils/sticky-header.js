@@ -25,8 +25,8 @@ import './sticky-header.scss';
 		zIndex: 100,
 		shadowOnScroll: true,
 		shadowSize: 'medium',
-		shrinkOnScroll: false,
-		shrinkAmount: 20,
+		shrinkOnScroll: true,
+		shrinkAmount: 50,
 		mobileEnabled: true,
 		mobileBreakpoint: 768,
 		transitionSpeed: 300,
@@ -145,6 +145,51 @@ import './sticky-header.scss';
 	}
 
 	/**
+	 * Measure the natural rendered size of each logo image inside the header
+	 * and store it as CSS custom properties on the element. The CSS rule for
+	 * .dsgo-sticky-shrink-logo reads these when applying shrunk max-width /
+	 * max-height on scroll, preserving aspect ratio for wide or tall logos.
+	 *
+	 * @param {HTMLElement} header Header element
+	 */
+	function measureLogos(header) {
+		if (!header.classList.contains('dsgo-sticky-shrink-logo')) {
+			return;
+		}
+
+		const logos = header.querySelectorAll(
+			'.wp-block-image img, .wp-block-site-logo img'
+		);
+
+		logos.forEach((img) => {
+			const store = () => {
+				const w = img.offsetWidth;
+				const h = img.offsetHeight;
+				if (w > 0 && h > 0) {
+					img.style.setProperty(
+						'--dsgo-sticky-logo-original-width',
+						`${w}px`
+					);
+					img.style.setProperty(
+						'--dsgo-sticky-logo-original-height',
+						`${h}px`
+					);
+				}
+			};
+
+			if (img.complete && img.naturalWidth > 0) {
+				store();
+			} else if (!img.dataset.dsgoLogoLoadBound) {
+				// Only attach the load listener once per image — measureLogos
+				// may run several times (init, window.load, resize) before the
+				// image actually finishes loading.
+				img.dataset.dsgoLogoLoadBound = 'true';
+				img.addEventListener('load', store, { once: true });
+			}
+		});
+	}
+
+	/**
 	 * Apply CSS custom properties
 	 *
 	 * @param {HTMLElement} header Header element
@@ -159,16 +204,22 @@ import './sticky-header.scss';
 			`${settings.transitionSpeed}ms`
 		);
 
-		// Check for per-block shrink amount from FSE controls
+		// Logo-shrink: per-block amount from FSE controls, fall back to global.
+		// Amount is a % reduction — 40% means the logo scales to 60% of original.
+		const hasLogoShrink = header.classList.contains(
+			'dsgo-sticky-shrink-logo'
+		);
 		const blockShrinkAmount =
-			header.dataset.dsgShrinkAmount ||
-			(settings.shrinkOnScroll ? settings.shrinkAmount : null);
+			header.dataset.dsgoShrinkAmount ??
+			header.dataset.dsgShrinkAmount ??
+			(hasLogoShrink || settings.shrinkOnScroll
+				? (settings.shrinkAmount ?? 50)
+				: null);
 
 		if (blockShrinkAmount) {
-			// Calculate scale amount (shrink by X% = scale to (1 - X/100))
-			const shrinkDecimal = parseInt(blockShrinkAmount) / 100;
-			const scaleAmount = 1 - shrinkDecimal;
-			header.style.setProperty('--dsgo-sticky-scale-amount', scaleAmount);
+			const shrinkDecimal = parseInt(blockShrinkAmount, 10) / 100;
+			const scaleAmount = Math.max(0.1, 1 - shrinkDecimal);
+			header.style.setProperty('--dsgo-sticky-logo-scale', scaleAmount);
 		}
 
 		// Apply background and text color CSS vars when global setting is enabled
@@ -236,9 +287,9 @@ import './sticky-header.scss';
 				);
 			}
 
-			// Shrink on scroll
+			// Shrink logo on scroll
 			if (settings.shrinkOnScroll) {
-				header.classList.add('dsgo-sticky-shrink');
+				header.classList.add('dsgo-sticky-shrink-logo');
 			}
 
 			// Hide on scroll down
@@ -338,6 +389,20 @@ import './sticky-header.scss';
 		// Apply configuration classes
 		applyConfigurationClasses(header);
 
+		// Back-compat: legacy saved template parts may carry the old class
+		// (dsgo-sticky-shrink) from before the feature was renamed to logo-only.
+		// Treat it as an alias so existing sites keep working after upgrade.
+		if (
+			header.classList.contains('dsgo-sticky-shrink') &&
+			!header.classList.contains('dsgo-sticky-shrink-logo')
+		) {
+			header.classList.add('dsgo-sticky-shrink-logo');
+		}
+
+		// Measure logos AFTER configuration classes are applied so the class
+		// check inside measureLogos passes for global-settings-driven headers.
+		measureLogos(header);
+
 		// Apply top bar offset (negative top so top bar scrolls away first)
 		applyTopBarOffset(header);
 
@@ -356,6 +421,11 @@ import './sticky-header.scss';
 			resizeTimeout = setTimeout(() => {
 				handleScroll(header);
 				applyTopBarOffset(header);
+				// Re-measure logos only when not currently scrolled so we
+				// capture the true natural size, not the shrunk size.
+				if (!header.classList.contains('dsgo-scrolled')) {
+					measureLogos(header);
+				}
 			}, 150);
 		});
 	}
@@ -379,13 +449,19 @@ import './sticky-header.scss';
 			initAll();
 		}
 
-		// Re-run top bar offset after all resources load (images/fonts can
-		// change the top bar height measured at DOMContentLoaded)
+		// Re-run top bar offset and logo measurement after all resources load.
+		// Late-loading fonts/images can change the top bar height and the
+		// logo's rendered size measured at DOMContentLoaded.
 		window.addEventListener(
 			'load',
 			() => {
 				const headers = document.querySelectorAll(selector);
-				headers.forEach(applyTopBarOffset);
+				headers.forEach((header) => {
+					applyTopBarOffset(header);
+					if (!header.classList.contains('dsgo-scrolled')) {
+						measureLogos(header);
+					}
+				});
 			},
 			{ once: true }
 		);

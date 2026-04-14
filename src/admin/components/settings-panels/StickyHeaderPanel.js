@@ -179,11 +179,11 @@ const StickyHeaderPanel = ({ settings, updateSetting }) => {
 							<div>
 								<ToggleControl
 									label={__(
-										'Shrink on Scroll',
+										'Shrink Logo on Scroll',
 										'designsetgo'
 									)}
 									help={__(
-										'Reduce header height.',
+										'Scale down logos inside the sticky header while preserving aspect ratio.',
 										'designsetgo'
 									)}
 									checked={
@@ -206,9 +206,13 @@ const StickyHeaderPanel = ({ settings, updateSetting }) => {
 											'Shrink Amount (%)',
 											'designsetgo'
 										)}
+										help={__(
+											'40% means the logo is scaled to 60% of its original size.',
+											'designsetgo'
+										)}
 										value={
 											settings?.sticky_header
-												?.shrink_amount || 20
+												?.shrink_amount ?? 50
 										}
 										onChange={(value) =>
 											updateSetting(
@@ -218,7 +222,7 @@ const StickyHeaderPanel = ({ settings, updateSetting }) => {
 											)
 										}
 										min={5}
-										max={50}
+										max={70}
 										step={5}
 										__nextHasNoMarginBottom
 										__next40pxDefaultSize

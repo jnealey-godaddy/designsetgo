@@ -100,7 +100,11 @@ export default function StickyHeaderPanel(props) {
 						/>
 
 						<ToggleControl
-							label={__('Shrink on Scroll', 'designsetgo')}
+							label={__('Shrink Logo on Scroll', 'designsetgo')}
+							help={__(
+								'Scale down images (site logo, image blocks) inside the header when scrolled. Keeps aspect ratio — works for wide or tall logos.',
+								'designsetgo'
+							)}
 							checked={attributes.dsgoStickyShrink || false}
 							onChange={(value) =>
 								setAttributes({
@@ -112,14 +116,18 @@ export default function StickyHeaderPanel(props) {
 						{attributes.dsgoStickyShrink && (
 							<RangeControl
 								label={__('Shrink Amount (%)', 'designsetgo')}
-								value={attributes.dsgoStickyShrinkAmount || 15}
+								help={__(
+									'How much to shrink the logo. 40% means scaled to 60% of original size.',
+									'designsetgo'
+								)}
+								value={attributes.dsgoStickyShrinkAmount ?? 50}
 								onChange={(value) =>
 									setAttributes({
 										dsgoStickyShrinkAmount: value,
 									})
 								}
 								min={5}
-								max={50}
+								max={70}
 								step={5}
 							/>
 						)}

@@ -66,12 +66,26 @@ body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-heade
 }
 
 /**
- * Shrink on Scroll
- * Disabled - too complex to implement universally across different layouts
+ * Shrink Logo on Scroll
+ * Scales down logo images (site logo + image blocks) inside the sticky header
+ * once scrolled past the threshold. The JS measures each image's natural
+ * rendered size and stores it as CSS custom properties on the image element,
+ * so aspect ratio is preserved for wide or tall logos alike.
+ *
+ * --dsgo-sticky-logo-scale comes from the header element (0..1, set by JS).
+ * --dsgo-sticky-logo-original-width / -height come from each image inline.
  */
-.dsgo-sticky-shrink.wp-block-template-part {
+.dsgo-sticky-shrink-logo.wp-block-template-part :where(.wp-block-image img, .wp-block-site-logo img) {
+	transition:
+		max-width var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out,
+		max-height var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out;
+}
 
-	/* Feature disabled - classes preserved for backwards compatibility */
+.dsgo-sticky-shrink-logo.wp-block-template-part.dsgo-scrolled :where(.wp-block-image img, .wp-block-site-logo img) {
+	max-width: calc(var(--dsgo-sticky-logo-original-width, 100%) * var(--dsgo-sticky-logo-scale, 0.5));
+	max-height: calc(var(--dsgo-sticky-logo-original-height, 100%) * var(--dsgo-sticky-logo-scale, 0.5));
+	width: auto;
+	height: auto;
 }
 
 /**
@@ -148,7 +162,8 @@ body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-heade
 @media (prefers-reduced-motion: reduce) {
 
 	.wp-block-template-part,
-	.dsgo-sticky-shrink.wp-block-template-part,
+	.dsgo-sticky-shrink-logo.wp-block-template-part .wp-block-image img,
+	.dsgo-sticky-shrink-logo.wp-block-template-part .wp-block-site-logo img,
 	.dsgo-sticky-hide-on-scroll-down.wp-block-template-part,
 	.dsgo-sticky-bg-on-scroll.wp-block-template-part,
 	.dsgo-sticky-bg-on-scroll.wp-block-template-part .wp-block-navigation a,
