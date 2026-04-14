@@ -129,11 +129,17 @@ function applyStickyHeaderClasses(extraProps, blockType, attributes) {
 		classes.push('dsgo-sticky-skip-top-bar');
 	}
 
-	return {
+	const props = {
 		...extraProps,
 		className: `${extraProps.className || ''} ${classes.join(' ')}`.trim(),
-		'data-dsgo-shrink-amount': attributes.dsgoStickyShrinkAmount || 50,
 	};
+
+	if (attributes.dsgoStickyShrink) {
+		props['data-dsgo-shrink-amount'] =
+			attributes.dsgoStickyShrinkAmount ?? 50;
+	}
+
+	return props;
 }
 
 addFilter(

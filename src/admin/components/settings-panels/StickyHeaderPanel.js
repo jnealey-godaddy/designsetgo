@@ -212,7 +212,7 @@ const StickyHeaderPanel = ({ settings, updateSetting }) => {
 										)}
 										value={
 											settings?.sticky_header
-												?.shrink_amount || 50
+												?.shrink_amount ?? 50
 										}
 										onChange={(value) =>
 											updateSetting(
@@ -221,7 +221,7 @@ const StickyHeaderPanel = ({ settings, updateSetting }) => {
 												value
 											)
 										}
-										min={20}
+										min={5}
 										max={70}
 										step={5}
 										__nextHasNoMarginBottom

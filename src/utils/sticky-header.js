@@ -179,7 +179,11 @@ import './sticky-header.scss';
 
 			if (img.complete && img.naturalWidth > 0) {
 				store();
-			} else {
+			} else if (!img.dataset.dsgoLogoLoadBound) {
+				// Only attach the load listener once per image — measureLogos
+				// may run several times (init, window.load, resize) before the
+				// image actually finishes loading.
+				img.dataset.dsgoLogoLoadBound = 'true';
 				img.addEventListener('load', store, { once: true });
 			}
 		});
@@ -206,10 +210,10 @@ import './sticky-header.scss';
 			'dsgo-sticky-shrink-logo'
 		);
 		const blockShrinkAmount =
-			header.dataset.dsgoShrinkAmount ||
-			header.dataset.dsgShrinkAmount ||
+			header.dataset.dsgoShrinkAmount ??
+			header.dataset.dsgShrinkAmount ??
 			(hasLogoShrink || settings.shrinkOnScroll
-				? settings.shrinkAmount || 50
+				? (settings.shrinkAmount ?? 50)
 				: null);
 
 		if (blockShrinkAmount) {
@@ -217,8 +221,6 @@ import './sticky-header.scss';
 			const scaleAmount = Math.max(0.1, 1 - shrinkDecimal);
 			header.style.setProperty('--dsgo-sticky-logo-scale', scaleAmount);
 		}
-
-		measureLogos(header);
 
 		// Apply background and text color CSS vars when global setting is enabled
 		// OR when the block has FSE-level bg-on-scroll class (per-template-part override)
@@ -387,6 +389,20 @@ import './sticky-header.scss';
 		// Apply configuration classes
 		applyConfigurationClasses(header);
 
+		// Back-compat: legacy saved template parts may carry the old class
+		// (dsgo-sticky-shrink) from before the feature was renamed to logo-only.
+		// Treat it as an alias so existing sites keep working after upgrade.
+		if (
+			header.classList.contains('dsgo-sticky-shrink') &&
+			!header.classList.contains('dsgo-sticky-shrink-logo')
+		) {
+			header.classList.add('dsgo-sticky-shrink-logo');
+		}
+
+		// Measure logos AFTER configuration classes are applied so the class
+		// check inside measureLogos passes for global-settings-driven headers.
+		measureLogos(header);
+
 		// Apply top bar offset (negative top so top bar scrolls away first)
 		applyTopBarOffset(header);
 
@@ -433,13 +449,19 @@ import './sticky-header.scss';
 			initAll();
 		}
 
-		// Re-run top bar offset after all resources load (images/fonts can
-		// change the top bar height measured at DOMContentLoaded)
+		// Re-run top bar offset and logo measurement after all resources load.
+		// Late-loading fonts/images can change the top bar height and the
+		// logo's rendered size measured at DOMContentLoaded.
 		window.addEventListener(
 			'load',
 			() => {
 				const headers = document.querySelectorAll(selector);
-				headers.forEach(applyTopBarOffset);
+				headers.forEach((header) => {
+					applyTopBarOffset(header);
+					if (!header.classList.contains('dsgo-scrolled')) {
+						measureLogos(header);
+					}
+				});
 			},
 			{ once: true }
 		);

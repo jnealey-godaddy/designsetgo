@@ -120,13 +120,13 @@ export default function StickyHeaderPanel(props) {
 									'How much to shrink the logo. 40% means scaled to 60% of original size.',
 									'designsetgo'
 								)}
-								value={attributes.dsgoStickyShrinkAmount || 50}
+								value={attributes.dsgoStickyShrinkAmount ?? 50}
 								onChange={(value) =>
 									setAttributes({
 										dsgoStickyShrinkAmount: value,
 									})
 								}
-								min={20}
+								min={5}
 								max={70}
 								step={5}
 							/>
