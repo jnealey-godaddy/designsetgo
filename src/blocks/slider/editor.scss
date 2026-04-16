@@ -101,23 +101,26 @@
 		display: none;
 	}
 
-	// `display: contents` removes the appender wrappers from layout entirely,
-	// so they don't take flex-flow space in the centered content (which was
-	// visually pushing heading/paragraph upward). The inserter button inside
-	// then becomes a direct child of .dsgo-slide__content for layout purposes.
-	.dsgo-slide .block-list-appender,
-	.dsgo-slide .block-editor-default-block-appender {
+	// `display: contents` on the slide's own end-of-content appender wrappers
+	// removes them from layout, so they don't take flex-flow space in the
+	// centered content (which was pushing heading/paragraph upward). The
+	// inserter button inside then becomes a direct child of .dsgo-slide__content.
+	// Scoped to the direct-child appender only (not inserters inside nested
+	// Group / Columns / etc. blocks within a slide).
+	.dsgo-slide > .dsgo-slide__content > .block-list-appender,
+	.dsgo-slide > .dsgo-slide__content > .block-list-appender > .block-editor-default-block-appender {
 		display: contents;
 	}
 
 	// Make .dsgo-slide__content static so the nearest positioned ancestor of
-	// the inserter is .dsgo-slide. Overlay stacking still works because the
-	// overlay is rendered before content in the DOM.
-	.dsgo-slide .dsgo-slide__content {
+	// the slide-level inserter is .dsgo-slide. Overlay stacking still works
+	// because the overlay is rendered before content in the DOM.
+	.dsgo-slide > .dsgo-slide__content {
 		position: static;
 	}
 
-	.dsgo-slide .block-editor-inserter {
+	// Pin ONLY the slide-level inserter (not inserters inside nested blocks).
+	.dsgo-slide > .dsgo-slide__content > .block-list-appender .block-editor-inserter {
 		position: absolute !important;
 		top: auto !important;
 		right: auto !important;

@@ -4,7 +4,7 @@
  * Parent block that manages tab navigation and panels
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
 	InspectorControls,
@@ -23,7 +23,7 @@ import {
 	Button,
 	Tooltip,
 } from '@wordpress/components';
-import { createBlock } from '@wordpress/blocks';
+import { createBlock, cloneBlock } from '@wordpress/blocks';
 import { copy, trash, plus } from '@wordpress/icons';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
@@ -106,25 +106,29 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	const handleAddTab = () => {
 		const tabCount = innerBlocks.length;
 		const newTab = createBlock('designsetgo/tab', {
-			title: `Tab ${tabCount + 1}`,
+			title: sprintf(
+				/* translators: %d: tab number */
+				__('Tab %d', 'designsetgo'),
+				tabCount + 1
+			),
 		});
 		insertBlock(newTab, tabCount, clientId, true);
 		setAttributes({ activeTab: tabCount });
 	};
 
 	const handleDuplicateTab = (tab, index) => {
-		const clone = createBlock(
-			tab.name,
-			{ ...tab.attributes, uniqueId: '' },
-			tab.innerBlocks.map((inner) =>
-				createBlock(inner.name, inner.attributes, inner.innerBlocks)
-			)
-		);
+		// cloneBlock produces a deep clone with fresh clientIds at every level.
+		// Reset uniqueId so the duplicated tab regenerates its own via the
+		// child block's onMount effect.
+		const clone = cloneBlock(tab, { uniqueId: '' });
 		insertBlock(clone, index + 1, clientId, true);
 		setAttributes({ activeTab: index + 1 });
 	};
 
 	const handleRemoveTab = (tab, index) => {
+		if (innerBlocks.length <= 1) {
+			return;
+		}
 		removeBlock(tab.clientId, false);
 		// If we removed the active tab (or an earlier one), keep a valid index.
 		if (index <= activeTab) {
@@ -552,108 +556,167 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 			</InspectorControls>
 
 			<div {...blockProps}>
-				{/* Tab Navigation */}
-				<div
-					className="dsgo-tabs__nav"
-					role="tablist"
-					aria-label={__('Tabs', 'designsetgo')}
-				>
-					{innerBlocks.map((block, index) => {
-						const {
-							title,
-							icon,
-							iconPosition,
-							uniqueId: tabId,
-						} = block.attributes;
-						const isActive = index === activeTab;
+				{/* Tab Navigation. The tablist + the editor-only "Add tab"
+				    button are wrapped in a single flex row so the add
+				    control reads as adjacent to the tabs without sitting
+				    inside role="tablist". */}
+				<div className="dsgo-tabs__nav-row">
+					<div
+						className="dsgo-tabs__nav"
+						role="tablist"
+						aria-label={__('Tabs', 'designsetgo')}
+					>
+						{innerBlocks.map((block, index) => {
+							const {
+								title,
+								icon,
+								iconPosition,
+								uniqueId: tabId,
+							} = block.attributes;
+							const isActive = index === activeTab;
 
-						return (
-							<div
-								key={block.clientId}
-								className={`dsgo-tabs__tab dsgo-tabs__tab--editor ${
-									isActive ? 'is-active' : ''
-								} ${
-									icon
-										? `has-icon has-icon-${iconPosition}`
-										: ''
-								}`}
-								id={`tab-${tabId}`}
-								role="tab"
-								aria-selected={isActive}
-								aria-controls={`panel-${tabId}`}
-								tabIndex={isActive ? 0 : -1}
-								data-tab-index={index}
-								onKeyDown={(e) => handleKeyDown(e, index)}
-							>
-								{icon && iconPosition === 'left' && (
-									<span className="dsgo-tabs__tab-icon">
-										{getIcon(icon)}
-									</span>
-								)}
+							const placeholderLabel = sprintf(
+								/* translators: %d: tab number */
+								__('Tab %d', 'designsetgo'),
+								index + 1
+							);
+							return (
+								<div
+									key={block.clientId}
+									className={`dsgo-tabs__tab dsgo-tabs__tab--editor ${
+										isActive ? 'is-active' : ''
+									} ${
+										icon
+											? `has-icon has-icon-${iconPosition}`
+											: ''
+									}`}
+									id={`tab-${tabId}`}
+									role="tab"
+									aria-selected={isActive}
+									aria-controls={`panel-${tabId}`}
+									tabIndex={isActive ? 0 : -1}
+									data-tab-index={index}
+									onClick={(e) => {
+										// Ignore clicks routed through the inline
+										// edit input or an action button — they
+										// handle their own focus/click behavior.
+										if (
+											e.target.closest(
+												'.dsgo-tabs__tab-title--editor, .dsgo-tabs__tab-actions'
+											)
+										) {
+											return;
+										}
+										handleTabClick(index);
+									}}
+									onKeyDown={(e) => handleKeyDown(e, index)}
+								>
+									{icon && iconPosition === 'left' && (
+										<span className="dsgo-tabs__tab-icon">
+											{getIcon(icon)}
+										</span>
+									)}
 
-								{icon && iconPosition === 'top' && (
-									<span className="dsgo-tabs__tab-icon-top">
-										{getIcon(icon)}
-									</span>
-								)}
+									{icon && iconPosition === 'top' && (
+										<span className="dsgo-tabs__tab-icon-top">
+											{getIcon(icon)}
+										</span>
+									)}
 
-								<input
-									type="text"
-									className="dsgo-tabs__tab-title dsgo-tabs__tab-title--editor"
-									value={title || ''}
-									placeholder={`Tab ${index + 1}`}
-									onFocus={() => handleTabClick(index)}
-									onChange={(e) =>
-										handleTitleChange(block, e.target.value)
-									}
-									aria-label={__('Tab title', 'designsetgo')}
-								/>
-
-								{icon && iconPosition === 'right' && (
-									<span className="dsgo-tabs__tab-icon">
-										{getIcon(icon)}
-									</span>
-								)}
-
-								<span className="dsgo-tabs__tab-actions">
-									<Tooltip
-										text={__(
-											'Duplicate tab',
+									<input
+										type="text"
+										className="dsgo-tabs__tab-title dsgo-tabs__tab-title--editor"
+										value={title || ''}
+										placeholder={placeholderLabel}
+										onFocus={() => handleTabClick(index)}
+										onChange={(e) =>
+											handleTitleChange(
+												block,
+												e.target.value
+											)
+										}
+										onKeyDown={(e) => {
+											// Don't let navigation keys from the
+											// title input bubble up and trigger
+											// the tab's arrow-key navigation —
+											// those should move the text caret.
+											if (
+												[
+													'ArrowLeft',
+													'ArrowRight',
+													'ArrowUp',
+													'ArrowDown',
+													'Home',
+													'End',
+												].includes(e.key)
+											) {
+												e.stopPropagation();
+											}
+										}}
+										aria-label={__(
+											'Tab title',
 											'designsetgo'
 										)}
-									>
-										<Button
-											size="small"
-											icon={copy}
-											label={__(
+									/>
+
+									{icon && iconPosition === 'right' && (
+										<span className="dsgo-tabs__tab-icon">
+											{getIcon(icon)}
+										</span>
+									)}
+
+									<span className="dsgo-tabs__tab-actions">
+										<Tooltip
+											text={__(
 												'Duplicate tab',
 												'designsetgo'
 											)}
-											onClick={() =>
-												handleDuplicateTab(block, index)
-											}
-										/>
-									</Tooltip>
-									<Tooltip
-										text={__('Remove tab', 'designsetgo')}
-									>
-										<Button
-											size="small"
-											icon={trash}
-											isDestructive
-											label={__(
+										>
+											<Button
+												size="small"
+												icon={copy}
+												label={__(
+													'Duplicate tab',
+													'designsetgo'
+												)}
+												onClick={() =>
+													handleDuplicateTab(
+														block,
+														index
+													)
+												}
+											/>
+										</Tooltip>
+										<Tooltip
+											text={__(
 												'Remove tab',
 												'designsetgo'
 											)}
-											onClick={() =>
-												handleRemoveTab(block, index)
-											}
-										/>
-									</Tooltip>
-								</span>
-							</div>
-						);
-					})}
+										>
+											<Button
+												size="small"
+												icon={trash}
+												isDestructive
+												label={__(
+													'Remove tab',
+													'designsetgo'
+												)}
+												onClick={() =>
+													handleRemoveTab(
+														block,
+														index
+													)
+												}
+											/>
+										</Tooltip>
+									</span>
+								</div>
+							);
+						})}
+					</div>
+					{/* "Add tab" sits outside the tablist so it doesn't violate the
+				    ARIA tab pattern (a tablist should only contain role="tab"
+				    children). */}
 					<Button
 						size="small"
 						icon={plus}

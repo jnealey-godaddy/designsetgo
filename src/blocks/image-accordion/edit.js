@@ -62,8 +62,13 @@ export default function ImageAccordionEdit({
 					(inner) => inner.name === 'core/heading'
 				);
 				const raw = heading?.attributes?.content ?? '';
-				const text = String(raw)
-					.replace(/<[^>]+>/g, '')
+				// DOMParser handles malformed/unterminated tags safely
+				// (unlike a naive regex).
+				const parsed = new window.DOMParser().parseFromString(
+					String(raw),
+					'text/html'
+				);
+				const text = (parsed.body.textContent || '')
 					.trim()
 					.slice(0, 40);
 				const label = text

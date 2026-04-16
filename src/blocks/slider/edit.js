@@ -22,7 +22,7 @@ import {
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { createBlock } from '@wordpress/blocks';
+import { createBlock, cloneBlock } from '@wordpress/blocks';
 import { copy, trash, plus } from '@wordpress/icons';
 import classnames from 'classnames';
 import {
@@ -112,14 +112,17 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 		useDispatch('core/block-editor');
 
 	// Extract a readable label for a slide: first heading text if present, else "Slide N".
+	// DOMParser handles malformed/unterminated tags safely (unlike a naive regex).
 	const getSlideLabel = (slide, index) => {
 		const heading = slide.innerBlocks?.find(
 			(inner) => inner.name === 'core/heading'
 		);
 		const raw = heading?.attributes?.content ?? '';
-		const text = String(raw)
-			.replace(/<[^>]+>/g, '')
-			.trim();
+		const parsed = new window.DOMParser().parseFromString(
+			String(raw),
+			'text/html'
+		);
+		const text = (parsed.body.textContent || '').trim();
 		if (text) {
 			return text.slice(0, 30);
 		}
@@ -136,17 +139,15 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 	};
 
 	const handleDuplicateSlide = (slide, index) => {
-		const clone = createBlock(
-			slide.name,
-			{ ...slide.attributes },
-			slide.innerBlocks.map((inner) =>
-				createBlock(inner.name, inner.attributes, inner.innerBlocks)
-			)
-		);
+		// cloneBlock does a deep clone with fresh clientIds at every level.
+		const clone = cloneBlock(slide);
 		insertBlock(clone, index + 1, clientId, true);
 	};
 
 	const handleRemoveSlide = (slide) => {
+		if (slides.length <= 1) {
+			return;
+		}
 		removeBlock(slide.clientId, false);
 	};
 

@@ -94,7 +94,7 @@ export const formBuilderTemplates = [
 					label: __('Email Address', 'designsetgo'),
 					fieldName: 'email',
 					required: true,
-					placeholder: 'you@example.com',
+					placeholder: __('you@example.com', 'designsetgo'),
 				},
 			],
 		],

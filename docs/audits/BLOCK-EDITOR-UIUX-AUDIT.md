@@ -33,10 +33,10 @@ These three are the clearest usability regressions because they block the author
 
 Relevant files:
 
-- [slider/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/slider/edit.js#L240)
-- [slider/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/slider/edit.js#L363)
-- [advanced-heading/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/advanced-heading/edit.js#L62)
-- [reveal/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/reveal/edit.js#L26)
+- [slider/edit.js](src/blocks/slider/edit.js#L240)
+- [slider/edit.js](src/blocks/slider/edit.js#L363)
+- [advanced-heading/edit.js](src/blocks/advanced-heading/edit.js#L62)
+- [reveal/edit.js](src/blocks/reveal/edit.js#L26)
 
 ### 2. `Section` and `Row` auto-transform too aggressively
 
@@ -52,8 +52,8 @@ This should become:
 
 Relevant files:
 
-- [section/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/section/edit.js#L163)
-- [row/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/row/edit.js#L121)
+- [section/edit.js](src/blocks/section/edit.js#L163)
+- [row/edit.js](src/blocks/row/edit.js#L121)
 
 ### 3. The plugin already contains good onboarding patterns, but only for some blocks
 
@@ -69,11 +69,11 @@ These blocks use template choosers, placeholders, or setup states well. That pat
 
 Relevant files:
 
-- [ModalPlaceholder.js](/Users/jnealey/github-local/designsetgo/src/blocks/modal/components/ModalPlaceholder.js#L35)
-- [StickySectionsPlaceholder.js](/Users/jnealey/github-local/designsetgo/src/blocks/sticky-sections/components/StickySectionsPlaceholder.js#L30)
-- [ScrollSlidesPlaceholder.js](/Users/jnealey/github-local/designsetgo/src/blocks/scroll-slides/components/ScrollSlidesPlaceholder.js#L30)
-- [product-categories-grid/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/product-categories-grid/edit.js#L253)
-- [product-showcase-hero/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/product-showcase-hero/edit.js#L258)
+- [ModalPlaceholder.js](src/blocks/modal/components/ModalPlaceholder.js#L35)
+- [StickySectionsPlaceholder.js](src/blocks/sticky-sections/components/StickySectionsPlaceholder.js#L30)
+- [ScrollSlidesPlaceholder.js](src/blocks/scroll-slides/components/ScrollSlidesPlaceholder.js#L30)
+- [product-categories-grid/edit.js](src/blocks/product-categories-grid/edit.js#L253)
+- [product-showcase-hero/edit.js](src/blocks/product-showcase-hero/edit.js#L258)
 
 ### 4. Some of the most powerful blocks are too sidebar-driven
 
@@ -94,11 +94,11 @@ These should move toward:
 
 Relevant files:
 
-- [slider/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/slider/edit.js#L367)
-- [form-builder/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/form-builder/edit.js#L200)
-- [comparison-table/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/comparison-table/edit.js#L364)
-- [modal/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/modal/edit.js#L139)
-- [card/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/card/edit.js#L72)
+- [slider/edit.js](src/blocks/slider/edit.js#L367)
+- [form-builder/edit.js](src/blocks/form-builder/edit.js#L200)
+- [comparison-table/edit.js](src/blocks/comparison-table/edit.js#L364)
+- [modal/edit.js](src/blocks/modal/edit.js#L139)
+- [card/edit.js](src/blocks/card/edit.js#L72)
 
 ## Cross-Cutting Recommendations
 
@@ -214,8 +214,8 @@ Recommendations:
 
 Relevant files:
 
-- [section/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/section/edit.js#L163)
-- [section/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/section/edit.js#L328)
+- [section/edit.js](src/blocks/section/edit.js#L163)
+- [section/edit.js](src/blocks/section/edit.js#L328)
 
 #### `Row`
 
@@ -238,8 +238,8 @@ Recommendations:
 
 Relevant files:
 
-- [row/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/row/edit.js#L121)
-- [row/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/row/edit.js#L268)
+- [row/edit.js](src/blocks/row/edit.js#L121)
+- [row/edit.js](src/blocks/row/edit.js#L268)
 
 #### `Grid`
 
@@ -261,7 +261,7 @@ Recommendations:
 
 Relevant files:
 
-- [grid/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/grid/edit.js#L325)
+- [grid/edit.js](src/blocks/grid/edit.js#L325)
 
 #### `Fifty Fifty`
 
@@ -284,8 +284,8 @@ Recommendations:
 
 Relevant files:
 
-- [fifty-fifty/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/fifty-fifty/edit.js#L156)
-- [fifty-fifty/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/fifty-fifty/edit.js#L243)
+- [fifty-fifty/edit.js](src/blocks/fifty-fifty/edit.js#L156)
+- [fifty-fifty/edit.js](src/blocks/fifty-fifty/edit.js#L243)
 
 #### `Blobs`
 
@@ -325,7 +325,7 @@ Recommendations:
 
 Relevant files:
 
-- [accordion/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/accordion/edit.js#L103)
+- [accordion/edit.js](src/blocks/accordion/edit.js#L103)
 
 #### `Accordion Item`
 
@@ -346,7 +346,7 @@ Recommendations:
 
 Relevant files:
 
-- [accordion-item/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/accordion-item/edit.js#L173)
+- [accordion-item/edit.js](src/blocks/accordion-item/edit.js#L173)
 
 #### `Tabs`
 
@@ -370,8 +370,8 @@ Recommendations:
 
 Relevant files:
 
-- [tabs/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/tabs/edit.js#L87)
-- [tabs/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/tabs/edit.js#L515)
+- [tabs/edit.js](src/blocks/tabs/edit.js#L87)
+- [tabs/edit.js](src/blocks/tabs/edit.js#L515)
 
 #### `Tab`
 
@@ -390,7 +390,7 @@ Recommendations:
 
 Relevant files:
 
-- [tab/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/tab/edit.js#L77)
+- [tab/edit.js](src/blocks/tab/edit.js#L77)
 
 #### `Slider`
 
@@ -415,9 +415,9 @@ Recommendations:
 
 Relevant files:
 
-- [slider/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/slider/edit.js#L240)
-- [slider/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/slider/edit.js#L363)
-- [slider/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/slider/edit.js#L1091)
+- [slider/edit.js](src/blocks/slider/edit.js#L240)
+- [slider/edit.js](src/blocks/slider/edit.js#L363)
+- [slider/edit.js](src/blocks/slider/edit.js#L1091)
 
 #### `Slide`
 
@@ -438,8 +438,8 @@ Recommendations:
 
 Relevant files:
 
-- [slide/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/slide/edit.js#L107)
-- [slide/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/slide/edit.js#L186)
+- [slide/edit.js](src/blocks/slide/edit.js#L107)
+- [slide/edit.js](src/blocks/slide/edit.js#L186)
 
 #### `Flip Card`
 
@@ -460,7 +460,7 @@ Recommendations:
 
 Relevant files:
 
-- [flip-card/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/flip-card/edit.js#L67)
+- [flip-card/edit.js](src/blocks/flip-card/edit.js#L67)
 
 #### `Flip Card Front`
 
@@ -471,7 +471,7 @@ Recommendations:
 
 Relevant files:
 
-- [flip-card-front/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/flip-card-front/edit.js#L15)
+- [flip-card-front/edit.js](src/blocks/flip-card-front/edit.js#L15)
 
 #### `Flip Card Back`
 
@@ -482,7 +482,7 @@ Recommendations:
 
 Relevant files:
 
-- [flip-card-back/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/flip-card-back/edit.js#L15)
+- [flip-card-back/edit.js](src/blocks/flip-card-back/edit.js#L15)
 
 #### `Image Accordion`
 
@@ -504,7 +504,7 @@ Recommendations:
 
 Relevant files:
 
-- [image-accordion/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/image-accordion/edit.js#L207)
+- [image-accordion/edit.js](src/blocks/image-accordion/edit.js#L207)
 
 #### `Image Accordion Item`
 
@@ -524,7 +524,7 @@ Recommendations:
 
 Relevant files:
 
-- [image-accordion-item/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/image-accordion-item/edit.js#L66)
+- [image-accordion-item/edit.js](src/blocks/image-accordion-item/edit.js#L66)
 
 #### `Scroll Accordion`
 
@@ -545,8 +545,8 @@ Recommendations:
 
 Relevant files:
 
-- [scroll-accordion/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/scroll-accordion/edit.js#L45)
-- [scroll-accordion/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/scroll-accordion/edit.js#L220)
+- [scroll-accordion/edit.js](src/blocks/scroll-accordion/edit.js#L45)
+- [scroll-accordion/edit.js](src/blocks/scroll-accordion/edit.js#L220)
 
 #### `Scroll Accordion Item`
 
@@ -575,8 +575,8 @@ Recommendations:
 
 Relevant files:
 
-- [scroll-slides/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/scroll-slides/edit.js#L176)
-- [scroll-slides/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/scroll-slides/edit.js#L206)
+- [scroll-slides/edit.js](src/blocks/scroll-slides/edit.js#L176)
+- [scroll-slides/edit.js](src/blocks/scroll-slides/edit.js#L206)
 
 #### `Scroll Slide`
 
@@ -604,7 +604,7 @@ Recommendations:
 
 Relevant files:
 
-- [sticky-sections/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/sticky-sections/edit.js#L47)
+- [sticky-sections/edit.js](src/blocks/sticky-sections/edit.js#L47)
 
 #### `Timeline`
 
@@ -625,7 +625,7 @@ Recommendations:
 
 Relevant files:
 
-- [timeline/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/timeline/edit.js#L112)
+- [timeline/edit.js](src/blocks/timeline/edit.js#L112)
 
 #### `Timeline Item`
 
@@ -646,7 +646,7 @@ Recommendations:
 
 Relevant files:
 
-- [timeline-item/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/timeline-item/edit.js#L203)
+- [timeline-item/edit.js](src/blocks/timeline-item/edit.js#L203)
 
 #### `Scroll Marquee`
 
@@ -668,8 +668,8 @@ Recommendations:
 
 Relevant files:
 
-- [scroll-marquee/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/scroll-marquee/edit.js#L37)
-- [scroll-marquee/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/scroll-marquee/edit.js#L201)
+- [scroll-marquee/edit.js](src/blocks/scroll-marquee/edit.js#L37)
+- [scroll-marquee/edit.js](src/blocks/scroll-marquee/edit.js#L201)
 
 ### Content / Presentation Blocks
 
@@ -694,8 +694,8 @@ Recommendations:
 
 Relevant files:
 
-- [card/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/card/edit.js#L72)
-- [card/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/card/edit.js#L223)
+- [card/edit.js](src/blocks/card/edit.js#L72)
+- [card/edit.js](src/blocks/card/edit.js#L223)
 
 #### `Advanced Heading`
 
@@ -716,7 +716,7 @@ Recommendations:
 
 Relevant files:
 
-- [advanced-heading/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/advanced-heading/edit.js#L62)
+- [advanced-heading/edit.js](src/blocks/advanced-heading/edit.js#L62)
 
 #### `Heading Segment`
 
@@ -743,7 +743,7 @@ Recommendations:
 
 Relevant files:
 
-- [icon/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/icon/edit.js#L145)
+- [icon/edit.js](src/blocks/icon/edit.js#L145)
 
 #### `Icon Button`
 
@@ -762,7 +762,7 @@ Recommendations:
 
 Relevant files:
 
-- [icon-button/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/icon-button/edit.js#L216)
+- [icon-button/edit.js](src/blocks/icon-button/edit.js#L216)
 
 #### `Icon List`
 
@@ -781,7 +781,7 @@ Recommendations:
 
 Relevant files:
 
-- [icon-list/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/icon-list/edit.js#L100)
+- [icon-list/edit.js](src/blocks/icon-list/edit.js#L100)
 
 #### `Icon List Item`
 
@@ -806,7 +806,7 @@ Recommendations:
 
 Relevant files:
 
-- [pill/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/pill/edit.js#L55)
+- [pill/edit.js](src/blocks/pill/edit.js#L55)
 
 #### `Divider`
 
@@ -824,7 +824,7 @@ Recommendations:
 
 Relevant files:
 
-- [divider/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/divider/edit.js#L47)
+- [divider/edit.js](src/blocks/divider/edit.js#L47)
 
 #### `Counter Group`
 
@@ -844,7 +844,7 @@ Recommendations:
 
 Relevant files:
 
-- [counter-group/index.js](/Users/jnealey/github-local/designsetgo/src/blocks/counter-group/index.js#L153)
+- [counter-group/index.js](src/blocks/counter-group/index.js#L153)
 
 #### `Counter`
 
@@ -863,7 +863,7 @@ Recommendations:
 
 Relevant files:
 
-- [counter/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/counter/edit.js#L162)
+- [counter/edit.js](src/blocks/counter/edit.js#L162)
 
 #### `Progress Bar`
 
@@ -884,7 +884,7 @@ Recommendations:
 
 Relevant files:
 
-- [progress-bar/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/progress-bar/edit.js#L162)
+- [progress-bar/edit.js](src/blocks/progress-bar/edit.js#L162)
 
 #### `Countdown Timer`
 
@@ -906,8 +906,8 @@ Recommendations:
 
 Relevant files:
 
-- [countdown-timer/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/countdown-timer/edit.js#L79)
-- [countdown-timer/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/countdown-timer/edit.js#L429)
+- [countdown-timer/edit.js](src/blocks/countdown-timer/edit.js#L79)
+- [countdown-timer/edit.js](src/blocks/countdown-timer/edit.js#L429)
 
 #### `Comparison Table`
 
@@ -929,8 +929,8 @@ Recommendations:
 
 Relevant files:
 
-- [comparison-table/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/comparison-table/edit.js#L431)
-- [comparison-table/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/comparison-table/edit.js#L782)
+- [comparison-table/edit.js](src/blocks/comparison-table/edit.js#L431)
+- [comparison-table/edit.js](src/blocks/comparison-table/edit.js#L782)
 
 ### Form Blocks
 
@@ -955,8 +955,8 @@ Recommendations:
 
 Relevant files:
 
-- [form-builder/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/form-builder/edit.js#L148)
-- [form-builder/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/form-builder/edit.js#L714)
+- [form-builder/edit.js](src/blocks/form-builder/edit.js#L148)
+- [form-builder/edit.js](src/blocks/form-builder/edit.js#L714)
 
 #### `Form Text Field`
 
@@ -1007,8 +1007,8 @@ Recommendations:
 
 Relevant files:
 
-- [form-phone-field/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/form-phone-field/edit.js#L82)
-- [form-phone-field/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/form-phone-field/edit.js#L192)
+- [form-phone-field/edit.js](src/blocks/form-phone-field/edit.js#L82)
+- [form-phone-field/edit.js](src/blocks/form-phone-field/edit.js#L192)
 
 #### `Form Date Field`
 
@@ -1064,8 +1064,8 @@ Recommendations:
 
 Relevant files:
 
-- [modal/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/modal/edit.js#L124)
-- [modal/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/modal/edit.js#L149)
+- [modal/edit.js](src/blocks/modal/edit.js#L124)
+- [modal/edit.js](src/blocks/modal/edit.js#L149)
 
 #### `Modal Trigger`
 
@@ -1085,8 +1085,8 @@ Recommendations:
 
 Relevant files:
 
-- [modal-trigger/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/modal-trigger/edit.js#L64)
-- [modal-trigger/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/modal-trigger/edit.js#L152)
+- [modal-trigger/edit.js](src/blocks/modal-trigger/edit.js#L64)
+- [modal-trigger/edit.js](src/blocks/modal-trigger/edit.js#L152)
 
 #### `Table of Contents`
 
@@ -1107,7 +1107,7 @@ Recommendations:
 
 Relevant files:
 
-- [table-of-contents/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/table-of-contents/edit.js#L52)
+- [table-of-contents/edit.js](src/blocks/table-of-contents/edit.js#L52)
 
 #### `Breadcrumbs`
 
@@ -1126,7 +1126,7 @@ Recommendations:
 
 Relevant files:
 
-- [breadcrumbs/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/breadcrumbs/edit.js#L201)
+- [breadcrumbs/edit.js](src/blocks/breadcrumbs/edit.js#L201)
 
 #### `Map`
 
@@ -1146,7 +1146,7 @@ Recommendations:
 
 Relevant files:
 
-- [map/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/map/edit.js#L97)
+- [map/edit.js](src/blocks/map/edit.js#L97)
 
 #### `Product Categories Grid`
 
@@ -1167,7 +1167,7 @@ Recommendations:
 
 Relevant files:
 
-- [product-categories-grid/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/product-categories-grid/edit.js#L105)
+- [product-categories-grid/edit.js](src/blocks/product-categories-grid/edit.js#L105)
 
 #### `Product Showcase Hero`
 
@@ -1187,8 +1187,8 @@ Recommendations:
 
 Relevant files:
 
-- [product-showcase-hero/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/product-showcase-hero/edit.js#L128)
-- [product-showcase-hero/edit.js](/Users/jnealey/github-local/designsetgo/src/blocks/product-showcase-hero/edit.js#L209)
+- [product-showcase-hero/edit.js](src/blocks/product-showcase-hero/edit.js#L128)
+- [product-showcase-hero/edit.js](src/blocks/product-showcase-hero/edit.js#L209)
 
 ## Suggested Roadmap
 

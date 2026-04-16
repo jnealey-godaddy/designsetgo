@@ -344,13 +344,23 @@
 	 */
 
 	// Gutenberg positions the block toolbar directly above the selected block.
-	// Reserve space above the nav (for the Tabs block's own toolbar) and
-	// below the nav (for a selected child Tab's toolbar). Without this, the
-	// toolbar overlaps the tab titles or the panel boundary.
-	/* stylelint-disable-next-line no-duplicate-selectors */
-	.dsgo-tabs__nav {
+	// Reserve space above the nav row (for the Tabs block's own toolbar) and
+	// below the nav row (for a selected child Tab's toolbar). Without this,
+	// the toolbar overlaps the tab titles or the panel boundary.
+	.dsgo-tabs__nav-row {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 8px;
 		margin-top: 56px;
 		margin-bottom: 56px;
+	}
+
+	// The nav strip inside the row keeps its own layout but drops the
+	// outer margin (the row handles spacing now).
+	/* stylelint-disable-next-line no-duplicate-selectors */
+	.dsgo-tabs__nav-row .dsgo-tabs__nav {
+		margin-bottom: 0;
 	}
 
 	.dsgo-tabs__tab--editor {
@@ -362,7 +372,9 @@
 			padding: 2px 4px;
 			font: inherit;
 			color: inherit;
-			min-width: 4ch;
+			// Minimum size fallback for browsers without field-sizing support
+			// (Firefox/Safari pre-17.4). Keeps the input readable when empty.
+			min-width: max(6ch, 6rem);
 			width: auto;
 			field-sizing: content;
 
@@ -392,6 +404,6 @@
 
 	.dsgo-tabs__add-tab {
 		align-self: center;
-		margin-left: 4px;
+		flex-shrink: 0;
 	}
 }
