@@ -11,10 +11,11 @@
 	overflow: hidden;
 	min-height: 200px;
 
-	// Background image handling (WordPress adds this automatically)
-	background-size: cover;
+	// Background image must always cover the item regardless of what the Styles
+	// panel sets inline — allowing `auto`/`contain` breaks the accordion layout.
+	background-size: cover !important;
 	background-position: center;
-	background-repeat: no-repeat;
+	background-repeat: no-repeat !important;
 
 	// Overlay (pseudo-element) - same as frontend
 	&--has-overlay::before {
@@ -54,24 +55,6 @@
 		a {
 			text-decoration: underline;
 		}
-	}
-
-	// Editor-specific: Show placeholder when no background image
-	&:not([style*="background-image"])::after {
-		content: 'Add background image in Styles panel →';
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		background: rgba(0, 0, 0, 0.8);
-		color: #fff;
-		padding: 12px 20px;
-		border-radius: 8px;
-		font-size: 14px;
-		text-align: center;
-		z-index: 3;
-		pointer-events: none;
-		white-space: nowrap;
 	}
 
 	// Border for better visibility in editor

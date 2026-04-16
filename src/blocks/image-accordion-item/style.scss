@@ -14,10 +14,11 @@
 	// Smooth transition on flex property
 	transition: flex var(--transition-duration, 0.5s) cubic-bezier(0.4, 0, 0.2, 1);
 
-	// Background image handling (WordPress adds this automatically)
-	background-size: cover;
+	// Background image must always cover the item regardless of what the Styles
+	// panel sets inline — allowing `auto`/`contain` breaks the accordion layout.
+	background-size: cover !important;
 	background-position: center;
-	background-repeat: no-repeat;
+	background-repeat: no-repeat !important;
 
 	// Overlay (pseudo-element)
 	&--has-overlay::before {

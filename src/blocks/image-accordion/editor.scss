@@ -4,9 +4,11 @@
  * Editor-specific styles only - main styles in style.scss
  */
 
-// Editor: Enable hover animations
+// Editor layout — expansion is driven by block selection (see edit.js), not
+// hover. Hovering previously conflicted with inline-toolbar interactions
+// because moving to the toolbar collapsed the item.
 .editor-styles-wrapper .dsgo-image-accordion {
-	// Items container needs to be flex for hover to work
+
 	.dsgo-image-accordion__items {
 		display: flex;
 		flex-direction: row;
@@ -15,39 +17,14 @@
 		height: 500px; // Fixed height for editor preview
 	}
 
-	// Each item
 	.dsgo-image-accordion-item {
-		position: relative;
+		// Higher-specificity baseline so the is-expanded override below beats
+		// the `flex: 1` set on the item in its own editor.scss. All other
+		// base properties live on the item itself.
 		flex: 1;
-		overflow: hidden;
-		transition: flex var(--transition-duration, 0.5s) cubic-bezier(0.4, 0, 0.2, 1);
 
-		// Hover: expand this item, keep siblings normal size
-		&:hover {
+		&.is-expanded {
 			flex: var(--expanded-ratio, 3);
-
-			// Reduce overlay on hover
-			&.dsgo-image-accordion-item--has-overlay::before {
-				opacity: var(--dsgo-overlay-opacity-expanded, 0.2);
-			}
-
-			// Increase content opacity on hover
-			.dsgo-image-accordion-item__content {
-				opacity: 1;
-			}
-
-			// Siblings stay normal size
-			~ .dsgo-image-accordion-item {
-				flex: 1;
-
-				&.dsgo-image-accordion-item--has-overlay::before {
-					opacity: calc(var(--dsgo-overlay-opacity, 0.4) + 0.2);
-				}
-
-				.dsgo-image-accordion-item__content {
-					opacity: 0.7;
-				}
-			}
 		}
 	}
 }

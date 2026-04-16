@@ -3,9 +3,12 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 	InspectorControls,
+	BlockControls,
+	MediaReplaceFlow,
 } from '@wordpress/block-editor';
 import { useEffect } from '@wordpress/element';
-import { PanelBody, SelectControl } from '@wordpress/components';
+import { useSelect } from '@wordpress/data';
+import { PanelBody, SelectControl, ToolbarGroup } from '@wordpress/components';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 
@@ -13,8 +16,56 @@ export default function ImageAccordionItemEdit({
 	attributes,
 	setAttributes,
 	context,
+	clientId,
+	isSelected,
 }) {
-	const { uniqueId, verticalAlignment, horizontalAlignment } = attributes;
+	const { uniqueId, verticalAlignment, horizontalAlignment, style } =
+		attributes;
+
+	// Expand when this item (or any of its inner blocks) is selected so the
+	// inline toolbar and content editing stay stable — hover-based expansion
+	// collapsed the item when the cursor moved to the toolbar.
+	const hasChildSelected = useSelect(
+		(select) =>
+			select('core/block-editor').hasSelectedInnerBlock(clientId, true),
+		[clientId]
+	);
+	const isExpanded = isSelected || hasChildSelected;
+
+	const backgroundImage = style?.background?.backgroundImage;
+	const mediaUrl = backgroundImage?.url || '';
+	const mediaId = backgroundImage?.id;
+
+	const onSelectMedia = (media) => {
+		if (!media?.url) {
+			return;
+		}
+		setAttributes({
+			style: {
+				...(style || {}),
+				background: {
+					...(style?.background || {}),
+					backgroundImage: {
+						url: media.url,
+						id: media.id,
+						source: 'file',
+					},
+				},
+			},
+		});
+	};
+
+	const onRemoveMedia = () => {
+		setAttributes({
+			style: {
+				...(style || {}),
+				background: {
+					...(style?.background || {}),
+					backgroundImage: undefined,
+				},
+			},
+		});
+	};
 
 	// Get context from parent accordion
 	const enableOverlay =
@@ -40,6 +91,7 @@ export default function ImageAccordionItemEdit({
 	// Declaratively calculate classes
 	const itemClasses = classnames('dsgo-image-accordion-item', {
 		'dsgo-image-accordion-item--has-overlay': enableOverlay,
+		'is-expanded': isExpanded,
 	});
 
 	// Apply overlay and alignment as inline styles
@@ -89,6 +141,24 @@ export default function ImageAccordionItemEdit({
 
 	return (
 		<>
+			<BlockControls group="other">
+				<ToolbarGroup>
+					<MediaReplaceFlow
+						mediaId={mediaId}
+						mediaURL={mediaUrl}
+						allowedTypes={['image']}
+						accept="image/*"
+						onSelect={onSelectMedia}
+						onReset={mediaUrl ? onRemoveMedia : undefined}
+						name={
+							mediaUrl
+								? __('Replace', 'designsetgo')
+								: __('Add image', 'designsetgo')
+						}
+					/>
+				</ToolbarGroup>
+			</BlockControls>
+
 			<InspectorControls>
 				<PanelBody
 					title={__('Content Alignment', 'designsetgo')}
