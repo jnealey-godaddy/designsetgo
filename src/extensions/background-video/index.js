@@ -12,6 +12,7 @@ import { addFilter } from '@wordpress/hooks';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { lazy, Suspense } from '@wordpress/element';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
+import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 
 /**
  * Container blocks that support background video
@@ -163,7 +164,11 @@ function addBackgroundVideoSaveProps(props, blockType, attributes) {
 		'data-video-mobile-hide': attributes.dsgoVideoMobileHide
 			? 'true'
 			: 'false',
-		'data-video-overlay-color': attributes.dsgoVideoOverlayColor || '',
+		// Convert WordPress preset format (`var:preset|color|slug`) and bare
+		// slugs to a real CSS color string so the frontend can validate and
+		// apply the value directly, without parsing preset syntax at runtime.
+		'data-video-overlay-color':
+			convertColorToCSSVar(attributes.dsgoVideoOverlayColor) || '',
 	};
 }
 

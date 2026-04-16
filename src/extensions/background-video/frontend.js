@@ -56,7 +56,7 @@
 		if (/url\s*\(|expression\s*\(|javascript:/i.test(trimmed)) {
 			return false;
 		}
-		return /^(#[0-9a-fA-F]{3,8}|rgba?\([\d\s,.%/]+\)|hsla?\([\d\s,.%/]+\)|var\(--[a-zA-Z0-9_-]+(,\s*[^)]+)?\)|[a-zA-Z]+)$/.test(
+		return /^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{4}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgba?\([\d\s,.%/]+\)|hsla?\([\d\s,.%/]+\)|var\(--[a-zA-Z0-9_-]+(,\s*[^)]+)?\)|[a-zA-Z]+)$/.test(
 			trimmed
 		);
 	}

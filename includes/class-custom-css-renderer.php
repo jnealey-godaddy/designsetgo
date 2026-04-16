@@ -260,12 +260,28 @@ class Custom_CSS_Renderer {
 		// Normalize CSS escape sequences BEFORE any pattern matching. CSS
 		// permits arbitrary unicode escapes and null bytes inside tokens,
 		// e.g. `java\0script:` or `java\000073cript:`, which would bypass
-		// regex strips like `/javascript:/i` if left in place. Stripping
-		// them here means downstream checks see the decoded text.
+		// regex strips like `/javascript:/i` if left in place. Decode them
+		// to the real characters so downstream checks see the actual text
+		// (and legitimate content like `content: "\2192";` is preserved).
 		$css = str_replace( "\0", '', $css );
 		// CSS unicode escape: backslash + 1..6 hex digits, optional trailing
-		// whitespace. Remove them entirely so patterns can't be reconstituted.
-		$css = preg_replace( '/\\\\[0-9a-fA-F]{1,6}\s?/', '', $css );
+		// whitespace. Decode to the referenced codepoint so pattern matching
+		// sees the actual character.
+		$css = preg_replace_callback(
+			'/\\\\([0-9a-fA-F]{1,6})\s?/',
+			static function ( $match ) {
+				$codepoint = hexdec( $match[1] );
+				// Reject null and out-of-range codepoints.
+				if ( 0 === $codepoint || $codepoint > 0x10FFFF ) {
+					return '';
+				}
+				$decoded = function_exists( 'mb_chr' )
+					? mb_chr( $codepoint, 'UTF-8' )
+					: html_entity_decode( '&#' . $codepoint . ';', ENT_QUOTES, 'UTF-8' );
+				return false === $decoded ? '' : $decoded;
+			},
+			$css
+		);
 		// Any remaining backslash escapes of ASCII printable chars.
 		$css = preg_replace( '/\\\\([\x20-\x7E])/', '$1', $css );
 
@@ -273,8 +289,9 @@ class Custom_CSS_Renderer {
 		$css = preg_replace( '/<script\b[^>]*>(.*?)<\/script>/is', '', $css );
 		$css = preg_replace( '/<[^>]+>/i', '', $css );
 
-		// Remove event handlers (onclick, onload, etc.).
-		$css = preg_replace( '/on\w+\s*=\s*["\'].*?["\']/i', '', $css );
+		// Remove event handlers (onclick, onload, etc.). Match both quoted
+		// (`onclick="alert(1)"`) and unquoted (`onclick=alert(1)`) forms.
+		$css = preg_replace( '/on\w+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s;{}]+)/is', '', $css );
 
 		// Remove dangerous protocols.
 		$css = preg_replace( '/javascript:/i', '', $css );
@@ -328,7 +345,7 @@ class Custom_CSS_Renderer {
 		$css = preg_replace( '/javascript:/i', '', $css );
 		$css = preg_replace( '/vbscript:/i', '', $css );
 		$css = preg_replace( '/expression\s*\(/i', '', $css );
-		$css = preg_replace( '/on\w+\s*=\s*["\'].*?["\']/i', '', $css );
+		$css = preg_replace( '/on\w+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s;{}]+)/is', '', $css );
 
 		return $css;
 	}

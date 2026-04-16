@@ -316,11 +316,14 @@ class REST_Controller {
 	public function get_post_markdown( \WP_REST_Request $request ) {
 		// Gate the endpoint before doing any work (rate counter included) so
 		// disabled installations can't be used to confirm the existence of
-		// specific post IDs via timing or rate-limit side channels.
+		// specific post IDs via timing or rate-limit side channels. Use a
+		// plugin-namespaced error code (not WP core's `rest_no_route`) so
+		// middleware that inspects error codes for fallthrough behavior
+		// isn't confused. The 404 status is what clients actually see.
 		$settings = \DesignSetGo\Admin\Settings::get_settings();
 		if ( empty( $settings['llms_txt']['enable'] ) ) {
 			return new \WP_Error(
-				'rest_no_route',
+				'designsetgo_feature_disabled',
 				__( 'No route was found matching the URL and request method.', 'designsetgo' ),
 				array( 'status' => 404 )
 			);
