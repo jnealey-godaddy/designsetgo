@@ -18,13 +18,11 @@
 	}
 
 	.dsgo-image-accordion-item {
-		position: relative;
+		// Higher-specificity baseline so the is-expanded override below beats
+		// the `flex: 1` set on the item in its own editor.scss. All other
+		// base properties live on the item itself.
 		flex: 1;
-		overflow: hidden;
-		transition: flex var(--transition-duration, 0.5s) cubic-bezier(0.4, 0, 0.2, 1);
 
-		// Bump specificity so the is-expanded rule from style.scss wins over
-		// the editor's `flex: 1` baseline above.
 		&.is-expanded {
 			flex: var(--expanded-ratio, 3);
 		}

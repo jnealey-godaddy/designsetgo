@@ -87,9 +87,9 @@
 		},
 		"background": {
 			"backgroundImage": true,
-			"backgroundSize": true,
+			"backgroundSize": false,
 			"backgroundPosition": true,
-			"backgroundRepeat": true,
+			"backgroundRepeat": false,
 			"__experimentalDefaultControls": {
 				"backgroundImage": true
 			}

@@ -55,6 +55,18 @@ export default function ImageAccordionItemEdit({
 		});
 	};
 
+	const onRemoveMedia = () => {
+		setAttributes({
+			style: {
+				...(style || {}),
+				background: {
+					...(style?.background || {}),
+					backgroundImage: undefined,
+				},
+			},
+		});
+	};
+
 	// Get context from parent accordion
 	const enableOverlay =
 		context['designsetgo/imageAccordion/enableOverlay'] !== undefined
@@ -137,6 +149,7 @@ export default function ImageAccordionItemEdit({
 						allowedTypes={['image']}
 						accept="image/*"
 						onSelect={onSelectMedia}
+						onReset={mediaUrl ? onRemoveMedia : undefined}
 						name={
 							mediaUrl
 								? __('Replace', 'designsetgo')
