@@ -275,10 +275,7 @@ class Custom_CSS_Renderer {
 				if ( 0 === $codepoint || $codepoint > 0x10FFFF ) {
 					return '';
 				}
-				$decoded = function_exists( 'mb_chr' )
-					? mb_chr( $codepoint, 'UTF-8' )
-					: html_entity_decode( '&#' . $codepoint . ';', ENT_QUOTES, 'UTF-8' );
-				return false === $decoded ? '' : $decoded;
+				return mb_chr( $codepoint, 'UTF-8' );
 			},
 			$css
 		);
