@@ -343,17 +343,17 @@
 	 * and the "Add tab" button. None of this is emitted to the frontend.
 	 */
 
-	// Gutenberg positions the block toolbar directly above the selected block.
-	// Reserve space above the nav row (for the Tabs block's own toolbar) and
-	// below the nav row (for a selected child Tab's toolbar). Without this,
-	// the toolbar overlaps the tab titles or the panel boundary.
+	// Wrap the tablist and the editor-only "Add tab" button in a flex row so
+	// the add control reads as adjacent to the tabs without sitting inside
+	// role="tablist". No artificial toolbar spacing is needed: tab chip
+	// clicks only switch `activeTab` (see handleTabClick) instead of
+	// selecting the child Tab, so the inline toolbar stays anchored to the
+	// Tabs parent block above the whole block.
 	.dsgo-tabs__nav-row {
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
 		gap: 8px;
-		margin-top: 56px;
-		margin-bottom: 56px;
 	}
 
 	// The nav strip inside the row keeps its own layout but drops the

@@ -85,18 +85,16 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		[clientId]
 	);
 
-	// Get dispatch actions for selecting blocks
-	const { selectBlock, insertBlock, removeBlock, updateBlockAttributes } =
+	const { insertBlock, removeBlock, updateBlockAttributes } =
 		useDispatch(blockEditorStore);
 
-	// Handle tab click - set active tab and select the Tab block to show its settings
+	// Handle tab chip click — only switch which tab is active. We intentionally
+	// do NOT call selectBlock() on the child Tab, so the Gutenberg inline
+	// toolbar stays anchored to the Tabs parent (above the whole block) instead
+	// of hovering between the nav and the panel. Authors who want to edit a
+	// specific Tab's attributes can click into its panel content below.
 	const handleTabClick = (index) => {
 		setAttributes({ activeTab: index });
-
-		// Select the corresponding Tab block so its settings appear in sidebar
-		if (innerBlocks[index]) {
-			selectBlock(innerBlocks[index].clientId);
-		}
 	};
 
 	const handleTitleChange = (tab, value) => {
@@ -112,7 +110,9 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 				tabCount + 1
 			),
 		});
-		insertBlock(newTab, tabCount, clientId, true);
+		// updateSelection: false — keep the Tabs parent selected so the inline
+		// toolbar doesn't jump to the new child Tab and overlap the nav.
+		insertBlock(newTab, tabCount, clientId, false);
 		setAttributes({ activeTab: tabCount });
 	};
 
@@ -121,7 +121,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		// Reset uniqueId so the duplicated tab regenerates its own via the
 		// child block's onMount effect.
 		const clone = cloneBlock(tab, { uniqueId: '' });
-		insertBlock(clone, index + 1, clientId, true);
+		insertBlock(clone, index + 1, clientId, false);
 		setAttributes({ activeTab: index + 1 });
 	};
 
@@ -167,11 +167,6 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
 		if (newIndex !== index) {
 			setAttributes({ activeTab: newIndex });
-
-			// Select the corresponding Tab block so its settings appear in sidebar
-			if (innerBlocks[newIndex]) {
-				selectBlock(innerBlocks[newIndex].clientId);
-			}
 
 			// Focus the new tab
 			setTimeout(() => {
