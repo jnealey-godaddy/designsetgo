@@ -4,7 +4,7 @@
  * @since 1.0.0
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
@@ -27,6 +27,7 @@ import {
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
 import { useEffect } from '@wordpress/element';
+import { useSelect } from '@wordpress/data';
 import classnames from 'classnames';
 import {
 	encodeColorValue,
@@ -34,6 +35,22 @@ import {
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { validateCSSLength } from '../../utils/css-generator';
+import FormBuilderPlaceholder from './components/FormBuilderPlaceholder';
+
+// Blocks that Gutenberg identifies as form fields for the reply-to dropdown.
+const EMAILABLE_FIELD_BLOCKS = new Set([
+	'designsetgo/form-text-field',
+	'designsetgo/form-email-field',
+	'designsetgo/form-textarea-field',
+	'designsetgo/form-number-field',
+	'designsetgo/form-phone-field',
+	'designsetgo/form-url-field',
+	'designsetgo/form-date-field',
+	'designsetgo/form-time-field',
+	'designsetgo/form-select-field',
+	'designsetgo/form-checkbox-field',
+	'designsetgo/form-hidden-field',
+]);
 
 export default function FormBuilderEdit({
 	attributes,
@@ -119,6 +136,35 @@ export default function FormBuilderEdit({
 		}
 	}, [formId, clientId, setAttributes]);
 
+	// Track child count so we can show the template chooser on first insert,
+	// and build the reply-to dropdown options from the actual form fields.
+	const { hasInnerBlocks, replyToFieldOptions } = useSelect(
+		(select) => {
+			const children =
+				select('core/block-editor').getBlocks(clientId) || [];
+			const fields = children
+				.filter((child) => EMAILABLE_FIELD_BLOCKS.has(child.name))
+				.map((child) => ({
+					name: child.attributes?.fieldName || '',
+					label: child.attributes?.label || '',
+				}))
+				.filter((field) => !!field.name);
+			return {
+				hasInnerBlocks: children.length > 0,
+				replyToFieldOptions: fields,
+			};
+		},
+		[clientId]
+	);
+
+	// Keep hasFields in sync with the actual child field count so save.js can
+	// suppress the submit button/form wrapper when no template is picked.
+	useEffect(() => {
+		if (attributes.hasFields !== hasInnerBlocks) {
+			setAttributes({ hasFields: hasInnerBlocks });
+		}
+	}, [hasInnerBlocks, attributes.hasFields, setAttributes]);
+
 	// Calculate classes
 	const formClasses = classnames('dsgo-form-builder', {
 		[`dsgo-form-builder--align-${submitButtonAlignment}`]:
@@ -145,8 +191,10 @@ export default function FormBuilderEdit({
 		'data-form-id': formId,
 	});
 
-	// Inner blocks for form fields
-	// Extract children so we can add button inside fields container
+	// Inner blocks for form fields. The first-insert template chooser seeds
+	// innerBlocks itself, so we omit a default template here — otherwise the
+	// placeholder would never show.
+	// Extract children so we can add button inside fields container.
 	const { children, ...innerBlocksPropsWithoutChildren } =
 		useInnerBlocksProps(
 			{
@@ -166,34 +214,21 @@ export default function FormBuilderEdit({
 					'designsetgo/form-checkbox-field',
 					'designsetgo/form-hidden-field',
 				],
-				template: [
-					[
-						'designsetgo/form-text-field',
-						{
-							label: __('Name', 'designsetgo'),
-							fieldName: 'name',
-							required: true,
-						},
-					],
-					[
-						'designsetgo/form-email-field',
-						{
-							label: __('Email', 'designsetgo'),
-							fieldName: 'email',
-							required: true,
-						},
-					],
-					[
-						'designsetgo/form-textarea-field',
-						{
-							label: __('Message', 'designsetgo'),
-							fieldName: 'message',
-						},
-					],
-				],
 				orientation: 'vertical',
 			}
 		);
+
+	// Show the template chooser when the form is empty.
+	if (!hasInnerBlocks) {
+		return (
+			<div {...blockProps}>
+				<FormBuilderPlaceholder
+					clientId={clientId}
+					setAttributes={setAttributes}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<>
@@ -711,15 +746,50 @@ export default function FormBuilderEdit({
 								__nextHasNoMarginBottom
 							/>
 
-							<TextControl
-								label={__('Reply-To Field Name', 'designsetgo')}
-								value={emailReplyTo}
+							<SelectControl
+								label={__('Reply-To Field', 'designsetgo')}
+								value={emailReplyTo || ''}
+								options={[
+									{
+										label: __(
+											'— None (use From address) —',
+											'designsetgo'
+										),
+										value: '',
+									},
+									...replyToFieldOptions.map((field) => ({
+										label: field.label
+											? `${field.label} (${field.name})`
+											: field.name,
+										value: field.name,
+									})),
+									// If the saved value references a field that no
+									// longer exists, keep it as a selectable option
+									// so nothing silently changes behavior.
+									...(emailReplyTo &&
+									!replyToFieldOptions.some(
+										(field) => field.name === emailReplyTo
+									)
+										? [
+												{
+													label: sprintf(
+														/* translators: %s: missing field name */
+														__(
+															'%s (field not found)',
+															'designsetgo'
+														),
+														emailReplyTo
+													),
+													value: emailReplyTo,
+												},
+											]
+										: []),
+								]}
 								onChange={(value) =>
 									setAttributes({ emailReplyTo: value })
 								}
-								placeholder="email"
 								help={__(
-									'Use a form field value for reply-to (e.g., "email" or "user_email")',
+									'Submission from this form field is used as the reply-to address on notification emails.',
 									'designsetgo'
 								)}
 								__next40pxDefaultSize

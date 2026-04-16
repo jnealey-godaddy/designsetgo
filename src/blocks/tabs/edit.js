@@ -20,7 +20,11 @@ import {
 	SelectControl,
 	ToggleControl,
 	RangeControl,
+	Button,
+	Tooltip,
 } from '@wordpress/components';
+import { createBlock } from '@wordpress/blocks';
+import { copy, trash, plus } from '@wordpress/icons';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
 import { getIcon } from '../icon/utils/svg-icons';
@@ -82,7 +86,8 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	);
 
 	// Get dispatch actions for selecting blocks
-	const { selectBlock } = useDispatch(blockEditorStore);
+	const { selectBlock, insertBlock, removeBlock, updateBlockAttributes } =
+		useDispatch(blockEditorStore);
 
 	// Handle tab click - set active tab and select the Tab block to show its settings
 	const handleTabClick = (index) => {
@@ -91,6 +96,40 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		// Select the corresponding Tab block so its settings appear in sidebar
 		if (innerBlocks[index]) {
 			selectBlock(innerBlocks[index].clientId);
+		}
+	};
+
+	const handleTitleChange = (tab, value) => {
+		updateBlockAttributes(tab.clientId, { title: value });
+	};
+
+	const handleAddTab = () => {
+		const tabCount = innerBlocks.length;
+		const newTab = createBlock('designsetgo/tab', {
+			title: `Tab ${tabCount + 1}`,
+		});
+		insertBlock(newTab, tabCount, clientId, true);
+		setAttributes({ activeTab: tabCount });
+	};
+
+	const handleDuplicateTab = (tab, index) => {
+		const clone = createBlock(
+			tab.name,
+			{ ...tab.attributes, uniqueId: '' },
+			tab.innerBlocks.map((inner) =>
+				createBlock(inner.name, inner.attributes, inner.innerBlocks)
+			)
+		);
+		insertBlock(clone, index + 1, clientId, true);
+		setAttributes({ activeTab: index + 1 });
+	};
+
+	const handleRemoveTab = (tab, index) => {
+		removeBlock(tab.clientId, false);
+		// If we removed the active tab (or an earlier one), keep a valid index.
+		if (index <= activeTab) {
+			const next = Math.max(0, activeTab - 1);
+			setAttributes({ activeTab: next });
 		}
 	};
 
@@ -529,9 +568,11 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 						const isActive = index === activeTab;
 
 						return (
-							<button
+							<div
 								key={block.clientId}
-								className={`dsgo-tabs__tab ${isActive ? 'is-active' : ''} ${
+								className={`dsgo-tabs__tab dsgo-tabs__tab--editor ${
+									isActive ? 'is-active' : ''
+								} ${
 									icon
 										? `has-icon has-icon-${iconPosition}`
 										: ''
@@ -542,7 +583,6 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 								aria-controls={`panel-${tabId}`}
 								tabIndex={isActive ? 0 : -1}
 								data-tab-index={index}
-								onClick={() => handleTabClick(index)}
 								onKeyDown={(e) => handleKeyDown(e, index)}
 							>
 								{icon && iconPosition === 'left' && (
@@ -557,18 +597,71 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 									</span>
 								)}
 
-								<span className="dsgo-tabs__tab-title">
-									{title || `Tab ${index + 1}`}
-								</span>
+								<input
+									type="text"
+									className="dsgo-tabs__tab-title dsgo-tabs__tab-title--editor"
+									value={title || ''}
+									placeholder={`Tab ${index + 1}`}
+									onFocus={() => handleTabClick(index)}
+									onChange={(e) =>
+										handleTitleChange(block, e.target.value)
+									}
+									aria-label={__('Tab title', 'designsetgo')}
+								/>
 
 								{icon && iconPosition === 'right' && (
 									<span className="dsgo-tabs__tab-icon">
 										{getIcon(icon)}
 									</span>
 								)}
-							</button>
+
+								<span className="dsgo-tabs__tab-actions">
+									<Tooltip
+										text={__(
+											'Duplicate tab',
+											'designsetgo'
+										)}
+									>
+										<Button
+											size="small"
+											icon={copy}
+											label={__(
+												'Duplicate tab',
+												'designsetgo'
+											)}
+											onClick={() =>
+												handleDuplicateTab(block, index)
+											}
+										/>
+									</Tooltip>
+									<Tooltip
+										text={__('Remove tab', 'designsetgo')}
+									>
+										<Button
+											size="small"
+											icon={trash}
+											isDestructive
+											label={__(
+												'Remove tab',
+												'designsetgo'
+											)}
+											onClick={() =>
+												handleRemoveTab(block, index)
+											}
+										/>
+									</Tooltip>
+								</span>
+							</div>
 						);
 					})}
+					<Button
+						size="small"
+						icon={plus}
+						className="dsgo-tabs__add-tab"
+						onClick={handleAddTab}
+					>
+						{__('Add tab', 'designsetgo')}
+					</Button>
 				</div>
 
 				{/* Tab Panels - Use spread props pattern */}

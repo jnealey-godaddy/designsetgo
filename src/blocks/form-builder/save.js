@@ -12,6 +12,7 @@ import { validateCSSLength } from '../../utils/css-generator';
 export default function FormBuilderSave({ attributes }) {
 	const {
 		formId,
+		hasFields,
 		submitButtonText,
 		submitButtonAlignment,
 		submitButtonPosition,
@@ -37,6 +38,12 @@ export default function FormBuilderSave({ attributes }) {
 		enableTurnstile,
 		redirectUrl,
 	} = attributes;
+
+	// If the author never picked a template (so the form has no fields),
+	// render nothing instead of a lonely submit button.
+	if (!hasFields) {
+		return null;
+	}
 
 	// Same classes as edit.js - MUST MATCH
 	const formClasses = classnames('dsgo-form-builder', {

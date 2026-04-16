@@ -68,7 +68,6 @@ export default function AdvancedHeadingEdit({ attributes, setAttributes }) {
 			allowedBlocks: ALLOWED_BLOCKS,
 			template: TEMPLATE,
 			orientation: 'horizontal',
-			renderAppender: false,
 		}
 	);
 

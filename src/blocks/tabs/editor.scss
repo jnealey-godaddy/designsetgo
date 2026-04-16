@@ -337,4 +337,61 @@
 			}
 		}
 	}
+
+	/**
+	 * Editor-only inline tab affordances: inline-rename input, hover actions,
+	 * and the "Add tab" button. None of this is emitted to the frontend.
+	 */
+
+	// Gutenberg positions the block toolbar directly above the selected block.
+	// Reserve space above the nav (for the Tabs block's own toolbar) and
+	// below the nav (for a selected child Tab's toolbar). Without this, the
+	// toolbar overlaps the tab titles or the panel boundary.
+	/* stylelint-disable-next-line no-duplicate-selectors */
+	.dsgo-tabs__nav {
+		margin-top: 56px;
+		margin-bottom: 56px;
+	}
+
+	.dsgo-tabs__tab--editor {
+
+		.dsgo-tabs__tab-title--editor {
+			background: transparent;
+			border: 1px dashed transparent;
+			border-radius: 3px;
+			padding: 2px 4px;
+			font: inherit;
+			color: inherit;
+			min-width: 4ch;
+			width: auto;
+			field-sizing: content;
+
+			&:hover,
+			&:focus {
+				border-color: var(--wp-admin-theme-color, #2271b1);
+				background: rgba(255, 255, 255, 0.8);
+			}
+
+			&:focus {
+				outline: none;
+			}
+		}
+
+		.dsgo-tabs__tab-actions {
+			display: none;
+			align-items: center;
+			gap: 2px;
+			margin-left: 4px;
+		}
+
+		&:hover .dsgo-tabs__tab-actions,
+		&:focus-within .dsgo-tabs__tab-actions {
+			display: inline-flex;
+		}
+	}
+
+	.dsgo-tabs__add-tab {
+		align-self: center;
+		margin-left: 4px;
+	}
 }

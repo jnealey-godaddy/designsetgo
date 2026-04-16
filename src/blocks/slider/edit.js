@@ -16,10 +16,14 @@ import {
 	RangeControl,
 	TextControl,
 	Notice,
+	Button,
+	Tooltip,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
-import { useSelect } from '@wordpress/data';
+import { useSelect, useDispatch } from '@wordpress/data';
+import { createBlock } from '@wordpress/blocks';
+import { copy, trash, plus } from '@wordpress/icons';
 import classnames from 'classnames';
 import {
 	encodeColorValue,
@@ -76,11 +80,75 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 
 	const blockRef = useRef(null);
 
-	// Get actual slide count for dynamic dot navigation
-	const slideCount = useSelect(
-		(select) => select('core/block-editor').getBlockCount(clientId),
+	// Slide list powers both the dot navigation and the editor-only navigator.
+	const { slides, selectedSlideId } = useSelect(
+		(select) => {
+			const editor = select('core/block-editor');
+			const children = editor.getBlocks(clientId) || [];
+			const selectedBlock = editor.getSelectedBlockClientId();
+			let selectedSlide = null;
+			if (selectedBlock) {
+				if (
+					children.some((child) => child.clientId === selectedBlock)
+				) {
+					selectedSlide = selectedBlock;
+				} else {
+					const parents = editor.getBlockParents(selectedBlock);
+					const match = parents.find((parent) =>
+						children.some((child) => child.clientId === parent)
+					);
+					if (match) {
+						selectedSlide = match;
+					}
+				}
+			}
+			return { slides: children, selectedSlideId: selectedSlide };
+		},
 		[clientId]
 	);
+	const slideCount = slides.length;
+
+	const { insertBlock, removeBlock, selectBlock } =
+		useDispatch('core/block-editor');
+
+	// Extract a readable label for a slide: first heading text if present, else "Slide N".
+	const getSlideLabel = (slide, index) => {
+		const heading = slide.innerBlocks?.find(
+			(inner) => inner.name === 'core/heading'
+		);
+		const raw = heading?.attributes?.content ?? '';
+		const text = String(raw)
+			.replace(/<[^>]+>/g, '')
+			.trim();
+		if (text) {
+			return text.slice(0, 30);
+		}
+		return sprintf(
+			/* translators: %d: slide number */
+			__('Slide %d', 'designsetgo'),
+			index + 1
+		);
+	};
+
+	const handleAddSlide = () => {
+		const newSlide = createBlock('designsetgo/slide');
+		insertBlock(newSlide, slideCount, clientId, true);
+	};
+
+	const handleDuplicateSlide = (slide, index) => {
+		const clone = createBlock(
+			slide.name,
+			{ ...slide.attributes },
+			slide.innerBlocks.map((inner) =>
+				createBlock(inner.name, inner.attributes, inner.innerBlocks)
+			)
+		);
+		insertBlock(clone, index + 1, clientId, true);
+	};
+
+	const handleRemoveSlide = (slide) => {
+		removeBlock(slide.clientId, false);
+	};
 
 	useEffect(() => {
 		if (
@@ -360,7 +428,6 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 				],
 			],
 			orientation: 'horizontal',
-			renderAppender: false, // Hide default appender, we'll add custom UI
 		}
 	);
 
@@ -1092,6 +1159,85 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 				<div className="dsgo-slider__viewport">
 					<div {...innerBlocksProps} />
 				</div>
+
+				{/* Editor-only slide navigator */}
+				{slides.length > 0 && (
+					<div
+						className="dsgo-slider__nav dsgo-slider__nav--editor-only"
+						role="toolbar"
+						aria-label={__('Slides', 'designsetgo')}
+					>
+						{slides.map((slide, index) => (
+							<div
+								key={slide.clientId}
+								className={classnames('dsgo-slider__nav-chip', {
+									'is-active':
+										selectedSlideId === slide.clientId,
+								})}
+							>
+								<button
+									type="button"
+									className="dsgo-slider__nav-chip-label"
+									onClick={() => selectBlock(slide.clientId)}
+								>
+									<span className="dsgo-slider__nav-chip-index">
+										{index + 1}
+									</span>
+									<span className="dsgo-slider__nav-chip-title">
+										{getSlideLabel(slide, index)}
+									</span>
+								</button>
+								<div className="dsgo-slider__nav-chip-actions">
+									<Tooltip
+										text={__(
+											'Duplicate slide',
+											'designsetgo'
+										)}
+									>
+										<Button
+											size="small"
+											icon={copy}
+											label={__(
+												'Duplicate slide',
+												'designsetgo'
+											)}
+											onClick={() =>
+												handleDuplicateSlide(
+													slide,
+													index
+												)
+											}
+										/>
+									</Tooltip>
+									<Tooltip
+										text={__('Remove slide', 'designsetgo')}
+									>
+										<Button
+											size="small"
+											icon={trash}
+											isDestructive
+											label={__(
+												'Remove slide',
+												'designsetgo'
+											)}
+											onClick={() =>
+												handleRemoveSlide(slide)
+											}
+										/>
+									</Tooltip>
+								</div>
+							</div>
+						))}
+						<Button
+							size="small"
+							icon={plus}
+							className="dsgo-slider__nav-add"
+							onClick={handleAddSlide}
+						>
+							{__('Add slide', 'designsetgo')}
+						</Button>
+					</div>
+				)}
 
 				{/* Editor-only navigation - functional scroll controls */}
 				{showArrows && (

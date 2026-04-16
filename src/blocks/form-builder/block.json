@@ -19,6 +19,10 @@
 			"type": "string",
 			"default": ""
 		},
+		"hasFields": {
+			"type": "boolean",
+			"default": true
+		},
 		"submitButtonText": {
 			"type": "string",
 			"default": "Submit"
