@@ -20,14 +20,14 @@ Only `modal` and `form-builder` present a first-insert wizard via `<Placeholder>
 
 ### Direction
 
-- Adopt the modal pattern as the convention. Extract `<ModalPlaceholder>` into a shared `src/components/shared/BlockPlaceholder/` taking `{ icon, label, instructions, variations, onSelect }`.
+- Adopt the modal pattern as the convention. Extract `<ModalPlaceholder>` into a shared `<DsgoBlockPlaceholder>` (`src/components/shared/DsgoBlockPlaceholder/`) taking `{ icon, label, instructions, variations, onSelect }`.
 - Every compound block gets a placeholder offering 2–4 starter layouts (tabs: Horizontal / Vertical / Pill; slider: Hero / Testimonial / Gallery; accordion: FAQ / Content / Icon List).
 - No block renders an empty `<div>` with no affordance. Kill silent-empty states.
 
 ### Scope
 
-- 8 blocks need placeholders added.
-- Depends on Theme 6 `<BlockPlaceholder>` primitive.
+- 7–8 blocks need placeholders added (pending `reveal` investigation in Theme 4).
+- Depends on Theme 6 `<DsgoBlockPlaceholder>` primitive.
 - Effort: ~4 hours each including variation skeletons; ~1 sprint total.
 
 ### Success signal
@@ -49,7 +49,7 @@ The form-field family has 5 near-identical blocks (`form-text-field`, `form-emai
 ### Direction
 
 - Consolidate `flip-card-front` + `flip-card-back` → single `flip-card-face` with `side: 'front' | 'back'` attribute. Child-only block, contained blast radius, tiny migration payload. Deprecations with `isEligible` cover live content.
-- **Forward-looking rule**: add to `CLAUDE.md` and the `add-block` skill — *"If a new block differs from an existing one only by 1–3 attributes, register a variation, not a new block."* Applies to all future work.
+- **Forward-looking rule**: add to `.claude/claude.md` and the `add-block` skill — *"If a new block differs from an existing one only by 1–3 attributes **and shares the same `save()` output structure**, register a variation, not a new block."* The `save()` constraint is the real technical blocker: variations can't carry differing markup, so differing output forces a new block + deprecations. Applies to all future work.
 - Audit in-flight (unshipped) blocks for sibling patterns before they land.
 
 ### Scope
@@ -70,15 +70,16 @@ Panel naming is ad-hoc. Accordion uses `"Accordion Settings" / "Icon Settings" /
 - **3-panel convention**: `Settings` (behavior/content), `Style` (visuals not covered by native `supports`), `Advanced` (auto-provided by WP). Color stays in native `group="color"`. Prefer native `supports` over custom panels whenever possible.
 - Migrate all custom controls to `ToolsPanel` + `ToolsPanelItem`. Users gain universal reset-to-default.
 - Ship a `<DsgoInspectorPanel>` wrapper that enforces naming + ToolsPanel. New blocks can't drift.
-- **Ordering rule**: Settings → Style → (native color/typography/spacing) → Advanced. Documented in `CLAUDE.md`.
+- **Ordering rule**: Settings → Style → (native color/typography/spacing) → Advanced. Documented in `.claude/claude.md`.
 
 ### Rollout — big bang
 
 Pure editor-facing refactor. `save()` output untouched → no deprecations, no content migration risk. Half-migrated state would defeat the consistency goal, so execute in one tight sequence.
 
+0. Stand up screenshot-diff CI for editor sidebars (prerequisite; estimate: ~1 day). This is scoped here rather than Theme 6 because it's Theme 3-specific regression tooling.
 1. Land `<DsgoInspectorPanel>` + convention doc (no block changes).
-2. One PR per block family (interactive / form / layout / scroll / content / data) — 5 PRs, all merged within a sprint.
-3. Screenshot-diff CI check for editor sidebar regressions.
+2. One PR per block family (interactive / form / layout / scroll / content / data) — 6 PRs, all merged within a sprint.
+3. Screenshot-diff CI gates each family PR.
 4. Changelog flags the reorganization; version bump to signal the breaking editor-UX change.
 
 ### Scope
@@ -160,10 +161,10 @@ Extract in this order, each as its own small PR:
 2. `useBlockColors(attributes, setAttributes, config)` — wraps the encode/decode/dropdown trio.
 3. `cssVars(attributes, map)` — pure function returning the inline-style object from an attribute→variable map.
 4. `<DsgoInspectorPanel>` — Theme 3 dependency.
-5. `<BlockPlaceholder>` — Theme 1 dependency.
+5. `<DsgoBlockPlaceholder>` — Theme 1 dependency.
 6. `<DsgoChildToolbar>` + `useTablistKeyboard` — Theme 5 dependencies.
 
-Contribution rule added to `CLAUDE.md`: *"Before adding a pattern to a block, check `src/hooks/` and `src/components/shared/`. If it's the second time you're writing a pattern, extract it."* Back-referenced from the `add-block` skill so new blocks are born using shared primitives.
+Contribution rule added to [`.claude/claude.md`](../../.claude/claude.md): *"Before adding a pattern to a block, check `src/hooks/` and `src/components/shared/`. If it's the second time you're writing a pattern, extract it."* Back-referenced from the `add-block` skill so new blocks are born using shared primitives.
 
 ### Scope
 
