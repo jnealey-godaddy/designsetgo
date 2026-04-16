@@ -1,4 +1,4 @@
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
@@ -16,6 +16,7 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { useSelect } from '@wordpress/data';
 import classnames from 'classnames';
 import {
 	encodeColorValue,
@@ -43,6 +44,51 @@ export default function ImageAccordionEdit({
 
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
+
+	// Build options for the default-expanded picker from the actual child items.
+	// Uses the first core/heading content when present so authors recognize each item.
+	const itemOptions = useSelect(
+		(select) => {
+			const children =
+				select('core/block-editor').getBlocks(clientId) || [];
+			const options = [
+				{
+					label: __('None (no item expanded)', 'designsetgo'),
+					value: '0',
+				},
+			];
+			children.forEach((child, index) => {
+				const heading = child.innerBlocks?.find(
+					(inner) => inner.name === 'core/heading'
+				);
+				const raw = heading?.attributes?.content ?? '';
+				// DOMParser handles malformed/unterminated tags safely
+				// (unlike a naive regex).
+				const parsed = new window.DOMParser().parseFromString(
+					String(raw),
+					'text/html'
+				);
+				const text = (parsed.body.textContent || '')
+					.trim()
+					.slice(0, 40);
+				const label = text
+					? sprintf(
+							/* translators: %1$d: item position, %2$s: item title */
+							__('Item %1$d: %2$s', 'designsetgo'),
+							index + 1,
+							text
+						)
+					: sprintf(
+							/* translators: %d: item position */
+							__('Item %d', 'designsetgo'),
+							index + 1
+						);
+				options.push({ label, value: String(index + 1) });
+			});
+			return options;
+		},
+		[clientId]
+	);
 
 	// Declaratively calculate classes based on attributes
 	const accordionClasses = classnames('dsgo-image-accordion', {
@@ -204,16 +250,17 @@ export default function ImageAccordionEdit({
 						__nextHasNoMarginBottom
 					/>
 
-					<RangeControl
+					<SelectControl
 						label={__('Default Expanded Item', 'designsetgo')}
-						value={defaultExpanded}
+						value={String(defaultExpanded)}
+						options={itemOptions}
 						onChange={(value) =>
-							setAttributes({ defaultExpanded: value })
+							setAttributes({
+								defaultExpanded: parseInt(value, 10) || 0,
+							})
 						}
-						min={0}
-						max={10}
 						help={__(
-							'Which item is expanded on page load (0 = none, 1 = first, etc.)',
+							'Which item is expanded when the page loads',
 							'designsetgo'
 						)}
 						__next40pxDefaultSize

@@ -92,6 +92,46 @@
 		}
 	}
 
+	// Pin the slide's block-list-appender "+" button to the slide's
+	// bottom-center so it sits below the arrow band instead of overlapping
+	// the arrows (which are centered mid-height, intentionally overlaying
+	// the slide). Frontend/save output is unaffected.
+	/* stylelint-disable selector-class-pattern */
+	.dsgo-slide .block-editor-default-block-appender__content {
+		display: none;
+	}
+
+	// `display: contents` on the slide's own end-of-content appender wrappers
+	// removes them from layout, so they don't take flex-flow space in the
+	// centered content (which was pushing heading/paragraph upward). The
+	// inserter button inside then becomes a direct child of .dsgo-slide__content.
+	// Scoped to the direct-child appender only (not inserters inside nested
+	// Group / Columns / etc. blocks within a slide).
+	.dsgo-slide > .dsgo-slide__content > .block-list-appender,
+	.dsgo-slide > .dsgo-slide__content > .block-list-appender > .block-editor-default-block-appender {
+		display: contents;
+	}
+
+	// Make .dsgo-slide__content static so the nearest positioned ancestor of
+	// the slide-level inserter is .dsgo-slide. Overlay stacking still works
+	// because the overlay is rendered before content in the DOM.
+	.dsgo-slide > .dsgo-slide__content {
+		position: static;
+	}
+
+	// Pin ONLY the slide-level inserter (not inserters inside nested blocks).
+	.dsgo-slide > .dsgo-slide__content > .block-list-appender .block-editor-inserter {
+		position: absolute !important;
+		top: auto !important;
+		right: auto !important;
+		bottom: 16px !important;
+		left: 50% !important;
+		translate: -50% 0 !important;
+		transform: none !important;
+		z-index: 5;
+	}
+	/* stylelint-enable selector-class-pattern */
+
 	// Make appender visible in editor
 	/* stylelint-disable-next-line selector-class-pattern */
 	.block-list-appender {
@@ -121,5 +161,102 @@
 	.block-editor-block-list__block {
 		margin-top: 0;
 		margin-bottom: 0;
+	}
+}
+
+// Editor-only slide navigator
+.dsgo-slider__nav--editor-only {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin-top: 12px;
+	padding: 8px;
+	background: rgba(0, 0, 0, 0.03);
+	border: 1px dashed rgba(0, 0, 0, 0.15);
+	border-radius: 4px;
+
+	.dsgo-slider__nav-chip {
+		display: inline-flex;
+		align-items: center;
+		background: #fff;
+		border: 1px solid rgba(0, 0, 0, 0.15);
+		border-radius: 4px;
+		overflow: hidden;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+		max-width: 220px;
+
+		&:hover {
+			border-color: var(--wp-admin-theme-color, #2271b1);
+
+			.dsgo-slider__nav-chip-actions {
+				display: inline-flex;
+			}
+		}
+
+		&.is-active {
+			border-color: var(--wp-admin-theme-color, #2271b1);
+			box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #2271b1);
+		}
+	}
+
+	.dsgo-slider__nav-chip-label {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 8px;
+		background: none;
+		border: 0;
+		cursor: pointer;
+		font-size: 12px;
+		line-height: 1.2;
+		color: inherit;
+		max-width: 100%;
+
+		&:focus-visible {
+			outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+			outline-offset: -2px;
+		}
+	}
+
+	.dsgo-slider__nav-chip-index {
+		flex-shrink: 0;
+		width: 18px;
+		height: 18px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(0, 0, 0, 0.08);
+		border-radius: 9px;
+		font-size: 10px;
+		font-weight: 600;
+		color: rgba(0, 0, 0, 0.7);
+	}
+
+	.dsgo-slider__nav-chip.is-active .dsgo-slider__nav-chip-index {
+		background: var(--wp-admin-theme-color, #2271b1);
+		color: #fff;
+	}
+
+	.dsgo-slider__nav-chip-title {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.dsgo-slider__nav-chip-actions {
+		display: none;
+		align-items: center;
+		border-left: 1px solid rgba(0, 0, 0, 0.1);
+		padding: 0 2px;
+
+		// Always show on focus inside the chip for keyboard users
+		.dsgo-slider__nav-chip:focus-within & {
+			display: inline-flex;
+		}
+	}
+
+	.dsgo-slider__nav-add {
+		margin-left: auto;
 	}
 }
