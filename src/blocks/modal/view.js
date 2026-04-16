@@ -1004,7 +1004,7 @@
 			prevButton.className = 'dsgo-modal__gallery-prev';
 			prevButton.setAttribute('type', 'button');
 			prevButton.setAttribute('aria-label', 'Previous');
-			prevButton.innerHTML = this.getNavigationIcon('prev');
+			prevButton.appendChild(this.getNavigationIcon('prev'));
 			prevButton.addEventListener('click', (e) => {
 				e.preventDefault();
 				this.navigateToPrevious();
@@ -1015,7 +1015,7 @@
 			nextButton.className = 'dsgo-modal__gallery-next';
 			nextButton.setAttribute('type', 'button');
 			nextButton.setAttribute('aria-label', 'Next');
-			nextButton.innerHTML = this.getNavigationIcon('next');
+			nextButton.appendChild(this.getNavigationIcon('next'));
 			nextButton.addEventListener('click', (e) => {
 				e.preventDefault();
 				this.navigateToNext();
@@ -1035,25 +1035,45 @@
 		}
 
 		/**
-		 * Get navigation icon HTML based on style
+		 * Build the navigation icon as a DOM node based on the configured
+		 * navigationStyle. Returning a Node (rather than an HTML string) lets
+		 * callers use appendChild() instead of innerHTML, which avoids
+		 * introducing an HTML-injection footgun if this method ever starts
+		 * interpolating user content.
 		 * @param direction
 		 */
 		getNavigationIcon(direction) {
 			const isNext = direction === 'next';
 
 			if (this.settings.navigationStyle === 'arrows') {
-				// SVG arrows
-				return `
-					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M${isNext ? '9' : '15'} 6l${isNext ? '6' : '-6'} 6l${isNext ? '-6' : '6'} 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
-				`;
-			} else if (this.settings.navigationStyle === 'text') {
-				// Text labels
-				return isNext ? 'Next' : 'Previous';
+				const SVG_NS = 'http://www.w3.org/2000/svg';
+				const svg = document.createElementNS(SVG_NS, 'svg');
+				svg.setAttribute('width', '24');
+				svg.setAttribute('height', '24');
+				svg.setAttribute('viewBox', '0 0 24 24');
+				svg.setAttribute('fill', 'none');
+
+				const path = document.createElementNS(SVG_NS, 'path');
+				path.setAttribute(
+					'd',
+					`M${isNext ? '9' : '15'} 6l${isNext ? '6' : '-6'} 6l${isNext ? '-6' : '6'} 6`
+				);
+				path.setAttribute('stroke', 'currentColor');
+				path.setAttribute('stroke-width', '2');
+				path.setAttribute('stroke-linecap', 'round');
+				path.setAttribute('stroke-linejoin', 'round');
+				svg.appendChild(path);
+				return svg;
 			}
-			// Chevrons (default)
-			return isNext ? '›' : '‹';
+
+			const span = document.createElement('span');
+			if (this.settings.navigationStyle === 'text') {
+				span.textContent = isNext ? 'Next' : 'Previous';
+			} else {
+				// Chevrons (default)
+				span.textContent = isNext ? '›' : '‹';
+			}
+			return span;
 		}
 
 		/**

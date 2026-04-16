@@ -32,6 +32,36 @@
 	}
 
 	/**
+	 * Validate a CSS color value before assigning it to a style property.
+	 * Accepts the formats the plugin can emit (hex, rgb/rgba, hsl/hsla, CSS
+	 * custom property references, and CSS named colors). Rejects anything
+	 * that could carry a `url()`, `expression()`, or `javascript:` payload.
+	 *
+	 * @param {string} value The candidate color value read from a data attribute.
+	 * @return {boolean} True if the value is safe to pass to `style.backgroundColor`.
+	 */
+	function isSafeCssColor(value) {
+		if (!value || typeof value !== 'string') {
+			return false;
+		}
+		const trimmed = value.trim();
+		if (trimmed.length === 0 || trimmed.length > 64) {
+			return false;
+		}
+		// Disallow anything that could carry a URL or expression, and
+		// control/escape characters that sanitizers often miss.
+		if (/[<>"'`\\\u0000-\u001f]/.test(trimmed)) {
+			return false;
+		}
+		if (/url\s*\(|expression\s*\(|javascript:/i.test(trimmed)) {
+			return false;
+		}
+		return /^(#[0-9a-fA-F]{3}|#[0-9a-fA-F]{4}|#[0-9a-fA-F]{6}|#[0-9a-fA-F]{8}|rgba?\([\d\s,.%/]+\)|hsla?\([\d\s,.%/]+\)|var\(--[a-zA-Z0-9_-]+(,\s*[^)]+)?\)|[a-zA-Z]+)$/.test(
+			trimmed
+		);
+	}
+
+	/**
 	 * Initialize background videos
 	 */
 	function initBackgroundVideos() {
@@ -98,9 +128,11 @@
 			// Append video to wrapper
 			videoWrapper.appendChild(video);
 
-			// Add overlay if color is set
+			// Add overlay if color is set. The value is validated to reject
+			// anything that could smuggle url()/expression()/javascript:
+			// payloads into the style attribute.
 			const overlayColor = block.getAttribute('data-video-overlay-color');
-			if (overlayColor) {
+			if (overlayColor && isSafeCssColor(overlayColor)) {
 				const overlay = document.createElement('div');
 				overlay.className = 'dsgo-video-overlay';
 				overlay.style.position = 'absolute';

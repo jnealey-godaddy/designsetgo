@@ -226,23 +226,33 @@ class DSGSlider {
 
 		const arrowsContainer = document.createElement('div');
 		arrowsContainer.className = 'dsgo-slider__arrows';
-		arrowsContainer.innerHTML = `
-			<button type="button" class="dsgo-slider__arrow dsgo-slider__arrow--prev" aria-label="Previous slide">
-				<span>‹</span>
-			</button>
-			<button type="button" class="dsgo-slider__arrow dsgo-slider__arrow--next" aria-label="Next slide">
-				<span>›</span>
-			</button>
-		`;
+
+		// Build arrows via DOM APIs instead of innerHTML. The strings are
+		// static today, but appendChild keeps the pattern safe if a future
+		// change ever interpolates user content into the label.
+		const prevBtn = document.createElement('button');
+		prevBtn.type = 'button';
+		prevBtn.className = 'dsgo-slider__arrow dsgo-slider__arrow--prev';
+		prevBtn.setAttribute('aria-label', 'Previous slide');
+		const prevSpan = document.createElement('span');
+		prevSpan.textContent = '‹';
+		prevBtn.appendChild(prevSpan);
+
+		const nextBtn = document.createElement('button');
+		nextBtn.type = 'button';
+		nextBtn.className = 'dsgo-slider__arrow dsgo-slider__arrow--next';
+		nextBtn.setAttribute('aria-label', 'Next slide');
+		const nextSpan = document.createElement('span');
+		nextSpan.textContent = '›';
+		nextBtn.appendChild(nextSpan);
+
+		arrowsContainer.appendChild(prevBtn);
+		arrowsContainer.appendChild(nextBtn);
 
 		this.slider.appendChild(arrowsContainer);
 
-		this.prevArrow = arrowsContainer.querySelector(
-			'.dsgo-slider__arrow--prev'
-		);
-		this.nextArrow = arrowsContainer.querySelector(
-			'.dsgo-slider__arrow--next'
-		);
+		this.prevArrow = prevBtn;
+		this.nextArrow = nextBtn;
 
 		this.prevArrow.addEventListener('click', () => this.prev());
 		this.nextArrow.addEventListener('click', () => this.next());
