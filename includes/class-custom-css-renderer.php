@@ -257,6 +257,18 @@ class Custom_CSS_Renderer {
 	private function sanitize_css( $css ) {
 		$original_css = $css;
 
+		// Normalize CSS escape sequences BEFORE any pattern matching. CSS
+		// permits arbitrary unicode escapes and null bytes inside tokens,
+		// e.g. `java\0script:` or `java\000073cript:`, which would bypass
+		// regex strips like `/javascript:/i` if left in place. Stripping
+		// them here means downstream checks see the decoded text.
+		$css = str_replace( "\0", '', $css );
+		// CSS unicode escape: backslash + 1..6 hex digits, optional trailing
+		// whitespace. Remove them entirely so patterns can't be reconstituted.
+		$css = preg_replace( '/\\\\[0-9a-fA-F]{1,6}\s?/', '', $css );
+		// Any remaining backslash escapes of ASCII printable chars.
+		$css = preg_replace( '/\\\\([\x20-\x7E])/', '$1', $css );
+
 		// Remove script tags and all HTML tags.
 		$css = preg_replace( '/<script\b[^>]*>(.*?)<\/script>/is', '', $css );
 		$css = preg_replace( '/<[^>]+>/i', '', $css );
@@ -305,6 +317,18 @@ class Custom_CSS_Renderer {
 		 * @return string Further sanitized or modified CSS.
 		 */
 		$css = apply_filters( 'designsetgo/custom_css_sanitize', $css, $original_css );
+
+		// Final defense pass: a filter callback could reintroduce a dangerous
+		// pattern (accidentally or by a compromised plugin). Re-run the
+		// highest-severity strips on the filtered output so no amount of
+		// filter misuse can smuggle script tags or javascript: protocols
+		// back in.
+		$css = preg_replace( '/<script\b[^>]*>(.*?)<\/script>/is', '', $css );
+		$css = preg_replace( '/<[^>]+>/i', '', $css );
+		$css = preg_replace( '/javascript:/i', '', $css );
+		$css = preg_replace( '/vbscript:/i', '', $css );
+		$css = preg_replace( '/expression\s*\(/i', '', $css );
+		$css = preg_replace( '/on\w+\s*=\s*["\'].*?["\']/i', '', $css );
 
 		return $css;
 	}

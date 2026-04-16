@@ -314,10 +314,22 @@ class REST_Controller {
 	 * @return \WP_REST_Response|\WP_Error Response or error.
 	 */
 	public function get_post_markdown( \WP_REST_Request $request ) {
+		// Gate the endpoint before doing any work (rate counter included) so
+		// disabled installations can't be used to confirm the existence of
+		// specific post IDs via timing or rate-limit side channels.
+		$settings = \DesignSetGo\Admin\Settings::get_settings();
+		if ( empty( $settings['llms_txt']['enable'] ) ) {
+			return new \WP_Error(
+				'rest_no_route',
+				__( 'No route was found matching the URL and request method.', 'designsetgo' ),
+				array( 'status' => 404 )
+			);
+		}
+
 		// Rate limit: 30 requests per minute per IP.
-		$ip        = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) );
-		$rate_key  = 'dsgo_llms_rate_' . md5( $ip );
-		$count     = (int) get_transient( $rate_key );
+		$ip       = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) );
+		$rate_key = 'dsgo_llms_rate_' . md5( $ip );
+		$count    = (int) get_transient( $rate_key );
 		if ( $count > 30 ) {
 			return new \WP_Error(
 				'rate_limited',
@@ -360,15 +372,6 @@ class REST_Controller {
 			return new \WP_Error(
 				'excluded',
 				__( 'This post is excluded from llms.txt.', 'designsetgo' ),
-				array( 'status' => 403 )
-			);
-		}
-
-		$settings = \DesignSetGo\Admin\Settings::get_settings();
-		if ( empty( $settings['llms_txt']['enable'] ) ) {
-			return new \WP_Error(
-				'feature_disabled',
-				__( 'llms.txt feature is not enabled.', 'designsetgo' ),
 				array( 'status' => 403 )
 			);
 		}
