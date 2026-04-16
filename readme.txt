@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, animations, responsive
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.0.50
+Stable tag: 2.0.51
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -178,6 +178,26 @@ Check the [documentation](https://designsetgoblocks.com/docs/), visit the [suppo
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.0.51 - 2026-04-16 =
+**Editor UX Improvements:**
+* Slider: new editor-only slide navigator strip below the track with per-slide duplicate/remove actions and an "Add slide" button
+* Slider: the slide "+" appender is pinned to the bottom-center of each slide so it no longer collides with the editor preview arrows
+* Form Builder: skippable first-insert template chooser with Blank, Contact, Newsletter, Event Registration, and Lead Capture presets
+* Form Builder: "Reply-To Field" is now a structured dropdown populated from the actual form fields (was a raw text input)
+* Image Accordion: "Default Expanded Item" is now a named item picker showing each item's heading text (was a 0–10 numeric slider)
+* Tabs: inline-editable tab titles in the nav strip, per-tab duplicate/remove on hover, and an "Add tab" button
+* Advanced Heading: the segment appender is restored so authors can add more heading segments from the canvas
+
+**Security Hardening:**
+* Validate background-video overlay color against an explicit CSS color grammar before assigning to the DOM — blocks url()/expression()/javascript: injection
+* Replace innerHTML with DOM APIs (createElement/createElementNS) in slider and modal frontend scripts
+* Gate LLMS markdown REST endpoint at feature-disabled check before rate-limiter to prevent post-existence enumeration on disabled installations
+* Normalize CSS unicode escapes and null bytes before the custom CSS sanitizer's regex pipeline; add a final defense pass after the filter hook
+
+**Bug Fixes:**
+* Fix: Tabs frontend no longer shows "Click the + button below to add content to this tab" — the block.json style asset was pointing at the editor CSS bundle
+* Fix: an empty Form Builder (placeholder dismissed without picking a template) no longer renders an orphan submit button on the frontend
 
 = 2.0.50 - 2026-04-14 =
 **Bug Fixes:**
