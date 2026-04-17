@@ -40,6 +40,13 @@ class Settings {
 	/**
 	 * Get default settings
 	 *
+	 * Source of truth for the settings structure. When adding or removing
+	 * a setting key here, keep Settings_Schema::get() and
+	 * get_sanitization_schema() in sync — each of the three descriptions
+	 * covers the same shape and omissions silently hide keys from either
+	 * the Abilities API surface (Settings_Schema) or the sanitization
+	 * pipeline (get_sanitization_schema).
+	 *
 	 * @return array Default settings.
 	 */
 	public static function get_defaults() {
@@ -92,9 +99,9 @@ class Settings {
 				'log_referrers'    => false,
 			),
 			'integrations'       => array(
-				'google_maps_api_key'    => '',
-				'turnstile_site_key'     => '',
-				'turnstile_secret_key'   => '',
+				'google_maps_api_key'  => '',
+				'turnstile_site_key'   => '',
+				'turnstile_secret_key' => '',
 			),
 			'sticky_header'      => array(
 				'enable'                    => true,
@@ -123,9 +130,9 @@ class Settings {
 				'auto_save_interval'     => 60,
 			),
 			'llms_txt'           => array(
-				'enable'           => false,
-				'post_types'       => array( 'page', 'post' ),
-				'description'      => '',
+				'enable'            => false,
+				'post_types'        => array( 'page', 'post' ),
+				'description'       => '',
 				'generate_full_txt' => false,
 			),
 		);
@@ -287,8 +294,8 @@ class Settings {
 			return self::$cached_settings;
 		}
 
-		$saved_settings       = get_option( self::OPTION_NAME, array() );
-		$defaults             = self::get_defaults();
+		$saved_settings        = get_option( self::OPTION_NAME, array() );
+		$defaults              = self::get_defaults();
 		self::$cached_settings = wp_parse_args( $saved_settings, $defaults );
 
 		return self::$cached_settings;
@@ -470,24 +477,41 @@ class Settings {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function update_settings_endpoint( $request ) {
-		$new_settings = $request->get_json_params();
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'settings' => self::update_settings( (array) $request->get_json_params() ),
+			)
+		);
+	}
 
-		// Sanitize only the incoming keys.
-		$sanitized = $this->sanitize_settings( $new_settings );
+	/**
+	 * Apply a partial settings update.
+	 *
+	 * Sanitizes only keys present in $input, merges with existing saved
+	 * settings so unsubmitted keys are preserved, persists, and invalidates
+	 * the cache. Shared between the REST endpoint and the Abilities API
+	 * update-settings ability so sanitization stays centralized.
+	 *
+	 * IMPORTANT: This method does not perform any authorization. Callers
+	 * are responsible for verifying that the current user is allowed to
+	 * mutate plugin settings (e.g. current_user_can( 'manage_options' ))
+	 * before invoking it. The REST endpoint and update-settings ability
+	 * both gate on manage_options before calling through.
+	 *
+	 * @param array $input Raw settings to apply (partial, nested).
+	 * @return array Current settings after the update.
+	 */
+	public static function update_settings( array $input ): array {
+		$sanitized = self::sanitize_settings( $input );
 
-		// Merge with existing saved settings so unsubmitted keys are preserved.
 		$existing = get_option( self::OPTION_NAME, array() );
 		$merged   = array_replace_recursive( $existing, $sanitized );
 
 		update_option( self::OPTION_NAME, $merged );
 		self::invalidate_cache();
 
-		return rest_ensure_response(
-			array(
-				'success'  => true,
-				'settings' => self::get_settings(),
-			)
-		);
+		return self::get_settings();
 	}
 
 	/**
@@ -559,6 +583,10 @@ class Settings {
 	 * Maps each setting key to its sanitizer type. The defaults are sourced
 	 * from get_defaults() so there is a single source of truth.
 	 *
+	 * Keep in sync with get_defaults() and Settings_Schema::get() — a key
+	 * missing from this schema is silently dropped by sanitize_settings()
+	 * even if the client sends it.
+	 *
 	 * Supported sanitizer types:
 	 * - 'bool'       — Cast to boolean.
 	 * - 'absint'     — Unsigned integer via absint().
@@ -599,9 +627,9 @@ class Settings {
 				'log_referrers'    => 'bool',
 			),
 			'integrations'       => array(
-				'google_maps_api_key'    => 'text',
-				'turnstile_site_key'     => 'text',
-				'turnstile_secret_key'   => 'text',
+				'google_maps_api_key'  => 'text',
+				'turnstile_site_key'   => 'text',
+				'turnstile_secret_key' => 'text',
 			),
 			'sticky_header'      => array(
 				'enable'                    => 'bool',
@@ -630,9 +658,9 @@ class Settings {
 				'auto_save_interval'     => 'absint',
 			),
 			'llms_txt'           => array(
-				'enable'           => 'bool',
-				'post_types'       => 'key_list',
-				'description'      => 'textarea',
+				'enable'            => 'bool',
+				'post_types'        => 'key_list',
+				'description'       => 'textarea',
 				'generate_full_txt' => 'bool',
 			),
 		);
@@ -684,7 +712,7 @@ class Settings {
 	 * @param array $settings Settings to sanitize.
 	 * @return array Sanitized settings.
 	 */
-	private function sanitize_settings( $settings ): array {
+	public static function sanitize_settings( array $settings ): array {
 		$sanitized = array();
 		$defaults  = self::get_defaults();
 		$schema    = self::get_sanitization_schema();
@@ -710,8 +738,8 @@ class Settings {
 				continue;
 			}
 
-			$group_defaults    = $defaults[ $key ] ?? array();
-			$sanitized[ $key ] = array();
+			$group_defaults = $defaults[ $key ] ?? array();
+			$group_values   = array();
 
 			foreach ( $field_schema as $field_key => $sanitizer ) {
 				// Only sanitize fields that were actually submitted.
@@ -723,11 +751,20 @@ class Settings {
 
 				$default = $group_defaults[ $field_key ] ?? null;
 
-				$sanitized[ $key ][ $field_key ] = self::sanitize_value(
+				$group_values[ $field_key ] = self::sanitize_value(
 					$settings[ $key ][ $field_key ],
 					$sanitizer,
 					$default
 				);
+			}
+
+			// Skip groups where no fields were actually submitted. Persisting
+			// an empty array for a nested group would suppress the group's
+			// defaults on subsequent get_settings() reads because wp_parse_args
+			// is not recursive — a fresh install would then see e.g.
+			// integrations => [] instead of the default shape.
+			if ( ! empty( $group_values ) ) {
+				$sanitized[ $key ] = $group_values;
 			}
 		}
 
