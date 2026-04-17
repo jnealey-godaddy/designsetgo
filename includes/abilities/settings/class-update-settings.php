@@ -20,6 +20,7 @@ namespace DesignSetGo\Abilities\Settings;
 
 use DesignSetGo\Abilities\Abstract_Ability;
 use DesignSetGo\Admin\Settings;
+use DesignSetGo\Admin\Settings_Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -49,7 +50,7 @@ class Update_Settings extends Abstract_Ability {
 			'label'               => __( 'Update DesignSetGo Settings', 'designsetgo' ),
 			'description'         => __( 'Applies a partial update to DesignSetGo plugin settings. Only the keys provided are changed; all other settings are preserved. Nested groups are merged field-by-field — sending { "forms": { "retention_days": 60 } } updates just that field.', 'designsetgo' ),
 			'category'            => 'settings',
-			'input_schema'        => Settings::get_json_schema(),
+			'input_schema'        => Settings_Schema::get(),
 			'output_schema'       => $this->get_output_schema(),
 			'permission_callback' => array( $this, 'check_permission_callback' ),
 			'show_in_rest'        => true,
@@ -75,7 +76,7 @@ class Update_Settings extends Abstract_Ability {
 					'description' => __( 'Whether the update was applied.', 'designsetgo' ),
 				),
 				'settings' => array_merge(
-					Settings::get_json_schema(),
+					Settings_Schema::get(),
 					array( 'description' => __( 'The full settings object after the update has been applied.', 'designsetgo' ) )
 				),
 			),

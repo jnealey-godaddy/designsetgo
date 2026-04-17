@@ -16,6 +16,7 @@ namespace DesignSetGo\Abilities\Settings;
 
 use DesignSetGo\Abilities\Abstract_Ability;
 use DesignSetGo\Admin\Settings;
+use DesignSetGo\Admin\Settings_Schema;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -46,7 +47,7 @@ class Get_Settings extends Abstract_Ability {
 			'description'         => __( 'Returns the current DesignSetGo plugin settings merged with defaults, including enabled blocks/extensions, performance, forms, animations, sticky header, draft mode, integrations, and llms.txt configuration.', 'designsetgo' ),
 			'category'            => 'settings',
 			'input_schema'        => $this->get_input_schema(),
-			'output_schema'       => Settings::get_json_schema(),
+			'output_schema'       => Settings_Schema::get(),
 			'permission_callback' => array( $this, 'check_permission_callback' ),
 			'show_in_rest'        => true,
 			'keywords'            => array( 'settings', 'config', 'options', 'preferences' ),

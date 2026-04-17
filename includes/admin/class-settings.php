@@ -41,10 +41,11 @@ class Settings {
 	 * Get default settings
 	 *
 	 * Source of truth for the settings structure. When adding or removing
-	 * a setting key here, keep get_json_schema() and get_sanitization_schema()
-	 * in sync — each of the three methods describes the same shape and
-	 * omissions silently hide keys from either the Abilities API surface
-	 * (get_json_schema) or the sanitization pipeline (get_sanitization_schema).
+	 * a setting key here, keep Settings_Schema::get() and
+	 * get_sanitization_schema() in sync — each of the three descriptions
+	 * covers the same shape and omissions silently hide keys from either
+	 * the Abilities API surface (Settings_Schema) or the sanitization
+	 * pipeline (get_sanitization_schema).
 	 *
 	 * @return array Default settings.
 	 */
@@ -577,183 +578,14 @@ class Settings {
 	}
 
 	/**
-	 * Get the JSON Schema describing the settings object.
-	 *
-	 * Used by the Abilities API (get-settings, update-settings) to describe
-	 * the full shape of the settings payload to AI agents and MCP clients.
-	 * The schema mirrors the structure produced by get_defaults() and
-	 * sanitized by sanitize_settings().
-	 *
-	 * Keep in sync with get_defaults() and get_sanitization_schema() — a
-	 * key missing from this schema is invisible to Abilities API clients
-	 * even if it is otherwise valid.
-	 *
-	 * @return array JSON Schema for the settings object.
-	 */
-	public static function get_json_schema(): array {
-		return array(
-			'type'                 => 'object',
-			'additionalProperties' => false,
-			'properties'           => array(
-				'enabled_blocks'     => array(
-					'type'        => 'array',
-					'items'       => array( 'type' => 'string' ),
-					'description' => __( 'Enabled block names. Empty array means all blocks are enabled.', 'designsetgo' ),
-				),
-				'enabled_extensions' => array(
-					'type'        => 'array',
-					'items'       => array( 'type' => 'string' ),
-					'description' => __( 'Enabled extension names. Empty array means all extensions are enabled.', 'designsetgo' ),
-				),
-				'excluded_blocks'    => array(
-					'type'        => 'array',
-					'items'       => array( 'type' => 'string' ),
-					'description' => __( 'Block name patterns excluded from configuration (supports wildcards like "plugin/*").', 'designsetgo' ),
-				),
-				'performance'        => array(
-					'type'                 => 'object',
-					'additionalProperties' => false,
-					'properties'           => array(
-						'conditional_loading' => array( 'type' => 'boolean' ),
-						'cache_duration'      => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-						),
-					),
-				),
-				'forms'              => array(
-					'type'                 => 'object',
-					'additionalProperties' => false,
-					'properties'           => array(
-						'enable_honeypot'      => array( 'type' => 'boolean' ),
-						'enable_rate_limiting' => array( 'type' => 'boolean' ),
-						'enable_email_logging' => array( 'type' => 'boolean' ),
-						'retention_days'       => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-						),
-					),
-				),
-				'animations'         => array(
-					'type'                 => 'object',
-					'additionalProperties' => false,
-					'properties'           => array(
-						'enable_animations'              => array( 'type' => 'boolean' ),
-						'default_duration'               => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-						),
-						'default_easing'                 => array( 'type' => 'string' ),
-						'respect_prefers_reduced_motion' => array( 'type' => 'boolean' ),
-						'default_icon_button_hover'      => array( 'type' => 'string' ),
-					),
-				),
-				'security'           => array(
-					'type'                 => 'object',
-					'additionalProperties' => false,
-					'properties'           => array(
-						'log_ip_addresses' => array( 'type' => 'boolean' ),
-						'log_user_agents'  => array( 'type' => 'boolean' ),
-						'log_referrers'    => array( 'type' => 'boolean' ),
-					),
-				),
-				'integrations'       => array(
-					'type'                 => 'object',
-					'additionalProperties' => false,
-					'properties'           => array(
-						'google_maps_api_key'  => array( 'type' => 'string' ),
-						'turnstile_site_key'   => array( 'type' => 'string' ),
-						'turnstile_secret_key' => array( 'type' => 'string' ),
-					),
-				),
-				'sticky_header'      => array(
-					'type'                 => 'object',
-					'additionalProperties' => false,
-					'properties'           => array(
-						'enable'                    => array( 'type' => 'boolean' ),
-						'custom_selector'           => array( 'type' => 'string' ),
-						'z_index'                   => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-						),
-						'shadow_on_scroll'          => array( 'type' => 'boolean' ),
-						'shadow_size'               => array( 'type' => 'string' ),
-						'shrink_on_scroll'          => array( 'type' => 'boolean' ),
-						'shrink_amount'             => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-						),
-						'mobile_enabled'            => array( 'type' => 'boolean' ),
-						'mobile_breakpoint'         => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-						),
-						'transition_speed'          => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-						),
-						'scroll_threshold'          => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-						),
-						'hide_on_scroll_down'       => array( 'type' => 'boolean' ),
-						'background_on_scroll'      => array( 'type' => 'boolean' ),
-						'background_scroll_color'   => array(
-							'type'        => 'string',
-							'description' => __( 'Hex color (e.g. "#ffffff") or empty string.', 'designsetgo' ),
-						),
-						'background_scroll_opacity' => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-							'maximum' => 100,
-						),
-						'text_scroll_color'         => array(
-							'type'        => 'string',
-							'description' => __( 'Hex color (e.g. "#000000") or empty string.', 'designsetgo' ),
-						),
-					),
-				),
-				'draft_mode'         => array(
-					'type'                 => 'object',
-					'additionalProperties' => false,
-					'properties'           => array(
-						'enable'                 => array( 'type' => 'boolean' ),
-						'show_page_list_actions' => array( 'type' => 'boolean' ),
-						'show_page_list_column'  => array( 'type' => 'boolean' ),
-						'show_frontend_preview'  => array( 'type' => 'boolean' ),
-						'auto_save_enabled'      => array( 'type' => 'boolean' ),
-						'auto_save_interval'     => array(
-							'type'    => 'integer',
-							'minimum' => 0,
-						),
-					),
-				),
-				'llms_txt'           => array(
-					'type'                 => 'object',
-					'additionalProperties' => false,
-					'properties'           => array(
-						'enable'            => array( 'type' => 'boolean' ),
-						'post_types'        => array(
-							'type'  => 'array',
-							'items' => array( 'type' => 'string' ),
-						),
-						'description'       => array( 'type' => 'string' ),
-						'generate_full_txt' => array( 'type' => 'boolean' ),
-					),
-				),
-			),
-		);
-	}
-
-	/**
 	 * Get the sanitization schema for settings fields.
 	 *
 	 * Maps each setting key to its sanitizer type. The defaults are sourced
 	 * from get_defaults() so there is a single source of truth.
 	 *
-	 * Keep in sync with get_defaults() and get_json_schema() — a key missing
-	 * from this schema is silently dropped by sanitize_settings() even if
-	 * the client sends it.
+	 * Keep in sync with get_defaults() and Settings_Schema::get() — a key
+	 * missing from this schema is silently dropped by sanitize_settings()
+	 * even if the client sends it.
 	 *
 	 * Supported sanitizer types:
 	 * - 'bool'       — Cast to boolean.
@@ -906,8 +738,8 @@ class Settings {
 				continue;
 			}
 
-			$group_defaults    = $defaults[ $key ] ?? array();
-			$sanitized[ $key ] = array();
+			$group_defaults = $defaults[ $key ] ?? array();
+			$group_values   = array();
 
 			foreach ( $field_schema as $field_key => $sanitizer ) {
 				// Only sanitize fields that were actually submitted.
@@ -919,11 +751,20 @@ class Settings {
 
 				$default = $group_defaults[ $field_key ] ?? null;
 
-				$sanitized[ $key ][ $field_key ] = self::sanitize_value(
+				$group_values[ $field_key ] = self::sanitize_value(
 					$settings[ $key ][ $field_key ],
 					$sanitizer,
 					$default
 				);
+			}
+
+			// Skip groups where no fields were actually submitted. Persisting
+			// an empty array for a nested group would suppress the group's
+			// defaults on subsequent get_settings() reads because wp_parse_args
+			// is not recursive — a fresh install would then see e.g.
+			// integrations => [] instead of the default shape.
+			if ( ! empty( $group_values ) ) {
+				$sanitized[ $key ] = $group_values;
 			}
 		}
 

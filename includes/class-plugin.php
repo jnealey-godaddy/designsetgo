@@ -491,6 +491,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-settings.php';
+		require_once DESIGNSETGO_PATH . 'includes/admin/class-settings-schema.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-block-manager.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-gdpr-compliance.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-admin-menu.php';
