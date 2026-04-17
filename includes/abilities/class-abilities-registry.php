@@ -110,6 +110,7 @@ class Abilities_Registry {
 		$this->load_abilities_from_directory( $base_path . '/inserters' );
 		$this->load_abilities_from_directory( $base_path . '/configurators' );
 		$this->load_abilities_from_directory( $base_path . '/generators' );
+		$this->load_abilities_from_directory( $base_path . '/settings' );
 	}
 
 	/**
@@ -150,6 +151,7 @@ class Abilities_Registry {
 			'inserters'     => 'DesignSetGo\\Abilities\\Inserters\\',
 			'configurators' => 'DesignSetGo\\Abilities\\Configurators\\',
 			'generators'    => 'DesignSetGo\\Abilities\\Generators\\',
+			'settings'      => 'DesignSetGo\\Abilities\\Settings\\',
 		);
 
 		foreach ( $directories as $dir => $namespace ) {
@@ -267,6 +269,14 @@ class Abilities_Registry {
 			array(
 				'label'       => __( 'Blocks', 'designsetgo' ),
 				'description' => __( 'Abilities for inserting and configuring blocks', 'designsetgo' ),
+			)
+		);
+
+		wp_register_ability_category(
+			'settings',
+			array(
+				'label'       => __( 'Settings', 'designsetgo' ),
+				'description' => __( 'Abilities for reading and updating DesignSetGo plugin settings', 'designsetgo' ),
 			)
 		);
 	}

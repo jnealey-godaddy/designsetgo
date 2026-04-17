@@ -92,9 +92,9 @@ class Settings {
 				'log_referrers'    => false,
 			),
 			'integrations'       => array(
-				'google_maps_api_key'    => '',
-				'turnstile_site_key'     => '',
-				'turnstile_secret_key'   => '',
+				'google_maps_api_key'  => '',
+				'turnstile_site_key'   => '',
+				'turnstile_secret_key' => '',
 			),
 			'sticky_header'      => array(
 				'enable'                    => true,
@@ -123,9 +123,9 @@ class Settings {
 				'auto_save_interval'     => 60,
 			),
 			'llms_txt'           => array(
-				'enable'           => false,
-				'post_types'       => array( 'page', 'post' ),
-				'description'      => '',
+				'enable'            => false,
+				'post_types'        => array( 'page', 'post' ),
+				'description'       => '',
 				'generate_full_txt' => false,
 			),
 		);
@@ -287,8 +287,8 @@ class Settings {
 			return self::$cached_settings;
 		}
 
-		$saved_settings       = get_option( self::OPTION_NAME, array() );
-		$defaults             = self::get_defaults();
+		$saved_settings        = get_option( self::OPTION_NAME, array() );
+		$defaults              = self::get_defaults();
 		self::$cached_settings = wp_parse_args( $saved_settings, $defaults );
 
 		return self::$cached_settings;
@@ -470,24 +470,35 @@ class Settings {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function update_settings_endpoint( $request ) {
-		$new_settings = $request->get_json_params();
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'settings' => self::update_settings( (array) $request->get_json_params() ),
+			)
+		);
+	}
 
-		// Sanitize only the incoming keys.
-		$sanitized = $this->sanitize_settings( $new_settings );
+	/**
+	 * Apply a partial settings update.
+	 *
+	 * Sanitizes only keys present in $input, merges with existing saved
+	 * settings so unsubmitted keys are preserved, persists, and invalidates
+	 * the cache. Shared between the REST endpoint and the Abilities API
+	 * update-settings ability so sanitization stays centralized.
+	 *
+	 * @param array $input Raw settings to apply (partial, nested).
+	 * @return array Current settings after the update.
+	 */
+	public static function update_settings( array $input ): array {
+		$sanitized = self::sanitize_settings( $input );
 
-		// Merge with existing saved settings so unsubmitted keys are preserved.
 		$existing = get_option( self::OPTION_NAME, array() );
 		$merged   = array_replace_recursive( $existing, $sanitized );
 
 		update_option( self::OPTION_NAME, $merged );
 		self::invalidate_cache();
 
-		return rest_ensure_response(
-			array(
-				'success'  => true,
-				'settings' => self::get_settings(),
-			)
-		);
+		return self::get_settings();
 	}
 
 	/**
@@ -554,6 +565,171 @@ class Settings {
 	}
 
 	/**
+	 * Get the JSON Schema describing the settings object.
+	 *
+	 * Used by the Abilities API (get-settings, update-settings) to describe
+	 * the full shape of the settings payload to AI agents and MCP clients.
+	 * The schema mirrors the structure produced by get_defaults() and
+	 * sanitized by sanitize_settings().
+	 *
+	 * @return array JSON Schema for the settings object.
+	 */
+	public static function get_json_schema(): array {
+		return array(
+			'type'                 => 'object',
+			'additionalProperties' => false,
+			'properties'           => array(
+				'enabled_blocks'     => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Enabled block names. Empty array means all blocks are enabled.', 'designsetgo' ),
+				),
+				'enabled_extensions' => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Enabled extension names. Empty array means all extensions are enabled.', 'designsetgo' ),
+				),
+				'excluded_blocks'    => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Block name patterns excluded from configuration (supports wildcards like "plugin/*").', 'designsetgo' ),
+				),
+				'performance'        => array(
+					'type'                 => 'object',
+					'additionalProperties' => false,
+					'properties'           => array(
+						'conditional_loading' => array( 'type' => 'boolean' ),
+						'cache_duration'      => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+					),
+				),
+				'forms'              => array(
+					'type'                 => 'object',
+					'additionalProperties' => false,
+					'properties'           => array(
+						'enable_honeypot'      => array( 'type' => 'boolean' ),
+						'enable_rate_limiting' => array( 'type' => 'boolean' ),
+						'enable_email_logging' => array( 'type' => 'boolean' ),
+						'retention_days'       => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+					),
+				),
+				'animations'         => array(
+					'type'                 => 'object',
+					'additionalProperties' => false,
+					'properties'           => array(
+						'enable_animations'              => array( 'type' => 'boolean' ),
+						'default_duration'               => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+						'default_easing'                 => array( 'type' => 'string' ),
+						'respect_prefers_reduced_motion' => array( 'type' => 'boolean' ),
+						'default_icon_button_hover'      => array( 'type' => 'string' ),
+					),
+				),
+				'security'           => array(
+					'type'                 => 'object',
+					'additionalProperties' => false,
+					'properties'           => array(
+						'log_ip_addresses' => array( 'type' => 'boolean' ),
+						'log_user_agents'  => array( 'type' => 'boolean' ),
+						'log_referrers'    => array( 'type' => 'boolean' ),
+					),
+				),
+				'integrations'       => array(
+					'type'                 => 'object',
+					'additionalProperties' => false,
+					'properties'           => array(
+						'google_maps_api_key'  => array( 'type' => 'string' ),
+						'turnstile_site_key'   => array( 'type' => 'string' ),
+						'turnstile_secret_key' => array( 'type' => 'string' ),
+					),
+				),
+				'sticky_header'      => array(
+					'type'                 => 'object',
+					'additionalProperties' => false,
+					'properties'           => array(
+						'enable'                    => array( 'type' => 'boolean' ),
+						'custom_selector'           => array( 'type' => 'string' ),
+						'z_index'                   => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+						'shadow_on_scroll'          => array( 'type' => 'boolean' ),
+						'shadow_size'               => array( 'type' => 'string' ),
+						'shrink_on_scroll'          => array( 'type' => 'boolean' ),
+						'shrink_amount'             => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+						'mobile_enabled'            => array( 'type' => 'boolean' ),
+						'mobile_breakpoint'         => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+						'transition_speed'          => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+						'scroll_threshold'          => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+						'hide_on_scroll_down'       => array( 'type' => 'boolean' ),
+						'background_on_scroll'      => array( 'type' => 'boolean' ),
+						'background_scroll_color'   => array(
+							'type'        => 'string',
+							'description' => __( 'Hex color (e.g. "#ffffff") or empty string.', 'designsetgo' ),
+						),
+						'background_scroll_opacity' => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
+						'text_scroll_color'         => array(
+							'type'        => 'string',
+							'description' => __( 'Hex color (e.g. "#000000") or empty string.', 'designsetgo' ),
+						),
+					),
+				),
+				'draft_mode'         => array(
+					'type'                 => 'object',
+					'additionalProperties' => false,
+					'properties'           => array(
+						'enable'                 => array( 'type' => 'boolean' ),
+						'show_page_list_actions' => array( 'type' => 'boolean' ),
+						'show_page_list_column'  => array( 'type' => 'boolean' ),
+						'show_frontend_preview'  => array( 'type' => 'boolean' ),
+						'auto_save_enabled'      => array( 'type' => 'boolean' ),
+						'auto_save_interval'     => array(
+							'type'    => 'integer',
+							'minimum' => 0,
+						),
+					),
+				),
+				'llms_txt'           => array(
+					'type'                 => 'object',
+					'additionalProperties' => false,
+					'properties'           => array(
+						'enable'            => array( 'type' => 'boolean' ),
+						'post_types'        => array(
+							'type'  => 'array',
+							'items' => array( 'type' => 'string' ),
+						),
+						'description'       => array( 'type' => 'string' ),
+						'generate_full_txt' => array( 'type' => 'boolean' ),
+					),
+				),
+			),
+		);
+	}
+
+	/**
 	 * Get the sanitization schema for settings fields.
 	 *
 	 * Maps each setting key to its sanitizer type. The defaults are sourced
@@ -599,9 +775,9 @@ class Settings {
 				'log_referrers'    => 'bool',
 			),
 			'integrations'       => array(
-				'google_maps_api_key'    => 'text',
-				'turnstile_site_key'     => 'text',
-				'turnstile_secret_key'   => 'text',
+				'google_maps_api_key'  => 'text',
+				'turnstile_site_key'   => 'text',
+				'turnstile_secret_key' => 'text',
 			),
 			'sticky_header'      => array(
 				'enable'                    => 'bool',
@@ -630,9 +806,9 @@ class Settings {
 				'auto_save_interval'     => 'absint',
 			),
 			'llms_txt'           => array(
-				'enable'           => 'bool',
-				'post_types'       => 'key_list',
-				'description'      => 'textarea',
+				'enable'            => 'bool',
+				'post_types'        => 'key_list',
+				'description'       => 'textarea',
 				'generate_full_txt' => 'bool',
 			),
 		);
@@ -684,7 +860,7 @@ class Settings {
 	 * @param array $settings Settings to sanitize.
 	 * @return array Sanitized settings.
 	 */
-	private function sanitize_settings( $settings ): array {
+	public static function sanitize_settings( array $settings ): array {
 		$sanitized = array();
 		$defaults  = self::get_defaults();
 		$schema    = self::get_sanitization_schema();
