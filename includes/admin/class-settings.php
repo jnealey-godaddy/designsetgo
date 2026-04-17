@@ -40,6 +40,12 @@ class Settings {
 	/**
 	 * Get default settings
 	 *
+	 * Source of truth for the settings structure. When adding or removing
+	 * a setting key here, keep get_json_schema() and get_sanitization_schema()
+	 * in sync — each of the three methods describes the same shape and
+	 * omissions silently hide keys from either the Abilities API surface
+	 * (get_json_schema) or the sanitization pipeline (get_sanitization_schema).
+	 *
 	 * @return array Default settings.
 	 */
 	public static function get_defaults() {
@@ -486,6 +492,12 @@ class Settings {
 	 * the cache. Shared between the REST endpoint and the Abilities API
 	 * update-settings ability so sanitization stays centralized.
 	 *
+	 * IMPORTANT: This method does not perform any authorization. Callers
+	 * are responsible for verifying that the current user is allowed to
+	 * mutate plugin settings (e.g. current_user_can( 'manage_options' ))
+	 * before invoking it. The REST endpoint and update-settings ability
+	 * both gate on manage_options before calling through.
+	 *
 	 * @param array $input Raw settings to apply (partial, nested).
 	 * @return array Current settings after the update.
 	 */
@@ -571,6 +583,10 @@ class Settings {
 	 * the full shape of the settings payload to AI agents and MCP clients.
 	 * The schema mirrors the structure produced by get_defaults() and
 	 * sanitized by sanitize_settings().
+	 *
+	 * Keep in sync with get_defaults() and get_sanitization_schema() — a
+	 * key missing from this schema is invisible to Abilities API clients
+	 * even if it is otherwise valid.
 	 *
 	 * @return array JSON Schema for the settings object.
 	 */
@@ -734,6 +750,10 @@ class Settings {
 	 *
 	 * Maps each setting key to its sanitizer type. The defaults are sourced
 	 * from get_defaults() so there is a single source of truth.
+	 *
+	 * Keep in sync with get_defaults() and get_json_schema() — a key missing
+	 * from this schema is silently dropped by sanitize_settings() even if
+	 * the client sends it.
 	 *
 	 * Supported sanitizer types:
 	 * - 'bool'       — Cast to boolean.

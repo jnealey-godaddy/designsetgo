@@ -89,12 +89,10 @@ class Get_Settings extends Abstract_Ability {
 	/**
 	 * Execute the ability.
 	 *
-	 * @param array<string, mixed> $input Unused.
+	 * @param array<string, mixed> $_input Unused — settings reads take no parameters.
 	 * @return array<string, mixed>
 	 */
-	public function execute( array $input ): array {
-		unset( $input );
-
+	public function execute( array $_input ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
 		return Settings::get_settings();
 	}
 }
