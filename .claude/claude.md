@@ -37,6 +37,19 @@ Before adding a pattern to a block, check `src/hooks/` and `src/components/share
 
 If a new block differs from an existing one only by 1–3 attributes **and shares the same `save()` output structure**, register a `block.json` variation, not a new block. The `save()` constraint is the technical blocker: variations cannot carry differing markup, so differing output forces a new block + deprecations.
 
+### Inspector IA (Theme 3)
+
+Three panels per block, in this order: **Settings** → **Style** → **Advanced**. Use `<DsgoInspectorPanel>` (the `ToolsPanel` wrapper) for all custom inspector controls; never reach for `PanelBody` directly.
+
+- `title` is `__('Settings', 'designsetgo')` or `__('Style', 'designsetgo')` — no block-name prefix (no more "Grid Settings", "Tab Settings").
+- `panelName` is `'settings'` or `'style'` — DsgoInspectorPanel warns once per unrecognised value.
+- `panelId={clientId}` — required so reset state scopes per block instance.
+- Wrap every control in `<DsgoInspectorPanel.Item label hasValue onDeselect isShownByDefault>`. `hasValue` returns `true` when the attribute differs from the `block.json` default; `onDeselect` resets it. `isShownByDefault` is `true` for the primary 1–3 controls; the rest reveal via the panel's "+" menu.
+- Color stays in `<InspectorControls group="color">`; HTML element / anchor / class stay in `<InspectorControls group="advanced">`. Do not duplicate them inside Settings or Style.
+- Prefer native `supports` (color / typography / spacing / border) over custom controls whenever possible.
+
+See [`docs/plans/2026-04-17-theme-3-inspector-ia.md`](../docs/plans/2026-04-17-theme-3-inspector-ia.md).
+
 ## Security
 
 - **Input**: Validate all user input

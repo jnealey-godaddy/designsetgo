@@ -19,7 +19,6 @@ import {
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	ToggleControl,
 	SelectControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
@@ -27,6 +26,7 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUseCustomUnits as useCustomUnits,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
 import { createBlock } from '@wordpress/blocks';
@@ -346,59 +346,86 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 			</InspectorControls>
 
 			<InspectorControls>
-				<PanelBody
-					title={__('Section Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							constrainWidth: true,
+							contentWidth: '',
+						})
+					}
 				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Constrain Inner Width', 'designsetgo')}
-						checked={constrainWidth}
-						onChange={(value) =>
-							setAttributes({ constrainWidth: value })
+						hasValue={() => constrainWidth !== true}
+						onDeselect={() =>
+							setAttributes({
+								constrainWidth: true,
+								contentWidth: '',
+							})
 						}
-						help={
-							constrainWidth
-								? __(
-										'Inner content is constrained to max width',
-										'designsetgo'
-									)
-								: __(
-										'Inner content spans full container width',
-										'designsetgo'
-									)
-						}
-						__nextHasNoMarginBottom
-					/>
-					{constrainWidth && (
-						<UnitControl
-							label={__('Max Content Width', 'designsetgo')}
-							value={contentWidth}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Constrain Inner Width', 'designsetgo')}
+							checked={constrainWidth}
 							onChange={(value) =>
-								setAttributes({ contentWidth: value })
+								setAttributes({ constrainWidth: value })
 							}
-							placeholder={
-								themeContentSize ||
-								__('Theme default', 'designsetgo')
-							}
-							units={units}
-							__unstableInputWidth="80px"
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
 							help={
-								!contentWidth && themeContentSize
-									? sprintf(
-											/* translators: %s: theme content size value */
-											__(
-												'Using theme default: %s',
-												'designsetgo'
-											),
-											themeContentSize
+								constrainWidth
+									? __(
+											'Inner content is constrained to max width',
+											'designsetgo'
 										)
-									: ''
+									: __(
+											'Inner content spans full container width',
+											'designsetgo'
+										)
 							}
+							__nextHasNoMarginBottom
 						/>
+					</DsgoInspectorPanel.Item>
+					{constrainWidth && (
+						<DsgoInspectorPanel.Item
+							label={__('Max Content Width', 'designsetgo')}
+							hasValue={() => contentWidth !== ''}
+							onDeselect={() =>
+								setAttributes({ contentWidth: '' })
+							}
+						>
+							<UnitControl
+								label={__('Max Content Width', 'designsetgo')}
+								value={contentWidth}
+								onChange={(value) =>
+									setAttributes({ contentWidth: value })
+								}
+								placeholder={
+									themeContentSize ||
+									__('Theme default', 'designsetgo')
+								}
+								units={units}
+								__unstableInputWidth="80px"
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+								help={
+									!contentWidth && themeContentSize
+										? sprintf(
+												/* translators: %s: theme content size value */
+												__(
+													'Using theme default: %s',
+													'designsetgo'
+												),
+												themeContentSize
+											)
+										: ''
+								}
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">
