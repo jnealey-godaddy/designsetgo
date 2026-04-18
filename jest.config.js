@@ -33,6 +33,10 @@ module.exports = {
 		'^.+\\.[jt]sx?$': ['@wordpress/scripts/config/babel-transform'],
 	},
 
+	// parsel-js ships only ESM; transform it so jest.requireActual('@wordpress/block-editor')
+	// doesn't crash when @wordpress/block-editor's CJS build pulls it in.
+	transformIgnorePatterns: ['/node_modules/(?!(parsel-js)/)'],
+
 	// Module name mapper for CSS and asset files
 	moduleNameMapper: {
 		'\\.(css|less|scss|sass)$': 'identity-obj-proxy',

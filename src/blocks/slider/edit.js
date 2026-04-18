@@ -6,8 +6,6 @@ import {
 	InspectorControls,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
-	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
-	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -75,11 +73,10 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 		scrollDrivenSpeed,
 	} = attributes;
 
-	// Get theme color palette and gradient settings
-	const colorGradientSettings = useMultipleOriginColorsAndGradients();
-
-	// Arrow Colors panel — migrated to useBlockColors hook
-	const { settings: arrowColorSettings } = useBlockColors({
+	// Arrow Colors panel — migrated to useBlockColors hook.
+	// colorGradientSettings is returned by the hook (same shape as
+	// useMultipleOriginColorsAndGradients) and used by the inline Dot Color panel.
+	const { settings: arrowColorSettings, colorGradientSettings } = useBlockColors({
 		attributes,
 		setAttributes,
 		entries: [

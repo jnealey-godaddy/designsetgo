@@ -17,8 +17,6 @@ import {
 	useSettings,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
-	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
-	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -126,12 +124,11 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 	// Get theme settings (WP 6.5+)
 	const [themeContentSize] = useSettings('layout.contentSize');
 
-	// Get theme color palette and gradient settings
-	const colorGradientSettings = useMultipleOriginColorsAndGradients();
-
 	// Hover Settings panel (static entries) — migrated to useBlockColors hook.
 	// The two conditional entries (icon/button background) are kept inline below.
-	const { settings: hoverColorSettings } = useBlockColors({
+	// colorGradientSettings is also returned by the hook (same shape as
+	// useMultipleOriginColorsAndGradients) and used by the inline panels below.
+	const { settings: hoverColorSettings, colorGradientSettings } = useBlockColors({
 		attributes,
 		setAttributes,
 		entries: [

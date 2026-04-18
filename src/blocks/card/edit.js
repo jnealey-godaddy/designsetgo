@@ -11,8 +11,6 @@ import {
 	MediaUploadCheck,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
-	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
-	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -70,10 +68,10 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 		showCta,
 	} = attributes;
 
-	const colorGradientSettings = useMultipleOriginColorsAndGradients();
-
-	// Border panel — migrated to useBlockColors hook
-	const { settings: borderColorSettings } = useBlockColors({
+	// Border panel — migrated to useBlockColors hook.
+	// colorGradientSettings is returned by the hook (same shape as
+	// useMultipleOriginColorsAndGradients) and used by the inline panels below.
+	const { settings: borderColorSettings, colorGradientSettings } = useBlockColors({
 		attributes,
 		setAttributes,
 		entries: [
