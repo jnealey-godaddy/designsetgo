@@ -1,63 +1,36 @@
 /**
- * Block Category Filter
+ * Custom icon for the DesignSetGo block category.
  *
- * Ensures DesignSetGo blocks appear in BOTH:
- * 1. Their assigned WordPress core category (design, text, widgets)
- * 2. The custom DesignSetGo category
- *
- * This improves discoverability while maintaining organization.
- *
- * @package
+ * The category itself is registered server-side via the `block_categories_all`
+ * filter (see includes/class-plugin.php). PHP only supports a Dashicon slug
+ * for the category icon, so we override with a branded SVG here.
  */
 
 import domReady from '@wordpress/dom-ready';
-import { registerBlockCollection } from '@wordpress/blocks';
-import { addFilter } from '@wordpress/hooks';
+import { dispatch } from '@wordpress/data';
+import { createElement } from '@wordpress/element';
 
-/**
- * Modify block categories to add DesignSetGo category alongside core categories.
- *
- * This filter adds the 'designsetgo' category to all our blocks,
- * ensuring they appear in both their core category AND our custom category.
- */
-addFilter(
-	'blocks.registerBlockType',
-	'designsetgo/dual-categorization',
-	(settings, name) => {
-		// Only modify our blocks
-		if (!name.startsWith('designsetgo/')) {
-			return settings;
-		}
+const CATEGORY_SLUG = 'designsetgo';
 
-		// Store the original category
-		const originalCategory = settings.category;
-
-		// Create a custom categories array that includes both categories
-		// Note: WordPress only supports one category per block in the UI,
-		// but we can modify how blocks appear in the inserter using collections
-		return {
-			...settings,
-			// Keep the core category as primary
-			category: originalCategory,
-			// Add metadata for our custom handling
-			__experimentalLabel: () => {
-				// This allows blocks to show context-aware labeling
-				return settings.title;
-			},
-		};
-	}
+const categoryIcon = createElement(
+	'svg',
+	{
+		xmlns: 'http://www.w3.org/2000/svg',
+		viewBox: '0 0 24 24',
+		width: 24,
+		height: 24,
+		fill: 'currentColor',
+		'aria-hidden': 'true',
+		focusable: 'false',
+	},
+	createElement('path', {
+		d: 'M3 3h8v8H3V3zm10 0h8v5h-8V3zm0 7h8v4h-8v-4zM3 13h8v8H3v-8zm10 3h8v5h-8v-5z',
+	})
 );
 
-/**
- * Register block collection for DesignSetGo.
- *
- * This creates a filterable collection in the block inserter
- * that shows all DesignSetGo blocks together.
- */
 domReady(() => {
-	// Register a block collection for all DesignSetGo blocks
-	registerBlockCollection('designsetgo', {
-		title: 'DesignSetGo',
-		icon: 'layout',
-	});
+	const store = dispatch('core/blocks');
+	if (store && typeof store.updateCategory === 'function') {
+		store.updateCategory(CATEGORY_SLUG, { icon: categoryIcon });
+	}
 });

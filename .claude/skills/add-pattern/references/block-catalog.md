@@ -365,18 +365,6 @@ Trigger: designsetgo/modal-trigger
   Key attributes: targetModalId (string), text (string), icon (string)
 ```
 
-### designsetgo/reveal
-
-Content revealed on hover.
-
-```text
-Key attributes:
-  revealAnimation (string)
-  revealDuration (number)
-
-InnerBlocks: Yes
-```
-
 ### designsetgo/scroll-accordion
 
 Scroll-triggered stacking accordion — items reveal progressively as the user scrolls down the page.

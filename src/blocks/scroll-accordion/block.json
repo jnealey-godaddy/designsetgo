@@ -4,10 +4,16 @@
 	"name": "designsetgo/scroll-accordion",
 	"version": "1.0.0",
 	"title": "Scroll Accordion",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Accordion that reveals items progressively as you scroll down the page",
-	"keywords": ["scroll", "accordion", "sticky", "stacking"],
+	"keywords": [
+		"scroll",
+		"accordion",
+		"sticky",
+		"stacking"
+	],
 	"textdomain": "designsetgo",
+	"icon": "menu-alt2",
 	"attributes": {
 		"align": {
 			"type": "string"
@@ -22,7 +28,10 @@
 	},
 	"supports": {
 		"anchor": true,
-		"align": ["wide", "full"],
+		"align": [
+			"wide",
+			"full"
+		],
 		"html": false,
 		"spacing": {
 			"margin": true,

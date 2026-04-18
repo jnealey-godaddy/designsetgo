@@ -4,7 +4,7 @@
 	"name": "designsetgo/form-builder",
 	"version": "1.0.0",
 	"title": "Form Builder",
-	"category": "widgets",
+	"category": "designsetgo",
 	"description": "Create custom forms with multiple field types, AJAX submission, and spam protection.",
 	"keywords": [
 		"form",
@@ -14,6 +14,7 @@
 		"survey"
 	],
 	"textdomain": "designsetgo",
+	"icon": "forms",
 	"attributes": {
 		"formId": {
 			"type": "string",
@@ -30,12 +31,19 @@
 		"submitButtonAlignment": {
 			"type": "string",
 			"default": "left",
-			"enum": ["left", "center", "right"]
+			"enum": [
+				"left",
+				"center",
+				"right"
+			]
 		},
 		"submitButtonPosition": {
 			"type": "string",
 			"default": "below",
-			"enum": ["below", "inline"]
+			"enum": [
+				"below",
+				"inline"
+			]
 		},
 		"ajaxSubmit": {
 			"type": "boolean",
@@ -176,7 +184,10 @@
 	},
 	"supports": {
 		"anchor": true,
-		"align": ["wide", "full"],
+		"align": [
+			"wide",
+			"full"
+		],
 		"html": false,
 		"spacing": {
 			"margin": true,

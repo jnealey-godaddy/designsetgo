@@ -4,7 +4,7 @@
 	"name": "designsetgo/heading-segment",
 	"version": "1.0.0",
 	"title": "Heading Segment",
-	"category": "text",
+	"category": "designsetgo",
 	"parent": [
 		"designsetgo/advanced-heading"
 	],
@@ -16,6 +16,7 @@
 		"typography"
 	],
 	"textdomain": "designsetgo",
+	"icon": "editor-textcolor",
 	"attributes": {
 		"content": {
 			"type": "string",

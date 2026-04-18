@@ -6,9 +6,17 @@
 	"title": "Email Field",
 	"category": "designsetgo",
 	"description": "Email input field with built-in validation.",
-	"keywords": ["form", "email", "input", "field"],
+	"keywords": [
+		"form",
+		"email",
+		"input",
+		"field"
+	],
 	"textdomain": "designsetgo",
-	"parent": ["designsetgo/form-builder"],
+	"icon": "email-alt",
+	"parent": [
+		"designsetgo/form-builder"
+	],
 	"attributes": {
 		"fieldName": {
 			"type": "string",

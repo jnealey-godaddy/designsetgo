@@ -4,7 +4,7 @@
 	"name": "designsetgo/flip-card-front",
 	"version": "1.0.0",
 	"title": "Flip Card Front",
-	"category": "design",
+	"category": "designsetgo",
 	"parent": [
 		"designsetgo/flip-card"
 	],
@@ -15,6 +15,7 @@
 		"front"
 	],
 	"textdomain": "designsetgo",
+	"icon": "id",
 	"supports": {
 		"anchor": false,
 		"align": false,

@@ -4,7 +4,7 @@
 	"name": "designsetgo/icon-list",
 	"version": "1.0.0",
 	"title": "Icon List",
-	"category": "text",
+	"category": "designsetgo",
 	"description": "Create a list of items with icons, titles, and descriptions.",
 	"keywords": [
 		"icon",
@@ -14,6 +14,7 @@
 		"services"
 	],
 	"textdomain": "designsetgo",
+	"icon": "list-view",
 	"supports": {
 		"anchor": true,
 		"align": [

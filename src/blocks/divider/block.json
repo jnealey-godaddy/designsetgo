@@ -4,7 +4,7 @@
 	"name": "designsetgo/divider",
 	"version": "1.0.0",
 	"title": "Divider",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Add a visual separator with multiple style options including solid, dashed, gradient, and decorative patterns.",
 	"keywords": [
 		"divider",
@@ -14,6 +14,7 @@
 		"break"
 	],
 	"textdomain": "designsetgo",
+	"icon": "minus",
 	"supports": {
 		"anchor": true,
 		"align": [

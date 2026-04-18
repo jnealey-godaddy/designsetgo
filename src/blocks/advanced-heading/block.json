@@ -4,7 +4,7 @@
 	"name": "designsetgo/advanced-heading",
 	"version": "1.0.0",
 	"title": "Advanced Heading",
-	"category": "text",
+	"category": "designsetgo",
 	"description": "Create headings with multiple font styles — mix fonts, weights, and colors within a single heading for advanced typographic designs.",
 	"keywords": [
 		"heading",
@@ -14,6 +14,7 @@
 		"advanced"
 	],
 	"textdomain": "designsetgo",
+	"icon": "heading",
 	"attributes": {
 		"level": {
 			"type": "number",

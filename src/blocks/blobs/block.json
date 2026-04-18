@@ -4,7 +4,7 @@
 	"name": "designsetgo/blobs",
 	"version": "1.0.0",
 	"title": "Blobs",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Create random, unique, and organic-looking blob shapes. Customize with gradients, overlays, and images. Animate with smooth morphing effects.",
 	"keywords": [
 		"blob",
@@ -15,6 +15,7 @@
 		"gradient"
 	],
 	"textdomain": "designsetgo",
+	"icon": "art",
 	"attributes": {
 		"align": {
 			"type": "string"

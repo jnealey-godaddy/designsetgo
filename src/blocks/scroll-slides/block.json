@@ -4,10 +4,17 @@
 	"name": "designsetgo/scroll-slides",
 	"version": "1.0.0",
 	"title": "Scroll Slides",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Full-screen scroll-pinned slideshow with crossfading content and navigation",
-	"keywords": ["scroll", "slides", "fullscreen", "pinned", "showcase"],
+	"keywords": [
+		"scroll",
+		"slides",
+		"fullscreen",
+		"pinned",
+		"showcase"
+	],
 	"textdomain": "designsetgo",
+	"icon": "images-alt",
 	"attributes": {
 		"minHeight": {
 			"type": "string",
@@ -44,7 +51,10 @@
 	},
 	"supports": {
 		"anchor": true,
-		"align": ["wide", "full"],
+		"align": [
+			"wide",
+			"full"
+		],
 		"html": false,
 		"spacing": {
 			"margin": true,

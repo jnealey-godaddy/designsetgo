@@ -16,7 +16,6 @@ const CONTAINER_BLOCKS = [
 	'designsetgo/section', // Section block (vertical stack)
 	'designsetgo/row', // Row block (horizontal flex)
 	'designsetgo/grid',
-	'designsetgo/reveal',
 ];
 
 /**

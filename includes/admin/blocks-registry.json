@@ -110,12 +110,6 @@
 				"performance": "high"
 			},
 			{
-				"name": "designsetgo/reveal",
-				"title": "Reveal",
-				"description": "Content reveal on scroll",
-				"performance": "medium"
-			},
-			{
 				"name": "designsetgo/image-accordion",
 				"title": "Image Accordion",
 				"description": "Accordion with images",

@@ -4,7 +4,7 @@
 	"name": "designsetgo/timeline",
 	"version": "1.0.0",
 	"title": "Timeline",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Display chronological events, company history, or process steps in a visual timeline format with customizable layouts and scroll animations.",
 	"keywords": [
 		"timeline",
@@ -17,6 +17,7 @@
 		"milestones"
 	],
 	"textdomain": "designsetgo",
+	"icon": "backup",
 	"attributes": {
 		"orientation": {
 			"type": "string",

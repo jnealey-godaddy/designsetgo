@@ -4,7 +4,7 @@
 	"name": "designsetgo/card",
 	"version": "1.0.0",
 	"title": "Card",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Display content in a card layout with image, badge, title, subtitle, body text, and CTA button. Perfect for pricing, features, services, and team members.",
 	"keywords": [
 		"card",
@@ -15,6 +15,7 @@
 		"feature"
 	],
 	"textdomain": "designsetgo",
+	"icon": "id",
 	"supports": {
 		"anchor": true,
 		"align": [

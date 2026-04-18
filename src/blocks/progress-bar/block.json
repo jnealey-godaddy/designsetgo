@@ -4,7 +4,7 @@
 	"name": "designsetgo/progress-bar",
 	"version": "1.0.0",
 	"title": "Progress Bar",
-	"category": "widgets",
+	"category": "designsetgo",
 	"description": "Display progress or statistics with an animated bar",
 	"keywords": [
 		"progress",
@@ -14,6 +14,7 @@
 		"meter"
 	],
 	"textdomain": "designsetgo",
+	"icon": "performance",
 	"supports": {
 		"anchor": true,
 		"align": [

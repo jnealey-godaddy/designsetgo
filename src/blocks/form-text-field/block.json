@@ -6,9 +6,17 @@
 	"title": "Text Field",
 	"category": "designsetgo",
 	"description": "Single-line text input field for forms.",
-	"keywords": ["form", "input", "text", "field"],
+	"keywords": [
+		"form",
+		"input",
+		"text",
+		"field"
+	],
 	"textdomain": "designsetgo",
-	"parent": ["designsetgo/form-builder"],
+	"icon": "edit",
+	"parent": [
+		"designsetgo/form-builder"
+	],
 	"attributes": {
 		"fieldName": {
 			"type": "string",
@@ -45,7 +53,13 @@
 		"validation": {
 			"type": "string",
 			"default": "none",
-			"enum": ["none", "letters", "numbers", "alphanumeric", "custom"]
+			"enum": [
+				"none",
+				"letters",
+				"numbers",
+				"alphanumeric",
+				"custom"
+			]
 		},
 		"validationPattern": {
 			"type": "string",

@@ -4,7 +4,7 @@
 	"name": "designsetgo/product-categories-grid",
 	"version": "1.0.0",
 	"title": "Product Categories Grid",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Display WooCommerce product categories in a visual grid with images, names, and product counts. Requires WooCommerce.",
 	"keywords": [
 		"product",
@@ -13,10 +13,10 @@
 		"woocommerce",
 		"shop",
 		"store",
-		"ecommerce",
-		"dsg"
+		"ecommerce"
 	],
 	"textdomain": "designsetgo",
+	"icon": "products",
 	"supports": {
 		"anchor": true,
 		"align": [

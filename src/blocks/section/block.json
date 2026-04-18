@@ -4,11 +4,10 @@
 	"name": "designsetgo/section",
 	"version": "1.0.0",
 	"title": "Section",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Vertical stacking container for sections and content areas. Perfect for building layouts with consistent spacing. Can be nested within other sections for complex page structures.",
 	"keywords": [
 		"section",
-		"dsg",
 		"stack",
 		"vertical",
 		"layout",
@@ -16,6 +15,7 @@
 		"content area"
 	],
 	"textdomain": "designsetgo",
+	"icon": "align-wide",
 	"supports": {
 		"anchor": true,
 		"align": [

@@ -4,11 +4,10 @@
 	"name": "designsetgo/row",
 	"version": "1.0.0",
 	"title": "Row",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Flexible horizontal or vertical layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts.",
 	"keywords": [
 		"row",
-		"dsg",
 		"flex",
 		"flexbox",
 		"horizontal",
@@ -16,6 +15,7 @@
 		"container"
 	],
 	"textdomain": "designsetgo",
+	"icon": "leftright",
 	"supports": {
 		"anchor": true,
 		"align": [

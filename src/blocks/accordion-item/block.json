@@ -16,6 +16,7 @@
 		"section"
 	],
 	"textdomain": "designsetgo",
+	"icon": "menu-alt2",
 	"attributes": {
 		"title": {
 			"type": "string",

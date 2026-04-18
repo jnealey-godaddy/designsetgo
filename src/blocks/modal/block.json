@@ -4,7 +4,7 @@
 	"name": "designsetgo/modal",
 	"version": "1.0.0",
 	"title": "Modal",
-	"category": "widgets",
+	"category": "designsetgo",
 	"description": "Create accessible modal dialogs with customizable triggers and content.",
 	"keywords": [
 		"modal",

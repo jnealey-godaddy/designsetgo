@@ -4,11 +4,20 @@
 	"name": "designsetgo/form-number-field",
 	"version": "1.0.0",
 	"title": "Number Field",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "A number input field for forms.",
-	"keywords": ["form", "number", "input", "integer", "decimal"],
-	"parent": ["designsetgo/form-builder"],
+	"keywords": [
+		"form",
+		"number",
+		"input",
+		"integer",
+		"decimal"
+	],
+	"parent": [
+		"designsetgo/form-builder"
+	],
 	"textdomain": "designsetgo",
+	"icon": "calculator",
 	"supports": {
 		"html": false,
 		"anchor": false,

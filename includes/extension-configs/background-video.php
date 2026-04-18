@@ -13,7 +13,6 @@ return array(
 		'designsetgo/section',
 		'designsetgo/row',
 		'designsetgo/grid',
-		'designsetgo/reveal',
 		'designsetgo/flip-card',
 		'designsetgo/flip-card-front',
 		'designsetgo/flip-card-back',

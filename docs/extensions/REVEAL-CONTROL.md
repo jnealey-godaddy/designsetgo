@@ -1,6 +1,6 @@
 # Reveal Control Extension - User Guide
 
-**Compatible With**: Container blocks (Section, Row, Grid, Reveal) and their children
+**Compatible With**: Container blocks (Section, Row, Grid) and their children
 **Since**: 1.0.0
 
 ## Overview
@@ -41,7 +41,6 @@ Only appears when block is inside a reveal-enabled container:
 - **designsetgo/section**: Vertical stack
 - **designsetgo/row**: Horizontal flex
 - **designsetgo/grid**: Grid layout
-- **designsetgo/reveal**: Dedicated reveal block
 
 ## 💡 Common Use Cases
 

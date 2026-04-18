@@ -4,7 +4,7 @@
 	"name": "designsetgo/icon",
 	"version": "1.0.0",
 	"title": "Icon",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Display an inline SVG icon with customizable styling.",
 	"keywords": [
 		"icon",
@@ -13,6 +13,7 @@
 		"graphic"
 	],
 	"textdomain": "designsetgo",
+	"icon": "star-filled",
 	"usesContext": [
 		"designsetgo/hoverIconBackgroundColor"
 	],

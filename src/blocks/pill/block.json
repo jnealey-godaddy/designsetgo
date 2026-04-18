@@ -4,7 +4,7 @@
 	"name": "designsetgo/pill",
 	"version": "1.0.0",
 	"title": "Pill",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Display text with a rounded background that wraps tightly around content.",
 	"keywords": [
 		"pill",
@@ -13,6 +13,7 @@
 		"label"
 	],
 	"textdomain": "designsetgo",
+	"icon": "tag",
 	"attributes": {
 		"align": {
 			"type": "string",

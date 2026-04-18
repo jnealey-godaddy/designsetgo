@@ -4,7 +4,7 @@
 	"name": "designsetgo/tabs",
 	"version": "1.0.0",
 	"title": "Tabs",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Create tabbed content with icons, deep linking, and responsive accordion mode.",
 	"keywords": [
 		"tabs",
@@ -13,6 +13,7 @@
 		"toggle"
 	],
 	"textdomain": "designsetgo",
+	"icon": "tickets",
 	"attributes": {
 		"uniqueId": {
 			"type": "string",
