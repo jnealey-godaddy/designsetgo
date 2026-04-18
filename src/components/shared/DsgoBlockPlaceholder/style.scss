@@ -31,16 +31,19 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 12px;
-		padding: 20px 16px;
+		gap: 16px;
+		padding: 28px 20px;
 		height: auto;
-		min-height: 140px;
+		min-height: 168px;
 		max-width: 100%;
 		width: 100%;
 		text-align: center;
-		white-space: normal;
-		word-break: break-word;
-		overflow-wrap: break-word;
+		// WP core ships `.components-button.is-secondary { white-space: nowrap }`
+		// (specificity 0,0,2,0) which would otherwise force tile copy onto a
+		// single line and overflow the tile. !important per CLAUDE.md.
+		white-space: normal !important;
+		word-break: break-word !important;
+		overflow-wrap: break-word !important;
 		border: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
 		border-radius: 4px;
 		background: var(--wp-components-color-background, #fff);
@@ -122,8 +125,8 @@
 		}
 
 		&__template {
-			padding: 16px 12px;
-			min-height: 120px;
+			padding: 22px 16px;
+			min-height: 148px;
 		}
 
 		&__template-icon {
