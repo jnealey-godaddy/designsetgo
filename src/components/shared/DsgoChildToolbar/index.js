@@ -1,109 +1,246 @@
 /**
  * DsgoChildToolbar
  *
- * Drop-in BlockControls toolbar for child blocks of compound parents
- * (tab, slide, accordion-item, etc.). Provides Add / Duplicate / Move /
- * Remove actions wired to core/block-editor.
- *
- * Theme 5 uses this to consolidate the three different "add child"
- * affordances currently scattered across the codebase (inline canvas
- * buttons in tabs/scroll-marquee, default appender in accordion, none
- * in reveal).
+ * Editor-only toolbar group rendered inside `<BlockControls>` for parent
+ * blocks that manage an ordered list of children (tabs, slides,
+ * accordion-items, marquee rows, etc.). Provides the canonical Add /
+ * Duplicate / Move / Remove controls backed by core/block-editor, so
+ * individual parent blocks don't reinvent the dispatch plumbing or the
+ * icon/label vocabulary.
  *
  * Usage:
  *
- *   // inside child block edit():
- *   <DsgoChildToolbar
- *     clientId={clientId}
- *     childBlockName="designsetgo/tab"
- *     newAttributes={{ label: __('New Tab', 'designsetgo') }}
- *   />
+ *   <BlockControls>
+ *     <DsgoChildToolbar
+ *       parentClientId={clientId}
+ *       childBlockName="designsetgo/tab"
+ *       activeIndex={activeTab}
+ *       onActiveIndexChange={(i) => setAttributes({ activeTab: i })}
+ *       addLabel={__('Add tab', 'designsetgo')}
+ *     />
+ *   </BlockControls>
+ *
+ * Keeping the canvas clean is the point — use this in place of inline
+ * `+`/copy/trash buttons on the canvas. Canvas-led blocks (tab and slide
+ * pickers where position is visually meaningful) may still keep a single
+ * hover-only inline `+`, but destructive and order controls belong here.
  */
+
 import { __ } from '@wordpress/i18n';
-import { BlockControls } from '@wordpress/block-editor';
 import { ToolbarGroup, ToolbarButton } from '@wordpress/components';
-import { useDispatch, useSelect } from '@wordpress/data';
+import { useSelect, useDispatch } from '@wordpress/data';
+import { store as blockEditorStore } from '@wordpress/block-editor';
 import { createBlock, cloneBlock } from '@wordpress/blocks';
-import { plus, copy, chevronUp, chevronDown, trash } from '@wordpress/icons';
+import {
+	plus,
+	copy,
+	trash,
+	chevronLeft,
+	chevronRight,
+	chevronUp,
+	chevronDown,
+} from '@wordpress/icons';
 
-export function DsgoChildToolbar({
-	clientId,
+/**
+ * @typedef {Object} DsgoChildToolbarProps
+ * @property {string}   parentClientId             Client ID of the parent block whose children we act on.
+ * @property {string}   childBlockName             Block name to insert when the user clicks Add.
+ * @property {number}   [activeIndex]              Index of the currently active child (optional).
+ *                                                 When provided, Duplicate/Move/Remove target this child.
+ * @property {Function} [onActiveIndexChange]      Called with `(newIndex, newChildClientId)` after
+ *                                                 Add/Duplicate/Move. Remove passes `null` for the
+ *                                                 clientId. Callers should prefer the clientId when
+ *                                                 reselecting — a stale `innerBlocks` closure
+ *                                                 captured above this component won't include a
+ *                                                 freshly-inserted child until the next render.
+ * @property {Object}   [childAttributes]          Attributes passed to `createBlock` for new children.
+ * @property {Array}    [childInnerBlocks]         Inner blocks passed to `createBlock` for new children.
+ * @property {Object}   [cloneAttributeOverrides]  Attributes merged into the duplicated block. Use
+ *                                                 this to clear per-block unique IDs (e.g.
+ *                                                 `{ uniqueId: '' }`) so the child's mount effect
+ *                                                 regenerates its ARIA wiring instead of inheriting
+ *                                                 the source's id.
+ * @property {string}   [addLabel]                 Localized label for the Add button (default: "Add item").
+ * @property {string}   [duplicateLabel]           Localized label for Duplicate.
+ * @property {string}   [removeLabel]              Localized label for Remove.
+ * @property {string}   [movePrevLabel]            Localized label for Move Previous.
+ * @property {string}   [moveNextLabel]            Localized label for Move Next.
+ * @property {boolean}  [showMove=true]            Whether to render Move Prev/Next buttons.
+ * @property {string}   [orientation='horizontal'] 'horizontal' renders chevronLeft/Right;
+ *                                                 'vertical' renders chevronUp/Down so the
+ *                                                 icon matches the direction of travel.
+ */
+
+/**
+ * @param {DsgoChildToolbarProps} props
+ */
+export default function DsgoChildToolbar({
+	parentClientId,
 	childBlockName,
-	newAttributes = {},
+	activeIndex,
+	onActiveIndexChange,
+	childAttributes = {},
+	childInnerBlocks,
+	cloneAttributeOverrides,
+	addLabel,
+	duplicateLabel,
+	removeLabel,
+	movePrevLabel,
+	moveNextLabel,
+	showMove = true,
+	orientation = 'horizontal',
 }) {
-	const { insertBlock, removeBlock, moveBlocksUp, moveBlocksDown } =
-		useDispatch('core/block-editor');
-
-	const { rootClientId, block, index } = useSelect(
+	const { childCount, activeChild, targetIndex } = useSelect(
 		(select) => {
-			const store = select('core/block-editor');
-			const root = store.getBlockRootClientId(clientId);
+			const { getBlock } = select(blockEditorStore);
+			const parent = getBlock(parentClientId);
+			const inner = parent?.innerBlocks || [];
+			// With no children there is no valid "active" index to clamp to;
+			// return -1 so Add appends at 0 and Duplicate/Remove/Move are
+			// hidden (no activeChild).
+			const resolvedIndex =
+				inner.length > 0 && typeof activeIndex === 'number'
+					? Math.max(0, Math.min(inner.length - 1, activeIndex))
+					: -1;
 			return {
-				rootClientId: root,
-				block: store.getBlock(clientId),
-				index: store.getBlockIndex(clientId),
+				childCount: inner.length,
+				activeChild: inner[resolvedIndex] || null,
+				targetIndex: resolvedIndex,
 			};
 		},
-		[clientId]
+		[parentClientId, activeIndex]
 	);
 
-	const onAdd = () => {
-		if (rootClientId === null) {
+	const { insertBlock, removeBlock, moveBlocksDown, moveBlocksUp } =
+		useDispatch(blockEditorStore);
+
+	const handleAdd = () => {
+		const block = createBlock(
+			childBlockName,
+			childAttributes,
+			childInnerBlocks
+		);
+		const insertionIndex = targetIndex >= 0 ? targetIndex + 1 : childCount;
+		// updateSelection: false — keep parent selected so the toolbar stays
+		// anchored to the parent block instead of jumping to the new child.
+		insertBlock(block, insertionIndex, parentClientId, false);
+		if (typeof onActiveIndexChange === 'function') {
+			onActiveIndexChange(insertionIndex, block.clientId);
+		}
+	};
+
+	const handleDuplicate = () => {
+		if (!activeChild) {
 			return;
 		}
-		const newBlock = createBlock(childBlockName, newAttributes);
-		insertBlock(newBlock, index + 1, rootClientId, false);
+		// cloneBlock produces a deep clone with fresh clientIds. The
+		// cloneAttributeOverrides escape hatch lets callers clear per-block
+		// unique ids (e.g. Tabs' `uniqueId` powers the tab/panel ARIA wiring
+		// — without resetting it, the clone would duplicate the source's id).
+		const clone = cloneBlock(activeChild, cloneAttributeOverrides);
+		insertBlock(clone, targetIndex + 1, parentClientId, false);
+		if (typeof onActiveIndexChange === 'function') {
+			onActiveIndexChange(targetIndex + 1, clone.clientId);
+		}
 	};
-	const onDuplicate = () => {
-		if (!block) {
+
+	const handleRemove = () => {
+		if (!activeChild || childCount <= 1) {
 			return;
 		}
-		insertBlock(cloneBlock(block), index + 1, rootClientId, false);
+		removeBlock(activeChild.clientId, false);
+		if (typeof onActiveIndexChange === 'function') {
+			onActiveIndexChange(Math.max(0, targetIndex - 1), null);
+		}
 	};
-	const onMoveUp = () => {
-		if (rootClientId === null) {
+
+	const handleMovePrev = () => {
+		if (!activeChild || targetIndex <= 0) {
 			return;
 		}
-		moveBlocksUp([clientId], rootClientId);
+		moveBlocksUp([activeChild.clientId], parentClientId);
+		if (typeof onActiveIndexChange === 'function') {
+			onActiveIndexChange(targetIndex - 1, activeChild.clientId);
+		}
 	};
-	const onMoveDown = () => {
-		if (rootClientId === null) {
+
+	const handleMoveNext = () => {
+		if (!activeChild || targetIndex >= childCount - 1) {
 			return;
 		}
-		moveBlocksDown([clientId], rootClientId);
+		moveBlocksDown([activeChild.clientId], parentClientId);
+		if (typeof onActiveIndexChange === 'function') {
+			onActiveIndexChange(targetIndex + 1, activeChild.clientId);
+		}
 	};
-	const onRemove = () => removeBlock(clientId, false);
+
+	const hasTarget = activeChild !== null;
+	const isFirst = targetIndex <= 0;
+	const isLast = targetIndex >= childCount - 1;
+	const isOnly = childCount <= 1;
+	const isVertical = orientation === 'vertical';
+	const movePrevIcon = isVertical ? chevronUp : chevronLeft;
+	const moveNextIcon = isVertical ? chevronDown : chevronRight;
+
+	const resolvedAddLabel = addLabel || __('Add item', 'designsetgo');
+	const resolvedDuplicateLabel =
+		duplicateLabel || __('Duplicate item', 'designsetgo');
+	const resolvedRemoveLabel = removeLabel || __('Remove item', 'designsetgo');
+	const resolvedMovePrevLabel =
+		movePrevLabel ||
+		(isVertical
+			? __('Move up', 'designsetgo')
+			: __('Move left', 'designsetgo'));
+	const resolvedMoveNextLabel =
+		moveNextLabel ||
+		(isVertical
+			? __('Move down', 'designsetgo')
+			: __('Move right', 'designsetgo'));
 
 	return (
-		<BlockControls>
-			<ToolbarGroup>
-				<ToolbarButton
-					icon={plus}
-					label={__('Add', 'designsetgo')}
-					onClick={onAdd}
-				/>
+		<ToolbarGroup label={__('Child block actions', 'designsetgo')}>
+			<ToolbarButton
+				icon={plus}
+				label={resolvedAddLabel}
+				onClick={handleAdd}
+				showTooltip
+			/>
+			{hasTarget && (
 				<ToolbarButton
 					icon={copy}
-					label={__('Duplicate', 'designsetgo')}
-					onClick={onDuplicate}
+					label={resolvedDuplicateLabel}
+					onClick={handleDuplicate}
+					showTooltip
 				/>
-				<ToolbarButton
-					icon={chevronUp}
-					label={__('Move up', 'designsetgo')}
-					onClick={onMoveUp}
-				/>
-				<ToolbarButton
-					icon={chevronDown}
-					label={__('Move down', 'designsetgo')}
-					onClick={onMoveDown}
-				/>
+			)}
+			{hasTarget && showMove && (
+				<>
+					<ToolbarButton
+						icon={movePrevIcon}
+						label={resolvedMovePrevLabel}
+						onClick={handleMovePrev}
+						disabled={isFirst}
+						showTooltip
+					/>
+					<ToolbarButton
+						icon={moveNextIcon}
+						label={resolvedMoveNextLabel}
+						onClick={handleMoveNext}
+						disabled={isLast}
+						showTooltip
+					/>
+				</>
+			)}
+			{hasTarget && (
 				<ToolbarButton
 					icon={trash}
-					label={__('Remove', 'designsetgo')}
-					onClick={onRemove}
+					label={resolvedRemoveLabel}
+					onClick={handleRemove}
+					disabled={isOnly}
 					isDestructive
+					showTooltip
 				/>
-			</ToolbarGroup>
-		</BlockControls>
+			)}
+		</ToolbarGroup>
 	);
 }

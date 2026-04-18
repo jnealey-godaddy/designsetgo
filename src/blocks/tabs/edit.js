@@ -7,6 +7,7 @@
 import { __, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
+	BlockControls,
 	InspectorControls,
 	useInnerBlocksProps,
 	store as blockEditorStore,
@@ -26,7 +27,7 @@ import {
 import { createBlock, cloneBlock } from '@wordpress/blocks';
 import { copy, trash, plus } from '@wordpress/icons';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { useEffect } from '@wordpress/element';
+import { useCallback, useEffect, useRef } from '@wordpress/element';
 import { getIcon } from '../icon/utils/svg-icons';
 import { useUniqueBlockId } from '../../hooks';
 import {
@@ -35,6 +36,8 @@ import {
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import TabsPlaceholder from './components/TabsPlaceholder';
+import useTablistKeyboard from '../../hooks/useTablistKeyboard';
+import DsgoChildToolbar from '../../components/shared/DsgoChildToolbar';
 
 const ALLOWED_BLOCKS = ['designsetgo/tab'];
 
@@ -149,48 +152,26 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		}
 	};
 
-	// Handle keyboard navigation
-	const handleKeyDown = (e, index) => {
-		let newIndex = index;
-
-		if (orientation === 'horizontal') {
-			if (e.key === 'ArrowLeft') {
-				newIndex = index > 0 ? index - 1 : innerBlocks.length - 1;
-				e.preventDefault();
-			} else if (e.key === 'ArrowRight') {
-				newIndex = index < innerBlocks.length - 1 ? index + 1 : 0;
-				e.preventDefault();
-			}
-		} else if (e.key === 'ArrowUp') {
-			newIndex = index > 0 ? index - 1 : innerBlocks.length - 1;
-			e.preventDefault();
-		} else if (e.key === 'ArrowDown') {
-			newIndex = index < innerBlocks.length - 1 ? index + 1 : 0;
-			e.preventDefault();
+	// Shared tablist keyboard navigation — same ArrowLeft/Right/Home/End
+	// behavior across tabs, slider, accordion, etc.
+	// Ref anchors the focus lookup to the editor canvas's iframed document.
+	// `document.querySelector` here resolves to the WP admin wrapper and
+	// misses the tabs rendered inside the canvas iframe.
+	const navRef = useRef(null);
+	const focusTabByIndex = useCallback((newIndex) => {
+		const tabButton = navRef.current?.querySelector(
+			`[data-tab-index="${newIndex}"]`
+		);
+		if (tabButton) {
+			tabButton.focus();
 		}
-
-		if (e.key === 'Home') {
-			newIndex = 0;
-			e.preventDefault();
-		} else if (e.key === 'End') {
-			newIndex = innerBlocks.length - 1;
-			e.preventDefault();
-		}
-
-		if (newIndex !== index) {
-			setAttributes({ activeTab: newIndex });
-
-			// Focus the new tab
-			setTimeout(() => {
-				const tabButton = document.querySelector(
-					`.dsgo-tabs-${uniqueId} [data-tab-index="${newIndex}"]`
-				);
-				if (tabButton) {
-					tabButton.focus();
-				}
-			}, 0);
-		}
-	};
+	}, []);
+	const handleKeyDown = useTablistKeyboard({
+		itemCount: innerBlocks.length,
+		orientation,
+		onIndexChange: (newIndex) => setAttributes({ activeTab: newIndex }),
+		focusItem: focusTabByIndex,
+	});
 
 	const blockProps = useBlockProps({
 		className: `dsgo-tabs dsgo-tabs-${uniqueId} dsgo-tabs--${orientation} dsgo-tabs--${tabStyle} dsgo-tabs--align-${alignment}${showNavBorder ? ' dsgo-tabs--show-nav-border' : ''}`,
@@ -255,6 +236,39 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
 	return (
 		<>
+			<BlockControls>
+				<DsgoChildToolbar
+					parentClientId={clientId}
+					childBlockName="designsetgo/tab"
+					activeIndex={activeTab}
+					onActiveIndexChange={(index) =>
+						setAttributes({ activeTab: index })
+					}
+					childAttributes={{
+						title: sprintf(
+							/* translators: %d: tab number */
+							__('Tab %d', 'designsetgo'),
+							innerBlocks.length + 1
+						),
+					}}
+					cloneAttributeOverrides={{ uniqueId: '' }}
+					addLabel={__('Add tab', 'designsetgo')}
+					duplicateLabel={__('Duplicate tab', 'designsetgo')}
+					removeLabel={__('Remove tab', 'designsetgo')}
+					movePrevLabel={
+						orientation === 'vertical'
+							? __('Move tab up', 'designsetgo')
+							: __('Move tab left', 'designsetgo')
+					}
+					moveNextLabel={
+						orientation === 'vertical'
+							? __('Move tab down', 'designsetgo')
+							: __('Move tab right', 'designsetgo')
+					}
+					orientation={orientation}
+				/>
+			</BlockControls>
+
 			<InspectorControls group="color">
 				<ColorGradientSettingsDropdown
 					panelId={clientId}
@@ -581,6 +595,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 				    inside role="tablist". */}
 				<div className="dsgo-tabs__nav-row">
 					<div
+						ref={navRef}
 						className="dsgo-tabs__nav"
 						role="tablist"
 						aria-label={__('Tabs', 'designsetgo')}

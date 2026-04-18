@@ -402,8 +402,26 @@
 		}
 	}
 
+	// Hover-only per Theme 5: only reveal the inline "Add tab" affordance when
+	// the author is engaged with the block. The BlockControls toolbar
+	// provides the always-available Add action for keyboard/screen-reader
+	// users. See docs/plans/2026-04-16-blocks-editor-ux-design.md.
 	.dsgo-tabs__add-tab {
 		align-self: center;
 		flex-shrink: 0;
+		opacity: 0;
+		transition: opacity 0.15s ease;
+		pointer-events: none;
+	}
+}
+
+.wp-block-designsetgo-tabs:hover,
+.wp-block-designsetgo-tabs.is-selected,
+.wp-block-designsetgo-tabs.has-child-selected,
+.wp-block-designsetgo-tabs:focus-within {
+
+	.dsgo-tabs__add-tab {
+		opacity: 1;
+		pointer-events: auto;
 	}
 }

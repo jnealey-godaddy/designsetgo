@@ -1,54 +1,97 @@
 /**
  * useTablistKeyboard
  *
- * Returns a keydown handler implementing ARIA Authoring Practices tablist
- * keyboard navigation (ArrowLeft/Right or ArrowUp/Down + Home/End with
- * wraparound). Generalized from src/blocks/tabs/edit.js lines 141-176.
+ * WAI-ARIA tablist keyboard navigation for editor parent blocks that manage
+ * a list of selectable children (tabs, slides, accordion-items, etc.).
  *
- * Theme 5 uses this for tabs, slider, scroll-slides, accordion,
- * image-accordion.
+ * Ported from the original inline implementation in `blocks/tabs/edit.js` so
+ * every compound block can opt in with one import. Horizontal orientation
+ * binds ArrowLeft/Right; vertical binds ArrowUp/Down. Home/End jump to the
+ * first/last child in both orientations. Movement wraps.
  *
- * @param {Object}                  params
- * @param {number}                  params.count                      Number of children.
- * @param {number}                  params.activeIndex                Currently active index.
- * @param {Function}                params.onChange                   Called with new index.
- * @param {'horizontal'|'vertical'} [params.orientation='horizontal']
- * @return {{ onKeyDown: Function }}
+ * Focus is re-anchored to the target child after the parent's active-index
+ * update via the optional `focusItem` callback. The hook itself does no DOM
+ * querying — collision-safety for duplicate blocks on the same page is the
+ * caller's responsibility. Scope the `focusItem` lookup with something
+ * unique (e.g. a `uniqueId`-prefixed class or `data-*` attribute) so
+ * two instances of the same block don't steal each other's focus.
  */
+
 import { useCallback } from '@wordpress/element';
 
-export function useTablistKeyboard({
-	count,
-	activeIndex,
-	onChange,
+const HORIZONTAL_KEYS = new Set(['ArrowLeft', 'ArrowRight']);
+const VERTICAL_KEYS = new Set(['ArrowUp', 'ArrowDown']);
+
+/**
+ * @param {Object}   options
+ * @param {number}   options.itemCount                  Number of tab-like children.
+ * @param {Function} options.onIndexChange              Called with the new index after a navigation key.
+ * @param {string}   [options.orientation='horizontal'] 'horizontal' | 'vertical'.
+ * @param {Function} [options.focusItem]                Optional custom focus handler `(index) => void`.
+ *                                                      When omitted, no DOM focus is moved — callers
+ *                                                      that render controlled inputs should pass one.
+ * @return {(event: KeyboardEvent, index: number) => void} Keydown handler.
+ */
+export default function useTablistKeyboard({
+	itemCount,
+	onIndexChange,
 	orientation = 'horizontal',
+	focusItem,
 }) {
-	const onKeyDown = useCallback(
-		(event) => {
-			if (count === 0) {
+	return useCallback(
+		(event, index) => {
+			const isHorizontal = orientation !== 'vertical';
+			const prevKey = isHorizontal ? 'ArrowLeft' : 'ArrowUp';
+			const nextKey = isHorizontal ? 'ArrowRight' : 'ArrowDown';
+			const orientationKeys = isHorizontal
+				? HORIZONTAL_KEYS
+				: VERTICAL_KEYS;
+
+			// Keys from the opposing axis are ignored so they pass through to
+			// the browser (e.g. caret movement inside a nested text input).
+			if (
+				!orientationKeys.has(event.key) &&
+				event.key !== 'Home' &&
+				event.key !== 'End'
+			) {
 				return;
 			}
-			const prev = orientation === 'horizontal' ? 'ArrowLeft' : 'ArrowUp';
-			const next =
-				orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown';
 
-			let newIndex = activeIndex;
-			if (event.key === next) {
-				newIndex = activeIndex < count - 1 ? activeIndex + 1 : 0;
-			} else if (event.key === prev) {
-				newIndex = activeIndex > 0 ? activeIndex - 1 : count - 1;
+			// Always consume the key for WAI-ARIA tablist semantics — the
+			// widget "owns" these keys regardless of item count, so Home at
+			// index 0, End at the last item, or arrow keys on a single-item
+			// tablist don't trigger page-level scroll. Precedes the
+			// single-item early return so a reduced tablist still behaves
+			// like a tablist, matching the original inline handler.
+			event.preventDefault();
+
+			if (itemCount <= 1) {
+				return;
+			}
+
+			let newIndex = index;
+			if (event.key === prevKey) {
+				newIndex = index > 0 ? index - 1 : itemCount - 1;
+			} else if (event.key === nextKey) {
+				newIndex = index < itemCount - 1 ? index + 1 : 0;
 			} else if (event.key === 'Home') {
 				newIndex = 0;
 			} else if (event.key === 'End') {
-				newIndex = count - 1;
-			} else {
+				newIndex = itemCount - 1;
+			}
+
+			if (newIndex === index) {
 				return;
 			}
-			event.preventDefault();
-			onChange(newIndex);
-		},
-		[count, activeIndex, onChange, orientation]
-	);
 
-	return { onKeyDown };
+			onIndexChange(newIndex);
+
+			if (typeof focusItem === 'function') {
+				// Defer until after state flush so the child we're focusing
+				// has rendered its `tabIndex=0` / aria-selected state.
+				setTimeout(() => focusItem(newIndex), 0);
+			}
+		},
+		[itemCount, orientation, onIndexChange, focusItem]
+	);
 }
