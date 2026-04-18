@@ -833,6 +833,202 @@ class Test_Abilities_Execution extends WP_UnitTestCase {
 }
 
 /**
+ * Round-trip validation tests for blocks inserted via add-block.
+ *
+ * Gutenberg fails block validation when the stored innerHTML doesn't match
+ * what the block's save() function would emit from the parsed attributes.
+ * These tests lock in the invariants that previously drifted and caused
+ * "attempt recovery" prompts in the editor.
+ */
+class Test_Add_Block_Round_Trip extends WP_UnitTestCase {
+
+	/**
+	 * Test user ID.
+	 *
+	 * @var int
+	 */
+	private $editor_user_id;
+
+	/**
+	 * Test page ID.
+	 *
+	 * @var int
+	 */
+	private $page_id;
+
+	/**
+	 * Set up test fixtures.
+	 */
+	public function set_up() {
+		parent::set_up();
+
+		$this->editor_user_id = $this->factory->user->create( array(
+			'role' => 'editor',
+		) );
+		wp_set_current_user( $this->editor_user_id );
+
+		$this->page_id = $this->factory->post->create( array(
+			'post_type'    => 'page',
+			'post_status'  => 'publish',
+			'post_title'   => 'Round-trip Test',
+			'post_content' => '',
+		) );
+	}
+
+	/**
+	 * Insert a designsetgo block and return the first parsed block.
+	 *
+	 * @param string               $block_name Block name.
+	 * @param array<string, mixed> $attributes Attributes.
+	 * @return array<string, mixed>|null Parsed block array or null if registration missing.
+	 */
+	private function insert_and_parse( string $block_name, array $attributes = array() ): ?array {
+		$registry = \WP_Block_Type_Registry::get_instance();
+		if ( ! $registry->get_registered( $block_name ) ) {
+			return null;
+		}
+
+		$result = Block_Inserter::insert_block(
+			$this->page_id,
+			$block_name,
+			$attributes,
+			array(),
+			-1
+		);
+
+		$this->assertIsArray( $result, 'insert_block should succeed' );
+		$this->assertTrue( $result['success'] );
+
+		$post   = get_post( $this->page_id );
+		$blocks = parse_blocks( $post->post_content );
+
+		foreach ( $blocks as $block ) {
+			if ( $block_name === $block['blockName'] ) {
+				return $block;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Slider: the wrapper HTML must reflect block.json defaults so the
+	 * stored HTML round-trips through save() without validation errors.
+	 *
+	 * Regression guard for the bug where add-block carried its own default
+	 * table (height=500px, arrowSize=48px, dotPosition=bottom) that diverged
+	 * from block.json (height="", arrowSize=24px, dotPosition=inside).
+	 */
+	public function test_slider_defaults_match_block_json() {
+		$block = $this->insert_and_parse( 'designsetgo/slider' );
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/slider block not registered (build folder missing).' );
+		}
+
+		$html = $block['innerHTML'];
+
+		// block.json default height is "" → save() omits --dsgo-slider-height.
+		$this->assertStringNotContainsString(
+			'--dsgo-slider-height:',
+			$html,
+			'Wrapper must omit --dsgo-slider-height when height default is empty.'
+		);
+
+		// block.json default arrowSize is "24px".
+		$this->assertStringContainsString(
+			'--dsgo-slider-arrow-size:24px',
+			$html,
+			'Wrapper must emit arrow size matching block.json default (24px, not 48px).'
+		);
+
+		// block.json default dotPosition is "inside".
+		$this->assertStringContainsString(
+			'data-dot-position="inside"',
+			$html,
+			'Wrapper must emit dot position matching block.json default (inside, not bottom).'
+		);
+	}
+
+	/**
+	 * Slider: serializing the stored post content should be idempotent
+	 * (parse → serialize → parse → serialize produces the same output).
+	 */
+	public function test_slider_serialization_is_idempotent() {
+		$block = $this->insert_and_parse( 'designsetgo/slider' );
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/slider block not registered (build folder missing).' );
+		}
+
+		$post  = get_post( $this->page_id );
+		$once  = serialize_blocks( parse_blocks( $post->post_content ) );
+		$twice = serialize_blocks( parse_blocks( $once ) );
+
+		$this->assertSame( $once, $twice, 'Serialization must be idempotent.' );
+	}
+
+	/**
+	 * Map: addresses with embedded newlines must be preserved identically
+	 * in both the stored innerHTML and the block comment JSON so that the
+	 * block parser sees the same value save() would emit.
+	 */
+	public function test_map_address_preserves_newlines() {
+		$address = "Sweet Treats Bakery\n123 Main Street\nYour City, ST 00000";
+
+		$block = $this->insert_and_parse(
+			'designsetgo/map',
+			array( 'dsgoAddress' => $address )
+		);
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/map block not registered (build folder missing).' );
+		}
+
+		// Real newline characters must survive into the stored attribute.
+		$this->assertStringContainsString(
+			$address,
+			$block['innerHTML'],
+			'innerHTML must preserve real newlines in dsgoAddress.'
+		);
+
+		// The parsed attribute must carry the same newline-containing value
+		// that save() would render, so block validation succeeds.
+		$this->assertArrayHasKey( 'attrs', $block );
+		$this->assertArrayHasKey( 'dsgoAddress', $block['attrs'] );
+		$this->assertSame(
+			$address,
+			$block['attrs']['dsgoAddress'],
+			'Parsed dsgoAddress must round-trip through serialize_block().'
+		);
+	}
+
+	/**
+	 * Map: a literal backslash-n pair in the input is not a newline, so the
+	 * two-character sequence must be preserved verbatim (not converted into
+	 * a real newline or stripped to just "n").
+	 */
+	public function test_map_address_preserves_literal_backslash_n() {
+		$address = 'Line1\\nLine2'; // 11 chars: L i n e 1 \ n L i n e 2
+
+		$block = $this->insert_and_parse(
+			'designsetgo/map',
+			array( 'dsgoAddress' => $address )
+		);
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/map block not registered (build folder missing).' );
+		}
+
+		$this->assertSame(
+			$address,
+			$block['attrs']['dsgoAddress'],
+			'Literal backslash-n must survive verbatim through round-trip.'
+		);
+	}
+}
+
+/**
  * Tests for Block_Schema_Loader class.
  */
 class Test_Block_Schema_Loader extends WP_UnitTestCase {

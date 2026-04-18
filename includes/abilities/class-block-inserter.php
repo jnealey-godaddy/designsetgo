@@ -135,6 +135,10 @@ class Block_Inserter {
 		// Coerce attribute types and normalize defaults.
 		$attrs = self::coerce_attribute_types( $block_name, $attributes );
 		$attrs = self::normalize_block_attributes( $block_name, $attrs );
+		// Apply block.json defaults so the HTML we build matches what save()
+		// would emit from the same parsed attributes, preventing block
+		// validation failures on first edit.
+		$attrs = self::apply_block_json_defaults( $block_name, $attrs );
 
 		// Convert CSS var() syntax to WordPress shorthand in style attribute.
 		if ( isset( $attrs['style'] ) && is_array( $attrs['style'] ) ) {
@@ -1364,7 +1368,7 @@ class Block_Inserter {
 				$slides_per_view        = isset( $attributes['slidesPerView'] ) ? intval( $attributes['slidesPerView'] ) : 1;
 				$slides_per_view_tablet = isset( $attributes['slidesPerViewTablet'] ) ? intval( $attributes['slidesPerViewTablet'] ) : 1;
 				$slides_per_view_mobile = isset( $attributes['slidesPerViewMobile'] ) ? intval( $attributes['slidesPerViewMobile'] ) : 1;
-				$height                 = isset( $attributes['height'] ) ? $attributes['height'] : '500px';
+				$height                 = isset( $attributes['height'] ) ? $attributes['height'] : '';
 				$aspect_ratio           = isset( $attributes['aspectRatio'] ) ? $attributes['aspectRatio'] : '16/9';
 				$use_aspect_ratio       = isset( $attributes['useAspectRatio'] ) ? $attributes['useAspectRatio'] : false;
 				$gap                    = isset( $attributes['gap'] ) ? $attributes['gap'] : '20px';
@@ -1373,9 +1377,9 @@ class Block_Inserter {
 				$arrow_style            = isset( $attributes['arrowStyle'] ) ? $attributes['arrowStyle'] : 'default';
 				$arrow_position         = isset( $attributes['arrowPosition'] ) ? $attributes['arrowPosition'] : 'sides';
 				$arrow_vertical_pos     = isset( $attributes['arrowVerticalPosition'] ) ? $attributes['arrowVerticalPosition'] : 'center';
-				$arrow_size             = isset( $attributes['arrowSize'] ) ? $attributes['arrowSize'] : '48px';
+				$arrow_size             = isset( $attributes['arrowSize'] ) ? $attributes['arrowSize'] : '24px';
 				$dot_style              = isset( $attributes['dotStyle'] ) ? $attributes['dotStyle'] : 'default';
-				$dot_position           = isset( $attributes['dotPosition'] ) ? $attributes['dotPosition'] : 'bottom';
+				$dot_position           = isset( $attributes['dotPosition'] ) ? $attributes['dotPosition'] : 'inside';
 				$effect                 = isset( $attributes['effect'] ) ? $attributes['effect'] : 'slide';
 				$transition_duration    = isset( $attributes['transitionDuration'] ) ? $attributes['transitionDuration'] : '0.5s';
 				$transition_easing      = isset( $attributes['transitionEasing'] ) ? $attributes['transitionEasing'] : 'ease-in-out';
@@ -1422,16 +1426,20 @@ class Block_Inserter {
 					$class_parts[] = 'dsgo-slider--free-mode';
 				}
 
-				// Build style.
-				$style_parts = array(
-					'--dsgo-slider-height:' . esc_attr( $height ),
-					'--dsgo-slider-aspect-ratio:' . esc_attr( $aspect_ratio ),
-					'--dsgo-slider-gap:' . esc_attr( $gap ),
-					'--dsgo-slider-transition:' . esc_attr( $transition_duration ),
-					'--dsgo-slider-slides-per-view:' . esc_attr( (string) $effective_slides ),
-					'--dsgo-slider-slides-per-view-tablet:' . esc_attr( (string) $effective_slides_tablet ),
-					'--dsgo-slider-slides-per-view-mobile:' . esc_attr( (string) $effective_slides_mobile ),
-				);
+				// Build style. Mirror save.js: height is only included when
+				// truthy (block.json default is ""), and arrow size follows the
+				// same rule. Emitting them unconditionally here breaks
+				// round-tripping against save().
+				$style_parts = array();
+				if ( $height ) {
+					$style_parts[] = '--dsgo-slider-height:' . esc_attr( $height );
+				}
+				$style_parts[] = '--dsgo-slider-aspect-ratio:' . esc_attr( $aspect_ratio );
+				$style_parts[] = '--dsgo-slider-gap:' . esc_attr( $gap );
+				$style_parts[] = '--dsgo-slider-transition:' . esc_attr( $transition_duration );
+				$style_parts[] = '--dsgo-slider-slides-per-view:' . esc_attr( (string) $effective_slides );
+				$style_parts[] = '--dsgo-slider-slides-per-view-tablet:' . esc_attr( (string) $effective_slides_tablet );
+				$style_parts[] = '--dsgo-slider-slides-per-view-mobile:' . esc_attr( (string) $effective_slides_mobile );
 				if ( $arrow_size ) {
 					$style_parts[] = '--dsgo-slider-arrow-size:' . esc_attr( $arrow_size );
 				}
@@ -1919,6 +1927,53 @@ class Block_Inserter {
 					$attributes['uniqueId'] = 'counter-' . wp_generate_uuid4();
 				}
 				break;
+		}
+
+		return $attributes;
+	}
+
+	/**
+	 * Fill missing attributes with their block.json defaults.
+	 *
+	 * The wrapper HTML generators previously carried their own fallback
+	 * defaults, which drifted from block.json over time and produced markup
+	 * that didn't round-trip through save(). Applying block.json defaults up
+	 * front keeps the ability in sync with the single source of truth.
+	 *
+	 * Scoped to an allowlist rather than applied to every block: other
+	 * wrapper generators have not been audited against their save() output,
+	 * so forcing block.json defaults on them could expose unrelated latent
+	 * mismatches. Add blocks here as their wrappers are verified.
+	 *
+	 * @param string               $block_name Block name.
+	 * @param array<string, mixed> $attributes Incoming attributes.
+	 * @return array<string, mixed> Attributes merged with block.json defaults.
+	 */
+	private static function apply_block_json_defaults( string $block_name, array $attributes ): array {
+		$verified_blocks = array(
+			'designsetgo/slider',
+			'designsetgo/map',
+		);
+
+		if ( ! in_array( $block_name, $verified_blocks, true ) ) {
+			return $attributes;
+		}
+
+		$registry   = \WP_Block_Type_Registry::get_instance();
+		$block_type = $registry->get_registered( $block_name );
+
+		if ( ! $block_type || empty( $block_type->attributes ) ) {
+			return $attributes;
+		}
+
+		foreach ( $block_type->attributes as $attr_name => $attr_def ) {
+			if ( array_key_exists( $attr_name, $attributes ) ) {
+				continue;
+			}
+			if ( ! array_key_exists( 'default', $attr_def ) ) {
+				continue;
+			}
+			$attributes[ $attr_name ] = $attr_def['default'];
 		}
 
 		return $attributes;
