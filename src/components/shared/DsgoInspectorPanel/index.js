@@ -58,6 +58,14 @@ export function DsgoInspectorPanel({
 	panelId,
 	resetAll,
 	children,
+	// Explicitly drop nested-only layout props if a caller passes them —
+	// see comment on the render below. Stripping here (rather than just
+	// documenting) prevents the ~50% width regression from sneaking back
+	// in via `...rest` during the Theme 3 migration rollout.
+	// eslint-disable-next-line no-unused-vars
+	hasInnerWrapper: _hasInnerWrapper,
+	// eslint-disable-next-line no-unused-vars
+	shouldRenderPlaceholderItems: _shouldRenderPlaceholderItems,
 	...rest
 }) {
 	if (
