@@ -53,6 +53,7 @@
     "i18n:make-pot": "wp-env run cli wp i18n make-pot /var/www/html/wp-content/plugins/designsetgo /var/www/html/wp-content/plugins/designsetgo/languages/designsetgo.pot --domain=designsetgo",
     "i18n:make-json": "wp-env run cli wp i18n make-json /var/www/html/wp-content/plugins/designsetgo/languages /var/www/html/wp-content/plugins/designsetgo/languages --no-purge",
     "prepare": "husky",
+    "postinstall": "node scripts/patch-wp-env-composer-audit.js",
     "clean:cache": "rm -rf node_modules/.cache",
     "clean:cache:wp-env": "rm -rf .wp-env/WordPress",
     "clean:build": "rm -rf build",
