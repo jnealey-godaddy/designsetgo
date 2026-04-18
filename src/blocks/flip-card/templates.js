@@ -8,6 +8,22 @@
 
 import { __ } from '@wordpress/i18n';
 
+// flip-card-front/back support `spacing.padding` but default to none, so
+// templates seed it explicitly — otherwise text sits flush against the card
+// edge on first insert. Authors can still adjust via Style → Padding.
+const facePadding = {
+	style: {
+		spacing: {
+			padding: {
+				top: '32px',
+				right: '32px',
+				bottom: '32px',
+				left: '32px',
+			},
+		},
+	},
+};
+
 const flipCardTemplates = [
 	{
 		name: 'blank',
@@ -16,8 +32,8 @@ const flipCardTemplates = [
 		icon: 'welcome-add-page',
 		attributes: {},
 		innerBlocks: [
-			['designsetgo/flip-card-front', {}],
-			['designsetgo/flip-card-back', {}],
+			['designsetgo/flip-card-front', facePadding],
+			['designsetgo/flip-card-back', facePadding],
 		],
 	},
 	{
@@ -32,7 +48,7 @@ const flipCardTemplates = [
 		innerBlocks: [
 			[
 				'designsetgo/flip-card-front',
-				{},
+				facePadding,
 				[
 					[
 						'core/heading',
@@ -46,7 +62,7 @@ const flipCardTemplates = [
 			],
 			[
 				'designsetgo/flip-card-back',
-				{},
+				facePadding,
 				[
 					[
 						'core/paragraph',
@@ -71,7 +87,7 @@ const flipCardTemplates = [
 		innerBlocks: [
 			[
 				'designsetgo/flip-card-front',
-				{},
+				facePadding,
 				[
 					['core/image', { sizeSlug: 'medium' }],
 					[
@@ -93,7 +109,7 @@ const flipCardTemplates = [
 			],
 			[
 				'designsetgo/flip-card-back',
-				{},
+				facePadding,
 				[
 					[
 						'core/paragraph',
@@ -121,7 +137,7 @@ const flipCardTemplates = [
 		innerBlocks: [
 			[
 				'designsetgo/flip-card-front',
-				{},
+				facePadding,
 				[
 					[
 						'core/heading',
@@ -142,7 +158,7 @@ const flipCardTemplates = [
 			],
 			[
 				'designsetgo/flip-card-back',
-				{},
+				facePadding,
 				[
 					[
 						'core/paragraph',
