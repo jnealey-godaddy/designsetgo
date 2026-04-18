@@ -359,7 +359,16 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 					parentClientId={clientId}
 					childBlockName="designsetgo/slide"
 					activeIndex={activeSlideIndex}
-					onActiveIndexChange={(index) => {
+					onActiveIndexChange={(index, newClientId) => {
+						// Prefer the clientId handed to us — the `slides`
+						// closure here comes from the parent's useSelect and
+						// doesn't include freshly-inserted children until
+						// the next render. On Remove (null clientId) fall
+						// through to the clamped neighbor in the stale list.
+						if (newClientId) {
+							selectBlock(newClientId);
+							return;
+						}
 						const target = slides[index];
 						if (target) {
 							selectBlock(target.clientId);

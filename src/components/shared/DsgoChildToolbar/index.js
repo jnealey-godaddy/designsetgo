@@ -47,9 +47,19 @@ import {
  * @property {string}   childBlockName             Block name to insert when the user clicks Add.
  * @property {number}   [activeIndex]              Index of the currently active child (optional).
  *                                                 When provided, Duplicate/Move/Remove target this child.
- * @property {Function} [onActiveIndexChange]      Called with a new index after Add/Duplicate/Move/Remove.
+ * @property {Function} [onActiveIndexChange]      Called with `(newIndex, newChildClientId)` after
+ *                                                 Add/Duplicate/Move. Remove passes `null` for the
+ *                                                 clientId. Callers should prefer the clientId when
+ *                                                 reselecting — a stale `innerBlocks` closure
+ *                                                 captured above this component won't include a
+ *                                                 freshly-inserted child until the next render.
  * @property {Object}   [childAttributes]          Attributes passed to `createBlock` for new children.
  * @property {Array}    [childInnerBlocks]         Inner blocks passed to `createBlock` for new children.
+ * @property {Object}   [cloneAttributeOverrides]  Attributes merged into the duplicated block. Use
+ *                                                 this to clear per-block unique IDs (e.g.
+ *                                                 `{ uniqueId: '' }`) so the child's mount effect
+ *                                                 regenerates its ARIA wiring instead of inheriting
+ *                                                 the source's id.
  * @property {string}   [addLabel]                 Localized label for the Add button (default: "Add item").
  * @property {string}   [duplicateLabel]           Localized label for Duplicate.
  * @property {string}   [removeLabel]              Localized label for Remove.
@@ -71,6 +81,7 @@ export default function DsgoChildToolbar({
 	onActiveIndexChange,
 	childAttributes = {},
 	childInnerBlocks,
+	cloneAttributeOverrides,
 	addLabel,
 	duplicateLabel,
 	removeLabel,
@@ -114,7 +125,7 @@ export default function DsgoChildToolbar({
 		// anchored to the parent block instead of jumping to the new child.
 		insertBlock(block, insertionIndex, parentClientId, false);
 		if (typeof onActiveIndexChange === 'function') {
-			onActiveIndexChange(insertionIndex);
+			onActiveIndexChange(insertionIndex, block.clientId);
 		}
 	};
 
@@ -122,13 +133,14 @@ export default function DsgoChildToolbar({
 		if (!activeChild) {
 			return;
 		}
-		// cloneBlock produces a deep clone with fresh clientIds. Callers that
-		// store a derived per-block unique id (see `useUniqueBlockId`) should
-		// reset it via child onMount so the clone regenerates its own.
-		const clone = cloneBlock(activeChild);
+		// cloneBlock produces a deep clone with fresh clientIds. The
+		// cloneAttributeOverrides escape hatch lets callers clear per-block
+		// unique ids (e.g. Tabs' `uniqueId` powers the tab/panel ARIA wiring
+		// — without resetting it, the clone would duplicate the source's id).
+		const clone = cloneBlock(activeChild, cloneAttributeOverrides);
 		insertBlock(clone, targetIndex + 1, parentClientId, false);
 		if (typeof onActiveIndexChange === 'function') {
-			onActiveIndexChange(targetIndex + 1);
+			onActiveIndexChange(targetIndex + 1, clone.clientId);
 		}
 	};
 
@@ -138,7 +150,7 @@ export default function DsgoChildToolbar({
 		}
 		removeBlock(activeChild.clientId, false);
 		if (typeof onActiveIndexChange === 'function') {
-			onActiveIndexChange(Math.max(0, targetIndex - 1));
+			onActiveIndexChange(Math.max(0, targetIndex - 1), null);
 		}
 	};
 
@@ -148,7 +160,7 @@ export default function DsgoChildToolbar({
 		}
 		moveBlocksUp([activeChild.clientId], parentClientId);
 		if (typeof onActiveIndexChange === 'function') {
-			onActiveIndexChange(targetIndex - 1);
+			onActiveIndexChange(targetIndex - 1, activeChild.clientId);
 		}
 	};
 
@@ -158,7 +170,7 @@ export default function DsgoChildToolbar({
 		}
 		moveBlocksDown([activeChild.clientId], parentClientId);
 		if (typeof onActiveIndexChange === 'function') {
-			onActiveIndexChange(targetIndex + 1);
+			onActiveIndexChange(targetIndex + 1, activeChild.clientId);
 		}
 	};
 

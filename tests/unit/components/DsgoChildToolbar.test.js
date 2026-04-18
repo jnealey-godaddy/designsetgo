@@ -154,7 +154,7 @@ describe('DsgoChildToolbar', () => {
 			'parent',
 			false
 		);
-		expect(onActiveIndexChange).toHaveBeenCalledWith(2);
+		expect(onActiveIndexChange).toHaveBeenCalledWith(2, 'new-client-id');
 	});
 
 	test('Duplicate clones active child and inserts after it', async () => {
@@ -172,7 +172,8 @@ describe('DsgoChildToolbar', () => {
 		await userEvent.click(screen.getByLabelText('Duplicate item'));
 
 		expect(cloneBlock).toHaveBeenCalledWith(
-			expect.objectContaining({ clientId: 'child-1' })
+			expect.objectContaining({ clientId: 'child-1' }),
+			undefined
 		);
 		expect(insertBlock).toHaveBeenCalledWith(
 			expect.objectContaining({ clientId: 'clone-of-child-1' }),
@@ -180,7 +181,29 @@ describe('DsgoChildToolbar', () => {
 			'parent',
 			false
 		);
-		expect(onActiveIndexChange).toHaveBeenCalledWith(2);
+		expect(onActiveIndexChange).toHaveBeenCalledWith(2, 'clone-of-child-1');
+	});
+
+	test('Duplicate forwards cloneAttributeOverrides to cloneBlock', async () => {
+		// Parents with per-block unique IDs (Tabs' uniqueId, accordion panel
+		// ids, etc.) rely on the override to wipe stale ids so the clone
+		// regenerates its own ARIA wiring on mount.
+		setupSelect(makeChildren(3));
+		render(
+			<DsgoChildToolbar
+				parentClientId="parent"
+				childBlockName="designsetgo/tab"
+				activeIndex={1}
+				cloneAttributeOverrides={{ uniqueId: '' }}
+			/>
+		);
+
+		await userEvent.click(screen.getByLabelText('Duplicate item'));
+
+		expect(cloneBlock).toHaveBeenCalledWith(
+			expect.objectContaining({ clientId: 'child-1' }),
+			{ uniqueId: '' }
+		);
 	});
 
 	test('Remove dispatches removeBlock and decrements active index', async () => {
@@ -198,7 +221,7 @@ describe('DsgoChildToolbar', () => {
 		await userEvent.click(screen.getByLabelText('Remove item'));
 
 		expect(removeBlock).toHaveBeenCalledWith('child-2', false);
-		expect(onActiveIndexChange).toHaveBeenCalledWith(1);
+		expect(onActiveIndexChange).toHaveBeenCalledWith(1, null);
 	});
 
 	test('Remove is disabled when only one child remains', () => {
@@ -252,7 +275,7 @@ describe('DsgoChildToolbar', () => {
 		await userEvent.click(screen.getByLabelText('Move left'));
 
 		expect(moveBlocksUp).toHaveBeenCalledWith(['child-2'], 'parent');
-		expect(onActiveIndexChange).toHaveBeenCalledWith(1);
+		expect(onActiveIndexChange).toHaveBeenCalledWith(1, 'child-2');
 	});
 
 	test('MoveNext dispatches moveBlocksDown and increments index', async () => {
@@ -270,7 +293,7 @@ describe('DsgoChildToolbar', () => {
 		await userEvent.click(screen.getByLabelText('Move right'));
 
 		expect(moveBlocksDown).toHaveBeenCalledWith(['child-0'], 'parent');
-		expect(onActiveIndexChange).toHaveBeenCalledWith(1);
+		expect(onActiveIndexChange).toHaveBeenCalledWith(1, 'child-0');
 	});
 
 	test('custom labels override defaults', () => {
@@ -315,7 +338,7 @@ describe('DsgoChildToolbar', () => {
 			'parent',
 			false
 		);
-		expect(onActiveIndexChange).toHaveBeenCalledWith(0);
+		expect(onActiveIndexChange).toHaveBeenCalledWith(0, 'new-client-id');
 		// With no children there is no active target, so no duplicate/remove.
 		expect(
 			screen.queryByLabelText('Duplicate item')

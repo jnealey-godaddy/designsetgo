@@ -27,7 +27,7 @@ import {
 import { createBlock, cloneBlock } from '@wordpress/blocks';
 import { copy, trash, plus } from '@wordpress/icons';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { useCallback, useEffect } from '@wordpress/element';
+import { useCallback, useEffect, useRef } from '@wordpress/element';
 import { getIcon } from '../icon/utils/svg-icons';
 import { useUniqueBlockId } from '../../hooks';
 import {
@@ -154,17 +154,18 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
 	// Shared tablist keyboard navigation — same ArrowLeft/Right/Home/End
 	// behavior across tabs, slider, accordion, etc.
-	const focusTabByIndex = useCallback(
-		(newIndex) => {
-			const tabButton = document.querySelector(
-				`.dsgo-tabs-${uniqueId} [data-tab-index="${newIndex}"]`
-			);
-			if (tabButton) {
-				tabButton.focus();
-			}
-		},
-		[uniqueId]
-	);
+	// Ref anchors the focus lookup to the editor canvas's iframed document.
+	// `document.querySelector` here resolves to the WP admin wrapper and
+	// misses the tabs rendered inside the canvas iframe.
+	const navRef = useRef(null);
+	const focusTabByIndex = useCallback((newIndex) => {
+		const tabButton = navRef.current?.querySelector(
+			`[data-tab-index="${newIndex}"]`
+		);
+		if (tabButton) {
+			tabButton.focus();
+		}
+	}, []);
 	const handleKeyDown = useTablistKeyboard({
 		itemCount: innerBlocks.length,
 		orientation,
@@ -250,6 +251,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 							innerBlocks.length + 1
 						),
 					}}
+					cloneAttributeOverrides={{ uniqueId: '' }}
 					addLabel={__('Add tab', 'designsetgo')}
 					duplicateLabel={__('Duplicate tab', 'designsetgo')}
 					removeLabel={__('Remove tab', 'designsetgo')}
@@ -593,6 +595,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 				    inside role="tablist". */}
 				<div className="dsgo-tabs__nav-row">
 					<div
+						ref={navRef}
 						className="dsgo-tabs__nav"
 						role="tablist"
 						aria-label={__('Tabs', 'designsetgo')}

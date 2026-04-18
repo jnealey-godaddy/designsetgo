@@ -40,10 +40,6 @@ export default function useTablistKeyboard({
 }) {
 	return useCallback(
 		(event, index) => {
-			if (itemCount <= 1) {
-				return;
-			}
-
 			const isHorizontal = orientation !== 'vertical';
 			const prevKey = isHorizontal ? 'ArrowLeft' : 'ArrowUp';
 			const nextKey = isHorizontal ? 'ArrowRight' : 'ArrowDown';
@@ -61,6 +57,18 @@ export default function useTablistKeyboard({
 				return;
 			}
 
+			// Always consume the key for WAI-ARIA tablist semantics — the
+			// widget "owns" these keys regardless of item count, so Home at
+			// index 0, End at the last item, or arrow keys on a single-item
+			// tablist don't trigger page-level scroll. Precedes the
+			// single-item early return so a reduced tablist still behaves
+			// like a tablist, matching the original inline handler.
+			event.preventDefault();
+
+			if (itemCount <= 1) {
+				return;
+			}
+
 			let newIndex = index;
 			if (event.key === prevKey) {
 				newIndex = index > 0 ? index - 1 : itemCount - 1;
@@ -71,12 +79,6 @@ export default function useTablistKeyboard({
 			} else if (event.key === 'End') {
 				newIndex = itemCount - 1;
 			}
-
-			// Always consume the key for WAI-ARIA tablist semantics — the
-			// widget "owns" these keys even when pressing Home at index 0 or
-			// End at the last item is a no-op, so the page doesn't also
-			// scroll to top/bottom. This matches the original tabs handler.
-			event.preventDefault();
 
 			if (newIndex === index) {
 				return;

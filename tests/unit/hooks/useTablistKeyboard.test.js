@@ -185,6 +185,32 @@ describe('useTablistKeyboard', () => {
 			expect(onIndexChange).not.toHaveBeenCalled();
 		});
 
+		test('single-item lists still consume navigation keys (no page scroll)', () => {
+			// WAI-ARIA tablist semantics: the widget "owns" arrow/Home/End
+			// regardless of item count, so a reduced tablist doesn't let
+			// those keys bubble up and trigger page-level scroll. Regression
+			// guard for the original inline handler's behavior.
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 1,
+					onIndexChange,
+				})
+			);
+
+			const arrow = createKeyEvent('ArrowRight');
+			const end = createKeyEvent('End');
+			const home = createKeyEvent('Home');
+			result.current(arrow, 0);
+			result.current(end, 0);
+			result.current(home, 0);
+
+			expect(arrow.preventDefault).toHaveBeenCalled();
+			expect(end.preventDefault).toHaveBeenCalled();
+			expect(home.preventDefault).toHaveBeenCalled();
+			expect(onIndexChange).not.toHaveBeenCalled();
+		});
+
 		test('invokes focusItem after a navigation key', () => {
 			jest.useFakeTimers();
 			const focusItem = jest.fn();
