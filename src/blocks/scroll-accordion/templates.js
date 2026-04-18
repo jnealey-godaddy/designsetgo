@@ -19,12 +19,16 @@ function card({ background, text = '#ffffff', heading, body, accentText }) {
 	return [
 		'designsetgo/scroll-accordion-item',
 		{
+			// Shadow lives under `style.shadow` because the block exposes
+			// shadow via `supports.shadow: true` rather than declaring a
+			// top-level `shadow` attribute. A top-level `shadow:` here
+			// would be silently dropped on save.
 			style: {
 				spacing: { padding: cardPadding },
 				color: { background, text },
 				border: { radius: '16px' },
+				shadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
 			},
-			shadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
 		},
 		[
 			[

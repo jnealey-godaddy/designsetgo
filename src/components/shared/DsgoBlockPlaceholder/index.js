@@ -17,15 +17,20 @@ import './style.scss';
 
 /**
  * @typedef {Object} DsgoPlaceholderTemplate
- * @property {string}             name          BEM modifier slug. Required.
- * @property {string}             title         Tile title.
- * @property {string}             description   Short tile description.
- * @property {string|JSX.Element} icon          Dashicon slug or icon element.
- * @property {Object}             [attributes]  Optional attributes to apply
- *                                              to the parent block.
- * @property {Array}              [innerBlocks] InnerBlocks.Content-style
- *                                              template (rest-spread args
- *                                              to createBlock).
+ * @property {string}             name         BEM modifier slug. Required.
+ * @property {string}             title        Tile title.
+ * @property {string}             description  Short tile description.
+ * @property {string|JSX.Element} icon         Dashicon slug or icon element.
+ * @property {Object}             [attributes] Optional attributes to apply to
+ *                                             the parent block.
+ * @property {Array}              innerBlocks  InnerBlocks.Content-style
+ *                                             template. Required and must
+ *                                             contain at least one block —
+ *                                             parent blocks gate the
+ *                                             placeholder on
+ *                                             `innerBlocks.length > 0`, so an
+ *                                             empty template would lock the
+ *                                             author on the chooser.
  */
 
 /**
