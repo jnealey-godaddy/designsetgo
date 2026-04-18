@@ -42,6 +42,10 @@ registerBlockType(metadata.name, {
 	},
 	edit,
 	save,
+	// Spread preserves core-managed attrs (style, className, color, etc.)
+	// across the transform. flip-card-front / flip-card-back defined no
+	// custom attributes, so this is safe today — if either legacy block ever
+	// picks up a custom attribute, audit the spread before shipping.
 	transforms: {
 		from: [
 			{

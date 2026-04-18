@@ -15,15 +15,47 @@ import {
 	useInnerBlocksProps,
 	InspectorControls,
 } from '@wordpress/block-editor';
-import { PanelBody, SelectControl } from '@wordpress/components';
+import { Notice, PanelBody, SelectControl } from '@wordpress/components';
+import { useSelect } from '@wordpress/data';
 
-export default function FlipCardFaceEdit({ attributes, setAttributes }) {
+export default function FlipCardFaceEdit({
+	attributes,
+	setAttributes,
+	clientId,
+}) {
 	const side = attributes.side === 'back' ? 'back' : 'front';
+
+	// The parent flip-card's view script and stylesheet assume exactly one
+	// front face and one back face — a duplicate side (two fronts, or the
+	// front face renamed to back while a sibling already holds back) would
+	// break the flip animation. Warn authors before they ship broken markup.
+	const hasDuplicateSide = useSelect(
+		(select) => {
+			const { getBlockRootClientId, getBlock } =
+				select('core/block-editor');
+			const parentId = getBlockRootClientId(clientId);
+			if (!parentId) {
+				return false;
+			}
+			const siblings = getBlock(parentId)?.innerBlocks || [];
+			return siblings.some(
+				(sibling) =>
+					sibling.clientId !== clientId &&
+					(sibling.name === 'designsetgo/flip-card-face'
+						? sibling.attributes?.side === side
+						: sibling.name === `designsetgo/flip-card-${side}`)
+			);
+		},
+		[clientId, side]
+	);
 
 	const blockProps = useBlockProps({
 		className: `dsgo-flip-card__face dsgo-flip-card__${side}`,
 	});
 
+	// Template is seeded once on first insertion; switching `side` later does
+	// not re-template, so a face relabelled "back" will still show the
+	// original "Front of Card" placeholder heading until the author edits it.
 	const innerBlocksProps = useInnerBlocksProps(blockProps, {
 		template: [
 			[
@@ -76,6 +108,19 @@ export default function FlipCardFaceEdit({ attributes, setAttributes }) {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
+					{hasDuplicateSide && (
+						<Notice status="warning" isDismissible={false}>
+							{side === 'back'
+								? __(
+										'Another face on this flip card is already set to Back. Change one of them to Front so the card can flip.',
+										'designsetgo'
+									)
+								: __(
+										'Another face on this flip card is already set to Front. Change one of them to Back so the card can flip.',
+										'designsetgo'
+									)}
+						</Notice>
+					)}
 				</PanelBody>
 			</InspectorControls>
 			<div {...innerBlocksProps} />

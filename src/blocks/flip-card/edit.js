@@ -25,8 +25,8 @@ import FlipCardPlaceholder from './components/FlipCardPlaceholder';
 /**
  * Flip Card Edit Component
  *
- * Uses a template with two child blocks (flip-card-front and flip-card-back).
- * Each child block can contain any blocks the user wants to add.
+ * Uses a template with two designsetgo/flip-card-face children (one per
+ * side). Each face can contain any blocks the author wants to add.
  *
  * @param {Object}   props               Component props
  * @param {Object}   props.attributes    Block attributes
