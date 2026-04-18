@@ -35,6 +35,11 @@
     "allow-plugins": {
       "dealerdirect/phpcodesniffer-composer-installer": true,
       "phpstan/extension-installer": true
+    },
+    "audit": {
+      "ignore": {
+        "PKSA-5jz8-6tcw-pbk4": "phpunit/phpunit advisory GHSA-qrr6-mg7r-m243 — argument injection via newline in PHP INI values forwarded to child processes. Only impacts PHPUnit's subprocess invocation in dev/CI; not reachable in production. Affected range covers all phpunit ^9 releases; revisit when phpunit ^10/^11 upgrade lands."
+      }
     }
   }
 }
