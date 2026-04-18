@@ -223,6 +223,18 @@ class Block_Configurator {
 
 				if ( self::is_css_property( $key ) ) {
 					$sanitized[ $key ] = $decoded;
+				} elseif ( self::is_multiline_text_attribute( $key ) ) {
+					// Preserve newlines for attributes that legitimately hold
+					// multi-line content (e.g., postal addresses). Collapsing
+					// them to spaces here would cause the stored HTML to diverge
+					// from what save() emits and trip block validation.
+					//
+					// The decode/strip pipeline above already removes entities
+					// and tags; layering sanitize_textarea_field on top adds
+					// null-byte stripping and invalid-UTF-8 rejection that the
+					// prior pipeline doesn't cover. The apparent duplication is
+					// defense-in-depth, not dead code.
+					$sanitized[ $key ] = sanitize_textarea_field( $decoded );
 				} else {
 					$sanitized[ $key ] = sanitize_text_field( $decoded );
 				}
@@ -265,6 +277,25 @@ class Block_Configurator {
 		);
 
 		return in_array( $key, $css_properties, true );
+	}
+
+	/**
+	 * Check if an attribute is known to hold multi-line text.
+	 *
+	 * These attributes go through sanitize_textarea_field so embedded
+	 * newlines survive round-tripping through serialize_block() and the
+	 * block's save() function.
+	 *
+	 * @param string $key Attribute key.
+	 * @return bool
+	 */
+	private static function is_multiline_text_attribute( string $key ): bool {
+		$multiline_attrs = array(
+			'dsgoAddress',
+			'dsgoPrivacyNotice',
+		);
+
+		return in_array( $key, $multiline_attrs, true );
 	}
 
 	/**

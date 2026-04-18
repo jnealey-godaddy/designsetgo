@@ -833,6 +833,324 @@ class Test_Abilities_Execution extends WP_UnitTestCase {
 }
 
 /**
+ * Round-trip validation tests for blocks inserted via add-block.
+ *
+ * Gutenberg fails block validation when the stored innerHTML doesn't match
+ * what the block's save() function would emit from the parsed attributes.
+ * These tests lock in the invariants that previously drifted and caused
+ * "attempt recovery" prompts in the editor.
+ */
+class Test_Add_Block_Round_Trip extends WP_UnitTestCase {
+
+	/**
+	 * Test user ID.
+	 *
+	 * @var int
+	 */
+	private $editor_user_id;
+
+	/**
+	 * Test page ID.
+	 *
+	 * @var int
+	 */
+	private $page_id;
+
+	/**
+	 * Set up test fixtures.
+	 */
+	public function set_up() {
+		parent::set_up();
+
+		$this->editor_user_id = $this->factory->user->create( array(
+			'role' => 'editor',
+		) );
+		wp_set_current_user( $this->editor_user_id );
+
+		$this->page_id = $this->factory->post->create( array(
+			'post_type'    => 'page',
+			'post_status'  => 'publish',
+			'post_title'   => 'Round-trip Test',
+			'post_content' => '',
+		) );
+	}
+
+	/**
+	 * Insert a designsetgo block and return the first parsed block with the
+	 * matching blockName. Returns null ONLY when the block type isn't
+	 * registered — any downstream failure (insert error, parse miss) is
+	 * asserted so the test fails loudly instead of silently skipping.
+	 *
+	 * @param string               $block_name Block name.
+	 * @param array<string, mixed> $attributes Attributes.
+	 * @return array<string, mixed>|null Parsed block, or null if unregistered.
+	 */
+	private function insert_and_parse( string $block_name, array $attributes = array() ): ?array {
+		$registry = \WP_Block_Type_Registry::get_instance();
+		if ( ! $registry->get_registered( $block_name ) ) {
+			return null;
+		}
+
+		$result = Block_Inserter::insert_block(
+			$this->page_id,
+			$block_name,
+			$attributes,
+			array(),
+			-1
+		);
+
+		$this->assertIsArray( $result, 'insert_block must return an array (got WP_Error or other type)' );
+		$this->assertTrue( $result['success'], 'insert_block must report success' );
+
+		$post = get_post( $this->page_id );
+		$this->assertNotNull( $post, 'Post must exist after insert_block' );
+
+		$blocks = parse_blocks( $post->post_content );
+
+		foreach ( $blocks as $block ) {
+			if ( $block_name === $block['blockName'] ) {
+				return $block;
+			}
+		}
+
+		$this->fail(
+			sprintf(
+				'Inserted block %s not found in parsed post_content. Raw content: %s',
+				$block_name,
+				$post->post_content
+			)
+		);
+	}
+
+	/**
+	 * sanitize_attributes: multi-line attributes must preserve newlines.
+	 *
+	 * This is the direct regression guard for the map address bug — runs
+	 * without any block registration, so it's the one test that's
+	 * guaranteed to execute in every CI matrix cell.
+	 */
+	public function test_sanitize_preserves_newlines_for_multiline_attrs() {
+		$address = "Sweet Treats Bakery\n123 Main Street\nYour City, ST 00000";
+
+		$sanitized = Block_Configurator::sanitize_attributes(
+			array(
+				'dsgoAddress' => $address,
+			)
+		);
+
+		$this->assertSame(
+			$address,
+			$sanitized['dsgoAddress'],
+			'sanitize_attributes must preserve newlines in dsgoAddress.'
+		);
+	}
+
+	/**
+	 * Non-multiline string attributes still go through sanitize_text_field,
+	 * which collapses newlines to spaces. This keeps behavior narrow: only
+	 * the allow-listed attributes get newline-preserving treatment.
+	 */
+	public function test_sanitize_still_strips_newlines_for_regular_attrs() {
+		$sanitized = Block_Configurator::sanitize_attributes(
+			array(
+				'someOtherText' => "line1\nline2",
+			)
+		);
+
+		$this->assertSame(
+			'line1 line2',
+			$sanitized['someOtherText'],
+			'Regular string attributes must keep the previous sanitize_text_field behavior.'
+		);
+	}
+
+	/**
+	 * Slider: the wrapper HTML must reflect block.json defaults so the
+	 * stored HTML round-trips through save() without validation errors.
+	 *
+	 * Regression guard for the bug where add-block carried its own default
+	 * table (height=500px, arrowSize=48px, dotPosition=bottom) that diverged
+	 * from block.json (height="", arrowSize=24px, dotPosition=inside).
+	 */
+	public function test_slider_defaults_match_block_json() {
+		$block = $this->insert_and_parse( 'designsetgo/slider' );
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/slider block not registered (build folder missing).' );
+		}
+
+		$html = $block['innerHTML'];
+
+		// block.json default height is "" → save() omits --dsgo-slider-height.
+		$this->assertStringNotContainsString(
+			'--dsgo-slider-height:',
+			$html,
+			'Wrapper must omit --dsgo-slider-height when height default is empty.'
+		);
+
+		// block.json default arrowSize is "24px".
+		$this->assertStringContainsString(
+			'--dsgo-slider-arrow-size:24px',
+			$html,
+			'Wrapper must emit arrow size matching block.json default (24px, not 48px).'
+		);
+
+		// block.json default dotPosition is "inside".
+		$this->assertStringContainsString(
+			'data-dot-position="inside"',
+			$html,
+			'Wrapper must emit dot position matching block.json default (inside, not bottom).'
+		);
+	}
+
+	/**
+	 * Slider: serializing the stored post content should be idempotent
+	 * (parse → serialize → parse → serialize produces the same output).
+	 */
+	public function test_slider_serialization_is_idempotent() {
+		$block = $this->insert_and_parse( 'designsetgo/slider' );
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/slider block not registered (build folder missing).' );
+		}
+
+		$post  = get_post( $this->page_id );
+		$once  = serialize_blocks( parse_blocks( $post->post_content ) );
+		$twice = serialize_blocks( parse_blocks( $once ) );
+
+		$this->assertSame( $once, $twice, 'Serialization must be idempotent.' );
+	}
+
+	/**
+	 * Slider: optional non-default props must round-trip through the wrapper,
+	 * not just the all-default case.
+	 */
+	public function test_slider_optional_props_match_save_output() {
+		$block = $this->insert_and_parse(
+			'designsetgo/slider',
+			array(
+				'arrowColor'           => 'accent-3',
+				'arrowBackgroundColor' => 'var:preset|color|accent-2',
+				'arrowPadding'         => '12px',
+				'dotColor'             => '#ff0000',
+				'scrollDriven'         => true,
+				'scrollDrivenSpeed'    => 2,
+			)
+		);
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/slider block not registered (build folder missing).' );
+		}
+
+		$html = $block['innerHTML'];
+
+		$this->assertStringContainsString(
+			'dsgo-slider--scroll-driven',
+			$html,
+			'Wrapper must include the scroll-driven class when scrollDriven is true.'
+		);
+		$this->assertStringContainsString(
+			'data-scroll-driven="true"',
+			$html,
+			'Wrapper must emit the scroll-driven data attribute when enabled.'
+		);
+		$this->assertStringContainsString(
+			'data-scroll-driven-speed="2"',
+			$html,
+			'Wrapper must emit the configured scroll-driven speed.'
+		);
+		$this->assertStringContainsString(
+			'--dsgo-slider-arrow-color:var(--wp--preset--color--accent-3)',
+			$html,
+			'Bare preset slugs must be converted to CSS variables in slider arrow color.'
+		);
+		$this->assertStringContainsString(
+			'--dsgo-slider-arrow-bg-color:var(--wp--preset--color--accent-2)',
+			$html,
+			'WordPress preset shorthand must be converted to CSS variables in slider arrow background color.'
+		);
+		$this->assertStringContainsString(
+			'--dsgo-slider-arrow-padding:12px',
+			$html,
+			'Wrapper must emit slider arrow padding when configured.'
+		);
+		$this->assertStringContainsString(
+			'--dsgo-slider-dot-color:#ff0000',
+			$html,
+			'Wrapper must emit slider dot color when configured.'
+		);
+	}
+
+	/**
+	 * Map: privacy mode must serialize the same overlay branch as save.js.
+	 */
+	public function test_map_privacy_mode_matches_save_output() {
+		$block = $this->insert_and_parse(
+			'designsetgo/map',
+			array(
+				'dsgoPrivacyMode'   => true,
+				'dsgoPrivacyNotice' => "Line 1\nLine 2",
+			)
+		);
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/map block not registered (build folder missing).' );
+		}
+
+		$html = $block['innerHTML'];
+
+		$this->assertStringContainsString(
+			'dsgo-map__privacy-overlay',
+			$html,
+			'Privacy-mode maps must render the privacy overlay branch, not the live map container.'
+		);
+		$this->assertStringContainsString(
+			'dsgo-map__privacy-text',
+			$html,
+			'Privacy-mode maps must render the privacy notice text element.'
+		);
+		$this->assertStringContainsString(
+			"Line 1\nLine 2",
+			$html,
+			'Privacy notice text must preserve embedded newlines in saved HTML.'
+		);
+		$this->assertStringContainsString(
+			'Load Map',
+			$html,
+			'Privacy-mode maps must render the load button text.'
+		);
+		$this->assertStringNotContainsString(
+			'dsgo-map__container',
+			$html,
+			'Privacy-mode maps must not serialize the non-privacy container branch.'
+		);
+	}
+
+	/**
+	 * Map: when privacy mode is enabled and the notice attribute is omitted,
+	 * the wrapper must use the block.json default notice text.
+	 */
+	public function test_map_privacy_mode_uses_default_notice_when_attr_omitted() {
+		$block = $this->insert_and_parse(
+			'designsetgo/map',
+			array(
+				'dsgoPrivacyMode' => true,
+			)
+		);
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/map block not registered (build folder missing).' );
+		}
+
+		$this->assertStringContainsString(
+			'This map will load content from external services. Click to load and view the map.',
+			$block['innerHTML'],
+			'Privacy-mode maps must use the block.json default privacy notice when none is provided.'
+		);
+	}
+}
+
+/**
  * Tests for Block_Schema_Loader class.
  */
 class Test_Block_Schema_Loader extends WP_UnitTestCase {

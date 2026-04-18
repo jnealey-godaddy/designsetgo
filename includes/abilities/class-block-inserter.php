@@ -135,6 +135,10 @@ class Block_Inserter {
 		// Coerce attribute types and normalize defaults.
 		$attrs = self::coerce_attribute_types( $block_name, $attributes );
 		$attrs = self::normalize_block_attributes( $block_name, $attrs );
+		// Apply block.json defaults so the HTML we build matches what save()
+		// would emit from the same parsed attributes, preventing block
+		// validation failures on first edit.
+		$attrs = self::apply_block_json_defaults( $block_name, $attrs );
 
 		// Convert CSS var() syntax to WordPress shorthand in style attribute.
 		if ( isset( $attrs['style'] ) && is_array( $attrs['style'] ) ) {
@@ -784,17 +788,19 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/map':
-				$provider     = isset( $attributes['dsgoProvider'] ) ? $attributes['dsgoProvider'] : 'openstreetmap';
-				$latitude     = isset( $attributes['dsgoLatitude'] ) ? floatval( $attributes['dsgoLatitude'] ) : 40.7128;
-				$longitude    = isset( $attributes['dsgoLongitude'] ) ? floatval( $attributes['dsgoLongitude'] ) : -74.006;
-				$zoom         = isset( $attributes['dsgoZoom'] ) ? intval( $attributes['dsgoZoom'] ) : 13;
-				$address      = isset( $attributes['dsgoAddress'] ) ? $attributes['dsgoAddress'] : '';
-				$marker_icon  = isset( $attributes['dsgoMarkerIcon'] ) ? $attributes['dsgoMarkerIcon'] : '📍';
-				$marker_color = isset( $attributes['dsgoMarkerColor'] ) ? $attributes['dsgoMarkerColor'] : '#e74c3c';
-				$height       = isset( $attributes['dsgoHeight'] ) ? $attributes['dsgoHeight'] : '400px';
-				$aspect_ratio = isset( $attributes['dsgoAspectRatio'] ) ? $attributes['dsgoAspectRatio'] : 'custom';
-				$privacy_mode = isset( $attributes['dsgoPrivacyMode'] ) ? $attributes['dsgoPrivacyMode'] : false;
-				$map_style    = isset( $attributes['dsgoMapStyle'] ) ? $attributes['dsgoMapStyle'] : 'standard';
+				$provider           = isset( $attributes['dsgoProvider'] ) ? $attributes['dsgoProvider'] : 'openstreetmap';
+				$latitude           = isset( $attributes['dsgoLatitude'] ) ? floatval( $attributes['dsgoLatitude'] ) : 40.7128;
+				$longitude          = isset( $attributes['dsgoLongitude'] ) ? floatval( $attributes['dsgoLongitude'] ) : -74.006;
+				$zoom               = isset( $attributes['dsgoZoom'] ) ? intval( $attributes['dsgoZoom'] ) : 13;
+				$address            = isset( $attributes['dsgoAddress'] ) ? $attributes['dsgoAddress'] : '';
+				$marker_icon        = isset( $attributes['dsgoMarkerIcon'] ) ? $attributes['dsgoMarkerIcon'] : '📍';
+				$marker_color       = isset( $attributes['dsgoMarkerColor'] ) ? $attributes['dsgoMarkerColor'] : '#e74c3c';
+				$height             = isset( $attributes['dsgoHeight'] ) ? $attributes['dsgoHeight'] : '400px';
+				$aspect_ratio       = isset( $attributes['dsgoAspectRatio'] ) ? $attributes['dsgoAspectRatio'] : 'custom';
+				$privacy_mode       = isset( $attributes['dsgoPrivacyMode'] ) ? $attributes['dsgoPrivacyMode'] : false;
+				$has_privacy_notice = array_key_exists( 'dsgoPrivacyNotice', $attributes );
+				$privacy_notice     = $attributes['dsgoPrivacyNotice'] ?? __( 'This map will load content from external services. Click to load and view the map.', 'designsetgo' );
+				$map_style          = isset( $attributes['dsgoMapStyle'] ) ? $attributes['dsgoMapStyle'] : 'standard';
 
 				// Clamp coordinates.
 				$safe_lat  = max( -90, min( 90, $latitude ) );
@@ -828,8 +834,31 @@ class Block_Inserter {
 				$data_attrs .= ' data-dsgo-map-style="' . esc_attr( $map_style ) . '"';
 
 				// Inner HTML.
-				$aria_label = $address ? 'Map showing ' . $address : 'Interactive map';
-				$inner_html = '<div class="dsgo-map__container" role="region" aria-label="' . esc_attr( $aria_label ) . '"></div>';
+				$aria_label = $address
+					? sprintf(
+						/* translators: %s: The address being shown on the map */
+						__( 'Map showing %s', 'designsetgo' ),
+						$address
+					)
+					: __( 'Interactive map', 'designsetgo' );
+
+				if ( $privacy_mode ) {
+					$privacy_text = ( $has_privacy_notice && '' === $privacy_notice )
+						? __( 'Click to load map', 'designsetgo' )
+						: $privacy_notice;
+
+					$inner_html  = '<div class="dsgo-map__privacy-overlay"><div class="dsgo-map__privacy-content">';
+					$inner_html .= '<svg class="dsgo-map__privacy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+					$inner_html .= '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>';
+					$inner_html .= '<circle cx="12" cy="10" r="3"></circle>';
+					$inner_html .= '</svg>';
+					$inner_html .= '<p class="dsgo-map__privacy-text">' . esc_html( $privacy_text ) . '</p>';
+					$inner_html .= '<button class="dsgo-map__load-button" type="button" aria-label="' . esc_attr__( 'Load map. This will connect to external map services.', 'designsetgo' ) . '">';
+					$inner_html .= esc_html__( 'Load Map', 'designsetgo' );
+					$inner_html .= '</button></div></div>';
+				} else {
+					$inner_html = '<div class="dsgo-map__container" role="region" aria-label="' . esc_attr( $aria_label ) . '"></div>';
+				}
 
 				$style_attr = $style ? ' style="' . esc_attr( $style ) . '"' : '';
 
@@ -1361,10 +1390,16 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/slider':
+				// The inline isset() fallbacks below are normally unreachable
+				// because apply_block_json_defaults() fills these from the
+				// registry before we get here. They only fire when the block
+				// isn't registered (e.g., build folder missing), so keep them
+				// synced with src/blocks/slider/block.json — not with any
+				// past convention like height=500px / arrowSize=48px.
 				$slides_per_view        = isset( $attributes['slidesPerView'] ) ? intval( $attributes['slidesPerView'] ) : 1;
 				$slides_per_view_tablet = isset( $attributes['slidesPerViewTablet'] ) ? intval( $attributes['slidesPerViewTablet'] ) : 1;
 				$slides_per_view_mobile = isset( $attributes['slidesPerViewMobile'] ) ? intval( $attributes['slidesPerViewMobile'] ) : 1;
-				$height                 = isset( $attributes['height'] ) ? $attributes['height'] : '500px';
+				$height                 = isset( $attributes['height'] ) ? $attributes['height'] : '';
 				$aspect_ratio           = isset( $attributes['aspectRatio'] ) ? $attributes['aspectRatio'] : '16/9';
 				$use_aspect_ratio       = isset( $attributes['useAspectRatio'] ) ? $attributes['useAspectRatio'] : false;
 				$gap                    = isset( $attributes['gap'] ) ? $attributes['gap'] : '20px';
@@ -1373,9 +1408,13 @@ class Block_Inserter {
 				$arrow_style            = isset( $attributes['arrowStyle'] ) ? $attributes['arrowStyle'] : 'default';
 				$arrow_position         = isset( $attributes['arrowPosition'] ) ? $attributes['arrowPosition'] : 'sides';
 				$arrow_vertical_pos     = isset( $attributes['arrowVerticalPosition'] ) ? $attributes['arrowVerticalPosition'] : 'center';
-				$arrow_size             = isset( $attributes['arrowSize'] ) ? $attributes['arrowSize'] : '48px';
+				$arrow_color            = isset( $attributes['arrowColor'] ) ? $attributes['arrowColor'] : '';
+				$arrow_bg_color         = isset( $attributes['arrowBackgroundColor'] ) ? $attributes['arrowBackgroundColor'] : '';
+				$arrow_size             = isset( $attributes['arrowSize'] ) ? $attributes['arrowSize'] : '24px';
+				$arrow_padding          = isset( $attributes['arrowPadding'] ) ? $attributes['arrowPadding'] : '';
 				$dot_style              = isset( $attributes['dotStyle'] ) ? $attributes['dotStyle'] : 'default';
-				$dot_position           = isset( $attributes['dotPosition'] ) ? $attributes['dotPosition'] : 'bottom';
+				$dot_position           = isset( $attributes['dotPosition'] ) ? $attributes['dotPosition'] : 'inside';
+				$dot_color              = isset( $attributes['dotColor'] ) ? $attributes['dotColor'] : '';
 				$effect                 = isset( $attributes['effect'] ) ? $attributes['effect'] : 'slide';
 				$transition_duration    = isset( $attributes['transitionDuration'] ) ? $attributes['transitionDuration'] : '0.5s';
 				$transition_easing      = isset( $attributes['transitionEasing'] ) ? $attributes['transitionEasing'] : 'ease-in-out';
@@ -1393,6 +1432,8 @@ class Block_Inserter {
 				$active_slide           = isset( $attributes['activeSlide'] ) ? intval( $attributes['activeSlide'] ) : 0;
 				$style_variation        = isset( $attributes['styleVariation'] ) ? $attributes['styleVariation'] : 'classic';
 				$aria_label             = isset( $attributes['ariaLabel'] ) ? $attributes['ariaLabel'] : '';
+				$scroll_driven          = isset( $attributes['scrollDriven'] ) ? $attributes['scrollDriven'] : false;
+				$scroll_driven_speed    = isset( $attributes['scrollDrivenSpeed'] ) ? floatval( $attributes['scrollDrivenSpeed'] ) : 1;
 
 				// Single slide effects.
 				$single_slide_effects    = array( 'fade', 'zoom' );
@@ -1421,19 +1462,38 @@ class Block_Inserter {
 				if ( $free_mode ) {
 					$class_parts[] = 'dsgo-slider--free-mode';
 				}
+				if ( $scroll_driven ) {
+					$class_parts[] = 'dsgo-slider--scroll-driven';
+				}
 
-				// Build style.
-				$style_parts = array(
-					'--dsgo-slider-height:' . esc_attr( $height ),
-					'--dsgo-slider-aspect-ratio:' . esc_attr( $aspect_ratio ),
-					'--dsgo-slider-gap:' . esc_attr( $gap ),
-					'--dsgo-slider-transition:' . esc_attr( $transition_duration ),
-					'--dsgo-slider-slides-per-view:' . esc_attr( (string) $effective_slides ),
-					'--dsgo-slider-slides-per-view-tablet:' . esc_attr( (string) $effective_slides_tablet ),
-					'--dsgo-slider-slides-per-view-mobile:' . esc_attr( (string) $effective_slides_mobile ),
-				);
+				// Build style. Mirror save.js: height is only included when
+				// truthy (block.json default is ""), and arrow size follows the
+				// same rule. Emitting them unconditionally here breaks
+				// round-tripping against save().
+				$style_parts = array();
+				if ( $height ) {
+					$style_parts[] = '--dsgo-slider-height:' . esc_attr( $height );
+				}
+				$style_parts[] = '--dsgo-slider-aspect-ratio:' . esc_attr( $aspect_ratio );
+				$style_parts[] = '--dsgo-slider-gap:' . esc_attr( $gap );
+				$style_parts[] = '--dsgo-slider-transition:' . esc_attr( $transition_duration );
+				$style_parts[] = '--dsgo-slider-slides-per-view:' . esc_attr( (string) $effective_slides );
+				$style_parts[] = '--dsgo-slider-slides-per-view-tablet:' . esc_attr( (string) $effective_slides_tablet );
+				$style_parts[] = '--dsgo-slider-slides-per-view-mobile:' . esc_attr( (string) $effective_slides_mobile );
+				if ( $arrow_color ) {
+					$style_parts[] = '--dsgo-slider-arrow-color:' . esc_attr( self::convert_color_value_to_css_var( $arrow_color ) );
+				}
+				if ( $arrow_bg_color ) {
+					$style_parts[] = '--dsgo-slider-arrow-bg-color:' . esc_attr( self::convert_color_value_to_css_var( $arrow_bg_color ) );
+				}
 				if ( $arrow_size ) {
 					$style_parts[] = '--dsgo-slider-arrow-size:' . esc_attr( $arrow_size );
+				}
+				if ( $arrow_padding ) {
+					$style_parts[] = '--dsgo-slider-arrow-padding:' . esc_attr( $arrow_padding );
+				}
+				if ( $dot_color ) {
+					$style_parts[] = '--dsgo-slider-dot-color:' . esc_attr( self::convert_color_value_to_css_var( $dot_color ) );
 				}
 				$style = implode( ';', $style_parts );
 
@@ -1464,6 +1524,10 @@ class Block_Inserter {
 				$data_attrs .= ' data-mobile-breakpoint="' . esc_attr( (string) $mobile_breakpoint ) . '"';
 				$data_attrs .= ' data-tablet-breakpoint="' . esc_attr( (string) $tablet_breakpoint ) . '"';
 				$data_attrs .= ' data-active-slide="' . esc_attr( (string) $active_slide ) . '"';
+				if ( $scroll_driven ) {
+					$data_attrs .= ' data-scroll-driven="true"';
+					$data_attrs .= ' data-scroll-driven-speed="' . esc_attr( (string) $scroll_driven_speed ) . '"';
+				}
 
 				$aria = $aria_label ? $aria_label : 'Image slider';
 
@@ -1925,6 +1989,55 @@ class Block_Inserter {
 	}
 
 	/**
+	 * Fill missing attributes with their block.json defaults.
+	 *
+	 * The wrapper HTML generators previously carried their own fallback
+	 * defaults, which drifted from block.json over time and produced markup
+	 * that didn't round-trip through save(). Applying block.json defaults up
+	 * front keeps the ability in sync with the single source of truth.
+	 *
+	 * Scoped to an allowlist rather than applied to every block: other
+	 * wrapper generators have not been audited against their save() output,
+	 * so forcing block.json defaults on them could expose unrelated latent
+	 * mismatches. Add blocks here as their wrappers are verified.
+	 *
+	 * @param string               $block_name Block name.
+	 * @param array<string, mixed> $attributes Incoming attributes.
+	 * @return array<string, mixed> Attributes merged with block.json defaults.
+	 */
+	private static function apply_block_json_defaults( string $block_name, array $attributes ): array {
+		// Only slider and map have been audited end-to-end against their
+		// save.js output. Add blocks here as their wrapper HTML is verified.
+		$verified_blocks = array(
+			'designsetgo/map',
+			'designsetgo/slider',
+		);
+
+		if ( ! in_array( $block_name, $verified_blocks, true ) ) {
+			return $attributes;
+		}
+
+		$registry   = \WP_Block_Type_Registry::get_instance();
+		$block_type = $registry->get_registered( $block_name );
+
+		if ( ! $block_type || empty( $block_type->attributes ) ) {
+			return $attributes;
+		}
+
+		foreach ( $block_type->attributes as $attr_name => $attr_def ) {
+			if ( array_key_exists( $attr_name, $attributes ) ) {
+				continue;
+			}
+			if ( ! array_key_exists( 'default', $attr_def ) ) {
+				continue;
+			}
+			$attributes[ $attr_name ] = $attr_def['default'];
+		}
+
+		return $attributes;
+	}
+
+	/**
 	 * Strip attributes that match their block.json defaults.
 	 *
 	 * WordPress's block serialization omits attributes that equal the
@@ -1983,6 +2096,52 @@ class Block_Inserter {
 			return 'var(--wp--preset--' . $matches[1] . '--' . $matches[2] . ')';
 		}
 		return $value;
+	}
+
+	/**
+	 * Convert a color value to CSS var() syntax, mirroring the JS save helper.
+	 *
+	 * Supports WordPress preset shorthand (`var:preset|color|slug`), already-
+	 * valid CSS values, and bare preset slugs such as `accent-3`.
+	 *
+	 * @param string $value Color value.
+	 * @return string Converted CSS value.
+	 */
+	private static function convert_color_value_to_css_var( string $value ): string {
+		if ( '' === $value ) {
+			return '';
+		}
+
+		if ( 0 === strpos( $value, 'var(--' ) ) {
+			return $value;
+		}
+
+		if ( 0 === strpos( $value, 'var:preset|' ) ) {
+			return self::wp_shorthand_to_css_var( $value );
+		}
+
+		if ( preg_match( '/^(#|rgb|hsl|hwb|lab|lch|oklch|oklab|color\(|var\(|url\(|\d)/i', $value ) ) {
+			return $value;
+		}
+
+		$css_keywords = array(
+			'transparent',
+			'inherit',
+			'initial',
+			'unset',
+			'revert',
+			'revert-layer',
+			'currentcolor',
+			'none',
+			'auto',
+			'normal',
+		);
+
+		if ( in_array( strtolower( $value ), $css_keywords, true ) ) {
+			return $value;
+		}
+
+		return 'var(--wp--preset--color--' . $value . ')';
 	}
 
 	/**
