@@ -6,7 +6,7 @@
  * flip card. Kept as a child-only block so it can only appear inside
  * designsetgo/flip-card.
  *
- * @since 2.0.52
+ * @since 2.0.51
  */
 
 import { __ } from '@wordpress/i18n';
@@ -28,26 +28,39 @@ export default function FlipCardFaceEdit({
 	// The parent flip-card's view script and stylesheet assume exactly one
 	// front face and one back face — a duplicate side (two fronts, or the
 	// front face renamed to back while a sibling already holds back) would
-	// break the flip animation. Warn authors before they ship broken markup.
-	const hasDuplicateSide = useSelect(
+	// break the flip animation. Track which side(s) siblings occupy so we
+	// can disable the matching option in the Side dropdown and fall back to
+	// a Notice if legacy content already violates the invariant.
+	const siblingSides = useSelect(
 		(select) => {
 			const { getBlockRootClientId, getBlock } =
 				select('core/block-editor');
 			const parentId = getBlockRootClientId(clientId);
 			if (!parentId) {
-				return false;
+				return [];
 			}
 			const siblings = getBlock(parentId)?.innerBlocks || [];
-			return siblings.some(
-				(sibling) =>
-					sibling.clientId !== clientId &&
-					(sibling.name === 'designsetgo/flip-card-face'
-						? sibling.attributes?.side === side
-						: sibling.name === `designsetgo/flip-card-${side}`)
-			);
+			return siblings
+				.filter((sibling) => sibling.clientId !== clientId)
+				.map((sibling) => {
+					if (sibling.name === 'designsetgo/flip-card-face') {
+						return sibling.attributes?.side === 'back'
+							? 'back'
+							: 'front';
+					}
+					if (sibling.name === 'designsetgo/flip-card-front') {
+						return 'front';
+					}
+					if (sibling.name === 'designsetgo/flip-card-back') {
+						return 'back';
+					}
+					return null;
+				})
+				.filter(Boolean);
 		},
-		[clientId, side]
+		[clientId]
 	);
+	const hasDuplicateSide = siblingSides.includes(side);
 
 	const blockProps = useBlockProps({
 		className: `dsgo-flip-card__face dsgo-flip-card__${side}`,
@@ -94,10 +107,16 @@ export default function FlipCardFaceEdit({
 							{
 								label: __('Front', 'designsetgo'),
 								value: 'front',
+								disabled:
+									side !== 'front' &&
+									siblingSides.includes('front'),
 							},
 							{
 								label: __('Back', 'designsetgo'),
 								value: 'back',
+								disabled:
+									side !== 'back' &&
+									siblingSides.includes('back'),
 							},
 						]}
 						onChange={(value) => setAttributes({ side: value })}

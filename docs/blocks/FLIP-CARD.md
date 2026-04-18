@@ -16,7 +16,7 @@ The **Flip Card Block** adds a layer of interactivity and surprise to your websi
     *   Add a **Heading** (Name) and **Paragraph** (Role).
     *   *Style*: Set a white background and add a subtle shadow.
 3.  **Edit Back**:
-    *   Select the second **Flip Card Face** (Side = Back — already set by the template). Add a **Paragraph** (Bio).
+    *   Select the second **Flip Card Face** (Side = back — already set by the template). Add a **Paragraph** (Bio).
     *   Add an **Icon Group** or **Buttons** for social links (LinkedIn, Twitter).
     *   *Style*: Set a colored background (e.g., Brand Blue) and white text to make it distinct from the front.
 4.  **Settings**:

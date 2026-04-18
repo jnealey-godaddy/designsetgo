@@ -1,7 +1,7 @@
 /**
  * Flip Card Face - Save Component
  *
- * @since 2.0.52
+ * @since 2.0.51
  */
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';

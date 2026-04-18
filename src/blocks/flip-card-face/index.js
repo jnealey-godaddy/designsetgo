@@ -1,7 +1,7 @@
 /**
  * Flip Card Face Block Registration
  *
- * @since 2.0.52
+ * @since 2.0.51
  */
 
 import { registerBlockType, createBlock } from '@wordpress/blocks';

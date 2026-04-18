@@ -448,7 +448,7 @@ class Block_Inserter {
 					'closing' => '</div>',
 				);
 
-			// Legacy — consolidated into designsetgo/flip-card-face in 2.0.52.
+			// Legacy — consolidated into designsetgo/flip-card-face in 2.0.51.
 			// Kept so the inserter ability can still emit existing content
 			// until it is transformed to the new block.
 			case 'designsetgo/flip-card-front':

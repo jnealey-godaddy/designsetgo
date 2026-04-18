@@ -1,7 +1,7 @@
 /**
  * Flip Card Back Block Registration
  *
- * Deprecated in 2.0.52 in favour of designsetgo/flip-card-face. The block
+ * Deprecated in 2.0.51 in favour of designsetgo/flip-card-face. The block
  * stays registered with inserter:false so existing content keeps rendering;
  * the transforms.to entry lets editors one-click convert it to the new
  * consolidated block.
