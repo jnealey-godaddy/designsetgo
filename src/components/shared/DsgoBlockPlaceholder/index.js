@@ -13,7 +13,6 @@ import { Button, Placeholder, Icon } from '@wordpress/components';
 import { store as blockEditorStore } from '@wordpress/block-editor';
 import { createBlocksFromInnerBlocksTemplate } from '@wordpress/blocks';
 import { useDispatch } from '@wordpress/data';
-import './style.scss';
 
 /**
  * @typedef {Object} DsgoPlaceholderTemplate
