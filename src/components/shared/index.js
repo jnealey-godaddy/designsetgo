@@ -1,0 +1,1 @@
+export { DsgoInspectorPanel } from './DsgoInspectorPanel';
