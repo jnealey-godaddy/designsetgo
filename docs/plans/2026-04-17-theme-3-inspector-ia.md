@@ -71,8 +71,7 @@ Within a Settings panel, place primary behavior toggles first (e.g. "Constrain I
 - Modify: `.claude/claude.md` — add Inspector IA section.
 - Modify: `src/blocks/grid/edit.js` — migrate 3 panels (Grid Settings / Gap Settings / Width Settings) into a single Settings panel.
 - Modify: `src/blocks/section/edit.js` — migrate 1 panel (Section Settings) into a Settings panel.
-- Create: `tests/unit/blocks/grid/inspector.test.js` — verify panel renders and reset-all clears non-default attributes.
-- Create: `tests/unit/blocks/section/inspector.test.js` — same coverage shape.
+- Create: `tests/unit/blocks/inspector-ia.test.js` — single static-analysis suite that iterates over `MIGRATED_BLOCKS = ['grid', 'section', ...]`, asserting the structural invariants of every migrated `edit.js`. Tasks 2–7 extend the array as their family lands; the static-analysis approach (over per-block render tests) keeps WP store mocking out of CI — full render/visual coverage lives in the screenshot-diff workflow scoped in Task 0.
 
 ### Why two blocks instead of the full layout family
 

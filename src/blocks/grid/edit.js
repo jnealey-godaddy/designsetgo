@@ -537,6 +537,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							label={__('Row Gap', 'designsetgo')}
 							hasValue={() => rowGap !== ''}
 							onDeselect={() => setAttributes({ rowGap: '' })}
+							isShownByDefault
 						>
 							<UnitControl
 								label={__('Row Gap', 'designsetgo')}
@@ -558,6 +559,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							label={__('Column Gap', 'designsetgo')}
 							hasValue={() => columnGap !== ''}
 							onDeselect={() => setAttributes({ columnGap: '' })}
+							isShownByDefault
 						>
 							<UnitControl
 								label={__('Column Gap', 'designsetgo')}

@@ -395,6 +395,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 							onDeselect={() =>
 								setAttributes({ contentWidth: '' })
 							}
+							isShownByDefault
 						>
 							<UnitControl
 								label={__('Max Content Width', 'designsetgo')}
