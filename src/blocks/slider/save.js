@@ -1,6 +1,6 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
-import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { cssVars } from '../../utils/css-vars';
 
 const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
 
@@ -18,13 +18,10 @@ export default function SliderSave({ attributes }) {
 		arrowStyle,
 		arrowPosition,
 		arrowVerticalPosition,
-		arrowColor,
-		arrowBackgroundColor,
 		arrowSize,
 		arrowPadding,
 		dotStyle,
 		dotPosition,
-		dotColor,
 		effect,
 		transitionDuration,
 		transitionEasing,
@@ -81,18 +78,13 @@ export default function SliderSave({ attributes }) {
 		'--dsgo-slider-slides-per-view-mobile': String(
 			effectiveSlidesPerViewMobile
 		),
-		...(arrowColor && {
-			'--dsgo-slider-arrow-color': convertColorToCSSVar(arrowColor),
-		}),
-		...(arrowBackgroundColor && {
-			'--dsgo-slider-arrow-bg-color':
-				convertColorToCSSVar(arrowBackgroundColor),
+		...cssVars(attributes, {
+			'--dsgo-slider-arrow-color': 'arrowColor',
+			'--dsgo-slider-arrow-bg-color': 'arrowBackgroundColor',
+			'--dsgo-slider-dot-color': 'dotColor',
 		}),
 		...(arrowSize && { '--dsgo-slider-arrow-size': arrowSize }),
 		...(arrowPadding && { '--dsgo-slider-arrow-padding': arrowPadding }),
-		...(dotColor && {
-			'--dsgo-slider-dot-color': convertColorToCSSVar(dotColor),
-		}),
 	};
 
 	// Use .save() variant for save function
