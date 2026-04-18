@@ -5,7 +5,10 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import { DsgoInspectorPanel, _resetWarnCache } from '../../../../src/components/shared/DsgoInspectorPanel';
+import {
+	DsgoInspectorPanel,
+	_resetWarnCache,
+} from '../../../../src/components/shared/DsgoInspectorPanel';
 
 describe('DsgoInspectorPanel', () => {
 	beforeEach(() => {

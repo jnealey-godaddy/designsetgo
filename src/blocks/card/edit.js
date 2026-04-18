@@ -71,16 +71,17 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 	// Border panel — migrated to useBlockColors hook.
 	// colorGradientSettings is returned by the hook (same shape as
 	// useMultipleOriginColorsAndGradients) and used by the inline panels below.
-	const { settings: borderColorSettings, colorGradientSettings } = useBlockColors({
-		attributes,
-		setAttributes,
-		entries: [
-			{
-				label: __('Border Color', 'designsetgo'),
-				attribute: 'borderColor',
-			},
-		],
-	});
+	const { settings: borderColorSettings, colorGradientSettings } =
+		useBlockColors({
+			attributes,
+			setAttributes,
+			entries: [
+				{
+					label: __('Border Color', 'designsetgo'),
+					attribute: 'borderColor',
+				},
+			],
+		});
 
 	// Build block props with border color
 	const blockStyles = {};

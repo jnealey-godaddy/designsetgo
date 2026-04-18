@@ -24,13 +24,7 @@ import { BlockControls } from '@wordpress/block-editor';
 import { ToolbarGroup, ToolbarButton } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { createBlock, cloneBlock } from '@wordpress/blocks';
-import {
-	plus,
-	copy,
-	chevronUp,
-	chevronDown,
-	trash,
-} from '@wordpress/icons';
+import { plus, copy, chevronUp, chevronDown, trash } from '@wordpress/icons';
 
 export function DsgoChildToolbar({
 	clientId,
@@ -54,7 +48,7 @@ export function DsgoChildToolbar({
 	);
 
 	const onAdd = () => {
-		if (rootClientId == null) {
+		if (rootClientId === null) {
 			return;
 		}
 		const newBlock = createBlock(childBlockName, newAttributes);
@@ -67,13 +61,13 @@ export function DsgoChildToolbar({
 		insertBlock(cloneBlock(block), index + 1, rootClientId, false);
 	};
 	const onMoveUp = () => {
-		if (rootClientId == null) {
+		if (rootClientId === null) {
 			return;
 		}
 		moveBlocksUp([clientId], rootClientId);
 	};
 	const onMoveDown = () => {
-		if (rootClientId == null) {
+		if (rootClientId === null) {
 			return;
 		}
 		moveBlocksDown([clientId], rootClientId);

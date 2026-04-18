@@ -128,24 +128,25 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 	// The two conditional entries (icon/button background) are kept inline below.
 	// colorGradientSettings is also returned by the hook (same shape as
 	// useMultipleOriginColorsAndGradients) and used by the inline panels below.
-	const { settings: hoverColorSettings, colorGradientSettings } = useBlockColors({
-		attributes,
-		setAttributes,
-		entries: [
-			{
-				label: __('Overlay Color', 'designsetgo'),
-				attribute: 'overlayColor',
-			},
-			{
-				label: __('Hover Background Color', 'designsetgo'),
-				attribute: 'hoverBackgroundColor',
-			},
-			{
-				label: __('Hover Text Color', 'designsetgo'),
-				attribute: 'hoverTextColor',
-			},
-		],
-	});
+	const { settings: hoverColorSettings, colorGradientSettings } =
+		useBlockColors({
+			attributes,
+			setAttributes,
+			entries: [
+				{
+					label: __('Overlay Color', 'designsetgo'),
+					attribute: 'overlayColor',
+				},
+				{
+					label: __('Hover Background Color', 'designsetgo'),
+					attribute: 'hoverBackgroundColor',
+				},
+				{
+					label: __('Hover Text Color', 'designsetgo'),
+					attribute: 'hoverTextColor',
+				},
+			],
+		});
 
 	// Setup custom units for width control
 	const units = useCustomUnits({
