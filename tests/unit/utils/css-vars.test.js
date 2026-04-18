@@ -33,6 +33,17 @@ describe('cssVars', () => {
 		expect(result).toEqual({ '--dsgo-border': '#000' });
 	});
 
+	test('omits keys whose attribute value is null', () => {
+		const result = cssVars(
+			{ bg: null, text: '#000' },
+			{
+				'--dsgo-bg': 'bg',
+				'--dsgo-text': 'text',
+			}
+		);
+		expect(result).toEqual({ '--dsgo-text': '#000' });
+	});
+
 	test('honors custom converter via { attribute, convert } shape', () => {
 		const px = (v) => (typeof v === 'number' ? `${v}px` : v);
 		const result = cssVars(
