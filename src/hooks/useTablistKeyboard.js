@@ -10,9 +10,11 @@
  * first/last child in both orientations. Movement wraps.
  *
  * Focus is re-anchored to the target child after the parent's active-index
- * update via a `data-*` selector the caller supplies — the handler scopes
- * the `querySelector` to the parent container element so duplicate blocks on
- * the same page don't collide on matching selectors.
+ * update via the optional `focusItem` callback. The hook itself does no DOM
+ * querying — collision-safety for duplicate blocks on the same page is the
+ * caller's responsibility. Scope the `focusItem` lookup with something
+ * unique (e.g. a `uniqueId`-prefixed class or `data-*` attribute) so
+ * two instances of the same block don't steal each other's focus.
  */
 
 import { useCallback } from '@wordpress/element';
@@ -70,6 +72,10 @@ export default function useTablistKeyboard({
 				newIndex = itemCount - 1;
 			}
 
+			// Always consume the key for WAI-ARIA tablist semantics — the
+			// widget "owns" these keys even when pressing Home at index 0 or
+			// End at the last item is a no-op, so the page doesn't also
+			// scroll to top/bottom. This matches the original tabs handler.
 			event.preventDefault();
 
 			if (newIndex === index) {

@@ -72,7 +72,7 @@ export default function DsgoChildToolbar({
 	showMove = true,
 	orientation = 'horizontal',
 }) {
-	const { childCount, activeChild } = useSelect(
+	const { childCount, activeChild, targetIndex } = useSelect(
 		(select) => {
 			const { getBlock } = select(blockEditorStore);
 			const parent = getBlock(parentClientId);
@@ -84,6 +84,7 @@ export default function DsgoChildToolbar({
 			return {
 				childCount: inner.length,
 				activeChild: inner[resolvedIndex] || null,
+				targetIndex: resolvedIndex,
 			};
 		},
 		[parentClientId, activeIndex]
@@ -91,11 +92,6 @@ export default function DsgoChildToolbar({
 
 	const { insertBlock, removeBlock, moveBlocksDown, moveBlocksUp } =
 		useDispatch(blockEditorStore);
-
-	const targetIndex =
-		typeof activeIndex === 'number'
-			? Math.max(0, Math.min(childCount - 1, activeIndex))
-			: -1;
 
 	const handleAdd = () => {
 		const block = createBlock(
@@ -177,7 +173,7 @@ export default function DsgoChildToolbar({
 			: __('Move right', 'designsetgo'));
 
 	return (
-		<ToolbarGroup>
+		<ToolbarGroup label={__('Child block actions', 'designsetgo')}>
 			<ToolbarButton
 				icon={plus}
 				label={resolvedAddLabel}
