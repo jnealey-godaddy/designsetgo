@@ -10,6 +10,7 @@
  */
 
 import { Button, Placeholder, Icon } from '@wordpress/components';
+import { store as blockEditorStore } from '@wordpress/block-editor';
 import { createBlocksFromInnerBlocksTemplate } from '@wordpress/blocks';
 import { useDispatch } from '@wordpress/data';
 import './style.scss';
@@ -50,7 +51,7 @@ export default function DsgoBlockPlaceholder({
 	templates,
 	variant,
 }) {
-	const { replaceInnerBlocks } = useDispatch('core/block-editor');
+	const { replaceInnerBlocks } = useDispatch(blockEditorStore);
 
 	const selectTemplate = (template) => {
 		if (template.attributes) {
@@ -61,6 +62,16 @@ export default function DsgoBlockPlaceholder({
 				template.innerBlocks
 			);
 			replaceInnerBlocks(clientId, blocks, false);
+		} else if (process.env.NODE_ENV !== 'production') {
+			// Parent blocks gate the placeholder on `hasInnerBlocks > 0`. A
+			// template that ships only `attributes` would apply them and then
+			// the placeholder would re-render, locking the author in. Catch
+			// that at template-author time so it's never shipped to users.
+			// eslint-disable-next-line no-console
+			console.warn(
+				`DsgoBlockPlaceholder: template "${template.name}" has no innerBlocks. ` +
+					'Templates must seed at least one inner block or the placeholder will re-render and the author will be stuck.'
+			);
 		}
 	};
 

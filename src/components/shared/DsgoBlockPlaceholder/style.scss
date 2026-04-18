@@ -44,7 +44,11 @@
 		border: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
 		border-radius: 4px;
 		background: var(--wp-components-color-background, #fff);
-		transition: all 0.2s ease;
+		transition:
+			border-color 0.2s ease,
+			background-color 0.2s ease,
+			transform 0.2s ease,
+			box-shadow 0.2s ease;
 
 		&:hover {
 			border-color: var(--wp-admin-theme-color, #007cba);

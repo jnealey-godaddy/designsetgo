@@ -89,31 +89,19 @@ const imageAccordionTemplates = [
 		innerBlocks: [
 			imageItem(
 				__('Series One', 'designsetgo'),
-				__(
-					'Add a short caption that previews the story behind this image.',
-					'designsetgo'
-				)
+				__('Add a caption for the first image.', 'designsetgo')
 			),
 			imageItem(
 				__('Series Two', 'designsetgo'),
-				__(
-					'Add a short caption that previews the story behind this image.',
-					'designsetgo'
-				)
+				__('Add a caption for the second image.', 'designsetgo')
 			),
 			imageItem(
 				__('Series Three', 'designsetgo'),
-				__(
-					'Add a short caption that previews the story behind this image.',
-					'designsetgo'
-				)
+				__('Add a caption for the third image.', 'designsetgo')
 			),
 			imageItem(
 				__('Series Four', 'designsetgo'),
-				__(
-					'Add a short caption that previews the story behind this image.',
-					'designsetgo'
-				)
+				__('Add a caption for the fourth image.', 'designsetgo')
 			),
 		],
 	},
