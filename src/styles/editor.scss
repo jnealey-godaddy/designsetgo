@@ -10,6 +10,9 @@
 @use 'mixins' as *;
 @use 'utilities' as *;
 
+// Shared components
+@use '../components/shared/DsgoBlockPlaceholder/style' as dsgo-block-placeholder;
+
 // Extension Editor Styles (must be after variables/mixins but before other rules)
 // Extensions are kept global because they apply to multiple blocks
 @use '../extensions/background-video/editor' as background-video;

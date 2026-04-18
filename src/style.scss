@@ -26,6 +26,9 @@
 @use './extensions/expanding-background/style' as expanding-background;
 @use './extensions/svg-patterns/style' as svg-patterns;
 
+// Shared components
+@use './components/shared/DsgoBlockPlaceholder/style' as dsgo-block-placeholder;
+
 // Rich text formats (frontend)
 @use './formats/text-style/style' as text-style;
 
