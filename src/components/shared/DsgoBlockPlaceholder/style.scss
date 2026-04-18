@@ -1,32 +1,153 @@
-.dsgo-block-placeholder {
+/**
+ * DsgoBlockPlaceholder
+ *
+ * Shared styles for the first-insert template chooser used by every compound
+ * block. Tiles are arranged in an auto-fill grid so the layout scales from 2
+ * tiles (flip-card) to 9 tiles (modal) without per-block overrides.
+ */
 
-	&__variations {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-		gap: 12px;
-		width: 100%;
-		margin-top: 16px;
+.dsgo-block-placeholder {
+	padding: 32px;
+	min-height: 300px;
+
+	.components-placeholder__label {
+		margin-bottom: 8px;
 	}
 
-	&__variation {
-		display: flex !important; // Override WP Button's inline-flex default so the column layout works
+	.components-placeholder__instructions {
+		margin-bottom: 24px;
+	}
+
+	&__templates {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: 16px;
+		width: 100%;
+		max-width: 900px;
+		margin: 0 auto;
+	}
+
+	&__template {
+		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: flex-start;
+		gap: 12px;
+		padding: 20px 16px;
+		height: auto;
+		min-height: 140px;
+		max-width: 100%;
+		width: 100%;
 		text-align: center;
-		padding: 16px !important; // Override WP Button's default padding for wizard tile spacing
-		height: auto !important; // Override WP Button's fixed height so stacked title + description fits
-		min-height: 120px;
+		white-space: normal;
+		word-break: break-word;
+		overflow-wrap: break-word;
+		border: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
+		border-radius: 4px;
+		background: var(--wp-components-color-background, #fff);
+		transition: all 0.2s ease;
 
-		&-title {
-			font-weight: 600;
-			margin-top: 8px;
+		&:hover {
+			border-color: var(--wp-admin-theme-color, #007cba);
+			background: color-mix(in srgb, var(--wp-admin-theme-color, #007cba) 5%, var(--wp-components-color-background, #fff));
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px color-mix(in srgb, currentcolor 10%, transparent);
 		}
 
-		&-description {
-			font-size: 12px;
-			color: var(--wp-admin-theme-color-darker-10, #757575);
-			margin-top: 4px;
+		&:focus {
+			border-color: var(--wp-admin-theme-color, #007cba);
+			box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #007cba);
+		}
+
+		// "Blank" / quick-start tiles get the accent treatment so authors see
+		// an obvious bail-out when they don't want a populated template.
+		&--blank {
+			border-color: var(--wp-admin-theme-color, #007cba);
+			background: color-mix(in srgb, var(--wp-admin-theme-color, #007cba) 8%, var(--wp-components-color-background, #fff));
+
+			.dsgo-block-placeholder__template-icon {
+				color: var(--wp-admin-theme-color, #007cba);
+				opacity: 1;
+			}
+		}
+	}
+
+	&__template-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		color: inherit;
+		opacity: 0.6;
+
+		svg {
+			fill: currentcolor;
+		}
+	}
+
+	&__template-info {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		width: 100%;
+		min-width: 0;
+	}
+
+	&__template-title {
+		font-weight: 600;
+		font-size: 14px;
+		color: inherit;
+	}
+
+	&__template-description {
+		font-size: 12px;
+		color: inherit;
+		opacity: 0.7;
+		line-height: 1.4;
+	}
+}
+
+@media (max-width: 782px) {
+
+	.dsgo-block-placeholder {
+		padding: 20px;
+
+		&__templates {
+			grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+			gap: 12px;
+		}
+
+		&__template {
+			padding: 16px 12px;
+			min-height: 120px;
+		}
+
+		&__template-icon {
+			width: 40px;
+			height: 40px;
+
+			svg {
+				width: 28px !important;
+				height: 28px !important;
+			}
+		}
+
+		&__template-title {
+			font-size: 13px;
+		}
+
+		&__template-description {
+			font-size: 11px;
+		}
+	}
+}
+
+@media (max-width: 600px) {
+
+	.dsgo-block-placeholder {
+
+		&__templates {
+			grid-template-columns: 1fr 1fr;
 		}
 	}
 }

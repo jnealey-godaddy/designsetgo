@@ -3,6 +3,7 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 	InspectorControls,
+	store as blockEditorStore,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
@@ -23,6 +24,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import ImageAccordionPlaceholder from './components/ImageAccordionPlaceholder';
 
 export default function ImageAccordionEdit({
 	attributes,
@@ -44,6 +46,13 @@ export default function ImageAccordionEdit({
 
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
+
+	const hasInnerBlocks = useSelect(
+		(select) =>
+			select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length >
+			0,
+		[clientId]
+	);
 
 	// Build options for the default-expanded picker from the actual child items.
 	// Uses the first core/heading content when present so authors recognize each item.
@@ -117,21 +126,29 @@ export default function ImageAccordionEdit({
 		style: customStyles,
 	});
 
-	// Inner blocks configuration - ONLY allow image-accordion-item children
+	// Inner blocks configuration - ONLY allow image-accordion-item children.
+	// Initial seeding is handled by ImageAccordionPlaceholder so authors pick
+	// a starter layout instead of landing on a generic three-item template.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-image-accordion__items',
 		},
 		{
 			allowedBlocks: ['designsetgo/image-accordion-item'],
-			template: [
-				['designsetgo/image-accordion-item', {}],
-				['designsetgo/image-accordion-item', {}],
-				['designsetgo/image-accordion-item', {}],
-			],
 			orientation: 'vertical', // Always vertical in editor for easier editing
 		}
 	);
+
+	if (!hasInnerBlocks) {
+		return (
+			<div {...blockProps}>
+				<ImageAccordionPlaceholder
+					clientId={clientId}
+					setAttributes={setAttributes}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<>

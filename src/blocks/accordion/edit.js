@@ -3,6 +3,7 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 	InspectorControls,
+	store as blockEditorStore,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
@@ -15,12 +16,14 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { useSelect } from '@wordpress/data';
 import classnames from 'classnames';
 import {
 	encodeColorValue,
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import AccordionPlaceholder from './components/AccordionPlaceholder';
 
 export default function AccordionEdit({ attributes, setAttributes, clientId }) {
 	const {
@@ -38,6 +41,13 @@ export default function AccordionEdit({ attributes, setAttributes, clientId }) {
 
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
+
+	const hasInnerBlocks = useSelect(
+		(select) =>
+			select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length >
+			0,
+		[clientId]
+	);
 
 	// Smart default: hover mirrors open unless explicitly set
 	const effectiveHoverBg = hoverBackgroundColor || openBackgroundColor;
@@ -71,32 +81,29 @@ export default function AccordionEdit({ attributes, setAttributes, clientId }) {
 		style: customStyles,
 	});
 
-	// Inner blocks configuration - ONLY allow accordion-item children
+	// Inner blocks configuration - ONLY allow accordion-item children. The
+	// initial seeding is handled by AccordionPlaceholder so the user always
+	// picks a starter layout instead of landing on a generic two-item template.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-accordion__items',
 		},
 		{
 			allowedBlocks: ['designsetgo/accordion-item'],
-			template: [
-				[
-					'designsetgo/accordion-item',
-					{
-						title: __('Accordion Item 1', 'designsetgo'),
-						isOpen: false,
-					},
-				],
-				[
-					'designsetgo/accordion-item',
-					{
-						title: __('Accordion Item 2', 'designsetgo'),
-						isOpen: false,
-					},
-				],
-			],
 			orientation: 'vertical',
 		}
 	);
+
+	if (!hasInnerBlocks) {
+		return (
+			<div {...blockProps}>
+				<AccordionPlaceholder
+					clientId={clientId}
+					setAttributes={setAttributes}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<>

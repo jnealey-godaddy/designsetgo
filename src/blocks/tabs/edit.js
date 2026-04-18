@@ -33,14 +33,9 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import TabsPlaceholder from './components/TabsPlaceholder';
 
 const ALLOWED_BLOCKS = ['designsetgo/tab'];
-
-const TEMPLATE = [
-	['designsetgo/tab', { title: __('Tab 1', 'designsetgo') }],
-	['designsetgo/tab', { title: __('Tab 2', 'designsetgo') }],
-	['designsetgo/tab', { title: __('Tab 3', 'designsetgo') }],
-];
 
 export default function Edit({ attributes, setAttributes, clientId }) {
 	const {
@@ -217,17 +212,29 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		},
 	});
 
-	// Use useInnerBlocksProps for tab panels
+	// Use useInnerBlocksProps for tab panels. Initial seeding happens via
+	// TabsPlaceholder so authors pick a starter layout instead of landing on
+	// a generic three-tab template.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-tabs__panels',
 		},
 		{
 			allowedBlocks: ALLOWED_BLOCKS,
-			template: TEMPLATE,
 			orientation: orientation === 'vertical' ? 'vertical' : 'horizontal',
 		}
 	);
+
+	if (innerBlocks.length === 0) {
+		return (
+			<div {...blockProps}>
+				<TabsPlaceholder
+					clientId={clientId}
+					setAttributes={setAttributes}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<>

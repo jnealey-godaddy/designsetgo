@@ -6,14 +6,17 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 	BlockControls,
+	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import { ToolbarGroup, ToolbarButton } from '@wordpress/components';
 import { alignLeft, alignCenter, alignRight } from '@wordpress/icons';
+import { useSelect } from '@wordpress/data';
 
 /**
  * Internal dependencies
  */
 import './editor.scss';
+import ScrollAccordionPlaceholder from './components/ScrollAccordionPlaceholder';
 
 /**
  * Edit component for the Scroll Accordion block.
@@ -22,10 +25,18 @@ import './editor.scss';
  * @param {Object}   props               Component props
  * @param {Object}   props.attributes    Block attributes
  * @param {Function} props.setAttributes Function to update attributes
+ * @param {string}   props.clientId      Block client ID
  * @return {Element} Element to render.
  */
-export default function Edit({ attributes, setAttributes }) {
+export default function Edit({ attributes, setAttributes, clientId }) {
 	const { alignItems } = attributes;
+
+	const hasInnerBlocks = useSelect(
+		(select) =>
+			select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length >
+			0,
+		[clientId]
+	);
 
 	// Calculate inner styles declaratively
 	const innerStyles = {
@@ -42,6 +53,8 @@ export default function Edit({ attributes, setAttributes }) {
 		},
 	});
 
+	// Initial seeding is handled by ScrollAccordionPlaceholder so authors pick
+	// a starter layout instead of landing on a generic three-card template.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-scroll-accordion__items',
@@ -49,171 +62,21 @@ export default function Edit({ attributes, setAttributes }) {
 		},
 		{
 			allowedBlocks: ['designsetgo/scroll-accordion-item'],
-			template: [
-				[
-					'designsetgo/scroll-accordion-item',
-					{
-						style: {
-							spacing: {
-								padding: {
-									top: 'var(--wp--preset--spacing--60)',
-									right: 'var(--wp--preset--spacing--60)',
-									bottom: 'var(--wp--preset--spacing--60)',
-									left: 'var(--wp--preset--spacing--60)',
-								},
-							},
-							color: {
-								background: '#1e293b',
-								text: '#ffffff',
-							},
-							border: {
-								radius: '16px',
-							},
-						},
-						shadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
-					},
-					[
-						[
-							'core/heading',
-							{
-								level: 2,
-								content: 'Design Systems',
-								style: {
-									typography: {
-										fontSize: '2.5rem',
-										fontWeight: '700',
-									},
-								},
-							},
-						],
-						[
-							'core/paragraph',
-							{
-								content:
-									'Build consistent, scalable interfaces with reusable components and design tokens.',
-								style: {
-									typography: {
-										fontSize: '1.125rem',
-									},
-									color: {
-										text: '#cbd5e1',
-									},
-								},
-							},
-						],
-					],
-				],
-				[
-					'designsetgo/scroll-accordion-item',
-					{
-						style: {
-							spacing: {
-								padding: {
-									top: 'var(--wp--preset--spacing--60)',
-									right: 'var(--wp--preset--spacing--60)',
-									bottom: 'var(--wp--preset--spacing--60)',
-									left: 'var(--wp--preset--spacing--60)',
-								},
-							},
-							color: {
-								background: '#0f172a',
-								text: '#ffffff',
-							},
-							border: {
-								radius: '16px',
-							},
-						},
-						shadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-					},
-					[
-						[
-							'core/heading',
-							{
-								level: 2,
-								content: 'Component Library',
-								style: {
-									typography: {
-										fontSize: '2.5rem',
-										fontWeight: '700',
-									},
-								},
-							},
-						],
-						[
-							'core/paragraph',
-							{
-								content:
-									'Pre-built, accessible components that work seamlessly together for rapid development.',
-								style: {
-									typography: {
-										fontSize: '1.125rem',
-									},
-									color: {
-										text: '#cbd5e1',
-									},
-								},
-							},
-						],
-					],
-				],
-				[
-					'designsetgo/scroll-accordion-item',
-					{
-						style: {
-							spacing: {
-								padding: {
-									top: 'var(--wp--preset--spacing--60)',
-									right: 'var(--wp--preset--spacing--60)',
-									bottom: 'var(--wp--preset--spacing--60)',
-									left: 'var(--wp--preset--spacing--60)',
-								},
-							},
-							color: {
-								background: '#7c3aed',
-								text: '#ffffff',
-							},
-							border: {
-								radius: '16px',
-							},
-						},
-						shadow: '0 10px 40px rgba(124, 58, 237, 0.3)',
-					},
-					[
-						[
-							'core/heading',
-							{
-								level: 2,
-								content: 'Launch & Scale',
-								style: {
-									typography: {
-										fontSize: '2.5rem',
-										fontWeight: '700',
-									},
-								},
-							},
-						],
-						[
-							'core/paragraph',
-							{
-								content:
-									'Deploy with confidence and scale effortlessly with performance-optimized architecture.',
-								style: {
-									typography: {
-										fontSize: '1.125rem',
-									},
-									color: {
-										text: '#ede9fe',
-									},
-								},
-							},
-						],
-					],
-				],
-			],
 			orientation: 'vertical',
 			renderAppender: false,
 		}
 	);
+
+	if (!hasInnerBlocks) {
+		return (
+			<div {...blockProps}>
+				<ScrollAccordionPlaceholder
+					clientId={clientId}
+					setAttributes={setAttributes}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<>

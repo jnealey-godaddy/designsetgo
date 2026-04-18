@@ -29,6 +29,7 @@ import {
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { useBlockColors } from '../../hooks';
+import SliderPlaceholder from './components/SliderPlaceholder';
 
 const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
 
@@ -320,132 +321,29 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 		'data-effect': effect,
 	});
 
-	// Inner blocks configuration - ONLY allow slide children
+	// Inner blocks configuration - ONLY allow slide children. Initial seeding
+	// is handled by SliderPlaceholder so authors pick a starter layout instead
+	// of landing on a generic three-slide template.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-slider__track',
 		},
 		{
 			allowedBlocks: ['designsetgo/slide'],
-			template: [
-				[
-					'designsetgo/slide',
-					{
-						style: {
-							spacing: {
-								padding: {
-									top: 'var:preset|spacing|70',
-									bottom: 'var:preset|spacing|70',
-									left: 'var:preset|spacing|30',
-									right: 'var:preset|spacing|30',
-								},
-							},
-						},
-					},
-					[
-						[
-							'core/heading',
-							{
-								level: 2,
-								content: __(
-									'Slide 1: Beautiful Slider',
-									'designsetgo'
-								),
-								textAlign: 'center',
-							},
-						],
-						[
-							'core/paragraph',
-							{
-								content: __(
-									'Add any WordPress blocks inside slides. Click to edit or add background images.',
-									'designsetgo'
-								),
-								align: 'center',
-							},
-						],
-					],
-				],
-				[
-					'designsetgo/slide',
-					{
-						style: {
-							spacing: {
-								padding: {
-									top: 'var:preset|spacing|70',
-									bottom: 'var:preset|spacing|70',
-									left: 'var:preset|spacing|30',
-									right: 'var:preset|spacing|30',
-								},
-							},
-						},
-					},
-					[
-						[
-							'core/heading',
-							{
-								level: 2,
-								content: __(
-									'Slide 2: Fully Customizable',
-									'designsetgo'
-								),
-								textAlign: 'center',
-							},
-						],
-						[
-							'core/paragraph',
-							{
-								content: __(
-									'Configure transitions, navigation, auto-play, and more in the settings panel.',
-									'designsetgo'
-								),
-								align: 'center',
-							},
-						],
-					],
-				],
-				[
-					'designsetgo/slide',
-					{
-						style: {
-							spacing: {
-								padding: {
-									top: 'var:preset|spacing|70',
-									bottom: 'var:preset|spacing|70',
-									left: 'var:preset|spacing|30',
-									right: 'var:preset|spacing|30',
-								},
-							},
-						},
-					},
-					[
-						[
-							'core/heading',
-							{
-								level: 2,
-								content: __(
-									'Slide 3: Get Started',
-									'designsetgo'
-								),
-								textAlign: 'center',
-							},
-						],
-						[
-							'core/paragraph',
-							{
-								content: __(
-									'Replace these slides with your own content and images. Swipe, click arrows, or use keyboard to navigate.',
-									'designsetgo'
-								),
-								align: 'center',
-							},
-						],
-					],
-				],
-			],
 			orientation: 'horizontal',
 		}
 	);
+
+	if (slideCount === 0) {
+		return (
+			<div {...blockProps}>
+				<SliderPlaceholder
+					clientId={clientId}
+					setAttributes={setAttributes}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<>
