@@ -17,6 +17,7 @@ import {
 } from '@wordpress/block-editor';
 import { Notice, PanelBody, SelectControl } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
+import { useEffect } from '@wordpress/element';
 
 export default function FlipCardFaceEdit({
 	attributes,
@@ -30,37 +31,70 @@ export default function FlipCardFaceEdit({
 	// front face renamed to back while a sibling already holds back) would
 	// break the flip animation. Track which side(s) siblings occupy so we
 	// can disable the matching option in the Side dropdown and fall back to
-	// a Notice if legacy content already violates the invariant.
-	const siblingSides = useSelect(
+	// a Notice if legacy content already violates the invariant. We split
+	// siblings by position — `earlier` siblings are the ones we treat as
+	// "already present" when deciding whether this face is a newly inserted
+	// duplicate, while `all` drives the inspector dropdown's occupied-side
+	// state (which must consider every sibling regardless of order).
+	const { earlierSiblingSides, allSiblingSides } = useSelect(
 		(select) => {
 			const { getBlockRootClientId, getBlock } =
 				select('core/block-editor');
 			const parentId = getBlockRootClientId(clientId);
 			if (!parentId) {
-				return [];
+				return { earlierSiblingSides: [], allSiblingSides: [] };
 			}
 			const siblings = getBlock(parentId)?.innerBlocks || [];
-			return siblings
-				.filter((sibling) => sibling.clientId !== clientId)
-				.map((sibling) => {
-					if (sibling.name === 'designsetgo/flip-card-face') {
-						return sibling.attributes?.side === 'back'
-							? 'back'
-							: 'front';
-					}
-					if (sibling.name === 'designsetgo/flip-card-front') {
-						return 'front';
-					}
-					if (sibling.name === 'designsetgo/flip-card-back') {
-						return 'back';
-					}
-					return null;
-				})
+			const toSide = (sibling) => {
+				if (sibling.name === 'designsetgo/flip-card-face') {
+					return sibling.attributes?.side === 'back'
+						? 'back'
+						: 'front';
+				}
+				if (sibling.name === 'designsetgo/flip-card-front') {
+					return 'front';
+				}
+				if (sibling.name === 'designsetgo/flip-card-back') {
+					return 'back';
+				}
+				return null;
+			};
+			const selfIndex = siblings.findIndex(
+				(sibling) => sibling.clientId === clientId
+			);
+			const earlier = siblings
+				.slice(0, selfIndex === -1 ? 0 : selfIndex)
+				.map(toSide)
 				.filter(Boolean);
+			const all = siblings
+				.filter((sibling) => sibling.clientId !== clientId)
+				.map(toSide)
+				.filter(Boolean);
+			return { earlierSiblingSides: earlier, allSiblingSides: all };
 		},
 		[clientId]
 	);
+	const siblingSides = allSiblingSides;
 	const hasDuplicateSide = siblingSides.includes(side);
+
+	// When an author deletes a face and inserts a replacement via the parent's
+	// inserter, the new block uses the block.json default `side: 'front'`. If
+	// an earlier sibling already occupies this face's side and the opposite
+	// side is free, flip *this* face so the parent keeps exactly one front
+	// and one back. Using *earlier* siblings (rather than all siblings) is
+	// the tie-breaker: without it, two faces with the same side would each
+	// try to switch in the same tick and the older face would usually win.
+	// Only auto-correct when the opposite side is actually available —
+	// otherwise leave the duplicate in place so the Notice guides the author.
+	useEffect(() => {
+		if (!earlierSiblingSides.includes(side)) {
+			return;
+		}
+		const oppositeSide = side === 'front' ? 'back' : 'front';
+		if (!siblingSides.includes(oppositeSide)) {
+			setAttributes({ side: oppositeSide });
+		}
+	}, [earlierSiblingSides, siblingSides, side, setAttributes]);
 
 	const blockProps = useBlockProps({
 		className: `dsgo-flip-card__face dsgo-flip-card__${side}`,
