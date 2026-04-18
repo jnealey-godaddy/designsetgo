@@ -30,6 +30,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { useBlockColors } from '../../hooks';
 
 const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
 
@@ -76,6 +77,22 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
+
+	// Arrow Colors panel — migrated to useBlockColors hook
+	const { settings: arrowColorSettings } = useBlockColors({
+		attributes,
+		setAttributes,
+		entries: [
+			{
+				label: __('Arrow Icon Color', 'designsetgo'),
+				attribute: 'arrowColor',
+			},
+			{
+				label: __('Arrow Background', 'designsetgo'),
+				attribute: 'arrowBackgroundColor',
+			},
+		],
+	});
 	const requiresSingleSlideEffect = SINGLE_SLIDE_EFFECTS.includes(effect);
 
 	const blockRef = useRef(null);
@@ -1086,42 +1103,7 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 					<ColorGradientSettingsDropdown
 						panelId={clientId}
 						title={__('Arrow Colors', 'designsetgo')}
-						settings={[
-							{
-								label: __('Arrow Icon Color', 'designsetgo'),
-								colorValue: decodeColorValue(
-									arrowColor,
-									colorGradientSettings
-								),
-								onColorChange: (color) =>
-									setAttributes({
-										arrowColor:
-											encodeColorValue(
-												color,
-												colorGradientSettings
-											) || '',
-									}),
-								enableAlpha: true,
-								clearable: true,
-							},
-							{
-								label: __('Arrow Background', 'designsetgo'),
-								colorValue: decodeColorValue(
-									arrowBackgroundColor,
-									colorGradientSettings
-								),
-								onColorChange: (color) =>
-									setAttributes({
-										arrowBackgroundColor:
-											encodeColorValue(
-												color,
-												colorGradientSettings
-											) || '',
-									}),
-								enableAlpha: true,
-								clearable: true,
-							},
-						]}
+						settings={arrowColorSettings}
 						{...colorGradientSettings}
 					/>
 				</InspectorControls>

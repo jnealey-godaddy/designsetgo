@@ -28,6 +28,7 @@ import {
 	encodeColorValue,
 	decodeColorValue,
 } from '../../utils/encode-color-value';
+import { useBlockColors } from '../../hooks';
 
 /**
  * Edit component for Card block
@@ -70,6 +71,18 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 	} = attributes;
 
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
+
+	// Border panel — migrated to useBlockColors hook
+	const { settings: borderColorSettings } = useBlockColors({
+		attributes,
+		setAttributes,
+		entries: [
+			{
+				label: __('Border Color', 'designsetgo'),
+				attribute: 'borderColor',
+			},
+		],
+	});
 
 	// Build block props with border color
 	const blockStyles = {};
@@ -763,25 +776,7 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 				<ColorGradientSettingsDropdown
 					panelId={clientId}
 					title={__('Border', 'designsetgo')}
-					settings={[
-						{
-							label: __('Border Color', 'designsetgo'),
-							colorValue: decodeColorValue(
-								borderColor,
-								colorGradientSettings
-							),
-							onColorChange: (color) =>
-								setAttributes({
-									borderColor:
-										encodeColorValue(
-											color,
-											colorGradientSettings
-										) || '',
-								}),
-							enableAlpha: true,
-							clearable: true,
-						},
-					]}
+					settings={borderColorSettings}
 					{...colorGradientSettings}
 				/>
 
