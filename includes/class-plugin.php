@@ -488,6 +488,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-submissions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-modal-hooks.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query.php';
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-settings.php';
@@ -555,6 +556,7 @@ class Plugin {
 		$this->modal_hooks         = new Blocks\Modal_Hooks();
 		$this->form_handler        = new Blocks\Form_Handler();
 		$this->form_submissions    = new Blocks\Form_Submissions();
+		$this->query_controller    = new Blocks\Query\Controller();
 		$this->patterns            = new Patterns\Loader();
 		$this->global_styles       = new Admin\Global_Styles();
 		$this->settings            = new Admin\Settings();
