@@ -10,14 +10,45 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( '/designsetgo/v1/query/render', $routes );
 	}
 
-	public function test_requires_nonce_for_write_like_scope() {
-		$request  = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+	public function test_rejects_anonymous_requests() {
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
 		$request->set_param( 'queryId', 'abc' );
 		$request->set_param( 'attributes', array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 3 ) );
 		$request->set_param( 'page', 2 );
-		// No nonce.
+
 		$response = rest_get_server()->dispatch( $request );
 		$this->assertSame( 401, $response->get_status() );
+	}
+
+	public function test_rejects_logged_in_user_without_nonce() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request->set_param( 'queryId', 'abc' );
+		$request->set_param( 'attributes', array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 3 ) );
+		$request->set_param( 'page', 2 );
+		// No X-WP-Nonce header.
+
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertSame( 401, $response->get_status() );
+	}
+
+	public function test_rejects_user_without_read_capability() {
+		// Create a user with no role so they lack the read cap entirely,
+		// exercising the current_user_can('read') gate in check_permission().
+		// Using role '' is more reliable than remove_cap() in unit tests because
+		// remove_cap() cannot override role-inherited capabilities.
+		$user_id = self::factory()->user->create( array( 'role' => '' ) );
+		wp_set_current_user( $user_id );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'queryId', 'abc' );
+		$request->set_param( 'attributes', array( 'source' => 'posts' ) );
+		$request->set_param( 'page', 1 );
+
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertSame( 403, $response->get_status() );
 	}
 
 	public function test_returns_html_shell_for_valid_request() {

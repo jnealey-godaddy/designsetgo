@@ -29,6 +29,11 @@ class Controller {
 				'permission_callback' => array( $this, 'check_permission' ),
 				'args'                => array(
 					'queryId'     => array( 'type' => 'string', 'required' => true, 'sanitize_callback' => 'sanitize_key' ),
+
+					// NOTE: `attributes` and `params` are nested objects; WP only enforces the
+					// top-level type. The shared render helper (designsetgo_query_render) is
+					// responsible for per-field sanitization of every value before it reaches
+					// WP_Query args or HTML output. Do NOT assume these arrive sanitized.
 					'attributes'  => array( 'type' => 'object', 'required' => true ),
 					'page'        => array( 'type' => 'integer', 'default' => 1, 'sanitize_callback' => 'absint' ),
 					'innerBlocks' => array( 'type' => 'string', 'default' => '' ),
@@ -39,10 +44,31 @@ class Controller {
 	}
 
 	public function check_permission( \WP_REST_Request $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'You must be logged in.', 'designsetgo' ),
+				array( 'status' => 401 )
+			);
+		}
+
 		$nonce = $request->get_header( 'X-WP-Nonce' );
 		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-			return new \WP_Error( 'rest_forbidden', __( 'Invalid nonce.', 'designsetgo' ), array( 'status' => 401 ) );
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Invalid nonce.', 'designsetgo' ),
+				array( 'status' => 401 )
+			);
 		}
+
+		if ( ! current_user_can( 'read' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Insufficient permissions.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
+		}
+
 		return true;
 	}
 
