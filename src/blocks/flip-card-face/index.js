@@ -1,12 +1,7 @@
 /**
- * Flip Card Back Block Registration
+ * Flip Card Face Block Registration
  *
- * Deprecated in 2.0.52 in favour of designsetgo/flip-card-face. The block
- * stays registered with inserter:false so existing content keeps rendering;
- * the transforms.to entry lets editors one-click convert it to the new
- * consolidated block.
- *
- * @since 1.0.0
+ * @since 2.0.52
  */
 
 import { registerBlockType, createBlock } from '@wordpress/blocks';
@@ -39,8 +34,6 @@ registerBlockType(metadata.name, {
 					stroke="currentColor"
 					strokeWidth="2"
 					fill="none"
-					strokeDasharray="3 3"
-					opacity="0.5"
 				/>
 				<circle cx="12" cy="12" r="3" fill="currentColor" />
 			</svg>
@@ -50,10 +43,20 @@ registerBlockType(metadata.name, {
 	edit,
 	save,
 	transforms: {
-		to: [
+		from: [
 			{
 				type: 'block',
-				blocks: ['designsetgo/flip-card-face'],
+				blocks: ['designsetgo/flip-card-front'],
+				transform: (attributes, innerBlocks) =>
+					createBlock(
+						'designsetgo/flip-card-face',
+						{ ...attributes, side: 'front' },
+						innerBlocks
+					),
+			},
+			{
+				type: 'block',
+				blocks: ['designsetgo/flip-card-back'],
 				transform: (attributes, innerBlocks) =>
 					createBlock(
 						'designsetgo/flip-card-face',

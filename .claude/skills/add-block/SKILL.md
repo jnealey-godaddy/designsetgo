@@ -8,6 +8,17 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(npm run *)
 
 Create a new Gutenberg block following WordPress best practices.
 
+## Pre-flight: Variation check
+
+Before scaffolding a new block, run this check:
+
+1. Search existing blocks (`src/blocks/*`) for anything conceptually similar.
+2. Ask: would the new block differ from an existing one only by 1–3 attributes **and share the same `save()` output structure**?
+3. If yes → register a **variation** via `registerBlockVariation`, not a new block. Variations have no migration cost and no deprecation debt.
+4. If the save markup or inner-block structure actually differs → a new block is justified. Proceed.
+
+See the "Variations vs. new blocks" section in `.claude/claude.md` for rationale and the consolidation pattern for sibling blocks.
+
 ## Ask the User For
 
 - **Block name** (e.g., "accordion", "testimonial-slider")

@@ -328,8 +328,8 @@ Key attributes:
   flipEffect ("horizontal"|"vertical"|"diagonal")
   flipDuration (string)
 
-Children: designsetgo/flip-card-front, designsetgo/flip-card-back
-  Both accept InnerBlocks
+Children: designsetgo/flip-card-face (required side attribute: "front" or "back")
+  Each face accepts InnerBlocks. Insert two faces, one with side="front" and one with side="back".
 ```
 
 ### designsetgo/image-accordion

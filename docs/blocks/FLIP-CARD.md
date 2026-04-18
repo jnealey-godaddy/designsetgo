@@ -12,11 +12,11 @@ The **Flip Card Block** adds a layer of interactivity and surprise to your websi
 
 1.  **Insert Block**: Add the **Flip Card** block.
 2.  **Edit Front**:
-    *   Inside the **Flip Card Front** area, add an **Image** block (Team Photo).
+    *   Select the first **Flip Card Face** (Side = Front). Add an **Image** block (Team Photo).
     *   Add a **Heading** (Name) and **Paragraph** (Role).
     *   *Style*: Set a white background and add a subtle shadow.
 3.  **Edit Back**:
-    *   Inside the **Flip Card Back** area, add a **Paragraph** (Bio).
+    *   Select the second **Flip Card Face** and switch the **Side** attribute to `Back`. Add a **Paragraph** (Bio).
     *   Add an **Icon Group** or **Buttons** for social links (LinkedIn, Twitter).
     *   *Style*: Set a colored background (e.g., Brand Blue) and white text to make it distinct from the front.
 4.  **Settings**:
@@ -84,10 +84,10 @@ Front shows "Before" state; Back shows "After".
 
 *   **DOM Structure**:
     ```html
-    <div class="designsetgo-flip-card">
-      <div class="designsetgo-flip-card-inner">
-        <div class="designsetgo-flip-card-front">...</div>
-        <div class="designsetgo-flip-card-back">...</div>
+    <div class="wp-block-designsetgo-flip-card dsgo-flip-card">
+      <div class="dsgo-flip-card__container">
+        <div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__front">...</div>
+        <div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__back">...</div>
       </div>
     </div>
     ```

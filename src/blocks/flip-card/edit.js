@@ -37,23 +37,31 @@ import FlipCardPlaceholder from './components/FlipCardPlaceholder';
 export default function FlipCardEdit({ attributes, setAttributes, clientId }) {
 	const { flipTrigger, flipEffect, flipDirection, flipDuration } = attributes;
 
-	// Determine which face blocks already exist to prevent duplicates and
-	// whether the card has been seeded yet (used to gate the placeholder).
+	// Cap child faces at two (one front + one back). designsetgo/flip-card-face
+	// is the canonical child block; flip-card-front / flip-card-back are
+	// legacy siblings kept for content already in the wild — they count
+	// toward the same two-face budget. `hasInnerBlocks` gates the first-
+	// insert placeholder (Theme 1).
 	const { allowedBlocks, hasInnerBlocks } = useSelect(
 		(select) => {
 			const { getBlock } = select(blockEditorStore);
 			const block = getBlock(clientId);
 			const children = block?.innerBlocks || [];
-			const childNames = children.map((child) => child.name);
-			const missing = [];
-			if (!childNames.includes('designsetgo/flip-card-front')) {
-				missing.push('designsetgo/flip-card-front');
-			}
-			if (!childNames.includes('designsetgo/flip-card-back')) {
-				missing.push('designsetgo/flip-card-back');
-			}
+			const legacyCount = children.filter(
+				(child) =>
+					child.name === 'designsetgo/flip-card-front' ||
+					child.name === 'designsetgo/flip-card-back'
+			).length;
+			const faceCount = children.filter(
+				(child) => child.name === 'designsetgo/flip-card-face'
+			).length;
+			// Empty array hides the inserter entirely — flip card is at capacity.
+			const allowed =
+				legacyCount + faceCount >= 2
+					? []
+					: ['designsetgo/flip-card-face'];
 			return {
-				allowedBlocks: missing,
+				allowedBlocks: allowed,
 				hasInnerBlocks: children.length > 0,
 			};
 		},
@@ -69,18 +77,22 @@ export default function FlipCardEdit({ attributes, setAttributes, clientId }) {
 		},
 	});
 
-	// Inner blocks configuration. Initial seeding (both faces) is handled by
-	// FlipCardPlaceholder so authors pick a starter layout instead of landing
-	// on two empty faces. templateLock is false so users can delete a face
-	// and re-add it; "Attempt Recovery" still works on validation errors.
-	// allowedBlocks is computed dynamically to only permit missing faces,
-	// preventing duplicate front or back blocks.
+	// Inner blocks configuration. Initial seeding is handled by
+	// FlipCardPlaceholder so authors pick a starter layout instead of
+	// landing on two empty faces. The `template` here is a safety net for
+	// "Attempt Recovery" on validation errors — it fires only when there
+	// are no children, which normally is caught by hasInnerBlocks above.
+	// templateLock is false so authors can delete a face and re-add it.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-flip-card__container',
 		},
 		{
 			allowedBlocks,
+			template: [
+				['designsetgo/flip-card-face', { side: 'front' }],
+				['designsetgo/flip-card-face', { side: 'back' }],
+			],
 			templateLock: false,
 			orientation: 'vertical',
 		}

@@ -441,6 +441,16 @@ class Block_Inserter {
 					'closing' => '</div></div>',
 				);
 
+			case 'designsetgo/flip-card-face':
+				$side = isset( $attributes['side'] ) && 'back' === $attributes['side'] ? 'back' : 'front';
+				return array(
+					'opening' => '<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__' . esc_attr( $side ) . '">',
+					'closing' => '</div>',
+				);
+
+			// Legacy — consolidated into designsetgo/flip-card-face in 2.0.52.
+			// Kept so the inserter ability can still emit existing content
+			// until it is transformed to the new block.
 			case 'designsetgo/flip-card-front':
 				return array(
 					'opening' => '<div class="wp-block-designsetgo-flip-card-front dsgo-flip-card__face dsgo-flip-card__front">',

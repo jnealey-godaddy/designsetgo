@@ -22,6 +22,7 @@ const ALLOWED_BLOCKS = [
 	'designsetgo/row',
 	'designsetgo/grid',
 	'designsetgo/flip-card',
+	'designsetgo/flip-card-face',
 	'designsetgo/flip-card-front',
 	'designsetgo/flip-card-back',
 	'designsetgo/accordion',

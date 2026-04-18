@@ -121,7 +121,7 @@ Complete reference guide for all DesignSetGo blocks organized by category.
 ### Flip Card
 **Name**: `designsetgo/flip-card`
 **Category**: Design
-**Parent Blocks**: `designsetgo/flip-card-front`, `designsetgo/flip-card-back`
+**Child Blocks**: `designsetgo/flip-card-face` (Side attribute: `front` or `back`)
 **Description**: Interactive card that flips to reveal content on the back. Perfect for team profiles, product showcases, and feature highlights.
 
 **Key Features**:
@@ -417,7 +417,7 @@ Many DesignSetGo blocks use parent-child relationships for better organization:
 1. **Accordion** → Accordion Item
 2. **Tabs** → Tab
 3. **Slider** → Slide
-4. **Flip Card** → Flip Card Front + Flip Card Back
+4. **Flip Card** → Flip Card Face (Side = Front/Back)
 5. **Icon List** → Icon List Item
 6. **Counter Group** → Counter
 7. **Scroll Accordion** → Scroll Accordion Item

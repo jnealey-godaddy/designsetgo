@@ -1,26 +1,27 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "designsetgo/flip-card-back",
+	"name": "designsetgo/flip-card-face",
 	"version": "1.0.0",
-	"title": "Flip Card Back",
-	"category": "designsetgo",
+	"title": "Flip Card Face",
+	"category": "design",
 	"parent": [
 		"designsetgo/flip-card"
 	],
-	"description": "Back face of the flip card.",
+	"description": "A face of the flip card. Use the Side attribute to mark it as front or back.",
 	"keywords": [
 		"flip",
 		"card",
+		"face",
+		"front",
 		"back"
 	],
 	"textdomain": "designsetgo",
-	"icon": "id-alt",
 	"supports": {
 		"anchor": false,
 		"align": false,
 		"html": false,
-		"inserter": false,
+		"inserter": true,
 		"reusable": false,
 		"layout": {
 			"allowSwitching": false,
@@ -70,7 +71,16 @@
 			}
 		}
 	},
-	"attributes": {},
+	"attributes": {
+		"side": {
+			"type": "string",
+			"default": "front",
+			"enum": [
+				"front",
+				"back"
+			]
+		}
+	},
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css"

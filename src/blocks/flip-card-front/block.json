@@ -20,7 +20,7 @@
 		"anchor": false,
 		"align": false,
 		"html": false,
-		"inserter": true,
+		"inserter": false,
 		"reusable": false,
 		"layout": {
 			"allowSwitching": false,

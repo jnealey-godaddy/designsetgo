@@ -145,15 +145,9 @@
 				"performance": "high"
 			},
 			{
-				"name": "designsetgo/flip-card-front",
-				"title": "Flip Card Front",
-				"description": "Front face of flip card",
-				"performance": "high"
-			},
-			{
-				"name": "designsetgo/flip-card-back",
-				"title": "Flip Card Back",
-				"description": "Back face of flip card",
+				"name": "designsetgo/flip-card-face",
+				"title": "Flip Card Face",
+				"description": "Front or back face of a flip card",
 				"performance": "high"
 			},
 			{

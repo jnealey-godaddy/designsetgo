@@ -2,27 +2,36 @@
  * Flip Card Templates
  *
  * Starter layouts shown by FlipCardPlaceholder when the block is first
- * inserted. Every template seeds both flip-card-front and flip-card-back so
- * the card is immediately interactive — never a single-faced state.
+ * inserted. Every template seeds one front face and one back face so the
+ * card is immediately interactive — never a single-faced state.
+ *
+ * Children are `designsetgo/flip-card-face` (the consolidated block
+ * introduced in Theme 2) distinguished by the `side` attribute; the
+ * legacy flip-card-front / flip-card-back siblings remain registered
+ * with `inserter: false` for existing content but are not seeded here.
  */
 
 import { __ } from '@wordpress/i18n';
 
-// flip-card-front/back support `spacing.padding` but default to none, so
-// templates seed it explicitly — otherwise text sits flush against the card
-// edge on first insert. Authors can still adjust via Style → Padding.
+// Face children support `spacing.padding` but default to none, so templates
+// seed it explicitly — otherwise text sits flush against the card edge on
+// first insert. Authors can still adjust via Style → Padding.
 const facePadding = {
-	style: {
-		spacing: {
-			padding: {
-				top: '32px',
-				right: '32px',
-				bottom: '32px',
-				left: '32px',
-			},
+	spacing: {
+		padding: {
+			top: '32px',
+			right: '32px',
+			bottom: '32px',
+			left: '32px',
 		},
 	},
 };
+
+const face = (side, extra = {}, innerBlocks = []) => [
+	'designsetgo/flip-card-face',
+	{ side, style: { ...facePadding, ...(extra.style || {}) } },
+	innerBlocks,
+];
 
 const flipCardTemplates = [
 	{
@@ -31,10 +40,7 @@ const flipCardTemplates = [
 		description: __('Empty front and back to fill in', 'designsetgo'),
 		icon: 'welcome-add-page',
 		attributes: {},
-		innerBlocks: [
-			['designsetgo/flip-card-front', facePadding],
-			['designsetgo/flip-card-back', facePadding],
-		],
+		innerBlocks: [face('front'), face('back')],
 	},
 	{
 		name: 'feature',
@@ -46,36 +52,28 @@ const flipCardTemplates = [
 		icon: 'star-filled',
 		attributes: { flipTrigger: 'hover', flipEffect: 'flip' },
 		innerBlocks: [
-			[
-				'designsetgo/flip-card-front',
-				facePadding,
+			face('front', {}, [
 				[
-					[
-						'core/heading',
-						{
-							level: 3,
-							content: __('Feature title', 'designsetgo'),
-							textAlign: 'center',
-						},
-					],
+					'core/heading',
+					{
+						level: 3,
+						content: __('Feature title', 'designsetgo'),
+						textAlign: 'center',
+					},
 				],
-			],
-			[
-				'designsetgo/flip-card-back',
-				facePadding,
+			]),
+			face('back', {}, [
 				[
-					[
-						'core/paragraph',
-						{
-							content: __(
-								'Add a short description of the feature, the value it delivers, or how it works.',
-								'designsetgo'
-							),
-							align: 'center',
-						},
-					],
+					'core/paragraph',
+					{
+						content: __(
+							'Add a short description of the feature, the value it delivers, or how it works.',
+							'designsetgo'
+						),
+						align: 'center',
+					},
 				],
-			],
+			]),
 		],
 	},
 	{
@@ -85,44 +83,36 @@ const flipCardTemplates = [
 		icon: 'admin-users',
 		attributes: { flipTrigger: 'click', flipEffect: 'flip' },
 		innerBlocks: [
-			[
-				'designsetgo/flip-card-front',
-				facePadding,
+			face('front', {}, [
+				['core/image', { sizeSlug: 'medium' }],
 				[
-					['core/image', { sizeSlug: 'medium' }],
-					[
-						'core/heading',
-						{
-							level: 4,
-							content: __('Name', 'designsetgo'),
-							textAlign: 'center',
-						},
-					],
-					[
-						'core/paragraph',
-						{
-							content: __('Role / Title', 'designsetgo'),
-							align: 'center',
-						},
-					],
+					'core/heading',
+					{
+						level: 4,
+						content: __('Name', 'designsetgo'),
+						textAlign: 'center',
+					},
 				],
-			],
-			[
-				'designsetgo/flip-card-back',
-				facePadding,
 				[
-					[
-						'core/paragraph',
-						{
-							content: __(
-								'Short bio. Mention background, current focus, and how to get in touch.',
-								'designsetgo'
-							),
-							align: 'center',
-						},
-					],
+					'core/paragraph',
+					{
+						content: __('Role / Title', 'designsetgo'),
+						align: 'center',
+					},
 				],
-			],
+			]),
+			face('back', {}, [
+				[
+					'core/paragraph',
+					{
+						content: __(
+							'Short bio. Mention background, current focus, and how to get in touch.',
+							'designsetgo'
+						),
+						align: 'center',
+					},
+				],
+			]),
 		],
 	},
 	{
@@ -135,50 +125,42 @@ const flipCardTemplates = [
 		icon: 'megaphone',
 		attributes: { flipTrigger: 'hover', flipEffect: 'flip' },
 		innerBlocks: [
-			[
-				'designsetgo/flip-card-front',
-				facePadding,
+			face('front', {}, [
 				[
-					[
-						'core/heading',
-						{
-							level: 3,
-							content: __('Try it free', 'designsetgo'),
-							textAlign: 'center',
-						},
-					],
-					[
-						'core/paragraph',
-						{
-							content: __('Hover to learn more.', 'designsetgo'),
-							align: 'center',
-						},
-					],
+					'core/heading',
+					{
+						level: 3,
+						content: __('Try it free', 'designsetgo'),
+						textAlign: 'center',
+					},
 				],
-			],
-			[
-				'designsetgo/flip-card-back',
-				facePadding,
 				[
-					[
-						'core/paragraph',
-						{
-							content: __(
-								'No credit card required. Cancel anytime.',
-								'designsetgo'
-							),
-							align: 'center',
-						},
-					],
-					[
-						'designsetgo/icon-button',
-						{
-							text: __('Get started', 'designsetgo'),
-							align: 'center',
-						},
-					],
+					'core/paragraph',
+					{
+						content: __('Hover to learn more.', 'designsetgo'),
+						align: 'center',
+					},
 				],
-			],
+			]),
+			face('back', {}, [
+				[
+					'core/paragraph',
+					{
+						content: __(
+							'No credit card required. Cancel anytime.',
+							'designsetgo'
+						),
+						align: 'center',
+					},
+				],
+				[
+					'designsetgo/icon-button',
+					{
+						text: __('Get started', 'designsetgo'),
+						align: 'center',
+					},
+				],
+			]),
 		],
 	},
 ];
