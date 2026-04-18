@@ -3,6 +3,7 @@ import { useEffect, useRef } from '@wordpress/element';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
+	BlockControls,
 	InspectorControls,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
@@ -30,6 +31,7 @@ import {
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { useBlockColors } from '../../hooks';
 import SliderPlaceholder from './components/SliderPlaceholder';
+import DsgoChildToolbar from '../../components/shared/DsgoChildToolbar';
 
 const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
 
@@ -123,6 +125,11 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 		[clientId]
 	);
 	const slideCount = slides.length;
+	const selectedSlideIndex = selectedSlideId
+		? slides.findIndex((slide) => slide.clientId === selectedSlideId)
+		: -1;
+	const activeSlideIndex =
+		selectedSlideIndex >= 0 ? selectedSlideIndex : undefined;
 
 	const { insertBlock, removeBlock, selectBlock } =
 		useDispatch('core/block-editor');
@@ -347,6 +354,25 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 
 	return (
 		<>
+			<BlockControls>
+				<DsgoChildToolbar
+					parentClientId={clientId}
+					childBlockName="designsetgo/slide"
+					activeIndex={activeSlideIndex}
+					onActiveIndexChange={(index) => {
+						const target = slides[index];
+						if (target) {
+							selectBlock(target.clientId);
+						}
+					}}
+					addLabel={__('Add slide', 'designsetgo')}
+					duplicateLabel={__('Duplicate slide', 'designsetgo')}
+					removeLabel={__('Remove slide', 'designsetgo')}
+					movePrevLabel={__('Move slide left', 'designsetgo')}
+					moveNextLabel={__('Move slide right', 'designsetgo')}
+				/>
+			</BlockControls>
+
 			<InspectorControls>
 				<PanelBody
 					title={__('Layout Settings', 'designsetgo')}

@@ -155,6 +155,32 @@ npm run lint:php
 - **Context**: `providesContext` in parent, `usesContext` in child
 - **!important**: Only for accessibility, user expectation, or WP core override
 
+## Shared Authoring Primitives (Theme 5/6)
+
+Canonical homes: `src/hooks/` for hooks, `src/components/shared/` for
+editor-only React components. Before adding a pattern to a block, check
+these directories; the second time you write the same pattern, extract it.
+
+- **`useTablistKeyboard`** (`src/hooks/useTablistKeyboard.js`) — WAI-ARIA
+  tablist keyboard nav (ArrowLeft/Right/Up/Down/Home/End, with wrapping)
+  for parent blocks that manage tab-like children. Pass `{ itemCount,
+  orientation, onIndexChange, focusItem }`. Use in tabs, slider,
+  scroll-slides, accordion, image-accordion.
+- **`<DsgoChildToolbar>`** (`src/components/shared/DsgoChildToolbar/`) —
+  Add/Duplicate/Move/Remove controls for a parent block's children,
+  rendered inside `<BlockControls>`. Preferred over bespoke inline
+  canvas buttons; keeps authoring a11y consistent across compound blocks.
+
+**Editor interaction conventions (Theme 5):**
+
+- *Toolbar-led*: Add/Remove/Reorder live in `<BlockControls>` via
+  `<DsgoChildToolbar>`. Default for most compound blocks.
+- *Canvas-led*: Inline `+` may stay on the canvas for tab/slide-like
+  blocks where child position is visually meaningful — but hide it
+  unless `.is-selected`, `.has-child-selected`, `:hover`, or
+  `:focus-within` on the block wrapper. Destructive and reorder
+  actions still belong in the toolbar.
+
 ## Container Width Pattern
 
 **Two-div structure** (outer: full-width/backgrounds, inner: constrained):

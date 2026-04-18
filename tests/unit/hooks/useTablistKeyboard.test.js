@@ -1,106 +1,238 @@
 /**
- * useTablistKeyboard Tests
+ * useTablistKeyboard — Hook Unit Tests
  *
- * @package
+ * Exercises the shared ARIA tablist keyboard navigation ported from
+ * tabs/edit.js as part of Theme 5. Hook consumers: tabs, slider,
+ * scroll-slides, accordion, image-accordion.
  */
 
+/* global KeyboardEvent */
+
 import { renderHook } from '@testing-library/react';
-import { useTablistKeyboard } from '../../../src/hooks/useTablistKeyboard';
+import useTablistKeyboard from '../../../src/hooks/useTablistKeyboard';
+
+function createKeyEvent(key) {
+	const event = new KeyboardEvent('keydown', {
+		key,
+		bubbles: true,
+		cancelable: true,
+	});
+	// preventDefault is fired inside the hook — jsdom's KeyboardEvent
+	// supports it but we spy so we can assert.
+	jest.spyOn(event, 'preventDefault');
+	return event;
+}
 
 describe('useTablistKeyboard', () => {
-	const makeEvent = (key) => ({ key, preventDefault: jest.fn() });
+	describe('horizontal orientation', () => {
+		test('ArrowRight advances to next index', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 3,
+					orientation: 'horizontal',
+					onIndexChange,
+				})
+			);
 
-	test('ArrowRight advances index', () => {
-		const onChange = jest.fn();
-		const { result } = renderHook(() =>
-			useTablistKeyboard({ count: 3, activeIndex: 0, onChange })
-		);
-		const evt = makeEvent('ArrowRight');
-		result.current.onKeyDown(evt);
-		expect(evt.preventDefault).toHaveBeenCalled();
-		expect(onChange).toHaveBeenCalledWith(1);
+			const event = createKeyEvent('ArrowRight');
+			result.current(event, 0);
+
+			expect(onIndexChange).toHaveBeenCalledWith(1);
+			expect(event.preventDefault).toHaveBeenCalled();
+		});
+
+		test('ArrowLeft moves to previous index', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 3,
+					orientation: 'horizontal',
+					onIndexChange,
+				})
+			);
+
+			result.current(createKeyEvent('ArrowLeft'), 2);
+			expect(onIndexChange).toHaveBeenCalledWith(1);
+		});
+
+		test('ArrowRight wraps from last to first', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 3,
+					orientation: 'horizontal',
+					onIndexChange,
+				})
+			);
+
+			result.current(createKeyEvent('ArrowRight'), 2);
+			expect(onIndexChange).toHaveBeenCalledWith(0);
+		});
+
+		test('ArrowLeft wraps from first to last', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 3,
+					orientation: 'horizontal',
+					onIndexChange,
+				})
+			);
+
+			result.current(createKeyEvent('ArrowLeft'), 0);
+			expect(onIndexChange).toHaveBeenCalledWith(2);
+		});
+
+		test('ArrowUp/ArrowDown are ignored on horizontal (pass through)', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 3,
+					orientation: 'horizontal',
+					onIndexChange,
+				})
+			);
+
+			const up = createKeyEvent('ArrowUp');
+			const down = createKeyEvent('ArrowDown');
+			result.current(up, 0);
+			result.current(down, 0);
+
+			expect(onIndexChange).not.toHaveBeenCalled();
+			expect(up.preventDefault).not.toHaveBeenCalled();
+			expect(down.preventDefault).not.toHaveBeenCalled();
+		});
 	});
 
-	test('ArrowRight wraps from last to first', () => {
-		const onChange = jest.fn();
-		const { result } = renderHook(() =>
-			useTablistKeyboard({ count: 3, activeIndex: 2, onChange })
-		);
-		result.current.onKeyDown(makeEvent('ArrowRight'));
-		expect(onChange).toHaveBeenCalledWith(0);
+	describe('vertical orientation', () => {
+		test('ArrowDown advances, ArrowUp retreats', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 4,
+					orientation: 'vertical',
+					onIndexChange,
+				})
+			);
+
+			result.current(createKeyEvent('ArrowDown'), 1);
+			expect(onIndexChange).toHaveBeenCalledWith(2);
+
+			result.current(createKeyEvent('ArrowUp'), 2);
+			expect(onIndexChange).toHaveBeenCalledWith(1);
+		});
+
+		test('ArrowLeft/ArrowRight are ignored on vertical', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 3,
+					orientation: 'vertical',
+					onIndexChange,
+				})
+			);
+
+			result.current(createKeyEvent('ArrowLeft'), 1);
+			result.current(createKeyEvent('ArrowRight'), 1);
+
+			expect(onIndexChange).not.toHaveBeenCalled();
+		});
 	});
 
-	test('ArrowLeft decrements index', () => {
-		const onChange = jest.fn();
-		const { result } = renderHook(() =>
-			useTablistKeyboard({ count: 3, activeIndex: 1, onChange })
-		);
-		result.current.onKeyDown(makeEvent('ArrowLeft'));
-		expect(onChange).toHaveBeenCalledWith(0);
+	describe('Home and End', () => {
+		test('Home jumps to first index regardless of orientation', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 5,
+					orientation: 'horizontal',
+					onIndexChange,
+				})
+			);
+
+			result.current(createKeyEvent('Home'), 3);
+			expect(onIndexChange).toHaveBeenCalledWith(0);
+		});
+
+		test('End jumps to last index', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 5,
+					orientation: 'vertical',
+					onIndexChange,
+				})
+			);
+
+			result.current(createKeyEvent('End'), 1);
+			expect(onIndexChange).toHaveBeenCalledWith(4);
+		});
 	});
 
-	test('ArrowLeft wraps from first to last', () => {
-		const onChange = jest.fn();
-		const { result } = renderHook(() =>
-			useTablistKeyboard({ count: 3, activeIndex: 0, onChange })
-		);
-		result.current.onKeyDown(makeEvent('ArrowLeft'));
-		expect(onChange).toHaveBeenCalledWith(2);
-	});
+	describe('edge cases', () => {
+		test('single-item lists do not move', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 1,
+					onIndexChange,
+				})
+			);
 
-	test('Home jumps to 0, End jumps to last', () => {
-		const onChange = jest.fn();
-		const { result } = renderHook(() =>
-			useTablistKeyboard({ count: 5, activeIndex: 2, onChange })
-		);
-		result.current.onKeyDown(makeEvent('Home'));
-		expect(onChange).toHaveBeenLastCalledWith(0);
-		result.current.onKeyDown(makeEvent('End'));
-		expect(onChange).toHaveBeenLastCalledWith(4);
-	});
+			result.current(createKeyEvent('ArrowRight'), 0);
+			result.current(createKeyEvent('End'), 0);
+			expect(onIndexChange).not.toHaveBeenCalled();
+		});
 
-	test('vertical orientation swaps Arrow keys', () => {
-		const onChange = jest.fn();
-		const { result } = renderHook(() =>
-			useTablistKeyboard({
-				count: 3,
-				activeIndex: 0,
-				onChange,
-				orientation: 'vertical',
-			})
-		);
-		result.current.onKeyDown(makeEvent('ArrowDown'));
-		expect(onChange).toHaveBeenCalledWith(1);
-		result.current.onKeyDown(makeEvent('ArrowUp'));
-		expect(onChange).toHaveBeenCalledWith(2);
-	});
+		test('invokes focusItem after a navigation key', () => {
+			jest.useFakeTimers();
+			const focusItem = jest.fn();
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 3,
+					orientation: 'horizontal',
+					onIndexChange,
+					focusItem,
+				})
+			);
 
-	test('Home fires onChange even when already at index 0', () => {
-		const onChange = jest.fn();
-		const { result } = renderHook(() =>
-			useTablistKeyboard({ count: 3, activeIndex: 0, onChange })
-		);
-		const evt = makeEvent('Home');
-		result.current.onKeyDown(evt);
-		expect(evt.preventDefault).toHaveBeenCalled();
-		expect(onChange).toHaveBeenCalledWith(0);
-	});
+			result.current(createKeyEvent('ArrowRight'), 0);
+			jest.runAllTimers();
 
-	test('does nothing for unrelated keys', () => {
-		const onChange = jest.fn();
-		const { result } = renderHook(() =>
-			useTablistKeyboard({ count: 3, activeIndex: 1, onChange })
-		);
-		result.current.onKeyDown(makeEvent('Enter'));
-		expect(onChange).not.toHaveBeenCalled();
-	});
+			expect(focusItem).toHaveBeenCalledWith(1);
+			jest.useRealTimers();
+		});
 
-	test('does nothing when count is 0', () => {
-		const onChange = jest.fn();
-		const { result } = renderHook(() =>
-			useTablistKeyboard({ count: 0, activeIndex: 0, onChange })
-		);
-		result.current.onKeyDown(makeEvent('ArrowRight'));
-		expect(onChange).not.toHaveBeenCalled();
+		test('does not invoke onIndexChange if index would not change', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 3,
+					orientation: 'horizontal',
+					onIndexChange,
+				})
+			);
+
+			result.current(createKeyEvent('Home'), 0);
+			expect(onIndexChange).not.toHaveBeenCalled();
+		});
+
+		test('non-navigation keys are ignored', () => {
+			const onIndexChange = jest.fn();
+			const { result } = renderHook(() =>
+				useTablistKeyboard({
+					itemCount: 3,
+					onIndexChange,
+				})
+			);
+
+			const event = createKeyEvent('a');
+			result.current(event, 1);
+
+			expect(onIndexChange).not.toHaveBeenCalled();
+			expect(event.preventDefault).not.toHaveBeenCalled();
+		});
 	});
 });
