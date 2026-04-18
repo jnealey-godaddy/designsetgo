@@ -71,14 +71,18 @@ export function DsgoInspectorPanel({
 			`DsgoInspectorPanel: panelName "${panelName}" is not one of the canonical values (${CANONICAL_PANEL_NAMES.join(', ')}). See docs/plans/2026-04-16-blocks-editor-ux-design.md Theme 3.`
 		);
 	}
+	// `hasInnerWrapper` and `shouldRenderPlaceholderItems` are intended for
+	// ToolsPanels nested inside a parent ToolsPanel (e.g. sub-panels rendered
+	// via `<InspectorControls group="border">`). On a top-level panel they
+	// wrap children in an inner grid cell that shrinks controls to a single
+	// column — the convention here targets standalone Settings/Style/Advanced
+	// panels, so both are left off.
 	return (
 		<PanelIdContext.Provider value={panelId}>
 			<ToolsPanel
 				label={title}
 				panelId={panelId}
 				resetAll={resetAll}
-				hasInnerWrapper
-				shouldRenderPlaceholderItems
 				{...rest}
 			>
 				{children}
