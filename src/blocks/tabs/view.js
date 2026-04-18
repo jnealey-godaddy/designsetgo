@@ -12,13 +12,27 @@
 			this.element = element;
 			this.nav = element.querySelector('.dsgo-tabs__nav');
 			this.panels = element.querySelectorAll('.dsgo-tab');
-			this.activeTab = parseInt(element.dataset.activeTab) || 0;
+			this.activeTab = this.clampTabIndex(
+				parseInt(element.dataset.activeTab, 10)
+			);
 			this.mobileBreakpoint =
 				parseInt(element.dataset.mobileBreakpoint) || 768;
 			this.mobileMode = element.dataset.mobileMode || 'accordion';
 			this.enableDeepLinking = element.dataset.deepLinking === 'true';
 
 			this.init();
+		}
+
+		clampTabIndex(index) {
+			if (this.panels.length === 0) {
+				return 0;
+			}
+
+			if (!Number.isInteger(index) || index < 0) {
+				return 0;
+			}
+
+			return Math.min(index, this.panels.length - 1);
 		}
 
 		/**
@@ -55,7 +69,7 @@
 			});
 
 			// Determine initial tab: prioritize deep linking, then default to first tab
-			let initialTab = 0;
+			let initialTab = this.activeTab;
 
 			// Check for deep link hash first
 			if (this.enableDeepLinking) {
@@ -89,13 +103,17 @@
 			this.nav.replaceChildren();
 
 			// Add skip link for keyboard accessibility
+			const activePanel = this.panels[this.clampTabIndex(this.activeTab)];
 			const skipLink = document.createElement('a');
-			skipLink.href = `#${this.panels[this.activeTab].id}`;
+			skipLink.href = `#${activePanel.id}`;
 			skipLink.className = 'dsgo-tabs__skip-link';
 			skipLink.textContent = 'Skip to tab content';
 			skipLink.addEventListener('click', (e) => {
 				e.preventDefault();
-				this.panels[this.activeTab].focus();
+				const panel = this.panels[this.clampTabIndex(this.activeTab)];
+				if (panel) {
+					panel.focus();
+				}
 			});
 			this.nav.appendChild(skipLink);
 
@@ -202,11 +220,12 @@
 		}
 
 		setActiveTab(index, updateURL = true) {
-			if (index < 0 || index >= this.panels.length) {
+			if (this.panels.length === 0) {
 				return;
 			}
 
-			this.activeTab = index;
+			const safeIndex = this.clampTabIndex(index);
+			this.activeTab = safeIndex;
 
 			// Check if we're in accordion mode
 			const isAccordionMode = this.element.classList.contains(
@@ -216,7 +235,7 @@
 			// Update tabs
 			const tabs = this.nav.querySelectorAll('.dsgo-tabs__tab');
 			tabs.forEach((tab, i) => {
-				const isActive = i === index;
+				const isActive = i === safeIndex;
 				tab.classList.toggle('is-active', isActive);
 				tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
 				tab.setAttribute('tabindex', isActive ? '0' : '-1');
@@ -224,7 +243,7 @@
 
 			// Update panels
 			this.panels.forEach((panel, i) => {
-				const isActive = i === index;
+				const isActive = i === safeIndex;
 				panel.classList.toggle('is-active', isActive);
 
 				// In accordion mode, keep all panels visible (CSS handles content visibility)
@@ -247,7 +266,7 @@
 
 			// Update URL hash if deep linking enabled
 			if (this.enableDeepLinking && updateURL) {
-				const panel = this.panels[index];
+				const panel = this.panels[safeIndex];
 				if (panel.id) {
 					// eslint-disable-next-line no-undef
 					history.replaceState(null, null, `#${panel.id}`);
@@ -257,7 +276,10 @@
 			// Trigger custom event
 			this.element.dispatchEvent(
 				new CustomEvent('dsgo-tab-change', {
-					detail: { index, panel: this.panels[index] },
+					detail: {
+						index: safeIndex,
+						panel: this.panels[safeIndex],
+					},
 				})
 			);
 		}

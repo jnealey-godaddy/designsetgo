@@ -26,6 +26,7 @@ import {
 import { createBlock, cloneBlock } from '@wordpress/blocks';
 import { copy, trash, plus } from '@wordpress/icons';
 import { useSelect, useDispatch } from '@wordpress/data';
+import { useEffect } from '@wordpress/element';
 import { getIcon } from '../icon/utils/svg-icons';
 import { useUniqueBlockId } from '../../hooks';
 import {
@@ -82,6 +83,22 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
 	const { insertBlock, removeBlock, updateBlockAttributes } =
 		useDispatch(blockEditorStore);
+
+	useEffect(() => {
+		// Keep the active tab index valid when authors remove every child and
+		// then reseed via the placeholder, or when malformed content restores
+		// with an out-of-range index.
+		if (innerBlocks.length === 0) {
+			if (activeTab !== 0) {
+				setAttributes({ activeTab: 0 });
+			}
+			return;
+		}
+
+		if (activeTab < 0 || activeTab >= innerBlocks.length) {
+			setAttributes({ activeTab: 0 });
+		}
+	}, [activeTab, innerBlocks.length, setAttributes]);
 
 	// Handle tab chip click — only switch which tab is active. We intentionally
 	// do NOT call selectBlock() on the child Tab, so the Gutenberg inline

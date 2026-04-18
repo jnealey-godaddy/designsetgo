@@ -58,6 +58,14 @@ export function DsgoInspectorPanel({
 	panelId,
 	resetAll,
 	children,
+	// Explicitly drop nested-only layout props if a caller passes them —
+	// see comment on the render below. Stripping here (rather than just
+	// documenting) prevents the ~50% width regression from sneaking back
+	// in via `...rest` during the Theme 3 migration rollout.
+	// eslint-disable-next-line no-unused-vars
+	hasInnerWrapper: _hasInnerWrapper,
+	// eslint-disable-next-line no-unused-vars
+	shouldRenderPlaceholderItems: _shouldRenderPlaceholderItems,
 	...rest
 }) {
 	if (
@@ -71,14 +79,18 @@ export function DsgoInspectorPanel({
 			`DsgoInspectorPanel: panelName "${panelName}" is not one of the canonical values (${CANONICAL_PANEL_NAMES.join(', ')}). See docs/plans/2026-04-16-blocks-editor-ux-design.md Theme 3.`
 		);
 	}
+	// `hasInnerWrapper` and `shouldRenderPlaceholderItems` are intended for
+	// ToolsPanels nested inside a parent ToolsPanel (e.g. sub-panels rendered
+	// via `<InspectorControls group="border">`). On a top-level panel they
+	// wrap children in an inner grid cell that shrinks controls to a single
+	// column — the convention here targets standalone Settings/Style/Advanced
+	// panels, so both are left off.
 	return (
 		<PanelIdContext.Provider value={panelId}>
 			<ToolsPanel
 				label={title}
 				panelId={panelId}
 				resetAll={resetAll}
-				hasInnerWrapper
-				shouldRenderPlaceholderItems
 				{...rest}
 			>
 				{children}
