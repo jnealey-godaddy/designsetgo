@@ -140,7 +140,7 @@ Stand up Playwright-based visual regression for the editor sidebar so subsequent
 
 - [ ] Migrate `src/blocks/row/edit.js` (1 panel: "Row Settings").
 - [ ] Migrate `src/blocks/fifty-fifty/edit.js` (2 panels: "Layout", "Media").
-- [ ] Tests under `tests/unit/blocks/{row,fifty-fifty}/inspector.test.js`.
+- [ ] Add `'row'` and `'fifty-fifty'` to the `MIGRATED_BLOCKS` array in `tests/unit/blocks/inspector-ia.test.js`.
 
 ## Task 3 — Interactive family
 
