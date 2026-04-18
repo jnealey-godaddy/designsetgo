@@ -31,7 +31,15 @@ import { ToolbarGroup, ToolbarButton } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { store as blockEditorStore } from '@wordpress/block-editor';
 import { createBlock, cloneBlock } from '@wordpress/blocks';
-import { plus, copy, trash, chevronLeft, chevronRight } from '@wordpress/icons';
+import {
+	plus,
+	copy,
+	trash,
+	chevronLeft,
+	chevronRight,
+	chevronUp,
+	chevronDown,
+} from '@wordpress/icons';
 
 /**
  * @typedef {Object} DsgoChildToolbarProps
@@ -48,10 +56,9 @@ import { plus, copy, trash, chevronLeft, chevronRight } from '@wordpress/icons';
  * @property {string}   [movePrevLabel]            Localized label for Move Previous.
  * @property {string}   [moveNextLabel]            Localized label for Move Next.
  * @property {boolean}  [showMove=true]            Whether to render Move Prev/Next buttons.
- * @property {string}   [orientation='horizontal'] 'horizontal' shows left/right arrows;
- *                                                 'vertical' shows up/down (still chevronLeft/Right icons
- *                                                 because WP icons only ships left/right; the semantic
- *                                                 label is what matters).
+ * @property {string}   [orientation='horizontal'] 'horizontal' renders chevronLeft/Right;
+ *                                                 'vertical' renders chevronUp/Down so the
+ *                                                 icon matches the direction of travel.
  */
 
 /**
@@ -77,8 +84,11 @@ export default function DsgoChildToolbar({
 			const { getBlock } = select(blockEditorStore);
 			const parent = getBlock(parentClientId);
 			const inner = parent?.innerBlocks || [];
+			// With no children there is no valid "active" index to clamp to;
+			// return -1 so Add appends at 0 and Duplicate/Remove/Move are
+			// hidden (no activeChild).
 			const resolvedIndex =
-				typeof activeIndex === 'number'
+				inner.length > 0 && typeof activeIndex === 'number'
 					? Math.max(0, Math.min(inner.length - 1, activeIndex))
 					: -1;
 			return {
@@ -156,6 +166,9 @@ export default function DsgoChildToolbar({
 	const isFirst = targetIndex <= 0;
 	const isLast = targetIndex >= childCount - 1;
 	const isOnly = childCount <= 1;
+	const isVertical = orientation === 'vertical';
+	const movePrevIcon = isVertical ? chevronUp : chevronLeft;
+	const moveNextIcon = isVertical ? chevronDown : chevronRight;
 
 	const resolvedAddLabel = addLabel || __('Add item', 'designsetgo');
 	const resolvedDuplicateLabel =
@@ -163,12 +176,12 @@ export default function DsgoChildToolbar({
 	const resolvedRemoveLabel = removeLabel || __('Remove item', 'designsetgo');
 	const resolvedMovePrevLabel =
 		movePrevLabel ||
-		(orientation === 'vertical'
+		(isVertical
 			? __('Move up', 'designsetgo')
 			: __('Move left', 'designsetgo'));
 	const resolvedMoveNextLabel =
 		moveNextLabel ||
-		(orientation === 'vertical'
+		(isVertical
 			? __('Move down', 'designsetgo')
 			: __('Move right', 'designsetgo'));
 
@@ -191,14 +204,14 @@ export default function DsgoChildToolbar({
 			{hasTarget && showMove && (
 				<>
 					<ToolbarButton
-						icon={chevronLeft}
+						icon={movePrevIcon}
 						label={resolvedMovePrevLabel}
 						onClick={handleMovePrev}
 						disabled={isFirst}
 						showTooltip
 					/>
 					<ToolbarButton
-						icon={chevronRight}
+						icon={moveNextIcon}
 						label={resolvedMoveNextLabel}
 						onClick={handleMoveNext}
 						disabled={isLast}

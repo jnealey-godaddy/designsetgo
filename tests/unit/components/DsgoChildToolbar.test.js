@@ -67,6 +67,8 @@ jest.mock('@wordpress/icons', () => ({
 	trash: 'trash-icon',
 	chevronLeft: 'chevron-left-icon',
 	chevronRight: 'chevron-right-icon',
+	chevronUp: 'chevron-up-icon',
+	chevronDown: 'chevron-down-icon',
 }));
 
 import DsgoChildToolbar from '../../../src/components/shared/DsgoChildToolbar';
@@ -291,6 +293,50 @@ describe('DsgoChildToolbar', () => {
 		expect(screen.getByLabelText('Remove tab')).toBeInTheDocument();
 		expect(screen.getByLabelText('Move tab left')).toBeInTheDocument();
 		expect(screen.getByLabelText('Move tab right')).toBeInTheDocument();
+	});
+
+	test('Add inserts at index 0 when there are no children (activeIndex ignored)', async () => {
+		setupSelect(makeChildren(0));
+		const onActiveIndexChange = jest.fn();
+		render(
+			<DsgoChildToolbar
+				parentClientId="parent"
+				childBlockName="designsetgo/tab"
+				activeIndex={0}
+				onActiveIndexChange={onActiveIndexChange}
+			/>
+		);
+
+		await userEvent.click(screen.getByLabelText('Add item'));
+
+		expect(insertBlock).toHaveBeenCalledWith(
+			expect.any(Object),
+			0,
+			'parent',
+			false
+		);
+		expect(onActiveIndexChange).toHaveBeenCalledWith(0);
+		// With no children there is no active target, so no duplicate/remove.
+		expect(
+			screen.queryByLabelText('Duplicate item')
+		).not.toBeInTheDocument();
+		expect(screen.queryByLabelText('Remove item')).not.toBeInTheDocument();
+	});
+
+	test('vertical orientation renders chevronUp/Down and up/down labels', () => {
+		setupSelect(makeChildren(3));
+		render(
+			<DsgoChildToolbar
+				parentClientId="parent"
+				childBlockName="designsetgo/tab"
+				activeIndex={1}
+				orientation="vertical"
+			/>
+		);
+		expect(screen.getByLabelText('Move up')).toBeInTheDocument();
+		expect(screen.getByLabelText('Move down')).toBeInTheDocument();
+		expect(screen.queryByLabelText('Move left')).not.toBeInTheDocument();
+		expect(screen.queryByLabelText('Move right')).not.toBeInTheDocument();
 	});
 
 	test('showMove=false hides move buttons', () => {
