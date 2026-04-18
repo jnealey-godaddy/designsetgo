@@ -29,9 +29,36 @@ const facePadding = {
 
 const face = (side, extra = {}, innerBlocks = []) => [
 	'designsetgo/flip-card-face',
-	{ side, style: { ...facePadding, ...(extra.style || {}) } },
+	{
+		side,
+		style: {
+			...facePadding,
+			...(extra.style || {}),
+		},
+	},
 	innerBlocks,
 ];
+
+// Theme-agnostic neutral colors for template starters. Hardcoded hex keeps
+// the faces visibly "card-like" on any theme; authors override via Style.
+// Palette matches the DesignSetGo wider system (slate-inspired neutrals).
+const neutralBack = {
+	style: {
+		color: {
+			background: '#f1f5f9',
+			text: '#0f172a',
+		},
+	},
+};
+
+const contrastBack = {
+	style: {
+		color: {
+			background: '#0f172a',
+			text: '#ffffff',
+		},
+	},
+};
 
 const flipCardTemplates = [
 	{
@@ -62,7 +89,7 @@ const flipCardTemplates = [
 					},
 				],
 			]),
-			face('back', {}, [
+			face('back', neutralBack, [
 				[
 					'core/paragraph',
 					{
@@ -142,7 +169,7 @@ const flipCardTemplates = [
 					},
 				],
 			]),
-			face('back', {}, [
+			face('back', contrastBack, [
 				[
 					'core/paragraph',
 					{
