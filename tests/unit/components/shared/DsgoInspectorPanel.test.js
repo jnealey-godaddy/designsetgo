@@ -37,11 +37,12 @@ describe('DsgoInspectorPanel', () => {
 		expect(screen.getByTestId('child')).toBeInTheDocument();
 	});
 
-	test('throws (or warns) when title is not one of the canonical names', () => {
+	test('throws (or warns) when panelName is not one of the canonical names', () => {
 		const consoleWarn = jest.spyOn(console, 'warn').mockImplementation();
 		render(
 			<DsgoInspectorPanel
 				title="Custom Settings"
+				panelName="Custom Settings"
 				panelId="test-panel"
 				resetAll={jest.fn()}
 			>
@@ -50,17 +51,18 @@ describe('DsgoInspectorPanel', () => {
 		);
 		expect(consoleWarn).toHaveBeenCalledWith(
 			expect.stringContaining(
-				'DsgoInspectorPanel: title "Custom Settings" is not one of the canonical panel names'
+				'DsgoInspectorPanel: panelName "Custom Settings" is not one of the canonical values'
 			)
 		);
 		consoleWarn.mockRestore();
 	});
 
-	test('does not warn for canonical Settings/Style titles', () => {
+	test('does not warn for canonical settings/style panelName values', () => {
 		const consoleWarn = jest.spyOn(console, 'warn').mockImplementation();
 		render(
 			<DsgoInspectorPanel
 				title="Settings"
+				panelName="settings"
 				panelId="test-panel"
 				resetAll={jest.fn()}
 			>
@@ -70,6 +72,22 @@ describe('DsgoInspectorPanel', () => {
 		render(
 			<DsgoInspectorPanel
 				title="Style"
+				panelName="style"
+				panelId="test-panel"
+				resetAll={jest.fn()}
+			>
+				<div>Child</div>
+			</DsgoInspectorPanel>
+		);
+		expect(consoleWarn).not.toHaveBeenCalled();
+		consoleWarn.mockRestore();
+	});
+
+	test('does not warn when panelName is not provided (incremental adoption)', () => {
+		const consoleWarn = jest.spyOn(console, 'warn').mockImplementation();
+		render(
+			<DsgoInspectorPanel
+				title="Anything"
 				panelId="test-panel"
 				resetAll={jest.fn()}
 			>

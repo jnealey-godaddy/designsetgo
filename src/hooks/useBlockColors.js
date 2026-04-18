@@ -31,7 +31,8 @@
  * @param {Array}    params.entries       Color entries: { label, attribute, enableAlpha?, clearable? }.
  * @return {Object} { settings, colorGradientSettings }
  */
-import { useMultipleOriginColorsAndGradients } from '@wordpress/block-editor';
+// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+import { __experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients } from '@wordpress/block-editor';
 import {
 	encodeColorValue,
 	decodeColorValue,

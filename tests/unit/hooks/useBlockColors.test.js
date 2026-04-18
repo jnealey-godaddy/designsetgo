@@ -23,7 +23,7 @@ const mockColorSettings = {
 
 jest.mock('@wordpress/block-editor', () => ({
 	...jest.requireActual('@wordpress/block-editor'),
-	useMultipleOriginColorsAndGradients: () => mockColorSettings,
+	__experimentalUseMultipleOriginColorsAndGradients: () => mockColorSettings,
 }));
 
 describe('useBlockColors', () => {
