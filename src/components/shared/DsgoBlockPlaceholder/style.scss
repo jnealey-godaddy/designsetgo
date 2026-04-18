@@ -130,9 +130,11 @@
 			width: 40px;
 			height: 40px;
 
+			// `<Icon>` writes width/height HTML attributes on the SVG. Author
+			// CSS wins over those without !important.
 			svg {
-				width: 28px !important;
-				height: 28px !important;
+				width: 28px;
+				height: 28px;
 			}
 		}
 

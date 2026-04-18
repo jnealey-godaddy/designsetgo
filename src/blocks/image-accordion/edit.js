@@ -47,19 +47,13 @@ export default function ImageAccordionEdit({
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 
-	const hasInnerBlocks = useSelect(
-		(select) =>
-			select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length >
-			0,
-		[clientId]
-	);
-
-	// Build options for the default-expanded picker from the actual child items.
-	// Uses the first core/heading content when present so authors recognize each item.
-	const itemOptions = useSelect(
+	// Single subscription powers both the placeholder gate and the
+	// default-expanded picker so Gutenberg only tracks one subscriber for
+	// this block's inner-block list.
+	const { hasInnerBlocks, itemOptions } = useSelect(
 		(select) => {
 			const children =
-				select('core/block-editor').getBlocks(clientId) || [];
+				select(blockEditorStore).getBlock(clientId)?.innerBlocks || [];
 			const options = [
 				{
 					label: __('None (no item expanded)', 'designsetgo'),
@@ -94,7 +88,10 @@ export default function ImageAccordionEdit({
 						);
 				options.push({ label, value: String(index + 1) });
 			});
-			return options;
+			return {
+				hasInnerBlocks: children.length > 0,
+				itemOptions: options,
+			};
 		},
 		[clientId]
 	);
