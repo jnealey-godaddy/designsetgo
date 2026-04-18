@@ -143,6 +143,7 @@ export default function FiftyFiftyEdit({
 			mediaId: 0,
 			mediaUrl: '',
 			mediaAlt: '',
+			focalPoint: { x: 0.5, y: 0.5 },
 		});
 	};
 
