@@ -29,8 +29,8 @@ const categoryIcon = createElement(
 );
 
 domReady(() => {
-	const store = dispatch('core/blocks');
-	if (store && typeof store.updateCategory === 'function') {
-		store.updateCategory(CATEGORY_SLUG, { icon: categoryIcon });
+	const actions = dispatch('core/blocks');
+	if (actions && typeof actions.updateCategory === 'function') {
+		actions.updateCategory(CATEGORY_SLUG, { icon: categoryIcon });
 	}
 });

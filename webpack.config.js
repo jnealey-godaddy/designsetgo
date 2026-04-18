@@ -107,11 +107,11 @@ module.exports = {
 		frontend: path.resolve(process.cwd(), 'src', 'frontend.js'),
 		// Admin dashboard entry point
 		admin: path.resolve(process.cwd(), 'src', 'admin', 'index.js'),
-		// Block category filter for dual categorization
-		'block-category-filter': path.resolve(
+		// Branded SVG icon for the DesignSetGo block category.
+		'block-category-icon': path.resolve(
 			process.cwd(),
 			'src',
-			'block-category-filter.js'
+			'block-category-icon.js'
 		),
 		// Sticky header utility script
 		'utils/sticky-header': path.resolve(
