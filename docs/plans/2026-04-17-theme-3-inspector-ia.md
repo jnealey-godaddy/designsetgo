@@ -102,7 +102,7 @@ If Theme 6 has not merged, this PR is stacked on top of the Theme 6 branch and w
 
 - [ ] Drop `PanelBody` import; add `DsgoInspectorPanel`.
 - [ ] Replace the single `<PanelBody title={__('Section Settings', ...)}>` with `<DsgoInspectorPanel title={__('Settings', ...)} panelName="settings" panelId={clientId} resetAll={...}>`.
-- [ ] Wrap `constrainWidth` (toggle) and `contentWidth` (UnitControl) as `<DsgoInspectorPanel.Item>` entries. Defaults: `constrainWidth: false`, `contentWidth: ''`.
+- [ ] Wrap `constrainWidth` (toggle) and `contentWidth` (UnitControl) as `<DsgoInspectorPanel.Item>` entries. Defaults from `src/blocks/section/block.json`: `constrainWidth: true`, `contentWidth: ''`. (Note: section's default is `true` — opposite of grid's `false`. `resetAll` and `hasValue` must reflect that.)
 - [ ] Leave the second `<InspectorControls>` block (ShapeDividerControls) alone — it is its own component and will be migrated when the shape-divider sub-component is rewritten.
 
 ### Step 1.4: Tests
