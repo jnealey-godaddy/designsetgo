@@ -2174,7 +2174,6 @@ class Block_Inserter {
 			'post_id'  => array(
 				'type'        => 'integer',
 				'description' => __( 'Target post ID', 'designsetgo' ),
-				'required'    => true,
 			),
 			'position' => array(
 				'type'        => 'integer',

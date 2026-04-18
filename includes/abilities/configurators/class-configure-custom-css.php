@@ -94,6 +94,7 @@ class Configure_Custom_CSS extends Abstract_Ability {
 					),
 				)
 			),
+			'required'             => array( 'post_id' ),
 			'additionalProperties' => false,
 		);
 	}

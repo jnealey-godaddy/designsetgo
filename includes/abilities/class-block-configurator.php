@@ -277,7 +277,6 @@ class Block_Configurator {
 			'post_id'         => array(
 				'type'        => 'integer',
 				'description' => __( 'Target post ID', 'designsetgo' ),
-				'required'    => true,
 			),
 			'block_index'     => array(
 				'type'        => 'integer',
