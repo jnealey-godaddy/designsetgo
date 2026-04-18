@@ -41,9 +41,7 @@ export function useTablistKeyboard({
 			return;
 		}
 		event.preventDefault();
-		if (newIndex !== activeIndex) {
-			onChange(newIndex);
-		}
+		onChange(newIndex);
 	};
 
 	return { onKeyDown };

@@ -75,6 +75,17 @@ describe('useTablistKeyboard', () => {
 		expect(onChange).toHaveBeenCalledWith(2);
 	});
 
+	test('Home fires onChange even when already at index 0', () => {
+		const onChange = jest.fn();
+		const { result } = renderHook(() =>
+			useTablistKeyboard({ count: 3, activeIndex: 0, onChange })
+		);
+		const evt = makeEvent('Home');
+		result.current.onKeyDown(evt);
+		expect(evt.preventDefault).toHaveBeenCalled();
+		expect(onChange).toHaveBeenCalledWith(0);
+	});
+
 	test('does nothing for unrelated keys', () => {
 		const onChange = jest.fn();
 		const { result } = renderHook(() =>

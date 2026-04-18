@@ -21,6 +21,22 @@
 - **File Structure**: `src/blocks/{block}/` → index.js (registration), edit.js, save.js, components/, utils/
 - **Asset Loading**: Enqueue in `enqueue_block_assets` with `is_admin()` check
 
+### Shared Primitives First
+
+Before adding a pattern to a block, check `src/hooks/` and `src/components/shared/`. If it's the second time you're writing a pattern, extract it. Available primitives:
+
+- `useUniqueBlockId({ clientId, attributeName, value, setAttributes, prefix?, length? })` — seeds a stable id attribute from clientId.
+- `useBlockColors({ attributes, setAttributes, entries })` — wraps `ColorGradientSettingsDropdown` boilerplate.
+- `useTablistKeyboard({ count, activeIndex, onChange, orientation? })` — ARIA tablist keyboard nav.
+- `cssVars(attributes, map)` — pure attribute → CSS-var inline-style mapper (in `src/utils/`).
+- `<DsgoInspectorPanel>` — `ToolsPanel` wrapper enforcing the 3-panel inspector convention (Settings / Style / Advanced).
+- `<DsgoBlockPlaceholder>` — first-insert wizard for compound blocks.
+- `<DsgoChildToolbar>` — Add/Duplicate/Move/Remove for child blocks of compound parents.
+
+### Variation vs New Block
+
+If a new block differs from an existing one only by 1–3 attributes **and shares the same `save()` output structure**, register a `block.json` variation, not a new block. The `save()` constraint is the technical blocker: variations cannot carry differing markup, so differing output forces a new block + deprecations.
+
 ## Security
 
 - **Input**: Validate all user input

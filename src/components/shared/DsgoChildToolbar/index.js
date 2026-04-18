@@ -54,6 +54,9 @@ export function DsgoChildToolbar({
 	);
 
 	const onAdd = () => {
+		if (rootClientId == null) {
+			return;
+		}
 		const newBlock = createBlock(childBlockName, newAttributes);
 		insertBlock(newBlock, index + 1, rootClientId, false);
 	};
@@ -63,8 +66,18 @@ export function DsgoChildToolbar({
 		}
 		insertBlock(cloneBlock(block), index + 1, rootClientId, false);
 	};
-	const onMoveUp = () => moveBlocksUp([clientId], rootClientId);
-	const onMoveDown = () => moveBlocksDown([clientId], rootClientId);
+	const onMoveUp = () => {
+		if (rootClientId == null) {
+			return;
+		}
+		moveBlocksUp([clientId], rootClientId);
+	};
+	const onMoveDown = () => {
+		if (rootClientId == null) {
+			return;
+		}
+		moveBlocksDown([clientId], rootClientId);
+	};
 	const onRemove = () => removeBlock(clientId, false);
 
 	return (
