@@ -14,7 +14,7 @@
 		"field"
 	],
 	"textdomain": "designsetgo",
-	"icon": "edit-large",
+	"icon": "edit-page",
 	"parent": [
 		"designsetgo/form-builder"
 	],

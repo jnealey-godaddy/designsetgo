@@ -620,15 +620,15 @@ class Plugin {
 	 * Note: Block-specific assets are loaded automatically via block.json.
 	 */
 	public function editor_assets() {
-		// Enqueue block category filter to show blocks in multiple categories.
-		$asset_file = DESIGNSETGO_PATH . 'build/block-category-filter.asset.php';
+		// Enqueue the branded SVG icon for the DesignSetGo block category.
+		$asset_file = DESIGNSETGO_PATH . 'build/block-category-icon.asset.php';
 
 		if ( file_exists( $asset_file ) ) {
 			$asset = include $asset_file;
 
 			wp_enqueue_script(
-				'designsetgo-block-category-filter',
-				DESIGNSETGO_URL . 'build/block-category-filter.js',
+				'designsetgo-block-category-icon',
+				DESIGNSETGO_URL . 'build/block-category-icon.js',
 				$asset['dependencies'],
 				$asset['version'],
 				true
@@ -641,7 +641,7 @@ class Plugin {
 			$sticky_settings = wp_parse_args( $sticky_settings, $defaults['sticky_header'] );
 
 			wp_localize_script(
-				'designsetgo-block-category-filter',
+				'designsetgo-block-category-icon',
 				'dsgoStickyHeaderGlobalSettings',
 				array(
 					'enabled' => (bool) $sticky_settings['enable'],
@@ -654,7 +654,7 @@ class Plugin {
 			$integrations_settings = wp_parse_args( $integrations_settings, $integrations_defaults );
 
 			wp_localize_script(
-				'designsetgo-block-category-filter',
+				'designsetgo-block-category-icon',
 				'dsgoIntegrations',
 				array(
 					'googleMapsApiKey'    => ! empty( $integrations_settings['google_maps_api_key'] ) ? esc_js( $integrations_settings['google_maps_api_key'] ) : '',
@@ -695,7 +695,7 @@ class Plugin {
 		}
 
 		// Localize excluded blocks setting for extension filtering.
-		// This is done outside the block-category-filter conditional because
+		// This is done outside the block-category-icon conditional because
 		// the 'designsetgo-extensions' script is registered separately in the Assets class.
 		if ( wp_script_is( 'designsetgo-extensions', 'registered' ) || wp_script_is( 'designsetgo-extensions', 'enqueued' ) ) {
 			$settings        = $settings ?? \DesignSetGo\Admin\Settings::get_settings();

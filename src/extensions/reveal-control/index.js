@@ -18,6 +18,11 @@ const CONTAINER_BLOCKS = [
 	'designsetgo/grid',
 ];
 
+// NOTE: The `designsetgo/reveal/*` strings below are context-key names, not
+// references to the retired `designsetgo/reveal` block. Renaming them would
+// require block deprecations for every container using this extension, so the
+// prefix is intentionally preserved.
+
 /**
  * Add reveal control attributes to all blocks
  * @param {Object} settings - Block settings

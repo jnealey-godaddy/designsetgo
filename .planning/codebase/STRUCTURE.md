@@ -20,7 +20,7 @@ designsetgo/                        # WordPress plugin root
 │   ├── index.js                    # Editor bundle entry (extensions + filters)
 │   ├── style.scss                  # Frontend global CSS entry
 │   ├── frontend.js                 # Frontend JS bundle entry
-│   ├── block-category-filter.js    # Editor: dual-categorization filter
+│   ├── block-category-icon.js      # Editor: branded SVG for designsetgo category
 │   │
 │   ├── blocks/                     # All custom blocks
 │   │   ├── {block-name}/           # One directory per block
