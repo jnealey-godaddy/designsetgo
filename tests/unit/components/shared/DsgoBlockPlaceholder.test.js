@@ -81,4 +81,16 @@ describe('DsgoBlockPlaceholder', () => {
 		);
 		expect(screen.queryByRole('button')).not.toBeInTheDocument();
 	});
+
+	test('renders nothing for variations when prop is omitted', () => {
+		render(
+			<DsgoBlockPlaceholder
+				icon="block-default"
+				label="Tabs"
+				instructions="Pick"
+				onSelect={jest.fn()}
+			/>
+		);
+		expect(screen.queryByRole('button')).not.toBeInTheDocument();
+	});
 });

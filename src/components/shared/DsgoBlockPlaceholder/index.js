@@ -29,7 +29,7 @@ export function DsgoBlockPlaceholder({
 	icon,
 	label,
 	instructions,
-	variations,
+	variations = [],
 	onSelect,
 	className = '',
 }) {
