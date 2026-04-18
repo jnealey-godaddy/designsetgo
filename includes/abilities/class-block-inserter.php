@@ -1365,6 +1365,12 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/slider':
+				// The inline isset() fallbacks below are normally unreachable
+				// because apply_block_json_defaults() fills these from the
+				// registry before we get here. They only fire when the block
+				// isn't registered (e.g., build folder missing), so keep them
+				// synced with src/blocks/slider/block.json — not with any
+				// past convention like height=500px / arrowSize=48px.
 				$slides_per_view        = isset( $attributes['slidesPerView'] ) ? intval( $attributes['slidesPerView'] ) : 1;
 				$slides_per_view_tablet = isset( $attributes['slidesPerViewTablet'] ) ? intval( $attributes['slidesPerViewTablet'] ) : 1;
 				$slides_per_view_mobile = isset( $attributes['slidesPerViewMobile'] ) ? intval( $attributes['slidesPerViewMobile'] ) : 1;
@@ -1950,9 +1956,15 @@ class Block_Inserter {
 	 * @return array<string, mixed> Attributes merged with block.json defaults.
 	 */
 	private static function apply_block_json_defaults( string $block_name, array $attributes ): array {
+		// Only slider has been audited end-to-end against its save.js. The
+		// map wrapper still diverges from save() in at least two ways (hard-
+		// coded English aria-labels vs. __()/sprintf(), and no privacy-mode
+		// overlay branch), so forcing block.json defaults there would hide
+		// those pre-existing mismatches under a false "verified" label. The
+		// map's newline-preservation fix is independent and lives in
+		// Block_Configurator::sanitize_attributes().
 		$verified_blocks = array(
 			'designsetgo/slider',
-			'designsetgo/map',
 		);
 
 		if ( ! in_array( $block_name, $verified_blocks, true ) ) {

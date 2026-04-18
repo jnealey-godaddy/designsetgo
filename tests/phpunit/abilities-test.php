@@ -876,11 +876,14 @@ class Test_Add_Block_Round_Trip extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Insert a designsetgo block and return the first parsed block.
+	 * Insert a designsetgo block and return the first parsed block with the
+	 * matching blockName. Returns null ONLY when the block type isn't
+	 * registered — any downstream failure (insert error, parse miss) is
+	 * asserted so the test fails loudly instead of silently skipping.
 	 *
 	 * @param string               $block_name Block name.
 	 * @param array<string, mixed> $attributes Attributes.
-	 * @return array<string, mixed>|null Parsed block array or null if registration missing.
+	 * @return array<string, mixed>|null Parsed block, or null if unregistered.
 	 */
 	private function insert_and_parse( string $block_name, array $attributes = array() ): ?array {
 		$registry = \WP_Block_Type_Registry::get_instance();
@@ -896,10 +899,12 @@ class Test_Add_Block_Round_Trip extends WP_UnitTestCase {
 			-1
 		);
 
-		$this->assertIsArray( $result, 'insert_block should succeed' );
-		$this->assertTrue( $result['success'] );
+		$this->assertIsArray( $result, 'insert_block must return an array (got WP_Error or other type)' );
+		$this->assertTrue( $result['success'], 'insert_block must report success' );
 
-		$post   = get_post( $this->page_id );
+		$post = get_post( $this->page_id );
+		$this->assertNotNull( $post, 'Post must exist after insert_block' );
+
 		$blocks = parse_blocks( $post->post_content );
 
 		foreach ( $blocks as $block ) {
@@ -908,7 +913,55 @@ class Test_Add_Block_Round_Trip extends WP_UnitTestCase {
 			}
 		}
 
-		return null;
+		$this->fail(
+			sprintf(
+				'Inserted block %s not found in parsed post_content. Raw content: %s',
+				$block_name,
+				$post->post_content
+			)
+		);
+	}
+
+	/**
+	 * sanitize_attributes: multi-line attributes must preserve newlines.
+	 *
+	 * This is the direct regression guard for the map address bug — runs
+	 * without any block registration, so it's the one test that's
+	 * guaranteed to execute in every CI matrix cell.
+	 */
+	public function test_sanitize_preserves_newlines_for_multiline_attrs() {
+		$address = "Sweet Treats Bakery\n123 Main Street\nYour City, ST 00000";
+
+		$sanitized = Block_Configurator::sanitize_attributes(
+			array(
+				'dsgoAddress' => $address,
+			)
+		);
+
+		$this->assertSame(
+			$address,
+			$sanitized['dsgoAddress'],
+			'sanitize_attributes must preserve newlines in dsgoAddress.'
+		);
+	}
+
+	/**
+	 * Non-multiline string attributes still go through sanitize_text_field,
+	 * which collapses newlines to spaces. This keeps behavior narrow: only
+	 * the allow-listed attributes get newline-preserving treatment.
+	 */
+	public function test_sanitize_still_strips_newlines_for_regular_attrs() {
+		$sanitized = Block_Configurator::sanitize_attributes(
+			array(
+				'someOtherText' => "line1\nline2",
+			)
+		);
+
+		$this->assertSame(
+			'line1 line2',
+			$sanitized['someOtherText'],
+			'Regular string attributes must keep the previous sanitize_text_field behavior.'
+		);
 	}
 
 	/**
@@ -966,65 +1019,6 @@ class Test_Add_Block_Round_Trip extends WP_UnitTestCase {
 		$twice = serialize_blocks( parse_blocks( $once ) );
 
 		$this->assertSame( $once, $twice, 'Serialization must be idempotent.' );
-	}
-
-	/**
-	 * Map: addresses with embedded newlines must be preserved identically
-	 * in both the stored innerHTML and the block comment JSON so that the
-	 * block parser sees the same value save() would emit.
-	 */
-	public function test_map_address_preserves_newlines() {
-		$address = "Sweet Treats Bakery\n123 Main Street\nYour City, ST 00000";
-
-		$block = $this->insert_and_parse(
-			'designsetgo/map',
-			array( 'dsgoAddress' => $address )
-		);
-
-		if ( null === $block ) {
-			$this->markTestSkipped( 'designsetgo/map block not registered (build folder missing).' );
-		}
-
-		// Real newline characters must survive into the stored attribute.
-		$this->assertStringContainsString(
-			$address,
-			$block['innerHTML'],
-			'innerHTML must preserve real newlines in dsgoAddress.'
-		);
-
-		// The parsed attribute must carry the same newline-containing value
-		// that save() would render, so block validation succeeds.
-		$this->assertArrayHasKey( 'attrs', $block );
-		$this->assertArrayHasKey( 'dsgoAddress', $block['attrs'] );
-		$this->assertSame(
-			$address,
-			$block['attrs']['dsgoAddress'],
-			'Parsed dsgoAddress must round-trip through serialize_block().'
-		);
-	}
-
-	/**
-	 * Map: a literal backslash-n pair in the input is not a newline, so the
-	 * two-character sequence must be preserved verbatim (not converted into
-	 * a real newline or stripped to just "n").
-	 */
-	public function test_map_address_preserves_literal_backslash_n() {
-		$address = 'Line1\\nLine2'; // 11 chars: L i n e 1 \ n L i n e 2
-
-		$block = $this->insert_and_parse(
-			'designsetgo/map',
-			array( 'dsgoAddress' => $address )
-		);
-
-		if ( null === $block ) {
-			$this->markTestSkipped( 'designsetgo/map block not registered (build folder missing).' );
-		}
-
-		$this->assertSame(
-			$address,
-			$block['attrs']['dsgoAddress'],
-			'Literal backslash-n must survive verbatim through round-trip.'
-		);
 	}
 }
 

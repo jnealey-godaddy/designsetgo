@@ -228,6 +228,12 @@ class Block_Configurator {
 					// multi-line content (e.g., postal addresses). Collapsing
 					// them to spaces here would cause the stored HTML to diverge
 					// from what save() emits and trip block validation.
+					//
+					// The decode/strip pipeline above already removes entities
+					// and tags; layering sanitize_textarea_field on top adds
+					// null-byte stripping and invalid-UTF-8 rejection that the
+					// prior pipeline doesn't cover. The apparent duplication is
+					// defense-in-depth, not dead code.
 					$sanitized[ $key ] = sanitize_textarea_field( $decoded );
 				} else {
 					$sanitized[ $key ] = sanitize_text_field( $decoded );
