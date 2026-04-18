@@ -4,7 +4,7 @@
 	"name": "designsetgo/icon-button",
 	"version": "1.0.0",
 	"title": "Icon Button",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "A customizable button with optional icon and hover animations.",
 	"keywords": [
 		"button",
@@ -15,6 +15,7 @@
 		"animated"
 	],
 	"textdomain": "designsetgo",
+	"icon": "external",
 	"usesContext": [
 		"designsetgo/hoverButtonBackgroundColor"
 	],

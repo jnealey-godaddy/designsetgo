@@ -3,7 +3,7 @@
 	"apiVersion": 3,
 	"name": "designsetgo/slider",
 	"title": "Slider",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "A modern, performant slider with multiple transition effects, auto-play, and full block support inside slides.",
 	"keywords": [
 		"slider",
@@ -13,6 +13,7 @@
 		"hero"
 	],
 	"textdomain": "designsetgo",
+	"icon": "images-alt2",
 	"attributes": {
 		"slidesPerView": {
 			"type": "number",

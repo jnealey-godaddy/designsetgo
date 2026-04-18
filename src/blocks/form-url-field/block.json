@@ -4,11 +4,20 @@
 	"name": "designsetgo/form-url-field",
 	"version": "1.0.0",
 	"title": "URL Field",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "A URL/website address input field for forms.",
-	"keywords": ["form", "url", "website", "link", "address"],
-	"parent": ["designsetgo/form-builder"],
+	"keywords": [
+		"form",
+		"url",
+		"website",
+		"link",
+		"address"
+	],
+	"parent": [
+		"designsetgo/form-builder"
+	],
 	"textdomain": "designsetgo",
+	"icon": "admin-links",
 	"supports": {
 		"html": false,
 		"anchor": false,

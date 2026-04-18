@@ -13,7 +13,6 @@ return array(
 		'designsetgo/section',
 		'designsetgo/row',
 		'designsetgo/grid',
-		'designsetgo/reveal',
 	),
 	'exclude'    => array(),
 	'attributes' => array(

@@ -4,10 +4,18 @@
 	"name": "designsetgo/scroll-marquee",
 	"version": "1.0.0",
 	"title": "Scrolling Gallery",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Display rows of images that scroll horizontally in alternating directions based on page scroll. For best performance, use optimized images (WebP format recommended) and limit to 20 images or less.",
-	"keywords": ["scrolling", "gallery", "images", "parallax", "scroll", "infinite"],
+	"keywords": [
+		"scrolling",
+		"gallery",
+		"images",
+		"parallax",
+		"scroll",
+		"infinite"
+	],
 	"textdomain": "designsetgo",
+	"icon": "controls-repeat",
 	"supports": {
 		"anchor": true,
 		"align": false,
@@ -34,9 +42,15 @@
 						"items": {
 							"type": "object",
 							"properties": {
-								"id": { "type": "number" },
-								"url": { "type": "string" },
-								"alt": { "type": "string" }
+								"id": {
+									"type": "number"
+								},
+								"url": {
+									"type": "string"
+								},
+								"alt": {
+									"type": "string"
+								}
 							}
 						}
 					},
@@ -46,7 +60,10 @@
 				}
 			},
 			"default": [
-				{ "images": [], "direction": "left" }
+				{
+					"images": [],
+					"direction": "left"
+				}
 			]
 		},
 		"scrollSpeed": {
@@ -79,9 +96,18 @@
 			"rows": [
 				{
 					"images": [
-						{ "url": "https://picsum.photos/300/200?random=1", "alt": "Example image 1" },
-						{ "url": "https://picsum.photos/300/200?random=2", "alt": "Example image 2" },
-						{ "url": "https://picsum.photos/300/200?random=3", "alt": "Example image 3" }
+						{
+							"url": "https://picsum.photos/300/200?random=1",
+							"alt": "Example image 1"
+						},
+						{
+							"url": "https://picsum.photos/300/200?random=2",
+							"alt": "Example image 2"
+						},
+						{
+							"url": "https://picsum.photos/300/200?random=3",
+							"alt": "Example image 3"
+						}
 					],
 					"direction": "left"
 				}

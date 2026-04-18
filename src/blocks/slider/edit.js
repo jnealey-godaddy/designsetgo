@@ -76,20 +76,21 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 	// Arrow Colors panel — migrated to useBlockColors hook.
 	// colorGradientSettings is returned by the hook (same shape as
 	// useMultipleOriginColorsAndGradients) and used by the inline Dot Color panel.
-	const { settings: arrowColorSettings, colorGradientSettings } = useBlockColors({
-		attributes,
-		setAttributes,
-		entries: [
-			{
-				label: __('Arrow Icon Color', 'designsetgo'),
-				attribute: 'arrowColor',
-			},
-			{
-				label: __('Arrow Background', 'designsetgo'),
-				attribute: 'arrowBackgroundColor',
-			},
-		],
-	});
+	const { settings: arrowColorSettings, colorGradientSettings } =
+		useBlockColors({
+			attributes,
+			setAttributes,
+			entries: [
+				{
+					label: __('Arrow Icon Color', 'designsetgo'),
+					attribute: 'arrowColor',
+				},
+				{
+					label: __('Arrow Background', 'designsetgo'),
+					attribute: 'arrowBackgroundColor',
+				},
+			],
+		});
 	const requiresSingleSlideEffect = SINGLE_SLIDE_EFFECTS.includes(effect);
 
 	const blockRef = useRef(null);

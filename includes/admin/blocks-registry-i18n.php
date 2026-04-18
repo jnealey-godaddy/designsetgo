@@ -61,8 +61,6 @@ __( 'Scroll Accordion Item', 'designsetgo' );
 __( 'Individual scroll panel', 'designsetgo' );
 __( 'Scroll Marquee', 'designsetgo' );
 __( 'Infinite scrolling content', 'designsetgo' );
-__( 'Reveal', 'designsetgo' );
-__( 'Content reveal on scroll', 'designsetgo' );
 __( 'Image Accordion', 'designsetgo' );
 __( 'Accordion with images', 'designsetgo' );
 __( 'Image Accordion Item', 'designsetgo' );

@@ -3,18 +3,18 @@
 	"apiVersion": 3,
 	"name": "designsetgo/grid",
 	"version": "1.0.0",
-	"title": "Grid (DSG)",
-	"category": "design",
+	"title": "Grid",
+	"category": "designsetgo",
 	"description": "Responsive multi-column grid layouts. Perfect for feature grids, product listings, team members, and card layouts.",
 	"keywords": [
 		"grid",
-		"dsg",
 		"columns",
 		"layout",
 		"container",
 		"responsive"
 	],
 	"textdomain": "designsetgo",
+	"icon": "grid-view",
 	"supports": {
 		"anchor": true,
 		"align": [

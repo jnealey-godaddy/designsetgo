@@ -11,6 +11,7 @@
 		"panel"
 	],
 	"textdomain": "designsetgo",
+	"icon": "tickets-alt",
 	"parent": [
 		"designsetgo/tabs"
 	],

@@ -4,7 +4,7 @@
 	"name": "designsetgo/counter-group",
 	"version": "1.0.0",
 	"title": "Counter Group",
-	"category": "widgets",
+	"category": "designsetgo",
 	"description": "Display animated statistics and numbers that count up on scroll",
 	"keywords": [
 		"counter",
@@ -14,6 +14,7 @@
 		"animated"
 	],
 	"textdomain": "designsetgo",
+	"icon": "chart-area",
 	"supports": {
 		"anchor": true,
 		"align": [

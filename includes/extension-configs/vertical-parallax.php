@@ -21,7 +21,6 @@ return array(
 		'designsetgo/section',
 		'designsetgo/row',
 		'designsetgo/grid',
-		'designsetgo/reveal',
 		// DesignSetGo visual blocks.
 		'designsetgo/flip-card',
 		'designsetgo/flip-card-front',

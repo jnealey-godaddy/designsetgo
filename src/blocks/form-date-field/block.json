@@ -4,11 +4,20 @@
 	"name": "designsetgo/form-date-field",
 	"version": "1.0.0",
 	"title": "Date Field",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "A date picker input field for forms.",
-	"keywords": ["form", "date", "calendar", "datepicker", "day"],
-	"parent": ["designsetgo/form-builder"],
+	"keywords": [
+		"form",
+		"date",
+		"calendar",
+		"datepicker",
+		"day"
+	],
+	"parent": [
+		"designsetgo/form-builder"
+	],
 	"textdomain": "designsetgo",
+	"icon": "calendar-alt",
 	"supports": {
 		"html": false,
 		"anchor": false,

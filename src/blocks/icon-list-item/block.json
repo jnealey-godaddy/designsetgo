@@ -15,6 +15,7 @@
 		"designsetgo/icon-list"
 	],
 	"textdomain": "designsetgo",
+	"icon": "marker",
 	"supports": {
 		"html": false,
 		"inserter": true,

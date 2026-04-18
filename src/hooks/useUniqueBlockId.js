@@ -5,13 +5,13 @@
  * Replaces the duplicated `useEffect(() => { if (!attr) setAttributes({ attr: clientId.substring(0, 8) }); }, [])`
  * pattern that lived in tabs, form-builder, and modal.
  *
- * @param {Object}      params
- * @param {string}      params.clientId      The block clientId.
- * @param {string}      params.attributeName Name of the attribute to seed.
- * @param {string|undefined|null} params.value    Current value of the attribute. Seeds only when undefined, null, or empty string.
- * @param {Function}    params.setAttributes The block's setAttributes callback.
- * @param {string}      [params.prefix='']   Optional prefix prepended to the id.
- * @param {number|null} [params.length=8]    Substring length, or null to use the full clientId.
+ * @param {Object}                params
+ * @param {string}                params.clientId      The block clientId.
+ * @param {string}                params.attributeName Name of the attribute to seed.
+ * @param {string|undefined|null} params.value         Current value of the attribute.
+ * @param {Function}              params.setAttributes The block's setAttributes callback.
+ * @param {string}                [params.prefix='']   Optional prefix prepended to the id.
+ * @param {number|null}           [params.length=8]    Substring length, or null to use the full clientId.
  */
 import { useEffect } from '@wordpress/element';
 

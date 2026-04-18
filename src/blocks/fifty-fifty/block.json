@@ -4,13 +4,24 @@
 	"name": "designsetgo/fifty-fifty",
 	"version": "1.0.0",
 	"title": "Fifty Fifty",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Full-width 50/50 split layout with edge-to-edge media on one side and constrained content on the other. Perfect for hero sections, feature highlights, and about sections.",
-	"keywords": ["fifty", "fifty-fifty", "split", "half", "media", "image", "dsg", "hero"],
+	"keywords": [
+		"fifty",
+		"fifty-fifty",
+		"split",
+		"half",
+		"media",
+		"image",
+		"hero"
+	],
 	"textdomain": "designsetgo",
+	"icon": "columns",
 	"supports": {
 		"anchor": true,
-		"align": ["full"],
+		"align": [
+			"full"
+		],
 		"html": false,
 		"inserter": true,
 		"color": {
@@ -47,7 +58,10 @@
 		"mediaPosition": {
 			"type": "string",
 			"default": "left",
-			"enum": ["left", "right"]
+			"enum": [
+				"left",
+				"right"
+			]
 		},
 		"mediaId": {
 			"type": "number",
@@ -75,7 +89,11 @@
 		"verticalAlignment": {
 			"type": "string",
 			"default": "center",
-			"enum": ["top", "center", "bottom"]
+			"enum": [
+				"top",
+				"center",
+				"bottom"
+			]
 		},
 		"contentPadding": {
 			"type": "string",

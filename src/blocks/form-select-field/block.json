@@ -4,11 +4,20 @@
 	"name": "designsetgo/form-select-field",
 	"version": "1.0.0",
 	"title": "Select Field",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "A dropdown select field for forms.",
-	"keywords": ["form", "select", "dropdown", "options", "choice"],
-	"parent": ["designsetgo/form-builder"],
+	"keywords": [
+		"form",
+		"select",
+		"dropdown",
+		"options",
+		"choice"
+	],
+	"parent": [
+		"designsetgo/form-builder"
+	],
 	"textdomain": "designsetgo",
+	"icon": "menu",
 	"supports": {
 		"html": false,
 		"anchor": false,
@@ -47,15 +56,28 @@
 		"options": {
 			"type": "array",
 			"default": [
-				{ "label": "Option 1", "value": "option-1" },
-				{ "label": "Option 2", "value": "option-2" },
-				{ "label": "Option 3", "value": "option-3" }
+				{
+					"label": "Option 1",
+					"value": "option-1"
+				},
+				{
+					"label": "Option 2",
+					"value": "option-2"
+				},
+				{
+					"label": "Option 3",
+					"value": "option-3"
+				}
 			],
 			"items": {
 				"type": "object",
 				"properties": {
-					"label": { "type": "string" },
-					"value": { "type": "string" }
+					"label": {
+						"type": "string"
+					},
+					"value": {
+						"type": "string"
+					}
 				}
 			}
 		},

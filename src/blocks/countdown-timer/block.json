@@ -4,7 +4,7 @@
 	"name": "designsetgo/countdown-timer",
 	"version": "1.0.0",
 	"title": "Countdown Timer",
-	"category": "widgets",
+	"category": "designsetgo",
 	"description": "Display a countdown timer to a specific date and time with customizable styling.",
 	"keywords": [
 		"countdown",
@@ -14,6 +14,7 @@
 		"event"
 	],
 	"textdomain": "designsetgo",
+	"icon": "clock",
 	"supports": {
 		"anchor": true,
 		"align": [

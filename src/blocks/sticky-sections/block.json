@@ -4,10 +4,19 @@
 	"name": "designsetgo/sticky-sections",
 	"version": "1.0.0",
 	"title": "Sticky Sections",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Sections that stick and stack as you scroll, creating a card-stacking reveal effect",
-	"keywords": ["sticky", "stack", "scroll", "cards", "pin", "reveal", "sections"],
+	"keywords": [
+		"sticky",
+		"stack",
+		"scroll",
+		"cards",
+		"pin",
+		"reveal",
+		"sections"
+	],
 	"textdomain": "designsetgo",
+	"icon": "align-full-width",
 	"attributes": {
 		"align": {
 			"type": "string",
@@ -20,7 +29,10 @@
 	},
 	"supports": {
 		"anchor": true,
-		"align": ["wide", "full"],
+		"align": [
+			"wide",
+			"full"
+		],
 		"html": false,
 		"spacing": {
 			"margin": true,
@@ -30,7 +42,9 @@
 			"allowEditing": false
 		}
 	},
-	"allowedBlocks": ["designsetgo/section"],
+	"allowedBlocks": [
+		"designsetgo/section"
+	],
 	"example": {
 		"attributes": {
 			"align": "full"
@@ -40,7 +54,9 @@
 				"name": "designsetgo/section",
 				"attributes": {
 					"style": {
-						"color": { "background": "#1a1a2e" }
+						"color": {
+							"background": "#1a1a2e"
+						}
 					}
 				}
 			},
@@ -48,7 +64,9 @@
 				"name": "designsetgo/section",
 				"attributes": {
 					"style": {
-						"color": { "background": "#16213e" }
+						"color": {
+							"background": "#16213e"
+						}
 					}
 				}
 			},
@@ -56,7 +74,9 @@
 				"name": "designsetgo/section",
 				"attributes": {
 					"style": {
-						"color": { "background": "#0f3460" }
+						"color": {
+							"background": "#0f3460"
+						}
 					}
 				}
 			}

@@ -4,11 +4,20 @@
 	"name": "designsetgo/form-phone-field",
 	"version": "1.0.0",
 	"title": "Phone Field",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "A phone number input field for forms.",
-	"keywords": ["form", "phone", "telephone", "tel", "mobile"],
-	"parent": ["designsetgo/form-builder"],
+	"keywords": [
+		"form",
+		"phone",
+		"telephone",
+		"tel",
+		"mobile"
+	],
+	"parent": [
+		"designsetgo/form-builder"
+	],
 	"textdomain": "designsetgo",
+	"icon": "phone",
 	"supports": {
 		"html": false,
 		"anchor": false,
@@ -50,7 +59,11 @@
 		"phoneFormat": {
 			"type": "string",
 			"default": "any",
-			"enum": ["any", "us", "international"]
+			"enum": [
+				"any",
+				"us",
+				"international"
+			]
 		},
 		"showCountryCode": {
 			"type": "boolean",

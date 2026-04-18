@@ -4,7 +4,7 @@
 	"name": "designsetgo/comparison-table",
 	"version": "1.0.0",
 	"title": "Comparison Table",
-	"category": "widgets",
+	"category": "designsetgo",
 	"description": "Display a feature comparison table for products, services, or plans",
 	"keywords": [
 		"comparison",
@@ -14,6 +14,7 @@
 		"plans"
 	],
 	"textdomain": "designsetgo",
+	"icon": "editor-table",
 	"supports": {
 		"anchor": true,
 		"align": [

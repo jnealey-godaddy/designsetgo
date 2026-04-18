@@ -17,6 +17,7 @@
 		"section"
 	],
 	"textdomain": "designsetgo",
+	"icon": "format-image",
 	"attributes": {
 		"uniqueId": {
 			"type": "string",

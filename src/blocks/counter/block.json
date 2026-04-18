@@ -12,6 +12,7 @@
 		"number"
 	],
 	"textdomain": "designsetgo",
+	"icon": "chart-bar",
 	"parent": [
 		"designsetgo/counter-group"
 	],

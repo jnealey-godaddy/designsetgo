@@ -4,10 +4,18 @@
 	"name": "designsetgo/flip-card",
 	"version": "1.0.0",
 	"title": "Flip Card",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Interactive card that flips to reveal content on the back. Perfect for team profiles, product showcases, and feature highlights.",
-	"keywords": ["flip", "card", "interactive", "hover", "3d", "rotate"],
+	"keywords": [
+		"flip",
+		"card",
+		"interactive",
+		"hover",
+		"3d",
+		"rotate"
+	],
 	"textdomain": "designsetgo",
+	"icon": "index-card",
 	"supports": {
 		"anchor": true,
 		"align": false,
@@ -25,17 +33,28 @@
 		"flipTrigger": {
 			"type": "string",
 			"default": "hover",
-			"enum": ["hover", "click"]
+			"enum": [
+				"hover",
+				"click"
+			]
 		},
 		"flipEffect": {
 			"type": "string",
 			"default": "flip",
-			"enum": ["flip", "fade", "slide", "zoom"]
+			"enum": [
+				"flip",
+				"fade",
+				"slide",
+				"zoom"
+			]
 		},
 		"flipDirection": {
 			"type": "string",
 			"default": "horizontal",
-			"enum": ["horizontal", "vertical"]
+			"enum": [
+				"horizontal",
+				"vertical"
+			]
 		},
 		"flipDuration": {
 			"type": "string",

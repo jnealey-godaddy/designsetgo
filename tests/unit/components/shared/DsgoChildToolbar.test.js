@@ -44,7 +44,9 @@ jest.mock('@wordpress/blocks', () => ({
 	cloneBlock: (...args) => mockCloneBlock(...args),
 }));
 jest.mock('@wordpress/block-editor', () => ({
-	BlockControls: ({ children }) => <div data-testid="block-controls">{children}</div>,
+	BlockControls: ({ children }) => (
+		<div data-testid="block-controls">{children}</div>
+	),
 }));
 jest.mock('@wordpress/components', () => ({
 	ToolbarGroup: ({ children }) => <div>{children}</div>,
@@ -67,12 +69,22 @@ describe('DsgoChildToolbar', () => {
 	});
 
 	test('renders inside BlockControls slot', () => {
-		render(<DsgoChildToolbar clientId="child-id" childBlockName="designsetgo/tab" />);
+		render(
+			<DsgoChildToolbar
+				clientId="child-id"
+				childBlockName="designsetgo/tab"
+			/>
+		);
 		expect(screen.getByTestId('block-controls')).toBeInTheDocument();
 	});
 
 	test('Add button inserts a new sibling at index+1', () => {
-		render(<DsgoChildToolbar clientId="child-id" childBlockName="designsetgo/tab" />);
+		render(
+			<DsgoChildToolbar
+				clientId="child-id"
+				childBlockName="designsetgo/tab"
+			/>
+		);
 		fireEvent.click(screen.getByRole('button', { name: /Add/i }));
 		expect(mockCreateBlock).toHaveBeenCalledWith('designsetgo/tab', {});
 		expect(mockInsertBlock).toHaveBeenCalledWith(
@@ -84,7 +96,12 @@ describe('DsgoChildToolbar', () => {
 	});
 
 	test('Duplicate button clones the current block at index+1', () => {
-		render(<DsgoChildToolbar clientId="child-id" childBlockName="designsetgo/tab" />);
+		render(
+			<DsgoChildToolbar
+				clientId="child-id"
+				childBlockName="designsetgo/tab"
+			/>
+		);
 		fireEvent.click(screen.getByRole('button', { name: /Duplicate/i }));
 		expect(mockCloneBlock).toHaveBeenCalled();
 		expect(mockInsertBlock).toHaveBeenCalledWith(
@@ -96,19 +113,40 @@ describe('DsgoChildToolbar', () => {
 	});
 
 	test('Move Up calls moveBlocksUp with the clientId', () => {
-		render(<DsgoChildToolbar clientId="child-id" childBlockName="designsetgo/tab" />);
+		render(
+			<DsgoChildToolbar
+				clientId="child-id"
+				childBlockName="designsetgo/tab"
+			/>
+		);
 		fireEvent.click(screen.getByRole('button', { name: /Move up/i }));
-		expect(mockMoveBlocksUp).toHaveBeenCalledWith(['child-id'], 'parent-id');
+		expect(mockMoveBlocksUp).toHaveBeenCalledWith(
+			['child-id'],
+			'parent-id'
+		);
 	});
 
 	test('Move Down calls moveBlocksDown with the clientId', () => {
-		render(<DsgoChildToolbar clientId="child-id" childBlockName="designsetgo/tab" />);
+		render(
+			<DsgoChildToolbar
+				clientId="child-id"
+				childBlockName="designsetgo/tab"
+			/>
+		);
 		fireEvent.click(screen.getByRole('button', { name: /Move down/i }));
-		expect(mockMoveBlocksDown).toHaveBeenCalledWith(['child-id'], 'parent-id');
+		expect(mockMoveBlocksDown).toHaveBeenCalledWith(
+			['child-id'],
+			'parent-id'
+		);
 	});
 
 	test('Remove button calls removeBlock with the clientId', () => {
-		render(<DsgoChildToolbar clientId="child-id" childBlockName="designsetgo/tab" />);
+		render(
+			<DsgoChildToolbar
+				clientId="child-id"
+				childBlockName="designsetgo/tab"
+			/>
+		);
 		fireEvent.click(screen.getByRole('button', { name: /Remove/i }));
 		expect(mockRemoveBlock).toHaveBeenCalledWith('child-id', false);
 	});

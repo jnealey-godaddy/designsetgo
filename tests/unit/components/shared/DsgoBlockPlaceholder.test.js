@@ -50,8 +50,12 @@ describe('DsgoBlockPlaceholder', () => {
 				onSelect={jest.fn()}
 			/>
 		);
-		expect(screen.getByRole('button', { name: /Horizontal/ })).toBeInTheDocument();
-		expect(screen.getByRole('button', { name: /Vertical/ })).toBeInTheDocument();
+		expect(
+			screen.getByRole('button', { name: /Horizontal/ })
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole('button', { name: /Vertical/ })
+		).toBeInTheDocument();
 	});
 
 	test('invokes onSelect with the chosen variation', () => {

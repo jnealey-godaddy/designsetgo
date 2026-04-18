@@ -8,10 +8,10 @@
  * Theme 5 uses this for tabs, slider, scroll-slides, accordion,
  * image-accordion.
  *
- * @param {Object}   params
- * @param {number}   params.count        Number of children.
- * @param {number}   params.activeIndex  Currently active index.
- * @param {Function} params.onChange     Called with new index.
+ * @param {Object}                  params
+ * @param {number}                  params.count                      Number of children.
+ * @param {number}                  params.activeIndex                Currently active index.
+ * @param {Function}                params.onChange                   Called with new index.
  * @param {'horizontal'|'vertical'} [params.orientation='horizontal']
  * @return {{ onKeyDown: Function }}
  */
@@ -29,7 +29,8 @@ export function useTablistKeyboard({
 				return;
 			}
 			const prev = orientation === 'horizontal' ? 'ArrowLeft' : 'ArrowUp';
-			const next = orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown';
+			const next =
+				orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown';
 
 			let newIndex = activeIndex;
 			if (event.key === next) {

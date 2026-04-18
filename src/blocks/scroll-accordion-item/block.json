@@ -4,7 +4,7 @@
 	"name": "designsetgo/scroll-accordion-item",
 	"version": "1.0.0",
 	"title": "Scroll Accordion Item",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Individual item within a Scroll Accordion",
 	"keywords": [
 		"scroll",
@@ -13,6 +13,7 @@
 		"section"
 	],
 	"textdomain": "designsetgo",
+	"icon": "menu",
 	"parent": [
 		"designsetgo/scroll-accordion"
 	],

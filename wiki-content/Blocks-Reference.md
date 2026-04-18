@@ -135,21 +135,6 @@ Complete reference guide for all DesignSetGo blocks organized by category.
 
 ---
 
-### Reveal
-**Name**: `designsetgo/reveal`
-**Category**: Design
-**Description**: Container that reveals hidden content on hover with smooth animations.
-
-**Key Features**:
-- Fade reveal animation
-- Customizable reveal duration
-- Full WordPress block support inside
-- Color and spacing controls
-
-**Use Cases**: Interactive galleries, hover-to-reveal content, hidden details
-
----
-
 ### Scroll Accordion
 **Name**: `designsetgo/scroll-accordion`
 **Category**: Design

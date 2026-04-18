@@ -4,7 +4,7 @@
 	"name": "designsetgo/scroll-slide",
 	"version": "1.0.0",
 	"title": "Scroll Slide",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Individual slide within a Scroll Slides block",
 	"keywords": [
 		"slide",
@@ -13,6 +13,7 @@
 		"scroll"
 	],
 	"textdomain": "designsetgo",
+	"icon": "slides",
 	"parent": [
 		"designsetgo/scroll-slides"
 	],

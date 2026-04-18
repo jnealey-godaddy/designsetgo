@@ -4,11 +4,20 @@
 	"name": "designsetgo/form-time-field",
 	"version": "1.0.0",
 	"title": "Time Field",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "A time picker input field for forms.",
-	"keywords": ["form", "time", "clock", "timepicker", "hour"],
-	"parent": ["designsetgo/form-builder"],
+	"keywords": [
+		"form",
+		"time",
+		"clock",
+		"timepicker",
+		"hour"
+	],
+	"parent": [
+		"designsetgo/form-builder"
+	],
 	"textdomain": "designsetgo",
+	"icon": "schedule",
 	"supports": {
 		"html": false,
 		"anchor": false,

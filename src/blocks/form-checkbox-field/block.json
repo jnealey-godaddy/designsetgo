@@ -4,11 +4,20 @@
 	"name": "designsetgo/form-checkbox-field",
 	"version": "1.0.0",
 	"title": "Checkbox Field",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "A single checkbox field for forms.",
-	"keywords": ["form", "checkbox", "check", "toggle", "agree"],
-	"parent": ["designsetgo/form-builder"],
+	"keywords": [
+		"form",
+		"checkbox",
+		"check",
+		"toggle",
+		"agree"
+	],
+	"parent": [
+		"designsetgo/form-builder"
+	],
 	"textdomain": "designsetgo",
+	"icon": "yes-alt",
 	"supports": {
 		"html": false,
 		"anchor": false,

@@ -4,7 +4,7 @@
 	"name": "designsetgo/timeline-item",
 	"version": "1.0.0",
 	"title": "Timeline Item",
-	"category": "design",
+	"category": "designsetgo",
 	"parent": [
 		"designsetgo/timeline"
 	],
@@ -17,6 +17,7 @@
 		"step"
 	],
 	"textdomain": "designsetgo",
+	"icon": "marker",
 	"attributes": {
 		"date": {
 			"type": "string",

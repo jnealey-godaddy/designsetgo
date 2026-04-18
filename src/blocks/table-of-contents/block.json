@@ -4,7 +4,7 @@
 	"name": "designsetgo/table-of-contents",
 	"version": "1.0.0",
 	"title": "Table of Contents",
-	"category": "design",
+	"category": "designsetgo",
 	"description": "Auto-generate a table of contents from page headings with smooth scroll navigation and scroll spy.",
 	"keywords": [
 		"toc",
@@ -15,6 +15,7 @@
 		"outline"
 	],
 	"textdomain": "designsetgo",
+	"icon": "editor-ol",
 	"attributes": {
 		"uniqueId": {
 			"type": "string",

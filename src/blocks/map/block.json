@@ -4,7 +4,7 @@
 	"name": "designsetgo/map",
 	"version": "1.0.0",
 	"title": "Map",
-	"category": "widgets",
+	"category": "designsetgo",
 	"description": "Display an interactive map using OpenStreetMap or Google Maps.",
 	"keywords": [
 		"map",
@@ -15,6 +15,7 @@
 		"directions"
 	],
 	"textdomain": "designsetgo",
+	"icon": "location-alt",
 	"attributes": {
 		"dsgoProvider": {
 			"type": "string",

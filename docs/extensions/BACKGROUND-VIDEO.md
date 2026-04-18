@@ -1,6 +1,6 @@
 # Background Video Extension - User Guide
 
-**Compatible With**: Section, Row, Grid, Reveal, Flip Card, Accordion, Tabs, Scroll blocks
+**Compatible With**: Section, Row, Grid, Flip Card, Accordion, Tabs, Scroll blocks
 **Since**: 1.0.0
 
 ## Overview
@@ -40,7 +40,7 @@ The **Background Video Extension** adds fullscreen background video capability t
 
 ### Supported Blocks
 - **designsetgo/section**, **row**, **grid**: Layout containers
-- **designsetgo/reveal**, **flip-card**: Interactive blocks
+- **designsetgo/flip-card**: Interactive blocks
 - **designsetgo/accordion**, **tabs**: Expandable content
 - **designsetgo/scroll-accordion**, **scroll-marquee**: Scroll-based
 - **designsetgo/image-accordion**: Image-based accordion

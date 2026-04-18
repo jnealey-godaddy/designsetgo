@@ -4,7 +4,7 @@
 	"name": "designsetgo/modal-trigger",
 	"version": "1.0.0",
 	"title": "Modal Trigger",
-	"category": "widgets",
+	"category": "designsetgo",
 	"description": "A button or link that opens a modal dialog.",
 	"keywords": [
 		"modal",
