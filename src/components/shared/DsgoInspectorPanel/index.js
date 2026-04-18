@@ -38,10 +38,19 @@ import {
 	__experimentalToolsPanelItem as ToolsPanelItem,
 } from '@wordpress/components';
 /* eslint-enable @wordpress/no-unsafe-wp-apis */
+import { createContext, useContext } from '@wordpress/element';
 
 const CANONICAL_PANEL_NAMES = ['settings', 'style', 'advanced'];
 
 const _warnedPanelNames = new Set();
+
+// `ToolsPanelItem` only registers with its parent panel when its own
+// `panelId` prop matches the panel's `panelId` (see
+// `@wordpress/components` `tools-panel-item/hook`). Without a matching
+// value, items render but never appear in the panel's reset-to-default
+// ⋮ menu. This context lets every `DsgoInspectorPanel.Item` inherit the
+// parent panel's `panelId` automatically, so callers can't forget.
+const PanelIdContext = createContext(null);
 
 export function DsgoInspectorPanel({
 	title,
@@ -63,20 +72,27 @@ export function DsgoInspectorPanel({
 		);
 	}
 	return (
-		<ToolsPanel
-			label={title}
-			panelId={panelId}
-			resetAll={resetAll}
-			hasInnerWrapper
-			shouldRenderPlaceholderItems
-			{...rest}
-		>
-			{children}
-		</ToolsPanel>
+		<PanelIdContext.Provider value={panelId}>
+			<ToolsPanel
+				label={title}
+				panelId={panelId}
+				resetAll={resetAll}
+				hasInnerWrapper
+				shouldRenderPlaceholderItems
+				{...rest}
+			>
+				{children}
+			</ToolsPanel>
+		</PanelIdContext.Provider>
 	);
 }
 
-DsgoInspectorPanel.Item = ToolsPanelItem;
+function DsgoInspectorPanelItem({ panelId: panelIdProp, ...rest }) {
+	const contextPanelId = useContext(PanelIdContext);
+	return <ToolsPanelItem panelId={panelIdProp ?? contextPanelId} {...rest} />;
+}
+
+DsgoInspectorPanel.Item = DsgoInspectorPanelItem;
 
 // Test-only helper — clears the deduped warn cache between tests.
 // Not part of the public API.

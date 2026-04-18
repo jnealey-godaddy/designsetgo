@@ -22,7 +22,6 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	RangeControl,
 	SelectControl,
 	ToggleControl,
@@ -31,6 +30,7 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUseCustomUnits as useCustomUnits,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useState, useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import {
@@ -323,148 +323,222 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 			</InspectorControls>
 
 			<InspectorControls>
-				<PanelBody
-					title={__('Grid Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() => {
+						setUseCustomGaps(false);
+						setAttributes({
+							desktopColumns: 3,
+							tabletColumns: 2,
+							mobileColumns: 1,
+							alignItems: 'stretch',
+							rowGap: '',
+							columnGap: '',
+							constrainWidth: false,
+							contentWidth: '',
+						});
+					}}
 				>
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__('Desktop Columns', 'designsetgo')}
-						value={desktopColumns}
-						onChange={(value) => {
-							// Ensure tablet columns don't exceed desktop
-							const newTabletCols = Math.min(
-								tabletColumns,
-								value
-							);
-							// Ensure mobile columns don't exceed tablet
-							const newMobileCols = Math.min(
-								mobileColumns,
-								newTabletCols
-							);
-
+						hasValue={() => desktopColumns !== 3}
+						onDeselect={() =>
 							setAttributes({
-								desktopColumns: value,
-								...(newTabletCols !== tabletColumns && {
-									tabletColumns: newTabletCols,
-								}),
-								...(newMobileCols !== mobileColumns && {
-									mobileColumns: newMobileCols,
-								}),
-							});
-						}}
-						min={1}
-						max={12}
-						help={__(
-							'Number of columns on desktop screens',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+								desktopColumns: 3,
+								tabletColumns: Math.min(tabletColumns, 3),
+								mobileColumns: Math.min(
+									mobileColumns,
+									Math.min(tabletColumns, 3)
+								),
+							})
+						}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Desktop Columns', 'designsetgo')}
+							value={desktopColumns}
+							onChange={(value) => {
+								// Ensure tablet columns don't exceed desktop
+								const newTabletCols = Math.min(
+									tabletColumns,
+									value
+								);
+								// Ensure mobile columns don't exceed tablet
+								const newMobileCols = Math.min(
+									mobileColumns,
+									newTabletCols
+								);
 
-					<RangeControl
+								setAttributes({
+									desktopColumns: value,
+									...(newTabletCols !== tabletColumns && {
+										tabletColumns: newTabletCols,
+									}),
+									...(newMobileCols !== mobileColumns && {
+										mobileColumns: newMobileCols,
+									}),
+								});
+							}}
+							min={1}
+							max={12}
+							help={__(
+								'Number of columns on desktop screens',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
 						label={__('Tablet Columns', 'designsetgo')}
-						value={tabletColumns}
-						onChange={(value) => {
-							// Ensure mobile columns don't exceed tablet
-							const newMobileCols = Math.min(
-								mobileColumns,
-								value
-							);
-
+						hasValue={() => tabletColumns !== 2}
+						onDeselect={() =>
 							setAttributes({
-								tabletColumns: value,
-								...(newMobileCols !== mobileColumns && {
-									mobileColumns: newMobileCols,
-								}),
-							});
-						}}
-						min={1}
-						max={desktopColumns}
-						help={__(
-							'Number of columns on tablet screens (≤ 1024px)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+								tabletColumns: 2,
+								mobileColumns: Math.min(mobileColumns, 2),
+							})
+						}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Tablet Columns', 'designsetgo')}
+							value={tabletColumns}
+							onChange={(value) => {
+								// Ensure mobile columns don't exceed tablet
+								const newMobileCols = Math.min(
+									mobileColumns,
+									value
+								);
 
-					<RangeControl
+								setAttributes({
+									tabletColumns: value,
+									...(newMobileCols !== mobileColumns && {
+										mobileColumns: newMobileCols,
+									}),
+								});
+							}}
+							min={1}
+							max={desktopColumns}
+							help={__(
+								'Number of columns on tablet screens (≤ 1024px)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
 						label={__('Mobile Columns', 'designsetgo')}
-						value={mobileColumns}
-						onChange={(value) =>
-							setAttributes({ mobileColumns: value })
-						}
-						min={1}
-						max={tabletColumns}
-						help={__(
-							'Number of columns on mobile screens (≤ 767px)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<SelectControl
-						label={__('Align Items', 'designsetgo')}
-						value={alignItems}
-						options={[
-							{
-								label: __('Start', 'designsetgo'),
-								value: 'start',
-							},
-							{
-								label: __('Center', 'designsetgo'),
-								value: 'center',
-							},
-							{ label: __('End', 'designsetgo'), value: 'end' },
-							{
-								label: __('Stretch', 'designsetgo'),
-								value: 'stretch',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ alignItems: value })
-						}
-						help={__(
-							'Vertical alignment of grid items',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
-
-				<PanelBody
-					title={__('Gap Settings', 'designsetgo')}
-					initialOpen={false}
-				>
-					<ToggleControl
-						label={__('Custom Row/Column Gaps', 'designsetgo')}
-						checked={useCustomGaps}
-						onChange={(value) => {
-							setUseCustomGaps(value);
-							if (!value) {
-								// Reset to WordPress blockGap
-								setAttributes({ rowGap: '', columnGap: '' });
+						hasValue={() => mobileColumns !== 1}
+						onDeselect={() => setAttributes({ mobileColumns: 1 })}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Mobile Columns', 'designsetgo')}
+							value={mobileColumns}
+							onChange={(value) =>
+								setAttributes({ mobileColumns: value })
 							}
-						}}
-						help={
-							useCustomGaps
-								? __(
-										'Using separate row and column gaps',
-										'designsetgo'
-									)
-								: __(
-										'Using WordPress blockGap (configure in Spacing panel)',
-										'designsetgo'
-									)
+							min={1}
+							max={tabletColumns}
+							help={__(
+								'Number of columns on mobile screens (≤ 767px)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Align Items', 'designsetgo')}
+						hasValue={() => alignItems !== 'stretch'}
+						onDeselect={() =>
+							setAttributes({ alignItems: 'stretch' })
 						}
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Align Items', 'designsetgo')}
+							value={alignItems}
+							options={[
+								{
+									label: __('Start', 'designsetgo'),
+									value: 'start',
+								},
+								{
+									label: __('Center', 'designsetgo'),
+									value: 'center',
+								},
+								{
+									label: __('End', 'designsetgo'),
+									value: 'end',
+								},
+								{
+									label: __('Stretch', 'designsetgo'),
+									value: 'stretch',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ alignItems: value })
+							}
+							help={__(
+								'Vertical alignment of grid items',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Custom Row/Column Gaps', 'designsetgo')}
+						hasValue={() => useCustomGaps}
+						onDeselect={() => {
+							setUseCustomGaps(false);
+							setAttributes({ rowGap: '', columnGap: '' });
+						}}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Custom Row/Column Gaps', 'designsetgo')}
+							checked={useCustomGaps}
+							onChange={(value) => {
+								setUseCustomGaps(value);
+								if (!value) {
+									// Reset to WordPress blockGap
+									setAttributes({
+										rowGap: '',
+										columnGap: '',
+									});
+								}
+							}}
+							help={
+								useCustomGaps
+									? __(
+											'Using separate row and column gaps',
+											'designsetgo'
+										)
+									: __(
+											'Using WordPress blockGap (configure in Spacing panel)',
+											'designsetgo'
+										)
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
 					{useCustomGaps && (
-						<>
+						<DsgoInspectorPanel.Item
+							label={__('Row Gap', 'designsetgo')}
+							hasValue={() => rowGap !== ''}
+							onDeselect={() => setAttributes({ rowGap: '' })}
+							isShownByDefault
+						>
 							<UnitControl
 								label={__('Row Gap', 'designsetgo')}
 								value={rowGap}
@@ -477,7 +551,16 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{useCustomGaps && (
+						<DsgoInspectorPanel.Item
+							label={__('Column Gap', 'designsetgo')}
+							hasValue={() => columnGap !== ''}
+							onDeselect={() => setAttributes({ columnGap: '' })}
+							isShownByDefault
+						>
 							<UnitControl
 								label={__('Column Gap', 'designsetgo')}
 								value={columnGap}
@@ -490,63 +573,80 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
-						</>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
 
-				<PanelBody
-					title={__('Width Settings', 'designsetgo')}
-					initialOpen={false}
-				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Constrain Inner Width', 'designsetgo')}
-						checked={constrainWidth}
-						onChange={(value) =>
-							setAttributes({ constrainWidth: value })
+						hasValue={() => constrainWidth !== false}
+						onDeselect={() =>
+							setAttributes({
+								constrainWidth: false,
+								contentWidth: '',
+							})
 						}
-						help={
-							constrainWidth
-								? __(
-										'Inner content is constrained to max width',
-										'designsetgo'
-									)
-								: __(
-										'Inner content spans full container width',
-										'designsetgo'
-									)
-						}
-						__nextHasNoMarginBottom
-					/>
-					{constrainWidth && (
-						<UnitControl
-							label={__('Max Content Width', 'designsetgo')}
-							value={contentWidth}
+						isShownByDefault={false}
+					>
+						<ToggleControl
+							label={__('Constrain Inner Width', 'designsetgo')}
+							checked={constrainWidth}
 							onChange={(value) =>
-								setAttributes({ contentWidth: value })
+								setAttributes({ constrainWidth: value })
 							}
-							placeholder={
-								themeContentSize ||
-								__('Theme default', 'designsetgo')
-							}
-							units={units}
-							__unstableInputWidth="80px"
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
 							help={
-								!contentWidth && themeContentSize
-									? sprintf(
-											/* translators: %s: theme content size value */
-											__(
-												'Using theme default: %s',
-												'designsetgo'
-											),
-											themeContentSize
+								constrainWidth
+									? __(
+											'Inner content is constrained to max width',
+											'designsetgo'
 										)
-									: ''
+									: __(
+											'Inner content spans full container width',
+											'designsetgo'
+										)
 							}
+							__nextHasNoMarginBottom
 						/>
+					</DsgoInspectorPanel.Item>
+
+					{constrainWidth && (
+						<DsgoInspectorPanel.Item
+							label={__('Max Content Width', 'designsetgo')}
+							hasValue={() => contentWidth !== ''}
+							onDeselect={() =>
+								setAttributes({ contentWidth: '' })
+							}
+							isShownByDefault
+						>
+							<UnitControl
+								label={__('Max Content Width', 'designsetgo')}
+								value={contentWidth}
+								onChange={(value) =>
+									setAttributes({ contentWidth: value })
+								}
+								placeholder={
+									themeContentSize ||
+									__('Theme default', 'designsetgo')
+								}
+								units={units}
+								__unstableInputWidth="80px"
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+								help={
+									!contentWidth && themeContentSize
+										? sprintf(
+												/* translators: %s: theme content size value */
+												__(
+													'Using theme default: %s',
+													'designsetgo'
+												),
+												themeContentSize
+											)
+										: ''
+								}
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<TagName {...blockProps}>
