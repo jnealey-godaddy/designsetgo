@@ -5,10 +5,12 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { DsgoInspectorPanel } from '../../../../src/components/shared/DsgoInspectorPanel';
+import { DsgoInspectorPanel, _resetWarnCache } from '../../../../src/components/shared/DsgoInspectorPanel';
 
 describe('DsgoInspectorPanel', () => {
+	beforeEach(() => {
+		_resetWarnCache();
+	});
 	test('renders with the provided title', () => {
 		render(
 			<DsgoInspectorPanel

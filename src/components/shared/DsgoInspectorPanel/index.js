@@ -29,6 +29,8 @@ import {
 
 const CANONICAL_TITLES = ['Settings', 'Style', 'Advanced'];
 
+const _warnedTitles = new Set();
+
 export function DsgoInspectorPanel({
 	title,
 	panelId,
@@ -36,7 +38,8 @@ export function DsgoInspectorPanel({
 	children,
 	...rest
 }) {
-	if (!CANONICAL_TITLES.includes(title)) {
+	if (!CANONICAL_TITLES.includes(title) && !_warnedTitles.has(title)) {
+		_warnedTitles.add(title);
 		// eslint-disable-next-line no-console
 		console.warn(
 			`DsgoInspectorPanel: title "${title}" is not one of the canonical panel names (${CANONICAL_TITLES.join(', ')}). See docs/plans/2026-04-16-blocks-editor-ux-design.md Theme 3.`
@@ -57,3 +60,7 @@ export function DsgoInspectorPanel({
 }
 
 DsgoInspectorPanel.Item = ToolsPanelItem;
+
+// Test-only helper — clears the deduped warn cache between tests.
+// Not part of the public API.
+export const _resetWarnCache = () => _warnedTitles.clear();
