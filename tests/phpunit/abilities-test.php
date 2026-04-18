@@ -386,6 +386,18 @@ class Test_Block_Inserter extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'post_id', $schema );
 		$this->assertArrayHasKey( 'position', $schema );
 		$this->assertEquals( 'integer', $schema['post_id']['type'] );
+
+		// JSON Schema Draft 7+ compliance: requiredness is expressed via a
+		// parent-level `required` array, never as an inline boolean on a
+		// property definition (Swagger/OpenAPI v2 syntax). Downstream
+		// consumers like OpenAI function calling reject the inline form.
+		foreach ( $schema as $name => $definition ) {
+			$this->assertArrayNotHasKey(
+				'required',
+				$definition,
+				"Property '$name' must not declare an inline 'required' flag."
+			);
+		}
 	}
 
 	/**
@@ -612,6 +624,18 @@ class Test_Block_Configurator extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'post_id', $schema );
 		$this->assertArrayHasKey( 'block_client_id', $schema );
 		$this->assertArrayHasKey( 'update_all', $schema );
+
+		// JSON Schema Draft 7+ compliance: requiredness is expressed via a
+		// parent-level `required` array, never as an inline boolean on a
+		// property definition (Swagger/OpenAPI v2 syntax). Downstream
+		// consumers like OpenAI function calling reject the inline form.
+		foreach ( $schema as $name => $definition ) {
+			$this->assertArrayNotHasKey(
+				'required',
+				$definition,
+				"Property '$name' must not declare an inline 'required' flag."
+			);
+		}
 	}
 
 	/**
