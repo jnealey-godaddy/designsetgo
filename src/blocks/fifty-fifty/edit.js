@@ -19,7 +19,6 @@ import {
 	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	SelectControl,
 	FocalPointPicker,
 	Button,
@@ -31,6 +30,7 @@ import {
 	ToolbarButton,
 	ToolbarGroup,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect } from '@wordpress/data';
 import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
 
@@ -181,137 +181,194 @@ export default function FiftyFiftyEdit({
 
 			{/* Inspector Controls */}
 			<InspectorControls>
-				<PanelBody
-					title={__('Layout', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							mediaPosition: 'left',
+							verticalAlignment: 'center',
+							minHeight: '500px',
+							mediaId: 0,
+							mediaUrl: '',
+							mediaAlt: '',
+							focalPoint: { x: 0.5, y: 0.5 },
+						})
+					}
 				>
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Media Position', 'designsetgo')}
-						value={mediaPosition}
-						options={[
-							{
-								label: __('Left', 'designsetgo'),
-								value: 'left',
-							},
-							{
-								label: __('Right', 'designsetgo'),
-								value: 'right',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ mediaPosition: value })
+						hasValue={() => mediaPosition !== 'left'}
+						onDeselect={() =>
+							setAttributes({ mediaPosition: 'left' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Media Position', 'designsetgo')}
+							value={mediaPosition}
+							options={[
+								{
+									label: __('Left', 'designsetgo'),
+									value: 'left',
+								},
+								{
+									label: __('Right', 'designsetgo'),
+									value: 'right',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ mediaPosition: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Content Vertical Alignment', 'designsetgo')}
-						value={verticalAlignment}
-						options={[
-							{
-								label: __('Top', 'designsetgo'),
-								value: 'top',
-							},
-							{
-								label: __('Center', 'designsetgo'),
-								value: 'center',
-							},
-							{
-								label: __('Bottom', 'designsetgo'),
-								value: 'bottom',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ verticalAlignment: value })
+						hasValue={() => verticalAlignment !== 'center'}
+						onDeselect={() =>
+							setAttributes({ verticalAlignment: 'center' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__(
+								'Content Vertical Alignment',
+								'designsetgo'
+							)}
+							value={verticalAlignment}
+							options={[
+								{
+									label: __('Top', 'designsetgo'),
+									value: 'top',
+								},
+								{
+									label: __('Center', 'designsetgo'),
+									value: 'center',
+								},
+								{
+									label: __('Bottom', 'designsetgo'),
+									value: 'bottom',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ verticalAlignment: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Min Height', 'designsetgo')}
-						value={minHeight}
-						onChange={(value) =>
-							setAttributes({ minHeight: value })
-						}
-						units={units}
-						__next40pxDefaultSize
-					/>
-				</PanelBody>
+						hasValue={() => minHeight !== '500px'}
+						onDeselect={() => setAttributes({ minHeight: '500px' })}
+						isShownByDefault={false}
+					>
+						<UnitControl
+							label={__('Min Height', 'designsetgo')}
+							value={minHeight}
+							onChange={(value) =>
+								setAttributes({ minHeight: value })
+							}
+							units={units}
+							__next40pxDefaultSize
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Media', 'designsetgo')}
-					initialOpen={true}
-				>
-					<MediaUploadCheck>
-						<MediaUpload
-							onSelect={onSelectMedia}
-							allowedTypes={['image']}
-							value={mediaId}
-							render={({ open }) => (
-								<>
-									{mediaUrl ? (
-										<>
-											<img
-												src={mediaUrl}
-												alt={mediaAlt}
+					<DsgoInspectorPanel.Item
+						label={__('Image', 'designsetgo')}
+						hasValue={() => !!mediaUrl}
+						onDeselect={() =>
+							setAttributes({
+								mediaId: 0,
+								mediaUrl: '',
+								mediaAlt: '',
+								focalPoint: { x: 0.5, y: 0.5 },
+							})
+						}
+						isShownByDefault
+					>
+						<MediaUploadCheck>
+							<MediaUpload
+								onSelect={onSelectMedia}
+								allowedTypes={['image']}
+								value={mediaId}
+								render={({ open }) => (
+									<>
+										{mediaUrl ? (
+											<>
+												<img
+													src={mediaUrl}
+													alt={mediaAlt}
+													style={{
+														width: '100%',
+														height: 'auto',
+														marginBottom: '8px',
+														borderRadius: '4px',
+													}}
+												/>
+												<div
+													style={{
+														display: 'flex',
+														gap: '8px',
+														marginBottom: '12px',
+													}}
+												>
+													<Button
+														onClick={open}
+														variant="secondary"
+														style={{ flex: 1 }}
+													>
+														{__(
+															'Replace',
+															'designsetgo'
+														)}
+													</Button>
+													<Button
+														onClick={onRemoveMedia}
+														variant="secondary"
+														isDestructive
+													>
+														{__(
+															'Remove',
+															'designsetgo'
+														)}
+													</Button>
+												</div>
+											</>
+										) : (
+											<Button
+												onClick={open}
+												variant="secondary"
 												style={{
 													width: '100%',
-													height: 'auto',
-													marginBottom: '8px',
-													borderRadius: '4px',
-												}}
-											/>
-											<div
-												style={{
-													display: 'flex',
-													gap: '8px',
+													justifyContent: 'center',
 													marginBottom: '12px',
 												}}
 											>
-												<Button
-													onClick={open}
-													variant="secondary"
-													style={{ flex: 1 }}
-												>
-													{__(
-														'Replace',
-														'designsetgo'
-													)}
-												</Button>
-												<Button
-													onClick={onRemoveMedia}
-													variant="secondary"
-													isDestructive
-												>
-													{__(
-														'Remove',
-														'designsetgo'
-													)}
-												</Button>
-											</div>
-										</>
-									) : (
-										<Button
-											onClick={open}
-											variant="secondary"
-											style={{
-												width: '100%',
-												justifyContent: 'center',
-												marginBottom: '12px',
-											}}
-										>
-											{__('Select Image', 'designsetgo')}
-										</Button>
-									)}
-								</>
-							)}
-						/>
-					</MediaUploadCheck>
+												{__(
+													'Select Image',
+													'designsetgo'
+												)}
+											</Button>
+										)}
+									</>
+								)}
+							/>
+						</MediaUploadCheck>
+					</DsgoInspectorPanel.Item>
 
 					{mediaUrl && (
-						<>
+						<DsgoInspectorPanel.Item
+							label={__('Alt Text', 'designsetgo')}
+							hasValue={() => mediaAlt !== ''}
+							onDeselect={() => setAttributes({ mediaAlt: '' })}
+							isShownByDefault
+						>
 							<TextControl
 								label={__('Alt Text', 'designsetgo')}
 								value={mediaAlt}
@@ -325,7 +382,22 @@ export default function FiftyFiftyEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{mediaUrl && (
+						<DsgoInspectorPanel.Item
+							label={__('Focal Point', 'designsetgo')}
+							hasValue={() =>
+								focalPoint?.x !== 0.5 || focalPoint?.y !== 0.5
+							}
+							onDeselect={() =>
+								setAttributes({
+									focalPoint: { x: 0.5, y: 0.5 },
+								})
+							}
+							isShownByDefault={false}
+						>
 							<FocalPointPicker
 								label={__('Focal Point', 'designsetgo')}
 								url={mediaUrl}
@@ -338,9 +410,9 @@ export default function FiftyFiftyEdit({
 									'designsetgo'
 								)}
 							/>
-						</>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			{/* Block Output */}

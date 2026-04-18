@@ -30,7 +30,7 @@ function readEdit(blockName) {
 	);
 }
 
-const MIGRATED_BLOCKS = ['grid', 'section'];
+const MIGRATED_BLOCKS = ['grid', 'section', 'row', 'fifty-fifty'];
 
 describe('Theme 3 — Inspector IA migration', () => {
 	describe.each(MIGRATED_BLOCKS)('%s', (blockName) => {
