@@ -15,8 +15,8 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import { Notice } from '@wordpress/components';
-import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
+import { useUniqueBlockId } from '../../hooks';
 import { transferStylesToContent } from './utils/style-transfer';
 import ModalSettings from './components/ModalSettings';
 import AnimationSettings from './components/AnimationSettings';
@@ -48,12 +48,14 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 		closeButtonBgColor,
 	} = attributes;
 
-	// Generate unique modal ID on first load
-	useEffect(() => {
-		if (!modalId) {
-			setAttributes({ modalId: `dsgo-modal-${clientId}` });
-		}
-	}, [modalId, clientId, setAttributes]);
+	useUniqueBlockId({
+		clientId,
+		attributeName: 'modalId',
+		value: modalId,
+		setAttributes,
+		prefix: 'dsgo-modal-',
+		length: null,
+	});
 
 	// Check if this block has inner blocks and for duplicate modal IDs
 	const { hasInnerBlocks, hasDuplicateId } = useSelect(
