@@ -502,6 +502,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							setUseCustomGaps(false);
 							setAttributes({ rowGap: '', columnGap: '' });
 						}}
+						isShownByDefault
 					>
 						<ToggleControl
 							label={__('Custom Row/Column Gaps', 'designsetgo')}
