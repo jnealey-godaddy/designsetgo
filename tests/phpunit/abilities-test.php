@@ -1020,6 +1020,134 @@ class Test_Add_Block_Round_Trip extends WP_UnitTestCase {
 
 		$this->assertSame( $once, $twice, 'Serialization must be idempotent.' );
 	}
+
+	/**
+	 * Slider: optional non-default props must round-trip through the wrapper,
+	 * not just the all-default case.
+	 */
+	public function test_slider_optional_props_match_save_output() {
+		$block = $this->insert_and_parse(
+			'designsetgo/slider',
+			array(
+				'arrowColor'           => 'accent-3',
+				'arrowBackgroundColor' => 'var:preset|color|accent-2',
+				'arrowPadding'         => '12px',
+				'dotColor'             => '#ff0000',
+				'scrollDriven'         => true,
+				'scrollDrivenSpeed'    => 2,
+			)
+		);
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/slider block not registered (build folder missing).' );
+		}
+
+		$html = $block['innerHTML'];
+
+		$this->assertStringContainsString(
+			'dsgo-slider--scroll-driven',
+			$html,
+			'Wrapper must include the scroll-driven class when scrollDriven is true.'
+		);
+		$this->assertStringContainsString(
+			'data-scroll-driven="true"',
+			$html,
+			'Wrapper must emit the scroll-driven data attribute when enabled.'
+		);
+		$this->assertStringContainsString(
+			'data-scroll-driven-speed="2"',
+			$html,
+			'Wrapper must emit the configured scroll-driven speed.'
+		);
+		$this->assertStringContainsString(
+			'--dsgo-slider-arrow-color:var(--wp--preset--color--accent-3)',
+			$html,
+			'Bare preset slugs must be converted to CSS variables in slider arrow color.'
+		);
+		$this->assertStringContainsString(
+			'--dsgo-slider-arrow-bg-color:var(--wp--preset--color--accent-2)',
+			$html,
+			'WordPress preset shorthand must be converted to CSS variables in slider arrow background color.'
+		);
+		$this->assertStringContainsString(
+			'--dsgo-slider-arrow-padding:12px',
+			$html,
+			'Wrapper must emit slider arrow padding when configured.'
+		);
+		$this->assertStringContainsString(
+			'--dsgo-slider-dot-color:#ff0000',
+			$html,
+			'Wrapper must emit slider dot color when configured.'
+		);
+	}
+
+	/**
+	 * Map: privacy mode must serialize the same overlay branch as save.js.
+	 */
+	public function test_map_privacy_mode_matches_save_output() {
+		$block = $this->insert_and_parse(
+			'designsetgo/map',
+			array(
+				'dsgoPrivacyMode'   => true,
+				'dsgoPrivacyNotice' => "Line 1\nLine 2",
+			)
+		);
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/map block not registered (build folder missing).' );
+		}
+
+		$html = $block['innerHTML'];
+
+		$this->assertStringContainsString(
+			'dsgo-map__privacy-overlay',
+			$html,
+			'Privacy-mode maps must render the privacy overlay branch, not the live map container.'
+		);
+		$this->assertStringContainsString(
+			'dsgo-map__privacy-text',
+			$html,
+			'Privacy-mode maps must render the privacy notice text element.'
+		);
+		$this->assertStringContainsString(
+			"Line 1\nLine 2",
+			$html,
+			'Privacy notice text must preserve embedded newlines in saved HTML.'
+		);
+		$this->assertStringContainsString(
+			'Load Map',
+			$html,
+			'Privacy-mode maps must render the load button text.'
+		);
+		$this->assertStringNotContainsString(
+			'dsgo-map__container',
+			$html,
+			'Privacy-mode maps must not serialize the non-privacy container branch.'
+		);
+	}
+
+	/**
+	 * Map: when privacy mode is enabled and the notice attribute is omitted,
+	 * the wrapper must use the block.json default notice text.
+	 */
+	public function test_map_privacy_mode_uses_default_notice_when_attr_omitted() {
+		$block = $this->insert_and_parse(
+			'designsetgo/map',
+			array(
+				'dsgoPrivacyMode' => true,
+			)
+		);
+
+		if ( null === $block ) {
+			$this->markTestSkipped( 'designsetgo/map block not registered (build folder missing).' );
+		}
+
+		$this->assertStringContainsString(
+			'This map will load content from external services. Click to load and view the map.',
+			$block['innerHTML'],
+			'Privacy-mode maps must use the block.json default privacy notice when none is provided.'
+		);
+	}
 }
 
 /**
