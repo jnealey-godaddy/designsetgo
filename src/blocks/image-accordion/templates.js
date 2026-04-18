@@ -15,7 +15,7 @@ function imageItem(heading, body) {
 		{},
 		[
 			['core/heading', { level: 3, content: heading }],
-			['core/paragraph', { content: body }],
+			['core/paragraph', { content: body, align: 'center' }],
 		],
 	];
 }
