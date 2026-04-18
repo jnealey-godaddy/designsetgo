@@ -3,6 +3,7 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 	InspectorControls,
+	store as blockEditorStore,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
@@ -23,6 +24,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import ImageAccordionPlaceholder from './components/ImageAccordionPlaceholder';
 
 export default function ImageAccordionEdit({
 	attributes,
@@ -45,12 +47,13 @@ export default function ImageAccordionEdit({
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 
-	// Build options for the default-expanded picker from the actual child items.
-	// Uses the first core/heading content when present so authors recognize each item.
-	const itemOptions = useSelect(
+	// Single subscription powers both the placeholder gate and the
+	// default-expanded picker so Gutenberg only tracks one subscriber for
+	// this block's inner-block list.
+	const { hasInnerBlocks, itemOptions } = useSelect(
 		(select) => {
 			const children =
-				select('core/block-editor').getBlocks(clientId) || [];
+				select(blockEditorStore).getBlock(clientId)?.innerBlocks || [];
 			const options = [
 				{
 					label: __('None (no item expanded)', 'designsetgo'),
@@ -85,7 +88,10 @@ export default function ImageAccordionEdit({
 						);
 				options.push({ label, value: String(index + 1) });
 			});
-			return options;
+			return {
+				hasInnerBlocks: children.length > 0,
+				itemOptions: options,
+			};
 		},
 		[clientId]
 	);
@@ -117,21 +123,29 @@ export default function ImageAccordionEdit({
 		style: customStyles,
 	});
 
-	// Inner blocks configuration - ONLY allow image-accordion-item children
+	// Inner blocks configuration - ONLY allow image-accordion-item children.
+	// Initial seeding is handled by ImageAccordionPlaceholder so authors pick
+	// a starter layout instead of landing on a generic three-item template.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-image-accordion__items',
 		},
 		{
 			allowedBlocks: ['designsetgo/image-accordion-item'],
-			template: [
-				['designsetgo/image-accordion-item', {}],
-				['designsetgo/image-accordion-item', {}],
-				['designsetgo/image-accordion-item', {}],
-			],
 			orientation: 'vertical', // Always vertical in editor for easier editing
 		}
 	);
+
+	if (!hasInnerBlocks) {
+		return (
+			<div {...blockProps}>
+				<ImageAccordionPlaceholder
+					clientId={clientId}
+					setAttributes={setAttributes}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<>

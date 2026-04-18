@@ -5,49 +5,87 @@
  */
 
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DsgoBlockPlaceholder } from '../../../../src/components/shared/DsgoBlockPlaceholder';
 
-const variations = [
+const mockReplaceInnerBlocks = jest.fn();
+
+jest.mock('@wordpress/data', () => ({
+	useDispatch: () => ({ replaceInnerBlocks: mockReplaceInnerBlocks }),
+}));
+
+jest.mock('@wordpress/block-editor', () => ({
+	store: 'core/block-editor',
+}));
+
+jest.mock('@wordpress/blocks', () => ({
+	createBlocksFromInnerBlocksTemplate: (template) =>
+		template.map(([name, attrs]) => ({ name, attrs })),
+}));
+
+jest.mock('@wordpress/components', () => ({
+	Placeholder: ({ label, instructions, className, children }) => (
+		<div className={className} data-testid="placeholder">
+			<span>{label}</span>
+			<span>{instructions}</span>
+			{children}
+		</div>
+	),
+	Button: ({ className, onClick, children }) => (
+		<button className={className} onClick={onClick} type="button">
+			{children}
+		</button>
+	),
+	Icon: ({ icon }) => <span data-testid="icon">{icon}</span>,
+}));
+
+import DsgoBlockPlaceholder from '../../../../src/components/shared/DsgoBlockPlaceholder';
+
+const templates = [
 	{
 		name: 'horizontal',
 		title: 'Horizontal',
 		description: 'Side-by-side',
 		icon: 'align-center',
+		attributes: { layout: 'horizontal' },
+		innerBlocks: [['core/paragraph', { content: 'h' }]],
 	},
 	{
 		name: 'vertical',
 		title: 'Vertical',
 		description: 'Stacked',
 		icon: 'align-left',
+		innerBlocks: [['core/paragraph', { content: 'v' }]],
 	},
 ];
 
 describe('DsgoBlockPlaceholder', () => {
+	beforeEach(() => {
+		mockReplaceInnerBlocks.mockClear();
+	});
+
 	test('renders label and instructions', () => {
 		render(
 			<DsgoBlockPlaceholder
+				clientId="abc"
+				setAttributes={jest.fn()}
 				icon="block-default"
 				label="Tabs"
 				instructions="Pick a starting layout"
-				variations={variations}
-				onSelect={jest.fn()}
+				templates={templates}
 			/>
 		);
 		expect(screen.getByText('Tabs')).toBeInTheDocument();
-		// WordPress Placeholder sends instructions to a11y-speak region too — use getAllByText
-		expect(
-			screen.getAllByText('Pick a starting layout').length
-		).toBeGreaterThan(0);
+		expect(screen.getByText('Pick a starting layout')).toBeInTheDocument();
 	});
 
-	test('renders one button per variation', () => {
+	test('renders one button per template', () => {
 		render(
 			<DsgoBlockPlaceholder
+				clientId="abc"
+				setAttributes={jest.fn()}
 				icon="block-default"
 				label="Tabs"
-				instructions="Pick a starting layout"
-				variations={variations}
-				onSelect={jest.fn()}
+				instructions="Pick"
+				templates={templates}
 			/>
 		);
 		expect(
@@ -58,43 +96,41 @@ describe('DsgoBlockPlaceholder', () => {
 		).toBeInTheDocument();
 	});
 
-	test('invokes onSelect with the chosen variation', () => {
-		const onSelect = jest.fn();
+	test('applies template attributes and seeds inner blocks on select', () => {
+		const setAttributes = jest.fn();
 		render(
 			<DsgoBlockPlaceholder
-				icon="block-default"
-				label="Tabs"
-				instructions="Pick a starting layout"
-				variations={variations}
-				onSelect={onSelect}
-			/>
-		);
-		fireEvent.click(screen.getByRole('button', { name: /Vertical/ }));
-		expect(onSelect).toHaveBeenCalledWith(variations[1]);
-	});
-
-	test('renders nothing for variations when array is empty', () => {
-		render(
-			<DsgoBlockPlaceholder
+				clientId="abc"
+				setAttributes={setAttributes}
 				icon="block-default"
 				label="Tabs"
 				instructions="Pick"
-				variations={[]}
-				onSelect={jest.fn()}
+				templates={templates}
 			/>
 		);
-		expect(screen.queryByRole('button')).not.toBeInTheDocument();
+		fireEvent.click(screen.getByRole('button', { name: /Horizontal/ }));
+		expect(setAttributes).toHaveBeenCalledWith({ layout: 'horizontal' });
+		expect(mockReplaceInnerBlocks).toHaveBeenCalledWith(
+			'abc',
+			[{ name: 'core/paragraph', attrs: { content: 'h' } }],
+			false
+		);
 	});
 
-	test('renders nothing for variations when prop is omitted', () => {
-		render(
+	test('applies variant modifier class when supplied', () => {
+		const { container } = render(
 			<DsgoBlockPlaceholder
+				clientId="abc"
+				setAttributes={jest.fn()}
 				icon="block-default"
 				label="Tabs"
 				instructions="Pick"
-				onSelect={jest.fn()}
+				templates={templates}
+				variant="slim"
 			/>
 		);
-		expect(screen.queryByRole('button')).not.toBeInTheDocument();
+		expect(
+			container.querySelector('.dsgo-block-placeholder--slim')
+		).not.toBeNull();
 	});
 });

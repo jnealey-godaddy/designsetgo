@@ -11,6 +11,7 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 	InspectorControls,
+	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -19,6 +20,7 @@ import {
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
+import FlipCardPlaceholder from './components/FlipCardPlaceholder';
 
 /**
  * Flip Card Edit Component
@@ -35,14 +37,14 @@ import { useSelect } from '@wordpress/data';
 export default function FlipCardEdit({ attributes, setAttributes, clientId }) {
 	const { flipTrigger, flipEffect, flipDirection, flipDuration } = attributes;
 
-	// Determine which face blocks already exist to prevent duplicates
-	const allowedBlocks = useSelect(
+	// Determine which face blocks already exist to prevent duplicates and
+	// whether the card has been seeded yet (used to gate the placeholder).
+	const { allowedBlocks, hasInnerBlocks } = useSelect(
 		(select) => {
-			const { getBlock } = select('core/block-editor');
+			const { getBlock } = select(blockEditorStore);
 			const block = getBlock(clientId);
-			const childNames = (block?.innerBlocks || []).map(
-				(child) => child.name
-			);
+			const children = block?.innerBlocks || [];
+			const childNames = children.map((child) => child.name);
 			const missing = [];
 			if (!childNames.includes('designsetgo/flip-card-front')) {
 				missing.push('designsetgo/flip-card-front');
@@ -50,7 +52,10 @@ export default function FlipCardEdit({ attributes, setAttributes, clientId }) {
 			if (!childNames.includes('designsetgo/flip-card-back')) {
 				missing.push('designsetgo/flip-card-back');
 			}
-			return missing;
+			return {
+				allowedBlocks: missing,
+				hasInnerBlocks: children.length > 0,
+			};
 		},
 		[clientId]
 	);
@@ -64,10 +69,10 @@ export default function FlipCardEdit({ attributes, setAttributes, clientId }) {
 		},
 	});
 
-	// Inner blocks configuration
-	// Template seeds front and back faces on first insert.
-	// templateLock is false so users can delete a face and re-add it,
-	// which also allows "Attempt Recovery" to work on validation errors.
+	// Inner blocks configuration. Initial seeding (both faces) is handled by
+	// FlipCardPlaceholder so authors pick a starter layout instead of landing
+	// on two empty faces. templateLock is false so users can delete a face
+	// and re-add it; "Attempt Recovery" still works on validation errors.
 	// allowedBlocks is computed dynamically to only permit missing faces,
 	// preventing duplicate front or back blocks.
 	const innerBlocksProps = useInnerBlocksProps(
@@ -76,14 +81,21 @@ export default function FlipCardEdit({ attributes, setAttributes, clientId }) {
 		},
 		{
 			allowedBlocks,
-			template: [
-				['designsetgo/flip-card-front', {}],
-				['designsetgo/flip-card-back', {}],
-			],
 			templateLock: false,
 			orientation: 'vertical',
 		}
 	);
+
+	if (!hasInnerBlocks) {
+		return (
+			<div {...blockProps}>
+				<FlipCardPlaceholder
+					clientId={clientId}
+					setAttributes={setAttributes}
+				/>
+			</div>
+		);
+	}
 
 	return (
 		<>
