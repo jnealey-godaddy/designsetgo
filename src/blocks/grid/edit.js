@@ -585,6 +585,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 								contentWidth: '',
 							})
 						}
+						isShownByDefault={false}
 					>
 						<ToggleControl
 							label={__('Constrain Inner Width', 'designsetgo')}
@@ -614,6 +615,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							onDeselect={() =>
 								setAttributes({ contentWidth: '' })
 							}
+							isShownByDefault
 						>
 							<UnitControl
 								label={__('Max Content Width', 'designsetgo')}

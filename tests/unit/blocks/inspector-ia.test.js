@@ -35,6 +35,16 @@ const MIGRATED_BLOCKS = ['grid', 'section'];
 describe('Theme 3 — Inspector IA migration', () => {
 	describe.each(MIGRATED_BLOCKS)('%s', (blockName) => {
 		const source = readEdit(blockName);
+		const itemCount = (source.match(/<DsgoInspectorPanel\.Item\b/g) || [])
+			.length;
+		const hasValueCount = (source.match(/hasValue=\{/g) || []).length;
+		const onDeselectCount = (source.match(/onDeselect=\{/g) || []).length;
+		const isShownByDefaultCount = (
+			source.match(/\bisShownByDefault(?:\s|=|>)/g) || []
+		).length;
+		const explicitlyHiddenCount = (
+			source.match(/isShownByDefault=\{\s*false\s*\}/g) || []
+		).length;
 
 		test('imports DsgoInspectorPanel from shared components', () => {
 			// Loose match so the assertion still passes once a future migration
@@ -63,16 +73,19 @@ describe('Theme 3 — Inspector IA migration', () => {
 			expect(source).toMatch(/resetAll=\{/);
 		});
 
-		test('wraps controls in DsgoInspectorPanel.Item with hasValue + onDeselect', () => {
-			expect(source).toMatch(/<DsgoInspectorPanel\.Item/);
-			expect(source).toMatch(/hasValue=\{\s*\(\)\s*=>/);
-			expect(source).toMatch(/onDeselect=\{/);
+		test('wraps every control in DsgoInspectorPanel.Item with hasValue + onDeselect', () => {
+			expect(itemCount).toBeGreaterThan(0);
+			expect(hasValueCount).toBe(itemCount);
+			expect(onDeselectCount).toBe(itemCount);
 		});
 
-		test('marks at least one item as isShownByDefault', () => {
+		test('declares isShownByDefault on every item and leaves at least one item visible by default', () => {
 			// Without this, every control hides behind the "+" menu and the
 			// Settings panel renders empty by default — defeats the convention.
-			expect(source).toMatch(/isShownByDefault/);
+			expect(isShownByDefaultCount).toBe(itemCount);
+			expect(
+				isShownByDefaultCount - explicitlyHiddenCount
+			).toBeGreaterThan(0);
 		});
 	});
 });
