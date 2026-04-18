@@ -69,6 +69,7 @@ export const ALLOWED_BLOCKS = [
 	'designsetgo/grid',
 	// DesignSetGo visual blocks
 	'designsetgo/flip-card',
+	'designsetgo/flip-card-face',
 	'designsetgo/flip-card-front',
 	'designsetgo/flip-card-back',
 	'designsetgo/icon',

@@ -51,9 +51,14 @@
 			width: 100%;
 		}
 
-		// Both cards visible for editing
+		// Both cards visible for editing. Match both the legacy
+		// flip-card-front/back block wrappers and the new flip-card-face
+		// face classes (dsgo-flip-card__front / __back) so consolidated
+		// content authored via designsetgo/flip-card-face is editable.
 		&__container > .wp-block-designsetgo-flip-card-front,
-		&__container > .wp-block-designsetgo-flip-card-back {
+		&__container > .wp-block-designsetgo-flip-card-back,
+		&__container > .dsgo-flip-card__front,
+		&__container > .dsgo-flip-card__back {
 			box-sizing: border-box;
 			position: relative;
 			// CRITICAL: Override frontend opacity to show both cards in editor
@@ -78,14 +83,16 @@
 			}
 		}
 
-		&__container > .wp-block-designsetgo-flip-card-front {
+		&__container > .wp-block-designsetgo-flip-card-front,
+		&__container > .dsgo-flip-card__front {
 
 			&::before {
 				content: 'Front';
 			}
 		}
 
-		&__container > .wp-block-designsetgo-flip-card-back {
+		&__container > .wp-block-designsetgo-flip-card-back,
+		&__container > .dsgo-flip-card__back {
 
 			&::before {
 				content: 'Back';

@@ -33,9 +33,13 @@ Before adding a pattern to a block, check `src/hooks/` and `src/components/share
 - `<DsgoBlockPlaceholder>` — first-insert wizard for compound blocks.
 - `<DsgoChildToolbar>` — Add/Duplicate/Move/Remove for child blocks of compound parents.
 
-### Variation vs New Block
+### Variations vs. new blocks
 
-If a new block differs from an existing one only by 1–3 attributes **and shares the same `save()` output structure**, register a `block.json` variation, not a new block. The `save()` constraint is the technical blocker: variations cannot carry differing markup, so differing output forces a new block + deprecations.
+Before registering a new block, check whether the idea fits a variation on an existing one. **If a new block would differ from an existing block only by 1–3 attributes and share the same `save()` output structure, register a variation (`registerBlockVariation`), not a new block.** The shared-`save()` constraint is the real technical gate: variations cannot carry differing markup, so differing output always forces a separate block + deprecations.
+
+When in doubt prefer variations — they have no migration cost, no deprecation debt, and stay invisible to `save()` validation. Reach for a new block only when markup, inner-block structure, or block-level behaviour actually differs.
+
+For sibling blocks that already exist and meet the "1–3 attribute difference + shared save" rule (e.g. `flip-card-front` / `flip-card-back` → `flip-card-face` with a `side` attribute), consolidate via a new block + `inserter: false` on the legacy names + `transforms.to` on each legacy block pointing to the new one. Keep the legacy blocks registered so existing content keeps rendering.
 
 ### Inspector IA (Theme 3)
 

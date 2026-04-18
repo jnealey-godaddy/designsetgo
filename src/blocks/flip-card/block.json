@@ -68,8 +68,9 @@
 		},
 		"innerBlocks": [
 			{
-				"name": "designsetgo/flip-card-front",
+				"name": "designsetgo/flip-card-face",
 				"attributes": {
+					"side": "front",
 					"style": {
 						"spacing": {
 							"padding": {
@@ -105,8 +106,9 @@
 				]
 			},
 			{
-				"name": "designsetgo/flip-card-back",
+				"name": "designsetgo/flip-card-face",
 				"attributes": {
+					"side": "back",
 					"style": {
 						"spacing": {
 							"padding": {

@@ -73,10 +73,8 @@ __( 'Individual slide within Scroll Slides', 'designsetgo' );
 // Interactive Blocks.
 __( 'Flip Card', 'designsetgo' );
 __( '3D flip card container', 'designsetgo' );
-__( 'Flip Card Front', 'designsetgo' );
-__( 'Front face of flip card', 'designsetgo' );
-__( 'Flip Card Back', 'designsetgo' );
-__( 'Back face of flip card', 'designsetgo' );
+__( 'Flip Card Face', 'designsetgo' );
+__( 'Front or back face of a flip card', 'designsetgo' );
 __( 'Slider', 'designsetgo' );
 __( 'Modern carousel with effects', 'designsetgo' );
 __( 'Slide', 'designsetgo' );
