@@ -34,6 +34,32 @@ describe('useUniqueBlockId', () => {
 		expect(setAttributes).not.toHaveBeenCalled();
 	});
 
+	test('seeds when value is empty string', () => {
+		const setAttributes = jest.fn();
+		renderHook(() =>
+			useUniqueBlockId({
+				clientId: 'abcdef1234567890',
+				attributeName: 'uniqueId',
+				value: '',
+				setAttributes,
+			})
+		);
+		expect(setAttributes).toHaveBeenCalledWith({ uniqueId: 'abcdef12' });
+	});
+
+	test('seeds when value is null', () => {
+		const setAttributes = jest.fn();
+		renderHook(() =>
+			useUniqueBlockId({
+				clientId: 'abcdef1234567890',
+				attributeName: 'uniqueId',
+				value: null,
+				setAttributes,
+			})
+		);
+		expect(setAttributes).toHaveBeenCalledWith({ uniqueId: 'abcdef12' });
+	});
+
 	test('honors prefix option (full clientId, with prefix)', () => {
 		const setAttributes = jest.fn();
 		renderHook(() =>

@@ -80,4 +80,7 @@ DsgoInspectorPanel.Item = ToolsPanelItem;
 
 // Test-only helper — clears the deduped warn cache between tests.
 // Not part of the public API.
-export const _resetWarnCache = () => _warnedPanelNames.clear();
+export const _resetWarnCache =
+	process.env.NODE_ENV === 'test'
+		? () => _warnedPanelNames.clear()
+		: undefined;
