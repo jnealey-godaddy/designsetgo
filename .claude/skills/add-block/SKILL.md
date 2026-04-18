@@ -27,6 +27,12 @@ Create a new Gutenberg block following WordPress best practices.
 8. `frontend.js` (if needed for interactivity)
 9. `render.php` (if dynamic rendering needed)
 
+## Before Scaffolding — Check Shared Primitives
+
+Before generating any block code, check `src/hooks/` and `src/components/shared/` for primitives that already cover the patterns you're about to write. The plugin maintains shared building blocks specifically to keep new blocks consistent with the rest of the codebase. See the **Shared Primitives First** and **Variation vs New Block** sections of `.claude/CLAUDE.md` for the full list and the variation-vs-block decision rule.
+
+If a new block differs from an existing one only by 1–3 attributes and shares the same `save()` output, register a variation in the existing block's `block.json` instead of creating a new block.
+
 ## Critical Patterns to Follow
 
 **ALWAYS use these in edit.js:**
