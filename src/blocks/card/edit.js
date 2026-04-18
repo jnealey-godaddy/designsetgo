@@ -11,8 +11,6 @@ import {
 	MediaUploadCheck,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
-	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
-	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -28,6 +26,7 @@ import {
 	encodeColorValue,
 	decodeColorValue,
 } from '../../utils/encode-color-value';
+import { useBlockColors } from '../../hooks';
 
 /**
  * Edit component for Card block
@@ -69,7 +68,19 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 		showCta,
 	} = attributes;
 
-	const colorGradientSettings = useMultipleOriginColorsAndGradients();
+	// Border panel — migrated to useBlockColors hook.
+	// colorGradientSettings is returned by the hook (same shape as
+	// useMultipleOriginColorsAndGradients) and used by the inline panels below.
+	const { settings: borderColorSettings, colorGradientSettings } = useBlockColors({
+		attributes,
+		setAttributes,
+		entries: [
+			{
+				label: __('Border Color', 'designsetgo'),
+				attribute: 'borderColor',
+			},
+		],
+	});
 
 	// Build block props with border color
 	const blockStyles = {};
@@ -763,25 +774,7 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 				<ColorGradientSettingsDropdown
 					panelId={clientId}
 					title={__('Border', 'designsetgo')}
-					settings={[
-						{
-							label: __('Border Color', 'designsetgo'),
-							colorValue: decodeColorValue(
-								borderColor,
-								colorGradientSettings
-							),
-							onColorChange: (color) =>
-								setAttributes({
-									borderColor:
-										encodeColorValue(
-											color,
-											colorGradientSettings
-										) || '',
-								}),
-							enableAlpha: true,
-							clearable: true,
-						},
-					]}
+					settings={borderColorSettings}
 					{...colorGradientSettings}
 				/>
 

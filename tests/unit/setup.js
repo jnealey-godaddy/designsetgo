@@ -7,8 +7,8 @@
  * @package
  */
 
-// Add custom matchers if needed
-// import '@testing-library/jest-dom';
+// Add custom matchers for DOM assertions
+import '@testing-library/jest-dom';
 
 // Mock WordPress global functions if they're not already mocked by @wordpress/scripts
 global.wp = global.wp || {

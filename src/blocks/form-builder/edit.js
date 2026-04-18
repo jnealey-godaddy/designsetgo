@@ -29,6 +29,7 @@ import {
 import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import classnames from 'classnames';
+import { useUniqueBlockId } from '../../hooks';
 import {
 	encodeColorValue,
 	decodeColorValue,
@@ -129,12 +130,12 @@ export default function FormBuilderEdit({
 			? ` dsgo-form__submit--${effectiveAnimation}`
 			: '';
 
-	// Generate unique formId on mount
-	useEffect(() => {
-		if (!formId) {
-			setAttributes({ formId: clientId.substring(0, 8) });
-		}
-	}, [formId, clientId, setAttributes]);
+	useUniqueBlockId({
+		clientId,
+		attributeName: 'formId',
+		value: formId,
+		setAttributes,
+	});
 
 	// Track child count so we can show the template chooser on first insert,
 	// and build the reply-to dropdown options from the actual form fields.

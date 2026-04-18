@@ -17,8 +17,6 @@ import {
 	useSettings,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
-	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
-	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -39,6 +37,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { useBlockColors } from '../../hooks';
 
 /**
  * Section Container Edit Component
@@ -125,8 +124,28 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 	// Get theme settings (WP 6.5+)
 	const [themeContentSize] = useSettings('layout.contentSize');
 
-	// Get theme color palette and gradient settings
-	const colorGradientSettings = useMultipleOriginColorsAndGradients();
+	// Hover Settings panel (static entries) — migrated to useBlockColors hook.
+	// The two conditional entries (icon/button background) are kept inline below.
+	// colorGradientSettings is also returned by the hook (same shape as
+	// useMultipleOriginColorsAndGradients) and used by the inline panels below.
+	const { settings: hoverColorSettings, colorGradientSettings } = useBlockColors({
+		attributes,
+		setAttributes,
+		entries: [
+			{
+				label: __('Overlay Color', 'designsetgo'),
+				attribute: 'overlayColor',
+			},
+			{
+				label: __('Hover Background Color', 'designsetgo'),
+				attribute: 'hoverBackgroundColor',
+			},
+			{
+				label: __('Hover Text Color', 'designsetgo'),
+				attribute: 'hoverTextColor',
+			},
+		],
+	});
 
 	// Setup custom units for width control
 	const units = useCustomUnits({
@@ -386,57 +405,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 					panelId={clientId}
 					title={__('Hover Settings', 'designsetgo')}
 					settings={[
-						{
-							label: __('Overlay Color', 'designsetgo'),
-							colorValue: decodeColorValue(
-								overlayColor,
-								colorGradientSettings
-							),
-							onColorChange: (color) =>
-								setAttributes({
-									overlayColor:
-										encodeColorValue(
-											color,
-											colorGradientSettings
-										) || '',
-								}),
-							enableAlpha: true,
-							clearable: true,
-						},
-						{
-							label: __('Hover Background Color', 'designsetgo'),
-							colorValue: decodeColorValue(
-								hoverBackgroundColor,
-								colorGradientSettings
-							),
-							onColorChange: (color) =>
-								setAttributes({
-									hoverBackgroundColor:
-										encodeColorValue(
-											color,
-											colorGradientSettings
-										) || '',
-								}),
-							enableAlpha: true,
-							clearable: true,
-						},
-						{
-							label: __('Hover Text Color', 'designsetgo'),
-							colorValue: decodeColorValue(
-								hoverTextColor,
-								colorGradientSettings
-							),
-							onColorChange: (color) =>
-								setAttributes({
-									hoverTextColor:
-										encodeColorValue(
-											color,
-											colorGradientSettings
-										) || '',
-								}),
-							enableAlpha: true,
-							clearable: true,
-						},
+						...hoverColorSettings,
 						// Only show icon background control if hover background is set
 						...(hoverBackgroundColor
 							? [

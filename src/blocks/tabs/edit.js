@@ -26,8 +26,8 @@ import {
 import { createBlock, cloneBlock } from '@wordpress/blocks';
 import { copy, trash, plus } from '@wordpress/icons';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { useEffect } from '@wordpress/element';
 import { getIcon } from '../icon/utils/svg-icons';
+import { useUniqueBlockId } from '../../hooks';
 import {
 	encodeColorValue,
 	decodeColorValue,
@@ -67,12 +67,12 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 
-	// Generate unique ID on mount
-	useEffect(() => {
-		if (!uniqueId) {
-			setAttributes({ uniqueId: clientId.substring(0, 8) });
-		}
-	}, [uniqueId, clientId, setAttributes]);
+	useUniqueBlockId({
+		clientId,
+		attributeName: 'uniqueId',
+		value: uniqueId,
+		setAttributes,
+	});
 
 	// Get inner blocks (tabs)
 	const { innerBlocks } = useSelect(
