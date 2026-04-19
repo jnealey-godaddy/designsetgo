@@ -49,11 +49,11 @@ class DesignSetGo_Query_Facet_Registry_Test extends WP_UnitTestCase {
 			'source' => "<script>alert('xss')</script>_price",
 		) );
 
-		// Key sanitized to 'bad_key', type lowercased.
+		// sanitize_key() strips spaces/special chars → 'badkey'; type is lowercased.
 		$stored = get_option( FacetRegistry::OPTION, array() );
-		$this->assertArrayHasKey( 'bad_key', $stored );
-		$this->assertSame( 'meta', $stored['bad_key']['type'] );
-		$this->assertStringNotContainsString( '<script>', $stored['bad_key']['source'] );
+		$this->assertArrayHasKey( 'badkey', $stored );
+		$this->assertSame( 'meta', $stored['badkey']['type'] );
+		$this->assertStringNotContainsString( '<script>', $stored['badkey']['source'] );
 	}
 
 	public function test_all_applies_filter() {

@@ -26,7 +26,7 @@ class FacetRegistry {
 			$facets = array();
 		}
 
-		$sanitized_key = sanitize_key( str_replace( ' ', '_', $key ) );
+		$sanitized_key = sanitize_key( $key );
 		if ( '' === $sanitized_key ) {
 			return;
 		}
@@ -46,7 +46,7 @@ class FacetRegistry {
 			return;
 		}
 
-		$sanitized_key = sanitize_key( str_replace( ' ', '_', $key ) );
+		$sanitized_key = sanitize_key( $key );
 		unset( $facets[ $sanitized_key ] );
 
 		update_option( self::OPTION, $facets, false );
@@ -70,7 +70,7 @@ class FacetRegistry {
 
 	public static function get( string $key ): ?array {
 		$all           = self::all();
-		$sanitized_key = sanitize_key( str_replace( ' ', '_', $key ) );
+		$sanitized_key = sanitize_key( $key );
 		return $all[ $sanitized_key ] ?? null;
 	}
 }
