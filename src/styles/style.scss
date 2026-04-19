@@ -32,5 +32,8 @@
 @use '../blocks/scroll-slides/style' as scroll-slides;
 @use '../blocks/scroll-slide/style' as scroll-slide;
 
+// Query blocks (frontend)
+@forward '../blocks/query/style';
+
 // RichText formats (frontend)
 @use '../formats/text-style/style' as text-style;

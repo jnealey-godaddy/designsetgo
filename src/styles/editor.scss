@@ -27,6 +27,9 @@
 @use '../blocks/table-of-contents/editor' as table-of-contents;
 @use '../blocks/breadcrumbs/editor' as breadcrumbs;
 
+// Query blocks (editor)
+@forward '../blocks/query/editor';
+
 // ===================================================================
 // PERFORMANCE OPTIMIZATION (2025-11-11)
 // ===================================================================
