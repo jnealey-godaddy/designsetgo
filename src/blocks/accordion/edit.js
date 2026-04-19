@@ -10,12 +10,12 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	ToggleControl,
 	SelectControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect } from '@wordpress/data';
 import classnames from 'classnames';
 import {
@@ -108,129 +108,180 @@ export default function AccordionEdit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody title={__('Accordion Settings', 'designsetgo')}>
-					<ToggleControl
-						label={__('Allow Multiple Open', 'designsetgo')}
-						help={
-							allowMultipleOpen
-								? __(
-										'Multiple panels can be open at once',
-										'designsetgo'
-									)
-								: __(
-										'Only one panel can be open at a time',
-										'designsetgo'
-									)
-						}
-						checked={allowMultipleOpen}
-						onChange={(value) =>
-							setAttributes({ allowMultipleOpen: value })
-						}
-						__nextHasNoMarginBottom
-					/>
-					<p className="components-base-control__help">
-						{__(
-							'Tip: Use the "Open by Default" toggle on individual accordion items to control which panels are open when the page loads.',
-							'designsetgo'
-						)}
-					</p>
-				</PanelBody>
-
-				<PanelBody
-					title={__('Icon Settings', 'designsetgo')}
-					initialOpen={false}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							allowMultipleOpen: false,
+							iconStyle: 'chevron',
+							iconPosition: 'right',
+							borderBetween: true,
+							itemGap: '0.5rem',
+						})
+					}
 				>
-					<SelectControl
-						label={__('Icon Style', 'designsetgo')}
-						value={iconStyle}
-						options={[
-							{
-								label: __('Chevron', 'designsetgo'),
-								value: 'chevron',
-							},
-							{
-								label: __('Plus/Minus', 'designsetgo'),
-								value: 'plus-minus',
-							},
-							{
-								label: __('Caret', 'designsetgo'),
-								value: 'caret',
-							},
-							{ label: __('None', 'designsetgo'), value: 'none' },
-						]}
-						onChange={(value) =>
-							setAttributes({ iconStyle: value })
+					<DsgoInspectorPanel.Item
+						label={__('Allow Multiple Open', 'designsetgo')}
+						hasValue={() => allowMultipleOpen !== false}
+						onDeselect={() =>
+							setAttributes({ allowMultipleOpen: false })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Allow Multiple Open', 'designsetgo')}
+							help={
+								allowMultipleOpen
+									? __(
+											'Multiple panels can be open at once',
+											'designsetgo'
+										)
+									: __(
+											'Only one panel can be open at a time',
+											'designsetgo'
+										)
+							}
+							checked={allowMultipleOpen}
+							onChange={(value) =>
+								setAttributes({ allowMultipleOpen: value })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					{iconStyle !== 'none' && (
+					<DsgoInspectorPanel.Item
+						label={__('Icon Style', 'designsetgo')}
+						hasValue={() => iconStyle !== 'chevron'}
+						onDeselect={() =>
+							setAttributes({ iconStyle: 'chevron' })
+						}
+						isShownByDefault
+					>
 						<SelectControl
-							label={__('Icon Position', 'designsetgo')}
-							value={iconPosition}
+							label={__('Icon Style', 'designsetgo')}
+							value={iconStyle}
 							options={[
 								{
-									label: __('Left', 'designsetgo'),
-									value: 'left',
+									label: __('Chevron', 'designsetgo'),
+									value: 'chevron',
 								},
 								{
-									label: __('Right', 'designsetgo'),
-									value: 'right',
+									label: __('Plus/Minus', 'designsetgo'),
+									value: 'plus-minus',
+								},
+								{
+									label: __('Caret', 'designsetgo'),
+									value: 'caret',
+								},
+								{
+									label: __('None', 'designsetgo'),
+									value: 'none',
 								},
 							]}
 							onChange={(value) =>
-								setAttributes({ iconPosition: value })
+								setAttributes({ iconStyle: value })
 							}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
-					)}
-				</PanelBody>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Style Settings', 'designsetgo')}
-					initialOpen={false}
-				>
-					<ToggleControl
+					{iconStyle !== 'none' && (
+						<DsgoInspectorPanel.Item
+							label={__('Icon Position', 'designsetgo')}
+							hasValue={() => iconPosition !== 'right'}
+							onDeselect={() =>
+								setAttributes({ iconPosition: 'right' })
+							}
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Icon Position', 'designsetgo')}
+								value={iconPosition}
+								options={[
+									{
+										label: __('Left', 'designsetgo'),
+										value: 'left',
+									},
+									{
+										label: __('Right', 'designsetgo'),
+										value: 'right',
+									},
+								]}
+								onChange={(value) =>
+									setAttributes({ iconPosition: value })
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
+
+					<DsgoInspectorPanel.Item
 						label={__('Border Between Items', 'designsetgo')}
-						checked={borderBetween}
-						onChange={(value) =>
-							setAttributes({ borderBetween: value })
+						hasValue={() => borderBetween !== true}
+						onDeselect={() =>
+							setAttributes({ borderBetween: true })
 						}
-						help={
-							borderBetween
-								? __(
-										'Items have borders between them with no gap',
-										'designsetgo'
-									)
-								: __(
-										'Items are separated with spacing',
-										'designsetgo'
-									)
-						}
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault={false}
+					>
+						<ToggleControl
+							label={__('Border Between Items', 'designsetgo')}
+							checked={borderBetween}
+							onChange={(value) =>
+								setAttributes({ borderBetween: value })
+							}
+							help={
+								borderBetween
+									? __(
+											'Items have borders between them with no gap',
+											'designsetgo'
+										)
+									: __(
+											'Items are separated with spacing',
+											'designsetgo'
+										)
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
 					{!borderBetween && (
-						<UnitControl
+						<DsgoInspectorPanel.Item
 							label={__('Gap Between Items', 'designsetgo')}
-							value={itemGap}
-							onChange={(value) =>
-								setAttributes({ itemGap: value || '0.5rem' })
+							hasValue={() => itemGap !== '0.5rem'}
+							onDeselect={() =>
+								setAttributes({ itemGap: '0.5rem' })
 							}
-							units={[
-								{ value: 'px', label: 'px', default: 8 },
-								{ value: 'rem', label: 'rem', default: 0.5 },
-								{ value: 'em', label: 'em', default: 0.5 },
-							]}
-							min={0}
-							max={100}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
+							isShownByDefault
+						>
+							<UnitControl
+								label={__('Gap Between Items', 'designsetgo')}
+								value={itemGap}
+								onChange={(value) =>
+									setAttributes({
+										itemGap: value || '0.5rem',
+									})
+								}
+								units={[
+									{ value: 'px', label: 'px', default: 8 },
+									{
+										value: 'rem',
+										label: 'rem',
+										default: 0.5,
+									},
+									{ value: 'em', label: 'em', default: 0.5 },
+								]}
+								min={0}
+								max={100}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">

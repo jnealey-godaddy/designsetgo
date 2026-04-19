@@ -14,11 +14,11 @@ import {
 	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	SelectControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect } from '@wordpress/data';
 import FlipCardPlaceholder from './components/FlipCardPlaceholder';
 
@@ -112,148 +112,173 @@ export default function FlipCardEdit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Flip Card Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							flipTrigger: 'hover',
+							flipEffect: 'flip',
+							flipDirection: 'horizontal',
+							flipDuration: '0.6s',
+						})
+					}
 				>
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Flip Trigger', 'designsetgo')}
-						value={flipTrigger}
-						options={[
-							{
-								label: __('Hover', 'designsetgo'),
-								value: 'hover',
-							},
-							{
-								label: __('Click', 'designsetgo'),
-								value: 'click',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ flipTrigger: value })
+						hasValue={() => flipTrigger !== 'hover'}
+						onDeselect={() =>
+							setAttributes({ flipTrigger: 'hover' })
 						}
-						help={
-							flipTrigger === 'hover'
-								? __(
-										'Card flips when hovering over it',
-										'designsetgo'
-									)
-								: __(
-										'Card flips when clicking on it',
-										'designsetgo'
-									)
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<SelectControl
-						label={__('Flip Effect', 'designsetgo')}
-						value={flipEffect}
-						options={[
-							{
-								label: __('Flip (3D Rotation)', 'designsetgo'),
-								value: 'flip',
-							},
-							{
-								label: __('Fade', 'designsetgo'),
-								value: 'fade',
-							},
-							{
-								label: __('Slide', 'designsetgo'),
-								value: 'slide',
-							},
-							{
-								label: __('Zoom', 'designsetgo'),
-								value: 'zoom',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ flipEffect: value })
-						}
-						help={__(
-							'Choose the transition animation style',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					{flipEffect === 'flip' && (
+						isShownByDefault
+					>
 						<SelectControl
-							label={__('Flip Direction', 'designsetgo')}
-							value={flipDirection}
+							label={__('Flip Trigger', 'designsetgo')}
+							value={flipTrigger}
 							options={[
 								{
-									label: __('Horizontal', 'designsetgo'),
-									value: 'horizontal',
+									label: __('Hover', 'designsetgo'),
+									value: 'hover',
 								},
 								{
-									label: __('Vertical', 'designsetgo'),
-									value: 'vertical',
+									label: __('Click', 'designsetgo'),
+									value: 'click',
 								},
 							]}
 							onChange={(value) =>
-								setAttributes({ flipDirection: value })
+								setAttributes({ flipTrigger: value })
 							}
 							help={
-								flipDirection === 'horizontal'
+								flipTrigger === 'hover'
 									? __(
-											'Card flips left to right',
+											'Card flips when hovering over it',
 											'designsetgo'
 										)
 									: __(
-											'Card flips top to bottom',
+											'Card flips when clicking on it',
 											'designsetgo'
 										)
 							}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Flip Effect', 'designsetgo')}
+						hasValue={() => flipEffect !== 'flip'}
+						onDeselect={() => setAttributes({ flipEffect: 'flip' })}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Flip Effect', 'designsetgo')}
+							value={flipEffect}
+							options={[
+								{
+									label: __(
+										'Flip (3D Rotation)',
+										'designsetgo'
+									),
+									value: 'flip',
+								},
+								{
+									label: __('Fade', 'designsetgo'),
+									value: 'fade',
+								},
+								{
+									label: __('Slide', 'designsetgo'),
+									value: 'slide',
+								},
+								{
+									label: __('Zoom', 'designsetgo'),
+									value: 'zoom',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ flipEffect: value })
+							}
+							help={__(
+								'Choose the transition animation style',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					{flipEffect === 'flip' && (
+						<DsgoInspectorPanel.Item
+							label={__('Flip Direction', 'designsetgo')}
+							hasValue={() => flipDirection !== 'horizontal'}
+							onDeselect={() =>
+								setAttributes({ flipDirection: 'horizontal' })
+							}
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Flip Direction', 'designsetgo')}
+								value={flipDirection}
+								options={[
+									{
+										label: __('Horizontal', 'designsetgo'),
+										value: 'horizontal',
+									},
+									{
+										label: __('Vertical', 'designsetgo'),
+										value: 'vertical',
+									},
+								]}
+								onChange={(value) =>
+									setAttributes({ flipDirection: value })
+								}
+								help={
+									flipDirection === 'horizontal'
+										? __(
+												'Card flips left to right',
+												'designsetgo'
+											)
+										: __(
+												'Card flips top to bottom',
+												'designsetgo'
+											)
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
 
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Flip Duration', 'designsetgo')}
-						value={flipDuration}
-						onChange={(value) =>
-							setAttributes({ flipDuration: value || '0.6s' })
+						hasValue={() => flipDuration !== '0.6s'}
+						onDeselect={() =>
+							setAttributes({ flipDuration: '0.6s' })
 						}
-						units={[
-							{ value: 's', label: 's', default: 0.6 },
-							{ value: 'ms', label: 'ms', default: 600 },
-						]}
-						min={0.1}
-						max={3}
-						step={0.1}
-						help={__('Speed of the flip animation', 'designsetgo')}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
-
-				<PanelBody
-					title={__('How to Use', 'designsetgo')}
-					initialOpen={false}
-				>
-					<p>
-						{__(
-							'This flip card has two sections: Front and Back. Click on each section to edit its content.',
-							'designsetgo'
-						)}
-					</p>
-					<p>
-						{__(
-							'You can add any blocks you want to the front and back, including images, headings, buttons, and more.',
-							'designsetgo'
-						)}
-					</p>
-					<p>
-						{__(
-							'Style each section using the block toolbar or the Styles panel.',
-							'designsetgo'
-						)}
-					</p>
-				</PanelBody>
+						isShownByDefault={false}
+					>
+						<UnitControl
+							label={__('Flip Duration', 'designsetgo')}
+							value={flipDuration}
+							onChange={(value) =>
+								setAttributes({ flipDuration: value || '0.6s' })
+							}
+							units={[
+								{ value: 's', label: 's', default: 0.6 },
+								{ value: 'ms', label: 'ms', default: 600 },
+							]}
+							min={0.1}
+							max={3}
+							step={0.1}
+							help={__(
+								'Speed of the flip animation',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

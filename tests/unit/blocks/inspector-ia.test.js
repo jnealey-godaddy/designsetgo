@@ -40,6 +40,9 @@ const MIGRATED_BLOCKS = [
 	'slide',
 	'modal-trigger',
 	'image-accordion-item',
+	'flip-card',
+	'accordion',
+	'image-accordion',
 ];
 
 describe('Theme 3 — Inspector IA migration', () => {

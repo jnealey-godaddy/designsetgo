@@ -10,13 +10,13 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	ToggleControl,
 	SelectControl,
 	RangeControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect } from '@wordpress/data';
 import classnames from 'classnames';
 import {
@@ -150,161 +150,225 @@ export default function ImageAccordionEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Layout', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							height: '500px',
+							gap: '4px',
+							expandedRatio: 3,
+							transitionDuration: '0.5s',
+							triggerType: 'hover',
+							defaultExpanded: 0,
+							enableOverlay: true,
+							overlayOpacity: 40,
+							overlayOpacityExpanded: 20,
+						})
+					}
 				>
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Height', 'designsetgo')}
-						value={height}
-						onChange={(value) =>
-							setAttributes({ height: value || '500px' })
-						}
-						units={[
-							{ value: 'px', label: 'px', default: 500 },
-							{ value: 'vh', label: 'vh', default: 50 },
-							{ value: 'rem', label: 'rem', default: 30 },
-						]}
-						min={200}
-						max={1000}
-						help={__(
-							'Fixed height for the accordion',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => height !== '500px'}
+						onDeselect={() => setAttributes({ height: '500px' })}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Height', 'designsetgo')}
+							value={height}
+							onChange={(value) =>
+								setAttributes({ height: value || '500px' })
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 500 },
+								{ value: 'vh', label: 'vh', default: 50 },
+								{ value: 'rem', label: 'rem', default: 30 },
+							]}
+							min={200}
+							max={1000}
+							help={__(
+								'Fixed height for the accordion',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Gap Between Items', 'designsetgo')}
-						value={gap}
-						onChange={(value) =>
-							setAttributes({ gap: value || '4px' })
-						}
-						units={[
-							{ value: 'px', label: 'px', default: 4 },
-							{ value: 'rem', label: 'rem', default: 0.25 },
-						]}
-						min={0}
-						max={32}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => gap !== '4px'}
+						onDeselect={() => setAttributes({ gap: '4px' })}
+						isShownByDefault={false}
+					>
+						<UnitControl
+							label={__('Gap Between Items', 'designsetgo')}
+							value={gap}
+							onChange={(value) =>
+								setAttributes({ gap: value || '4px' })
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 4 },
+								{ value: 'rem', label: 'rem', default: 0.25 },
+							]}
+							min={0}
+							max={32}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Expansion Behavior', 'designsetgo')}
-					initialOpen={false}
-				>
-					<RangeControl
-						label={__('Expanded Ratio', 'designsetgo')}
-						value={expandedRatio}
-						onChange={(value) =>
-							setAttributes({ expandedRatio: value })
-						}
-						min={2}
-						max={5}
-						step={0.5}
-						help={__(
-							'How much larger the expanded item becomes (others stay normal size)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<UnitControl
-						label={__('Transition Duration', 'designsetgo')}
-						value={transitionDuration}
-						onChange={(value) =>
-							setAttributes({
-								transitionDuration: value || '0.5s',
-							})
-						}
-						units={[
-							{ value: 's', label: 's', default: 0.5 },
-							{ value: 'ms', label: 'ms', default: 500 },
-						]}
-						min={0.1}
-						max={2}
-						help={__(
-							'Speed of expansion/collapse animation',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
-
-				<PanelBody
-					title={__('Interaction', 'designsetgo')}
-					initialOpen={false}
-				>
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Trigger Type', 'designsetgo')}
-						value={triggerType}
-						options={[
-							{
-								label: __('Hover (Desktop)', 'designsetgo'),
-								value: 'hover',
-							},
-							{
-								label: __('Click/Tap', 'designsetgo'),
-								value: 'click',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ triggerType: value })
+						hasValue={() => triggerType !== 'hover'}
+						onDeselect={() =>
+							setAttributes({ triggerType: 'hover' })
 						}
-						help={__(
-							'Hover is automatically replaced with click on mobile',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Trigger Type', 'designsetgo')}
+							value={triggerType}
+							options={[
+								{
+									label: __('Hover (Desktop)', 'designsetgo'),
+									value: 'hover',
+								},
+								{
+									label: __('Click/Tap', 'designsetgo'),
+									value: 'click',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ triggerType: value })
+							}
+							help={__(
+								'Hover is automatically replaced with click on mobile',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Default Expanded Item', 'designsetgo')}
-						value={String(defaultExpanded)}
-						options={itemOptions}
-						onChange={(value) =>
-							setAttributes({
-								defaultExpanded: parseInt(value, 10) || 0,
-							})
-						}
-						help={__(
-							'Which item is expanded when the page loads',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => defaultExpanded !== 0}
+						onDeselect={() => setAttributes({ defaultExpanded: 0 })}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Default Expanded Item', 'designsetgo')}
+							value={String(defaultExpanded)}
+							options={itemOptions}
+							onChange={(value) =>
+								setAttributes({
+									defaultExpanded: parseInt(value, 10) || 0,
+								})
+							}
+							help={__(
+								'Which item is expanded when the page loads',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Overlay', 'designsetgo')}
-					initialOpen={false}
-				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
+						label={__('Expanded Ratio', 'designsetgo')}
+						hasValue={() => expandedRatio !== 3}
+						onDeselect={() => setAttributes({ expandedRatio: 3 })}
+						isShownByDefault={false}
+					>
+						<RangeControl
+							label={__('Expanded Ratio', 'designsetgo')}
+							value={expandedRatio}
+							onChange={(value) =>
+								setAttributes({ expandedRatio: value })
+							}
+							min={2}
+							max={5}
+							step={0.5}
+							help={__(
+								'How much larger the expanded item becomes (others stay normal size)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Transition Duration', 'designsetgo')}
+						hasValue={() => transitionDuration !== '0.5s'}
+						onDeselect={() =>
+							setAttributes({ transitionDuration: '0.5s' })
+						}
+						isShownByDefault={false}
+					>
+						<UnitControl
+							label={__('Transition Duration', 'designsetgo')}
+							value={transitionDuration}
+							onChange={(value) =>
+								setAttributes({
+									transitionDuration: value || '0.5s',
+								})
+							}
+							units={[
+								{ value: 's', label: 's', default: 0.5 },
+								{ value: 'ms', label: 'ms', default: 500 },
+							]}
+							min={0.1}
+							max={2}
+							help={__(
+								'Speed of expansion/collapse animation',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
 						label={__('Enable Overlay', 'designsetgo')}
-						checked={enableOverlay}
-						onChange={(value) =>
-							setAttributes({ enableOverlay: value })
+						hasValue={() => enableOverlay !== true}
+						onDeselect={() =>
+							setAttributes({ enableOverlay: true })
 						}
-						help={
-							enableOverlay
-								? __(
-										'Overlay applied to all items',
-										'designsetgo'
-									)
-								: __('No overlay on items', 'designsetgo')
-						}
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault={false}
+					>
+						<ToggleControl
+							label={__('Enable Overlay', 'designsetgo')}
+							checked={enableOverlay}
+							onChange={(value) =>
+								setAttributes({ enableOverlay: value })
+							}
+							help={
+								enableOverlay
+									? __(
+											'Overlay applied to all items',
+											'designsetgo'
+										)
+									: __('No overlay on items', 'designsetgo')
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
 					{enableOverlay && (
-						<>
+						<DsgoInspectorPanel.Item
+							label={__(
+								'Overlay Opacity (Default)',
+								'designsetgo'
+							)}
+							hasValue={() => overlayOpacity !== 40}
+							onDeselect={() =>
+								setAttributes({ overlayOpacity: 40 })
+							}
+							isShownByDefault={false}
+						>
 							<RangeControl
 								label={__(
 									'Overlay Opacity (Default)',
@@ -323,7 +387,21 @@ export default function ImageAccordionEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{enableOverlay && (
+						<DsgoInspectorPanel.Item
+							label={__(
+								'Overlay Opacity (Expanded)',
+								'designsetgo'
+							)}
+							hasValue={() => overlayOpacityExpanded !== 20}
+							onDeselect={() =>
+								setAttributes({ overlayOpacityExpanded: 20 })
+							}
+							isShownByDefault={false}
+						>
 							<RangeControl
 								label={__(
 									'Overlay Opacity (Expanded)',
@@ -344,9 +422,9 @@ export default function ImageAccordionEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
-						</>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			{enableOverlay && (
