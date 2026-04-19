@@ -1,0 +1,7 @@
+Marker file: the presence of this file tells webpack.config.js to build
+view.js as a native ES module (viewScriptModule) instead of an IIFE
+(viewScript). Required for blocks that use the Interactivity API —
+@wordpress/interactivity is module-only in WP 6.5+.
+
+Do not add frontmatter or content logic; webpack only checks for the
+file's existence, not its contents.

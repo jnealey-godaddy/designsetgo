@@ -88,26 +88,27 @@ store( 'designsetgo/query', {
 				const innerBlocks = JSON.parse( innerEl.textContent );
 				const nextPage = ( ctx.page || 1 ) + 1;
 
-				// Fix 3: use wpApiSettings.root so subdirectory WP installs work.
-				const restRoot = window.wpApiSettings?.root || '/wp-json/';
-				const res = yield fetch(
-					`${ restRoot }designsetgo/v1/query/render`,
-					{
-						method: 'POST',
-						credentials: 'same-origin',
-						headers: {
-							'Content-Type': 'application/json',
-							'X-WP-Nonce':
-								window.wpApiSettings?.nonce || '',
-						},
-						body: JSON.stringify( {
-							queryId: ctx.queryId,
-							attributes,
-							page: nextPage,
-							innerBlocks,
-						} ),
-					}
-				);
+				// ctx.restUrl + ctx.nonce are seeded by render-helpers.php so we
+				// don't rely on wpApiSettings (admin-only) or /wp-json/ rewrites
+				// (not guaranteed on plain-permalink installs).
+				const restUrl = ctx.restUrl
+					|| ( window.wpApiSettings?.root || '/wp-json/' ) + 'designsetgo/v1/query/render';
+				const restNonce = ctx.nonce || window.wpApiSettings?.nonce || '';
+				const res = yield fetch( restUrl, {
+					method: 'POST',
+					credentials: 'same-origin',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': restNonce,
+					},
+					body: JSON.stringify( {
+						queryId: ctx.queryId,
+						attributes,
+						page: nextPage,
+						innerBlocks,
+						currentUrl: window.location.href,
+					} ),
+				} );
 
 				if ( ! res.ok ) {
 					return;
@@ -403,25 +404,25 @@ function* dsgoQueryRefresh( ctx, url ) {
 		const innerBlocks = JSON.parse( innerEl.textContent );
 		const params      = dsgoCollectParams( url );
 
-		const restRoot = window.wpApiSettings?.root || '/wp-json/';
-		const res      = yield fetch(
-			`${ restRoot }designsetgo/v1/query/render`,
-			{
-				method: 'POST',
-				credentials: 'same-origin',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-WP-Nonce': window.wpApiSettings?.nonce || '',
-				},
-				body: JSON.stringify( {
-					queryId,
-					attributes,
-					page: 1,
-					innerBlocks,
-					params,
-				} ),
-			}
-		);
+		const restUrl = ctx.restUrl
+			|| ( window.wpApiSettings?.root || '/wp-json/' ) + 'designsetgo/v1/query/render';
+		const restNonce = ctx.nonce || window.wpApiSettings?.nonce || '';
+		const res = yield fetch( restUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-WP-Nonce': restNonce,
+			},
+			body: JSON.stringify( {
+				queryId,
+				attributes,
+				page: 1,
+				innerBlocks,
+				params,
+				currentUrl: url.toString(),
+			} ),
+		} );
 
 		if ( ! res.ok ) return;
 		const data = yield res.json();
@@ -497,25 +498,25 @@ async function dsgoQueryRefreshPlain( ctx, url ) {
 		const innerBlocks = JSON.parse( innerEl.textContent );
 		const params      = dsgoCollectParams( url );
 
-		const restRoot = window.wpApiSettings?.root || '/wp-json/';
-		const res      = await fetch(
-			`${ restRoot }designsetgo/v1/query/render`,
-			{
-				method: 'POST',
-				credentials: 'same-origin',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-WP-Nonce': window.wpApiSettings?.nonce || '',
-				},
-				body: JSON.stringify( {
-					queryId,
-					attributes,
-					page: 1,
-					innerBlocks,
-					params,
-				} ),
-			}
-		);
+		const restUrl = ctx.restUrl
+			|| ( window.wpApiSettings?.root || '/wp-json/' ) + 'designsetgo/v1/query/render';
+		const restNonce = ctx.nonce || window.wpApiSettings?.nonce || '';
+		const res = await fetch( restUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-WP-Nonce': restNonce,
+			},
+			body: JSON.stringify( {
+				queryId,
+				attributes,
+				page: 1,
+				innerBlocks,
+				params,
+				currentUrl: url.toString(),
+			} ),
+		} );
 
 		if ( ! res.ok ) return;
 		const data = await res.json();

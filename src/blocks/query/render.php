@@ -26,6 +26,14 @@ defined( 'ABSPATH' ) || exit;
 
 require_once __DIR__ . '/render-helpers.php';
 
+// Defensive enqueue — WordPress should auto-enqueue the view script module
+// declared in block.json, but the auto-hook misses in some render paths
+// (e.g. nested/custom SSR). Calling it here guarantees view.js reaches the
+// page whenever the query block renders.
+if ( function_exists( 'wp_enqueue_script_module' ) ) {
+	wp_enqueue_script_module( 'designsetgo-query-view-script-module' );
+}
+
 // Pagination — `paged` for archives, `page` for singular post paginator.
 $dsgo_query_page = absint( get_query_var( 'paged' ) );
 if ( ! $dsgo_query_page ) {

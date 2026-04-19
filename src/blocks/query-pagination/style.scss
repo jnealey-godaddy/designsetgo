@@ -38,8 +38,50 @@
 		text-align: center;
 	}
 
+	// Mirror the Icon Button block's base button styling so the load-more
+	// control visually matches the rest of the plugin's buttons and inherits
+	// theme.json Global Styles via wp-element-button.
+	:where(.dsgo-query-pagination__loadmore) {
+		border-radius: 9999px;
+	}
+
 	.dsgo-query-pagination__loadmore {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5em;
+		padding: 0.65em 1.4em;
+		border: 1px solid transparent;
+		font-family: inherit;
+		font-size: 1em;
+		line-height: 1.2;
+		text-decoration: none !important;
 		cursor: pointer;
+		transition: all 0.2s ease;
+		overflow: hidden;
+
+		&:hover {
+			opacity: 0.9;
+			transform: translateY(-1px);
+			text-decoration: none !important;
+		}
+
+		&:active {
+			transform: translateY(0);
+			text-decoration: none !important;
+		}
+
+		&:focus,
+		&:focus-within {
+			text-decoration: none !important;
+		}
+
+		&:disabled,
+		&[aria-busy="true"] {
+			opacity: 0.6;
+			cursor: progress;
+			transform: none;
+		}
 	}
 }
 

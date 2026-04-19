@@ -64,6 +64,11 @@ class Controller {
 						'type'    => 'object',
 						'default' => array(),
 					),
+					'currentUrl'  => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'esc_url_raw',
+					),
 				),
 			)
 		);
@@ -111,21 +116,51 @@ class Controller {
 	 * @return \WP_REST_Response
 	 */
 	public function handle_render( \WP_REST_Request $request ) {
-		$query_id   = $request->get_param( 'queryId' );
-		$attributes = (array) $request->get_param( 'attributes' );
-		$page       = max( 1, (int) $request->get_param( 'page' ) );
-		$inner_html = (string) $request->get_param( 'innerBlocks' );
-		$params     = (array) $request->get_param( 'params' );
+		$query_id    = $request->get_param( 'queryId' );
+		$attributes  = (array) $request->get_param( 'attributes' );
+		$page        = max( 1, (int) $request->get_param( 'page' ) );
+		$inner_html  = (string) $request->get_param( 'innerBlocks' );
+		$params      = (array) $request->get_param( 'params' );
+		$current_url = (string) $request->get_param( 'currentUrl' );
 
-		$result = self::render(
-			$attributes,
-			array(
-				'query_id'   => $query_id,
-				'page'       => $page,
-				'inner_html' => $inner_html,
-				'params'     => $params,
-			)
-		);
+		// Sibling filter blocks (search / sort / checkbox / select / active /
+		// reset) read filter state from $_GET and the current page URL
+		// (`add_query_arg(array())`) so the no-JS fallback can build chip/
+		// reset links that navigate back to the page. On the REST refresh
+		// path, $_GET is empty and REQUEST_URI points at the REST endpoint,
+		// so we overlay both for the duration of the render and restore
+		// afterwards to avoid leaking state into later request-scoped code.
+		$original_get    = $_GET; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$original_uri    = $_SERVER['REQUEST_URI'] ?? '';
+		$allowed_keys    = apply_filters( 'designsetgo_query_url_params', array( 'q', 'sort' ) );
+		foreach ( $params as $key => $value ) {
+			$key = (string) $key;
+			if ( in_array( $key, $allowed_keys, true ) || 0 === strpos( $key, 'filter_' ) ) {
+				$_GET[ $key ] = $value;
+			}
+		}
+		if ( '' !== $current_url ) {
+			$parsed = wp_parse_url( $current_url );
+			if ( is_array( $parsed ) && isset( $parsed['path'] ) ) {
+				$_SERVER['REQUEST_URI'] = $parsed['path']
+					. ( isset( $parsed['query'] ) ? '?' . $parsed['query'] : '' );
+			}
+		}
+
+		try {
+			$result = self::render(
+				$attributes,
+				array(
+					'query_id'   => $query_id,
+					'page'       => $page,
+					'inner_html' => $inner_html,
+					'params'     => $params,
+				)
+			);
+		} finally {
+			$_GET                  = $original_get; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$_SERVER['REQUEST_URI'] = $original_uri;
+		}
 
 		return rest_ensure_response( $result );
 	}

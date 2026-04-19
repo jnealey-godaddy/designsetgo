@@ -17,55 +17,10 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$dsgo_query_id = isset( $block->context['designsetgo/queryId'] )
-	? sanitize_key( (string) $block->context['designsetgo/queryId'] )
-	: '';
-
-if ( '' === $dsgo_query_id ) {
-	return;
-}
-
-$dsgo_filter_kind        = isset( $attributes['filterKind'] ) ? sanitize_key( (string) $attributes['filterKind'] ) : 'checkbox';
-$dsgo_filter_param       = isset( $attributes['paramName'] ) ? sanitize_key( (string) $attributes['paramName'] ) : '';
-$dsgo_filter_label       = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
-$dsgo_filter_placeholder = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : '';
-$dsgo_filter_taxonomy    = isset( $attributes['taxonomy'] ) ? sanitize_key( (string) $attributes['taxonomy'] ) : 'category';
-
-$dsgo_filter_wrapper = get_block_wrapper_attributes(
-	array(
-		'class'                 => 'dsgo-query-filter dsgo-query-filter--' . esc_attr( $dsgo_filter_kind ),
-		'data-wp-interactive'   => 'designsetgo/query',
-		'data-dsgo-query-id'    => $dsgo_query_id,
-		'data-dsgo-filter-kind' => $dsgo_filter_kind,
-		'data-dsgo-param'       => $dsgo_filter_param,
-	)
-);
-
-switch ( $dsgo_filter_kind ) {
-	case 'search':
-		designsetgo_query_filter_render_search( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_placeholder );
-		break;
-	case 'sort':
-		$dsgo_sort_options = isset( $attributes['sortOptions'] ) ? (array) $attributes['sortOptions'] : array();
-		designsetgo_query_filter_render_sort( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_sort_options );
-		break;
-	case 'select':
-		designsetgo_query_filter_render_select( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy );
-		break;
-	case 'active':
-		designsetgo_query_filter_render_active( $dsgo_filter_wrapper, $dsgo_filter_label );
-		break;
-	case 'reset':
-		designsetgo_query_filter_render_reset( $dsgo_filter_wrapper, $dsgo_filter_label );
-		break;
-	case 'checkbox':
-	default:
-		designsetgo_query_filter_render_checkbox( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy );
-		break;
-}
-
 // ---------------------------------------------------------------------------
-// Helper renderers (one per filterKind)
+// Helper renderers (one per filterKind) — defined FIRST so the dispatcher
+// below can call them on the first render (conditional function defs only
+// become callable after the if-block executes).
 // ---------------------------------------------------------------------------
 
 if ( ! function_exists( 'designsetgo_query_filter_render_search' ) ) :
@@ -399,3 +354,70 @@ if ( ! function_exists( 'designsetgo_query_filter_render_reset' ) ) :
 	}
 
 endif;
+
+// ---------------------------------------------------------------------------
+// Dispatcher — runs on every block render. Lives at the bottom of the file so
+// every helper above is defined by the time we invoke one.
+// ---------------------------------------------------------------------------
+
+$dsgo_query_id = isset( $block->context['designsetgo/queryId'] )
+	? sanitize_key( (string) $block->context['designsetgo/queryId'] )
+	: '';
+
+if ( '' === $dsgo_query_id ) {
+	return;
+}
+
+$dsgo_filter_kind        = isset( $attributes['filterKind'] ) ? sanitize_key( (string) $attributes['filterKind'] ) : 'checkbox';
+$dsgo_filter_param       = isset( $attributes['paramName'] ) ? sanitize_key( (string) $attributes['paramName'] ) : '';
+$dsgo_filter_label       = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
+$dsgo_filter_placeholder = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : '';
+$dsgo_filter_taxonomy    = isset( $attributes['taxonomy'] ) ? sanitize_key( (string) $attributes['taxonomy'] ) : 'category';
+
+$dsgo_filter_wrapper = get_block_wrapper_attributes(
+	array(
+		'class'                 => 'dsgo-query-filter dsgo-query-filter--' . esc_attr( $dsgo_filter_kind ),
+		'data-wp-interactive'   => 'designsetgo/query',
+		'data-dsgo-query-id'    => $dsgo_query_id,
+		'data-dsgo-filter-kind' => $dsgo_filter_kind,
+		'data-dsgo-param'       => $dsgo_filter_param,
+	)
+);
+// Seed IAPI context so `getContext()` inside setFilter / setFilterDebounced /
+// toggleFilter / removeActiveFilter / resetAll resolves ctx.queryId. Appended
+// outside get_block_wrapper_attributes() because that helper runs esc_attr()
+// on values, which would mangle JSON quotes.
+$dsgo_filter_wrapper .= sprintf(
+	" data-wp-context='%s'",
+	wp_json_encode(
+		array(
+			'queryId' => $dsgo_query_id,
+			'busy'    => false,
+			'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
+			'nonce'   => wp_create_nonce( 'wp_rest' ),
+		)
+	)
+);
+
+switch ( $dsgo_filter_kind ) {
+	case 'search':
+		designsetgo_query_filter_render_search( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_placeholder );
+		break;
+	case 'sort':
+		$dsgo_sort_options = isset( $attributes['sortOptions'] ) ? (array) $attributes['sortOptions'] : array();
+		designsetgo_query_filter_render_sort( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_sort_options );
+		break;
+	case 'select':
+		designsetgo_query_filter_render_select( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy );
+		break;
+	case 'active':
+		designsetgo_query_filter_render_active( $dsgo_filter_wrapper, $dsgo_filter_label );
+		break;
+	case 'reset':
+		designsetgo_query_filter_render_reset( $dsgo_filter_wrapper, $dsgo_filter_label );
+		break;
+	case 'checkbox':
+	default:
+		designsetgo_query_filter_render_checkbox( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy );
+		break;
+}

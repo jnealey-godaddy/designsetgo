@@ -136,12 +136,17 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		$query_id = sanitize_key( (string) ( $context['query_id'] ?? '' ) );
 		$source   = sanitize_key( (string) $atts['source'] );
 
+		// restUrl + nonce travel in the IAPI context so view.js works under
+		// plain-permalink installs where /wp-json/ rewrites aren't available
+		// and wpApiSettings isn't localised on the frontend.
 		$wp_context = wp_json_encode(
 			array(
 				'queryId' => $query_id,
 				'source'  => $source,
 				'page'    => (int) $context['page'],
 				'busy'    => false,
+				'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
 			)
 		);
 

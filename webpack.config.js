@@ -30,12 +30,31 @@ const blockEntries = glob
 		return entries;
 	}, {});
 
-// Auto-detect all blocks with view.js files (frontend scripts)
+// Auto-detect all blocks with view.js files (frontend scripts).
+// Blocks using the Interactivity API (viewScriptModule) must build as ES
+// modules and live in `moduleViewEntries`; legacy IIFE view.js stays in
+// `viewEntries`. Opt-in via `src/blocks/<name>/view.module` marker file,
+// which tells webpack to emit the script as a real ES module.
+const moduleViewEntries = {};
 const viewEntries = glob
 	.sync('src/blocks/*/view.js')
 	.reduce((entries, file) => {
 		const blockName = file.match(/\/blocks\/([^/]+)\/view\.js$/)[1];
-		entries[`blocks/${blockName}/view`] = path.resolve(process.cwd(), file);
+		const markerPath = path.resolve(
+			path.dirname(file),
+			'view.module'
+		);
+		if (require('fs').existsSync(markerPath)) {
+			moduleViewEntries[`blocks/${blockName}/view`] = path.resolve(
+				process.cwd(),
+				file
+			);
+		} else {
+			entries[`blocks/${blockName}/view`] = path.resolve(
+				process.cwd(),
+				file
+			);
+		}
 		return entries;
 	}, {});
 
@@ -51,8 +70,78 @@ const styleEntries = glob
 		return entries;
 	}, {});
 
-module.exports = {
+// Build config for script-module view.js (IAPI blocks). Outputs native ES
+// modules that import `@wordpress/interactivity` via the browser's native
+// module resolver (resolved by WP's importmap). This is a separate webpack
+// config from the main one because @wordpress/scripts' default externals
+// rewrite imports to `window.wp.interactivity` (wrong target for modules).
+const scriptModuleConfig = {
+	mode: defaultConfig.mode,
+	entry: moduleViewEntries,
+	output: {
+		filename: '[name].js',
+		path: path.resolve(process.cwd(), 'build'),
+		library: { type: 'module' },
+		module: true,
+		environment: { module: true, dynamicImport: true },
+	},
+	experiments: { outputModule: true },
+	externalsType: 'module',
+	externals: {
+		'@wordpress/interactivity': '@wordpress/interactivity',
+	},
+	module: {
+		rules: [
+			{
+				test: /\.js$/,
+				exclude: /node_modules/,
+				use: {
+					loader: require.resolve('babel-loader'),
+					options: {
+						presets: [
+							require.resolve(
+								'@wordpress/babel-preset-default'
+							),
+						],
+					},
+				},
+			},
+		],
+	},
+	plugins: [
+		// DependencyExtractionWebpackPlugin auto-generates the `.asset.php`
+		// manifest (dependencies + version) so WP knows what modules to
+		// load. `useDefaults: false` keeps the default behavior of treating
+		// `@wordpress/*` imports as externals, which combined with our
+		// explicit `externals` map emits the correct dep id.
+		new (require('@wordpress/dependency-extraction-webpack-plugin'))({
+			useDefaults: false,
+			requestToExternalModule(request) {
+				if (request === '@wordpress/interactivity') {
+					return request;
+				}
+			},
+		}),
+	],
+	optimization: {
+		minimize: defaultConfig.mode === 'production',
+		usedExports: true,
+		sideEffects: false,
+	},
+	performance: { hints: false },
+};
+
+module.exports = [{
 	...defaultConfig,
+	// Disable the default clean behaviour. We emit into `build/` from two
+	// parallel webpack configs (this one + `scriptModuleConfig`), and the
+	// default `output.clean` would wipe the second config's output after
+	// it has already been written. The dev and CI workflows both call
+	// `npm run clean` (or `build:clean`) when a full reset is needed.
+	output: {
+		...defaultConfig.output,
+		clean: false,
+	},
 	module: {
 		...defaultConfig.module,
 		rules: defaultConfig.module.rules.map((rule) => {
@@ -296,4 +385,4 @@ module.exports = {
 			return true;
 		},
 	},
-};
+}, scriptModuleConfig];

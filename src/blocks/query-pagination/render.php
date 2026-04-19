@@ -46,6 +46,18 @@ $label_loading   = ! empty( $attributes['labelLoading'] )
 	: __( 'Loading\u2026', 'designsetgo' );
 
 if ( 'loadmore' === $pagination_mode ) {
+	// Seed the IAPI context on the pagination wrapper so `getContext()` inside
+	// actions.loadMore resolves ctx.queryId / ctx.page / ctx.busy. Without this
+	// the click handler would see an empty context and silently no-op.
+	$lm_context = wp_json_encode(
+		array(
+			'queryId' => $query_id,
+			'page'    => 1,
+			'busy'    => false,
+			'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
+			'nonce'   => wp_create_nonce( 'wp_rest' ),
+		)
+	);
 	$wrapper = get_block_wrapper_attributes(
 		array(
 			'class'                => 'dsgo-query-pagination dsgo-query-pagination--loadmore',
@@ -55,11 +67,12 @@ if ( 'loadmore' === $pagination_mode ) {
 		)
 	);
 	printf(
-		'<div %1$s><button type="button" class="dsgo-query-pagination__loadmore" data-wp-on--click="actions.loadMore" data-dsgo-label-idle="%3$s" data-dsgo-label-loading="%4$s">%2$s</button></div>',
+		'<div %1$s data-wp-context=\'%5$s\'><button type="button" class="dsgo-query-pagination__loadmore wp-element-button" data-wp-on--click="actions.loadMore" data-dsgo-label-idle="%3$s" data-dsgo-label-loading="%4$s">%2$s</button></div>',
 		$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output.
 		esc_html( $label_load_more ),
 		esc_attr( $label_load_more ),
-		esc_attr( $label_loading )
+		esc_attr( $label_loading ),
+		$lm_context // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode output inside single-quoted attr.
 	);
 	return;
 }
