@@ -1,0 +1,52 @@
+.wp-block-designsetgo-query-pagination {
+
+	&--numbered {
+
+		.dsgo-query-pagination__list {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.5rem;
+			list-style: none;
+			margin: 1rem 0 0;
+			padding: 0;
+		}
+
+		.dsgo-query-pagination__item {
+			margin: 0;
+		}
+
+		/* stylelint-disable selector-class-pattern -- .current and .dots are WordPress paginate_links() generated class names */
+		a,
+		.current,
+		.dots {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 2rem;
+			padding: 0.25rem 0.5rem;
+			text-decoration: none;
+		}
+
+		.current {
+			font-weight: 600;
+		}
+		/* stylelint-enable selector-class-pattern */
+	}
+
+	&--loadmore {
+		margin-top: 1rem;
+		text-align: center;
+	}
+
+	.dsgo-query-pagination__loadmore {
+		cursor: pointer;
+	}
+}
+
+// Reduced motion on item append transitions.
+@media (prefers-reduced-motion: reduce) {
+
+	.dsgo-query .dsgo-query__item {
+		transition: none;
+	}
+}

@@ -34,6 +34,7 @@
 
 // Query blocks (frontend)
 @use '../blocks/query/style' as query;
+@use '../blocks/query-pagination/style' as query-pagination;
 
 // RichText formats (frontend)
 @use '../formats/text-style/style' as text-style;

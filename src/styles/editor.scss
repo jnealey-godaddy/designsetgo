@@ -29,6 +29,7 @@
 
 // Query blocks (editor)
 @use '../blocks/query/editor' as query;
+@use '../blocks/query-pagination/editor' as query-pagination;
 
 // ===================================================================
 // PERFORMANCE OPTIMIZATION (2025-11-11)

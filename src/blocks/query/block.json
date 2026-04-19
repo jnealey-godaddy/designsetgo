@@ -63,6 +63,7 @@
     "showPlaceholder": { "type": "boolean", "default": true }
   },
   "example": { "attributes": { "perPage": 3 } },
+  "viewScriptModule": "file:./view.js",
   "editorScript": "file:./index.js",
   "editorStyle": "file:./index.css",
   "style": "file:./style-index.css",

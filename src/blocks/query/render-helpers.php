@@ -155,10 +155,26 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			);
 		}
 
+		// Emit JSON blobs so view.js (load-more) can re-send the block's attribute
+		// state and innerBlocks template without needing a server-side lookup.
+		// JSON_HEX_* flags ensure no literal <, >, &, ', " appear in the output,
+		// making the strings safe to embed inside a <script> element in any context.
+		$json_blobs = '';
+		if ( '' !== $query_id ) {
+			$flags       = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+			$json_blobs .= '<script type="application/json" data-dsgo-attrs hidden>'
+				. wp_json_encode( $atts, $flags )
+				. '</script>';
+			$json_blobs .= '<script type="application/json" data-dsgo-inner hidden>'
+				. wp_json_encode( (string) ( $context['inner_html'] ?? '' ), $flags )
+				. '</script>';
+		}
+
 		return sprintf(
-			'<%1$s %2$s>%3$s</%1$s>',
+			'<%1$s %2$s>%3$s%4$s</%1$s>',
 			$tag,
 			$attrs_string, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from esc_attr()-escaped parts + get_block_wrapper_attributes() output.
+			$json_blobs, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode with JSON_HEX_* flags; no literal HTML special chars.
 			$inner_items
 		);
 	}
