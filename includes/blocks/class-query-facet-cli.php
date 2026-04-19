@@ -156,6 +156,10 @@ class FacetCLI {
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . FacetIndex::table_name() );
 		delete_option( FacetIndex::OPTION_SCHEMA );
 		delete_option( FacetIndex::OPTION_STATUS );
+		// Also clear the plugin db version so the next admin_init fires
+		// maybe_upgrade() and reinstalls the table. Without this, the stored
+		// version is still '2.2.0' and the install logic is skipped.
+		delete_option( 'designsetgo_db_version' );
 
 		\WP_CLI::success( 'Facet index table dropped.' );
 	}

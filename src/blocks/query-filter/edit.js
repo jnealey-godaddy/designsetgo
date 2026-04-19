@@ -17,7 +17,6 @@ import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { DsgoInspectorPanel } from '../../components/shared';
 import FilterPreview from './components/FilterPreview';
-import { useFacetRegistration } from '../query/hooks/useFacetRegistration';
 
 const FILTER_KIND_OPTIONS = [
 	{ value: 'checkbox', label: __('Taxonomy checkboxes', 'designsetgo') },
@@ -47,20 +46,6 @@ export default function QueryFilterEdit({
 
 	const blockProps = useBlockProps({
 		className: 'dsgo-query-filter is-editor',
-	});
-
-	// Auto-register this filter's facet config with the PHP FacetRegistry so
-	// the server knows how to resolve values for this facet key. Only fires
-	// for taxonomy-backed filter kinds; search/sort/active/reset have no
-	// facet to index.
-	const isTaxonomyFilter =
-		filterKind === 'checkbox' || filterKind === 'select';
-	useFacetRegistration({
-		facetKey: isTaxonomyFilter ? taxonomy : '',
-		config: {
-			type: isTaxonomyFilter ? 'taxonomy' : '',
-			source: isTaxonomyFilter ? taxonomy : '',
-		},
 	});
 
 	// Load available taxonomies for the checkbox/select filter kinds.

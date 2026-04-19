@@ -435,6 +435,87 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 	}
 
 	// -------------------------------------------------------------------------
+	// Codex HIGH #2 — post-status gate in reindex_object
+	// -------------------------------------------------------------------------
+
+	public function test_reindex_object_removes_non_published_post() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+
+		$cat = $this->factory->category->create();
+		$pid = $this->factory->post->create( array( 'post_status' => 'draft', 'post_category' => array( $cat ) ) );
+
+		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+
+		global $wpdb;
+		$this->assertSame( 0, (int) $wpdb->get_var( $wpdb->prepare(
+			'SELECT COUNT(*) FROM ' . \DesignSetGo\Blocks\Query\FacetIndex::table_name() . ' WHERE object_id = %d',
+			$pid
+		) ), 'A draft post must not be indexed.' );
+	}
+
+	public function test_taxonomy_hook_on_draft_does_not_reindex() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
+
+		$cat = $this->factory->category->create();
+		$pid = $this->factory->post->create( array(
+			'post_status'   => 'publish',
+			'post_category' => array( $cat ),
+		) );
+
+		// Unpublish: this removes the post from the index via on_save_post.
+		wp_update_post( array( 'ID' => $pid, 'post_status' => 'draft' ) );
+
+		// Now a taxonomy change on the draft should NOT re-add it.
+		$cat2 = $this->factory->category->create();
+		wp_set_post_categories( $pid, array( $cat2 ) );
+
+		global $wpdb;
+		$this->assertSame( 0, (int) $wpdb->get_var( $wpdb->prepare(
+			'SELECT COUNT(*) FROM ' . \DesignSetGo\Blocks\Query\FacetIndex::table_name() . ' WHERE object_id = %d',
+			$pid
+		) ), 'Taxonomy hook on a draft must not re-add the post to the index.' );
+	}
+
+	// -------------------------------------------------------------------------
+	// Codex MEDIUM #3 — server-side facet registration on save_post
+	// -------------------------------------------------------------------------
+
+	public function test_save_post_registers_facets_from_query_filter_blocks() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
+
+		$content = '<!-- wp:designsetgo/query --><!-- wp:designsetgo/query-filter {"taxonomy":"category","filterKind":"checkbox"} /--><!-- /wp:designsetgo/query -->';
+		$this->factory->post->create( array(
+			'post_status'  => 'publish',
+			'post_content' => $content,
+		) );
+
+		$facets = get_option( \DesignSetGo\Blocks\Query\FacetRegistry::OPTION, array() );
+		$this->assertArrayHasKey( 'category', $facets, 'category facet must be registered after publishing a post with a query-filter block.' );
+		$this->assertSame( 'taxonomy', $facets['category']['type'] );
+	}
+
+	public function test_save_post_does_not_register_facets_for_draft() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
+
+		// Clear the registry.
+		delete_option( \DesignSetGo\Blocks\Query\FacetRegistry::OPTION );
+
+		$content = '<!-- wp:designsetgo/query-filter {"taxonomy":"post_tag","filterKind":"checkbox"} /-->';
+		$this->factory->post->create( array(
+			'post_status'  => 'draft',
+			'post_content' => $content,
+		) );
+
+		$facets = get_option( \DesignSetGo\Blocks\Query\FacetRegistry::OPTION, array() );
+		$this->assertArrayNotHasKey( 'post_tag', $facets, 'Draft posts must not register facets.' );
+	}
+
+	// -------------------------------------------------------------------------
 	// count_for_options + is_available (Task A5)
 	// -------------------------------------------------------------------------
 

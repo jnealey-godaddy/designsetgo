@@ -39,7 +39,8 @@ class FacetIndexHooks {
 	}
 
 	/**
-	 * Reindexes (or removes) a post when it is saved.
+	 * Reindexes (or removes) a post when it is saved, and registers any
+	 * query-filter facets found in the post's block content.
 	 *
 	 * Revisions and auto-saves are skipped because they do not represent
 	 * canonical published content. Drafts, trashed posts, and other
@@ -59,6 +60,54 @@ class FacetIndexHooks {
 			return;
 		}
 		FacetIndex::reindex_object( 'post', $post_id );
+		self::register_facets_from_post_blocks( $post );
+	}
+
+	/**
+	 * Parses a published post's block content and registers any
+	 * designsetgo/query-filter blocks' facets into the FacetRegistry.
+	 *
+	 * Moving registration to save time (rather than the editor) ensures that
+	 * only facets belonging to actually-published posts end up in the registry.
+	 * Abandoned drafts no longer pollute the registry.
+	 *
+	 * @param \WP_Post $post The published post whose content to scan.
+	 * @return void
+	 */
+	private static function register_facets_from_post_blocks( \WP_Post $post ): void {
+		if ( ! function_exists( 'parse_blocks' ) ) {
+			return;
+		}
+		$blocks = parse_blocks( $post->post_content );
+		self::walk_blocks_for_facets( $blocks );
+	}
+
+	/**
+	 * Recursively walks a block tree and registers taxonomy facets for any
+	 * designsetgo/query-filter blocks found.
+	 *
+	 * @param array $blocks Parsed block array from parse_blocks().
+	 * @return void
+	 */
+	private static function walk_blocks_for_facets( array $blocks ): void {
+		foreach ( $blocks as $block ) {
+			if ( 'designsetgo/query-filter' === ( $block['blockName'] ?? '' ) ) {
+				$attrs    = $block['attrs'] ?? array();
+				$taxonomy = sanitize_key( (string) ( $attrs['taxonomy'] ?? '' ) );
+				if ( '' !== $taxonomy ) {
+					FacetRegistry::register(
+						$taxonomy,
+						array(
+							'type'   => 'taxonomy',
+							'source' => $taxonomy,
+						)
+					);
+				}
+			}
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				self::walk_blocks_for_facets( $block['innerBlocks'] );
+			}
+		}
 	}
 
 	/**

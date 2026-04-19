@@ -452,6 +452,43 @@ foreach ( $dsgo_active_filters as $dsgo_param_key => $dsgo_param_values ) {
 	$dsgo_active_filters_by_key[ $dsgo_facet_key ] = $dsgo_param_values;
 }
 
+// Translate taxonomy slugs in active_filters_by_key to term IDs.
+//
+// URL params carry taxonomy slugs (e.g. filter_category=news), but the facet
+// index stores term IDs (integers as strings). Without this translation, the
+// intersection subquery in count_for_options() looks for facet_value='news'
+// but the index has facet_value='42', so all cross-facet counts collapse to 0.
+//
+// Meta facets store their value verbatim — no translation needed.
+if ( class_exists( '\DesignSetGo\Blocks\Query\FacetRegistry' ) ) {
+	$dsgo_registered_facets = \DesignSetGo\Blocks\Query\FacetRegistry::all();
+	foreach ( $dsgo_active_filters_by_key as $dsgo_fk => $dsgo_fv ) {
+		$dsgo_facet_config = $dsgo_registered_facets[ $dsgo_fk ] ?? null;
+		if ( ! $dsgo_facet_config || 'taxonomy' !== ( $dsgo_facet_config['type'] ?? '' ) ) {
+			continue; // Meta or unknown — values are already in the correct format.
+		}
+		$dsgo_facet_taxonomy = (string) ( $dsgo_facet_config['source'] ?? '' );
+		if ( '' === $dsgo_facet_taxonomy ) {
+			continue;
+		}
+		$dsgo_translated = array();
+		foreach ( (array) $dsgo_fv as $dsgo_slug_or_id ) {
+			$dsgo_slug_or_id = (string) $dsgo_slug_or_id;
+			if ( ctype_digit( $dsgo_slug_or_id ) ) {
+				// Already a numeric ID — pass through as-is.
+				$dsgo_translated[] = $dsgo_slug_or_id;
+				continue;
+			}
+			$dsgo_term = get_term_by( 'slug', $dsgo_slug_or_id, $dsgo_facet_taxonomy );
+			if ( $dsgo_term instanceof \WP_Term ) {
+				$dsgo_translated[] = (string) $dsgo_term->term_id;
+			}
+		}
+		$dsgo_active_filters_by_key[ $dsgo_fk ] = $dsgo_translated;
+	}
+	unset( $dsgo_registered_facets, $dsgo_facet_config, $dsgo_facet_taxonomy, $dsgo_translated, $dsgo_slug_or_id, $dsgo_term );
+}
+
 // Only render counts when the facet is indexed AND showCounts is enabled.
 $dsgo_counts_enabled = $dsgo_show_counts
 	&& class_exists( '\DesignSetGo\Blocks\Query\FacetIndex' )

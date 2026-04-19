@@ -261,6 +261,91 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 		);
 	}
 
+	// -------------------------------------------------------------------------
+	// Codex HIGH #1 — slug→ID translation for taxonomy facets
+	// -------------------------------------------------------------------------
+
+	/**
+	 * When the URL carries taxonomy slugs (e.g. filter_post_tag=hot) but the
+	 * facet index stores term IDs, cross-facet counts must still be correct
+	 * after slug-to-ID translation.
+	 *
+	 * Scenario: 3 posts in News; 2 also tagged "hot" (slug). With active
+	 * filter_post_tag=hot, the News count should be 2 (not 0).
+	 */
+	public function test_active_filter_slugs_resolve_to_term_ids_for_intersection() {
+		\DesignSetGo\Blocks\Query\FacetRegistry::register(
+			'category',
+			array( 'type' => 'taxonomy', 'source' => 'category' )
+		);
+		\DesignSetGo\Blocks\Query\FacetRegistry::register(
+			'post_tag',
+			array( 'type' => 'taxonomy', 'source' => 'post_tag' )
+		);
+
+		$news    = $this->factory->category->create( array( 'name' => 'News', 'slug' => 'news' ) );
+		$hot_tag = $this->factory->term->create( array( 'taxonomy' => 'post_tag', 'slug' => 'hot' ) );
+
+		// 2 posts in News AND tagged hot.
+		$hot_news = $this->factory->post->create_many(
+			2,
+			array(
+				'post_status'   => 'publish',
+				'post_category' => array( $news ),
+				'tags_input'    => array( get_term( $hot_tag )->slug ),
+			)
+		);
+		// 1 post in News but NOT tagged hot.
+		$cold_news = $this->factory->post->create( array(
+			'post_status'   => 'publish',
+			'post_category' => array( $news ),
+		) );
+
+		foreach ( array_merge( $hot_news, array( $cold_news ) ) as $pid ) {
+			\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+		}
+
+		// active_filters carry the SLUG, not the term ID — as URL params do.
+		$active_filters_with_slug = array(
+			'post_tag' => array( 'hot' ), // <-- slug, not int
+		);
+
+		// Translate slugs to IDs the same way render.php does.
+		$registered = \DesignSetGo\Blocks\Query\FacetRegistry::all();
+		foreach ( $active_filters_with_slug as $fk => $fv ) {
+			$cfg = $registered[ $fk ] ?? null;
+			if ( ! $cfg || 'taxonomy' !== ( $cfg['type'] ?? '' ) ) {
+				continue;
+			}
+			$tax         = (string) ( $cfg['source'] ?? '' );
+			$translated  = array();
+			foreach ( (array) $fv as $slug_or_id ) {
+				$slug_or_id = (string) $slug_or_id;
+				if ( ctype_digit( $slug_or_id ) ) {
+					$translated[] = $slug_or_id;
+					continue;
+				}
+				$term = get_term_by( 'slug', $slug_or_id, $tax );
+				if ( $term instanceof \WP_Term ) {
+					$translated[] = (string) $term->term_id;
+				}
+			}
+			$active_filters_with_slug[ $fk ] = $translated;
+		}
+
+		$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+			'category',
+			array( $news ),
+			$active_filters_with_slug
+		);
+
+		$this->assertSame(
+			2,
+			$counts[ (string) $news ],
+			'News count must be 2 when tag=hot (slug) is active and the index stores term IDs.'
+		);
+	}
+
 	/**
 	 * Test that active filter extraction strips "filter_" prefix correctly.
 	 *

@@ -511,7 +511,7 @@ class Plugin {
 	private function __construct() {
 		$this->load_dependencies();
 		$this->init();
-		$this->maybe_upgrade();
+		add_action( 'admin_init', array( $this, 'maybe_upgrade' ) );
 	}
 
 	/**
@@ -671,11 +671,16 @@ class Plugin {
 	/**
 	 * Runs any pending database schema upgrades.
 	 *
+	 * Hooked onto admin_init so it only runs in the admin context where
+	 * ABSPATH/wp-admin/includes/upgrade.php is guaranteed to be present.
+	 * Running in the constructor caused phpstan analysis failures because
+	 * FacetIndex::install() requires that file at analysis time.
+	 *
 	 * Compares the stored designsetgo_db_version option against
 	 * DESIGNSETGO_VERSION and installs missing schema when the plugin
 	 * moves past a version that introduced a schema change.
 	 */
-	private function maybe_upgrade(): void {
+	public function maybe_upgrade(): void {
 		$stored = get_option( 'designsetgo_db_version', '0.0.0' );
 
 		if ( version_compare( $stored, '2.2.0', '<' ) ) {

@@ -40,8 +40,13 @@ $pagination_kind = isset( $attributes['paginationKind'] ) && 'numbered' !== $att
 	? $attributes['paginationKind']
 	: ( isset( $attributes['mode'] ) ? $attributes['mode'] : 'numbered' );
 
-// Infinite scroll: always render the sentinel even on a single-page result
-// (the observer will simply never fire, which is the correct no-op behaviour).
+// Single-page guard applies to ALL pagination kinds, including infinite.
+// Emit nothing for single-page results so no sentinel or button is injected.
+if ( ! $state || (int) $state['totalPages'] < 2 ) {
+	return;
+}
+
+// Infinite scroll: emit the sentinel + hidden fallback button.
 if ( 'infinite' === $pagination_kind ) {
 	$auto_pause    = isset( $attributes['autoPauseAfter'] ) ? (int) $attributes['autoPauseAfter'] : 3;
 	$sentinel_offset = isset( $attributes['sentinelOffsetPx'] ) ? (int) $attributes['sentinelOffsetPx'] : 200;
@@ -88,10 +93,6 @@ if ( 'infinite' === $pagination_kind ) {
 		esc_html( $btn_label )
 	);
 	return;
-}
-
-if ( ! $state || (int) $state['totalPages'] < 2 ) {
-	return; // Single page — no pagination needed.
 }
 
 $pagination_mode = $pagination_kind; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited

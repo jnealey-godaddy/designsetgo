@@ -165,13 +165,17 @@ store('designsetgo/query', {
 
 				ctx.page = nextPage;
 
-				// Hide the load-more button once we've fetched the last page.
+				// Remove pagination controls once we've fetched the last page.
+				// Covers both load-more buttons and the infinite-scroll sentinel
+				// wrapper (removing the wrapper also garbage-collects any
+				// IntersectionObserver attached to the sentinel inside it).
 				if (data.totalPages && nextPage >= data.totalPages) {
 					document
 						.querySelectorAll(
-							`[data-dsgo-query-id="${ctx.queryId}"][data-dsgo-pagination="loadmore"] button`
+							`[data-dsgo-query-id="${ctx.queryId}"][data-dsgo-pagination="loadmore"] button, ` +
+								`[data-dsgo-query-id="${ctx.queryId}"][data-dsgo-pagination="infinite"]`
 						)
-						.forEach((btn) => btn.remove());
+						.forEach((el) => el.remove());
 				}
 			} finally {
 				ctx.busy = false;

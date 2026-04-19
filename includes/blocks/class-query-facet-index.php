@@ -99,6 +99,17 @@ class FacetIndex {
 			return;
 		}
 
+		// v2.2 indexes only published posts. If the post is not published,
+		// remove any existing rows and bail. This covers the case where
+		// taxonomy/meta hooks fire for a draft that was previously published.
+		if ( 'post' === $object_type ) {
+			$status = get_post_status( $object_id );
+			if ( 'publish' !== $status ) {
+				self::remove_object( 'post', $object_id );
+				return;
+			}
+		}
+
 		$table = self::table_name();
 
 		// Idempotency: wipe existing rows for this object before reinsert.
