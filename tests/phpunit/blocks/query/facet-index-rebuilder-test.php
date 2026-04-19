@@ -156,6 +156,45 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'last_rebuilt_at', $status );
 	}
 
+	public function test_rebuild_facet_with_custom_batch_size_completes_correctly() {
+		FacetIndex::install();
+		FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+
+		$cat      = $this->factory->category->create();
+		$post_ids = $this->factory->post->create_many( 5, array(
+			'post_status'   => 'publish',
+			'post_category' => array( $cat ),
+		) );
+
+		$result = FacetIndexRebuilder::rebuild_facet( 'category', array( 'batch_size' => 2 ) );
+
+		$this->assertSame( 'complete', $result['status'] );
+		$this->assertGreaterThanOrEqual( 5, $result['processed'] );
+		$this->assertGreaterThanOrEqual( 5, $result['total_rows'] );
+	}
+
+	public function test_rebuild_all_reports_error_when_table_missing() {
+		FacetIndex::install();
+
+		// Drop the table so TRUNCATE fails.
+		global $wpdb;
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . FacetIndex::table_name() );
+		// Suppress the expected MySQL error so the test output stays clean.
+		$wpdb->suppress_errors( true );
+
+		$result = FacetIndexRebuilder::rebuild_all();
+
+		$wpdb->suppress_errors( false );
+
+		$this->assertSame( 'error', $result['status'] );
+		$this->assertSame( 0, $result['processed'] );
+
+		$status = get_option( FacetIndex::OPTION_STATUS );
+		$this->assertArrayHasKey( 'error', $status );
+		$this->assertSame( 'truncate_failed', $status['error'] );
+		$this->assertFalse( $status['in_progress'] );
+	}
+
 	public function test_rebuild_all_only_processes_publish_posts() {
 		FacetIndex::install();
 		FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );

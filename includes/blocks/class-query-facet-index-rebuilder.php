@@ -62,7 +62,21 @@ class FacetIndexRebuilder {
 		);
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- intentional truncate for full rebuild.
-		$wpdb->query( 'TRUNCATE ' . FacetIndex::table_name() );
+		$truncated = $wpdb->query( 'TRUNCATE ' . FacetIndex::table_name() );
+		if ( false === $truncated ) {
+			self::write_status(
+				array(
+					'in_progress' => false,
+					'error'       => 'truncate_failed',
+					'updated_at'  => time(),
+				)
+			);
+			return array(
+				'status'     => 'error',
+				'processed'  => 0,
+				'total_rows' => 0,
+			);
+		}
 
 		$processed = 0;
 		$offset    = 0;
@@ -120,14 +134,22 @@ class FacetIndexRebuilder {
 	 *
 	 * Returns early with status='skipped' if the key is not registered.
 	 *
+	 * Processes posts in batches to avoid max_execution_time on large sites.
+	 * Writes intermediate progress to FacetIndex::OPTION_STATUS so callers can
+	 * poll status() during a long run (A7 / B5).
+	 *
 	 * @param string $facet_key The registered facet key to rebuild (e.g. 'category').
+	 * @param array  $args {
+	 *     Optional overrides.
+	 *     @type int $batch_size Number of posts per iteration. Default 200, min 50.
+	 * }
 	 * @return array {
 	 *     @type string $status     'complete' or 'skipped'.
 	 *     @type int    $processed  Number of post IDs iterated (0 when skipped).
 	 *     @type int    $total_rows Rows for this key after rebuild (0 when skipped).
 	 * }
 	 */
-	public static function rebuild_facet( string $facet_key ): array {
+	public static function rebuild_facet( string $facet_key, array $args = array() ): array {
 		$key = sanitize_key( $facet_key );
 		if ( '' === $key || null === FacetRegistry::get( $key ) ) {
 			return array(
@@ -138,25 +160,61 @@ class FacetIndexRebuilder {
 		}
 
 		global $wpdb;
-		$table = FacetIndex::table_name();
+		$table      = FacetIndex::table_name();
+		$batch_size = max( self::MIN_BATCH_SIZE, (int) ( $args['batch_size'] ?? self::DEFAULT_BATCH_SIZE ) );
 
-		// Delete all rows for this facet key.
+		// Delete all rows for this key in one statement — fast regardless of row count.
 		$wpdb->delete( $table, array( 'facet_key' => $key ), array( '%s' ) );
 
-		// Re-scan every published post; reindex_object rewrites ALL facets for
-		// each post, including the one we just wiped.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- full post scan required for facet rebuild.
-		$post_ids = $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish'" );
-		foreach ( $post_ids as $id ) {
-			FacetIndex::reindex_object( 'post', (int) $id );
-		}
+		self::write_status(
+			array(
+				'in_progress' => true,
+				'started_at'  => time(),
+				'processed'   => 0,
+			)
+		);
+
+		$processed = 0;
+		$offset    = 0;
+		do {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- batched id scan over core posts table.
+			$ids = $wpdb->get_col( $wpdb->prepare(
+				"SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' ORDER BY ID ASC LIMIT %d OFFSET %d",
+				$batch_size,
+				$offset
+			) );
+
+			foreach ( $ids as $id ) {
+				FacetIndex::reindex_object( 'post', (int) $id );
+				$processed++;
+			}
+
+			self::write_status(
+				array(
+					'in_progress' => count( $ids ) === $batch_size,
+					'processed'   => $processed,
+					'updated_at'  => time(),
+				)
+			);
+
+			$offset += $batch_size;
+		} while ( count( $ids ) === $batch_size );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- count rows for the rebuilt key.
 		$total_rows = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE facet_key = %s", $key ) );
 
+		self::write_status(
+			array(
+				'in_progress'     => false,
+				'last_rebuilt_at' => time(),
+				'processed'       => $processed,
+				'total_rows'      => $total_rows,
+			)
+		);
+
 		return array(
 			'status'     => 'complete',
-			'processed'  => count( $post_ids ),
+			'processed'  => $processed,
 			'total_rows' => $total_rows,
 		);
 	}
