@@ -7,14 +7,23 @@ import { useState, useEffect } from '@wordpress/element';
  *
  * Debounced by React re-render cadence + JSON.stringify key so rapid attribute
  * changes coalesce into a single request.
+ * @param {Object} root0            The hook options object.
+ * @param {Object} root0.attributes The query block attributes to send to the server.
+ * @param {string} root0.queryId    The unique query ID used to scope the REST request.
  */
 export default function useQueryPreview({ attributes, queryId }) {
-	const [state, setState] = useState({ loading: false, totalItems: null, error: null });
+	const [state, setState] = useState({
+		loading: false,
+		totalItems: null,
+		error: null,
+	});
 
 	const payloadKey = JSON.stringify(attributes);
 
 	useEffect(() => {
-		if (!queryId) return undefined;
+		if (!queryId) {
+			return undefined;
+		}
 		let cancelled = false;
 		setState((s) => ({ ...s, loading: true }));
 
@@ -29,15 +38,22 @@ export default function useQueryPreview({ attributes, queryId }) {
 			},
 		})
 			.then((res) => {
-				if (cancelled) return;
+				if (cancelled) {
+					return;
+				}
 				setState({
 					loading: false,
-					totalItems: typeof res?.totalItems === 'number' ? res.totalItems : null,
+					totalItems:
+						typeof res?.totalItems === 'number'
+							? res.totalItems
+							: null,
 					error: null,
 				});
 			})
 			.catch((err) => {
-				if (cancelled) return;
+				if (cancelled) {
+					return;
+				}
 				setState({ loading: false, totalItems: null, error: err });
 			});
 

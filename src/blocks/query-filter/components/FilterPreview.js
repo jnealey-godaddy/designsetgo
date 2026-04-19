@@ -5,25 +5,24 @@
  */
 import { __ } from '@wordpress/i18n';
 
-export default function FilterPreview( { filterKind, label, placeholder } ) {
+export default function FilterPreview({ filterKind, label, placeholder }) {
 	const displayLabel = label || null;
 
-	switch ( filterKind ) {
+	switch (filterKind) {
 		case 'search':
 			return (
 				<div className="dsgo-query-filter dsgo-query-filter--search dsgo-query-filter--preview">
-					{ displayLabel && (
+					{displayLabel && (
 						<span className="dsgo-query-filter__label">
-							{ displayLabel }
+							{displayLabel}
 						</span>
-					) }
+					)}
 					<div className="dsgo-query-filter__search-row">
 						<input
 							type="search"
 							readOnly
 							placeholder={
-								placeholder ||
-								__( 'Search\u2026', 'designsetgo' )
+								placeholder || __('Search\u2026', 'designsetgo')
 							}
 							className="dsgo-query-filter__search-input"
 						/>
@@ -32,7 +31,7 @@ export default function FilterPreview( { filterKind, label, placeholder } ) {
 							className="dsgo-query-filter__submit"
 							disabled
 						>
-							{ __( 'Search', 'designsetgo' ) }
+							{__('Search', 'designsetgo')}
 						</button>
 					</div>
 				</div>
@@ -41,21 +40,16 @@ export default function FilterPreview( { filterKind, label, placeholder } ) {
 		case 'sort':
 			return (
 				<div className="dsgo-query-filter dsgo-query-filter--sort dsgo-query-filter--preview">
-					{ displayLabel && (
+					{displayLabel && (
 						<span className="dsgo-query-filter__label">
-							{ displayLabel }
+							{displayLabel}
 						</span>
-					) }
-					<select
-						className="dsgo-query-filter__sort"
-						disabled
-					>
-						<option>
-							{ __( 'Default order', 'designsetgo' ) }
-						</option>
-						<option>{ __( 'Newest', 'designsetgo' ) }</option>
-						<option>{ __( 'Oldest', 'designsetgo' ) }</option>
-						<option>{ __( 'A\u2013Z', 'designsetgo' ) }</option>
+					)}
+					<select className="dsgo-query-filter__sort" disabled>
+						<option>{__('Default order', 'designsetgo')}</option>
+						<option>{__('Newest', 'designsetgo')}</option>
+						<option>{__('Oldest', 'designsetgo')}</option>
+						<option>{__('A\u2013Z', 'designsetgo')}</option>
 					</select>
 				</div>
 			);
@@ -63,19 +57,15 @@ export default function FilterPreview( { filterKind, label, placeholder } ) {
 		case 'select':
 			return (
 				<div className="dsgo-query-filter dsgo-query-filter--select dsgo-query-filter--preview">
-					{ displayLabel && (
+					{displayLabel && (
 						<span className="dsgo-query-filter__label">
-							{ displayLabel }
+							{displayLabel}
 						</span>
-					) }
+					)}
 					<select className="dsgo-query-filter__select" disabled>
-						<option>{ __( 'All', 'designsetgo' ) }</option>
-						<option>
-							{ __( 'Category A', 'designsetgo' ) }
-						</option>
-						<option>
-							{ __( 'Category B', 'designsetgo' ) }
-						</option>
+						<option>{__('All', 'designsetgo')}</option>
+						<option>{__('Category A', 'designsetgo')}</option>
+						<option>{__('Category B', 'designsetgo')}</option>
 					</select>
 				</div>
 			);
@@ -83,17 +73,17 @@ export default function FilterPreview( { filterKind, label, placeholder } ) {
 		case 'active':
 			return (
 				<div className="dsgo-query-filter dsgo-query-filter--active dsgo-query-filter--preview">
-					{ displayLabel && (
+					{displayLabel && (
 						<span className="dsgo-query-filter__label">
-							{ displayLabel }
+							{displayLabel}
 						</span>
-					) }
+					)}
 					<span className="dsgo-query-filter__chip">
-						{ __( 'tech', 'designsetgo' ) }
+						{__('tech', 'designsetgo')}
 						<span aria-hidden="true">&nbsp;&times;</span>
 					</span>
 					<span className="dsgo-query-filter__chip">
-						{ __( 'news', 'designsetgo' ) }
+						{__('news', 'designsetgo')}
 						<span aria-hidden="true">&nbsp;&times;</span>
 					</span>
 				</div>
@@ -107,7 +97,7 @@ export default function FilterPreview( { filterKind, label, placeholder } ) {
 						className="dsgo-query-filter__reset"
 						disabled
 					>
-						{ label || __( 'Reset filters', 'designsetgo' ) }
+						{label || __('Reset filters', 'designsetgo')}
 					</button>
 				</div>
 			);
@@ -116,25 +106,26 @@ export default function FilterPreview( { filterKind, label, placeholder } ) {
 		default:
 			return (
 				<div className="dsgo-query-filter dsgo-query-filter--checkbox dsgo-query-filter--preview">
-					{ displayLabel && (
+					{displayLabel && (
 						<span className="dsgo-query-filter__label">
-							{ displayLabel }
+							{displayLabel}
 						</span>
-					) }
+					)}
 					<div className="dsgo-query-filter__checkbox-list">
-						{ [
-							__( 'Category A', 'designsetgo' ),
-							__( 'Category B', 'designsetgo' ),
-							__( 'Category C', 'designsetgo' ),
-						].map( ( item ) => (
+						{[
+							__('Category A', 'designsetgo'),
+							__('Category B', 'designsetgo'),
+							__('Category C', 'designsetgo'),
+						].map((item) => (
+							// eslint-disable-next-line jsx-a11y/label-has-associated-control -- static preview; input is nested inside label (valid HTML), readOnly attr confuses the linter
 							<label
-								key={ item }
+								key={item}
 								className="dsgo-query-filter__checkbox-item"
 							>
 								<input type="checkbox" readOnly />
-								<span>{ item }</span>
+								<span>{item}</span>
 							</label>
-						) ) }
+						))}
 					</div>
 				</div>
 			);
