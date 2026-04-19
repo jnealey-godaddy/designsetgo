@@ -188,6 +188,9 @@ class File_Manager {
 	 * writes when missing so any admin-authored overrides survive. Nginx cannot
 	 * honour .htaccess — those users need a server-level text/markdown MIME entry.
 	 *
+	 * Uses `AddType` + `AddCharset` (separate directives) rather than a
+	 * parameterised media-type string, which older Apache versions silently drop.
+	 *
 	 * @param string $root Absolute path to the markdown root directory.
 	 */
 	private function maybe_write_htaccess( string $root ): void {
@@ -201,10 +204,18 @@ class File_Manager {
 		}
 
 		$contents = "# DesignSetGo llms.txt - serve Markdown inline\n"
-			. "AddType text/markdown .md\n";
+			. "<IfModule mod_mime.c>\n"
+			. "\tAddType text/markdown .md\n"
+			. "\tAddCharset UTF-8 .md\n"
+			. "</IfModule>\n";
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Small MIME-hint file.
-		@file_put_contents( $path, $contents ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Best-effort; failures are non-fatal.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Matches existing write pattern in this class.
+		$result = file_put_contents( $path, $contents );
+
+		if ( false === $result && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging for non-fatal filesystem failure.
+			error_log( 'DesignSetGo: Failed to write llms.txt .htaccess file to ' . $path );
+		}
 	}
 
 	/**

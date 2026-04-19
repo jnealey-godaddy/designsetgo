@@ -15,6 +15,7 @@ use WP_REST_Request;
 use DesignSetGo\LLMS_Txt\Controller;
 use DesignSetGo\LLMS_Txt\REST_Controller;
 use DesignSetGo\LLMS_Txt\Generator;
+use DesignSetGo\LLMS_Txt\File_Manager;
 use DesignSetGo\Markdown\Converter;
 use DesignSetGo\Admin\Settings;
 
@@ -80,7 +81,49 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
 		delete_transient( Controller::FULL_CACHE_KEY );
 		Settings::invalidate_cache();
 
+		// Reset the backfill option so each test runs against a clean state.
+		delete_option( Controller::HTACCESS_BACKFILL_OPTION );
+
+		// Remove any .htaccess the tests may have written in the uploads dir.
+		$upload_dir = wp_upload_dir();
+		$htaccess   = trailingslashit( $upload_dir['basedir'] ) . File_Manager::MARKDOWN_DIR . '/.htaccess';
+		if ( file_exists( $htaccess ) ) {
+			unlink( $htaccess );
+		}
+
 		parent::tear_down();
+	}
+
+	/**
+	 * Helper: create the markdown root directory without any contents.
+	 *
+	 * Simulates a legacy install whose llms.txt feature was enabled before
+	 * this PR shipped — directory exists but no .htaccess yet.
+	 */
+	private function make_legacy_markdown_dir(): string {
+		$upload_dir = wp_upload_dir();
+		$dir        = trailingslashit( $upload_dir['basedir'] ) . File_Manager::MARKDOWN_DIR;
+		wp_mkdir_p( $dir );
+		$htaccess = trailingslashit( $dir ) . '.htaccess';
+		if ( file_exists( $htaccess ) ) {
+			unlink( $htaccess );
+		}
+		return $dir;
+	}
+
+	/**
+	 * Helper: enable the llms.txt feature in settings.
+	 */
+	private function enable_llms_feature(): void {
+		update_option(
+			'designsetgo_settings',
+			array(
+				'llms_txt' => array(
+					'enable' => true,
+				),
+			)
+		);
+		Settings::invalidate_cache();
 	}
 
 	/**
@@ -525,6 +568,113 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
 		$output = $this->controller->add_to_robots_txt( '', true );
 
 		$this->assertStringNotContainsString( 'llms.txt', $output );
+	}
+
+	/**
+	 * Test backfill writes .htaccess into an existing legacy markdown dir.
+	 */
+	public function test_htaccess_backfill_writes_file_on_legacy_dir() {
+		$dir = $this->make_legacy_markdown_dir();
+		$this->enable_llms_feature();
+
+		$this->controller->maybe_backfill_htaccess();
+
+		$this->assertFileExists( trailingslashit( $dir ) . '.htaccess' );
+		$this->assertEquals( 1, (int) get_option( Controller::HTACCESS_BACKFILL_OPTION ) );
+	}
+
+	/**
+	 * Test backfill short-circuits when the option is already set.
+	 */
+	public function test_htaccess_backfill_skips_when_option_already_set() {
+		$dir = $this->make_legacy_markdown_dir();
+		$this->enable_llms_feature();
+		update_option( Controller::HTACCESS_BACKFILL_OPTION, 1, true );
+
+		$this->controller->maybe_backfill_htaccess();
+
+		$this->assertFileDoesNotExist( trailingslashit( $dir ) . '.htaccess' );
+	}
+
+	/**
+	 * Test backfill is a no-op when the feature is disabled.
+	 */
+	public function test_htaccess_backfill_noop_when_feature_disabled() {
+		$dir = $this->make_legacy_markdown_dir();
+		update_option(
+			'designsetgo_settings',
+			array(
+				'llms_txt' => array(
+					'enable' => false,
+				),
+			)
+		);
+		Settings::invalidate_cache();
+
+		$this->controller->maybe_backfill_htaccess();
+
+		$this->assertFileDoesNotExist( trailingslashit( $dir ) . '.htaccess' );
+		$this->assertFalse( get_option( Controller::HTACCESS_BACKFILL_OPTION ) );
+	}
+
+	/**
+	 * Test backfill marks done (without writing) when the dir doesn't exist.
+	 *
+	 * In that case the normal post-save path creates both dir and .htaccess,
+	 * so we short-circuit to avoid rechecking every init.
+	 */
+	public function test_htaccess_backfill_marks_done_when_dir_missing() {
+		// Ensure the directory is absent.
+		$upload_dir = wp_upload_dir();
+		$dir        = trailingslashit( $upload_dir['basedir'] ) . File_Manager::MARKDOWN_DIR;
+		if ( is_dir( $dir ) ) {
+			// Remove htaccess first if present; then the dir (must be empty).
+			$htaccess = trailingslashit( $dir ) . '.htaccess';
+			if ( file_exists( $htaccess ) ) {
+				unlink( $htaccess );
+			}
+			@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Best-effort cleanup; if non-empty we skip the test.
+			if ( is_dir( $dir ) ) {
+				$this->markTestSkipped( 'Could not remove markdown dir to simulate missing-dir scenario.' );
+			}
+		}
+
+		$this->enable_llms_feature();
+
+		$this->controller->maybe_backfill_htaccess();
+
+		$this->assertDirectoryDoesNotExist( $dir );
+		$this->assertEquals( 1, (int) get_option( Controller::HTACCESS_BACKFILL_OPTION ) );
+	}
+
+	/**
+	 * Test the .htaccess preserves an existing (admin-authored) file.
+	 */
+	public function test_htaccess_preserves_existing_file() {
+		$dir           = $this->make_legacy_markdown_dir();
+		$htaccess_path = trailingslashit( $dir ) . '.htaccess';
+		$custom        = "# admin override\nAddType text/plain .md\n";
+		file_put_contents( $htaccess_path, $custom ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.
+		$this->enable_llms_feature();
+
+		$this->controller->maybe_backfill_htaccess();
+
+		$this->assertStringEqualsFile( $htaccess_path, $custom );
+	}
+
+	/**
+	 * Test the generated .htaccess declares markdown + UTF-8.
+	 */
+	public function test_htaccess_contents_declare_markdown_and_utf8() {
+		$dir = $this->make_legacy_markdown_dir();
+		$this->enable_llms_feature();
+
+		$this->controller->maybe_backfill_htaccess();
+
+		$contents = file_get_contents( trailingslashit( $dir ) . '.htaccess' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- Test read.
+		$this->assertStringContainsString( 'AddType text/markdown .md', $contents );
+		$this->assertStringContainsString( 'AddCharset UTF-8 .md', $contents );
+		$this->assertStringContainsString( '<IfModule mod_mime.c>', $contents );
 	}
 
 	/**

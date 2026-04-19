@@ -396,11 +396,24 @@ class Controller {
 			return;
 		}
 
-		if ( is_dir( $this->file_manager->get_directory() ) ) {
-			$this->file_manager->ensure_directory();
+		$directory = $this->file_manager->get_directory();
+
+		// If the legacy dir doesn't exist yet, there is nothing to backfill.
+		// The normal post-save path will create both the dir and the .htaccess
+		// on first publish, so mark done to avoid repeating the init-time check.
+		if ( ! is_dir( $directory ) ) {
+			update_option( self::HTACCESS_BACKFILL_OPTION, 1, true );
+			return;
 		}
 
-		update_option( self::HTACCESS_BACKFILL_OPTION, 1, true );
+		$this->file_manager->ensure_directory();
+
+		// Only mark done once the .htaccess is actually on disk; leaving the
+		// option unset means we retry next request if the write failed
+		// (e.g. permissions).
+		if ( file_exists( trailingslashit( $directory ) . '.htaccess' ) ) {
+			update_option( self::HTACCESS_BACKFILL_OPTION, 1, true );
+		}
 	}
 
 	/**
