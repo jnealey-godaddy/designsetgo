@@ -26,7 +26,7 @@ class Controller {
 	}
 
 	/**
-	 * Registers the designsetgo/v1/query/render REST route.
+	 * Registers the designsetgo/v1/query REST routes.
 	 */
 	public function register_routes() {
 		register_rest_route(
@@ -72,6 +72,95 @@ class Controller {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/query/facet-register',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_facet_register' ),
+				'permission_callback' => array( $this, 'check_facet_register_permission' ),
+				'args'                => array(
+					'facet_key' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'config'    => array(
+						'type'     => 'object',
+						'required' => true,
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Checks that the request carries a valid nonce and the user can edit posts.
+	 *
+	 * Used by the /facet-register route — requires `edit_posts` capability so
+	 * subscribers cannot pollute the facet registry.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return true|\WP_Error
+	 */
+	public function check_facet_register_permission( \WP_REST_Request $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'You must be logged in.', 'designsetgo' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Invalid nonce.', 'designsetgo' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Insufficient permissions.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Handles the facet-register REST request.
+	 *
+	 * Stores the facet configuration in FacetRegistry so the PHP facet index
+	 * knows how to resolve values for this facet key.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_facet_register( \WP_REST_Request $request ) {
+		$key    = $request->get_param( 'facet_key' );
+		$config = (array) $request->get_param( 'config' );
+
+		if ( empty( $key ) || empty( $config['type'] ) || empty( $config['source'] ) ) {
+			return new \WP_Error(
+				'dsgo_facet_register_invalid',
+				__( 'facet_key, type, and source are required.', 'designsetgo' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		FacetRegistry::register( $key, $config );
+
+		return rest_ensure_response( array(
+			'registered' => true,
+			'facet_key'  => sanitize_key( $key ),
+			'config'     => FacetRegistry::get( $key ),
+		) );
 	}
 
 	/**
