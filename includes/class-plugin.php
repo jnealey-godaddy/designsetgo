@@ -473,6 +473,13 @@ class Plugin {
 	public $query_bindings;
 
 	/**
+	 * Query Facet Index instance.
+	 *
+	 * @var Blocks\Query\FacetIndex
+	 */
+	public $facet_index;
+
+	/**
 	 * Returns the instance.
 	 *
 	 * @return Plugin
@@ -490,6 +497,7 @@ class Plugin {
 	private function __construct() {
 		$this->load_dependencies();
 		$this->init();
+		$this->maybe_upgrade();
 	}
 
 	/**
@@ -504,6 +512,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-modal-hooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-index.php';
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-settings.php';
@@ -573,6 +582,7 @@ class Plugin {
 		$this->form_submissions    = new Blocks\Form_Submissions();
 		$this->query_controller    = new Blocks\Query\Controller();
 		$this->query_bindings      = new Blocks\Query\Bindings();
+		$this->facet_index         = new Blocks\Query\FacetIndex();
 		$this->patterns            = new Patterns\Loader();
 		$this->global_styles       = new Admin\Global_Styles();
 		$this->settings            = new Admin\Settings();
@@ -630,6 +640,22 @@ class Plugin {
 		add_filter( 'safe_style_css', array( $this, 'allow_block_style_properties' ) );
 		add_filter( 'safecss_filter_attr_allow_css', array( $this, 'allow_block_css_functions' ), 10, 2 );
 		add_filter( 'wp_kses_allowed_html', array( $this, 'allow_block_svg_elements' ), 10, 2 );
+	}
+
+	/**
+	 * Runs any pending database schema upgrades.
+	 *
+	 * Compares the stored designsetgo_db_version option against
+	 * DESIGNSETGO_VERSION and installs missing schema when the plugin
+	 * moves past a version that introduced a schema change.
+	 */
+	private function maybe_upgrade(): void {
+		$stored = get_option( 'designsetgo_db_version', '0.0.0' );
+
+		if ( version_compare( $stored, '2.2.0', '<' ) ) {
+			Blocks\Query\FacetIndex::install();
+			update_option( 'designsetgo_db_version', DESIGNSETGO_VERSION );
+		}
 	}
 
 	/**
