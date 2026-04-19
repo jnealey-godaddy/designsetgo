@@ -1,6 +1,7 @@
 // Editor styles for designsetgo/query.
 
 .wp-block-designsetgo-query {
+
 	.dsgo-query__editor-header {
 		display: flex;
 		justify-content: flex-end;
@@ -13,6 +14,7 @@
 	}
 
 	.dsgo-query__count {
+
 		&.is-loading {
 			opacity: 0.5;
 		}

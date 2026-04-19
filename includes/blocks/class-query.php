@@ -10,15 +10,24 @@ namespace DesignSetGo\Blocks\Query;
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * REST controller and shared render entry-point for the Dynamic Query block.
+ */
 class Controller {
 
 	const REST_NAMESPACE = 'designsetgo/v1';
 	const REST_ROUTE     = '/query/render';
 
+	/**
+	 * Registers action hooks on instantiation.
+	 */
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 	}
 
+	/**
+	 * Registers the designsetgo/v1/query/render REST route.
+	 */
 	public function register_routes() {
 		register_rest_route(
 			self::REST_NAMESPACE,
@@ -28,21 +37,44 @@ class Controller {
 				'callback'            => array( $this, 'handle_render' ),
 				'permission_callback' => array( $this, 'check_permission' ),
 				'args'                => array(
-					'queryId'     => array( 'type' => 'string', 'required' => true, 'sanitize_callback' => 'sanitize_key' ),
+					'queryId'     => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_key',
+					),
 
 					// NOTE: `attributes` and `params` are nested objects; WP only enforces the
 					// top-level type. The shared render helper (designsetgo_query_render) is
 					// responsible for per-field sanitization of every value before it reaches
 					// WP_Query args or HTML output. Do NOT assume these arrive sanitized.
-					'attributes'  => array( 'type' => 'object', 'required' => true ),
-					'page'        => array( 'type' => 'integer', 'default' => 1, 'sanitize_callback' => 'absint' ),
-					'innerBlocks' => array( 'type' => 'string', 'default' => '' ),
-					'params'      => array( 'type' => 'object', 'default' => array() ),
+					'attributes'  => array(
+						'type'     => 'object',
+						'required' => true,
+					),
+					'page'        => array(
+						'type'              => 'integer',
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+					),
+					'innerBlocks' => array(
+						'type'    => 'string',
+						'default' => '',
+					),
+					'params'      => array(
+						'type'    => 'object',
+						'default' => array(),
+					),
 				),
 			)
 		);
 	}
 
+	/**
+	 * Checks that the request is authenticated and carries a valid nonce.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return true|\WP_Error
+	 */
 	public function check_permission( \WP_REST_Request $request ) {
 		if ( ! is_user_logged_in() ) {
 			return new \WP_Error(
@@ -72,6 +104,12 @@ class Controller {
 		return true;
 	}
 
+	/**
+	 * Handles the render REST request and returns HTML + pagination metadata.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return \WP_REST_Response
+	 */
 	public function handle_render( \WP_REST_Request $request ) {
 		$query_id   = $request->get_param( 'queryId' );
 		$attributes = (array) $request->get_param( 'attributes' );

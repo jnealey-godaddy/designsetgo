@@ -14,12 +14,21 @@ namespace DesignSetGo\Blocks\Query;
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Block Bindings sources for the Dynamic Query block.
+ */
 class Bindings {
 
+	/**
+	 * Registers action hooks on instantiation.
+	 */
 	public function __construct() {
 		add_action( 'init', array( $this, 'register' ), 5 );
 	}
 
+	/**
+	 * Registers the designsetgo/post-meta and designsetgo/acf binding sources.
+	 */
 	public function register() {
 		if ( ! function_exists( 'register_block_bindings_source' ) ) {
 			return; // WP < 6.5.
@@ -49,6 +58,14 @@ class Bindings {
 		}
 	}
 
+	/**
+	 * Returns a single post-meta value for the bound block.
+	 *
+	 * @param array          $args           Binding args (expects 'key').
+	 * @param \WP_Block|null $block          The current block instance.
+	 * @param string         $attribute_name The bound attribute name.
+	 * @return string|null
+	 */
 	public function get_post_meta_value( array $args, $block = null, $attribute_name = 'content' ) {
 		// sanitize_text_field() strips HTML/null-bytes but preserves case and common characters.
 		// sanitize_key() would silently lowercase keys like "SEOTitle" → "seotitle", breaking lookups.
@@ -88,6 +105,14 @@ class Bindings {
 		return '' === $value ? null : $value;
 	}
 
+	/**
+	 * Returns a single ACF field value for the bound block.
+	 *
+	 * @param array          $args           Binding args (expects 'key').
+	 * @param \WP_Block|null $block          The current block instance.
+	 * @param string         $attribute_name The bound attribute name.
+	 * @return string|null
+	 */
 	public function get_acf_value( array $args, $block = null, $attribute_name = 'content' ) {
 		if ( ! function_exists( 'get_field' ) ) {
 			return null;
@@ -127,7 +152,7 @@ class Bindings {
 			return null;
 		}
 
-		$value = get_field( $key, $post_id ?: false );
+		$value = get_field( $key, $post_id ? $post_id : false );
 		if ( is_array( $value ) || is_object( $value ) ) {
 			return null; // Scalar-only source; complex values need a specific render path.
 		}
