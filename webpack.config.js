@@ -169,6 +169,18 @@ module.exports = {
 					to: 'admin/assets/[name][ext]',
 					noErrorOnMissing: true,
 				},
+				// Copy query block helper PHP files to build so the REST endpoint
+				// and PHPUnit tests can require_once them from build/blocks/query/.
+				{
+					from: 'src/blocks/query/render-helpers.php',
+					to: 'blocks/query/render-helpers.php',
+					noErrorOnMissing: true,
+				},
+				{
+					from: 'src/blocks/query/render-posts.php',
+					to: 'blocks/query/render-posts.php',
+					noErrorOnMissing: true,
+				},
 			],
 		}),
 		// Bundle analyzer - run with: ANALYZE=true npm run build
