@@ -39,9 +39,12 @@ export function useFacetRegistration({ facetKey, config }) {
 				facet_key: facetKey,
 				config,
 			},
-		}).catch(() => {
-			// Network/nonce failure — reset so a retry can happen on the next edit.
-			lastSent.current = null;
-		});
+		} ).catch( ( err ) => {
+			// Retry on network-level failures; keep dedup for persistent 4xx so we
+			// don't storm the server with the same bad request.
+			if ( err?.code === 'fetch_error' || err?.code === 'offline_error' ) {
+				lastSent.current = null;
+			}
+		} );
 	}, [facetKey, config?.type, config?.source]);
 }

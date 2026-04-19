@@ -64,7 +64,7 @@ class DesignSetGo_Query_Facet_Register_Route_Test extends WP_UnitTestCase {
 
 		$response = rest_do_request( $request );
 
-		$this->assertGreaterThanOrEqual( 400, $response->get_status() );
+		$this->assertSame( 403, $response->get_status() );
 		$this->assertArrayNotHasKey( 'category', get_option( 'dsgo_query_facets', array() ) );
 	}
 
@@ -100,7 +100,7 @@ class DesignSetGo_Query_Facet_Register_Route_Test extends WP_UnitTestCase {
 		$request->set_param( 'config', array( 'type' => 'taxonomy', 'source' => 'category' ) );
 
 		$response = rest_do_request( $request );
-		$this->assertGreaterThanOrEqual( 400, $response->get_status() );
+		$this->assertSame( 401, $response->get_status() );
 	}
 
 	public function test_anonymous_user_is_rejected() {
@@ -111,6 +111,6 @@ class DesignSetGo_Query_Facet_Register_Route_Test extends WP_UnitTestCase {
 		$request->set_param( 'config', array( 'type' => 'taxonomy', 'source' => 'category' ) );
 
 		$response = rest_do_request( $request );
-		$this->assertGreaterThanOrEqual( 400, $response->get_status() );
+		$this->assertSame( 401, $response->get_status() );
 	}
 }
