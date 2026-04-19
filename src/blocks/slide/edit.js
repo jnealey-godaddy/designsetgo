@@ -495,7 +495,7 @@ export default function SlideEdit({
 						label={__('Min Height Override', 'designsetgo')}
 						hasValue={() => minHeight !== ''}
 						onDeselect={() => setAttributes({ minHeight: '' })}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<UnitControl
 							label={__('Min Height Override', 'designsetgo')}

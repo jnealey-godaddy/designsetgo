@@ -21,7 +21,7 @@ export default function AnimationSettings({ attributes, setAttributes }) {
 				label={__('Animation Type', 'designsetgo')}
 				hasValue={() => animationType !== 'fade'}
 				onDeselect={() => setAttributes({ animationType: 'fade' })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<SelectControl
 					label={__('Animation Type', 'designsetgo')}
@@ -51,7 +51,7 @@ export default function AnimationSettings({ attributes, setAttributes }) {
 				label={__('Animation Duration (ms)', 'designsetgo')}
 				hasValue={() => animationDuration !== 300}
 				onDeselect={() => setAttributes({ animationDuration: 300 })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<RangeControl
 					label={__('Animation Duration (ms)', 'designsetgo')}

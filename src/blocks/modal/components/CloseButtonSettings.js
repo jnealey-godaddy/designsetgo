@@ -26,7 +26,7 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 				label={__('Show Close Button', 'designsetgo')}
 				hasValue={() => showCloseButton !== true}
 				onDeselect={() => setAttributes({ showCloseButton: true })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<ToggleControl
 					label={__('Show Close Button', 'designsetgo')}
@@ -47,7 +47,7 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 							closeButtonPosition: 'inside-top-right',
 						})
 					}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<SelectControl
 						label={__('Position', 'designsetgo')}
@@ -84,7 +84,7 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 					label={__('Close Button Size (px)', 'designsetgo')}
 					hasValue={() => closeButtonSize !== 24}
 					onDeselect={() => setAttributes({ closeButtonSize: 24 })}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<RangeControl
 						label={__('Button Size (px)', 'designsetgo')}

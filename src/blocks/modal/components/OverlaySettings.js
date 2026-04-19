@@ -21,7 +21,7 @@ export default function OverlaySettings({ attributes, setAttributes }) {
 				label={__('Overlay Opacity (%)', 'designsetgo')}
 				hasValue={() => overlayOpacity !== 80}
 				onDeselect={() => setAttributes({ overlayOpacity: 80 })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<RangeControl
 					label={__('Overlay Opacity (%)', 'designsetgo')}
@@ -41,7 +41,7 @@ export default function OverlaySettings({ attributes, setAttributes }) {
 				label={__('Backdrop Blur (px)', 'designsetgo')}
 				hasValue={() => overlayBlur !== 0}
 				onDeselect={() => setAttributes({ overlayBlur: 0 })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<RangeControl
 					label={__('Backdrop Blur (px)', 'designsetgo')}

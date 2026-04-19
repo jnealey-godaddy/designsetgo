@@ -27,7 +27,7 @@ export default function BehaviorSettings({ attributes, setAttributes }) {
 				label={__('Close on Backdrop Click', 'designsetgo')}
 				hasValue={() => closeOnBackdrop !== true}
 				onDeselect={() => setAttributes({ closeOnBackdrop: true })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<ToggleControl
 					label={__('Close on Backdrop Click', 'designsetgo')}
@@ -47,7 +47,7 @@ export default function BehaviorSettings({ attributes, setAttributes }) {
 				label={__('Close on ESC Key', 'designsetgo')}
 				hasValue={() => closeOnEsc !== true}
 				onDeselect={() => setAttributes({ closeOnEsc: true })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<ToggleControl
 					label={__('Close on ESC Key', 'designsetgo')}
@@ -65,7 +65,7 @@ export default function BehaviorSettings({ attributes, setAttributes }) {
 				label={__('Disable Body Scroll', 'designsetgo')}
 				hasValue={() => disableBodyScroll !== true}
 				onDeselect={() => setAttributes({ disableBodyScroll: true })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<ToggleControl
 					label={__('Disable Body Scroll', 'designsetgo')}
@@ -85,7 +85,7 @@ export default function BehaviorSettings({ attributes, setAttributes }) {
 				label={__('Allow Hash Trigger', 'designsetgo')}
 				hasValue={() => allowHashTrigger !== true}
 				onDeselect={() => setAttributes({ allowHashTrigger: true })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<ToggleControl
 					label={__('Allow Hash Trigger', 'designsetgo')}
@@ -106,7 +106,7 @@ export default function BehaviorSettings({ attributes, setAttributes }) {
 					label={__('Update URL on Open', 'designsetgo')}
 					hasValue={() => updateUrlOnOpen !== false}
 					onDeselect={() => setAttributes({ updateUrlOnOpen: false })}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<ToggleControl
 						label={__('Update URL on Open', 'designsetgo')}

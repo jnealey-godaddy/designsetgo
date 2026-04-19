@@ -173,7 +173,7 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 					label={__('Anchor (URL Hash)', 'designsetgo')}
 					hasValue={() => !!attributes.anchor}
 					onDeselect={() => setAttributes({ anchor: '' })}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<TextControl
 						label={__('Anchor (URL Hash)', 'designsetgo')}

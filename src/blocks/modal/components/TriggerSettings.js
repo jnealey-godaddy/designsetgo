@@ -37,7 +37,7 @@ export default function TriggerSettings({ attributes, setAttributes }) {
 				label={__('Auto Trigger Type', 'designsetgo')}
 				hasValue={() => autoTriggerType !== 'none'}
 				onDeselect={() => setAttributes({ autoTriggerType: 'none' })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<SelectControl
 					label={__('Trigger Type', 'designsetgo')}
@@ -88,7 +88,7 @@ export default function TriggerSettings({ attributes, setAttributes }) {
 					onDeselect={() =>
 						setAttributes({ autoTriggerFrequency: 'always' })
 					}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<SelectControl
 						label={__('Frequency', 'designsetgo')}
@@ -125,7 +125,7 @@ export default function TriggerSettings({ attributes, setAttributes }) {
 					label={__('Cookie Duration (days)', 'designsetgo')}
 					hasValue={() => cookieDuration !== 7}
 					onDeselect={() => setAttributes({ cookieDuration: 7 })}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<RangeControl
 						label={__('Cookie Duration (days)', 'designsetgo')}
@@ -150,7 +150,7 @@ export default function TriggerSettings({ attributes, setAttributes }) {
 					label={__('Page Load Delay (s)', 'designsetgo')}
 					hasValue={() => autoTriggerDelay !== 0}
 					onDeselect={() => setAttributes({ autoTriggerDelay: 0 })}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<RangeControl
 						label={__('Delay (seconds)', 'designsetgo')}
@@ -178,7 +178,7 @@ export default function TriggerSettings({ attributes, setAttributes }) {
 					onDeselect={() =>
 						setAttributes({ exitIntentSensitivity: 'medium' })
 					}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<SelectControl
 						label={__('Sensitivity', 'designsetgo')}
@@ -217,7 +217,7 @@ export default function TriggerSettings({ attributes, setAttributes }) {
 					label={__('Exit Intent Minimum Time (s)', 'designsetgo')}
 					hasValue={() => exitIntentMinTime !== 5}
 					onDeselect={() => setAttributes({ exitIntentMinTime: 5 })}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<RangeControl
 						label={__('Minimum Time (seconds)', 'designsetgo')}
@@ -244,7 +244,7 @@ export default function TriggerSettings({ attributes, setAttributes }) {
 					onDeselect={() =>
 						setAttributes({ exitIntentExcludeMobile: true })
 					}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<ToggleControl
 						label={__('Exclude Mobile Devices', 'designsetgo')}
@@ -268,7 +268,7 @@ export default function TriggerSettings({ attributes, setAttributes }) {
 					label={__('Scroll Depth (%)', 'designsetgo')}
 					hasValue={() => scrollDepth !== 50}
 					onDeselect={() => setAttributes({ scrollDepth: 50 })}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<RangeControl
 						label={__('Scroll Depth (%)', 'designsetgo')}
@@ -295,7 +295,7 @@ export default function TriggerSettings({ attributes, setAttributes }) {
 					onDeselect={() =>
 						setAttributes({ scrollDirection: 'down' })
 					}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<SelectControl
 						label={__('Scroll Direction', 'designsetgo')}
@@ -328,7 +328,7 @@ export default function TriggerSettings({ attributes, setAttributes }) {
 					label={__('Time on Page (s)', 'designsetgo')}
 					hasValue={() => timeOnPage !== 30}
 					onDeselect={() => setAttributes({ timeOnPage: 30 })}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<RangeControl
 						label={__('Time on Page (seconds)', 'designsetgo')}

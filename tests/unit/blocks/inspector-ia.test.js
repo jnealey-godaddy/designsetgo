@@ -72,6 +72,18 @@ const MIGRATED_BLOCKS = [
 	'image-accordion',
 	'tabs',
 	'modal',
+	'form-text-field',
+	'form-email-field',
+	'form-textarea-field',
+	'form-url-field',
+	'form-phone-field',
+	'form-number-field',
+	'form-date-field',
+	'form-time-field',
+	'form-select-field',
+	'form-checkbox-field',
+	'form-hidden-field',
+	'form-builder',
 ];
 
 // Blocks whose inspector items live in sub-components under

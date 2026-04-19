@@ -225,7 +225,7 @@ export default function AccordionEdit({ attributes, setAttributes, clientId }) {
 						onDeselect={() =>
 							setAttributes({ borderBetween: true })
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<ToggleControl
 							label={__('Border Between Items', 'designsetgo')}

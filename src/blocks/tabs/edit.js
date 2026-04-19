@@ -542,7 +542,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 						label={__('Gap Between Tabs', 'designsetgo')}
 						hasValue={() => gap !== '8px'}
 						onDeselect={() => setAttributes({ gap: '8px' })}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<RangeControl
 							label={__('Gap Between Tabs', 'designsetgo')}
@@ -564,7 +564,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 						onDeselect={() =>
 							setAttributes({ showNavBorder: false })
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<ToggleControl
 							label={__('Show Border Below Tabs', 'designsetgo')}
@@ -586,7 +586,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 						onDeselect={() =>
 							setAttributes({ mobileBreakpoint: 768 })
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<RangeControl
 							label={__('Mobile Breakpoint (px)', 'designsetgo')}
@@ -612,7 +612,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 						onDeselect={() =>
 							setAttributes({ mobileMode: 'accordion' })
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<SelectControl
 							label={__('Mobile Mode', 'designsetgo')}
@@ -648,7 +648,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 						onDeselect={() =>
 							setAttributes({ enableDeepLinking: false })
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<ToggleControl
 							label={__('Enable Deep Linking', 'designsetgo')}

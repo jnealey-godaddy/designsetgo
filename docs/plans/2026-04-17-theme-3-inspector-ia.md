@@ -42,7 +42,7 @@ Color stays in `<InspectorControls group="color">` so it slots into the native C
 - Every `<DsgoInspectorPanel.Item>` declares `hasValue`, `onDeselect`, and `isShownByDefault`.
 - `hasValue` returns `true` when the attribute differs from the `block.json` default.
 - `onDeselect` resets the attribute back to the `block.json` default (via `setAttributes`).
-- `isShownByDefault` is `true` for the primary 1–3 controls per panel; the rest are revealed via the panel's "+" menu.
+- **`isShownByDefault` is `true` on every item.** The original plan hid tertiary controls behind `ToolsPanel`'s kebab ("+") menu to keep inspector panels short, but the menu is not discoverable to most authors using this plugin — users missed controls they previously saw in flat `PanelBody` groups. The revised policy is: show everything by default. The per-item ⋮ reset and the panel-level `resetAll` still work exactly the same; only the default-visibility changed. See the "should we have the settings all show by default?" thread on PR #363 for the decision.
 
 ### Display order within Settings
 
@@ -172,7 +172,11 @@ Blocked on: the above. Not blocked on code — a `ToolsPanel` migration of slide
 
 Blocks: `form-builder`, `form-text-field`, `form-email-field`, `form-url-field`, `form-phone-field`, `form-number-field`, `form-date-field`, `form-time-field`, `form-textarea-field`, `form-select-field`, `form-checkbox-field`, `form-hidden-field`.
 
-- [ ] `form-builder` has 7 panels — consolidation target needs a sub-design.
+- [x] Eight text-like field blocks (`form-text-field` / `form-email-field` / `form-url-field` / `form-phone-field` / `form-number-field` / `form-date-field` / `form-time-field` / `form-textarea-field`) — each collapses its 1–4 `PanelBody` groups into one Settings panel. Every control is default-shown per the revised convention. `fieldName` `hasValue` predicates match on the block's specific auto-generated prefix (`field_`, `url-`, `phone-`, `number-`, `date-`, `time-`, `select-`, `checkbox-`, `hidden-`) so the reset doesn't falsely flag the generated name as "set".
+- [x] `form-select-field` — three panels + dynamic options array. Options list becomes a single Settings item whose `hasValue` does a deep equality check against the `block.json` default triple.
+- [x] `form-checkbox-field` — two panels (Field Settings / Additional Options) collapsed; `label` uses RichText, so the editor preview still renders via the existing label affordance below.
+- [x] `form-hidden-field` — trivial two-item Settings panel (fieldName + value).
+- [x] `form-builder` — **six** top-level `PanelBody` groups (Form Settings / Button Styling / Field Styling / Messages / Spam Protection / Email Notifications) consolidated into one Settings panel with ~25 items. Color dropdown stays in `<InspectorControls group="color">`. All items default-shown; conditional rate-limit and email items mount only when their parent toggle is on. `resetAll` returns every 25+ attribute to its `block.json` default in one click.
 
 ## Task 5 — Scroll family
 

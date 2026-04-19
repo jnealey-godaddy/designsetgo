@@ -267,7 +267,7 @@ export default function FiftyFiftyEdit({
 						label={__('Min Height', 'designsetgo')}
 						hasValue={() => minHeight !== '500px'}
 						onDeselect={() => setAttributes({ minHeight: '500px' })}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<UnitControl
 							label={__('Min Height', 'designsetgo')}
@@ -397,7 +397,7 @@ export default function FiftyFiftyEdit({
 									focalPoint: { x: 0.5, y: 0.5 },
 								})
 							}
-							isShownByDefault={false}
+							isShownByDefault
 						>
 							<FocalPointPicker
 								__nextHasNoMarginBottom

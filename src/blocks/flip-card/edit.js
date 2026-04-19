@@ -255,7 +255,7 @@ export default function FlipCardEdit({ attributes, setAttributes, clientId }) {
 						onDeselect={() =>
 							setAttributes({ flipDuration: '0.6s' })
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<UnitControl
 							label={__('Flip Duration', 'designsetgo')}

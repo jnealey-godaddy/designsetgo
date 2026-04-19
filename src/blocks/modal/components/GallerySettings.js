@@ -40,7 +40,7 @@ export default function GallerySettings({ attributes, setAttributes }) {
 						showGalleryNavigation: true,
 					})
 				}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<TextControl
 					label={__('Gallery Group ID', 'designsetgo')}
@@ -63,7 +63,7 @@ export default function GallerySettings({ attributes, setAttributes }) {
 					label={__('Gallery Index', 'designsetgo')}
 					hasValue={() => galleryIndex !== 0}
 					onDeselect={() => setAttributes({ galleryIndex: 0 })}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<RangeControl
 						label={__('Gallery Index', 'designsetgo')}
@@ -90,7 +90,7 @@ export default function GallerySettings({ attributes, setAttributes }) {
 					onDeselect={() =>
 						setAttributes({ showGalleryNavigation: true })
 					}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<ToggleControl
 						label={__('Show Navigation', 'designsetgo')}
@@ -114,7 +114,7 @@ export default function GallerySettings({ attributes, setAttributes }) {
 					onDeselect={() =>
 						setAttributes({ navigationStyle: 'arrows' })
 					}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<SelectControl
 						label={__('Navigation Style', 'designsetgo')}
@@ -153,7 +153,7 @@ export default function GallerySettings({ attributes, setAttributes }) {
 					onDeselect={() =>
 						setAttributes({ navigationPosition: 'sides' })
 					}
-					isShownByDefault={false}
+					isShownByDefault
 				>
 					<SelectControl
 						label={__('Navigation Position', 'designsetgo')}

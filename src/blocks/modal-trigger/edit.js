@@ -239,7 +239,7 @@ export default function ModalTriggerEdit({
 						onDeselect={() =>
 							setAttributes({ icon: '', iconPosition: 'none' })
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<IconPicker
 							label={__('Icon', 'designsetgo')}
@@ -298,7 +298,7 @@ export default function ModalTriggerEdit({
 							label={__('Icon Size (px)', 'designsetgo')}
 							hasValue={() => iconSize !== 20}
 							onDeselect={() => setAttributes({ iconSize: 20 })}
-							isShownByDefault={false}
+							isShownByDefault
 						>
 							<RangeControl
 								label={__('Icon Size (px)', 'designsetgo')}
@@ -320,7 +320,7 @@ export default function ModalTriggerEdit({
 							label={__('Icon Gap', 'designsetgo')}
 							hasValue={() => iconGap !== '8px'}
 							onDeselect={() => setAttributes({ iconGap: '8px' })}
-							isShownByDefault={false}
+							isShownByDefault
 						>
 							<UnitControl
 								label={__('Icon Gap', 'designsetgo')}

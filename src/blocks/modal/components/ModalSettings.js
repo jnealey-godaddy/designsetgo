@@ -83,7 +83,7 @@ export default function ModalSettings({ attributes, setAttributes }) {
 				label={__('Max Width', 'designsetgo')}
 				hasValue={() => maxWidth !== '90vw'}
 				onDeselect={() => setAttributes({ maxWidth: '90vw' })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<UnitControl
 					label={__('Max Width', 'designsetgo')}
@@ -104,7 +104,7 @@ export default function ModalSettings({ attributes, setAttributes }) {
 				onDeselect={() =>
 					setAttributes({ height: 'auto', maxHeight: '90vh' })
 				}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<SelectControl
 					label={__('Height', 'designsetgo')}

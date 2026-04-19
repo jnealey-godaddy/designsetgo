@@ -10,9 +10,13 @@ import {
 	InspectorControls,
 	RichText,
 } from '@wordpress/block-editor';
-import { PanelBody, TextControl, ToggleControl } from '@wordpress/components';
+import { TextControl, ToggleControl } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect } from '@wordpress/element';
 import classnames from 'classnames';
+
+const DEFAULT_LABEL = 'I agree to the terms and conditions';
+const DEFAULT_VALUE = '1';
 
 export default function FormCheckboxFieldEdit({
 	attributes,
@@ -43,80 +47,128 @@ export default function FormCheckboxFieldEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Field Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							fieldName: '',
+							label: DEFAULT_LABEL,
+							helpText: '',
+							required: false,
+							checkedByDefault: false,
+							value: DEFAULT_VALUE,
+						})
+					}
 				>
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Field Name', 'designsetgo')}
-						value={fieldName}
-						onChange={(newValue) =>
-							setAttributes({
-								fieldName: newValue.replace(
-									/[^a-z0-9_-]/gi,
-									''
-								),
-							})
+						hasValue={() =>
+							!!fieldName &&
+							!/^checkbox-[a-z0-9]{1,8}$/i.test(fieldName)
 						}
-						help={__(
-							'Unique identifier for this field (letters, numbers, hyphens, underscores only)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						onDeselect={() => setAttributes({ fieldName: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Field Name', 'designsetgo')}
+							value={fieldName}
+							onChange={(newValue) =>
+								setAttributes({
+									fieldName: newValue.replace(
+										/[^a-z0-9_-]/gi,
+										''
+									),
+								})
+							}
+							help={__(
+								'Unique identifier for this field (letters, numbers, hyphens, underscores only)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Required', 'designsetgo')}
-						checked={required}
-						onChange={(newValue) =>
-							setAttributes({ required: newValue })
-						}
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => required !== false}
+						onDeselect={() => setAttributes({ required: false })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Required', 'designsetgo')}
+							checked={required}
+							onChange={(newValue) =>
+								setAttributes({ required: newValue })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Checked by Default', 'designsetgo')}
-						checked={checkedByDefault}
-						onChange={(newValue) =>
-							setAttributes({ checkedByDefault: newValue })
+						hasValue={() => checkedByDefault !== false}
+						onDeselect={() =>
+							setAttributes({ checkedByDefault: false })
 						}
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Checked by Default', 'designsetgo')}
+							checked={checkedByDefault}
+							onChange={(newValue) =>
+								setAttributes({ checkedByDefault: newValue })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Additional Options', 'designsetgo')}
-					initialOpen={false}
-				>
-					<TextControl
-						label={__('Value', 'designsetgo')}
-						value={value}
-						onChange={(newValue) =>
-							setAttributes({ value: newValue })
+					<DsgoInspectorPanel.Item
+						label={__('Submitted Value', 'designsetgo')}
+						hasValue={() => value !== DEFAULT_VALUE}
+						onDeselect={() =>
+							setAttributes({ value: DEFAULT_VALUE })
 						}
-						help={__(
-							'The value submitted when checkbox is checked',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Value', 'designsetgo')}
+							value={value}
+							onChange={(newValue) =>
+								setAttributes({ value: newValue })
+							}
+							help={__(
+								'The value submitted when checkbox is checked',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Help Text', 'designsetgo')}
-						value={helpText}
-						onChange={(newValue) =>
-							setAttributes({ helpText: newValue })
-						}
-						help={__(
-							'Additional guidance shown below the field',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => helpText !== ''}
+						onDeselect={() => setAttributes({ helpText: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Help Text', 'designsetgo')}
+							value={helpText}
+							onChange={(newValue) =>
+								setAttributes({ helpText: newValue })
+							}
+							help={__(
+								'Additional guidance shown below the field',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

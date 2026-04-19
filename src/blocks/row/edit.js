@@ -314,7 +314,7 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 								contentWidth: '',
 							})
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<ToggleControl
 							label={__('Constrain Inner Width', 'designsetgo')}

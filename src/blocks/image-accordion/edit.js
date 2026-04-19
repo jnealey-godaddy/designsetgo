@@ -200,7 +200,7 @@ export default function ImageAccordionEdit({
 						label={__('Gap Between Items', 'designsetgo')}
 						hasValue={() => gap !== '4px'}
 						onDeselect={() => setAttributes({ gap: '4px' })}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<UnitControl
 							label={__('Gap Between Items', 'designsetgo')}
@@ -280,7 +280,7 @@ export default function ImageAccordionEdit({
 						label={__('Expanded Ratio', 'designsetgo')}
 						hasValue={() => expandedRatio !== 3}
 						onDeselect={() => setAttributes({ expandedRatio: 3 })}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<RangeControl
 							label={__('Expanded Ratio', 'designsetgo')}
@@ -306,7 +306,7 @@ export default function ImageAccordionEdit({
 						onDeselect={() =>
 							setAttributes({ transitionDuration: '0.5s' })
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<UnitControl
 							label={__('Transition Duration', 'designsetgo')}
@@ -337,7 +337,7 @@ export default function ImageAccordionEdit({
 						onDeselect={() =>
 							setAttributes({ enableOverlay: true })
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<ToggleControl
 							label={__('Enable Overlay', 'designsetgo')}
@@ -367,7 +367,7 @@ export default function ImageAccordionEdit({
 							onDeselect={() =>
 								setAttributes({ overlayOpacity: 40 })
 							}
-							isShownByDefault={false}
+							isShownByDefault
 						>
 							<RangeControl
 								label={__(
@@ -400,7 +400,7 @@ export default function ImageAccordionEdit({
 							onDeselect={() =>
 								setAttributes({ overlayOpacityExpanded: 20 })
 							}
-							isShownByDefault={false}
+							isShownByDefault
 						>
 							<RangeControl
 								label={__(
