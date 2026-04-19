@@ -109,7 +109,12 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 				<div className="dsgo-query__editor-grid">
 					<div {...innerBlocksProps} />
 					{Array.from(
-						{ length: Math.max(0, (attributes.columns || 1) - 1) },
+						// perPage - 1 ghost tiles (the real prototype fills
+						// slot #1) so the editor preview matches the total
+						// item count the frontend will render. Capped at 23
+						// (24 cells total) to keep the editor DOM cheap when
+						// someone sets perPage to 48.
+						{ length: Math.max(0, Math.min(23, (attributes.perPage || 6) - 1)) },
 						(_, i) => (
 							<div
 								key={ i }

@@ -5,7 +5,7 @@
  * post-featured-image + linked title + excerpt trio.
  */
 export const DEFAULT_TEMPLATE = [
-	['core/post-featured-image'],
-	['core/post-title', { level: 3, isLink: true }],
-	['core/post-excerpt'],
+	[ 'core/post-featured-image', { isLink: true } ],
+	[ 'core/post-title', { level: 3, isLink: true } ],
+	[ 'core/post-excerpt' ],
 ];
