@@ -232,7 +232,14 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			if ( empty( $terms ) ) {
 				continue;
 			}
-			if ( ! isset( $args['tax_query'] ) ) {
+			// If an attribute-level tax_query exists with relation=OR, wrap it so
+			// the URL-param clause ANDs against the entire OR group.
+			if ( isset( $args['tax_query'] ) && 'OR' === ( $args['tax_query']['relation'] ?? 'AND' ) ) {
+				$args['tax_query'] = array(
+					'relation' => 'AND',
+					$args['tax_query'],
+				);
+			} elseif ( ! isset( $args['tax_query'] ) ) {
 				$args['tax_query'] = array( 'relation' => 'AND' ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 			}
 			$args['tax_query'][] = array(

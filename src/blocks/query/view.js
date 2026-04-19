@@ -210,13 +210,13 @@ store( 'designsetgo/query', {
 		 * what we need for the setTimeout pattern.
 		 */
 		setFilterDebounced( event ) {
+			const ctx       = getContext(); // capture while IAPI frame is live
 			const el        = event.target;
 			const paramName = el.getAttribute( 'name' )?.replace( /\[\]$/, '' );
 			if ( ! paramName ) return;
 
 			clearTimeout( dsgoDebounceTimers[ paramName ] );
 			dsgoDebounceTimers[ paramName ] = setTimeout( () => {
-				const ctx = getContext();
 				const url = new URL( window.location.href );
 				if ( el.value ) {
 					url.searchParams.set( paramName, el.value );
@@ -275,6 +275,7 @@ store( 'designsetgo/query', {
 			const href    = ref.getAttribute( 'href' );
 			if ( ! href ) return;
 			const url = new URL( href, window.location.href );
+			url.searchParams.delete( 'paged' );
 			yield* dsgoQueryRefresh( ctx, url );
 		},
 

@@ -303,8 +303,20 @@ if ( ! function_exists( 'designsetgo_query_filter_render_active' ) ) :
 				}
 			}
 
-			$base        = strtok( $current_url, '?' );
-			$new_url     = $parsed ? $base . '?' . http_build_query( $parsed ) : $base;
+			unset( $parsed['paged'] );
+
+			$base    = strtok( $current_url, '?' );
+			$parts   = array();
+			foreach ( $parsed as $qs_key => $qs_val ) {
+				if ( is_array( $qs_val ) ) {
+					foreach ( $qs_val as $item ) {
+						$parts[] = rawurlencode( (string) $qs_key ) . '%5B%5D=' . rawurlencode( (string) $item );
+					}
+				} else {
+					$parts[] = rawurlencode( (string) $qs_key ) . '=' . rawurlencode( (string) $qs_val );
+				}
+			}
+			$new_url = $parts ? $base . '?' . implode( '&', $parts ) : $base;
 			$chips_html .= sprintf(
 				'<a href="%1$s" class="dsgo-query-filter__chip" data-wp-on--click="actions.removeActiveFilter" data-dsgo-filter-key="%2$s" data-dsgo-filter-value="%3$s">%4$s<span aria-hidden="true"> &times;</span><span class="screen-reader-text">%5$s</span></a>',
 				esc_url( $new_url ),
@@ -347,8 +359,18 @@ if ( ! function_exists( 'designsetgo_query_filter_render_reset' ) ) :
 			}
 		}
 
-		$base      = strtok( $current_url, '?' );
-		$reset_url = $parsed ? $base . '?' . http_build_query( $parsed ) : $base;
+		$base        = strtok( $current_url, '?' );
+		$reset_parts = array();
+		foreach ( $parsed as $qs_key => $qs_val ) {
+			if ( is_array( $qs_val ) ) {
+				foreach ( $qs_val as $item ) {
+					$reset_parts[] = rawurlencode( (string) $qs_key ) . '%5B%5D=' . rawurlencode( (string) $item );
+				}
+			} else {
+				$reset_parts[] = rawurlencode( (string) $qs_key ) . '=' . rawurlencode( (string) $qs_val );
+			}
+		}
+		$reset_url = $reset_parts ? $base . '?' . implode( '&', $reset_parts ) : $base;
 		$btn_label = $label ? $label : __( 'Reset filters', 'designsetgo' );
 
 		printf(

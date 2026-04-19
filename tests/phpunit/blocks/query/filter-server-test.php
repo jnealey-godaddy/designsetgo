@@ -117,6 +117,73 @@ class DesignSetGo_Query_Filter_Server_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * URL filter_<taxonomy> must AND against an attribute-level OR-relation tax_query.
+	 *
+	 * Scenario: attribute taxQuery has relation=OR (category=a OR category=b).
+	 * URL param adds filter_category=c.
+	 * Expected: (a OR b) AND c — only posts in (a+c) or (b+c) are returned.
+	 */
+	public function test_url_filter_ands_against_attribute_or_tax_query() {
+		$cat_a = self::factory()->category->create( array( 'slug' => 'a' ) );
+		$cat_b = self::factory()->category->create( array( 'slug' => 'b' ) );
+		$cat_c = self::factory()->category->create( array( 'slug' => 'c' ) );
+
+		// Post in A+C (matches attribute OR + URL filter).
+		$pac = self::factory()->post->create( array( 'post_status' => 'publish' ) );
+		wp_set_post_categories( $pac, array( $cat_a, $cat_c ) );
+
+		// Post in B+C (matches attribute OR + URL filter).
+		$pbc = self::factory()->post->create( array( 'post_status' => 'publish' ) );
+		wp_set_post_categories( $pbc, array( $cat_b, $cat_c ) );
+
+		// Post in only A (matches attribute OR but NOT URL filter=c).
+		$pa = self::factory()->post->create( array( 'post_status' => 'publish' ) );
+		wp_set_post_categories( $pa, array( $cat_a ) );
+
+		$this->load_helpers();
+
+		// Attribute: OR (category=a OR category=b).
+		// URL param: filter_category=c.
+		// Expected: (a OR b) AND (c) = just $pac + $pbc.
+		$result = designsetgo_query_render(
+			array(
+				'source'      => 'posts',
+				'postType'    => 'post',
+				'perPage'     => 10,
+				'tagName'     => 'ul',
+				'itemTagName' => 'li',
+				'taxQuery'    => array(
+					'relation' => 'OR',
+					'clauses'  => array(
+						array(
+							'taxonomy' => 'category',
+							'terms'    => array( $cat_a ),
+							'operator' => 'IN',
+						),
+						array(
+							'taxonomy' => 'category',
+							'terms'    => array( $cat_b ),
+							'operator' => 'IN',
+						),
+					),
+				),
+			),
+			array(
+				'query_id'   => 'or-and',
+				'page'       => 1,
+				'inner_html' => '',
+				'params'     => array( 'filter_category' => array( 'c' ) ),
+			)
+		);
+
+		$this->assertSame(
+			2,
+			$result['totalItems'],
+			'URL filter must AND against OR-relation attribute tax_query.'
+		);
+	}
+
+	/**
 	 * q=Needle should limit results to posts whose title/content matches.
 	 */
 	public function test_q_search_param_narrows_posts() {
