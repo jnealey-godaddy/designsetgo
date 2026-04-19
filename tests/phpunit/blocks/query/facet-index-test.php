@@ -7,6 +7,13 @@
  */
 class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 
+	public function tear_down(): void {
+		global $wpdb;
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'dsgo_query_facet_index' );
+		delete_option( \DesignSetGo\Blocks\Query\FacetIndex::OPTION_SCHEMA );
+		parent::tear_down();
+	}
+
 	public function test_install_creates_table() {
 		global $wpdb;
 		$table = $wpdb->prefix . 'dsgo_query_facet_index';

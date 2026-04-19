@@ -654,7 +654,7 @@ class Plugin {
 
 		if ( version_compare( $stored, '2.2.0', '<' ) ) {
 			Blocks\Query\FacetIndex::install();
-			update_option( 'designsetgo_db_version', DESIGNSETGO_VERSION );
+			update_option( 'designsetgo_db_version', '2.2.0', false );
 		}
 	}
 

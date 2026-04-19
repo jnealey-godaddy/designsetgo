@@ -77,6 +77,6 @@ class FacetIndex {
 
 		dbDelta( $sql );
 
-		update_option( self::OPTION_SCHEMA, self::SCHEMA_VERSION );
+		update_option( self::OPTION_SCHEMA, self::SCHEMA_VERSION, false );
 	}
 }
