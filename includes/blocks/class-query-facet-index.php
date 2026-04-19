@@ -190,6 +190,97 @@ class FacetIndex {
 	}
 
 	/**
+	 * Returns the count of distinct objects matching each option value for a
+	 * facet key, intersected with the current active-filter state.
+	 *
+	 * Within-group semantics: selections inside the same facet group are OR
+	 * (showing "how many objects would match if you added this value").
+	 * Across-group semantics: each other active-filter group is AND.
+	 * The self-facet is excluded from the intersection so users can still see
+	 * counts for all options of the group they are currently filtering on.
+	 *
+	 * @param string  $facet_key     The facet to count options for (e.g. 'category').
+	 * @param array   $option_values Option values to count. Values are (string)-cast.
+	 * @param array   $active_filters Active filter state: [ facet_key => [ value, ... ] ].
+	 * @return array  [ value => count ] zero-filled for options absent from the result set.
+	 */
+	public static function count_for_options( string $facet_key, array $option_values, array $active_filters ): array {
+		if ( empty( $option_values ) ) {
+			return array();
+		}
+
+		global $wpdb;
+		$table = self::table_name();
+		$key   = sanitize_key( $facet_key );
+		if ( '' === $key ) {
+			return array();
+		}
+
+		// Normalise option values to strings and build a keyed default (0-filled).
+		$string_values = array_values( array_unique( array_map( 'strval', $option_values ) ) );
+		$counts        = array_fill_keys( $string_values, 0 );
+
+		// Exclude self-facet from intersection — OR semantics within a group.
+		unset( $active_filters[ $facet_key ] );
+
+		// Build intersection subqueries, one per active-filter group.
+		$intersect_sql    = '';
+		$intersect_params = array();
+
+		foreach ( $active_filters as $f_key => $f_values ) {
+			$sanitized_f_key = sanitize_key( (string) $f_key );
+			if ( '' === $sanitized_f_key || empty( $f_values ) ) {
+				continue;
+			}
+			$f_strings = array_values( array_unique( array_map( 'strval', (array) $f_values ) ) );
+			if ( empty( $f_strings ) ) {
+				continue;
+			}
+			$f_placeholders    = implode( ',', array_fill( 0, count( $f_strings ), '%s' ) );
+			$intersect_sql    .= " AND object_id IN (
+            SELECT object_id FROM {$table}
+            WHERE facet_key = %s AND facet_value IN ({$f_placeholders})
+        )";
+			$intersect_params[] = $sanitized_f_key;
+			foreach ( $f_strings as $v ) {
+				$intersect_params[] = $v;
+			}
+		}
+
+		$value_placeholders = implode( ',', array_fill( 0, count( $string_values ), '%s' ) );
+		$sql = "SELECT facet_value, COUNT(DISTINCT object_id) AS cnt
+            FROM {$table}
+            WHERE facet_key = %s AND facet_value IN ({$value_placeholders})
+            {$intersect_sql}
+            GROUP BY facet_value";
+
+		$params = array_merge( array( $key ), $string_values, $intersect_params );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- placeholders built programmatically above.
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
+
+		if ( is_array( $rows ) ) {
+			foreach ( $rows as $row ) {
+				if ( array_key_exists( $row->facet_value, $counts ) ) {
+					$counts[ $row->facet_value ] = (int) $row->cnt;
+				}
+			}
+		}
+
+		return $counts;
+	}
+
+	/**
+	 * Returns true if the given facet key is registered in FacetRegistry.
+	 *
+	 * @param string $facet_key The facet key to check (e.g. 'category').
+	 * @return bool
+	 */
+	public static function is_available( string $facet_key ): bool {
+		return null !== FacetRegistry::get( $facet_key );
+	}
+
+	/**
 	 * Creates or upgrades the facet index table via dbDelta.
 	 *
 	 * Safe to call multiple times — dbDelta is idempotent.

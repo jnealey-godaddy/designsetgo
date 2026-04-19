@@ -433,4 +433,133 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 		) );
 		$this->assertSame( 1, $count );
 	}
+
+	// -------------------------------------------------------------------------
+	// count_for_options + is_available (Task A5)
+	// -------------------------------------------------------------------------
+
+	public function test_count_for_options_returns_counts_per_value() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+
+		$news   = $this->factory->category->create( array( 'slug' => 'news' ) );
+		$events = $this->factory->category->create( array( 'slug' => 'events' ) );
+
+		$news_ids = $this->factory->post->create_many( 3, array(
+			'post_status'   => 'publish',
+			'post_category' => array( $news ),
+		) );
+		$event_ids = $this->factory->post->create_many( 2, array(
+			'post_status'   => 'publish',
+			'post_category' => array( $events ),
+		) );
+		foreach ( array_merge( $news_ids, $event_ids ) as $pid ) {
+			\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+		}
+
+		$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+			'category',
+			array( $news, $events ),
+			array()
+		);
+
+		$this->assertSame( 3, $counts[ (string) $news ] );
+		$this->assertSame( 2, $counts[ (string) $events ] );
+	}
+
+	public function test_count_for_options_zero_fills_missing_values() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+
+		$news   = $this->factory->category->create();
+		$orphan = $this->factory->category->create(); // no posts
+
+		$pid = $this->factory->post->create( array( 'post_status' => 'publish', 'post_category' => array( $news ) ) );
+		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+
+		$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options( 'category', array( $news, $orphan ), array() );
+
+		$this->assertSame( 1, $counts[ (string) $news ] );
+		$this->assertSame( 0, $counts[ (string) $orphan ] );
+	}
+
+	public function test_count_for_options_respects_cross_facet_intersection() {
+		// 3 posts in news; 2 of them tagged hot; count for news under active tag=hot should be 2.
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'tag',      array( 'type' => 'taxonomy', 'source' => 'post_tag' ) );
+
+		$news = $this->factory->category->create();
+		$hot  = $this->factory->term->create( array( 'taxonomy' => 'post_tag' ) );
+
+		$hot_in_news  = $this->factory->post->create_many( 2, array( 'post_status' => 'publish', 'post_category' => array( $news ), 'tags_input' => array( get_term( $hot )->slug ) ) );
+		$cold_in_news = $this->factory->post->create( array( 'post_status' => 'publish', 'post_category' => array( $news ) ) );
+
+		foreach ( array_merge( $hot_in_news, array( $cold_in_news ) ) as $pid ) {
+			\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+		}
+
+		$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+			'category',
+			array( $news ),
+			array( 'tag' => array( (string) $hot ) )
+		);
+
+		$this->assertSame( 2, $counts[ (string) $news ] );
+	}
+
+	public function test_count_for_options_excludes_self_facet_from_intersection() {
+		// Counting options for 'category' with 'category' ALSO in active_filters
+		// must ignore the self-entry — OR semantics within a group.
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+
+		$news   = $this->factory->category->create();
+		$events = $this->factory->category->create();
+
+		$news_ids  = $this->factory->post->create_many( 3, array( 'post_status' => 'publish', 'post_category' => array( $news ) ) );
+		$event_ids = $this->factory->post->create_many( 2, array( 'post_status' => 'publish', 'post_category' => array( $events ) ) );
+		foreach ( array_merge( $news_ids, $event_ids ) as $pid ) {
+			\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+		}
+
+		// Even though user has 'news' selected, counting for 'category' must still
+		// show events=2 (so user can see what switching to events would give them).
+		$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+			'category',
+			array( $news, $events ),
+			array( 'category' => array( (string) $news ) )
+		);
+
+		$this->assertSame( 3, $counts[ (string) $news ] );
+		$this->assertSame( 2, $counts[ (string) $events ] );
+	}
+
+	public function test_count_for_options_empty_option_values_returns_empty_array() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		$this->assertSame( array(), \DesignSetGo\Blocks\Query\FacetIndex::count_for_options( 'anything', array(), array() ) );
+	}
+
+	public function test_count_for_options_deduplicates_option_values() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+
+		$news = $this->factory->category->create();
+		$pid  = $this->factory->post->create( array( 'post_status' => 'publish', 'post_category' => array( $news ) ) );
+		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+
+		// Pass the same value twice — result should have one entry.
+		$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options( 'category', array( $news, $news, (string) $news ), array() );
+		$this->assertCount( 1, $counts );
+		$this->assertSame( 1, $counts[ (string) $news ] );
+	}
+
+	public function test_is_available_true_for_registered_facet() {
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+		$this->assertTrue( \DesignSetGo\Blocks\Query\FacetIndex::is_available( 'category' ) );
+	}
+
+	public function test_is_available_false_for_unregistered_facet() {
+		$this->assertFalse( \DesignSetGo\Blocks\Query\FacetIndex::is_available( 'nonexistent' ) );
+	}
 }
