@@ -1,34 +1,22 @@
 /**
  * Icon List - List Settings Panel Component
  *
- * Provides controls for layout, icon size, gap, and columns.
+ * Renders DsgoInspectorPanel.Item entries for icon-list layout and icon
+ * attributes. Meant to be composed inside the Settings DsgoInspectorPanel
+ * in icon-list/edit.js.
  *
  * @since 1.0.0
  */
 
 import { __ } from '@wordpress/i18n';
 import {
-	PanelBody,
 	SelectControl,
 	RangeControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../../../components/shared';
 
-/**
- * List Settings Panel Component
- *
- * @param {Object}   props                       - Component props
- * @param {string}   props.layout                - Current layout type
- * @param {number}   props.iconSize              - Icon size in pixels
- * @param {string}   props.gap                   - Gap between items
- * @param {string}   props.iconPosition          - Icon position relative to text
- * @param {number}   props.columns               - Number of columns for grid layout
- * @param {string}   props.alignment             - Alignment for vertical layout
- * @param {string}   props.iconVerticalAlignment - Vertical alignment of icon with text
- * @param {Function} props.setAttributes         - Function to update attributes
- * @return {JSX.Element} List Settings Panel component
- */
 export const ListSettingsPanel = ({
 	layout,
 	iconSize,
@@ -41,9 +29,11 @@ export const ListSettingsPanel = ({
 }) => {
 	return (
 		<>
-			<PanelBody
-				title={__('List Settings', 'designsetgo')}
-				initialOpen={true}
+			<DsgoInspectorPanel.Item
+				label={__('Layout', 'designsetgo')}
+				hasValue={() => layout !== 'vertical'}
+				onDeselect={() => setAttributes({ layout: 'vertical' })}
+				isShownByDefault
 			>
 				<SelectControl
 					label={__('Layout', 'designsetgo')}
@@ -67,8 +57,15 @@ export const ListSettingsPanel = ({
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
+			</DsgoInspectorPanel.Item>
 
-				{(layout === 'vertical' || layout === 'horizontal') && (
+			{(layout === 'vertical' || layout === 'horizontal') && (
+				<DsgoInspectorPanel.Item
+					label={__('Alignment', 'designsetgo')}
+					hasValue={() => alignment !== 'left'}
+					onDeselect={() => setAttributes({ alignment: 'left' })}
+					isShownByDefault
+				>
 					<SelectControl
 						label={__('Alignment', 'designsetgo')}
 						value={alignment}
@@ -100,9 +97,16 @@ export const ListSettingsPanel = ({
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				)}
+				</DsgoInspectorPanel.Item>
+			)}
 
-				{layout === 'grid' && (
+			{layout === 'grid' && (
+				<DsgoInspectorPanel.Item
+					label={__('Columns', 'designsetgo')}
+					hasValue={() => columns !== 1}
+					onDeselect={() => setAttributes({ columns: 1 })}
+					isShownByDefault
+				>
 					<RangeControl
 						label={__('Columns', 'designsetgo')}
 						value={columns}
@@ -116,8 +120,15 @@ export const ListSettingsPanel = ({
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				)}
+				</DsgoInspectorPanel.Item>
+			)}
 
+			<DsgoInspectorPanel.Item
+				label={__('Icon Position', 'designsetgo')}
+				hasValue={() => iconPosition !== 'left'}
+				onDeselect={() => setAttributes({ iconPosition: 'left' })}
+				isShownByDefault
+			>
 				<SelectControl
 					label={__('Icon Position', 'designsetgo')}
 					value={iconPosition}
@@ -130,8 +141,17 @@ export const ListSettingsPanel = ({
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
+			</DsgoInspectorPanel.Item>
 
-				{iconPosition !== 'top' && (
+			{iconPosition !== 'top' && (
+				<DsgoInspectorPanel.Item
+					label={__('Icon Vertical Alignment', 'designsetgo')}
+					hasValue={() => iconVerticalAlignment !== 'top'}
+					onDeselect={() =>
+						setAttributes({ iconVerticalAlignment: 'top' })
+					}
+					isShownByDefault
+				>
 					<SelectControl
 						label={__('Vertical Alignment', 'designsetgo')}
 						value={iconVerticalAlignment}
@@ -155,8 +175,15 @@ export const ListSettingsPanel = ({
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				)}
+				</DsgoInspectorPanel.Item>
+			)}
 
+			<DsgoInspectorPanel.Item
+				label={__('Icon Size', 'designsetgo')}
+				hasValue={() => iconSize !== 32}
+				onDeselect={() => setAttributes({ iconSize: 32 })}
+				isShownByDefault
+			>
 				<RangeControl
 					label={__('Icon Size', 'designsetgo')}
 					value={iconSize}
@@ -167,7 +194,14 @@ export const ListSettingsPanel = ({
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
+			</DsgoInspectorPanel.Item>
 
+			<DsgoInspectorPanel.Item
+				label={__('Gap', 'designsetgo')}
+				hasValue={() => gap !== '24px'}
+				onDeselect={() => setAttributes({ gap: '24px' })}
+				isShownByDefault
+			>
 				<UnitControl
 					label={__('Gap', 'designsetgo')}
 					value={gap}
@@ -181,7 +215,7 @@ export const ListSettingsPanel = ({
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
-			</PanelBody>
+			</DsgoInspectorPanel.Item>
 		</>
 	);
 };

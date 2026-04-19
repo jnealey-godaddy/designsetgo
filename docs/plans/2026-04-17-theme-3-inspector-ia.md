@@ -196,6 +196,17 @@ Blocks: `scroll-marquee`, `scroll-slide`, `scroll-slides`, `scroll-accordion`, `
 
 Blocks: `card`, `icon`, `icon-button`, `icon-list`, `icon-list-item`, `pill`, `divider`, `advanced-heading`, `heading-segment`, `breadcrumbs`, `blobs`, `comparison-table`, `timeline`, `timeline-item`.
 
+- [x] `divider` — single PanelBody (4 controls, conditional IconPicker) → Settings panel.
+- [x] `blobs` — single PanelBody (7 controls) + color group for overlay → Settings panel. Conditional overlay-opacity item.
+- [x] `icon-list` — `ListSettingsPanel` sub-component migrated. 7 items with conditional alignment/columns/verticalAlignment. Added to `COMPOSITE_INSPECTOR_BLOCKS`; test helper extended to recurse `components/**/*.js` so nested `components/inspector/` files are picked up.
+- [x] `icon` — 3 PanelBody groups (Icon / Link / Accessibility) consolidated into one Settings panel with 9 items (icon, style, conditional stroke-width, icon-size, rotation, link-url, conditional open-in-new-tab, decorative, conditional aria-label).
+- [x] `icon-button` — `ButtonSettingsPanel` sub-component migrated. 7 items including conditional icon-size / icon-gap when icon is shown, and conditional modal-close ID field.
+- [x] `breadcrumbs` — `DisplaySettingsPanel` (`InspectorPanels.js`) sub-component migrated to 7 items (toggles + text inputs + separator select).
+- [x] `timeline` — four PanelBody groups (Layout / Line / Marker / Animation) consolidated into one Settings panel with 10 items. Conditional content-layout (vertical only) and animation-duration / stagger-delay (animateOnScroll only).
+- [x] `card` — large 5-section PanelBody (Layout / Image / Badge / Content Elements / Overlay) consolidated into one Settings panel with ~20 items. Image sub-controls (alt text, aspect ratio, custom aspect ratio, object fit) mount only when the image is set and the layout allows images. Badge position items mount only when badgeText is set. `resetAll` returns every 20+ attribute to its `block.json` default in one click.
+- [x] `comparison-table` — three PanelBody groups (Table Settings / Columns / Row Tooltips) consolidated into one Settings panel with six items. The complex `columns` and `rows` arrays survive as single items with `JSON.stringify`-based `hasValue` against `DEFAULT_COLUMNS` / `DEFAULT_ROWS` constants (mirrors the form-select-field options pattern); each row's onDeselect restores the block.json default array.
+- [ ] **`pill`, `icon-list-item`, `heading-segment`, `advanced-heading`, `timeline-item` skipped** — none of these blocks have a custom Settings `PanelBody` today. They rely on native Block Supports (typography / color / spacing) and parent context. Adding empty DsgoInspectorPanels would be worse than nothing; excluded from `MIGRATED_BLOCKS` for that reason.
+
 ## Task 7 — Data family
 
 **PR title:** `feat(blocks): Theme 3 — data family inspector IA`

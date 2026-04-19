@@ -23,6 +23,7 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import { ToolbarButton, Popover } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { link as linkIcon } from '@wordpress/icons';
 import { useSelect } from '@wordpress/data';
 import { getIcon } from '../icon/utils/svg-icons';
@@ -336,17 +337,33 @@ export default function IconButtonEdit({
 			</InspectorControls>
 
 			<InspectorControls>
-				<ButtonSettingsPanel
-					icon={icon}
-					iconPosition={iconPosition}
-					iconSize={iconSize}
-					iconGap={iconGap}
-					hoverAnimation={hoverAnimation}
-					adminDefaultHover={themeDefaultHover || 'none'}
-					modalCloseId={modalCloseId}
-					isInsideModal={isInsideModal}
-					setAttributes={setAttributes}
-				/>
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							icon: 'lightbulb',
+							iconPosition: 'start',
+							iconSize: 20,
+							iconGap: '8px',
+							hoverAnimation: 'none',
+							modalCloseId: '',
+						})
+					}
+				>
+					<ButtonSettingsPanel
+						icon={icon}
+						iconPosition={iconPosition}
+						iconSize={iconSize}
+						iconGap={iconGap}
+						hoverAnimation={hoverAnimation}
+						adminDefaultHover={themeDefaultHover || 'none'}
+						modalCloseId={modalCloseId}
+						isInsideModal={isInsideModal}
+						setAttributes={setAttributes}
+					/>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<ButtonElement {...blockProps}>

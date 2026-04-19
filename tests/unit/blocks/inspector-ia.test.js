@@ -31,13 +31,34 @@ function readEdit(blockName) {
 }
 
 /**
- * Read `edit.js` plus every `components/*.js` for a block. Used for blocks
- * that split their inspector across sub-components (currently `modal`) —
- * concatenating the sources lets the structural regex below catch an
- * accidental PanelBody re-introduction anywhere in the block's tree.
+ * Recursively collect every `.js` file under a directory.
+ *
+ * @param {string} dir Absolute directory path.
+ * @return {string[]} Absolute paths of every .js file found.
+ */
+function collectJsFiles(dir) {
+	if (!fs.existsSync(dir)) {
+		return [];
+	}
+	return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+		const full = path.join(dir, entry.name);
+		if (entry.isDirectory()) {
+			return collectJsFiles(full);
+		}
+		return entry.isFile() && entry.name.endsWith('.js') ? [full] : [];
+	});
+}
+
+/**
+ * Read `edit.js` plus every `components/**\/*.js` for a block. Used for
+ * blocks that split their inspector across sub-components (currently
+ * `modal`, `scroll-slides`, `icon-list`) — concatenating the sources lets
+ * the structural regex below catch an accidental PanelBody re-introduction
+ * anywhere in the block's tree, including nested sub-component folders
+ * like `components/inspector/`.
  *
  * @param {string} blockName Block directory name.
- * @return {string} Concatenated source of edit.js + all components.
+ * @return {string} Concatenated source of edit.js + all nested components.
  */
 function readEditAndComponents(blockName) {
 	const blockDir = path.resolve(
@@ -45,14 +66,9 @@ function readEditAndComponents(blockName) {
 		`../../../src/blocks/${blockName}`
 	);
 	const edit = fs.readFileSync(path.join(blockDir, 'edit.js'), 'utf8');
-	const componentsDir = path.join(blockDir, 'components');
-	if (!fs.existsSync(componentsDir)) {
-		return edit;
-	}
-	const componentSources = fs
-		.readdirSync(componentsDir)
-		.filter((name) => name.endsWith('.js'))
-		.map((name) => fs.readFileSync(path.join(componentsDir, name), 'utf8'));
+	const componentSources = collectJsFiles(
+		path.join(blockDir, 'components')
+	).map((file) => fs.readFileSync(file, 'utf8'));
 	return [edit, ...componentSources].join('\n');
 }
 
@@ -88,13 +104,28 @@ const MIGRATED_BLOCKS = [
 	'sticky-sections',
 	'scroll-marquee',
 	'scroll-slides',
+	'divider',
+	'blobs',
+	'icon-list',
+	'icon',
+	'icon-button',
+	'breadcrumbs',
+	'timeline',
+	'card',
+	'comparison-table',
 ];
 
 // Blocks whose inspector items live in sub-components under
-// `src/blocks/{name}/components/*.js`. The structural assertions below
+// `src/blocks/{name}/components/**/*.js`. The structural assertions below
 // concatenate those sources before matching so the guard holds even
 // though `edit.js` alone contains no DsgoInspectorPanel.Item calls.
-const COMPOSITE_INSPECTOR_BLOCKS = new Set(['modal', 'scroll-slides']);
+const COMPOSITE_INSPECTOR_BLOCKS = new Set([
+	'modal',
+	'scroll-slides',
+	'icon-list',
+	'icon-button',
+	'breadcrumbs',
+]);
 
 describe('Theme 3 — Inspector IA migration', () => {
 	describe.each(MIGRATED_BLOCKS)('%s', (blockName) => {
@@ -119,7 +150,7 @@ describe('Theme 3 — Inspector IA migration', () => {
 			// Accepts 2 levels up (edit.js importers) or 3 levels up (sub-component
 			// importers nested under src/blocks/{name}/components/).
 			expect(source).toMatch(
-				/import\s+\{[^}]*\bDsgoInspectorPanel\b[^}]*\}\s+from\s+['"](?:\.\.\/){2,3}components\/shared['"]/
+				/import\s+\{[^}]*\bDsgoInspectorPanel\b[^}]*\}\s+from\s+['"](?:\.\.\/){2,4}components\/shared['"]/
 			);
 		});
 
