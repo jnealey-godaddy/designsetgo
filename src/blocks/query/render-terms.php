@@ -60,7 +60,12 @@ if ( ! function_exists( 'designsetgo_query_render_terms' ) ) :
 			$terms = array();
 		}
 
-		// Separate call without pagination-affecting args to get total count.
+		// Build count query from post-filter $args so all developer-added
+		// constraints (taxonomy, meta, search, etc.) carry through to the count.
+		// We strip the pagination args (number/offset) and ordering (orderby/order)
+		// because they'd artificially cap or reshape the count. Filters that add
+		// 'fields', 'child_of', or 'parent' to $args intentionally flow through —
+		// they constrain the result set in ways counts should reflect.
 		$count_args = $args;
 		unset( $count_args['number'], $count_args['offset'], $count_args['orderby'], $count_args['order'] );
 		$count_args['fields'] = 'count';
