@@ -400,6 +400,7 @@ export default function FiftyFiftyEdit({
 							isShownByDefault={false}
 						>
 							<FocalPointPicker
+								__nextHasNoMarginBottom
 								label={__('Focal Point', 'designsetgo')}
 								url={mediaUrl}
 								value={focalPoint}
