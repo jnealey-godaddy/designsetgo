@@ -131,7 +131,11 @@ class Controller {
 		// so we overlay both for the duration of the render and restore
 		// afterwards to avoid leaking state into later request-scoped code.
 		$original_get    = $_GET; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$original_uri    = $_SERVER['REQUEST_URI'] ?? '';
+		// REQUEST_URI is only restored to its original string (not parsed or
+		// output), so a plain isset/empty check is all the safety it needs.
+		$original_uri    = isset( $_SERVER['REQUEST_URI'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) )
+			: '';
 		$allowed_keys    = apply_filters( 'designsetgo_query_url_params', array( 'q', 'sort' ) );
 		foreach ( $params as $key => $value ) {
 			$key = (string) $key;
