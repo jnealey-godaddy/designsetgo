@@ -21,8 +21,8 @@ class DesignSetGo_Query_Facet_Register_Route_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( '/designsetgo/v1/query/facet-register', $routes );
 	}
 
-	public function test_editor_can_register_facet() {
-		wp_set_current_user( $this->factory->user->create( array( 'role' => 'editor' ) ) );
+	public function test_admin_can_register_facet() {
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
 		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/facet-register' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
@@ -37,7 +37,7 @@ class DesignSetGo_Query_Facet_Register_Route_Test extends WP_UnitTestCase {
 	}
 
 	public function test_response_contains_registered_config() {
-		wp_set_current_user( $this->factory->user->create( array( 'role' => 'editor' ) ) );
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
 		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/facet-register' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
@@ -52,6 +52,19 @@ class DesignSetGo_Query_Facet_Register_Route_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $data['config'] );
 		$this->assertSame( 'taxonomy', $data['config']['type'] );
 		$this->assertSame( 'post_tag', $data['config']['source'] );
+	}
+
+	public function test_editor_is_denied() {
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'editor' ) ) );
+
+		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/facet-register' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'facet_key', 'category' );
+		$request->set_param( 'config', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+
+		$response = rest_do_request( $request );
+
+		$this->assertSame( 403, $response->get_status() );
 	}
 
 	public function test_subscriber_is_denied() {
@@ -69,7 +82,7 @@ class DesignSetGo_Query_Facet_Register_Route_Test extends WP_UnitTestCase {
 	}
 
 	public function test_missing_params_return_400() {
-		wp_set_current_user( $this->factory->user->create( array( 'role' => 'editor' ) ) );
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
 		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/facet-register' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
@@ -81,7 +94,7 @@ class DesignSetGo_Query_Facet_Register_Route_Test extends WP_UnitTestCase {
 	}
 
 	public function test_missing_source_returns_400() {
-		wp_set_current_user( $this->factory->user->create( array( 'role' => 'editor' ) ) );
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
 		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/facet-register' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
@@ -92,8 +105,21 @@ class DesignSetGo_Query_Facet_Register_Route_Test extends WP_UnitTestCase {
 		$this->assertSame( 400, $response->get_status() );
 	}
 
+	public function test_invalid_type_returns_400() {
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
+
+		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/facet-register' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'facet_key', 'category' );
+		$request->set_param( 'config', array( 'type' => 'invalid_type', 'source' => 'category' ) );
+
+		$response = rest_do_request( $request );
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertSame( 'dsgo_facet_invalid_type', $response->get_data()['code'] );
+	}
+
 	public function test_no_nonce_is_rejected() {
-		wp_set_current_user( $this->factory->user->create( array( 'role' => 'editor' ) ) );
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
 
 		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/facet-register' );
 		$request->set_param( 'facet_key', 'category' );

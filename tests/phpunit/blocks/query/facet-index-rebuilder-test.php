@@ -173,6 +173,52 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 		$this->assertGreaterThanOrEqual( 5, $result['total_rows'] );
 	}
 
+	public function test_rebuild_all_returns_locked_when_lock_held() {
+		FacetIndex::install();
+
+		// Manually acquire the lock so rebuild_all sees it as held.
+		add_option( FacetIndexRebuilder::LOCK_OPTION, time(), '', 'no' );
+
+		$result = FacetIndexRebuilder::rebuild_all();
+
+		// Clean up lock so subsequent tests aren't blocked.
+		delete_option( FacetIndexRebuilder::LOCK_OPTION );
+
+		$this->assertSame( 'locked', $result['status'] );
+		$this->assertSame( 0, $result['processed'] );
+		$this->assertSame( 0, $result['total_rows'] );
+	}
+
+	public function test_rebuild_all_releases_lock_on_completion() {
+		FacetIndex::install();
+
+		$result = FacetIndexRebuilder::rebuild_all();
+
+		$this->assertSame( 'complete', $result['status'] );
+		// Lock must be released after a successful run.
+		$this->assertFalse( get_option( FacetIndexRebuilder::LOCK_OPTION, false ) );
+	}
+
+	public function test_status_clears_stale_in_progress() {
+		FacetIndex::install();
+
+		// Seed a stale in-progress status (started > 5 min ago).
+		update_option(
+			FacetIndex::OPTION_STATUS,
+			array(
+				'in_progress' => true,
+				'started_at'  => time() - ( 6 * MINUTE_IN_SECONDS ),
+				'processed'   => 0,
+			),
+			false
+		);
+
+		$status = FacetIndexRebuilder::status();
+
+		$this->assertFalse( $status['in_progress'] );
+		$this->assertSame( 'timed_out', $status['error'] );
+	}
+
 	public function test_rebuild_all_reports_error_when_table_missing() {
 		FacetIndex::install();
 

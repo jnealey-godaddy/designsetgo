@@ -70,8 +70,8 @@ class FacetIndex {
 		}
 		global $wpdb;
 		$table_name          = self::table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- SHOW TABLES cannot use %i; table name is our own constant.
-		self::$table_exists  = ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) === $table_name );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- SHOW TABLES LIKE is the correct idiom; prepare() handles escaping.
+		self::$table_exists  = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) ) ) === $table_name );
 		return self::$table_exists;
 	}
 

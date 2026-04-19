@@ -122,7 +122,7 @@ class Controller {
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_preview' ),
-				'permission_callback' => array( $this, 'check_facet_register_permission' ),
+				'permission_callback' => array( $this, 'check_edit_posts_permission' ),
 				'args'                => array(
 					'attributes' => array(
 						'type'     => 'object',
@@ -337,13 +337,14 @@ class Controller {
 	/**
 	 * Checks that the request carries a valid nonce and the user can edit posts.
 	 *
-	 * Used by the /facet-register route — requires `edit_posts` capability so
-	 * subscribers cannot pollute the facet registry.
+	 * Used by the /query/preview route — any editor-level user may use the live
+	 * preview endpoint; only admins may mutate the facet registry (see
+	 * check_facet_register_permission).
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return true|\WP_Error
 	 */
-	public function check_facet_register_permission( \WP_REST_Request $request ) {
+	public function check_edit_posts_permission( \WP_REST_Request $request ) {
 		if ( ! is_user_logged_in() ) {
 			return new \WP_Error(
 				'rest_forbidden',
@@ -373,6 +374,44 @@ class Controller {
 	}
 
 	/**
+	 * Checks that the request carries a valid nonce and the user has manage_options.
+	 *
+	 * Used by the /facet-register and /query/preview routes — requires `manage_options`
+	 * so only site admins can register site-wide facet keys into the index.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return true|\WP_Error
+	 */
+	public function check_facet_register_permission( \WP_REST_Request $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'You must be logged in.', 'designsetgo' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Invalid nonce.', 'designsetgo' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Insufficient permissions.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Handles the facet-register REST request.
 	 *
 	 * Stores the facet configuration in FacetRegistry so the PHP facet index
@@ -389,6 +428,15 @@ class Controller {
 			return new \WP_Error(
 				'dsgo_facet_register_invalid',
 				__( 'facet_key, type, and source are required.', 'designsetgo' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$type = isset( $config['type'] ) ? (string) $config['type'] : '';
+		if ( ! in_array( $type, array( 'taxonomy', 'meta' ), true ) ) {
+			return new \WP_Error(
+				'dsgo_facet_invalid_type',
+				__( 'config.type must be "taxonomy" or "meta".', 'designsetgo' ),
 				array( 'status' => 400 )
 			);
 		}

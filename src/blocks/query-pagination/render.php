@@ -101,7 +101,7 @@ $label_load_more = ! empty( $attributes['labelLoadMore'] )
 	: __( 'Load more', 'designsetgo' );
 $label_loading   = ! empty( $attributes['labelLoading'] )
 	? (string) $attributes['labelLoading']
-	: __( 'Loading\u2026', 'designsetgo' );
+	: __( 'Loading…', 'designsetgo' );
 
 if ( 'loadmore' === $pagination_mode ) {
 	// Seed the IAPI context on the pagination wrapper so `getContext()` inside

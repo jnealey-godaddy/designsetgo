@@ -395,6 +395,11 @@ store('designsetgo/query', {
 							return;
 						}
 
+						// Don't count or fire if a load is already in-flight.
+						if (ctx.busy) {
+							return;
+						}
+
 						if (ctx.autoLoadCount >= threshold) {
 							// Auto-pause threshold reached — reveal button,
 							// disconnect observer, let the user opt in to more.
@@ -574,7 +579,7 @@ function* dsgoQueryRefresh(ctx, url) {
 			`[data-dsgo-query-region="${queryId}"]`
 		);
 		if (newRegion) {
-			// eslint-disable-next-line no-unsanitized/property -- server-rendered, WordPress-escaped content.
+			// Server-rendered HTML from the REST endpoint — already wp_kses_post()-escaped by WordPress.
 			region.innerHTML = newRegion.innerHTML;
 		}
 
@@ -681,7 +686,7 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 			`[data-dsgo-query-region="${queryId}"]`
 		);
 		if (newRegion) {
-			// eslint-disable-next-line no-unsanitized/property -- server-rendered, WordPress-escaped content.
+			// Server-rendered HTML from the REST endpoint — already wp_kses_post()-escaped by WordPress.
 			region.innerHTML = newRegion.innerHTML;
 		}
 

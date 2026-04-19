@@ -32,6 +32,49 @@ class FacetIndexRebuilder {
 	const MIN_BATCH_SIZE = 50;
 
 	/**
+	 * WordPress option key used as a rebuild mutex.
+	 */
+	const LOCK_OPTION = 'dsgo_query_facet_rebuild_lock';
+
+	/**
+	 * Maximum seconds a rebuild lock is considered valid before being treated as stale.
+	 */
+	const LOCK_TTL = 600; // 10 * MINUTE_IN_SECONDS
+
+	/**
+	 * Returns true if a rebuild lock is currently held and not stale.
+	 *
+	 * @return bool
+	 */
+	private static function is_locked(): bool {
+		$locked_at = (int) get_option( self::LOCK_OPTION, 0 );
+		return $locked_at > 0 && ( time() - $locked_at ) < self::LOCK_TTL;
+	}
+
+	/**
+	 * Acquires the rebuild mutex by writing the current timestamp to the lock option.
+	 *
+	 * Uses add_option with autoload=no to avoid cache pollution; falls back to
+	 * update_option when the option already exists (e.g. stale lock).
+	 *
+	 * @return void
+	 */
+	private static function acquire_lock(): void {
+		if ( false === add_option( self::LOCK_OPTION, time(), '', 'no' ) ) {
+			update_option( self::LOCK_OPTION, time(), false );
+		}
+	}
+
+	/**
+	 * Releases the rebuild mutex by deleting the lock option.
+	 *
+	 * @return void
+	 */
+	private static function release_lock(): void {
+		delete_option( self::LOCK_OPTION );
+	}
+
+	/**
 	 * Truncates the index and repopulates it from all published posts.
 	 *
 	 * Batch-scans the posts table in chunks of $args['batch_size'] (default 200,
@@ -43,12 +86,36 @@ class FacetIndexRebuilder {
 	 *     @type int $batch_size Number of posts per iteration. Default 200, min 50.
 	 * }
 	 * @return array {
-	 *     @type string $status     'complete'.
+	 *     @type string $status     'complete' or 'locked'.
 	 *     @type int    $processed  Number of post IDs iterated.
 	 *     @type int    $total_rows Total index rows after rebuild.
 	 * }
 	 */
 	public static function rebuild_all( array $args = array() ): array {
+		if ( self::is_locked() ) {
+			return array(
+				'status'     => 'locked',
+				'processed'  => 0,
+				'total_rows' => 0,
+			);
+		}
+
+		self::acquire_lock();
+
+		try {
+			return self::do_rebuild_all( $args );
+		} finally {
+			self::release_lock();
+		}
+	}
+
+	/**
+	 * Inner implementation of rebuild_all — called inside the mutex.
+	 *
+	 * @param array $args Optional overrides (batch_size).
+	 * @return array Result array (status, processed, total_rows).
+	 */
+	private static function do_rebuild_all( array $args ): array {
 		global $wpdb;
 		$batch_size = max( self::MIN_BATCH_SIZE, (int) ( $args['batch_size'] ?? self::DEFAULT_BATCH_SIZE ) );
 		$started_at = microtime( true );
@@ -163,6 +230,31 @@ class FacetIndexRebuilder {
 			);
 		}
 
+		if ( self::is_locked() ) {
+			return array(
+				'status'     => 'locked',
+				'processed'  => 0,
+				'total_rows' => 0,
+			);
+		}
+
+		self::acquire_lock();
+
+		try {
+			return self::do_rebuild_facet( $key, $args );
+		} finally {
+			self::release_lock();
+		}
+	}
+
+	/**
+	 * Inner implementation of rebuild_facet — called inside the mutex.
+	 *
+	 * @param string $key  Sanitized facet key.
+	 * @param array  $args Optional overrides (batch_size).
+	 * @return array Result array (status, processed, total_rows).
+	 */
+	private static function do_rebuild_facet( string $key, array $args ): array {
 		global $wpdb;
 		$table      = FacetIndex::table_name();
 		$batch_size = max( self::MIN_BATCH_SIZE, (int) ( $args['batch_size'] ?? self::DEFAULT_BATCH_SIZE ) );
@@ -247,10 +339,21 @@ class FacetIndexRebuilder {
 			$status = array();
 		}
 
+		// Auto-clear stale in-progress state (timeout safeguard).
+		if ( ! empty( $status['in_progress'] ) && ! empty( $status['started_at'] ) ) {
+			if ( time() - (int) $status['started_at'] > 5 * MINUTE_IN_SECONDS ) {
+				$status['in_progress'] = false;
+				$status['error']       = 'timed_out';
+				update_option( FacetIndex::OPTION_STATUS, $status, false );
+			}
+		}
+
 		// Always surface a live row count and normalise required keys.
-		$index_table = FacetIndex::table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
-		$status['total_rows']      = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $index_table );
+		$index_table             = FacetIndex::table_name();
+		$status['total_rows']    = FacetIndex::table_exists()
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
+			? (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $index_table )
+			: 0;
 		$status['in_progress']     = (bool) ( $status['in_progress'] ?? false );
 		$status['last_rebuilt_at'] = $status['last_rebuilt_at'] ?? null;
 		$status['processed']       = (int) ( $status['processed'] ?? 0 );
