@@ -1,19 +1,19 @@
 <?php
 /**
- * PHPUnit tests for admin-only facet REST routes:
- *   GET  /designsetgo/v1/query/facet-status
- *   POST /designsetgo/v1/query/facet-rebuild
- *   GET  /designsetgo/v1/query/facets
- *   DELETE /designsetgo/v1/query/facets
+ * PHPUnit tests for admin-only filter REST routes:
+ *   GET  /designsetgo/v1/query/filter-status
+ *   POST /designsetgo/v1/query/filter-rebuild
+ *   GET  /designsetgo/v1/query/filters
+ *   DELETE /designsetgo/v1/query/filters
  *
  * @package DesignSetGo
  * @group query-block
  */
 
-use DesignSetGo\Blocks\Query\FacetRegistry;
-use DesignSetGo\Blocks\Query\FacetIndex;
+use DesignSetGo\Blocks\Query\FilterRegistry;
+use DesignSetGo\Blocks\Query\FilterIndex;
 
-class DesignSetGo_Query_Facet_Admin_Routes_Test extends WP_UnitTestCase {
+class DesignSetGo_Query_Filter_Admin_Routes_Test extends WP_UnitTestCase {
 
 	/**
 	 * Admin user ID.
@@ -37,8 +37,8 @@ class DesignSetGo_Query_Facet_Admin_Routes_Test extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		delete_option( FacetRegistry::OPTION );
-		delete_option( FacetIndex::OPTION_STATUS );
+		delete_option( FilterRegistry::OPTION );
+		delete_option( FilterIndex::OPTION_STATUS );
 		parent::tear_down();
 	}
 
@@ -46,29 +46,29 @@ class DesignSetGo_Query_Facet_Admin_Routes_Test extends WP_UnitTestCase {
 	// Route registration
 	// ─────────────────────────────────────────────────────────────────────
 
-	public function test_facet_status_route_is_registered() {
+	public function test_filter_status_route_is_registered() {
 		$routes = rest_get_server()->get_routes();
-		$this->assertArrayHasKey( '/designsetgo/v1/query/facet-status', $routes );
+		$this->assertArrayHasKey( '/designsetgo/v1/query/filter-status', $routes );
 	}
 
-	public function test_facet_rebuild_route_is_registered() {
+	public function test_filter_rebuild_route_is_registered() {
 		$routes = rest_get_server()->get_routes();
-		$this->assertArrayHasKey( '/designsetgo/v1/query/facet-rebuild', $routes );
+		$this->assertArrayHasKey( '/designsetgo/v1/query/filter-rebuild', $routes );
 	}
 
-	public function test_facets_list_route_is_registered() {
+	public function test_filters_list_route_is_registered() {
 		$routes = rest_get_server()->get_routes();
-		$this->assertArrayHasKey( '/designsetgo/v1/query/facets', $routes );
+		$this->assertArrayHasKey( '/designsetgo/v1/query/filters', $routes );
 	}
 
 	// ─────────────────────────────────────────────────────────────────────
-	// GET /query/facet-status
+	// GET /query/filter-status
 	// ─────────────────────────────────────────────────────────────────────
 
-	public function test_facet_status_returns_200_for_admin() {
+	public function test_filter_status_returns_200_for_admin() {
 		wp_set_current_user( $this->admin_id );
 
-		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/facet-status' );
+		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/filter-status' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_do_request( $request );
@@ -81,40 +81,40 @@ class DesignSetGo_Query_Facet_Admin_Routes_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'processed', $data );
 	}
 
-	public function test_facet_status_returns_403_for_editor() {
+	public function test_filter_status_returns_403_for_editor() {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/facet-status' );
+		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/filter-status' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_do_request( $request );
 		$this->assertSame( 403, $response->get_status() );
 	}
 
-	public function test_facet_status_rejects_missing_nonce() {
+	public function test_filter_status_rejects_missing_nonce() {
 		wp_set_current_user( $this->admin_id );
 
-		$request  = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/facet-status' );
+		$request  = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/filter-status' );
 		$response = rest_do_request( $request );
 		$this->assertSame( 401, $response->get_status() );
 	}
 
-	public function test_facet_status_rejects_anonymous() {
+	public function test_filter_status_rejects_anonymous() {
 		wp_set_current_user( 0 );
 
-		$request  = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/facet-status' );
+		$request  = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/filter-status' );
 		$response = rest_do_request( $request );
 		$this->assertSame( 401, $response->get_status() );
 	}
 
 	// ─────────────────────────────────────────────────────────────────────
-	// POST /query/facet-rebuild
+	// POST /query/filter-rebuild
 	// ─────────────────────────────────────────────────────────────────────
 
-	public function test_facet_rebuild_returns_200_for_admin() {
+	public function test_filter_rebuild_returns_200_for_admin() {
 		wp_set_current_user( $this->admin_id );
 
-		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/facet-rebuild' );
+		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/filter-rebuild' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_do_request( $request );
@@ -125,10 +125,10 @@ class DesignSetGo_Query_Facet_Admin_Routes_Test extends WP_UnitTestCase {
 		$this->assertContains( $data['status'], array( 'complete', 'error' ) );
 	}
 
-	public function test_facet_rebuild_returns_403_for_editor() {
+	public function test_filter_rebuild_returns_403_for_editor() {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/facet-rebuild' );
+		$request = new \WP_REST_Request( 'POST', '/designsetgo/v1/query/filter-rebuild' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_do_request( $request );
@@ -136,13 +136,13 @@ class DesignSetGo_Query_Facet_Admin_Routes_Test extends WP_UnitTestCase {
 	}
 
 	// ─────────────────────────────────────────────────────────────────────
-	// GET /query/facets
+	// GET /query/filters
 	// ─────────────────────────────────────────────────────────────────────
 
-	public function test_facets_list_returns_empty_array_when_none_registered() {
+	public function test_filters_list_returns_empty_array_when_none_registered() {
 		wp_set_current_user( $this->admin_id );
 
-		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/facets' );
+		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/filters' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_do_request( $request );
@@ -151,13 +151,13 @@ class DesignSetGo_Query_Facet_Admin_Routes_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $response->get_data() );
 	}
 
-	public function test_facets_list_returns_registered_facets() {
-		FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
-		FacetRegistry::register( 'price', array( 'type' => 'meta', 'source' => '_price' ) );
+	public function test_filters_list_returns_registered_filters() {
+		FilterRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+		FilterRegistry::register( 'price', array( 'type' => 'meta', 'source' => '_price' ) );
 
 		wp_set_current_user( $this->admin_id );
 
-		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/facets' );
+		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/filters' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_do_request( $request );
@@ -167,10 +167,10 @@ class DesignSetGo_Query_Facet_Admin_Routes_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'price', $data );
 	}
 
-	public function test_facets_list_returns_403_for_editor() {
+	public function test_filters_list_returns_403_for_editor() {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/facets' );
+		$request = new \WP_REST_Request( 'GET', '/designsetgo/v1/query/filters' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
 		$response = rest_do_request( $request );
@@ -178,58 +178,58 @@ class DesignSetGo_Query_Facet_Admin_Routes_Test extends WP_UnitTestCase {
 	}
 
 	// ─────────────────────────────────────────────────────────────────────
-	// DELETE /query/facets
+	// DELETE /query/filters
 	// ─────────────────────────────────────────────────────────────────────
 
-	public function test_facet_unregister_removes_facet() {
-		FacetRegistry::register( 'price', array( 'type' => 'meta', 'source' => '_price' ) );
+	public function test_filter_unregister_removes_filter() {
+		FilterRegistry::register( 'price', array( 'type' => 'meta', 'source' => '_price' ) );
 
 		wp_set_current_user( $this->admin_id );
 
-		$request = new \WP_REST_Request( 'DELETE', '/designsetgo/v1/query/facets' );
+		$request = new \WP_REST_Request( 'DELETE', '/designsetgo/v1/query/filters' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-		$request->set_param( 'facet_key', 'price' );
+		$request->set_param( 'filter_key', 'price' );
 
 		$response = rest_do_request( $request );
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertTrue( $response->get_data()['unregistered'] );
-		$this->assertNull( FacetRegistry::get( 'price' ) );
+		$this->assertNull( FilterRegistry::get( 'price' ) );
 	}
 
-	public function test_facet_unregister_returns_404_for_unknown_key() {
+	public function test_filter_unregister_returns_404_for_unknown_key() {
 		wp_set_current_user( $this->admin_id );
 
-		$request = new \WP_REST_Request( 'DELETE', '/designsetgo/v1/query/facets' );
+		$request = new \WP_REST_Request( 'DELETE', '/designsetgo/v1/query/filters' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-		$request->set_param( 'facet_key', 'nonexistent' );
+		$request->set_param( 'filter_key', 'nonexistent' );
 
 		$response = rest_do_request( $request );
 		$this->assertSame( 404, $response->get_status() );
 	}
 
-	public function test_facet_unregister_returns_403_for_editor() {
-		FacetRegistry::register( 'price', array( 'type' => 'meta', 'source' => '_price' ) );
+	public function test_filter_unregister_returns_403_for_editor() {
+		FilterRegistry::register( 'price', array( 'type' => 'meta', 'source' => '_price' ) );
 
 		wp_set_current_user( $this->editor_id );
 
-		$request = new \WP_REST_Request( 'DELETE', '/designsetgo/v1/query/facets' );
+		$request = new \WP_REST_Request( 'DELETE', '/designsetgo/v1/query/filters' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
-		$request->set_param( 'facet_key', 'price' );
+		$request->set_param( 'filter_key', 'price' );
 
 		$response = rest_do_request( $request );
 		$this->assertSame( 403, $response->get_status() );
 
-		// Verify facet was NOT removed.
-		$this->assertNotNull( FacetRegistry::get( 'price' ) );
+		// Verify filter was NOT removed.
+		$this->assertNotNull( FilterRegistry::get( 'price' ) );
 	}
 
-	public function test_facet_unregister_rejects_missing_nonce() {
-		FacetRegistry::register( 'price', array( 'type' => 'meta', 'source' => '_price' ) );
+	public function test_filter_unregister_rejects_missing_nonce() {
+		FilterRegistry::register( 'price', array( 'type' => 'meta', 'source' => '_price' ) );
 
 		wp_set_current_user( $this->admin_id );
 
-		$request = new \WP_REST_Request( 'DELETE', '/designsetgo/v1/query/facets' );
-		$request->set_param( 'facet_key', 'price' );
+		$request = new \WP_REST_Request( 'DELETE', '/designsetgo/v1/query/filters' );
+		$request->set_param( 'filter_key', 'price' );
 
 		$response = rest_do_request( $request );
 		$this->assertSame( 401, $response->get_status() );

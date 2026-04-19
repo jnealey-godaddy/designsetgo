@@ -1,19 +1,19 @@
 <?php
 /**
- * PHPUnit tests for FacetIndexRebuilder.
+ * PHPUnit tests for FilterIndexRebuilder.
  *
  * @package DesignSetGo
  * @group query-block
  */
 
-use DesignSetGo\Blocks\Query\FacetIndex;
-use DesignSetGo\Blocks\Query\FacetIndexRebuilder;
-use DesignSetGo\Blocks\Query\FacetRegistry;
+use DesignSetGo\Blocks\Query\FilterIndex;
+use DesignSetGo\Blocks\Query\FilterIndexRebuilder;
+use DesignSetGo\Blocks\Query\FilterRegistry;
 
 /**
  * Rebuilder tests.
  */
-class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
+class DesignSetGo_Query_Filter_Index_Rebuilder_Test extends WP_UnitTestCase {
 
 	public function tear_down(): void {
 		global $wpdb;
@@ -29,18 +29,18 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 		// Ensure we are not inside an implicit transaction before cleanup.
 		$wpdb->query( 'COMMIT' );
 
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'dsgo_query_facet_index' );
-		delete_option( FacetIndex::OPTION_SCHEMA );
-		delete_option( FacetIndex::OPTION_STATUS );
-		delete_option( FacetRegistry::OPTION );
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'dsgo_query_filter_index' );
+		delete_option( FilterIndex::OPTION_SCHEMA );
+		delete_option( FilterIndex::OPTION_STATUS );
+		delete_option( FilterRegistry::OPTION );
 
 		// Flush the WP object cache so the next test reads fresh option values.
 		wp_cache_flush();
 	}
 
 	public function test_rebuild_all_populates_index_from_scratch() {
-		FacetIndex::install();
-		FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+		FilterIndex::install();
+		FilterRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
 
 		$cat      = $this->factory->category->create();
 		$post_ids = $this->factory->post->create_many( 5, array(
@@ -50,43 +50,43 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 
 		// Wipe index — simulate fresh install.
 		global $wpdb;
-		$wpdb->query( 'TRUNCATE ' . FacetIndex::table_name() );
-		$this->assertSame( '0', $wpdb->get_var( 'SELECT COUNT(*) FROM ' . FacetIndex::table_name() ) );
+		$wpdb->query( 'TRUNCATE ' . FilterIndex::table_name() );
+		$this->assertSame( '0', $wpdb->get_var( 'SELECT COUNT(*) FROM ' . FilterIndex::table_name() ) );
 
-		$result = FacetIndexRebuilder::rebuild_all( array( 'batch_size' => 2 ) );
+		$result = FilterIndexRebuilder::rebuild_all( array( 'batch_size' => 2 ) );
 
 		$this->assertSame( 'complete', $result['status'] );
 		$this->assertGreaterThanOrEqual( 5, $result['processed'] );
-		$this->assertSame( 5, (int) $wpdb->get_var( 'SELECT COUNT(DISTINCT object_id) FROM ' . FacetIndex::table_name() ) );
+		$this->assertSame( 5, (int) $wpdb->get_var( 'SELECT COUNT(DISTINCT object_id) FROM ' . FilterIndex::table_name() ) );
 	}
 
 	public function test_rebuild_all_truncates_before_repopulating() {
-		FacetIndex::install();
-		FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+		FilterIndex::install();
+		FilterRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
 
 		// Seed a stale row that doesn't correspond to any real post.
 		global $wpdb;
-		$wpdb->insert( FacetIndex::table_name(), array(
+		$wpdb->insert( FilterIndex::table_name(), array(
 			'object_id'   => 999999,
 			'object_type' => 'post',
-			'facet_key'   => 'category',
-			'facet_value' => 'stale',
+			'filter_key'   => 'category',
+			'filter_value' => 'stale',
 		), array( '%d', '%s', '%s', '%s' ) );
 
-		FacetIndexRebuilder::rebuild_all();
+		FilterIndexRebuilder::rebuild_all();
 
 		$count = (int) $wpdb->get_var( $wpdb->prepare(
-			'SELECT COUNT(*) FROM ' . FacetIndex::table_name() . ' WHERE object_id = %d',
+			'SELECT COUNT(*) FROM ' . FilterIndex::table_name() . ' WHERE object_id = %d',
 			999999
 		) );
 		$this->assertSame( 0, $count, 'Stale row must be removed by rebuild_all.' );
 	}
 
 	public function test_rebuild_all_status_option_records_completion() {
-		FacetIndex::install();
-		FacetIndexRebuilder::rebuild_all();
+		FilterIndex::install();
+		FilterIndexRebuilder::rebuild_all();
 
-		$status = get_option( FacetIndex::OPTION_STATUS );
+		$status = get_option( FilterIndex::OPTION_STATUS );
 		$this->assertIsArray( $status );
 		$this->assertFalse( $status['in_progress'] );
 		$this->assertArrayHasKey( 'last_rebuilt_at', $status );
@@ -94,10 +94,10 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'processed', $status );
 	}
 
-	public function test_rebuild_facet_only_wipes_target_key() {
-		FacetIndex::install();
-		FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
-		FacetRegistry::register( 'price',    array( 'type' => 'meta',     'source' => '_price' ) );
+	public function test_rebuild_filter_only_wipes_target_key() {
+		FilterIndex::install();
+		FilterRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+		FilterRegistry::register( 'price',    array( 'type' => 'meta',     'source' => '_price' ) );
 
 		$cat     = $this->factory->category->create();
 		$post_id = $this->factory->post->create( array(
@@ -105,60 +105,60 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 			'post_category' => array( $cat ),
 		) );
 		update_post_meta( $post_id, '_price', '19.99' );
-		FacetIndex::reindex_object( 'post', $post_id );
+		FilterIndex::reindex_object( 'post', $post_id );
 
 		// Seed a stale price row.
 		global $wpdb;
-		$wpdb->insert( FacetIndex::table_name(), array(
+		$wpdb->insert( FilterIndex::table_name(), array(
 			'object_id'   => 77777,
 			'object_type' => 'post',
-			'facet_key'   => 'price',
-			'facet_value' => 'stale',
+			'filter_key'   => 'price',
+			'filter_value' => 'stale',
 		), array( '%d', '%s', '%s', '%s' ) );
 
-		$result = FacetIndexRebuilder::rebuild_facet( 'price' );
+		$result = FilterIndexRebuilder::rebuild_filter( 'price' );
 
 		// Stale price row gone.
 		$this->assertSame( 0, (int) $wpdb->get_var( $wpdb->prepare(
-			'SELECT COUNT(*) FROM ' . FacetIndex::table_name() . ' WHERE facet_key = %s AND facet_value = %s',
+			'SELECT COUNT(*) FROM ' . FilterIndex::table_name() . ' WHERE filter_key = %s AND filter_value = %s',
 			'price',
 			'stale'
 		) ) );
 
 		// Real price row repopulated.
 		$this->assertSame( 1, (int) $wpdb->get_var( $wpdb->prepare(
-			'SELECT COUNT(*) FROM ' . FacetIndex::table_name() . ' WHERE object_id = %d AND facet_key = %s',
+			'SELECT COUNT(*) FROM ' . FilterIndex::table_name() . ' WHERE object_id = %d AND filter_key = %s',
 			$post_id,
 			'price'
 		) ) );
 
 		// Category row untouched.
 		$this->assertSame( 1, (int) $wpdb->get_var( $wpdb->prepare(
-			'SELECT COUNT(*) FROM ' . FacetIndex::table_name() . ' WHERE object_id = %d AND facet_key = %s',
+			'SELECT COUNT(*) FROM ' . FilterIndex::table_name() . ' WHERE object_id = %d AND filter_key = %s',
 			$post_id,
 			'category'
 		) ) );
 	}
 
-	public function test_rebuild_facet_on_unregistered_key_is_noop() {
-		FacetIndex::install();
-		$result = FacetIndexRebuilder::rebuild_facet( 'never_registered' );
+	public function test_rebuild_filter_on_unregistered_key_is_noop() {
+		FilterIndex::install();
+		$result = FilterIndexRebuilder::rebuild_filter( 'never_registered' );
 		$this->assertSame( 'skipped', $result['status'] );
 		$this->assertSame( 0, $result['processed'] );
 	}
 
 	public function test_status_reports_zero_when_table_empty() {
-		FacetIndex::install();
-		$status = FacetIndexRebuilder::status();
+		FilterIndex::install();
+		$status = FilterIndexRebuilder::status();
 		$this->assertIsArray( $status );
 		$this->assertSame( 0, $status['total_rows'] );
 		$this->assertFalse( $status['in_progress'] );
 		$this->assertArrayHasKey( 'last_rebuilt_at', $status );
 	}
 
-	public function test_rebuild_facet_with_custom_batch_size_completes_correctly() {
-		FacetIndex::install();
-		FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+	public function test_rebuild_filter_with_custom_batch_size_completes_correctly() {
+		FilterIndex::install();
+		FilterRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
 
 		$cat      = $this->factory->category->create();
 		$post_ids = $this->factory->post->create_many( 5, array(
@@ -166,7 +166,7 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 			'post_category' => array( $cat ),
 		) );
 
-		$result = FacetIndexRebuilder::rebuild_facet( 'category', array( 'batch_size' => 2 ) );
+		$result = FilterIndexRebuilder::rebuild_filter( 'category', array( 'batch_size' => 2 ) );
 
 		$this->assertSame( 'complete', $result['status'] );
 		$this->assertGreaterThanOrEqual( 5, $result['processed'] );
@@ -174,15 +174,15 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 	}
 
 	public function test_rebuild_all_returns_locked_when_lock_held() {
-		FacetIndex::install();
+		FilterIndex::install();
 
 		// Manually acquire the lock so rebuild_all sees it as held.
-		add_option( FacetIndexRebuilder::LOCK_OPTION, time(), '', 'no' );
+		add_option( FilterIndexRebuilder::LOCK_OPTION, time(), '', 'no' );
 
-		$result = FacetIndexRebuilder::rebuild_all();
+		$result = FilterIndexRebuilder::rebuild_all();
 
 		// Clean up lock so subsequent tests aren't blocked.
-		delete_option( FacetIndexRebuilder::LOCK_OPTION );
+		delete_option( FilterIndexRebuilder::LOCK_OPTION );
 
 		$this->assertSame( 'locked', $result['status'] );
 		$this->assertSame( 0, $result['processed'] );
@@ -190,21 +190,21 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 	}
 
 	public function test_rebuild_all_releases_lock_on_completion() {
-		FacetIndex::install();
+		FilterIndex::install();
 
-		$result = FacetIndexRebuilder::rebuild_all();
+		$result = FilterIndexRebuilder::rebuild_all();
 
 		$this->assertSame( 'complete', $result['status'] );
 		// Lock must be released after a successful run.
-		$this->assertFalse( get_option( FacetIndexRebuilder::LOCK_OPTION, false ) );
+		$this->assertFalse( get_option( FilterIndexRebuilder::LOCK_OPTION, false ) );
 	}
 
 	public function test_status_clears_stale_in_progress() {
-		FacetIndex::install();
+		FilterIndex::install();
 
 		// Seed a stale in-progress status (started > 5 min ago).
 		update_option(
-			FacetIndex::OPTION_STATUS,
+			FilterIndex::OPTION_STATUS,
 			array(
 				'in_progress' => true,
 				'started_at'  => time() - ( 6 * MINUTE_IN_SECONDS ),
@@ -213,37 +213,37 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 			false
 		);
 
-		$status = FacetIndexRebuilder::status();
+		$status = FilterIndexRebuilder::status();
 
 		$this->assertFalse( $status['in_progress'] );
 		$this->assertSame( 'timed_out', $status['error'] );
 	}
 
 	public function test_rebuild_all_reports_error_when_table_missing() {
-		FacetIndex::install();
+		FilterIndex::install();
 
 		// Drop the table so TRUNCATE fails.
 		global $wpdb;
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . FacetIndex::table_name() );
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . FilterIndex::table_name() );
 		// Suppress the expected MySQL error so the test output stays clean.
 		$wpdb->suppress_errors( true );
 
-		$result = FacetIndexRebuilder::rebuild_all();
+		$result = FilterIndexRebuilder::rebuild_all();
 
 		$wpdb->suppress_errors( false );
 
 		$this->assertSame( 'error', $result['status'] );
 		$this->assertSame( 0, $result['processed'] );
 
-		$status = get_option( FacetIndex::OPTION_STATUS );
+		$status = get_option( FilterIndex::OPTION_STATUS );
 		$this->assertArrayHasKey( 'error', $status );
 		$this->assertSame( 'truncate_failed', $status['error'] );
 		$this->assertFalse( $status['in_progress'] );
 	}
 
 	public function test_rebuild_all_only_processes_publish_posts() {
-		FacetIndex::install();
-		FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+		FilterIndex::install();
+		FilterRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
 
 		// TRUNCATE in rebuild_all commits the DB transaction, so posts from prior
 		// tests may still be in the DB. Delete all existing posts before this test
@@ -256,9 +256,9 @@ class DesignSetGo_Query_Facet_Index_Rebuilder_Test extends WP_UnitTestCase {
 		$this->factory->post->create( array( 'post_status' => 'draft',   'post_category' => array( $cat ) ) );
 		$this->factory->post->create( array( 'post_status' => 'publish', 'post_category' => array( $cat ) ) );
 
-		$wpdb->query( 'TRUNCATE ' . FacetIndex::table_name() );
+		$wpdb->query( 'TRUNCATE ' . FilterIndex::table_name() );
 
-		$result = FacetIndexRebuilder::rebuild_all();
+		$result = FilterIndexRebuilder::rebuild_all();
 		$this->assertSame( 2, $result['processed'] );  // Only 2 published posts.
 	}
 }

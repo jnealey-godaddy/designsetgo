@@ -3,9 +3,9 @@
  * PHPUnit tests for (N) count rendering in designsetgo/query-filter.
  *
  * Covers:
- *  - \DesignSetGo\Blocks\Query\FacetIndex::count_for_options() returns correct counts per term.
+ *  - \DesignSetGo\Blocks\Query\FilterIndex::count_for_options() returns correct counts per term.
  *  - showCounts=false suppresses counts (simulated via the render.php gate logic).
- *  - Active-filter intersection: counts reflect cross-facet AND semantics.
+ *  - Active-filter intersection: counts reflect cross-filter AND semantics.
  *
  * @package DesignSetGo
  * @group query-block
@@ -19,21 +19,21 @@
 class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 
 	/**
-	 * Install the facet index table before each test.
+	 * Install the filter index table before each test.
 	 */
 	public function set_up(): void {
 		parent::set_up();
-		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FilterIndex::install();
 	}
 
 	/**
-	 * Drop the facet index table and reset options after each test.
+	 * Drop the filter index table and reset options after each test.
 	 */
 	public function tear_down(): void {
 		global $wpdb;
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'dsgo_query_facet_index' );
-		delete_option( \DesignSetGo\Blocks\Query\FacetIndex::OPTION_SCHEMA );
-		delete_option( \DesignSetGo\Blocks\Query\FacetRegistry::OPTION );
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'dsgo_query_filter_index' );
+		delete_option( \DesignSetGo\Blocks\Query\FilterIndex::OPTION_SCHEMA );
+		delete_option( \DesignSetGo\Blocks\Query\FilterRegistry::OPTION );
 		$_GET = array(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		parent::tear_down();
 	}
@@ -46,7 +46,7 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 	 * Extract active_filters_by_key from $_GET the same way render.php does.
 	 *
 	 * URL params named filter_<taxonomy> are re-keyed to bare taxonomy slugs
-	 * (facet keys) for use with \DesignSetGo\Blocks\Query\FacetIndex::count_for_options().
+	 * (filter keys) for use with \DesignSetGo\Blocks\Query\FilterIndex::count_for_options().
 	 *
 	 * @return array  [ taxonomy_slug => [ value, ... ] ]
 	 */
@@ -67,11 +67,11 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 			}
 		}
 
-		// Re-key: strip "filter_" prefix so keys become taxonomy slugs (facet keys).
+		// Re-key: strip "filter_" prefix so keys become taxonomy slugs (filter keys).
 		$by_key = array();
 		foreach ( $active as $param_key => $vals ) {
-			$facet_key          = substr( $param_key, 7 );
-			$by_key[ $facet_key ] = $vals;
+			$filter_key          = substr( $param_key, 7 );
+			$by_key[ $filter_key ] = $vals;
 		}
 		return $by_key;
 	}
@@ -84,7 +84,7 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 	 * Test that count_for_options returns (3) for News when 3 posts are indexed.
 	 */
 	public function test_count_for_options_returns_count_for_news() {
-		\DesignSetGo\Blocks\Query\FacetRegistry::register(
+		\DesignSetGo\Blocks\Query\FilterRegistry::register(
 			'category',
 			array(
 				'type'   => 'taxonomy',
@@ -107,10 +107,10 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 			)
 		);
 		foreach ( $pids as $pid ) {
-			\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+			\DesignSetGo\Blocks\Query\FilterIndex::reindex_object( 'post', $pid );
 		}
 
-		$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+		$counts = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
 			'category',
 			array( $news ),
 			array()
@@ -131,7 +131,7 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 	 * when showCounts is false.
 	 */
 	public function test_no_count_label_when_show_counts_false() {
-		\DesignSetGo\Blocks\Query\FacetRegistry::register(
+		\DesignSetGo\Blocks\Query\FilterRegistry::register(
 			'category',
 			array(
 				'type'   => 'taxonomy',
@@ -146,16 +146,16 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 				'post_category' => array( $news ),
 			)
 		);
-		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+		\DesignSetGo\Blocks\Query\FilterIndex::reindex_object( 'post', $pid );
 
 		// Simulate the render.php gate: showCounts attribute is false.
 		$show_counts    = false;
-		$counts_enabled = $show_counts && \DesignSetGo\Blocks\Query\FacetIndex::is_available( 'category' );
+		$counts_enabled = $show_counts && \DesignSetGo\Blocks\Query\FilterIndex::is_available( 'category' );
 
 		// Build the label string as render.php would.
 		$name_label = esc_html( 'News' );
 		if ( $counts_enabled ) {
-			$counts      = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options( 'category', array( $news ), array() );
+			$counts      = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options( 'category', array( $news ), array() );
 			$name_label .= ' <span class="dsgo-query-filter__count">(' . (int) ( $counts[ (string) $news ] ?? 0 ) . ')</span>';
 		}
 
@@ -173,14 +173,14 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 	 * counting "News" should return 2, not 3.
 	 */
 	public function test_count_reflects_active_filter_intersection() {
-		\DesignSetGo\Blocks\Query\FacetRegistry::register(
+		\DesignSetGo\Blocks\Query\FilterRegistry::register(
 			'category',
 			array(
 				'type'   => 'taxonomy',
 				'source' => 'category',
 			)
 		);
-		\DesignSetGo\Blocks\Query\FacetRegistry::register(
+		\DesignSetGo\Blocks\Query\FilterRegistry::register(
 			'post_tag',
 			array(
 				'type'   => 'taxonomy',
@@ -219,7 +219,7 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 		);
 
 		foreach ( array_merge( $hot_news, array( $cold_news ) ) as $pid ) {
-			\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+			\DesignSetGo\Blocks\Query\FilterIndex::reindex_object( 'post', $pid );
 		}
 
 		// Simulate: filter_post_tag[]=<hot_tag_id> is active.
@@ -227,7 +227,7 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 
 		$active_filters = $this->extract_active_filters_from_get();
 
-		$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+		$counts = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
 			'category',
 			array( $news ),
 			$active_filters
@@ -241,44 +241,44 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that is_available() returns false when a facet is not registered.
+	 * Test that is_available() returns false when a filter is not registered.
 	 *
 	 * When is_available() returns false, render.php skips count_for_options entirely,
 	 * so no count spans are rendered even if showCounts=true.
 	 */
 	public function test_is_available_false_suppresses_count_call() {
-		// Do NOT register 'category' facet.
+		// Do NOT register 'category' filter.
 		$this->assertFalse(
-			\DesignSetGo\Blocks\Query\FacetIndex::is_available( 'category' ),
-			'is_available() must return false for an unregistered facet.'
+			\DesignSetGo\Blocks\Query\FilterIndex::is_available( 'category' ),
+			'is_available() must return false for an unregistered filter.'
 		);
 
 		// Simulate the render.php gate: $dsgo_counts_enabled = $show_counts && is_available().
-		$counts_enabled = true && \DesignSetGo\Blocks\Query\FacetIndex::is_available( 'category' );
+		$counts_enabled = true && \DesignSetGo\Blocks\Query\FilterIndex::is_available( 'category' );
 		$this->assertFalse(
 			$counts_enabled,
-			'$dsgo_counts_enabled must be false when facet is not registered, even if showCounts=true.'
+			'$dsgo_counts_enabled must be false when filter is not registered, even if showCounts=true.'
 		);
 	}
 
 	// -------------------------------------------------------------------------
-	// Codex HIGH #1 — slug→ID translation for taxonomy facets
+	// Codex HIGH #1 — slug→ID translation for taxonomy filters
 	// -------------------------------------------------------------------------
 
 	/**
 	 * When the URL carries taxonomy slugs (e.g. filter_post_tag=hot) but the
-	 * facet index stores term IDs, cross-facet counts must still be correct
+	 * filter index stores term IDs, cross-filter counts must still be correct
 	 * after slug-to-ID translation.
 	 *
 	 * Scenario: 3 posts in News; 2 also tagged "hot" (slug). With active
 	 * filter_post_tag=hot, the News count should be 2 (not 0).
 	 */
 	public function test_active_filter_slugs_resolve_to_term_ids_for_intersection() {
-		\DesignSetGo\Blocks\Query\FacetRegistry::register(
+		\DesignSetGo\Blocks\Query\FilterRegistry::register(
 			'category',
 			array( 'type' => 'taxonomy', 'source' => 'category' )
 		);
-		\DesignSetGo\Blocks\Query\FacetRegistry::register(
+		\DesignSetGo\Blocks\Query\FilterRegistry::register(
 			'post_tag',
 			array( 'type' => 'taxonomy', 'source' => 'post_tag' )
 		);
@@ -302,7 +302,7 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 		) );
 
 		foreach ( array_merge( $hot_news, array( $cold_news ) ) as $pid ) {
-			\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+			\DesignSetGo\Blocks\Query\FilterIndex::reindex_object( 'post', $pid );
 		}
 
 		// active_filters carry the SLUG, not the term ID — as URL params do.
@@ -311,7 +311,7 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 		);
 
 		// Translate slugs to IDs the same way render.php does.
-		$registered = \DesignSetGo\Blocks\Query\FacetRegistry::all();
+		$registered = \DesignSetGo\Blocks\Query\FilterRegistry::all();
 		foreach ( $active_filters_with_slug as $fk => $fv ) {
 			$cfg = $registered[ $fk ] ?? null;
 			if ( ! $cfg || 'taxonomy' !== ( $cfg['type'] ?? '' ) ) {
@@ -333,7 +333,7 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 			$active_filters_with_slug[ $fk ] = $translated;
 		}
 
-		$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+		$counts = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
 			'category',
 			array( $news ),
 			$active_filters_with_slug
