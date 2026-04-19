@@ -42,7 +42,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_search' ) ) :
 
 		printf(
 			'<form %1$s method="get" action="" role="search">%2$s<div class="dsgo-query-filter__search-row"><input type="search" name="%3$s" value="%4$s" placeholder="%5$s" class="dsgo-query-filter__search-input" data-wp-on--change="actions.setFilter" data-wp-on--input="actions.setFilterDebounced" /><button type="submit" class="dsgo-query-filter__submit">%6$s</button></div></form>',
-			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output.
+			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output + appended data-wp-context JSON (sanitized values + wp_json_encode with JSON_HEX_APOS).
 			$label ? '<label class="dsgo-query-filter__label">' . esc_html( $label ) . '</label>' : '',
 			esc_attr( $param_name ),
 			esc_attr( $current ),
@@ -387,6 +387,9 @@ $dsgo_filter_wrapper = get_block_wrapper_attributes(
 // toggleFilter / removeActiveFilter / resetAll resolves ctx.queryId. Appended
 // outside get_block_wrapper_attributes() because that helper runs esc_attr()
 // on values, which would mangle JSON quotes.
+// JSON_HEX_APOS defends the single-quoted attribute boundary against a
+// stray apostrophe in any future context value (today all four are quote-
+// free: sanitize_key / false / esc_url_raw / wp_create_nonce).
 $dsgo_filter_wrapper .= sprintf(
 	" data-wp-context='%s'",
 	wp_json_encode(
@@ -395,7 +398,8 @@ $dsgo_filter_wrapper .= sprintf(
 			'busy'    => false,
 			'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
 			'nonce'   => wp_create_nonce( 'wp_rest' ),
-		)
+		),
+		JSON_HEX_APOS
 	)
 );
 

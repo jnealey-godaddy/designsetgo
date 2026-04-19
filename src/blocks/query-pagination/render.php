@@ -49,6 +49,8 @@ if ( 'loadmore' === $pagination_mode ) {
 	// Seed the IAPI context on the pagination wrapper so `getContext()` inside
 	// actions.loadMore resolves ctx.queryId / ctx.page / ctx.busy. Without this
 	// the click handler would see an empty context and silently no-op.
+	// JSON_HEX_APOS defends the single-quoted attr boundary against a stray
+	// apostrophe in any future context value.
 	$lm_context = wp_json_encode(
 		array(
 			'queryId' => $query_id,
@@ -56,7 +58,8 @@ if ( 'loadmore' === $pagination_mode ) {
 			'busy'    => false,
 			'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
 			'nonce'   => wp_create_nonce( 'wp_rest' ),
-		)
+		),
+		JSON_HEX_APOS
 	);
 	$wrapper = get_block_wrapper_attributes(
 		array(

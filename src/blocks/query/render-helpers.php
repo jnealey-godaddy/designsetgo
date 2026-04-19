@@ -138,7 +138,9 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 
 		// restUrl + nonce travel in the IAPI context so view.js works under
 		// plain-permalink installs where /wp-json/ rewrites aren't available
-		// and wpApiSettings isn't localised on the frontend.
+		// and wpApiSettings isn't localised on the frontend. JSON_HEX_APOS
+		// defends the single-quoted attr boundary against a stray apostrophe
+		// in any future context value.
 		$wp_context = wp_json_encode(
 			array(
 				'queryId' => $query_id,
@@ -147,7 +149,8 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 				'busy'    => false,
 				'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
-			)
+			),
+			JSON_HEX_APOS
 		);
 
 		if ( is_string( $wrapper_attrs ) && '' !== $wrapper_attrs ) {

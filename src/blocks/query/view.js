@@ -111,6 +111,13 @@ store( 'designsetgo/query', {
 				} );
 
 				if ( ! res.ok ) {
+					// 401 typically means the nonce expired (page open > 12h).
+					// Surface this to devtools so "load more does nothing" is
+					// debuggable without the user having to inspect network.
+					// eslint-disable-next-line no-console
+					console.warn(
+						`[designsetgo/query] load-more request failed (${ res.status }). If 401, the nonce has likely expired — reload the page.`
+					);
 					return;
 				}
 
@@ -424,7 +431,13 @@ function* dsgoQueryRefresh( ctx, url ) {
 			} ),
 		} );
 
-		if ( ! res.ok ) return;
+		if ( ! res.ok ) {
+			// eslint-disable-next-line no-console
+			console.warn(
+				`[designsetgo/query] filter refresh failed (${ res.status }). If 401, the nonce has likely expired — reload the page.`
+			);
+			return;
+		}
 		const data = yield res.json();
 
 		// Parse the returned region HTML and swap the outer region's innerHTML.
@@ -518,7 +531,13 @@ async function dsgoQueryRefreshPlain( ctx, url ) {
 			} ),
 		} );
 
-		if ( ! res.ok ) return;
+		if ( ! res.ok ) {
+			// eslint-disable-next-line no-console
+			console.warn(
+				`[designsetgo/query] debounced refresh failed (${ res.status }). If 401, the nonce has likely expired — reload the page.`
+			);
+			return;
+		}
 		const data = await res.json();
 
 		const doc       = new DOMParser().parseFromString( data.html || '', 'text/html' );
