@@ -459,6 +459,20 @@ class Plugin {
 	public $extension_attrs;
 
 	/**
+	 * Query Block Controller instance.
+	 *
+	 * @var Blocks\Query\Controller
+	 */
+	public $query_controller;
+
+	/**
+	 * Query Block Bindings instance.
+	 *
+	 * @var Blocks\Query\Bindings
+	 */
+	public $query_bindings;
+
+	/**
 	 * Returns the instance.
 	 *
 	 * @return Plugin

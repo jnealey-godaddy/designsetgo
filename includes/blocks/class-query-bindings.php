@@ -50,8 +50,9 @@ class Bindings {
 	}
 
 	public function get_post_meta_value( array $args, $block = null, $attribute_name = 'content' ) {
-		// sanitize_key() ensures $key is a valid meta key slug; a bad key returns empty from get_post_meta.
-		$key = isset( $args['key'] ) ? sanitize_key( $args['key'] ) : '';
+		// sanitize_text_field() strips HTML/null-bytes but preserves case and common characters.
+		// sanitize_key() would silently lowercase keys like "SEOTitle" → "seotitle", breaking lookups.
+		$key = isset( $args['key'] ) ? sanitize_text_field( $args['key'] ) : '';
 		if ( '' === $key ) {
 			return null;
 		}
@@ -64,6 +65,22 @@ class Bindings {
 			$post_id = get_the_ID();
 		}
 		if ( ! $post_id ) {
+			return null;
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return null;
+		}
+
+		// Mirror WP core's core/post-meta security gates (minus show_in_rest strictness).
+		if ( post_password_required( $post ) ) {
+			return null;
+		}
+		if ( ! is_post_publicly_viewable( $post ) && ! current_user_can( 'read_post', $post_id ) ) {
+			return null;
+		}
+		if ( is_protected_meta( $key, 'post' ) ) {
 			return null;
 		}
 
@@ -76,8 +93,9 @@ class Bindings {
 			return null;
 		}
 
-		// sanitize_key() ensures $key is a valid ACF field name slug; a bad key returns null from get_field.
-		$key = isset( $args['key'] ) ? sanitize_key( $args['key'] ) : '';
+		// sanitize_text_field() strips HTML/null-bytes but preserves case and common characters.
+		// sanitize_key() would silently lowercase ACF field names, breaking lookups.
+		$key = isset( $args['key'] ) ? sanitize_text_field( $args['key'] ) : '';
 		if ( '' === $key ) {
 			return null;
 		}
@@ -89,12 +107,34 @@ class Bindings {
 		if ( ! $post_id ) {
 			$post_id = get_the_ID();
 		}
+		if ( ! $post_id ) {
+			return null;
+		}
+
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return null;
+		}
+
+		// ACF stores values in postmeta — apply same security gates as post-meta source.
+		if ( post_password_required( $post ) ) {
+			return null;
+		}
+		if ( ! is_post_publicly_viewable( $post ) && ! current_user_can( 'read_post', $post_id ) ) {
+			return null;
+		}
+		if ( is_protected_meta( $key, 'post' ) ) {
+			return null;
+		}
 
 		$value = get_field( $key, $post_id ?: false );
 		if ( is_array( $value ) || is_object( $value ) ) {
 			return null; // Scalar-only source; complex values need a specific render path.
 		}
 
-		return '' === $value || null === $value ? null : (string) $value;
+		if ( '' === $value || null === $value || false === $value ) {
+			return null;
+		}
+		return (string) $value;
 	}
 }
