@@ -27,6 +27,12 @@
 @use '../blocks/table-of-contents/editor' as table-of-contents;
 @use '../blocks/breadcrumbs/editor' as breadcrumbs;
 
+// Query blocks (editor)
+@use '../blocks/query/editor' as query;
+@use '../blocks/query-no-results/editor' as query_no_results;
+@use '../blocks/query-pagination/editor' as query-pagination;
+@use '../blocks/query-filter/editor' as query-filter;
+
 // ===================================================================
 // PERFORMANCE OPTIMIZATION (2025-11-11)
 // ===================================================================

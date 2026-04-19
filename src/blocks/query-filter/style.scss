@@ -1,0 +1,112 @@
+// Frontend styles for designsetgo/query-filter.
+
+.wp-block-designsetgo-query-filter,
+.dsgo-query-filter {
+	box-sizing: border-box;
+
+	// Label
+	.dsgo-query-filter__label {
+		display: block;
+		margin-block-end: 0.4em;
+		font-weight: 600;
+	}
+
+	// Fieldset / legend variant (checkbox)
+	.dsgo-query-filter__fieldset {
+		border: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	// --- Checkbox list ---
+	&.dsgo-query-filter--checkbox {
+
+		.dsgo-query-filter__checkbox-list {
+			display: flex;
+			flex-direction: column;
+			gap: 0.4em;
+		}
+
+		.dsgo-query-filter__checkbox-item {
+			display: flex;
+			align-items: center;
+			gap: 0.5em;
+			cursor: pointer;
+
+			input[type="checkbox"] {
+				flex-shrink: 0;
+			}
+		}
+	}
+
+	// --- Select / Sort dropdowns ---
+	&.dsgo-query-filter--select,
+	&.dsgo-query-filter--sort {
+
+		.dsgo-query-filter__select,
+		.dsgo-query-filter__sort {
+			width: 100%;
+			max-width: 320px;
+		}
+	}
+
+	// --- Search input ---
+	&.dsgo-query-filter--search {
+
+		form {
+			display: flex;
+			flex-direction: column;
+			gap: 0.4em;
+		}
+
+		.dsgo-query-filter__search-row {
+			display: flex;
+			gap: 0.5em;
+			align-items: center;
+		}
+
+		.dsgo-query-filter__search-input {
+			flex: 1;
+		}
+
+		.dsgo-query-filter__submit {
+			flex-shrink: 0;
+			cursor: pointer;
+		}
+	}
+
+	// --- Active filter chips ---
+	&.dsgo-query-filter--active {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4em;
+
+		.dsgo-query-filter__chip {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.25em;
+			padding: 0.2em 0.6em;
+			border: 1px solid currentcolor;
+			border-radius: 999px;
+			background: transparent;
+			color: inherit;
+			text-decoration: none;
+			font-size: 0.875em;
+			white-space: nowrap;
+
+			&:where(:hover, :focus) {
+				background: color-mix(in srgb, currentcolor 10%, transparent);
+			}
+		}
+	}
+
+	// --- Reset button ---
+	&.dsgo-query-filter--reset {
+
+		.dsgo-query-filter__reset {
+			display: inline-block;
+			cursor: pointer;
+		}
+	}
+}

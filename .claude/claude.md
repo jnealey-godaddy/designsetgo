@@ -41,6 +41,19 @@ When in doubt prefer variations — they have no migration cost, no deprecation 
 
 For sibling blocks that already exist and meet the "1–3 attribute difference + shared save" rule (e.g. `flip-card-front` / `flip-card-back` → `flip-card-face` with a `side` attribute), consolidate via a new block + `inserter: false` on the legacy names + `transforms.to` on each legacy block pointing to the new one. Keep the legacy blocks registered so existing content keeps rendering.
 
+### Query block family (Dynamic Query v1)
+
+- Container: `designsetgo/query`. Siblings bind via `queryId` (context key: `designsetgo/queryId`).
+- Siblings: `designsetgo/query-pagination` (numbered/loadmore), `designsetgo/query-filter` (variations: checkbox/select/search/sort/active/reset), `designsetgo/query-no-results`.
+- Dynamic data: WP 6.5+ Block Bindings. Built-in sources: `designsetgo/post-meta` (always), `designsetgo/acf` (only when `function_exists('get_field')`). Do NOT invent a token parser.
+- Server render: `src/blocks/query/render-helpers.php` owns `designsetgo_query_render()`; REST endpoint `designsetgo/v1/query/render` reuses it so first-paint and AJAX paths are byte-identical.
+- Per-item context: `postId` + `postType` for Posts (matches core blocks); `designsetgo/currentItemId` + `designsetgo/currentItemType` for users/terms.
+- IAPI store: `'designsetgo/query'`. Actions: `loadMore`, `setFilter`, `setFilterDebounced`, `toggleFilter`, `removeActiveFilter`, `resetAll`.
+- Filter hooks: `designsetgo_query_args` (all sources), `designsetgo/query/{queryId}/args` (scoped — fires after the global hook).
+- URL params: `q`, `sort`, `filter_<taxonomy>`. Extend via `designsetgo_query_url_params` filter.
+- Frontend data contract: `[data-dsgo-query-id]` on the wrapper; `[data-dsgo-blobs-for]` sibling holds attributes + innerBlocks JSON blobs for IAPI requests.
+- See `.claude/docs/QUERY-BLOCK-GUIDE.md` for recipes + extension points.
+
 ### Inspector IA (Theme 3)
 
 Three panels per block, in this order: **Settings** → **Style** → **Advanced**. Use `<DsgoInspectorPanel>` (the `ToolsPanel` wrapper) for all custom inspector controls; never reach for `PanelBody` directly.

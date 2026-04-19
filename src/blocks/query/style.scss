@@ -1,0 +1,40 @@
+// Frontend-only grid layout. Scope to `[data-dsgo-query-role="container"]`
+// so the grid attaches to the actual rendered <ul>/<ol>/<div> list on the
+// frontend and does NOT apply in the editor, where the outer `.dsgo-query`
+// is just a wrapper around the header + inner blocks (grid there would
+// turn the template blocks into columns instead of items).
+.dsgo-query[data-dsgo-query-role="container"] {
+	display: grid;
+	grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
+	gap: var(--dsgo-query-gap, 1.5rem);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.dsgo-query__item {
+	margin: 0;
+	// Space for future entrance transitions (added in Task 18).
+	transition: opacity 0.2s ease;
+}
+
+@media (max-width: 900px) {
+
+	.dsgo-query[data-dsgo-query-role="container"] {
+		grid-template-columns: repeat(var(--dsgo-query-columns-tablet, var(--dsgo-query-columns, 1)), minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 600px) {
+
+	.dsgo-query[data-dsgo-query-role="container"] {
+		grid-template-columns: repeat(var(--dsgo-query-columns-mobile, 1), minmax(0, 1fr));
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.dsgo-query__item {
+		transition: none;
+	}
+}

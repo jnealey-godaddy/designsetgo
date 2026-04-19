@@ -25,7 +25,61 @@ class Loader {
 		add_action( 'init', array( $this, 'register_blocks' ) );
 		add_action( 'init', array( $this, 'register_block_styles' ) );
 		add_action( 'init', array( $this, 'setup_script_translations' ), 15 ); // After blocks are registered.
+		add_action( 'init', array( $this, 'fix_view_module_dependencies' ), 20 ); // After blocks register their modules.
 		add_filter( 'block_type_metadata', array( $this, 'add_shared_dependencies' ) );
+	}
+
+	/**
+	 * Re-register view script modules with the correct @wordpress/interactivity
+	 * dependency name.
+	 *
+	 * @wordpress/scripts' webpack build emits `wp-interactivity` (the old script
+	 * handle) as the dependency in view.asset.php, but WP 6.5+ registers the
+	 * module as `@wordpress/interactivity`. Sorting fails silently during
+	 * `print_enqueued_script_modules` when a module references an unregistered
+	 * dependency, so the view script never reaches the page.
+	 *
+	 * @since 2.1.0
+	 */
+	public function fix_view_module_dependencies() {
+		if ( ! function_exists( 'wp_register_script_module' ) ) {
+			return;
+		}
+
+		$modules_to_fix = array(
+			'designsetgo-query-view-script-module' => DESIGNSETGO_PATH . 'build/blocks/query/view.js',
+		);
+
+		foreach ( $modules_to_fix as $module_id => $src_path ) {
+			if ( ! file_exists( $src_path ) ) {
+				continue;
+			}
+			$asset_file = str_replace( '.js', '.asset.php', $src_path );
+			$version    = file_exists( $asset_file )
+				? ( include $asset_file )['version'] ?? false
+				: filemtime( $src_path );
+
+			// Deregister first — wp_register_script_module is a no-op if the id
+			// is already registered, and block.json auto-registration already
+			// ran with the wrong dep name.
+			wp_deregister_script_module( $module_id );
+
+			// Re-register with `@wordpress/interactivity` (the current module id)
+			// instead of `wp-interactivity` (the old script handle). Dep is
+			// declared as a shaped array so the `import` type is explicit
+			// (matches WP's `register_script_module` signature).
+			wp_register_script_module(
+				$module_id,
+				plugins_url( 'build/blocks/query/view.js', DESIGNSETGO_PATH . 'designsetgo.php' ),
+				array(
+					array(
+						'id'     => '@wordpress/interactivity',
+						'import' => 'static',
+					),
+				),
+				$version
+			);
+		}
 	}
 
 	/**

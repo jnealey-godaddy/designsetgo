@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "designsetgo/query-filter",
+  "version": "1.0.0",
+  "title": "Query Filter",
+  "category": "designsetgo",
+  "parent": ["designsetgo/query"],
+  "description": "Filter, search, sort, or reset a Dynamic Query via URL parameters with no page reload.",
+  "keywords": ["filter", "facet", "search", "sort", "query"],
+  "textdomain": "designsetgo",
+  "icon": "filter",
+  "supports": {
+    "html": false,
+    "align": false,
+    "color": {
+      "background": true,
+      "text": true,
+      "__experimentalDefaultControls": { "text": true }
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true
+    }
+  },
+  "usesContext": ["designsetgo/queryId"],
+  "attributes": {
+    "filterKind": { "type": "string", "default": "checkbox", "enum": ["checkbox", "select", "search", "sort", "active", "reset"] },
+    "taxonomy":   { "type": "string", "default": "category" },
+    "paramName":  { "type": "string", "default": "filter_category" },
+    "label":      { "type": "string", "default": "" },
+    "placeholder": { "type": "string", "default": "" },
+    "sortOptions": {
+      "type": "array",
+      "default": [
+        { "value": "date.DESC",  "label": "Newest" },
+        { "value": "date.ASC",   "label": "Oldest" },
+        { "value": "title.ASC",  "label": "A\u2013Z" },
+        { "value": "title.DESC", "label": "Z\u2013A" }
+      ]
+    }
+  },
+  "example": { "attributes": { "filterKind": "checkbox" } },
+  "editorScript": "file:./index.js",
+  "editorStyle":  "file:./index.css",
+  "style":        "file:./style-index.css",
+  "render":       "file:./render.php"
+}

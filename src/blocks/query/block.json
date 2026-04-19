@@ -1,0 +1,76 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "designsetgo/query",
+  "version": "1.0.0",
+  "title": "Dynamic Query",
+  "category": "designsetgo",
+  "description": "Query any posts, users, or terms and render them with your own block design. Supports filters, pagination, and Block Bindings.",
+  "keywords": ["query", "loop", "posts", "dynamic", "grid", "listing"],
+  "textdomain": "designsetgo",
+  "icon": "editor-table",
+  "supports": {
+    "anchor": true,
+    "align": ["wide", "full"],
+    "html": false,
+    "inserter": true,
+    "color": {
+      "background": true,
+      "text": true,
+      "__experimentalDefaultControls": { "background": true, "text": true }
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true,
+      "__experimentalDefaultControls": { "blockGap": true }
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "__experimentalDefaultControls": { "fontSize": true }
+    }
+  },
+  "providesContext": {
+    "designsetgo/queryId": "queryId",
+    "designsetgo/querySource": "source"
+  },
+  "attributes": {
+    "queryId": { "type": "string", "default": "" },
+    "source": { "type": "string", "default": "posts", "enum": ["posts", "users", "terms", "manual", "current"] },
+    "postType": { "type": "string", "default": "post" },
+    "perPage": { "type": "number", "default": 6 },
+    "offset": { "type": "number", "default": 0 },
+    "orderBy": { "type": "string", "default": "date" },
+    "orderByMetaKey": { "type": "string", "default": "" },
+    "order": { "type": "string", "default": "DESC", "enum": ["ASC", "DESC"] },
+    "search": { "type": "string", "default": "" },
+    "bindSearchTo": { "type": "string", "default": "" },
+    "author": { "type": "array", "default": [] },
+    "excludeCurrent": { "type": "boolean", "default": false },
+    "ignoreSticky": { "type": "boolean", "default": true },
+    "manualIds": { "type": "array", "default": [] },
+    "taxQuery": {
+      "type": "object",
+      "default": { "relation": "AND", "clauses": [] }
+    },
+    "metaQuery": {
+      "type": "object",
+      "default": { "relation": "AND", "clauses": [] }
+    },
+    "tagName": { "type": "string", "default": "ul" },
+    "itemTagName": { "type": "string", "default": "li" },
+    "columns": { "type": "number", "default": 1 },
+    "columnsTablet": { "type": "number", "default": 0 },
+    "columnsMobile": { "type": "number", "default": 0 },
+    "columnGap": { "type": "string", "default": "" },
+    "showPlaceholder": { "type": "boolean", "default": true },
+    "emitSchema": { "type": "boolean", "default": true }
+  },
+  "example": { "attributes": { "perPage": 3 } },
+  "viewScriptModule": "file:./view.js",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}

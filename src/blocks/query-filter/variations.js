@@ -1,0 +1,53 @@
+import { __ } from '@wordpress/i18n';
+
+export default [
+	{
+		name: 'checkbox',
+		title: __( 'Taxonomy checkboxes', 'designsetgo' ),
+		icon: 'list-view',
+		description: __( 'Filter by taxonomy term via checkboxes.', 'designsetgo' ),
+		attributes: { filterKind: 'checkbox', paramName: 'filter_category' },
+		isDefault: true,
+		scope: [ 'inserter', 'transform' ],
+	},
+	{
+		name: 'select',
+		title: __( 'Taxonomy dropdown', 'designsetgo' ),
+		icon: 'menu',
+		description: __( 'Filter by taxonomy term via single-select dropdown.', 'designsetgo' ),
+		attributes: { filterKind: 'select', paramName: 'filter_category' },
+		scope: [ 'inserter', 'transform' ],
+	},
+	{
+		name: 'search',
+		title: __( 'Search input', 'designsetgo' ),
+		icon: 'search',
+		description: __( 'Free-text search bound to ?q=.', 'designsetgo' ),
+		attributes: { filterKind: 'search', paramName: 'q' },
+		scope: [ 'inserter', 'transform' ],
+	},
+	{
+		name: 'sort',
+		title: __( 'Sort dropdown', 'designsetgo' ),
+		icon: 'sort',
+		description: __( 'Sort bound to ?sort=.', 'designsetgo' ),
+		attributes: { filterKind: 'sort', paramName: 'sort' },
+		scope: [ 'inserter', 'transform' ],
+	},
+	{
+		name: 'active',
+		title: __( 'Active filters', 'designsetgo' ),
+		icon: 'tag',
+		description: __( 'Show removable chips for each active filter.', 'designsetgo' ),
+		attributes: { filterKind: 'active', paramName: '' },
+		scope: [ 'inserter', 'transform' ],
+	},
+	{
+		name: 'reset',
+		title: __( 'Reset button', 'designsetgo' ),
+		icon: 'undo',
+		description: __( 'Clear all filter params.', 'designsetgo' ),
+		attributes: { filterKind: 'reset', paramName: '' },
+		scope: [ 'inserter', 'transform' ],
+	},
+];

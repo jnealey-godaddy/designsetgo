@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, animations, responsive
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.0.51
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -178,6 +178,33 @@ Check the [documentation](https://designsetgoblocks.com/docs/), visit the [suppo
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.1.0 =
+
+**Editor UX foundations (Themes 1–6)**
+* Theme 1 — placeholder & onboarding parity: DsgoBlockPlaceholder wizard rolled out to accordion, flip-card, image-accordion, scroll-accordion, and slider (#356).
+* Theme 2 — flip-card-face consolidation: front/back child blocks merged into a single flip-card-face block with a side attribute; starter colors + i18n polish (#357).
+* Theme 3 — Inspector IA standardization: grid and section migrated to the Settings → Style → Advanced three-panel convention via DsgoInspectorPanel, with per-control reset-to-default (#360).
+* Theme 4 — discoverability polish: block icons, category registration, and naming cleaned up across ~30 blocks + follow-up fixes (#358, #362).
+* Theme 5 — shared tablist keyboard hook + child toolbar: useTablistKeyboard and DsgoChildToolbar rolled out to tabs and slider with full test coverage (#359).
+* Theme 6 — shared authoring primitives: extracted DsgoBlockPlaceholder, DsgoChildToolbar, DsgoInspectorPanel, useBlockColors, useTablistKeyboard, and useUniqueBlockId into canonical src/hooks/ and src/components/shared/ homes (#354).
+
+**Dynamic Query block family (new)**
+* New: designsetgo/query container block — Posts/Users/Terms/Manual/Current sources with tax_query, meta_query, search, author, and offset controls.
+* New: Block Bindings integration — designsetgo/post-meta (always) + designsetgo/acf (auto-detected when ACF is active).
+* New: Interactivity API load-more pagination + filter state synchronization with URL params.
+* New: Sibling blocks — designsetgo/query-pagination (numbered + load-more), designsetgo/query-filter (6 variations: checkbox / select / search / sort / active / reset), designsetgo/query-no-results.
+* New: 6 block variations — blog-index / team / testimonials / portfolio / related-posts / events.
+* New: REST endpoint designsetgo/v1/query/render for headless + AJAX consumption.
+* New: ItemList schema.org markup for Posts queries (emitSchema attribute, default on).
+* Dev: filter hooks designsetgo_query_args + designsetgo/query/{queryId}/args.
+* See .claude/docs/QUERY-BLOCK-GUIDE.md for recipes.
+
+**Fixes & hardening**
+* Fix: Inspector panel controls now render full-width correctly; tabs activeTab index clamped defensively on editor and frontend (#361).
+* Fix: Abilities API add-block output round-tripped through save() to prevent block validation failures (#355).
+* Fix: Abilities JSON Schema — inline required:true migrated to JSON Schema compliant form (#352).
+* Dev: Silence phpunit audit advisory (CI-only, no user-facing change) (#353).
 
 = 2.0.51 - 2026-04-16 =
 **Editor UX Improvements:**

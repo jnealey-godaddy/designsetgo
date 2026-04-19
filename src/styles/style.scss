@@ -32,5 +32,11 @@
 @use '../blocks/scroll-slides/style' as scroll-slides;
 @use '../blocks/scroll-slide/style' as scroll-slide;
 
+// Query blocks (frontend)
+@use '../blocks/query/style' as query;
+@use '../blocks/query-no-results/style' as query_no_results;
+@use '../blocks/query-pagination/style' as query-pagination;
+@use '../blocks/query-filter/style' as query-filter;
+
 // RichText formats (frontend)
 @use '../formats/text-style/style' as text-style;
