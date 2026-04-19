@@ -1,35 +1,54 @@
 /**
  * Close Button Settings Panel Component
  *
+ * Renders DsgoInspectorPanel.Item entries for the modal's close-button
+ * attributes, meant to be composed inside the Settings panel in
+ * modal/edit.js.
+ *
  * @package
  */
 
 import { __ } from '@wordpress/i18n';
 import {
-	PanelBody,
 	RangeControl,
 	SelectControl,
 	ToggleControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../../components/shared';
 
 export default function CloseButtonSettings({ attributes, setAttributes }) {
 	const { showCloseButton, closeButtonPosition, closeButtonSize } =
 		attributes;
 
 	return (
-		<PanelBody
-			title={__('Close Button', 'designsetgo')}
-			initialOpen={false}
-		>
-			<ToggleControl
+		<>
+			<DsgoInspectorPanel.Item
 				label={__('Show Close Button', 'designsetgo')}
-				checked={showCloseButton}
-				onChange={(value) => setAttributes({ showCloseButton: value })}
-				__nextHasNoMarginBottom
-			/>
+				hasValue={() => showCloseButton !== true}
+				onDeselect={() => setAttributes({ showCloseButton: true })}
+				isShownByDefault={false}
+			>
+				<ToggleControl
+					label={__('Show Close Button', 'designsetgo')}
+					checked={showCloseButton}
+					onChange={(value) =>
+						setAttributes({ showCloseButton: value })
+					}
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
 
 			{showCloseButton && (
-				<>
+				<DsgoInspectorPanel.Item
+					label={__('Close Button Position', 'designsetgo')}
+					hasValue={() => closeButtonPosition !== 'inside-top-right'}
+					onDeselect={() =>
+						setAttributes({
+							closeButtonPosition: 'inside-top-right',
+						})
+					}
+					isShownByDefault={false}
+				>
 					<SelectControl
 						label={__('Position', 'designsetgo')}
 						value={closeButtonPosition}
@@ -57,7 +76,16 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
+				</DsgoInspectorPanel.Item>
+			)}
 
+			{showCloseButton && (
+				<DsgoInspectorPanel.Item
+					label={__('Close Button Size (px)', 'designsetgo')}
+					hasValue={() => closeButtonSize !== 24}
+					onDeselect={() => setAttributes({ closeButtonSize: 24 })}
+					isShownByDefault={false}
+				>
 					<RangeControl
 						label={__('Button Size (px)', 'designsetgo')}
 						value={closeButtonSize}
@@ -70,8 +98,8 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				</>
+				</DsgoInspectorPanel.Item>
 			)}
-		</PanelBody>
+		</>
 	);
 }

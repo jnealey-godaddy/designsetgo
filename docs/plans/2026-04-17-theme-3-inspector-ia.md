@@ -148,8 +148,23 @@ Stand up Playwright-based visual regression for the editor sidebar so subsequent
 
 Blocks: `accordion`, `accordion-item`, `tabs`, `tab`, `slider`, `slide`, `modal`, `modal-trigger`, `flip-card`, `image-accordion`, `image-accordion-item`.
 
-- [ ] Family-wide audit and migration. Estimated 30–60 min per block.
-- [ ] Special handling for `slider` — has 8 panels today; consolidation target needs a sub-design.
+- [x] `accordion-item`, `tab`, `slide`, `modal-trigger`, `image-accordion-item` — simple child/leaf blocks, single Settings panel each. (Tranche 1 of PR #363.)
+- [x] `flip-card`, `accordion`, `image-accordion` — parent blocks that collapse 2–4 PanelBody groups into one Settings panel. (Tranche 2 of PR #363.)
+- [x] `tabs` — three PanelBody groups (Tab Settings / Mobile Settings / Advanced) consolidated; the plugin-specific `enableDeepLinking` toggle lives as an off-by-default Settings item (WP's native Advanced group is HTML anchor / class only).
+- [x] `modal` — the block's inspector is fragmented across seven sub-components under `src/blocks/modal/components/*Settings.js`. Each sub-component was refactored to render a React Fragment of `DsgoInspectorPanel.Item` entries; `modal/edit.js` now wraps all seven in a single Settings `DsgoInspectorPanel` with a shared `resetAll`. Structural test extended to concatenate sub-component sources for blocks listed in `COMPOSITE_INSPECTOR_BLOCKS`.
+- [ ] **`slider` — deferred.** See [Task 3a](#task-3a--slider-sub-design-deferred) below; it requires a sub-design before migration.
+
+### Task 3a — `slider` (sub-design deferred)
+
+`src/blocks/slider/edit.js` currently has **eight** top-level panels (Layout, Transition, Arrows, Dots, Autoplay, Behavior, Style, Scroll-Driven) and uses the `useBlockColors` hook to feed inline `ColorGradientSettingsDropdown` controls for arrows and dots. Collapsing everything into one Settings panel would produce ~30 items — far past the "a few default-shown, the rest revealed via +" sweet spot the convention targets.
+
+Open design questions before this can land:
+
+1. **Split into Settings + Style.** Settings = behaviour (slides per view, transition, autoplay, loop, swipe, scroll-driven). Style = arrow/dot appearance + colors. The inline color dropdowns for arrows/dots would need to either become `.Item` entries inside the Style panel, or move into `<InspectorControls group="color">` alongside the existing native colors. The latter is closer to the convention but breaks the inline "colors live next to their control" affordance that `useBlockColors` was built for.
+2. **Arrows / Dots nesting.** Today the arrow and dot panels are gated by `showArrows` / `showDots` toggles. In the Settings-panel world they'd become conditional `.Item` entries (same pattern as `image-accordion`'s overlay gating). Decide whether sub-headings are worth preserving for legibility.
+3. **Single-slide-effect notice.** The current Transition panel shows a Notice when `fade` / `zoom` is picked. That maps cleanly to the Transition `.Item`'s body but needs reviewer buy-in on keeping Notices inside items.
+
+Blocked on: the above. Not blocked on code — a `ToolsPanel` migration of slider is a day's work once the sub-design is signed off.
 
 ## Task 4 — Form family
 

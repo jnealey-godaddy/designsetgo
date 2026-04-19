@@ -30,6 +30,32 @@ function readEdit(blockName) {
 	);
 }
 
+/**
+ * Read `edit.js` plus every `components/*.js` for a block. Used for blocks
+ * that split their inspector across sub-components (currently `modal`) —
+ * concatenating the sources lets the structural regex below catch an
+ * accidental PanelBody re-introduction anywhere in the block's tree.
+ *
+ * @param {string} blockName Block directory name.
+ * @return {string} Concatenated source of edit.js + all components.
+ */
+function readEditAndComponents(blockName) {
+	const blockDir = path.resolve(
+		__dirname,
+		`../../../src/blocks/${blockName}`
+	);
+	const edit = fs.readFileSync(path.join(blockDir, 'edit.js'), 'utf8');
+	const componentsDir = path.join(blockDir, 'components');
+	if (!fs.existsSync(componentsDir)) {
+		return edit;
+	}
+	const componentSources = fs
+		.readdirSync(componentsDir)
+		.filter((name) => name.endsWith('.js'))
+		.map((name) => fs.readFileSync(path.join(componentsDir, name), 'utf8'));
+	return [edit, ...componentSources].join('\n');
+}
+
 const MIGRATED_BLOCKS = [
 	'grid',
 	'section',
@@ -43,11 +69,20 @@ const MIGRATED_BLOCKS = [
 	'flip-card',
 	'accordion',
 	'image-accordion',
+	'modal',
 ];
+
+// Blocks whose inspector items live in sub-components under
+// `src/blocks/{name}/components/*.js`. The structural assertions below
+// concatenate those sources before matching so the guard holds even
+// though `edit.js` alone contains no DsgoInspectorPanel.Item calls.
+const COMPOSITE_INSPECTOR_BLOCKS = new Set(['modal']);
 
 describe('Theme 3 — Inspector IA migration', () => {
 	describe.each(MIGRATED_BLOCKS)('%s', (blockName) => {
-		const source = readEdit(blockName);
+		const source = COMPOSITE_INSPECTOR_BLOCKS.has(blockName)
+			? readEditAndComponents(blockName)
+			: readEdit(blockName);
 		const itemCount = (source.match(/<DsgoInspectorPanel\.Item\b/g) || [])
 			.length;
 		const hasValueCount = (source.match(/hasValue=\{/g) || []).length;

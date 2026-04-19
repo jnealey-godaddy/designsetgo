@@ -17,13 +17,13 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	SelectControl,
 	ToggleControl,
 	RangeControl,
 	Button,
 	Tooltip,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { createBlock, cloneBlock } from '@wordpress/blocks';
 import { copy, trash, plus } from '@wordpress/icons';
 import { useSelect, useDispatch } from '@wordpress/data';
@@ -416,176 +416,254 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 			</InspectorControls>
 
 			<InspectorControls>
-				<PanelBody
-					title={__('Tab Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							orientation: 'horizontal',
+							tabStyle: 'default',
+							alignment: 'left',
+							gap: '8px',
+							showNavBorder: false,
+							mobileBreakpoint: 768,
+							mobileMode: 'accordion',
+							enableDeepLinking: false,
+						})
+					}
 				>
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Orientation', 'designsetgo')}
-						value={orientation}
-						options={[
-							{
-								label: __('Horizontal', 'designsetgo'),
-								value: 'horizontal',
-							},
-							{
-								label: __('Vertical', 'designsetgo'),
-								value: 'vertical',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ orientation: value })
+						hasValue={() => orientation !== 'horizontal'}
+						onDeselect={() =>
+							setAttributes({ orientation: 'horizontal' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<SelectControl
-						label={__('Tab Style', 'designsetgo')}
-						value={tabStyle}
-						options={[
-							{
-								label: __('Default', 'designsetgo'),
-								value: 'default',
-							},
-							{
-								label: __('Pills', 'designsetgo'),
-								value: 'pills',
-							},
-							{
-								label: __('Underline', 'designsetgo'),
-								value: 'underline',
-							},
-							{
-								label: __('Minimal', 'designsetgo'),
-								value: 'minimal',
-							},
-						]}
-						onChange={(value) => setAttributes({ tabStyle: value })}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					{orientation === 'horizontal' && (
+						isShownByDefault
+					>
 						<SelectControl
-							label={__('Alignment', 'designsetgo')}
-							value={alignment}
+							label={__('Orientation', 'designsetgo')}
+							value={orientation}
 							options={[
 								{
-									label: __('Left', 'designsetgo'),
-									value: 'left',
+									label: __('Horizontal', 'designsetgo'),
+									value: 'horizontal',
 								},
 								{
-									label: __('Center', 'designsetgo'),
-									value: 'center',
-								},
-								{
-									label: __('Right', 'designsetgo'),
-									value: 'right',
-								},
-								{
-									label: __('Justified', 'designsetgo'),
-									value: 'justified',
+									label: __('Vertical', 'designsetgo'),
+									value: 'vertical',
 								},
 							]}
 							onChange={(value) =>
-								setAttributes({ alignment: value })
+								setAttributes({ orientation: value })
 							}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Tab Style', 'designsetgo')}
+						hasValue={() => tabStyle !== 'default'}
+						onDeselect={() =>
+							setAttributes({ tabStyle: 'default' })
+						}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Tab Style', 'designsetgo')}
+							value={tabStyle}
+							options={[
+								{
+									label: __('Default', 'designsetgo'),
+									value: 'default',
+								},
+								{
+									label: __('Pills', 'designsetgo'),
+									value: 'pills',
+								},
+								{
+									label: __('Underline', 'designsetgo'),
+									value: 'underline',
+								},
+								{
+									label: __('Minimal', 'designsetgo'),
+									value: 'minimal',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ tabStyle: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					{orientation === 'horizontal' && (
+						<DsgoInspectorPanel.Item
+							label={__('Alignment', 'designsetgo')}
+							hasValue={() => alignment !== 'left'}
+							onDeselect={() =>
+								setAttributes({ alignment: 'left' })
+							}
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Alignment', 'designsetgo')}
+								value={alignment}
+								options={[
+									{
+										label: __('Left', 'designsetgo'),
+										value: 'left',
+									},
+									{
+										label: __('Center', 'designsetgo'),
+										value: 'center',
+									},
+									{
+										label: __('Right', 'designsetgo'),
+										value: 'right',
+									},
+									{
+										label: __('Justified', 'designsetgo'),
+										value: 'justified',
+									},
+								]}
+								onChange={(value) =>
+									setAttributes({ alignment: value })
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
 
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__('Gap Between Tabs', 'designsetgo')}
-						value={parseInt(gap)}
-						onChange={(value) =>
-							setAttributes({ gap: `${value}px` })
-						}
-						min={0}
-						max={40}
-						step={1}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => gap !== '8px'}
+						onDeselect={() => setAttributes({ gap: '8px' })}
+						isShownByDefault={false}
+					>
+						<RangeControl
+							label={__('Gap Between Tabs', 'designsetgo')}
+							value={parseInt(gap)}
+							onChange={(value) =>
+								setAttributes({ gap: `${value}px` })
+							}
+							min={0}
+							max={40}
+							step={1}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Show Border Below Tabs', 'designsetgo')}
-						checked={showNavBorder}
-						onChange={(value) =>
-							setAttributes({ showNavBorder: value })
+						hasValue={() => showNavBorder !== false}
+						onDeselect={() =>
+							setAttributes({ showNavBorder: false })
 						}
-						help={__(
-							'Add a divider line between tab navigation and content',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault={false}
+					>
+						<ToggleControl
+							label={__('Show Border Below Tabs', 'designsetgo')}
+							checked={showNavBorder}
+							onChange={(value) =>
+								setAttributes({ showNavBorder: value })
+							}
+							help={__(
+								'Add a divider line between tab navigation and content',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Mobile Settings', 'designsetgo')}
-					initialOpen={false}
-				>
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__('Mobile Breakpoint (px)', 'designsetgo')}
-						value={mobileBreakpoint}
-						onChange={(value) =>
-							setAttributes({ mobileBreakpoint: value })
+						hasValue={() => mobileBreakpoint !== 768}
+						onDeselect={() =>
+							setAttributes({ mobileBreakpoint: 768 })
 						}
-						min={320}
-						max={1024}
-						step={1}
-						help={__(
-							'Screen width below which mobile mode activates',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault={false}
+					>
+						<RangeControl
+							label={__('Mobile Breakpoint (px)', 'designsetgo')}
+							value={mobileBreakpoint}
+							onChange={(value) =>
+								setAttributes({ mobileBreakpoint: value })
+							}
+							min={320}
+							max={1024}
+							step={1}
+							help={__(
+								'Screen width below which mobile mode activates',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Mobile Mode', 'designsetgo')}
-						value={mobileMode}
-						options={[
-							{
-								label: __('Accordion', 'designsetgo'),
-								value: 'accordion',
-							},
-							{
-								label: __('Dropdown', 'designsetgo'),
-								value: 'dropdown',
-							},
-							{
-								label: __('Tabs (Scrollable)', 'designsetgo'),
-								value: 'tabs',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ mobileMode: value })
+						hasValue={() => mobileMode !== 'accordion'}
+						onDeselect={() =>
+							setAttributes({ mobileMode: 'accordion' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault={false}
+					>
+						<SelectControl
+							label={__('Mobile Mode', 'designsetgo')}
+							value={mobileMode}
+							options={[
+								{
+									label: __('Accordion', 'designsetgo'),
+									value: 'accordion',
+								},
+								{
+									label: __('Dropdown', 'designsetgo'),
+									value: 'dropdown',
+								},
+								{
+									label: __(
+										'Tabs (Scrollable)',
+										'designsetgo'
+									),
+									value: 'tabs',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ mobileMode: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Advanced', 'designsetgo')}
-					initialOpen={false}
-				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Enable Deep Linking', 'designsetgo')}
-						checked={enableDeepLinking}
-						onChange={(value) =>
-							setAttributes({ enableDeepLinking: value })
+						hasValue={() => enableDeepLinking !== false}
+						onDeselect={() =>
+							setAttributes({ enableDeepLinking: false })
 						}
-						help={__(
-							'Allow tabs to be accessed via URL hash (e.g., #tab-name)',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault={false}
+					>
+						<ToggleControl
+							label={__('Enable Deep Linking', 'designsetgo')}
+							checked={enableDeepLinking}
+							onChange={(value) =>
+								setAttributes({ enableDeepLinking: value })
+							}
+							help={__(
+								'Allow tabs to be accessed via URL hash (e.g., #tab-name)',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>
