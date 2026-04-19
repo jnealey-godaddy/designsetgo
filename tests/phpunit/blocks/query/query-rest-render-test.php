@@ -74,4 +74,41 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'totalItems', $data );
 		$this->assertIsString( $data['html'] );
 	}
+
+	public function test_rest_output_matches_direct_render_call() {
+		self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) );
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+
+		$attributes = array(
+			'source'   => 'posts',
+			'postType' => 'post',
+			'perPage'  => 5,
+		);
+		$inner = '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->';
+
+		require_once DESIGNSETGO_PATH . 'build/blocks/query/render-helpers.php';
+		$direct = designsetgo_query_render(
+			$attributes,
+			array(
+				'query_id'   => 'x',
+				'page'       => 1,
+				'inner_html' => $inner,
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'queryId', 'x' );
+		$request->set_param( 'attributes', $attributes );
+		$request->set_param( 'page', 1 );
+		$request->set_param( 'innerBlocks', $inner );
+
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertSame( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertSame( $direct['html'], $data['html'] );
+		$this->assertSame( $direct['totalItems'], $data['totalItems'] );
+		$this->assertSame( $direct['totalPages'], $data['totalPages'] );
+	}
 }
