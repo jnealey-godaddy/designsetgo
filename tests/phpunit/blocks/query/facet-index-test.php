@@ -184,7 +184,7 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 			'type'   => 'taxonomy',
 			'source' => 'category',
 		) );
-		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
 
 		$cat_id  = $this->factory->category->create();
 		$post_id = $this->factory->post->create( array(
@@ -208,7 +208,7 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 			'type'   => 'taxonomy',
 			'source' => 'category',
 		) );
-		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
 
 		$cat_id  = $this->factory->category->create();
 		$post_id = $this->factory->post->create( array(
@@ -240,7 +240,7 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 			'type'   => 'taxonomy',
 			'source' => 'category',
 		) );
-		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
 
 		$cat_id  = $this->factory->category->create();
 		$post_id = $this->factory->post->create( array(
@@ -264,7 +264,7 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 			'type'   => 'taxonomy',
 			'source' => 'category',
 		) );
-		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
 
 		$old_cat = $this->factory->category->create();
 		$new_cat = $this->factory->category->create();
@@ -292,7 +292,7 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 			'type'   => 'taxonomy',
 			'source' => 'category',
 		) );
-		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
 
 		$post_id = $this->factory->post->create( array( 'post_status' => 'publish' ) );
 
@@ -325,7 +325,7 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 			'type'   => 'meta',
 			'source' => '_price',
 		) );
-		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
 
 		$post_id = $this->factory->post->create( array( 'post_status' => 'publish' ) );
 		update_post_meta( $post_id, '_price', '19.99' );
@@ -346,7 +346,7 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 			'type'   => 'meta',
 			'source' => '_price',
 		) );
-		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
 
 		$post_id = $this->factory->post->create( array( 'post_status' => 'publish' ) );
 
@@ -375,7 +375,7 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 			'type'   => 'taxonomy',
 			'source' => 'category',
 		) );
-		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
 
 		$cat_id  = $this->factory->category->create();
 		$post_id = $this->factory->post->create( array(
@@ -398,5 +398,39 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d",
 			$post_id
 		) ) );
+	}
+
+	public function test_set_object_terms_ignores_non_post_object_id() {
+		global $wpdb;
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array(
+			'type'   => 'taxonomy',
+			'source' => 'category',
+		) );
+		\DesignSetGo\Blocks\Query\FacetIndexHooks::register_hooks();
+
+		// Pick an ID that does NOT correspond to a post.
+		$fake_id = 99999999;
+		$this->assertNull( get_post( $fake_id ) );
+
+		// Seed a sentinel row under that same ID so we can detect an errant reindex.
+		$table = $wpdb->prefix . 'dsgo_query_facet_index';
+		$wpdb->insert( $table, array(
+			'object_id'   => $fake_id,
+			'object_type' => 'post',
+			'facet_key'   => 'category',
+			'facet_value' => 'sentinel',
+		), array( '%d', '%s', '%s', '%s' ) );
+
+		// Trigger set_object_terms against the non-post ID.
+		$cat_id = $this->factory->category->create();
+		do_action( 'set_object_terms', $fake_id, array( $cat_id ), array( $cat_id ), 'category', false, array() );
+
+		// Sentinel must still be present — no reindex happened.
+		$count = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d AND facet_value = 'sentinel'",
+			$fake_id
+		) );
+		$this->assertSame( 1, $count );
 	}
 }
