@@ -1,1 +1,24 @@
-// Editor styles for designsetgo/query. Content lands in Task 11.
+// Editor styles for designsetgo/query.
+
+.wp-block-designsetgo-query {
+	.dsgo-query__editor-header {
+		display: flex;
+		justify-content: flex-end;
+		padding: 4px 8px;
+		margin-bottom: 8px;
+		border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+		font-size: 12px;
+		color: rgba(0, 0, 0, 0.6);
+		user-select: none;
+	}
+
+	.dsgo-query__count {
+		&.is-loading {
+			opacity: 0.5;
+		}
+
+		&.is-error {
+			color: #cc1818;
+		}
+	}
+}

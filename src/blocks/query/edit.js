@@ -1,23 +1,31 @@
 import { __ } from '@wordpress/i18n';
-import { useBlockProps, useInnerBlocksProps, InspectorControls } from '@wordpress/block-editor';
-import { Placeholder } from '@wordpress/components';
+import { useBlockProps, useInnerBlocksProps, InspectorControls, store as blockEditorStore } from '@wordpress/block-editor';
+import { useSelect } from '@wordpress/data';
 
 import useQueryId from './hooks/useQueryId';
+import useQueryPreview from './hooks/useQueryPreview';
 import QuerySourcePanel from './components/QuerySourcePanel';
 import TaxQueryBuilder from './components/TaxQueryBuilder';
 import MetaQueryBuilder from './components/MetaQueryBuilder';
+import AdvancedPanel from './components/AdvancedPanel';
+import ResultCountBadge from './components/ResultCountBadge';
+import { DEFAULT_TEMPLATE } from './edit-template';
 
 export default function QueryEdit({ attributes, setAttributes, clientId }) {
-	const blockProps = useBlockProps( { className: 'dsgo-query' } );
-	const innerBlocksProps = useInnerBlocksProps( blockProps, {
-		// Real template + templateLock arrive in Task 12.
-	} );
+	useQueryId({ clientId, queryId: attributes.queryId, setAttributes });
 
-	useQueryId( {
-		clientId,
-		queryId: attributes.queryId,
-		setAttributes,
-	} );
+	const hasInnerBlocks = useSelect(
+		(select) => (select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length || 0) > 0,
+		[clientId]
+	);
+
+	const blockProps = useBlockProps({ className: 'dsgo-query' });
+	const innerBlocksProps = useInnerBlocksProps(blockProps, {
+		template: hasInnerBlocks ? undefined : DEFAULT_TEMPLATE,
+		templateLock: false,
+	});
+
+	const preview = useQueryPreview({ attributes, queryId: attributes.queryId });
 
 	const showPostsOnlyPanels = attributes.source === 'posts';
 
@@ -25,34 +33,39 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 		<>
 			<InspectorControls>
 				<QuerySourcePanel
-					attributes={ attributes }
-					setAttributes={ setAttributes }
-					clientId={ clientId }
+					attributes={attributes}
+					setAttributes={setAttributes}
+					clientId={clientId}
 				/>
-				{ showPostsOnlyPanels && (
+				{showPostsOnlyPanels && (
 					<>
 						<TaxQueryBuilder
-							attributes={ attributes }
-							setAttributes={ setAttributes }
-							clientId={ clientId }
+							attributes={attributes}
+							setAttributes={setAttributes}
+							clientId={clientId}
 						/>
 						<MetaQueryBuilder
-							attributes={ attributes }
-							setAttributes={ setAttributes }
-							clientId={ clientId }
+							attributes={attributes}
+							setAttributes={setAttributes}
+							clientId={clientId}
 						/>
 					</>
-				) }
-			</InspectorControls>
-			<div { ...innerBlocksProps }>
-				<Placeholder
-					icon="editor-table"
-					label={ __( 'Dynamic Query', 'designsetgo' ) }
-					instructions={ __(
-						'Configure this block\'s query in the inspector. Default template will be added in Task 12.',
-						'designsetgo'
-					) }
+				)}
+				<AdvancedPanel
+					attributes={attributes}
+					setAttributes={setAttributes}
+					clientId={clientId}
 				/>
+			</InspectorControls>
+
+			<div {...innerBlocksProps}>
+				<div className="dsgo-query__editor-header" contentEditable={false}>
+					<ResultCountBadge
+						totalItems={preview.totalItems}
+						loading={preview.loading}
+						error={preview.error}
+					/>
+				</div>
 			</div>
 		</>
 	);

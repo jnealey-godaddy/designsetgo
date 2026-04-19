@@ -6,13 +6,33 @@ import '@testing-library/jest-dom';
 
 jest.mock('@wordpress/i18n', () => ({
 	__: (text) => text,
+	_n: (singular, plural, count) => (count === 1 ? singular : plural),
+	sprintf: (template, ...args) => {
+		let result = template;
+		args.forEach((arg) => {
+			result = result.replace(/%d/, String(arg));
+		});
+		return result;
+	},
 }));
 
+// Mock @wordpress/api-fetch — useQueryPreview calls this to fetch totalItems.
+// Use a never-resolving Promise so the async state update doesn't fire during
+// the synchronous render phase and trigger "not wrapped in act()" warnings.
+jest.mock('@wordpress/api-fetch', () => jest.fn(() => new Promise(() => {})));
+
 // Mock @wordpress/data — useSelect invokes the callback with a mock select()
-// so QuerySourcePanel, TaxQueryBuilder, and TermPicker all get correct data.
+// so QuerySourcePanel, TaxQueryBuilder, TermPicker, and hasInnerBlocks all
+// get correct data. The block-editor store returns a stub block with no
+// innerBlocks so the default template seeds.
 jest.mock('@wordpress/data', () => ({
 	useSelect: (cb) =>
 		cb((storeName) => {
+			if (storeName === 'core/block-editor') {
+				return {
+					getBlock: () => ({ innerBlocks: [] }),
+				};
+			}
 			if (storeName !== 'core') return {};
 			return {
 				getPostTypes: () => [
@@ -52,7 +72,7 @@ jest.mock('@wordpress/blocks', () => ({
 }));
 
 // Minimal @wordpress/components stubs — covers QuerySourcePanel, TaxQueryBuilder,
-// MetaQueryBuilder, and Placeholder needs.
+// MetaQueryBuilder, AdvancedPanel, and ResultCountBadge needs.
 jest.mock('@wordpress/components', () => {
 	const SelectControl = ({ label, value, options, onChange }) => (
 		<label>
@@ -134,6 +154,29 @@ jest.mock('@wordpress/components', () => {
 		</div>
 	);
 
+	const TextareaControl = ({ label, value, onChange }) => (
+		<label>
+			{label}
+			<textarea
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				aria-label={label}
+			/>
+		</label>
+	);
+
+	const ToggleControl = ({ label, checked, onChange }) => (
+		<label>
+			{label}
+			<input
+				type="checkbox"
+				checked={checked}
+				onChange={(e) => onChange(e.target.checked)}
+				aria-label={label}
+			/>
+		</label>
+	);
+
 	const VStack = ({ children }) => <div>{children}</div>;
 	const HStack = ({ children }) => <div>{children}</div>;
 
@@ -141,6 +184,8 @@ jest.mock('@wordpress/components', () => {
 		SelectControl,
 		RangeControl,
 		TextControl,
+		TextareaControl,
+		ToggleControl,
 		FormTokenField,
 		__experimentalNumberControl: NumberControl,
 		__experimentalToolsPanel: ToolsPanel,
@@ -176,6 +221,13 @@ const DEFAULT_ATTRIBUTES = {
 	order: 'DESC',
 	taxQuery: { relation: 'AND', clauses: [] },
 	metaQuery: { relation: 'AND', clauses: [] },
+	search: '',
+	bindSearchTo: '',
+	excludeCurrent: false,
+	ignoreSticky: true,
+	manualIds: [],
+	tagName: 'ul',
+	itemTagName: 'li',
 };
 
 function renderWith(attributeOverrides = {}, propOverrides = {}) {
