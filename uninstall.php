@@ -73,6 +73,7 @@ designsetgo_uninstall_step(
 		delete_option( 'designsetgo_global_styles' );
 		delete_option( 'designsetgo_settings' );
 		delete_option( 'designsetgo_llms_txt_physical' );
+		delete_option( 'designsetgo_llms_htaccess_backfilled' );
 	}
 );
 

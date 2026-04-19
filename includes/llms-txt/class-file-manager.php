@@ -148,19 +148,26 @@ class File_Manager {
 	 * @return bool True if directory exists or was created.
 	 */
 	public function ensure_directory( string $subdirectory = '' ): bool {
-		$dir = $this->get_directory();
+		$root = $this->get_directory();
+		$dir  = $root;
 
 		if ( $subdirectory ) {
-			$dir = trailingslashit( $dir ) . $subdirectory;
+			$dir = trailingslashit( $root ) . $subdirectory;
 		}
 
 		if ( ! file_exists( $dir ) ) {
-			return wp_mkdir_p( $dir );
+			if ( ! wp_mkdir_p( $dir ) ) {
+				return false;
+			}
+			$this->maybe_write_htaccess( $root );
+			return true;
 		}
 
 		if ( ! is_dir( $dir ) ) {
 			return false;
 		}
+
+		$this->maybe_write_htaccess( $root );
 
 		// Use WP_Filesystem for writability check, with fallback to native function.
 		global $wp_filesystem;
@@ -171,6 +178,33 @@ class File_Manager {
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Fallback when WP_Filesystem fails.
 		return $wp_filesystem ? $wp_filesystem->is_writable( $dir ) : is_writable( $dir );
+	}
+
+	/**
+	 * Drop a root-level .htaccess that tells Apache to serve .md as text/markdown.
+	 *
+	 * Without it, most servers fall back to application/octet-stream for .md and
+	 * browsers download the file instead of rendering it inline. Idempotent: only
+	 * writes when missing so any admin-authored overrides survive. Nginx cannot
+	 * honour .htaccess — those users need a server-level text/markdown MIME entry.
+	 *
+	 * @param string $root Absolute path to the markdown root directory.
+	 */
+	private function maybe_write_htaccess( string $root ): void {
+		if ( ! is_dir( $root ) ) {
+			return;
+		}
+
+		$path = trailingslashit( $root ) . '.htaccess';
+		if ( file_exists( $path ) ) {
+			return;
+		}
+
+		$contents = "# DesignSetGo llms.txt - serve Markdown inline\n"
+			. "AddType text/markdown .md\n";
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Small MIME-hint file.
+		@file_put_contents( $path, $contents ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Best-effort; failures are non-fatal.
 	}
 
 	/**

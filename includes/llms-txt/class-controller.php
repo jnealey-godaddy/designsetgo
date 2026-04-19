@@ -53,6 +53,11 @@ class Controller {
 	const PHYSICAL_FULL_FILE_OPTION = 'designsetgo_llms_full_txt_physical';
 
 	/**
+	 * Option key tracking whether the per-post markdown .htaccess has been backfilled.
+	 */
+	const HTACCESS_BACKFILL_OPTION = 'designsetgo_llms_htaccess_backfilled';
+
+	/**
 	 * File manager instance.
 	 *
 	 * @var File_Manager
@@ -104,6 +109,7 @@ class Controller {
 		add_action( 'transition_post_status', array( $this, 'invalidate_cache' ) );
 		add_action( 'update_option_designsetgo_settings', array( $this, 'handle_settings_update' ), 10, 2 );
 		add_action( 'init', array( $this, 'register_post_meta' ) );
+		add_action( 'init', array( $this, 'maybe_backfill_htaccess' ), 20 );
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
 		add_action( 'admin_notices', array( $this->conflict_detector, 'maybe_show_notice' ) );
 		add_action( 'admin_init', array( $this->conflict_detector, 'handle_dismiss_action' ) );
@@ -371,6 +377,30 @@ class Controller {
 				$this->delete_physical_full_file();
 			}
 		}
+	}
+
+	/**
+	 * One-time backfill: drop an .htaccess into the markdown dir on legacy installs.
+	 *
+	 * New installs pick it up via ensure_directory() on the next post save; this
+	 * covers sites that enabled llms.txt before this fix shipped and haven't
+	 * re-saved settings or published a post since.
+	 */
+	public function maybe_backfill_htaccess(): void {
+		if ( get_option( self::HTACCESS_BACKFILL_OPTION ) ) {
+			return;
+		}
+
+		$settings = \DesignSetGo\Admin\Settings::get_settings();
+		if ( empty( $settings['llms_txt']['enable'] ) ) {
+			return;
+		}
+
+		if ( is_dir( $this->file_manager->get_directory() ) ) {
+			$this->file_manager->ensure_directory();
+		}
+
+		update_option( self::HTACCESS_BACKFILL_OPTION, 1, true );
 	}
 
 	/**
