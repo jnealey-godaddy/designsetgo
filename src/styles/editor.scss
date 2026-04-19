@@ -28,7 +28,7 @@
 @use '../blocks/breadcrumbs/editor' as breadcrumbs;
 
 // Query blocks (editor)
-@forward '../blocks/query/editor';
+@use '../blocks/query/editor' as query;
 
 // ===================================================================
 // PERFORMANCE OPTIMIZATION (2025-11-11)

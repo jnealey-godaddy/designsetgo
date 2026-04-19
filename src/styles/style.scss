@@ -33,7 +33,7 @@
 @use '../blocks/scroll-slide/style' as scroll-slide;
 
 // Query blocks (frontend)
-@forward '../blocks/query/style';
+@use '../blocks/query/style' as query;
 
 // RichText formats (frontend)
 @use '../formats/text-style/style' as text-style;
