@@ -47,6 +47,9 @@ class FacetRegistry {
 		}
 
 		$sanitized_key = sanitize_key( $key );
+		if ( ! array_key_exists( $sanitized_key, $facets ) ) {
+			return;
+		}
 		unset( $facets[ $sanitized_key ] );
 
 		update_option( self::OPTION, $facets, false );

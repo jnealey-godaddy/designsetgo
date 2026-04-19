@@ -54,6 +54,7 @@ class DesignSetGo_Query_Facet_Registry_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'badkey', $stored );
 		$this->assertSame( 'meta', $stored['badkey']['type'] );
 		$this->assertStringNotContainsString( '<script>', $stored['badkey']['source'] );
+		$this->assertSame( 'Bad Key!', $stored['badkey']['label'], 'Label fallback preserves raw key for human readability.' );
 	}
 
 	public function test_all_applies_filter() {
@@ -86,5 +87,15 @@ class DesignSetGo_Query_Facet_Registry_Test extends WP_UnitTestCase {
 		$entry = FacetRegistry::get( 'category' );
 		$this->assertIsArray( $entry );
 		$this->assertSame( 'taxonomy', $entry['type'] );
+	}
+
+	public function test_unregister_missing_key_does_not_write() {
+		// Baseline: option does not exist yet.
+		$this->assertFalse( get_option( FacetRegistry::OPTION, false ) );
+
+		FacetRegistry::unregister( 'never_registered' );
+
+		// Still should not exist — unregister must not create an empty option.
+		$this->assertFalse( get_option( FacetRegistry::OPTION, false ) );
 	}
 }
