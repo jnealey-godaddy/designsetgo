@@ -42,7 +42,8 @@
         { "value": "title.ASC",  "label": "A\u2013Z" },
         { "value": "title.DESC", "label": "Z\u2013A" }
       ]
-    }
+    },
+    "showCounts": { "type": "boolean", "default": true }
   },
   "example": { "attributes": { "filterKind": "checkbox" } },
   "editorScript": "file:./index.js",

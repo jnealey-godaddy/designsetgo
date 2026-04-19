@@ -104,8 +104,10 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 	 * @param string $param_name      URL parameter name.
 	 * @param string $label           Optional visible label.
 	 * @param string $filter_taxonomy Taxonomy slug.
+	 * @param bool   $show_counts     Whether to append (N) counts to option labels.
+	 * @param array  $active_filters  Current active filter state for intersection counts.
 	 */
-	function designsetgo_query_filter_render_select( $wrapper, $param_name, $label, $filter_taxonomy ) {
+	function designsetgo_query_filter_render_select( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array() ) {
 		if ( ! taxonomy_exists( $filter_taxonomy ) ) {
 			return;
 		}
@@ -124,13 +126,33 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 		$raw     = is_array( $raw ) ? ( isset( $raw[0] ) ? $raw[0] : '' ) : $raw;
 		$current = sanitize_title( (string) $raw );
 
+		// Resolve counts if requested.
+		$counts = array();
+		if ( $show_counts && class_exists( '\DesignSetGo\Blocks\Query\FacetIndex' ) ) {
+			$term_ids = array_map(
+				function ( $t ) {
+					return (string) $t->term_id;
+				},
+				$terms
+			);
+			$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+				$filter_taxonomy,
+				$term_ids,
+				$active_filters
+			);
+		}
+
 		$opts_html = '';
 		foreach ( $terms as $term ) {
+			$label_text = esc_html( $term->name );
+			if ( $show_counts && isset( $counts[ (string) $term->term_id ] ) ) {
+				$label_text .= ' <span class="dsgo-query-filter__count">(' . (int) $counts[ (string) $term->term_id ] . ')</span>';
+			}
 			$opts_html .= sprintf(
 				'<option value="%1$s"%2$s>%3$s</option>',
 				esc_attr( $term->slug ),
 				selected( $current, $term->slug, false ),
-				esc_html( $term->name )
+				wp_kses( $label_text, array( 'span' => array( 'class' => array() ) ) )
 			);
 		}
 
@@ -156,8 +178,10 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 	 * @param string $param_name      URL parameter name (e.g. filter_category).
 	 * @param string $label           Optional legend label.
 	 * @param string $filter_taxonomy Taxonomy slug.
+	 * @param bool   $show_counts     Whether to append (N) counts to option labels.
+	 * @param array  $active_filters  Current active filter state for intersection counts.
 	 */
-	function designsetgo_query_filter_render_checkbox( $wrapper, $param_name, $label, $filter_taxonomy ) {
+	function designsetgo_query_filter_render_checkbox( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array() ) {
 		if ( ! taxonomy_exists( $filter_taxonomy ) ) {
 			return;
 		}
@@ -180,15 +204,35 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 				: array_filter( array_map( 'sanitize_title', explode( ',', (string) $raw_input ) ) );
 		}
 
+		// Resolve per-option counts from the facet index if requested.
+		$counts = array();
+		if ( $show_counts && class_exists( '\DesignSetGo\Blocks\Query\FacetIndex' ) ) {
+			$term_ids = array_map(
+				function ( $t ) {
+					return (string) $t->term_id;
+				},
+				$terms
+			);
+			$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+				$filter_taxonomy,
+				$term_ids,
+				$active_filters
+			);
+		}
+
 		$items_html = '';
 		foreach ( $terms as $term ) {
-			$checked     = in_array( $term->slug, $selected_raw, true ) ? 'checked' : '';
+			$checked    = in_array( $term->slug, $selected_raw, true ) ? 'checked' : '';
+			$name_label = esc_html( $term->name );
+			if ( $show_counts && isset( $counts[ (string) $term->term_id ] ) ) {
+				$name_label .= ' <span class="dsgo-query-filter__count">(' . (int) $counts[ (string) $term->term_id ] . ')</span>';
+			}
 			$items_html .= sprintf(
 				'<label class="dsgo-query-filter__checkbox-item"><input type="checkbox" name="%1$s[]" value="%2$s" %3$s data-wp-on--change="actions.toggleFilter" /><span>%4$s</span></label>',
 				esc_attr( $param_name ),
 				esc_attr( $term->slug ),
 				esc_attr( $checked ),
-				esc_html( $term->name )
+				$name_label // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() on term->name + our own <span> markup.
 			);
 		}
 
@@ -374,6 +418,45 @@ $dsgo_filter_label       = isset( $attributes['label'] ) ? (string) $attributes[
 $dsgo_filter_placeholder = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : '';
 $dsgo_filter_taxonomy    = isset( $attributes['taxonomy'] ) ? sanitize_key( (string) $attributes['taxonomy'] ) : 'category';
 
+// Whether to show (N) counts next to filter options (default: true).
+$dsgo_show_counts = ! isset( $attributes['showCounts'] ) || (bool) $attributes['showCounts'];
+
+// Extract active filters from $_GET so count queries respect the current
+// filter state. On the REST-refresh path, $_GET has been overlaid by the
+// REST controller with the incoming params, so this is always up-to-date.
+$dsgo_active_filters = array();
+foreach ( (array) $_GET as $dsgo_k => $dsgo_v ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$dsgo_k = sanitize_key( (string) $dsgo_k );
+	if ( '' === $dsgo_k ) {
+		continue;
+	}
+	if ( 0 === strpos( $dsgo_k, 'filter_' ) ) {
+		if ( is_array( $dsgo_v ) ) {
+			$dsgo_active_filters[ $dsgo_k ] = array_map( 'sanitize_text_field', wp_unslash( $dsgo_v ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		} else {
+			$dsgo_val = sanitize_text_field( wp_unslash( (string) $dsgo_v ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			if ( '' !== $dsgo_val ) {
+				$dsgo_active_filters[ $dsgo_k ] = array( $dsgo_val );
+			}
+		}
+	}
+}
+
+// Re-key active_filters to use the bare taxonomy slug (strip "filter_" prefix)
+// because FacetIndex::count_for_options() expects facet keys, not URL param names.
+$dsgo_active_filters_by_key = array();
+foreach ( $dsgo_active_filters as $dsgo_param_key => $dsgo_param_values ) {
+	$dsgo_facet_key = 'filter_' === substr( $dsgo_param_key, 0, 7 )
+		? substr( $dsgo_param_key, 7 )
+		: $dsgo_param_key;
+	$dsgo_active_filters_by_key[ $dsgo_facet_key ] = $dsgo_param_values;
+}
+
+// Only render counts when the facet is indexed AND showCounts is enabled.
+$dsgo_counts_enabled = $dsgo_show_counts
+	&& class_exists( '\DesignSetGo\Blocks\Query\FacetIndex' )
+	&& \DesignSetGo\Blocks\Query\FacetIndex::is_available( $dsgo_filter_taxonomy );
+
 $dsgo_filter_wrapper = get_block_wrapper_attributes(
 	array(
 		'class'                 => 'dsgo-query-filter dsgo-query-filter--' . esc_attr( $dsgo_filter_kind ),
@@ -412,7 +495,7 @@ switch ( $dsgo_filter_kind ) {
 		designsetgo_query_filter_render_sort( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_sort_options );
 		break;
 	case 'select':
-		designsetgo_query_filter_render_select( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy );
+		designsetgo_query_filter_render_select( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy, $dsgo_counts_enabled, $dsgo_active_filters_by_key );
 		break;
 	case 'active':
 		designsetgo_query_filter_render_active( $dsgo_filter_wrapper, $dsgo_filter_label );
@@ -422,6 +505,6 @@ switch ( $dsgo_filter_kind ) {
 		break;
 	case 'checkbox':
 	default:
-		designsetgo_query_filter_render_checkbox( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy );
+		designsetgo_query_filter_render_checkbox( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy, $dsgo_counts_enabled, $dsgo_active_filters_by_key );
 		break;
 }

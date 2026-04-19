@@ -8,7 +8,11 @@
  */
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
-import { SelectControl, TextControl } from '@wordpress/components';
+import {
+	SelectControl,
+	TextControl,
+	ToggleControl,
+} from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { DsgoInspectorPanel } from '../../components/shared';
@@ -30,6 +34,7 @@ const DEFAULTS = {
 	paramName: 'filter_category',
 	label: '',
 	placeholder: '',
+	showCounts: true,
 };
 
 export default function QueryFilterEdit({
@@ -37,7 +42,8 @@ export default function QueryFilterEdit({
 	setAttributes,
 	clientId,
 }) {
-	const { filterKind, taxonomy, paramName, label, placeholder } = attributes;
+	const { filterKind, taxonomy, paramName, label, placeholder, showCounts } =
+		attributes;
 
 	const blockProps = useBlockProps({
 		className: 'dsgo-query-filter is-editor',
@@ -75,6 +81,9 @@ export default function QueryFilterEdit({
 		filterKind === 'checkbox' || filterKind === 'select';
 	const showLabelControl = true; // all kinds
 	const showSearchControl = filterKind === 'search';
+	// Show counts toggle only for taxonomy-backed filter kinds.
+	const showCountsControl =
+		filterKind === 'checkbox' || filterKind === 'select';
 
 	function handleTaxonomyChange(slug) {
 		setAttributes({
@@ -219,6 +228,32 @@ export default function QueryFilterEdit({
 								}
 								placeholder={__('Search\u2026', 'designsetgo')}
 								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
+
+					{showCountsControl && (
+						<DsgoInspectorPanel.Item
+							label={__(
+								'Show counts next to options',
+								'designsetgo'
+							)}
+							hasValue={() => showCounts !== true}
+							onDeselect={() =>
+								setAttributes({ showCounts: true })
+							}
+							isShownByDefault
+						>
+							<ToggleControl
+								label={__(
+									'Show counts next to options',
+									'designsetgo'
+								)}
+								checked={showCounts}
+								onChange={(v) =>
+									setAttributes({ showCounts: v })
+								}
 								__nextHasNoMarginBottom
 							/>
 						</DsgoInspectorPanel.Item>
