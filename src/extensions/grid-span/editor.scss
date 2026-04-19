@@ -13,6 +13,9 @@
  * On mobile/tablet, if the grid has fewer columns than the span,
  * the span should be constrained to the max available columns.
  * This prevents blocks from spanning more columns than exist.
+ *
+ * Selectors explicitly match grid-column / gridColumn to avoid false
+ * positives on row-span styles (grid-row: span N).
  */
 
 // Generate responsive constraints for each grid column configuration
@@ -23,8 +26,12 @@
 		.dsgo-grid-cols-tablet-#{$cols} .dsgo-grid__inner > [data-block] {
 			// If span exceeds available columns, constrain it
 			@for $span from ($cols + 1) through 12 {
-				&[style*="span #{$span}"],
-				&[style*="span#{$span}"] {
+				&[style*="grid-column: span #{$span}"],
+				&[style*="grid-column:span #{$span}"],
+				&[style*="grid-column:span#{$span}"],
+				&[style*="gridColumn: span #{$span}"],
+				&[style*="gridColumn:span #{$span}"],
+				&[style*="gridColumn:span#{$span}"] {
 					grid-column: span #{$cols} !important;
 				}
 			}
@@ -39,8 +46,12 @@
 		.dsgo-grid-cols-mobile-#{$cols} .dsgo-grid__inner > [data-block] {
 			// If span exceeds available columns, constrain it
 			@for $span from ($cols + 1) through 12 {
-				&[style*="span #{$span}"],
-				&[style*="span#{$span}"] {
+				&[style*="grid-column: span #{$span}"],
+				&[style*="grid-column:span #{$span}"],
+				&[style*="grid-column:span#{$span}"],
+				&[style*="gridColumn: span #{$span}"],
+				&[style*="gridColumn:span #{$span}"],
+				&[style*="gridColumn:span#{$span}"] {
 					grid-column: span #{$cols} !important;
 				}
 			}
