@@ -153,27 +153,51 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			JSON_HEX_APOS
 		);
 
+		// Column CSS variables drive the responsive grid layout applied in
+		// style.scss. `columns` attr may be missing for pre-grid blocks, in
+		// which case we default to 1 column and skip the optional vars.
+		$columns         = isset( $atts['columns'] ) ? max( 1, (int) $atts['columns'] ) : 1;
+		$columns_tablet  = isset( $atts['columnsTablet'] ) ? (int) $atts['columnsTablet'] : 0;
+		$columns_mobile  = isset( $atts['columnsMobile'] ) ? (int) $atts['columnsMobile'] : 0;
+		$column_gap      = isset( $atts['columnGap'] ) ? sanitize_text_field( (string) $atts['columnGap'] ) : '';
+		$grid_style      = sprintf( '--dsgo-query-columns:%d;', $columns );
+		if ( $columns_tablet > 0 ) {
+			$grid_style .= sprintf( '--dsgo-query-columns-tablet:%d;', $columns_tablet );
+		}
+		if ( $columns_mobile > 0 ) {
+			$grid_style .= sprintf( '--dsgo-query-columns-mobile:%d;', $columns_mobile );
+		}
+		if ( '' !== $column_gap ) {
+			// Whitelist a safe subset of CSS length values to defeat `;` / `}` injection.
+			if ( preg_match( '/^[0-9]+(?:\.[0-9]+)?(?:px|rem|em|%|vw|vh|ch|ex|pt)$/', $column_gap ) ) {
+				$grid_style .= '--dsgo-query-gap:' . $column_gap . ';';
+			}
+		}
+
 		if ( is_string( $wrapper_attrs ) && '' !== $wrapper_attrs ) {
 			// First-paint path: get_block_wrapper_attributes() already produced an
 			// escaped attrs string that includes wp-block-designsetgo-query,
 			// all native-supports classes/styles, anchor id, and user className.
-			// Append the IAPI + query-id + aria-live attrs inline.
-			$iapi_attrs = sprintf(
+			// Append the IAPI + query-id + aria-live attrs inline, plus the grid
+			// CSS vars (merged into an existing style="" attr if present).
+			$wrapper_with_style = designsetgo_query_merge_inline_style( $wrapper_attrs, $grid_style );
+			$iapi_attrs         = sprintf(
 				'data-dsgo-query-id="%1$s" data-dsgo-query-role="container" data-wp-interactive="%2$s" data-wp-context=\'%3$s\' aria-live="polite"',
 				esc_attr( $query_id ),
 				esc_attr( 'designsetgo/query' ),
 				// wp_json_encode output is safe inside a single-quoted HTML attribute.
 				$wp_context // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode output inside single-quoted attr.
 			);
-			$attrs_string = $wrapper_attrs . ' ' . $iapi_attrs;
+			$attrs_string = $wrapper_with_style . ' ' . $iapi_attrs;
 		} else {
 			// REST / unit-test path: build minimal attrs manually.
 			$attrs_string = sprintf(
-				'class="%1$s" data-dsgo-query-id="%2$s" data-dsgo-query-role="container" data-wp-interactive="%3$s" data-wp-context=\'%4$s\' aria-live="polite"',
+				'class="%1$s" style="%5$s" data-dsgo-query-id="%2$s" data-dsgo-query-role="container" data-wp-interactive="%3$s" data-wp-context=\'%4$s\' aria-live="polite"',
 				esc_attr( 'dsgo-query dsgo-query--source-' . $source ),
 				esc_attr( $query_id ),
 				esc_attr( 'designsetgo/query' ),
-				$wp_context // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				$wp_context, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				esc_attr( $grid_style )
 			);
 		}
 
@@ -429,6 +453,42 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			'totalPages' => $result['totalPages'],
 			'totalItems' => $result['totalItems'],
 		);
+	}
+
+endif;
+
+if ( ! function_exists( 'designsetgo_query_merge_inline_style' ) ) :
+
+	/**
+	 * Merges extra inline CSS declarations into an existing pre-serialized
+	 * HTML attribute string. If a `style="..."` attribute already exists
+	 * (as emitted by `get_block_wrapper_attributes()` when the user has
+	 * applied padding/margin/etc), the new declarations are appended inside
+	 * it; otherwise a new `style="..."` attribute is added to the string.
+	 *
+	 * Values passed in `$extra_style` must already be safe for an HTML
+	 * attribute context — this helper only concatenates, it does not
+	 * sanitize.
+	 *
+	 * @param string $wrapper_attrs Existing attributes string from
+	 *                              `get_block_wrapper_attributes()`.
+	 * @param string $extra_style   Raw CSS declarations to append, terminated
+	 *                              with a trailing `;`.
+	 * @return string The merged attributes string.
+	 */
+	function designsetgo_query_merge_inline_style( $wrapper_attrs, $extra_style ) {
+		$extra_style = trim( (string) $extra_style );
+		if ( '' === $extra_style ) {
+			return $wrapper_attrs;
+		}
+
+		if ( preg_match( '/\bstyle\s*=\s*"([^"]*)"/i', $wrapper_attrs, $m ) ) {
+			$existing = rtrim( $m[1], '; ' );
+			$merged   = ( '' === $existing ? '' : $existing . ';' ) . $extra_style;
+			return str_replace( $m[0], 'style="' . esc_attr( $merged ) . '"', $wrapper_attrs );
+		}
+
+		return $wrapper_attrs . ' style="' . esc_attr( $extra_style ) . '"';
 	}
 
 endif;

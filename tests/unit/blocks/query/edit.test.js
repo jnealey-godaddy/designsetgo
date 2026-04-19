@@ -49,7 +49,9 @@ jest.mock('@wordpress/data', () => ({
 				getEntityRecords: () => [],
 			};
 		}),
-	useDispatch: () => ({}),
+	useDispatch: () => ({
+		insertBlocks: jest.fn(),
+	}),
 }));
 
 // Stub @wordpress/core-data — only the store token is needed.
@@ -69,6 +71,7 @@ jest.mock('@wordpress/block-editor', () => ({
 // @wordpress/blocks stub — avoids pulling in @wordpress/rich-text store.
 jest.mock('@wordpress/blocks', () => ({
 	createBlocksFromInnerBlocksTemplate: jest.fn((t) => t),
+	createBlock: jest.fn((name, attrs) => ({ name, attributes: attrs || {} })),
 }));
 
 // Minimal @wordpress/components stubs — covers QuerySourcePanel, TaxQueryBuilder,

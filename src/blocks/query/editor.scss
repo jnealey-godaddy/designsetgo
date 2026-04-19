@@ -2,6 +2,15 @@
 
 .wp-block-designsetgo-query {
 
+	// Mirror the frontend grid so the editor preview reflects the chosen
+	// columns. The `.dsgo-query__inner` div is the useInnerBlocksProps
+	// wrapper that actually contains the per-item template blocks.
+	.dsgo-query__inner {
+		display: grid;
+		grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
+		gap: var(--dsgo-query-gap, 1.5rem);
+	}
+
 	.dsgo-query__editor-header {
 		display: flex;
 		justify-content: flex-end;

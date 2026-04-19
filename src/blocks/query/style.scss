@@ -1,8 +1,29 @@
 .dsgo-query {
+	display: grid;
+	grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
+	gap: var(--dsgo-query-gap, 1.5rem);
+	list-style: none;
+	margin: 0;
+	padding: 0;
 
 	&__item {
+		margin: 0;
 		// Space for future entrance transitions (added in Task 18).
 		transition: opacity 0.2s ease;
+	}
+}
+
+@media (max-width: 900px) {
+
+	.dsgo-query {
+		grid-template-columns: repeat(var(--dsgo-query-columns-tablet, var(--dsgo-query-columns, 1)), minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 600px) {
+
+	.dsgo-query {
+		grid-template-columns: repeat(var(--dsgo-query-columns-mobile, 1), minmax(0, 1fr));
 	}
 }
 

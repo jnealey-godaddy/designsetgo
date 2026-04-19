@@ -1,6 +1,8 @@
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, useInnerBlocksProps, InspectorControls, store as blockEditorStore } from '@wordpress/block-editor';
-import { useSelect } from '@wordpress/data';
+import { useDispatch, useSelect } from '@wordpress/data';
+import { useEffect, useRef } from '@wordpress/element';
+import { createBlock } from '@wordpress/blocks';
 
 import useQueryId from './hooks/useQueryId';
 import useQueryPreview from './hooks/useQueryPreview';
@@ -19,12 +21,45 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 		[clientId]
 	);
 
-	const blockProps = useBlockProps({ className: 'dsgo-query' });
-	// Inner blocks must live on their own `<div>` so the header can sit
-	// alongside them without overriding `innerBlocksProps.children`.
+	// Commit the default template as real inner blocks on first insert so the
+	// frontend has something to render. `useInnerBlocksProps({ template })`
+	// only shows a visual preview; it does NOT persist to post_content, so a
+	// user who inserted the block and published without interacting would
+	// save `<!-- wp:designsetgo/query {} /-->` and see empty <li>s live.
+	// The ref guards against React 18 StrictMode's intentional double-invoke
+	// of effects on mount, which would otherwise seed the template twice.
+	const { insertBlocks } = useDispatch(blockEditorStore);
+	const seededRef = useRef(false);
+	useEffect(() => {
+		if (hasInnerBlocks || seededRef.current) {
+			return;
+		}
+		seededRef.current = true;
+		const seeded = DEFAULT_TEMPLATE.map(([name, attrs]) =>
+			createBlock(name, attrs || {})
+		);
+		insertBlocks(seeded, 0, clientId, false);
+	}, [hasInnerBlocks, clientId, insertBlocks]);
+
+	const blockProps = useBlockProps({
+		className: 'dsgo-query',
+		style: {
+			'--dsgo-query-columns': attributes.columns || 1,
+			'--dsgo-query-columns-tablet':
+				attributes.columnsTablet || attributes.columns || 1,
+			'--dsgo-query-columns-mobile':
+				attributes.columnsMobile || 1,
+			'--dsgo-query-gap': attributes.columnGap || undefined,
+		},
+	});
+
 	const innerBlocksProps = useInnerBlocksProps(
 		{ className: 'dsgo-query__inner' },
 		{
+			// `template` alone is unreliable for persistence on dynamic blocks —
+			// Gutenberg treats it as a visual hint only. The useEffect above is
+			// the authoritative seeder; the template here just ensures the
+			// initial editor render shows the structure before the effect fires.
 			template: hasInnerBlocks ? undefined : DEFAULT_TEMPLATE,
 			templateLock: false,
 		}
