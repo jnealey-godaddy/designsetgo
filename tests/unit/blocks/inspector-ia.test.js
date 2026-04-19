@@ -67,8 +67,10 @@ const MIGRATED_BLOCKS = [
 	'modal-trigger',
 	'image-accordion-item',
 	'flip-card',
+	'flip-card-face',
 	'accordion',
 	'image-accordion',
+	'tabs',
 	'modal',
 ];
 

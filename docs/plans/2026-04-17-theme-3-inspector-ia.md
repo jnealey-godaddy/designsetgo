@@ -146,9 +146,9 @@ Stand up Playwright-based visual regression for the editor sidebar so subsequent
 
 **PR title:** `feat(blocks): Theme 3 — interactive family inspector IA`
 
-Blocks: `accordion`, `accordion-item`, `tabs`, `tab`, `slider`, `slide`, `modal`, `modal-trigger`, `flip-card`, `image-accordion`, `image-accordion-item`.
+Blocks: `accordion`, `accordion-item`, `tabs`, `tab`, `slider`, `slide`, `modal`, `modal-trigger`, `flip-card`, `flip-card-face`, `image-accordion`, `image-accordion-item`.
 
-- [x] `accordion-item`, `tab`, `slide`, `modal-trigger`, `image-accordion-item` — simple child/leaf blocks, single Settings panel each. (Tranche 1 of PR #363.)
+- [x] `accordion-item`, `tab`, `slide`, `modal-trigger`, `image-accordion-item`, `flip-card-face` — simple child/leaf blocks, single Settings panel each. (Tranche 1 of PR #363.)
 - [x] `flip-card`, `accordion`, `image-accordion` — parent blocks that collapse 2–4 PanelBody groups into one Settings panel. (Tranche 2 of PR #363.)
 - [x] `tabs` — three PanelBody groups (Tab Settings / Mobile Settings / Advanced) consolidated; the plugin-specific `enableDeepLinking` toggle lives as an off-by-default Settings item (WP's native Advanced group is HTML anchor / class only).
 - [x] `modal` — the block's inspector is fragmented across seven sub-components under `src/blocks/modal/components/*Settings.js`. Each sub-component was refactored to render a React Fragment of `DsgoInspectorPanel.Item` entries; `modal/edit.js` now wraps all seven in a single Settings `DsgoInspectorPanel` with a shared `resetAll`. Structural test extended to concatenate sub-component sources for blocks listed in `COMPOSITE_INSPECTOR_BLOCKS`.

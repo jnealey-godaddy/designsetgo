@@ -15,9 +15,10 @@ import {
 	useInnerBlocksProps,
 	InspectorControls,
 } from '@wordpress/block-editor';
-import { Notice, PanelBody, SelectControl } from '@wordpress/components';
+import { Notice, SelectControl } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
+import { DsgoInspectorPanel } from '../../components/shared';
 
 export default function FlipCardFaceEdit({
 	attributes,
@@ -130,51 +131,60 @@ export default function FlipCardFaceEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Face Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() => setAttributes({ side: 'front' })}
 				>
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Side', 'designsetgo')}
-						value={side}
-						options={[
-							{
-								label: __('Front', 'designsetgo'),
-								value: 'front',
-								disabled:
-									side !== 'front' &&
-									siblingSides.includes('front'),
-							},
-							{
-								label: __('Back', 'designsetgo'),
-								value: 'back',
-								disabled:
-									side !== 'back' &&
-									siblingSides.includes('back'),
-							},
-						]}
-						onChange={(value) => setAttributes({ side: value })}
-						help={__(
-							'Choose whether this face shows on the front or back of the flip card.',
-							'designsetgo'
+						hasValue={() => side !== 'front'}
+						onDeselect={() => setAttributes({ side: 'front' })}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Side', 'designsetgo')}
+							value={side}
+							options={[
+								{
+									label: __('Front', 'designsetgo'),
+									value: 'front',
+									disabled:
+										side !== 'front' &&
+										siblingSides.includes('front'),
+								},
+								{
+									label: __('Back', 'designsetgo'),
+									value: 'back',
+									disabled:
+										side !== 'back' &&
+										siblingSides.includes('back'),
+								},
+							]}
+							onChange={(value) => setAttributes({ side: value })}
+							help={__(
+								'Choose whether this face shows on the front or back of the flip card.',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+						{hasDuplicateSide && (
+							<Notice status="warning" isDismissible={false}>
+								{side === 'back'
+									? __(
+											'Another face on this flip card is already set to Back. Change one of them to Front so the card can flip.',
+											'designsetgo'
+										)
+									: __(
+											'Another face on this flip card is already set to Front. Change one of them to Back so the card can flip.',
+											'designsetgo'
+										)}
+							</Notice>
 						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					{hasDuplicateSide && (
-						<Notice status="warning" isDismissible={false}>
-							{side === 'back'
-								? __(
-										'Another face on this flip card is already set to Back. Change one of them to Front so the card can flip.',
-										'designsetgo'
-									)
-								: __(
-										'Another face on this flip card is already set to Front. Change one of them to Back so the card can flip.',
-										'designsetgo'
-									)}
-						</Notice>
-					)}
-				</PanelBody>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 			<div {...innerBlocksProps} />
 		</>
