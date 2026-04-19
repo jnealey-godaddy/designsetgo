@@ -26,7 +26,7 @@ export default [
 	{
 		name: 'team',
 		title: __( 'Team directory', 'designsetgo' ),
-		description: __( 'Team members grid. Requires a `team` custom post type or similar.', 'designsetgo' ),
+		description: __( 'Team members grid. Switch Post type to your `team` CPT (or similar) in the inspector.', 'designsetgo' ),
 		icon: 'groups',
 		attributes: {
 			source: 'posts',
@@ -108,7 +108,7 @@ export default [
 	{
 		name: 'events',
 		title: __( 'Events', 'designsetgo' ),
-		description: __( 'Upcoming event listings sorted by date. Requires an `events` CPT or similar.', 'designsetgo' ),
+		description: __( 'Upcoming event listings sorted by date. Switch Post type to your `events` CPT (or similar) in the inspector.', 'designsetgo' ),
 		icon: 'calendar-alt',
 		attributes: {
 			source: 'posts',

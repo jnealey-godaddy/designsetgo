@@ -102,7 +102,9 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 					$post_urls
 				),
 			);
-			$schema_html = '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES ) . '</script>';
+			// JSON_HEX_TAG defends against a stray `</script>` inside a URL breaking
+			// out of the script context; JSON_HEX_AMP keeps the payload entity-safe.
+			$schema_html = '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP ) . '</script>';
 		}
 
 		return array(

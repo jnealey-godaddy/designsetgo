@@ -71,6 +71,31 @@ export default function QueryFilterEdit( {
 		} );
 	}
 
+	// Sensible default paramName per filterKind so switching kinds never
+	// leaves a stale `filter_category` on a search/sort/etc variation.
+	function defaultParamNameForKind( kind, tax ) {
+		switch ( kind ) {
+			case 'search':
+				return 'q';
+			case 'sort':
+				return 'sort';
+			case 'active':
+			case 'reset':
+				return '';
+			case 'checkbox':
+			case 'select':
+			default:
+				return `filter_${ tax || 'category' }`;
+		}
+	}
+
+	function handleFilterKindChange( nextKind ) {
+		setAttributes( {
+			filterKind: nextKind,
+			paramName: defaultParamNameForKind( nextKind, taxonomy ),
+		} );
+	}
+
 	return (
 		<>
 			<InspectorControls>
@@ -96,9 +121,7 @@ export default function QueryFilterEdit( {
 							label={ __( 'Filter type', 'designsetgo' ) }
 							value={ filterKind }
 							options={ FILTER_KIND_OPTIONS }
-							onChange={ ( v ) =>
-								setAttributes( { filterKind: v } )
-							}
+							onChange={ handleFilterKindChange }
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>

@@ -4,7 +4,7 @@
   "name": "designsetgo/query-filter",
   "version": "1.0.0",
   "title": "Query Filter",
-  "category": "design",
+  "category": "designsetgo",
   "parent": ["designsetgo/query"],
   "description": "Filter, search, sort, or reset a Dynamic Query via URL parameters with no page reload.",
   "keywords": ["filter", "facet", "search", "sort", "query"],

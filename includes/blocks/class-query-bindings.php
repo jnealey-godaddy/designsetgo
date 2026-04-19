@@ -152,7 +152,7 @@ class Bindings {
 			return null;
 		}
 
-		$value = get_field( $key, $post_id ? $post_id : false );
+		$value = get_field( $key, $post_id );
 		if ( is_array( $value ) || is_object( $value ) ) {
 			return null; // Scalar-only source; complex values need a specific render path.
 		}

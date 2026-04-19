@@ -401,7 +401,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		);
 		$siblings_html = '';
 		foreach ( $sibling_blocks as $sb ) {
-			if ( function_exists( 'WP_Block' ) || class_exists( 'WP_Block' ) ) {
+			if ( class_exists( 'WP_Block' ) ) {
 				$siblings_html .= ( new WP_Block( $sb, $sibling_context ) )->render();
 			}
 		}

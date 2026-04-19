@@ -79,8 +79,10 @@ if ( ! function_exists( 'designsetgo_query_filter_render_search' ) ) :
 	 * @param string $placeholder Input placeholder text.
 	 */
 	function designsetgo_query_filter_render_search( $wrapper, $param_name, $label, $placeholder ) {
-		// $param_name is already sanitize_key()'d at the call site.
+		// $param_name is already sanitize_key()'d at the call site. Coerce array
+		// GET (?q[]=value) to a scalar so the input doesn't render "Array".
 		$raw     = isset( $_GET[ $param_name ] ) ? wp_unslash( $_GET[ $param_name ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw     = is_array( $raw ) ? ( isset( $raw[0] ) ? $raw[0] : '' ) : $raw;
 		$current = sanitize_text_field( (string) $raw );
 
 		printf(
@@ -89,7 +91,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_search' ) ) :
 			$label ? '<label class="dsgo-query-filter__label">' . esc_html( $label ) . '</label>' : '',
 			esc_attr( $param_name ),
 			esc_attr( $current ),
-			esc_attr( $placeholder ? $placeholder : __( 'Search&hellip;', 'designsetgo' ) ),
+			esc_attr( $placeholder ? $placeholder : __( 'Search…', 'designsetgo' ) ),
 			esc_html__( 'Search', 'designsetgo' )
 		);
 	}
@@ -108,6 +110,9 @@ if ( ! function_exists( 'designsetgo_query_filter_render_sort' ) ) :
 	 */
 	function designsetgo_query_filter_render_sort( $wrapper, $param_name, $label, array $options ) {
 		$raw     = isset( $_GET[ $param_name ] ) ? wp_unslash( $_GET[ $param_name ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		// Coerce array GET (?sort[]=value) to a scalar so `selected()` compares
+		// a string, not the literal "Array".
+		$raw     = is_array( $raw ) ? ( isset( $raw[0] ) ? $raw[0] : '' ) : $raw;
 		$current = sanitize_text_field( (string) $raw );
 
 		$opts_html = '';
@@ -160,6 +165,8 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 		}
 
 		$raw     = isset( $_GET[ $param_name ] ) ? wp_unslash( $_GET[ $param_name ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		// Coerce array GET to scalar for the single-select variation.
+		$raw     = is_array( $raw ) ? ( isset( $raw[0] ) ? $raw[0] : '' ) : $raw;
 		$current = sanitize_title( (string) $raw );
 
 		$opts_html = '';

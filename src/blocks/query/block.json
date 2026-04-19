@@ -4,7 +4,7 @@
   "name": "designsetgo/query",
   "version": "1.0.0",
   "title": "Dynamic Query",
-  "category": "design",
+  "category": "designsetgo",
   "description": "Query any posts, users, or terms and render them with your own block design. Supports filters, pagination, and Block Bindings.",
   "keywords": ["query", "loop", "posts", "dynamic", "grid", "listing"],
   "textdomain": "designsetgo",

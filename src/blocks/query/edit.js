@@ -20,10 +20,15 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 	);
 
 	const blockProps = useBlockProps({ className: 'dsgo-query' });
-	const innerBlocksProps = useInnerBlocksProps(blockProps, {
-		template: hasInnerBlocks ? undefined : DEFAULT_TEMPLATE,
-		templateLock: false,
-	});
+	// Inner blocks must live on their own `<div>` so the header can sit
+	// alongside them without overriding `innerBlocksProps.children`.
+	const innerBlocksProps = useInnerBlocksProps(
+		{ className: 'dsgo-query__inner' },
+		{
+			template: hasInnerBlocks ? undefined : DEFAULT_TEMPLATE,
+			templateLock: false,
+		}
+	);
 
 	const preview = useQueryPreview({ attributes, queryId: attributes.queryId });
 
@@ -58,7 +63,7 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 				/>
 			</InspectorControls>
 
-			<div {...innerBlocksProps}>
+			<div {...blockProps}>
 				<div className="dsgo-query__editor-header" contentEditable={false}>
 					<ResultCountBadge
 						totalItems={preview.totalItems}
@@ -66,6 +71,7 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 						error={preview.error}
 					/>
 				</div>
+				<div {...innerBlocksProps} />
 			</div>
 		</>
 	);

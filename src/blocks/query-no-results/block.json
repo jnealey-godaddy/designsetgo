@@ -4,7 +4,7 @@
   "name": "designsetgo/query-no-results",
   "version": "1.0.0",
   "title": "No Results",
-  "category": "design",
+  "category": "designsetgo",
   "parent": ["designsetgo/query"],
   "description": "Content shown when the Dynamic Query returns no items.",
   "textdomain": "designsetgo",
