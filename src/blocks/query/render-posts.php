@@ -57,20 +57,22 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		$query = new WP_Query( $args );
 
 		$items_html = '';
-		while ( $query->have_posts() ) {
-			$query->the_post();
-			$items_html .= designsetgo_query_render_item(
-				(string) $context['inner_html'],
-				array(
-					'postId'   => get_the_ID(),
-					'postType' => get_post_type(),
-				),
-				$atts['itemTagName']
-			);
+		try {
+			while ( $query->have_posts() ) {
+				$query->the_post();
+				$items_html .= designsetgo_query_render_item(
+					(string) $context['inner_html'],
+					array(
+						'postId'   => get_the_ID(),
+						'postType' => get_post_type(),
+					),
+					$atts['itemTagName']
+				);
+			}
+		} finally {
+			wp_reset_postdata();
+			$post = $saved_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 		}
-
-		wp_reset_postdata();
-		$post = $saved_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 
 		$state = array(
 			'totalItems' => (int) $query->found_posts,
@@ -80,7 +82,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		designsetgo_query_set_last_state( $query_id, $state );
 
 		return array(
-			'html'       => designsetgo_query_wrap( $items_html, $atts, $context ),
+			'html'       => designsetgo_query_wrap( $items_html, $atts, $context, $context['wrapper_attrs'] ?? null ),
 			'totalPages' => $state['totalPages'],
 			'totalItems' => $state['totalItems'],
 		);
@@ -172,7 +174,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 				}
 				$meta_query[] = array(
 					'key'     => sanitize_text_field( (string) $clause['key'] ),
-					'value'   => (string) ( $clause['value'] ?? '' ),
+					'value'   => sanitize_text_field( (string) ( $clause['value'] ?? '' ) ),
 					'compare' => in_array( ( $clause['compare'] ?? '=' ), $valid_compare, true ) ? $clause['compare'] : '=',
 					'type'    => in_array( ( $clause['type'] ?? 'CHAR' ), $valid_type, true ) ? $clause['type'] : 'CHAR',
 				);

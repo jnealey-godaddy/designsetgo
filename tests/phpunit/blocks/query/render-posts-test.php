@@ -204,4 +204,39 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		// Current post is excluded, so 2 remaining.
 		$this->assertSame( 2, $result['totalItems'] );
 	}
+
+	public function test_child_blocks_resolve_per_item_context() {
+		$ids   = array();
+		$ids[] = self::factory()->post->create( array( 'post_title' => 'Alpha', 'post_status' => 'publish' ) );
+		$ids[] = self::factory()->post->create( array( 'post_title' => 'Beta',  'post_status' => 'publish' ) );
+
+		$this->load_helpers();
+
+		// core/post-title reads postId from context; its render will emit the
+		// title of whichever post context->postId points at.
+		$result = designsetgo_query_render(
+			array(
+				'source'   => 'posts',
+				'postType' => 'post',
+				'perPage'  => 10,
+				'orderBy'  => 'date',
+				'order'    => 'ASC',
+			),
+			array(
+				'query_id'   => 'ctx',
+				'page'       => 1,
+				'inner_html' => '<!-- wp:post-title /-->',
+			)
+		);
+
+		// Both titles must appear — one per iterated post context.
+		$this->assertStringContainsString( 'Alpha', $result['html'] );
+		$this->assertStringContainsString( 'Beta', $result['html'] );
+
+		// And they must appear in the correct order (Alpha then Beta).
+		$pos_alpha = strpos( $result['html'], 'Alpha' );
+		$pos_beta  = strpos( $result['html'], 'Beta' );
+		$this->assertGreaterThan( 0, $pos_alpha );
+		$this->assertGreaterThan( $pos_alpha, $pos_beta, 'Order posts ASC → Alpha before Beta.' );
+	}
 }

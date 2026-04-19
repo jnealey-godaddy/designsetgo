@@ -33,16 +33,19 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 * Render a Dynamic Query block for any source.
 	 *
 	 * @param array $attributes Block attributes.
-	 * @param array $context    Keys: query_id (string), page (int), inner_html (string), params (array).
+	 * @param array $context    Keys: query_id (string), page (int), inner_html (string), params (array),
+	 *                          wrapper_attrs (string|null) — pre-computed get_block_wrapper_attributes() string
+	 *                          from render.php; null for REST/tests.
 	 * @return array { html: string, totalPages: int, totalItems: int }
 	 */
 	function designsetgo_query_render( array $attributes, array $context ) {
 		$attributes = designsetgo_query_defaults( $attributes );
 		$context    = wp_parse_args( $context, array(
-			'query_id'   => '',
-			'page'       => 1,
-			'inner_html' => '',
-			'params'     => array(),
+			'query_id'      => '',
+			'page'          => 1,
+			'inner_html'    => '',
+			'params'        => array(),
+			'wrapper_attrs' => null,  // first-paint passes string; REST/tests pass null
 		) );
 
 		switch ( $attributes['source'] ) {
@@ -103,21 +106,18 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	/**
 	 * Emit the list wrapper around accumulated items markup.
 	 *
-	 * Builds element attributes manually (not via get_block_wrapper_attributes)
-	 * so the function is callable from unit tests and from the REST endpoint
-	 * where no block rendering context is active.
-	 *
-	 * render.php emits the final output through WordPress's normal block
-	 * rendering pipeline, so the <ul>/<ol>/<div> wrapper here is nested
-	 * inside the wrapper div added by WordPress core — by design, matching
-	 * the pattern used by other dynamic blocks (core/query, etc.).
-	 *
-	 * @param string $inner_items Accumulated <li>…</li> markup for all items.
-	 * @param array  $atts        Attributes (already defaulted).
-	 * @param array  $context     Render context.
+	 * @param string      $inner_items     Accumulated <li>…</li> markup.
+	 * @param array       $atts            Attributes (already defaulted).
+	 * @param array       $context         Render context.
+	 * @param string|null $wrapper_attrs   Optional pre-computed wrapper attrs string
+	 *                                     from get_block_wrapper_attributes(). When
+	 *                                     provided (first-paint), it carries all
+	 *                                     native-supports classes and user inline
+	 *                                     styles. When null (REST / tests), fall
+	 *                                     back to the minimal attrs we build here.
 	 * @return string
 	 */
-	function designsetgo_query_wrap( $inner_items, array $atts, array $context ) {
+	function designsetgo_query_wrap( $inner_items, array $atts, array $context, $wrapper_attrs = null ) {
 		$tag      = in_array( $atts['tagName'], array( 'ul', 'ol', 'div' ), true ) ? $atts['tagName'] : 'ul';
 		$query_id = sanitize_key( (string) ( $context['query_id'] ?? '' ) );
 		$source   = sanitize_key( (string) $atts['source'] );
@@ -131,20 +131,34 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			)
 		);
 
-		$attrs_string = sprintf(
-			'class="%1$s" data-dsgo-query-id="%2$s" data-wp-interactive="%3$s" data-wp-context=\'%4$s\' aria-live="polite"',
-			esc_attr( 'dsgo-query dsgo-query--source-' . $source ),
-			esc_attr( $query_id ),
-			esc_attr( 'designsetgo/query' ),
-			// Single-quoted to allow JSON double-quotes without entity encoding.
-			// wp_json_encode output is safe: no raw HTML, no unescaped control chars.
-			$wp_context // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		);
+		if ( is_string( $wrapper_attrs ) && '' !== $wrapper_attrs ) {
+			// First-paint path: get_block_wrapper_attributes() already produced an
+			// escaped attrs string that includes wp-block-designsetgo-query,
+			// all native-supports classes/styles, anchor id, and user className.
+			// Append the IAPI + query-id + aria-live attrs inline.
+			$iapi_attrs = sprintf(
+				'data-dsgo-query-id="%1$s" data-wp-interactive="%2$s" data-wp-context=\'%3$s\' aria-live="polite"',
+				esc_attr( $query_id ),
+				esc_attr( 'designsetgo/query' ),
+				// wp_json_encode output is safe inside a single-quoted HTML attribute.
+				$wp_context // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode output inside single-quoted attr.
+			);
+			$attrs_string = $wrapper_attrs . ' ' . $iapi_attrs;
+		} else {
+			// REST / unit-test path: build minimal attrs manually.
+			$attrs_string = sprintf(
+				'class="%1$s" data-dsgo-query-id="%2$s" data-wp-interactive="%3$s" data-wp-context=\'%4$s\' aria-live="polite"',
+				esc_attr( 'dsgo-query dsgo-query--source-' . $source ),
+				esc_attr( $query_id ),
+				esc_attr( 'designsetgo/query' ),
+				$wp_context // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			);
+		}
 
 		return sprintf(
 			'<%1$s %2$s>%3$s</%1$s>',
 			$tag,
-			$attrs_string, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped above per attr.
+			$attrs_string, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from esc_attr()-escaped parts + get_block_wrapper_attributes() output.
 			$inner_items
 		);
 	}
@@ -174,13 +188,12 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			if ( empty( $parsed_block['blockName'] ) ) {
 				continue;
 			}
-			$existing_context = isset( $parsed_block['context'] ) ? (array) $parsed_block['context'] : array();
-			$html .= render_block(
-				array_merge(
-					$parsed_block,
-					array( 'context' => array_merge( $existing_context, $item_context ) )
-				)
-			);
+			// WP_Block's constructor signature is ( $block, $available_context, $registry ).
+			// The $available_context arg is what gets filtered through child blocks'
+			// usesContext declarations. Passing it via render_block()'s parsed-block
+			// 'context' key would NOT work — that key is not read by WP_Block.
+			$block_instance = new WP_Block( $parsed_block, $item_context );
+			$html          .= $block_instance->render();
 		}
 
 		return sprintf( '<%1$s class="dsgo-query__item">%2$s</%1$s>', $tag, $html );
