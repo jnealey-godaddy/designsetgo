@@ -2,13 +2,26 @@
 
 .wp-block-designsetgo-query {
 
-	// Mirror the frontend grid so the editor preview reflects the chosen
-	// columns. The `.dsgo-query__inner` div is the useInnerBlocksProps
-	// wrapper that actually contains the per-item template blocks.
+	// Editor preview shows ONE prototype card (the template blocks stacked
+	// naturally). The frontend iterates this prototype N times across the
+	// grid defined by `columns`. Rendering the template itself as a grid in
+	// the editor would force the template's blocks (featured image, title,
+	// excerpt) into separate columns — incorrect, since those blocks are
+	// meant to appear together inside each frontend item.
+	//
+	// The prototype is constrained to one column's worth of width so users
+	// get an accurate preview of how each item will look on the live grid.
+	// The remaining columns are rendered as faint placeholder tiles so the
+	// author immediately sees the multi-column layout they configured.
 	.dsgo-query__inner {
-		display: grid;
-		grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
-		gap: var(--dsgo-query-gap, 1.5rem);
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		max-width: calc((100% - (var(--dsgo-query-columns, 1) - 1) * var(--dsgo-query-gap, 1.5rem)) / var(--dsgo-query-columns, 1));
+		outline: 1px dashed rgba(242, 89, 18, 0.4);
+		outline-offset: 4px;
+		padding: 4px;
+		position: relative;
 	}
 
 	.dsgo-query__editor-header {
