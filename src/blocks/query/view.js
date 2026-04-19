@@ -29,6 +29,13 @@ const dsgoDebounceTimers = {};
 // browser GC events when they're done.
 const dsgoHandledEvents = new WeakSet();
 
+// Query IDs with an in-flight delegated refresh. The delegated handlers build
+// a fresh ctx object from the DOM each call, so the ctx.busy guard inside
+// dsgoQueryRefreshPlain is effectively a no-op for them — this module-level
+// Set is what actually serialises rapid delegated interactions per queryId.
+// IAPI-action callers pass a stable reactive ctx and do not go through here.
+const dsgoDelegatedBusy = new Set();
+
 store('designsetgo/query', {
 	actions: {
 		// ----------------------------------------------------------------
@@ -525,6 +532,28 @@ store('designsetgo/query', {
 // URL-manipulation + dsgoQueryRefreshPlain() path.
 
 /**
+ * Serialise delegated-path refreshes per queryId.
+ *
+ * Two rapid filter changes after the IAPI swap produce two calls to
+ * dsgoQueryRefreshPlain, each with a freshly-parsed ctx — so ctx.busy cannot
+ * guard them. Track in-flight refreshes in the module-level Set and drop new
+ * requests while one is already running, mirroring the IAPI reactive guard.
+ *
+ * @param {Object} ctx Parsed context ({ queryId, ...}).
+ * @param {URL}    url Target URL.
+ */
+function dsgoDelegatedRefresh(ctx, url) {
+	const queryId = ctx && ctx.queryId;
+	if (!queryId || dsgoDelegatedBusy.has(queryId)) {
+		return;
+	}
+	dsgoDelegatedBusy.add(queryId);
+	Promise.resolve(dsgoQueryRefreshPlain(ctx, url)).finally(() => {
+		dsgoDelegatedBusy.delete(queryId);
+	});
+}
+
+/**
  * Read the IAPI context encoded in a filter form's data-wp-context attribute.
  *
  * @param {HTMLElement} el Descendant of the interactive form.
@@ -613,7 +642,7 @@ function dsgoDelegatedChange(event) {
 
 	url.searchParams.delete('paged');
 	url.searchParams.delete('page');
-	dsgoQueryRefreshPlain(ctx, url);
+	dsgoDelegatedRefresh(ctx, url);
 }
 
 /**
@@ -655,7 +684,7 @@ function dsgoDelegatedInput(event) {
 		}
 		url.searchParams.delete('paged');
 		url.searchParams.delete('page');
-		dsgoQueryRefreshPlain(ctx, url);
+		dsgoDelegatedRefresh(ctx, url);
 	}, 250);
 }
 
@@ -694,7 +723,7 @@ function dsgoDelegatedClick(event) {
 	const url = new URL(href, window.location.href);
 	url.searchParams.delete('paged');
 	url.searchParams.delete('page');
-	dsgoQueryRefreshPlain(ctx, url);
+	dsgoDelegatedRefresh(ctx, url);
 }
 
 document.addEventListener('change', dsgoDelegatedChange);

@@ -79,7 +79,7 @@ class Controller {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_filter_register' ),
-				'permission_callback' => array( $this, 'check_filter_register_permission' ),
+				'permission_callback' => array( $this, 'check_manage_options_permission' ),
 				'args'                => array(
 					'filter_key' => array(
 						'type'              => 'string',
@@ -160,7 +160,10 @@ class Controller {
 	/**
 	 * Checks that the request carries a valid nonce and the user has manage_options.
 	 *
-	 * Used by admin-only filter routes (status, rebuild, list, unregister).
+	 * Used by every admin-only filter route: /filter-register, /filter-status,
+	 * /filter-rebuild, /filters (list), /filters/{key} (delete). Editor-level
+	 * users go through check_edit_posts_permission instead (used only by the
+	 * /query/preview route).
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return true|\WP_Error
@@ -339,7 +342,7 @@ class Controller {
 	 *
 	 * Used by the /query/preview route — any editor-level user may use the live
 	 * preview endpoint; only admins may mutate the filter registry (see
-	 * check_filter_register_permission).
+	 * check_manage_options_permission).
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return true|\WP_Error
@@ -363,46 +366,6 @@ class Controller {
 		}
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			return new \WP_Error(
-				'rest_forbidden',
-				__( 'Insufficient permissions.', 'designsetgo' ),
-				array( 'status' => 403 )
-			);
-		}
-
-		return true;
-	}
-
-	/**
-	 * Checks that the request carries a valid nonce and the user has manage_options.
-	 *
-	 * Used by the /filter-register, /filter-rebuild, /filter-status, and /filters
-	 * admin routes — requires `manage_options` so only site admins can mutate or
-	 * inspect the site-wide filter registry and index. (The /query/preview route
-	 * uses check_edit_posts_permission; see that method's docblock.)
-	 *
-	 * @param \WP_REST_Request $request The REST request.
-	 * @return true|\WP_Error
-	 */
-	public function check_filter_register_permission( \WP_REST_Request $request ) {
-		if ( ! is_user_logged_in() ) {
-			return new \WP_Error(
-				'rest_forbidden',
-				__( 'You must be logged in.', 'designsetgo' ),
-				array( 'status' => 401 )
-			);
-		}
-
-		$nonce = $request->get_header( 'X-WP-Nonce' );
-		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-			return new \WP_Error(
-				'rest_forbidden',
-				__( 'Invalid nonce.', 'designsetgo' ),
-				array( 'status' => 401 )
-			);
-		}
-
-		if ( ! current_user_can( 'manage_options' ) ) {
 			return new \WP_Error(
 				'rest_forbidden',
 				__( 'Insufficient permissions.', 'designsetgo' ),

@@ -38,8 +38,12 @@ class FilterIndexRebuilder {
 
 	/**
 	 * Maximum seconds a rebuild lock is considered valid before being treated as stale.
+	 *
+	 * Kept in sync with the status() timeout (same 5-minute window) so the fast
+	 * status-poll path and the lock gate agree on "idle vs busy" and don't
+	 * produce a confusing "dashboard says idle, API says locked" UX.
 	 */
-	const LOCK_TTL = 600; // 10 * MINUTE_IN_SECONDS
+	const LOCK_TTL = 5 * MINUTE_IN_SECONDS;
 
 	/**
 	 * Returns true if a rebuild lock is currently held and not stale.
@@ -52,17 +56,28 @@ class FilterIndexRebuilder {
 	}
 
 	/**
-	 * Acquires the rebuild mutex by writing the current timestamp to the lock option.
+	 * Attempts to acquire the rebuild mutex atomically.
 	 *
-	 * Uses add_option with autoload=no to avoid cache pollution; falls back to
-	 * update_option when the option already exists (e.g. stale lock).
+	 * `add_option` is backed by an `INSERT ... ON DUPLICATE KEY UPDATE` no-op at
+	 * the MySQL level, giving us atomic gate semantics with no TOCTOU window.
+	 * If the option already exists we check whether the stored timestamp is
+	 * stale (older than LOCK_TTL) and retry once if so, so a crashed prior
+	 * process can't deadlock future rebuilds.
 	 *
-	 * @return void
+	 * @return bool True when the lock was acquired; false when another active
+	 *              process genuinely holds it.
 	 */
-	private static function acquire_lock(): void {
-		if ( false === add_option( self::LOCK_OPTION, time(), '', false ) ) {
-			update_option( self::LOCK_OPTION, time(), false );
+	private static function acquire_lock(): bool {
+		if ( false !== add_option( self::LOCK_OPTION, time(), '', false ) ) {
+			return true;
 		}
+		// add_option failed — option exists. Honour an active lock.
+		if ( self::is_locked() ) {
+			return false;
+		}
+		// Stale lock — clear and retry once. A concurrent retry will win the race.
+		delete_option( self::LOCK_OPTION );
+		return false !== add_option( self::LOCK_OPTION, time(), '', false );
 	}
 
 	/**
@@ -92,15 +107,13 @@ class FilterIndexRebuilder {
 	 * }
 	 */
 	public static function rebuild_all( array $args = array() ): array {
-		if ( self::is_locked() ) {
+		if ( ! self::acquire_lock() ) {
 			return array(
 				'status'     => 'locked',
 				'processed'  => 0,
 				'total_rows' => 0,
 			);
 		}
-
-		self::acquire_lock();
 
 		try {
 			return self::do_rebuild_all( $args );
@@ -256,15 +269,13 @@ class FilterIndexRebuilder {
 			);
 		}
 
-		if ( self::is_locked() ) {
+		if ( ! self::acquire_lock() ) {
 			return array(
 				'status'     => 'locked',
 				'processed'  => 0,
 				'total_rows' => 0,
 			);
 		}
-
-		self::acquire_lock();
 
 		try {
 			return self::do_rebuild_filter( $key, $args );
@@ -370,12 +381,17 @@ class FilterIndexRebuilder {
 			$status = array();
 		}
 
-		// Auto-clear stale in-progress state (timeout safeguard).
+		// Auto-clear stale in-progress state (timeout safeguard). Releasing the
+		// mutex at the same moment prevents the dashboard from showing "idle"
+		// while a later Rebuild click comes back with "locked" until LOCK_TTL
+		// also elapses — the two TTLs are aligned but a poll can still race
+		// a new click, so unlock explicitly.
 		if ( ! empty( $status['in_progress'] ) && ! empty( $status['started_at'] ) ) {
 			if ( time() - (int) $status['started_at'] > 5 * MINUTE_IN_SECONDS ) {
 				$status['in_progress'] = false;
 				$status['error']       = 'timed_out';
 				update_option( FilterIndex::OPTION_STATUS, $status, false );
+				self::release_lock();
 			}
 		}
 
