@@ -16,30 +16,32 @@ import { store, getContext, getElement } from '@wordpress/interactivity';
 // Per-element debounce timer map (module-level, not reactive state).
 const dsgoDebounceTimers = {};
 
-store( 'designsetgo/query', {
+store('designsetgo/query', {
 	actions: {
 		// ----------------------------------------------------------------
 		// Pagination
 		// ----------------------------------------------------------------
 		*loadMore() {
 			const ctx = getContext();
-			if ( ctx.busy ) return;
+			if (ctx.busy) {
+				return;
+			}
 			ctx.busy = true;
 
 			const { ref } = getElement(); // the button itself
 			const idleLabel =
 				ref instanceof HTMLElement
-					? ref.getAttribute( 'data-dsgo-label-idle' ) ||
-					  ref.textContent
+					? ref.getAttribute('data-dsgo-label-idle') ||
+						ref.textContent
 					: '';
 			const loadingLabel =
 				ref instanceof HTMLElement
-					? ref.getAttribute( 'data-dsgo-label-loading' ) || ''
+					? ref.getAttribute('data-dsgo-label-loading') || ''
 					: '';
 
-			if ( ref instanceof HTMLElement && loadingLabel ) {
+			if (ref instanceof HTMLElement && loadingLabel) {
 				ref.textContent = loadingLabel;
-				ref.setAttribute( 'aria-busy', 'true' );
+				ref.setAttribute('aria-busy', 'true');
 				ref.disabled = true;
 			}
 
@@ -50,26 +52,26 @@ store( 'designsetgo/query', {
 					'[data-dsgo-query-id]:not([data-dsgo-pagination])'
 				) ||
 				document.querySelector(
-					`[data-dsgo-query-id="${ ctx.queryId }"]:not([data-dsgo-pagination])`
+					`[data-dsgo-query-id="${ctx.queryId}"]:not([data-dsgo-pagination])`
 				);
 
-			if ( ! container ) {
-				if ( ref instanceof HTMLElement ) {
+			if (!container) {
+				if (ref instanceof HTMLElement) {
 					ref.textContent = idleLabel;
 					ref.disabled = false;
-					ref.removeAttribute( 'aria-busy' );
+					ref.removeAttribute('aria-busy');
 				}
 				ctx.busy = false;
 				return;
 			}
 
-			container.setAttribute( 'aria-busy', 'true' );
+			container.setAttribute('aria-busy', 'true');
 
 			try {
 				// Fix 4: blobs now live in a preceding-sibling hidden div with
 				// data-dsgo-blobs-for, not inside the list element.
 				const blobsHost = document.querySelector(
-					`[data-dsgo-blobs-for="${ ctx.queryId }"]`
+					`[data-dsgo-blobs-for="${ctx.queryId}"]`
 				);
 				const attrsEl = blobsHost?.querySelector(
 					'script[data-dsgo-attrs]'
@@ -78,45 +80,48 @@ store( 'designsetgo/query', {
 					'script[data-dsgo-inner]'
 				);
 
-				if ( ! attrsEl || ! innerEl ) {
+				if (!attrsEl || !innerEl) {
 					ctx.busy = false;
-					container.setAttribute( 'aria-busy', 'false' );
+					container.setAttribute('aria-busy', 'false');
 					return;
 				}
 
-				const attributes = JSON.parse( attrsEl.textContent );
-				const innerBlocks = JSON.parse( innerEl.textContent );
-				const nextPage = ( ctx.page || 1 ) + 1;
+				const attributes = JSON.parse(attrsEl.textContent);
+				const innerBlocks = JSON.parse(innerEl.textContent);
+				const nextPage = (ctx.page || 1) + 1;
 
 				// ctx.restUrl + ctx.nonce are seeded by render-helpers.php so we
 				// don't rely on wpApiSettings (admin-only) or /wp-json/ rewrites
 				// (not guaranteed on plain-permalink installs).
-				const restUrl = ctx.restUrl
-					|| ( window.wpApiSettings?.root || '/wp-json/' ) + 'designsetgo/v1/query/render';
-				const restNonce = ctx.nonce || window.wpApiSettings?.nonce || '';
-				const res = yield fetch( restUrl, {
+				const restUrl =
+					ctx.restUrl ||
+					(window.wpApiSettings?.root || '/wp-json/') +
+						'designsetgo/v1/query/render';
+				const restNonce =
+					ctx.nonce || window.wpApiSettings?.nonce || '';
+				const res = yield fetch(restUrl, {
 					method: 'POST',
 					credentials: 'same-origin',
 					headers: {
 						'Content-Type': 'application/json',
 						'X-WP-Nonce': restNonce,
 					},
-					body: JSON.stringify( {
+					body: JSON.stringify({
 						queryId: ctx.queryId,
 						attributes,
 						page: nextPage,
 						innerBlocks,
 						currentUrl: window.location.href,
-					} ),
-				} );
+					}),
+				});
 
-				if ( ! res.ok ) {
+				if (!res.ok) {
 					// 401 typically means the nonce expired (page open > 12h).
 					// Surface this to devtools so "load more does nothing" is
 					// debuggable without the user having to inspect network.
 					// eslint-disable-next-line no-console
 					console.warn(
-						`[designsetgo/query] load-more request failed (${ res.status }). If 401, the nonce has likely expired — reload the page.`
+						`[designsetgo/query] load-more request failed (${res.status}). If 401, the nonce has likely expired — reload the page.`
 					);
 					return;
 				}
@@ -129,12 +134,12 @@ store( 'designsetgo/query', {
 					data.html || '',
 					'text/html'
 				);
-				const newItems = doc.querySelectorAll( '.dsgo-query__item' );
+				const newItems = doc.querySelectorAll('.dsgo-query__item');
 
-				if ( newItems.length ) {
+				if (newItems.length) {
 					// Focus management: move focus to the first newly-appended item.
-					const firstNew = newItems[ 0 ];
-					newItems.forEach( ( el ) => container.appendChild( el ) );
+					const firstNew = newItems[0];
+					newItems.forEach((el) => container.appendChild(el));
 
 					// Fix 2: only stamp tabindex="-1" when falling back to the item
 					// wrapper itself (no naturally focusable child found). This avoids
@@ -144,12 +149,12 @@ store( 'designsetgo/query', {
 					);
 					const focusable = naturallyFocusable || firstNew;
 
-					if ( focusable instanceof HTMLElement ) {
-						if ( ! naturallyFocusable ) {
-							focusable.setAttribute( 'tabindex', '-1' );
+					if (focusable instanceof HTMLElement) {
+						if (!naturallyFocusable) {
+							focusable.setAttribute('tabindex', '-1');
 							focusable.addEventListener(
 								'blur',
-								() => focusable.removeAttribute( 'tabindex' ),
+								() => focusable.removeAttribute('tabindex'),
 								{ once: true }
 							);
 						}
@@ -160,22 +165,22 @@ store( 'designsetgo/query', {
 				ctx.page = nextPage;
 
 				// Hide the load-more button once we've fetched the last page.
-				if ( data.totalPages && nextPage >= data.totalPages ) {
+				if (data.totalPages && nextPage >= data.totalPages) {
 					document
 						.querySelectorAll(
-							`[data-dsgo-query-id="${ ctx.queryId }"][data-dsgo-pagination="loadmore"] button`
+							`[data-dsgo-query-id="${ctx.queryId}"][data-dsgo-pagination="loadmore"] button`
 						)
-						.forEach( ( btn ) => btn.remove() );
+						.forEach((btn) => btn.remove());
 				}
 			} finally {
 				ctx.busy = false;
-				container.setAttribute( 'aria-busy', 'false' );
+				container.setAttribute('aria-busy', 'false');
 				// Restore button label and state (button may have been removed
 				// when we reached the last page, so guard with isConnected).
-				if ( ref instanceof HTMLElement && ref.isConnected ) {
+				if (ref instanceof HTMLElement && ref.isConnected) {
 					ref.textContent = idleLabel;
 					ref.disabled = false;
-					ref.removeAttribute( 'aria-busy' );
+					ref.removeAttribute('aria-busy');
 				}
 			}
 		},
@@ -188,31 +193,32 @@ store( 'designsetgo/query', {
 		 * Handle change on a select or single-value input.
 		 * Sets (or clears) the param, resets paged, then refreshes.
 		 *
+		 * @param event
 		 * @generator
 		 */
-		*setFilter( event ) {
+		*setFilter(event) {
 			event.preventDefault?.();
 			const { ref } = getElement();
-			const ctx     = getContext();
-			const form    = ref.closest( 'form' );
-			const input   = form?.querySelector( '[name]' );
-			const paramName = input
-				?.getAttribute( 'name' )
-				?.replace( /\[\]$/, '' );
-			if ( ! paramName ) return;
+			const ctx = getContext();
+			const form = ref.closest('form');
+			const input = form?.querySelector('[name]');
+			const paramName = input?.getAttribute('name')?.replace(/\[\]$/, '');
+			if (!paramName) {
+				return;
+			}
 
-			const url = new URL( window.location.href );
-			if ( ref.value ) {
-				url.searchParams.set( paramName, ref.value );
+			const url = new URL(window.location.href);
+			if (ref.value) {
+				url.searchParams.set(paramName, ref.value);
 			} else {
-				url.searchParams.delete( paramName );
+				url.searchParams.delete(paramName);
 			}
 			// Fix 3: strip both pagination params — `paged` for archives,
 			// `page` for singular post paginators — so filtering from page 2+
 			// always resets to page 1.
-			url.searchParams.delete( 'paged' );
-			url.searchParams.delete( 'page' );
-			yield* dsgoQueryRefresh( ctx, url );
+			url.searchParams.delete('paged');
+			url.searchParams.delete('page');
+			yield* dsgoQueryRefresh(ctx, url);
 		},
 
 		/**
@@ -220,27 +226,30 @@ store( 'designsetgo/query', {
 		 * Fires 250 ms after typing stops. Declared as a regular function
 		 * (not a generator) so IAPI treats it as synchronous — which is
 		 * what we need for the setTimeout pattern.
+		 * @param event
 		 */
-		setFilterDebounced( event ) {
-			const ctx       = getContext(); // capture while IAPI frame is live
-			const el        = event.target;
-			const paramName = el.getAttribute( 'name' )?.replace( /\[\]$/, '' );
-			if ( ! paramName ) return;
+		setFilterDebounced(event) {
+			const ctx = getContext(); // capture while IAPI frame is live
+			const el = event.target;
+			const paramName = el.getAttribute('name')?.replace(/\[\]$/, '');
+			if (!paramName) {
+				return;
+			}
 
-			clearTimeout( dsgoDebounceTimers[ paramName ] );
-			dsgoDebounceTimers[ paramName ] = setTimeout( () => {
-				const url = new URL( window.location.href );
-				if ( el.value ) {
-					url.searchParams.set( paramName, el.value );
+			clearTimeout(dsgoDebounceTimers[paramName]);
+			dsgoDebounceTimers[paramName] = setTimeout(() => {
+				const url = new URL(window.location.href);
+				if (el.value) {
+					url.searchParams.set(paramName, el.value);
 				} else {
-					url.searchParams.delete( paramName );
+					url.searchParams.delete(paramName);
 				}
 				// Fix 3: strip both pagination params.
-				url.searchParams.delete( 'paged' );
-				url.searchParams.delete( 'page' );
+				url.searchParams.delete('paged');
+				url.searchParams.delete('page');
 				// Use the Promise-based helper — no yield needed here.
-				dsgoQueryRefreshPlain( ctx, url );
-			}, 250 );
+				dsgoQueryRefreshPlain(ctx, url);
+			}, 250);
 		},
 
 		/**
@@ -251,70 +260,173 @@ store( 'designsetgo/query', {
 		 */
 		*toggleFilter() {
 			const { ref } = getElement();
-			const ctx     = getContext();
-			const paramName = ref
-				.getAttribute( 'name' )
-				?.replace( /\[\]$/, '' );
-			if ( ! paramName ) return;
-
-			const url      = new URL( window.location.href );
-			const arrayKey = paramName + '[]';
-			const current  = url.searchParams.getAll( arrayKey );
-			url.searchParams.delete( arrayKey );
-
-			if ( ref.checked ) {
-				if ( ! current.includes( ref.value ) ) {
-					current.push( ref.value );
-				}
-			} else {
-				const idx = current.indexOf( ref.value );
-				if ( idx > -1 ) current.splice( idx, 1 );
+			const ctx = getContext();
+			const paramName = ref.getAttribute('name')?.replace(/\[\]$/, '');
+			if (!paramName) {
+				return;
 			}
 
-			current.forEach( ( v ) => url.searchParams.append( arrayKey, v ) );
+			const url = new URL(window.location.href);
+			const arrayKey = paramName + '[]';
+			const current = url.searchParams.getAll(arrayKey);
+			url.searchParams.delete(arrayKey);
+
+			if (ref.checked) {
+				if (!current.includes(ref.value)) {
+					current.push(ref.value);
+				}
+			} else {
+				const idx = current.indexOf(ref.value);
+				if (idx > -1) {
+					current.splice(idx, 1);
+				}
+			}
+
+			current.forEach((v) => url.searchParams.append(arrayKey, v));
 			// Fix 3: strip both pagination params.
-			url.searchParams.delete( 'paged' );
-			url.searchParams.delete( 'page' );
-			yield* dsgoQueryRefresh( ctx, url );
+			url.searchParams.delete('paged');
+			url.searchParams.delete('page');
+			yield* dsgoQueryRefresh(ctx, url);
 		},
 
 		/**
 		 * Handle click on an active-filter chip.
 		 * The chip <a> href already encodes the removal URL.
 		 *
+		 * @param event
 		 * @generator
 		 */
-		*removeActiveFilter( event ) {
+		*removeActiveFilter(event) {
 			event.preventDefault?.();
 			const { ref } = getElement();
-			const ctx     = getContext();
-			const href    = ref.getAttribute( 'href' );
-			if ( ! href ) return;
-			const url = new URL( href, window.location.href );
+			const ctx = getContext();
+			const href = ref.getAttribute('href');
+			if (!href) {
+				return;
+			}
+			const url = new URL(href, window.location.href);
 			// Fix 3: strip both pagination params.
-			url.searchParams.delete( 'paged' );
-			url.searchParams.delete( 'page' );
-			yield* dsgoQueryRefresh( ctx, url );
+			url.searchParams.delete('paged');
+			url.searchParams.delete('page');
+			yield* dsgoQueryRefresh(ctx, url);
 		},
 
 		/**
 		 * Handle click on the reset-all-filters button.
 		 * The button <a> href already encodes the clean URL.
 		 *
+		 * @param event
 		 * @generator
 		 */
-		*resetAll( event ) {
+		*resetAll(event) {
 			event.preventDefault?.();
 			const { ref } = getElement();
-			const ctx     = getContext();
-			const href    = ref.getAttribute( 'href' );
-			const url     = href
-				? new URL( href, window.location.href )
-				: new URL( window.location.href );
-			yield* dsgoQueryRefresh( ctx, url );
+			const ctx = getContext();
+			const href = ref.getAttribute('href');
+			const url = href
+				? new URL(href, window.location.href)
+				: new URL(window.location.href);
+			yield* dsgoQueryRefresh(ctx, url);
 		},
 	},
-} );
+
+	callbacks: {
+		/**
+		 * Initialise an IntersectionObserver on the infinite-scroll sentinel element.
+		 *
+		 * Called via data-wp-init="callbacks.initInfiniteObserver" on the sentinel div.
+		 * Auto-advances by clicking the hidden fallback button (which carries the
+		 * data-wp-on--click="actions.loadMore" wiring) so we reuse the existing
+		 * generator action without duplicating its fetch logic.
+		 *
+		 * Respects prefers-reduced-motion: reveals the button immediately and
+		 * skips auto-advance so keyboard/accessible users always have the button path.
+		 *
+		 * @since 2.2.0
+		 */
+		initInfiniteObserver() {
+			const { ref } = getElement(); // sentinel div
+			const ctx = getContext();
+
+			const wrapper = ref.closest('[data-dsgo-pagination="infinite"]');
+			if (!wrapper) {
+				return;
+			}
+
+			const button = wrapper.querySelector(
+				'.dsgo-query-pagination__loadmore'
+			);
+
+			// Reduced-motion: reveal the button and skip auto-advance entirely.
+			const prefersReduced = window.matchMedia(
+				'(prefers-reduced-motion: reduce)'
+			).matches;
+			if (prefersReduced) {
+				if (button) {
+					button.hidden = false;
+				}
+				return;
+			}
+
+			const threshold = parseInt(
+				wrapper.dataset.dsgoAutoPauseAfter || '3',
+				10
+			);
+			const offset = parseInt(
+				wrapper.dataset.dsgoSentinelOffset || '200',
+				10
+			);
+
+			// Initialise the auto-load counter on the context if not already set.
+			if (typeof ctx.autoLoadCount !== 'number') {
+				ctx.autoLoadCount = 0;
+			}
+
+			const observer = new IntersectionObserver(
+				(entries) => {
+					entries.forEach((entry) => {
+						if (!entry.isIntersecting) {
+							return;
+						}
+
+						if (ctx.autoLoadCount >= threshold) {
+							// Auto-pause threshold reached — reveal button,
+							// disconnect observer, let the user opt in to more.
+							if (button) {
+								button.hidden = false;
+							}
+							observer.disconnect();
+							return;
+						}
+
+						ctx.autoLoadCount++;
+
+						// Fire a synthetic click on the button so the existing
+						// loadMore generator action handles the full fetch/append
+						// cycle (including busy-guard, aria-busy, focus management).
+						// The button stays hidden visually during auto-loads;
+						// we briefly un-hide it so the IAPI click event resolves
+						// the correct element reference, then re-hide immediately.
+						if (button) {
+							button.hidden = false;
+							button.click();
+							// Re-hide after the microtask tick so the click event
+							// is dispatched with the button visible, then restore.
+							Promise.resolve().then(() => {
+								if (button.isConnected) {
+									button.hidden = true;
+								}
+							});
+						}
+					});
+				},
+				{ rootMargin: `${offset}px` }
+			);
+
+			observer.observe(ref);
+		},
+	},
+});
 
 // ---------------------------------------------------------------------------
 // Shared refresh helpers
@@ -325,33 +437,31 @@ store( 'designsetgo/query', {
  * Collects filter_*, q, sort — handles both ?key[]=v and ?key=v styles.
  *
  * @param {URL} url
- * @returns {Object}
+ * @return {Object}
  */
-function dsgoCollectParams( url ) {
+function dsgoCollectParams(url) {
 	const params = {};
-	for ( const [ k, v ] of url.searchParams.entries() ) {
-		const isArrayKey = k.endsWith( '[]' );
-		const baseKey    = isArrayKey ? k.slice( 0, -2 ) : k;
+	for (const [k, v] of url.searchParams.entries()) {
+		const isArrayKey = k.endsWith('[]');
+		const baseKey = isArrayKey ? k.slice(0, -2) : k;
 
 		// Only collect filter_*, q, and sort keys.
 		if (
-			! baseKey.startsWith( 'filter_' ) &&
+			!baseKey.startsWith('filter_') &&
 			baseKey !== 'q' &&
 			baseKey !== 'sort'
 		) {
 			continue;
 		}
 
-		if ( isArrayKey || Array.isArray( params[ baseKey ] ) ) {
-			if ( ! Array.isArray( params[ baseKey ] ) ) {
-				params[ baseKey ] =
-					params[ baseKey ] !== undefined
-						? [ params[ baseKey ] ]
-						: [];
+		if (isArrayKey || Array.isArray(params[baseKey])) {
+			if (!Array.isArray(params[baseKey])) {
+				params[baseKey] =
+					params[baseKey] !== undefined ? [params[baseKey]] : [];
 			}
-			params[ baseKey ].push( v );
+			params[baseKey].push(v);
 		} else {
-			params[ baseKey ] = v;
+			params[baseKey] = v;
 		}
 	}
 	return params;
@@ -371,23 +481,25 @@ function dsgoCollectParams( url ) {
  * innerHTML is equivalent to what wp_kses_post() would allow.
  *
  * @generator
- * @param {Object} ctx  IAPI context (must have .queryId).
- * @param {URL}    url  New URL to navigate to (search params = new filters).
+ * @param {Object} ctx IAPI context (must have .queryId).
+ * @param {URL}    url New URL to navigate to (search params = new filters).
  */
-function* dsgoQueryRefresh( ctx, url ) {
+function* dsgoQueryRefresh(ctx, url) {
 	const queryId = ctx.queryId;
-	if ( ! queryId || ctx.busy ) return;
+	if (!queryId || ctx.busy) {
+		return;
+	}
 	ctx.busy = true;
 
 	// Find the outer region wrapper — its innerHTML is replaced after the fetch.
 	const region = document.querySelector(
-		`[data-dsgo-query-region="${ queryId }"]`
+		`[data-dsgo-query-region="${queryId}"]`
 	);
 	const blobsHost = document.querySelector(
-		`[data-dsgo-blobs-for="${ queryId }"]`
+		`[data-dsgo-blobs-for="${queryId}"]`
 	);
 
-	if ( ! region || ! blobsHost ) {
+	if (!region || !blobsHost) {
 		ctx.busy = false;
 		return;
 	}
@@ -396,45 +508,49 @@ function* dsgoQueryRefresh( ctx, url ) {
 	// during the fetch. The region wrapper contains filter/pagination children
 	// too; scoping with data-dsgo-query-role avoids aria-busy on those.
 	const listContainer = region.querySelector(
-		`[data-dsgo-query-id="${ queryId }"][data-dsgo-query-role="container"]`
+		`[data-dsgo-query-id="${queryId}"][data-dsgo-query-role="container"]`
 	);
-	if ( listContainer ) {
-		listContainer.setAttribute( 'aria-busy', 'true' );
+	if (listContainer) {
+		listContainer.setAttribute('aria-busy', 'true');
 	}
 
 	try {
-		const attrsEl = blobsHost.querySelector( 'script[data-dsgo-attrs]' );
-		const innerEl = blobsHost.querySelector( 'script[data-dsgo-inner]' );
-		if ( ! attrsEl || ! innerEl ) return;
+		const attrsEl = blobsHost.querySelector('script[data-dsgo-attrs]');
+		const innerEl = blobsHost.querySelector('script[data-dsgo-inner]');
+		if (!attrsEl || !innerEl) {
+			return;
+		}
 
-		const attributes  = JSON.parse( attrsEl.textContent );
-		const innerBlocks = JSON.parse( innerEl.textContent );
-		const params      = dsgoCollectParams( url );
+		const attributes = JSON.parse(attrsEl.textContent);
+		const innerBlocks = JSON.parse(innerEl.textContent);
+		const params = dsgoCollectParams(url);
 
-		const restUrl = ctx.restUrl
-			|| ( window.wpApiSettings?.root || '/wp-json/' ) + 'designsetgo/v1/query/render';
+		const restUrl =
+			ctx.restUrl ||
+			(window.wpApiSettings?.root || '/wp-json/') +
+				'designsetgo/v1/query/render';
 		const restNonce = ctx.nonce || window.wpApiSettings?.nonce || '';
-		const res = yield fetch( restUrl, {
+		const res = yield fetch(restUrl, {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: {
 				'Content-Type': 'application/json',
 				'X-WP-Nonce': restNonce,
 			},
-			body: JSON.stringify( {
+			body: JSON.stringify({
 				queryId,
 				attributes,
 				page: 1,
 				innerBlocks,
 				params,
 				currentUrl: url.toString(),
-			} ),
-		} );
+			}),
+		});
 
-		if ( ! res.ok ) {
+		if (!res.ok) {
 			// eslint-disable-next-line no-console
 			console.warn(
-				`[designsetgo/query] filter refresh failed (${ res.status }). If 401, the nonce has likely expired — reload the page.`
+				`[designsetgo/query] filter refresh failed (${res.status}). If 401, the nonce has likely expired — reload the page.`
 			);
 			return;
 		}
@@ -444,25 +560,30 @@ function* dsgoQueryRefresh( ctx, url ) {
 		// This updates the list, pagination, no-results, and active-filter chips
 		// in one operation. The outer region element (and its data attribute) stays
 		// intact so the IAPI context survives the swap.
-		const doc       = new DOMParser().parseFromString( data.html || '', 'text/html' );
-		const newRegion = doc.querySelector( `[data-dsgo-query-region="${ queryId }"]` );
-		if ( newRegion ) {
+		const doc = new DOMParser().parseFromString(
+			data.html || '',
+			'text/html'
+		);
+		const newRegion = doc.querySelector(
+			`[data-dsgo-query-region="${queryId}"]`
+		);
+		if (newRegion) {
 			// eslint-disable-next-line no-unsanitized/property -- server-rendered, WordPress-escaped content.
 			region.innerHTML = newRegion.innerHTML;
 		}
 
 		// Sync the browser URL without a page reload.
-		window.history.replaceState( {}, '', url.toString() );
+		window.history.replaceState({}, '', url.toString());
 		ctx.page = 1;
 	} finally {
 		ctx.busy = false;
 		// listContainer may have been replaced by the innerHTML swap above;
 		// re-query from the region to get the fresh element.
 		const freshList = region.querySelector(
-			`[data-dsgo-query-id="${ queryId }"][data-dsgo-query-role="container"]`
+			`[data-dsgo-query-id="${queryId}"][data-dsgo-query-role="container"]`
 		);
-		if ( freshList ) {
-			freshList.setAttribute( 'aria-busy', 'false' );
+		if (freshList) {
+			freshList.setAttribute('aria-busy', 'false');
 		}
 	}
 }
@@ -475,87 +596,98 @@ function* dsgoQueryRefresh( ctx, url ) {
  * Like dsgoQueryRefresh, swaps the outer .dsgo-query-region innerHTML so
  * pagination, no-results, and filter chips update along with the list.
  *
- * @param {Object} ctx  IAPI context (must have .queryId).
- * @param {URL}    url  New URL to navigate to.
+ * @param {Object} ctx IAPI context (must have .queryId).
+ * @param {URL}    url New URL to navigate to.
  */
-async function dsgoQueryRefreshPlain( ctx, url ) {
+async function dsgoQueryRefreshPlain(ctx, url) {
 	const queryId = ctx.queryId;
-	if ( ! queryId || ctx.busy ) return;
+	if (!queryId || ctx.busy) {
+		return;
+	}
 	ctx.busy = true;
 
 	const region = document.querySelector(
-		`[data-dsgo-query-region="${ queryId }"]`
+		`[data-dsgo-query-region="${queryId}"]`
 	);
 	const blobsHost = document.querySelector(
-		`[data-dsgo-blobs-for="${ queryId }"]`
+		`[data-dsgo-blobs-for="${queryId}"]`
 	);
 
-	if ( ! region || ! blobsHost ) {
+	if (!region || !blobsHost) {
 		ctx.busy = false;
 		return;
 	}
 
 	const listContainer = region.querySelector(
-		`[data-dsgo-query-id="${ queryId }"][data-dsgo-query-role="container"]`
+		`[data-dsgo-query-id="${queryId}"][data-dsgo-query-role="container"]`
 	);
-	if ( listContainer ) {
-		listContainer.setAttribute( 'aria-busy', 'true' );
+	if (listContainer) {
+		listContainer.setAttribute('aria-busy', 'true');
 	}
 
 	try {
-		const attrsEl = blobsHost.querySelector( 'script[data-dsgo-attrs]' );
-		const innerEl = blobsHost.querySelector( 'script[data-dsgo-inner]' );
-		if ( ! attrsEl || ! innerEl ) return;
+		const attrsEl = blobsHost.querySelector('script[data-dsgo-attrs]');
+		const innerEl = blobsHost.querySelector('script[data-dsgo-inner]');
+		if (!attrsEl || !innerEl) {
+			return;
+		}
 
-		const attributes  = JSON.parse( attrsEl.textContent );
-		const innerBlocks = JSON.parse( innerEl.textContent );
-		const params      = dsgoCollectParams( url );
+		const attributes = JSON.parse(attrsEl.textContent);
+		const innerBlocks = JSON.parse(innerEl.textContent);
+		const params = dsgoCollectParams(url);
 
-		const restUrl = ctx.restUrl
-			|| ( window.wpApiSettings?.root || '/wp-json/' ) + 'designsetgo/v1/query/render';
+		const restUrl =
+			ctx.restUrl ||
+			(window.wpApiSettings?.root || '/wp-json/') +
+				'designsetgo/v1/query/render';
 		const restNonce = ctx.nonce || window.wpApiSettings?.nonce || '';
-		const res = await fetch( restUrl, {
+		const res = await fetch(restUrl, {
 			method: 'POST',
 			credentials: 'same-origin',
 			headers: {
 				'Content-Type': 'application/json',
 				'X-WP-Nonce': restNonce,
 			},
-			body: JSON.stringify( {
+			body: JSON.stringify({
 				queryId,
 				attributes,
 				page: 1,
 				innerBlocks,
 				params,
 				currentUrl: url.toString(),
-			} ),
-		} );
+			}),
+		});
 
-		if ( ! res.ok ) {
+		if (!res.ok) {
 			// eslint-disable-next-line no-console
 			console.warn(
-				`[designsetgo/query] debounced refresh failed (${ res.status }). If 401, the nonce has likely expired — reload the page.`
+				`[designsetgo/query] debounced refresh failed (${res.status}). If 401, the nonce has likely expired — reload the page.`
 			);
 			return;
 		}
 		const data = await res.json();
 
-		const doc       = new DOMParser().parseFromString( data.html || '', 'text/html' );
-		const newRegion = doc.querySelector( `[data-dsgo-query-region="${ queryId }"]` );
-		if ( newRegion ) {
+		const doc = new DOMParser().parseFromString(
+			data.html || '',
+			'text/html'
+		);
+		const newRegion = doc.querySelector(
+			`[data-dsgo-query-region="${queryId}"]`
+		);
+		if (newRegion) {
 			// eslint-disable-next-line no-unsanitized/property -- server-rendered, WordPress-escaped content.
 			region.innerHTML = newRegion.innerHTML;
 		}
 
-		window.history.replaceState( {}, '', url.toString() );
+		window.history.replaceState({}, '', url.toString());
 		ctx.page = 1;
 	} finally {
 		ctx.busy = false;
 		const freshList = region.querySelector(
-			`[data-dsgo-query-id="${ queryId }"][data-dsgo-query-role="container"]`
+			`[data-dsgo-query-id="${queryId}"][data-dsgo-query-role="container"]`
 		);
-		if ( freshList ) {
-			freshList.setAttribute( 'aria-busy', 'false' );
+		if (freshList) {
+			freshList.setAttribute('aria-busy', 'false');
 		}
 	}
 }
