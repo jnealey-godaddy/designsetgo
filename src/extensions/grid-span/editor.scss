@@ -14,8 +14,8 @@
  * the span should be constrained to the max available columns.
  * This prevents blocks from spanning more columns than exist.
  *
- * Selectors explicitly match grid-column / gridColumn to avoid false
- * positives on row-span styles (grid-row: span N).
+ * Selectors explicitly match the `grid-column` style property to avoid
+ * false positives on row-span styles (`grid-row: span N`).
  */
 
 // Generate responsive constraints for each grid column configuration
