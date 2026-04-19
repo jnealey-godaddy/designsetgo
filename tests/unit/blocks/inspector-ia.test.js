@@ -121,6 +121,7 @@ const MIGRATED_BLOCKS = [
 	'icon-button',
 	'breadcrumbs',
 	'timeline',
+	'timeline-item',
 	'card',
 	'comparison-table',
 	'progress-bar',
