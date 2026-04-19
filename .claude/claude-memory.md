@@ -1,5 +1,42 @@
 # Claude Memory - DesignSetGo
 
+## v2.2 Codex review remediation (agent: codex-review-2026-04-18, commit: 37a491e0)
+
+- **Priority 0 / CI fix**: `Plugin::maybe_upgrade()` is now `public` and hooked onto `admin_init` (no longer called directly in `__construct`). This prevents `FilterIndex::install()` from executing `require_once ABSPATH . 'wp-admin/includes/upgrade.php'` at phpstan analysis time.
+- **#1 Slug→ID**: `src/blocks/query-filter/render.php` translates taxonomy slug values in `$dsgo_active_filters_by_key` to term IDs via `get_term_by()` before passing to `FilterIndex::count_for_options()`.
+- **#2 Post-status gate**: `FilterIndex::reindex_object()` calls `get_post_status()` early; non-publish posts are removed and short-circuit via `remove_object()`. Covers meta/taxonomy hooks firing on drafts.
+- **#3 Server-side registration**: `useFilterRegistration.js` deleted. `FilterIndexHooks::on_save_post()` now calls `register_filters_from_post_blocks()` → recursive `walk_blocks_for_filters()` on `parse_blocks()` output. Only published posts register filters.
+- **#4a Infinite sentinel guard**: Single-page `totalPages < 2` guard moved BEFORE the `infinite` render path so single-page results never emit a sentinel.
+- **#4b Infinite last-page teardown**: `loadMore` in view.js now removes `[data-dsgo-pagination="infinite"]` wrapper on last page (garbage-collects observer), not just the loadmore button.
+- **#5 drop clears db_version**: `FilterIndexCLI::drop` also calls `delete_option('designsetgo_db_version')` so next `admin_init` reinstalls the table.
+- **Tests**: 125 PHPUnit tests / 298 assertions all pass. 4 new tests in filter-index-test.php; 1 new test in filter-counts-test.php.
+
+## Phase C — Infinite Scroll Bundle (agent: phase-c-2026-04-18)
+
+### Implementation Summary
+- **C1**: Added `paginationKind` enum (numbered/loadmore/infinite) + 3 new attrs (autoPauseAfter, sentinelOffsetPx, buttonLabelWhenPaused) to block.json. Created variations.js with `infinite-scroll` variation using `isActive: ['paginationKind']`. Updated index.js to call `registerBlockVariation`.
+- **C2**: Created `src/blocks/query-pagination/components/InfiniteScrollControls.js` — 3 DsgoInspectorPanel.Item entries (NumberControl×2, TextControl×1). Uses eslint-disable comment *inside* the import block for `__experimentalNumberControl`. Updated edit.js with `PaginationPreview` sub-component (extracted to avoid no-nested-ternary lint error).
+- **C3**: render.php now checks `paginationKind === 'infinite'` first (before totalPages guard). Emits sentinel div with `data-wp-init="callbacks.initInfiniteObserver"` + hidden button. IAPI context includes autoLoadCount=0, restUrl, nonce. Added `--infinite` modifier + sentinel styles to style.scss.
+- **C4**: Added `callbacks.initInfiniteObserver` to the existing single `store('designsetgo/query', {...})` call. Uses `IntersectionObserver` with rootMargin offset. Fires `button.click()` (re-hidden via Promise.resolve microtask) to reuse the loadMore generator. Reduced-motion: reveals button, skips observer. Auto-pauses at threshold, reveals button, disconnects observer.
+- **Tests**: 5 PHPUnit tests in `tests/phpunit/blocks/query/pagination-infinite-render-test.php`. All 109 query-block tests pass.
+- **Commits**: `8bfd6911` (C1+C2), `d8b64aaa` (C3+C4+tests).
+
+### Key Design Decisions
+- `paginationKind` is a NEW attribute separate from the legacy `mode` attribute — both coexist for backwards compat. render.php resolves effective kind by checking paginationKind ≠ 'numbered' first, then falls back to mode.
+- Infinite renders the sentinel even on single-page results (observer fires but finds no next page, ctx.autoLoadCount never increments).
+- `eslint-disable-next-line` for `__experimentalNumberControl` must go INSIDE the import block (not before the import statement) to suppress the rule on the right line.
+- `PaginationPreview` sub-component extracted from QueryPaginationEdit to satisfy `no-nested-ternary` lint rule.
+- The `IntersectionObserver` no-undef lint error (line 385) is the same pre-existing pattern as HTMLElement/DOMParser elsewhere in view.js — codebase doesn't declare browser globals in eslint config.
+
+## B3+B4 — Filter Counts + Intersection (agent: b3b4-2026-04-18)
+
+### Implementation Summary
+- **B3**: Added `showCounts` attr to query-filter block.json (default true). ToggleControl in Settings panel. render.php computes per-option counts via `FilterIndex::count_for_options()` for checkbox and select kinds when filter is registered and showCounts is true. CSS `.dsgo-query-filter__count` added to style.scss.
+- **B4**: No new files — intersection works via existing $_GET overlay mechanism in `class-query.php::handle_render()` which overlays $_GET with incoming `params` payload before calling `designsetgo_query_render_region()`. Filter siblings re-render with updated $_GET so counts are always current. Added explanatory comment to render-helpers.php.
+- **Tests**: `filter-counts-test.php` with 5 PHPUnit tests (group: query-block in class docblock, NOT file docblock — PHPUnit 9 ignores file-level @group). Total: 88 tests passing.
+- **Commits**: `bf744d66` (B3), `3ce52fcb` (B4).
+- **Key insight**: PHPUnit 9 requires @group annotation on the *class* docblock, not the file docblock.
+
 ## Task 14 — Query Filter Block (agent: task14-2026-04-18)
 
 ### Implementation Summary

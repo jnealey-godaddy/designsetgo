@@ -427,11 +427,11 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		// Render each sibling block ONCE, passing queryId + source via context so
 		// pagination, filter, and no-results blocks know which query they belong to.
 		//
-		// Facet-count intersection (B4): filter blocks read active filters from
+		// Filter-count intersection (B4): filter blocks read active filters from
 		// $_GET. On first-paint, $_GET reflects the live request. On AJAX refresh,
 		// the REST controller (class-query.php::handle_render) overlays $_GET with
 		// the incoming `params` payload before calling this function, so when filter
-		// blocks call FacetIndex::count_for_options() their active_filters are always
+		// blocks call FilterIndex::count_for_options() their active_filters are always
 		// current. No additional context threading is needed.
 		$source           = isset( $attributes['source'] ) ? (string) $attributes['source'] : 'posts';
 		$sibling_context  = array(

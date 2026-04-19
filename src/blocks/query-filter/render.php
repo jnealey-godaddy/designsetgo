@@ -128,14 +128,14 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 
 		// Resolve counts if requested.
 		$counts = array();
-		if ( $show_counts && class_exists( '\DesignSetGo\Blocks\Query\FacetIndex' ) ) {
+		if ( $show_counts && class_exists( '\DesignSetGo\Blocks\Query\FilterIndex' ) ) {
 			$term_ids = array_map(
 				function ( $t ) {
 					return (string) $t->term_id;
 				},
 				$terms
 			);
-			$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+			$counts = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
 				$filter_taxonomy,
 				$term_ids,
 				$active_filters
@@ -204,16 +204,16 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 				: array_filter( array_map( 'sanitize_title', explode( ',', (string) $raw_input ) ) );
 		}
 
-		// Resolve per-option counts from the facet index if requested.
+		// Resolve per-option counts from the filter index if requested.
 		$counts = array();
-		if ( $show_counts && class_exists( '\DesignSetGo\Blocks\Query\FacetIndex' ) ) {
+		if ( $show_counts && class_exists( '\DesignSetGo\Blocks\Query\FilterIndex' ) ) {
 			$term_ids = array_map(
 				function ( $t ) {
 					return (string) $t->term_id;
 				},
 				$terms
 			);
-			$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+			$counts = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
 				$filter_taxonomy,
 				$term_ids,
 				$active_filters
@@ -443,32 +443,32 @@ foreach ( (array) $_GET as $dsgo_k => $dsgo_v ) { // phpcs:ignore WordPress.Secu
 }
 
 // Re-key active_filters to use the bare taxonomy slug (strip "filter_" prefix)
-// because FacetIndex::count_for_options() expects facet keys, not URL param names.
+// because FilterIndex::count_for_options() expects filter keys, not URL param names.
 $dsgo_active_filters_by_key = array();
 foreach ( $dsgo_active_filters as $dsgo_param_key => $dsgo_param_values ) {
-	$dsgo_facet_key = 'filter_' === substr( $dsgo_param_key, 0, 7 )
+	$dsgo_filter_key = 'filter_' === substr( $dsgo_param_key, 0, 7 )
 		? substr( $dsgo_param_key, 7 )
 		: $dsgo_param_key;
-	$dsgo_active_filters_by_key[ $dsgo_facet_key ] = $dsgo_param_values;
+	$dsgo_active_filters_by_key[ $dsgo_filter_key ] = $dsgo_param_values;
 }
 
 // Translate taxonomy slugs in active_filters_by_key to term IDs.
 //
-// URL params carry taxonomy slugs (e.g. filter_category=news), but the facet
+// URL params carry taxonomy slugs (e.g. filter_category=news), but the filter
 // index stores term IDs (integers as strings). Without this translation, the
-// intersection subquery in count_for_options() looks for facet_value='news'
-// but the index has facet_value='42', so all cross-facet counts collapse to 0.
+// intersection subquery in count_for_options() looks for filter_value='news'
+// but the index has filter_value='42', so all cross-filter counts collapse to 0.
 //
-// Meta facets store their value verbatim — no translation needed.
-if ( class_exists( '\DesignSetGo\Blocks\Query\FacetRegistry' ) ) {
-	$dsgo_registered_facets = \DesignSetGo\Blocks\Query\FacetRegistry::all();
+// Meta filters store their value verbatim — no translation needed.
+if ( class_exists( '\DesignSetGo\Blocks\Query\FilterRegistry' ) ) {
+	$dsgo_registered_filters = \DesignSetGo\Blocks\Query\FilterRegistry::all();
 	foreach ( $dsgo_active_filters_by_key as $dsgo_fk => $dsgo_fv ) {
-		$dsgo_facet_config = $dsgo_registered_facets[ $dsgo_fk ] ?? null;
-		if ( ! $dsgo_facet_config || 'taxonomy' !== ( $dsgo_facet_config['type'] ?? '' ) ) {
+		$dsgo_filter_config = $dsgo_registered_filters[ $dsgo_fk ] ?? null;
+		if ( ! $dsgo_filter_config || 'taxonomy' !== ( $dsgo_filter_config['type'] ?? '' ) ) {
 			continue; // Meta or unknown — values are already in the correct format.
 		}
-		$dsgo_facet_taxonomy = (string) ( $dsgo_facet_config['source'] ?? '' );
-		if ( '' === $dsgo_facet_taxonomy ) {
+		$dsgo_filter_taxonomy = (string) ( $dsgo_filter_config['source'] ?? '' );
+		if ( '' === $dsgo_filter_taxonomy ) {
 			continue;
 		}
 		$dsgo_translated = array();
@@ -479,20 +479,20 @@ if ( class_exists( '\DesignSetGo\Blocks\Query\FacetRegistry' ) ) {
 				$dsgo_translated[] = $dsgo_slug_or_id;
 				continue;
 			}
-			$dsgo_term = get_term_by( 'slug', $dsgo_slug_or_id, $dsgo_facet_taxonomy );
+			$dsgo_term = get_term_by( 'slug', $dsgo_slug_or_id, $dsgo_filter_taxonomy );
 			if ( $dsgo_term instanceof \WP_Term ) {
 				$dsgo_translated[] = (string) $dsgo_term->term_id;
 			}
 		}
 		$dsgo_active_filters_by_key[ $dsgo_fk ] = $dsgo_translated;
 	}
-	unset( $dsgo_registered_facets, $dsgo_facet_config, $dsgo_facet_taxonomy, $dsgo_translated, $dsgo_slug_or_id, $dsgo_term );
+	unset( $dsgo_registered_filters, $dsgo_filter_config, $dsgo_filter_taxonomy, $dsgo_translated, $dsgo_slug_or_id, $dsgo_term );
 }
 
-// Only render counts when the facet is indexed AND showCounts is enabled.
+// Only render counts when the filter is indexed AND showCounts is enabled.
 $dsgo_counts_enabled = $dsgo_show_counts
-	&& class_exists( '\DesignSetGo\Blocks\Query\FacetIndex' )
-	&& \DesignSetGo\Blocks\Query\FacetIndex::is_available( $dsgo_filter_taxonomy );
+	&& class_exists( '\DesignSetGo\Blocks\Query\FilterIndex' )
+	&& \DesignSetGo\Blocks\Query\FilterIndex::is_available( $dsgo_filter_taxonomy );
 
 $dsgo_filter_wrapper = get_block_wrapper_attributes(
 	array(
