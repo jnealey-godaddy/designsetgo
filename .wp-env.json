@@ -27,8 +27,8 @@
 	"lifecycleScripts": {
 		"afterStart": "npx wp-env run cli wp theme activate twentytwentyfive"
 	},
-	"port": 9451,
-	"testsPort": 9452,
+	"port": 9449,
+	"testsPort": 9450,
 	"config": {
 		"WP_DEBUG": true,
 		"WP_DEBUG_LOG": true,

@@ -68,7 +68,7 @@ class FilterIndexRebuilder {
 	 *              process genuinely holds it.
 	 */
 	private static function acquire_lock(): bool {
-		if ( false !== add_option( self::LOCK_OPTION, time(), '', false ) ) {
+		if ( add_option( self::LOCK_OPTION, time(), '', false ) ) {
 			return true;
 		}
 		// add_option failed — option exists. Honour an active lock.
@@ -77,7 +77,7 @@ class FilterIndexRebuilder {
 		}
 		// Stale lock — clear and retry once. A concurrent retry will win the race.
 		delete_option( self::LOCK_OPTION );
-		return false !== add_option( self::LOCK_OPTION, time(), '', false );
+		return (bool) add_option( self::LOCK_OPTION, time(), '', false );
 	}
 
 	/**
