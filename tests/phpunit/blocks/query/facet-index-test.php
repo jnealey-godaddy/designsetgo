@@ -11,6 +11,7 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 		global $wpdb;
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'dsgo_query_facet_index' );
 		delete_option( \DesignSetGo\Blocks\Query\FacetIndex::OPTION_SCHEMA );
+		delete_option( \DesignSetGo\Blocks\Query\FacetRegistry::OPTION );
 		parent::tear_down();
 	}
 
@@ -42,5 +43,99 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 	public function test_install_persists_schema_version() {
 		\DesignSetGo\Blocks\Query\FacetIndex::install();
 		$this->assertSame( '1', get_option( 'dsgo_query_facet_index_schema' ) );
+	}
+
+	public function test_reindex_post_writes_taxonomy_rows() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array(
+			'type'   => 'taxonomy',
+			'source' => 'category',
+		) );
+
+		$cat_id  = $this->factory->category->create( array( 'name' => 'News' ) );
+		$post_id = $this->factory->post->create( array(
+			'post_title'    => 'Hello',
+			'post_category' => array( $cat_id ),
+		) );
+
+		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $post_id );
+
+		global $wpdb;
+		$table  = $wpdb->prefix . 'dsgo_query_facet_index';
+		$values = $wpdb->get_col( $wpdb->prepare(
+			"SELECT facet_value FROM {$table} WHERE object_id = %d AND object_type = 'post' AND facet_key = 'category'",
+			$post_id
+		) );
+
+		$this->assertContains( (string) $cat_id, $values );
+	}
+
+	public function test_reindex_post_writes_meta_rows() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'price', array(
+			'type'   => 'meta',
+			'source' => '_price',
+		) );
+
+		$post_id = $this->factory->post->create();
+		add_post_meta( $post_id, '_price', '19.99' );
+		add_post_meta( $post_id, '_price', '29.99' );  // Multiple values, distinct rows.
+
+		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $post_id );
+
+		global $wpdb;
+		$table  = $wpdb->prefix . 'dsgo_query_facet_index';
+		$values = $wpdb->get_col( $wpdb->prepare(
+			"SELECT facet_value FROM {$table} WHERE object_id = %d AND facet_key = 'price' ORDER BY facet_value",
+			$post_id
+		) );
+
+		$this->assertSame( array( '19.99', '29.99' ), $values );
+	}
+
+	public function test_reindex_is_idempotent() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array(
+			'type'   => 'taxonomy',
+			'source' => 'category',
+		) );
+
+		$cat_id  = $this->factory->category->create();
+		$post_id = $this->factory->post->create( array( 'post_category' => array( $cat_id ) ) );
+
+		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $post_id );
+		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $post_id );
+		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $post_id );
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_facet_index';
+		$count = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d AND facet_key = 'category'",
+			$post_id
+		) );
+
+		$this->assertSame( 1, $count );
+	}
+
+	public function test_reindex_user_type_is_noop_in_a2() {
+		// Users/terms support deferred to v2.4. Method must not throw on non-post types.
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'role', array(
+			'type'   => 'meta',
+			'source' => 'wp_capabilities',
+		) );
+
+		$user_id = $this->factory->user->create();
+
+		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'user', $user_id );
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_facet_index';
+		$count = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d AND object_type = 'user'",
+			$user_id
+		) );
+
+		$this->assertSame( 0, $count );
 	}
 }
