@@ -34,6 +34,7 @@
 
 // Query blocks (frontend)
 @use '../blocks/query/style' as query;
+@use '../blocks/query-no-results/style' as query_no_results;
 @use '../blocks/query-pagination/style' as query-pagination;
 @use '../blocks/query-filter/style' as query-filter;
 
