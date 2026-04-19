@@ -480,6 +480,13 @@ class Plugin {
 	public $facet_index;
 
 	/**
+	 * Query Facet Registry instance.
+	 *
+	 * @var Blocks\Query\FacetRegistry
+	 */
+	public $facet_registry;
+
+	/**
 	 * Returns the instance.
 	 *
 	 * @return Plugin
@@ -513,6 +520,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-index.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-registry.php';
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-settings.php';
@@ -583,6 +591,7 @@ class Plugin {
 		$this->query_controller    = new Blocks\Query\Controller();
 		$this->query_bindings      = new Blocks\Query\Bindings();
 		$this->facet_index         = new Blocks\Query\FacetIndex();
+		$this->facet_registry      = new Blocks\Query\FacetRegistry();
 		$this->patterns            = new Patterns\Loader();
 		$this->global_styles       = new Admin\Global_Styles();
 		$this->settings            = new Admin\Settings();
