@@ -60,7 +60,8 @@
     },
     "tagName": { "type": "string", "default": "ul" },
     "itemTagName": { "type": "string", "default": "li" },
-    "showPlaceholder": { "type": "boolean", "default": true }
+    "showPlaceholder": { "type": "boolean", "default": true },
+    "emitSchema": { "type": "boolean", "default": true }
   },
   "example": { "attributes": { "perPage": 3 } },
   "viewScriptModule": "file:./view.js",

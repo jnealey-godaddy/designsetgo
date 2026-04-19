@@ -57,9 +57,11 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		$query = new WP_Query( $args );
 
 		$items_html = '';
+		$post_urls  = array();
 		try {
 			while ( $query->have_posts() ) {
 				$query->the_post();
+				$post_urls[] = get_permalink();
 				$items_html .= designsetgo_query_render_item(
 					(string) $context['inner_html'],
 					array(
@@ -81,8 +83,30 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		);
 		designsetgo_query_set_last_state( $query_id, $state );
 
+		// JSON-LD ItemList schema for Posts-source queries.
+		$emit_schema = ! isset( $atts['emitSchema'] ) || (bool) $atts['emitSchema'];
+		$schema_html = '';
+		if ( $emit_schema && 'posts' === $atts['source'] && ! empty( $post_urls ) ) {
+			$schema = array(
+				'@context'        => 'https://schema.org',
+				'@type'           => 'ItemList',
+				'itemListElement' => array_map(
+					function ( $i, $url ) {
+						return array(
+							'@type'    => 'ListItem',
+							'position' => $i + 1,
+							'url'      => $url,
+						);
+					},
+					array_keys( $post_urls ),
+					$post_urls
+				),
+			);
+			$schema_html = '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES ) . '</script>';
+		}
+
 		return array(
-			'html'       => designsetgo_query_wrap( $items_html, $atts, $context, $context['wrapper_attrs'] ?? null ),
+			'html'       => designsetgo_query_wrap( $items_html, $atts, $context, $context['wrapper_attrs'] ?? null ) . $schema_html,
 			'totalPages' => $state['totalPages'],
 			'totalItems' => $state['totalItems'],
 		);

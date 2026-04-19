@@ -112,6 +112,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			),
 			'tagName'        => 'ul',
 			'itemTagName'    => 'li',
+			'emitSchema'     => true,
 		);
 		return wp_parse_args( $attributes, $defaults );
 	}

@@ -1,1 +1,14 @@
-// Frontend styles for designsetgo/query. Content lands in Task 18.
+.dsgo-query {
+
+	&__item {
+		// Space for future entrance transitions (added in Task 18).
+		transition: opacity 0.2s ease;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.dsgo-query__item {
+		transition: none;
+	}
+}
