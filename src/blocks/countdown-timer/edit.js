@@ -21,7 +21,9 @@ import { DsgoInspectorPanel } from '../../components/shared';
 import DateTimePanel from './components/inspector/DateTimePanel';
 import DisplayPanel from './components/inspector/DisplayPanel';
 import StylingPanel from './components/inspector/StylingPanel';
-import UnitBorderPanel from './components/inspector/UnitBorderPanel';
+import UnitBorderPanel, {
+	DEFAULT_UNIT_BORDER,
+} from './components/inspector/UnitBorderPanel';
 import CompletionPanel from './components/inspector/CompletionPanel';
 import {
 	calculateTimeRemaining,
@@ -35,7 +37,6 @@ import {
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 
 const DEFAULT_COMPLETION_MESSAGE = 'The countdown has ended!';
-const DEFAULT_UNIT_BORDER = { color: '', style: 'solid', width: '2px' };
 
 /**
  * Edit component for Countdown Timer block

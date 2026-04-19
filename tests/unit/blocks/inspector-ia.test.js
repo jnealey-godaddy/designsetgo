@@ -170,8 +170,9 @@ describe('Theme 3 — Inspector IA migration', () => {
 			// Loose match so the assertion still passes once a future migration
 			// co-imports DsgoChildToolbar / DsgoBlockPlaceholder from the same
 			// barrel: `import { DsgoInspectorPanel, DsgoChildToolbar } from ...`.
-			// Accepts 2 levels up (edit.js importers) or 3 levels up (sub-component
-			// importers nested under src/blocks/{name}/components/).
+			// Accepts 2 levels up (edit.js importers), 3 levels up (sub-components
+			// under src/blocks/{name}/components/), or 4 levels up (nested
+			// sub-components like src/blocks/{name}/components/inspector/).
 			expect(source).toMatch(
 				/import\s+\{[^}]*\bDsgoInspectorPanel\b[^}]*\}\s+from\s+['"](?:\.\.\/){2,4}components\/shared['"]/
 			);

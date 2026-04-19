@@ -10,8 +10,12 @@ import {
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../../components/shared';
 
-const DEFAULT_BORDER = {
-	color: undefined,
+// Matches `attributes.unitBorder.default` in block.json. Exported so
+// countdown-timer/edit.js can reference the same object in its
+// panel-level resetAll — no drift between the per-item and panel-wide
+// resets.
+export const DEFAULT_UNIT_BORDER = {
+	color: '',
 	style: 'solid',
 	width: '2px',
 };
@@ -37,17 +41,19 @@ export default function UnitBorderPanel({ attributes, setAttributes }) {
 			<DsgoInspectorPanel.Item
 				label={__('Unit Border', 'designsetgo')}
 				hasValue={() =>
-					unitBorder &&
-					(unitBorder.color !== undefined ||
+					!!unitBorder &&
+					(unitBorder.color !== '' ||
 						unitBorder.style !== 'solid' ||
 						unitBorder.width !== '2px')
 				}
-				onDeselect={() => setAttributes({ unitBorder: DEFAULT_BORDER })}
+				onDeselect={() =>
+					setAttributes({ unitBorder: DEFAULT_UNIT_BORDER })
+				}
 				isShownByDefault
 			>
 				<BorderControl
 					label={__('Unit Border', 'designsetgo')}
-					value={unitBorder || DEFAULT_BORDER}
+					value={unitBorder || DEFAULT_UNIT_BORDER}
 					onChange={(value) => setAttributes({ unitBorder: value })}
 					withSlider={true}
 					__next40pxDefaultSize
