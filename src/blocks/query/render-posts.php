@@ -163,7 +163,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		// Meta query.
 		$meta_clauses = isset( $atts['metaQuery']['clauses'] ) ? (array) $atts['metaQuery']['clauses'] : array();
 		if ( ! empty( $meta_clauses ) ) {
-			$meta_query = array(
+			$meta_query    = array(
 				'relation' => ( 'OR' === ( $atts['metaQuery']['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
 			);
 			$valid_compare = array( '=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS' );
@@ -201,7 +201,58 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 				$GLOBALS['wp_query']->query_vars,
 				array_flip( array( 'post_type', 'category_name', 'tag', 'author_name', 'year', 'monthnum', 's' ) )
 			);
-			$args = array_merge( $args, $inherited );
+			$args      = array_merge( $args, $inherited );
+		}
+
+		// URL-param-driven filters (Task 14).
+		// filter_<taxonomy>=slug[,slug] or filter_<taxonomy>[]=slug style.
+		// Also handles ?q= directly (overrides static search attr when present).
+		$params = isset( $context['params'] ) ? (array) $context['params'] : array();
+
+		// Direct ?q= support: override search when bindSearchTo is not set or empty.
+		if ( isset( $params['q'] ) && '' === (string) $atts['bindSearchTo'] ) {
+			$q_val = is_array( $params['q'] ) ? implode( ' ', $params['q'] ) : (string) $params['q'];
+			$q_val = sanitize_text_field( $q_val );
+			if ( '' !== $q_val ) {
+				$args['s'] = $q_val;
+			}
+		}
+
+		foreach ( $params as $key => $value ) {
+			$key = (string) $key;
+			if ( 0 !== strpos( $key, 'filter_' ) ) {
+				continue;
+			}
+			$taxonomy = substr( $key, strlen( 'filter_' ) );
+			if ( '' === $taxonomy || ! taxonomy_exists( $taxonomy ) ) {
+				continue;
+			}
+			$terms = is_array( $value ) ? $value : array( $value );
+			$terms = array_filter( array_map( 'sanitize_title', $terms ) );
+			if ( empty( $terms ) ) {
+				continue;
+			}
+			if ( ! isset( $args['tax_query'] ) ) {
+				$args['tax_query'] = array( 'relation' => 'AND' ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+			}
+			$args['tax_query'][] = array(
+				'taxonomy' => $taxonomy,
+				'field'    => 'slug',
+				'terms'    => array_values( $terms ),
+				'operator' => 'IN',
+			);
+		}
+
+		// URL-param sort override (?sort=orderby.DIR).
+		if ( isset( $params['sort'] ) && is_string( $params['sort'] ) && '' !== $params['sort'] ) {
+			$parts           = explode( '.', $params['sort'], 2 );
+			$sort_by         = sanitize_key( $parts[0] );
+			$sort_dir        = isset( $parts[1] ) && 'ASC' === strtoupper( $parts[1] ) ? 'ASC' : 'DESC';
+			$allowed_orderby = array( 'date', 'title', 'menu_order', 'rand', 'comment_count', 'meta_value', 'meta_value_num' );
+			if ( in_array( $sort_by, $allowed_orderby, true ) ) {
+				$args['orderby'] = $sort_by;
+				$args['order']   = $sort_dir;
+			}
 		}
 
 		return $args;

@@ -1,0 +1,31 @@
+// Editor styles for designsetgo/query-filter.
+
+.wp-block-designsetgo-query-filter {
+
+	// Prevent pointer events on preview controls so they're non-interactive
+	// in the editor (clicking selects the block instead).
+	&.dsgo-query-filter--preview,
+	.dsgo-query-filter--preview {
+
+		input,
+		select,
+		button,
+		a {
+			pointer-events: none;
+		}
+	}
+
+	// Preview chips need a visible background in the editor context.
+	.dsgo-query-filter__chip {
+		background: rgba(0, 0, 0, 0.08);
+		color: inherit;
+	}
+
+	// Visual affordance that these are editor placeholders.
+	.dsgo-query-filter__checkbox-item input[type="checkbox"],
+	.dsgo-query-filter__search-input,
+	.dsgo-query-filter__select,
+	.dsgo-query-filter__sort {
+		opacity: 0.7;
+	}
+}
