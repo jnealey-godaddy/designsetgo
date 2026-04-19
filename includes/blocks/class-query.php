@@ -118,6 +118,22 @@ class Controller {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
+			'/query/preview',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_preview' ),
+				'permission_callback' => array( $this, 'check_facet_register_permission' ),
+				'args'                => array(
+					'attributes' => array(
+						'type'     => 'object',
+						'required' => true,
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
 			'/query/facets',
 			array(
 				array(
@@ -176,6 +192,80 @@ class Controller {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Handles the preview REST request.
+	 *
+	 * For `source === 'posts'` this returns a WP_Error (client uses useEntityRecords).
+	 * For `source === 'users'` runs WP_User_Query limited to perPage results.
+	 * For `source === 'terms'` runs get_terms() limited to perPage results.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_preview( \WP_REST_Request $request ) {
+		$attributes = (array) $request->get_param( 'attributes' );
+		$source     = isset( $attributes['source'] ) ? sanitize_key( $attributes['source'] ) : 'posts';
+		$per_page   = isset( $attributes['perPage'] ) ? max( 1, min( 100, (int) $attributes['perPage'] ) ) : 6;
+
+		if ( 'posts' === $source ) {
+			return new \WP_Error(
+				'not_needed',
+				__( 'Use useEntityRecords for posts source preview.', 'designsetgo' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( 'users' === $source ) {
+			$user_query = new \WP_User_Query(
+				array(
+					'number'  => $per_page,
+					'orderby' => 'registered',
+					'order'   => 'DESC',
+					'fields'  => array( 'ID', 'display_name' ),
+				)
+			);
+			$items      = array();
+			foreach ( $user_query->get_results() as $user ) {
+				$items[] = array(
+					'id'   => (int) $user->ID,
+					'name' => (string) $user->display_name,
+					'type' => 'user',
+				);
+			}
+			return rest_ensure_response( $items );
+		}
+
+		if ( 'terms' === $source ) {
+			$taxonomy = isset( $attributes['taxonomy'] )
+				? sanitize_key( $attributes['taxonomy'] )
+				: 'category';
+			$terms    = get_terms(
+				array(
+					'taxonomy'   => $taxonomy,
+					'number'     => $per_page,
+					'hide_empty' => false,
+					'fields'     => 'id=>name',
+				)
+			);
+
+			if ( is_wp_error( $terms ) || ! is_array( $terms ) ) {
+				return rest_ensure_response( array() );
+			}
+
+			$items = array();
+			foreach ( $terms as $term_id => $term_name ) {
+				$items[] = array(
+					'id'   => (int) $term_id,
+					'name' => (string) $term_name,
+					'type' => 'term',
+				);
+			}
+			return rest_ensure_response( $items );
+		}
+
+		return rest_ensure_response( array() );
 	}
 
 	/**
@@ -370,13 +460,13 @@ class Controller {
 		// path, $_GET is empty and REQUEST_URI points at the REST endpoint,
 		// so we overlay both for the duration of the render and restore
 		// afterwards to avoid leaking state into later request-scoped code.
-		$original_get    = $_GET; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$original_get = $_GET; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		// REQUEST_URI is only restored to its original string (not parsed or
 		// output), so a plain isset/empty check is all the safety it needs.
-		$original_uri    = isset( $_SERVER['REQUEST_URI'] )
+		$original_uri = isset( $_SERVER['REQUEST_URI'] )
 			? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) )
 			: '';
-		$allowed_keys    = apply_filters( 'designsetgo_query_url_params', array( 'q', 'sort' ) );
+		$allowed_keys = apply_filters( 'designsetgo_query_url_params', array( 'q', 'sort' ) );
 		foreach ( $params as $key => $value ) {
 			$key = (string) $key;
 			if ( in_array( $key, $allowed_keys, true ) || 0 === strpos( $key, 'filter_' ) ) {
@@ -402,7 +492,7 @@ class Controller {
 				)
 			);
 		} finally {
-			$_GET                  = $original_get; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$_GET                   = $original_get; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$_SERVER['REQUEST_URI'] = $original_uri;
 		}
 
