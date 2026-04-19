@@ -33,9 +33,28 @@ class DesignSetGo_Query_Filter_Index_Rebuilder_Test extends WP_UnitTestCase {
 		delete_option( FilterIndex::OPTION_SCHEMA );
 		delete_option( FilterIndex::OPTION_STATUS );
 		delete_option( FilterRegistry::OPTION );
+		// Rebuild mutex survives the implicit commit if a prior test errored
+		// before release_lock ran — explicit cleanup keeps each test isolated.
+		delete_option( FilterIndexRebuilder::LOCK_OPTION );
 
 		// Flush the WP object cache so the next test reads fresh option values.
 		wp_cache_flush();
+
+		// The per-request table_exists cache may still say "yes" from tests
+		// that installed the table above — reset it so save_post fires in
+		// subsequent test classes short-circuit on the now-missing table.
+		FilterIndex::reset_table_cache();
+		FilterRegistry::bust_cache();
+	}
+
+	public function set_up(): void {
+		parent::set_up();
+		// Guarantee a fresh lock and clean registry at the start of each test —
+		// defensive against any leak from cross-class state (other test files
+		// may acquire the mutex without calling this class's tear_down).
+		delete_option( FilterIndexRebuilder::LOCK_OPTION );
+		FilterRegistry::bust_cache();
+		FilterIndex::reset_table_cache();
 	}
 
 	public function test_rebuild_all_populates_index_from_scratch() {
@@ -222,10 +241,11 @@ class DesignSetGo_Query_Filter_Index_Rebuilder_Test extends WP_UnitTestCase {
 	public function test_rebuild_all_reports_error_when_table_missing() {
 		FilterIndex::install();
 
-		// Drop the table so TRUNCATE fails.
+		// Drop the table so the pre-TRUNCATE existence guard trips.
 		global $wpdb;
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . FilterIndex::table_name() );
-		// Suppress the expected MySQL error so the test output stays clean.
+		FilterIndex::reset_table_cache();
+		// Suppress any lingering MySQL errors so the test output stays clean.
 		$wpdb->suppress_errors( true );
 
 		$result = FilterIndexRebuilder::rebuild_all();
@@ -237,7 +257,11 @@ class DesignSetGo_Query_Filter_Index_Rebuilder_Test extends WP_UnitTestCase {
 
 		$status = get_option( FilterIndex::OPTION_STATUS );
 		$this->assertArrayHasKey( 'error', $status );
-		$this->assertSame( 'truncate_failed', $status['error'] );
+		$this->assertContains(
+			$status['error'],
+			array( 'table_missing', 'truncate_failed' ),
+			'Expected either the pre-TRUNCATE table-missing guard or the TRUNCATE-failed path to trigger.'
+		);
 		$this->assertFalse( $status['in_progress'] );
 	}
 

@@ -128,9 +128,29 @@ class FilterIndexRebuilder {
 			)
 		);
 
+		// Short-circuit with a clean error status if the table hasn't been
+		// installed yet. Without this guard the TRUNCATE below emits a loud
+		// "table doesn't exist" notice before write_status runs.
+		FilterIndex::reset_table_cache();
+		if ( ! FilterIndex::table_exists() ) {
+			self::write_status(
+				array(
+					'in_progress' => false,
+					'error'       => 'table_missing',
+					'updated_at'  => time(),
+				)
+			);
+			return array(
+				'status'     => 'error',
+				'processed'  => 0,
+				'total_rows' => 0,
+			);
+		}
+
 		$table = FilterIndex::table_name();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
 		$truncated = $wpdb->query( 'TRUNCATE ' . $table );
+		FilterIndex::bump_counts_cache();
 		if ( false === $truncated ) {
 			self::write_status(
 				array(
@@ -146,20 +166,28 @@ class FilterIndexRebuilder {
 			);
 		}
 
+		// Keyset pagination: track the last ID seen and query `WHERE ID > $last_id`.
+		// OFFSET degrades quadratically because MySQL must scan all skipped rows;
+		// keyset uses the `posts.ID` PK index to jump directly to the next batch.
 		$processed = 0;
-		$offset    = 0;
+		$last_id   = 0;
+		$ids_count = 0;
 		do {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- batched id scan over core posts table.
 			$ids = $wpdb->get_col(
 				$wpdb->prepare(
-					"SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' ORDER BY ID ASC LIMIT %d OFFSET %d",
-					$batch_size,
-					$offset
+					"SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' AND ID > %d ORDER BY ID ASC LIMIT %d",
+					$last_id,
+					$batch_size
 				)
 			);
 
 			foreach ( $ids as $id ) {
-				FilterIndex::reindex_object( 'post', (int) $id );
+				$id = (int) $id;
+				FilterIndex::reindex_object( 'post', $id );
+				if ( $id > $last_id ) {
+					$last_id = $id;
+				}
 				++$processed;
 			}
 
@@ -171,9 +199,7 @@ class FilterIndexRebuilder {
 					'updated_at'  => time(),
 				)
 			);
-
-			$offset += $batch_size;
-		} while ( count( $ids ) === $batch_size ); // phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found -- $ids is reassigned each iteration; extracting is less clear here.
+		} while ( $ids_count === $batch_size );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
 		$total_rows  = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $table );
@@ -261,6 +287,7 @@ class FilterIndexRebuilder {
 
 		// Delete all rows for this key in one statement — fast regardless of row count.
 		$wpdb->delete( $table, array( 'filter_key' => $key ), array( '%s' ) );
+		FilterIndex::bump_counts_cache();
 
 		self::write_status(
 			array(
@@ -270,20 +297,26 @@ class FilterIndexRebuilder {
 			)
 		);
 
+		// Keyset pagination (see do_rebuild_all for rationale).
 		$processed = 0;
-		$offset    = 0;
+		$last_id   = 0;
+		$ids_count = 0;
 		do {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- batched id scan over core posts table.
 			$ids = $wpdb->get_col(
 				$wpdb->prepare(
-					"SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' ORDER BY ID ASC LIMIT %d OFFSET %d",
-					$batch_size,
-					$offset
+					"SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' AND ID > %d ORDER BY ID ASC LIMIT %d",
+					$last_id,
+					$batch_size
 				)
 			);
 
 			foreach ( $ids as $id ) {
-				FilterIndex::reindex_object( 'post', (int) $id );
+				$id = (int) $id;
+				FilterIndex::reindex_object( 'post', $id );
+				if ( $id > $last_id ) {
+					$last_id = $id;
+				}
 				++$processed;
 			}
 
@@ -295,9 +328,7 @@ class FilterIndexRebuilder {
 					'updated_at'  => time(),
 				)
 			);
-
-			$offset += $batch_size;
-		} while ( count( $ids ) === $batch_size ); // phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found -- $ids is reassigned each iteration; extracting is less clear here.
+		} while ( $ids_count === $batch_size );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is our own controlled constant obtained via FilterIndex::table_name().
 		$total_rows = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE filter_key = %s", $key ) );

@@ -18,18 +18,28 @@ import ResultCountBadge from './components/ResultCountBadge';
 import EditorPreviewList from './components/EditorPreviewList';
 import { DEFAULT_TEMPLATE } from './edit-template';
 
+// Stable reference returned when the block has no inner blocks yet. Using
+// an ad-hoc `[]` literal in the selector would produce a fresh array each
+// render, which trips useSelect's shallow equality check and floods the
+// console with "`useSelect` returns different values" warnings.
+const EMPTY_BLOCKS = Object.freeze([]);
+
 export default function QueryEdit({ attributes, setAttributes, clientId }) {
 	useQueryId({ clientId, queryId: attributes.queryId, setAttributes });
 
-	const { hasInnerBlocks, innerBlocks } = useSelect(
-		(select) => {
-			const block = select(blockEditorStore).getBlock(clientId);
-			const blocks = block?.innerBlocks || [];
-			return {
-				hasInnerBlocks: blocks.length > 0,
-				innerBlocks: blocks,
-			};
-		},
+	// Two narrow selectors instead of one composite object: hasInnerBlocks is
+	// a primitive (always shallow-equal) and innerBlocks is the block editor's
+	// own stable array reference (mutated only on genuine tree changes).
+	const hasInnerBlocks = useSelect(
+		(select) =>
+			(select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length ||
+				0) > 0,
+		[clientId]
+	);
+	const innerBlocks = useSelect(
+		(select) =>
+			select(blockEditorStore).getBlock(clientId)?.innerBlocks ||
+			EMPTY_BLOCKS,
 		[clientId]
 	);
 

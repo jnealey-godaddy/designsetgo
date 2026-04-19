@@ -167,4 +167,56 @@ class DesignSetGo_Query_Pagination_Infinite_Render_Test extends WP_UnitTestCase 
 			'The buttonLabelWhenPaused attribute must appear in the rendered button text.'
 		);
 	}
+
+	/**
+	 * When the query has only one page of results, the pagination block should
+	 * render NOTHING — no sentinel, no button, no wrapper. Regression guard for
+	 * the single-page guard added in v2.2: without it, the IntersectionObserver
+	 * would fire loadMore(), hit an empty page 2, and flicker briefly.
+	 */
+	public function test_infinite_renders_nothing_when_single_page() {
+		// Prime the block registration + helpers first (render_block will try to
+		// seed totalPages=2 by default, which we need to override after).
+		if ( ! \WP_Block_Type_Registry::get_instance()->is_registered( 'designsetgo/query-pagination' ) ) {
+			register_block_type( DESIGNSETGO_PATH . 'build/blocks/query-pagination/block.json' );
+		}
+		require_once DESIGNSETGO_PATH . 'build/blocks/query/render-helpers.php';
+
+		// Override with a single-page state BEFORE invoking the renderer, and
+		// do it via a direct block instantiation so render_block()'s default
+		// seeding never runs.
+		designsetgo_query_set_last_state(
+			'inf-test',
+			array(
+				'totalPages' => 1,
+				'totalItems' => 3,
+			)
+		);
+
+		$block_markup = '<!-- wp:designsetgo/query-pagination ' . wp_json_encode(
+			array( 'paginationKind' => 'infinite' )
+		) . ' /-->';
+		$parsed       = parse_blocks( $block_markup );
+		$block_obj    = new \WP_Block(
+			$parsed[0],
+			array( 'designsetgo/queryId' => 'inf-test' )
+		);
+		$html         = $block_obj->render();
+
+		$this->assertStringNotContainsString(
+			'data-wp-init="callbacks.initInfiniteObserver"',
+			$html,
+			'Single-page result set must NOT emit the infinite sentinel — loadMore would flicker against an empty page 2.'
+		);
+		$this->assertStringNotContainsString(
+			'dsgo-query-pagination__sentinel',
+			$html,
+			'Single-page result set must NOT emit the sentinel container.'
+		);
+		$this->assertStringNotContainsString(
+			'data-dsgo-pagination="infinite"',
+			$html,
+			'Single-page result set must NOT emit the infinite wrapper marker.'
+		);
+	}
 }

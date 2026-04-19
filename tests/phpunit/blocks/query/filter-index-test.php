@@ -12,6 +12,10 @@ class DesignSetGo_Query_Filter_Index_Test extends WP_UnitTestCase {
 		$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . 'dsgo_query_filter_index' );
 		delete_option( \DesignSetGo\Blocks\Query\FilterIndex::OPTION_SCHEMA );
 		delete_option( \DesignSetGo\Blocks\Query\FilterRegistry::OPTION );
+		// Reset the per-request table_exists cache so the next test (which may
+		// trigger save_post before installing the index) sees the missing table
+		// and the short-circuit in reindex_object() fires correctly.
+		\DesignSetGo\Blocks\Query\FilterIndex::reset_table_cache();
 		parent::tear_down();
 	}
 
@@ -37,12 +41,51 @@ class DesignSetGo_Query_Filter_Index_Test extends WP_UnitTestCase {
 
 		$this->assertContains( 'PRIMARY', $indexes );
 		$this->assertContains( 'filter_key_value', $indexes );
+		$this->assertContains( 'filter_scope', $indexes );
 		$this->assertContains( 'object_lookup', $indexes );
+	}
+
+	public function test_install_creates_post_type_column() {
+		\DesignSetGo\Blocks\Query\FilterIndex::install();
+
+		global $wpdb;
+		$table   = $wpdb->prefix . 'dsgo_query_filter_index';
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}" );
+
+		$this->assertContains( 'post_type', $columns, 'post_type column added in schema v2 for CPT-scoped counts.' );
 	}
 
 	public function test_install_persists_schema_version() {
 		\DesignSetGo\Blocks\Query\FilterIndex::install();
-		$this->assertSame( '1', get_option( 'dsgo_query_filter_index_schema' ) );
+		$this->assertSame( '2', get_option( 'dsgo_query_filter_index_schema' ) );
+	}
+
+	public function test_install_truncates_v1_table_on_v2_upgrade() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_filter_index';
+
+		// Simulate a pre-existing v1 install.
+		\DesignSetGo\Blocks\Query\FilterIndex::install();
+		update_option( \DesignSetGo\Blocks\Query\FilterIndex::OPTION_SCHEMA, '1', false );
+		$wpdb->insert(
+			$table,
+			array(
+				'object_id'    => 123,
+				'object_type'  => 'post',
+				'filter_key'   => 'category',
+				'filter_value' => '7',
+			),
+			array( '%d', '%s', '%s', '%s' )
+		);
+		$this->assertSame( 1, (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ) );
+
+		// Re-run install — simulates the upgrade path. v1 rows must be cleared
+		// so the rebuild can re-populate with the correct post_type values.
+		\DesignSetGo\Blocks\Query\FilterIndex::reset_table_cache();
+		\DesignSetGo\Blocks\Query\FilterIndex::install();
+
+		$this->assertSame( 0, (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ), 'v1 rows truncated on v2 upgrade.' );
+		$this->assertSame( '2', get_option( \DesignSetGo\Blocks\Query\FilterIndex::OPTION_SCHEMA ) );
 	}
 
 	public function test_reindex_post_writes_taxonomy_rows() {
@@ -670,5 +713,128 @@ class DesignSetGo_Query_Filter_Index_Test extends WP_UnitTestCase {
 		// With the fix: events=2 regardless of 'category' being in active_filters.
 		$this->assertSame( 3, $counts[ (string) $news ] );
 		$this->assertSame( 2, $counts[ (string) $events ] );
+	}
+
+	// -------------------------------------------------------------------------
+	// Post-type scoping (v2)
+	// -------------------------------------------------------------------------
+
+	public function test_count_for_options_scopes_to_post_type_when_provided() {
+		register_post_type( 'team', array( 'public' => true, 'taxonomies' => array( 'category' ) ) );
+		\DesignSetGo\Blocks\Query\FilterIndex::install();
+		\DesignSetGo\Blocks\Query\FilterRegistry::register(
+			'category',
+			array( 'type' => 'taxonomy', 'source' => 'category' )
+		);
+
+		$news = $this->factory->category->create( array( 'slug' => 'news' ) );
+
+		// 2 regular posts + 3 team posts, all in the "news" category.
+		$post_ids = $this->factory->post->create_many( 2, array(
+			'post_status'   => 'publish',
+			'post_category' => array( $news ),
+		) );
+		$team_ids = $this->factory->post->create_many( 3, array(
+			'post_type'   => 'team',
+			'post_status' => 'publish',
+		) );
+		foreach ( $team_ids as $tid ) {
+			wp_set_object_terms( $tid, array( $news ), 'category' );
+		}
+		foreach ( array_merge( $post_ids, $team_ids ) as $pid ) {
+			\DesignSetGo\Blocks\Query\FilterIndex::reindex_object( 'post', $pid );
+		}
+
+		// Unscoped count = 5 (2 posts + 3 team).
+		$all = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
+			'category',
+			array( $news ),
+			array()
+		);
+		$this->assertSame( 5, $all[ (string) $news ] );
+
+		// Scoped to "post" = 2; scoped to "team" = 3.
+		$posts_only = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
+			'category',
+			array( $news ),
+			array(),
+			'post'
+		);
+		$team_only = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
+			'category',
+			array( $news ),
+			array(),
+			'team'
+		);
+
+		$this->assertSame( 2, $posts_only[ (string) $news ], 'CPT scoping must exclude other post types.' );
+		$this->assertSame( 3, $team_only[ (string) $news ], 'CPT scoping must exclude other post types.' );
+
+		unregister_post_type( 'team' );
+	}
+
+	public function test_count_for_options_post_type_scope_applies_to_intersection() {
+		register_post_type( 'team', array( 'public' => true, 'taxonomies' => array( 'category', 'post_tag' ) ) );
+		\DesignSetGo\Blocks\Query\FilterIndex::install();
+		\DesignSetGo\Blocks\Query\FilterRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+		\DesignSetGo\Blocks\Query\FilterRegistry::register( 'post_tag', array( 'type' => 'taxonomy', 'source' => 'post_tag' ) );
+
+		$news = $this->factory->category->create( array( 'slug' => 'news' ) );
+		$hot  = $this->factory->tag->create( array( 'slug' => 'hot' ) );
+
+		// A regular post with category=news AND tag=hot — would satisfy an
+		// unscoped intersection but must be excluded when scoping to team.
+		$post_id = $this->factory->post->create( array(
+			'post_status'   => 'publish',
+			'post_category' => array( $news ),
+			'tags_input'    => array( 'hot' ),
+		) );
+
+		// A team post with category=news AND tag=hot.
+		$team_id = $this->factory->post->create( array(
+			'post_type'   => 'team',
+			'post_status' => 'publish',
+		) );
+		wp_set_object_terms( $team_id, array( $news ), 'category' );
+		wp_set_object_terms( $team_id, array( $hot ), 'post_tag' );
+
+		foreach ( array( $post_id, $team_id ) as $pid ) {
+			\DesignSetGo\Blocks\Query\FilterIndex::reindex_object( 'post', $pid );
+		}
+
+		// Scoped to team + active tag=hot → intersection should be 1 (team only).
+		$counts = \DesignSetGo\Blocks\Query\FilterIndex::count_for_options(
+			'category',
+			array( $news ),
+			array( 'post_tag' => array( (string) $hot ) ),
+			'team'
+		);
+		$this->assertSame( 1, $counts[ (string) $news ] );
+
+		unregister_post_type( 'team' );
+	}
+
+	public function test_reindex_object_stores_post_type() {
+		register_post_type( 'team', array( 'public' => true, 'taxonomies' => array( 'category' ) ) );
+		\DesignSetGo\Blocks\Query\FilterIndex::install();
+		\DesignSetGo\Blocks\Query\FilterRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+
+		$news    = $this->factory->category->create();
+		$team_id = $this->factory->post->create( array(
+			'post_type'   => 'team',
+			'post_status' => 'publish',
+		) );
+		wp_set_object_terms( $team_id, array( $news ), 'category' );
+
+		\DesignSetGo\Blocks\Query\FilterIndex::reindex_object( 'post', $team_id );
+
+		global $wpdb;
+		$post_type = $wpdb->get_var( $wpdb->prepare(
+			"SELECT post_type FROM {$wpdb->prefix}dsgo_query_filter_index WHERE object_id = %d LIMIT 1",
+			$team_id
+		) );
+		$this->assertSame( 'team', $post_type );
+
+		unregister_post_type( 'team' );
 	}
 }

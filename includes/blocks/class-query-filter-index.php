@@ -23,8 +23,11 @@ class FilterIndex {
 	 *
 	 * Increment when columns or indexes change and add migration logic in
 	 * install() before updating the stored option.
+	 *
+	 * v2 (2026-04-19): adds `post_type` column so count_for_options can scope
+	 * per-CPT. Upgrade TRUNCATEs the table — see install().
 	 */
-	const SCHEMA_VERSION = '1';
+	const SCHEMA_VERSION = '2';
 
 	/**
 	 * Option key that stores the installed schema version.
@@ -36,6 +39,29 @@ class FilterIndex {
 	 * Reserved for future reindex tasks (Task A2+).
 	 */
 	const OPTION_STATUS = 'dsgo_query_filter_index_status';
+
+	/**
+	 * Object-cache group for count_for_options() results.
+	 *
+	 * Cache entries carry the current epoch in their key so a bump invalidates
+	 * every outstanding entry without needing to enumerate keys (which many
+	 * object-cache backends do not support).
+	 */
+	const CACHE_GROUP = 'designsetgo_query_filter_index';
+
+	/**
+	 * Cache-epoch key. Read via wp_cache_get / bumped via wp_cache_incr so a
+	 * persistent object cache (Redis/Memcached) invalidates count results
+	 * atomically without hitting the options table on each write.
+	 */
+	const CACHE_EPOCH_KEY = 'counts_epoch';
+
+	/**
+	 * TTL (seconds) for cached count results. Counts stay correct until the
+	 * next write (via the epoch), but we still TTL-cap in case the epoch
+	 * counter is lost (non-persistent cache restart) — bounded staleness.
+	 */
+	const CACHE_TTL = 300;
 
 	/**
 	 * Per-request cache of the table existence check.
@@ -102,12 +128,14 @@ class FilterIndex {
 		// v2.2 indexes only published posts. If the post is not published,
 		// remove any existing rows and bail. This covers the case where
 		// taxonomy/meta hooks fire for a draft that was previously published.
+		$post_type = '';
 		if ( 'post' === $object_type ) {
-			$status = get_post_status( $object_id );
-			if ( 'publish' !== $status ) {
+			$post = get_post( $object_id );
+			if ( ! $post || 'publish' !== $post->post_status ) {
 				self::remove_object( 'post', $object_id );
 				return;
 			}
+			$post_type = (string) $post->post_type;
 		}
 
 		$table = self::table_name();
@@ -132,8 +160,9 @@ class FilterIndex {
 			$values = self::resolve_filter_values( $object_type, $object_id, $config );
 			foreach ( $values as $value ) {
 				$rows[] = array(
-					'object_id'   => $object_id,
-					'object_type' => $object_type,
+					'object_id'    => $object_id,
+					'object_type'  => $object_type,
+					'post_type'    => $post_type,
 					'filter_key'   => $filter_key,
 					'filter_value' => (string) $value,
 				);
@@ -148,18 +177,21 @@ class FilterIndex {
 		$placeholders = array();
 		$params       = array();
 		foreach ( $rows as $row ) {
-			$placeholders[] = '(%d, %s, %s, %s)';
+			$placeholders[] = '(%d, %s, %s, %s, %s)';
 			$params[]       = $row['object_id'];
 			$params[]       = $row['object_type'];
+			$params[]       = $row['post_type'];
 			$params[]       = $row['filter_key'];
 			$params[]       = $row['filter_value'];
 		}
 
-		$sql = "INSERT INTO {$table} (object_id, object_type, filter_key, filter_value) VALUES "
+		$sql = "INSERT INTO {$table} (object_id, object_type, post_type, filter_key, filter_value) VALUES "
 			. implode( ', ', $placeholders );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- placeholders built programmatically above.
 		$wpdb->query( $wpdb->prepare( $sql, $params ) );
+
+		self::bump_counts_cache();
 	}
 
 	/**
@@ -238,6 +270,7 @@ class FilterIndex {
 			),
 			array( '%d', '%s' )
 		);
+		self::bump_counts_cache();
 	}
 
 	/**
@@ -253,9 +286,14 @@ class FilterIndex {
 	 * @param string $filter_key     The filter key to count options for (e.g. 'category').
 	 * @param array  $option_values Option values to count. Values are (string)-cast.
 	 * @param array  $active_filters Active filter state: [ filter_key => [ value, ... ] ].
+	 * @param string $post_type     Optional. When non-empty, counts are restricted
+	 *                              to rows with a matching post_type — and so are
+	 *                              the intersection subqueries for active filters,
+	 *                              so a CPT-scoped query never leaks counts from
+	 *                              other post types that share the same taxonomy.
 	 * @return array  [ value => count ] zero-filled for options absent from the result set.
 	 */
-	public static function count_for_options( string $filter_key, array $option_values, array $active_filters ): array {
+	public static function count_for_options( string $filter_key, array $option_values, array $active_filters, string $post_type = '' ): array {
 		if ( empty( $option_values ) || ! self::table_exists() ) {
 			return array();
 		}
@@ -274,6 +312,27 @@ class FilterIndex {
 		// Exclude self-filter from intersection — OR semantics within a group.
 		unset( $active_filters[ $key ] );
 
+		// Cache lookup. Key is (epoch, filter_key, option_values, active_filters, post_type).
+		// The epoch is bumped on every index write, so cached entries remain valid
+		// until the next reindex/remove/rebuild. Skipped in tests where the
+		// per-request table_exists cache can race with the drop-table teardown.
+		$cache_key = self::build_counts_cache_key( $key, $string_values, $active_filters, $post_type );
+		$cached    = wp_cache_get( $cache_key, self::CACHE_GROUP );
+		if ( is_array( $cached ) ) {
+			return $cached;
+		}
+
+		// Optional post_type scope — applied to the outer query AND each
+		// intersection subquery so cross-filter counts stay within the CPT.
+		$post_type_sql    = '';
+		$subquery_pt_sql  = '';
+		$post_type_params = array();
+		if ( '' !== $post_type ) {
+			$post_type_sql      = ' AND post_type = %s';
+			$subquery_pt_sql    = ' AND post_type = %s';
+			$post_type_params[] = $post_type;
+		}
+
 		// Build intersection subqueries, one per active-filter group.
 		$intersect_sql    = '';
 		$intersect_params = array();
@@ -290,22 +349,25 @@ class FilterIndex {
 			$f_placeholders     = implode( ',', array_fill( 0, count( $f_strings ), '%s' ) );
 			$intersect_sql     .= " AND object_id IN (
             SELECT object_id FROM {$table}
-            WHERE filter_key = %s AND filter_value IN ({$f_placeholders})
+            WHERE filter_key = %s AND filter_value IN ({$f_placeholders}){$subquery_pt_sql}
         )";
 			$intersect_params[] = $sanitized_f_key;
 			foreach ( $f_strings as $v ) {
 				$intersect_params[] = $v;
+			}
+			if ( '' !== $post_type ) {
+				$intersect_params[] = $post_type;
 			}
 		}
 
 		$value_placeholders = implode( ',', array_fill( 0, count( $string_values ), '%s' ) );
 		$sql                = "SELECT filter_value, COUNT(DISTINCT object_id) AS cnt
             FROM {$table}
-            WHERE filter_key = %s AND filter_value IN ({$value_placeholders})
+            WHERE filter_key = %s AND filter_value IN ({$value_placeholders}){$post_type_sql}
             {$intersect_sql}
             GROUP BY filter_value";
 
-		$params = array_merge( array( $key ), $string_values, $intersect_params );
+		$params = array_merge( array( $key ), $string_values, $post_type_params, $intersect_params );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- placeholders built programmatically above.
 		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
@@ -318,7 +380,71 @@ class FilterIndex {
 			}
 		}
 
+		wp_cache_set( $cache_key, $counts, self::CACHE_GROUP, self::CACHE_TTL );
+
 		return $counts;
+	}
+
+	/**
+	 * Builds a cache key for count_for_options() that scopes the cached value to
+	 * the current cache epoch + the full argument shape. Any index write bumps
+	 * the epoch, so stale entries become unreachable without explicit deletion.
+	 *
+	 * @param string $filter_key     Sanitized filter key.
+	 * @param array  $string_values  Sorted, unique option values.
+	 * @param array  $active_filters Active filter state (minus self-filter).
+	 * @param string $post_type      Post-type scope or empty string for all.
+	 * @return string
+	 */
+	private static function build_counts_cache_key( string $filter_key, array $string_values, array $active_filters, string $post_type = '' ): string {
+		$epoch = self::get_counts_epoch();
+		// Sort values and active filters for stable key regardless of input order.
+		sort( $string_values );
+		ksort( $active_filters );
+		foreach ( $active_filters as $k => $vs ) {
+			if ( is_array( $vs ) ) {
+				$vs = array_values( array_unique( array_map( 'strval', $vs ) ) );
+				sort( $vs );
+				$active_filters[ $k ] = $vs;
+			}
+		}
+		return 'cfo:' . $epoch . ':' . md5(
+			$filter_key . '|' . wp_json_encode( $string_values ) . '|' . wp_json_encode( $active_filters ) . '|pt=' . $post_type
+		);
+	}
+
+	/**
+	 * Returns the current counts cache epoch — an incrementing integer used as
+	 * part of the cache key so bumping the epoch invalidates every outstanding
+	 * cached result without key enumeration.
+	 *
+	 * @return int
+	 */
+	private static function get_counts_epoch(): int {
+		$epoch = wp_cache_get( self::CACHE_EPOCH_KEY, self::CACHE_GROUP );
+		if ( false === $epoch ) {
+			$epoch = 1;
+			wp_cache_set( self::CACHE_EPOCH_KEY, $epoch, self::CACHE_GROUP );
+		}
+		return (int) $epoch;
+	}
+
+	/**
+	 * Bumps the counts cache epoch, invalidating all previously-cached
+	 * count_for_options() results. Called from reindex_object / remove_object
+	 * and by the rebuilder on completion. Object-cache-only (no DB write) so
+	 * bumping inside tight loops is safe; with a persistent cache backend the
+	 * bump is atomic via wp_cache_incr.
+	 *
+	 * @return void
+	 */
+	public static function bump_counts_cache(): void {
+		$incremented = wp_cache_incr( self::CACHE_EPOCH_KEY, 1, self::CACHE_GROUP );
+		if ( false === $incremented ) {
+			// Non-persistent caches (or no cache yet) — seed then bump.
+			$current = (int) wp_cache_get( self::CACHE_EPOCH_KEY, self::CACHE_GROUP );
+			wp_cache_set( self::CACHE_EPOCH_KEY, $current + 1, self::CACHE_GROUP );
+		}
 	}
 
 	/**
@@ -343,23 +469,40 @@ class FilterIndex {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-		$table   = self::table_name();
-		$charset = $wpdb->get_charset_collate();
+		$table          = self::table_name();
+		$charset        = $wpdb->get_charset_collate();
+		$stored_schema  = (string) get_option( self::OPTION_SCHEMA, '0' );
+		$needs_truncate = self::table_exists() && version_compare( $stored_schema, '2', '<' );
 
 		// Note: PRIMARY KEY requires two spaces before the column name — dbDelta quirk.
+		// post_type is VARCHAR(40) to match WP's wp_posts.post_type column width.
+		// Empty string for non-post object_types (users/terms in v2.4+).
 		$sql = "CREATE TABLE {$table} (
 	id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 	object_id BIGINT UNSIGNED NOT NULL,
 	object_type VARCHAR(20) NOT NULL,
+	post_type VARCHAR(40) NOT NULL DEFAULT '',
 	filter_key VARCHAR(190) NOT NULL,
 	filter_value VARCHAR(190) NOT NULL,
 	indexed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY  (id),
 	KEY filter_key_value (filter_key, filter_value),
+	KEY filter_scope (post_type, filter_key, filter_value),
 	KEY object_lookup (object_type, object_id)
 ) {$charset};";
 
 		dbDelta( $sql );
+
+		// On a v1 → v2 upgrade, pre-existing rows have post_type='' (dbDelta's
+		// DEFAULT fills new columns). A per-CPT count query would miss them,
+		// so TRUNCATE and rely on the admin dashboard / WP-CLI rebuild to
+		// reindex with correct post_type values. v2.2 has not shipped yet so
+		// no production data is lost.
+		if ( $needs_truncate ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.NotPrepared -- deliberate upgrade-time schema reset; $table comes from our controlled self::table_name() constant.
+			$wpdb->query( 'TRUNCATE TABLE ' . $table );
+			self::bump_counts_cache();
+		}
 
 		// Reset the per-request cache so subsequent calls see the new table.
 		self::$table_exists = null;

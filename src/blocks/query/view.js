@@ -11,11 +11,23 @@
  *
  * @since 2.1.0
  */
-/* global HTMLElement, DOMParser, IntersectionObserver */
+/* global HTMLElement, HTMLInputElement, HTMLSelectElement, DOMParser, IntersectionObserver */
 import { store, getContext, getElement } from '@wordpress/interactivity';
+import {
+	sentinelObservers as dsgoSentinelObservers,
+	disconnectSentinelObservers as dsgoDisconnectSentinelObservers,
+	stampFeedPositions as dsgoStampFeedPositions,
+	announceResultCount as dsgoAnnounceResultCount,
+	collectParams as dsgoCollectParamsShared,
+} from './view-helpers.js';
 
 // Per-element debounce timer map (module-level, not reactive state).
 const dsgoDebounceTimers = {};
+
+// Events already processed by the IAPI store (first render). Used by the
+// delegated fallback listener so we never double-fire. The WeakSet lets the
+// browser GC events when they're done.
+const dsgoHandledEvents = new WeakSet();
 
 store('designsetgo/query', {
 	actions: {
@@ -142,6 +154,13 @@ store('designsetgo/query', {
 					const firstNew = newItems[0];
 					newItems.forEach((el) => container.appendChild(el));
 
+					// Refresh feed positions for the now-longer set and announce
+					// the running count if the server reported a total.
+					dsgoStampFeedPositions(container);
+					if (Number.isFinite(data.totalItems)) {
+						dsgoAnnounceResultCount(ctx.queryId, data.totalItems);
+					}
+
 					// Fix 2: only stamp tabindex="-1" when falling back to the item
 					// wrapper itself (no naturally focusable child found). This avoids
 					// permanently evicting <a>/<button>/<input> from the tab order.
@@ -203,6 +222,7 @@ store('designsetgo/query', {
 		 */
 		*setFilter(event) {
 			event.preventDefault?.();
+			dsgoHandledEvents.add(event);
 			const { ref } = getElement();
 			const form = ref.closest('form');
 			const input = form?.querySelector('[name]');
@@ -235,6 +255,7 @@ store('designsetgo/query', {
 		 * @param {Event} event
 		 */
 		setFilterDebounced(event) {
+			dsgoHandledEvents.add(event);
 			const el = event.target;
 			const paramName = el.getAttribute('name')?.replace(/\[\]$/, '');
 			if (!paramName) {
@@ -245,6 +266,13 @@ store('designsetgo/query', {
 
 			clearTimeout(dsgoDebounceTimers[paramName]);
 			dsgoDebounceTimers[paramName] = setTimeout(() => {
+				// Bail out if the input was removed mid-debounce by a concurrent
+				// setFilter / toggleFilter refresh — the captured ctx is bound to
+				// an orphaned state object in that case, and the fresh HTML has
+				// its own data-wp-context to drive subsequent interactions.
+				if (!el.isConnected) {
+					return;
+				}
 				const url = new URL(window.location.href);
 				if (el.value) {
 					url.searchParams.set(paramName, el.value);
@@ -263,9 +291,13 @@ store('designsetgo/query', {
 		 * Handle checkbox toggle for multi-value taxonomy filters.
 		 * Appends or removes the checked value from the URL array param.
 		 *
+		 * @param {Event} [event] Change event (IAPI may omit in some edge cases).
 		 * @generator
 		 */
-		*toggleFilter() {
+		*toggleFilter(event) {
+			if (event) {
+				dsgoHandledEvents.add(event);
+			}
 			const { ref } = getElement();
 			const paramName = ref.getAttribute('name')?.replace(/\[\]$/, '');
 			if (!paramName) {
@@ -306,6 +338,7 @@ store('designsetgo/query', {
 		 */
 		*removeActiveFilter(event) {
 			event.preventDefault?.();
+			dsgoHandledEvents.add(event);
 			const { ref } = getElement();
 			const href = ref.getAttribute('href');
 			if (!href) {
@@ -329,6 +362,7 @@ store('designsetgo/query', {
 		 */
 		*resetAll(event) {
 			event.preventDefault?.();
+			dsgoHandledEvents.add(event);
 			const { ref } = getElement();
 			const href = ref.getAttribute('href');
 			const ctx = getContext();
@@ -359,6 +393,34 @@ store('designsetgo/query', {
 			const wrapper = ref.closest('[data-dsgo-pagination="infinite"]');
 			if (!wrapper) {
 				return;
+			}
+
+			// Disconnect any prior observer for this sentinel. IAPI may
+			// re-run callbacks.initInfiniteObserver on the same element if
+			// a refresh swaps innerHTML and the sentinel is rebuilt, and
+			// leftover observers from previous mounts would keep firing.
+			const prior = dsgoSentinelObservers.get(ref);
+			if (prior) {
+				prior.disconnect();
+			}
+
+			// Promote the list to role="feed" + stamp positions so AT users
+			// can navigate the incrementally-loaded items structurally. Done
+			// here (not in render.php) so markup stays correct under plain
+			// (non-infinite) pagination modes.
+			const queryId = wrapper.getAttribute('data-dsgo-query-id') || '';
+			const feedContainer = queryId
+				? document.querySelector(
+						`[data-dsgo-query-id="${queryId}"][data-dsgo-query-role="container"]`
+					)
+				: null;
+			if (
+				feedContainer &&
+				feedContainer.getAttribute('role') !== 'feed'
+			) {
+				feedContainer.setAttribute('role', 'feed');
+				feedContainer.setAttribute('aria-busy', 'false');
+				dsgoStampFeedPositions(feedContainer);
 			}
 
 			const button = wrapper.querySelector(
@@ -411,6 +473,7 @@ store('designsetgo/query', {
 								button.hidden = false;
 							}
 							observer.disconnect();
+							dsgoSentinelObservers.delete(ref);
 							return;
 						}
 
@@ -439,48 +502,212 @@ store('designsetgo/query', {
 			);
 
 			observer.observe(ref);
+			dsgoSentinelObservers.set(ref, observer);
 		},
 	},
 });
 
 // ---------------------------------------------------------------------------
+// Delegated fallback for filter interactions
+// ---------------------------------------------------------------------------
+//
+// Problem: dsgoQueryRefresh() swaps region.innerHTML with freshly-rendered
+// HTML from /query/render. @wordpress/interactivity binds directives like
+// `data-wp-on--change` at hydration time; the replaced DOM carries the
+// directive attribute but the handler is NOT re-attached. Result: the first
+// filter interaction works (IAPI fires), but every subsequent click on the
+// swapped DOM becomes a silent no-op.
+//
+// Fix: attach document-level delegated listeners once at module load. When
+// IAPI is alive for an element, its store action fires first and marks the
+// event via dsgoHandledEvents — the delegated handler bails. When IAPI is
+// dead (post-swap DOM), only the delegated handler runs and drives the same
+// URL-manipulation + dsgoQueryRefreshPlain() path.
+
+/**
+ * Read the IAPI context encoded in a filter form's data-wp-context attribute.
+ *
+ * @param {HTMLElement} el Descendant of the interactive form.
+ * @return {Object|null}   Parsed context object, or null if missing/malformed.
+ */
+function dsgoGetContextFromDom(el) {
+	const form = el.closest('[data-wp-context]');
+	if (!form) {
+		return null;
+	}
+	try {
+		return JSON.parse(form.getAttribute('data-wp-context') || '');
+	} catch (err) {
+		return null;
+	}
+}
+
+/**
+ * Delegated change handler for filter inputs and selects.
+ *
+ * Covers three filterKinds: checkbox (multi-value array param), select, sort,
+ * and search-on-change. IAPI's actions.toggleFilter / actions.setFilter run
+ * first when alive; this handler only takes over when they don't.
+ *
+ * @param {Event} event Native change event.
+ */
+function dsgoDelegatedChange(event) {
+	if (dsgoHandledEvents.has(event)) {
+		return;
+	}
+	const target = event.target;
+	if (!(target instanceof HTMLElement)) {
+		return;
+	}
+	const filterRoot = target.closest('.dsgo-query-filter');
+	if (!filterRoot) {
+		return;
+	}
+	const rawName =
+		target instanceof HTMLInputElement ||
+		target instanceof HTMLSelectElement
+			? target.getAttribute('name') || ''
+			: '';
+	const paramName = rawName.replace(/\[\]$/, '');
+	if (!paramName) {
+		return;
+	}
+	const ctx = dsgoGetContextFromDom(target);
+	if (!ctx) {
+		return;
+	}
+	const kind = filterRoot.getAttribute('data-dsgo-filter-kind');
+	const url = new URL(window.location.href);
+
+	if (kind === 'checkbox') {
+		const arrayKey = `${paramName}[]`;
+		const current = url.searchParams.getAll(arrayKey);
+		url.searchParams.delete(arrayKey);
+		const value = target instanceof HTMLInputElement ? target.value : '';
+		const checked =
+			target instanceof HTMLInputElement ? target.checked : false;
+		if (checked) {
+			if (!current.includes(value)) {
+				current.push(value);
+			}
+		} else {
+			const idx = current.indexOf(value);
+			if (idx > -1) {
+				current.splice(idx, 1);
+			}
+		}
+		current.forEach((v) => url.searchParams.append(arrayKey, v));
+	} else {
+		// select / sort / search-on-change: single value.
+		const value =
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLSelectElement
+				? target.value
+				: '';
+		if (value) {
+			url.searchParams.set(paramName, value);
+		} else {
+			url.searchParams.delete(paramName);
+		}
+	}
+
+	url.searchParams.delete('paged');
+	url.searchParams.delete('page');
+	dsgoQueryRefreshPlain(ctx, url);
+}
+
+/**
+ * Delegated input handler for the debounced search field.
+ *
+ * @param {Event} event Native input event.
+ */
+function dsgoDelegatedInput(event) {
+	if (dsgoHandledEvents.has(event)) {
+		return;
+	}
+	const target = event.target;
+	if (!(target instanceof HTMLInputElement)) {
+		return;
+	}
+	const filterRoot = target.closest('.dsgo-query-filter--search');
+	if (!filterRoot) {
+		return;
+	}
+	const paramName = (target.getAttribute('name') || '').replace(/\[\]$/, '');
+	if (!paramName) {
+		return;
+	}
+	const ctx = dsgoGetContextFromDom(target);
+	if (!ctx) {
+		return;
+	}
+
+	clearTimeout(dsgoDebounceTimers[paramName]);
+	dsgoDebounceTimers[paramName] = setTimeout(() => {
+		if (!target.isConnected) {
+			return;
+		}
+		const url = new URL(window.location.href);
+		if (target.value) {
+			url.searchParams.set(paramName, target.value);
+		} else {
+			url.searchParams.delete(paramName);
+		}
+		url.searchParams.delete('paged');
+		url.searchParams.delete('page');
+		dsgoQueryRefreshPlain(ctx, url);
+	}, 250);
+}
+
+/**
+ * Delegated click handler for active-filter chips and reset-all buttons.
+ *
+ * Chips and reset buttons are <a href="…"> elements whose href encodes the
+ * post-action URL; we just drive an AJAX refresh to that URL.
+ *
+ * @param {Event} event Native click event.
+ */
+function dsgoDelegatedClick(event) {
+	if (dsgoHandledEvents.has(event)) {
+		return;
+	}
+	const target = event.target;
+	if (!(target instanceof HTMLElement)) {
+		return;
+	}
+	const chip = target.closest(
+		'.dsgo-query-filter--active .dsgo-query-filter__chip, .dsgo-query-filter--reset .dsgo-query-filter__reset, .dsgo-query-filter--reset a'
+	);
+	if (!chip) {
+		return;
+	}
+	const href = chip.getAttribute('href');
+	if (!href) {
+		return;
+	}
+	const ctx = dsgoGetContextFromDom(chip);
+	if (!ctx) {
+		return;
+	}
+
+	event.preventDefault();
+	const url = new URL(href, window.location.href);
+	url.searchParams.delete('paged');
+	url.searchParams.delete('page');
+	dsgoQueryRefreshPlain(ctx, url);
+}
+
+document.addEventListener('change', dsgoDelegatedChange);
+document.addEventListener('input', dsgoDelegatedInput);
+document.addEventListener('click', dsgoDelegatedClick);
+
+// ---------------------------------------------------------------------------
 // Shared refresh helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Build the query params object from a URL's search params.
- * Collects filter_*, q, sort — handles both ?key[]=v and ?key=v styles.
- *
- * @param {URL} url
- * @return {Object} Key/value map of filter params extracted from the URL.
- */
-function dsgoCollectParams(url) {
-	const params = {};
-	for (const [k, v] of url.searchParams.entries()) {
-		const isArrayKey = k.endsWith('[]');
-		const baseKey = isArrayKey ? k.slice(0, -2) : k;
-
-		// Only collect filter_*, q, and sort keys.
-		if (
-			!baseKey.startsWith('filter_') &&
-			baseKey !== 'q' &&
-			baseKey !== 'sort'
-		) {
-			continue;
-		}
-
-		if (isArrayKey || Array.isArray(params[baseKey])) {
-			if (!Array.isArray(params[baseKey])) {
-				params[baseKey] =
-					params[baseKey] !== undefined ? [params[baseKey]] : [];
-			}
-			params[baseKey].push(v);
-		} else {
-			params[baseKey] = v;
-		}
-	}
-	return params;
-}
+// collectParams lives in view-helpers.js so it can be unit-tested with jsdom;
+// alias locally to preserve the existing call-site names below.
+const dsgoCollectParams = dsgoCollectParamsShared;
 
 /**
  * Core refresh generator — used by all filter actions via yield*.
@@ -583,13 +810,23 @@ function* dsgoQueryRefresh(ctx, url) {
 			`[data-dsgo-query-region="${queryId}"]`
 		);
 		if (newRegion) {
-			// Server-rendered HTML from the REST endpoint — already wp_kses_post()-escaped by WordPress.
+			// Disconnect observers inside the region before detaching their
+			// sentinels — observers that fire post-swap close over stale ctx.
+			dsgoDisconnectSentinelObservers(region);
+			// Server-rendered HTML assembled from esc_attr / esc_html /
+			// block-render output in designsetgo_query_render_region().
 			region.innerHTML = newRegion.innerHTML;
 		}
 
 		// Sync the browser URL without a page reload.
 		window.history.replaceState({}, '', url.toString());
 		ctx.page = 1;
+
+		// Announce the new result count + re-stamp feed positions if the
+		// list was in feed mode before the swap.
+		if (Number.isFinite(data.totalItems)) {
+			dsgoAnnounceResultCount(queryId, data.totalItems);
+		}
 	} finally {
 		ctx.busy = false;
 		// listContainer may have been replaced by the innerHTML swap above;
@@ -599,6 +836,7 @@ function* dsgoQueryRefresh(ctx, url) {
 		);
 		if (freshList) {
 			freshList.setAttribute('aria-busy', 'false');
+			dsgoStampFeedPositions(freshList);
 		}
 	}
 }
@@ -690,12 +928,20 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 			`[data-dsgo-query-region="${queryId}"]`
 		);
 		if (newRegion) {
-			// Server-rendered HTML from the REST endpoint — already wp_kses_post()-escaped by WordPress.
+			// Disconnect observers inside the region before detaching their
+			// sentinels — observers that fire post-swap close over stale ctx.
+			dsgoDisconnectSentinelObservers(region);
+			// Server-rendered HTML assembled from esc_attr / esc_html /
+			// block-render output in designsetgo_query_render_region().
 			region.innerHTML = newRegion.innerHTML;
 		}
 
 		window.history.replaceState({}, '', url.toString());
 		ctx.page = 1;
+
+		if (Number.isFinite(data.totalItems)) {
+			dsgoAnnounceResultCount(queryId, data.totalItems);
+		}
 	} finally {
 		ctx.busy = false;
 		const freshList = region.querySelector(
@@ -703,6 +949,7 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 		);
 		if (freshList) {
 			freshList.setAttribute('aria-busy', 'false');
+			dsgoStampFeedPositions(freshList);
 		}
 	}
 }

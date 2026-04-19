@@ -20,16 +20,27 @@ defined( 'ABSPATH' ) || exit;
 class FilterIndexHooks {
 
 	/**
+	 * Tracks whether the hook set has been registered in this request.
+	 * A single flag (not per-hook has_action checks) so a caller that removes
+	 * just one hook — e.g. removing save_post during a bulk import — cannot
+	 * trigger accidental duplicate-registration of the other four hooks.
+	 *
+	 * @var bool
+	 */
+	private static $registered = false;
+
+	/**
 	 * Registers WordPress lifecycle hooks so the index stays current.
 	 *
-	 * Idempotent — a second call is a no-op because we guard on has_action().
+	 * Idempotent — a second call is a no-op.
 	 *
 	 * @return void
 	 */
 	public static function register_hooks(): void {
-		if ( has_action( 'save_post', array( __CLASS__, 'on_save_post' ) ) ) {
+		if ( self::$registered ) {
 			return;
 		}
+		self::$registered = true;
 		add_action( 'save_post', array( __CLASS__, 'on_save_post' ), 20, 2 );
 		add_action( 'deleted_post', array( __CLASS__, 'on_deleted_post' ), 20, 1 );
 		add_action( 'set_object_terms', array( __CLASS__, 'on_set_object_terms' ), 20, 4 );

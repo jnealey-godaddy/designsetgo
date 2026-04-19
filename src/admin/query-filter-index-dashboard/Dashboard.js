@@ -17,6 +17,7 @@ import {
 	SelectControl,
 	Spinner,
 } from '@wordpress/components';
+import { addQueryArgs } from '@wordpress/url';
 import { __ } from '@wordpress/i18n';
 
 const { apiUrl, nonce } = window.dsgoQueryFilterIndexDashboard || {};
@@ -24,18 +25,32 @@ const { apiUrl, nonce } = window.dsgoQueryFilterIndexDashboard || {};
 /**
  * Shared fetch helper — sets nonce header and parses JSON.
  *
- * @param {string} path URL path relative to apiUrl.
- * @param {Object} opts fetch() options overrides.
+ * Appends query args via addQueryArgs so it works on sites using either
+ * pretty permalinks (path style) or default permalinks (?rest_route=…).
+ *
+ * @param {string} path       URL path relative to apiUrl (no query string).
+ * @param {Object} opts       fetch() options overrides.
+ * @param {Object} opts.query Optional query parameters to append to path.
  * @return {Promise<any>}     Parsed JSON body.
  */
 async function apiFetch(path, opts = {}) {
-	const response = await fetch(`${apiUrl}${path}`, {
+	const { query, ...fetchOpts } = opts;
+	const fullPath = query ? addQueryArgs(path, query) : path;
+	const separator = apiUrl.indexOf('?') === -1 ? '' : '&';
+	// When apiUrl is the ugly form (?rest_route=/designsetgo/v1), the path's
+	// leading "?" would collide with the existing query string — swap to "&".
+	const relative =
+		separator && fullPath.charAt(0) === '?'
+			? separator + fullPath.slice(1)
+			: fullPath;
+
+	const response = await fetch(`${apiUrl}${relative}`, {
 		headers: {
 			'Content-Type': 'application/json',
 			'X-WP-Nonce': nonce,
-			...(opts.headers || {}),
+			...(fetchOpts.headers || {}),
 		},
-		...opts,
+		...fetchOpts,
 	});
 
 	if (!response.ok) {
@@ -137,12 +152,17 @@ function IndexStatusCard() {
 			)}
 
 			<div className="dsgo-filter-index-card__actions">
-				{status?.in_progress ? (
-					<>
-						<Spinner />
-						<span>{__('Rebuild in progress…', 'designsetgo')}</span>
-					</>
-				) : (
+				<div role="status" aria-live="polite" aria-atomic="true">
+					{status?.in_progress && (
+						<>
+							<Spinner />
+							<span>
+								{__('Rebuild in progress…', 'designsetgo')}
+							</span>
+						</>
+					)}
+				</div>
+				{!status?.in_progress && (
 					<Button
 						variant="primary"
 						onClick={handleRebuild}
@@ -190,12 +210,10 @@ function RegisteredFiltersTable({ onChanged }) {
 		setRemoving(key);
 		setError(null);
 		try {
-			await apiFetch(
-				`/query/filters?filter_key=${encodeURIComponent(key)}`,
-				{
-					method: 'DELETE',
-				}
-			);
+			await apiFetch('/query/filters', {
+				method: 'DELETE',
+				query: { filter_key: key },
+			});
 			setFilters((prev) => {
 				const next = { ...prev };
 				delete next[key];
@@ -236,7 +254,11 @@ function RegisteredFiltersTable({ onChanged }) {
 							<th>{__('Type', 'designsetgo')}</th>
 							<th>{__('Source', 'designsetgo')}</th>
 							<th>{__('Label', 'designsetgo')}</th>
-							<th></th>
+							<th>
+								<span className="screen-reader-text">
+									{__('Actions', 'designsetgo')}
+								</span>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -343,6 +365,7 @@ function AddFilterForm({ onAdded }) {
 					onChange={setFilterKey}
 					placeholder="e.g. price"
 					required
+					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
 				<SelectControl
@@ -350,6 +373,7 @@ function AddFilterForm({ onAdded }) {
 					value={type}
 					options={TYPE_OPTIONS}
 					onChange={setType}
+					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
 				<TextControl
@@ -358,6 +382,7 @@ function AddFilterForm({ onAdded }) {
 					onChange={setSource}
 					placeholder="e.g. _price or category"
 					required
+					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
 				<TextControl
@@ -365,6 +390,7 @@ function AddFilterForm({ onAdded }) {
 					value={label}
 					onChange={setLabel}
 					placeholder={__('Human-readable label', 'designsetgo')}
+					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
 				<Button

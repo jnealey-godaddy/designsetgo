@@ -376,8 +376,10 @@ class Controller {
 	/**
 	 * Checks that the request carries a valid nonce and the user has manage_options.
 	 *
-	 * Used by the /filter-register and /query/preview routes — requires `manage_options`
-	 * so only site admins can register site-wide filter keys into the index.
+	 * Used by the /filter-register, /filter-rebuild, /filter-status, and /filters
+	 * admin routes — requires `manage_options` so only site admins can mutate or
+	 * inspect the site-wide filter registry and index. (The /query/preview route
+	 * uses check_edit_posts_permission; see that method's docblock.)
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return true|\WP_Error
@@ -509,16 +511,23 @@ class Controller {
 		// so we overlay both for the duration of the render and restore
 		// afterwards to avoid leaking state into later request-scoped code.
 		$original_get = $_GET; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		// REQUEST_URI is only restored to its original string (not parsed or
-		// output), so a plain isset/empty check is all the safety it needs.
-		$original_uri = isset( $_SERVER['REQUEST_URI'] )
-			? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) )
-			: '';
+		// Snapshot REQUEST_URI raw — sanitize_text_field() mangles URL encoding
+		// (eats `+`, collapses whitespace) and this value is only ever restored
+		// to the superglobal, never echoed or used in HTML.
+		$original_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- restore-only, see comment above.
 		$allowed_keys = apply_filters( 'designsetgo_query_url_params', array( 'q', 'sort' ) );
 		foreach ( $params as $key => $value ) {
 			$key = (string) $key;
 			if ( in_array( $key, $allowed_keys, true ) || 0 === strpos( $key, 'filter_' ) ) {
-				$_GET[ $key ] = $value;
+				// REST-supplied values are sanitized downstream before use in
+				// WP_Query / SQL / HTML, but nested block renders may pass
+				// through filter hooks or third-party code that reads $_GET
+				// directly — sanitize at the overlay boundary too.
+				if ( is_array( $value ) ) {
+					$_GET[ $key ] = array_map( 'sanitize_text_field', wp_unslash( (array) $value ) );
+				} else {
+					$_GET[ $key ] = sanitize_text_field( wp_unslash( (string) $value ) );
+				}
 			}
 		}
 		if ( '' !== $current_url ) {

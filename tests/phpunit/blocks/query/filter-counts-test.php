@@ -35,6 +35,7 @@ class DesignSetGo_Query_Filter_Counts_Test extends WP_UnitTestCase {
 		delete_option( \DesignSetGo\Blocks\Query\FilterIndex::OPTION_SCHEMA );
 		delete_option( \DesignSetGo\Blocks\Query\FilterRegistry::OPTION );
 		$_GET = array(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		\DesignSetGo\Blocks\Query\FilterIndex::reset_table_cache();
 		parent::tear_down();
 	}
 

@@ -6,7 +6,7 @@ import { ICON_COLOR } from '../shared/constants';
 import './editor.scss';
 import './style.scss';
 
-registerBlockType( metadata.name, {
+registerBlockType(metadata.name, {
 	...metadata,
 	icon: {
 		src: (
@@ -27,4 +27,4 @@ registerBlockType( metadata.name, {
 	},
 	edit,
 	save,
-} );
+});

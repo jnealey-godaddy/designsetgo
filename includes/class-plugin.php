@@ -685,7 +685,15 @@ class Plugin {
 
 		if ( version_compare( $stored, '2.2.0', '<' ) ) {
 			Blocks\Query\FilterIndex::install();
-			update_option( 'designsetgo_db_version', '2.2.0', false );
+			// Only seal the upgrade gate after verifying the table actually
+			// exists. Previously the version was bumped unconditionally, so a
+			// silent dbDelta failure (permissions, disk full, early-load order
+			// quirks) left the option at 2.2.0 with no table, and the gate
+			// never retried on subsequent requests.
+			Blocks\Query\FilterIndex::reset_table_cache();
+			if ( Blocks\Query\FilterIndex::table_exists() ) {
+				update_option( 'designsetgo_db_version', '2.2.0', false );
+			}
 		}
 	}
 

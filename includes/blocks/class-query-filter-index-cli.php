@@ -10,23 +10,24 @@ namespace DesignSetGo\Blocks\Query;
 
 defined( 'ABSPATH' ) || exit;
 
-// Only loaded under WP-CLI — class body is harmless if file is required in non-CLI context,
-// but the `register()` call is what actually binds it to WP_CLI.
-if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
-	return;
-}
-
 /**
  * WP-CLI commands for managing the filter index.
+ *
+ * The class is always declared so PHPUnit can exercise command methods
+ * directly (with a stubbed WP_CLI). Actual command-namespace binding only
+ * happens from register() when WP-CLI is the active SAPI.
  */
 class FilterIndexCLI {
 
 	/**
-	 * Registers the WP-CLI command namespace.
+	 * Registers the WP-CLI command namespace. No-op outside CLI.
 	 *
 	 * @return void
 	 */
 	public static function register(): void {
+		if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+			return;
+		}
 		\WP_CLI::add_command( 'dsgo query index', __CLASS__ );
 	}
 

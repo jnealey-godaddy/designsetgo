@@ -27,7 +27,7 @@
       "fontSize": true
     }
   },
-  "usesContext": ["designsetgo/queryId"],
+  "usesContext": ["designsetgo/queryId", "designsetgo/querySource", "designsetgo/queryPostType"],
   "attributes": {
     "filterKind": { "type": "string", "default": "checkbox", "enum": ["checkbox", "select", "search", "sort", "active", "reset"] },
     "taxonomy":   { "type": "string", "default": "category" },

@@ -132,7 +132,9 @@ function renderWith(attributeOverrides = {}) {
 describe('AdvancedPanel', () => {
 	it('renders without Manual IDs field when source is posts', () => {
 		renderWith({ source: 'posts' });
-		expect(screen.queryByLabelText(/manual post ids/i)).not.toBeInTheDocument();
+		expect(
+			screen.queryByLabelText(/manual post ids/i)
+		).not.toBeInTheDocument();
 	});
 
 	it('shows Manual IDs textarea when source is manual', () => {
@@ -141,7 +143,10 @@ describe('AdvancedPanel', () => {
 	});
 
 	it('Manual IDs textarea parses comma-separated integers on change', () => {
-		const { setAttributes } = renderWith({ source: 'manual', manualIds: [] });
+		const { setAttributes } = renderWith({
+			source: 'manual',
+			manualIds: [],
+		});
 		const textarea = screen.getByLabelText(/manual post ids/i);
 		fireEvent.change(textarea, { target: { value: '1, 2, 3' } });
 		expect(setAttributes).toHaveBeenCalledWith({ manualIds: [1, 2, 3] });
@@ -156,7 +161,9 @@ describe('AdvancedPanel', () => {
 
 	it('Bind search to URL param TextControl is present', () => {
 		renderWith();
-		expect(screen.getByLabelText(/url parameter name/i)).toBeInTheDocument();
+		expect(
+			screen.getByLabelText(/url parameter name/i)
+		).toBeInTheDocument();
 	});
 
 	it('Exclude current post toggle calls setAttributes on change', () => {
@@ -168,7 +175,9 @@ describe('AdvancedPanel', () => {
 
 	it('Ignore sticky posts toggle is rendered', () => {
 		renderWith();
-		expect(screen.getByLabelText(/ignore sticky posts/i)).toBeInTheDocument();
+		expect(
+			screen.getByLabelText(/ignore sticky posts/i)
+		).toBeInTheDocument();
 	});
 
 	it('Wrapper tag SelectControl is present', () => {
@@ -185,7 +194,10 @@ describe('AdvancedPanel', () => {
 	});
 
 	it('Manual IDs filters out non-positive integers', () => {
-		const { setAttributes } = renderWith({ source: 'manual', manualIds: [] });
+		const { setAttributes } = renderWith({
+			source: 'manual',
+			manualIds: [],
+		});
 		const textarea = screen.getByLabelText(/manual post ids/i);
 		fireEvent.change(textarea, { target: { value: '0, abc, -5, 10' } });
 		expect(setAttributes).toHaveBeenCalledWith({ manualIds: [10] });

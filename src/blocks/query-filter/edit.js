@@ -14,9 +14,14 @@ import {
 	ToggleControl,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
+import { useMemo } from '@wordpress/element';
 import { store as coreStore } from '@wordpress/core-data';
 import { DsgoInspectorPanel } from '../../components/shared';
 import FilterPreview from './components/FilterPreview';
+
+// Stable references so useSelect doesn't flag "returns different values when
+// called with the same state" on every consumer render.
+const EMPTY_TAXONOMIES = Object.freeze([]);
 
 const FILTER_KIND_OPTIONS = [
 	{ value: 'checkbox', label: __('Taxonomy checkboxes', 'designsetgo') },
@@ -48,19 +53,26 @@ export default function QueryFilterEdit({
 		className: 'dsgo-query-filter is-editor',
 	});
 
-	// Load available taxonomies for the checkbox/select filter kinds.
-	const taxonomies = useSelect(
-		(select) => {
-			if (filterKind !== 'checkbox' && filterKind !== 'select') {
-				return [];
-			}
-			const all = select(coreStore).getTaxonomies({ per_page: -1 }) || [];
-			return all
-				.filter((t) => t.show_in_rest !== false)
-				.map((t) => ({ value: t.slug, label: t.name }));
-		},
-		[filterKind]
+	// Return the raw taxonomies array from core-data — core-data caches by
+	// query args and returns a ref-stable array, so useSelect's shallow
+	// equality stays happy across unrelated store updates.
+	const rawTaxonomies = useSelect(
+		(select) =>
+			select(coreStore).getTaxonomies({ per_page: -1 }) ||
+			EMPTY_TAXONOMIES,
+		[]
 	);
+
+	// Transform into SelectControl option shape in a useMemo so the mapped
+	// array keeps the same identity until raw data or filterKind changes.
+	const taxonomies = useMemo(() => {
+		if (filterKind !== 'checkbox' && filterKind !== 'select') {
+			return EMPTY_TAXONOMIES;
+		}
+		return rawTaxonomies
+			.filter((t) => t.show_in_rest !== false)
+			.map((t) => ({ value: t.slug, label: t.name }));
+	}, [filterKind, rawTaxonomies]);
 
 	const showTaxonomyControl =
 		filterKind === 'checkbox' || filterKind === 'select';

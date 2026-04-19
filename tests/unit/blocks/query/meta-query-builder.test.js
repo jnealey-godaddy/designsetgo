@@ -57,7 +57,14 @@ jest.mock('@wordpress/components', () => {
 		</label>
 	);
 
-	const Button = ({ children, onClick, disabled, 'aria-label': ariaLabel, isDestructive, variant }) => (
+	const Button = ({
+		children,
+		onClick,
+		disabled,
+		'aria-label': ariaLabel,
+		isDestructive,
+		variant,
+	}) => (
 		<button
 			type="button"
 			onClick={onClick}
@@ -129,7 +136,14 @@ describe('MetaQueryBuilder', () => {
 		renderWith({
 			metaQuery: {
 				relation: 'AND',
-				clauses: [{ key: 'my_field', compare: '=', value: 'foo', type: 'CHAR' }],
+				clauses: [
+					{
+						key: 'my_field',
+						compare: '=',
+						value: 'foo',
+						type: 'CHAR',
+					},
+				],
 			},
 		});
 		expect(screen.getByLabelText(/^key$/i)).toBeInTheDocument();
@@ -142,7 +156,14 @@ describe('MetaQueryBuilder', () => {
 		renderWith({
 			metaQuery: {
 				relation: 'AND',
-				clauses: [{ key: 'my_field', compare: 'EXISTS', value: '', type: 'CHAR' }],
+				clauses: [
+					{
+						key: 'my_field',
+						compare: 'EXISTS',
+						value: '',
+						type: 'CHAR',
+					},
+				],
 			},
 		});
 		expect(screen.queryByLabelText(/^value$/i)).not.toBeInTheDocument();
@@ -152,7 +173,14 @@ describe('MetaQueryBuilder', () => {
 		renderWith({
 			metaQuery: {
 				relation: 'AND',
-				clauses: [{ key: 'my_field', compare: 'NOT EXISTS', value: '', type: 'CHAR' }],
+				clauses: [
+					{
+						key: 'my_field',
+						compare: 'NOT EXISTS',
+						value: '',
+						type: 'CHAR',
+					},
+				],
 			},
 		});
 		expect(screen.queryByLabelText(/^value$/i)).not.toBeInTheDocument();
@@ -163,7 +191,12 @@ describe('MetaQueryBuilder', () => {
 			metaQuery: {
 				relation: 'AND',
 				clauses: [
-					{ key: 'field_a', compare: '=', value: '1', type: 'NUMERIC' },
+					{
+						key: 'field_a',
+						compare: '=',
+						value: '1',
+						type: 'NUMERIC',
+					},
 					{ key: 'field_b', compare: '!=', value: '2', type: 'CHAR' },
 				],
 			},
@@ -185,7 +218,14 @@ describe('MetaQueryBuilder', () => {
 				attributes={{
 					metaQuery: {
 						relation: 'AND',
-						clauses: [{ key: 'a', compare: '=', value: '1', type: 'CHAR' }],
+						clauses: [
+							{
+								key: 'a',
+								compare: '=',
+								value: '1',
+								type: 'CHAR',
+							},
+						],
 					},
 				}}
 				setAttributes={jest.fn()}
@@ -201,8 +241,18 @@ describe('MetaQueryBuilder', () => {
 					metaQuery: {
 						relation: 'OR',
 						clauses: [
-							{ key: 'a', compare: '=', value: '1', type: 'CHAR' },
-							{ key: 'b', compare: '!=', value: '2', type: 'CHAR' },
+							{
+								key: 'a',
+								compare: '=',
+								value: '1',
+								type: 'CHAR',
+							},
+							{
+								key: 'b',
+								compare: '!=',
+								value: '2',
+								type: 'CHAR',
+							},
 						],
 					},
 				}}

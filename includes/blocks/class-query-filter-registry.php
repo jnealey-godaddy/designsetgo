@@ -21,6 +21,40 @@ class FilterRegistry {
 	const OPTION = 'dsgo_query_filters';
 
 	/**
+	 * Per-request cache of the resolved registry. Bust on any mutation.
+	 * Post-save meta/term hooks call all() once per tracked key, so this
+	 * avoids re-running the filter chain 30+ times on a single save.
+	 *
+	 * @var array|null
+	 */
+	private static $cache = null;
+
+	/**
+	 * Whether option-mutation hooks have been registered. Guarded so calls
+	 * from multiple request paths (admin + REST + CLI) stay idempotent.
+	 *
+	 * @var bool
+	 */
+	private static $hooks_registered = false;
+
+	/**
+	 * Wires option-update/delete hooks so direct option mutations (e.g. from
+	 * tests or third-party code that bypasses register()/unregister()) still
+	 * bust the per-request cache. Called lazily from all() + register().
+	 *
+	 * @return void
+	 */
+	private static function ensure_hooks(): void {
+		if ( self::$hooks_registered ) {
+			return;
+		}
+		self::$hooks_registered = true;
+		add_action( 'update_option_' . self::OPTION, array( __CLASS__, 'bust_cache' ) );
+		add_action( 'add_option_' . self::OPTION, array( __CLASS__, 'bust_cache' ) );
+		add_action( 'delete_option_' . self::OPTION, array( __CLASS__, 'bust_cache' ) );
+	}
+
+	/**
 	 * Registers or updates a filter in the option-backed registry.
 	 *
 	 * @param string $key    Filter registry key (e.g. 'category'). Will be sanitized.
@@ -45,6 +79,7 @@ class FilterRegistry {
 		);
 
 		update_option( self::OPTION, $filters, false );
+		self::$cache = null;
 	}
 
 	/**
@@ -66,6 +101,7 @@ class FilterRegistry {
 		unset( $filters[ $sanitized_key ] );
 
 		update_option( self::OPTION, $filters, false );
+		self::$cache = null;
 	}
 
 	/**
@@ -74,6 +110,12 @@ class FilterRegistry {
 	 * @return array Keyed array of filter configs (key => { type, source, label }).
 	 */
 	public static function all(): array {
+		self::ensure_hooks();
+
+		if ( null !== self::$cache ) {
+			return self::$cache;
+		}
+
 		$stored = get_option( self::OPTION, array() );
 		if ( ! is_array( $stored ) ) {
 			$stored = array();
@@ -86,7 +128,19 @@ class FilterRegistry {
 		 *
 		 * @param array $stored Keyed array of filter configs (key => { type, source, label }).
 		 */
-		return (array) apply_filters( 'designsetgo_query_registered_filters', $stored );
+		self::$cache = (array) apply_filters( 'designsetgo_query_registered_filters', $stored );
+
+		return self::$cache;
+	}
+
+	/**
+	 * Clears the per-request cache. Intended for test teardown and for callers
+	 * that mutate the underlying option directly.
+	 *
+	 * @return void
+	 */
+	public static function bust_cache(): void {
+		self::$cache = null;
 	}
 
 	/**

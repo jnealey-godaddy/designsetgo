@@ -16,6 +16,7 @@ import { useEntityRecords } from '@wordpress/core-data';
 import { BlockPreview, BlockContextProvider } from '@wordpress/block-editor';
 import { Spinner, Placeholder } from '@wordpress/components';
 import apiFetch from '@wordpress/api-fetch';
+import { addQueryArgs } from '@wordpress/url';
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -126,11 +127,24 @@ function EditableTemplate({ innerBlocksProps }) {
  * @param {boolean} enabled    Whether to actually fetch.
  */
 function usePosts(attributes, enabled) {
+	// Narrow memo key to the attributes buildCoreDataQuery actually reads —
+	// color/spacing/etc edits no longer thrash useEntityRecords. The author
+	// key is flattened up-front so the dep array stays a plain list of
+	// scalars (react-hooks/exhaustive-deps dislikes complex expressions).
+	const authorKey = Array.isArray(attributes.author)
+		? attributes.author.join(',')
+		: attributes.author;
 	const queryArgs = useMemo(
 		() => buildCoreDataQuery(attributes),
-		// Stringify so the memo is stable for objects like taxQuery.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[JSON.stringify(attributes)]
+		[
+			attributes.perPage,
+			attributes.offset,
+			attributes.orderBy,
+			attributes.order,
+			attributes.search,
+			authorKey,
+		]
 	);
 
 	// useEntityRecords must be called unconditionally (rules of hooks).
@@ -176,8 +190,16 @@ function useRemotePreview(attributes, enabled) {
 		hasResolved: false,
 	});
 
-	// Stringify to get a stable dependency key.
-	const cacheKey = enabled ? JSON.stringify(attributes) : null;
+	// Narrow cache key to the subset the /preview endpoint actually reads:
+	// source, perPage, taxonomy (for terms). Avoids refetching on every
+	// unrelated inspector edit (color, spacing, etc.).
+	const cacheKey = enabled
+		? [
+				attributes.source || 'posts',
+				attributes.perPage || 6,
+				attributes.taxonomy || '',
+			].join('|')
+		: null;
 
 	useEffect(() => {
 		if (!enabled || !cacheKey) {
@@ -187,11 +209,12 @@ function useRemotePreview(attributes, enabled) {
 		let cancelled = false;
 		setState({ records: null, hasResolved: false });
 
+		// apiFetch sends `data` as a JSON body regardless of method, so GET
+		// requests with complex nested objects must serialise into the path.
 		apiFetch({
-			path: '/designsetgo/v1/query/preview',
-			method: 'GET',
-			// apiFetch GET sends query params via `data`.
-			data: { attributes },
+			path: addQueryArgs('/designsetgo/v1/query/preview', {
+				attributes,
+			}),
 		})
 			.then((items) => {
 				if (!cancelled) {
