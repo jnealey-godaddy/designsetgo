@@ -40,13 +40,16 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 */
 	function designsetgo_query_render( array $attributes, array $context ) {
 		$attributes = designsetgo_query_defaults( $attributes );
-		$context    = wp_parse_args( $context, array(
-			'query_id'      => '',
-			'page'          => 1,
-			'inner_html'    => '',
-			'params'        => array(),
-			'wrapper_attrs' => null,  // first-paint passes string; REST/tests pass null
-		) );
+		$context    = wp_parse_args(
+			$context,
+			array(
+				'query_id'      => '',
+				'page'          => 1,
+				'inner_html'    => '',
+				'params'        => array(),
+				'wrapper_attrs' => null,  // first-paint passes string; REST/tests pass null.
+			)
+		);
 
 		switch ( $attributes['source'] ) {
 			case 'users':
@@ -69,7 +72,11 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 				return designsetgo_query_render_posts( $attributes, $context );
 		}
 
-		return array( 'html' => '', 'totalPages' => 0, 'totalItems' => 0 );
+		return array(
+			'html'       => '',
+			'totalPages' => 0,
+			'totalItems' => 0,
+		);
 	}
 
 	/**
@@ -95,8 +102,14 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			'excludeCurrent' => false,
 			'ignoreSticky'   => true,
 			'manualIds'      => array(),
-			'taxQuery'       => array( 'relation' => 'AND', 'clauses' => array() ),
-			'metaQuery'      => array( 'relation' => 'AND', 'clauses' => array() ),
+			'taxQuery'       => array(
+				'relation' => 'AND',
+				'clauses'  => array(),
+			),
+			'metaQuery'      => array(
+				'relation' => 'AND',
+				'clauses'  => array(),
+			),
 			'tagName'        => 'ul',
 			'itemTagName'    => 'li',
 		);
@@ -159,22 +172,27 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		// state and innerBlocks template without needing a server-side lookup.
 		// JSON_HEX_* flags ensure no literal <, >, &, ', " appear in the output,
 		// making the strings safe to embed inside a <script> element in any context.
-		$json_blobs = '';
+		// The blobs live OUTSIDE the list element (as a preceding sibling hidden div)
+		// because <script> elements are not valid children of <ul>/<ol> per the HTML
+		// spec, and they would break ul > li:first-child CSS selectors.
+		$blob_wrapper = '';
 		if ( '' !== $query_id ) {
-			$flags       = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
-			$json_blobs .= '<script type="application/json" data-dsgo-attrs hidden>'
+			$flags        = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+			$blob_wrapper = '<div hidden class="dsgo-query__blobs" data-dsgo-blobs-for="' . esc_attr( $query_id ) . '">'
+				. '<script type="application/json" data-dsgo-attrs>'
 				. wp_json_encode( $atts, $flags )
-				. '</script>';
-			$json_blobs .= '<script type="application/json" data-dsgo-inner hidden>'
+				. '</script>'
+				. '<script type="application/json" data-dsgo-inner>'
 				. wp_json_encode( (string) ( $context['inner_html'] ?? '' ), $flags )
-				. '</script>';
+				. '</script>'
+				. '</div>';
 		}
 
 		return sprintf(
-			'<%1$s %2$s>%3$s%4$s</%1$s>',
+			'%1$s<%2$s %3$s>%4$s</%2$s>',
+			$blob_wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr() + JSON_HEX_* assembled; no literal HTML special chars.
 			$tag,
 			$attrs_string, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from esc_attr()-escaped parts + get_block_wrapper_attributes() output.
-			$json_blobs, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode with JSON_HEX_* flags; no literal HTML special chars.
 			$inner_items
 		);
 	}

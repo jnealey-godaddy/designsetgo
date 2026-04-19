@@ -41,6 +41,9 @@ $show_prev_next  = ! isset( $attributes['showPrevNext'] ) || (bool) $attributes[
 $label_load_more = ! empty( $attributes['labelLoadMore'] )
 	? (string) $attributes['labelLoadMore']
 	: __( 'Load more', 'designsetgo' );
+$label_loading   = ! empty( $attributes['labelLoading'] )
+	? (string) $attributes['labelLoading']
+	: __( 'Loading\u2026', 'designsetgo' );
 
 if ( 'loadmore' === $pagination_mode ) {
 	$wrapper = get_block_wrapper_attributes(
@@ -52,9 +55,11 @@ if ( 'loadmore' === $pagination_mode ) {
 		)
 	);
 	printf(
-		'<div %1$s><button type="button" class="dsgo-query-pagination__loadmore" data-wp-on--click="actions.loadMore">%2$s</button></div>',
+		'<div %1$s><button type="button" class="dsgo-query-pagination__loadmore" data-wp-on--click="actions.loadMore" data-dsgo-label-idle="%3$s" data-dsgo-label-loading="%4$s">%2$s</button></div>',
 		$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output.
-		esc_html( $label_load_more )
+		esc_html( $label_load_more ),
+		esc_attr( $label_load_more ),
+		esc_attr( $label_loading )
 	);
 	return;
 }

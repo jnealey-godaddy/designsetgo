@@ -76,14 +76,19 @@ class DesignSetGo_Query_Pagination_Render_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertStringContainsString(
+			'data-dsgo-blobs-for="blobs"',
+			$result['html'],
+			'Result HTML must include the blob wrapper (data-dsgo-blobs-for) when query_id is set.'
+		);
+		$this->assertStringContainsString(
 			'data-dsgo-attrs',
 			$result['html'],
-			'Container HTML must include the data-dsgo-attrs JSON blob when query_id is set.'
+			'Result HTML must include the data-dsgo-attrs JSON blob when query_id is set.'
 		);
 		$this->assertStringContainsString(
 			'data-dsgo-inner',
 			$result['html'],
-			'Container HTML must include the data-dsgo-inner JSON blob when query_id is set.'
+			'Result HTML must include the data-dsgo-inner JSON blob when query_id is set.'
 		);
 	}
 

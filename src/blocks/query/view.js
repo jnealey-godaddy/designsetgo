@@ -1,9 +1,9 @@
 /**
  * Dynamic Query — Interactivity API view script.
  *
- * Handles load-more pagination: fetches the next page via
- * /wp-json/designsetgo/v1/query/render and appends returned items to the list,
- * updating aria-busy + focus per accessibility expectations.
+ * Handles load-more pagination: fetches the next page via the REST API and
+ * appends returned items to the list, updating aria-busy + focus per
+ * accessibility expectations.
  *
  * Task 14 will extend this store with filter + sort + reset actions.
  *
@@ -18,16 +18,39 @@ store( 'designsetgo/query', {
 			if ( ctx.busy ) return;
 			ctx.busy = true;
 
-			const { ref } = getElement();
-			// The button is a sibling of the list; look upward for the nearest
-			// wrapper that has data-dsgo-query-id on it (the <ul>/<ol>/<div>).
+			const { ref } = getElement(); // the button itself
+			const idleLabel =
+				ref instanceof HTMLElement
+					? ref.getAttribute( 'data-dsgo-label-idle' ) ||
+					  ref.textContent
+					: '';
+			const loadingLabel =
+				ref instanceof HTMLElement
+					? ref.getAttribute( 'data-dsgo-label-loading' ) || ''
+					: '';
+
+			if ( ref instanceof HTMLElement && loadingLabel ) {
+				ref.textContent = loadingLabel;
+				ref.setAttribute( 'aria-busy', 'true' );
+				ref.disabled = true;
+			}
+
+			// Fix 1: exclude elements with [data-dsgo-pagination] so we find the
+			// query list, not the pagination wrapper (both carry data-dsgo-query-id).
 			const container =
-				ref.closest( '[data-dsgo-query-id]' ) ||
+				ref.closest(
+					'[data-dsgo-query-id]:not([data-dsgo-pagination])'
+				) ||
 				document.querySelector(
-					`[data-dsgo-query-id="${ ctx.queryId }"]`
+					`[data-dsgo-query-id="${ ctx.queryId }"]:not([data-dsgo-pagination])`
 				);
 
 			if ( ! container ) {
+				if ( ref instanceof HTMLElement ) {
+					ref.textContent = idleLabel;
+					ref.disabled = false;
+					ref.removeAttribute( 'aria-busy' );
+				}
 				ctx.busy = false;
 				return;
 			}
@@ -35,10 +58,15 @@ store( 'designsetgo/query', {
 			container.setAttribute( 'aria-busy', 'true' );
 
 			try {
-				const attrsEl = container.querySelector(
+				// Fix 4: blobs now live in a preceding-sibling hidden div with
+				// data-dsgo-blobs-for, not inside the list element.
+				const blobsHost = document.querySelector(
+					`[data-dsgo-blobs-for="${ ctx.queryId }"]`
+				);
+				const attrsEl = blobsHost?.querySelector(
 					'script[data-dsgo-attrs]'
 				);
-				const innerEl = container.querySelector(
+				const innerEl = blobsHost?.querySelector(
 					'script[data-dsgo-inner]'
 				);
 
@@ -52,8 +80,10 @@ store( 'designsetgo/query', {
 				const innerBlocks = JSON.parse( innerEl.textContent );
 				const nextPage = ( ctx.page || 1 ) + 1;
 
+				// Fix 3: use wpApiSettings.root so subdirectory WP installs work.
+				const restRoot = window.wpApiSettings?.root || '/wp-json/';
 				const res = yield fetch(
-					'/wp-json/designsetgo/v1/query/render',
+					`${ restRoot }designsetgo/v1/query/render`,
 					{
 						method: 'POST',
 						credentials: 'same-origin',
@@ -72,8 +102,6 @@ store( 'designsetgo/query', {
 				);
 
 				if ( ! res.ok ) {
-					ctx.busy = false;
-					container.setAttribute( 'aria-busy', 'false' );
 					return;
 				}
 
@@ -92,15 +120,22 @@ store( 'designsetgo/query', {
 					const firstNew = newItems[ 0 ];
 					newItems.forEach( ( el ) => container.appendChild( el ) );
 
-					// Prefer a link or button inside the new item; fall back to the item.
-					const focusable =
-						firstNew.querySelector(
-							'a, button, input, [tabindex]:not([tabindex="-1"])'
-						) || firstNew;
+					// Fix 2: only stamp tabindex="-1" when falling back to the item
+					// wrapper itself (no naturally focusable child found). This avoids
+					// permanently evicting <a>/<button>/<input> from the tab order.
+					const naturallyFocusable = firstNew.querySelector(
+						'a, button, input, [tabindex]:not([tabindex="-1"])'
+					);
+					const focusable = naturallyFocusable || firstNew;
 
 					if ( focusable instanceof HTMLElement ) {
-						if ( ! focusable.getAttribute( 'tabindex' ) ) {
+						if ( ! naturallyFocusable ) {
 							focusable.setAttribute( 'tabindex', '-1' );
+							focusable.addEventListener(
+								'blur',
+								() => focusable.removeAttribute( 'tabindex' ),
+								{ once: true }
+							);
 						}
 						focusable.focus();
 					}
@@ -119,6 +154,13 @@ store( 'designsetgo/query', {
 			} finally {
 				ctx.busy = false;
 				container.setAttribute( 'aria-busy', 'false' );
+				// Restore button label and state (button may have been removed
+				// when we reached the last page, so guard with isConnected).
+				if ( ref instanceof HTMLElement && ref.isConnected ) {
+					ref.textContent = idleLabel;
+					ref.disabled = false;
+					ref.removeAttribute( 'aria-busy' );
+				}
 			}
 		},
 	},
