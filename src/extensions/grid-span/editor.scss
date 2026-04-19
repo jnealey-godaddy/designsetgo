@@ -28,10 +28,7 @@
 			@for $span from ($cols + 1) through 12 {
 				&[style*="grid-column: span #{$span}"],
 				&[style*="grid-column:span #{$span}"],
-				&[style*="grid-column:span#{$span}"],
-				&[style*="gridColumn: span #{$span}"],
-				&[style*="gridColumn:span #{$span}"],
-				&[style*="gridColumn:span#{$span}"] {
+				&[style*="grid-column:span#{$span}"] {
 					grid-column: span #{$cols} !important;
 				}
 			}
@@ -48,10 +45,7 @@
 			@for $span from ($cols + 1) through 12 {
 				&[style*="grid-column: span #{$span}"],
 				&[style*="grid-column:span #{$span}"],
-				&[style*="grid-column:span#{$span}"],
-				&[style*="gridColumn: span #{$span}"],
-				&[style*="gridColumn:span #{$span}"],
-				&[style*="gridColumn:span#{$span}"] {
+				&[style*="grid-column:span#{$span}"] {
 					grid-column: span #{$cols} !important;
 				}
 			}
