@@ -473,25 +473,25 @@ class Plugin {
 	public $query_bindings;
 
 	/**
-	 * Query Facet Index instance.
+	 * Query Filter Index instance.
 	 *
-	 * @var Blocks\Query\FacetIndex
+	 * @var Blocks\Query\FilterIndex
 	 */
-	public $facet_index;
+	public $filter_index;
 
 	/**
-	 * Query Facet Registry instance.
+	 * Query Filter Registry instance.
 	 *
-	 * @var Blocks\Query\FacetRegistry
+	 * @var Blocks\Query\FilterRegistry
 	 */
-	public $facet_registry;
+	public $filter_registry;
 
 	/**
-	 * Query Facet Admin page instance.
+	 * Query Filter Index Admin page instance.
 	 *
-	 * @var Admin\Query_Facet_Admin
+	 * @var Admin\Query_Filter_Index_Admin
 	 */
-	public $query_facet_admin;
+	public $query_filter_index_admin;
 
 	/**
 	 * Returns the instance.
@@ -526,14 +526,14 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-modal-hooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-index.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-index-hooks.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-index-rebuilder.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-registry.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-hooks.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-rebuilder.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-registry.php';
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-cli.php';
-			Blocks\Query\FacetCLI::register();
+			require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-cli.php';
+			Blocks\Query\FilterIndexCLI::register();
 		}
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';
@@ -547,7 +547,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-draft-mode.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-draft-mode-preview.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-block-migrator.php';
-		require_once DESIGNSETGO_PATH . 'includes/admin/class-query-facet-admin.php';
+		require_once DESIGNSETGO_PATH . 'includes/admin/class-query-filter-index-admin.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-custom-css-renderer.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-section-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-sticky-header.php';
@@ -605,9 +605,9 @@ class Plugin {
 		$this->form_submissions    = new Blocks\Form_Submissions();
 		$this->query_controller    = new Blocks\Query\Controller();
 		$this->query_bindings      = new Blocks\Query\Bindings();
-		$this->facet_index         = new Blocks\Query\FacetIndex();
-		Blocks\Query\FacetIndexHooks::register_hooks();
-		$this->facet_registry      = new Blocks\Query\FacetRegistry();
+		$this->filter_index         = new Blocks\Query\FilterIndex();
+		Blocks\Query\FilterIndexHooks::register_hooks();
+		$this->filter_registry      = new Blocks\Query\FilterRegistry();
 		$this->patterns            = new Patterns\Loader();
 		$this->global_styles       = new Admin\Global_Styles();
 		$this->settings            = new Admin\Settings();
@@ -628,7 +628,7 @@ class Plugin {
 		if ( is_admin() ) {
 			$this->admin_menu         = new Admin\Admin_Menu();
 			$this->block_migrator     = new Admin\Block_Migrator();
-			$this->query_facet_admin  = new Admin\Query_Facet_Admin();
+			$this->query_filter_index_admin  = new Admin\Query_Filter_Index_Admin();
 		}
 
 		// Initialize draft mode (works on both admin and REST API).
@@ -674,7 +674,7 @@ class Plugin {
 	 * Hooked onto admin_init so it only runs in the admin context where
 	 * ABSPATH/wp-admin/includes/upgrade.php is guaranteed to be present.
 	 * Running in the constructor caused phpstan analysis failures because
-	 * FacetIndex::install() requires that file at analysis time.
+	 * FilterIndex::install() requires that file at analysis time.
 	 *
 	 * Compares the stored designsetgo_db_version option against
 	 * DESIGNSETGO_VERSION and installs missing schema when the plugin
@@ -684,7 +684,7 @@ class Plugin {
 		$stored = get_option( 'designsetgo_db_version', '0.0.0' );
 
 		if ( version_compare( $stored, '2.2.0', '<' ) ) {
-			Blocks\Query\FacetIndex::install();
+			Blocks\Query\FilterIndex::install();
 			update_option( 'designsetgo_db_version', '2.2.0', false );
 		}
 	}

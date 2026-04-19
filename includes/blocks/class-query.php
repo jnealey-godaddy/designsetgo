@@ -75,13 +75,13 @@ class Controller {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/query/facet-register',
+			'/query/filter-register',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'handle_facet_register' ),
-				'permission_callback' => array( $this, 'check_facet_register_permission' ),
+				'callback'            => array( $this, 'handle_filter_register' ),
+				'permission_callback' => array( $this, 'check_filter_register_permission' ),
 				'args'                => array(
-					'facet_key' => array(
+					'filter_key' => array(
 						'type'              => 'string',
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_key',
@@ -98,20 +98,20 @@ class Controller {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/query/facet-status',
+			'/query/filter-status',
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'handle_facet_status' ),
+				'callback'            => array( $this, 'handle_filter_status' ),
 				'permission_callback' => array( $this, 'check_manage_options_permission' ),
 			)
 		);
 
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/query/facet-rebuild',
+			'/query/filter-rebuild',
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'handle_facet_rebuild' ),
+				'callback'            => array( $this, 'handle_filter_rebuild' ),
 				'permission_callback' => array( $this, 'check_manage_options_permission' ),
 			)
 		);
@@ -134,19 +134,19 @@ class Controller {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/query/facets',
+			'/query/filters',
 			array(
 				array(
 					'methods'             => \WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'handle_facets_list' ),
+					'callback'            => array( $this, 'handle_filters_list' ),
 					'permission_callback' => array( $this, 'check_manage_options_permission' ),
 				),
 				array(
 					'methods'             => \WP_REST_Server::DELETABLE,
-					'callback'            => array( $this, 'handle_facet_unregister' ),
+					'callback'            => array( $this, 'handle_filter_unregister' ),
 					'permission_callback' => array( $this, 'check_manage_options_permission' ),
 					'args'                => array(
-						'facet_key' => array(
+						'filter_key' => array(
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_key',
@@ -160,7 +160,7 @@ class Controller {
 	/**
 	 * Checks that the request carries a valid nonce and the user has manage_options.
 	 *
-	 * Used by admin-only facet routes (status, rebuild, list, unregister).
+	 * Used by admin-only filter routes (status, rebuild, list, unregister).
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return true|\WP_Error
@@ -269,67 +269,67 @@ class Controller {
 	}
 
 	/**
-	 * Returns the current facet index status.
+	 * Returns the current filter index status.
 	 *
 	 * @return \WP_REST_Response
 	 */
-	public function handle_facet_status() {
-		return rest_ensure_response( FacetIndexRebuilder::status() );
+	public function handle_filter_status() {
+		return rest_ensure_response( FilterIndexRebuilder::status() );
 	}
 
 	/**
-	 * Runs a full facet index rebuild synchronously and returns the result.
+	 * Runs a full filter index rebuild synchronously and returns the result.
 	 *
 	 * Note: on large sites this may approach PHP's max_execution_time.
 	 * For v2.2 the synchronous model is acceptable; the dashboard polls
-	 * /facet-status every 2 s so even a timeout is handled gracefully.
+	 * /filter-status every 2 s so even a timeout is handled gracefully.
 	 *
 	 * @return \WP_REST_Response
 	 */
-	public function handle_facet_rebuild() {
-		return rest_ensure_response( FacetIndexRebuilder::rebuild_all() );
+	public function handle_filter_rebuild() {
+		return rest_ensure_response( FilterIndexRebuilder::rebuild_all() );
 	}
 
 	/**
-	 * Returns all registered facets.
+	 * Returns all registered filters.
 	 *
 	 * @return \WP_REST_Response
 	 */
-	public function handle_facets_list() {
-		return rest_ensure_response( FacetRegistry::all() );
+	public function handle_filters_list() {
+		return rest_ensure_response( FilterRegistry::all() );
 	}
 
 	/**
-	 * Unregisters a facet by key.
+	 * Unregisters a filter by key.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
-	public function handle_facet_unregister( \WP_REST_Request $request ) {
-		$key = $request->get_param( 'facet_key' );
+	public function handle_filter_unregister( \WP_REST_Request $request ) {
+		$key = $request->get_param( 'filter_key' );
 
 		if ( empty( $key ) ) {
 			return new \WP_Error(
-				'dsgo_facet_unregister_invalid',
-				__( 'facet_key is required.', 'designsetgo' ),
+				'dsgo_filter_unregister_invalid',
+				__( 'filter_key is required.', 'designsetgo' ),
 				array( 'status' => 400 )
 			);
 		}
 
-		if ( null === FacetRegistry::get( $key ) ) {
+		if ( null === FilterRegistry::get( $key ) ) {
 			return new \WP_Error(
-				'dsgo_facet_not_found',
-				__( 'Facet not found.', 'designsetgo' ),
+				'dsgo_filter_not_found',
+				__( 'Filter not found.', 'designsetgo' ),
 				array( 'status' => 404 )
 			);
 		}
 
-		FacetRegistry::unregister( $key );
+		FilterRegistry::unregister( $key );
 
 		return rest_ensure_response(
 			array(
 				'unregistered' => true,
-				'facet_key'    => $key,
+				'filter_key'    => $key,
 			)
 		);
 	}
@@ -338,8 +338,8 @@ class Controller {
 	 * Checks that the request carries a valid nonce and the user can edit posts.
 	 *
 	 * Used by the /query/preview route — any editor-level user may use the live
-	 * preview endpoint; only admins may mutate the facet registry (see
-	 * check_facet_register_permission).
+	 * preview endpoint; only admins may mutate the filter registry (see
+	 * check_filter_register_permission).
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return true|\WP_Error
@@ -376,13 +376,13 @@ class Controller {
 	/**
 	 * Checks that the request carries a valid nonce and the user has manage_options.
 	 *
-	 * Used by the /facet-register and /query/preview routes — requires `manage_options`
-	 * so only site admins can register site-wide facet keys into the index.
+	 * Used by the /filter-register and /query/preview routes — requires `manage_options`
+	 * so only site admins can register site-wide filter keys into the index.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return true|\WP_Error
 	 */
-	public function check_facet_register_permission( \WP_REST_Request $request ) {
+	public function check_filter_register_permission( \WP_REST_Request $request ) {
 		if ( ! is_user_logged_in() ) {
 			return new \WP_Error(
 				'rest_forbidden',
@@ -412,22 +412,22 @@ class Controller {
 	}
 
 	/**
-	 * Handles the facet-register REST request.
+	 * Handles the filter-register REST request.
 	 *
-	 * Stores the facet configuration in FacetRegistry so the PHP facet index
-	 * knows how to resolve values for this facet key.
+	 * Stores the filter configuration in FilterRegistry so the PHP filter index
+	 * knows how to resolve values for this filter key.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
-	public function handle_facet_register( \WP_REST_Request $request ) {
-		$key    = $request->get_param( 'facet_key' );
+	public function handle_filter_register( \WP_REST_Request $request ) {
+		$key    = $request->get_param( 'filter_key' );
 		$config = (array) $request->get_param( 'config' );
 
 		if ( empty( $key ) || empty( $config['type'] ) || empty( $config['source'] ) ) {
 			return new \WP_Error(
-				'dsgo_facet_register_invalid',
-				__( 'facet_key, type, and source are required.', 'designsetgo' ),
+				'dsgo_filter_register_invalid',
+				__( 'filter_key, type, and source are required.', 'designsetgo' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -435,19 +435,19 @@ class Controller {
 		$type = (string) $config['type'];
 		if ( ! in_array( $type, array( 'taxonomy', 'meta' ), true ) ) {
 			return new \WP_Error(
-				'dsgo_facet_invalid_type',
+				'dsgo_filter_invalid_type',
 				__( 'config.type must be "taxonomy" or "meta".', 'designsetgo' ),
 				array( 'status' => 400 )
 			);
 		}
 
-		FacetRegistry::register( $key, $config );
+		FilterRegistry::register( $key, $config );
 
 		return rest_ensure_response(
 			array(
 				'registered' => true,
-				'facet_key'  => sanitize_key( $key ),
-				'config'     => FacetRegistry::get( $key ),
+				'filter_key'  => sanitize_key( $key ),
+				'config'     => FilterRegistry::get( $key ),
 			)
 		);
 	}

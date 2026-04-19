@@ -1,8 +1,8 @@
 <?php
 /**
- * Dynamic Query — Facet Index Rebuilder.
+ * Dynamic Query — Filter Index Rebuilder.
  *
- * Bulk index operations: full rebuild, single-facet rebuild, status reporting.
+ * Bulk index operations: full rebuild, single-filter rebuild, status reporting.
  * Used by the admin dashboard (B5) and WP-CLI commands (A7).
  *
  * @package DesignSetGo
@@ -14,12 +14,12 @@ namespace DesignSetGo\Blocks\Query;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Provides static methods for bulk facet index operations.
+ * Provides static methods for bulk filter index operations.
  *
- * Reads FacetIndex::OPTION_STATUS (canonical location) for status tracking.
+ * Reads FilterIndex::OPTION_STATUS (canonical location) for status tracking.
  * All methods are pure static — no hooks registered, no instantiation needed.
  */
-class FacetIndexRebuilder {
+class FilterIndexRebuilder {
 
 	/**
 	 * Default number of posts to process per batch in rebuild_all.
@@ -34,7 +34,7 @@ class FacetIndexRebuilder {
 	/**
 	 * WordPress option key used as a rebuild mutex.
 	 */
-	const LOCK_OPTION = 'dsgo_query_facet_rebuild_lock';
+	const LOCK_OPTION = 'dsgo_query_filter_rebuild_lock';
 
 	/**
 	 * Maximum seconds a rebuild lock is considered valid before being treated as stale.
@@ -78,7 +78,7 @@ class FacetIndexRebuilder {
 	 * Truncates the index and repopulates it from all published posts.
 	 *
 	 * Batch-scans the posts table in chunks of $args['batch_size'] (default 200,
-	 * minimum 50). Writes progress to FacetIndex::OPTION_STATUS so callers can
+	 * minimum 50). Writes progress to FilterIndex::OPTION_STATUS so callers can
 	 * poll status() during a long run (A7 / B5).
 	 *
 	 * @param array $args {
@@ -128,7 +128,7 @@ class FacetIndexRebuilder {
 			)
 		);
 
-		$table = FacetIndex::table_name();
+		$table = FilterIndex::table_name();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
 		$truncated = $wpdb->query( 'TRUNCATE ' . $table );
 		if ( false === $truncated ) {
@@ -159,7 +159,7 @@ class FacetIndexRebuilder {
 			);
 
 			foreach ( $ids as $id ) {
-				FacetIndex::reindex_object( 'post', (int) $id );
+				FilterIndex::reindex_object( 'post', (int) $id );
 				++$processed;
 			}
 
@@ -197,19 +197,19 @@ class FacetIndexRebuilder {
 	}
 
 	/**
-	 * Wipes all index rows for a single facet key and repopulates them.
+	 * Wipes all index rows for a single filter key and repopulates them.
 	 *
-	 * Because reindex_object() rewrites ALL facets for a given post, calling
-	 * this method will also refresh other facets' rows for each post it touches.
+	 * Because reindex_object() rewrites ALL filters for a given post, calling
+	 * this method will also refresh other filters' rows for each post it touches.
 	 * Per-post partial reindex is deferred to v2.5+.
 	 *
 	 * Returns early with status='skipped' if the key is not registered.
 	 *
 	 * Processes posts in batches to avoid max_execution_time on large sites.
-	 * Writes intermediate progress to FacetIndex::OPTION_STATUS so callers can
+	 * Writes intermediate progress to FilterIndex::OPTION_STATUS so callers can
 	 * poll status() during a long run (A7 / B5).
 	 *
-	 * @param string $facet_key The registered facet key to rebuild (e.g. 'category').
+	 * @param string $filter_key The registered filter key to rebuild (e.g. 'category').
 	 * @param array  $args {
 	 *     Optional overrides.
 	 *     @type int $batch_size Number of posts per iteration. Default 200, min 50.
@@ -220,9 +220,9 @@ class FacetIndexRebuilder {
 	 *     @type int    $total_rows Rows for this key after rebuild (0 when skipped).
 	 * }
 	 */
-	public static function rebuild_facet( string $facet_key, array $args = array() ): array {
-		$key = sanitize_key( $facet_key );
-		if ( '' === $key || null === FacetRegistry::get( $key ) ) {
+	public static function rebuild_filter( string $filter_key, array $args = array() ): array {
+		$key = sanitize_key( $filter_key );
+		if ( '' === $key || null === FilterRegistry::get( $key ) ) {
 			return array(
 				'status'     => 'skipped',
 				'processed'  => 0,
@@ -241,26 +241,26 @@ class FacetIndexRebuilder {
 		self::acquire_lock();
 
 		try {
-			return self::do_rebuild_facet( $key, $args );
+			return self::do_rebuild_filter( $key, $args );
 		} finally {
 			self::release_lock();
 		}
 	}
 
 	/**
-	 * Inner implementation of rebuild_facet — called inside the mutex.
+	 * Inner implementation of rebuild_filter — called inside the mutex.
 	 *
-	 * @param string $key  Sanitized facet key.
+	 * @param string $key  Sanitized filter key.
 	 * @param array  $args Optional overrides (batch_size).
 	 * @return array Result array (status, processed, total_rows).
 	 */
-	private static function do_rebuild_facet( string $key, array $args ): array {
+	private static function do_rebuild_filter( string $key, array $args ): array {
 		global $wpdb;
-		$table      = FacetIndex::table_name();
+		$table      = FilterIndex::table_name();
 		$batch_size = max( self::MIN_BATCH_SIZE, (int) ( $args['batch_size'] ?? self::DEFAULT_BATCH_SIZE ) );
 
 		// Delete all rows for this key in one statement — fast regardless of row count.
-		$wpdb->delete( $table, array( 'facet_key' => $key ), array( '%s' ) );
+		$wpdb->delete( $table, array( 'filter_key' => $key ), array( '%s' ) );
 
 		self::write_status(
 			array(
@@ -283,7 +283,7 @@ class FacetIndexRebuilder {
 			);
 
 			foreach ( $ids as $id ) {
-				FacetIndex::reindex_object( 'post', (int) $id );
+				FilterIndex::reindex_object( 'post', (int) $id );
 				++$processed;
 			}
 
@@ -299,8 +299,8 @@ class FacetIndexRebuilder {
 			$offset += $batch_size;
 		} while ( count( $ids ) === $batch_size ); // phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found -- $ids is reassigned each iteration; extracting is less clear here.
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is our own controlled constant obtained via FacetIndex::table_name().
-		$total_rows = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE facet_key = %s", $key ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is our own controlled constant obtained via FilterIndex::table_name().
+		$total_rows = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE filter_key = %s", $key ) );
 
 		self::write_status(
 			array(
@@ -321,7 +321,7 @@ class FacetIndexRebuilder {
 	/**
 	 * Returns the current index status.
 	 *
-	 * Reads FacetIndex::OPTION_STATUS and supplements it with a live row count
+	 * Reads FilterIndex::OPTION_STATUS and supplements it with a live row count
 	 * so the caller always gets an up-to-date snapshot without needing a full
 	 * rebuild to have run first.
 	 *
@@ -334,7 +334,7 @@ class FacetIndexRebuilder {
 	 */
 	public static function status(): array {
 		global $wpdb;
-		$status = get_option( FacetIndex::OPTION_STATUS, array() );
+		$status = get_option( FilterIndex::OPTION_STATUS, array() );
 		if ( ! is_array( $status ) ) {
 			$status = array();
 		}
@@ -344,13 +344,13 @@ class FacetIndexRebuilder {
 			if ( time() - (int) $status['started_at'] > 5 * MINUTE_IN_SECONDS ) {
 				$status['in_progress'] = false;
 				$status['error']       = 'timed_out';
-				update_option( FacetIndex::OPTION_STATUS, $status, false );
+				update_option( FilterIndex::OPTION_STATUS, $status, false );
 			}
 		}
 
 		// Always surface a live row count and normalise required keys.
-		$index_table             = FacetIndex::table_name();
-		$status['total_rows']    = FacetIndex::table_exists()
+		$index_table             = FilterIndex::table_name();
+		$status['total_rows']    = FilterIndex::table_exists()
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
 			? (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $index_table )
 			: 0;
@@ -371,10 +371,10 @@ class FacetIndexRebuilder {
 	 * @return void
 	 */
 	private static function write_status( array $patch ): void {
-		$current = get_option( FacetIndex::OPTION_STATUS, array() );
+		$current = get_option( FilterIndex::OPTION_STATUS, array() );
 		if ( ! is_array( $current ) ) {
 			$current = array();
 		}
-		update_option( FacetIndex::OPTION_STATUS, array_merge( $current, $patch ), false );
+		update_option( FilterIndex::OPTION_STATUS, array_merge( $current, $patch ), false );
 	}
 }

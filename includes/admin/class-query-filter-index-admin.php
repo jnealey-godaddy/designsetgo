@@ -1,6 +1,6 @@
 <?php
 /**
- * Query Facet Admin Page
+ * Query Filter Index Admin Page
  *
  * Registers the Settings → DesignSetGo → Dynamic Query admin page
  * and enqueues the React dashboard bundle.
@@ -17,9 +17,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Query Facet Admin class
+ * Query Filter Index Admin class
  */
-class Query_Facet_Admin {
+class Query_Filter_Index_Admin {
 
 	/**
 	 * Admin page hook suffix returned by add_submenu_page().
@@ -54,7 +54,7 @@ class Query_Facet_Admin {
 	 * Render the mount point for the React app.
 	 */
 	public function render_page() {
-		echo '<div id="dsgo-query-facet-dashboard"></div>';
+		echo '<div id="dsgo-query-filter-index-dashboard"></div>';
 	}
 
 	/**
@@ -67,7 +67,7 @@ class Query_Facet_Admin {
 			return;
 		}
 
-		$asset_file = DESIGNSETGO_PATH . 'build/admin/query-facet-dashboard.asset.php';
+		$asset_file = DESIGNSETGO_PATH . 'build/admin/query-filter-index-dashboard.asset.php';
 
 		if ( ! file_exists( $asset_file ) ) {
 			return;
@@ -76,29 +76,29 @@ class Query_Facet_Admin {
 		$asset = include $asset_file;
 
 		wp_enqueue_script(
-			'dsgo-query-facet-dashboard',
-			DESIGNSETGO_URL . 'build/admin/query-facet-dashboard.js',
+			'dsgo-query-filter-index-dashboard',
+			DESIGNSETGO_URL . 'build/admin/query-filter-index-dashboard.js',
 			$asset['dependencies'],
 			$asset['version'],
 			true
 		);
 
 		wp_set_script_translations(
-			'dsgo-query-facet-dashboard',
+			'dsgo-query-filter-index-dashboard',
 			'designsetgo',
 			DESIGNSETGO_PATH . 'languages'
 		);
 
 		wp_enqueue_style(
-			'dsgo-query-facet-dashboard',
-			DESIGNSETGO_URL . 'build/admin/query-facet-dashboard.css',
+			'dsgo-query-filter-index-dashboard',
+			DESIGNSETGO_URL . 'build/admin/query-filter-index-dashboard.css',
 			array( 'wp-components' ),
 			$asset['version']
 		);
 
 		wp_localize_script(
-			'dsgo-query-facet-dashboard',
-			'dsgoQueryFacetDashboard',
+			'dsgo-query-filter-index-dashboard',
+			'dsgoQueryFilterIndexDashboard',
 			array(
 				'apiUrl' => esc_url_raw( rest_url( 'designsetgo/v1' ) ),
 				'nonce'  => wp_create_nonce( 'wp_rest' ),

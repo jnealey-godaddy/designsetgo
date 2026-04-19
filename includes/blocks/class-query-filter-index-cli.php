@@ -1,6 +1,6 @@
 <?php
 /**
- * Dynamic Query — Facet Index WP-CLI commands.
+ * Dynamic Query — Filter Index WP-CLI commands.
  *
  * @package DesignSetGo
  * @since 2.2.0
@@ -17,9 +17,9 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 }
 
 /**
- * WP-CLI commands for managing the facet index.
+ * WP-CLI commands for managing the filter index.
  */
-class FacetCLI {
+class FilterIndexCLI {
 
 	/**
 	 * Registers the WP-CLI command namespace.
@@ -31,7 +31,7 @@ class FacetCLI {
 	}
 
 	/**
-	 * Rebuild the full facet index.
+	 * Rebuild the full filter index.
 	 *
 	 * ## OPTIONS
 	 *
@@ -48,7 +48,7 @@ class FacetCLI {
 	 */
 	public function rebuild( $args, $assoc_args ): void {
 		$batch  = (int) \WP_CLI\Utils\get_flag_value( $assoc_args, 'batch-size', 200 );
-		$result = FacetIndexRebuilder::rebuild_all( array( 'batch_size' => $batch ) );
+		$result = FilterIndexRebuilder::rebuild_all( array( 'batch_size' => $batch ) );
 
 		if ( 'error' === ( $result['status'] ?? '' ) ) {
 			\WP_CLI::error( sprintf( 'Rebuild failed (status: %s).', $result['status'] ) );
@@ -64,36 +64,36 @@ class FacetCLI {
 	}
 
 	/**
-	 * Rebuild a single facet.
+	 * Rebuild a single filter.
 	 *
 	 * ## OPTIONS
 	 *
-	 * <facet_key>
-	 * : The facet key to rebuild (e.g. 'category', 'post_tag', 'price').
+	 * <filter_key>
+	 * : The filter key to rebuild (e.g. 'category', 'post_tag', 'price').
 	 *
 	 * [--batch-size=<n>]
 	 * : Posts to process per batch. Default 200.
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp dsgo query index rebuild-facet category
-	 *     wp dsgo query index rebuild-facet price --batch-size=500
+	 *     wp dsgo query index rebuild-filter category
+	 *     wp dsgo query index rebuild-filter price --batch-size=500
 	 *
-	 * @subcommand rebuild-facet
+	 * @subcommand rebuild-filter
 	 *
-	 * @param array $args       Positional arguments: $args[0] = facet_key.
+	 * @param array $args       Positional arguments: $args[0] = filter_key.
 	 * @param array $assoc_args Named arguments (batch-size).
 	 */
-	public function rebuild_facet( $args, $assoc_args ): void {
+	public function rebuild_filter( $args, $assoc_args ): void {
 		if ( empty( $args[0] ) ) {
-			\WP_CLI::error( 'Facet key is required.' );
+			\WP_CLI::error( 'Filter key is required.' );
 		}
 
 		$batch  = (int) \WP_CLI\Utils\get_flag_value( $assoc_args, 'batch-size', 200 );
-		$result = FacetIndexRebuilder::rebuild_facet( $args[0], array( 'batch_size' => $batch ) );
+		$result = FilterIndexRebuilder::rebuild_filter( $args[0], array( 'batch_size' => $batch ) );
 
 		if ( 'skipped' === ( $result['status'] ?? '' ) ) {
-			\WP_CLI::warning( sprintf( 'Facet "%s" is not registered — nothing to do.', $args[0] ) );
+			\WP_CLI::warning( sprintf( 'Filter "%s" is not registered — nothing to do.', $args[0] ) );
 			return;
 		}
 
@@ -103,7 +103,7 @@ class FacetCLI {
 
 		\WP_CLI::success(
 			sprintf(
-				'Rebuilt facet "%s" (%d objects, %d rows).',
+				'Rebuilt filter "%s" (%d objects, %d rows).',
 				$args[0],
 				(int) $result['processed'],
 				(int) $result['total_rows']
@@ -112,14 +112,14 @@ class FacetCLI {
 	}
 
 	/**
-	 * Show current facet index status.
+	 * Show current filter index status.
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp dsgo query index status
 	 */
 	public function status(): void {
-		$status = FacetIndexRebuilder::status();
+		$status = FilterIndexRebuilder::status();
 
 		if ( ! empty( $status['last_rebuilt_at'] ) && is_numeric( $status['last_rebuilt_at'] ) ) {
 			$status['last_rebuilt_at'] = gmdate( 'Y-m-d H:i:s', (int) $status['last_rebuilt_at'] ) . ' UTC';
@@ -133,7 +133,7 @@ class FacetCLI {
 	}
 
 	/**
-	 * Drop the facet index table and clear its options.
+	 * Drop the filter index table and clear its options.
 	 *
 	 * ## OPTIONS
 	 *
@@ -149,18 +149,18 @@ class FacetCLI {
 	 * @param array $assoc_args Named arguments (yes).
 	 */
 	public function drop( $args, $assoc_args ): void {
-		\WP_CLI::confirm( 'This will drop the facet index table and all its data. Continue?', $assoc_args );
+		\WP_CLI::confirm( 'This will drop the filter index table and all its data. Continue?', $assoc_args );
 
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.NotPrepared -- intentional CLI drop; table name is a safe internal method call.
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . FacetIndex::table_name() );
-		delete_option( FacetIndex::OPTION_SCHEMA );
-		delete_option( FacetIndex::OPTION_STATUS );
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . FilterIndex::table_name() );
+		delete_option( FilterIndex::OPTION_SCHEMA );
+		delete_option( FilterIndex::OPTION_STATUS );
 		// Also clear the plugin db version so the next admin_init fires
 		// maybe_upgrade() and reinstalls the table. Without this, the stored
 		// version is still '2.2.0' and the install logic is skipped.
 		delete_option( 'designsetgo_db_version' );
 
-		\WP_CLI::success( 'Facet index table dropped.' );
+		\WP_CLI::success( 'Filter index table dropped.' );
 	}
 }

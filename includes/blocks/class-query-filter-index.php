@@ -1,9 +1,9 @@
 <?php
 /**
- * Dynamic Query Block — Facet Index lifecycle.
+ * Dynamic Query Block — Filter Index lifecycle.
  *
  * Owns creation, versioning and future reindex logic for the
- * {$wpdb->prefix}dsgo_query_facet_index custom table.
+ * {$wpdb->prefix}dsgo_query_filter_index custom table.
  *
  * @package DesignSetGo
  * @since 2.2.0
@@ -14,9 +14,9 @@ namespace DesignSetGo\Blocks\Query;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Manages the dsgo_query_facet_index database table.
+ * Manages the dsgo_query_filter_index database table.
  */
-class FacetIndex {
+class FilterIndex {
 
 	/**
 	 * Current schema version.
@@ -29,13 +29,13 @@ class FacetIndex {
 	/**
 	 * Option key that stores the installed schema version.
 	 */
-	const OPTION_SCHEMA = 'dsgo_query_facet_index_schema';
+	const OPTION_SCHEMA = 'dsgo_query_filter_index_schema';
 
 	/**
 	 * Option key used to record background index status (e.g. "indexing", "ready").
 	 * Reserved for future reindex tasks (Task A2+).
 	 */
-	const OPTION_STATUS = 'dsgo_query_facet_index_status';
+	const OPTION_STATUS = 'dsgo_query_filter_index_status';
 
 	/**
 	 * Per-request cache of the table existence check.
@@ -53,11 +53,11 @@ class FacetIndex {
 	 */
 	public static function table_name(): string {
 		global $wpdb;
-		return $wpdb->prefix . 'dsgo_query_facet_index';
+		return $wpdb->prefix . 'dsgo_query_filter_index';
 	}
 
 	/**
-	 * Returns true when the facet index table actually exists in the database.
+	 * Returns true when the filter index table actually exists in the database.
 	 *
 	 * Result is cached for the lifetime of the request to avoid repeated
 	 * SHOW TABLES queries. Call reset_table_cache() in tests between cases.
@@ -85,10 +85,10 @@ class FacetIndex {
 	}
 
 	/**
-	 * Reindexes a single object's facet values.
+	 * Reindexes a single object's filter values.
 	 *
 	 * Deletes all prior rows for this (object_type, object_id) and rewrites them
-	 * based on the current FacetRegistry entries. Idempotent by design.
+	 * based on the current FilterRegistry entries. Idempotent by design.
 	 *
 	 * @param string $object_type One of 'post' (A2), 'user' (v2.4+), 'term' (v2.4+).
 	 * @param int    $object_id   The object's primary key.
@@ -122,20 +122,20 @@ class FacetIndex {
 			array( '%d', '%s' )
 		);
 
-		$facets = FacetRegistry::all();
-		if ( empty( $facets ) ) {
+		$filters = FilterRegistry::all();
+		if ( empty( $filters ) ) {
 			return;
 		}
 
 		$rows = array();
-		foreach ( $facets as $facet_key => $config ) {
-			$values = self::resolve_facet_values( $object_type, $object_id, $config );
+		foreach ( $filters as $filter_key => $config ) {
+			$values = self::resolve_filter_values( $object_type, $object_id, $config );
 			foreach ( $values as $value ) {
 				$rows[] = array(
 					'object_id'   => $object_id,
 					'object_type' => $object_type,
-					'facet_key'   => $facet_key,
-					'facet_value' => (string) $value,
+					'filter_key'   => $filter_key,
+					'filter_value' => (string) $value,
 				);
 			}
 		}
@@ -144,18 +144,18 @@ class FacetIndex {
 			return;
 		}
 
-		// Bulk insert — one query regardless of facet count.
+		// Bulk insert — one query regardless of filter count.
 		$placeholders = array();
 		$params       = array();
 		foreach ( $rows as $row ) {
 			$placeholders[] = '(%d, %s, %s, %s)';
 			$params[]       = $row['object_id'];
 			$params[]       = $row['object_type'];
-			$params[]       = $row['facet_key'];
-			$params[]       = $row['facet_value'];
+			$params[]       = $row['filter_key'];
+			$params[]       = $row['filter_value'];
 		}
 
-		$sql = "INSERT INTO {$table} (object_id, object_type, facet_key, facet_value) VALUES "
+		$sql = "INSERT INTO {$table} (object_id, object_type, filter_key, filter_value) VALUES "
 			. implode( ', ', $placeholders );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- placeholders built programmatically above.
@@ -163,14 +163,14 @@ class FacetIndex {
 	}
 
 	/**
-	 * Resolves facet values for a given object. Posts-only in v2.2.
+	 * Resolves filter values for a given object. Posts-only in v2.2.
 	 *
 	 * @param string $object_type One of 'post', 'user', 'term'.
 	 * @param int    $object_id   Object primary key.
-	 * @param array  $config      Facet config from FacetRegistry: { type, source, label }.
+	 * @param array  $config      Filter config from FilterRegistry: { type, source, label }.
 	 * @return array Flat array of string values to index.
 	 */
-	private static function resolve_facet_values( string $object_type, int $object_id, array $config ): array {
+	private static function resolve_filter_values( string $object_type, int $object_id, array $config ): array {
 		if ( 'post' !== $object_type ) {
 			return array(); // v2.4 will add user/term support.
 		}
@@ -242,27 +242,27 @@ class FacetIndex {
 
 	/**
 	 * Returns the count of distinct objects matching each option value for a
-	 * facet key, intersected with the current active-filter state.
+	 * filter key, intersected with the current active-filter state.
 	 *
-	 * Within-group semantics: selections inside the same facet group are OR
+	 * Within-group semantics: selections inside the same filter group are OR
 	 * (showing "how many objects would match if you added this value").
 	 * Across-group semantics: each other active-filter group is AND.
-	 * The self-facet is excluded from the intersection so users can still see
+	 * The self-filter is excluded from the intersection so users can still see
 	 * counts for all options of the group they are currently filtering on.
 	 *
-	 * @param string $facet_key     The facet to count options for (e.g. 'category').
+	 * @param string $filter_key     The filter key to count options for (e.g. 'category').
 	 * @param array  $option_values Option values to count. Values are (string)-cast.
-	 * @param array  $active_filters Active filter state: [ facet_key => [ value, ... ] ].
+	 * @param array  $active_filters Active filter state: [ filter_key => [ value, ... ] ].
 	 * @return array  [ value => count ] zero-filled for options absent from the result set.
 	 */
-	public static function count_for_options( string $facet_key, array $option_values, array $active_filters ): array {
+	public static function count_for_options( string $filter_key, array $option_values, array $active_filters ): array {
 		if ( empty( $option_values ) || ! self::table_exists() ) {
 			return array();
 		}
 
 		global $wpdb;
 		$table = self::table_name();
-		$key   = sanitize_key( $facet_key );
+		$key   = sanitize_key( $filter_key );
 		if ( '' === $key ) {
 			return array();
 		}
@@ -271,7 +271,7 @@ class FacetIndex {
 		$string_values = array_values( array_unique( array_map( 'strval', $option_values ) ) );
 		$counts        = array_fill_keys( $string_values, 0 );
 
-		// Exclude self-facet from intersection — OR semantics within a group.
+		// Exclude self-filter from intersection — OR semantics within a group.
 		unset( $active_filters[ $key ] );
 
 		// Build intersection subqueries, one per active-filter group.
@@ -290,7 +290,7 @@ class FacetIndex {
 			$f_placeholders     = implode( ',', array_fill( 0, count( $f_strings ), '%s' ) );
 			$intersect_sql     .= " AND object_id IN (
             SELECT object_id FROM {$table}
-            WHERE facet_key = %s AND facet_value IN ({$f_placeholders})
+            WHERE filter_key = %s AND filter_value IN ({$f_placeholders})
         )";
 			$intersect_params[] = $sanitized_f_key;
 			foreach ( $f_strings as $v ) {
@@ -299,11 +299,11 @@ class FacetIndex {
 		}
 
 		$value_placeholders = implode( ',', array_fill( 0, count( $string_values ), '%s' ) );
-		$sql                = "SELECT facet_value, COUNT(DISTINCT object_id) AS cnt
+		$sql                = "SELECT filter_value, COUNT(DISTINCT object_id) AS cnt
             FROM {$table}
-            WHERE facet_key = %s AND facet_value IN ({$value_placeholders})
+            WHERE filter_key = %s AND filter_value IN ({$value_placeholders})
             {$intersect_sql}
-            GROUP BY facet_value";
+            GROUP BY filter_value";
 
 		$params = array_merge( array( $key ), $string_values, $intersect_params );
 
@@ -312,8 +312,8 @@ class FacetIndex {
 
 		if ( is_array( $rows ) ) {
 			foreach ( $rows as $row ) {
-				if ( array_key_exists( $row->facet_value, $counts ) ) {
-					$counts[ $row->facet_value ] = (int) $row->cnt;
+				if ( array_key_exists( $row->filter_value, $counts ) ) {
+					$counts[ $row->filter_value ] = (int) $row->cnt;
 				}
 			}
 		}
@@ -322,17 +322,17 @@ class FacetIndex {
 	}
 
 	/**
-	 * Returns true if the given facet key is registered in FacetRegistry.
+	 * Returns true if the given filter key is registered in FilterRegistry.
 	 *
-	 * @param string $facet_key The facet key to check (e.g. 'category').
+	 * @param string $filter_key The filter key to check (e.g. 'category').
 	 * @return bool
 	 */
-	public static function is_available( string $facet_key ): bool {
-		return null !== FacetRegistry::get( $facet_key );
+	public static function is_available( string $filter_key ): bool {
+		return null !== FilterRegistry::get( $filter_key );
 	}
 
 	/**
-	 * Creates or upgrades the facet index table via dbDelta.
+	 * Creates or upgrades the filter index table via dbDelta.
 	 *
 	 * Safe to call multiple times — dbDelta is idempotent.
 	 *
@@ -351,11 +351,11 @@ class FacetIndex {
 	id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 	object_id BIGINT UNSIGNED NOT NULL,
 	object_type VARCHAR(20) NOT NULL,
-	facet_key VARCHAR(190) NOT NULL,
-	facet_value VARCHAR(190) NOT NULL,
+	filter_key VARCHAR(190) NOT NULL,
+	filter_value VARCHAR(190) NOT NULL,
 	indexed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY  (id),
-	KEY facet_key_value (facet_key, facet_value),
+	KEY filter_key_value (filter_key, filter_value),
 	KEY object_lookup (object_type, object_id)
 ) {$charset};";
 
