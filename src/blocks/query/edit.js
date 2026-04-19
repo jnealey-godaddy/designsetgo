@@ -4,6 +4,8 @@ import { Placeholder } from '@wordpress/components';
 
 import useQueryId from './hooks/useQueryId';
 import QuerySourcePanel from './components/QuerySourcePanel';
+import TaxQueryBuilder from './components/TaxQueryBuilder';
+import MetaQueryBuilder from './components/MetaQueryBuilder';
 
 export default function QueryEdit({ attributes, setAttributes, clientId }) {
 	const blockProps = useBlockProps( { className: 'dsgo-query' } );
@@ -17,6 +19,8 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 		setAttributes,
 	} );
 
+	const showPostsOnlyPanels = attributes.source === 'posts';
+
 	return (
 		<>
 			<InspectorControls>
@@ -25,6 +29,20 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 					setAttributes={ setAttributes }
 					clientId={ clientId }
 				/>
+				{ showPostsOnlyPanels && (
+					<>
+						<TaxQueryBuilder
+							attributes={ attributes }
+							setAttributes={ setAttributes }
+							clientId={ clientId }
+						/>
+						<MetaQueryBuilder
+							attributes={ attributes }
+							setAttributes={ setAttributes }
+							clientId={ clientId }
+						/>
+					</>
+				) }
 			</InspectorControls>
 			<div { ...innerBlocksProps }>
 				<Placeholder

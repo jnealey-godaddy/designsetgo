@@ -8,12 +8,27 @@ jest.mock('@wordpress/i18n', () => ({
 	__: (text) => text,
 }));
 
-// Mock @wordpress/data — only useSelect / useDispatch needed.
+// Mock @wordpress/data — useSelect invokes the callback with a mock select()
+// so QuerySourcePanel, TaxQueryBuilder, and TermPicker all get correct data.
 jest.mock('@wordpress/data', () => ({
-	useSelect: () => [
-		{ slug: 'post', labels: { singular_name: 'Post' }, viewable: true },
-		{ slug: 'page', labels: { singular_name: 'Page' }, viewable: true },
-	],
+	useSelect: (cb) =>
+		cb((storeName) => {
+			if (storeName !== 'core') return {};
+			return {
+				getPostTypes: () => [
+					{ slug: 'post', labels: { singular_name: 'Post' }, viewable: true },
+					{ slug: 'page', labels: { singular_name: 'Page' }, viewable: true },
+				],
+				getTaxonomies: () => [
+					{
+						slug: 'category',
+						labels: { singular_name: 'Category' },
+						types: ['post'],
+					},
+				],
+				getEntityRecords: () => [],
+			};
+		}),
 	useDispatch: () => ({}),
 }));
 
@@ -36,7 +51,8 @@ jest.mock('@wordpress/blocks', () => ({
 	createBlocksFromInnerBlocksTemplate: jest.fn((t) => t),
 }));
 
-// Minimal @wordpress/components stubs — only what QuerySourcePanel + Placeholder need.
+// Minimal @wordpress/components stubs — covers QuerySourcePanel, TaxQueryBuilder,
+// MetaQueryBuilder, and Placeholder needs.
 jest.mock('@wordpress/components', () => {
 	const SelectControl = ({ label, value, options, onChange }) => (
 		<label>
@@ -91,6 +107,18 @@ jest.mock('@wordpress/components', () => {
 		</label>
 	);
 
+	const FormTokenField = ({ label, value, suggestions, onChange }) => (
+		<label>
+			{label}
+			<input
+				type="text"
+				aria-label={label}
+				value={(value || []).join(', ')}
+				onChange={(e) => onChange(e.target.value.split(', ').filter(Boolean))}
+			/>
+		</label>
+	);
+
 	// ToolsPanelItem: isShownByDefault=false items are hidden (like the real WP component).
 	const ToolsPanelItem = ({ children, isShownByDefault }) =>
 		isShownByDefault !== false ? <>{children}</> : null;
@@ -106,16 +134,22 @@ jest.mock('@wordpress/components', () => {
 		</div>
 	);
 
+	const VStack = ({ children }) => <div>{children}</div>;
+	const HStack = ({ children }) => <div>{children}</div>;
+
 	return {
 		SelectControl,
 		RangeControl,
 		TextControl,
+		FormTokenField,
 		__experimentalNumberControl: NumberControl,
 		__experimentalToolsPanel: ToolsPanel,
 		__experimentalToolsPanelItem: ToolsPanelItem,
+		__experimentalHStack: HStack,
+		__experimentalVStack: VStack,
 		Placeholder,
-		Button: ({ children, onClick }) => (
-			<button type="button" onClick={onClick}>
+		Button: ({ children, onClick, disabled, 'aria-label': ariaLabel }) => (
+			<button type="button" onClick={onClick} disabled={disabled} aria-label={ariaLabel}>
 				{children}
 			</button>
 		),
