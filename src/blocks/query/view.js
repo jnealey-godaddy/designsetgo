@@ -11,6 +11,7 @@
  *
  * @since 2.1.0
  */
+/* global HTMLElement, DOMParser, IntersectionObserver */
 import { store, getContext, getElement } from '@wordpress/interactivity';
 
 // Per-element debounce timer map (module-level, not reactive state).
@@ -193,13 +194,12 @@ store('designsetgo/query', {
 		 * Handle change on a select or single-value input.
 		 * Sets (or clears) the param, resets paged, then refreshes.
 		 *
-		 * @param event
+		 * @param {Event} event
 		 * @generator
 		 */
 		*setFilter(event) {
 			event.preventDefault?.();
 			const { ref } = getElement();
-			const ctx = getContext();
 			const form = ref.closest('form');
 			const input = form?.querySelector('[name]');
 			const paramName = input?.getAttribute('name')?.replace(/\[\]$/, '');
@@ -207,6 +207,7 @@ store('designsetgo/query', {
 				return;
 			}
 
+			const ctx = getContext();
 			const url = new URL(window.location.href);
 			if (ref.value) {
 				url.searchParams.set(paramName, ref.value);
@@ -226,15 +227,17 @@ store('designsetgo/query', {
 		 * Fires 250 ms after typing stops. Declared as a regular function
 		 * (not a generator) so IAPI treats it as synchronous — which is
 		 * what we need for the setTimeout pattern.
-		 * @param event
+		 *
+		 * @param {Event} event
 		 */
 		setFilterDebounced(event) {
-			const ctx = getContext(); // capture while IAPI frame is live
 			const el = event.target;
 			const paramName = el.getAttribute('name')?.replace(/\[\]$/, '');
 			if (!paramName) {
 				return;
 			}
+
+			const ctx = getContext(); // capture while IAPI frame is live
 
 			clearTimeout(dsgoDebounceTimers[paramName]);
 			dsgoDebounceTimers[paramName] = setTimeout(() => {
@@ -260,11 +263,12 @@ store('designsetgo/query', {
 		 */
 		*toggleFilter() {
 			const { ref } = getElement();
-			const ctx = getContext();
 			const paramName = ref.getAttribute('name')?.replace(/\[\]$/, '');
 			if (!paramName) {
 				return;
 			}
+
+			const ctx = getContext();
 
 			const url = new URL(window.location.href);
 			const arrayKey = paramName + '[]';
@@ -293,17 +297,18 @@ store('designsetgo/query', {
 		 * Handle click on an active-filter chip.
 		 * The chip <a> href already encodes the removal URL.
 		 *
-		 * @param event
+		 * @param {Event} event
 		 * @generator
 		 */
 		*removeActiveFilter(event) {
 			event.preventDefault?.();
 			const { ref } = getElement();
-			const ctx = getContext();
 			const href = ref.getAttribute('href');
 			if (!href) {
 				return;
 			}
+
+			const ctx = getContext();
 			const url = new URL(href, window.location.href);
 			// Fix 3: strip both pagination params.
 			url.searchParams.delete('paged');
@@ -315,14 +320,14 @@ store('designsetgo/query', {
 		 * Handle click on the reset-all-filters button.
 		 * The button <a> href already encodes the clean URL.
 		 *
-		 * @param event
+		 * @param {Event} event
 		 * @generator
 		 */
 		*resetAll(event) {
 			event.preventDefault?.();
 			const { ref } = getElement();
-			const ctx = getContext();
 			const href = ref.getAttribute('href');
+			const ctx = getContext();
 			const url = href
 				? new URL(href, window.location.href)
 				: new URL(window.location.href);
@@ -346,7 +351,6 @@ store('designsetgo/query', {
 		 */
 		initInfiniteObserver() {
 			const { ref } = getElement(); // sentinel div
-			const ctx = getContext();
 
 			const wrapper = ref.closest('[data-dsgo-pagination="infinite"]');
 			if (!wrapper) {
@@ -367,6 +371,8 @@ store('designsetgo/query', {
 				}
 				return;
 			}
+
+			const ctx = getContext();
 
 			const threshold = parseInt(
 				wrapper.dataset.dsgoAutoPauseAfter || '3',
@@ -437,7 +443,7 @@ store('designsetgo/query', {
  * Collects filter_*, q, sort — handles both ?key[]=v and ?key=v styles.
  *
  * @param {URL} url
- * @return {Object}
+ * @return {Object} Key/value map of filter params extracted from the URL.
  */
 function dsgoCollectParams(url) {
 	const params = {};

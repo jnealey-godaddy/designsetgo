@@ -61,8 +61,9 @@ class FacetIndexRebuilder {
 			)
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- intentional truncate for full rebuild.
-		$truncated = $wpdb->query( 'TRUNCATE ' . FacetIndex::table_name() );
+		$table = FacetIndex::table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
+		$truncated = $wpdb->query( 'TRUNCATE ' . $table );
 		if ( false === $truncated ) {
 			self::write_status(
 				array(
@@ -82,30 +83,33 @@ class FacetIndexRebuilder {
 		$offset    = 0;
 		do {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- batched id scan over core posts table.
-			$ids = $wpdb->get_col( $wpdb->prepare(
-				"SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' ORDER BY ID ASC LIMIT %d OFFSET %d",
-				$batch_size,
-				$offset
-			) );
+			$ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' ORDER BY ID ASC LIMIT %d OFFSET %d",
+					$batch_size,
+					$offset
+				)
+			);
 
 			foreach ( $ids as $id ) {
 				FacetIndex::reindex_object( 'post', (int) $id );
-				$processed++;
+				++$processed;
 			}
 
+			$ids_count = count( $ids );
 			self::write_status(
 				array(
-					'in_progress' => count( $ids ) === $batch_size,
+					'in_progress' => $ids_count === $batch_size,
 					'processed'   => $processed,
 					'updated_at'  => time(),
 				)
 			);
 
 			$offset += $batch_size;
-		} while ( count( $ids ) === $batch_size );
+		} while ( count( $ids ) === $batch_size ); // phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found -- $ids is reassigned each iteration; extracting is less clear here.
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- final row count after rebuild.
-		$total_rows  = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . FacetIndex::table_name() );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
+		$total_rows  = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $table );
 		$duration_ms = (int) ( ( microtime( true ) - $started_at ) * 1000 );
 
 		self::write_status(
@@ -178,29 +182,32 @@ class FacetIndexRebuilder {
 		$offset    = 0;
 		do {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- batched id scan over core posts table.
-			$ids = $wpdb->get_col( $wpdb->prepare(
-				"SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' ORDER BY ID ASC LIMIT %d OFFSET %d",
-				$batch_size,
-				$offset
-			) );
+			$ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT ID FROM {$wpdb->posts} WHERE post_status = 'publish' ORDER BY ID ASC LIMIT %d OFFSET %d",
+					$batch_size,
+					$offset
+				)
+			);
 
 			foreach ( $ids as $id ) {
 				FacetIndex::reindex_object( 'post', (int) $id );
-				$processed++;
+				++$processed;
 			}
 
+			$ids_count = count( $ids );
 			self::write_status(
 				array(
-					'in_progress' => count( $ids ) === $batch_size,
+					'in_progress' => $ids_count === $batch_size,
 					'processed'   => $processed,
 					'updated_at'  => time(),
 				)
 			);
 
 			$offset += $batch_size;
-		} while ( count( $ids ) === $batch_size );
+		} while ( count( $ids ) === $batch_size ); // phpcs:ignore Squiz.PHP.DisallowSizeFunctionsInLoops.Found -- $ids is reassigned each iteration; extracting is less clear here.
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- count rows for the rebuilt key.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is our own controlled constant obtained via FacetIndex::table_name().
 		$total_rows = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE facet_key = %s", $key ) );
 
 		self::write_status(
@@ -241,8 +248,9 @@ class FacetIndexRebuilder {
 		}
 
 		// Always surface a live row count and normalise required keys.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- live count for status reporting.
-		$status['total_rows']      = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . FacetIndex::table_name() );
+		$index_table = FacetIndex::table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
+		$status['total_rows']      = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $index_table );
 		$status['in_progress']     = (bool) ( $status['in_progress'] ?? false );
 		$status['last_rebuilt_at'] = $status['last_rebuilt_at'] ?? null;
 		$status['processed']       = (int) ( $status['processed'] ?? 0 );

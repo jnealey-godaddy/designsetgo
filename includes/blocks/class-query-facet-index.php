@@ -38,6 +38,15 @@ class FacetIndex {
 	const OPTION_STATUS = 'dsgo_query_facet_index_status';
 
 	/**
+	 * Per-request cache of the table existence check.
+	 *
+	 * Null = not yet checked; true/false = checked result.
+	 *
+	 * @var bool|null
+	 */
+	private static $table_exists = null;
+
+	/**
 	 * Returns the fully-qualified table name.
 	 *
 	 * @return string
@@ -45,6 +54,34 @@ class FacetIndex {
 	public static function table_name(): string {
 		global $wpdb;
 		return $wpdb->prefix . 'dsgo_query_facet_index';
+	}
+
+	/**
+	 * Returns true when the facet index table actually exists in the database.
+	 *
+	 * Result is cached for the lifetime of the request to avoid repeated
+	 * SHOW TABLES queries. Call reset_table_cache() in tests between cases.
+	 *
+	 * @return bool
+	 */
+	public static function table_exists(): bool {
+		if ( null !== self::$table_exists ) {
+			return self::$table_exists;
+		}
+		global $wpdb;
+		$table_name          = self::table_name();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- SHOW TABLES cannot use %i; table name is our own constant.
+		self::$table_exists  = ( $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" ) === $table_name );
+		return self::$table_exists;
+	}
+
+	/**
+	 * Resets the per-request table existence cache (for tests).
+	 *
+	 * @return void
+	 */
+	public static function reset_table_cache(): void {
+		self::$table_exists = null;
 	}
 
 	/**
@@ -58,7 +95,7 @@ class FacetIndex {
 	 */
 	public static function reindex_object( string $object_type, int $object_id ): void {
 		global $wpdb;
-		if ( $object_id <= 0 ) {
+		if ( $object_id <= 0 || ! self::table_exists() ) {
 			return;
 		}
 
@@ -178,6 +215,9 @@ class FacetIndex {
 	 * @return void
 	 */
 	public static function remove_object( string $object_type, int $object_id ): void {
+		if ( ! self::table_exists() ) {
+			return;
+		}
 		global $wpdb;
 		$wpdb->delete(
 			self::table_name(),
@@ -199,13 +239,13 @@ class FacetIndex {
 	 * The self-facet is excluded from the intersection so users can still see
 	 * counts for all options of the group they are currently filtering on.
 	 *
-	 * @param string  $facet_key     The facet to count options for (e.g. 'category').
-	 * @param array   $option_values Option values to count. Values are (string)-cast.
-	 * @param array   $active_filters Active filter state: [ facet_key => [ value, ... ] ].
+	 * @param string $facet_key     The facet to count options for (e.g. 'category').
+	 * @param array  $option_values Option values to count. Values are (string)-cast.
+	 * @param array  $active_filters Active filter state: [ facet_key => [ value, ... ] ].
 	 * @return array  [ value => count ] zero-filled for options absent from the result set.
 	 */
 	public static function count_for_options( string $facet_key, array $option_values, array $active_filters ): array {
-		if ( empty( $option_values ) ) {
+		if ( empty( $option_values ) || ! self::table_exists() ) {
 			return array();
 		}
 
@@ -236,8 +276,8 @@ class FacetIndex {
 			if ( empty( $f_strings ) ) {
 				continue;
 			}
-			$f_placeholders    = implode( ',', array_fill( 0, count( $f_strings ), '%s' ) );
-			$intersect_sql    .= " AND object_id IN (
+			$f_placeholders     = implode( ',', array_fill( 0, count( $f_strings ), '%s' ) );
+			$intersect_sql     .= " AND object_id IN (
             SELECT object_id FROM {$table}
             WHERE facet_key = %s AND facet_value IN ({$f_placeholders})
         )";
@@ -248,7 +288,7 @@ class FacetIndex {
 		}
 
 		$value_placeholders = implode( ',', array_fill( 0, count( $string_values ), '%s' ) );
-		$sql = "SELECT facet_value, COUNT(DISTINCT object_id) AS cnt
+		$sql                = "SELECT facet_value, COUNT(DISTINCT object_id) AS cnt
             FROM {$table}
             WHERE facet_key = %s AND facet_value IN ({$value_placeholders})
             {$intersect_sql}
@@ -309,6 +349,9 @@ class FacetIndex {
 ) {$charset};";
 
 		dbDelta( $sql );
+
+		// Reset the per-request cache so subsequent calls see the new table.
+		self::$table_exists = null;
 
 		update_option( self::OPTION_SCHEMA, self::SCHEMA_VERSION, false );
 	}

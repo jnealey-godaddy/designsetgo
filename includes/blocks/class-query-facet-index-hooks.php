@@ -75,7 +75,7 @@ class FacetIndexHooks {
 	 * Reindexes a post when its taxonomy terms are changed, but only when
 	 * the taxonomy is tracked by at least one registered facet.
 	 *
-	 * set_object_terms fires for any taxonomy-capable object; we only index
+	 * Set_object_terms fires for any taxonomy-capable object; we only index
 	 * posts in v2.2, so we short-circuit when the object ID does not resolve
 	 * to a real post.
 	 *
@@ -91,7 +91,7 @@ class FacetIndexHooks {
 			return;
 		}
 		foreach ( FacetRegistry::all() as $config ) {
-			if ( 'taxonomy' === ( $config['type'] ?? '' ) && $taxonomy === ( $config['source'] ?? '' ) ) {
+			if ( 'taxonomy' === ( $config['type'] ?? '' ) && ( $config['source'] ?? '' ) === $taxonomy ) {
 				FacetIndex::reindex_object( 'post', $object_id );
 				return;
 			}
@@ -109,7 +109,7 @@ class FacetIndexHooks {
 	 */
 	public static function on_post_meta_changed( $meta_id, int $object_id, string $meta_key ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed
 		foreach ( FacetRegistry::all() as $config ) {
-			if ( 'meta' === ( $config['type'] ?? '' ) && $meta_key === ( $config['source'] ?? '' ) ) {
+			if ( 'meta' === ( $config['type'] ?? '' ) && ( $config['source'] ?? '' ) === $meta_key ) {
 				FacetIndex::reindex_object( 'post', $object_id );
 				return;
 			}

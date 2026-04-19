@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, animations, responsive
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.1.0
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -178,6 +178,17 @@ Check the [documentation](https://designsetgoblocks.com/docs/), visit the [suppo
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.2.0 =
+* **New:** Facet index powering sub-millisecond per-option counts on Dynamic Query filters (`(N)` counts next to each option, intersection-aware across multiple facets).
+* **New:** Infinite scroll as a Dynamic Query pagination variation — `IntersectionObserver`-backed, auto-pauses after 3 auto-loads, respects `prefers-reduced-motion`.
+* **New:** Editor live preview for Dynamic Query — real posts, users, and terms render in the editor with the first item's template editable.
+* **New:** Settings → DesignSetGo → Dynamic Query admin dashboard — rebuild facet index, manage ad-hoc facet registrations.
+* **New:** WP-CLI commands: `wp dsgo query index rebuild/rebuild-facet/status/drop`.
+* **New:** Per-option count spans in filter output (`dsgo-query-filter__count` class, styled via CSS custom property).
+* **New:** CSS-only loading skeletons during filter/pagination refreshes (shown via `aria-busy="true"` state).
+* **Developer:** `designsetgo_query_registered_facets` filter for programmatic facet registration.
+* **Developer:** `/designsetgo/v1/query/preview`, `/facet-register`, `/facet-status`, `/facet-rebuild`, `/facets` REST routes.
 
 = 2.1.0 =
 

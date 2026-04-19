@@ -39,12 +39,13 @@ export function useFacetRegistration({ facetKey, config }) {
 				facet_key: facetKey,
 				config,
 			},
-		} ).catch( ( err ) => {
+		}).catch((err) => {
 			// Retry on network-level failures; keep dedup for persistent 4xx so we
 			// don't storm the server with the same bad request.
-			if ( err?.code === 'fetch_error' || err?.code === 'offline_error' ) {
+			if (err?.code === 'fetch_error' || err?.code === 'offline_error') {
 				lastSent.current = null;
 			}
-		} );
+		});
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- config object reference is intentionally excluded; we track individual primitive values to avoid re-firing on every render.
 	}, [facetKey, config?.type, config?.source]);
 }
