@@ -184,20 +184,6 @@ describe('QueryEdit — Settings panel', () => {
 		expect(screen.getByLabelText(/items per page/i)).toBeInTheDocument();
 	});
 
-	it('renders the Order by selector', () => {
-		// Order by has isShownByDefault=false in the panel item — our stub hides
-		// those items. Verify panel renders without error rather than the hidden field.
-		renderWith();
-		// The inspector panel itself must be present (no crash).
-		expect(screen.getByTestId('inspector')).toBeInTheDocument();
-	});
-
-	it('renders the Order direction selector', () => {
-		// Same as above — Order direction is isShownByDefault=false.
-		renderWith();
-		expect(screen.getByTestId('inspector')).toBeInTheDocument();
-	});
-
 	it('shows the meta-key input only when orderBy is meta_value', () => {
 		// When orderBy is date, meta key item is absent (showMetaKey=false).
 		const { rerender } = renderWith({ orderBy: 'date' });

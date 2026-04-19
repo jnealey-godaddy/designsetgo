@@ -55,6 +55,15 @@ export default function QuerySourcePanel({ attributes, setAttributes, clientId }
 			title={ __( 'Settings', 'designsetgo' ) }
 			panelName="settings"
 			panelId={ clientId }
+			resetAll={ () => setAttributes( {
+				source: 'posts',
+				postType: 'post',
+				perPage: 6,
+				offset: 0,
+				orderBy: 'date',
+				orderByMetaKey: '',
+				order: 'DESC',
+			} ) }
 		>
 			<DsgoInspectorPanel.Item
 				label={ __( 'Source', 'designsetgo' ) }
@@ -119,6 +128,7 @@ export default function QuerySourcePanel({ attributes, setAttributes, clientId }
 					min={ 0 }
 					onChange={ ( value ) => setAttributes( { offset: Number( value ) || 0 } ) }
 					__next40pxDefaultSize
+					__nextHasNoMarginBottom
 				/>
 			</DsgoInspectorPanel.Item>
 
