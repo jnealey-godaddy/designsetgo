@@ -591,6 +591,7 @@ class Plugin {
 		$this->query_controller    = new Blocks\Query\Controller();
 		$this->query_bindings      = new Blocks\Query\Bindings();
 		$this->facet_index         = new Blocks\Query\FacetIndex();
+		Blocks\Query\FacetIndex::register_hooks();
 		$this->facet_registry      = new Blocks\Query\FacetRegistry();
 		$this->patterns            = new Patterns\Loader();
 		$this->global_styles       = new Admin\Global_Styles();

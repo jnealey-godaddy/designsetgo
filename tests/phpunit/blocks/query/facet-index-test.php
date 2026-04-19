@@ -177,4 +177,226 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 
 		$this->assertSame( array( $short ), $values, 'Meta value exceeding 190 chars must be skipped, not truncated.' );
 	}
+
+	public function test_save_post_triggers_reindex() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array(
+			'type'   => 'taxonomy',
+			'source' => 'category',
+		) );
+		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+
+		$cat_id  = $this->factory->category->create();
+		$post_id = $this->factory->post->create( array(
+			'post_status'   => 'publish',
+			'post_category' => array( $cat_id ),
+		) );
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_facet_index';
+		$count = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d AND facet_key = 'category'",
+			$post_id
+		) );
+
+		$this->assertGreaterThan( 0, $count );
+	}
+
+	public function test_unpublished_post_is_removed_from_index() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array(
+			'type'   => 'taxonomy',
+			'source' => 'category',
+		) );
+		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+
+		$cat_id  = $this->factory->category->create();
+		$post_id = $this->factory->post->create( array(
+			'post_status'   => 'publish',
+			'post_category' => array( $cat_id ),
+		) );
+
+		// Verify seeded.
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_facet_index';
+		$this->assertGreaterThan( 0, (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d",
+			$post_id
+		) ) );
+
+		// Unpublish.
+		wp_update_post( array( 'ID' => $post_id, 'post_status' => 'draft' ) );
+
+		$count_after = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d",
+			$post_id
+		) );
+		$this->assertSame( 0, $count_after );
+	}
+
+	public function test_deleted_post_removes_index_rows() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array(
+			'type'   => 'taxonomy',
+			'source' => 'category',
+		) );
+		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+
+		$cat_id  = $this->factory->category->create();
+		$post_id = $this->factory->post->create( array(
+			'post_status'   => 'publish',
+			'post_category' => array( $cat_id ),
+		) );
+
+		wp_delete_post( $post_id, true );
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_facet_index';
+		$this->assertSame( 0, (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d",
+			$post_id
+		) ) );
+	}
+
+	public function test_taxonomy_change_on_registered_facet_triggers_reindex() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array(
+			'type'   => 'taxonomy',
+			'source' => 'category',
+		) );
+		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+
+		$old_cat = $this->factory->category->create();
+		$new_cat = $this->factory->category->create();
+		$post_id = $this->factory->post->create( array(
+			'post_status'   => 'publish',
+			'post_category' => array( $old_cat ),
+		) );
+
+		wp_set_post_categories( $post_id, array( $new_cat ) );
+
+		global $wpdb;
+		$table  = $wpdb->prefix . 'dsgo_query_facet_index';
+		$values = $wpdb->get_col( $wpdb->prepare(
+			"SELECT facet_value FROM {$table} WHERE object_id = %d AND facet_key = 'category'",
+			$post_id
+		) );
+
+		$this->assertContains( (string) $new_cat, $values );
+		$this->assertNotContains( (string) $old_cat, $values );
+	}
+
+	public function test_unregistered_taxonomy_change_does_not_reindex() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array(
+			'type'   => 'taxonomy',
+			'source' => 'category',
+		) );
+		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+
+		$post_id = $this->factory->post->create( array( 'post_status' => 'publish' ) );
+
+		// Register an unrelated taxonomy we're NOT tracking as a facet.
+		register_taxonomy( 'unrelated_tax', 'post' );
+		$term_id = $this->factory->term->create( array( 'taxonomy' => 'unrelated_tax' ) );
+
+		// Seed the index directly with a sentinel row so we can detect an errant DELETE.
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_facet_index';
+		$wpdb->insert( $table, array(
+			'object_id'   => $post_id,
+			'object_type' => 'post',
+			'facet_key'   => 'category',
+			'facet_value' => 'sentinel',
+		), array( '%d', '%s', '%s', '%s' ) );
+
+		wp_set_object_terms( $post_id, array( $term_id ), 'unrelated_tax' );
+
+		// The sentinel row must still be present — no reindex happened.
+		$this->assertSame( '1', $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d AND facet_value = 'sentinel'",
+			$post_id
+		) ) );
+	}
+
+	public function test_meta_change_on_registered_facet_triggers_reindex() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'price', array(
+			'type'   => 'meta',
+			'source' => '_price',
+		) );
+		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+
+		$post_id = $this->factory->post->create( array( 'post_status' => 'publish' ) );
+		update_post_meta( $post_id, '_price', '19.99' );
+
+		global $wpdb;
+		$table  = $wpdb->prefix . 'dsgo_query_facet_index';
+		$values = $wpdb->get_col( $wpdb->prepare(
+			"SELECT facet_value FROM {$table} WHERE object_id = %d AND facet_key = 'price'",
+			$post_id
+		) );
+
+		$this->assertSame( array( '19.99' ), $values );
+	}
+
+	public function test_unregistered_meta_change_does_not_reindex() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'price', array(
+			'type'   => 'meta',
+			'source' => '_price',
+		) );
+		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+
+		$post_id = $this->factory->post->create( array( 'post_status' => 'publish' ) );
+
+		// Seed a sentinel.
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_facet_index';
+		$wpdb->insert( $table, array(
+			'object_id'   => $post_id,
+			'object_type' => 'post',
+			'facet_key'   => 'price',
+			'facet_value' => 'sentinel',
+		), array( '%d', '%s', '%s', '%s' ) );
+
+		// Update a DIFFERENT meta key — not a registered facet.
+		update_post_meta( $post_id, '_irrelevant', 'something' );
+
+		$this->assertSame( '1', $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d AND facet_value = 'sentinel'",
+			$post_id
+		) ) );
+	}
+
+	public function test_revisions_and_autosaves_skipped() {
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array(
+			'type'   => 'taxonomy',
+			'source' => 'category',
+		) );
+		\DesignSetGo\Blocks\Query\FacetIndex::register_hooks();
+
+		$cat_id  = $this->factory->category->create();
+		$post_id = $this->factory->post->create( array(
+			'post_status'   => 'publish',
+			'post_category' => array( $cat_id ),
+		) );
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_facet_index';
+		$baseline = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d",
+			$post_id
+		) );
+
+		// Create a revision — this fires save_post with the revision's ID, not the post's.
+		_wp_put_post_revision( get_post( $post_id ) );
+
+		// Index state for the actual post is unchanged.
+		$this->assertSame( $baseline, (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d",
+			$post_id
+		) ) );
+	}
 }
