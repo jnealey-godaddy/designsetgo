@@ -181,6 +181,16 @@ module.exports = {
 					to: 'blocks/query/render-posts.php',
 					noErrorOnMissing: true,
 				},
+				{
+					from: 'src/blocks/query/render-users.php',
+					to: 'blocks/query/render-users.php',
+					noErrorOnMissing: true,
+				},
+				{
+					from: 'src/blocks/query/render-terms.php',
+					to: 'blocks/query/render-terms.php',
+					noErrorOnMissing: true,
+				},
 			],
 		}),
 		// Bundle analyzer - run with: ANALYZE=true npm run build
