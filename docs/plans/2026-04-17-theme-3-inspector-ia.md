@@ -213,7 +213,14 @@ Blocks: `card`, `icon`, `icon-button`, `icon-list`, `icon-list-item`, `pill`, `d
 
 Blocks: `countdown-timer`, `counter`, `counter-group`, `progress-bar`, `table-of-contents`, `product-categories-grid`, `product-showcase-hero`, `map`.
 
-- [ ] `countdown-timer` already uses `ToolsPanel` for `UnitBorderPanel.js` — port the rest of its inspector for consistency.
+- [x] `progress-bar` — four PanelBody groups (Progress / Appearance / Label / Animation) → one Settings panel with ~10 items. Conditional label-text / label-position / animate-stripes mount only when their parent toggle/style allows.
+- [x] `counter-group` — parent-block edit lives inline in `index.js` (outlier — rest of plugin uses `edit.js`). Test helper extended with a fallback that reads `index.js` when `edit.js` is missing. Three PanelBody groups (Layout / Animation / Number Formatting) → one Settings panel with 11 items, including conditional `separator` when `useGrouping` is true.
+- [x] `product-categories-grid` — three PanelBody groups (Categories / Display / Layout) → one Settings panel with seven items, including conditional `showEmpty` (all-source) and `selectedCategories` picker (manual-source).
+- [x] `counter` — four sub-component panels (Counter Settings / Label / Icon / Animation Override) refactored into React Fragments of `DsgoInspectorPanel.Item` entries. Conditional icon / position items mount only when `showIcon` is true; conditional custom animation items mount only when `overrideAnimation` is true.
+- [x] `table-of-contents` — four sub-component panels in `InspectorPanels.js` (Heading Levels / Display / Title / Scroll) migrated. Title Text item mounts only when `showTitle` is true.
+- [x] `product-showcase-hero` — three panel regions (inline `ProductPanelContent` + `DisplayOptionsPanel` + `LayoutPanel`) migrated. Product item resets `productSource` + `productId`; Focal Point item mounts only when a product image is available.
+- [x] `map` — `MapSettingsPanel` sub-component (single 11-control PanelBody with `<h3>`-labeled sub-sections) flattened into 11 DsgoInspectorPanel.Item entries. Conditional `Map Height` (custom aspect ratio), `Map Style` (Google Maps only), and `Privacy Notice` (privacy mode on). Search state (isSearching / searchError) still handled inside the Address item body.
+- [x] **`countdown-timer`** — five sub-component panels migrated, including **`UnitBorderPanel.js`**. The old file wrapped controls in `<InspectorControls group="border">` + its own `ToolsPanel` / `ToolsPanelItem` — the only pre-existing ToolsPanel in the plugin. Refactored to return a fragment of `DsgoInspectorPanel.Item` entries composed into the main Settings panel; the `group="border"` placement is abandoned so every countdown control reads from a single panel per the convention. The placeholder / completion-hide / completion-show / normal branches that previously duplicated the entire inspector now share one `const inspector` JSX, rendered once per branch.
 
 ---
 

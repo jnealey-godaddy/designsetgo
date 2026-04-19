@@ -7,114 +7,75 @@ import {
 	__experimentalBorderControl as BorderControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
-	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
-	__experimentalToolsPanel as ToolsPanel,
-	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
-	__experimentalToolsPanelItem as ToolsPanelItem,
 } from '@wordpress/components';
-import { InspectorControls } from '@wordpress/block-editor';
+import { DsgoInspectorPanel } from '../../../../components/shared';
+
+const DEFAULT_BORDER = {
+	color: undefined,
+	style: 'solid',
+	width: '2px',
+};
 
 /**
  * Unit Border Panel component
  *
- * Controls for individual countdown unit borders (Days, Hours, Minutes, Seconds).
- * These appear in the Styles tab → Border section alongside container border controls.
- * Uses WordPress core BorderControl component for color, style, and width.
+ * Renders DsgoInspectorPanel.Item entries for per-unit border + radius.
+ * Originally lived in <InspectorControls group="border"> as a nested
+ * ToolsPanel; now composed into the Settings panel in
+ * countdown-timer/edit.js to match the rest of the plugin convention.
  *
  * @param {Object}   props               - Component properties
  * @param {Object}   props.attributes    - Block attributes
  * @param {Function} props.setAttributes - Function to update attributes
- * @return {JSX.Element} Border controls component
+ * @return {JSX.Element} Item fragment
  */
 export default function UnitBorderPanel({ attributes, setAttributes }) {
 	const { unitBorder, unitBorderRadius } = attributes;
 
-	// Default border values
-	const defaultBorder = {
-		color: undefined,
-		style: 'solid',
-		width: '2px',
-	};
-
 	return (
-		<InspectorControls group="border">
-			<div style={{ gridColumn: '1 / -1' }}>
-				<ToolsPanel
-					label={__('Unit Borders', 'designsetgo')}
-					resetAll={() => {
+		<>
+			<DsgoInspectorPanel.Item
+				label={__('Unit Border', 'designsetgo')}
+				hasValue={() =>
+					unitBorder &&
+					(unitBorder.color !== undefined ||
+						unitBorder.style !== 'solid' ||
+						unitBorder.width !== '2px')
+				}
+				onDeselect={() => setAttributes({ unitBorder: DEFAULT_BORDER })}
+				isShownByDefault
+			>
+				<BorderControl
+					label={__('Unit Border', 'designsetgo')}
+					value={unitBorder || DEFAULT_BORDER}
+					onChange={(value) => setAttributes({ unitBorder: value })}
+					withSlider={true}
+					__next40pxDefaultSize
+				/>
+			</DsgoInspectorPanel.Item>
+
+			<DsgoInspectorPanel.Item
+				label={__('Unit Radius', 'designsetgo')}
+				hasValue={() => unitBorderRadius !== 12}
+				onDeselect={() => setAttributes({ unitBorderRadius: 12 })}
+				isShownByDefault
+			>
+				<UnitControl
+					label={__('Unit Radius', 'designsetgo')}
+					value={`${unitBorderRadius}px`}
+					onChange={(value) => {
+						const numValue = parseInt(value);
 						setAttributes({
-							unitBorder: defaultBorder,
-							unitBorderRadius: 12,
+							unitBorderRadius: isNaN(numValue) ? 12 : numValue,
 						});
 					}}
-					panelId="unit-borders"
-					hasInnerWrapper={true}
-					shouldRenderPlaceholderItems={true}
-					__experimentalFirstVisibleItemClass="first"
-					__experimentalLastVisibleItemClass="last"
-				>
-					<p
-						className="components-base-control__help"
-						style={{ margin: '0 0 8px 0', gridColumn: '1 / -1' }}
-					>
-						{__(
-							'Customize borders for individual countdown units (Days, Hours, etc.). Container border is controlled above.',
-							'designsetgo'
-						)}
-					</p>
-					<ToolsPanelItem
-						hasValue={() =>
-							unitBorder &&
-							(unitBorder.color !== undefined ||
-								unitBorder.style !== 'solid' ||
-								unitBorder.width !== '2px')
-						}
-						label={__('Unit Border', 'designsetgo')}
-						onDeselect={() =>
-							setAttributes({ unitBorder: defaultBorder })
-						}
-						isShownByDefault={true}
-						panelId="unit-borders"
-					>
-						<BorderControl
-							label={__('Unit Border', 'designsetgo')}
-							value={unitBorder || defaultBorder}
-							onChange={(value) =>
-								setAttributes({ unitBorder: value })
-							}
-							withSlider={true}
-							__next40pxDefaultSize
-						/>
-					</ToolsPanelItem>
-					<ToolsPanelItem
-						hasValue={() => unitBorderRadius !== 12}
-						label={__('Unit Radius', 'designsetgo')}
-						onDeselect={() =>
-							setAttributes({ unitBorderRadius: 12 })
-						}
-						isShownByDefault={true}
-						panelId="unit-borders"
-					>
-						<UnitControl
-							label={__('Unit Radius', 'designsetgo')}
-							value={`${unitBorderRadius}px`}
-							onChange={(value) => {
-								const numValue = parseInt(value);
-								setAttributes({
-									unitBorderRadius: isNaN(numValue)
-										? 12
-										: numValue,
-								});
-							}}
-							units={[{ value: 'px', label: 'px' }]}
-							min={0}
-							max={50}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-					</ToolsPanelItem>
-				</ToolsPanel>
-			</div>
-		</InspectorControls>
+					units={[{ value: 'px', label: 'px' }]}
+					min={0}
+					max={50}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
+		</>
 	);
 }

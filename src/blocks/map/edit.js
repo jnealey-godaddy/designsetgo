@@ -15,6 +15,7 @@ import {
 } from '@wordpress/block-editor';
 import classnames from 'classnames';
 
+import { DsgoInspectorPanel } from '../../components/shared';
 // Inspector Panel
 import MapSettingsPanel from './components/inspector/MapSettingsPanel';
 
@@ -68,10 +69,32 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<InspectorControls>
-				<MapSettingsPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							dsgoProvider: 'openstreetmap',
+							dsgoLatitude: 40.7128,
+							dsgoLongitude: -74.006,
+							dsgoZoom: 13,
+							dsgoAddress: '',
+							dsgoMarkerIcon: '📍',
+							dsgoHeight: '400px',
+							dsgoAspectRatio: 'custom',
+							dsgoMapStyle: 'standard',
+							dsgoPrivacyMode: false,
+							dsgoPrivacyNotice:
+								'This map will load content from external services. Click to load and view the map.',
+						})
+					}
+				>
+					<MapSettingsPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">

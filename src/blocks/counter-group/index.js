@@ -17,7 +17,6 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	RangeControl,
 	SelectControl,
 	ToggleControl,
@@ -25,6 +24,7 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 
 import metadata from './block.json';
 import save from './save';
@@ -151,201 +151,300 @@ function CounterGroupEdit({ attributes, setAttributes, clientId }) {
 			</InspectorControls>
 
 			<InspectorControls>
-				{/* Layout Settings */}
-				<PanelBody
-					title={__('Layout Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							columns: 3,
+							columnsTablet: 2,
+							columnsMobile: 1,
+							gap: '32px',
+							alignContent: 'center',
+							animationDuration: 2,
+							animationDelay: 0,
+							animationEasing: 'easeOutQuad',
+							useGrouping: true,
+							separator: ',',
+							decimal: '.',
+						})
+					}
 				>
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__('Columns (Desktop)', 'designsetgo')}
-						value={columns}
-						onChange={(value) => setAttributes({ columns: value })}
-						min={1}
-						max={6}
-						help={__('>1024px', 'designsetgo')}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => columns !== 3}
+						onDeselect={() => setAttributes({ columns: 3 })}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Columns (Desktop)', 'designsetgo')}
+							value={columns}
+							onChange={(value) =>
+								setAttributes({ columns: value })
+							}
+							min={1}
+							max={6}
+							help={__('>1024px', 'designsetgo')}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__('Columns (Tablet)', 'designsetgo')}
-						value={columnsTablet}
-						onChange={(value) =>
-							setAttributes({ columnsTablet: value })
-						}
-						min={1}
-						max={columns}
-						help={__('768px - 1023px', 'designsetgo')}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => columnsTablet !== 2}
+						onDeselect={() => setAttributes({ columnsTablet: 2 })}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Columns (Tablet)', 'designsetgo')}
+							value={columnsTablet}
+							onChange={(value) =>
+								setAttributes({ columnsTablet: value })
+							}
+							min={1}
+							max={columns}
+							help={__('768px - 1023px', 'designsetgo')}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__('Columns (Mobile)', 'designsetgo')}
-						value={columnsMobile}
-						onChange={(value) =>
-							setAttributes({ columnsMobile: value })
-						}
-						min={1}
-						max={columnsTablet}
-						help={__('<768px', 'designsetgo')}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => columnsMobile !== 1}
+						onDeselect={() => setAttributes({ columnsMobile: 1 })}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Columns (Mobile)', 'designsetgo')}
+							value={columnsMobile}
+							onChange={(value) =>
+								setAttributes({ columnsMobile: value })
+							}
+							min={1}
+							max={columnsTablet}
+							help={__('<768px', 'designsetgo')}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Gap', 'designsetgo')}
-						value={gap}
-						onChange={(value) => setAttributes({ gap: value })}
-						units={[
-							{ value: 'px', label: 'px' },
-							{ value: 'rem', label: 'rem' },
-							{ value: 'em', label: 'em' },
-						]}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => gap !== '32px'}
+						onDeselect={() => setAttributes({ gap: '32px' })}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Gap', 'designsetgo')}
+							value={gap}
+							onChange={(value) => setAttributes({ gap: value })}
+							units={[
+								{ value: 'px', label: 'px' },
+								{ value: 'rem', label: 'rem' },
+								{ value: 'em', label: 'em' },
+							]}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Content Alignment', 'designsetgo')}
-						value={alignContent}
-						options={[
-							{ label: __('Left', 'designsetgo'), value: 'left' },
-							{
-								label: __('Center', 'designsetgo'),
-								value: 'center',
-							},
-							{
-								label: __('Right', 'designsetgo'),
-								value: 'right',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ alignContent: value })
+						hasValue={() => alignContent !== 'center'}
+						onDeselect={() =>
+							setAttributes({ alignContent: 'center' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Content Alignment', 'designsetgo')}
+							value={alignContent}
+							options={[
+								{
+									label: __('Left', 'designsetgo'),
+									value: 'left',
+								},
+								{
+									label: __('Center', 'designsetgo'),
+									value: 'center',
+								},
+								{
+									label: __('Right', 'designsetgo'),
+									value: 'right',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ alignContent: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				{/* Animation Settings */}
-				<PanelBody
-					title={__('Animation Settings', 'designsetgo')}
-					initialOpen={false}
-				>
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__(
 							'Animation Duration (seconds)',
 							'designsetgo'
 						)}
-						value={animationDuration}
-						onChange={(value) =>
-							setAttributes({ animationDuration: value })
+						hasValue={() => animationDuration !== 2}
+						onDeselect={() =>
+							setAttributes({ animationDuration: 2 })
 						}
-						min={0.5}
-						max={5}
-						step={0.1}
-						help={__(
-							'How long the count animation takes',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<RangeControl
-						label={__('Animation Delay (seconds)', 'designsetgo')}
-						value={animationDelay}
-						onChange={(value) =>
-							setAttributes({ animationDelay: value })
-						}
-						min={0}
-						max={2}
-						step={0.1}
-						help={__(
-							'Delay before animation starts',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<SelectControl
-						label={__('Easing Function', 'designsetgo')}
-						value={animationEasing}
-						options={[
-							{
-								label: __('Ease Out Quad', 'designsetgo'),
-								value: 'easeOutQuad',
-							},
-							{
-								label: __('Ease Out Cubic', 'designsetgo'),
-								value: 'easeOutCubic',
-							},
-							{
-								label: __('Ease In Out', 'designsetgo'),
-								value: 'easeInOutQuad',
-							},
-							{
-								label: __('Linear', 'designsetgo'),
-								value: 'linear',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ animationEasing: value })
-						}
-						help={__('Animation timing curve', 'designsetgo')}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
-
-				{/* Number Formatting */}
-				<PanelBody
-					title={__('Number Formatting', 'designsetgo')}
-					initialOpen={false}
-				>
-					<ToggleControl
-						label={__('Use Thousands Separator', 'designsetgo')}
-						checked={useGrouping}
-						onChange={(value) =>
-							setAttributes({ useGrouping: value })
-						}
-						help={__(
-							'Format numbers like "1,000" or "1000"',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
-
-					{useGrouping && (
-						<TextControl
-							label={__('Thousands Separator', 'designsetgo')}
-							value={separator}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__(
+								'Animation Duration (seconds)',
+								'designsetgo'
+							)}
+							value={animationDuration}
 							onChange={(value) =>
-								setAttributes({ separator: value })
+								setAttributes({ animationDuration: value })
 							}
+							min={0.5}
+							max={5}
+							step={0.1}
 							help={__(
-								'Character for thousands (e.g., "," or ".")',
+								'How long the count animation takes',
 								'designsetgo'
 							)}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Animation Delay (seconds)', 'designsetgo')}
+						hasValue={() => animationDelay !== 0}
+						onDeselect={() => setAttributes({ animationDelay: 0 })}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__(
+								'Animation Delay (seconds)',
+								'designsetgo'
+							)}
+							value={animationDelay}
+							onChange={(value) =>
+								setAttributes({ animationDelay: value })
+							}
+							min={0}
+							max={2}
+							step={0.1}
+							help={__(
+								'Delay before animation starts',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Easing Function', 'designsetgo')}
+						hasValue={() => animationEasing !== 'easeOutQuad'}
+						onDeselect={() =>
+							setAttributes({ animationEasing: 'easeOutQuad' })
+						}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Easing Function', 'designsetgo')}
+							value={animationEasing}
+							options={[
+								{
+									label: __('Ease Out Quad', 'designsetgo'),
+									value: 'easeOutQuad',
+								},
+								{
+									label: __('Ease Out Cubic', 'designsetgo'),
+									value: 'easeOutCubic',
+								},
+								{
+									label: __('Ease In Out', 'designsetgo'),
+									value: 'easeInOutQuad',
+								},
+								{
+									label: __('Linear', 'designsetgo'),
+									value: 'linear',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ animationEasing: value })
+							}
+							help={__('Animation timing curve', 'designsetgo')}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Use Thousands Separator', 'designsetgo')}
+						hasValue={() => useGrouping !== true}
+						onDeselect={() => setAttributes({ useGrouping: true })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Use Thousands Separator', 'designsetgo')}
+							checked={useGrouping}
+							onChange={(value) =>
+								setAttributes({ useGrouping: value })
+							}
+							help={__(
+								'Format numbers like "1,000" or "1000"',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					{useGrouping && (
+						<DsgoInspectorPanel.Item
+							label={__('Thousands Separator', 'designsetgo')}
+							hasValue={() => separator !== ','}
+							onDeselect={() => setAttributes({ separator: ',' })}
+							isShownByDefault
+						>
+							<TextControl
+								label={__('Thousands Separator', 'designsetgo')}
+								value={separator}
+								onChange={(value) =>
+									setAttributes({ separator: value })
+								}
+								help={__(
+									'Character for thousands (e.g., "," or ".")',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
 
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Decimal Point', 'designsetgo')}
-						value={decimal}
-						onChange={(value) => setAttributes({ decimal: value })}
-						help={__(
-							'Character for decimals (e.g., "." or ",")',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => decimal !== '.'}
+						onDeselect={() => setAttributes({ decimal: '.' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Decimal Point', 'designsetgo')}
+							value={decimal}
+							onChange={(value) =>
+								setAttributes({ decimal: value })
+							}
+							help={__(
+								'Character for decimals (e.g., "." or ",")',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

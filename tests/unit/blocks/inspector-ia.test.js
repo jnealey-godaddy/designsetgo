@@ -18,14 +18,24 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * Read an `edit.js` file from `src/blocks/{block}/`.
+ * Read the block's edit-component source. Most blocks keep it at
+ * `src/blocks/{block}/edit.js`, but a few register the edit function
+ * inline inside `index.js` (e.g. `counter-group`). Fall back to the
+ * index file so the structural guard still covers those.
  *
  * @param {string} blockName Block directory name.
  * @return {string} File contents.
  */
 function readEdit(blockName) {
+	const editPath = path.resolve(
+		__dirname,
+		`../../../src/blocks/${blockName}/edit.js`
+	);
+	if (fs.existsSync(editPath)) {
+		return fs.readFileSync(editPath, 'utf8');
+	}
 	return fs.readFileSync(
-		path.resolve(__dirname, `../../../src/blocks/${blockName}/edit.js`),
+		path.resolve(__dirname, `../../../src/blocks/${blockName}/index.js`),
 		'utf8'
 	);
 }
@@ -65,7 +75,7 @@ function readEditAndComponents(blockName) {
 		__dirname,
 		`../../../src/blocks/${blockName}`
 	);
-	const edit = fs.readFileSync(path.join(blockDir, 'edit.js'), 'utf8');
+	const edit = readEdit(blockName);
 	const componentSources = collectJsFiles(
 		path.join(blockDir, 'components')
 	).map((file) => fs.readFileSync(file, 'utf8'));
@@ -113,6 +123,14 @@ const MIGRATED_BLOCKS = [
 	'timeline',
 	'card',
 	'comparison-table',
+	'progress-bar',
+	'counter-group',
+	'product-categories-grid',
+	'counter',
+	'table-of-contents',
+	'product-showcase-hero',
+	'map',
+	'countdown-timer',
 ];
 
 // Blocks whose inspector items live in sub-components under
@@ -125,6 +143,11 @@ const COMPOSITE_INSPECTOR_BLOCKS = new Set([
 	'icon-list',
 	'icon-button',
 	'breadcrumbs',
+	'counter',
+	'table-of-contents',
+	'product-showcase-hero',
+	'map',
+	'countdown-timer',
 ]);
 
 describe('Theme 3 — Inspector IA migration', () => {

@@ -17,7 +17,6 @@ import {
 	BlockControls,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	Placeholder,
 	Button,
 	ToolbarButton,
@@ -29,6 +28,7 @@ import {
 } from '@wordpress/components';
 import apiFetch from '@wordpress/api-fetch';
 
+import { DsgoInspectorPanel } from '../../components/shared';
 import ProductPicker from './components/ProductPicker';
 import ProductPreview from './components/ProductPreview';
 import DisplayOptionsPanel from './components/DisplayOptionsPanel';
@@ -41,12 +41,14 @@ import LayoutPanel from './components/LayoutPanel';
  * @param {Object}   props.attributes    Block attributes
  * @param {Function} props.setAttributes Function to set attributes
  * @param {Object}   props.context       Block context (postId, postType from usesContext)
+ * @param {string}   props.clientId      Block client ID
  * @return {JSX.Element} Edit component
  */
 export default function ProductShowcaseHeroEdit({
 	attributes,
 	setAttributes,
 	context,
+	clientId,
 }) {
 	const { productId, productSource, layout } = attributes;
 
@@ -235,24 +237,57 @@ export default function ProductShowcaseHeroEdit({
 			</BlockControls>
 
 			<InspectorControls>
-				<PanelBody
-					title={__('Product', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							productSource: 'manual',
+							productId: 0,
+							layout: 'media-left',
+							imageSize: 'large',
+							showPrice: true,
+							showRating: true,
+							showStockStatus: true,
+							showSaleBadge: true,
+							showShortDescription: false,
+							showAddToCart: true,
+							showVariations: true,
+							minHeight: '500px',
+							mediaFocalPoint: { x: 0.5, y: 0.5 },
+							contentVerticalAlignment: 'center',
+						})
+					}
 				>
-					<ProductPanelContent />
-				</PanelBody>
+					<DsgoInspectorPanel.Item
+						label={__('Product', 'designsetgo')}
+						hasValue={() =>
+							productSource !== 'manual' || productId !== 0
+						}
+						onDeselect={() =>
+							setAttributes({
+								productSource: 'manual',
+								productId: 0,
+							})
+						}
+						isShownByDefault
+					>
+						<ProductPanelContent />
+					</DsgoInspectorPanel.Item>
 
-				<DisplayOptionsPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
+					<DisplayOptionsPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
 
-				<LayoutPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-					units={units}
-					imageUrl={productData?.images?.[0]?.src}
-				/>
+					<LayoutPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+						units={units}
+						imageUrl={productData?.images?.[0]?.src}
+					/>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

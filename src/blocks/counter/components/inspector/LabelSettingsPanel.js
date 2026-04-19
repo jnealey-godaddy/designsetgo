@@ -1,27 +1,23 @@
 /**
  * Counter Block - Label Settings Panel Component
  *
- * Provides control for counter label text.
+ * Renders DsgoInspectorPanel.Item for the counter label. Meant to be
+ * composed inside the Settings DsgoInspectorPanel in counter/edit.js.
  *
  * @since 1.0.0
  */
 
 import { __ } from '@wordpress/i18n';
-import { PanelBody, TextControl } from '@wordpress/components';
+import { TextControl } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../../../components/shared';
 
-/**
- * Label Settings Panel - Control for label text below counter.
- *
- * @param {Object}   props               - Component props
- * @param {string}   props.label         - Label text to display below counter
- * @param {Function} props.setAttributes - Function to update block attributes
- * @return {JSX.Element} Label Settings Panel component
- */
 export const LabelSettingsPanel = ({ label, setAttributes }) => {
 	return (
-		<PanelBody
-			title={__('Label Settings', 'designsetgo')}
-			initialOpen={true}
+		<DsgoInspectorPanel.Item
+			label={__('Label', 'designsetgo')}
+			hasValue={() => label !== ''}
+			onDeselect={() => setAttributes({ label: '' })}
+			isShownByDefault
 		>
 			<TextControl
 				label={__('Label', 'designsetgo')}
@@ -32,6 +28,6 @@ export const LabelSettingsPanel = ({ label, setAttributes }) => {
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 			/>
-		</PanelBody>
+		</DsgoInspectorPanel.Item>
 	);
 };

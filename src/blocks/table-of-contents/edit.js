@@ -8,6 +8,7 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import { Notice } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect, useMemo } from '@wordpress/element';
 import classnames from 'classnames';
 import { useHeadingScanner } from './components/useHeadingScanner';
@@ -144,22 +145,44 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<InspectorControls>
-				<HeadingLevelsPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<DisplaySettingsPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<TitleSettingsPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<ScrollSettingsPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							includeH2: true,
+							includeH3: true,
+							includeH4: false,
+							includeH5: false,
+							includeH6: false,
+							displayMode: 'hierarchical',
+							listStyle: 'unordered',
+							showTitle: true,
+							titleText: 'Table of Contents',
+							scrollSmooth: true,
+							scrollOffset: 0,
+							stickyOffset: 0,
+						})
+					}
+				>
+					<HeadingLevelsPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<DisplaySettingsPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<TitleSettingsPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<ScrollSettingsPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">
