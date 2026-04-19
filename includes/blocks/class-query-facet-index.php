@@ -146,7 +146,7 @@ class FacetIndex {
 			if ( ! is_array( $meta ) || empty( $meta ) ) {
 				return array();
 			}
-			// Filter out empty strings and non-scalars (objects/arrays aren't indexable as facet values).
+			// Filter out empty strings, non-scalars, and values exceeding the VARCHAR(190) column width.
 			$clean = array();
 			foreach ( $meta as $value ) {
 				if ( ! is_scalar( $value ) ) {
@@ -155,6 +155,9 @@ class FacetIndex {
 				$value = (string) $value;
 				if ( '' === $value ) {
 					continue;
+				}
+				if ( mb_strlen( $value ) > 190 ) {
+					continue; // Longer than the VARCHAR(190) index column; skip to avoid truncation.
 				}
 				$clean[] = $value;
 			}

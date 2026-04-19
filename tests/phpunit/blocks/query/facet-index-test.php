@@ -118,7 +118,7 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 	}
 
 	public function test_reindex_user_type_is_noop_in_a2() {
-		// Users/terms support deferred to v2.4. Method must not throw on non-post types.
+		global $wpdb;
 		\DesignSetGo\Blocks\Query\FacetIndex::install();
 		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'role', array(
 			'type'   => 'meta',
@@ -126,16 +126,55 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 		) );
 
 		$user_id = $this->factory->user->create();
+		$table   = $wpdb->prefix . 'dsgo_query_facet_index';
+
+		// Seed a post row that happens to share the same numeric id.
+		$wpdb->insert( $table, array(
+			'object_id'   => $user_id,
+			'object_type' => 'post',
+			'facet_key'   => 'sentinel',
+			'facet_value' => 'survives',
+		), array( '%d', '%s', '%s', '%s' ) );
 
 		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'user', $user_id );
 
-		global $wpdb;
-		$table = $wpdb->prefix . 'dsgo_query_facet_index';
-		$count = (int) $wpdb->get_var( $wpdb->prepare(
+		// No user rows written.
+		$user_rows = (int) $wpdb->get_var( $wpdb->prepare(
 			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d AND object_type = 'user'",
 			$user_id
 		) );
+		$this->assertSame( 0, $user_rows );
 
-		$this->assertSame( 0, $count );
+		// Post row with the same id must survive the 'user' reindex call.
+		$surviving = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table} WHERE object_id = %d AND object_type = 'post' AND facet_key = 'sentinel'",
+			$user_id
+		) );
+		$this->assertSame( 1, $surviving, 'DELETE must be scoped by object_type; post row survives user-type reindex.' );
+	}
+
+	public function test_reindex_skips_meta_values_exceeding_column_width() {
+		global $wpdb;
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'url', array(
+			'type'   => 'meta',
+			'source' => '_canonical',
+		) );
+
+		$post_id = $this->factory->post->create();
+		$short   = 'https://example.com/short';
+		$long    = 'https://example.com/' . str_repeat( 'x', 250 );
+		add_post_meta( $post_id, '_canonical', $short );
+		add_post_meta( $post_id, '_canonical', $long );
+
+		\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $post_id );
+
+		$table  = $wpdb->prefix . 'dsgo_query_facet_index';
+		$values = $wpdb->get_col( $wpdb->prepare(
+			"SELECT facet_value FROM {$table} WHERE object_id = %d AND facet_key = 'url'",
+			$post_id
+		) );
+
+		$this->assertSame( array( $short ), $values, 'Meta value exceeding 190 chars must be skipped, not truncated.' );
 	}
 }
