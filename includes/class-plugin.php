@@ -523,6 +523,11 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-index-hooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-index-rebuilder.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-registry.php';
+
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-cli.php';
+			Blocks\Query\FacetCLI::register();
+		}
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-settings.php';
