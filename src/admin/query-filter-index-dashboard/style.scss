@@ -1,11 +1,11 @@
 /**
- * Dynamic Query Facet Admin Dashboard styles.
+ * Dynamic Query Filter Index Admin Dashboard styles.
  *
  * Minimal — WP admin styles handle most layout.
  * Only layout adjustments for cards and the form grid.
  */
 
-.dsgo-query-facet-dashboard {
+.dsgo-query-filter-index-dashboard {
 	max-width: 900px;
 	padding: 16px 0;
 
@@ -14,7 +14,7 @@
 	}
 }
 
-.dsgo-facet-card {
+.dsgo-filter-index-card {
 	background: #fff;
 	border: 1px solid #c3c4c7;
 	border-radius: 4px;
@@ -32,7 +32,7 @@
 	}
 }
 
-.dsgo-facet-status-table {
+.dsgo-filter-index-status-table {
 	width: 100%;
 	border-collapse: collapse;
 	margin-bottom: 16px;
@@ -51,14 +51,14 @@
 	}
 }
 
-.dsgo-facet-card__actions {
+.dsgo-filter-index-card__actions {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 	margin-top: 8px;
 }
 
-.dsgo-facet-list-table {
+.dsgo-filter-index-list-table {
 	margin-bottom: 8px;
 
 	th,
@@ -78,12 +78,12 @@
 	}
 }
 
-.dsgo-facet-empty {
+.dsgo-filter-index-empty {
 	color: #50575e;
 	font-style: italic;
 }
 
-.dsgo-facet-add-form {
+.dsgo-filter-index-add-form {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 16px;

@@ -231,12 +231,12 @@ module.exports = [
 				'overlay-header',
 				'index.js'
 			),
-			// Dynamic Query facet admin dashboard
-			'admin/query-facet-dashboard': path.resolve(
+			// Dynamic Query filter index admin dashboard
+			'admin/query-filter-index-dashboard': path.resolve(
 				process.cwd(),
 				'src',
 				'admin',
-				'query-facet-dashboard',
+				'query-filter-index-dashboard',
 				'index.js'
 			),
 			// Block-specific entries (auto-detected from src/blocks/*/index.js)

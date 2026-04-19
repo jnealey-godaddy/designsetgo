@@ -1,5 +1,5 @@
 /**
- * Dynamic Query — Facet Admin Dashboard entry point.
+ * Dynamic Query — Filter Index Admin Dashboard entry point.
  *
  * @package
  */
@@ -10,7 +10,7 @@ import Dashboard from './Dashboard';
 import './style.scss';
 
 domReady(() => {
-	const mount = document.getElementById('dsgo-query-facet-dashboard');
+	const mount = document.getElementById('dsgo-query-filter-index-dashboard');
 	if (!mount) {
 		return;
 	}

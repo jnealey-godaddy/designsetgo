@@ -1,10 +1,10 @@
 /**
- * Dynamic Query — Facet Admin Dashboard component.
+ * Dynamic Query — Filter Index Admin Dashboard component.
  *
  * Three sub-components:
  *   IndexStatusCard       — last rebuild time, row count, rebuild button.
- *   RegisteredFacetsTable — list of registered facets with Remove per row.
- *   AddFacetForm          — form to add a new facet.
+ *   RegisteredFiltersTable — list of registered filters with Remove per row.
+ *   AddFilterForm          — form to add a new filter.
  *
  * @package
  */
@@ -19,7 +19,7 @@ import {
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
-const { apiUrl, nonce } = window.dsgoQueryFacetDashboard || {};
+const { apiUrl, nonce } = window.dsgoQueryFilterIndexDashboard || {};
 
 /**
  * Shared fetch helper — sets nonce header and parses JSON.
@@ -56,7 +56,7 @@ function IndexStatusCard() {
 
 	const fetchStatus = useCallback(async () => {
 		try {
-			const data = await apiFetch('/query/facet-status');
+			const data = await apiFetch('/query/filter-status');
 			setStatus(data);
 		} catch (e) {
 			setError(e.message);
@@ -84,7 +84,7 @@ function IndexStatusCard() {
 			// Kick off the rebuild — this call is synchronous server-side.
 			// Poll will show intermediate progress if the page polls before
 			// the response returns.
-			const result = await apiFetch('/query/facet-rebuild', {
+			const result = await apiFetch('/query/filter-rebuild', {
 				method: 'POST',
 			});
 			setStatus((prev) => ({
@@ -106,7 +106,7 @@ function IndexStatusCard() {
 		: __('Never', 'designsetgo');
 
 	return (
-		<div className="dsgo-facet-card">
+		<div className="dsgo-filter-index-card">
 			<h2>{__('Index Status', 'designsetgo')}</h2>
 
 			{error && (
@@ -118,7 +118,7 @@ function IndexStatusCard() {
 			{!status && !error && <Spinner />}
 
 			{status && (
-				<table className="dsgo-facet-status-table">
+				<table className="dsgo-filter-index-status-table">
 					<tbody>
 						<tr>
 							<th>{__('Total rows', 'designsetgo')}</th>
@@ -136,7 +136,7 @@ function IndexStatusCard() {
 				</table>
 			)}
 
-			<div className="dsgo-facet-card__actions">
+			<div className="dsgo-filter-index-card__actions">
 				{status?.in_progress ? (
 					<>
 						<Spinner />
@@ -158,45 +158,45 @@ function IndexStatusCard() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// RegisteredFacetsTable
+// RegisteredFiltersTable
 // ─────────────────────────────────────────────────────────────────────────────
 
-function RegisteredFacetsTable({ onChanged }) {
-	const [facets, setFacets] = useState(null);
+function RegisteredFiltersTable({ onChanged }) {
+	const [filters, setFilters] = useState(null);
 	const [error, setError] = useState(null);
 	const [removing, setRemoving] = useState(null);
 
-	const loadFacets = useCallback(async () => {
+	const loadFilters = useCallback(async () => {
 		try {
-			const data = await apiFetch('/query/facets');
-			setFacets(data);
+			const data = await apiFetch('/query/filters');
+			setFilters(data);
 		} catch (e) {
 			setError(e.message);
 		}
 	}, []);
 
 	useEffect(() => {
-		loadFacets();
-	}, [loadFacets]);
+		loadFilters();
+	}, [loadFilters]);
 
-	// Refresh when a new facet is added.
+	// Refresh when a new filter is added.
 	useEffect(() => {
 		if (onChanged) {
-			onChanged(loadFacets);
+			onChanged(loadFilters);
 		}
-	}, [onChanged, loadFacets]);
+	}, [onChanged, loadFilters]);
 
 	const handleRemove = async (key) => {
 		setRemoving(key);
 		setError(null);
 		try {
 			await apiFetch(
-				`/query/facets?facet_key=${encodeURIComponent(key)}`,
+				`/query/filters?filter_key=${encodeURIComponent(key)}`,
 				{
 					method: 'DELETE',
 				}
 			);
-			setFacets((prev) => {
+			setFilters((prev) => {
 				const next = { ...prev };
 				delete next[key];
 				return next;
@@ -208,11 +208,11 @@ function RegisteredFacetsTable({ onChanged }) {
 		}
 	};
 
-	const entries = facets ? Object.entries(facets) : [];
+	const entries = filters ? Object.entries(filters) : [];
 
 	return (
-		<div className="dsgo-facet-card">
-			<h2>{__('Registered Facets', 'designsetgo')}</h2>
+		<div className="dsgo-filter-index-card">
+			<h2>{__('Registered Filters', 'designsetgo')}</h2>
 
 			{error && (
 				<Notice status="error" isDismissible={false}>
@@ -220,16 +220,16 @@ function RegisteredFacetsTable({ onChanged }) {
 				</Notice>
 			)}
 
-			{!facets && !error && <Spinner />}
+			{!filters && !error && <Spinner />}
 
-			{facets && entries.length === 0 && (
-				<p className="dsgo-facet-empty">
-					{__('No facets registered yet.', 'designsetgo')}
+			{filters && entries.length === 0 && (
+				<p className="dsgo-filter-index-empty">
+					{__('No filters registered yet.', 'designsetgo')}
 				</p>
 			)}
 
-			{facets && entries.length > 0 && (
-				<table className="dsgo-facet-list-table widefat">
+			{filters && entries.length > 0 && (
+				<table className="dsgo-filter-index-list-table widefat">
 					<thead>
 						<tr>
 							<th>{__('Key', 'designsetgo')}</th>
@@ -269,7 +269,7 @@ function RegisteredFacetsTable({ onChanged }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AddFacetForm
+// AddFilterForm
 // ─────────────────────────────────────────────────────────────────────────────
 
 const TYPE_OPTIONS = [
@@ -277,8 +277,8 @@ const TYPE_OPTIONS = [
 	{ label: __('Meta', 'designsetgo'), value: 'meta' },
 ];
 
-function AddFacetForm({ onAdded }) {
-	const [facetKey, setFacetKey] = useState('');
+function AddFilterForm({ onAdded }) {
+	const [filterKey, setFilterKey] = useState('');
 	const [type, setType] = useState('taxonomy');
 	const [source, setSource] = useState('');
 	const [label, setLabel] = useState('');
@@ -293,15 +293,15 @@ function AddFacetForm({ onAdded }) {
 		setSuccess(false);
 
 		try {
-			await apiFetch('/query/facet-register', {
+			await apiFetch('/query/filter-register', {
 				method: 'POST',
 				body: JSON.stringify({
-					facet_key: facetKey,
+					filter_key: filterKey,
 					config: { type, source, label },
 				}),
 			});
 
-			setFacetKey('');
+			setFilterKey('');
 			setSource('');
 			setLabel('');
 			setType('taxonomy');
@@ -318,8 +318,8 @@ function AddFacetForm({ onAdded }) {
 	};
 
 	return (
-		<div className="dsgo-facet-card">
-			<h2>{__('Add Facet', 'designsetgo')}</h2>
+		<div className="dsgo-filter-index-card">
+			<h2>{__('Add Filter', 'designsetgo')}</h2>
 
 			{error && (
 				<Notice status="error" onRemove={() => setError(null)}>
@@ -329,15 +329,18 @@ function AddFacetForm({ onAdded }) {
 
 			{success && (
 				<Notice status="success" onRemove={() => setSuccess(false)}>
-					{__('Facet registered successfully.', 'designsetgo')}
+					{__('Filter registered successfully.', 'designsetgo')}
 				</Notice>
 			)}
 
-			<form onSubmit={handleSubmit} className="dsgo-facet-add-form">
+			<form
+				onSubmit={handleSubmit}
+				className="dsgo-filter-index-add-form"
+			>
 				<TextControl
-					label={__('Facet Key', 'designsetgo')}
-					value={facetKey}
-					onChange={setFacetKey}
+					label={__('Filter Key', 'designsetgo')}
+					value={filterKey}
+					onChange={setFilterKey}
 					placeholder="e.g. price"
 					required
 					__nextHasNoMarginBottom
@@ -368,9 +371,9 @@ function AddFacetForm({ onAdded }) {
 					type="submit"
 					variant="primary"
 					isBusy={saving}
-					disabled={saving || !facetKey || !source}
+					disabled={saving || !filterKey || !source}
 				>
-					{__('Add Facet', 'designsetgo')}
+					{__('Add Filter', 'designsetgo')}
 				</Button>
 			</form>
 		</div>
@@ -382,20 +385,20 @@ function AddFacetForm({ onAdded }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-	// refreshFacets is a ref to RegisteredFacetsTable's loadFacets, so
-	// AddFacetForm can trigger a reload after a successful register.
-	const [refreshFacets, setRefreshFacets] = useState(null);
+	// refreshFilters is a ref to RegisteredFiltersTable's loadFilters, so
+	// AddFilterForm can trigger a reload after a successful register.
+	const [refreshFilters, setRefreshFilters] = useState(null);
 
 	const handleTableReady = (loadFn) => {
-		setRefreshFacets(() => loadFn);
+		setRefreshFilters(() => loadFn);
 	};
 
 	return (
-		<div className="dsgo-query-facet-dashboard">
-			<h1>{__('Dynamic Query — Facet Index', 'designsetgo')}</h1>
+		<div className="dsgo-query-filter-index-dashboard">
+			<h1>{__('Dynamic Query — Filter Index', 'designsetgo')}</h1>
 			<IndexStatusCard />
-			<RegisteredFacetsTable onChanged={handleTableReady} />
-			<AddFacetForm onAdded={refreshFacets} />
+			<RegisteredFiltersTable onChanged={handleTableReady} />
+			<AddFilterForm onAdded={refreshFilters} />
 		</div>
 	);
 }
