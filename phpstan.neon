@@ -14,7 +14,7 @@ parameters:
 		- build
 		- tests
 		- .wp-env
-		- includes/blocks/class-query-facet-cli.php
+		- includes/blocks/class-query-filter-index-cli.php
 
 	# Bootstrap files for WordPress functions and plugin constants
 	bootstrapFiles:
@@ -34,7 +34,7 @@ parameters:
 		- '#Function register_[a-z_]+ not found#'
 
 		# WP_CLI class is excluded from analysis; suppress the call-site reference in class-plugin.php
-		- '#Call to static method register\(\) on an unknown class DesignSetGo\\Blocks\\Query\\FacetCLI#'
+		- '#Call to static method register\(\) on an unknown class DesignSetGo\\Blocks\\Query\\FilterIndexCLI#'
 
 		# Allow dynamic properties (common in WordPress)
 		- '#Access to an undefined property#'

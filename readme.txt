@@ -180,15 +180,15 @@ Check the [documentation](https://designsetgoblocks.com/docs/), visit the [suppo
 == Changelog ==
 
 = 2.2.0 =
-* **New:** Facet index powering sub-millisecond per-option counts on Dynamic Query filters (`(N)` counts next to each option, intersection-aware across multiple facets).
+* **New:** Filter index powering sub-millisecond per-option counts on Dynamic Query filters (`(N)` counts next to each option, intersection-aware across multiple active filters).
 * **New:** Infinite scroll as a Dynamic Query pagination variation — `IntersectionObserver`-backed, auto-pauses after 3 auto-loads, respects `prefers-reduced-motion`.
 * **New:** Editor live preview for Dynamic Query — real posts, users, and terms render in the editor with the first item's template editable.
-* **New:** Settings → DesignSetGo → Dynamic Query admin dashboard — rebuild facet index, manage ad-hoc facet registrations.
-* **New:** WP-CLI commands: `wp dsgo query index rebuild/rebuild-facet/status/drop`.
+* **New:** Settings → DesignSetGo → Dynamic Query admin dashboard — rebuild filter index, manage ad-hoc filter registrations.
+* **New:** WP-CLI commands: `wp dsgo query index rebuild/rebuild-filter/status/drop`.
 * **New:** Per-option count spans in filter output (`dsgo-query-filter__count` class, styled via CSS custom property).
 * **New:** CSS-only loading skeletons during filter/pagination refreshes (shown via `aria-busy="true"` state).
-* **Developer:** `designsetgo_query_registered_facets` filter for programmatic facet registration.
-* **Developer:** `/designsetgo/v1/query/preview`, `/facet-register`, `/facet-status`, `/facet-rebuild`, `/facets` REST routes.
+* **Developer:** `designsetgo_query_registered_filters` filter for programmatic filter registration.
+* **Developer:** `/designsetgo/v1/query/preview`, `/filter-register`, `/filter-status`, `/filter-rebuild`, `/filters` REST routes.
 
 = 2.1.0 =
 

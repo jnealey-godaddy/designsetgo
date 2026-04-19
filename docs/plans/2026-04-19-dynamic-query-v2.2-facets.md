@@ -1,5 +1,7 @@
 # Dynamic Query v2.2 — Facets, Infinite Scroll, Editor Live Preview
 
+> **NOTE:** Final implementation renamed "facet" → "filter" throughout the codebase per brand hygiene (avoids confusion with FacetWP). Class names, file names, table name, option keys, REST routes, and filter hooks all use "filter" rather than "facet". Terminology in this plan may predate that rename.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship the "rival FacetWP" release of the Dynamic Query block family: persistent facet index powering sub-millisecond per-option counts, infinite-scroll pagination as a first-class kind, and editor live preview that renders real posts with the first item's inner-block template remaining editable.
