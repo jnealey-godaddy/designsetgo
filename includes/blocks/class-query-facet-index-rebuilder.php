@@ -60,7 +60,7 @@ class FacetIndexRebuilder {
 	 * @return void
 	 */
 	private static function acquire_lock(): void {
-		if ( false === add_option( self::LOCK_OPTION, time(), '', 'no' ) ) {
+		if ( false === add_option( self::LOCK_OPTION, time(), '', false ) ) {
 			update_option( self::LOCK_OPTION, time(), false );
 		}
 	}

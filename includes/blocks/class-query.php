@@ -432,7 +432,7 @@ class Controller {
 			);
 		}
 
-		$type = isset( $config['type'] ) ? (string) $config['type'] : '';
+		$type = (string) $config['type'];
 		if ( ! in_array( $type, array( 'taxonomy', 'meta' ), true ) ) {
 			return new \WP_Error(
 				'dsgo_facet_invalid_type',
