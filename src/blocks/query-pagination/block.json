@@ -32,9 +32,13 @@
   "usesContext": ["designsetgo/queryId"],
   "attributes": {
     "mode": { "type": "string", "default": "numbered", "enum": ["numbered", "loadmore"] },
+    "paginationKind": { "type": "string", "default": "numbered", "enum": ["numbered", "loadmore", "infinite"] },
     "labelLoadMore": { "type": "string", "default": "" },
     "labelLoading": { "type": "string", "default": "" },
-    "showPrevNext": { "type": "boolean", "default": true }
+    "showPrevNext": { "type": "boolean", "default": true },
+    "autoPauseAfter": { "type": "number", "default": 3 },
+    "sentinelOffsetPx": { "type": "number", "default": 200 },
+    "buttonLabelWhenPaused": { "type": "string", "default": "Load more" }
   },
   "example": { "attributes": { "mode": "numbered" } },
   "editorScript": "file:./index.js",
