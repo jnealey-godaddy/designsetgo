@@ -106,7 +106,25 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 						error={preview.error}
 					/>
 				</div>
-				<div {...innerBlocksProps} />
+				<div className="dsgo-query__editor-grid">
+					<div {...innerBlocksProps} />
+					{Array.from(
+						{ length: Math.max(0, (attributes.columns || 1) - 1) },
+						(_, i) => (
+							<div
+								key={ i }
+								className="dsgo-query__ghost-item"
+								aria-hidden="true"
+								contentEditable={ false }
+							>
+								<div className="dsgo-query__ghost-image" />
+								<div className="dsgo-query__ghost-line dsgo-query__ghost-line--title" />
+								<div className="dsgo-query__ghost-line" />
+								<div className="dsgo-query__ghost-line dsgo-query__ghost-line--short" />
+							</div>
+						)
+					)}
+				</div>
 			</div>
 		</>
 	);
