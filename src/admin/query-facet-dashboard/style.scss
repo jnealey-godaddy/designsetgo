@@ -1,0 +1,97 @@
+/**
+ * Dynamic Query Facet Admin Dashboard styles.
+ *
+ * Minimal — WP admin styles handle most layout.
+ * Only layout adjustments for cards and the form grid.
+ */
+
+.dsgo-query-facet-dashboard {
+	max-width: 900px;
+	padding: 16px 0;
+
+	h1 {
+		margin-bottom: 24px;
+	}
+}
+
+.dsgo-facet-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 20px 24px;
+	margin-bottom: 24px;
+
+	h2 {
+		margin-top: 0;
+		margin-bottom: 16px;
+		font-size: 14px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: #1d2327;
+	}
+}
+
+.dsgo-facet-status-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 16px;
+
+	th,
+	td {
+		padding: 6px 8px;
+		text-align: left;
+		border-bottom: 1px solid #f0f0f1;
+	}
+
+	th {
+		font-weight: 600;
+		color: #50575e;
+		width: 180px;
+	}
+}
+
+.dsgo-facet-card__actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 8px;
+}
+
+.dsgo-facet-list-table {
+	margin-bottom: 8px;
+
+	th,
+	td {
+		padding: 8px 12px;
+	}
+
+	td:last-child {
+		width: 80px;
+	}
+
+	code {
+		background: #f6f7f7;
+		padding: 2px 6px;
+		border-radius: 3px;
+		font-size: 12px;
+	}
+}
+
+.dsgo-facet-empty {
+	color: #50575e;
+	font-style: italic;
+}
+
+.dsgo-facet-add-form {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	align-items: end;
+
+	// Submit button spans both columns.
+	> button[type="submit"] {
+		grid-column: 1 / -1;
+		justify-self: start;
+	}
+}

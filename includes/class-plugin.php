@@ -487,6 +487,13 @@ class Plugin {
 	public $facet_registry;
 
 	/**
+	 * Query Facet Admin page instance.
+	 *
+	 * @var Admin\Query_Facet_Admin
+	 */
+	public $query_facet_admin;
+
+	/**
 	 * Returns the instance.
 	 *
 	 * @return Plugin
@@ -540,6 +547,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-draft-mode.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-draft-mode-preview.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-block-migrator.php';
+		require_once DESIGNSETGO_PATH . 'includes/admin/class-query-facet-admin.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-custom-css-renderer.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-section-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-sticky-header.php';
@@ -618,8 +626,9 @@ class Plugin {
 
 		// Initialize admin-only features.
 		if ( is_admin() ) {
-			$this->admin_menu      = new Admin\Admin_Menu();
-			$this->block_migrator  = new Admin\Block_Migrator();
+			$this->admin_menu         = new Admin\Admin_Menu();
+			$this->block_migrator     = new Admin\Block_Migrator();
+			$this->query_facet_admin  = new Admin\Query_Facet_Admin();
 		}
 
 		// Initialize draft mode (works on both admin and REST API).

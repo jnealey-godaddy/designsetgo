@@ -93,6 +93,155 @@ class Controller {
 				),
 			)
 		);
+
+		// Admin-only routes (manage_options).
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/query/facet-status',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_facet_status' ),
+				'permission_callback' => array( $this, 'check_manage_options_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/query/facet-rebuild',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_facet_rebuild' ),
+				'permission_callback' => array( $this, 'check_manage_options_permission' ),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/query/facets',
+			array(
+				array(
+					'methods'             => \WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'handle_facets_list' ),
+					'permission_callback' => array( $this, 'check_manage_options_permission' ),
+				),
+				array(
+					'methods'             => \WP_REST_Server::DELETABLE,
+					'callback'            => array( $this, 'handle_facet_unregister' ),
+					'permission_callback' => array( $this, 'check_manage_options_permission' ),
+					'args'                => array(
+						'facet_key' => array(
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Checks that the request carries a valid nonce and the user has manage_options.
+	 *
+	 * Used by admin-only facet routes (status, rebuild, list, unregister).
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return true|\WP_Error
+	 */
+	public function check_manage_options_permission( \WP_REST_Request $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'You must be logged in.', 'designsetgo' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Invalid nonce.', 'designsetgo' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Insufficient permissions.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Returns the current facet index status.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function handle_facet_status() {
+		return rest_ensure_response( FacetIndexRebuilder::status() );
+	}
+
+	/**
+	 * Runs a full facet index rebuild synchronously and returns the result.
+	 *
+	 * Note: on large sites this may approach PHP's max_execution_time.
+	 * For v2.2 the synchronous model is acceptable; the dashboard polls
+	 * /facet-status every 2 s so even a timeout is handled gracefully.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function handle_facet_rebuild() {
+		return rest_ensure_response( FacetIndexRebuilder::rebuild_all() );
+	}
+
+	/**
+	 * Returns all registered facets.
+	 *
+	 * @return \WP_REST_Response
+	 */
+	public function handle_facets_list() {
+		return rest_ensure_response( FacetRegistry::all() );
+	}
+
+	/**
+	 * Unregisters a facet by key.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_facet_unregister( \WP_REST_Request $request ) {
+		$key = $request->get_param( 'facet_key' );
+
+		if ( empty( $key ) ) {
+			return new \WP_Error(
+				'dsgo_facet_unregister_invalid',
+				__( 'facet_key is required.', 'designsetgo' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		if ( null === FacetRegistry::get( $key ) ) {
+			return new \WP_Error(
+				'dsgo_facet_not_found',
+				__( 'Facet not found.', 'designsetgo' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		FacetRegistry::unregister( $key );
+
+		return rest_ensure_response(
+			array(
+				'unregistered' => true,
+				'facet_key'    => $key,
+			)
+		);
 	}
 
 	/**
@@ -156,11 +305,13 @@ class Controller {
 
 		FacetRegistry::register( $key, $config );
 
-		return rest_ensure_response( array(
-			'registered' => true,
-			'facet_key'  => sanitize_key( $key ),
-			'config'     => FacetRegistry::get( $key ),
-		) );
+		return rest_ensure_response(
+			array(
+				'registered' => true,
+				'facet_key'  => sanitize_key( $key ),
+				'config'     => FacetRegistry::get( $key ),
+			)
+		);
 	}
 
 	/**
