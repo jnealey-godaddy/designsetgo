@@ -221,7 +221,7 @@ class FacetIndex {
 		$counts        = array_fill_keys( $string_values, 0 );
 
 		// Exclude self-facet from intersection — OR semantics within a group.
-		unset( $active_filters[ $facet_key ] );
+		unset( $active_filters[ $key ] );
 
 		// Build intersection subqueries, one per active-filter group.
 		$intersect_sql    = '';

@@ -562,4 +562,32 @@ class DesignSetGo_Query_Facet_Index_Test extends WP_UnitTestCase {
 	public function test_is_available_false_for_unregistered_facet() {
 		$this->assertFalse( \DesignSetGo\Blocks\Query\FacetIndex::is_available( 'nonexistent' ) );
 	}
+
+	public function test_count_for_options_self_exclusion_uses_sanitized_key() {
+		// Regression: $active_filters lookup must use the sanitized key form, not raw $facet_key.
+		\DesignSetGo\Blocks\Query\FacetIndex::install();
+		\DesignSetGo\Blocks\Query\FacetRegistry::register( 'category', array( 'type' => 'taxonomy', 'source' => 'category' ) );
+
+		$news   = $this->factory->category->create();
+		$events = $this->factory->category->create();
+
+		$news_ids  = $this->factory->post->create_many( 3, array( 'post_status' => 'publish', 'post_category' => array( $news ) ) );
+		$event_ids = $this->factory->post->create_many( 2, array( 'post_status' => 'publish', 'post_category' => array( $events ) ) );
+		foreach ( array_merge( $news_ids, $event_ids ) as $pid ) {
+			\DesignSetGo\Blocks\Query\FacetIndex::reindex_object( 'post', $pid );
+		}
+
+		// Pass a key that sanitizes differently from its raw form. active_filters stores the
+		// sanitized form (as all real callers do). The self-exclusion must match that form.
+		$counts = \DesignSetGo\Blocks\Query\FacetIndex::count_for_options(
+			'Category',                                         // sanitizes to 'category'
+			array( $news, $events ),
+			array( 'category' => array( (string) $news ) )       // stored with sanitized key
+		);
+
+		// Without the fix: events count would be 0 (self-filter silently applied).
+		// With the fix: events=2 regardless of 'category' being in active_filters.
+		$this->assertSame( 3, $counts[ (string) $news ] );
+		$this->assertSame( 2, $counts[ (string) $events ] );
+	}
 }
