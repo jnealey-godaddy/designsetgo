@@ -21,7 +21,6 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	ToggleControl,
 	SelectControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
@@ -29,6 +28,7 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUseCustomUnits as useCustomUnits,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
 import { createBlock } from '@wordpress/blocks';
@@ -266,80 +266,116 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 			</InspectorControls>
 
 			<InspectorControls>
-				<PanelBody
-					title={__('Row Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							mobileStack: false,
+							constrainWidth: false,
+							contentWidth: '',
+						})
+					}
 				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
+						label={__('Stack on Mobile', 'designsetgo')}
+						hasValue={() => mobileStack !== false}
+						onDeselect={() => setAttributes({ mobileStack: false })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Stack on Mobile', 'designsetgo')}
+							checked={mobileStack}
+							onChange={(value) =>
+								setAttributes({ mobileStack: value })
+							}
+							help={
+								mobileStack
+									? __(
+											'Items will stack vertically on mobile devices',
+											'designsetgo'
+										)
+									: __(
+											'Items maintain flex layout on all devices',
+											'designsetgo'
+										)
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
 						label={__('Constrain Inner Width', 'designsetgo')}
-						checked={constrainWidth}
-						onChange={(value) =>
-							setAttributes({ constrainWidth: value })
+						hasValue={() => constrainWidth !== false}
+						onDeselect={() =>
+							setAttributes({
+								constrainWidth: false,
+								contentWidth: '',
+							})
 						}
-						help={
-							constrainWidth
-								? __(
-										'Inner content is constrained to max width',
-										'designsetgo'
-									)
-								: __(
-										'Inner content spans full container width',
-										'designsetgo'
-									)
-						}
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Constrain Inner Width', 'designsetgo')}
+							checked={constrainWidth}
+							onChange={(value) =>
+								setAttributes({ constrainWidth: value })
+							}
+							help={
+								constrainWidth
+									? __(
+											'Inner content is constrained to max width',
+											'designsetgo'
+										)
+									: __(
+											'Inner content spans full container width',
+											'designsetgo'
+										)
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
 					{constrainWidth && (
-						<UnitControl
+						<DsgoInspectorPanel.Item
 							label={__('Max Content Width', 'designsetgo')}
-							value={contentWidth}
-							onChange={(value) =>
-								setAttributes({ contentWidth: value })
+							hasValue={() => contentWidth !== ''}
+							onDeselect={() =>
+								setAttributes({ contentWidth: '' })
 							}
-							placeholder={
-								themeContentSize ||
-								__('Theme default', 'designsetgo')
-							}
-							units={units}
-							__unstableInputWidth="80px"
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-							help={
-								!contentWidth && themeContentSize
-									? sprintf(
-											/* translators: %s: theme content size value */
-											__(
-												'Using theme default: %s',
-												'designsetgo'
-											),
-											themeContentSize
-										)
-									: ''
-							}
-						/>
+							isShownByDefault
+						>
+							<UnitControl
+								label={__('Max Content Width', 'designsetgo')}
+								value={contentWidth}
+								onChange={(value) =>
+									setAttributes({ contentWidth: value })
+								}
+								placeholder={
+									themeContentSize ||
+									__('Theme default', 'designsetgo')
+								}
+								units={units}
+								__unstableInputWidth="80px"
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+								help={
+									!contentWidth && themeContentSize
+										? sprintf(
+												/* translators: %s: theme content size value */
+												__(
+													'Using theme default: %s',
+													'designsetgo'
+												),
+												themeContentSize
+											)
+										: ''
+								}
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
-
-					<ToggleControl
-						label={__('Stack on Mobile', 'designsetgo')}
-						checked={mobileStack}
-						onChange={(value) =>
-							setAttributes({ mobileStack: value })
-						}
-						help={
-							mobileStack
-								? __(
-										'Items will stack vertically on mobile devices',
-										'designsetgo'
-									)
-								: __(
-										'Items maintain flex layout on all devices',
-										'designsetgo'
-									)
-						}
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">

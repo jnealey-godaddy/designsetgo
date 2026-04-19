@@ -1,34 +1,21 @@
 /**
  * Counter Block - Animation Panel Component
  *
- * Provides controls for overriding parent counter group animation settings.
+ * Renders DsgoInspectorPanel.Item entries for animation override.
+ * Meant to be composed inside the Settings DsgoInspectorPanel in
+ * counter/edit.js.
  *
  * @since 1.0.0
  */
 
 import { __ } from '@wordpress/i18n';
 import {
-	PanelBody,
 	ToggleControl,
 	RangeControl,
 	SelectControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../../../components/shared';
 
-/**
- * Animation Panel - Controls for animation override.
- *
- * Allows this counter to use custom animation settings instead of inheriting
- * from the parent Counter Group block.
- *
- * @param {Object}   props                   - Component props
- * @param {boolean}  props.overrideAnimation - Whether to override parent animation
- * @param {number}   props.customDuration    - Custom animation duration (seconds)
- * @param {number}   props.customDelay       - Custom animation delay (seconds)
- * @param {string}   props.customEasing      - Custom easing function
- * @param {Object}   props.context           - Block context from parent
- * @param {Function} props.setAttributes     - Function to update block attributes
- * @return {JSX.Element} Animation Panel component
- */
 export const AnimationPanel = ({
 	overrideAnimation,
 	customDuration,
@@ -46,25 +33,62 @@ export const AnimationPanel = ({
 		context?.['designsetgo/counterGroup/animationEasing'] || 'easeOutQuad';
 
 	return (
-		<PanelBody
-			title={__('Animation Override', 'designsetgo')}
-			initialOpen={false}
-		>
-			<ToggleControl
+		<>
+			<DsgoInspectorPanel.Item
 				label={__('Override Parent Animation', 'designsetgo')}
-				checked={overrideAnimation}
-				onChange={(value) =>
-					setAttributes({ overrideAnimation: value })
-				}
-				help={__(
-					'Use custom animation settings instead of parent settings',
-					'designsetgo'
+				hasValue={() => overrideAnimation !== false}
+				onDeselect={() => setAttributes({ overrideAnimation: false })}
+				isShownByDefault
+			>
+				<ToggleControl
+					label={__('Override Parent Animation', 'designsetgo')}
+					checked={overrideAnimation}
+					onChange={(value) =>
+						setAttributes({ overrideAnimation: value })
+					}
+					help={__(
+						'Use custom animation settings instead of parent settings',
+						'designsetgo'
+					)}
+					__nextHasNoMarginBottom
+				/>
+				{!overrideAnimation && (
+					<div
+						style={{
+							padding: '12px',
+							background: '#f0f0f0',
+							borderRadius: '4px',
+							marginTop: '12px',
+						}}
+					>
+						<p
+							style={{
+								margin: 0,
+								fontSize: '12px',
+								color: '#666',
+							}}
+						>
+							<strong>
+								{__('Using parent settings:', 'designsetgo')}
+							</strong>
+							<br />
+							{__('Duration:', 'designsetgo')} {parentDuration}s
+							<br />
+							{__('Delay:', 'designsetgo')} {parentDelay}s
+							<br />
+							{__('Easing:', 'designsetgo')} {parentEasing}
+						</p>
+					</div>
 				)}
-				__nextHasNoMarginBottom
-			/>
+			</DsgoInspectorPanel.Item>
 
 			{overrideAnimation && (
-				<>
+				<DsgoInspectorPanel.Item
+					label={__('Animation Duration (seconds)', 'designsetgo')}
+					hasValue={() => customDuration !== 2}
+					onDeselect={() => setAttributes({ customDuration: 2 })}
+					isShownByDefault
+				>
 					<RangeControl
 						label={__(
 							'Animation Duration (seconds)',
@@ -84,7 +108,16 @@ export const AnimationPanel = ({
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
+				</DsgoInspectorPanel.Item>
+			)}
 
+			{overrideAnimation && (
+				<DsgoInspectorPanel.Item
+					label={__('Animation Delay (seconds)', 'designsetgo')}
+					hasValue={() => customDelay !== 0}
+					onDeselect={() => setAttributes({ customDelay: 0 })}
+					isShownByDefault
+				>
 					<RangeControl
 						label={__('Animation Delay (seconds)', 'designsetgo')}
 						value={customDelay}
@@ -101,7 +134,18 @@ export const AnimationPanel = ({
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
+				</DsgoInspectorPanel.Item>
+			)}
 
+			{overrideAnimation && (
+				<DsgoInspectorPanel.Item
+					label={__('Easing Function', 'designsetgo')}
+					hasValue={() => customEasing !== 'easeOutQuad'}
+					onDeselect={() =>
+						setAttributes({ customEasing: 'easeOutQuad' })
+					}
+					isShownByDefault
+				>
 					<SelectControl
 						label={__('Easing Function', 'designsetgo')}
 						value={customEasing}
@@ -129,31 +173,8 @@ export const AnimationPanel = ({
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				</>
+				</DsgoInspectorPanel.Item>
 			)}
-
-			{!overrideAnimation && (
-				<div
-					style={{
-						padding: '12px',
-						background: '#f0f0f0',
-						borderRadius: '4px',
-						marginTop: '12px',
-					}}
-				>
-					<p style={{ margin: 0, fontSize: '12px', color: '#666' }}>
-						<strong>
-							{__('Using parent settings:', 'designsetgo')}
-						</strong>
-						<br />
-						{__('Duration:', 'designsetgo')} {parentDuration}s
-						<br />
-						{__('Delay:', 'designsetgo')} {parentDelay}s
-						<br />
-						{__('Easing:', 'designsetgo')} {parentEasing}
-					</p>
-				</div>
-			)}
-		</PanelBody>
+		</>
 	);
 };

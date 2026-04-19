@@ -13,15 +13,13 @@ import {
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	SelectControl,
 	RangeControl,
 	TextControl,
 	ToggleControl,
 	Button,
-	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
-	__experimentalDivider as Divider,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import {
 	encodeColorValue,
 	decodeColorValue,
@@ -339,44 +337,94 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Card Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							layoutPreset: 'standard',
+							visualStyle: 'default',
+							imageId: 0,
+							imageUrl: '',
+							imageAlt: '',
+							imageAspectRatio: '16-9',
+							imageCustomAspectRatio: '',
+							imageObjectFit: 'cover',
+							imageFocalPoint: { x: 0.5, y: 0.5 },
+							overlayOpacity: 80,
+							contentAlignment: 'center',
+							badgeText: '',
+							badgeStyle: 'floating',
+							badgeFloatingPosition: 'top-right',
+							badgeInlinePosition: 'above-title',
+							showImage: true,
+							showTitle: true,
+							showSubtitle: true,
+							showBody: true,
+							showBadge: true,
+							showCta: true,
+						})
+					}
 				>
-					{/* Layout Settings */}
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Layout Preset', 'designsetgo')}
-						value={layoutPreset}
-						options={layoutOptions}
-						onChange={(value) =>
-							setAttributes({ layoutPreset: value })
+						hasValue={() => layoutPreset !== 'standard'}
+						onDeselect={() =>
+							setAttributes({ layoutPreset: 'standard' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Layout Preset', 'designsetgo')}
+							value={layoutPreset}
+							options={layoutOptions}
+							onChange={(value) =>
+								setAttributes({ layoutPreset: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Visual Style', 'designsetgo')}
-						value={visualStyle}
-						options={visualStyleOptions}
-						onChange={(value) =>
-							setAttributes({ visualStyle: value })
+						hasValue={() => visualStyle !== 'default'}
+						onDeselect={() =>
+							setAttributes({ visualStyle: 'default' })
 						}
-						help={__(
-							'Choose a visual style for the card appearance.',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Visual Style', 'designsetgo')}
+							value={visualStyle}
+							options={visualStyleOptions}
+							onChange={(value) =>
+								setAttributes({ visualStyle: value })
+							}
+							help={__(
+								'Choose a visual style for the card appearance.',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					{/* Image Upload */}
 					{layoutPreset !== 'minimal' && showImage && (
-						<>
-							<Divider />
-							<p style={{ marginBottom: '8px', fontWeight: 600 }}>
-								{__('Image', 'designsetgo')}
-							</p>
+						<DsgoInspectorPanel.Item
+							label={__('Image', 'designsetgo')}
+							hasValue={() => !!imageUrl}
+							onDeselect={() =>
+								setAttributes({
+									imageId: 0,
+									imageUrl: '',
+									imageAlt: '',
+									imageFocalPoint: { x: 0.5, y: 0.5 },
+								})
+							}
+							isShownByDefault
+						>
 							<MediaUploadCheck>
 								<MediaUpload
 									onSelect={(media) => {
@@ -458,141 +506,166 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 									)}
 								/>
 							</MediaUploadCheck>
+						</DsgoInspectorPanel.Item>
+					)}
 
-							{imageUrl && (
-								<>
-									<TextControl
-										label={__('Alt Text', 'designsetgo')}
-										value={imageAlt}
-										onChange={(value) =>
-											setAttributes({ imageAlt: value })
-										}
-										help={__(
-											'Describe the image for accessibility.',
-											'designsetgo'
-										)}
-										__next40pxDefaultSize
-										__nextHasNoMarginBottom
-										style={{ marginTop: '12px' }}
-									/>
+					{layoutPreset !== 'minimal' && showImage && imageUrl && (
+						<DsgoInspectorPanel.Item
+							label={__('Alt Text', 'designsetgo')}
+							hasValue={() => imageAlt !== ''}
+							onDeselect={() => setAttributes({ imageAlt: '' })}
+							isShownByDefault
+						>
+							<TextControl
+								label={__('Alt Text', 'designsetgo')}
+								value={imageAlt}
+								onChange={(value) =>
+									setAttributes({ imageAlt: value })
+								}
+								help={__(
+									'Describe the image for accessibility.',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
-									<SelectControl
-										label={__(
-											'Aspect Ratio',
-											'designsetgo'
-										)}
-										value={imageAspectRatio}
-										options={[
-											{
-												label: __(
-													'16:9',
-													'designsetgo'
-												),
-												value: '16-9',
-											},
-											{
-												label: __('4:3', 'designsetgo'),
-												value: '4-3',
-											},
-											{
-												label: __('1:1', 'designsetgo'),
-												value: '1-1',
-											},
-											{
-												label: __(
-													'Original',
-													'designsetgo'
-												),
-												value: 'original',
-											},
-											{
-												label: __(
-													'Custom',
-													'designsetgo'
-												),
-												value: 'custom',
-											},
-										]}
-										onChange={(value) =>
-											setAttributes({
-												imageAspectRatio: value,
-											})
-										}
-										__next40pxDefaultSize
-										__nextHasNoMarginBottom
-									/>
+					{layoutPreset !== 'minimal' && showImage && imageUrl && (
+						<DsgoInspectorPanel.Item
+							label={__('Aspect Ratio', 'designsetgo')}
+							hasValue={() => imageAspectRatio !== '16-9'}
+							onDeselect={() =>
+								setAttributes({
+									imageAspectRatio: '16-9',
+									imageCustomAspectRatio: '',
+								})
+							}
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Aspect Ratio', 'designsetgo')}
+								value={imageAspectRatio}
+								options={[
+									{
+										label: __('16:9', 'designsetgo'),
+										value: '16-9',
+									},
+									{
+										label: __('4:3', 'designsetgo'),
+										value: '4-3',
+									},
+									{
+										label: __('1:1', 'designsetgo'),
+										value: '1-1',
+									},
+									{
+										label: __('Original', 'designsetgo'),
+										value: 'original',
+									},
+									{
+										label: __('Custom', 'designsetgo'),
+										value: 'custom',
+									},
+								]}
+								onChange={(value) =>
+									setAttributes({
+										imageAspectRatio: value,
+									})
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
-									{imageAspectRatio === 'custom' && (
-										<TextControl
-											label={__(
-												'Custom Aspect Ratio',
-												'designsetgo'
-											)}
-											value={imageCustomAspectRatio}
-											onChange={(value) =>
-												setAttributes({
-													imageCustomAspectRatio:
-														value,
-												})
-											}
-											placeholder="16 / 9"
-											help={__(
-												'E.g., "16 / 9" or "2 / 1"',
-												'designsetgo'
-											)}
-											__next40pxDefaultSize
-											__nextHasNoMarginBottom
-										/>
+					{layoutPreset !== 'minimal' &&
+						showImage &&
+						imageUrl &&
+						imageAspectRatio === 'custom' && (
+							<DsgoInspectorPanel.Item
+								label={__('Custom Aspect Ratio', 'designsetgo')}
+								hasValue={() => imageCustomAspectRatio !== ''}
+								onDeselect={() =>
+									setAttributes({
+										imageCustomAspectRatio: '',
+									})
+								}
+								isShownByDefault
+							>
+								<TextControl
+									label={__(
+										'Custom Aspect Ratio',
+										'designsetgo'
 									)}
+									value={imageCustomAspectRatio}
+									onChange={(value) =>
+										setAttributes({
+											imageCustomAspectRatio: value,
+										})
+									}
+									placeholder="16 / 9"
+									help={__(
+										'E.g., "16 / 9" or "2 / 1"',
+										'designsetgo'
+									)}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+							</DsgoInspectorPanel.Item>
+						)}
 
-									<SelectControl
-										label={__('Object Fit', 'designsetgo')}
-										value={imageObjectFit}
-										options={[
-											{
-												label: __(
-													'Cover',
-													'designsetgo'
-												),
-												value: 'cover',
-											},
-											{
-												label: __(
-													'Contain',
-													'designsetgo'
-												),
-												value: 'contain',
-											},
-											{
-												label: __(
-													'Fill',
-													'designsetgo'
-												),
-												value: 'fill',
-											},
-											{
-												label: __(
-													'Scale Down',
-													'designsetgo'
-												),
-												value: 'scale-down',
-											},
-										]}
-										onChange={(value) =>
-											setAttributes({
-												imageObjectFit: value,
-											})
-										}
-										__next40pxDefaultSize
-										__nextHasNoMarginBottom
-									/>
-								</>
-							)}
-						</>
+					{layoutPreset !== 'minimal' && showImage && imageUrl && (
+						<DsgoInspectorPanel.Item
+							label={__('Object Fit', 'designsetgo')}
+							hasValue={() => imageObjectFit !== 'cover'}
+							onDeselect={() =>
+								setAttributes({ imageObjectFit: 'cover' })
+							}
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Object Fit', 'designsetgo')}
+								value={imageObjectFit}
+								options={[
+									{
+										label: __('Cover', 'designsetgo'),
+										value: 'cover',
+									},
+									{
+										label: __('Contain', 'designsetgo'),
+										value: 'contain',
+									},
+									{
+										label: __('Fill', 'designsetgo'),
+										value: 'fill',
+									},
+									{
+										label: __('Scale Down', 'designsetgo'),
+										value: 'scale-down',
+									},
+								]}
+								onChange={(value) =>
+									setAttributes({
+										imageObjectFit: value,
+									})
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
 
 					{layoutPreset === 'background' && (
-						<>
+						<DsgoInspectorPanel.Item
+							label={__('Overlay Opacity', 'designsetgo')}
+							hasValue={() => overlayOpacity !== 80}
+							onDeselect={() =>
+								setAttributes({ overlayOpacity: 80 })
+							}
+							isShownByDefault
+						>
 							<RangeControl
 								label={__('Overlay Opacity', 'designsetgo')}
 								value={overlayOpacity}
@@ -609,7 +682,18 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{layoutPreset === 'background' && (
+						<DsgoInspectorPanel.Item
+							label={__('Content Alignment', 'designsetgo')}
+							hasValue={() => contentAlignment !== 'center'}
+							onDeselect={() =>
+								setAttributes({ contentAlignment: 'center' })
+							}
+							isShownByDefault
+						>
 							<SelectControl
 								label={__('Content Alignment', 'designsetgo')}
 								value={contentAlignment}
@@ -624,29 +708,40 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
-						</>
+						</DsgoInspectorPanel.Item>
 					)}
 
-					<Divider />
-
-					{/* Badge Settings */}
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Badge Text', 'designsetgo')}
-						value={badgeText}
-						onChange={(value) =>
-							setAttributes({ badgeText: value })
-						}
-						placeholder={__('NEW', 'designsetgo')}
-						help={__(
-							'Leave empty to hide the badge.',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => badgeText !== ''}
+						onDeselect={() => setAttributes({ badgeText: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Badge Text', 'designsetgo')}
+							value={badgeText}
+							onChange={(value) =>
+								setAttributes({ badgeText: value })
+							}
+							placeholder={__('NEW', 'designsetgo')}
+							help={__(
+								'Leave empty to hide the badge.',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
 					{badgeText && (
-						<>
+						<DsgoInspectorPanel.Item
+							label={__('Badge Style', 'designsetgo')}
+							hasValue={() => badgeStyle !== 'floating'}
+							onDeselect={() =>
+								setAttributes({ badgeStyle: 'floating' })
+							}
+							isShownByDefault
+						>
 							<SelectControl
 								label={__('Badge Style', 'designsetgo')}
 								value={badgeStyle}
@@ -657,118 +752,194 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
-
-							{badgeStyle === 'floating' && (
-								<SelectControl
-									label={__(
-										'Floating Position',
-										'designsetgo'
-									)}
-									value={badgeFloatingPosition}
-									options={badgeFloatingPositionOptions}
-									onChange={(value) =>
-										setAttributes({
-											badgeFloatingPosition: value,
-										})
-									}
-									help={__(
-										'Position the badge over the card.',
-										'designsetgo'
-									)}
-									__next40pxDefaultSize
-									__nextHasNoMarginBottom
-								/>
-							)}
-
-							{badgeStyle === 'inline' && (
-								<SelectControl
-									label={__('Inline Position', 'designsetgo')}
-									value={badgeInlinePosition}
-									options={badgeInlinePositionOptions}
-									onChange={(value) =>
-										setAttributes({
-											badgeInlinePosition: value,
-										})
-									}
-									help={__(
-										'Position the badge in the content flow.',
-										'designsetgo'
-									)}
-									__next40pxDefaultSize
-									__nextHasNoMarginBottom
-								/>
-							)}
-						</>
+						</DsgoInspectorPanel.Item>
 					)}
 
-					<Divider />
+					{badgeText && badgeStyle === 'floating' && (
+						<DsgoInspectorPanel.Item
+							label={__('Floating Position', 'designsetgo')}
+							hasValue={() =>
+								badgeFloatingPosition !== 'top-right'
+							}
+							onDeselect={() =>
+								setAttributes({
+									badgeFloatingPosition: 'top-right',
+								})
+							}
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Floating Position', 'designsetgo')}
+								value={badgeFloatingPosition}
+								options={badgeFloatingPositionOptions}
+								onChange={(value) =>
+									setAttributes({
+										badgeFloatingPosition: value,
+									})
+								}
+								help={__(
+									'Position the badge over the card.',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
-					{/* Content Elements */}
-					<p style={{ marginBottom: '8px', fontWeight: 600 }}>
-						{__('Content Elements', 'designsetgo')}
-					</p>
+					{badgeText && badgeStyle === 'inline' && (
+						<DsgoInspectorPanel.Item
+							label={__('Inline Position', 'designsetgo')}
+							hasValue={() =>
+								badgeInlinePosition !== 'above-title'
+							}
+							onDeselect={() =>
+								setAttributes({
+									badgeInlinePosition: 'above-title',
+								})
+							}
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Inline Position', 'designsetgo')}
+								value={badgeInlinePosition}
+								options={badgeInlinePositionOptions}
+								onChange={(value) =>
+									setAttributes({
+										badgeInlinePosition: value,
+									})
+								}
+								help={__(
+									'Position the badge in the content flow.',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
 					{layoutPreset !== 'minimal' && (
-						<ToggleControl
+						<DsgoInspectorPanel.Item
 							label={__('Show Image', 'designsetgo')}
-							checked={showImage}
-							onChange={(value) =>
-								setAttributes({ showImage: value })
+							hasValue={() => showImage !== true}
+							onDeselect={() =>
+								setAttributes({ showImage: true })
 							}
-							help={__('Display the card image.', 'designsetgo')}
-							__nextHasNoMarginBottom
-						/>
+							isShownByDefault
+						>
+							<ToggleControl
+								label={__('Show Image', 'designsetgo')}
+								checked={showImage}
+								onChange={(value) =>
+									setAttributes({ showImage: value })
+								}
+								help={__(
+									'Display the card image.',
+									'designsetgo'
+								)}
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Show Title', 'designsetgo')}
-						checked={showTitle}
-						onChange={(value) =>
-							setAttributes({ showTitle: value })
-						}
-						help={__('Display the card title.', 'designsetgo')}
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => showTitle !== true}
+						onDeselect={() => setAttributes({ showTitle: true })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Show Title', 'designsetgo')}
+							checked={showTitle}
+							onChange={(value) =>
+								setAttributes({ showTitle: value })
+							}
+							help={__('Display the card title.', 'designsetgo')}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Show Subtitle', 'designsetgo')}
-						checked={showSubtitle}
-						onChange={(value) =>
-							setAttributes({ showSubtitle: value })
-						}
-						help={__('Display the card subtitle.', 'designsetgo')}
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => showSubtitle !== true}
+						onDeselect={() => setAttributes({ showSubtitle: true })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Show Subtitle', 'designsetgo')}
+							checked={showSubtitle}
+							onChange={(value) =>
+								setAttributes({ showSubtitle: value })
+							}
+							help={__(
+								'Display the card subtitle.',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Show Body Text', 'designsetgo')}
-						checked={showBody}
-						onChange={(value) => setAttributes({ showBody: value })}
-						help={__('Display the card body text.', 'designsetgo')}
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => showBody !== true}
+						onDeselect={() => setAttributes({ showBody: true })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Show Body Text', 'designsetgo')}
+							checked={showBody}
+							onChange={(value) =>
+								setAttributes({ showBody: value })
+							}
+							help={__(
+								'Display the card body text.',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Show Badge', 'designsetgo')}
-						checked={showBadge}
-						onChange={(value) =>
-							setAttributes({ showBadge: value })
-						}
-						help={__('Display the badge element.', 'designsetgo')}
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => showBadge !== true}
+						onDeselect={() => setAttributes({ showBadge: true })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Show Badge', 'designsetgo')}
+							checked={showBadge}
+							onChange={(value) =>
+								setAttributes({ showBadge: value })
+							}
+							help={__(
+								'Display the badge element.',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Show CTA Button', 'designsetgo')}
-						checked={showCta}
-						onChange={(value) => setAttributes({ showCta: value })}
-						help={__(
-							'Display the call-to-action button.',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => showCta !== true}
+						onDeselect={() => setAttributes({ showCta: true })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Show CTA Button', 'designsetgo')}
+							checked={showCta}
+							onChange={(value) =>
+								setAttributes({ showCta: value })
+							}
+							help={__(
+								'Display the call-to-action button.',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">

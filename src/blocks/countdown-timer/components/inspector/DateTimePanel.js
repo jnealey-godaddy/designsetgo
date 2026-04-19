@@ -2,12 +2,8 @@
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
-import {
-	PanelBody,
-	DateTimePicker,
-	SelectControl,
-	Notice,
-} from '@wordpress/components';
+import { DateTimePicker, SelectControl, Notice } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../../../components/shared';
 
 /**
  * Common timezone options - WordPress standard timezones
@@ -79,10 +75,14 @@ const TIMEZONE_OPTIONS = [
 /**
  * DateTime Panel component
  *
+ * Renders DsgoInspectorPanel.Item entries for target-date + timezone.
+ * Meant to be composed inside the Settings DsgoInspectorPanel in
+ * countdown-timer/edit.js.
+ *
  * @param {Object}   props               - Component properties
  * @param {Object}   props.attributes    - Block attributes
  * @param {Function} props.setAttributes - Function to update attributes
- * @return {JSX.Element} Panel component
+ * @return {JSX.Element} Item fragment
  */
 export default function DateTimePanel({ attributes, setAttributes }) {
 	const { targetDateTime, timezone } = attributes;
@@ -92,46 +92,58 @@ export default function DateTimePanel({ attributes, setAttributes }) {
 		window?.wp?.date?.getSettings?.()?.timezone?.string || 'UTC';
 
 	return (
-		<PanelBody title={__('Date & Time', 'designsetgo')} initialOpen={true}>
-			<Notice status="info" isDismissible={false}>
-				{__(
-					'Set the target date and time for your countdown.',
-					'designsetgo'
-				)}
-			</Notice>
-
-			<div style={{ marginTop: '12px', marginBottom: '12px' }}>
-				<DateTimePicker
-					currentDate={targetDateTime || null}
-					onChange={(newDateTime) =>
-						setAttributes({ targetDateTime: newDateTime })
-					}
-					is12Hour={true}
-				/>
-			</div>
-
-			<SelectControl
-				label={__('Timezone', 'designsetgo')}
-				value={timezone}
-				options={TIMEZONE_OPTIONS}
-				onChange={(newTimezone) =>
-					setAttributes({ timezone: newTimezone })
-				}
-				help={
-					__('WordPress site timezone:', 'designsetgo') +
-					' ' +
-					wpTimezone
-				}
-				__next40pxDefaultSize
-				__nextHasNoMarginBottom
-			/>
-
-			{targetDateTime && (
-				<Notice status="success" isDismissible={false}>
-					{__('Target date set!', 'designsetgo')}{' '}
-					{new Date(targetDateTime).toLocaleString()}
+		<>
+			<DsgoInspectorPanel.Item
+				label={__('Target Date & Time', 'designsetgo')}
+				hasValue={() => !!targetDateTime}
+				onDeselect={() => setAttributes({ targetDateTime: '' })}
+				isShownByDefault
+			>
+				<Notice status="info" isDismissible={false}>
+					{__(
+						'Set the target date and time for your countdown.',
+						'designsetgo'
+					)}
 				</Notice>
-			)}
-		</PanelBody>
+				<div style={{ marginTop: '12px', marginBottom: '12px' }}>
+					<DateTimePicker
+						currentDate={targetDateTime || null}
+						onChange={(newDateTime) =>
+							setAttributes({ targetDateTime: newDateTime })
+						}
+						is12Hour={true}
+					/>
+				</div>
+				{targetDateTime && (
+					<Notice status="success" isDismissible={false}>
+						{__('Target date set!', 'designsetgo')}{' '}
+						{new Date(targetDateTime).toLocaleString()}
+					</Notice>
+				)}
+			</DsgoInspectorPanel.Item>
+
+			<DsgoInspectorPanel.Item
+				label={__('Timezone', 'designsetgo')}
+				hasValue={() => timezone !== ''}
+				onDeselect={() => setAttributes({ timezone: '' })}
+				isShownByDefault
+			>
+				<SelectControl
+					label={__('Timezone', 'designsetgo')}
+					value={timezone}
+					options={TIMEZONE_OPTIONS}
+					onChange={(newTimezone) =>
+						setAttributes({ timezone: newTimezone })
+					}
+					help={
+						__('WordPress site timezone:', 'designsetgo') +
+						' ' +
+						wpTimezone
+					}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
+		</>
 	);
 }

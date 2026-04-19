@@ -11,13 +11,13 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	SelectControl,
 	RangeControl,
 	Button,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import classnames from 'classnames';
 import {
 	encodeColorValue,
@@ -185,80 +185,112 @@ export default function SlideEdit({
 
 			{/* Other controls - appear in SETTINGS tab */}
 			<InspectorControls>
-				<PanelBody
-					title={__('Background Image', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							backgroundImage: { url: '', id: 0, alt: '' },
+							backgroundSize: 'cover',
+							backgroundPosition: 'center center',
+							overlayOpacity: 80,
+							contentVerticalAlign: 'center',
+							contentHorizontalAlign: 'center',
+							minHeight: '',
+						})
+					}
 				>
-					<MediaUploadCheck>
-						<MediaUpload
-							onSelect={onSelectImage}
-							allowedTypes={['image']}
-							value={backgroundImage?.id}
-							render={({ open }) => (
-								<>
-									{!backgroundImage?.url ? (
-										<Button
-											onClick={open}
-											variant="secondary"
-											style={{
-												width: '100%',
-												marginBottom: '12px',
-											}}
-										>
-											{__(
-												'Select Background Image',
-												'designsetgo'
-											)}
-										</Button>
-									) : (
-										<div style={{ marginBottom: '12px' }}>
-											<img
-												src={backgroundImage.url}
-												alt={backgroundImage.alt}
+					<DsgoInspectorPanel.Item
+						label={__('Background Image', 'designsetgo')}
+						hasValue={() => !!backgroundImage?.url}
+						onDeselect={() =>
+							setAttributes({
+								backgroundImage: { url: '', id: 0, alt: '' },
+							})
+						}
+						isShownByDefault
+					>
+						<MediaUploadCheck>
+							<MediaUpload
+								onSelect={onSelectImage}
+								allowedTypes={['image']}
+								value={backgroundImage?.id}
+								render={({ open }) => (
+									<>
+										{!backgroundImage?.url ? (
+											<Button
+												onClick={open}
+												variant="secondary"
 												style={{
 													width: '100%',
-													height: 'auto',
-													borderRadius: '4px',
-													marginBottom: '8px',
-												}}
-											/>
-											<div
-												style={{
-													display: 'flex',
-													gap: '8px',
+													marginBottom: '12px',
 												}}
 											>
-												<Button
-													onClick={open}
-													variant="secondary"
-													style={{ flex: 1 }}
+												{__(
+													'Select Background Image',
+													'designsetgo'
+												)}
+											</Button>
+										) : (
+											<div
+												style={{ marginBottom: '12px' }}
+											>
+												<img
+													src={backgroundImage.url}
+													alt={backgroundImage.alt}
+													style={{
+														width: '100%',
+														height: 'auto',
+														borderRadius: '4px',
+														marginBottom: '8px',
+													}}
+												/>
+												<div
+													style={{
+														display: 'flex',
+														gap: '8px',
+													}}
 												>
-													{__(
-														'Replace Image',
-														'designsetgo'
-													)}
-												</Button>
-												<Button
-													onClick={onRemoveImage}
-													variant="secondary"
-													isDestructive
-													style={{ flex: 1 }}
-												>
-													{__(
-														'Remove Image',
-														'designsetgo'
-													)}
-												</Button>
+													<Button
+														onClick={open}
+														variant="secondary"
+														style={{ flex: 1 }}
+													>
+														{__(
+															'Replace Image',
+															'designsetgo'
+														)}
+													</Button>
+													<Button
+														onClick={onRemoveImage}
+														variant="secondary"
+														isDestructive
+														style={{ flex: 1 }}
+													>
+														{__(
+															'Remove Image',
+															'designsetgo'
+														)}
+													</Button>
+												</div>
 											</div>
-										</div>
-									)}
-								</>
-							)}
-						/>
-					</MediaUploadCheck>
+										)}
+									</>
+								)}
+							/>
+						</MediaUploadCheck>
+					</DsgoInspectorPanel.Item>
 
 					{backgroundImage?.url && (
-						<>
+						<DsgoInspectorPanel.Item
+							label={__('Background Size', 'designsetgo')}
+							hasValue={() => backgroundSize !== 'cover'}
+							onDeselect={() =>
+								setAttributes({ backgroundSize: 'cover' })
+							}
+							isShownByDefault
+						>
 							<SelectControl
 								label={__('Background Size', 'designsetgo')}
 								value={backgroundSize}
@@ -286,7 +318,22 @@ export default function SlideEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{backgroundImage?.url && (
+						<DsgoInspectorPanel.Item
+							label={__('Background Position', 'designsetgo')}
+							hasValue={() =>
+								backgroundPosition !== 'center center'
+							}
+							onDeselect={() =>
+								setAttributes({
+									backgroundPosition: 'center center',
+								})
+							}
+							isShownByDefault
+						>
 							<SelectControl
 								label={__('Background Position', 'designsetgo')}
 								value={backgroundPosition}
@@ -346,112 +393,129 @@ export default function SlideEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
-
-							{overlayColor && (
-								<>
-									<hr
-										style={{
-											margin: '16px 0',
-											borderColor: '#ddd',
-										}}
-									/>
-
-									<RangeControl
-										label={__(
-											'Overlay Opacity',
-											'designsetgo'
-										)}
-										value={overlayOpacity}
-										onChange={(value) =>
-											setAttributes({
-												overlayOpacity: value,
-											})
-										}
-										min={0}
-										max={100}
-										help={__(
-											'Set overlay color in the Styles tab to enable overlay',
-											'designsetgo'
-										)}
-										__next40pxDefaultSize
-										__nextHasNoMarginBottom
-									/>
-								</>
-							)}
-						</>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
 
-				<PanelBody
-					title={__('Content Alignment', 'designsetgo')}
-					initialOpen={false}
-				>
-					<SelectControl
+					{backgroundImage?.url && overlayColor && (
+						<DsgoInspectorPanel.Item
+							label={__('Overlay Opacity', 'designsetgo')}
+							hasValue={() => overlayOpacity !== 80}
+							onDeselect={() =>
+								setAttributes({ overlayOpacity: 80 })
+							}
+							isShownByDefault
+						>
+							<RangeControl
+								label={__('Overlay Opacity', 'designsetgo')}
+								value={overlayOpacity}
+								onChange={(value) =>
+									setAttributes({
+										overlayOpacity: value,
+									})
+								}
+								min={0}
+								max={100}
+								help={__(
+									'Set overlay color in the Styles tab to enable overlay',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
+
+					<DsgoInspectorPanel.Item
 						label={__('Vertical Alignment', 'designsetgo')}
-						value={contentVerticalAlign}
-						options={[
-							{
-								label: __('Top', 'designsetgo'),
-								value: 'flex-start',
-							},
-							{
-								label: __('Center', 'designsetgo'),
-								value: 'center',
-							},
-							{
-								label: __('Bottom', 'designsetgo'),
-								value: 'flex-end',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ contentVerticalAlign: value })
+						hasValue={() => contentVerticalAlign !== 'center'}
+						onDeselect={() =>
+							setAttributes({ contentVerticalAlign: 'center' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Vertical Alignment', 'designsetgo')}
+							value={contentVerticalAlign}
+							options={[
+								{
+									label: __('Top', 'designsetgo'),
+									value: 'flex-start',
+								},
+								{
+									label: __('Center', 'designsetgo'),
+									value: 'center',
+								},
+								{
+									label: __('Bottom', 'designsetgo'),
+									value: 'flex-end',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ contentVerticalAlign: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Horizontal Alignment', 'designsetgo')}
-						value={contentHorizontalAlign}
-						options={[
-							{
-								label: __('Left', 'designsetgo'),
-								value: 'flex-start',
-							},
-							{
-								label: __('Center', 'designsetgo'),
-								value: 'center',
-							},
-							{
-								label: __('Right', 'designsetgo'),
-								value: 'flex-end',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ contentHorizontalAlign: value })
+						hasValue={() => contentHorizontalAlign !== 'center'}
+						onDeselect={() =>
+							setAttributes({ contentHorizontalAlign: 'center' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Horizontal Alignment', 'designsetgo')}
+							value={contentHorizontalAlign}
+							options={[
+								{
+									label: __('Left', 'designsetgo'),
+									value: 'flex-start',
+								},
+								{
+									label: __('Center', 'designsetgo'),
+									value: 'center',
+								},
+								{
+									label: __('Right', 'designsetgo'),
+									value: 'flex-end',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ contentHorizontalAlign: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Min Height Override', 'designsetgo')}
-						value={minHeight}
-						onChange={(value) =>
-							setAttributes({ minHeight: value })
-						}
-						units={[
-							{ value: 'px', label: 'px', default: 0 },
-							{ value: 'vh', label: 'vh', default: 0 },
-						]}
-						help={__(
-							'Override slider height for this slide only (leave empty to use slider settings)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => minHeight !== ''}
+						onDeselect={() => setAttributes({ minHeight: '' })}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Min Height Override', 'designsetgo')}
+							value={minHeight}
+							onChange={(value) =>
+								setAttributes({ minHeight: value })
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 0 },
+								{ value: 'vh', label: 'vh', default: 0 },
+							]}
+							help={__(
+								'Override slider height for this slide only (leave empty to use slider settings)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

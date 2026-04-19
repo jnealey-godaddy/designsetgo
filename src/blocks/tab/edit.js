@@ -10,7 +10,8 @@ import {
 	InspectorControls,
 	useInnerBlocksProps,
 } from '@wordpress/block-editor';
-import { PanelBody, TextControl, SelectControl } from '@wordpress/components';
+import { TextControl, SelectControl } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect } from '@wordpress/element';
 import { IconPicker } from '../icon/components/IconPicker';
 
@@ -74,124 +75,26 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 		}
 	);
 
-	// Don't render inactive tabs at all - improves performance
-	if (!isActive) {
-		return (
-			<>
-				<InspectorControls>
-					<PanelBody
-						title={__('Tab Settings', 'designsetgo')}
-						initialOpen={true}
-					>
-						<TextControl
-							label={__('Tab Title', 'designsetgo')}
-							value={title}
-							onChange={(value) =>
-								setAttributes({ title: value })
-							}
-							help={__(
-								'The title shown in the tab navigation',
-								'designsetgo'
-							)}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-
-						<SelectControl
-							label={__('Icon Position', 'designsetgo')}
-							value={iconPosition}
-							options={[
-								{
-									label: __('None', 'designsetgo'),
-									value: 'none',
-								},
-								{
-									label: __('Left', 'designsetgo'),
-									value: 'left',
-								},
-								{
-									label: __('Right', 'designsetgo'),
-									value: 'right',
-								},
-								{
-									label: __('Top', 'designsetgo'),
-									value: 'top',
-								},
-							]}
-							onChange={(value) =>
-								setAttributes({ iconPosition: value })
-							}
-							help={__(
-								'Choose where to display an icon with the tab',
-								'designsetgo'
-							)}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-
-						{iconPosition !== 'none' && (
-							<IconPicker
-								value={icon}
-								onChange={(value) =>
-									setAttributes({ icon: value })
-								}
-								label={__('Tab Icon', 'designsetgo')}
-								help={__(
-									'Choose an icon to display with the tab',
-									'designsetgo'
-								)}
-							/>
-						)}
-
-						<TextControl
-							label={__('Anchor (URL Hash)', 'designsetgo')}
-							value={attributes.anchor}
-							onChange={(value) =>
-								setAttributes({ anchor: value })
-							}
-							help={__(
-								'URL-friendly identifier for deep linking',
-								'designsetgo'
-							)}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-					</PanelBody>
-				</InspectorControls>
-
-				<div {...blockProps}>
-					<div className="dsgo-tab__inactive-notice">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="20"
-							height="20"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-						>
-							<circle cx="12" cy="12" r="10" />
-							<line x1="12" y1="8" x2="12" y2="12" />
-							<line x1="12" y1="16" x2="12.01" y2="16" />
-						</svg>
-						<span>
-							{__(
-								'Click the tab above to edit its content',
-								'designsetgo'
-							)}
-						</span>
-					</div>
-				</div>
-			</>
-		);
-	}
-
-	return (
-		<>
-			<InspectorControls>
-				<PanelBody
-					title={__('Tab Settings', 'designsetgo')}
-					initialOpen={true}
+	const inspector = (
+		<InspectorControls>
+			<DsgoInspectorPanel
+				title={__('Settings', 'designsetgo')}
+				panelName="settings"
+				panelId={clientId}
+				resetAll={() =>
+					setAttributes({
+						title: 'Tab',
+						icon: '',
+						iconPosition: 'none',
+						anchor: '',
+					})
+				}
+			>
+				<DsgoInspectorPanel.Item
+					label={__('Tab Title', 'designsetgo')}
+					hasValue={() => title !== 'Tab'}
+					onDeselect={() => setAttributes({ title: 'Tab' })}
+					isShownByDefault
 				>
 					<TextControl
 						label={__('Tab Title', 'designsetgo')}
@@ -204,7 +107,16 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
+				</DsgoInspectorPanel.Item>
 
+				<DsgoInspectorPanel.Item
+					label={__('Icon Position', 'designsetgo')}
+					hasValue={() => iconPosition !== 'none'}
+					onDeselect={() =>
+						setAttributes({ iconPosition: 'none', icon: '' })
+					}
+					isShownByDefault
+				>
 					<SelectControl
 						label={__('Icon Position', 'designsetgo')}
 						value={iconPosition}
@@ -236,8 +148,15 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
+				</DsgoInspectorPanel.Item>
 
-					{iconPosition !== 'none' && (
+				{iconPosition !== 'none' && (
+					<DsgoInspectorPanel.Item
+						label={__('Tab Icon', 'designsetgo')}
+						hasValue={() => icon !== ''}
+						onDeselect={() => setAttributes({ icon: '' })}
+						isShownByDefault
+					>
 						<IconPicker
 							value={icon}
 							onChange={(value) => setAttributes({ icon: value })}
@@ -247,8 +166,15 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 								'designsetgo'
 							)}
 						/>
-					)}
+					</DsgoInspectorPanel.Item>
+				)}
 
+				<DsgoInspectorPanel.Item
+					label={__('Anchor (URL Hash)', 'designsetgo')}
+					hasValue={() => !!attributes.anchor}
+					onDeselect={() => setAttributes({ anchor: '' })}
+					isShownByDefault
+				>
 					<TextControl
 						label={__('Anchor (URL Hash)', 'designsetgo')}
 						value={attributes.anchor}
@@ -260,8 +186,47 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				</PanelBody>
-			</InspectorControls>
+				</DsgoInspectorPanel.Item>
+			</DsgoInspectorPanel>
+		</InspectorControls>
+	);
+
+	// Don't render inactive tabs at all - improves performance
+	if (!isActive) {
+		return (
+			<>
+				{inspector}
+
+				<div {...blockProps}>
+					<div className="dsgo-tab__inactive-notice">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+						>
+							<circle cx="12" cy="12" r="10" />
+							<line x1="12" y1="8" x2="12" y2="12" />
+							<line x1="12" y1="16" x2="12.01" y2="16" />
+						</svg>
+						<span>
+							{__(
+								'Click the tab above to edit its content',
+								'designsetgo'
+							)}
+						</span>
+					</div>
+				</div>
+			</>
+		);
+	}
+
+	return (
+		<>
+			{inspector}
 
 			<div {...blockProps}>
 				{/* Use spread props pattern - InnerBlocks will show appender */}

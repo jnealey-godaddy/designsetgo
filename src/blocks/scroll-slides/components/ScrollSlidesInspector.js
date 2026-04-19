@@ -16,7 +16,6 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	ToggleControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
@@ -25,6 +24,7 @@ import {
 /**
  * Internal dependencies
  */
+import { DsgoInspectorPanel } from '../../../components/shared';
 import {
 	encodeColorValue,
 	decodeColorValue,
@@ -51,90 +51,140 @@ export default function ScrollSlidesInspector({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Scroll Slides Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							minHeight: '100vh',
+							maxHeight: '900px',
+							constrainWidth: true,
+							contentWidth: '',
+						})
+					}
 				>
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Minimum Height', 'designsetgo')}
-						value={minHeight}
-						onChange={(value) =>
-							setAttributes({ minHeight: value })
-						}
-						units={[
-							{ value: 'vh', label: 'vh' },
-							{ value: 'px', label: 'px' },
-							{ value: 'rem', label: 'rem' },
-							{ value: '%', label: '%' },
-						]}
-						__next40pxDefaultSize
-					/>
-					<UnitControl
-						label={__('Maximum Height', 'designsetgo')}
-						value={maxHeight}
-						onChange={(value) =>
-							setAttributes({ maxHeight: value })
-						}
-						help={__(
-							'Caps the section height on tall monitors',
-							'designsetgo'
-						)}
-						units={[
-							{ value: 'px', label: 'px' },
-							{ value: 'vh', label: 'vh' },
-							{ value: 'rem', label: 'rem' },
-						]}
-						__next40pxDefaultSize
-					/>
-					<ToggleControl
-						label={__('Constrain Content Width', 'designsetgo')}
-						checked={constrainWidth}
-						onChange={(value) =>
-							setAttributes({ constrainWidth: value })
-						}
-						help={
-							constrainWidth
-								? __(
-										'Content respects theme content width',
-										'designsetgo'
-									)
-								: __('Content fills full width', 'designsetgo')
-						}
-						__nextHasNoMarginBottom
-					/>
-					{constrainWidth && (
+						hasValue={() => minHeight !== '100vh'}
+						onDeselect={() => setAttributes({ minHeight: '100vh' })}
+						isShownByDefault
+					>
 						<UnitControl
-							label={__('Content Width', 'designsetgo')}
-							value={contentWidth}
+							label={__('Minimum Height', 'designsetgo')}
+							value={minHeight}
 							onChange={(value) =>
-								setAttributes({ contentWidth: value })
-							}
-							placeholder={
-								themeContentSize ||
-								__('Theme default', 'designsetgo')
-							}
-							help={
-								!contentWidth && themeContentSize
-									? sprintf(
-											/* translators: %s: theme content size */
-											__(
-												'Using theme default: %s',
-												'designsetgo'
-											),
-											themeContentSize
-										)
-									: undefined
+								setAttributes({ minHeight: value })
 							}
 							units={[
+								{ value: 'vh', label: 'vh' },
 								{ value: 'px', label: 'px' },
 								{ value: 'rem', label: 'rem' },
 								{ value: '%', label: '%' },
-								{ value: 'vw', label: 'vw' },
 							]}
 							__next40pxDefaultSize
 						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Maximum Height', 'designsetgo')}
+						hasValue={() => maxHeight !== '900px'}
+						onDeselect={() => setAttributes({ maxHeight: '900px' })}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Maximum Height', 'designsetgo')}
+							value={maxHeight}
+							onChange={(value) =>
+								setAttributes({ maxHeight: value })
+							}
+							help={__(
+								'Caps the section height on tall monitors',
+								'designsetgo'
+							)}
+							units={[
+								{ value: 'px', label: 'px' },
+								{ value: 'vh', label: 'vh' },
+								{ value: 'rem', label: 'rem' },
+							]}
+							__next40pxDefaultSize
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Constrain Content Width', 'designsetgo')}
+						hasValue={() => constrainWidth !== true}
+						onDeselect={() =>
+							setAttributes({
+								constrainWidth: true,
+								contentWidth: '',
+							})
+						}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Constrain Content Width', 'designsetgo')}
+							checked={constrainWidth}
+							onChange={(value) =>
+								setAttributes({ constrainWidth: value })
+							}
+							help={
+								constrainWidth
+									? __(
+											'Content respects theme content width',
+											'designsetgo'
+										)
+									: __(
+											'Content fills full width',
+											'designsetgo'
+										)
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					{constrainWidth && (
+						<DsgoInspectorPanel.Item
+							label={__('Content Width', 'designsetgo')}
+							hasValue={() => contentWidth !== ''}
+							onDeselect={() =>
+								setAttributes({ contentWidth: '' })
+							}
+							isShownByDefault
+						>
+							<UnitControl
+								label={__('Content Width', 'designsetgo')}
+								value={contentWidth}
+								onChange={(value) =>
+									setAttributes({ contentWidth: value })
+								}
+								placeholder={
+									themeContentSize ||
+									__('Theme default', 'designsetgo')
+								}
+								help={
+									!contentWidth && themeContentSize
+										? sprintf(
+												/* translators: %s: theme content size */
+												__(
+													'Using theme default: %s',
+													'designsetgo'
+												),
+												themeContentSize
+											)
+										: undefined
+								}
+								units={[
+									{ value: 'px', label: 'px' },
+									{ value: 'rem', label: 'rem' },
+									{ value: '%', label: '%' },
+									{ value: 'vw', label: 'vw' },
+								]}
+								__next40pxDefaultSize
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">

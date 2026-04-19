@@ -1,15 +1,15 @@
 /**
  * Icon Button - Button Settings Panel Component
  *
- * Provides controls for icon and animation settings.
- * Link settings are managed via the inline toolbar (core Button pattern).
+ * Renders DsgoInspectorPanel.Item entries for icon-button icon,
+ * animation, and modal-close attributes. Meant to be composed inside
+ * the Settings DsgoInspectorPanel in icon-button/edit.js.
  *
  * @since 1.0.0
  */
 
 import { __, sprintf } from '@wordpress/i18n';
 import {
-	PanelBody,
 	SelectControl,
 	RangeControl,
 	ToggleControl,
@@ -17,23 +17,23 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../../../components/shared';
 import { IconPicker } from '../../../icon/components/IconPicker';
 
-/**
- * Button Settings Panel Component
- *
- * @param {Object}   props                   - Component props
- * @param {string}   props.icon              - Selected icon name
- * @param {string}   props.iconPosition      - Icon position (start, end, none)
- * @param {number}   props.iconSize          - Icon size in pixels
- * @param {string}   props.iconGap           - Gap between icon and text
- * @param {string}   props.hoverAnimation    - Hover animation style
- * @param {string}   props.adminDefaultHover - Site-wide default hover animation from admin settings
- * @param {string}   props.modalCloseId      - Modal ID to close (or "true" for parent modal)
- * @param {boolean}  props.isInsideModal     - Whether button is inside a modal
- * @param {Function} props.setAttributes     - Function to update attributes
- * @return {JSX.Element} Button Settings Panel component
- */
+const ANIMATION_LABELS = {
+	none: __('None', 'designsetgo'),
+	'fill-diagonal': __('Fill Diagonal', 'designsetgo'),
+	'zoom-in': __('Zoom In', 'designsetgo'),
+	'slide-left': __('Slide Left', 'designsetgo'),
+	'slide-right': __('Slide Right', 'designsetgo'),
+	'slide-down': __('Slide Down', 'designsetgo'),
+	'slide-up': __('Slide Up', 'designsetgo'),
+	'border-pulse': __('Border Pulse', 'designsetgo'),
+	'border-glow': __('Border Glow', 'designsetgo'),
+	lift: __('Lift', 'designsetgo'),
+	shrink: __('Shrink', 'designsetgo'),
+};
+
 export const ButtonSettingsPanel = ({
 	icon,
 	iconPosition,
@@ -45,109 +45,97 @@ export const ButtonSettingsPanel = ({
 	isInsideModal,
 	setAttributes,
 }) => {
+	const adminDefault = adminDefaultHover || 'none';
+	const defaultLabel =
+		adminDefault !== 'none'
+			? sprintf(
+					/* translators: %s: animation name */
+					__('Default (%s)', 'designsetgo'),
+					ANIMATION_LABELS[adminDefault] || adminDefault
+				)
+			: __('Default (None)', 'designsetgo');
+
 	return (
 		<>
-			<PanelBody
-				title={__('Button & Icon Settings', 'designsetgo')}
-				initialOpen={true}
+			<DsgoInspectorPanel.Item
+				label={__('Hover Animation', 'designsetgo')}
+				hasValue={() => hoverAnimation !== 'none'}
+				onDeselect={() => setAttributes({ hoverAnimation: 'none' })}
+				isShownByDefault
 			>
-				{(() => {
-					const adminDefault = adminDefaultHover || 'none';
-					const animationLabels = {
-						none: __('None', 'designsetgo'),
-						'fill-diagonal': __('Fill Diagonal', 'designsetgo'),
-						'zoom-in': __('Zoom In', 'designsetgo'),
-						'slide-left': __('Slide Left', 'designsetgo'),
-						'slide-right': __('Slide Right', 'designsetgo'),
-						'slide-down': __('Slide Down', 'designsetgo'),
-						'slide-up': __('Slide Up', 'designsetgo'),
-						'border-pulse': __('Border Pulse', 'designsetgo'),
-						'border-glow': __('Border Glow', 'designsetgo'),
-						lift: __('Lift', 'designsetgo'),
-						shrink: __('Shrink', 'designsetgo'),
-					};
-					const defaultLabel =
-						adminDefault !== 'none'
-							? sprintf(
-									/* translators: %s: animation name */
-									__('Default (%s)', 'designsetgo'),
-									animationLabels[adminDefault] ||
-										adminDefault
-								)
-							: __('Default (None)', 'designsetgo');
+				<SelectControl
+					label={__('Hover Animation', 'designsetgo')}
+					value={hoverAnimation}
+					options={[
+						{
+							label: defaultLabel,
+							value: 'none',
+						},
+						{
+							label: __('None (No Animation)', 'designsetgo'),
+							value: 'explicit-none',
+						},
+						{
+							label: __('Fill Diagonal', 'designsetgo'),
+							value: 'fill-diagonal',
+						},
+						{
+							label: __('Zoom In', 'designsetgo'),
+							value: 'zoom-in',
+						},
+						{
+							label: __('Slide Left', 'designsetgo'),
+							value: 'slide-left',
+						},
+						{
+							label: __('Slide Right', 'designsetgo'),
+							value: 'slide-right',
+						},
+						{
+							label: __('Slide Down', 'designsetgo'),
+							value: 'slide-down',
+						},
+						{
+							label: __('Slide Up', 'designsetgo'),
+							value: 'slide-up',
+						},
+						{
+							label: __('Border Pulse', 'designsetgo'),
+							value: 'border-pulse',
+						},
+						{
+							label: __('Border Glow', 'designsetgo'),
+							value: 'border-glow',
+						},
+						{
+							label: __('Lift', 'designsetgo'),
+							value: 'lift',
+						},
+						{
+							label: __('Shrink', 'designsetgo'),
+							value: 'shrink',
+						},
+					]}
+					onChange={(value) =>
+						setAttributes({
+							hoverAnimation: value,
+						})
+					}
+					help={__(
+						'Choose a hover animation. "Default" uses the site-wide setting from Settings > Animations.',
+						'designsetgo'
+					)}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
 
-					return (
-						<SelectControl
-							label={__('Hover Animation', 'designsetgo')}
-							value={hoverAnimation}
-							options={[
-								{
-									label: defaultLabel,
-									value: 'none',
-								},
-								{
-									label: __(
-										'None (No Animation)',
-										'designsetgo'
-									),
-									value: 'explicit-none',
-								},
-								{
-									label: __('Fill Diagonal', 'designsetgo'),
-									value: 'fill-diagonal',
-								},
-								{
-									label: __('Zoom In', 'designsetgo'),
-									value: 'zoom-in',
-								},
-								{
-									label: __('Slide Left', 'designsetgo'),
-									value: 'slide-left',
-								},
-								{
-									label: __('Slide Right', 'designsetgo'),
-									value: 'slide-right',
-								},
-								{
-									label: __('Slide Down', 'designsetgo'),
-									value: 'slide-down',
-								},
-								{
-									label: __('Slide Up', 'designsetgo'),
-									value: 'slide-up',
-								},
-								{
-									label: __('Border Pulse', 'designsetgo'),
-									value: 'border-pulse',
-								},
-								{
-									label: __('Border Glow', 'designsetgo'),
-									value: 'border-glow',
-								},
-								{
-									label: __('Lift', 'designsetgo'),
-									value: 'lift',
-								},
-								{
-									label: __('Shrink', 'designsetgo'),
-									value: 'shrink',
-								},
-							]}
-							onChange={(value) =>
-								setAttributes({
-									hoverAnimation: value,
-								})
-							}
-							help={__(
-								'Choose a hover animation. "Default" uses the site-wide setting from Settings > Animations.',
-								'designsetgo'
-							)}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-					);
-				})()}
-
+			<DsgoInspectorPanel.Item
+				label={__('Icon Position', 'designsetgo')}
+				hasValue={() => iconPosition !== 'start'}
+				onDeselect={() => setAttributes({ iconPosition: 'start' })}
+				isShownByDefault
+			>
 				<SelectControl
 					label={__('Icon Position', 'designsetgo')}
 					value={iconPosition}
@@ -164,52 +152,70 @@ export const ButtonSettingsPanel = ({
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
+			</DsgoInspectorPanel.Item>
 
-				{iconPosition !== 'none' && (
-					<>
-						<IconPicker
-							value={icon}
-							onChange={(value) => setAttributes({ icon: value })}
-						/>
+			{iconPosition !== 'none' && (
+				<DsgoInspectorPanel.Item
+					label={__('Icon', 'designsetgo')}
+					hasValue={() => icon !== 'lightbulb'}
+					onDeselect={() => setAttributes({ icon: 'lightbulb' })}
+					isShownByDefault
+				>
+					<IconPicker
+						value={icon}
+						onChange={(value) => setAttributes({ icon: value })}
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
 
-						<RangeControl
-							label={__('Icon Size', 'designsetgo')}
-							value={iconSize}
-							onChange={(value) =>
-								setAttributes({ iconSize: value })
-							}
-							min={12}
-							max={48}
-							help={__('Icon size in pixels', 'designsetgo')}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
+			{iconPosition !== 'none' && (
+				<DsgoInspectorPanel.Item
+					label={__('Icon Size', 'designsetgo')}
+					hasValue={() => iconSize !== 20}
+					onDeselect={() => setAttributes({ iconSize: 20 })}
+					isShownByDefault
+				>
+					<RangeControl
+						label={__('Icon Size', 'designsetgo')}
+						value={iconSize}
+						onChange={(value) => setAttributes({ iconSize: value })}
+						min={12}
+						max={48}
+						help={__('Icon size in pixels', 'designsetgo')}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
 
-						<UnitControl
-							label={__('Icon Gap', 'designsetgo')}
-							value={iconGap}
-							onChange={(value) =>
-								setAttributes({ iconGap: value })
-							}
-							units={[
-								{ value: 'px', label: 'px' },
-								{ value: 'em', label: 'em' },
-								{ value: 'rem', label: 'rem' },
-							]}
-							help={__(
-								'Space between icon and text',
-								'designsetgo'
-							)}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-					</>
-				)}
-			</PanelBody>
+			{iconPosition !== 'none' && (
+				<DsgoInspectorPanel.Item
+					label={__('Icon Gap', 'designsetgo')}
+					hasValue={() => iconGap !== '8px'}
+					onDeselect={() => setAttributes({ iconGap: '8px' })}
+					isShownByDefault
+				>
+					<UnitControl
+						label={__('Icon Gap', 'designsetgo')}
+						value={iconGap}
+						onChange={(value) => setAttributes({ iconGap: value })}
+						units={[
+							{ value: 'px', label: 'px' },
+							{ value: 'em', label: 'em' },
+							{ value: 'rem', label: 'rem' },
+						]}
+						help={__('Space between icon and text', 'designsetgo')}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
 
-			<PanelBody
-				title={__('Modal Close', 'designsetgo')}
-				initialOpen={false}
+			<DsgoInspectorPanel.Item
+				label={__('Close modal on click', 'designsetgo')}
+				hasValue={() => !!modalCloseId}
+				onDeselect={() => setAttributes({ modalCloseId: '' })}
+				isShownByDefault
 			>
 				<ToggleControl
 					label={__('Close modal on click', 'designsetgo')}
@@ -232,8 +238,15 @@ export const ButtonSettingsPanel = ({
 					}
 					__nextHasNoMarginBottom
 				/>
+			</DsgoInspectorPanel.Item>
 
-				{modalCloseId && !isInsideModal && (
+			{modalCloseId && !isInsideModal && (
+				<DsgoInspectorPanel.Item
+					label={__('Modal ID', 'designsetgo')}
+					hasValue={() => !!modalCloseId && modalCloseId !== 'true'}
+					onDeselect={() => setAttributes({ modalCloseId: 'true' })}
+					isShownByDefault
+				>
 					<TextControl
 						label={__('Modal ID', 'designsetgo')}
 						value={modalCloseId === 'true' ? '' : modalCloseId}
@@ -250,8 +263,8 @@ export const ButtonSettingsPanel = ({
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				)}
-			</PanelBody>
+				</DsgoInspectorPanel.Item>
+			)}
 		</>
 	);
 };

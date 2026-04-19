@@ -17,19 +17,63 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	ToggleControl,
 	SelectControl,
 	Button,
 	TextControl,
 	Tooltip,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useState } from '@wordpress/element';
 import {
 	encodeColorValue,
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+
+const DEFAULT_COLUMNS = [
+	{ name: 'Basic', link: '', linkText: 'Get Started', featured: false },
+	{ name: 'Pro', link: '', linkText: 'Get Started', featured: true },
+	{ name: 'Enterprise', link: '', linkText: 'Contact Us', featured: false },
+];
+const DEFAULT_ROWS = [
+	{
+		label: 'Storage',
+		tooltip: '',
+		cells: [
+			{ type: 'text', value: '5 GB' },
+			{ type: 'text', value: '50 GB' },
+			{ type: 'text', value: 'Unlimited' },
+		],
+	},
+	{
+		label: 'Users',
+		tooltip: '',
+		cells: [
+			{ type: 'text', value: '1' },
+			{ type: 'text', value: '10' },
+			{ type: 'text', value: 'Unlimited' },
+		],
+	},
+	{
+		label: 'Priority Support',
+		tooltip: 'Get faster response times from our team',
+		cells: [
+			{ type: 'cross', value: '' },
+			{ type: 'check', value: '' },
+			{ type: 'check', value: '' },
+		],
+	},
+	{
+		label: 'API Access',
+		tooltip: '',
+		cells: [
+			{ type: 'cross', value: '' },
+			{ type: 'check', value: '' },
+			{ type: 'check', value: '' },
+		],
+	},
+];
 
 /**
  * Check icon SVG for cell display
@@ -363,179 +407,247 @@ export default function ComparisonTableEdit({
 
 			{/* Table Settings */}
 			<InspectorControls>
-				<PanelBody
-					title={__('Table Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							alternatingRows: true,
+							responsiveMode: 'scroll',
+							showCtaButtons: true,
+							ctaStyle: 'filled',
+							columns: DEFAULT_COLUMNS,
+							rows: DEFAULT_ROWS,
+						})
+					}
 				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Alternating Row Colors', 'designsetgo')}
-						checked={alternatingRows}
-						onChange={(value) =>
-							setAttributes({ alternatingRows: value })
+						hasValue={() => alternatingRows !== true}
+						onDeselect={() =>
+							setAttributes({ alternatingRows: true })
 						}
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Alternating Row Colors', 'designsetgo')}
+							checked={alternatingRows}
+							onChange={(value) =>
+								setAttributes({ alternatingRows: value })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Responsive Mode', 'designsetgo')}
-						value={responsiveMode}
-						options={[
-							{
-								label: __('Horizontal Scroll', 'designsetgo'),
-								value: 'scroll',
-							},
-							{
-								label: __('Stack on Mobile', 'designsetgo'),
-								value: 'stack',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ responsiveMode: value })
+						hasValue={() => responsiveMode !== 'scroll'}
+						onDeselect={() =>
+							setAttributes({ responsiveMode: 'scroll' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<ToggleControl
-						label={__('Show CTA Buttons', 'designsetgo')}
-						checked={showCtaButtons}
-						onChange={(value) =>
-							setAttributes({ showCtaButtons: value })
-						}
-						__nextHasNoMarginBottom
-					/>
-
-					{showCtaButtons && (
+						isShownByDefault
+					>
 						<SelectControl
-							label={__('CTA Style', 'designsetgo')}
-							value={ctaStyle}
+							label={__('Responsive Mode', 'designsetgo')}
+							value={responsiveMode}
 							options={[
 								{
-									label: __('Filled', 'designsetgo'),
-									value: 'filled',
+									label: __(
+										'Horizontal Scroll',
+										'designsetgo'
+									),
+									value: 'scroll',
 								},
 								{
-									label: __('Outlined', 'designsetgo'),
-									value: 'outlined',
+									label: __('Stack on Mobile', 'designsetgo'),
+									value: 'stack',
 								},
 							]}
 							onChange={(value) =>
-								setAttributes({ ctaStyle: value })
+								setAttributes({ responsiveMode: value })
 							}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
-					)}
-				</PanelBody>
+					</DsgoInspectorPanel.Item>
 
-				{/* Column Management */}
-				<PanelBody
-					title={__('Columns', 'designsetgo')}
-					initialOpen={false}
-				>
-					{columns.map((col, colIndex) => (
-						<div
-							key={colIndex}
-							className="dsgo-comparison-table-editor__column-settings"
+					<DsgoInspectorPanel.Item
+						label={__('Show CTA Buttons', 'designsetgo')}
+						hasValue={() => showCtaButtons !== true}
+						onDeselect={() =>
+							setAttributes({ showCtaButtons: true })
+						}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Show CTA Buttons', 'designsetgo')}
+							checked={showCtaButtons}
+							onChange={(value) =>
+								setAttributes({ showCtaButtons: value })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					{showCtaButtons && (
+						<DsgoInspectorPanel.Item
+							label={__('CTA Style', 'designsetgo')}
+							hasValue={() => ctaStyle !== 'filled'}
+							onDeselect={() =>
+								setAttributes({ ctaStyle: 'filled' })
+							}
+							isShownByDefault
 						>
-							<h4
-								style={{
-									margin: '0 0 8px',
-									display: 'flex',
-									alignItems: 'center',
-									justifyContent: 'space-between',
-								}}
-							>
-								{col.name || `Column ${colIndex + 1}`}
-								{columns.length > 2 && (
-									<Button
-										icon="no-alt"
-										label={__(
-											'Remove column',
-											'designsetgo'
-										)}
-										onClick={() => removeColumn(colIndex)}
-										isDestructive
-										size="small"
-									/>
-								)}
-							</h4>
-
-							<ToggleControl
-								label={__('Featured', 'designsetgo')}
-								checked={col.featured}
+							<SelectControl
+								label={__('CTA Style', 'designsetgo')}
+								value={ctaStyle}
+								options={[
+									{
+										label: __('Filled', 'designsetgo'),
+										value: 'filled',
+									},
+									{
+										label: __('Outlined', 'designsetgo'),
+										value: 'outlined',
+									},
+								]}
 								onChange={(value) =>
-									updateColumn(colIndex, {
-										featured: value,
-									})
+									setAttributes({ ctaStyle: value })
 								}
+								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
-
-							{showCtaButtons && (
-								<>
-									<TextControl
-										label={__('CTA Link', 'designsetgo')}
-										value={col.link}
-										onChange={(value) =>
-											updateColumn(colIndex, {
-												link: value,
-											})
-										}
-										placeholder="https://"
-										__next40pxDefaultSize
-										__nextHasNoMarginBottom
-									/>
-									<TextControl
-										label={__('CTA Text', 'designsetgo')}
-										value={col.linkText}
-										onChange={(value) =>
-											updateColumn(colIndex, {
-												linkText: value,
-											})
-										}
-										__next40pxDefaultSize
-										__nextHasNoMarginBottom
-									/>
-								</>
-							)}
-
-							{colIndex < columns.length - 1 && (
-								<hr style={{ margin: '16px 0' }} />
-							)}
-						</div>
-					))}
-
-					{columns.length < 6 && (
-						<Button
-							variant="secondary"
-							onClick={addColumn}
-							style={{ marginTop: '12px', width: '100%' }}
-						>
-							{__('Add Column', 'designsetgo')}
-						</Button>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
 
-				{/* Row Settings (tooltips) */}
-				<PanelBody
-					title={__('Row Tooltips', 'designsetgo')}
-					initialOpen={false}
-				>
-					{rows.map((row, rowIndex) => (
-						<TextControl
-							key={rowIndex}
-							label={row.label || `Row ${rowIndex + 1}`}
-							value={row.tooltip}
-							onChange={(value) =>
-								updateRow(rowIndex, { tooltip: value })
-							}
-							placeholder={__('Tooltip text…', 'designsetgo')}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-					))}
-				</PanelBody>
+					<DsgoInspectorPanel.Item
+						label={__('Columns', 'designsetgo')}
+						hasValue={() =>
+							JSON.stringify(columns) !==
+							JSON.stringify(DEFAULT_COLUMNS)
+						}
+						onDeselect={() =>
+							setAttributes({ columns: DEFAULT_COLUMNS })
+						}
+						isShownByDefault
+					>
+						{columns.map((col, colIndex) => (
+							<div
+								key={colIndex}
+								className="dsgo-comparison-table-editor__column-settings"
+							>
+								<h4
+									style={{
+										margin: '0 0 8px',
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'space-between',
+									}}
+								>
+									{col.name || `Column ${colIndex + 1}`}
+									{columns.length > 2 && (
+										<Button
+											icon="no-alt"
+											label={__(
+												'Remove column',
+												'designsetgo'
+											)}
+											onClick={() =>
+												removeColumn(colIndex)
+											}
+											isDestructive
+											size="small"
+										/>
+									)}
+								</h4>
+
+								<ToggleControl
+									label={__('Featured', 'designsetgo')}
+									checked={col.featured}
+									onChange={(value) =>
+										updateColumn(colIndex, {
+											featured: value,
+										})
+									}
+									__nextHasNoMarginBottom
+								/>
+
+								{showCtaButtons && (
+									<>
+										<TextControl
+											label={__(
+												'CTA Link',
+												'designsetgo'
+											)}
+											value={col.link}
+											onChange={(value) =>
+												updateColumn(colIndex, {
+													link: value,
+												})
+											}
+											placeholder="https://"
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+										/>
+										<TextControl
+											label={__(
+												'CTA Text',
+												'designsetgo'
+											)}
+											value={col.linkText}
+											onChange={(value) =>
+												updateColumn(colIndex, {
+													linkText: value,
+												})
+											}
+											__next40pxDefaultSize
+											__nextHasNoMarginBottom
+										/>
+									</>
+								)}
+
+								{colIndex < columns.length - 1 && (
+									<hr style={{ margin: '16px 0' }} />
+								)}
+							</div>
+						))}
+
+						{columns.length < 6 && (
+							<Button
+								variant="secondary"
+								onClick={addColumn}
+								style={{ marginTop: '12px', width: '100%' }}
+							>
+								{__('Add Column', 'designsetgo')}
+							</Button>
+						)}
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Row Tooltips', 'designsetgo')}
+						hasValue={() =>
+							JSON.stringify(rows) !==
+							JSON.stringify(DEFAULT_ROWS)
+						}
+						onDeselect={() => setAttributes({ rows: DEFAULT_ROWS })}
+						isShownByDefault
+					>
+						{rows.map((row, rowIndex) => (
+							<TextControl
+								key={rowIndex}
+								label={row.label || `Row ${rowIndex + 1}`}
+								value={row.tooltip}
+								onChange={(value) =>
+									updateRow(rowIndex, { tooltip: value })
+								}
+								placeholder={__('Tooltip text…', 'designsetgo')}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						))}
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			{/* Block Content */}

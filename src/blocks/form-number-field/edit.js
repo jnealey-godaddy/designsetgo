@@ -7,16 +7,25 @@
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	TextControl,
 	ToggleControl,
 	SelectControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- NumberControl is stable in practice
 	__experimentalNumberControl as NumberControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect } from '@wordpress/element';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+
+const FIELD_WIDTH_OPTIONS = [
+	{ label: __('Full Width (100%)', 'designsetgo'), value: '100' },
+	{ label: __('Half Width (50%)', 'designsetgo'), value: '50' },
+	{ label: __('One Third (33%)', 'designsetgo'), value: '33' },
+	{ label: __('Two Thirds (66%)', 'designsetgo'), value: '66' },
+	{ label: __('One Quarter (25%)', 'designsetgo'), value: '25' },
+	{ label: __('Three Quarters (75%)', 'designsetgo'), value: '75' },
+];
 
 export default function FormNumberFieldEdit({
 	attributes,
@@ -62,7 +71,6 @@ export default function FormNumberFieldEdit({
 		className: fieldClasses,
 		style: {
 			...fieldStyles,
-			// Use flex-basis with calc to account for gap between fields
 			flexBasis:
 				fieldWidth === '100'
 					? '100%'
@@ -79,198 +87,269 @@ export default function FormNumberFieldEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Field Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							fieldName: '',
+							label: 'Number',
+							placeholder: '',
+							helpText: '',
+							required: false,
+							defaultValue: '',
+							min: null,
+							max: null,
+							step: 1,
+							allowDecimals: false,
+							fieldWidth: '100',
+						})
+					}
 				>
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Field Name', 'designsetgo')}
-						value={fieldName}
-						onChange={(value) =>
-							setAttributes({
-								fieldName: value.replace(/[^a-z0-9_-]/gi, ''),
-							})
+						hasValue={() =>
+							!!fieldName &&
+							!/^number-[a-z0-9]{1,8}$/i.test(fieldName)
 						}
-						help={__(
-							'Unique identifier for this field (letters, numbers, hyphens, underscores only)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<TextControl
-						label={__('Label', 'designsetgo')}
-						value={label}
-						onChange={(value) => setAttributes({ label: value })}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<ToggleControl
-						label={__('Required', 'designsetgo')}
-						checked={required}
-						onChange={(value) => setAttributes({ required: value })}
-						__nextHasNoMarginBottom
-					/>
-
-					<SelectControl
-						label={__('Field Width', 'designsetgo')}
-						value={fieldWidth}
-						options={[
-							{
-								label: __('Full Width (100%)', 'designsetgo'),
-								value: '100',
-							},
-							{
-								label: __('Half Width (50%)', 'designsetgo'),
-								value: '50',
-							},
-							{
-								label: __('One Third (33%)', 'designsetgo'),
-								value: '33',
-							},
-							{
-								label: __('Two Thirds (66%)', 'designsetgo'),
-								value: '66',
-							},
-							{
-								label: __('One Quarter (25%)', 'designsetgo'),
-								value: '25',
-							},
-							{
-								label: __(
-									'Three Quarters (75%)',
-									'designsetgo'
-								),
-								value: '75',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ fieldWidth: value })
-						}
-						help={__(
-							'Set field width to create multi-column layouts',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
-
-				<PanelBody
-					title={__('Number Settings', 'designsetgo')}
-					initialOpen={false}
-				>
-					<NumberControl
-						label={__('Minimum Value', 'designsetgo')}
-						value={min !== null ? min : ''}
-						onChange={(value) =>
-							setAttributes({
-								min: value !== '' ? parseFloat(value) : null,
-							})
-						}
-						help={__(
-							'Minimum allowed value (leave empty for no minimum)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<NumberControl
-						label={__('Maximum Value', 'designsetgo')}
-						value={max !== null ? max : ''}
-						onChange={(value) =>
-							setAttributes({
-								max: value !== '' ? parseFloat(value) : null,
-							})
-						}
-						help={__(
-							'Maximum allowed value (leave empty for no maximum)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<NumberControl
-						label={__('Step', 'designsetgo')}
-						value={step}
-						onChange={(value) =>
-							setAttributes({ step: parseFloat(value) || 1 })
-						}
-						help={__(
-							'Increment/decrement step value',
-							'designsetgo'
-						)}
-						min={0.01}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<ToggleControl
-						label={__('Allow Decimals', 'designsetgo')}
-						checked={allowDecimals}
-						onChange={(value) => {
-							setAttributes({ allowDecimals: value });
-							if (!value && step < 1) {
-								setAttributes({ step: 1 });
+						onDeselect={() => setAttributes({ fieldName: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Field Name', 'designsetgo')}
+							value={fieldName}
+							onChange={(value) =>
+								setAttributes({
+									fieldName: value.replace(
+										/[^a-z0-9_-]/gi,
+										''
+									),
+								})
 							}
-						}}
-						help={__(
-							'Allow decimal numbers instead of integers only',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+							help={__(
+								'Unique identifier for this field (letters, numbers, hyphens, underscores only)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Additional Options', 'designsetgo')}
-					initialOpen={false}
-				>
-					<TextControl
+					<DsgoInspectorPanel.Item
+						label={__('Label', 'designsetgo')}
+						hasValue={() => label !== 'Number'}
+						onDeselect={() => setAttributes({ label: 'Number' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Label', 'designsetgo')}
+							value={label}
+							onChange={(value) =>
+								setAttributes({ label: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Required', 'designsetgo')}
+						hasValue={() => required !== false}
+						onDeselect={() => setAttributes({ required: false })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Required', 'designsetgo')}
+							checked={required}
+							onChange={(value) =>
+								setAttributes({ required: value })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Minimum Value', 'designsetgo')}
+						hasValue={() => min !== null}
+						onDeselect={() => setAttributes({ min: null })}
+						isShownByDefault
+					>
+						<NumberControl
+							label={__('Minimum Value', 'designsetgo')}
+							value={min !== null ? min : ''}
+							onChange={(value) =>
+								setAttributes({
+									min:
+										value !== '' ? parseFloat(value) : null,
+								})
+							}
+							help={__(
+								'Minimum allowed value (leave empty for no minimum)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Maximum Value', 'designsetgo')}
+						hasValue={() => max !== null}
+						onDeselect={() => setAttributes({ max: null })}
+						isShownByDefault
+					>
+						<NumberControl
+							label={__('Maximum Value', 'designsetgo')}
+							value={max !== null ? max : ''}
+							onChange={(value) =>
+								setAttributes({
+									max:
+										value !== '' ? parseFloat(value) : null,
+								})
+							}
+							help={__(
+								'Maximum allowed value (leave empty for no maximum)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Allow Decimals', 'designsetgo')}
+						hasValue={() => allowDecimals !== false}
+						onDeselect={() =>
+							setAttributes({ allowDecimals: false, step: 1 })
+						}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Allow Decimals', 'designsetgo')}
+							checked={allowDecimals}
+							onChange={(value) => {
+								setAttributes({ allowDecimals: value });
+								if (!value && step < 1) {
+									setAttributes({ step: 1 });
+								}
+							}}
+							help={__(
+								'Allow decimal numbers instead of integers only',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Step', 'designsetgo')}
+						hasValue={() => step !== 1}
+						onDeselect={() => setAttributes({ step: 1 })}
+						isShownByDefault
+					>
+						<NumberControl
+							label={__('Step', 'designsetgo')}
+							value={step}
+							onChange={(value) =>
+								setAttributes({ step: parseFloat(value) || 1 })
+							}
+							help={__(
+								'Increment/decrement step value',
+								'designsetgo'
+							)}
+							min={0.01}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
 						label={__('Placeholder', 'designsetgo')}
-						value={placeholder}
-						onChange={(value) =>
-							setAttributes({ placeholder: value })
-						}
-						help={__(
-							'Example text shown when field is empty',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => placeholder !== ''}
+						onDeselect={() => setAttributes({ placeholder: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Placeholder', 'designsetgo')}
+							value={placeholder}
+							onChange={(value) =>
+								setAttributes({ placeholder: value })
+							}
+							help={__(
+								'Example text shown when field is empty',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<TextControl
-						label={__('Default Value', 'designsetgo')}
-						value={defaultValue}
-						onChange={(value) =>
-							setAttributes({ defaultValue: value })
-						}
-						help={__(
-							'Pre-filled value for this field',
-							'designsetgo'
-						)}
-						type="number"
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Help Text', 'designsetgo')}
-						value={helpText}
-						onChange={(value) => setAttributes({ helpText: value })}
-						help={__(
-							'Additional guidance shown below the field',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => helpText !== ''}
+						onDeselect={() => setAttributes({ helpText: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Help Text', 'designsetgo')}
+							value={helpText}
+							onChange={(value) =>
+								setAttributes({ helpText: value })
+							}
+							help={__(
+								'Additional guidance shown below the field',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Default Value', 'designsetgo')}
+						hasValue={() => defaultValue !== ''}
+						onDeselect={() => setAttributes({ defaultValue: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Default Value', 'designsetgo')}
+							value={defaultValue}
+							onChange={(value) =>
+								setAttributes({ defaultValue: value })
+							}
+							help={__(
+								'Pre-filled value for this field',
+								'designsetgo'
+							)}
+							type="number"
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Field Width', 'designsetgo')}
+						hasValue={() => fieldWidth !== '100'}
+						onDeselect={() => setAttributes({ fieldWidth: '100' })}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Field Width', 'designsetgo')}
+							value={fieldWidth}
+							options={FIELD_WIDTH_OPTIONS}
+							onChange={(value) =>
+								setAttributes({ fieldWidth: value })
+							}
+							help={__(
+								'Set field width to create multi-column layouts',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

@@ -42,7 +42,7 @@ Color stays in `<InspectorControls group="color">` so it slots into the native C
 - Every `<DsgoInspectorPanel.Item>` declares `hasValue`, `onDeselect`, and `isShownByDefault`.
 - `hasValue` returns `true` when the attribute differs from the `block.json` default.
 - `onDeselect` resets the attribute back to the `block.json` default (via `setAttributes`).
-- `isShownByDefault` is `true` for the primary 1–3 controls per panel; the rest are revealed via the panel's "+" menu.
+- **`isShownByDefault` is `true` on every item.** The original plan hid tertiary controls behind `ToolsPanel`'s kebab ("+") menu to keep inspector panels short, but the menu is not discoverable to most authors using this plugin — users missed controls they previously saw in flat `PanelBody` groups. The revised policy is: show everything by default. The per-item ⋮ reset and the panel-level `resetAll` still work exactly the same; only the default-visibility changed. See the "should we have the settings all show by default?" thread on PR #363 for the decision.
 
 ### Display order within Settings
 
@@ -146,10 +146,25 @@ Stand up Playwright-based visual regression for the editor sidebar so subsequent
 
 **PR title:** `feat(blocks): Theme 3 — interactive family inspector IA`
 
-Blocks: `accordion`, `accordion-item`, `tabs`, `tab`, `slider`, `slide`, `modal`, `modal-trigger`, `flip-card`, `image-accordion`, `image-accordion-item`.
+Blocks: `accordion`, `accordion-item`, `tabs`, `tab`, `slider`, `slide`, `modal`, `modal-trigger`, `flip-card`, `flip-card-face`, `image-accordion`, `image-accordion-item`.
 
-- [ ] Family-wide audit and migration. Estimated 30–60 min per block.
-- [ ] Special handling for `slider` — has 8 panels today; consolidation target needs a sub-design.
+- [x] `accordion-item`, `tab`, `slide`, `modal-trigger`, `image-accordion-item`, `flip-card-face` — simple child/leaf blocks, single Settings panel each. (Tranche 1 of PR #363.)
+- [x] `flip-card`, `accordion`, `image-accordion` — parent blocks that collapse 2–4 PanelBody groups into one Settings panel. (Tranche 2 of PR #363.)
+- [x] `tabs` — three PanelBody groups (Tab Settings / Mobile Settings / Advanced) consolidated; the plugin-specific `enableDeepLinking` toggle lives as an off-by-default Settings item (WP's native Advanced group is HTML anchor / class only).
+- [x] `modal` — the block's inspector is fragmented across seven sub-components under `src/blocks/modal/components/*Settings.js`. Each sub-component was refactored to render a React Fragment of `DsgoInspectorPanel.Item` entries; `modal/edit.js` now wraps all seven in a single Settings `DsgoInspectorPanel` with a shared `resetAll`. Structural test extended to concatenate sub-component sources for blocks listed in `COMPOSITE_INSPECTOR_BLOCKS`.
+- [ ] **`slider` — deferred.** See [Task 3a](#task-3a--slider-sub-design-deferred) below; it requires a sub-design before migration.
+
+### Task 3a — `slider` (sub-design deferred)
+
+`src/blocks/slider/edit.js` currently has **eight** top-level panels (Layout, Transition, Arrows, Dots, Autoplay, Behavior, Style, Scroll-Driven) and uses the `useBlockColors` hook to feed inline `ColorGradientSettingsDropdown` controls for arrows and dots. Collapsing everything into one Settings panel would produce ~30 items — far past the "a few default-shown, the rest revealed via +" sweet spot the convention targets.
+
+Open design questions before this can land:
+
+1. **Split into Settings + Style.** Settings = behaviour (slides per view, transition, autoplay, loop, swipe, scroll-driven). Style = arrow/dot appearance + colors. The inline color dropdowns for arrows/dots would need to either become `.Item` entries inside the Style panel, or move into `<InspectorControls group="color">` alongside the existing native colors. The latter is closer to the convention but breaks the inline "colors live next to their control" affordance that `useBlockColors` was built for.
+2. **Arrows / Dots nesting.** Today the arrow and dot panels are gated by `showArrows` / `showDots` toggles. In the Settings-panel world they'd become conditional `.Item` entries (same pattern as `image-accordion`'s overlay gating). Decide whether sub-headings are worth preserving for legibility.
+3. **Single-slide-effect notice.** The current Transition panel shows a Notice when `fade` / `zoom` is picked. That maps cleanly to the Transition `.Item`'s body but needs reviewer buy-in on keeping Notices inside items.
+
+Blocked on: the above. Not blocked on code — a `ToolsPanel` migration of slider is a day's work once the sub-design is signed off.
 
 ## Task 4 — Form family
 
@@ -157,7 +172,11 @@ Blocks: `accordion`, `accordion-item`, `tabs`, `tab`, `slider`, `slide`, `modal`
 
 Blocks: `form-builder`, `form-text-field`, `form-email-field`, `form-url-field`, `form-phone-field`, `form-number-field`, `form-date-field`, `form-time-field`, `form-textarea-field`, `form-select-field`, `form-checkbox-field`, `form-hidden-field`.
 
-- [ ] `form-builder` has 7 panels — consolidation target needs a sub-design.
+- [x] Eight text-like field blocks (`form-text-field` / `form-email-field` / `form-url-field` / `form-phone-field` / `form-number-field` / `form-date-field` / `form-time-field` / `form-textarea-field`) — each collapses its 1–4 `PanelBody` groups into one Settings panel. Every control is default-shown per the revised convention. `fieldName` `hasValue` predicates match on the block's specific auto-generated prefix (`field_`, `url-`, `phone-`, `number-`, `date-`, `time-`, `select-`, `checkbox-`, `hidden-`) so the reset doesn't falsely flag the generated name as "set".
+- [x] `form-select-field` — three panels + dynamic options array. Options list becomes a single Settings item whose `hasValue` does a deep equality check against the `block.json` default triple.
+- [x] `form-checkbox-field` — two panels (Field Settings / Additional Options) collapsed; `label` uses RichText, so the editor preview still renders via the existing label affordance below.
+- [x] `form-hidden-field` — trivial two-item Settings panel (fieldName + value).
+- [x] `form-builder` — **six** top-level `PanelBody` groups (Form Settings / Button Styling / Field Styling / Messages / Spam Protection / Email Notifications) consolidated into one Settings panel with ~25 items. Color dropdown stays in `<InspectorControls group="color">`. All items default-shown; conditional rate-limit and email items mount only when their parent toggle is on. `resetAll` returns every 25+ attribute to its `block.json` default in one click.
 
 ## Task 5 — Scroll family
 
@@ -165,11 +184,28 @@ Blocks: `form-builder`, `form-text-field`, `form-email-field`, `form-url-field`,
 
 Blocks: `scroll-marquee`, `scroll-slide`, `scroll-slides`, `scroll-accordion`, `scroll-accordion-item`, `sticky-sections`.
 
+- [x] `scroll-slide` — single PanelBody ("Slide Settings", 1 control: `navHeading`) collapsed into Settings.
+- [x] `sticky-sections` — single PanelBody (1 control: `stickyOffset`) collapsed into Settings.
+- [x] `scroll-marquee` — four PanelBody groups (Performance / Scroll Settings / Image Dimensions / Spacing) consolidated into one Settings panel with six items. The "Performance" panel was info-only (Notice with image-count warning); it survives as a Notice rendered at the top of the Settings panel body, outside any `.Item`.
+- [x] `scroll-slides` — `ScrollSlidesInspector` sub-component migrated to `DsgoInspectorPanel`. Four items (minHeight, maxHeight, constrainWidth, conditional contentWidth). Color group (Navigation + Overlay) stays untouched. Added to `COMPOSITE_INSPECTOR_BLOCKS` so the structural test scans the sub-component. Test regex widened to accept 2- or 3-level-up import paths.
+- [ ] **`scroll-accordion` and `scroll-accordion-item` skipped** — neither block has a custom Settings `PanelBody`. `scroll-accordion` is toolbar-only; `scroll-accordion-item` only uses `<InspectorControls group="color">` for an overlay colour. Adding empty DsgoInspectorPanels would be worse than nothing; these are excluded from `MIGRATED_BLOCKS` for that reason.
+
 ## Task 6 — Content family
 
 **PR title:** `feat(blocks): Theme 3 — content family inspector IA`
 
 Blocks: `card`, `icon`, `icon-button`, `icon-list`, `icon-list-item`, `pill`, `divider`, `advanced-heading`, `heading-segment`, `breadcrumbs`, `blobs`, `comparison-table`, `timeline`, `timeline-item`.
+
+- [x] `divider` — single PanelBody (4 controls, conditional IconPicker) → Settings panel.
+- [x] `blobs` — single PanelBody (7 controls) + color group for overlay → Settings panel. Conditional overlay-opacity item.
+- [x] `icon-list` — `ListSettingsPanel` sub-component migrated. 7 items with conditional alignment/columns/verticalAlignment. Added to `COMPOSITE_INSPECTOR_BLOCKS`; test helper extended to recurse `components/**/*.js` so nested `components/inspector/` files are picked up.
+- [x] `icon` — 3 PanelBody groups (Icon / Link / Accessibility) consolidated into one Settings panel with 9 items (icon, style, conditional stroke-width, icon-size, rotation, link-url, conditional open-in-new-tab, decorative, conditional aria-label).
+- [x] `icon-button` — `ButtonSettingsPanel` sub-component migrated. 7 items including conditional icon-size / icon-gap when icon is shown, and conditional modal-close ID field.
+- [x] `breadcrumbs` — `DisplaySettingsPanel` (`InspectorPanels.js`) sub-component migrated to 7 items (toggles + text inputs + separator select).
+- [x] `timeline` — four PanelBody groups (Layout / Line / Marker / Animation) consolidated into one Settings panel with 10 items. Conditional content-layout (vertical only) and animation-duration / stagger-delay (animateOnScroll only).
+- [x] `card` — large 5-section PanelBody (Layout / Image / Badge / Content Elements / Overlay) consolidated into one Settings panel with ~20 items. Image sub-controls (alt text, aspect ratio, custom aspect ratio, object fit) mount only when the image is set and the layout allows images. Badge position items mount only when badgeText is set. `resetAll` returns every 20+ attribute to its `block.json` default in one click.
+- [x] `comparison-table` — three PanelBody groups (Table Settings / Columns / Row Tooltips) consolidated into one Settings panel with six items. The complex `columns` and `rows` arrays survive as single items with `JSON.stringify`-based `hasValue` against `DEFAULT_COLUMNS` / `DEFAULT_ROWS` constants (mirrors the form-select-field options pattern); each row's onDeselect restores the block.json default array.
+- [ ] **`pill`, `icon-list-item`, `heading-segment`, `advanced-heading`, `timeline-item` skipped** — none of these blocks have a custom Settings `PanelBody` today. They rely on native Block Supports (typography / color / spacing) and parent context. Adding empty DsgoInspectorPanels would be worse than nothing; excluded from `MIGRATED_BLOCKS` for that reason.
 
 ## Task 7 — Data family
 
@@ -177,7 +213,14 @@ Blocks: `card`, `icon`, `icon-button`, `icon-list`, `icon-list-item`, `pill`, `d
 
 Blocks: `countdown-timer`, `counter`, `counter-group`, `progress-bar`, `table-of-contents`, `product-categories-grid`, `product-showcase-hero`, `map`.
 
-- [ ] `countdown-timer` already uses `ToolsPanel` for `UnitBorderPanel.js` — port the rest of its inspector for consistency.
+- [x] `progress-bar` — four PanelBody groups (Progress / Appearance / Label / Animation) → one Settings panel with ~10 items. Conditional label-text / label-position / animate-stripes mount only when their parent toggle/style allows.
+- [x] `counter-group` — parent-block edit lives inline in `index.js` (outlier — rest of plugin uses `edit.js`). Test helper extended with a fallback that reads `index.js` when `edit.js` is missing. Three PanelBody groups (Layout / Animation / Number Formatting) → one Settings panel with 11 items, including conditional `separator` when `useGrouping` is true.
+- [x] `product-categories-grid` — three PanelBody groups (Categories / Display / Layout) → one Settings panel with seven items, including conditional `showEmpty` (all-source) and `selectedCategories` picker (manual-source).
+- [x] `counter` — four sub-component panels (Counter Settings / Label / Icon / Animation Override) refactored into React Fragments of `DsgoInspectorPanel.Item` entries. Conditional icon / position items mount only when `showIcon` is true; conditional custom animation items mount only when `overrideAnimation` is true.
+- [x] `table-of-contents` — four sub-component panels in `InspectorPanels.js` (Heading Levels / Display / Title / Scroll) migrated. Title Text item mounts only when `showTitle` is true.
+- [x] `product-showcase-hero` — three panel regions (inline `ProductPanelContent` + `DisplayOptionsPanel` + `LayoutPanel`) migrated. Product item resets `productSource` + `productId`; Focal Point item mounts only when a product image is available.
+- [x] `map` — `MapSettingsPanel` sub-component (single 11-control PanelBody with `<h3>`-labeled sub-sections) flattened into 11 DsgoInspectorPanel.Item entries. Conditional `Map Height` (custom aspect ratio), `Map Style` (Google Maps only), and `Privacy Notice` (privacy mode on). Search state (isSearching / searchError) still handled inside the Address item body.
+- [x] **`countdown-timer`** — five sub-component panels migrated, including **`UnitBorderPanel.js`**. The old file wrapped controls in `<InspectorControls group="border">` + its own `ToolsPanel` / `ToolsPanelItem` — the only pre-existing ToolsPanel in the plugin. Refactored to return a fragment of `DsgoInspectorPanel.Item` entries composed into the main Settings panel; the `group="border"` placement is abandoned so every countdown control reads from a single panel per the convention. The placeholder / completion-hide / completion-show / normal branches that previously duplicated the entire inspector now share one `const inspector` JSX, rendered once per branch.
 
 ---
 

@@ -23,6 +23,7 @@ import {
 import { useEffect } from '@wordpress/element';
 
 // Extracted Inspector Panel Components
+import { DsgoInspectorPanel } from '../../components/shared';
 import { CounterSettingsPanel } from './components/inspector/CounterSettingsPanel';
 import { LabelSettingsPanel } from './components/inspector/LabelSettingsPanel';
 import { IconSettingsPanel } from './components/inspector/IconSettingsPanel';
@@ -160,35 +161,58 @@ export default function CounterEdit({
 			</InspectorControls>
 
 			<InspectorControls>
-				<CounterSettingsPanel
-					startValue={startValue}
-					endValue={endValue}
-					decimals={decimals}
-					prefix={prefix}
-					suffix={suffix}
-					setAttributes={setAttributes}
-				/>
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							startValue: 0,
+							endValue: 100,
+							decimals: 0,
+							prefix: '',
+							suffix: '',
+							label: '',
+							showIcon: false,
+							icon: 'star',
+							iconPosition: 'top',
+							overrideAnimation: false,
+							customDuration: 2,
+							customDelay: 0,
+							customEasing: 'easeOutQuad',
+						})
+					}
+				>
+					<CounterSettingsPanel
+						startValue={startValue}
+						endValue={endValue}
+						decimals={decimals}
+						prefix={prefix}
+						suffix={suffix}
+						setAttributes={setAttributes}
+					/>
 
-				<LabelSettingsPanel
-					label={label}
-					setAttributes={setAttributes}
-				/>
+					<LabelSettingsPanel
+						label={label}
+						setAttributes={setAttributes}
+					/>
 
-				<IconSettingsPanel
-					showIcon={showIcon}
-					icon={icon}
-					iconPosition={iconPosition}
-					setAttributes={setAttributes}
-				/>
+					<IconSettingsPanel
+						showIcon={showIcon}
+						icon={icon}
+						iconPosition={iconPosition}
+						setAttributes={setAttributes}
+					/>
 
-				<AnimationPanel
-					overrideAnimation={overrideAnimation}
-					customDuration={customDuration}
-					customDelay={customDelay}
-					customEasing={customEasing}
-					context={context}
-					setAttributes={setAttributes}
-				/>
+					<AnimationPanel
+						overrideAnimation={overrideAnimation}
+						customDuration={customDuration}
+						customDelay={customDelay}
+						customEasing={customEasing}
+						context={context}
+						setAttributes={setAttributes}
+					/>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			{/* ========================================

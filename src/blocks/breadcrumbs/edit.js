@@ -16,6 +16,7 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import { Notice } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import classnames from 'classnames';
 import { useMemo, Fragment } from '@wordpress/element';
 import { DisplaySettingsPanel } from './components/InspectorPanels';
@@ -133,10 +134,27 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 			</BlockControls>
 
 			<InspectorControls>
-				<DisplaySettingsPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							showHome: true,
+							homeText: 'Home',
+							separator: 'slash',
+							showCurrent: true,
+							linkCurrent: false,
+							prefixText: '',
+							hideOnHome: true,
+						})
+					}
+				>
+					<DisplaySettingsPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">

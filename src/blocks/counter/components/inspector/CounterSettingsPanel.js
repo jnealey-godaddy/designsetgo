@@ -1,26 +1,17 @@
 /**
  * Counter Block - Counter Settings Panel Component
  *
- * Provides controls for counter values, decimals, and prefix/suffix.
+ * Renders DsgoInspectorPanel.Item entries for counter values, decimals,
+ * and prefix/suffix. Meant to be composed inside the Settings
+ * DsgoInspectorPanel in counter/edit.js.
  *
  * @since 1.0.0
  */
 
 import { __ } from '@wordpress/i18n';
-import { PanelBody, RangeControl, TextControl } from '@wordpress/components';
+import { RangeControl, TextControl } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../../../components/shared';
 
-/**
- * Counter Settings Panel - Controls for counter number configuration.
- *
- * @param {Object}   props               - Component props
- * @param {number}   props.startValue    - Start value for animation
- * @param {number}   props.endValue      - End value (final display number)
- * @param {number}   props.decimals      - Number of decimal places (0-3)
- * @param {string}   props.prefix        - Text before number (e.g., '$', '€')
- * @param {string}   props.suffix        - Text after number (e.g., '+', '%', 'K')
- * @param {Function} props.setAttributes - Function to update block attributes
- * @return {JSX.Element} Counter Settings Panel component
- */
 export const CounterSettingsPanel = ({
 	startValue,
 	endValue,
@@ -30,66 +21,101 @@ export const CounterSettingsPanel = ({
 	setAttributes,
 }) => {
 	return (
-		<PanelBody
-			title={__('Counter Settings', 'designsetgo')}
-			initialOpen={true}
-		>
-			<RangeControl
+		<>
+			<DsgoInspectorPanel.Item
 				label={__('Start Value', 'designsetgo')}
-				value={startValue}
-				onChange={(value) => setAttributes({ startValue: value })}
-				min={0}
-				max={endValue}
-				help={__('Number to count from', 'designsetgo')}
-				__next40pxDefaultSize
-				__nextHasNoMarginBottom
-			/>
+				hasValue={() => startValue !== 0}
+				onDeselect={() => setAttributes({ startValue: 0 })}
+				isShownByDefault
+			>
+				<RangeControl
+					label={__('Start Value', 'designsetgo')}
+					value={startValue}
+					onChange={(value) => setAttributes({ startValue: value })}
+					min={0}
+					max={endValue}
+					help={__('Number to count from', 'designsetgo')}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
 
-			<TextControl
+			<DsgoInspectorPanel.Item
 				label={__('End Value', 'designsetgo')}
-				type="number"
-				value={endValue}
-				onChange={(value) =>
-					setAttributes({ endValue: parseFloat(value) || 0 })
-				}
-				help={__('Final number to display', 'designsetgo')}
-				__next40pxDefaultSize
-				__nextHasNoMarginBottom
-			/>
+				hasValue={() => endValue !== 100}
+				onDeselect={() => setAttributes({ endValue: 100 })}
+				isShownByDefault
+			>
+				<TextControl
+					label={__('End Value', 'designsetgo')}
+					type="number"
+					value={endValue}
+					onChange={(value) =>
+						setAttributes({ endValue: parseFloat(value) || 0 })
+					}
+					help={__('Final number to display', 'designsetgo')}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
 
-			<RangeControl
+			<DsgoInspectorPanel.Item
 				label={__('Decimal Places', 'designsetgo')}
-				value={decimals}
-				onChange={(value) => setAttributes({ decimals: value })}
-				min={0}
-				max={3}
-				help={__('Number of decimal places', 'designsetgo')}
-				__next40pxDefaultSize
-				__nextHasNoMarginBottom
-			/>
+				hasValue={() => decimals !== 0}
+				onDeselect={() => setAttributes({ decimals: 0 })}
+				isShownByDefault
+			>
+				<RangeControl
+					label={__('Decimal Places', 'designsetgo')}
+					value={decimals}
+					onChange={(value) => setAttributes({ decimals: value })}
+					min={0}
+					max={3}
+					help={__('Number of decimal places', 'designsetgo')}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
 
-			<TextControl
+			<DsgoInspectorPanel.Item
 				label={__('Prefix', 'designsetgo')}
-				value={prefix}
-				onChange={(value) => setAttributes({ prefix: value })}
-				placeholder="$"
-				help={__('Text before number (e.g., "$", "€")', 'designsetgo')}
-				__next40pxDefaultSize
-				__nextHasNoMarginBottom
-			/>
+				hasValue={() => prefix !== ''}
+				onDeselect={() => setAttributes({ prefix: '' })}
+				isShownByDefault
+			>
+				<TextControl
+					label={__('Prefix', 'designsetgo')}
+					value={prefix}
+					onChange={(value) => setAttributes({ prefix: value })}
+					placeholder="$"
+					help={__(
+						'Text before number (e.g., "$", "€")',
+						'designsetgo'
+					)}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
 
-			<TextControl
+			<DsgoInspectorPanel.Item
 				label={__('Suffix', 'designsetgo')}
-				value={suffix}
-				onChange={(value) => setAttributes({ suffix: value })}
-				placeholder="+"
-				help={__(
-					'Text after number (e.g., "+", "%", "K")',
-					'designsetgo'
-				)}
-				__next40pxDefaultSize
-				__nextHasNoMarginBottom
-			/>
-		</PanelBody>
+				hasValue={() => suffix !== ''}
+				onDeselect={() => setAttributes({ suffix: '' })}
+				isShownByDefault
+			>
+				<TextControl
+					label={__('Suffix', 'designsetgo')}
+					value={suffix}
+					onChange={(value) => setAttributes({ suffix: value })}
+					placeholder="+"
+					help={__(
+						'Text after number (e.g., "+", "%", "K")',
+						'designsetgo'
+					)}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
+		</>
 	);
 };

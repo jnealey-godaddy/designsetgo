@@ -17,10 +17,13 @@ import { useState, useEffect } from '@wordpress/element';
 /**
  * Internal dependencies
  */
+import { DsgoInspectorPanel } from '../../components/shared';
 import DateTimePanel from './components/inspector/DateTimePanel';
 import DisplayPanel from './components/inspector/DisplayPanel';
 import StylingPanel from './components/inspector/StylingPanel';
-import UnitBorderPanel from './components/inspector/UnitBorderPanel';
+import UnitBorderPanel, {
+	DEFAULT_UNIT_BORDER,
+} from './components/inspector/UnitBorderPanel';
 import CompletionPanel from './components/inspector/CompletionPanel';
 import {
 	calculateTimeRemaining,
@@ -32,6 +35,8 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+
+const DEFAULT_COMPLETION_MESSAGE = 'The countdown has ended!';
 
 /**
  * Edit component for Countdown Timer block
@@ -138,297 +143,12 @@ export default function Edit(props) {
 		showSeconds,
 	});
 
-	// Show placeholder if no target date is set
-	if (!targetDateTime) {
-		return (
-			<div {...blockProps}>
-				<InspectorControls group="color">
-					<ColorGradientSettingsDropdown
-						panelId={clientId}
-						title={__('Colors', 'designsetgo')}
-						settings={[
-							{
-								label: __('Number Color', 'designsetgo'),
-								colorValue: decodeColorValue(
-									numberColor,
-									colorGradientSettings
-								),
-								onColorChange: (color) =>
-									setAttributes({
-										numberColor:
-											encodeColorValue(
-												color,
-												colorGradientSettings
-											) || '',
-									}),
-								enableAlpha: true,
-								clearable: true,
-							},
-							{
-								label: __('Label Color', 'designsetgo'),
-								colorValue: decodeColorValue(
-									labelColor,
-									colorGradientSettings
-								),
-								onColorChange: (color) =>
-									setAttributes({
-										labelColor:
-											encodeColorValue(
-												color,
-												colorGradientSettings
-											) || '',
-									}),
-								enableAlpha: true,
-								clearable: true,
-							},
-							{
-								label: __('Unit Background', 'designsetgo'),
-								colorValue: decodeColorValue(
-									unitBackgroundColor,
-									colorGradientSettings
-								),
-								onColorChange: (color) =>
-									setAttributes({
-										unitBackgroundColor:
-											encodeColorValue(
-												color,
-												colorGradientSettings
-											) || '',
-									}),
-								enableAlpha: true,
-								clearable: true,
-							},
-						]}
-						{...colorGradientSettings}
-					/>
-				</InspectorControls>
-				<UnitBorderPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<InspectorControls>
-					<DateTimePanel
-						attributes={attributes}
-						setAttributes={setAttributes}
-					/>
-					<DisplayPanel
-						attributes={attributes}
-						setAttributes={setAttributes}
-					/>
-					<StylingPanel
-						attributes={attributes}
-						setAttributes={setAttributes}
-					/>
-					<CompletionPanel
-						attributes={attributes}
-						setAttributes={setAttributes}
-					/>
-				</InspectorControls>
-				<Placeholder
-					icon="clock"
-					label={__('Countdown Timer', 'designsetgo')}
-					instructions={__(
-						'Set a target date and time in the block settings to start your countdown.',
-						'designsetgo'
-					)}
-				/>
-			</div>
-		);
-	}
-
-	// Show completion state
-	if (currentTime.isComplete) {
-		if (completionAction === 'hide') {
-			return (
-				<div {...blockProps}>
-					<InspectorControls group="color">
-						<ColorGradientSettingsDropdown
-							panelId={clientId}
-							title={__('Colors', 'designsetgo')}
-							settings={[
-								{
-									label: __('Number Color', 'designsetgo'),
-									colorValue: decodeColorValue(
-										numberColor,
-										colorGradientSettings
-									),
-									onColorChange: (color) =>
-										setAttributes({
-											numberColor:
-												encodeColorValue(
-													color,
-													colorGradientSettings
-												) || '',
-										}),
-									enableAlpha: true,
-									clearable: true,
-								},
-								{
-									label: __('Label Color', 'designsetgo'),
-									colorValue: decodeColorValue(
-										labelColor,
-										colorGradientSettings
-									),
-									onColorChange: (color) =>
-										setAttributes({
-											labelColor:
-												encodeColorValue(
-													color,
-													colorGradientSettings
-												) || '',
-										}),
-									enableAlpha: true,
-									clearable: true,
-								},
-								{
-									label: __('Unit Background', 'designsetgo'),
-									colorValue: decodeColorValue(
-										unitBackgroundColor,
-										colorGradientSettings
-									),
-									onColorChange: (color) =>
-										setAttributes({
-											unitBackgroundColor:
-												encodeColorValue(
-													color,
-													colorGradientSettings
-												) || '',
-										}),
-									enableAlpha: true,
-									clearable: true,
-								},
-							]}
-							{...colorGradientSettings}
-						/>
-					</InspectorControls>
-					<UnitBorderPanel
-						attributes={attributes}
-						setAttributes={setAttributes}
-					/>
-					<InspectorControls>
-						<DateTimePanel
-							attributes={attributes}
-							setAttributes={setAttributes}
-						/>
-						<DisplayPanel
-							attributes={attributes}
-							setAttributes={setAttributes}
-						/>
-						<StylingPanel
-							attributes={attributes}
-							setAttributes={setAttributes}
-						/>
-						<CompletionPanel
-							attributes={attributes}
-							setAttributes={setAttributes}
-						/>
-					</InspectorControls>
-					<div className="dsgo-countdown-timer__completion">
-						<p style={{ opacity: 0.5 }}>
-							{__(
-								'Timer hidden (countdown complete)',
-								'designsetgo'
-							)}
-						</p>
-					</div>
-				</div>
-			);
-		}
-
-		return (
-			<div {...blockProps}>
-				<InspectorControls group="color">
-					<ColorGradientSettingsDropdown
-						panelId={clientId}
-						title={__('Colors', 'designsetgo')}
-						settings={[
-							{
-								label: __('Number Color', 'designsetgo'),
-								colorValue: decodeColorValue(
-									numberColor,
-									colorGradientSettings
-								),
-								onColorChange: (color) =>
-									setAttributes({
-										numberColor:
-											encodeColorValue(
-												color,
-												colorGradientSettings
-											) || '',
-									}),
-								enableAlpha: true,
-								clearable: true,
-							},
-							{
-								label: __('Label Color', 'designsetgo'),
-								colorValue: decodeColorValue(
-									labelColor,
-									colorGradientSettings
-								),
-								onColorChange: (color) =>
-									setAttributes({
-										labelColor:
-											encodeColorValue(
-												color,
-												colorGradientSettings
-											) || '',
-									}),
-								enableAlpha: true,
-								clearable: true,
-							},
-							{
-								label: __('Unit Background', 'designsetgo'),
-								colorValue: decodeColorValue(
-									unitBackgroundColor,
-									colorGradientSettings
-								),
-								onColorChange: (color) =>
-									setAttributes({
-										unitBackgroundColor:
-											encodeColorValue(
-												color,
-												colorGradientSettings
-											) || '',
-									}),
-								enableAlpha: true,
-								clearable: true,
-							},
-						]}
-						{...colorGradientSettings}
-					/>
-				</InspectorControls>
-				<UnitBorderPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<InspectorControls>
-					<DateTimePanel
-						attributes={attributes}
-						setAttributes={setAttributes}
-					/>
-					<DisplayPanel
-						attributes={attributes}
-						setAttributes={setAttributes}
-					/>
-					<StylingPanel
-						attributes={attributes}
-						setAttributes={setAttributes}
-					/>
-					<CompletionPanel
-						attributes={attributes}
-						setAttributes={setAttributes}
-					/>
-				</InspectorControls>
-				<div className="dsgo-countdown-timer__completion-message">
-					{completionMessage}
-				</div>
-			</div>
-		);
-	}
-
-	// Show countdown timer
-	return (
-		<div {...blockProps}>
+	// Extracted inspector — rendered once per branch below. Composing all
+	// sub-panels under one DsgoInspectorPanel follows the plugin-wide
+	// Settings convention. Color dropdown stays in the native "color"
+	// group so it slots into WP's Color panel.
+	const inspector = (
+		<>
 			<InspectorControls group="color">
 				<ColorGradientSettingsDropdown
 					panelId={clientId}
@@ -489,28 +209,102 @@ export default function Edit(props) {
 					{...colorGradientSettings}
 				/>
 			</InspectorControls>
-			<UnitBorderPanel
-				attributes={attributes}
-				setAttributes={setAttributes}
-			/>
+
 			<InspectorControls>
-				<DateTimePanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<DisplayPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<StylingPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<CompletionPanel
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							targetDateTime: '',
+							timezone: '',
+							showDays: true,
+							showHours: true,
+							showMinutes: true,
+							showSeconds: true,
+							layout: 'boxed',
+							completionAction: 'message',
+							completionMessage: DEFAULT_COMPLETION_MESSAGE,
+							unitGap: '1rem',
+							unitPadding: '1.5rem',
+							unitBorder: DEFAULT_UNIT_BORDER,
+							unitBorderRadius: 12,
+						})
+					}
+				>
+					<DateTimePanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<DisplayPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<StylingPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<UnitBorderPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<CompletionPanel
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+				</DsgoInspectorPanel>
 			</InspectorControls>
+		</>
+	);
+
+	// Show placeholder if no target date is set
+	if (!targetDateTime) {
+		return (
+			<div {...blockProps}>
+				{inspector}
+				<Placeholder
+					icon="clock"
+					label={__('Countdown Timer', 'designsetgo')}
+					instructions={__(
+						'Set a target date and time in the block settings to start your countdown.',
+						'designsetgo'
+					)}
+				/>
+			</div>
+		);
+	}
+
+	// Show completion state — hidden timer
+	if (currentTime.isComplete && completionAction === 'hide') {
+		return (
+			<div {...blockProps}>
+				{inspector}
+				<div className="dsgo-countdown-timer__completion">
+					<p style={{ opacity: 0.5 }}>
+						{__('Timer hidden (countdown complete)', 'designsetgo')}
+					</p>
+				</div>
+			</div>
+		);
+	}
+
+	// Show completion state — custom message
+	if (currentTime.isComplete) {
+		return (
+			<div {...blockProps}>
+				{inspector}
+				<div className="dsgo-countdown-timer__completion-message">
+					{completionMessage}
+				</div>
+			</div>
+		);
+	}
+
+	// Show countdown timer
+	return (
+		<div {...blockProps}>
+			{inspector}
 			<div className="dsgo-countdown-timer__units">
 				{visibleUnits.map((unit) => (
 					<div

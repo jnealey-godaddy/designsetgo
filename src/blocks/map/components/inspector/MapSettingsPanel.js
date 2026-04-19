@@ -1,12 +1,13 @@
 /**
  * Map Settings Panel Component
  *
- * Consolidated inspector panel for all map settings.
+ * Renders DsgoInspectorPanel.Item entries for all map settings.
+ * Meant to be composed inside the Settings DsgoInspectorPanel in
+ * map/edit.js.
  */
 
 import { __ } from '@wordpress/i18n';
 import {
-	PanelBody,
 	SelectControl,
 	TextControl,
 	RangeControl,
@@ -18,7 +19,11 @@ import {
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
 import { useState, useCallback } from '@wordpress/element';
+import { DsgoInspectorPanel } from '../../../../components/shared';
 import { geocodeAddress } from '../../utils/geocoding';
+
+const DEFAULT_PRIVACY_NOTICE =
+	'This map will load content from external services. Click to load and view the map.';
 
 export default function MapSettingsPanel({ attributes, setAttributes }) {
 	const {
@@ -38,10 +43,6 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 	const [isSearching, setIsSearching] = useState(false);
 	const [searchError, setSearchError] = useState('');
 
-	/**
-	 * Handle address search and geocoding.
-	 * Debounced to respect Nominatim API rate limiting (1 req/sec).
-	 */
 	const handleAddressSearch = useCallback(async () => {
 		if (!dsgoAddress || dsgoAddress.trim() === '') {
 			setSearchError(
@@ -79,17 +80,6 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 		}
 	}, [dsgoAddress, setAttributes]);
 
-	// Note: Debouncing removed for now - can be added back if needed for rate limiting
-	// const debouncedSearch = useMemo(
-	// 	() => debounce(handleAddressSearch, 1000),
-	// 	[handleAddressSearch]
-	// );
-
-	/**
-	 * Handle Enter key in address field.
-	 *
-	 * @param {KeyboardEvent} event - Keyboard event.
-	 */
 	const handleAddressKeyPress = (event) => {
 		if (event.key === 'Enter') {
 			event.preventDefault();
@@ -98,40 +88,51 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 	};
 
 	return (
-		<PanelBody title={__('Map Settings', 'designsetgo')} initialOpen={true}>
-			{/* Provider Selection */}
-			<SelectControl
+		<>
+			<DsgoInspectorPanel.Item
 				label={__('Map Provider', 'designsetgo')}
-				value={dsgoProvider}
-				options={[
-					{
-						label: __(
-							'OpenStreetMap (No API key required)',
-							'designsetgo'
-						),
-						value: 'openstreetmap',
-					},
-					{
-						label: __(
-							'Google Maps (Requires API key)',
-							'designsetgo'
-						),
-						value: 'googlemaps',
-					},
-				]}
-				onChange={(value) => setAttributes({ dsgoProvider: value })}
-				help={
-					dsgoProvider === 'openstreetmap'
-						? __('Privacy-friendly and free to use.', 'designsetgo')
-						: __('Requires a Google Maps API key.', 'designsetgo')
+				hasValue={() => dsgoProvider !== 'openstreetmap'}
+				onDeselect={() =>
+					setAttributes({ dsgoProvider: 'openstreetmap' })
 				}
-				__next40pxDefaultSize
-				__nextHasNoMarginBottom
-			/>
-
-			{dsgoProvider === 'googlemaps' && (
-				<>
-					{window.dsgoIntegrations?.googleMapsApiKey ? (
+				isShownByDefault
+			>
+				<SelectControl
+					label={__('Map Provider', 'designsetgo')}
+					value={dsgoProvider}
+					options={[
+						{
+							label: __(
+								'OpenStreetMap (No API key required)',
+								'designsetgo'
+							),
+							value: 'openstreetmap',
+						},
+						{
+							label: __(
+								'Google Maps (Requires API key)',
+								'designsetgo'
+							),
+							value: 'googlemaps',
+						},
+					]}
+					onChange={(value) => setAttributes({ dsgoProvider: value })}
+					help={
+						dsgoProvider === 'openstreetmap'
+							? __(
+									'Privacy-friendly and free to use.',
+									'designsetgo'
+								)
+							: __(
+									'Requires a Google Maps API key.',
+									'designsetgo'
+								)
+					}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+				{dsgoProvider === 'googlemaps' &&
+					(window.dsgoIntegrations?.googleMapsApiKey ? (
 						<Notice
 							status="success"
 							isDismissible={false}
@@ -168,33 +169,16 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 								{__('Settings', 'designsetgo')}
 							</a>{' '}
 							{__('to use Google Maps.', 'designsetgo')}
-							<br />
-							<small>
-								<strong>
-									{__('Security:', 'designsetgo')}
-								</strong>{' '}
-								{__(
-									'Configure HTTP referrer restrictions in Google Cloud Console.',
-									'designsetgo'
-								)}
-							</small>
 						</Notice>
-					)}
-				</>
-			)}
+					))}
+			</DsgoInspectorPanel.Item>
 
-			{/* Location Section */}
-			<div style={{ marginTop: '24px' }}>
-				<h3
-					style={{
-						fontSize: '13px',
-						fontWeight: '500',
-						marginBottom: '12px',
-					}}
-				>
-					{__('Location', 'designsetgo')}
-				</h3>
-
+			<DsgoInspectorPanel.Item
+				label={__('Address', 'designsetgo')}
+				hasValue={() => dsgoAddress !== ''}
+				onDeselect={() => setAttributes({ dsgoAddress: '' })}
+				isShownByDefault
+			>
 				<TextControl
 					label={__('Search Address', 'designsetgo')}
 					value={dsgoAddress}
@@ -236,53 +220,72 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 						{searchError}
 					</Notice>
 				)}
+			</DsgoInspectorPanel.Item>
 
-				<div style={{ marginTop: '16px' }}>
-					<TextControl
-						label={__('Latitude', 'designsetgo')}
-						type="number"
-						value={dsgoLatitude}
-						onChange={(value) => {
-							const num = parseFloat(value);
-							const clamped = Number.isFinite(num)
-								? Math.max(-90, Math.min(90, num))
-								: 0;
-							setAttributes({ dsgoLatitude: clamped });
-						}}
-						step="0.000001"
-						min="-90"
-						max="90"
-						help={__(
-							'Manual coordinate entry (between -90 and 90).',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+			<DsgoInspectorPanel.Item
+				label={__('Latitude', 'designsetgo')}
+				hasValue={() => dsgoLatitude !== 40.7128}
+				onDeselect={() => setAttributes({ dsgoLatitude: 40.7128 })}
+				isShownByDefault
+			>
+				<TextControl
+					label={__('Latitude', 'designsetgo')}
+					type="number"
+					value={dsgoLatitude}
+					onChange={(value) => {
+						const num = parseFloat(value);
+						const clamped = Number.isFinite(num)
+							? Math.max(-90, Math.min(90, num))
+							: 0;
+						setAttributes({ dsgoLatitude: clamped });
+					}}
+					step="0.000001"
+					min="-90"
+					max="90"
+					help={__(
+						'Manual coordinate entry (between -90 and 90).',
+						'designsetgo'
+					)}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
 
-					<TextControl
-						label={__('Longitude', 'designsetgo')}
-						type="number"
-						value={dsgoLongitude}
-						onChange={(value) => {
-							const num = parseFloat(value);
-							const clamped = Number.isFinite(num)
-								? Math.max(-180, Math.min(180, num))
-								: 0;
-							setAttributes({ dsgoLongitude: clamped });
-						}}
-						step="0.000001"
-						min="-180"
-						max="180"
-						help={__(
-							'Manual coordinate entry (between -180 and 180).',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</div>
+			<DsgoInspectorPanel.Item
+				label={__('Longitude', 'designsetgo')}
+				hasValue={() => dsgoLongitude !== -74.006}
+				onDeselect={() => setAttributes({ dsgoLongitude: -74.006 })}
+				isShownByDefault
+			>
+				<TextControl
+					label={__('Longitude', 'designsetgo')}
+					type="number"
+					value={dsgoLongitude}
+					onChange={(value) => {
+						const num = parseFloat(value);
+						const clamped = Number.isFinite(num)
+							? Math.max(-180, Math.min(180, num))
+							: 0;
+						setAttributes({ dsgoLongitude: clamped });
+					}}
+					step="0.000001"
+					min="-180"
+					max="180"
+					help={__(
+						'Manual coordinate entry (between -180 and 180).',
+						'designsetgo'
+					)}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
 
+			<DsgoInspectorPanel.Item
+				label={__('Zoom Level', 'designsetgo')}
+				hasValue={() => dsgoZoom !== 13}
+				onDeselect={() => setAttributes({ dsgoZoom: 13 })}
+				isShownByDefault
+			>
 				<RangeControl
 					label={__('Zoom Level', 'designsetgo')}
 					value={dsgoZoom}
@@ -297,20 +300,14 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
-			</div>
+			</DsgoInspectorPanel.Item>
 
-			{/* Marker Section */}
-			<div style={{ marginTop: '24px' }}>
-				<h3
-					style={{
-						fontSize: '13px',
-						fontWeight: '500',
-						marginBottom: '12px',
-					}}
-				>
-					{__('Marker', 'designsetgo')}
-				</h3>
-
+			<DsgoInspectorPanel.Item
+				label={__('Marker Icon', 'designsetgo')}
+				hasValue={() => dsgoMarkerIcon !== '📍'}
+				onDeselect={() => setAttributes({ dsgoMarkerIcon: '📍' })}
+				isShownByDefault
+			>
 				<TextControl
 					label={__('Marker Icon', 'designsetgo')}
 					value={dsgoMarkerIcon}
@@ -324,20 +321,14 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
-			</div>
+			</DsgoInspectorPanel.Item>
 
-			{/* Appearance Section */}
-			<div style={{ marginTop: '24px' }}>
-				<h3
-					style={{
-						fontSize: '13px',
-						fontWeight: '500',
-						marginBottom: '12px',
-					}}
-				>
-					{__('Appearance', 'designsetgo')}
-				</h3>
-
+			<DsgoInspectorPanel.Item
+				label={__('Aspect Ratio', 'designsetgo')}
+				hasValue={() => dsgoAspectRatio !== 'custom'}
+				onDeselect={() => setAttributes({ dsgoAspectRatio: 'custom' })}
+				isShownByDefault
+			>
 				<SelectControl
 					label={__('Aspect Ratio', 'designsetgo')}
 					value={dsgoAspectRatio}
@@ -373,8 +364,15 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
+			</DsgoInspectorPanel.Item>
 
-				{dsgoAspectRatio === 'custom' && (
+			{dsgoAspectRatio === 'custom' && (
+				<DsgoInspectorPanel.Item
+					label={__('Map Height', 'designsetgo')}
+					hasValue={() => dsgoHeight !== '400px'}
+					onDeselect={() => setAttributes({ dsgoHeight: '400px' })}
+					isShownByDefault
+				>
 					<UnitControl
 						label={__('Map Height', 'designsetgo')}
 						value={dsgoHeight}
@@ -393,9 +391,18 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				)}
+				</DsgoInspectorPanel.Item>
+			)}
 
-				{dsgoProvider === 'googlemaps' && (
+			{dsgoProvider === 'googlemaps' && (
+				<DsgoInspectorPanel.Item
+					label={__('Map Style', 'designsetgo')}
+					hasValue={() => dsgoMapStyle !== 'standard'}
+					onDeselect={() =>
+						setAttributes({ dsgoMapStyle: 'standard' })
+					}
+					isShownByDefault
+				>
 					<SelectControl
 						label={__('Map Style', 'designsetgo')}
 						value={dsgoMapStyle}
@@ -423,21 +430,15 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				)}
-			</div>
+				</DsgoInspectorPanel.Item>
+			)}
 
-			{/* Privacy Section */}
-			<div style={{ marginTop: '24px' }}>
-				<h3
-					style={{
-						fontSize: '13px',
-						fontWeight: '500',
-						marginBottom: '12px',
-					}}
-				>
-					{__('Privacy', 'designsetgo')}
-				</h3>
-
+			<DsgoInspectorPanel.Item
+				label={__('Enable Privacy Mode', 'designsetgo')}
+				hasValue={() => dsgoPrivacyMode !== false}
+				onDeselect={() => setAttributes({ dsgoPrivacyMode: false })}
+				isShownByDefault
+			>
 				<ToggleControl
 					label={__('Enable Privacy Mode', 'designsetgo')}
 					checked={dsgoPrivacyMode}
@@ -457,38 +458,36 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 					}
 					__nextHasNoMarginBottom
 				/>
+			</DsgoInspectorPanel.Item>
 
-				{dsgoPrivacyMode && (
-					<>
-						<TextareaControl
-							label={__('Privacy Notice', 'designsetgo')}
-							value={dsgoPrivacyNotice}
-							onChange={(value) =>
-								setAttributes({ dsgoPrivacyNotice: value })
-							}
-							rows={4}
-							help={__(
-								'Message shown to users before loading the map.',
-								'designsetgo'
-							)}
-							__nextHasNoMarginBottom
-						/>
-
-						<p
-							style={{
-								marginTop: '12px',
-								fontSize: '12px',
-								color: '#757575',
-							}}
-						>
-							{__(
-								'Privacy mode is GDPR-compliant. External map services will only load after user consent.',
-								'designsetgo'
-							)}
-						</p>
-					</>
-				)}
-			</div>
-		</PanelBody>
+			{dsgoPrivacyMode && (
+				<DsgoInspectorPanel.Item
+					label={__('Privacy Notice', 'designsetgo')}
+					hasValue={() =>
+						dsgoPrivacyNotice !== DEFAULT_PRIVACY_NOTICE
+					}
+					onDeselect={() =>
+						setAttributes({
+							dsgoPrivacyNotice: DEFAULT_PRIVACY_NOTICE,
+						})
+					}
+					isShownByDefault
+				>
+					<TextareaControl
+						label={__('Privacy Notice', 'designsetgo')}
+						value={dsgoPrivacyNotice}
+						onChange={(value) =>
+							setAttributes({ dsgoPrivacyNotice: value })
+						}
+						rows={4}
+						help={__(
+							'Message shown to users before loading the map.',
+							'designsetgo'
+						)}
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+		</>
 	);
 }

@@ -7,7 +7,8 @@ import {
 	useInnerBlocksProps,
 	InspectorControls,
 } from '@wordpress/block-editor';
-import { PanelBody, TextControl } from '@wordpress/components';
+import { TextControl } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
 
@@ -111,24 +112,33 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Slide Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() => setAttributes({ navHeading: '' })}
 				>
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Navigation Heading', 'designsetgo')}
-						value={navHeading}
-						onChange={(value) =>
-							setAttributes({ navHeading: value })
-						}
-						help={__(
-							'Displayed in the slide navigation on the frontend',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => navHeading !== ''}
+						onDeselect={() => setAttributes({ navHeading: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Navigation Heading', 'designsetgo')}
+							value={navHeading}
+							onChange={(value) =>
+								setAttributes({ navHeading: value })
+							}
+							help={__(
+								'Displayed in the slide navigation on the frontend',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...innerBlocksProps} />

@@ -7,16 +7,25 @@
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	TextControl,
 	TextareaControl,
 	ToggleControl,
 	RangeControl,
 	SelectControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect } from '@wordpress/element';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+
+const FIELD_WIDTH_OPTIONS = [
+	{ label: __('Full Width (100%)', 'designsetgo'), value: '100' },
+	{ label: __('Half Width (50%)', 'designsetgo'), value: '50' },
+	{ label: __('One Third (33%)', 'designsetgo'), value: '33' },
+	{ label: __('Two Thirds (66%)', 'designsetgo'), value: '66' },
+	{ label: __('One Quarter (25%)', 'designsetgo'), value: '25' },
+	{ label: __('Three Quarters (75%)', 'designsetgo'), value: '75' },
+];
 
 export default function FormTextareaEdit({
 	attributes,
@@ -63,7 +72,6 @@ export default function FormTextareaEdit({
 		className: fieldClasses,
 		style: {
 			...fieldStyles,
-			// Use flex-basis with calc to account for gap between fields
 			flexBasis:
 				fieldWidth === '100'
 					? '100%'
@@ -78,133 +86,186 @@ export default function FormTextareaEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Field Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							fieldName: '',
+							label: 'Message',
+							placeholder: '',
+							helpText: '',
+							required: false,
+							rows: 4,
+							maxLength: 0,
+							fieldWidth: '100',
+						})
+					}
 				>
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Field Name', 'designsetgo')}
-						value={fieldName}
-						onChange={(value) =>
-							setAttributes({
-								fieldName: value.replace(/[^a-z0-9_]/g, '_'),
-							})
+						hasValue={() =>
+							!!fieldName &&
+							!/^field_[a-z0-9]{1,8}$/i.test(fieldName)
 						}
-						help={__(
-							'Unique identifier for this field',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						onDeselect={() => setAttributes({ fieldName: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Field Name', 'designsetgo')}
+							value={fieldName}
+							onChange={(value) =>
+								setAttributes({
+									fieldName: value.replace(
+										/[^a-z0-9_]/g,
+										'_'
+									),
+								})
+							}
+							help={__(
+								'Unique identifier for this field',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Label', 'designsetgo')}
-						value={label}
-						onChange={(value) => setAttributes({ label: value })}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => label !== 'Message'}
+						onDeselect={() => setAttributes({ label: 'Message' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Label', 'designsetgo')}
+							value={label}
+							onChange={(value) =>
+								setAttributes({ label: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<TextControl
-						label={__('Placeholder', 'designsetgo')}
-						value={placeholder}
-						onChange={(value) =>
-							setAttributes({ placeholder: value })
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<TextareaControl
-						label={__('Help Text', 'designsetgo')}
-						value={helpText}
-						onChange={(value) => setAttributes({ helpText: value })}
-						rows={2}
-						__nextHasNoMarginBottom
-					/>
-
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Required Field', 'designsetgo')}
-						checked={required}
-						onChange={(value) => setAttributes({ required: value })}
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => required !== false}
+						onDeselect={() => setAttributes({ required: false })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Required Field', 'designsetgo')}
+							checked={required}
+							onChange={(value) =>
+								setAttributes({ required: value })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<RangeControl
+					<DsgoInspectorPanel.Item
+						label={__('Placeholder', 'designsetgo')}
+						hasValue={() => placeholder !== ''}
+						onDeselect={() => setAttributes({ placeholder: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Placeholder', 'designsetgo')}
+							value={placeholder}
+							onChange={(value) =>
+								setAttributes({ placeholder: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Help Text', 'designsetgo')}
+						hasValue={() => helpText !== ''}
+						onDeselect={() => setAttributes({ helpText: '' })}
+						isShownByDefault
+					>
+						<TextareaControl
+							label={__('Help Text', 'designsetgo')}
+							value={helpText}
+							onChange={(value) =>
+								setAttributes({ helpText: value })
+							}
+							rows={2}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
 						label={__('Rows', 'designsetgo')}
-						value={rows}
-						onChange={(value) => setAttributes({ rows: value })}
-						min={2}
-						max={20}
-						help={__(
-							'Height of the textarea in rows',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => rows !== 4}
+						onDeselect={() => setAttributes({ rows: 4 })}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Rows', 'designsetgo')}
+							value={rows}
+							onChange={(value) => setAttributes({ rows: value })}
+							min={2}
+							max={20}
+							help={__(
+								'Height of the textarea in rows',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__('Maximum Length', 'designsetgo')}
-						value={maxLength}
-						onChange={(value) =>
-							setAttributes({ maxLength: value })
-						}
-						min={0}
-						max={5000}
-						step={50}
-						help={__(
-							'Maximum characters allowed (0 = no limit)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => maxLength !== 0}
+						onDeselect={() => setAttributes({ maxLength: 0 })}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Maximum Length', 'designsetgo')}
+							value={maxLength}
+							onChange={(value) =>
+								setAttributes({ maxLength: value })
+							}
+							min={0}
+							max={5000}
+							step={50}
+							help={__(
+								'Maximum characters allowed (0 = no limit)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Field Width', 'designsetgo')}
-						value={fieldWidth}
-						options={[
-							{
-								label: __('Full Width (100%)', 'designsetgo'),
-								value: '100',
-							},
-							{
-								label: __('Half Width (50%)', 'designsetgo'),
-								value: '50',
-							},
-							{
-								label: __('One Third (33%)', 'designsetgo'),
-								value: '33',
-							},
-							{
-								label: __('Two Thirds (66%)', 'designsetgo'),
-								value: '66',
-							},
-							{
-								label: __('One Quarter (25%)', 'designsetgo'),
-								value: '25',
-							},
-							{
-								label: __(
-									'Three Quarters (75%)',
-									'designsetgo'
-								),
-								value: '75',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ fieldWidth: value })
-						}
-						help={__(
-							'Set field width to create multi-column layouts',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => fieldWidth !== '100'}
+						onDeselect={() => setAttributes({ fieldWidth: '100' })}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Field Width', 'designsetgo')}
+							value={fieldWidth}
+							options={FIELD_WIDTH_OPTIONS}
+							onChange={(value) =>
+								setAttributes({ fieldWidth: value })
+							}
+							help={__(
+								'Set field width to create multi-column layouts',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

@@ -16,7 +16,6 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	Notice,
 	TextControl,
 	TextareaControl,
@@ -26,6 +25,7 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import classnames from 'classnames';
@@ -234,349 +234,561 @@ export default function FormBuilderEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Form Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							submitButtonText: 'Submit',
+							submitButtonAlignment: 'left',
+							submitButtonPosition: 'below',
+							ajaxSubmit: true,
+							successMessage:
+								'Thank you! Your form has been submitted successfully.',
+							errorMessage:
+								'There was an error submitting the form. Please try again.',
+							redirectUrl: '',
+							fieldSpacing: '1.5rem',
+							inputHeight: '44px',
+							inputPadding: '0.75rem',
+							fieldBorderRadius: '',
+							submitButtonHeight: '44px',
+							submitButtonPaddingVertical: '0.75rem',
+							submitButtonPaddingHorizontal: '2rem',
+							submitButtonFontSize: '',
+							enableHoneypot: true,
+							enableRateLimit: true,
+							rateLimitCount: 3,
+							rateLimitWindow: 60,
+							enableTurnstile: false,
+							enableEmail: true,
+							emailTo: '',
+							emailSubject: 'New Form Submission',
+							emailFromName: '',
+							emailFromEmail: '',
+							emailReplyTo: '',
+							emailBody: '',
+						})
+					}
 				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('AJAX Submit', 'designsetgo')}
-						checked={ajaxSubmit}
-						onChange={(value) =>
-							setAttributes({ ajaxSubmit: value })
-						}
-						help={__(
-							'Submit form without page reload',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
-
-					<TextControl
-						label={__('Submit Button Text', 'designsetgo')}
-						value={submitButtonText}
-						onChange={(value) =>
-							setAttributes({ submitButtonText: value })
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<SelectControl
-						label={__('Button Position', 'designsetgo')}
-						value={submitButtonPosition}
-						options={[
-							{
-								label: __('Below fields', 'designsetgo'),
-								value: 'below',
-							},
-							{
-								label: __(
-									'Inline with last field',
-									'designsetgo'
-								),
-								value: 'inline',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ submitButtonPosition: value })
-						}
-						help={__(
-							'Place button below all fields or inline with the last field (useful for subscribe forms)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					{submitButtonPosition === 'below' && (
-						<SelectControl
-							label={__('Button Alignment', 'designsetgo')}
-							value={submitButtonAlignment}
-							options={[
-								{
-									label: __('Left', 'designsetgo'),
-									value: 'left',
-								},
-								{
-									label: __('Center', 'designsetgo'),
-									value: 'center',
-								},
-								{
-									label: __('Right', 'designsetgo'),
-									value: 'right',
-								},
-							]}
+						hasValue={() => ajaxSubmit !== true}
+						onDeselect={() => setAttributes({ ajaxSubmit: true })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('AJAX Submit', 'designsetgo')}
+							checked={ajaxSubmit}
 							onChange={(value) =>
-								setAttributes({ submitButtonAlignment: value })
+								setAttributes({ ajaxSubmit: value })
+							}
+							help={__(
+								'Submit form without page reload',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Submit Button Text', 'designsetgo')}
+						hasValue={() => submitButtonText !== 'Submit'}
+						onDeselect={() =>
+							setAttributes({ submitButtonText: 'Submit' })
+						}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Submit Button Text', 'designsetgo')}
+							value={submitButtonText}
+							onChange={(value) =>
+								setAttributes({ submitButtonText: value })
 							}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Button Position', 'designsetgo')}
+						hasValue={() => submitButtonPosition !== 'below'}
+						onDeselect={() =>
+							setAttributes({ submitButtonPosition: 'below' })
+						}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Button Position', 'designsetgo')}
+							value={submitButtonPosition}
+							options={[
+								{
+									label: __('Below fields', 'designsetgo'),
+									value: 'below',
+								},
+								{
+									label: __(
+										'Inline with last field',
+										'designsetgo'
+									),
+									value: 'inline',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ submitButtonPosition: value })
+							}
+							help={__(
+								'Place button below all fields or inline with the last field (useful for subscribe forms)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					{submitButtonPosition === 'below' && (
+						<DsgoInspectorPanel.Item
+							label={__('Button Alignment', 'designsetgo')}
+							hasValue={() => submitButtonAlignment !== 'left'}
+							onDeselect={() =>
+								setAttributes({ submitButtonAlignment: 'left' })
+							}
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Button Alignment', 'designsetgo')}
+								value={submitButtonAlignment}
+								options={[
+									{
+										label: __('Left', 'designsetgo'),
+										value: 'left',
+									},
+									{
+										label: __('Center', 'designsetgo'),
+										value: 'center',
+									},
+									{
+										label: __('Right', 'designsetgo'),
+										value: 'right',
+									},
+								]}
+								onChange={(value) =>
+									setAttributes({
+										submitButtonAlignment: value,
+									})
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
 
-				<PanelBody
-					title={__('Button Styling', 'designsetgo')}
-					initialOpen={false}
-				>
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Button Height', 'designsetgo')}
-						value={submitButtonHeight}
-						onChange={(value) =>
-							setAttributes({
-								submitButtonHeight: value || '44px',
-							})
+						hasValue={() => submitButtonHeight !== '44px'}
+						onDeselect={() =>
+							setAttributes({ submitButtonHeight: '44px' })
 						}
-						units={[
-							{ value: 'px', label: 'px', default: 44 },
-							{ value: 'rem', label: 'rem', default: 2.75 },
-							{ value: 'em', label: 'em', default: 2.75 },
-						]}
-						min={28}
-						max={200}
-						help={__(
-							'Minimum height for submit button',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Button Height', 'designsetgo')}
+							value={submitButtonHeight}
+							onChange={(value) =>
+								setAttributes({
+									submitButtonHeight: value || '44px',
+								})
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 44 },
+								{ value: 'rem', label: 'rem', default: 2.75 },
+								{ value: 'em', label: 'em', default: 2.75 },
+							]}
+							min={28}
+							max={200}
+							help={__(
+								'Minimum height for submit button',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Button Padding (Vertical)', 'designsetgo')}
-						value={submitButtonPaddingVertical}
-						onChange={(value) =>
+						hasValue={() =>
+							submitButtonPaddingVertical !== '0.75rem'
+						}
+						onDeselect={() =>
 							setAttributes({
-								submitButtonPaddingVertical: value || '0.75rem',
+								submitButtonPaddingVertical: '0.75rem',
 							})
 						}
-						units={[
-							{ value: 'px', label: 'px', default: 12 },
-							{ value: 'rem', label: 'rem', default: 0.75 },
-							{ value: 'em', label: 'em', default: 0.75 },
-						]}
-						min={0}
-						max={50}
-						help={__(
-							'Top and bottom padding for button',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<UnitControl
+							label={__(
+								'Button Padding (Vertical)',
+								'designsetgo'
+							)}
+							value={submitButtonPaddingVertical}
+							onChange={(value) =>
+								setAttributes({
+									submitButtonPaddingVertical:
+										value || '0.75rem',
+								})
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 12 },
+								{ value: 'rem', label: 'rem', default: 0.75 },
+								{ value: 'em', label: 'em', default: 0.75 },
+							]}
+							min={0}
+							max={50}
+							help={__(
+								'Top and bottom padding for button',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Button Padding (Horizontal)', 'designsetgo')}
-						value={submitButtonPaddingHorizontal}
-						onChange={(value) =>
+						hasValue={() =>
+							submitButtonPaddingHorizontal !== '2rem'
+						}
+						onDeselect={() =>
 							setAttributes({
-								submitButtonPaddingHorizontal: value || '2rem',
+								submitButtonPaddingHorizontal: '2rem',
 							})
 						}
-						units={[
-							{ value: 'px', label: 'px', default: 32 },
-							{ value: 'rem', label: 'rem', default: 2 },
-							{ value: 'em', label: 'em', default: 2 },
-						]}
-						min={0}
-						max={100}
-						help={__(
-							'Left and right padding for button',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<UnitControl
+							label={__(
+								'Button Padding (Horizontal)',
+								'designsetgo'
+							)}
+							value={submitButtonPaddingHorizontal}
+							onChange={(value) =>
+								setAttributes({
+									submitButtonPaddingHorizontal:
+										value || '2rem',
+								})
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 32 },
+								{ value: 'rem', label: 'rem', default: 2 },
+								{ value: 'em', label: 'em', default: 2 },
+							]}
+							min={0}
+							max={100}
+							help={__(
+								'Left and right padding for button',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Button Font Size', 'designsetgo')}
-						value={submitButtonFontSize}
-						onChange={(value) =>
-							setAttributes({ submitButtonFontSize: value || '' })
+						hasValue={() => submitButtonFontSize !== ''}
+						onDeselect={() =>
+							setAttributes({ submitButtonFontSize: '' })
 						}
-						units={[
-							{ value: 'px', label: 'px', default: 16 },
-							{ value: 'rem', label: 'rem', default: 1 },
-							{ value: 'em', label: 'em', default: 1 },
-						]}
-						min={10}
-						max={100}
-						help={__(
-							'Font size for button text (leave empty to inherit)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Button Font Size', 'designsetgo')}
+							value={submitButtonFontSize}
+							onChange={(value) =>
+								setAttributes({
+									submitButtonFontSize: value || '',
+								})
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 16 },
+								{ value: 'rem', label: 'rem', default: 1 },
+								{ value: 'em', label: 'em', default: 1 },
+							]}
+							min={10}
+							max={100}
+							help={__(
+								'Font size for button text (leave empty to inherit)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Field Styling', 'designsetgo')}
-					initialOpen={false}
-				>
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Field Spacing', 'designsetgo')}
-						value={fieldSpacing}
-						onChange={(value) =>
-							setAttributes({ fieldSpacing: value || '1.5rem' })
+						hasValue={() => fieldSpacing !== '1.5rem'}
+						onDeselect={() =>
+							setAttributes({ fieldSpacing: '1.5rem' })
 						}
-						units={[
-							{ value: 'px', label: 'px', default: 24 },
-							{ value: 'rem', label: 'rem', default: 1.5 },
-							{ value: 'em', label: 'em', default: 1.5 },
-						]}
-						min={0}
-						max={100}
-						help={__('Space between form fields', 'designsetgo')}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Field Spacing', 'designsetgo')}
+							value={fieldSpacing}
+							onChange={(value) =>
+								setAttributes({
+									fieldSpacing: value || '1.5rem',
+								})
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 24 },
+								{ value: 'rem', label: 'rem', default: 1.5 },
+								{ value: 'em', label: 'em', default: 1.5 },
+							]}
+							min={0}
+							max={100}
+							help={__(
+								'Space between form fields',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Input Height', 'designsetgo')}
-						value={inputHeight}
-						onChange={(value) =>
-							setAttributes({ inputHeight: value || '44px' })
+						hasValue={() => inputHeight !== '44px'}
+						onDeselect={() =>
+							setAttributes({ inputHeight: '44px' })
 						}
-						units={[
-							{ value: 'px', label: 'px', default: 44 },
-							{ value: 'rem', label: 'rem', default: 2.75 },
-							{ value: 'em', label: 'em', default: 2.75 },
-						]}
-						min={28}
-						max={200}
-						help={__(
-							'Minimum height for input fields',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Input Height', 'designsetgo')}
+							value={inputHeight}
+							onChange={(value) =>
+								setAttributes({ inputHeight: value || '44px' })
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 44 },
+								{ value: 'rem', label: 'rem', default: 2.75 },
+								{ value: 'em', label: 'em', default: 2.75 },
+							]}
+							min={28}
+							max={200}
+							help={__(
+								'Minimum height for input fields',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Input Padding', 'designsetgo')}
-						value={inputPadding}
-						onChange={(value) =>
-							setAttributes({ inputPadding: value || '0.75rem' })
+						hasValue={() => inputPadding !== '0.75rem'}
+						onDeselect={() =>
+							setAttributes({ inputPadding: '0.75rem' })
 						}
-						units={[
-							{ value: 'px', label: 'px', default: 12 },
-							{ value: 'rem', label: 'rem', default: 0.75 },
-							{ value: 'em', label: 'em', default: 0.75 },
-						]}
-						min={0}
-						max={50}
-						help={__('Padding inside input fields', 'designsetgo')}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Input Padding', 'designsetgo')}
+							value={inputPadding}
+							onChange={(value) =>
+								setAttributes({
+									inputPadding: value || '0.75rem',
+								})
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 12 },
+								{ value: 'rem', label: 'rem', default: 0.75 },
+								{ value: 'em', label: 'em', default: 0.75 },
+							]}
+							min={0}
+							max={50}
+							help={__(
+								'Padding inside input fields',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<UnitControl
-						label={__('Border Radius', 'designsetgo')}
-						value={fieldBorderRadius}
-						onChange={(value) =>
+					<DsgoInspectorPanel.Item
+						label={__('Field Border Radius', 'designsetgo')}
+						hasValue={() => fieldBorderRadius !== ''}
+						onDeselect={() =>
+							setAttributes({ fieldBorderRadius: '' })
+						}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Border Radius', 'designsetgo')}
+							value={fieldBorderRadius}
+							onChange={(value) =>
+								setAttributes({
+									fieldBorderRadius: value || '',
+								})
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 6 },
+								{ value: 'rem', label: 'rem', default: 0.375 },
+								{ value: 'em', label: 'em', default: 0.375 },
+							]}
+							min={0}
+							max={100}
+							help={__(
+								'Border radius for input fields',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Success Message', 'designsetgo')}
+						hasValue={() =>
+							successMessage !==
+							'Thank you! Your form has been submitted successfully.'
+						}
+						onDeselect={() =>
 							setAttributes({
-								fieldBorderRadius: value || '',
+								successMessage:
+									'Thank you! Your form has been submitted successfully.',
 							})
 						}
-						units={[
-							{ value: 'px', label: 'px', default: 6 },
-							{ value: 'rem', label: 'rem', default: 0.375 },
-							{ value: 'em', label: 'em', default: 0.375 },
-						]}
-						min={0}
-						max={100}
-						help={__(
-							'Border radius for input fields',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault
+					>
+						<TextareaControl
+							label={__('Success Message', 'designsetgo')}
+							value={successMessage}
+							onChange={(value) =>
+								setAttributes({ successMessage: value })
+							}
+							help={__(
+								'Message shown after successful submission',
+								'designsetgo'
+							)}
+							rows={3}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Messages', 'designsetgo')}
-					initialOpen={false}
-				>
-					<TextareaControl
-						label={__('Success Message', 'designsetgo')}
-						value={successMessage}
-						onChange={(value) =>
-							setAttributes({ successMessage: value })
-						}
-						help={__(
-							'Message shown after successful submission',
-							'designsetgo'
-						)}
-						rows={3}
-						__nextHasNoMarginBottom
-					/>
-
-					<TextareaControl
+					<DsgoInspectorPanel.Item
 						label={__('Error Message', 'designsetgo')}
-						value={errorMessage}
-						onChange={(value) =>
-							setAttributes({ errorMessage: value })
+						hasValue={() =>
+							errorMessage !==
+							'There was an error submitting the form. Please try again.'
 						}
-						help={__(
-							'Message shown if submission fails',
-							'designsetgo'
-						)}
-						rows={3}
-						__nextHasNoMarginBottom
-					/>
+						onDeselect={() =>
+							setAttributes({
+								errorMessage:
+									'There was an error submitting the form. Please try again.',
+							})
+						}
+						isShownByDefault
+					>
+						<TextareaControl
+							label={__('Error Message', 'designsetgo')}
+							value={errorMessage}
+							onChange={(value) =>
+								setAttributes({ errorMessage: value })
+							}
+							help={__(
+								'Message shown if submission fails',
+								'designsetgo'
+							)}
+							rows={3}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Redirect URL', 'designsetgo')}
-						value={redirectUrl}
-						onChange={(value) =>
-							setAttributes({ redirectUrl: value })
-						}
-						type="url"
-						placeholder="https://example.com/thank-you"
-						help={__(
-							'Redirect to this URL after successful submission. Leave empty to show the success message instead. Requires AJAX Submit to be enabled.',
-							'designsetgo'
-						)}
-						disabled={!ajaxSubmit}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => redirectUrl !== ''}
+						onDeselect={() => setAttributes({ redirectUrl: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Redirect URL', 'designsetgo')}
+							value={redirectUrl}
+							onChange={(value) =>
+								setAttributes({ redirectUrl: value })
+							}
+							type="url"
+							placeholder="https://example.com/thank-you"
+							help={__(
+								'Redirect to this URL after successful submission. Leave empty to show the success message instead. Requires AJAX Submit to be enabled.',
+								'designsetgo'
+							)}
+							disabled={!ajaxSubmit}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Spam Protection', 'designsetgo')}
-					initialOpen={false}
-				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Enable Honeypot', 'designsetgo')}
-						checked={enableHoneypot}
-						onChange={(value) =>
-							setAttributes({ enableHoneypot: value })
+						hasValue={() => enableHoneypot !== true}
+						onDeselect={() =>
+							setAttributes({ enableHoneypot: true })
 						}
-						help={__(
-							'Invisible field to catch spam bots',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Enable Honeypot', 'designsetgo')}
+							checked={enableHoneypot}
+							onChange={(value) =>
+								setAttributes({ enableHoneypot: value })
+							}
+							help={__(
+								'Invisible field to catch spam bots',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Enable Rate Limiting', 'designsetgo')}
-						checked={enableRateLimit}
-						onChange={(value) =>
-							setAttributes({ enableRateLimit: value })
+						hasValue={() => enableRateLimit !== true}
+						onDeselect={() =>
+							setAttributes({ enableRateLimit: true })
 						}
-						help={__(
-							'Limit submissions per IP address',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Enable Rate Limiting', 'designsetgo')}
+							checked={enableRateLimit}
+							onChange={(value) =>
+								setAttributes({ enableRateLimit: value })
+							}
+							help={__(
+								'Limit submissions per IP address',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
 					{enableRateLimit && (
-						<>
+						<DsgoInspectorPanel.Item
+							label={__('Max Submissions', 'designsetgo')}
+							hasValue={() => rateLimitCount !== 3}
+							onDeselect={() =>
+								setAttributes({ rateLimitCount: 3 })
+							}
+							isShownByDefault
+						>
 							<RangeControl
 								label={__('Max Submissions', 'designsetgo')}
 								value={rateLimitCount}
@@ -592,7 +804,21 @@ export default function FormBuilderEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{enableRateLimit && (
+						<DsgoInspectorPanel.Item
+							label={__(
+								'Rate Limit Time Window (seconds)',
+								'designsetgo'
+							)}
+							hasValue={() => rateLimitWindow !== 60}
+							onDeselect={() =>
+								setAttributes({ rateLimitWindow: 60 })
+							}
+							isShownByDefault
+						>
 							<RangeControl
 								label={__(
 									'Time Window (seconds)',
@@ -612,70 +838,86 @@ export default function FormBuilderEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
-						</>
+						</DsgoInspectorPanel.Item>
 					)}
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Enable Cloudflare Turnstile', 'designsetgo')}
-						checked={enableTurnstile}
-						onChange={(value) =>
-							setAttributes({ enableTurnstile: value })
+						hasValue={() => enableTurnstile !== false}
+						onDeselect={() =>
+							setAttributes({ enableTurnstile: false })
 						}
-						help={__(
-							'Privacy-friendly CAPTCHA alternative',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
-
-					{enableTurnstile && (
-						<p className="dsgo-form-builder__turnstile-note">
-							{__(
-								'Configure your Turnstile keys in',
-								'designsetgo'
-							)}{' '}
-							<a
-								href={
-									window.designSetGoAdmin?.adminUrl +
-									'admin.php?page=designsetgo-settings'
-								}
-								target="_blank"
-								rel="noopener noreferrer"
-								aria-label={__(
-									'Settings → Integrations (opens in new tab)',
-									'designsetgo'
-								)}
-							>
-								{__('Settings → Integrations', 'designsetgo')}
-							</a>
-							.{' '}
-							{__(
-								'Widget mode (Managed, Non-interactive, Invisible) is configured in your Cloudflare dashboard.',
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__(
+								'Enable Cloudflare Turnstile',
 								'designsetgo'
 							)}
-						</p>
-					)}
-				</PanelBody>
-
-				<PanelBody
-					title={__('Email Notifications', 'designsetgo')}
-					initialOpen={false}
-				>
-					<ToggleControl
-						label={__('Enable Email Notifications', 'designsetgo')}
-						checked={enableEmail}
-						onChange={(value) =>
-							setAttributes({ enableEmail: value })
-						}
-						help={__(
-							'Send email when form is submitted',
-							'designsetgo'
+							checked={enableTurnstile}
+							onChange={(value) =>
+								setAttributes({ enableTurnstile: value })
+							}
+							help={__(
+								'Privacy-friendly CAPTCHA alternative',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+						{enableTurnstile && (
+							<p className="dsgo-form-builder__turnstile-note">
+								{__(
+									'Configure your Turnstile keys in',
+									'designsetgo'
+								)}{' '}
+								<a
+									href={
+										window.designSetGoAdmin?.adminUrl +
+										'admin.php?page=designsetgo-settings'
+									}
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={__(
+										'Settings → Integrations (opens in new tab)',
+										'designsetgo'
+									)}
+								>
+									{__(
+										'Settings → Integrations',
+										'designsetgo'
+									)}
+								</a>
+								.{' '}
+								{__(
+									'Widget mode (Managed, Non-interactive, Invisible) is configured in your Cloudflare dashboard.',
+									'designsetgo'
+								)}
+							</p>
 						)}
-						__nextHasNoMarginBottom
-					/>
+					</DsgoInspectorPanel.Item>
 
-					{enableEmail && (
-						<>
+					<DsgoInspectorPanel.Item
+						label={__('Enable Email Notifications', 'designsetgo')}
+						hasValue={() => enableEmail !== true}
+						onDeselect={() => setAttributes({ enableEmail: true })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__(
+								'Enable Email Notifications',
+								'designsetgo'
+							)}
+							checked={enableEmail}
+							onChange={(value) =>
+								setAttributes({ enableEmail: value })
+							}
+							help={__(
+								'Send email when form is submitted',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+						{enableEmail && (
 							<Notice
 								status="info"
 								isDismissible={false}
@@ -686,6 +928,16 @@ export default function FormBuilderEdit({
 									'designsetgo'
 								)}
 							</Notice>
+						)}
+					</DsgoInspectorPanel.Item>
+
+					{enableEmail && (
+						<DsgoInspectorPanel.Item
+							label={__('Recipient Email', 'designsetgo')}
+							hasValue={() => emailTo !== ''}
+							onDeselect={() => setAttributes({ emailTo: '' })}
+							isShownByDefault
+						>
 							<TextControl
 								label={__('Recipient Email', 'designsetgo')}
 								value={emailTo}
@@ -701,7 +953,22 @@ export default function FormBuilderEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{enableEmail && (
+						<DsgoInspectorPanel.Item
+							label={__('Email Subject', 'designsetgo')}
+							hasValue={() =>
+								emailSubject !== 'New Form Submission'
+							}
+							onDeselect={() =>
+								setAttributes({
+									emailSubject: 'New Form Submission',
+								})
+							}
+							isShownByDefault
+						>
 							<TextControl
 								label={__('Email Subject', 'designsetgo')}
 								value={emailSubject}
@@ -715,7 +982,18 @@ export default function FormBuilderEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{enableEmail && (
+						<DsgoInspectorPanel.Item
+							label={__('From Name', 'designsetgo')}
+							hasValue={() => emailFromName !== ''}
+							onDeselect={() =>
+								setAttributes({ emailFromName: '' })
+							}
+							isShownByDefault
+						>
 							<TextControl
 								label={__('From Name', 'designsetgo')}
 								value={emailFromName}
@@ -730,7 +1008,18 @@ export default function FormBuilderEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{enableEmail && (
+						<DsgoInspectorPanel.Item
+							label={__('From Email', 'designsetgo')}
+							hasValue={() => emailFromEmail !== ''}
+							onDeselect={() =>
+								setAttributes({ emailFromEmail: '' })
+							}
+							isShownByDefault
+						>
 							<TextControl
 								label={__('From Email', 'designsetgo')}
 								value={emailFromEmail}
@@ -746,7 +1035,18 @@ export default function FormBuilderEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{enableEmail && (
+						<DsgoInspectorPanel.Item
+							label={__('Reply-To Field', 'designsetgo')}
+							hasValue={() => emailReplyTo !== ''}
+							onDeselect={() =>
+								setAttributes({ emailReplyTo: '' })
+							}
+							isShownByDefault
+						>
 							<SelectControl
 								label={__('Reply-To Field', 'designsetgo')}
 								value={emailReplyTo || ''}
@@ -764,9 +1064,9 @@ export default function FormBuilderEdit({
 											: field.name,
 										value: field.name,
 									})),
-									// If the saved value references a field that no
-									// longer exists, keep it as a selectable option
-									// so nothing silently changes behavior.
+									// If the saved value references a field that
+									// no longer exists, keep it as a selectable
+									// option so nothing silently changes behavior.
 									...(emailReplyTo &&
 									!replyToFieldOptions.some(
 										(field) => field.name === emailReplyTo
@@ -796,7 +1096,16 @@ export default function FormBuilderEdit({
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
+					{enableEmail && (
+						<DsgoInspectorPanel.Item
+							label={__('Email Body Template', 'designsetgo')}
+							hasValue={() => emailBody !== ''}
+							onDeselect={() => setAttributes({ emailBody: '' })}
+							isShownByDefault
+						>
 							<TextareaControl
 								label={__('Email Body Template', 'designsetgo')}
 								value={emailBody}
@@ -818,9 +1127,9 @@ export default function FormBuilderEdit({
 								rows={5}
 								__nextHasNoMarginBottom
 							/>
-						</>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">

@@ -14,7 +14,6 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	ToggleControl,
 	Button,
 	Popover,
@@ -28,6 +27,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { DsgoInspectorPanel } from '../../components/shared';
 
 // Marker shape SVGs
 const MarkerShapes = {
@@ -203,123 +203,177 @@ export default function TimelineItemEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody title={__('Item Settings', 'designsetgo')}>
-					<ToggleControl
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							isActive: false,
+							linkUrl: '',
+							linkTarget: '_self',
+							imageId: 0,
+							imageUrl: '',
+							imageAlt: '',
+						})
+					}
+				>
+					<DsgoInspectorPanel.Item
 						label={__('Active State', 'designsetgo')}
-						help={
-							isActive
-								? __(
-										'This milestone is highlighted as active/current',
-										'designsetgo'
-									)
-								: __(
-										'This is a regular timeline item',
-										'designsetgo'
-									)
-						}
-						checked={isActive}
-						onChange={(value) => setAttributes({ isActive: value })}
-						__nextHasNoMarginBottom
-					/>
-
-					<TextControl
-						label={__('Link URL', 'designsetgo')}
-						value={linkUrl}
-						onChange={(value) => setAttributes({ linkUrl: value })}
-						placeholder="https://..."
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					{linkUrl && (
+						hasValue={() => isActive !== false}
+						onDeselect={() => setAttributes({ isActive: false })}
+						isShownByDefault
+					>
 						<ToggleControl
-							label={__('Open in New Tab', 'designsetgo')}
-							checked={linkTarget === '_blank'}
+							label={__('Active State', 'designsetgo')}
+							help={
+								isActive
+									? __(
+											'This milestone is highlighted as active/current',
+											'designsetgo'
+										)
+									: __(
+											'This is a regular timeline item',
+											'designsetgo'
+										)
+							}
+							checked={isActive}
 							onChange={(value) =>
-								setAttributes({
-									linkTarget: value ? '_blank' : '_self',
-								})
+								setAttributes({ isActive: value })
 							}
 							__nextHasNoMarginBottom
 						/>
-					)}
-				</PanelBody>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Marker Image', 'designsetgo')}
-					initialOpen={false}
-				>
-					<MediaUploadCheck>
-						<MediaUpload
-							onSelect={onSelectImage}
-							allowedTypes={['image']}
-							value={imageId}
-							render={({ open }) => (
-								<div className="dsgo-timeline-item__image-control">
-									{imageUrl ? (
-										<>
-											<img
-												src={imageUrl}
-												alt={imageAlt}
-												style={{
-													maxWidth: '100%',
-													height: 'auto',
-													marginBottom: '8px',
-													borderRadius: '4px',
-												}}
-											/>
-											<div
-												style={{
-													display: 'flex',
-													gap: '8px',
-												}}
-											>
-												<Button
-													variant="secondary"
-													onClick={open}
-												>
-													{__(
-														'Replace',
-														'designsetgo'
-													)}
-												</Button>
-												<Button
-													variant="secondary"
-													isDestructive
-													onClick={onRemoveImage}
-												>
-													{__(
-														'Remove',
-														'designsetgo'
-													)}
-												</Button>
-											</div>
-										</>
-									) : (
-										<Button
-											variant="secondary"
-											onClick={open}
-										>
-											{__(
-												'Add Marker Image',
-												'designsetgo'
-											)}
-										</Button>
-									)}
-								</div>
-							)}
-						/>
-					</MediaUploadCheck>
-					<p
-						className="components-base-control__help"
-						style={{ marginTop: '8px' }}
+					<DsgoInspectorPanel.Item
+						label={__('Link URL', 'designsetgo')}
+						hasValue={() => linkUrl !== ''}
+						onDeselect={() =>
+							setAttributes({
+								linkUrl: '',
+								linkTarget: '_self',
+							})
+						}
+						isShownByDefault
 					>
-						{__(
-							'Optional: Replace the marker dot with an image or avatar.',
-							'designsetgo'
-						)}
-					</p>
-				</PanelBody>
+						<TextControl
+							label={__('Link URL', 'designsetgo')}
+							value={linkUrl}
+							onChange={(value) =>
+								setAttributes({ linkUrl: value })
+							}
+							placeholder="https://..."
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					{linkUrl && (
+						<DsgoInspectorPanel.Item
+							label={__('Open in New Tab', 'designsetgo')}
+							hasValue={() => linkTarget !== '_self'}
+							onDeselect={() =>
+								setAttributes({ linkTarget: '_self' })
+							}
+							isShownByDefault
+						>
+							<ToggleControl
+								label={__('Open in New Tab', 'designsetgo')}
+								checked={linkTarget === '_blank'}
+								onChange={(value) =>
+									setAttributes({
+										linkTarget: value ? '_blank' : '_self',
+									})
+								}
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
+
+					<DsgoInspectorPanel.Item
+						label={__('Marker Image', 'designsetgo')}
+						hasValue={() => imageUrl !== ''}
+						onDeselect={() =>
+							setAttributes({
+								imageId: 0,
+								imageUrl: '',
+								imageAlt: '',
+							})
+						}
+						isShownByDefault
+					>
+						<MediaUploadCheck>
+							<MediaUpload
+								onSelect={onSelectImage}
+								allowedTypes={['image']}
+								value={imageId}
+								render={({ open }) => (
+									<div className="dsgo-timeline-item__image-control">
+										{imageUrl ? (
+											<>
+												<img
+													src={imageUrl}
+													alt={imageAlt}
+													style={{
+														maxWidth: '100%',
+														height: 'auto',
+														marginBottom: '8px',
+														borderRadius: '4px',
+													}}
+												/>
+												<div
+													style={{
+														display: 'flex',
+														gap: '8px',
+													}}
+												>
+													<Button
+														variant="secondary"
+														onClick={open}
+													>
+														{__(
+															'Replace',
+															'designsetgo'
+														)}
+													</Button>
+													<Button
+														variant="secondary"
+														isDestructive
+														onClick={onRemoveImage}
+													>
+														{__(
+															'Remove',
+															'designsetgo'
+														)}
+													</Button>
+												</div>
+											</>
+										) : (
+											<Button
+												variant="secondary"
+												onClick={open}
+											>
+												{__(
+													'Add Marker Image',
+													'designsetgo'
+												)}
+											</Button>
+										)}
+									</div>
+								)}
+							/>
+						</MediaUploadCheck>
+						<p
+							className="components-base-control__help"
+							style={{ marginTop: '8px' }}
+						>
+							{__(
+								'Optional: Replace the marker dot with an image or avatar.',
+								'designsetgo'
+							)}
+						</p>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">

@@ -7,7 +7,6 @@
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	TextControl,
 	ToggleControl,
 	SelectControl,
@@ -15,9 +14,38 @@ import {
 	Flex,
 	FlexItem,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect } from '@wordpress/element';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+
+const FIELD_WIDTH_OPTIONS = [
+	{ label: __('Full Width (100%)', 'designsetgo'), value: '100' },
+	{ label: __('Half Width (50%)', 'designsetgo'), value: '50' },
+	{ label: __('One Third (33%)', 'designsetgo'), value: '33' },
+	{ label: __('Two Thirds (66%)', 'designsetgo'), value: '66' },
+	{ label: __('One Quarter (25%)', 'designsetgo'), value: '25' },
+	{ label: __('Three Quarters (75%)', 'designsetgo'), value: '75' },
+];
+
+const DEFAULT_OPTIONS = [
+	{ label: 'Option 1', value: 'option-1' },
+	{ label: 'Option 2', value: 'option-2' },
+	{ label: 'Option 3', value: 'option-3' },
+];
+const DEFAULT_PLACEHOLDER = '-- Select an option --';
+
+// Deep-equality check against DEFAULT_OPTIONS. Options is an array of
+// {label, value} pairs; matches the block.json default exactly when the
+// author hasn't touched the Options list.
+const isDefaultOptions = (opts) =>
+	Array.isArray(opts) &&
+	opts.length === DEFAULT_OPTIONS.length &&
+	opts.every(
+		(opt, i) =>
+			opt?.label === DEFAULT_OPTIONS[i].label &&
+			opt?.value === DEFAULT_OPTIONS[i].value
+	);
 
 export default function FormSelectFieldEdit({
 	attributes,
@@ -60,7 +88,6 @@ export default function FormSelectFieldEdit({
 		className: fieldClasses,
 		style: {
 			...fieldStyles,
-			// Use flex-basis with calc to account for gap between fields
 			flexBasis:
 				fieldWidth === '100'
 					? '100%'
@@ -106,175 +133,230 @@ export default function FormSelectFieldEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Field Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							fieldName: '',
+							label: 'Select Option',
+							helpText: '',
+							required: false,
+							defaultValue: '',
+							options: DEFAULT_OPTIONS,
+							placeholder: DEFAULT_PLACEHOLDER,
+							fieldWidth: '100',
+						})
+					}
 				>
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Field Name', 'designsetgo')}
-						value={fieldName}
-						onChange={(value) =>
-							setAttributes({
-								fieldName: value.replace(/[^a-z0-9_-]/gi, ''),
-							})
+						hasValue={() =>
+							!!fieldName &&
+							!/^select-[a-z0-9]{1,8}$/i.test(fieldName)
 						}
-						help={__(
-							'Unique identifier for this field (letters, numbers, hyphens, underscores only)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						onDeselect={() => setAttributes({ fieldName: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Field Name', 'designsetgo')}
+							value={fieldName}
+							onChange={(value) =>
+								setAttributes({
+									fieldName: value.replace(
+										/[^a-z0-9_-]/gi,
+										''
+									),
+								})
+							}
+							help={__(
+								'Unique identifier for this field (letters, numbers, hyphens, underscores only)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Label', 'designsetgo')}
-						value={label}
-						onChange={(value) => setAttributes({ label: value })}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => label !== 'Select Option'}
+						onDeselect={() =>
+							setAttributes({ label: 'Select Option' })
+						}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Label', 'designsetgo')}
+							value={label}
+							onChange={(value) =>
+								setAttributes({ label: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Required', 'designsetgo')}
-						checked={required}
-						onChange={(value) => setAttributes({ required: value })}
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => required !== false}
+						onDeselect={() => setAttributes({ required: false })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Required', 'designsetgo')}
+							checked={required}
+							onChange={(value) =>
+								setAttributes({ required: value })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
-						label={__('Field Width', 'designsetgo')}
-						value={fieldWidth}
-						options={[
-							{
-								label: __('Full Width (100%)', 'designsetgo'),
-								value: '100',
-							},
-							{
-								label: __('Half Width (50%)', 'designsetgo'),
-								value: '50',
-							},
-							{
-								label: __('One Third (33%)', 'designsetgo'),
-								value: '33',
-							},
-							{
-								label: __('Two Thirds (66%)', 'designsetgo'),
-								value: '66',
-							},
-							{
-								label: __('One Quarter (25%)', 'designsetgo'),
-								value: '25',
-							},
-							{
-								label: __(
-									'Three Quarters (75%)',
-									'designsetgo'
-								),
-								value: '75',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ fieldWidth: value })
+					<DsgoInspectorPanel.Item
+						label={__('Options', 'designsetgo')}
+						hasValue={() => !isDefaultOptions(options)}
+						onDeselect={() =>
+							setAttributes({ options: DEFAULT_OPTIONS })
 						}
-						help={__(
-							'Set field width to create multi-column layouts',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault
+					>
+						{options.map((option, index) => (
+							<Flex
+								key={index}
+								gap={2}
+								style={{ marginBottom: '1rem' }}
+							>
+								<FlexItem isBlock>
+									<TextControl
+										label={__('Label', 'designsetgo')}
+										value={option.label}
+										onChange={(value) =>
+											updateOption(index, 'label', value)
+										}
+										__next40pxDefaultSize
+										__nextHasNoMarginBottom
+									/>
+								</FlexItem>
+								<FlexItem isBlock>
+									<TextControl
+										label={__('Value', 'designsetgo')}
+										value={option.value}
+										onChange={(value) =>
+											updateOption(index, 'value', value)
+										}
+										__next40pxDefaultSize
+										__nextHasNoMarginBottom
+									/>
+								</FlexItem>
+								<FlexItem style={{ alignSelf: 'flex-end' }}>
+									<Button
+										isDestructive
+										icon="trash"
+										label={__(
+											'Remove option',
+											'designsetgo'
+										)}
+										onClick={() => removeOption(index)}
+										disabled={options.length === 1}
+									/>
+								</FlexItem>
+							</Flex>
+						))}
 
-				<PanelBody
-					title={__('Options', 'designsetgo')}
-					initialOpen={true}
-				>
-					{options.map((option, index) => (
-						<Flex
-							key={index}
-							gap={2}
-							style={{ marginBottom: '1rem' }}
-						>
-							<FlexItem isBlock>
-								<TextControl
-									label={__('Label', 'designsetgo')}
-									value={option.label}
-									onChange={(value) =>
-										updateOption(index, 'label', value)
-									}
-									__next40pxDefaultSize
-									__nextHasNoMarginBottom
-								/>
-							</FlexItem>
-							<FlexItem isBlock>
-								<TextControl
-									label={__('Value', 'designsetgo')}
-									value={option.value}
-									onChange={(value) =>
-										updateOption(index, 'value', value)
-									}
-									__next40pxDefaultSize
-									__nextHasNoMarginBottom
-								/>
-							</FlexItem>
-							<FlexItem style={{ alignSelf: 'flex-end' }}>
-								<Button
-									isDestructive
-									icon="trash"
-									label={__('Remove option', 'designsetgo')}
-									onClick={() => removeOption(index)}
-									disabled={options.length === 1}
-								/>
-							</FlexItem>
-						</Flex>
-					))}
+						<Button variant="secondary" onClick={addOption}>
+							{__('Add Option', 'designsetgo')}
+						</Button>
+					</DsgoInspectorPanel.Item>
 
-					<Button variant="secondary" onClick={addOption}>
-						{__('Add Option', 'designsetgo')}
-					</Button>
-				</PanelBody>
-
-				<PanelBody
-					title={__('Additional Options', 'designsetgo')}
-					initialOpen={false}
-				>
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Placeholder', 'designsetgo')}
-						value={placeholder}
-						onChange={(value) =>
-							setAttributes({ placeholder: value })
+						hasValue={() => placeholder !== DEFAULT_PLACEHOLDER}
+						onDeselect={() =>
+							setAttributes({ placeholder: DEFAULT_PLACEHOLDER })
 						}
-						help={__(
-							'Text shown when no option is selected',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Placeholder', 'designsetgo')}
+							value={placeholder}
+							onChange={(value) =>
+								setAttributes({ placeholder: value })
+							}
+							help={__(
+								'Text shown when no option is selected',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Default Value', 'designsetgo')}
-						value={defaultValue}
-						onChange={(value) =>
-							setAttributes({ defaultValue: value })
-						}
-						help={__('Pre-selected option value', 'designsetgo')}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => defaultValue !== ''}
+						onDeselect={() => setAttributes({ defaultValue: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Default Value', 'designsetgo')}
+							value={defaultValue}
+							onChange={(value) =>
+								setAttributes({ defaultValue: value })
+							}
+							help={__(
+								'Pre-selected option value',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Help Text', 'designsetgo')}
-						value={helpText}
-						onChange={(value) => setAttributes({ helpText: value })}
-						help={__(
-							'Additional guidance shown below the field',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => helpText !== ''}
+						onDeselect={() => setAttributes({ helpText: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Help Text', 'designsetgo')}
+							value={helpText}
+							onChange={(value) =>
+								setAttributes({ helpText: value })
+							}
+							help={__(
+								'Additional guidance shown below the field',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Field Width', 'designsetgo')}
+						hasValue={() => fieldWidth !== '100'}
+						onDeselect={() => setAttributes({ fieldWidth: '100' })}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Field Width', 'designsetgo')}
+							value={fieldWidth}
+							options={FIELD_WIDTH_OPTIONS}
+							onChange={(value) =>
+								setAttributes({ fieldWidth: value })
+							}
+							help={__(
+								'Set field width to create multi-column layouts',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

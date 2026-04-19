@@ -16,7 +16,6 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	RangeControl,
 	ToggleControl,
 	SelectControl,
@@ -28,6 +27,7 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import {
 	encodeColorValue,
 	decodeColorValue,
@@ -160,197 +160,287 @@ export default function ProgressBarEdit({
 			</InspectorControls>
 
 			<InspectorControls>
-				{/* Progress Settings */}
-				<PanelBody
-					title={__('Progress Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							percentage: 75,
+							height: '20px',
+							borderRadius: '4px',
+							barStyle: 'solid',
+							showLabel: true,
+							labelText: '',
+							showPercentage: true,
+							labelPosition: 'top',
+							animateOnScroll: true,
+							animationDuration: 1.5,
+							stripedAnimation: false,
+						})
+					}
 				>
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__('Percentage', 'designsetgo')}
-						value={percentage}
-						onChange={(value) =>
-							setAttributes({ percentage: value })
-						}
-						min={0}
-						max={100}
-						step={1}
-						help={__(
-							'Set the progress percentage (0–100)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
-
-				{/* Appearance Settings */}
-				<PanelBody
-					title={__('Appearance', 'designsetgo')}
-					initialOpen={false}
-				>
-					<UnitControl
-						label={__('Bar Height', 'designsetgo')}
-						value={height}
-						onChange={(value) => setAttributes({ height: value })}
-						units={[
-							{ value: 'px', label: 'px' },
-							{ value: 'em', label: 'em' },
-							{ value: 'rem', label: 'rem' },
-						]}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<UnitControl
-						label={__('Border Radius', 'designsetgo')}
-						value={borderRadius}
-						onChange={(value) =>
-							setAttributes({ borderRadius: value })
-						}
-						units={[
-							{ value: 'px', label: 'px' },
-							{ value: 'em', label: 'em' },
-							{ value: '%', label: '%' },
-						]}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<ToggleGroupControl
-						label={__('Bar Style', 'designsetgo')}
-						value={barStyle}
-						onChange={(value) => setAttributes({ barStyle: value })}
-						isBlock
+						hasValue={() => percentage !== 75}
+						onDeselect={() => setAttributes({ percentage: 75 })}
+						isShownByDefault
 					>
-						<ToggleGroupControlOption
-							value="solid"
-							label={__('Solid', 'designsetgo')}
-						/>
-						<ToggleGroupControlOption
-							value="striped"
-							label={__('Striped', 'designsetgo')}
-						/>
-						<ToggleGroupControlOption
-							value="striped-animated"
-							label={__('Animated', 'designsetgo')}
-						/>
-					</ToggleGroupControl>
-				</PanelBody>
-
-				{/* Label Settings */}
-				<PanelBody
-					title={__('Label Settings', 'designsetgo')}
-					initialOpen={false}
-				>
-					<ToggleControl
-						label={__('Show Label', 'designsetgo')}
-						checked={showLabel}
-						onChange={(value) =>
-							setAttributes({ showLabel: value })
-						}
-						__nextHasNoMarginBottom
-					/>
-
-					{showLabel && (
-						<TextControl
-							label={__('Label Text', 'designsetgo')}
-							value={labelText}
+						<RangeControl
+							label={__('Percentage', 'designsetgo')}
+							value={percentage}
 							onChange={(value) =>
-								setAttributes({ labelText: value })
+								setAttributes({ percentage: value })
 							}
-							placeholder={__(
-								'e.g., Project Progress',
+							min={0}
+							max={100}
+							step={1}
+							help={__(
+								'Set the progress percentage (0–100)',
 								'designsetgo'
 							)}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
-					)}
+					</DsgoInspectorPanel.Item>
 
-					<ToggleControl
-						label={__('Show Percentage', 'designsetgo')}
-						checked={showPercentage}
-						onChange={(value) =>
-							setAttributes({ showPercentage: value })
-						}
-						__nextHasNoMarginBottom
-					/>
-
-					{(showLabel || showPercentage) && (
-						<SelectControl
-							label={__('Label Position', 'designsetgo')}
-							value={labelPosition}
-							options={[
-								{
-									label: __('Above Bar', 'designsetgo'),
-									value: 'top',
-								},
-								{
-									label: __('Inside Bar', 'designsetgo'),
-									value: 'inside',
-								},
-								{
-									label: __('Below Bar', 'designsetgo'),
-									value: 'bottom',
-								},
-							]}
+					<DsgoInspectorPanel.Item
+						label={__('Bar Height', 'designsetgo')}
+						hasValue={() => height !== '20px'}
+						onDeselect={() => setAttributes({ height: '20px' })}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Bar Height', 'designsetgo')}
+							value={height}
 							onChange={(value) =>
-								setAttributes({ labelPosition: value })
+								setAttributes({ height: value })
 							}
+							units={[
+								{ value: 'px', label: 'px' },
+								{ value: 'em', label: 'em' },
+								{ value: 'rem', label: 'rem' },
+							]}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Border Radius', 'designsetgo')}
+						hasValue={() => borderRadius !== '4px'}
+						onDeselect={() =>
+							setAttributes({ borderRadius: '4px' })
+						}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Border Radius', 'designsetgo')}
+							value={borderRadius}
+							onChange={(value) =>
+								setAttributes({ borderRadius: value })
+							}
+							units={[
+								{ value: 'px', label: 'px' },
+								{ value: 'em', label: 'em' },
+								{ value: '%', label: '%' },
+							]}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Bar Style', 'designsetgo')}
+						hasValue={() => barStyle !== 'solid'}
+						onDeselect={() => setAttributes({ barStyle: 'solid' })}
+						isShownByDefault
+					>
+						<ToggleGroupControl
+							label={__('Bar Style', 'designsetgo')}
+							value={barStyle}
+							onChange={(value) =>
+								setAttributes({ barStyle: value })
+							}
+							isBlock
+						>
+							<ToggleGroupControlOption
+								value="solid"
+								label={__('Solid', 'designsetgo')}
+							/>
+							<ToggleGroupControlOption
+								value="striped"
+								label={__('Striped', 'designsetgo')}
+							/>
+							<ToggleGroupControlOption
+								value="striped-animated"
+								label={__('Animated', 'designsetgo')}
+							/>
+						</ToggleGroupControl>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Show Label', 'designsetgo')}
+						hasValue={() => showLabel !== true}
+						onDeselect={() => setAttributes({ showLabel: true })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Show Label', 'designsetgo')}
+							checked={showLabel}
+							onChange={(value) =>
+								setAttributes({ showLabel: value })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					{showLabel && (
+						<DsgoInspectorPanel.Item
+							label={__('Label Text', 'designsetgo')}
+							hasValue={() => labelText !== ''}
+							onDeselect={() => setAttributes({ labelText: '' })}
+							isShownByDefault
+						>
+							<TextControl
+								label={__('Label Text', 'designsetgo')}
+								value={labelText}
+								onChange={(value) =>
+									setAttributes({ labelText: value })
+								}
+								placeholder={__(
+									'e.g., Project Progress',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
 
-				{/* Animation Settings */}
-				<PanelBody
-					title={__('Animation', 'designsetgo')}
-					initialOpen={false}
-				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
+						label={__('Show Percentage', 'designsetgo')}
+						hasValue={() => showPercentage !== true}
+						onDeselect={() =>
+							setAttributes({ showPercentage: true })
+						}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Show Percentage', 'designsetgo')}
+							checked={showPercentage}
+							onChange={(value) =>
+								setAttributes({ showPercentage: value })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					{(showLabel || showPercentage) && (
+						<DsgoInspectorPanel.Item
+							label={__('Label Position', 'designsetgo')}
+							hasValue={() => labelPosition !== 'top'}
+							onDeselect={() =>
+								setAttributes({ labelPosition: 'top' })
+							}
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Label Position', 'designsetgo')}
+								value={labelPosition}
+								options={[
+									{
+										label: __('Above Bar', 'designsetgo'),
+										value: 'top',
+									},
+									{
+										label: __('Inside Bar', 'designsetgo'),
+										value: 'inside',
+									},
+									{
+										label: __('Below Bar', 'designsetgo'),
+										value: 'bottom',
+									},
+								]}
+								onChange={(value) =>
+									setAttributes({ labelPosition: value })
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
+
+					<DsgoInspectorPanel.Item
 						label={__('Animate on Scroll', 'designsetgo')}
-						checked={animateOnScroll}
-						onChange={(value) =>
-							setAttributes({ animateOnScroll: value })
+						hasValue={() => animateOnScroll !== true}
+						onDeselect={() =>
+							setAttributes({ animateOnScroll: true })
 						}
-						help={__(
-							'Animate the bar when it enters the viewport',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Animate on Scroll', 'designsetgo')}
+							checked={animateOnScroll}
+							onChange={(value) =>
+								setAttributes({ animateOnScroll: value })
+							}
+							help={__(
+								'Animate the bar when it enters the viewport',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__('Animation Duration', 'designsetgo')}
-						value={animationDuration}
-						onChange={(value) =>
-							setAttributes({ animationDuration: value })
+						hasValue={() => animationDuration !== 1.5}
+						onDeselect={() =>
+							setAttributes({ animationDuration: 1.5 })
 						}
-						min={0.5}
-						max={5}
-						step={0.1}
-						help={__('Duration in seconds', 'designsetgo')}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Animation Duration', 'designsetgo')}
+							value={animationDuration}
+							onChange={(value) =>
+								setAttributes({ animationDuration: value })
+							}
+							min={0.5}
+							max={5}
+							step={0.1}
+							help={__('Duration in seconds', 'designsetgo')}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
 					{(barStyle === 'striped' ||
 						barStyle === 'striped-animated') && (
-						<ToggleControl
+						<DsgoInspectorPanel.Item
 							label={__('Animate Stripes', 'designsetgo')}
-							checked={
-								stripedAnimation ||
-								barStyle === 'striped-animated'
+							hasValue={() => stripedAnimation !== false}
+							onDeselect={() =>
+								setAttributes({ stripedAnimation: false })
 							}
-							onChange={(value) =>
-								setAttributes({ stripedAnimation: value })
-							}
-							disabled={barStyle === 'striped-animated'}
-							__nextHasNoMarginBottom
-						/>
+							isShownByDefault
+						>
+							<ToggleControl
+								label={__('Animate Stripes', 'designsetgo')}
+								checked={
+									stripedAnimation ||
+									barStyle === 'striped-animated'
+								}
+								onChange={(value) =>
+									setAttributes({ stripedAnimation: value })
+								}
+								disabled={barStyle === 'striped-animated'}
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

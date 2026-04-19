@@ -15,7 +15,6 @@ import {
 	BlockControls,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	Placeholder,
 	Spinner,
 	Notice,
@@ -26,6 +25,7 @@ import {
 	ToolbarGroup,
 	ToolbarButton,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 
 import GridPreview from './components/GridPreview';
 import CategoryPicker from './components/CategoryPicker';
@@ -50,11 +50,13 @@ const ASPECT_RATIO_OPTIONS = [
  * @param {Object}   props               Component props
  * @param {Object}   props.attributes    Block attributes
  * @param {Function} props.setAttributes Function to update block attributes
+ * @param {string}   props.clientId      Block client ID
  * @return {JSX.Element} Edit component
  */
 export default function ProductCategoriesGridEdit({
 	attributes,
 	setAttributes,
+	clientId,
 }) {
 	const {
 		categorySource,
@@ -104,47 +106,89 @@ export default function ProductCategoriesGridEdit({
 
 			{/* ── Sidebar ───────────────────────────────────────────────── */}
 			<InspectorControls>
-				{/* Categories panel */}
-				<PanelBody
-					title={__('Categories', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							categorySource: 'all',
+							selectedCategories: [],
+							excludeCategories: [],
+							columns: 3,
+							showProductCount: true,
+							showEmpty: false,
+							imageAspectRatio: '3/4',
+							overlayPosition: 'bottom-left',
+						})
+					}
 				>
-					<ButtonGroup>
-						<Button
-							isPressed={categorySource === 'all'}
-							onClick={() =>
-								setAttributes({ categorySource: 'all' })
-							}
-							__next40pxDefaultSize
-						>
-							{__('All Categories', 'designsetgo')}
-						</Button>
-						<Button
-							isPressed={categorySource === 'manual'}
-							onClick={() =>
-								setAttributes({ categorySource: 'manual' })
-							}
-							__next40pxDefaultSize
-						>
-							{__('Manual', 'designsetgo')}
-						</Button>
-					</ButtonGroup>
-
-					<div style={{ marginTop: '16px' }} />
+					<DsgoInspectorPanel.Item
+						label={__('Category Source', 'designsetgo')}
+						hasValue={() => categorySource !== 'all'}
+						onDeselect={() =>
+							setAttributes({ categorySource: 'all' })
+						}
+						isShownByDefault
+					>
+						<ButtonGroup>
+							<Button
+								isPressed={categorySource === 'all'}
+								onClick={() =>
+									setAttributes({ categorySource: 'all' })
+								}
+								__next40pxDefaultSize
+							>
+								{__('All Categories', 'designsetgo')}
+							</Button>
+							<Button
+								isPressed={categorySource === 'manual'}
+								onClick={() =>
+									setAttributes({
+										categorySource: 'manual',
+									})
+								}
+								__next40pxDefaultSize
+							>
+								{__('Manual', 'designsetgo')}
+							</Button>
+						</ButtonGroup>
+					</DsgoInspectorPanel.Item>
 
 					{categorySource === 'all' && (
-						<ToggleControl
+						<DsgoInspectorPanel.Item
 							label={__('Show Empty Categories', 'designsetgo')}
-							checked={showEmpty}
-							onChange={(value) =>
-								setAttributes({ showEmpty: value })
+							hasValue={() => showEmpty !== false}
+							onDeselect={() =>
+								setAttributes({ showEmpty: false })
 							}
-							__nextHasNoMarginBottom
-						/>
+							isShownByDefault
+						>
+							<ToggleControl
+								label={__(
+									'Show Empty Categories',
+									'designsetgo'
+								)}
+								checked={showEmpty}
+								onChange={(value) =>
+									setAttributes({ showEmpty: value })
+								}
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
 					)}
 
 					{categorySource === 'manual' && (
-						<>
+						<DsgoInspectorPanel.Item
+							label={__('Manual Categories', 'designsetgo')}
+							hasValue={() =>
+								attributes.selectedCategories.length > 0
+							}
+							onDeselect={() =>
+								setAttributes({ selectedCategories: [] })
+							}
+							isShownByDefault
+						>
 							<CategoryPicker
 								onSelect={handleCategorySelect}
 								excludeIds={excludeIds}
@@ -160,94 +204,120 @@ export default function ProductCategoriesGridEdit({
 									})
 								}
 							/>
-						</>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
 
-				{/* Display panel */}
-				<PanelBody
-					title={__('Display', 'designsetgo')}
-					initialOpen={true}
-				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Show Product Count', 'designsetgo')}
-						checked={showProductCount}
-						onChange={(value) =>
-							setAttributes({ showProductCount: value })
+						hasValue={() => showProductCount !== true}
+						onDeselect={() =>
+							setAttributes({ showProductCount: true })
 						}
-						__nextHasNoMarginBottom
-					/>
-
-					<p
-						className="dsgo-product-categories-grid__aspect-ratio-label"
-						id="dsgo-pcg-overlay-position-label"
+						isShownByDefault
 					>
-						{__('Text Position', 'designsetgo')}
-					</p>
-					<ButtonGroup aria-labelledby="dsgo-pcg-overlay-position-label">
-						<Button
-							isPressed={overlayPosition === 'bottom-left'}
-							onClick={() =>
-								setAttributes({
-									overlayPosition: 'bottom-left',
-								})
+						<ToggleControl
+							label={__('Show Product Count', 'designsetgo')}
+							checked={showProductCount}
+							onChange={(value) =>
+								setAttributes({ showProductCount: value })
 							}
-							__next40pxDefaultSize
-						>
-							{__('Bottom Left', 'designsetgo')}
-						</Button>
-						<Button
-							isPressed={overlayPosition === 'center'}
-							onClick={() =>
-								setAttributes({
-									overlayPosition: 'center',
-								})
-							}
-							__next40pxDefaultSize
-						>
-							{__('Center', 'designsetgo')}
-						</Button>
-					</ButtonGroup>
-				</PanelBody>
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				{/* Layout panel */}
-				<PanelBody
-					title={__('Layout', 'designsetgo')}
-					initialOpen={false}
-				>
-					<RangeControl
-						label={__('Columns', 'designsetgo')}
-						value={columns}
-						onChange={(value) => setAttributes({ columns: value })}
-						min={2}
-						max={5}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-
-					<p
-						className="dsgo-product-categories-grid__aspect-ratio-label"
-						id="dsgo-pcg-aspect-ratio-label"
+					<DsgoInspectorPanel.Item
+						label={__('Text Position', 'designsetgo')}
+						hasValue={() => overlayPosition !== 'bottom-left'}
+						onDeselect={() =>
+							setAttributes({ overlayPosition: 'bottom-left' })
+						}
+						isShownByDefault
 					>
-						{__('Image Aspect Ratio', 'designsetgo')}
-					</p>
-					<ButtonGroup aria-labelledby="dsgo-pcg-aspect-ratio-label">
-						{ASPECT_RATIO_OPTIONS.map((option) => (
+						<p
+							className="dsgo-product-categories-grid__aspect-ratio-label"
+							id="dsgo-pcg-overlay-position-label"
+						>
+							{__('Text Position', 'designsetgo')}
+						</p>
+						<ButtonGroup aria-labelledby="dsgo-pcg-overlay-position-label">
 							<Button
-								key={option.value}
-								isPressed={imageAspectRatio === option.value}
+								isPressed={overlayPosition === 'bottom-left'}
 								onClick={() =>
 									setAttributes({
-										imageAspectRatio: option.value,
+										overlayPosition: 'bottom-left',
 									})
 								}
 								__next40pxDefaultSize
 							>
-								{option.label}
+								{__('Bottom Left', 'designsetgo')}
 							</Button>
-						))}
-					</ButtonGroup>
-				</PanelBody>
+							<Button
+								isPressed={overlayPosition === 'center'}
+								onClick={() =>
+									setAttributes({
+										overlayPosition: 'center',
+									})
+								}
+								__next40pxDefaultSize
+							>
+								{__('Center', 'designsetgo')}
+							</Button>
+						</ButtonGroup>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Columns', 'designsetgo')}
+						hasValue={() => columns !== 3}
+						onDeselect={() => setAttributes({ columns: 3 })}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Columns', 'designsetgo')}
+							value={columns}
+							onChange={(value) =>
+								setAttributes({ columns: value })
+							}
+							min={2}
+							max={5}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Image Aspect Ratio', 'designsetgo')}
+						hasValue={() => imageAspectRatio !== '3/4'}
+						onDeselect={() =>
+							setAttributes({ imageAspectRatio: '3/4' })
+						}
+						isShownByDefault
+					>
+						<p
+							className="dsgo-product-categories-grid__aspect-ratio-label"
+							id="dsgo-pcg-aspect-ratio-label"
+						>
+							{__('Image Aspect Ratio', 'designsetgo')}
+						</p>
+						<ButtonGroup aria-labelledby="dsgo-pcg-aspect-ratio-label">
+							{ASPECT_RATIO_OPTIONS.map((option) => (
+								<Button
+									key={option.value}
+									isPressed={
+										imageAspectRatio === option.value
+									}
+									onClick={() =>
+										setAttributes({
+											imageAspectRatio: option.value,
+										})
+									}
+									__next40pxDefaultSize
+								>
+									{option.label}
+								</Button>
+							))}
+						</ButtonGroup>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			{/* ── Canvas ────────────────────────────────────────────────── */}

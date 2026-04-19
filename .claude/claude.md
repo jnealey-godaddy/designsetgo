@@ -48,7 +48,7 @@ Three panels per block, in this order: **Settings** → **Style** → **Advanced
 - `title` is `__('Settings', 'designsetgo')` or `__('Style', 'designsetgo')` — no block-name prefix (no more "Grid Settings", "Tab Settings").
 - `panelName` is `'settings'` or `'style'` — DsgoInspectorPanel warns once per unrecognised value.
 - `panelId={clientId}` — required so reset state scopes per block instance.
-- Wrap every control in `<DsgoInspectorPanel.Item label hasValue onDeselect isShownByDefault>`. `hasValue` returns `true` when the attribute differs from the `block.json` default; `onDeselect` resets it. `isShownByDefault` is `true` for the primary 1–3 controls; the rest reveal via the panel's "+" menu.
+- Wrap every control in `<DsgoInspectorPanel.Item label hasValue onDeselect isShownByDefault>`. `hasValue` returns `true` when the attribute differs from the `block.json` default; `onDeselect` resets it. **`isShownByDefault` is `true` on every item** — authors need every control visible without hunting through `ToolsPanel`'s kebab menu. The ⋮ reset-per-control affordance still works.
 - Color stays in `<InspectorControls group="color">`; HTML element / anchor / class stay in `<InspectorControls group="advanced">`. Do not duplicate them inside Settings or Style.
 - Prefer native `supports` (color / typography / spacing / border) over custom controls whenever possible.
 

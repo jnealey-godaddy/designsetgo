@@ -9,10 +9,10 @@ import {
 	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect } from '@wordpress/data';
 
 /**
@@ -59,28 +59,39 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Sticky Sections Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() => setAttributes({ stickyOffset: '0px' })}
 				>
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Sticky Offset', 'designsetgo')}
-						value={stickyOffset}
-						onChange={(value) =>
-							setAttributes({ stickyOffset: value })
+						hasValue={() => stickyOffset !== '0px'}
+						onDeselect={() =>
+							setAttributes({ stickyOffset: '0px' })
 						}
-						help={__(
-							'Offset from the top of the viewport. Useful when your site has a fixed header.',
-							'designsetgo'
-						)}
-						units={[
-							{ value: 'px', label: 'px' },
-							{ value: 'rem', label: 'rem' },
-							{ value: 'vh', label: 'vh' },
-						]}
-						__next40pxDefaultSize
-					/>
-				</PanelBody>
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Sticky Offset', 'designsetgo')}
+							value={stickyOffset}
+							onChange={(value) =>
+								setAttributes({ stickyOffset: value })
+							}
+							help={__(
+								'Offset from the top of the viewport. Useful when your site has a fixed header.',
+								'designsetgo'
+							)}
+							units={[
+								{ value: 'px', label: 'px' },
+								{ value: 'rem', label: 'rem' },
+								{ value: 'vh', label: 'vh' },
+							]}
+							__next40pxDefaultSize
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...innerBlocksProps} />

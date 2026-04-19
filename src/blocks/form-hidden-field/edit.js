@@ -6,7 +6,8 @@
 
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, TextControl, Notice } from '@wordpress/components';
+import { TextControl, Notice } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect } from '@wordpress/element';
 
 export default function FormHiddenFieldEdit({
@@ -30,43 +31,67 @@ export default function FormHiddenFieldEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Field Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							fieldName: '',
+							value: '',
+						})
+					}
 				>
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Field Name', 'designsetgo')}
-						value={fieldName}
-						onChange={(newValue) =>
-							setAttributes({
-								fieldName: newValue.replace(
-									/[^a-z0-9_-]/gi,
-									''
-								),
-							})
+						hasValue={() =>
+							!!fieldName &&
+							!/^hidden-[a-z0-9]{1,8}$/i.test(fieldName)
 						}
-						help={__(
-							'Unique identifier for this field (letters, numbers, hyphens, underscores only)',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						onDeselect={() => setAttributes({ fieldName: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Field Name', 'designsetgo')}
+							value={fieldName}
+							onChange={(newValue) =>
+								setAttributes({
+									fieldName: newValue.replace(
+										/[^a-z0-9_-]/gi,
+										''
+									),
+								})
+							}
+							help={__(
+								'Unique identifier for this field (letters, numbers, hyphens, underscores only)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<TextControl
+					<DsgoInspectorPanel.Item
 						label={__('Value', 'designsetgo')}
-						value={value}
-						onChange={(newValue) =>
-							setAttributes({ value: newValue })
-						}
-						help={__(
-							'The hidden value to be submitted with the form',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => value !== ''}
+						onDeselect={() => setAttributes({ value: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Value', 'designsetgo')}
+							value={value}
+							onChange={(newValue) =>
+								setAttributes({ value: newValue })
+							}
+							help={__(
+								'The hidden value to be submitted with the form',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

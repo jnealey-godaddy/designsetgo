@@ -15,6 +15,7 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import { Notice } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect } from '@wordpress/data';
 import { useUniqueBlockId } from '../../hooks';
 import { transferStylesToContent } from './utils/style-transfer';
@@ -148,34 +149,75 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 					</Notice>
 				)}
 
-				<ModalSettings
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<AnimationSettings
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<OverlaySettings
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<CloseButtonSettings
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<BehaviorSettings
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<TriggerSettings
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
-				<GallerySettings
-					attributes={attributes}
-					setAttributes={setAttributes}
-				/>
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							width: '600px',
+							maxWidth: '90vw',
+							height: 'auto',
+							maxHeight: '90vh',
+							animationType: 'fade',
+							animationDuration: 300,
+							overlayOpacity: 80,
+							overlayBlur: 0,
+							showCloseButton: true,
+							closeButtonPosition: 'inside-top-right',
+							closeButtonSize: 24,
+							closeOnBackdrop: true,
+							closeOnEsc: true,
+							disableBodyScroll: true,
+							allowHashTrigger: true,
+							updateUrlOnOpen: false,
+							autoTriggerType: 'none',
+							autoTriggerDelay: 0,
+							autoTriggerFrequency: 'always',
+							cookieDuration: 7,
+							exitIntentSensitivity: 'medium',
+							exitIntentMinTime: 5,
+							exitIntentExcludeMobile: true,
+							scrollDepth: 50,
+							scrollDirection: 'down',
+							timeOnPage: 30,
+							galleryGroupId: '',
+							galleryIndex: 0,
+							showGalleryNavigation: true,
+							navigationStyle: 'arrows',
+							navigationPosition: 'sides',
+						})
+					}
+				>
+					<ModalSettings
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<AnimationSettings
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<OverlaySettings
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<CloseButtonSettings
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<BehaviorSettings
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<TriggerSettings
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+					<GallerySettings
+						attributes={attributes}
+						setAttributes={setAttributes}
+					/>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<InspectorControls group="color">

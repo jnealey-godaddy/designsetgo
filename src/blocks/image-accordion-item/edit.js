@@ -8,7 +8,8 @@ import {
 } from '@wordpress/block-editor';
 import { useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
-import { PanelBody, SelectControl, ToolbarGroup } from '@wordpress/components';
+import { SelectControl, ToolbarGroup } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 
@@ -160,58 +161,83 @@ export default function ImageAccordionItemEdit({
 			</BlockControls>
 
 			<InspectorControls>
-				<PanelBody
-					title={__('Content Alignment', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							verticalAlignment: 'center',
+							horizontalAlignment: 'center',
+						})
+					}
 				>
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Vertical Alignment', 'designsetgo')}
-						value={verticalAlignment}
-						options={[
-							{
-								label: __('Top', 'designsetgo'),
-								value: 'flex-start',
-							},
-							{
-								label: __('Center', 'designsetgo'),
-								value: 'center',
-							},
-							{
-								label: __('Bottom', 'designsetgo'),
-								value: 'flex-end',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ verticalAlignment: value })
+						hasValue={() => verticalAlignment !== 'center'}
+						onDeselect={() =>
+							setAttributes({ verticalAlignment: 'center' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Vertical Alignment', 'designsetgo')}
+							value={verticalAlignment}
+							options={[
+								{
+									label: __('Top', 'designsetgo'),
+									value: 'flex-start',
+								},
+								{
+									label: __('Center', 'designsetgo'),
+									value: 'center',
+								},
+								{
+									label: __('Bottom', 'designsetgo'),
+									value: 'flex-end',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ verticalAlignment: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Horizontal Alignment', 'designsetgo')}
-						value={horizontalAlignment}
-						options={[
-							{
-								label: __('Left', 'designsetgo'),
-								value: 'flex-start',
-							},
-							{
-								label: __('Center', 'designsetgo'),
-								value: 'center',
-							},
-							{
-								label: __('Right', 'designsetgo'),
-								value: 'flex-end',
-							},
-						]}
-						onChange={(value) =>
-							setAttributes({ horizontalAlignment: value })
+						hasValue={() => horizontalAlignment !== 'center'}
+						onDeselect={() =>
+							setAttributes({ horizontalAlignment: 'center' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Horizontal Alignment', 'designsetgo')}
+							value={horizontalAlignment}
+							options={[
+								{
+									label: __('Left', 'designsetgo'),
+									value: 'flex-start',
+								},
+								{
+									label: __('Center', 'designsetgo'),
+									value: 'center',
+								},
+								{
+									label: __('Right', 'designsetgo'),
+									value: 'flex-end',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ horizontalAlignment: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

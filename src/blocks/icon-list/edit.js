@@ -16,6 +16,7 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { ListSettingsPanel } from './components/inspector/ListSettingsPanel';
 import {
 	encodeColorValue,
@@ -170,16 +171,33 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 			</InspectorControls>
 
 			<InspectorControls>
-				<ListSettingsPanel
-					layout={layout}
-					iconSize={iconSize}
-					gap={gap}
-					iconPosition={iconPosition}
-					columns={columns}
-					alignment={alignment}
-					iconVerticalAlignment={iconVerticalAlignment}
-					setAttributes={setAttributes}
-				/>
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							layout: 'vertical',
+							iconSize: 32,
+							gap: '24px',
+							iconPosition: 'left',
+							columns: 1,
+							alignment: 'left',
+							iconVerticalAlignment: 'top',
+						})
+					}
+				>
+					<ListSettingsPanel
+						layout={layout}
+						iconSize={iconSize}
+						gap={gap}
+						iconPosition={iconPosition}
+						columns={columns}
+						alignment={alignment}
+						iconVerticalAlignment={iconVerticalAlignment}
+						setAttributes={setAttributes}
+					/>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

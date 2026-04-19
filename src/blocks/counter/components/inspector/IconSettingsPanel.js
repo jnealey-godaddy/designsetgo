@@ -1,24 +1,17 @@
 /**
  * Counter Block - Icon Settings Panel Component
  *
- * Provides controls for showing/hiding icon and selecting icon type and position.
+ * Renders DsgoInspectorPanel.Item entries for icon show/hide, type, and
+ * position. Meant to be composed inside the Settings DsgoInspectorPanel
+ * in counter/edit.js.
  *
  * @since 1.0.0
  */
 
 import { __ } from '@wordpress/i18n';
-import { PanelBody, ToggleControl, SelectControl } from '@wordpress/components';
+import { ToggleControl, SelectControl } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../../../components/shared';
 
-/**
- * Icon Settings Panel - Controls for counter icon.
- *
- * @param {Object}   props               - Component props
- * @param {boolean}  props.showIcon      - Whether to show icon
- * @param {string}   props.icon          - Icon type (star, trophy, heart, etc.)
- * @param {string}   props.iconPosition  - Icon position (top, left, right)
- * @param {Function} props.setAttributes - Function to update block attributes
- * @return {JSX.Element} Icon Settings Panel component
- */
 export const IconSettingsPanel = ({
 	showIcon,
 	icon,
@@ -26,24 +19,33 @@ export const IconSettingsPanel = ({
 	setAttributes,
 }) => {
 	return (
-		<PanelBody
-			title={__('Icon Settings', 'designsetgo')}
-			initialOpen={false}
-		>
-			<ToggleControl
+		<>
+			<DsgoInspectorPanel.Item
 				label={__('Show Icon', 'designsetgo')}
-				checked={showIcon}
-				onChange={(value) => setAttributes({ showIcon: value })}
-				help={
-					showIcon
-						? __('Icon is displayed', 'designsetgo')
-						: __('No icon displayed', 'designsetgo')
-				}
-				__nextHasNoMarginBottom
-			/>
+				hasValue={() => showIcon !== false}
+				onDeselect={() => setAttributes({ showIcon: false })}
+				isShownByDefault
+			>
+				<ToggleControl
+					label={__('Show Icon', 'designsetgo')}
+					checked={showIcon}
+					onChange={(value) => setAttributes({ showIcon: value })}
+					help={
+						showIcon
+							? __('Icon is displayed', 'designsetgo')
+							: __('No icon displayed', 'designsetgo')
+					}
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
 
 			{showIcon && (
-				<>
+				<DsgoInspectorPanel.Item
+					label={__('Icon', 'designsetgo')}
+					hasValue={() => icon !== 'star'}
+					onDeselect={() => setAttributes({ icon: 'star' })}
+					isShownByDefault
+				>
 					<SelectControl
 						label={__('Icon', 'designsetgo')}
 						value={icon}
@@ -82,7 +84,16 @@ export const IconSettingsPanel = ({
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
+				</DsgoInspectorPanel.Item>
+			)}
 
+			{showIcon && (
+				<DsgoInspectorPanel.Item
+					label={__('Icon Position', 'designsetgo')}
+					hasValue={() => iconPosition !== 'top'}
+					onDeselect={() => setAttributes({ iconPosition: 'top' })}
+					isShownByDefault
+				>
 					<SelectControl
 						label={__('Icon Position', 'designsetgo')}
 						value={iconPosition}
@@ -100,8 +111,8 @@ export const IconSettingsPanel = ({
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				</>
+				</DsgoInspectorPanel.Item>
 			)}
-		</PanelBody>
+		</>
 	);
 };
