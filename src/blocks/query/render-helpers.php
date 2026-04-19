@@ -151,7 +151,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			// all native-supports classes/styles, anchor id, and user className.
 			// Append the IAPI + query-id + aria-live attrs inline.
 			$iapi_attrs = sprintf(
-				'data-dsgo-query-id="%1$s" data-wp-interactive="%2$s" data-wp-context=\'%3$s\' aria-live="polite"',
+				'data-dsgo-query-id="%1$s" data-dsgo-query-role="container" data-wp-interactive="%2$s" data-wp-context=\'%3$s\' aria-live="polite"',
 				esc_attr( $query_id ),
 				esc_attr( 'designsetgo/query' ),
 				// wp_json_encode output is safe inside a single-quoted HTML attribute.
@@ -161,7 +161,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		} else {
 			// REST / unit-test path: build minimal attrs manually.
 			$attrs_string = sprintf(
-				'class="%1$s" data-dsgo-query-id="%2$s" data-wp-interactive="%3$s" data-wp-context=\'%4$s\' aria-live="polite"',
+				'class="%1$s" data-dsgo-query-id="%2$s" data-dsgo-query-role="container" data-wp-interactive="%3$s" data-wp-context=\'%4$s\' aria-live="polite"',
 				esc_attr( 'dsgo-query dsgo-query--source-' . $source ),
 				esc_attr( $query_id ),
 				esc_attr( 'designsetgo/query' ),
@@ -169,22 +169,33 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			);
 		}
 
-		// Emit JSON blobs so view.js (load-more) can re-send the block's attribute
-		// state and innerBlocks template without needing a server-side lookup.
-		// JSON_HEX_* flags ensure no literal <, >, &, ', " appear in the output,
-		// making the strings safe to embed inside a <script> element in any context.
+		// Emit JSON blobs so view.js (load-more / filter refresh) can re-send the
+		// block's attribute state and innerBlocks template without needing a
+		// server-side lookup. JSON_HEX_* flags ensure no literal <, >, &, ', "
+		// appear in the output, making the strings safe to embed inside a <script>
+		// element in any context.
 		// The blobs live OUTSIDE the list element (as a preceding sibling hidden div)
 		// because <script> elements are not valid children of <ul>/<ol> per the HTML
 		// spec, and they would break ul > li:first-child CSS selectors.
+		//
+		// Fix 1 + Fix 2: store full_inner_html (template + siblings) in the blob so
+		// the REST endpoint can re-split siblings correctly during filter refresh and
+		// produce a region-level response that includes pagination + no-results HTML.
 		$blob_wrapper = '';
 		if ( '' !== $query_id ) {
 			$flags        = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+			// Prefer full_inner_html (set by designsetgo_query_render_region) so the
+			// REST refresh can re-render siblings; fall back to inner_html for backwards
+			// compatibility when called directly (e.g. unit tests, load-more endpoint).
+			$blob_inner   = isset( $context['full_inner_html'] ) && '' !== (string) $context['full_inner_html']
+				? (string) $context['full_inner_html']
+				: (string) ( $context['inner_html'] ?? '' );
 			$blob_wrapper = '<div hidden class="dsgo-query__blobs" data-dsgo-blobs-for="' . esc_attr( $query_id ) . '">'
 				. '<script type="application/json" data-dsgo-attrs>'
 				. wp_json_encode( $atts, $flags )
 				. '</script>'
 				. '<script type="application/json" data-dsgo-inner>'
-				. wp_json_encode( (string) ( $context['inner_html'] ?? '' ), $flags )
+				. wp_json_encode( $blob_inner, $flags )
 				. '</script>'
 				. '</div>';
 		}
@@ -293,6 +304,123 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	function designsetgo_query_get_last_state( $query_id ) {
 		$states = isset( $GLOBALS['designsetgo_query_states'] ) ? (array) $GLOBALS['designsetgo_query_states'] : array();
 		return $states[ (string) $query_id ] ?? null;
+	}
+
+	/**
+	 * Render a full query region — list items + sibling blocks — wrapped in
+	 * a <div class="dsgo-query-region"> container used as the JS refresh target.
+	 *
+	 * This is the preferred entry point for both render.php (first-paint) and
+	 * the REST controller (filter/sort refresh). Using a single shared helper
+	 * ensures both paths produce byte-identical output so the JS can safely
+	 * swap the region's innerHTML.
+	 *
+	 * Sibling block names (pagination, filter, no-results) are NOT rendered
+	 * per-item; they are rendered once, AFTER the query runs (so the state
+	 * registry is populated and sibling blocks can read totalPages etc.).
+	 *
+	 * @param array $attributes Block attributes (raw — will be defaulted internally).
+	 * @param array $context    Keys:
+	 *                          - query_id   (string)       Unique query identifier.
+	 *                          - page       (int)          Current page number.
+	 *                          - inner_html (string)       Full serialized innerBlocks
+	 *                                                      (template blocks + sibling
+	 *                                                      block comment strings). The
+	 *                                                      helper splits them here.
+	 *                          - params     (array)        URL filter params.
+	 *                          - wrapper_attrs (string|null) Pre-computed
+	 *                                                      get_block_wrapper_attributes()
+	 *                                                      string (first-paint only;
+	 *                                                      null for REST/tests).
+	 * @return array { html: string, totalPages: int, totalItems: int }
+	 */
+	function designsetgo_query_render_region( array $attributes, array $context ) {
+		$context = wp_parse_args(
+			$context,
+			array(
+				'query_id'      => '',
+				'page'          => 1,
+				'inner_html'    => '',
+				'params'        => array(),
+				'wrapper_attrs' => null,
+			)
+		);
+
+		$query_id        = sanitize_key( (string) $context['query_id'] );
+		$full_inner_html = (string) $context['inner_html'];
+
+		// Block names that are sibling concerns — render ONCE after the query.
+		$sibling_names = array(
+			'designsetgo/query-pagination',
+			'designsetgo/query-filter',
+			'designsetgo/query-no-results',
+		);
+
+		// Parse the full inner block HTML and split into template vs sibling lists.
+		$parsed_blocks   = function_exists( 'parse_blocks' ) ? parse_blocks( $full_inner_html ) : array();
+		$template_blocks = array();
+		$sibling_blocks  = array();
+		foreach ( $parsed_blocks as $parsed ) {
+			if ( empty( $parsed['blockName'] ) ) {
+				continue;
+			}
+			if ( in_array( $parsed['blockName'], $sibling_names, true ) ) {
+				$sibling_blocks[] = $parsed;
+			} else {
+				$template_blocks[] = $parsed;
+			}
+		}
+
+		// Serialize only the template blocks back to a WP comment string for the
+		// per-item renderer.
+		$template_html = '';
+		foreach ( $template_blocks as $tb ) {
+			if ( function_exists( 'serialize_block' ) ) {
+				$template_html .= serialize_block( $tb );
+			}
+		}
+
+		// Pass template-only HTML as inner_html to the per-item render, but store
+		// the FULL inner HTML in full_inner_html so the blob (written inside
+		// designsetgo_query_wrap) carries the complete set — enabling the REST
+		// endpoint to re-split siblings on filter refresh.
+		$render_context                    = $context;
+		$render_context['inner_html']      = $template_html;
+		$render_context['full_inner_html'] = $full_inner_html;
+
+		// Run the query. This populates the state registry so siblings can read
+		// totalPages / totalItems without re-running the query.
+		$result = designsetgo_query_render( $attributes, $render_context );
+
+		// Render each sibling block ONCE, passing queryId + source via context so
+		// pagination, filter, and no-results blocks know which query they belong to.
+		$source           = isset( $attributes['source'] ) ? (string) $attributes['source'] : 'posts';
+		$sibling_context  = array(
+			'designsetgo/queryId'     => $query_id,
+			'designsetgo/querySource' => $source,
+		);
+		$siblings_html = '';
+		foreach ( $sibling_blocks as $sb ) {
+			if ( function_exists( 'WP_Block' ) || class_exists( 'WP_Block' ) ) {
+				$siblings_html .= ( new WP_Block( $sb, $sibling_context ) )->render();
+			}
+		}
+
+		// Wrap everything in the region container — this is the JS swap target.
+		// The inner list HTML (from $result['html']) already contains the blobs div
+		// and the <ul>/<ol>/<div> list element with data-dsgo-query-role="container".
+		$region_html = sprintf(
+			'<div class="dsgo-query-region" data-dsgo-query-region="%1$s">%2$s%3$s</div>',
+			esc_attr( $query_id ),
+			$result['html'],          // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled in designsetgo_query_wrap() from esc_attr()-escaped parts.
+			$siblings_html            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- block render() output is escaped by WordPress.
+		);
+
+		return array(
+			'html'       => $region_html,
+			'totalPages' => $result['totalPages'],
+			'totalItems' => $result['totalItems'],
+		);
 	}
 
 endif;

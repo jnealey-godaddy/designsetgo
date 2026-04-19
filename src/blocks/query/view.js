@@ -199,7 +199,11 @@ store( 'designsetgo/query', {
 			} else {
 				url.searchParams.delete( paramName );
 			}
+			// Fix 3: strip both pagination params — `paged` for archives,
+			// `page` for singular post paginators — so filtering from page 2+
+			// always resets to page 1.
 			url.searchParams.delete( 'paged' );
+			url.searchParams.delete( 'page' );
 			yield* dsgoQueryRefresh( ctx, url );
 		},
 
@@ -223,7 +227,9 @@ store( 'designsetgo/query', {
 				} else {
 					url.searchParams.delete( paramName );
 				}
+				// Fix 3: strip both pagination params.
 				url.searchParams.delete( 'paged' );
+				url.searchParams.delete( 'page' );
 				// Use the Promise-based helper — no yield needed here.
 				dsgoQueryRefreshPlain( ctx, url );
 			}, 250 );
@@ -258,7 +264,9 @@ store( 'designsetgo/query', {
 			}
 
 			current.forEach( ( v ) => url.searchParams.append( arrayKey, v ) );
+			// Fix 3: strip both pagination params.
 			url.searchParams.delete( 'paged' );
+			url.searchParams.delete( 'page' );
 			yield* dsgoQueryRefresh( ctx, url );
 		},
 
@@ -275,7 +283,9 @@ store( 'designsetgo/query', {
 			const href    = ref.getAttribute( 'href' );
 			if ( ! href ) return;
 			const url = new URL( href, window.location.href );
+			// Fix 3: strip both pagination params.
 			url.searchParams.delete( 'paged' );
+			url.searchParams.delete( 'page' );
 			yield* dsgoQueryRefresh( ctx, url );
 		},
 
@@ -342,9 +352,10 @@ function dsgoCollectParams( url ) {
 /**
  * Core refresh generator — used by all filter actions via yield*.
  *
- * Fetches fresh HTML from designsetgo/v1/query/render, then replaces the
- * query list's innerHTML with the server response. The wrapper element and
- * its data attributes (including the JSON blobs sibling) are preserved.
+ * Fetches fresh HTML from designsetgo/v1/query/render (which now returns
+ * a full region — list + pagination + no-results + filter siblings), then
+ * swaps the outer .dsgo-query-region wrapper's innerHTML so pagination,
+ * no-results visibility, and active-filter chips all update together.
  *
  * Safety: the HTML returned by the REST endpoint is server-rendered by
  * WordPress (same pipeline as first-paint), so it is already escaped by
@@ -360,19 +371,28 @@ function* dsgoQueryRefresh( ctx, url ) {
 	if ( ! queryId || ctx.busy ) return;
 	ctx.busy = true;
 
-	const container = document.querySelector(
-		`[data-dsgo-query-id="${ queryId }"]:not([data-dsgo-pagination])`
+	// Find the outer region wrapper — its innerHTML is replaced after the fetch.
+	const region = document.querySelector(
+		`[data-dsgo-query-region="${ queryId }"]`
 	);
 	const blobsHost = document.querySelector(
 		`[data-dsgo-blobs-for="${ queryId }"]`
 	);
 
-	if ( ! container || ! blobsHost ) {
+	if ( ! region || ! blobsHost ) {
 		ctx.busy = false;
 		return;
 	}
 
-	container.setAttribute( 'aria-busy', 'true' );
+	// Also find the list container (role="container") so we can aria-busy it
+	// during the fetch. The region wrapper contains filter/pagination children
+	// too; scoping with data-dsgo-query-role avoids aria-busy on those.
+	const listContainer = region.querySelector(
+		`[data-dsgo-query-id="${ queryId }"][data-dsgo-query-role="container"]`
+	);
+	if ( listContainer ) {
+		listContainer.setAttribute( 'aria-busy', 'true' );
+	}
 
 	try {
 		const attrsEl = blobsHost.querySelector( 'script[data-dsgo-attrs]' );
@@ -406,15 +426,15 @@ function* dsgoQueryRefresh( ctx, url ) {
 		if ( ! res.ok ) return;
 		const data = yield res.json();
 
-		// Swap the list's inner content without touching wrapper attrs or blobs.
-		// Content is server-rendered (WordPress-escaped) — safe for innerHTML.
-		const doc     = new DOMParser().parseFromString( data.html || '', 'text/html' );
-		const newList = doc.querySelector(
-			'[data-dsgo-query-id]:not([data-dsgo-pagination])'
-		);
-		if ( newList ) {
+		// Parse the returned region HTML and swap the outer region's innerHTML.
+		// This updates the list, pagination, no-results, and active-filter chips
+		// in one operation. The outer region element (and its data attribute) stays
+		// intact so the IAPI context survives the swap.
+		const doc       = new DOMParser().parseFromString( data.html || '', 'text/html' );
+		const newRegion = doc.querySelector( `[data-dsgo-query-region="${ queryId }"]` );
+		if ( newRegion ) {
 			// eslint-disable-next-line no-unsanitized/property -- server-rendered, WordPress-escaped content.
-			container.innerHTML = newList.innerHTML;
+			region.innerHTML = newRegion.innerHTML;
 		}
 
 		// Sync the browser URL without a page reload.
@@ -422,7 +442,14 @@ function* dsgoQueryRefresh( ctx, url ) {
 		ctx.page = 1;
 	} finally {
 		ctx.busy = false;
-		container.setAttribute( 'aria-busy', 'false' );
+		// listContainer may have been replaced by the innerHTML swap above;
+		// re-query from the region to get the fresh element.
+		const freshList = region.querySelector(
+			`[data-dsgo-query-id="${ queryId }"][data-dsgo-query-role="container"]`
+		);
+		if ( freshList ) {
+			freshList.setAttribute( 'aria-busy', 'false' );
+		}
 	}
 }
 
@@ -430,6 +457,9 @@ function* dsgoQueryRefresh( ctx, url ) {
  * Promise-based (non-generator) variant for the debounced search action.
  * Mirrors dsgoQueryRefresh but uses async/await so it can be called from
  * a regular (non-generator) setTimeout callback.
+ *
+ * Like dsgoQueryRefresh, swaps the outer .dsgo-query-region innerHTML so
+ * pagination, no-results, and filter chips update along with the list.
  *
  * @param {Object} ctx  IAPI context (must have .queryId).
  * @param {URL}    url  New URL to navigate to.
@@ -439,19 +469,24 @@ async function dsgoQueryRefreshPlain( ctx, url ) {
 	if ( ! queryId || ctx.busy ) return;
 	ctx.busy = true;
 
-	const container = document.querySelector(
-		`[data-dsgo-query-id="${ queryId }"]:not([data-dsgo-pagination])`
+	const region = document.querySelector(
+		`[data-dsgo-query-region="${ queryId }"]`
 	);
 	const blobsHost = document.querySelector(
 		`[data-dsgo-blobs-for="${ queryId }"]`
 	);
 
-	if ( ! container || ! blobsHost ) {
+	if ( ! region || ! blobsHost ) {
 		ctx.busy = false;
 		return;
 	}
 
-	container.setAttribute( 'aria-busy', 'true' );
+	const listContainer = region.querySelector(
+		`[data-dsgo-query-id="${ queryId }"][data-dsgo-query-role="container"]`
+	);
+	if ( listContainer ) {
+		listContainer.setAttribute( 'aria-busy', 'true' );
+	}
 
 	try {
 		const attrsEl = blobsHost.querySelector( 'script[data-dsgo-attrs]' );
@@ -485,19 +520,22 @@ async function dsgoQueryRefreshPlain( ctx, url ) {
 		if ( ! res.ok ) return;
 		const data = await res.json();
 
-		const doc     = new DOMParser().parseFromString( data.html || '', 'text/html' );
-		const newList = doc.querySelector(
-			'[data-dsgo-query-id]:not([data-dsgo-pagination])'
-		);
-		if ( newList ) {
+		const doc       = new DOMParser().parseFromString( data.html || '', 'text/html' );
+		const newRegion = doc.querySelector( `[data-dsgo-query-region="${ queryId }"]` );
+		if ( newRegion ) {
 			// eslint-disable-next-line no-unsanitized/property -- server-rendered, WordPress-escaped content.
-			container.innerHTML = newList.innerHTML;
+			region.innerHTML = newRegion.innerHTML;
 		}
 
 		window.history.replaceState( {}, '', url.toString() );
 		ctx.page = 1;
 	} finally {
 		ctx.busy = false;
-		container.setAttribute( 'aria-busy', 'false' );
+		const freshList = region.querySelector(
+			`[data-dsgo-query-id="${ queryId }"][data-dsgo-query-role="container"]`
+		);
+		if ( freshList ) {
+			freshList.setAttribute( 'aria-busy', 'false' );
+		}
 	}
 }

@@ -123,12 +123,13 @@ if ( ! function_exists( 'designsetgo_query_filter_render_sort' ) ) :
 		}
 
 		printf(
-			'<form %1$s method="get" action="">%2$s<select name="%3$s" class="dsgo-query-filter__sort" data-wp-on--change="actions.setFilter"><option value="">%4$s</option>%5$s</select></form>',
+			'<form %1$s method="get" action="">%2$s<select name="%3$s" class="dsgo-query-filter__sort" data-wp-on--change="actions.setFilter"><option value="">%4$s</option>%5$s</select><noscript><button type="submit" class="dsgo-query-filter__nojs-submit">%6$s</button></noscript></form>',
 			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$label ? '<label class="dsgo-query-filter__label">' . esc_html( $label ) . '</label>' : '',
 			esc_attr( $param_name ),
 			esc_html__( 'Default order', 'designsetgo' ),
-			$opts_html // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each option is escaped per-attribute above.
+			$opts_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each option is escaped per-attribute above.
+			esc_html__( 'Apply filter', 'designsetgo' )
 		);
 	}
 
@@ -172,12 +173,13 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 		}
 
 		printf(
-			'<form %1$s method="get" action="">%2$s<select name="%3$s" class="dsgo-query-filter__select" data-wp-on--change="actions.setFilter"><option value="">%4$s</option>%5$s</select></form>',
+			'<form %1$s method="get" action="">%2$s<select name="%3$s" class="dsgo-query-filter__select" data-wp-on--change="actions.setFilter"><option value="">%4$s</option>%5$s</select><noscript><button type="submit" class="dsgo-query-filter__nojs-submit">%6$s</button></noscript></form>',
 			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$label ? '<label class="dsgo-query-filter__label">' . esc_html( $label ) . '</label>' : '',
 			esc_attr( $param_name ),
 			esc_html__( 'All', 'designsetgo' ),
-			$opts_html // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each option is escaped above.
+			$opts_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each option is escaped above.
+			esc_html__( 'Apply filter', 'designsetgo' )
 		);
 	}
 
@@ -228,18 +230,22 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 			);
 		}
 
+		// Fix 4: noscript submit so no-JS users can apply checkbox filters.
+		$dsgo_nojs_btn = '<noscript><button type="submit" class="dsgo-query-filter__nojs-submit">' . esc_html__( 'Apply filter', 'designsetgo' ) . '</button></noscript>';
 		if ( $label ) {
 			printf(
-				'<form %1$s method="get" action=""><fieldset class="dsgo-query-filter__fieldset"><legend class="dsgo-query-filter__label">%2$s</legend><div class="dsgo-query-filter__checkbox-list">%3$s</div></fieldset></form>',
+				'<form %1$s method="get" action=""><fieldset class="dsgo-query-filter__fieldset"><legend class="dsgo-query-filter__label">%2$s</legend><div class="dsgo-query-filter__checkbox-list">%3$s</div></fieldset>%4$s</form>',
 				$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				esc_html( $label ),
-				$items_html // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- per-field escaped above.
+				$items_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- per-field escaped above.
+				$dsgo_nojs_btn // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
 			);
 		} else {
 			printf(
-				'<form %1$s method="get" action=""><div class="dsgo-query-filter__checkbox-list">%2$s</div></form>',
+				'<form %1$s method="get" action=""><div class="dsgo-query-filter__checkbox-list">%2$s</div>%3$s</form>',
 				$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				$items_html // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				$items_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				$dsgo_nojs_btn // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
 			);
 		}
 	}
@@ -286,6 +292,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_active' ) ) :
 		$current_url = add_query_arg( array() );
 		$qs          = wp_parse_url( $current_url, PHP_URL_QUERY );
 		parse_str( (string) $qs, $parsed_base );
+		$base        = strtok( $current_url, '?' );
 
 		foreach ( $active_params as $p ) {
 			// Clone and remove this specific key/value.
@@ -303,20 +310,22 @@ if ( ! function_exists( 'designsetgo_query_filter_render_active' ) ) :
 				}
 			}
 
-			unset( $parsed['paged'] );
+			// Fix 3 (PHP): strip both WordPress pagination params from chip hrefs.
+			unset( $parsed['paged'], $parsed['page'] );
 
-			$base    = strtok( $current_url, '?' );
-			$parts   = array();
-			foreach ( $parsed as $qs_key => $qs_val ) {
-				if ( is_array( $qs_val ) ) {
-					foreach ( $qs_val as $item ) {
-						$parts[] = rawurlencode( (string) $qs_key ) . '%5B%5D=' . rawurlencode( (string) $item );
-					}
-				} else {
-					$parts[] = rawurlencode( (string) $qs_key ) . '=' . rawurlencode( (string) $qs_val );
-				}
-			}
-			$new_url = $parts ? $base . '?' . implode( '&', $parts ) : $base;
+			// Fix 5: use http_build_query so nested associative arrays (e.g.
+			// foo[bar]=baz) are preserved correctly, then normalize only our known
+			// filter-related keys' numeric-indexed brackets (filter_foo[0]=x →
+			// filter_foo[]=x) without corrupting arbitrary nested params.
+			$qs_encoded = http_build_query( $parsed );
+			$qs_encoded = preg_replace_callback(
+				'/(^|&)((?:filter_[a-z0-9_-]+|q|sort))%5B\d+%5D=/i',
+				function ( $m ) {
+					return $m[1] . $m[2] . '%5B%5D=';
+				},
+				$qs_encoded
+			);
+			$new_url = $qs_encoded ? $base . '?' . $qs_encoded : $base;
 			$chips_html .= sprintf(
 				'<a href="%1$s" class="dsgo-query-filter__chip" data-wp-on--click="actions.removeActiveFilter" data-dsgo-filter-key="%2$s" data-dsgo-filter-value="%3$s">%4$s<span aria-hidden="true"> &times;</span><span class="screen-reader-text">%5$s</span></a>',
 				esc_url( $new_url ),
@@ -354,23 +363,24 @@ if ( ! function_exists( 'designsetgo_query_filter_render_reset' ) ) :
 		parse_str( (string) $qs, $parsed );
 
 		foreach ( array_keys( $parsed ) as $k ) {
-			if ( 0 === strpos( (string) $k, 'filter_' ) || 'q' === $k || 'sort' === $k || 'paged' === $k ) {
+			// Fix 3 (PHP): strip both WordPress pagination params.
+			if ( 0 === strpos( (string) $k, 'filter_' ) || 'q' === $k || 'sort' === $k || 'paged' === $k || 'page' === $k ) {
 				unset( $parsed[ $k ] );
 			}
 		}
 
-		$base        = strtok( $current_url, '?' );
-		$reset_parts = array();
-		foreach ( $parsed as $qs_key => $qs_val ) {
-			if ( is_array( $qs_val ) ) {
-				foreach ( $qs_val as $item ) {
-					$reset_parts[] = rawurlencode( (string) $qs_key ) . '%5B%5D=' . rawurlencode( (string) $item );
-				}
-			} else {
-				$reset_parts[] = rawurlencode( (string) $qs_key ) . '=' . rawurlencode( (string) $qs_val );
-			}
-		}
-		$reset_url = $reset_parts ? $base . '?' . implode( '&', $reset_parts ) : $base;
+		$base       = strtok( $current_url, '?' );
+		// Fix 5: use http_build_query to handle nested associative arrays correctly,
+		// then normalize only filter-related numeric brackets to empty brackets.
+		$qs_encoded = http_build_query( $parsed );
+		$qs_encoded = preg_replace_callback(
+			'/(^|&)((?:filter_[a-z0-9_-]+|q|sort))%5B\d+%5D=/i',
+			function ( $m ) {
+				return $m[1] . $m[2] . '%5B%5D=';
+			},
+			$qs_encoded
+		);
+		$reset_url  = $qs_encoded ? $base . '?' . $qs_encoded : $base;
 		$btn_label = $label ? $label : __( 'Reset filters', 'designsetgo' );
 
 		printf(

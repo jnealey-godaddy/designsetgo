@@ -75,7 +75,7 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		$this->assertIsString( $data['html'] );
 	}
 
-	public function test_rest_output_matches_direct_render_call() {
+	public function test_rest_output_matches_direct_region_render_call() {
 		self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) );
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
@@ -87,7 +87,9 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		$inner = '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->';
 
 		require_once DESIGNSETGO_PATH . 'build/blocks/query/render-helpers.php';
-		$direct = designsetgo_query_render(
+		// The REST controller now delegates to designsetgo_query_render_region()
+		// so we compare against that helper (not the bare designsetgo_query_render).
+		$direct = designsetgo_query_render_region(
 			$attributes,
 			array(
 				'query_id'   => 'x',

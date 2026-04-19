@@ -132,17 +132,27 @@ class Controller {
 
 	/**
 	 * Shared render entrypoint used by both REST and first-paint render.php.
-	 * Task 5 lands the real helper; until then we return an empty shell so
-	 * Step 2.1's test_returns_html_shell_for_valid_request still passes.
+	 *
+	 * Delegates to designsetgo_query_render_region() so the REST response
+	 * contains the full region (list + sibling blocks wrapped in
+	 * .dsgo-query-region) — identical to the first-paint output. The JS
+	 * refresh handler swaps the outer region's innerHTML in one operation,
+	 * updating pagination + no-results + chips together with the list.
 	 *
 	 * @param array $attributes Block attributes.
-	 * @param array $context    Keys: query_id, page, inner_html, params.
+	 * @param array $context    Keys: query_id, page, inner_html (full serialized
+	 *                          innerBlocks including siblings), params.
 	 * @return array { html: string, totalPages: int, totalItems: int }
 	 */
 	public static function render( array $attributes, array $context ) {
 		$helpers = DESIGNSETGO_PATH . 'build/blocks/query/render-helpers.php';
 		if ( file_exists( $helpers ) ) {
 			require_once $helpers;
+			if ( function_exists( 'designsetgo_query_render_region' ) ) {
+				return designsetgo_query_render_region( $attributes, $context );
+			}
+			// Fallback to bare render (no region wrapper) for environments where
+			// the build artefact predates the region helper (e.g. older build cache).
 			if ( function_exists( 'designsetgo_query_render' ) ) {
 				return designsetgo_query_render( $attributes, $context );
 			}
