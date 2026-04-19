@@ -6,7 +6,8 @@ import {
 	InspectorControls,
 } from '@wordpress/block-editor';
 import { useEffect, useMemo } from '@wordpress/element';
-import { PanelBody, Icon, ToggleControl } from '@wordpress/components';
+import { Icon, ToggleControl } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect, useDispatch } from '@wordpress/data';
 import classnames from 'classnames';
 
@@ -173,28 +174,39 @@ export default function AccordionItemEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Item Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() => setAttributes({ isOpen: false })}
 				>
-					<ToggleControl
+					<DsgoInspectorPanel.Item
 						label={__('Open by Default', 'designsetgo')}
-						help={
-							isOpen
-								? __(
-										'This panel will be open when the page loads',
-										'designsetgo'
-									)
-								: __(
-										'This panel will be closed when the page loads',
-										'designsetgo'
-									)
-						}
-						checked={isOpen}
-						onChange={(value) => setAttributes({ isOpen: value })}
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => isOpen !== false}
+						onDeselect={() => setAttributes({ isOpen: false })}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Open by Default', 'designsetgo')}
+							help={
+								isOpen
+									? __(
+											'This panel will be open when the page loads',
+											'designsetgo'
+										)
+									: __(
+											'This panel will be closed when the page loads',
+											'designsetgo'
+										)
+							}
+							checked={isOpen}
+							onChange={(value) =>
+								setAttributes({ isOpen: value })
+							}
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>

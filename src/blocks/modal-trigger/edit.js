@@ -11,13 +11,13 @@ import {
 	RichText,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	SelectControl,
 	Notice,
 	RangeControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect } from '@wordpress/data';
 import { useMemo } from '@wordpress/element';
 import { getIcon } from '../icon/utils/svg-icons';
@@ -45,7 +45,11 @@ function findModals(blocks, result = []) {
 	return result;
 }
 
-export default function ModalTriggerEdit({ attributes, setAttributes }) {
+export default function ModalTriggerEdit({
+	attributes,
+	setAttributes,
+	clientId,
+}) {
 	const {
 		targetModalId,
 		text,
@@ -150,9 +154,20 @@ export default function ModalTriggerEdit({ attributes, setAttributes }) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Trigger Settings', 'designsetgo')}
-					initialOpen={true}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							targetModalId: '',
+							buttonStyle: 'fill',
+							icon: '',
+							iconPosition: 'none',
+							iconSize: 20,
+							iconGap: '8px',
+						})
+					}
 				>
 					{modals.length === 0 && (
 						<Notice status="warning" isDismissible={false}>
@@ -163,68 +178,95 @@ export default function ModalTriggerEdit({ attributes, setAttributes }) {
 						</Notice>
 					)}
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Target Modal', 'designsetgo')}
-						value={targetModalId}
-						options={modalOptions}
-						onChange={(value) =>
-							setAttributes({ targetModalId: value })
-						}
-						help={__(
-							'Select which modal this button should open.',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+						hasValue={() => targetModalId !== ''}
+						onDeselect={() => setAttributes({ targetModalId: '' })}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Target Modal', 'designsetgo')}
+							value={targetModalId}
+							options={modalOptions}
+							onChange={(value) =>
+								setAttributes({ targetModalId: value })
+							}
+							help={__(
+								'Select which modal this button should open.',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-					<SelectControl
+					<DsgoInspectorPanel.Item
 						label={__('Button Style', 'designsetgo')}
-						value={buttonStyle}
-						onChange={(value) =>
-							setAttributes({ buttonStyle: value })
+						hasValue={() => buttonStyle !== 'fill'}
+						onDeselect={() =>
+							setAttributes({ buttonStyle: 'fill' })
 						}
-						options={[
-							{
-								label: __('Fill', 'designsetgo'),
-								value: 'fill',
-							},
-							{
-								label: __('Outline', 'designsetgo'),
-								value: 'outline',
-							},
-							{
-								label: __('Link', 'designsetgo'),
-								value: 'link',
-							},
-						]}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Button Style', 'designsetgo')}
+							value={buttonStyle}
+							onChange={(value) =>
+								setAttributes({ buttonStyle: value })
+							}
+							options={[
+								{
+									label: __('Fill', 'designsetgo'),
+									value: 'fill',
+								},
+								{
+									label: __('Outline', 'designsetgo'),
+									value: 'outline',
+								},
+								{
+									label: __('Link', 'designsetgo'),
+									value: 'link',
+								},
+							]}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Icon Settings', 'designsetgo')}
-					initialOpen={false}
-				>
-					<IconPicker
+					<DsgoInspectorPanel.Item
 						label={__('Icon', 'designsetgo')}
-						value={icon}
-						onChange={(value) => {
-							setAttributes({ icon: value });
-							// If icon is selected and position is none, default to start
-							if (value && iconPosition === 'none') {
-								setAttributes({ iconPosition: 'start' });
-							}
-							// If icon is cleared, set position to none
-							if (!value) {
-								setAttributes({ iconPosition: 'none' });
-							}
-						}}
-					/>
+						hasValue={() => icon !== ''}
+						onDeselect={() =>
+							setAttributes({ icon: '', iconPosition: 'none' })
+						}
+						isShownByDefault={false}
+					>
+						<IconPicker
+							label={__('Icon', 'designsetgo')}
+							value={icon}
+							onChange={(value) => {
+								setAttributes({ icon: value });
+								// If icon is selected and position is none, default to start
+								if (value && iconPosition === 'none') {
+									setAttributes({ iconPosition: 'start' });
+								}
+								// If icon is cleared, set position to none
+								if (!value) {
+									setAttributes({ iconPosition: 'none' });
+								}
+							}}
+						/>
+					</DsgoInspectorPanel.Item>
 
 					{icon && (
-						<>
+						<DsgoInspectorPanel.Item
+							label={__('Icon Position', 'designsetgo')}
+							hasValue={() => iconPosition !== 'none'}
+							onDeselect={() =>
+								setAttributes({ iconPosition: 'none' })
+							}
+							isShownByDefault
+						>
 							<SelectControl
 								label={__('Icon Position', 'designsetgo')}
 								value={iconPosition}
@@ -248,43 +290,54 @@ export default function ModalTriggerEdit({ attributes, setAttributes }) {
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
-
-							{iconPosition !== 'none' && (
-								<>
-									<RangeControl
-										label={__(
-											'Icon Size (px)',
-											'designsetgo'
-										)}
-										value={iconSize}
-										onChange={(value) =>
-											setAttributes({ iconSize: value })
-										}
-										min={12}
-										max={48}
-										step={1}
-										__next40pxDefaultSize
-										__nextHasNoMarginBottom
-									/>
-
-									<UnitControl
-										label={__('Icon Gap', 'designsetgo')}
-										value={iconGap}
-										onChange={(value) =>
-											setAttributes({ iconGap: value })
-										}
-										units={[
-											{ value: 'px', label: 'px' },
-											{ value: 'em', label: 'em' },
-											{ value: 'rem', label: 'rem' },
-										]}
-										__next40pxDefaultSize
-									/>
-								</>
-							)}
-						</>
+						</DsgoInspectorPanel.Item>
 					)}
-				</PanelBody>
+
+					{icon && iconPosition !== 'none' && (
+						<DsgoInspectorPanel.Item
+							label={__('Icon Size (px)', 'designsetgo')}
+							hasValue={() => iconSize !== 20}
+							onDeselect={() => setAttributes({ iconSize: 20 })}
+							isShownByDefault={false}
+						>
+							<RangeControl
+								label={__('Icon Size (px)', 'designsetgo')}
+								value={iconSize}
+								onChange={(value) =>
+									setAttributes({ iconSize: value })
+								}
+								min={12}
+								max={48}
+								step={1}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
+
+					{icon && iconPosition !== 'none' && (
+						<DsgoInspectorPanel.Item
+							label={__('Icon Gap', 'designsetgo')}
+							hasValue={() => iconGap !== '8px'}
+							onDeselect={() => setAttributes({ iconGap: '8px' })}
+							isShownByDefault={false}
+						>
+							<UnitControl
+								label={__('Icon Gap', 'designsetgo')}
+								value={iconGap}
+								onChange={(value) =>
+									setAttributes({ iconGap: value })
+								}
+								units={[
+									{ value: 'px', label: 'px' },
+									{ value: 'em', label: 'em' },
+									{ value: 'rem', label: 'rem' },
+								]}
+								__next40pxDefaultSize
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>
