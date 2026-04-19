@@ -521,6 +521,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-index.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-index-hooks.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-index-rebuilder.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-facet-registry.php';
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';
