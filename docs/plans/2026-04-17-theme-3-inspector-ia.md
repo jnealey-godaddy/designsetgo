@@ -184,6 +184,12 @@ Blocks: `form-builder`, `form-text-field`, `form-email-field`, `form-url-field`,
 
 Blocks: `scroll-marquee`, `scroll-slide`, `scroll-slides`, `scroll-accordion`, `scroll-accordion-item`, `sticky-sections`.
 
+- [x] `scroll-slide` — single PanelBody ("Slide Settings", 1 control: `navHeading`) collapsed into Settings.
+- [x] `sticky-sections` — single PanelBody (1 control: `stickyOffset`) collapsed into Settings.
+- [x] `scroll-marquee` — four PanelBody groups (Performance / Scroll Settings / Image Dimensions / Spacing) consolidated into one Settings panel with six items. The "Performance" panel was info-only (Notice with image-count warning); it survives as a Notice rendered at the top of the Settings panel body, outside any `.Item`.
+- [x] `scroll-slides` — `ScrollSlidesInspector` sub-component migrated to `DsgoInspectorPanel`. Four items (minHeight, maxHeight, constrainWidth, conditional contentWidth). Color group (Navigation + Overlay) stays untouched. Added to `COMPOSITE_INSPECTOR_BLOCKS` so the structural test scans the sub-component. Test regex widened to accept 2- or 3-level-up import paths.
+- [ ] **`scroll-accordion` and `scroll-accordion-item` skipped** — neither block has a custom Settings `PanelBody`. `scroll-accordion` is toolbar-only; `scroll-accordion-item` only uses `<InspectorControls group="color">` for an overlay colour. Adding empty DsgoInspectorPanels would be worse than nothing; these are excluded from `MIGRATED_BLOCKS` for that reason.
+
 ## Task 6 — Content family
 
 **PR title:** `feat(blocks): Theme 3 — content family inspector IA`

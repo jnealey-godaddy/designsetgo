@@ -84,13 +84,17 @@ const MIGRATED_BLOCKS = [
 	'form-checkbox-field',
 	'form-hidden-field',
 	'form-builder',
+	'scroll-slide',
+	'sticky-sections',
+	'scroll-marquee',
+	'scroll-slides',
 ];
 
 // Blocks whose inspector items live in sub-components under
 // `src/blocks/{name}/components/*.js`. The structural assertions below
 // concatenate those sources before matching so the guard holds even
 // though `edit.js` alone contains no DsgoInspectorPanel.Item calls.
-const COMPOSITE_INSPECTOR_BLOCKS = new Set(['modal']);
+const COMPOSITE_INSPECTOR_BLOCKS = new Set(['modal', 'scroll-slides']);
 
 describe('Theme 3 — Inspector IA migration', () => {
 	describe.each(MIGRATED_BLOCKS)('%s', (blockName) => {
@@ -112,8 +116,10 @@ describe('Theme 3 — Inspector IA migration', () => {
 			// Loose match so the assertion still passes once a future migration
 			// co-imports DsgoChildToolbar / DsgoBlockPlaceholder from the same
 			// barrel: `import { DsgoInspectorPanel, DsgoChildToolbar } from ...`.
+			// Accepts 2 levels up (edit.js importers) or 3 levels up (sub-component
+			// importers nested under src/blocks/{name}/components/).
 			expect(source).toMatch(
-				/import\s+\{[^}]*\bDsgoInspectorPanel\b[^}]*\}\s+from\s+['"]\.\.\/\.\.\/components\/shared['"]/
+				/import\s+\{[^}]*\bDsgoInspectorPanel\b[^}]*\}\s+from\s+['"](?:\.\.\/){2,3}components\/shared['"]/
 			);
 		});
 

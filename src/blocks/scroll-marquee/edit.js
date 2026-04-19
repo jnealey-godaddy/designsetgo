@@ -6,7 +6,6 @@ import {
 	useBlockProps,
 } from '@wordpress/block-editor';
 import {
-	PanelBody,
 	RangeControl,
 	Button,
 	Notice,
@@ -15,9 +14,14 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
 	__experimentalHStack as HStack,
 } from '@wordpress/components';
+import { DsgoInspectorPanel } from '../../components/shared';
 import { plus, close } from '@wordpress/icons';
 
-export default function ScrollMarqueeEdit({ attributes, setAttributes }) {
+export default function ScrollMarqueeEdit({
+	attributes,
+	setAttributes,
+	clientId,
+}) {
 	const {
 		rows,
 		scrollSpeed,
@@ -96,11 +100,22 @@ export default function ScrollMarqueeEdit({ attributes, setAttributes }) {
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody
-					title={__('Performance', 'designsetgo')}
-					initialOpen={showPerformanceWarning}
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							scrollSpeed: 0.5,
+							imageHeight: '200px',
+							imageWidth: '300px',
+							gap: '20px',
+							rowGap: '20px',
+							borderRadius: '8px',
+						})
+					}
 				>
-					{showPerformanceWarning && (
+					{showPerformanceWarning ? (
 						<Notice status="warning" isDismissible={false}>
 							{__('You have', 'designsetgo')}
 							<strong>{totalImages}</strong>
@@ -109,8 +124,7 @@ export default function ScrollMarqueeEdit({ attributes, setAttributes }) {
 								'designsetgo'
 							)}
 						</Notice>
-					)}
-					{!showPerformanceWarning && (
+					) : (
 						<Notice status="success" isDismissible={false}>
 							{__('Total images:', 'designsetgo')}
 							<strong>{totalImages}</strong>
@@ -120,82 +134,120 @@ export default function ScrollMarqueeEdit({ attributes, setAttributes }) {
 							)}
 						</Notice>
 					)}
-				</PanelBody>
 
-				<PanelBody
-					title={__('Scroll Settings', 'designsetgo')}
-					initialOpen={!showPerformanceWarning}
-				>
-					<RangeControl
+					<DsgoInspectorPanel.Item
 						label={__('Scroll Speed', 'designsetgo')}
-						value={scrollSpeed}
-						onChange={(value) =>
-							setAttributes({ scrollSpeed: value })
-						}
-						min={0.1}
-						max={2}
-						step={0.1}
-						help={__(
-							'Controls how fast images move based on scroll',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => scrollSpeed !== 0.5}
+						onDeselect={() => setAttributes({ scrollSpeed: 0.5 })}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Scroll Speed', 'designsetgo')}
+							value={scrollSpeed}
+							onChange={(value) =>
+								setAttributes({ scrollSpeed: value })
+							}
+							min={0.1}
+							max={2}
+							step={0.1}
+							help={__(
+								'Controls how fast images move based on scroll',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Image Dimensions', 'designsetgo')}
-					initialOpen={false}
-				>
-					<UnitControl
+					<DsgoInspectorPanel.Item
 						label={__('Image Height', 'designsetgo')}
-						value={imageHeight}
-						onChange={(value) =>
-							setAttributes({ imageHeight: value })
+						hasValue={() => imageHeight !== '200px'}
+						onDeselect={() =>
+							setAttributes({ imageHeight: '200px' })
 						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<UnitControl
-						label={__('Image Width', 'designsetgo')}
-						value={imageWidth}
-						onChange={(value) =>
-							setAttributes({ imageWidth: value })
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<UnitControl
-						label={__('Border Radius', 'designsetgo')}
-						value={borderRadius}
-						onChange={(value) =>
-							setAttributes({ borderRadius: value })
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Image Height', 'designsetgo')}
+							value={imageHeight}
+							onChange={(value) =>
+								setAttributes({ imageHeight: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 
-				<PanelBody
-					title={__('Spacing', 'designsetgo')}
-					initialOpen={false}
-				>
-					<UnitControl
+					<DsgoInspectorPanel.Item
+						label={__('Image Width', 'designsetgo')}
+						hasValue={() => imageWidth !== '300px'}
+						onDeselect={() =>
+							setAttributes({ imageWidth: '300px' })
+						}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Image Width', 'designsetgo')}
+							value={imageWidth}
+							onChange={(value) =>
+								setAttributes({ imageWidth: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Border Radius', 'designsetgo')}
+						hasValue={() => borderRadius !== '8px'}
+						onDeselect={() =>
+							setAttributes({ borderRadius: '8px' })
+						}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Border Radius', 'designsetgo')}
+							value={borderRadius}
+							onChange={(value) =>
+								setAttributes({ borderRadius: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
 						label={__('Gap Between Images', 'designsetgo')}
-						value={gap}
-						onChange={(value) => setAttributes({ gap: value })}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<UnitControl
+						hasValue={() => gap !== '20px'}
+						onDeselect={() => setAttributes({ gap: '20px' })}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Gap Between Images', 'designsetgo')}
+							value={gap}
+							onChange={(value) => setAttributes({ gap: value })}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
 						label={__('Gap Between Rows', 'designsetgo')}
-						value={rowGap}
-						onChange={(value) => setAttributes({ rowGap: value })}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</PanelBody>
+						hasValue={() => rowGap !== '20px'}
+						onDeselect={() => setAttributes({ rowGap: '20px' })}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Gap Between Rows', 'designsetgo')}
+							value={rowGap}
+							onChange={(value) =>
+								setAttributes({ rowGap: value })
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>
