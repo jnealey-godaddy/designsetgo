@@ -59,7 +59,7 @@ designsetgo_uninstall_step(
 	}
 );
 
-// 3. Remove physical llms.txt if we own it, then delete plugin options.
+// 3. Remove physical llms.txt / llms-full.txt if we own them, then delete plugin options.
 designsetgo_uninstall_step(
 	'options and llms.txt',
 	function () {
@@ -70,9 +70,18 @@ designsetgo_uninstall_step(
 			}
 		}
 
+		if ( get_option( 'designsetgo_llms_full_txt_physical' ) ) {
+			$full_path = ABSPATH . 'llms-full.txt';
+			if ( file_exists( $full_path ) && is_writable( $full_path ) ) {
+				wp_delete_file( $full_path );
+			}
+		}
+
 		delete_option( 'designsetgo_global_styles' );
 		delete_option( 'designsetgo_settings' );
 		delete_option( 'designsetgo_llms_txt_physical' );
+		delete_option( 'designsetgo_llms_full_txt_physical' );
+		delete_option( 'designsetgo_llms_htaccess_backfilled' );
 	}
 );
 
