@@ -226,6 +226,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		const isDefault = (value, slug) =>
 			value === `var:preset|spacing|${slug}` ||
 			value === `var(--wp--preset--spacing--${slug})`;
+		// Slugs must match block.json attributes.style.spacing.padding defaults.
 		const hasDefaultPadding =
 			isDefault(currentPadding?.top, '50') &&
 			isDefault(currentPadding?.bottom, '50') &&
