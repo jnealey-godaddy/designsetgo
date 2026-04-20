@@ -76,6 +76,11 @@ body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-heade
  * --dsgo-sticky-logo-original-width / -height come from each image inline.
  */
 .dsgo-sticky-shrink-logo.wp-block-template-part :where(.wp-block-image img, .wp-block-site-logo img) {
+	// Set explicit px values so the transition animates in both directions.
+	// Without this, the non-scrolled state has max-width: none (∞), and
+	// CSS cannot interpolate ∞ → px, causing an instant snap on scroll-down.
+	max-width: var(--dsgo-sticky-logo-original-width);
+	max-height: var(--dsgo-sticky-logo-original-height);
 	transition:
 		max-width var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out,
 		max-height var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out;
