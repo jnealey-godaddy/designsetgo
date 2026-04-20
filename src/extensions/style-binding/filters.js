@@ -25,8 +25,8 @@ const SOURCE_OPTIONS = [
 addFilter(
 	'blocks.registerBlockType',
 	'designsetgo/style-binding-attribute',
-	( settings ) => {
-		if ( BLOCKED.has( settings.name ) ) {
+	( settings, name ) => {
+		if ( BLOCKED.has( name ) ) {
 			return settings;
 		}
 		if ( ! settings.attributes ) {

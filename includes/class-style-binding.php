@@ -50,7 +50,7 @@ class StyleBinding {
 				continue;
 			}
 
-			$source = sanitize_key( (string) ( $config['source'] ?? '' ) );
+			$source = sanitize_text_field( (string) ( $config['source'] ?? '' ) );
 			$args   = is_array( $config['args'] ?? null ) ? $config['args'] : array();
 
 			/**
@@ -82,7 +82,7 @@ class StyleBinding {
 				continue;
 			}
 
-			$styles[] = esc_attr( $prop ) . ':' . esc_attr( $value );
+			$styles[] = $prop . ':' . $value;
 		}
 
 		if ( empty( $styles ) ) {
@@ -113,7 +113,7 @@ class StyleBinding {
 
 		switch ( $source ) {
 			case 'designsetgo/post-meta':
-				$key = sanitize_key( (string) ( $args['key'] ?? '' ) );
+				$key = sanitize_text_field( (string) ( $args['key'] ?? '' ) );
 				if ( ! $key || ! $post_id ) {
 					return null;
 				}
@@ -151,7 +151,7 @@ class StyleBinding {
 				if ( ! function_exists( 'jet_engine' ) || ! isset( jet_engine()->listings->data ) ) {
 					return null;
 				}
-				$key = sanitize_key( (string) ( $args['key'] ?? '' ) );
+				$key = sanitize_text_field( (string) ( $args['key'] ?? '' ) );
 				if ( ! $key || ! $post_id ) {
 					return null;
 				}

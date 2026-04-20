@@ -35,10 +35,14 @@ if ( ! function_exists( 'designsetgo_build_tax_query_entry' ) ) :
 		if ( empty( $entry['taxonomy'] ) || empty( $entry['terms'] ) ) {
 			return null;
 		}
+		$operator = $entry['operator'] ?? 'IN';
+		if ( ! in_array( $operator, array( 'IN', 'NOT IN', 'AND' ), true ) ) {
+			$operator = 'IN';
+		}
 		return array(
 			'taxonomy'         => sanitize_key( (string) $entry['taxonomy'] ),
 			'terms'            => array_map( 'absint', (array) $entry['terms'] ),
-			'operator'         => in_array( ( $entry['operator'] ?? 'IN' ), array( 'IN', 'NOT IN', 'AND' ), true ) ? $entry['operator'] : 'IN',
+			'operator'         => $operator,
 			'include_children' => isset( $entry['include_children'] ) ? (bool) $entry['include_children'] : true,
 		);
 	}
@@ -71,12 +75,23 @@ if ( ! function_exists( 'designsetgo_build_meta_query_entry' ) ) :
 		}
 		$valid_compare = array( '=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS' );
 		$valid_type    = array( 'CHAR', 'NUMERIC', 'DATE' );
-		return array(
+		$compare       = $entry['compare'] ?? '=';
+		if ( ! in_array( $compare, $valid_compare, true ) ) {
+			$compare = '=';
+		}
+		$type = $entry['type'] ?? 'CHAR';
+		if ( ! in_array( $type, $valid_type, true ) ) {
+			$type = 'CHAR';
+		}
+		$result = array(
 			'key'     => sanitize_text_field( (string) $entry['key'] ),
-			'value'   => sanitize_text_field( (string) ( $entry['value'] ?? '' ) ),
-			'compare' => in_array( ( $entry['compare'] ?? '=' ), $valid_compare, true ) ? $entry['compare'] : '=',
-			'type'    => in_array( ( $entry['type'] ?? 'CHAR' ), $valid_type, true ) ? $entry['type'] : 'CHAR',
+			'compare' => $compare,
+			'type'    => $type,
 		);
+		if ( ! in_array( $compare, array( 'EXISTS', 'NOT EXISTS' ), true ) ) {
+			$result['value'] = sanitize_text_field( (string) ( $entry['value'] ?? '' ) );
+		}
+		return $result;
 	}
 endif;
 
@@ -397,8 +412,12 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 					continue;
 				}
 
+				$column = $clause['column'] ?? 'post_date';
+				if ( ! in_array( $column, $valid_columns, true ) ) {
+					$column = 'post_date';
+				}
 				$entry = array(
-					'column'    => in_array( ( $clause['column'] ?? 'post_date' ), $valid_columns, true ) ? $clause['column'] : 'post_date',
+					'column'    => $column,
 					'inclusive' => ! empty( $clause['inclusive'] ),
 				);
 				if ( 'after' === $mode || 'between' === $mode ) {

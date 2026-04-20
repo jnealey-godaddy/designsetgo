@@ -30,4 +30,15 @@ describe( 'style-binding extension', () => {
 		expect( result.attributes ).toBeDefined();
 		expect( result.attributes.dsgoStyleBinding ).toBeDefined();
 	} );
+
+	it( 'does not add dsgoStyleBinding to BLOCKED block types', () => {
+		for ( const name of [ 'core/freeform', 'core/missing', 'core/template-part' ] ) {
+			const result = applyFilters(
+				'blocks.registerBlockType',
+				{ attributes: {} },
+				name
+			);
+			expect( result.attributes.dsgoStyleBinding ).toBeUndefined();
+		}
+	} );
 } );

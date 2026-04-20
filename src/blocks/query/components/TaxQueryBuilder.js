@@ -103,6 +103,7 @@ export default function TaxQueryBuilder( {
 										'Remove taxonomy filter',
 										'designsetgo'
 									) }
+									__next40pxDefaultSize
 								>
 									{ __( 'Remove', 'designsetgo' ) }
 								</Button>

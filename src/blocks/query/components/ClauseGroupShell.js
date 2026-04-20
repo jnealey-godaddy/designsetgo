@@ -73,6 +73,7 @@ export default function ClauseGroupShell( {
 						depth={ depth + 1 }
 						renderClause={ renderClause }
 						newClause={ newClause }
+						isAddDisabled={ isAddDisabled }
 					/>
 				) : (
 					renderClause( entry, idx, updateEntry, removeEntry )
@@ -83,7 +84,7 @@ export default function ClauseGroupShell( {
 				<Button variant="secondary" size="small" onClick={ addClause } disabled={ isAddDisabled } __next40pxDefaultSize>
 					{ __( '+ Clause', 'designsetgo' ) }
 				</Button>
-				<Button variant="secondary" size="small" onClick={ addGroup } __next40pxDefaultSize>
+				<Button variant="secondary" size="small" onClick={ addGroup } disabled={ isAddDisabled } __next40pxDefaultSize>
 					{ __( '+ Group', 'designsetgo' ) }
 				</Button>
 				{ onRemove && (
