@@ -56,24 +56,98 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 
 		$query = new WP_Query( $args );
 
-		$items_html = '';
-		$post_urls  = array();
+		// Determine whether grouped rendering is requested.
+		// Parse inner_html to split group-header blocks from the item template.
+		$group_header_blocks = array();
+		$item_template_html  = (string) $context['inner_html'];
+		if ( ! empty( $atts['groupBy'] ) && is_array( $atts['groupBy'] ) ) {
+			$parsed_inner = parse_blocks( $item_template_html );
+			$template_parts = array();
+			foreach ( $parsed_inner as $pb ) {
+				if ( empty( $pb['blockName'] ) ) {
+					continue;
+				}
+				if ( 'designsetgo/query-group-header' === $pb['blockName'] ) {
+					$group_header_blocks[] = $pb;
+				} else {
+					$template_parts[] = serialize_block( $pb );
+				}
+			}
+			if ( ! empty( $group_header_blocks ) ) {
+				$item_template_html = implode( '', $template_parts );
+			}
+		}
+
+		$use_groups = ! empty( $atts['groupBy'] ) && ! empty( $group_header_blocks );
+
+		$items_html    = '';
+		$post_urls     = array();
+		$collected_ids = array();
+
 		try {
 			while ( $query->have_posts() ) {
 				$query->the_post();
+				$post_id   = get_the_ID();
 				$post_urls[] = get_permalink();
-				$items_html .= designsetgo_query_render_item(
-					(string) $context['inner_html'],
-					array(
-						'postId'   => get_the_ID(),
-						'postType' => get_post_type(),
-					),
-					$atts['itemTagName']
-				);
+				if ( $use_groups ) {
+					$collected_ids[] = $post_id;
+				} else {
+					$items_html .= designsetgo_query_render_item(
+						$item_template_html,
+						array(
+							'postId'   => $post_id,
+							'postType' => get_post_type(),
+						),
+						$atts['itemTagName']
+					);
+				}
 			}
 		} finally {
 			wp_reset_postdata();
 			$post = $saved_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+		}
+
+		// If grouped, partition collected IDs and render per group.
+		if ( $use_groups && ! empty( $collected_ids ) ) {
+			require_once __DIR__ . '/render-helpers.php';
+			$groups = designsetgo_query_partition_items( $collected_ids, $atts['groupBy'] );
+			foreach ( $groups as $group ) {
+				// Render group header block(s) with group context.
+				$header_html_out = '';
+				foreach ( $group_header_blocks as $hb ) {
+					$header_block     = new WP_Block(
+						$hb,
+						array(
+							'designsetgo/queryId'    => sanitize_key( (string) ( $context['query_id'] ?? '' ) ),
+							'designsetgo/groupLabel' => (string) $group['label'],
+							'designsetgo/groupValue' => (string) $group['value'],
+						)
+					);
+					$header_html_out .= $header_block->render();
+				}
+				// Render items in this group using the stripped template.
+				$group_items_html = '';
+				foreach ( $group['ids'] as $gid ) {
+					$post_obj = get_post( $gid );
+					if ( ! $post_obj ) {
+						continue;
+					}
+					$group_items_html .= designsetgo_query_render_item(
+						$item_template_html,
+						array(
+							'postId'   => (int) $gid,
+							'postType' => $post_obj->post_type,
+						),
+						$atts['itemTagName']
+					);
+				}
+				$items_html .= sprintf(
+					'<section class="dsgo-query-group" data-dsgo-group-value="%s">%s%s</section>',
+					esc_attr( (string) $group['value'] ),
+					$header_html_out,     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- block render() output.
+					$group_items_html     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from designsetgo_query_render_item().
+				);
+			}
 		}
 
 		$state = array(

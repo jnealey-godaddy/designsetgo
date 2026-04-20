@@ -121,8 +121,66 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			'emitSchema'           => true,
 			'relationshipField'    => '',
 			'relationshipFallback' => 'empty', // empty | all | parent
+			'groupBy'              => null,
 		);
 		return wp_parse_args( $attributes, $defaults );
+	}
+
+	/**
+	 * Partition an array of post IDs into labelled groups for grouped rendering.
+	 *
+	 * Supported fields: 'taxonomy' (by term slug), 'meta' (by meta value),
+	 * 'date' (by Y, Y-m, or Y-m-d depending on $group_spec['key']).
+	 *
+	 * Posts with multiple terms (taxonomy field) appear in ALL matching groups.
+	 * Posts with no matching term land in the '__none__' / Uncategorized bucket.
+	 *
+	 * @param int[]  $post_ids   Ordered list of post IDs to partition.
+	 * @param array  $group_spec { field: string, key: string }
+	 * @return array[] Array of groups: each { label: string, value: string, ids: int[] }
+	 */
+	function designsetgo_query_partition_items( array $post_ids, array $group_spec ) {
+		if ( empty( $group_spec['field'] ) || empty( $group_spec['key'] ) ) {
+			return array( array( 'label' => '', 'value' => '', 'ids' => $post_ids ) );
+		}
+		$field = (string) $group_spec['field'];
+		$key   = (string) $group_spec['key'];
+
+		$groups = array();
+		foreach ( $post_ids as $pid ) {
+			$values = array();
+			$labels = array();
+			if ( 'taxonomy' === $field ) {
+				$terms = get_the_terms( $pid, $key );
+				if ( empty( $terms ) || is_wp_error( $terms ) ) {
+					$values = array( '__none__' );
+					$labels = array( __( 'Uncategorized', 'designsetgo' ) );
+				} else {
+					$values = wp_list_pluck( $terms, 'slug' );
+					$labels = wp_list_pluck( $terms, 'name' );
+				}
+			} elseif ( 'meta' === $field ) {
+				$v      = (string) get_post_meta( $pid, $key, true );
+				$values = array( $v );
+				$labels = array( $v );
+			} elseif ( 'date' === $field ) {
+				$d      = get_post_field( 'post_date', $pid );
+				$ts     = $d ? strtotime( $d ) : 0;
+				$format = 'Y-M-D' === $key ? 'Y-m-d' : ( 'Y-M' === $key ? 'Y-m' : 'Y' );
+				$values = array( gmdate( $format, $ts ) );
+				$labels = $values;
+			} else {
+				$values = array( '' );
+				$labels = array( '' );
+			}
+			foreach ( $values as $i => $v ) {
+				if ( ! isset( $groups[ $v ] ) ) {
+					$groups[ $v ] = array( 'label' => $labels[ $i ] ?? $v, 'value' => $v, 'ids' => array() );
+				}
+				$groups[ $v ]['ids'][] = $pid;
+			}
+		}
+		return array_values( $groups );
 	}
 
 	/**
