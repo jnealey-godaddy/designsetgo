@@ -175,6 +175,122 @@ class StyleBindingTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Password-protected posts must not leak meta values via style bindings.
+	 * Mirrors the gate the v2.4 block-bindings adapter applies.
+	 */
+	public function test_password_protected_post_blocks_resolution() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_status'   => 'publish',
+				'post_password' => 'secret',
+			)
+		);
+		update_post_meta( $post_id, 'brand_color', '#ff0000' );
+
+		$GLOBALS['designsetgo_parent_stack'] = array(
+			array( 'id' => $post_id, 'type' => 'post' ),
+		);
+
+		$block = $this->make_block(
+			array(
+				'dsgoStyleBinding' => array(
+					'--brand' => array(
+						'source' => 'designsetgo/post-meta',
+						'args'   => array( 'key' => 'brand_color' ),
+					),
+				),
+			)
+		);
+		$result = $this->sb->apply_style_bindings( '<div>X</div>', $block );
+
+		unset( $GLOBALS['designsetgo_parent_stack'] );
+
+		$this->assertStringNotContainsString( '#ff0000', $result );
+		$this->assertStringNotContainsString( '--brand', $result );
+	}
+
+	/**
+	 * Protected meta keys (prefixed with `_`) must be rejected.
+	 */
+	public function test_protected_meta_key_blocks_resolution() {
+		$post_id = self::factory()->post->create( array( 'post_status' => 'publish' ) );
+		update_post_meta( $post_id, '_internal_color', '#ff0000' );
+
+		$GLOBALS['designsetgo_parent_stack'] = array(
+			array( 'id' => $post_id, 'type' => 'post' ),
+		);
+
+		$block = $this->make_block(
+			array(
+				'dsgoStyleBinding' => array(
+					'--brand' => array(
+						'source' => 'designsetgo/post-meta',
+						'args'   => array( 'key' => '_internal_color' ),
+					),
+				),
+			)
+		);
+		$result = $this->sb->apply_style_bindings( '<div>X</div>', $block );
+
+		unset( $GLOBALS['designsetgo_parent_stack'] );
+
+		$this->assertStringNotContainsString( '#ff0000', $result );
+	}
+
+	/**
+	 * CSS values containing `{`, `}`, or `data:` are rejected as injection
+	 * vectors, in addition to `url(`, `expression(`, `javascript:`, and `;`.
+	 */
+	public function test_blocklist_rejects_braces_and_data_uri() {
+		$dangerous = array(
+			'red} body { display:none',
+			'expression(alert(1))',
+			'javascript:alert(1)',
+			'data:image/svg+xml;base64,PHN2Zy8+',
+			'red; display:none',
+			'{color:red}',
+		);
+		foreach ( $dangerous as $value ) {
+			add_filter( 'designsetgo_style_binding_resolve', fn() => $value, 10, 3 );
+			$block = $this->make_block(
+				array(
+					'dsgoStyleBinding' => array(
+						'--brand' => array(
+							'source' => 'designsetgo/post-meta',
+							'args'   => array( 'key' => 'c' ),
+						),
+					),
+				)
+			);
+			$result = $this->sb->apply_style_bindings( '<div>X</div>', $block );
+			remove_all_filters( 'designsetgo_style_binding_resolve' );
+			$this->assertStringNotContainsString( $value, $result, "Should reject: $value" );
+		}
+	}
+
+	/**
+	 * Vendor-prefixed and digit-bearing CSS property names are accepted.
+	 * Regression: previous regex excluded `-webkit-text-fill-color` and
+	 * any property with a digit.
+	 */
+	public function test_vendor_prefixed_and_digit_props_accepted() {
+		add_filter( 'designsetgo_style_binding_resolve', fn() => 'red', 10, 3 );
+		$block = $this->make_block(
+			array(
+				'dsgoStyleBinding' => array(
+					'-webkit-text-fill-color' => array(
+						'source' => 'designsetgo/post-meta',
+						'args'   => array( 'key' => 'c' ),
+					),
+				),
+			)
+		);
+		$result = $this->sb->apply_style_bindings( '<div>X</div>', $block );
+		remove_all_filters( 'designsetgo_style_binding_resolve' );
+		$this->assertStringContainsString( '-webkit-text-fill-color:red', $result );
+	}
+
+	/**
 	 * Existing style attribute is preserved when new styles are injected.
 	 */
 	public function test_existing_style_attribute_is_preserved() {

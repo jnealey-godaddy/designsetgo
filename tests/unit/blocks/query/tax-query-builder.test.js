@@ -5,6 +5,10 @@ import '@testing-library/jest-dom';
 
 jest.mock('@wordpress/i18n', () => ({
 	__: (text) => text,
+	sprintf: (fmt, ...args) => {
+		let i = 0;
+		return fmt.replace(/%[sd]/g, () => String(args[i++] ?? ''));
+	},
 }));
 
 // useSelect is called twice per render: once in TaxQueryBuilder (getTaxonomies)
@@ -173,16 +177,16 @@ describe('TaxQueryBuilder', () => {
 	it('renders with no clauses — shows + Clause and + Group buttons', () => {
 		renderWith();
 		expect(
-			screen.getByRole('button', { name: /\+ clause/i })
+			screen.getByRole('button', { name: /add clause/i })
 		).toBeInTheDocument();
 		expect(
-			screen.getByRole('button', { name: /\+ group/i })
+			screen.getByRole('button', { name: /add group/i })
 		).toBeInTheDocument();
 	});
 
 	it('+ Clause button is enabled when relevant taxonomies exist', () => {
 		renderWith();
-		const addBtn = screen.getByRole('button', { name: /\+ clause/i });
+		const addBtn = screen.getByRole('button', { name: /add clause/i });
 		expect(addBtn).not.toBeDisabled();
 	});
 
@@ -254,7 +258,7 @@ describe('TaxQueryBuilder', () => {
 
 	it('addClause seeds include_children: true on the new clause', () => {
 		const { setAttributes } = renderWith();
-		const addBtn = screen.getByRole('button', { name: /\+ clause/i });
+		const addBtn = screen.getByRole('button', { name: /add clause/i });
 		fireEvent.click(addBtn);
 		expect(setAttributes).toHaveBeenCalledTimes(1);
 		const call = setAttributes.mock.calls[0][0];
@@ -301,7 +305,7 @@ describe('TaxQueryBuilder', () => {
 				clientId="test"
 			/>
 		);
-		fireEvent.click( getByRole( 'button', { name: /\+ group/i } ) );
+		fireEvent.click( getByRole( 'button', { name: /add group/i } ) );
 		const call = setAttributes.mock.calls[0][0];
 		expect( call.taxQuery.clauses[0] ).toHaveProperty( 'clauses' );
 		expect( call.taxQuery.clauses[0].relation ).toBe( 'AND' );

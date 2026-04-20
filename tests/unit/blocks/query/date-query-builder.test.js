@@ -5,6 +5,10 @@ import '@testing-library/jest-dom';
 
 jest.mock( '@wordpress/i18n', () => ( {
 	__: ( text ) => text,
+	sprintf: ( fmt, ...args ) => {
+		let i = 0;
+		return fmt.replace( /%[sd]/g, () => String( args[ i++ ] ?? '' ) );
+	},
 } ) );
 
 jest.mock( '@wordpress/data', () => ( {

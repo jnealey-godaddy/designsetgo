@@ -397,6 +397,98 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'active', $args['meta_query'][1]['key'] );
 	}
 
+	/**
+	 * Date query supports `before`-only mode (upper bound, no after).
+	 * Regression: missing branch coverage in the inlined date builder.
+	 */
+	public function test_date_query_before_builds_correctly() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'dateQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'column'    => 'post_modified',
+					'mode'      => 'before',
+					'after'     => '',
+					'before'    => '2025-01-01',
+					'inclusive' => true,
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertArrayHasKey( 'date_query', $args );
+		$this->assertEquals( 'post_modified', $args['date_query'][0]['column'] );
+		$this->assertEquals( '2025-01-01', $args['date_query'][0]['before'] );
+		$this->assertArrayNotHasKey( 'after', $args['date_query'][0] );
+	}
+
+	/**
+	 * Single-child nested groups are unwrapped to the bare child to avoid
+	 * WP_Query's `_doing_it_wrong()` notice when a tax_query group has
+	 * `relation` set with only one sub-clause.
+	 */
+	public function test_single_child_tax_group_is_unwrapped() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'   => 'posts',
+			'taxQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'relation' => 'OR',
+					'clauses'  => [ [
+						'taxonomy' => 'category',
+						'terms'    => [ 1 ],
+						'operator' => 'IN',
+					] ],
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		// The single-child OR group should collapse to a bare leaf clause.
+		$this->assertArrayHasKey( 'tax_query', $args );
+		$this->assertSame( 'category', $args['tax_query'][0]['taxonomy'] );
+		$this->assertArrayNotHasKey( 'relation', $args['tax_query'][0] );
+	}
+
+	/**
+	 * Empty groups (all-invalid leaves) are pruned from the WP_Query args
+	 * entirely instead of emitting a `relation`-only stub.
+	 */
+	public function test_empty_meta_group_is_pruned() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'metaQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'relation' => 'OR',
+					'clauses'  => [
+						[ 'key' => '', 'compare' => '=', 'value' => 'a', 'type' => 'CHAR' ],
+						[ 'key' => '', 'compare' => '=', 'value' => 'b', 'type' => 'CHAR' ],
+					],
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertArrayNotHasKey( 'meta_query', $args );
+	}
+
 	public function test_child_blocks_resolve_per_item_context() {
 		$ids   = array();
 		$ids[] = self::factory()->post->create( array( 'post_title' => 'Alpha', 'post_status' => 'publish' ) );

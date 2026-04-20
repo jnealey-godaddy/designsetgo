@@ -41,8 +41,9 @@ class StyleBinding {
 
 		$styles = array();
 		foreach ( $binding as $prop => $config ) {
-			// Validate CSS property: custom property or standard property.
-			if ( ! is_string( $prop ) || ! preg_match( '/^--[a-zA-Z][a-zA-Z0-9\-_]*$|^[a-z][a-z\-]*$/', $prop ) ) {
+			// Validate CSS property: custom property (--foo) or standard property
+			// including vendor prefix (-webkit-…) and digits (line2-color etc.).
+			if ( ! is_string( $prop ) || ! preg_match( '/^--[a-zA-Z][a-zA-Z0-9\-_]*$|^-?[a-z][a-z0-9\-]*$/', $prop ) ) {
 				continue;
 			}
 
@@ -73,12 +74,13 @@ class StyleBinding {
 				continue;
 			}
 
-			// Reject values that could execute code.
-			if ( preg_match( '/url\s*\(|expression\s*\(|javascript:/i', $value ) ) {
+			// Reject values that could execute code or break out of the
+			// declaration: url(), expression(), javascript:/data: schemes,
+			// CSS curly braces, and embedded semicolons.
+			if ( preg_match( '/url\s*\(|expression\s*\(|javascript:|data:/i', $value ) ) {
 				continue;
 			}
-			// Reject values containing semicolons to prevent CSS declaration injection.
-			if ( str_contains( $value, ';' ) ) {
+			if ( false !== strpbrk( $value, ';{}' ) ) {
 				continue;
 			}
 
@@ -113,6 +115,23 @@ class StyleBinding {
 		$key     = sanitize_text_field( (string) ( $args['key'] ?? '' ) );
 
 		if ( ! $key || ! $post_id ) {
+			return null;
+		}
+
+		// Apply the same security gates the v2.4 block bindings adapter uses
+		// (see includes/blocks/class-query-bindings-helpers.php) so style
+		// bindings cannot leak data block bindings would withhold.
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return null;
+		}
+		if ( post_password_required( $post ) ) {
+			return null;
+		}
+		if ( ! is_post_publicly_viewable( $post ) && ! current_user_can( 'read_post', $post_id ) ) {
+			return null;
+		}
+		if ( is_protected_meta( $key, 'post' ) ) {
 			return null;
 		}
 

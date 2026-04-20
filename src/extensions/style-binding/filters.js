@@ -1,5 +1,5 @@
 import { addFilter } from '@wordpress/hooks';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -97,6 +97,11 @@ const withStyleBindingInspector = createHigherOrderComponent( ( BlockEdit ) => {
 										isDestructive
 										size="small"
 										onClick={ () => removeEntry( prop ) }
+										aria-label={ sprintf(
+											/* translators: %s: CSS property name being unbound. */
+											__( 'Remove style binding for "%s"', 'designsetgo' ),
+											prop
+										) }
 										style={ { alignSelf: 'flex-end' } }
 									>
 										{ __( 'Remove', 'designsetgo' ) }

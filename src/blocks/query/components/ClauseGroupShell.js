@@ -1,4 +1,4 @@
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { Button, SelectControl, __experimentalVStack as VStack } from '@wordpress/components';
 
 /**
@@ -44,10 +44,25 @@ export default function ClauseGroupShell( {
 			clauses: [ ...clauses, { relation: 'AND', clauses: [ { ...newClause } ] } ],
 		} );
 
+	const groupLabel =
+		depth === 0
+			? __( 'top level', 'designsetgo' )
+			: sprintf(
+				/* translators: %d: nesting depth, where 1 is the first nested group. */
+				__( 'nested group level %d', 'designsetgo' ),
+				depth
+			);
+
 	return (
 		<VStack
 			spacing={ 2 }
 			className={ `dsgo-clause-group dsgo-clause-group--depth-${ depth }` }
+			role="group"
+			aria-label={ sprintf(
+				/* translators: %s: human label for the group's nesting depth. */
+				__( 'Filter clauses, %s', 'designsetgo' ),
+				groupLabel
+			) }
 			style={ depth > 0 ? { paddingLeft: '12px', borderLeft: '2px solid var(--wp-admin-theme-color-darker-10, #ccc)' } : undefined }
 		>
 			{ ( clauses.length > 1 || depth > 0 ) && (
@@ -81,14 +96,47 @@ export default function ClauseGroupShell( {
 			) }
 
 			<div className="dsgo-clause-group__actions">
-				<Button variant="secondary" size="small" onClick={ addClause } disabled={ isAddDisabled } __next40pxDefaultSize>
+				<Button
+					variant="secondary"
+					size="small"
+					onClick={ addClause }
+					disabled={ isAddDisabled }
+					aria-label={ sprintf(
+						/* translators: %s: human label for the group's nesting depth. */
+						__( 'Add clause to %s', 'designsetgo' ),
+						groupLabel
+					) }
+					__next40pxDefaultSize
+				>
 					{ __( '+ Clause', 'designsetgo' ) }
 				</Button>
-				<Button variant="secondary" size="small" onClick={ addGroup } disabled={ isAddDisabled } __next40pxDefaultSize>
+				<Button
+					variant="secondary"
+					size="small"
+					onClick={ addGroup }
+					disabled={ isAddDisabled }
+					aria-label={ sprintf(
+						/* translators: %s: human label for the group's nesting depth. */
+						__( 'Add group inside %s', 'designsetgo' ),
+						groupLabel
+					) }
+					__next40pxDefaultSize
+				>
 					{ __( '+ Group', 'designsetgo' ) }
 				</Button>
 				{ onRemove && (
-					<Button variant="tertiary" isDestructive size="small" onClick={ onRemove } __next40pxDefaultSize>
+					<Button
+						variant="tertiary"
+						isDestructive
+						size="small"
+						onClick={ onRemove }
+						aria-label={ sprintf(
+							/* translators: %s: human label for the group's nesting depth. */
+							__( 'Remove %s', 'designsetgo' ),
+							groupLabel
+						) }
+						__next40pxDefaultSize
+					>
 						{ __( 'Remove group', 'designsetgo' ) }
 					</Button>
 				) }

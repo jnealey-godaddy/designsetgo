@@ -1,5 +1,5 @@
 /* eslint-disable @wordpress/no-unsafe-wp-apis -- experimental layout/control primitives intentionally used; stable replacements not yet available */
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	Button,
 	SelectControl,
@@ -39,7 +39,11 @@ export default function MetaQueryBuilder( {
 	setAttributes,
 	clientId,
 } ) {
-	const metaQuery = attributes.metaQuery ?? EMPTY_DEFAULT;
+	const rawMetaQuery = attributes.metaQuery ?? EMPTY_DEFAULT;
+	const metaQuery = {
+		relation: rawMetaQuery.relation ?? 'AND',
+		clauses: Array.isArray( rawMetaQuery.clauses ) ? rawMetaQuery.clauses : [],
+	};
 
 	const renderClause = ( clause, idx, updateEntry, removeEntry ) => {
 		const hideValue =
@@ -84,6 +88,11 @@ export default function MetaQueryBuilder( {
 					isDestructive
 					variant="tertiary"
 					onClick={ () => removeEntry( idx ) }
+					aria-label={ sprintf(
+						/* translators: %s: meta key being removed, or "(empty)" when blank. */
+						__( 'Remove meta filter for "%s"', 'designsetgo' ),
+						clause.key || __( '(empty)', 'designsetgo' )
+					) }
 					__next40pxDefaultSize
 				>
 					{ __( 'Remove', 'designsetgo' ) }

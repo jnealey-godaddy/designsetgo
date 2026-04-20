@@ -20,16 +20,23 @@ if ( ! function_exists( 'designsetgo_build_tax_query_entry' ) ) :
 	function designsetgo_build_tax_query_entry( array $entry ) {
 		if ( isset( $entry['clauses'] ) ) {
 			// Nested group.
-			$sub = array(
-				'relation' => ( 'OR' === ( $entry['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
-			);
+			$relation = ( 'OR' === ( $entry['relation'] ?? 'AND' ) ) ? 'OR' : 'AND';
+			$children = array();
 			foreach ( (array) $entry['clauses'] as $child ) {
 				$built = designsetgo_build_tax_query_entry( $child );
 				if ( null !== $built ) {
-					$sub[] = $built;
+					$children[] = $built;
 				}
 			}
-			return count( $sub ) > 1 ? $sub : null;
+			if ( empty( $children ) ) {
+				return null;
+			}
+			// WP_Query triggers _doing_it_wrong when a tax_query group carries
+			// `relation` with a single child — unwrap to the bare child.
+			if ( 1 === count( $children ) ) {
+				return $children[0];
+			}
+			return array_merge( array( 'relation' => $relation ), $children );
 		}
 		// Leaf clause.
 		if ( empty( $entry['taxonomy'] ) || empty( $entry['terms'] ) ) {
@@ -58,16 +65,23 @@ if ( ! function_exists( 'designsetgo_build_meta_query_entry' ) ) :
 	function designsetgo_build_meta_query_entry( array $entry ) {
 		if ( isset( $entry['clauses'] ) ) {
 			// Nested group.
-			$sub = array(
-				'relation' => ( 'OR' === ( $entry['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
-			);
+			$relation = ( 'OR' === ( $entry['relation'] ?? 'AND' ) ) ? 'OR' : 'AND';
+			$children = array();
 			foreach ( (array) $entry['clauses'] as $child ) {
 				$built = designsetgo_build_meta_query_entry( $child );
 				if ( null !== $built ) {
-					$sub[] = $built;
+					$children[] = $built;
 				}
 			}
-			return count( $sub ) > 1 ? $sub : null;
+			if ( empty( $children ) ) {
+				return null;
+			}
+			// Unwrap single-child groups to avoid WP_Meta_Query's
+			// `relation`-with-one-child _doing_it_wrong notice.
+			if ( 1 === count( $children ) ) {
+				return $children[0];
+			}
+			return array_merge( array( 'relation' => $relation ), $children );
 		}
 		// Leaf clause.
 		if ( empty( $entry['key'] ) ) {
@@ -139,21 +153,32 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			$args = apply_filters( 'designsetgo/query/' . $query_id . '/args', $args, $atts, $context );
 		}
 
-		$t_start     = microtime( true );
-		$query       = new WP_Query( $args );
-		$last_sql    = $GLOBALS['wpdb']->last_query ?? '';
-		$duration_ms = ( microtime( true ) - $t_start ) * 1000;
+		// Capture render telemetry only when Query Monitor is loaded — otherwise
+		// the action exposes raw SQL to any third-party callback on every public
+		// page render, which is data we don't want to broadcast.
+		if ( defined( 'QM_VERSION' ) ) {
+			$t_start     = microtime( true );
+			$query       = new WP_Query( $args );
+			$duration_ms = ( microtime( true ) - $t_start ) * 1000;
 
-		$capture = array(
-			'query_id'    => $atts['queryId'] ?? '',
-			'source'      => $atts['source'] ?? 'posts',
-			'wp_args'     => $args,
-			'found_posts' => $query->found_posts,
-			'sql'         => $last_sql,
-			'filters'     => array(),
-			'duration_ms' => round( $duration_ms, 2 ),
-		);
-		do_action( 'designsetgo_query_did_render', $capture );
+			do_action(
+				'designsetgo_query_did_render',
+				array(
+					'query_id'    => $atts['queryId'] ?? '',
+					'source'      => $atts['source'] ?? 'posts',
+					'wp_args'     => $args,
+					'found_posts' => $query->found_posts,
+					// $query->request is the actual posts SELECT WP_Query just
+					// ran; $wpdb->last_query at this point would be the
+					// trailing FOUND_ROWS()/COUNT instead.
+					'sql'         => (string) ( $query->request ?? '' ),
+					'filters'     => array(),
+					'duration_ms' => round( $duration_ms, 2 ),
+				)
+			);
+		} else {
+			$query = new WP_Query( $args );
+		}
 
 		// Determine whether grouped rendering is requested.
 		// Parse inner_html to split group-header blocks from the item template.

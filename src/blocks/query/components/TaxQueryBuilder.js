@@ -25,7 +25,11 @@ export default function TaxQueryBuilder( {
 	clientId,
 } ) {
 	const { postType } = attributes;
-	const taxQuery = attributes.taxQuery ?? { relation: 'AND', clauses: [] };
+	const rawTaxQuery = attributes.taxQuery ?? { relation: 'AND', clauses: [] };
+	const taxQuery = {
+		relation: rawTaxQuery.relation ?? 'AND',
+		clauses: Array.isArray( rawTaxQuery.clauses ) ? rawTaxQuery.clauses : [],
+	};
 
 	const taxonomies = useSelect(
 		( select ) => select( coreStore ).getTaxonomies( { per_page: -1 } ) || [],

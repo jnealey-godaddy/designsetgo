@@ -41,7 +41,13 @@ export default function DateQueryBuilder({
 	setAttributes,
 	clientId,
 }) {
-	const dateQuery = attributes.dateQuery ?? EMPTY_DEFAULT;
+	// Normalise both `dateQuery` and `dateQuery.clauses` so a malformed import
+	// (e.g. `{ relation: 'AND' }` with no clauses) doesn't crash the builder.
+	const rawDateQuery = attributes.dateQuery ?? EMPTY_DEFAULT;
+	const dateQuery    = {
+		relation: rawDateQuery.relation ?? 'AND',
+		clauses: Array.isArray(rawDateQuery.clauses) ? rawDateQuery.clauses : [],
+	};
 
 	const updateClause = (i, patch) => {
 		const next = [...dateQuery.clauses];

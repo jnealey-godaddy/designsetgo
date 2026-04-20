@@ -5,6 +5,10 @@ import '@testing-library/jest-dom';
 
 jest.mock('@wordpress/i18n', () => ({
 	__: (text) => text,
+	sprintf: (fmt, ...args) => {
+		let i = 0;
+		return fmt.replace(/%[sd]/g, () => String(args[i++] ?? ''));
+	},
 }));
 
 // MetaQueryBuilder has no coreStore lookups — useSelect is not used.
@@ -128,7 +132,7 @@ describe('MetaQueryBuilder', () => {
 	it('renders + Clause button when no clauses', () => {
 		renderWith();
 		expect(
-			screen.getByRole('button', { name: /\+ clause/i })
+			screen.getByRole('button', { name: /add clause/i })
 		).toBeInTheDocument();
 	});
 
@@ -201,8 +205,10 @@ describe('MetaQueryBuilder', () => {
 				],
 			},
 		});
+		// Each Remove button now carries a per-clause aria-label like
+		// `Remove meta filter for "field_a"`.
 		const removeButtons = screen.getAllByRole('button', {
-			name: /^remove$/i,
+			name: /remove meta filter for/i,
 		});
 		expect(removeButtons).toHaveLength(2);
 	});
@@ -272,7 +278,7 @@ describe('MetaQueryBuilder', () => {
 				clientId="test"
 			/>
 		);
-		fireEvent.click(getByRole('button', { name: /\+ group/i }));
+		fireEvent.click(getByRole('button', { name: /add group/i }));
 		const call = setAttributes.mock.calls[0][0];
 		expect(call.metaQuery.clauses[0]).toHaveProperty('clauses');
 	});
