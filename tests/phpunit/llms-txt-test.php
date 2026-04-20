@@ -16,6 +16,7 @@ use DesignSetGo\LLMS_Txt\Controller;
 use DesignSetGo\LLMS_Txt\REST_Controller;
 use DesignSetGo\LLMS_Txt\Generator;
 use DesignSetGo\LLMS_Txt\File_Manager;
+use DesignSetGo\LLMS_Txt\Negotiation_Handler;
 use DesignSetGo\Markdown\Converter;
 use DesignSetGo\Admin\Settings;
 
@@ -1022,5 +1023,119 @@ class Test_Markdown_Converter extends WP_UnitTestCase {
 		// Should escape special characters.
 		$this->assertStringContainsString( '\\*stars\\*', $markdown );
 		$this->assertStringContainsString( '\\[brackets\\]', $markdown );
+	}
+
+	/**
+	 * `Accept: text/markdown` alone selects markdown.
+	 */
+	public function test_negotiation_markdown_only_selects_markdown() {
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( 'text/markdown' ) );
+	}
+
+	/**
+	 * A browser-style Accept (html first) resolves to html.
+	 */
+	public function test_negotiation_browser_accept_selects_html() {
+		$browser = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
+		$this->assertSame( 'html', Negotiation_Handler::preferred_type( $browser ) );
+	}
+
+	/**
+	 * When markdown outranks html via q-value, markdown wins.
+	 */
+	public function test_negotiation_q_values_prefer_markdown() {
+		$accept = 'text/html;q=0.5, text/markdown;q=1.0';
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( $accept ) );
+	}
+
+	/**
+	 * When html outranks markdown via q-value, html wins.
+	 */
+	public function test_negotiation_q_values_prefer_html() {
+		$accept = 'text/markdown;q=0.5, text/html;q=0.9';
+		$this->assertSame( 'html', Negotiation_Handler::preferred_type( $accept ) );
+	}
+
+	/**
+	 * Tie between html and markdown goes to html (safe default for browsers).
+	 */
+	public function test_negotiation_tie_prefers_html() {
+		$this->assertSame( 'html', Negotiation_Handler::preferred_type( 'text/html, text/markdown' ) );
+	}
+
+	/**
+	 * `*\/*` accepts everything — html wins by default tiebreak.
+	 */
+	public function test_negotiation_wildcard_prefers_html() {
+		$this->assertSame( 'html', Negotiation_Handler::preferred_type( '*/*' ) );
+	}
+
+	/**
+	 * RFC 7231 §5.3.2: an explicit media-range overrides a wildcard's q-value.
+	 * `Accept: *\/*;q=0.9, text/html;q=0.5` should resolve to markdown
+	 * (markdown from wildcard = 0.9, html explicit = 0.5).
+	 */
+	public function test_negotiation_explicit_overrides_wildcard() {
+		$accept = '*/*;q=0.9, text/html;q=0.5';
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( $accept ) );
+	}
+
+	/**
+	 * An explicit `text/markdown` q-value must not be bumped by a wildcard.
+	 * `text/markdown;q=0.3, *\/*;q=0.9` → markdown explicit at 0.3, html
+	 * via wildcard at 0.9 → html wins.
+	 */
+	public function test_negotiation_wildcard_does_not_raise_explicit() {
+		$accept = 'text/markdown;q=0.3, */*;q=0.9';
+		$this->assertSame( 'html', Negotiation_Handler::preferred_type( $accept ) );
+	}
+
+	/**
+	 * An Accept that lists only unsupported types returns 'none' so the
+	 * handler can emit 406.
+	 */
+	public function test_negotiation_unsupported_only_is_none() {
+		$this->assertSame( 'none', Negotiation_Handler::preferred_type( 'application/pdf' ) );
+		$this->assertSame( 'none', Negotiation_Handler::preferred_type( 'image/png, application/json' ) );
+	}
+
+	/**
+	 * `q=0` is an explicit rejection — a markdown-only Accept with q=0
+	 * should not be treated as a markdown preference.
+	 */
+	public function test_negotiation_q_zero_is_rejection() {
+		$this->assertSame( 'none', Negotiation_Handler::preferred_type( 'text/markdown;q=0' ) );
+		$this->assertSame( 'html', Negotiation_Handler::preferred_type( 'text/html, text/markdown;q=0' ) );
+	}
+
+	/**
+	 * Parameter ordering and whitespace shouldn't break parsing.
+	 */
+	public function test_negotiation_parses_parameters_loosely() {
+		$accept = '  text/markdown ;  q=0.9 ,text/html;charset=utf-8;q=0.5';
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( $accept ) );
+	}
+
+	/**
+	 * Empty header resolves to 'none' — caller treats it as a no-op.
+	 */
+	public function test_negotiation_empty_accept_is_none() {
+		$this->assertSame( 'none', Negotiation_Handler::preferred_type( '' ) );
+	}
+
+	/**
+	 * Malformed q-values (non-numeric, out-of-range) should be treated as
+	 * "missing" and default to 1.0 — not as explicit rejections that would
+	 * silently flip a positive preference to 'none'.
+	 */
+	public function test_negotiation_malformed_q_defaults_to_one() {
+		// `q=abc` is invalid; markdown should still count at q=1.0.
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( 'text/markdown;q=abc, text/html;q=0.9' ) );
+
+		// `q=1.5` is out of range; treat as 1.0 (clamp).
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( 'text/markdown;q=1.5, text/html;q=0.9' ) );
+
+		// A solo markdown with malformed q must NOT become a 406.
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( 'text/markdown;q=abc' ) );
 	}
 }

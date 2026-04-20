@@ -86,18 +86,27 @@ class Controller {
 	private $conflict_detector;
 
 	/**
+	 * Per-URL content-negotiation handler.
+	 *
+	 * @var Negotiation_Handler
+	 */
+	private $negotiation_handler;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		// Initialize components.
-		$this->file_manager      = new File_Manager();
-		$this->generator         = new Generator( $this->file_manager );
-		$this->conflict_detector = new Conflict_Detector();
-		$this->rest_controller   = new REST_Controller(
+		$this->file_manager        = new File_Manager();
+		$this->generator           = new Generator( $this->file_manager );
+		$this->conflict_detector   = new Conflict_Detector();
+		$this->rest_controller     = new REST_Controller(
 			$this->file_manager,
 			$this->generator,
 			$this->conflict_detector
 		);
+		$this->negotiation_handler = new Negotiation_Handler( $this->file_manager, $this->generator );
+		$this->negotiation_handler->register();
 
 		// Register hooks.
 		add_action( 'init', array( $this, 'add_rewrite_rule' ) );

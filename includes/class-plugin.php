@@ -573,6 +573,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-generator.php';
 		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-conflict-detector.php';
 		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-rest-controller.php';
+		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-negotiation-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-controller.php';
 
 		// Markdown converter classes.
