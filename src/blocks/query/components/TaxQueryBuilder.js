@@ -36,7 +36,7 @@ export default function TaxQueryBuilder( {
 
 	return (
 		<DsgoInspectorPanel
-			title={ __( 'Settings', 'designsetgo' ) }
+			title={ __( 'Taxonomy filters', 'designsetgo' ) }
 			panelName="settings"
 			panelId={ clientId }
 			resetAll={ () =>

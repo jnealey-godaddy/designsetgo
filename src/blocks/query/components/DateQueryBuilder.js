@@ -69,7 +69,7 @@ export default function DateQueryBuilder({
 
 	return (
 		<DsgoInspectorPanel
-			title={__('Settings', 'designsetgo')}
+			title={__('Date filters', 'designsetgo')}
 			panelName="settings"
 			panelId={clientId}
 			resetAll={() => setAttributes({ dateQuery: EMPTY_DEFAULT })}

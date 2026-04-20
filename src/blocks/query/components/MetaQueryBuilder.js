@@ -94,7 +94,7 @@ export default function MetaQueryBuilder( {
 
 	return (
 		<DsgoInspectorPanel
-			title={ __( 'Settings', 'designsetgo' ) }
+			title={ __( 'Meta filters', 'designsetgo' ) }
 			panelName="settings"
 			panelId={ clientId }
 			resetAll={ () => setAttributes( { metaQuery: EMPTY_DEFAULT } ) }
