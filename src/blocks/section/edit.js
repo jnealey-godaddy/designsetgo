@@ -219,12 +219,18 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 			return;
 		}
 
+		// Default padding is stored in preset-reference format ("var:preset|spacing|50"),
+		// not the CSS-resolved format. Match against both so the check works regardless
+		// of how WordPress serializes the value.
 		const currentPadding = attributes.style?.spacing?.padding;
+		const isDefault = (value, slug) =>
+			value === `var:preset|spacing|${slug}` ||
+			value === `var(--wp--preset--spacing--${slug})`;
 		const hasDefaultPadding =
-			currentPadding?.top === 'var(--wp--preset--spacing--50)' &&
-			currentPadding?.bottom === 'var(--wp--preset--spacing--50)' &&
-			currentPadding?.left === 'var(--wp--preset--spacing--30)' &&
-			currentPadding?.right === 'var(--wp--preset--spacing--30)';
+			isDefault(currentPadding?.top, '50') &&
+			isDefault(currentPadding?.bottom, '50') &&
+			isDefault(currentPadding?.left, '30') &&
+			isDefault(currentPadding?.right, '30');
 
 		if (hasDefaultPadding) {
 			setAttributes({
