@@ -31,6 +31,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### New Blocks
 - **Fifty Fifty** - Full-width 50/50 split layout with edge-to-edge media on one side and constrained content on the other — includes media position toggle (left/right), focal point picker, configurable min height, content vertical alignment, and mobile-responsive stacking
 
+## [2.3.0] - 2026-04-19
+
+### Added
+- **Dynamic Query — Relationship source** - New `source: 'relationship'` on the Dynamic Query block reads a parent-context field (meta or ACF relationship) and iterates the referenced posts via `post__in`; configurable fallback when no IDs are resolved (render nothing, all posts, or the parent item)
+- **Dynamic Query — Nested loops with parent context** - Outer Query's current item now flows into inner Queries via the `designsetgo/parentItem` block context; DSGo bindings (`designsetgo/post-meta`, `designsetgo/acf`) accept a new optional `scope` arg of `'self'` (default), `'parent'`, or `'root'` — reading from a parent-stack maintained by `designsetgo_query_render_item()`
+- **Dynamic Query — Conditional inner-block visibility** - Every block now carries a `dsgoVisibility` attribute with an inspector panel under Advanced → Visibility. Rule types: meta / taxonomy / index / auth, combined with AND/OR relations and ops (`equals`, `not_equals`, `contains`, `gt`, `lt`, `empty`, `not_empty`, `has`, `not_has`). Editor previews mirror server-side evaluation so authors see what will ship
+- **Dynamic Query — Group-by partitioning** - New `groupBy` attribute on the Query block partitions iterated items by taxonomy / meta / date (with year / year-month / year-month-day precision). New sibling block `designsetgo/query-group-header` renders once per group inside a `<section class="dsgo-query-group">` wrapper
+
+### Changed
+- `designsetgo/post-meta` and `designsetgo/acf` binding sources accept an optional `scope` arg — defaults to `'self'`; existing bindings unchanged
+
+### Extension points
+- `designsetgo_visibility_rule` filter — add custom rule types by returning a bool from `($match, $rule, $context) → bool|null`
+- `$GLOBALS['designsetgo_parent_stack']` — ordered list of `{ postId, postType }` contexts available during any `render_block` hook fired inside a query item
+- `designsetgo_query_partition_items( $post_ids, $group_spec )` — public PHP helper for custom group-by integrations
+
+### Migration
+No breaking changes. All new attributes default to `null` / `'self'`; existing block markup renders identically.
+
 ## [2.0.0] - 2026-02-08
 
 ### New Blocks
