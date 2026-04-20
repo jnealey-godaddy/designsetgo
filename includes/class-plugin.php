@@ -531,6 +531,8 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-metabox.php';
 		\DesignSetGo\Blocks\Query\MetaBoxBindings::bootstrap();
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-pods.php';
+		\DesignSetGo\Blocks\Query\PodsBindings::bootstrap();
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-hooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-rebuilder.php';
