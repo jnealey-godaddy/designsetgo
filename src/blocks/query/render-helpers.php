@@ -266,12 +266,23 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 * @return string
 	 */
 	function designsetgo_query_render_item( $inner_html, array $item_context, $item_tag ) {
+		// Ensure BlockVisibility is available when this file is required directly
+		// (e.g. in integration tests) before the plugin bootstrap has run.
+		if ( ! class_exists( '\\DesignSetGo\\BlockVisibility' ) ) {
+			require_once DESIGNSETGO_PATH . 'includes/class-block-visibility.php';
+		}
+
 		$tag = in_array( $item_tag, array( 'li', 'div', 'article' ), true ) ? $item_tag : 'li';
 
 		$html   = '';
 		$parsed = parse_blocks( $inner_html );
 		foreach ( $parsed as $parsed_block ) {
 			if ( empty( $parsed_block['blockName'] ) ) {
+				continue;
+			}
+			// Skip blocks whose dsgoVisibility rules don't match the current item context.
+			$visibility = isset( $parsed_block['attrs']['dsgoVisibility'] ) ? $parsed_block['attrs']['dsgoVisibility'] : null;
+			if ( ! \DesignSetGo\BlockVisibility::matches( $visibility, $item_context ) ) {
 				continue;
 			}
 			// WP_Block's constructor signature is ( $block, $available_context, $registry ).
