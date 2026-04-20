@@ -527,6 +527,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-submissions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-modal-hooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-helpers.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-hooks.php';
