@@ -28,9 +28,12 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 			return array( 'html' => '', 'totalPages' => 0, 'totalItems' => 0 );
 		}
 
-		$parent_stack = isset( $context['parent_stack'] ) && is_array( $context['parent_stack'] )
-			? $context['parent_stack']
-			: array();
+		$parent_stack = array();
+		if ( isset( $context['parent_stack'] ) && is_array( $context['parent_stack'] ) && ! empty( $context['parent_stack'] ) ) {
+			$parent_stack = $context['parent_stack'];
+		} elseif ( isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ) {
+			$parent_stack = $GLOBALS['designsetgo_parent_stack'];
+		}
 		$parent = empty( $parent_stack ) ? null : end( $parent_stack );
 
 		$parent_post_id = 0;
@@ -121,10 +124,13 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 		}
 
 		// 'parent' fallback: render a single item using the parent post itself.
-		$parent = null;
-		if ( isset( $context['parent_stack'] ) && is_array( $context['parent_stack'] ) ) {
-			$parent = end( $context['parent_stack'] );
+		$fallback_stack = array();
+		if ( isset( $context['parent_stack'] ) && is_array( $context['parent_stack'] ) && ! empty( $context['parent_stack'] ) ) {
+			$fallback_stack = $context['parent_stack'];
+		} elseif ( isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ) {
+			$fallback_stack = $GLOBALS['designsetgo_parent_stack'];
 		}
+		$parent = empty( $fallback_stack ) ? null : end( $fallback_stack );
 		if ( ! is_array( $parent ) || empty( $parent['postId'] ) ) {
 			return array( 'html' => '', 'totalPages' => 0, 'totalItems' => 0 );
 		}
