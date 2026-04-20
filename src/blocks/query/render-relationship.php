@@ -45,9 +45,13 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 			return designsetgo_query_relationship_fallback( $atts, $context );
 		}
 
-		$raw_value = function_exists( 'get_field' )
-			? get_field( $field, $parent_post_id )
-			: get_post_meta( $parent_post_id, $field, true );
+		$raw_value = false;
+		if ( function_exists( 'get_field' ) ) {
+			$raw_value = get_field( $field, $parent_post_id );
+		}
+		if ( false === $raw_value || null === $raw_value ) {
+			$raw_value = get_post_meta( $parent_post_id, $field, true );
+		}
 
 		$ids = designsetgo_query_relationship_normalize_ids( $raw_value );
 
@@ -63,10 +67,11 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 		$atts_override = array_merge(
 			$atts,
 			array(
-				'source'    => 'manual',
-				'manualIds' => $ids,
-				'postType'  => 'any',
-				'perPage'   => max( 1, min( count( $ids ), (int) $atts['perPage'] ) ),
+				'source'          => 'manual',
+				'manualIds'       => $ids,
+				'postType'        => 'any',
+				'perPage'         => max( 1, min( count( $ids ), (int) $atts['perPage'] ) ),
+				'manualPaginated' => true,
 			)
 		);
 

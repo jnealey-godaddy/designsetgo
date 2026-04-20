@@ -294,6 +294,11 @@ module.exports = [
 						to: 'blocks/query/render-terms.php',
 						noErrorOnMissing: true,
 					},
+					{
+						from: 'src/blocks/query/render-relationship.php',
+						to: 'blocks/query/render-relationship.php',
+						noErrorOnMissing: true,
+					},
 				],
 			}),
 			// Bundle analyzer - run with: ANALYZE=true npm run build

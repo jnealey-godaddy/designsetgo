@@ -47,6 +47,59 @@ class RelationshipRenderTest extends WP_UnitTestCase {
 		$this->assertSame( '', trim( wp_strip_all_tags( $result['html'] ) ) );
 	}
 
+	public function test_relationship_honors_per_page_and_total_pages() {
+		$parent   = self::factory()->post->create( array( 'post_title' => 'Parent' ) );
+		$children = self::factory()->post->create_many( 3 );
+		update_post_meta( $parent, 'related_posts', $children );
+
+		require_once DESIGNSETGO_PATH . 'src/blocks/query/render-helpers.php';
+
+		$page_one = designsetgo_query_render(
+			array(
+				'source'            => 'relationship',
+				'relationshipField' => 'related_posts',
+				'postType'          => 'post',
+				'perPage'           => 2,
+				'tagName'           => 'ul',
+				'itemTagName'       => 'li',
+			),
+			array(
+				'query_id'     => 'rel-paginated',
+				'page'         => 1,
+				'inner_html'   => '<!-- wp:paragraph --><p>child</p><!-- /wp:paragraph -->',
+				'params'       => array(),
+				'parent_stack' => array(
+					array( 'postId' => $parent, 'postType' => 'post' ),
+				),
+			)
+		);
+
+		$page_two = designsetgo_query_render(
+			array(
+				'source'            => 'relationship',
+				'relationshipField' => 'related_posts',
+				'postType'          => 'post',
+				'perPage'           => 2,
+				'tagName'           => 'ul',
+				'itemTagName'       => 'li',
+			),
+			array(
+				'query_id'     => 'rel-paginated',
+				'page'         => 2,
+				'inner_html'   => '<!-- wp:paragraph --><p>child</p><!-- /wp:paragraph -->',
+				'params'       => array(),
+				'parent_stack' => array(
+					array( 'postId' => $parent, 'postType' => 'post' ),
+				),
+			)
+		);
+
+		$this->assertSame( 3, $page_one['totalItems'] );
+		$this->assertSame( 2, $page_one['totalPages'] );
+		$this->assertSame( 2, substr_count( $page_one['html'], 'dsgo-query__item' ) );
+		$this->assertSame( 1, substr_count( $page_two['html'], 'dsgo-query__item' ) );
+	}
+
 	/**
 	 * Production path: no manual context injection — parent stack comes from
 	 * $GLOBALS['designsetgo_parent_stack'] pushed by designsetgo_query_render_item().
@@ -58,7 +111,6 @@ class RelationshipRenderTest extends WP_UnitTestCase {
 		update_post_meta( $parent, 'related_posts', array( $child_a, $child_b ) );
 
 		require_once DESIGNSETGO_PATH . 'src/blocks/query/render-helpers.php';
-		require_once DESIGNSETGO_PATH . 'src/blocks/query/render-relationship.php';
 
 		// Simulate the production path: push the parent item onto $GLOBALS directly,
 		// as designsetgo_query_render_item() does, then call the relationship renderer
@@ -68,7 +120,8 @@ class RelationshipRenderTest extends WP_UnitTestCase {
 		);
 
 		try {
-			$result = designsetgo_query_render_relationship(
+			// Use designsetgo_query_render() so defaults are applied (avoids "Undefined array key" notices).
+			$result = designsetgo_query_render(
 				array(
 					'source'               => 'relationship',
 					'relationshipField'    => 'related_posts',
