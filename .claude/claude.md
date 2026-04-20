@@ -84,6 +84,15 @@ For sibling blocks that already exist and meet the "1–3 attribute difference +
 - Inspector → Settings panel → Template I/O section exposes Export + Import buttons backed by those routes.
 - `designsetgo/post-meta` and `designsetgo/acf` sources (v2.1) refactored to use the new helper internally — output is identical.
 
+### Query block family (Dynamic Query v2.5)
+
+- `dateQuery` attribute on `designsetgo/query` — shape `{ relation, clauses: [{ column, mode, after, before, inclusive }] }`. Supported modes: `after`, `before`, `between`. Date values: ISO `YYYY-MM-DD` or PHP relative expressions (`-30 days`, `today`).
+- `taxQuery.clauses[]` entries may now be leaf clauses OR nested groups (`{ relation, clauses: [...] }`). PHP builder: `designsetgo_build_tax_query_entry()` (recursive). Same pattern for `metaQuery` via `designsetgo_build_meta_query_entry()`.
+- `include_children` field on each `taxQuery` leaf clause — boolean, defaults `true`. Pass-through to WP_Query `tax_query`.
+- `<ClauseGroupShell>` (`src/blocks/query/components/ClauseGroupShell.js`) — shared recursive group chrome (relation selector, + Clause, + Group, Remove group). Used by both TaxQueryBuilder and MetaQueryBuilder via `renderClause` render prop.
+- Query Monitor panel: `includes/class-query-qm-collector.php` + `includes/class-query-qm-output.php`. Loaded only when `defined('QM_VERSION')`. Collects data via `designsetgo_query_did_render` action fired from `render-posts.php` after each WP_Query.
+- Dynamic CSS style bindings: `dsgoStyleBinding` global attribute (`src/extensions/style-binding/filters.js`) maps CSS property names (including custom properties `--foo`) → binding source+key. PHP: `DesignSetGo\StyleBinding` (`includes/class-style-binding.php`) resolves via `designsetgo_style_binding_resolve` filter and injects via `WP_HTML_Tag_Processor`. Honours `$GLOBALS['designsetgo_parent_stack']` for nested loop context. Dangerous values (`url(`, `expression(`, `javascript:`) rejected.
+
 ### Inspector IA (Theme 3)
 
 Three panels per block, in this order: **Settings** → **Style** → **Advanced**. Use `<DsgoInspectorPanel>` (the `ToolsPanel` wrapper) for all custom inspector controls; never reach for `PanelBody` directly.
