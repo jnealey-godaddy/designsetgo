@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Query Group Header** - Sibling block for the Dynamic Query that renders once per group when group-by is enabled; hosts an InnerBlocks area for a heading or any custom content, and receives `designsetgo/groupLabel` + `designsetgo/groupValue` context so bindings can display the current group's name
 
 ### Added
+- Date Query Builder: inspector UI for `before`/`after`/`between` date filters with relative expression support (`-30 days`, `today`).
+- Multi-level AND/OR filter groups: TaxQueryBuilder and MetaQueryBuilder now support nested `{relation, clauses}` groups at any depth.
+- Hierarchical taxonomy drilldown: per-clause `include_children` toggle in TaxQueryBuilder (defaults `true`).
+- Query Monitor panel: when QM is active, a "DSGo (N)" panel in the QM toolbar shows per-render query args, found-posts count, duration, and SQL.
+- Dynamic CSS style bindings: `dsgoStyleBinding` attribute on every block maps CSS property names → DSGo binding source + key. Values injected as inline styles on the block root element via `render_block` filter.
 - **Dynamic Query — Relationship source** - New `source: 'relationship'` reads a parent-context field (meta or ACF relationship) and iterates the referenced posts via `post__in`; configurable fallback when no IDs are resolved (render nothing, all posts, or the parent item)
 - **Dynamic Query — Nested loops with parent context** - Outer Query's current item flows into inner Queries via the `designsetgo/parentItem` block context; DSGo bindings (`designsetgo/post-meta`, `designsetgo/acf`) accept a new optional `scope` arg of `'self'` (default), `'parent'`, or `'root'` — reading from a parent-stack maintained by `designsetgo_query_render_item()`
 - **Conditional inner-block visibility** - Every block now carries a `dsgoVisibility` attribute with an inspector panel under Advanced → Visibility. Rule types: meta / taxonomy / index / auth, combined with AND/OR relations and ops (`equals`, `not_equals`, `contains`, `gt`, `lt`, `empty`, `not_empty`, `has`, `not_has`). Editor previews mirror server-side evaluation so authors see what will ship
