@@ -86,7 +86,16 @@ const withVisibilityGate = createHigherOrderComponent( ( BlockListBlock ) => ( p
 	};
 
 	if ( ! evaluateRules( visibility, evalCtx ) ) {
-		return null;
+		// Return a hidden placeholder rather than null so the React tree stays
+		// stable. Returning null from editor.BlockListBlock can break tree
+		// diffing because Gutenberg expects a stable DOM node per slot.
+		return (
+			<div
+				className="dsgo-visibility-hidden"
+				style={ { display: 'none' } }
+				aria-hidden="true"
+			/>
+		);
 	}
 
 	return <BlockListBlock { ...props } />;
