@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "designsetgo/query-group-header",
+  "version": "1.0.0",
+  "title": "Query Group Header",
+  "category": "designsetgo",
+  "description": "Renders once per group inside a Query with group-by enabled. Use block bindings or context to display the group label.",
+  "keywords": ["query", "group", "header", "section"],
+  "textdomain": "designsetgo",
+  "icon": "list-view",
+  "parent": ["designsetgo/query"],
+  "usesContext": ["designsetgo/queryId", "designsetgo/groupLabel", "designsetgo/groupValue"],
+  "supports": {
+    "anchor": true,
+    "html": false,
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    }
+  },
+  "attributes": {
+    "tagName": { "type": "string", "default": "header" }
+  },
+  "example": { "attributes": {} },
+  "editorScript": "file:./index.js",
+  "render": "file:./render.php"
+}
