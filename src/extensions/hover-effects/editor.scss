@@ -1,0 +1,61 @@
+/**
+ * Hover Effects Extension - Editor Styles
+ *
+ * Mirrors the frontend hover effects inside the block editor so
+ * authors can preview the effect while hovering a block in the canvas.
+ *
+ * @package
+ */
+
+$dsgo-hover-duration: 300ms;
+$dsgo-hover-easing: ease-out;
+
+.editor-styles-wrapper {
+
+	.dsgo-hover-effect {
+		transition:
+			transform $dsgo-hover-duration $dsgo-hover-easing,
+			box-shadow $dsgo-hover-duration $dsgo-hover-easing,
+			filter $dsgo-hover-duration $dsgo-hover-easing;
+		will-change: transform;
+
+		&--lift:hover {
+			transform: translateY(-4px);
+			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+		}
+
+		&--sink:hover {
+			transform: translateY(4px);
+		}
+
+		&--grow:hover {
+			transform: scale(1.03);
+		}
+
+		&--shrink:hover {
+			transform: scale(0.97);
+		}
+
+		&--tilt:hover {
+			transform: rotate(-1deg) scale(1.01);
+		}
+
+		&--glow:hover {
+			box-shadow: 0 0 24px rgba(0, 0, 0, 0.15);
+			filter: brightness(1.05);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+
+		.dsgo-hover-effect {
+			transition: none;
+
+			&:hover {
+				transform: none;
+				box-shadow: none;
+				filter: none;
+			}
+		}
+	}
+}
