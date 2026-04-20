@@ -16,5 +16,9 @@ return array(
 			'type'    => 'number',
 			'default' => 1,
 		),
+		'dsgoRowSpan'    => array(
+			'type'    => 'number',
+			'default' => 1,
+		),
 	),
 );
