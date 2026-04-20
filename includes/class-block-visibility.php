@@ -17,6 +17,51 @@ defined( 'ABSPATH' ) || exit;
 class BlockVisibility {
 
 	/**
+	 * Register the render_block filter once at plugin bootstrap.
+	 *
+	 * Idempotent — safe to call multiple times; only hooks once.
+	 * This gates nested block rendering (inside core/group, core/columns, etc.)
+	 * by reading the top of $GLOBALS['designsetgo_parent_stack'] set by
+	 * designsetgo_query_render_item().
+	 */
+	public static function register() {
+		static $registered = false;
+		if ( $registered ) {
+			return;
+		}
+		$registered = true;
+		add_filter( 'render_block', array( __CLASS__, 'filter_render_block' ), 10, 2 );
+	}
+
+	/**
+	 * Filter callback: suppress nested blocks whose dsgoVisibility rules do not
+	 * match the current item context.
+	 *
+	 * Only active when $GLOBALS['designsetgo_parent_stack'] is non-empty, meaning
+	 * we are inside a designsetgo_query_render_item() call. Top-level template
+	 * blocks are already gated in the render_item loop (optimisation: they skip
+	 * WP_Block instantiation entirely); this filter catches blocks at deeper
+	 * nesting levels that are rendered recursively by WP_Block::render().
+	 *
+	 * @param string $block_content Rendered block HTML.
+	 * @param array  $parsed_block  Parsed block array (blockName + attrs).
+	 * @return string Empty string when rules do not match; original content otherwise.
+	 */
+	public static function filter_render_block( $block_content, $parsed_block ) {
+		if ( empty( $GLOBALS['designsetgo_parent_stack'] ) ) {
+			return $block_content;
+		}
+		$visibility = $parsed_block['attrs']['dsgoVisibility'] ?? null;
+		if ( null === $visibility ) {
+			return $block_content;
+		}
+		$ctx = end( $GLOBALS['designsetgo_parent_stack'] );
+		return self::matches( $visibility, is_array( $ctx ) ? $ctx : array() )
+			? $block_content
+			: '';
+	}
+
+	/**
 	 * Evaluate a dsgoVisibility rules object against per-item context.
 	 *
 	 * Returns true when the block should be rendered; false to suppress it.
