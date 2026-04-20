@@ -236,9 +236,11 @@ class Template_Controller {
 		// sibling blocks that are already bound to the exported queryId.
 		$attrs['queryId'] = self::generate_query_id();
 
-		// Build block comment markup. This approach round-trips cleanly through
-		// parse_blocks() and is byte-identical to what the editor serializes.
-		$markup = '<!-- wp:designsetgo/query ' . wp_json_encode( $attrs ) . ' -->' . "\n"
+		// Build block comment markup using serialize_block_attributes() so that
+		// attribute values containing "-->" are escaped as "\u002d\u002d>"
+		// and cannot prematurely close the block comment.
+		$attrs_str = serialize_block_attributes( $attrs );
+		$markup    = '<!-- wp:designsetgo/query ' . $attrs_str . ' -->' . "\n"
 				. $inner_html . "\n"
 				. '<!-- /wp:designsetgo/query -->';
 

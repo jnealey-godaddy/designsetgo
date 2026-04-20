@@ -196,6 +196,37 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Attribute values containing "-->" are escaped so they cannot prematurely
+	 * close the block comment — round-trip via parse_blocks() must yield the
+	 * original value byte-for-byte.
+	 */
+	public function test_import_escapes_block_comment_terminator_in_attrs() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		$request->set_body_params(
+			array(
+				'schemaVersion' => 1,
+				'blockName'     => 'designsetgo/query',
+				'attributes'    => array( 'search' => 'hack --> </p>' ),
+				'innerBlocks'   => '',
+			)
+		);
+		$response = rest_do_request( $request );
+		$this->assertSame( 200, $response->get_status() );
+		$markup = $response->get_data()['blockMarkup'];
+
+		// The raw "-->" must not appear inside the opening comment tag.
+		$open_comment_end = strpos( $markup, ' -->' );
+		$this->assertNotFalse( $open_comment_end, 'Opening block comment must be present.' );
+		$opening_comment = substr( $markup, 0, $open_comment_end );
+		$this->assertStringNotContainsString( '-->', $opening_comment );
+
+		// Round-trip: parse_blocks() must recover the original value.
+		$parsed = parse_blocks( $markup );
+		$this->assertSame( 'hack --> </p>', $parsed[0]['attrs']['search'] );
+	}
+
+	/**
 	 * Import silently drops attributes not present in the block.json allowlist.
 	 */
 	public function test_import_drops_unknown_attributes() {
