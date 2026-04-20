@@ -10,10 +10,29 @@
 import { addFilter } from '@wordpress/hooks';
 
 /**
- * Blocks whose usesContext should NOT be touched (no runtime, or special
- * blocks that don't participate in the editor block-tree context system).
+ * Blocks whose usesContext should NOT be touched.
+ *
+ * Container/query-family blocks never appear inside a query item template,
+ * so they never need the item-context keys.
  */
-const BLOCKED = new Set(['core/freeform', 'core/missing', 'core/template-part']);
+const BLOCKED = new Set([
+	'core/freeform',
+	'core/missing',
+	'core/template-part',
+	'core/query',
+	'core/query-loop',
+	'core/query-pagination',
+	'core/query-pagination-next',
+	'core/query-pagination-previous',
+	'core/query-pagination-numbers',
+	'core/query-no-results',
+	'core/post-template',
+	'designsetgo/query',
+	'designsetgo/query-pagination',
+	'designsetgo/query-filter',
+	'designsetgo/query-no-results',
+	'designsetgo/query-group-header',
+]);
 
 /** Context keys provided by the Dynamic Query block per rendered item. */
 const CONTEXT_KEYS = [
