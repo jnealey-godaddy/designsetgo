@@ -261,6 +261,7 @@ const DEFAULT_ATTRIBUTES = {
 	itemTagName: 'li',
 	relationshipField: '',
 	relationshipFallback: 'empty',
+	groupBy: null,
 };
 
 function renderWith(attributeOverrides = {}, propOverrides = {}) {
@@ -336,5 +337,17 @@ describe('QueryEdit — Settings panel', () => {
 			/>
 		);
 		expect(screen.getByLabelText(/meta key/i)).toBeInTheDocument();
+	});
+});
+
+describe('QueryEdit — Group-by', () => {
+	it('renders the group-by type select', () => {
+		renderWith();
+		expect(screen.getByLabelText(/group by/i)).toBeInTheDocument();
+	});
+
+	it('shows a taxonomy picker when groupBy.field is taxonomy', () => {
+		renderWith({ groupBy: { field: 'taxonomy', key: 'category' } });
+		expect(screen.getByLabelText(/group taxonomy/i)).toBeInTheDocument();
 	});
 });

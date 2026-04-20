@@ -68,6 +68,20 @@ export default function EditorPreviewList({
 		);
 	}
 
+	const groupBy = attributes.groupBy || null;
+	if (groupBy) {
+		return (
+			<GroupedPreviewList
+				records={records}
+				attributes={attributes}
+				innerBlocks={innerBlocks}
+				innerBlocksProps={innerBlocksProps}
+				context={context}
+				groupBy={groupBy}
+			/>
+		);
+	}
+
 	return (
 		<ul className="dsgo-query__editor-preview-list">
 			{records.map((item, idx) => {
@@ -98,6 +112,144 @@ export default function EditorPreviewList({
 				);
 			})}
 		</ul>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Grouped preview (when groupBy is set)
+// ---------------------------------------------------------------------------
+
+/**
+ * Derive a group label string from a record given the groupBy config.
+ *
+ * @param {Object} item    Preview record.
+ * @param {Object} groupBy { field, key } attribute value.
+ * @return {string} Group label.
+ */
+function buildGroupLabel(item, groupBy) {
+	const { field, key } = groupBy;
+
+	if (field === 'taxonomy') {
+		const termsMap = buildTermsMap(item);
+		const slugs = termsMap[key];
+		if (slugs && slugs.length > 0) {
+			return slugs[0]; // Use first term slug as group key.
+		}
+		return __('Uncategorised', 'designsetgo');
+	}
+
+	if (field === 'meta') {
+		const val = item?.meta?.[key];
+		return val !== undefined && val !== null && val !== ''
+			? String(val)
+			: __('(no value)', 'designsetgo');
+	}
+
+	if (field === 'date') {
+		const date = item?.date;
+		if (!date) {
+			return __('(no date)', 'designsetgo');
+		}
+		// date is ISO 8601 e.g. "2024-03-15T12:00:00".
+		const [year, month, day] = date.split('T')[0].split('-');
+		if (key === 'Y-M-D') {
+			return `${year}-${month}-${day}`;
+		}
+		if (key === 'Y-M') {
+			return `${year}-${month}`;
+		}
+		return year;
+	}
+
+	return '';
+}
+
+/**
+ * Render records partitioned by their groupBy value, with a simple placeholder
+ * heading for each group.
+ *
+ * @param {Object} props
+ */
+function GroupedPreviewList({
+	records,
+	attributes,
+	innerBlocks,
+	innerBlocksProps,
+	context,
+	groupBy,
+}) {
+	const source = attributes.source || 'posts';
+
+	// Partition records into ordered groups preserving first-seen order.
+	const groups = [];
+	const groupIndex = {};
+	records.forEach((item) => {
+		const label = buildGroupLabel(item, groupBy);
+		if (!Object.prototype.hasOwnProperty.call(groupIndex, label)) {
+			groupIndex[label] = groups.length;
+			groups.push({ label, items: [] });
+		}
+		groups[groupIndex[label]].items.push(item);
+	});
+
+	// Track the first-ever item index across all groups so item 0 gets
+	// the editable InnerBlocks slot.
+	let globalIdx = 0;
+
+	return (
+		<div className="dsgo-query__editor-preview-list is-grouped">
+			{groups.map((group) => (
+				<section
+					key={group.label}
+					className="dsgo-query__editor-preview-group"
+				>
+					<div
+						className="dsgo-query-group-label"
+						aria-hidden="true"
+					>
+						{group.label}
+					</div>
+					<ul className="dsgo-query__editor-preview-list">
+						{group.items.map((item) => {
+							const idx = globalIdx;
+							globalIdx++;
+							const itemContext = buildContext(
+								item,
+								source,
+								idx,
+								context
+							);
+							return (
+								<li
+									key={item.id}
+									className={
+										idx === 0
+											? 'dsgo-query__editor-preview-item is-template-source'
+											: 'dsgo-query__editor-preview-item is-read-only'
+									}
+								>
+									<BlockContextProvider value={itemContext}>
+										{idx === 0 ? (
+											<EditableTemplate
+												innerBlocksProps={
+													innerBlocksProps
+												}
+											/>
+										) : (
+											<BlockPreview
+												blocks={innerBlocks}
+												viewportWidth={1000}
+												additionalStyles={[]}
+											/>
+										)}
+									</BlockContextProvider>
+								</li>
+							);
+						})}
+					</ul>
+				</section>
+			))}
+		</div>
 	);
 }
 

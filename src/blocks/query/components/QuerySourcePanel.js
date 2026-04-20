@@ -10,6 +10,19 @@ import {
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../components/shared';
 
+const GROUP_BY_OPTIONS = [
+	{ value: 'none', label: __('None', 'designsetgo') },
+	{ value: 'taxonomy', label: __('Taxonomy', 'designsetgo') },
+	{ value: 'meta', label: __('Meta field', 'designsetgo') },
+	{ value: 'date', label: __('Date', 'designsetgo') },
+];
+
+const DATE_PRECISION_OPTIONS = [
+	{ value: 'Y', label: __('Year', 'designsetgo') },
+	{ value: 'Y-M', label: __('Year + Month', 'designsetgo') },
+	{ value: 'Y-M-D', label: __('Year + Month + Day', 'designsetgo') },
+];
+
 const SOURCES = [
 	{ value: 'posts', label: __('Posts', 'designsetgo') },
 	{ value: 'users', label: __('Users', 'designsetgo') },
@@ -62,10 +75,16 @@ export default function QuerySourcePanel({
 		columnGap,
 		relationshipField,
 		relationshipFallback,
+		groupBy,
 	} = attributes;
 
 	const postTypes = useSelect(
 		(select) => select(coreStore).getPostTypes({ per_page: -1 }) || [],
+		[]
+	);
+
+	const taxonomies = useSelect(
+		(select) => select(coreStore).getTaxonomies({ per_page: -1 }) || [],
 		[]
 	);
 
@@ -76,9 +95,28 @@ export default function QuerySourcePanel({
 			value: pt.slug,
 		}));
 
+	const taxonomyOptions = (taxonomies || []).map((t) => ({
+		label: t.labels?.singular_name || t.slug,
+		value: t.slug,
+	}));
+
 	const showPostType = source === 'posts';
 	const showRelationship = source === 'relationship';
 	const showMetaKey = ['meta_value', 'meta_value_num'].includes(orderBy);
+
+	// Group-by derived state.
+	const groupByField = groupBy?.field || 'none';
+	const showGroupTaxonomy = groupByField === 'taxonomy';
+	const showGroupMeta = groupByField === 'meta';
+	const showGroupDate = groupByField === 'date';
+
+	const handleGroupByFieldChange = (value) => {
+		if (value === 'none') {
+			setAttributes({ groupBy: null });
+		} else {
+			setAttributes({ groupBy: { field: value, key: '' } });
+		}
+	};
 
 	return (
 		<DsgoInspectorPanel
@@ -343,6 +381,90 @@ export default function QuerySourcePanel({
 					__nextHasNoMarginBottom
 				/>
 			</DsgoInspectorPanel.Item>
+
+			<DsgoInspectorPanel.Item
+				label={__('Group by', 'designsetgo')}
+				hasValue={() => groupBy !== null}
+				onDeselect={() => setAttributes({ groupBy: null })}
+				isShownByDefault
+			>
+				<SelectControl
+					label={__('Group by', 'designsetgo')}
+					value={groupByField}
+					options={GROUP_BY_OPTIONS}
+					onChange={handleGroupByFieldChange}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
+
+			{showGroupTaxonomy && (
+				<DsgoInspectorPanel.Item
+					label={__('Group taxonomy', 'designsetgo')}
+					hasValue={() => (groupBy?.key || '') !== ''}
+					onDeselect={() =>
+						setAttributes({ groupBy: { ...groupBy, key: '' } })
+					}
+					isShownByDefault
+				>
+					<SelectControl
+						label={__('Group taxonomy', 'designsetgo')}
+						value={groupBy?.key || ''}
+						options={[
+							{ value: '', label: __('— Select —', 'designsetgo') },
+							...taxonomyOptions,
+						]}
+						onChange={(value) =>
+							setAttributes({ groupBy: { ...groupBy, key: value } })
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{showGroupMeta && (
+				<DsgoInspectorPanel.Item
+					label={__('Group meta key', 'designsetgo')}
+					hasValue={() => (groupBy?.key || '') !== ''}
+					onDeselect={() =>
+						setAttributes({ groupBy: { ...groupBy, key: '' } })
+					}
+					isShownByDefault
+				>
+					<TextControl
+						label={__('Group meta key', 'designsetgo')}
+						value={groupBy?.key || ''}
+						onChange={(value) =>
+							setAttributes({ groupBy: { ...groupBy, key: value } })
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{showGroupDate && (
+				<DsgoInspectorPanel.Item
+					label={__('Date precision', 'designsetgo')}
+					hasValue={() => (groupBy?.key || '') !== '' && groupBy?.key !== 'Y'}
+					onDeselect={() =>
+						setAttributes({ groupBy: { ...groupBy, key: 'Y' } })
+					}
+					isShownByDefault
+				>
+					<SelectControl
+						label={__('Date precision', 'designsetgo')}
+						value={groupBy?.key || 'Y'}
+						options={DATE_PRECISION_OPTIONS}
+						onChange={(value) =>
+							setAttributes({ groupBy: { ...groupBy, key: value } })
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
 		</DsgoInspectorPanel>
 	);
 }
