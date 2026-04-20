@@ -115,7 +115,6 @@ function TaxonomyControls( { rule, onChange } ) {
  * @param {Function} props.onChange
  */
 function IndexControls( { rule, onChange } ) {
-	const showValue = [ 'equals', 'not_equals', 'lt', 'gt' ].includes( rule.op ?? 'equals' );
 	return (
 		<>
 			<SelectControl
@@ -126,15 +125,13 @@ function IndexControls( { rule, onChange } ) {
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 			/>
-			{ showValue && (
-				<TextControl
-					label={ __( 'Index Value', 'designsetgo' ) }
-					value={ String( rule.value ?? '' ) }
-					onChange={ ( value ) => onChange( { ...rule, value } ) }
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
-			) }
+			<TextControl
+				label={ __( 'Index Value', 'designsetgo' ) }
+				value={ String( rule.value ?? '' ) }
+				onChange={ ( value ) => onChange( { ...rule, value } ) }
+				__next40pxDefaultSize
+				__nextHasNoMarginBottom
+			/>
 		</>
 	);
 }
