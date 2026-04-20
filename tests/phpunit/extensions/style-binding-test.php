@@ -128,6 +128,53 @@ class StyleBindingTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Resolver passes the iterated post id and the `key` arg to source plugins.
+	 *
+	 * Locks in the contract that every built-in source reads `args['key']` (not
+	 * a per-source synonym like `id`/`name`/`field`) and resolves against the
+	 * current post id from `$GLOBALS['designsetgo_parent_stack']`. Regression
+	 * for editor → resolver mismatch and JetEngine dropping the post id.
+	 */
+	public function test_resolver_uses_key_arg_and_iterated_post_id() {
+		$post_id              = self::factory()->post->create();
+		$captured             = array();
+		$GLOBALS['designsetgo_parent_stack'] = array(
+			array( 'id' => $post_id, 'type' => 'post' ),
+		);
+
+		add_filter(
+			'designsetgo_style_binding_resolve',
+			function ( $val, $source, $args ) use ( &$captured ) {
+				$captured[ $source ] = $args;
+				return $val ?? 'sentinel';
+			},
+			10,
+			3
+		);
+
+		foreach ( array( 'designsetgo/metabox', 'designsetgo/pods', 'designsetgo/jetengine' ) as $source ) {
+			$block = $this->make_block(
+				array(
+					'dsgoStyleBinding' => array(
+						'--brand' => array(
+							'source' => $source,
+							'args'   => array( 'key' => 'brand_color' ),
+						),
+					),
+				)
+			);
+			$this->sb->apply_style_bindings( '<p>X</p>', $block );
+		}
+
+		unset( $GLOBALS['designsetgo_parent_stack'] );
+		remove_all_filters( 'designsetgo_style_binding_resolve' );
+
+		foreach ( array( 'designsetgo/metabox', 'designsetgo/pods', 'designsetgo/jetengine' ) as $source ) {
+			$this->assertSame( 'brand_color', $captured[ $source ]['key'] ?? null, "Source $source must receive args.key" );
+		}
+	}
+
+	/**
 	 * Existing style attribute is preserved when new styles are injected.
 	 */
 	public function test_existing_style_attribute_is_preserved() {

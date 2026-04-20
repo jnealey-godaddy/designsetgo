@@ -553,11 +553,20 @@ class Plugin {
 			Blocks\Query\FilterIndexCLI::register();
 		}
 
-		// Query Monitor integration — loads only when QM is active.
-		if ( defined( 'QM_VERSION' ) ) {
-			require_once DESIGNSETGO_PATH . 'includes/class-query-qm-collector.php';
-			require_once DESIGNSETGO_PATH . 'includes/class-query-qm-output.php';
-		}
+		// Query Monitor integration — deferred to plugins_loaded so QM has finished
+		// loading regardless of plugin order; the files themselves bail if the QM
+		// base classes still aren't present at the deferred point.
+		add_action(
+			'plugins_loaded',
+			static function () {
+				if ( ! class_exists( '\QM_Collector' ) ) {
+					return;
+				}
+				require_once DESIGNSETGO_PATH . 'includes/class-query-qm-collector.php';
+				require_once DESIGNSETGO_PATH . 'includes/class-query-qm-output.php';
+			},
+			20
+		);
 
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';

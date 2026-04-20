@@ -111,13 +111,10 @@ const withStyleBindingInspector = createHigherOrderComponent( ( BlockEdit ) => {
 								/>
 								<TextControl
 									label={ __( 'Field key / name', 'designsetgo' ) }
-									value={ config.args?.key ?? config.args?.name ?? config.args?.id ?? config.args?.field ?? '' }
-									onChange={ ( val ) => {
-										const argKey = [ 'designsetgo/acf' ].includes( config.source ) ? 'name'
-											: [ 'designsetgo/pods' ].includes( config.source ) ? 'field'
-											: 'key';
-										updateEntry( prop, prop, { ...config, args: { [ argKey ]: val } } );
-									} }
+									value={ config.args?.key ?? '' }
+									onChange={ ( val ) =>
+										updateEntry( prop, prop, { ...config, args: { key: val } } )
+									}
 									__nextHasNoMarginBottom
 								/>
 							</VStack>

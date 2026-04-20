@@ -110,13 +110,14 @@ class StyleBinding {
 	 */
 	private function resolve( string $source, array $args ): ?string {
 		$post_id = $this->current_post_id();
+		$key     = sanitize_text_field( (string) ( $args['key'] ?? '' ) );
+
+		if ( ! $key || ! $post_id ) {
+			return null;
+		}
 
 		switch ( $source ) {
 			case 'designsetgo/post-meta':
-				$key = sanitize_text_field( (string) ( $args['key'] ?? '' ) );
-				if ( ! $key || ! $post_id ) {
-					return null;
-				}
 				$val = get_post_meta( $post_id, $key, true );
 				return is_scalar( $val ) ? (string) $val : null;
 
@@ -124,39 +125,29 @@ class StyleBinding {
 				if ( ! function_exists( 'get_field' ) ) {
 					return null;
 				}
-				$name = sanitize_text_field( (string) ( $args['name'] ?? '' ) );
-				if ( ! $name || ! $post_id ) {
-					return null;
-				}
-				$val = get_field( $name, $post_id );
+				$val = get_field( $key, $post_id );
 				return is_scalar( $val ) ? (string) $val : null;
 
 			case 'designsetgo/metabox':
 				if ( ! function_exists( 'rwmb_meta' ) ) {
 					return null;
 				}
-				$id  = sanitize_key( (string) ( $args['id'] ?? '' ) );
-				$val = $id && $post_id ? rwmb_meta( $id, array(), $post_id ) : null;
+				$val = rwmb_meta( $key, array(), $post_id );
 				return is_scalar( $val ) ? (string) $val : null;
 
 			case 'designsetgo/pods':
 				if ( ! function_exists( 'pods_field' ) ) {
 					return null;
 				}
-				$field = sanitize_text_field( (string) ( $args['field'] ?? '' ) );
-				$val   = $field && $post_id ? pods_field( $field, $post_id ) : null;
+				$val = pods_field( $key, $post_id );
 				return is_scalar( $val ) ? (string) $val : null;
 
 			case 'designsetgo/jetengine':
-				if ( ! function_exists( 'jet_engine' ) || ! isset( jet_engine()->listings->data ) ) {
-					return null;
+				if ( function_exists( 'jet_engine' ) && isset( jet_engine()->listings->data ) && method_exists( jet_engine()->listings->data, 'get_meta' ) ) {
+					$val = jet_engine()->listings->data->get_meta( $key, $post_id );
+				} else {
+					$val = get_post_meta( $post_id, $key, true );
 				}
-				$key = sanitize_text_field( (string) ( $args['key'] ?? '' ) );
-				if ( ! $key || ! $post_id ) {
-					return null;
-				}
-				$val = jet_engine()->listings->data->get_meta( $key )
-					?? get_post_meta( $post_id, $key, true );
 				return is_scalar( $val ) ? (string) $val : null;
 
 			default:
