@@ -130,12 +130,27 @@ function buildGroupLabel(item, groupBy) {
 	const { field, key } = groupBy;
 
 	if (field === 'taxonomy') {
+		// Prefer the term name from embedded REST data (_embedded['wp:term'])
+		// so the editor label matches the server-side label produced by
+		// designsetgo_query_partition_items() via wp_list_pluck( $terms, 'name' ).
+		const embedded = item?._embedded?.['wp:term'];
+		if (Array.isArray(embedded)) {
+			for (const taxTerms of embedded) {
+				const match = Array.isArray(taxTerms)
+					? taxTerms.find((t) => t.taxonomy === key)
+					: null;
+				if (match) {
+					return match.name || match.slug;
+				}
+			}
+		}
+		// Fall back to slug via the flat terms map when embedded data is absent.
 		const termsMap = buildTermsMap(item);
 		const slugs = termsMap[key];
 		if (slugs && slugs.length > 0) {
-			return slugs[0]; // Use first term slug as group key.
+			return slugs[0];
 		}
-		return __('Uncategorised', 'designsetgo');
+		return __('Uncategorized', 'designsetgo');
 	}
 
 	if (field === 'meta') {
