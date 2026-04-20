@@ -101,10 +101,18 @@
 	}
 
 	// Mobile stack behavior (screens < 768px)
+	// The outer rule is kept for backward compatibility, but the meaningful
+	// flip targets `.dsgo-flex__inner` — that's where the flex children live.
+	// With `flex-wrap: nowrap` as the default inline style, the previous
+	// outer-only rule no longer produced stacking.
 	&--mobile-stack {
 
 		@media (max-width: 767px) {
 			flex-direction: column !important;
+
+			> .dsgo-flex__inner {
+				flex-direction: column !important;
+			}
 		}
 	}
 

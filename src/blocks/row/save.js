@@ -120,7 +120,11 @@ export default function RowSave({ attributes }) {
 		// Apply vertical alignment (align-items) from layout support
 		...(alignItems && { alignItems }),
 		// Apply flex-wrap from layout support
-		flexWrap: layout?.flexWrap || 'wrap',
+		// Fallback must match block.json supports.layout.default.flexWrap ("nowrap").
+		// Using "wrap" here caused block-level children (which default to 100% width)
+		// to wrap onto their own lines and appear stacked on fresh rows where
+		// attributes.layout is not yet written.
+		flexWrap: layout?.flexWrap || 'nowrap',
 		// Apply gap from blockProps or attributes
 		...(gapValue && { gap: gapValue }),
 	};
