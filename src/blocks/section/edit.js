@@ -36,7 +36,10 @@ import {
 	encodeColorValue,
 	decodeColorValue,
 } from '../../utils/encode-color-value';
-import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	convertColorToCSSVar,
+	convertPresetToCSSVar,
+} from '../../utils/convert-preset-to-css-var';
 import { useBlockColors } from '../../hooks';
 
 /**
@@ -219,14 +222,13 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 			return;
 		}
 
-		// Default padding is stored in preset-reference format ("var:preset|spacing|50"),
-		// not the CSS-resolved format. Match against both so the check works regardless
-		// of how WordPress serializes the value.
+		// Normalize through the shared preset utility so either the preset-reference
+		// format ("var:preset|spacing|50") or the CSS-resolved form compares equal.
+		// Slugs must match block.json attributes.style.spacing.padding defaults.
 		const currentPadding = attributes.style?.spacing?.padding;
 		const isDefault = (value, slug) =>
-			value === `var:preset|spacing|${slug}` ||
-			value === `var(--wp--preset--spacing--${slug})`;
-		// Slugs must match block.json attributes.style.spacing.padding defaults.
+			convertPresetToCSSVar(value) ===
+			`var(--wp--preset--spacing--${slug})`;
 		const hasDefaultPadding =
 			isDefault(currentPadding?.top, '50') &&
 			isDefault(currentPadding?.bottom, '50') &&
