@@ -17,6 +17,7 @@ import { BlockPreview, BlockContextProvider } from '@wordpress/block-editor';
 import { Spinner, Placeholder } from '@wordpress/components';
 import apiFetch from '@wordpress/api-fetch';
 import { addQueryArgs } from '@wordpress/url';
+import useQueryPreview from '../hooks/useQueryPreview';
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -29,20 +30,36 @@ import { addQueryArgs } from '@wordpress/url';
  * @param {Object} props.innerBlocksProps Props from useInnerBlocksProps in edit.js —
  *                                        spread onto item 0's container so the block
  *                                        editor "owns" the inner blocks slot correctly.
+ * @param {Object} [props.context]        Block context passed from edit.js (may include
+ *                                        designsetgo/parentItem from an outer Query).
  */
 export default function EditorPreviewList({
 	attributes,
 	innerBlocks,
 	innerBlocksProps,
+	context,
 }) {
 	const source = attributes.source || 'posts';
 	const isPosts = source === 'posts';
+	const isRelationship = source === 'relationship';
 
-	// Choose the data-fetching path based on source.
+	// All three hooks must be called unconditionally (Rules of Hooks).
+	// Each hook no-ops cheaply when its source doesn't match via its `enabled`
+	// guard or its internal isRelationship branch.
 	const postsData = usePosts(attributes, isPosts);
-	const remoteData = useRemotePreview(attributes, !isPosts);
+	const remoteData = useRemotePreview(attributes, !isPosts && !isRelationship);
+	const relationshipData = useQueryPreview({
+		source,
+		relationshipField: attributes.relationshipField || '',
+		perPage: attributes.perPage || 6,
+	});
 
-	const { records, hasResolved } = isPosts ? postsData : remoteData;
+	// Select the active data path.
+	const { records, hasResolved } = isPosts
+		? postsData
+		: isRelationship
+		? relationshipData
+		: remoteData;
 
 	if (!hasResolved) {
 		return (
@@ -65,10 +82,24 @@ export default function EditorPreviewList({
 		);
 	}
 
+	const groupBy = attributes.groupBy || null;
+	if (groupBy) {
+		return (
+			<GroupedPreviewList
+				records={records}
+				attributes={attributes}
+				innerBlocks={innerBlocks}
+				innerBlocksProps={innerBlocksProps}
+				context={context}
+				groupBy={groupBy}
+			/>
+		);
+	}
+
 	return (
 		<ul className="dsgo-query__editor-preview-list">
 			{records.map((item, idx) => {
-				const context = buildContext(item, source);
+				const itemContext = buildContext(item, source, idx, context);
 				return (
 					<li
 						key={item.id}
@@ -78,7 +109,7 @@ export default function EditorPreviewList({
 								: 'dsgo-query__editor-preview-item is-read-only'
 						}
 					>
-						<BlockContextProvider value={context}>
+						<BlockContextProvider value={itemContext}>
 							{idx === 0 ? (
 								<EditableTemplate
 									innerBlocksProps={innerBlocksProps}
@@ -95,6 +126,165 @@ export default function EditorPreviewList({
 				);
 			})}
 		</ul>
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Grouped preview (when groupBy is set)
+// ---------------------------------------------------------------------------
+
+/**
+ * Derive a group label string from a record given the groupBy config.
+ *
+ * @param {Object} item    Preview record.
+ * @param {Object} groupBy { field, key } attribute value.
+ * @return {string} Group label.
+ */
+function buildGroupLabel(item, groupBy) {
+	const { field, key } = groupBy;
+
+	if (field === 'taxonomy') {
+		// Prefer the term name from embedded REST data (_embedded['wp:term'])
+		// so the editor label matches the server-side label produced by
+		// designsetgo_query_partition_items() via wp_list_pluck( $terms, 'name' ).
+		const embedded = item?._embedded?.['wp:term'];
+		if (Array.isArray(embedded)) {
+			for (const taxTerms of embedded) {
+				const match = Array.isArray(taxTerms)
+					? taxTerms.find((t) => t.taxonomy === key)
+					: null;
+				if (match) {
+					return match.name || match.slug;
+				}
+			}
+		}
+		// Fall back to slug via the flat terms map when embedded data is absent.
+		const termsMap = buildTermsMap(item);
+		const slugs = termsMap[key];
+		if (slugs && slugs.length > 0) {
+			return slugs[0];
+		}
+		return __('Uncategorized', 'designsetgo');
+	}
+
+	if (field === 'meta') {
+		const val = item?.meta?.[key];
+		return val !== undefined && val !== null && val !== ''
+			? String(val)
+			: __('(no value)', 'designsetgo');
+	}
+
+	if (field === 'date') {
+		const date = item?.date;
+		if (!date) {
+			return __('(no date)', 'designsetgo');
+		}
+		// date is ISO 8601 e.g. "2024-03-15T12:00:00".
+		const [year, month, day] = date.split('T')[0].split('-');
+		if (key === 'Y-M-D') {
+			return `${year}-${month}-${day}`;
+		}
+		if (key === 'Y-M') {
+			return `${year}-${month}`;
+		}
+		return year;
+	}
+
+	return '';
+}
+
+/**
+ * Render records partitioned by their groupBy value, with a simple placeholder
+ * heading for each group.
+ *
+ * @param {Object} props
+ */
+function GroupedPreviewList({
+	records,
+	attributes,
+	innerBlocks,
+	innerBlocksProps,
+	context,
+	groupBy,
+}) {
+	const source = attributes.source || 'posts';
+
+	// Partition records into ordered groups preserving first-seen order.
+	const groups = [];
+	const groupIndex = {};
+	records.forEach((item) => {
+		const label = buildGroupLabel(item, groupBy);
+		if (!Object.prototype.hasOwnProperty.call(groupIndex, label)) {
+			groupIndex[label] = groups.length;
+			groups.push({ label, items: [] });
+		}
+		groups[groupIndex[label]].items.push(item);
+	});
+
+	// Track the first-ever item index across all groups so item 0 gets
+	// the editable InnerBlocks slot.
+	let globalIdx = 0;
+
+	return (
+		<div className="dsgo-query__editor-preview-list is-grouped">
+			{groups.map((group) => {
+				let groupItemIdx = 0;
+				return (
+					<section
+						key={group.label}
+						className="dsgo-query__editor-preview-group"
+					>
+						<div
+							className="dsgo-query-group-label"
+							aria-hidden="true"
+						>
+							{group.label}
+						</div>
+						<ul className="dsgo-query__editor-preview-list">
+							{group.items.map((item) => {
+								const idx = globalIdx;
+								const groupIdx = groupItemIdx;
+								globalIdx++;
+								groupItemIdx++;
+								const itemContext = buildContext(
+									item,
+									source,
+									idx,
+									context,
+									groupIdx
+								);
+								return (
+									<li
+										key={item.id}
+										className={
+											idx === 0
+												? 'dsgo-query__editor-preview-item is-template-source'
+												: 'dsgo-query__editor-preview-item is-read-only'
+										}
+									>
+										<BlockContextProvider value={itemContext}>
+											{idx === 0 ? (
+												<EditableTemplate
+													innerBlocksProps={
+														innerBlocksProps
+													}
+												/>
+											) : (
+												<BlockPreview
+													blocks={innerBlocks}
+													viewportWidth={1000}
+													additionalStyles={[]}
+												/>
+											)}
+										</BlockContextProvider>
+									</li>
+								);
+							})}
+						</ul>
+					</section>
+				);
+			})}
+		</div>
 	);
 }
 
@@ -245,36 +435,109 @@ function useRemotePreview(attributes, enabled) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Build a taxonomy → term-slug-array map from a preview item.
+ *
+ * WP REST post objects expose embedded terms under `_embedded['wp:term']`
+ * as an array of taxonomy arrays. We flatten these into a plain object
+ * so inner blocks (and the visibility gate) can filter by taxonomy slug.
+ *
+ * @param {Object} item WP REST post object (may have _embedded or taxonomies).
+ * @return {Object} e.g. { category: ['news'], post_tag: ['js'] }
+ */
+function buildTermsMap(item) {
+	const map = {};
+	const embedded = item?._embedded?.['wp:term'];
+	if (!Array.isArray(embedded)) {
+		return map;
+	}
+	embedded.forEach((taxTerms) => {
+		if (!Array.isArray(taxTerms) || taxTerms.length === 0) {
+			return;
+		}
+		const taxonomy = taxTerms[0]?.taxonomy;
+		if (!taxonomy) {
+			return;
+		}
+		map[taxonomy] = taxTerms.map((t) => t.slug).filter(Boolean);
+	});
+	return map;
+}
+
+/**
  * Build the BlockContextProvider value for a single preview item.
  *
  * Posts use the native `postId` + `postType` shape that core Block Bindings
  * (post-meta etc.) understand. Users and Terms use the designsetgo custom
  * context keys.
  *
- * @param {Object} item   Preview item: { id, type, ... }.
- * @param {string} source The query block source attribute value.
+ * Extends the base context with:
+ * - `designsetgo/itemIndex`  — zero-based position in the result set.
+ * - `designsetgo/itemMeta`   — post meta map (if available from REST embed).
+ * - `designsetgo/itemTerms`  — taxonomy → slug-array map.
+ * - `designsetgo/parentItem` — the outer Query's current item (when nested),
+ *   or a self-referencing fallback for root-level Queries so inner Query
+ *   blocks always receive a defined value.
+ *
+ * @param {Object} item           Preview item: { id, type, ... }.
+ * @param {string} source         The query block source attribute value.
+ * @param {number} index          Zero-based item index in the current result set (flat/cross-group).
+ * @param {Object} outerCtx       The block's `context` prop from edit.js. May carry
+ *                                `designsetgo/parentItem` when this Query is nested.
+ * @param {number} [groupItemIndex] Zero-based position within the current group (grouped queries only).
  * @return {Object} Context object for BlockContextProvider.
  */
-function buildContext(item, source) {
+function buildContext(item, source, index, outerCtx, groupItemIndex) {
+	// Common enrichment applied regardless of source type.
+	const enrichment = {
+		'designsetgo/itemIndex': index,
+		'designsetgo/itemMeta': item.meta || {},
+		'designsetgo/itemTerms': buildTermsMap(item),
+		// Editor sessions are always authenticated — the admin is logged in.
+		// This ensures auth-rule "show for logged-in users" works correctly
+		// in the editor preview without requiring server-side context.
+		'designsetgo/isAuthenticated': true,
+		// Per-group index (0-based within the group). Omitted for non-grouped
+		// queries (undefined); present when groupItemIndex is supplied.
+		...(groupItemIndex !== undefined
+			? { 'designsetgo/groupItemIndex': groupItemIndex }
+			: {}),
+	};
+
+	let base;
 	if (source === 'posts' || source === 'manual' || source === 'current') {
-		return {
+		base = {
 			postId: item.id,
 			postType: item.type || 'post',
 		};
-	}
-	if (source === 'users') {
-		return {
+	} else if (source === 'users') {
+		base = {
 			'designsetgo/currentItemId': item.id,
 			'designsetgo/currentItemType': 'user',
 		};
-	}
-	if (source === 'terms') {
-		return {
+	} else if (source === 'terms') {
+		base = {
 			'designsetgo/currentItemId': item.id,
 			'designsetgo/currentItemType': 'term',
 		};
+	} else {
+		base = {};
 	}
-	return {};
+
+	// `designsetgo/parentItem` propagates the outer Query's current item so a
+	// nested Query block can identify its parent. For root-level Queries the
+	// outer context has no parentItem, so we fall back to the current item
+	// itself — ensuring the key is always defined for inner blocks.
+	const parentItem =
+		outerCtx?.['designsetgo/parentItem'] ??
+		(base.postId !== undefined
+			? { postId: base.postId, postType: base.postType }
+			: { postId: item.id, postType: item.type || 'post' });
+
+	return {
+		...base,
+		...enrichment,
+		'designsetgo/parentItem': parentItem,
+	};
 }
 
 /**

@@ -10,12 +10,32 @@ import {
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../components/shared';
 
+const GROUP_BY_OPTIONS = [
+	{ value: 'none', label: __('None', 'designsetgo') },
+	{ value: 'taxonomy', label: __('Taxonomy', 'designsetgo') },
+	{ value: 'meta', label: __('Meta field', 'designsetgo') },
+	{ value: 'date', label: __('Date', 'designsetgo') },
+];
+
+const DATE_PRECISION_OPTIONS = [
+	{ value: 'Y', label: __('Year', 'designsetgo') },
+	{ value: 'Y-M', label: __('Year + Month', 'designsetgo') },
+	{ value: 'Y-M-D', label: __('Year + Month + Day', 'designsetgo') },
+];
+
 const SOURCES = [
 	{ value: 'posts', label: __('Posts', 'designsetgo') },
 	{ value: 'users', label: __('Users', 'designsetgo') },
 	{ value: 'terms', label: __('Terms', 'designsetgo') },
 	{ value: 'manual', label: __('Manual picks', 'designsetgo') },
 	{ value: 'current', label: __('Current archive', 'designsetgo') },
+	{ value: 'relationship', label: __('Related items (field-driven)', 'designsetgo') },
+];
+
+const RELATIONSHIP_FALLBACK_OPTIONS = [
+	{ value: 'empty', label: __('Render no items', 'designsetgo') },
+	{ value: 'all', label: __('Fall back to all posts', 'designsetgo') },
+	{ value: 'parent', label: __('Render the parent item', 'designsetgo') },
 ];
 
 const ORDER_BY_OPTIONS = [
@@ -53,10 +73,18 @@ export default function QuerySourcePanel({
 		columnsTablet,
 		columnsMobile,
 		columnGap,
+		relationshipField,
+		relationshipFallback,
+		groupBy,
 	} = attributes;
 
 	const postTypes = useSelect(
 		(select) => select(coreStore).getPostTypes({ per_page: -1 }) || [],
+		[]
+	);
+
+	const taxonomies = useSelect(
+		(select) => select(coreStore).getTaxonomies({ per_page: -1 }) || [],
 		[]
 	);
 
@@ -67,8 +95,28 @@ export default function QuerySourcePanel({
 			value: pt.slug,
 		}));
 
+	const taxonomyOptions = (taxonomies || []).map((t) => ({
+		label: t.labels?.singular_name || t.slug,
+		value: t.slug,
+	}));
+
 	const showPostType = source === 'posts';
+	const showRelationship = source === 'relationship';
 	const showMetaKey = ['meta_value', 'meta_value_num'].includes(orderBy);
+
+	// Group-by derived state.
+	const groupByField = groupBy?.field || 'none';
+	const showGroupTaxonomy = groupByField === 'taxonomy';
+	const showGroupMeta = groupByField === 'meta';
+	const showGroupDate = groupByField === 'date';
+
+	const handleGroupByFieldChange = (value) => {
+		if (value === 'none') {
+			setAttributes({ groupBy: null });
+		} else {
+			setAttributes({ groupBy: { field: value, key: '' } });
+		}
+	};
 
 	return (
 		<DsgoInspectorPanel
@@ -121,6 +169,45 @@ export default function QuerySourcePanel({
 						onChange={(value) => setAttributes({ postType: value })}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{showRelationship && (
+				<DsgoInspectorPanel.Item
+					label={__('Relationship field', 'designsetgo')}
+					hasValue={() => (relationshipField || '') !== ''}
+					onDeselect={() => setAttributes({ relationshipField: '' })}
+					isShownByDefault
+				>
+					<TextControl
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+						label={__('Relationship field', 'designsetgo')}
+						help={__(
+							'Meta key or ACF field on the parent item that holds the related post IDs.',
+							'designsetgo'
+						)}
+						value={relationshipField || ''}
+						onChange={(v) => setAttributes({ relationshipField: v })}
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{showRelationship && (
+				<DsgoInspectorPanel.Item
+					label={__('When no related items', 'designsetgo')}
+					hasValue={() => (relationshipFallback || 'empty') !== 'empty'}
+					onDeselect={() => setAttributes({ relationshipFallback: 'empty' })}
+					isShownByDefault
+				>
+					<SelectControl
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+						label={__('When no related items', 'designsetgo')}
+						value={relationshipFallback || 'empty'}
+						onChange={(v) => setAttributes({ relationshipFallback: v })}
+						options={RELATIONSHIP_FALLBACK_OPTIONS}
 					/>
 				</DsgoInspectorPanel.Item>
 			)}
@@ -294,6 +381,90 @@ export default function QuerySourcePanel({
 					__nextHasNoMarginBottom
 				/>
 			</DsgoInspectorPanel.Item>
+
+			<DsgoInspectorPanel.Item
+				label={__('Group by', 'designsetgo')}
+				hasValue={() => groupBy !== null}
+				onDeselect={() => setAttributes({ groupBy: null })}
+				isShownByDefault
+			>
+				<SelectControl
+					label={__('Group by', 'designsetgo')}
+					value={groupByField}
+					options={GROUP_BY_OPTIONS}
+					onChange={handleGroupByFieldChange}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
+
+			{showGroupTaxonomy && (
+				<DsgoInspectorPanel.Item
+					label={__('Group taxonomy', 'designsetgo')}
+					hasValue={() => (groupBy?.key || '') !== ''}
+					onDeselect={() =>
+						setAttributes({ groupBy: { ...groupBy, key: '' } })
+					}
+					isShownByDefault
+				>
+					<SelectControl
+						label={__('Group taxonomy', 'designsetgo')}
+						value={groupBy?.key || ''}
+						options={[
+							{ value: '', label: __('— Select —', 'designsetgo') },
+							...taxonomyOptions,
+						]}
+						onChange={(value) =>
+							setAttributes({ groupBy: { ...groupBy, key: value } })
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{showGroupMeta && (
+				<DsgoInspectorPanel.Item
+					label={__('Group meta key', 'designsetgo')}
+					hasValue={() => (groupBy?.key || '') !== ''}
+					onDeselect={() =>
+						setAttributes({ groupBy: { ...groupBy, key: '' } })
+					}
+					isShownByDefault
+				>
+					<TextControl
+						label={__('Group meta key', 'designsetgo')}
+						value={groupBy?.key || ''}
+						onChange={(value) =>
+							setAttributes({ groupBy: { ...groupBy, key: value } })
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{showGroupDate && (
+				<DsgoInspectorPanel.Item
+					label={__('Date precision', 'designsetgo')}
+					hasValue={() => (groupBy?.key || '') !== '' && groupBy?.key !== 'Y'}
+					onDeselect={() =>
+						setAttributes({ groupBy: { ...groupBy, key: 'Y' } })
+					}
+					isShownByDefault
+				>
+					<SelectControl
+						label={__('Date precision', 'designsetgo')}
+						value={groupBy?.key || 'Y'}
+						options={DATE_PRECISION_OPTIONS}
+						onChange={(value) =>
+							setAttributes({ groupBy: { ...groupBy, key: value } })
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
 		</DsgoInspectorPanel>
 	);
 }

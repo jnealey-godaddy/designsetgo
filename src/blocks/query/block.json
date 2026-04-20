@@ -31,6 +31,7 @@
       "__experimentalDefaultControls": { "fontSize": true }
     }
   },
+  "usesContext": ["postId", "postType", "designsetgo/parentItem"],
   "providesContext": {
     "designsetgo/queryId": "queryId",
     "designsetgo/querySource": "source",
@@ -38,7 +39,9 @@
   },
   "attributes": {
     "queryId": { "type": "string", "default": "" },
-    "source": { "type": "string", "default": "posts", "enum": ["posts", "users", "terms", "manual", "current"] },
+    "source": { "type": "string", "default": "posts", "enum": ["posts", "users", "terms", "manual", "current", "relationship"] },
+    "relationshipField": { "type": "string", "default": "" },
+    "relationshipFallback": { "type": "string", "default": "empty", "enum": ["empty", "all", "parent"] },
     "postType": { "type": "string", "default": "post" },
     "perPage": { "type": "number", "default": 6 },
     "offset": { "type": "number", "default": 0 },
@@ -66,7 +69,8 @@
     "columnsMobile": { "type": "number", "default": 0 },
     "columnGap": { "type": "string", "default": "" },
     "showPlaceholder": { "type": "boolean", "default": true },
-    "emitSchema": { "type": "boolean", "default": true }
+    "emitSchema": { "type": "boolean", "default": true },
+    "groupBy": { "type": "object", "default": null }
   },
   "example": { "attributes": { "perPage": 3 } },
   "viewScriptModule": "file:./view.js",

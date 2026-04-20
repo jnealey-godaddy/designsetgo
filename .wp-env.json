@@ -1,38 +1,30 @@
 {
-	"core": "WordPress/WordPress#6.9",
-	"phpVersion": "8.3",
-	"plugins": [
-		"."
-	],
-	"themes": [
-		"https://downloads.wordpress.org/theme/twentytwentyfour.1.3.zip",
-		"https://downloads.wordpress.org/theme/twentytwentyfive.1.4.zip"
-	],
-	"mappings": {},
-	"env": {
-		"development": {
-			"themes": [
-				"https://downloads.wordpress.org/theme/twentytwentyfour.1.3.zip",
-				"https://downloads.wordpress.org/theme/twentytwentyfive.1.4.zip"
-			]
-		},
-		"tests": {
-			"core": "WordPress/WordPress#6.8",
-			"themes": [
-				"https://downloads.wordpress.org/theme/twentytwentyfour.1.3.zip",
-				"https://downloads.wordpress.org/theme/twentytwentyfive.1.4.zip"
-			]
-		}
-	},
-	"lifecycleScripts": {
-		"afterStart": "npx wp-env run cli wp theme activate twentytwentyfive"
-	},
-	"port": 9449,
-	"testsPort": 9450,
-	"config": {
-		"WP_DEBUG": true,
-		"WP_DEBUG_LOG": true,
-		"WP_DEBUG_DISPLAY": false,
-		"SCRIPT_DEBUG": true
-	}
+  "core": "WordPress/WordPress#6.9",
+  "phpVersion": "8.3",
+  "plugins": [
+    "."
+  ],
+  "themes": [
+    "https://downloads.wordpress.org/theme/twentytwentyfour.1.3.zip",
+    "https://downloads.wordpress.org/theme/twentytwentyfive.1.4.zip"
+  ],
+  "mappings": {},
+  "env": {
+    "development": {
+      "themes": [
+        "https://downloads.wordpress.org/theme/twentytwentyfour.1.3.zip",
+        "https://downloads.wordpress.org/theme/twentytwentyfive.1.4.zip"
+      ]
+    }
+  },
+  "lifecycleScripts": {
+    "afterStart": "npx wp-env run cli wp theme activate twentytwentyfive"
+  },
+  "port": 9451,
+  "config": {
+    "WP_DEBUG": true,
+    "WP_DEBUG_LOG": true,
+    "WP_DEBUG_DISPLAY": false,
+    "SCRIPT_DEBUG": true
+  }
 }

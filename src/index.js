@@ -70,6 +70,9 @@ import './extensions/draft-mode';
 // Hover Effects - adds subtle hover micro-interactions to common core blocks
 import './extensions/hover-effects';
 
+// Conditional Visibility - registers dsgoVisibility attribute for query-driven inner-block visibility
+import './extensions/visibility';
+
 // ===== RICH TEXT FORMATS =====
 // Text Style - adds inline text styling (color, gradient, size) to selected text
 import './formats/text-style';

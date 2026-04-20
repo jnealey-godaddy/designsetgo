@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // ─── WordPress module mocks ───────────────────────────────────────────────────
@@ -16,15 +16,10 @@ jest.mock('@wordpress/i18n', () => ({
 	},
 }));
 
-// Mock @wordpress/api-fetch — useQueryPreview calls this to fetch totalItems.
-// Use a never-resolving Promise so the async state update doesn't fire during
-// the synchronous render phase and trigger "not wrapped in act()" warnings.
+// Mock @wordpress/api-fetch — never-resolving to avoid async act() warnings.
 jest.mock('@wordpress/api-fetch', () => jest.fn(() => new Promise(() => {})));
 
-// Mock @wordpress/data — useSelect invokes the callback with a mock select()
-// so QuerySourcePanel, TaxQueryBuilder, TermPicker, and hasInnerBlocks all
-// get correct data. The block-editor store returns a stub block with no
-// innerBlocks so the default template seeds.
+// Mock @wordpress/data — same as edit.test.js.
 jest.mock('@wordpress/data', () => ({
 	useSelect: (cb) =>
 		cb((storeName) => {
@@ -43,19 +38,8 @@ jest.mock('@wordpress/data', () => ({
 						labels: { singular_name: 'Post' },
 						viewable: true,
 					},
-					{
-						slug: 'page',
-						labels: { singular_name: 'Page' },
-						viewable: true,
-					},
 				],
-				getTaxonomies: () => [
-					{
-						slug: 'category',
-						labels: { singular_name: 'Category' },
-						types: ['post'],
-					},
-				],
+				getTaxonomies: () => [],
 				getEntityRecords: () => [],
 			};
 		}),
@@ -64,13 +48,21 @@ jest.mock('@wordpress/data', () => ({
 	}),
 }));
 
-// Stub @wordpress/core-data — store token + useEntityRecords for EditorPreviewList.
+// Stub @wordpress/core-data — return a real record so BlockContextProvider fires.
 jest.mock('@wordpress/core-data', () => ({
 	store: 'core',
-	useEntityRecords: () => ({ records: [], hasResolved: true }),
+	useEntityRecords: () => ({
+		records: [{ id: 42, type: 'post', meta: {} }],
+		hasResolved: true,
+	}),
 }));
 
-// Block-editor mock — useBlockProps / useInnerBlocksProps / InspectorControls.
+// Capture array — populated by the BlockContextProvider mock below.
+// Must be declared here (module scope) so it is accessible inside the mock
+// factory closure AND inside the test assertions.
+const ctxCapture = [];
+
+// Block-editor mock — capture BlockContextProvider values.
 jest.mock('@wordpress/block-editor', () => ({
 	useBlockProps: () => ({ className: 'wp-block-designsetgo-query' }),
 	useInnerBlocksProps: (p = {}) => ({ ...p, children: null }),
@@ -79,18 +71,20 @@ jest.mock('@wordpress/block-editor', () => ({
 	),
 	InnerBlocks: () => <div data-testid="inner-blocks" />,
 	BlockPreview: () => <div data-testid="block-preview" />,
-	BlockContextProvider: ({ children }) => <>{children}</>,
+	BlockContextProvider: ({ value, children }) => {
+		ctxCapture.push(value);
+		return <>{children}</>;
+	},
 	store: 'core/block-editor',
 }));
 
-// @wordpress/blocks stub — avoids pulling in @wordpress/rich-text store.
+// @wordpress/blocks stub.
 jest.mock('@wordpress/blocks', () => ({
 	createBlocksFromInnerBlocksTemplate: jest.fn((t) => t),
 	createBlock: jest.fn((name, attrs) => ({ name, attributes: attrs || {} })),
 }));
 
-// Minimal @wordpress/components stubs — covers QuerySourcePanel, TaxQueryBuilder,
-// MetaQueryBuilder, AdvancedPanel, and ResultCountBadge needs.
+// Minimal @wordpress/components stubs — same as edit.test.js.
 jest.mock('@wordpress/components', () => {
 	const SelectControl = ({ label, value, options, onChange }) => (
 		<label>
@@ -164,7 +158,6 @@ jest.mock('@wordpress/components', () => {
 		</label>
 	);
 
-	// ToolsPanelItem: isShownByDefault=false items are hidden (like the real WP component).
 	const ToolsPanelItem = ({ children, isShownByDefault }) =>
 		isShownByDefault !== false ? <>{children}</> : null;
 
@@ -233,19 +226,19 @@ jest.mock('@wordpress/components', () => {
 	};
 });
 
-// @wordpress/element — use real React so hooks work correctly.
+// @wordpress/element — real React so hooks work correctly.
 jest.mock('@wordpress/element', () => jest.requireActual('@wordpress/element'));
 
 // ─── Component under test ─────────────────────────────────────────────────────
 import QueryEdit from '../../../../src/blocks/query/edit';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const DEFAULT_ATTRIBUTES = {
-	queryId: 'q-1',
+	queryId: 'nested-1',
 	source: 'posts',
 	postType: 'post',
-	perPage: 6,
+	perPage: 1,
 	offset: 0,
 	orderBy: 'date',
 	orderByMetaKey: '',
@@ -261,93 +254,101 @@ const DEFAULT_ATTRIBUTES = {
 	itemTagName: 'li',
 	relationshipField: '',
 	relationshipFallback: 'empty',
-	groupBy: null,
 };
 
-function renderWith(attributeOverrides = {}, propOverrides = {}) {
-	return render(
-		<QueryEdit
-			attributes={{ ...DEFAULT_ATTRIBUTES, ...attributeOverrides }}
-			setAttributes={jest.fn()}
-			clientId="test-client"
-			context={{}}
-			{...propOverrides}
-		/>
-	);
-}
+// ─── Tests ────────────────────────────────────────────────────────────────────
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
-
-describe('QueryEdit — Settings panel', () => {
-	it('renders the inspector container', () => {
-		renderWith();
-		expect(screen.getByTestId('inspector')).toBeInTheDocument();
+describe('QueryEdit nested preview', () => {
+	beforeEach(() => {
+		ctxCapture.length = 0;
 	});
 
-	it('renders a Source selector', () => {
-		renderWith();
-		expect(screen.getByLabelText(/^source$/i)).toBeInTheDocument();
-	});
-
-	it('renders a Post type selector when source is posts', () => {
-		renderWith({ source: 'posts' });
-		expect(screen.getByLabelText(/post type/i)).toBeInTheDocument();
-	});
-
-	it('does not render Post type selector when source is users', () => {
-		renderWith({ source: 'users' });
-		expect(screen.queryByLabelText(/post type/i)).not.toBeInTheDocument();
-	});
-
-	it('renders the Items per page control', () => {
-		renderWith();
-		expect(screen.getByLabelText(/items per page/i)).toBeInTheDocument();
-	});
-
-	it('renders the relationship field input when source is relationship', () => {
-		renderWith({ source: 'relationship' });
-		expect(screen.getByLabelText(/relationship field/i)).toBeInTheDocument();
-	});
-
-	it('renders the fallback select when source is relationship', () => {
-		renderWith({ source: 'relationship' });
-		expect(screen.getByLabelText(/when no related items/i)).toBeInTheDocument();
-	});
-
-	it('does not render relationship field input when source is posts', () => {
-		renderWith({ source: 'posts' });
-		expect(screen.queryByLabelText(/relationship field/i)).not.toBeInTheDocument();
-	});
-
-	it('shows the meta-key input only when orderBy is meta_value', () => {
-		// When orderBy is date, meta key item is absent (showMetaKey=false).
-		const { rerender } = renderWith({ orderBy: 'date' });
-		expect(screen.queryByLabelText(/meta key/i)).not.toBeInTheDocument();
-
-		// After switching to meta_value, the item becomes visible (isShownByDefault).
-		rerender(
+	it('provides parent context to BlockContextProvider when nested inside an outer Query', () => {
+		render(
 			<QueryEdit
-				attributes={{
-					...DEFAULT_ATTRIBUTES,
-					orderBy: 'meta_value',
-				}}
+				attributes={DEFAULT_ATTRIBUTES}
 				setAttributes={jest.fn()}
-				clientId="c"
+				clientId="cli-1"
+				context={{ 'designsetgo/parentItem': { postId: 99, postType: 'post' } }}
+			/>
+		);
+		// At least one BlockContextProvider must have received the outer parentItem.
+		expect(
+			ctxCapture.some(
+				(c) => c?.['designsetgo/parentItem']?.postId === 99
+			)
+		).toBe(true);
+	});
+
+	it('provides a self-referencing parentItem fallback for root-level Queries', () => {
+		render(
+			<QueryEdit
+				attributes={DEFAULT_ATTRIBUTES}
+				setAttributes={jest.fn()}
+				clientId="cli-2"
 				context={{}}
 			/>
 		);
-		expect(screen.getByLabelText(/meta key/i)).toBeInTheDocument();
+		// No outer parentItem — the provider should fall back to the current item
+		// (id: 42, as returned by the useEntityRecords mock).
+		expect(
+			ctxCapture.some(
+				(c) =>
+					c?.['designsetgo/parentItem'] !== undefined &&
+					c?.['designsetgo/parentItem']?.postId === 42
+			)
+		).toBe(true);
 	});
-});
 
-describe('QueryEdit — Group-by', () => {
-	it('renders the group-by type select', () => {
-		renderWith();
-		expect(screen.getByLabelText(/group by/i)).toBeInTheDocument();
+	it('always provides designsetgo/itemIndex in BlockContextProvider', () => {
+		render(
+			<QueryEdit
+				attributes={DEFAULT_ATTRIBUTES}
+				setAttributes={jest.fn()}
+				clientId="cli-3"
+				context={{}}
+			/>
+		);
+		expect(
+			ctxCapture.some(
+				(c) => typeof c?.['designsetgo/itemIndex'] === 'number'
+			)
+		).toBe(true);
 	});
 
-	it('shows a taxonomy picker when groupBy.field is taxonomy', () => {
-		renderWith({ groupBy: { field: 'taxonomy', key: 'category' } });
-		expect(screen.getByLabelText(/group taxonomy/i)).toBeInTheDocument();
+	it('always provides designsetgo/itemMeta in BlockContextProvider', () => {
+		render(
+			<QueryEdit
+				attributes={DEFAULT_ATTRIBUTES}
+				setAttributes={jest.fn()}
+				clientId="cli-4"
+				context={{}}
+			/>
+		);
+		expect(
+			ctxCapture.some(
+				(c) =>
+					c?.['designsetgo/itemMeta'] !== undefined &&
+					typeof c?.['designsetgo/itemMeta'] === 'object'
+			)
+		).toBe(true);
+	});
+
+	it('provides designsetgo/isAuthenticated=true in BlockContextProvider', () => {
+		render(
+			<QueryEdit
+				attributes={DEFAULT_ATTRIBUTES}
+				setAttributes={jest.fn()}
+				clientId="cli-5"
+				context={{}}
+			/>
+		);
+		// Editor sessions are always authenticated; auth visibility rules should
+		// never hide content from the admin in the editor preview.
+		expect(
+			ctxCapture.some(
+				(c) => c?.['designsetgo/isAuthenticated'] === true
+			)
+		).toBe(true);
 	});
 });

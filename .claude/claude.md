@@ -65,6 +65,16 @@ For sibling blocks that already exist and meet the "1–3 attribute difference +
 - Editor live preview: Posts via `useEntityRecords`, users/terms via `/designsetgo/v1/query/preview` REST route. First item wraps editable `InnerBlocks`; items 2..N render `BlockPreview`.
 - Admin dashboard: Settings → DesignSetGo → Dynamic Query (requires `manage_options`).
 
+### Query block family (Dynamic Query v2.3)
+
+- Relationship source (`source: 'relationship'`) reads `relationshipField` from the nearest parent-stack item and iterates referenced post IDs via `post__in`.
+- `relationshipFallback`: `'empty'` | `'all'` | `'parent'` controls behavior when the field yields zero IDs.
+- DSGo bindings (`designsetgo/post-meta`, `designsetgo/acf`) accept a `scope` arg: `'self'` (default), `'parent'`, `'root'`. Reads from `$GLOBALS['designsetgo_parent_stack']` pushed by `designsetgo_query_render_item()`.
+- Every block has a `dsgoVisibility` attribute (registered via `blocks.registerBlockType` filter in `src/extensions/visibility/filters.js`). Rule shape: `{ operator: 'AND'|'OR', rules: [{ type: 'meta'|'taxonomy'|'index'|'auth', op, key?, value }] }`. Server evaluator: `DesignSetGo\BlockVisibility::matches()`. Editor mirror: `src/extensions/visibility/evaluateRules.js`.
+- New sibling block `designsetgo/query-group-header` renders once per group inside a parent Query when `groupBy` is set.
+- `groupBy` attribute on the Query block — shape `{ field: 'taxonomy'|'meta'|'date', key: string }`. Server partitions items in `designsetgo_query_partition_items()` (in `render-helpers.php`).
+- Custom visibility rule types via `designsetgo_visibility_rule` filter (`($match, $rule, $context)` → bool|null).
+
 ### Inspector IA (Theme 3)
 
 Three panels per block, in this order: **Settings** → **Style** → **Advanced**. Use `<DsgoInspectorPanel>` (the `ToolsPanel` wrapper) for all custom inspector controls; never reach for `PanelBody` directly.

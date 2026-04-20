@@ -12,6 +12,9 @@
 		<testsuite name="DesignSetGo">
 			<directory suffix="-test.php">./tests/phpunit</directory>
 		</testsuite>
+		<testsuite name="DesignSetGo Integration">
+			<directory suffix="Test.php">./tests/integration</directory>
+		</testsuite>
 	</testsuites>
 	<coverage>
 		<include>

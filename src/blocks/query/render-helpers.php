@@ -64,6 +64,12 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 					return designsetgo_query_render_terms( $attributes, $context );
 				}
 				break;
+			case 'relationship':
+				require_once __DIR__ . '/render-relationship.php';
+				if ( function_exists( 'designsetgo_query_render_relationship' ) ) {
+					return designsetgo_query_render_relationship( $attributes, $context );
+				}
+				break;
 			case 'posts':
 			case 'manual':
 			case 'current':
@@ -110,11 +116,71 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 				'relation' => 'AND',
 				'clauses'  => array(),
 			),
-			'tagName'        => 'ul',
-			'itemTagName'    => 'li',
-			'emitSchema'     => true,
+			'tagName'              => 'ul',
+			'itemTagName'          => 'li',
+			'emitSchema'           => true,
+			'relationshipField'    => '',
+			'relationshipFallback' => 'empty', // empty | all | parent
+			'groupBy'              => null,
 		);
 		return wp_parse_args( $attributes, $defaults );
+	}
+
+	/**
+	 * Partition an array of post IDs into labelled groups for grouped rendering.
+	 *
+	 * Supported fields: 'taxonomy' (by term slug), 'meta' (by meta value),
+	 * 'date' (by Y, Y-m, or Y-m-d depending on $group_spec['key']).
+	 *
+	 * Posts with multiple terms (taxonomy field) appear in ALL matching groups.
+	 * Posts with no matching term land in the '__none__' / Uncategorized bucket.
+	 *
+	 * @param int[]  $post_ids   Ordered list of post IDs to partition.
+	 * @param array  $group_spec { field: string, key: string }
+	 * @return array[] Array of groups: each { label: string, value: string, ids: int[] }
+	 */
+	function designsetgo_query_partition_items( array $post_ids, array $group_spec ) {
+		if ( empty( $group_spec['field'] ) || empty( $group_spec['key'] ) ) {
+			return array( array( 'label' => '', 'value' => '', 'ids' => $post_ids ) );
+		}
+		$field = (string) $group_spec['field'];
+		$key   = (string) $group_spec['key'];
+
+		$groups = array();
+		foreach ( $post_ids as $pid ) {
+			$values = array();
+			$labels = array();
+			if ( 'taxonomy' === $field ) {
+				$terms = get_the_terms( $pid, $key );
+				if ( empty( $terms ) || is_wp_error( $terms ) ) {
+					$values = array( '__none__' );
+					$labels = array( __( 'Uncategorized', 'designsetgo' ) );
+				} else {
+					$values = wp_list_pluck( $terms, 'slug' );
+					$labels = wp_list_pluck( $terms, 'name' );
+				}
+			} elseif ( 'meta' === $field ) {
+				$v      = (string) get_post_meta( $pid, $key, true );
+				$values = array( $v );
+				$labels = array( $v );
+			} elseif ( 'date' === $field ) {
+				$d      = get_post_field( 'post_date', $pid );
+				$ts     = $d ? strtotime( $d ) : 0;
+				$format = 'Y-M-D' === $key ? 'Y-m-d' : ( 'Y-M' === $key ? 'Y-m' : 'Y' );
+				$values = array( gmdate( $format, $ts ) );
+				$labels = $values;
+			} else {
+				$values = array( '' );
+				$labels = array( '' );
+			}
+			foreach ( $values as $i => $v ) {
+				if ( ! isset( $groups[ $v ] ) ) {
+					$groups[ $v ] = array( 'label' => $labels[ $i ] ?? $v, 'value' => $v, 'ids' => array() );
+				}
+				$groups[ $v ]['ids'][] = $pid;
+			}
+		}
+		return array_values( $groups );
 	}
 
 	/**
@@ -258,20 +324,51 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 * @return string
 	 */
 	function designsetgo_query_render_item( $inner_html, array $item_context, $item_tag ) {
+		// Ensure BlockVisibility is available when this file is required directly
+		// (e.g. in integration tests) before the plugin bootstrap has run.
+		if ( ! class_exists( '\\DesignSetGo\\BlockVisibility' ) ) {
+			require_once DESIGNSETGO_PATH . 'includes/class-block-visibility.php';
+		}
+
 		$tag = in_array( $item_tag, array( 'li', 'div', 'article' ), true ) ? $item_tag : 'li';
 
 		$html   = '';
 		$parsed = parse_blocks( $inner_html );
-		foreach ( $parsed as $parsed_block ) {
-			if ( empty( $parsed_block['blockName'] ) ) {
-				continue;
+
+		// Push this item's context onto the global parent stack so that nested
+		// Query blocks (and Task C2's `scope` arg on bindings) can walk the
+		// ancestor chain. The stack is keyed by depth, so parallel items from
+		// different queries never collide — each item fully completes before the
+		// next begins (PHP is single-threaded, no async interleaving).
+		if ( ! isset( $GLOBALS['designsetgo_parent_stack'] ) || ! is_array( $GLOBALS['designsetgo_parent_stack'] ) ) {
+			$GLOBALS['designsetgo_parent_stack'] = array();
+		}
+		array_push( $GLOBALS['designsetgo_parent_stack'], $item_context );
+
+		try {
+			foreach ( $parsed as $parsed_block ) {
+				if ( empty( $parsed_block['blockName'] ) ) {
+					continue;
+				}
+				// Skip blocks whose dsgoVisibility rules don't match the current item context.
+				$visibility = isset( $parsed_block['attrs']['dsgoVisibility'] ) ? $parsed_block['attrs']['dsgoVisibility'] : null;
+				if ( ! \DesignSetGo\BlockVisibility::matches( $visibility, $item_context ) ) {
+					continue;
+				}
+				// WP_Block's constructor signature is ( $block, $available_context, $registry ).
+				// The $available_context arg is what gets filtered through child blocks'
+				// usesContext declarations. Passing it via render_block()'s parsed-block
+				// 'context' key would NOT work — that key is not read by WP_Block.
+				$block_instance = new WP_Block( $parsed_block, $item_context );
+				$html          .= $block_instance->render();
 			}
-			// WP_Block's constructor signature is ( $block, $available_context, $registry ).
-			// The $available_context arg is what gets filtered through child blocks'
-			// usesContext declarations. Passing it via render_block()'s parsed-block
-			// 'context' key would NOT work — that key is not read by WP_Block.
-			$block_instance = new WP_Block( $parsed_block, $item_context );
-			$html          .= $block_instance->render();
+		} finally {
+			// Always pop — even if render() throws — so the stack stays consistent
+			// for any outer Query block that is still iterating.
+			array_pop( $GLOBALS['designsetgo_parent_stack'] );
+			if ( empty( $GLOBALS['designsetgo_parent_stack'] ) ) {
+				unset( $GLOBALS['designsetgo_parent_stack'] );
+			}
 		}
 
 		return sprintf( '<%1$s class="dsgo-query__item">%2$s</%1$s>', $tag, $html );
