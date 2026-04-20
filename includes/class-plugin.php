@@ -459,6 +459,13 @@ class Plugin {
 	public $extension_attrs;
 
 	/**
+	 * Style Binding instance.
+	 *
+	 * @var StyleBinding
+	 */
+	public $style_binding;
+
+	/**
 	 * Query Block Controller instance.
 	 *
 	 * @var Blocks\Query\Controller
@@ -572,6 +579,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/class-icon-injector.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-button-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-extension-attributes.php';
+		require_once DESIGNSETGO_PATH . 'includes/class-style-binding.php';
 		require_once DESIGNSETGO_PATH . 'includes/svg-pattern-data.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-svg-pattern-renderer.php';
 
@@ -617,6 +625,7 @@ class Plugin {
 		$this->assets              = new Assets();
 		$this->blocks              = new Blocks\Loader();
 		$this->extension_attrs     = new Extension_Attributes();
+		$this->style_binding       = new StyleBinding();
 		$this->modal_hooks         = new Blocks\Modal_Hooks();
 		$this->form_handler        = new Blocks\Form_Handler();
 		$this->form_submissions    = new Blocks\Form_Submissions();
