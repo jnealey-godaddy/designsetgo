@@ -267,9 +267,10 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 					continue;
 				}
 				$tax_query[] = array(
-					'taxonomy' => sanitize_key( (string) $clause['taxonomy'] ),
-					'terms'    => array_map( 'absint', (array) $clause['terms'] ),
-					'operator' => in_array( ( $clause['operator'] ?? 'IN' ), array( 'IN', 'NOT IN', 'AND' ), true ) ? $clause['operator'] : 'IN',
+					'taxonomy'         => sanitize_key( (string) $clause['taxonomy'] ),
+					'terms'            => array_map( 'absint', (array) $clause['terms'] ),
+					'operator'         => in_array( ( $clause['operator'] ?? 'IN' ), array( 'IN', 'NOT IN', 'AND' ), true ) ? $clause['operator'] : 'IN',
+					'include_children' => isset( $clause['include_children'] ) ? (bool) $clause['include_children'] : true,
 				);
 			}
 			if ( count( $tax_query ) > 1 ) {

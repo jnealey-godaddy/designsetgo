@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // ─── WordPress module mocks ───────────────────────────────────────────────────
@@ -119,10 +119,23 @@ jest.mock('@wordpress/components', () => {
 	const VStack = ({ children }) => <div>{children}</div>;
 	const HStack = ({ children }) => <div>{children}</div>;
 
+	const ToggleControl = ({ label, checked, onChange }) => (
+		<label>
+			{label}
+			<input
+				type="checkbox"
+				aria-label={label}
+				checked={checked}
+				onChange={(e) => onChange(e.target.checked)}
+			/>
+		</label>
+	);
+
 	return {
 		SelectControl,
 		FormTokenField,
 		Button,
+		ToggleControl,
 		__experimentalToolsPanel: ToolsPanel,
 		__experimentalToolsPanelItem: ToolsPanelItem,
 		__experimentalHStack: HStack,
@@ -245,5 +258,47 @@ describe('TaxQueryBuilder', () => {
 			/>
 		);
 		expect(screen.getByLabelText(/relation/i)).toBeInTheDocument();
+	});
+
+	it('addClause seeds include_children: true on the new clause', () => {
+		const { setAttributes } = renderWith();
+		const addBtn = screen.getByRole('button', {
+			name: /add taxonomy filter/i,
+		});
+		fireEvent.click( addBtn );
+		expect(setAttributes).toHaveBeenCalledTimes(1);
+		const call = setAttributes.mock.calls[0][0];
+		const newClause = call.taxQuery.clauses[0];
+		expect(newClause).toHaveProperty('include_children', true);
+	});
+
+	it('renders include_children toggle checked by default for existing clause', () => {
+		renderWith({
+			taxQuery: {
+				relation: 'AND',
+				clauses: [{ taxonomy: 'category', terms: [], operator: 'IN' }],
+			},
+		});
+		const toggle = screen.getByLabelText(/include child terms/i);
+		expect(toggle).toBeInTheDocument();
+		expect(toggle).toBeChecked();
+	});
+
+	it('renders include_children toggle unchecked when set to false', () => {
+		renderWith({
+			taxQuery: {
+				relation: 'AND',
+				clauses: [
+					{
+						taxonomy: 'category',
+						terms: [],
+						operator: 'IN',
+						include_children: false,
+					},
+				],
+			},
+		});
+		const toggle = screen.getByLabelText(/include child terms/i);
+		expect(toggle).not.toBeChecked();
 	});
 });

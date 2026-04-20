@@ -5,6 +5,7 @@ import { store as coreStore } from '@wordpress/core-data';
 import {
 	Button,
 	SelectControl,
+	ToggleControl,
 	FormTokenField,
 	__experimentalHStack as HStack,
 	__experimentalVStack as VStack,
@@ -56,7 +57,7 @@ export default function TaxQueryBuilder({
 				...taxQuery,
 				clauses: [
 					...taxQuery.clauses,
-					{ taxonomy: relevant[0].slug, terms: [], operator: 'IN' },
+					{ taxonomy: relevant[0].slug, terms: [], operator: 'IN', include_children: true },
 				],
 			},
 		});
@@ -160,6 +161,14 @@ export default function TaxQueryBuilder({
 									{__('Remove', 'designsetgo')}
 								</Button>
 							</HStack>
+							<ToggleControl
+								label={__('Include child terms', 'designsetgo')}
+								checked={clause.include_children ?? true}
+								onChange={(val) =>
+									updateClause(idx, { include_children: val })
+								}
+								__nextHasNoMarginBottom
+							/>
 						</VStack>
 					))}
 
