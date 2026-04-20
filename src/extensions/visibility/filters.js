@@ -57,11 +57,6 @@ addFilter(
  *   2. The block context explicitly provides `designsetgo/itemIndex`
  *      (meaning we are inside a query-item preview, not the main canvas), AND
  *   3. evaluateRules() returns false for the current item context.
- *
- * NOTE: This gate is inert until Task C3 wires `designsetgo/itemIndex`,
- * `designsetgo/itemMeta`, and `designsetgo/itemTerms` into query-item
- * preview context. Until then `props.context['designsetgo/itemIndex']`
- * will always be undefined and every block will pass through unchanged.
  */
 const withVisibilityGate = createHigherOrderComponent( ( BlockListBlock ) => ( props ) => {
 	const visibility = props.attributes?.dsgoVisibility;
