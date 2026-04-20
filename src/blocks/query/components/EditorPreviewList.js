@@ -17,6 +17,7 @@ import { BlockPreview, BlockContextProvider } from '@wordpress/block-editor';
 import { Spinner, Placeholder } from '@wordpress/components';
 import apiFetch from '@wordpress/api-fetch';
 import { addQueryArgs } from '@wordpress/url';
+import useQueryPreview from '../hooks/useQueryPreview';
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -40,12 +41,25 @@ export default function EditorPreviewList({
 }) {
 	const source = attributes.source || 'posts';
 	const isPosts = source === 'posts';
+	const isRelationship = source === 'relationship';
 
-	// Choose the data-fetching path based on source.
+	// All three hooks must be called unconditionally (Rules of Hooks).
+	// Each hook no-ops cheaply when its source doesn't match via its `enabled`
+	// guard or its internal isRelationship branch.
 	const postsData = usePosts(attributes, isPosts);
-	const remoteData = useRemotePreview(attributes, !isPosts);
+	const remoteData = useRemotePreview(attributes, !isPosts && !isRelationship);
+	const relationshipData = useQueryPreview({
+		source,
+		relationshipField: attributes.relationshipField || '',
+		perPage: attributes.perPage || 6,
+	});
 
-	const { records, hasResolved } = isPosts ? postsData : remoteData;
+	// Select the active data path.
+	const { records, hasResolved } = isPosts
+		? postsData
+		: isRelationship
+		? relationshipData
+		: remoteData;
 
 	if (!hasResolved) {
 		return (
