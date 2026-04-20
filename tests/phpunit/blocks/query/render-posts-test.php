@@ -37,7 +37,7 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		self::factory()->post->create_many( 7, array( 'post_status' => 'publish' ) );
 		$this->load_helpers();
 
-		$atts = array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 3 );
+		$atts = array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 3, 'itemTagName' => 'li' );
 		$page1 = designsetgo_query_render( $atts, array( 'query_id' => 't', 'page' => 1, 'inner_html' => '' ) );
 		$page2 = designsetgo_query_render( $atts, array( 'query_id' => 't', 'page' => 2, 'inner_html' => '' ) );
 		$page3 = designsetgo_query_render( $atts, array( 'query_id' => 't', 'page' => 3, 'inner_html' => '' ) );
@@ -114,7 +114,7 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		add_filter( 'designsetgo_query_args', $filter_cb, 10, 3 );
 
 		$result = designsetgo_query_render(
-			array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 10 ),
+			array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 10, 'itemTagName' => 'li' ),
 			array( 'query_id' => 'hook', 'page' => 1, 'inner_html' => '' )
 		);
 
@@ -359,6 +359,42 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		$leaf = $args['tax_query'][1];
 		$this->assertEquals( 'post_tag', $leaf['taxonomy'] );
 		$this->assertFalse( $leaf['include_children'] );
+	}
+
+	public function test_nested_meta_group_builds_correctly() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage'      => 10,
+			'orderBy'      => 'date',
+			'order'        => 'DESC',
+			'postType'     => 'post',
+			'offset'       => 0,
+			'ignoreSticky' => false,
+			'search'       => '',
+			'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'metaQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [
+					[
+						'relation' => 'OR',
+						'clauses'  => [
+							[ 'key' => 'status', 'compare' => '=', 'value' => 'featured', 'type' => 'CHAR' ],
+							[ 'key' => 'featured', 'compare' => '=', 'value' => '1', 'type' => 'NUMERIC' ],
+						],
+					],
+					[ 'key' => 'active', 'compare' => '=', 'value' => '1', 'type' => 'CHAR' ],
+				],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertEquals( 'AND', $args['meta_query']['relation'] );
+		$sub = $args['meta_query'][0];
+		$this->assertEquals( 'OR', $sub['relation'] );
+		$this->assertEquals( 'status', $sub[0]['key'] );
+		$this->assertEquals( 'active', $args['meta_query'][1]['key'] );
 	}
 
 	public function test_child_blocks_resolve_per_item_context() {

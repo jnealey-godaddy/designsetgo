@@ -44,6 +44,42 @@ if ( ! function_exists( 'designsetgo_build_tax_query_entry' ) ) :
 	}
 endif;
 
+if ( ! function_exists( 'designsetgo_build_meta_query_entry' ) ) :
+	/**
+	 * Recursively builds a WP_Query meta_query clause or nested group.
+	 *
+	 * @param array $entry Clause or group from block attributes.
+	 * @return array|null WP_Query meta_query entry, or null if invalid.
+	 */
+	function designsetgo_build_meta_query_entry( array $entry ) {
+		if ( isset( $entry['clauses'] ) ) {
+			// Nested group.
+			$sub = array(
+				'relation' => ( 'OR' === ( $entry['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
+			);
+			foreach ( (array) $entry['clauses'] as $child ) {
+				$built = designsetgo_build_meta_query_entry( $child );
+				if ( null !== $built ) {
+					$sub[] = $built;
+				}
+			}
+			return count( $sub ) > 1 ? $sub : null;
+		}
+		// Leaf clause.
+		if ( empty( $entry['key'] ) ) {
+			return null;
+		}
+		$valid_compare = array( '=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS' );
+		$valid_type    = array( 'CHAR', 'NUMERIC', 'DATE' );
+		return array(
+			'key'     => sanitize_text_field( (string) $entry['key'] ),
+			'value'   => sanitize_text_field( (string) ( $entry['value'] ?? '' ) ),
+			'compare' => in_array( ( $entry['compare'] ?? '=' ), $valid_compare, true ) ? $entry['compare'] : '=',
+			'type'    => in_array( ( $entry['type'] ?? 'CHAR' ), $valid_type, true ) ? $entry['type'] : 'CHAR',
+		);
+	}
+endif;
+
 if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 
 	/**
@@ -307,24 +343,17 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			}
 		}
 
-		// Meta query.
+		// Meta query (supports nested AND/OR groups).
 		$meta_clauses = isset( $atts['metaQuery']['clauses'] ) ? (array) $atts['metaQuery']['clauses'] : array();
 		if ( ! empty( $meta_clauses ) ) {
-			$meta_query    = array(
+			$meta_query = array(
 				'relation' => ( 'OR' === ( $atts['metaQuery']['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
 			);
-			$valid_compare = array( '=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS' );
-			$valid_type    = array( 'CHAR', 'NUMERIC', 'DATE' );
-			foreach ( $meta_clauses as $clause ) {
-				if ( empty( $clause['key'] ) ) {
-					continue;
+			foreach ( $meta_clauses as $entry ) {
+				$built = designsetgo_build_meta_query_entry( $entry );
+				if ( null !== $built ) {
+					$meta_query[] = $built;
 				}
-				$meta_query[] = array(
-					'key'     => sanitize_text_field( (string) $clause['key'] ),
-					'value'   => sanitize_text_field( (string) ( $clause['value'] ?? '' ) ),
-					'compare' => in_array( ( $clause['compare'] ?? '=' ), $valid_compare, true ) ? $clause['compare'] : '=',
-					'type'    => in_array( ( $clause['type'] ?? 'CHAR' ), $valid_type, true ) ? $clause['type'] : 'CHAR',
-				);
 			}
 			if ( count( $meta_query ) > 1 ) {
 				$args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query

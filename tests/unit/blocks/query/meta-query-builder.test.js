@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // ─── WordPress module mocks ───────────────────────────────────────────────────
@@ -125,10 +125,10 @@ function renderWith(attributeOverrides = {}) {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('MetaQueryBuilder', () => {
-	it('renders Add meta condition button when no clauses', () => {
+	it('renders + Clause button when no clauses', () => {
 		renderWith();
 		expect(
-			screen.getByRole('button', { name: /add meta condition/i })
+			screen.getByRole('button', { name: /\+ clause/i })
 		).toBeInTheDocument();
 	});
 
@@ -186,7 +186,7 @@ describe('MetaQueryBuilder', () => {
 		expect(screen.queryByLabelText(/^value$/i)).not.toBeInTheDocument();
 	});
 
-	it('renders Remove button with aria-label for each clause', () => {
+	it('renders Remove button for each clause', () => {
 		renderWith({
 			metaQuery: {
 				relation: 'AND',
@@ -202,17 +202,17 @@ describe('MetaQueryBuilder', () => {
 			},
 		});
 		const removeButtons = screen.getAllByRole('button', {
-			name: /remove meta condition/i,
+			name: /^remove$/i,
 		});
 		expect(removeButtons).toHaveLength(2);
 	});
 
-	it('renders Relation selector only when more than 1 clause is present', () => {
-		// 0 clauses — no relation selector.
+	it('renders Match selector only when more than 1 clause is present', () => {
+		// 0 clauses — no match selector.
 		const { rerender } = renderWith();
-		expect(screen.queryByLabelText(/relation/i)).not.toBeInTheDocument();
+		expect(screen.queryByLabelText(/match/i)).not.toBeInTheDocument();
 
-		// 1 clause — no relation selector.
+		// 1 clause — no match selector.
 		rerender(
 			<MetaQueryBuilder
 				attributes={{
@@ -232,9 +232,9 @@ describe('MetaQueryBuilder', () => {
 				clientId="test-client"
 			/>
 		);
-		expect(screen.queryByLabelText(/relation/i)).not.toBeInTheDocument();
+		expect(screen.queryByLabelText(/match/i)).not.toBeInTheDocument();
 
-		// 2 clauses — relation selector appears.
+		// 2 clauses — match selector appears.
 		rerender(
 			<MetaQueryBuilder
 				attributes={{
@@ -260,6 +260,20 @@ describe('MetaQueryBuilder', () => {
 				clientId="test-client"
 			/>
 		);
-		expect(screen.getByLabelText(/relation/i)).toBeInTheDocument();
+		expect(screen.getByLabelText(/match/i)).toBeInTheDocument();
+	});
+
+	it('adds a nested group when clicking + Group', () => {
+		const setAttributes = jest.fn();
+		const { getByRole } = render(
+			<MetaQueryBuilder
+				attributes={{ metaQuery: { relation: 'AND', clauses: [] } }}
+				setAttributes={setAttributes}
+				clientId="test"
+			/>
+		);
+		fireEvent.click(getByRole('button', { name: /\+ group/i }));
+		const call = setAttributes.mock.calls[0][0];
+		expect(call.metaQuery.clauses[0]).toHaveProperty('clauses');
 	});
 });
