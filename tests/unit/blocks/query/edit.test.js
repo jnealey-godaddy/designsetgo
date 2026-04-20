@@ -259,6 +259,8 @@ const DEFAULT_ATTRIBUTES = {
 	manualIds: [],
 	tagName: 'ul',
 	itemTagName: 'li',
+	relationshipField: '',
+	relationshipFallback: 'empty',
 };
 
 function renderWith(attributeOverrides = {}, propOverrides = {}) {
@@ -299,6 +301,21 @@ describe('QueryEdit — Settings panel', () => {
 	it('renders the Items per page control', () => {
 		renderWith();
 		expect(screen.getByLabelText(/items per page/i)).toBeInTheDocument();
+	});
+
+	it('renders the relationship field input when source is relationship', () => {
+		renderWith({ source: 'relationship' });
+		expect(screen.getByLabelText(/relationship field/i)).toBeInTheDocument();
+	});
+
+	it('renders the fallback select when source is relationship', () => {
+		renderWith({ source: 'relationship' });
+		expect(screen.getByLabelText(/when no related items/i)).toBeInTheDocument();
+	});
+
+	it('does not render relationship field input when source is posts', () => {
+		renderWith({ source: 'posts' });
+		expect(screen.queryByLabelText(/relationship field/i)).not.toBeInTheDocument();
 	});
 
 	it('shows the meta-key input only when orderBy is meta_value', () => {

@@ -16,6 +16,13 @@ const SOURCES = [
 	{ value: 'terms', label: __('Terms', 'designsetgo') },
 	{ value: 'manual', label: __('Manual picks', 'designsetgo') },
 	{ value: 'current', label: __('Current archive', 'designsetgo') },
+	{ value: 'relationship', label: __('Related items (field-driven)', 'designsetgo') },
+];
+
+const RELATIONSHIP_FALLBACK_OPTIONS = [
+	{ value: 'empty', label: __('Render no items', 'designsetgo') },
+	{ value: 'all', label: __('Fall back to all posts', 'designsetgo') },
+	{ value: 'parent', label: __('Render the parent item', 'designsetgo') },
 ];
 
 const ORDER_BY_OPTIONS = [
@@ -53,6 +60,8 @@ export default function QuerySourcePanel({
 		columnsTablet,
 		columnsMobile,
 		columnGap,
+		relationshipField,
+		relationshipFallback,
 	} = attributes;
 
 	const postTypes = useSelect(
@@ -68,6 +77,7 @@ export default function QuerySourcePanel({
 		}));
 
 	const showPostType = source === 'posts';
+	const showRelationship = source === 'relationship';
 	const showMetaKey = ['meta_value', 'meta_value_num'].includes(orderBy);
 
 	return (
@@ -121,6 +131,45 @@ export default function QuerySourcePanel({
 						onChange={(value) => setAttributes({ postType: value })}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{showRelationship && (
+				<DsgoInspectorPanel.Item
+					label={__('Relationship field', 'designsetgo')}
+					hasValue={() => (relationshipField || '') !== ''}
+					onDeselect={() => setAttributes({ relationshipField: '' })}
+					isShownByDefault
+				>
+					<TextControl
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+						label={__('Relationship field', 'designsetgo')}
+						help={__(
+							'Meta key or ACF field on the parent item that holds the related post IDs.',
+							'designsetgo'
+						)}
+						value={relationshipField || ''}
+						onChange={(v) => setAttributes({ relationshipField: v })}
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{showRelationship && (
+				<DsgoInspectorPanel.Item
+					label={__('When no related items', 'designsetgo')}
+					hasValue={() => (relationshipFallback || 'empty') !== 'empty'}
+					onDeselect={() => setAttributes({ relationshipFallback: 'empty' })}
+					isShownByDefault
+				>
+					<SelectControl
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+						label={__('When no related items', 'designsetgo')}
+						value={relationshipFallback || 'empty'}
+						onChange={(v) => setAttributes({ relationshipFallback: v })}
+						options={RELATIONSHIP_FALLBACK_OPTIONS}
 					/>
 				</DsgoInspectorPanel.Item>
 			)}
