@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Per-URL Markdown content negotiation** — any published page/post URL now returns Markdown when the request sends `Accept: text/markdown` (or any Accept header where `text/markdown` outranks `text/html` via q-values). Responds with `Content-Type: text/markdown; charset=utf-8` and `Vary: Accept`. Returns `406 Not Acceptable` when the client rejects both `text/html` and `text/markdown`. Reuses the existing per-post Markdown files (falls back to live conversion). Respects the llms.txt enablement flag, post-type allowlist, exclusion meta, and password-protected posts. Passes the [acceptmarkdown.com](https://acceptmarkdown.com/) readiness contract.
+
 ### Removed
 - **Visual Revision Comparison** - Deprecated and removed in favor of WordPress 7.0's native visual diff for revisions. Removed the visual comparison admin page, block differ, revision renderer, REST API endpoints (`/designsetgo/v1/revisions/*`), and associated settings (`revisions.enable_visual_comparison`, `revisions.default_to_visual`)
 
