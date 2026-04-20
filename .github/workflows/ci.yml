@@ -261,7 +261,7 @@ jobs:
         run: |
           echo "Waiting for WordPress..."
           for i in $(seq 1 30); do
-            if curl -s -o /dev/null -w '%{http_code}' http://localhost:9449/wp-login.php | grep -q '200'; then
+            if curl -s -o /dev/null -w '%{http_code}' http://localhost:9451/wp-login.php | grep -q '200'; then
               echo "WordPress is ready (attempt $i)"
               break
             fi

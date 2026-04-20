@@ -14,7 +14,7 @@ const http = require('http');
 const ADMIN_USER = process.env.WP_ADMIN_USER || 'admin';
 const ADMIN_PASSWORD = process.env.WP_ADMIN_PASSWORD || 'password';
 
-const WP_BASE_URL = process.env.WP_BASE_URL || 'http://localhost:9449';
+const WP_BASE_URL = process.env.WP_BASE_URL || 'http://localhost:9451';
 
 /**
  * Wait for the WordPress server to be ready by polling the login page.

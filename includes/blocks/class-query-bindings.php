@@ -210,7 +210,9 @@ class Bindings {
 					return '' === $value ? null : $value;
 				}
 			} catch ( \ReflectionException $e ) {
-				// Property not accessible — nothing to do.
+				// WP_Block::$available_context is no longer reflectable on this WP
+				// version — fall through to returning null. No recovery possible.
+				unset( $e );
 			}
 		}
 
@@ -298,7 +300,9 @@ class Bindings {
 				return (int) $available['postId'];
 			}
 		} catch ( \ReflectionException $e ) {
-			// Property not accessible — nothing to do.
+			// WP_Block::$available_context is no longer reflectable on this WP
+			// version — fall through to returning 0. No recovery possible.
+			unset( $e );
 		}
 
 		return 0;

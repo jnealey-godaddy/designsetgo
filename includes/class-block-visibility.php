@@ -14,6 +14,12 @@ namespace DesignSetGo;
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Evaluates `dsgoVisibility` rules against per-item context during query renders.
+ *
+ * Pure static helpers plus a single `render_block` filter registered via
+ * `register()` that gates nested inner blocks inside a query item template.
+ */
 class BlockVisibility {
 
 	/**
