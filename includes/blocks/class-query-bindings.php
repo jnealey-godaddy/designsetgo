@@ -61,7 +61,7 @@ class Bindings {
 	/**
 	 * Returns a single post-meta value for the bound block.
 	 *
-	 * @param array          $args           Binding args (expects 'key').
+	 * @param array          $args           Binding args (expects 'key'; optional 'scope': 'self'|'parent'|'root').
 	 * @param \WP_Block|null $block          The current block instance.
 	 * @param string         $attribute_name The bound attribute name.
 	 * @return string|null
@@ -74,10 +74,25 @@ class Bindings {
 			return null;
 		}
 
+		$scope = isset( $args['scope'] ) ? (string) $args['scope'] : 'self';
+
 		$post_id = 0;
-		if ( $block && isset( $block->context['postId'] ) ) {
-			$post_id = (int) $block->context['postId'];
+		if ( 'parent' === $scope ) {
+			$stack  = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
+			$parent = empty( $stack ) ? null : end( $stack );
+			if ( is_array( $parent ) && ! empty( $parent['postId'] ) ) {
+				$post_id = (int) $parent['postId'];
+			}
+		} elseif ( 'root' === $scope ) {
+			$stack = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
+			$root  = empty( $stack ) ? null : reset( $stack );
+			if ( is_array( $root ) && ! empty( $root['postId'] ) ) {
+				$post_id = (int) $root['postId'];
+			}
+		} else {
+			$post_id = self::resolve_post_id_from_block( $block );
 		}
+
 		if ( ! $post_id ) {
 			$post_id = get_the_ID();
 		}
@@ -108,7 +123,7 @@ class Bindings {
 	/**
 	 * Returns a single ACF field value for the bound block.
 	 *
-	 * @param array          $args           Binding args (expects 'key').
+	 * @param array          $args           Binding args (expects 'key'; optional 'scope': 'self'|'parent'|'root').
 	 * @param \WP_Block|null $block          The current block instance.
 	 * @param string         $attribute_name The bound attribute name.
 	 * @return string|null
@@ -125,10 +140,25 @@ class Bindings {
 			return null;
 		}
 
+		$scope = isset( $args['scope'] ) ? (string) $args['scope'] : 'self';
+
 		$post_id = 0;
-		if ( $block && isset( $block->context['postId'] ) ) {
-			$post_id = (int) $block->context['postId'];
+		if ( 'parent' === $scope ) {
+			$stack  = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
+			$parent = empty( $stack ) ? null : end( $stack );
+			if ( is_array( $parent ) && ! empty( $parent['postId'] ) ) {
+				$post_id = (int) $parent['postId'];
+			}
+		} elseif ( 'root' === $scope ) {
+			$stack = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
+			$root  = empty( $stack ) ? null : reset( $stack );
+			if ( is_array( $root ) && ! empty( $root['postId'] ) ) {
+				$post_id = (int) $root['postId'];
+			}
+		} else {
+			$post_id = self::resolve_post_id_from_block( $block );
 		}
+
 		if ( ! $post_id ) {
 			$post_id = get_the_ID();
 		}
@@ -161,5 +191,44 @@ class Bindings {
 			return null;
 		}
 		return (string) $value;
+	}
+
+	/**
+	 * Resolves the post ID from a block's context.
+	 *
+	 * First checks `$block->context['postId']` (populated when the block type
+	 * declares `uses_context: ['postId']`). Falls back to reading the
+	 * protected `available_context` via Reflection, which always holds the full
+	 * ancestor context regardless of the block type's `uses_context` declaration.
+	 * This fallback is used in tests and edge-cases where block type registration
+	 * is absent or incomplete.
+	 *
+	 * @param \WP_Block|null $block The current block instance.
+	 * @return int Post ID, or 0 if not resolvable.
+	 */
+	private static function resolve_post_id_from_block( $block ) {
+		if ( ! $block instanceof \WP_Block ) {
+			return 0;
+		}
+
+		if ( isset( $block->context['postId'] ) ) {
+			return (int) $block->context['postId'];
+		}
+
+		// Fallback: read the full available_context (protected property) via Reflection.
+		// WP_Block filters context to only keys declared in uses_context, but the unfiltered
+		// available_context always carries the full ancestor context.
+		try {
+			$prop = new \ReflectionProperty( \WP_Block::class, 'available_context' );
+			$prop->setAccessible( true );
+			$available = $prop->getValue( $block );
+			if ( isset( $available['postId'] ) ) {
+				return (int) $available['postId'];
+			}
+		} catch ( \ReflectionException $e ) {
+			// Property not accessible — nothing to do.
+		}
+
+		return 0;
 	}
 }
