@@ -67,6 +67,9 @@ import './extensions/vertical-scroll-parallax';
 // Draft Mode - adds "draft mode" functionality for published pages
 import './extensions/draft-mode';
 
+// Conditional Visibility - registers dsgoVisibility attribute for query-driven inner-block visibility
+import './extensions/visibility';
+
 // ===== RICH TEXT FORMATS =====
 // Text Style - adds inline text styling (color, gradient, size) to selected text
 import './formats/text-style';
