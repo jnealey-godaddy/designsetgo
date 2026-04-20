@@ -16,9 +16,11 @@ use WP_UnitTestCase;
 class BindingsScopeTest extends WP_UnitTestCase {
 
 	/**
-	 * Returns the get_value callable for designsetgo/post-meta.
+	 * Returns the registered WP_Block_Bindings_Source object for designsetgo/post-meta.
+	 *
+	 * @return \WP_Block_Bindings_Source
 	 */
-	private function get_source_callback() {
+	private function get_source() {
 		$source = get_block_bindings_source( 'designsetgo/post-meta' );
 		$this->assertNotNull( $source, 'designsetgo/post-meta source must be registered.' );
 		return $source;
@@ -38,7 +40,7 @@ class BindingsScopeTest extends WP_UnitTestCase {
 			array( 'postId' => $child_id,  'postType' => 'post' ),
 		);
 
-		$source = $this->get_source_callback();
+		$source = $this->get_source();
 		$block  = new WP_Block(
 			array( 'blockName' => 'core/paragraph' ),
 			array( 'postId' => $child_id, 'postType' => 'post' )
@@ -62,7 +64,7 @@ class BindingsScopeTest extends WP_UnitTestCase {
 			array( 'postId' => $only_id, 'postType' => 'post' ),
 		);
 
-		$source = $this->get_source_callback();
+		$source = $this->get_source();
 		$block  = new WP_Block(
 			array( 'blockName' => 'core/paragraph' ),
 			array( 'postId' => $only_id, 'postType' => 'post' )
@@ -81,7 +83,7 @@ class BindingsScopeTest extends WP_UnitTestCase {
 		$post_id = self::factory()->post->create();
 		update_post_meta( $post_id, 'label', 'ME' );
 
-		$source = $this->get_source_callback();
+		$source = $this->get_source();
 		$block  = new WP_Block(
 			array( 'blockName' => 'core/paragraph' ),
 			array( 'postId' => $post_id, 'postType' => 'post' )
@@ -104,7 +106,7 @@ class BindingsScopeTest extends WP_UnitTestCase {
 			array( 'postId' => $leaf_id, 'postType' => 'post' ),
 		);
 
-		$source = $this->get_source_callback();
+		$source = $this->get_source();
 		$block  = new WP_Block(
 			array( 'blockName' => 'core/paragraph' ),
 			array( 'postId' => $leaf_id, 'postType' => 'post' )
