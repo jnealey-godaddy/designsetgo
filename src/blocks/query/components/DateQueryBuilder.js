@@ -41,7 +41,7 @@ export default function DateQueryBuilder({
 	setAttributes,
 	clientId,
 }) {
-	const { dateQuery } = attributes;
+	const dateQuery = attributes.dateQuery ?? EMPTY_DEFAULT;
 
 	const updateClause = (i, patch) => {
 		const next = [...dateQuery.clauses];

@@ -15,6 +15,10 @@ parameters:
 		- tests
 		- .wp-env
 		- includes/blocks/class-query-filter-index-cli.php
+		# Query Monitor integration: optional dependency, runtime-guarded with class_exists().
+		# QM stubs aren't available, so analysing extends \QM_Collector / \QM_Output_Html fails.
+		- includes/class-query-qm-collector.php
+		- includes/class-query-qm-output.php
 
 	# Bootstrap files for WordPress functions and plugin constants
 	bootstrapFiles:
