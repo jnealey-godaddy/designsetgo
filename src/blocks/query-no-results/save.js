@@ -1,9 +1,11 @@
 import { InnerBlocks, useBlockProps } from '@wordpress/block-editor';
 
 export default function save() {
-	const blockProps = useBlockProps.save( { className: 'dsgo-query-no-results' } );
+	const blockProps = useBlockProps.save({
+		className: 'dsgo-query-no-results',
+	});
 	return (
-		<div { ...blockProps }>
+		<div {...blockProps}>
 			<InnerBlocks.Content />
 		</div>
 	);

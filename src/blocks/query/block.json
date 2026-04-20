@@ -33,7 +33,8 @@
   },
   "providesContext": {
     "designsetgo/queryId": "queryId",
-    "designsetgo/querySource": "source"
+    "designsetgo/querySource": "source",
+    "designsetgo/queryPostType": "postType"
   },
   "attributes": {
     "queryId": { "type": "string", "default": "" },

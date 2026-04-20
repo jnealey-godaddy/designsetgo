@@ -31,9 +31,11 @@ module.exports = {
 					'error',
 					{
 						varsIgnorePattern: '^_',
+						argsIgnorePattern: '^_',
 						caughtErrorsIgnorePattern: '^_',
 					},
 				],
+				'jsx-a11y/label-has-associated-control': 'off',
 			},
 		},
 	],

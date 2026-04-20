@@ -4,6 +4,13 @@
 .dsgo-query-filter {
 	box-sizing: border-box;
 
+	// Per-option count badge — shown next to checkbox / select labels.
+	.dsgo-query-filter__count {
+		margin-inline-start: 0.25em;
+		color: var(--wp--preset--color--contrast-3, #666);
+		font-variant-numeric: tabular-nums;
+	}
+
 	// Label
 	.dsgo-query-filter__label {
 		display: block;

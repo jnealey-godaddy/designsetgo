@@ -25,13 +25,19 @@ describe('ResultCountBadge', () => {
 
 	it('returns null when totalItems is undefined', () => {
 		const { container } = render(
-			<ResultCountBadge totalItems={undefined} loading={false} error={null} />
+			<ResultCountBadge
+				totalItems={undefined}
+				loading={false}
+				error={null}
+			/>
 		);
 		expect(container.firstChild).toBeNull();
 	});
 
 	it('renders loading state', () => {
-		render(<ResultCountBadge totalItems={null} loading={true} error={null} />);
+		render(
+			<ResultCountBadge totalItems={null} loading={true} error={null} />
+		);
 		expect(screen.getByText(/loading/i)).toBeInTheDocument();
 	});
 
@@ -44,36 +50,54 @@ describe('ResultCountBadge', () => {
 
 	it('renders error state', () => {
 		render(
-			<ResultCountBadge totalItems={null} loading={false} error={new Error('boom')} />
+			<ResultCountBadge
+				totalItems={null}
+				loading={false}
+				error={new Error('boom')}
+			/>
 		);
 		expect(screen.getByText(/preview failed/i)).toBeInTheDocument();
 	});
 
 	it('error span has is-error class', () => {
 		const { container } = render(
-			<ResultCountBadge totalItems={null} loading={false} error={new Error('boom')} />
+			<ResultCountBadge
+				totalItems={null}
+				loading={false}
+				error={new Error('boom')}
+			/>
 		);
 		expect(container.firstChild).toHaveClass('is-error');
 	});
 
 	it('renders singular match count', () => {
-		render(<ResultCountBadge totalItems={1} loading={false} error={null} />);
+		render(
+			<ResultCountBadge totalItems={1} loading={false} error={null} />
+		);
 		expect(screen.getByText(/1 match/i)).toBeInTheDocument();
 	});
 
 	it('renders plural match count', () => {
-		render(<ResultCountBadge totalItems={7} loading={false} error={null} />);
+		render(
+			<ResultCountBadge totalItems={7} loading={false} error={null} />
+		);
 		expect(screen.getByText(/7 matches/i)).toBeInTheDocument();
 	});
 
 	it('renders zero with plural', () => {
-		render(<ResultCountBadge totalItems={0} loading={false} error={null} />);
+		render(
+			<ResultCountBadge totalItems={0} loading={false} error={null} />
+		);
 		expect(screen.getByText(/0 matches/i)).toBeInTheDocument();
 	});
 
 	it('error takes precedence over loading', () => {
 		render(
-			<ResultCountBadge totalItems={null} loading={true} error={new Error('fail')} />
+			<ResultCountBadge
+				totalItems={null}
+				loading={true}
+				error={new Error('fail')}
+			/>
 		);
 		expect(screen.getByText(/preview failed/i)).toBeInTheDocument();
 		expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();

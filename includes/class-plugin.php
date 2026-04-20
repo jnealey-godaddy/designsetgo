@@ -473,6 +473,27 @@ class Plugin {
 	public $query_bindings;
 
 	/**
+	 * Query Filter Index instance.
+	 *
+	 * @var Blocks\Query\FilterIndex
+	 */
+	public $filter_index;
+
+	/**
+	 * Query Filter Registry instance.
+	 *
+	 * @var Blocks\Query\FilterRegistry
+	 */
+	public $filter_registry;
+
+	/**
+	 * Query Filter Index Admin page instance.
+	 *
+	 * @var Admin\Query_Filter_Index_Admin
+	 */
+	public $query_filter_index_admin;
+
+	/**
 	 * Returns the instance.
 	 *
 	 * @return Plugin
@@ -490,6 +511,7 @@ class Plugin {
 	private function __construct() {
 		$this->load_dependencies();
 		$this->init();
+		add_action( 'admin_init', array( $this, 'maybe_upgrade' ) );
 	}
 
 	/**
@@ -504,6 +526,15 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-modal-hooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-hooks.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-rebuilder.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-registry.php';
+
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-cli.php';
+			Blocks\Query\FilterIndexCLI::register();
+		}
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-settings.php';
@@ -516,6 +547,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-draft-mode.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-draft-mode-preview.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-block-migrator.php';
+		require_once DESIGNSETGO_PATH . 'includes/admin/class-query-filter-index-admin.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-custom-css-renderer.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-section-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-sticky-header.php';
@@ -573,6 +605,9 @@ class Plugin {
 		$this->form_submissions    = new Blocks\Form_Submissions();
 		$this->query_controller    = new Blocks\Query\Controller();
 		$this->query_bindings      = new Blocks\Query\Bindings();
+		$this->filter_index         = new Blocks\Query\FilterIndex();
+		Blocks\Query\FilterIndexHooks::register_hooks();
+		$this->filter_registry      = new Blocks\Query\FilterRegistry();
 		$this->patterns            = new Patterns\Loader();
 		$this->global_styles       = new Admin\Global_Styles();
 		$this->settings            = new Admin\Settings();
@@ -591,8 +626,9 @@ class Plugin {
 
 		// Initialize admin-only features.
 		if ( is_admin() ) {
-			$this->admin_menu      = new Admin\Admin_Menu();
-			$this->block_migrator  = new Admin\Block_Migrator();
+			$this->admin_menu         = new Admin\Admin_Menu();
+			$this->block_migrator     = new Admin\Block_Migrator();
+			$this->query_filter_index_admin  = new Admin\Query_Filter_Index_Admin();
 		}
 
 		// Initialize draft mode (works on both admin and REST API).
@@ -630,6 +666,35 @@ class Plugin {
 		add_filter( 'safe_style_css', array( $this, 'allow_block_style_properties' ) );
 		add_filter( 'safecss_filter_attr_allow_css', array( $this, 'allow_block_css_functions' ), 10, 2 );
 		add_filter( 'wp_kses_allowed_html', array( $this, 'allow_block_svg_elements' ), 10, 2 );
+	}
+
+	/**
+	 * Runs any pending database schema upgrades.
+	 *
+	 * Hooked onto admin_init so it only runs in the admin context where
+	 * ABSPATH/wp-admin/includes/upgrade.php is guaranteed to be present.
+	 * Running in the constructor caused phpstan analysis failures because
+	 * FilterIndex::install() requires that file at analysis time.
+	 *
+	 * Compares the stored designsetgo_db_version option against
+	 * DESIGNSETGO_VERSION and installs missing schema when the plugin
+	 * moves past a version that introduced a schema change.
+	 */
+	public function maybe_upgrade(): void {
+		$stored = get_option( 'designsetgo_db_version', '0.0.0' );
+
+		if ( version_compare( $stored, '2.2.0', '<' ) ) {
+			Blocks\Query\FilterIndex::install();
+			// Only seal the upgrade gate after verifying the table actually
+			// exists. Previously the version was bumped unconditionally, so a
+			// silent dbDelta failure (permissions, disk full, early-load order
+			// quirks) left the option at 2.2.0 with no table, and the gate
+			// never retried on subsequent requests.
+			Blocks\Query\FilterIndex::reset_table_cache();
+			if ( Blocks\Query\FilterIndex::table_exists() ) {
+				update_option( 'designsetgo_db_version', '2.2.0', false );
+			}
+		}
 	}
 
 	/**

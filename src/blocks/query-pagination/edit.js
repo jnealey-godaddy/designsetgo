@@ -1,170 +1,225 @@
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
-import { SelectControl, TextControl, ToggleControl } from '@wordpress/components';
+import {
+	SelectControl,
+	TextControl,
+	ToggleControl,
+} from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import InfiniteScrollControls from './components/InfiniteScrollControls';
+
+/**
+ * Canvas preview for the pagination block in the editor.
+ * Extracted to avoid nested ternary expressions (no-nested-ternary rule).
+ *
+ * @param {Object}  root0
+ * @param {string}  root0.effectiveKind         The resolved pagination kind.
+ * @param {boolean} root0.showPrevNext          Whether to show prev/next arrows.
+ * @param {string}  root0.labelLoadMore         Label for the load-more button.
+ * @param {string}  root0.buttonLabelWhenPaused Label for the infinite-scroll pause button.
+ */
+function PaginationPreview({
+	effectiveKind,
+	showPrevNext,
+	labelLoadMore,
+	buttonLabelWhenPaused,
+}) {
+	if (effectiveKind === 'infinite') {
+		return (
+			<div className="dsgo-query-pagination--infinite is-editor-preview">
+				<button
+					type="button"
+					className="dsgo-query-pagination__loadmore wp-element-button"
+					disabled
+				>
+					{buttonLabelWhenPaused || __('Load more', 'designsetgo')}
+				</button>
+				<div
+					className="dsgo-query-pagination__sentinel"
+					aria-hidden="true"
+				/>
+			</div>
+		);
+	}
+	if (effectiveKind === 'loadmore') {
+		return (
+			<button
+				type="button"
+				className="dsgo-query-pagination__loadmore"
+				disabled
+			>
+				{labelLoadMore || __('Load more', 'designsetgo')}
+			</button>
+		);
+	}
+	return (
+		<span className="dsgo-query-pagination__preview">
+			{showPrevNext ? '\u2190 ' : ''}1 2 3{showPrevNext ? ' \u2192' : ''}
+		</span>
+	);
+}
 
 const DEFAULTS = {
 	mode: 'numbered',
+	paginationKind: 'numbered',
 	labelLoadMore: '',
 	labelLoading: '',
 	showPrevNext: true,
+	autoPauseAfter: 3,
+	sentinelOffsetPx: 200,
+	buttonLabelWhenPaused: 'Load more',
 };
 
-export default function QueryPaginationEdit( {
+export default function QueryPaginationEdit({
 	attributes,
 	setAttributes,
 	clientId,
-} ) {
-	const { mode, labelLoadMore, labelLoading, showPrevNext } = attributes;
-	const blockProps = useBlockProps( {
+}) {
+	const {
+		mode,
+		paginationKind,
+		labelLoadMore,
+		labelLoading,
+		showPrevNext,
+		buttonLabelWhenPaused,
+	} = attributes;
+
+	// Determine the effective kind: paginationKind takes precedence when set
+	// to a non-default value; fall back to mode for backwards compatibility.
+	const effectiveKind = paginationKind !== 'numbered' ? paginationKind : mode;
+
+	const blockProps = useBlockProps({
 		className: 'dsgo-query-pagination is-editor',
-	} );
+	});
 
 	return (
 		<>
 			<InspectorControls>
 				<DsgoInspectorPanel
-					title={ __( 'Settings', 'designsetgo' ) }
+					title={__('Settings', 'designsetgo')}
 					panelName="settings"
-					panelId={ clientId }
-					resetAll={ () => setAttributes( DEFAULTS ) }
+					panelId={clientId}
+					resetAll={() => setAttributes(DEFAULTS)}
 				>
 					<DsgoInspectorPanel.Item
-						label={ __( 'Mode', 'designsetgo' ) }
-						hasValue={ () => mode !== 'numbered' }
-						onDeselect={ () =>
-							setAttributes( { mode: 'numbered' } )
-						}
+						label={__('Mode', 'designsetgo')}
+						hasValue={() => mode !== 'numbered'}
+						onDeselect={() => setAttributes({ mode: 'numbered' })}
 						isShownByDefault
 					>
 						<SelectControl
-							label={ __( 'Mode', 'designsetgo' ) }
-							value={ mode }
-							options={ [
+							label={__('Mode', 'designsetgo')}
+							value={mode}
+							options={[
 								{
 									value: 'numbered',
-									label: __( 'Numbered', 'designsetgo' ),
+									label: __('Numbered', 'designsetgo'),
 								},
 								{
 									value: 'loadmore',
-									label: __( 'Load more', 'designsetgo' ),
+									label: __('Load more', 'designsetgo'),
 								},
-							] }
-							onChange={ ( v ) =>
-								setAttributes( { mode: v } )
-							}
+							]}
+							onChange={(v) => setAttributes({ mode: v })}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
 					</DsgoInspectorPanel.Item>
 
-					{ mode === 'numbered' && (
+					{mode === 'numbered' && paginationKind !== 'infinite' && (
 						<DsgoInspectorPanel.Item
-							label={ __(
-								'Show prev/next arrows',
-								'designsetgo'
-							) }
-							hasValue={ () => showPrevNext !== true }
-							onDeselect={ () =>
-								setAttributes( { showPrevNext: true } )
+							label={__('Show prev/next arrows', 'designsetgo')}
+							hasValue={() => showPrevNext !== true}
+							onDeselect={() =>
+								setAttributes({ showPrevNext: true })
 							}
 						>
 							<ToggleControl
-								label={ __(
+								label={__(
 									'Show prev/next arrows',
 									'designsetgo'
-								) }
-								checked={ !! showPrevNext }
-								onChange={ ( v ) =>
-									setAttributes( { showPrevNext: !! v } )
+								)}
+								checked={!!showPrevNext}
+								onChange={(v) =>
+									setAttributes({ showPrevNext: !!v })
 								}
 								__nextHasNoMarginBottom
 							/>
 						</DsgoInspectorPanel.Item>
-					) }
+					)}
 
-					{ mode === 'loadmore' && (
+					{mode === 'loadmore' && paginationKind !== 'infinite' && (
 						<>
 							<DsgoInspectorPanel.Item
-								label={ __(
-									'Load more label',
-									'designsetgo'
-								) }
-								hasValue={ () => labelLoadMore !== '' }
-								onDeselect={ () =>
-									setAttributes( { labelLoadMore: '' } )
+								label={__('Load more label', 'designsetgo')}
+								hasValue={() => labelLoadMore !== ''}
+								onDeselect={() =>
+									setAttributes({ labelLoadMore: '' })
 								}
 								isShownByDefault
 							>
 								<TextControl
-									label={ __(
+									label={__(
 										'Load more button label',
 										'designsetgo'
-									) }
-									value={ labelLoadMore }
-									onChange={ ( v ) =>
-										setAttributes( {
+									)}
+									value={labelLoadMore}
+									onChange={(v) =>
+										setAttributes({
 											labelLoadMore: v,
-										} )
+										})
 									}
-									placeholder={ __(
-										'Load more',
-										'designsetgo'
-									) }
+									placeholder={__('Load more', 'designsetgo')}
 									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
 							</DsgoInspectorPanel.Item>
 							<DsgoInspectorPanel.Item
-								label={ __(
-									'Loading label',
-									'designsetgo'
-								) }
-								hasValue={ () => labelLoading !== '' }
-								onDeselect={ () =>
-									setAttributes( { labelLoading: '' } )
+								label={__('Loading label', 'designsetgo')}
+								hasValue={() => labelLoading !== ''}
+								onDeselect={() =>
+									setAttributes({ labelLoading: '' })
 								}
 							>
 								<TextControl
-									label={ __(
+									label={__(
 										'Loading state label',
 										'designsetgo'
-									) }
-									value={ labelLoading }
-									onChange={ ( v ) =>
-										setAttributes( {
+									)}
+									value={labelLoading}
+									onChange={(v) =>
+										setAttributes({
 											labelLoading: v,
-										} )
+										})
 									}
-									placeholder={ __(
+									placeholder={__(
 										'Loading\u2026',
 										'designsetgo'
-									) }
+									)}
 									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
 							</DsgoInspectorPanel.Item>
 						</>
-					) }
+					)}
+
+					{paginationKind === 'infinite' && (
+						<InfiniteScrollControls
+							attributes={attributes}
+							setAttributes={setAttributes}
+							panelId={clientId}
+						/>
+					)}
 				</DsgoInspectorPanel>
 			</InspectorControls>
 
-			<div { ...blockProps }>
-				{ mode === 'numbered' ? (
-					<span className="dsgo-query-pagination__preview">
-						{ showPrevNext ? '\u2190 ' : '' }1 2 3
-						{ showPrevNext ? ' \u2192' : '' }
-					</span>
-				) : (
-					<button
-						type="button"
-						className="dsgo-query-pagination__loadmore"
-						disabled
-					>
-						{ labelLoadMore ||
-							__( 'Load more', 'designsetgo' ) }
-					</button>
-				) }
+			<div {...blockProps}>
+				<PaginationPreview
+					effectiveKind={effectiveKind}
+					showPrevNext={showPrevNext}
+					labelLoadMore={labelLoadMore}
+					buttonLabelWhenPaused={buttonLabelWhenPaused}
+				/>
 			</div>
 		</>
 	);

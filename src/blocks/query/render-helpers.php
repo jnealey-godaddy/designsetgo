@@ -426,6 +426,13 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 
 		// Render each sibling block ONCE, passing queryId + source via context so
 		// pagination, filter, and no-results blocks know which query they belong to.
+		//
+		// Filter-count intersection (B4): filter blocks read active filters from
+		// $_GET. On first-paint, $_GET reflects the live request. On AJAX refresh,
+		// the REST controller (class-query.php::handle_render) overlays $_GET with
+		// the incoming `params` payload before calling this function, so when filter
+		// blocks call FilterIndex::count_for_options() their active_filters are always
+		// current. No additional context threading is needed.
 		$source           = isset( $attributes['source'] ) ? (string) $attributes['source'] : 'posts';
 		$sibling_context  = array(
 			'designsetgo/queryId'     => $query_id,
@@ -438,14 +445,24 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			}
 		}
 
+		// Terse status region for AT — populated by view.js after every refresh
+		// with "N results found". Keeps the chatty list-update announcements from
+		// aria-live="polite" on the list from drowning screen-reader users.
+		$status_region = sprintf(
+			'<div role="status" aria-live="polite" aria-atomic="true" class="screen-reader-text dsgo-query__status" data-dsgo-query-status="%1$s" data-dsgo-total-items="%2$d"></div>',
+			esc_attr( $query_id ),
+			(int) $result['totalItems']
+		);
+
 		// Wrap everything in the region container — this is the JS swap target.
 		// The inner list HTML (from $result['html']) already contains the blobs div
 		// and the <ul>/<ol>/<div> list element with data-dsgo-query-role="container".
 		$region_html = sprintf(
-			'<div class="dsgo-query-region" data-dsgo-query-region="%1$s">%2$s%3$s</div>',
+			'<div class="dsgo-query-region" data-dsgo-query-region="%1$s">%2$s%3$s%4$s</div>',
 			esc_attr( $query_id ),
 			$result['html'],          // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled in designsetgo_query_wrap() from esc_attr()-escaped parts.
-			$siblings_html            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- block render() output is escaped by WordPress.
+			$siblings_html,           // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- block render() output is escaped by WordPress.
+			$status_region            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr-assembled; empty text content.
 		);
 
 		return array(

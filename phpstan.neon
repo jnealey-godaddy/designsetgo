@@ -14,6 +14,7 @@ parameters:
 		- build
 		- tests
 		- .wp-env
+		- includes/blocks/class-query-filter-index-cli.php
 
 	# Bootstrap files for WordPress functions and plugin constants
 	bootstrapFiles:
@@ -31,6 +32,9 @@ parameters:
 		- '#Function get_[a-z_]+ not found#'
 		- '#Function add_[a-z_]+ not found#'
 		- '#Function register_[a-z_]+ not found#'
+
+		# WP_CLI class is excluded from analysis; suppress the call-site reference in class-plugin.php
+		- '#Call to static method register\(\) on an unknown class DesignSetGo\\Blocks\\Query\\FilterIndexCLI#'
 
 		# Allow dynamic properties (common in WordPress)
 		- '#Access to an undefined property#'

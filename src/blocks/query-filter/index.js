@@ -14,7 +14,7 @@ import { ICON_COLOR } from '../shared/constants';
 import './editor.scss';
 import './style.scss';
 
-registerBlockType( metadata.name, {
+registerBlockType(metadata.name, {
 	...metadata,
 	icon: {
 		src: (
@@ -34,9 +34,9 @@ registerBlockType( metadata.name, {
 	},
 	edit,
 	save,
-} );
+});
 
 // Register the 6 filter variations.
-variations.forEach( ( variation ) => {
-	registerBlockVariation( metadata.name, variation );
-} );
+variations.forEach((variation) => {
+	registerBlockVariation(metadata.name, variation);
+});

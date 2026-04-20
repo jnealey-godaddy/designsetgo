@@ -1,3 +1,5 @@
+@use 'skeletons';
+
 // Frontend-only grid layout. Scope to `[data-dsgo-query-role="container"]`
 // so the grid attaches to the actual rendered <ul>/<ol>/<div> list on the
 // frontend and does NOT apply in the editor, where the outer `.dsgo-query`

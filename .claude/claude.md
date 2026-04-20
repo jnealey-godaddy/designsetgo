@@ -54,6 +54,17 @@ For sibling blocks that already exist and meet the "1–3 attribute difference +
 - Frontend data contract: `[data-dsgo-query-id]` on the wrapper; `[data-dsgo-blobs-for]` sibling holds attributes + innerBlocks JSON blobs for IAPI requests.
 - See `.claude/docs/QUERY-BLOCK-GUIDE.md` for recipes + extension points.
 
+### Query block family (Dynamic Query v2.2)
+
+- Persistent filter index at `{$wpdb->prefix}dsgo_query_filter_index`. Auto-maintained via `FilterIndexHooks` on `save_post` / taxonomy / meta events.
+- `FilterRegistry` at option `dsgo_query_filters` tracks `{key: {type, source, label}}`. Filterable via `designsetgo_query_registered_filters`.
+- `FilterIndexRebuilder::rebuild_all/rebuild_filter/status` — batched rebuild primitives.
+- WP-CLI: `wp dsgo query index {rebuild|rebuild-filter|status|drop}`.
+- Filter counts: `showCounts` attribute on `designsetgo/query-filter` (default `true`); rendered via `.dsgo-query-filter__count` span.
+- Infinite scroll: `paginationKind: 'infinite'` variation on `designsetgo/query-pagination`. Auto-pauses after `autoPauseAfter` (default 3), reveals button. Reduced-motion safe.
+- Editor live preview: Posts via `useEntityRecords`, users/terms via `/designsetgo/v1/query/preview` REST route. First item wraps editable `InnerBlocks`; items 2..N render `BlockPreview`.
+- Admin dashboard: Settings → DesignSetGo → Dynamic Query (requires `manage_options`).
+
 ### Inspector IA (Theme 3)
 
 Three panels per block, in this order: **Settings** → **Style** → **Advanced**. Use `<DsgoInspectorPanel>` (the `ToolsPanel` wrapper) for all custom inspector controls; never reach for `PanelBody` directly.

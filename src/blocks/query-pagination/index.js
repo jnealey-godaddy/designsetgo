@@ -1,14 +1,15 @@
-import { registerBlockType } from '@wordpress/blocks';
+import { registerBlockType, registerBlockVariation } from '@wordpress/blocks';
 
 import edit from './edit';
 import save from './save';
 import metadata from './block.json';
+import variations from './variations';
 import { ICON_COLOR } from '../shared/constants';
 
 import './editor.scss';
 import './style.scss';
 
-registerBlockType( metadata.name, {
+registerBlockType(metadata.name, {
 	...metadata,
 	icon: {
 		src: (
@@ -31,4 +32,9 @@ registerBlockType( metadata.name, {
 	},
 	edit,
 	save,
-} );
+});
+
+// Register the Infinite Scroll variation.
+variations.forEach((variation) => {
+	registerBlockVariation(metadata.name, variation);
+});

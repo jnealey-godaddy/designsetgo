@@ -32,18 +32,77 @@ if ( ! file_exists( $helpers ) ) {
 require_once $helpers;
 
 $state = designsetgo_query_get_last_state( $query_id );
+
+// Determine the effective pagination kind.
+// paginationKind takes precedence (supports the 'infinite' variation);
+// falls back to legacy 'mode' attribute for backwards compatibility.
+$pagination_kind = isset( $attributes['paginationKind'] ) && 'numbered' !== $attributes['paginationKind']
+	? $attributes['paginationKind']
+	: ( isset( $attributes['mode'] ) ? $attributes['mode'] : 'numbered' );
+
+// Single-page guard applies to ALL pagination kinds, including infinite.
+// Emit nothing for single-page results so no sentinel or button is injected.
 if ( ! $state || (int) $state['totalPages'] < 2 ) {
-	return; // Single page — no pagination needed.
+	return;
 }
 
-$pagination_mode = isset( $attributes['mode'] ) && 'loadmore' === $attributes['mode'] ? 'loadmore' : 'numbered'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+// Infinite scroll: emit the sentinel + hidden fallback button.
+if ( 'infinite' === $pagination_kind ) {
+	$auto_pause    = isset( $attributes['autoPauseAfter'] ) ? (int) $attributes['autoPauseAfter'] : 3;
+	$sentinel_offset = isset( $attributes['sentinelOffsetPx'] ) ? (int) $attributes['sentinelOffsetPx'] : 200;
+	$btn_label     = ! empty( $attributes['buttonLabelWhenPaused'] )
+		? (string) $attributes['buttonLabelWhenPaused']
+		: __( 'Load more', 'designsetgo' );
+
+	$inf_context = wp_json_encode(
+		array(
+			'queryId'       => $query_id,
+			'autoLoadCount' => 0,
+			'page'          => 1,
+			'busy'          => false,
+			'restUrl'       => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
+			'nonce'         => wp_create_nonce( 'wp_rest' ),
+		),
+		JSON_HEX_APOS
+	);
+
+	$wrapper = get_block_wrapper_attributes(
+		array(
+			'class'                    => 'dsgo-query-pagination dsgo-query-pagination--infinite',
+			'data-wp-interactive'      => 'designsetgo/query',
+			'data-dsgo-query-id'       => $query_id,
+			'data-dsgo-pagination'     => 'infinite',
+			'data-dsgo-auto-pause-after' => (string) $auto_pause,
+			'data-dsgo-sentinel-offset'  => (string) $sentinel_offset,
+		)
+	);
+
+	printf(
+		'<div %1$s data-wp-context=\'%2$s\'>' .
+		'<button type="button" class="dsgo-query-pagination__loadmore wp-element-button"' .
+		' data-wp-on--click="actions.loadMore"' .
+		' data-dsgo-label-idle="%3$s"' .
+		' data-dsgo-label-loading="%4$s"' .
+		' hidden>%5$s</button>' .
+		'<div class="dsgo-query-pagination__sentinel" aria-hidden="true" data-wp-init="callbacks.initInfiniteObserver"></div>' .
+		'</div>',
+		$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output.
+		$inf_context, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode output inside single-quoted attr.
+		esc_attr( $btn_label ),
+		esc_attr__( 'Loading\u2026', 'designsetgo' ),
+		esc_html( $btn_label )
+	);
+	return;
+}
+
+$pagination_mode = $pagination_kind; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 $show_prev_next  = ! isset( $attributes['showPrevNext'] ) || (bool) $attributes['showPrevNext'];
 $label_load_more = ! empty( $attributes['labelLoadMore'] )
 	? (string) $attributes['labelLoadMore']
 	: __( 'Load more', 'designsetgo' );
 $label_loading   = ! empty( $attributes['labelLoading'] )
 	? (string) $attributes['labelLoading']
-	: __( 'Loading\u2026', 'designsetgo' );
+	: __( 'Loading…', 'designsetgo' );
 
 if ( 'loadmore' === $pagination_mode ) {
 	// Seed the IAPI context on the pagination wrapper so `getContext()` inside

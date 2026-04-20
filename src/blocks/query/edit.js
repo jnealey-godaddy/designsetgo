@@ -1,5 +1,9 @@
-import { __ } from '@wordpress/i18n';
-import { useBlockProps, useInnerBlocksProps, InspectorControls, store as blockEditorStore } from '@wordpress/block-editor';
+import {
+	useBlockProps,
+	useInnerBlocksProps,
+	InspectorControls,
+	store as blockEditorStore,
+} from '@wordpress/block-editor';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { useEffect, useRef } from '@wordpress/element';
 import { createBlock } from '@wordpress/blocks';
@@ -11,13 +15,31 @@ import TaxQueryBuilder from './components/TaxQueryBuilder';
 import MetaQueryBuilder from './components/MetaQueryBuilder';
 import AdvancedPanel from './components/AdvancedPanel';
 import ResultCountBadge from './components/ResultCountBadge';
+import EditorPreviewList from './components/EditorPreviewList';
 import { DEFAULT_TEMPLATE } from './edit-template';
+
+// Stable reference returned when the block has no inner blocks yet. Using
+// an ad-hoc `[]` literal in the selector would produce a fresh array each
+// render, which trips useSelect's shallow equality check and floods the
+// console with "`useSelect` returns different values" warnings.
+const EMPTY_BLOCKS = Object.freeze([]);
 
 export default function QueryEdit({ attributes, setAttributes, clientId }) {
 	useQueryId({ clientId, queryId: attributes.queryId, setAttributes });
 
+	// Two narrow selectors instead of one composite object: hasInnerBlocks is
+	// a primitive (always shallow-equal) and innerBlocks is the block editor's
+	// own stable array reference (mutated only on genuine tree changes).
 	const hasInnerBlocks = useSelect(
-		(select) => (select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length || 0) > 0,
+		(select) =>
+			(select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length ||
+				0) > 0,
+		[clientId]
+	);
+	const innerBlocks = useSelect(
+		(select) =>
+			select(blockEditorStore).getBlock(clientId)?.innerBlocks ||
+			EMPTY_BLOCKS,
 		[clientId]
 	);
 
@@ -47,8 +69,7 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 			'--dsgo-query-columns': attributes.columns || 1,
 			'--dsgo-query-columns-tablet':
 				attributes.columnsTablet || attributes.columns || 1,
-			'--dsgo-query-columns-mobile':
-				attributes.columnsMobile || 1,
+			'--dsgo-query-columns-mobile': attributes.columnsMobile || 1,
 			'--dsgo-query-gap': attributes.columnGap || undefined,
 		},
 	});
@@ -65,9 +86,21 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 		}
 	);
 
-	const preview = useQueryPreview({ attributes, queryId: attributes.queryId });
+	const preview = useQueryPreview({
+		attributes,
+		queryId: attributes.queryId,
+	});
 
 	const showPostsOnlyPanels = attributes.source === 'posts';
+
+	// Show live preview (real posts / users / terms) for all sources except
+	// 'manual' (hand-picked IDs) and 'current' (context-bound single post).
+	// Also skip if the queryId hasn't been assigned yet (first render tick)
+	// so we don't fire a network request with an empty queryId.
+	const showLivePreview =
+		attributes.source !== 'manual' &&
+		attributes.source !== 'current' &&
+		!!attributes.queryId;
 
 	return (
 		<>
@@ -99,7 +132,10 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 			</InspectorControls>
 
 			<div {...blockProps}>
-				<div className="dsgo-query__editor-header" contentEditable={false}>
+				<div
+					className="dsgo-query__editor-header"
+					contentEditable={false}
+				>
 					<ResultCountBadge
 						totalItems={preview.totalItems}
 						loading={preview.loading}
@@ -107,27 +143,45 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 					/>
 				</div>
 				<div className="dsgo-query__editor-grid">
-					<div {...innerBlocksProps} />
-					{Array.from(
-						// perPage - 1 ghost tiles (the real prototype fills
-						// slot #1) so the editor preview matches the total
-						// item count the frontend will render. Capped at 23
-						// (24 cells total) to keep the editor DOM cheap when
-						// someone sets perPage to 48.
-						{ length: Math.max(0, Math.min(23, (attributes.perPage || 6) - 1)) },
-						(_, i) => (
-							<div
-								key={ i }
-								className="dsgo-query__ghost-item"
-								aria-hidden="true"
-								contentEditable={ false }
-							>
-								<div className="dsgo-query__ghost-image" />
-								<div className="dsgo-query__ghost-line dsgo-query__ghost-line--title" />
-								<div className="dsgo-query__ghost-line" />
-								<div className="dsgo-query__ghost-line dsgo-query__ghost-line--short" />
-							</div>
-						)
+					{showLivePreview ? (
+						<EditorPreviewList
+							attributes={attributes}
+							innerBlocks={innerBlocks}
+							innerBlocksProps={innerBlocksProps}
+						/>
+					) : (
+						<>
+							<div {...innerBlocksProps} />
+							{Array.from(
+								// perPage - 1 ghost tiles (the real prototype fills
+								// slot #1) so the editor preview matches the total
+								// item count the frontend will render. Capped at 23
+								// (24 cells total) to keep the editor DOM cheap when
+								// someone sets perPage to 48.
+								{
+									length: Math.max(
+										0,
+										Math.min(
+											23,
+											(attributes.perPage || 6) - 1
+										)
+									),
+								},
+								(_, i) => (
+									<div
+										key={i}
+										className="dsgo-query__ghost-item"
+										aria-hidden="true"
+										contentEditable={false}
+									>
+										<div className="dsgo-query__ghost-image" />
+										<div className="dsgo-query__ghost-line dsgo-query__ghost-line--title" />
+										<div className="dsgo-query__ghost-line" />
+										<div className="dsgo-query__ghost-line dsgo-query__ghost-line--short" />
+									</div>
+								)
+							)}
+						</>
 					)}
 				</div>
 			</div>

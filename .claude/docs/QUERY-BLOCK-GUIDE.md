@@ -330,7 +330,7 @@ The endpoint calls `designsetgo_query_render()` — the same function used by th
 
 - **No index table in v1.** Per-option counts on filter controls are live `WP_Query` calls at render time. For small-to-medium result sets this is fine; for large catalogs (10 k+ posts) plan for v2's index table or add a page caching layer.
 - **One `WP_Query` per block per render.** If you place 4 query blocks on one page you get 4 queries. Combine with a page cache (Cloudflare, WP Rocket, LiteSpeed) for archive pages where filters don't change per-user.
-- **Cache invalidation.** Flush the page cache on post publish/update and on facet-toggle AJAX responses. WP Rocket's "Purge cache when post updated" covers the publish side; the IAPI filter refresh uses `history.replaceState` so the browser URL changes and cache keys differ automatically.
+- **Cache invalidation.** Flush the page cache on post publish/update and on filter-toggle AJAX responses. WP Rocket's "Purge cache when post updated" covers the publish side; the IAPI filter refresh uses `history.replaceState` so the browser URL changes and cache keys differ automatically.
 - **`ignoreSticky` defaults to `true`.** Sticky posts are excluded from query results unless you uncheck this in the Advanced panel (or set `$args['ignore_sticky_posts'] = false` in a filter hook).
 
 ---

@@ -33,11 +33,21 @@ jest.mock('@wordpress/data', () => ({
 					getBlock: () => ({ innerBlocks: [] }),
 				};
 			}
-			if (storeName !== 'core') return {};
+			if (storeName !== 'core') {
+				return {};
+			}
 			return {
 				getPostTypes: () => [
-					{ slug: 'post', labels: { singular_name: 'Post' }, viewable: true },
-					{ slug: 'page', labels: { singular_name: 'Page' }, viewable: true },
+					{
+						slug: 'post',
+						labels: { singular_name: 'Post' },
+						viewable: true,
+					},
+					{
+						slug: 'page',
+						labels: { singular_name: 'Page' },
+						viewable: true,
+					},
 				],
 				getTaxonomies: () => [
 					{
@@ -54,17 +64,22 @@ jest.mock('@wordpress/data', () => ({
 	}),
 }));
 
-// Stub @wordpress/core-data — only the store token is needed.
+// Stub @wordpress/core-data — store token + useEntityRecords for EditorPreviewList.
 jest.mock('@wordpress/core-data', () => ({
 	store: 'core',
+	useEntityRecords: () => ({ records: [], hasResolved: true }),
 }));
 
 // Block-editor mock — useBlockProps / useInnerBlocksProps / InspectorControls.
 jest.mock('@wordpress/block-editor', () => ({
 	useBlockProps: () => ({ className: 'wp-block-designsetgo-query' }),
 	useInnerBlocksProps: (p = {}) => ({ ...p, children: null }),
-	InspectorControls: ({ children }) => <div data-testid="inspector">{children}</div>,
+	InspectorControls: ({ children }) => (
+		<div data-testid="inspector">{children}</div>
+	),
 	InnerBlocks: () => <div data-testid="inner-blocks" />,
+	BlockPreview: () => <div data-testid="block-preview" />,
+	BlockContextProvider: ({ children }) => <>{children}</>,
 	store: 'core/block-editor',
 }));
 
@@ -130,14 +145,21 @@ jest.mock('@wordpress/components', () => {
 		</label>
 	);
 
-	const FormTokenField = ({ label, value, suggestions, onChange }) => (
+	const FormTokenField = ({
+		label,
+		value,
+		suggestions: _suggestions,
+		onChange,
+	}) => (
 		<label>
 			{label}
 			<input
 				type="text"
 				aria-label={label}
 				value={(value || []).join(', ')}
-				onChange={(e) => onChange(e.target.value.split(', ').filter(Boolean))}
+				onChange={(e) =>
+					onChange(e.target.value.split(', ').filter(Boolean))
+				}
 			/>
 		</label>
 	);
@@ -197,11 +219,17 @@ jest.mock('@wordpress/components', () => {
 		__experimentalVStack: VStack,
 		Placeholder,
 		Button: ({ children, onClick, disabled, 'aria-label': ariaLabel }) => (
-			<button type="button" onClick={onClick} disabled={disabled} aria-label={ariaLabel}>
+			<button
+				type="button"
+				onClick={onClick}
+				disabled={disabled}
+				aria-label={ariaLabel}
+			>
 				{children}
 			</button>
 		),
 		Icon: ({ icon }) => <span>{icon}</span>,
+		Spinner: () => <span data-testid="spinner" />,
 	};
 });
 

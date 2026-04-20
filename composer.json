@@ -38,7 +38,7 @@
     },
     "audit": {
       "ignore": {
-        "PKSA-5jz8-6tcw-pbk4": "phpunit/phpunit advisory GHSA-qrr6-mg7r-m243 — argument injection via newline in PHP INI values forwarded to child processes. Only impacts PHPUnit's subprocess invocation in dev/CI; not reachable in production. Affected range covers all phpunit ^9 releases; revisit when phpunit ^10/^11 upgrade lands."
+        "PKSA-5jz8-6tcw-pbk4": "phpunit/phpunit advisory GHSA-qrr6-mg7r-m243 — argument injection via newline in PHP INI values forwarded to child processes. Dev-only dependency; never ships to plugin users. Upstream patch exists only in 12.5.22+ / 13.1.6+ — no backports to 9.x/10.x/11.x. PHPUnit 12 requires PHP 8.3, but this plugin commits to 'Requires PHP: 8.0', so upgrading would be a breaking change outside the v2.2 scope. CI uses pull_request (not pull_request_target), so fork PR jobs run sandboxed without secrets — the Poisoned Pipeline Execution vector is closed. phpunit.xml sits on main, protected by branch rules. Revisit when/if the plugin bumps its minimum PHP to 8.3."
       }
     }
   }

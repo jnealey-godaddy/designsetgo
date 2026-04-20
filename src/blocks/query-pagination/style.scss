@@ -38,6 +38,16 @@
 		text-align: center;
 	}
 
+	&--infinite {
+		margin-top: 1rem;
+		text-align: center;
+
+		.dsgo-query-pagination__sentinel {
+			height: 1px;
+			width: 100%;
+		}
+	}
+
 	// Mirror the Icon Button block's base button styling so the load-more
 	// control visually matches the rest of the plugin's buttons and inherits
 	// theme.json Global Styles via wp-element-button.

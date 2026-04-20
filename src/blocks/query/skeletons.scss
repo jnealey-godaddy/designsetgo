@@ -1,0 +1,54 @@
+/**
+ * CSS-only loading skeletons for the Dynamic Query block.
+ *
+ * Applied via `aria-busy="true"` on the list container during AJAX refreshes
+ * (filter changes, load-more, infinite-scroll advances). The gradient overlay
+ * is appended via ::after so it renders on top of existing list items during
+ * the fetch, giving the user a clear loading signal without layout shift.
+ *
+ * No JS changes needed — view.js already sets aria-busy="true" at fetch start
+ * and aria-busy="false" (or removes it) on success/error.
+ *
+ * @since 2.2.0
+ */
+
+@keyframes dsgo-query-skeleton-pulse {
+
+	0%, 100% { opacity: 0.6; }
+
+	50% { opacity: 1; }
+}
+
+.dsgo-query[aria-busy="true"] {
+
+	.dsgo-query__item {
+		position: relative;
+		min-height: 200px;
+
+		&::after {
+			content: "";
+			position: absolute;
+			inset: 0;
+			background: linear-gradient(90deg, #f2f2f2, #e8e8e8, #f2f2f2);
+			background-size: 200% 100%;
+			animation: dsgo-query-skeleton-pulse 1.5s ease-in-out infinite;
+			border-radius: inherit;
+			pointer-events: none;
+			z-index: 1;
+		}
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.dsgo-query[aria-busy="true"] {
+
+		.dsgo-query__item {
+
+			&::after {
+				animation: none;
+				opacity: 0.7;
+			}
+		}
+	}
+}

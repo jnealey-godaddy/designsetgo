@@ -8,25 +8,25 @@ import {
 import { DsgoInspectorPanel } from '../../../components/shared';
 
 const TAG_OPTIONS = [
-	{ value: 'ul',  label: __('Unordered list (ul)', 'designsetgo') },
-	{ value: 'ol',  label: __('Ordered list (ol)', 'designsetgo') },
+	{ value: 'ul', label: __('Unordered list (ul)', 'designsetgo') },
+	{ value: 'ol', label: __('Ordered list (ol)', 'designsetgo') },
 	{ value: 'div', label: __('Container (div)', 'designsetgo') },
 ];
 
 const ITEM_TAG_OPTIONS = [
-	{ value: 'li',      label: 'li' },
-	{ value: 'div',     label: 'div' },
+	{ value: 'li', label: 'li' },
+	{ value: 'div', label: 'div' },
 	{ value: 'article', label: 'article' },
 ];
 
 const ATTR_DEFAULTS = {
-	search:         '',
-	bindSearchTo:   '',
+	search: '',
+	bindSearchTo: '',
 	excludeCurrent: false,
-	ignoreSticky:   true,
-	manualIds:      [],
-	tagName:        'ul',
-	itemTagName:    'li',
+	ignoreSticky: true,
+	manualIds: [],
+	tagName: 'ul',
+	itemTagName: 'li',
 };
 
 export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
@@ -41,7 +41,9 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 		itemTagName,
 	} = attributes;
 
-	const manualIdsAsText = Array.isArray(manualIds) ? manualIds.join(', ') : '';
+	const manualIdsAsText = Array.isArray(manualIds)
+		? manualIds.join(', ')
+		: '';
 
 	return (
 		<DsgoInspectorPanel
@@ -57,7 +59,10 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 			>
 				<TextControl
 					label={__('Search text', 'designsetgo')}
-					help={__('Limit results by keyword (like WP search).', 'designsetgo')}
+					help={__(
+						'Limit results by keyword (like WP search).',
+						'designsetgo'
+					)}
 					value={search}
 					onChange={(v) => setAttributes({ search: v })}
 					__next40pxDefaultSize
@@ -72,7 +77,10 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 			>
 				<TextControl
 					label={__('URL parameter name', 'designsetgo')}
-					help={__('Overrides the static search with ?<param>=\u2026 at render time. Leave blank to ignore.', 'designsetgo')}
+					help={__(
+						'Overrides the static search with ?<param>=\u2026 at render time. Leave blank to ignore.',
+						'designsetgo'
+					)}
 					value={bindSearchTo}
 					onChange={(v) => setAttributes({ bindSearchTo: v })}
 					__next40pxDefaultSize
@@ -109,12 +117,17 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 			{source === 'manual' && (
 				<DsgoInspectorPanel.Item
 					label={__('Manual IDs', 'designsetgo')}
-					hasValue={() => Array.isArray(manualIds) && manualIds.length > 0}
+					hasValue={() =>
+						Array.isArray(manualIds) && manualIds.length > 0
+					}
 					onDeselect={() => setAttributes({ manualIds: [] })}
 					isShownByDefault
 				>
 					<TextareaControl
-						label={__('Manual post IDs (comma-separated)', 'designsetgo')}
+						label={__(
+							'Manual post IDs (comma-separated)',
+							'designsetgo'
+						)}
 						value={manualIdsAsText}
 						onChange={(v) => {
 							const ids = String(v || '')

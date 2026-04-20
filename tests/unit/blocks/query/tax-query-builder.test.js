@@ -13,7 +13,9 @@ jest.mock('@wordpress/i18n', () => ({
 jest.mock('@wordpress/data', () => ({
 	useSelect: (cb) =>
 		cb((storeName) => {
-			if (storeName !== 'core') return {};
+			if (storeName !== 'core') {
+				return {};
+			}
 			return {
 				getTaxonomies: () => [
 					{
@@ -73,7 +75,9 @@ jest.mock('@wordpress/components', () => {
 				type="text"
 				aria-label={label}
 				value={(value || []).join(', ')}
-				onChange={(e) => onChange(e.target.value.split(', ').filter(Boolean))}
+				onChange={(e) =>
+					onChange(e.target.value.split(', ').filter(Boolean))
+				}
 				list={`${label}-suggestions`}
 			/>
 			<datalist id={`${label}-suggestions`}>
@@ -84,7 +88,14 @@ jest.mock('@wordpress/components', () => {
 		</label>
 	);
 
-	const Button = ({ children, onClick, disabled, 'aria-label': ariaLabel, isDestructive, variant }) => (
+	const Button = ({
+		children,
+		onClick,
+		disabled,
+		'aria-label': ariaLabel,
+		isDestructive,
+		variant,
+	}) => (
 		<button
 			type="button"
 			onClick={onClick}
@@ -155,14 +166,18 @@ describe('TaxQueryBuilder', () => {
 
 	it('Add button is enabled when relevant taxonomies exist', () => {
 		renderWith();
-		const addBtn = screen.getByRole('button', { name: /add taxonomy filter/i });
+		const addBtn = screen.getByRole('button', {
+			name: /add taxonomy filter/i,
+		});
 		expect(addBtn).not.toBeDisabled();
 	});
 
 	it('Add button is disabled when no relevant taxonomies for postType', () => {
 		// 'event' is not in any taxonomy's types list returned by our mock.
 		renderWith({ postType: 'event' });
-		const addBtn = screen.getByRole('button', { name: /add taxonomy filter/i });
+		const addBtn = screen.getByRole('button', {
+			name: /add taxonomy filter/i,
+		});
 		expect(addBtn).toBeDisabled();
 	});
 
@@ -201,7 +216,9 @@ describe('TaxQueryBuilder', () => {
 					...DEFAULT_ATTRIBUTES,
 					taxQuery: {
 						relation: 'AND',
-						clauses: [{ taxonomy: 'category', terms: [], operator: 'IN' }],
+						clauses: [
+							{ taxonomy: 'category', terms: [], operator: 'IN' },
+						],
 					},
 				}}
 				setAttributes={jest.fn()}
