@@ -135,11 +135,17 @@
 	}
 
 	// CRITICAL: Mobile stack behavior
-	// Must be duplicated from style.scss for editor/frontend parity
+	// Must be duplicated from style.scss for editor/frontend parity.
+	// The inner-div flip is the one that actually stacks children;
+	// the outer flip is kept for legacy class-contract compatibility.
 	&--mobile-stack {
 
 		@media (max-width: 767px) {
 			flex-direction: column !important;
+
+			> .dsgo-flex__inner {
+				flex-direction: column !important;
+			}
 		}
 	}
 
