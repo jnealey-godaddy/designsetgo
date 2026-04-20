@@ -79,6 +79,14 @@ class Negotiation_Handler {
 			return;
 		}
 
+		// Feature must be enabled before we change any HTTP semantics.
+		// Without this guard, a disabled plugin would still answer 406
+		// to unrelated Accept headers on every page.
+		$settings = \DesignSetGo\Admin\Settings::get_settings();
+		if ( empty( $settings['llms_txt']['enable'] ) ) {
+			return;
+		}
+
 		$preferred = self::preferred_type( $accept );
 
 		if ( 'none' === $preferred ) {
@@ -88,12 +96,6 @@ class Negotiation_Handler {
 
 		if ( 'markdown' !== $preferred ) {
 			return; // HTML wins; let WordPress render normally.
-		}
-
-		// Feature must be enabled to serve per-URL Markdown.
-		$settings = \DesignSetGo\Admin\Settings::get_settings();
-		if ( empty( $settings['llms_txt']['enable'] ) ) {
-			return;
 		}
 
 		// Front page or blog posts index: serve the llms.txt listing as Markdown.
@@ -145,15 +147,23 @@ class Negotiation_Handler {
 	 *  - `'html'`     — `text/html` is acceptable at q > 0 (ties go to html).
 	 *  - `'none'`     — Accept was present but rejects html AND markdown.
 	 *
-	 * Wildcards (`text/*`, `*\/*`) count for both html and markdown.
+	 * Honors RFC 7231 §5.3.2 media-range specificity: an explicit
+	 * `text/html` or `text/markdown` q-value always overrides a wildcard
+	 * (`text/*`, `*\/*`). Without this, `Accept: *\/*;q=0.9, text/html;q=0.5`
+	 * would leak wildcard weight onto `text/markdown` and misresolve the tie.
+	 *
+	 * Invalid q-values (`q=abc`, `q=1.5`, `q=-1`) are treated as missing and
+	 * default to 1.0 rather than 0.0, so a malformed parameter cannot silently
+	 * turn a positive preference into a rejection.
 	 *
 	 * @param string $accept Raw Accept header value.
 	 * @return string One of 'markdown' | 'html' | 'none'.
 	 */
 	public static function preferred_type( string $accept ): string {
-		$md_q   = 0.0;
-		$html_q = 0.0;
-		$saw    = false;
+		$md_explicit   = null; // null = no explicit text/markdown entry seen.
+		$html_explicit = null;
+		$wild_q        = 0.0;  // best q from text/* or */*.
+		$saw           = false;
 
 		foreach ( explode( ',', $accept ) as $raw ) {
 			$raw = trim( $raw );
@@ -163,41 +173,68 @@ class Negotiation_Handler {
 
 			$parts = array_map( 'trim', explode( ';', $raw ) );
 			$type  = strtolower( (string) array_shift( $parts ) );
-			$q     = 1.0;
+			$q     = self::parse_q_value( $parts );
 
-			foreach ( $parts as $param ) {
-				if ( 0 === stripos( $param, 'q=' ) ) {
-					$q = (float) substr( $param, 2 );
-					break;
-				}
-			}
-
-			if ( $q <= 0 ) {
-				continue; // Explicit rejection.
+			if ( null === $q ) {
+				continue; // Explicit rejection (q=0) or nonsense we can't interpret as a preference.
 			}
 
 			$saw = true;
 
 			switch ( $type ) {
 				case 'text/markdown':
-					$md_q = max( $md_q, $q );
+					$md_explicit = ( null === $md_explicit ) ? $q : max( $md_explicit, $q );
 					break;
 				case 'text/html':
-					$html_q = max( $html_q, $q );
+					$html_explicit = ( null === $html_explicit ) ? $q : max( $html_explicit, $q );
 					break;
 				case 'text/*':
 				case '*/*':
-					$md_q   = max( $md_q, $q );
-					$html_q = max( $html_q, $q );
+					$wild_q = max( $wild_q, $q );
 					break;
 			}
 		}
+
+		// Specificity: explicit entries override wildcards (RFC 7231 §5.3.2).
+		$md_q   = ( null !== $md_explicit ) ? $md_explicit : $wild_q;
+		$html_q = ( null !== $html_explicit ) ? $html_explicit : $wild_q;
 
 		if ( ! $saw || ( 0.0 === $md_q && 0.0 === $html_q ) ) {
 			return 'none';
 		}
 
 		return ( $md_q > $html_q ) ? 'markdown' : 'html';
+	}
+
+	/**
+	 * Extract the q-value from a media-range parameter list.
+	 *
+	 * Returns `null` when the entry is an explicit rejection (`q=0`),
+	 * otherwise a float in (0, 1]. Malformed q-values (`q=abc`, `q=1.5`,
+	 * negative) default to 1.0 per "treat invalid as missing."
+	 *
+	 * @param array $params Semicolon-delimited parameter list (already trimmed).
+	 * @return float|null
+	 */
+	private static function parse_q_value( array $params ): ?float {
+		foreach ( $params as $param ) {
+			if ( 0 !== stripos( $param, 'q=' ) ) {
+				continue;
+			}
+			$raw = substr( $param, 2 );
+			if ( ! is_numeric( $raw ) ) {
+				return 1.0; // Malformed → treat as missing.
+			}
+			$q = (float) $raw;
+			if ( $q <= 0 ) {
+				return null; // Explicit rejection.
+			}
+			if ( $q > 1 ) {
+				return 1.0; // Out-of-range → clamp.
+			}
+			return $q;
+		}
+		return 1.0; // No q= param → default weight.
 	}
 
 	/**
@@ -223,12 +260,25 @@ class Negotiation_Handler {
 		if ( $this->file_manager->file_exists( $post->ID ) ) {
 			$filename = $this->file_manager->get_filename( $post );
 			if ( '' !== $filename ) {
-				$path = $this->file_manager->get_directory() . '/' . $filename . '.md';
-				if ( is_readable( $path ) ) {
-					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file, size-bounded.
-					$content = file_get_contents( $path );
-					if ( is_string( $content ) && '' !== $content ) {
-						return $content;
+				$directory     = $this->file_manager->get_directory();
+				$path          = $directory . '/' . $filename . '.md';
+				$resolved_dir  = realpath( $directory );
+				$resolved_path = realpath( $path );
+
+				// Defense-in-depth: confirm the resolved file is actually under
+				// the markdown directory. `get_filename()` sanitizes each slug
+				// segment, but this mirrors the containment check used in
+				// `Generator::generate_full_content()`.
+				if ( false !== $resolved_dir && false !== $resolved_path ) {
+					$normalized_dir  = wp_normalize_path( trailingslashit( $resolved_dir ) );
+					$normalized_path = wp_normalize_path( $resolved_path );
+
+					if ( 0 === strpos( $normalized_path, $normalized_dir ) && is_readable( $resolved_path ) ) {
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file, containment-checked.
+						$content = file_get_contents( $resolved_path );
+						if ( is_string( $content ) && '' !== $content ) {
+							return $content;
+						}
 					}
 				}
 			}
@@ -249,7 +299,8 @@ class Negotiation_Handler {
 		header( 'Content-Type: text/markdown; charset=utf-8' );
 		header( 'Vary: Accept' );
 		header( 'X-Robots-Tag: noindex' );
-		header( 'Content-Length: ' . strlen( $markdown ) );
+		// Intentionally no Content-Length: it becomes incorrect under
+		// mod_deflate / ob_gzhandler, causing truncated or hung responses.
 		echo $markdown; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Markdown body.
 	}
 

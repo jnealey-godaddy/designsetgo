@@ -1071,10 +1071,23 @@ class Test_Markdown_Converter extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Curl default (`*\/*`) resolves to html, not markdown.
+	 * RFC 7231 §5.3.2: an explicit media-range overrides a wildcard's q-value.
+	 * `Accept: *\/*;q=0.9, text/html;q=0.5` should resolve to markdown
+	 * (markdown from wildcard = 0.9, html explicit = 0.5).
 	 */
-	public function test_negotiation_curl_default_is_html() {
-		$this->assertSame( 'html', Negotiation_Handler::preferred_type( '*/*' ) );
+	public function test_negotiation_explicit_overrides_wildcard() {
+		$accept = '*/*;q=0.9, text/html;q=0.5';
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( $accept ) );
+	}
+
+	/**
+	 * An explicit `text/markdown` q-value must not be bumped by a wildcard.
+	 * `text/markdown;q=0.3, *\/*;q=0.9` → markdown explicit at 0.3, html
+	 * via wildcard at 0.9 → html wins.
+	 */
+	public function test_negotiation_wildcard_does_not_raise_explicit() {
+		$accept = 'text/markdown;q=0.3, */*;q=0.9';
+		$this->assertSame( 'html', Negotiation_Handler::preferred_type( $accept ) );
 	}
 
 	/**
@@ -1108,5 +1121,21 @@ class Test_Markdown_Converter extends WP_UnitTestCase {
 	 */
 	public function test_negotiation_empty_accept_is_none() {
 		$this->assertSame( 'none', Negotiation_Handler::preferred_type( '' ) );
+	}
+
+	/**
+	 * Malformed q-values (non-numeric, out-of-range) should be treated as
+	 * "missing" and default to 1.0 — not as explicit rejections that would
+	 * silently flip a positive preference to 'none'.
+	 */
+	public function test_negotiation_malformed_q_defaults_to_one() {
+		// `q=abc` is invalid; markdown should still count at q=1.0.
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( 'text/markdown;q=abc, text/html;q=0.9' ) );
+
+		// `q=1.5` is out of range; treat as 1.0 (clamp).
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( 'text/markdown;q=1.5, text/html;q=0.9' ) );
+
+		// A solo markdown with malformed q must NOT become a 406.
+		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( 'text/markdown;q=abc' ) );
 	}
 }
