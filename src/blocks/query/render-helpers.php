@@ -64,6 +64,12 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 					return designsetgo_query_render_terms( $attributes, $context );
 				}
 				break;
+			case 'relationship':
+				require_once __DIR__ . '/render-relationship.php';
+				if ( function_exists( 'designsetgo_query_render_relationship' ) ) {
+					return designsetgo_query_render_relationship( $attributes, $context );
+				}
+				break;
 			case 'posts':
 			case 'manual':
 			case 'current':
@@ -110,9 +116,11 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 				'relation' => 'AND',
 				'clauses'  => array(),
 			),
-			'tagName'        => 'ul',
-			'itemTagName'    => 'li',
-			'emitSchema'     => true,
+			'tagName'              => 'ul',
+			'itemTagName'          => 'li',
+			'emitSchema'           => true,
+			'relationshipField'    => '',
+			'relationshipFallback' => 'empty', // empty | all | parent
 		);
 		return wp_parse_args( $attributes, $defaults );
 	}

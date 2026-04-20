@@ -38,7 +38,9 @@
   },
   "attributes": {
     "queryId": { "type": "string", "default": "" },
-    "source": { "type": "string", "default": "posts", "enum": ["posts", "users", "terms", "manual", "current"] },
+    "source": { "type": "string", "default": "posts", "enum": ["posts", "users", "terms", "manual", "current", "relationship"] },
+    "relationshipField": { "type": "string", "default": "" },
+    "relationshipFallback": { "type": "string", "default": "empty", "enum": ["empty", "all", "parent"] },
     "postType": { "type": "string", "default": "post" },
     "perPage": { "type": "number", "default": 6 },
     "offset": { "type": "number", "default": 0 },
