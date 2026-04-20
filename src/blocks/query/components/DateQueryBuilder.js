@@ -170,6 +170,7 @@ export default function DateQueryBuilder({
 										'Remove date clause',
 										'designsetgo'
 									)}
+									__next40pxDefaultSize
 								>
 									{__('Remove', 'designsetgo')}
 								</Button>
@@ -177,7 +178,7 @@ export default function DateQueryBuilder({
 						);
 					})}
 
-					<Button variant="secondary" onClick={addClause}>
+					<Button variant="secondary" onClick={addClause} __next40pxDefaultSize>
 						{__('Add date clause', 'designsetgo')}
 					</Button>
 				</VStack>

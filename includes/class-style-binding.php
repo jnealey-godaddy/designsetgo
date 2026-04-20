@@ -77,6 +77,10 @@ class StyleBinding {
 			if ( preg_match( '/url\s*\(|expression\s*\(|javascript:/i', $value ) ) {
 				continue;
 			}
+			// Reject values containing semicolons to prevent CSS declaration injection.
+			if ( str_contains( $value, ';' ) ) {
+				continue;
+			}
 
 			$styles[] = esc_attr( $prop ) . ':' . esc_attr( $value );
 		}

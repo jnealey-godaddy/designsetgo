@@ -84,6 +84,7 @@ export default function MetaQueryBuilder( {
 					isDestructive
 					variant="tertiary"
 					onClick={ () => removeEntry( idx ) }
+					__next40pxDefaultSize
 				>
 					{ __( 'Remove', 'designsetgo' ) }
 				</Button>

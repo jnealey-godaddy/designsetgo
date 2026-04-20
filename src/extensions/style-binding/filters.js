@@ -12,6 +12,8 @@ import {
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { Fragment } from '@wordpress/element';
 
+const BLOCKED = new Set( [ 'core/freeform', 'core/missing', 'core/template-part' ] );
+
 const SOURCE_OPTIONS = [
 	{ label: __( 'Post meta', 'designsetgo' ), value: 'designsetgo/post-meta' },
 	{ label: __( 'ACF', 'designsetgo' ), value: 'designsetgo/acf' },
@@ -24,6 +26,9 @@ addFilter(
 	'blocks.registerBlockType',
 	'designsetgo/style-binding-attribute',
 	( settings ) => {
+		if ( BLOCKED.has( settings.name ) ) {
+			return settings;
+		}
 		if ( ! settings.attributes ) {
 			settings.attributes = {};
 		}
@@ -37,6 +42,9 @@ addFilter(
 
 const withStyleBindingInspector = createHigherOrderComponent( ( BlockEdit ) => {
 	return function WithStyleBindingInspector( props ) {
+		if ( BLOCKED.has( props.name ) ) {
+			return <BlockEdit { ...props } />;
+		}
 		const { attributes, setAttributes } = props;
 		const binding = attributes.dsgoStyleBinding ?? {};
 		const entries = Object.entries( binding );

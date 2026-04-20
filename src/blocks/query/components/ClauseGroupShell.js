@@ -87,7 +87,7 @@ export default function ClauseGroupShell( {
 					{ __( '+ Group', 'designsetgo' ) }
 				</Button>
 				{ onRemove && (
-					<Button variant="tertiary" isDestructive size="small" onClick={ onRemove }>
+					<Button variant="tertiary" isDestructive size="small" onClick={ onRemove } __next40pxDefaultSize>
 						{ __( 'Remove group', 'designsetgo' ) }
 					</Button>
 				) }
