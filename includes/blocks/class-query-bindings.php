@@ -131,5 +131,4 @@ class Bindings {
 
 		return null;
 	}
-
 }
