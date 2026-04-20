@@ -19,10 +19,16 @@ export default [
 			itemTagName: 'li',
 		},
 		innerBlocks: [
-			['core/post-featured-image', { isLink: true }],
-			['core/post-title', { level: 3, isLink: true }],
-			['core/post-date'],
-			['core/post-excerpt', { excerptLength: 30 }],
+			[
+				'designsetgo/section',
+				{},
+				[
+					[ 'core/post-featured-image', { isLink: true } ],
+					[ 'core/post-title', { level: 3, isLink: true } ],
+					[ 'core/post-date' ],
+					[ 'core/post-excerpt', { excerptLength: 30 } ],
+				],
+			],
 		],
 		scope: ['inserter'],
 	},
@@ -44,9 +50,15 @@ export default [
 			itemTagName: 'li',
 		},
 		innerBlocks: [
-			['core/post-featured-image'],
-			['core/post-title', { level: 3 }],
-			['core/post-excerpt', { excerptLength: 15 }],
+			[
+				'designsetgo/section',
+				{},
+				[
+					[ 'core/post-featured-image' ],
+					[ 'core/post-title', { level: 3 } ],
+					[ 'core/post-excerpt', { excerptLength: 15 } ],
+				],
+			],
 		],
 		scope: ['inserter'],
 	},
@@ -67,7 +79,16 @@ export default [
 			tagName: 'ul',
 			itemTagName: 'li',
 		},
-		innerBlocks: [['core/post-excerpt'], ['core/post-title', { level: 4 }]],
+		innerBlocks: [
+			[
+				'designsetgo/section',
+				{},
+				[
+					[ 'core/post-excerpt' ],
+					[ 'core/post-title', { level: 4 } ],
+				],
+			],
+		],
 		scope: ['inserter'],
 	},
 	{
@@ -88,8 +109,14 @@ export default [
 			itemTagName: 'li',
 		},
 		innerBlocks: [
-			['core/post-featured-image', { isLink: true, aspectRatio: '4/3' }],
-			['core/post-title', { level: 3, isLink: true }],
+			[
+				'designsetgo/section',
+				{},
+				[
+					[ 'core/post-featured-image', { isLink: true, aspectRatio: '4/3' } ],
+					[ 'core/post-title', { level: 3, isLink: true } ],
+				],
+			],
 		],
 		scope: ['inserter'],
 	},
@@ -112,8 +139,14 @@ export default [
 			itemTagName: 'li',
 		},
 		innerBlocks: [
-			['core/post-featured-image', { isLink: true }],
-			['core/post-title', { level: 4, isLink: true }],
+			[
+				'designsetgo/section',
+				{},
+				[
+					[ 'core/post-featured-image', { isLink: true } ],
+					[ 'core/post-title', { level: 4, isLink: true } ],
+				],
+			],
 		],
 		scope: ['inserter'],
 	},
@@ -135,10 +168,16 @@ export default [
 			itemTagName: 'li',
 		},
 		innerBlocks: [
-			['core/post-featured-image'],
-			['core/post-date'],
-			['core/post-title', { level: 3, isLink: true }],
-			['core/post-excerpt', { excerptLength: 20 }],
+			[
+				'designsetgo/section',
+				{},
+				[
+					[ 'core/post-featured-image' ],
+					[ 'core/post-date' ],
+					[ 'core/post-title', { level: 3, isLink: true } ],
+					[ 'core/post-excerpt', { excerptLength: 20 } ],
+				],
+			],
 		],
 		scope: ['inserter'],
 	},

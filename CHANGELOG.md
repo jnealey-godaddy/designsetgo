@@ -37,14 +37,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dynamic Query — Nested loops with parent context** - Outer Query's current item flows into inner Queries via the `designsetgo/parentItem` block context; DSGo bindings (`designsetgo/post-meta`, `designsetgo/acf`) accept a new optional `scope` arg of `'self'` (default), `'parent'`, or `'root'` — reading from a parent-stack maintained by `designsetgo_query_render_item()`
 - **Conditional inner-block visibility** - Every block now carries a `dsgoVisibility` attribute with an inspector panel under Advanced → Visibility. Rule types: meta / taxonomy / index / auth, combined with AND/OR relations and ops (`equals`, `not_equals`, `contains`, `gt`, `lt`, `empty`, `not_empty`, `has`, `not_has`). Editor previews mirror server-side evaluation so authors see what will ship
 - **Dynamic Query — Group-by partitioning** - New `groupBy` attribute on the Query block partitions iterated items by taxonomy / meta / date (with year / year-month / year-month-day precision); server wraps each group in `<section class="dsgo-query-group">` and renders the new Query Group Header block once per group
+- **Dynamic Query — Meta Box, Pods, JetEngine binding sources** - Three new Block Bindings sources (`designsetgo/metabox`, `designsetgo/pods`, `designsetgo/jetengine`) that delegate to each plugin's canonical formatting API (`rwmb_meta()`, `pods_field()`, `jet_engine()->listings->data->get_meta()`) so formatted dates, files, and relations render correctly. Each registers only when the host plugin is active
+- **`designsetgo_register_bindings_source()` helper** - Public PHP function wrapping `register_block_bindings_source()` with DSGo's shared post-password / viewable / protected-meta gates and the `scope` arg (`self`/`parent`/`root`). Lets child themes and mu-plugins ship custom binding sources without reimplementing the security gates
+- **Dynamic Query — Template export/import** - REST routes `GET /designsetgo/v1/query/template` (export) and `POST /designsetgo/v1/query/template` (import) plus inspector Export/Import buttons in the Settings panel's Template I/O section. JSON format with `schemaVersion: 1`, attribute allowlist enforced via `WP_Block_Type_Registry`, and a fresh `queryId` generated on import so sibling bindings never collide
 
 ### Changed
 - `designsetgo/post-meta` and `designsetgo/acf` binding sources accept an optional `scope` arg — defaults to `'self'`; existing bindings unchanged
+- `designsetgo/post-meta` and `designsetgo/acf` internally refactored to use the new `designsetgo_register_bindings_source()` helper — single source of truth for security gates and scope resolution; externally observable behavior is identical
 
 ### Extension points
 - `designsetgo_visibility_rule` filter — add custom rule types by returning a bool from `($match, $rule, $context) → bool|null`
 - `$GLOBALS['designsetgo_parent_stack']` — ordered list of `{ postId, postType }` contexts available during any `render_block` hook fired inside a query item
 - `designsetgo_query_partition_items( $post_ids, $group_spec )` — public PHP helper for custom group-by integrations
+- `designsetgo_register_bindings_source( $slug, callable $callback, array $options )` — public PHP helper for registering custom DSGo-compatible binding sources with inherited gates and `scope` support
+- `designsetgo_resolve_bindings_post_id( $args, $block )` — free function exposing the scope-aware post-ID resolution used by the helper, for callers that register via `register_block_bindings_source()` directly
 
 ## [2.0.0] - 2026-02-08
 

@@ -527,7 +527,15 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-submissions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-modal-hooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-template-controller.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-helpers.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-metabox.php';
+		\DesignSetGo\Blocks\Query\MetaBoxBindings::bootstrap();
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-pods.php';
+		\DesignSetGo\Blocks\Query\PodsBindings::bootstrap();
+		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-jetengine.php';
+		\DesignSetGo\Blocks\Query\JetEngineBindings::bootstrap();
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-hooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-rebuilder.php';
@@ -605,7 +613,8 @@ class Plugin {
 		$this->modal_hooks         = new Blocks\Modal_Hooks();
 		$this->form_handler        = new Blocks\Form_Handler();
 		$this->form_submissions    = new Blocks\Form_Submissions();
-		$this->query_controller    = new Blocks\Query\Controller();
+		$this->query_controller          = new Blocks\Query\Controller();
+		add_action( 'rest_api_init', array( 'DesignSetGo\Blocks\Query\Template_Controller', 'register_routes' ) );
 		$this->query_bindings      = new Blocks\Query\Bindings();
 		$this->filter_index         = new Blocks\Query\FilterIndex();
 		Blocks\Query\FilterIndexHooks::register_hooks();

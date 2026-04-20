@@ -31,7 +31,12 @@ jest.mock('@wordpress/data', () => ({
 			if (storeName === 'core/block-editor') {
 				return {
 					getBlock: () => ({ innerBlocks: [] }),
+					getBlocks: () => [],
 				};
+			}
+			// TemplateIO calls getCurrentPostId() on the editor store.
+			if (storeName === 'core/editor') {
+				return { getCurrentPostId: () => 1 };
 			}
 			if (storeName !== 'core') {
 				return {};
@@ -61,6 +66,9 @@ jest.mock('@wordpress/data', () => ({
 		}),
 	useDispatch: () => ({
 		insertBlocks: jest.fn(),
+		replaceBlocks: jest.fn(),
+		createErrorNotice: jest.fn(),
+		createSuccessNotice: jest.fn(),
 	}),
 }));
 

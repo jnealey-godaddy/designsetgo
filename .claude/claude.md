@@ -75,6 +75,15 @@ For sibling blocks that already exist and meet the "1–3 attribute difference +
 - `groupBy` attribute on the Query block — shape `{ field: 'taxonomy'|'meta'|'date', key: string }`. Server partitions items in `designsetgo_query_partition_items()` (in `render-helpers.php`).
 - Custom visibility rule types via `designsetgo_visibility_rule` filter (`($match, $rule, $context)` → bool|null).
 
+### Query block family (Dynamic Query v2.4)
+
+- Three new Block Bindings sources registered only when the host plugin is active: `designsetgo/metabox` (via `rwmb_meta()`), `designsetgo/pods` (via `pods_field()`), `designsetgo/jetengine` (via `jet_engine()->listings->data->get_meta()` with `get_post_meta` fallback). Each delegates to the plugin's formatting API so dates / files / relations render correctly.
+- `designsetgo_register_bindings_source( $slug, callable $callback, array $options )` — public PHP helper. Wraps `register_block_bindings_source()` with DSGo's shared post-password / viewable / protected-meta gates and the `scope` arg (`self`/`parent`/`root`). Use this instead of `register_block_bindings_source()` to inherit all security + scope behavior.
+- Post ID resolution exposed via `designsetgo_resolve_bindings_post_id( $args, $block )` (free function) — mirrors the helper's internal resolution.
+- Template export/import REST routes at `/designsetgo/v1/query/template` (GET for export, POST for import). JSON format with `schemaVersion: 1`, attribute allowlist via `WP_Block_Type_Registry`, fresh `queryId` generated on import to avoid sibling-binding collisions.
+- Inspector → Settings panel → Template I/O section exposes Export + Import buttons backed by those routes.
+- `designsetgo/post-meta` and `designsetgo/acf` sources (v2.1) refactored to use the new helper internally — output is identical.
+
 ### Inspector IA (Theme 3)
 
 Three panels per block, in this order: **Settings** → **Style** → **Advanced**. Use `<DsgoInspectorPanel>` (the `ToolsPanel` wrapper) for all custom inspector controls; never reach for `PanelBody` directly.

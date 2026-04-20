@@ -485,6 +485,92 @@ You can also read the parent context via bindings using `scope: 'parent'`:
 
 ---
 
+## v2.4 Recipes
+
+### Recipe — render a Meta Box date field in a Query item
+
+**Requires:** Meta Box plugin active.
+
+1. Add a Dynamic Query block (source = Posts). Inside the item template, insert a **Heading** block.
+2. Open the Heading's toolbar → **Bind** → pick **Meta Box Field (DesignSetGo)** from the source list.
+3. Set `source = designsetgo/metabox` and `args = { "key": "event_date" }`.
+
+If the field has a formatting config in Meta Box (date format, etc.), `rwmb_meta()` returns the already-formatted string — no extra processing needed.
+
+```html
+<!-- wp:heading {"level":3,"metadata":{"bindings":{"content":{"source":"designsetgo/metabox","args":{"key":"event_date"}}}}} -->
+<h3></h3>
+<!-- /wp:heading -->
+```
+
+---
+
+### Recipe — share a Query block configuration across sites
+
+1. Set up a Query block — filters, group-by, inner template, whatever you need.
+2. Open block inspector → **Settings** → **Template I/O** → **Export template**.
+3. A `query-template-{queryId}.json` file downloads.
+4. On another site or page, insert an empty Dynamic Query block → **Import template** → select the file.
+5. The block's attributes + inner template are replaced with the imported config. A fresh `queryId` is generated automatically to avoid sibling-binding collisions.
+
+> **Portability note:** The JSON is fully portable. Field/meta references that depend on other plugins (ACF fields, Meta Box fields, JetEngine fields) only work if those plugins are installed at the destination.
+
+---
+
+### Recipe — custom binding source for a third-party API
+
+Use `designsetgo_register_bindings_source()` in a mu-plugin or child theme `functions.php`. The helper wraps WP core's `register_block_bindings_source()` and automatically inherits DSGo's post-password / viewable / protected-meta security gates and `scope` resolution.
+
+Example: render a post's live Twitter follower count.
+
+```php
+add_action( 'init', function () {
+    if ( ! function_exists( 'designsetgo_register_bindings_source' ) ) {
+        return;
+    }
+    designsetgo_register_bindings_source(
+        'my-theme/twitter-followers',
+        function ( $args, $block = null, $attribute_name = 'content' ) {
+            $post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
+            $handle  = isset( $args['key'] ) ? sanitize_text_field( $args['key'] ) : '';
+            if ( ! $post_id || '' === $handle ) {
+                return null;
+            }
+            // Your API call (with caching — don't hit the network on every render).
+            $count = get_transient( "twitter_followers_{$handle}" );
+            if ( false === $count ) {
+                $count = wp_remote_retrieve_body( wp_remote_get( "https://api.example.com/followers/{$handle}" ) );
+                set_transient( "twitter_followers_{$handle}", $count, HOUR_IN_SECONDS );
+            }
+            return (string) $count;
+        },
+        array( 'label' => 'Twitter followers' )
+    );
+}, 20 );
+```
+
+Key points:
+
+- The helper handles the post-password / viewable / protected-meta gates automatically — you do not need to add those checks yourself.
+- The `scope` arg (`'self'` | `'parent'` | `'root'`) works out of the box via DSGo's shared scope resolution.
+- `$args['__dsgo_post_id']` is the already-resolved post ID — do not re-resolve it from `$block->context`, as the stack-based `scope` logic will already have done that for you.
+
+---
+
+### Recipe — render a JetEngine date/relation field
+
+Same workflow as the Meta Box recipe, but with `source = designsetgo/jetengine` and the JetEngine meta key:
+
+```html
+<!-- wp:heading {"level":3,"metadata":{"bindings":{"content":{"source":"designsetgo/jetengine","args":{"key":"event_start_date"}}}}} -->
+<h3></h3>
+<!-- /wp:heading -->
+```
+
+> **Relation fields:** JetEngine relation fields return arrays. The `designsetgo/jetengine` binding source returns `null` for array values. To iterate related posts, use a child Query block with `source = relationship` instead — the relation traversal happens at the query level, not the binding level.
+
+---
+
 ## v2.3 Extension points
 
 ### `scope` arg on binding sources
@@ -561,6 +647,18 @@ Use `designsetgo/groupItemIndex` in custom Block Bindings or `wp:if` conditions 
 > **Note:** A `type: 'groupItemIndex'` visibility rule is not yet implemented in the built-in UI. Use Block Bindings or a custom `designsetgo_visibility_rule` filter for now. The UI rule type is planned for a future release.
 
 > **Note:** `designsetgo/groupKey` and `designsetgo/groupCount` are **not** provided by the server renderer. Do not bind to these keys — bindings will resolve to empty. A `groupCount` context key may be added in a future release once counting is integrated into the partition step.
+
+---
+
+## v2.4 Extension points
+
+| Name | Form | Purpose |
+|------|------|---------|
+| `designsetgo_register_bindings_source()` | PHP function | Public helper to register a custom Block Bindings source that inherits DSGo's security gates + scope resolution. Signature: `( string $slug, callable $callback, array $options = [] )`. Use this instead of `register_block_bindings_source()` directly. |
+| `GET /designsetgo/v1/query/template` | REST | Export a Query block's config as JSON. Params: `post_id`, `query_id`. Auth: `edit_post`. |
+| `POST /designsetgo/v1/query/template` | REST | Import JSON → block markup string. Body: `{ schemaVersion: 1, blockName, attributes, innerBlocks }`. Auth: `edit_posts`. |
+
+---
 
 ### `$GLOBALS['designsetgo_parent_stack']`
 
