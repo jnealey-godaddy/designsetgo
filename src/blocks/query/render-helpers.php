@@ -276,21 +276,41 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 
 		$html   = '';
 		$parsed = parse_blocks( $inner_html );
-		foreach ( $parsed as $parsed_block ) {
-			if ( empty( $parsed_block['blockName'] ) ) {
-				continue;
+
+		// Push this item's context onto the global parent stack so that nested
+		// Query blocks (and Task C2's `scope` arg on bindings) can walk the
+		// ancestor chain. The stack is keyed by depth, so parallel items from
+		// different queries never collide — each item fully completes before the
+		// next begins (PHP is single-threaded, no async interleaving).
+		if ( ! isset( $GLOBALS['designsetgo_parent_stack'] ) || ! is_array( $GLOBALS['designsetgo_parent_stack'] ) ) {
+			$GLOBALS['designsetgo_parent_stack'] = array();
+		}
+		array_push( $GLOBALS['designsetgo_parent_stack'], $item_context );
+
+		try {
+			foreach ( $parsed as $parsed_block ) {
+				if ( empty( $parsed_block['blockName'] ) ) {
+					continue;
+				}
+				// Skip blocks whose dsgoVisibility rules don't match the current item context.
+				$visibility = isset( $parsed_block['attrs']['dsgoVisibility'] ) ? $parsed_block['attrs']['dsgoVisibility'] : null;
+				if ( ! \DesignSetGo\BlockVisibility::matches( $visibility, $item_context ) ) {
+					continue;
+				}
+				// WP_Block's constructor signature is ( $block, $available_context, $registry ).
+				// The $available_context arg is what gets filtered through child blocks'
+				// usesContext declarations. Passing it via render_block()'s parsed-block
+				// 'context' key would NOT work — that key is not read by WP_Block.
+				$block_instance = new WP_Block( $parsed_block, $item_context );
+				$html          .= $block_instance->render();
 			}
-			// Skip blocks whose dsgoVisibility rules don't match the current item context.
-			$visibility = isset( $parsed_block['attrs']['dsgoVisibility'] ) ? $parsed_block['attrs']['dsgoVisibility'] : null;
-			if ( ! \DesignSetGo\BlockVisibility::matches( $visibility, $item_context ) ) {
-				continue;
+		} finally {
+			// Always pop — even if render() throws — so the stack stays consistent
+			// for any outer Query block that is still iterating.
+			array_pop( $GLOBALS['designsetgo_parent_stack'] );
+			if ( empty( $GLOBALS['designsetgo_parent_stack'] ) ) {
+				unset( $GLOBALS['designsetgo_parent_stack'] );
 			}
-			// WP_Block's constructor signature is ( $block, $available_context, $registry ).
-			// The $available_context arg is what gets filtered through child blocks'
-			// usesContext declarations. Passing it via render_block()'s parsed-block
-			// 'context' key would NOT work — that key is not read by WP_Block.
-			$block_instance = new WP_Block( $parsed_block, $item_context );
-			$html          .= $block_instance->render();
 		}
 
 		return sprintf( '<%1$s class="dsgo-query__item">%2$s</%1$s>', $tag, $html );
