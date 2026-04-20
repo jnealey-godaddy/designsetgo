@@ -8,7 +8,7 @@ class BindingsHelperTest extends WP_UnitTestCase {
 
 	public function test_registers_source_with_shared_gates() {
 		$called_with = null;
-		designsetgo_register_bindings_source( 'designsetgo/test-source', function ( $args, $block ) use ( &$called_with ) {
+		designsetgo_register_bindings_source( 'designsetgo/test-source', function ( $args, $block = null, $attribute_name = 'content' ) use ( &$called_with ) {
 			$called_with = $args;
 			return 'OK-' . $args['key'];
 		}, array( 'label' => 'Test source' ) );
@@ -28,7 +28,7 @@ class BindingsHelperTest extends WP_UnitTestCase {
 
 	public function test_applies_password_gate() {
 		$post_id = self::factory()->post->create( array( 'post_password' => 'secret' ) );
-		designsetgo_register_bindings_source( 'designsetgo/test-gated', function ( $args ) {
+		designsetgo_register_bindings_source( 'designsetgo/test-gated', function ( $args, $block = null, $attribute_name = 'content' ) {
 			return 'LEAK-' . $args['key'];
 		} );
 

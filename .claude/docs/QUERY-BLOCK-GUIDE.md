@@ -530,7 +530,7 @@ add_action( 'init', function () {
     }
     designsetgo_register_bindings_source(
         'my-theme/twitter-followers',
-        function ( $args ) {
+        function ( $args, $block = null, $attribute_name = 'content' ) {
             $post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
             $handle  = isset( $args['key'] ) ? sanitize_text_field( $args['key'] ) : '';
             if ( ! $post_id || '' === $handle ) {

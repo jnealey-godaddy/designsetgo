@@ -32,7 +32,7 @@ class Bindings {
 	public function register() {
 		designsetgo_register_bindings_source(
 			'designsetgo/post-meta',
-			function ( $args ) {
+			function ( $args, $block = null, $attribute_name = 'content' ) {
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				$key     = isset( $args['key'] ) ? sanitize_text_field( (string) $args['key'] ) : '';
 				if ( ! $post_id || '' === $key ) {
@@ -50,7 +50,7 @@ class Bindings {
 		if ( function_exists( 'get_field' ) ) {
 			designsetgo_register_bindings_source(
 				'designsetgo/acf',
-				function ( $args ) {
+				function ( $args, $block = null, $attribute_name = 'content' ) {
 					$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 					$key     = isset( $args['key'] ) ? sanitize_text_field( (string) $args['key'] ) : '';
 					if ( ! $post_id || '' === $key ) {
