@@ -13,6 +13,7 @@ import useQueryPreview from './hooks/useQueryPreview';
 import QuerySourcePanel from './components/QuerySourcePanel';
 import TaxQueryBuilder from './components/TaxQueryBuilder';
 import MetaQueryBuilder from './components/MetaQueryBuilder';
+import DateQueryBuilder from './components/DateQueryBuilder';
 import AdvancedPanel from './components/AdvancedPanel';
 import ResultCountBadge from './components/ResultCountBadge';
 import EditorPreviewList from './components/EditorPreviewList';
@@ -24,7 +25,12 @@ import { DEFAULT_TEMPLATE } from './edit-template';
 // console with "`useSelect` returns different values" warnings.
 const EMPTY_BLOCKS = Object.freeze([]);
 
-export default function QueryEdit({ attributes, setAttributes, clientId, context }) {
+export default function QueryEdit({
+	attributes,
+	setAttributes,
+	clientId,
+	context,
+}) {
 	useQueryId({ clientId, queryId: attributes.queryId, setAttributes });
 
 	// Two narrow selectors instead of one composite object: hasInnerBlocks is
@@ -118,6 +124,11 @@ export default function QueryEdit({ attributes, setAttributes, clientId, context
 							clientId={clientId}
 						/>
 						<MetaQueryBuilder
+							attributes={attributes}
+							setAttributes={setAttributes}
+							clientId={clientId}
+						/>
+						<DateQueryBuilder
 							attributes={attributes}
 							setAttributes={setAttributes}
 							clientId={clientId}

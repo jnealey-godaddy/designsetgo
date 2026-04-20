@@ -73,6 +73,9 @@ import './extensions/hover-effects';
 // Conditional Visibility - registers dsgoVisibility attribute for query-driven inner-block visibility
 import './extensions/visibility';
 
+// Style Binding - maps CSS properties to dynamic data sources (post-meta, ACF, MetaBox, Pods, JetEngine)
+import './extensions/style-binding';
+
 // ===== RICH TEXT FORMATS =====
 // Text Style - adds inline text styling (color, gradient, size) to selected text
 import './formats/text-style';

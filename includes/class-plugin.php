@@ -459,6 +459,13 @@ class Plugin {
 	public $extension_attrs;
 
 	/**
+	 * Style Binding instance.
+	 *
+	 * @var StyleBinding
+	 */
+	public $style_binding;
+
+	/**
 	 * Query Block Controller instance.
 	 *
 	 * @var Blocks\Query\Controller
@@ -545,6 +552,22 @@ class Plugin {
 			require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-cli.php';
 			Blocks\Query\FilterIndexCLI::register();
 		}
+
+		// Query Monitor integration — deferred to plugins_loaded so QM has finished
+		// loading regardless of plugin order; the files themselves bail if the QM
+		// base classes still aren't present at the deferred point.
+		add_action(
+			'plugins_loaded',
+			static function () {
+				if ( ! class_exists( '\QM_Collector' ) ) {
+					return;
+				}
+				require_once DESIGNSETGO_PATH . 'includes/class-query-qm-collector.php';
+				require_once DESIGNSETGO_PATH . 'includes/class-query-qm-output.php';
+			},
+			20
+		);
+
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-settings.php';
@@ -565,6 +588,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/class-icon-injector.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-button-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-extension-attributes.php';
+		require_once DESIGNSETGO_PATH . 'includes/class-style-binding.php';
 		require_once DESIGNSETGO_PATH . 'includes/svg-pattern-data.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-svg-pattern-renderer.php';
 
@@ -611,6 +635,7 @@ class Plugin {
 		$this->assets              = new Assets();
 		$this->blocks              = new Blocks\Loader();
 		$this->extension_attrs     = new Extension_Attributes();
+		$this->style_binding       = new StyleBinding();
 		$this->modal_hooks         = new Blocks\Modal_Hooks();
 		$this->form_handler        = new Blocks\Form_Handler();
 		$this->form_submissions    = new Blocks\Form_Submissions();

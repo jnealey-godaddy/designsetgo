@@ -10,6 +10,105 @@
 
 defined( 'ABSPATH' ) || exit;
 
+if ( ! function_exists( 'designsetgo_build_tax_query_entry' ) ) :
+	/**
+	 * Recursively builds a WP_Query tax_query clause or nested group.
+	 *
+	 * @param array $entry Clause or group from block attributes.
+	 * @return array|null WP_Query tax_query entry, or null if invalid.
+	 */
+	function designsetgo_build_tax_query_entry( array $entry ) {
+		if ( isset( $entry['clauses'] ) ) {
+			// Nested group.
+			$relation = ( 'OR' === ( $entry['relation'] ?? 'AND' ) ) ? 'OR' : 'AND';
+			$children = array();
+			foreach ( (array) $entry['clauses'] as $child ) {
+				$built = designsetgo_build_tax_query_entry( $child );
+				if ( null !== $built ) {
+					$children[] = $built;
+				}
+			}
+			if ( empty( $children ) ) {
+				return null;
+			}
+			// WP_Query triggers _doing_it_wrong when a tax_query group carries
+			// `relation` with a single child — unwrap to the bare child.
+			if ( 1 === count( $children ) ) {
+				return $children[0];
+			}
+			return array_merge( array( 'relation' => $relation ), $children );
+		}
+		// Leaf clause.
+		if ( empty( $entry['taxonomy'] ) || empty( $entry['terms'] ) ) {
+			return null;
+		}
+		$operator = $entry['operator'] ?? 'IN';
+		if ( ! in_array( $operator, array( 'IN', 'NOT IN', 'AND' ), true ) ) {
+			$operator = 'IN';
+		}
+		return array(
+			'taxonomy'         => sanitize_key( (string) $entry['taxonomy'] ),
+			'terms'            => array_map( 'absint', (array) $entry['terms'] ),
+			'operator'         => $operator,
+			'include_children' => isset( $entry['include_children'] ) ? (bool) $entry['include_children'] : true,
+		);
+	}
+endif;
+
+if ( ! function_exists( 'designsetgo_build_meta_query_entry' ) ) :
+	/**
+	 * Recursively builds a WP_Query meta_query clause or nested group.
+	 *
+	 * @param array $entry Clause or group from block attributes.
+	 * @return array|null WP_Query meta_query entry, or null if invalid.
+	 */
+	function designsetgo_build_meta_query_entry( array $entry ) {
+		if ( isset( $entry['clauses'] ) ) {
+			// Nested group.
+			$relation = ( 'OR' === ( $entry['relation'] ?? 'AND' ) ) ? 'OR' : 'AND';
+			$children = array();
+			foreach ( (array) $entry['clauses'] as $child ) {
+				$built = designsetgo_build_meta_query_entry( $child );
+				if ( null !== $built ) {
+					$children[] = $built;
+				}
+			}
+			if ( empty( $children ) ) {
+				return null;
+			}
+			// Unwrap single-child groups to avoid WP_Meta_Query's
+			// `relation`-with-one-child _doing_it_wrong notice.
+			if ( 1 === count( $children ) ) {
+				return $children[0];
+			}
+			return array_merge( array( 'relation' => $relation ), $children );
+		}
+		// Leaf clause.
+		if ( empty( $entry['key'] ) ) {
+			return null;
+		}
+		$valid_compare = array( '=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS' );
+		$valid_type    = array( 'CHAR', 'NUMERIC', 'DATE' );
+		$compare       = $entry['compare'] ?? '=';
+		if ( ! in_array( $compare, $valid_compare, true ) ) {
+			$compare = '=';
+		}
+		$type = $entry['type'] ?? 'CHAR';
+		if ( ! in_array( $type, $valid_type, true ) ) {
+			$type = 'CHAR';
+		}
+		$result = array(
+			'key'     => sanitize_text_field( (string) $entry['key'] ),
+			'compare' => $compare,
+			'type'    => $type,
+		);
+		if ( ! in_array( $compare, array( 'EXISTS', 'NOT EXISTS' ), true ) ) {
+			$result['value'] = sanitize_text_field( (string) ( $entry['value'] ?? '' ) );
+		}
+		return $result;
+	}
+endif;
+
 if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 
 	/**
@@ -54,7 +153,32 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			$args = apply_filters( 'designsetgo/query/' . $query_id . '/args', $args, $atts, $context );
 		}
 
-		$query = new WP_Query( $args );
+		// Capture render telemetry only when Query Monitor is loaded — otherwise
+		// the action exposes raw SQL to any third-party callback on every public
+		// page render, which is data we don't want to broadcast.
+		if ( defined( 'QM_VERSION' ) ) {
+			$t_start     = microtime( true );
+			$query       = new WP_Query( $args );
+			$duration_ms = ( microtime( true ) - $t_start ) * 1000;
+
+			do_action(
+				'designsetgo_query_did_render',
+				array(
+					'query_id'    => $atts['queryId'] ?? '',
+					'source'      => $atts['source'] ?? 'posts',
+					'wp_args'     => $args,
+					'found_posts' => $query->found_posts,
+					// $query->request is the actual posts SELECT WP_Query just
+					// ran; $wpdb->last_query at this point would be the
+					// trailing FOUND_ROWS()/COUNT instead.
+					'sql'         => (string) ( $query->request ?? '' ),
+					'filters'     => array(),
+					'duration_ms' => round( $duration_ms, 2 ),
+				)
+			);
+		} else {
+			$query = new WP_Query( $args );
+		}
 
 		// Determine whether grouped rendering is requested.
 		// Parse inner_html to split group-header blocks from the item template.
@@ -256,48 +380,81 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			}
 		}
 
-		// Taxonomy query.
+		// Tax query (supports nested AND/OR groups).
 		$tax_clauses = isset( $atts['taxQuery']['clauses'] ) ? (array) $atts['taxQuery']['clauses'] : array();
 		if ( ! empty( $tax_clauses ) ) {
 			$tax_query = array(
 				'relation' => ( 'OR' === ( $atts['taxQuery']['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
 			);
-			foreach ( $tax_clauses as $clause ) {
-				if ( empty( $clause['taxonomy'] ) || empty( $clause['terms'] ) ) {
-					continue;
+			foreach ( $tax_clauses as $entry ) {
+				$built = designsetgo_build_tax_query_entry( $entry );
+				if ( null !== $built ) {
+					$tax_query[] = $built;
 				}
-				$tax_query[] = array(
-					'taxonomy' => sanitize_key( (string) $clause['taxonomy'] ),
-					'terms'    => array_map( 'absint', (array) $clause['terms'] ),
-					'operator' => in_array( ( $clause['operator'] ?? 'IN' ), array( 'IN', 'NOT IN', 'AND' ), true ) ? $clause['operator'] : 'IN',
-				);
 			}
 			if ( count( $tax_query ) > 1 ) {
 				$args['tax_query'] = $tax_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 			}
 		}
 
-		// Meta query.
+		// Meta query (supports nested AND/OR groups).
 		$meta_clauses = isset( $atts['metaQuery']['clauses'] ) ? (array) $atts['metaQuery']['clauses'] : array();
 		if ( ! empty( $meta_clauses ) ) {
-			$meta_query    = array(
+			$meta_query = array(
 				'relation' => ( 'OR' === ( $atts['metaQuery']['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
 			);
-			$valid_compare = array( '=', '!=', '>', '>=', '<', '<=', 'LIKE', 'NOT LIKE', 'IN', 'NOT IN', 'EXISTS', 'NOT EXISTS' );
-			$valid_type    = array( 'CHAR', 'NUMERIC', 'DATE' );
-			foreach ( $meta_clauses as $clause ) {
-				if ( empty( $clause['key'] ) ) {
-					continue;
+			foreach ( $meta_clauses as $entry ) {
+				$built = designsetgo_build_meta_query_entry( $entry );
+				if ( null !== $built ) {
+					$meta_query[] = $built;
 				}
-				$meta_query[] = array(
-					'key'     => sanitize_text_field( (string) $clause['key'] ),
-					'value'   => sanitize_text_field( (string) ( $clause['value'] ?? '' ) ),
-					'compare' => in_array( ( $clause['compare'] ?? '=' ), $valid_compare, true ) ? $clause['compare'] : '=',
-					'type'    => in_array( ( $clause['type'] ?? 'CHAR' ), $valid_type, true ) ? $clause['type'] : 'CHAR',
-				);
 			}
 			if ( count( $meta_query ) > 1 ) {
 				$args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+			}
+		}
+
+		// Date query.
+		$date_clauses = isset( $atts['dateQuery']['clauses'] ) ? (array) $atts['dateQuery']['clauses'] : array();
+		if ( ! empty( $date_clauses ) ) {
+			$valid_columns = array( 'post_date', 'post_modified', 'post_date_gmt', 'post_modified_gmt' );
+			$date_query    = array(
+				'relation' => ( 'OR' === ( $atts['dateQuery']['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
+			);
+			foreach ( $date_clauses as $clause ) {
+				$mode   = $clause['mode'] ?? 'after';
+				$after  = sanitize_text_field( (string) ( $clause['after'] ?? '' ) );
+				$before = sanitize_text_field( (string) ( $clause['before'] ?? '' ) );
+
+				// Skip clauses with no date value.
+				if ( 'between' === $mode && ( '' === $after || '' === $before ) ) {
+					continue;
+				}
+				if ( 'after' === $mode && '' === $after ) {
+					continue;
+				}
+				if ( 'before' === $mode && '' === $before ) {
+					continue;
+				}
+
+				$column = $clause['column'] ?? 'post_date';
+				if ( ! in_array( $column, $valid_columns, true ) ) {
+					$column = 'post_date';
+				}
+				$entry = array(
+					'column'    => $column,
+					'inclusive' => ! empty( $clause['inclusive'] ),
+				);
+				if ( 'after' === $mode || 'between' === $mode ) {
+					$entry['after'] = $after;
+				}
+				if ( 'before' === $mode || 'between' === $mode ) {
+					$entry['before'] = $before;
+				}
+				$date_query[] = $entry;
+			}
+			if ( count( $date_query ) > 1 ) {
+				$args['date_query'] = $date_query;
 			}
 		}
 

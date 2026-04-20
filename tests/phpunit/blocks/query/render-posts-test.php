@@ -37,7 +37,7 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		self::factory()->post->create_many( 7, array( 'post_status' => 'publish' ) );
 		$this->load_helpers();
 
-		$atts = array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 3 );
+		$atts = array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 3, 'itemTagName' => 'li' );
 		$page1 = designsetgo_query_render( $atts, array( 'query_id' => 't', 'page' => 1, 'inner_html' => '' ) );
 		$page2 = designsetgo_query_render( $atts, array( 'query_id' => 't', 'page' => 2, 'inner_html' => '' ) );
 		$page3 = designsetgo_query_render( $atts, array( 'query_id' => 't', 'page' => 3, 'inner_html' => '' ) );
@@ -114,7 +114,7 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		add_filter( 'designsetgo_query_args', $filter_cb, 10, 3 );
 
 		$result = designsetgo_query_render(
-			array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 10 ),
+			array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 10, 'itemTagName' => 'li' ),
 			array( 'query_id' => 'hook', 'page' => 1, 'inner_html' => '' )
 		);
 
@@ -203,6 +203,290 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 
 		// Current post is excluded, so 2 remaining.
 		$this->assertSame( 2, $result['totalItems'] );
+	}
+
+	public function test_tax_clause_defaults_include_children_true() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage'       => 10,
+			'orderBy'       => 'date',
+			'order'         => 'DESC',
+			'postType'      => 'post',
+			'offset'        => 0,
+			'ignoreSticky'  => false,
+			'search'        => '',
+			'bindSearchTo'  => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'   => 'posts',
+			'taxQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [ 'taxonomy' => 'category', 'terms' => [ 1 ], 'operator' => 'IN' ] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertTrue( $args['tax_query'][0]['include_children'] );
+	}
+
+	public function test_tax_clause_include_children_false() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage'       => 10,
+			'orderBy'       => 'date',
+			'order'         => 'DESC',
+			'postType'      => 'post',
+			'offset'        => 0,
+			'ignoreSticky'  => false,
+			'search'        => '',
+			'bindSearchTo'  => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'   => 'posts',
+			'taxQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'taxonomy'         => 'category',
+					'terms'            => [ 1 ],
+					'operator'         => 'IN',
+					'include_children' => false,
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertFalse( $args['tax_query'][0]['include_children'] );
+	}
+
+	public function test_date_query_after_builds_correctly() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'dateQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'column'    => 'post_date',
+					'mode'      => 'after',
+					'after'     => '-30 days',
+					'before'    => '',
+					'inclusive' => false,
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertArrayHasKey( 'date_query', $args );
+		$this->assertEquals( 'post_date', $args['date_query'][0]['column'] );
+		$this->assertEquals( '-30 days', $args['date_query'][0]['after'] );
+		$this->assertArrayNotHasKey( 'before', $args['date_query'][0] );
+	}
+
+	public function test_date_query_between_includes_both_bounds() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'dateQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'column'    => 'post_date',
+					'mode'      => 'between',
+					'after'     => '2024-01-01',
+					'before'    => '2024-12-31',
+					'inclusive' => true,
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertEquals( '2024-01-01', $args['date_query'][0]['after'] );
+		$this->assertEquals( '2024-12-31', $args['date_query'][0]['before'] );
+		$this->assertTrue( $args['date_query'][0]['inclusive'] );
+	}
+
+	public function test_date_query_skips_empty_clauses() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'dateQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [ 'column' => 'post_date', 'mode' => 'after', 'after' => '', 'before' => '' ] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertArrayNotHasKey( 'date_query', $args );
+	}
+
+	public function test_nested_tax_group_builds_correctly() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'   => 'posts',
+			'taxQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [
+					[
+						'relation' => 'OR',
+						'clauses'  => [
+							[ 'taxonomy' => 'category', 'terms' => [ 1 ], 'operator' => 'IN', 'include_children' => true ],
+							[ 'taxonomy' => 'category', 'terms' => [ 2 ], 'operator' => 'IN', 'include_children' => true ],
+						],
+					],
+					[ 'taxonomy' => 'post_tag', 'terms' => [ 5 ], 'operator' => 'IN', 'include_children' => false ],
+				],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertEquals( 'AND', $args['tax_query']['relation'] );
+		$sub = $args['tax_query'][0];
+		$this->assertEquals( 'OR', $sub['relation'] );
+		$this->assertEquals( 'category', $sub[0]['taxonomy'] );
+		$this->assertEquals( 'category', $sub[1]['taxonomy'] );
+		$leaf = $args['tax_query'][1];
+		$this->assertEquals( 'post_tag', $leaf['taxonomy'] );
+		$this->assertFalse( $leaf['include_children'] );
+	}
+
+	public function test_nested_meta_group_builds_correctly() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage'      => 10,
+			'orderBy'      => 'date',
+			'order'        => 'DESC',
+			'postType'     => 'post',
+			'offset'       => 0,
+			'ignoreSticky' => false,
+			'search'       => '',
+			'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'metaQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [
+					[
+						'relation' => 'OR',
+						'clauses'  => [
+							[ 'key' => 'status', 'compare' => '=', 'value' => 'featured', 'type' => 'CHAR' ],
+							[ 'key' => 'featured', 'compare' => '=', 'value' => '1', 'type' => 'NUMERIC' ],
+						],
+					],
+					[ 'key' => 'active', 'compare' => '=', 'value' => '1', 'type' => 'CHAR' ],
+				],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertEquals( 'AND', $args['meta_query']['relation'] );
+		$sub = $args['meta_query'][0];
+		$this->assertEquals( 'OR', $sub['relation'] );
+		$this->assertEquals( 'status', $sub[0]['key'] );
+		$this->assertEquals( 'active', $args['meta_query'][1]['key'] );
+	}
+
+	/**
+	 * Date query supports `before`-only mode (upper bound, no after).
+	 * Regression: missing branch coverage in the inlined date builder.
+	 */
+	public function test_date_query_before_builds_correctly() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'dateQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'column'    => 'post_modified',
+					'mode'      => 'before',
+					'after'     => '',
+					'before'    => '2025-01-01',
+					'inclusive' => true,
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertArrayHasKey( 'date_query', $args );
+		$this->assertEquals( 'post_modified', $args['date_query'][0]['column'] );
+		$this->assertEquals( '2025-01-01', $args['date_query'][0]['before'] );
+		$this->assertArrayNotHasKey( 'after', $args['date_query'][0] );
+	}
+
+	/**
+	 * Single-child nested groups are unwrapped to the bare child to avoid
+	 * WP_Query's `_doing_it_wrong()` notice when a tax_query group has
+	 * `relation` set with only one sub-clause.
+	 */
+	public function test_single_child_tax_group_is_unwrapped() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'   => 'posts',
+			'taxQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'relation' => 'OR',
+					'clauses'  => [ [
+						'taxonomy' => 'category',
+						'terms'    => [ 1 ],
+						'operator' => 'IN',
+					] ],
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		// The single-child OR group should collapse to a bare leaf clause.
+		$this->assertArrayHasKey( 'tax_query', $args );
+		$this->assertSame( 'category', $args['tax_query'][0]['taxonomy'] );
+		$this->assertArrayNotHasKey( 'relation', $args['tax_query'][0] );
+	}
+
+	/**
+	 * Empty groups (all-invalid leaves) are pruned from the WP_Query args
+	 * entirely instead of emitting a `relation`-only stub.
+	 */
+	public function test_empty_meta_group_is_pruned() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'metaQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'relation' => 'OR',
+					'clauses'  => [
+						[ 'key' => '', 'compare' => '=', 'value' => 'a', 'type' => 'CHAR' ],
+						[ 'key' => '', 'compare' => '=', 'value' => 'b', 'type' => 'CHAR' ],
+					],
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertArrayNotHasKey( 'meta_query', $args );
 	}
 
 	public function test_child_blocks_resolve_per_item_context() {
