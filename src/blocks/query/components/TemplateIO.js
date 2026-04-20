@@ -3,7 +3,7 @@ import { Button, __experimentalVStack as VStack } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { parse } from '@wordpress/blocks';
 import apiFetch from '@wordpress/api-fetch';
-import { useRef } from '@wordpress/element';
+import { useRef, useState } from '@wordpress/element';
 import { store as blockEditorStore } from '@wordpress/block-editor';
 import { store as editorStore } from '@wordpress/editor';
 import { store as noticesStore } from '@wordpress/notices';
@@ -14,9 +14,11 @@ export default function TemplateIO({ clientId, attributes }) {
 	const { createSuccessNotice, createErrorNotice } = useDispatch(noticesStore);
 	const postId = useSelect((s) => s(editorStore).getCurrentPostId(), []);
 	const fileInputRef = useRef(null);
+	const [ isBusy, setIsBusy ] = useState( false );
 
 	async function handleExport() {
 		try {
+			setIsBusy( true );
 			const payload = await apiFetch({
 				path: `/designsetgo/v1/query/template?post_id=${postId}&query_id=${encodeURIComponent(queryId)}`,
 			});
@@ -41,6 +43,8 @@ export default function TemplateIO({ clientId, attributes }) {
 				err?.message || __('Export failed.', 'designsetgo'),
 				{ type: 'snackbar' }
 			);
+		} finally {
+			setIsBusy( false );
 		}
 	}
 
@@ -56,6 +60,7 @@ export default function TemplateIO({ clientId, attributes }) {
 			return;
 		}
 		try {
+			setIsBusy( true );
 			const text = await file.text();
 			const payload = JSON.parse(text);
 			const response = await apiFetch({
@@ -79,6 +84,8 @@ export default function TemplateIO({ clientId, attributes }) {
 				err?.message || __('Import failed.', 'designsetgo'),
 				{ type: 'snackbar' }
 			);
+		} finally {
+			setIsBusy( false );
 		}
 	}
 
@@ -88,7 +95,7 @@ export default function TemplateIO({ clientId, attributes }) {
 				__next40pxDefaultSize
 				variant="secondary"
 				onClick={handleExport}
-				disabled={!queryId || !postId}
+				disabled={!queryId || !postId || isBusy}
 			>
 				{__('Export template', 'designsetgo')}
 			</Button>
@@ -96,6 +103,7 @@ export default function TemplateIO({ clientId, attributes }) {
 				__next40pxDefaultSize
 				variant="secondary"
 				onClick={handleImportClick}
+				disabled={isBusy}
 			>
 				{__('Import template', 'designsetgo')}
 			</Button>

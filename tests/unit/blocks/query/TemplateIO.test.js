@@ -47,11 +47,25 @@ import TemplateIO from '../../../../src/blocks/query/components/TemplateIO';
 // navigation" when an <a> with an href is clicked, which @wordpress/jest-console
 // treats as a test failure. The no-op stub suppresses that without affecting the
 // test assertions (we verify apiFetch + notice calls, not the DOM click itself).
+let origCreateObjectURL;
+let origRevokeObjectURL;
+let origAnchorClick;
+
 beforeAll(() => {
+	origCreateObjectURL = global.URL.createObjectURL;
+	origRevokeObjectURL = global.URL.revokeObjectURL;
+	origAnchorClick = HTMLAnchorElement.prototype.click;
+
 	global.URL.createObjectURL = jest.fn(() => 'blob:mock');
 	global.URL.revokeObjectURL = jest.fn();
 	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	HTMLAnchorElement.prototype.click = jest.fn();
+});
+
+afterAll(() => {
+	global.URL.createObjectURL = origCreateObjectURL;
+	global.URL.revokeObjectURL = origRevokeObjectURL;
+	HTMLAnchorElement.prototype.click = origAnchorClick;
 });
 
 describe('TemplateIO', () => {
@@ -75,7 +89,7 @@ describe('TemplateIO', () => {
 		).toBeDisabled();
 	});
 
-	it('import button is never disabled', () => {
+	it('import button is enabled when not busy', () => {
 		render(<TemplateIO clientId="c1" attributes={{ queryId: '' }} />);
 		expect(
 			screen.getByText('Import template').closest('button')
