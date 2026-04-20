@@ -333,4 +333,22 @@ describe('QueryEdit nested preview', () => {
 			)
 		).toBe(true);
 	});
+
+	it('provides designsetgo/isAuthenticated=true in BlockContextProvider', () => {
+		render(
+			<QueryEdit
+				attributes={DEFAULT_ATTRIBUTES}
+				setAttributes={jest.fn()}
+				clientId="cli-5"
+				context={{}}
+			/>
+		);
+		// Editor sessions are always authenticated; auth visibility rules should
+		// never hide content from the admin in the editor preview.
+		expect(
+			ctxCapture.some(
+				(c) => c?.['designsetgo/isAuthenticated'] === true
+			)
+		).toBe(true);
+	});
 });

@@ -471,6 +471,10 @@ function buildContext(item, source, index, outerCtx) {
 		'designsetgo/itemIndex': index,
 		'designsetgo/itemMeta': item.meta || {},
 		'designsetgo/itemTerms': buildTermsMap(item),
+		// Editor sessions are always authenticated — the admin is logged in.
+		// This ensures auth-rule "show for logged-in users" works correctly
+		// in the editor preview without requiring server-side context.
+		'designsetgo/isAuthenticated': true,
 	};
 
 	let base;
