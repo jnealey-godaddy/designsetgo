@@ -83,6 +83,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		$items_html    = '';
 		$post_urls     = array();
 		$collected_ids = array();
+		$flat_counter  = 0;
 
 		try {
 			while ( $query->have_posts() ) {
@@ -97,6 +98,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 						array(
 							'postId'   => $post_id,
 							'postType' => get_post_type(),
+							'index'    => $flat_counter++,
 						),
 						$atts['itemTagName']
 					);
@@ -126,7 +128,9 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 					$header_html_out .= $header_block->render();
 				}
 				// Render items in this group using the stripped template.
-				$group_items_html = '';
+				// Counter resets per group so "index 0" means "first in group".
+				$group_items_html  = '';
+				$group_item_index  = 0;
 				foreach ( $group['ids'] as $gid ) {
 					$post_obj = get_post( $gid );
 					if ( ! $post_obj ) {
@@ -137,6 +141,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 						array(
 							'postId'   => (int) $gid,
 							'postType' => $post_obj->post_type,
+							'index'    => $group_item_index++,
 						),
 						$atts['itemTagName']
 					);
