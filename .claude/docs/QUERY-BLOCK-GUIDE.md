@@ -549,6 +549,17 @@ Group context keys injected into the `designsetgo/query-group-header` inner bloc
 | `designsetgo/groupLabel` | Human-readable group name (term name, meta value, or formatted date) |
 | `designsetgo/groupValue` | Raw group identifier (term slug, meta value, or ISO date fragment) |
 
+Per-item context keys available inside each item in a grouped query (in addition to the standard `postId`, `postType`, `designsetgo/itemIndex` keys):
+
+| Key | Value |
+|---|---|
+| `designsetgo/itemIndex` | Flat, zero-based position across all groups (consistent with non-grouped queries) |
+| `designsetgo/groupItemIndex` | Zero-based position within the current group (resets to 0 for each new group) |
+
+Use `designsetgo/groupItemIndex` in custom Block Bindings or `wp:if` conditions when you want to target the first item in each group (e.g. a featured card), independent of that group's absolute position in the result set.
+
+> **Note:** A `type: 'groupItemIndex'` visibility rule is not yet implemented in the built-in UI. Use Block Bindings or a custom `designsetgo_visibility_rule` filter for now. The UI rule type is planned for a future release.
+
 > **Note:** `designsetgo/groupKey` and `designsetgo/groupCount` are **not** provided by the server renderer. Do not bind to these keys — bindings will resolve to empty. A `groupCount` context key may be added in a future release once counting is integrated into the partition step.
 
 ### `$GLOBALS['designsetgo_parent_stack']`

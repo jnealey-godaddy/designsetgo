@@ -133,9 +133,12 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 					);
 					$header_html_out .= $header_block->render();
 				}
-				// Render items in this group using the original flat result-set
-				// indices so visibility rules behave the same grouped or ungrouped.
-				$group_items_html = '';
+				// Render items in this group.
+				// Pass both the flat cross-group index (designsetgo/itemIndex) and a
+				// per-group zero-based index (designsetgo/groupItemIndex) so authors
+				// can target either in custom bindings or visibility rules.
+				$group_items_html  = '';
+				$group_item_index  = 0;
 				foreach ( $group['ids'] as $gid ) {
 					$post_obj = get_post( $gid );
 					if ( ! $post_obj ) {
@@ -145,13 +148,15 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 					$group_items_html .= designsetgo_query_render_item(
 						$item_template_html,
 						array(
-							'postId'                => (int) $gid,
-							'postType'              => $post_obj->post_type,
-							'index'                 => $item_index,
-							'designsetgo/itemIndex' => $item_index,
+							'postId'                         => (int) $gid,
+							'postType'                       => $post_obj->post_type,
+							'index'                          => $item_index,
+							'designsetgo/itemIndex'          => $item_index,
+							'designsetgo/groupItemIndex'     => $group_item_index,
 						),
 						$atts['itemTagName']
 					);
+					$group_item_index++;
 				}
 				$items_html .= sprintf(
 					'<section class="dsgo-query-group" data-dsgo-group-value="%s">%s%s</section>',

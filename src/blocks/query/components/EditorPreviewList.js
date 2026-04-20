@@ -227,57 +227,63 @@ function GroupedPreviewList({
 
 	return (
 		<div className="dsgo-query__editor-preview-list is-grouped">
-			{groups.map((group) => (
-				<section
-					key={group.label}
-					className="dsgo-query__editor-preview-group"
-				>
-					<div
-						className="dsgo-query-group-label"
-						aria-hidden="true"
+			{groups.map((group) => {
+				let groupItemIdx = 0;
+				return (
+					<section
+						key={group.label}
+						className="dsgo-query__editor-preview-group"
 					>
-						{group.label}
-					</div>
-					<ul className="dsgo-query__editor-preview-list">
-						{group.items.map((item) => {
-							const idx = globalIdx;
-							globalIdx++;
-							const itemContext = buildContext(
-								item,
-								source,
-								idx,
-								context
-							);
-							return (
-								<li
-									key={item.id}
-									className={
-										idx === 0
-											? 'dsgo-query__editor-preview-item is-template-source'
-											: 'dsgo-query__editor-preview-item is-read-only'
-									}
-								>
-									<BlockContextProvider value={itemContext}>
-										{idx === 0 ? (
-											<EditableTemplate
-												innerBlocksProps={
-													innerBlocksProps
-												}
-											/>
-										) : (
-											<BlockPreview
-												blocks={innerBlocks}
-												viewportWidth={1000}
-												additionalStyles={[]}
-											/>
-										)}
-									</BlockContextProvider>
-								</li>
-							);
-						})}
-					</ul>
-				</section>
-			))}
+						<div
+							className="dsgo-query-group-label"
+							aria-hidden="true"
+						>
+							{group.label}
+						</div>
+						<ul className="dsgo-query__editor-preview-list">
+							{group.items.map((item) => {
+								const idx = globalIdx;
+								const groupIdx = groupItemIdx;
+								globalIdx++;
+								groupItemIdx++;
+								const itemContext = buildContext(
+									item,
+									source,
+									idx,
+									context,
+									groupIdx
+								);
+								return (
+									<li
+										key={item.id}
+										className={
+											idx === 0
+												? 'dsgo-query__editor-preview-item is-template-source'
+												: 'dsgo-query__editor-preview-item is-read-only'
+										}
+									>
+										<BlockContextProvider value={itemContext}>
+											{idx === 0 ? (
+												<EditableTemplate
+													innerBlocksProps={
+														innerBlocksProps
+													}
+												/>
+											) : (
+												<BlockPreview
+													blocks={innerBlocks}
+													viewportWidth={1000}
+													additionalStyles={[]}
+												/>
+											)}
+										</BlockContextProvider>
+									</li>
+								);
+							})}
+						</ul>
+					</section>
+				);
+			})}
 		</div>
 	);
 }
@@ -472,14 +478,15 @@ function buildTermsMap(item) {
  *   or a self-referencing fallback for root-level Queries so inner Query
  *   blocks always receive a defined value.
  *
- * @param {Object} item      Preview item: { id, type, ... }.
- * @param {string} source    The query block source attribute value.
- * @param {number} index     Zero-based item index in the current result set.
- * @param {Object} outerCtx  The block's `context` prop from edit.js. May carry
- *                           `designsetgo/parentItem` when this Query is nested.
+ * @param {Object} item           Preview item: { id, type, ... }.
+ * @param {string} source         The query block source attribute value.
+ * @param {number} index          Zero-based item index in the current result set (flat/cross-group).
+ * @param {Object} outerCtx       The block's `context` prop from edit.js. May carry
+ *                                `designsetgo/parentItem` when this Query is nested.
+ * @param {number} [groupItemIndex] Zero-based position within the current group (grouped queries only).
  * @return {Object} Context object for BlockContextProvider.
  */
-function buildContext(item, source, index, outerCtx) {
+function buildContext(item, source, index, outerCtx, groupItemIndex) {
 	// Common enrichment applied regardless of source type.
 	const enrichment = {
 		'designsetgo/itemIndex': index,
@@ -489,6 +496,11 @@ function buildContext(item, source, index, outerCtx) {
 		// This ensures auth-rule "show for logged-in users" works correctly
 		// in the editor preview without requiring server-side context.
 		'designsetgo/isAuthenticated': true,
+		// Per-group index (0-based within the group). Omitted for non-grouped
+		// queries (undefined); present when groupItemIndex is supplied.
+		...(groupItemIndex !== undefined
+			? { 'designsetgo/groupItemIndex': groupItemIndex }
+			: {}),
 	};
 
 	let base;

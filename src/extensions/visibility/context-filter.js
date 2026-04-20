@@ -40,6 +40,7 @@ const CONTEXT_KEYS = [
 	'designsetgo/itemMeta',
 	'designsetgo/itemTerms',
 	'designsetgo/isAuthenticated',
+	'designsetgo/groupItemIndex',
 ];
 
 /**
