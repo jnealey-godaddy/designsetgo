@@ -356,6 +356,216 @@ The endpoint calls `designsetgo_query_render()` — the same function used by th
 
 ---
 
+## v2.3 Recipes
+
+### Recipe — show posts linked via an ACF/Meta relationship field
+
+An outer post stores an ACF relationship field (`related_posts`) containing an array of post IDs. Configure the Query block to iterate exactly those posts:
+
+1. Query block → Settings → **Source**: Relationship.
+2. **Relationship field**: `related_posts` (the ACF or postmeta key that stores the IDs array).
+3. **Fallback when field is empty**: choose `Render no items` (or `all` / `parent` depending on your intent).
+
+The server renderer reads the nearest parent-stack item's `related_posts` meta value, passes the IDs through `post__in`, and falls back according to `relationshipFallback`.
+
+```html
+<!-- wp:designsetgo/query {
+    "queryId":"related-products",
+    "source":"relationship",
+    "relationshipField":"related_posts",
+    "relationshipFallback":"empty"
+} -->
+<ul class="wp-block-designsetgo-query">
+
+    <!-- wp:core/post-title {"level":3} /-->
+    <!-- wp:core/post-featured-image /-->
+
+</ul>
+<!-- /wp:designsetgo/query -->
+```
+
+---
+
+### Recipe — hide a "Featured" badge on non-featured posts
+
+Use the Visibility panel on any inner block to show it only when a meta condition is met. No custom PHP required.
+
+1. Select the inner block you want to conditionally show (e.g. a Heading that says "Featured").
+2. Open **Block Settings** → **Visibility** panel.
+3. Add a rule: **Type** = Meta, **Key** = `featured`, **Op** = equals, **Value** = `1`.
+4. Leave operator at `AND` (default).
+
+The `dsgoVisibility` attribute is registered on every block via the `blocks.registerBlockType` filter in `src/extensions/visibility/filters.js`. The server evaluator is `DesignSetGo\BlockVisibility::matches()`.
+
+```html
+<!-- wp:heading {
+    "level":3,
+    "dsgoVisibility":{
+        "operator":"AND",
+        "rules":[{"type":"meta","op":"equals","key":"featured","value":"1"}]
+    }
+} -->
+<h3 class="wp-block-heading">Featured</h3>
+<!-- /wp:heading -->
+```
+
+---
+
+### Recipe — group posts by category with custom group headers
+
+1. Query block → Settings → **Group by**: Taxonomy, **Group taxonomy**: `category`.
+2. Inside the Query block, insert a **Query Group Header** block (`designsetgo/query-group-header`). It renders once per group, before that group's items.
+3. Inside the Group Header, add a Heading and bind its content to the group context key `designsetgo/groupLabel` (the term name) or `designsetgo/groupCount` (item count).
+
+```html
+<!-- wp:designsetgo/query {
+    "queryId":"by-category",
+    "source":"posts",
+    "groupBy":{"field":"taxonomy","key":"category"}
+} -->
+<ul class="wp-block-designsetgo-query">
+
+    <!-- wp:designsetgo/query-group-header -->
+    <div class="wp-block-designsetgo-query-group-header">
+        <!-- wp:heading {"level":2,"metadata":{"bindings":{"content":{"source":"designsetgo/post-meta","args":{"key":"designsetgo/groupLabel","scope":"self"}}}}} -->
+        <h2></h2>
+        <!-- /wp:heading -->
+    </div>
+    <!-- /wp:designsetgo/query-group-header -->
+
+    <!-- wp:core/post-title {"level":3} /-->
+
+</ul>
+<!-- /wp:designsetgo/query -->
+```
+
+Server partitioning logic lives in `designsetgo_query_partition_items()` inside `render-helpers.php`.
+
+---
+
+### Recipe — nested loops: for each post, show its 3 latest sibling posts
+
+Outer Query iterates a post list; the inner Query, placed inside the item template, fetches that post's category siblings.
+
+1. Outer Query: source = Posts, any post type.
+2. Inside the item template, insert an inner Query block: source = Posts, `perPage = 3`, give it a unique `queryId` (e.g. `siblings`).
+3. Use the scoped filter to restrict the inner query to the outer post's primary category. The outer post's context is available via `$GLOBALS['designsetgo_parent_stack']` during any `render_block` hook that fires inside a query item.
+
+```php
+add_filter( 'designsetgo/query/siblings/args', function ( $args, $atts, $context ) {
+    // $GLOBALS['designsetgo_parent_stack'] is an ordered list (outermost first).
+    $stack   = $GLOBALS['designsetgo_parent_stack'] ?? array();
+    $parent  = end( $stack ); // nearest ancestor item
+    if ( empty( $parent['postId'] ) ) {
+        return $args;
+    }
+
+    $cats = wp_get_post_categories( $parent['postId'], array( 'fields' => 'ids' ) );
+    if ( $cats ) {
+        $args['tax_query'] = array(
+            array(
+                'taxonomy' => 'category',
+                'field'    => 'term_id',
+                'terms'    => $cats,
+            ),
+        );
+    }
+    $args['post__not_in'] = array( $parent['postId'] ); // exclude the parent post itself
+    return $args;
+}, 10, 3 );
+```
+
+You can also read the parent context via bindings using `scope: 'parent'`:
+
+```html
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"designsetgo/post-meta","args":{"key":"subtitle","scope":"parent"}}}}} -->
+<p></p>
+<!-- /wp:paragraph -->
+```
+
+---
+
+## v2.3 Extension points
+
+### `scope` arg on binding sources
+
+Both `designsetgo/post-meta` and `designsetgo/acf` accept a `scope` arg that controls which item in the parent stack is read:
+
+| `scope` value | Reads from |
+|---|---|
+| `'self'` (default) | Current item |
+| `'parent'` | Nearest enclosing query item (one level up) |
+| `'root'` | Outermost item in the stack |
+
+The stack itself is `$GLOBALS['designsetgo_parent_stack']` — an ordered list of item contexts pushed by `designsetgo_query_render_item()` in `render-helpers.php`.
+
+```html
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"designsetgo/post-meta","args":{"key":"company_name","scope":"parent"}}}}} -->
+<p></p>
+<!-- /wp:paragraph -->
+```
+
+### `designsetgo_visibility_rule` filter
+
+Register custom visibility rule types in PHP. Return `true` to show the block, `false` to hide it, or `null` to fall through to the next rule handler.
+
+```php
+/**
+ * @param bool|null $match   Current match result (null = not yet determined).
+ * @param array     $rule    Rule definition from the dsgoVisibility attribute.
+ * @param array     $context Render context: postId, postType, currentItemId, etc.
+ * @return bool|null
+ */
+add_filter( 'designsetgo_visibility_rule', function ( $match, $rule, $context ) {
+    if ( $rule['type'] !== 'my_custom_type' ) {
+        return $match; // pass through
+    }
+    // Example: show only to admins
+    return current_user_can( 'manage_options' );
+}, 10, 3 );
+```
+
+Built-in rule types (`meta`, `taxonomy`, `index`, `auth`) are evaluated in `DesignSetGo\BlockVisibility::matches()`. Custom types hook in after the built-ins.
+
+### `groupBy` attribute shape
+
+```json
+{
+    "field": "taxonomy",
+    "key": "category"
+}
+```
+
+| `field` | `key` meaning |
+|---|---|
+| `"taxonomy"` | Taxonomy slug (e.g. `"category"`, `"genre"`) |
+| `"meta"` | Postmeta key whose value is used as the group identifier |
+| `"date"` | Date part: `"year"`, `"month"`, `"year-month"` |
+
+Group context keys injected into the `designsetgo/query-group-header` inner blocks:
+
+| Key | Value |
+|---|---|
+| `designsetgo/groupLabel` | Human-readable group name (term name, meta value, or formatted date) |
+| `designsetgo/groupKey` | Raw group identifier (term slug, meta value, or ISO date fragment) |
+| `designsetgo/groupCount` | Number of items in this group |
+
+### `$GLOBALS['designsetgo_parent_stack']`
+
+An ordered list (outermost first) of item-context arrays. Each entry mirrors the per-item context shape:
+
+```php
+[
+    'postId'   => 42,
+    'postType' => 'post',
+    // users/terms: 'currentItemId', 'currentItemType'
+]
+```
+
+The stack is pushed before each item is rendered and popped after. It is safe to read during any `render_block` or `designsetgo_query_args` hook that fires inside a query item. The scoped filter hook name `designsetgo/query/{queryId}/args` fires with the stack already populated, so the nearest ancestor is always available.
+
+---
+
 ## Known v1 limits
 
 | Limit | Notes |
