@@ -42,6 +42,12 @@ module.exports = {
 		'\\.(css|less|scss|sass)$': 'identity-obj-proxy',
 		'\\.(jpg|jpeg|png|gif|svg|eot|otf|webp|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
 			'<rootDir>/tests/unit/__mocks__/fileMock.js',
+		// @wordpress/editor and @wordpress/notices pull in heavy WP store internals
+		// that fail in Jest. Stub them with minimal modules exposing store IDs only.
+		'^@wordpress/editor$':
+			'<rootDir>/tests/unit/__mocks__/wordpressEditorMock.js',
+		'^@wordpress/notices$':
+			'<rootDir>/tests/unit/__mocks__/wordpressNoticesMock.js',
 	},
 
 	// Coverage configuration

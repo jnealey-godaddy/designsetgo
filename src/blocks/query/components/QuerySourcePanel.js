@@ -9,6 +9,7 @@ import {
 	__experimentalNumberControl as NumberControl,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../components/shared';
+import TemplateIO from './TemplateIO';
 
 const GROUP_BY_OPTIONS = [
 	{ value: 'none', label: __('None', 'designsetgo') },
@@ -465,6 +466,15 @@ export default function QuerySourcePanel({
 					/>
 				</DsgoInspectorPanel.Item>
 			)}
+
+			<DsgoInspectorPanel.Item
+				label={__('Template I/O', 'designsetgo')}
+				hasValue={() => false}
+				onDeselect={() => {}}
+				isShownByDefault
+			>
+				<TemplateIO clientId={clientId} attributes={attributes} />
+			</DsgoInspectorPanel.Item>
 		</DsgoInspectorPanel>
 	);
 }
