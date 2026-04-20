@@ -82,12 +82,30 @@ class Template_Controller {
 						'innerBlocks'   => array(
 							'required'          => true,
 							'type'              => 'string',
-							'sanitize_callback' => 'wp_kses_post',
+							'sanitize_callback' => array( __CLASS__, 'sanitize_inner_blocks_markup' ),
 						),
 					),
 				),
 			)
 		);
+	}
+
+	/**
+	 * Normalizes imported inner block markup without KSES-stripping valid block HTML.
+	 *
+	 * This route returns markup to the editor; it does not persist post content.
+	 * Re-serializing parsed blocks preserves custom/raw block HTML while still
+	 * normalizing the block tree to canonical comment markup.
+	 *
+	 * @param mixed $value Raw `innerBlocks` request value.
+	 * @return string
+	 */
+	public static function sanitize_inner_blocks_markup( $value ) {
+		if ( ! is_string( $value ) ) {
+			return '';
+		}
+
+		return self::serialize_blocks_markup( parse_blocks( $value ) );
 	}
 
 	/**
@@ -301,9 +319,19 @@ class Template_Controller {
 			return '';
 		}
 
+		return self::serialize_blocks_markup( $block['innerBlocks'] );
+	}
+
+	/**
+	 * Serializes a parsed block list back to block-comment markup.
+	 *
+	 * @param array $blocks Parsed blocks from parse_blocks().
+	 * @return string
+	 */
+	private static function serialize_blocks_markup( array $blocks ) {
 		$parts = array();
-		foreach ( $block['innerBlocks'] as $inner ) {
-			$parts[] = serialize_block( $inner );
+		foreach ( $blocks as $block ) {
+			$parts[] = serialize_block( $block );
 		}
 
 		return implode( "\n", $parts );

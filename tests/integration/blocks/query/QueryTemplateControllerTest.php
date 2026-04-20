@@ -252,4 +252,26 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( '__evil_script', $markup );
 		$this->assertStringNotContainsString( 'unknownField', $markup );
 	}
+
+	/**
+	 * Import preserves freeform custom HTML inside inner blocks instead of KSES-stripping it.
+	 */
+	public function test_import_preserves_freeform_custom_html_inside_inner_blocks() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		$request->set_body_params(
+			array(
+				'schemaVersion' => 1,
+				'blockName'     => 'designsetgo/query',
+				'attributes'    => array( 'perPage' => 6 ),
+				'innerBlocks'   => '<x-dsgo-card data-variant="hero">Hello</x-dsgo-card>',
+			)
+		);
+		$response = rest_do_request( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$markup = $response->get_data()['blockMarkup'];
+		$this->assertStringContainsString( '<x-dsgo-card data-variant="hero">Hello</x-dsgo-card>', $markup );
+	}
 }

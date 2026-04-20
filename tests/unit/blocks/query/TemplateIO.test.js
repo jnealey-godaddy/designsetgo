@@ -12,6 +12,11 @@ const apiFetch = require('@wordpress/api-fetch');
 const mockReplaceBlocks = jest.fn();
 const mockCreateErrorNotice = jest.fn();
 const mockCreateSuccessNotice = jest.fn();
+let mockCurrentBlock = {
+	clientId: 'c1',
+	attributes: { queryId: 'abc', perPage: 6 },
+	innerBlocks: [{ name: 'core/paragraph' }],
+};
 
 jest.mock('@wordpress/data', () => ({
 	useDispatch: () => ({
@@ -19,13 +24,21 @@ jest.mock('@wordpress/data', () => ({
 		createErrorNotice: mockCreateErrorNotice,
 		createSuccessNotice: mockCreateSuccessNotice,
 	}),
-	useSelect: () => 42, // postId
+	useSelect: (selector) =>
+		selector((storeName) => {
+			if (storeName === 'core/block-editor') {
+				return {
+					getBlock: () => mockCurrentBlock,
+				};
+			}
+			return {};
+		}),
 }));
-jest.mock('@wordpress/editor', () => ({ store: 'core/editor' }));
 jest.mock('@wordpress/block-editor', () => ({ store: 'core/block-editor' }));
 jest.mock('@wordpress/notices', () => ({ store: 'core/notices' }));
 jest.mock('@wordpress/blocks', () => ({
 	parse: jest.fn(() => [{ name: 'designsetgo/query' }]),
+	serialize: jest.fn(() => '<!-- wp:paragraph --><p>Item</p><!-- /wp:paragraph -->'),
 }));
 
 jest.mock('@wordpress/components', () => ({
@@ -74,6 +87,14 @@ describe('TemplateIO', () => {
 		mockReplaceBlocks.mockReset();
 		mockCreateSuccessNotice.mockReset();
 		mockCreateErrorNotice.mockReset();
+		mockCurrentBlock = {
+			clientId: 'c1',
+			attributes: { queryId: 'abc', perPage: 6 },
+			innerBlocks: [{ name: 'core/paragraph' }],
+		};
+		global.URL.createObjectURL.mockClear();
+		global.URL.revokeObjectURL.mockClear();
+		HTMLAnchorElement.prototype.click.mockClear();
 	});
 
 	it('renders export + import buttons', () => {
@@ -89,6 +110,15 @@ describe('TemplateIO', () => {
 		).toBeDisabled();
 	});
 
+	it('disables export when the current block cannot be resolved', () => {
+		mockCurrentBlock = null;
+
+		render(<TemplateIO clientId="c1" attributes={{ queryId: 'abc' }} />);
+		expect(
+			screen.getByText('Export template').closest('button')
+		).toBeDisabled();
+	});
+
 	it('import button is enabled when not busy', () => {
 		render(<TemplateIO clientId="c1" attributes={{ queryId: '' }} />);
 		expect(
@@ -96,24 +126,23 @@ describe('TemplateIO', () => {
 		).not.toBeDisabled();
 	});
 
-	it('calls apiFetch with GET params on export click', async () => {
-		apiFetch.mockResolvedValue({ schemaVersion: 1 });
-
+	it('exports the live block state instead of calling the REST export endpoint', async () => {
+		const { serialize } = require('@wordpress/blocks');
 		render(<TemplateIO clientId="c1" attributes={{ queryId: 'abc' }} />);
 		fireEvent.click(screen.getByText('Export template'));
 
 		await waitFor(() =>
-			expect(apiFetch).toHaveBeenCalledWith(
-				expect.objectContaining({
-					path: expect.stringContaining('query_id=abc'),
-				})
+			expect(mockCreateSuccessNotice).toHaveBeenCalledWith(
+				'Query template exported.',
+				{ type: 'snackbar' }
 			)
 		);
+		expect(apiFetch).not.toHaveBeenCalled();
+		expect(serialize).toHaveBeenCalledWith(mockCurrentBlock.innerBlocks);
+		expect(global.URL.createObjectURL).toHaveBeenCalledTimes(1);
 	});
 
 	it('shows success notice after export', async () => {
-		apiFetch.mockResolvedValue({ schemaVersion: 1 });
-
 		render(<TemplateIO clientId="c1" attributes={{ queryId: 'abc' }} />);
 		fireEvent.click(screen.getByText('Export template'));
 
@@ -126,17 +155,21 @@ describe('TemplateIO', () => {
 	});
 
 	it('shows error notice when export fails', async () => {
-		apiFetch.mockRejectedValue(new Error('Network error'));
+		const originalBlob = global.Blob;
+		global.Blob = jest.fn(() => {
+			throw new Error('Blob failure');
+		});
 
 		render(<TemplateIO clientId="c1" attributes={{ queryId: 'abc' }} />);
 		fireEvent.click(screen.getByText('Export template'));
 
 		await waitFor(() =>
 			expect(mockCreateErrorNotice).toHaveBeenCalledWith(
-				'Network error',
+				'Blob failure',
 				{ type: 'snackbar' }
 			)
 		);
+		global.Blob = originalBlob;
 	});
 
 	it('calls apiFetch POST and replaceBlocks on import', async () => {

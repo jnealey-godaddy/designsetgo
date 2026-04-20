@@ -26,6 +26,7 @@ jest.mock('@wordpress/data', () => ({
 			if (storeName === 'core/block-editor') {
 				return {
 					getBlock: () => ({ innerBlocks: [] }),
+					getBlocks: () => [],
 				};
 			}
 			// TemplateIO calls getCurrentPostId() on the editor store.

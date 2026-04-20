@@ -1,27 +1,38 @@
 import { __ } from '@wordpress/i18n';
 import { Button, __experimentalVStack as VStack } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
-import { parse } from '@wordpress/blocks';
+import { parse, serialize } from '@wordpress/blocks';
 import apiFetch from '@wordpress/api-fetch';
 import { useRef, useState } from '@wordpress/element';
 import { store as blockEditorStore } from '@wordpress/block-editor';
-import { store as editorStore } from '@wordpress/editor';
 import { store as noticesStore } from '@wordpress/notices';
 
 export default function TemplateIO({ clientId, attributes }) {
 	const { queryId } = attributes;
 	const { replaceBlocks } = useDispatch(blockEditorStore);
 	const { createSuccessNotice, createErrorNotice } = useDispatch(noticesStore);
-	const postId = useSelect((s) => s(editorStore).getCurrentPostId(), []);
+	const currentBlock = useSelect(
+		(select) => select(blockEditorStore).getBlock(clientId),
+		[clientId]
+	);
 	const fileInputRef = useRef(null);
 	const [ isBusy, setIsBusy ] = useState( false );
 
 	async function handleExport() {
 		try {
+			if (!currentBlock) {
+				throw new Error(
+					__('Unable to read the current Query block.', 'designsetgo')
+				);
+			}
 			setIsBusy( true );
-			const payload = await apiFetch({
-				path: `/designsetgo/v1/query/template?post_id=${postId}&query_id=${encodeURIComponent(queryId)}`,
-			});
+			const payload = {
+				schemaVersion: 1,
+				exportedAt: new Date().toISOString(),
+				blockName: 'designsetgo/query',
+				attributes: currentBlock.attributes || attributes,
+				innerBlocks: serialize(currentBlock.innerBlocks || []),
+			};
 			const blob = new Blob(
 				[JSON.stringify(payload, null, 2)],
 				{ type: 'application/json' }
@@ -95,7 +106,7 @@ export default function TemplateIO({ clientId, attributes }) {
 				__next40pxDefaultSize
 				variant="secondary"
 				onClick={handleExport}
-				disabled={!queryId || !postId || isBusy}
+				disabled={!queryId || !currentBlock || isBusy}
 			>
 				{__('Export template', 'designsetgo')}
 			</Button>
