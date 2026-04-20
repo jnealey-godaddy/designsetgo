@@ -24,7 +24,7 @@ import { DEFAULT_TEMPLATE } from './edit-template';
 // console with "`useSelect` returns different values" warnings.
 const EMPTY_BLOCKS = Object.freeze([]);
 
-export default function QueryEdit({ attributes, setAttributes, clientId }) {
+export default function QueryEdit({ attributes, setAttributes, clientId, context }) {
 	useQueryId({ clientId, queryId: attributes.queryId, setAttributes });
 
 	// Two narrow selectors instead of one composite object: hasInnerBlocks is
@@ -148,6 +148,7 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 							attributes={attributes}
 							innerBlocks={innerBlocks}
 							innerBlocksProps={innerBlocksProps}
+							context={context}
 						/>
 					) : (
 						<>

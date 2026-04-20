@@ -29,11 +29,14 @@ import { addQueryArgs } from '@wordpress/url';
  * @param {Object} props.innerBlocksProps Props from useInnerBlocksProps in edit.js —
  *                                        spread onto item 0's container so the block
  *                                        editor "owns" the inner blocks slot correctly.
+ * @param {Object} [props.context]        Block context passed from edit.js (may include
+ *                                        designsetgo/parentItem from an outer Query).
  */
 export default function EditorPreviewList({
 	attributes,
 	innerBlocks,
 	innerBlocksProps,
+	context,
 }) {
 	const source = attributes.source || 'posts';
 	const isPosts = source === 'posts';
@@ -68,7 +71,7 @@ export default function EditorPreviewList({
 	return (
 		<ul className="dsgo-query__editor-preview-list">
 			{records.map((item, idx) => {
-				const context = buildContext(item, source);
+				const itemContext = buildContext(item, source, idx, context);
 				return (
 					<li
 						key={item.id}
@@ -78,7 +81,7 @@ export default function EditorPreviewList({
 								: 'dsgo-query__editor-preview-item is-read-only'
 						}
 					>
-						<BlockContextProvider value={context}>
+						<BlockContextProvider value={itemContext}>
 							{idx === 0 ? (
 								<EditableTemplate
 									innerBlocksProps={innerBlocksProps}
@@ -245,36 +248,99 @@ function useRemotePreview(attributes, enabled) {
 // ---------------------------------------------------------------------------
 
 /**
+ * Build a taxonomy → term-slug-array map from a preview item.
+ *
+ * WP REST post objects expose embedded terms under `_embedded['wp:term']`
+ * as an array of taxonomy arrays. We flatten these into a plain object
+ * so inner blocks (and the visibility gate) can filter by taxonomy slug.
+ *
+ * @param {Object} item WP REST post object (may have _embedded or taxonomies).
+ * @return {Object} e.g. { category: ['news'], post_tag: ['js'] }
+ */
+function buildTermsMap(item) {
+	const map = {};
+	const embedded = item?._embedded?.['wp:term'];
+	if (!Array.isArray(embedded)) {
+		return map;
+	}
+	embedded.forEach((taxTerms) => {
+		if (!Array.isArray(taxTerms) || taxTerms.length === 0) {
+			return;
+		}
+		const taxonomy = taxTerms[0]?.taxonomy;
+		if (!taxonomy) {
+			return;
+		}
+		map[taxonomy] = taxTerms.map((t) => t.slug).filter(Boolean);
+	});
+	return map;
+}
+
+/**
  * Build the BlockContextProvider value for a single preview item.
  *
  * Posts use the native `postId` + `postType` shape that core Block Bindings
  * (post-meta etc.) understand. Users and Terms use the designsetgo custom
  * context keys.
  *
- * @param {Object} item   Preview item: { id, type, ... }.
- * @param {string} source The query block source attribute value.
+ * Extends the base context with:
+ * - `designsetgo/itemIndex`  — zero-based position in the result set.
+ * - `designsetgo/itemMeta`   — post meta map (if available from REST embed).
+ * - `designsetgo/itemTerms`  — taxonomy → slug-array map.
+ * - `designsetgo/parentItem` — the outer Query's current item (when nested),
+ *   or a self-referencing fallback for root-level Queries so inner Query
+ *   blocks always receive a defined value.
+ *
+ * @param {Object} item      Preview item: { id, type, ... }.
+ * @param {string} source    The query block source attribute value.
+ * @param {number} index     Zero-based item index in the current result set.
+ * @param {Object} outerCtx  The block's `context` prop from edit.js. May carry
+ *                           `designsetgo/parentItem` when this Query is nested.
  * @return {Object} Context object for BlockContextProvider.
  */
-function buildContext(item, source) {
+function buildContext(item, source, index, outerCtx) {
+	// Common enrichment applied regardless of source type.
+	const enrichment = {
+		'designsetgo/itemIndex': index,
+		'designsetgo/itemMeta': item.meta || {},
+		'designsetgo/itemTerms': buildTermsMap(item),
+	};
+
+	let base;
 	if (source === 'posts' || source === 'manual' || source === 'current') {
-		return {
+		base = {
 			postId: item.id,
 			postType: item.type || 'post',
 		};
-	}
-	if (source === 'users') {
-		return {
+	} else if (source === 'users') {
+		base = {
 			'designsetgo/currentItemId': item.id,
 			'designsetgo/currentItemType': 'user',
 		};
-	}
-	if (source === 'terms') {
-		return {
+	} else if (source === 'terms') {
+		base = {
 			'designsetgo/currentItemId': item.id,
 			'designsetgo/currentItemType': 'term',
 		};
+	} else {
+		base = {};
 	}
-	return {};
+
+	// `designsetgo/parentItem` propagates the outer Query's current item so a
+	// nested Query block can identify its parent. For root-level Queries the
+	// outer context has no parentItem, so we fall back to the current item
+	// itself — ensuring the key is always defined for inner blocks.
+	const parentItem =
+		outerCtx?.['designsetgo/parentItem'] ??
+		(base.postId !== undefined
+			? { postId: base.postId, postType: base.postType }
+			: { postId: item.id, postType: item.type || 'post' });
+
+	return {
+		...base,
+		...enrichment,
+		'designsetgo/parentItem': parentItem,
+	};
 }
 
 /**
