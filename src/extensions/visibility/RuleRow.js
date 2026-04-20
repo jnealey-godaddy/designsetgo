@@ -16,8 +16,9 @@ const TYPE_OPTIONS = [
 const META_OP_OPTIONS = [
 	{ value: 'equals', label: __( 'equals', 'designsetgo' ) },
 	{ value: 'not_equals', label: __( 'does not equal', 'designsetgo' ) },
-	{ value: 'exists', label: __( 'exists', 'designsetgo' ) },
-	{ value: 'not_exists', label: __( 'does not exist', 'designsetgo' ) },
+	{ value: 'contains', label: __( 'contains', 'designsetgo' ) },
+	{ value: 'not_empty', label: __( 'is set', 'designsetgo' ) },
+	{ value: 'empty', label: __( 'is not set', 'designsetgo' ) },
 ];
 
 const TAXONOMY_OP_OPTIONS = [
@@ -26,11 +27,10 @@ const TAXONOMY_OP_OPTIONS = [
 ];
 
 const INDEX_OP_OPTIONS = [
-	{ value: 'equals', label: __( 'equals', 'designsetgo' ) },
-	{ value: 'less_than', label: __( 'less than', 'designsetgo' ) },
-	{ value: 'greater_than', label: __( 'greater than', 'designsetgo' ) },
-	{ value: 'even', label: __( 'is even', 'designsetgo' ) },
-	{ value: 'odd', label: __( 'is odd', 'designsetgo' ) },
+	{ value: 'equals', label: __( 'is', 'designsetgo' ) },
+	{ value: 'not_equals', label: __( 'is not', 'designsetgo' ) },
+	{ value: 'lt', label: __( 'less than', 'designsetgo' ) },
+	{ value: 'gt', label: __( 'greater than', 'designsetgo' ) },
 ];
 
 const AUTH_OP_OPTIONS = [
@@ -63,7 +63,7 @@ function MetaControls( { rule, onChange } ) {
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 			/>
-			{ ( rule.op === 'equals' || rule.op === 'not_equals' || ! rule.op ) && (
+			{ ! [ 'empty', 'not_empty' ].includes( rule.op ) && (
 				<TextControl
 					label={ __( 'Value', 'designsetgo' ) }
 					value={ rule.value ?? '' }
@@ -120,7 +120,7 @@ function TaxonomyControls( { rule, onChange } ) {
  * @param {Function} props.onChange
  */
 function IndexControls( { rule, onChange } ) {
-	const showValue = [ 'equals', 'less_than', 'greater_than' ].includes( rule.op ?? 'equals' );
+	const showValue = [ 'equals', 'not_equals', 'lt', 'gt' ].includes( rule.op ?? 'equals' );
 	return (
 		<>
 			<SelectControl
@@ -165,6 +165,27 @@ function AuthControls( { rule, onChange } ) {
 }
 
 /**
+ * Returns the default rule shape for a given type.
+ *
+ * @param {string} type Rule type.
+ * @return {Object} Default rule object.
+ */
+function getDefaultRule( type ) {
+	switch ( type ) {
+		case 'meta':
+			return { type: 'meta', key: '', op: 'equals', value: '' };
+		case 'taxonomy':
+			return { type: 'taxonomy', taxonomy: '', op: 'has', value: '' };
+		case 'index':
+			return { type: 'index', op: 'equals', value: 0 };
+		case 'auth':
+			return { type: 'auth', value: true };
+		default:
+			return { type, op: 'equals', value: '' };
+	}
+}
+
+/**
  * A single visibility rule row.
  *
  * @param {Object}   props
@@ -181,7 +202,7 @@ export default function RuleRow( { rule, onChange, onRemove } ) {
 						label={ __( 'Rule Type', 'designsetgo' ) }
 						value={ rule.type ?? 'meta' }
 						options={ TYPE_OPTIONS }
-						onChange={ ( type ) => onChange( { ...rule, type } ) }
+						onChange={ ( type ) => onChange( getDefaultRule( type ) ) }
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
