@@ -40,3 +40,16 @@
 		transition: none;
 	}
 }
+
+.dsgo-query-group {
+	display: block;
+	margin-block-end: var(--wp--preset--spacing--40, 1.5rem);
+
+	&:last-child {
+		margin-block-end: 0;
+	}
+}
+
+.wp-block-designsetgo-query-group-header {
+	margin-block-end: var(--wp--preset--spacing--20, 0.75rem);
+}
