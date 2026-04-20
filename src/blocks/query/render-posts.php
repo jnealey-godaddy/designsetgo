@@ -80,10 +80,11 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 
 		$use_groups = ! empty( $atts['groupBy'] ) && ! empty( $group_header_blocks );
 
-		$items_html    = '';
-		$post_urls     = array();
-		$collected_ids = array();
-		$flat_counter  = 0;
+		$items_html        = '';
+		$post_urls         = array();
+		$collected_ids     = array();
+		$collected_indexes = array();
+		$flat_counter      = 0;
 
 		try {
 			while ( $query->have_posts() ) {
@@ -92,17 +93,22 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 				$post_urls[] = get_permalink();
 				if ( $use_groups ) {
 					$collected_ids[] = $post_id;
+					if ( ! isset( $collected_indexes[ $post_id ] ) ) {
+						$collected_indexes[ $post_id ] = $flat_counter;
+					}
 				} else {
 					$items_html .= designsetgo_query_render_item(
 						$item_template_html,
 						array(
-							'postId'   => $post_id,
-							'postType' => get_post_type(),
-							'index'    => $flat_counter++,
+							'postId'                => $post_id,
+							'postType'              => get_post_type(),
+							'index'                 => $flat_counter,
+							'designsetgo/itemIndex' => $flat_counter,
 						),
 						$atts['itemTagName']
 					);
 				}
+				$flat_counter++;
 			}
 		} finally {
 			wp_reset_postdata();
@@ -127,21 +133,22 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 					);
 					$header_html_out .= $header_block->render();
 				}
-				// Render items in this group using the stripped template.
-				// Counter resets per group so "index 0" means "first in group".
-				$group_items_html  = '';
-				$group_item_index  = 0;
+				// Render items in this group using the original flat result-set
+				// indices so visibility rules behave the same grouped or ungrouped.
+				$group_items_html = '';
 				foreach ( $group['ids'] as $gid ) {
 					$post_obj = get_post( $gid );
 					if ( ! $post_obj ) {
 						continue;
 					}
+					$item_index = isset( $collected_indexes[ $gid ] ) ? (int) $collected_indexes[ $gid ] : 0;
 					$group_items_html .= designsetgo_query_render_item(
 						$item_template_html,
 						array(
-							'postId'   => (int) $gid,
-							'postType' => $post_obj->post_type,
-							'index'    => $group_item_index++,
+							'postId'                => (int) $gid,
+							'postType'              => $post_obj->post_type,
+							'index'                 => $item_index,
+							'designsetgo/itemIndex' => $item_index,
 						),
 						$atts['itemTagName']
 					);
@@ -296,7 +303,9 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 				$args['post__in']       = $ids;
 				$args['orderby']        = 'post__in';
 				$args['post_type']      = 'any';
-				$args['posts_per_page'] = count( $ids );
+				if ( empty( $atts['manualPaginated'] ) ) {
+					$args['posts_per_page'] = count( $ids );
+				}
 			}
 		}
 

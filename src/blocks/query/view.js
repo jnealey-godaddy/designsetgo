@@ -41,179 +41,11 @@ store('designsetgo/query', {
 		// ----------------------------------------------------------------
 		// Pagination
 		// ----------------------------------------------------------------
-		*loadMore() {
+		*loadMore(event) {
+			dsgoMarkHandledEvent(event);
 			const ctx = getContext();
-			if (ctx.busy) {
-				return;
-			}
-			ctx.busy = true;
-
 			const { ref } = getElement(); // the button itself
-			const idleLabel =
-				ref instanceof HTMLElement
-					? ref.getAttribute('data-dsgo-label-idle') ||
-						ref.textContent
-					: '';
-			const loadingLabel =
-				ref instanceof HTMLElement
-					? ref.getAttribute('data-dsgo-label-loading') || ''
-					: '';
-
-			if (ref instanceof HTMLElement && loadingLabel) {
-				ref.textContent = loadingLabel;
-				ref.setAttribute('aria-busy', 'true');
-				ref.disabled = true;
-			}
-
-			// Fix 1: exclude elements with [data-dsgo-pagination] so we find the
-			// query list, not the pagination wrapper (both carry data-dsgo-query-id).
-			const container =
-				ref.closest(
-					'[data-dsgo-query-id]:not([data-dsgo-pagination])'
-				) ||
-				document.querySelector(
-					`[data-dsgo-query-id="${ctx.queryId}"]:not([data-dsgo-pagination])`
-				);
-
-			if (!container) {
-				if (ref instanceof HTMLElement) {
-					ref.textContent = idleLabel;
-					ref.disabled = false;
-					ref.removeAttribute('aria-busy');
-				}
-				ctx.busy = false;
-				return;
-			}
-
-			container.setAttribute('aria-busy', 'true');
-
-			try {
-				// Fix 4: blobs now live in a preceding-sibling hidden div with
-				// data-dsgo-blobs-for, not inside the list element.
-				const blobsHost = document.querySelector(
-					`[data-dsgo-blobs-for="${ctx.queryId}"]`
-				);
-				const attrsEl = blobsHost?.querySelector(
-					'script[data-dsgo-attrs]'
-				);
-				const innerEl = blobsHost?.querySelector(
-					'script[data-dsgo-inner]'
-				);
-
-				if (!attrsEl || !innerEl) {
-					ctx.busy = false;
-					container.setAttribute('aria-busy', 'false');
-					return;
-				}
-
-				const attributes = JSON.parse(attrsEl.textContent);
-				const innerBlocks = JSON.parse(innerEl.textContent);
-				const nextPage = (ctx.page || 1) + 1;
-
-				// ctx.restUrl + ctx.nonce are seeded by render-helpers.php so we
-				// don't rely on wpApiSettings (admin-only) or /wp-json/ rewrites
-				// (not guaranteed on plain-permalink installs).
-				const restUrl =
-					ctx.restUrl ||
-					(window.wpApiSettings?.root || '/wp-json/') +
-						'designsetgo/v1/query/render';
-				const restNonce =
-					ctx.nonce || window.wpApiSettings?.nonce || '';
-				const res = yield fetch(restUrl, {
-					method: 'POST',
-					credentials: 'same-origin',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-WP-Nonce': restNonce,
-					},
-					body: JSON.stringify({
-						queryId: ctx.queryId,
-						attributes,
-						page: nextPage,
-						innerBlocks,
-						currentUrl: window.location.href,
-					}),
-				});
-
-				if (!res.ok) {
-					// 401 typically means the nonce expired (page open > 12h).
-					// Surface this to devtools so "load more does nothing" is
-					// debuggable without the user having to inspect network.
-					// eslint-disable-next-line no-console
-					console.warn(
-						`[designsetgo/query] load-more request failed (${res.status}). If 401, the nonce has likely expired — reload the page.`
-					);
-					return;
-				}
-
-				const data = yield res.json();
-
-				// Parse the returned HTML and append .dsgo-query__item nodes.
-				const parser = new DOMParser();
-				const doc = parser.parseFromString(
-					data.html || '',
-					'text/html'
-				);
-				const newItems = doc.querySelectorAll('.dsgo-query__item');
-
-				if (newItems.length) {
-					// Focus management: move focus to the first newly-appended item.
-					const firstNew = newItems[0];
-					newItems.forEach((el) => container.appendChild(el));
-
-					// Refresh feed positions for the now-longer set and announce
-					// the running count if the server reported a total.
-					dsgoStampFeedPositions(container);
-					if (Number.isFinite(data.totalItems)) {
-						dsgoAnnounceResultCount(ctx.queryId, data.totalItems);
-					}
-
-					// Fix 2: only stamp tabindex="-1" when falling back to the item
-					// wrapper itself (no naturally focusable child found). This avoids
-					// permanently evicting <a>/<button>/<input> from the tab order.
-					const naturallyFocusable = firstNew.querySelector(
-						'a, button, input, [tabindex]:not([tabindex="-1"])'
-					);
-					const focusable = naturallyFocusable || firstNew;
-
-					if (focusable instanceof HTMLElement) {
-						if (!naturallyFocusable) {
-							focusable.setAttribute('tabindex', '-1');
-							focusable.addEventListener(
-								'blur',
-								() => focusable.removeAttribute('tabindex'),
-								{ once: true }
-							);
-						}
-						focusable.focus();
-					}
-				}
-
-				ctx.page = nextPage;
-
-				// Remove pagination controls once we've fetched the last page.
-				// Covers both load-more buttons and the infinite-scroll sentinel
-				// wrapper (removing the wrapper also garbage-collects any
-				// IntersectionObserver attached to the sentinel inside it).
-				if (data.totalPages && nextPage >= data.totalPages) {
-					document
-						.querySelectorAll(
-							`[data-dsgo-query-id="${ctx.queryId}"][data-dsgo-pagination="loadmore"] button, ` +
-								`[data-dsgo-query-id="${ctx.queryId}"][data-dsgo-pagination="infinite"]`
-						)
-						.forEach((el) => el.remove());
-				}
-			} finally {
-				ctx.busy = false;
-				container.setAttribute('aria-busy', 'false');
-				// Restore button label and state (button may have been removed
-				// when we reached the last page, so guard with isConnected).
-				if (ref instanceof HTMLElement && ref.isConnected) {
-					ref.textContent = idleLabel;
-					ref.disabled = false;
-					ref.removeAttribute('aria-busy');
-				}
-			}
+			yield dsgoLoadMorePlain(ctx, ref);
 		},
 
 		// ----------------------------------------------------------------
@@ -396,120 +228,7 @@ store('designsetgo/query', {
 		 */
 		initInfiniteObserver() {
 			const { ref } = getElement(); // sentinel div
-
-			const wrapper = ref.closest('[data-dsgo-pagination="infinite"]');
-			if (!wrapper) {
-				return;
-			}
-
-			// Disconnect any prior observer for this sentinel. IAPI may
-			// re-run callbacks.initInfiniteObserver on the same element if
-			// a refresh swaps innerHTML and the sentinel is rebuilt, and
-			// leftover observers from previous mounts would keep firing.
-			const prior = dsgoSentinelObservers.get(ref);
-			if (prior) {
-				prior.disconnect();
-			}
-
-			// Promote the list to role="feed" + stamp positions so AT users
-			// can navigate the incrementally-loaded items structurally. Done
-			// here (not in render.php) so markup stays correct under plain
-			// (non-infinite) pagination modes.
-			const queryId = wrapper.getAttribute('data-dsgo-query-id') || '';
-			const feedContainer = queryId
-				? document.querySelector(
-						`[data-dsgo-query-id="${queryId}"][data-dsgo-query-role="container"]`
-					)
-				: null;
-			if (
-				feedContainer &&
-				feedContainer.getAttribute('role') !== 'feed'
-			) {
-				feedContainer.setAttribute('role', 'feed');
-				feedContainer.setAttribute('aria-busy', 'false');
-				dsgoStampFeedPositions(feedContainer);
-			}
-
-			const button = wrapper.querySelector(
-				'.dsgo-query-pagination__loadmore'
-			);
-
-			// Reduced-motion: reveal the button and skip auto-advance entirely.
-			const prefersReduced = window.matchMedia(
-				'(prefers-reduced-motion: reduce)'
-			).matches;
-			if (prefersReduced) {
-				if (button) {
-					button.hidden = false;
-				}
-				return;
-			}
-
-			const ctx = getContext();
-
-			const threshold = parseInt(
-				wrapper.dataset.dsgoAutoPauseAfter || '3',
-				10
-			);
-			const offset = parseInt(
-				wrapper.dataset.dsgoSentinelOffset || '200',
-				10
-			);
-
-			// Initialise the auto-load counter on the context if not already set.
-			if (typeof ctx.autoLoadCount !== 'number') {
-				ctx.autoLoadCount = 0;
-			}
-
-			const observer = new IntersectionObserver(
-				(entries) => {
-					entries.forEach((entry) => {
-						if (!entry.isIntersecting) {
-							return;
-						}
-
-						// Don't count or fire if a load is already in-flight.
-						if (ctx.busy) {
-							return;
-						}
-
-						if (ctx.autoLoadCount >= threshold) {
-							// Auto-pause threshold reached — reveal button,
-							// disconnect observer, let the user opt in to more.
-							if (button) {
-								button.hidden = false;
-							}
-							observer.disconnect();
-							dsgoSentinelObservers.delete(ref);
-							return;
-						}
-
-						ctx.autoLoadCount++;
-
-						// Fire a synthetic click on the button so the existing
-						// loadMore generator action handles the full fetch/append
-						// cycle (including busy-guard, aria-busy, focus management).
-						// The button stays hidden visually during auto-loads;
-						// we briefly un-hide it so the IAPI click event resolves
-						// the correct element reference, then re-hide immediately.
-						if (button) {
-							button.hidden = false;
-							button.click();
-							// Re-hide after the microtask tick so the click event
-							// is dispatched with the button visible, then restore.
-							Promise.resolve().then(() => {
-								if (button.isConnected) {
-									button.hidden = true;
-								}
-							});
-						}
-					});
-				},
-				{ rootMargin: `${offset}px` }
-			);
-
-			observer.observe(ref);
-			dsgoSentinelObservers.set(ref, observer);
+			dsgoSetupInfiniteObserver(ref, getContext());
 		},
 	},
 });
@@ -542,15 +261,25 @@ store('designsetgo/query', {
  * @param {Object} ctx Parsed context ({ queryId, ...}).
  * @param {URL}    url Target URL.
  */
-function dsgoDelegatedRefresh(ctx, url) {
+function dsgoMarkHandledEvent(event) {
+	if (event && typeof event === 'object') {
+		dsgoHandledEvents.add(event);
+	}
+}
+
+function dsgoRunDelegated(ctx, callback) {
 	const queryId = ctx && ctx.queryId;
 	if (!queryId || dsgoDelegatedBusy.has(queryId)) {
 		return;
 	}
 	dsgoDelegatedBusy.add(queryId);
-	Promise.resolve(dsgoQueryRefreshPlain(ctx, url)).finally(() => {
+	Promise.resolve(callback()).finally(() => {
 		dsgoDelegatedBusy.delete(queryId);
 	});
+}
+
+function dsgoDelegatedRefresh(ctx, url) {
+	dsgoRunDelegated(ctx, () => dsgoQueryRefreshPlain(ctx, url));
 }
 
 /**
@@ -569,6 +298,235 @@ function dsgoGetContextFromDom(el) {
 	} catch (err) {
 		return null;
 	}
+}
+
+function dsgoGetQueryContainer(queryId, el) {
+	return (
+		el?.closest('[data-dsgo-query-id]:not([data-dsgo-pagination])') ||
+		document.querySelector(
+			`[data-dsgo-query-id="${queryId}"]:not([data-dsgo-pagination])`
+		)
+	);
+}
+
+function dsgoGetRestConfig(ctx) {
+	return {
+		restUrl:
+			ctx.restUrl ||
+			(window.wpApiSettings?.root || '/wp-json/') +
+				'designsetgo/v1/query/render',
+		restNonce: ctx.nonce || window.wpApiSettings?.nonce || '',
+	};
+}
+
+async function dsgoLoadMorePlain(ctx, button) {
+	if (!ctx?.queryId || ctx.busy || !(button instanceof HTMLElement)) {
+		return;
+	}
+
+	ctx.busy = true;
+
+	const idleLabel =
+		button.getAttribute('data-dsgo-label-idle') || button.textContent;
+	const loadingLabel = button.getAttribute('data-dsgo-label-loading') || '';
+	if (loadingLabel) {
+		button.textContent = loadingLabel;
+		button.setAttribute('aria-busy', 'true');
+	}
+	button.disabled = true;
+
+	const container = dsgoGetQueryContainer(ctx.queryId, button);
+	if (!container) {
+		button.textContent = idleLabel;
+		button.disabled = false;
+		button.removeAttribute('aria-busy');
+		ctx.busy = false;
+		return;
+	}
+
+	container.setAttribute('aria-busy', 'true');
+
+	try {
+		const blobsHost = document.querySelector(
+			`[data-dsgo-blobs-for="${ctx.queryId}"]`
+		);
+		const attrsEl = blobsHost?.querySelector('script[data-dsgo-attrs]');
+		const innerEl = blobsHost?.querySelector('script[data-dsgo-inner]');
+
+		if (!attrsEl || !innerEl) {
+			return;
+		}
+
+		const attributes = JSON.parse(attrsEl.textContent);
+		const innerBlocks = JSON.parse(innerEl.textContent);
+		const nextPage = (ctx.page || 1) + 1;
+		const { restUrl, restNonce } = dsgoGetRestConfig(ctx);
+		const res = await fetch(restUrl, {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-WP-Nonce': restNonce,
+			},
+			body: JSON.stringify({
+				queryId: ctx.queryId,
+				attributes,
+				page: nextPage,
+				innerBlocks,
+				currentUrl: window.location.href,
+			}),
+		});
+
+		if (!res.ok) {
+			// eslint-disable-next-line no-console
+			console.warn(
+				`[designsetgo/query] load-more request failed (${res.status}). If 401, the nonce has likely expired — reload the page.`
+			);
+			return;
+		}
+
+		const data = await res.json();
+		const doc = new DOMParser().parseFromString(data.html || '', 'text/html');
+		const newItems = doc.querySelectorAll('.dsgo-query__item');
+
+		if (newItems.length) {
+			const firstNew = newItems[0];
+			newItems.forEach((el) => container.appendChild(el));
+
+			dsgoStampFeedPositions(container);
+			if (Number.isFinite(data.totalItems)) {
+				dsgoAnnounceResultCount(ctx.queryId, data.totalItems);
+			}
+
+			const naturallyFocusable = firstNew.querySelector(
+				'a, button, input, [tabindex]:not([tabindex="-1"])'
+			);
+			const focusable = naturallyFocusable || firstNew;
+
+			if (focusable instanceof HTMLElement) {
+				if (!naturallyFocusable) {
+					focusable.setAttribute('tabindex', '-1');
+					focusable.addEventListener(
+						'blur',
+						() => focusable.removeAttribute('tabindex'),
+						{ once: true }
+					);
+				}
+				focusable.focus();
+			}
+		}
+
+		ctx.page = nextPage;
+
+		if (data.totalPages && nextPage >= data.totalPages) {
+			document
+				.querySelectorAll(
+					`[data-dsgo-query-id="${ctx.queryId}"][data-dsgo-pagination="loadmore"] button, ` +
+						`[data-dsgo-query-id="${ctx.queryId}"][data-dsgo-pagination="infinite"]`
+				)
+				.forEach((el) => el.remove());
+		}
+	} finally {
+		ctx.busy = false;
+		container.setAttribute('aria-busy', 'false');
+		if (button.isConnected) {
+			button.textContent = idleLabel;
+			button.disabled = false;
+			button.removeAttribute('aria-busy');
+		}
+	}
+}
+
+function dsgoSetupInfiniteObserver(sentinel, ctx) {
+	if (!(sentinel instanceof HTMLElement) || !ctx?.queryId) {
+		return;
+	}
+
+	const wrapper = sentinel.closest('[data-dsgo-pagination="infinite"]');
+	if (!wrapper) {
+		return;
+	}
+
+	const prior = dsgoSentinelObservers.get(sentinel);
+	if (prior) {
+		prior.disconnect();
+	}
+
+	const feedContainer = dsgoGetQueryContainer(ctx.queryId, wrapper);
+	if (feedContainer && feedContainer.getAttribute('role') !== 'feed') {
+		feedContainer.setAttribute('role', 'feed');
+		feedContainer.setAttribute('aria-busy', 'false');
+		dsgoStampFeedPositions(feedContainer);
+	}
+
+	const button = wrapper.querySelector('.dsgo-query-pagination__loadmore');
+	const prefersReduced = window.matchMedia(
+		'(prefers-reduced-motion: reduce)'
+	).matches;
+	if (prefersReduced) {
+		if (button) {
+			button.hidden = false;
+		}
+		return;
+	}
+
+	const threshold = parseInt(wrapper.dataset.dsgoAutoPauseAfter || '3', 10);
+	const offset = parseInt(wrapper.dataset.dsgoSentinelOffset || '200', 10);
+	if (typeof ctx.autoLoadCount !== 'number') {
+		ctx.autoLoadCount = 0;
+	}
+
+	const observer = new IntersectionObserver(
+		(entries) => {
+			entries.forEach((entry) => {
+				if (!entry.isIntersecting || ctx.busy) {
+					return;
+				}
+
+				if (ctx.autoLoadCount >= threshold) {
+					if (button) {
+						button.hidden = false;
+					}
+					observer.disconnect();
+					dsgoSentinelObservers.delete(sentinel);
+					return;
+				}
+
+				ctx.autoLoadCount++;
+
+				if (button) {
+					button.hidden = false;
+					button.click();
+					Promise.resolve().then(() => {
+						if (button.isConnected) {
+							button.hidden = true;
+						}
+					});
+				}
+			});
+		},
+		{ rootMargin: `${offset}px` }
+	);
+
+	observer.observe(sentinel);
+	dsgoSentinelObservers.set(sentinel, observer);
+}
+
+function dsgoInitInfiniteObservers(root = document) {
+	if (!root?.querySelectorAll) {
+		return;
+	}
+
+	root
+		.querySelectorAll(
+			'[data-dsgo-pagination="infinite"] [data-wp-init*="initInfiniteObserver"]'
+		)
+		.forEach((sentinel) => {
+			const ctx = dsgoGetContextFromDom(sentinel);
+			if (ctx) {
+				dsgoSetupInfiniteObserver(sentinel, ctx);
+			}
+		});
 }
 
 /**
@@ -704,6 +662,17 @@ function dsgoDelegatedClick(event) {
 	if (!(target instanceof HTMLElement)) {
 		return;
 	}
+	const loadMoreButton = target.closest('.dsgo-query-pagination__loadmore');
+	if (loadMoreButton) {
+		const ctx = dsgoGetContextFromDom(loadMoreButton);
+		if (!ctx) {
+			return;
+		}
+
+		event.preventDefault();
+		dsgoRunDelegated(ctx, () => dsgoLoadMorePlain(ctx, loadMoreButton));
+		return;
+	}
 	const chip = target.closest(
 		'.dsgo-query-filter--active .dsgo-query-filter__chip, .dsgo-query-filter--reset .dsgo-query-filter__reset, .dsgo-query-filter--reset a'
 	);
@@ -729,6 +698,13 @@ function dsgoDelegatedClick(event) {
 document.addEventListener('change', dsgoDelegatedChange);
 document.addEventListener('input', dsgoDelegatedInput);
 document.addEventListener('click', dsgoDelegatedClick);
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', () =>
+		dsgoInitInfiniteObservers(document)
+	);
+} else {
+	dsgoInitInfiniteObservers(document);
+}
 
 // ---------------------------------------------------------------------------
 // Shared refresh helpers
@@ -845,6 +821,7 @@ function* dsgoQueryRefresh(ctx, url) {
 			// Server-rendered HTML assembled from esc_attr / esc_html /
 			// block-render output in designsetgo_query_render_region().
 			region.innerHTML = newRegion.innerHTML;
+			dsgoInitInfiniteObservers(region);
 		}
 
 		// Sync the browser URL without a page reload.
@@ -963,6 +940,7 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 			// Server-rendered HTML assembled from esc_attr / esc_html /
 			// block-render output in designsetgo_query_render_region().
 			region.innerHTML = newRegion.innerHTML;
+			dsgoInitInfiniteObservers(region);
 		}
 
 		window.history.replaceState({}, '', url.toString());

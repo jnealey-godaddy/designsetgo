@@ -74,25 +74,7 @@ class Bindings {
 			return null;
 		}
 
-		$scope = isset( $args['scope'] ) ? (string) $args['scope'] : 'self';
-
-		$post_id = 0;
-		if ( 'parent' === $scope ) {
-			$stack  = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
-			$parent = empty( $stack ) ? null : end( $stack );
-			if ( is_array( $parent ) && ! empty( $parent['postId'] ) ) {
-				$post_id = (int) $parent['postId'];
-			}
-		} elseif ( 'root' === $scope ) {
-			$stack = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
-			$root  = empty( $stack ) ? null : reset( $stack );
-			if ( is_array( $root ) && ! empty( $root['postId'] ) ) {
-				$post_id = (int) $root['postId'];
-			}
-		} else {
-			$post_id = self::resolve_post_id_from_block( $block );
-		}
-
+		$post_id = $this->resolve_scoped_post_id( $args, $block );
 		if ( ! $post_id ) {
 			$post_id = get_the_ID();
 		}
@@ -140,25 +122,7 @@ class Bindings {
 			return null;
 		}
 
-		$scope = isset( $args['scope'] ) ? (string) $args['scope'] : 'self';
-
-		$post_id = 0;
-		if ( 'parent' === $scope ) {
-			$stack  = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
-			$parent = empty( $stack ) ? null : end( $stack );
-			if ( is_array( $parent ) && ! empty( $parent['postId'] ) ) {
-				$post_id = (int) $parent['postId'];
-			}
-		} elseif ( 'root' === $scope ) {
-			$stack = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
-			$root  = empty( $stack ) ? null : reset( $stack );
-			if ( is_array( $root ) && ! empty( $root['postId'] ) ) {
-				$post_id = (int) $root['postId'];
-			}
-		} else {
-			$post_id = self::resolve_post_id_from_block( $block );
-		}
-
+		$post_id = $this->resolve_scoped_post_id( $args, $block );
 		if ( ! $post_id ) {
 			$post_id = get_the_ID();
 		}
@@ -194,6 +158,46 @@ class Bindings {
 	}
 
 	/**
+	 * Resolves the post ID to read from, taking the 'scope' arg into account.
+	 *
+	 * - 'parent': reads the most-recently-pushed item from $GLOBALS['designsetgo_parent_stack'].
+	 * - 'root':   reads the first (outermost) item from the same stack.
+	 * - 'self' (default): reads from the block's own context, with a Reflection fallback.
+	 *
+	 * @param array          $args  Binding args (optional 'scope': 'self'|'parent'|'root').
+	 * @param \WP_Block|null $block The current block instance.
+	 * @return int Post ID, or 0 if not resolvable.
+	 */
+	private function resolve_scoped_post_id( array $args, $block ) {
+		$scope = isset( $args['scope'] ) ? (string) $args['scope'] : 'self';
+
+		if ( 'parent' === $scope ) {
+			$stack  = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
+			$parent = empty( $stack ) ? null : end( $stack );
+			if ( is_array( $parent ) && ! empty( $parent['postId'] ) ) {
+				return (int) $parent['postId'];
+			}
+			return 0;
+		}
+
+		if ( 'root' === $scope ) {
+			$stack = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
+			$root  = empty( $stack ) ? null : reset( $stack );
+			if ( is_array( $root ) && ! empty( $root['postId'] ) ) {
+				return (int) $root['postId'];
+			}
+			return 0;
+		}
+
+		// 'self' (default) — read from block context (with the existing reflection fallback).
+		if ( $block && isset( $block->context['postId'] ) ) {
+			return (int) $block->context['postId'];
+		}
+		// Reflection fallback — preserve the existing logic.
+		return $this->resolve_post_id_from_block_reflection( $block );
+	}
+
+	/**
 	 * Resolves the post ID from a block's context.
 	 *
 	 * First checks `$block->context['postId']` (populated when the block type
@@ -206,7 +210,7 @@ class Bindings {
 	 * @param \WP_Block|null $block The current block instance.
 	 * @return int Post ID, or 0 if not resolvable.
 	 */
-	private static function resolve_post_id_from_block( $block ) {
+	private function resolve_post_id_from_block_reflection( $block ) {
 		if ( ! $block instanceof \WP_Block ) {
 			return 0;
 		}

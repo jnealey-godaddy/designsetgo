@@ -45,16 +45,20 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 		$users       = (array) $query->get_results();
 		$total_users = (int) $query->get_total();
 
-		$items_html = '';
+		$items_html  = '';
+		$item_index  = 0;
 		foreach ( $users as $user ) {
 			$items_html .= designsetgo_query_render_item(
 				(string) $context['inner_html'],
 				array(
 					'designsetgo/currentItemId'   => (int) $user->ID,
 					'designsetgo/currentItemType' => 'user',
+					'index'                       => $item_index,
+					'designsetgo/itemIndex'       => $item_index,
 				),
 				$atts['itemTagName']
 			);
+			$item_index++;
 		}
 
 		$state = array(
