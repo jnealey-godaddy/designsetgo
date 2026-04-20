@@ -9,6 +9,11 @@
 
 @use 'tokens' as *;
 
+// Base rules: apply transforms, shadows and transitions to whichever
+// element carries the effect class. For most supported blocks (Group,
+// Cover, Columns, etc.) this IS the visible rounded surface. For button
+// and image — whose visible surface is a child — we cancel these on the
+// outer wrapper further down and reapply on the child.
 .dsgo-hover-effect {
 	transition:
 		transform $dsgo-hover-duration $dsgo-hover-easing,
@@ -54,6 +59,138 @@
 	}
 }
 
+// Button: the outer `.wp-block-button` is a transparent layout wrapper;
+// the rounded, background-bearing surface is `.wp-block-button__link`
+// (the <a>). Painting transform/shadow on the wrapper produces a
+// rectangular halo that does not follow the link's border-radius.
+// Cancel on the wrapper and reapply on the link.
+.wp-block-button.dsgo-hover-effect {
+	transition: none;
+	will-change: auto;
+
+	&:hover {
+		transform: none;
+		box-shadow: none;
+		filter: none;
+	}
+
+	> .wp-block-button__link {
+		transition:
+			transform $dsgo-hover-duration $dsgo-hover-easing,
+			box-shadow $dsgo-hover-duration $dsgo-hover-easing,
+			filter $dsgo-hover-duration $dsgo-hover-easing;
+	}
+
+	&--lift > .wp-block-button__link,
+	&--sink > .wp-block-button__link,
+	&--grow > .wp-block-button__link,
+	&--shrink > .wp-block-button__link,
+	&--tilt > .wp-block-button__link {
+		will-change: transform;
+	}
+
+	&--glow > .wp-block-button__link {
+		will-change: filter;
+	}
+
+	&--lift:hover > .wp-block-button__link {
+		transform: translateY(-4px);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+	}
+
+	&--sink:hover > .wp-block-button__link {
+		transform: translateY(4px);
+	}
+
+	&--grow:hover > .wp-block-button__link {
+		transform: scale(1.03);
+	}
+
+	&--shrink:hover > .wp-block-button__link {
+		transform: scale(0.97);
+	}
+
+	&--tilt:hover > .wp-block-button__link {
+		transform: rotate(-1deg) scale(1.01);
+	}
+
+	&--glow:hover > .wp-block-button__link {
+		box-shadow: 0 0 24px rgba(0, 0, 0, 0.15);
+		filter: brightness(1.05);
+	}
+}
+
+// Image: the outer `<figure>` may be larger than the `<img>` and the
+// block-support border-radius applies to the img. Same retarget pattern.
+.wp-block-image.dsgo-hover-effect {
+	transition: none;
+	will-change: auto;
+
+	&:hover {
+		transform: none;
+		box-shadow: none;
+		filter: none;
+	}
+
+	> img,
+	> a > img {
+		transition:
+			transform $dsgo-hover-duration $dsgo-hover-easing,
+			box-shadow $dsgo-hover-duration $dsgo-hover-easing,
+			filter $dsgo-hover-duration $dsgo-hover-easing;
+	}
+
+	&--lift > img,
+	&--lift > a > img,
+	&--sink > img,
+	&--sink > a > img,
+	&--grow > img,
+	&--grow > a > img,
+	&--shrink > img,
+	&--shrink > a > img,
+	&--tilt > img,
+	&--tilt > a > img {
+		will-change: transform;
+	}
+
+	&--glow > img,
+	&--glow > a > img {
+		will-change: filter;
+	}
+
+	&--lift:hover > img,
+	&--lift:hover > a > img {
+		transform: translateY(-4px);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+	}
+
+	&--sink:hover > img,
+	&--sink:hover > a > img {
+		transform: translateY(4px);
+	}
+
+	&--grow:hover > img,
+	&--grow:hover > a > img {
+		transform: scale(1.03);
+	}
+
+	&--shrink:hover > img,
+	&--shrink:hover > a > img {
+		transform: scale(0.97);
+	}
+
+	&--tilt:hover > img,
+	&--tilt:hover > a > img {
+		transform: rotate(-1deg) scale(1.01);
+	}
+
+	&--glow:hover > img,
+	&--glow:hover > a > img {
+		box-shadow: 0 0 24px rgba(0, 0, 0, 0.15);
+		filter: brightness(1.05);
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 
 	.dsgo-hover-effect {
@@ -64,5 +201,27 @@
 			box-shadow: none;
 			filter: none;
 		}
+	}
+
+	.wp-block-button.dsgo-hover-effect > .wp-block-button__link {
+		transition: none;
+	}
+
+	.wp-block-button.dsgo-hover-effect:hover > .wp-block-button__link {
+		transform: none;
+		box-shadow: none;
+		filter: none;
+	}
+
+	.wp-block-image.dsgo-hover-effect > img,
+	.wp-block-image.dsgo-hover-effect > a > img {
+		transition: none;
+	}
+
+	.wp-block-image.dsgo-hover-effect:hover > img,
+	.wp-block-image.dsgo-hover-effect:hover > a > img {
+		transform: none;
+		box-shadow: none;
+		filter: none;
 	}
 }
