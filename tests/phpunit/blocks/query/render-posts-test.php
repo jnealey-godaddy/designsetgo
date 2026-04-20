@@ -327,6 +327,40 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'date_query', $args );
 	}
 
+	public function test_nested_tax_group_builds_correctly() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'   => 'posts',
+			'taxQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [
+					[
+						'relation' => 'OR',
+						'clauses'  => [
+							[ 'taxonomy' => 'category', 'terms' => [ 1 ], 'operator' => 'IN', 'include_children' => true ],
+							[ 'taxonomy' => 'category', 'terms' => [ 2 ], 'operator' => 'IN', 'include_children' => true ],
+						],
+					],
+					[ 'taxonomy' => 'post_tag', 'terms' => [ 5 ], 'operator' => 'IN', 'include_children' => false ],
+				],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertEquals( 'AND', $args['tax_query']['relation'] );
+		$sub = $args['tax_query'][0];
+		$this->assertEquals( 'OR', $sub['relation'] );
+		$this->assertEquals( 'category', $sub[0]['taxonomy'] );
+		$this->assertEquals( 'category', $sub[1]['taxonomy'] );
+		$leaf = $args['tax_query'][1];
+		$this->assertEquals( 'post_tag', $leaf['taxonomy'] );
+		$this->assertFalse( $leaf['include_children'] );
+	}
+
 	public function test_child_blocks_resolve_per_item_context() {
 		$ids   = array();
 		$ids[] = self::factory()->post->create( array( 'post_title' => 'Alpha', 'post_status' => 'publish' ) );

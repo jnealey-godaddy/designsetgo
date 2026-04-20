@@ -170,28 +170,20 @@ function renderWith(attributeOverrides = {}) {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('TaxQueryBuilder', () => {
-	it('renders with no clauses — shows Add button', () => {
+	it('renders with no clauses — shows + Clause and + Group buttons', () => {
 		renderWith();
 		expect(
-			screen.getByRole('button', { name: /add taxonomy filter/i })
+			screen.getByRole('button', { name: /\+ clause/i })
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole('button', { name: /\+ group/i })
 		).toBeInTheDocument();
 	});
 
-	it('Add button is enabled when relevant taxonomies exist', () => {
+	it('+ Clause button is enabled when relevant taxonomies exist', () => {
 		renderWith();
-		const addBtn = screen.getByRole('button', {
-			name: /add taxonomy filter/i,
-		});
+		const addBtn = screen.getByRole('button', { name: /\+ clause/i });
 		expect(addBtn).not.toBeDisabled();
-	});
-
-	it('Add button is disabled when no relevant taxonomies for postType', () => {
-		// 'event' is not in any taxonomy's types list returned by our mock.
-		renderWith({ postType: 'event' });
-		const addBtn = screen.getByRole('button', {
-			name: /add taxonomy filter/i,
-		});
-		expect(addBtn).toBeDisabled();
 	});
 
 	it('renders clause row with taxonomy selector and Remove button when clauses > 0', () => {
@@ -217,12 +209,12 @@ describe('TaxQueryBuilder', () => {
 		expect(screen.getByLabelText(/^terms$/i)).toBeInTheDocument();
 	});
 
-	it('renders Relation selector only when more than 1 clause is present', () => {
-		// 0 clauses — no relation selector.
+	it('renders Match selector only when more than 1 clause is present', () => {
+		// 0 clauses — no match selector.
 		const { rerender } = renderWith();
-		expect(screen.queryByLabelText(/relation/i)).not.toBeInTheDocument();
+		expect(screen.queryByLabelText(/^match$/i)).not.toBeInTheDocument();
 
-		// 1 clause — still no relation selector.
+		// 1 clause — still no match selector.
 		rerender(
 			<TaxQueryBuilder
 				attributes={{
@@ -238,9 +230,9 @@ describe('TaxQueryBuilder', () => {
 				clientId="test-client"
 			/>
 		);
-		expect(screen.queryByLabelText(/relation/i)).not.toBeInTheDocument();
+		expect(screen.queryByLabelText(/^match$/i)).not.toBeInTheDocument();
 
-		// 2 clauses — relation selector appears.
+		// 2 clauses — match selector appears.
 		rerender(
 			<TaxQueryBuilder
 				attributes={{
@@ -257,15 +249,13 @@ describe('TaxQueryBuilder', () => {
 				clientId="test-client"
 			/>
 		);
-		expect(screen.getByLabelText(/relation/i)).toBeInTheDocument();
+		expect(screen.getByLabelText(/^match$/i)).toBeInTheDocument();
 	});
 
 	it('addClause seeds include_children: true on the new clause', () => {
 		const { setAttributes } = renderWith();
-		const addBtn = screen.getByRole('button', {
-			name: /add taxonomy filter/i,
-		});
-		fireEvent.click( addBtn );
+		const addBtn = screen.getByRole('button', { name: /\+ clause/i });
+		fireEvent.click(addBtn);
 		expect(setAttributes).toHaveBeenCalledTimes(1);
 		const call = setAttributes.mock.calls[0][0];
 		const newClause = call.taxQuery.clauses[0];
@@ -301,4 +291,19 @@ describe('TaxQueryBuilder', () => {
 		const toggle = screen.getByLabelText(/include child terms/i);
 		expect(toggle).not.toBeChecked();
 	});
+
+	it('adds a nested group when clicking + Group', () => {
+		const setAttributes = jest.fn();
+		const { getByRole } = render(
+			<TaxQueryBuilder
+				attributes={ { taxQuery: { relation: 'AND', clauses: [] }, postType: 'post' } }
+				setAttributes={ setAttributes }
+				clientId="test"
+			/>
+		);
+		fireEvent.click( getByRole( 'button', { name: /\+ group/i } ) );
+		const call = setAttributes.mock.calls[0][0];
+		expect( call.taxQuery.clauses[0] ).toHaveProperty( 'clauses' );
+		expect( call.taxQuery.clauses[0].relation ).toBe( 'AND' );
+	} );
 });

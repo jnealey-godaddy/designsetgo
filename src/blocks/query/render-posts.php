@@ -10,6 +10,40 @@
 
 defined( 'ABSPATH' ) || exit;
 
+if ( ! function_exists( 'designsetgo_build_tax_query_entry' ) ) :
+	/**
+	 * Recursively builds a WP_Query tax_query clause or nested group.
+	 *
+	 * @param array $entry Clause or group from block attributes.
+	 * @return array|null WP_Query tax_query entry, or null if invalid.
+	 */
+	function designsetgo_build_tax_query_entry( array $entry ) {
+		if ( isset( $entry['clauses'] ) ) {
+			// Nested group.
+			$sub = array(
+				'relation' => ( 'OR' === ( $entry['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
+			);
+			foreach ( (array) $entry['clauses'] as $child ) {
+				$built = designsetgo_build_tax_query_entry( $child );
+				if ( null !== $built ) {
+					$sub[] = $built;
+				}
+			}
+			return count( $sub ) > 1 ? $sub : null;
+		}
+		// Leaf clause.
+		if ( empty( $entry['taxonomy'] ) || empty( $entry['terms'] ) ) {
+			return null;
+		}
+		return array(
+			'taxonomy'         => sanitize_key( (string) $entry['taxonomy'] ),
+			'terms'            => array_map( 'absint', (array) $entry['terms'] ),
+			'operator'         => in_array( ( $entry['operator'] ?? 'IN' ), array( 'IN', 'NOT IN', 'AND' ), true ) ? $entry['operator'] : 'IN',
+			'include_children' => isset( $entry['include_children'] ) ? (bool) $entry['include_children'] : true,
+		);
+	}
+endif;
+
 if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 
 	/**
@@ -256,22 +290,17 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			}
 		}
 
-		// Taxonomy query.
+		// Tax query (supports nested AND/OR groups).
 		$tax_clauses = isset( $atts['taxQuery']['clauses'] ) ? (array) $atts['taxQuery']['clauses'] : array();
 		if ( ! empty( $tax_clauses ) ) {
 			$tax_query = array(
 				'relation' => ( 'OR' === ( $atts['taxQuery']['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
 			);
-			foreach ( $tax_clauses as $clause ) {
-				if ( empty( $clause['taxonomy'] ) || empty( $clause['terms'] ) ) {
-					continue;
+			foreach ( $tax_clauses as $entry ) {
+				$built = designsetgo_build_tax_query_entry( $entry );
+				if ( null !== $built ) {
+					$tax_query[] = $built;
 				}
-				$tax_query[] = array(
-					'taxonomy'         => sanitize_key( (string) $clause['taxonomy'] ),
-					'terms'            => array_map( 'absint', (array) $clause['terms'] ),
-					'operator'         => in_array( ( $clause['operator'] ?? 'IN' ), array( 'IN', 'NOT IN', 'AND' ), true ) ? $clause['operator'] : 'IN',
-					'include_children' => isset( $clause['include_children'] ) ? (bool) $clause['include_children'] : true,
-				);
 			}
 			if ( count( $tax_query ) > 1 ) {
 				$args['tax_query'] = $tax_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
