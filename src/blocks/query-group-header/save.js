@@ -1,12 +1,7 @@
-import { InnerBlocks, useBlockProps } from '@wordpress/block-editor';
+import { InnerBlocks } from '@wordpress/block-editor';
 
+// render.php wraps innerBlocks in the configured tag (header/div/section).
+// Returning an InnerBlocks.Content wrapper here would double-wrap the output.
 export default function save() {
-	const blockProps = useBlockProps.save( {
-		className: 'dsgo-query-group-header',
-	} );
-	return (
-		<div { ...blockProps }>
-			<InnerBlocks.Content />
-		</div>
-	);
+	return <InnerBlocks.Content />;
 }

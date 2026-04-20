@@ -56,6 +56,17 @@ class Bindings {
 				)
 			);
 		}
+
+		if ( ! get_block_bindings_source( 'designsetgo/group-context' ) ) {
+			register_block_bindings_source(
+				'designsetgo/group-context',
+				array(
+					'label'              => __( 'Group Context (DesignSetGo)', 'designsetgo' ),
+					'get_value_callback' => array( $this, 'get_group_context_value' ),
+					'uses_context'       => array( 'designsetgo/groupLabel', 'designsetgo/groupValue' ),
+				)
+			);
+		}
 	}
 
 	/**
@@ -158,10 +169,65 @@ class Bindings {
 	}
 
 	/**
+	 * Returns a group-context value for a block inside a query-group-header.
+	 *
+	 * Supported keys: 'groupLabel' (human-readable term/meta/date label),
+	 * 'groupValue' (slug/key — use this when comparing, rendering links, etc.).
+	 *
+	 * The parent query pushes both keys into the header's context before calling
+	 * render(), but the consuming block (core/heading, core/paragraph, etc.)
+	 * only exposes `$block->context` for keys it declared in `usesContext`. We
+	 * fall back to the block's full `available_context` via Reflection so
+	 * authors don't have to modify core blocks.
+	 *
+	 * @param array          $args           Binding args (expects 'key').
+	 * @param \WP_Block|null $block          The current block instance.
+	 * @param string         $attribute_name The bound attribute name.
+	 * @return string|null
+	 */
+	public function get_group_context_value( array $args, $block = null, $attribute_name = 'content' ) {
+		$key = isset( $args['key'] ) ? (string) $args['key'] : 'groupLabel';
+		if ( 'groupValue' !== $key ) {
+			$key = 'groupLabel';
+		}
+		$context_key = 'designsetgo/' . $key;
+
+		if ( $block && isset( $block->context[ $context_key ] ) ) {
+			$value = (string) $block->context[ $context_key ];
+			return '' === $value ? null : $value;
+		}
+
+		// Fallback: read the full available_context (protected property) via Reflection.
+		// Inner blocks like core/heading don't declare usesContext for the group keys,
+		// so $block->context would be empty even though available_context has the values.
+		if ( $block instanceof \WP_Block ) {
+			try {
+				$prop = new \ReflectionProperty( \WP_Block::class, 'available_context' );
+				$prop->setAccessible( true );
+				$available = $prop->getValue( $block );
+				if ( isset( $available[ $context_key ] ) ) {
+					$value = (string) $available[ $context_key ];
+					return '' === $value ? null : $value;
+				}
+			} catch ( \ReflectionException $e ) {
+				// Property not accessible — nothing to do.
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Resolves the post ID to read from, taking the 'scope' arg into account.
 	 *
-	 * - 'parent': reads the most-recently-pushed item from $GLOBALS['designsetgo_parent_stack'].
-	 * - 'root':   reads the first (outermost) item from the same stack.
+	 * The parent stack maintained by `designsetgo_query_render_item()` pushes the
+	 * CURRENT item before rendering its innerBlocks, so at binding-resolution time
+	 * the stack looks like `[...ancestors, self]`. 'parent' therefore means the
+	 * penultimate entry (ancestor one level up), not the top.
+	 *
+	 * - 'parent': reads the ancestor one level up (penultimate stack entry). Returns 0
+	 *   when no outer query is iterating.
+	 * - 'root':   reads the outermost (first) entry. Returns 0 when the stack is empty.
 	 * - 'self' (default): reads from the block's own context, with a Reflection fallback.
 	 *
 	 * @param array          $args  Binding args (optional 'scope': 'self'|'parent'|'root').
@@ -172,8 +238,10 @@ class Bindings {
 		$scope = isset( $args['scope'] ) ? (string) $args['scope'] : 'self';
 
 		if ( 'parent' === $scope ) {
-			$stack  = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
-			$parent = empty( $stack ) ? null : end( $stack );
+			$stack = isset( $GLOBALS['designsetgo_parent_stack'] ) && is_array( $GLOBALS['designsetgo_parent_stack'] ) ? $GLOBALS['designsetgo_parent_stack'] : array();
+			$count = count( $stack );
+			// Skip the top entry — that's the current item (same as 'self').
+			$parent = $count >= 2 ? $stack[ $count - 2 ] : null;
 			if ( is_array( $parent ) && ! empty( $parent['postId'] ) ) {
 				return (int) $parent['postId'];
 			}

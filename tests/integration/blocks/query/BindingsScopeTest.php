@@ -7,13 +7,18 @@ use WP_UnitTestCase;
 
 class BindingsScopeTest extends WP_UnitTestCase {
 
-	public function test_parent_scope_reads_from_parent_stack() {
+	public function test_parent_scope_reads_ancestor_not_current_item() {
 		$parent_id = self::factory()->post->create();
 		$child_id  = self::factory()->post->create();
 		update_post_meta( $parent_id, 'parent_label', 'HELLO-PARENT' );
+		update_post_meta( $child_id, 'parent_label', 'WRONG-CHILD' );
 
+		// designsetgo_query_render_item() pushes the CURRENT item onto the
+		// stack before innerBlocks render, so 'parent' must skip the top entry
+		// (self) and read the ancestor one level up.
 		$GLOBALS['designsetgo_parent_stack'] = array(
 			array( 'postId' => $parent_id, 'postType' => 'post' ),
+			array( 'postId' => $child_id,  'postType' => 'post' ),
 		);
 
 		$bindings = new Bindings();
@@ -28,6 +33,30 @@ class BindingsScopeTest extends WP_UnitTestCase {
 		);
 
 		$this->assertSame( 'HELLO-PARENT', $value );
+		unset( $GLOBALS['designsetgo_parent_stack'] );
+	}
+
+	public function test_parent_scope_returns_null_when_no_outer_loop() {
+		$only_id = self::factory()->post->create();
+		update_post_meta( $only_id, 'label', 'ONLY' );
+
+		// Single-level query — stack has just the current item, no ancestor.
+		$GLOBALS['designsetgo_parent_stack'] = array(
+			array( 'postId' => $only_id, 'postType' => 'post' ),
+		);
+
+		$bindings = new Bindings();
+		$block    = new WP_Block(
+			array( 'blockName' => 'core/paragraph' ),
+			array( 'postId' => $only_id, 'postType' => 'post' )
+		);
+		$value = $bindings->get_post_meta_value(
+			array( 'key' => 'label', 'scope' => 'parent' ),
+			$block,
+			'content'
+		);
+
+		$this->assertNull( $value );
 		unset( $GLOBALS['designsetgo_parent_stack'] );
 	}
 
@@ -50,9 +79,12 @@ class BindingsScopeTest extends WP_UnitTestCase {
 		$leaf_id  = self::factory()->post->create();
 		update_post_meta( $root_id, 'root_label', 'ROOT' );
 
+		// Three-level stack matches the real render pipeline: root → mid → leaf
+		// (leaf is the current item, pushed by designsetgo_query_render_item()).
 		$GLOBALS['designsetgo_parent_stack'] = array(
 			array( 'postId' => $root_id, 'postType' => 'post' ),
 			array( 'postId' => $mid_id,  'postType' => 'post' ),
+			array( 'postId' => $leaf_id, 'postType' => 'post' ),
 		);
 
 		$bindings = new Bindings();
