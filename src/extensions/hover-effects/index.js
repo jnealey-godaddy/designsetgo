@@ -121,7 +121,7 @@ const withHoverEffectClass = createHigherOrderComponent((BlockListBlock) => {
 		);
 		const updatedWrapperProps = {
 			...wrapperProps,
-			className: mergedClassName || undefined,
+			className: mergedClassName,
 		};
 
 		return <BlockListBlock {...props} wrapperProps={updatedWrapperProps} />;

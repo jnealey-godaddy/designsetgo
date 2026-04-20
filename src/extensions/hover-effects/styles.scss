@@ -7,15 +7,25 @@
  * @package
  */
 
-$dsgo-hover-duration: 300ms;
-$dsgo-hover-easing: ease-out;
+@use 'tokens' as *;
 
 .dsgo-hover-effect {
 	transition:
 		transform $dsgo-hover-duration $dsgo-hover-easing,
 		box-shadow $dsgo-hover-duration $dsgo-hover-easing,
 		filter $dsgo-hover-duration $dsgo-hover-easing;
-	will-change: transform;
+
+	&--lift,
+	&--sink,
+	&--grow,
+	&--shrink,
+	&--tilt {
+		will-change: transform;
+	}
+
+	&--glow {
+		will-change: filter;
+	}
 
 	&--lift:hover {
 		transform: translateY(-4px);

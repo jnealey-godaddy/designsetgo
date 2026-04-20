@@ -7,8 +7,7 @@
  * @package
  */
 
-$dsgo-hover-duration: 300ms;
-$dsgo-hover-easing: ease-out;
+@use 'tokens' as *;
 
 .editor-styles-wrapper {
 
@@ -17,7 +16,18 @@ $dsgo-hover-easing: ease-out;
 			transform $dsgo-hover-duration $dsgo-hover-easing,
 			box-shadow $dsgo-hover-duration $dsgo-hover-easing,
 			filter $dsgo-hover-duration $dsgo-hover-easing;
-		will-change: transform;
+
+		&--lift,
+		&--sink,
+		&--grow,
+		&--shrink,
+		&--tilt {
+			will-change: transform;
+		}
+
+		&--glow {
+			will-change: filter;
+		}
 
 		&--lift:hover {
 			transform: translateY(-4px);
