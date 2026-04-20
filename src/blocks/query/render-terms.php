@@ -72,6 +72,7 @@ if ( ! function_exists( 'designsetgo_query_render_terms' ) ) :
 		$total_terms          = (int) get_terms( $count_args );
 
 		$items_html = '';
+		$item_index = 0;
 		foreach ( (array) $terms as $term ) {
 			if ( ! $term instanceof WP_Term ) {
 				continue;
@@ -81,9 +82,12 @@ if ( ! function_exists( 'designsetgo_query_render_terms' ) ) :
 				array(
 					'designsetgo/currentItemId'   => (int) $term->term_id,
 					'designsetgo/currentItemType' => 'term:' . $term->taxonomy,
+					'index'                       => $item_index,
+					'designsetgo/itemIndex'       => $item_index,
 				),
 				$atts['itemTagName']
 			);
+			$item_index++;
 		}
 
 		$state = array(

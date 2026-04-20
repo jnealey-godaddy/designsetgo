@@ -18,12 +18,12 @@ import { useSelect } from '@wordpress/data';
  *   attribute changes coalesce into a single request.
  *   Returns `{ loading, totalItems, error }`.
  *
- * @param {Object} root0                    The hook options object.
- * @param {string} [root0.source]           Query source ('posts', 'relationship', …).
+ * @param {Object} root0                     The hook options object.
+ * @param {string} [root0.source]            Query source ('posts', 'relationship', …).
  * @param {string} [root0.relationshipField] Meta/ACF key when source is 'relationship'.
- * @param {number} [root0.perPage]          Maximum number of items to fetch.
- * @param {Object} [root0.attributes]       Full query block attributes (non-relationship path).
- * @param {string} [root0.queryId]          The unique query ID (non-relationship path).
+ * @param {number} [root0.perPage]           Maximum number of items to fetch.
+ * @param {Object} [root0.attributes]        Full query block attributes (non-relationship path).
+ * @param {string} [root0.queryId]           The unique query ID (non-relationship path).
  */
 export default function useQueryPreview({
 	source,
@@ -48,19 +48,34 @@ export default function useQueryPreview({
 		[isRelationship]
 	);
 
+	const parentPostType = useSelect(
+		(s) => {
+			if (!isRelationship) {
+				return null;
+			}
+			return s('core/editor')?.getCurrentPostType?.() ?? null;
+		},
+		[isRelationship]
+	);
+
 	const fieldValue = useSelect(
 		(s) => {
-			if (!isRelationship || !parentId || !relationshipField) {
+			if (
+				!isRelationship ||
+				!parentId ||
+				!relationshipField ||
+				!parentPostType
+			) {
 				return null;
 			}
 			const record = s('core').getEntityRecord(
 				'postType',
-				'post',
+				parentPostType,
 				parentId
 			);
-			return record?.meta?.[ relationshipField ] ?? null;
+			return record?.meta?.[relationshipField] ?? null;
 		},
-		[isRelationship, parentId, relationshipField]
+		[isRelationship, parentId, parentPostType, relationshipField]
 	);
 
 	// Normalize the raw field value into an array of integer post IDs.
@@ -74,15 +89,11 @@ export default function useQueryPreview({
 	// useEntityRecords must always be called (rules of hooks). When not in
 	// relationship mode, or when ids is empty, we pass a sentinel [0] so
 	// the call is valid but returns nothing useful.
-	const entityResult = useEntityRecords(
-		'postType',
-		'any',
-		{
-			include: ids.length ? ids : [0],
-			per_page: Math.max(1, perPage),
-			orderby: 'include',
-		}
-	);
+	const entityResult = useEntityRecords('postType', 'any', {
+		include: ids.length ? ids : [0],
+		per_page: Math.max(1, perPage),
+		orderby: 'include',
+	});
 
 	// ── Non-relationship: REST-based totalItems badge ─────────────────────────
 	const [restState, setRestState] = useState({

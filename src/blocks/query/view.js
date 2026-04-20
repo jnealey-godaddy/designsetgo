@@ -251,15 +251,9 @@ store('designsetgo/query', {
 // URL-manipulation + dsgoQueryRefreshPlain() path.
 
 /**
- * Serialise delegated-path refreshes per queryId.
+ * Mark a native event as already handled by the Interactivity API store.
  *
- * Two rapid filter changes after the IAPI swap produce two calls to
- * dsgoQueryRefreshPlain, each with a freshly-parsed ctx — so ctx.busy cannot
- * guard them. Track in-flight refreshes in the module-level Set and drop new
- * requests while one is already running, mirroring the IAPI reactive guard.
- *
- * @param {Object} ctx Parsed context ({ queryId, ...}).
- * @param {URL}    url Target URL.
+ * @param {Event} event Native event object.
  */
 function dsgoMarkHandledEvent(event) {
 	if (event && typeof event === 'object') {
@@ -267,6 +261,16 @@ function dsgoMarkHandledEvent(event) {
 	}
 }
 
+/**
+ * Serialise delegated-path network work per queryId.
+ *
+ * Two rapid interactions after the IAPI swap produce fresh ctx objects, so
+ * ctx.busy cannot guard them. Track in-flight work in a module-level Set and
+ * drop new requests while one is already running.
+ *
+ * @param {Object}   ctx      Parsed context ({ queryId, ... }).
+ * @param {Function} callback Promise-returning runner.
+ */
 function dsgoRunDelegated(ctx, callback) {
 	const queryId = ctx && ctx.queryId;
 	if (!queryId || dsgoDelegatedBusy.has(queryId)) {
@@ -386,7 +390,10 @@ async function dsgoLoadMorePlain(ctx, button) {
 		}
 
 		const data = await res.json();
-		const doc = new DOMParser().parseFromString(data.html || '', 'text/html');
+		const doc = new DOMParser().parseFromString(
+			data.html || '',
+			'text/html'
+		);
 		const newItems = doc.querySelectorAll('.dsgo-query__item');
 
 		if (newItems.length) {
@@ -517,16 +524,14 @@ function dsgoInitInfiniteObservers(root = document) {
 		return;
 	}
 
-	root
-		.querySelectorAll(
-			'[data-dsgo-pagination="infinite"] [data-wp-init*="initInfiniteObserver"]'
-		)
-		.forEach((sentinel) => {
-			const ctx = dsgoGetContextFromDom(sentinel);
-			if (ctx) {
-				dsgoSetupInfiniteObserver(sentinel, ctx);
-			}
-		});
+	root.querySelectorAll(
+		'[data-dsgo-pagination="infinite"] [data-wp-init*="initInfiniteObserver"]'
+	).forEach((sentinel) => {
+		const ctx = dsgoGetContextFromDom(sentinel);
+		if (ctx) {
+			dsgoSetupInfiniteObserver(sentinel, ctx);
+		}
+	});
 }
 
 /**
