@@ -302,6 +302,46 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			}
 		}
 
+		// Date query.
+		$date_clauses = isset( $atts['dateQuery']['clauses'] ) ? (array) $atts['dateQuery']['clauses'] : array();
+		if ( ! empty( $date_clauses ) ) {
+			$valid_columns = array( 'post_date', 'post_modified', 'post_date_gmt', 'post_modified_gmt' );
+			$date_query    = array(
+				'relation' => ( 'OR' === ( $atts['dateQuery']['relation'] ?? 'AND' ) ) ? 'OR' : 'AND',
+			);
+			foreach ( $date_clauses as $clause ) {
+				$mode   = $clause['mode'] ?? 'after';
+				$after  = sanitize_text_field( (string) ( $clause['after'] ?? '' ) );
+				$before = sanitize_text_field( (string) ( $clause['before'] ?? '' ) );
+
+				// Skip clauses with no date value.
+				if ( 'between' === $mode && ( '' === $after || '' === $before ) ) {
+					continue;
+				}
+				if ( 'after' === $mode && '' === $after ) {
+					continue;
+				}
+				if ( 'before' === $mode && '' === $before ) {
+					continue;
+				}
+
+				$entry = array(
+					'column'    => in_array( ( $clause['column'] ?? 'post_date' ), $valid_columns, true ) ? $clause['column'] : 'post_date',
+					'inclusive' => ! empty( $clause['inclusive'] ),
+				);
+				if ( 'after' === $mode || 'between' === $mode ) {
+					$entry['after'] = $after;
+				}
+				if ( 'before' === $mode || 'between' === $mode ) {
+					$entry['before'] = $before;
+				}
+				$date_query[] = $entry;
+			}
+			if ( count( $date_query ) > 1 ) {
+				$args['date_query'] = $date_query;
+			}
+		}
+
 		// Manual source: override with specific post IDs in user-defined order.
 		if ( 'manual' === $atts['source'] && ! empty( $atts['manualIds'] ) && is_array( $atts['manualIds'] ) ) {
 			$ids = array_values( array_filter( array_map( 'absint', $atts['manualIds'] ) ) );

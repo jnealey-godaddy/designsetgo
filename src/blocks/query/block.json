@@ -62,6 +62,10 @@
       "type": "object",
       "default": { "relation": "AND", "clauses": [] }
     },
+    "dateQuery": {
+      "type": "object",
+      "default": { "relation": "AND", "clauses": [] }
+    },
     "tagName": { "type": "string", "default": "ul" },
     "itemTagName": { "type": "string", "default": "li" },
     "columns": { "type": "number", "default": 1 },

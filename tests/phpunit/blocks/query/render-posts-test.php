@@ -256,6 +256,77 @@ class DesignSetGo_Query_Render_Posts_Test extends WP_UnitTestCase {
 		$this->assertFalse( $args['tax_query'][0]['include_children'] );
 	}
 
+	public function test_date_query_after_builds_correctly() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'dateQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'column'    => 'post_date',
+					'mode'      => 'after',
+					'after'     => '-30 days',
+					'before'    => '',
+					'inclusive' => false,
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertArrayHasKey( 'date_query', $args );
+		$this->assertEquals( 'post_date', $args['date_query'][0]['column'] );
+		$this->assertEquals( '-30 days', $args['date_query'][0]['after'] );
+		$this->assertArrayNotHasKey( 'before', $args['date_query'][0] );
+	}
+
+	public function test_date_query_between_includes_both_bounds() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'dateQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [
+					'column'    => 'post_date',
+					'mode'      => 'between',
+					'after'     => '2024-01-01',
+					'before'    => '2024-12-31',
+					'inclusive' => true,
+				] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertEquals( '2024-01-01', $args['date_query'][0]['after'] );
+		$this->assertEquals( '2024-12-31', $args['date_query'][0]['before'] );
+		$this->assertTrue( $args['date_query'][0]['inclusive'] );
+	}
+
+	public function test_date_query_skips_empty_clauses() {
+		$this->load_helpers();
+		$base_atts = [
+			'perPage' => 10, 'orderBy' => 'date', 'order' => 'DESC',
+			'postType' => 'post', 'offset' => 0, 'ignoreSticky' => false,
+			'search' => '', 'bindSearchTo' => '',
+		];
+		$atts = array_merge( $base_atts, [
+			'source'    => 'posts',
+			'dateQuery' => [
+				'relation' => 'AND',
+				'clauses'  => [ [ 'column' => 'post_date', 'mode' => 'after', 'after' => '', 'before' => '' ] ],
+			],
+		] );
+		$args = designsetgo_query_build_posts_args( $atts, [ 'page' => 1, 'query_id' => '' ] );
+		$this->assertArrayNotHasKey( 'date_query', $args );
+	}
+
 	public function test_child_blocks_resolve_per_item_context() {
 		$ids   = array();
 		$ids[] = self::factory()->post->create( array( 'post_title' => 'Alpha', 'post_status' => 'publish' ) );
