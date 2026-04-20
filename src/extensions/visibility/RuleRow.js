@@ -33,11 +33,6 @@ const INDEX_OP_OPTIONS = [
 	{ value: 'gt', label: __( 'greater than', 'designsetgo' ) },
 ];
 
-const AUTH_OP_OPTIONS = [
-	{ value: 'logged_in', label: __( 'logged in', 'designsetgo' ) },
-	{ value: 'logged_out', label: __( 'logged out', 'designsetgo' ) },
-];
-
 /**
  * Renders the extra controls for a meta-type rule.
  *
@@ -154,10 +149,13 @@ function IndexControls( { rule, onChange } ) {
 function AuthControls( { rule, onChange } ) {
 	return (
 		<SelectControl
-			label={ __( 'Auth State', 'designsetgo' ) }
-			value={ rule.op ?? 'logged_in' }
-			options={ AUTH_OP_OPTIONS }
-			onChange={ ( op ) => onChange( { ...rule, op } ) }
+			label={ __( 'Visibility requires', 'designsetgo' ) }
+			value={ JSON.stringify( !! rule.value ) }
+			options={ [
+				{ value: 'true', label: __( 'Logged-in user', 'designsetgo' ) },
+				{ value: 'false', label: __( 'Logged-out visitor', 'designsetgo' ) },
+			] }
+			onChange={ ( v ) => onChange( { ...rule, value: JSON.parse( v ) } ) }
 			__next40pxDefaultSize
 			__nextHasNoMarginBottom
 		/>
