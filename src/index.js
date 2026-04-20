@@ -67,6 +67,9 @@ import './extensions/vertical-scroll-parallax';
 // Draft Mode - adds "draft mode" functionality for published pages
 import './extensions/draft-mode';
 
+// Hover Effects - adds subtle hover micro-interactions to common core blocks
+import './extensions/hover-effects';
+
 // Conditional Visibility - registers dsgoVisibility attribute for query-driven inner-block visibility
 import './extensions/visibility';
 

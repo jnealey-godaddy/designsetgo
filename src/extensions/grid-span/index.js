@@ -1,8 +1,8 @@
 /**
  * Grid Span Extension
  *
- * Adds column span controls to blocks when they're inside a Grid container.
- * Allows blocks to span multiple columns in the grid.
+ * Adds column and row span controls to blocks when they're inside a Grid
+ * container. Allows blocks to span multiple columns and/or rows in the grid.
  *
  * @since 1.0.0
  */
@@ -18,13 +18,17 @@ import { PanelBody, RangeControl } from '@wordpress/components';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { useSelect } from '@wordpress/data';
 
+// Upper bound for row span. Rows are implicit in CSS Grid so any value works;
+// we cap at the same max as columns for UI parity and to discourage extreme values.
+const MAX_ROW_SPAN = 12;
+
 /**
- * Add columnSpan attribute to all blocks
+ * Add columnSpan and rowSpan attributes to all blocks
  * @param {Object} settings Block settings
  * @param {string} name     Block name
  * @return {Object} Modified block settings
  */
-function addColumnSpanAttribute(settings, name) {
+function addSpanAttributes(settings, name) {
 	// Check user exclusion list first
 	if (!shouldExtendBlock(name)) {
 		return settings;
@@ -38,23 +42,27 @@ function addColumnSpanAttribute(settings, name) {
 				type: 'number',
 				default: 1,
 			},
+			dsgoRowSpan: {
+				type: 'number',
+				default: 1,
+			},
 		},
 	};
 }
 
 addFilter(
 	'blocks.registerBlockType',
-	'designsetgo/add-column-span-attribute',
-	addColumnSpanAttribute
+	'designsetgo/add-grid-span-attributes',
+	addSpanAttributes
 );
 
 /**
- * Add Column Span control to block inspector when inside Grid
+ * Add Column and Row Span controls to block inspector when inside Grid
  */
-const withColumnSpanControl = createHigherOrderComponent((BlockEdit) => {
+const withGridSpanControls = createHigherOrderComponent((BlockEdit) => {
 	return (props) => {
 		const { attributes, setAttributes, clientId } = props;
-		const { dsgoColumnSpan } = attributes;
+		const { dsgoColumnSpan, dsgoRowSpan } = attributes;
 
 		// Check if this block is inside a Grid container
 		const parentBlock = useSelect(
@@ -102,32 +110,47 @@ const withColumnSpanControl = createHigherOrderComponent((BlockEdit) => {
 								__nextHasNoMarginBottom
 								__next40pxDefaultSize
 							/>
+							<RangeControl
+								label={__('Row Span', 'designsetgo')}
+								value={dsgoRowSpan}
+								onChange={(value) =>
+									setAttributes({ dsgoRowSpan: value })
+								}
+								min={1}
+								max={MAX_ROW_SPAN}
+								help={__(
+									'Number of rows this block spans in the grid',
+									'designsetgo'
+								)}
+								__nextHasNoMarginBottom
+								__next40pxDefaultSize
+							/>
 						</PanelBody>
 					</InspectorControls>
 				)}
 			</>
 		);
 	};
-}, 'withColumnSpanControl');
+}, 'withGridSpanControls');
 
 addFilter(
 	'editor.BlockEdit',
-	'designsetgo/add-column-span-control',
-	withColumnSpanControl,
+	'designsetgo/add-grid-span-controls',
+	withGridSpanControls,
 	20
 );
 
 /**
- * Apply column span styles in editor via wrapperProps
+ * Apply column and row span styles in editor via wrapperProps
  *
  * Uses inline styles on the block wrapper instead of dynamic <style> injection.
- * This ensures grid-column spans work in both the editor canvas AND pattern
+ * This ensures grid spans work in both the editor canvas AND pattern
  * previews (which render in separate iframes without name="editor-canvas").
  */
-const withColumnSpanStyles = createHigherOrderComponent((BlockListBlock) => {
+const withGridSpanStyles = createHigherOrderComponent((BlockListBlock) => {
 	return (props) => {
 		const { attributes, clientId } = props;
-		const { dsgoColumnSpan } = attributes;
+		const { dsgoColumnSpan, dsgoRowSpan } = attributes;
 
 		// Check if this block is inside a Grid container
 		const isInGrid = useSelect(
@@ -147,13 +170,21 @@ const withColumnSpanStyles = createHigherOrderComponent((BlockListBlock) => {
 			[clientId]
 		);
 
-		// Apply grid-column span directly via wrapperProps
-		if (isInGrid && dsgoColumnSpan && dsgoColumnSpan > 1) {
+		const hasColumnSpan =
+			isInGrid && dsgoColumnSpan && dsgoColumnSpan > 1;
+		const hasRowSpan = isInGrid && dsgoRowSpan && dsgoRowSpan > 1;
+
+		if (hasColumnSpan || hasRowSpan) {
 			const wrapperProps = {
 				...props.wrapperProps,
 				style: {
 					...props.wrapperProps?.style,
-					gridColumn: `span ${dsgoColumnSpan}`,
+					...(hasColumnSpan && {
+						gridColumn: `span ${dsgoColumnSpan}`,
+					}),
+					...(hasRowSpan && {
+						gridRow: `span ${dsgoRowSpan}`,
+					}),
 				},
 			};
 
@@ -162,27 +193,29 @@ const withColumnSpanStyles = createHigherOrderComponent((BlockListBlock) => {
 
 		return <BlockListBlock {...props} />;
 	};
-}, 'withColumnSpanStyles');
+}, 'withGridSpanStyles');
 
 addFilter(
 	'editor.BlockListBlock',
-	'designsetgo/add-column-span-styles-editor',
-	withColumnSpanStyles,
+	'designsetgo/add-grid-span-styles-editor',
+	withGridSpanStyles,
 	20
 );
 
 /**
- * Apply column span styles on frontend
+ * Apply column and row span styles on frontend
  * @param {Object} props      Block props
  * @param {Object} blockType  Block type
  * @param {Object} attributes Block attributes
  * @return {Object} Modified props
  */
-function applyColumnSpanStyles(props, blockType, attributes) {
-	const { dsgoColumnSpan } = attributes;
+function applyGridSpanStyles(props, blockType, attributes) {
+	const { dsgoColumnSpan, dsgoRowSpan } = attributes;
 
-	// Only apply if columnSpan is set and > 1
-	if (!dsgoColumnSpan || dsgoColumnSpan === 1) {
+	const applyColumn = dsgoColumnSpan && dsgoColumnSpan > 1;
+	const applyRow = dsgoRowSpan && dsgoRowSpan > 1;
+
+	if (!applyColumn && !applyRow) {
 		return props;
 	}
 
@@ -190,13 +223,14 @@ function applyColumnSpanStyles(props, blockType, attributes) {
 		...props,
 		style: {
 			...props.style,
-			gridColumn: `span ${dsgoColumnSpan}`,
+			...(applyColumn && { gridColumn: `span ${dsgoColumnSpan}` }),
+			...(applyRow && { gridRow: `span ${dsgoRowSpan}` }),
 		},
 	};
 }
 
 addFilter(
 	'blocks.getSaveContent.extraProps',
-	'designsetgo/apply-column-span-styles',
-	applyColumnSpanStyles
+	'designsetgo/apply-grid-span-styles',
+	applyGridSpanStyles
 );

@@ -10,10 +10,10 @@
 		padding: 0;
 	}
 
-	// Gap between heading segments — uses CSS custom property
-	// so the editor block-gap control can override the default
+	// Gap between heading segments — defaults to 0 so segments run
+	// together as one heading; editor block-gap control can override
 	.dsgo-heading-segment + .dsgo-heading-segment {
-		margin-inline-start: var(--dsgo-segment-gap, 0.3em);
+		margin-inline-start: var(--dsgo-segment-gap, 0);
 	}
 }
 

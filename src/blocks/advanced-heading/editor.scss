@@ -11,7 +11,7 @@
 
 	// Gap between heading segments — matches frontend style.scss
 	.dsgo-heading-segment + .dsgo-heading-segment {
-		margin-inline-start: var(--dsgo-segment-gap, 0.3em);
+		margin-inline-start: var(--dsgo-segment-gap, 0);
 	}
 }
 

@@ -211,7 +211,10 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 		// Apply layout justifyContent to inner div where flex children are
 		justifyContent: layout?.justifyContent || 'left',
 		// Apply flex-wrap from layout support
-		flexWrap: layout?.flexWrap || 'wrap',
+		// Fallback must match block.json supports.layout.default.flexWrap ("nowrap").
+		// Using "wrap" here made the editor preview disagree with the toggle state
+		// and caused children to appear stacked on fresh rows.
+		flexWrap: layout?.flexWrap || 'nowrap',
 		// Apply gap from blockProps or attributes
 		...(gapValue && { gap: gapValue }),
 	};

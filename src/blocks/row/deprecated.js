@@ -5,7 +5,33 @@
  */
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
-import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	convertPresetToCSSVar,
+	convertColorToCSSVar,
+} from '../../utils/convert-preset-to-css-var';
+
+/**
+ * Convert WordPress vertical alignment value to CSS align-items value.
+ * Kept local to this file so deprecations stay self-contained.
+ *
+ * @param {string} value The WordPress vertical alignment value
+ * @return {string|undefined} CSS align-items value
+ */
+function getAlignItemsValue(value) {
+	if (!value) {
+		return undefined;
+	}
+
+	const alignMap = {
+		stretch: 'stretch',
+		center: 'center',
+		top: 'flex-start',
+		bottom: 'flex-end',
+		'space-between': 'space-between',
+	};
+
+	return alignMap[value];
+}
 
 const sharedSupports = {
 	anchor: true,
@@ -74,6 +100,171 @@ const sharedSupports = {
 			style: true,
 			width: true,
 		},
+	},
+};
+
+// Version 4: Before flex-wrap fallback was aligned with block.json default.
+// This version's save() uses the old "wrap" fallback (instead of "nowrap") and
+// is here so already-saved rows continue to validate. Migration is a no-op:
+// attributes are untouched, and on the next user edit the current save() will
+// re-serialize the block with the correct "nowrap" inline style, fixing the
+// stacking behavior.
+const v4 = {
+	supports: sharedSupports,
+	attributes: {
+		align: {
+			type: 'string',
+			default: 'full',
+		},
+		tagName: {
+			type: 'string',
+			default: 'div',
+		},
+		constrainWidth: {
+			type: 'boolean',
+			default: false,
+		},
+		contentWidth: {
+			type: 'string',
+			default: '',
+		},
+		mobileStack: {
+			type: 'boolean',
+			default: false,
+		},
+		style: {
+			type: 'object',
+			default: {
+				spacing: {
+					padding: {
+						top: 'var:preset|spacing|50',
+						bottom: 'var:preset|spacing|50',
+						left: 'var:preset|spacing|30',
+						right: 'var:preset|spacing|30',
+					},
+					blockGap: 'var:preset|spacing|30',
+				},
+			},
+		},
+		layout: {
+			type: 'object',
+		},
+		hoverBackgroundColor: {
+			type: 'string',
+			default: '',
+		},
+		hoverTextColor: {
+			type: 'string',
+			default: '',
+		},
+		hoverIconBackgroundColor: {
+			type: 'string',
+			default: '',
+		},
+		hoverButtonBackgroundColor: {
+			type: 'string',
+			default: '',
+		},
+		overlayColor: {
+			type: 'string',
+			default: '',
+		},
+	},
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			constrainWidth,
+			contentWidth,
+			overlayColor,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			mobileStack,
+			layout,
+		} = attributes;
+
+		const className = [
+			'dsgo-flex',
+			mobileStack && 'dsgo-flex--mobile-stack',
+			!constrainWidth && 'dsgo-no-width-constraint',
+			overlayColor && 'dsgo-flex--has-overlay',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+		const blockProps = useBlockProps.save({
+			className,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+				...(overlayColor && {
+					'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+					'--dsgo-overlay-opacity': '0.8',
+				}),
+			},
+		});
+
+		const rawGapValue = attributes.style?.spacing?.blockGap;
+		const gapValue = convertPresetToCSSVar(rawGapValue);
+
+		if (blockProps.style?.gap) {
+			delete blockProps.style.gap;
+		}
+
+		const alignItems = getAlignItemsValue(layout?.verticalAlignment);
+		const innerStyle = {
+			display: 'flex',
+			justifyContent: layout?.justifyContent || 'left',
+			...(alignItems && { alignItems }),
+			// Old fallback: "wrap" (the source of the stacking bug). Kept here
+			// only for backward-compatible validation of previously saved HTML.
+			flexWrap: layout?.flexWrap || 'wrap',
+			...(gapValue && { gap: gapValue }),
+		};
+
+		if (constrainWidth) {
+			innerStyle.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyle.marginLeft = 'auto';
+			innerStyle.marginRight = 'auto';
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-flex__inner',
+			style: innerStyle,
+		});
+
+		return (
+			<TagName {...blockProps}>
+				<div {...innerBlocksProps} />
+			</TagName>
+		);
+	},
+	migrate(oldAttributes) {
+		// No attribute changes — the serialization difference (flex-wrap) is
+		// re-emitted by the current save() on the next save cycle.
+		return {
+			...oldAttributes,
+		};
 	},
 };
 
@@ -499,4 +690,4 @@ const v1 = {
 	},
 };
 
-export default [v3, v2, v1];
+export default [v4, v3, v2, v1];
