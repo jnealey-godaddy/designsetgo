@@ -150,7 +150,17 @@ if ( ! function_exists( 'designsetgo_register_bindings_source' ) ) :
 				return 0;
 			}
 
-			$entry = 'parent' === $scope ? end( $stack ) : reset( $stack );
+			if ( 'parent' === $scope ) {
+				// 'parent' = the ancestor one level up from the current item.
+				// The stack's top entry IS the current item (pushed by
+				// designsetgo_query_render_item() before innerBlocks render),
+				// so we need the penultimate entry, not the last one.
+				$count = count( $stack );
+				$entry = $count >= 2 ? $stack[ $count - 2 ] : null;
+			} else {
+				// 'root' = the outermost (first) entry in the stack.
+				$entry = reset( $stack );
+			}
 
 			if ( is_array( $entry ) && ! empty( $entry['postId'] ) ) {
 				return (int) $entry['postId'];
