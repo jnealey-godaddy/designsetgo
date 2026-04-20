@@ -466,13 +466,6 @@ class Plugin {
 	public $query_controller;
 
 	/**
-	 * Query Template Controller instance (export/import REST endpoints).
-	 *
-	 * @var Blocks\Query\Template_Controller
-	 */
-	public $query_template_controller;
-
-	/**
 	 * Query Block Bindings instance.
 	 *
 	 * @var Blocks\Query\Bindings

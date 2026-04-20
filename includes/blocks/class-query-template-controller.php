@@ -80,8 +80,9 @@ class Template_Controller {
 							'type'     => 'object',
 						),
 						'innerBlocks'   => array(
-							'required' => true,
-							'type'     => 'string',
+							'required'          => true,
+							'type'              => 'string',
+							'sanitize_callback' => 'wp_kses_post',
 						),
 					),
 				),
