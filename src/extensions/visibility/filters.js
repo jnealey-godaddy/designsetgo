@@ -8,9 +8,13 @@ const BLOCKED = new Set([
 
 function addVisibilityAttribute(settings, name) {
 	if (BLOCKED.has(name)) return settings;
-	if (!settings.attributes) settings.attributes = {};
-	settings.attributes.dsgoVisibility = { type: 'object', default: null };
-	return settings;
+	return {
+		...settings,
+		attributes: {
+			...(settings.attributes ?? {}),
+			dsgoVisibility: { type: 'object', default: null },
+		},
+	};
 }
 
 addFilter(
