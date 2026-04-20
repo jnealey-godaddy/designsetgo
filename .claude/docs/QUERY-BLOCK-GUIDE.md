@@ -415,7 +415,7 @@ The `dsgoVisibility` attribute is registered on every block via the `blocks.regi
 
 1. Query block → Settings → **Group by**: Taxonomy, **Group taxonomy**: `category`.
 2. Inside the Query block, insert a **Query Group Header** block (`designsetgo/query-group-header`). It renders once per group, before that group's items.
-3. Inside the Group Header, add a Heading and bind its content to the group context key `designsetgo/groupLabel` (the term name) or `designsetgo/groupCount` (item count).
+3. Inside the Group Header, add a Heading and bind its content to the group context key `designsetgo/groupLabel` (the term name) or `designsetgo/groupValue` (the raw group identifier, e.g. the term slug).
 
 ```html
 <!-- wp:designsetgo/query {
@@ -547,8 +547,9 @@ Group context keys injected into the `designsetgo/query-group-header` inner bloc
 | Key | Value |
 |---|---|
 | `designsetgo/groupLabel` | Human-readable group name (term name, meta value, or formatted date) |
-| `designsetgo/groupKey` | Raw group identifier (term slug, meta value, or ISO date fragment) |
-| `designsetgo/groupCount` | Number of items in this group |
+| `designsetgo/groupValue` | Raw group identifier (term slug, meta value, or ISO date fragment) |
+
+> **Note:** `designsetgo/groupKey` and `designsetgo/groupCount` are **not** provided by the server renderer. Do not bind to these keys — bindings will resolve to empty. A `groupCount` context key may be added in a future release once counting is integrated into the partition step.
 
 ### `$GLOBALS['designsetgo_parent_stack']`
 
