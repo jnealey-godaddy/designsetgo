@@ -545,6 +545,13 @@ class Plugin {
 			require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-cli.php';
 			Blocks\Query\FilterIndexCLI::register();
 		}
+
+		// Query Monitor integration — loads only when QM is active.
+		if ( defined( 'QM_VERSION' ) ) {
+			require_once DESIGNSETGO_PATH . 'includes/class-query-qm-collector.php';
+			require_once DESIGNSETGO_PATH . 'includes/class-query-qm-output.php';
+		}
+
 		require_once DESIGNSETGO_PATH . 'includes/patterns/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-settings.php';

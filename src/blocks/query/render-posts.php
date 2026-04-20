@@ -124,7 +124,21 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			$args = apply_filters( 'designsetgo/query/' . $query_id . '/args', $args, $atts, $context );
 		}
 
-		$query = new WP_Query( $args );
+		$t_start     = microtime( true );
+		$query       = new WP_Query( $args );
+		$last_sql    = $GLOBALS['wpdb']->last_query ?? '';
+		$duration_ms = ( microtime( true ) - $t_start ) * 1000;
+
+		$capture = array(
+			'query_id'    => $atts['queryId'] ?? '',
+			'source'      => $atts['source'] ?? 'posts',
+			'wp_args'     => $args,
+			'found_posts' => $query->found_posts,
+			'sql'         => $last_sql,
+			'filters'     => array(),
+			'duration_ms' => round( $duration_ms, 2 ),
+		);
+		do_action( 'designsetgo_query_did_render', $capture );
 
 		// Determine whether grouped rendering is requested.
 		// Parse inner_html to split group-header blocks from the item template.
