@@ -43,7 +43,8 @@
         { "value": "title.DESC", "label": "Z\u2013A" }
       ]
     },
-    "showCounts": { "type": "boolean", "default": true }
+    "showCounts": { "type": "boolean", "default": true },
+    "orientation": { "type": "string", "default": "vertical", "enum": ["vertical", "horizontal"] }
   },
   "example": { "attributes": { "filterKind": "checkbox" } },
   "editorScript": "file:./index.js",

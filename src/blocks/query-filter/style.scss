@@ -84,6 +84,16 @@
 			display: flex;
 			flex-direction: column;
 			gap: 0.5em;
+
+			// Horizontal orientation — wrap chips across the row. Gap stays
+			// symmetric (row + column) so wrap lines breathe the same as the
+			// vertical layout.
+			&.is-horizontal {
+				flex-direction: row;
+				flex-wrap: wrap;
+				column-gap: 1.25em;
+				row-gap: 0.5em;
+			}
 		}
 
 		.dsgo-query-filter__checkbox-item {
@@ -101,7 +111,9 @@
 				width: 1.15em;
 				height: 1.15em;
 				margin: 0;
-				border: 1.5px solid var(--dsgo-filter-border);
+				// Stronger border than the token default so unchecked
+				// checkboxes remain clearly visible against light backgrounds.
+				border: 1.5px solid color-mix(in srgb, currentcolor 50%, transparent);
 				border-radius: calc(var(--dsgo-filter-radius) * 0.45);
 				background: var(--dsgo-filter-bg);
 				cursor: pointer;
@@ -131,7 +143,7 @@
 				}
 
 				&:hover:not(:checked) {
-					border-color: var(--dsgo-filter-border-hover);
+					border-color: currentcolor;
 				}
 
 				&:focus-visible {

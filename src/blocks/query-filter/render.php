@@ -202,7 +202,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 	 * @param array  $active_filters  Current active filter state for intersection counts.
 	 * @param string $post_type       Optional post-type scope for counts.
 	 */
-	function designsetgo_query_filter_render_checkbox( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '' ) {
+	function designsetgo_query_filter_render_checkbox( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '', $orientation = 'vertical' ) {
 		if ( ! taxonomy_exists( $filter_taxonomy ) ) {
 			return;
 		}
@@ -260,20 +260,25 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 
 		// Fix 4: noscript submit so no-JS users can apply checkbox filters.
 		$dsgo_nojs_btn = '<noscript><button type="submit" class="dsgo-query-filter__nojs-submit">' . esc_html__( 'Apply filter', 'designsetgo' ) . '</button></noscript>';
+		$list_class    = 'horizontal' === $orientation
+			? 'dsgo-query-filter__checkbox-list is-horizontal'
+			: 'dsgo-query-filter__checkbox-list';
 		if ( $label ) {
 			printf(
-				'<form %1$s method="get" action=""><fieldset class="dsgo-query-filter__fieldset"><legend class="dsgo-query-filter__label">%2$s</legend><div class="dsgo-query-filter__checkbox-list">%3$s</div></fieldset>%4$s</form>',
+				'<form %1$s method="get" action=""><fieldset class="dsgo-query-filter__fieldset"><legend class="dsgo-query-filter__label">%2$s</legend><div class="%5$s">%3$s</div></fieldset>%4$s</form>',
 				$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				esc_html( $label ),
 				$items_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- per-field escaped above.
-				$dsgo_nojs_btn // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
+				$dsgo_nojs_btn, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
+				esc_attr( $list_class )
 			);
 		} else {
 			printf(
-				'<form %1$s method="get" action=""><div class="dsgo-query-filter__checkbox-list">%2$s</div>%3$s</form>',
+				'<form %1$s method="get" action=""><div class="%4$s">%2$s</div>%3$s</form>',
 				$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				$items_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				$dsgo_nojs_btn // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
+				$dsgo_nojs_btn, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
+				esc_attr( $list_class )
 			);
 		}
 	}
@@ -450,6 +455,7 @@ $dsgo_filter_param       = isset( $attributes['paramName'] ) ? sanitize_key( (st
 $dsgo_filter_label       = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
 $dsgo_filter_placeholder = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : '';
 $dsgo_filter_taxonomy    = isset( $attributes['taxonomy'] ) ? sanitize_key( (string) $attributes['taxonomy'] ) : 'category';
+$dsgo_filter_orientation = ( isset( $attributes['orientation'] ) && 'horizontal' === $attributes['orientation'] ) ? 'horizontal' : 'vertical';
 
 // Post-type scope for counts: only non-empty when the parent query targets a
 // specific post type (source === 'posts'). Users/terms sources leave it empty
@@ -589,6 +595,6 @@ switch ( $dsgo_filter_kind ) {
 		break;
 	case 'checkbox':
 	default:
-		designsetgo_query_filter_render_checkbox( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy, $dsgo_counts_enabled, $dsgo_active_filters_by_key, $dsgo_query_post_type );
+		designsetgo_query_filter_render_checkbox( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy, $dsgo_counts_enabled, $dsgo_active_filters_by_key, $dsgo_query_post_type, $dsgo_filter_orientation );
 		break;
 }

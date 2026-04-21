@@ -5,7 +5,12 @@
  */
 import { __ } from '@wordpress/i18n';
 
-export default function FilterPreview({ filterKind, label, placeholder }) {
+export default function FilterPreview({
+	filterKind,
+	label,
+	placeholder,
+	orientation = 'vertical',
+}) {
 	const displayLabel = label || null;
 
 	switch (filterKind) {
@@ -111,7 +116,13 @@ export default function FilterPreview({ filterKind, label, placeholder }) {
 							{displayLabel}
 						</span>
 					)}
-					<div className="dsgo-query-filter__checkbox-list">
+					<div
+						className={
+							orientation === 'horizontal'
+								? 'dsgo-query-filter__checkbox-list is-horizontal'
+								: 'dsgo-query-filter__checkbox-list'
+						}
+					>
 						{[
 							__('Category A', 'designsetgo'),
 							__('Category B', 'designsetgo'),
