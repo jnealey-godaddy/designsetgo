@@ -676,6 +676,109 @@ The stack is pushed before each item is rendered and popped after. It is safe to
 
 ---
 
+## v2.6 Extension points — layout blocks as query item hosts
+
+The item host — the block whose innerBlocks are the per-iteration template — defaults to `designsetgo/query-results` (grid/list). Any "chrome + N items" block (slider, scroll-slides) can opt in as an alternative host so authors can compose `designsetgo/query > designsetgo/<layout> > designsetgo/<item>` and get a dynamic iteration of posts/users/terms in the layout's native presentation.
+
+Two hosts ship by default: `designsetgo/slider` and `designsetgo/scroll-slides`.
+
+### The contract
+
+A query-capable layout block must:
+
+1. **Declare the query context in `block.json`:**
+
+   ```json
+   "usesContext": [
+       "designsetgo/queryId",
+       "designsetgo/querySource",
+       "designsetgo/queryPostType",
+       "designsetgo/currentItemId",
+       "designsetgo/currentItemType"
+   ]
+   ```
+
+2. **Register a `render.php`** (via `"render": "file:./render.php"` in `block.json`) that:
+   - Echoes `$content` unchanged when `$block->context['designsetgo/queryId']` is empty (authored mode — save.js output passes through).
+   - When a queryId is present, reads the pre-rendered items from `$GLOBALS['designsetgo_query_items_html'][ $query_id ]` and emits its own chrome around them. Because block.json `render` wraps the file in `ob_start()` / `ob_get_clean()`, **echo, don't return**.
+
+3. **Join the host registry** via the `designsetgo_query_item_host_block_names` filter (or have DesignSetGo add it to the defaults). The container uses this list to resolve which child carries the per-item template.
+
+### How the container behaves
+
+When `designsetgo_query_render_container()` sees a registered layout host child, it:
+
+- **Template** — takes only `innerBlocks[0]` as the per-item template (vs. all innerBlocks for `query-results`). Extra authored siblings are ignored server-side, so the editor should enforce single-child via `templateLock: 'insert'`.
+- **Item wrapper** — sets `itemTagName = 'none'` on the render context, which tells `designsetgo_query_render_item()` to skip its default `<li class="dsgo-query__item">` wrapper. The host's template block (slide, scroll-slide) already wraps itself.
+- **Stash** — writes both `$GLOBALS['designsetgo_query_results_html'][ queryId ]` (fully wrapped) and `$GLOBALS['designsetgo_query_items_html'][ queryId ]` (bare items) before walking children, and unsets both after.
+
+### Recipe — register a new layout host
+
+```php
+// In your plugin's bootstrap.
+add_filter( 'designsetgo_query_item_host_block_names', function ( $hosts ) {
+    $hosts[] = 'acme/tabs';
+    return $hosts;
+} );
+```
+
+In `src/blocks/tabs/render.php`:
+
+```php
+defined( 'ABSPATH' ) || exit;
+
+$query_id = isset( $block->context['designsetgo/queryId'] )
+    ? sanitize_key( (string) $block->context['designsetgo/queryId'] )
+    : '';
+
+if ( '' === $query_id ) {
+    echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+    return;
+}
+
+$items_html = $GLOBALS['designsetgo_query_items_html'][ $query_id ] ?? '';
+
+$wrapper_attrs = get_block_wrapper_attributes( array(
+    'class' => 'acme-tabs',
+    'role'  => 'tablist',
+) );
+
+printf(
+    '<div %s><div class="acme-tabs__panels">%s</div></div>',
+    $wrapper_attrs, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+    $items_html     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+);
+```
+
+In `src/blocks/tabs/edit.js`:
+
+```jsx
+export default function TabsEdit({ attributes, setAttributes, clientId, context }) {
+    const queryId = context?.['designsetgo/queryId'] || '';
+    const inQueryMode = !!queryId;
+
+    const innerBlocksProps = useInnerBlocksProps(
+        { className: 'acme-tabs__track' },
+        {
+            allowedBlocks: ['acme/tab'],
+            templateLock: inQueryMode ? 'insert' : false,
+        }
+    );
+    // ...render + inspector notice when inQueryMode...
+}
+```
+
+### Sibling composition
+
+The query container still accepts `designsetgo/query-filter`, `designsetgo/query-pagination`, and `designsetgo/query-no-results` as siblings of the item host — filters and pagination continue to work whether the host is `query-results`, `slider`, or `scroll-slides`. Filter actions rebuild the stash via the IAPI REST endpoint; the layout block then re-initializes on DOM mutation.
+
+Recommended pairings:
+- Slider + `paginationKind: 'infinite'` — IntersectionObserver triggers `loadMore` as the last visible slide becomes intersected.
+- Scroll-slides + `designsetgo/query-group-header` — group headers become pinned section headings.
+- Slider + grouping (`groupBy` attribute) — not recommended; interleaved group headers inside a carousel are noisy. Not blocked in the editor, but call it out in your variation docs if you ship one.
+
+---
+
 ## Known v1 limits
 
 | Limit | Notes |

@@ -7,7 +7,9 @@ import {
 	useInnerBlocksProps,
 	store as blockEditorStore,
 	useSettings,
+	InspectorControls,
 } from '@wordpress/block-editor';
+import { PanelBody, Notice } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useState } from '@wordpress/element';
 
@@ -22,7 +24,12 @@ import ScrollSlidesInspector from './components/ScrollSlidesInspector';
 const ALLOWED_BLOCKS = ['designsetgo/scroll-slide'];
 const MAX_SLIDES = 10;
 
-export default function Edit({ attributes, setAttributes, clientId }) {
+export default function Edit({
+	attributes,
+	setAttributes,
+	clientId,
+	context,
+}) {
 	const {
 		minHeight,
 		maxHeight,
@@ -33,6 +40,16 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		navActiveColor,
 	} = attributes;
 	const [activeSlide, setActiveSlide] = useState(0);
+
+	// Dynamic mode: a parent designsetgo/query sets queryId in context. In
+	// that mode only the first scroll-slide is used as the per-item template;
+	// extras are ignored server-side. Lock add/remove at this level so the
+	// editor reflects the server contract.
+	const queryId =
+		typeof context === 'object' && context
+			? context['designsetgo/queryId'] || ''
+			: '';
+	const inQueryMode = !!queryId;
 
 	const [themeContentSize] = useSettings('layout.contentSize');
 
@@ -142,8 +159,11 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		{
 			allowedBlocks: ALLOWED_BLOCKS,
 			orientation: 'vertical',
+			templateLock: inQueryMode ? 'insert' : false,
 			renderAppender:
-				innerBlocks.length >= MAX_SLIDES ? false : undefined,
+				inQueryMode || innerBlocks.length >= MAX_SLIDES
+					? false
+					: undefined,
 		}
 	);
 
@@ -187,6 +207,33 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
 	return (
 		<>
+			{inQueryMode && (
+				<InspectorControls>
+					<PanelBody
+						title={__('Dynamic mode', 'designsetgo')}
+						initialOpen={true}
+					>
+						<Notice status="info" isDismissible={false}>
+							{__(
+								'This block is bound to a parent Dynamic Query. The first scroll slide is the per-item template — extra slides are ignored at render. Add/Remove is disabled while bound.',
+								'designsetgo'
+							)}
+						</Notice>
+						{innerBlocks.length > 1 && (
+							<Notice status="warning" isDismissible={false}>
+								{sprintf(
+									/* translators: %d: number of slides that will not render */
+									__(
+										'%d extra slide(s) will be ignored at render. Only the first slide is used as the template.',
+										'designsetgo'
+									),
+									innerBlocks.length - 1
+								)}
+							</Notice>
+						)}
+					</PanelBody>
+				</InspectorControls>
+			)}
 			<ScrollSlidesInspector
 				attributes={attributes}
 				setAttributes={setAttributes}

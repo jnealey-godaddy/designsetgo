@@ -35,7 +35,21 @@ import DsgoChildToolbar from '../../components/shared/DsgoChildToolbar';
 
 const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
 
-export default function SliderEdit({ attributes, setAttributes, clientId }) {
+export default function SliderEdit({
+	attributes,
+	setAttributes,
+	clientId,
+	context,
+}) {
+	// When the slider sits inside a Dynamic Query, the parent provides a
+	// queryId via context. In that mode the slider becomes an item host: the
+	// first slide acts as the per-item template, extras are ignored
+	// server-side, and the toolbar's Add/Remove controls are locked out.
+	const queryId =
+		typeof context === 'object' && context
+			? context['designsetgo/queryId'] || ''
+			: '';
+	const inQueryMode = !!queryId;
 	const {
 		slidesPerView,
 		slidesPerViewTablet,
@@ -330,7 +344,9 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 
 	// Inner blocks configuration - ONLY allow slide children. Initial seeding
 	// is handled by SliderPlaceholder so authors pick a starter layout instead
-	// of landing on a generic three-slide template.
+	// of landing on a generic three-slide template. In query mode we also lock
+	// add/remove at the slider level — slides beyond the first are ignored at
+	// render, so allowing authors to add more would be misleading.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-slider__track',
@@ -338,6 +354,7 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 		{
 			allowedBlocks: ['designsetgo/slide'],
 			orientation: 'horizontal',
+			templateLock: inQueryMode ? 'insert' : false,
 		}
 	);
 
@@ -383,6 +400,31 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 			</BlockControls>
 
 			<InspectorControls>
+				{inQueryMode && (
+					<PanelBody
+						title={__('Dynamic mode', 'designsetgo')}
+						initialOpen={true}
+					>
+						<Notice status="info" isDismissible={false}>
+							{__(
+								'This slider is bound to a parent Dynamic Query. The first slide is the per-item template — extra slides are ignored at render. Add or Remove in the toolbar is disabled while bound.',
+								'designsetgo'
+							)}
+						</Notice>
+						{slideCount > 1 && (
+							<Notice status="warning" isDismissible={false}>
+								{sprintf(
+									/* translators: %d: number of slides that will not render */
+									__(
+										'%d extra slide(s) will be ignored at render. Only the first slide is used as the template.',
+										'designsetgo'
+									),
+									slideCount - 1
+								)}
+							</Notice>
+						)}
+					</PanelBody>
+				)}
 				<PanelBody
 					title={__('Layout Settings', 'designsetgo')}
 					initialOpen={true}
