@@ -2245,7 +2245,7 @@ class Block_Inserter {
 	 * Block_Inserter would skip wrapper HTML generation because the render
 	 * callback is non-null, producing an empty innerHTML.
 	 *
-	 * v2.6: slider + scroll-slides became hybrid to support item-host
+	 * V2.6: slider + scroll-slides became hybrid to support item-host
 	 * rendering inside designsetgo/query.
 	 */
 	private const HYBRID_BLOCKS = array(
