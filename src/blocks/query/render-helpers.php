@@ -519,7 +519,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 			}
 		}
 
-		if ( '' !== $query_id && ! empty( $template_blocks ) ) {
+		if ( '' !== $query_id ) {
 			$template_html = '';
 			foreach ( $template_blocks as $tb ) {
 				if ( function_exists( 'serialize_block' ) ) {
