@@ -1,3 +1,6 @@
+# MCP config (contains credentials)
+.mcp.json
+
 # WordPress
 # .wordpress-org/ - Now tracked for asset deployment
 
