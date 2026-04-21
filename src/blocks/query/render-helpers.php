@@ -485,8 +485,17 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 
 		$total_items = 0;
 
-		if ( $results_child && '' !== $query_id ) {
-			$results_attrs = is_array( $results_child['attrs'] ?? null ) ? $results_child['attrs'] : array();
+		// Two shapes are accepted:
+		//  1. First-paint path — children contain a <query-results> wrapper.
+		//     Use its attrs for presentation + its innerBlocks for the template.
+		//  2. Editor-preview / legacy path — children ARE the item template
+		//     directly (no query-results wrapper). Use parent attrs for
+		//     presentation and treat all children as template blocks.
+		$effective_attrs = $attributes;
+		$template_blocks = array();
+
+		if ( $results_child ) {
+			$results_attrs   = is_array( $results_child['attrs'] ?? null ) ? $results_child['attrs'] : array();
 			$effective_attrs = array_merge(
 				$attributes,
 				array(
@@ -499,10 +508,21 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 					'groupBy'       => $results_attrs['groupBy']       ?? ( $attributes['groupBy']       ?? null ),
 				)
 			);
+			$template_blocks = (array) ( $results_child['innerBlocks'] ?? array() );
+		} else {
+			// No query-results wrapper — fall through with parent-only attrs
+			// and treat every non-empty child as a template block.
+			foreach ( $parsed_children as $pc ) {
+				if ( ! empty( $pc['blockName'] ) ) {
+					$template_blocks[] = $pc;
+				}
+			}
+		}
 
+		if ( '' !== $query_id && ! empty( $template_blocks ) ) {
 			$template_html = '';
-			foreach ( (array) ( $results_child['innerBlocks'] ?? array() ) as $tb ) {
-				if ( ! empty( $tb['blockName'] ) && function_exists( 'serialize_block' ) ) {
+			foreach ( $template_blocks as $tb ) {
+				if ( function_exists( 'serialize_block' ) ) {
 					$template_html .= serialize_block( $tb );
 				}
 			}
@@ -526,6 +546,44 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 				$GLOBALS['designsetgo_query_results_html'] = array();
 			}
 			$GLOBALS['designsetgo_query_results_html'][ $query_id ] = (string) $result['html'];
+
+			// Legacy path (no query-results wrapper): since no child block will
+			// emit the items, emit them directly here so the editor preview
+			// REST call still returns a usable region.
+			if ( ! $results_child ) {
+				$children_html_direct = (string) $result['html'];
+				$blobs                = designsetgo_query_render_blobs( $query_id, $attributes, $parsed_children );
+				$status               = sprintf(
+					'<div role="status" aria-live="polite" aria-atomic="true" class="screen-reader-text dsgo-query__status" data-dsgo-query-status="%1$s" data-dsgo-total-items="%2$d"></div>',
+					esc_attr( $query_id ),
+					(int) $total_items
+				);
+				$wp_context_legacy = wp_json_encode(
+					array(
+						'queryId' => $query_id,
+						'source'  => $source,
+						'page'    => (int) $page,
+						'busy'    => false,
+						'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
+						'nonce'   => wp_create_nonce( 'wp_rest' ),
+					),
+					JSON_HEX_APOS
+				);
+				$iapi_attrs_legacy = sprintf(
+					'data-dsgo-query-id="%1$s" data-dsgo-query-region="%1$s" data-wp-interactive="%2$s" data-wp-context=\'%3$s\' aria-live="polite"',
+					esc_attr( $query_id ),
+					esc_attr( 'designsetgo/query' ),
+					$wp_context_legacy // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON_HEX_APOS output is safe in single-quoted attr.
+				);
+				$merged_legacy = trim( (string) $wrapper_attrs . ' ' . $iapi_attrs_legacy );
+				return sprintf(
+					'<div %1$s>%2$s%3$s%4$s</div>',
+					$merged_legacy,         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wrapper + esc_attr IAPI attrs.
+					$blobs,                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designsetgo_query_render_blobs escapes internally.
+					$status,                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr-assembled.
+					$children_html_direct   // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- designsetgo_query_wrap + render_item output.
+				);
+			}
 		}
 
 		// Shared context passed to every child block. Must include everything the
