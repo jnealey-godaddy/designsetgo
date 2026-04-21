@@ -4,20 +4,18 @@ import {
 	InspectorControls,
 	store as blockEditorStore,
 } from '@wordpress/block-editor';
-import { useDispatch, useSelect } from '@wordpress/data';
-import { useEffect, useRef } from '@wordpress/element';
-import { createBlock } from '@wordpress/blocks';
+import { useSelect } from '@wordpress/data';
 
 import useQueryId from './hooks/useQueryId';
 import useQueryPreview from './hooks/useQueryPreview';
 import QuerySourcePanel from './components/QuerySourcePanel';
 import TaxQueryBuilder from './components/TaxQueryBuilder';
 import MetaQueryBuilder from './components/MetaQueryBuilder';
+import QueryPlaceholder from './components/QueryPlaceholder';
 import DateQueryBuilder from './components/DateQueryBuilder';
 import AdvancedPanel from './components/AdvancedPanel';
 import ResultCountBadge from './components/ResultCountBadge';
 import EditorPreviewList from './components/EditorPreviewList';
-import { DEFAULT_TEMPLATE } from './edit-template';
 
 // Stable reference returned when the block has no inner blocks yet. Using
 // an ad-hoc `[]` literal in the selector would produce a fresh array each
@@ -49,26 +47,6 @@ export default function QueryEdit({
 		[clientId]
 	);
 
-	// Commit the default template as real inner blocks on first insert so the
-	// frontend has something to render. `useInnerBlocksProps({ template })`
-	// only shows a visual preview; it does NOT persist to post_content, so a
-	// user who inserted the block and published without interacting would
-	// save `<!-- wp:designsetgo/query {} /-->` and see empty <li>s live.
-	// The ref guards against React 18 StrictMode's intentional double-invoke
-	// of effects on mount, which would otherwise seed the template twice.
-	const { insertBlocks } = useDispatch(blockEditorStore);
-	const seededRef = useRef(false);
-	useEffect(() => {
-		if (hasInnerBlocks || seededRef.current) {
-			return;
-		}
-		seededRef.current = true;
-		const seeded = DEFAULT_TEMPLATE.map(([name, attrs]) =>
-			createBlock(name, attrs || {})
-		);
-		insertBlocks(seeded, 0, clientId, false);
-	}, [hasInnerBlocks, clientId, insertBlocks]);
-
 	const blockProps = useBlockProps({
 		className: 'dsgo-query',
 		style: {
@@ -82,20 +60,24 @@ export default function QueryEdit({
 
 	const innerBlocksProps = useInnerBlocksProps(
 		{ className: 'dsgo-query__inner' },
-		{
-			// `template` alone is unreliable for persistence on dynamic blocks —
-			// Gutenberg treats it as a visual hint only. The useEffect above is
-			// the authoritative seeder; the template here just ensures the
-			// initial editor render shows the structure before the effect fires.
-			template: hasInnerBlocks ? undefined : DEFAULT_TEMPLATE,
-			templateLock: false,
-		}
+		{ templateLock: false }
 	);
 
 	const preview = useQueryPreview({
 		attributes,
 		queryId: attributes.queryId,
 	});
+
+	if (!hasInnerBlocks) {
+		return (
+			<div {...blockProps}>
+				<QueryPlaceholder
+					clientId={clientId}
+					setAttributes={setAttributes}
+				/>
+			</div>
+		);
+	}
 
 	const showPostsOnlyPanels = attributes.source === 'posts';
 

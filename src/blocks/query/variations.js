@@ -23,14 +23,13 @@ export default [
 				'designsetgo/section',
 				{},
 				[
-					[ 'core/post-featured-image', { isLink: true } ],
-					[ 'core/post-title', { level: 3, isLink: true } ],
-					[ 'core/post-date' ],
-					[ 'core/post-excerpt', { excerptLength: 30 } ],
+					['core/post-featured-image', { isLink: true }],
+					['core/post-title', { level: 3, isLink: true }],
+					['core/post-date'],
+					['core/post-excerpt', { excerptLength: 30 }],
 				],
 			],
 		],
-		scope: ['inserter'],
 	},
 	{
 		name: 'team',
@@ -54,13 +53,12 @@ export default [
 				'designsetgo/section',
 				{},
 				[
-					[ 'core/post-featured-image' ],
-					[ 'core/post-title', { level: 3 } ],
-					[ 'core/post-excerpt', { excerptLength: 15 } ],
+					['core/post-featured-image'],
+					['core/post-title', { level: 3 }],
+					['core/post-excerpt', { excerptLength: 15 }],
 				],
 			],
 		],
-		scope: ['inserter'],
 	},
 	{
 		name: 'testimonials',
@@ -83,13 +81,9 @@ export default [
 			[
 				'designsetgo/section',
 				{},
-				[
-					[ 'core/post-excerpt' ],
-					[ 'core/post-title', { level: 4 } ],
-				],
+				[['core/post-excerpt'], ['core/post-title', { level: 4 }]],
 			],
 		],
-		scope: ['inserter'],
 	},
 	{
 		name: 'portfolio',
@@ -113,12 +107,14 @@ export default [
 				'designsetgo/section',
 				{},
 				[
-					[ 'core/post-featured-image', { isLink: true, aspectRatio: '4/3' } ],
-					[ 'core/post-title', { level: 3, isLink: true } ],
+					[
+						'core/post-featured-image',
+						{ isLink: true, aspectRatio: '4/3' },
+					],
+					['core/post-title', { level: 3, isLink: true }],
 				],
 			],
 		],
-		scope: ['inserter'],
 	},
 	{
 		name: 'related-posts',
@@ -143,12 +139,11 @@ export default [
 				'designsetgo/section',
 				{},
 				[
-					[ 'core/post-featured-image', { isLink: true } ],
-					[ 'core/post-title', { level: 4, isLink: true } ],
+					['core/post-featured-image', { isLink: true }],
+					['core/post-title', { level: 4, isLink: true }],
 				],
 			],
 		],
-		scope: ['inserter'],
 	},
 	{
 		name: 'events',
@@ -172,13 +167,12 @@ export default [
 				'designsetgo/section',
 				{},
 				[
-					[ 'core/post-featured-image' ],
-					[ 'core/post-date' ],
-					[ 'core/post-title', { level: 3, isLink: true } ],
-					[ 'core/post-excerpt', { excerptLength: 20 } ],
+					['core/post-featured-image'],
+					['core/post-date'],
+					['core/post-title', { level: 3, isLink: true }],
+					['core/post-excerpt', { excerptLength: 20 }],
 				],
 			],
 		],
-		scope: ['inserter'],
 	},
 ];
