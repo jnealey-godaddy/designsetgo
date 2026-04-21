@@ -6,7 +6,7 @@ const minimal = {
 	name: 'minimal',
 	title: __('Minimal', 'designsetgo'),
 	description: __(
-		'Start with a single item template and build from scratch.',
+		'Bare skeleton: results, no-results, and pagination. Build from scratch.',
 		'designsetgo'
 	),
 	icon: 'welcome-add-page',
