@@ -56,13 +56,14 @@ export default function useQueryHostPreview({
 	enabled = true,
 }) {
 	const source = attributes?.source || 'posts';
-	const isPosts = source === 'posts';
+	const isPostsLike =
+		source === 'posts' || source === 'manual' || source === 'current';
 	const isRelationship = source === 'relationship';
 
-	const postsData = usePosts(attributes, enabled && isPosts);
+	const postsData = usePosts(attributes, enabled && isPostsLike);
 	const remoteData = useRemotePreview(
 		attributes,
-		enabled && !isPosts && !isRelationship
+		enabled && !isPostsLike && !isRelationship
 	);
 	const relationshipData = useQueryPreview({
 		source,
@@ -81,7 +82,7 @@ export default function useQueryHostPreview({
 			!!queryId,
 	});
 
-	const { records, hasResolved } = isPosts
+	const { records, hasResolved } = isPostsLike
 		? postsData
 		: isRelationship
 		? relationshipData
@@ -143,13 +144,10 @@ function usePosts(attributes, enabled) {
 function useRemotePreview(attributes, enabled) {
 	const [state, setState] = useState({ records: null, hasResolved: false });
 
-	const cacheKey = enabled
-		? [
-				attributes?.source || 'posts',
-				attributes?.perPage || 6,
-				attributes?.taxonomy || '',
-		  ].join('|')
-		: null;
+	// Serialize the full attributes object so orderBy/order/offset/filters/etc.
+	// all invalidate the cache. `attributes` is always a plain serialisable
+	// object (block attribute storage), so JSON.stringify is deterministic.
+	const cacheKey = enabled ? JSON.stringify(attributes || {}) : null;
 
 	useEffect(() => {
 		if (!enabled || !cacheKey) {

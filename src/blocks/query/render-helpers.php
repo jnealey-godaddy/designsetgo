@@ -27,6 +27,46 @@
 
 defined( 'ABSPATH' ) || exit;
 
+if ( ! function_exists( 'designsetgo_safe_css_value' ) ) :
+
+	/**
+	 * Sanitize a CSS value destined for an inline `--prop: VALUE` declaration.
+	 *
+	 * Used by layout-host render.php files (slider, scroll-slides, …) which
+	 * emit block attributes as custom properties in a `style=""` attribute.
+	 * `get_block_wrapper_attributes()` HTML-encodes the outer quote, but that
+	 * alone does not prevent CSS-context injection — an editor-capability user
+	 * storing `20px; --dsgo-slider-slides-per-view:99` would otherwise inject
+	 * an extra custom property.
+	 *
+	 * The sanitizer strips characters that could close the current declaration
+	 * (`;`, `{`, `}`), escape sequences (`\`), control/newline characters, and
+	 * rejects CSS expression/javascript: patterns entirely. Legitimate CSS
+	 * values — `var(...)`, `calc(...)`, colors, lengths, aspect ratios — pass
+	 * through unchanged.
+	 *
+	 * @param mixed $value Raw attribute value.
+	 * @return string Safe-to-concatenate CSS value (empty string if rejected).
+	 */
+	function designsetgo_safe_css_value( $value ) {
+		if ( ! is_string( $value ) && ! is_numeric( $value ) ) {
+			return '';
+		}
+		$value = (string) $value;
+		if ( '' === $value ) {
+			return '';
+		}
+		$lower = strtolower( $value );
+		if ( false !== strpos( $lower, 'expression(' ) || false !== strpos( $lower, 'javascript:' ) ) {
+			return '';
+		}
+		// Strip chars that could break out of a `--prop: VALUE` declaration
+		// context: semicolon / braces / backslash (escape) / control + newline.
+		return preg_replace( '/[;{}\\\\\r\n\x00-\x1F]/', '', $value );
+	}
+
+endif;
+
 if ( ! function_exists( 'designsetgo_query_item_host_block_names' ) ) :
 
 	/**
@@ -34,8 +74,8 @@ if ( ! function_exists( 'designsetgo_query_item_host_block_names' ) ) :
 	 *
 	 * An "item host" is the child block whose innerBlocks define the per-item
 	 * template and whose render.php emits the iterated items (or chrome that
-	 * wraps them). Today only designsetgo/query-results qualifies; slider and
-	 * scroll-slides join once their render paths opt in.
+	 * wraps them). The built-in hosts are designsetgo/query-results (grid
+	 * layout), designsetgo/slider, and designsetgo/scroll-slides.
 	 *
 	 * Third parties can register their own layout blocks as item hosts via the
 	 * `designsetgo_query_item_host_block_names` filter, provided they pair the
@@ -49,7 +89,11 @@ if ( ! function_exists( 'designsetgo_query_item_host_block_names' ) ) :
 		/**
 		 * Filter the list of blocks that may act as item hosts inside a Dynamic Query.
 		 *
-		 * @param string[] $hosts Default list: [ 'designsetgo/query-results' ].
+		 * @param string[] $hosts Default list: [
+		 *     'designsetgo/query-results',
+		 *     'designsetgo/slider',
+		 *     'designsetgo/scroll-slides',
+		 * ].
 		 */
 		$hosts = apply_filters(
 			'designsetgo_query_item_host_block_names',
@@ -533,11 +577,13 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 		// opt in). Only the first match is used; multiple hosts aren't supported.
 		// Its attrs govern presentation (columns, tagName, groupBy...) and its
 		// innerBlocks form the per-item template.
-		$host_block_names = designsetgo_query_item_host_block_names();
-		$results_child    = null;
-		foreach ( $parsed_children as $child ) {
+		$host_block_names   = designsetgo_query_item_host_block_names();
+		$results_child      = null;
+		$results_child_index = null;
+		foreach ( $parsed_children as $child_index => $child ) {
 			if ( in_array( ( $child['blockName'] ?? '' ), $host_block_names, true ) ) {
-				$results_child = $child;
+				$results_child       = $child;
+				$results_child_index = (int) $child_index;
 				break;
 			}
 		}
@@ -685,12 +731,29 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 		// reads $GLOBALS['designsetgo_query_results_html'][queryId] and echoes
 		// the pre-rendered items HTML.
 		$children_html = '';
-		foreach ( $parsed_children as $child ) {
+		foreach ( $parsed_children as $child_index => $child ) {
 			if ( empty( $child['blockName'] ) ) {
+				continue;
+			}
+			$is_item_host_child = in_array( ( $child['blockName'] ?? '' ), $host_block_names, true );
+			if (
+				$is_item_host_child &&
+				null !== $results_child_index &&
+				(int) $child_index !== $results_child_index
+			) {
 				continue;
 			}
 			if ( class_exists( 'WP_Block' ) ) {
 				$children_html .= ( new WP_Block( $child, $shared_context ) )->render();
+				if (
+					$is_item_host_child &&
+					null !== $results_child_index &&
+					(int) $child_index === $results_child_index &&
+					'' !== $query_id
+				) {
+					unset( $GLOBALS['designsetgo_query_results_html'][ $query_id ] );
+					unset( $GLOBALS['designsetgo_query_items_html'][ $query_id ] );
+				}
 			}
 		}
 

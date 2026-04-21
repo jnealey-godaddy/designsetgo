@@ -128,4 +128,59 @@ class DesignSetGo_Query_Item_Hosts_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'items_html', $result );
 		$this->assertSame( '', $result['items_html'] );
 	}
+
+	public function test_container_renders_only_the_first_registered_item_host() {
+		self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) );
+		$this->load_helpers();
+
+		$parsed_children = array(
+			array(
+				'blockName'   => 'designsetgo/query-results',
+				'attrs'       => array( 'itemTagName' => 'li' ),
+				'innerBlocks' => array(
+					array(
+						'blockName'    => 'core/paragraph',
+						'attrs'        => array(),
+						'innerBlocks'  => array(),
+						'innerHTML'    => '<p>Primary host</p>',
+						'innerContent' => array( '<p>Primary host</p>' ),
+					),
+				),
+				'innerHTML'    => '',
+				'innerContent' => array( '' ),
+			),
+			array(
+				'blockName'   => 'designsetgo/slider',
+				'attrs'       => array(),
+				'innerBlocks' => array(
+					array(
+						'blockName'    => 'core/paragraph',
+						'attrs'        => array(),
+						'innerBlocks'  => array(),
+						'innerHTML'    => '<p>Secondary host</p>',
+						'innerContent' => array( '<p>Secondary host</p>' ),
+					),
+				),
+				'innerHTML'    => '',
+				'innerContent' => array( '' ),
+			),
+		);
+
+		$html = designsetgo_query_render_container(
+			array(
+				'source'   => 'posts',
+				'postType' => 'post',
+				'perPage'  => 2,
+				'queryId'  => 'first-host-only',
+			),
+			$parsed_children,
+			1,
+			'first-host-only',
+			'class="test-wrap"'
+		);
+
+		$this->assertSame( 2, substr_count( $html, '<p>Primary host</p>' ) );
+		$this->assertStringNotContainsString( 'Secondary host', $html );
+		$this->assertStringNotContainsString( 'dsgo-slider__track', $html );
+	}
 }

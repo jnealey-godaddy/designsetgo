@@ -19,7 +19,7 @@
  * query-mode output diverges visually from authored-mode output.
  *
  * @package DesignSetGo
- * @since   2.2.0
+ * @since   2.6.0
  *
  * @param array    $attributes Block attributes.
  * @param string   $content    Pre-rendered save.js output.
@@ -123,31 +123,33 @@ if ( $atts['scrollDriven'] ) {
 	$classes[] = 'dsgo-slider--scroll-driven';
 }
 
-// CSS custom properties. Only emit keys save.js would emit to keep diffs tight.
+// CSS custom properties. Each attribute passes through designsetgo_safe_css_value()
+// so a stored value like `20px; --dsgo-slider-slides-per-view:99` can't escape
+// the declaration context — see render-helpers.php for the rules.
 $style_parts = array();
 if ( '' !== $atts['height'] ) {
-	$style_parts[] = '--dsgo-slider-height:' . $atts['height'];
+	$style_parts[] = '--dsgo-slider-height:' . designsetgo_safe_css_value( $atts['height'] );
 }
-$style_parts[] = '--dsgo-slider-aspect-ratio:' . $atts['aspectRatio'];
-$style_parts[] = '--dsgo-slider-gap:' . $atts['gap'];
-$style_parts[] = '--dsgo-slider-transition:' . $atts['transitionDuration'];
-$style_parts[] = '--dsgo-slider-slides-per-view:' . $spv;
-$style_parts[] = '--dsgo-slider-slides-per-view-tablet:' . $spv_tablet;
-$style_parts[] = '--dsgo-slider-slides-per-view-mobile:' . $spv_mobile;
+$style_parts[] = '--dsgo-slider-aspect-ratio:' . designsetgo_safe_css_value( $atts['aspectRatio'] );
+$style_parts[] = '--dsgo-slider-gap:' . designsetgo_safe_css_value( $atts['gap'] );
+$style_parts[] = '--dsgo-slider-transition:' . designsetgo_safe_css_value( $atts['transitionDuration'] );
+$style_parts[] = '--dsgo-slider-slides-per-view:' . (int) $spv;
+$style_parts[] = '--dsgo-slider-slides-per-view-tablet:' . (int) $spv_tablet;
+$style_parts[] = '--dsgo-slider-slides-per-view-mobile:' . (int) $spv_mobile;
 if ( '' !== $atts['arrowColor'] ) {
-	$style_parts[] = '--dsgo-slider-arrow-color:' . $atts['arrowColor'];
+	$style_parts[] = '--dsgo-slider-arrow-color:' . designsetgo_safe_css_value( $atts['arrowColor'] );
 }
 if ( '' !== $atts['arrowBackgroundColor'] ) {
-	$style_parts[] = '--dsgo-slider-arrow-bg-color:' . $atts['arrowBackgroundColor'];
+	$style_parts[] = '--dsgo-slider-arrow-bg-color:' . designsetgo_safe_css_value( $atts['arrowBackgroundColor'] );
 }
 if ( '' !== $atts['dotColor'] ) {
-	$style_parts[] = '--dsgo-slider-dot-color:' . $atts['dotColor'];
+	$style_parts[] = '--dsgo-slider-dot-color:' . designsetgo_safe_css_value( $atts['dotColor'] );
 }
 if ( '' !== $atts['arrowSize'] ) {
-	$style_parts[] = '--dsgo-slider-arrow-size:' . $atts['arrowSize'];
+	$style_parts[] = '--dsgo-slider-arrow-size:' . designsetgo_safe_css_value( $atts['arrowSize'] );
 }
 if ( '' !== $atts['arrowPadding'] ) {
-	$style_parts[] = '--dsgo-slider-arrow-padding:' . $atts['arrowPadding'];
+	$style_parts[] = '--dsgo-slider-arrow-padding:' . designsetgo_safe_css_value( $atts['arrowPadding'] );
 }
 $style_inline = implode( ';', $style_parts ) . ';';
 
@@ -158,7 +160,9 @@ $wrapper_attrs = get_block_wrapper_attributes(
 		'class'                => implode( ' ', $classes ),
 		'style'                => $style_inline,
 		'role'                 => 'region',
-		'aria-label'           => $atts['ariaLabel'] !== '' ? $atts['ariaLabel'] : __( 'Image slider', 'designsetgo' ),
+		// Literal fallback mirrors save.js (which does not translate it).
+		// If save.js ever translates the default, match that change here too.
+		'aria-label'           => $atts['ariaLabel'] !== '' ? $atts['ariaLabel'] : 'Image slider',
 		'aria-roledescription' => 'slider',
 	)
 );

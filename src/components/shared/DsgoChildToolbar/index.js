@@ -65,6 +65,10 @@ import {
  * @property {string}   [removeLabel]              Localized label for Remove.
  * @property {string}   [movePrevLabel]            Localized label for Move Previous.
  * @property {string}   [moveNextLabel]            Localized label for Move Next.
+ * @property {boolean}  [disableAdd=false]         Disables the Add button.
+ * @property {boolean}  [disableDuplicate=false]   Disables the Duplicate button.
+ * @property {boolean}  [disableRemove=false]      Disables the Remove button.
+ * @property {boolean}  [disableMove=false]        Disables both Move buttons.
  * @property {boolean}  [showMove=true]            Whether to render Move Prev/Next buttons.
  * @property {string}   [orientation='horizontal'] 'horizontal' renders chevronLeft/Right;
  *                                                 'vertical' renders chevronUp/Down so the
@@ -87,6 +91,10 @@ export default function DsgoChildToolbar({
 	removeLabel,
 	movePrevLabel,
 	moveNextLabel,
+	disableAdd = false,
+	disableDuplicate = false,
+	disableRemove = false,
+	disableMove = false,
 	showMove = true,
 	orientation = 'horizontal',
 }) {
@@ -203,6 +211,7 @@ export default function DsgoChildToolbar({
 				icon={plus}
 				label={resolvedAddLabel}
 				onClick={handleAdd}
+				disabled={disableAdd}
 				showTooltip
 			/>
 			{hasTarget && (
@@ -210,6 +219,7 @@ export default function DsgoChildToolbar({
 					icon={copy}
 					label={resolvedDuplicateLabel}
 					onClick={handleDuplicate}
+					disabled={disableDuplicate}
 					showTooltip
 				/>
 			)}
@@ -219,14 +229,14 @@ export default function DsgoChildToolbar({
 						icon={movePrevIcon}
 						label={resolvedMovePrevLabel}
 						onClick={handleMovePrev}
-						disabled={isFirst}
+						disabled={disableMove || isFirst}
 						showTooltip
 					/>
 					<ToolbarButton
 						icon={moveNextIcon}
 						label={resolvedMoveNextLabel}
 						onClick={handleMoveNext}
-						disabled={isLast}
+						disabled={disableMove || isLast}
 						showTooltip
 					/>
 				</>
@@ -236,7 +246,7 @@ export default function DsgoChildToolbar({
 					icon={trash}
 					label={resolvedRemoveLabel}
 					onClick={handleRemove}
-					disabled={isOnly}
+					disabled={disableRemove || isOnly}
 					isDestructive
 					showTooltip
 				/>

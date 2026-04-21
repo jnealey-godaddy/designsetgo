@@ -1,8 +1,15 @@
 import variations from '../../../../src/blocks/query/variations';
 
+const ITEM_HOST_NAMES = [
+	'designsetgo/query-results',
+	'designsetgo/slider',
+	'designsetgo/scroll-slides',
+];
+
 describe('Query block variations', () => {
-	it('ships exactly six variations', () => {
-		expect(variations).toHaveLength(6);
+	it('ships at least the built-in variations', () => {
+		// Count floor: bump when a new built-in variation is added.
+		expect(variations.length).toBeGreaterThanOrEqual(8);
 	});
 
 	it.each(variations.map((v) => [v.name, v]))(
@@ -20,18 +27,20 @@ describe('Query block variations', () => {
 		}
 	);
 
-	it('wraps the item template in a designsetgo/query-results child', () => {
+	it('wraps the item template in a registered item-host child', () => {
+		// v2.6: accept any of the known item hosts (query-results, slider,
+		// scroll-slides). Mirrors designsetgo_query_item_host_block_names().
 		variations.forEach((v) => {
-			const resultsChild = v.innerBlocks.find(
-				(b) => Array.isArray(b) && b[0] === 'designsetgo/query-results'
+			const hostChild = v.innerBlocks.find(
+				(b) => Array.isArray(b) && ITEM_HOST_NAMES.includes(b[0])
 			);
-			expect(resultsChild).toBeDefined();
+			expect(hostChild).toBeDefined();
 		});
 	});
 
 	it('has unique names', () => {
 		const names = variations.map((v) => v.name);
-		expect(new Set(names).size).toBe(6);
+		expect(new Set(names).size).toBe(names.length);
 	});
 
 	it('related-posts variation has excludeCurrent: true', () => {

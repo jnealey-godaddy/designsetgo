@@ -10,9 +10,9 @@ import {
 	InspectorControls,
 	BlockContextProvider,
 } from '@wordpress/block-editor';
-import { PanelBody, Notice } from '@wordpress/components';
+import { Notice } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { useState } from '@wordpress/element';
+import { useMemo, useState } from '@wordpress/element';
 
 /**
  * Internal dependencies
@@ -24,6 +24,7 @@ import ScrollSlidesInspector from './components/ScrollSlidesInspector';
 import useQueryHostPreview, {
 	buildItemContext,
 } from '../query/hooks/useQueryHostPreview';
+import useParentQueryAttrs from '../query/hooks/useParentQueryAttrs';
 import QueryHostReadOnlyItem from '../query/components/QueryHostReadOnlyItem';
 
 const ALLOWED_BLOCKS = ['designsetgo/scroll-slide'];
@@ -75,26 +76,15 @@ export default function Edit({
 		useDispatch(blockEditorStore);
 
 	// Parent query's attributes (only resolved when bound via context).
-	const parentQueryAttrs = useSelect(
-		(select) => {
-			if (!inQueryMode) {
-				return null;
-			}
-			const { getBlockParents, getBlock } = select(blockEditorStore);
-			const parents = getBlockParents(clientId);
-			for (const parentId of parents) {
-				const parent = getBlock(parentId);
-				if (parent?.name === 'designsetgo/query') {
-					return parent.attributes;
-				}
-			}
-			return null;
-		},
-		[clientId, inQueryMode]
-	);
+	const parentQueryAttrs = useParentQueryAttrs(clientId, inQueryMode);
 
 	// Only the first scroll-slide is used as the template at render time.
-	const templateSlideBlocks = innerBlocks.slice(0, 1);
+	// Memoize to preserve the array reference across renders — useRenderedItems
+	// re-serializes the template tree on every identity change.
+	const templateSlideBlocks = useMemo(
+		() => (innerBlocks.length > 0 ? [innerBlocks[0]] : []),
+		[innerBlocks]
+	);
 
 	const preview = useQueryHostPreview({
 		attributes: parentQueryAttrs,
@@ -245,29 +235,24 @@ export default function Edit({
 		<>
 			{inQueryMode && (
 				<InspectorControls>
-					<PanelBody
-						title={__('Dynamic mode', 'designsetgo')}
-						initialOpen={true}
-					>
-						<Notice status="info" isDismissible={false}>
-							{__(
-								'This block is bound to a parent Dynamic Query. The first scroll slide is the per-item template — extra slides are ignored at render. Add/Remove is disabled while bound.',
-								'designsetgo'
+					<Notice status="info" isDismissible={false}>
+						{__(
+							'This block is bound to a parent Dynamic Query. Only the first scroll slide is rendered for each iterated item; extras are ignored.',
+							'designsetgo'
+						)}
+					</Notice>
+					{innerBlocks.length > 1 && (
+						<Notice status="warning" isDismissible={false}>
+							{sprintf(
+								/* translators: %d: number of slides that will not render */
+								__(
+									'%d extra slide(s) will be ignored at render. Only the first slide is used as the template.',
+									'designsetgo'
+								),
+								innerBlocks.length - 1
 							)}
 						</Notice>
-						{innerBlocks.length > 1 && (
-							<Notice status="warning" isDismissible={false}>
-								{sprintf(
-									/* translators: %d: number of slides that will not render */
-									__(
-										'%d extra slide(s) will be ignored at render. Only the first slide is used as the template.',
-										'designsetgo'
-									),
-									innerBlocks.length - 1
-								)}
-							</Notice>
-						)}
-					</PanelBody>
+					)}
 				</InspectorControls>
 			)}
 			<ScrollSlidesInspector

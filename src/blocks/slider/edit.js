@@ -1,12 +1,11 @@
 import { __, sprintf } from '@wordpress/i18n';
-import { useEffect, useRef } from '@wordpress/element';
+import { useEffect, useMemo, useRef } from '@wordpress/element';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
 	BlockControls,
 	InspectorControls,
 	BlockContextProvider,
-	store as blockEditorStore,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 } from '@wordpress/block-editor';
@@ -37,6 +36,7 @@ import DsgoChildToolbar from '../../components/shared/DsgoChildToolbar';
 import useQueryHostPreview, {
 	buildItemContext,
 } from '../query/hooks/useQueryHostPreview';
+import useParentQueryAttrs from '../query/hooks/useParentQueryAttrs';
 import QueryHostReadOnlyItem from '../query/components/QueryHostReadOnlyItem';
 
 const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
@@ -154,27 +154,15 @@ export default function SliderEdit({
 	// When bound to a parent Dynamic Query, walk up to the parent's attributes
 	// so the editor preview uses the same query config (postType, perPage,
 	// filters, orderBy) the frontend will. Runs only when inQueryMode.
-	const parentQueryAttrs = useSelect(
-		(select) => {
-			if (!inQueryMode) {
-				return null;
-			}
-			const { getBlockParents, getBlock } = select(blockEditorStore);
-			const parents = getBlockParents(clientId);
-			for (const parentId of parents) {
-				const parent = getBlock(parentId);
-				if (parent?.name === 'designsetgo/query') {
-					return parent.attributes;
-				}
-			}
-			return null;
-		},
-		[clientId, inQueryMode]
-	);
+	const parentQueryAttrs = useParentQueryAttrs(clientId, inQueryMode);
 
-	// The per-item template is the first slide block. Extras are ignored at
-	// render; the editor shows a warning when slideCount > 1.
-	const templateSlideBlocks = slides.slice(0, 1);
+	// The per-item template is the first slide block. Memoize to avoid
+	// allocating a new array on every render — useQueryHostPreview /
+	// useRenderedItems depend on stable references to avoid re-serializing.
+	const templateSlideBlocks = useMemo(
+		() => (slides.length > 0 ? [slides[0]] : []),
+		[slides]
+	);
 
 	const preview = useQueryHostPreview({
 		attributes: parentQueryAttrs,
@@ -439,6 +427,10 @@ export default function SliderEdit({
 					removeLabel={__('Remove slide', 'designsetgo')}
 					movePrevLabel={__('Move slide left', 'designsetgo')}
 					moveNextLabel={__('Move slide right', 'designsetgo')}
+					disableAdd={inQueryMode}
+					disableDuplicate={inQueryMode}
+					disableRemove={inQueryMode}
+					disableMove={inQueryMode}
 				/>
 			</BlockControls>
 
@@ -450,7 +442,7 @@ export default function SliderEdit({
 					>
 						<Notice status="info" isDismissible={false}>
 							{__(
-								'This slider is bound to a parent Dynamic Query. The first slide is the per-item template — extra slides are ignored at render. Add or Remove in the toolbar is disabled while bound.',
+								'This slider is bound to a parent Dynamic Query. The first slide is the per-item template — extra slides are ignored at render. Slide management controls are disabled while bound.',
 								'designsetgo'
 							)}
 						</Notice>
@@ -1209,6 +1201,7 @@ export default function SliderEdit({
 												'Duplicate slide',
 												'designsetgo'
 											)}
+											disabled={inQueryMode}
 											onClick={() =>
 												handleDuplicateSlide(
 													slide,
@@ -1228,6 +1221,7 @@ export default function SliderEdit({
 												'Remove slide',
 												'designsetgo'
 											)}
+											disabled={inQueryMode}
 											onClick={() =>
 												handleRemoveSlide(slide)
 											}
@@ -1240,6 +1234,7 @@ export default function SliderEdit({
 							size="small"
 							icon={plus}
 							className="dsgo-slider__nav-add"
+							disabled={inQueryMode}
 							onClick={handleAddSlide}
 						>
 							{__('Add slide', 'designsetgo')}

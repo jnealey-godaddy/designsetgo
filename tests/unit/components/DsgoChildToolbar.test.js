@@ -224,6 +224,34 @@ describe('DsgoChildToolbar', () => {
 		expect(onActiveIndexChange).toHaveBeenCalledWith(1, null);
 	});
 
+	test('disable flags prevent the toolbar actions from dispatching', async () => {
+		setupSelect(makeChildren(3));
+		render(
+			<DsgoChildToolbar
+				parentClientId="parent"
+				childBlockName="designsetgo/tab"
+				activeIndex={1}
+				disableAdd
+				disableDuplicate
+				disableRemove
+				disableMove
+			/>
+		);
+
+		expect(screen.getByLabelText('Add item')).toBeDisabled();
+		expect(screen.getByLabelText('Duplicate item')).toBeDisabled();
+		expect(screen.getByLabelText('Remove item')).toBeDisabled();
+		expect(screen.getByLabelText('Move left')).toBeDisabled();
+		expect(screen.getByLabelText('Move right')).toBeDisabled();
+
+		await userEvent.click(screen.getByLabelText('Add item'));
+		await userEvent.click(screen.getByLabelText('Duplicate item'));
+		await userEvent.click(screen.getByLabelText('Remove item'));
+
+		expect(insertBlock).not.toHaveBeenCalled();
+		expect(removeBlock).not.toHaveBeenCalled();
+	});
+
 	test('Remove is disabled when only one child remains', () => {
 		setupSelect(makeChildren(1));
 		render(

@@ -17,7 +17,7 @@
  * If save.js gains a new wrapper or attribute, mirror it here too.
  *
  * @package DesignSetGo
- * @since   2.2.0
+ * @since   2.6.0
  *
  * @param array    $attributes Block attributes.
  * @param string   $content    Pre-rendered save.js output.
@@ -60,16 +60,23 @@ $atts = wp_parse_args(
 // Minimal parity with save.js's convertColorToCSSVar(): convert the WP preset
 // shorthand (`var:preset|color|slug`) to a real `var(...)`, otherwise pass
 // through as-is (hex/rgb/CSS keywords already work inline).
+//
+// Both branches run the final value through designsetgo_safe_css_value() so a
+// stored color like `red; content:'x'` or a crafted slug like `slug);}` can't
+// escape the `--prop: VALUE` declaration. Preset slug segments are also
+// constrained via sanitize_html_class() so only identifier characters survive.
 $color_to_css = static function ( $value ) {
 	$value = (string) $value;
 	if ( '' === $value ) {
 		return '';
 	}
 	if ( 0 === strpos( $value, 'var:preset|' ) ) {
-		$parts = explode( '|', substr( $value, strlen( 'var:preset|' ) ) );
-		return 'var(--wp--preset--' . implode( '--', $parts ) . ')';
+		$parts  = explode( '|', substr( $value, strlen( 'var:preset|' ) ) );
+		$parts  = array_filter( array_map( 'sanitize_html_class', $parts ) );
+		$result = 'var(--wp--preset--' . implode( '--', $parts ) . ')';
+		return designsetgo_safe_css_value( $result );
 	}
-	return $value;
+	return designsetgo_safe_css_value( $value );
 };
 
 $classes = array( 'dsgo-scroll-slides' );
@@ -99,12 +106,19 @@ if ( '' !== $style_inline ) {
 	$style_inline .= ';';
 }
 
+$min_height = designsetgo_safe_css_value( $atts['minHeight'] );
+if ( '' === $min_height ) {
+	$min_height = '100vh';
+}
 $wrapper_attrs_list = array(
 	'class'                => implode( ' ', $classes ),
-	'data-dsgo-min-height' => $atts['minHeight'] !== '' ? $atts['minHeight'] : '100vh',
+	'data-dsgo-min-height' => $min_height,
 );
 if ( '' !== $atts['maxHeight'] ) {
-	$wrapper_attrs_list['data-dsgo-max-height'] = $atts['maxHeight'];
+	$max_h = designsetgo_safe_css_value( $atts['maxHeight'] );
+	if ( '' !== $max_h ) {
+		$wrapper_attrs_list['data-dsgo-max-height'] = $max_h;
+	}
 }
 if ( '' !== $style_inline ) {
 	$wrapper_attrs_list['style'] = $style_inline;
@@ -114,9 +128,12 @@ $wrapper_attrs = get_block_wrapper_attributes( $wrapper_attrs_list );
 
 $inner_style = '';
 if ( ! empty( $atts['constrainWidth'] ) ) {
-	$max_width   = $atts['contentWidth'] !== ''
-		? $atts['contentWidth']
+	$max_width = $atts['contentWidth'] !== ''
+		? designsetgo_safe_css_value( $atts['contentWidth'] )
 		: 'var(--wp--style--global--content-size, 1140px)';
+	if ( '' === $max_width ) {
+		$max_width = 'var(--wp--style--global--content-size, 1140px)';
+	}
 	$inner_style = ' style="max-width:' . esc_attr( $max_width ) . ';margin-left:auto;margin-right:auto"';
 }
 

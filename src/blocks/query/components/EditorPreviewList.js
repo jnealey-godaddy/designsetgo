@@ -41,14 +41,18 @@ export default function EditorPreviewList({
 	context,
 }) {
 	const source = attributes.source || 'posts';
-	const isPosts = source === 'posts';
+	const isPostsLike =
+		source === 'posts' || source === 'manual' || source === 'current';
 	const isRelationship = source === 'relationship';
 
 	// All three hooks must be called unconditionally (Rules of Hooks).
 	// Each hook no-ops cheaply when its source doesn't match via its `enabled`
 	// guard or its internal isRelationship branch.
-	const postsData = usePosts(attributes, isPosts);
-	const remoteData = useRemotePreview(attributes, !isPosts && !isRelationship);
+	const postsData = usePosts(attributes, isPostsLike);
+	const remoteData = useRemotePreview(
+		attributes,
+		!isPostsLike && !isRelationship
+	);
 	const relationshipData = useQueryPreview({
 		source,
 		relationshipField: attributes.relationshipField || '',
@@ -70,7 +74,7 @@ export default function EditorPreviewList({
 	});
 
 	// Select the active data path.
-	const { records, hasResolved } = isPosts
+	const { records, hasResolved } = isPostsLike
 		? postsData
 		: isRelationship
 		? relationshipData
