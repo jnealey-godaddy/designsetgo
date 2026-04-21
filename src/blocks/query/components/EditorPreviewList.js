@@ -60,13 +60,12 @@ export default function EditorPreviewList({
 	const [itemWidth, setItemWidth] = useState(300);
 	useEffect(() => {
 		const el = listRef.current;
-		if (!el) return;
+		if (!el) return undefined;
+		// eslint-disable-next-line no-undef
 		const observer = new ResizeObserver((entries) => {
 			const w = entries[0]?.contentRect.width;
 			if (w) {
-				setItemWidth(
-					Math.round(w / (attributes.columns || 1))
-				);
+				setItemWidth(Math.round(w / (attributes.columns || 1)));
 			}
 		});
 		observer.observe(el);

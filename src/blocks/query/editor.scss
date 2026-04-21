@@ -101,6 +101,13 @@
 	.dsgo-query__editor-preview-item {
 		margin: 0;
 		padding: 0;
+
+		// Read-only BlockPreview items lack the .dsgo-query__inner wrapper's
+		// 4px chrome padding, so mirror it on the <li> to keep content aligned
+		// with the editable item 0.
+		&.is-read-only {
+			padding: 4px;
+		}
 	}
 
 	.dsgo-query__editor-header {
