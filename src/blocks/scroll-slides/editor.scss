@@ -201,3 +201,24 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+// Query-bound editor preview — the block-editor-managed template slot
+// sits alongside read-only server-rendered panels inside the panels grid.
+// `display: contents` keeps the slot wrapper transparent to layout.
+.wp-block-designsetgo-scroll-slides {
+	.dsgo-scroll-slides__editor-template-slot {
+		display: contents;
+	}
+
+	.dsgo-scroll-slides__editor-readonly-item {
+		pointer-events: none;
+	}
+
+	.dsgo-scroll-slides__editor-empty-hint {
+		padding: 1.25rem;
+		font-size: 0.875rem;
+		color: #6c7180;
+		background: rgba(0, 0, 0, 0.03);
+		border-radius: 4px;
+	}
+}

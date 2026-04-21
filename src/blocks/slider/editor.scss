@@ -260,3 +260,36 @@
 		margin-left: auto;
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Query-bound editor preview. The block-editor-managed template slot sits
+// inside a manually-built track alongside read-only server-rendered slides.
+// `display: contents` makes the slot wrapper transparent so the single
+// authored slide participates in the track's flex layout directly.
+// ---------------------------------------------------------------------------
+.wp-block-designsetgo-slider {
+	.dsgo-slider__editor-template-slot {
+		display: contents;
+	}
+
+	.dsgo-slider__editor-readonly-item {
+		flex: 0 0 auto;
+		width: 100%;
+		min-width: 0;
+		pointer-events: none;
+	}
+
+	.dsgo-slider__editor-empty-hint {
+		flex: 1 1 auto;
+		padding: 1.25rem;
+		font-size: 0.875rem;
+		color: #6c7180;
+		background: rgba(0, 0, 0, 0.03);
+		border-radius: 4px;
+	}
+
+	.dsgo-slider__track--query-loading,
+	.dsgo-slider__track--query-empty {
+		min-height: 120px;
+	}
+}

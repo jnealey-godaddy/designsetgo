@@ -8,6 +8,7 @@ import {
 	store as blockEditorStore,
 	useSettings,
 	InspectorControls,
+	BlockContextProvider,
 } from '@wordpress/block-editor';
 import { PanelBody, Notice } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
@@ -20,6 +21,10 @@ import './editor.scss';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import ScrollSlidesPlaceholder from './components/ScrollSlidesPlaceholder';
 import ScrollSlidesInspector from './components/ScrollSlidesInspector';
+import useQueryHostPreview, {
+	buildItemContext,
+} from '../query/hooks/useQueryHostPreview';
+import QueryHostReadOnlyItem from '../query/components/QueryHostReadOnlyItem';
 
 const ALLOWED_BLOCKS = ['designsetgo/scroll-slide'];
 const MAX_SLIDES = 10;
@@ -68,6 +73,35 @@ export default function Edit({
 
 	const { updateBlockAttributes, selectBlock } =
 		useDispatch(blockEditorStore);
+
+	// Parent query's attributes (only resolved when bound via context).
+	const parentQueryAttrs = useSelect(
+		(select) => {
+			if (!inQueryMode) {
+				return null;
+			}
+			const { getBlockParents, getBlock } = select(blockEditorStore);
+			const parents = getBlockParents(clientId);
+			for (const parentId of parents) {
+				const parent = getBlock(parentId);
+				if (parent?.name === 'designsetgo/query') {
+					return parent.attributes;
+				}
+			}
+			return null;
+		},
+		[clientId, inQueryMode]
+	);
+
+	// Only the first scroll-slide is used as the template at render time.
+	const templateSlideBlocks = innerBlocks.slice(0, 1);
+
+	const preview = useQueryHostPreview({
+		attributes: parentQueryAttrs,
+		queryId,
+		innerBlocks: templateSlideBlocks,
+		enabled: inQueryMode && !!parentQueryAttrs,
+	});
 
 	// Clamp active slide to valid range when slides are removed
 	const clampedActive =
@@ -154,7 +188,9 @@ export default function Edit({
 
 	const innerBlocksProps = useInnerBlocksProps(
 		{
-			className: 'dsgo-scroll-slides__editor-panels',
+			className: inQueryMode
+				? 'dsgo-scroll-slides__editor-template-slot'
+				: 'dsgo-scroll-slides__editor-panels',
 		},
 		{
 			allowedBlocks: ALLOWED_BLOCKS,
@@ -287,9 +323,91 @@ export default function Edit({
 					)}
 
 					{/* Slide panels — all rendered, CSS shows only active */}
-					<div {...innerBlocksProps} />
+					{inQueryMode ? (
+						<QueryModePanels
+							innerBlocksProps={innerBlocksProps}
+							preview={preview}
+							parentQueryAttrs={parentQueryAttrs}
+							outerContext={context}
+						/>
+					) : (
+						<div {...innerBlocksProps} />
+					)}
 				</div>
 			</div>
 		</>
+	);
+}
+
+/**
+ * Render the scroll-slides panels in query-bound mode: panel 0 wraps the
+ * editable InnerBlocks slot (the template scroll-slide); panels 1..N are
+ * read-only server-rendered panels. Each panel is wrapped in a
+ * BlockContextProvider so bindings resolve against the iterated post.
+ */
+function QueryModePanels({
+	innerBlocksProps,
+	preview,
+	parentQueryAttrs,
+	outerContext,
+}) {
+	const source = parentQueryAttrs?.source || 'posts';
+	const { records, hasResolved, serverHtml, loading } = preview;
+
+	if (!hasResolved) {
+		return (
+			<div className="dsgo-scroll-slides__editor-panels dsgo-scroll-slides__editor-panels--query-loading">
+				<div {...innerBlocksProps} />
+			</div>
+		);
+	}
+
+	const items = Array.isArray(records) ? records : [];
+
+	if (items.length === 0) {
+		return (
+			<div className="dsgo-scroll-slides__editor-panels dsgo-scroll-slides__editor-panels--query-empty">
+				<div {...innerBlocksProps} />
+				<div
+					className="dsgo-scroll-slides__editor-empty-hint"
+					contentEditable={false}
+					aria-hidden="true"
+				>
+					{__(
+						'No posts match the parent query. Design the template panel above \u2014 it will render once per result at publish time.',
+						'designsetgo'
+					)}
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="dsgo-scroll-slides__editor-panels">
+			{items.map((item, idx) => {
+				const itemContext = buildItemContext(
+					item,
+					source,
+					idx,
+					outerContext
+				);
+				return (
+					<BlockContextProvider
+						key={item.id ?? idx}
+						value={itemContext}
+					>
+						{idx === 0 ? (
+							<div {...innerBlocksProps} />
+						) : (
+							<QueryHostReadOnlyItem
+								className="dsgo-scroll-slides__editor-readonly-item"
+								html={serverHtml?.[idx] ?? null}
+								loading={loading}
+							/>
+						)}
+					</BlockContextProvider>
+				);
+			})}
+		</div>
 	);
 }
