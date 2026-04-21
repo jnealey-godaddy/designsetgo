@@ -182,7 +182,18 @@ function initFormBuilder() {
 		}
 
 		const formId = formContainer.getAttribute('data-form-id');
-		const storageKey = `dsgo_confirmed_${formId || 'default'}`;
+		const storageKey = (() => {
+			if (formId) {
+				return `dsgo_confirmed_${formId}`;
+			}
+			if (formContainer.id) {
+				return `dsgo_confirmed_instance_${formContainer.id.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+			}
+			const idx = Array.from(
+				document.querySelectorAll('[data-form-id]')
+			).indexOf(formContainer);
+			return `dsgo_confirmed_instance_${idx >= 0 ? idx : 0}`;
+		})();
 		const successMessage = formContainer.getAttribute(
 			'data-success-message'
 		);
@@ -231,6 +242,14 @@ function initFormBuilder() {
 			}
 		}
 
+		function clearConfirmation() {
+			try {
+				sessionStorage.removeItem(storageKey);
+			} catch {
+				// sessionStorage unavailable
+			}
+		}
+
 		function showRedirectStatus() {
 			const params = new URLSearchParams(window.location.search);
 			const status = params.get('dsgo_form_status');
@@ -253,6 +272,7 @@ function initFormBuilder() {
 				matchesCurrentForm &&
 				(params.has('dsgo_form_error') || status === 'error')
 			) {
+				clearConfirmation();
 				showMessage(
 					messageContainer,
 					errorMessage ||
@@ -323,11 +343,12 @@ function initFormBuilder() {
 
 		const shownFromRedirect = showRedirectStatus();
 
-		// Restore confirmation message persisted from a previous submission
+		// Restore confirmation message persisted from a previous submission (one-time)
 		if (!shownFromRedirect) {
 			const storedConfirmation = getStoredConfirmation();
 			if (storedConfirmation) {
 				showMessage(messageContainer, storedConfirmation, 'success');
+				clearConfirmation();
 			}
 		}
 
@@ -348,8 +369,9 @@ function initFormBuilder() {
 		formElement.addEventListener('submit', async function (e) {
 			e.preventDefault();
 
-			// Clear previous messages
+			// Clear previous messages and any persisted confirmation state
 			hideMessage(messageContainer);
+			clearConfirmation();
 
 			// Validate form using HTML5 validation
 			if (!formElement.checkValidity()) {
