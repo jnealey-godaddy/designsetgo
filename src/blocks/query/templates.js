@@ -1,28 +1,19 @@
 import { __ } from '@wordpress/i18n';
+import { DEFAULT_TEMPLATE } from './edit-template';
 import variations from './variations';
 
-const blank = {
-	name: 'blank',
-	title: __('Blank', 'designsetgo'),
+const minimal = {
+	name: 'minimal',
+	title: __('Minimal', 'designsetgo'),
 	description: __(
 		'Start with a single item template and build from scratch.',
 		'designsetgo'
 	),
 	icon: 'welcome-add-page',
 	attributes: {},
-	innerBlocks: [
-		[
-			'designsetgo/section',
-			{},
-			[
-				['core/post-featured-image', { isLink: true }],
-				['core/post-title', { level: 3, isLink: true }],
-				['core/post-excerpt'],
-			],
-		],
-	],
+	innerBlocks: DEFAULT_TEMPLATE,
 };
 
-const queryTemplates = [blank, ...variations];
+const queryTemplates = [minimal, ...variations];
 
 export default queryTemplates;

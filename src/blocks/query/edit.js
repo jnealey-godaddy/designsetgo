@@ -8,14 +8,14 @@ import { useSelect } from '@wordpress/data';
 
 import useQueryId from './hooks/useQueryId';
 import useQueryPreview from './hooks/useQueryPreview';
-import QuerySourcePanel from './components/QuerySourcePanel';
-import TaxQueryBuilder from './components/TaxQueryBuilder';
+import AdvancedPanel from './components/AdvancedPanel';
+import DateQueryBuilder from './components/DateQueryBuilder';
+import EditorPreviewList from './components/EditorPreviewList';
 import MetaQueryBuilder from './components/MetaQueryBuilder';
 import QueryPlaceholder from './components/QueryPlaceholder';
-import DateQueryBuilder from './components/DateQueryBuilder';
-import AdvancedPanel from './components/AdvancedPanel';
+import QuerySourcePanel from './components/QuerySourcePanel';
 import ResultCountBadge from './components/ResultCountBadge';
-import EditorPreviewList from './components/EditorPreviewList';
+import TaxQueryBuilder from './components/TaxQueryBuilder';
 
 // Stable reference returned when the block has no inner blocks yet. Using
 // an ad-hoc `[]` literal in the selector would produce a fresh array each
