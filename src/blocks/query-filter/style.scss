@@ -1,5 +1,4 @@
 // Frontend styles for designsetgo/query-filter.
-//
 // Prefers theme.json presets via CSS vars with sensible fallbacks, so the
 // filter inherits the site's typography, color, and spacing tokens without
 // needing every theme to opt in. currentcolor is used for strokes so the
@@ -153,7 +152,7 @@
 			// consistently across browsers. currentcolor in the SVG stroke picks
 			// up the surrounding text color.
 			padding-inline-end: 2.4em;
-			background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+			background-image: url(data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E);
 			background-repeat: no-repeat;
 			background-position: right 0.95em center;
 			background-size: 0.75em auto;
