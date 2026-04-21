@@ -64,14 +64,16 @@
 
 	@media (max-width: 900px) {
 
-		.dsgo-query__editor-grid {
+		.dsgo-query__editor-grid,
+		.dsgo-query__editor-preview-list {
 			grid-template-columns: repeat(var(--dsgo-query-columns-tablet, var(--dsgo-query-columns, 1)), minmax(0, 1fr));
 		}
 	}
 
 	@media (max-width: 600px) {
 
-		.dsgo-query__editor-grid {
+		.dsgo-query__editor-grid,
+		.dsgo-query__editor-preview-list {
 			grid-template-columns: repeat(var(--dsgo-query-columns-mobile, 1), minmax(0, 1fr));
 		}
 
@@ -80,6 +82,23 @@
 		.dsgo-query__ghost-item {
 			display: none;
 		}
+	}
+
+	// Live-preview list rendered by EditorPreviewList. Mirrors the editor-grid
+	// column/gap layout so items fan out the same way ghost tiles do on the
+	// non-live path. List-style reset removes browser bullet + indentation.
+	.dsgo-query__editor-preview-list {
+		display: grid;
+		grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
+		gap: var(--dsgo-query-gap, 1.5rem);
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.dsgo-query__editor-preview-item {
+		margin: 0;
+		padding: 0;
 	}
 
 	.dsgo-query__editor-header {
