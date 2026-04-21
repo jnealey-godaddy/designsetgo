@@ -222,6 +222,83 @@ export default [
 		],
 	},
 	{
+		name: 'featured-carousel',
+		title: __('Featured carousel', 'designsetgo'),
+		description: __(
+			'Slider that iterates posts — featured image, title, excerpt per slide. Edits to slide 1 apply to all.',
+			'designsetgo'
+		),
+		icon: 'images-alt2',
+		attributes: {
+			source: 'posts',
+			postType: 'post',
+			perPage: 5,
+			orderBy: 'date',
+			order: 'DESC',
+		},
+		innerBlocks: [
+			[
+				'designsetgo/slider',
+				{
+					slidesPerView: 1,
+					showArrows: true,
+					showDots: true,
+					effect: 'slide',
+					loop: true,
+					autoplay: false,
+				},
+				[
+					[
+						'designsetgo/slide',
+						{
+							contentVerticalAlign: 'center',
+							contentHorizontalAlign: 'center',
+						},
+						[
+							['core/post-featured-image', { aspectRatio: '16/9' }],
+							['core/post-title', { level: 3, isLink: true }],
+							['core/post-excerpt', { excerptLength: 20 }],
+						],
+					],
+				],
+			],
+			['designsetgo/query-no-results'],
+		],
+	},
+	{
+		name: 'post-spotlight',
+		title: __('Post spotlight (scroll-slides)', 'designsetgo'),
+		description: __(
+			'Scroll-driven panels that iterate posts. Each panel shows title + excerpt; one template applies to every post.',
+			'designsetgo'
+		),
+		icon: 'format-gallery',
+		attributes: {
+			source: 'posts',
+			postType: 'post',
+			perPage: 4,
+			orderBy: 'date',
+			order: 'DESC',
+		},
+		innerBlocks: [
+			[
+				'designsetgo/scroll-slides',
+				{ minHeight: '70vh' },
+				[
+					[
+						'designsetgo/scroll-slide',
+						{ navHeading: __('Story', 'designsetgo') },
+						[
+							['core/post-title', { level: 2, isLink: true }],
+							['core/post-excerpt', { excerptLength: 30 }],
+						],
+					],
+				],
+			],
+			['designsetgo/query-no-results'],
+		],
+	},
+	{
 		name: 'events',
 		title: __('Events', 'designsetgo'),
 		description: __(
