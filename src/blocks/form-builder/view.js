@@ -182,6 +182,18 @@ function initFormBuilder() {
 		}
 
 		const formId = formContainer.getAttribute('data-form-id');
+		const storageKey = (() => {
+			if (formId) {
+				return `dsgo_confirmed_${formId}`;
+			}
+			if (formContainer.id) {
+				return `dsgo_confirmed_instance_${formContainer.id.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+			}
+			const idx = Array.from(
+				document.querySelectorAll('[data-form-id]')
+			).indexOf(formContainer);
+			return `dsgo_confirmed_instance_${idx >= 0 ? idx : 0}`;
+		})();
 		const successMessage = formContainer.getAttribute(
 			'data-success-message'
 		);
@@ -214,6 +226,30 @@ function initFormBuilder() {
 			nonceField.defaultValue = nonceField.value;
 		}
 
+		function getStoredConfirmation() {
+			try {
+				return sessionStorage.getItem(storageKey);
+			} catch {
+				return null;
+			}
+		}
+
+		function storeConfirmation(message) {
+			try {
+				sessionStorage.setItem(storageKey, message);
+			} catch {
+				// sessionStorage unavailable
+			}
+		}
+
+		function clearConfirmation() {
+			try {
+				sessionStorage.removeItem(storageKey);
+			} catch {
+				// sessionStorage unavailable
+			}
+		}
+
 		function showRedirectStatus() {
 			const params = new URLSearchParams(window.location.search);
 			const status = params.get('dsgo_form_status');
@@ -225,18 +261,18 @@ function initFormBuilder() {
 				matchesCurrentForm &&
 				(params.has('dsgo_form_success') || status === 'success')
 			) {
-				showMessage(
-					messageContainer,
+				const msg =
 					successMessage ||
-						__('Form submitted successfully!', 'designsetgo'),
-					'success'
-				);
+					__('Form submitted successfully!', 'designsetgo');
+				showMessage(messageContainer, msg, 'success');
+				storeConfirmation(msg);
 				formElement.reset();
 				shown = true;
 			} else if (
 				matchesCurrentForm &&
 				(params.has('dsgo_form_error') || status === 'error')
 			) {
+				clearConfirmation();
 				showMessage(
 					messageContainer,
 					errorMessage ||
@@ -305,7 +341,16 @@ function initFormBuilder() {
 			window.HTMLFormElement.prototype.submit.call(formElement);
 		}
 
-		showRedirectStatus();
+		const shownFromRedirect = showRedirectStatus();
+
+		// Restore confirmation message persisted from a previous submission (one-time)
+		if (!shownFromRedirect) {
+			const storedConfirmation = getStoredConfirmation();
+			if (storedConfirmation) {
+				showMessage(messageContainer, storedConfirmation, 'success');
+				clearConfirmation();
+			}
+		}
 
 		// Check if AJAX is enabled
 		const ajaxEnabled =
@@ -324,8 +369,9 @@ function initFormBuilder() {
 		formElement.addEventListener('submit', async function (e) {
 			e.preventDefault();
 
-			// Clear previous messages
+			// Clear previous messages and any persisted confirmation state
 			hideMessage(messageContainer);
+			clearConfirmation();
 
 			// Validate form using HTML5 validation
 			if (!formElement.checkValidity()) {
@@ -507,12 +553,10 @@ function initFormBuilder() {
 						return;
 					}
 
-					// Show success message
-					showMessage(
-						messageContainer,
-						successMessage || result.message,
-						'success'
-					);
+					// Show success message and persist for reload
+					const successMsg = successMessage || result.message;
+					showMessage(messageContainer, successMsg, 'success');
+					storeConfirmation(successMsg);
 
 					// Reset form
 					formElement.reset();
