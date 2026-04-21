@@ -120,6 +120,8 @@ jest.mock('@wordpress/block-editor', () => ({
 jest.mock('@wordpress/blocks', () => ({
 	createBlocksFromInnerBlocksTemplate: jest.fn((t) => t),
 	createBlock: jest.fn((name, attrs) => ({ name, attributes: attrs || {} })),
+	// useRenderedItems calls serialize() on innerBlocks for the REST payload.
+	serialize: jest.fn(() => ''),
 }));
 
 // Minimal @wordpress/components stubs — same as edit.test.js.
@@ -210,6 +212,12 @@ jest.mock('@wordpress/components', () => {
 		</div>
 	);
 
+	const PanelBody = ({ title, children }) => (
+		<div data-testid="panel-body" aria-label={title}>
+			{children}
+		</div>
+	);
+
 	const TextareaControl = ({ label, value, onChange }) => (
 		<label>
 			{label}
@@ -243,6 +251,7 @@ jest.mock('@wordpress/components', () => {
 		TextareaControl,
 		ToggleControl,
 		FormTokenField,
+		PanelBody,
 		__experimentalNumberControl: NumberControl,
 		__experimentalToolsPanel: ToolsPanel,
 		__experimentalToolsPanelItem: ToolsPanelItem,
