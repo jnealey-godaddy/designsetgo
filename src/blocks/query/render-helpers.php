@@ -27,6 +27,39 @@
 
 defined( 'ABSPATH' ) || exit;
 
+if ( ! function_exists( 'designsetgo_query_item_host_block_names' ) ) :
+
+	/**
+	 * Block names that may act as the item host inside a designsetgo/query.
+	 *
+	 * An "item host" is the child block whose innerBlocks define the per-item
+	 * template and whose render.php emits the iterated items (or chrome that
+	 * wraps them). Today only designsetgo/query-results qualifies; slider and
+	 * scroll-slides join once their render paths opt in.
+	 *
+	 * Third parties can register their own layout blocks as item hosts via the
+	 * `designsetgo_query_item_host_block_names` filter, provided they pair the
+	 * registration with the matching render.php contract (read pre-rendered
+	 * items from $GLOBALS['designsetgo_query_items_html'][ queryId ], wrap in
+	 * their own chrome, echo).
+	 *
+	 * @return string[] Registered item host block names.
+	 */
+	function designsetgo_query_item_host_block_names() {
+		/**
+		 * Filter the list of blocks that may act as item hosts inside a Dynamic Query.
+		 *
+		 * @param string[] $hosts Default list: [ 'designsetgo/query-results' ].
+		 */
+		$hosts = apply_filters(
+			'designsetgo_query_item_host_block_names',
+			array( 'designsetgo/query-results' )
+		);
+		return array_values( array_filter( array_map( 'strval', (array) $hosts ) ) );
+	}
+
+endif;
+
 if ( ! function_exists( 'designsetgo_query_render' ) ) :
 
 	/**
@@ -80,6 +113,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 
 		return array(
 			'html'       => '',
+			'items_html' => '',
 			'totalPages' => 0,
 			'totalItems' => 0,
 		);
@@ -94,25 +128,25 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 */
 	function designsetgo_query_defaults( array $attributes ) {
 		$defaults = array(
-			'queryId'        => '',
-			'source'         => 'posts',
-			'postType'       => 'post',
-			'perPage'        => 6,
-			'offset'         => 0,
-			'orderBy'        => 'date',
-			'orderByMetaKey' => '',
-			'order'          => 'DESC',
-			'search'         => '',
-			'bindSearchTo'   => '',
-			'author'         => array(),
-			'excludeCurrent' => false,
-			'ignoreSticky'   => true,
-			'manualIds'      => array(),
-			'taxQuery'       => array(
+			'queryId'              => '',
+			'source'               => 'posts',
+			'postType'             => 'post',
+			'perPage'              => 6,
+			'offset'               => 0,
+			'orderBy'              => 'date',
+			'orderByMetaKey'       => '',
+			'order'                => 'DESC',
+			'search'               => '',
+			'bindSearchTo'         => '',
+			'author'               => array(),
+			'excludeCurrent'       => false,
+			'ignoreSticky'         => true,
+			'manualIds'            => array(),
+			'taxQuery'             => array(
 				'relation' => 'AND',
 				'clauses'  => array(),
 			),
-			'metaQuery'      => array(
+			'metaQuery'            => array(
 				'relation' => 'AND',
 				'clauses'  => array(),
 			),
@@ -135,13 +169,19 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 * Posts with multiple terms (taxonomy field) appear in ALL matching groups.
 	 * Posts with no matching term land in the '__none__' / Uncategorized bucket.
 	 *
-	 * @param int[]  $post_ids   Ordered list of post IDs to partition.
-	 * @param array  $group_spec { field: string, key: string }
+	 * @param int[] $post_ids   Ordered list of post IDs to partition.
+	 * @param array $group_spec { field: string, key: string }
 	 * @return array[] Array of groups: each { label: string, value: string, ids: int[] }
 	 */
 	function designsetgo_query_partition_items( array $post_ids, array $group_spec ) {
 		if ( empty( $group_spec['field'] ) || empty( $group_spec['key'] ) ) {
-			return array( array( 'label' => '', 'value' => '', 'ids' => $post_ids ) );
+			return array(
+				array(
+					'label' => '',
+					'value' => '',
+					'ids'   => $post_ids,
+				),
+			);
 		}
 		$field = (string) $group_spec['field'];
 		$key   = (string) $group_spec['key'];
@@ -175,7 +215,11 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			}
 			foreach ( $values as $i => $v ) {
 				if ( ! isset( $groups[ $v ] ) ) {
-					$groups[ $v ] = array( 'label' => $labels[ $i ] ?? $v, 'value' => $v, 'ids' => array() );
+					$groups[ $v ] = array(
+						'label' => $labels[ $i ] ?? $v,
+						'value' => $v,
+						'ids'   => array(),
+					);
 				}
 				$groups[ $v ]['ids'][] = $pid;
 			}
@@ -204,11 +248,11 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 
 		// Column CSS variables drive the responsive grid layout in
 		// query-results/style.scss.
-		$columns         = isset( $atts['columns'] ) ? max( 1, (int) $atts['columns'] ) : 1;
-		$columns_tablet  = isset( $atts['columnsTablet'] ) ? (int) $atts['columnsTablet'] : 0;
-		$columns_mobile  = isset( $atts['columnsMobile'] ) ? (int) $atts['columnsMobile'] : 0;
-		$column_gap      = isset( $atts['columnGap'] ) ? sanitize_text_field( (string) $atts['columnGap'] ) : '';
-		$grid_style      = sprintf( '--dsgo-query-columns:%d;', $columns );
+		$columns        = isset( $atts['columns'] ) ? max( 1, (int) $atts['columns'] ) : 1;
+		$columns_tablet = isset( $atts['columnsTablet'] ) ? (int) $atts['columnsTablet'] : 0;
+		$columns_mobile = isset( $atts['columnsMobile'] ) ? (int) $atts['columnsMobile'] : 0;
+		$column_gap     = isset( $atts['columnGap'] ) ? sanitize_text_field( (string) $atts['columnGap'] ) : '';
+		$grid_style     = sprintf( '--dsgo-query-columns:%d;', $columns );
 		if ( $columns_tablet > 0 ) {
 			$grid_style .= sprintf( '--dsgo-query-columns-tablet:%d;', $columns_tablet );
 		}
@@ -472,12 +516,15 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 		$attributes = designsetgo_query_defaults( $attributes );
 		$source     = sanitize_key( (string) ( $attributes['source'] ?? 'posts' ) );
 
-		// Find the designsetgo/query-results child (only one allowed). Its attrs
-		// govern presentation (columns, tagName, groupBy...) and its innerBlocks
-		// are the per-item template.
-		$results_child = null;
+		// Find the item host child — any block registered as a query item host
+		// (designsetgo/query-results by default; slider/scroll-slides once they
+		// opt in). Only the first match is used; multiple hosts aren't supported.
+		// Its attrs govern presentation (columns, tagName, groupBy...) and its
+		// innerBlocks form the per-item template.
+		$host_block_names = designsetgo_query_item_host_block_names();
+		$results_child    = null;
 		foreach ( $parsed_children as $child ) {
-			if ( ( $child['blockName'] ?? '' ) === 'designsetgo/query-results' ) {
+			if ( in_array( ( $child['blockName'] ?? '' ), $host_block_names, true ) ) {
 				$results_child = $child;
 				break;
 			}
@@ -486,11 +533,11 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 		$total_items = 0;
 
 		// Two shapes are accepted:
-		//  1. First-paint path — children contain a <query-results> wrapper.
-		//     Use its attrs for presentation + its innerBlocks for the template.
-		//  2. Editor-preview / legacy path — children ARE the item template
-		//     directly (no query-results wrapper). Use parent attrs for
-		//     presentation and treat all children as template blocks.
+		// 1. First-paint path — children contain a <query-results> wrapper.
+		// Use its attrs for presentation + its innerBlocks for the template.
+		// 2. Editor-preview / legacy path — children ARE the item template
+		// directly (no query-results wrapper). Use parent attrs for
+		// presentation and treat all children as template blocks.
 		$effective_attrs = $attributes;
 		$template_blocks = array();
 
@@ -499,13 +546,13 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 			$effective_attrs = array_merge(
 				$attributes,
 				array(
-					'tagName'       => $results_attrs['tagName']       ?? ( $attributes['tagName']       ?? 'ul' ),
-					'itemTagName'   => $results_attrs['itemTagName']   ?? ( $attributes['itemTagName']   ?? 'li' ),
-					'columns'       => $results_attrs['columns']       ?? ( $attributes['columns']       ?? 1 ),
+					'tagName'       => $results_attrs['tagName'] ?? ( $attributes['tagName'] ?? 'ul' ),
+					'itemTagName'   => $results_attrs['itemTagName'] ?? ( $attributes['itemTagName'] ?? 'li' ),
+					'columns'       => $results_attrs['columns'] ?? ( $attributes['columns'] ?? 1 ),
 					'columnsTablet' => $results_attrs['columnsTablet'] ?? ( $attributes['columnsTablet'] ?? 0 ),
 					'columnsMobile' => $results_attrs['columnsMobile'] ?? ( $attributes['columnsMobile'] ?? 0 ),
-					'columnGap'     => $results_attrs['columnGap']     ?? ( $attributes['columnGap']     ?? '' ),
-					'groupBy'       => $results_attrs['groupBy']       ?? ( $attributes['groupBy']       ?? null ),
+					'columnGap'     => $results_attrs['columnGap'] ?? ( $attributes['columnGap'] ?? '' ),
+					'groupBy'       => $results_attrs['groupBy'] ?? ( $attributes['groupBy'] ?? null ),
 				)
 			);
 			$template_blocks = (array) ( $results_child['innerBlocks'] ?? array() );
@@ -541,11 +588,20 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 
 			// Stash the rendered items HTML so query-results/render.php can
 			// echo it when WordPress walks the tree below. Keyed by queryId so
-			// nested queries can't clash.
+			// nested queries can't clash. Two stashes:
+			// - designsetgo_query_results_html: the fully wrapped output
+			// (grid <ul> + schema). Consumed by query-results/render.php.
+			// - designsetgo_query_items_html: raw per-item HTML, no outer
+			// wrap. Consumed by non-grid item hosts (slider, scroll-slides)
+			// that supply their own chrome around the iterated items.
 			if ( ! isset( $GLOBALS['designsetgo_query_results_html'] ) || ! is_array( $GLOBALS['designsetgo_query_results_html'] ) ) {
 				$GLOBALS['designsetgo_query_results_html'] = array();
 			}
 			$GLOBALS['designsetgo_query_results_html'][ $query_id ] = (string) $result['html'];
+			if ( ! isset( $GLOBALS['designsetgo_query_items_html'] ) || ! is_array( $GLOBALS['designsetgo_query_items_html'] ) ) {
+				$GLOBALS['designsetgo_query_items_html'] = array();
+			}
+			$GLOBALS['designsetgo_query_items_html'][ $query_id ] = isset( $result['items_html'] ) ? (string) $result['items_html'] : '';
 
 			// Legacy path (no query-results wrapper): since no child block will
 			// emit the items, emit them directly here so the editor preview
@@ -558,7 +614,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 					esc_attr( $query_id ),
 					(int) $total_items
 				);
-				$wp_context_legacy = wp_json_encode(
+				$wp_context_legacy    = wp_json_encode(
 					array(
 						'queryId' => $query_id,
 						'source'  => $source,
@@ -569,13 +625,13 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 					),
 					JSON_HEX_APOS
 				);
-				$iapi_attrs_legacy = sprintf(
+				$iapi_attrs_legacy    = sprintf(
 					'data-dsgo-query-id="%1$s" data-dsgo-query-region="%1$s" data-wp-interactive="%2$s" data-wp-context=\'%3$s\' aria-live="polite"',
 					esc_attr( $query_id ),
 					esc_attr( 'designsetgo/query' ),
 					$wp_context_legacy // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON_HEX_APOS output is safe in single-quoted attr.
 				);
-				$merged_legacy = trim( (string) $wrapper_attrs . ' ' . $iapi_attrs_legacy );
+				$merged_legacy        = trim( (string) $wrapper_attrs . ' ' . $iapi_attrs_legacy );
 				return sprintf(
 					'<div %1$s>%2$s%3$s%4$s</div>',
 					$merged_legacy,         // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wrapper + esc_attr IAPI attrs.
@@ -614,6 +670,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 		// the request (e.g. multiple Dynamic Query blocks on one page).
 		if ( '' !== $query_id ) {
 			unset( $GLOBALS['designsetgo_query_results_html'][ $query_id ] );
+			unset( $GLOBALS['designsetgo_query_items_html'][ $query_id ] );
 		}
 
 		// IAPI + state-announcement markup. Appended to the block wrapper so
