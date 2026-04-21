@@ -16,14 +16,13 @@
 	// The useInnerBlocksProps wrapper — the live editable prototype. Flex
 	// column so the template blocks (featured image, title, excerpt) stack
 	// vertically inside ONE grid cell, matching how each frontend item
-	// will render.
+	// will render. No padding/outline chrome so item 0 renders identically
+	// to the read-only BlockPreview items 1..N next to it; WordPress still
+	// draws its own selection ring on click.
 	.dsgo-query__inner {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		outline: 1px dashed rgba(242, 89, 18, 0.4);
-		outline-offset: 4px;
-		padding: 4px;
 		position: relative;
 	}
 
@@ -96,18 +95,33 @@
 		list-style: none;
 		margin: 0;
 		padding: 0;
+
+		// When grouped, the outer element is a <div> that stacks <section>
+		// wrappers; each section then owns its own grid of items. Without
+		// this override the sections would be forced into the N-column grid
+		// and collapse into a single column.
+		&.is-grouped {
+			display: flex;
+			flex-direction: column;
+			gap: 2rem;
+		}
+	}
+
+	.dsgo-query__editor-preview-group {
+
+		&:not(:last-child) {
+			padding-bottom: 1rem;
+			border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+		}
+	}
+
+	.dsgo-query__group-notice {
+		margin: 0 0 1rem;
 	}
 
 	.dsgo-query__editor-preview-item {
 		margin: 0;
 		padding: 0;
-
-		// Read-only BlockPreview items lack the .dsgo-query__inner wrapper's
-		// 4px chrome padding, so mirror it on the <li> to keep content aligned
-		// with the editable item 0.
-		&.is-read-only {
-			padding: 4px;
-		}
 	}
 
 	.dsgo-query__editor-header {
