@@ -11,13 +11,14 @@
  * @since 2.2.0
  */
 import { __, sprintf } from '@wordpress/i18n';
-import { useMemo, useState, useEffect } from '@wordpress/element';
+import { useMemo, useState, useEffect, useRef } from '@wordpress/element';
 import { useEntityRecords } from '@wordpress/core-data';
 import { BlockPreview, BlockContextProvider } from '@wordpress/block-editor';
-import { Spinner, Placeholder } from '@wordpress/components';
+import { Spinner, Placeholder, Notice } from '@wordpress/components';
 import apiFetch from '@wordpress/api-fetch';
 import { addQueryArgs } from '@wordpress/url';
 import useQueryPreview from '../hooks/useQueryPreview';
+import useRenderedItems from '../hooks/useRenderedItems';
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -52,6 +53,20 @@ export default function EditorPreviewList({
 		source,
 		relationshipField: attributes.relationshipField || '',
 		perPage: attributes.perPage || 6,
+	});
+
+	// Fetch server-rendered HTML for each item so items 1..N visually match
+	// the editable item 0 pixel-for-pixel. This runs on the same PHP pipeline
+	// as the frontend, so fluid spacing presets, block-supports padding, and
+	// style bindings all resolve identically to what visitors will see.
+	const renderedItems = useRenderedItems({
+		queryId: attributes.queryId,
+		attributes,
+		innerBlocks,
+		enabled:
+			Array.isArray(innerBlocks) &&
+			innerBlocks.length > 0 &&
+			!!attributes.queryId,
 	});
 
 	// Select the active data path.
@@ -92,6 +107,7 @@ export default function EditorPreviewList({
 				innerBlocksProps={innerBlocksProps}
 				context={context}
 				groupBy={groupBy}
+				renderedItems={renderedItems}
 			/>
 		);
 	}
@@ -115,10 +131,12 @@ export default function EditorPreviewList({
 									innerBlocksProps={innerBlocksProps}
 								/>
 							) : (
-								<BlockPreview
-									blocks={innerBlocks}
-									viewportWidth={1000}
-									additionalStyles={[]}
+								<ReadOnlyItem
+									innerBlocks={innerBlocks}
+									serverHtml={
+										renderedItems.items?.[idx] ?? null
+									}
+									loading={renderedItems.loading}
 								/>
 							)}
 						</BlockContextProvider>
@@ -132,6 +150,29 @@ export default function EditorPreviewList({
 // ---------------------------------------------------------------------------
 // Grouped preview (when groupBy is set)
 // ---------------------------------------------------------------------------
+
+/**
+ * Recursively check whether a block tree contains a designsetgo/query-group-header
+ * block. Used to warn the author when groupBy is set but no header block is in
+ * the template — the frontend silently skips grouping in that case.
+ *
+ * @param {Array} blocks Block tree from innerBlocks.
+ * @return {boolean} True if a query-group-header block is present anywhere.
+ */
+function hasGroupHeaderBlock(blocks) {
+	if (!Array.isArray(blocks)) {
+		return false;
+	}
+	for (const block of blocks) {
+		if (block?.name === 'designsetgo/query-group-header') {
+			return true;
+		}
+		if (hasGroupHeaderBlock(block?.innerBlocks)) {
+			return true;
+		}
+	}
+	return false;
+}
 
 /**
  * Derive a group label string from a record given the groupBy config.
@@ -206,6 +247,7 @@ function GroupedPreviewList({
 	innerBlocksProps,
 	context,
 	groupBy,
+	renderedItems,
 }) {
 	const source = attributes.source || 'posts';
 
@@ -221,12 +263,30 @@ function GroupedPreviewList({
 		groups[groupIndex[label]].items.push(item);
 	});
 
+	// Grouping only renders on the frontend when the template contains a
+	// designsetgo/query-group-header block (render-posts.php:205). Surface
+	// this in the editor so authors aren't left wondering why "Group by"
+	// had no visible effect.
+	const hasGroupHeader = hasGroupHeaderBlock(innerBlocks);
+
 	// Track the first-ever item index across all groups so item 0 gets
 	// the editable InnerBlocks slot.
 	let globalIdx = 0;
 
 	return (
 		<div className="dsgo-query__editor-preview-list is-grouped">
+			{!hasGroupHeader && (
+				<Notice
+					status="info"
+					isDismissible={false}
+					className="dsgo-query__group-notice"
+				>
+					{__(
+						'Group by is set, but the template has no Query group header block. Frontend output will not show group headers until one is added inside the item template.',
+						'designsetgo'
+					)}
+				</Notice>
+			)}
 			{groups.map((group) => {
 				let groupItemIdx = 0;
 				return (
@@ -270,10 +330,15 @@ function GroupedPreviewList({
 													}
 												/>
 											) : (
-												<BlockPreview
-													blocks={innerBlocks}
-													viewportWidth={1000}
-													additionalStyles={[]}
+												<ReadOnlyItem
+													innerBlocks={innerBlocks}
+													serverHtml={
+														renderedItems
+															.items?.[idx] ?? null
+													}
+													loading={
+														renderedItems.loading
+													}
 												/>
 											)}
 										</BlockContextProvider>
@@ -303,6 +368,70 @@ function GroupedPreviewList({
  */
 function EditableTemplate({ innerBlocksProps }) {
 	return <div {...innerBlocksProps} />;
+}
+
+// ---------------------------------------------------------------------------
+// Read-only item (items 1..N)
+// ---------------------------------------------------------------------------
+
+/**
+ * Renders a single read-only item using server-rendered HTML so the markup
+ * exactly matches what the frontend will produce. Falls back to BlockPreview
+ * while the server response is in flight, or if the server response doesn't
+ * include an entry for this item (e.g. render error).
+ *
+ * The HTML is produced by the plugin's own render pipeline — the same markup
+ * served to frontend visitors, which flows through wp_kses_post / block-render
+ * sanitization. The REST endpoint requires edit_posts capability, so only
+ * trusted editors can influence this output.
+ *
+ * @param {Object}      props
+ * @param {Array}       props.innerBlocks Current editor innerBlocks (fallback preview).
+ * @param {string|null} props.serverHtml  Rendered inner HTML for this item, or null.
+ * @param {boolean}     props.loading     True while the server render is in flight.
+ */
+function ReadOnlyItem({ innerBlocks, serverHtml, loading }) {
+	const hostRef = useRef(null);
+
+	useEffect(() => {
+		const node = hostRef.current;
+		if (!node) {
+			return;
+		}
+		// Clear previous content.
+		while (node.firstChild) {
+			node.removeChild(node.firstChild);
+		}
+		if (typeof serverHtml !== 'string') {
+			return;
+		}
+		// Parse the server-rendered markup into a DocumentFragment and attach.
+		// Content originates from our own PHP render pipeline (same output as
+		// the frontend), so no additional sanitization is required beyond what
+		// wp_kses_post / block rendering already applied server-side.
+		const range = node.ownerDocument.createRange();
+		range.selectNodeContents(node);
+		const fragment = range.createContextualFragment(serverHtml);
+		node.appendChild(fragment);
+	}, [serverHtml]);
+
+	if (typeof serverHtml === 'string') {
+		return <div ref={hostRef} />;
+	}
+	if (loading) {
+		return (
+			<Placeholder className="dsgo-query__editor-placeholder">
+				<Spinner />
+			</Placeholder>
+		);
+	}
+	return (
+		<BlockPreview
+			blocks={innerBlocks}
+			viewportWidth={1200}
+			additionalStyles={[]}
+		/>
+	);
 }
 
 // ---------------------------------------------------------------------------

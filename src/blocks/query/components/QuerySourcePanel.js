@@ -11,14 +11,14 @@ import {
 import { DsgoInspectorPanel } from '../../../components/shared';
 import TemplateIO from './TemplateIO';
 
-const GROUP_BY_OPTIONS = [
+export const GROUP_BY_OPTIONS = [
 	{ value: 'none', label: __('None', 'designsetgo') },
 	{ value: 'taxonomy', label: __('Taxonomy', 'designsetgo') },
 	{ value: 'meta', label: __('Meta field', 'designsetgo') },
 	{ value: 'date', label: __('Date', 'designsetgo') },
 ];
 
-const DATE_PRECISION_OPTIONS = [
+export const DATE_PRECISION_OPTIONS = [
 	{ value: 'Y', label: __('Year', 'designsetgo') },
 	{ value: 'Y-M', label: __('Year + Month', 'designsetgo') },
 	{ value: 'Y-M-D', label: __('Year + Month + Day', 'designsetgo') },
@@ -70,13 +70,8 @@ export default function QuerySourcePanel({
 		orderBy,
 		orderByMetaKey,
 		order,
-		columns,
-		columnsTablet,
-		columnsMobile,
-		columnGap,
 		relationshipField,
 		relationshipFallback,
-		groupBy,
 	} = attributes;
 
 	const postTypes = useSelect(
@@ -84,10 +79,6 @@ export default function QuerySourcePanel({
 		[]
 	);
 
-	const taxonomies = useSelect(
-		(select) => select(coreStore).getTaxonomies({ per_page: -1 }) || [],
-		[]
-	);
 
 	const postTypeOptions = (postTypes || [])
 		.filter((pt) => pt && pt.viewable)
@@ -96,28 +87,9 @@ export default function QuerySourcePanel({
 			value: pt.slug,
 		}));
 
-	const taxonomyOptions = (taxonomies || []).map((t) => ({
-		label: t.labels?.singular_name || t.slug,
-		value: t.slug,
-	}));
-
 	const showPostType = source === 'posts';
 	const showRelationship = source === 'relationship';
 	const showMetaKey = ['meta_value', 'meta_value_num'].includes(orderBy);
-
-	// Group-by derived state.
-	const groupByField = groupBy?.field || 'none';
-	const showGroupTaxonomy = groupByField === 'taxonomy';
-	const showGroupMeta = groupByField === 'meta';
-	const showGroupDate = groupByField === 'date';
-
-	const handleGroupByFieldChange = (value) => {
-		if (value === 'none') {
-			setAttributes({ groupBy: null });
-		} else {
-			setAttributes({ groupBy: { field: value, key: '' } });
-		}
-	};
 
 	return (
 		<DsgoInspectorPanel
@@ -133,10 +105,6 @@ export default function QuerySourcePanel({
 					orderBy: 'date',
 					orderByMetaKey: '',
 					order: 'DESC',
-					columns: 1,
-					columnsTablet: 0,
-					columnsMobile: 0,
-					columnGap: '',
 				})
 			}
 		>
@@ -231,88 +199,6 @@ export default function QuerySourcePanel({
 			</DsgoInspectorPanel.Item>
 
 			<DsgoInspectorPanel.Item
-				label={__('Columns', 'designsetgo')}
-				hasValue={() => columns !== 1}
-				onDeselect={() => setAttributes({ columns: 1 })}
-				isShownByDefault
-			>
-				<RangeControl
-					label={__('Columns', 'designsetgo')}
-					help={__(
-						'Desktop columns. Tablet and mobile narrow further by default.',
-						'designsetgo'
-					)}
-					value={columns}
-					min={1}
-					max={6}
-					onChange={(value) => setAttributes({ columns: value || 1 })}
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
-			</DsgoInspectorPanel.Item>
-
-			<DsgoInspectorPanel.Item
-				label={__('Columns (tablet)', 'designsetgo')}
-				hasValue={() => columnsTablet !== 0}
-				onDeselect={() => setAttributes({ columnsTablet: 0 })}
-				isShownByDefault={false}
-			>
-				<RangeControl
-					label={__('Columns (tablet)', 'designsetgo')}
-					help={__('0 inherits from desktop.', 'designsetgo')}
-					value={columnsTablet}
-					min={0}
-					max={6}
-					onChange={(value) =>
-						setAttributes({ columnsTablet: value || 0 })
-					}
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
-			</DsgoInspectorPanel.Item>
-
-			<DsgoInspectorPanel.Item
-				label={__('Columns (mobile)', 'designsetgo')}
-				hasValue={() => columnsMobile !== 0}
-				onDeselect={() => setAttributes({ columnsMobile: 0 })}
-				isShownByDefault={false}
-			>
-				<RangeControl
-					label={__('Columns (mobile)', 'designsetgo')}
-					help={__('0 means single column on mobile.', 'designsetgo')}
-					value={columnsMobile}
-					min={0}
-					max={3}
-					onChange={(value) =>
-						setAttributes({ columnsMobile: value || 0 })
-					}
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
-			</DsgoInspectorPanel.Item>
-
-			<DsgoInspectorPanel.Item
-				label={__('Column gap', 'designsetgo')}
-				hasValue={() => columnGap !== ''}
-				onDeselect={() => setAttributes({ columnGap: '' })}
-				isShownByDefault={false}
-			>
-				<TextControl
-					label={__('Column gap', 'designsetgo')}
-					help={__(
-						'CSS length (e.g. 1.5rem, 24px). Leave blank for default.',
-						'designsetgo'
-					)}
-					value={columnGap}
-					onChange={(value) =>
-						setAttributes({ columnGap: String(value || '') })
-					}
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
-			</DsgoInspectorPanel.Item>
-
-			<DsgoInspectorPanel.Item
 				label={__('Offset', 'designsetgo')}
 				hasValue={() => offset !== 0}
 				onDeselect={() => setAttributes({ offset: 0 })}
@@ -382,90 +268,6 @@ export default function QuerySourcePanel({
 					__nextHasNoMarginBottom
 				/>
 			</DsgoInspectorPanel.Item>
-
-			<DsgoInspectorPanel.Item
-				label={__('Group by', 'designsetgo')}
-				hasValue={() => groupBy !== null}
-				onDeselect={() => setAttributes({ groupBy: null })}
-				isShownByDefault
-			>
-				<SelectControl
-					label={__('Group by', 'designsetgo')}
-					value={groupByField}
-					options={GROUP_BY_OPTIONS}
-					onChange={handleGroupByFieldChange}
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
-			</DsgoInspectorPanel.Item>
-
-			{showGroupTaxonomy && (
-				<DsgoInspectorPanel.Item
-					label={__('Group taxonomy', 'designsetgo')}
-					hasValue={() => (groupBy?.key || '') !== ''}
-					onDeselect={() =>
-						setAttributes({ groupBy: { ...groupBy, key: '' } })
-					}
-					isShownByDefault
-				>
-					<SelectControl
-						label={__('Group taxonomy', 'designsetgo')}
-						value={groupBy?.key || ''}
-						options={[
-							{ value: '', label: __('— Select —', 'designsetgo') },
-							...taxonomyOptions,
-						]}
-						onChange={(value) =>
-							setAttributes({ groupBy: { ...groupBy, key: value } })
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</DsgoInspectorPanel.Item>
-			)}
-
-			{showGroupMeta && (
-				<DsgoInspectorPanel.Item
-					label={__('Group meta key', 'designsetgo')}
-					hasValue={() => (groupBy?.key || '') !== ''}
-					onDeselect={() =>
-						setAttributes({ groupBy: { ...groupBy, key: '' } })
-					}
-					isShownByDefault
-				>
-					<TextControl
-						label={__('Group meta key', 'designsetgo')}
-						value={groupBy?.key || ''}
-						onChange={(value) =>
-							setAttributes({ groupBy: { ...groupBy, key: value } })
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</DsgoInspectorPanel.Item>
-			)}
-
-			{showGroupDate && (
-				<DsgoInspectorPanel.Item
-					label={__('Date precision', 'designsetgo')}
-					hasValue={() => (groupBy?.key || '') !== '' && groupBy?.key !== 'Y'}
-					onDeselect={() =>
-						setAttributes({ groupBy: { ...groupBy, key: 'Y' } })
-					}
-					isShownByDefault
-				>
-					<SelectControl
-						label={__('Date precision', 'designsetgo')}
-						value={groupBy?.key || 'Y'}
-						options={DATE_PRECISION_OPTIONS}
-						onChange={(value) =>
-							setAttributes({ groupBy: { ...groupBy, key: value } })
-						}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</DsgoInspectorPanel.Item>
-			)}
 
 			<DsgoInspectorPanel.Item
 				label={__('Template I/O', 'designsetgo')}

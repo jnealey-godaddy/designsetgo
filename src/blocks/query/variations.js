@@ -1,11 +1,23 @@
 import { __ } from '@wordpress/i18n';
 
+/**
+ * Dynamic Query inserter variations.
+ *
+ * Post-restructure (v2.6) the outer designsetgo/query block is a pure
+ * container; presentation attrs (columns, tagName, groupBy…) and the item
+ * template live on the required designsetgo/query-results child.
+ *
+ * Each variation ships with a sensible default set of sibling blocks —
+ * filter, no-results, pagination — so authors see the whole Dynamic Query
+ * toolkit on first insert. Removing a block you don't need is trivial;
+ * discovering blocks that weren't scaffolded for you is not.
+ */
 export default [
 	{
 		name: 'blog-index',
 		title: __('Blog index', 'designsetgo'),
 		description: __(
-			'Latest posts in a responsive grid with featured image, title, excerpt, and date.',
+			'Latest posts with search + sort, a responsive card grid, and numbered pagination.',
 			'designsetgo'
 		),
 		icon: 'admin-post',
@@ -15,28 +27,50 @@ export default [
 			perPage: 9,
 			orderBy: 'date',
 			order: 'DESC',
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-filter',
+				{
+					filterKind: 'search',
+					paramName: 'q',
+					label: __('Search posts', 'designsetgo'),
+					placeholder: __('Search…', 'designsetgo'),
+				},
+			],
+			[
+				'designsetgo/query-filter',
+				{
+					filterKind: 'sort',
+					paramName: 'sort',
+					label: __('Sort by', 'designsetgo'),
+				},
+			],
+			[
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 3 },
 				[
-					[ 'core/post-featured-image', { isLink: true } ],
-					[ 'core/post-title', { level: 3, isLink: true } ],
-					[ 'core/post-date' ],
-					[ 'core/post-excerpt', { excerptLength: 30 } ],
+					[
+						'designsetgo/section',
+						{},
+						[
+							['core/post-featured-image', { isLink: true }],
+							['core/post-title', { level: 3, isLink: true }],
+							['core/post-date'],
+							['core/post-excerpt', { excerptLength: 30 }],
+						],
+					],
 				],
 			],
+			['designsetgo/query-no-results'],
+			['designsetgo/query-pagination', { paginationKind: 'numbered' }],
 		],
-		scope: ['inserter'],
 	},
 	{
 		name: 'team',
 		title: __('Team directory', 'designsetgo'),
 		description: __(
-			'Team members grid. Switch Post type to your `team` CPT (or similar) in the inspector.',
+			'Searchable grid of team members. Switch Post type to your `team` CPT in the inspector.',
 			'designsetgo'
 		),
 		icon: 'groups',
@@ -46,27 +80,40 @@ export default [
 			perPage: 12,
 			orderBy: 'menu_order',
 			order: 'ASC',
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-filter',
+				{
+					filterKind: 'search',
+					paramName: 'q',
+					label: __('Search team', 'designsetgo'),
+					placeholder: __('Search by name…', 'designsetgo'),
+				},
+			],
+			[
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 4 },
 				[
-					[ 'core/post-featured-image' ],
-					[ 'core/post-title', { level: 3 } ],
-					[ 'core/post-excerpt', { excerptLength: 15 } ],
+					[
+						'designsetgo/section',
+						{},
+						[
+							['core/post-featured-image'],
+							['core/post-title', { level: 3 }],
+							['core/post-excerpt', { excerptLength: 15 }],
+						],
+					],
 				],
 			],
+			['designsetgo/query-no-results'],
 		],
-		scope: ['inserter'],
 	},
 	{
 		name: 'testimonials',
 		title: __('Testimonials', 'designsetgo'),
 		description: __(
-			'Customer quotes layout. Use the ACF binding source to render quote meta.',
+			'Customer quotes layout with load-more pagination. Pair with the ACF binding source to render quote meta.',
 			'designsetgo'
 		),
 		icon: 'format-quote',
@@ -76,26 +123,30 @@ export default [
 			perPage: 6,
 			orderBy: 'date',
 			order: 'DESC',
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 2 },
 				[
-					[ 'core/post-excerpt' ],
-					[ 'core/post-title', { level: 4 } ],
+					[
+						'designsetgo/section',
+						{},
+						[
+							['core/post-excerpt'],
+							['core/post-title', { level: 4 }],
+						],
+					],
 				],
 			],
+			['designsetgo/query-pagination', { paginationKind: 'loadmore' }],
 		],
-		scope: ['inserter'],
 	},
 	{
 		name: 'portfolio',
 		title: __('Portfolio', 'designsetgo'),
 		description: __(
-			'Project showcase in a grid with featured images.',
+			'Project showcase with category filter and load-more pagination.',
 			'designsetgo'
 		),
 		icon: 'portfolio',
@@ -105,20 +156,37 @@ export default [
 			perPage: 12,
 			orderBy: 'date',
 			order: 'DESC',
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-filter',
+				{
+					filterKind: 'checkbox',
+					taxonomy: 'category',
+					paramName: 'filter_category',
+					label: __('Filter by category', 'designsetgo'),
+				},
+			],
+			[
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 3 },
 				[
-					[ 'core/post-featured-image', { isLink: true, aspectRatio: '4/3' } ],
-					[ 'core/post-title', { level: 3, isLink: true } ],
+					[
+						'designsetgo/section',
+						{},
+						[
+							[
+								'core/post-featured-image',
+								{ isLink: true, aspectRatio: '4/3' },
+							],
+							['core/post-title', { level: 3, isLink: true }],
+						],
+					],
 				],
 			],
+			['designsetgo/query-no-results'],
+			['designsetgo/query-pagination', { paginationKind: 'loadmore' }],
 		],
-		scope: ['inserter'],
 	},
 	{
 		name: 'related-posts',
@@ -135,26 +203,29 @@ export default [
 			orderBy: 'rand',
 			order: 'DESC',
 			excludeCurrent: true,
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 3 },
 				[
-					[ 'core/post-featured-image', { isLink: true } ],
-					[ 'core/post-title', { level: 4, isLink: true } ],
+					[
+						'designsetgo/section',
+						{},
+						[
+							['core/post-featured-image', { isLink: true }],
+							['core/post-title', { level: 4, isLink: true }],
+						],
+					],
 				],
 			],
 		],
-		scope: ['inserter'],
 	},
 	{
 		name: 'events',
 		title: __('Events', 'designsetgo'),
 		description: __(
-			'Upcoming event listings sorted by date. Switch Post type to your `events` CPT (or similar) in the inspector.',
+			'Upcoming event listings with sort controls and pagination. Switch Post type to your `events` CPT in the inspector.',
 			'designsetgo'
 		),
 		icon: 'calendar-alt',
@@ -164,21 +235,34 @@ export default [
 			perPage: 6,
 			orderBy: 'date',
 			order: 'ASC',
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-filter',
+				{
+					filterKind: 'sort',
+					paramName: 'sort',
+					label: __('Sort by', 'designsetgo'),
+				},
+			],
+			[
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 2 },
 				[
-					[ 'core/post-featured-image' ],
-					[ 'core/post-date' ],
-					[ 'core/post-title', { level: 3, isLink: true } ],
-					[ 'core/post-excerpt', { excerptLength: 20 } ],
+					[
+						'designsetgo/section',
+						{},
+						[
+							['core/post-featured-image'],
+							['core/post-date'],
+							['core/post-title', { level: 3, isLink: true }],
+							['core/post-excerpt', { excerptLength: 20 }],
+						],
+					],
 				],
 			],
+			['designsetgo/query-no-results'],
+			['designsetgo/query-pagination', { paginationKind: 'numbered' }],
 		],
-		scope: ['inserter'],
 	},
 ];

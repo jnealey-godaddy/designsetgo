@@ -39,15 +39,28 @@ const DEFAULTS = {
 	label: '',
 	placeholder: '',
 	showCounts: true,
+	orientation: 'vertical',
 };
+
+const ORIENTATION_OPTIONS = [
+	{ value: 'vertical', label: __('Vertical', 'designsetgo') },
+	{ value: 'horizontal', label: __('Horizontal', 'designsetgo') },
+];
 
 export default function QueryFilterEdit({
 	attributes,
 	setAttributes,
 	clientId,
 }) {
-	const { filterKind, taxonomy, paramName, label, placeholder, showCounts } =
-		attributes;
+	const {
+		filterKind,
+		taxonomy,
+		paramName,
+		label,
+		placeholder,
+		showCounts,
+		orientation,
+	} = attributes;
 
 	const blockProps = useBlockProps({
 		className: 'dsgo-query-filter is-editor',
@@ -255,6 +268,28 @@ export default function QueryFilterEdit({
 							/>
 						</DsgoInspectorPanel.Item>
 					)}
+
+					{filterKind === 'checkbox' && (
+						<DsgoInspectorPanel.Item
+							label={__('Orientation', 'designsetgo')}
+							hasValue={() => orientation !== 'vertical'}
+							onDeselect={() =>
+								setAttributes({ orientation: 'vertical' })
+							}
+							isShownByDefault
+						>
+							<SelectControl
+								label={__('Orientation', 'designsetgo')}
+								value={orientation || 'vertical'}
+								options={ORIENTATION_OPTIONS}
+								onChange={(v) =>
+									setAttributes({ orientation: v })
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
 				</DsgoInspectorPanel>
 			</InspectorControls>
 
@@ -263,6 +298,7 @@ export default function QueryFilterEdit({
 					filterKind={filterKind}
 					label={label}
 					placeholder={placeholder}
+					orientation={orientation || 'vertical'}
 				/>
 			</div>
 		</>

@@ -24,9 +24,39 @@ jest.mock('@wordpress/data', () => ({
 	useSelect: (cb) =>
 		cb((storeName) => {
 			if (storeName === 'core/block-editor') {
+				// v2.6: QueryResultsEdit walks up to find its parent
+				// designsetgo/query block so it can read query attrs for the
+				// preview REST call. Stub the parent lookup here; the current
+				// block's getBlock returns a non-empty innerBlocks so the
+				// preview path (not the placeholder) renders.
+				const parentQuery = {
+					name: 'designsetgo/query',
+					attributes: {
+						queryId: 'nested-1',
+						source: 'posts',
+						postType: 'post',
+						perPage: 1,
+						orderBy: 'date',
+						order: 'DESC',
+						taxQuery: { relation: 'AND', clauses: [] },
+						metaQuery: { relation: 'AND', clauses: [] },
+					},
+				};
 				return {
-					getBlock: () => ({ innerBlocks: [] }),
+					getBlock: ( clientId ) =>
+						clientId === 'parent-client-id'
+							? parentQuery
+							: {
+									name: 'designsetgo/query-results',
+									innerBlocks: [
+										{
+											name: 'core/paragraph',
+											attributes: {},
+										},
+									],
+							  },
 					getBlocks: () => [],
+					getBlockParents: () => [ 'parent-client-id' ],
 				};
 			}
 			// TemplateIO calls getCurrentPostId() on the editor store.
@@ -90,6 +120,8 @@ jest.mock('@wordpress/block-editor', () => ({
 jest.mock('@wordpress/blocks', () => ({
 	createBlocksFromInnerBlocksTemplate: jest.fn((t) => t),
 	createBlock: jest.fn((name, attrs) => ({ name, attributes: attrs || {} })),
+	// useRenderedItems calls serialize() on innerBlocks for the REST payload.
+	serialize: jest.fn(() => ''),
 }));
 
 // Minimal @wordpress/components stubs — same as edit.test.js.
@@ -180,6 +212,12 @@ jest.mock('@wordpress/components', () => {
 		</div>
 	);
 
+	const PanelBody = ({ title, children }) => (
+		<div data-testid="panel-body" aria-label={title}>
+			{children}
+		</div>
+	);
+
 	const TextareaControl = ({ label, value, onChange }) => (
 		<label>
 			{label}
@@ -213,6 +251,7 @@ jest.mock('@wordpress/components', () => {
 		TextareaControl,
 		ToggleControl,
 		FormTokenField,
+		PanelBody,
 		__experimentalNumberControl: NumberControl,
 		__experimentalToolsPanel: ToolsPanel,
 		__experimentalToolsPanelItem: ToolsPanelItem,
@@ -238,7 +277,10 @@ jest.mock('@wordpress/components', () => {
 jest.mock('@wordpress/element', () => jest.requireActual('@wordpress/element'));
 
 // ─── Component under test ─────────────────────────────────────────────────────
-import QueryEdit from '../../../../src/blocks/query/edit';
+// v2.6: preview now lives in QueryResultsEdit (the inner grid child), not the
+// outer QueryEdit container. Both render EditorPreviewList under the hood —
+// the context-propagation assertions below target that component's behaviour.
+import QueryResultsEdit from '../../../../src/blocks/query-results/edit';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -266,14 +308,14 @@ const DEFAULT_ATTRIBUTES = {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('QueryEdit nested preview', () => {
+describe('QueryResultsEdit nested preview', () => {
 	beforeEach(() => {
 		ctxCapture.length = 0;
 	});
 
 	it('provides parent context to BlockContextProvider when nested inside an outer Query', () => {
 		render(
-			<QueryEdit
+			<QueryResultsEdit
 				attributes={DEFAULT_ATTRIBUTES}
 				setAttributes={jest.fn()}
 				clientId="cli-1"
@@ -290,7 +332,7 @@ describe('QueryEdit nested preview', () => {
 
 	it('provides a self-referencing parentItem fallback for root-level Queries', () => {
 		render(
-			<QueryEdit
+			<QueryResultsEdit
 				attributes={DEFAULT_ATTRIBUTES}
 				setAttributes={jest.fn()}
 				clientId="cli-2"
@@ -310,7 +352,7 @@ describe('QueryEdit nested preview', () => {
 
 	it('always provides designsetgo/itemIndex in BlockContextProvider', () => {
 		render(
-			<QueryEdit
+			<QueryResultsEdit
 				attributes={DEFAULT_ATTRIBUTES}
 				setAttributes={jest.fn()}
 				clientId="cli-3"
@@ -326,7 +368,7 @@ describe('QueryEdit nested preview', () => {
 
 	it('always provides designsetgo/itemMeta in BlockContextProvider', () => {
 		render(
-			<QueryEdit
+			<QueryResultsEdit
 				attributes={DEFAULT_ATTRIBUTES}
 				setAttributes={jest.fn()}
 				clientId="cli-4"
@@ -344,7 +386,7 @@ describe('QueryEdit nested preview', () => {
 
 	it('provides designsetgo/isAuthenticated=true in BlockContextProvider', () => {
 		render(
-			<QueryEdit
+			<QueryResultsEdit
 				attributes={DEFAULT_ATTRIBUTES}
 				setAttributes={jest.fn()}
 				clientId="cli-5"

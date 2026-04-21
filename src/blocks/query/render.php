@@ -1,78 +1,63 @@
 <?php
 /**
- * Dynamic Query — first-paint render.
+ * Dynamic Query — first-paint render (v2.6 restructure).
  *
- * Delegates to designsetgo_query_render_region() which:
- *  1. Splits the block's parsed innerBlocks into per-item template blocks
- *     and once-only sibling blocks (pagination / filter / no-results).
- *  2. Runs the query (populates the state registry).
- *  3. Renders sibling blocks ONCE, AFTER the query, so they can read
- *     totalPages / totalItems from the state registry.
- *  4. Wraps everything in <div class="dsgo-query-region"> — the JS
- *     refresh target so a filter/sort action can swap the whole region
- *     (list + pagination + no-results) in a single innerHTML assignment.
+ * The block is now a pure container. Flow:
+ *   1. Find the designsetgo/query-results child in parsed innerBlocks.
+ *   2. Run the WP_Query once via designsetgo_query_render() using the
+ *      parent's query attrs + the results child's presentation attrs
+ *      (columns, tagName, groupBy…). Populate the state registry so
+ *      pagination / no-results siblings can read totalPages / totalItems.
+ *   3. Stash the rendered items HTML in $GLOBALS keyed by queryId so the
+ *      query-results block's render.php picks it up when WordPress walks
+ *      the tree and renders children.
+ *   4. Render each child block in tree order via WP_Block so filters,
+ *      pagination, and no-results appear exactly where the author placed
+ *      them — no more "always at the bottom" behaviour.
  *
  * @package DesignSetGo
- * @since 2.1.0
+ * @since 2.6.0
  *
  * @param array    $attributes Block attributes.
- * @param string   $content    Serialized innerBlocks (NOT used — we read
- *                             $block->parsed_block['innerBlocks'] instead
- *                             to avoid sibling-blocks being rendered per-item).
- * @param WP_Block $block      Block instance.
+ * @param string   $content    Ignored — we re-render children manually so
+ *                             the results block can splice in its pre-
+ *                             rendered items HTML via a global.
+ * @param WP_Block $block      Block instance (carries parsed_block).
  */
 
 defined( 'ABSPATH' ) || exit;
 
 require_once __DIR__ . '/render-helpers.php';
 
-// Defensive enqueue — WordPress should auto-enqueue the view script module
-// declared in block.json, but the auto-hook misses in some render paths
-// (e.g. nested/custom SSR). Calling it here guarantees view.js reaches the
-// page whenever the query block renders.
 if ( function_exists( 'wp_enqueue_script_module' ) ) {
 	wp_enqueue_script_module( 'designsetgo-query-view-script-module' );
 }
 
-// Pagination — `paged` for archives, `page` for singular post paginator.
-$dsgo_query_page = absint( get_query_var( 'paged' ) );
-if ( ! $dsgo_query_page ) {
-	$dsgo_query_page = absint( get_query_var( 'page' ) );
+$dsgo_page = max( 1, absint( get_query_var( 'paged' ) ) );
+if ( 1 === $dsgo_page ) {
+	$dsgo_page = max( 1, absint( get_query_var( 'page' ) ) );
 }
-$dsgo_query_page = max( 1, $dsgo_query_page );
 
-// Pre-compute wrapper attrs (first-paint path: carries native-supports classes,
-// inline styles, anchor id, and user className from the block editor).
-$dsgo_query_wrapper_attrs = get_block_wrapper_attributes(
-	array(
-		'class' => 'dsgo-query dsgo-query--source-' . sanitize_key( (string) ( $attributes['source'] ?? 'posts' ) ),
-	)
-);
+$dsgo_query_id = isset( $attributes['queryId'] ) ? sanitize_key( (string) $attributes['queryId'] ) : '';
 
-// Serialize ALL parsed innerBlocks into a WP comment string. The region helper
-// will parse this string and split it into template vs. sibling blocks itself.
-// Using parsed_block['innerBlocks'] (not $content) is the fix — $content is the
-// pre-rendered HTML of ALL inner blocks (WordPress already ran render() on each),
-// so using it would cause sibling blocks to appear inside each item iteration.
-$dsgo_parsed_inner = isset( $block->parsed_block['innerBlocks'] )
+$dsgo_parsed_children = isset( $block->parsed_block['innerBlocks'] )
 	? (array) $block->parsed_block['innerBlocks']
 	: array();
 
-$dsgo_full_inner_html = '';
-foreach ( $dsgo_parsed_inner as $dsgo_parsed_block ) {
-	if ( ! empty( $dsgo_parsed_block['blockName'] ) ) {
-		$dsgo_full_inner_html .= serialize_block( $dsgo_parsed_block );
-	}
-}
-
-$dsgo_query_context = array(
-	'query_id'      => isset( $attributes['queryId'] ) ? sanitize_key( (string) $attributes['queryId'] ) : '',
-	'page'          => $dsgo_query_page,
-	'inner_html'    => $dsgo_full_inner_html,
-	'params'        => designsetgo_query_extract_params_from_request(),
-	'wrapper_attrs' => $dsgo_query_wrapper_attrs,
+// Block wrapper attrs carry native-supports classes / styles / anchor id +
+// author-supplied className. We append IAPI attrs inline so the region
+// lives on a single element, giving view.js a clean swap target.
+$dsgo_wrapper_attrs = get_block_wrapper_attributes(
+	array(
+		'class' => 'dsgo-query dsgo-query-region dsgo-query--source-' . sanitize_key( (string) ( $attributes['source'] ?? 'posts' ) ),
+	)
 );
 
-$dsgo_region_result = designsetgo_query_render_region( (array) $attributes, $dsgo_query_context );
-
-echo $dsgo_region_result['html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled in designsetgo_query_render_region() from esc_attr()-escaped parts + block render() output.
+echo designsetgo_query_render_container( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from WP_Block->render() output + esc_attr()-escaped parts.
+	(array) $attributes,
+	$dsgo_parsed_children,
+	$dsgo_page,
+	$dsgo_query_id,
+	$dsgo_wrapper_attrs,
+	(array) ( $block->context ?? array() )
+);

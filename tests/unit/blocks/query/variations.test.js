@@ -15,9 +15,19 @@ describe('Query block variations', () => {
 			expect(v.attributes).toMatchObject({ source: 'posts' });
 			expect(Array.isArray(v.innerBlocks)).toBe(true);
 			expect(v.innerBlocks.length).toBeGreaterThan(0);
-			expect(v.scope).toContain('inserter');
+			// v2.6: `scope: ['inserter']` dropped — the QueryPlaceholder
+			// template picker surfaces variations on first insert instead.
 		}
 	);
+
+	it('wraps the item template in a designsetgo/query-results child', () => {
+		variations.forEach((v) => {
+			const resultsChild = v.innerBlocks.find(
+				(b) => Array.isArray(b) && b[0] === 'designsetgo/query-results'
+			);
+			expect(resultsChild).toBeDefined();
+		});
+	});
 
 	it('has unique names', () => {
 		const names = variations.map((v) => v.name);
