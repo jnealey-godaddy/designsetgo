@@ -66,15 +66,8 @@
       "type": "object",
       "default": { "relation": "AND", "clauses": [] }
     },
-    "tagName": { "type": "string", "default": "ul" },
-    "itemTagName": { "type": "string", "default": "li" },
-    "columns": { "type": "number", "default": 1 },
-    "columnsTablet": { "type": "number", "default": 0 },
-    "columnsMobile": { "type": "number", "default": 0 },
-    "columnGap": { "type": "string", "default": "" },
     "showPlaceholder": { "type": "boolean", "default": true },
-    "emitSchema": { "type": "boolean", "default": true },
-    "groupBy": { "type": "object", "default": null }
+    "emitSchema": { "type": "boolean", "default": true }
   },
   "example": { "attributes": { "perPage": 3 } },
   "viewScriptModule": "file:./view.js",

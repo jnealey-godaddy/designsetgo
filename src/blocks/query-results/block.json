@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "designsetgo/query-results",
+  "version": "1.0.0",
+  "title": "Query Results",
+  "category": "designsetgo",
+  "parent": ["designsetgo/query"],
+  "description": "The repeating grid of items inside a Dynamic Query. Holds the item template that renders once per result.",
+  "keywords": ["query", "loop", "results", "template", "grid"],
+  "textdomain": "designsetgo",
+  "icon": "grid-view",
+  "supports": {
+    "anchor": true,
+    "html": false,
+    "inserter": false,
+    "multiple": false,
+    "reusable": false,
+    "color": {
+      "background": true,
+      "text": true
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "__experimentalLayout": {
+      "allowSwitching": false
+    }
+  },
+  "usesContext": [
+    "designsetgo/queryId",
+    "designsetgo/querySource",
+    "designsetgo/queryPostType",
+    "designsetgo/parentItem"
+  ],
+  "attributes": {
+    "tagName": { "type": "string", "default": "ul" },
+    "itemTagName": { "type": "string", "default": "li" },
+    "columns": { "type": "number", "default": 1 },
+    "columnsTablet": { "type": "number", "default": 0 },
+    "columnsMobile": { "type": "number", "default": 0 },
+    "columnGap": { "type": "string", "default": "" },
+    "groupBy": { "type": "object", "default": null }
+  },
+  "example": { "attributes": { "columns": 3 } },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}

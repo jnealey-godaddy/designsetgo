@@ -1,0 +1,114 @@
+// Editor styles for designsetgo/query-results.
+
+.wp-block-designsetgo-query-results {
+
+	// Editor preview: show the actual template card in column 1 and faint
+	// ghost cards in columns 2..N so the author sees a true-to-scale preview
+	// of how the chosen `columns` setting will look on the frontend. The
+	// grid + responsive breakpoints mirror style.scss so resize behaviour
+	// stays identical.
+	.dsgo-query-results__editor-grid {
+		display: grid;
+		grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
+		gap: var(--dsgo-query-gap, 1.5rem);
+	}
+
+	// The useInnerBlocksProps wrapper — the live editable prototype.
+	.dsgo-query-results__inner {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		position: relative;
+	}
+
+	// Ghost item placeholders (columns 2..N) shown before preview data loads.
+	.dsgo-query-results__ghost-item {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		padding: 4px;
+		opacity: 0.45;
+		pointer-events: none;
+		user-select: none;
+
+		.dsgo-query-results__ghost-image {
+			aspect-ratio: 4 / 3;
+			background: linear-gradient(135deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.12) 100%);
+			border-radius: 4px;
+		}
+
+		.dsgo-query-results__ghost-line {
+			height: 0.75rem;
+			background: rgba(0, 0, 0, 0.08);
+			border-radius: 3px;
+
+			&--title {
+				height: 1.25rem;
+				width: 80%;
+				margin-top: 0.25rem;
+			}
+
+			&--short {
+				width: 55%;
+			}
+		}
+	}
+
+	@media (max-width: 900px) {
+
+		.dsgo-query-results__editor-grid,
+		.dsgo-query__editor-preview-list {
+			grid-template-columns: repeat(var(--dsgo-query-columns-tablet, var(--dsgo-query-columns, 1)), minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 600px) {
+
+		.dsgo-query-results__editor-grid,
+		.dsgo-query__editor-preview-list {
+			grid-template-columns: repeat(var(--dsgo-query-columns-mobile, 1), minmax(0, 1fr));
+		}
+
+		// Hide ghost cards on mobile preview — a single-column layout
+		// doesn't need them.
+		.dsgo-query-results__ghost-item {
+			display: none;
+		}
+	}
+
+	// Live-preview list rendered by EditorPreviewList. Shared class with the
+	// query block's previous implementation so the editor preview component
+	// can stay block-agnostic.
+	.dsgo-query__editor-preview-list {
+		grid-column: 1 / -1;
+		display: grid;
+		grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
+		gap: var(--dsgo-query-gap, 1.5rem);
+		list-style: none;
+		margin: 0;
+		padding: 0;
+
+		&.is-grouped {
+			display: flex;
+			flex-direction: column;
+			gap: 2rem;
+		}
+	}
+
+	.dsgo-query__editor-preview-group {
+
+		&:not(:last-child) {
+			padding-bottom: 1rem;
+			border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+		}
+	}
+
+	.dsgo-query__group-notice {
+		margin: 0 0 1rem;
+	}
+
+	.dsgo-query__editor-preview-item {
+		margin: 0;
+		padding: 0;
+	}
+}

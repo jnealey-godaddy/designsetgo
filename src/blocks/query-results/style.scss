@@ -1,0 +1,51 @@
+// Frontend grid layout. Scoped to `[data-dsgo-query-results-role="container"]`
+// so the grid attaches only to the rendered <ul>/<ol>/<div> list and doesn't
+// apply to the editor wrapper (which would turn template blocks into columns
+// instead of items).
+.dsgo-query-results[data-dsgo-query-results-role="container"] {
+	display: grid;
+	grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
+	gap: var(--dsgo-query-gap, 1.5rem);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.dsgo-query__item {
+	margin: 0;
+	transition: opacity 0.2s ease;
+}
+
+@media (max-width: 900px) {
+
+	.dsgo-query-results[data-dsgo-query-results-role="container"] {
+		grid-template-columns: repeat(var(--dsgo-query-columns-tablet, var(--dsgo-query-columns, 1)), minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 600px) {
+
+	.dsgo-query-results[data-dsgo-query-results-role="container"] {
+		grid-template-columns: repeat(var(--dsgo-query-columns-mobile, 1), minmax(0, 1fr));
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.dsgo-query__item {
+		transition: none;
+	}
+}
+
+.dsgo-query-group {
+	display: block;
+	margin-block-end: var(--wp--preset--spacing--40, 1.5rem);
+
+	&:last-child {
+		margin-block-end: 0;
+	}
+}
+
+.wp-block-designsetgo-query-group-header {
+	margin-block-end: var(--wp--preset--spacing--20, 0.75rem);
+}

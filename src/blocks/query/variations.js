@@ -1,5 +1,14 @@
 import { __ } from '@wordpress/i18n';
 
+/**
+ * Dynamic Query inserter variations.
+ *
+ * Post-restructure (v2.6) the outer designsetgo/query block is a pure
+ * container; presentation attrs (columns, tagName, groupBy…) and the item
+ * template live on the required designsetgo/query-results child. Each
+ * variation's innerBlocks therefore starts with a query-results wrapper
+ * carrying those presentation attrs.
+ */
 export default [
 	{
 		name: 'blog-index',
@@ -15,18 +24,22 @@ export default [
 			perPage: 9,
 			orderBy: 'date',
 			order: 'DESC',
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 3 },
 				[
-					['core/post-featured-image', { isLink: true }],
-					['core/post-title', { level: 3, isLink: true }],
-					['core/post-date'],
-					['core/post-excerpt', { excerptLength: 30 }],
+					[
+						'designsetgo/section',
+						{},
+						[
+							['core/post-featured-image', { isLink: true }],
+							['core/post-title', { level: 3, isLink: true }],
+							['core/post-date'],
+							['core/post-excerpt', { excerptLength: 30 }],
+						],
+					],
 				],
 			],
 		],
@@ -45,17 +58,21 @@ export default [
 			perPage: 12,
 			orderBy: 'menu_order',
 			order: 'ASC',
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 4 },
 				[
-					['core/post-featured-image'],
-					['core/post-title', { level: 3 }],
-					['core/post-excerpt', { excerptLength: 15 }],
+					[
+						'designsetgo/section',
+						{},
+						[
+							['core/post-featured-image'],
+							['core/post-title', { level: 3 }],
+							['core/post-excerpt', { excerptLength: 15 }],
+						],
+					],
 				],
 			],
 		],
@@ -74,14 +91,21 @@ export default [
 			perPage: 6,
 			orderBy: 'date',
 			order: 'DESC',
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
-				[['core/post-excerpt'], ['core/post-title', { level: 4 }]],
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 2 },
+				[
+					[
+						'designsetgo/section',
+						{},
+						[
+							['core/post-excerpt'],
+							['core/post-title', { level: 4 }],
+						],
+					],
+				],
 			],
 		],
 	},
@@ -99,19 +123,23 @@ export default [
 			perPage: 12,
 			orderBy: 'date',
 			order: 'DESC',
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 3 },
 				[
 					[
-						'core/post-featured-image',
-						{ isLink: true, aspectRatio: '4/3' },
+						'designsetgo/section',
+						{},
+						[
+							[
+								'core/post-featured-image',
+								{ isLink: true, aspectRatio: '4/3' },
+							],
+							['core/post-title', { level: 3, isLink: true }],
+						],
 					],
-					['core/post-title', { level: 3, isLink: true }],
 				],
 			],
 		],
@@ -131,16 +159,20 @@ export default [
 			orderBy: 'rand',
 			order: 'DESC',
 			excludeCurrent: true,
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 3 },
 				[
-					['core/post-featured-image', { isLink: true }],
-					['core/post-title', { level: 4, isLink: true }],
+					[
+						'designsetgo/section',
+						{},
+						[
+							['core/post-featured-image', { isLink: true }],
+							['core/post-title', { level: 4, isLink: true }],
+						],
+					],
 				],
 			],
 		],
@@ -159,18 +191,22 @@ export default [
 			perPage: 6,
 			orderBy: 'date',
 			order: 'ASC',
-			tagName: 'ul',
-			itemTagName: 'li',
 		},
 		innerBlocks: [
 			[
-				'designsetgo/section',
-				{},
+				'designsetgo/query-results',
+				{ tagName: 'ul', itemTagName: 'li', columns: 2 },
 				[
-					['core/post-featured-image'],
-					['core/post-date'],
-					['core/post-title', { level: 3, isLink: true }],
-					['core/post-excerpt', { excerptLength: 20 }],
+					[
+						'designsetgo/section',
+						{},
+						[
+							['core/post-featured-image'],
+							['core/post-date'],
+							['core/post-title', { level: 3, isLink: true }],
+							['core/post-excerpt', { excerptLength: 20 }],
+						],
+					],
 				],
 			],
 		],

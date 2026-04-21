@@ -758,9 +758,9 @@ function* dsgoQueryRefresh(ctx, url) {
 
 	// Also find the list container (role="container") so we can aria-busy it
 	// during the fetch. The region wrapper contains filter/pagination children
-	// too; scoping with data-dsgo-query-role avoids aria-busy on those.
+	// too; scoping with data-dsgo-query-results-role avoids aria-busy on those.
 	const listContainer = region.querySelector(
-		`[data-dsgo-query-id="${queryId}"][data-dsgo-query-role="container"]`
+		`[data-dsgo-query-id="${queryId}"][data-dsgo-query-results-role="container"]`
 	);
 	if (listContainer) {
 		listContainer.setAttribute('aria-busy', 'true');
@@ -843,7 +843,7 @@ function* dsgoQueryRefresh(ctx, url) {
 		// listContainer may have been replaced by the innerHTML swap above;
 		// re-query from the region to get the fresh element.
 		const freshList = region.querySelector(
-			`[data-dsgo-query-id="${queryId}"][data-dsgo-query-role="container"]`
+			`[data-dsgo-query-id="${queryId}"][data-dsgo-query-results-role="container"]`
 		);
 		if (freshList) {
 			freshList.setAttribute('aria-busy', 'false');
@@ -883,7 +883,7 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 	}
 
 	const listContainer = region.querySelector(
-		`[data-dsgo-query-id="${queryId}"][data-dsgo-query-role="container"]`
+		`[data-dsgo-query-id="${queryId}"][data-dsgo-query-results-role="container"]`
 	);
 	if (listContainer) {
 		listContainer.setAttribute('aria-busy', 'true');
@@ -957,7 +957,7 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 	} finally {
 		ctx.busy = false;
 		const freshList = region.querySelector(
-			`[data-dsgo-query-id="${queryId}"][data-dsgo-query-role="container"]`
+			`[data-dsgo-query-id="${queryId}"][data-dsgo-query-results-role="container"]`
 		);
 		if (freshList) {
 			freshList.setAttribute('aria-busy', 'false');
