@@ -62,7 +62,9 @@ class DesignSetGo_Query_Pagination_Render_Test extends WP_UnitTestCase {
 		self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) );
 		$this->load_helpers();
 
-		$result = designsetgo_query_render(
+		// v2.6: blobs live on the outer .dsgo-query-region wrapper emitted by
+		// designsetgo_query_render_region(), not inside designsetgo_query_wrap.
+		$result = designsetgo_query_render_region(
 			array(
 				'source'   => 'posts',
 				'postType' => 'post',
@@ -102,7 +104,7 @@ class DesignSetGo_Query_Pagination_Render_Test extends WP_UnitTestCase {
 		self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) );
 		$this->load_helpers();
 
-		$result = designsetgo_query_render(
+		$result = designsetgo_query_render_region(
 			array(
 				'source'   => 'posts',
 				'postType' => 'post',

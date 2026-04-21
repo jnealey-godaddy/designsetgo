@@ -16,6 +16,11 @@ import {
 
 import EditorPreviewList from '../query/components/EditorPreviewList';
 import { RESULT_TEMPLATE } from '../query/edit-template';
+import {
+	GROUP_BY_OPTIONS,
+	DATE_PRECISION_OPTIONS,
+} from '../query/components/QuerySourcePanel';
+import { store as coreStore } from '@wordpress/core-data';
 
 const EMPTY_BLOCKS = Object.freeze([]);
 
@@ -49,6 +54,29 @@ export default function QueryResultsEdit({
 	context,
 }) {
 	const parentAttrs = useParentQueryAttributes(clientId);
+
+	// Taxonomy list for the group-by-taxonomy key selector. Filtered to visible
+	// taxonomies (show_in_rest) since hidden ones can't be queried from here.
+	const taxonomyOptions = useSelect((select) => {
+		const taxes = select(coreStore).getTaxonomies({ per_page: -1 }) || [];
+		return taxes
+			.filter((t) => t.show_in_rest !== false)
+			.map((t) => ({
+				value: t.slug,
+				label: t.labels?.singular_name || t.name || t.slug,
+			}));
+	}, []);
+
+	const groupBy = attributes.groupBy || null;
+	const groupByField = groupBy?.field || 'none';
+
+	const handleGroupByFieldChange = (value) => {
+		if (value === 'none') {
+			setAttributes({ groupBy: null });
+		} else {
+			setAttributes({ groupBy: { field: value, key: '' } });
+		}
+	};
 
 	const hasInnerBlocks = useSelect(
 		(select) =>
@@ -186,6 +214,71 @@ export default function QueryResultsEdit({
 						__nextHasNoMarginBottom
 						__next40pxDefaultSize
 					/>
+				</PanelBody>
+
+				<PanelBody title={__('Group by', 'designsetgo')} initialOpen={false}>
+					<SelectControl
+						label={__('Group by', 'designsetgo')}
+						value={groupByField}
+						options={GROUP_BY_OPTIONS}
+						onChange={handleGroupByFieldChange}
+						help={__(
+							'Grouped output requires a Query group header block inside this results template.',
+							'designsetgo'
+						)}
+						__nextHasNoMarginBottom
+						__next40pxDefaultSize
+					/>
+
+					{groupByField === 'taxonomy' && (
+						<SelectControl
+							label={__('Group taxonomy', 'designsetgo')}
+							value={groupBy?.key || ''}
+							options={[
+								{
+									value: '',
+									label: __('— Select —', 'designsetgo'),
+								},
+								...taxonomyOptions,
+							]}
+							onChange={(v) =>
+								setAttributes({
+									groupBy: { ...groupBy, key: v },
+								})
+							}
+							__nextHasNoMarginBottom
+							__next40pxDefaultSize
+						/>
+					)}
+
+					{groupByField === 'meta' && (
+						<TextControl
+							label={__('Group meta key', 'designsetgo')}
+							value={groupBy?.key || ''}
+							onChange={(v) =>
+								setAttributes({
+									groupBy: { ...groupBy, key: v },
+								})
+							}
+							__nextHasNoMarginBottom
+							__next40pxDefaultSize
+						/>
+					)}
+
+					{groupByField === 'date' && (
+						<SelectControl
+							label={__('Date precision', 'designsetgo')}
+							value={groupBy?.key || 'Y'}
+							options={DATE_PRECISION_OPTIONS}
+							onChange={(v) =>
+								setAttributes({
+									groupBy: { ...groupBy, key: v },
+								})
+							}
+							__nextHasNoMarginBottom
+							__next40pxDefaultSize
+						/>
+					)}
 				</PanelBody>
 			</InspectorControls>
 

@@ -29,9 +29,17 @@ jest.mock('@wordpress/data', () => ({
 	useSelect: (cb) =>
 		cb((storeName) => {
 			if (storeName === 'core/block-editor') {
+				// Non-empty innerBlocks so QueryEdit renders the Inspector
+				// instead of the first-insert placeholder (gated by hasInnerBlocks).
+				const stubChild = {
+					name: 'designsetgo/query-results',
+					innerBlocks: [],
+					attributes: {},
+				};
 				return {
-					getBlock: () => ({ innerBlocks: [] }),
-					getBlocks: () => [],
+					getBlock: () => ({ innerBlocks: [ stubChild ] }),
+					getBlocks: () => [ stubChild ],
+					getBlockParents: () => [],
 				};
 			}
 			// TemplateIO calls getCurrentPostId() on the editor store.
@@ -348,14 +356,6 @@ describe('QueryEdit — Settings panel', () => {
 	});
 });
 
-describe('QueryEdit — Group-by', () => {
-	it('renders the group-by type select', () => {
-		renderWith();
-		expect(screen.getByLabelText(/group by/i)).toBeInTheDocument();
-	});
-
-	it('shows a taxonomy picker when groupBy.field is taxonomy', () => {
-		renderWith({ groupBy: { field: 'taxonomy', key: 'category' } });
-		expect(screen.getByLabelText(/group taxonomy/i)).toBeInTheDocument();
-	});
-});
+// v2.6: Group-by inspector moved to designsetgo/query-results (the child
+// block that now owns presentation attrs). Tests for the new controls
+// should live alongside that block's edit component.

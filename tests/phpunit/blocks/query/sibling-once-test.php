@@ -130,8 +130,12 @@ class DesignSetGo_Query_Sibling_Once_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Verify data-dsgo-query-role="container" is present on the list element
-	 * so JS can distinguish it from pagination/filter wrappers.
+	 * Verify data-dsgo-query-results-role="container" is present on the list
+	 * element so JS can distinguish it from pagination/filter wrappers.
+	 *
+	 * Renamed from data-dsgo-query-role in v2.6 when the items grid moved
+	 * from the outer query block onto the new designsetgo/query-results
+	 * child — keeping the attribute name aligned with its new owner block.
 	 */
 	public function test_list_element_has_container_role() {
 		self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) );
@@ -143,9 +147,9 @@ class DesignSetGo_Query_Sibling_Once_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertStringContainsString(
-			'data-dsgo-query-role="container"',
+			'data-dsgo-query-results-role="container"',
 			$result['html'],
-			'List element must carry data-dsgo-query-role="container".'
+			'List element must carry data-dsgo-query-results-role="container".'
 		);
 	}
 }

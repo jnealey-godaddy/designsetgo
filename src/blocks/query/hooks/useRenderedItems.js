@@ -87,7 +87,7 @@ export default function useRenderedItems({
 		return () => {
 			clearTimeout(timer);
 		};
-		// payloadKey subsumes attributes + innerHtml. eslint-disable-next-line react-hooks/exhaustive-deps
+		// payloadKey subsumes attributes + innerHtml so they don't need to be deps.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [payloadKey, queryId, enabled]);
 

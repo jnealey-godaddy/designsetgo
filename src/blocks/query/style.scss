@@ -1,21 +1,9 @@
 @use 'skeletons';
 
-// Post-restructure (v2.6): this block is a pure container. Grid + item
-// layout lives in designsetgo/query-results. The wrapper stays so filters,
+// Post-restructure (v2.6): this block is a pure container. Grid + per-item
+// styling lives in designsetgo/query-results. The wrapper stays so filters,
 // pagination, and no-results have a consistent block-level ancestor and the
 // region can be targeted as one unit for AJAX refreshes.
 .wp-block-designsetgo-query {
 	box-sizing: border-box;
-}
-
-.dsgo-query__item {
-	margin: 0;
-	transition: opacity 0.2s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-
-	.dsgo-query__item {
-		transition: none;
-	}
 }
