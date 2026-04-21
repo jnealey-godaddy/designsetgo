@@ -53,7 +53,10 @@ if ( ! function_exists( 'designsetgo_query_item_host_block_names' ) ) :
 		 */
 		$hosts = apply_filters(
 			'designsetgo_query_item_host_block_names',
-			array( 'designsetgo/query-results' )
+			array(
+				'designsetgo/query-results',
+				'designsetgo/slider',
+			)
 		);
 		return array_values( array_filter( array_map( 'strval', (array) $hosts ) ) );
 	}
@@ -304,7 +307,11 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 *
 	 * @param string $inner_html   Serialized innerBlocks HTML from block content.
 	 * @param array  $item_context Context keys to override.
-	 * @param string $item_tag     li / div / article.
+	 * @param string $item_tag     li / div / article to wrap each item; pass
+	 *                             'none' to skip the wrapper entirely (used by
+	 *                             non-grid hosts like designsetgo/slider whose
+	 *                             template block — e.g. designsetgo/slide —
+	 *                             already provides its own outer element).
 	 * @return string
 	 */
 	function designsetgo_query_render_item( $inner_html, array $item_context, $item_tag ) {
@@ -314,7 +321,8 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			require_once DESIGNSETGO_PATH . 'includes/class-block-visibility.php';
 		}
 
-		$tag = in_array( $item_tag, array( 'li', 'div', 'article' ), true ) ? $item_tag : 'li';
+		$skip_wrap = ( 'none' === $item_tag );
+		$tag       = in_array( $item_tag, array( 'li', 'div', 'article' ), true ) ? $item_tag : 'li';
 
 		$html   = '';
 		$parsed = parse_blocks( $inner_html );
@@ -355,6 +363,9 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			}
 		}
 
+		if ( $skip_wrap ) {
+			return $html;
+		}
 		return sprintf( '<%1$s class="dsgo-query__item">%2$s</%1$s>', $tag, $html );
 	}
 
@@ -542,12 +553,19 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 		$template_blocks = array();
 
 		if ( $results_child ) {
+			$host_name       = (string) ( $results_child['blockName'] ?? '' );
+			$is_grid_host    = ( 'designsetgo/query-results' === $host_name );
 			$results_attrs   = is_array( $results_child['attrs'] ?? null ) ? $results_child['attrs'] : array();
 			$effective_attrs = array_merge(
 				$attributes,
 				array(
 					'tagName'       => $results_attrs['tagName'] ?? ( $attributes['tagName'] ?? 'ul' ),
-					'itemTagName'   => $results_attrs['itemTagName'] ?? ( $attributes['itemTagName'] ?? 'li' ),
+					// Non-grid hosts (slider, scroll-slides) wrap items with
+					// their own outer element (slide, scroll-slide). Suppress
+					// render_item()'s <li> wrapper so we don't double-wrap.
+					'itemTagName'   => $is_grid_host
+						? ( $results_attrs['itemTagName'] ?? ( $attributes['itemTagName'] ?? 'li' ) )
+						: 'none',
 					'columns'       => $results_attrs['columns'] ?? ( $attributes['columns'] ?? 1 ),
 					'columnsTablet' => $results_attrs['columnsTablet'] ?? ( $attributes['columnsTablet'] ?? 0 ),
 					'columnsMobile' => $results_attrs['columnsMobile'] ?? ( $attributes['columnsMobile'] ?? 0 ),
@@ -555,7 +573,16 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 					'groupBy'       => $results_attrs['groupBy'] ?? ( $attributes['groupBy'] ?? null ),
 				)
 			);
-			$template_blocks = (array) ( $results_child['innerBlocks'] ?? array() );
+			$inner_children  = (array) ( $results_child['innerBlocks'] ?? array() );
+			// Grid host: all innerBlocks collectively form the per-item
+			// template (post-title + featured-image + paragraph, etc.).
+			// Non-grid host: the host wraps exactly one template block
+			// (one slide, one scroll-slide). Ignore any extra authored
+			// siblings server-side — the editor enforces single-child via
+			// allowedBlocks + prune effect; this is a safety net.
+			$template_blocks = $is_grid_host
+				? $inner_children
+				: array_slice( $inner_children, 0, 1 );
 		} else {
 			// No query-results wrapper — fall through with parent-only attrs
 			// and treat every non-empty child as a template block.

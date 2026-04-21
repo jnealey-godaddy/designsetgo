@@ -174,6 +174,13 @@
 		"designsetgo/slider/activeSlide": "activeSlide",
 		"designsetgo/slider/styleVariation": "styleVariation"
 	},
+	"usesContext": [
+		"designsetgo/queryId",
+		"designsetgo/querySource",
+		"designsetgo/queryPostType",
+		"designsetgo/currentItemId",
+		"designsetgo/currentItemType"
+	],
 	"supports": {
 		"anchor": true,
 		"align": [
@@ -236,5 +243,6 @@
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css",
-	"viewScript": "file:./view.js"
+	"viewScript": "file:./view.js",
+	"render": "file:./render.php"
 }
