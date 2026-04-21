@@ -84,10 +84,12 @@
 		}
 	}
 
-	// Live-preview list rendered by EditorPreviewList. Mirrors the editor-grid
-	// column/gap layout so items fan out the same way ghost tiles do on the
-	// non-live path. List-style reset removes browser bullet + indentation.
+	// Live-preview list rendered by EditorPreviewList. The <ul> is a single
+	// child of dsgo-query__editor-grid, so span it across all outer columns
+	// then apply its own grid so the items fan out correctly.
+	// List-style reset removes browser bullet + indentation.
 	.dsgo-query__editor-preview-list {
+		grid-column: 1 / -1;
 		display: grid;
 		grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
 		gap: var(--dsgo-query-gap, 1.5rem);
