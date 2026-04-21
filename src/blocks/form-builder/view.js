@@ -182,6 +182,7 @@ function initFormBuilder() {
 		}
 
 		const formId = formContainer.getAttribute('data-form-id');
+		const storageKey = `dsgo_confirmed_${formId || 'default'}`;
 		const successMessage = formContainer.getAttribute(
 			'data-success-message'
 		);
@@ -214,6 +215,22 @@ function initFormBuilder() {
 			nonceField.defaultValue = nonceField.value;
 		}
 
+		function getStoredConfirmation() {
+			try {
+				return sessionStorage.getItem(storageKey);
+			} catch {
+				return null;
+			}
+		}
+
+		function storeConfirmation(message) {
+			try {
+				sessionStorage.setItem(storageKey, message);
+			} catch {
+				// sessionStorage unavailable
+			}
+		}
+
 		function showRedirectStatus() {
 			const params = new URLSearchParams(window.location.search);
 			const status = params.get('dsgo_form_status');
@@ -225,12 +242,11 @@ function initFormBuilder() {
 				matchesCurrentForm &&
 				(params.has('dsgo_form_success') || status === 'success')
 			) {
-				showMessage(
-					messageContainer,
+				const msg =
 					successMessage ||
-						__('Form submitted successfully!', 'designsetgo'),
-					'success'
-				);
+					__('Form submitted successfully!', 'designsetgo');
+				showMessage(messageContainer, msg, 'success');
+				storeConfirmation(msg);
 				formElement.reset();
 				shown = true;
 			} else if (
@@ -305,7 +321,15 @@ function initFormBuilder() {
 			window.HTMLFormElement.prototype.submit.call(formElement);
 		}
 
-		showRedirectStatus();
+		const shownFromRedirect = showRedirectStatus();
+
+		// Restore confirmation message persisted from a previous submission
+		if (!shownFromRedirect) {
+			const storedConfirmation = getStoredConfirmation();
+			if (storedConfirmation) {
+				showMessage(messageContainer, storedConfirmation, 'success');
+			}
+		}
 
 		// Check if AJAX is enabled
 		const ajaxEnabled =
@@ -507,12 +531,10 @@ function initFormBuilder() {
 						return;
 					}
 
-					// Show success message
-					showMessage(
-						messageContainer,
-						successMessage || result.message,
-						'success'
-					);
+					// Show success message and persist for reload
+					const successMsg = successMessage || result.message;
+					showMessage(messageContainer, successMsg, 'success');
+					storeConfirmation(successMsg);
 
 					// Reset form
 					formElement.reset();
