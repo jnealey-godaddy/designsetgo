@@ -99,6 +99,19 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Create a REST request pre-populated with a valid nonce for the current user.
+	 *
+	 * @param string $method HTTP method.
+	 * @param string $route  Route path.
+	 * @return WP_REST_Request
+	 */
+	private function authed_request( string $method, string $route ): WP_REST_Request {
+		$req = new WP_REST_Request( $method, $route );
+		$req->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		return $req;
+	}
+
+	/**
 	 * Test REST routes are registered.
 	 */
 	public function test_routes_registered() {
@@ -116,7 +129,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	public function test_create_draft_endpoint_success() {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -136,7 +149,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	public function test_create_draft_endpoint_with_overrides() {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', 'Draft content' );
 		$request->set_param( 'title', 'Draft title' );
@@ -160,7 +173,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	public function test_create_draft_endpoint_permission_denied() {
 		wp_set_current_user( $this->subscriber_id );
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -174,7 +187,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	public function test_create_draft_endpoint_missing_post_id() {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 
 		$response = rest_get_server()->dispatch( $request );
 
@@ -193,7 +206,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 			'content' => 'Updated content',
 		) );
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/' . $draft_id . '/publish' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/' . $draft_id . '/publish' );
 		$request->set_param( 'id', $draft_id );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -219,7 +232,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 		// Switch to subscriber (no permissions).
 		wp_set_current_user( $this->subscriber_id );
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/' . $draft_id . '/publish' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/' . $draft_id . '/publish' );
 		$request->set_param( 'id', $draft_id );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -236,7 +249,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 		// Create a draft first.
 		$draft_id = $this->draft_mode->create_draft( $this->page_id );
 
-		$request = new WP_REST_Request( 'DELETE', '/' . $this->namespace . '/draft-mode/' . $draft_id );
+		$request = $this->authed_request( 'DELETE', '/' . $this->namespace . '/draft-mode/' . $draft_id );
 		$request->set_param( 'id', $draft_id );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -341,26 +354,44 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	public function test_check_permission_publish_pages() {
 		// Editor has publish_pages capability.
 		wp_set_current_user( $this->editor_id );
-		$this->assertTrue( $this->rest_api->check_permission() );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$this->assertTrue( $this->rest_api->check_permission( $request ) );
 
-		// Subscriber does not have publish_pages capability.
+		// Subscriber does not have publish_pages capability — fails before nonce check.
 		wp_set_current_user( $this->subscriber_id );
-		$result = $this->rest_api->check_permission();
+		$result = $this->rest_api->check_permission( $request );
 		$this->assertWPError( $result );
 		$this->assertEquals( 'rest_forbidden', $result->get_error_code() );
+	}
+
+	/**
+	 * Test nonce validation in check_permission.
+	 */
+	public function test_check_permission_rejects_invalid_nonce() {
+		wp_set_current_user( $this->editor_id );
+
+		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request->set_header( 'X-WP-Nonce', 'invalid_nonce_value' );
+
+		$result = $this->rest_api->check_permission( $request );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'invalid_nonce', $result->get_error_code() );
 	}
 
 	/**
 	 * Test capability check method for edit_pages.
 	 */
 	public function test_check_read_permission_edit_pages() {
+		$request = new WP_REST_Request( 'GET', '/' . $this->namespace . '/draft-mode/status/' . $this->page_id );
+
 		// Editor has edit_pages capability.
 		wp_set_current_user( $this->editor_id );
-		$this->assertTrue( $this->rest_api->check_read_permission() );
+		$this->assertTrue( $this->rest_api->check_read_permission( $request ) );
 
 		// Subscriber does not have edit_pages capability.
 		wp_set_current_user( $this->subscriber_id );
-		$this->assertFalse( $this->rest_api->check_read_permission() );
+		$this->assertFalse( $this->rest_api->check_read_permission( $request ) );
 	}
 
 	/**
@@ -378,7 +409,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <div class="wp-block-designsetgo-row dsgo-flex"><div class="dsgo-flex__inner" style="display:flex;justify-content:center;flex-wrap:wrap;gap:20px"><!-- wp:paragraph --><p>Test</p><!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/row -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $block_content );
 
@@ -407,7 +438,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <div class="wp-block-designsetgo-grid dsgo-grid"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:20px"><!-- wp:paragraph --><p>Test</p><!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/grid -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $block_content );
 
@@ -436,7 +467,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <div class="wp-block-designsetgo-section dsgo-stack"><div class="dsgo-shape-divider dsgo-shape-divider--bottom"><svg viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,0 C300,120 900,0 1200,80 L1200,120 L0,120 Z"></path></svg></div></div>
 <!-- /wp:designsetgo/section -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $block_content );
 
@@ -466,7 +497,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <a class="wp-block-designsetgo-icon-button dsgo-icon-button" style="display:inline-flex;align-items:center;justify-content:center;gap:8px" href="#">Click me</a>
 <!-- /wp:designsetgo/icon-button -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $block_content );
 
@@ -495,7 +526,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:paragraph --><p>Test</p><!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/image-accordion-item -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $block_content );
 
@@ -528,7 +559,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <p>World</p>
 <!-- /wp:paragraph -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $malicious_content );
 
@@ -561,7 +592,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <p onclick="alert(\'XSS\')">Click me</p>
 <!-- /wp:paragraph -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $malicious_content );
 
@@ -593,7 +624,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <figure class="wp-block-image"><img src="invalid.jpg" onerror="alert(\'XSS\')" alt="Test" /></figure>
 <!-- /wp:image -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $malicious_content );
 
@@ -625,7 +656,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <p><a href="javascript:alert(\'XSS\')">Click me</a></p>
 <!-- /wp:paragraph -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $malicious_content );
 
@@ -656,7 +687,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <div class="wp-block-designsetgo-section"><svg onload="alert(\'XSS\')" viewBox="0 0 100 100"><path d="M0,0 L100,100"></path></svg></div>
 <!-- /wp:designsetgo/section -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $malicious_content );
 
@@ -690,7 +721,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 <div class="wp-block-designsetgo-row dsgo-flex" onclick="alert(\'XSS\')"><div class="dsgo-flex__inner" style="display:flex;justify-content:center"><!-- wp:paragraph --><p>Test</p><!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/row -->';
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'content', $mixed_content );
 
@@ -718,7 +749,7 @@ class Test_Draft_Mode_REST extends WP_UnitTestCase {
 	public function test_create_draft_sanitizes_excerpt() {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
+		$request = $this->authed_request( 'POST', '/' . $this->namespace . '/draft-mode/create' );
 		$request->set_param( 'post_id', $this->page_id );
 		$request->set_param( 'excerpt', '<script>alert("XSS")</script>Safe text with line
 breaks' );

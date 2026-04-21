@@ -486,24 +486,11 @@ class Draft_Mode_REST {
 	/**
 	 * Check read permission
 	 *
-	 * @param \WP_REST_Request $request Request object.
-	 * @return bool|\WP_Error True if user has permission, WP_Error otherwise.
+	 * @param \WP_REST_Request $_request Request object (unused).
+	 * @return bool True if user has permission, false otherwise.
 	 */
-	public function check_read_permission( $request ) {
-		if ( ! current_user_can( 'edit_pages' ) ) {
-			return false;
-		}
-
-		$nonce = $request->get_header( 'X-WP-Nonce' );
-		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-			return new \WP_Error(
-				'invalid_nonce',
-				__( 'Invalid security token.', 'designsetgo' ),
-				array( 'status' => 403 )
-			);
-		}
-
-		return true;
+	public function check_read_permission( $_request ) {
+		return current_user_can( 'edit_pages' );
 	}
 
 	/**
