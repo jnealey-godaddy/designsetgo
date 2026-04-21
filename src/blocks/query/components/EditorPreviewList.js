@@ -11,7 +11,7 @@
  * @since 2.2.0
  */
 import { __, sprintf } from '@wordpress/i18n';
-import { useMemo, useState, useEffect } from '@wordpress/element';
+import { useMemo, useState, useEffect, useRef } from '@wordpress/element';
 import { useEntityRecords } from '@wordpress/core-data';
 import { BlockPreview, BlockContextProvider } from '@wordpress/block-editor';
 import { Spinner, Placeholder } from '@wordpress/components';
@@ -54,6 +54,25 @@ export default function EditorPreviewList({
 		perPage: attributes.perPage || 6,
 	});
 
+	// Measure the <ul> width so BlockPreview renders at the actual column width
+	// rather than scaling down from a fixed 1000px viewport.
+	const listRef = useRef(null);
+	const [itemWidth, setItemWidth] = useState(300);
+	useEffect(() => {
+		const el = listRef.current;
+		if (!el) return;
+		const observer = new ResizeObserver((entries) => {
+			const w = entries[0]?.contentRect.width;
+			if (w) {
+				setItemWidth(
+					Math.round(w / (attributes.columns || 1))
+				);
+			}
+		});
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [attributes.columns]);
+
 	// Select the active data path.
 	const { records, hasResolved } = isPosts
 		? postsData
@@ -92,12 +111,13 @@ export default function EditorPreviewList({
 				innerBlocksProps={innerBlocksProps}
 				context={context}
 				groupBy={groupBy}
+				itemWidth={itemWidth}
 			/>
 		);
 	}
 
 	return (
-		<ul className="dsgo-query__editor-preview-list">
+		<ul ref={listRef} className="dsgo-query__editor-preview-list">
 			{records.map((item, idx) => {
 				const itemContext = buildContext(item, source, idx, context);
 				return (
@@ -117,7 +137,7 @@ export default function EditorPreviewList({
 							) : (
 								<BlockPreview
 									blocks={innerBlocks}
-									viewportWidth={1000}
+									viewportWidth={itemWidth}
 									additionalStyles={[]}
 								/>
 							)}
@@ -206,6 +226,7 @@ function GroupedPreviewList({
 	innerBlocksProps,
 	context,
 	groupBy,
+	itemWidth,
 }) {
 	const source = attributes.source || 'posts';
 
@@ -272,7 +293,7 @@ function GroupedPreviewList({
 											) : (
 												<BlockPreview
 													blocks={innerBlocks}
-													viewportWidth={1000}
+													viewportWidth={itemWidth}
 													additionalStyles={[]}
 												/>
 											)}
