@@ -56,6 +56,7 @@ if ( ! function_exists( 'designsetgo_query_item_host_block_names' ) ) :
 			array(
 				'designsetgo/query-results',
 				'designsetgo/slider',
+				'designsetgo/scroll-slides',
 			)
 		);
 		return array_values( array_filter( array_map( 'strval', (array) $hosts ) ) );
