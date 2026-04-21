@@ -75,7 +75,9 @@ class DesignSetGo_Scroll_Slides_Host_Test extends WP_UnitTestCase {
 		// Chrome receives minHeight via data attr.
 		$this->assertStringContainsString( 'data-dsgo-min-height="80vh"', $html );
 		// Exactly one template block is used — 3 iterations of Panel template.
-		$this->assertSame( 3, substr_count( $html, '<p>Panel template</p>' ) );
+		// Match `Panel template</p>` so WP 6.8+'s added `wp-block-paragraph`
+		// class doesn't invalidate the count.
+		$this->assertSame( 3, substr_count( $html, 'Panel template</p>' ) );
 		// Non-template sibling never leaks.
 		$this->assertStringNotContainsString( 'Stray second child', $html );
 		// Non-grid host: no <li class="dsgo-query__item"> wrappers around items.

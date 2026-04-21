@@ -179,7 +179,9 @@ class DesignSetGo_Query_Item_Hosts_Test extends WP_UnitTestCase {
 			'class="test-wrap"'
 		);
 
-		$this->assertSame( 2, substr_count( $html, '<p>Primary host</p>' ) );
+		// Match `Primary host</p>` so WP 6.8+'s added `wp-block-paragraph`
+		// class doesn't invalidate the count.
+		$this->assertSame( 2, substr_count( $html, 'Primary host</p>' ) );
 		$this->assertStringNotContainsString( 'Secondary host', $html );
 		$this->assertStringNotContainsString( 'dsgo-slider__track', $html );
 	}

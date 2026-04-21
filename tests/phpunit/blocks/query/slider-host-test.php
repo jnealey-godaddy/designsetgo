@@ -34,7 +34,10 @@ class DesignSetGo_Slider_Host_Test extends WP_UnitTestCase {
 			'none'
 		);
 
-		$this->assertStringContainsString( '<p>Bare</p>', $html );
+		// WP 6.8+ emits core/paragraph with a `wp-block-paragraph` class. Match
+		// the closing tag + content so both pre- and post-6.8 output pass.
+		$this->assertStringContainsString( 'Bare</p>', $html );
+		$this->assertMatchesRegularExpression( '#<p[^>]*>Bare</p>#', $html );
 		$this->assertStringNotContainsString( 'dsgo-query__item', $html );
 		// No leading <li, <div, or <article wrapper around the paragraph.
 		$this->assertStringStartsNotWith( '<li', $html );
@@ -109,7 +112,9 @@ class DesignSetGo_Slider_Host_Test extends WP_UnitTestCase {
 		// Slider chrome present (slider's render.php should have emitted it).
 		$this->assertStringContainsString( 'dsgo-slider__track', $html );
 		// Template is innerBlocks[0] only — 3 posts → 3 renderings of Slide one.
-		$this->assertSame( 3, substr_count( $html, '<p>Slide one</p>' ) );
+		// Match `Slide one</p>` so an added `wp-block-paragraph` class (WP 6.8+)
+		// doesn't invalidate the count.
+		$this->assertSame( 3, substr_count( $html, 'Slide one</p>' ) );
 		// The unused 2nd sibling never leaks into output.
 		$this->assertStringNotContainsString( 'Slide two', $html );
 		// Non-grid host should NOT double-wrap with <li class="dsgo-query__item">.
@@ -162,8 +167,9 @@ class DesignSetGo_Slider_Host_Test extends WP_UnitTestCase {
 
 		// Grid host keeps all innerBlocks as the template, wrapped per item.
 		$this->assertSame( 2, substr_count( $html, '<li class="dsgo-query__item">' ) );
-		// Both paragraphs render inside each <li>.
-		$this->assertStringContainsString( '<p>First</p>', $html );
-		$this->assertStringContainsString( '<p>Second</p>', $html );
+		// Both paragraphs render inside each <li>. Match closing tag + content
+		// so the WP 6.8+ `wp-block-paragraph` class doesn't break the assertion.
+		$this->assertStringContainsString( 'First</p>', $html );
+		$this->assertStringContainsString( 'Second</p>', $html );
 	}
 }
