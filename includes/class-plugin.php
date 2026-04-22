@@ -699,6 +699,9 @@ class Plugin {
 		// Apply global default hover animation to Form Builder submit buttons.
 		add_filter( 'render_block_designsetgo/form-builder', array( $this, 'apply_default_form_button_hover' ), 10, 2 );
 
+		// Apply global default hover animation to core/button blocks.
+		add_filter( 'render_block_core/button', array( $this, 'apply_default_core_button_hover' ), 10, 2 );
+
 		// Allow block CSS properties, function values, and SVG through wp_kses_post().
 		add_filter( 'safe_style_css', array( $this, 'allow_block_style_properties' ) );
 		add_filter( 'safecss_filter_attr_allow_css', array( $this, 'allow_block_css_functions' ), 10, 2 );
@@ -1099,6 +1102,68 @@ class Plugin {
 			)
 		) ) {
 			$processor->add_class( 'dsgo-form__submit--' . $default );
+			break;
+		}
+
+		return $processor->get_updated_html();
+	}
+
+	/**
+	 * Apply global default hover animation to core/button blocks.
+	 *
+	 * Mirrors apply_default_icon_button_hover() but adds the generic
+	 * `dsgo-btn-fx--{name}` class to the rendered <a class="wp-block-button__link">.
+	 * Uses the same admin setting (default_icon_button_hover) so all button-like
+	 * blocks share one site-wide hover style.
+	 *
+	 * @param string $block_content Rendered block content.
+	 * @param array  $block         Block data.
+	 * @return string Modified block content.
+	 */
+	public function apply_default_core_button_hover( $block_content, $block ) {
+		if ( empty( $block_content ) ) {
+			return $block_content;
+		}
+
+		// Honor explicit opt-out.
+		if ( strpos( $block_content, 'dsgo-btn-fx--no-hover' ) !== false ) {
+			return $block_content;
+		}
+
+		// Already has an explicit animation class — leave alone.
+		$pattern = '/dsgo-btn-fx--(' . implode( '|', array_map( 'preg_quote', self::ALLOWED_HOVER_ANIMATIONS ) ) . ')/';
+		if ( preg_match( $pattern, $block_content ) ) {
+			return $block_content;
+		}
+
+		$settings      = \DesignSetGo\Admin\Settings::get_settings();
+		$admin_default = isset( $settings['animations']['default_icon_button_hover'] )
+			? sanitize_key( $settings['animations']['default_icon_button_hover'] )
+			: 'none';
+
+		$default = $admin_default;
+		if ( 'none' === $default ) {
+			$theme_default = wp_get_global_settings( array( 'custom', 'designsetgo', 'defaultIconButtonHover' ) );
+			if ( ! empty( $theme_default ) && is_string( $theme_default ) ) {
+				$theme_default = sanitize_key( $theme_default );
+				if ( 'none' !== $theme_default ) {
+					$default = $theme_default;
+				}
+			}
+		}
+
+		if ( 'none' === $default || ! in_array( $default, self::ALLOWED_HOVER_ANIMATIONS, true ) ) {
+			return $block_content;
+		}
+
+		$processor = new \WP_HTML_Tag_Processor( $block_content );
+		while ( $processor->next_tag(
+			array(
+				'tag_name'   => 'a',
+				'class_name' => 'wp-block-button__link',
+			)
+		) ) {
+			$processor->add_class( 'dsgo-btn-fx--' . $default );
 			break;
 		}
 

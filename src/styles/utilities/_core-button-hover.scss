@@ -1,28 +1,212 @@
-// Core button hover parity with dsgo-icon-button.
-// Themes (and the WP block-button stylesheet) already define a hover
-// background change for .wp-block-button__link. We deliberately do
-// NOT touch background-color/image so we don't fight the theme — we
-// only add the 1px lift micro-interaction the icon-button has, which
-// no theme provides. :where() keeps specificity at 0 so any author
-// rule wins. Motion is gated behind prefers-reduced-motion to match
-// the rest of the project.
-:where(.wp-block-button__link) {
+// Core button hover animations.
+//
+// Mirrors the icon-button hover-animation system on core/button blocks.
+// Class is added server-side by Plugin::apply_default_core_button_hover()
+// based on the "Default Hover Effects → Icon Button Default Hover" admin
+// setting. Selector excludes .dsgo-icon-button so this never collides
+// with the icon-button's own animation rules. Specificity (0,3,0) beats
+// the theme's :root :where(.wp-block-button__link:hover) hover override.
 
-	@media (prefers-reduced-motion: no-preference) {
-		transition: transform 0.2s ease;
+$dsgo-btn-fx-bg: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
+
+// Stacking context primer for slide effects: ::before sits above
+// background-color but below the link's text content (z-index: -1 inside
+// an isolated context stays above the box's painted background).
+%dsgo-btn-fx-slide-base {
+	position: relative;
+	overflow: hidden;
+	isolation: isolate;
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		width: 100%;
+		height: 100%;
+		background-color: $dsgo-btn-fx-bg;
+		z-index: -1;
 	}
 }
 
-:where(.wp-block-button__link:hover) {
+// Fill Diagonal — diagonal sweep fill.
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--fill-diagonal {
+	@extend %dsgo-btn-fx-slide-base;
 
-	@media (prefers-reduced-motion: no-preference) {
-		transform: translateY(-1px);
+	&::before {
+		left: -150%;
+		width: 150%;
+		transform: skewX(-20deg);
+		transform-origin: top left;
+
+		@media (prefers-reduced-motion: no-preference) {
+			transition: left 0.5s ease;
+		}
+	}
+
+	&:hover::before {
+		left: 0;
 	}
 }
 
-:where(.wp-block-button__link:active) {
+// Slide Left — overlay slides in from the right.
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--slide-left {
+	@extend %dsgo-btn-fx-slide-base;
+
+	&::before {
+		right: -100%;
+		left: auto;
+
+		@media (prefers-reduced-motion: no-preference) {
+			transition: right 0.3s ease;
+		}
+	}
+
+	&:hover::before {
+		right: 0;
+	}
+}
+
+// Slide Right — overlay slides in from the left.
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--slide-right {
+	@extend %dsgo-btn-fx-slide-base;
+
+	&::before {
+		left: -100%;
+
+		@media (prefers-reduced-motion: no-preference) {
+			transition: left 0.3s ease;
+		}
+	}
+
+	&:hover::before {
+		left: 0;
+	}
+}
+
+// Slide Down — overlay drops in from the top.
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--slide-down {
+	@extend %dsgo-btn-fx-slide-base;
+
+	&::before {
+		top: -100%;
+		left: 0;
+
+		@media (prefers-reduced-motion: no-preference) {
+			transition: top 0.3s ease;
+		}
+	}
+
+	&:hover::before {
+		top: 0;
+	}
+}
+
+// Slide Up — overlay rises in from the bottom.
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--slide-up {
+	@extend %dsgo-btn-fx-slide-base;
+
+	&::before {
+		top: auto;
+		bottom: -100%;
+		left: 0;
+
+		@media (prefers-reduced-motion: no-preference) {
+			transition: bottom 0.3s ease;
+		}
+	}
+
+	&:hover::before {
+		bottom: 0;
+	}
+}
+
+// Zoom In — scale up on hover.
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--zoom-in {
 
 	@media (prefers-reduced-motion: no-preference) {
-		transform: translateY(0);
+		transition: transform 0.3s ease;
+	}
+
+	&:hover {
+		@media (prefers-reduced-motion: no-preference) {
+			transform: scale(1.05);
+		}
+	}
+}
+
+// Shrink — subtle scale down on hover.
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--shrink {
+
+	@media (prefers-reduced-motion: no-preference) {
+		transition: transform 0.4s ease;
+	}
+
+	&:hover {
+		@media (prefers-reduced-motion: no-preference) {
+			transform: scale(0.95);
+		}
+	}
+}
+
+// Lift — elevate with shadow on hover.
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--lift {
+
+	@media (prefers-reduced-motion: no-preference) {
+		transition: transform 0.5s ease, box-shadow 0.5s ease;
+	}
+
+	&:hover {
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 6px 12px rgba(0, 0, 0, 0.15);
+
+		@media (prefers-reduced-motion: no-preference) {
+			transform: translateY(-8px);
+		}
+	}
+}
+
+// Border Pulse — pulsing glow using the current text color.
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--border-pulse {
+
+	@media (prefers-reduced-motion: no-preference) {
+		transition: box-shadow 0.3s ease;
+
+		&:hover {
+			animation: dsgo-btn-fx-border-pulse 1s ease infinite;
+		}
+	}
+}
+
+@keyframes dsgo-btn-fx-border-pulse {
+
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 currentcolor;
+	}
+
+	50% {
+		box-shadow: 0 0 0 4px currentcolor;
+	}
+}
+
+// Border Glow — multi-layer glow on hover.
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--border-glow {
+	position: relative;
+
+	@media (prefers-reduced-motion: no-preference) {
+		transition: box-shadow 0.3s ease;
+	}
+
+	&:hover {
+		box-shadow: 0 0 15px currentcolor, 0 0 30px currentcolor, 0 0 45px currentcolor;
+	}
+}
+
+// Explicit opt-out (mirrors icon-button no-hover).
+.wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--no-hover {
+
+	&:hover {
+		opacity: 1;
+		transform: none;
+		background-image: none;
 	}
 }
