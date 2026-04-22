@@ -1,21 +1,19 @@
 // Core button hover parity with dsgo-icon-button.
-// Pseudo-classes wrapped inside :where() so theme hover/active rules
-// always win regardless of load order. Motion is gated behind
-// prefers-reduced-motion to match the rest of the project.
+// Themes (and the WP block-button stylesheet) already define a hover
+// background change for .wp-block-button__link. We deliberately do
+// NOT touch background-color/image so we don't fight the theme — we
+// only add the 1px lift micro-interaction the icon-button has, which
+// no theme provides. :where() keeps specificity at 0 so any author
+// rule wins. Motion is gated behind prefers-reduced-motion to match
+// the rest of the project.
 :where(.wp-block-button__link) {
 
 	@media (prefers-reduced-motion: no-preference) {
-		transition: background-image 0.2s ease, transform 0.2s ease;
+		transition: transform 0.2s ease;
 	}
 }
 
-// Default hover tint: a translucent dark overlay layered on top of
-// whatever background-color the button already has. linear-gradient
-// stacks above background-color, so this works for theme presets,
-// custom colors, and transparent/outline buttons alike. Authors can
-// override by setting their own background-image on :hover.
 :where(.wp-block-button__link:hover) {
-	background-image: linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12));
 
 	@media (prefers-reduced-motion: no-preference) {
 		transform: translateY(-1px);
@@ -23,7 +21,6 @@
 }
 
 :where(.wp-block-button__link:active) {
-	background-image: linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18));
 
 	@media (prefers-reduced-motion: no-preference) {
 		transform: translateY(0);
