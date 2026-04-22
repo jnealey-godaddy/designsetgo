@@ -5,6 +5,7 @@
  */
 
 @use 'mixins' as *;
+@use 'utilities/core-button-hover';
 
 // Sticky header styles are compiled via the utils/sticky-header webpack entry
 // and enqueued independently by class-sticky-header.php so they load on every
@@ -74,21 +75,6 @@ body.dsgo-show-focus-outlines :where(.wp-site-blocks *:focus-visible) {
 	content: '';
 	display: table;
 	clear: both;
-}
-
-// Core button hover parity with dsgo-icon-button.
-// :where() keeps specificity at 0 so themes can override.
-:where(.wp-block-button__link) {
-	transition: opacity 0.2s ease, transform 0.2s ease;
-
-	&:hover {
-		opacity: 0.9;
-		transform: translateY(-1px);
-	}
-
-	&:active {
-		transform: translateY(0);
-	}
 }
 
 /**

@@ -1,0 +1,26 @@
+// Core button hover parity with dsgo-icon-button.
+// Pseudo-classes wrapped inside :where() so theme hover/active rules
+// always win regardless of load order. Motion is gated behind
+// prefers-reduced-motion to match the rest of the project.
+:where(.wp-block-button__link) {
+
+	@media (prefers-reduced-motion: no-preference) {
+		transition: opacity 0.2s ease, transform 0.2s ease;
+	}
+}
+
+:where(.wp-block-button__link:hover) {
+	opacity: 0.9;
+
+	@media (prefers-reduced-motion: no-preference) {
+		transform: translateY(-1px);
+	}
+}
+
+:where(.wp-block-button__link:active) {
+	opacity: 1;
+
+	@media (prefers-reduced-motion: no-preference) {
+		transform: translateY(0);
+	}
+}
