@@ -76,6 +76,21 @@ body.dsgo-show-focus-outlines :where(.wp-site-blocks *:focus-visible) {
 	clear: both;
 }
 
+// Core button hover parity with dsgo-icon-button.
+// :where() keeps specificity at 0 so themes can override.
+:where(.wp-block-button__link) {
+	transition: opacity 0.2s ease, transform 0.2s ease;
+
+	&:hover {
+		opacity: 0.9;
+		transform: translateY(-1px);
+	}
+
+	&:active {
+		transform: translateY(0);
+	}
+}
+
 /**
  * Separator Fix
  * Ensures separators display correctly within container blocks
