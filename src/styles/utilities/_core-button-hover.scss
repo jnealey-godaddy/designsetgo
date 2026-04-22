@@ -1,5 +1,4 @@
 // Core button hover animations.
-//
 // Mirrors the icon-button hover-animation system on core/button blocks.
 // Class is added server-side by Plugin::apply_default_core_button_hover()
 // based on the "Default Hover Effects → Icon Button Default Hover" admin
@@ -30,6 +29,7 @@ $dsgo-btn-fx-bg: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
 
 // Fill Diagonal — diagonal sweep fill.
 .wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--fill-diagonal {
+
 	@extend %dsgo-btn-fx-slide-base;
 
 	&::before {
@@ -50,6 +50,7 @@ $dsgo-btn-fx-bg: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
 
 // Slide Left — overlay slides in from the right.
 .wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--slide-left {
+
 	@extend %dsgo-btn-fx-slide-base;
 
 	&::before {
@@ -68,6 +69,7 @@ $dsgo-btn-fx-bg: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
 
 // Slide Right — overlay slides in from the left.
 .wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--slide-right {
+
 	@extend %dsgo-btn-fx-slide-base;
 
 	&::before {
@@ -85,6 +87,7 @@ $dsgo-btn-fx-bg: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
 
 // Slide Down — overlay drops in from the top.
 .wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--slide-down {
+
 	@extend %dsgo-btn-fx-slide-base;
 
 	&::before {
@@ -103,6 +106,7 @@ $dsgo-btn-fx-bg: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
 
 // Slide Up — overlay rises in from the bottom.
 .wp-block-button__link:not(.dsgo-icon-button).dsgo-btn-fx--slide-up {
+
 	@extend %dsgo-btn-fx-slide-base;
 
 	&::before {
@@ -128,6 +132,7 @@ $dsgo-btn-fx-bg: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
 	}
 
 	&:hover {
+
 		@media (prefers-reduced-motion: no-preference) {
 			transform: scale(1.05);
 		}
@@ -142,6 +147,7 @@ $dsgo-btn-fx-bg: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
 	}
 
 	&:hover {
+
 		@media (prefers-reduced-motion: no-preference) {
 			transform: scale(0.95);
 		}
