@@ -363,7 +363,9 @@ function initFormBuilder() {
 			return;
 		}
 
-		const redirectUrl = formContainer.getAttribute('data-redirect-url');
+		const safeRedirectUrl = getSafeRedirectUrl(
+			formContainer.getAttribute('data-redirect-url')
+		);
 
 		// Handle form submission
 		formElement.addEventListener('submit', async function (e) {
@@ -546,10 +548,11 @@ function initFormBuilder() {
 						})
 					);
 
-					// Redirect if URL is configured and safe
-					if (redirectUrl && isSafeRedirectUrl(redirectUrl)) {
+					// Redirect using the normalized safe URL instead of the raw
+					// DOM attribute value so the browser never reparses unsanitized text.
+					if (safeRedirectUrl) {
 						redirecting = true;
-						window.location.href = redirectUrl;
+						window.location.assign(safeRedirectUrl);
 						return;
 					}
 
@@ -646,17 +649,23 @@ function initFormBuilder() {
 	}
 
 	/**
-	 * Validate that a redirect URL is safe (not javascript: or data: protocol)
+	 * Return a canonical redirect URL when it uses an allowed protocol.
 	 *
-	 * @param {string} url URL to validate
-	 * @return {boolean} True if safe to redirect to
+	 * @param {string|null} url URL to validate
+	 * @return {string|null} Canonical URL or null when unsafe
 	 */
-	function isSafeRedirectUrl(url) {
+	function getSafeRedirectUrl(url) {
+		if (!url) {
+			return null;
+		}
+
 		try {
 			const parsed = new URL(url, window.location.origin);
-			return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+			return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+				? parsed.toString()
+				: null;
 		} catch {
-			return false;
+			return null;
 		}
 	}
 
