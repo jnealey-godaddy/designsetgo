@@ -13,6 +13,7 @@ import {
 	useBlockProps,
 	MediaUpload,
 	MediaUploadCheck,
+	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -31,18 +32,36 @@ import { store as editorStore } from '@wordpress/editor';
 
 import { DynamicTagButton, useDynamicTagPreview } from '../../components/DynamicTagPicker';
 
-const SIZE_OPTIONS = [
-	{ label: __( 'Thumbnail', 'designsetgo' ), value: 'thumbnail' },
-	{ label: __( 'Medium', 'designsetgo' ), value: 'medium' },
-	{ label: __( 'Large', 'designsetgo' ), value: 'large' },
-	{ label: __( 'Full', 'designsetgo' ), value: 'full' },
-];
-
 const OBJECT_FIT_OPTIONS = [
 	{ label: __( 'Cover', 'designsetgo' ), value: 'cover' },
 	{ label: __( 'Contain', 'designsetgo' ), value: 'contain' },
 	{ label: __( 'Fill', 'designsetgo' ), value: 'fill' },
 	{ label: __( 'Scale down', 'designsetgo' ), value: 'scale-down' },
+];
+
+const ASPECT_RATIO_OPTIONS = [
+	{ label: __( 'Original', 'designsetgo' ), value: '' },
+	{ label: __( 'Square (1 : 1)', 'designsetgo' ), value: '1/1' },
+	{ label: __( 'Landscape (16 : 9)', 'designsetgo' ), value: '16/9' },
+	{ label: __( 'Landscape (4 : 3)', 'designsetgo' ), value: '4/3' },
+	{ label: __( 'Landscape (3 : 2)', 'designsetgo' ), value: '3/2' },
+	{ label: __( 'Portrait (3 : 4)', 'designsetgo' ), value: '3/4' },
+	{ label: __( 'Portrait (2 : 3)', 'designsetgo' ), value: '2/3' },
+	{ label: __( 'Portrait (9 : 16)', 'designsetgo' ), value: '9/16' },
+];
+
+const LINK_TARGET_OPTIONS = [
+	{ label: __( 'Same tab', 'designsetgo' ), value: '' },
+	{ label: __( 'New tab', 'designsetgo' ), value: '_blank' },
+];
+
+const REL_OPTIONS = [
+	{ label: __( 'None', 'designsetgo' ), value: '' },
+	{ label: 'nofollow', value: 'nofollow' },
+	{ label: 'noopener noreferrer', value: 'noopener noreferrer' },
+	{ label: 'nofollow noopener noreferrer', value: 'nofollow noopener noreferrer' },
+	{ label: 'sponsored', value: 'sponsored' },
+	{ label: 'ugc', value: 'ugc' },
 ];
 
 export default function Edit( { attributes, setAttributes, context } ) {
@@ -62,11 +81,24 @@ export default function Edit( { attributes, setAttributes, context } ) {
 		rel,
 	} = attributes;
 
-	const editorPostId = useSelect(
-		( select ) => select( editorStore )?.getCurrentPostId?.() || 0,
-		[]
-	);
+	const { editorPostId, imageSizes } = useSelect( ( select ) => {
+		const editor = select( editorStore );
+		const blockEditor = select( blockEditorStore );
+		return {
+			editorPostId: editor?.getCurrentPostId?.() || 0,
+			imageSizes: blockEditor?.getSettings?.()?.imageSizes || [],
+		};
+	}, [] );
 	const postId = context?.postId || editorPostId;
+
+	const sizeOptions = imageSizes.length
+		? imageSizes.map( ( s ) => ( { label: s.name, value: s.slug } ) )
+		: [
+				{ label: __( 'Thumbnail', 'designsetgo' ), value: 'thumbnail' },
+				{ label: __( 'Medium', 'designsetgo' ), value: 'medium' },
+				{ label: __( 'Large', 'designsetgo' ), value: 'large' },
+				{ label: __( 'Full', 'designsetgo' ), value: 'full' },
+		  ];
 
 	const preview = useDynamicTagPreview( {
 		source,
@@ -119,7 +151,7 @@ export default function Edit( { attributes, setAttributes, context } ) {
 						<SelectControl
 							label={ __( 'Image size', 'designsetgo' ) }
 							value={ size }
-							options={ SIZE_OPTIONS }
+							options={ sizeOptions }
 							onChange={ ( value ) => setAttributes( { size: value } ) }
 							__nextHasNoMarginBottom
 							__next40pxDefaultSize
@@ -138,10 +170,10 @@ export default function Edit( { attributes, setAttributes, context } ) {
 
 				<PanelBody title={ __( 'Display', 'designsetgo' ) } initialOpen={ false }>
 					<VStack spacing={ 3 }>
-						<TextControl
+						<SelectControl
 							label={ __( 'Aspect ratio', 'designsetgo' ) }
-							help={ __( 'e.g. 16/9, 1/1. Leave blank for natural.', 'designsetgo' ) }
 							value={ aspectRatio }
+							options={ ASPECT_RATIO_OPTIONS }
 							onChange={ ( value ) => setAttributes( { aspectRatio: value } ) }
 							__nextHasNoMarginBottom
 							__next40pxDefaultSize
@@ -218,17 +250,15 @@ export default function Edit( { attributes, setAttributes, context } ) {
 						<SelectControl
 							label={ __( 'Open in', 'designsetgo' ) }
 							value={ linkTarget }
-							options={ [
-								{ label: __( 'Same tab', 'designsetgo' ), value: '' },
-								{ label: __( 'New tab', 'designsetgo' ), value: '_blank' },
-							] }
+							options={ LINK_TARGET_OPTIONS }
 							onChange={ ( value ) => setAttributes( { linkTarget: value } ) }
 							__nextHasNoMarginBottom
 							__next40pxDefaultSize
 						/>
-						<TextControl
+						<SelectControl
 							label={ __( 'Rel attribute', 'designsetgo' ) }
 							value={ rel }
+							options={ REL_OPTIONS }
 							onChange={ ( value ) => setAttributes( { rel: value } ) }
 							__nextHasNoMarginBottom
 							__next40pxDefaultSize

@@ -13,6 +13,8 @@ import {
 	__experimentalVStack as VStack,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
+import { useSelect } from '@wordpress/data';
+import { store as blockEditorStore } from '@wordpress/block-editor';
 
 const ARG_LABEL_MAP = {
 	key: __( 'Field key', 'designsetgo' ),
@@ -31,6 +33,11 @@ function argLabel( name ) {
 export default function SourceArgsForm( { source, args, onChange, fieldDiscovery } ) {
 	const schema = source.args || {};
 	const entries = Object.entries( schema );
+
+	const imageSizes = useSelect(
+		( select ) => select( blockEditorStore )?.getSettings?.()?.imageSizes || [],
+		[]
+	);
 
 	if ( entries.length === 0 ) {
 		return null;
@@ -91,6 +98,26 @@ export default function SourceArgsForm( { source, args, onChange, fieldDiscovery
 							options={ [
 								{ label: __( '— Default —', 'designsetgo' ), value: '' },
 								...argSchema.enum.map( ( v ) => ( { label: v, value: v } ) ),
+							] }
+							onChange={ ( value ) => setArg( argName, value ) }
+							__nextHasNoMarginBottom
+							__next40pxDefaultSize
+						/>
+					);
+				}
+
+				// `size` argument: project the editor's registered image sizes
+				// (core + theme + plugin add_image_size()) into a Select so
+				// authors don't have to remember or type slugs.
+				if ( argName === 'size' && imageSizes.length ) {
+					return (
+						<SelectControl
+							key={ argName }
+							label={ argLabel( argName ) }
+							value={ args[ argName ] ?? '' }
+							options={ [
+								{ label: __( '— Default —', 'designsetgo' ), value: '' },
+								...imageSizes.map( ( s ) => ( { label: s.name, value: s.slug } ) ),
 							] }
 							onChange={ ( value ) => setArg( argName, value ) }
 							__nextHasNoMarginBottom
