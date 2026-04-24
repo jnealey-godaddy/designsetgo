@@ -62,7 +62,7 @@ class File_Manager {
 			return $wp_filesystem->put_contents( $path, $content, FS_CHMOD_FILE );
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Fallback when WP_Filesystem is unavailable (e.g. during unit tests or early bootstrap).
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Fallback when WP_Filesystem is unavailable. This is the primary path on managed hosts (WP Engine, Kinsta, Pantheon) where no FTP constants are defined and the web user owns the files; also fires during unit tests and early bootstrap.
 		return false !== file_put_contents( $path, $content );
 	}
 
@@ -92,7 +92,7 @@ class File_Manager {
 			return $wp_filesystem->delete( $path );
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Fallback when WP_Filesystem is unavailable (e.g. during unit tests or early bootstrap).
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Fallback when WP_Filesystem is unavailable; same scenarios as fs_put_contents().
 		return unlink( $path );
 	}
 

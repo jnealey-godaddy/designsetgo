@@ -708,8 +708,11 @@ class Settings {
 	/**
 	 * Sanitize a CSS selector, rejecting values with HTML or dangerous CSS/JS patterns.
 	 *
-	 * Checks for HTML angle brackets/quotes and known injection vectors
-	 * (javascript:, expression(), url(), @import) before accepting the value.
+	 * Quotes ARE allowed because attribute selectors like `[data-foo="bar"]`
+	 * and `[aria-expanded='true']` are valid and common — only `<` and `>`
+	 * are rejected outright. The remaining patterns (`javascript:`,
+	 * `expression(`, `url(`, `@import`) are real CSS injection vectors with
+	 * no legitimate use inside a selector.
 	 *
 	 * @param mixed $value Raw input value.
 	 * @return string Sanitized selector or empty string if the value is unsafe.
@@ -719,8 +722,8 @@ class Settings {
 		if ( '' === $trimmed ) {
 			return '';
 		}
-		// Reject HTML characters and known dangerous CSS/JS injection patterns.
-		if ( preg_match( '/[<>\'"]/u', $trimmed ) ||
+		// Reject HTML angle brackets and known dangerous CSS/JS injection patterns.
+		if ( preg_match( '/[<>]/u', $trimmed ) ||
 			preg_match( '/javascript:/i', $trimmed ) ||
 			preg_match( '/expression\s*\(/i', $trimmed ) ||
 			preg_match( '/url\s*\(/i', $trimmed ) ||

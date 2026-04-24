@@ -788,7 +788,9 @@ function* dsgoQueryRefresh(ctx, url) {
 		}
 		// Defence-in-depth: only parse responses we recognise. A misbehaving
 		// proxy / WAF could replace the body with non-JSON; bail before injecting.
-		const contentType = res.headers.get('content-type') || '';
+		const contentType = (
+			res.headers.get('content-type') || ''
+		).toLowerCase();
 		if (!contentType.includes('application/json')) {
 			return;
 		}
@@ -916,7 +918,9 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 			return;
 		}
 		// Defence-in-depth: see dsgoQueryRefresh — only inject from JSON envelopes.
-		const contentType = res.headers.get('content-type') || '';
+		const contentType = (
+			res.headers.get('content-type') || ''
+		).toLowerCase();
 		if (!contentType.includes('application/json')) {
 			return;
 		}

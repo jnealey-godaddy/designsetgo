@@ -161,8 +161,8 @@ class FilterIndexRebuilder {
 		}
 
 		$table = FilterIndex::table_name();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
-		$truncated = $wpdb->query( 'TRUNCATE ' . esc_sql( $table ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- TRUNCATE has no cache; %i correctly escapes the identifier.
+		$truncated = $wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', $table ) );
 		FilterIndex::bump_counts_cache();
 		if ( false === $truncated ) {
 			self::write_status(
@@ -214,8 +214,8 @@ class FilterIndexRebuilder {
 			);
 		} while ( $ids_count === $batch_size );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
-		$total_rows  = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . esc_sql( $table ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- live count for the rebuild status; %i correctly escapes the identifier.
+		$total_rows  = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) );
 		$duration_ms = (int) ( ( microtime( true ) - $started_at ) * 1000 );
 
 		self::write_status(
@@ -398,8 +398,8 @@ class FilterIndexRebuilder {
 		// Always surface a live row count and normalise required keys.
 		$index_table             = FilterIndex::table_name();
 		$status['total_rows']    = FilterIndex::table_exists()
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
-			? (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . esc_sql( $index_table ) )
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- live count for status output; %i correctly escapes the identifier.
+			? (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $index_table ) )
 			: 0;
 		$status['in_progress']     = (bool) ( $status['in_progress'] ?? false );
 		$status['last_rebuilt_at'] = $status['last_rebuilt_at'] ?? null;

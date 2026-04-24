@@ -598,11 +598,17 @@ class Global_Styles {
 	 * Accepts values that match any of the following patterns (permissive enough
 	 * for typical theme.json values):
 	 *  - Numeric with optional unit: -?[\d.]+(px|em|rem|%|vh|vw|fr|ch|s|ms)?
-	 *  - CSS custom property reference: var(--name, fallback)
+	 *  - CSS custom property reference: var(--name, fallback) — fallback may
+	 *    contain nested var() / calc() / etc.
 	 *  - Hex color: #RGB / #RRGGBB / #RGBA / #RRGGBBAA
-	 *  - Functional color: rgb()/rgba()/hsl()/hsla() without < or ;
+	 *  - Functional color: rgb()/rgba()/hsl()/hsla() — no url(/expression(
+	 *  - Math functions: calc()/clamp()/min()/max() — common in theme.json
 	 *  - Named keyword (a-z + hyphens): e.g. transparent, normal, bold
 	 *  - Typography family list: letters, digits, spaces, commas, quotes, underscores, hyphens
+	 *
+	 * Every functional form is gated against `<`, `;`, `url(`, `expression(`,
+	 * and `javascript:` to keep injection vectors out even where browsers would
+	 * already reject the result as invalid CSS.
 	 *
 	 * @param string $value CSS value to validate.
 	 * @return bool True when the value is acceptable.
@@ -613,21 +619,9 @@ class Global_Styles {
 			return true;
 		}
 
-		// CSS custom property reference: var(--name) or var(--name, fallback).
-		if ( preg_match( '/^var\(--[a-zA-Z0-9_-]+(,\s*[^)]+)?\)$/', $value ) ) {
-			return true;
-		}
-
 		// Hex color.
 		if ( preg_match( '/^#[0-9a-fA-F]{3,8}$/', $value ) ) {
 			return true;
-		}
-
-		// Functional color — rgb / rgba / hsl / hsla, no < or ; allowed.
-		if ( preg_match( '/^(rgba?|hsla?)\(/', $value ) && str_ends_with( $value, ')' ) ) {
-			if ( ! str_contains( $value, '<' ) && ! str_contains( $value, ';' ) ) {
-				return true;
-			}
 		}
 
 		// Named keyword: lowercase letters and hyphens only.
@@ -638,6 +632,22 @@ class Global_Styles {
 		// Typography family list: letters, digits, spaces, commas, quotes, underscores, hyphens.
 		if ( preg_match( '/^[a-zA-Z0-9 ,.\'"_-]+$/', $value ) ) {
 			return true;
+		}
+
+		// Functional CSS values (var, calc, clamp, min, max, rgb/rgba/hsl/hsla).
+		// We allow nested calls inside the args (e.g. var(--a, var(--b))) but
+		// blocklist the dangerous CSS sinks. Browsers would reject these anyway
+		// when the value resolves, but we don't want to persist them.
+		if ( preg_match( '/^(var|calc|clamp|min|max|rgba?|hsla?)\(/i', $value ) && str_ends_with( $value, ')' ) ) {
+			if (
+				! str_contains( $value, '<' )
+				&& ! str_contains( $value, ';' )
+				&& false === stripos( $value, 'url(' )
+				&& false === stripos( $value, 'expression(' )
+				&& false === stripos( $value, 'javascript:' )
+			) {
+				return true;
+			}
 		}
 
 		return false;
