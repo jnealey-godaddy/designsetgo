@@ -87,6 +87,13 @@ class MetaBoxBindings {
 		}
 
 		$value = call_user_func( $reader, $key, array(), $post_id );
+
+		// Image / file-group fields may return arrays — extract a scalar
+		// sub-value (url, ID, alt, …) when the binding args request one.
+		if ( is_array( $value ) && isset( $args['subkey'] ) && function_exists( 'designsetgo_extract_bindings_subvalue' ) ) {
+			$value = designsetgo_extract_bindings_subvalue( $value, (string) $args['subkey'] );
+		}
+
 		if ( is_array( $value ) || is_object( $value ) ) {
 			return null; // Complex fields need their own render path.
 		}

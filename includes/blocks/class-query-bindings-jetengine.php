@@ -96,6 +96,10 @@ class JetEngineBindings {
 			$value = get_post_meta( $post_id, $key, true );
 		}
 
+		if ( is_array( $value ) && isset( $args['subkey'] ) && function_exists( 'designsetgo_extract_bindings_subvalue' ) ) {
+			$value = designsetgo_extract_bindings_subvalue( $value, (string) $args['subkey'] );
+		}
+
 		if ( is_array( $value ) || is_object( $value ) ) {
 			return null; // Complex fields need their own render path.
 		}
