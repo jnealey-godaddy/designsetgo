@@ -47,6 +47,44 @@ class FilterIndexHooks {
 		add_action( 'added_post_meta', array( __CLASS__, 'on_post_meta_changed' ), 20, 3 );
 		add_action( 'updated_post_meta', array( __CLASS__, 'on_post_meta_changed' ), 20, 3 );
 		add_action( 'deleted_post_meta', array( __CLASS__, 'on_post_meta_changed' ), 20, 3 );
+
+		// Queue a background backfill the first time each filter key is seen.
+		// Runs out-of-band via WP-Cron so the post-save request that triggered
+		// registration isn't blocked iterating the posts table.
+		add_action( 'designsetgo_query_filter_registered', array( __CLASS__, 'on_filter_registered' ) );
+		add_action( 'designsetgo_query_filter_backfill', array( __CLASS__, 'on_filter_backfill' ) );
+	}
+
+	/**
+	 * Handles a first-time filter registration by scheduling a single-event
+	 * backfill. Deduplicates via `wp_next_scheduled` so rapid repeat saves of
+	 * a post containing the same filter don't pile up cron jobs.
+	 *
+	 * @param string $filter_key The freshly-registered filter key.
+	 * @return void
+	 */
+	public static function on_filter_registered( string $filter_key ): void {
+		$filter_key = sanitize_key( $filter_key );
+		if ( '' === $filter_key ) {
+			return;
+		}
+		$args = array( $filter_key );
+		if ( false !== wp_next_scheduled( 'designsetgo_query_filter_backfill', $args ) ) {
+			return;
+		}
+		wp_schedule_single_event( time() + 5, 'designsetgo_query_filter_backfill', $args );
+	}
+
+	/**
+	 * Cron handler — runs the actual index rebuild for the given filter key.
+	 *
+	 * @param string $filter_key The filter key to rebuild.
+	 * @return void
+	 */
+	public static function on_filter_backfill( string $filter_key ): void {
+		if ( class_exists( FilterIndexRebuilder::class ) ) {
+			FilterIndexRebuilder::rebuild_filter( sanitize_key( $filter_key ) );
+		}
 	}
 
 	/**

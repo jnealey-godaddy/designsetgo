@@ -19,7 +19,7 @@ export default function FilterPreview({
 	label,
 	placeholder,
 	orientation = 'vertical',
-	filterStyle = 'underline',
+	filterStyle = 'default',
 	terms = null,
 	termsLoading = false,
 }) {

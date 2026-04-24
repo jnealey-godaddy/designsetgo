@@ -9,7 +9,14 @@ export default [
 			'Multi-select taxonomy filter — render as checkboxes, pills, or underlined tabs.',
 			'designsetgo'
 		),
-		attributes: { filterKind: 'checkbox', paramName: 'filter_category' },
+		// New inserts opt into the modern underlined-tabs look. The block
+		// default stays `default` (classic checkboxes) so legacy saved blocks
+		// don't silently change appearance on upgrade.
+		attributes: {
+			filterKind: 'checkbox',
+			paramName: 'filter_category',
+			filterStyle: 'underline',
+		},
 		isDefault: true,
 		scope: ['inserter', 'transform'],
 	},
@@ -17,10 +24,7 @@ export default [
 		name: 'select',
 		title: __('Taxonomy (dropdown)', 'designsetgo'),
 		icon: 'menu',
-		description: __(
-			'Single-select taxonomy dropdown.',
-			'designsetgo'
-		),
+		description: __('Single-select taxonomy dropdown.', 'designsetgo'),
 		attributes: { filterKind: 'select', paramName: 'filter_category' },
 		scope: ['inserter', 'transform'],
 	},

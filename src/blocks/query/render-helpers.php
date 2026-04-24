@@ -318,6 +318,33 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			$grid_style .= sprintf( '--dsgo-query-first-row-span:%d;', $first_row_span );
 		}
 
+		// Honor the query-results child's `style.spacing.blockGap` setting on
+		// the frontend. The grid's CSS reads gap from
+		// `var(--wp--style--block-gap, 1.5rem)`, and the editor gets this
+		// variable for free via useBlockProps. On the server we bypass
+		// get_block_wrapper_attributes() (see comment below), so we translate
+		// the raw attr value to the same custom property ourselves. Accepts
+		// both direct CSS values ("1.5rem", "24px") and the `var:preset|…`
+		// reference syntax WordPress emits for preset spacing sizes.
+		$block_gap = $atts['style']['spacing']['blockGap'] ?? null;
+		if ( is_string( $block_gap ) && '' !== $block_gap ) {
+			if ( 0 === strpos( $block_gap, 'var:preset|' ) ) {
+				$parts = explode( '|', substr( $block_gap, 4 ) );
+				if ( 3 === count( $parts ) ) {
+					$block_gap = sprintf(
+						'var(--wp--%s--%s--%s)',
+						sanitize_key( $parts[0] ),
+						sanitize_key( $parts[1] ),
+						sanitize_key( $parts[2] )
+					);
+				}
+			}
+			$safe_gap = designsetgo_safe_css_value( $block_gap );
+			if ( '' !== $safe_gap ) {
+				$grid_style .= sprintf( '--wp--style--block-gap:%s;', $safe_gap );
+			}
+		}
+
 		// Post-restructure: this element IS the query-results grid. IAPI /
 		// context / blobs live on the outer dsgo-query-region container
 		// emitted by designsetgo_query_render_container(). The first-paint
@@ -628,6 +655,14 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 					'firstItemRowSpan'    => $results_attrs['firstItemRowSpan'] ?? ( $attributes['firstItemRowSpan'] ?? 1 ),
 					'groupBy'             => $results_attrs['groupBy'] ?? ( $attributes['groupBy'] ?? null ),
 					'layoutVariant' => $results_attrs['layoutVariant'] ?? ( $attributes['layoutVariant'] ?? '' ),
+					// Carry the child's `style` attribute forward so
+					// designsetgo_query_wrap() can translate
+					// `style.spacing.blockGap` into `--wp--style--block-gap`
+					// on the grid wrapper. Without this pass-through the
+					// editor respects block-gap (via useBlockProps) but the
+					// frontend falls back to the 1.5rem default because the
+					// grid is constructed without get_block_wrapper_attributes.
+					'style'         => $results_attrs['style'] ?? ( $attributes['style'] ?? null ),
 				)
 			);
 			$inner_children  = (array) ( $results_child['innerBlocks'] ?? array() );

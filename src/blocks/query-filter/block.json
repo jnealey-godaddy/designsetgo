@@ -45,7 +45,7 @@
     },
     "showCounts": { "type": "boolean", "default": true },
     "orientation": { "type": "string", "default": "vertical", "enum": ["vertical", "horizontal"] },
-    "filterStyle": { "type": "string", "default": "underline", "enum": ["default", "pill", "underline"] }
+    "filterStyle": { "type": "string", "default": "default", "enum": ["default", "pill", "underline"] }
   },
   "example": { "attributes": { "filterKind": "checkbox" } },
   "editorScript": "file:./index.js",

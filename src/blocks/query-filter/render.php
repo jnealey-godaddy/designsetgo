@@ -469,12 +469,13 @@ $dsgo_filter_label       = isset( $attributes['label'] ) ? (string) $attributes[
 $dsgo_filter_placeholder = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : '';
 $dsgo_filter_taxonomy    = isset( $attributes['taxonomy'] ) ? sanitize_key( (string) $attributes['taxonomy'] ) : 'category';
 $dsgo_filter_orientation = ( isset( $attributes['orientation'] ) && 'horizontal' === $attributes['orientation'] ) ? 'horizontal' : 'vertical';
-// Default `filterStyle` is `underline` (matches block.json). WordPress omits
-// attributes that equal the block default from the saved markup, so a missing
-// `filterStyle` key here means the author kept the default.
-$dsgo_filter_style       = isset( $attributes['filterStyle'] ) && in_array( $attributes['filterStyle'], array( 'default', 'pill', 'underline' ), true )
+// Default `filterStyle` is `default` (classic checkboxes) to preserve the
+// look of pre-existing saved blocks that have no `filterStyle` attribute.
+// New inserts through the inserter variation opt into `underline` explicitly
+// — see the variation attributes in src/blocks/query-filter/variations.js.
+$dsgo_filter_style       = isset( $attributes['filterStyle'] ) && in_array( $attributes['filterStyle'], array( 'pill', 'underline' ), true )
 	? $attributes['filterStyle']
-	: 'underline';
+	: 'default';
 
 // Post-type scope for counts: only non-empty when the parent query targets a
 // specific post type (source === 'posts'). Users/terms sources leave it empty
@@ -575,8 +576,8 @@ $dsgo_filter_wrapper = get_block_wrapper_attributes(
 		'data-dsgo-param'       => $dsgo_filter_param,
 	)
 );
-// Seed IAPI context so `getContext()` inside setFilter / setFilterDebounced /
-// toggleFilter / removeActiveFilter / resetAll resolves ctx.queryId. Appended
+// Seed IAPI context so `getContext()` inside setFilter / toggleFilter /
+// removeActiveFilter / resetAll resolves ctx.queryId. Appended
 // outside get_block_wrapper_attributes() because that helper runs esc_attr()
 // on values, which would mangle JSON quotes.
 // JSON_HEX_APOS defends the single-quoted attribute boundary against a

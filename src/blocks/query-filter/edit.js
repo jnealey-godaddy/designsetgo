@@ -40,7 +40,7 @@ const DEFAULTS = {
 	placeholder: '',
 	showCounts: true,
 	orientation: 'vertical',
-	filterStyle: 'underline',
+	filterStyle: 'default',
 };
 
 const ORIENTATION_OPTIONS = [
@@ -102,10 +102,7 @@ export default function QueryFilterEdit({
 	// we call it unconditionally with an empty taxonomy slug when disabled —
 	// core-data returns null records and never issues a request.
 	const isTaxonomyKind = filterKind === 'checkbox' || filterKind === 'select';
-	const termQuery = useMemo(
-		() => ({ per_page: 20, hide_empty: false }),
-		[]
-	);
+	const termQuery = useMemo(() => ({ per_page: 20, hide_empty: false }), []);
 	const termsResult = useEntityRecords(
 		'taxonomy',
 		isTaxonomyKind ? taxonomy || 'category' : '',
@@ -317,29 +314,29 @@ export default function QueryFilterEdit({
 							<DsgoInspectorPanel.Item
 								label={__('Style', 'designsetgo')}
 								hasValue={() =>
-									(filterStyle || 'underline') !== 'underline'
+									(filterStyle || 'default') !== 'default'
 								}
 								onDeselect={() =>
-									setAttributes({ filterStyle: 'underline' })
+									setAttributes({ filterStyle: 'default' })
 								}
 								isShownByDefault
 							>
 								<SelectControl
 									label={__('Style', 'designsetgo')}
-									value={filterStyle || 'underline'}
+									value={filterStyle || 'default'}
 									options={FILTER_STYLE_OPTIONS}
 									onChange={(v) =>
 										setAttributes({ filterStyle: v })
 									}
 									help={__(
-										'Underlined tabs (default) and pills render the filter as a modern horizontal selector. Switch to Checkboxes for a classic multi-select list. The underlying input stays accessible to keyboard + screen-reader users.',
+										'Pills and underlined tabs render the filter as a modern horizontal selector. The underlying input stays accessible to keyboard + screen-reader users.',
 										'designsetgo'
 									)}
 									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
 							</DsgoInspectorPanel.Item>
-							{(filterStyle || 'underline') === 'default' && (
+							{(filterStyle || 'default') === 'default' && (
 								<DsgoInspectorPanel.Item
 									label={__('Orientation', 'designsetgo')}
 									hasValue={() => orientation !== 'vertical'}
@@ -373,11 +370,9 @@ export default function QueryFilterEdit({
 					label={label}
 					placeholder={placeholder}
 					orientation={orientation || 'vertical'}
-					filterStyle={filterStyle || 'underline'}
+					filterStyle={filterStyle || 'default'}
 					terms={previewTerms}
-					termsLoading={
-						isTaxonomyKind && !termsResult.hasResolved
-					}
+					termsLoading={isTaxonomyKind && !termsResult.hasResolved}
 				/>
 			</div>
 		</>

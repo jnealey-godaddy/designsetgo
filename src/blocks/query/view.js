@@ -21,9 +21,6 @@ import {
 	collectParams as dsgoCollectParamsShared,
 } from './view-helpers.js';
 
-// Per-element debounce timer map (module-level, not reactive state).
-const dsgoDebounceTimers = {};
-
 // Events already processed by the IAPI store (first render). Used by the
 // delegated fallback listener so we never double-fire. The WeakSet lets the
 // browser GC events when they're done.
@@ -88,47 +85,6 @@ store('designsetgo/query', {
 			url.searchParams.delete('paged');
 			url.searchParams.delete('page');
 			yield* dsgoQueryRefresh(ctx, url);
-		},
-
-		/**
-		 * Debounced input handler for the search field.
-		 * Fires 250 ms after typing stops. Declared as a regular function
-		 * (not a generator) so IAPI treats it as synchronous — which is
-		 * what we need for the setTimeout pattern.
-		 *
-		 * @param {Event} event
-		 */
-		setFilterDebounced(event) {
-			dsgoHandledEvents.add(event);
-			const el = event.target;
-			const paramName = el.getAttribute('name')?.replace(/\[\]$/, '');
-			if (!paramName) {
-				return;
-			}
-
-			const ctx = getContext(); // capture while IAPI frame is live
-
-			clearTimeout(dsgoDebounceTimers[paramName]);
-			dsgoDebounceTimers[paramName] = setTimeout(() => {
-				// Bail out if the input was removed mid-debounce by a concurrent
-				// setFilter / toggleFilter refresh — the captured ctx is bound to
-				// an orphaned state object in that case, and the fresh HTML has
-				// its own data-wp-context to drive subsequent interactions.
-				if (!el.isConnected) {
-					return;
-				}
-				const url = new URL(window.location.href);
-				if (el.value) {
-					url.searchParams.set(paramName, el.value);
-				} else {
-					url.searchParams.delete(paramName);
-				}
-				// Fix 3: strip both pagination params.
-				url.searchParams.delete('paged');
-				url.searchParams.delete('page');
-				// Use the Promise-based helper — no yield needed here.
-				dsgoQueryRefreshPlain(ctx, url);
-			}, 250);
 		},
 
 		/**
