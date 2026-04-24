@@ -76,6 +76,9 @@ import './extensions/visibility';
 // Style Binding - maps CSS properties to dynamic data sources (post-meta, ACF, MetaBox, Pods, JetEngine)
 import './extensions/style-binding';
 
+// Dynamic Tags - Elementor-style per-attribute dynamic bindings on core blocks
+import './extensions/dynamic-tags';
+
 // ===== RICH TEXT FORMATS =====
 // Text Style - adds inline text styling (color, gradient, size) to selected text
 import './formats/text-style';

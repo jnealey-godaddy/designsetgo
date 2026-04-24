@@ -57,6 +57,13 @@ class Bindings {
 						return null;
 					}
 					$value = get_field( $key, $post_id );
+
+					// Image / attachment fields are arrays — let callers extract a
+					// specific scalar sub-value via args.subkey (url, ID, alt, …).
+					if ( is_array( $value ) && isset( $args['subkey'] ) ) {
+						$value = designsetgo_extract_bindings_subvalue( $value, (string) $args['subkey'] );
+					}
+
 					if ( is_array( $value ) || is_object( $value ) ) {
 						return null;
 					}

@@ -1,0 +1,178 @@
+.dsgo-dynamic-tag-picker {
+	// `className` on WP's Modal lands on `.components-modal__frame`. Pin
+	// the frame to a sensible fraction of the viewport (rather than
+	// auto-sizing) so the inner sidebar/detail scroll INSIDE the modal
+	// and the footer is always visible — auto-sizing pushed the footer
+	// below the screen on tall source lists.
+	height: min(640px, 80vh);
+	max-height: calc(100vh - 64px);
+	display: flex;
+	flex-direction: column;
+
+	.components-modal__content {
+		flex: 1 1 auto;
+		min-height: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	// WP Modal wraps our children in an unclassed <div> sibling to
+	// __header. Without flexing it, the layout grid grows past the frame
+	// and pushes the footer below the fold.
+	.components-modal__content > div:not(.components-modal__header) {
+		flex: 1 1 auto;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	&__layout {
+		display: grid;
+		grid-template-columns: 260px 1fr;
+		flex: 1 1 0;
+		min-height: 0;
+		overflow: hidden;
+		border-top: 1px solid #ddd;
+	}
+
+	&__sidebar {
+		padding: 16px;
+		border-right: 1px solid #e0e0e0;
+		overflow-y: auto;
+		background: #f6f7f7;
+	}
+
+	&__detail {
+		padding: 20px 24px;
+		overflow-y: auto;
+	}
+
+	&__group {
+		margin-top: 16px;
+
+		&:first-of-type {
+			margin-top: 12px;
+		}
+	}
+
+	&__group-title {
+		font-size: 11px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: #757575;
+		margin: 0 0 6px;
+		padding: 0 4px;
+	}
+
+	&__source-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+
+		li {
+			margin: 0;
+		}
+	}
+
+	&__source-button {
+		width: 100%;
+		justify-content: flex-start;
+		text-align: left;
+		margin-bottom: 2px;
+	}
+
+	&__loading {
+		display: flex;
+		justify-content: center;
+		padding: 24px 0;
+	}
+
+	&__empty {
+		color: #757575;
+		font-size: 13px;
+		padding: 12px 4px;
+	}
+
+	&__prompt {
+		color: #757575;
+		text-align: center;
+		padding: 80px 24px;
+	}
+
+	&__title {
+		font-size: 16px;
+		margin: 0 0 4px;
+	}
+
+	&__subtitle {
+		margin: 0 0 12px;
+		color: #757575;
+		font-size: 12px;
+
+		code {
+			background: #f0f0f1;
+			padding: 2px 6px;
+			border-radius: 2px;
+		}
+	}
+
+	&__preview {
+		padding: 12px;
+		background: #f6f7f7;
+		border: 1px solid #e0e0e0;
+		border-radius: 4px;
+
+		h4 {
+			font-size: 11px;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+			color: #757575;
+			margin: 0 0 8px;
+		}
+
+		img {
+			max-width: 100%;
+			max-height: 240px;
+			display: block;
+			border-radius: 2px;
+		}
+	}
+
+	&__preview-value {
+		margin: 0;
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+		font-size: 13px;
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
+	&__preview-meta {
+		margin: 8px 0 0;
+		color: #757575;
+		font-size: 12px;
+	}
+
+	&__footer {
+		flex: 0 0 auto;
+		padding: 12px 24px;
+		border-top: 1px solid #e0e0e0;
+		background: #fff;
+	}
+}
+
+.dsgo-dynamic-tag-button {
+
+	&.is-connected {
+		background: #2271b1;
+		color: #fff;
+
+		&:hover:not(:disabled) {
+			background: #135e96;
+			color: #fff;
+		}
+	}
+}

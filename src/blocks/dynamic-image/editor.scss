@@ -1,0 +1,47 @@
+.wp-block-designsetgo-dynamic-image {
+	position: relative;
+	margin: 0;
+
+	> img {
+		display: block;
+		max-width: 100%;
+		height: auto;
+	}
+
+	.dsgo-dynamic-image__loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 120px;
+		background: #f0f0f1;
+	}
+
+	.dsgo-dynamic-image__empty {
+		padding: 20px;
+		color: #757575;
+		font-style: italic;
+		background: #f6f7f7;
+		border: 1px dashed #ccc;
+		border-radius: 4px;
+		text-align: center;
+	}
+
+	.dsgo-dynamic-image__source-summary code {
+		font-size: 11px;
+		color: #757575;
+	}
+
+	.dsgo-dynamic-image__help {
+		margin-top: 0;
+		color: #757575;
+		font-size: 12px;
+	}
+
+	.dsgo-dynamic-image__fallback-preview {
+		margin-top: 12px;
+		max-width: 100%;
+		max-height: 120px;
+		display: block;
+		border-radius: 2px;
+	}
+}

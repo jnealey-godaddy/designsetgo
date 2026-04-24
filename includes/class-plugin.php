@@ -487,6 +487,13 @@ class Plugin {
 	public $query_bindings;
 
 	/**
+	 * Dynamic Tags bootstrap instance.
+	 *
+	 * @var Blocks\DynamicTags\Bootstrap
+	 */
+	public $dynamic_tags;
+
+	/**
 	 * Query Filter Index instance.
 	 *
 	 * @var Blocks\Query\FilterIndex
@@ -550,6 +557,18 @@ class Plugin {
 		\DesignSetGo\Blocks\Query\PodsBindings::bootstrap();
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-jetengine.php';
 		\DesignSetGo\Blocks\Query\JetEngineBindings::bootstrap();
+
+		// Dynamic Tags subsystem (registry, source catalog, REST, image resolver).
+		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-registry.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-post.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-site.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-archive.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-user.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-field-discovery.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-image-resolver.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-rest.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-bootstrap.php';
+
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-hooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-rebuilder.php';
@@ -652,6 +671,7 @@ class Plugin {
 		$this->query_controller          = new Blocks\Query\Controller();
 		add_action( 'rest_api_init', array( 'DesignSetGo\Blocks\Query\Template_Controller', 'register_routes' ) );
 		$this->query_bindings      = new Blocks\Query\Bindings();
+		$this->dynamic_tags        = new Blocks\DynamicTags\Bootstrap();
 		$this->filter_index         = new Blocks\Query\FilterIndex();
 		Blocks\Query\FilterIndexHooks::register_hooks();
 		$this->filter_registry      = new Blocks\Query\FilterRegistry();
@@ -831,6 +851,8 @@ class Plugin {
 			$settings        = $settings ?? \DesignSetGo\Admin\Settings::get_settings();
 			$excluded_blocks = isset( $settings['excluded_blocks'] ) ? $settings['excluded_blocks'] : array();
 
+			$enabled_extensions = isset( $settings['enabled_extensions'] ) ? (array) $settings['enabled_extensions'] : array();
+
 			wp_localize_script(
 				'designsetgo-extensions',
 				'dsgoSettings',
@@ -839,6 +861,9 @@ class Plugin {
 					'defaultIconButtonHover' => isset( $settings['animations']['default_icon_button_hover'] )
 						? sanitize_key( $settings['animations']['default_icon_button_hover'] )
 						: 'fill-diagonal',
+					// Empty list = all extensions enabled (matches the
+					// PHP convention in Block_Manager::should_load_extension).
+					'enabledExtensions'      => array_values( array_map( 'sanitize_key', $enabled_extensions ) ),
 				)
 			);
 		}

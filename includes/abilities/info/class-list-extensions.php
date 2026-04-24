@@ -109,6 +109,11 @@ class List_Extensions extends Abstract_Ability {
 			'description' => 'Configuration for sticky/fixed header behavior.',
 			'keywords'    => array( 'sticky', 'fixed', 'header', 'navigation' ),
 		),
+		'dynamic-tags'           => array(
+			'label'       => 'Dynamic Tags',
+			'description' => 'Bind block attributes (paragraph content, heading content, image url/alt, button text/url, etc.) to post / site / archive / user data or custom fields (ACF, Meta Box, Pods, JetEngine). Authors trigger the picker from the inline toolbar (database icon) or the Inspector "Dynamic Tags" panel. Bindings are written to attributes.metadata.bindings; use designsetgo/list-dynamic-tag-sources to enumerate sources.',
+			'keywords'    => array( 'binding', 'dynamic', 'data', 'acf', 'meta', 'token' ),
+		),
 	);
 
 	/**

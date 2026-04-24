@@ -139,6 +139,16 @@ if ( ! function_exists( 'designsetgo_register_bindings_source' ) ) :
 	 * @return int Resolved post ID, or 0 if not resolvable.
 	 */
 	function designsetgo_resolve_bindings_post_id( array $args, $block ) {
+		// Short-circuit: callers such as Registry::resolve() (invoked from
+		// the Dynamic Tags REST preview) have no WP_Block instance to
+		// provide, so they pre-resolve the post ID and stash it in
+		// $args['__dsgo_post_id']. Honour that first so the wrapper
+		// doesn't fall through to get_the_ID(), which returns 0 in a
+		// REST context and would cause every scalar source to return null.
+		if ( ! empty( $args['__dsgo_post_id'] ) ) {
+			return (int) $args['__dsgo_post_id'];
+		}
+
 		$scope = isset( $args['scope'] ) ? (string) $args['scope'] : 'self';
 
 		if ( 'parent' === $scope || 'root' === $scope ) {
@@ -194,6 +204,76 @@ if ( ! function_exists( 'designsetgo_register_bindings_source' ) ) :
 		$current = get_the_ID();
 
 		return $current ? (int) $current : 0;
+	}
+
+endif;
+
+if ( ! function_exists( 'designsetgo_extract_bindings_subvalue' ) ) :
+
+	/**
+	 * Extracts a scalar sub-value from an array field (image, file, user, etc.).
+	 *
+	 * Custom-field plugins (ACF, Meta Box, Pods, JetEngine) return image and
+	 * file fields as arrays like `[ID, url, alt, width, height, sizes=>…]`.
+	 * The Block Bindings API requires scalar returns, so when a binding
+	 * needs a specific sub-value (e.g. image URL vs image ID), callers pass
+	 * `args.subkey` and this helper maps it to the right array key,
+	 * tolerating the various keys each plugin uses.
+	 *
+	 * Allowed subkey values: url, id, alt, width, height, title, caption.
+	 * Unknown subkeys are normalised to 'url'.
+	 *
+	 * @since 2.2.0
+	 *
+	 * @param array  $value  The raw array value returned by the field plugin.
+	 * @param string $subkey The requested sub-key.
+	 * @return mixed Scalar sub-value, or null when the sub-key is not present.
+	 */
+	function designsetgo_extract_bindings_subvalue( array $value, $subkey ) {
+		$subkey = strtolower( (string) $subkey );
+		$allowed = array( 'url', 'id', 'alt', 'width', 'height', 'title', 'caption' );
+		if ( ! in_array( $subkey, $allowed, true ) ) {
+			$subkey = 'url';
+		}
+
+		// Map to the various keys each plugin uses for the same concept.
+		$aliases = array(
+			'url'     => array( 'url', 'sizes.full', 'full_url', 'guid' ),
+			'id'      => array( 'ID', 'id', 'attachment_id' ),
+			'alt'     => array( 'alt', 'alt_text' ),
+			'width'   => array( 'width' ),
+			'height'  => array( 'height' ),
+			'title'   => array( 'title', 'name' ),
+			'caption' => array( 'caption', 'description' ),
+		);
+
+		foreach ( $aliases[ $subkey ] as $path ) {
+			// Support dotted paths for nested lookups like `sizes.full`.
+			$segments = explode( '.', $path );
+			$cursor   = $value;
+			$found    = true;
+			foreach ( $segments as $segment ) {
+				if ( is_array( $cursor ) && array_key_exists( $segment, $cursor ) ) {
+					$cursor = $cursor[ $segment ];
+				} else {
+					$found = false;
+					break;
+				}
+			}
+			if ( $found && is_scalar( $cursor ) && '' !== $cursor ) {
+				return $cursor;
+			}
+		}
+
+		// Fallback: when asked for url and we have an ID, resolve via WP.
+		if ( 'url' === $subkey && isset( $value['ID'] ) && is_numeric( $value['ID'] ) ) {
+			$url = wp_get_attachment_url( (int) $value['ID'] );
+			if ( $url ) {
+				return $url;
+			}
+		}
+
+		return null;
 	}
 
 endif;
