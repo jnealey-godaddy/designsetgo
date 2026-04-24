@@ -100,11 +100,9 @@ class Block_Bindings_Support {
 		 *
 		 * @param array<string, string[]> $map Block name → list of bindable attribute names.
 		 */
-		$map = apply_filters(
+		return (array) apply_filters(
 			'designsetgo_block_bindings_supported_attributes',
 			self::DEFAULT_SUPPORTED_ATTRIBUTES
 		);
-
-		return is_array( $map ) ? $map : array();
 	}
 }
