@@ -644,7 +644,7 @@ class Plugin {
 		$this->blocks              = new Blocks\Loader();
 		$this->extension_attrs     = new Extension_Attributes();
 		$this->style_binding       = new StyleBinding();
-		$this->block_bindings_support  = new Block_Bindings_Support();
+		$this->block_bindings_support = new Block_Bindings_Support();
 		$this->block_bindings_support->register();
 		$this->modal_hooks         = new Blocks\Modal_Hooks();
 		$this->form_handler        = new Blocks\Form_Handler();
