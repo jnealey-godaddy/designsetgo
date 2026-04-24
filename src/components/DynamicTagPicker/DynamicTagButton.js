@@ -1,9 +1,11 @@
 /**
- * DynamicTagButton — inline "⚡ Connect" trigger that opens the picker.
+ * DynamicTagButton — inline "Connect" trigger that opens the picker.
  *
- * Mirrors Elementor's per-attribute dynamic-tag toggle. Callers pass the
- * current binding value and receive the new value via onChange; this
- * component owns the modal open/close state.
+ * Mirrors Elementor's per-attribute dynamic-tag toggle. Uses a database
+ * cylinder icon — the conventional "dynamic data" symbol; deliberately
+ * distinct from the lightning bolt used by the block-animations
+ * extension. Callers pass the current binding value and receive the
+ * new value via onChange; this component owns the modal open/close state.
  */
 import { useState } from '@wordpress/element';
 import { Button } from '@wordpress/components';

@@ -4,10 +4,12 @@
  * Adds two ways to bind any of a core block's bindable attributes to a
  * Dynamic Tag source:
  *
- *  1. A toolbar icon in the block's inline BlockControls (lightning-bolt
- *     for unbound, filled state for bound). Single-attribute blocks open
- *     the picker directly; multi-attribute blocks (image, button) open a
- *     dropdown menu of attribute names that each open the picker.
+ *  1. A toolbar icon in the block's inline BlockControls (database
+ *     cylinder — the conventional "dynamic data" symbol; deliberately
+ *     distinct from the lightning-bolt used by the block-animations
+ *     extension). Single-attribute blocks open the picker directly;
+ *     multi-attribute blocks (image, button) open a dropdown menu of
+ *     attribute names that each open the picker.
  *
  *  2. An Inspector "Dynamic Tags" panel listing every bindable attribute.
  *
@@ -31,11 +33,40 @@ import { Fragment, useState } from '@wordpress/element';
 import { DynamicTagButton, DynamicTagPicker } from '../../components/DynamicTagPicker';
 import { getBindableAttributes } from './bindable-attributes';
 
+// Database cylinder — the conventional "dynamic data" icon used by
+// Elementor and other page builders, and matches the icon already on
+// our DynamicTagButton in the inspector. Deliberately distinct from
+// the block-animations extension's lightning bolt.
 const dynamicIcon = (
-	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+	<svg
+		xmlns="http://www.w3.org/2000/svg"
+		viewBox="0 0 24 24"
+		width="20"
+		height="20"
+		aria-hidden="true"
+	>
+		<ellipse
+			cx="12"
+			cy="5"
+			rx="7"
+			ry="2.5"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.6"
+		/>
 		<path
-			fill="currentColor"
-			d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"
+			d="M5 5v6c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5V5"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.6"
+			strokeLinecap="round"
+		/>
+		<path
+			d="M5 11v6c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5v-6"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.6"
+			strokeLinecap="round"
 		/>
 	</svg>
 );
