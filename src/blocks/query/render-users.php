@@ -45,8 +45,8 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 		$users       = (array) $query->get_results();
 		$total_users = (int) $query->get_total();
 
-		$items_html  = '';
-		$item_index  = 0;
+		$items_html = '';
+		$item_index = 0;
 		foreach ( $users as $user ) {
 			$items_html .= designsetgo_query_render_item(
 				(string) $context['inner_html'],
@@ -58,7 +58,7 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 				),
 				$atts['itemTagName']
 			);
-			$item_index++;
+			++$item_index;
 		}
 
 		$state = array(
@@ -70,6 +70,7 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 
 		return array(
 			'html'       => designsetgo_query_wrap( $items_html, $atts, $context, $context['wrapper_attrs'] ?? null ),
+			'items_html' => $items_html,
 			'totalPages' => $state['totalPages'],
 			'totalItems' => $state['totalItems'],
 		);

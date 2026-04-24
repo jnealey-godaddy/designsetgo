@@ -185,7 +185,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		$group_header_blocks = array();
 		$item_template_html  = (string) $context['inner_html'];
 		if ( ! empty( $atts['groupBy'] ) && is_array( $atts['groupBy'] ) ) {
-			$parsed_inner = parse_blocks( $item_template_html );
+			$parsed_inner   = parse_blocks( $item_template_html );
 			$template_parts = array();
 			foreach ( $parsed_inner as $pb ) {
 				if ( empty( $pb['blockName'] ) ) {
@@ -213,7 +213,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		try {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$post_id   = get_the_ID();
+				$post_id     = get_the_ID();
 				$post_urls[] = get_permalink();
 				if ( $use_groups ) {
 					$collected_ids[] = $post_id;
@@ -232,7 +232,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 						$atts['itemTagName']
 					);
 				}
-				$flat_counter++;
+				++$flat_counter;
 			}
 		} finally {
 			wp_reset_postdata();
@@ -261,26 +261,26 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 				// Pass both the flat cross-group index (designsetgo/itemIndex) and a
 				// per-group zero-based index (designsetgo/groupItemIndex) so authors
 				// can target either in custom bindings or visibility rules.
-				$group_items_html  = '';
-				$group_item_index  = 0;
+				$group_items_html = '';
+				$group_item_index = 0;
 				foreach ( $group['ids'] as $gid ) {
 					$post_obj = get_post( $gid );
 					if ( ! $post_obj ) {
 						continue;
 					}
-					$item_index = isset( $collected_indexes[ $gid ] ) ? (int) $collected_indexes[ $gid ] : 0;
+					$item_index        = isset( $collected_indexes[ $gid ] ) ? (int) $collected_indexes[ $gid ] : 0;
 					$group_items_html .= designsetgo_query_render_item(
 						$item_template_html,
 						array(
-							'postId'                         => (int) $gid,
-							'postType'                       => $post_obj->post_type,
-							'index'                          => $item_index,
-							'designsetgo/itemIndex'          => $item_index,
-							'designsetgo/groupItemIndex'     => $group_item_index,
+							'postId'                     => (int) $gid,
+							'postType'                   => $post_obj->post_type,
+							'index'                      => $item_index,
+							'designsetgo/itemIndex'      => $item_index,
+							'designsetgo/groupItemIndex' => $group_item_index,
 						),
 						$atts['itemTagName']
 					);
-					$group_item_index++;
+					++$group_item_index;
 				}
 				$items_html .= sprintf(
 					'<section class="dsgo-query-group" data-dsgo-group-value="%s">%s%s</section>',
@@ -324,6 +324,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 
 		return array(
 			'html'       => designsetgo_query_wrap( $items_html, $atts, $context, $context['wrapper_attrs'] ?? null ) . $schema_html,
+			'items_html' => $items_html,
 			'totalPages' => $state['totalPages'],
 			'totalItems' => $state['totalItems'],
 		);
@@ -462,9 +463,9 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		if ( 'manual' === $atts['source'] && ! empty( $atts['manualIds'] ) && is_array( $atts['manualIds'] ) ) {
 			$ids = array_values( array_filter( array_map( 'absint', $atts['manualIds'] ) ) );
 			if ( ! empty( $ids ) ) {
-				$args['post__in']       = $ids;
-				$args['orderby']        = 'post__in';
-				$args['post_type']      = 'any';
+				$args['post__in']  = $ids;
+				$args['orderby']   = 'post__in';
+				$args['post_type'] = 'any';
 				if ( empty( $atts['manualPaginated'] ) ) {
 					$args['posts_per_page'] = count( $ids );
 				}

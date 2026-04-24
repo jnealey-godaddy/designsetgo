@@ -5,13 +5,29 @@
  */
 import { __ } from '@wordpress/i18n';
 
+// Placeholder term list shown when terms haven't resolved yet or no taxonomy
+// terms exist on the site. Keeps the preview visually stable (prevents the
+// block from collapsing to zero height) while the REST request is in flight.
+const PLACEHOLDER_TERMS = [
+	{ id: 0, slug: 'a', name: __('Category A', 'designsetgo') },
+	{ id: 1, slug: 'b', name: __('Category B', 'designsetgo') },
+	{ id: 2, slug: 'c', name: __('Category C', 'designsetgo') },
+];
+
 export default function FilterPreview({
 	filterKind,
 	label,
 	placeholder,
 	orientation = 'vertical',
+	filterStyle = 'default',
+	terms = null,
+	termsLoading = false,
 }) {
 	const displayLabel = label || null;
+	// Use real terms when available, otherwise fall back to placeholders so
+	// the block always renders something recognisable in the editor.
+	const effectiveTerms =
+		Array.isArray(terms) && terms.length > 0 ? terms : PLACEHOLDER_TERMS;
 
 	switch (filterKind) {
 		case 'search':
@@ -69,8 +85,9 @@ export default function FilterPreview({
 					)}
 					<select className="dsgo-query-filter__select" disabled>
 						<option>{__('All', 'designsetgo')}</option>
-						<option>{__('Category A', 'designsetgo')}</option>
-						<option>{__('Category B', 'designsetgo')}</option>
+						{effectiveTerms.map((term) => (
+							<option key={term.id}>{term.name}</option>
+						))}
 					</select>
 				</div>
 			);
@@ -108,7 +125,19 @@ export default function FilterPreview({
 			);
 
 		case 'checkbox':
-		default:
+		default: {
+			const isPill = filterStyle === 'pill';
+			const isUnderline = filterStyle === 'underline';
+			const isHorizontal =
+				orientation === 'horizontal' || isPill || isUnderline;
+			const listClass = [
+				'dsgo-query-filter__checkbox-list',
+				isHorizontal ? 'is-horizontal' : '',
+				isPill ? 'is-style-pill' : '',
+				isUnderline ? 'is-style-underline' : '',
+			]
+				.filter(Boolean)
+				.join(' ');
 			return (
 				<div className="dsgo-query-filter dsgo-query-filter--checkbox dsgo-query-filter--preview">
 					{displayLabel && (
@@ -117,28 +146,22 @@ export default function FilterPreview({
 						</span>
 					)}
 					<div
-						className={
-							orientation === 'horizontal'
-								? 'dsgo-query-filter__checkbox-list is-horizontal'
-								: 'dsgo-query-filter__checkbox-list'
-						}
+						className={listClass}
+						aria-busy={termsLoading || undefined}
 					>
-						{[
-							__('Category A', 'designsetgo'),
-							__('Category B', 'designsetgo'),
-							__('Category C', 'designsetgo'),
-						].map((item) => (
+						{effectiveTerms.map((term) => (
 							// eslint-disable-next-line jsx-a11y/label-has-associated-control -- static preview; input is nested inside label (valid HTML), readOnly attr confuses the linter
 							<label
-								key={item}
+								key={term.id}
 								className="dsgo-query-filter__checkbox-item"
 							>
 								<input type="checkbox" readOnly />
-								<span>{item}</span>
+								<span>{term.name}</span>
 							</label>
 						))}
 					</div>
 				</div>
 			);
+		}
 	}
 }

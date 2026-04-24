@@ -127,9 +127,7 @@ export default function useQueryPreview({
 	// render-relationship.php, covering all storage shapes ACF/postmeta can
 	// produce. PHP's maybe_unserialize() branch is omitted — the WP REST
 	// API always pre-deserializes meta values before exposing them.
-	const ids = isRelationship
-		? normalizeRelationshipIds(fieldValue)
-		: [];
+	const ids = isRelationship ? normalizeRelationshipIds(fieldValue) : [];
 
 	// useEntityRecords must always be called (rules of hooks). When not in
 	// relationship mode, or when ids is empty, we pass a sentinel [0] so

@@ -170,8 +170,7 @@ const withGridSpanStyles = createHigherOrderComponent((BlockListBlock) => {
 			[clientId]
 		);
 
-		const hasColumnSpan =
-			isInGrid && dsgoColumnSpan && dsgoColumnSpan > 1;
+		const hasColumnSpan = isInGrid && dsgoColumnSpan && dsgoColumnSpan > 1;
 		const hasRowSpan = isInGrid && dsgoRowSpan && dsgoRowSpan > 1;
 
 		if (hasColumnSpan || hasRowSpan) {

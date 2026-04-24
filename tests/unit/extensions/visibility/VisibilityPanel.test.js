@@ -2,15 +2,37 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import VisibilityPanel from '../../../../src/extensions/visibility/VisibilityPanel';
 
-jest.mock('@wordpress/i18n', () => ({ __: (t) => t, sprintf: (t, a) => String(t).replace('%s', a) }));
+jest.mock('@wordpress/i18n', () => ({
+	__: (t) => t,
+	sprintf: (t, a) => String(t).replace('%s', a),
+}));
 jest.mock('@wordpress/components', () => ({
 	SelectControl: ({ label, value, onChange, options }) => (
-		<label>{label}<select value={value} onChange={(e) => onChange(e.target.value)}>{(options || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
+		<label>
+			{label}
+			<select value={value} onChange={(e) => onChange(e.target.value)}>
+				{(options || []).map((o) => (
+					<option key={o.value} value={o.value}>
+						{o.label}
+					</option>
+				))}
+			</select>
+		</label>
 	),
 	TextControl: ({ label, value, onChange }) => (
-		<label>{label}<input value={value || ''} onChange={(e) => onChange(e.target.value)} /></label>
+		<label>
+			{label}
+			<input
+				value={value || ''}
+				onChange={(e) => onChange(e.target.value)}
+			/>
+		</label>
 	),
-	Button: ({ children, onClick }) => <button type="button" onClick={onClick}>{children}</button>,
+	Button: ({ children, onClick }) => (
+		<button type="button" onClick={onClick}>
+			{children}
+		</button>
+	),
 	__experimentalVStack: ({ children }) => <div>{children}</div>,
 	__experimentalHStack: ({ children }) => <div>{children}</div>,
 }));
@@ -34,9 +56,13 @@ describe('VisibilityPanel', () => {
 		const onChange = jest.fn();
 		render(<VisibilityPanel value={null} onChange={onChange} />);
 		fireEvent.click(screen.getByText(/add rule/i));
-		expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
-			operator: 'AND',
-			rules: expect.arrayContaining([expect.objectContaining({ type: 'meta' })]),
-		}));
+		expect(onChange).toHaveBeenCalledWith(
+			expect.objectContaining({
+				operator: 'AND',
+				rules: expect.arrayContaining([
+					expect.objectContaining({ type: 'meta' }),
+				]),
+			})
+		);
 	});
 });

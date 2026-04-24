@@ -72,6 +72,8 @@ class FilterRegistry {
 			return;
 		}
 
+		$is_new = ! isset( $filters[ $sanitized_key ] );
+
 		$filters[ $sanitized_key ] = array(
 			'type'   => sanitize_key( $config['type'] ?? '' ),
 			'source' => sanitize_text_field( $config['source'] ?? '' ),
@@ -80,6 +82,27 @@ class FilterRegistry {
 
 		update_option( self::OPTION, $filters, false );
 		self::$cache = null;
+
+		// First-time registration: queue a background backfill of index rows
+		// for all existing posts. Without this, posts that predate the filter
+		// block (common when authors add the block to an already-populated
+		// site) show "(0)" next to terms they legitimately belong to because
+		// the save_post hooks only cover posts updated AFTER the filter was
+		// registered.
+		//
+		// Queued (not inline) because `rebuild_filter` iterates the entire
+		// posts table — on a large site that would stall the post-save
+		// request that triggered registration and could time out. WP-Cron
+		// runs the backfill on the next request instead. The hook is handled
+		// by FilterIndexHooks::on_filter_registered below.
+		if ( $is_new ) {
+			/**
+			 * Fires when a new filter key is added to the registry.
+			 *
+			 * @param string $filter_key The sanitized filter key that was just registered.
+			 */
+			do_action( 'designsetgo_query_filter_registered', $sanitized_key );
+		}
 	}
 
 	/**

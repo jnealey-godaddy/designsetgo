@@ -10,13 +10,14 @@ import { store as noticesStore } from '@wordpress/notices';
 export default function TemplateIO({ clientId, attributes }) {
 	const { queryId } = attributes;
 	const { replaceBlocks } = useDispatch(blockEditorStore);
-	const { createSuccessNotice, createErrorNotice } = useDispatch(noticesStore);
+	const { createSuccessNotice, createErrorNotice } =
+		useDispatch(noticesStore);
 	const currentBlock = useSelect(
 		(select) => select(blockEditorStore).getBlock(clientId),
 		[clientId]
 	);
 	const fileInputRef = useRef(null);
-	const [ isBusy, setIsBusy ] = useState( false );
+	const [isBusy, setIsBusy] = useState(false);
 
 	async function handleExport() {
 		try {
@@ -25,7 +26,7 @@ export default function TemplateIO({ clientId, attributes }) {
 					__('Unable to read the current Query block.', 'designsetgo')
 				);
 			}
-			setIsBusy( true );
+			setIsBusy(true);
 			const payload = {
 				schemaVersion: 1,
 				exportedAt: new Date().toISOString(),
@@ -33,10 +34,9 @@ export default function TemplateIO({ clientId, attributes }) {
 				attributes: currentBlock.attributes || attributes,
 				innerBlocks: serialize(currentBlock.innerBlocks || []),
 			};
-			const blob = new Blob(
-				[JSON.stringify(payload, null, 2)],
-				{ type: 'application/json' }
-			);
+			const blob = new Blob([JSON.stringify(payload, null, 2)], {
+				type: 'application/json',
+			});
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
@@ -45,17 +45,16 @@ export default function TemplateIO({ clientId, attributes }) {
 			a.click();
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
-			createSuccessNotice(
-				__('Query template exported.', 'designsetgo'),
-				{ type: 'snackbar' }
-			);
+			createSuccessNotice(__('Query template exported.', 'designsetgo'), {
+				type: 'snackbar',
+			});
 		} catch (err) {
 			createErrorNotice(
 				err?.message || __('Export failed.', 'designsetgo'),
 				{ type: 'snackbar' }
 			);
 		} finally {
-			setIsBusy( false );
+			setIsBusy(false);
 		}
 	}
 
@@ -71,7 +70,7 @@ export default function TemplateIO({ clientId, attributes }) {
 			return;
 		}
 		try {
-			setIsBusy( true );
+			setIsBusy(true);
 			const text = await file.text();
 			const payload = JSON.parse(text);
 			const response = await apiFetch({
@@ -82,21 +81,23 @@ export default function TemplateIO({ clientId, attributes }) {
 			const blocks = parse(response.blockMarkup);
 			if (!blocks.length) {
 				throw new Error(
-					__('Imported JSON did not yield a valid block.', 'designsetgo')
+					__(
+						'Imported JSON did not yield a valid block.',
+						'designsetgo'
+					)
 				);
 			}
 			replaceBlocks(clientId, blocks);
-			createSuccessNotice(
-				__('Query template imported.', 'designsetgo'),
-				{ type: 'snackbar' }
-			);
+			createSuccessNotice(__('Query template imported.', 'designsetgo'), {
+				type: 'snackbar',
+			});
 		} catch (err) {
 			createErrorNotice(
 				err?.message || __('Import failed.', 'designsetgo'),
 				{ type: 'snackbar' }
 			);
 		} finally {
-			setIsBusy( false );
+			setIsBusy(false);
 		}
 	}
 

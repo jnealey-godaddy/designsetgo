@@ -30,7 +30,10 @@ const SOURCES = [
 	{ value: 'terms', label: __('Terms', 'designsetgo') },
 	{ value: 'manual', label: __('Manual picks', 'designsetgo') },
 	{ value: 'current', label: __('Current archive', 'designsetgo') },
-	{ value: 'relationship', label: __('Related items (field-driven)', 'designsetgo') },
+	{
+		value: 'relationship',
+		label: __('Related items (field-driven)', 'designsetgo'),
+	},
 ];
 
 const RELATIONSHIP_FALLBACK_OPTIONS = [
@@ -78,7 +81,6 @@ export default function QuerySourcePanel({
 		(select) => select(coreStore).getPostTypes({ per_page: -1 }) || [],
 		[]
 	);
-
 
 	const postTypeOptions = (postTypes || [])
 		.filter((pt) => pt && pt.viewable)
@@ -158,7 +160,9 @@ export default function QuerySourcePanel({
 							'designsetgo'
 						)}
 						value={relationshipField || ''}
-						onChange={(v) => setAttributes({ relationshipField: v })}
+						onChange={(v) =>
+							setAttributes({ relationshipField: v })
+						}
 					/>
 				</DsgoInspectorPanel.Item>
 			)}
@@ -166,8 +170,12 @@ export default function QuerySourcePanel({
 			{showRelationship && (
 				<DsgoInspectorPanel.Item
 					label={__('When no related items', 'designsetgo')}
-					hasValue={() => (relationshipFallback || 'empty') !== 'empty'}
-					onDeselect={() => setAttributes({ relationshipFallback: 'empty' })}
+					hasValue={() =>
+						(relationshipFallback || 'empty') !== 'empty'
+					}
+					onDeselect={() =>
+						setAttributes({ relationshipFallback: 'empty' })
+					}
 					isShownByDefault
 				>
 					<SelectControl
@@ -175,7 +183,9 @@ export default function QuerySourcePanel({
 						__nextHasNoMarginBottom
 						label={__('When no related items', 'designsetgo')}
 						value={relationshipFallback || 'empty'}
-						onChange={(v) => setAttributes({ relationshipFallback: v })}
+						onChange={(v) =>
+							setAttributes({ relationshipFallback: v })
+						}
 						options={RELATIONSHIP_FALLBACK_OPTIONS}
 					/>
 				</DsgoInspectorPanel.Item>
@@ -202,7 +212,7 @@ export default function QuerySourcePanel({
 				label={__('Offset', 'designsetgo')}
 				hasValue={() => offset !== 0}
 				onDeselect={() => setAttributes({ offset: 0 })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<NumberControl
 					label={__('Offset', 'designsetgo')}
@@ -220,7 +230,7 @@ export default function QuerySourcePanel({
 				label={__('Order by', 'designsetgo')}
 				hasValue={() => orderBy !== 'date'}
 				onDeselect={() => setAttributes({ orderBy: 'date' })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<SelectControl
 					label={__('Order by', 'designsetgo')}
@@ -257,7 +267,7 @@ export default function QuerySourcePanel({
 				label={__('Order direction', 'designsetgo')}
 				hasValue={() => order !== 'DESC'}
 				onDeselect={() => setAttributes({ order: 'DESC' })}
-				isShownByDefault={false}
+				isShownByDefault
 			>
 				<SelectControl
 					label={__('Order direction', 'designsetgo')}

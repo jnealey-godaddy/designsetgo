@@ -21,9 +21,6 @@ import {
 	collectParams as dsgoCollectParamsShared,
 } from './view-helpers.js';
 
-// Per-element debounce timer map (module-level, not reactive state).
-const dsgoDebounceTimers = {};
-
 // Events already processed by the IAPI store (first render). Used by the
 // delegated fallback listener so we never double-fire. The WeakSet lets the
 // browser GC events when they're done.
@@ -63,17 +60,22 @@ store('designsetgo/query', {
 			event.preventDefault?.();
 			dsgoHandledEvents.add(event);
 			const { ref } = getElement();
-			const form = ref.closest('form');
+			// ref may be the form (submit event) or the input/select (change event).
+			const form =
+				ref.closest('form') ?? (ref.tagName === 'FORM' ? ref : null);
 			const input = form?.querySelector('[name]');
 			const paramName = input?.getAttribute('name')?.replace(/\[\]$/, '');
 			if (!paramName) {
 				return;
 			}
 
+			// Read the value from the named input, not from ref — ref may be the
+			// <form> element when the directive is bound to the form's submit event.
+			const value = input?.value ?? ref.value ?? '';
 			const ctx = getContext();
 			const url = new URL(window.location.href);
-			if (ref.value) {
-				url.searchParams.set(paramName, ref.value);
+			if (value) {
+				url.searchParams.set(paramName, value);
 			} else {
 				url.searchParams.delete(paramName);
 			}
@@ -83,47 +85,6 @@ store('designsetgo/query', {
 			url.searchParams.delete('paged');
 			url.searchParams.delete('page');
 			yield* dsgoQueryRefresh(ctx, url);
-		},
-
-		/**
-		 * Debounced input handler for the search field.
-		 * Fires 250 ms after typing stops. Declared as a regular function
-		 * (not a generator) so IAPI treats it as synchronous — which is
-		 * what we need for the setTimeout pattern.
-		 *
-		 * @param {Event} event
-		 */
-		setFilterDebounced(event) {
-			dsgoHandledEvents.add(event);
-			const el = event.target;
-			const paramName = el.getAttribute('name')?.replace(/\[\]$/, '');
-			if (!paramName) {
-				return;
-			}
-
-			const ctx = getContext(); // capture while IAPI frame is live
-
-			clearTimeout(dsgoDebounceTimers[paramName]);
-			dsgoDebounceTimers[paramName] = setTimeout(() => {
-				// Bail out if the input was removed mid-debounce by a concurrent
-				// setFilter / toggleFilter refresh — the captured ctx is bound to
-				// an orphaned state object in that case, and the fresh HTML has
-				// its own data-wp-context to drive subsequent interactions.
-				if (!el.isConnected) {
-					return;
-				}
-				const url = new URL(window.location.href);
-				if (el.value) {
-					url.searchParams.set(paramName, el.value);
-				} else {
-					url.searchParams.delete(paramName);
-				}
-				// Fix 3: strip both pagination params.
-				url.searchParams.delete('paged');
-				url.searchParams.delete('page');
-				// Use the Promise-based helper — no yield needed here.
-				dsgoQueryRefreshPlain(ctx, url);
-			}, 250);
 		},
 
 		/**
@@ -305,10 +266,23 @@ function dsgoGetContextFromDom(el) {
 }
 
 function dsgoGetQueryContainer(queryId, el) {
+	// The grid <ul> / <ol> / <div> is the actual item container — it carries
+	// `data-dsgo-query-results-role="container"` + the matching query id.
+	// The outer .dsgo-query-region wrapper ALSO carries data-dsgo-query-id
+	// (so view.js can target the whole region for full swaps), so targeting
+	// [data-dsgo-query-id] alone would match the region and cause load-more
+	// to append new items after the pagination button instead of into the
+	// grid. Scope by role to always land inside the grid.
+	const doc = el?.ownerDocument || document;
+	// Prefer scoping via the enclosing region so nested queries on the same
+	// page can't collide even when another query shares the same queryId.
+	const region = el?.closest(`[data-dsgo-query-region="${queryId}"]`);
 	return (
-		el?.closest('[data-dsgo-query-id]:not([data-dsgo-pagination])') ||
-		document.querySelector(
-			`[data-dsgo-query-id="${queryId}"]:not([data-dsgo-pagination])`
+		region?.querySelector(
+			`[data-dsgo-query-results-role="container"][data-dsgo-query-id="${queryId}"]`
+		) ||
+		doc.querySelector(
+			`[data-dsgo-query-results-role="container"][data-dsgo-query-id="${queryId}"]`
 		)
 	);
 }
@@ -419,7 +393,12 @@ async function dsgoLoadMorePlain(ctx, button) {
 						{ once: true }
 					);
 				}
-				focusable.focus();
+				// preventScroll keeps the viewport anchored on the Load more
+				// button the user just clicked. Without this the browser jumps
+				// to wherever the first new item lands (often well below the
+				// fold on long grids), which reads as a lost scroll position
+				// even though focus is moving for a screen-reader handoff.
+				focusable.focus({ preventScroll: true });
 			}
 		}
 
@@ -609,23 +588,28 @@ function dsgoDelegatedChange(event) {
 }
 
 /**
- * Delegated input handler for the debounced search field.
+ * Delegated submit handler for search filter forms.
  *
- * @param {Event} event Native input event.
+ * Covers the post-swap DOM where IAPI directives are no longer live.
+ * Mirrors the IAPI setFilter logic but reads the form's named input directly.
+ *
+ * @param {Event} event Native submit event.
  */
-function dsgoDelegatedInput(event) {
+function dsgoDelegatedSubmit(event) {
 	if (dsgoHandledEvents.has(event)) {
 		return;
 	}
 	const target = event.target;
-	if (!(target instanceof HTMLInputElement)) {
+	if (!(target instanceof HTMLElement)) {
 		return;
 	}
 	const filterRoot = target.closest('.dsgo-query-filter--search');
 	if (!filterRoot) {
 		return;
 	}
-	const paramName = (target.getAttribute('name') || '').replace(/\[\]$/, '');
+	event.preventDefault();
+	const input = target.querySelector('[name]');
+	const paramName = (input?.getAttribute('name') || '').replace(/\[\]$/, '');
 	if (!paramName) {
 		return;
 	}
@@ -633,22 +617,15 @@ function dsgoDelegatedInput(event) {
 	if (!ctx) {
 		return;
 	}
-
-	clearTimeout(dsgoDebounceTimers[paramName]);
-	dsgoDebounceTimers[paramName] = setTimeout(() => {
-		if (!target.isConnected) {
-			return;
-		}
-		const url = new URL(window.location.href);
-		if (target.value) {
-			url.searchParams.set(paramName, target.value);
-		} else {
-			url.searchParams.delete(paramName);
-		}
-		url.searchParams.delete('paged');
-		url.searchParams.delete('page');
-		dsgoDelegatedRefresh(ctx, url);
-	}, 250);
+	const url = new URL(window.location.href);
+	if (input?.value) {
+		url.searchParams.set(paramName, input.value);
+	} else {
+		url.searchParams.delete(paramName);
+	}
+	url.searchParams.delete('paged');
+	url.searchParams.delete('page');
+	dsgoDelegatedRefresh(ctx, url);
 }
 
 /**
@@ -701,7 +678,10 @@ function dsgoDelegatedClick(event) {
 }
 
 document.addEventListener('change', dsgoDelegatedChange);
-document.addEventListener('input', dsgoDelegatedInput);
+// No delegated `input` listener: the search filter is submit-only to avoid
+// yanking focus out of the input mid-typing when the debounced refresh swaps
+// the form's DOM. Submit (Enter / button) is handled by dsgoDelegatedSubmit.
+document.addEventListener('submit', dsgoDelegatedSubmit);
 document.addEventListener('click', dsgoDelegatedClick);
 if (document.readyState === 'loading') {
 	document.addEventListener('DOMContentLoaded', () =>

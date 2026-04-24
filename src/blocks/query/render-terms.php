@@ -87,7 +87,7 @@ if ( ! function_exists( 'designsetgo_query_render_terms' ) ) :
 				),
 				$atts['itemTagName']
 			);
-			$item_index++;
+			++$item_index;
 		}
 
 		$state = array(
@@ -99,6 +99,7 @@ if ( ! function_exists( 'designsetgo_query_render_terms' ) ) :
 
 		return array(
 			'html'       => designsetgo_query_wrap( $items_html, $atts, $context, $context['wrapper_attrs'] ?? null ),
+			'items_html' => $items_html,
 			'totalPages' => $state['totalPages'],
 			'totalItems' => $state['totalItems'],
 		);

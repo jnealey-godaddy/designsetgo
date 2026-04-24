@@ -1,3 +1,5 @@
+@use 'layout-variants';
+
 // Frontend grid layout. Scoped to `[data-dsgo-query-results-role="container"]`
 // so the grid attaches only to the rendered <ul>/<ol>/<div> list and doesn't
 // apply to the editor wrapper (which would turn template blocks into columns
@@ -5,10 +7,19 @@
 .dsgo-query-results[data-dsgo-query-results-role="container"] {
 	display: grid;
 	grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
-	gap: var(--dsgo-query-gap, 1.5rem);
+	gap: var(--wp--style--block-gap, 1.5rem);
 	list-style: none;
 	margin: 0;
 	padding: 0;
+
+	// Featured first item — optional callout that spans extra columns/rows.
+	// The span is already clamped server-side to the desktop column count;
+	// responsive rules below clamp again for tablet/mobile so the callout
+	// doesn't overflow a narrower grid.
+	> .dsgo-query__item:first-child {
+		grid-column: span min(var(--dsgo-query-first-col-span, 1), var(--dsgo-query-columns, 1));
+		grid-row: span var(--dsgo-query-first-row-span, 1);
+	}
 }
 
 .dsgo-query__item {
@@ -20,6 +31,10 @@
 
 	.dsgo-query-results[data-dsgo-query-results-role="container"] {
 		grid-template-columns: repeat(var(--dsgo-query-columns-tablet, var(--dsgo-query-columns, 1)), minmax(0, 1fr));
+
+		> .dsgo-query__item:first-child {
+			grid-column: span min(var(--dsgo-query-first-col-span, 1), var(--dsgo-query-columns-tablet, var(--dsgo-query-columns, 1)));
+		}
 	}
 }
 
@@ -27,6 +42,11 @@
 
 	.dsgo-query-results[data-dsgo-query-results-role="container"] {
 		grid-template-columns: repeat(var(--dsgo-query-columns-mobile, 1), minmax(0, 1fr));
+
+		> .dsgo-query__item:first-child {
+			grid-column: span min(var(--dsgo-query-first-col-span, 1), var(--dsgo-query-columns-mobile, 1));
+			grid-row: auto;
+		}
 	}
 }
 

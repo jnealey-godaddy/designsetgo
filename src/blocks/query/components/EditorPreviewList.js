@@ -41,14 +41,18 @@ export default function EditorPreviewList({
 	context,
 }) {
 	const source = attributes.source || 'posts';
-	const isPosts = source === 'posts';
+	const isPostsLike =
+		source === 'posts' || source === 'manual' || source === 'current';
 	const isRelationship = source === 'relationship';
 
 	// All three hooks must be called unconditionally (Rules of Hooks).
 	// Each hook no-ops cheaply when its source doesn't match via its `enabled`
 	// guard or its internal isRelationship branch.
-	const postsData = usePosts(attributes, isPosts);
-	const remoteData = useRemotePreview(attributes, !isPosts && !isRelationship);
+	const postsData = usePosts(attributes, isPostsLike);
+	const remoteData = useRemotePreview(
+		attributes,
+		!isPostsLike && !isRelationship
+	);
 	const relationshipData = useQueryPreview({
 		source,
 		relationshipField: attributes.relationshipField || '',
@@ -70,11 +74,11 @@ export default function EditorPreviewList({
 	});
 
 	// Select the active data path.
-	const { records, hasResolved } = isPosts
+	const { records, hasResolved } = isPostsLike
 		? postsData
 		: isRelationship
-		? relationshipData
-		: remoteData;
+			? relationshipData
+			: remoteData;
 
 	if (!hasResolved) {
 		return (
@@ -239,6 +243,13 @@ function buildGroupLabel(item, groupBy) {
  * heading for each group.
  *
  * @param {Object} props
+ * @param          props.records
+ * @param          props.attributes
+ * @param          props.innerBlocks
+ * @param          props.innerBlocksProps
+ * @param          props.context
+ * @param          props.groupBy
+ * @param          props.renderedItems
  */
 function GroupedPreviewList({
 	records,
@@ -322,7 +333,9 @@ function GroupedPreviewList({
 												: 'dsgo-query__editor-preview-item is-read-only'
 										}
 									>
-										<BlockContextProvider value={itemContext}>
+										<BlockContextProvider
+											value={itemContext}
+										>
 											{idx === 0 ? (
 												<EditableTemplate
 													innerBlocksProps={
@@ -333,8 +346,9 @@ function GroupedPreviewList({
 												<ReadOnlyItem
 													innerBlocks={innerBlocks}
 													serverHtml={
-														renderedItems
-															.items?.[idx] ?? null
+														renderedItems.items?.[
+															idx
+														] ?? null
 													}
 													loading={
 														renderedItems.loading
@@ -607,11 +621,11 @@ function buildTermsMap(item) {
  *   or a self-referencing fallback for root-level Queries so inner Query
  *   blocks always receive a defined value.
  *
- * @param {Object} item           Preview item: { id, type, ... }.
- * @param {string} source         The query block source attribute value.
- * @param {number} index          Zero-based item index in the current result set (flat/cross-group).
- * @param {Object} outerCtx       The block's `context` prop from edit.js. May carry
- *                                `designsetgo/parentItem` when this Query is nested.
+ * @param {Object} item             Preview item: { id, type, ... }.
+ * @param {string} source           The query block source attribute value.
+ * @param {number} index            Zero-based item index in the current result set (flat/cross-group).
+ * @param {Object} outerCtx         The block's `context` prop from edit.js. May carry
+ *                                  `designsetgo/parentItem` when this Query is nested.
  * @param {number} [groupItemIndex] Zero-based position within the current group (grouped queries only).
  * @return {Object} Context object for BlockContextProvider.
  */
@@ -669,6 +683,25 @@ function buildContext(item, source, index, outerCtx, groupItemIndex) {
 	};
 }
 
+// The WP REST /wp/v2/posts endpoint accepts a fixed enum for `orderby` and
+// 400s on anything outside it — notably `menu_order`, `rand`, `meta_value`,
+// `meta_value_num`, and `comment_count`, all of which WP_Query accepts on the
+// frontend. For the editor preview we fall back to `date` so authors see
+// representative posts instead of an empty "No results" placeholder; the
+// frontend still uses the real orderBy value via PHP render.
+const REST_ALLOWED_POSTS_ORDERBY = new Set([
+	'author',
+	'date',
+	'id',
+	'include',
+	'modified',
+	'parent',
+	'relevance',
+	'slug',
+	'include_slugs',
+	'title',
+]);
+
 /**
  * Translate block attributes into @wordpress/core-data useEntityRecords args.
  *
@@ -680,10 +713,14 @@ function buildContext(item, source, index, outerCtx, groupItemIndex) {
  * @return {Object} Query args for useEntityRecords.
  */
 function buildCoreDataQuery(attributes) {
+	const rawOrderBy = (attributes.orderBy || 'date').toLowerCase();
+	const orderBy = REST_ALLOWED_POSTS_ORDERBY.has(rawOrderBy)
+		? rawOrderBy
+		: 'date';
 	const args = {
 		per_page: attributes.perPage || 6,
 		offset: attributes.offset || 0,
-		orderby: (attributes.orderBy || 'date').toLowerCase(),
+		orderby: orderBy,
 		order: (attributes.order || 'DESC').toLowerCase(),
 		status: 'publish',
 		_embed: true,

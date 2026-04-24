@@ -1,5 +1,9 @@
 import { __, sprintf } from '@wordpress/i18n';
-import { Button, SelectControl, __experimentalVStack as VStack } from '@wordpress/components';
+import {
+	Button,
+	SelectControl,
+	__experimentalVStack as VStack,
+} from '@wordpress/components';
 
 /**
  * Reusable recursive group shell for tax/meta clause builders.
@@ -11,8 +15,16 @@ import { Button, SelectControl, __experimentalVStack as VStack } from '@wordpres
  *   depth        - number (0 = root)
  *   renderClause - (clause, idx, updateEntry, removeEntry) => JSX — renders one leaf clause
  *   newClause    - object — default shape for a new leaf clause
+ * @param root0
+ * @param root0.group
+ * @param root0.onChange
+ * @param root0.onRemove
+ * @param root0.depth
+ * @param root0.renderClause
+ * @param root0.newClause
+ * @param root0.isAddDisabled
  */
-export default function ClauseGroupShell( {
+export default function ClauseGroupShell({
 	group,
 	onChange,
 	onRemove,
@@ -20,126 +32,141 @@ export default function ClauseGroupShell( {
 	renderClause,
 	newClause,
 	isAddDisabled,
-} ) {
+}) {
 	const { relation = 'AND', clauses = [] } = group;
 
-	const updateEntry = ( idx, patch ) => {
-		const next = clauses.map( ( c, i ) => ( i === idx ? { ...c, ...patch } : c ) );
-		onChange( { clauses: next } );
+	const updateEntry = (idx, patch) => {
+		const next = clauses.map((c, i) =>
+			i === idx ? { ...c, ...patch } : c
+		);
+		onChange({ clauses: next });
 	};
 
-	const replaceEntry = ( idx, entry ) => {
-		const next = clauses.map( ( c, i ) => ( i === idx ? entry : c ) );
-		onChange( { clauses: next } );
+	const replaceEntry = (idx, entry) => {
+		const next = clauses.map((c, i) => (i === idx ? entry : c));
+		onChange({ clauses: next });
 	};
 
-	const removeEntry = ( idx ) =>
-		onChange( { clauses: clauses.filter( ( _, i ) => i !== idx ) } );
+	const removeEntry = (idx) =>
+		onChange({ clauses: clauses.filter((_, i) => i !== idx) });
 
 	const addClause = () =>
-		onChange( { clauses: [ ...clauses, { ...newClause } ] } );
+		onChange({ clauses: [...clauses, { ...newClause }] });
 
 	const addGroup = () =>
-		onChange( {
-			clauses: [ ...clauses, { relation: 'AND', clauses: [ { ...newClause } ] } ],
-		} );
+		onChange({
+			clauses: [
+				...clauses,
+				{ relation: 'AND', clauses: [{ ...newClause }] },
+			],
+		});
 
 	const groupLabel =
 		depth === 0
-			? __( 'top level', 'designsetgo' )
+			? __('top level', 'designsetgo')
 			: sprintf(
-				/* translators: %d: nesting depth, where 1 is the first nested group. */
-				__( 'nested group level %d', 'designsetgo' ),
-				depth
-			);
+					/* translators: %d: nesting depth, where 1 is the first nested group. */
+					__('nested group level %d', 'designsetgo'),
+					depth
+				);
 
 	return (
 		<VStack
-			spacing={ 2 }
-			className={ `dsgo-clause-group dsgo-clause-group--depth-${ depth }` }
+			spacing={2}
+			className={`dsgo-clause-group dsgo-clause-group--depth-${depth}`}
 			role="group"
-			aria-label={ sprintf(
+			aria-label={sprintf(
 				/* translators: %s: human label for the group's nesting depth. */
-				__( 'Filter clauses, %s', 'designsetgo' ),
+				__('Filter clauses, %s', 'designsetgo'),
 				groupLabel
-			) }
-			style={ depth > 0 ? { paddingLeft: '12px', borderLeft: '2px solid var(--wp-admin-theme-color-darker-10, #ccc)' } : undefined }
+			)}
+			style={
+				depth > 0
+					? {
+							paddingLeft: '12px',
+							borderLeft:
+								'2px solid var(--wp-admin-theme-color-darker-10, #ccc)',
+						}
+					: undefined
+			}
 		>
-			{ ( clauses.length > 1 || depth > 0 ) && (
+			{(clauses.length > 1 || depth > 0) && (
 				<SelectControl
-					label={ __( 'Match', 'designsetgo' ) }
-					value={ relation }
-					options={ [
-						{ label: __( 'All (AND)', 'designsetgo' ), value: 'AND' },
-						{ label: __( 'Any (OR)', 'designsetgo' ), value: 'OR' },
-					] }
-					onChange={ ( val ) => onChange( { relation: val } ) }
+					label={__('Match', 'designsetgo')}
+					value={relation}
+					options={[
+						{ label: __('All (AND)', 'designsetgo'), value: 'AND' },
+						{ label: __('Any (OR)', 'designsetgo'), value: 'OR' },
+					]}
+					onChange={(val) => onChange({ relation: val })}
 					__nextHasNoMarginBottom
 				/>
-			) }
+			)}
 
-			{ clauses.map( ( entry, idx ) =>
-				Array.isArray( entry.clauses ) ? (
+			{clauses.map((entry, idx) =>
+				Array.isArray(entry.clauses) ? (
 					<ClauseGroupShell
-						key={ idx }
-						group={ entry }
-						onChange={ ( patch ) => replaceEntry( idx, { ...entry, ...patch } ) }
-						onRemove={ () => removeEntry( idx ) }
-						depth={ depth + 1 }
-						renderClause={ renderClause }
-						newClause={ newClause }
-						isAddDisabled={ isAddDisabled }
+						key={idx}
+						group={entry}
+						onChange={(patch) =>
+							replaceEntry(idx, { ...entry, ...patch })
+						}
+						onRemove={() => removeEntry(idx)}
+						depth={depth + 1}
+						renderClause={renderClause}
+						newClause={newClause}
+						isAddDisabled={isAddDisabled}
 					/>
 				) : (
-					renderClause( entry, idx, updateEntry, removeEntry )
+					renderClause(entry, idx, updateEntry, removeEntry)
 				)
-			) }
+			)}
 
 			<div className="dsgo-clause-group__actions">
 				<Button
 					variant="secondary"
 					size="small"
-					onClick={ addClause }
-					disabled={ isAddDisabled }
-					aria-label={ sprintf(
+					onClick={addClause}
+					disabled={isAddDisabled}
+					aria-label={sprintf(
 						/* translators: %s: human label for the group's nesting depth. */
-						__( 'Add clause to %s', 'designsetgo' ),
+						__('Add clause to %s', 'designsetgo'),
 						groupLabel
-					) }
+					)}
 					__next40pxDefaultSize
 				>
-					{ __( '+ Clause', 'designsetgo' ) }
+					{__('+ Clause', 'designsetgo')}
 				</Button>
 				<Button
 					variant="secondary"
 					size="small"
-					onClick={ addGroup }
-					disabled={ isAddDisabled }
-					aria-label={ sprintf(
+					onClick={addGroup}
+					disabled={isAddDisabled}
+					aria-label={sprintf(
 						/* translators: %s: human label for the group's nesting depth. */
-						__( 'Add group inside %s', 'designsetgo' ),
+						__('Add group inside %s', 'designsetgo'),
 						groupLabel
-					) }
+					)}
 					__next40pxDefaultSize
 				>
-					{ __( '+ Group', 'designsetgo' ) }
+					{__('+ Group', 'designsetgo')}
 				</Button>
-				{ onRemove && (
+				{onRemove && (
 					<Button
 						variant="tertiary"
 						isDestructive
 						size="small"
-						onClick={ onRemove }
-						aria-label={ sprintf(
+						onClick={onRemove}
+						aria-label={sprintf(
 							/* translators: %s: human label for the group's nesting depth. */
-							__( 'Remove %s', 'designsetgo' ),
+							__('Remove %s', 'designsetgo'),
 							groupLabel
-						) }
+						)}
 						__next40pxDefaultSize
 					>
-						{ __( 'Remove group', 'designsetgo' ) }
+						{__('Remove group', 'designsetgo')}
 					</Button>
-				) }
+				)}
 			</div>
 		</VStack>
 	);

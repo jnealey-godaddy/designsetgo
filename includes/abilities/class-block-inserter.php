@@ -2238,15 +2238,37 @@ class Block_Inserter {
 	}
 
 	/**
+	 * Blocks that carry BOTH a save.js (static HTML saved to post content)
+	 * AND a render.php (dynamic transform at display time). For insertion
+	 * purposes these should be treated as authored-mode blocks — their
+	 * save.js output is the canonical wrapper HTML. Without this allowlist,
+	 * Block_Inserter would skip wrapper HTML generation because the render
+	 * callback is non-null, producing an empty innerHTML.
+	 *
+	 * V2.6: slider + scroll-slides became hybrid to support item-host
+	 * rendering inside designsetgo/query.
+	 */
+	private const HYBRID_BLOCKS = array(
+		'designsetgo/slider',
+		'designsetgo/scroll-slides',
+	);
+
+	/**
 	 * Check if a block is dynamic (has a render callback).
 	 *
 	 * Dynamic blocks are rendered server-side via PHP and should not have
-	 * wrapper HTML generated during insertion.
+	 * wrapper HTML generated during insertion. Hybrid blocks (see
+	 * HYBRID_BLOCKS) return false here because their save.js output is still
+	 * authoritative at insertion time.
 	 *
 	 * @param string $block_name Block name (e.g., 'designsetgo/section').
 	 * @return bool True if block has a render callback, false otherwise.
 	 */
 	private static function is_dynamic_block( string $block_name ): bool {
+		if ( in_array( $block_name, self::HYBRID_BLOCKS, true ) ) {
+			return false;
+		}
+
 		$registry   = \WP_Block_Type_Registry::get_instance();
 		$block_type = $registry->get_registered( $block_name );
 

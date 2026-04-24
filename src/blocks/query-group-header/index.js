@@ -4,7 +4,7 @@ import save from './save';
 import metadata from './block.json';
 import { ICON_COLOR } from '../shared/constants';
 
-registerBlockType( metadata.name, {
+registerBlockType(metadata.name, {
 	...metadata,
 	icon: {
 		src: (
@@ -26,4 +26,4 @@ registerBlockType( metadata.name, {
 	},
 	edit,
 	save,
-} );
+});

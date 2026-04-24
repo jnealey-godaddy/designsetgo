@@ -12,24 +12,28 @@ import {
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { Fragment } from '@wordpress/element';
 
-const BLOCKED = new Set( [ 'core/freeform', 'core/missing', 'core/template-part' ] );
+const BLOCKED = new Set([
+	'core/freeform',
+	'core/missing',
+	'core/template-part',
+]);
 
 const SOURCE_OPTIONS = [
-	{ label: __( 'Post meta', 'designsetgo' ), value: 'designsetgo/post-meta' },
-	{ label: __( 'ACF', 'designsetgo' ), value: 'designsetgo/acf' },
-	{ label: __( 'Meta Box', 'designsetgo' ), value: 'designsetgo/metabox' },
-	{ label: __( 'Pods', 'designsetgo' ), value: 'designsetgo/pods' },
-	{ label: __( 'JetEngine', 'designsetgo' ), value: 'designsetgo/jetengine' },
+	{ label: __('Post meta', 'designsetgo'), value: 'designsetgo/post-meta' },
+	{ label: __('ACF', 'designsetgo'), value: 'designsetgo/acf' },
+	{ label: __('Meta Box', 'designsetgo'), value: 'designsetgo/metabox' },
+	{ label: __('Pods', 'designsetgo'), value: 'designsetgo/pods' },
+	{ label: __('JetEngine', 'designsetgo'), value: 'designsetgo/jetengine' },
 ];
 
 addFilter(
 	'blocks.registerBlockType',
 	'designsetgo/style-binding-attribute',
-	( settings, name ) => {
-		if ( BLOCKED.has( name ) ) {
+	(settings, name) => {
+		if (BLOCKED.has(name)) {
 			return settings;
 		}
-		if ( ! settings.attributes ) {
+		if (!settings.attributes) {
 			settings.attributes = {};
 		}
 		settings.attributes.dsgoStyleBinding = {
@@ -40,99 +44,130 @@ addFilter(
 	}
 );
 
-const withStyleBindingInspector = createHigherOrderComponent( ( BlockEdit ) => {
-	return function WithStyleBindingInspector( props ) {
-		if ( BLOCKED.has( props.name ) ) {
-			return <BlockEdit { ...props } />;
+const withStyleBindingInspector = createHigherOrderComponent((BlockEdit) => {
+	return function WithStyleBindingInspector(props) {
+		if (BLOCKED.has(props.name)) {
+			return <BlockEdit {...props} />;
 		}
 		const { attributes, setAttributes } = props;
 		const binding = attributes.dsgoStyleBinding ?? {};
-		const entries = Object.entries( binding );
+		const entries = Object.entries(binding);
 
-		const updateEntry = ( oldProp, newProp, config ) => {
+		const updateEntry = (oldProp, newProp, config) => {
 			const next = { ...binding };
-			if ( oldProp !== newProp ) {
-				delete next[ oldProp ];
+			if (oldProp !== newProp) {
+				delete next[oldProp];
 			}
-			next[ newProp ] = config;
-			setAttributes( { dsgoStyleBinding: next } );
+			next[newProp] = config;
+			setAttributes({ dsgoStyleBinding: next });
 		};
 
-		const removeEntry = ( prop ) => {
+		const removeEntry = (prop) => {
 			const next = { ...binding };
-			delete next[ prop ];
-			setAttributes( { dsgoStyleBinding: next } );
+			delete next[prop];
+			setAttributes({ dsgoStyleBinding: next });
 		};
 
 		const addEntry = () => {
-			const key = `--dsgo-binding-${ Date.now() }`;
-			setAttributes( {
+			const key = `--dsgo-binding-${Date.now()}`;
+			setAttributes({
 				dsgoStyleBinding: {
 					...binding,
-					[ key ]: { source: 'designsetgo/post-meta', args: { key: '' } },
+					[key]: {
+						source: 'designsetgo/post-meta',
+						args: { key: '' },
+					},
 				},
-			} );
+			});
 		};
 
 		return (
 			<Fragment>
-				<BlockEdit { ...props } />
+				<BlockEdit {...props} />
 				<InspectorControls group="advanced">
 					<PanelBody
-						title={ __( 'Style Bindings', 'designsetgo' ) }
-						initialOpen={ entries.length > 0 }
+						title={__('Style Bindings', 'designsetgo')}
+						initialOpen={entries.length > 0}
 					>
-						{ entries.map( ( [ prop, config ] ) => (
-							<VStack key={ prop } spacing={ 1 } style={ { marginBottom: '12px' } }>
+						{entries.map(([prop, config]) => (
+							<VStack
+								key={prop}
+								spacing={1}
+								style={{ marginBottom: '12px' }}
+							>
 								<HStack>
 									<TextControl
-										label={ __( 'CSS property', 'designsetgo' ) }
-										value={ prop }
+										label={__(
+											'CSS property',
+											'designsetgo'
+										)}
+										value={prop}
 										placeholder="--brand-color"
-										onChange={ ( val ) => updateEntry( prop, val, config ) }
+										onChange={(val) =>
+											updateEntry(prop, val, config)
+										}
 										__nextHasNoMarginBottom
 									/>
 									<Button
 										variant="tertiary"
 										isDestructive
 										size="small"
-										onClick={ () => removeEntry( prop ) }
-										aria-label={ sprintf(
+										onClick={() => removeEntry(prop)}
+										aria-label={sprintf(
 											/* translators: %s: CSS property name being unbound. */
-											__( 'Remove style binding for "%s"', 'designsetgo' ),
+											__(
+												'Remove style binding for "%s"',
+												'designsetgo'
+											),
 											prop
-										) }
-										style={ { alignSelf: 'flex-end' } }
+										)}
+										style={{ alignSelf: 'flex-end' }}
 									>
-										{ __( 'Remove', 'designsetgo' ) }
+										{__('Remove', 'designsetgo')}
 									</Button>
 								</HStack>
 								<SelectControl
-									label={ __( 'Source', 'designsetgo' ) }
-									value={ config.source }
-									options={ SOURCE_OPTIONS }
-									onChange={ ( val ) => updateEntry( prop, prop, { ...config, source: val } ) }
+									label={__('Source', 'designsetgo')}
+									value={config.source}
+									options={SOURCE_OPTIONS}
+									onChange={(val) =>
+										updateEntry(prop, prop, {
+											...config,
+											source: val,
+										})
+									}
 									__nextHasNoMarginBottom
 								/>
 								<TextControl
-									label={ __( 'Field key / name', 'designsetgo' ) }
-									value={ config.args?.key ?? '' }
-									onChange={ ( val ) =>
-										updateEntry( prop, prop, { ...config, args: { key: val } } )
+									label={__(
+										'Field key / name',
+										'designsetgo'
+									)}
+									value={config.args?.key ?? ''}
+									onChange={(val) =>
+										updateEntry(prop, prop, {
+											...config,
+											args: { key: val },
+										})
 									}
 									__nextHasNoMarginBottom
 								/>
 							</VStack>
-						) ) }
-						<Button variant="secondary" size="small" onClick={ addEntry } __next40pxDefaultSize>
-							{ __( '+ Add style binding', 'designsetgo' ) }
+						))}
+						<Button
+							variant="secondary"
+							size="small"
+							onClick={addEntry}
+							__next40pxDefaultSize
+						>
+							{__('+ Add style binding', 'designsetgo')}
 						</Button>
 					</PanelBody>
 				</InspectorControls>
 			</Fragment>
 		);
 	};
-}, 'withStyleBindingInspector' );
+}, 'withStyleBindingInspector');
 
 addFilter(
 	'editor.BlockEdit',

@@ -25,7 +25,12 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 	function designsetgo_query_render_relationship( array $atts, array $context ) {
 		$field = isset( $atts['relationshipField'] ) ? sanitize_text_field( (string) $atts['relationshipField'] ) : '';
 		if ( '' === $field ) {
-			return array( 'html' => '', 'totalPages' => 0, 'totalItems' => 0 );
+			return array(
+				'html'       => '',
+				'items_html' => '',
+				'totalPages' => 0,
+				'totalItems' => 0,
+			);
 		}
 
 		$parent_stack = array();
@@ -118,7 +123,12 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 		$mode = isset( $atts['relationshipFallback'] ) ? (string) $atts['relationshipFallback'] : 'empty';
 
 		if ( 'empty' === $mode ) {
-			return array( 'html' => designsetgo_query_wrap( '', $atts, $context, $context['wrapper_attrs'] ?? null ), 'totalPages' => 0, 'totalItems' => 0 );
+			return array(
+				'html'       => designsetgo_query_wrap( '', $atts, $context, $context['wrapper_attrs'] ?? null ),
+				'items_html' => '',
+				'totalPages' => 0,
+				'totalItems' => 0,
+			);
 		}
 
 		require_once __DIR__ . '/render-posts.php';
@@ -137,7 +147,12 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 		}
 		$parent = empty( $fallback_stack ) ? null : end( $fallback_stack );
 		if ( ! is_array( $parent ) || empty( $parent['postId'] ) ) {
-			return array( 'html' => '', 'totalPages' => 0, 'totalItems' => 0 );
+			return array(
+				'html'       => '',
+				'items_html' => '',
+				'totalPages' => 0,
+				'totalItems' => 0,
+			);
 		}
 		$atts['source']    = 'manual';
 		$atts['manualIds'] = array( (int) $parent['postId'] );

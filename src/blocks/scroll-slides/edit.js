@@ -7,9 +7,12 @@ import {
 	useInnerBlocksProps,
 	store as blockEditorStore,
 	useSettings,
+	InspectorControls,
+	BlockContextProvider,
 } from '@wordpress/block-editor';
+import { Notice } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { useState } from '@wordpress/element';
+import { useMemo, useState } from '@wordpress/element';
 
 /**
  * Internal dependencies
@@ -18,11 +21,16 @@ import './editor.scss';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import ScrollSlidesPlaceholder from './components/ScrollSlidesPlaceholder';
 import ScrollSlidesInspector from './components/ScrollSlidesInspector';
+import useQueryHostPreview, {
+	buildItemContext,
+} from '../query/hooks/useQueryHostPreview';
+import useParentQueryAttrs from '../query/hooks/useParentQueryAttrs';
+import QueryHostReadOnlyItem from '../query/components/QueryHostReadOnlyItem';
 
 const ALLOWED_BLOCKS = ['designsetgo/scroll-slide'];
 const MAX_SLIDES = 10;
 
-export default function Edit({ attributes, setAttributes, clientId }) {
+export default function Edit({ attributes, setAttributes, clientId, context }) {
 	const {
 		minHeight,
 		maxHeight,
@@ -33,6 +41,16 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		navActiveColor,
 	} = attributes;
 	const [activeSlide, setActiveSlide] = useState(0);
+
+	// Dynamic mode: a parent designsetgo/query sets queryId in context. In
+	// that mode only the first scroll-slide is used as the per-item template;
+	// extras are ignored server-side. Lock add/remove at this level so the
+	// editor reflects the server contract.
+	const queryId =
+		typeof context === 'object' && context
+			? context['designsetgo/queryId'] || ''
+			: '';
+	const inQueryMode = !!queryId;
 
 	const [themeContentSize] = useSettings('layout.contentSize');
 
@@ -52,11 +70,33 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	const { updateBlockAttributes, selectBlock } =
 		useDispatch(blockEditorStore);
 
-	// Clamp active slide to valid range when slides are removed
+	// Parent query's attributes (only resolved when bound via context).
+	const parentQueryAttrs = useParentQueryAttrs(clientId, inQueryMode);
+
+	// Only the first scroll-slide is used as the template at render time.
+	// Memoize to preserve the array reference across renders — useRenderedItems
+	// re-serializes the template tree on every identity change.
+	const templateSlideBlocks = useMemo(
+		() => (innerBlocks.length > 0 ? [innerBlocks[0]] : []),
+		[innerBlocks]
+	);
+
+	const preview = useQueryHostPreview({
+		attributes: parentQueryAttrs,
+		queryId,
+		innerBlocks: templateSlideBlocks,
+		enabled: inQueryMode && !!parentQueryAttrs,
+	});
+
+	// Clamp active slide to valid range. In query mode the panel count is
+	// driven by the preview record count; outside of query mode by the
+	// authored inner blocks count.
+	const previewRecords = Array.isArray(preview?.records)
+		? preview.records
+		: [];
+	const slideCount = inQueryMode ? previewRecords.length : innerBlocks.length;
 	const clampedActive =
-		innerBlocks.length > 0
-			? Math.min(activeSlide, innerBlocks.length - 1)
-			: 0;
+		slideCount > 0 ? Math.min(activeSlide, slideCount - 1) : 0;
 
 	const blockClassName = [
 		'dsgo-scroll-slides',
@@ -108,6 +148,21 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		}
 	}
 
+	// In query mode, the active record's featured image becomes the panel
+	// background — mirroring what scroll-slide/render.php injects on the
+	// frontend when the template has no authored background.
+	if (inQueryMode && !editorBgStyle.backgroundImage) {
+		const activeRecord = previewRecords[clampedActive];
+		const featuredUrl =
+			activeRecord?._embedded?.['wp:featuredmedia']?.[0]?.source_url;
+		if (featuredUrl) {
+			editorBgStyle.backgroundImage = `url(${featuredUrl})`;
+			editorBgStyle.backgroundSize = 'cover';
+			editorBgStyle.backgroundPosition = 'center';
+			editorBgStyle.backgroundRepeat = 'no-repeat';
+		}
+	}
+
 	const hasEditorBg = Object.keys(editorBgStyle).length > 0;
 
 	const blockProps = useBlockProps({
@@ -137,13 +192,18 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
 	const innerBlocksProps = useInnerBlocksProps(
 		{
-			className: 'dsgo-scroll-slides__editor-panels',
+			className: inQueryMode
+				? 'dsgo-scroll-slides__editor-template-slot'
+				: 'dsgo-scroll-slides__editor-panels',
 		},
 		{
 			allowedBlocks: ALLOWED_BLOCKS,
 			orientation: 'vertical',
+			templateLock: inQueryMode ? 'insert' : false,
 			renderAppender:
-				innerBlocks.length >= MAX_SLIDES ? false : undefined,
+				inQueryMode || innerBlocks.length >= MAX_SLIDES
+					? false
+					: undefined,
 		}
 	);
 
@@ -154,7 +214,10 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	 */
 	const handleNavClick = (index) => {
 		setActiveSlide(index);
-		if (innerBlocks[index]) {
+		// Only select the authored child when it exists (outside query mode
+		// there is one block per nav item; in query mode there is only a
+		// single template block regardless of the active preview record).
+		if (!inQueryMode && innerBlocks[index]) {
 			selectBlock(innerBlocks[index].clientId);
 		}
 	};
@@ -187,6 +250,28 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
 	return (
 		<>
+			{inQueryMode && (
+				<InspectorControls>
+					<Notice status="info" isDismissible={false}>
+						{__(
+							'This block is bound to a parent Dynamic Query. Only the first scroll slide is rendered for each iterated item; extras are ignored.',
+							'designsetgo'
+						)}
+					</Notice>
+					{innerBlocks.length > 1 && (
+						<Notice status="warning" isDismissible={false}>
+							{sprintf(
+								/* translators: %d: number of slides that will not render */
+								__(
+									'%d extra slide(s) will be ignored at render. Only the first slide is used as the template.',
+									'designsetgo'
+								),
+								innerBlocks.length - 1
+							)}
+						</Notice>
+					)}
+				</InspectorControls>
+			)}
 			<ScrollSlidesInspector
 				attributes={attributes}
 				setAttributes={setAttributes}
@@ -194,7 +279,18 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 				themeContentSize={themeContentSize}
 			/>
 
-			<div {...blockProps}>
+			<div
+				{...blockProps}
+				onClickCapture={(event) => {
+					// Kill link navigation inside the editor — real anchors come
+					// from authored post-title/featured-image blocks and from
+					// server-rendered readonly slides in query mode.
+					const anchor = event.target.closest?.('a[href]');
+					if (anchor) {
+						event.preventDefault();
+					}
+				}}
+			>
 				{hasEditorBg && (
 					<div
 						className="dsgo-scroll-slides__editor-bg"
@@ -203,46 +299,176 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 					/>
 				)}
 				<div className="dsgo-scroll-slides__inner" style={innerStyle}>
-					{/* Navigation — editable headings, click to switch slide */}
-					{innerBlocks.length > 0 && (
-						<div className="dsgo-scroll-slides__editor-nav">
-							{innerBlocks.map((block, index) => (
-								<div
-									key={block.clientId}
-									className={`dsgo-scroll-slides__editor-nav-item${
-										index === clampedActive
-											? ' is-active'
-											: ''
-									}`}
-								>
-									<input
-										type="text"
-										className="dsgo-scroll-slides__editor-nav-input"
-										value={
-											block.attributes.navHeading || ''
-										}
-										placeholder={sprintf(
-											/* translators: %d: slide number */
-											__('Slide %d', 'designsetgo'),
-											index + 1
-										)}
-										onChange={(e) =>
-											handleNavHeadingChange(
-												index,
-												e.target.value
-											)
-										}
-										onFocus={() => handleNavClick(index)}
-									/>
+					{/* Navigation — editable headings outside query mode; in
+					    query mode, one read-only heading per preview record
+					    (post title, user name, term name, etc.). */}
+					{inQueryMode
+						? slideCount > 0 && (
+								<div className="dsgo-scroll-slides__editor-nav">
+									{previewRecords.map((record, index) => {
+										const heading =
+											record?.title?.rendered ||
+											record?.name ||
+											sprintf(
+												/* translators: %d: slide number */
+												__('Slide %d', 'designsetgo'),
+												index + 1
+											);
+										return (
+											<div
+												key={record?.id ?? index}
+												className={`dsgo-scroll-slides__editor-nav-item${
+													index === clampedActive
+														? ' is-active'
+														: ''
+												}`}
+											>
+												<button
+													type="button"
+													className="dsgo-scroll-slides__editor-nav-input"
+													onClick={() =>
+														handleNavClick(index)
+													}
+												>
+													{heading}
+												</button>
+											</div>
+										);
+									})}
 								</div>
-							))}
-						</div>
-					)}
+							)
+						: innerBlocks.length > 0 && (
+								<div className="dsgo-scroll-slides__editor-nav">
+									{innerBlocks.map((block, index) => (
+										<div
+											key={block.clientId}
+											className={`dsgo-scroll-slides__editor-nav-item${
+												index === clampedActive
+													? ' is-active'
+													: ''
+											}`}
+										>
+											<input
+												type="text"
+												className="dsgo-scroll-slides__editor-nav-input"
+												value={
+													block.attributes
+														.navHeading || ''
+												}
+												placeholder={sprintf(
+													/* translators: %d: slide number */
+													__(
+														'Slide %d',
+														'designsetgo'
+													),
+													index + 1
+												)}
+												onChange={(e) =>
+													handleNavHeadingChange(
+														index,
+														e.target.value
+													)
+												}
+												onFocus={() =>
+													handleNavClick(index)
+												}
+											/>
+										</div>
+									))}
+								</div>
+							)}
 
 					{/* Slide panels — all rendered, CSS shows only active */}
-					<div {...innerBlocksProps} />
+					{inQueryMode ? (
+						<QueryModePanels
+							innerBlocksProps={innerBlocksProps}
+							preview={preview}
+							parentQueryAttrs={parentQueryAttrs}
+							outerContext={context}
+						/>
+					) : (
+						<div {...innerBlocksProps} />
+					)}
 				</div>
 			</div>
 		</>
+	);
+}
+
+/**
+ * Render the scroll-slides panels in query-bound mode: panel 0 wraps the
+ * editable InnerBlocks slot (the template scroll-slide); panels 1..N are
+ * read-only server-rendered panels. Each panel is wrapped in a
+ * BlockContextProvider so bindings resolve against the iterated post.
+ * @param {Object} root0                  Props.
+ * @param {Object} root0.innerBlocksProps useInnerBlocksProps result.
+ * @param {Object} root0.preview          useQueryHostPreview result.
+ * @param {Object} root0.parentQueryAttrs Parent query's attributes.
+ * @param {Object} root0.outerContext     Outer block context.
+ */
+function QueryModePanels({
+	innerBlocksProps,
+	preview,
+	parentQueryAttrs,
+	outerContext,
+}) {
+	const source = parentQueryAttrs?.source || 'posts';
+	const { records, hasResolved, serverHtml, loading } = preview;
+
+	if (!hasResolved) {
+		return (
+			<div className="dsgo-scroll-slides__editor-panels dsgo-scroll-slides__editor-panels--query-loading">
+				<div {...innerBlocksProps} />
+			</div>
+		);
+	}
+
+	const items = Array.isArray(records) ? records : [];
+
+	if (items.length === 0) {
+		return (
+			<div className="dsgo-scroll-slides__editor-panels dsgo-scroll-slides__editor-panels--query-empty">
+				<div {...innerBlocksProps} />
+				<div
+					className="dsgo-scroll-slides__editor-empty-hint"
+					contentEditable={false}
+					aria-hidden="true"
+				>
+					{__(
+						'No posts match the parent query. Design the template panel above \u2014 it will render once per result at publish time.',
+						'designsetgo'
+					)}
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="dsgo-scroll-slides__editor-panels dsgo-scroll-slides__editor-panels--query-mode">
+			{items.map((item, idx) => {
+				const itemContext = buildItemContext(
+					item,
+					source,
+					idx,
+					outerContext
+				);
+				return (
+					<BlockContextProvider
+						key={item.id ?? idx}
+						value={itemContext}
+					>
+						{idx === 0 ? (
+							<div {...innerBlocksProps} />
+						) : (
+							<QueryHostReadOnlyItem
+								className="dsgo-scroll-slides__editor-readonly-item"
+								html={serverHtml?.[idx] ?? null}
+								loading={loading}
+							/>
+						)}
+					</BlockContextProvider>
+				);
+			})}
+		</div>
 	);
 }

@@ -7,17 +7,19 @@ import { __ } from '@wordpress/i18n';
  * container; presentation attrs (columns, tagName, groupBy…) and the item
  * template live on the required designsetgo/query-results child.
  *
- * Each variation ships with a sensible default set of sibling blocks —
- * filter, no-results, pagination — so authors see the whole Dynamic Query
- * toolkit on first insert. Removing a block you don't need is trivial;
- * discovering blocks that weren't scaffolded for you is not.
+ * Each variation carries a `layoutVariant` on the query-results child so the
+ * scoped SCSS in query-results/style.scss can style each layout distinctly.
+ * Pair the layoutVariant with a per-variation template that plays to that
+ * layout's strengths (quote-card omits the image, compact-row uses a square
+ * thumb, etc.) so the inserter previews read as visually different at a
+ * glance rather than "same grid, different columns".
  */
 export default [
 	{
 		name: 'blog-index',
 		title: __('Blog index', 'designsetgo'),
 		description: __(
-			'Latest posts with search + sort, a responsive card grid, and numbered pagination.',
+			'Magazine-style cards with featured image, date, and excerpt. Search + sort + numbered pagination.',
 			'designsetgo'
 		),
 		icon: 'admin-post',
@@ -48,16 +50,24 @@ export default [
 			],
 			[
 				'designsetgo/query-results',
-				{ tagName: 'ul', itemTagName: 'li', columns: 3 },
+				{
+					tagName: 'ul',
+					itemTagName: 'li',
+					columns: 3,
+					layoutVariant: 'magazine',
+				},
 				[
 					[
 						'designsetgo/section',
 						{},
 						[
-							['core/post-featured-image', { isLink: true }],
-							['core/post-title', { level: 3, isLink: true }],
+							[
+								'core/post-featured-image',
+								{ isLink: true, aspectRatio: '3/2' },
+							],
 							['core/post-date'],
-							['core/post-excerpt', { excerptLength: 30 }],
+							['core/post-title', { level: 3, isLink: true }],
+							['core/post-excerpt', { excerptLength: 25 }],
 						],
 					],
 				],
@@ -70,7 +80,7 @@ export default [
 		name: 'team',
 		title: __('Team directory', 'designsetgo'),
 		description: __(
-			'Searchable grid of team members. Switch Post type to your `team` CPT in the inspector.',
+			'Circular avatars in a centered grid. Switch Post type to your `team` CPT in the inspector.',
 			'designsetgo'
 		),
 		icon: 'groups',
@@ -93,15 +103,27 @@ export default [
 			],
 			[
 				'designsetgo/query-results',
-				{ tagName: 'ul', itemTagName: 'li', columns: 4 },
+				{
+					tagName: 'ul',
+					itemTagName: 'li',
+					columns: 4,
+					layoutVariant: 'avatar-grid',
+				},
 				[
 					[
 						'designsetgo/section',
 						{},
 						[
-							['core/post-featured-image'],
+							[
+								'core/post-featured-image',
+								{
+									align: 'center',
+									aspectRatio: '1',
+									width: '140px',
+								},
+							],
 							['core/post-title', { level: 3 }],
-							['core/post-excerpt', { excerptLength: 15 }],
+							['core/post-excerpt', { excerptLength: 12 }],
 						],
 					],
 				],
@@ -113,7 +135,7 @@ export default [
 		name: 'testimonials',
 		title: __('Testimonials', 'designsetgo'),
 		description: __(
-			'Customer quotes layout with load-more pagination. Pair with the ACF binding source to render quote meta.',
+			'Pull-quote cards with oversized excerpt and attribution. Load-more pagination.',
 			'designsetgo'
 		),
 		icon: 'format-quote',
@@ -127,13 +149,18 @@ export default [
 		innerBlocks: [
 			[
 				'designsetgo/query-results',
-				{ tagName: 'ul', itemTagName: 'li', columns: 2 },
+				{
+					tagName: 'ul',
+					itemTagName: 'li',
+					columns: 2,
+					layoutVariant: 'quote-card',
+				},
 				[
 					[
 						'designsetgo/section',
 						{},
 						[
-							['core/post-excerpt'],
+							['core/post-excerpt', { excerptLength: 40 }],
 							['core/post-title', { level: 4 }],
 						],
 					],
@@ -146,7 +173,7 @@ export default [
 		name: 'portfolio',
 		title: __('Portfolio', 'designsetgo'),
 		description: __(
-			'Project showcase with category filter and load-more pagination.',
+			'Image tiles with overlay title. Category filter and load-more pagination.',
 			'designsetgo'
 		),
 		icon: 'portfolio',
@@ -165,11 +192,17 @@ export default [
 					taxonomy: 'category',
 					paramName: 'filter_category',
 					label: __('Filter by category', 'designsetgo'),
+					filterStyle: 'pill',
 				},
 			],
 			[
 				'designsetgo/query-results',
-				{ tagName: 'ul', itemTagName: 'li', columns: 3 },
+				{
+					tagName: 'ul',
+					itemTagName: 'li',
+					columns: 3,
+					layoutVariant: 'image-tile',
+				},
 				[
 					[
 						'designsetgo/section',
@@ -192,14 +225,14 @@ export default [
 		name: 'related-posts',
 		title: __('Related posts', 'designsetgo'),
 		description: __(
-			'Posts excluding the current one. Pair with the designsetgo/query/{queryId}/args filter to narrow by shared taxonomy.',
+			'Compact horizontal rows — small thumbnail + title. Excludes current post by default.',
 			'designsetgo'
 		),
 		icon: 'controls-repeat',
 		attributes: {
 			source: 'posts',
 			postType: 'post',
-			perPage: 3,
+			perPage: 6,
 			orderBy: 'rand',
 			order: 'DESC',
 			excludeCurrent: true,
@@ -207,14 +240,36 @@ export default [
 		innerBlocks: [
 			[
 				'designsetgo/query-results',
-				{ tagName: 'ul', itemTagName: 'li', columns: 3 },
+				{
+					tagName: 'ul',
+					itemTagName: 'li',
+					columns: 3,
+					layoutVariant: 'compact-row',
+				},
 				[
 					[
 						'designsetgo/section',
 						{},
 						[
-							['core/post-featured-image', { isLink: true }],
-							['core/post-title', { level: 4, isLink: true }],
+							[
+								'core/post-featured-image',
+								{
+									isLink: true,
+									aspectRatio: '1',
+									width: '96px',
+								},
+							],
+							[
+								'designsetgo/section',
+								{},
+								[
+									[
+										'core/post-title',
+										{ level: 4, isLink: true },
+									],
+									['core/post-date'],
+								],
+							],
 						],
 					],
 				],
@@ -222,10 +277,113 @@ export default [
 		],
 	},
 	{
+		name: 'featured-carousel',
+		title: __('Featured carousel', 'designsetgo'),
+		description: __(
+			'Cinematic slider — one post per slide, oversized image, centered title. Dots + arrows.',
+			'designsetgo'
+		),
+		icon: 'images-alt2',
+		attributes: {
+			source: 'posts',
+			postType: 'post',
+			perPage: 5,
+			orderBy: 'date',
+			order: 'DESC',
+		},
+		innerBlocks: [
+			[
+				'designsetgo/slider',
+				{
+					slidesPerView: 3,
+					slidesPerViewTablet: 2,
+					slidesPerViewMobile: 1,
+					showArrows: true,
+					showDots: true,
+					arrowPosition: 'outside',
+					dotPosition: 'outside',
+					effect: 'slide',
+					loop: true,
+					autoplay: false,
+				},
+				[
+					[
+						'designsetgo/slide',
+						{
+							contentVerticalAlign: 'center',
+							contentHorizontalAlign: 'center',
+						},
+						[
+							[
+								'core/post-featured-image',
+								{ aspectRatio: '21/9' },
+							],
+							['core/post-title', { level: 3, isLink: true }],
+							['core/post-excerpt', { excerptLength: 20 }],
+						],
+					],
+				],
+			],
+			['designsetgo/query-no-results'],
+		],
+	},
+	{
+		name: 'post-spotlight',
+		title: __('Post spotlight (scroll-slides)', 'designsetgo'),
+		description: __(
+			'Scroll-driven story panels. One post per panel, big title, no image. Ideal for narrative lists.',
+			'designsetgo'
+		),
+		icon: 'format-gallery',
+		attributes: {
+			source: 'posts',
+			postType: 'post',
+			perPage: 4,
+			orderBy: 'date',
+			order: 'DESC',
+			// Scroll-slides is a pinned, viewport-height experience; a
+			// constrained outer query container would letterbox it.
+			align: 'full',
+		},
+		innerBlocks: [
+			[
+				'designsetgo/scroll-slides',
+				{
+					align: 'full',
+					minHeight: '100vh',
+					// Default maxHeight on the block is 900px, which caps the
+					// pinned section below the 100vh the variation asks for on
+					// tall viewports. Clear it so 100vh lands at viewport
+					// height.
+					maxHeight: '',
+					overlayColor: '#000000',
+					style: { color: { text: '#ffffff' } },
+				},
+				[
+					[
+						'designsetgo/scroll-slide',
+						{},
+						[
+							[
+								'core/post-excerpt',
+								{
+									excerptLength: 30,
+									moreText: __('Read more', 'designsetgo'),
+									showMoreOnNewLine: true,
+								},
+							],
+						],
+					],
+				],
+			],
+			['designsetgo/query-no-results'],
+		],
+	},
+	{
 		name: 'events',
 		title: __('Events', 'designsetgo'),
 		description: __(
-			'Upcoming event listings with sort controls and pagination. Switch Post type to your `events` CPT in the inspector.',
+			'Date-forward cards with accent rail. Sort controls and numbered pagination. Switch Post type to your `events` CPT.',
 			'designsetgo'
 		),
 		icon: 'calendar-alt',
@@ -247,13 +405,17 @@ export default [
 			],
 			[
 				'designsetgo/query-results',
-				{ tagName: 'ul', itemTagName: 'li', columns: 2 },
+				{
+					tagName: 'ul',
+					itemTagName: 'li',
+					columns: 2,
+					layoutVariant: 'date-forward',
+				},
 				[
 					[
 						'designsetgo/section',
 						{},
 						[
-							['core/post-featured-image'],
 							['core/post-date'],
 							['core/post-title', { level: 3, isLink: true }],
 							['core/post-excerpt', { excerptLength: 20 }],

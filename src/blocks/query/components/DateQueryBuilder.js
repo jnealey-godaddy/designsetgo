@@ -44,9 +44,11 @@ export default function DateQueryBuilder({
 	// Normalise both `dateQuery` and `dateQuery.clauses` so a malformed import
 	// (e.g. `{ relation: 'AND' }` with no clauses) doesn't crash the builder.
 	const rawDateQuery = attributes.dateQuery ?? EMPTY_DEFAULT;
-	const dateQuery    = {
+	const dateQuery = {
 		relation: rawDateQuery.relation ?? 'AND',
-		clauses: Array.isArray(rawDateQuery.clauses) ? rawDateQuery.clauses : [],
+		clauses: Array.isArray(rawDateQuery.clauses)
+			? rawDateQuery.clauses
+			: [],
 	};
 
 	const updateClause = (i, patch) => {
@@ -184,7 +186,11 @@ export default function DateQueryBuilder({
 						);
 					})}
 
-					<Button variant="secondary" onClick={addClause} __next40pxDefaultSize>
+					<Button
+						variant="secondary"
+						onClick={addClause}
+						__next40pxDefaultSize
+					>
 						{__('Add date clause', 'designsetgo')}
 					</Button>
 				</VStack>

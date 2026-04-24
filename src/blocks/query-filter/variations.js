@@ -3,24 +3,28 @@ import { __ } from '@wordpress/i18n';
 export default [
 	{
 		name: 'checkbox',
-		title: __('Taxonomy checkboxes', 'designsetgo'),
+		title: __('Taxonomy (multi-select)', 'designsetgo'),
 		icon: 'list-view',
 		description: __(
-			'Filter by taxonomy term via checkboxes.',
+			'Multi-select taxonomy filter — render as checkboxes, pills, or underlined tabs.',
 			'designsetgo'
 		),
-		attributes: { filterKind: 'checkbox', paramName: 'filter_category' },
+		// New inserts opt into the modern underlined-tabs look. The block
+		// default stays `default` (classic checkboxes) so legacy saved blocks
+		// don't silently change appearance on upgrade.
+		attributes: {
+			filterKind: 'checkbox',
+			paramName: 'filter_category',
+			filterStyle: 'underline',
+		},
 		isDefault: true,
 		scope: ['inserter', 'transform'],
 	},
 	{
 		name: 'select',
-		title: __('Taxonomy dropdown', 'designsetgo'),
+		title: __('Taxonomy (dropdown)', 'designsetgo'),
 		icon: 'menu',
-		description: __(
-			'Filter by taxonomy term via single-select dropdown.',
-			'designsetgo'
-		),
+		description: __('Single-select taxonomy dropdown.', 'designsetgo'),
 		attributes: { filterKind: 'select', paramName: 'filter_category' },
 		scope: ['inserter', 'transform'],
 	},
@@ -56,7 +60,11 @@ export default [
 		title: __('Reset button', 'designsetgo'),
 		icon: 'undo',
 		description: __('Clear all filter params.', 'designsetgo'),
-		attributes: { filterKind: 'reset', paramName: '' },
+		attributes: {
+			filterKind: 'reset',
+			paramName: '',
+			label: __('Reset', 'designsetgo'),
+		},
 		scope: ['inserter', 'transform'],
 	},
 ];

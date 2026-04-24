@@ -1,0 +1,301 @@
+// Per-variation layout styles for designsetgo/query-results. Each variation
+// in src/blocks/query/variations.js sets `layoutVariant: '<slug>'` on the
+// query-results child; the editor/frontend renderers emit `is-layout-<slug>`
+// on the results wrapper. Rules below target both the frontend grid
+// (`[data-dsgo-query-results-role="container"]`) and the editor preview list
+// (`.dsgo-query__editor-preview-list`) so authors see the same thing in the
+// inserter preview as on the published page.
+
+// Magazine ────────────────────────────────────────────────────────────────
+// Default-ish card. Date as faint meta above the title; excerpt tight.
+.dsgo-query-results.is-layout-magazine {
+
+	&[data-dsgo-query-results-role="container"],
+	.dsgo-query__editor-preview-list {
+
+		.wp-block-post-date {
+			font-size: 0.8em;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			opacity: 0.65;
+			margin: 0 0 0.25em;
+		}
+
+		.wp-block-post-title {
+			margin: 0 0 0.5em;
+			line-height: 1.2;
+		}
+
+		.wp-block-post-featured-image {
+			margin-bottom: 0.75em;
+		}
+	}
+}
+
+// ── Avatar grid ───────────────────────────────────────────────────────────
+// Centered square-cropped avatars; compact text column underneath.
+.dsgo-query-results.is-layout-avatar-grid {
+
+	&[data-dsgo-query-results-role="container"],
+	.dsgo-query__editor-preview-list {
+
+		.wp-block-designsetgo-section {
+			text-align: center;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		// The variation sets `align: 'center'` on the featured-image block so
+		// core's .aligncenter does the inline-centering natively; we only add
+		// the circular crop treatment here.
+		.wp-block-post-featured-image {
+			max-width: 140px;
+
+			img {
+				aspect-ratio: 1 / 1;
+				object-fit: cover;
+				border-radius: 50%;
+				width: 100%;
+				height: auto;
+				display: block;
+			}
+		}
+
+		.wp-block-post-title {
+			margin: 0;
+			font-size: 1em;
+			line-height: 1.3;
+		}
+
+		.wp-block-post-excerpt {
+			margin: 0;
+			font-size: 0.9em;
+			opacity: 0.75;
+		}
+	}
+}
+
+// ── Quote card ────────────────────────────────────────────────────────────
+// Oversized excerpt (the quote) with a decorative leading mark; title is the
+// small attribution, prefixed with an em-dash.
+.dsgo-query-results.is-layout-quote-card {
+
+	&[data-dsgo-query-results-role="container"],
+	.dsgo-query__editor-preview-list {
+
+		.dsgo-query__item .wp-block-designsetgo-section {
+			padding: 1.5rem;
+			background: var(--wp--preset--color--base-2, rgba(0, 0, 0, 0.04));
+			border-radius: 8px;
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+		}
+
+		.wp-block-post-excerpt {
+			font-size: 1.15em;
+			line-height: 1.5;
+			font-style: italic;
+			position: relative;
+			padding-inline-start: 1.75rem;
+			margin: 0;
+
+			&::before {
+				content: "\201C";
+				position: absolute;
+				inset-inline-start: -0.1em;
+				top: -0.4em;
+				font-size: 3.5em;
+				line-height: 1;
+				opacity: 0.25;
+				font-style: normal;
+			}
+		}
+
+		.wp-block-post-title {
+			margin: 0;
+			font-size: 0.95em;
+			font-weight: 600;
+			opacity: 0.8;
+
+			&::before {
+				content: "— ";
+			}
+		}
+	}
+}
+
+// ── Image tile ────────────────────────────────────────────────────────────
+// Featured image fills the tile; title lays over the bottom with a gradient
+// scrim so it stays legible regardless of the image.
+.dsgo-query-results.is-layout-image-tile {
+
+	&[data-dsgo-query-results-role="container"],
+	.dsgo-query__editor-preview-list {
+
+		.dsgo-query__item .wp-block-designsetgo-section {
+			position: relative;
+			overflow: hidden;
+			border-radius: 6px;
+			isolation: isolate;
+			padding: 0;
+		}
+
+		.wp-block-post-featured-image {
+			margin: 0;
+			position: relative;
+			transition: transform 0.4s ease;
+
+			img {
+				aspect-ratio: 4 / 3;
+				object-fit: cover;
+				width: 100%;
+				height: auto;
+				display: block;
+			}
+
+			// Core renders the overlay as an absolutely-positioned span covering
+			// the image. Re-stating inset:0 here defeats any theme CSS that
+			// might reposition it and keeps it glued to the image on scale.
+			.wp-block-post-featured-image__overlay {
+				position: absolute;
+				inset: 0;
+				pointer-events: none;
+			}
+
+			// Dark gradient lives on the image wrapper (not the title) so it
+			// scales with the image on hover and never leaves a transparent
+			// seam between gradient and photo.
+			&::after {
+				content: '';
+				position: absolute;
+				inset-inline: 0;
+				inset-block-end: 0;
+				height: 55%;
+				background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 100%);
+				pointer-events: none;
+			}
+		}
+
+		.dsgo-query__item .wp-block-designsetgo-section:hover .wp-block-post-featured-image {
+			transform: scale(1.05);
+		}
+
+		.wp-block-post-title {
+			position: absolute;
+			inset-inline: 0;
+			inset-block-end: 0;
+			margin: 0;
+			padding: 1rem;
+			color: #fff;
+			z-index: 1;
+
+			a {
+				color: inherit;
+				text-decoration: none;
+			}
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+
+		&[data-dsgo-query-results-role="container"],
+		.dsgo-query__editor-preview-list {
+
+			.wp-block-post-featured-image {
+				transition: none;
+			}
+		}
+	}
+}
+
+// ── Compact row ───────────────────────────────────────────────────────────
+// Horizontal row: small square thumbnail + stacked title/date column. Works
+// at any `columns` value — the grid still partitions items across columns,
+// each item is just laid out as a flex row internally.
+.dsgo-query-results.is-layout-compact-row {
+
+	&[data-dsgo-query-results-role="container"],
+	.dsgo-query__editor-preview-list {
+
+		.dsgo-query__item > .wp-block-designsetgo-section {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+			padding: 0.5rem 0;
+		}
+
+		.wp-block-post-featured-image {
+			flex: 0 0 auto;
+			margin: 0;
+
+			img {
+				width: 96px;
+				height: 96px;
+				aspect-ratio: 1 / 1;
+				object-fit: cover;
+				border-radius: 6px;
+			}
+		}
+
+		.dsgo-query__item .wp-block-designsetgo-section .wp-block-designsetgo-section {
+			flex: 1 1 auto;
+			display: flex;
+			flex-direction: column;
+			gap: 0.2rem;
+			padding: 0;
+			border: 0;
+		}
+
+		.wp-block-post-title {
+			margin: 0;
+			font-size: 1em;
+			line-height: 1.3;
+		}
+
+		.wp-block-post-date {
+			font-size: 0.8em;
+			opacity: 0.65;
+			margin: 0;
+		}
+	}
+}
+
+// ── Date-forward ──────────────────────────────────────────────────────────
+// Calendar-style accent rail on the inline-start edge of each card; date
+// reads as a tagline above the title.
+.dsgo-query-results.is-layout-date-forward {
+
+	&[data-dsgo-query-results-role="container"],
+	.dsgo-query__editor-preview-list {
+
+		.dsgo-query__item .wp-block-designsetgo-section {
+			border-inline-start: 3px solid currentcolor;
+			padding-inline-start: 1rem;
+			display: flex;
+			flex-direction: column;
+			gap: 0.35rem;
+		}
+
+		.wp-block-post-date {
+			font-size: 0.8em;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			font-weight: 600;
+			color: var(--wp--preset--color--primary, currentcolor);
+			margin: 0;
+		}
+
+		.wp-block-post-title {
+			margin: 0;
+			line-height: 1.25;
+		}
+
+		.wp-block-post-excerpt {
+			margin: 0;
+			opacity: 0.8;
+		}
+	}
+}

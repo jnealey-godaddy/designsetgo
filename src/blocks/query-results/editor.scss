@@ -1,3 +1,5 @@
+@use 'layout-variants';
+
 // Editor styles for designsetgo/query-results.
 
 .wp-block-designsetgo-query-results {
@@ -10,7 +12,19 @@
 	.dsgo-query-results__editor-grid {
 		display: grid;
 		grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
-		gap: var(--dsgo-query-gap, 1.5rem);
+		gap: var(--wp--style--block-gap, 1.5rem);
+
+		// Mirror the frontend's featured-first-item span so authors see the
+		// callout as they design it. First-child is the real editable
+		// template. Excluded: the live-preview <ul> wrapper, which spans
+		// the full row itself (see the `grid-column: 1 / -1` rule below) —
+		// a higher-specificity first-child span would otherwise clamp it
+		// to one column and collapse the grid.
+		> .dsgo-query-results__inner:first-child,
+		> :first-child:not(.dsgo-query__editor-preview-list) {
+			grid-column: span min(var(--dsgo-query-first-col-span, 1), var(--dsgo-query-columns, 1));
+			grid-row: span var(--dsgo-query-first-row-span, 1);
+		}
 	}
 
 	// The useInnerBlocksProps wrapper — the live editable prototype.
@@ -60,6 +74,14 @@
 		.dsgo-query__editor-preview-list {
 			grid-template-columns: repeat(var(--dsgo-query-columns-tablet, var(--dsgo-query-columns, 1)), minmax(0, 1fr));
 		}
+
+		.dsgo-query__editor-preview-list {
+
+			> .dsgo-query__item:first-child,
+			> .dsgo-query__editor-preview-item:first-child {
+				grid-column: span min(var(--dsgo-query-first-col-span, 1), var(--dsgo-query-columns-tablet, var(--dsgo-query-columns, 1)));
+			}
+		}
 	}
 
 	@media (max-width: 600px) {
@@ -67,6 +89,15 @@
 		.dsgo-query-results__editor-grid,
 		.dsgo-query__editor-preview-list {
 			grid-template-columns: repeat(var(--dsgo-query-columns-mobile, 1), minmax(0, 1fr));
+		}
+
+		.dsgo-query__editor-preview-list {
+
+			> .dsgo-query__item:first-child,
+			> .dsgo-query__editor-preview-item:first-child {
+				grid-column: span min(var(--dsgo-query-first-col-span, 1), var(--dsgo-query-columns-mobile, 1));
+				grid-row: auto;
+			}
 		}
 
 		// Hide ghost cards on mobile preview — a single-column layout
@@ -83,10 +114,20 @@
 		grid-column: 1 / -1;
 		display: grid;
 		grid-template-columns: repeat(var(--dsgo-query-columns, 1), minmax(0, 1fr));
-		gap: var(--dsgo-query-gap, 1.5rem);
+		gap: var(--wp--style--block-gap, 1.5rem);
 		list-style: none;
 		margin: 0;
 		padding: 0;
+
+		// Mirror the frontend's featured-first-item span. The live preview
+		// wraps each record in `.dsgo-query__editor-preview-item` (not
+		// `.dsgo-query__item`, which is the published-HTML class), so target
+		// both to keep editor and frontend visual parity.
+		> .dsgo-query__item:first-child,
+		> .dsgo-query__editor-preview-item:first-child {
+			grid-column: span min(var(--dsgo-query-first-col-span, 1), var(--dsgo-query-columns, 1));
+			grid-row: span var(--dsgo-query-first-row-span, 1);
+		}
 
 		&.is-grouped {
 			display: flex;

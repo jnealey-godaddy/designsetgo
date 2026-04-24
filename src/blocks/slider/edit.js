@@ -1,10 +1,11 @@
 import { __, sprintf } from '@wordpress/i18n';
-import { useEffect, useRef } from '@wordpress/element';
+import { useEffect, useMemo, useRef } from '@wordpress/element';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
 	BlockControls,
 	InspectorControls,
+	BlockContextProvider,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 } from '@wordpress/block-editor';
@@ -32,10 +33,29 @@ import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { useBlockColors } from '../../hooks';
 import SliderPlaceholder from './components/SliderPlaceholder';
 import DsgoChildToolbar from '../../components/shared/DsgoChildToolbar';
+import useQueryHostPreview, {
+	buildItemContext,
+} from '../query/hooks/useQueryHostPreview';
+import useParentQueryAttrs from '../query/hooks/useParentQueryAttrs';
+import QueryHostReadOnlyItem from '../query/components/QueryHostReadOnlyItem';
 
 const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
 
-export default function SliderEdit({ attributes, setAttributes, clientId }) {
+export default function SliderEdit({
+	attributes,
+	setAttributes,
+	clientId,
+	context,
+}) {
+	// When the slider sits inside a Dynamic Query, the parent provides a
+	// queryId via context. In that mode the slider becomes an item host: the
+	// first slide acts as the per-item template, extras are ignored
+	// server-side, and the toolbar's Add/Remove controls are locked out.
+	const queryId =
+		typeof context === 'object' && context
+			? context['designsetgo/queryId'] || ''
+			: '';
+	const inQueryMode = !!queryId;
 	const {
 		slidesPerView,
 		slidesPerViewTablet,
@@ -130,6 +150,26 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 		: -1;
 	const activeSlideIndex =
 		selectedSlideIndex >= 0 ? selectedSlideIndex : undefined;
+
+	// When bound to a parent Dynamic Query, walk up to the parent's attributes
+	// so the editor preview uses the same query config (postType, perPage,
+	// filters, orderBy) the frontend will. Runs only when inQueryMode.
+	const parentQueryAttrs = useParentQueryAttrs(clientId, inQueryMode);
+
+	// The per-item template is the first slide block. Memoize to avoid
+	// allocating a new array on every render — useQueryHostPreview /
+	// useRenderedItems depend on stable references to avoid re-serializing.
+	const templateSlideBlocks = useMemo(
+		() => (slides.length > 0 ? [slides[0]] : []),
+		[slides]
+	);
+
+	const preview = useQueryHostPreview({
+		attributes: parentQueryAttrs,
+		queryId,
+		innerBlocks: templateSlideBlocks,
+		enabled: inQueryMode && !!parentQueryAttrs,
+	});
 
 	const { insertBlock, removeBlock, selectBlock } =
 		useDispatch('core/block-editor');
@@ -330,14 +370,22 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 
 	// Inner blocks configuration - ONLY allow slide children. Initial seeding
 	// is handled by SliderPlaceholder so authors pick a starter layout instead
-	// of landing on a generic three-slide template.
+	// of landing on a generic three-slide template. In query mode we also lock
+	// add/remove at the slider level — slides beyond the first are ignored at
+	// render, so allowing authors to add more would be misleading. The class
+	// name also switches: in authored mode this IS the track; in query mode
+	// it becomes a "display: contents" slot that sits inside a manually-built
+	// track alongside read-only preview items.
 	const innerBlocksProps = useInnerBlocksProps(
 		{
-			className: 'dsgo-slider__track',
+			className: inQueryMode
+				? 'dsgo-slider__editor-template-slot'
+				: 'dsgo-slider__track',
 		},
 		{
 			allowedBlocks: ['designsetgo/slide'],
 			orientation: 'horizontal',
+			templateLock: inQueryMode ? 'insert' : false,
 		}
 	);
 
@@ -379,10 +427,39 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 					removeLabel={__('Remove slide', 'designsetgo')}
 					movePrevLabel={__('Move slide left', 'designsetgo')}
 					moveNextLabel={__('Move slide right', 'designsetgo')}
+					disableAdd={inQueryMode}
+					disableDuplicate={inQueryMode}
+					disableRemove={inQueryMode}
+					disableMove={inQueryMode}
 				/>
 			</BlockControls>
 
 			<InspectorControls>
+				{inQueryMode && (
+					<PanelBody
+						title={__('Dynamic mode', 'designsetgo')}
+						initialOpen={true}
+					>
+						<Notice status="info" isDismissible={false}>
+							{__(
+								'This slider is bound to a parent Dynamic Query. The first slide is the per-item template — extra slides are ignored at render. Slide management controls are disabled while bound.',
+								'designsetgo'
+							)}
+						</Notice>
+						{slideCount > 1 && (
+							<Notice status="warning" isDismissible={false}>
+								{sprintf(
+									/* translators: %d: number of slides that will not render */
+									__(
+										'%d extra slide(s) will be ignored at render. Only the first slide is used as the template.',
+										'designsetgo'
+									),
+									slideCount - 1
+								)}
+							</Notice>
+						)}
+					</PanelBody>
+				)}
 				<PanelBody
 					title={__('Layout Settings', 'designsetgo')}
 					initialOpen={true}
@@ -1069,9 +1146,29 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 				</InspectorControls>
 			)}
 
-			<div {...blockProps}>
+			<div
+				{...blockProps}
+				onClickCapture={(event) => {
+					// Kill link navigation inside the editor — real anchors come
+					// from authored post-title/featured-image blocks and from
+					// server-rendered readonly slides in query mode.
+					const anchor = event.target.closest?.('a[href]');
+					if (anchor) {
+						event.preventDefault();
+					}
+				}}
+			>
 				<div className="dsgo-slider__viewport">
-					<div {...innerBlocksProps} />
+					{inQueryMode ? (
+						<QueryModeTrack
+							innerBlocksProps={innerBlocksProps}
+							preview={preview}
+							parentQueryAttrs={parentQueryAttrs}
+							outerContext={context}
+						/>
+					) : (
+						<div {...innerBlocksProps} />
+					)}
 				</div>
 
 				{/* Editor-only slide navigator */}
@@ -1115,6 +1212,7 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 												'Duplicate slide',
 												'designsetgo'
 											)}
+											disabled={inQueryMode}
 											onClick={() =>
 												handleDuplicateSlide(
 													slide,
@@ -1134,6 +1232,7 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 												'Remove slide',
 												'designsetgo'
 											)}
+											disabled={inQueryMode}
 											onClick={() =>
 												handleRemoveSlide(slide)
 											}
@@ -1146,6 +1245,7 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 							size="small"
 							icon={plus}
 							className="dsgo-slider__nav-add"
+							disabled={inQueryMode}
 							onClick={handleAddSlide}
 						>
 							{__('Add slide', 'designsetgo')}
@@ -1197,5 +1297,83 @@ export default function SliderEdit({ attributes, setAttributes, clientId }) {
 				)}
 			</div>
 		</>
+	);
+}
+
+/**
+ * Render the slider track in query-bound mode: item 0 wraps the editable
+ * InnerBlocks slot (the template slide), items 1..N are read-only server-
+ * rendered slides. Each item is wrapped in a BlockContextProvider so any
+ * Block Bindings inside the template resolve against the iterated post.
+ * @param root0
+ * @param root0.innerBlocksProps
+ * @param root0.preview
+ * @param root0.parentQueryAttrs
+ * @param root0.outerContext
+ */
+function QueryModeTrack({
+	innerBlocksProps,
+	preview,
+	parentQueryAttrs,
+	outerContext,
+}) {
+	const source = parentQueryAttrs?.source || 'posts';
+	const { records, hasResolved, serverHtml, loading } = preview;
+
+	if (!hasResolved) {
+		return (
+			<div className="dsgo-slider__track dsgo-slider__track--query-loading">
+				<div {...innerBlocksProps} />
+			</div>
+		);
+	}
+
+	const items = Array.isArray(records) ? records : [];
+
+	if (items.length === 0) {
+		return (
+			<div className="dsgo-slider__track dsgo-slider__track--query-empty">
+				<div {...innerBlocksProps} />
+				<div
+					className="dsgo-slider__editor-empty-hint"
+					contentEditable={false}
+					aria-hidden="true"
+				>
+					{__(
+						'No posts match the parent query. Design the template slide above \u2014 it will render once per result at publish time.',
+						'designsetgo'
+					)}
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="dsgo-slider__track">
+			{items.map((item, idx) => {
+				const itemContext = buildItemContext(
+					item,
+					source,
+					idx,
+					outerContext
+				);
+				return (
+					<BlockContextProvider
+						key={item.id ?? idx}
+						value={itemContext}
+					>
+						{idx === 0 ? (
+							<div {...innerBlocksProps} />
+						) : (
+							<QueryHostReadOnlyItem
+								className="dsgo-slider__editor-readonly-item"
+								html={serverHtml?.[idx] ?? null}
+								loading={loading}
+							/>
+						)}
+					</BlockContextProvider>
+				);
+			})}
+		</div>
 	);
 }

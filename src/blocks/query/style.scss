@@ -6,4 +6,11 @@
 // region can be targeted as one unit for AJAX refreshes.
 .wp-block-designsetgo-query {
 	box-sizing: border-box;
+
+	// Apply blockGap between all direct children (filters, results, pagination,
+	// no-results). WordPress sets --wp--style--block-gap on this wrapper when the
+	// author adjusts block spacing; this rule makes it visible on the frontend.
+	> * + * {
+		margin-block-start: var(--wp--style--block-gap, 0);
+	}
 }
