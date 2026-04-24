@@ -132,6 +132,7 @@ const MIGRATED_BLOCKS = [
 	'product-showcase-hero',
 	'map',
 	'countdown-timer',
+	'dynamic-image',
 ];
 
 // Blocks whose inspector items live in sub-components under

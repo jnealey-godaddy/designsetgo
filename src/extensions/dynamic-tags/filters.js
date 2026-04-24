@@ -20,78 +20,92 @@ import { Fragment } from '@wordpress/element';
 import { DynamicTagButton } from '../../components/DynamicTagPicker';
 import { getBindableAttributes } from './bindable-attributes';
 
-const withDynamicTagsInspector = createHigherOrderComponent( ( BlockEdit ) => {
-	return function WithDynamicTagsInspector( props ) {
-		const bindable = getBindableAttributes( props.name );
-		if ( ! bindable ) {
-			return <BlockEdit { ...props } />;
+const withDynamicTagsInspector = createHigherOrderComponent((BlockEdit) => {
+	return function WithDynamicTagsInspector(props) {
+		const bindable = getBindableAttributes(props.name);
+		if (!bindable) {
+			return <BlockEdit {...props} />;
 		}
 
 		const { attributes, setAttributes } = props;
 		const metadata = attributes.metadata || {};
 		const bindings = metadata.bindings || {};
 
-		const setBinding = ( attributeName, nextBinding, subkey ) => {
+		const setBinding = (attributeName, nextBinding, subkey) => {
 			const nextBindings = { ...bindings };
 
-			if ( ! nextBinding ) {
-				delete nextBindings[ attributeName ];
+			if (!nextBinding) {
+				delete nextBindings[attributeName];
 			} else {
-				const args = { ...( nextBinding.args || {} ) };
+				const args = { ...(nextBinding.args || {}) };
 				// Image-typed attributes need a subkey to project the source's
 				// array value into a scalar. Merge the per-attribute default.
-				if ( subkey && ! args.subkey ) {
+				if (subkey && !args.subkey) {
 					args.subkey = subkey;
 				}
-				nextBindings[ attributeName ] = {
+				nextBindings[attributeName] = {
 					source: nextBinding.source,
 					args,
 				};
 			}
 
 			const nextMetadata = { ...metadata };
-			if ( Object.keys( nextBindings ).length === 0 ) {
+			if (Object.keys(nextBindings).length === 0) {
 				delete nextMetadata.bindings;
 			} else {
 				nextMetadata.bindings = nextBindings;
 			}
 
-			setAttributes( {
-				metadata: Object.keys( nextMetadata ).length ? nextMetadata : undefined,
-			} );
+			setAttributes({
+				metadata: Object.keys(nextMetadata).length
+					? nextMetadata
+					: undefined,
+			});
 		};
 
 		return (
 			<Fragment>
-				<BlockEdit { ...props } />
+				<BlockEdit {...props} />
 				<InspectorControls>
 					<PanelBody
-						title={ __( 'Dynamic Tags', 'designsetgo' ) }
-						initialOpen={ Object.keys( bindings ).length > 0 }
+						title={__('Dynamic Tags', 'designsetgo')}
+						initialOpen={Object.keys(bindings).length > 0}
 					>
-						<VStack spacing={ 3 }>
-							{ bindable.map( ( { attribute, returns, label, subkey } ) => {
-								const current = bindings[ attribute ] || null;
-								return (
-									<HStack key={ attribute } justify="space-between" alignment="center">
-										<span className="dsgo-dynamic-tags-extension__label">
-											{ label }
-										</span>
-										<DynamicTagButton
-											value={ current }
-											onChange={ ( next ) => setBinding( attribute, next, subkey ) }
-											returns={ returns }
-										/>
-									</HStack>
-								);
-							} ) }
+						<VStack spacing={3}>
+							{bindable.map(
+								({ attribute, returns, label, subkey }) => {
+									const current = bindings[attribute] || null;
+									return (
+										<HStack
+											key={attribute}
+											justify="space-between"
+											alignment="center"
+										>
+											<span className="dsgo-dynamic-tags-extension__label">
+												{label}
+											</span>
+											<DynamicTagButton
+												value={current}
+												onChange={(next) =>
+													setBinding(
+														attribute,
+														next,
+														subkey
+													)
+												}
+												returns={returns}
+											/>
+										</HStack>
+									);
+								}
+							)}
 						</VStack>
 					</PanelBody>
 				</InspectorControls>
 			</Fragment>
 		);
 	};
-}, 'withDynamicTagsInspector' );
+}, 'withDynamicTagsInspector');
 
 addFilter(
 	'editor.BlockEdit',
