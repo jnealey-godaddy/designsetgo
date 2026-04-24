@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Native Block Bindings support for DesignSetGo blocks** — opts DesignSetGo blocks into the WordPress 6.9+ `block_bindings_supported_attributes` filter so their attributes can be driven by any registered Block Bindings source (core/post-meta, designsetgo/post-meta, designsetgo/acf, designsetgo/metabox, designsetgo/pods, designsetgo/jetengine, or any custom source). Initial coverage: `designsetgo/heading-segment.content`, `designsetgo/breadcrumbs.homeText` + `.prefixText`, and `designsetgo/query-pagination.labelLoadMore` + `.labelLoading` + `.buttonLabelWhenPaused`. Extensible via the new `designsetgo_block_bindings_supported_attributes` filter (block name → attribute names map). On WordPress < 6.9 this is inert and causes no behavior change.
 - **Per-URL Markdown content negotiation** — any published page/post URL now returns Markdown when the request sends `Accept: text/markdown` (or any Accept header where `text/markdown` outranks `text/html` via q-values). Responds with `Content-Type: text/markdown; charset=utf-8` and `Vary: Accept`. Returns `406 Not Acceptable` when the client rejects both `text/html` and `text/markdown`. Reuses the existing per-post Markdown files (falls back to live conversion). Respects the llms.txt enablement flag, post-type allowlist, exclusion meta, and password-protected posts. Passes the [acceptmarkdown.com](https://acceptmarkdown.com/) readiness contract.
 
 ### Removed
