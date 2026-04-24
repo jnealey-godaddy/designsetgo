@@ -6,7 +6,7 @@
  * @since 1.0.0
  */
 
-import { __, sprintf } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
@@ -25,11 +25,14 @@ import {
 	RangeControl,
 	SelectControl,
 	ToggleControl,
+	ToolbarGroup,
+	ToolbarDropdownMenu,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUseCustomUnits as useCustomUnits,
 } from '@wordpress/components';
+import { grid as gridIcon } from '@wordpress/icons';
 import { DsgoInspectorPanel } from '../../components/shared';
 import { useState, useEffect } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
@@ -195,6 +198,47 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<BlockControls>
+				<ToolbarGroup>
+					<ToolbarDropdownMenu
+						icon={gridIcon}
+						label={__('Desktop columns', 'designsetgo')}
+						controls={Array.from(
+							{ length: 12 },
+							(_unused, i) => i + 1
+						).map((count) => ({
+							title: sprintf(
+								/* translators: %d: number of columns */
+								_n(
+									'%d Column',
+									'%d Columns',
+									count,
+									'designsetgo'
+								),
+								count
+							),
+							isActive: desktopColumns === count,
+							onClick: () => {
+								const newTabletCols = Math.min(
+									tabletColumns,
+									count
+								);
+								const newMobileCols = Math.min(
+									mobileColumns,
+									newTabletCols
+								);
+								setAttributes({
+									desktopColumns: count,
+									...(newTabletCols !== tabletColumns && {
+										tabletColumns: newTabletCols,
+									}),
+									...(newMobileCols !== mobileColumns && {
+										mobileColumns: newMobileCols,
+									}),
+								});
+							},
+						}))}
+					/>
+				</ToolbarGroup>
 				<AlignmentControl
 					value={textAlign}
 					onChange={(newAlign) =>
