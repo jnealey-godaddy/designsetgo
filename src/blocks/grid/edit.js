@@ -197,42 +197,46 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<BlockControls>
-				<ToolbarGroup
-					label={__('Desktop Columns', 'designsetgo')}
-				>
-					{[1, 2, 3, 4, 5, 6].map((count) => (
-						<ToolbarButton
-							key={count}
-							label={sprintf(
-								/* translators: %d: number of columns */
-								__('%d Columns', 'designsetgo'),
-								count
-							)}
-							isActive={desktopColumns === count}
-							onClick={() => {
-								const newTabletCols = Math.min(
-									tabletColumns,
+				{desktopColumns <= 6 && (
+					<ToolbarGroup
+						label={__('Desktop Columns', 'designsetgo')}
+					>
+						{[1, 2, 3, 4, 5, 6].map((count) => (
+							<ToolbarButton
+								key={count}
+								label={sprintf(
+									/* translators: %d: number of columns */
+									__('%d Columns', 'designsetgo'),
 									count
-								);
-								const newMobileCols = Math.min(
-									mobileColumns,
-									newTabletCols
-								);
-								setAttributes({
-									desktopColumns: count,
-									...(newTabletCols !== tabletColumns && {
-										tabletColumns: newTabletCols,
-									}),
-									...(newMobileCols !== mobileColumns && {
-										mobileColumns: newMobileCols,
-									}),
-								});
-							}}
-						>
-							{count}
-						</ToolbarButton>
-					))}
-				</ToolbarGroup>
+								)}
+								isActive={desktopColumns === count}
+								onClick={() => {
+									const newTabletCols = Math.min(
+										tabletColumns,
+										count
+									);
+									const newMobileCols = Math.min(
+										mobileColumns,
+										newTabletCols
+									);
+									setAttributes({
+										desktopColumns: count,
+										...(newTabletCols !==
+											tabletColumns && {
+											tabletColumns: newTabletCols,
+										}),
+										...(newMobileCols !==
+											mobileColumns && {
+											mobileColumns: newMobileCols,
+										}),
+									});
+								}}
+							>
+								{count}
+							</ToolbarButton>
+						))}
+					</ToolbarGroup>
+				)}
 				<AlignmentControl
 					value={textAlign}
 					onChange={(newAlign) =>
