@@ -148,12 +148,12 @@
 		height: auto;
 	}
 
-	// CRITICAL: When grid is empty, show full-width appender
+	// When grid is empty, render the appender as a single grid cell
+	// so users can see the configured column width instead of a confusing
+	// full-width box that doesn't reflect the chosen column count.
 	/* stylelint-disable-next-line selector-class-pattern */
 	.dsgo-grid__inner > .block-list-appender:only-child {
-		width: 100%;
-		grid-column: 1 / -1; // Span all columns
-		position: static; // Reset positioning
+		position: static;
 	}
 
 	// CRITICAL: When Grid is nested inside Section/Stack/Flex, force full width (EDITOR)
