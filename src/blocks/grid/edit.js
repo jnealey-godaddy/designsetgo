@@ -197,7 +197,9 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<BlockControls>
-				<ToolbarGroup>
+				<ToolbarGroup
+					label={__('Desktop Columns', 'designsetgo')}
+				>
 					{[1, 2, 3, 4, 5, 6].map((count) => (
 						<ToolbarButton
 							key={count}
