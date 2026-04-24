@@ -242,6 +242,8 @@ Check the [documentation](https://designsetgoblocks.com/docs/), visit the [suppo
 * **Fix:** Section clears its default padding automatically when nested inside another Section.
 * **Fix:** Row — inner `flex-direction` flips correctly on mobile stack.
 * **Fix:** Sticky header — smooth logo shrink transition in both scroll directions.
+* **Fix:** Sticky header — a typo in the custom selector setting no longer breaks frontend JavaScript; invalid selectors silently fall back to the default header detection.
+* **Fix:** llms.txt generation now writes reliably on managed hosts (WP Engine, Kinsta, Pantheon) — file writes route through the WordPress filesystem API with a safe fallback.
 * **Fix:** Advanced Heading segment appender restored on the canvas.
 * **Fix:** Inspector panel controls render full-width correctly; Tabs `activeTab` index clamped defensively on editor and frontend.
 * **Fix:** Abilities API add-block output round-tripped through `save()` to prevent block validation failures.
@@ -251,6 +253,8 @@ Check the [documentation](https://designsetgoblocks.com/docs/), visit the [suppo
 * **Security:** Form submissions — redirect URL normalized and validated before navigation (blocks `javascript:` and other unsafe protocols).
 * **Security:** Draft Mode REST routes now require nonce verification on their permission callbacks.
 * **Security:** Dynamic CSS style bindings block dangerous values (`url(`, `expression(`, `javascript:`) and enforce a property allowlist so bindings can't leak behavioral styles.
+* **Security:** Global Styles values are validated against a CSS-value allowlist before being saved — every functional CSS context (var, calc, clamp, min, max, rgb, hsl) rejects `url(`, `expression(`, and `javascript:` payloads.
+* **Security:** Sticky header custom selector setting rejects HTML angle brackets and known CSS injection patterns (`javascript:`, `expression(`, `url(`, `@import`) before the value reaches the frontend.
 
 **Removed**
 * **Removed:** Visual Revision Comparison — WordPress 7.0 ships native visual diffs for revisions, so the custom admin page, block differ, REST endpoints, and associated settings have been removed.

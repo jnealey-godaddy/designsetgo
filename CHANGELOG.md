@@ -74,6 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Patterns: removed leftover `id="contact-professional"` on the form-builder root in starter patterns; aligned form block markup with current `save.js` output.
 - Abilities API add-block output round-tripped through `save()` to prevent block validation failures (#355).
 - Abilities JSON Schema — inline `required:true` migrated to JSON Schema compliant form (#352).
+- llms.txt generation now writes reliably on managed hosts (WP Engine, Kinsta, Pantheon) that don't define FTP constants — file writes go through the WordPress filesystem API with a safe fallback for environments where it's unavailable.
+- Sticky header: a typo in the Settings → DesignSetGo custom selector field no longer throws an exception that breaks all frontend JavaScript; an invalid selector silently falls back to the default header detection.
 
 ### Removed
 - **Visual Revision Comparison** — Removed in favor of WordPress 7.0's native visual diff for revisions. Also removed the associated admin page, block differ, revision renderer, REST endpoints (`/designsetgo/v1/revisions/*`), and settings (`revisions.enable_visual_comparison`, `revisions.default_to_visual`).
@@ -82,6 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Draft Mode REST permission callbacks** — Added nonce verification to all Draft Mode REST routes.
 - **Form submissions** — Redirect URLs normalized and validated against an allowlist of safe protocols before navigation.
 - **Dynamic Query style bindings** — CSS value injection blocked; dangerous CSS functions and protocols cannot be passed through a binding.
+- **Global Styles sanitization** — Stored Global Styles values are now validated against a CSS-value allowlist (numeric+units, `var()`/`calc()`/`clamp()`/`min()`/`max()`, hex/rgb/hsl colors, named keywords, font-family lists). Every functional form rejects `url(`, `expression(`, `javascript:`, `<`, and `;` regardless of the wrapping function.
+- **Sticky header custom selector** — Settings input now rejects HTML angle brackets, `javascript:`, `expression(`, `url(`, and `@import` patterns before the value reaches the frontend.
 
 ### Changed
 - `designsetgo/post-meta` and `designsetgo/acf` binding sources accept an optional `scope` arg — defaults to `'self'`; existing bindings unchanged.
