@@ -300,14 +300,17 @@ describe('TaxQueryBuilder', () => {
 		const setAttributes = jest.fn();
 		const { getByRole } = render(
 			<TaxQueryBuilder
-				attributes={ { taxQuery: { relation: 'AND', clauses: [] }, postType: 'post' } }
-				setAttributes={ setAttributes }
+				attributes={{
+					taxQuery: { relation: 'AND', clauses: [] },
+					postType: 'post',
+				}}
+				setAttributes={setAttributes}
 				clientId="test"
 			/>
 		);
-		fireEvent.click( getByRole( 'button', { name: /add group/i } ) );
+		fireEvent.click(getByRole('button', { name: /add group/i }));
 		const call = setAttributes.mock.calls[0][0];
-		expect( call.taxQuery.clauses[0] ).toHaveProperty( 'clauses' );
-		expect( call.taxQuery.clauses[0].relation ).toBe( 'AND' );
-	} );
+		expect(call.taxQuery.clauses[0]).toHaveProperty('clauses');
+		expect(call.taxQuery.clauses[0].relation).toBe('AND');
+	});
 });

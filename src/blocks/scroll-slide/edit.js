@@ -22,8 +22,12 @@ import './editor.scss';
  */
 const DEFAULT_OVERLAY_COLOR = '#111111';
 
-export default function Edit({ attributes, setAttributes, clientId }) {
+export default function Edit({ attributes, setAttributes, clientId, context }) {
 	const { navHeading } = attributes;
+	// When bound to a dynamic query the heading is driven by the iterated
+	// post's title (see src/blocks/scroll-slide/render.php), so showing an
+	// editable control that has no effect would be misleading.
+	const inQueryMode = !!context?.['designsetgo/queryId'];
 
 	const hasBackgroundImage =
 		!!attributes?.style?.background?.backgroundImage?.url;
@@ -111,35 +115,37 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
 	return (
 		<>
-			<InspectorControls>
-				<DsgoInspectorPanel
-					title={__('Settings', 'designsetgo')}
-					panelName="settings"
-					panelId={clientId}
-					resetAll={() => setAttributes({ navHeading: '' })}
-				>
-					<DsgoInspectorPanel.Item
-						label={__('Navigation Heading', 'designsetgo')}
-						hasValue={() => navHeading !== ''}
-						onDeselect={() => setAttributes({ navHeading: '' })}
-						isShownByDefault
+			{!inQueryMode && (
+				<InspectorControls>
+					<DsgoInspectorPanel
+						title={__('Settings', 'designsetgo')}
+						panelName="settings"
+						panelId={clientId}
+						resetAll={() => setAttributes({ navHeading: '' })}
 					>
-						<TextControl
+						<DsgoInspectorPanel.Item
 							label={__('Navigation Heading', 'designsetgo')}
-							value={navHeading}
-							onChange={(value) =>
-								setAttributes({ navHeading: value })
-							}
-							help={__(
-								'Displayed in the slide navigation on the frontend',
-								'designsetgo'
-							)}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-					</DsgoInspectorPanel.Item>
-				</DsgoInspectorPanel>
-			</InspectorControls>
+							hasValue={() => navHeading !== ''}
+							onDeselect={() => setAttributes({ navHeading: '' })}
+							isShownByDefault
+						>
+							<TextControl
+								label={__('Navigation Heading', 'designsetgo')}
+								value={navHeading}
+								onChange={(value) =>
+									setAttributes({ navHeading: value })
+								}
+								help={__(
+									'Displayed in the slide navigation on the frontend',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					</DsgoInspectorPanel>
+				</InspectorControls>
+			)}
 
 			<div {...innerBlocksProps} />
 		</>

@@ -1,23 +1,10 @@
 import { __ } from '@wordpress/i18n';
 import {
 	ToggleControl,
-	SelectControl,
 	TextControl,
 	TextareaControl,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../components/shared';
-
-const TAG_OPTIONS = [
-	{ value: 'ul', label: __('Unordered list (ul)', 'designsetgo') },
-	{ value: 'ol', label: __('Ordered list (ol)', 'designsetgo') },
-	{ value: 'div', label: __('Container (div)', 'designsetgo') },
-];
-
-const ITEM_TAG_OPTIONS = [
-	{ value: 'li', label: 'li' },
-	{ value: 'div', label: 'div' },
-	{ value: 'article', label: 'article' },
-];
 
 const ATTR_DEFAULTS = {
 	search: '',
@@ -25,8 +12,6 @@ const ATTR_DEFAULTS = {
 	excludeCurrent: false,
 	ignoreSticky: true,
 	manualIds: [],
-	tagName: 'ul',
-	itemTagName: 'li',
 };
 
 export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
@@ -37,8 +22,6 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 		excludeCurrent,
 		ignoreSticky,
 		manualIds,
-		tagName,
-		itemTagName,
 	} = attributes;
 
 	const manualIdsAsText = Array.isArray(manualIds)
@@ -56,6 +39,7 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 				label={__('Search', 'designsetgo')}
 				hasValue={() => search !== ''}
 				onDeselect={() => setAttributes({ search: '' })}
+				isShownByDefault
 			>
 				<TextControl
 					label={__('Search text', 'designsetgo')}
@@ -74,6 +58,7 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 				label={__('Bind search to URL param', 'designsetgo')}
 				hasValue={() => bindSearchTo !== ''}
 				onDeselect={() => setAttributes({ bindSearchTo: '' })}
+				isShownByDefault
 			>
 				<TextControl
 					label={__('URL parameter name', 'designsetgo')}
@@ -92,6 +77,7 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 				label={__('Exclude current post', 'designsetgo')}
 				hasValue={() => excludeCurrent !== false}
 				onDeselect={() => setAttributes({ excludeCurrent: false })}
+				isShownByDefault
 			>
 				<ToggleControl
 					label={__('Exclude current post', 'designsetgo')}
@@ -105,6 +91,7 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 				label={__('Ignore sticky', 'designsetgo')}
 				hasValue={() => ignoreSticky !== true}
 				onDeselect={() => setAttributes({ ignoreSticky: true })}
+				isShownByDefault
 			>
 				<ToggleControl
 					label={__('Ignore sticky posts', 'designsetgo')}
@@ -141,35 +128,6 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 				</DsgoInspectorPanel.Item>
 			)}
 
-			<DsgoInspectorPanel.Item
-				label={__('Wrapper tag', 'designsetgo')}
-				hasValue={() => tagName !== 'ul'}
-				onDeselect={() => setAttributes({ tagName: 'ul' })}
-			>
-				<SelectControl
-					label={__('Wrapper tag', 'designsetgo')}
-					value={tagName}
-					options={TAG_OPTIONS}
-					onChange={(v) => setAttributes({ tagName: v })}
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
-			</DsgoInspectorPanel.Item>
-
-			<DsgoInspectorPanel.Item
-				label={__('Item tag', 'designsetgo')}
-				hasValue={() => itemTagName !== 'li'}
-				onDeselect={() => setAttributes({ itemTagName: 'li' })}
-			>
-				<SelectControl
-					label={__('Item tag', 'designsetgo')}
-					value={itemTagName}
-					options={ITEM_TAG_OPTIONS}
-					onChange={(v) => setAttributes({ itemTagName: v })}
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
-			</DsgoInspectorPanel.Item>
 		</DsgoInspectorPanel>
 	);
 }

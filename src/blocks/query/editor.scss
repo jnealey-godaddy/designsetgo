@@ -32,6 +32,11 @@
 	}
 }
 
+.dsgo-clause-group__actions {
+	display: flex;
+	gap: 8px;
+}
+
 .dsgo-query-group-label {
 	font-size: 0.85em;
 	font-weight: 600;

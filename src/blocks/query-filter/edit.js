@@ -15,7 +15,7 @@ import {
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { useMemo } from '@wordpress/element';
-import { store as coreStore } from '@wordpress/core-data';
+import { store as coreStore, useEntityRecords } from '@wordpress/core-data';
 import { DsgoInspectorPanel } from '../../components/shared';
 import FilterPreview from './components/FilterPreview';
 
@@ -24,8 +24,8 @@ import FilterPreview from './components/FilterPreview';
 const EMPTY_TAXONOMIES = Object.freeze([]);
 
 const FILTER_KIND_OPTIONS = [
-	{ value: 'checkbox', label: __('Taxonomy checkboxes', 'designsetgo') },
-	{ value: 'select', label: __('Taxonomy dropdown', 'designsetgo') },
+	{ value: 'checkbox', label: __('Taxonomy (multi-select)', 'designsetgo') },
+	{ value: 'select', label: __('Taxonomy (dropdown)', 'designsetgo') },
 	{ value: 'search', label: __('Search input', 'designsetgo') },
 	{ value: 'sort', label: __('Sort dropdown', 'designsetgo') },
 	{ value: 'active', label: __('Active filters', 'designsetgo') },
@@ -40,11 +40,18 @@ const DEFAULTS = {
 	placeholder: '',
 	showCounts: true,
 	orientation: 'vertical',
+	filterStyle: 'underline',
 };
 
 const ORIENTATION_OPTIONS = [
 	{ value: 'vertical', label: __('Vertical', 'designsetgo') },
 	{ value: 'horizontal', label: __('Horizontal', 'designsetgo') },
+];
+
+const FILTER_STYLE_OPTIONS = [
+	{ value: 'default', label: __('Checkboxes', 'designsetgo') },
+	{ value: 'pill', label: __('Pills', 'designsetgo') },
+	{ value: 'underline', label: __('Underlined tabs', 'designsetgo') },
 ];
 
 export default function QueryFilterEdit({
@@ -60,6 +67,7 @@ export default function QueryFilterEdit({
 		placeholder,
 		showCounts,
 		orientation,
+		filterStyle,
 	} = attributes;
 
 	const blockProps = useBlockProps({
@@ -86,6 +94,33 @@ export default function QueryFilterEdit({
 			.filter((t) => t.show_in_rest !== false)
 			.map((t) => ({ value: t.slug, label: t.name }));
 	}, [filterKind, rawTaxonomies]);
+
+	// Pull the real taxonomy terms so the editor preview shows the same
+	// options visitors will see, not placeholder strings. Gated on taxonomy
+	// filter kinds so we don't fire the REST request for search/sort/etc.
+	// `useEntityRecords` must still run every render (rules of hooks), so
+	// we call it unconditionally with an empty taxonomy slug when disabled —
+	// core-data returns null records and never issues a request.
+	const isTaxonomyKind = filterKind === 'checkbox' || filterKind === 'select';
+	const termQuery = useMemo(
+		() => ({ per_page: 20, hide_empty: false }),
+		[]
+	);
+	const termsResult = useEntityRecords(
+		'taxonomy',
+		isTaxonomyKind ? taxonomy || 'category' : '',
+		termQuery
+	);
+	const previewTerms = useMemo(() => {
+		if (!isTaxonomyKind || !termsResult.records) {
+			return null;
+		}
+		return termsResult.records.map((term) => ({
+			id: term.id,
+			slug: term.slug,
+			name: term.name,
+		}));
+	}, [isTaxonomyKind, termsResult.records]);
 
 	const showTaxonomyControl =
 		filterKind === 'checkbox' || filterKind === 'select';
@@ -121,10 +156,18 @@ export default function QueryFilterEdit({
 	}
 
 	function handleFilterKindChange(nextKind) {
-		setAttributes({
+		const next = {
 			filterKind: nextKind,
 			paramName: defaultParamNameForKind(nextKind, taxonomy),
-		});
+		};
+		// Seed a sensible default button label when switching to Reset so
+		// newly-inserted reset filters don't render as a bare "Reset filters"
+		// fallback. Skip when the author has already typed their own label so
+		// we never overwrite intentional copy.
+		if (nextKind === 'reset' && !label) {
+			next.label = __('Reset', 'designsetgo');
+		}
+		setAttributes(next);
 	}
 
 	return (
@@ -270,25 +313,56 @@ export default function QueryFilterEdit({
 					)}
 
 					{filterKind === 'checkbox' && (
-						<DsgoInspectorPanel.Item
-							label={__('Orientation', 'designsetgo')}
-							hasValue={() => orientation !== 'vertical'}
-							onDeselect={() =>
-								setAttributes({ orientation: 'vertical' })
-							}
-							isShownByDefault
-						>
-							<SelectControl
-								label={__('Orientation', 'designsetgo')}
-								value={orientation || 'vertical'}
-								options={ORIENTATION_OPTIONS}
-								onChange={(v) =>
-									setAttributes({ orientation: v })
+						<>
+							<DsgoInspectorPanel.Item
+								label={__('Style', 'designsetgo')}
+								hasValue={() =>
+									(filterStyle || 'underline') !== 'underline'
 								}
-								__next40pxDefaultSize
-								__nextHasNoMarginBottom
-							/>
-						</DsgoInspectorPanel.Item>
+								onDeselect={() =>
+									setAttributes({ filterStyle: 'underline' })
+								}
+								isShownByDefault
+							>
+								<SelectControl
+									label={__('Style', 'designsetgo')}
+									value={filterStyle || 'underline'}
+									options={FILTER_STYLE_OPTIONS}
+									onChange={(v) =>
+										setAttributes({ filterStyle: v })
+									}
+									help={__(
+										'Underlined tabs (default) and pills render the filter as a modern horizontal selector. Switch to Checkboxes for a classic multi-select list. The underlying input stays accessible to keyboard + screen-reader users.',
+										'designsetgo'
+									)}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+							</DsgoInspectorPanel.Item>
+							{(filterStyle || 'underline') === 'default' && (
+								<DsgoInspectorPanel.Item
+									label={__('Orientation', 'designsetgo')}
+									hasValue={() => orientation !== 'vertical'}
+									onDeselect={() =>
+										setAttributes({
+											orientation: 'vertical',
+										})
+									}
+									isShownByDefault
+								>
+									<SelectControl
+										label={__('Orientation', 'designsetgo')}
+										value={orientation || 'vertical'}
+										options={ORIENTATION_OPTIONS}
+										onChange={(v) =>
+											setAttributes({ orientation: v })
+										}
+										__next40pxDefaultSize
+										__nextHasNoMarginBottom
+									/>
+								</DsgoInspectorPanel.Item>
+							)}
+						</>
 					)}
 				</DsgoInspectorPanel>
 			</InspectorControls>
@@ -299,6 +373,11 @@ export default function QueryFilterEdit({
 					label={label}
 					placeholder={placeholder}
 					orientation={orientation || 'vertical'}
+					filterStyle={filterStyle || 'underline'}
+					terms={previewTerms}
+					termsLoading={
+						isTaxonomyKind && !termsResult.hasResolved
+					}
 				/>
 			</div>
 		</>

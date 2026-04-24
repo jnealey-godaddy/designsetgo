@@ -44,7 +44,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_search' ) ) :
 		$aria_label = $label ? '' : ' aria-label="' . esc_attr__( 'Search', 'designsetgo' ) . '"';
 
 		printf(
-			'<form %1$s method="get" action="" role="search">%2$s<div class="dsgo-query-filter__search-row"><input type="search" id="%7$s" name="%3$s" value="%4$s" placeholder="%5$s" class="dsgo-query-filter__search-input" data-wp-on--change="actions.setFilter" data-wp-on--input="actions.setFilterDebounced"%8$s /><button type="submit" class="dsgo-query-filter__submit">%6$s</button></div></form>',
+			'<form %1$s method="get" action="" role="search" data-wp-on--submit="actions.setFilter">%2$s<div class="dsgo-query-filter__search-row"><input type="search" id="%7$s" name="%3$s" value="%4$s" placeholder="%5$s" class="dsgo-query-filter__search-input"%8$s /><button type="submit" class="dsgo-query-filter__submit">%6$s</button></div></form>',
 			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output + appended data-wp-context JSON (sanitized values + wp_json_encode with JSON_HEX_APOS).
 			$label ? '<label for="' . esc_attr( $input_id ) . '" class="dsgo-query-filter__label">' . esc_html( $label ) . '</label>' : '',
 			esc_attr( $param_name ),
@@ -202,7 +202,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 	 * @param array  $active_filters  Current active filter state for intersection counts.
 	 * @param string $post_type       Optional post-type scope for counts.
 	 */
-	function designsetgo_query_filter_render_checkbox( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '', $orientation = 'vertical' ) {
+	function designsetgo_query_filter_render_checkbox( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '', $orientation = 'vertical', $style = 'default' ) {
 		if ( ! taxonomy_exists( $filter_taxonomy ) ) {
 			return;
 		}
@@ -259,10 +259,23 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 		}
 
 		// Fix 4: noscript submit so no-JS users can apply checkbox filters.
-		$dsgo_nojs_btn = '<noscript><button type="submit" class="dsgo-query-filter__nojs-submit">' . esc_html__( 'Apply filter', 'designsetgo' ) . '</button></noscript>';
-		$list_class    = 'horizontal' === $orientation
-			? 'dsgo-query-filter__checkbox-list is-horizontal'
-			: 'dsgo-query-filter__checkbox-list';
+		$dsgo_nojs_btn      = '<noscript><button type="submit" class="dsgo-query-filter__nojs-submit">' . esc_html__( 'Apply filter', 'designsetgo' ) . '</button></noscript>';
+		$list_class_parts   = array( 'dsgo-query-filter__checkbox-list' );
+		if ( 'horizontal' === $orientation ) {
+			$list_class_parts[] = 'is-horizontal';
+		}
+		if ( in_array( $style, array( 'pill', 'underline' ), true ) ) {
+			// `is-style-pill` / `is-style-underline` → SCSS hides the native
+			// checkbox and styles the label as a pill or underlined tab. The
+			// input stays in the DOM so keyboard/screen-reader users still
+			// toggle filters the same way.
+			$list_class_parts[] = 'is-style-' . $style;
+			// Pill + underline variants always read better as a horizontal row.
+			if ( 'horizontal' !== $orientation ) {
+				$list_class_parts[] = 'is-horizontal';
+			}
+		}
+		$list_class = implode( ' ', $list_class_parts );
 		if ( $label ) {
 			printf(
 				'<form %1$s method="get" action=""><fieldset class="dsgo-query-filter__fieldset"><legend class="dsgo-query-filter__label">%2$s</legend><div class="%5$s">%3$s</div></fieldset>%4$s</form>',
@@ -456,6 +469,12 @@ $dsgo_filter_label       = isset( $attributes['label'] ) ? (string) $attributes[
 $dsgo_filter_placeholder = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : '';
 $dsgo_filter_taxonomy    = isset( $attributes['taxonomy'] ) ? sanitize_key( (string) $attributes['taxonomy'] ) : 'category';
 $dsgo_filter_orientation = ( isset( $attributes['orientation'] ) && 'horizontal' === $attributes['orientation'] ) ? 'horizontal' : 'vertical';
+// Default `filterStyle` is `underline` (matches block.json). WordPress omits
+// attributes that equal the block default from the saved markup, so a missing
+// `filterStyle` key here means the author kept the default.
+$dsgo_filter_style       = isset( $attributes['filterStyle'] ) && in_array( $attributes['filterStyle'], array( 'default', 'pill', 'underline' ), true )
+	? $attributes['filterStyle']
+	: 'underline';
 
 // Post-type scope for counts: only non-empty when the parent query targets a
 // specific post type (source === 'posts'). Users/terms sources leave it empty
@@ -595,6 +614,6 @@ switch ( $dsgo_filter_kind ) {
 		break;
 	case 'checkbox':
 	default:
-		designsetgo_query_filter_render_checkbox( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy, $dsgo_counts_enabled, $dsgo_active_filters_by_key, $dsgo_query_post_type, $dsgo_filter_orientation );
+		designsetgo_query_filter_render_checkbox( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy, $dsgo_counts_enabled, $dsgo_active_filters_by_key, $dsgo_query_post_type, $dsgo_filter_orientation, $dsgo_filter_style );
 		break;
 }

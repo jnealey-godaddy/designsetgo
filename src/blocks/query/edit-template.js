@@ -26,7 +26,7 @@ export const RESULT_TEMPLATE = [
 // most authors end up wanting, plus the required query-results wrapper.
 // Easy to remove a block; harder to discover one that wasn't scaffolded.
 export const DEFAULT_TEMPLATE = [
-	['designsetgo/query-results', {}, RESULT_TEMPLATE],
+	['designsetgo/query-results', { columns: 3 }, RESULT_TEMPLATE],
 	['designsetgo/query-no-results'],
 	['designsetgo/query-pagination', { paginationKind: 'numbered' }],
 ];

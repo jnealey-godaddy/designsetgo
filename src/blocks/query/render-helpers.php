@@ -298,20 +298,24 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		// query-results/style.scss.
 		$columns        = isset( $atts['columns'] ) ? max( 1, (int) $atts['columns'] ) : 1;
 		$columns_tablet = isset( $atts['columnsTablet'] ) ? (int) $atts['columnsTablet'] : 0;
-		$columns_mobile = isset( $atts['columnsMobile'] ) ? (int) $atts['columnsMobile'] : 0;
-		$column_gap     = isset( $atts['columnGap'] ) ? sanitize_text_field( (string) $atts['columnGap'] ) : '';
-		$grid_style     = sprintf( '--dsgo-query-columns:%d;', $columns );
+		$columns_mobile   = isset( $atts['columnsMobile'] ) ? (int) $atts['columnsMobile'] : 0;
+		$first_col_span   = isset( $atts['firstItemColumnSpan'] ) ? max( 1, (int) $atts['firstItemColumnSpan'] ) : 1;
+		$first_row_span   = isset( $atts['firstItemRowSpan'] ) ? max( 1, (int) $atts['firstItemRowSpan'] ) : 1;
+		// Clamp the column span to the desktop column count so we never ask the
+		// grid to span more tracks than exist.
+		$first_col_span   = min( $first_col_span, $columns );
+		$grid_style       = sprintf( '--dsgo-query-columns:%d;', $columns );
 		if ( $columns_tablet > 0 ) {
 			$grid_style .= sprintf( '--dsgo-query-columns-tablet:%d;', $columns_tablet );
 		}
 		if ( $columns_mobile > 0 ) {
 			$grid_style .= sprintf( '--dsgo-query-columns-mobile:%d;', $columns_mobile );
 		}
-		if ( '' !== $column_gap ) {
-			// Whitelist a safe subset of CSS length values to defeat `;` / `}` injection.
-			if ( preg_match( '/^[0-9]+(?:\.[0-9]+)?(?:px|rem|em|%|vw|vh|ch|ex|pt)$/', $column_gap ) ) {
-				$grid_style .= '--dsgo-query-gap:' . $column_gap . ';';
-			}
+		if ( $first_col_span > 1 ) {
+			$grid_style .= sprintf( '--dsgo-query-first-col-span:%d;', $first_col_span );
+		}
+		if ( $first_row_span > 1 ) {
+			$grid_style .= sprintf( '--dsgo-query-first-row-span:%d;', $first_row_span );
 		}
 
 		// Post-restructure: this element IS the query-results grid. IAPI /
@@ -321,9 +325,13 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		// always constructed by this helper since it belongs to query-results,
 		// not to the outer query block.
 		unset( $wrapper_attrs );
+		$layout_variant = isset( $atts['layoutVariant'] )
+			? sanitize_html_class( (string) $atts['layoutVariant'] )
+			: '';
+		$variant_class  = '' !== $layout_variant ? ' is-layout-' . $layout_variant : '';
 		$attrs_string = sprintf(
 			'class="%1$s" style="%3$s" data-dsgo-query-results-role="container" data-dsgo-query-id="%2$s"',
-			esc_attr( 'dsgo-query-results dsgo-query-results--source-' . $source ),
+			esc_attr( 'dsgo-query-results dsgo-query-results--source-' . $source . $variant_class ),
 			esc_attr( $query_id ),
 			esc_attr( $grid_style )
 		);
@@ -615,9 +623,11 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 						: 'none',
 					'columns'       => $results_attrs['columns'] ?? ( $attributes['columns'] ?? 1 ),
 					'columnsTablet' => $results_attrs['columnsTablet'] ?? ( $attributes['columnsTablet'] ?? 0 ),
-					'columnsMobile' => $results_attrs['columnsMobile'] ?? ( $attributes['columnsMobile'] ?? 0 ),
-					'columnGap'     => $results_attrs['columnGap'] ?? ( $attributes['columnGap'] ?? '' ),
-					'groupBy'       => $results_attrs['groupBy'] ?? ( $attributes['groupBy'] ?? null ),
+					'columnsMobile'       => $results_attrs['columnsMobile'] ?? ( $attributes['columnsMobile'] ?? 0 ),
+					'firstItemColumnSpan' => $results_attrs['firstItemColumnSpan'] ?? ( $attributes['firstItemColumnSpan'] ?? 1 ),
+					'firstItemRowSpan'    => $results_attrs['firstItemRowSpan'] ?? ( $attributes['firstItemRowSpan'] ?? 1 ),
+					'groupBy'             => $results_attrs['groupBy'] ?? ( $attributes['groupBy'] ?? null ),
+					'layoutVariant' => $results_attrs['layoutVariant'] ?? ( $attributes['layoutVariant'] ?? '' ),
 				)
 			);
 			$inner_children  = (array) ( $results_child['innerBlocks'] ?? array() );

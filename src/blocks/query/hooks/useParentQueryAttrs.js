@@ -9,7 +9,7 @@
  *
  * @since 2.6.0
  *
- * @param {string}  clientId Current block clientId.
+ * @param {string}  clientId       Current block clientId.
  * @param {boolean} [enabled=true] Skip the lookup when false (lets callers
  *                                 pass a stable falsy value outside of
  *                                 query mode without wrapping the hook call).

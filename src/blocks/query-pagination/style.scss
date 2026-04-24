@@ -1,4 +1,30 @@
-.wp-block-designsetgo-query-pagination {
+// BEM root uses the `.dsgo-query-pagination` class emitted by render.php, NOT
+// `.wp-block-designsetgo-query-pagination`. The WP-generated block class is
+// present too but the `--numbered` / `--loadmore` / `--infinite` modifiers are
+// on the dsgo- prefix only (see get_block_wrapper_attributes call in
+// render.php). Keeping selectors rooted on the BEM class means layout still
+// applies after a filter/pagination REST refresh re-serialises the wrapper.
+.dsgo-query-pagination {
+
+	// Horizontal alignment modifier. Numbered pagination centres/right-aligns
+	// via flex justify-content on the list; load-more + infinite are a single
+	// inline-block element so text-align on the wrapper is enough. Left is the
+	// natural flow default, no rule needed.
+	&.is-align-center {
+		text-align: center;
+
+		.dsgo-query-pagination__list {
+			justify-content: center;
+		}
+	}
+
+	&.is-align-right {
+		text-align: right;
+
+		.dsgo-query-pagination__list {
+			justify-content: flex-end;
+		}
+	}
 
 	&--numbered {
 

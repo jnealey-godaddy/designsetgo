@@ -14,6 +14,7 @@ import MetaQueryBuilder from './components/MetaQueryBuilder';
 import QueryPlaceholder from './components/QueryPlaceholder';
 import QuerySourcePanel from './components/QuerySourcePanel';
 import ResultCountBadge from './components/ResultCountBadge';
+import ResultsLayoutPanel from './components/ResultsLayoutPanel';
 import TaxQueryBuilder from './components/TaxQueryBuilder';
 
 /**
@@ -24,6 +25,10 @@ import TaxQueryBuilder from './components/TaxQueryBuilder';
  * context. Actual item rendering lives in the child designsetgo/query-results
  * block. Filters, pagination, and no-results render in-place as siblings of
  * query-results in whatever tree position the author chooses.
+ * @param {Object}   root0
+ * @param {Object}   root0.attributes
+ * @param {Function} root0.setAttributes
+ * @param {string}   root0.clientId
  */
 export default function QueryEdit({ attributes, setAttributes, clientId }) {
 	useQueryId({ clientId, queryId: attributes.queryId, setAttributes });
@@ -68,6 +73,7 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 					setAttributes={setAttributes}
 					clientId={clientId}
 				/>
+				<ResultsLayoutPanel clientId={clientId} />
 				{showPostsOnlyPanels && (
 					<>
 						<TaxQueryBuilder
@@ -95,7 +101,10 @@ export default function QueryEdit({ attributes, setAttributes, clientId }) {
 			</InspectorControls>
 
 			<div {...blockProps}>
-				<div className="dsgo-query__editor-header" contentEditable={false}>
+				<div
+					className="dsgo-query__editor-header"
+					contentEditable={false}
+				>
 					<ResultCountBadge
 						totalItems={preview.totalItems}
 						loading={preview.loading}

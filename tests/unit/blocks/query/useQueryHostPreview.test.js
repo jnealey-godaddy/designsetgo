@@ -16,23 +16,19 @@ jest.mock('@wordpress/i18n', () => ({
 	sprintf: (text, value) => text.replace('%d', value),
 }));
 
-jest.mock(
-	'../../../../src/blocks/query/hooks/useQueryPreview',
-	() =>
-		jest.fn(() => ({
-			records: [],
-			hasResolved: true,
-		}))
+jest.mock('../../../../src/blocks/query/hooks/useQueryPreview', () =>
+	jest.fn(() => ({
+		records: [],
+		hasResolved: true,
+	}))
 );
 
-jest.mock(
-	'../../../../src/blocks/query/hooks/useRenderedItems',
-	() =>
-		jest.fn(() => ({
-			items: null,
-			loading: false,
-			error: null,
-		}))
+jest.mock('../../../../src/blocks/query/hooks/useRenderedItems', () =>
+	jest.fn(() => ({
+		items: null,
+		loading: false,
+		error: null,
+	}))
 );
 
 const { useEntityRecords } = require('@wordpress/core-data');

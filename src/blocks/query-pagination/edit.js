@@ -68,7 +68,14 @@ const DEFAULTS = {
 	autoPauseAfter: 3,
 	sentinelOffsetPx: 200,
 	buttonLabelWhenPaused: 'Load more',
+	alignment: 'left',
 };
+
+const ALIGNMENT_OPTIONS = [
+	{ value: 'left', label: __('Left', 'designsetgo') },
+	{ value: 'center', label: __('Center', 'designsetgo') },
+	{ value: 'right', label: __('Right', 'designsetgo') },
+];
 
 export default function QueryPaginationEdit({
 	attributes,
@@ -82,6 +89,7 @@ export default function QueryPaginationEdit({
 		labelLoading,
 		showPrevNext,
 		buttonLabelWhenPaused,
+		alignment,
 	} = attributes;
 
 	// Determine the effective kind: paginationKind takes precedence when set
@@ -89,7 +97,9 @@ export default function QueryPaginationEdit({
 	const effectiveKind = paginationKind !== 'numbered' ? paginationKind : mode;
 
 	const blockProps = useBlockProps({
-		className: 'dsgo-query-pagination is-editor',
+		className: `dsgo-query-pagination is-editor is-align-${
+			alignment || 'left'
+		}`,
 	});
 
 	return (
@@ -210,6 +220,22 @@ export default function QueryPaginationEdit({
 							panelId={clientId}
 						/>
 					)}
+
+					<DsgoInspectorPanel.Item
+						label={__('Alignment', 'designsetgo')}
+						hasValue={() => (alignment || 'left') !== 'left'}
+						onDeselect={() => setAttributes({ alignment: 'left' })}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Alignment', 'designsetgo')}
+							value={alignment || 'left'}
+							options={ALIGNMENT_OPTIONS}
+							onChange={(v) => setAttributes({ alignment: v })}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 

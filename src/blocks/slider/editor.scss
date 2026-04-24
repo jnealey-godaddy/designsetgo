@@ -264,17 +264,24 @@
 // ---------------------------------------------------------------------------
 // Query-bound editor preview. The block-editor-managed template slot sits
 // inside a manually-built track alongside read-only server-rendered slides.
-// `display: contents` makes the slot wrapper transparent so the single
-// authored slide participates in the track's flex layout directly.
+// Give the slot the same flex-basis that .dsgo-slider__track > .dsgo-slide
+// would receive on the frontend — we can't use `display: contents` here
+// because the slider's `> .dsgo-slide` rule matches the DOM tree, and the
+// block-editor always wraps the slide in this intermediate div, so the
+// slide never becomes a DOM direct child of the track and the rule misses.
+// Without the explicit flex-basis below the slot collapses to width 0 and
+// the slide's text content wraps to absurd heights.
 // ---------------------------------------------------------------------------
 .wp-block-designsetgo-slider {
+
 	.dsgo-slider__editor-template-slot {
-		display: contents;
+		flex: 0 0 calc((100% - (var(--dsgo-slider-gap) * (var(--dsgo-slider-slides-per-view) - 1))) / var(--dsgo-slider-slides-per-view));
+		min-width: 0;
+		display: flex;
 	}
 
 	.dsgo-slider__editor-readonly-item {
-		flex: 0 0 auto;
-		width: 100%;
+		flex: 0 0 calc((100% - (var(--dsgo-slider-gap) * (var(--dsgo-slider-slides-per-view) - 1))) / var(--dsgo-slider-slides-per-view));
 		min-width: 0;
 		pointer-events: none;
 	}

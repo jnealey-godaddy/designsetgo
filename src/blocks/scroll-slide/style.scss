@@ -11,6 +11,17 @@
 	padding: 2rem;
 
 	/**
+	 * Flex gap doesn't collapse with element margins — theme headings and
+	 * paragraphs would add their own margin-block on top of the gap,
+	 * producing uneven spacing. Zero out direct children so the gap alone
+	 * controls rhythm (matches the editor, which WP normalises the same
+	 * way via .editor-styles-wrapper).
+	 */
+	> :where(h1, h2, h3, h4, h5, h6, p, figure, ul, ol) {
+		margin-block: 0;
+	}
+
+	/**
 	 * Transition styles apply in both pinned (desktop scroll) and
 	 * tap mode (mobile click). Without this scope, opacity:0 would
 	 * hide slides in the editor too.

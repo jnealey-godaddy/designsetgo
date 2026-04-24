@@ -72,6 +72,8 @@ class FilterRegistry {
 			return;
 		}
 
+		$is_new = ! isset( $filters[ $sanitized_key ] );
+
 		$filters[ $sanitized_key ] = array(
 			'type'   => sanitize_key( $config['type'] ?? '' ),
 			'source' => sanitize_text_field( $config['source'] ?? '' ),
@@ -80,6 +82,18 @@ class FilterRegistry {
 
 		update_option( self::OPTION, $filters, false );
 		self::$cache = null;
+
+		// First-time registration: backfill index rows for all existing posts.
+		// Without this, posts that predate the filter block (common when
+		// authors add the block to an already-populated site) show "(0)" next
+		// to terms they legitimately belong to because save_post-based hooks
+		// only cover posts updated AFTER the filter exists. `rebuild_filter`
+		// is mutex-locked + batched, so repeated calls during bulk saves are
+		// safe. Fires after update_option so FilterRegistry::get() inside
+		// rebuild_filter resolves the freshly-registered config.
+		if ( $is_new && class_exists( FilterIndexRebuilder::class ) ) {
+			FilterIndexRebuilder::rebuild_filter( $sanitized_key );
+		}
 	}
 
 	/**

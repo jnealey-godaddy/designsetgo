@@ -40,6 +40,14 @@ $pagination_kind = isset( $attributes['paginationKind'] ) && 'numbered' !== $att
 	? $attributes['paginationKind']
 	: ( isset( $attributes['mode'] ) ? $attributes['mode'] : 'numbered' );
 
+// Horizontal alignment of the pagination control. Drives the SCSS
+// `is-align-{left|center|right}` modifier so the numbered flex list / load-more
+// button / infinite sentinel all honour the setting with a single class.
+$alignment = isset( $attributes['alignment'] ) && in_array( $attributes['alignment'], array( 'center', 'right' ), true )
+	? $attributes['alignment']
+	: 'left';
+$align_class = 'is-align-' . $alignment;
+
 // Single-page guard applies to ALL pagination kinds, including infinite.
 // Emit nothing for single-page results so no sentinel or button is injected.
 if ( ! $state || (int) $state['totalPages'] < 2 ) {
@@ -68,7 +76,7 @@ if ( 'infinite' === $pagination_kind ) {
 
 	$wrapper = get_block_wrapper_attributes(
 		array(
-			'class'                    => 'dsgo-query-pagination dsgo-query-pagination--infinite',
+			'class'                    => 'dsgo-query-pagination dsgo-query-pagination--infinite ' . $align_class,
 			'data-wp-interactive'      => 'designsetgo/query',
 			'data-dsgo-query-id'       => $query_id,
 			'data-dsgo-pagination'     => 'infinite',
@@ -122,7 +130,7 @@ if ( 'loadmore' === $pagination_mode ) {
 	);
 	$wrapper = get_block_wrapper_attributes(
 		array(
-			'class'                => 'dsgo-query-pagination dsgo-query-pagination--loadmore',
+			'class'                => 'dsgo-query-pagination dsgo-query-pagination--loadmore ' . $align_class,
 			'data-wp-interactive'  => 'designsetgo/query',
 			'data-dsgo-query-id'   => $query_id,
 			'data-dsgo-pagination' => 'loadmore',
@@ -161,7 +169,7 @@ if ( empty( $links ) || ! is_array( $links ) ) {
 
 $wrapper = get_block_wrapper_attributes(
 	array(
-		'class'              => 'dsgo-query-pagination dsgo-query-pagination--numbered',
+		'class'              => 'dsgo-query-pagination dsgo-query-pagination--numbered ' . $align_class,
 		'role'               => 'navigation',
 		'aria-label'         => __( 'Query pagination', 'designsetgo' ),
 		'data-dsgo-query-id' => $query_id,

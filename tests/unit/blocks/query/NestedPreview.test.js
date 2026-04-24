@@ -43,7 +43,7 @@ jest.mock('@wordpress/data', () => ({
 					},
 				};
 				return {
-					getBlock: ( clientId ) =>
+					getBlock: (clientId) =>
 						clientId === 'parent-client-id'
 							? parentQuery
 							: {
@@ -54,9 +54,9 @@ jest.mock('@wordpress/data', () => ({
 											attributes: {},
 										},
 									],
-							  },
+								},
 					getBlocks: () => [],
-					getBlockParents: () => [ 'parent-client-id' ],
+					getBlockParents: () => ['parent-client-id'],
 				};
 			}
 			// TemplateIO calls getCurrentPostId() on the editor store.
@@ -319,14 +319,14 @@ describe('QueryResultsEdit nested preview', () => {
 				attributes={DEFAULT_ATTRIBUTES}
 				setAttributes={jest.fn()}
 				clientId="cli-1"
-				context={{ 'designsetgo/parentItem': { postId: 99, postType: 'post' } }}
+				context={{
+					'designsetgo/parentItem': { postId: 99, postType: 'post' },
+				}}
 			/>
 		);
 		// At least one BlockContextProvider must have received the outer parentItem.
 		expect(
-			ctxCapture.some(
-				(c) => c?.['designsetgo/parentItem']?.postId === 99
-			)
+			ctxCapture.some((c) => c?.['designsetgo/parentItem']?.postId === 99)
 		).toBe(true);
 	});
 
@@ -396,9 +396,7 @@ describe('QueryResultsEdit nested preview', () => {
 		// Editor sessions are always authenticated; auth visibility rules should
 		// never hide content from the admin in the editor preview.
 		expect(
-			ctxCapture.some(
-				(c) => c?.['designsetgo/isAuthenticated'] === true
-			)
+			ctxCapture.some((c) => c?.['designsetgo/isAuthenticated'] === true)
 		).toBe(true);
 	});
 });

@@ -92,22 +92,29 @@
 	}
 }
 
-.dsgo-scroll-slides__editor-nav input.dsgo-scroll-slides__editor-nav-input {
+.dsgo-scroll-slides__editor-nav input.dsgo-scroll-slides__editor-nav-input,
+.dsgo-scroll-slides__editor-nav button.dsgo-scroll-slides__editor-nav-input {
 	display: block;
 	width: 100%;
 	background: none;
 	border: none;
-	border-bottom: 1px solid transparent;
+	border-radius: 0;
 	box-shadow: none;
 	padding: 0.25rem 0;
-	font-size: clamp(1.25rem, 2.5vw, 2rem);
+	// Match the frontend nav-item sizing so the editor preview reads the
+	// same scale as the published output.
+	font-size: clamp(1.5rem, 3vw, 2.5rem);
 	font-weight: 700;
 	font-family: inherit;
+	line-height: 1.2;
 	color: inherit;
+	text-align: left;
+	text-decoration: none;
 	opacity: 0.3;
 	transition: opacity 0.2s ease, color 0.2s ease;
-	cursor: text;
 	outline: none;
+	min-height: 0;
+	min-width: 0;
 
 	// When custom nav colors are set, use explicit colors
 	.dsgo-scroll-slides--has-nav-color & {
@@ -119,18 +126,38 @@
 		color: var(--dsgo-nav-active-color, var(--dsgo-nav-color, inherit));
 	}
 
-	&:hover {
-		opacity: 0.6;
-	}
-
+	&:hover,
 	&:focus {
-		opacity: 1;
-		border-bottom-color: currentcolor;
+		opacity: 0.6;
+		text-decoration: none;
 	}
 
 	&::placeholder {
 		color: inherit;
 		opacity: 0.3;
+	}
+}
+
+// Input-only — the freeform editable nav heading is a typed field, so
+// give it a text cursor and a focus underline cue so authors notice it.
+.dsgo-scroll-slides__editor-nav input.dsgo-scroll-slides__editor-nav-input {
+	cursor: text;
+	border-bottom: 1px solid transparent;
+
+	&:focus {
+		opacity: 1;
+		border-bottom-color: currentcolor;
+	}
+}
+
+// Button variant — query-mode nav is a read-only clickable label, so
+// show a pointer and keep focus subtle (no underline to match the
+// frontend nav behavior).
+.dsgo-scroll-slides__editor-nav button.dsgo-scroll-slides__editor-nav-input {
+	cursor: pointer;
+
+	.dsgo-scroll-slides__editor-nav-item.is-active & {
+		opacity: 1;
 	}
 }
 
@@ -141,6 +168,18 @@
  * This is editor-only — the saved HTML retains the inline styles for view.js.
  */
 .dsgo-scroll-slides [data-type="designsetgo/scroll-slide"] {
+	background-image: none !important;
+	background-color: transparent !important;
+}
+
+/**
+ * Readonly preview items (panels 1..N in query mode) ship the same inline
+ * background-image that view.js lifts into the crossfading layer at
+ * runtime. In the editor that hoist never happens, so the featured image
+ * would render both on the outer __editor-bg AND inside the panel box.
+ * Unset the inline bg with !important to defeat the inline style.
+ */
+.dsgo-scroll-slides__editor-readonly-item .dsgo-scroll-slide {
 	background-image: none !important;
 	background-color: transparent !important;
 }
@@ -204,10 +243,15 @@
 
 // Query-bound editor preview — the block-editor-managed template slot
 // sits alongside read-only server-rendered panels inside the panels grid.
-// `display: contents` keeps the slot wrapper transparent to layout.
 .wp-block-designsetgo-scroll-slides {
+
 	.dsgo-scroll-slides__editor-template-slot {
-		display: contents;
+		// Outside query mode, panels rely on nth-child selectors walking
+		// the real block-editor tree, which means the wrapper needs to be
+		// transparent to layout. In query mode, nth-child is applied to
+		// direct panel children, so a block-level template slot is fine
+		// (and is required for the active-panel toggle below).
+		display: block;
 	}
 
 	.dsgo-scroll-slides__editor-readonly-item {
@@ -222,3 +266,29 @@
 		border-radius: 4px;
 	}
 }
+
+/**
+ * Query-mode panels — one template slot at index 0 plus N read-only items
+ * at indices 1..N. Hide all by default and show the active one via the
+ * container's data-dsgo-active-slide attribute. This mirrors the authored
+ * mode's nth-child logic but targets direct children so both the
+ * template-slot div and the read-only-item divs are toggled together.
+ */
+/* stylelint-disable no-descending-specificity */
+.dsgo-scroll-slides__editor-panels--query-mode > * {
+	display: none;
+}
+
+.dsgo-scroll-slides[data-dsgo-active-slide="0"] .dsgo-scroll-slides__editor-panels--query-mode > :nth-child(1),
+.dsgo-scroll-slides[data-dsgo-active-slide="1"] .dsgo-scroll-slides__editor-panels--query-mode > :nth-child(2),
+.dsgo-scroll-slides[data-dsgo-active-slide="2"] .dsgo-scroll-slides__editor-panels--query-mode > :nth-child(3),
+.dsgo-scroll-slides[data-dsgo-active-slide="3"] .dsgo-scroll-slides__editor-panels--query-mode > :nth-child(4),
+.dsgo-scroll-slides[data-dsgo-active-slide="4"] .dsgo-scroll-slides__editor-panels--query-mode > :nth-child(5),
+.dsgo-scroll-slides[data-dsgo-active-slide="5"] .dsgo-scroll-slides__editor-panels--query-mode > :nth-child(6),
+.dsgo-scroll-slides[data-dsgo-active-slide="6"] .dsgo-scroll-slides__editor-panels--query-mode > :nth-child(7),
+.dsgo-scroll-slides[data-dsgo-active-slide="7"] .dsgo-scroll-slides__editor-panels--query-mode > :nth-child(8),
+.dsgo-scroll-slides[data-dsgo-active-slide="8"] .dsgo-scroll-slides__editor-panels--query-mode > :nth-child(9),
+.dsgo-scroll-slides[data-dsgo-active-slide="9"] .dsgo-scroll-slides__editor-panels--query-mode > :nth-child(10) {
+	display: block;
+}
+/* stylelint-enable no-descending-specificity */

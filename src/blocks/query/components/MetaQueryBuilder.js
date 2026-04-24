@@ -26,76 +26,78 @@ const COMPARE_OPTIONS = [
 ];
 
 const TYPE_OPTIONS = [
-	{ value: 'CHAR', label: __( 'Text', 'designsetgo' ) },
-	{ value: 'NUMERIC', label: __( 'Numeric', 'designsetgo' ) },
-	{ value: 'DATE', label: __( 'Date', 'designsetgo' ) },
+	{ value: 'CHAR', label: __('Text', 'designsetgo') },
+	{ value: 'NUMERIC', label: __('Numeric', 'designsetgo') },
+	{ value: 'DATE', label: __('Date', 'designsetgo') },
 ];
 
 const EMPTY_DEFAULT = { relation: 'AND', clauses: [] };
 const NEW_CLAUSE = { key: '', compare: '=', value: '', type: 'CHAR' };
 
-export default function MetaQueryBuilder( {
+export default function MetaQueryBuilder({
 	attributes,
 	setAttributes,
 	clientId,
-} ) {
+}) {
 	const rawMetaQuery = attributes.metaQuery ?? EMPTY_DEFAULT;
 	const metaQuery = {
 		relation: rawMetaQuery.relation ?? 'AND',
-		clauses: Array.isArray( rawMetaQuery.clauses ) ? rawMetaQuery.clauses : [],
+		clauses: Array.isArray(rawMetaQuery.clauses)
+			? rawMetaQuery.clauses
+			: [],
 	};
 
-	const renderClause = ( clause, idx, updateEntry, removeEntry ) => {
+	const renderClause = (clause, idx, updateEntry, removeEntry) => {
 		const hideValue =
 			clause.compare === 'EXISTS' || clause.compare === 'NOT EXISTS';
 		return (
-			<VStack key={ idx } spacing={ 2 }>
+			<VStack key={idx} spacing={2}>
 				<TextControl
-					label={ __( 'Key', 'designsetgo' ) }
-					value={ clause.key }
-					onChange={ ( v ) => updateEntry( idx, { key: v } ) }
+					label={__('Key', 'designsetgo')}
+					value={clause.key}
+					onChange={(v) => updateEntry(idx, { key: v })}
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
 				<HStack>
 					<SelectControl
-						label={ __( 'Compare', 'designsetgo' ) }
-						value={ clause.compare }
-						options={ COMPARE_OPTIONS }
-						onChange={ ( v ) => updateEntry( idx, { compare: v } ) }
+						label={__('Compare', 'designsetgo')}
+						value={clause.compare}
+						options={COMPARE_OPTIONS}
+						onChange={(v) => updateEntry(idx, { compare: v })}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
 					<SelectControl
-						label={ __( 'Type', 'designsetgo' ) }
-						value={ clause.type }
-						options={ TYPE_OPTIONS }
-						onChange={ ( v ) => updateEntry( idx, { type: v } ) }
+						label={__('Type', 'designsetgo')}
+						value={clause.type}
+						options={TYPE_OPTIONS}
+						onChange={(v) => updateEntry(idx, { type: v })}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
 				</HStack>
-				{ ! hideValue && (
+				{!hideValue && (
 					<TextControl
-						label={ __( 'Value', 'designsetgo' ) }
-						value={ clause.value }
-						onChange={ ( v ) => updateEntry( idx, { value: v } ) }
+						label={__('Value', 'designsetgo')}
+						value={clause.value}
+						onChange={(v) => updateEntry(idx, { value: v })}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-				) }
+				)}
 				<Button
 					isDestructive
 					variant="tertiary"
-					onClick={ () => removeEntry( idx ) }
-					aria-label={ sprintf(
+					onClick={() => removeEntry(idx)}
+					aria-label={sprintf(
 						/* translators: %s: meta key being removed, or "(empty)" when blank. */
-						__( 'Remove meta filter for "%s"', 'designsetgo' ),
-						clause.key || __( '(empty)', 'designsetgo' )
-					) }
+						__('Remove meta filter for "%s"', 'designsetgo'),
+						clause.key || __('(empty)', 'designsetgo')
+					)}
 					__next40pxDefaultSize
 				>
-					{ __( 'Remove', 'designsetgo' ) }
+					{__('Remove', 'designsetgo')}
 				</Button>
 			</VStack>
 		);
@@ -103,25 +105,25 @@ export default function MetaQueryBuilder( {
 
 	return (
 		<DsgoInspectorPanel
-			title={ __( 'Meta filters', 'designsetgo' ) }
+			title={__('Meta filters', 'designsetgo')}
 			panelName="settings"
-			panelId={ clientId }
-			resetAll={ () => setAttributes( { metaQuery: EMPTY_DEFAULT } ) }
+			panelId={clientId}
+			resetAll={() => setAttributes({ metaQuery: EMPTY_DEFAULT })}
 		>
 			<DsgoInspectorPanel.Item
-				label={ __( 'Meta query', 'designsetgo' ) }
-				hasValue={ () => metaQuery.clauses.length > 0 }
-				onDeselect={ () => setAttributes( { metaQuery: EMPTY_DEFAULT } ) }
+				label={__('Meta query', 'designsetgo')}
+				hasValue={() => metaQuery.clauses.length > 0}
+				onDeselect={() => setAttributes({ metaQuery: EMPTY_DEFAULT })}
 				isShownByDefault
 			>
 				<ClauseGroupShell
-					group={ metaQuery }
-					onChange={ ( patch ) =>
-						setAttributes( { metaQuery: { ...metaQuery, ...patch } } )
+					group={metaQuery}
+					onChange={(patch) =>
+						setAttributes({ metaQuery: { ...metaQuery, ...patch } })
 					}
-					depth={ 0 }
-					newClause={ NEW_CLAUSE }
-					renderClause={ renderClause }
+					depth={0}
+					newClause={NEW_CLAUSE}
+					renderClause={renderClause}
 				/>
 			</DsgoInspectorPanel.Item>
 		</DsgoInspectorPanel>

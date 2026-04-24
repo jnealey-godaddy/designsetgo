@@ -5,22 +5,13 @@ import {
 	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import { useSelect } from '@wordpress/data';
+import { store as coreStore } from '@wordpress/core-data';
 import { __ } from '@wordpress/i18n';
-import {
-	PanelBody,
-	RangeControl,
-	SelectControl,
-	TextControl,
-	Placeholder,
-} from '@wordpress/components';
+import { Placeholder } from '@wordpress/components';
 
 import EditorPreviewList from '../query/components/EditorPreviewList';
 import { RESULT_TEMPLATE } from '../query/edit-template';
-import {
-	GROUP_BY_OPTIONS,
-	DATE_PRECISION_OPTIONS,
-} from '../query/components/QuerySourcePanel';
-import { store as coreStore } from '@wordpress/core-data';
+import ResultsLayoutControls from '../query/components/ResultsLayoutControls';
 
 const EMPTY_BLOCKS = Object.freeze([]);
 
@@ -29,6 +20,7 @@ const EMPTY_BLOCKS = Object.freeze([]);
  * return its attributes. The query-results block depends on the parent for
  * source / postType / perPage / taxQuery / etc. — everything needed by the
  * REST render endpoint that powers the editor preview.
+ * @param {string} clientId The block clientId to walk up from.
  */
 function useParentQueryAttributes(clientId) {
 	return useSelect(
@@ -55,8 +47,6 @@ export default function QueryResultsEdit({
 }) {
 	const parentAttrs = useParentQueryAttributes(clientId);
 
-	// Taxonomy list for the group-by-taxonomy key selector. Filtered to visible
-	// taxonomies (show_in_rest) since hidden ones can't be queried from here.
 	const taxonomyOptions = useSelect((select) => {
 		const taxes = select(coreStore).getTaxonomies({ per_page: -1 }) || [];
 		return taxes
@@ -66,17 +56,6 @@ export default function QueryResultsEdit({
 				label: t.labels?.singular_name || t.name || t.slug,
 			}));
 	}, []);
-
-	const groupBy = attributes.groupBy || null;
-	const groupByField = groupBy?.field || 'none';
-
-	const handleGroupByFieldChange = (value) => {
-		if (value === 'none') {
-			setAttributes({ groupBy: null });
-		} else {
-			setAttributes({ groupBy: { field: value, key: '' } });
-		}
-	};
 
 	const hasInnerBlocks = useSelect(
 		(select) =>
@@ -91,14 +70,18 @@ export default function QueryResultsEdit({
 		[clientId]
 	);
 
+	const variantClass = attributes.layoutVariant
+		? `is-layout-${attributes.layoutVariant}`
+		: '';
 	const blockProps = useBlockProps({
-		className: 'dsgo-query-results',
+		className: `dsgo-query-results ${variantClass}`.trim(),
 		style: {
 			'--dsgo-query-columns': attributes.columns || 1,
 			'--dsgo-query-columns-tablet':
 				attributes.columnsTablet || attributes.columns || 1,
 			'--dsgo-query-columns-mobile': attributes.columnsMobile || 1,
-			'--dsgo-query-gap': attributes.columnGap || undefined,
+			'--dsgo-query-first-col-span': attributes.firstItemColumnSpan || 1,
+			'--dsgo-query-first-row-span': attributes.firstItemRowSpan || 1,
 		},
 	});
 
@@ -134,7 +117,8 @@ export default function QueryResultsEdit({
 		columns: attributes.columns,
 		columnsTablet: attributes.columnsTablet,
 		columnsMobile: attributes.columnsMobile,
-		columnGap: attributes.columnGap,
+		firstItemColumnSpan: attributes.firstItemColumnSpan,
+		firstItemRowSpan: attributes.firstItemRowSpan,
 		groupBy: attributes.groupBy,
 	};
 
@@ -147,142 +131,27 @@ export default function QueryResultsEdit({
 	return (
 		<>
 			<InspectorControls>
-				<PanelBody title={__('Layout', 'designsetgo')} initialOpen>
-					<RangeControl
-						label={__('Columns', 'designsetgo')}
-						value={attributes.columns || 1}
-						min={1}
-						max={6}
-						onChange={(v) => setAttributes({ columns: v })}
-						__nextHasNoMarginBottom
-						__next40pxDefaultSize
-					/>
-					<RangeControl
-						label={__('Columns (tablet)', 'designsetgo')}
-						help={__(
-							'0 inherits the desktop column count.',
-							'designsetgo'
-						)}
-						value={attributes.columnsTablet || 0}
-						min={0}
-						max={6}
-						onChange={(v) => setAttributes({ columnsTablet: v })}
-						__nextHasNoMarginBottom
-						__next40pxDefaultSize
-					/>
-					<RangeControl
-						label={__('Columns (mobile)', 'designsetgo')}
-						value={attributes.columnsMobile || 1}
-						min={1}
-						max={3}
-						onChange={(v) => setAttributes({ columnsMobile: v })}
-						__nextHasNoMarginBottom
-						__next40pxDefaultSize
-					/>
-					<TextControl
-						label={__('Column gap', 'designsetgo')}
-						help={__(
-							'e.g. 1.5rem, 24px. Leave blank for theme default.',
-							'designsetgo'
-						)}
-						value={attributes.columnGap || ''}
-						onChange={(v) => setAttributes({ columnGap: v })}
-						__nextHasNoMarginBottom
-						__next40pxDefaultSize
-					/>
-					<SelectControl
-						label={__('List tag', 'designsetgo')}
-						value={attributes.tagName || 'ul'}
-						options={[
-							{ label: 'ul', value: 'ul' },
-							{ label: 'ol', value: 'ol' },
-							{ label: 'div', value: 'div' },
-						]}
-						onChange={(v) => setAttributes({ tagName: v })}
-						__nextHasNoMarginBottom
-						__next40pxDefaultSize
-					/>
-					<SelectControl
-						label={__('Item tag', 'designsetgo')}
-						value={attributes.itemTagName || 'li'}
-						options={[
-							{ label: 'li', value: 'li' },
-							{ label: 'div', value: 'div' },
-							{ label: 'article', value: 'article' },
-						]}
-						onChange={(v) => setAttributes({ itemTagName: v })}
-						__nextHasNoMarginBottom
-						__next40pxDefaultSize
-					/>
-				</PanelBody>
-
-				<PanelBody title={__('Group by', 'designsetgo')} initialOpen={false}>
-					<SelectControl
-						label={__('Group by', 'designsetgo')}
-						value={groupByField}
-						options={GROUP_BY_OPTIONS}
-						onChange={handleGroupByFieldChange}
-						help={__(
-							'Grouped output requires a Query group header block inside this results template.',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-						__next40pxDefaultSize
-					/>
-
-					{groupByField === 'taxonomy' && (
-						<SelectControl
-							label={__('Group taxonomy', 'designsetgo')}
-							value={groupBy?.key || ''}
-							options={[
-								{
-									value: '',
-									label: __('— Select —', 'designsetgo'),
-								},
-								...taxonomyOptions,
-							]}
-							onChange={(v) =>
-								setAttributes({
-									groupBy: { ...groupBy, key: v },
-								})
-							}
-							__nextHasNoMarginBottom
-							__next40pxDefaultSize
-						/>
-					)}
-
-					{groupByField === 'meta' && (
-						<TextControl
-							label={__('Group meta key', 'designsetgo')}
-							value={groupBy?.key || ''}
-							onChange={(v) =>
-								setAttributes({
-									groupBy: { ...groupBy, key: v },
-								})
-							}
-							__nextHasNoMarginBottom
-							__next40pxDefaultSize
-						/>
-					)}
-
-					{groupByField === 'date' && (
-						<SelectControl
-							label={__('Date precision', 'designsetgo')}
-							value={groupBy?.key || 'Y'}
-							options={DATE_PRECISION_OPTIONS}
-							onChange={(v) =>
-								setAttributes({
-									groupBy: { ...groupBy, key: v },
-								})
-							}
-							__nextHasNoMarginBottom
-							__next40pxDefaultSize
-						/>
-					)}
-				</PanelBody>
+				<ResultsLayoutControls
+					attributes={attributes}
+					set={setAttributes}
+					panelId={clientId}
+					taxonomyOptions={taxonomyOptions}
+				/>
 			</InspectorControls>
-
-			<div {...blockProps}>
+			<div
+				{...blockProps}
+				onClickCapture={(event) => {
+					// Prevent navigation when authors click post-title, featured-image,
+					// or any bound link inside the editor preview. Real anchors land
+					// here from server-rendered readonly items and from core blocks
+					// like core/post-title{isLink:true}. Scope to real hrefs so we
+					// don't interfere with in-editor anchor tooling.
+					const anchor = event.target.closest?.('a[href]');
+					if (anchor) {
+						event.preventDefault();
+					}
+				}}
+			>
 				<div className="dsgo-query-results__editor-grid">
 					{showLivePreview && hasInnerBlocks ? (
 						<EditorPreviewList

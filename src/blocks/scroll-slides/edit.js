@@ -30,12 +30,7 @@ import QueryHostReadOnlyItem from '../query/components/QueryHostReadOnlyItem';
 const ALLOWED_BLOCKS = ['designsetgo/scroll-slide'];
 const MAX_SLIDES = 10;
 
-export default function Edit({
-	attributes,
-	setAttributes,
-	clientId,
-	context,
-}) {
+export default function Edit({ attributes, setAttributes, clientId, context }) {
 	const {
 		minHeight,
 		maxHeight,
@@ -93,11 +88,15 @@ export default function Edit({
 		enabled: inQueryMode && !!parentQueryAttrs,
 	});
 
-	// Clamp active slide to valid range when slides are removed
+	// Clamp active slide to valid range. In query mode the panel count is
+	// driven by the preview record count; outside of query mode by the
+	// authored inner blocks count.
+	const previewRecords = Array.isArray(preview?.records)
+		? preview.records
+		: [];
+	const slideCount = inQueryMode ? previewRecords.length : innerBlocks.length;
 	const clampedActive =
-		innerBlocks.length > 0
-			? Math.min(activeSlide, innerBlocks.length - 1)
-			: 0;
+		slideCount > 0 ? Math.min(activeSlide, slideCount - 1) : 0;
 
 	const blockClassName = [
 		'dsgo-scroll-slides',
@@ -146,6 +145,21 @@ export default function Edit({
 				slideStyle.background?.backgroundPosition || 'center';
 			editorBgStyle.backgroundRepeat =
 				slideStyle.background?.backgroundRepeat || 'no-repeat';
+		}
+	}
+
+	// In query mode, the active record's featured image becomes the panel
+	// background — mirroring what scroll-slide/render.php injects on the
+	// frontend when the template has no authored background.
+	if (inQueryMode && !editorBgStyle.backgroundImage) {
+		const activeRecord = previewRecords[clampedActive];
+		const featuredUrl =
+			activeRecord?._embedded?.['wp:featuredmedia']?.[0]?.source_url;
+		if (featuredUrl) {
+			editorBgStyle.backgroundImage = `url(${featuredUrl})`;
+			editorBgStyle.backgroundSize = 'cover';
+			editorBgStyle.backgroundPosition = 'center';
+			editorBgStyle.backgroundRepeat = 'no-repeat';
 		}
 	}
 
@@ -200,7 +214,10 @@ export default function Edit({
 	 */
 	const handleNavClick = (index) => {
 		setActiveSlide(index);
-		if (innerBlocks[index]) {
+		// Only select the authored child when it exists (outside query mode
+		// there is one block per nav item; in query mode there is only a
+		// single template block regardless of the active preview record).
+		if (!inQueryMode && innerBlocks[index]) {
 			selectBlock(innerBlocks[index].clientId);
 		}
 	};
@@ -262,7 +279,18 @@ export default function Edit({
 				themeContentSize={themeContentSize}
 			/>
 
-			<div {...blockProps}>
+			<div
+				{...blockProps}
+				onClickCapture={(event) => {
+					// Kill link navigation inside the editor — real anchors come
+					// from authored post-title/featured-image blocks and from
+					// server-rendered readonly slides in query mode.
+					const anchor = event.target.closest?.('a[href]');
+					if (anchor) {
+						event.preventDefault();
+					}
+				}}
+			>
 				{hasEditorBg && (
 					<div
 						className="dsgo-scroll-slides__editor-bg"
@@ -271,41 +299,84 @@ export default function Edit({
 					/>
 				)}
 				<div className="dsgo-scroll-slides__inner" style={innerStyle}>
-					{/* Navigation — editable headings, click to switch slide */}
-					{innerBlocks.length > 0 && (
-						<div className="dsgo-scroll-slides__editor-nav">
-							{innerBlocks.map((block, index) => (
-								<div
-									key={block.clientId}
-									className={`dsgo-scroll-slides__editor-nav-item${
-										index === clampedActive
-											? ' is-active'
-											: ''
-									}`}
-								>
-									<input
-										type="text"
-										className="dsgo-scroll-slides__editor-nav-input"
-										value={
-											block.attributes.navHeading || ''
-										}
-										placeholder={sprintf(
-											/* translators: %d: slide number */
-											__('Slide %d', 'designsetgo'),
-											index + 1
-										)}
-										onChange={(e) =>
-											handleNavHeadingChange(
-												index,
-												e.target.value
-											)
-										}
-										onFocus={() => handleNavClick(index)}
-									/>
+					{/* Navigation — editable headings outside query mode; in
+					    query mode, one read-only heading per preview record
+					    (post title, user name, term name, etc.). */}
+					{inQueryMode
+						? slideCount > 0 && (
+								<div className="dsgo-scroll-slides__editor-nav">
+									{previewRecords.map((record, index) => {
+										const heading =
+											record?.title?.rendered ||
+											record?.name ||
+											sprintf(
+												/* translators: %d: slide number */
+												__('Slide %d', 'designsetgo'),
+												index + 1
+											);
+										return (
+											<div
+												key={record?.id ?? index}
+												className={`dsgo-scroll-slides__editor-nav-item${
+													index === clampedActive
+														? ' is-active'
+														: ''
+												}`}
+											>
+												<button
+													type="button"
+													className="dsgo-scroll-slides__editor-nav-input"
+													onClick={() =>
+														handleNavClick(index)
+													}
+												>
+													{heading}
+												</button>
+											</div>
+										);
+									})}
 								</div>
-							))}
-						</div>
-					)}
+							)
+						: innerBlocks.length > 0 && (
+								<div className="dsgo-scroll-slides__editor-nav">
+									{innerBlocks.map((block, index) => (
+										<div
+											key={block.clientId}
+											className={`dsgo-scroll-slides__editor-nav-item${
+												index === clampedActive
+													? ' is-active'
+													: ''
+											}`}
+										>
+											<input
+												type="text"
+												className="dsgo-scroll-slides__editor-nav-input"
+												value={
+													block.attributes
+														.navHeading || ''
+												}
+												placeholder={sprintf(
+													/* translators: %d: slide number */
+													__(
+														'Slide %d',
+														'designsetgo'
+													),
+													index + 1
+												)}
+												onChange={(e) =>
+													handleNavHeadingChange(
+														index,
+														e.target.value
+													)
+												}
+												onFocus={() =>
+													handleNavClick(index)
+												}
+											/>
+										</div>
+									))}
+								</div>
+							)}
 
 					{/* Slide panels — all rendered, CSS shows only active */}
 					{inQueryMode ? (
@@ -329,6 +400,11 @@ export default function Edit({
  * editable InnerBlocks slot (the template scroll-slide); panels 1..N are
  * read-only server-rendered panels. Each panel is wrapped in a
  * BlockContextProvider so bindings resolve against the iterated post.
+ * @param {Object} root0                  Props.
+ * @param {Object} root0.innerBlocksProps useInnerBlocksProps result.
+ * @param {Object} root0.preview          useQueryHostPreview result.
+ * @param {Object} root0.parentQueryAttrs Parent query's attributes.
+ * @param {Object} root0.outerContext     Outer block context.
  */
 function QueryModePanels({
 	innerBlocksProps,
@@ -368,7 +444,7 @@ function QueryModePanels({
 	}
 
 	return (
-		<div className="dsgo-scroll-slides__editor-panels">
+		<div className="dsgo-scroll-slides__editor-panels dsgo-scroll-slides__editor-panels--query-mode">
 			{items.map((item, idx) => {
 				const itemContext = buildItemContext(
 					item,

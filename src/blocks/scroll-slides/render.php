@@ -39,6 +39,15 @@ if ( '' === $query_id ) {
 }
 
 // Query mode — pull pre-rendered items from the parent container's stash.
+// Inner blocks render before their parent's render_callback fires, so we
+// can't rely on the query container having loaded the shared helpers yet.
+$helpers = DESIGNSETGO_PATH . 'build/blocks/query/render-helpers.php';
+if ( ! file_exists( $helpers ) ) {
+	echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-rendered save.js output.
+	return;
+}
+require_once $helpers;
+
 $items_html = '';
 if ( isset( $GLOBALS['designsetgo_query_items_html'][ $query_id ] ) ) {
 	$items_html = (string) $GLOBALS['designsetgo_query_items_html'][ $query_id ];

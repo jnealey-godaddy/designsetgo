@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "title": "Query Pagination",
   "category": "designsetgo",
-  "parent": ["designsetgo/query"],
+  "ancestor": ["designsetgo/query"],
   "description": "Pagination controls for the Dynamic Query block. Supports numbered links and Interactivity-API load-more.",
   "keywords": ["pagination", "load more"],
   "textdomain": "designsetgo",
@@ -38,7 +38,8 @@
     "showPrevNext": { "type": "boolean", "default": true },
     "autoPauseAfter": { "type": "number", "default": 3 },
     "sentinelOffsetPx": { "type": "number", "default": 200 },
-    "buttonLabelWhenPaused": { "type": "string", "default": "Load more" }
+    "buttonLabelWhenPaused": { "type": "string", "default": "Load more" },
+    "alignment": { "type": "string", "default": "left", "enum": ["left", "center", "right"] }
   },
   "example": { "attributes": { "mode": "numbered" } },
   "editorScript": "file:./index.js",

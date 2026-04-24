@@ -14,7 +14,6 @@
     "anchor": true,
     "html": false,
     "inserter": false,
-    "multiple": false,
     "reusable": false,
     "color": {
       "background": true,
@@ -41,8 +40,10 @@
     "columns": { "type": "number", "default": 1 },
     "columnsTablet": { "type": "number", "default": 0 },
     "columnsMobile": { "type": "number", "default": 0 },
-    "columnGap": { "type": "string", "default": "" },
-    "groupBy": { "type": "object", "default": null }
+    "firstItemColumnSpan": { "type": "number", "default": 1 },
+    "firstItemRowSpan": { "type": "number", "default": 1 },
+    "groupBy": { "type": "object", "default": null },
+    "layoutVariant": { "type": "string", "default": "" }
   },
   "example": { "attributes": { "columns": 3 } },
   "editorScript": "file:./index.js",

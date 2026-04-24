@@ -18,8 +18,8 @@ import { Spinner, Placeholder } from '@wordpress/components';
 
 /**
  * @param {Object}      props
- * @param {string|null} props.html    Rendered inner HTML for this item.
- * @param {boolean}     props.loading True while the server render is in flight.
+ * @param {string|null} props.html        Rendered inner HTML for this item.
+ * @param {boolean}     props.loading     True while the server render is in flight.
  * @param {string}      [props.className] Optional wrapping className.
  */
 export default function QueryHostReadOnlyItem({ html, loading, className }) {

@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "title": "Query Filter",
   "category": "designsetgo",
-  "parent": ["designsetgo/query"],
+  "ancestor": ["designsetgo/query"],
   "description": "Filter, search, sort, or reset a Dynamic Query via URL parameters with no page reload.",
   "keywords": ["filter", "facet", "search", "sort", "query"],
   "textdomain": "designsetgo",
@@ -44,7 +44,8 @@
       ]
     },
     "showCounts": { "type": "boolean", "default": true },
-    "orientation": { "type": "string", "default": "vertical", "enum": ["vertical", "horizontal"] }
+    "orientation": { "type": "string", "default": "vertical", "enum": ["vertical", "horizontal"] },
+    "filterStyle": { "type": "string", "default": "underline", "enum": ["default", "pill", "underline"] }
   },
   "example": { "attributes": { "filterKind": "checkbox" } },
   "editorScript": "file:./index.js",

@@ -38,7 +38,9 @@ jest.mock('@wordpress/block-editor', () => ({ store: 'core/block-editor' }));
 jest.mock('@wordpress/notices', () => ({ store: 'core/notices' }));
 jest.mock('@wordpress/blocks', () => ({
 	parse: jest.fn(() => [{ name: 'designsetgo/query' }]),
-	serialize: jest.fn(() => '<!-- wp:paragraph --><p>Item</p><!-- /wp:paragraph -->'),
+	serialize: jest.fn(
+		() => '<!-- wp:paragraph --><p>Item</p><!-- /wp:paragraph -->'
+	),
 }));
 
 jest.mock('@wordpress/components', () => ({
@@ -164,10 +166,9 @@ describe('TemplateIO', () => {
 		fireEvent.click(screen.getByText('Export template'));
 
 		await waitFor(() =>
-			expect(mockCreateErrorNotice).toHaveBeenCalledWith(
-				'Blob failure',
-				{ type: 'snackbar' }
-			)
+			expect(mockCreateErrorNotice).toHaveBeenCalledWith('Blob failure', {
+				type: 'snackbar',
+			})
 		);
 		global.Blob = originalBlob;
 	});
@@ -206,7 +207,10 @@ describe('TemplateIO', () => {
 		);
 
 		await waitFor(() =>
-			expect(mockReplaceBlocks).toHaveBeenCalledWith('c1', expect.any(Array))
+			expect(mockReplaceBlocks).toHaveBeenCalledWith(
+				'c1',
+				expect.any(Array)
+			)
 		);
 		expect(parse).toHaveBeenCalled();
 	});

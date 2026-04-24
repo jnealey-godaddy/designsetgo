@@ -28,15 +28,15 @@ describe('normalizeRelationshipIds', () => {
 	});
 
 	it('handles array of WP_Post-style objects with .ID', () => {
-		expect(
-			normalizeRelationshipIds([{ ID: 12 }, { ID: 34 }])
-		).toEqual([12, 34]);
+		expect(normalizeRelationshipIds([{ ID: 12 }, { ID: 34 }])).toEqual([
+			12, 34,
+		]);
 	});
 
 	it('handles array of REST-style objects with .id (lowercase)', () => {
-		expect(
-			normalizeRelationshipIds([{ id: 12 }, { id: 34 }])
-		).toEqual([12, 34]);
+		expect(normalizeRelationshipIds([{ id: 12 }, { id: 34 }])).toEqual([
+			12, 34,
+		]);
 	});
 
 	it('handles comma-separated string', () => {

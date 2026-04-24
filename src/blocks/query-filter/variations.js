@@ -3,10 +3,10 @@ import { __ } from '@wordpress/i18n';
 export default [
 	{
 		name: 'checkbox',
-		title: __('Taxonomy checkboxes', 'designsetgo'),
+		title: __('Taxonomy (multi-select)', 'designsetgo'),
 		icon: 'list-view',
 		description: __(
-			'Filter by taxonomy term via checkboxes.',
+			'Multi-select taxonomy filter — render as checkboxes, pills, or underlined tabs.',
 			'designsetgo'
 		),
 		attributes: { filterKind: 'checkbox', paramName: 'filter_category' },
@@ -15,10 +15,10 @@ export default [
 	},
 	{
 		name: 'select',
-		title: __('Taxonomy dropdown', 'designsetgo'),
+		title: __('Taxonomy (dropdown)', 'designsetgo'),
 		icon: 'menu',
 		description: __(
-			'Filter by taxonomy term via single-select dropdown.',
+			'Single-select taxonomy dropdown.',
 			'designsetgo'
 		),
 		attributes: { filterKind: 'select', paramName: 'filter_category' },
@@ -56,7 +56,11 @@ export default [
 		title: __('Reset button', 'designsetgo'),
 		icon: 'undo',
 		description: __('Clear all filter params.', 'designsetgo'),
-		attributes: { filterKind: 'reset', paramName: '' },
+		attributes: {
+			filterKind: 'reset',
+			paramName: '',
+			label: __('Reset', 'designsetgo'),
+		},
 		scope: ['inserter', 'transform'],
 	},
 ];

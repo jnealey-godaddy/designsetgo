@@ -36,12 +36,12 @@ import useQueryPreview from './useQueryPreview';
 import useRenderedItems from './useRenderedItems';
 
 /**
- * @param {Object} root0
- * @param {Object} root0.attributes  Parent query block attributes (source,
- *                                   postType, perPage, filters, etc.).
- * @param {string} root0.queryId     Parent query's queryId attribute.
- * @param {Array}  root0.innerBlocks Template block tree (rendered once per item).
- * @param {boolean} [root0.enabled]  Skip all fetching when false.
+ * @param {Object}  root0
+ * @param {Object}  root0.attributes  Parent query block attributes (source,
+ *                                    postType, perPage, filters, etc.).
+ * @param {string}  root0.queryId     Parent query's queryId attribute.
+ * @param {Array}   root0.innerBlocks Template block tree (rendered once per item).
+ * @param {boolean} [root0.enabled]   Skip all fetching when false.
  * @return {{
  *   records: Array|null,
  *   hasResolved: boolean,
@@ -85,8 +85,8 @@ export default function useQueryHostPreview({
 	const { records, hasResolved } = isPostsLike
 		? postsData
 		: isRelationship
-		? relationshipData
-		: remoteData;
+			? relationshipData
+			: remoteData;
 
 	return {
 		records,
@@ -135,7 +135,7 @@ function usePosts(attributes, enabled) {
 						__('Post %d', 'designsetgo'),
 						post.id
 					),
-		  }))
+			}))
 		: null;
 
 	return { records: mapped, hasResolved: result.hasResolved };
@@ -216,9 +216,9 @@ function buildCoreDataQuery(attributes) {
  * blocks (and Block Bindings) resolve against the iterated post/user/term
  * just like they do on the frontend.
  *
- * @param {Object} item      Preview item.
- * @param {string} source    Query source attribute.
- * @param {number} index     Zero-based item index.
+ * @param {Object} item       Preview item.
+ * @param {string} source     Query source attribute.
+ * @param {number} index      Zero-based item index.
  * @param {Object} [outerCtx] Outer block context (may contain parentItem).
  * @return {Object} Context object.
  */

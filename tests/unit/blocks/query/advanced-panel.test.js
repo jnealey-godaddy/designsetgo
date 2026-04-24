@@ -180,18 +180,10 @@ describe('AdvancedPanel', () => {
 		).toBeInTheDocument();
 	});
 
-	it('Wrapper tag SelectControl is present', () => {
-		renderWith();
-		// SelectControl uses label as aria-label — ToolsPanelItem default is isShownByDefault=true
-		// but our mock hides items with isShownByDefault=false; Wrapper tag has no explicit
-		// isShownByDefault so it defaults to truthy and renders.
-		expect(screen.getByLabelText(/wrapper tag/i)).toBeInTheDocument();
-	});
-
-	it('Item tag SelectControl is present', () => {
-		renderWith();
-		expect(screen.getByLabelText(/item tag/i)).toBeInTheDocument();
-	});
+	// Wrapper / Item tag SelectControls moved out of AdvancedPanel into the
+	// shared ResultsLayoutControls when the Results layout panel was added to
+	// both the parent query inspector and the query-results child inspector.
+	// Those controls are now covered by the ResultsLayoutControls-level tests.
 
 	it('Manual IDs filters out non-positive integers', () => {
 		const { setAttributes } = renderWith({
