@@ -1,11 +1,11 @@
 .dsgo-dynamic-tag-picker {
-	// `className` on WP's Modal lands on `.components-modal__frame`, so
-	// these rules cap the OUTER frame to the viewport. Without this the
-	// modal grows with its content, the Cancel / Use this source CTAs
-	// land below the bottom edge, and authors have to page-scroll to
-	// reach them.
+	// `className` on WP's Modal lands on `.components-modal__frame`. Pin
+	// the frame to a sensible fraction of the viewport (rather than
+	// auto-sizing) so the inner sidebar/detail scroll INSIDE the modal
+	// and the footer is always visible — auto-sizing pushed the footer
+	// below the screen on tall source lists.
+	height: min(640px, 80vh);
 	max-height: calc(100vh - 64px);
-	height: auto;
 	display: flex;
 	flex-direction: column;
 
@@ -21,7 +21,7 @@
 	&__layout {
 		display: grid;
 		grid-template-columns: 260px 1fr;
-		flex: 1 1 auto;
+		flex: 1 1 0;
 		min-height: 0;
 		overflow: hidden;
 		border-top: 1px solid #ddd;
