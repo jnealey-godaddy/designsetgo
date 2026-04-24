@@ -274,6 +274,11 @@ class Settings {
 				'title'       => __( 'Draft Mode', 'designsetgo' ),
 				'description' => __( 'Create draft versions of published pages for safe editing', 'designsetgo' ),
 			),
+			array(
+				'name'        => 'dynamic-tags',
+				'title'       => __( 'Dynamic Tags', 'designsetgo' ),
+				'description' => __( 'Bind block attributes to post / site / archive / user data or custom fields (ACF, Meta Box, Pods, JetEngine).', 'designsetgo' ),
+			),
 		);
 	}
 

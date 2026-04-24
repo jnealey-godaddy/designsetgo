@@ -841,6 +841,8 @@ class Plugin {
 			$settings        = $settings ?? \DesignSetGo\Admin\Settings::get_settings();
 			$excluded_blocks = isset( $settings['excluded_blocks'] ) ? $settings['excluded_blocks'] : array();
 
+			$enabled_extensions = isset( $settings['enabled_extensions'] ) ? (array) $settings['enabled_extensions'] : array();
+
 			wp_localize_script(
 				'designsetgo-extensions',
 				'dsgoSettings',
@@ -849,6 +851,9 @@ class Plugin {
 					'defaultIconButtonHover' => isset( $settings['animations']['default_icon_button_hover'] )
 						? sanitize_key( $settings['animations']['default_icon_button_hover'] )
 						: 'fill-diagonal',
+					// Empty list = all extensions enabled (matches the
+					// PHP convention in Block_Manager::should_load_extension).
+					'enabledExtensions'      => array_values( array_map( 'sanitize_key', $enabled_extensions ) ),
 				)
 			);
 		}
