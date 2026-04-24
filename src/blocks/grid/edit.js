@@ -6,7 +6,7 @@
  * @since 1.0.0
  */
 
-import { __, sprintf } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
@@ -206,7 +206,12 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 								key={count}
 								label={sprintf(
 									/* translators: %d: number of columns */
-									__('%d Columns', 'designsetgo'),
+									_n(
+										'%d Column',
+										'%d Columns',
+										count,
+										'designsetgo'
+									),
 									count
 								)}
 								isActive={desktopColumns === count}
