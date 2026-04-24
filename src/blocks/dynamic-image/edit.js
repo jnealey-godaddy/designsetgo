@@ -27,8 +27,9 @@ import {
 	Spinner,
 	__experimentalHStack as HStack,
 } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { useSelect } from '@wordpress/data';
+import { useMemo } from '@wordpress/element';
 import { store as editorStore } from '@wordpress/editor';
 
 import {
@@ -123,6 +124,30 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 				{ label: __('Large', 'designsetgo'), value: 'large' },
 				{ label: __('Full', 'designsetgo'), value: 'full' },
 			];
+
+	// If a stored aspectRatio value isn't one of our presets (e.g. a
+	// custom 4/5 saved by an earlier free-text version of this control),
+	// surface it as an extra option so authors can still see and edit
+	// it instead of the dropdown silently snapping to "Original".
+	const aspectRatioOptions = useMemo(() => {
+		if (
+			!aspectRatio ||
+			ASPECT_RATIO_OPTIONS.some((opt) => opt.value === aspectRatio)
+		) {
+			return ASPECT_RATIO_OPTIONS;
+		}
+		return [
+			...ASPECT_RATIO_OPTIONS,
+			{
+				label: sprintf(
+					/* translators: %s: custom aspect-ratio value such as 4/5 */
+					__('Custom (%s)', 'designsetgo'),
+					aspectRatio
+				),
+				value: aspectRatio,
+			},
+		];
+	}, [aspectRatio]);
 
 	const preview = useDynamicTagPreview({
 		source,
@@ -236,7 +261,7 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 						<SelectControl
 							label={__('Aspect ratio', 'designsetgo')}
 							value={aspectRatio}
-							options={ASPECT_RATIO_OPTIONS}
+							options={aspectRatioOptions}
 							onChange={(value) =>
 								setAttributes({ aspectRatio: value })
 							}

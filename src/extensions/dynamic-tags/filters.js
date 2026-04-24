@@ -71,7 +71,7 @@ const dynamicIcon = (
 	</svg>
 );
 
-function withDynamicTagsBindingsState({ attributes, setAttributes }) {
+function getDynamicTagsBindings({ attributes, setAttributes }) {
 	const metadata = attributes.metadata || {};
 	const bindings = metadata.bindings || {};
 
@@ -214,7 +214,7 @@ const withDynamicTagsControls = createHigherOrderComponent((BlockEdit) => {
 			return <BlockEdit {...props} />;
 		}
 
-		const { bindings, setBinding } = withDynamicTagsBindingsState(props);
+		const { bindings, setBinding } = getDynamicTagsBindings(props);
 
 		return (
 			<Fragment>
