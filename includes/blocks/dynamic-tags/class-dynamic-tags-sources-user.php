@@ -36,7 +36,7 @@ class UserSources {
 			array( 'text' ),
 			static function ( $args, $block, $attr ) {
 				$user = wp_get_current_user();
-				if ( ! $user || 0 === (int) $user->ID ) {
+				if ( 0 === (int) $user->ID ) {
 					return null;
 				}
 				return (string) $user->display_name;
@@ -50,7 +50,7 @@ class UserSources {
 			array( 'image', 'url' ),
 			static function ( $args, $block, $attr ) {
 				$user = wp_get_current_user();
-				if ( ! $user || 0 === (int) $user->ID ) {
+				if ( 0 === (int) $user->ID ) {
 					return null;
 				}
 				$size = isset( $args['size'] ) ? (int) $args['size'] : 96;
@@ -69,7 +69,7 @@ class UserSources {
 			array( 'url' ),
 			static function ( $args, $block, $attr ) {
 				$user = wp_get_current_user();
-				if ( ! $user || 0 === (int) $user->ID ) {
+				if ( 0 === (int) $user->ID ) {
 					return null;
 				}
 				$url = (string) $user->user_url;
@@ -77,52 +77,50 @@ class UserSources {
 			}
 		);
 
-		/**
-		 * Controls whether the `designsetgo/current-user-email` source is
-		 * enabled. Disabled by default because exposing an email address on
-		 * the public frontend is almost always a privacy mistake.
-		 *
-		 * @since 2.2.0
-		 *
-		 * @param bool $enabled Whether to register the email source.
-		 */
-		if ( apply_filters( 'designsetgo_dynamic_tags_allow_email', false ) ) {
-			self::register_one(
-				$registry,
-				'designsetgo/current-user-email',
-				__( 'Current user email', 'designsetgo' ),
-				array( 'text' ),
-				static function ( $args, $block, $attr ) {
-					$user = wp_get_current_user();
-					if ( ! $user || 0 === (int) $user->ID ) {
-						return null;
-					}
-					return (string) $user->user_email;
-				},
-				'read'
-			);
-		}
+		// Always register the email source so plugins hooking `init` at the
+		// default priority (10) can still enable it; the value callback
+		// evaluates `designsetgo_dynamic_tags_allow_email` lazily at render
+		// time. Disabled by default because exposing an email on the public
+		// frontend is almost always a privacy mistake.
+		self::register_one(
+			$registry,
+			'designsetgo/current-user-email',
+			__( 'Current user email', 'designsetgo' ),
+			array( 'text' ),
+			static function ( $args, $block, $attr ) {
+				/**
+				 * Enables the `designsetgo/current-user-email` source.
+				 *
+				 * @since 2.2.0
+				 *
+				 * @param bool $enabled Whether to resolve the email source.
+				 */
+				if ( ! apply_filters( 'designsetgo_dynamic_tags_allow_email', false ) ) {
+					return null;
+				}
+				$user = wp_get_current_user();
+				if ( 0 === (int) $user->ID ) {
+					return null;
+				}
+				return (string) $user->user_email;
+			},
+			array(),
+			'read'
+		);
 	}
 
 	/**
 	 * Registers one source with both core Bindings and our metadata registry.
 	 *
-	 * @param Registry $registry     Metadata registry.
-	 * @param string   $slug         Binding source slug.
-	 * @param string   $label        Display label.
-	 * @param string[] $returns      Return types.
-	 * @param callable $callback     Value callback.
-	 * @param array    $args_schema  Optional arg schema.
-	 * @param string   $capability   Optional capability gate.
+	 * @param Registry $registry    Metadata registry.
+	 * @param string   $slug        Binding source slug.
+	 * @param string   $label       Display label.
+	 * @param string[] $returns     Return types.
+	 * @param callable $callback    Value callback.
+	 * @param array    $args_schema Optional arg schema.
+	 * @param string   $capability  Optional capability gate.
 	 */
-	private static function register_one( Registry $registry, $slug, $label, array $returns, callable $callback, $args_schema = array(), $capability = '' ) {
-		// Allow callers to pass capability as the 6th positional arg (string) or
-		// in the args_schema slot when there are no args.
-		if ( is_string( $args_schema ) ) {
-			$capability  = $args_schema;
-			$args_schema = array();
-		}
-
+	private static function register_one( Registry $registry, $slug, $label, array $returns, callable $callback, array $args_schema = array(), $capability = '' ) {
 		designsetgo_register_bindings_source(
 			$slug,
 			$callback,

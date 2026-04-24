@@ -249,7 +249,7 @@ class PostSources {
 				if ( ! $post_id || '' === $taxonomy || ! taxonomy_exists( $taxonomy ) ) {
 					return null;
 				}
-				$separator = isset( $args['separator'] ) ? (string) $args['separator'] : ', ';
+				$separator = isset( $args['separator'] ) ? sanitize_text_field( (string) $args['separator'] ) : ', ';
 				$terms     = get_the_term_list( $post_id, $taxonomy, '', $separator );
 				if ( is_wp_error( $terms ) || ! $terms ) {
 					return null;
@@ -334,7 +334,7 @@ class PostSources {
 					return null;
 				}
 				$idx = 'width' === $subkey ? 1 : 2;
-				return isset( $src[ $idx ] ) ? (string) $src[ $idx ] : null;
+				return (string) $src[ $idx ];
 			case 'url':
 			default:
 				$src = wp_get_attachment_image_src( $attachment_id, $size );

@@ -69,11 +69,11 @@ $alt = '' !== $alt_override ? $alt_override : (string) ( $descriptor['alt'] ?? '
 
 $figure_style = array();
 if ( '' !== $aspect_ratio ) {
-	$figure_style[] = 'aspect-ratio:' . esc_attr( $aspect_ratio );
+	$figure_style[] = 'aspect-ratio:' . $aspect_ratio;
 }
 
 $img_style = array(
-	'object-fit:' . esc_attr( $object_fit ),
+	'object-fit:' . $object_fit,
 );
 if ( isset( $focal['x'], $focal['y'] ) ) {
 	$img_style[] = sprintf(
@@ -120,7 +120,7 @@ if ( '' !== $href ) {
 	if ( '' !== $rel ) {
 		$link_attrs['rel'] = esc_attr( $rel );
 	} elseif ( '_blank' === $link_target ) {
-		$link_attrs['rel'] = 'noopener';
+		$link_attrs['rel'] = 'noopener noreferrer';
 	}
 	$link_open = '<a';
 	foreach ( $link_attrs as $key => $val ) {

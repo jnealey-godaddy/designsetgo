@@ -23,11 +23,11 @@ defined( 'ABSPATH' ) || exit;
 class Bootstrap {
 
 	/**
-	 * REST controller instance (kept for test access).
+	 * REST controller instance.
 	 *
 	 * @var RestController|null
 	 */
-	public $rest;
+	protected $rest;
 
 	/**
 	 * Wires the init and rest_api_init hooks.
@@ -37,6 +37,15 @@ class Bootstrap {
 
 		$this->rest = new RestController( Registry::instance() );
 		$this->rest->register_hooks();
+	}
+
+	/**
+	 * Returns the REST controller instance (test/debug accessor).
+	 *
+	 * @return RestController|null
+	 */
+	public function get_rest_controller() {
+		return $this->rest;
 	}
 
 	/**

@@ -5,7 +5,7 @@
  * (scalar string or image descriptor) so the picker can show users
  * exactly what will render on the frontend.
  */
-import { useEffect, useState, useRef } from '@wordpress/element';
+import { useEffect, useMemo, useState, useRef } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { addQueryArgs } from '@wordpress/url';
 
@@ -15,6 +15,11 @@ export function useDynamicTagPreview( { source, args, postId, size } ) {
 	const [ state, setState ] = useState( { status: 'idle', value: null, returns: null, error: null } );
 	const timerRef = useRef( null );
 	const requestRef = useRef( 0 );
+
+	// Stabilise the args dependency — serialising inside the effect would
+	// re-run JSON.stringify on every render, including renders where args
+	// has not changed.
+	const argsKey = useMemo( () => JSON.stringify( args || {} ), [ args ] );
 
 	useEffect( () => {
 		if ( ! source ) {
@@ -57,7 +62,7 @@ export function useDynamicTagPreview( { source, args, postId, size } ) {
 		return () => {
 			clearTimeout( timerRef.current );
 		};
-	}, [ source, JSON.stringify( args || {} ), postId, size ] );
+	}, [ source, argsKey, postId, size ] );
 
 	return state;
 }

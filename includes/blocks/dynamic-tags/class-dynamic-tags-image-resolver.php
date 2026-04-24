@@ -116,8 +116,8 @@ class ImageResolver {
 			'id'     => $attachment_id,
 			'url'    => (string) $src[0],
 			'alt'    => is_string( $alt ) ? $alt : '',
-			'width'  => isset( $src[1] ) ? (int) $src[1] : 0,
-			'height' => isset( $src[2] ) ? (int) $src[2] : 0,
+			'width'  => (int) $src[1],
+			'height' => (int) $src[2],
 		);
 	}
 

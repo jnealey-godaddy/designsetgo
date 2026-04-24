@@ -75,7 +75,7 @@ export default function DynamicTagPicker( {
 			setDraftArgs( value?.args || {} );
 			setSearch( '' );
 		}
-	}, [ isOpen, value?.source ] );
+	}, [ isOpen, value?.source, value?.args ] );
 
 	const activeSource = useMemo(
 		() => sources.find( ( s ) => s.slug === selectedSource ) || null,

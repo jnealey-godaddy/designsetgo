@@ -206,7 +206,17 @@ class Registry {
 	 * Resolves a source value for a given post context.
 	 *
 	 * Prefers a direct resolver when registered, otherwise falls back to
-	 * apply_filters on the core Bindings source the same way core does.
+	 * the core Bindings source's get_value_callback (which is the wrapped
+	 * closure from designsetgo_register_bindings_source() and therefore
+	 * applies the shared password / viewable / protected-meta gates).
+	 *
+	 * NOTE ON DIRECT RESOLVERS: when a source registers its own
+	 * $source['resolver'], this method invokes it without the shared
+	 * gates. Callers registering a direct resolver MUST apply their own
+	 * password / viewability / protected-meta checks — or, more commonly,
+	 * omit the resolver and rely on the Bindings callback path. Callers
+	 * of this method (e.g. RestController::get_preview) must also apply
+	 * the password / viewable gate before invoking resolve().
 	 *
 	 * @param string $slug    Source slug.
 	 * @param array  $args    Source args.

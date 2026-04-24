@@ -182,9 +182,9 @@ class RestController {
 	 * @return \WP_REST_Response
 	 */
 	public function get_fields( \WP_REST_Request $request ) {
-		$slug      = (string) $request->get_param( 'source' );
-		$post_type = (string) $request->get_param( 'postType' );
-		$returns   = (string) $request->get_param( 'returns' );
+		$slug      = sanitize_text_field( (string) $request->get_param( 'source' ) );
+		$post_type = sanitize_key( (string) $request->get_param( 'postType' ) );
+		$returns   = sanitize_key( (string) $request->get_param( 'returns' ) );
 
 		$context = array(
 			'post_type' => $post_type,
