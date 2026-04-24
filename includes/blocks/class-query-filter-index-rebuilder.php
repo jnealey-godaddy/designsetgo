@@ -162,7 +162,7 @@ class FilterIndexRebuilder {
 
 		$table = FilterIndex::table_name();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
-		$truncated = $wpdb->query( 'TRUNCATE ' . $table );
+		$truncated = $wpdb->query( 'TRUNCATE ' . esc_sql( $table ) );
 		FilterIndex::bump_counts_cache();
 		if ( false === $truncated ) {
 			self::write_status(
@@ -215,7 +215,7 @@ class FilterIndexRebuilder {
 		} while ( $ids_count === $batch_size );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
-		$total_rows  = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $table );
+		$total_rows  = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . esc_sql( $table ) );
 		$duration_ms = (int) ( ( microtime( true ) - $started_at ) * 1000 );
 
 		self::write_status(
@@ -399,7 +399,7 @@ class FilterIndexRebuilder {
 		$index_table             = FilterIndex::table_name();
 		$status['total_rows']    = FilterIndex::table_exists()
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- table name is our own controlled constant, not user input.
-			? (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . $index_table )
+			? (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . esc_sql( $index_table ) )
 			: 0;
 		$status['in_progress']     = (bool) ( $status['in_progress'] ?? false );
 		$status['last_rebuilt_at'] = $status['last_rebuilt_at'] ?? null;

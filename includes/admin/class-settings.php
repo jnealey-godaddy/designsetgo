@@ -638,7 +638,7 @@ class Settings {
 			),
 			'sticky_header'      => array(
 				'enable'                    => 'bool',
-				'custom_selector'           => 'text',
+				'custom_selector'           => 'css_selector',
 				'z_index'                   => 'absint',
 				'shadow_on_scroll'          => 'bool',
 				'shadow_size'               => 'text',
@@ -687,6 +687,8 @@ class Settings {
 				return absint( $value );
 			case 'text':
 				return sanitize_text_field( $value );
+			case 'css_selector':
+				return self::sanitize_css_selector( $value );
 			case 'textarea':
 				return sanitize_textarea_field( $value );
 			case 'hex_color':
@@ -701,6 +703,31 @@ class Settings {
 			default:
 				return sanitize_text_field( $value );
 		}
+	}
+
+	/**
+	 * Sanitize a CSS selector, rejecting values with HTML or dangerous CSS/JS patterns.
+	 *
+	 * Checks for HTML angle brackets/quotes and known injection vectors
+	 * (javascript:, expression(), url(), @import) before accepting the value.
+	 *
+	 * @param mixed $value Raw input value.
+	 * @return string Sanitized selector or empty string if the value is unsafe.
+	 */
+	public static function sanitize_css_selector( $value ): string {
+		$trimmed = trim( (string) $value );
+		if ( '' === $trimmed ) {
+			return '';
+		}
+		// Reject HTML characters and known dangerous CSS/JS injection patterns.
+		if ( preg_match( '/[<>\'"]/u', $trimmed ) ||
+			preg_match( '/javascript:/i', $trimmed ) ||
+			preg_match( '/expression\s*\(/i', $trimmed ) ||
+			preg_match( '/url\s*\(/i', $trimmed ) ||
+			preg_match( '/@import/i', $trimmed ) ) {
+			return '';
+		}
+		return sanitize_text_field( $trimmed );
 	}
 
 	/**

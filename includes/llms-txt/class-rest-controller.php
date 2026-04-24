@@ -217,16 +217,14 @@ class REST_Controller {
 		if ( get_option( Controller::PHYSICAL_FILE_OPTION ) && ! empty( $settings['llms_txt']['enable'] ) ) {
 			$content = $this->generator->generate_content();
 			if ( $content ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct write for performance.
-				file_put_contents( ABSPATH . 'llms.txt', $content );
+				File_Manager::fs_put_contents( ABSPATH . 'llms.txt', $content );
 			}
 		}
 
 		if ( get_option( Controller::PHYSICAL_FULL_FILE_OPTION ) && ! empty( $settings['llms_txt']['enable'] ) && ! empty( $settings['llms_txt']['generate_full_txt'] ) ) {
 			$full_content = $this->generator->generate_full_content();
 			if ( $full_content ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct write for performance.
-				file_put_contents( ABSPATH . 'llms-full.txt', $full_content );
+				File_Manager::fs_put_contents( ABSPATH . 'llms-full.txt', $full_content );
 			}
 		}
 
@@ -257,9 +255,7 @@ class REST_Controller {
 				$llms_path = ABSPATH . 'llms.txt';
 				// Only write if we own the file or it doesn't exist yet.
 				if ( get_option( Controller::PHYSICAL_FILE_OPTION ) || ! file_exists( $llms_path ) ) {
-					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct write for performance.
-					$written = file_put_contents( $llms_path, $content );
-					if ( false !== $written ) {
+					if ( File_Manager::fs_put_contents( $llms_path, $content ) ) {
 						update_option( Controller::PHYSICAL_FILE_OPTION, true, true );
 					}
 				}
@@ -271,9 +267,7 @@ class REST_Controller {
 					$full_path = ABSPATH . 'llms-full.txt';
 					// Only write if we own the file or it doesn't exist yet.
 					if ( get_option( Controller::PHYSICAL_FULL_FILE_OPTION ) || ! file_exists( $full_path ) ) {
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct write for performance.
-						$written = file_put_contents( $full_path, $full_content );
-						if ( false !== $written ) {
+						if ( File_Manager::fs_put_contents( $full_path, $full_content ) ) {
 							update_option( Controller::PHYSICAL_FULL_FILE_OPTION, true, true );
 						}
 					}

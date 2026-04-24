@@ -155,13 +155,15 @@ class Block_Migrator {
 
 			if ( is_wp_error( $update_result ) ) {
 				++$failed;
-				error_log(
-					sprintf(
-						'DesignSetGo Block Migrator: Failed to convert post ID %d: %s',
-						$post->ID,
-						$update_result->get_error_message()
-					)
-				);
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging.
+						sprintf(
+							'DesignSetGo Block Migrator: Failed to convert post ID %d: %s',
+							$post->ID,
+							$update_result->get_error_message()
+						)
+					);
+				}
 			} else {
 				++$converted;
 			}

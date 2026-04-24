@@ -478,10 +478,7 @@ class Controller {
 
 		$file_path = ABSPATH . 'llms.txt';
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct write for performance.
-		$result = file_put_contents( $file_path, $content );
-
-		if ( false !== $result ) {
+		if ( File_Manager::fs_put_contents( $file_path, $content ) ) {
 			update_option( self::PHYSICAL_FILE_OPTION, true, true );
 			return true;
 		}
@@ -499,11 +496,7 @@ class Controller {
 			return;
 		}
 
-		$file_path = ABSPATH . 'llms.txt';
-		if ( file_exists( $file_path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct file operation required.
-			unlink( $file_path );
-		}
+		File_Manager::fs_delete( ABSPATH . 'llms.txt' );
 
 		delete_option( self::PHYSICAL_FILE_OPTION );
 	}
@@ -531,10 +524,7 @@ class Controller {
 			return false;
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct write for performance.
-		$result = file_put_contents( $file_path, $content );
-
-		if ( false !== $result ) {
+		if ( File_Manager::fs_put_contents( $file_path, $content ) ) {
 			update_option( self::PHYSICAL_FULL_FILE_OPTION, true, true );
 			return true;
 		}
@@ -552,11 +542,7 @@ class Controller {
 			return;
 		}
 
-		$file_path = ABSPATH . 'llms-full.txt';
-		if ( file_exists( $file_path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct file operation required.
-			unlink( $file_path );
-		}
+		File_Manager::fs_delete( ABSPATH . 'llms-full.txt' );
 
 		delete_option( self::PHYSICAL_FULL_FILE_OPTION );
 	}

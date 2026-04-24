@@ -404,6 +404,7 @@ class Assets {
 			$css_file = DESIGNSETGO_PATH . "build/blocks/{$block}/style-index.css";
 
 			if ( file_exists( $css_file ) && is_readable( $css_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading own plugin build asset, not user-supplied path.
 				$css = file_get_contents( $css_file );
 
 				// Minify: Remove comments and extra whitespace.

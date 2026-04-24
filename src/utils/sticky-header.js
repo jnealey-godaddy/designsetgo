@@ -43,10 +43,35 @@ import './sticky-header.scss';
 		return;
 	}
 
-	// Determine selector to use
-	const selector =
-		settings.customSelector ||
+	// Default selector — used when the admin-provided customSelector is empty
+	// or invalid (a typo would otherwise throw DOMException and kill all JS).
+	const defaultSelector =
 		'body:not(.block-editor-page) .wp-block-template-part:first-of-type, body:not(.block-editor-page) header.wp-block-template-part, body:not(.block-editor-page) .wp-block-template-part:has(.wp-block-navigation), body:not(.block-editor-page) .wp-block-template-part:has(.is-position-sticky)';
+
+	const selector = settings.customSelector || defaultSelector;
+
+	/**
+	 * Run document.querySelectorAll without letting an invalid selector throw.
+	 * sanitize_text_field on the server doesn't validate CSS selector syntax,
+	 * so a stray bracket from an admin typo would otherwise break the page.
+	 *
+	 * @param {string} sel CSS selector
+	 * @return {NodeList} Matching elements (empty when invalid)
+	 */
+	function safeQueryAll(sel) {
+		try {
+			return document.querySelectorAll(sel);
+		} catch (e) {
+			if (sel !== defaultSelector) {
+				try {
+					return document.querySelectorAll(defaultSelector);
+				} catch (_) {
+					// fall through to empty NodeList
+				}
+			}
+			return document.querySelectorAll(':not(*)');
+		}
+	}
 
 	// State tracking
 	let lastScrollY = window.scrollY;
@@ -434,7 +459,7 @@ import './sticky-header.scss';
 	 * Initialize all sticky headers found in the DOM
 	 */
 	function initAll() {
-		const headers = document.querySelectorAll(selector);
+		const headers = safeQueryAll(selector);
 		headers.forEach(initStickyHeader);
 	}
 
@@ -455,7 +480,7 @@ import './sticky-header.scss';
 		window.addEventListener(
 			'load',
 			() => {
-				const headers = document.querySelectorAll(selector);
+				const headers = safeQueryAll(selector);
 				headers.forEach((header) => {
 					applyTopBarOffset(header);
 					if (!header.classList.contains('dsgo-scrolled')) {

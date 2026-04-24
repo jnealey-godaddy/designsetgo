@@ -154,7 +154,7 @@ class FilterIndexCLI {
 
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.NotPrepared -- intentional CLI drop; table name is a safe internal method call.
-		$wpdb->query( 'DROP TABLE IF EXISTS ' . FilterIndex::table_name() );
+		$wpdb->query( 'DROP TABLE IF EXISTS ' . esc_sql( FilterIndex::table_name() ) );
 		delete_option( FilterIndex::OPTION_SCHEMA );
 		delete_option( FilterIndex::OPTION_STATUS );
 		// Also clear the plugin db version so the next admin_init fires

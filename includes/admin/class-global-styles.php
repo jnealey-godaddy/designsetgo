@@ -40,9 +40,6 @@ class Global_Styles {
 	 * @return \WP_Theme_JSON_Data Modified theme JSON.
 	 */
 	public function extend_theme_json( $theme_json ) {
-		// Get user-saved global styles (if any).
-		$saved_styles = get_option( 'designsetgo_global_styles', array() );
-
 		// Get existing theme data to check what's already defined.
 		$theme_data = $theme_json->get_data();
 
@@ -76,9 +73,9 @@ class Global_Styles {
 			),
 			'styles'   => array(
 				'blocks' => array(
-					'designsetgo/container' => $this->get_container_block_styles( $saved_styles ),
-					'designsetgo/tabs'      => $this->get_tabs_block_styles( $saved_styles ),
-					'designsetgo/tab'       => $this->get_tab_block_styles( $saved_styles ),
+					'designsetgo/container' => $this->get_container_block_styles(),
+					'designsetgo/tabs'      => $this->get_tabs_block_styles(),
+					'designsetgo/tab'       => $this->get_tab_block_styles(),
 				),
 			),
 		);
@@ -126,7 +123,7 @@ class Global_Styles {
 		// Only add font sizes if theme doesn't define them.
 		if ( ! $this->theme_has_font_sizes( $theme_data ) ) {
 			$dsg_settings['settings']['typography'] = array(
-				'fontSizes' => $this->get_font_sizes( $saved_styles ),
+				'fontSizes' => $this->get_font_sizes(),
 			);
 		}
 
@@ -277,10 +274,9 @@ class Global_Styles {
 	/**
 	 * Get font sizes with user customizations.
 	 *
-	 * @param array $saved_styles Saved user styles.
 	 * @return array Font sizes.
 	 */
-	private function get_font_sizes( $saved_styles ) {
+	private function get_font_sizes() {
 		return array(
 			array(
 				'slug' => 'small',
@@ -317,10 +313,9 @@ class Global_Styles {
 	 * conditionally in extend_theme_json() only when the theme doesn't define
 	 * its own spacingSizes, so blocks inherit the theme's spacing rhythm.
 	 *
-	 * @param array $saved_styles Saved user styles.
 	 * @return array Container block styles.
 	 */
-	private function get_container_block_styles( $saved_styles ) {
+	private function get_container_block_styles() {
 		return array(
 			'border' => array(
 				'radius' => 'var(--wp--custom--designsetgo--border-radius--medium)',
@@ -338,10 +333,9 @@ class Global_Styles {
 	 * added conditionally in extend_theme_json() only when the theme doesn't
 	 * define its own spacingSizes.
 	 *
-	 * @param array $saved_styles Saved user styles.
 	 * @return array Tabs block styles.
 	 */
-	private function get_tabs_block_styles( $saved_styles ) {
+	private function get_tabs_block_styles() {
 		return array(
 			'typography' => array(
 				'fontSize'   => 'var(--wp--preset--font-size--medium)',
@@ -383,10 +377,9 @@ class Global_Styles {
 	 * conditionally in extend_theme_json() only when the theme doesn't
 	 * define its own spacingSizes.
 	 *
-	 * @param array $saved_styles Saved user styles.
 	 * @return array Tab block styles.
 	 */
-	private function get_tab_block_styles( $saved_styles ) {
+	private function get_tab_block_styles() {
 		return array(
 			'color' => array(
 				'background' => 'transparent',
@@ -504,10 +497,10 @@ class Global_Styles {
 	/**
 	 * Check read permission for REST API.
 	 *
-	 * @param \WP_REST_Request $request Request object.
+	 * @param \WP_REST_Request $_request Request object (unused but required by REST API).
 	 * @return bool True if user has permission.
 	 */
-	public function check_read_permission( $request ) {
+	public function check_read_permission( $_request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter
 		return current_user_can( 'manage_options' );
 	}
 
@@ -591,7 +584,8 @@ class Global_Styles {
 			if ( is_array( $value ) ) {
 				$sanitized[ $sanitized_key ] = $this->sanitize_styles_array( $value );
 			} else {
-				$sanitized[ $sanitized_key ] = sanitize_text_field( $value );
+				$text = sanitize_text_field( $value );
+				$sanitized[ $sanitized_key ] = $this->is_valid_css_value( $text ) ? $text : '';
 			}
 		}
 
@@ -599,7 +593,62 @@ class Global_Styles {
 	}
 
 	/**
+	 * Validate a CSS value string against the allowed pattern allowlist.
+	 *
+	 * Accepts values that match any of the following patterns (permissive enough
+	 * for typical theme.json values):
+	 *  - Numeric with optional unit: -?[\d.]+(px|em|rem|%|vh|vw|fr|ch|s|ms)?
+	 *  - CSS custom property reference: var(--name, fallback)
+	 *  - Hex color: #RGB / #RRGGBB / #RGBA / #RRGGBBAA
+	 *  - Functional color: rgb()/rgba()/hsl()/hsla() without < or ;
+	 *  - Named keyword (a-z + hyphens): e.g. transparent, normal, bold
+	 *  - Typography family list: letters, digits, spaces, commas, quotes, underscores, hyphens
+	 *
+	 * @param string $value CSS value to validate.
+	 * @return bool True when the value is acceptable.
+	 */
+	private function is_valid_css_value( $value ) {
+		// Numeric with optional CSS unit.
+		if ( preg_match( '/^-?[\d.]+(px|em|rem|%|vh|vw|fr|ch|s|ms)?$/', $value ) ) {
+			return true;
+		}
+
+		// CSS custom property reference: var(--name) or var(--name, fallback).
+		if ( preg_match( '/^var\(--[a-zA-Z0-9_-]+(,\s*[^)]+)?\)$/', $value ) ) {
+			return true;
+		}
+
+		// Hex color.
+		if ( preg_match( '/^#[0-9a-fA-F]{3,8}$/', $value ) ) {
+			return true;
+		}
+
+		// Functional color — rgb / rgba / hsl / hsla, no < or ; allowed.
+		if ( preg_match( '/^(rgba?|hsla?)\(/', $value ) && str_ends_with( $value, ')' ) ) {
+			if ( ! str_contains( $value, '<' ) && ! str_contains( $value, ';' ) ) {
+				return true;
+			}
+		}
+
+		// Named keyword: lowercase letters and hyphens only.
+		if ( preg_match( '/^[a-z][a-z0-9-]*$/', $value ) ) {
+			return true;
+		}
+
+		// Typography family list: letters, digits, spaces, commas, quotes, underscores, hyphens.
+		if ( preg_match( '/^[a-zA-Z0-9 ,.\'"_-]+$/', $value ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Recursively sanitize nested style arrays.
+	 *
+	 * Keys are run through sanitize_key(). String leaf values are validated
+	 * against the CSS value allowlist in is_valid_css_value(); values that do
+	 * not match are silently dropped (empty string) rather than stored.
 	 *
 	 * @param array $array Array to sanitize.
 	 * @return array Sanitized array.
@@ -617,7 +666,8 @@ class Global_Styles {
 			} elseif ( is_bool( $value ) ) {
 				$sanitized[ $sanitized_key ] = (bool) $value;
 			} else {
-				$sanitized[ $sanitized_key ] = sanitize_text_field( $value );
+				$text = sanitize_text_field( $value );
+				$sanitized[ $sanitized_key ] = $this->is_valid_css_value( $text ) ? $text : '';
 			}
 		}
 

@@ -500,7 +500,7 @@ class FilterIndex {
 		// no production data is lost.
 		if ( $needs_truncate ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.NotPrepared -- deliberate upgrade-time schema reset; $table comes from our controlled self::table_name() constant.
-			$wpdb->query( 'TRUNCATE TABLE ' . $table );
+			$wpdb->query( 'TRUNCATE TABLE ' . esc_sql( $table ) );
 			self::bump_counts_cache();
 		}
 
