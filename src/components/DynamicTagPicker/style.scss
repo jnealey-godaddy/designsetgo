@@ -18,6 +18,17 @@
 		overflow: hidden;
 	}
 
+	// WP Modal wraps our children in an unclassed <div> sibling to
+	// __header. Without flexing it, the layout grid grows past the frame
+	// and pushes the footer below the fold.
+	.components-modal__content > div:not(.components-modal__header) {
+		flex: 1 1 auto;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
 	&__layout {
 		display: grid;
 		grid-template-columns: 260px 1fr;

@@ -27,6 +27,7 @@
  */
 import {
 	registerBlockBindingsSource,
+	unregisterBlockBindingsSource,
 	getBlockBindingsSource,
 } from '@wordpress/blocks';
 import { store as editorStore } from '@wordpress/editor';
@@ -173,11 +174,13 @@ function buildGetValues(resolver) {
 
 export function registerEditorBindings() {
 	Object.entries(SCALAR_RESOLVERS).forEach(([slug, resolver]) => {
-		// Avoid double-registration (HMR / double-import) without
-		// swallowing any other error registerBlockBindingsSource may
-		// throw — narrow catch only after a positive existence check.
+		// PHP `register_block_bindings_source()` ships the source to the
+		// editor without a `getValues` resolver, so the canvas falls back
+		// to the source label as a placeholder. Re-register the JS side
+		// (unregister first; `registerBlockBindingsSource` rejects
+		// already-registered slugs) so the editor renders the live value.
 		if (getBlockBindingsSource?.(slug)) {
-			return;
+			unregisterBlockBindingsSource(slug);
 		}
 		registerBlockBindingsSource({
 			name: slug,
