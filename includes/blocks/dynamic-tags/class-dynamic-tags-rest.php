@@ -37,6 +37,8 @@ class RestController {
 	private $registry;
 
 	/**
+	 * Constructor.
+	 *
 	 * @param Registry $registry Metadata registry instance.
 	 */
 	public function __construct( Registry $registry ) {
