@@ -139,6 +139,16 @@ if ( ! function_exists( 'designsetgo_register_bindings_source' ) ) :
 	 * @return int Resolved post ID, or 0 if not resolvable.
 	 */
 	function designsetgo_resolve_bindings_post_id( array $args, $block ) {
+		// Short-circuit: callers such as Registry::resolve() (invoked from
+		// the Dynamic Tags REST preview) have no WP_Block instance to
+		// provide, so they pre-resolve the post ID and stash it in
+		// $args['__dsgo_post_id']. Honour that first so the wrapper
+		// doesn't fall through to get_the_ID(), which returns 0 in a
+		// REST context and would cause every scalar source to return null.
+		if ( ! empty( $args['__dsgo_post_id'] ) ) {
+			return (int) $args['__dsgo_post_id'];
+		}
+
 		$scope = isset( $args['scope'] ) ? (string) $args['scope'] : 'self';
 
 		if ( 'parent' === $scope || 'root' === $scope ) {

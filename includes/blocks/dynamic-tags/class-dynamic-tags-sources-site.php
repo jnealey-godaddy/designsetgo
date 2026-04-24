@@ -73,7 +73,7 @@ class SiteSources {
 				}
 				$subkey = isset( $args['subkey'] ) ? (string) $args['subkey'] : 'url';
 				$size   = isset( $args['size'] ) ? (string) $args['size'] : 'full';
-				return PostSources::resolve_image_subvalue( $logo_id, $subkey, $size );
+				return ImageResolver::resolve_subvalue( $logo_id, $subkey, $size );
 			},
 			array(
 				'subkey' => array(

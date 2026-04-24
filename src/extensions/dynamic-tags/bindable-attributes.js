@@ -1,3 +1,5 @@
+import { __ } from '@wordpress/i18n';
+
 /**
  * Allowlist of bindable attributes per core block, per the WordPress
  * Block Bindings API. Keep in sync with WP core — extending an
@@ -7,25 +9,25 @@
  */
 export const BINDABLE_ATTRIBUTES = {
 	'core/paragraph': [
-		{ attribute: 'content', returns: [ 'text' ], label: 'Content' },
+		{ attribute: 'content', returns: [ 'text' ], label: __( 'Content', 'designsetgo' ) },
 	],
 	'core/heading': [
-		{ attribute: 'content', returns: [ 'text' ], label: 'Content' },
+		{ attribute: 'content', returns: [ 'text' ], label: __( 'Content', 'designsetgo' ) },
 	],
 	'core/image': [
-		{ attribute: 'url', returns: [ 'image', 'url' ], label: 'Image URL', subkey: 'url' },
-		{ attribute: 'id', returns: [ 'image', 'number' ], label: 'Attachment ID', subkey: 'id' },
-		{ attribute: 'alt', returns: [ 'text' ], label: 'Alt text', subkey: 'alt' },
-		{ attribute: 'title', returns: [ 'text' ], label: 'Title', subkey: 'title' },
+		{ attribute: 'url', returns: [ 'image', 'url' ], label: __( 'Image URL', 'designsetgo' ), subkey: 'url' },
+		{ attribute: 'id', returns: [ 'image', 'number' ], label: __( 'Attachment ID', 'designsetgo' ), subkey: 'id' },
+		{ attribute: 'alt', returns: [ 'text' ], label: __( 'Alt text', 'designsetgo' ), subkey: 'alt' },
+		{ attribute: 'title', returns: [ 'text' ], label: __( 'Title', 'designsetgo' ), subkey: 'title' },
 	],
 	'core/button': [
-		{ attribute: 'url', returns: [ 'url' ], label: 'URL' },
-		{ attribute: 'text', returns: [ 'text' ], label: 'Text' },
-		{ attribute: 'linkTarget', returns: [ 'text' ], label: 'Link target' },
-		{ attribute: 'rel', returns: [ 'text' ], label: 'Rel' },
+		{ attribute: 'url', returns: [ 'url' ], label: __( 'URL', 'designsetgo' ) },
+		{ attribute: 'text', returns: [ 'text' ], label: __( 'Text', 'designsetgo' ) },
+		{ attribute: 'linkTarget', returns: [ 'text' ], label: __( 'Link target', 'designsetgo' ) },
+		{ attribute: 'rel', returns: [ 'text' ], label: __( 'Rel', 'designsetgo' ) },
 	],
 	'core/post-date': [
-		{ attribute: 'datetime', returns: [ 'date', 'text' ], label: 'Date' },
+		{ attribute: 'datetime', returns: [ 'date', 'text' ], label: __( 'Date', 'designsetgo' ) },
 	],
 };
 

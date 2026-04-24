@@ -105,7 +105,6 @@ class FieldDiscovery {
 			case 'text':
 			case 'textarea':
 			case 'email':
-			case 'password':
 			case 'wysiwyg':
 			case 'select':
 			case 'radio':
@@ -126,7 +125,10 @@ class FieldDiscovery {
 			case 'time_picker':
 			case 'date_time_picker':
 				return 'date';
-			// Container/repeater/flexible types — skip.
+			// Private / container / repeater / flexible types — skip so
+			// sensitive values (passwords) and non-scalar shapes never
+			// surface in the Dynamic Tag picker.
+			case 'password':
 			case 'group':
 			case 'repeater':
 			case 'flexible_content':

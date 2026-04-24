@@ -96,6 +96,52 @@ class ImageResolver {
 	}
 
 	/**
+	 * Resolves a scalar sub-value (url/id/alt/width/height/title/caption)
+	 * from an attachment ID. Used by image-typed Bindings sources that
+	 * need to project to a single scalar per the Block Bindings contract.
+	 *
+	 * @param int    $attachment_id Attachment post ID.
+	 * @param string $subkey        Sub-key: url|id|alt|width|height|title|caption.
+	 * @param string $size          Image size for url/width/height (default 'full').
+	 * @return string|null
+	 */
+	public static function resolve_subvalue( $attachment_id, $subkey, $size = 'full' ) {
+		$attachment_id = (int) $attachment_id;
+		if ( ! $attachment_id ) {
+			return null;
+		}
+		if ( ! in_array( $subkey, array( 'url', 'id', 'alt', 'width', 'height', 'title', 'caption' ), true ) ) {
+			$subkey = 'url';
+		}
+
+		switch ( $subkey ) {
+			case 'id':
+				return (string) $attachment_id;
+			case 'alt':
+				$alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
+				return '' === $alt ? null : (string) $alt;
+			case 'title':
+				$title = get_the_title( $attachment_id );
+				return '' === $title ? null : (string) $title;
+			case 'caption':
+				$caption = wp_get_attachment_caption( $attachment_id );
+				return '' === $caption || false === $caption ? null : (string) $caption;
+			case 'width':
+			case 'height':
+				$src = wp_get_attachment_image_src( $attachment_id, $size );
+				if ( ! $src ) {
+					return null;
+				}
+				$idx = 'width' === $subkey ? 1 : 2;
+				return (string) $src[ $idx ];
+			case 'url':
+			default:
+				$src = wp_get_attachment_image_src( $attachment_id, $size );
+				return $src && ! empty( $src[0] ) ? (string) $src[0] : null;
+		}
+	}
+
+	/**
 	 * Builds an image descriptor from an attachment ID.
 	 *
 	 * @param int    $attachment_id Attachment post ID.
