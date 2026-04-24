@@ -1,14 +1,21 @@
 .dsgo-dynamic-tag-picker {
-	// WordPress's Modal sets its own internal max-height; force the content
-	// region to a flex column so the layout grid scrolls inside the modal
-	// while the footer stays pinned at the bottom — otherwise the
-	// Cancel / Use this source CTAs land below the fold whenever the
-	// source list or argument form grows past ~440px.
+	// `className` on WP's Modal lands on `.components-modal__frame`, so
+	// these rules cap the OUTER frame to the viewport. Without this the
+	// modal grows with its content, the Cancel / Use this source CTAs
+	// land below the bottom edge, and authors have to page-scroll to
+	// reach them.
+	max-height: calc(100vh - 64px);
+	height: auto;
+	display: flex;
+	flex-direction: column;
+
 	.components-modal__content {
+		flex: 1 1 auto;
+		min-height: 0;
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		max-height: calc(80vh - 60px);
+		overflow: hidden;
 	}
 
 	&__layout {
@@ -147,6 +154,7 @@
 }
 
 .dsgo-dynamic-tag-button {
+
 	&.is-connected {
 		background: #2271b1;
 		color: #fff;
