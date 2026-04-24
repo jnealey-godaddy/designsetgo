@@ -80,9 +80,17 @@ class Test_Block_Bindings_Support extends WP_UnitTestCase {
 		$fresh = new \DesignSetGo\Block_Bindings_Support();
 		$fresh->register();
 
-		$this->assertNotFalse(
-			has_filter( 'block_bindings_supported_attributes', array( $fresh, 'filter_supported_attributes' ) ),
-			'Block_Bindings_Support::register() must hook into block_bindings_supported_attributes.'
-		);
+		try {
+			$this->assertNotFalse(
+				has_filter( 'block_bindings_supported_attributes', array( $fresh, 'filter_supported_attributes' ) ),
+				'Block_Bindings_Support::register() must hook into block_bindings_supported_attributes.'
+			);
+		} finally {
+			remove_filter(
+				'block_bindings_supported_attributes',
+				array( $fresh, 'filter_supported_attributes' ),
+				10
+			);
+		}
 	}
 }

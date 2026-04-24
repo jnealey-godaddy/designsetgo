@@ -72,6 +72,7 @@ class Block_Bindings_Support {
 		}
 
 		$map = $this->get_supported_map();
+		// empty() covers both "not in map" and "explicitly cleared to []" by a filter.
 		if ( empty( $map[ $block_type ] ) ) {
 			return $supported_attributes;
 		}
@@ -94,7 +95,7 @@ class Block_Bindings_Support {
 	 *
 	 * @return array<string, string[]>
 	 */
-	public function get_supported_map() {
+	private function get_supported_map() {
 		/**
 		 * Filter the DesignSetGo block bindings supported attributes map.
 		 *
