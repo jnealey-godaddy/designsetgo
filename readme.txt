@@ -1,7 +1,7 @@
 === DesignSetGo ===
 Contributors: justinnealey
 Donate link: https://designsetgoblocks.com/donate
-Tags: blocks, gutenberg, form-builder, animations, responsive
+Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
@@ -9,162 +9,77 @@ Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Professional WordPress blocks without page builder bloat. 53 blocks + 16 universal extensions that enhance ANY block.
+53 native blocks + 16 universal extensions for the WordPress block editor. Forms, dynamic post lists, animations, layouts — no page builder needed.
 
 == Description ==
 
-**When you need professional design features but page builders feel too heavy, too complex, or too limiting.**
+**The power of a page builder, the simplicity of native blocks.**
 
-DesignSetGo gives you the power of a page builder with the simplicity of WordPress blocks. Build layouts, forms, interactive elements, and stunning visuals—all using the native block editor you already know.
+DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to the block editor — without the bloat, lock-in, or learning curve. If you know WordPress blocks, you already know how to use it.
 
-= Why DesignSetGo? =
+[Documentation](https://designsetgoblocks.com/docs/) · [GitHub](https://github.com/designsetgo/designsetgo)
 
-✓ **Works Like WordPress** - If you know blocks, you know DesignSetGo. No separate interface, no learning curve.
-✓ **52 Blocks, One Plugin** - Replaces multiple plugins: forms, sliders, tabs, accordions, counters, cards, maps, modals, breadcrumbs, timelines, and more.
-✓ **16 Universal Extensions** - Add animations, scroll effects, parallax, responsive visibility, sticky headers, clickable groups, draft mode, max width, and more to ANY WordPress block (including core blocks).
-✓ **Text Style Format** - Apply custom colors, gradients, font sizes, and highlights to selected text inline, just like bold or italic.
-✓ **Performance First** - Lightweight code, no jQuery, optimized bundles. Your site stays fast.
-✓ **No Lock-In** - Built with WordPress standards. What you build works with or without the plugin.
-✓ **Editor = Frontend** - What you see in the editor is exactly what appears on your site. No surprises.
-✓ **Built-in Admin Tools** - Form submissions dashboard, revision comparison, draft mode for published pages, and organized settings.
+= Why DesignSetGo =
 
-= What's Included =
+* **Native blocks, not a page builder.** Editor matches frontend. Deactivate the plugin and your content keeps working — no proprietary markup, no lock-in.
+* **53 blocks replace 5+ plugins.** Forms, sliders, tabs, accordions, modals, maps, breadcrumbs, timelines, comparison tables, and the new Dynamic Query family.
+* **16 extensions enhance ANY block** — including core and third-party blocks. Animations, parallax, sticky headers, responsive visibility, hover effects, conditional visibility.
+* **Complete form builder built in.** AJAX, spam protection (Cloudflare Turnstile included), email notifications, submission dashboard. No Contact Form 7 required.
+* **Performance first.** CSS bundle under 10 KB gzipped, no jQuery, per-block on-demand assets. PageSpeed scores stay high.
+* **WordPress-standard everything.** theme.json, FSE, Block Bindings, REST API, WP-CLI, Schema.org markup, WCAG 2.1 AA accessible.
 
-**Layouts & Containers (3 blocks)**
-Build responsive layouts without code: grid, rows, and full-width sections with content width controls.
+= New in 2.1 =
 
-**Complete Form Builder (13 blocks)**
-Professional forms with AJAX submission, spam protection (including Cloudflare Turnstile), and email notifications. Includes text, email, phone, textarea, number, URL, date, time, select, checkbox, and hidden fields. No external services required.
+* **Dynamic Query** — display any posts, users, terms, or relationship fields with filters, search, sort, and pagination (numbered, load-more, or infinite scroll). Faceted result counts, nested loops, group-by, server-rendered with editable templates.
+* **Dynamic Tags** — bind any block's text, link, or image to live data: post meta, ACF, Meta Box, Pods, JetEngine, or your own source. Works on DSGo blocks and core blocks via WordPress 6.9 Block Bindings.
+* **Conditional Visibility** — show or hide any block by meta, taxonomy, login state, or position in a query loop, with AND/OR rules.
+* **Hover Effects** extension, grid column toolbar with row span, per-URL Markdown for AI clients (`Accept: text/markdown`).
 
-**Interactive Elements (14 blocks)**
-Tabs, accordions, modals/popups, flip cards, sliders, scroll effects, counters, progress bars, comparison tables, timelines, and revealing content. All with smooth animations and mobile-responsive behavior.
+= What's Inside =
 
-**Media Layouts (1 block)**
-Fifty Fifty — full-width 50/50 split layout with edge-to-edge media on one side and constrained content on the other. Toggle media position (left/right), set focal point, min height, and content vertical alignment. Mobile-responsive stacking.
-
-**Typography (2 blocks)**
-Advanced Heading with independent heading segments — create headings with multiple font styles, weights, and colors within a single semantic heading element (H1–H6).
-
-**Navigation & Structure (2 blocks)**
-Breadcrumbs with Schema.org markup and Table of Contents with automatic heading detection, smooth scrolling, and sticky positioning.
-
-**Visual Components (8 blocks + child blocks)**
-Icons (500+), icon buttons, icon lists, pills/badges, dividers, countdown timers, organic blob shapes, and content cards with multiple layout presets.
-
-**Location (1 block)**
-Interactive maps with Google Maps and OpenStreetMap support, custom markers, and privacy-friendly options.
-
-**Universal Extensions (16 extensions)**
-These work with ANY WordPress block—including core blocks and third-party blocks:
-* **Block Animations** - 24+ effects with scroll/hover/click triggers
-* **Scroll Parallax** - Elementor-style vertical/horizontal parallax effects with device controls
-* **Text Reveal** - Scroll-triggered text color animation that simulates reading progression
-* **Expanding Background** - Scroll-driven background that expands from a circle to fill sections
-* **Sticky Header** - Advanced sticky controls with offset and hide on scroll
-* **Clickable Groups** - Turn containers into accessible clickable links
-* **Background Video** - Add YouTube or self-hosted videos to containers
-* **Responsive Visibility** - Hide/show blocks by device (desktop, tablet, mobile)
-* **Max Width** - Constrain content width with auto-centering
-* **Custom CSS** - Per-block custom styling and advanced controls
-* **Grid Span** - Column and row spanning for grid layouts
-* **Grid Mobile Order** - Reorder grid items on mobile without changing HTML structure
-* **Reveal Control** - Advanced hover reveal timing and transitions
-* **Text Alignment Inheritance** - Inherit alignment from parent blocks
-* **SVG Patterns** - Add 25+ repeatable SVG background patterns to sections and groups with customizable color, opacity, and scale
-* **Draft Mode** - Control draft content visibility in the editor vs frontend
-
-**Content Management Tools**
-* **Visual Revision Comparison** - Side-by-side rendered previews of post revisions with color-coded block highlighting
-* **llms.txt Support** - Implements the llms.txt standard to help AI language models understand your site content
-
-**Admin Dashboard & Settings**
-* Form submission viewer with email delivery status tracking
-* Block and extension usage statistics
-* Tabbed settings for Features, Optimization, and Integrations
-* Block exclusion rules for third-party block compatibility
-* Data retention and anti-abuse controls for forms
-
-**Text Style Format**
-Apply custom inline styles to selected text, just like bold or italic:
-* Text color (solid + gradient fill)
-* Background highlight (solid + gradient)
-* Font size presets (S/M/L/XL) + custom values
-* Padding and border radius for pill/badge styles
-
-= Perfect For =
-
-* **Freelancers & Agencies** - Build client sites faster without learning another page builder
-* **Business Websites** - Professional forms, FAQs, service listings, and call-to-action sections
-* **Marketing & Landing Pages** - Eye-catching layouts with counters, flip cards, and animations
-* **Portfolios & Showcases** - Image galleries, sliders, and scroll effects for stunning presentations
-* **Membership & Community Sites** - Registration forms, organized content, gamification elements
-* **E-commerce Sites** - Enhanced product pages with sliders, icon lists, and custom layouts
+* **Layout** (3) — Grid, Row, Section with shape dividers
+* **Forms** (13) — full builder with 11 field types and admin dashboard
+* **Interactive** (14) — Tabs, Accordion, Modal, Flip Card, Slider, Scroll Slides, Sticky Sections, Counter, Progress, Comparison Table, Timeline
+* **Dynamic Query** (6) — Query, Pagination, Filter, Results, Group Header, No Results
+* **Typography & Navigation** — Advanced Heading, Breadcrumbs (Schema.org), Table of Contents
+* **Visual** (8) — 500+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs
+* **Media & Location** — Fifty Fifty split layout, Map (Google Maps + OpenStreetMap)
+* **WooCommerce** — Product Categories Grid, Product Showcase Hero
+* **Extensions** (16) — Animations, Parallax, Text Reveal, Expanding Background, Sticky Header, Hover Effects, Clickable Groups, Background Video, Responsive Visibility, Conditional Visibility, Max Width, Custom CSS, Grid Span, Grid Mobile Order, SVG Patterns (25+), Reveal Control
+* **Plus** — Text Style inline format, llms.txt + per-URL Markdown for AI, form submissions dashboard, draft mode for published pages
 
 == Installation ==
 
-= Automatic Installation =
+1. **Plugins → Add New**, search **DesignSetGo**, click **Install**, then **Activate**.
+2. Edit any post or page, click **+**, and look for the **DesignSetGo** category.
 
-1. Log in to your WordPress dashboard
-2. Go to **Plugins > Add New**
-3. Search for "DesignSetGo"
-4. Click **Install Now**
-5. Click **Activate**
-6. Start using blocks in the block editor!
-
-= Manual Installation =
-
-1. Download the plugin ZIP file
-2. Log in to your WordPress dashboard
-3. Go to **Plugins > Add New > Upload Plugin**
-4. Choose the ZIP file and click **Install Now**
-5. Click **Activate**
-6. Blocks are now available in the editor
-
-= After Activation =
-
-1. Edit any post or page
-2. Click the **+** button to add a block
-3. Find DesignSetGo blocks in the **DesignSetGo** category
-4. Insert a block and configure using the inspector controls
-5. Check the documentation for detailed guides
+Manual install: upload the ZIP via **Plugins → Add New → Upload Plugin**.
 
 == Frequently Asked Questions ==
 
-= Will this work with my theme? =
+= Will it work with my theme? =
 
-Yes! DesignSetGo is designed to work with any modern WordPress theme. It respects your theme's colors, spacing, and typography settings from theme.json. Tested with Twenty Twenty-Five and FSE themes.
+Yes. DesignSetGo respects theme.json colors, spacing, and typography, and is tested with FSE themes including Twenty Twenty-Five.
 
-= Will this slow down my site? =
+= Will it slow my site down? =
 
-No! DesignSetGo is built for performance. The entire CSS bundle is under 10 KB gzipped, there's no jQuery dependency, and blocks only load what you actually use. Your PageSpeed scores stay high.
+No. CSS is under 10 KB gzipped, there's no jQuery, and per-block assets load on-demand.
 
-= Do I need to know how to code? =
+= What happens if I deactivate it? =
 
-Not at all. If you can use WordPress blocks, you can use DesignSetGo. Everything is controlled through the familiar block inspector—no code required. (But if you want to add custom CSS to any block, you can!)
+Your content stays intact. DesignSetGo uses WordPress standards, so layouts render as standard containers — no broken markup, no lock-in.
 
-= What happens if I deactivate the plugin? =
+= Do I need to know code? =
 
-Your content stays intact. Because DesignSetGo uses WordPress standards, your layouts won't break—they'll just render as standard containers and content. No proprietary markup means no lock-in.
+No. Everything is controlled through the block inspector. Custom CSS per block is supported if you want it.
 
-= Does the editor match the frontend? =
+= Does it work with FSE and WooCommerce? =
 
-Yes, exactly. DesignSetGo uses the same patterns as WordPress core blocks to guarantee what you see in the editor is what appears on your live site. No surprises.
+Yes to both. All blocks work in the Site Editor, templates, and template parts. Use DSGo blocks on any WooCommerce page; the Sticky Header extension is built for FSE header parts.
 
-= Do I need Contact Form 7 or another form plugin? =
+= Where do I get support? =
 
-No! DesignSetGo includes a complete form builder with 11 field types, AJAX submission, spam protection, and email notifications. Everything is built-in and works without external services.
-
-= Does this work with Full Site Editing (FSE)? =
-
-Absolutely. All blocks work seamlessly with FSE, the Site Editor, templates, and template parts. The Sticky Header extension is specifically designed for FSE header template parts.
-
-= Can I use this with WooCommerce? =
-
-Yes! Use DesignSetGo blocks on any WooCommerce page to enhance product layouts, create custom sections, and build better shopping experiences.
-
-= How do I get support? =
-
-Check the [documentation](https://designsetgoblocks.com/docs/), visit the [support forum](https://wordpress.org/support/plugin/designsetgo/), or report bugs on [GitHub](https://github.com/designsetgo/designsetgo).
+[Documentation](https://designsetgoblocks.com/docs/), the [support forum](https://wordpress.org/support/plugin/designsetgo/), or [GitHub](https://github.com/designsetgo/designsetgo).
 
 == Screenshots ==
 
