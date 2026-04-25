@@ -5,7 +5,7 @@ All notable changes to the DesignSetGo plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — target: 2.1.0
+## [2.1.0] - 2026-04-24
 
 ### New Blocks
 - **Dynamic Query** — Container block that iterates Posts, Users, Terms, Manual selections, or the Current archive, with `tax_query`, `meta_query`, search, author, date, and offset controls. Server-rendered with an editable template and pluggable sources.

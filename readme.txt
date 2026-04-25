@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, animations, responsive
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.0.51
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -179,7 +179,7 @@ Check the [documentation](https://designsetgoblocks.com/docs/), visit the [suppo
 
 == Changelog ==
 
-= 2.1.0 =
+= 2.1.0 - 2026-04-24 =
 
 **New Blocks**
 * **New:** Dynamic Query — a full-featured query block that iterates Posts, Users, Terms, Manual selections, or the Current archive, with tax_query, meta_query, search, author, date, and offset controls. Renders entirely server-side with an editable template and pluggable sources.
