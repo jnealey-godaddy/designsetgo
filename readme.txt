@@ -31,15 +31,15 @@ DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to 
 = New in 2.1 =
 
 * **Dynamic Query** — display any posts, users, terms, or relationship fields with filters, search, sort, and pagination (numbered, load-more, or infinite scroll). Faceted result counts, nested loops, group-by, server-rendered with editable templates.
-* **Dynamic Tags** — bind any block's text, link, or image to live data: post meta, ACF, Meta Box, Pods, JetEngine, or your own source. Works on DSGo blocks and core blocks via WordPress 6.9 Block Bindings.
+* **Dynamic Tags** — bind any block's text, link, or image to live data: post meta, ACF, Meta Box, Pods, JetEngine, or your own source. Works on DesignSetGo blocks and core blocks via WordPress 6.9 Block Bindings.
 * **Conditional Visibility** — show or hide any block by meta, taxonomy, login state, or position in a query loop, with AND/OR rules.
-* **Hover Effects** extension, grid column toolbar with row span, per-URL Markdown for AI clients (`Accept: text/markdown`).
+* **Hover Effects** extension, grid column toolbar with row span, per-URL Markdown for AI clients (Accept: text/markdown header).
 
 = What's Inside =
 
 * **Layout** (3) — Grid, Row, Section with shape dividers
 * **Forms** (13) — full builder with 11 field types and admin dashboard
-* **Interactive** (14) — Tabs, Accordion, Modal, Flip Card, Slider, Scroll Slides, Sticky Sections, Counter, Progress, Comparison Table, Timeline
+* **Interactive** (14) — Tabs, Accordion, Modal, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counter, Progress, Comparison Table, Timeline
 * **Dynamic Query** (6) — Query, Pagination, Filter, Results, Group Header, No Results
 * **Typography & Navigation** — Advanced Heading, Breadcrumbs (Schema.org), Table of Contents
 * **Visual** (8) — 500+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs
@@ -75,7 +75,7 @@ No. Everything is controlled through the block inspector. Custom CSS per block i
 
 = Does it work with FSE and WooCommerce? =
 
-Yes to both. All blocks work in the Site Editor, templates, and template parts. Use DSGo blocks on any WooCommerce page; the Sticky Header extension is built for FSE header parts.
+Yes to both. All blocks work in the Site Editor, templates, and template parts. Use DesignSetGo blocks on any WooCommerce page; the Sticky Header extension is built for FSE header parts.
 
 = Where do I get support? =
 
