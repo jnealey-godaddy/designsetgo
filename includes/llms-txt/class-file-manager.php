@@ -37,6 +37,66 @@ class File_Manager {
 	const FILENAME_META_KEY = '_designsetgo_llms_filename';
 
 	/**
+	 * Write content to a file using WP_Filesystem, falling back to file_put_contents().
+	 *
+	 * Initialises WP_Filesystem on demand so the method is safe to call outside
+	 * of an `admin_init` context (e.g. from a REST route or a save_post hook).
+	 * On managed hosts (WP Engine, Kinsta, Pantheon) the web user cannot write
+	 * to ABSPATH directly, but WP_Filesystem succeeds via stored FTP constants.
+	 *
+	 * @param string $path    Absolute path to the file to write.
+	 * @param string $content File content.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function fs_put_contents( string $path, string $content ): bool {
+		global $wp_filesystem;
+
+		if ( ! $wp_filesystem ) {
+			if ( ! function_exists( 'WP_Filesystem' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+			WP_Filesystem();
+		}
+
+		if ( $wp_filesystem ) {
+			return $wp_filesystem->put_contents( $path, $content, FS_CHMOD_FILE );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Fallback when WP_Filesystem is unavailable. This is the primary path on managed hosts (WP Engine, Kinsta, Pantheon) where no FTP constants are defined and the web user owns the files; also fires during unit tests and early bootstrap.
+		return false !== file_put_contents( $path, $content );
+	}
+
+	/**
+	 * Delete a file using WP_Filesystem, falling back to unlink().
+	 *
+	 * Uses the same on-demand WP_Filesystem initialisation as fs_put_contents().
+	 *
+	 * @param string $path Absolute path to the file to delete.
+	 * @return bool True on success or when the file did not exist, false on failure.
+	 */
+	public static function fs_delete( string $path ): bool {
+		if ( ! file_exists( $path ) ) {
+			return true;
+		}
+
+		global $wp_filesystem;
+
+		if ( ! $wp_filesystem ) {
+			if ( ! function_exists( 'WP_Filesystem' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+			WP_Filesystem();
+		}
+
+		if ( $wp_filesystem ) {
+			return $wp_filesystem->delete( $path );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Fallback when WP_Filesystem is unavailable; same scenarios as fs_put_contents().
+		return unlink( $path );
+	}
+
+	/**
 	 * Get the full path to the markdown files directory.
 	 *
 	 * @return string Directory path.
@@ -209,10 +269,9 @@ class File_Manager {
 			. "\tAddCharset UTF-8 .md\n"
 			. "</IfModule>\n";
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Matches existing write pattern in this class.
-		$result = file_put_contents( $path, $contents );
+		$result = self::fs_put_contents( $path, $contents );
 
-		if ( false === $result && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		if ( ! $result && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only logging for non-fatal filesystem failure.
 			error_log( 'DesignSetGo: Failed to write llms.txt .htaccess file to ' . $path );
 		}
@@ -269,10 +328,7 @@ class File_Manager {
 		// Delete old file if filename changed (e.g., slug was updated).
 		if ( $old_filename && $old_filename !== $filename ) {
 			$old_file_path = $this->get_directory() . '/' . $old_filename . '.md';
-			if ( file_exists( $old_file_path ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct file operation required.
-				unlink( $old_file_path );
-			}
+			self::fs_delete( $old_file_path );
 		}
 
 		// Ensure directory exists (including subdirectories for hierarchical content).
@@ -292,10 +348,7 @@ class File_Manager {
 		// Write the file.
 		$file_path = $this->get_directory() . '/' . $filename . '.md';
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Direct file write required for performance.
-		$result = file_put_contents( $file_path, $markdown );
-
-		if ( false === $result ) {
+		if ( ! self::fs_put_contents( $file_path, $markdown ) ) {
 			return new \WP_Error( 'write_error', __( 'Could not write markdown file.', 'designsetgo' ) );
 		}
 
@@ -318,10 +371,7 @@ class File_Manager {
 		$stored_filename = get_post_meta( $post_id, self::FILENAME_META_KEY, true );
 		if ( $stored_filename ) {
 			$file_path = $this->get_directory() . '/' . $stored_filename . '.md';
-			if ( file_exists( $file_path ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct file operation required.
-				$deleted = unlink( $file_path );
-			}
+			$deleted   = self::fs_delete( $file_path );
 			delete_post_meta( $post_id, self::FILENAME_META_KEY );
 		}
 
@@ -330,18 +380,12 @@ class File_Manager {
 		if ( $post ) {
 			$filename  = $this->get_filename( $post );
 			$file_path = $this->get_directory() . '/' . $filename . '.md';
-			if ( file_exists( $file_path ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct file operation required.
-				$deleted = unlink( $file_path ) && $deleted;
-			}
+			$deleted   = self::fs_delete( $file_path ) && $deleted;
 		}
 
 		// Clean up legacy ID-based files.
 		$legacy_path = $this->get_directory() . '/' . $post_id . '.md';
-		if ( file_exists( $legacy_path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct file operation required.
-			unlink( $legacy_path );
-		}
+		self::fs_delete( $legacy_path );
 
 		return $deleted;
 	}

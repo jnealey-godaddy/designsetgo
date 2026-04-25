@@ -99,7 +99,7 @@ class Sticky_Header {
 				'dsgStickyHeaderSettings',
 				array(
 					'enable'                  => (bool) $sticky_settings['enable'],
-					'customSelector'          => sanitize_text_field( $sticky_settings['custom_selector'] ),
+					'customSelector'          => \DesignSetGo\Admin\Settings::sanitize_css_selector( $sticky_settings['custom_selector'] ),
 					'zIndex'                  => absint( $sticky_settings['z_index'] ),
 					'shadowOnScroll'          => (bool) $sticky_settings['shadow_on_scroll'],
 					'shadowSize'              => sanitize_text_field( $sticky_settings['shadow_size'] ),

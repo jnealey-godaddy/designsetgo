@@ -786,16 +786,24 @@ function* dsgoQueryRefresh(ctx, url) {
 			);
 			return;
 		}
+		// Defence-in-depth: only parse responses we recognise. A misbehaving
+		// proxy / WAF could replace the body with non-JSON; bail before injecting.
+		const contentType = (
+			res.headers.get('content-type') || ''
+		).toLowerCase();
+		if (!contentType.includes('application/json')) {
+			return;
+		}
 		const data = yield res.json();
+		if (!data || typeof data.html !== 'string') {
+			return;
+		}
 
 		// Parse the returned region HTML and swap the outer region's innerHTML.
 		// This updates the list, pagination, no-results, and active-filter chips
 		// in one operation. The outer region element (and its data attribute) stays
 		// intact so the IAPI context survives the swap.
-		const doc = new DOMParser().parseFromString(
-			data.html || '',
-			'text/html'
-		);
+		const doc = new DOMParser().parseFromString(data.html, 'text/html');
 		const newRegion = doc.querySelector(
 			`[data-dsgo-query-region="${queryId}"]`
 		);
@@ -909,12 +917,19 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 			);
 			return;
 		}
+		// Defence-in-depth: see dsgoQueryRefresh — only inject from JSON envelopes.
+		const contentType = (
+			res.headers.get('content-type') || ''
+		).toLowerCase();
+		if (!contentType.includes('application/json')) {
+			return;
+		}
 		const data = await res.json();
+		if (!data || typeof data.html !== 'string') {
+			return;
+		}
 
-		const doc = new DOMParser().parseFromString(
-			data.html || '',
-			'text/html'
-		);
+		const doc = new DOMParser().parseFromString(data.html, 'text/html');
 		const newRegion = doc.querySelector(
 			`[data-dsgo-query-region="${queryId}"]`
 		);

@@ -147,3 +147,9 @@ npm-debug.log*
 # ===================
 languages/*.po
 languages/*.pot
+
+# ===================
+# Source Maps (never ship to production)
+# ===================
+*.js.map
+*.css.map

@@ -207,6 +207,20 @@
 			align-self: stretch !important;
 			width: 100% !important;
 		}
+
+		// Aspect-ratio'd figures (core/post-featured-image with aspectRatio,
+		// core/image with aspectRatio) render as <figure style="aspect-ratio:X">
+		// with no explicit width. In a column flex with align-self: stretch and
+		// min-width: auto, the browser can resolve the figure's width from the
+		// child <img>'s intrinsic size (e.g. 1024px) rather than the cross-axis
+		// container width — breaking the figure out of a narrow section (cards
+		// inside grid cells, sections nested in columns, etc.). Pin to 100% so
+		// the aspect-ratio drives height while width stays inside the column.
+		// Honors WP alignment classes that intentionally shrink the figure.
+		> .wp-block-post-featured-image:not(.alignleft):not(.alignright):not(.aligncenter):not(.alignwide):not(.alignfull),
+		> .wp-block-image:not(.alignleft):not(.alignright):not(.aligncenter):not(.alignwide):not(.alignfull) {
+			max-width: 100%;
+		}
 	}
 
 	// ONLY apply full-width forcing when section has NO width constraints

@@ -180,11 +180,26 @@ class Form_Submissions {
 
 		// Email delivery status.
 		if ( '' !== $email_sent ) {
-			$is_sent = ( 'yes' === $email_sent );
-			echo '<div style="margin-bottom: 1em; padding: 10px; background: ' . ( $is_sent ? '#d4edda' : '#f8d7da' ) . '; border-left: 3px solid ' . ( $is_sent ? '#28a745' : '#dc3545' ) . ';">';
+			$is_sent      = ( 'yes' === $email_sent );
+			$status_class = $is_sent ? 'dsgo-submission-status--success' : 'dsgo-submission-status--error';
+
+			// Emit the status styles once per page load via a static guard.
+			static $dsgo_status_styles_printed = false;
+			if ( ! $dsgo_status_styles_printed ) {
+				$dsgo_status_styles_printed = true;
+				echo '<style>
+.dsgo-submission-status{margin-bottom:1em;padding:10px;border-left:3px solid}
+.dsgo-submission-status--success{background:#d4edda;border-color:#28a745}
+.dsgo-submission-status--success .dsgo-submission-status__label{color:#155724}
+.dsgo-submission-status--error{background:#f8d7da;border-color:#dc3545}
+.dsgo-submission-status--error .dsgo-submission-status__label{color:#721c24}
+</style>';
+			}
+
+			printf( '<div class="dsgo-submission-status %s">', esc_attr( $status_class ) );
 			echo '<strong>' . esc_html__( 'Email Status:', 'designsetgo' ) . '</strong><br>';
 			if ( $is_sent ) {
-				echo '<span style="color: #155724;">✓ ' . esc_html__( 'Sent Successfully', 'designsetgo' ) . '</span>';
+				echo '<span class="dsgo-submission-status__label">&#10003; ' . esc_html__( 'Sent Successfully', 'designsetgo' ) . '</span>';
 				if ( $email_to ) {
 					echo '<br><small>' . esc_html__( 'To:', 'designsetgo' ) . ' ' . esc_html( $email_to ) . '</small>';
 				}
@@ -192,7 +207,7 @@ class Form_Submissions {
 					echo '<br><small>' . esc_html__( 'Sent:', 'designsetgo' ) . ' ' . esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $email_sent_date ) ) . '</small>';
 				}
 			} else {
-				echo '<span style="color: #721c24;">✗ ' . esc_html__( 'Failed to Send', 'designsetgo' ) . '</span>';
+				echo '<span class="dsgo-submission-status__label">&#10007; ' . esc_html__( 'Failed to Send', 'designsetgo' ) . '</span>';
 				if ( $email_to ) {
 					echo '<br><small>' . esc_html__( 'Attempted to:', 'designsetgo' ) . ' ' . esc_html( $email_to ) . '</small>';
 				}

@@ -72,8 +72,15 @@ const styleEntries = glob
 // module resolver (resolved by WP's importmap). This is a separate webpack
 // config from the main one because @wordpress/scripts' default externals
 // rewrite imports to `window.wp.interactivity` (wrong target for modules).
+// Don't ship source maps in production. They expose source layout, internal
+// paths, and stripped comments; the .map files also bloat the distribution.
+// Dev builds keep the @wordpress/scripts default for debuggability.
+const productionDevtool = false;
+const isProduction = defaultConfig.mode === 'production';
+
 const scriptModuleConfig = {
 	mode: defaultConfig.mode,
+	devtool: isProduction ? productionDevtool : defaultConfig.devtool,
 	entry: moduleViewEntries,
 	output: {
 		filename: '[name].js',
@@ -129,6 +136,7 @@ const scriptModuleConfig = {
 module.exports = [
 	{
 		...defaultConfig,
+		devtool: isProduction ? productionDevtool : defaultConfig.devtool,
 		// Disable the default clean behaviour. We emit into `build/` from two
 		// parallel webpack configs (this one + `scriptModuleConfig`), and the
 		// default `output.clean` would wipe the second config's output after

@@ -228,8 +228,18 @@ class Form_Handler {
 	 * @return WP_REST_Response|WP_Error Response object on success, or WP_Error on failure.
 	 */
 	public function handle_form_submission( $request ) {
-		// CSRF Protection: Verify nonce for logged-in users.
-		// For non-logged-in users, rely on honeypot + rate limiting + time-based checks.
+		// CSRF Protection: Verify nonce when one is supplied.
+		//
+		// Rationale: WordPress only emits a valid `wp_rest` nonce for users with
+		// an active session — fully anonymous visitors hit this endpoint without
+		// one. We can't require a nonce universally without breaking unauthenticated
+		// public-facing forms (the primary use case for this block). Instead, we
+		// layer non-cookie defences for anonymous submissions:
+		// 1. Honeypot field (rejects most bots).
+		// 2. Submission-timing check (rejects sub-3s autofill).
+		// 3. IP rate limiting (default 2/60s, configurable per-form).
+		// 4. Optional Cloudflare Turnstile (recommended for high-value forms).
+		// For sensitive use cases, enable Turnstile in the block's Inspector.
 		$nonce = $request->get_header( 'X-WP-Nonce' );
 		if ( $nonce && ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 			return new WP_Error(
@@ -246,8 +256,11 @@ class Form_Handler {
 		$form_settings = $this->get_form_settings();
 
 		// Look up per-block attributes for rate limiting and Turnstile enforcement.
+		// Fallback (2/60s) is intentionally stricter than the block-level default
+		// — it only applies to orphaned/legacy submissions where the per-block
+		// configuration is missing.
 		$block_attrs      = $this->get_form_block_attributes( $form_id );
-		$rate_limit_count = isset( $block_attrs['rateLimitCount'] ) ? absint( $block_attrs['rateLimitCount'] ) : 3;
+		$rate_limit_count = isset( $block_attrs['rateLimitCount'] ) ? absint( $block_attrs['rateLimitCount'] ) : 2;
 		$rate_limit_window = isset( $block_attrs['rateLimitWindow'] ) ? absint( $block_attrs['rateLimitWindow'] ) : 60;
 		$turnstile_required = ! empty( $block_attrs['enableTurnstile'] );
 

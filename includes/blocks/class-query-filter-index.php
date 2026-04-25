@@ -499,8 +499,8 @@ class FilterIndex {
 		// reindex with correct post_type values. v2.2 has not shipped yet so
 		// no production data is lost.
 		if ( $needs_truncate ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.NotPrepared -- deliberate upgrade-time schema reset; $table comes from our controlled self::table_name() constant.
-			$wpdb->query( 'TRUNCATE TABLE ' . $table );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- deliberate upgrade-time schema reset.
+			$wpdb->query( $wpdb->prepare( 'TRUNCATE TABLE %i', $table ) );
 			self::bump_counts_cache();
 		}
 
