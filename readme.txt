@@ -21,7 +21,7 @@ DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to 
 
 = Why DesignSetGo =
 
-* **Native blocks, not a page builder.** Editor matches frontend. Deactivate the plugin and your content keeps working — no proprietary markup, no lock-in.
+* **Native blocks, not a page builder.** Editor matches frontend. Static content stays put if you deactivate; dynamic blocks need the plugin to render. No proprietary markup, no lock-in.
 * **53 blocks replace 5+ plugins.** Forms, sliders, tabs, accordions, modals, maps, breadcrumbs, timelines, comparison tables, and the new Dynamic Query family.
 * **16 extensions enhance ANY block** — including core and third-party blocks. Animations, parallax, sticky headers, responsive visibility, hover effects, conditional visibility.
 * **Complete form builder built in.** AJAX, spam protection (Cloudflare Turnstile included), email notifications, submission dashboard. No Contact Form 7 required.
@@ -31,9 +31,9 @@ DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to 
 = New in 2.1 =
 
 * **Dynamic Query** — display any posts, users, terms, or relationship fields with filters, search, sort, and pagination (numbered, load-more, or infinite scroll). Faceted result counts, nested loops, group-by, server-rendered with editable templates.
-* **Dynamic Tags** — bind any block's text, link, or image to live data: post meta, ACF, Meta Box, Pods, JetEngine, or your own source. Works on DesignSetGo blocks and core blocks via WordPress 6.9 Block Bindings.
+* **Dynamic Tags** — bind any block's text, link, or image to live data: post meta, ACF, Meta Box, Pods, JetEngine, or your own source. Works on DesignSetGo blocks and core blocks via the WordPress 6.9+ Block Bindings API.
 * **Conditional Visibility** — show or hide any block by meta, taxonomy, login state, or position in a query loop, with AND/OR rules.
-* **Hover Effects** extension, grid column toolbar with row span, per-URL Markdown for AI clients (Accept: text/markdown header).
+* **Hover Effects** extension, grid column toolbar with row span, per-URL Markdown for AI clients via the `Accept: text/markdown` request header.
 
 = What's Inside =
 
