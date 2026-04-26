@@ -83,6 +83,10 @@ Access via **Styles > Color** in the sidebar:
 - **Success Message**: Shown after successful submission
 - **Error Message**: Shown if submission fails
 
+**Confirmation persistence (2.1.0):** After a successful AJAX submission the confirmation message is stored in `sessionStorage` keyed to the form's unique ID. If the submitter refreshes the page the message is restored once and then cleared, so they see the confirmation even after a reload without seeing it on every subsequent visit.
+
+**Stale confirmation clearing:** The stored confirmation is keyed to the form's unique ID (`data-form-id` attribute). If the same form instance is reopened with a different unique key (for example, after a template switch or block duplication that assigns a new ID) the old `sessionStorage` key no longer matches and the stale confirmation is silently discarded.
+
 ### Spam Protection
 - **Honeypot**: Invisible field to catch bots (default: ON)
 - **Rate Limiting**: Limit submissions per IP (default: ON, 3 per 60 seconds)
@@ -219,6 +223,9 @@ Disable AJAX to use traditional form submission. Useful for:
 - Redirecting to thank-you pages
 - Payment gateway integration
 - Custom server-side processing
+
+### Redirect URL Hardening (2.1.0)
+The redirect URL set in form settings is normalized with the browser's `URL` constructor before navigation occurs. Only `http:` and `https:` protocol URLs are followed; `javascript:`, `data:`, and any other non-HTTP protocol are silently blocked. Relative paths are resolved against the current page origin.
 
 ## Troubleshooting
 

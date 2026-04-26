@@ -370,6 +370,18 @@ The Slider block includes a **Scroll Carousel** variation that converts the slid
 
 ---
 
+### Query-bound Mode
+
+> **Added in 2.1.0**
+
+When a Slider block is placed inside a `designsetgo/query` block it can act as the item host instead of `designsetgo/query-results`, iterating the query's items as slides. The Slider receives the query's `queryId`, `querySource`, and `queryPostType` via block context and renders one slide per item with full editor-to-frontend parity — the first item's inner blocks are editable on the canvas, while subsequent items render as server-rendered HTML previews.
+
+**When to use:** Choose this over the default Query Results block when you want a paginated or carousel presentation of query items rather than a static grid.
+
+See [QUERY.md](QUERY.md) for Dynamic Query configuration options.
+
+---
+
 ## Common Use Cases
 
 ### 1. Hero Section Slider

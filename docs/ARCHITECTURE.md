@@ -14,6 +14,7 @@ Complete guide to DesignSetGo's architecture, code organization, and how everyth
 - [Asset Loading](#asset-loading)
 - [Testing Infrastructure](#testing-infrastructure)
 - [AI Integration](#ai-integration)
+- [Editor UX Foundations (Themes 1–6)](#editor-ux-foundations-themes-16)
 
 ## High-Level Overview
 
@@ -902,6 +903,47 @@ useEffect(() => {
   element.style.color = textColor;
 }, [textColor]);
 ```
+
+## Editor UX Foundations (Themes 1–6)
+
+Released in 2.1.0, six cross-cutting themes standardized the editor experience across all DesignSetGo blocks. The goals: consistent author UX, less duplicated code, and a clear pattern for onboarding new blocks.
+
+### Theme 1 — First-insert onboarding parity
+
+`DsgoBlockPlaceholder` (`src/components/shared/DsgoBlockPlaceholder/`) displays a wizard-style placeholder on the first insert so authors can pick a starter template or configuration before the block renders. Rolled out to accordion, flip-card, image-accordion, scroll-accordion, and slider.
+
+### Theme 2 — Flip Card consolidation
+
+The separate `designsetgo/flip-card-front` and `designsetgo/flip-card-back` child blocks were consolidated into a single `designsetgo/flip-card-face` block (`src/blocks/flip-card-face/`) with a `side` attribute (`"front"` | `"back"`). The old blocks remain registered with `inserter: false` (hidden from the inserter) so existing content continues to render; each has a `transforms.to` entry that lets editors one-click convert to the new block.
+
+### Theme 3 — Inspector IA standardization
+
+Every block's sidebar is organized into the Settings → Style → Advanced three-panel convention using `DsgoInspectorPanel` (`src/components/shared/DsgoInspectorPanel/`). Each control includes a reset-to-default action so authors can always revert individual settings without clearing the whole block.
+
+### Theme 4 — Discoverability polish
+
+Block icons, category registration, and display names were cleaned up across ~30 blocks so the inserter is easier to scan and blocks are easier to find by keyword.
+
+### Theme 5 — Shared tablist keyboard hook and child toolbar
+
+`useTablistKeyboard` (`src/hooks/useTablistKeyboard.js`) centralizes arrow-key navigation for tab-like patterns. `DsgoChildToolbar` (`src/components/shared/DsgoChildToolbar/`) provides the per-child duplicate/remove/reorder toolbar. Both are used by the Tabs and Slider blocks.
+
+### Theme 6 — Shared authoring primitives
+
+All reusable editor-only primitives were extracted to canonical locations rather than living inside individual block directories:
+
+| Primitive | Location |
+|---|---|
+| `useBlockColors` | `src/hooks/useBlockColors.js` |
+| `useTablistKeyboard` | `src/hooks/useTablistKeyboard.js` |
+| `useUniqueBlockId` | `src/hooks/useUniqueBlockId.js` |
+| `DsgoBlockPlaceholder` | `src/components/shared/DsgoBlockPlaceholder/` |
+| `DsgoChildToolbar` | `src/components/shared/DsgoChildToolbar/` |
+| `DsgoInspectorPanel` | `src/components/shared/DsgoInspectorPanel/` |
+
+New blocks import from these canonical paths instead of copying code. The `src/hooks/index.js` and `src/components/shared/index.js` barrel files provide named exports.
+
+---
 
 ## Common Patterns
 

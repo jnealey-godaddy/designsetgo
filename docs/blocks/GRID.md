@@ -1,8 +1,10 @@
 # Grid Container Block - User Guide
 
-**Version**: 1.0.0
+**Version**: 2.1.0
 **Category**: Design
 **Keywords**: grid, columns, layout, container, responsive
+
+> **Updated in 2.1.0** — Column picker added to the block toolbar; row span control added for grid children; empty appender width fixed.
 
 ## Overview
 
@@ -24,6 +26,10 @@ The **Grid Block** is the backbone of responsive layout design. While the standa
 5.  **Equal Heights**: Ensure **Align Items** is set to `Stretch`. Now, if one card has more text, the others will stretch to match its height.
 
 ## ⚙️ Settings & Configuration
+
+### Column Toolbar
+
+A column picker sits in the block toolbar whenever the Grid block is selected. Clicking the grid icon opens a dropdown listing every column count from 1 to 12. Choosing a value updates the desktop column count immediately and clamps the tablet and mobile counts so they never exceed the new desktop value. This replaces the need to open the inspector for the most common edit.
 
 ### Grid Settings Panel
 
@@ -75,8 +81,13 @@ Showcase team members with photos and bios.
 ## 🎨 Styling & Customization
 
 *   **Hover Effects**: Use the "Hover Settings" panel to change background/text colors on hover.
-*   **Spanning**: Some Grid implementations allow children to "span" multiple columns.
+*   **Column span**: Any block inside a Grid exposes a "Grid Settings" panel in the inspector with a Column Span control (1 to the grid's desktop column count).
+*   **Row span**: The same "Grid Settings" panel also includes a Row Span control (1–12) so a child block can occupy multiple implicit rows.
 *   **Backgrounds**: You can apply a background color to the entire Grid container.
+
+### Empty appender width
+
+When a Grid block has no children the `+` appender previously collapsed to a very narrow target. This is fixed; the appender now fills the available grid cell width as expected.
 
 ## ✅ Best Practices
 
