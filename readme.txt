@@ -39,10 +39,10 @@ DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to 
 
 * **Layout** (3) — Grid, Row, Section with shape dividers
 * **Forms** (13) — full builder with 11 field types and admin dashboard
-* **Interactive** (14) — Tabs, Accordion, Modal, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counter, Progress, Comparison Table, Timeline
+* **Interactive** (15) — Tabs, Accordion, Modal, Modal Trigger, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counter, Progress, Comparison Table, Timeline
 * **Dynamic Query** (6) — Query, Pagination, Filter, Results, Group Header, No Results
 * **Typography & Navigation** — Advanced Heading, Breadcrumbs (Schema.org), Table of Contents
-* **Visual** (8) — 500+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs
+* **Visual** (9) — 500+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image
 * **Media & Location** — Fifty Fifty split layout, Map (Google Maps + OpenStreetMap)
 * **WooCommerce** — Product Categories Grid, Product Showcase Hero
 * **Extensions** (16) — Animations, Parallax, Text Reveal, Expanding Background, Sticky Header, Hover Effects, Clickable Groups, Background Video, Responsive Visibility, Conditional Visibility, Max Width, Custom CSS, Grid Span, Grid Mobile Order, SVG Patterns (25+), Reveal Control
