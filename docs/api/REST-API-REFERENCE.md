@@ -35,7 +35,6 @@ Returns all current settings merged with defaults.
   "integrations": { "google_maps_api_key": "", "turnstile_site_key": "", "turnstile_secret_key": "" },
   "sticky_header": { "enable": true, "custom_selector": "", "z_index": 100, "..." : "..." },
   "draft_mode": { "enable": true, "show_page_list_actions": true, "..." : "..." },
-  "revisions": { "enable_visual_comparison": true, "default_to_visual": true },
   "llms_txt": { "enable": false, "post_types": ["page", "post"] }
 }
 ```
@@ -62,7 +61,6 @@ Updates plugin settings. Partial updates are supported — only supplied keys ar
 | `integrations` | `object` | `{ google_maps_api_key: string, turnstile_site_key: string, turnstile_secret_key: string }` |
 | `sticky_header` | `object` | Sticky header configuration (see `get_defaults()` for full schema). |
 | `draft_mode` | `object` | `{ enable: bool, show_page_list_actions: bool, show_page_list_column: bool, show_frontend_preview: bool, auto_save_enabled: bool, auto_save_interval: int }` |
-| `revisions` | `object` | `{ enable_visual_comparison: bool, default_to_visual: bool }` |
 | `llms_txt` | `object` | `{ enable: bool, post_types: array<string> }` |
 
 **Response** — `200 OK`
@@ -258,92 +256,7 @@ Returns draft mode status for a post.
 
 ## Revisions
 
-Visual revision comparison and restore.
-
-**Source**: `includes/admin/class-revision-rest-api.php`
-
-### GET `/revisions/{post_id}`
-
-Lists revisions for a post.
-
-| Auth | Capability |
-|------|------------|
-| Required | `edit_post` on target |
-
-**URL Parameters**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `post_id` | `integer` | Post ID. |
-
-**Response** — `200 OK`
-
-```json
-{
-  "post_id": 45,
-  "post_type": "page",
-  "revisions": [
-    { "id": 50, "date": "2026-02-07 12:00:00", "author": { "id": 1, "name": "Admin", "avatar": "..." }, "is_autosave": false, "is_current": true }
-  ]
-}
-```
-
-### GET `/revisions/render/{revision_id}`
-
-Renders a revision as HTML.
-
-| Auth | Capability |
-|------|------------|
-| Required | `edit_post` on parent post |
-
-**URL Parameters**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `revision_id` | `integer` | Revision ID. |
-
-**Response** — `200 OK` — Rendered HTML content.
-
-### GET `/revisions/diff/{from_id}/{to_id}`
-
-Returns a block-level diff between two revisions.
-
-| Auth | Capability |
-|------|------------|
-| Required | `edit_post` on parent post (both revisions must share the same parent) |
-
-**URL Parameters**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `from_id` | `integer` | Source revision ID. |
-| `to_id` | `integer` | Target revision ID. |
-
-**Response** — `200 OK`
-
-```json
-{ "from_id": 48, "to_id": 50, "changes": [...], "summary": { "total": 3 } }
-```
-
-### POST `/revisions/restore/{revision_id}`
-
-Restores a post to a previous revision.
-
-| Auth | Capability |
-|------|------------|
-| Required | `edit_post` on parent post |
-
-**URL Parameters**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `revision_id` | `integer` | Revision to restore. |
-
-**Response** — `200 OK`
-
-```json
-{ "success": true, "post_id": 45, "edit_url": "..." }
-```
+> **Removed in 2.1.0.** The Visual Revision Comparison endpoints (`/revisions/*`) were removed in favor of WordPress 7.0's native visual diff for revisions. The associated settings (`revisions.enable_visual_comparison`, `revisions.default_to_visual`) were also removed. See the [2.1.0 changelog entry](../../CHANGELOG.md) for details.
 
 ---
 
@@ -567,6 +480,293 @@ Dismisses the conflict notice without resolving.
 
 ---
 
+---
+
+## Removed Endpoints
+
+### `/designsetgo/v1/revisions/*` — Removed in 2.1.0
+
+The Visual Revision Comparison endpoints (`GET /revisions/{post_id}`, `GET /revisions/render/{revision_id}`, `GET /revisions/diff/{from_id}/{to_id}`, `POST /revisions/restore/{revision_id}`) were removed in 2.1.0 in favour of WordPress 7.0's native visual diff for revisions. The associated admin page, block differ, revision renderer, and settings keys (`revisions.enable_visual_comparison`, `revisions.default_to_visual`) were also removed. The endpoint stubs in the **Revisions** section above are retained for historical reference only.
+
+---
+
+## Dynamic Query Endpoints
+
+Server-side rendering, editor preview, and filter-index management for the `designsetgo/query` block family.
+
+**Source**: `includes/blocks/class-query.php`, `includes/blocks/class-query-template-controller.php`
+
+All write endpoints require an `X-WP-Nonce` header with a valid `wp_rest` nonce. The `/query/render` and `/query/preview` routes are editor-facing (require `read` / `edit_posts`); all filter-index and template routes require `manage_options` or `edit_post` as noted per endpoint.
+
+---
+
+### POST `/query/render`
+
+Server-side render of a Dynamic Query block, used by the editor live-preview path for users and terms (posts use `useEntityRecords` on the client).
+
+| Auth | Capability | Nonce |
+|------|------------|-------|
+| Required | `read` | `X-WP-Nonce` |
+
+**Body Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `queryId` | `string` | Yes | Block's unique query identifier (e.g. `q-a3f2c1b4d9`). |
+| `attributes` | `object` | Yes | Full block attributes object (source, perPage, taxQuery, etc.). |
+| `page` | `integer` | No | Page number (default `1`). |
+| `innerBlocks` | `string` | No | Serialized block-comment markup of inner blocks (item template + siblings). |
+| `params` | `object` | No | Active filter/sort state: keys from `designsetgo_query_url_params` allowlist and any `filter_<taxonomy>` keys. |
+| `currentUrl` | `string` | No | Canonical page URL used to build chip/reset links in the no-JS fallback. |
+
+**Response** — `200 OK`
+
+```json
+{
+  "html": "<div class=\"dsgo-query-region\">...</div>",
+  "totalPages": 4,
+  "totalItems": 22
+}
+```
+
+**Example**
+
+```bash
+curl -X POST "https://example.com/wp-json/designsetgo/v1/query/render" \
+  -H "X-WP-Nonce: $(wp eval 'echo wp_create_nonce("wp_rest");')" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "queryId": "q-a3f2c1b4d9",
+    "attributes": { "source": "posts", "postType": "post", "perPage": 6 },
+    "page": 1,
+    "params": { "filter_category": "news" }
+  }'
+```
+
+---
+
+### GET `/query/preview`
+
+Returns a lightweight list of preview items for `users` and `terms` sources. Posts use `useEntityRecords` on the client and will receive a `400` from this route if requested.
+
+| Auth | Capability | Nonce |
+|------|------------|-------|
+| Required | `edit_posts` | `X-WP-Nonce` |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `attributes` | `object` | Yes | Block attributes. Keys used: `source` (`users`\|`terms`), `perPage` (1–100, default 6), `taxonomy` (required when `source=terms`, default `category`). |
+
+**Response** — `200 OK`
+
+```json
+[
+  { "id": 1, "name": "Alice Smith", "type": "user" },
+  { "id": 2, "name": "Bob Jones",  "type": "user" }
+]
+```
+
+**Error Responses**
+
+| Code | Status | Cause |
+|------|--------|-------|
+| `not_needed` | 400 | `source` is `posts` — use `useEntityRecords` instead. |
+
+---
+
+### POST `/query/filter-register`
+
+Registers an ad-hoc filter in the filter registry and schedules it for the next index rebuild.
+
+| Auth | Capability | Nonce |
+|------|------------|-------|
+| Required | `manage_options` | `X-WP-Nonce` |
+
+**Body Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `filter_key` | `string` | Yes | Unique registry key (sanitized via `sanitize_key`). |
+| `config` | `object` | Yes | Filter configuration. Must include `type` (`taxonomy`\|`meta`) and `source` (taxonomy or meta key name). |
+
+**Response** — `200 OK`
+
+```json
+{
+  "registered": true,
+  "filter_key": "price_range",
+  "config": { "type": "meta", "source": "_price" }
+}
+```
+
+**Error Responses**
+
+| Code | Status | Cause |
+|------|--------|-------|
+| `dsgo_filter_register_invalid` | 400 | `filter_key`, `type`, or `source` missing. |
+| `dsgo_filter_invalid_type` | 400 | `config.type` is not `taxonomy` or `meta`. |
+
+---
+
+### GET `/query/filter-status`
+
+Returns the current health and state of the filter index table.
+
+| Auth | Capability |
+|------|------------|
+| Required | `manage_options` |
+
+**Response** — `200 OK`
+
+```json
+{
+  "total_rows": 4821,
+  "in_progress": false,
+  "last_rebuilt_at": 1745510400,
+  "processed": 320
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total_rows` | `integer` | Live row count in `{prefix}dsgo_query_filter_index`. |
+| `in_progress` | `boolean` | Whether a rebuild is currently running. Auto-clears after 5 minutes if stale. |
+| `last_rebuilt_at` | `integer\|null` | Unix timestamp of the last completed rebuild, or `null`. |
+| `processed` | `integer` | Posts processed in the last (or current) rebuild pass. |
+
+---
+
+### POST `/query/filter-rebuild`
+
+Triggers a full synchronous rebuild of the filter index (truncate + re-index all published posts). On large sites this may approach PHP's `max_execution_time`; the admin dashboard polls `/filter-status` every 2 s to track progress.
+
+| Auth | Capability | Nonce |
+|------|------------|-------|
+| Required | `manage_options` | `X-WP-Nonce` |
+
+No body parameters. The rebuild batch size uses the server-side default (200 posts/batch).
+
+**Response** — `200 OK`
+
+```json
+{
+  "status": "complete",
+  "processed": 320,
+  "total_rows": 4821
+}
+```
+
+| `status` value | Meaning |
+|----------------|---------|
+| `complete` | Rebuild finished successfully. |
+| `locked` | Another rebuild is already running; try again shortly. |
+| `error` | Table missing or truncation failed — check database. |
+
+---
+
+### GET `/query/filters`
+
+Returns all filters currently registered in the filter registry.
+
+| Auth | Capability |
+|------|------------|
+| Required | `manage_options` |
+
+**Response** — `200 OK` — Array of registered filter objects.
+
+```json
+[
+  { "key": "category",    "type": "taxonomy", "source": "category" },
+  { "key": "price_range", "type": "meta",     "source": "_price"   }
+]
+```
+
+Also accepts `DELETE /query/filters` with body `{ "filter_key": "<key>" }` to unregister a filter.
+
+---
+
+### GET `/query/template`
+
+Exports a `designsetgo/query` block from a post as a portable JSON blob (`schemaVersion: 1`). Only attributes present in the block's `block.json` allowlist (resolved via `WP_Block_Type_Registry`) are included.
+
+| Auth | Capability |
+|------|------------|
+| Required | `edit_post` on the target post |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `post_id` | `integer` | Yes | ID of the post that contains the query block. |
+| `query_id` | `string` | Yes | The `queryId` attribute of the block to export. |
+
+**Response** — `200 OK`
+
+```json
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-04-26T12:00:00Z",
+  "blockName": "designsetgo/query",
+  "attributes": { "queryId": "q-a3f2c1b4d9", "source": "posts", "perPage": 6 },
+  "innerBlocks": "<!-- wp:designsetgo/query-results -->...<!-- /wp:designsetgo/query-results -->"
+}
+```
+
+**Error Responses**
+
+| Code | Status | Cause |
+|------|--------|-------|
+| `dsgo_template_not_found` | 404 | Post not found. |
+| `dsgo_template_block_not_found` | 404 | No `designsetgo/query` block with that `queryId` in the post. |
+| `dsgo_template_forbidden` | 403 | Current user cannot edit the post. |
+
+---
+
+### POST `/query/template`
+
+Imports a query template blob. Attributes are filtered against the current `block.json` allowlist. A fresh `queryId` is generated on every import so the result never collides with existing blocks.
+
+| Auth | Capability |
+|------|------------|
+| Required | `edit_posts` |
+
+**Body Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `schemaVersion` | `integer` | Yes | Must be `1`. |
+| `blockName` | `string` | Yes | Must be `"designsetgo/query"`. |
+| `attributes` | `object` | Yes | Block attributes from the export blob. Unknown keys are silently dropped. |
+| `innerBlocks` | `string` | Yes | Serialized block-comment markup of inner blocks. |
+
+**Response** — `200 OK`
+
+```json
+{
+  "blockMarkup": "<!-- wp:designsetgo/query {\"queryId\":\"q-f7c3b8a2d1\",...} -->...<!-- /wp:designsetgo/query -->"
+}
+```
+
+**Error Responses**
+
+| Code | Status | Cause |
+|------|--------|-------|
+| `dsgo_template_schema_mismatch` | 400 | `schemaVersion` is not `1`. |
+| `dsgo_template_wrong_block` | 400 | `blockName` is not `"designsetgo/query"`. |
+| `dsgo_template_forbidden` | 403 | Current user cannot edit posts. |
+
+---
+
+## Markdown Content Negotiation
+
+Any published page or post URL returns Markdown when the request sends `Accept: text/markdown` (or outranks `text/html` via q-values). This feature is implemented at the `template_redirect` layer, not as a REST route.
+
+See [MARKDOWN-CONTENT-NEGOTIATION.md](MARKDOWN-CONTENT-NEGOTIATION.md) for full details, per-post exclusion meta, WP-CLI commands, and test instructions.
+
+---
+
 ## Endpoint Summary
 
 | Method | Route | Auth | Source |
@@ -582,10 +782,19 @@ Dismisses the conflict notice without resolving.
 | POST | `/draft-mode/{id}/publish` | `publish_pages` | `class-draft-mode-rest.php` |
 | DELETE | `/draft-mode/{id}` | `publish_pages` | `class-draft-mode-rest.php` |
 | GET | `/draft-mode/status/{post_id}` | `edit_pages` | `class-draft-mode-rest.php` |
-| GET | `/revisions/{post_id}` | `edit_post` | `class-revision-rest-api.php` |
-| GET | `/revisions/render/{revision_id}` | `edit_post` | `class-revision-rest-api.php` |
-| GET | `/revisions/diff/{from_id}/{to_id}` | `edit_post` | `class-revision-rest-api.php` |
-| POST | `/revisions/restore/{revision_id}` | `edit_post` | `class-revision-rest-api.php` |
+| GET | `/revisions/{post_id}` | `edit_post` | `class-revision-rest-api.php` (**removed 2.1.0**) |
+| GET | `/revisions/render/{revision_id}` | `edit_post` | `class-revision-rest-api.php` (**removed 2.1.0**) |
+| GET | `/revisions/diff/{from_id}/{to_id}` | `edit_post` | `class-revision-rest-api.php` (**removed 2.1.0**) |
+| POST | `/revisions/restore/{revision_id}` | `edit_post` | `class-revision-rest-api.php` (**removed 2.1.0**) |
+| POST | `/query/render` | `read` + nonce | `class-query.php` |
+| GET | `/query/preview` | `edit_posts` + nonce | `class-query.php` |
+| POST | `/query/filter-register` | `manage_options` + nonce | `class-query.php` |
+| GET | `/query/filter-status` | `manage_options` | `class-query.php` |
+| POST | `/query/filter-rebuild` | `manage_options` + nonce | `class-query.php` |
+| GET | `/query/filters` | `manage_options` | `class-query.php` |
+| DELETE | `/query/filters` | `manage_options` + nonce | `class-query.php` |
+| GET | `/query/template` | `edit_post` on target | `class-query-template-controller.php` |
+| POST | `/query/template` | `edit_posts` | `class-query-template-controller.php` |
 | POST | `/form/submit` | Public | `class-form-handler.php` |
 | POST | `/gdpr/export` | `manage_options` | `class-gdpr-compliance.php` |
 | DELETE | `/gdpr/delete` | `manage_options` | `class-gdpr-compliance.php` |

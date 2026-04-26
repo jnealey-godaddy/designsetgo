@@ -1,6 +1,6 @@
 # DesignSetGo
 
-Professional Gutenberg block library with 49 blocks and 15 powerful extensions - complete Form Builder, container system, interactive elements, maps, modals, breadcrumbs, scroll effects, and animations. Built with WordPress standards for guaranteed editor/frontend parity.
+Professional Gutenberg block library with 53 blocks and 16 powerful extensions - complete Form Builder, Dynamic Query family, container system, interactive elements, maps, modals, breadcrumbs, scroll effects, animations, and WooCommerce blocks. Built with WordPress standards for guaranteed editor/frontend parity.
 
 ## 🤖 **First AI-Native WordPress Block Library**
 
@@ -16,13 +16,15 @@ DesignSetGo is the **first WordPress block plugin** to integrate with the WordPr
 - ✅ Project foundation and architecture complete
 - ✅ Build system configured (webpack + @wordpress/scripts)
 - ✅ PHP plugin architecture implemented
-- ✅ 49 custom blocks across 6 categories with FSE integration
+- ✅ 53 custom blocks across 8+ categories with FSE integration
 - ✅ Complete Form Builder system (13 blocks: builder + 11 field types)
 - ✅ Container system (Row, Section, Grid)
-- ✅ Interactive blocks (Tabs, Accordion, Flip Card, Reveal, Scroll effects, Slider, Counters, Progress)
-- ✅ Content blocks (Icon, Icon Button, Icon List, Card, Pill, Divider, Countdown, Blobs)
+- ✅ Interactive blocks (Tabs, Accordion, Flip Card, Reveal, Scroll Slides, Sticky Sections, Scroll Marquee, Slider, Counters, Progress)
+- ✅ Dynamic Query family (6 blocks: Query, Pagination, Filter, Results, Group Header, No Results)
+- ✅ Content blocks (Icon, Icon Button, Icon List, Card, Pill, Divider, Countdown, Blobs, Dynamic Image)
+- ✅ WooCommerce blocks (Product Categories Grid, Product Showcase Hero)
 - ✅ Location block (Map with OpenStreetMap & Google Maps support)
-- ✅ 15 Block Extensions - Animations, Sticky Header, Clickable Groups, Background Video, Responsive, Scroll Effects (Parallax, Text Reveal, Expanding Background), and more
+- ✅ 16 Block Extensions - Animations, Sticky Header, Clickable Groups, Background Video, Responsive, Hover Effects, Conditional Visibility, Dynamic Tags, Style Binding, SVG Patterns, Scroll Effects (Parallax, Text Reveal, Expanding Background), and more
 - ✅ Global styles system (theme.json integration)
 - ✅ Block patterns library
 - ✅ Comprehensive testing setup (E2E + Unit + PHP)
@@ -40,9 +42,9 @@ See [CLAUDE.md](.claude/CLAUDE.md) for development learnings and best practices.
 
 | Category | Features |
 |----------|----------|
-| **🤖 AI Integration** | **WordPress Abilities API** - First plugin with AI-native programmatic access |
-| **Blocks** | **49 blocks** across 6 categories: **Containers (3)** - Row, Section, Grid; **Form Builder (13)** - Complete form system with AJAX, spam protection, 11 field types; **Interactive (12)** - Tabs, Accordion, Flip Card, Reveal, Scroll effects, Slider, Counters, Progress, Comparison Table, Timeline; **Content/UI (10)** - Icon, Icon Button, Icon List, Card, Pill, Divider, Countdown, Blobs, Breadcrumbs, Table of Contents, plus child blocks; **Media Layouts (1)** - Fifty Fifty (50/50 split with edge-to-edge media); **Modals (2)** - Modal, Modal Trigger; **Location (1)** - Interactive Map with OpenStreetMap & Google Maps |
-| **Extensions** | **15 Extensions** - Block Animations (24 effects), Sticky Header, Clickable Groups, Background Video, Responsive Visibility, Max Width, Custom CSS, Grid Span, Grid Mobile Order, Reveal Control, Text Alignment, Draft Mode, Scroll Effects (Vertical Parallax, Text Reveal, Expanding Background) |
+| **🤖 AI Integration** | **WordPress Abilities API** — First plugin with AI-native programmatic access. **Per-URL Markdown** — any published URL returns Markdown when a client sends `Accept: text/markdown`, passes the acceptmarkdown.com contract. |
+| **Blocks** | **53 blocks** across 8+ categories: **Layout (3)** - Row, Section, Grid; **Forms (13)** - Complete form system with AJAX, spam protection, 11 field types; **Interactive (15)** - Tabs, Accordion, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counters, Progress, Comparison Table, Timeline, Modal, Modal Trigger; **Dynamic Query (6)** - Query, Pagination, Filter, Results, Group Header, No Results; **Typography & Navigation (3)** - Advanced Heading, Breadcrumbs (Schema.org), Table of Contents; **Visual (9)** - 500+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image; **Media & Location (2)** - Fifty Fifty split layout, Map (OSM + Google Maps); **WooCommerce (2)** - Product Categories Grid, Product Showcase Hero |
+| **Extensions** | **16 Extensions** - Block Animations (24 effects), Sticky Header, Clickable Groups, Background Video, Responsive Visibility, Hover Effects, Conditional Visibility, Dynamic Tags, Style Binding, SVG Patterns (25+), Max Width, Custom CSS, Grid Span, Grid Mobile Order, Reveal Control, Text Alignment Inheritance |
 | **Patterns** | Pre-designed layouts (Hero, CTA, Features, FAQ) |
 | **FSE Ready** | Full Site Editing compatible, theme.json integration, dual categorization |
 | **Performance** | Optimized bundles, code-splitting, no jQuery, declarative styling, viewScript support |
@@ -131,7 +133,7 @@ npm run plugin-zip
 
 ## Current Features
 
-### 49 Custom Blocks
+### 53 Custom Blocks
 
 📚 **[View Complete Blocks Reference →](https://github.com/jnealey-godaddy/designsetgo/wiki/Blocks-Reference)**
 
@@ -140,7 +142,7 @@ npm run plugin-zip
 - **Section** - Full-width sections with inner content width constraints
 - **Grid Container** - Responsive CSS Grid with column/row controls
 
-#### Interactive Content (12 Blocks + Child Blocks)
+#### Interactive Content (15 Blocks + Child Blocks)
 - **Accordion** - Collapsible content panels with customizable icons
 - **Tabs** - Tabbed content interface with icon support
 - **Slider** - Modern carousel with multiple effects (slide, fade, zoom)
@@ -150,10 +152,14 @@ npm run plugin-zip
 - **Image Accordion** - Expandable image panels for portfolios
 - **Counter Group** - Animated counting statistics
 - **Progress Bar** - Animated progress indicators with labels
-- **Scroll Marquee** - Horizontal scrolling galleries with parallax
+- **Scroll Marquee** - Horizontal scrolling marquee with click-drag and mouse wheel support
+- **Scroll Slides** - Scroll-pinned slideshow with crossfade transitions
+- **Sticky Sections** - Card-stacking scroll effect where sections stack as you scroll
 - **Comparison Table** - Feature comparison tables for products, services, or plans
 - **Timeline** - Chronological events, company history, or process steps with scroll animations
-- Plus child blocks: Accordion Item, Tab, Slide, Flip Card Front/Back, Image Accordion Item, Scroll Accordion Item, Counter, Timeline Item
+- **Modal** - Accessible popup/dialog with customizable triggers (moved from Modals category)
+- **Modal Trigger** - Button or element to open modals
+- Plus child blocks: Accordion Item, Tab, Slide, Flip Card Face, Image Accordion Item, Scroll Accordion Item, Counter, Timeline Item
 
 #### Content & UI Elements (10 Blocks)
 - **Icon** - 500+ icons with shapes, sizes, and animations
@@ -195,7 +201,7 @@ npm run plugin-zip
 - Success/error message customization
 - Form validation and error handling
 
-### 15 Block Extensions
+### 16 Block Extensions
 
 Extensions work with **any WordPress block** (core, third-party, or DesignSetGo):
 
@@ -205,6 +211,10 @@ Extensions work with **any WordPress block** (core, third-party, or DesignSetGo)
 - Configurable duration, delay, and easing
 - Respects `prefers-reduced-motion`
 - CSS-only implementation (no JS libraries)
+
+**Hover Effects Extension** - Animated hover interactions
+- Works with any block, including core blocks
+- Multiple hover animation styles
 
 **Sticky Header Extension** - Make headers/navs stick on scroll
 - Smooth sticky behavior with customizable offset
@@ -229,6 +239,24 @@ Extensions work with **any WordPress block** (core, third-party, or DesignSetGo)
 - Hide/show on Desktop, Tablet, Mobile
 - Works with any WordPress block
 - CSS-based (no JavaScript)
+
+**Conditional Visibility Extension** - Show or hide blocks by rule
+- Rules: meta, taxonomy, login state, query loop index
+- AND/OR rule combinations
+- Editor previews mirror frontend evaluation
+
+**Dynamic Tags Extension** - Bind block content to live data
+- Bind text, titles, URLs, and images to post meta, ACF, Meta Box, Pods, JetEngine, or custom sources
+- Works on DesignSetGo blocks and core blocks via WordPress 6.9 Block Bindings API
+- Live preview in the editor
+
+**Style Binding Extension** - Map CSS properties to dynamic data
+- Bind any CSS property (including custom properties) to a DSGo binding source
+- Validated against an allowlist to block dangerous values
+
+**SVG Patterns Extension** - Add background patterns to any block
+- 25+ repeatable SVG background patterns
+- Customizable color, opacity, and scale
 
 **Max Width Extension** - Constrain content width
 - Custom max-width controls
@@ -397,8 +425,8 @@ Reference .claude/CLAUDE.md as you develop
 ## Roadmap
 
 ### ✅ Completed (Phase 1)
-- 49 custom blocks across 6 categories (Containers, Interactive, Content/UI, Media Layouts, Modals, Location, Forms)
-- 15 block extensions (Animations, Sticky Header, Clickable Groups, Background Video, Responsive, Scroll Effects, and more)
+- 53 custom blocks across 8+ categories (Layout, Forms, Interactive, Dynamic Query, Typography & Navigation, Visual, Media & Location, WooCommerce)
+- 16 block extensions (Animations, Sticky Header, Clickable Groups, Background Video, Responsive Visibility, Hover Effects, Conditional Visibility, Dynamic Tags, Style Binding, SVG Patterns, Scroll Effects, and more)
 - Global styles integration with theme.json
 - Animation system (24+ entrance/exit animations)
 - Map block with OpenStreetMap & Google Maps support
@@ -578,31 +606,37 @@ GPL-2.0-or-later - 100% Free Forever
 
 Blocks are organized in the WordPress block inserter:
 
-**DesignSetGo Collection** - All 49 blocks grouped together
-- **Layout Containers**: Row, Section, Grid
-- **Interactive**: Accordion, Tabs, Slider, Flip Card, Reveal, Scroll Accordion, Image Accordion, Counter Group, Progress Bar, Scroll Marquee, Comparison Table, Timeline
-- **Content & UI**: Icon, Icon Button, Icon List, Card, Pill, Divider, Countdown Timer, Blobs, Breadcrumbs, Table of Contents
-- **Media Layouts**: Fifty Fifty (50/50 split with edge-to-edge media)
-- **Modals**: Modal, Modal Trigger
-- **Location**: Map (OpenStreetMap & Google Maps)
+**DesignSetGo Collection** - All 53 blocks grouped together
+- **Layout**: Row, Section, Grid
 - **Forms**: Form Builder + 11 field types (Text, Email, Phone, URL, Date, Time, Number, Checkbox, Select, Textarea, Hidden)
+- **Interactive**: Accordion, Tabs, Slider, Flip Card, Reveal, Scroll Accordion, Image Accordion, Counter Group, Progress Bar, Scroll Marquee, Scroll Slides, Sticky Sections, Comparison Table, Timeline, Modal, Modal Trigger
+- **Dynamic Query**: Query, Pagination, Filter, Results, Group Header, No Results
+- **Typography & Navigation**: Advanced Heading, Breadcrumbs, Table of Contents
+- **Visual**: Icon, Icon Button, Icon List, Card, Pill, Divider, Countdown Timer, Blobs, Dynamic Image
+- **Media & Location**: Fifty Fifty (50/50 split with edge-to-edge media), Map (OpenStreetMap & Google Maps)
+- **WooCommerce**: Product Categories Grid, Product Showcase Hero
 
 **WordPress Core Categories** - Blocks also appear in native categories
 - **Design**: Layout containers and interactive blocks
 - **Text**: Icon List, Card
 - **Widgets**: Forms, Counters, Progress Bars, Map, Countdown Timer
 
-**15 Block Extensions** - Available for ANY block (core, third-party, or DesignSetGo)
+**16 Block Extensions** - Available for ANY block (core, third-party, or DesignSetGo)
 - **Block Animations** - 24+ entrance/exit effects with scroll triggers
+- **Hover Effects** - Animated hover interactions (works on any block)
 - **Sticky Header** - Sticky navigation on scroll
 - **Clickable Groups** - Make containers clickable
 - **Background Video** - YouTube or self-hosted video backgrounds
 - **Responsive Visibility** - Hide/show by device
+- **Conditional Visibility** - Show/hide by meta, taxonomy, login state, or query index
+- **Dynamic Tags** - Bind text, links, and images to live data (post meta, ACF, and more)
+- **Style Binding** - Map CSS properties to dynamic data sources
+- **SVG Patterns** - 25+ repeatable SVG background patterns
 - **Max Width** - Content width constraints
 - **Custom CSS** - Block-specific CSS
 - **Grid Span** - Column/row spanning for grids
 - **Grid Mobile Order** - Mobile stacking order for grid items
-- **Reveal Control** - Advanced hover effects
+- **Reveal Control** - Advanced hover reveal settings
 - **Text Alignment Inheritance** - Align with parent context
 - **Draft Mode** - Control draft content visibility
 - **Vertical Scroll Parallax** - Parallax scroll effects
@@ -613,7 +647,7 @@ Blocks are organized in the WordPress block inserter:
 - Look for the "DesignSetGo" category in the pattern inserter
 - Hero sections, CTAs, Features, FAQ layouts
 
-📚 **[Complete Blocks Reference](https://github.com/jnealey-godaddy/designsetgo/wiki/Blocks-Reference)** - Detailed documentation for all 49 blocks
+📚 **[Complete Blocks Reference](https://github.com/jnealey-godaddy/designsetgo/wiki/Blocks-Reference)** - Detailed documentation for all 53 blocks
 
 ## 🤖 AI Integration (WordPress Abilities API)
 
@@ -704,4 +738,4 @@ Built with ❤️ for the WordPress community by developers who believe in:
 
 ---
 
-**License**: GPL-2.0-or-later | **Version**: 1.4.1 | **Requires WordPress**: 6.7+ | **Requires PHP**: 8.0+
+**License**: GPL-2.0-or-later | **Version**: 2.1.0 | **Requires WordPress**: 6.7+ | **Requires PHP**: 8.0+

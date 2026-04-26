@@ -2,6 +2,8 @@
 
 **Category**: Design | **Keywords**: section, stack, vertical, layout, container
 
+> **Updated in 2.1.0** — Section now automatically clears default padding when nested inside another Section.
+
 ## Overview
 
 Create vertical stacking containers for organizing content areas. Perfect for page layouts, hero sections, and content sections. Maintains centered, constrained layouts with full-width backgrounds.
@@ -42,6 +44,10 @@ Create vertical stacking containers for organizing content areas. Perfect for pa
 - Full-width galleries/images
 - Nested sections (parent already constrains)
 - Intentional edge-to-edge designs
+
+### Nested Sections and Padding
+
+When a Section block is placed inside another Section block, DesignSetGo automatically clears the inner Section's default padding so spacing doesn't compound. Only the explicitly-set (non-default) padding values are preserved; if you want padding on the inner Section you can still set it manually and it will be respected. This prevents accidental double-spacing in layouts that use Sections for structural grouping.
 
 ---
 

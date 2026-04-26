@@ -218,21 +218,16 @@ The Image Accordion block creates an interactive expandable image gallery where 
 ---
 
 **Default Expanded Item**
-- Default: 0 (none)
-- Range: 0-10
-- Which panel is expanded on page load
 
-**Values:**
-- 0: No panel expanded (all equal)
-- 1: First panel expanded
-- 2: Second panel expanded
-- etc.
+> **Updated in 2.0.51** — The control is now a named-item picker that lists each item's heading text. Previously it was a numeric slider (0–10).
+
+- Default: None (no panel expanded)
+- Shows a dropdown of your actual item headings so you can identify panels by name
+- Selecting a heading expands that panel on page load
 
 **When to Use:**
-- 0: Neutral presentation, no favoritism
-- 1+: Highlight specific panel, guide attention
-
-**Help Text:** "Which item is expanded on page load (0 = none, 1 = first, etc.)"
+- None: Neutral presentation, no favoritism
+- Any item: Highlight a specific panel and guide attention to it on arrival
 
 ---
 
