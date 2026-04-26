@@ -117,7 +117,7 @@ The filter index can be rebuilt from **Settings → DesignSetGo → Dynamic Quer
 
 ```
 wp dsgo query index rebuild
-wp dsgo query index rebuild-filter
+wp dsgo query index rebuild-filter <filter_key>
 wp dsgo query index status
 ```
 

@@ -167,7 +167,7 @@ Documentation for all 16 block extensions that enhance any WordPress block:
 - [CONDITIONAL-VISIBILITY.md](./extensions/CONDITIONAL-VISIBILITY.md) - Conditional block visibility (meta, taxonomy, auth, index)
 - [CUSTOM-CSS.md](./extensions/CUSTOM-CSS.md) - Custom CSS per block
 - [STYLE-BINDING.md](./extensions/STYLE-BINDING.md) - CSS property bindings to dynamic data
-- [SVG-PATTERNS.md](./extensions/SVG-PATTERNS.md) - 25+ SVG background patterns
+- [SVG-PATTERNS.md](./extensions/SVG-PATTERNS.md) - 31 SVG background patterns
 - [TEXT-ALIGNMENT-INHERITANCE.md](./extensions/TEXT-ALIGNMENT-INHERITANCE.md) - Alignment inheritance
 - [DYNAMIC-TAGS.md](./extensions/DYNAMIC-TAGS.md) - Bind block text/links/images to live data
 - [DRAFT-MODE.md](./extensions/DRAFT-MODE.md) - Draft content visibility control

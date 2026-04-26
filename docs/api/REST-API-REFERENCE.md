@@ -480,13 +480,11 @@ Dismisses the conflict notice without resolving.
 
 ---
 
----
-
 ## Removed Endpoints
 
 ### `/designsetgo/v1/revisions/*` — Removed in 2.1.0
 
-The Visual Revision Comparison endpoints (`GET /revisions/{post_id}`, `GET /revisions/render/{revision_id}`, `GET /revisions/diff/{from_id}/{to_id}`, `POST /revisions/restore/{revision_id}`) were removed in 2.1.0 in favour of WordPress 7.0's native visual diff for revisions. The associated admin page, block differ, revision renderer, and settings keys (`revisions.enable_visual_comparison`, `revisions.default_to_visual`) were also removed. The endpoint stubs in the **Revisions** section above are retained for historical reference only.
+The Visual Revision Comparison endpoints (`GET /revisions/{post_id}`, `GET /revisions/render/{revision_id}`, `GET /revisions/diff/{from_id}/{to_id}`, `POST /revisions/restore/{revision_id}`) were removed in 2.1.0 in favour of WordPress 7.0's native visual diff for revisions. The associated admin page, block differ, revision renderer, and settings keys (`revisions.enable_visual_comparison`, `revisions.default_to_visual`) were also removed. Entries for these routes are retained in the Endpoint Summary table below for historical reference.
 
 ---
 
@@ -558,6 +556,27 @@ Returns a lightweight list of preview items for `users` and `terms` sources. Pos
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `attributes` | `object` | Yes | Block attributes. Keys used: `source` (`users`\|`terms`), `perPage` (1–100, default 6), `taxonomy` (required when `source=terms`, default `category`). |
+
+**Example request**
+
+WordPress REST accepts nested objects on `GET` via bracket notation in the query string:
+
+```bash
+curl -G 'https://example.com/wp-json/designsetgo/v1/query/preview' \
+  --data-urlencode 'attributes[source]=users' \
+  --data-urlencode 'attributes[perPage]=6' \
+  -H 'X-WP-Nonce: <nonce>'
+```
+
+For terms:
+
+```bash
+curl -G 'https://example.com/wp-json/designsetgo/v1/query/preview' \
+  --data-urlencode 'attributes[source]=terms' \
+  --data-urlencode 'attributes[taxonomy]=category' \
+  --data-urlencode 'attributes[perPage]=10' \
+  -H 'X-WP-Nonce: <nonce>'
+```
 
 **Response** — `200 OK`
 

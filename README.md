@@ -255,7 +255,7 @@ Extensions work with **any WordPress block** (core, third-party, or DesignSetGo)
 - Validated against an allowlist to block dangerous values
 
 **SVG Patterns Extension** - Add background patterns to any block
-- 25+ repeatable SVG background patterns
+- 31 repeatable SVG background patterns
 - Customizable color, opacity, and scale
 
 **Max Width Extension** - Constrain content width
@@ -631,7 +631,7 @@ Blocks are organized in the WordPress block inserter:
 - **Conditional Visibility** - Show/hide by meta, taxonomy, login state, or query index
 - **Dynamic Tags** - Bind text, links, and images to live data (post meta, ACF, and more)
 - **Style Binding** - Map CSS properties to dynamic data sources
-- **SVG Patterns** - 25+ repeatable SVG background patterns
+- **SVG Patterns** - 31 repeatable SVG background patterns
 - **Max Width** - Content width constraints
 - **Custom CSS** - Block-specific CSS
 - **Grid Span** - Column/row spanning for grids

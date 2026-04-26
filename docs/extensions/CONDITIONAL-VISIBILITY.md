@@ -10,7 +10,7 @@ Controls whether a block is rendered based on per-item data when the block is in
 
 Every block receives a `dsgoVisibility` attribute (type `object`, default `null`). The attribute holds a `{ operator, rules[] }` structure. On the frontend, a `render_block` filter compares the rules against the current item context pushed by Dynamic Query onto `$GLOBALS['designsetgo_parent_stack']`. Blocks that do not match are suppressed (rendered as an empty string). The editor canvas mirrors this evaluation inside query-item previews using the same rule logic compiled to JavaScript.
 
-Blocks outside a Dynamic Query context are unaffected — visibility rules are only evaluated when the item-context stack is non-empty.
+Blocks outside a Dynamic Query context are unaffected — visibility rules are only evaluated when the item-context stack is non-empty. This applies to **every** rule type, including **Auth State**: a logged-in/out rule on a block that is not inside a Dynamic Query will be ignored. The intent is to keep this extension focused on per-item rendering inside loops; for global "show only to logged-in users" use cases on standalone pages, use a core Block Visibility plugin or `wp_get_current_user()` in a custom block.
 
 ## Inspector controls
 
