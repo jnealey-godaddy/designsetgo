@@ -51,13 +51,24 @@ class Registry {
 	public static function instance() {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
-			self::$instance->register_default_groups();
+
+			if ( did_action( 'after_setup_theme' ) ) {
+				self::$instance->register_default_groups();
+			} else {
+				add_action( 'after_setup_theme', function () {
+					Registry::instance()->register_default_groups();
+				} );
+			}
 		}
 		return self::$instance;
 	}
 
 	/**
 	 * Seed the default group list so sources can reference them.
+	 *
+	 * Called from after_setup_theme so __() calls don't trigger
+	 * _load_textdomain_just_in_time before translations are ready.
+	 * Runs well before sources register at init priority 6.
 	 */
 	private function register_default_groups() {
 		$this->register_group( 'post', __( 'Post', 'designsetgo' ), 10 );
