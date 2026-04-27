@@ -188,11 +188,10 @@ class Assets {
 			return;
 		}
 
-		// Check user can edit post (optional security check).
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
-			return;
-		}
-
+		// No capability check: this is the only invalidation path now and it
+		// must run in WP-CLI / cron / programmatic update contexts where
+		// there is no current user. Clearing this boolean cache entry is
+		// not a privileged operation.
 		wp_cache_delete( 'dsgo_has_blocks_' . $post_id, 'designsetgo' );
 
 		// Backwards compatibility with the old transient-based cache.
