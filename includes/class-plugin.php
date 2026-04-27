@@ -707,8 +707,6 @@ class Plugin {
 		}
 
 		// Hook into WordPress.
-		// Note: load_plugin_textdomain() is not needed for WordPress.org plugins since WP 4.6+.
-		// WordPress automatically loads translations from wordpress.org.
 		add_action( 'enqueue_block_editor_assets', array( $this, 'editor_assets' ) );
 
 		// Add block category.
