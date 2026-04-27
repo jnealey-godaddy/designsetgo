@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,10 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.1.1 - 2026-04-27 =
+
+* **Fix:** Eliminates `_load_textdomain_just_in_time` PHP notices on WordPress 6.7+. Dynamic Tags default group registration now defers to `after_setup_theme`, and Abilities API registrations defer to `init` when those hooks fire before translations are loaded. Recommended for all sites; no content or settings changes required. (Props @ncimbaljevic-godaddy)
 
 = 2.1.0 - 2026-04-24 =
 
@@ -775,6 +779,9 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 * Comprehensive documentation and developer guides
 
 == Upgrade Notice ==
+
+= 2.1.1 =
+Patch fix for WordPress 6.7+: eliminates `_load_textdomain_just_in_time` PHP notices triggered by early translation function calls. Recommended for all sites.
 
 = 2.1.0 =
 Major update: Dynamic Query block family (list any posts/users/terms with filters, pagination, and faceted counts), Dynamic Tags picker for live data, native WordPress 6.9 Block Bindings, field sources for Meta Box / Pods / JetEngine, conditional block visibility, per-URL Markdown, Hover Effects extension, grid column toolbar + row span, and a full editor UX refresh (standardized inspectors, new onboarding). Security hardening for form redirects, Draft Mode REST endpoints, and CSS style bindings. Visual Revision Comparison removed (WordPress 7.0 ships a native replacement).

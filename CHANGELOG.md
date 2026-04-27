@@ -5,6 +5,11 @@ All notable changes to the DesignSetGo plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-04-27
+
+### Bug Fixes
+- **Eliminate `_load_textdomain_just_in_time` notices on WordPress 6.7+** — Defer Dynamic Tags default group registration to `after_setup_theme`, and defer Abilities API category/ability registration to `init` when those hooks fire before translations are loaded. The previous code path called `__()` before WordPress had finished loading translations, which surfaced as PHP notices on 6.7 and grew louder on 6.9. (#391, thanks @ncimbaljevic-godaddy)
+
 ## [2.1.0] - 2026-04-24
 
 ### New Blocks

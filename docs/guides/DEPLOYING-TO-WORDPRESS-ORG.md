@@ -187,11 +187,11 @@ After the release commit lands on `main`:
 ```bash
 git checkout main
 git pull
-git tag 2.2.0           # NO leading "v"
-git push origin 2.2.0
+git tag v2.2.0
+git push origin v2.2.0
 ```
 
-> **The tag name IS the WP.org SVN tag.** Use the bare version (`2.2.0`), not `v2.2.0`. Mismatched tags must be re-cut — SVN tags cannot be silently re-pointed.
+> **Tag convention:** this repo uses `v`-prefixed tags (`v2.1.0`, `v2.0.51`, …). [`10up/action-wordpress-plugin-deploy`](https://github.com/10up/action-wordpress-plugin-deploy) strips the leading `v` before pushing to SVN, so WordPress.org still gets `2.2.0` as the SVN tag and that's what `Stable tag` in `readme.txt` must match. SVN tags cannot be silently re-pointed; if you mis-tag, cut a new patch version rather than trying to overwrite.
 
 ---
 
