@@ -40,9 +40,11 @@ class Assets {
 		add_action( 'wp_enqueue_scripts', array( $this, 'register_frontend_assets' ) );
 		add_filter( 'render_block', array( $this, 'maybe_enqueue_frontend_on_render' ), 10, 2 );
 
-		// Clear block detection cache when post is saved.
+		// Clear block detection cache when post is saved or deleted.
+		// Use before_delete_post (not deleted_post) so the post row still
+		// exists when clear_block_cache() runs current_user_can('edit_post').
 		add_action( 'save_post', array( $this, 'clear_block_cache' ) );
-		add_action( 'deleted_post', array( $this, 'clear_block_cache' ) );
+		add_action( 'before_delete_post', array( $this, 'clear_block_cache' ) );
 
 		// Performance: CSS loading optimization.
 		add_filter( 'style_loader_tag', array( $this, 'optimize_css_loading' ), 10, 4 );
