@@ -124,7 +124,7 @@ class Assets {
 		}
 
 		// Check object cache first (faster if Redis/Memcached available).
-		// Cache is invalidated via clear_block_cache() on save_post / deleted_post.
+		// Cache is invalidated via clear_block_cache() on save_post / before_delete_post.
 		$cache_key = 'dsgo_has_blocks_' . $post_id;
 		$cached    = wp_cache_get( $cache_key, 'designsetgo' );
 
