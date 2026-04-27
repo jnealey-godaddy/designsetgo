@@ -13,7 +13,7 @@ name: Claude Code Review
 # inside this workflow without first re-evaluating the threat model.
 on:
   pull_request_target:
-    types: [opened, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review]
 
 jobs:
   claude-review:
@@ -30,6 +30,9 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          # Don't leave the privileged base-repo GITHUB_TOKEN in .git/config
+          # while untrusted PR code is on disk.
+          persist-credentials: false
 
       - name: Run Claude Code Review
         id: claude-review
