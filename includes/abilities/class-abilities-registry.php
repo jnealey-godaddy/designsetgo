@@ -260,7 +260,7 @@ class Abilities_Registry {
 		// init, so __() calls here trigger a _load_textdomain_just_in_time
 		// notice.  Defer to init when called too early.
 		if ( ! did_action( 'init' ) ) {
-			add_action( 'init', array( $this, 'register_ability_categories' ) );
+			add_action( 'init', array( $this, 'register_ability_categories' ), 8 );
 			return;
 		}
 
@@ -304,7 +304,7 @@ class Abilities_Registry {
 		// to avoid _load_textdomain_just_in_time notice from __() inside
 		// each ability's get_config().
 		if ( ! did_action( 'init' ) ) {
-			add_action( 'init', array( $this, 'register_abilities' ) );
+			add_action( 'init', array( $this, 'register_abilities' ), 9 );
 			return;
 		}
 
