@@ -1,8 +1,19 @@
 name: Claude Code Review
 
+# Uses `pull_request_target` so the workflow runs in the BASE repo context with
+# access to secrets (CLAUDE_CODE_OAUTH_TOKEN) and `id-token: write`. The default
+# `pull_request` event runs from forks WITHOUT secrets, which made every
+# external-contributor PR fail with "Unable to get ACTIONS_ID_TOKEN_REQUEST_URL".
+#
+# SECURITY: `pull_request_target` runs privileged. The action below:
+#   - Checks out the PR head SHA explicitly (untrusted code).
+#   - Only uses read-only tools (Read/Grep/Glob) plus a narrow `gh pr` allowlist.
+#   - Does NOT execute any build/test scripts from the PR.
+# Do not add steps that run code from the PR (e.g. `npm install`, `npm test`)
+# inside this workflow without first re-evaluating the threat model.
 on:
-  pull_request:
-    types: [opened, ready_for_review]
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
 
 jobs:
   claude-review:
@@ -14,10 +25,14 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout PR head
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          # Don't leave the privileged base-repo GITHUB_TOKEN in .git/config
+          # while untrusted PR code is on disk.
+          persist-credentials: false
 
       - name: Run Claude Code Review
         id: claude-review
