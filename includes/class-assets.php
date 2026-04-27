@@ -63,10 +63,9 @@ class Assets {
 			return;
 		}
 
-		// Enqueue Dashicons for tab/accordion icon pickers.
-		// Note: WordPress automatically loads Dashicons in admin, but we enqueue
-		// explicitly to ensure availability. This is lightweight in editor context.
-		wp_enqueue_style( 'dashicons' );
+		// Dashicons load automatically in admin contexts, so no explicit enqueue
+		// is needed here. The frontend tab/accordion path enqueues it on demand
+		// in maybe_enqueue_frontend_on_render().
 
 		// Load block extensions and variations.
 		$asset_file_path = DESIGNSETGO_PATH . 'build/index.asset.php';
@@ -123,10 +122,9 @@ class Assets {
 		}
 
 		// Check object cache first (faster if Redis/Memcached available).
-		// Include post modified time in key for automatic cache invalidation.
-		$modified_time = get_post_modified_time( 'U', false, $post_id );
-		$cache_key     = 'dsgo_has_blocks_' . $post_id . '_' . $modified_time;
-		$cached        = wp_cache_get( $cache_key, 'designsetgo' );
+		// Cache is invalidated via clear_block_cache() on save_post / deleted_post.
+		$cache_key = 'dsgo_has_blocks_' . $post_id;
+		$cached    = wp_cache_get( $cache_key, 'designsetgo' );
 
 		if ( false !== $cached ) {
 			return (bool) $cached;
@@ -174,7 +172,6 @@ class Assets {
 	 * Clear block detection cache for a post.
 	 *
 	 * Called automatically when a post is saved or deleted.
-	 * Clears object cache (cache key includes modified time, so it auto-invalidates).
 	 *
 	 * @param int $post_id Post ID.
 	 */
@@ -194,14 +191,10 @@ class Assets {
 			return;
 		}
 
-		// Clear all cache entries for this post (wildcard not supported in wp_cache).
-		// The modified time in the cache key handles automatic invalidation,
-		// so we don't strictly need to delete old entries (they'll expire).
-		// This is here for backwards compatibility with old transient-based cache.
-		delete_transient( 'dsgo_has_blocks_' . $post_id );
+		wp_cache_delete( 'dsgo_has_blocks_' . $post_id, 'designsetgo' );
 
-		// Note: Object cache entries auto-invalidate on post update because
-		// the cache key includes the post's modified time.
+		// Backwards compatibility with the old transient-based cache.
+		delete_transient( 'dsgo_has_blocks_' . $post_id );
 	}
 
 	/**
