@@ -18,7 +18,7 @@ const CSS_KEYWORDS = new Set([
  * Values that start with these prefixes are already valid CSS and should pass through.
  */
 const CSS_VALUE_PREFIX =
-	/^(#|rgb|hsl|hwb|lab|lch|oklch|oklab|color\(|var\(|url\(|\d)/;
+	/^(#|rgb|hsl|hwb|lab|lch|oklch|oklab|color\(|var\(|url\(|linear-gradient\(|radial-gradient\(|conic-gradient\(|repeating-linear-gradient\(|repeating-radial-gradient\(|repeating-conic-gradient\(|\d)/;
 
 /**
  * Convert WordPress preset format to CSS variable.
