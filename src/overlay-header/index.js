@@ -19,6 +19,10 @@ import {
 	ColorPalette,
 	BaseControl,
 } from '@wordpress/components';
+import {
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
+} from '@wordpress/block-editor';
 
 /**
  * Overlay Header Panel Component
@@ -29,10 +33,29 @@ const OverlayHeaderPanel = () => {
 		[]
 	);
 
-	const colors = useSelect((select) => {
-		const settings = select('core/block-editor').getSettings();
-		return settings.colors || [];
-	}, []);
+	const colorGradientSettings = useMultipleOriginColorsAndGradients();
+	const originColors = colorGradientSettings?.colors || [];
+
+	// Walk origin groups in reverse so custom palette wins over theme/default
+	// when slugs collide, matching how --wp--preset--color--{slug} resolves at render.
+	const findColorBySlug = (slug) => {
+		for (let i = originColors.length - 1; i >= 0; i--) {
+			const match = originColors[i].colors?.find((c) => c.slug === slug);
+			if (match) return match;
+		}
+		return undefined;
+	};
+
+	const findColorByHex = (hex) => {
+		const normalized = hex.toLowerCase();
+		for (let i = originColors.length - 1; i >= 0; i--) {
+			const match = originColors[i].colors?.find(
+				(c) => c.color?.toLowerCase() === normalized
+			);
+			if (match) return match;
+		}
+		return undefined;
+	};
 
 	const [meta, setMeta] = useEntityProp('postType', postType, 'meta');
 
@@ -40,9 +63,8 @@ const OverlayHeaderPanel = () => {
 	const textColorSlug = meta?.dsgo_overlay_header_text_color || '';
 	const skipTopBarEnabled = meta?.dsgo_overlay_skip_top_bar || false;
 
-	// Convert slug to hex for ColorPalette display.
 	const textColorHex = textColorSlug
-		? colors.find((c) => c.slug === textColorSlug)?.color || ''
+		? findColorBySlug(textColorSlug)?.color || ''
 		: '';
 
 	const updateOverlay = (value) => {
@@ -59,7 +81,7 @@ const OverlayHeaderPanel = () => {
 			setMeta({ ...meta, dsgo_overlay_header_text_color: '' });
 			return;
 		}
-		const colorObj = colors.find((c) => c.color === hex);
+		const colorObj = findColorByHex(hex);
 		setMeta({
 			...meta,
 			dsgo_overlay_header_text_color: colorObj?.slug || '',
@@ -113,7 +135,7 @@ const OverlayHeaderPanel = () => {
 						)}
 					>
 						<ColorPalette
-							colors={colors}
+							colors={originColors}
 							value={textColorHex}
 							onChange={updateTextColor}
 							clearable
