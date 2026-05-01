@@ -90,7 +90,11 @@ $inline-block-data-types: (
 			left: 0;
 			right: 0;
 			bottom: 0;
-			background-color: var(--dsgo-overlay-color) !important;
+			/* Gradient takes precedence; falls back to solid color when unset */
+			background: var(
+				--dsgo-overlay-gradient,
+				var(--dsgo-overlay-color)
+			) !important;
 			opacity: var(--dsgo-overlay-opacity, 0.8) !important;
 			pointer-events: none;
 			z-index: 1;

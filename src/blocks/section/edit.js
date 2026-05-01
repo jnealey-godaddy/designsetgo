@@ -65,6 +65,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		hoverIconBackgroundColor,
 		hoverButtonBackgroundColor,
 		overlayColor,
+		overlayGradient,
 		layout,
 		// Shape divider attributes
 		shapeDividerTop,
@@ -137,10 +138,6 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 			setAttributes,
 			entries: [
 				{
-					label: __('Overlay Color', 'designsetgo'),
-					attribute: 'overlayColor',
-				},
-				{
 					label: __('Hover Background Color', 'designsetgo'),
 					attribute: 'hoverBackgroundColor',
 				},
@@ -150,6 +147,24 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 				},
 			],
 		});
+
+	// Overlay supports both solid color and gradient. Built inline (rather than
+	// via useBlockColors) so we can pass both colorValue/gradientValue to the
+	// dropdown and let users toggle between solid and gradient.
+	const overlaySetting = {
+		label: __('Overlay', 'designsetgo'),
+		colorValue: decodeColorValue(overlayColor, colorGradientSettings),
+		gradientValue: overlayGradient,
+		onColorChange: (color) =>
+			setAttributes({
+				overlayColor:
+					encodeColorValue(color, colorGradientSettings) || '',
+			}),
+		onGradientChange: (gradient) =>
+			setAttributes({ overlayGradient: gradient || '' }),
+		enableAlpha: true,
+		clearable: true,
+	};
 
 	// Setup custom units for width control
 	const units = useCustomUnits({
@@ -255,10 +270,11 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 	}, []);
 
 	// Build className (must match save.js)
+	const hasOverlay = !!(overlayColor || overlayGradient);
 	const blockClassName = [
 		'dsgo-stack',
 		!constrainWidth && 'dsgo-no-width-constraint',
-		overlayColor && 'dsgo-stack--has-overlay',
+		hasOverlay && 'dsgo-stack--has-overlay',
 		(shapeDividerTop || shapeDividerBottom) &&
 			'dsgo-stack--has-shape-divider',
 	]
@@ -291,6 +307,14 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+			}),
+			...(overlayGradient && {
+				'--dsgo-overlay-gradient': convertPresetToCSSVar(
+					overlayGradient,
+					'gradient'
+				),
+			}),
+			...(hasOverlay && {
 				'--dsgo-overlay-opacity': '0.8',
 			}),
 		},
@@ -443,6 +467,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 					panelId={clientId}
 					title={__('Hover Settings', 'designsetgo')}
 					settings={[
+						overlaySetting,
 						...hoverColorSettings,
 						// Only show icon background control if hover background is set
 						...(hoverBackgroundColor

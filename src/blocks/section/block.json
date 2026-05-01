@@ -140,6 +140,10 @@
 			"type": "string",
 			"default": ""
 		},
+		"overlayGradient": {
+			"type": "string",
+			"default": ""
+		},
 		"shapeDividerTop": {
 			"type": "string",
 			"default": ""
@@ -217,6 +221,7 @@
 			"hoverIconBackgroundColor": "Icon background color on hover (passed to child blocks via context)",
 			"hoverButtonBackgroundColor": "Button background color on hover (passed to child blocks via context)",
 			"overlayColor": "Semi-transparent overlay color for background images",
+			"overlayGradient": "Semi-transparent overlay gradient for background images (takes precedence over overlayColor when set)",
 			"shapeDividerTop": "Shape divider style for the top edge (wave, tilt, curve, etc.)",
 			"shapeDividerTopColor": "Color of the top shape divider",
 			"shapeDividerTopHeight": "Height of the top shape divider in pixels",

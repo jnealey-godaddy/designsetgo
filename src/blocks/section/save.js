@@ -8,7 +8,10 @@
  */
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
-import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	convertColorToCSSVar,
+	convertPresetToCSSVar,
+} from '../../utils/convert-preset-to-css-var';
 import ShapeDivider from './components/ShapeDivider';
 
 /**
@@ -30,6 +33,7 @@ export default function SectionSave({ attributes }) {
 		hoverIconBackgroundColor,
 		hoverButtonBackgroundColor,
 		overlayColor,
+		overlayGradient,
 		// Shape divider attributes
 		shapeDividerTop,
 		shapeDividerTopColor,
@@ -61,10 +65,11 @@ export default function SectionSave({ attributes }) {
 		(textColor ? `var(--wp--preset--color--${textColor})` : '');
 
 	// Build className with conditional no-width-constraint and overlay classes
+	const hasOverlay = !!(overlayColor || overlayGradient);
 	const className = [
 		'dsgo-stack',
 		!constrainWidth && 'dsgo-no-width-constraint',
-		overlayColor && 'dsgo-stack--has-overlay',
+		hasOverlay && 'dsgo-stack--has-overlay',
 		(shapeDividerTop || shapeDividerBottom) &&
 			'dsgo-stack--has-shape-divider',
 	]
@@ -95,6 +100,14 @@ export default function SectionSave({ attributes }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+			}),
+			...(overlayGradient && {
+				'--dsgo-overlay-gradient': convertPresetToCSSVar(
+					overlayGradient,
+					'gradient'
+				),
+			}),
+			...(hasOverlay && {
 				'--dsgo-overlay-opacity': '0.8',
 			}),
 		},
