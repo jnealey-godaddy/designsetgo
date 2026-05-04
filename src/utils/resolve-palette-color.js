@@ -2,18 +2,34 @@
  * Lookup helpers for the multi-origin palette returned by
  * useMultipleOriginColorsAndGradients().
  *
- * The hook returns origins in display order [theme, default, custom]. For
- * slug or hex collisions across origins, --wp--preset--color--{slug} resolves
- * to the *custom* palette at render time (custom CSS vars are loaded after
- * theme/default and override them). These helpers walk origins in reverse so
- * the editor lookup mirrors that cascade.
+ * For slug or hex collisions across origins, --wp--preset--color--{slug}
+ * resolves to whichever palette has higher precedence in WP_Theme_JSON
+ * merge order: custom > theme > default. These helpers iterate origins in
+ * that precedence so the editor lookup mirrors what the CSS variable
+ * resolves to at render time.
+ *
+ * Looking up by origin `slug` instead of array index keeps this independent
+ * of the order the hook happens to push origins into the array.
  *
  * @see node_modules/@wordpress/block-editor/build-module/components/colors-gradients/use-multiple-origin-colors-and-gradients.js
  */
 
+const ORIGIN_PRECEDENCE = ['custom', 'theme', 'default'];
+
+const orderedOrigins = (originColors) => {
+	if (!Array.isArray(originColors)) return [];
+	const byPrecedence = ORIGIN_PRECEDENCE.map((slug) =>
+		originColors.find((o) => o?.slug === slug)
+	).filter(Boolean);
+	const others = originColors.filter(
+		(o) => o && !ORIGIN_PRECEDENCE.includes(o.slug)
+	);
+	return [...byPrecedence, ...others];
+};
+
 /**
- * Find a color in the multi-origin palette by slug, preferring custom over
- * theme/default when the same slug appears in multiple origins.
+ * Find a color in the multi-origin palette by slug, preferring custom > theme
+ * > default when the same slug appears in multiple origins.
  *
  * @param {Array}            originColors The grouped colors array from
  *                                        useMultipleOriginColorsAndGradients().
@@ -21,11 +37,9 @@
  * @return {Object|undefined} The matching color object, or undefined.
  */
 export function resolvePresetColorBySlug(originColors, slug) {
-	if (!slug || !Array.isArray(originColors)) {
-		return undefined;
-	}
-	for (let i = originColors.length - 1; i >= 0; i--) {
-		const match = originColors[i]?.colors?.find((c) => c.slug === slug);
+	if (!slug) return undefined;
+	for (const origin of orderedOrigins(originColors)) {
+		const match = origin.colors?.find((c) => c.slug === slug);
 		if (match) return match;
 	}
 	return undefined;
@@ -33,7 +47,7 @@ export function resolvePresetColorBySlug(originColors, slug) {
 
 /**
  * Find a color in the multi-origin palette by hex value (case-insensitive),
- * preferring custom over theme/default when the same hex appears in multiple
+ * preferring custom > theme > default when the same hex appears in multiple
  * origins.
  *
  * @param {Array}            originColors The grouped colors array from
@@ -42,12 +56,10 @@ export function resolvePresetColorBySlug(originColors, slug) {
  * @return {Object|undefined} The matching color object, or undefined.
  */
 export function resolvePresetColorByHex(originColors, hex) {
-	if (!hex || !Array.isArray(originColors)) {
-		return undefined;
-	}
+	if (!hex) return undefined;
 	const normalized = hex.toLowerCase();
-	for (let i = originColors.length - 1; i >= 0; i--) {
-		const match = originColors[i]?.colors?.find(
+	for (const origin of orderedOrigins(originColors)) {
+		const match = origin.colors?.find(
 			(c) => c.color?.toLowerCase() === normalized
 		);
 		if (match) return match;
