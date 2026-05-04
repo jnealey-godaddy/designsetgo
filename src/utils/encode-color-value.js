@@ -13,6 +13,11 @@
  * @see node_modules/@wordpress/block-editor/build-module/components/global-styles/color-panel.js
  */
 
+import {
+	resolvePresetColorBySlug,
+	resolvePresetColorByHex,
+} from './resolve-palette-color';
+
 /**
  * Encode a hex color value to WordPress preset format if it matches a theme preset.
  *
@@ -29,12 +34,9 @@ export function encodeColorValue(colorValue, colorSettings) {
 		return colorValue;
 	}
 
-	const allColors = colorSettings.colors.flatMap(
-		({ colors: originColors }) => originColors
-	);
-	const normalizedValue = colorValue.toLowerCase();
-	const colorObject = allColors.find(
-		({ color }) => color.toLowerCase() === normalizedValue
+	const colorObject = resolvePresetColorByHex(
+		colorSettings.colors,
+		colorValue
 	);
 
 	return colorObject ? `var:preset|color|${colorObject.slug}` : colorValue;
@@ -81,10 +83,7 @@ export function decodeColorValue(colorValue, colorSettings) {
 		return colorValue;
 	}
 
-	const allColors = colorSettings.colors.flatMap(
-		({ colors: originColors }) => originColors
-	);
-	const colorObject = allColors.find((c) => c.slug === slug);
+	const colorObject = resolvePresetColorBySlug(colorSettings.colors, slug);
 
 	// Return hex if found, undefined if slug exists but isn't in current palette.
 	// Returning undefined (not the raw preset string) prevents broken swatches

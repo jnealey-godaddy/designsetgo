@@ -23,6 +23,10 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
+import {
+	resolvePresetColorBySlug,
+	resolvePresetColorByHex,
+} from '../utils/resolve-palette-color';
 
 /**
  * Overlay Header Panel Component
@@ -36,27 +40,6 @@ const OverlayHeaderPanel = () => {
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 	const originColors = colorGradientSettings?.colors || [];
 
-	// Walk origin groups in reverse so custom palette wins over theme/default
-	// when slugs collide, matching how --wp--preset--color--{slug} resolves at render.
-	const findColorBySlug = (slug) => {
-		for (let i = originColors.length - 1; i >= 0; i--) {
-			const match = originColors[i].colors?.find((c) => c.slug === slug);
-			if (match) return match;
-		}
-		return undefined;
-	};
-
-	const findColorByHex = (hex) => {
-		const normalized = hex.toLowerCase();
-		for (let i = originColors.length - 1; i >= 0; i--) {
-			const match = originColors[i].colors?.find(
-				(c) => c.color?.toLowerCase() === normalized
-			);
-			if (match) return match;
-		}
-		return undefined;
-	};
-
 	const [meta, setMeta] = useEntityProp('postType', postType, 'meta');
 
 	const overlayEnabled = meta?.dsgo_overlay_header || false;
@@ -64,7 +47,7 @@ const OverlayHeaderPanel = () => {
 	const skipTopBarEnabled = meta?.dsgo_overlay_skip_top_bar || false;
 
 	const textColorHex = textColorSlug
-		? findColorBySlug(textColorSlug)?.color || ''
+		? resolvePresetColorBySlug(originColors, textColorSlug)?.color || ''
 		: '';
 
 	const updateOverlay = (value) => {
@@ -81,7 +64,7 @@ const OverlayHeaderPanel = () => {
 			setMeta({ ...meta, dsgo_overlay_header_text_color: '' });
 			return;
 		}
-		const colorObj = findColorByHex(hex);
+		const colorObj = resolvePresetColorByHex(originColors, hex);
 		setMeta({
 			...meta,
 			dsgo_overlay_header_text_color: colorObj?.slug || '',
