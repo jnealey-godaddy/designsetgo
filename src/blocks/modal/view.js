@@ -19,6 +19,38 @@
 			window.dsgoModalDebug) ||
 		window.location.search.includes('dsgo_debug=1');
 
+	// In-memory fallback when browser storage is blocked (sandboxed iframes,
+	// incognito mode with third-party cookies disabled, strict privacy modes).
+	const memoryStore = {
+		session: new Map(),
+		local: new Map(),
+		cookie: new Map(),
+	};
+
+	function safeStorageGet(type, key) {
+		try {
+			const storage = type === 'session' ? sessionStorage : localStorage;
+			const value = storage.getItem(key);
+			if (value !== null) {
+				return value;
+			}
+		} catch (e) {
+			// Storage access blocked — fall through to memory.
+		}
+		return memoryStore[type].has(key) ? memoryStore[type].get(key) : null;
+	}
+
+	function safeStorageSet(type, key, value) {
+		try {
+			const storage = type === 'session' ? sessionStorage : localStorage;
+			storage.setItem(key, value);
+			return;
+		} catch (e) {
+			// Storage access blocked — use memory fallback.
+		}
+		memoryStore[type].set(key, value);
+	}
+
 	/**
 	 * Modal Manager Class
 	 *
@@ -450,7 +482,7 @@
 
 			// Check session storage for session frequency
 			if (frequency === 'session') {
-				if (sessionStorage.getItem(storageKey)) {
+				if (safeStorageGet('session', storageKey)) {
 					return false;
 				}
 			}
@@ -458,7 +490,7 @@
 			// Check localStorage/cookie for once frequency
 			if (frequency === 'once') {
 				// Try localStorage first
-				if (localStorage.getItem(storageKey)) {
+				if (safeStorageGet('local', storageKey)) {
 					return false;
 				}
 
@@ -484,12 +516,12 @@
 			const storageKey = `dsgo_modal_${this.modalId}_shown`;
 
 			if (frequency === 'session') {
-				sessionStorage.setItem(storageKey, 'true');
+				safeStorageSet('session', storageKey, 'true');
 			}
 
 			if (frequency === 'once') {
 				// Save to localStorage
-				localStorage.setItem(storageKey, 'true');
+				safeStorageSet('local', storageKey, 'true');
 
 				// Also save to cookie as fallback
 				this.setCookie(
@@ -507,8 +539,19 @@
 		 * @param name
 		 */
 		getCookie(name) {
+			let rawCookie = '';
+			try {
+				rawCookie = document.cookie;
+			} catch (e) {
+				// document.cookie access blocked (sandboxed iframe, strict
+				// privacy mode). Fall back to in-memory store.
+				return memoryStore.cookie.has(name)
+					? memoryStore.cookie.get(name)
+					: undefined;
+			}
+
 			// Use safer string splitting instead of complex regex
-			const cookieString = `; ${document.cookie}`;
+			const cookieString = `; ${rawCookie}`;
 			const parts = cookieString.split(`; ${name}=`);
 
 			if (parts.length === 2) {
@@ -521,7 +564,9 @@
 				}
 			}
 
-			return undefined;
+			return memoryStore.cookie.has(name)
+				? memoryStore.cookie.get(name)
+				: undefined;
 		}
 
 		/**
@@ -546,7 +591,13 @@
 			const secure =
 				window.location.protocol === 'https:' ? ';Secure' : '';
 
-			document.cookie = `${name}=${encodedValue};expires=${expires.toUTCString()};path=/;SameSite=${sameSite}${secure}`;
+			try {
+				document.cookie = `${name}=${encodedValue};expires=${expires.toUTCString()};path=/;SameSite=${sameSite}${secure}`;
+			} catch (e) {
+				// document.cookie write blocked — keep value in memory so
+				// frequency tracking still works for the current page session.
+				memoryStore.cookie.set(name, value);
+			}
 		}
 
 		/**
