@@ -39,12 +39,17 @@
 	function safeStorageGet(type, key) {
 		try {
 			const storage = type === 'session' ? sessionStorage : localStorage;
-			const value = storage.getItem(key);
-			if (value !== null) {
-				return value;
-			}
+			return storage.getItem(key);
 		} catch (e) {
-			// Storage access blocked — fall through to memory.
+			// Storage access blocked — use memory fallback.
+			if (DEBUG_MODE) {
+				// eslint-disable-next-line no-console
+				console.warn(
+					'[DSGModal] Storage read blocked, using in-memory fallback',
+					type,
+					e
+				);
+			}
 		}
 		return memoryStore[type].has(key) ? memoryStore[type].get(key) : null;
 	}
@@ -67,6 +72,14 @@
 			return;
 		} catch (e) {
 			// Storage access blocked — use memory fallback.
+			if (DEBUG_MODE) {
+				// eslint-disable-next-line no-console
+				console.warn(
+					'[DSGModal] Storage write blocked, using in-memory fallback',
+					type,
+					e
+				);
+			}
 		}
 		memoryStore[type].set(key, value);
 	}
@@ -565,6 +578,13 @@
 			} catch (e) {
 				// document.cookie access blocked (sandboxed iframe, strict
 				// privacy mode). Fall back to in-memory store.
+				if (DEBUG_MODE) {
+					// eslint-disable-next-line no-console
+					console.warn(
+						'[DSGModal] Cookie read blocked, using in-memory fallback',
+						e
+					);
+				}
 				return memoryStore.cookie.has(name)
 					? memoryStore.cookie.get(name)
 					: undefined;
@@ -616,6 +636,13 @@
 			} catch (e) {
 				// document.cookie write blocked — keep value in memory so
 				// frequency tracking still works for the current page session.
+				if (DEBUG_MODE) {
+					// eslint-disable-next-line no-console
+					console.warn(
+						'[DSGModal] Cookie write blocked, using in-memory fallback',
+						e
+					);
+				}
 				memoryStore.cookie.set(name, value);
 			}
 		}
