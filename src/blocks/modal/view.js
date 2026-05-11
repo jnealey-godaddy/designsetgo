@@ -27,6 +27,15 @@
 		cookie: new Map(),
 	};
 
+	/**
+	 * Read a value from browser storage, falling back to the in-memory store
+	 * if the storage API throws (sandboxed iframe, strict privacy mode, etc.).
+	 *
+	 * @param {'session'|'local'} type Which Web Storage area to read from.
+	 * @param {string}            key  Storage key.
+	 * @return {string|null} Stored value, or `null` when neither storage nor
+	 * the memory fallback has the key.
+	 */
 	function safeStorageGet(type, key) {
 		try {
 			const storage = type === 'session' ? sessionStorage : localStorage;
@@ -40,6 +49,17 @@
 		return memoryStore[type].has(key) ? memoryStore[type].get(key) : null;
 	}
 
+	/**
+	 * Write a value to browser storage, falling back to the in-memory store
+	 * if the storage API throws (sandboxed iframe, strict privacy mode, etc.).
+	 *
+	 * When storage is blocked the value is kept in memory so suppression still
+	 * works for the current page lifetime; it will not persist across reloads.
+	 *
+	 * @param {'session'|'local'} type  Which Web Storage area to write to.
+	 * @param {string}            key   Storage key.
+	 * @param {string}            value Value to store.
+	 */
 	function safeStorageSet(type, key, value) {
 		try {
 			const storage = type === 'session' ? sessionStorage : localStorage;
