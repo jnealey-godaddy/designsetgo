@@ -604,6 +604,8 @@
 				}
 			}
 
+			// Not in the real cookie store; check the in-memory fallback in
+			// case setCookie was blocked earlier this page session.
 			return memoryStore.cookie.has(name)
 				? memoryStore.cookie.get(name)
 				: undefined;
