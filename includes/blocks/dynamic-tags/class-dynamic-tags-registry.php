@@ -55,9 +55,12 @@ class Registry {
 			if ( did_action( 'after_setup_theme' ) ) {
 				self::$instance->register_default_groups();
 			} else {
-				add_action( 'after_setup_theme', function () {
-					Registry::instance()->register_default_groups();
-				} );
+				add_action(
+					'after_setup_theme',
+					function () {
+						Registry::instance()->register_default_groups();
+					}
+				);
 			}
 		}
 		return self::$instance;
