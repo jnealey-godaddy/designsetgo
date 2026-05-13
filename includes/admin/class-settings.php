@@ -569,8 +569,9 @@ class Settings {
 				)
 			);
 
-			// Cache for 5 minutes.
-			set_transient( 'dsgo_form_submissions_count', $form_submissions, 5 * MINUTE_IN_SECONDS );
+			// Cache for 1 hour. Invalidated on submission create/delete in
+			// class-form-handler.php, so a longer TTL stays accurate.
+			set_transient( 'dsgo_form_submissions_count', $form_submissions, HOUR_IN_SECONDS );
 		}
 
 		return rest_ensure_response(
