@@ -64,7 +64,7 @@ class Abilities_Settings_Test extends WP_UnitTestCase {
 		$this->assertSame( array(), $normalized, 'Null input should normalize to the empty-object default.' );
 
 		$valid = $ability->validate_input( $normalized );
-		$this->assertTrue( $valid, 'Empty object must pass input validation.' );
+		$this->assertNotWPError( $valid, 'Empty object must pass input validation.' );
 	}
 
 	/**
