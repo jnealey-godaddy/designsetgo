@@ -139,7 +139,7 @@ class Generator {
 		$extra_sections = apply_filters( 'designsetgo_llms_txt_extra_sections', array(), 'summary' );
 		if ( is_array( $extra_sections ) ) {
 			foreach ( $extra_sections as $section ) {
-				if ( ! is_string( $section ) || $section === '' ) {
+				if ( ! is_string( $section ) || '' === $section ) {
 					continue;
 				}
 				$lines[] = rtrim( $section );
@@ -242,7 +242,7 @@ class Generator {
 		$extra_sections = apply_filters( 'designsetgo_llms_txt_extra_sections', array(), 'full' );
 		if ( is_array( $extra_sections ) ) {
 			foreach ( $extra_sections as $section ) {
-				if ( ! is_string( $section ) || $section === '' ) {
+				if ( ! is_string( $section ) || '' === $section ) {
 					continue;
 				}
 				$lines[] = rtrim( $section );

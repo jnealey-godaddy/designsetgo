@@ -96,6 +96,15 @@ abstract class Abstract_Ability {
 			unset( $config['annotations'] );
 		}
 
+		// Move keywords into meta as well. WP_Ability::__construct emits a
+		// _doing_it_wrong notice for any unknown top-level property, and
+		// `keywords` is one — historically we declared it at the top level
+		// to match the registration shape from earlier prototypes.
+		if ( isset( $config['keywords'] ) ) {
+			$config['meta']['keywords'] = $config['keywords'];
+			unset( $config['keywords'] );
+		}
+
 		wp_register_ability( $this->get_name(), $config );
 	}
 

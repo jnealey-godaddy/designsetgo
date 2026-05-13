@@ -47,6 +47,11 @@ class Get_Global_CSS extends Abstract_Ability {
 				'type'                 => 'object',
 				'properties'           => new \stdClass(),
 				'additionalProperties' => false,
+				// REST GETs without `?input=...` arrive as null. The Abilities
+				// API replaces null with the schema default before validation,
+				// so an empty-object default lets nonce'd reads succeed
+				// without requiring callers to pass an empty `input` param.
+				'default'              => array(),
 			),
 			'output_schema'       => $this->get_output_schema(),
 			'permission_callback' => array( $this, 'check_permission_callback' ),
