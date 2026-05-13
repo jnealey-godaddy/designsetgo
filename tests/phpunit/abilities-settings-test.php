@@ -12,17 +12,6 @@
 class Abilities_Settings_Test extends WP_UnitTestCase {
 
 	/**
-	 * Whether the first-touch _doing_it_wrong notice has already fired
-	 * in this PHP process. Unrelated abilities in the registry trip one
-	 * about an invalid `keywords` property on first construction; it
-	 * fires exactly once per process so only one test needs to declare
-	 * it as expected.
-	 *
-	 * @var bool
-	 */
-	private static bool $primed_registry = false;
-
-	/**
 	 * User with edit_css.
 	 *
 	 * @var int
@@ -34,13 +23,27 @@ class Abilities_Settings_Test extends WP_UnitTestCase {
 	 */
 	public function set_up(): void {
 		parent::set_up();
+
+		if ( ! function_exists( 'wp_get_ability' ) ) {
+			$this->markTestSkipped( 'Abilities API requires WordPress 6.9+.' );
+		}
+
 		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $this->admin_id );
+	}
 
-		if ( ! self::$primed_registry ) {
-			$this->setExpectedIncorrectUsage( 'WP_Ability::__construct' );
-			self::$primed_registry = true;
+	/**
+	 * Tear down each test.
+	 *
+	 * Always clears the active theme's Additional CSS so an early
+	 * assertion failure in the round-trip test can't leak global CSS
+	 * state into other tests in this process.
+	 */
+	public function tear_down(): void {
+		if ( function_exists( 'wp_update_custom_css_post' ) ) {
+			wp_update_custom_css_post( '', array( 'stylesheet' => get_stylesheet() ) );
 		}
+		parent::tear_down();
 	}
 
 	/**
@@ -66,7 +69,8 @@ class Abilities_Settings_Test extends WP_UnitTestCase {
 
 	/**
 	 * The get ability returns a structured payload even before anything
-	 * has been written. Guards the no-op read path.
+	 * has been written. Guards the no-op read path and exercises every
+	 * declared output property so a regression in any field is caught.
 	 */
 	public function test_get_global_css_empty_state(): void {
 		$ability = wp_get_ability( 'designsetgo/get-global-css' );
@@ -78,6 +82,8 @@ class Abilities_Settings_Test extends WP_UnitTestCase {
 		$this->assertTrue( $result['success'] ?? false );
 		$this->assertSame( '', $result['css'] );
 		$this->assertSame( get_stylesheet(), $result['stylesheet'] );
+		$this->assertArrayHasKey( 'post_id', $result );
+		$this->assertNull( $result['post_id'], 'post_id must be null when no CSS has been saved.' );
 	}
 
 	/**
@@ -86,9 +92,6 @@ class Abilities_Settings_Test extends WP_UnitTestCase {
 	 * read-modify-write of Additional CSS.
 	 */
 	public function test_update_then_get_roundtrip(): void {
-		// edit_css is gated on unfiltered_html; administrators on single
-		// site have it. Skip if the environment denies the cap so this
-		// test stays portable to multisite phpunit runs.
 		if ( ! current_user_can( 'edit_css' ) ) {
 			$this->markTestSkipped( 'edit_css cap unavailable in this environment.' );
 		}
@@ -105,8 +108,31 @@ class Abilities_Settings_Test extends WP_UnitTestCase {
 
 		$get_result = $getter->execute( array() );
 		$this->assertSame( $css, $get_result['css'] );
+		$this->assertIsInt( $get_result['post_id'] );
+	}
 
-		// Clean up so this test leaves no global state behind.
-		$updater->execute( array( 'css' => '' ) );
+	/**
+	 * Permission denial: a subscriber lacks edit_css and must be
+	 * rejected by both abilities' permission callbacks. Mirrors the
+	 * pattern used elsewhere in the abilities test suite and guards the
+	 * cap check in Get_Global_CSS / Update_Global_CSS.
+	 */
+	public function test_permission_denied_for_subscriber(): void {
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+
+		$getter  = wp_get_ability( 'designsetgo/get-global-css' );
+		$updater = wp_get_ability( 'designsetgo/update-global-css' );
+		$this->assertNotNull( $getter );
+		$this->assertNotNull( $updater );
+
+		$this->assertFalse(
+			$getter->check_permissions( array() ),
+			'Subscriber must not be able to read global CSS.'
+		);
+		$this->assertFalse(
+			$updater->check_permissions( array( 'css' => 'body{}' ) ),
+			'Subscriber must not be able to write global CSS.'
+		);
 	}
 }
