@@ -1,8 +1,12 @@
 name: Claude Code Review
 
+# Uses `pull_request` (not `pull_request_target`). The Claude GitHub App's OIDC
+# trust policy rejects tokens whose `sub` claim references `pull_request_target`,
+# so the app-token exchange fails with "401 Invalid OIDC token" under that
+# trigger. Fork PRs are not supported by this workflow.
 on:
   pull_request:
-    types: [opened, ready_for_review]
+    types: [opened, reopened, synchronize, ready_for_review]
 
 jobs:
   claude-review:

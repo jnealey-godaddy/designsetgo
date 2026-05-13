@@ -6,7 +6,7 @@
  * @package
  */
 
-/* global sessionStorage, localStorage, Document */
+/* global sessionStorage, localStorage, Document, Storage */
 
 // Import modal functionality
 import '../../src/blocks/modal/view.js';
@@ -398,6 +398,124 @@ describe('DSGModal - Core Functionality', () => {
 			instance.markAsShown();
 
 			expect(instance.checkTriggerFrequency()).toBe(false);
+		});
+	});
+
+	describe('Storage Fallback - Blocked Storage', () => {
+		// Each test uses a unique modal id so the module-scoped in-memory
+		// fallback (which persists across tests) doesn't bleed state.
+
+		test('"session" frequency tolerates sessionStorage throwing and uses memory fallback', () => {
+			const getSpy = jest
+				.spyOn(Storage.prototype, 'getItem')
+				.mockImplementation(() => {
+					throw new Error('SecurityError: storage blocked');
+				});
+			const setSpy = jest
+				.spyOn(Storage.prototype, 'setItem')
+				.mockImplementation(() => {
+					throw new Error('SecurityError: storage blocked');
+				});
+
+			try {
+				const modal = createMockModal({ id: 'blocked-session' });
+				modal.setAttribute('data-auto-trigger-frequency', 'session');
+				const instance = new window.DSGModal(modal);
+
+				expect(() => instance.checkTriggerFrequency()).not.toThrow();
+				expect(instance.checkTriggerFrequency()).toBe(true);
+
+				expect(() => instance.markAsShown()).not.toThrow();
+
+				// In-memory fallback should now suppress repeat triggers.
+				expect(instance.checkTriggerFrequency()).toBe(false);
+			} finally {
+				getSpy.mockRestore();
+				setSpy.mockRestore();
+			}
+		});
+
+		test('"once" frequency tolerates localStorage and document.cookie throwing', () => {
+			const getSpy = jest
+				.spyOn(Storage.prototype, 'getItem')
+				.mockImplementation(() => {
+					throw new Error('SecurityError: storage blocked');
+				});
+			const setSpy = jest
+				.spyOn(Storage.prototype, 'setItem')
+				.mockImplementation(() => {
+					throw new Error('SecurityError: storage blocked');
+				});
+
+			const originalDescriptor = Object.getOwnPropertyDescriptor(
+				Document.prototype,
+				'cookie'
+			);
+			Object.defineProperty(document, 'cookie', {
+				get: () => {
+					throw new Error('SecurityError: cookie blocked');
+				},
+				set: () => {
+					throw new Error('SecurityError: cookie blocked');
+				},
+				configurable: true,
+			});
+
+			try {
+				const modal = createMockModal({ id: 'blocked-once' });
+				modal.setAttribute('data-auto-trigger-frequency', 'once');
+				modal.setAttribute('data-cookie-duration', '7');
+				const instance = new window.DSGModal(modal);
+
+				expect(() => instance.checkTriggerFrequency()).not.toThrow();
+				expect(instance.checkTriggerFrequency()).toBe(true);
+
+				expect(() => instance.markAsShown()).not.toThrow();
+
+				// In-memory fallback should now suppress repeat triggers.
+				expect(instance.checkTriggerFrequency()).toBe(false);
+			} finally {
+				getSpy.mockRestore();
+				setSpy.mockRestore();
+				Object.defineProperty(
+					document,
+					'cookie',
+					originalDescriptor || { value: '', writable: true }
+				);
+			}
+		});
+
+		test('getCookie returns undefined without throwing when document.cookie read throws', () => {
+			const originalDescriptor = Object.getOwnPropertyDescriptor(
+				Document.prototype,
+				'cookie'
+			);
+			Object.defineProperty(document, 'cookie', {
+				get: () => {
+					throw new Error('SecurityError: cookie blocked');
+				},
+				set: () => {
+					throw new Error('SecurityError: cookie blocked');
+				},
+				configurable: true,
+			});
+
+			try {
+				const modal = createMockModal({ id: 'blocked-cookie-read' });
+				const instance = new window.DSGModal(modal);
+
+				let result;
+				expect(() => {
+					result = instance.getCookie('nonexistent-key');
+				}).not.toThrow();
+				expect(result).toBeUndefined();
+			} finally {
+				Object.defineProperty(
+					document,
+					'cookie',
+					originalDescriptor || { value: '', writable: true }
+				);
+			}
 		});
 	});
 

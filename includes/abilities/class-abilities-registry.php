@@ -256,6 +256,14 @@ class Abilities_Registry {
 			return;
 		}
 
+		// On WP 6.9 the wp_abilities_api_categories_init hook fires before
+		// init, so __() calls here trigger a _load_textdomain_just_in_time
+		// notice.  Defer to init when called too early.
+		if ( ! did_action( 'init' ) ) {
+			add_action( 'init', array( $this, 'register_ability_categories' ), 8 );
+			return;
+		}
+
 		wp_register_ability_category(
 			'info',
 			array(
@@ -289,6 +297,14 @@ class Abilities_Registry {
 	public function register_abilities(): void {
 		// Check if the Abilities API is available.
 		if ( ! class_exists( 'WP_Ability' ) ) {
+			return;
+		}
+
+		// Defer to init when the abilities hook fires too early (WP 6.9)
+		// to avoid _load_textdomain_just_in_time notice from __() inside
+		// each ability's get_config().
+		if ( ! did_action( 'init' ) ) {
+			add_action( 'init', array( $this, 'register_abilities' ), 9 );
 			return;
 		}
 

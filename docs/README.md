@@ -62,8 +62,10 @@ The documentation is organized into the following categories:
 API references and technical documentation:
 - [ABILITIES-API-GUIDE.md](./api/ABILITIES-API-GUIDE.md) - WordPress Abilities API integration guide
 - [ABILITIES-API.md](./api/ABILITIES-API.md) - Core Abilities API reference
+- [BLOCK-BINDINGS.md](./api/BLOCK-BINDINGS.md) - Block Bindings API reference
 - [DRAFT-MODE-API.md](./api/DRAFT-MODE-API.md) - Draft Mode API reference
 - [INTERACTIVE-BLOCKS.md](./api/INTERACTIVE-BLOCKS.md) - Interactive block patterns
+- [REST-API-REFERENCE.md](./api/REST-API-REFERENCE.md) - REST API reference
 
 #### [audits/](./audits/)
 Block audits and analysis documents:
@@ -78,7 +80,7 @@ User-facing documentation for blocks:
 - [ROW.md](./blocks/ROW.md) - Horizontal flexbox containers
 - [SECTION.md](./blocks/SECTION.md) - Vertical stacking sections
 
-**Interactive Blocks (12):**
+**Interactive Blocks (15):**
 - [ACCORDION.md](./blocks/ACCORDION.md) - Collapsible content panels
 - [TABS.md](./blocks/TABS.md) - Tabbed interface with deep linking
 - [SLIDER.md](./blocks/SLIDER.md) - Image/content carousel
@@ -87,40 +89,63 @@ User-facing documentation for blocks:
 - [IMAGE-ACCORDION.md](./blocks/IMAGE-ACCORDION.md) - Expandable image panels
 - [SCROLL-ACCORDION.md](./blocks/SCROLL-ACCORDION.md) - Scroll-triggered sticky cards
 - [SCROLL-GALLERY.md](./blocks/SCROLL-GALLERY.md) - Scroll-based marquee gallery
+- [SCROLL-SLIDES.md](./blocks/SCROLL-SLIDES.md) - Scroll-pinned slideshow
+- [STICKY-SECTIONS.md](./blocks/STICKY-SECTIONS.md) - Card-stacking scroll effect
 - [COMPARISON-TABLE.md](./blocks/COMPARISON-TABLE.md) - Feature comparison tables
 - [TIMELINE.md](./blocks/TIMELINE.md) - Chronological event timelines
 - [COUNTER-GROUP.md](./blocks/COUNTER-GROUP.md) - Animated statistics
 - [PROGRESS-BAR.md](./blocks/PROGRESS-BAR.md) - Animated progress indicators
+- [SCROLL-MARQUEE.md](./blocks/SCROLL-MARQUEE.md) - Horizontal scrolling marquee
+
+**Dynamic Query (6):**
+- [QUERY.md](./blocks/QUERY.md) - Dynamic Query container block
+- [QUERY-PAGINATION.md](./blocks/QUERY-PAGINATION.md) - Numbered/load-more/infinite-scroll pagination
+- [QUERY-FILTER.md](./blocks/QUERY-FILTER.md) - Faceted filter variations
+- [QUERY-RESULTS.md](./blocks/QUERY-RESULTS.md) - Query results renderer
+- [QUERY-GROUP-HEADER.md](./blocks/QUERY-GROUP-HEADER.md) - Group-by header block
+- [QUERY-NO-RESULTS.md](./blocks/QUERY-NO-RESULTS.md) - Zero-result state block
+
+**Typography & Navigation:**
+- [ADVANCED-HEADING.md](./blocks/ADVANCED-HEADING.md) - Multi-segment headings with independent typography
+- [BREADCRUMBS.md](./blocks/BREADCRUMBS.md) - Navigation breadcrumbs with Schema.org
+- [TABLE-OF-CONTENTS.md](./blocks/TABLE-OF-CONTENTS.md) - Auto-generated TOC from headings
 
 **Icon Blocks (3):**
 - [ICON.md](./blocks/ICON.md) - SVG icon display
 - [ICON-BUTTON.md](./blocks/ICON-BUTTON.md) - Buttons with icons
 - [ICON-LIST.md](./blocks/ICON-LIST.md) - Lists with custom icons
 
-**Content/UI Blocks (7):**
+**Visual Blocks (9):**
 - [CARD.md](./blocks/CARD.md) - Content cards with layouts
 - [PILL.md](./blocks/PILL.md) - Inline badges and tags
 - [DIVIDER.md](./blocks/DIVIDER.md) - Content separators
 - [COUNTDOWN-TIMER.md](./blocks/COUNTDOWN-TIMER.md) - Live countdowns
 - [BLOBS.md](./blocks/BLOBS.md) - Organic animated shapes
-- [BREADCRUMBS.md](./blocks/BREADCRUMBS.md) - Navigation breadcrumbs with Schema.org
-- [TABLE-OF-CONTENTS.md](./blocks/TABLE-OF-CONTENTS.md) - Auto-generated TOC from headings
+- [DYNAMIC-IMAGE.md](./blocks/DYNAMIC-IMAGE.md) - Dynamic image with binding support
 
-**Utility Blocks (3):**
+**Media & Location:**
+- [FIFTY-FIFTY.md](./blocks/FIFTY-FIFTY.md) - 50/50 split layout with edge-to-edge media
 - [MAP.md](./blocks/MAP.md) - Interactive maps (OSM/Google)
+
+**Modals:**
 - [MODAL.md](./blocks/MODAL.md) - Modal dialogs and popups
 - [MODAL-TRIGGER.md](./blocks/MODAL-TRIGGER.md) - Modal trigger buttons
+
+**WooCommerce:**
+- [PRODUCT-CATEGORIES-GRID.md](./blocks/PRODUCT-CATEGORIES-GRID.md) - WooCommerce product categories grid
+- [PRODUCT-SHOWCASE-HERO.md](./blocks/PRODUCT-SHOWCASE-HERO.md) - WooCommerce product showcase hero
 
 **Forms (1):**
 - [FORM-BUILDER.md](./blocks/FORM-BUILDER.md) - Complete form system (11 field types)
 
 #### [extensions/](./extensions/)
-Documentation for all 15 block extensions that enhance any WordPress block:
+Documentation for all 16 block extensions that enhance any WordPress block:
 
 **Animation & Effects:**
 - [BLOCK-ANIMATIONS.md](./extensions/BLOCK-ANIMATIONS.md) - Entrance/exit animations
 - [ANIMATION.md](./extensions/ANIMATION.md) - Animation framework (advanced)
 - [REVEAL-CONTROL.md](./extensions/REVEAL-CONTROL.md) - Hover reveal effects
+- [HOVER-EFFECTS.md](./extensions/HOVER-EFFECTS.md) - Animated hover interactions
 
 **Scroll Effects:**
 - [SCROLL-PARALLAX.md](./extensions/SCROLL-PARALLAX.md) - Vertical/horizontal parallax
@@ -139,8 +164,13 @@ Documentation for all 15 block extensions that enhance any WordPress block:
 
 **Responsive & Styling:**
 - [RESPONSIVE-VISIBILITY.md](./extensions/RESPONSIVE-VISIBILITY.md) - Device-based visibility
+- [CONDITIONAL-VISIBILITY.md](./extensions/CONDITIONAL-VISIBILITY.md) - Conditional block visibility (meta, taxonomy, auth, index)
 - [CUSTOM-CSS.md](./extensions/CUSTOM-CSS.md) - Custom CSS per block
+- [STYLE-BINDING.md](./extensions/STYLE-BINDING.md) - CSS property bindings to dynamic data
+- [SVG-PATTERNS.md](./extensions/SVG-PATTERNS.md) - 31 SVG background patterns
 - [TEXT-ALIGNMENT-INHERITANCE.md](./extensions/TEXT-ALIGNMENT-INHERITANCE.md) - Alignment inheritance
+- [DYNAMIC-TAGS.md](./extensions/DYNAMIC-TAGS.md) - Bind block text/links/images to live data
+- [DRAFT-MODE.md](./extensions/DRAFT-MODE.md) - Draft content visibility control
 
 #### [compliance/](./compliance/)
 Accessibility and compliance documentation:
@@ -355,14 +385,16 @@ See [BLOCK-TEMPLATE-EDIT.js](./templates/BLOCK-TEMPLATE-EDIT.js) for complete ex
 ## 📊 Project Statistics
 
 ### Block Count
-- **Total blocks**: 48 (across 6 categories)
-- **Container blocks**: 3 (Row, Section, Grid)
+- **Total blocks**: 53 (across 8+ categories)
+- **Layout blocks**: 3 (Row, Section, Grid)
 - **Form blocks**: 13 (Form Builder + 11 field types)
-- **Interactive blocks**: 12 (Accordion, Tabs, Slider, Flip Card, Reveal, Scroll Accordion, Image Accordion, Counter Group, Progress Bar, Scroll Marquee, Comparison Table, Timeline)
-- **Content/UI blocks**: 10 (Icon, Icon Button, Icon List, Card, Pill, Divider, Countdown Timer, Blobs, Breadcrumbs, Table of Contents)
-- **Modal blocks**: 2 (Modal, Modal Trigger)
-- **Location blocks**: 1 (Map)
-- **Extensions**: 15
+- **Interactive blocks**: 15 (Tabs, Accordion, Modal, Modal Trigger, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counter Group, Progress Bar, Comparison Table, Timeline)
+- **Dynamic Query blocks**: 6 (Query, Pagination, Filter, Results, Group Header, No Results)
+- **Typography & Navigation**: 3 (Advanced Heading, Breadcrumbs, Table of Contents)
+- **Visual blocks**: 9 (500+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image)
+- **Media & Location**: 2 (Fifty Fifty, Map)
+- **WooCommerce blocks**: 2 (Product Categories Grid, Product Showcase Hero)
+- **Extensions**: 16
 
 ### Code Quality
 - **Color controls**: 100% modern (all blocks using ColorGradientSettingsDropdown)
@@ -414,6 +446,6 @@ When you discover new patterns or best practices:
 
 ---
 
-**Last Updated**: 2026-02-06
-**Plugin Version**: 1.4.1
+**Last Updated**: 2026-04-26
+**Plugin Version**: 2.1.0
 **WordPress Compatibility**: 6.7+

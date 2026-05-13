@@ -390,6 +390,16 @@ Scroll Slides
 
 ## Advanced Tips
 
+### Query-bound Mode
+
+> **Added in 2.1.0**
+
+When a Scroll Slides block is placed inside a `designsetgo/query` block it can act as the item host instead of `designsetgo/query-results`, iterating the query's items as scroll slides. The block receives the query's `queryId`, `querySource`, and `queryPostType` via block context and renders one slide per item with full editor-to-frontend parity — the first item's inner blocks are editable on the canvas, while subsequent items render as server-rendered HTML previews.
+
+**When to use:** Choose this over the default Query Results block when you want an immersive scroll-pinned presentation of query items rather than a static grid.
+
+See [QUERY.md](QUERY.md) for Dynamic Query configuration options.
+
 ### Re-initialization After AJAX
 
 If loading Scroll Slides content via AJAX or dynamic page updates, dispatch a custom event to reinitialize:
