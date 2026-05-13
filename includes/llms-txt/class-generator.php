@@ -121,6 +121,32 @@ class Generator {
 			$lines[] = '';
 		}
 
+		/**
+		 * Filter the extra markdown sections appended to /llms.txt
+		 * after the post-type listings.
+		 *
+		 * Each entry is a fully-formed markdown string (typically
+		 * starting with `## Section title`). Sibling plugins
+		 * (e.g. DesignSetGo Apps registering its bridge developer
+		 * reference) hook this filter to advertise additional
+		 * AI-readable surfaces on the site.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param string[] $sections Pre-formatted markdown sections.
+		 * @param string   $variant  Always 'summary' for llms.txt.
+		 */
+		$extra_sections = apply_filters( 'designsetgo_llms_txt_extra_sections', array(), 'summary' );
+		if ( is_array( $extra_sections ) ) {
+			foreach ( $extra_sections as $section ) {
+				if ( ! is_string( $section ) || $section === '' ) {
+					continue;
+				}
+				$lines[] = rtrim( $section );
+				$lines[] = '';
+			}
+		}
+
 		return implode( "\n", $lines );
 	}
 
@@ -192,6 +218,34 @@ class Generator {
 				}
 
 				$lines[] = $markdown;
+				$lines[] = '';
+				$lines[] = '---';
+				$lines[] = '';
+			}
+		}
+
+		/**
+		 * Filter the extra markdown sections appended to /llms-full.txt
+		 * after the post-content concatenation.
+		 *
+		 * Same shape as `designsetgo_llms_txt_extra_sections` fired
+		 * for /llms.txt, but invoked with the `'full'` variant.
+		 * Sibling plugins typically register a longer/inlined version
+		 * of their reference here so that AI tools fetching
+		 * /llms-full.txt get the complete brief.
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param string[] $sections Pre-formatted markdown sections.
+		 * @param string   $variant  Always 'full' for llms-full.txt.
+		 */
+		$extra_sections = apply_filters( 'designsetgo_llms_txt_extra_sections', array(), 'full' );
+		if ( is_array( $extra_sections ) ) {
+			foreach ( $extra_sections as $section ) {
+				if ( ! is_string( $section ) || $section === '' ) {
+					continue;
+				}
+				$lines[] = rtrim( $section );
 				$lines[] = '';
 				$lines[] = '---';
 				$lines[] = '';
