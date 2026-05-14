@@ -300,8 +300,8 @@ msgfmt -c -v -o /dev/null languages/designsetgo-es_ES.po
 
 Need help with translations?
 
-- **GitHub Issues**: [Report translation bugs](https://github.com/designsetgo/designsetgo/issues)
-- **Discussions**: [Ask translation questions](https://github.com/designsetgo/designsetgo/discussions)
+- **GitHub Issues**: [Report translation bugs](https://github.com/jnealey-godaddy/designsetgo/issues)
+- **Discussions**: [Ask translation questions](https://github.com/jnealey-godaddy/designsetgo/discussions)
 
 ## License
 
