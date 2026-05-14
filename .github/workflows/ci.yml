@@ -1,10 +1,10 @@
 name: CI
 
+# Temporarily disabled — running tests locally only to avoid CI minute/API spend.
+# To re-enable: replace `workflow_dispatch` with the original
+# `pull_request: branches: [main]` + `push: branches: [main]` triggers.
 on:
-  pull_request:
-    branches: [ main ]
-  push:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   # ─── Build once, share everywhere ─────────────────────────────
