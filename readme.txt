@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 2.1.1
+Stable tag: 2.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,14 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.1.2 - 2026-05-13 =
+
+* **New:** Abilities API — `designsetgo/get-global-css` and `designsetgo/update-global-css` for reading and writing the active theme's Additional CSS (the WordPress Customizer's "Additional CSS" panel) via `wp-abilities/v1`.
+* **New:** `designsetgo_llms_txt_extra_sections` filter — lets sibling plugins inject extra sections into the generated `llms.txt`.
+* **Fix:** Modal block now falls back to in-memory state when `localStorage`/`sessionStorage` is blocked (private mode, sandboxed iframe, storage-access denial), so "shown once" / "dismissed" modals no longer throw.
+* **Fix:** `designsetgo/get-global-css` ability now accepts empty/missing JSON input on GET requests instead of returning a `rest_invalid_param` error.
+* **Perf:** Simplified block-detection cache key, trimmed redundant frontend enqueues, and clear the cache before post deletion so stale entries no longer survive trash → delete cycles.
 
 = 2.1.1 - 2026-04-27 =
 

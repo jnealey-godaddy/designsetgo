@@ -18,17 +18,23 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const glob = require('glob');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 
+// Normalize glob output for cross-platform path matching. `glob.sync()`
+// returns native separators on Windows, which break our forward-slash
+// regexes. `posix: true` (glob v10+) forces forward slashes everywhere.
+const globSync = (pattern) => glob.sync(pattern, { posix: true });
+
 // Auto-detect all blocks with index.js files
-const blockEntries = glob
-	.sync('src/blocks/*/index.js')
-	.reduce((entries, file) => {
+const blockEntries = globSync('src/blocks/*/index.js').reduce(
+	(entries, file) => {
 		const blockName = file.match(/\/blocks\/([^/]+)\/index\.js$/)[1];
 		entries[`blocks/${blockName}/index`] = path.resolve(
 			process.cwd(),
 			file
 		);
 		return entries;
-	}, {});
+	},
+	{}
+);
 
 // Auto-detect all blocks with view.js files (frontend scripts).
 // Blocks using the Interactivity API (viewScriptModule) must build as ES
@@ -36,9 +42,8 @@ const blockEntries = glob
 // `viewEntries`. Opt-in via `src/blocks/<name>/view.module` marker file,
 // which tells webpack to emit the script as a real ES module.
 const moduleViewEntries = {};
-const viewEntries = glob
-	.sync('src/blocks/*/view.js')
-	.reduce((entries, file) => {
+const viewEntries = globSync('src/blocks/*/view.js').reduce(
+	(entries, file) => {
 		const blockName = file.match(/\/blocks\/([^/]+)\/view\.js$/)[1];
 		const markerPath = path.resolve(path.dirname(file), 'view.module');
 		if (require('fs').existsSync(markerPath)) {
@@ -53,19 +58,22 @@ const viewEntries = glob
 			);
 		}
 		return entries;
-	}, {});
+	},
+	{}
+);
 
 // Auto-detect all blocks with style.scss files (frontend CSS)
-const styleEntries = glob
-	.sync('src/blocks/*/style.scss')
-	.reduce((entries, file) => {
+const styleEntries = globSync('src/blocks/*/style.scss').reduce(
+	(entries, file) => {
 		const blockName = file.match(/\/blocks\/([^/]+)\/style\.scss$/)[1];
 		entries[`blocks/${blockName}/style-index`] = path.resolve(
 			process.cwd(),
 			file
 		);
 		return entries;
-	}, {});
+	},
+	{}
+);
 
 // Build config for script-module view.js (IAPI blocks). Outputs native ES
 // modules that import `@wordpress/interactivity` via the browser's native
@@ -264,8 +272,12 @@ module.exports = [
 					{
 						from: 'src/blocks/*/styles/*.json',
 						to: ({ absoluteFilename }) => {
-							// Extract block name and filename from the absolute path
-							const match = absoluteFilename.match(
+							// Normalize separators so the regex matches on Windows too.
+							const normalized = absoluteFilename.replace(
+								/\\/g,
+								'/'
+							);
+							const match = normalized.match(
 								/blocks\/([^/]+)\/styles\/(.+)$/
 							);
 							if (match) {
