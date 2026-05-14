@@ -5,6 +5,22 @@ All notable changes to the DesignSetGo plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.2] - 2026-05-13
+
+### New Features
+- **Abilities API: global CSS** — `designsetgo/get-global-css` and `designsetgo/update-global-css` for reading and writing the active theme's Additional CSS (the WordPress Customizer's "Additional CSS" panel) via `wp-abilities/v1`.
+- **`designsetgo_llms_txt_extra_sections` filter** — Lets sibling plugins inject extra sections into the generated `llms.txt`.
+
+### Bug Fixes
+- **Modal: storage fallback** — Modal block now falls back to in-memory state when `localStorage`/`sessionStorage` is blocked (private mode, sandboxed iframe, storage-access denial), so "shown once" / "dismissed" modals no longer throw.
+- **Abilities: get-global-css empty body** — `designsetgo/get-global-css` now accepts empty/missing JSON input on GET requests instead of returning `rest_invalid_param`. (#404)
+
+### Performance
+- **Block-detection cache** — Simplified cache key, trimmed redundant frontend enqueues, and cleared the cache before post deletion so stale entries no longer survive trash → delete cycles.
+
+### Internal
+- **Version-constant fix** — `DESIGNSETGO_VERSION` is now in sync with the plugin header (had drifted to `2.1.0` while the header was on `2.1.1`).
+
 ## [2.1.1] - 2026-04-27
 
 ### Bug Fixes
