@@ -17,7 +17,7 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to the block editor — without the bloat, lock-in, or learning curve. If you know WordPress blocks, you already know how to use it.
 
-[Documentation](https://designsetgoblocks.com/docs/) · [GitHub](https://github.com/designsetgo/designsetgo)
+[Documentation](https://designsetgoblocks.com/docs/) · [GitHub](https://github.com/jnealey-godaddy/designsetgo)
 
 = Why DesignSetGo =
 
@@ -79,7 +79,7 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 = Where do I get support? =
 
-[Documentation](https://designsetgoblocks.com/docs/), the [support forum](https://wordpress.org/support/plugin/designsetgo/), or [GitHub](https://github.com/designsetgo/designsetgo).
+[Documentation](https://designsetgoblocks.com/docs/), the [support forum](https://wordpress.org/support/plugin/designsetgo/), or [GitHub](https://github.com/jnealey-godaddy/designsetgo).
 
 == Screenshots ==
 
@@ -564,7 +564,7 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 = Earlier releases (1.4.1 and earlier) =
 
-For the full version history prior to 2.0, see [CHANGELOG.md](https://github.com/designsetgo/designsetgo/blob/main/CHANGELOG.md) in the GitHub repository. Highlights include:
+For the full version history prior to 2.0, see [CHANGELOG.md](https://github.com/jnealey-godaddy/designsetgo/blob/main/CHANGELOG.md) in the GitHub repository. Highlights include:
 
 * **1.4.x** — llms.txt support for AI language models, Draft Mode for published pages, Visual Revision Comparison, Block Exclusion System, PHP 8.0+ requirement.
 * **1.3.x** — WordPress 6.9 Abilities API (50 AI abilities), scroll-driven extensions (Parallax, Text Reveal, Expanding Background), Text Style inline format, Cloudflare Turnstile spam protection.
