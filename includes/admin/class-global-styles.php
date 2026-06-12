@@ -638,10 +638,10 @@ class Global_Styles {
 		// We allow nested calls inside the args (e.g. var(--a, var(--b))) but
 		// blocklist the dangerous CSS sinks. Browsers would reject these anyway
 		// when the value resolves, but we don't want to persist them.
-		if ( preg_match( '/^(var|calc|clamp|min|max|rgba?|hsla?)\(/i', $value ) && str_ends_with( $value, ')' ) ) {
+		if ( preg_match( '/^(var|calc|clamp|min|max|rgba?|hsla?)\(/i', $value ) && ')' === substr( $value, -1 ) ) {
 			if (
-				! str_contains( $value, '<' )
-				&& ! str_contains( $value, ';' )
+				false === strpos( $value, '<' )
+				&& false === strpos( $value, ';' )
 				&& false === stripos( $value, 'url(' )
 				&& false === stripos( $value, 'expression(' )
 				&& false === stripos( $value, 'javascript:' )
