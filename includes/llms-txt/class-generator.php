@@ -204,7 +204,7 @@ class Generator {
 					$real_path = realpath( $file_path );
 					$real_dir  = realpath( $this->file_manager->get_directory() );
 
-					if ( $real_path && $real_dir && 0 === strpos( $real_path, $real_dir ) && file_exists( $real_path ) ) {
+					if ( $real_path && $real_dir && 0 === strpos( $real_path, trailingslashit( $real_dir ) ) && file_exists( $real_path ) ) {
 						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local static file.
 						$markdown = file_get_contents( $real_path );
 						if ( false === $markdown ) {
