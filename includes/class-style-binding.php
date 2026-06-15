@@ -96,8 +96,8 @@ class StyleBinding {
 			return $html;
 		}
 
-		$existing = (string) ( $processor->get_attribute( 'style' ) ?? '' );
-		$sep      = ( '' !== $existing && ! str_ends_with( rtrim( $existing ), ';' ) ) ? ';' : '';
+		$existing = trim( (string) ( $processor->get_attribute( 'style' ) ?? '' ) );
+		$sep      = ( '' !== $existing && ';' !== substr( $existing, -1 ) ) ? ';' : '';
 		$processor->set_attribute( 'style', $existing . $sep . implode( ';', $styles ) );
 
 		return $processor->get_updated_html();

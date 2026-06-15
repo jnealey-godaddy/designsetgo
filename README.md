@@ -738,4 +738,4 @@ Built with ❤️ for the WordPress community by developers who believe in:
 
 ---
 
-**License**: GPL-2.0-or-later | **Version**: 2.1.0 | **Requires WordPress**: 6.7+ | **Requires PHP**: 8.0+
+**License**: GPL-2.0-or-later | **Version**: 2.1.2 | **Requires WordPress**: 6.7+ | **Requires PHP**: 7.4+
