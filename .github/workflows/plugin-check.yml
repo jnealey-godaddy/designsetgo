@@ -63,14 +63,19 @@ jobs:
 
           echo "${RESULTS}"
 
+          ERROR_COUNT=0
+          if echo "${RESULTS}" | grep -q $'\tERROR\t'; then
+            ERROR_COUNT=$(echo "${RESULTS}" | grep -c $'\tERROR\t')
+          fi
+
           mkdir -p plugin-check-results
           {
             echo "## Plugin Check Results"
             echo ""
-            if [ "${PCP_EXIT}" -eq 0 ]; then
-              echo "**Status: Passed**"
+            if [ "${ERROR_COUNT}" -gt 0 ]; then
+              echo "**Status: Failed** (${ERROR_COUNT} error(s))"
             else
-              echo "**Status: Failed**"
+              echo "**Status: Passed**"
             fi
             echo ""
             echo "<details>"
@@ -83,7 +88,10 @@ jobs:
             echo "</details>"
           } > plugin-check-results/report.md
 
-          exit "${PCP_EXIT}"
+          if [ "${ERROR_COUNT}" -gt 0 ]; then
+            echo "::error::Plugin Check found ${ERROR_COUNT} error(s)"
+            exit 1
+          fi
 
       - name: Post results to PR
         if: always() && github.event_name == 'pull_request'
