@@ -1,0 +1,97 @@
+name: Plugin Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: plugin-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plugin-check:
+    name: Plugin Check (PCP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Start wp-env
+        run: npx @wordpress/env start
+
+      - name: Wait for WordPress
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9451/wp-login.php > /dev/null 2>&1; then
+              echo "WordPress ready (attempt $i)"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "ERROR: WordPress did not start" >&2
+              exit 1
+            fi
+            sleep 2
+          done
+
+      - name: Run Plugin Check
+        id: pcp
+        run: |
+          npx @wordpress/env run cli -- wp plugin install plugin-check --activate --force
+          set +e
+          RESULTS=$(npx @wordpress/env run cli -- wp plugin check designsetgo --format=table --fields=code,type,message,file,line --exclude-directories=tests,bin,scripts,src,.github,.claude,.idea,docs,assets,.husky,node_modules --exclude-files=phpstan-constants.php,phpstan.neon,phpcs.xml.dist,composer.json,composer.lock,package.json,package-lock.json,webpack.config.js,playwright.config.js --ignore-codes=hidden_files,application_detected,unexpected_markdown_file 2>&1)
+          PCP_EXIT=$?
+          set -e
+
+          echo "${RESULTS}"
+
+          mkdir -p plugin-check-results
+          {
+            echo "## Plugin Check Results"
+            echo ""
+            if [ "${PCP_EXIT}" -eq 0 ]; then
+              echo "**Status: Passed**"
+            else
+              echo "**Status: Failed**"
+            fi
+            echo ""
+            echo "<details>"
+            echo "<summary>Full report (click to expand)</summary>"
+            echo ""
+            echo '```'
+            echo "${RESULTS}"
+            echo '```'
+            echo ""
+            echo "</details>"
+          } > plugin-check-results/report.md
+
+          exit "${PCP_EXIT}"
+
+      - name: Post results to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: plugin-check
+          path: plugin-check-results/report.md
+
+      - name: Stop wp-env
+        if: always()
+        run: npx @wordpress/env stop || true
