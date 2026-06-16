@@ -34,6 +34,7 @@ function designsetgo_uninstall_step( $label, $callback ) {
 designsetgo_uninstall_step(
 	'form submissions',
 	function () use ( $wpdb ) {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Uninstall bulk cleanup; no WP API for mass post deletion by type without loading each post.
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->posts} WHERE post_type = %s",
@@ -48,6 +49,7 @@ designsetgo_uninstall_step(
 designsetgo_uninstall_step(
 	'post meta',
 	function () use ( $wpdb ) {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Uninstall bulk cleanup; no WP API for mass meta deletion by key pattern.
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->postmeta} WHERE meta_key LIKE %s",
@@ -87,6 +89,7 @@ designsetgo_uninstall_step(
 designsetgo_uninstall_step(
 	'transients',
 	function () use ( $wpdb ) {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Uninstall bulk cleanup; no WP API for mass transient deletion by pattern.
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->options}
@@ -100,6 +103,7 @@ designsetgo_uninstall_step(
 		);
 
 		// Delete transient timeout entries.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Uninstall bulk cleanup; no WP API for mass transient deletion by pattern.
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->options}
