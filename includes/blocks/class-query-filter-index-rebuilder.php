@@ -297,6 +297,7 @@ class FilterIndexRebuilder {
 		$batch_size = max( self::MIN_BATCH_SIZE, (int) ( $args['batch_size'] ?? self::DEFAULT_BATCH_SIZE ) );
 
 		// Delete all rows for this key in one statement — fast regardless of row count.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table write; no WP API or caching applicable.
 		$wpdb->delete( $table, array( 'filter_key' => $key ), array( '%s' ) );
 		FilterIndex::bump_counts_cache();
 

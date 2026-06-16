@@ -153,7 +153,7 @@ class FilterIndexCLI {
 		\WP_CLI::confirm( 'This will drop the filter index table and all its data. Continue?', $assoc_args );
 
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.SchemaChange -- intentional CLI drop; %i correctly escapes the identifier.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Intentional CLI drop; no caching applicable for DDL.
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', FilterIndex::table_name() ) );
 		delete_option( FilterIndex::OPTION_SCHEMA );
 		delete_option( FilterIndex::OPTION_STATUS );

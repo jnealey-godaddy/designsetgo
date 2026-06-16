@@ -276,6 +276,29 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test flush_cache endpoint clears pattern-based markdown transients.
+	 */
+	public function test_flush_cache_endpoint_clears_markdown_transients() {
+		wp_set_current_user( $this->admin_user );
+
+		// Set pattern-based transients that should be flushed.
+		set_transient( 'designsetgo_llms_md_post_1', 'cached markdown 1' );
+		set_transient( 'designsetgo_llms_md_post_2', 'cached markdown 2' );
+
+		$request  = new WP_REST_Request( 'POST', '/designsetgo/v1/llms-txt/flush-cache' );
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 200, $response->get_status() );
+
+		// The bulk DELETE clears the DB rows; flush object cache to simulate
+		// a new request (the in-memory cache still holds stale values).
+		wp_cache_flush();
+
+		$this->assertFalse( get_transient( 'designsetgo_llms_md_post_1' ) );
+		$this->assertFalse( get_transient( 'designsetgo_llms_md_post_2' ) );
+	}
+
+	/**
 	 * Test markdown endpoint returns 404 for non-existent post.
 	 */
 	public function test_markdown_endpoint_returns_404_for_missing_post() {

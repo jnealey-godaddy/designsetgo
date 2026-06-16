@@ -704,4 +704,102 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		// Cleanup.
 		delete_transient( $cache_key );
 	}
+
+	/**
+	 * Test cleanup deletes old submissions when retention is enabled.
+	 */
+	public function test_cleanup_deletes_old_submissions() {
+		update_option(
+			'designsetgo_settings',
+			array(
+				'forms' => array(
+					'retention_days' => 30,
+				),
+			)
+		);
+
+		// Create an old submission (older than retention period).
+		$old_post_id = wp_insert_post(
+			array(
+				'post_type'   => 'dsgo_form_submission',
+				'post_status' => 'private',
+				'post_title'  => 'Old Submission',
+				'post_date'   => gmdate( 'Y-m-d H:i:s', strtotime( '-60 days' ) ),
+			)
+		);
+
+		// Create a recent submission (within retention period).
+		$new_post_id = wp_insert_post(
+			array(
+				'post_type'   => 'dsgo_form_submission',
+				'post_status' => 'private',
+				'post_title'  => 'New Submission',
+				'post_date'   => gmdate( 'Y-m-d H:i:s', strtotime( '-5 days' ) ),
+			)
+		);
+
+		$this->assertNotWPError( $old_post_id );
+		$this->assertNotWPError( $new_post_id );
+
+		$this->handler->cleanup_old_submissions();
+
+		// Old submission should be deleted.
+		$this->assertNull( get_post( $old_post_id ) );
+
+		// Recent submission should still exist.
+		$this->assertNotNull( get_post( $new_post_id ) );
+
+		// Cleanup.
+		wp_delete_post( $new_post_id, true );
+		delete_option( 'designsetgo_settings' );
+	}
+
+	/**
+	 * Test cleanup respects batch size filter.
+	 */
+	public function test_cleanup_respects_batch_size() {
+		update_option(
+			'designsetgo_settings',
+			array(
+				'forms' => array(
+					'retention_days' => 30,
+				),
+			)
+		);
+
+		// Create 3 old submissions.
+		$post_ids = array();
+		for ( $i = 0; $i < 3; $i++ ) {
+			$post_ids[] = wp_insert_post(
+				array(
+					'post_type'   => 'dsgo_form_submission',
+					'post_status' => 'private',
+					'post_title'  => "Old Submission {$i}",
+					'post_date'   => gmdate( 'Y-m-d H:i:s', strtotime( '-60 days' ) ),
+				)
+			);
+		}
+
+		// Limit batch to 2.
+		add_filter( 'designsetgo_cleanup_batch_size', function () {
+			return 2;
+		} );
+
+		$this->handler->cleanup_old_submissions();
+
+		// Only 2 should be deleted (batch limit).
+		$remaining = 0;
+		foreach ( $post_ids as $post_id ) {
+			if ( null !== get_post( $post_id ) ) {
+				++$remaining;
+			}
+		}
+		$this->assertEquals( 1, $remaining );
+
+		// Cleanup.
+		foreach ( $post_ids as $post_id ) {
+			wp_delete_post( $post_id, true );
+		}
+		delete_option( 'designsetgo_settings' );
+	}
 }
