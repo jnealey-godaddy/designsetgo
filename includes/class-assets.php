@@ -73,18 +73,14 @@ class Assets {
 		$asset_file_path = DESIGNSETGO_PATH . 'build/index.asset.php';
 
 		if ( ! file_exists( $asset_file_path ) || ! is_readable( $asset_file_path ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'DesignSetGo: Editor asset file not found. Run `npm run build`.' );
-			}
+			wp_trigger_error( __METHOD__, 'DesignSetGo: Editor asset file not found. Run `npm run build`.', E_USER_NOTICE );
 			return;
 		}
 
 		$asset_file = include $asset_file_path;
 
 		if ( ! is_array( $asset_file ) || ! isset( $asset_file['dependencies'] ) || ! isset( $asset_file['version'] ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'DesignSetGo: Invalid editor asset file format.' );
-			}
+			wp_trigger_error( __METHOD__, 'DesignSetGo: Invalid editor asset file format.', E_USER_NOTICE );
 			return;
 		}
 
@@ -218,18 +214,14 @@ class Assets {
 		$frontend_asset_path = DESIGNSETGO_PATH . 'build/frontend.asset.php';
 
 		if ( ! file_exists( $frontend_asset_path ) || ! is_readable( $frontend_asset_path ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'DesignSetGo: Frontend asset file not found. Run `npm run build`.' );
-			}
+			wp_trigger_error( __METHOD__, 'DesignSetGo: Frontend asset file not found. Run `npm run build`.', E_USER_NOTICE );
 			return;
 		}
 
 		$frontend_asset = include $frontend_asset_path;
 
 		if ( ! is_array( $frontend_asset ) || ! isset( $frontend_asset['dependencies'] ) || ! isset( $frontend_asset['version'] ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'DesignSetGo: Invalid frontend asset file format.' );
-			}
+			wp_trigger_error( __METHOD__, 'DesignSetGo: Invalid frontend asset file format.', E_USER_NOTICE );
 			return;
 		}
 
