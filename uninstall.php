@@ -63,18 +63,13 @@ designsetgo_uninstall_step(
 designsetgo_uninstall_step(
 	'options and llms.txt',
 	function () {
+		// wp_delete_file() uses @unlink() internally, safe to call without existence checks.
 		if ( get_option( 'designsetgo_llms_txt_physical' ) ) {
-			$file_path = ABSPATH . 'llms.txt';
-			if ( file_exists( $file_path ) && is_writable( $file_path ) ) {
-				wp_delete_file( $file_path );
-			}
+			wp_delete_file( ABSPATH . 'llms.txt' );
 		}
 
 		if ( get_option( 'designsetgo_llms_full_txt_physical' ) ) {
-			$full_path = ABSPATH . 'llms-full.txt';
-			if ( file_exists( $full_path ) && is_writable( $full_path ) ) {
-				wp_delete_file( $full_path );
-			}
+			wp_delete_file( ABSPATH . 'llms-full.txt' );
 		}
 
 		delete_option( 'designsetgo_global_styles' );
