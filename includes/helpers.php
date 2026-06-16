@@ -102,10 +102,7 @@ function designsetgo_sanitize_css_size( $value ) {
 		}
 	}
 
-	// Invalid value - log in debug mode.
-	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( sprintf( 'DesignSetGo: Invalid CSS size value rejected: %s', $value ) );
-	}
+	wp_trigger_error( __FUNCTION__, sprintf( 'DesignSetGo: Invalid CSS size value rejected: %s', $value ), E_USER_NOTICE );
 
 	return null;
 }
@@ -173,10 +170,7 @@ function designsetgo_sanitize_css_color( $value ) {
 		return strtolower( $value );
 	}
 
-	// Invalid color - log in debug mode.
-	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-		error_log( sprintf( 'DesignSetGo: Invalid CSS color value rejected: %s', $value ) );
-	}
+	wp_trigger_error( __FUNCTION__, sprintf( 'DesignSetGo: Invalid CSS color value rejected: %s', $value ), E_USER_NOTICE );
 
 	return null;
 }
