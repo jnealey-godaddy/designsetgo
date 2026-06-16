@@ -78,6 +78,7 @@
 namespace DesignSetGo\Blocks;
 
 use WP_Error;
+use WP_Query;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -903,7 +904,7 @@ class Form_Handler {
 		$batch_size = apply_filters( 'designsetgo_cleanup_batch_size', 100 );
 
 		// Find old submissions (limited batch to prevent timeout).
-		$query = new \WP_Query(
+		$query = new WP_Query(
 			array(
 				'post_type'      => 'dsgo_form_submission',
 				'post_status'    => 'any',

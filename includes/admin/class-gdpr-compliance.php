@@ -17,6 +17,8 @@
 
 namespace DesignSetGo\Admin;
 
+use WP_Query;
+
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -97,7 +99,7 @@ class GDPR_Compliance {
 			'order'          => 'DESC',
 		);
 
-		$submissions = new \WP_Query( $args );
+		$submissions = new WP_Query( $args );
 
 		if ( $submissions->have_posts() ) {
 			while ( $submissions->have_posts() ) {
@@ -207,7 +209,7 @@ class GDPR_Compliance {
 			'order'          => 'DESC',
 		);
 
-		$submissions = new \WP_Query( $args );
+		$submissions = new WP_Query( $args );
 
 		if ( $submissions->have_posts() ) {
 			while ( $submissions->have_posts() ) {
@@ -540,7 +542,7 @@ We implement appropriate security measures to protect your personal data from un
 	 * @return array Statistics.
 	 */
 	public function get_statistics() {
-		$total_query = new \WP_Query(
+		$total_query = new WP_Query(
 			array(
 				'post_type'      => 'dsgo_form_submission',
 				'post_status'    => 'any',
@@ -553,7 +555,7 @@ We implement appropriate security measures to protect your personal data from un
 
 		// Get submissions older than 30 days.
 		$thirty_days_ago   = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
-		$old_query = new \WP_Query(
+		$old_query = new WP_Query(
 			array(
 				'post_type'      => 'dsgo_form_submission',
 				'post_status'    => 'any',
