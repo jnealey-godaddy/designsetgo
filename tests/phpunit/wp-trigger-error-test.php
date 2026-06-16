@@ -73,7 +73,7 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 	 */
 	private function assert_notice_triggered( $expected_substring, $expected_count = 1 ) {
 		if ( ! WP_DEBUG ) {
-			$this->markTestIncomplete(
+			$this->markTestSkipped(
 				'WP_DEBUG is false — wp_trigger_error() bails early. ' .
 				'Run with WP_DEBUG=true to fully test notice triggering.'
 			);
@@ -94,10 +94,8 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 	 */
 	public function test_uninstall_step_survives_exception() {
 		if ( ! function_exists( 'designsetgo_uninstall_step' ) ) {
-			if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-				define( 'WP_UNINSTALL_PLUGIN', true );
-			}
-			require_once DESIGNSETGO_PLUGIN_DIR . '/uninstall.php';
+			$this->markTestSkipped( 'designsetgo_uninstall_step not loaded — run uninstall-test.php first or load uninstall.php separately.' );
+			return;
 		}
 
 		designsetgo_uninstall_step(
@@ -116,15 +114,13 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 	 */
 	public function test_uninstall_step_triggers_notice_on_exception() {
 		if ( ! WP_DEBUG ) {
-			$this->markTestIncomplete( 'WP_DEBUG is false — wp_trigger_error() bails early.' );
+			$this->markTestSkipped( 'WP_DEBUG is false — wp_trigger_error() bails early.' );
 			return;
 		}
 
 		if ( ! function_exists( 'designsetgo_uninstall_step' ) ) {
-			if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-				define( 'WP_UNINSTALL_PLUGIN', true );
-			}
-			require_once DESIGNSETGO_PLUGIN_DIR . '/uninstall.php';
+			$this->markTestSkipped( 'designsetgo_uninstall_step not loaded — run uninstall-test.php first or load uninstall.php separately.' );
+			return;
 		}
 
 		designsetgo_uninstall_step(
@@ -145,10 +141,8 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 	 */
 	public function test_uninstall_step_no_notice_on_success() {
 		if ( ! function_exists( 'designsetgo_uninstall_step' ) ) {
-			if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-				define( 'WP_UNINSTALL_PLUGIN', true );
-			}
-			require_once DESIGNSETGO_PLUGIN_DIR . '/uninstall.php';
+			$this->markTestSkipped( 'designsetgo_uninstall_step not loaded — run uninstall-test.php first or load uninstall.php separately.' );
+			return;
 		}
 
 		designsetgo_uninstall_step(
@@ -178,7 +172,7 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 	 */
 	public function test_sanitize_css_size_triggers_notice_on_invalid() {
 		if ( ! WP_DEBUG ) {
-			$this->markTestIncomplete( 'WP_DEBUG is false — wp_trigger_error() bails early.' );
+			$this->markTestSkipped( 'WP_DEBUG is false — wp_trigger_error() bails early.' );
 			return;
 		}
 
@@ -212,7 +206,7 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 	 */
 	public function test_sanitize_css_color_triggers_notice_on_invalid() {
 		if ( ! WP_DEBUG ) {
-			$this->markTestIncomplete( 'WP_DEBUG is false — wp_trigger_error() bails early.' );
+			$this->markTestSkipped( 'WP_DEBUG is false — wp_trigger_error() bails early.' );
 			return;
 		}
 

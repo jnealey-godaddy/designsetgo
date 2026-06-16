@@ -26,7 +26,7 @@ function designsetgo_uninstall_step( $label, $callback ) {
 	try {
 		$callback();
 	} catch ( \Throwable $e ) {
-		wp_trigger_error( 'designsetgo_uninstall_step', 'DesignSetGo uninstall (' . $label . '): ' . $e->getMessage(), E_USER_NOTICE );
+		wp_trigger_error( __FUNCTION__, 'DesignSetGo uninstall (' . $label . '): ' . $e->getMessage(), E_USER_NOTICE );
 	}
 }
 
@@ -137,5 +137,5 @@ designsetgo_uninstall_step(
 	}
 );
 
-// Log successful completion.
-wp_trigger_error( 'designsetgo_uninstall', 'DesignSetGo: Plugin uninstall cleanup completed.', E_USER_NOTICE );
+// Signal successful completion for debugging/testing hooks.
+do_action( 'designsetgo_uninstalled' );
