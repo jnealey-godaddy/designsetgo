@@ -73,7 +73,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"16px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&amp;h=500&amp;fit=crop" alt="Students learning online" style="border-radius:16px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Students learning online" style="border-radius:16px"/></figure>
 <!-- /wp:image --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/grid --></div></div>
@@ -195,7 +195,7 @@ return array(
 <!-- wp:designsetgo/grid {"style":{"spacing":{"blockGap":"var:preset|spacing|30","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-3 dsgo-grid-cols-tablet-2 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(3, 1fr);align-items:stretch;row-gap:var(--wp--preset--spacing--30);column-gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"var:preset|spacing|30","left":"0","right":"0"}},"border":{"radius":"12px","width":"1px"}},"borderColor":"contrast-3"} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack has-border-color has-contrast-3-border-color" style="border-width:1px;border-radius:12px;padding-top:0;padding-right:0;padding-bottom:var(--wp--preset--spacing--30);padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":{"topLeft":"12px","topRight":"12px"}}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=400&amp;h=250&amp;fit=crop" alt="Web development course" style="border-top-left-radius:12px;border-top-right-radius:12px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Web development course" style="border-top-left-radius:12px;border-top-right-radius:12px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"0","left":"var:preset|spacing|20","right":"var:preset|spacing|20"}}}} -->
@@ -231,7 +231,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"var:preset|spacing|30","left":"0","right":"0"}},"border":{"radius":"12px","width":"1px"}},"borderColor":"contrast-3"} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack has-border-color has-contrast-3-border-color" style="border-width:1px;border-radius:12px;padding-top:0;padding-right:0;padding-bottom:var(--wp--preset--spacing--30);padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":{"topLeft":"12px","topRight":"12px"}}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&amp;h=250&amp;fit=crop" alt="Data science course" style="border-top-left-radius:12px;border-top-right-radius:12px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Data science course" style="border-top-left-radius:12px;border-top-right-radius:12px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"0","left":"var:preset|spacing|20","right":"var:preset|spacing|20"}}}} -->
@@ -267,7 +267,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"var:preset|spacing|30","left":"0","right":"0"}},"border":{"radius":"12px","width":"1px"}},"borderColor":"contrast-3"} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack has-border-color has-contrast-3-border-color" style="border-width:1px;border-radius:12px;padding-top:0;padding-right:0;padding-bottom:var(--wp--preset--spacing--30);padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":{"topLeft":"12px","topRight":"12px"}}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&amp;h=250&amp;fit=crop" alt="UI/UX design course" style="border-top-left-radius:12px;border-top-right-radius:12px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="UI/UX design course" style="border-top-left-radius:12px;border-top-right-radius:12px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"0","left":"var:preset|spacing|20","right":"var:preset|spacing|20"}}}} -->
@@ -317,7 +317,7 @@ return array(
 <!-- wp:designsetgo/grid {"desktopColumns":4,"style":{"spacing":{"blockGap":"var:preset|spacing|30","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-4 dsgo-grid-cols-tablet-2 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(4, 1fr);align-items:stretch;row-gap:var(--wp--preset--spacing--30);column-gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","align":"center","style":{"border":{"radius":"50%"}}} -->
-<figure class="wp-block-image aligncenter size-large has-custom-border"><img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&amp;h=200&amp;fit=crop" alt="Dr. Angela Yu" style="border-radius:50%"/></figure>
+<figure class="wp-block-image aligncenter size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Dr. Angela Yu" style="border-radius:50%"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"textAlign":"center","level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"medium"} -->
@@ -331,7 +331,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","align":"center","style":{"border":{"radius":"50%"}}} -->
-<figure class="wp-block-image aligncenter size-large has-custom-border"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&amp;h=200&amp;fit=crop" alt="Jose Portilla" style="border-radius:50%"/></figure>
+<figure class="wp-block-image aligncenter size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Jose Portilla" style="border-radius:50%"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"textAlign":"center","level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"medium"} -->
@@ -345,7 +345,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","align":"center","style":{"border":{"radius":"50%"}}} -->
-<figure class="wp-block-image aligncenter size-large has-custom-border"><img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&amp;h=200&amp;fit=crop" alt="Sarah Chen" style="border-radius:50%"/></figure>
+<figure class="wp-block-image aligncenter size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Sarah Chen" style="border-radius:50%"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"textAlign":"center","level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"medium"} -->
@@ -359,7 +359,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","align":"center","style":{"border":{"radius":"50%"}}} -->
-<figure class="wp-block-image aligncenter size-large has-custom-border"><img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&amp;h=200&amp;fit=crop" alt="Michael Roberts" style="border-radius:50%"/></figure>
+<figure class="wp-block-image aligncenter size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Michael Roberts" style="border-radius:50%"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"textAlign":"center","level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"medium"} -->
@@ -397,7 +397,7 @@ return array(
 
 <!-- wp:designsetgo/row {"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"},"blockGap":"var:preset|spacing|10","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","justifyContent":"left","flexWrap":"nowrap"}} -->
 <div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="margin-top:var(--wp--preset--spacing--20);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--10)"><!-- wp:image {"width":"40px","height":"40px","sizeSlug":"large","style":{"border":{"radius":"50%"}}} -->
-<figure class="wp-block-image size-large is-resized has-custom-border"><img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=80&amp;h=80&amp;fit=crop" alt="Alex" style="border-radius:50%;width:40px;height:40px"/></figure>
+<figure class="wp-block-image size-large is-resized has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Alex" style="border-radius:50%;width:40px;height:40px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
@@ -425,7 +425,7 @@ return array(
 
 <!-- wp:designsetgo/row {"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"},"blockGap":"var:preset|spacing|10","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","justifyContent":"left","flexWrap":"nowrap"}} -->
 <div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="margin-top:var(--wp--preset--spacing--20);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--10)"><!-- wp:image {"width":"40px","height":"40px","sizeSlug":"large","style":{"border":{"radius":"50%"}}} -->
-<figure class="wp-block-image size-large is-resized has-custom-border"><img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&amp;h=80&amp;fit=crop" alt="Emily" style="border-radius:50%;width:40px;height:40px"/></figure>
+<figure class="wp-block-image size-large is-resized has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Emily" style="border-radius:50%;width:40px;height:40px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
@@ -453,7 +453,7 @@ return array(
 
 <!-- wp:designsetgo/row {"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"},"blockGap":"var:preset|spacing|10","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","justifyContent":"left","flexWrap":"nowrap"}} -->
 <div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="margin-top:var(--wp--preset--spacing--20);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--10)"><!-- wp:image {"width":"40px","height":"40px","sizeSlug":"large","style":{"border":{"radius":"50%"}}} -->
-<figure class="wp-block-image size-large is-resized has-custom-border"><img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&amp;h=80&amp;fit=crop" alt="Marcus" style="border-radius:50%;width:40px;height:40px"/></figure>
+<figure class="wp-block-image size-large is-resized has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Marcus" style="border-radius:50%;width:40px;height:40px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->

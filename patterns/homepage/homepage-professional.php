@@ -41,7 +41,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"8px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&amp;h=600&amp;fit=crop" alt="Professional office" style="border-radius:8px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Professional office" style="border-radius:8px"/></figure>
 <!-- /wp:image --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/grid --></div></div>
@@ -269,7 +269,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"8px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=600&amp;h=450&amp;fit=crop" alt="Business handshake" style="border-radius:8px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Business handshake" style="border-radius:8px"/></figure>
 <!-- /wp:image --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/grid --></div></div>
@@ -289,7 +289,7 @@ return array(
 <!-- wp:designsetgo/grid {"style":{"spacing":{"blockGap":"var:preset|spacing|40","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-3 dsgo-grid-cols-tablet-2 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(3, 1fr);align-items:stretch;row-gap:var(--wp--preset--spacing--40);column-gap:var(--wp--preset--spacing--40)"><!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"medium","style":{"border":{"radius":"8px"}}} -->
-<figure class="wp-block-image size-medium has-custom-border"><img src="https://i.pravatar.cc/400?img=68" alt="Robert Mitchell" style="border-radius:8px"/></figure>
+<figure class="wp-block-image size-medium has-custom-border"><img src="{{dsgo:placeholder-avatar}}" alt="Robert Mitchell" style="border-radius:8px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"large"} -->
@@ -307,7 +307,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"medium","style":{"border":{"radius":"8px"}}} -->
-<figure class="wp-block-image size-medium has-custom-border"><img src="https://i.pravatar.cc/400?img=26" alt="Sarah Williams" style="border-radius:8px"/></figure>
+<figure class="wp-block-image size-medium has-custom-border"><img src="{{dsgo:placeholder-avatar}}" alt="Sarah Williams" style="border-radius:8px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"large"} -->
@@ -325,7 +325,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"medium","style":{"border":{"radius":"8px"}}} -->
-<figure class="wp-block-image size-medium has-custom-border"><img src="https://i.pravatar.cc/400?img=59" alt="Michael Chen" style="border-radius:8px"/></figure>
+<figure class="wp-block-image size-medium has-custom-border"><img src="{{dsgo:placeholder-avatar}}" alt="Michael Chen" style="border-radius:8px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"large"} -->
@@ -358,7 +358,7 @@ return array(
 
 <!-- wp:designsetgo/row {"style":{"spacing":{"margin":{"top":"var:preset|spacing|30"},"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
 <div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="margin-top:var(--wp--preset--spacing--30);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap"><!-- wp:image {"width":"50px","height":"50px","scale":"cover","sizeSlug":"thumbnail","className":"is-style-rounded"} -->
-<figure class="wp-block-image size-thumbnail is-resized is-style-rounded"><img src="https://i.pravatar.cc/150?img=32" alt="Thomas Anderson" style="object-fit:cover;width:50px;height:50px"/></figure>
+<figure class="wp-block-image size-thumbnail is-resized is-style-rounded"><img src="{{dsgo:placeholder-avatar}}" alt="Thomas Anderson" style="object-fit:cover;width:50px;height:50px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
@@ -380,7 +380,7 @@ return array(
 
 <!-- wp:designsetgo/row {"style":{"spacing":{"margin":{"top":"var:preset|spacing|30"},"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
 <div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="margin-top:var(--wp--preset--spacing--30);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap"><!-- wp:image {"width":"50px","height":"50px","scale":"cover","sizeSlug":"thumbnail","className":"is-style-rounded"} -->
-<figure class="wp-block-image size-thumbnail is-resized is-style-rounded"><img src="https://i.pravatar.cc/150?img=47" alt="Patricia Reynolds" style="object-fit:cover;width:50px;height:50px"/></figure>
+<figure class="wp-block-image size-thumbnail is-resized is-style-rounded"><img src="{{dsgo:placeholder-avatar}}" alt="Patricia Reynolds" style="object-fit:cover;width:50px;height:50px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->

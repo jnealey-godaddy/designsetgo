@@ -26,27 +26,27 @@ return array(
 
 <!-- wp:gallery {"columns":3,"linkTo":"none","style":{"spacing":{"blockGap":{"top":"var:preset|spacing|30","left":"var:preset|spacing|30"}}}} -->
 <figure class="wp-block-gallery has-nested-images columns-3 is-cropped"><!-- wp:image {"sizeSlug":"large","linkDestination":"none","style":{"border":{"radius":"12px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&amp;q=80" alt="Project screenshot" style="border-radius:12px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Project screenshot" style="border-radius:12px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:image {"sizeSlug":"large","linkDestination":"none","style":{"border":{"radius":"12px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&amp;q=80" alt="Project screenshot" style="border-radius:12px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Project screenshot" style="border-radius:12px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:image {"sizeSlug":"large","linkDestination":"none","style":{"border":{"radius":"12px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&amp;q=80" alt="Project screenshot" style="border-radius:12px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Project screenshot" style="border-radius:12px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:image {"sizeSlug":"large","linkDestination":"none","style":{"border":{"radius":"12px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1559028012-481c04fa702d?w=600&amp;q=80" alt="Project screenshot" style="border-radius:12px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Project screenshot" style="border-radius:12px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:image {"sizeSlug":"large","linkDestination":"none","style":{"border":{"radius":"12px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&amp;q=80" alt="Project screenshot" style="border-radius:12px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Project screenshot" style="border-radius:12px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:image {"sizeSlug":"large","linkDestination":"none","style":{"border":{"radius":"12px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&amp;q=80" alt="Project screenshot" style="border-radius:12px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Project screenshot" style="border-radius:12px"/></figure>
 <!-- /wp:image --></figure>
 <!-- /wp:gallery --></div></div>
 <!-- /wp:designsetgo/section -->',

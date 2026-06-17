@@ -392,6 +392,11 @@ class Loader {
 					$pattern['postTypes'] = $post_types_map[ $category ];
 				}
 
+				// Replace placeholder tokens with local image URLs.
+				if ( isset( $pattern['content'] ) ) {
+					$pattern['content'] = designsetgo_replace_pattern_placeholders( $pattern['content'] );
+				}
+
 				register_block_pattern( $slug, $pattern );
 			}
 		}

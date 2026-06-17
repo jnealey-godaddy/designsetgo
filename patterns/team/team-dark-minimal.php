@@ -27,7 +27,7 @@ return array(
 <!-- wp:designsetgo/grid {"desktopColumns":4,"style":{"spacing":{"blockGap":"var:preset|spacing|30","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-4 dsgo-grid-cols-tablet-2 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(4, 1fr);align-items:stretch;row-gap:var(--wp--preset--spacing--30);column-gap:var(--wp--preset--spacing--30)"><!-- wp:group {"layout":{"type":"constrained"}} -->
 <div class="wp-block-group"><!-- wp:image {"sizeSlug":"medium","style":{"border":{"radius":"0"}}} -->
-<figure class="wp-block-image size-medium has-custom-border"><img src="https://i.pravatar.cc/300?img=68" alt="Alex Rivera" style="border-radius:0"/></figure>
+<figure class="wp-block-image size-medium has-custom-border"><img src="{{dsgo:placeholder-avatar}}" alt="Alex Rivera" style="border-radius:0"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"medium"} -->
@@ -41,7 +41,7 @@ return array(
 
 <!-- wp:group {"layout":{"type":"constrained"}} -->
 <div class="wp-block-group"><!-- wp:image {"sizeSlug":"medium","style":{"border":{"radius":"0"}}} -->
-<figure class="wp-block-image size-medium has-custom-border"><img src="https://i.pravatar.cc/300?img=26" alt="Jordan Kim" style="border-radius:0"/></figure>
+<figure class="wp-block-image size-medium has-custom-border"><img src="{{dsgo:placeholder-avatar}}" alt="Jordan Kim" style="border-radius:0"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"medium"} -->
@@ -55,7 +55,7 @@ return array(
 
 <!-- wp:group {"layout":{"type":"constrained"}} -->
 <div class="wp-block-group"><!-- wp:image {"sizeSlug":"medium","style":{"border":{"radius":"0"}}} -->
-<figure class="wp-block-image size-medium has-custom-border"><img src="https://i.pravatar.cc/300?img=59" alt="Marcus Chen" style="border-radius:0"/></figure>
+<figure class="wp-block-image size-medium has-custom-border"><img src="{{dsgo:placeholder-avatar}}" alt="Marcus Chen" style="border-radius:0"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"medium"} -->
@@ -69,7 +69,7 @@ return array(
 
 <!-- wp:group {"layout":{"type":"constrained"}} -->
 <div class="wp-block-group"><!-- wp:image {"sizeSlug":"medium","style":{"border":{"radius":"0"}}} -->
-<figure class="wp-block-image size-medium has-custom-border"><img src="https://i.pravatar.cc/300?img=44" alt="Sophie Taylor" style="border-radius:0"/></figure>
+<figure class="wp-block-image size-medium has-custom-border"><img src="{{dsgo:placeholder-avatar}}" alt="Sophie Taylor" style="border-radius:0"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"medium"} -->

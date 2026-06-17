@@ -35,7 +35,7 @@ return array(
 <!-- wp:designsetgo/grid {"desktopColumns":2,"style":{"spacing":{"blockGap":"var:preset|spacing|40","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-2 dsgo-grid-cols-tablet-2 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(2, 1fr);align-items:stretch;row-gap:var(--wp--preset--spacing--40);column-gap:var(--wp--preset--spacing--40)"><!-- wp:group {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"16px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=600&amp;h=450&amp;fit=crop" alt="Mobile App Design" style="border-radius:16px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Mobile App Design" style="border-radius:16px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"large"} -->
@@ -49,7 +49,7 @@ return array(
 
 <!-- wp:group {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"16px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=600&amp;h=450&amp;fit=crop" alt="Dashboard Design" style="border-radius:16px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Dashboard Design" style="border-radius:16px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"large"} -->
@@ -63,7 +63,7 @@ return array(
 
 <!-- wp:group {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"16px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=600&amp;h=450&amp;fit=crop" alt="E-commerce Design" style="border-radius:16px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="E-commerce Design" style="border-radius:16px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"large"} -->
@@ -77,7 +77,7 @@ return array(
 
 <!-- wp:group {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"constrained"}} -->
 <div class="wp-block-group" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"16px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&amp;h=450&amp;fit=crop" alt="Brand Identity" style="border-radius:16px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Brand Identity" style="border-radius:16px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"large"} -->

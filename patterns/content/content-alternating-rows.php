@@ -27,7 +27,7 @@ return array(
 <!-- wp:designsetgo/grid {"desktopColumns":2,"tabletColumns":1,"style":{"spacing":{"blockGap":"var:preset|spacing|60","padding":{"top":"0","bottom":"0","left":"0","right":"0"},"margin":{"bottom":"var:preset|spacing|60"}}},"alignItems":"center"} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-2 dsgo-grid-cols-tablet-1 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint" style="margin-bottom:var(--wp--preset--spacing--60);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(2, 1fr);align-items:center;row-gap:var(--wp--preset--spacing--60);column-gap:var(--wp--preset--spacing--60)"><!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}},"layout":{"gridColumn":"span 1"}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"16px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&amp;h=450&amp;fit=crop" alt="Strategy planning" style="border-radius:16px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Strategy planning" style="border-radius:16px"/></figure>
 <!-- /wp:image --></div></div>
 <!-- /wp:designsetgo/section -->
 
@@ -107,7 +107,7 @@ return array(
 
 <!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}},"layout":{"gridColumn":"span 1"}},"className":"dsgo-order-1-mobile","dsgoMobileOrder":0} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint dsgo-order-1-mobile" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0;--dsgo-mobile-order:0"><div class="dsgo-stack__inner"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"16px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=600&amp;h=450&amp;fit=crop" alt="Design process" style="border-radius:16px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Design process" style="border-radius:16px"/></figure>
 <!-- /wp:image --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/grid -->
@@ -115,7 +115,7 @@ return array(
 <!-- wp:designsetgo/grid {"desktopColumns":2,"tabletColumns":1,"style":{"spacing":{"blockGap":"var:preset|spacing|60","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"alignItems":"center"} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-2 dsgo-grid-cols-tablet-1 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(2, 1fr);align-items:center;row-gap:var(--wp--preset--spacing--60);column-gap:var(--wp--preset--spacing--60)"><!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}},"layout":{"gridColumn":"span 1"}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"16px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&amp;h=450&amp;fit=crop" alt="Launch and growth" style="border-radius:16px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-landscape}}" alt="Launch and growth" style="border-radius:16px"/></figure>
 <!-- /wp:image --></div></div>
 <!-- /wp:designsetgo/section -->
 

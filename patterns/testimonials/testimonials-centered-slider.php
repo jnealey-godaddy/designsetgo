@@ -32,7 +32,7 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:image {"width":"60px","height":"60px","scale":"cover","sizeSlug":"thumbnail","align":"center","className":"is-style-rounded"} -->
-<figure class="wp-block-image aligncenter size-thumbnail is-resized is-style-rounded"><img src="https://i.pravatar.cc/150?img=60" alt="David Park" style="object-fit:cover;width:60px;height:60px"/></figure>
+<figure class="wp-block-image aligncenter size-thumbnail is-resized is-style-rounded"><img src="{{dsgo:placeholder-avatar}}" alt="David Park" style="object-fit:cover;width:60px;height:60px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","orientation":"vertical"}} -->
@@ -54,7 +54,7 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:image {"width":"60px","height":"60px","scale":"cover","sizeSlug":"thumbnail","align":"center","className":"is-style-rounded"} -->
-<figure class="wp-block-image aligncenter size-thumbnail is-resized is-style-rounded"><img src="https://i.pravatar.cc/150?img=60" alt="David Park" style="object-fit:cover;width:60px;height:60px"/></figure>
+<figure class="wp-block-image aligncenter size-thumbnail is-resized is-style-rounded"><img src="{{dsgo:placeholder-avatar}}" alt="David Park" style="object-fit:cover;width:60px;height:60px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
