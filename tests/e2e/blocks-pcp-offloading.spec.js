@@ -11,14 +11,33 @@ const path = require('path');
 const { test, expect } = require('@playwright/test');
 const { getEditorCanvas, createNewPost } = require('./helpers/wordpress');
 
-// Screenshots land alongside the other Playwright artifacts so they are easy
-// to find (and get uploaded by CI). They are grouped one folder per block, with
-// editor captures prefixed `editor-` and frontend captures left bare, e.g.
-// screenshots/modal/editor-modal.png and screenshots/modal/modal.png.
+// Screenshots / videos land alongside the other Playwright artifacts so they
+// are easy to find (and get uploaded by CI). They are grouped per block, then
+// per test scenario, so a block can have many scenarios without collisions:
+//
+//   screenshots/<block>/<scenario>/editor.png
+//   screenshots/<block>/<scenario>/frontend.png
+//   screenshots/<block>/<scenario>/video.webm   (only when DSGO_RECORD_VIDEO=1)
 const SCREENSHOT_DIR = path.join(
 	process.env.WP_ARTIFACTS_PATH || path.join(process.cwd(), 'artifacts'),
 	'screenshots'
 );
+
+/**
+ * Tag a test with its block + scenario so screenshots and the recorded video
+ * all land under screenshots/<block>/<scenario>/. Call once at the top of a
+ * test; pass the returned descriptor to saveScreenshot().
+ *
+ * @param {import('@playwright/test').TestInfo} testInfo - Playwright test info
+ * @param {string}                              block    - Block name (top folder)
+ * @param {string}                              scenario - Scenario name (subfolder)
+ * @return {{block: string, scenario: string}} Artifact descriptor
+ */
+function defineArtifact(testInfo, block, scenario) {
+	testInfo.annotations.push({ type: 'dsgo-block', description: block });
+	testInfo.annotations.push({ type: 'dsgo-scenario', description: scenario });
+	return { block, scenario };
+}
 
 // Optional video capture. Off by default (screenshots only); set
 // DSGO_RECORD_VIDEO=1 to also record a video of each test. Videos are grouped
@@ -40,12 +59,15 @@ test.afterEach(async ({ page }, testInfo) => {
 	const block = testInfo.annotations.find(
 		(a) => a.type === 'dsgo-block'
 	)?.description;
-	if (!video || !block) {
+	const scenario = testInfo.annotations.find(
+		(a) => a.type === 'dsgo-scenario'
+	)?.description;
+	if (!video || !block || !scenario) {
 		return;
 	}
 	pendingVideos.push({
 		src: await video.path(),
-		dest: path.join(SCREENSHOT_DIR, block, `${block}.webm`),
+		dest: path.join(SCREENSHOT_DIR, block, scenario, 'video.webm'),
 	});
 });
 
@@ -61,18 +83,22 @@ test.afterAll(async () => {
 });
 
 /**
- * Save a full-page screenshot grouped by block name.
+ * Save a full-page screenshot under screenshots/<block>/<scenario>/.
  *
- * @param {import('@playwright/test').Page} page   - Playwright page object
- * @param {string}                          block  - Block name (folder + base file name)
- * @param {'editor'|'frontend'}             source - Where the capture is from;
- *                                                 `editor` adds an `editor-` prefix so admin/editor shots are distinguishable.
+ * @param {import('@playwright/test').Page}   page     - Playwright page object
+ * @param {{block: string, scenario: string}} artifact - Descriptor from defineArtifact()
+ * @param {'editor'|'frontend'}               source   - Which view; names the file
+ *                                                     editor.png or frontend.png.
  */
-async function saveScreenshot(page, block, source) {
-	const fileName =
-		source === 'editor' ? `editor-${block}.png` : `${block}.png`;
+async function saveScreenshot(page, artifact, source) {
+	const fileName = source === 'editor' ? 'editor.png' : 'frontend.png';
 	await page.screenshot({
-		path: path.join(SCREENSHOT_DIR, block, fileName),
+		path: path.join(
+			SCREENSHOT_DIR,
+			artifact.block,
+			artifact.scenario,
+			fileName
+		),
 		fullPage: true,
 	});
 }
@@ -192,7 +218,7 @@ test.describe('Modal block — editor and frontend', () => {
 	test('modal block inserts without validation error and renders on frontend', async ({
 		page,
 	}, testInfo) => {
-		testInfo.annotations.push({ type: 'dsgo-block', description: 'modal' });
+		const artifact = defineArtifact(testInfo, 'modal', 'insert-and-render');
 		const consoleErrors = [];
 		page.on('pageerror', (err) => consoleErrors.push(err.message));
 
@@ -228,7 +254,7 @@ test.describe('Modal block — editor and frontend', () => {
 
 		// Visual confirmation of the block in the editor.
 		await slowScrollEditor(page);
-		await saveScreenshot(page, 'modal', 'editor');
+		await saveScreenshot(page, artifact, 'editor');
 
 		// Publish and visit frontend.
 		const frontendUrl = await publishAndResolveUrl(page);
@@ -265,7 +291,7 @@ test.describe('Modal block — editor and frontend', () => {
 		// sees it (modal markup present, not yet shown).
 		await page.waitForLoadState('networkidle').catch(() => {});
 		await slowScrollToBottom(page);
-		await saveScreenshot(page, 'modal', 'frontend');
+		await saveScreenshot(page, artifact, 'frontend');
 	});
 });
 
@@ -276,10 +302,6 @@ test.describe('Pattern placeholder images — inserter and frontend', () => {
 	test('Hero Split pattern inserts with local placeholder images', async ({
 		page,
 	}, testInfo) => {
-		testInfo.annotations.push({
-			type: 'dsgo-block',
-			description: 'hero-split',
-		});
 		await createNewPost(page, 'page');
 		await setPostTitle(page, 'Hero Split');
 
@@ -323,6 +345,13 @@ test.describe('Pattern placeholder images — inserter and frontend', () => {
 		await patternItem.click();
 		await page.waitForTimeout(1500);
 
+		// Pattern found and inserted — tag artifacts now (past the skip guard).
+		const artifact = defineArtifact(
+			testInfo,
+			'hero-split',
+			'placeholder-images'
+		);
+
 		// Close inserter if still open.
 		const isPressed = await inserterToggle.getAttribute('aria-pressed');
 		if (isPressed === 'true') {
@@ -363,7 +392,7 @@ test.describe('Pattern placeholder images — inserter and frontend', () => {
 
 		// Visual confirmation of the pattern in the editor.
 		await slowScrollEditor(page);
-		await saveScreenshot(page, 'hero-split', 'editor');
+		await saveScreenshot(page, artifact, 'editor');
 
 		// Publish and check frontend.
 		const frontendUrl = await publishAndResolveUrl(page);
@@ -384,7 +413,7 @@ test.describe('Pattern placeholder images — inserter and frontend', () => {
 		// Visual confirmation of the rendered frontend (let images settle first).
 		await page.waitForLoadState('networkidle').catch(() => {});
 		await slowScrollToBottom(page);
-		await saveScreenshot(page, 'hero-split', 'frontend');
+		await saveScreenshot(page, artifact, 'frontend');
 	});
 });
 
@@ -395,10 +424,11 @@ test.describe('Form builder — editor and frontend', () => {
 	test('form builder inserts and renders form element on frontend', async ({
 		page,
 	}, testInfo) => {
-		testInfo.annotations.push({
-			type: 'dsgo-block',
-			description: 'form-builder',
-		});
+		const artifact = defineArtifact(
+			testInfo,
+			'form-builder',
+			'insert-and-render'
+		);
 		await createNewPost(page, 'page');
 		await setPostTitle(page, 'Form Builder');
 
@@ -435,7 +465,7 @@ test.describe('Form builder — editor and frontend', () => {
 
 		// Visual confirmation of the block in the editor.
 		await slowScrollEditor(page);
-		await saveScreenshot(page, 'form-builder', 'editor');
+		await saveScreenshot(page, artifact, 'editor');
 
 		// Publish and visit frontend.
 		const frontendUrl = await publishAndResolveUrl(page);
@@ -455,6 +485,6 @@ test.describe('Form builder — editor and frontend', () => {
 		// Visual confirmation of the rendered frontend.
 		await page.waitForLoadState('networkidle').catch(() => {});
 		await slowScrollToBottom(page);
-		await saveScreenshot(page, 'form-builder', 'frontend');
+		await saveScreenshot(page, artifact, 'frontend');
 	});
 });
