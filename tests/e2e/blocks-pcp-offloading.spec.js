@@ -6,8 +6,30 @@
  * (storage fallback, local placeholder images, WP_Query migration).
  */
 
+const path = require('path');
 const { test, expect } = require('@playwright/test');
 const { getEditorCanvas, createNewPost } = require('./helpers/wordpress');
+
+// Screenshots land alongside the other Playwright artifacts so they are easy
+// to find (and get uploaded by CI). One per block for the editor view and one
+// for the rendered frontend, for quick visual confirmation.
+const SCREENSHOT_DIR = path.join(
+	process.env.WP_ARTIFACTS_PATH || path.join(process.cwd(), 'artifacts'),
+	'screenshots'
+);
+
+/**
+ * Save a full-page screenshot under the shared screenshots directory.
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string}                          name - File name without extension
+ */
+async function saveScreenshot(page, name) {
+	await page.screenshot({
+		path: path.join(SCREENSHOT_DIR, `${name}.png`),
+		fullPage: true,
+	});
+}
 
 /**
  * Publish the current post and return its frontend URL.
@@ -90,6 +112,9 @@ test.describe('Modal block — editor and frontend', () => {
 		);
 		await expect(warnings).toHaveCount(0);
 
+		// Visual confirmation of the block in the editor.
+		await saveScreenshot(page, 'modal-editor');
+
 		// Publish and visit frontend.
 		const frontendUrl = await publishAndResolveUrl(page);
 
@@ -119,6 +144,12 @@ test.describe('Modal block — editor and frontend', () => {
 				msg.includes('SecurityError')
 		);
 		expect(storageErrors).toHaveLength(0);
+
+		// Visual confirmation of the rendered frontend. The modal itself is
+		// hidden until triggered, so this captures the page as a visitor first
+		// sees it (modal markup present, not yet shown).
+		await page.waitForLoadState('networkidle').catch(() => {});
+		await saveScreenshot(page, 'modal-frontend');
 	});
 });
 
@@ -188,6 +219,30 @@ test.describe('Pattern placeholder images — inserter and frontend', () => {
 		);
 		expect(await images.count()).toBeGreaterThan(0);
 
+		// Regression guard: every block in the pattern must validate against its
+		// save() output. A stale pattern (e.g. the parallax image missing the
+		// rotate data-attributes) shows up as isValid:false and would render the
+		// "Attempt Recovery" warning in the editor.
+		const invalidBlocks = await page.evaluate(() => {
+			const bad = [];
+			const walk = (blocks) => {
+				for (const b of blocks) {
+					if (b.isValid === false) {
+						bad.push(b.name);
+					}
+					if (b.innerBlocks) {
+						walk(b.innerBlocks);
+					}
+				}
+			};
+			walk(wp.data.select('core/block-editor').getBlocks());
+			return bad;
+		});
+		expect(invalidBlocks).toEqual([]);
+
+		// Visual confirmation of the pattern in the editor.
+		await saveScreenshot(page, 'pattern-hero-split-editor');
+
 		// Publish and check frontend.
 		const frontendUrl = await publishAndResolveUrl(page);
 
@@ -203,6 +258,10 @@ test.describe('Pattern placeholder images — inserter and frontend', () => {
 		// No raw tokens should appear in the page source.
 		const pageContent = await page.content();
 		expect(pageContent).not.toContain('{{dsgo:placeholder-');
+
+		// Visual confirmation of the rendered frontend (let images settle first).
+		await page.waitForLoadState('networkidle').catch(() => {});
+		await saveScreenshot(page, 'pattern-hero-split-frontend');
 	});
 });
 
@@ -246,6 +305,9 @@ test.describe('Form builder — editor and frontend', () => {
 		);
 		await expect(warnings).toHaveCount(0);
 
+		// Visual confirmation of the block in the editor.
+		await saveScreenshot(page, 'form-builder-editor');
+
 		// Publish and visit frontend.
 		const frontendUrl = await publishAndResolveUrl(page);
 
@@ -260,5 +322,9 @@ test.describe('Form builder — editor and frontend', () => {
 		// Verify the form has the text field we added (name="name").
 		const inputField = formElement.locator('input[name="name"]');
 		expect(await inputField.count()).toBeGreaterThan(0);
+
+		// Visual confirmation of the rendered frontend.
+		await page.waitForLoadState('networkidle').catch(() => {});
+		await saveScreenshot(page, 'form-builder-frontend');
 	});
 });
