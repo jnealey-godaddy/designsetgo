@@ -2,6 +2,21 @@
 # This shows linting issues but allows all changes to be committed
 npx lint-staged || true
 
+# Run the video-recording e2e block tests (modal / hero-split / form-builder).
+# These need the wp-env dev site running; if it isn't reachable we skip rather
+# than let Playwright spend ~2 min trying to boot wp-env inside the hook.
+# Kept non-blocking like lint above — failures are surfaced, CI is the gate.
+WP_ENV_URL="http://localhost:9451/wp-login.php"
+if curl -sf -o /dev/null --max-time 5 "$WP_ENV_URL"; then
+	echo ""
+	echo "▶  Running video-recording e2e block tests..."
+	DSGO_RECORD_VIDEO=1 npx playwright test tests/e2e/blocks-pcp-offloading.spec.js --project=chromium || true
+	echo "   Videos + screenshots: artifacts/screenshots/<block>/"
+else
+	echo ""
+	echo "⏭  Skipping e2e block tests — wp-env not running at :9451 (run 'npm run wp-env:start')"
+fi
+
 echo ""
 echo "ℹ️  Pre-commit checks completed (non-blocking)"
 echo "   Any linting issues will be caught in CI"
