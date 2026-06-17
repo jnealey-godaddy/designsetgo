@@ -78,6 +78,7 @@
 namespace DesignSetGo\Blocks;
 
 use WP_Error;
+use WP_Query;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -896,8 +897,6 @@ class Form_Handler {
 			return;
 		}
 
-		global $wpdb;
-
 		// Calculate cutoff date.
 		$cutoff_date = gmdate( 'Y-m-d H:i:s', strtotime( "-{$retention_days} days" ) );
 
@@ -905,17 +904,22 @@ class Form_Handler {
 		$batch_size = apply_filters( 'designsetgo_cleanup_batch_size', 100 );
 
 		// Find old submissions (limited batch to prevent timeout).
-		$old_submissions = $wpdb->get_col(
-			$wpdb->prepare(
-				"SELECT ID FROM {$wpdb->posts}
-				WHERE post_type = %s
-				AND post_date < %s
-				LIMIT %d",
-				'dsgo_form_submission',
-				$cutoff_date,
-				$batch_size
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'dsgo_form_submission',
+				'post_status'    => 'any',
+				'date_query'     => array(
+					array(
+						'before' => $cutoff_date,
+					),
+				),
+				'posts_per_page' => $batch_size,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
 			)
 		);
+
+		$old_submissions = $query->posts;
 
 		if ( empty( $old_submissions ) ) {
 			return;

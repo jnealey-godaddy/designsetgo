@@ -730,7 +730,8 @@ JS;
 			$prepare_values[] = $offset;
 		}
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Dynamic placeholders generated from safe constants; $sql variable is built above from safe constants.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- Dynamic placeholders and $sql variable built from safe constants above.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- No WP API for LIKE on post_content; admin-only migration tool, caching inappropriate for batch scans.
 		$posts = $wpdb->get_results(
 			$wpdb->prepare(
 				$sql,
@@ -789,6 +790,7 @@ JS;
 		$prepare_values = array_merge( $like_values, self::POST_TYPES, $statuses );
 
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic placeholders generated from safe constants.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- No WP API for LIKE on post_content; admin-only count, caching inappropriate for migration tool.
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$wpdb->posts}

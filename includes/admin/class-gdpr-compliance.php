@@ -17,6 +17,8 @@
 
 namespace DesignSetGo\Admin;
 
+use WP_Query;
+
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -97,7 +99,7 @@ class GDPR_Compliance {
 			'order'          => 'DESC',
 		);
 
-		$submissions = new \WP_Query( $args );
+		$submissions = new WP_Query( $args );
 
 		if ( $submissions->have_posts() ) {
 			while ( $submissions->have_posts() ) {
@@ -207,7 +209,7 @@ class GDPR_Compliance {
 			'order'          => 'DESC',
 		);
 
-		$submissions = new \WP_Query( $args );
+		$submissions = new WP_Query( $args );
 
 		if ( $submissions->have_posts() ) {
 			while ( $submissions->have_posts() ) {
@@ -540,24 +542,34 @@ We implement appropriate security measures to protect your personal data from un
 	 * @return array Statistics.
 	 */
 	public function get_statistics() {
-		global $wpdb;
-
-		$total = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s",
-				'dsgo_form_submission'
+		$total_query = new WP_Query(
+			array(
+				'post_type'      => 'dsgo_form_submission',
+				'post_status'    => 'any',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'no_found_rows'  => false,
 			)
 		);
+		$total = $total_query->found_posts;
 
 		// Get submissions older than 30 days.
-		$thirty_days_ago = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
-		$old_submissions = $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_date < %s",
-				'dsgo_form_submission',
-				$thirty_days_ago
+		$thirty_days_ago   = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
+		$old_query = new WP_Query(
+			array(
+				'post_type'      => 'dsgo_form_submission',
+				'post_status'    => 'any',
+				'date_query'     => array(
+					array(
+						'before' => $thirty_days_ago,
+					),
+				),
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'no_found_rows'  => false,
 			)
 		);
+		$old_submissions = $old_query->found_posts;
 
 		return array(
 			'total'           => (int) $total,

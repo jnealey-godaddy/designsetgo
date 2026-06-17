@@ -141,6 +141,7 @@ class FilterIndex {
 		$table = self::table_name();
 
 		// Idempotency: wipe existing rows for this object before reinsert.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table write; no WP API or caching applicable.
 		$wpdb->delete(
 			$table,
 			array(
@@ -188,7 +189,7 @@ class FilterIndex {
 		$sql = "INSERT INTO {$table} (object_id, object_type, post_type, filter_key, filter_value) VALUES "
 			. implode( ', ', $placeholders );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- placeholders built programmatically above.
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table bulk insert; placeholders built programmatically above.
 		$wpdb->query( $wpdb->prepare( $sql, $params ) );
 
 		self::bump_counts_cache();
@@ -262,6 +263,7 @@ class FilterIndex {
 			return;
 		}
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table write; no WP API or caching applicable.
 		$wpdb->delete(
 			self::table_name(),
 			array(
@@ -369,7 +371,7 @@ class FilterIndex {
 
 		$params = array_merge( array( $key ), $string_values, $post_type_params, $intersect_params );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- placeholders built programmatically above.
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table query; cached via wp_cache_get/set above. Placeholders built programmatically.
 		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) );
 
 		if ( is_array( $rows ) ) {

@@ -562,6 +562,7 @@ class Settings {
 
 		if ( false === $form_submissions ) {
 			// Cache miss - run the database query.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached via transient above; wp_count_posts() does not cover custom post types reliably.
 			$form_submissions = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s",
