@@ -164,7 +164,7 @@ class Settings {
 			return array();
 		}
 
-		$raw_data = json_decode( file_get_contents( $json_path ), true );
+		$raw_data = wp_json_file_decode( $json_path, array( 'associative' => true ) );
 
 		if ( ! is_array( $raw_data ) ) {
 			return array();

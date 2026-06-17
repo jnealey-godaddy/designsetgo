@@ -192,7 +192,7 @@ class Loader {
 			// In debug mode, verify the derived name matches block.json to catch
 			// directory/name mismatches during development.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$json_data = json_decode( file_get_contents( $block_dir . '/block.json' ), true );
+				$json_data = wp_json_file_decode( $block_dir . '/block.json', array( 'associative' => true ) );
 				$json_name = isset( $json_data['name'] ) ? $json_data['name'] : '';
 				if ( $block_name !== $json_name ) {
 					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
@@ -305,7 +305,7 @@ class Loader {
 
 			foreach ( $style_files as $style_file ) {
 				// Read and decode the JSON file.
-				$style_data = json_decode( file_get_contents( $style_file ), true );
+				$style_data = wp_json_file_decode( $style_file, array( 'associative' => true ) );
 
 				if ( ! $style_data || ! isset( $style_data['slug'] ) || ! isset( $style_data['title'] ) ) {
 					continue;
