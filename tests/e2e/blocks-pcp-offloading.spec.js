@@ -78,6 +78,44 @@ async function saveScreenshot(page, block, source) {
 }
 
 /**
+ * Slowly scroll the frontend page from top to bottom and back to top.
+ *
+ * Used on the published (non-editor) view so the full block is revealed over
+ * time in the recorded video, and so any lazy-loaded / parallax content is
+ * triggered before the screenshot. Runs in small steps with a short delay so
+ * the motion is visible rather than an instant jump.
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ */
+async function slowScrollToBottom(page) {
+	await page.evaluate(async () => {
+		const step = 250;
+		const delayMs = 120;
+		const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+		window.scrollTo(0, 0);
+		await sleep(delayMs);
+
+		let last = -1;
+		// Guard against unbounded growth (infinite scroll) with a step cap.
+		for (let i = 0; i < 200; i++) {
+			const maxY =
+				document.documentElement.scrollHeight - window.innerHeight;
+			const y = Math.min(window.scrollY + step, maxY);
+			window.scrollTo(0, y);
+			await sleep(delayMs);
+			if (y >= maxY || y === last) {
+				break;
+			}
+			last = y;
+		}
+
+		await sleep(delayMs);
+		window.scrollTo(0, 0);
+	});
+}
+
+/**
  * Title the current post after the block under test, so test pages are
  * identifiable (instead of "(no title)") in the editor, the page list, and the
  * frontend.
@@ -211,6 +249,7 @@ test.describe('Modal block — editor and frontend', () => {
 		// hidden until triggered, so this captures the page as a visitor first
 		// sees it (modal markup present, not yet shown).
 		await page.waitForLoadState('networkidle').catch(() => {});
+		await slowScrollToBottom(page);
 		await saveScreenshot(page, 'modal', 'frontend');
 	});
 });
@@ -328,6 +367,7 @@ test.describe('Pattern placeholder images — inserter and frontend', () => {
 
 		// Visual confirmation of the rendered frontend (let images settle first).
 		await page.waitForLoadState('networkidle').catch(() => {});
+		await slowScrollToBottom(page);
 		await saveScreenshot(page, 'hero-split', 'frontend');
 	});
 });
@@ -397,6 +437,7 @@ test.describe('Form builder — editor and frontend', () => {
 
 		// Visual confirmation of the rendered frontend.
 		await page.waitForLoadState('networkidle').catch(() => {});
+		await slowScrollToBottom(page);
 		await saveScreenshot(page, 'form-builder', 'frontend');
 	});
 });
