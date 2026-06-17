@@ -5,6 +5,25 @@
  * Handles form submissions via REST API endpoint with validation,
  * spam protection, and data storage.
  *
+ * @package DesignSetGo
+ * @since 1.0.0
+ */
+
+namespace DesignSetGo\Blocks;
+
+// Exit if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+use WP_Error;
+use WP_Query;
+use WP_REST_Request;
+use WP_REST_Response;
+
+/**
+ * Form_Handler class.
+ *
  * Security Monitoring Hooks
  * -------------------------
  * This class provides several action hooks for monitoring security events:
@@ -70,25 +89,6 @@
  *     }
  * }, 10, 3 );
  * ```
- *
- * @package DesignSetGo
- * @since 1.0.0
- */
-
-namespace DesignSetGo\Blocks;
-
-use WP_Error;
-use WP_Query;
-use WP_REST_Request;
-use WP_REST_Response;
-
-// Exit if accessed directly.
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
-
-/**
- * Form_Handler class.
  */
 class Form_Handler {
 
