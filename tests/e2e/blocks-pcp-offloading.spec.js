@@ -78,19 +78,21 @@ async function saveScreenshot(page, block, source) {
 }
 
 /**
- * Slowly scroll the frontend page from top to bottom and back to top.
+ * Slowly scroll a scope from top to bottom and back to top.
  *
- * Used on the published (non-editor) view so the full block is revealed over
- * time in the recorded video, and so any lazy-loaded / parallax content is
- * triggered before the screenshot. Runs in small steps with a short delay so
- * the motion is visible rather than an instant jump.
+ * Works on either a Page (frontend window) or a Frame (the editor canvas
+ * iframe) — both expose `evaluate`, and the body scrolls whatever `window`
+ * belongs to that scope. Used so the full block is revealed over time in the
+ * recorded video and any lazy-loaded / parallax content is triggered before
+ * the screenshot. Small steps with a delay keep the motion visible.
  *
- * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {import('@playwright/test').Page | import('@playwright/test').Frame} scope
+ *                                                                                   Page or Frame to scroll.
  */
-async function slowScrollToBottom(page) {
-	await page.evaluate(async () => {
-		const step = 250;
-		const delayMs = 120;
+async function slowScrollToBottom(scope) {
+	await scope.evaluate(async () => {
+		const step = 180;
+		const delayMs = 220;
 		const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 		window.scrollTo(0, 0);
@@ -98,7 +100,7 @@ async function slowScrollToBottom(page) {
 
 		let last = -1;
 		// Guard against unbounded growth (infinite scroll) with a step cap.
-		for (let i = 0; i < 200; i++) {
+		for (let i = 0; i < 400; i++) {
 			const maxY =
 				document.documentElement.scrollHeight - window.innerHeight;
 			const y = Math.min(window.scrollY + step, maxY);
@@ -113,6 +115,18 @@ async function slowScrollToBottom(page) {
 		await sleep(delayMs);
 		window.scrollTo(0, 0);
 	});
+}
+
+/**
+ * Slowly scroll the editor canvas (which lives in the `editor-canvas` iframe)
+ * so the whole block is revealed in the editor view of the recorded video.
+ * Falls back to scrolling the page if the canvas iframe isn't present.
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ */
+async function slowScrollEditor(page) {
+	const frame = page.frame({ name: 'editor-canvas' });
+	await slowScrollToBottom(frame || page);
 }
 
 /**
@@ -213,6 +227,7 @@ test.describe('Modal block — editor and frontend', () => {
 		await expect(warnings).toHaveCount(0);
 
 		// Visual confirmation of the block in the editor.
+		await slowScrollEditor(page);
 		await saveScreenshot(page, 'modal', 'editor');
 
 		// Publish and visit frontend.
@@ -347,6 +362,7 @@ test.describe('Pattern placeholder images — inserter and frontend', () => {
 		expect(invalidBlocks).toEqual([]);
 
 		// Visual confirmation of the pattern in the editor.
+		await slowScrollEditor(page);
 		await saveScreenshot(page, 'hero-split', 'editor');
 
 		// Publish and check frontend.
@@ -418,6 +434,7 @@ test.describe('Form builder — editor and frontend', () => {
 		await expect(warnings).toHaveCount(0);
 
 		// Visual confirmation of the block in the editor.
+		await slowScrollEditor(page);
 		await saveScreenshot(page, 'form-builder', 'editor');
 
 		// Publish and visit frontend.
