@@ -37,7 +37,7 @@ return array(
 
 <!-- wp:group {"style":{"spacing":{"margin":{"top":"var:preset|spacing|40"}}},"layout":{"type":"flex","justifyContent":"center"}} -->
 <div class="wp-block-group" style="margin-top:var(--wp--preset--spacing--40)"><!-- wp:image {"width":"60px","height":"60px","scale":"cover","sizeSlug":"thumbnail","className":"is-style-rounded"} -->
-<figure class="wp-block-image size-thumbnail is-resized is-style-rounded"><img src="https://i.pravatar.cc/150?img=32" alt="Sarah Johnson" style="object-fit:cover;width:60px;height:60px"/></figure>
+<figure class="wp-block-image size-thumbnail is-resized is-style-rounded"><img src="{{dsgo:placeholder-avatar}}" alt="Sarah Johnson" style="object-fit:cover;width:60px;height:60px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","justifyContent":"left"}} -->
@@ -65,7 +65,7 @@ return array(
 
 <!-- wp:group {"style":{"spacing":{"margin":{"top":"var:preset|spacing|40"}}},"layout":{"type":"flex","justifyContent":"center"}} -->
 <div class="wp-block-group" style="margin-top:var(--wp--preset--spacing--40)"><!-- wp:image {"width":"60px","height":"60px","scale":"cover","sizeSlug":"thumbnail","className":"is-style-rounded"} -->
-<figure class="wp-block-image size-thumbnail is-resized is-style-rounded"><img src="https://i.pravatar.cc/150?img=11" alt="Michael Chen" style="object-fit:cover;width:60px;height:60px"/></figure>
+<figure class="wp-block-image size-thumbnail is-resized is-style-rounded"><img src="{{dsgo:placeholder-avatar}}" alt="Michael Chen" style="object-fit:cover;width:60px;height:60px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","justifyContent":"left"}} -->
@@ -93,7 +93,7 @@ return array(
 
 <!-- wp:group {"style":{"spacing":{"margin":{"top":"var:preset|spacing|40"}}},"layout":{"type":"flex","justifyContent":"center"}} -->
 <div class="wp-block-group" style="margin-top:var(--wp--preset--spacing--40)"><!-- wp:image {"width":"60px","height":"60px","scale":"cover","sizeSlug":"thumbnail","className":"is-style-rounded"} -->
-<figure class="wp-block-image size-thumbnail is-resized is-style-rounded"><img src="https://i.pravatar.cc/150?img=47" alt="Emily Rodriguez" style="object-fit:cover;width:60px;height:60px"/></figure>
+<figure class="wp-block-image size-thumbnail is-resized is-style-rounded"><img src="{{dsgo:placeholder-avatar}}" alt="Emily Rodriguez" style="object-fit:cover;width:60px;height:60px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical","justifyContent":"left"}} -->

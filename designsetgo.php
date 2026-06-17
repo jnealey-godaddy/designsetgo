@@ -49,6 +49,11 @@ require_once DESIGNSETGO_PATH . 'includes/icon-svg-library.php';
 require_once DESIGNSETGO_PATH . 'includes/breadcrumbs-functions.php';
 
 /**
+ * Load pattern placeholder image helper (used by block patterns).
+ */
+require_once DESIGNSETGO_PATH . 'includes/patterns/placeholder-images.php';
+
+/**
  * Initialize the plugin.
  */
 function designsetgo_init() {

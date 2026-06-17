@@ -25,7 +25,7 @@ return array(
 <!-- /wp:designsetgo/section -->
 
 <!-- wp:designsetgo/image-accordion {"height":"550px","overlayOpacityExpanded":15} -->
-<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--hover" style="--dsgo-image-accordion-height:550px;--dsgo-image-accordion-gap:4px;--dsgo-image-accordion-expanded-ratio:3;--dsgo-image-accordion-transition:0.5s;--dsgo-image-accordion-overlay-color:#000000;--dsgo-image-accordion-overlay-opacity:0.4;--dsgo-image-accordion-overlay-opacity-expanded:0.15" data-trigger-type="hover" data-default-expanded="0" data-enable-overlay="true"><div class="dsgo-image-accordion__items"><!-- wp:designsetgo/image-accordion-item {"uniqueId":"prop-1","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600\\u0026h=900\\u0026fit=crop"}}}} -->
+<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--hover" style="--dsgo-image-accordion-height:550px;--dsgo-image-accordion-gap:4px;--dsgo-image-accordion-expanded-ratio:3;--dsgo-image-accordion-transition:0.5s;--dsgo-image-accordion-overlay-color:#000000;--dsgo-image-accordion-overlay-opacity:0.4;--dsgo-image-accordion-overlay-opacity-expanded:0.15" data-trigger-type="hover" data-default-expanded="0" data-enable-overlay="true"><div class="dsgo-image-accordion__items"><!-- wp:designsetgo/image-accordion-item {"uniqueId":"prop-1","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-landscape}}"}}}} -->
 <div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="prop-1" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:paragraph {"style":{"typography":{"textTransform":"uppercase","letterSpacing":"3px"},"color":{"text":"#d4af37"}},"fontSize":"small"} -->
 <p class="has-text-color has-small-font-size" style="color:#d4af37;letter-spacing:3px;text-transform:uppercase">Beverly Hills</p>
 <!-- /wp:paragraph -->
@@ -39,7 +39,7 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/image-accordion-item -->
 
-<!-- wp:designsetgo/image-accordion-item {"uniqueId":"prop-2","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600\\u0026h=900\\u0026fit=crop"}}}} -->
+<!-- wp:designsetgo/image-accordion-item {"uniqueId":"prop-2","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-landscape}}"}}}} -->
 <div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="prop-2" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:paragraph {"style":{"typography":{"textTransform":"uppercase","letterSpacing":"3px"},"color":{"text":"#d4af37"}},"fontSize":"small"} -->
 <p class="has-text-color has-small-font-size" style="color:#d4af37;letter-spacing:3px;text-transform:uppercase">Malibu</p>
 <!-- /wp:paragraph -->
@@ -53,7 +53,7 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/image-accordion-item -->
 
-<!-- wp:designsetgo/image-accordion-item {"uniqueId":"prop-3","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=600\\u0026h=900\\u0026fit=crop"}}}} -->
+<!-- wp:designsetgo/image-accordion-item {"uniqueId":"prop-3","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-landscape}}"}}}} -->
 <div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="prop-3" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:paragraph {"style":{"typography":{"textTransform":"uppercase","letterSpacing":"3px"},"color":{"text":"#d4af37"}},"fontSize":"small"} -->
 <p class="has-text-color has-small-font-size" style="color:#d4af37;letter-spacing:3px;text-transform:uppercase">Bel Air</p>
 <!-- /wp:paragraph -->
@@ -67,7 +67,7 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/image-accordion-item -->
 
-<!-- wp:designsetgo/image-accordion-item {"uniqueId":"prop-4","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"https://images.unsplash.com/photo-1600573472591-ee6c8e695481?w=600\\u0026h=900\\u0026fit=crop"}}}} -->
+<!-- wp:designsetgo/image-accordion-item {"uniqueId":"prop-4","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-landscape}}"}}}} -->
 <div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="prop-4" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:paragraph {"style":{"typography":{"textTransform":"uppercase","letterSpacing":"3px"},"color":{"text":"#d4af37"}},"fontSize":"small"} -->
 <p class="has-text-color has-small-font-size" style="color:#d4af37;letter-spacing:3px;text-transform:uppercase">Hollywood Hills</p>
 <!-- /wp:paragraph -->

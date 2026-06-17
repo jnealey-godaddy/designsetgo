@@ -27,7 +27,7 @@ return array(
 <!-- wp:designsetgo/grid {"desktopColumns":4,"style":{"spacing":{"blockGap":"var:preset|spacing|40","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"className":"dsgo-grid-cols-4"} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-4 dsgo-grid-cols-tablet-2 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(4, 1fr);align-items:stretch;row-gap:var(--wp--preset--spacing--40);column-gap:var(--wp--preset--spacing--40)"><!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"0","bottom":"var:preset|spacing|40","left":"0","right":"0"}},"border":{"radius":"16px"}},"backgroundColor":"base","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"fadeInUp"} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint has-base-background-color has-background has-dsgo-animation dsgo-animation-fadeInUp" style="border-radius:16px;padding-top:0;padding-right:0;padding-bottom:var(--wp--preset--spacing--40);padding-left:0" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInUp"><div class="dsgo-stack__inner"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":{"topLeft":"16px","topRight":"16px","bottomLeft":"0px","bottomRight":"0px"}}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&amp;h=400&amp;fit=crop" alt="John Smith" style="border-top-left-radius:16px;border-top-right-radius:16px;border-bottom-left-radius:0px;border-bottom-right-radius:0px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="John Smith" style="border-top-left-radius:16px;border-top-right-radius:16px;border-bottom-left-radius:0px;border-bottom-right-radius:0px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"0","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}}} -->
@@ -49,7 +49,7 @@ return array(
 
 <!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"0","bottom":"var:preset|spacing|40","left":"0","right":"0"}},"border":{"radius":"16px"}},"backgroundColor":"base","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"fadeInUp"} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint has-base-background-color has-background has-dsgo-animation dsgo-animation-fadeInUp" style="border-radius:16px;padding-top:0;padding-right:0;padding-bottom:var(--wp--preset--spacing--40);padding-left:0" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInUp"><div class="dsgo-stack__inner"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":{"topLeft":"16px","topRight":"16px","bottomLeft":"0px","bottomRight":"0px"}}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&amp;h=400&amp;fit=crop" alt="Sarah Johnson" style="border-top-left-radius:16px;border-top-right-radius:16px;border-bottom-left-radius:0px;border-bottom-right-radius:0px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Sarah Johnson" style="border-top-left-radius:16px;border-top-right-radius:16px;border-bottom-left-radius:0px;border-bottom-right-radius:0px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"0","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}}} -->
@@ -71,7 +71,7 @@ return array(
 
 <!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"0","bottom":"var:preset|spacing|40","left":"0","right":"0"}},"border":{"radius":"16px"}},"backgroundColor":"base","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"fadeInUp"} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint has-base-background-color has-background has-dsgo-animation dsgo-animation-fadeInUp" style="border-radius:16px;padding-top:0;padding-right:0;padding-bottom:var(--wp--preset--spacing--40);padding-left:0" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInUp"><div class="dsgo-stack__inner"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":{"topLeft":"16px","topRight":"16px","bottomLeft":"0px","bottomRight":"0px"}}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&amp;h=400&amp;fit=crop" alt="Mike Chen" style="border-top-left-radius:16px;border-top-right-radius:16px;border-bottom-left-radius:0px;border-bottom-right-radius:0px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Mike Chen" style="border-top-left-radius:16px;border-top-right-radius:16px;border-bottom-left-radius:0px;border-bottom-right-radius:0px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"0","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}}} -->
@@ -93,7 +93,7 @@ return array(
 
 <!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"0","bottom":"var:preset|spacing|40","left":"0","right":"0"}},"border":{"radius":"16px"}},"backgroundColor":"base","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"fadeInUp"} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint has-base-background-color has-background has-dsgo-animation dsgo-animation-fadeInUp" style="border-radius:16px;padding-top:0;padding-right:0;padding-bottom:var(--wp--preset--spacing--40);padding-left:0" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInUp"><div class="dsgo-stack__inner"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":{"topLeft":"16px","topRight":"16px","bottomLeft":"0px","bottomRight":"0px"}}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&amp;h=400&amp;fit=crop" alt="Emily Davis" style="border-top-left-radius:16px;border-top-right-radius:16px;border-bottom-left-radius:0px;border-bottom-right-radius:0px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Emily Davis" style="border-top-left-radius:16px;border-top-right-radius:16px;border-bottom-left-radius:0px;border-bottom-right-radius:0px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"0","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}}}} -->
