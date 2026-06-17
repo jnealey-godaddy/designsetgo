@@ -1161,4 +1161,229 @@ class Test_Markdown_Converter extends WP_UnitTestCase {
 		// A solo markdown with malformed q must NOT become a 406.
 		$this->assertSame( 'markdown', Negotiation_Handler::preferred_type( 'text/markdown;q=abc' ) );
 	}
+
+	// ------------------------------------------------------------------
+	// Path traversal guard in generate_full_content()
+	// ------------------------------------------------------------------
+
+	/**
+	 * Test that a symlink or path traversal outside the markdown directory
+	 * is rejected — the file content should NOT be included.
+	 */
+	public function test_full_content_rejects_path_traversal() {
+		$this->enable_llms_feature();
+
+		$post_id = $this->factory->post->create(
+			array(
+				'post_status' => 'publish',
+				'post_title'  => 'Traversal Test',
+				'post_content' => '<p>Inline content</p>',
+			)
+		);
+
+		$file_manager = new File_Manager();
+		$md_dir       = $file_manager->get_directory();
+		wp_mkdir_p( $md_dir );
+
+		// Write a file outside the markdown directory.
+		$outside_file = ABSPATH . 'secret-outside.md';
+		file_put_contents( $outside_file, '# SECRET FILE SHOULD NOT APPEAR' );
+
+		// Create a symlink inside the markdown directory pointing outside.
+		$post     = get_post( $post_id );
+		$filename = $file_manager->get_filename( $post ) . '.md';
+		$symlink  = $md_dir . '/' . $filename;
+
+		// Only run if we can create symlinks (skip on Windows or restricted envs).
+		if ( ! @symlink( $outside_file, $symlink ) ) {
+			@unlink( $outside_file );
+			$this->markTestSkipped( 'Cannot create symlinks in this environment.' );
+		}
+
+		// Ensure file_exists reports true for this post so the generator
+		// attempts to read the static file path.
+		$this->assertTrue( file_exists( $symlink ), 'Symlink should exist on disk.' );
+
+		$generator = new Generator( $file_manager );
+
+		update_option(
+			'designsetgo_settings',
+			array(
+				'llms_txt' => array(
+					'enable'     => true,
+					'post_types' => array( 'post' ),
+				),
+			)
+		);
+		Settings::invalidate_cache();
+
+		$content = $generator->generate_full_content();
+
+		// The secret content must NOT appear — the path traversal guard rejects it.
+		$this->assertStringNotContainsString( 'SECRET FILE SHOULD NOT APPEAR', $content );
+
+		// The inline fallback content should appear instead.
+		$this->assertStringContainsString( 'Inline content', $content );
+
+		// Cleanup.
+		@unlink( $symlink );
+		@unlink( $outside_file );
+	}
+
+	/**
+	 * Test that a constructed filename with ../ is rejected by realpath resolution.
+	 */
+	public function test_full_content_rejects_dot_dot_path() {
+		$this->enable_llms_feature();
+
+		$file_manager = new File_Manager();
+		$md_dir       = $file_manager->get_directory();
+		wp_mkdir_p( $md_dir );
+
+		// Place a file one level above the markdown directory.
+		$parent_dir  = dirname( $md_dir );
+		$secret_file = $parent_dir . '/evil-payload.md';
+		file_put_contents( $secret_file, '# EVIL PAYLOAD' );
+
+		// Verify the path resolves outside.
+		$traversal_path = $md_dir . '/../evil-payload.md';
+		$real_path      = realpath( $traversal_path );
+		$real_dir       = realpath( $md_dir );
+
+		// The guard: realpath resolves the ../ so it no longer starts with $md_dir.
+		if ( $real_path && $real_dir ) {
+			$normalized_path = wp_normalize_path( $real_path );
+			$normalized_dir  = wp_normalize_path( trailingslashit( $real_dir ) );
+			$this->assertNotSame( 0, strpos( $normalized_path, $normalized_dir ), 'Traversal path should NOT be within the markdown directory.' );
+		}
+
+		// Cleanup.
+		@unlink( $secret_file );
+	}
+
+	// ------------------------------------------------------------------
+	// designsetgo_llms_txt_extra_sections filter
+	// ------------------------------------------------------------------
+
+	/**
+	 * Test that extra sections filter adds content to summary output.
+	 */
+	public function test_extra_sections_filter_in_summary() {
+		$this->enable_llms_feature();
+
+		$callback = function ( $sections, $variant ) {
+			if ( 'summary' === $variant ) {
+				$sections[] = '## Extra Plugin Section';
+			}
+			return $sections;
+		};
+		add_filter( 'designsetgo_llms_txt_extra_sections', $callback, 10, 2 );
+
+		$file_manager = new File_Manager();
+		$generator    = new Generator( $file_manager );
+		$content      = $generator->generate_content();
+
+		$this->assertStringContainsString( '## Extra Plugin Section', $content );
+
+		remove_filter( 'designsetgo_llms_txt_extra_sections', $callback, 10 );
+	}
+
+	/**
+	 * Test that extra sections filter adds content to full output.
+	 */
+	public function test_extra_sections_filter_in_full() {
+		$this->enable_llms_feature();
+
+		$callback = function ( $sections, $variant ) {
+			if ( 'full' === $variant ) {
+				$sections[] = '## Full Extra Section';
+			}
+			return $sections;
+		};
+		add_filter( 'designsetgo_llms_txt_extra_sections', $callback, 10, 2 );
+
+		$file_manager = new File_Manager();
+		$generator    = new Generator( $file_manager );
+		$content      = $generator->generate_full_content();
+
+		$this->assertStringContainsString( '## Full Extra Section', $content );
+
+		remove_filter( 'designsetgo_llms_txt_extra_sections', $callback, 10 );
+	}
+
+	/**
+	 * Test that non-string entries in extra sections are skipped.
+	 */
+	public function test_extra_sections_filter_skips_non_strings() {
+		$this->enable_llms_feature();
+
+		$callback = function () {
+			return array(
+				'## Valid Section',
+				123,
+				null,
+				'',
+				array( 'not a string' ),
+				'## Another Valid',
+			);
+		};
+		add_filter( 'designsetgo_llms_txt_extra_sections', $callback, 10 );
+
+		$file_manager = new File_Manager();
+		$generator    = new Generator( $file_manager );
+		$content      = $generator->generate_content();
+
+		$this->assertStringContainsString( '## Valid Section', $content );
+		$this->assertStringContainsString( '## Another Valid', $content );
+		$this->assertStringNotContainsString( '123', $content );
+
+		remove_filter( 'designsetgo_llms_txt_extra_sections', $callback, 10 );
+	}
+
+	/**
+	 * Test that variant parameter is passed correctly to filter.
+	 */
+	public function test_extra_sections_filter_receives_variant() {
+		$this->enable_llms_feature();
+
+		$received_variants = array();
+
+		$callback = function ( $sections, $variant ) use ( &$received_variants ) {
+			$received_variants[] = $variant;
+			return $sections;
+		};
+		add_filter( 'designsetgo_llms_txt_extra_sections', $callback, 10, 2 );
+
+		$file_manager = new File_Manager();
+		$generator    = new Generator( $file_manager );
+
+		$generator->generate_content();
+		$generator->generate_full_content();
+
+		$this->assertContains( 'summary', $received_variants );
+		$this->assertContains( 'full', $received_variants );
+
+		remove_filter( 'designsetgo_llms_txt_extra_sections', $callback, 10 );
+	}
+
+	/**
+	 * Test that filter returning non-array is handled safely.
+	 */
+	public function test_extra_sections_filter_non_array_return() {
+		$this->enable_llms_feature();
+
+		$callback = function () {
+			return 'not an array';
+		};
+		add_filter( 'designsetgo_llms_txt_extra_sections', $callback, 10 );
+
+		$file_manager = new File_Manager();
+		$generator    = new Generator( $file_manager );
+
+		// Should not fatal — the is_array() check prevents iteration.
+		$content = $generator->generate_content();
+		$this->assertIsString( $content );
+
+		remove_filter( 'designsetgo_llms_txt_extra_sections', $callback, 10 );
+	}
 }
