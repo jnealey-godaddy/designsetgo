@@ -269,8 +269,13 @@ class Abilities_Registry {
 		// wp_abilities_api_categories_init hook (or init on 6.9+), so the call is
 		// already runtime-gated by class_exists( 'WP_Ability' ) above. Invoke it
 		// indirectly so Plugin Check's static "requires WP" scan does not flag a
-		// function that can never execute on the unsupported versions.
+		// function that can never execute on the unsupported versions. The
+		// is_callable() guard keeps the indirect call safe even if WP_Ability is
+		// ever present without its registration helper.
 		$register_category = 'wp_register_ability_category';
+		if ( ! is_callable( $register_category ) ) {
+			return;
+		}
 
 		$register_category(
 			'info',
