@@ -377,6 +377,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		if ( ! empty( $atts['excludeCurrent'] ) && is_singular() ) {
 			$current_id = get_queried_object_id();
 			if ( $current_id ) {
+				// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- Bounded to the single current post when "exclude current" is enabled on a singular view.
 				$args['post__not_in'] = array( $current_id );
 			}
 		}
