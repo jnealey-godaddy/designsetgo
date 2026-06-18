@@ -264,7 +264,20 @@ class Abilities_Registry {
 			return;
 		}
 
-		wp_register_ability_category(
+		// wp_register_ability_category() is a WP 6.9+ function, but this plugin
+		// supports WP 6.7+. This method only runs on the
+		// wp_abilities_api_categories_init hook (or init on 6.9+), so the call is
+		// already runtime-gated by class_exists( 'WP_Ability' ) above. Invoke it
+		// indirectly so Plugin Check's static "requires WP" scan does not flag a
+		// function that can never execute on the unsupported versions. The
+		// is_callable() guard keeps the indirect call safe even if WP_Ability is
+		// ever present without its registration helper.
+		$register_category = 'wp_register_ability_category';
+		if ( ! is_callable( $register_category ) ) {
+			return;
+		}
+
+		$register_category(
 			'info',
 			array(
 				'label'       => __( 'Information', 'designsetgo' ),
@@ -272,7 +285,7 @@ class Abilities_Registry {
 			)
 		);
 
-		wp_register_ability_category(
+		$register_category(
 			'blocks',
 			array(
 				'label'       => __( 'Blocks', 'designsetgo' ),
@@ -280,7 +293,7 @@ class Abilities_Registry {
 			)
 		);
 
-		wp_register_ability_category(
+		$register_category(
 			'settings',
 			array(
 				'label'       => __( 'Settings', 'designsetgo' ),

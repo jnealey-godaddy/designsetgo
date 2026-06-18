@@ -16,6 +16,10 @@
  * @since 2.0.0
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 // phpcs:disable
 // Category labels.
 __( 'Container Blocks', 'designsetgo' );

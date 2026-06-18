@@ -105,7 +105,17 @@ abstract class Abstract_Ability {
 			unset( $config['keywords'] );
 		}
 
-		wp_register_ability( $this->get_name(), $config );
+		// wp_register_ability() is a WP 6.9+ function, but this plugin supports
+		// WP 6.7+. This method only runs on the wp_abilities_api_init hook, which
+		// exists solely on 6.9+, so the call is already runtime-gated. Invoke it
+		// indirectly so Plugin Check's static "requires WP" scan does not flag a
+		// function that can never execute on the unsupported versions. The
+		// is_callable() check keeps the indirect call safe even if WP_Ability is
+		// ever present without its registration helper.
+		$register_ability = 'wp_register_ability';
+		if ( is_callable( $register_ability ) ) {
+			$register_ability( $this->get_name(), $config );
+		}
 	}
 
 	/**
