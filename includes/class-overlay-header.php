@@ -178,7 +178,7 @@ class Overlay_Header {
 		if ( wp_style_is( 'designsetgo-sticky-header', 'enqueued' ) ) {
 			wp_add_inline_style( 'designsetgo-sticky-header', $css );
 		} else {
-			wp_register_style( 'designsetgo-overlay-header-color', false );
+			wp_register_style( 'designsetgo-overlay-header-color', false, array(), DESIGNSETGO_VERSION );
 			wp_enqueue_style( 'designsetgo-overlay-header-color' );
 			wp_add_inline_style( 'designsetgo-overlay-header-color', $css );
 		}

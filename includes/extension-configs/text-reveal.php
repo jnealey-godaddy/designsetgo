@@ -13,7 +13,7 @@ return array(
 		'core/paragraph',
 		'core/heading',
 	),
-	'exclude'    => array(),
+	'exclude'    => array(), // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- Extension block-exclusion list, not a get_posts() query.
 	'attributes' => array(
 		'dsgoTextRevealEnabled'    => array(
 			'type'    => 'boolean',

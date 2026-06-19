@@ -21,9 +21,31 @@ use DesignSetGo\Markdown\Converter;
 use DesignSetGo\Admin\Settings;
 
 /**
+ * Shared helpers for the llms.txt test cases in this file.
+ */
+trait Enables_LLMS_Feature {
+	/**
+	 * Helper: enable the llms.txt feature in settings.
+	 */
+	private function enable_llms_feature(): void {
+		update_option(
+			'designsetgo_settings',
+			array(
+				'llms_txt' => array(
+					'enable' => true,
+				),
+			)
+		);
+		Settings::invalidate_cache();
+	}
+}
+
+/**
  * llms.txt Feature Test Case
  */
 class Test_LLMS_Txt extends WP_UnitTestCase {
+	use Enables_LLMS_Feature;
+
 	/**
 	 * Controller instance.
 	 *
@@ -110,21 +132,6 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
 			unlink( $htaccess );
 		}
 		return $dir;
-	}
-
-	/**
-	 * Helper: enable the llms.txt feature in settings.
-	 */
-	private function enable_llms_feature(): void {
-		update_option(
-			'designsetgo_settings',
-			array(
-				'llms_txt' => array(
-					'enable' => true,
-				),
-			)
-		);
-		Settings::invalidate_cache();
 	}
 
 	/**
@@ -924,6 +931,8 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
  * Markdown Converter Test Case
  */
 class Test_Markdown_Converter extends WP_UnitTestCase {
+	use Enables_LLMS_Feature;
+
 	/**
 	 * Converter instance.
 	 *

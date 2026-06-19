@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 
 return array(
 	'blocks'     => array( 'core/template-part' ),
-	'exclude'    => array(),
+	'exclude'    => array(), // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- Extension block-exclusion list, not a get_posts() query.
 	'attributes' => array(
 		'dsgoStickyEnabled'      => array(
 			'type'    => 'boolean',

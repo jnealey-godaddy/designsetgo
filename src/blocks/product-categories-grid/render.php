@@ -105,6 +105,7 @@ if ( 'manual' === $category_source ) {
 			'taxonomy'   => 'product_cat',
 			'parent'     => 0,
 			'hide_empty' => ! $show_empty,
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- get_terms() exclusion bounded to the default "uncategorized" product_cat term.
 			'exclude'    => $exclude_ids,
 			'orderby'    => 'menu_order',
 			'order'      => 'ASC',
