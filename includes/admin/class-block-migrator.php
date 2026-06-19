@@ -789,7 +789,7 @@ JS;
 
 		$prepare_values = array_merge( $like_values, self::POST_TYPES, $statuses );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Dynamic placeholders generated from safe constants.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Dynamic placeholders generated from safe constants; the %s placeholders live inside interpolated vars ($like_sql/$type_placeholders/$status_placeholders) so the sniff cannot see them, but every value is passed through $wpdb->prepare().
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $like_sql built from class constants with %s placeholders; all values passed through $wpdb->prepare(). No WP API for LIKE on post_content; admin-only count, caching inappropriate for migration tool.
 		$count = (int) $wpdb->get_var(
 			$wpdb->prepare(
@@ -800,7 +800,7 @@ JS;
 				...$prepare_values
 			)
 		);
-		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 		return $count;
 	}
