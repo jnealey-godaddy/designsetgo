@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param array $attributes Block attributes array.
  * @return array Array of data attributes for animations.
  */
-function dsgo_get_animation_attributes( $attributes ) {
+function designsetgo_get_animation_attributes( $attributes ) {
 	$animation_attrs   = array();
 	$animation_classes = array();
 
@@ -117,7 +117,7 @@ function dsgo_get_animation_attributes( $attributes ) {
  * @param array $attributes Block attributes array.
  * @return array Array of data attributes for links.
  */
-function dsgo_get_clickable_attributes( $attributes ) {
+function designsetgo_get_clickable_attributes( $attributes ) {
 	$link_attrs   = array();
 	$link_classes = array();
 
@@ -171,12 +171,12 @@ function dsgo_get_clickable_attributes( $attributes ) {
  * @param array  $attributes         Block attributes array.
  * @return string Modified wrapper attributes string.
  */
-function dsgo_add_animation_to_wrapper( $wrapper_attributes, $attributes ) {
+function designsetgo_add_animation_to_wrapper( $wrapper_attributes, $attributes ) {
 	// Get animation data.
-	$animation_data = dsgo_get_animation_attributes( $attributes );
+	$animation_data = designsetgo_get_animation_attributes( $attributes );
 
 	// Get clickable link data.
-	$clickable_data = dsgo_get_clickable_attributes( $attributes );
+	$clickable_data = designsetgo_get_clickable_attributes( $attributes );
 
 	// Combine all classes.
 	$all_classes = trim( $animation_data['classes'] . ' ' . $clickable_data['classes'] );
