@@ -123,7 +123,7 @@ class Button_Global_Styles {
 		if ( wp_style_is( 'designsetgo-frontend', 'registered' ) ) {
 			wp_add_inline_style( 'designsetgo-frontend', $css );
 		} else {
-			wp_register_style( 'designsetgo-button-global-styles', false );
+			wp_register_style( 'designsetgo-button-global-styles', false, array(), DESIGNSETGO_VERSION );
 			wp_enqueue_style( 'designsetgo-button-global-styles' );
 			wp_add_inline_style( 'designsetgo-button-global-styles', $css );
 		}
@@ -158,7 +158,7 @@ class Button_Global_Styles {
 		} elseif ( wp_style_is( 'designsetgo-form-builder-style', 'enqueued' ) ) {
 			wp_add_inline_style( 'designsetgo-form-builder-style', $css );
 		} else {
-			wp_register_style( 'designsetgo-button-global-styles-editor', false );
+			wp_register_style( 'designsetgo-button-global-styles-editor', false, array(), DESIGNSETGO_VERSION );
 			wp_enqueue_style( 'designsetgo-button-global-styles-editor' );
 			wp_add_inline_style( 'designsetgo-button-global-styles-editor', $css );
 		}
