@@ -219,14 +219,14 @@ class REST_Controller {
 		if ( get_option( Controller::PHYSICAL_FILE_OPTION ) && ! empty( $settings['llms_txt']['enable'] ) ) {
 			$content = $this->generator->generate_content();
 			if ( $content ) {
-				File_Manager::fs_put_contents( ABSPATH . 'llms.txt', $content );
+				File_Manager::fs_put_contents( File_Manager::site_root_path() . 'llms.txt', $content );
 			}
 		}
 
 		if ( get_option( Controller::PHYSICAL_FULL_FILE_OPTION ) && ! empty( $settings['llms_txt']['enable'] ) && ! empty( $settings['llms_txt']['generate_full_txt'] ) ) {
 			$full_content = $this->generator->generate_full_content();
 			if ( $full_content ) {
-				File_Manager::fs_put_contents( ABSPATH . 'llms-full.txt', $full_content );
+				File_Manager::fs_put_contents( File_Manager::site_root_path() . 'llms-full.txt', $full_content );
 			}
 		}
 
@@ -254,7 +254,7 @@ class REST_Controller {
 		if ( ! empty( $settings['llms_txt']['enable'] ) ) {
 			$content = $this->generator->generate_content();
 			if ( $content ) {
-				$llms_path = ABSPATH . 'llms.txt';
+				$llms_path = File_Manager::site_root_path() . 'llms.txt';
 				// Only write if we own the file or it doesn't exist yet.
 				if ( get_option( Controller::PHYSICAL_FILE_OPTION ) || ! file_exists( $llms_path ) ) {
 					if ( File_Manager::fs_put_contents( $llms_path, $content ) ) {
@@ -266,7 +266,7 @@ class REST_Controller {
 			if ( ! empty( $settings['llms_txt']['generate_full_txt'] ) ) {
 				$full_content = $this->generator->generate_full_content();
 				if ( $full_content ) {
-					$full_path = ABSPATH . 'llms-full.txt';
+					$full_path = File_Manager::site_root_path() . 'llms-full.txt';
 					// Only write if we own the file or it doesn't exist yet.
 					if ( get_option( Controller::PHYSICAL_FULL_FILE_OPTION ) || ! file_exists( $full_path ) ) {
 						if ( File_Manager::fs_put_contents( $full_path, $full_content ) ) {

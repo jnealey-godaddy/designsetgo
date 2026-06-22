@@ -487,6 +487,40 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test site_root_path() returns a trailing-slashed absolute path.
+	 *
+	 * Physical llms.txt lives at the served site root (home_url()), not
+	 * necessarily ABSPATH. On the test install home == siteurl, so
+	 * get_home_path() falls back to ABSPATH.
+	 */
+	public function test_site_root_path_is_trailing_slashed() {
+		$path = File_Manager::site_root_path();
+
+		$this->assertNotEmpty( $path );
+		$this->assertSame(
+			trailingslashit( $path ),
+			$path,
+			'site_root_path() must return a trailing-slashed path so callers can append a filename.'
+		);
+		$this->assertStringEndsWith( '/', $path );
+	}
+
+	/**
+	 * Test the designsetgo_llms_txt_site_root filter overrides resolution
+	 * and the result is still trailing-slashed.
+	 */
+	public function test_site_root_path_filter_override() {
+		$callback = static function () {
+			return '/custom/site/root'; // Intentionally no trailing slash.
+		};
+		add_filter( 'designsetgo_llms_txt_site_root', $callback );
+
+		$this->assertSame( '/custom/site/root/', File_Manager::site_root_path() );
+
+		remove_filter( 'designsetgo_llms_txt_site_root', $callback );
+	}
+
+	/**
 	 * Test query vars include both llms_txt and llms_full_txt.
 	 */
 	public function test_query_vars_include_full_txt() {
