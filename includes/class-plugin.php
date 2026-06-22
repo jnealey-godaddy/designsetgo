@@ -544,31 +544,35 @@ class Plugin {
 		// --- Core ---
 		require_once DESIGNSETGO_PATH . 'includes/core/class-assets.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-loader.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-security.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-handler.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-submissions.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-modal-hooks.php';
+		// --- Blocks: Forms ---
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-security.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
+		// --- Blocks: Modal ---
+		require_once DESIGNSETGO_PATH . 'includes/blocks/modal/class-modal-hooks.php';
+		// --- Blocks: Query engine ---
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-template-controller.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-helpers.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-metabox.php';
+		// --- Block Bindings (cross-cutting) ---
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings-helpers.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings-metabox.php';
 		\DesignSetGo\Blocks\Query\MetaBoxBindings::bootstrap();
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-pods.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings-pods.php';
 		\DesignSetGo\Blocks\Query\PodsBindings::bootstrap();
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-jetengine.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings-jetengine.php';
 		\DesignSetGo\Blocks\Query\JetEngineBindings::bootstrap();
 
 		// Dynamic Tags subsystem (registry, source catalog, REST, image resolver).
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-registry.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-post.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-site.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-archive.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-user.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-field-discovery.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-image-resolver.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-rest.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-bootstrap.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-registry.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-post.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-site.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-archive.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-user.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-field-discovery.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-image-resolver.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-rest.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-bootstrap.php';
 
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index-hooks.php';
@@ -617,7 +621,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/features/class-button-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-extension-attributes.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-style-binding.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-block-bindings-support.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-block-bindings-support.php';
 		require_once DESIGNSETGO_PATH . 'includes/data/svg-pattern-data.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-svg-pattern-renderer.php';
 
