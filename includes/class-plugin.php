@@ -541,7 +541,8 @@ class Plugin {
 	private function load_dependencies() {
 		require_once DESIGNSETGO_PATH . 'includes/class-block-visibility.php';
 		BlockVisibility::register();
-		require_once DESIGNSETGO_PATH . 'includes/class-assets.php';
+		// --- Core ---
+		require_once DESIGNSETGO_PATH . 'includes/core/class-assets.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-loader.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-security.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-handler.php';
