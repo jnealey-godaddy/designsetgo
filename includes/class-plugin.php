@@ -539,7 +539,7 @@ class Plugin {
 	 * Load required files.
 	 */
 	private function load_dependencies() {
-		require_once DESIGNSETGO_PATH . 'includes/class-block-visibility.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-block-visibility.php';
 		BlockVisibility::register();
 		// --- Core ---
 		require_once DESIGNSETGO_PATH . 'includes/core/class-assets.php';
@@ -608,17 +608,18 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-draft-mode-preview.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-block-migrator.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-query-filter-index-admin.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-custom-css-renderer.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-section-styles.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-sticky-header.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-overlay-header.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-icon-injector.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-button-global-styles.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-extension-attributes.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-style-binding.php';
+		// --- Render-time features ---
+		require_once DESIGNSETGO_PATH . 'includes/features/class-custom-css-renderer.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-section-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-sticky-header.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-overlay-header.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-icon-injector.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-button-global-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-extension-attributes.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-style-binding.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-block-bindings-support.php';
 		require_once DESIGNSETGO_PATH . 'includes/data/svg-pattern-data.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-svg-pattern-renderer.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-svg-pattern-renderer.php';
 
 		// LLMS TXT classes.
 		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-file-manager.php';

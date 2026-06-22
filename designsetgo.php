@@ -46,7 +46,7 @@ require_once DESIGNSETGO_PATH . 'includes/data/icon-svg-library.php';
 /**
  * Load breadcrumbs helper functions (used by breadcrumbs block).
  */
-require_once DESIGNSETGO_PATH . 'includes/breadcrumbs-functions.php';
+require_once DESIGNSETGO_PATH . 'includes/features/breadcrumbs-functions.php';
 
 /**
  * Load pattern placeholder image helper (used by block patterns).
