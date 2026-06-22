@@ -165,7 +165,7 @@ class Conflict_Detector {
 			);
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Direct file operation required.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename, PluginCheck.CodeAnalysis.WriteFile.ABSPATHDetected -- llms.txt is a site-root spec file (like robots.txt); it must live at ABSPATH, so wp_upload_dir() does not apply.
 		$result = rename( $file_path, $backup_path );
 
 		if ( ! $result ) {

@@ -578,7 +578,7 @@ For the full version history prior to 2.0, see [CHANGELOG.md](https://github.com
 Patch fix for WordPress 6.7+: eliminates `_load_textdomain_just_in_time` PHP notices triggered by early translation function calls. Recommended for all sites.
 
 = 2.1.0 =
-Major update: Dynamic Query block family (list any posts/users/terms with filters, pagination, and faceted counts), Dynamic Tags picker for live data, native WordPress 6.9 Block Bindings, field sources for Meta Box / Pods / JetEngine, conditional block visibility, per-URL Markdown, Hover Effects extension, grid column toolbar + row span, and a full editor UX refresh (standardized inspectors, new onboarding). Security hardening for form redirects, Draft Mode REST endpoints, and CSS style bindings. Visual Revision Comparison removed (WordPress 7.0 ships a native replacement).
+Major update: Dynamic Query block family (posts/users/terms with filters, pagination, faceted counts), Dynamic Tags, native WP 6.9 Block Bindings, Meta Box/Pods/JetEngine field sources, conditional visibility, per-URL Markdown, Hover Effects, editor UX refresh, and security hardening.
 
 = 2.0.33 =
 Fixes form block kses validation failures for select and phone fields, expands phone field to 60+ country codes via JS hydration, adds map geocoding fallback with error handling, and makes Deactivate the primary action in the deactivation modal.
@@ -608,7 +608,7 @@ New icon-list vertical alignment, icon search aliases, optional slider height, f
 Adds Icon Button hover animations, Section color picker alpha channel, polka-dots pattern with opacity, and fixes for parallax feedback loops, spacing preset overrides, icon list defaults, and REST sanitization.
 
 = 2.0.0 =
-Major update: 3 new blocks (Comparison Table, Timeline, Advanced Heading), 2 new extensions (Grid Mobile Order, SVG Patterns with 25+ background patterns), shape dividers for sections, 150+ patterns and 12 homepage templates, frontend draft preview mode, improved Icon Button link settings, lazy loading for faster editor performance, reduced motion accessibility support, plus numerous bug fixes and a security improvement.
+Major update: 3 new blocks (Comparison Table, Timeline, Advanced Heading), 2 new extensions (Grid Mobile Order, SVG Patterns), shape dividers, 150+ patterns and 12 homepage templates, frontend draft preview, lazy editor loading, reduced motion support, plus bug fixes and a security improvement.
 
 = 1.4.1 =
 Bug fix release: Fixes Grid block type safety for WordPress 6.1+ spacing presets, Row/Grid alignment consistency, Icon Button width migration, and improved llms.txt conflict handling with admin UI resolution.
