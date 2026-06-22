@@ -36,12 +36,12 @@ require_once DESIGNSETGO_PATH . 'includes/class-plugin.php';
 /**
  * Load animation attributes helper (used by dynamic blocks).
  */
-require_once DESIGNSETGO_PATH . 'includes/block-animation-attributes.php';
+require_once DESIGNSETGO_PATH . 'includes/data/block-animation-attributes.php';
 
 /**
  * Load SVG icon library (used by dynamic blocks).
  */
-require_once DESIGNSETGO_PATH . 'includes/icon-svg-library.php';
+require_once DESIGNSETGO_PATH . 'includes/data/icon-svg-library.php';
 
 /**
  * Load breadcrumbs helper functions (used by breadcrumbs block).

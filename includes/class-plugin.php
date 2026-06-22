@@ -617,7 +617,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/class-extension-attributes.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-style-binding.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-block-bindings-support.php';
-		require_once DESIGNSETGO_PATH . 'includes/svg-pattern-data.php';
+		require_once DESIGNSETGO_PATH . 'includes/data/svg-pattern-data.php';
 		require_once DESIGNSETGO_PATH . 'includes/class-svg-pattern-renderer.php';
 
 		// LLMS TXT classes.
