@@ -476,7 +476,7 @@ class Controller {
 			return false;
 		}
 
-		$file_path = ABSPATH . 'llms.txt';
+		$file_path = File_Manager::site_root_path() . 'llms.txt';
 
 		if ( File_Manager::fs_put_contents( $file_path, $content ) ) {
 			update_option( self::PHYSICAL_FILE_OPTION, true, true );
@@ -496,7 +496,7 @@ class Controller {
 			return;
 		}
 
-		File_Manager::fs_delete( ABSPATH . 'llms.txt' );
+		File_Manager::fs_delete( File_Manager::site_root_path() . 'llms.txt' );
 
 		delete_option( self::PHYSICAL_FILE_OPTION );
 	}
@@ -512,7 +512,7 @@ class Controller {
 			return false;
 		}
 
-		$file_path = ABSPATH . 'llms-full.txt';
+		$file_path = File_Manager::site_root_path() . 'llms-full.txt';
 
 		// Avoid overwriting a user-managed file the plugin didn't create.
 		if ( file_exists( $file_path ) && ! get_option( self::PHYSICAL_FULL_FILE_OPTION ) ) {
@@ -542,7 +542,7 @@ class Controller {
 			return;
 		}
 
-		File_Manager::fs_delete( ABSPATH . 'llms-full.txt' );
+		File_Manager::fs_delete( File_Manager::site_root_path() . 'llms-full.txt' );
 
 		delete_option( self::PHYSICAL_FULL_FILE_OPTION );
 	}

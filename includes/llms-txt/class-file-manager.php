@@ -37,6 +37,42 @@ class File_Manager {
 	const FILENAME_META_KEY = '_designsetgo_llms_filename';
 
 	/**
+	 * Get the absolute filesystem path to the public site root.
+	 *
+	 * Physical llms.txt / llms-full.txt are served by the web server directly by
+	 * URL (https://example.com/llms.txt), so they must live at the path that maps
+	 * to home_url() — NOT necessarily ABSPATH. The two differ when WordPress core
+	 * lives in its own subdirectory ("Giving WordPress its own directory"): there
+	 * ABSPATH points at the core subdir (e.g. /var/www/wp/) while the served root
+	 * is its parent (e.g. /var/www/). get_home_path() resolves the served root and
+	 * is what WordPress core itself uses to locate the root .htaccess; it falls
+	 * back to ABSPATH when the home and site URLs match (the common install).
+	 *
+	 * get_home_path() lives in wp-admin/includes/file.php, which is not loaded on
+	 * the frontend, REST, or save_post contexts where the writers run, so load it
+	 * on demand (mirroring fs_put_contents()/fs_delete()).
+	 *
+	 * @return string Trailing-slashed absolute path to the site root.
+	 */
+	public static function site_root_path(): string {
+		if ( ! function_exists( 'get_home_path' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		/**
+		 * Filter the absolute filesystem path to the public site root used for
+		 * physical llms.txt / llms-full.txt files. Lets ops override resolution on
+		 * setups where get_home_path() cannot derive the path (e.g. some WP-CLI or
+		 * cron contexts on subdirectory installs).
+		 *
+		 * @since 2.2.0
+		 *
+		 * @param string $path Trailing-slashed absolute site-root path.
+		 */
+		return trailingslashit( apply_filters( 'designsetgo_llms_txt_site_root', get_home_path() ) );
+	}
+
+	/**
 	 * Write content to a file using WP_Filesystem, falling back to file_put_contents().
 	 *
 	 * Initialises WP_Filesystem on demand so the method is safe to call outside
