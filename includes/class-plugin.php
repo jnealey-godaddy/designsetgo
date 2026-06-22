@@ -135,49 +135,49 @@ class Plugin {
 	 * @var array<string, bool>
 	 */
 	private const SVG_ATTRIBUTES = array(
-		'xmlns'              => true,
-		'viewbox'            => true,
+		'xmlns'               => true,
+		'viewbox'             => true,
 		'preserveaspectratio' => true,
-		'width'              => true,
-		'height'             => true,
-		'fill'               => true,
-		'fill-rule'          => true,
-		'fill-opacity'       => true,
-		'stroke'             => true,
-		'stroke-width'       => true,
-		'stroke-linecap'     => true,
-		'stroke-linejoin'    => true,
-		'stroke-dasharray'   => true,
-		'stroke-dashoffset'  => true,
-		'stroke-opacity'     => true,
-		'opacity'            => true,
-		'transform'          => true,
-		'x'                  => true,
-		'y'                  => true,
-		'x1'                 => true,
-		'y1'                 => true,
-		'x2'                 => true,
-		'y2'                 => true,
-		'cx'                 => true,
-		'cy'                 => true,
-		'r'                  => true,
-		'rx'                 => true,
-		'ry'                 => true,
-		'd'                  => true,
-		'points'             => true,
-		'clip-path'          => true,
-		'clip-rule'          => true,
-		'class'              => true,
-		'id'                 => true,
-		'style'              => true,
-		'aria-hidden'        => true,
-		'aria-label'         => true,
-		'role'               => true,
-		'focusable'          => true,
+		'width'               => true,
+		'height'              => true,
+		'fill'                => true,
+		'fill-rule'           => true,
+		'fill-opacity'        => true,
+		'stroke'              => true,
+		'stroke-width'        => true,
+		'stroke-linecap'      => true,
+		'stroke-linejoin'     => true,
+		'stroke-dasharray'    => true,
+		'stroke-dashoffset'   => true,
+		'stroke-opacity'      => true,
+		'opacity'             => true,
+		'transform'           => true,
+		'x'                   => true,
+		'y'                   => true,
+		'x1'                  => true,
+		'y1'                  => true,
+		'x2'                  => true,
+		'y2'                  => true,
+		'cx'                  => true,
+		'cy'                  => true,
+		'r'                   => true,
+		'rx'                  => true,
+		'ry'                  => true,
+		'd'                   => true,
+		'points'              => true,
+		'clip-path'           => true,
+		'clip-rule'           => true,
+		'class'               => true,
+		'id'                  => true,
+		'style'               => true,
+		'aria-hidden'         => true,
+		'aria-label'          => true,
+		'role'                => true,
+		'focusable'           => true,
 		// Gradient stop attributes.
-		'offset'             => true,
-		'stop-color'         => true,
-		'stop-opacity'       => true,
+		'offset'              => true,
+		'stop-color'          => true,
+		'stop-opacity'        => true,
 	);
 
 	/**
@@ -666,22 +666,22 @@ class Plugin {
 	 */
 	private function init() {
 		// Initialize components.
-		$this->assets              = new Assets();
-		$this->blocks              = new Blocks\Loader();
-		$this->extension_attrs     = new Extension_Attributes();
-		$this->style_binding       = new StyleBinding();
+		$this->assets                 = new Assets();
+		$this->blocks                 = new Blocks\Loader();
+		$this->extension_attrs        = new Extension_Attributes();
+		$this->style_binding          = new StyleBinding();
 		$this->block_bindings_support = new Block_Bindings_Support();
 		$this->block_bindings_support->register();
-		$this->modal_hooks         = new Blocks\Modal_Hooks();
-		$this->form_handler        = new Blocks\Form_Handler();
-		$this->form_submissions    = new Blocks\Form_Submissions();
-		$this->query_controller          = new Blocks\Query\Controller();
+		$this->modal_hooks      = new Blocks\Modal_Hooks();
+		$this->form_handler     = new Blocks\Form_Handler();
+		$this->form_submissions = new Blocks\Form_Submissions();
+		$this->query_controller = new Blocks\Query\Controller();
 		add_action( 'rest_api_init', array( 'DesignSetGo\Blocks\Query\Template_Controller', 'register_routes' ) );
-		$this->query_bindings      = new Blocks\Query\Bindings();
-		$this->dynamic_tags        = new Blocks\DynamicTags\Bootstrap();
-		$this->filter_index         = new Blocks\Query\FilterIndex();
+		$this->query_bindings = new Blocks\Query\Bindings();
+		$this->dynamic_tags   = new Blocks\DynamicTags\Bootstrap();
+		$this->filter_index   = new Blocks\Query\FilterIndex();
 		Blocks\Query\FilterIndexHooks::register_hooks();
-		$this->filter_registry      = new Blocks\Query\FilterRegistry();
+		$this->filter_registry     = new Blocks\Query\FilterRegistry();
 		$this->patterns            = new Patterns\Loader();
 		$this->global_styles       = new Admin\Global_Styles();
 		$this->settings            = new Admin\Settings();
@@ -690,19 +690,19 @@ class Plugin {
 		$this->custom_css_renderer = new Custom_CSS_Renderer();
 		$this->section_styles      = new Section_Styles();
 		$this->section_styles->init();
-		$this->sticky_header  = new Sticky_Header();
-		$this->overlay_header = new Overlay_Header();
-		$this->icon_injector         = new Icon_Injector();
-		$this->svg_pattern_renderer  = new SVG_Pattern_Renderer();
-		$this->button_global_styles  = new Button_Global_Styles();
+		$this->sticky_header        = new Sticky_Header();
+		$this->overlay_header       = new Overlay_Header();
+		$this->icon_injector        = new Icon_Injector();
+		$this->svg_pattern_renderer = new SVG_Pattern_Renderer();
+		$this->button_global_styles = new Button_Global_Styles();
 		$this->button_global_styles->init();
-		$this->llms_txt      = new LLMS_Txt\Controller();
+		$this->llms_txt = new LLMS_Txt\Controller();
 
 		// Initialize admin-only features.
 		if ( is_admin() ) {
-			$this->admin_menu         = new Admin\Admin_Menu();
-			$this->block_migrator     = new Admin\Block_Migrator();
-			$this->query_filter_index_admin  = new Admin\Query_Filter_Index_Admin();
+			$this->admin_menu               = new Admin\Admin_Menu();
+			$this->block_migrator           = new Admin\Block_Migrator();
+			$this->query_filter_index_admin = new Admin\Query_Filter_Index_Admin();
 		}
 
 		// Initialize draft mode (works on both admin and REST API).
