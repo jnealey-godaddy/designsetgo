@@ -82,7 +82,7 @@ namespace {
 	use DesignSetGo\Blocks\Query\FilterRegistry;
 
 	if ( ! class_exists( 'DesignSetGo\\Blocks\\Query\\FilterIndexCLI' ) ) {
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-cli.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index-cli.php';
 	}
 
 	/**

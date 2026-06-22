@@ -548,8 +548,8 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-submissions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-modal-hooks.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-template-controller.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-template-controller.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-helpers.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-metabox.php';
@@ -570,13 +570,13 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-rest.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-bootstrap.php';
 
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-hooks.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-rebuilder.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-registry.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index-hooks.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index-rebuilder.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-registry.php';
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-cli.php';
+			require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index-cli.php';
 			Blocks\Query\FilterIndexCLI::register();
 		}
 
