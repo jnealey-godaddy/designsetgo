@@ -18,18 +18,32 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$query_id = isset( $block->context['designsetgo/queryId'] )
-	? sanitize_key( (string) $block->context['designsetgo/queryId'] )
-	: '';
+if ( ! function_exists( 'designsetgo_render_query_results' ) ) {
+	/**
+	 * Render the Query Results block.
+	 *
+	 * @param array    $attributes Block attributes.
+	 * @param string   $content    Inner block content.
+	 * @param WP_Block $block      Block instance.
+	 * @return void
+	 */
+	function designsetgo_render_query_results( $attributes, $content, $block ) {
+		$query_id = isset( $block->context['designsetgo/queryId'] )
+			? sanitize_key( (string) $block->context['designsetgo/queryId'] )
+			: '';
 
-if ( '' === $query_id ) {
-	return;
+		if ( '' === $query_id ) {
+			return;
+		}
+
+		// The parent Query block's render.php pre-renders the items grid and stashes
+		// the HTML here keyed by queryId. That lets the parent run a single WP_Query
+		// and populate the state registry (for sibling pagination / no-results)
+		// before any child block renders.
+		if ( isset( $GLOBALS['designsetgo_query_results_html'][ $query_id ] ) ) {
+			echo $GLOBALS['designsetgo_query_results_html'][ $query_id ]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-rendered by parent query block's render.php.
+		}
+	}
 }
 
-// The parent Query block's render.php pre-renders the items grid and stashes
-// the HTML here keyed by queryId. That lets the parent run a single WP_Query
-// and populate the state registry (for sibling pagination / no-results)
-// before any child block renders.
-if ( isset( $GLOBALS['designsetgo_query_results_html'][ $query_id ] ) ) {
-	echo $GLOBALS['designsetgo_query_results_html'][ $query_id ]; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- pre-rendered by parent query block's render.php.
-}
+designsetgo_render_query_results( $attributes, $content, $block );

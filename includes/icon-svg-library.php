@@ -21,15 +21,15 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param string $icon_name Icon name (e.g., 'star', 'heart', 'check').
  * @return string SVG markup or empty string if not found.
  */
-function dsgo_get_icon_svg( $icon_name ) {
-	$icons = dsgo_get_all_icons();
+function designsetgo_get_icon_svg( $icon_name ) {
+	$icons = designsetgo_get_all_icons();
 
 	if ( isset( $icons[ $icon_name ] ) ) {
 		return $icons[ $icon_name ];
 	}
 
 	// Resolve alias to canonical name.
-	$aliases = dsgo_get_icon_aliases();
+	$aliases = designsetgo_get_icon_aliases();
 	if ( isset( $aliases[ $icon_name ] ) && isset( $icons[ $aliases[ $icon_name ] ] ) ) {
 		return $icons[ $aliases[ $icon_name ] ];
 	}
@@ -42,7 +42,7 @@ function dsgo_get_icon_svg( $icon_name ) {
  *
  * @return array Associative array of icon_name => svg_markup.
  */
-function dsgo_get_all_icons() {
+function designsetgo_get_all_icons() {
 	static $icons = null;
 
 	// Cache icons in static variable for performance.
@@ -227,7 +227,7 @@ function dsgo_get_all_icons() {
  *
  * @return array Associative array of alias => canonical_name.
  */
-function dsgo_get_icon_aliases() {
+function designsetgo_get_icon_aliases() {
 	static $aliases = null;
 
 	if ( null !== $aliases ) {
@@ -255,7 +255,7 @@ function dsgo_get_icon_aliases() {
  * @param string $icon Icon slug to sanitize.
  * @return string Sanitized icon slug.
  */
-function dsgo_sanitize_icon_slug( $icon ) {
+function designsetgo_sanitize_icon_slug( $icon ) {
 	if ( empty( $icon ) || ! is_string( $icon ) ) {
 		return '';
 	}
@@ -272,7 +272,7 @@ function dsgo_sanitize_icon_slug( $icon ) {
  * @param bool   $is_open    Whether accordion item is open.
  * @return string Icon HTML markup.
  */
-function dsgo_accordion_render_icon( $icon_style, $is_open ) {
+function designsetgo_accordion_render_icon( $icon_style, $is_open ) {
 	if ( 'none' === $icon_style ) {
 		return '';
 	}

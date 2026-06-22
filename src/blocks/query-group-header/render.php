@@ -16,16 +16,30 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$allowed_tags = array( 'header', 'div', 'section' );
-$tag          = isset( $attributes['tagName'] ) && in_array( $attributes['tagName'], $allowed_tags, true )
-	? $attributes['tagName']
-	: 'header';
+if ( ! function_exists( 'designsetgo_render_query_group_header' ) ) {
+	/**
+	 * Render the Query Group Header block.
+	 *
+	 * @param array    $attributes Block attributes.
+	 * @param string   $content    Inner block content.
+	 * @param WP_Block $block      Block instance.
+	 * @return void
+	 */
+	function designsetgo_render_query_group_header( $attributes, $content, $block ) {
+		$allowed_tags = array( 'header', 'div', 'section' );
+		$tag          = isset( $attributes['tagName'] ) && in_array( $attributes['tagName'], $allowed_tags, true )
+			? $attributes['tagName']
+			: 'header';
 
-$wrapper = get_block_wrapper_attributes( array( 'class' => 'dsgo-query-group-header' ) );
+		$wrapper = get_block_wrapper_attributes( array( 'class' => 'dsgo-query-group-header' ) );
 
-printf(
-	'<%1$s %2$s>%3$s</%1$s>',
-	$tag, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- validated against allowlist above.
-	$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	$content  // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- innerBlocks HTML is WP-sanitized on save.
-);
+		printf(
+			'<%1$s %2$s>%3$s</%1$s>',
+			$tag, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- validated against allowlist above.
+			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			$content  // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- innerBlocks HTML is WP-sanitized on save.
+		);
+	}
+}
+
+designsetgo_render_query_group_header( $attributes, $content, $block );

@@ -644,6 +644,7 @@ class Plugin {
 		if ( ! function_exists( 'wp_register_ability' ) ) {
 			if ( file_exists( DESIGNSETGO_PATH . 'vendor/wordpress/abilities-api/includes/bootstrap.php' ) ) {
 				if ( ! defined( 'WP_ABILITIES_API_DIR' ) ) {
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- Constant name is fixed by the bundled wordpress/abilities-api polyfill; its bootstrap reads WP_ABILITIES_API_DIR, so it cannot be prefixed.
 					define( 'WP_ABILITIES_API_DIR', DESIGNSETGO_PATH . 'vendor/wordpress/abilities-api/' );
 				}
 				require_once DESIGNSETGO_PATH . 'vendor/wordpress/abilities-api/includes/bootstrap.php';
