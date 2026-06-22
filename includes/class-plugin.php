@@ -593,8 +593,8 @@ class Plugin {
 				if ( ! class_exists( '\QM_Collector' ) ) {
 					return;
 				}
-				require_once DESIGNSETGO_PATH . 'includes/class-query-qm-collector.php';
-				require_once DESIGNSETGO_PATH . 'includes/class-query-qm-output.php';
+				require_once DESIGNSETGO_PATH . 'includes/integrations/query-monitor/class-query-qm-collector.php';
+				require_once DESIGNSETGO_PATH . 'includes/integrations/query-monitor/class-query-qm-output.php';
 			},
 			20
 		);
