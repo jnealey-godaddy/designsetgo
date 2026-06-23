@@ -36,9 +36,6 @@ function listTopLevelDesignSetGoBlocks() {
 			continue;
 		}
 		const file = path.join(BLOCKS_DIR, entry.name, 'block.json');
-		if (!fs.existsSync(file)) {
-			continue;
-		}
 		let json;
 		try {
 			json = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -60,7 +57,70 @@ function listTopLevelDesignSetGoBlocks() {
 	return names.sort();
 }
 
+/**
+ * Insert a single block into the editor programmatically (no inserter UI).
+ *
+ * Uses wp.blocks.createBlock against the LIVE registry — throws if the block
+ * isn't registered, so registry truth is the insertion gate. Builds content
+ * from the block's registered `example` when present (richer, representative
+ * happy-path markup); otherwise inserts defaults and lets the parent's
+ * InnerBlocks template hydrate its children. An optional override supplies
+ * explicit { attributes, innerBlocks } for blocks the defaults don't cover.
+ *
+ * @param {import('@playwright/test').Page}            page        - Playwright page object.
+ * @param {string}                                     name        - Block name, e.g. 'designsetgo/card'.
+ * @param {{attributes?: object, innerBlocks?: Array}} [overrides] - Optional override spec.
+ * @return {Promise<{clientId: string, blockCount: number}>} Inserted block id + total top-level count.
+ */
+async function insertBlockByName(page, name, overrides = {}) {
+	return page.evaluate(
+		({ blockName, ov }) => {
+			const { createBlock, getBlockType } = wp.blocks;
+			const dispatch = wp.data.dispatch('core/block-editor');
+			const select = wp.data.select('core/block-editor');
+
+			const type = getBlockType(blockName);
+			if (!type) {
+				throw new Error('Block not registered: ' + blockName);
+			}
+
+			// Build a block tree from a plain {name, attributes, innerBlocks} spec.
+			const build = (spec) =>
+				createBlock(
+					spec.name,
+					spec.attributes || {},
+					(spec.innerBlocks || []).map(build)
+				);
+
+			let block;
+			if (ov && (ov.attributes || ov.innerBlocks)) {
+				block = createBlock(
+					blockName,
+					ov.attributes || {},
+					(ov.innerBlocks || []).map(build)
+				);
+			} else if (type.example) {
+				block = createBlock(
+					blockName,
+					type.example.attributes || {},
+					(type.example.innerBlocks || []).map(build)
+				);
+			} else {
+				block = createBlock(blockName);
+			}
+
+			dispatch.insertBlocks(block);
+			return {
+				clientId: block.clientId,
+				blockCount: select.getBlockCount(),
+			};
+		},
+		{ blockName: name, ov: overrides }
+	);
+}
+
 module.exports = {
 	SKIP,
 	listTopLevelDesignSetGoBlocks,
+	insertBlockByName,
 };
