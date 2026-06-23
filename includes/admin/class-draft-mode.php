@@ -365,8 +365,9 @@ class Draft_Mode {
 
 			foreach ( $values as $value ) {
 				$unserialized = maybe_unserialize( $value );
-				// Reject PHP objects to prevent object injection.
-				if ( is_object( $unserialized ) ) {
+				// Reject PHP objects (including objects nested inside arrays)
+				// to prevent object injection.
+				if ( self::contains_object( $unserialized ) ) {
 					continue;
 				}
 				add_post_meta( $target_id, $key, $unserialized );
@@ -421,8 +422,9 @@ class Draft_Mode {
 
 			foreach ( $values as $value ) {
 				$unserialized = maybe_unserialize( $value );
-				// Reject PHP objects to prevent object injection.
-				if ( is_object( $unserialized ) ) {
+				// Reject PHP objects (including objects nested inside arrays)
+				// to prevent object injection.
+				if ( self::contains_object( $unserialized ) ) {
 					continue;
 				}
 				add_post_meta( $original_id, $key, $unserialized );
@@ -461,5 +463,31 @@ class Draft_Mode {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Recursively determine whether a value is, or contains, a PHP object.
+	 *
+	 * A plain is_object() check misses objects nested inside arrays (e.g. a
+	 * serialized payload like `a:1:{i:0;O:8:"stdClass":0:{}}`), which would
+	 * still trigger object injection when stored and later unserialized.
+	 *
+	 * @param mixed $value Value to inspect (already passed through maybe_unserialize()).
+	 * @return bool True if the value is an object or any nested array element is.
+	 */
+	private static function contains_object( $value ) {
+		if ( is_object( $value ) ) {
+			return true;
+		}
+
+		if ( is_array( $value ) ) {
+			foreach ( $value as $item ) {
+				if ( self::contains_object( $item ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 }

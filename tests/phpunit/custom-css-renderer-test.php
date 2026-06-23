@@ -214,6 +214,36 @@ class Test_Custom_CSS_Renderer extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that a malicious custom_css_output filter cannot inject markup.
+	 *
+	 * The filter runs after per-block sanitization, so its result is re-stripped
+	 * before being echoed inside the <style> block.
+	 */
+	public function test_custom_css_output_filter_result_is_resanitized() {
+		$block = array(
+			'blockName' => 'designsetgo/test',
+			'attrs'     => array( 'dsgoCustomCSS' => 'selector { color: red; }' ),
+		);
+		$this->renderer->collect_custom_css( '<div>Test</div>', $block );
+
+		$inject = static function () {
+			return '</style><script>alert(1)</script>selector{color:blue}javascript:foo';
+		};
+		add_filter( 'designsetgo/custom_css_output', $inject );
+
+		ob_start();
+		$this->renderer->render_custom_css();
+		$output = ob_get_clean();
+
+		remove_filter( 'designsetgo/custom_css_output', $inject );
+
+		// The injected script tag and protocol must be stripped from the output.
+		$this->assertStringNotContainsString( '<script>', $output );
+		$this->assertStringNotContainsString( '</script>', $output );
+		$this->assertStringNotContainsString( 'javascript:', $output );
+	}
+
+	/**
 	 * Test render_custom_css deduplicates identical CSS
 	 */
 	public function test_render_custom_css_deduplication() {

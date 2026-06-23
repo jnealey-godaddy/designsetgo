@@ -40,6 +40,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'GET', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_query_params( array( 'post_id' => $post_id, 'query_id' => 'abc' ) );
 		$response = rest_do_request( $request );
 
@@ -61,6 +62,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		$post_id = self::factory()->post->create( array( 'post_content' => '' ) );
 
 		$request = new WP_REST_Request( 'GET', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_query_params( array( 'post_id' => $post_id, 'query_id' => 'missing' ) );
 		$response = rest_do_request( $request );
 
@@ -77,6 +79,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'GET', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_query_params( array( 'post_id' => $post_id, 'query_id' => 'abc' ) );
 		$response = rest_do_request( $request );
 
@@ -95,6 +98,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		$post_id = self::factory()->post->create( array( 'post_content' => $content ) );
 
 		$request = new WP_REST_Request( 'GET', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_query_params( array( 'post_id' => $post_id, 'query_id' => 'nested' ) );
 		$response = rest_do_request( $request );
 
@@ -113,6 +117,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body_params(
 			array(
 				'schemaVersion' => 2,
@@ -133,6 +138,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body_params(
 			array(
 				'schemaVersion' => 1,
@@ -153,6 +159,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body_params(
 			array(
 				'schemaVersion' => 1,
@@ -178,6 +185,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body_params(
 			array(
 				'schemaVersion' => 1,
@@ -203,6 +211,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 	public function test_import_escapes_block_comment_terminator_in_attrs() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body_params(
 			array(
 				'schemaVersion' => 1,
@@ -233,6 +242,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body_params(
 			array(
 				'schemaVersion' => 1,
@@ -260,6 +270,7 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 
 		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_body_params(
 			array(
 				'schemaVersion' => 1,
