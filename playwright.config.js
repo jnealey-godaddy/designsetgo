@@ -29,8 +29,10 @@ module.exports = defineConfig({
 	// Timeout for each test
 	timeout: 60000, // 60 seconds
 
-	// Global timeout
-	globalTimeout: 600000, // 10 minutes
+	// Global timeout. The full chromium suite is ~60 tests (the per-block
+	// happy-path sweep alone is ~34), run serially on 1 worker in CI with
+	// retries, so the whole run needs comfortably more than 10 minutes.
+	globalTimeout: 1800000, // 30 minutes
 
 	// Expect timeout
 	expect: {
