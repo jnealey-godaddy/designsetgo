@@ -3,7 +3,7 @@
  * Tests for the block animation/clickable attribute helpers.
  *
  * Regression guard for the rename dsgo_* -> designsetgo_* in
- * includes/block-animation-attributes.php. Confirms the renamed global
+ * includes/data/block-animation-attributes.php. Confirms the renamed global
  * functions exist and behave as before.
  *
  * @group animation

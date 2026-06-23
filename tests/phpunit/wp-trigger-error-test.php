@@ -228,7 +228,7 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 	}
 
 	// -------------------------------------------------------------------------
-	// includes/class-assets.php — editor/frontend asset loading
+	// includes/core/class-assets.php — editor/frontend asset loading
 	// -------------------------------------------------------------------------
 
 	/**

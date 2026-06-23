@@ -3,7 +3,7 @@
  * Tests for the icon SVG library helpers.
  *
  * Regression guard for the rename dsgo_* -> designsetgo_* in
- * includes/icon-svg-library.php. Confirms the renamed global functions exist
+ * includes/data/icon-svg-library.php. Confirms the renamed global functions exist
  * and behave as before.
  *
  * @group icons

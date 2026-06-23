@@ -119,7 +119,7 @@ class StyleBinding {
 		}
 
 		// Apply the same security gates the v2.4 block bindings adapter uses
-		// (see includes/blocks/class-query-bindings-helpers.php) so style
+		// (see includes/bindings/class-query-bindings-helpers.php) so style
 		// bindings cannot leak data block bindings would withhold.
 		$post = get_post( $post_id );
 		if ( ! $post ) {
