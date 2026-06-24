@@ -12,19 +12,11 @@
  */
 
 const { test } = require('@playwright/test');
-const { execSync } = require('child_process');
+const { deleteAllPagesAndPosts } = require('./helpers/wp-cli');
 
 test('reset pages and posts', async () => {
-	// Delete every page and post (any status) in one CLI round-trip. The inner
-	// `sh -c` runs inside the cli container so the $(...) subshell and $ids
-	// expansion happen there, not on the host.
-	const command =
-		"npx wp-env run cli -- sh -c 'ids=$(wp post list " +
-		'--post_type=page,post --post_status=any --format=ids); ' +
-		'if [ -n "$ids" ]; then wp post delete $ids --force; fi\'';
-
 	try {
-		execSync(command, { stdio: 'pipe', cwd: process.cwd() });
+		deleteAllPagesAndPosts();
 		// eslint-disable-next-line no-console
 		console.log('[reset-content] Pages and posts reset before test run');
 	} catch (e) {

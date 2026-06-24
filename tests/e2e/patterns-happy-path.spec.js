@@ -29,6 +29,7 @@ const {
 	defineArtifact,
 	saveScreenshot,
 	installVideoCapture,
+	installPublishedPageCleanup,
 	slowScrollToBottom,
 	slowScrollEditor,
 	setPostTitle,
@@ -37,6 +38,8 @@ const {
 
 // Record a video per test when DSGO_RECORD_VIDEO=1 (screenshots only by default).
 installVideoCapture(test);
+// Delete each published page as the run proceeds so test pages don't pile up.
+installPublishedPageCleanup(test);
 
 // Local placeholder assets all live under this path; every resolved token
 // points here, so a single substring match validates editor + frontend images.

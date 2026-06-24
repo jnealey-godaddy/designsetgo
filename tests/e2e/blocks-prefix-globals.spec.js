@@ -17,6 +17,7 @@ const {
 	defineArtifact,
 	saveScreenshot,
 	installVideoCapture,
+	installPublishedPageCleanup,
 	slowScrollToBottom,
 	slowScrollEditor,
 	setPostTitle,
@@ -24,6 +25,8 @@ const {
 } = require('./helpers/artifacts');
 
 installVideoCapture(test);
+// Delete each published page as the run proceeds so test pages don't pile up.
+installPublishedPageCleanup(test);
 
 /**
  * Insert a block in a fresh page, assert it appears in the editor canvas with

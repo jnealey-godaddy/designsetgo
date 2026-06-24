@@ -313,12 +313,20 @@ async function blockHasClass(page, blockType, className, index = 0) {
  *         many top-level blocks were inserted.
  */
 async function insertPatternBySlug(page, slug) {
-	const result = await page.evaluate((patternSlug) => {
-		const patterns =
-			wp.data.select('core').getBlockPatterns?.() ||
-			wp.data.select('core/block-editor').getSettings()
-				.__experimentalBlockPatterns ||
-			[];
+	const result = await page.evaluate(async (patternSlug) => {
+		// `core`.getBlockPatterns is resolver-backed (it fetches from the REST
+		// block-patterns endpoint), so the first synchronous call returns [].
+		// Await the resolver so the full registry is present before we look up
+		// the slug; fall back to the editor settings list for older WP.
+		let patterns = [];
+		if (wp.data.resolveSelect('core').getBlockPatterns) {
+			patterns = await wp.data.resolveSelect('core').getBlockPatterns();
+		}
+		if (!patterns || !patterns.length) {
+			patterns =
+				wp.data.select('core/block-editor').getSettings()
+					.__experimentalBlockPatterns || [];
+		}
 		const pattern = patterns.find((p) => p.name === patternSlug);
 		if (!pattern) {
 			return { found: false, hadToken: false, blockCount: 0 };

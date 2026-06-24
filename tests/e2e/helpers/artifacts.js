@@ -17,6 +17,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { deletePostIds } = require('./wp-cli');
 
 const SCREENSHOT_DIR = path.join(
 	process.env.WP_ARTIFACTS_PATH || path.join(process.cwd(), 'artifacts'),
@@ -26,6 +27,11 @@ const SCREENSHOT_DIR = path.join(
 // Optional video capture. Off by default (screenshots only); set
 // DSGO_RECORD_VIDEO=1 to also record a video of each test.
 const RECORD_VIDEO = ['1', 'true'].includes(process.env.DSGO_RECORD_VIDEO);
+
+// IDs of pages published this run that haven't been deleted yet. Buffered so
+// the per-test cleanup deletes in small batches instead of one CLI round-trip
+// per test (see installPublishedPageCleanup). publishAndResolveUrl appends here.
+const pendingPostIds = [];
 
 /**
  * Tag a test with its group + item + scenario so screenshots and the recorded
@@ -227,7 +233,57 @@ async function publishAndResolveUrl(page) {
 	if (!id) {
 		throw new Error('Could not determine published post ID');
 	}
+	// Track for cleanup so this published page doesn't linger on the site (and
+	// in the nav header) once the test is done with it.
+	pendingPostIds.push(id);
 	return `/?page_id=${id}`;
+}
+
+/**
+ * Register per-test cleanup of the pages published via publishAndResolveUrl.
+ *
+ * Without this, every test leaves its published page on the site; across a
+ * large sweep they pile up in the database and in theme nav menus. This deletes
+ * them as the run proceeds (in afterEach, which fires even when a test fails),
+ * flushing in small batches so the site never holds more than `flushEvery`
+ * stray test pages while keeping CLI round-trips bounded. A final flush in
+ * afterAll clears the remainder. The cleanup teardown is the last-resort net for
+ * anything a crashed worker skips.
+ *
+ * Call once at module scope in a spec file, alongside installVideoCapture:
+ *   installPublishedPageCleanup(test);
+ *
+ * @param {import('@playwright/test').TestType} test                 - Playwright test object
+ * @param {{flushEvery?: number}}               [options]            - Tuning
+ * @param {number}                              [options.flushEvery] - Delete once this many pages are pending (default 5)
+ */
+function installPublishedPageCleanup(test, { flushEvery = 5 } = {}) {
+	const flush = () => {
+		if (!pendingPostIds.length) {
+			return;
+		}
+		try {
+			deletePostIds(pendingPostIds.splice(0));
+		} catch (e) {
+			// Non-fatal: the cleanup teardown wipes all pages/posts at the end,
+			// so a transient CLI failure here only delays cleanup. Surface it.
+			// eslint-disable-next-line no-console
+			console.warn(
+				'[cleanup] Could not delete published test pages:',
+				e.message.split('\n')[0]
+			);
+		}
+	};
+
+	test.afterEach(async () => {
+		if (pendingPostIds.length >= flushEvery) {
+			flush();
+		}
+	});
+
+	test.afterAll(async () => {
+		flush();
+	});
 }
 
 module.exports = {
@@ -236,6 +292,7 @@ module.exports = {
 	defineArtifact,
 	saveScreenshot,
 	installVideoCapture,
+	installPublishedPageCleanup,
 	slowScrollToBottom,
 	slowScrollEditor,
 	setPostTitle,
