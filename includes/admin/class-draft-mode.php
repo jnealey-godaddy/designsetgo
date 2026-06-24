@@ -36,6 +36,14 @@ class Draft_Mode {
 	const META_DRAFT_CREATED = '_dsgo_draft_created';
 
 	/**
+	 * Maximum nesting depth scanned by contains_object().
+	 *
+	 * Anything deeper is treated as containing an object (fail closed),
+	 * capping recursion so a maliciously deep payload cannot overflow the stack.
+	 */
+	const MAX_OBJECT_SCAN_DEPTH = 20;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -472,17 +480,27 @@ class Draft_Mode {
 	 * serialized payload like `a:1:{i:0;O:8:"stdClass":0:{}}`), which would
 	 * still trigger object injection when stored and later unserialized.
 	 *
+	 * Recursion is bounded by self::MAX_OBJECT_SCAN_DEPTH. A structure deeper
+	 * than that is treated as if it contains an object (fail closed) so the
+	 * caller skips it — both eliminating any stack-overflow risk from a
+	 * maliciously deep payload and erring on the side of rejecting it.
+	 *
 	 * @param mixed $value Value to inspect (already passed through maybe_unserialize()).
+	 * @param int   $depth Current recursion depth (internal).
 	 * @return bool True if the value is an object or any nested array element is.
 	 */
-	private static function contains_object( $value ) {
+	private static function contains_object( $value, $depth = 0 ) {
 		if ( is_object( $value ) ) {
 			return true;
 		}
 
 		if ( is_array( $value ) ) {
+			if ( $depth >= self::MAX_OBJECT_SCAN_DEPTH ) {
+				return true;
+			}
+
 			foreach ( $value as $item ) {
-				if ( self::contains_object( $item ) ) {
+				if ( self::contains_object( $item, $depth + 1 ) ) {
 					return true;
 				}
 			}

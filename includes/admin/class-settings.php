@@ -29,8 +29,11 @@ class Settings {
 	 * never reach the browser. The write path treats an incoming value equal
 	 * to this placeholder as "unchanged" and preserves the stored secret. A
 	 * real secret will never equal this string.
+	 *
+	 * Pure ASCII so it is byte-identical across encodings and opcode caches; a
+	 * value this distinctive will not collide with a legitimate secret.
 	 */
-	const REDACTED_PLACEHOLDER = '••••••••';
+	const REDACTED_PLACEHOLDER = '__DSGO_REDACTED__';
 
 	/**
 	 * Constructor
