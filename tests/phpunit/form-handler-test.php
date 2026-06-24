@@ -682,6 +682,128 @@ class Test_Form_Handler extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test validate_field enforces a server-defined allowed-value list.
+	 *
+	 * Covers the select/checkbox/hidden enforcement: a value outside the list
+	 * is rejected with 'value_not_allowed'; a member passes; empty short-circuits.
+	 */
+	public function test_validate_field_enforces_allowed_values() {
+		$allowed = array( 'option-1', 'option-2' );
+
+		// A member of the list passes.
+		$this->assertTrue(
+			$this->call_private_method( 'validate_field', array( 'option-1', 'select', $allowed ) )
+		);
+
+		// A value outside the list is rejected.
+		$result = $this->call_private_method( 'validate_field', array( 'forged', 'select', $allowed ) );
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertEquals( 'value_not_allowed', $result->get_error_code() );
+
+		// A forged hidden-field constant is rejected.
+		$hidden = $this->call_private_method( 'validate_field', array( 'tampered', 'hidden', array( 'real-constant' ) ) );
+		$this->assertInstanceOf( WP_Error::class, $hidden );
+		$this->assertEquals( 'value_not_allowed', $hidden->get_error_code() );
+
+		// Empty values still short-circuit (optional fields), even with a list.
+		$this->assertTrue(
+			$this->call_private_method( 'validate_field', array( '', 'select', $allowed ) )
+		);
+
+		// With no list (null), any value passes the membership gate.
+		$this->assertTrue(
+			$this->call_private_method( 'validate_field', array( 'anything', 'text', null ) )
+		);
+	}
+
+	/**
+	 * Test get_form_field_value_constraints extracts allowed values per field.
+	 */
+	public function test_get_form_field_value_constraints_extracts_allowed_values() {
+		$form_id = 'constraints1';
+		$content = '<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '"} --><div class="wp-block-designsetgo-form-builder">'
+				. '<!-- wp:designsetgo/form-select-field {"fieldName":"pick","options":[{"label":"A","value":"a"},{"label":"B","value":"b"}]} /-->'
+				. '<!-- wp:designsetgo/form-checkbox-field {"fieldName":"consent","value":"yes"} /-->'
+				. '<!-- wp:designsetgo/form-hidden-field {"fieldName":"campaign","value":"spring"} /-->'
+				. '<!-- wp:designsetgo/form-text-field {"fieldName":"name"} /-->'
+				. '</div><!-- /wp:designsetgo/form-builder -->';
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'    => 'page',
+				'post_status'  => 'publish',
+				'post_title'   => 'Constraints Form',
+				'post_content' => $content,
+			)
+		);
+
+		$this->assertNotWPError( $post_id );
+		delete_transient( 'dsgo_form_field_constraints_' . md5( $form_id ) );
+
+		$constraints = $this->call_private_method( 'get_form_field_value_constraints', array( $form_id ) );
+
+		$this->assertEquals(
+			array(
+				'pick'     => array( 'a', 'b' ),
+				'consent'  => array( 'yes' ),
+				'campaign' => array( 'spring' ),
+			),
+			$constraints
+		);
+		// Unconstrained text field is absent from the map.
+		$this->assertArrayNotHasKey( 'name', $constraints );
+
+		wp_delete_post( $post_id, true );
+		delete_transient( 'dsgo_form_field_constraints_' . md5( $form_id ) );
+	}
+
+	/**
+	 * Test a forged select value is rejected end-to-end via the submit endpoint.
+	 */
+	public function test_forged_select_value_is_rejected() {
+		$form_id = 'forgedselect1';
+		$content = '<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '"} --><div class="wp-block-designsetgo-form-builder">'
+				. '<!-- wp:designsetgo/form-select-field {"fieldName":"pick","options":[{"label":"A","value":"a"},{"label":"B","value":"b"}]} /-->'
+				. '</div><!-- /wp:designsetgo/form-builder -->';
+
+		$post_id = wp_insert_post(
+			array(
+				'post_type'    => 'page',
+				'post_status'  => 'publish',
+				'post_title'   => 'Forged Select Form',
+				'post_content' => $content,
+			)
+		);
+
+		$this->assertNotWPError( $post_id );
+		delete_transient( 'dsgo_form_field_types_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_field_constraints_' . md5( $form_id ) );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
+		$request->set_body_params(
+			array(
+				'formId' => $form_id,
+				'fields' => array(
+					array(
+						'name'  => 'pick',
+						'value' => 'c', // Not in the option list.
+						'type'  => 'select',
+					),
+				),
+			)
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertEquals( 400, $response->get_status() );
+		$this->assertEquals( 'validation_error', $response->get_data()['code'] );
+
+		wp_delete_post( $post_id, true );
+		delete_transient( 'dsgo_form_field_types_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_field_constraints_' . md5( $form_id ) );
+	}
+
+	/**
 	 * Test get_form_block_attributes uses transient cache.
 	 */
 	public function test_form_block_attributes_are_cached() {

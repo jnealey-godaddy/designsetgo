@@ -72,7 +72,12 @@ class UserSources {
 				if ( 0 === (int) $user->ID ) {
 					return null;
 				}
-				$url = (string) $user->user_url;
+				// The profile URL is user-editable (contributors can set their
+				// own). Core's renderer escapes it, but this value also flows
+				// raw to the /dynamic-tags/preview REST JSON — enforce an
+				// http/https allowlist so a `javascript:` URL can never reach a
+				// consumer that assigns it to el.href.
+				$url = esc_url_raw( (string) $user->user_url, array( 'http', 'https' ) );
 				return '' === $url ? null : $url;
 			}
 		);

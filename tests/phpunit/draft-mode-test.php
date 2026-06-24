@@ -132,6 +132,33 @@ class Test_Draft_Mode extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that object-injection payloads are not copied to the draft.
+	 *
+	 * A serialized PHP object nested inside an array must be rejected by the
+	 * recursive guard, while plain scalar/array meta still copies.
+	 */
+	public function test_create_draft_skips_meta_containing_nested_objects() {
+		// Object nested inside an array (the case a flat is_object() check misses).
+		update_post_meta( $this->page_id, 'nested_object_meta', array( 'payload' => new \stdClass() ) );
+		// Top-level object.
+		update_post_meta( $this->page_id, 'object_meta', new \stdClass() );
+		// Safe scalar/array meta that must survive.
+		update_post_meta( $this->page_id, 'safe_meta', 'keep-me' );
+		update_post_meta( $this->page_id, 'safe_array_meta', array( 'a', 'b' ) );
+
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->assertIsInt( $draft_id );
+
+		// Object-bearing meta is not copied.
+		$this->assertSame( '', get_post_meta( $draft_id, 'nested_object_meta', true ) );
+		$this->assertSame( '', get_post_meta( $draft_id, 'object_meta', true ) );
+
+		// Safe meta is copied.
+		$this->assertSame( 'keep-me', get_post_meta( $draft_id, 'safe_meta', true ) );
+		$this->assertSame( array( 'a', 'b' ), get_post_meta( $draft_id, 'safe_array_meta', true ) );
+	}
+
+	/**
 	 * Test creating draft fails for invalid post ID.
 	 */
 	public function test_create_draft_invalid_post() {

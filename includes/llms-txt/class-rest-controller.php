@@ -91,9 +91,7 @@ class REST_Controller {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'flush_cache' ),
-				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
-				},
+				'permission_callback' => array( $this, 'check_admin_permission' ),
 			)
 		);
 
@@ -103,9 +101,7 @@ class REST_Controller {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'generate_files' ),
-				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
-				},
+				'permission_callback' => array( $this, 'check_admin_permission' ),
 			)
 		);
 
@@ -147,9 +143,7 @@ class REST_Controller {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'resolve_conflict' ),
-				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
-				},
+				'permission_callback' => array( $this, 'check_admin_permission' ),
 			)
 		);
 
@@ -159,11 +153,50 @@ class REST_Controller {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'dismiss_conflict' ),
-				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
-				},
+				'permission_callback' => array( $this, 'check_admin_permission' ),
 			)
 		);
+	}
+
+	/**
+	 * Permission check for mutating admin routes: requires a valid REST nonce
+	 * and the manage_options capability.
+	 *
+	 * Mirrors the project-wide pattern in
+	 * DesignSetGo\Blocks\Query\Controller::check_manage_options_permission().
+	 * Without the nonce check these POST routes (which write files / options)
+	 * are reachable via CSRF against a logged-in admin.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return true|\WP_Error
+	 */
+	public function check_admin_permission( \WP_REST_Request $request ) {
+		if ( ! is_user_logged_in() ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'You must be logged in.', 'designsetgo' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Invalid nonce.', 'designsetgo' ),
+				array( 'status' => 401 )
+			);
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'Insufficient permissions.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
 	}
 
 	/**

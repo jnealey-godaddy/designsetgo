@@ -213,6 +213,12 @@ class Custom_CSS_Renderer {
 		 */
 		$output_css = apply_filters( 'designsetgo/custom_css_output', $output_css, $this->custom_css );
 
+		// The output filter runs after per-block sanitization and its result is
+		// echoed raw below. A compromised or careless callback could reintroduce
+		// `</style><script>…` here, so re-run the highest-severity strips on the
+		// final string before it reaches the page.
+		$output_css = $this->strip_dangerous_css( $output_css );
+
 		// Only output if we have CSS after filtering.
 		if ( ! empty( $output_css ) ) {
 			echo "\n<!-- DesignSetGo Custom CSS -->\n";
@@ -337,6 +343,23 @@ class Custom_CSS_Renderer {
 		// highest-severity strips on the filtered output so no amount of
 		// filter misuse can smuggle script tags or javascript: protocols
 		// back in.
+		$css = $this->strip_dangerous_css( $css );
+
+		return $css;
+	}
+
+	/**
+	 * Re-run the highest-severity sanitization strips on a CSS string.
+	 *
+	 * Used both as the final defense pass inside sanitize_css() (after the
+	 * `custom_css_sanitize` filter) and on the complete output after the
+	 * `custom_css_output` filter, so no filter callback can smuggle script
+	 * tags or dangerous protocols back into the echoed `<style>` block.
+	 *
+	 * @param string $css CSS string to harden.
+	 * @return string CSS with script tags, HTML, dangerous protocols, expression() and event handlers removed.
+	 */
+	private function strip_dangerous_css( $css ) {
 		$css = preg_replace( '/<script\b[^>]*>(.*?)<\/script>/is', '', $css );
 		$css = preg_replace( '/<[^>]+>/i', '', $css );
 		$css = preg_replace( '/javascript:/i', '', $css );

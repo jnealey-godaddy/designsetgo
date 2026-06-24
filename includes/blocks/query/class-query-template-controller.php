@@ -115,6 +115,11 @@ class Template_Controller {
 	 * @return true|\WP_Error
 	 */
 	public static function permission_export( \WP_REST_Request $request ) {
+		$nonce_check = self::verify_nonce( $request );
+		if ( is_wp_error( $nonce_check ) ) {
+			return $nonce_check;
+		}
+
 		$post_id = (int) $request['post_id'];
 
 		if ( ! $post_id || ! get_post( $post_id ) ) {
@@ -142,14 +147,43 @@ class Template_Controller {
 	 * Import is a generator (produces new markup), not a post mutator, so
 	 * `edit_posts` is sufficient — no specific post_id to gate against.
 	 *
+	 * @param \WP_REST_Request $request Incoming REST request.
 	 * @return true|\WP_Error
 	 */
-	public static function permission_import() {
+	public static function permission_import( \WP_REST_Request $request ) {
+		$nonce_check = self::verify_nonce( $request );
+		if ( is_wp_error( $nonce_check ) ) {
+			return $nonce_check;
+		}
+
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			return new \WP_Error(
 				'dsgo_template_forbidden',
 				__( 'You do not have permission to import templates.', 'designsetgo' ),
 				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Verifies the REST nonce header to block CSRF against these routes.
+	 *
+	 * Mirrors the project-wide pattern in
+	 * DesignSetGo\Blocks\Query\Controller::check_permission(). Editor callers
+	 * use @wordpress/api-fetch, which sends the X-WP-Nonce header.
+	 *
+	 * @param \WP_REST_Request $request Incoming REST request.
+	 * @return true|\WP_Error
+	 */
+	private static function verify_nonce( \WP_REST_Request $request ) {
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new \WP_Error(
+				'dsgo_template_forbidden',
+				__( 'Invalid nonce.', 'designsetgo' ),
+				array( 'status' => 401 )
 			);
 		}
 

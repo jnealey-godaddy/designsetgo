@@ -315,8 +315,9 @@ class Form_Handler {
 		}
 
 		// Sanitize and validate all fields.
-		$form_field_types = $this->get_form_field_types( $form_id );
-		$sanitized_fields = array();
+		$form_field_types  = $this->get_form_field_types( $form_id );
+		$field_constraints = $this->get_form_field_value_constraints( $form_id );
+		$sanitized_fields  = array();
 		foreach ( $fields as $field ) {
 			if ( ! isset( $field['name'] ) || ! isset( $field['value'] ) ) {
 				continue;
@@ -329,8 +330,14 @@ class Form_Handler {
 				? $form_field_types[ $field_name ]
 				: $submitted_field_type;
 
+			// Server-defined allowed values for constrained field types (only
+			// present for select/checkbox/hidden fields resolved from the block).
+			$allowed_values = isset( $field_constraints[ $field_name ] )
+				? $field_constraints[ $field_name ]
+				: null;
+
 			// Type-specific validation.
-			$validation_result = $this->validate_field( $field_value, $field_type );
+			$validation_result = $this->validate_field( $field_value, $field_type, $allowed_values );
 			if ( is_wp_error( $validation_result ) ) {
 				// Security monitoring hook for validation failures.
 				do_action( 'designsetgo_form_validation_failed', $form_id, $field_name, $field_type, $validation_result->get_error_code(), $this->security->get_client_ip() );
@@ -521,15 +528,34 @@ class Form_Handler {
 	/**
 	 * Validate field based on type.
 	 *
-	 * @param mixed  $value Field value.
-	 * @param string $type Field type.
+	 * @param mixed      $value   Field value.
+	 * @param string     $type    Field type.
+	 * @param array|null $allowed Optional list of server-defined allowed values
+	 *                            (for select/checkbox/hidden). When provided, the
+	 *                            submitted value(s) must be members of this list.
 	 * @return true|WP_Error True if valid, WP_Error if invalid.
 	 */
-	private function validate_field( $value, $type ) {
+	private function validate_field( $value, $type, $allowed = null ) {
 		// Skip validation for empty values (optional fields).
 		// Required fields are validated by HTML5 on the frontend.
 		if ( empty( $value ) && '0' !== $value ) {
 			return true;
+		}
+
+		// Enforce server-defined allowed values for constrained field types
+		// (select options, checkbox value, hidden constant). This prevents a
+		// client from submitting arbitrary values or forging hidden fields —
+		// the field type itself is already resolved server-side.
+		if ( is_array( $allowed ) ) {
+			$submitted = is_array( $value ) ? $value : array( $value );
+			foreach ( $submitted as $single ) {
+				if ( ! in_array( (string) $single, $allowed, true ) ) {
+					return new WP_Error(
+						'value_not_allowed',
+						__( 'Submitted value is not an allowed option.', 'designsetgo' )
+					);
+				}
+			}
 		}
 
 		switch ( $type ) {
@@ -1112,6 +1138,147 @@ class Form_Handler {
 	}
 
 	/**
+	 * Look up server-defined allowed values for constrained fields by form ID.
+	 *
+	 * Parallels get_form_field_types() but returns, per field name, the list of
+	 * values the server will accept. Only select/checkbox/hidden fields are
+	 * constrained; all other field types are omitted (unconstrained). Used to
+	 * reject forged option values and hidden-field constants from the client.
+	 *
+	 * @param string $form_id Form identifier to look up.
+	 * @return array<string, string[]> Allowed values keyed by field name.
+	 */
+	private function get_form_field_value_constraints( $form_id ) {
+		$cache_key = 'dsgo_form_field_constraints_' . md5( $form_id );
+		$cached    = get_transient( $cache_key );
+
+		if ( false !== $cached && is_array( $cached ) ) {
+			return $cached;
+		}
+
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached via transient above.
+		$posts = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT ID, post_content FROM {$wpdb->posts}
+				WHERE post_content LIKE %s
+				AND post_content LIKE %s
+				AND post_status IN ('publish', 'private')
+				LIMIT 5",
+				'%' . $wpdb->esc_like( 'designsetgo/form-builder' ) . '%',
+				'%' . $wpdb->esc_like( '"formId":"' . $form_id . '"' ) . '%'
+			)
+		);
+
+		if ( empty( $posts ) ) {
+			return array();
+		}
+
+		foreach ( $posts as $post ) {
+			$blocks      = parse_blocks( $post->post_content );
+			$constraints = $this->find_form_field_constraints( $blocks, $form_id );
+
+			if ( ! empty( $constraints ) ) {
+				set_transient( $cache_key, $constraints, HOUR_IN_SECONDS );
+				return $constraints;
+			}
+		}
+
+		return array();
+	}
+
+	/**
+	 * Recursively search parsed blocks for a form-builder block and extract
+	 * allowed values for constrained fields.
+	 *
+	 * @param array  $blocks  Parsed blocks array.
+	 * @param string $form_id Form identifier to match.
+	 * @return array<string, string[]> Allowed values keyed by field name.
+	 */
+	private function find_form_field_constraints( $blocks, $form_id ) {
+		foreach ( $blocks as $block ) {
+			if (
+				'designsetgo/form-builder' === $block['blockName'] &&
+				isset( $block['attrs']['formId'] ) &&
+				$block['attrs']['formId'] === $form_id
+			) {
+				return $this->extract_field_value_constraints_from_blocks(
+					isset( $block['innerBlocks'] ) ? $block['innerBlocks'] : array()
+				);
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$result = $this->find_form_field_constraints( $block['innerBlocks'], $form_id );
+				if ( ! empty( $result ) ) {
+					return $result;
+				}
+			}
+		}
+
+		return array();
+	}
+
+	/**
+	 * Extract allowed values for constrained fields from a form's inner blocks.
+	 *
+	 * - select: the `value` of each entry in the `options` attribute.
+	 * - checkbox: the single `value` attribute (default "1").
+	 * - hidden: the server-defined `value` attribute (a constant).
+	 *
+	 * Fields without a constraint are not added to the map.
+	 *
+	 * @param array $blocks Parsed inner blocks.
+	 * @return array<string, string[]> Allowed values keyed by field name.
+	 */
+	private function extract_field_value_constraints_from_blocks( $blocks ) {
+		$constraints = array();
+
+		foreach ( $blocks as $block ) {
+			$block_name = isset( $block['blockName'] ) ? $block['blockName'] : '';
+			$field_name = isset( $block['attrs']['fieldName'] ) ? sanitize_text_field( $block['attrs']['fieldName'] ) : '';
+			$attrs      = isset( $block['attrs'] ) ? $block['attrs'] : array();
+
+			if ( $field_name ) {
+				switch ( $block_name ) {
+					case 'designsetgo/form-select-field':
+						if ( isset( $attrs['options'] ) && is_array( $attrs['options'] ) ) {
+							$values = array();
+							foreach ( $attrs['options'] as $option ) {
+								if ( isset( $option['value'] ) ) {
+									$values[] = (string) $option['value'];
+								}
+							}
+							$constraints[ $field_name ] = $values;
+						}
+						break;
+
+					case 'designsetgo/form-checkbox-field':
+						$constraints[ $field_name ] = array(
+							isset( $attrs['value'] ) ? (string) $attrs['value'] : '1',
+						);
+						break;
+
+					case 'designsetgo/form-hidden-field':
+						$constraints[ $field_name ] = array(
+							isset( $attrs['value'] ) ? (string) $attrs['value'] : '',
+						);
+						break;
+				}
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$constraints = array_merge(
+					$constraints,
+					$this->extract_field_value_constraints_from_blocks( $block['innerBlocks'] )
+				);
+			}
+		}
+
+		return $constraints;
+	}
+
+	/**
 	 * Recursively search parsed blocks for a form-builder block and extract field types.
 	 *
 	 * @param array  $blocks  Parsed blocks array.
@@ -1246,6 +1413,7 @@ class Form_Handler {
 			) {
 				delete_transient( 'dsgo_form_attrs_v2_' . md5( $block['attrs']['formId'] ) );
 				delete_transient( 'dsgo_form_field_types_' . md5( $block['attrs']['formId'] ) );
+				delete_transient( 'dsgo_form_field_constraints_' . md5( $block['attrs']['formId'] ) );
 			}
 
 			if ( ! empty( $block['innerBlocks'] ) ) {

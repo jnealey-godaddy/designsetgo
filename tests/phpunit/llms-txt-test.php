@@ -276,6 +276,7 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
 		set_transient( Controller::CACHE_KEY, 'test content' );
 
 		$request  = new WP_REST_Request( 'POST', '/designsetgo/v1/llms-txt/flush-cache' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$response = rest_do_request( $request );
 
 		$this->assertEquals( 200, $response->get_status() );
@@ -293,6 +294,7 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
 		set_transient( 'designsetgo_llms_md_post_2', 'cached markdown 2' );
 
 		$request  = new WP_REST_Request( 'POST', '/designsetgo/v1/llms-txt/flush-cache' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$response = rest_do_request( $request );
 
 		$this->assertEquals( 200, $response->get_status() );

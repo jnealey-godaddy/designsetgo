@@ -253,6 +253,98 @@ class Test_Security_Fixes extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test the settings GET endpoint redacts the write-only Turnstile secret.
+	 *
+	 * The secret must never reach the browser, but get_settings() must keep
+	 * returning the real value for server-side consumers.
+	 */
+	public function test_settings_get_endpoint_redacts_turnstile_secret() {
+		wp_set_current_user( $this->admin_user );
+
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+		update_option(
+			\DesignSetGo\Admin\Settings::OPTION_NAME,
+			array( 'integrations' => array( 'turnstile_secret_key' => 'real-secret-0x123' ) )
+		);
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+
+		$settings = new \DesignSetGo\Admin\Settings();
+		$data     = $settings->get_settings_endpoint()->get_data();
+
+		// The REST response redacts the secret.
+		$this->assertSame(
+			\DesignSetGo\Admin\Settings::REDACTED_PLACEHOLDER,
+			$data['integrations']['turnstile_secret_key']
+		);
+		// The underlying value is intact for server-side consumers.
+		$this->assertSame(
+			'real-secret-0x123',
+			\DesignSetGo\Admin\Settings::get_settings()['integrations']['turnstile_secret_key']
+		);
+
+		delete_option( \DesignSetGo\Admin\Settings::OPTION_NAME );
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+	}
+
+	/**
+	 * Test that an empty secret is not redacted (UI shows an empty field).
+	 */
+	public function test_settings_get_endpoint_leaves_empty_secret_empty() {
+		wp_set_current_user( $this->admin_user );
+
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+		update_option(
+			\DesignSetGo\Admin\Settings::OPTION_NAME,
+			array( 'integrations' => array( 'turnstile_secret_key' => '' ) )
+		);
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+
+		$settings = new \DesignSetGo\Admin\Settings();
+		$data     = $settings->get_settings_endpoint()->get_data();
+
+		$this->assertSame( '', $data['integrations']['turnstile_secret_key'] );
+
+		delete_option( \DesignSetGo\Admin\Settings::OPTION_NAME );
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+	}
+
+	/**
+	 * Test the secret round-trip: the placeholder preserves the stored secret,
+	 * a real new value replaces it.
+	 */
+	public function test_settings_update_round_trips_redacted_secret() {
+		wp_set_current_user( $this->admin_user );
+
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+		update_option(
+			\DesignSetGo\Admin\Settings::OPTION_NAME,
+			array( 'integrations' => array( 'turnstile_secret_key' => 'stored-secret' ) )
+		);
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+
+		// Submitting the redaction placeholder preserves the stored secret.
+		\DesignSetGo\Admin\Settings::update_settings(
+			array( 'integrations' => array( 'turnstile_secret_key' => \DesignSetGo\Admin\Settings::REDACTED_PLACEHOLDER ) )
+		);
+		$this->assertSame(
+			'stored-secret',
+			\DesignSetGo\Admin\Settings::get_settings()['integrations']['turnstile_secret_key']
+		);
+
+		// Submitting a real new value replaces it.
+		\DesignSetGo\Admin\Settings::update_settings(
+			array( 'integrations' => array( 'turnstile_secret_key' => 'new-secret' ) )
+		);
+		$this->assertSame(
+			'new-secret',
+			\DesignSetGo\Admin\Settings::get_settings()['integrations']['turnstile_secret_key']
+		);
+
+		delete_option( \DesignSetGo\Admin\Settings::OPTION_NAME );
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+	}
+
+	/**
 	 * Test permission check ordering in Global Styles REST API
 	 *
 	 * Verifies that capability checks happen before nonce verification.
