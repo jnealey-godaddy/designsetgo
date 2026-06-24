@@ -32,6 +32,9 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 
 	/**
 	 * A valid export request returns 200 with the full blob.
+	 *
+	 * Export is an idempotent GET guarded by the `edit_post` capability, not a
+	 * nonce, so this deliberately omits the X-WP-Nonce header.
 	 */
 	public function test_export_returns_json_for_existing_block() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
@@ -40,7 +43,6 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'GET', '/designsetgo/v1/query/template' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_query_params( array( 'post_id' => $post_id, 'query_id' => 'abc' ) );
 		$response = rest_do_request( $request );
 
@@ -62,7 +64,6 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		$post_id = self::factory()->post->create( array( 'post_content' => '' ) );
 
 		$request = new WP_REST_Request( 'GET', '/designsetgo/v1/query/template' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_query_params( array( 'post_id' => $post_id, 'query_id' => 'missing' ) );
 		$response = rest_do_request( $request );
 
@@ -79,7 +80,6 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		);
 
 		$request = new WP_REST_Request( 'GET', '/designsetgo/v1/query/template' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_query_params( array( 'post_id' => $post_id, 'query_id' => 'abc' ) );
 		$response = rest_do_request( $request );
 
@@ -98,7 +98,6 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 		$post_id = self::factory()->post->create( array( 'post_content' => $content ) );
 
 		$request = new WP_REST_Request( 'GET', '/designsetgo/v1/query/template' );
-		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_query_params( array( 'post_id' => $post_id, 'query_id' => 'nested' ) );
 		$response = rest_do_request( $request );
 
@@ -109,6 +108,49 @@ class QueryTemplateControllerTest extends WP_UnitTestCase {
 	// -------------------------------------------------------------------------
 	// Import tests
 	// -------------------------------------------------------------------------
+
+	/**
+	 * Import (a mutating POST) rejects a request with no X-WP-Nonce header,
+	 * even for a user who has the edit_posts capability. Guards the S2 CSRF fix.
+	 */
+	public function test_import_rejects_missing_nonce() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		// Intentionally omit the X-WP-Nonce header.
+		$request->set_body_params(
+			array(
+				'schemaVersion' => 1,
+				'blockName'     => 'designsetgo/query',
+				'attributes'    => array( 'perPage' => 5 ),
+				'innerBlocks'   => '',
+			)
+		);
+		$response = rest_do_request( $request );
+
+		$this->assertSame( 401, $response->get_status() );
+	}
+
+	/**
+	 * Import rejects a request carrying an invalid nonce. Guards the S2 CSRF fix.
+	 */
+	public function test_import_rejects_invalid_nonce() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/template' );
+		$request->set_header( 'X-WP-Nonce', 'not-a-valid-nonce' );
+		$request->set_body_params(
+			array(
+				'schemaVersion' => 1,
+				'blockName'     => 'designsetgo/query',
+				'attributes'    => array( 'perPage' => 5 ),
+				'innerBlocks'   => '',
+			)
+		);
+		$response = rest_do_request( $request );
+
+		$this->assertSame( 401, $response->get_status() );
+	}
 
 	/**
 	 * Import returns 400 when schemaVersion is not 1.

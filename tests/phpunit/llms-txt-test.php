@@ -267,6 +267,35 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test flush cache endpoint rejects a request with no X-WP-Nonce header,
+	 * even for an administrator. Guards the S2 CSRF fix on the llms-txt POST routes.
+	 */
+	public function test_flush_cache_endpoint_rejects_missing_nonce() {
+		wp_set_current_user( $this->admin_user );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/llms-txt/flush-cache' );
+		// Intentionally omit the X-WP-Nonce header.
+
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 401, $response->get_status() );
+	}
+
+	/**
+	 * Test flush cache endpoint rejects a request carrying an invalid nonce.
+	 */
+	public function test_flush_cache_endpoint_rejects_invalid_nonce() {
+		wp_set_current_user( $this->admin_user );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/llms-txt/flush-cache' );
+		$request->set_header( 'X-WP-Nonce', 'not-a-valid-nonce' );
+
+		$response = rest_do_request( $request );
+
+		$this->assertEquals( 401, $response->get_status() );
+	}
+
+	/**
 	 * Test flush cache endpoint clears cache.
 	 */
 	public function test_flush_cache_endpoint_clears_cache() {
