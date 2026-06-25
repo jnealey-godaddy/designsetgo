@@ -15,6 +15,14 @@
 	--dsgo-form-success-color: #16a34a;
 	// Button colors intentionally not set here - uses theme defaults unless overridden
 
+	// The wrapper itself must never render a border. WordPress core ships
+	// `html :where([style*="border-color"]) { border-style: solid; }`, whose
+	// substring match catches the `--dsgo-form-border-color` custom property in
+	// this block's inline style and forces a solid border (with currentColor and
+	// a default width) around the whole form. The border color is only ever
+	// consumed by the field inputs, never the wrapper, so reset it here.
+	border-style: none;
+
 	// Prevents padding + border from exceeding container width when border-radius is applied
 	box-sizing: border-box;
 	padding: 1rem;
