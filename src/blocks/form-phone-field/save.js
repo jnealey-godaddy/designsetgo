@@ -121,7 +121,7 @@ export default function FormPhoneFieldSave({ attributes }) {
 					aria-required={required ? 'true' : undefined}
 					data-field-type="tel"
 					data-phone-format={phoneFormat}
-					style={{ flex: 1 }}
+					style={{ flex: '1' }}
 				/>
 			</div>
 

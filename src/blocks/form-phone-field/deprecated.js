@@ -130,32 +130,29 @@ function getPlaceholderText(placeholder, phoneFormat) {
  * Version 4: React serializes numeric `flex: 1` as `flex:1px` (it treats
  * numeric style values for non-unitless properties as pixel values). The
  * input's style was `style={{ flex: 1 }}` in save.js, causing WP's block
- * serializer to emit `style="flex:1px"`. Commit 76cc8b90 updated the
- * stored pattern markup from `flex:1px` to `flex:1`, creating a mismatch.
- * This version covers the `flex:1` era (pattern content updated but save.js
- * not yet fixed to use the string `'1'`).
+ * serializer to emit `style="flex:1px"`. This deprecation covers that legacy
+ * era so existing blocks with `flex:1px` silently migrate to the fixed
+ * `flex:1` output produced by the corrected save.js.
  *
- * Distinguishing signature: `style="flex:1"` on the input (no `px`), with
- * the current-format empty <select> (`data-dsgo-country-code`, no <option>
- * children). Matches neither the inline-options era (v3) nor the `flex:1px`
- * era (current save output).
+ * Distinguishing signature: `data-dsgo-country-code` present (current-format
+ * empty <select>, no <option> children) AND `style="flex:1px"` on the input.
+ * The fixed save.js emits `flex:1` (string), so `flex:1px` cannot appear in
+ * new content and uniquely identifies this legacy era.
  */
 const v4 = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
 	isEligible(attributes, innerBlocks, { innerHTML }) {
-		// Current format (data-dsgo-country-code, no <option>), but with
-		// `flex:1` (no px) on the input wrapper — the WP serializer currently
-		// emits `flex:1px` for numeric `flex: 1`, so this string is impossible
-		// in fresh content and uniquely identifies the legacy era.
+		// Legacy era: current-format <select> (data-dsgo-country-code, no
+		// <option> children) but with `flex:1px` on the <input> — React added
+		// `px` to the numeric `flex: 1` value. The fixed save.js uses the
+		// string `'1'` which serializes as `flex:1`, so `flex:1px` is
+		// impossible in new content.
 		return (
-			innerHTML &&
+			!!innerHTML &&
 			innerHTML.includes('data-dsgo-country-code') &&
-			!innerHTML.includes('<option') &&
-			!innerHTML.includes('defaultvalue') &&
-			!innerHTML.includes(' selected') &&
-			innerHTML.includes('style="flex:1"')
+			innerHTML.includes('flex:1px')
 		);
 	},
 
@@ -223,7 +220,7 @@ const v4 = {
 						aria-required={required ? 'true' : undefined}
 						data-field-type="tel"
 						data-phone-format={phoneFormat}
-						style={{ flex: '1' }}
+						style={{ flex: 1 }}
 					/>
 				</div>
 
