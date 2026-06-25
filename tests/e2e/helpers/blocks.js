@@ -120,7 +120,6 @@ async function insertBlockByName(page, name, overrides = {}) {
 }
 
 module.exports = {
-	SKIP,
 	listTopLevelDesignSetGoBlocks,
 	insertBlockByName,
 };

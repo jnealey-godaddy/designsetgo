@@ -73,17 +73,20 @@ test.describe('Blocks — editor and frontend happy path', () => {
 			await createNewPost(page, 'page');
 			await setPostTitle(page, `Block: ${item}`);
 
-			const { blockCount } = await insertBlockByName(
+			const { clientId, blockCount } = await insertBlockByName(
 				page,
 				name,
 				OVERRIDES[name]
 			);
 			expect(blockCount).toBeGreaterThan(0);
 
-			await page.waitForTimeout(800);
-
+			// Wait for the editor to actually render the inserted block in the
+			// canvas (the node's presence is the real signal, not a fixed sleep).
 			const canvas = getEditorCanvas(page);
-			await expect(canvas.locator('body')).toBeVisible();
+			await canvas
+				.locator(`[data-block="${clientId}"]`)
+				.first()
+				.waitFor({ state: 'attached', timeout: 10000 });
 
 			// Validity: the fresh insert must match save() output (a stale
 			// figure would render "Attempt Recovery" instead).

@@ -82,10 +82,17 @@ test.describe('Patterns — editor and frontend happy-path sweep', () => {
 			// content handed to the editor must already be token-free.
 			expect(insertion.hadToken).toBe(false);
 
-			await page.waitForTimeout(800);
-
+			// Wait for the editor to render the pattern's first block in the
+			// canvas (a real signal, not a fixed sleep) before asserting/scrolling.
 			const canvas = getEditorCanvas(page);
-			await expect(canvas.locator('body')).toBeVisible();
+			if (insertion.clientId) {
+				await canvas
+					.locator(`[data-block="${insertion.clientId}"]`)
+					.first()
+					.waitFor({ state: 'attached', timeout: 10000 });
+			} else {
+				await expect(canvas.locator('body')).toBeVisible();
+			}
 
 			// Capture the editor view first — even if validity fails below, the
 			// screenshot is there to eyeball what broke.

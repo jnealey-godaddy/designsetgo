@@ -23,6 +23,23 @@ function cli(args) {
 }
 
 /**
+ * Quote an arbitrary string as a single argument for the host shell.
+ *
+ * Wraps the value in single quotes and rewrites every embedded single quote as
+ * the canonical `'\''` sequence, so a value containing quotes (or any other
+ * shell metacharacter) survives verbatim. `wp-env run cli -- …` forwards the
+ * post-`--` tokens straight to the container as argv (no second shell parse —
+ * that's why deleteAllPagesAndPosts needs an explicit `sh -c`), so quoting for
+ * the host shell alone is sufficient.
+ *
+ * @param {string} value - Raw value to pass as one argument.
+ * @return {string} Shell-quoted token, including the surrounding quotes.
+ */
+function shellArg(value) {
+	return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+/**
  * Force-delete every page and post (any status) in one CLI round-trip.
  *
  * The inner `sh -c` runs inside the cli container so the $(...) subshell and
@@ -53,6 +70,7 @@ function deletePostIds(ids) {
 
 module.exports = {
 	cli,
+	shellArg,
 	deleteAllPagesAndPosts,
 	deletePostIds,
 };

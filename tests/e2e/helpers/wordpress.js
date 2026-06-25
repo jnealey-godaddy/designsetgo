@@ -307,10 +307,11 @@ async function blockHasClass(page, blockType, className, index = 0) {
  *
  * @param {import('@playwright/test').Page} page - Playwright page object
  * @param {string}                          slug - Pattern slug, e.g. 'designsetgo/hero/hero-split'
- * @return {Promise<{found: boolean, hadToken: boolean, blockCount: number}>}
+ * @return {Promise<{found: boolean, hadToken: boolean, blockCount: number, clientId: ?string}>}
  *         Insertion result: whether the pattern was registered, whether its
- *         registered content still contained a raw placeholder token, and how
- *         many top-level blocks were inserted.
+ *         registered content still contained a raw placeholder token, how many
+ *         top-level blocks were inserted, and the clientId of the first one
+ *         (so callers can wait for it to render in the canvas).
  */
 async function insertPatternBySlug(page, slug) {
 	const result = await page.evaluate(async (patternSlug) => {
@@ -336,7 +337,12 @@ async function insertPatternBySlug(page, slug) {
 		const blocks = wp.blocks.parse(pattern.content);
 		wp.data.dispatch('core/block-editor').insertBlocks(blocks);
 
-		return { found: true, hadToken, blockCount: blocks.length };
+		return {
+			found: true,
+			hadToken,
+			blockCount: blocks.length,
+			clientId: blocks[0] ? blocks[0].clientId : null,
+		};
 	}, slug);
 
 	if (!result.found) {

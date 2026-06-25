@@ -26,9 +26,13 @@ function sanitizeKey(value) {
 }
 
 // Pull "Title:" out of the pattern file's header doc-block for a readable test
-// name. Falls back to the slug when absent.
+// name. Falls back to the slug when absent. Scan only the header doc-block (up
+// to its closing `*/`) rather than an arbitrary byte cap, so a long header that
+// pushes the Title line further down still resolves.
 function readTitle(file) {
-	const head = fs.readFileSync(file, 'utf8').slice(0, 600);
+	const content = fs.readFileSync(file, 'utf8');
+	const headerEnd = content.indexOf('*/');
+	const head = headerEnd === -1 ? content : content.slice(0, headerEnd);
 	const match = head.match(/^\s*\*\s*Title:\s*(.+?)\s*$/m);
 	return match ? match[1] : null;
 }

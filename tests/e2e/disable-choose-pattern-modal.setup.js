@@ -17,17 +17,7 @@
  */
 
 const { test } = require('@playwright/test');
-const { execSync } = require('child_process');
-
-// Pull the JSON object line out of wp-env's chatter (it prints a trailing
-// "✔ Ran ..." status line we don't want to parse).
-function cli(args) {
-	const out = execSync(`npx wp-env run cli -- ${args}`, {
-		stdio: ['ignore', 'pipe', 'pipe'],
-		cwd: process.cwd(),
-	}).toString();
-	return out;
-}
+const { cli, shellArg } = require('./helpers/wp-cli');
 
 test('disable choose-pattern start modal', async () => {
 	try {
@@ -45,11 +35,13 @@ test('disable choose-pattern start modal', async () => {
 		}
 		prefs.core.enableChoosePatternModal = false;
 
-		// Single-quote the JSON arg for the host shell; JSON contains only
-		// double quotes, so single-quote wrapping is safe.
+		// Shell-quote the JSON arg with shellArg() so a preference value
+		// containing a single quote can't break out of the argument.
 		const value = JSON.stringify(prefs);
 		cli(
-			`wp user meta update admin wp_persisted_preferences '${value}' --format=json`
+			`wp user meta update admin wp_persisted_preferences ${shellArg(
+				value
+			)} --format=json`
 		);
 		// eslint-disable-next-line no-console
 		console.log('[disable-modal] Choose-pattern start modal disabled');
