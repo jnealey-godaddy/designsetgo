@@ -10,16 +10,49 @@
 const { execSync } = require('child_process');
 
 /**
+ * Distil wp-env's stderr down to the substantive failure text.
+ *
+ * wp-env wraps the inner command's output with its own decoration: a leading
+ * `ℹ Starting '…'` info line and a trailing `✖ Command failed…` line that it
+ * also echoes once more un-glyphed. Drop the info/blank lines and de-duplicate
+ * so the real WP-CLI error (e.g. `Error: …`) leads the message.
+ *
+ * @param {string} stderr - Raw captured stderr.
+ * @return {string} Meaningful failure lines joined with "; " (may be empty).
+ */
+function meaningfulStderr(stderr) {
+	const lines = stderr
+		.split('\n')
+		.map((l) => l.trim())
+		.filter((l) => l && !l.startsWith('ℹ'));
+	return [...new Set(lines.map((l) => l.replace(/^✖\s*/, '')))].join('; ');
+}
+
+/**
  * Run a WP-CLI command inside the wp-env `cli` container and return its stdout.
  *
  * @param {string} args - The `wp ...` command (without the leading `wp`).
  * @return {string} Raw stdout.
  */
 function cli(args) {
-	return execSync(`npx wp-env run cli -- ${args}`, {
-		stdio: ['ignore', 'pipe', 'pipe'],
-		cwd: process.cwd(),
-	}).toString();
+	try {
+		return execSync(`npx wp-env run cli -- ${args}`, {
+			stdio: ['ignore', 'pipe', 'pipe'],
+			cwd: process.cwd(),
+		}).toString();
+	} catch (e) {
+		// execSync's default message is the command invocation, not the WP-CLI
+		// failure reason — which lands on the captured stderr. Promote the
+		// distilled stderr onto .message so callers logging
+		// e.message.split('\n')[0] report the actual cause. The message is
+		// newline-free (lines joined with "; "), so that split keeps it intact.
+		// The original .stderr / .status are preserved.
+		const stderr = meaningfulStderr(e.stderr ? e.stderr.toString() : '');
+		if (stderr) {
+			e.message = `${stderr} (${args})`;
+		}
+		throw e;
+	}
 }
 
 /**
