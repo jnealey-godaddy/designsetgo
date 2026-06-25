@@ -60,10 +60,10 @@ const v2 = {
 		typography: {
 			fontSize: true,
 			lineHeight: true,
-			fontFamily: true,
-			fontWeight: true,
-			textTransform: true,
-			letterSpacing: true,
+			__experimentalFontFamily: true,
+			__experimentalFontWeight: true,
+			__experimentalTextTransform: true,
+			__experimentalLetterSpacing: true,
 		},
 		__experimentalBorder: {
 			color: true,
@@ -83,13 +83,20 @@ const v2 = {
 	},
 	migrate(attributes) {
 		// Reset height and arrowSize to the new empty defaults so the
-		// current save.js conditional guard takes effect. Passthrough
-		// everything else; v1 handles dotPosition 'bottom' → 'inside'.
-		const { height, arrowSize, ...rest } = attributes;
+		// current save.js conditional guard takes effect.
+		// Also remap dotPosition: v1 maps both 'bottom' and 'top' → 'inside';
+		// mirror that logic here so migrate runs only once and leaves fully
+		// valid attributes — no chaining to v1 is guaranteed by WordPress.
+		const { height, arrowSize, dotPosition, ...rest } = attributes;
+		const remappedDotPosition =
+			dotPosition === 'bottom' || dotPosition === 'top'
+				? 'inside'
+				: dotPosition;
 		return {
 			...rest,
 			height: height === '500px' ? '' : height,
 			arrowSize: arrowSize === '48px' ? '24px' : arrowSize,
+			dotPosition: remappedDotPosition,
 		};
 	},
 	save({ attributes }) {
