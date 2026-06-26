@@ -177,7 +177,9 @@ const v2 = {
 				'--dsgo-slider-arrow-bg-color': arrowBackgroundColor,
 			}),
 			...(arrowSize && { '--dsgo-slider-arrow-size': arrowSize }),
-			...(arrowPadding && { '--dsgo-slider-arrow-padding': arrowPadding }),
+			...(arrowPadding && {
+				'--dsgo-slider-arrow-padding': arrowPadding,
+			}),
 			...(dotColor && { '--dsgo-slider-dot-color': dotColor }),
 		};
 

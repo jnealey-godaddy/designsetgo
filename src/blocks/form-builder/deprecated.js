@@ -28,12 +28,12 @@ const v3 = {
 	supports: metadata.supports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
 		// v3 blocks have raw empty CSS vars rendered as `--dsgo-form-label-color:;`
-		return innerHTML && innerHTML.includes( '--dsgo-form-label-color:;' );
+		return innerHTML && innerHTML.includes('--dsgo-form-label-color:;');
 	},
-	migrate( attributes ) {
+	migrate(attributes) {
 		return attributes;
 	},
-	save( { attributes } ) {
+	save({ attributes }) {
 		const {
 			formId,
 			submitButtonText,
@@ -58,12 +58,12 @@ const v3 = {
 			enableTurnstile,
 		} = attributes;
 
-		const formClasses = classnames( 'dsgo-form-builder', {
-			[ `dsgo-form-builder--align-${ submitButtonAlignment }` ]:
+		const formClasses = classnames('dsgo-form-builder', {
+			[`dsgo-form-builder--align-${submitButtonAlignment}`]:
 				submitButtonAlignment && submitButtonPosition === 'below',
 			'dsgo-form-builder--button-inline':
 				submitButtonPosition === 'inline',
-		} );
+		});
 
 		// Raw values — no convertColorToCSSVar; empty strings render as empty CSS vars.
 		const formStyles = {
@@ -75,7 +75,7 @@ const v3 = {
 			'--dsgo-form-field-bg': fieldBackgroundColor,
 		};
 
-		const blockProps = useBlockProps.save( {
+		const blockProps = useBlockProps.save({
 			className: formClasses,
 			style: formStyles,
 			'data-form-id': formId,
@@ -83,49 +83,49 @@ const v3 = {
 			'data-success-message': successMessage,
 			'data-error-message': errorMessage,
 			'data-submit-text': submitButtonText,
-			...( enableTurnstile && {
+			...(enableTurnstile && {
 				'data-dsgo-turnstile': 'true',
-			} ),
-		} );
+			}),
+		});
 
 		const { children, ...innerBlocksPropsWithoutChildren } =
-			useInnerBlocksProps.save( {
+			useInnerBlocksProps.save({
 				className: 'dsgo-form__fields',
-			} );
+			});
 
 		return (
-			<div { ...blockProps }>
+			<div {...blockProps}>
 				<form className="dsgo-form" method="post" noValidate>
-					<div { ...innerBlocksPropsWithoutChildren }>
-						{ children }
-						{ submitButtonPosition === 'inline' && (
+					<div {...innerBlocksPropsWithoutChildren}>
+						{children}
+						{submitButtonPosition === 'inline' && (
 							<button
 								type="submit"
 								className="dsgo-form__submit dsgo-form__submit--inline wp-element-button"
-								style={ {
-									...( submitButtonColor && {
+								style={{
+									...(submitButtonColor && {
 										color: submitButtonColor,
-									} ),
-									...( submitButtonBackgroundColor && {
+									}),
+									...(submitButtonBackgroundColor && {
 										backgroundColor:
 											submitButtonBackgroundColor,
-									} ),
+									}),
 									minHeight: submitButtonHeight,
 									paddingTop: submitButtonPaddingVertical,
 									paddingBottom: submitButtonPaddingVertical,
 									paddingLeft: submitButtonPaddingHorizontal,
 									paddingRight: submitButtonPaddingHorizontal,
-									...( submitButtonFontSize && {
+									...(submitButtonFontSize && {
 										fontSize: submitButtonFontSize,
-									} ),
-								} }
+									}),
+								}}
 							>
-								{ submitButtonText }
+								{submitButtonText}
 							</button>
-						) }
+						)}
 					</div>
 
-					{ enableHoneypot && (
+					{enableHoneypot && (
 						<input
 							type="text"
 							name="dsg_website"
@@ -133,59 +133,59 @@ const v3 = {
 							tabIndex="-1"
 							autoComplete="off"
 							aria-hidden="true"
-							style={ {
+							style={{
 								position: 'absolute',
 								left: '-9999px',
 								width: '1px',
 								height: '1px',
 								overflow: 'hidden',
-							} }
+							}}
 						/>
-					) }
+					)}
 
-					<input type="hidden" name="dsg_form_id" value={ formId } />
+					<input type="hidden" name="dsg_form_id" value={formId} />
 
-					{ enableTurnstile && (
+					{enableTurnstile && (
 						<div
 							className="dsgo-turnstile-widget"
 							data-dsgo-turnstile-container="true"
 						/>
-					) }
+					)}
 
-					{ submitButtonPosition === 'below' && (
+					{submitButtonPosition === 'below' && (
 						<div className="dsgo-form__footer">
 							<button
 								type="submit"
 								className="dsgo-form__submit wp-element-button"
-								style={ {
-									...( submitButtonColor && {
+								style={{
+									...(submitButtonColor && {
 										color: submitButtonColor,
-									} ),
-									...( submitButtonBackgroundColor && {
+									}),
+									...(submitButtonBackgroundColor && {
 										backgroundColor:
 											submitButtonBackgroundColor,
-									} ),
+									}),
 									minHeight: submitButtonHeight,
 									paddingTop: submitButtonPaddingVertical,
 									paddingBottom: submitButtonPaddingVertical,
 									paddingLeft: submitButtonPaddingHorizontal,
 									paddingRight: submitButtonPaddingHorizontal,
-									...( submitButtonFontSize && {
+									...(submitButtonFontSize && {
 										fontSize: submitButtonFontSize,
-									} ),
-								} }
+									}),
+								}}
 							>
-								{ submitButtonText }
+								{submitButtonText}
 							</button>
 						</div>
-					) }
+					)}
 
 					<div
 						className="dsgo-form__message"
 						role="status"
 						aria-live="polite"
 						aria-atomic="true"
-						style={ { display: 'none' } }
+						style={{ display: 'none' }}
 					/>
 				</form>
 			</div>

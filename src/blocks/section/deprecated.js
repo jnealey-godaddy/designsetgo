@@ -322,9 +322,9 @@ const v6 = {
 	 * stored HTML is the unique signature — current serialization never outputs
 	 * that attribute when it holds the default value "scroll".
 	 *
-	 * @param {Object} attributes - Block attributes
-	 * @param {Array}  innerBlocks - Inner blocks
-	 * @param {Object} extra       - Extra data including innerHTML
+	 * @param {Object} attributes      - Block attributes
+	 * @param {Array}  innerBlocks     - Inner blocks
+	 * @param {Object} extra           - Extra data including innerHTML
 	 * @param {string} extra.innerHTML - The stored serialised HTML
 	 * @return {boolean} True when the legacy animation-attrs pattern is detected
 	 */
@@ -422,10 +422,13 @@ const v6 = {
 					'data-dsgo-animation-enabled': 'true',
 					'data-dsgo-entrance-animation': dsgoEntranceAnimation || '',
 					'data-dsgo-exit-animation': dsgoExitAnimation || '',
-					'data-dsgo-animation-trigger': dsgoAnimationTrigger || 'scroll',
-					'data-dsgo-animation-duration': dsgoAnimationDuration ?? 600,
+					'data-dsgo-animation-trigger':
+						dsgoAnimationTrigger || 'scroll',
+					'data-dsgo-animation-duration':
+						dsgoAnimationDuration ?? 600,
 					'data-dsgo-animation-delay': dsgoAnimationDelay ?? 0,
-					'data-dsgo-animation-easing': dsgoAnimationEasing || 'ease-out',
+					'data-dsgo-animation-easing':
+						dsgoAnimationEasing || 'ease-out',
 					'data-dsgo-animation-offset': dsgoAnimationOffset ?? 100,
 					'data-dsgo-animation-once':
 						dsgoAnimationOnce !== false ? 'true' : 'false',
