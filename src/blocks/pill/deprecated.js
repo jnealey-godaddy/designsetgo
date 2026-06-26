@@ -100,7 +100,7 @@ const v1 = {
 		// third argument; blockNode.innerHTML is the block's stored HTML.
 		const html = blockNode?.innerHTML || '';
 		return (
-			html.includes('dsgo-pill') &&
+			/class="[^"]*\bdsgo-pill\b/.test( html ) &&
 			!html.includes('aligncenter') &&
 			!html.includes('alignleft') &&
 			!html.includes('alignright')
