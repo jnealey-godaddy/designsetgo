@@ -24,6 +24,7 @@ const path = require( 'path' );
 const { test, expect } = require( '@playwright/test' );
 const {
 	createNewPost,
+	getEditorCanvas,
 	getInvalidBlockNames,
 } = require( './helpers/wordpress' );
 const { insertBlockByName } = require( './helpers/blocks' );
@@ -62,10 +63,15 @@ test.describe( 'Affected blocks — insert, validate, render', () => {
 			await createNewPost( page, 'page' );
 			await setPostTitle( page, `Affected: ${ name.split( '/' ).pop() }` );
 
-			await insertBlockByName( page, name );
+			const { clientId } = await insertBlockByName( page, name );
 
-			// Allow any async React state / validation to settle.
-			await page.waitForTimeout( 800 );
+			// Wait for the inserted block to appear in the canvas — a real DOM
+			// signal that React has finished rendering, replacing the bare timeout.
+			const canvas = getEditorCanvas( page );
+			await canvas
+				.locator( `[data-block="${ clientId }"]` )
+				.first()
+				.waitFor( { state: 'attached', timeout: 10000 } );
 
 			expect( await getInvalidBlockNames( page ) ).toEqual( [] );
 
@@ -130,8 +136,20 @@ test.describe( 'Affected blocks — legacy markup migrates silently', () => {
 					.resetBlocks( blocks );
 			}, markup );
 
-			// Allow deprecation-migration / async validation to settle.
-			await page.waitForTimeout( 800 );
+			// Wait until the block-editor store reports at least one block
+			// (the parse + resetBlocks is synchronous, but React reconciliation
+			// and block validation are async). Replaces the bare timeout.
+			await expect
+				.poll(
+					() =>
+						page.evaluate( () =>
+							window.wp.data
+								.select( 'core/block-editor' )
+								.getBlocks().length
+						),
+					{ timeout: 5000 }
+				)
+				.toBeGreaterThan( 0 );
 
 			expect( await getInvalidBlockNames( page ) ).toEqual( [] );
 		} );
