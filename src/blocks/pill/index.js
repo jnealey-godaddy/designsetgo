@@ -9,6 +9,7 @@ import { registerBlockType } from '@wordpress/blocks';
 
 import edit from './edit';
 import save from './save';
+import deprecated from './deprecated';
 import metadata from './block.json';
 import { ICON_COLOR } from '../shared/constants';
 
@@ -20,6 +21,7 @@ import './style.scss';
  */
 registerBlockType(metadata.name, {
 	...metadata,
+	deprecated,
 	icon: {
 		src: (
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
