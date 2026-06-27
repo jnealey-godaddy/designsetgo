@@ -13,7 +13,7 @@ return array(
 	'title'      => __( 'Restaurant / Local Business Homepage', 'designsetgo' ),
 	'categories' => array( 'dsgo-homepage' ),
 	'viewportWidth' => 1200,
-	'content'    => '<!-- wp:cover {"url":"{{dsgo:placeholder-landscape}}","alt":"Restaurant interior","dimRatio":60,"overlayColor":"contrast","minHeight":600,"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|80","bottom":"var:preset|spacing|80"}}}} -->
+	'content'    => '<!-- wp:cover {"url":"{{dsgo:placeholder-landscape-wide}}","alt":"Restaurant interior","dimRatio":60,"overlayColor":"contrast","minHeight":600,"align":"full","style":{"spacing":{"padding":{"top":"var:preset|spacing|80","bottom":"var:preset|spacing|80"}}}} -->
 <div class="wp-block-cover alignfull" style="padding-top:var(--wp--preset--spacing--80);padding-bottom:var(--wp--preset--spacing--80);min-height:600px"><img class="wp-block-cover__image-background" alt="Restaurant interior" src="{{dsgo:placeholder-landscape-wide}}" data-object-fit="cover"/><span aria-hidden="true" class="wp-block-cover__background has-contrast-background-color has-background-dim-60 has-background-dim"></span><div class="wp-block-cover__inner-container"><!-- wp:group {"layout":{"type":"constrained","contentSize":"700px"}} -->
 <div class="wp-block-group"><!-- wp:paragraph {"align":"center","style":{"typography":{"textTransform":"uppercase","letterSpacing":"4px"}},"textColor":"base","fontSize":"small"} -->
 <p class="has-text-align-center has-base-color has-text-color has-small-font-size" style="letter-spacing:4px;text-transform:uppercase">Est. 2010 - Farm to Table Dining</p>
