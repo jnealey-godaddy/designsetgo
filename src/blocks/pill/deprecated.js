@@ -90,15 +90,12 @@ const v1 = {
 			__experimentalSelector: '.dsgo-pill__content',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode }) {
+	isEligible(attributes, innerBlocks, { innerHTML }) {
 		// Legacy saves lack `aligncenter` even when no explicit align was
 		// stored (the default "center" was not yet an attribute). Current
 		// saves always emit `aligncenter` for the default. Match only the
 		// legacy case: dsgo-prefix pill whose wrapper has no align class.
-		//
-		// WP passes { blockNode } (the raw parsed block object) as the
-		// third argument; blockNode.innerHTML is the block's stored HTML.
-		const html = blockNode?.innerHTML || '';
+		const html = innerHTML || '';
 		return (
 			/class="[^"]*\bdsgo-pill\b/.test(html) &&
 			!html.includes('aligncenter') &&
@@ -115,7 +112,8 @@ const v1 = {
 
 		// Extract color/background styles from blockProps to apply to
 		// inner span (same style-transfer logic as current save.js).
-		const wrapperStyle = blockProps.style || {};
+		// Clone so we never mutate the object returned by useBlockProps.save().
+		const wrapperStyle = { ...(blockProps.style || {}) };
 		const innerStyle = {};
 
 		if (wrapperStyle.backgroundColor) {

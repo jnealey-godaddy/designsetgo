@@ -286,6 +286,14 @@ function V4ShapeDivider({
 //
 // migrate() is a passthrough — only the serialised HTML differs, not the
 // attribute values themselves.
+//
+// NOTE: the dsgoAnimation* attributes referenced in isEligible()/save() below
+// are intentionally NOT listed in `attributes` here. They are injected onto
+// every block's schema by the block-animations extension's
+// blocks.registerBlockType filter at registration time — and that filter pass
+// runs on each deprecated entry too, so the deprecated block type ends up with
+// them automatically. This is the same extension-injected attribute pattern
+// documented on the accordion and pill v1 deprecations in this repo.
 const v6 = {
 	supports: sharedSupports,
 	attributes: {
