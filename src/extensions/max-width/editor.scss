@@ -43,3 +43,43 @@
 	margin-left: auto !important;
 	margin-right: auto !important;
 }
+
+// Alignment-aware anchoring.
+// By default a max-width block is centered (margin: auto). When the block
+// carries a text alignment, anchor the constrained box to that edge instead
+// so it follows the alignment the author set (and the parent section's intent)
+// rather than always sitting in the middle.
+// Keyed on core's `has-text-align-*` classes, which are added whether the
+// alignment is stored at the top level or under style.typography.textAlign.
+// Specificity (0,2,0) intentionally beats the base `.dsgo-has-max-width`
+// (0,1,0) rules above and the per-block injected `[data-block]` styles.
+.dsgo-has-max-width.has-text-align-left {
+	margin-left: 0 !important;
+	margin-right: auto !important;
+}
+
+.dsgo-has-max-width.has-text-align-right {
+	margin-left: auto !important;
+	margin-right: 0 !important;
+}
+
+.dsgo-has-max-width.has-text-align-center {
+	margin-left: auto !important;
+	margin-right: auto !important;
+}
+
+// Top-level blocks are centered by core's editor rule
+// `.block-editor-block-list__layout.is-root-container > :where(:not(...))`,
+// which ties at (0,2,0) with the selectors above and wins on source order.
+// Bump specificity to (0,3,0) so the alignment override also wins for a
+// max-width block placed directly at the post root (keeps editor + frontend
+// consistent — the frontend has no equivalent root-container rule).
+.block-editor-block-list__layout > .dsgo-has-max-width.has-text-align-left {
+	margin-left: 0 !important;
+	margin-right: auto !important;
+}
+
+.block-editor-block-list__layout > .dsgo-has-max-width.has-text-align-right {
+	margin-left: auto !important;
+	margin-right: 0 !important;
+}
