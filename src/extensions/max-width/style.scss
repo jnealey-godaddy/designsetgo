@@ -32,3 +32,26 @@
 	margin-left: auto !important;
 	margin-right: auto !important;
 }
+
+// Alignment-aware anchoring.
+// A max-width block is centered by default via the inline `margin: auto` that
+// the extension writes. When the block carries a text alignment, anchor the
+// constrained box to that edge so it follows the author's alignment instead of
+// always centering. `!important` is required to beat the inline margins.
+// Keyed on core's `has-text-align-*` classes, which are present whether the
+// alignment is stored at the top level or under style.typography.textAlign, so
+// this also corrects content saved before this fix without a re-save.
+.dsgo-has-max-width.has-text-align-left {
+	margin-left: 0 !important;
+	margin-right: auto !important;
+}
+
+.dsgo-has-max-width.has-text-align-right {
+	margin-left: auto !important;
+	margin-right: 0 !important;
+}
+
+.dsgo-has-max-width.has-text-align-center {
+	margin-left: auto !important;
+	margin-right: auto !important;
+}
