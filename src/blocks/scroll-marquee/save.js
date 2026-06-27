@@ -6,6 +6,7 @@ export default function ScrollMarqueeSave({ attributes }) {
 		scrollSpeed,
 		imageHeight,
 		imageWidth,
+		objectFit,
 		gap,
 		rowGap,
 		borderRadius,
@@ -19,6 +20,7 @@ export default function ScrollMarqueeSave({ attributes }) {
 			'--dsgo-marquee-row-gap': rowGap,
 			'--dsgo-marquee-image-height': imageHeight,
 			'--dsgo-marquee-image-width': imageWidth,
+			'--dsgo-marquee-object-fit': objectFit,
 			'--dsgo-marquee-border-radius': borderRadius,
 		},
 	});

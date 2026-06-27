@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "designsetgo/scroll-marquee",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"title": "Scrolling Gallery",
 	"category": "designsetgo",
 	"description": "Display rows of images that scroll horizontally in alternating directions based on page scroll. For best performance, use optimized images (WebP format recommended) and limit to 20 images or less.",
@@ -77,6 +77,11 @@
 		"imageWidth": {
 			"type": "string",
 			"default": "300px"
+		},
+		"objectFit": {
+			"type": "string",
+			"default": "cover",
+			"enum": [ "cover", "contain", "fill", "scale-down" ]
 		},
 		"gap": {
 			"type": "string",
