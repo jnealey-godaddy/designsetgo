@@ -146,8 +146,11 @@ export default function FormBuilderEdit({
 	// it unstable on every call (the "useSelect returns different values" dev
 	// warning). Derive the dropdown options in a useMemo keyed on that stable
 	// array instead.
+	// `getBlocks` always returns an array (stable `[]` for an unknown clientId),
+	// so `|| []` short-circuits to that same reference and never reintroduces the
+	// instability — it's kept purely as a defensive guard.
 	const childBlocks = useSelect(
-		(select) => select('core/block-editor').getBlocks(clientId),
+		(select) => select('core/block-editor').getBlocks(clientId) || [],
 		[clientId]
 	);
 	const hasInnerBlocks = childBlocks.length > 0;
