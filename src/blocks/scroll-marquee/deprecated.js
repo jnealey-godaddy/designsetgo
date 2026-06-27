@@ -76,6 +76,15 @@ const v2 = {
 		// Only claim blocks whose rows are already serialized in the
 		// comment (this format). Ancient v1 blocks parse to empty rows
 		// here and must fall through to the v1 query-source deprecation.
+		//
+		// Known benign gap: a v2 block whose rows were all emptied of
+		// images is indistinguishable from a v1 block at the attribute
+		// level (both parse to image-less rows), so it also falls
+		// through to v1. v1.migrate is fully defensive and yields valid
+		// data, so the output is identical either way. We intentionally
+		// gate on row data rather than `rows` presence — `rows` has a
+		// default and is never undefined, so a presence check would
+		// wrongly claim ancient v1 blocks and discard their images.
 		return (
 			Array.isArray(attributes.rows) &&
 			attributes.rows.some(
@@ -207,21 +216,7 @@ const v1 = {
 			default: '8px',
 		},
 	},
-	supports: {
-		anchor: true,
-		align: false,
-		html: false,
-		spacing: {
-			margin: false,
-			padding: false,
-			blockGap: true,
-		},
-		color: {
-			background: true,
-			text: true,
-			gradients: true,
-		},
-	},
+	supports: sharedSupports,
 	migrate(attributes) {
 		// scrollSpeed comes back as a string from the HTML attribute source,
 		// convert to number for the new format.
