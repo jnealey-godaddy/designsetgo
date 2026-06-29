@@ -1,11 +1,18 @@
 /**
- * Stack Block - Deprecated versions
+ * Grid Block - Deprecated versions
  *
  * @since 1.0.0
  */
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
-import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	convertPresetToCSSVar,
+	convertColorToCSSVar,
+} from '../../utils/convert-preset-to-css-var';
+import metadata from './block.json';
+
+// Captures the column min width from a `minmax(<width>, 1fr)` grid track.
+const MIN_WIDTH_RE = /minmax\(\s*(\d+(?:\.\d+)?[a-z%]+)\s*,\s*1fr\s*\)/i;
 
 const sharedSupports = {
 	anchor: true,
@@ -197,4 +204,146 @@ const v1 = {
 	},
 };
 
-export default [v1];
+/**
+ * Legacy responsive-grid markup from gd-pattern-library patterns.
+ *
+ * AI-generated patterns hard-coded `grid-template-columns: repeat(N, minmax(
+ * <width>, 1fr))` directly in the inner div's INLINE style, with no
+ * columnMinWidth block attribute. The width lived only in CSS, so the current
+ * save() (which reads columnMinWidth) can't reproduce it and the block fails
+ * validation ("Attempt Recovery"). This deprecation captures the stored inner
+ * style, reproduces its grid-template-columns verbatim so validation passes,
+ * and migrate() recovers the width into the columnMinWidth attribute — after
+ * which the current save() reproduces the markup from the attribute as normal.
+ */
+const legacyMinWidth = {
+	supports: sharedSupports,
+	attributes: {
+		...metadata.attributes,
+		legacyInnerStyle: {
+			type: 'string',
+			source: 'attribute',
+			selector: '.dsgo-grid__inner',
+			attribute: 'style',
+		},
+	},
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		return (
+			!!innerHTML &&
+			/grid-template-columns:\s*repeat\([^)]*minmax/i.test(innerHTML)
+		);
+	},
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			constrainWidth,
+			contentWidth,
+			desktopColumns,
+			tabletColumns,
+			mobileColumns,
+			rowGap,
+			columnGap,
+			alignItems,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			style,
+			legacyInnerStyle,
+		} = attributes;
+
+		const className = [
+			'dsgo-grid',
+			`dsgo-grid-cols-${desktopColumns}`,
+			`dsgo-grid-cols-tablet-${tabletColumns}`,
+			`dsgo-grid-cols-mobile-${mobileColumns}`,
+			!constrainWidth && 'dsgo-no-width-constraint',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+		const blockProps = useBlockProps.save({
+			className,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+			},
+		});
+
+		const blockGapValue = style?.spacing?.blockGap;
+		const isBlockGapObject =
+			typeof blockGapValue === 'object' && blockGapValue !== null;
+		const blockGapRow = convertPresetToCSSVar(
+			isBlockGapObject ? blockGapValue?.top : blockGapValue
+		);
+		const blockGapColumn = convertPresetToCSSVar(
+			isBlockGapObject ? blockGapValue?.left : blockGapValue
+		);
+		const defaultGap = 'var(--wp--preset--spacing--50)';
+
+		// Reproduce the stored grid-template-columns verbatim from the captured
+		// inline style so this matches byte-for-byte.
+		const gtc = (legacyInnerStyle || '').match(
+			/grid-template-columns:\s*([^;]+)/i
+		);
+
+		const innerStyles = {
+			display: 'grid',
+			gridTemplateColumns: gtc
+				? gtc[1].trim()
+				: `repeat(${desktopColumns || 3}, 1fr)`,
+			alignItems: alignItems || 'stretch',
+			rowGap: blockGapRow || rowGap || defaultGap,
+			columnGap: blockGapColumn || columnGap || defaultGap,
+		};
+
+		if (constrainWidth) {
+			innerStyles.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyles.marginLeft = 'auto';
+			innerStyles.marginRight = 'auto';
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-grid__inner',
+			style: innerStyles,
+		});
+
+		return (
+			<TagName {...blockProps}>
+				<div {...innerBlocksProps} />
+			</TagName>
+		);
+	},
+	migrate(attributes) {
+		const { legacyInnerStyle, ...rest } = attributes;
+		const gtc = (legacyInnerStyle || '').match(
+			/grid-template-columns:\s*([^;]+)/i
+		);
+		const mm = gtc ? gtc[1].match(MIN_WIDTH_RE) : null;
+		return {
+			...rest,
+			columnMinWidth: mm ? mm[1] : '',
+		};
+	},
+};
+
+export default [legacyMinWidth, v1];
