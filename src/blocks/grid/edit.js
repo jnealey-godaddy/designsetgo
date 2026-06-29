@@ -710,6 +710,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 								setAttributes({ columnMinWidth: value || '' })
 							}
 							units={units}
+							isResetValueOnUnitChange
 							__unstableInputWidth="80px"
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom

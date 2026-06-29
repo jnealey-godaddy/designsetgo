@@ -142,6 +142,7 @@ export const ListSettingsPanel = ({
 							{ value: 'em', label: 'em' },
 							{ value: 'rem', label: 'rem' },
 						]}
+						isResetValueOnUnitChange
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 						help={__(
