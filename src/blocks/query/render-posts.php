@@ -377,6 +377,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		if ( ! empty( $atts['excludeCurrent'] ) && is_singular() ) {
 			$current_id = get_queried_object_id();
 			if ( $current_id ) {
+				// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- Bounded to the single current post when "exclude current" is enabled on a singular view.
 				$args['post__not_in'] = array( $current_id );
 			}
 		}
@@ -512,6 +513,7 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			// If an attribute-level tax_query exists with relation=OR, wrap it so
 			// the URL-param clause ANDs against the entire OR group.
 			if ( isset( $args['tax_query'] ) && 'OR' === ( $args['tax_query']['relation'] ?? 'AND' ) ) {
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Re-wrapping an existing tax_query the user explicitly configured; same query, just AND-grouped with the URL-param clause.
 				$args['tax_query'] = array(
 					'relation' => 'AND',
 					$args['tax_query'],

@@ -12,6 +12,188 @@ import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
 import metadata from './block.json';
 
 /**
+ * V3 deprecation: Before convertColorToCSSVar was applied to form style properties.
+ *
+ * Raw empty-string attribute values were passed directly into inline CSS custom
+ * properties, producing `--dsgo-form-label-color:;` and `--dsgo-form-field-bg:`
+ * in the serialised markup. After the fix, convertColorToCSSVar/convertPresetToCSSVar
+ * returns undefined for empty strings, so React omits those properties entirely.
+ *
+ * This version also predates: fieldBorderRadius / --dsgo-form-border-radius,
+ * redirectUrl / data-redirect-url, submitButtonHoverColor /
+ * submitButtonHoverBackgroundColor on the button, and the hasFields early-return.
+ */
+const v3 = {
+	attributes: metadata.attributes,
+	supports: metadata.supports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// v3 blocks have raw empty CSS vars rendered as `--dsgo-form-label-color:;`
+		return innerHTML && innerHTML.includes('--dsgo-form-label-color:;');
+	},
+	migrate(attributes) {
+		return attributes;
+	},
+	save({ attributes }) {
+		const {
+			formId,
+			submitButtonText,
+			submitButtonAlignment,
+			submitButtonPosition,
+			ajaxSubmit,
+			successMessage,
+			errorMessage,
+			fieldSpacing,
+			inputHeight,
+			inputPadding,
+			fieldLabelColor,
+			fieldBorderColor,
+			fieldBackgroundColor,
+			submitButtonColor,
+			submitButtonBackgroundColor,
+			submitButtonPaddingVertical,
+			submitButtonPaddingHorizontal,
+			submitButtonFontSize,
+			submitButtonHeight,
+			enableHoneypot,
+			enableTurnstile,
+		} = attributes;
+
+		const formClasses = classnames('dsgo-form-builder', {
+			[`dsgo-form-builder--align-${submitButtonAlignment}`]:
+				submitButtonAlignment && submitButtonPosition === 'below',
+			'dsgo-form-builder--button-inline':
+				submitButtonPosition === 'inline',
+		});
+
+		// Raw values — no convertColorToCSSVar; empty strings render as empty CSS vars.
+		const formStyles = {
+			'--dsgo-form-field-spacing': fieldSpacing,
+			'--dsgo-form-input-height': inputHeight,
+			'--dsgo-form-input-padding': inputPadding,
+			'--dsgo-form-label-color': fieldLabelColor,
+			'--dsgo-form-border-color': fieldBorderColor || '#d1d5db',
+			'--dsgo-form-field-bg': fieldBackgroundColor,
+		};
+
+		const blockProps = useBlockProps.save({
+			className: formClasses,
+			style: formStyles,
+			'data-form-id': formId,
+			'data-ajax-submit': ajaxSubmit,
+			'data-success-message': successMessage,
+			'data-error-message': errorMessage,
+			'data-submit-text': submitButtonText,
+			...(enableTurnstile && {
+				'data-dsgo-turnstile': 'true',
+			}),
+		});
+
+		const { children, ...innerBlocksPropsWithoutChildren } =
+			useInnerBlocksProps.save({
+				className: 'dsgo-form__fields',
+			});
+
+		return (
+			<div {...blockProps}>
+				<form className="dsgo-form" method="post" noValidate>
+					<div {...innerBlocksPropsWithoutChildren}>
+						{children}
+						{submitButtonPosition === 'inline' && (
+							<button
+								type="submit"
+								className="dsgo-form__submit dsgo-form__submit--inline wp-element-button"
+								style={{
+									...(submitButtonColor && {
+										color: submitButtonColor,
+									}),
+									...(submitButtonBackgroundColor && {
+										backgroundColor:
+											submitButtonBackgroundColor,
+									}),
+									minHeight: submitButtonHeight,
+									paddingTop: submitButtonPaddingVertical,
+									paddingBottom: submitButtonPaddingVertical,
+									paddingLeft: submitButtonPaddingHorizontal,
+									paddingRight: submitButtonPaddingHorizontal,
+									...(submitButtonFontSize && {
+										fontSize: submitButtonFontSize,
+									}),
+								}}
+							>
+								{submitButtonText}
+							</button>
+						)}
+					</div>
+
+					{enableHoneypot && (
+						<input
+							type="text"
+							name="dsg_website"
+							value=""
+							tabIndex="-1"
+							autoComplete="off"
+							aria-hidden="true"
+							style={{
+								position: 'absolute',
+								left: '-9999px',
+								width: '1px',
+								height: '1px',
+								overflow: 'hidden',
+							}}
+						/>
+					)}
+
+					<input type="hidden" name="dsg_form_id" value={formId} />
+
+					{enableTurnstile && (
+						<div
+							className="dsgo-turnstile-widget"
+							data-dsgo-turnstile-container="true"
+						/>
+					)}
+
+					{submitButtonPosition === 'below' && (
+						<div className="dsgo-form__footer">
+							<button
+								type="submit"
+								className="dsgo-form__submit wp-element-button"
+								style={{
+									...(submitButtonColor && {
+										color: submitButtonColor,
+									}),
+									...(submitButtonBackgroundColor && {
+										backgroundColor:
+											submitButtonBackgroundColor,
+									}),
+									minHeight: submitButtonHeight,
+									paddingTop: submitButtonPaddingVertical,
+									paddingBottom: submitButtonPaddingVertical,
+									paddingLeft: submitButtonPaddingHorizontal,
+									paddingRight: submitButtonPaddingHorizontal,
+									...(submitButtonFontSize && {
+										fontSize: submitButtonFontSize,
+									}),
+								}}
+							>
+								{submitButtonText}
+							</button>
+						</div>
+					)}
+
+					<div
+						className="dsgo-form__message"
+						role="status"
+						aria-live="polite"
+						aria-atomic="true"
+						style={{ display: 'none' }}
+					/>
+				</form>
+			</div>
+		);
+	},
+};
+
+/**
  * V2 deprecation: Before aria-hidden and aria-atomic were added.
  *
  * The honeypot input lacked aria-hidden="true" and the message div lacked
@@ -427,6 +609,6 @@ const v1 = {
 	},
 };
 
-const deprecated = [v2, v1];
+const deprecated = [v3, v2, v1];
 
 export default deprecated;

@@ -314,8 +314,8 @@ class Loader {
 
 		// glob() returns false on error, empty array when no matches.
 		if ( false === $files || empty( $files ) ) {
-			if ( false === $files && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( sprintf( 'DesignSetGo: glob() failed for pattern directory: %s', $category_dir ) );
+			if ( false === $files ) {
+				wp_trigger_error( __METHOD__, sprintf( 'DesignSetGo: glob() failed for pattern directory: %s', $category_dir ), E_USER_NOTICE );
 			}
 			return $patterns;
 		}
@@ -331,18 +331,14 @@ class Loader {
 
 			// Validate relative path structure.
 			if ( ! self::is_valid_relative_path( $relative_path ) ) {
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( sprintf( 'DesignSetGo: Skipped invalid relative pattern path: %s', $relative_path ) );
-				}
+				wp_trigger_error( __METHOD__, sprintf( 'DesignSetGo: Skipped invalid relative pattern path: %s', $relative_path ), E_USER_NOTICE );
 				continue;
 			}
 
 			// Security: Verify resolved file is within expected directory.
 			$real_file = realpath( $file );
 			if ( ! $real_file || 0 !== strpos( $real_file, $real_dir ) ) {
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( sprintf( 'DesignSetGo: Skipped pattern file outside allowed directory: %s', $file ) );
-				}
+				wp_trigger_error( __METHOD__, sprintf( 'DesignSetGo: Skipped pattern file outside allowed directory: %s', $file ), E_USER_NOTICE );
 				continue;
 			}
 
@@ -394,6 +390,11 @@ class Loader {
 				// pattern doesn't already declare its own.
 				if ( isset( $post_types_map[ $category ] ) && ! isset( $pattern['postTypes'] ) ) {
 					$pattern['postTypes'] = $post_types_map[ $category ];
+				}
+
+				// Replace placeholder tokens with local image URLs.
+				if ( isset( $pattern['content'] ) ) {
+					$pattern['content'] = designsetgo_replace_pattern_placeholders( $pattern['content'] );
 				}
 
 				register_block_pattern( $slug, $pattern );

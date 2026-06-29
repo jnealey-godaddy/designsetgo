@@ -135,49 +135,49 @@ class Plugin {
 	 * @var array<string, bool>
 	 */
 	private const SVG_ATTRIBUTES = array(
-		'xmlns'              => true,
-		'viewbox'            => true,
+		'xmlns'               => true,
+		'viewbox'             => true,
 		'preserveaspectratio' => true,
-		'width'              => true,
-		'height'             => true,
-		'fill'               => true,
-		'fill-rule'          => true,
-		'fill-opacity'       => true,
-		'stroke'             => true,
-		'stroke-width'       => true,
-		'stroke-linecap'     => true,
-		'stroke-linejoin'    => true,
-		'stroke-dasharray'   => true,
-		'stroke-dashoffset'  => true,
-		'stroke-opacity'     => true,
-		'opacity'            => true,
-		'transform'          => true,
-		'x'                  => true,
-		'y'                  => true,
-		'x1'                 => true,
-		'y1'                 => true,
-		'x2'                 => true,
-		'y2'                 => true,
-		'cx'                 => true,
-		'cy'                 => true,
-		'r'                  => true,
-		'rx'                 => true,
-		'ry'                 => true,
-		'd'                  => true,
-		'points'             => true,
-		'clip-path'          => true,
-		'clip-rule'          => true,
-		'class'              => true,
-		'id'                 => true,
-		'style'              => true,
-		'aria-hidden'        => true,
-		'aria-label'         => true,
-		'role'               => true,
-		'focusable'          => true,
+		'width'               => true,
+		'height'              => true,
+		'fill'                => true,
+		'fill-rule'           => true,
+		'fill-opacity'        => true,
+		'stroke'              => true,
+		'stroke-width'        => true,
+		'stroke-linecap'      => true,
+		'stroke-linejoin'     => true,
+		'stroke-dasharray'    => true,
+		'stroke-dashoffset'   => true,
+		'stroke-opacity'      => true,
+		'opacity'             => true,
+		'transform'           => true,
+		'x'                   => true,
+		'y'                   => true,
+		'x1'                  => true,
+		'y1'                  => true,
+		'x2'                  => true,
+		'y2'                  => true,
+		'cx'                  => true,
+		'cy'                  => true,
+		'r'                   => true,
+		'rx'                  => true,
+		'ry'                  => true,
+		'd'                   => true,
+		'points'              => true,
+		'clip-path'           => true,
+		'clip-rule'           => true,
+		'class'               => true,
+		'id'                  => true,
+		'style'               => true,
+		'aria-hidden'         => true,
+		'aria-label'          => true,
+		'role'                => true,
+		'focusable'           => true,
 		// Gradient stop attributes.
-		'offset'             => true,
-		'stop-color'         => true,
-		'stop-opacity'       => true,
+		'offset'              => true,
+		'stop-color'          => true,
+		'stop-opacity'        => true,
 	);
 
 	/**
@@ -539,43 +539,48 @@ class Plugin {
 	 * Load required files.
 	 */
 	private function load_dependencies() {
-		require_once DESIGNSETGO_PATH . 'includes/class-block-visibility.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-block-visibility.php';
 		BlockVisibility::register();
-		require_once DESIGNSETGO_PATH . 'includes/class-assets.php';
+		// --- Core ---
+		require_once DESIGNSETGO_PATH . 'includes/core/class-assets.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-loader.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-security.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-handler.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-form-submissions.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-modal-hooks.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-template-controller.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-helpers.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-metabox.php';
+		// --- Blocks: Forms ---
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-security.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
+		// --- Blocks: Modal ---
+		require_once DESIGNSETGO_PATH . 'includes/blocks/modal/class-modal-hooks.php';
+		// --- Blocks: Query engine ---
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-template-controller.php';
+		// --- Block Bindings (cross-cutting) ---
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings-helpers.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings-metabox.php';
 		\DesignSetGo\Blocks\Query\MetaBoxBindings::bootstrap();
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-pods.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings-pods.php';
 		\DesignSetGo\Blocks\Query\PodsBindings::bootstrap();
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-bindings-jetengine.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings-jetengine.php';
 		\DesignSetGo\Blocks\Query\JetEngineBindings::bootstrap();
 
 		// Dynamic Tags subsystem (registry, source catalog, REST, image resolver).
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-registry.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-post.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-site.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-archive.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-sources-user.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-field-discovery.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-image-resolver.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-rest.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/dynamic-tags/class-dynamic-tags-bootstrap.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-registry.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-post.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-site.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-archive.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-user.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-field-discovery.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-image-resolver.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-rest.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-bootstrap.php';
 
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-hooks.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-rebuilder.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-registry.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index-hooks.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index-rebuilder.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-registry.php';
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
-			require_once DESIGNSETGO_PATH . 'includes/blocks/class-query-filter-index-cli.php';
+			require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index-cli.php';
 			Blocks\Query\FilterIndexCLI::register();
 		}
 
@@ -588,8 +593,8 @@ class Plugin {
 				if ( ! class_exists( '\QM_Collector' ) ) {
 					return;
 				}
-				require_once DESIGNSETGO_PATH . 'includes/class-query-qm-collector.php';
-				require_once DESIGNSETGO_PATH . 'includes/class-query-qm-output.php';
+				require_once DESIGNSETGO_PATH . 'includes/integrations/query-monitor/class-query-qm-collector.php';
+				require_once DESIGNSETGO_PATH . 'includes/integrations/query-monitor/class-query-qm-output.php';
 			},
 			20
 		);
@@ -607,17 +612,18 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-draft-mode-preview.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-block-migrator.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-query-filter-index-admin.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-custom-css-renderer.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-section-styles.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-sticky-header.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-overlay-header.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-icon-injector.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-button-global-styles.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-extension-attributes.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-style-binding.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-block-bindings-support.php';
-		require_once DESIGNSETGO_PATH . 'includes/svg-pattern-data.php';
-		require_once DESIGNSETGO_PATH . 'includes/class-svg-pattern-renderer.php';
+		// --- Render-time features ---
+		require_once DESIGNSETGO_PATH . 'includes/features/class-custom-css-renderer.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-section-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-sticky-header.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-overlay-header.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-icon-injector.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-button-global-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-extension-attributes.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-style-binding.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-block-bindings-support.php';
+		require_once DESIGNSETGO_PATH . 'includes/data/svg-pattern-data.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-svg-pattern-renderer.php';
 
 		// LLMS TXT classes.
 		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-file-manager.php';
@@ -644,6 +650,7 @@ class Plugin {
 		if ( ! function_exists( 'wp_register_ability' ) ) {
 			if ( file_exists( DESIGNSETGO_PATH . 'vendor/wordpress/abilities-api/includes/bootstrap.php' ) ) {
 				if ( ! defined( 'WP_ABILITIES_API_DIR' ) ) {
+					// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- Constant name is fixed by the bundled wordpress/abilities-api polyfill; its bootstrap reads WP_ABILITIES_API_DIR, so it cannot be prefixed.
 					define( 'WP_ABILITIES_API_DIR', DESIGNSETGO_PATH . 'vendor/wordpress/abilities-api/' );
 				}
 				require_once DESIGNSETGO_PATH . 'vendor/wordpress/abilities-api/includes/bootstrap.php';
@@ -659,22 +666,22 @@ class Plugin {
 	 */
 	private function init() {
 		// Initialize components.
-		$this->assets              = new Assets();
-		$this->blocks              = new Blocks\Loader();
-		$this->extension_attrs     = new Extension_Attributes();
-		$this->style_binding       = new StyleBinding();
+		$this->assets                 = new Assets();
+		$this->blocks                 = new Blocks\Loader();
+		$this->extension_attrs        = new Extension_Attributes();
+		$this->style_binding          = new StyleBinding();
 		$this->block_bindings_support = new Block_Bindings_Support();
 		$this->block_bindings_support->register();
-		$this->modal_hooks         = new Blocks\Modal_Hooks();
-		$this->form_handler        = new Blocks\Form_Handler();
-		$this->form_submissions    = new Blocks\Form_Submissions();
-		$this->query_controller          = new Blocks\Query\Controller();
+		$this->modal_hooks      = new Blocks\Modal_Hooks();
+		$this->form_handler     = new Blocks\Form_Handler();
+		$this->form_submissions = new Blocks\Form_Submissions();
+		$this->query_controller = new Blocks\Query\Controller();
 		add_action( 'rest_api_init', array( 'DesignSetGo\Blocks\Query\Template_Controller', 'register_routes' ) );
-		$this->query_bindings      = new Blocks\Query\Bindings();
-		$this->dynamic_tags        = new Blocks\DynamicTags\Bootstrap();
-		$this->filter_index         = new Blocks\Query\FilterIndex();
+		$this->query_bindings = new Blocks\Query\Bindings();
+		$this->dynamic_tags   = new Blocks\DynamicTags\Bootstrap();
+		$this->filter_index   = new Blocks\Query\FilterIndex();
 		Blocks\Query\FilterIndexHooks::register_hooks();
-		$this->filter_registry      = new Blocks\Query\FilterRegistry();
+		$this->filter_registry     = new Blocks\Query\FilterRegistry();
 		$this->patterns            = new Patterns\Loader();
 		$this->global_styles       = new Admin\Global_Styles();
 		$this->settings            = new Admin\Settings();
@@ -683,19 +690,19 @@ class Plugin {
 		$this->custom_css_renderer = new Custom_CSS_Renderer();
 		$this->section_styles      = new Section_Styles();
 		$this->section_styles->init();
-		$this->sticky_header  = new Sticky_Header();
-		$this->overlay_header = new Overlay_Header();
-		$this->icon_injector         = new Icon_Injector();
-		$this->svg_pattern_renderer  = new SVG_Pattern_Renderer();
-		$this->button_global_styles  = new Button_Global_Styles();
+		$this->sticky_header        = new Sticky_Header();
+		$this->overlay_header       = new Overlay_Header();
+		$this->icon_injector        = new Icon_Injector();
+		$this->svg_pattern_renderer = new SVG_Pattern_Renderer();
+		$this->button_global_styles = new Button_Global_Styles();
 		$this->button_global_styles->init();
-		$this->llms_txt      = new LLMS_Txt\Controller();
+		$this->llms_txt = new LLMS_Txt\Controller();
 
 		// Initialize admin-only features.
 		if ( is_admin() ) {
-			$this->admin_menu         = new Admin\Admin_Menu();
-			$this->block_migrator     = new Admin\Block_Migrator();
-			$this->query_filter_index_admin  = new Admin\Query_Filter_Index_Admin();
+			$this->admin_menu               = new Admin\Admin_Menu();
+			$this->block_migrator           = new Admin\Block_Migrator();
+			$this->query_filter_index_admin = new Admin\Query_Filter_Index_Admin();
 		}
 
 		// Initialize draft mode (works on both admin and REST API).

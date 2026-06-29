@@ -99,7 +99,7 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 			return array_values( array_filter( $ids ) );
 		}
 		if ( is_string( $value ) && '' !== $value ) {
-			if ( str_contains( $value, ',' ) ) {
+			if ( false !== strpos( $value, ',' ) ) {
 				return array_values( array_filter( array_map( 'absint', explode( ',', $value ) ) ) );
 			}
 			if ( is_numeric( $value ) ) {

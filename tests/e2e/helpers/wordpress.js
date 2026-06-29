@@ -296,10 +296,94 @@ async function blockHasClass(page, blockType, className, index = 0) {
 	return false;
 }
 
+/**
+ * Insert a registered block pattern by its slug, programmatically.
+ *
+ * Reads the pattern's resolved `content` straight from the data store, parses
+ * it into blocks, and inserts them. This avoids the inserter-UI search (which
+ * is flaky: the Patterns tab label and the results list vary across WP
+ * versions) and guarantees we exercise the exact content the loader
+ * registered — including the placeholder-token replacement done in PHP.
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @param {string}                          slug - Pattern slug, e.g. 'designsetgo/hero/hero-split'
+ * @return {Promise<{found: boolean, hadToken: boolean, blockCount: number, clientId: ?string}>}
+ *         Insertion result: whether the pattern was registered, whether its
+ *         registered content still contained a raw placeholder token, how many
+ *         top-level blocks were inserted, and the clientId of the first one
+ *         (so callers can wait for it to render in the canvas).
+ */
+async function insertPatternBySlug(page, slug) {
+	const result = await page.evaluate(async (patternSlug) => {
+		// `core`.getBlockPatterns is resolver-backed (it fetches from the REST
+		// block-patterns endpoint), so the first synchronous call returns [].
+		// Await the resolver so the full registry is present before we look up
+		// the slug; fall back to the editor settings list for older WP.
+		let patterns = [];
+		if (wp.data.resolveSelect('core').getBlockPatterns) {
+			patterns = await wp.data.resolveSelect('core').getBlockPatterns();
+		}
+		if (!patterns || !patterns.length) {
+			patterns =
+				wp.data.select('core/block-editor').getSettings()
+					.__experimentalBlockPatterns || [];
+		}
+		const pattern = patterns.find((p) => p.name === patternSlug);
+		if (!pattern) {
+			return { found: false, hadToken: false, blockCount: 0 };
+		}
+
+		const hadToken = pattern.content.includes('{{dsgo:placeholder-');
+		const blocks = wp.blocks.parse(pattern.content);
+		wp.data.dispatch('core/block-editor').insertBlocks(blocks);
+
+		return {
+			found: true,
+			hadToken,
+			blockCount: blocks.length,
+			clientId: blocks[0] ? blocks[0].clientId : null,
+		};
+	}, slug);
+
+	if (!result.found) {
+		throw new Error(`Pattern "${slug}" is not registered`);
+	}
+
+	return result;
+}
+
+/**
+ * Walk the editor's block tree and return the names of every block whose
+ * `isValid` is false (i.e. its markup no longer matches its save() output, so
+ * the editor would show an "Attempt Recovery" warning).
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page object
+ * @return {Promise<string[]>} Unique block names that failed validation.
+ */
+async function getInvalidBlockNames(page) {
+	return page.evaluate(() => {
+		const bad = [];
+		const walk = (blocks) => {
+			for (const b of blocks) {
+				if (b.isValid === false) {
+					bad.push(b.name);
+				}
+				if (b.innerBlocks) {
+					walk(b.innerBlocks);
+				}
+			}
+		};
+		walk(wp.data.select('core/block-editor').getBlocks());
+		return Array.from(new Set(bad));
+	});
+}
+
 module.exports = {
 	getEditorCanvas,
 	createNewPost,
 	insertBlock,
+	insertPatternBySlug,
+	getInvalidBlockNames,
 	openBlockSettings,
 	savePost,
 	publishPost,

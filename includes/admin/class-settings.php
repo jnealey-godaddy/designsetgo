@@ -23,6 +23,16 @@ class Settings {
 	const OPTION_NAME = 'designsetgo_settings';
 
 	/**
+	 * Placeholder returned in place of a stored write-only secret on read.
+	 *
+	 * The REST GET endpoint redacts write-only secrets to this value so they
+	 * never reach the browser. The write path treats an incoming value equal
+	 * to this placeholder as "unchanged" and preserves the stored secret. A
+	 * real secret will never equal this string.
+	 */
+	const REDACTED_PLACEHOLDER = '••••••••';
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -164,7 +174,7 @@ class Settings {
 			return array();
 		}
 
-		$raw_data = json_decode( file_get_contents( $json_path ), true );
+		$raw_data = wp_json_file_decode( $json_path, array( 'associative' => true ) );
 
 		if ( ! is_array( $raw_data ) ) {
 			return array();
@@ -464,10 +474,54 @@ class Settings {
 	/**
 	 * Get settings endpoint
 	 *
+	 * Write-only secrets (e.g. the Turnstile secret key) are redacted to a
+	 * placeholder so they never reach the browser. get_settings() itself keeps
+	 * returning the real values for server-side consumers (e.g. Turnstile
+	 * verification).
+	 *
 	 * @return \WP_REST_Response
 	 */
 	public function get_settings_endpoint() {
-		return rest_ensure_response( self::get_settings() );
+		return rest_ensure_response( self::redact_secrets( self::get_settings() ) );
+	}
+
+	/**
+	 * Map of write-only secret fields, keyed by settings group.
+	 *
+	 * Single source of truth shared by the read-redaction (redact_secrets) and
+	 * the write-strip in sanitize_settings(). Add a field here to have it
+	 * redacted on read and preserved-on-placeholder on write.
+	 *
+	 * @return array<string, string[]> Group => list of secret field keys.
+	 */
+	private static function write_only_secret_keys(): array {
+		return array(
+			'integrations' => array( 'turnstile_secret_key' ),
+		);
+	}
+
+	/**
+	 * Return a copy of $settings with write-only secrets replaced by the
+	 * redaction placeholder.
+	 *
+	 * Only non-empty string secrets are redacted; an empty value stays empty so
+	 * the UI renders an empty field when no secret has been saved.
+	 *
+	 * @param array $settings Full settings array.
+	 * @return array Settings with secrets redacted.
+	 */
+	private static function redact_secrets( array $settings ): array {
+		foreach ( self::write_only_secret_keys() as $group => $fields ) {
+			foreach ( $fields as $field ) {
+				if ( isset( $settings[ $group ][ $field ] )
+					&& is_string( $settings[ $group ][ $field ] )
+					&& '' !== $settings[ $group ][ $field ] ) {
+					$settings[ $group ][ $field ] = self::REDACTED_PLACEHOLDER;
+				}
+			}
+		}
+
+		return $settings;
 	}
 
 	/**
@@ -562,6 +616,7 @@ class Settings {
 
 		if ( false === $form_submissions ) {
 			// Cache miss - run the database query.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached via transient above; wp_count_posts() does not cover custom post types reliably.
 			$form_submissions = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s",
@@ -792,6 +847,18 @@ class Settings {
 					$sanitizer,
 					$default
 				);
+			}
+
+			// Drop write-only secrets the client echoed back unchanged (i.e. the
+			// redaction placeholder served by get_settings_endpoint()). Leaving
+			// them out lets array_replace_recursive() in update_settings()
+			// preserve the stored secret instead of overwriting it with bullets.
+			$secret_fields = self::write_only_secret_keys()[ $key ] ?? array();
+			foreach ( $secret_fields as $secret_field ) {
+				if ( isset( $settings[ $key ][ $secret_field ] )
+					&& self::REDACTED_PLACEHOLDER === $settings[ $key ][ $secret_field ] ) {
+					unset( $group_values[ $secret_field ] );
+				}
 			}
 
 			// Skip groups where no fields were actually submitted. Persisting

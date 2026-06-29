@@ -3,9 +3,9 @@ Contributors: justinnealey
 Donate link: https://designsetgoblocks.com/donate
 Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
-Tested up to: 6.9
-Requires PHP: 8.0
-Stable tag: 2.1.2
+Tested up to: 7.0
+Requires PHP: 7.4
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,21 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.2.0 - 2026-06-29 =
+
+* **New:** Grid & Icon List — a "Column Min Width" control so columns never get narrower than a set minimum (Grid uses `minmax(value, 1fr)` and keeps its responsive column counts; Icon List uses `auto-fit` to flow as many columns as fit).
+* **New:** Scrolling Gallery — a per-image "Image Fit" (object-fit) control, plus image height and width controls.
+* **Fix:** Grid and Icon List blocks from older AI-generated patterns (a responsive grid hard-coded in inline CSS with no backing attribute) now migrate automatically to the new Column Min Width attribute instead of showing "Attempt Recovery."
+* **Fix:** Legacy block content now auto-migrates instead of showing "Attempt Recovery." Added deprecations for older Accordion, Pill, Section, Slider, Form Builder, and Phone Field markup saved by earlier versions and patterns.
+* **Fix:** Form Builder no longer renders an accidental black border around the whole form (WordPress core's `[style*="border-color"]` rule was matching the form's CSS custom property).
+* **Fix:** Max-width blocks (such as a constrained heading) now follow their text alignment instead of always centering.
+* **Fix:** Form Builder editor no longer triggers a `useSelect` re-render warning, reducing unnecessary inspector re-renders.
+* **Compat:** Lowered the minimum PHP requirement from 8.0 to 7.4.
+* **Security:** Hardened six medium-severity findings (S1–S6).
+* **Internal:** Full WordPress Plugin Check (PCP) compliance pass — replaced `error_log()` with `wp_trigger_error()`, prefixed all globals, and resolved direct-database-query, alternative-function, and code-offloading warnings.
+* **Internal:** Reorganized the `includes/` directory into a concern-based layout (file moves only, no behavior change).
+* **Internal:** Added happy-path end-to-end test sweeps across all blocks and patterns, with automatic cleanup.
 
 = 2.1.2 - 2026-05-13 =
 
@@ -574,11 +589,14 @@ For the full version history prior to 2.0, see [CHANGELOG.md](https://github.com
 
 == Upgrade Notice ==
 
+= 2.2.0 =
+Responsive Column Min Width for Grid and Icon List, Scrolling Gallery image-fit control, automatic migration of legacy block markup (no more "Attempt Recovery"), form-border and max-width alignment fixes, PHP 7.4 support, and a Plugin Check + security pass.
+
 = 2.1.1 =
 Patch fix for WordPress 6.7+: eliminates `_load_textdomain_just_in_time` PHP notices triggered by early translation function calls. Recommended for all sites.
 
 = 2.1.0 =
-Major update: Dynamic Query block family (list any posts/users/terms with filters, pagination, and faceted counts), Dynamic Tags picker for live data, native WordPress 6.9 Block Bindings, field sources for Meta Box / Pods / JetEngine, conditional block visibility, per-URL Markdown, Hover Effects extension, grid column toolbar + row span, and a full editor UX refresh (standardized inspectors, new onboarding). Security hardening for form redirects, Draft Mode REST endpoints, and CSS style bindings. Visual Revision Comparison removed (WordPress 7.0 ships a native replacement).
+Major update: Dynamic Query block family (posts/users/terms with filters, pagination, faceted counts), Dynamic Tags, native WP 6.9 Block Bindings, Meta Box/Pods/JetEngine field sources, conditional visibility, per-URL Markdown, Hover Effects, editor UX refresh, and security hardening.
 
 = 2.0.33 =
 Fixes form block kses validation failures for select and phone fields, expands phone field to 60+ country codes via JS hydration, adds map geocoding fallback with error handling, and makes Deactivate the primary action in the deactivation modal.
@@ -608,7 +626,7 @@ New icon-list vertical alignment, icon search aliases, optional slider height, f
 Adds Icon Button hover animations, Section color picker alpha channel, polka-dots pattern with opacity, and fixes for parallax feedback loops, spacing preset overrides, icon list defaults, and REST sanitization.
 
 = 2.0.0 =
-Major update: 3 new blocks (Comparison Table, Timeline, Advanced Heading), 2 new extensions (Grid Mobile Order, SVG Patterns with 25+ background patterns), shape dividers for sections, 150+ patterns and 12 homepage templates, frontend draft preview mode, improved Icon Button link settings, lazy loading for faster editor performance, reduced motion accessibility support, plus numerous bug fixes and a security improvement.
+Major update: 3 new blocks (Comparison Table, Timeline, Advanced Heading), 2 new extensions (Grid Mobile Order, SVG Patterns), shape dividers, 150+ patterns and 12 homepage templates, frontend draft preview, lazy editor loading, reduced motion support, plus bug fixes and a security improvement.
 
 = 1.4.1 =
 Bug fix release: Fixes Grid block type safety for WordPress 6.1+ spacing presets, Row/Grid alignment consistency, Icon Button width migration, and improved llms.txt conflict handling with admin UI resolution.

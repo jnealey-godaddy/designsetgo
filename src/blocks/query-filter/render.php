@@ -259,7 +259,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 		}
 
 		// Fix 4: noscript submit so no-JS users can apply checkbox filters.
-		$dsgo_nojs_btn      = '<noscript><button type="submit" class="dsgo-query-filter__nojs-submit">' . esc_html__( 'Apply filter', 'designsetgo' ) . '</button></noscript>';
+		$designsetgo_nojs_btn      = '<noscript><button type="submit" class="dsgo-query-filter__nojs-submit">' . esc_html__( 'Apply filter', 'designsetgo' ) . '</button></noscript>';
 		$list_class_parts   = array( 'dsgo-query-filter__checkbox-list' );
 		if ( 'horizontal' === $orientation ) {
 			$list_class_parts[] = 'is-horizontal';
@@ -282,7 +282,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 				$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				esc_html( $label ),
 				$items_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- per-field escaped above.
-				$dsgo_nojs_btn, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
+				$designsetgo_nojs_btn, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
 				esc_attr( $list_class )
 			);
 		} else {
@@ -290,7 +290,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 				'<form %1$s method="get" action=""><div class="%4$s">%2$s</div>%3$s</form>',
 				$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				$items_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				$dsgo_nojs_btn, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
+				$designsetgo_nojs_btn, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
 				esc_attr( $list_class )
 			);
 		}
@@ -373,7 +373,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_active' ) ) :
 			);
 			$new_url = $qs_encoded ? $base . '?' . $qs_encoded : $base;
 			// Derive a human dimension label from the URL key: "filter_post_tag" → "post tag".
-			$dsgo_dimension = 'q' === $p['key']
+			$designsetgo_dimension = 'q' === $p['key']
 				? __( 'search', 'designsetgo' )
 				: str_replace( array( 'filter_', '_' ), array( '', ' ' ), $p['key'] );
 			$chips_html .= sprintf(
@@ -386,7 +386,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_active' ) ) :
 					sprintf(
 						/* translators: 1: filter dimension name (e.g. "category"), 2: filter value (e.g. "photography") */
 						__( 'Remove %1$s: %2$s', 'designsetgo' ),
-						$dsgo_dimension,
+						$designsetgo_dimension,
 						$p['value']
 					)
 				)
@@ -455,58 +455,58 @@ endif;
 // every helper above is defined by the time we invoke one.
 // ---------------------------------------------------------------------------
 
-$dsgo_query_id = isset( $block->context['designsetgo/queryId'] )
+$designsetgo_query_id = isset( $block->context['designsetgo/queryId'] )
 	? sanitize_key( (string) $block->context['designsetgo/queryId'] )
 	: '';
 
-if ( '' === $dsgo_query_id ) {
+if ( '' === $designsetgo_query_id ) {
 	return;
 }
 
-$dsgo_filter_kind        = isset( $attributes['filterKind'] ) ? sanitize_key( (string) $attributes['filterKind'] ) : 'checkbox';
-$dsgo_filter_param       = isset( $attributes['paramName'] ) ? sanitize_key( (string) $attributes['paramName'] ) : '';
-$dsgo_filter_label       = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
-$dsgo_filter_placeholder = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : '';
-$dsgo_filter_taxonomy    = isset( $attributes['taxonomy'] ) ? sanitize_key( (string) $attributes['taxonomy'] ) : 'category';
-$dsgo_filter_orientation = ( isset( $attributes['orientation'] ) && 'horizontal' === $attributes['orientation'] ) ? 'horizontal' : 'vertical';
+$designsetgo_filter_kind        = isset( $attributes['filterKind'] ) ? sanitize_key( (string) $attributes['filterKind'] ) : 'checkbox';
+$designsetgo_filter_param       = isset( $attributes['paramName'] ) ? sanitize_key( (string) $attributes['paramName'] ) : '';
+$designsetgo_filter_label       = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
+$designsetgo_filter_placeholder = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : '';
+$designsetgo_filter_taxonomy    = isset( $attributes['taxonomy'] ) ? sanitize_key( (string) $attributes['taxonomy'] ) : 'category';
+$designsetgo_filter_orientation = ( isset( $attributes['orientation'] ) && 'horizontal' === $attributes['orientation'] ) ? 'horizontal' : 'vertical';
 // Default `filterStyle` is `default` (classic checkboxes) to preserve the
 // look of pre-existing saved blocks that have no `filterStyle` attribute.
 // New inserts through the inserter variation opt into `underline` explicitly
 // — see the variation attributes in src/blocks/query-filter/variations.js.
-$dsgo_filter_style       = isset( $attributes['filterStyle'] ) && in_array( $attributes['filterStyle'], array( 'pill', 'underline' ), true )
+$designsetgo_filter_style       = isset( $attributes['filterStyle'] ) && in_array( $attributes['filterStyle'], array( 'pill', 'underline' ), true )
 	? $attributes['filterStyle']
 	: 'default';
 
 // Post-type scope for counts: only non-empty when the parent query targets a
 // specific post type (source === 'posts'). Users/terms sources leave it empty
 // so the count query runs unscoped (those rows carry post_type='' anyway).
-$dsgo_query_source    = isset( $block->context['designsetgo/querySource'] )
+$designsetgo_query_source    = isset( $block->context['designsetgo/querySource'] )
 	? sanitize_key( (string) $block->context['designsetgo/querySource'] )
 	: 'posts';
-$dsgo_query_post_type = '';
-if ( 'posts' === $dsgo_query_source && isset( $block->context['designsetgo/queryPostType'] ) ) {
-	$dsgo_query_post_type = sanitize_key( (string) $block->context['designsetgo/queryPostType'] );
+$designsetgo_query_post_type = '';
+if ( 'posts' === $designsetgo_query_source && isset( $block->context['designsetgo/queryPostType'] ) ) {
+	$designsetgo_query_post_type = sanitize_key( (string) $block->context['designsetgo/queryPostType'] );
 }
 
 // Whether to show (N) counts next to filter options (default: true).
-$dsgo_show_counts = ! isset( $attributes['showCounts'] ) || (bool) $attributes['showCounts'];
+$designsetgo_show_counts = ! isset( $attributes['showCounts'] ) || (bool) $attributes['showCounts'];
 
 // Extract active filters from $_GET so count queries respect the current
 // filter state. On the REST-refresh path, $_GET has been overlaid by the
 // REST controller with the incoming params, so this is always up-to-date.
-$dsgo_active_filters = array();
-foreach ( (array) $_GET as $dsgo_k => $dsgo_v ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$dsgo_k = sanitize_key( (string) $dsgo_k );
-	if ( '' === $dsgo_k ) {
+$designsetgo_active_filters = array();
+foreach ( (array) $_GET as $designsetgo_k => $designsetgo_v ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$designsetgo_k = sanitize_key( (string) $designsetgo_k );
+	if ( '' === $designsetgo_k ) {
 		continue;
 	}
-	if ( 0 === strpos( $dsgo_k, 'filter_' ) ) {
-		if ( is_array( $dsgo_v ) ) {
-			$dsgo_active_filters[ $dsgo_k ] = array_map( 'sanitize_text_field', wp_unslash( $dsgo_v ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	if ( 0 === strpos( $designsetgo_k, 'filter_' ) ) {
+		if ( is_array( $designsetgo_v ) ) {
+			$designsetgo_active_filters[ $designsetgo_k ] = array_map( 'sanitize_text_field', wp_unslash( $designsetgo_v ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		} else {
-			$dsgo_val = sanitize_text_field( wp_unslash( (string) $dsgo_v ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			if ( '' !== $dsgo_val ) {
-				$dsgo_active_filters[ $dsgo_k ] = array( $dsgo_val );
+			$designsetgo_val = sanitize_text_field( wp_unslash( (string) $designsetgo_v ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			if ( '' !== $designsetgo_val ) {
+				$designsetgo_active_filters[ $designsetgo_k ] = array( $designsetgo_val );
 			}
 		}
 	}
@@ -514,12 +514,12 @@ foreach ( (array) $_GET as $dsgo_k => $dsgo_v ) { // phpcs:ignore WordPress.Secu
 
 // Re-key active_filters to use the bare taxonomy slug (strip "filter_" prefix)
 // because FilterIndex::count_for_options() expects filter keys, not URL param names.
-$dsgo_active_filters_by_key = array();
-foreach ( $dsgo_active_filters as $dsgo_param_key => $dsgo_param_values ) {
-	$dsgo_filter_key = 'filter_' === substr( $dsgo_param_key, 0, 7 )
-		? substr( $dsgo_param_key, 7 )
-		: $dsgo_param_key;
-	$dsgo_active_filters_by_key[ $dsgo_filter_key ] = $dsgo_param_values;
+$designsetgo_active_filters_by_key = array();
+foreach ( $designsetgo_active_filters as $designsetgo_param_key => $designsetgo_param_values ) {
+	$designsetgo_filter_key = 'filter_' === substr( $designsetgo_param_key, 0, 7 )
+		? substr( $designsetgo_param_key, 7 )
+		: $designsetgo_param_key;
+	$designsetgo_active_filters_by_key[ $designsetgo_filter_key ] = $designsetgo_param_values;
 }
 
 // Translate taxonomy slugs in active_filters_by_key to term IDs.
@@ -531,49 +531,49 @@ foreach ( $dsgo_active_filters as $dsgo_param_key => $dsgo_param_values ) {
 //
 // Meta filters store their value verbatim — no translation needed.
 if ( class_exists( '\DesignSetGo\Blocks\Query\FilterRegistry' ) ) {
-	$dsgo_registered_filters = \DesignSetGo\Blocks\Query\FilterRegistry::all();
-	foreach ( $dsgo_active_filters_by_key as $dsgo_fk => $dsgo_fv ) {
-		$dsgo_filter_config = $dsgo_registered_filters[ $dsgo_fk ] ?? null;
-		if ( ! $dsgo_filter_config || 'taxonomy' !== ( $dsgo_filter_config['type'] ?? '' ) ) {
+	$designsetgo_registered_filters = \DesignSetGo\Blocks\Query\FilterRegistry::all();
+	foreach ( $designsetgo_active_filters_by_key as $designsetgo_fk => $designsetgo_fv ) {
+		$designsetgo_filter_config = $designsetgo_registered_filters[ $designsetgo_fk ] ?? null;
+		if ( ! $designsetgo_filter_config || 'taxonomy' !== ( $designsetgo_filter_config['type'] ?? '' ) ) {
 			continue; // Meta or unknown — values are already in the correct format.
 		}
-		// Keep the loop variable distinct from $dsgo_filter_taxonomy, which holds
+		// Keep the loop variable distinct from $designsetgo_filter_taxonomy, which holds
 		// this block's own taxonomy and is needed later for the is_available()
 		// check and the render-dispatch switch.
-		$dsgo_iter_taxonomy = (string) ( $dsgo_filter_config['source'] ?? '' );
-		if ( '' === $dsgo_iter_taxonomy ) {
+		$designsetgo_iter_taxonomy = (string) ( $designsetgo_filter_config['source'] ?? '' );
+		if ( '' === $designsetgo_iter_taxonomy ) {
 			continue;
 		}
-		$dsgo_translated = array();
-		foreach ( (array) $dsgo_fv as $dsgo_slug_or_id ) {
-			$dsgo_slug_or_id = (string) $dsgo_slug_or_id;
-			if ( ctype_digit( $dsgo_slug_or_id ) ) {
+		$designsetgo_translated = array();
+		foreach ( (array) $designsetgo_fv as $designsetgo_slug_or_id ) {
+			$designsetgo_slug_or_id = (string) $designsetgo_slug_or_id;
+			if ( ctype_digit( $designsetgo_slug_or_id ) ) {
 				// Already a numeric ID — pass through as-is.
-				$dsgo_translated[] = $dsgo_slug_or_id;
+				$designsetgo_translated[] = $designsetgo_slug_or_id;
 				continue;
 			}
-			$dsgo_term = get_term_by( 'slug', $dsgo_slug_or_id, $dsgo_iter_taxonomy );
-			if ( $dsgo_term instanceof \WP_Term ) {
-				$dsgo_translated[] = (string) $dsgo_term->term_id;
+			$designsetgo_term = get_term_by( 'slug', $designsetgo_slug_or_id, $designsetgo_iter_taxonomy );
+			if ( $designsetgo_term instanceof \WP_Term ) {
+				$designsetgo_translated[] = (string) $designsetgo_term->term_id;
 			}
 		}
-		$dsgo_active_filters_by_key[ $dsgo_fk ] = $dsgo_translated;
+		$designsetgo_active_filters_by_key[ $designsetgo_fk ] = $designsetgo_translated;
 	}
-	unset( $dsgo_registered_filters, $dsgo_filter_config, $dsgo_iter_taxonomy, $dsgo_translated, $dsgo_slug_or_id, $dsgo_term );
+	unset( $designsetgo_registered_filters, $designsetgo_filter_config, $designsetgo_iter_taxonomy, $designsetgo_translated, $designsetgo_slug_or_id, $designsetgo_term );
 }
 
 // Only render counts when the filter is indexed AND showCounts is enabled.
-$dsgo_counts_enabled = $dsgo_show_counts
+$designsetgo_counts_enabled = $designsetgo_show_counts
 	&& class_exists( '\DesignSetGo\Blocks\Query\FilterIndex' )
-	&& \DesignSetGo\Blocks\Query\FilterIndex::is_available( $dsgo_filter_taxonomy );
+	&& \DesignSetGo\Blocks\Query\FilterIndex::is_available( $designsetgo_filter_taxonomy );
 
-$dsgo_filter_wrapper = get_block_wrapper_attributes(
+$designsetgo_filter_wrapper = get_block_wrapper_attributes(
 	array(
-		'class'                 => 'dsgo-query-filter dsgo-query-filter--' . esc_attr( $dsgo_filter_kind ),
+		'class'                 => 'dsgo-query-filter dsgo-query-filter--' . esc_attr( $designsetgo_filter_kind ),
 		'data-wp-interactive'   => 'designsetgo/query',
-		'data-dsgo-query-id'    => $dsgo_query_id,
-		'data-dsgo-filter-kind' => $dsgo_filter_kind,
-		'data-dsgo-param'       => $dsgo_filter_param,
+		'data-dsgo-query-id'    => $designsetgo_query_id,
+		'data-dsgo-filter-kind' => $designsetgo_filter_kind,
+		'data-dsgo-param'       => $designsetgo_filter_param,
 	)
 );
 // Seed IAPI context so `getContext()` inside setFilter / toggleFilter /
@@ -583,11 +583,11 @@ $dsgo_filter_wrapper = get_block_wrapper_attributes(
 // JSON_HEX_APOS defends the single-quoted attribute boundary against a
 // stray apostrophe in any future context value (today all four are quote-
 // free: sanitize_key / false / esc_url_raw / wp_create_nonce).
-$dsgo_filter_wrapper .= sprintf(
+$designsetgo_filter_wrapper .= sprintf(
 	" data-wp-context='%s'",
 	wp_json_encode(
 		array(
-			'queryId' => $dsgo_query_id,
+			'queryId' => $designsetgo_query_id,
 			'busy'    => false,
 			'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
 			'nonce'   => wp_create_nonce( 'wp_rest' ),
@@ -596,25 +596,25 @@ $dsgo_filter_wrapper .= sprintf(
 	)
 );
 
-switch ( $dsgo_filter_kind ) {
+switch ( $designsetgo_filter_kind ) {
 	case 'search':
-		designsetgo_query_filter_render_search( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_placeholder );
+		designsetgo_query_filter_render_search( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_placeholder );
 		break;
 	case 'sort':
-		$dsgo_sort_options = isset( $attributes['sortOptions'] ) ? (array) $attributes['sortOptions'] : array();
-		designsetgo_query_filter_render_sort( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_sort_options );
+		$designsetgo_sort_options = isset( $attributes['sortOptions'] ) ? (array) $attributes['sortOptions'] : array();
+		designsetgo_query_filter_render_sort( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_sort_options );
 		break;
 	case 'select':
-		designsetgo_query_filter_render_select( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy, $dsgo_counts_enabled, $dsgo_active_filters_by_key, $dsgo_query_post_type );
+		designsetgo_query_filter_render_select( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type );
 		break;
 	case 'active':
-		designsetgo_query_filter_render_active( $dsgo_filter_wrapper, $dsgo_filter_label );
+		designsetgo_query_filter_render_active( $designsetgo_filter_wrapper, $designsetgo_filter_label );
 		break;
 	case 'reset':
-		designsetgo_query_filter_render_reset( $dsgo_filter_wrapper, $dsgo_filter_label );
+		designsetgo_query_filter_render_reset( $designsetgo_filter_wrapper, $designsetgo_filter_label );
 		break;
 	case 'checkbox':
 	default:
-		designsetgo_query_filter_render_checkbox( $dsgo_filter_wrapper, $dsgo_filter_param, $dsgo_filter_label, $dsgo_filter_taxonomy, $dsgo_counts_enabled, $dsgo_active_filters_by_key, $dsgo_query_post_type, $dsgo_filter_orientation, $dsgo_filter_style );
+		designsetgo_query_filter_render_checkbox( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type, $designsetgo_filter_orientation, $designsetgo_filter_style );
 		break;
 }

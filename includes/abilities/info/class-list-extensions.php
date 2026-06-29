@@ -199,7 +199,7 @@ class List_Extensions extends Abstract_Ability {
 							'blocks'      => array(
 								'description' => __( 'Which blocks this extension applies to. "all" means all blocks (with possible exclusions).', 'designsetgo' ),
 							),
-							'exclude'     => array(
+							'exclude'     => array( // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- REST schema property describing an extension's block-exclusion list, not a get_posts() query.
 								'type'        => 'array',
 								'description' => __( 'Blocks excluded from this extension', 'designsetgo' ),
 							),
@@ -322,7 +322,7 @@ class List_Extensions extends Abstract_Ability {
 				'label'       => $label,
 				'description' => $description,
 				'blocks'      => $config['blocks'],
-				'exclude'     => $config['exclude'] ?? array(),
+				'exclude'     => $config['exclude'] ?? array(), // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- Passes through an extension's block-exclusion list, not a get_posts() query.
 				'attributes'  => $config['attributes'],
 			);
 		}

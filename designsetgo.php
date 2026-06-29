@@ -3,9 +3,9 @@
  * Plugin Name:       DesignSetGo
  * Plugin URI:        https://designsetgoblocks.com
  * Description:       Professional Gutenberg block library with 52 blocks and 16 powerful extensions - complete Form Builder, container system, interactive elements, maps, modals, breadcrumbs, timelines, scroll effects, and animations. Built with WordPress standards for guaranteed editor/frontend parity.
- * Version:           2.1.2
+ * Version:           2.2.0
  * Requires at least: 6.7
- * Requires PHP:      8.0
+ * Requires PHP:      7.4
  * Author:            DesignSetGo
  * Author URI:        https://designsetgoblocks.com/nealey
  * License:           GPL-2.0-or-later
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'DESIGNSETGO_VERSION', '2.1.2' );
+define( 'DESIGNSETGO_VERSION', '2.2.0' );
 define( 'DESIGNSETGO_FILE', __FILE__ );
 define( 'DESIGNSETGO_PATH', plugin_dir_path( __FILE__ ) );
 define( 'DESIGNSETGO_URL', plugin_dir_url( __FILE__ ) );
@@ -36,17 +36,22 @@ require_once DESIGNSETGO_PATH . 'includes/class-plugin.php';
 /**
  * Load animation attributes helper (used by dynamic blocks).
  */
-require_once DESIGNSETGO_PATH . 'includes/block-animation-attributes.php';
+require_once DESIGNSETGO_PATH . 'includes/data/block-animation-attributes.php';
 
 /**
  * Load SVG icon library (used by dynamic blocks).
  */
-require_once DESIGNSETGO_PATH . 'includes/icon-svg-library.php';
+require_once DESIGNSETGO_PATH . 'includes/data/icon-svg-library.php';
 
 /**
  * Load breadcrumbs helper functions (used by breadcrumbs block).
  */
-require_once DESIGNSETGO_PATH . 'includes/breadcrumbs-functions.php';
+require_once DESIGNSETGO_PATH . 'includes/features/breadcrumbs-functions.php';
+
+/**
+ * Load pattern placeholder image helper (used by block patterns).
+ */
+require_once DESIGNSETGO_PATH . 'includes/patterns/placeholder-images.php';
 
 /**
  * Initialize the plugin.

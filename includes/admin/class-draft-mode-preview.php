@@ -223,6 +223,7 @@ class Draft_Mode_Preview {
 			array(
 				'post_type'      => 'page',
 				'post_status'    => 'publish',
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Bounded by posts_per_page (default 100, filterable), fetches IDs only, and the result is cached in a transient for 10 minutes; the meta lookup runs at most once per cache window.
 				'meta_key'       => Draft_Mode::META_HAS_DRAFT,
 				'posts_per_page' => $posts_per_page,
 				'fields'         => 'ids',

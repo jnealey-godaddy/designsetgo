@@ -265,6 +265,281 @@ function V4ShapeDivider({
 	);
 }
 
+// Version 6: Block animations extension before lean serialization.
+// In commit 634833e5, addAnimationSaveProps was changed to only output data
+// attributes that differ from the defaults. Previously it always output all
+// animation data attrs (trigger, duration, delay, easing, offset, once,
+// exit-animation) regardless of their values. Patterns saved before that
+// change (e.g. pricing/pricing-tabs) have all attrs in their stored HTML.
+// Current serialization omits the default-value attrs, so the stored HTML no
+// longer matches and the block shows "Attempt Recovery".
+//
+// isEligible targets the legacy signature: sections that are animated AND
+// whose stored HTML contains data-dsgo-animation-trigger= (only the old
+// save-props filter always emitted that attribute; the current filter omits
+// it when it equals the default "scroll").
+//
+// save() reproduces the legacy HTML by passing the missing default-value attrs
+// directly into useBlockProps.save(). blocks.getSaveContent.extraProps still
+// runs on top and overrides any non-default-value attrs with the same values,
+// so the net output matches the stored markup exactly.
+//
+// migrate() is a passthrough — only the serialised HTML differs, not the
+// attribute values themselves.
+//
+// NOTE: the dsgoAnimation* attributes referenced in isEligible()/save() below
+// are intentionally NOT listed in `attributes` here. They are injected onto
+// every block's schema by the block-animations extension's
+// blocks.registerBlockType filter at registration time — and that filter pass
+// runs on each deprecated entry too, so the deprecated block type ends up with
+// them automatically. This is the same extension-injected attribute pattern
+// documented on the accordion and pill v1 deprecations in this repo.
+const v6 = {
+	supports: sharedSupports,
+	attributes: {
+		align: { type: 'string', default: 'full' },
+		tagName: { type: 'string', default: 'div' },
+		constrainWidth: { type: 'boolean', default: true },
+		contentWidth: { type: 'string', default: '' },
+		style: { type: 'object' },
+		hoverBackgroundColor: { type: 'string', default: '' },
+		hoverTextColor: { type: 'string', default: '' },
+		hoverIconBackgroundColor: { type: 'string', default: '' },
+		hoverButtonBackgroundColor: { type: 'string', default: '' },
+		overlayColor: { type: 'string', default: '' },
+		shapeDividerTop: { type: 'string', default: '' },
+		shapeDividerTopColor: { type: 'string', default: '' },
+		shapeDividerTopHeight: { type: 'number', default: 100 },
+		shapeDividerTopWidth: { type: 'number', default: 100 },
+		shapeDividerTopFlipX: { type: 'boolean', default: false },
+		shapeDividerTopFlipY: { type: 'boolean', default: false },
+		shapeDividerTopFront: { type: 'boolean', default: false },
+		shapeDividerTopBackgroundColor: { type: 'string', default: '' },
+		shapeDividerBottom: { type: 'string', default: '' },
+		shapeDividerBottomColor: { type: 'string', default: '' },
+		shapeDividerBottomHeight: { type: 'number', default: 100 },
+		shapeDividerBottomWidth: { type: 'number', default: 100 },
+		shapeDividerBottomFlipX: { type: 'boolean', default: false },
+		shapeDividerBottomFlipY: { type: 'boolean', default: false },
+		shapeDividerBottomFront: { type: 'boolean', default: false },
+		shapeDividerBottomBackgroundColor: { type: 'string', default: '' },
+	},
+	/**
+	 * Matches sections saved with the old animation filter that always emitted
+	 * all data attrs. The presence of data-dsgo-animation-trigger= in the
+	 * stored HTML is the unique signature — current serialization never outputs
+	 * that attribute when it holds the default value "scroll".
+	 *
+	 * @param {Object} attributes      - Block attributes
+	 * @param {Array}  innerBlocks     - Inner blocks
+	 * @param {Object} extra           - Extra data including innerHTML
+	 * @param {string} extra.innerHTML - The stored serialised HTML
+	 * @return {boolean} True when the legacy animation-attrs pattern is detected
+	 */
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		return !!(
+			attributes.dsgoAnimationEnabled &&
+			innerHTML &&
+			innerHTML.includes('data-dsgo-animation-trigger=')
+		);
+	},
+	/**
+	 * Reproduces the legacy outer-element HTML by passing the data attrs that
+	 * the old animation filter always emitted (trigger, delay, easing, offset,
+	 * once, exit-animation, duration) directly into useBlockProps.save().
+	 *
+	 * blocks.getSaveContent.extraProps (the current lean animation filter) still
+	 * runs on top. For non-default values it overrides with the same value;
+	 * for default values the current filter emits nothing so these props survive
+	 * in the final markup — matching the stored legacy HTML exactly.
+	 *
+	 * @param {Object} root0            Props
+	 * @param {Object} root0.attributes Block attributes
+	 * @return {JSX.Element} Save element
+	 */
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			backgroundColor,
+			textColor,
+			constrainWidth,
+			contentWidth,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			overlayColor,
+			// Shape divider attributes
+			shapeDividerTop,
+			shapeDividerTopColor,
+			shapeDividerTopBackgroundColor,
+			shapeDividerTopHeight,
+			shapeDividerTopWidth,
+			shapeDividerTopFlipX,
+			shapeDividerTopFlipY,
+			shapeDividerTopFront,
+			shapeDividerBottom,
+			shapeDividerBottomColor,
+			shapeDividerBottomBackgroundColor,
+			shapeDividerBottomHeight,
+			shapeDividerBottomWidth,
+			shapeDividerBottomFlipX,
+			shapeDividerBottomFlipY,
+			shapeDividerBottomFront,
+			// Animation attributes injected by the block-animations extension
+			dsgoAnimationEnabled,
+			dsgoEntranceAnimation,
+			dsgoExitAnimation,
+			dsgoAnimationTrigger,
+			dsgoAnimationDuration,
+			dsgoAnimationDelay,
+			dsgoAnimationEasing,
+			dsgoAnimationOffset,
+			dsgoAnimationOnce,
+		} = attributes;
+
+		const sectionBackgroundColor =
+			attributes.style?.color?.background ||
+			(backgroundColor
+				? `var(--wp--preset--color--${backgroundColor})`
+				: '');
+
+		const sectionTextColor =
+			attributes.style?.color?.text ||
+			(textColor ? `var(--wp--preset--color--${textColor})` : '');
+
+		const className = [
+			'dsgo-stack',
+			!constrainWidth && 'dsgo-no-width-constraint',
+			overlayColor && 'dsgo-stack--has-overlay',
+			(shapeDividerTop || shapeDividerBottom) &&
+				'dsgo-stack--has-shape-divider',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+
+		// When animated, include ALL the data attrs that the old save-props filter
+		// always emitted. The current lean filter (blocks.getSaveContent.extraProps)
+		// still runs on top — it overrides non-default values with the same value
+		// and leaves default-value attrs (trigger, easing, offset, once, delay=0,
+		// exit-animation="") that it no longer emits, reproducing the legacy HTML.
+		const legacyAnimationAttrs = dsgoAnimationEnabled
+			? {
+					'data-dsgo-animation-enabled': 'true',
+					'data-dsgo-entrance-animation': dsgoEntranceAnimation || '',
+					'data-dsgo-exit-animation': dsgoExitAnimation || '',
+					'data-dsgo-animation-trigger':
+						dsgoAnimationTrigger || 'scroll',
+					'data-dsgo-animation-duration':
+						dsgoAnimationDuration ?? 600,
+					'data-dsgo-animation-delay': dsgoAnimationDelay ?? 0,
+					'data-dsgo-animation-easing':
+						dsgoAnimationEasing || 'ease-out',
+					'data-dsgo-animation-offset': dsgoAnimationOffset ?? 100,
+					'data-dsgo-animation-once':
+						dsgoAnimationOnce !== false ? 'true' : 'false',
+				}
+			: {};
+
+		const blockProps = useBlockProps.save({
+			className,
+			...legacyAnimationAttrs,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+				...(overlayColor && {
+					'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+					'--dsgo-overlay-opacity': '0.8',
+				}),
+			},
+		});
+
+		const innerStyle = {};
+		if (constrainWidth) {
+			innerStyle.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyle.marginLeft = 'auto';
+			innerStyle.marginRight = 'auto';
+		}
+
+		if (shapeDividerTop) {
+			innerStyle.paddingTop = `${shapeDividerTopHeight || 100}px`;
+		}
+		if (shapeDividerBottom) {
+			innerStyle.paddingBottom = `${shapeDividerBottomHeight || 100}px`;
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-stack__inner',
+			style: innerStyle,
+		});
+
+		// Uses V4ShapeDivider — same as current save (no --dsgo-shape-gradient-dir)
+		return (
+			<TagName {...blockProps}>
+				<V4ShapeDivider
+					shape={shapeDividerTop}
+					color={
+						convertColorToCSSVar(shapeDividerTopColor) ||
+						sectionBackgroundColor
+					}
+					backgroundColor={
+						convertColorToCSSVar(shapeDividerTopBackgroundColor) ||
+						sectionTextColor
+					}
+					height={shapeDividerTopHeight}
+					width={shapeDividerTopWidth}
+					flipX={shapeDividerTopFlipX}
+					flipY={shapeDividerTopFlipY}
+					front={shapeDividerTopFront}
+					position="top"
+				/>
+				<div {...innerBlocksProps} />
+				<V4ShapeDivider
+					shape={shapeDividerBottom}
+					color={
+						convertColorToCSSVar(shapeDividerBottomColor) ||
+						sectionBackgroundColor
+					}
+					backgroundColor={
+						convertColorToCSSVar(
+							shapeDividerBottomBackgroundColor
+						) || sectionTextColor
+					}
+					height={shapeDividerBottomHeight}
+					width={shapeDividerBottomWidth}
+					flipX={shapeDividerBottomFlipX}
+					flipY={shapeDividerBottomFlipY}
+					front={shapeDividerBottomFront}
+					position="bottom"
+				/>
+			</TagName>
+		);
+	},
+	migrate(attributes) {
+		return attributes;
+	},
+};
+
 // Version 5: Shape dividers before gradient direction fix.
 // The anti-aliasing gradient was always applied at the top for bottom dividers
 // and bottom for top dividers, regardless of flipY. When flipY was true, this
@@ -1059,4 +1334,4 @@ const v1 = {
 };
 
 // Export deprecations in reverse chronological order (newest first)
-export default [v5, v4, v3, v2, v1];
+export default [v6, v5, v4, v3, v2, v1];

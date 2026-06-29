@@ -26,7 +26,7 @@ import {
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
-import { useEffect } from '@wordpress/element';
+import { useEffect, useMemo } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import classnames from 'classnames';
 import { useUniqueBlockId } from '../../hooks';
@@ -139,23 +139,31 @@ export default function FormBuilderEdit({
 
 	// Track child count so we can show the template chooser on first insert,
 	// and build the reply-to dropdown options from the actual form fields.
-	const { hasInnerBlocks, replyToFieldOptions } = useSelect(
-		(select) => {
-			const children =
-				select('core/block-editor').getBlocks(clientId) || [];
-			const fields = children
+	//
+	// Return the store's already-memoized `getBlocks` array directly rather than
+	// a freshly-derived object/array: useSelect compares its mapSelect result by
+	// reference, so building `.filter().map()` output inside the selector makes
+	// it unstable on every call (the "useSelect returns different values" dev
+	// warning). Derive the dropdown options in a useMemo keyed on that stable
+	// array instead.
+	// `getBlocks` always returns an array (stable `[]` for an unknown clientId),
+	// so `|| []` short-circuits to that same reference and never reintroduces the
+	// instability — it's kept purely as a defensive guard.
+	const childBlocks = useSelect(
+		(select) => select('core/block-editor').getBlocks(clientId) || [],
+		[clientId]
+	);
+	const hasInnerBlocks = childBlocks.length > 0;
+	const replyToFieldOptions = useMemo(
+		() =>
+			childBlocks
 				.filter((child) => EMAILABLE_FIELD_BLOCKS.has(child.name))
 				.map((child) => ({
 					name: child.attributes?.fieldName || '',
 					label: child.attributes?.label || '',
 				}))
-				.filter((field) => !!field.name);
-			return {
-				hasInnerBlocks: children.length > 0,
-				replyToFieldOptions: fields,
-			};
-		},
-		[clientId]
+				.filter((field) => !!field.name),
+		[childBlocks]
 	);
 
 	// Keep hasFields in sync with the actual child field count so save.js can

@@ -26,19 +26,19 @@ return array(
 
 <!-- wp:designsetgo/grid {"desktopColumns":4,"style":{"spacing":{"blockGap":"var:preset|spacing|20","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"className":"dsgo-grid-cols-mobile-2"} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-4 dsgo-grid-cols-tablet-2 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint dsgo-grid-cols-mobile-2" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(4, 1fr);align-items:stretch;row-gap:var(--wp--preset--spacing--20);column-gap:var(--wp--preset--spacing--20)"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"8px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1559339352-11d035aa65de?w=300&amp;h=300&amp;fit=crop" alt="Restaurant interior 1" style="border-radius:8px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Restaurant interior 1" style="border-radius:8px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"8px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=300&amp;h=300&amp;fit=crop" alt="Restaurant interior 2" style="border-radius:8px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Restaurant interior 2" style="border-radius:8px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"8px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?w=300&amp;h=300&amp;fit=crop" alt="Restaurant interior 3" style="border-radius:8px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Restaurant interior 3" style="border-radius:8px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"8px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img src="https://images.unsplash.com/photo-1424847651672-bf20a4b0982b?w=300&amp;h=300&amp;fit=crop" alt="Restaurant interior 4" style="border-radius:8px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img src="{{dsgo:placeholder-square}}" alt="Restaurant interior 4" style="border-radius:8px"/></figure>
 <!-- /wp:image --></div></div>
 <!-- /wp:designsetgo/grid --></div></div>
 <!-- /wp:designsetgo/section -->',

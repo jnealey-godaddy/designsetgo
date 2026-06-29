@@ -127,6 +127,118 @@ function getPlaceholderText(placeholder, phoneFormat) {
 }
 
 /**
+ * Version 4: React serializes numeric `flex: 1` as `flex:1px` (it treats
+ * numeric style values for non-unitless properties as pixel values). The
+ * input's style was `style={{ flex: 1 }}` in save.js, causing WP's block
+ * serializer to emit `style="flex:1px"`. This deprecation covers that legacy
+ * era so existing blocks with `flex:1px` silently migrate to the fixed
+ * `flex:1` output produced by the corrected save.js.
+ *
+ * Distinguishing signature: `data-dsgo-country-code` present (current-format
+ * empty <select>, no <option> children) AND `style="flex:1px"` on the input.
+ * The fixed save.js emits `flex:1` (string), so `flex:1px` cannot appear in
+ * new content and uniquely identifies this legacy era.
+ */
+const v4 = {
+	supports: sharedSupports,
+	attributes: sharedAttributes,
+
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// Legacy era: current-format <select> (data-dsgo-country-code, no
+		// <option> children) but with `flex:1px` on the <input> — React added
+		// `px` to the numeric `flex: 1` value. The fixed save.js uses the
+		// string `'1'` which serializes as `flex:1`, so `flex:1px` is
+		// impossible in new content.
+		return (
+			!!innerHTML &&
+			innerHTML.includes('data-dsgo-country-code') &&
+			innerHTML.includes('flex:1px')
+		);
+	},
+
+	save({ attributes }) {
+		const {
+			fieldName,
+			label,
+			placeholder,
+			helpText,
+			required,
+			defaultValue,
+			phoneFormat,
+			showCountryCode,
+			countryCode,
+			autoFormat,
+			fieldWidth,
+		} = attributes;
+
+		const blockProps = getSaveBlockProps(fieldWidth);
+		const fieldId = `field-${fieldName}`;
+
+		return (
+			<div {...blockProps}>
+				<label htmlFor={fieldId} className="dsgo-form-field__label">
+					{label}
+					{required && (
+						<span
+							className="dsgo-form-field__required"
+							aria-label="required"
+						>
+							*
+						</span>
+					)}
+				</label>
+
+				<div
+					className="dsgo-form-field__phone-wrapper"
+					style={{ display: 'flex', gap: '0.5rem' }}
+					data-auto-format={autoFormat}
+				>
+					{showCountryCode && (
+						<select
+							name={`${fieldName}_country_code`}
+							className="dsgo-form-field__country-code"
+							data-dsgo-country-code={countryCode}
+							style={{ minWidth: '85px', flexShrink: 0 }}
+							aria-label="Country Code"
+						/>
+					)}
+					<input
+						type="tel"
+						id={fieldId}
+						name={fieldName}
+						className="dsgo-form-field__input"
+						placeholder={getPlaceholderText(
+							placeholder,
+							phoneFormat
+						)}
+						required={required || undefined}
+						defaultValue={defaultValue || undefined}
+						pattern={getPattern(phoneFormat)}
+						aria-describedby={
+							helpText ? `${fieldId}-help` : undefined
+						}
+						aria-required={required ? 'true' : undefined}
+						data-field-type="tel"
+						data-phone-format={phoneFormat}
+						style={{ flex: 1 }}
+					/>
+				</div>
+
+				{helpText && (
+					<p id={`${fieldId}-help`} className="dsgo-form-field__help">
+						{helpText}
+					</p>
+				)}
+			</div>
+		);
+	},
+
+	migrate(attributes) {
+		return attributes;
+	},
+};
+
+/**
  * Version 3: Inline country code <option> elements without `selected`
  * or `defaultvalue` attributes. Produced when wp_kses_post or the
  * site-designer-api strips data-dsgo-country-code / aria-label from
@@ -533,4 +645,4 @@ const v1 = {
 	},
 };
 
-export default [v3, v2, v1];
+export default [v4, v3, v2, v1];

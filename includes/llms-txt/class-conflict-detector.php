@@ -36,7 +36,7 @@ class Conflict_Detector {
 	 * @return bool True if a conflicting file exists.
 	 */
 	public function has_conflict(): bool {
-		if ( ! file_exists( ABSPATH . 'llms.txt' ) ) {
+		if ( ! file_exists( File_Manager::site_root_path() . 'llms.txt' ) ) {
 			return false;
 		}
 
@@ -55,7 +55,7 @@ class Conflict_Detector {
 	 * @return array|null File info or null if no conflict.
 	 */
 	public function get_info(): ?array {
-		$file_path = ABSPATH . 'llms.txt';
+		$file_path = File_Manager::site_root_path() . 'llms.txt';
 
 		if ( ! file_exists( $file_path ) ) {
 			return null;
@@ -132,7 +132,7 @@ class Conflict_Detector {
 	 * @return bool|\WP_Error True on success, WP_Error on failure.
 	 */
 	public function rename_conflicting_file() {
-		$file_path = ABSPATH . 'llms.txt';
+		$file_path = File_Manager::site_root_path() . 'llms.txt';
 
 		if ( ! file_exists( $file_path ) ) {
 			return new \WP_Error(
@@ -150,11 +150,12 @@ class Conflict_Detector {
 		}
 
 		// Generate a unique backup filename with safety limit.
-		$backup_path  = ABSPATH . 'llms.txt.bak';
+		$site_root    = File_Manager::site_root_path();
+		$backup_path  = $site_root . 'llms.txt.bak';
 		$counter      = 1;
 		$max_attempts = 100;
 		while ( file_exists( $backup_path ) && $counter <= $max_attempts ) {
-			$backup_path = ABSPATH . 'llms.txt.bak.' . $counter;
+			$backup_path = $site_root . 'llms.txt.bak.' . $counter;
 			++$counter;
 		}
 
@@ -165,7 +166,7 @@ class Conflict_Detector {
 			);
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Direct file operation required.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Renaming a sibling file within the same site-root directory; WP_Filesystem has no equivalent atomic rename.
 		$result = rename( $file_path, $backup_path );
 
 		if ( ! $result ) {

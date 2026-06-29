@@ -7,6 +7,7 @@ import {
 } from '@wordpress/block-editor';
 import {
 	RangeControl,
+	SelectControl,
 	Button,
 	Notice,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
@@ -27,6 +28,7 @@ export default function ScrollMarqueeEdit({
 		scrollSpeed,
 		imageHeight,
 		imageWidth,
+		objectFit,
 		gap,
 		rowGap,
 		borderRadius,
@@ -35,6 +37,7 @@ export default function ScrollMarqueeEdit({
 	const imageInlineStyle = {
 		height: imageHeight,
 		width: imageWidth,
+		objectFit,
 		borderRadius,
 	};
 
@@ -52,6 +55,7 @@ export default function ScrollMarqueeEdit({
 			'--dsgo-marquee-row-gap': rowGap,
 			'--dsgo-marquee-image-height': imageHeight,
 			'--dsgo-marquee-image-width': imageWidth,
+			'--dsgo-marquee-object-fit': objectFit,
 			'--dsgo-marquee-border-radius': borderRadius,
 		},
 	});
@@ -109,6 +113,7 @@ export default function ScrollMarqueeEdit({
 							scrollSpeed: 0.5,
 							imageHeight: '200px',
 							imageWidth: '300px',
+							objectFit: 'cover',
 							gap: '20px',
 							rowGap: '20px',
 							borderRadius: '8px',
@@ -192,6 +197,45 @@ export default function ScrollMarqueeEdit({
 							onChange={(value) =>
 								setAttributes({ imageWidth: value })
 							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Image Fit', 'designsetgo')}
+						hasValue={() => objectFit !== 'cover'}
+						onDeselect={() => setAttributes({ objectFit: 'cover' })}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Image Fit', 'designsetgo')}
+							value={objectFit}
+							options={[
+								{
+									label: __('Cover', 'designsetgo'),
+									value: 'cover',
+								},
+								{
+									label: __('Contain', 'designsetgo'),
+									value: 'contain',
+								},
+								{
+									label: __('Fill', 'designsetgo'),
+									value: 'fill',
+								},
+								{
+									label: __('Scale down', 'designsetgo'),
+									value: 'scale-down',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ objectFit: value })
+							}
+							help={__(
+								'How each image fills its box. Cover crops to fill; Contain fits the whole image and may letterbox.',
+								'designsetgo'
+							)}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>

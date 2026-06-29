@@ -37,7 +37,7 @@ return array(
 <!-- /wp:designsetgo/row -->
 
 <!-- wp:image {"sizeSlug":"large","style":{"spacing":{"margin":{"top":"var:preset|spacing|60"}},"border":{"radius":"16px"}},"dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"fadeInUp","dsgoAnimationDuration":800,"dsgoAnimationDelay":400,"dsgoParallaxEnabled":true,"dsgoParallaxSpeed":3} -->
-<figure class="wp-block-image size-large has-custom-border has-dsgo-animation dsgo-animation-fadeInUp dsgo-has-parallax" style="margin-top:var(--wp--preset--spacing--60)" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInUp" data-dsgo-animation-duration="800" data-dsgo-animation-delay="400" data-dsgo-parallax-enabled="true" data-dsgo-parallax-direction="up" data-dsgo-parallax-speed="3" data-dsgo-parallax-viewport-start="0" data-dsgo-parallax-viewport-end="100" data-dsgo-parallax-relative-to="viewport" data-dsgo-parallax-desktop="true" data-dsgo-parallax-tablet="true" data-dsgo-parallax-mobile="false"><img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&amp;h=700&amp;fit=crop" alt="Dashboard preview" style="border-radius:16px"/></figure>
+<figure class="wp-block-image size-large has-custom-border has-dsgo-animation dsgo-animation-fadeInUp dsgo-has-parallax" style="margin-top:var(--wp--preset--spacing--60)" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInUp" data-dsgo-animation-duration="800" data-dsgo-animation-delay="400" data-dsgo-parallax-enabled="true" data-dsgo-parallax-direction="up" data-dsgo-parallax-speed="3" data-dsgo-parallax-viewport-start="0" data-dsgo-parallax-viewport-end="100" data-dsgo-parallax-relative-to="viewport" data-dsgo-parallax-desktop="true" data-dsgo-parallax-tablet="true" data-dsgo-parallax-mobile="false" data-dsgo-parallax-rotate-enabled="false" data-dsgo-parallax-rotate-direction="cw" data-dsgo-parallax-rotate-speed="3"><img src="{{dsgo:placeholder-landscape}}" alt="Dashboard preview" style="border-radius:16px"/></figure>
 <!-- /wp:image --></div><div class="dsgo-shape-divider dsgo-shape-divider--bottom" style="--dsgo-shape-height:120px;--dsgo-shape-width:100%;--dsgo-shape-offset:-0%;--dsgo-shape-color:currentColor" aria-hidden="true"><svg viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,0 C300,120 900,0 1200,80 L1200,120 L0,120 Z"></path></svg></div></div>
 <!-- /wp:designsetgo/section -->
 
@@ -213,7 +213,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"fadeInRight","dsgoAnimationDuration":700} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack has-dsgo-animation dsgo-animation-fadeInRight" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInRight" data-dsgo-animation-duration="700"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:image {"sizeSlug":"large","style":{"border":{"radius":"16px"}},"dsgoParallaxEnabled":true} -->
-<figure class="wp-block-image size-large has-custom-border dsgo-has-parallax" data-dsgo-parallax-enabled="true" data-dsgo-parallax-direction="up" data-dsgo-parallax-speed="5" data-dsgo-parallax-viewport-start="0" data-dsgo-parallax-viewport-end="100" data-dsgo-parallax-relative-to="viewport" data-dsgo-parallax-desktop="true" data-dsgo-parallax-tablet="true" data-dsgo-parallax-mobile="false"><img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&amp;h=500&amp;fit=crop" alt="Analytics dashboard" style="border-radius:16px"/></figure>
+<figure class="wp-block-image size-large has-custom-border dsgo-has-parallax" data-dsgo-parallax-enabled="true" data-dsgo-parallax-direction="up" data-dsgo-parallax-speed="5" data-dsgo-parallax-viewport-start="0" data-dsgo-parallax-viewport-end="100" data-dsgo-parallax-relative-to="viewport" data-dsgo-parallax-desktop="true" data-dsgo-parallax-tablet="true" data-dsgo-parallax-mobile="false" data-dsgo-parallax-rotate-enabled="false" data-dsgo-parallax-rotate-direction="cw" data-dsgo-parallax-rotate-speed="3"><img src="{{dsgo:placeholder-landscape}}" alt="Analytics dashboard" style="border-radius:16px"/></figure>
 <!-- /wp:image --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/grid --></div><div class="dsgo-shape-divider dsgo-shape-divider--bottom" style="--dsgo-shape-height:80px;--dsgo-shape-width:100%;--dsgo-shape-offset:-0%;--dsgo-shape-color:#ffffff" aria-hidden="true"><svg viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,120 L1200,0 L1200,120 L0,120 Z"></path></svg></div></div>
@@ -231,7 +231,7 @@ return array(
 <!-- /wp:designsetgo/section -->
 
 <!-- wp:designsetgo/image-accordion {"gap":"8px","overlayOpacity":30,"overlayOpacityExpanded":10} -->
-<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--hover" style="--dsgo-image-accordion-height:500px;--dsgo-image-accordion-gap:8px;--dsgo-image-accordion-expanded-ratio:3;--dsgo-image-accordion-transition:0.5s;--dsgo-image-accordion-overlay-color:#000000;--dsgo-image-accordion-overlay-opacity:0.3;--dsgo-image-accordion-overlay-opacity-expanded:0.1" data-trigger-type="hover" data-default-expanded="0" data-enable-overlay="true"><div class="dsgo-image-accordion__items"><!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-1","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600\u0026h=800\u0026fit=crop"}}}} -->
+<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--hover" style="--dsgo-image-accordion-height:500px;--dsgo-image-accordion-gap:8px;--dsgo-image-accordion-expanded-ratio:3;--dsgo-image-accordion-transition:0.5s;--dsgo-image-accordion-overlay-color:#000000;--dsgo-image-accordion-overlay-opacity:0.3;--dsgo-image-accordion-overlay-opacity-expanded:0.1" data-trigger-type="hover" data-default-expanded="0" data-enable-overlay="true"><div class="dsgo-image-accordion__items"><!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-1","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-portrait}}"}}}} -->
 <div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-1" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size">Dashboard</h3>
 <!-- /wp:heading -->
@@ -241,7 +241,7 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/image-accordion-item -->
 
-<!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-2","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600\u0026h=800\u0026fit=crop"}}}} -->
+<!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-2","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-portrait}}"}}}} -->
 <div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-2" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size">Reports</h3>
 <!-- /wp:heading -->
@@ -251,7 +251,7 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/image-accordion-item -->
 
-<!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-3","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600\u0026h=800\u0026fit=crop"}}}} -->
+<!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-3","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-portrait}}"}}}} -->
 <div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-3" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size">Team Hub</h3>
 <!-- /wp:heading -->
@@ -261,7 +261,7 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/image-accordion-item -->
 
-<!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-4","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600\u0026h=800\u0026fit=crop"}}}} -->
+<!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-4","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-portrait}}"}}}} -->
 <div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-4" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size">Integrations</h3>
 <!-- /wp:heading -->

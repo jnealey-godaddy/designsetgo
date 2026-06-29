@@ -420,18 +420,14 @@ class Global_Styles {
 		$asset_file_path = DESIGNSETGO_PATH . 'build/admin.asset.php';
 
 		if ( ! file_exists( $asset_file_path ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'DesignSetGo: Admin asset file not found. Run `npm run build`.' );
-			}
+			wp_trigger_error( __METHOD__, 'DesignSetGo: Admin asset file not found. Run `npm run build`.', E_USER_NOTICE );
 			return;
 		}
 
 		$asset_file = include $asset_file_path;
 
 		if ( ! is_array( $asset_file ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'DesignSetGo: Invalid admin asset file format.' );
-			}
+			wp_trigger_error( __METHOD__, 'DesignSetGo: Invalid admin asset file format.', E_USER_NOTICE );
 			return;
 		}
 
@@ -638,10 +634,10 @@ class Global_Styles {
 		// We allow nested calls inside the args (e.g. var(--a, var(--b))) but
 		// blocklist the dangerous CSS sinks. Browsers would reject these anyway
 		// when the value resolves, but we don't want to persist them.
-		if ( preg_match( '/^(var|calc|clamp|min|max|rgba?|hsla?)\(/i', $value ) && str_ends_with( $value, ')' ) ) {
+		if ( preg_match( '/^(var|calc|clamp|min|max|rgba?|hsla?)\(/i', $value ) && ')' === substr( $value, -1 ) ) {
 			if (
-				! str_contains( $value, '<' )
-				&& ! str_contains( $value, ';' )
+				false === strpos( $value, '<' )
+				&& false === strpos( $value, ';' )
 				&& false === stripos( $value, 'url(' )
 				&& false === stripos( $value, 'expression(' )
 				&& false === stripos( $value, 'javascript:' )

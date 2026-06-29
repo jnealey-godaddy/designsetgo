@@ -16,7 +16,7 @@ import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
  * @return {JSX.Element} Icon List save component
  */
 export default function IconListSave({ attributes }) {
-	const { layout, gap, columns, alignment } = attributes;
+	const { layout, gap, columns, columnMinWidth, alignment } = attributes;
 
 	// Calculate alignment value to avoid nested ternary (must match edit.js)
 	let alignItemsValue;
@@ -50,12 +50,21 @@ export default function IconListSave({ attributes }) {
 		flexDirection = 'row';
 	}
 
+	// Grid columns: when a min width is set, auto-fit responsively (wraps,
+	// never overflows thanks to the min(100%, …) clamp); otherwise a fixed
+	// column count. Computed ahead of the object to avoid a nested ternary.
+	let gridTemplateColumns;
+	if (layout === 'grid') {
+		gridTemplateColumns = columnMinWidth
+			? `repeat(auto-fit, minmax(min(100%, ${columnMinWidth}), 1fr))`
+			: `repeat(${columns}, 1fr)`;
+	}
+
 	// Calculate container styles (must match edit.js)
 	const containerStyles = {
 		display: layout === 'grid' ? 'grid' : 'flex',
 		flexDirection,
-		gridTemplateColumns:
-			layout === 'grid' ? `repeat(${columns}, 1fr)` : undefined,
+		gridTemplateColumns,
 		gap,
 		alignItems: alignItemsValue,
 		justifyContent: justifyContentValue,

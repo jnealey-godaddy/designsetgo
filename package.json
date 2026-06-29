@@ -1,6 +1,6 @@
 {
   "name": "designsetgo",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "Professional Gutenberg block library with 46 blocks and 14 extensions - complete Form Builder, container system, interactive elements, scroll effects, and animations. Built with WordPress standards.",
   "author": "DesignSetGo",
   "license": "GPL-2.0-or-later",
@@ -57,7 +57,8 @@
     "clean:cache": "rimraf node_modules/.cache",
     "clean:cache:wp-env": "rimraf .wp-env/WordPress",
     "clean:build": "rimraf build",
-    "clean:all": "npm run clean:cache && npm run clean:cache:wp-env && npm run clean:build"
+    "clean:all": "npm run clean:cache && npm run clean:cache:wp-env && npm run clean:build",
+    "plugin-check": "npx @wordpress/env run cli -- wp plugin install plugin-check --activate --force && npx @wordpress/env run cli -- wp plugin check designsetgo --format=table --fields=code,type,message,file,line --exclude-directories=tests,bin,scripts,src,.github,.claude,.idea,docs,assets,.husky,node_modules --exclude-files=phpstan-constants.php,phpstan.neon,phpcs.xml.dist,composer.json,composer.lock,package.json,package-lock.json,webpack.config.js,playwright.config.js --ignore-codes=hidden_files,application_detected,unexpected_markdown_file"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.5",

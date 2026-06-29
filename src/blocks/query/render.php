@@ -33,21 +33,21 @@ if ( function_exists( 'wp_enqueue_script_module' ) ) {
 	wp_enqueue_script_module( 'designsetgo-query-view-script-module' );
 }
 
-$dsgo_page = max( 1, absint( get_query_var( 'paged' ) ) );
-if ( 1 === $dsgo_page ) {
-	$dsgo_page = max( 1, absint( get_query_var( 'page' ) ) );
+$designsetgo_page = max( 1, absint( get_query_var( 'paged' ) ) );
+if ( 1 === $designsetgo_page ) {
+	$designsetgo_page = max( 1, absint( get_query_var( 'page' ) ) );
 }
 
-$dsgo_query_id = isset( $attributes['queryId'] ) ? sanitize_key( (string) $attributes['queryId'] ) : '';
+$designsetgo_query_id = isset( $attributes['queryId'] ) ? sanitize_key( (string) $attributes['queryId'] ) : '';
 
-$dsgo_parsed_children = isset( $block->parsed_block['innerBlocks'] )
+$designsetgo_parsed_children = isset( $block->parsed_block['innerBlocks'] )
 	? (array) $block->parsed_block['innerBlocks']
 	: array();
 
 // Block wrapper attrs carry native-supports classes / styles / anchor id +
 // author-supplied className. We append IAPI attrs inline so the region
 // lives on a single element, giving view.js a clean swap target.
-$dsgo_wrapper_attrs = get_block_wrapper_attributes(
+$designsetgo_wrapper_attrs = get_block_wrapper_attributes(
 	array(
 		'class' => 'dsgo-query dsgo-query-region dsgo-query--source-' . sanitize_key( (string) ( $attributes['source'] ?? 'posts' ) ),
 	)
@@ -55,9 +55,9 @@ $dsgo_wrapper_attrs = get_block_wrapper_attributes(
 
 echo designsetgo_query_render_container( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from WP_Block->render() output + esc_attr()-escaped parts.
 	(array) $attributes,
-	$dsgo_parsed_children,
-	$dsgo_page,
-	$dsgo_query_id,
-	$dsgo_wrapper_attrs,
+	$designsetgo_parsed_children,
+	$designsetgo_page,
+	$designsetgo_query_id,
+	$designsetgo_wrapper_attrs,
 	(array) ( $block->context ?? array() )
 );
