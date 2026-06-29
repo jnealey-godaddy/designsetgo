@@ -5,6 +5,29 @@ All notable changes to the DesignSetGo plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-06-29
+
+### New Features
+- **Grid & Icon List: Column Min Width** — New control that switches the grid to responsive auto-fit (`repeat(auto-fit, minmax(min(100%, <value>), 1fr))`), wrapping columns to new rows instead of overflowing at every breakpoint. Icon List also gains the matching editor control it previously lacked. (#431)
+- **Scrolling Gallery: image fit** — Per-image `object-fit` ("Image Fit") control plus image height/width controls. (#428)
+
+### Bug Fixes
+- **Auto-migrate legacy markup** — Added deprecations so older Accordion, Pill, Section, Slider, Form Builder, and Phone Field content (saved by earlier versions and patterns) silently migrates instead of showing "Attempt Recovery." (#427)
+- **Form Builder: accidental border** — The form no longer renders a black border around its wrapper; WordPress core's `html :where([style*="border-color"])` rule was matching the block's `--dsgo-form-border-color` custom property. (#426)
+- **Max-width alignment** — Constrained (max-width) blocks now anchor to their text alignment instead of always centering. (#429)
+- **Form Builder: useSelect stability** — The inspector no longer returns an unstable `useSelect` result, removing the re-render warning and avoidable re-renders. (#430)
+
+### Security
+- **Medium findings S1–S6** — Hardened six medium-severity security findings. (#424)
+
+### Compatibility
+- **PHP 7.4** — Lowered the minimum PHP requirement from 8.0 to 7.4. (#411)
+
+### Internal
+- **Plugin Check (PCP) compliance** — Replaced `error_log()` with `wp_trigger_error()`, prefixed all globals, and resolved DirectDatabaseQuery, AlternativeFunctions, code-offloading, and WP query-params warnings. (#412–#422)
+- **`includes/` reorganization** — Reorganized `includes/` into a concern-based directory layout (file moves only). (#423)
+- **E2E test sweeps** — Added happy-path end-to-end sweeps across all blocks and patterns, with automatic cleanup. (#425)
+
 ## [2.1.2] - 2026-05-13
 
 ### New Features
