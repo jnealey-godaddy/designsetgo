@@ -61,6 +61,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		tagName = 'div',
 		constrainWidth,
 		contentWidth,
+		columnMinWidth,
 		desktopColumns,
 		tabletColumns,
 		mobileColumns,
@@ -127,7 +128,9 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
 	const TagName = tagName || 'div';
 	const blockProps = useBlockProps({
-		className: `dsgo-grid dsgo-grid-cols-${desktopColumns} dsgo-grid-cols-tablet-${tabletColumns} dsgo-grid-cols-mobile-${mobileColumns}`,
+		className: `dsgo-grid dsgo-grid-cols-${desktopColumns} dsgo-grid-cols-tablet-${tabletColumns} dsgo-grid-cols-mobile-${mobileColumns}${
+			columnMinWidth ? ' dsgo-grid--min-width' : ''
+		}`,
 		style: {
 			...(hoverBackgroundColor && {
 				'--dsgo-hover-bg-color':
@@ -167,7 +170,9 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 
 	const innerStyles = {
 		display: 'grid',
-		gridTemplateColumns: `repeat(${desktopColumns || 3}, 1fr)`,
+		gridTemplateColumns: columnMinWidth
+			? `repeat(auto-fit, minmax(min(100%, ${columnMinWidth}), 1fr))`
+			: `repeat(${desktopColumns || 3}, 1fr)`,
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,
 		columnGap: blockGapColumn || columnGap || defaultGap,
@@ -382,6 +387,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							columnGap: '',
 							constrainWidth: false,
 							contentWidth: '',
+							columnMinWidth: '',
 						});
 					}}
 				>
@@ -690,6 +696,29 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							/>
 						</DsgoInspectorPanel.Item>
 					)}
+
+					<DsgoInspectorPanel.Item
+						label={__('Column Min Width', 'designsetgo')}
+						hasValue={() => columnMinWidth !== ''}
+						onDeselect={() => setAttributes({ columnMinWidth: '' })}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Column Min Width', 'designsetgo')}
+							value={columnMinWidth}
+							onChange={(value) =>
+								setAttributes({ columnMinWidth: value || '' })
+							}
+							units={units}
+							__unstableInputWidth="80px"
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+							help={__(
+								'When set, the grid auto-fits as many columns as fit at this minimum width and wraps the rest to new rows, overriding the fixed column counts. Stays responsive without overflowing.',
+								'designsetgo'
+							)}
+						/>
+					</DsgoInspectorPanel.Item>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 

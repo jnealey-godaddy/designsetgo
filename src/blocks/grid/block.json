@@ -155,6 +155,10 @@
 		"contentWidth": {
 			"type": "string",
 			"default": ""
+		},
+		"columnMinWidth": {
+			"type": "string",
+			"default": ""
 		}
 	},
 	"providesContext": {
