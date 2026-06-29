@@ -98,6 +98,10 @@
 			"type": "number",
 			"default": 1
 		},
+		"columnMinWidth": {
+			"type": "string",
+			"default": ""
+		},
 		"alignment": {
 			"type": "string",
 			"default": "left"

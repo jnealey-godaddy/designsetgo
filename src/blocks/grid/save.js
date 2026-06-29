@@ -24,6 +24,7 @@ export default function GridSave({ attributes }) {
 		tagName = 'div',
 		constrainWidth,
 		contentWidth,
+		columnMinWidth,
 		desktopColumns,
 		tabletColumns,
 		mobileColumns,
@@ -91,7 +92,9 @@ export default function GridSave({ attributes }) {
 
 	const innerStyles = {
 		display: 'grid',
-		gridTemplateColumns: `repeat(${desktopColumns || 3}, 1fr)`,
+		gridTemplateColumns: columnMinWidth
+			? `repeat(${desktopColumns || 3}, minmax(${columnMinWidth}, 1fr))`
+			: `repeat(${desktopColumns || 3}, 1fr)`,
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,
 		columnGap: blockGapColumn || columnGap || defaultGap,

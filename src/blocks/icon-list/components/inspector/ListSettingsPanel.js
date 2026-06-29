@@ -23,6 +23,7 @@ export const ListSettingsPanel = ({
 	gap,
 	iconPosition,
 	columns,
+	columnMinWidth,
 	alignment,
 	iconVerticalAlignment,
 	setAttributes,
@@ -119,6 +120,35 @@ export const ListSettingsPanel = ({
 						)}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{layout === 'grid' && (
+				<DsgoInspectorPanel.Item
+					label={__('Column Min Width', 'designsetgo')}
+					hasValue={() => columnMinWidth !== ''}
+					onDeselect={() => setAttributes({ columnMinWidth: '' })}
+					isShownByDefault
+				>
+					<UnitControl
+						label={__('Column Min Width', 'designsetgo')}
+						value={columnMinWidth}
+						onChange={(value) =>
+							setAttributes({ columnMinWidth: value || '' })
+						}
+						units={[
+							{ value: 'px', label: 'px' },
+							{ value: 'em', label: 'em' },
+							{ value: 'rem', label: 'rem' },
+						]}
+						isResetValueOnUnitChange
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+						help={__(
+							'When set, the grid auto-fits as many columns as fit at this minimum width, overriding the fixed column count.',
+							'designsetgo'
+						)}
 					/>
 				</DsgoInspectorPanel.Item>
 			)}

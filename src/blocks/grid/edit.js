@@ -61,6 +61,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		tagName = 'div',
 		constrainWidth,
 		contentWidth,
+		columnMinWidth,
 		desktopColumns,
 		tabletColumns,
 		mobileColumns,
@@ -167,7 +168,9 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 
 	const innerStyles = {
 		display: 'grid',
-		gridTemplateColumns: `repeat(${desktopColumns || 3}, 1fr)`,
+		gridTemplateColumns: columnMinWidth
+			? `repeat(${desktopColumns || 3}, minmax(${columnMinWidth}, 1fr))`
+			: `repeat(${desktopColumns || 3}, 1fr)`,
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,
 		columnGap: blockGapColumn || columnGap || defaultGap,
@@ -382,6 +385,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							columnGap: '',
 							constrainWidth: false,
 							contentWidth: '',
+							columnMinWidth: '',
 						});
 					}}
 				>
@@ -690,6 +694,30 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							/>
 						</DsgoInspectorPanel.Item>
 					)}
+
+					<DsgoInspectorPanel.Item
+						label={__('Column Min Width', 'designsetgo')}
+						hasValue={() => columnMinWidth !== ''}
+						onDeselect={() => setAttributes({ columnMinWidth: '' })}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Column Min Width', 'designsetgo')}
+							value={columnMinWidth}
+							onChange={(value) =>
+								setAttributes({ columnMinWidth: value || '' })
+							}
+							units={units}
+							isResetValueOnUnitChange
+							__unstableInputWidth="80px"
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+							help={__(
+								'Sets a minimum width for each column via minmax(value, 1fr) so columns never get narrower than this. Columns still drop to the tablet/mobile counts on smaller screens.',
+								'designsetgo'
+							)}
+						/>
+					</DsgoInspectorPanel.Item>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 

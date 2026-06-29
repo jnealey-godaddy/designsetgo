@@ -41,6 +41,7 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 		gap,
 		iconPosition,
 		columns,
+		columnMinWidth,
 		alignment,
 		iconVerticalAlignment,
 	} = attributes;
@@ -81,11 +82,20 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 		flexDirection = 'row';
 	}
 
+	// Grid columns: when a min width is set, auto-fit responsively (wraps,
+	// never overflows thanks to the min(100%, …) clamp); otherwise a fixed
+	// column count. Computed ahead of the object to avoid a nested ternary.
+	let gridTemplateColumns;
+	if (layout === 'grid') {
+		gridTemplateColumns = columnMinWidth
+			? `repeat(auto-fit, minmax(min(100%, ${columnMinWidth}), 1fr))`
+			: `repeat(${columns}, 1fr)`;
+	}
+
 	const containerStyles = {
 		display: layout === 'grid' ? 'grid' : 'flex',
 		flexDirection,
-		gridTemplateColumns:
-			layout === 'grid' ? `repeat(${columns}, 1fr)` : undefined,
+		gridTemplateColumns,
 		gap,
 		alignItems: alignItemsValue,
 		justifyContent: justifyContentValue,
@@ -182,6 +192,7 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 							gap: '24px',
 							iconPosition: 'left',
 							columns: 1,
+							columnMinWidth: '',
 							alignment: 'left',
 							iconVerticalAlignment: 'top',
 						})
@@ -193,6 +204,7 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 						gap={gap}
 						iconPosition={iconPosition}
 						columns={columns}
+						columnMinWidth={columnMinWidth}
 						alignment={alignment}
 						iconVerticalAlignment={iconVerticalAlignment}
 						setAttributes={setAttributes}
