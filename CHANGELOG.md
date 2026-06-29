@@ -8,11 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.0] - 2026-06-29
 
 ### New Features
-- **Grid & Icon List: Column Min Width** — New control that switches the grid to responsive auto-fit (`repeat(auto-fit, minmax(min(100%, <value>), 1fr))`), wrapping columns to new rows instead of overflowing at every breakpoint. Icon List also gains the matching editor control it previously lacked. (#431)
+- **Grid & Icon List: Column Min Width** — New control so columns never get narrower than a set minimum. Grid uses `repeat(N, minmax(<value>, 1fr))` and keeps its responsive desktop/tablet/mobile column counts; Icon List uses `repeat(auto-fit, minmax(min(100%, <value>), 1fr))` to flow as many columns as fit. Icon List also gains the matching editor control it previously lacked. (#431)
 - **Scrolling Gallery: image fit** — Per-image `object-fit` ("Image Fit") control plus image height/width controls. (#428)
 
 ### Bug Fixes
 - **Auto-migrate legacy markup** — Added deprecations so older Accordion, Pill, Section, Slider, Form Builder, and Phone Field content (saved by earlier versions and patterns) silently migrates instead of showing "Attempt Recovery." (#427)
+- **Icon List: migrate AI-pattern grid markup** — Icon List blocks from older gd-pattern-library patterns hard-coded a responsive grid (`repeat(auto-fit, minmax(min(100%, <width>), 1fr))`) in inline CSS with no backing attribute. A deprecation now captures that inline style, recovers the width into the new `columnMinWidth` attribute, and re-renders cleanly instead of failing validation. (#431)
 - **Form Builder: accidental border** — The form no longer renders a black border around its wrapper; WordPress core's `html :where([style*="border-color"])` rule was matching the block's `--dsgo-form-border-color` custom property. (#426)
 - **Max-width alignment** — Constrained (max-width) blocks now anchor to their text alignment instead of always centering. (#429)
 - **Form Builder: useSelect stability** — The inspector no longer returns an unstable `useSelect` result, removing the re-render warning and avoidable re-renders. (#430)

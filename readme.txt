@@ -96,8 +96,9 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 = 2.2.0 - 2026-06-29 =
 
-* **New:** Grid & Icon List — a "Column Min Width" control. When set, columns auto-fit responsively (`repeat(auto-fit, minmax(min(100%, value), 1fr))`) and wrap to new rows instead of overflowing, at every breakpoint.
+* **New:** Grid & Icon List — a "Column Min Width" control so columns never get narrower than a set minimum (Grid uses `minmax(value, 1fr)` and keeps its responsive column counts; Icon List uses `auto-fit` to flow as many columns as fit).
 * **New:** Scrolling Gallery — a per-image "Image Fit" (object-fit) control, plus image height and width controls.
+* **Fix:** Icon List blocks from older AI-generated patterns (responsive grid hard-coded in inline CSS) now migrate automatically to the new Column Min Width attribute instead of showing "Attempt Recovery."
 * **Fix:** Legacy block content now auto-migrates instead of showing "Attempt Recovery." Added deprecations for older Accordion, Pill, Section, Slider, Form Builder, and Phone Field markup saved by earlier versions and patterns.
 * **Fix:** Form Builder no longer renders an accidental black border around the whole form (WordPress core's `[style*="border-color"]` rule was matching the form's CSS custom property).
 * **Fix:** Max-width blocks (such as a constrained heading) now follow their text alignment instead of always centering.

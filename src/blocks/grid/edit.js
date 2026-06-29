@@ -128,9 +128,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
 	const TagName = tagName || 'div';
 	const blockProps = useBlockProps({
-		className: `dsgo-grid dsgo-grid-cols-${desktopColumns} dsgo-grid-cols-tablet-${tabletColumns} dsgo-grid-cols-mobile-${mobileColumns}${
-			columnMinWidth ? ' dsgo-grid--min-width' : ''
-		}`,
+		className: `dsgo-grid dsgo-grid-cols-${desktopColumns} dsgo-grid-cols-tablet-${tabletColumns} dsgo-grid-cols-mobile-${mobileColumns}`,
 		style: {
 			...(hoverBackgroundColor && {
 				'--dsgo-hover-bg-color':
@@ -171,7 +169,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	const innerStyles = {
 		display: 'grid',
 		gridTemplateColumns: columnMinWidth
-			? `repeat(auto-fit, minmax(min(100%, ${columnMinWidth}), 1fr))`
+			? `repeat(${desktopColumns || 3}, minmax(${columnMinWidth}, 1fr))`
 			: `repeat(${desktopColumns || 3}, 1fr)`,
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,
@@ -715,7 +713,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 							help={__(
-								'When set, the grid auto-fits as many columns as fit at this minimum width and wraps the rest to new rows, overriding the fixed column counts. Stays responsive without overflowing.',
+								'Sets a minimum width for each column via minmax(value, 1fr) so columns never get narrower than this. Columns still drop to the tablet/mobile counts on smaller screens.',
 								'designsetgo'
 							)}
 						/>

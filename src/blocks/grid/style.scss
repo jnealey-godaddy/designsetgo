@@ -11,10 +11,10 @@
 	// wrapper handles full-width/background/padding and `.dsgo-grid__inner` is
 	// the actual grid. The global `.dsgo-grid { display: grid !important }`
 	// layout utility (block-variations.scss, frontend only) collides with this
-	// wrapper class and forces it to be a grid container — which makes the inner
-	// an indefinite-width grid item and collapses auto-fit (min-width) column
-	// sizing. Restore block here so the inner gets a definite width. The editor
-	// never loads that utility, so this also keeps editor/frontend parity.
+	// wrapper class and forces it to be a grid container, which makes the inner
+	// an indefinite-width grid item. Restore block here so the inner gets a
+	// definite width. The editor never loads that utility, so this also keeps
+	// editor/frontend parity.
 	&.dsgo-grid {
 		display: block !important;
 	}
@@ -126,14 +126,10 @@
 	// CRITICAL: Target .dsgo-grid__inner since that's where grid-template-columns is applied
 
 	// Tablet breakpoint (≤ 1024px)
-	// Skipped when a column min width is set — that grid uses responsive
-	// auto-fit (inline) at every breakpoint, so the fixed-count override must
-	// not clobber it.
 	@media (max-width: 1024px) {
 
 		@for $i from 1 through 12 {
-			&.dsgo-grid-cols-tablet-#{$i}:not(.dsgo-grid--min-width)
-				.dsgo-grid__inner {
+			&.dsgo-grid-cols-tablet-#{$i} .dsgo-grid__inner {
 				grid-template-columns: repeat(#{$i}, 1fr) !important;
 			}
 		}
@@ -143,8 +139,7 @@
 	@media (max-width: 767px) {
 
 		@for $i from 1 through 12 {
-			&.dsgo-grid-cols-mobile-#{$i}:not(.dsgo-grid--min-width)
-				.dsgo-grid__inner {
+			&.dsgo-grid-cols-mobile-#{$i} .dsgo-grid__inner {
 				grid-template-columns: repeat(#{$i}, 1fr) !important;
 			}
 		}

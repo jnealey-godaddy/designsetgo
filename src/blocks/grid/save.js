@@ -39,15 +39,12 @@ export default function GridSave({ attributes }) {
 	} = attributes;
 
 	// Build className with conditional classes
-	// `dsgo-grid--min-width` switches the grid to responsive auto-fit and
-	// disables the fixed per-breakpoint column overrides (see style.scss).
 	const className = [
 		'dsgo-grid',
 		`dsgo-grid-cols-${desktopColumns}`,
 		`dsgo-grid-cols-tablet-${tabletColumns}`,
 		`dsgo-grid-cols-mobile-${mobileColumns}`,
 		!constrainWidth && 'dsgo-no-width-constraint',
-		columnMinWidth && 'dsgo-grid--min-width',
 	]
 		.filter(Boolean)
 		.join(' ');
@@ -96,7 +93,7 @@ export default function GridSave({ attributes }) {
 	const innerStyles = {
 		display: 'grid',
 		gridTemplateColumns: columnMinWidth
-			? `repeat(auto-fit, minmax(min(100%, ${columnMinWidth}), 1fr))`
+			? `repeat(${desktopColumns || 3}, minmax(${columnMinWidth}, 1fr))`
 			: `repeat(${desktopColumns || 3}, 1fr)`,
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,
