@@ -345,6 +345,35 @@ class Test_Security_Fixes extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A browser holding a stale settings form at upgrade time echoes the legacy
+	 * bullet placeholder back on submit; it must be treated as "unchanged" and
+	 * never overwrite the stored secret.
+	 */
+	public function test_settings_update_preserves_secret_on_legacy_placeholder() {
+		wp_set_current_user( $this->admin_user );
+
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+		update_option(
+			\DesignSetGo\Admin\Settings::OPTION_NAME,
+			array( 'integrations' => array( 'turnstile_secret_key' => 'stored-secret' ) )
+		);
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+
+		\DesignSetGo\Admin\Settings::update_settings(
+			array( 'integrations' => array( 'turnstile_secret_key' => \DesignSetGo\Admin\Settings::LEGACY_REDACTED_PLACEHOLDER ) )
+		);
+
+		$this->assertSame(
+			'stored-secret',
+			\DesignSetGo\Admin\Settings::get_settings()['integrations']['turnstile_secret_key'],
+			'Legacy bullet placeholder must preserve the stored secret, not overwrite it.'
+		);
+
+		delete_option( \DesignSetGo\Admin\Settings::OPTION_NAME );
+		\DesignSetGo\Admin\Settings::invalidate_cache();
+	}
+
+	/**
 	 * Test permission check ordering in Global Styles REST API
 	 *
 	 * Verifies that capability checks happen before nonce verification.

@@ -111,15 +111,16 @@ class Template_Controller {
 	/**
 	 * Checks that the requesting user can edit the specified post.
 	 *
+	 * Export is an idempotent GET, so it is not a CSRF vector and intentionally
+	 * does not require an X-WP-Nonce header — the `edit_post` capability check
+	 * below is the real guard. This mirrors the read path in
+	 * DesignSetGo\Admin\Settings::check_read_permission(). The mutating import
+	 * route (POST) still verifies the nonce.
+	 *
 	 * @param \WP_REST_Request $request Incoming REST request.
 	 * @return true|\WP_Error
 	 */
 	public static function permission_export( \WP_REST_Request $request ) {
-		$nonce_check = self::verify_nonce( $request );
-		if ( is_wp_error( $nonce_check ) ) {
-			return $nonce_check;
-		}
-
 		$post_id = (int) $request['post_id'];
 
 		if ( ! $post_id || ! get_post( $post_id ) ) {
@@ -168,7 +169,7 @@ class Template_Controller {
 	}
 
 	/**
-	 * Verifies the REST nonce header to block CSRF against these routes.
+	 * Verifies the REST nonce header to block CSRF against the mutating import route.
 	 *
 	 * Mirrors the project-wide pattern in
 	 * DesignSetGo\Blocks\Query\Controller::check_permission(). Editor callers

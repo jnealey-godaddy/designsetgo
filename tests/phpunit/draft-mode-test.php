@@ -159,6 +159,32 @@ class Test_Draft_Mode extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that meta nested deeper than the recursion cap is rejected (fail closed).
+	 *
+	 * The object guard stops recursing at MAX_OBJECT_SCAN_DEPTH and treats
+	 * anything deeper as suspect, so a pathologically deep payload is skipped
+	 * rather than copied — and cannot overflow the stack. Normally-shallow
+	 * arrays (covered above) still copy.
+	 */
+	public function test_create_draft_skips_meta_nested_beyond_depth_cap() {
+		// Wrap a scalar in arrays well past the 20-level cap (no object present).
+		$deep = 'leaf';
+		for ( $i = 0; $i < 25; $i++ ) {
+			$deep = array( $deep );
+		}
+		update_post_meta( $this->page_id, 'too_deep_meta', $deep );
+		update_post_meta( $this->page_id, 'safe_meta', 'keep-me' );
+
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->assertIsInt( $draft_id );
+
+		// Over-deep meta is not copied.
+		$this->assertSame( '', get_post_meta( $draft_id, 'too_deep_meta', true ) );
+		// Safe meta still copies.
+		$this->assertSame( 'keep-me', get_post_meta( $draft_id, 'safe_meta', true ) );
+	}
+
+	/**
 	 * Test creating draft fails for invalid post ID.
 	 */
 	public function test_create_draft_invalid_post() {
