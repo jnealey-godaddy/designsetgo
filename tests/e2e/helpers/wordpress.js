@@ -318,7 +318,6 @@ async function blockHasClass(page, blockType, className, index = 0) {
  * @return {Promise<*>} The evaluate result.
  */
 async function evaluateAcrossNavigation(page, fn, arg, tries = 3) {
-	let lastError;
 	for (let attempt = 1; attempt <= tries; attempt++) {
 		try {
 			return await page.evaluate(fn, arg);
@@ -327,17 +326,20 @@ async function evaluateAcrossNavigation(page, fn, arg, tries = 3) {
 				/execution context was destroyed|because of a navigation|frame (was )?detached/i.test(
 					error.message
 				);
+			// Rethrow anything that isn't the one-shot navigation race, and stop
+			// retrying once attempts are exhausted.
 			if (!isNavigationRace || attempt === tries) {
 				throw error;
 			}
-			lastError = error;
 			// Let the auto-draft navigation finish before the next attempt. A
 			// context-destroying navigation also discards anything the failed
 			// attempt dispatched into the store, so re-running is idempotent.
 			await page.waitForLoadState('domcontentloaded').catch(() => {});
 		}
 	}
-	throw lastError;
+	// Only reachable when called with tries < 1 — a misuse worth surfacing
+	// loudly rather than returning undefined.
+	throw new Error('evaluateAcrossNavigation: `tries` must be >= 1');
 }
 
 /**

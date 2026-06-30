@@ -32,6 +32,13 @@ class Settings {
 	 *
 	 * Pure ASCII so it is byte-identical across encodings and opcode caches; a
 	 * value this distinctive will not collide with a legitimate secret.
+	 *
+	 * Migration note: this placeholder changed from the prior '••••••••' on
+	 * upgrade. An admin who had the settings page open at the exact moment of
+	 * deploy still holds the old placeholder in their form; submitting without
+	 * re-touching the secret field would write that literal as the new value.
+	 * The window is one page-load wide and fully recoverable (re-enter the
+	 * key). Call it out in release notes for ops teams managing secrets.
 	 */
 	const REDACTED_PLACEHOLDER = '__DSGO_REDACTED__';
 
