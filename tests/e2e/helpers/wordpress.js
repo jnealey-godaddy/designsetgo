@@ -297,6 +297,50 @@ async function blockHasClass(page, blockType, className, index = 0) {
 }
 
 /**
+ * Run `fn` via page.evaluate, retrying if the editor navigates out from under
+ * it mid-flight.
+ *
+ * A freshly opened post-new.php editor creates an auto-draft a beat after the
+ * post is first dirtied, swapping the URL (post-new.php -> post.php?post=N) and
+ * tearing down the page's JS execution context. Any page.evaluate() that is
+ * awaiting when that happens rejects with "Execution context was destroyed,
+ * most likely because of a navigation." (and, less often, "frame was
+ * detached"). The navigation is one-shot, so re-running after it settles
+ * succeeds. Only that race is retried; every other error is rethrown at once.
+ *
+ * Used for two-workers/no-retries local runs, where this race surfaces; CI hides
+ * it behind retries. See tests/e2e/patterns-sweep.spec.js.
+ *
+ * @param {import('@playwright/test').Page} page  - Playwright page object
+ * @param {Function}                        fn    - In-page function to evaluate
+ * @param {*}                               arg   - Serialisable argument for fn
+ * @param {number}                          tries - Max attempts (default 3)
+ * @return {Promise<*>} The evaluate result.
+ */
+async function evaluateAcrossNavigation(page, fn, arg, tries = 3) {
+	let lastError;
+	for (let attempt = 1; attempt <= tries; attempt++) {
+		try {
+			return await page.evaluate(fn, arg);
+		} catch (error) {
+			const isNavigationRace =
+				/execution context was destroyed|because of a navigation|frame (was )?detached/i.test(
+					error.message
+				);
+			if (!isNavigationRace || attempt === tries) {
+				throw error;
+			}
+			lastError = error;
+			// Let the auto-draft navigation finish before the next attempt. A
+			// context-destroying navigation also discards anything the failed
+			// attempt dispatched into the store, so re-running is idempotent.
+			await page.waitForLoadState('domcontentloaded').catch(() => {});
+		}
+	}
+	throw lastError;
+}
+
+/**
  * Insert a registered block pattern by its slug, programmatically.
  *
  * Reads the pattern's resolved `content` straight from the data store, parses
@@ -314,36 +358,42 @@ async function blockHasClass(page, blockType, className, index = 0) {
  *         (so callers can wait for it to render in the canvas).
  */
 async function insertPatternBySlug(page, slug) {
-	const result = await page.evaluate(async (patternSlug) => {
-		// `core`.getBlockPatterns is resolver-backed (it fetches from the REST
-		// block-patterns endpoint), so the first synchronous call returns [].
-		// Await the resolver so the full registry is present before we look up
-		// the slug; fall back to the editor settings list for older WP.
-		let patterns = [];
-		if (wp.data.resolveSelect('core').getBlockPatterns) {
-			patterns = await wp.data.resolveSelect('core').getBlockPatterns();
-		}
-		if (!patterns || !patterns.length) {
-			patterns =
-				wp.data.select('core/block-editor').getSettings()
-					.__experimentalBlockPatterns || [];
-		}
-		const pattern = patterns.find((p) => p.name === patternSlug);
-		if (!pattern) {
-			return { found: false, hadToken: false, blockCount: 0 };
-		}
+	const result = await evaluateAcrossNavigation(
+		page,
+		async (patternSlug) => {
+			// `core`.getBlockPatterns is resolver-backed (it fetches from the REST
+			// block-patterns endpoint), so the first synchronous call returns [].
+			// Await the resolver so the full registry is present before we look up
+			// the slug; fall back to the editor settings list for older WP.
+			let patterns = [];
+			if (wp.data.resolveSelect('core').getBlockPatterns) {
+				patterns = await wp.data
+					.resolveSelect('core')
+					.getBlockPatterns();
+			}
+			if (!patterns || !patterns.length) {
+				patterns =
+					wp.data.select('core/block-editor').getSettings()
+						.__experimentalBlockPatterns || [];
+			}
+			const pattern = patterns.find((p) => p.name === patternSlug);
+			if (!pattern) {
+				return { found: false, hadToken: false, blockCount: 0 };
+			}
 
-		const hadToken = pattern.content.includes('{{dsgo:placeholder-');
-		const blocks = wp.blocks.parse(pattern.content);
-		wp.data.dispatch('core/block-editor').insertBlocks(blocks);
+			const hadToken = pattern.content.includes('{{dsgo:placeholder-');
+			const blocks = wp.blocks.parse(pattern.content);
+			wp.data.dispatch('core/block-editor').insertBlocks(blocks);
 
-		return {
-			found: true,
-			hadToken,
-			blockCount: blocks.length,
-			clientId: blocks[0] ? blocks[0].clientId : null,
-		};
-	}, slug);
+			return {
+				found: true,
+				hadToken,
+				blockCount: blocks.length,
+				clientId: blocks[0] ? blocks[0].clientId : null,
+			};
+		},
+		slug
+	);
 
 	if (!result.found) {
 		throw new Error(`Pattern "${slug}" is not registered`);
@@ -361,7 +411,7 @@ async function insertPatternBySlug(page, slug) {
  * @return {Promise<string[]>} Unique block names that failed validation.
  */
 async function getInvalidBlockNames(page) {
-	return page.evaluate(() => {
+	return evaluateAcrossNavigation(page, () => {
 		const bad = [];
 		const walk = (blocks) => {
 			for (const b of blocks) {
@@ -382,6 +432,7 @@ module.exports = {
 	getEditorCanvas,
 	createNewPost,
 	insertBlock,
+	evaluateAcrossNavigation,
 	insertPatternBySlug,
 	getInvalidBlockNames,
 	openBlockSettings,
