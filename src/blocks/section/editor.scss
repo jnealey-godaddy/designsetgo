@@ -6,6 +6,8 @@
  * @package DesignSetGo
  */
 
+@use './styles/shape-masks';
+
 // SCSS Variables for inline/shrink-wrap blocks
 // These blocks should align based on parent container settings rather than stretch to full width
 // Used across text-align, content-justification, and explicit alignment rules
@@ -564,71 +566,90 @@ $inline-block-data-types: (
 /**
  * Shape Divider Styles (Editor)
  *
- * Must match style.scss for consistent preview.
- * Shapes are positioned at the edges of the section, and the inner
- * container receives automatic padding to clear the shape heights.
+ * Must match style.scss for consistent preview. Class-based shapes are
+ * painted via CSS mask-image (see ./styles/_shape-masks.scss for the
+ * per-shape data-URI custom properties). Shapes are positioned at the
+ * edges of the section, and the inner container receives automatic
+ * padding to clear the shape heights.
  *
  * Z-index hierarchy:
  * - Shape dividers (default): z-index 1
- * - Inner container: z-index 2
+ * - Inner container / shape dividers (front): z-index 2
  * - Content children: z-index 3 (inherited from base styles)
- * - Shape dividers (front): z-index 10
  *
- * @since 1.4.2
+ * @since 2.6.0
  */
-// Amount the shape divider container extends beyond the section edges to prevent sub-pixel gaps.
-// Applied to width, height, and position offsets — change in one place only.
-$shape-divider-bleed: 3px;
-
-.dsgo-shape-divider {
+:where(.dsgo-shape-divider) {
 	position: absolute;
-	// Extend container beyond section edges to cover sub-pixel gaps at all zoom levels.
-	// Parent overflow-x: clip prevents horizontal scrollbar; adjacent sections cover vertical overflow.
-	width: calc(var(--dsgo-shape-width, 100%) + #{$shape-divider-bleed * 2});
-	height: calc(var(--dsgo-shape-height, 100px) + #{$shape-divider-bleed});
-	overflow: hidden;
+	left: 0;
+	width: var(--dsgo-shape-width, 100%);
+	height: var(--dsgo-shape-height, 100px);
 	pointer-events: none;
-	line-height: 0;
 	z-index: 1;
 
-	// Center the shape when width > 100%, offset by bleed for edge coverage
-	left: calc(var(--dsgo-shape-offset, 0px) - #{$shape-divider-bleed});
+	// Band behind the shape (e.g. matches the adjoining section's background).
+	background-color: var(--dsgo-shape-band, var(--wp--preset--color--base, #fff));
+}
 
-	// Default background for shapes without a position modifier
-	background-color: var(--dsgo-shape-background, transparent);
+// The shape itself is painted through a mask so the fill color can be a
+// flat color, gradient, or currentColor without re-encoding the SVG.
+:where(.dsgo-shape-divider)::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background-color: var(--dsgo-shape-fill, currentColor);
+	-webkit-mask: var(--dsgo-shape-mask) center / 100% 100% no-repeat;
+	mask: var(--dsgo-shape-mask) center / 100% 100% no-repeat;
+}
 
-	svg {
-		display: block;
-		width: 100%;
-		height: 100%;
-		fill: var(--dsgo-shape-color, transparent);
+:where(.dsgo-shape-divider.dsgo-shape-divider--top) {
+	top: 0;
+}
+
+:where(.dsgo-shape-divider.dsgo-shape-divider--bottom) {
+	bottom: 0;
+}
+
+// Flip modifiers - attribute-driven only (no automatic default flip).
+:where(.dsgo-shape-divider.is-flip-x)::before {
+	transform: scaleX(-1);
+}
+
+:where(.dsgo-shape-divider.is-flip-y)::before {
+	transform: scaleY(-1);
+}
+
+:where(.dsgo-shape-divider.is-flip-x.is-flip-y)::before {
+	transform: scale(-1, -1);
+}
+
+// Bring to front - display above content
+:where(.dsgo-shape-divider.is-front) {
+	z-index: 2;
+}
+
+// Per-shape mask assignment. One rule per slug from getShapeDividerNames()
+// (src/blocks/section/utils/shape-dividers.js) — keep this list in sync.
+$dsgo-shape-slugs: (
+	'wave', 'wave-double', 'wave-layered', 'wave-asymmetric',
+	'tilt', 'tilt-reverse', 'curve', 'curve-asymmetric',
+	'triangle', 'triangle-asymmetric', 'arrow', 'arrow-wide',
+	'peaks', 'peaks-soft', 'zigzag', 'book',
+	'clouds', 'drops', 'split', 'fan',
+	'steps', 'torn', 'slime'
+);
+
+@each $dsgo-shape-slug in $dsgo-shape-slugs {
+
+	:where(.dsgo-shape-divider.is-shape-#{$dsgo-shape-slug}) {
+		--dsgo-shape-mask: var(--dsgo-shape--#{$dsgo-shape-slug});
 	}
+}
 
-	// Anti-aliasing gradient — see style.scss for detailed explanation.
-	&--top {
-		top: -#{$shape-divider-bleed};
-		background-image: linear-gradient(
-			var(--dsgo-shape-gradient-dir),
-			var(--dsgo-shape-color, transparent) 0,
-			var(--dsgo-shape-color, transparent) 2px,
-			var(--dsgo-shape-background, transparent) 2px
-		);
-	}
-
-	&--bottom {
-		bottom: -#{$shape-divider-bleed};
-		background-image: linear-gradient(
-			var(--dsgo-shape-gradient-dir),
-			var(--dsgo-shape-color, transparent) 0,
-			var(--dsgo-shape-color, transparent) 2px,
-			var(--dsgo-shape-background, transparent) 2px
-		);
-	}
-
-	// Bring to front - display above content
-	&--front {
-		z-index: 10;
-	}
+// Theme-default shape: resolves to the theme.json custom shape-divider type,
+// falling back to "wave" when the theme doesn't define one.
+:where(.dsgo-shape-divider.is-shape-inherit) {
+	--dsgo-shape-mask: var(--wp--custom--designsetgo--shape-divider--type, var(--dsgo-shape--wave));
 }
 
 // When section has shape dividers, ensure proper stacking
@@ -636,8 +657,9 @@ $shape-divider-bleed: 3px;
 	// Prevent horizontal scrollbar from shapes extending beyond section width
 	overflow-x: clip;
 
-	// Content stays above shapes (z-index: 2)
-	// unless shape has "bring to front" option (z-index: 10)
+	// Content stays above shapes (z-index: 2), tied with the "bring to
+	// front" shape modifier (.is-front, also z-index: 2) — DOM order then
+	// decides stacking between the two.
 	> .dsgo-stack__inner {
 		position: relative;
 		z-index: 2;
