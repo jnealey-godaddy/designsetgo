@@ -182,7 +182,7 @@ class Admin_Menu {
 				'currentPage'     => $this->get_current_page( $hook ),
 				'siteUrl'         => esc_url( home_url() ),
 				'adminUrl'        => esc_url( admin_url() ),
-				'logoUrl'         => esc_url( DESIGNSETGO_URL . 'build/admin/assets/logo.png' ),
+				'logoUrl'         => esc_url( DESIGNSETGO_URL . 'build/admin/assets/logo.svg' ),
 				'conflictPlugins' => $this->detect_conflicting_plugins(),
 			)
 		);
