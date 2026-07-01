@@ -86,15 +86,19 @@ export default function ShapeDivider({
 		.filter(Boolean)
 		.join(' ');
 
-	// Build inline styles with validated values. Band is omitted when unset so
-	// the CSS `var(..., <fallback>)` base-color default applies. There is no
-	// fill color: the shape region is transparent and reveals the section's
-	// own background (color, gradient, or image).
+	// Build inline styles, emitting a custom property ONLY when it differs from
+	// the CSS default, so a default divider serializes with no inline style at
+	// all. The stylesheet supplies the fallbacks: `var(--dsgo-shape-height,
+	// 100px)`, `var(--dsgo-shape-width, 100%)`, and the base color for the band.
 	const style = {
-		'--dsgo-shape-height': `${safeHeight}px`,
-		'--dsgo-shape-width': `${safeWidth}%`,
+		...(safeHeight !== 100 && { '--dsgo-shape-height': `${safeHeight}px` }),
+		...(safeWidth !== 100 && { '--dsgo-shape-width': `${safeWidth}%` }),
 		...(safeBandColor && { '--dsgo-shape-band': safeBandColor }),
 	};
 
-	return <div className={className} style={style} aria-hidden="true" />;
+	// Only attach the style prop when there's something to set, so a
+	// default divider serializes as a bare <div> with no empty style="".
+	const styleProps = Object.keys(style).length > 0 ? { style } : {};
+
+	return <div className={className} {...styleProps} aria-hidden="true" />;
 }

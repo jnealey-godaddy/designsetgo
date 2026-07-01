@@ -62,6 +62,25 @@ describe('section save - shape dividers', () => {
 		).toContain('is-shape-inherit');
 	});
 
+	test('default divider omits height/width custom props (CSS defaults apply)', () => {
+		const html = serialize(
+			createBlock(metadata.name, { shapeDividerTop: 'wave' })
+		);
+		expect(html).toContain('is-shape-wave');
+		expect(html).not.toContain('--dsgo-shape-height');
+		expect(html).not.toContain('--dsgo-shape-width');
+	});
+
+	test('non-default height is emitted', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 80,
+			})
+		);
+		expect(html).toContain('--dsgo-shape-height:80px');
+	});
+
 	test('shape region carries no fill var (transparent / see-through)', () => {
 		const html = serialize(
 			createBlock(metadata.name, {
