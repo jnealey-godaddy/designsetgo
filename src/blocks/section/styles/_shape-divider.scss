@@ -33,17 +33,16 @@ $dsgo-shape-slugs: (
 	'steps', 'torn', 'slime'
 );
 
-// Sub-pixel edge bleed. mask + background-color paints a solid fill all the
-// way to the ::before box edge, so at fractional browser zoom (90/110/125%)
-// a hairline rounding gap can expose the band colour where the shape's flat
-// edge meets the section body. We over-paint the shape 1px past each
-// vertical edge (bleeding into the section) so the solid fill always
-// overlaps — replaces the old container-level $shape-divider-bleed + the
-// anti-aliasing gradient strip. Bleeding both edges keeps it correct under
-// is-flip-y (which swaps which edge faces the section). 1px over ~100px of
-// mask height is imperceptible stretch, and the overhang is clipped by
-// .dsgo-stack--has-shape-divider { overflow-x: clip } horizontally and
-// covered by the adjacent section vertically.
+// Sub-pixel edge bleed. The band is painted right up to the ::before box edge,
+// so at fractional browser zoom (90/110/125%) a hairline rounding gap can open
+// where the band meets the neighbouring section at the divider's outer edge.
+// We over-paint the band 1px past each vertical edge so it always overlaps —
+// replaces the old container-level $shape-divider-bleed + anti-aliasing strip.
+// Bleeding both edges keeps it correct under is-flip-y (which swaps which edge
+// faces the section). 1px over ~100px is imperceptible; the horizontal
+// overhang is clipped by .dsgo-stack--has-shape-divider { overflow-x: clip }.
+// The shape region needs no bleed: it is transparent and contiguous with the
+// section's own background, so there is no seam to cover there.
 $dsgo-shape-bleed: 1px;
 
 :where(.dsgo-shape-divider) {
@@ -56,21 +55,35 @@ $dsgo-shape-bleed: 1px;
 	pointer-events: none;
 	z-index: 1;
 
-	// Band behind the shape (e.g. matches the adjoining section's background).
-	background-color: var(--dsgo-shape-band, var(--wp--preset--color--base, #fff));
+	// No background on the divider itself: the shape region is knocked out to
+	// transparent (see ::before) so the section's OWN background — solid,
+	// gradient, or image — shows through and always matches the section.
 }
 
-// The shape itself is painted through a mask so the fill color can be a
-// flat color, gradient, or currentColor without re-encoding the SVG.
-// The ::before is extended $dsgo-shape-bleed past the top and bottom edges
-// (see $dsgo-shape-bleed note above) to eliminate sub-pixel hairline gaps.
+// The band (the part beside the shape, adjoining the neighbouring section) is
+// painted here and the shape region is knocked out to transparent via a
+// two-layer mask: a full-cover layer EXCLUDE the shape layer = everything but
+// the shape. The transform-driven flips live on this pseudo-element so
+// scaleX/scaleY mirror the mask (the uniform band layer is flip-invariant).
+// The ::before is extended $dsgo-shape-bleed past the top/bottom edges (see
+// note above) to eliminate the sub-pixel hairline gap at the outer edge.
 :where(.dsgo-shape-divider)::before {
 	content: "";
 	position: absolute;
 	inset: -#{$dsgo-shape-bleed} 0;
-	background-color: var(--dsgo-shape-fill, currentColor);
-	-webkit-mask: var(--dsgo-shape-mask) center / 100% 100% no-repeat;
-	mask: var(--dsgo-shape-mask) center / 100% 100% no-repeat;
+	background-color: var(--dsgo-shape-band, var(--wp--preset--color--base, #fff));
+
+	-webkit-mask-image: linear-gradient(#000, #000), var(--dsgo-shape-mask);
+	-webkit-mask-position: center, center;
+	-webkit-mask-size: 100% 100%, 100% 100%;
+	-webkit-mask-repeat: no-repeat, no-repeat;
+	-webkit-mask-composite: xor;
+
+	mask-image: linear-gradient(#000, #000), var(--dsgo-shape-mask);
+	mask-position: center, center;
+	mask-size: 100% 100%, 100% 100%;
+	mask-repeat: no-repeat, no-repeat;
+	mask-composite: exclude;
 }
 
 :where(.dsgo-shape-divider.dsgo-shape-divider--top) {
@@ -81,7 +94,9 @@ $dsgo-shape-bleed: 1px;
 	bottom: 0;
 }
 
-// Flip modifiers - attribute-driven only (no automatic default flip).
+// Flip modifiers. The is-flip-y class is emitted by ShapeDivider.js using a
+// position-aware rule (bottom dividers flip by default; flipY inverts the
+// per-position default), so here we only map the class to a transform.
 :where(.dsgo-shape-divider.is-flip-x)::before {
 	transform: scaleX(-1);
 }

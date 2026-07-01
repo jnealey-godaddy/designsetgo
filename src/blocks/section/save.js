@@ -21,7 +21,6 @@ import ShapeDivider from './components/ShapeDivider';
 export default function SectionSave({ attributes }) {
 	const {
 		tagName = 'div',
-		backgroundColor,
 		constrainWidth,
 		contentWidth,
 		hoverBackgroundColor,
@@ -31,7 +30,6 @@ export default function SectionSave({ attributes }) {
 		overlayColor,
 		// Shape divider attributes
 		shapeDividerTop,
-		shapeDividerTopColor,
 		shapeDividerTopBackgroundColor,
 		shapeDividerTopHeight,
 		shapeDividerTopWidth,
@@ -39,7 +37,6 @@ export default function SectionSave({ attributes }) {
 		shapeDividerTopFlipY,
 		shapeDividerTopFront,
 		shapeDividerBottom,
-		shapeDividerBottomColor,
 		shapeDividerBottomBackgroundColor,
 		shapeDividerBottomHeight,
 		shapeDividerBottomWidth,
@@ -48,22 +45,10 @@ export default function SectionSave({ attributes }) {
 		shapeDividerBottomFront,
 	} = attributes;
 
-	// Get section's effective background color for shape divider fill default.
-	// Prefer inline style (custom color) over preset slug.
-	const sectionBackgroundColor =
-		attributes.style?.color?.background ||
-		(backgroundColor ? `var(--wp--preset--color--${backgroundColor})` : '');
-
-	// Shape divider fill: explicit color wins, otherwise falls back to the
-	// section's own background color. If neither is set, omit the CSS var
-	// entirely so the stylesheet's `currentColor` fallback applies.
-	const shapeDividerTopFillColor =
-		convertColorToCSSVar(shapeDividerTopColor) || sectionBackgroundColor;
-	const shapeDividerBottomFillColor =
-		convertColorToCSSVar(shapeDividerBottomColor) || sectionBackgroundColor;
-
 	// Shape divider band: explicit color only. Omit when unset so the
-	// stylesheet's `--wp--preset--color--base` fallback applies.
+	// stylesheet's `--wp--preset--color--base` fallback applies. The shape
+	// region itself has no fill — it is transparent and reveals the section's
+	// own background (solid, gradient, or image) through the mask knockout.
 	const shapeDividerTopBandColor = convertColorToCSSVar(
 		shapeDividerTopBackgroundColor
 	);
@@ -145,7 +130,6 @@ export default function SectionSave({ attributes }) {
 				flipX={shapeDividerTopFlipX}
 				flipY={shapeDividerTopFlipY}
 				front={shapeDividerTopFront}
-				fillColor={shapeDividerTopFillColor}
 				bandColor={shapeDividerTopBandColor}
 			/>
 			<div {...innerBlocksProps} />
@@ -157,7 +141,6 @@ export default function SectionSave({ attributes }) {
 				flipX={shapeDividerBottomFlipX}
 				flipY={shapeDividerBottomFlipY}
 				front={shapeDividerBottomFront}
-				fillColor={shapeDividerBottomFillColor}
 				bandColor={shapeDividerBottomBandColor}
 			/>
 		</TagName>

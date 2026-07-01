@@ -68,7 +68,6 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		layout,
 		// Shape divider attributes
 		shapeDividerTop,
-		shapeDividerTopColor,
 		shapeDividerTopBackgroundColor,
 		shapeDividerTopHeight,
 		shapeDividerTopWidth,
@@ -76,7 +75,6 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		shapeDividerTopFlipY,
 		shapeDividerTopFront,
 		shapeDividerBottom,
-		shapeDividerBottomColor,
 		shapeDividerBottomBackgroundColor,
 		shapeDividerBottomHeight,
 		shapeDividerBottomWidth,
@@ -97,16 +95,10 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		attributes.style?.color?.text ||
 		(textColor ? `var(--wp--preset--color--${textColor})` : '');
 
-	// Shape divider fill: explicit color wins, otherwise falls back to the
-	// section's own background color. If neither is set, omit the CSS var
-	// entirely so the stylesheet's `currentColor` fallback applies.
-	const shapeDividerTopFillColor =
-		convertColorToCSSVar(shapeDividerTopColor) || sectionBackgroundColor;
-	const shapeDividerBottomFillColor =
-		convertColorToCSSVar(shapeDividerBottomColor) || sectionBackgroundColor;
-
 	// Shape divider band: explicit color only. Omit when unset so the
-	// stylesheet's `--wp--preset--color--base` fallback applies.
+	// stylesheet's `--wp--preset--color--base` fallback applies. The shape
+	// region has no fill — it is transparent and reveals the section's own
+	// background through the mask knockout.
 	const shapeDividerTopBandColor = convertColorToCSSVar(
 		shapeDividerTopBackgroundColor
 	);
@@ -521,29 +513,10 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 						panelId={clientId}
 						title={__('Shape Divider Colors', 'designsetgo')}
 						settings={[
-							// Top shape colors
+							// Top band color (the shape region is transparent and
+							// shows the section's own background through it).
 							...(shapeDividerTop
 								? [
-										{
-											label: __(
-												'Top Shape Fill (default: section background)',
-												'designsetgo'
-											),
-											colorValue: decodeColorValue(
-												shapeDividerTopColor,
-												colorGradientSettings
-											),
-											onColorChange: (color) =>
-												setAttributes({
-													shapeDividerTopColor:
-														encodeColorValue(
-															color,
-															colorGradientSettings
-														) || '',
-												}),
-											clearable: true,
-											enableAlpha: true,
-										},
 										{
 											label: __(
 												'Top Band Background (default: base)',
@@ -566,29 +539,10 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 										},
 									]
 								: []),
-							// Bottom shape colors
+							// Bottom band color (the shape region is transparent and
+							// shows the section's own background through it).
 							...(shapeDividerBottom
 								? [
-										{
-											label: __(
-												'Bottom Shape Fill (default: section background)',
-												'designsetgo'
-											),
-											colorValue: decodeColorValue(
-												shapeDividerBottomColor,
-												colorGradientSettings
-											),
-											onColorChange: (color) =>
-												setAttributes({
-													shapeDividerBottomColor:
-														encodeColorValue(
-															color,
-															colorGradientSettings
-														) || '',
-												}),
-											clearable: true,
-											enableAlpha: true,
-										},
 										{
 											label: __(
 												'Bottom Band Background (default: base)',
@@ -635,7 +589,6 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 					flipX={shapeDividerTopFlipX}
 					flipY={shapeDividerTopFlipY}
 					front={shapeDividerTopFront}
-					fillColor={shapeDividerTopFillColor}
 					bandColor={shapeDividerTopBandColor}
 				/>
 				<div {...innerBlocksProps} />
@@ -647,7 +600,6 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 					flipX={shapeDividerBottomFlipX}
 					flipY={shapeDividerBottomFlipY}
 					front={shapeDividerBottomFront}
-					fillColor={shapeDividerBottomFillColor}
 					bandColor={shapeDividerBottomBandColor}
 				/>
 			</TagName>

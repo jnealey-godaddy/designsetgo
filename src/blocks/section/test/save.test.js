@@ -2,8 +2,10 @@
  * Section Block - save.js Tests
  *
  * Verifies shape dividers render as class-based markup (CSS mask-image
- * contract) with no inline SVG, and that the theme-inherit option and
- * fill/band color defaults behave as specified.
+ * contract) with no inline SVG, that the theme-inherit option works, that the
+ * shape region carries no fill (it is transparent / see-through to the
+ * section background), and that the position-aware vertical-flip default is
+ * emitted correctly.
  *
  * @since 2.6.0
  */
@@ -60,13 +62,37 @@ describe('section save - shape dividers', () => {
 		).toContain('is-shape-inherit');
 	});
 
-	test('fill defaults to section background color when set', () => {
+	test('shape region carries no fill var (transparent / see-through)', () => {
 		const html = serialize(
 			createBlock(metadata.name, {
 				shapeDividerTop: 'wave',
 				backgroundColor: 'contrast',
 			})
 		);
-		expect(html).toContain('--dsgo-shape-fill');
+		expect(html).not.toContain('--dsgo-shape-fill');
+	});
+
+	test('bottom dividers flip vertically by default; top dividers do not', () => {
+		const bottom = serialize(
+			createBlock(metadata.name, { shapeDividerBottom: 'wave' })
+		);
+		expect(bottom).toContain('dsgo-shape-divider--bottom');
+		expect(bottom).toContain('is-flip-y');
+
+		const top = serialize(
+			createBlock(metadata.name, { shapeDividerTop: 'wave' })
+		);
+		expect(top).toContain('dsgo-shape-divider--top');
+		expect(top).not.toContain('is-flip-y');
+	});
+
+	test('flipY inverts the per-position default (bottom + flipY = not flipped)', () => {
+		const bottomFlipped = serialize(
+			createBlock(metadata.name, {
+				shapeDividerBottom: 'wave',
+				shapeDividerBottomFlipY: true,
+			})
+		);
+		expect(bottomFlipped).not.toContain('is-flip-y');
 	});
 });

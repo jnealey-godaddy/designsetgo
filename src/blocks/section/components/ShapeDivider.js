@@ -38,9 +38,10 @@ function clamp(value, min, max) {
  * @param {boolean} props.flipX     Flip horizontally
  * @param {boolean} props.flipY     Flip vertically
  * @param {boolean} props.front     Bring to front (above content)
- * @param {string}  props.fillColor Shape fill color. Falls back to `currentColor` in CSS when omitted.
- * @param {string}  props.bandColor Color of the band behind the shape. Falls back to the theme
- *                                  base color in CSS when omitted.
+ * @param {string}  props.bandColor Color of the band beside the shape (the part adjoining the
+ *                                  neighbouring section). Falls back to the theme base color in
+ *                                  CSS when omitted. The shape region itself is transparent and
+ *                                  shows the section's own background through it.
  * @return {JSX.Element|null} Shape divider element or null
  */
 export default function ShapeDivider({
@@ -51,7 +52,6 @@ export default function ShapeDivider({
 	flipX = false,
 	flipY = false,
 	front = false,
-	fillColor,
 	bandColor,
 }) {
 	// Don't render if no shape selected
@@ -64,8 +64,15 @@ export default function ShapeDivider({
 	const safeWidth = clamp(Number(width) || 100, 100, 300);
 
 	// Sanitize color values
-	const safeFillColor = sanitizeColor(fillColor);
 	const safeBandColor = sanitizeColor(bandColor);
+
+	// Bottom dividers flip vertically by default: the shapes are authored with
+	// their solid edge at the bottom of the viewBox (i.e. facing the section
+	// for a TOP divider), so a bottom divider must flip to face its section.
+	// `flipY` inverts the per-position default. This mirrors the legacy
+	// renderer and the inspector preview (ShapeDividerControls) exactly, so
+	// existing content and the editor preview stay visually consistent.
+	const flipYActive = position === 'bottom' ? !flipY : flipY;
 
 	// Build className
 	const className = [
@@ -73,18 +80,19 @@ export default function ShapeDivider({
 		`dsgo-shape-divider--${position}`,
 		`is-shape-${shape}`,
 		flipX && 'is-flip-x',
-		flipY && 'is-flip-y',
+		flipYActive && 'is-flip-y',
 		front && 'is-front',
 	]
 		.filter(Boolean)
 		.join(' ');
 
-	// Build inline styles with validated values. Fill/band are omitted when
-	// unset so the CSS `var(..., <fallback>)` defaults apply.
+	// Build inline styles with validated values. Band is omitted when unset so
+	// the CSS `var(..., <fallback>)` base-color default applies. There is no
+	// fill color: the shape region is transparent and reveals the section's
+	// own background (color, gradient, or image).
 	const style = {
 		'--dsgo-shape-height': `${safeHeight}px`,
 		'--dsgo-shape-width': `${safeWidth}%`,
-		...(safeFillColor && { '--dsgo-shape-fill': safeFillColor }),
 		...(safeBandColor && { '--dsgo-shape-band': safeBandColor }),
 	};
 
