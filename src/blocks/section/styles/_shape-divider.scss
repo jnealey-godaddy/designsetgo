@@ -128,6 +128,19 @@ $dsgo-shape-bleed: 1px;
 	--dsgo-shape-mask: var(--wp--custom--designsetgo--shape-divider--type, var(--dsgo-shape--wave));
 }
 
+// Fan: a TONAL ray divider, not a see-through knockout. Its mask carries its
+// own opacity layers, so we replace the two-layer XOR/exclude mask (which would
+// invert those layers into muddy translucency) with a single-layer mask. The
+// band colour is then painted over the section at the mask's graduated alpha —
+// producing layered rays that fade out from the centre, with the section's own
+// background showing between them.
+:where(.dsgo-shape-divider.is-shape-fan)::before {
+	-webkit-mask-image: var(--dsgo-shape-mask);
+	-webkit-mask-composite: source-over;
+	mask-image: var(--dsgo-shape-mask);
+	mask-composite: add;
+}
+
 // When section has shape dividers, ensure proper stacking.
 .dsgo-stack--has-shape-divider {
 	// Prevent horizontal scrollbar from shapes extending beyond section width.

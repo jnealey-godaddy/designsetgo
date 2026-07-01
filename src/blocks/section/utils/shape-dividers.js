@@ -96,16 +96,9 @@ export const SHAPE_DIVIDERS = {
 		<path d="M0,120 L0,80 Q100,40 200,80 Q300,20 450,70 Q550,30 650,80 Q750,20 850,70 Q950,40 1050,80 Q1150,50 1200,80 L1200,120 Z" />
 	),
 
-	// Oval drops pattern
+	// Rounded drops/bubbles rising from the base
 	drops: (
-		<>
-			<ellipse cx="100" cy="90" rx="100" ry="50" />
-			<ellipse cx="350" cy="100" rx="120" ry="40" />
-			<ellipse cx="580" cy="85" rx="90" ry="55" />
-			<ellipse cx="800" cy="95" rx="110" ry="45" />
-			<ellipse cx="1030" cy="90" rx="100" ry="50" />
-			<rect x="0" y="100" width="1200" height="20" />
-		</>
+		<path d="M0,120 L0,100 L20,100 A100,95 0 0 1 220,100 L260,100 A100,95 0 0 1 460,100 L500,100 A100,95 0 0 1 700,100 L740,100 A100,95 0 0 1 940,100 L980,100 A100,95 0 0 1 1180,100 L1200,100 L1200,120 Z" />
 	),
 
 	// Split center
@@ -113,21 +106,23 @@ export const SHAPE_DIVIDERS = {
 		<path d="M0,0 L550,0 L550,80 L0,80 Z M650,0 L1200,0 L1200,80 L650,80 Z M0,80 L0,120 L1200,120 L1200,80 L650,80 L650,40 L600,80 L550,40 L550,80 L0,80 Z" />
 	),
 
-	// Fan/rays effect
+	// Fan/rays — layered translucent rays converging on a bottom-center apex.
+	// Rendered as a tonal band-colour overlay (see .is-shape-fan in
+	// _shape-divider.scss), so the opacity layers read as graduated rays.
 	fan: (
 		<>
-			<path d="M600,120 L0,120 L600,0 Z" opacity="0.3" />
-			<path d="M600,120 L200,120 L600,20 Z" opacity="0.5" />
-			<path d="M600,120 L400,120 L600,40 Z" opacity="0.7" />
-			<path d="M600,120 L1200,120 L600,0 Z" opacity="0.3" />
-			<path d="M600,120 L1000,120 L600,20 Z" opacity="0.5" />
-			<path d="M600,120 L800,120 L600,40 Z" opacity="0.7" />
+			<path d="M600,120 L0,0 L1200,0 Z" opacity="0.16" />
+			<path d="M600,120 L150,0 L1050,0 Z" opacity="0.3" />
+			<path d="M600,120 L300,0 L900,0 Z" opacity="0.44" />
+			<path d="M600,120 L430,0 L770,0 Z" opacity="0.6" />
+			<path d="M600,120 L520,0 L680,0 Z" opacity="0.8" />
+			<path d="M600,120 L575,0 L625,0 Z" />
 		</>
 	),
 
-	// Rounded steps
+	// Stepped pyramid
 	steps: (
-		<path d="M0,120 L0,80 Q100,80 100,60 L400,60 Q400,40 500,40 L700,40 Q700,60 800,60 L1100,60 Q1100,80 1200,80 L1200,120 Z" />
+		<path d="M0,120 L0,100 L120,100 L120,75 L240,75 L240,50 L360,50 L360,25 L480,25 L480,0 L720,0 L720,25 L840,25 L840,50 L960,50 L960,75 L1080,75 L1080,100 L1200,100 L1200,120 Z" />
 	),
 
 	// Paper tear effect
@@ -135,9 +130,9 @@ export const SHAPE_DIVIDERS = {
 		<path d="M0,60 L40,80 L80,50 L140,90 L180,55 L240,85 L300,45 L360,75 L420,55 L480,95 L540,50 L600,80 L660,40 L720,70 L780,50 L840,90 L900,55 L960,85 L1020,45 L1080,75 L1140,60 L1200,80 L1200,120 L0,120 Z" />
 	),
 
-	// Slime/drip effect
+	// Slime/drip effect — irregular gooey drips of varying width and length
 	slime: (
-		<path d="M0,0 L0,40 Q50,40 50,80 Q50,120 100,120 L100,60 Q100,40 150,40 L150,100 Q150,120 200,120 L1000,120 Q1050,120 1050,100 L1050,40 Q1050,40 1100,40 L1100,80 Q1100,120 1150,120 Q1200,120 1200,80 L1200,0 Z" />
+		<path d="M0,120 L0,40 L67,40 Q57,94 110,94 Q163,94 153,40 L253,40 Q248,110 275,110 Q302,110 297,40 L414,40 Q405,80 450,80 Q495,80 486,40 L614,40 Q608,108 640,108 Q672,108 666,40 L788,40 Q777,90 835,90 Q893,90 882,40 L994,40 Q989,110 1015,110 Q1041,110 1036,40 L1119,40 Q1112,84 1150,84 Q1188,84 1181,40 L1200,40 L1200,120 Z" />
 	),
 };
 
