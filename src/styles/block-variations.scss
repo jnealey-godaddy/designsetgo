@@ -1,69 +1,10 @@
 /**
- * Block Style Variations
+ * Utility Classes
  *
- * Styles for registered block style variations that appear in FSE Styles panel.
- * These use WordPress design tokens for consistency with the global design system.
+ * Token-driven spacing, color, border-radius, shadow, animation and layout
+ * helpers. These use WordPress design tokens for consistency with the global
+ * design system.
  */
-
-/**
- * Container Block Style Variations
- *
- * These appear in Site Editor: Appearance → Editor → Styles → Blocks → Container
- */
-
-/* Card Style - Elevated card with shadow */
-.wp-block-designsetgo-container.is-style-card {
-	background: var(--wp--preset--color--base, #fff) !important;
-	border-radius: var(--wp--custom--designsetgo--border-radius--medium, 0.5rem) !important;
-	box-shadow: var(--wp--custom--designsetgo--shadow--medium, 0 4px 6px -1px rgba(0, 0, 0, 0.1)) !important;
-	padding: var(--wp--preset--spacing--50, 2rem) !important;
-}
-
-/* Elevated Style - Stronger shadow for more depth */
-.wp-block-designsetgo-container.is-style-elevated {
-	background: var(--wp--preset--color--base, #fff) !important;
-	border-radius: var(--wp--custom--designsetgo--border-radius--large, 1rem) !important;
-	box-shadow: var(--wp--custom--designsetgo--shadow--xlarge, 0 20px 25px -5px rgba(0, 0, 0, 0.1)) !important;
-	padding: var(--wp--preset--spacing--60, 3rem) !important;
-	transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-	&:hover {
-		transform: translateY(-4px);
-		box-shadow: var(--wp--custom--designsetgo--shadow--xlarge, 0 25px 30px -5px rgba(0, 0, 0, 0.15)) !important;
-	}
-}
-
-/* Bordered Style - Clean border, no shadow */
-.wp-block-designsetgo-container.is-style-bordered {
-	border: 2px solid var(--wp--preset--color--accent-2, #2563eb) !important;
-	border-radius: var(--wp--custom--designsetgo--border-radius--medium, 0.5rem) !important;
-	padding: var(--wp--preset--spacing--50, 2rem) !important;
-	background: transparent !important;
-}
-
-/* Gradient Style - Gradient background */
-.wp-block-designsetgo-container.is-style-gradient {
-	background: var(--wp--preset--gradient--primary-gradient, linear-gradient(135deg, #2563eb 0%, #334155 100%)) !important;
-	border-radius: var(--wp--custom--designsetgo--border-radius--large, 1rem) !important;
-	padding: var(--wp--preset--spacing--60, 3rem) !important;
-	color: var(--wp--preset--color--base, #fff) !important;
-
-	/* Ensure text is readable on gradient */
-	h1, h2, h3, h4, h5, h6, p {
-		color: inherit;
-	}
-}
-
-/* Glass Style - Glassmorphism effect */
-.wp-block-designsetgo-container.is-style-glass {
-	background: rgba(255, 255, 255, 0.1) !important;
-	backdrop-filter: blur(10px);
-	-webkit-backdrop-filter: blur(10px);
-	border: 1px solid rgba(255, 255, 255, 0.2) !important;
-	border-radius: var(--wp--custom--designsetgo--border-radius--large, 1rem) !important;
-	box-shadow: var(--wp--custom--designsetgo--shadow--medium, 0 4px 6px -1px rgba(0, 0, 0, 0.1)) !important;
-	padding: var(--wp--preset--spacing--50, 2rem) !important;
-}
 
 // Responsive visibility classes are in _utilities.scss (canonical source).
 

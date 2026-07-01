@@ -1,13 +1,17 @@
 /**
  * Shape Divider Component
  *
- * Renders an SVG shape divider for section blocks.
+ * Renders a class-based shape divider `<div>` for section blocks. The shape
+ * itself is painted by CSS via `mask-image` (see
+ * `src/blocks/section/styles/_shape-divider.scss` and `_shape-masks.scss`) —
+ * this component only emits the marker classes and CSS custom properties the
+ * stylesheet reads. No inline `<svg>` is rendered.
+ *
  * Used in both edit.js and save.js for consistent rendering.
  *
  * @since 1.4.2
  */
 
-import { getShapeDivider } from '../utils/shape-dividers';
 import { sanitizeColor } from '../utils/sanitize-color';
 
 /**
@@ -25,37 +29,33 @@ function clamp(value, min, max) {
 /**
  * Shape Divider Component
  *
- * @param {Object}  props                 Component props
- * @param {string}  props.shape           Shape name from SHAPE_DIVIDERS
- * @param {string}  props.color           Fill color for the shape
- * @param {string}  props.backgroundColor Background color behind the shape
- * @param {number}  props.height          Height in pixels
- * @param {number}  props.width           Width percentage (100-300)
- * @param {boolean} props.flipX           Flip horizontally
- * @param {boolean} props.flipY           Flip vertically
- * @param {boolean} props.front           Bring to front (above content)
- * @param {string}  props.position        'top' or 'bottom'
+ * @param {Object}  props           Component props
+ * @param {string}  props.shape     Shape slug (from getShapeDividerNames()), 'inherit' for the
+ *                                  theme default, or falsy to render nothing.
+ * @param {string}  props.position  'top' or 'bottom'
+ * @param {number}  props.height    Height in pixels
+ * @param {number}  props.width     Width percentage (100-300)
+ * @param {boolean} props.flipX     Flip horizontally
+ * @param {boolean} props.flipY     Flip vertically
+ * @param {boolean} props.front     Bring to front (above content)
+ * @param {string}  props.bandColor Color of the band beside the shape (the part adjoining the
+ *                                  neighbouring section). Falls back to the theme base color in
+ *                                  CSS when omitted. The shape region itself is transparent and
+ *                                  shows the section's own background through it.
  * @return {JSX.Element|null} Shape divider element or null
  */
 export default function ShapeDivider({
 	shape,
-	color,
-	backgroundColor,
+	position = 'top',
 	height = 100,
 	width = 100,
 	flipX = false,
 	flipY = false,
 	front = false,
-	position = 'top',
+	bandColor,
 }) {
 	// Don't render if no shape selected
 	if (!shape) {
-		return null;
-	}
-
-	// Get the shape SVG element
-	const shapeElement = getShapeDivider(shape);
-	if (!shapeElement) {
 		return null;
 	}
 
@@ -64,77 +64,41 @@ export default function ShapeDivider({
 	const safeWidth = clamp(Number(width) || 100, 100, 300);
 
 	// Sanitize color values
-	const safeColor = sanitizeColor(color);
-	const safeBackgroundColor = sanitizeColor(backgroundColor);
+	const safeBandColor = sanitizeColor(bandColor);
 
-	// Build transform for flipping
-	// Use scaleY for consistent 2D flipping behavior
-	const transforms = [];
-
-	if (flipX) {
-		transforms.push('scaleX(-1)');
-	}
-
-	// For bottom position, default is flipped (pointing into section)
-	// flipY inverts this behavior
-	if (position === 'bottom' && !flipY) {
-		transforms.push('scaleY(-1)');
-	} else if (position !== 'bottom' && flipY) {
-		// For top position, flipY flips it
-		transforms.push('scaleY(-1)');
-	}
-
-	// Calculate width offset for stretched shapes (centering)
-	// Use Math.max to guard against edge cases
-	const widthOffset = Math.max(0, (safeWidth - 100) / 2);
+	// Bottom dividers flip vertically by default: the shapes are authored with
+	// their solid edge at the bottom of the viewBox (i.e. facing the section
+	// for a TOP divider), so a bottom divider must flip to face its section.
+	// `flipY` inverts the per-position default. This mirrors the legacy
+	// renderer and the inspector preview (ShapeDividerControls) exactly, so
+	// existing content and the editor preview stay visually consistent.
+	const flipYActive = position === 'bottom' ? !flipY : flipY;
 
 	// Build className
 	const className = [
 		'dsgo-shape-divider',
 		`dsgo-shape-divider--${position}`,
-		front && 'dsgo-shape-divider--front',
+		`is-shape-${shape}`,
+		flipX && 'is-flip-x',
+		flipYActive && 'is-flip-y',
+		front && 'is-front',
 	]
 		.filter(Boolean)
 		.join(' ');
 
-	// Determine gradient direction for the anti-aliasing color strip.
-	// The gradient covers the SVG's flat edge (where anti-aliasing gaps appear).
-	// When flipY changes which edge faces the section, the gradient must flip too.
-	//
-	// | position | flipY | flat edge | gradient dir |
-	// |----------|-------|-----------|--------------|
-	// | top      | false | bottom    | to top       |
-	// | top      | true  | top       | to bottom    |
-	// | bottom   | false | top       | to bottom    |
-	// | bottom   | true  | bottom    | to top       |
-	const gradientDir = (position === 'top') !== flipY ? 'to top' : 'to bottom';
-
-	// Build inline styles with validated values
+	// Build inline styles, emitting a custom property ONLY when it differs from
+	// the CSS default, so a default divider serializes with no inline style at
+	// all. The stylesheet supplies the fallbacks: `var(--dsgo-shape-height,
+	// 100px)`, `var(--dsgo-shape-width, 100%)`, and the base color for the band.
 	const style = {
-		'--dsgo-shape-height': `${safeHeight}px`,
-		'--dsgo-shape-width': `${safeWidth}%`,
-		'--dsgo-shape-offset': `-${widthOffset}%`,
-		'--dsgo-shape-color': safeColor || 'transparent',
-		'--dsgo-shape-gradient-dir': gradientDir,
-		...(safeBackgroundColor && {
-			'--dsgo-shape-background': safeBackgroundColor,
-		}),
+		...(safeHeight !== 100 && { '--dsgo-shape-height': `${safeHeight}px` }),
+		...(safeWidth !== 100 && { '--dsgo-shape-width': `${safeWidth}%` }),
+		...(safeBandColor && { '--dsgo-shape-band': safeBandColor }),
 	};
 
-	return (
-		<div className={className} style={style} aria-hidden="true">
-			<svg
-				viewBox="0 0 1200 120"
-				preserveAspectRatio="none"
-				style={{
-					transform:
-						transforms.length > 0
-							? transforms.join(' ')
-							: undefined,
-				}}
-			>
-				{shapeElement}
-			</svg>
-		</div>
-	);
+	// Only attach the style prop when there's something to set, so a
+	// default divider serializes as a bare <div> with no empty style="".
+	const styleProps = Object.keys(style).length > 0 ? { style } : {};
+
+	return <div className={className} {...styleProps} aria-hidden="true" />;
 }

@@ -21,8 +21,6 @@ import ShapeDivider from './components/ShapeDivider';
 export default function SectionSave({ attributes }) {
 	const {
 		tagName = 'div',
-		backgroundColor,
-		textColor,
 		constrainWidth,
 		contentWidth,
 		hoverBackgroundColor,
@@ -32,7 +30,6 @@ export default function SectionSave({ attributes }) {
 		overlayColor,
 		// Shape divider attributes
 		shapeDividerTop,
-		shapeDividerTopColor,
 		shapeDividerTopBackgroundColor,
 		shapeDividerTopHeight,
 		shapeDividerTopWidth,
@@ -40,7 +37,6 @@ export default function SectionSave({ attributes }) {
 		shapeDividerTopFlipY,
 		shapeDividerTopFront,
 		shapeDividerBottom,
-		shapeDividerBottomColor,
 		shapeDividerBottomBackgroundColor,
 		shapeDividerBottomHeight,
 		shapeDividerBottomWidth,
@@ -49,16 +45,16 @@ export default function SectionSave({ attributes }) {
 		shapeDividerBottomFront,
 	} = attributes;
 
-	// Get section's effective background color for shape divider default
-	// Prefer inline style (custom color) over preset slug
-	const sectionBackgroundColor =
-		attributes.style?.color?.background ||
-		(backgroundColor ? `var(--wp--preset--color--${backgroundColor})` : '');
-
-	// Get section's effective text color for shape divider background default
-	const sectionTextColor =
-		attributes.style?.color?.text ||
-		(textColor ? `var(--wp--preset--color--${textColor})` : '');
+	// Shape divider band: explicit color only. Omit when unset so the
+	// stylesheet's `--wp--preset--color--base` fallback applies. The shape
+	// region itself has no fill — it is transparent and reveals the section's
+	// own background (solid, gradient, or image) through the mask knockout.
+	const shapeDividerTopBandColor = convertColorToCSSVar(
+		shapeDividerTopBackgroundColor
+	);
+	const shapeDividerBottomBandColor = convertColorToCSSVar(
+		shapeDividerBottomBackgroundColor
+	);
 
 	// Build className with conditional no-width-constraint and overlay classes
 	const className = [
@@ -128,38 +124,24 @@ export default function SectionSave({ attributes }) {
 		<TagName {...blockProps}>
 			<ShapeDivider
 				shape={shapeDividerTop}
-				color={
-					convertColorToCSSVar(shapeDividerTopColor) ||
-					sectionBackgroundColor
-				}
-				backgroundColor={
-					convertColorToCSSVar(shapeDividerTopBackgroundColor) ||
-					sectionTextColor
-				}
+				position="top"
 				height={shapeDividerTopHeight}
 				width={shapeDividerTopWidth}
 				flipX={shapeDividerTopFlipX}
 				flipY={shapeDividerTopFlipY}
 				front={shapeDividerTopFront}
-				position="top"
+				bandColor={shapeDividerTopBandColor}
 			/>
 			<div {...innerBlocksProps} />
 			<ShapeDivider
 				shape={shapeDividerBottom}
-				color={
-					convertColorToCSSVar(shapeDividerBottomColor) ||
-					sectionBackgroundColor
-				}
-				backgroundColor={
-					convertColorToCSSVar(shapeDividerBottomBackgroundColor) ||
-					sectionTextColor
-				}
+				position="bottom"
 				height={shapeDividerBottomHeight}
 				width={shapeDividerBottomWidth}
 				flipX={shapeDividerBottomFlipX}
 				flipY={shapeDividerBottomFlipY}
 				front={shapeDividerBottomFront}
-				position="bottom"
+				bandColor={shapeDividerBottomBandColor}
 			/>
 		</TagName>
 	);

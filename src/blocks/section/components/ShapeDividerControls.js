@@ -147,7 +147,17 @@ function ShapeDividerPanel({
 			<SelectControl
 				label={__('Shape', 'designsetgo')}
 				value={shape}
-				options={getShapeDividerOptions()}
+				options={(() => {
+					const [none, ...rest] = getShapeDividerOptions();
+					return [
+						none,
+						{
+							label: __('Theme default', 'designsetgo'),
+							value: 'inherit',
+						},
+						...rest,
+					];
+				})()}
 				onChange={(value) => onChange({ shape: value })}
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom

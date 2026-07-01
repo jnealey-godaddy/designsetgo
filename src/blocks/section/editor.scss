@@ -6,6 +6,8 @@
  * @package DesignSetGo
  */
 
+@use './styles/shape-divider';
+
 // SCSS Variables for inline/shrink-wrap blocks
 // These blocks should align based on parent container settings rather than stretch to full width
 // Used across text-align, content-justification, and explicit alignment rules
@@ -561,85 +563,7 @@ $inline-block-data-types: (
 	}
 }
 
-/**
- * Shape Divider Styles (Editor)
- *
- * Must match style.scss for consistent preview.
- * Shapes are positioned at the edges of the section, and the inner
- * container receives automatic padding to clear the shape heights.
- *
- * Z-index hierarchy:
- * - Shape dividers (default): z-index 1
- * - Inner container: z-index 2
- * - Content children: z-index 3 (inherited from base styles)
- * - Shape dividers (front): z-index 10
- *
- * @since 1.4.2
- */
-// Amount the shape divider container extends beyond the section edges to prevent sub-pixel gaps.
-// Applied to width, height, and position offsets — change in one place only.
-$shape-divider-bleed: 3px;
-
-.dsgo-shape-divider {
-	position: absolute;
-	// Extend container beyond section edges to cover sub-pixel gaps at all zoom levels.
-	// Parent overflow-x: clip prevents horizontal scrollbar; adjacent sections cover vertical overflow.
-	width: calc(var(--dsgo-shape-width, 100%) + #{$shape-divider-bleed * 2});
-	height: calc(var(--dsgo-shape-height, 100px) + #{$shape-divider-bleed});
-	overflow: hidden;
-	pointer-events: none;
-	line-height: 0;
-	z-index: 1;
-
-	// Center the shape when width > 100%, offset by bleed for edge coverage
-	left: calc(var(--dsgo-shape-offset, 0px) - #{$shape-divider-bleed});
-
-	// Default background for shapes without a position modifier
-	background-color: var(--dsgo-shape-background, transparent);
-
-	svg {
-		display: block;
-		width: 100%;
-		height: 100%;
-		fill: var(--dsgo-shape-color, transparent);
-	}
-
-	// Anti-aliasing gradient — see style.scss for detailed explanation.
-	&--top {
-		top: -#{$shape-divider-bleed};
-		background-image: linear-gradient(
-			var(--dsgo-shape-gradient-dir),
-			var(--dsgo-shape-color, transparent) 0,
-			var(--dsgo-shape-color, transparent) 2px,
-			var(--dsgo-shape-background, transparent) 2px
-		);
-	}
-
-	&--bottom {
-		bottom: -#{$shape-divider-bleed};
-		background-image: linear-gradient(
-			var(--dsgo-shape-gradient-dir),
-			var(--dsgo-shape-color, transparent) 0,
-			var(--dsgo-shape-color, transparent) 2px,
-			var(--dsgo-shape-background, transparent) 2px
-		);
-	}
-
-	// Bring to front - display above content
-	&--front {
-		z-index: 10;
-	}
-}
-
-// When section has shape dividers, ensure proper stacking
-.dsgo-stack--has-shape-divider {
-	// Prevent horizontal scrollbar from shapes extending beyond section width
-	overflow-x: clip;
-
-	// Content stays above shapes (z-index: 2)
-	// unless shape has "bring to front" option (z-index: 10)
-	> .dsgo-stack__inner {
-		position: relative;
-		z-index: 2;
-	}
-}
+// Shape Divider Styles (Editor) — identical to the frontend; the entire
+// ruleset lives in the shared partial @used at the top of this file. No
+// editor-specific divider variant exists, so there is nothing to override
+// here.
