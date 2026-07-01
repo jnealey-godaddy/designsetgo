@@ -183,6 +183,21 @@ class Section_Styles {
 
 		// Gather variation styles from the core containers. When more than one
 		// source defines the same slug, the first (Group) wins.
+		//
+		// This intentionally FLATTENS the three source blocks into one slug map
+		// and BROADCASTS it to all three DSGo container blocks — there is no
+		// source->target pairing (e.g. group->section, columns->row). That is
+		// deliberate: DSGo's section/row/grid are all general-purpose
+		// containers with no strict analog to the Group/Columns/Column split,
+		// and the goal is maximum coverage — a "section style" registered for
+		// only one core container (commonly core/group) should still reach all
+		// three DSGo blocks. Section styles in practice are layout-agnostic
+		// color/border presets, so broadcasting is correct for them. The only
+		// theoretical downside is a theme shipping a Column-specific variation
+		// that assumes a narrow child cell; such a variation would also land on
+		// the full-width Section. That is an accepted trade-off, not an
+		// oversight — revisit only if a real theme ships layout-specific,
+		// container-type-dependent section styles under distinct slugs.
 		$variation_styles = array();
 		foreach ( $this->source_blocks as $source ) {
 			if ( empty( $data['styles']['blocks'][ $source ]['variations'] ) ) {
