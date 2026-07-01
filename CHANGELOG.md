@@ -5,6 +5,19 @@ All notable changes to the DesignSetGo plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-07-01
+
+### New Features
+- **Section styles on layout blocks** — Theme "section style" variations registered for the core Group / Columns / Column blocks now also apply to DesignSetGo Section, Row, and Grid, so those blocks offer the same style options in the editor Styles panel. (#434)
+- **Theme-inheritable shape dividers** — Sections can inherit a site-wide default divider shape defined at the theme level (`settings.custom.designsetgo.shapeDivider.type`), and each section can still override it. (#434)
+
+### Changed
+- **Class-based, see-through shape dividers** — Shape dividers now render with CSS masks instead of an inline SVG. The shape region is transparent and reveals the section's own background — solid, gradient, or image — and the default height/width are left out of the saved markup unless customized. The drops, fan, steps, and slime shapes were redesigned for this see-through model. (#434)
+
+### Bug Fixes
+- **Theme default divider now resolves** — Shape mask definitions moved to `:root` so a theme/Style-Kit default resolves correctly; previously an inheriting divider silently fell back to Wave. (#434)
+- **Legacy divider content keeps migrating** — Froze the pre-redesign geometry the block deprecations use, so sections saved before this release with drops, fan, steps, or slime dividers still migrate silently instead of showing "Attempt Recovery." (#434)
+
 ## [2.2.0] - 2026-06-29
 
 ### New Features
