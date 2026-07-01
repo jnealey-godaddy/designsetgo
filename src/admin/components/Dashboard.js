@@ -287,6 +287,31 @@ const Dashboard = () => {
 					</CardBody>
 				</Card>
 			</div>
+
+			{/* designsetgo.dev callout */}
+			<a
+				className="designsetgo-dashboard__callout"
+				href="https://designsetgo.dev"
+				target="_blank"
+				rel="noopener noreferrer"
+			>
+				<span className="designsetgo-dashboard__callout-text">
+					<strong>
+						{__(
+							'Run your vibe-coded apps on your WordPress site',
+							'designsetgo'
+						)}
+					</strong>
+					{__(
+						'designsetgo.dev is a runtime that hosts the apps you build with AI — wired to your real posts, users, and data.',
+						'designsetgo'
+					)}
+				</span>
+				<span className="designsetgo-dashboard__callout-cta">
+					{__('Explore designsetgo.dev', 'designsetgo')}
+					<span className="dashicons dashicons-external"></span>
+				</span>
+			</a>
 		</div>
 	);
 };
