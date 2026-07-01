@@ -545,6 +545,21 @@ const v6 = {
 // and bottom for top dividers, regardless of flipY. When flipY was true, this
 // created a visible line where the wave curve didn't reach the container edge.
 // Fix: added --dsgo-shape-gradient-dir CSS custom property to ShapeDivider.
+//
+// NOTE ON THE SVG -> CLASS-BASED MIGRATION (commits 88f98fa/b81ba13/c01f810d):
+// The current save() in save.js was changed to emit an empty classed <div>
+// (no inline <svg>). No NEW deprecation entry was added for that change,
+// because the existing v3-v6 chain already migrates old content. WordPress's
+// applyBlockDeprecatedVersions() walks the deprecations in order and, for
+// each, first tries to byte-match that deprecation's own save() against the
+// stored HTML and, failing that, falls back to its isEligible(). Old
+// inline-SVG posts byte-match the frozen save() of whichever era wrote them
+// (OldShapeDivider/`currentColor` in v3, V4ShapeDivider/background-color
+// inheritance in v4-v6); that deprecation's passthrough migrate() then
+// carries the attributes forward unchanged so the new class-based save()
+// re-renders them. v5's broad isEligible (below) is an additional safety net
+// for near-miss markup. Verified in src/blocks/section/test/deprecated.test.js
+// — do not delete that test; it is the regression guard for this migration.
 const v5 = {
 	supports: sharedSupports,
 	attributes: {
