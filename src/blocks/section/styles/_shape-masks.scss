@@ -13,7 +13,16 @@
  * @since 2.6.0
  */
 
-:where(.dsgo-shape-divider) {
+// Defined on :root (NOT scoped to `.dsgo-shape-divider`) on purpose. A theme
+// or the Style Kit sets the site-wide default via theme.json
+// `settings.custom.designsetgo.shapeDivider.type: var(--dsgo-shape--<slug>)`,
+// which WordPress emits as `--wp--custom--designsetgo--shape-divider--type` on
+// `body`. For that `var(--dsgo-shape--<slug>)` to resolve, the shape masks must
+// be visible at that scope — so they live at :root and inherit down to both the
+// body-level theme var and the divider element. Scoping them to the divider
+// (as before) makes the theme-default value invalid, so `.is-shape-inherit`
+// silently falls back to wave. Do not narrow this selector.
+:root {
 	--dsgo-shape--wave: url(data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,0 C300,120 900,0 1200,80 L1200,120 L0,120 Z'/%3E%3C/svg%3E);
 	--dsgo-shape--wave-double: url(data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,40 C150,100 350,0 600,40 C850,80 1050,0 1200,60 L1200,120 L0,120 Z'/%3E%3C/svg%3E);
 	--dsgo-shape--wave-layered: url(data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M0,60 C300,20 600,100 900,40 C1050,10 1150,30 1200,50 L1200,120 L0,120 Z' opacity='0.5'/%3E%3Cpath d='M0,80 C200,40 400,100 600,60 C800,20 1000,80 1200,60 L1200,120 L0,120 Z' opacity='0.7'/%3E%3Cpath d='M0,100 C150,70 350,110 600,80 C850,50 1000,90 1200,70 L1200,120 L0,120 Z'/%3E%3C/svg%3E);
