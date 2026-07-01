@@ -85,16 +85,34 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		shapeDividerBottomFront,
 	} = attributes;
 
-	// Get section's effective background color for shape divider default
-	// Prefer inline style (custom color) over preset slug
+	// Get section's effective background color for shape divider fill default.
+	// Prefer inline style (custom color) over preset slug.
 	const sectionBackgroundColor =
 		attributes.style?.color?.background ||
 		(backgroundColor ? `var(--wp--preset--color--${backgroundColor})` : '');
 
-	// Get section's effective text color for shape divider background default
+	// Get section's effective text color — used only for the inspector's
+	// shape preview swatch (ShapeDividerControls), not the rendered divider.
 	const sectionTextColor =
 		attributes.style?.color?.text ||
 		(textColor ? `var(--wp--preset--color--${textColor})` : '');
+
+	// Shape divider fill: explicit color wins, otherwise falls back to the
+	// section's own background color. If neither is set, omit the CSS var
+	// entirely so the stylesheet's `currentColor` fallback applies.
+	const shapeDividerTopFillColor =
+		convertColorToCSSVar(shapeDividerTopColor) || sectionBackgroundColor;
+	const shapeDividerBottomFillColor =
+		convertColorToCSSVar(shapeDividerBottomColor) || sectionBackgroundColor;
+
+	// Shape divider band: explicit color only. Omit when unset so the
+	// stylesheet's `--wp--preset--color--base` fallback applies.
+	const shapeDividerTopBandColor = convertColorToCSSVar(
+		shapeDividerTopBackgroundColor
+	);
+	const shapeDividerBottomBandColor = convertColorToCSSVar(
+		shapeDividerBottomBackgroundColor
+	);
 
 	// Auto-migrate old blocks that use className for alignment
 	useEffect(() => {
@@ -508,7 +526,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 								? [
 										{
 											label: __(
-												'Top Shape Color',
+												'Top Shape Fill (default: section background)',
 												'designsetgo'
 											),
 											colorValue: decodeColorValue(
@@ -528,7 +546,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 										},
 										{
 											label: __(
-												'Top Shape Background',
+												'Top Band Background (default: base)',
 												'designsetgo'
 											),
 											colorValue: decodeColorValue(
@@ -553,7 +571,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 								? [
 										{
 											label: __(
-												'Bottom Shape Color',
+												'Bottom Shape Fill (default: section background)',
 												'designsetgo'
 											),
 											colorValue: decodeColorValue(
@@ -573,7 +591,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 										},
 										{
 											label: __(
-												'Bottom Shape Background',
+												'Bottom Band Background (default: base)',
 												'designsetgo'
 											),
 											colorValue: decodeColorValue(
@@ -611,39 +629,26 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 			<TagName {...blockProps}>
 				<ShapeDivider
 					shape={shapeDividerTop}
-					color={
-						convertColorToCSSVar(shapeDividerTopColor) ||
-						sectionBackgroundColor
-					}
-					backgroundColor={
-						convertColorToCSSVar(shapeDividerTopBackgroundColor) ||
-						sectionTextColor
-					}
+					position="top"
 					height={shapeDividerTopHeight}
 					width={shapeDividerTopWidth}
 					flipX={shapeDividerTopFlipX}
 					flipY={shapeDividerTopFlipY}
 					front={shapeDividerTopFront}
-					position="top"
+					fillColor={shapeDividerTopFillColor}
+					bandColor={shapeDividerTopBandColor}
 				/>
 				<div {...innerBlocksProps} />
 				<ShapeDivider
 					shape={shapeDividerBottom}
-					color={
-						convertColorToCSSVar(shapeDividerBottomColor) ||
-						sectionBackgroundColor
-					}
-					backgroundColor={
-						convertColorToCSSVar(
-							shapeDividerBottomBackgroundColor
-						) || sectionTextColor
-					}
+					position="bottom"
 					height={shapeDividerBottomHeight}
 					width={shapeDividerBottomWidth}
 					flipX={shapeDividerBottomFlipX}
 					flipY={shapeDividerBottomFlipY}
 					front={shapeDividerBottomFront}
-					position="bottom"
+					fillColor={shapeDividerBottomFillColor}
+					bandColor={shapeDividerBottomBandColor}
 				/>
 			</TagName>
 		</>
