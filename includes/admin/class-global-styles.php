@@ -73,9 +73,8 @@ class Global_Styles {
 			),
 			'styles'   => array(
 				'blocks' => array(
-					'designsetgo/container' => $this->get_container_block_styles(),
-					'designsetgo/tabs'      => $this->get_tabs_block_styles(),
-					'designsetgo/tab'       => $this->get_tab_block_styles(),
+					'designsetgo/tabs' => $this->get_tabs_block_styles(),
+					'designsetgo/tab'  => $this->get_tab_block_styles(),
 				),
 			),
 		);
@@ -94,15 +93,6 @@ class Global_Styles {
 
 			// Block spacing defaults — only applied when DSG controls the spacing
 			// scale. When theme has spacing, blocks inherit from the theme's system.
-			$dsg_settings['styles']['blocks']['designsetgo/container']['spacing'] = array(
-				'padding'  => array(
-					'top'    => 'var(--wp--preset--spacing--40, 1.5rem)',
-					'bottom' => 'var(--wp--preset--spacing--40, 1.5rem)',
-					'left'   => 'var(--wp--preset--spacing--20, 0.5rem)',
-					'right'  => 'var(--wp--preset--spacing--20, 0.5rem)',
-				),
-				'blockGap' => 'var(--wp--preset--spacing--30, 1rem)',
-			);
 			$dsg_settings['styles']['blocks']['designsetgo/tabs']['spacing'] = array(
 				'margin' => array(
 					'top'    => 'var(--wp--preset--spacing--40, 1.5rem)',
@@ -302,26 +292,6 @@ class Global_Styles {
 				'slug' => 'xx-large',
 				'size' => '2.5rem',
 				'name' => __( 'XXL (40px)', 'designsetgo' ),
-			),
-		);
-	}
-
-	/**
-	 * Get Container block global styles (non-spacing).
-	 *
-	 * Returns border and color defaults. Spacing (padding, blockGap) is added
-	 * conditionally in extend_theme_json() only when the theme doesn't define
-	 * its own spacingSizes, so blocks inherit the theme's spacing rhythm.
-	 *
-	 * @return array Container block styles.
-	 */
-	private function get_container_block_styles() {
-		return array(
-			'border' => array(
-				'radius' => 'var(--wp--custom--designsetgo--border-radius--medium)',
-			),
-			'color'  => array(
-				'background' => 'transparent',
 			),
 		);
 	}

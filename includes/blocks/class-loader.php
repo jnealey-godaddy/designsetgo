@@ -256,13 +256,14 @@ class Loader {
 	/**
 	 * Register block style variations.
 	 *
-	 * These appear in the Site Editor under Styles → Blocks → [Block Name]
-	 * All styles are now JSON-based (WordPress 6.7+ theme.json format) and
-	 * auto-discovered from the block's /styles/ directory.
+	 * These appear in the Site Editor under Styles → Blocks → [Block Name].
+	 * Styles are JSON-based (WordPress 6.7+ theme.json format) and
+	 * auto-discovered from each block's /styles/ directory. Drop a JSON file
+	 * (with `slug`, `title`, `blockTypes` and `styles`) into
+	 * `src/blocks/{block}/styles/` to add a variation; none ship by default.
 	 *
-	 * Container block styles include:
-	 * - section-1 through section-5: Color scheme variations
-	 * - card, elevated, bordered, gradient, glass: Visual style variations
+	 * Theme/plugin section styles for the layout blocks are handled separately
+	 * by {@see \DesignSetGo\Section_Styles}.
 	 */
 	public function register_block_styles() {
 		// Register JSON-based block style variations from the /styles/ directory.
