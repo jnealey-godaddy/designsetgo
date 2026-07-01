@@ -9,7 +9,7 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
-import { getShapeDivider } from './utils/shape-dividers';
+import { getLegacyShapeDivider } from './utils/legacy-shape-dividers';
 import { sanitizeColor } from './utils/sanitize-color';
 
 // Shared supports for deprecations (must match what was in block.json when blocks were saved).
@@ -116,7 +116,7 @@ function OldShapeDivider({
 		return null;
 	}
 
-	const shapeElement = getShapeDivider(shape);
+	const shapeElement = getLegacyShapeDivider(shape);
 	if (!shapeElement) {
 		return null;
 	}
@@ -206,7 +206,7 @@ function V4ShapeDivider({
 		return null;
 	}
 
-	const shapeElement = getShapeDivider(shape);
+	const shapeElement = getLegacyShapeDivider(shape);
 	if (!shapeElement) {
 		return null;
 	}

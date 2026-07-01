@@ -110,4 +110,28 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 		expect(block.attributes.shapeDividerBottomHeight).toBe(60);
 		expect(block.attributes.backgroundColor).toBe('contrast');
 	});
+
+	// Regression guard for the drops/fan/steps/slime redesign. Those four
+	// shapes' geometry changed in SHAPE_DIVIDERS for the see-through mask model.
+	// The deprecation save() functions (OldShapeDivider for v3, V4ShapeDivider
+	// for v4/v5/v6) reproduce the OLD inline-<svg> markup for byte-matching, so
+	// they MUST emit the pre-redesign geometry (via LEGACY_SHAPE_DIVIDERS) — not
+	// the live library — or content saved before the redesign fails to match any
+	// deprecation and shows "unexpected or invalid content". The other tests use
+	// wave/tilt, which were NOT redesigned, so they can't catch this.
+	test('deprecations reproduce frozen legacy geometry for redesigned shapes (drops)', () => {
+		// deprecated.js exports newest-first: [v6, v5, v4, v3, v2, v1].
+		const [, , v4Dep, v3Dep] = deprecated;
+
+		[v3Dep, v4Dep].forEach((deprecation) => {
+			const markup = buildOldMarkup(
+				{ shapeDividerTop: 'drops', shapeDividerTopHeight: 80 },
+				deprecation
+			);
+			// Pre-redesign drops was five <ellipse>s over a base <rect>.
+			expect(markup).toContain('<ellipse');
+			// The redesigned single-<path> arc signature must NOT appear.
+			expect(markup).not.toContain('A100,95');
+		});
+	});
 });
