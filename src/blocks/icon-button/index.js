@@ -17,6 +17,9 @@ import transforms from './transforms';
 import metadata from './block.json';
 import { ICON_COLOR } from '../shared/constants';
 
+// Mirror core Button's style variations (Fill, Outline, …) onto Icon Button.
+import './mirror-button-styles';
+
 import './editor.scss';
 import './style.scss';
 

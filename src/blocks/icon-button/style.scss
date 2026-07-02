@@ -111,6 +111,25 @@
 	}
 }
 
+// Outline style variation — mirrored from core Button (see
+// src/blocks/icon-button/mirror-button-styles.js, which lists it in the editor
+// Styles panel). Core's own `is-style-outline` CSS only loads when a core
+// button is present on the page (FSE per-block asset loading), so we reproduce
+// it here, scoped to the Icon Button, to guarantee the variation renders
+// everywhere. Matches core: transparent fill, 2px current-color border, and the
+// text/border colour reset to the inherited (theme) colour. A user-set colour
+// still wins via its higher-specificity inline style, mirroring core's
+// has-background / has-text-color behaviour.
+// The `:root .dsgo-icon-button.wp-block-button__link` selector matches the
+// specificity of the generated default-colour rule (theme.json block styles set
+// the Icon Button's fill background/text), so `transparent` + the inherited
+// colour actually win here; the extra `.is-style-outline` class pushes it past.
+:root .dsgo-icon-button.wp-block-button__link.is-style-outline {
+	border: 2px solid currentcolor;
+	background-color: transparent;
+	color: currentcolor;
+}
+
 // CRITICAL: Must duplicate from icons pattern for container parent hover
 // Parent container hover: apply button background when parent is hovered
 // Uses CSS variable set by parent container (Flex, Grid, Stack)
