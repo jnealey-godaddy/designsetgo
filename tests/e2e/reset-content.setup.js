@@ -1,14 +1,17 @@
 /**
  * Content Reset for Playwright Tests
  *
- * Deletes all pages and posts before the suite runs so each run starts from a
- * clean slate. Without this, every run publishes new test pages that accumulate
- * in the database, cluttering the site (and the frontend screenshots' nav/lists).
+ * In CI (or when DSGO_E2E_RESET_CONTENT=1) this deletes all pages and posts
+ * before the suite runs so each run starts from a clean slate — otherwise
+ * every run's test pages would accumulate in the database. It is GUARDED to a
+ * no-op locally (the pre-commit hook runs this suite) because the delete is
+ * unconditional across all post statuses and would otherwise wipe a developer's
+ * own content; see deleteAllPagesAndPosts() in helpers/wp-cli.js.
  *
  * Runs in the `setup` project (matched by *.setup.js), which the browser
  * projects depend on — so it always completes before the actual tests start.
- * Resets via WP-CLI through wp-env, which is thorough (all post statuses) and
- * matches how the project runs other CLI tasks (see the `plugin-check` script).
+ * Resets via WP-CLI through wp-env, matching how the project runs other CLI
+ * tasks (see the `plugin-check` script).
  */
 
 const { test } = require('@playwright/test');

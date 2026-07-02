@@ -373,6 +373,16 @@ const v1ObjectFit = {
 			attribute: 'data-scroll-speed',
 			default: 0.5,
 		},
+		// Only rows (query) and scrollSpeed (data-attribute) are recovered
+		// from the markup. gap/imageHeight/imageWidth/objectFit/rowGap are
+		// deliberately NOT sourced from the inline style: an empty block
+		// comment means every comment-backed attribute was at its default
+		// when saved (WordPress serializes any non-default value into the
+		// comment), so the inline-style vars are the defaults too — resolving
+		// to the schema default here is exact, not lossy, for any WP-authored
+		// block. (Only hand-crafted markup that baked a non-default var into
+		// the style while leaving the comment empty would differ, which no WP
+		// save path produces.)
 		imageHeight: { type: 'string', default: '200px' },
 		imageWidth: { type: 'string', default: '300px' },
 		objectFit: {
@@ -496,35 +506,9 @@ const v1 = {
 		},
 	},
 	supports: sharedSupports,
-	migrate(attributes) {
-		// scrollSpeed comes back as a string from the HTML attribute source,
-		// convert to number for the new format.
-		const scrollSpeed =
-			typeof attributes.scrollSpeed === 'string'
-				? parseFloat(attributes.scrollSpeed)
-				: attributes.scrollSpeed;
-
-		// Add id: 0 to images (not available from HTML, will be 0 until re-selected)
-		const rows = attributes.rows.map((row) => ({
-			direction: row.direction || 'left',
-			images: (row.images || []).map((img) => ({
-				id: 0,
-				url: img.url || '',
-				alt: img.alt || '',
-			})),
-		}));
-
-		return {
-			...attributes,
-			rows,
-			scrollSpeed:
-				isNaN(scrollSpeed) ||
-				scrollSpeed === null ||
-				scrollSpeed === undefined
-					? 0.5
-					: scrollSpeed,
-		};
-	},
+	// Shared with v1ObjectFit: normalizes HTML-sourced rows (adds id: 0) and
+	// coerces the string data-scroll-speed to a number.
+	migrate: migrateHtmlSourced,
 	save({ attributes }) {
 		const {
 			rows,

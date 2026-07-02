@@ -1,7 +1,10 @@
 /**
  * Cleanup Teardown for Playwright Tests
  *
- * This file handles cleanup after all tests complete.
+ * Runs after all tests complete. The full page/post wipe only happens in CI
+ * (or when DSGO_E2E_RESET_CONTENT=1) — see deleteAllPagesAndPosts() in
+ * helpers/wp-cli.js. Locally it is a no-op, so a pre-commit run never deletes a
+ * developer's content; per-test cleanup still removes each test's own pages.
  */
 
 const { test } = require('@playwright/test');
