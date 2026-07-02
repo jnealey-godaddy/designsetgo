@@ -79,13 +79,30 @@ function shellArg(value) {
  * $ids expansion happen there, not on the host. Used by the content reset
  * (before the suite) and the cleanup teardown (after the suite) so a run both
  * starts and ends from a clean slate.
+ *
+ * SAFETY GUARD: this wipes ALL content, including a developer's real pages on
+ * their local wp-env DB. The pre-commit hook runs the e2e suite locally, so
+ * without a guard a routine `git commit` would destroy the working site. The
+ * destructive delete therefore only runs against a disposable CI database
+ * (GitHub Actions sets `CI=true`) or when a developer explicitly opts in via
+ * `DSGO_E2E_RESET_CONTENT=1`. Otherwise it is a no-op, and the suite still
+ * works: each test creates and queries its own page by ID, and per-test
+ * cleanup removes those pages regardless.
+ *
+ * @return {boolean} True if content was actually deleted, false if skipped.
  */
 function deleteAllPagesAndPosts() {
+	const inCI = !!process.env.CI;
+	const optedIn = process.env.DSGO_E2E_RESET_CONTENT === '1';
+	if (!inCI && !optedIn) {
+		return false;
+	}
 	cli(
 		"sh -c 'ids=$(wp post list --post_type=page,post " +
 			'--post_status=any --format=ids); ' +
 			'if [ -n "$ids" ]; then wp post delete $ids --force; fi\''
 	);
+	return true;
 }
 
 /**

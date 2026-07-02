@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,11 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.3.1 - 2026-07-02 =
+
+* **Fix:** Scrolling Gallery blocks saved by older versions or patterns (image rows stored in the markup rather than the block comment) keep migrating silently instead of showing "Attempt Recovery."
+* **Internal:** A local pre-commit run of the end-to-end tests no longer resets the developer's pages and posts — the content wipe is now limited to CI.
 
 = 2.3.0 - 2026-07-01 =
 
