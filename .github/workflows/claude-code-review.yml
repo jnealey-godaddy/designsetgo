@@ -28,7 +28,14 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          track_progress: true
+          # track_progress makes the action manage a single "progress" comment
+          # and instructs the agent to ONLY update it ("never create new
+          # comments"), which conflicts with the review flow below (inline
+          # comments + a gh pr comment summary + a gh pr review verdict). Caught
+          # between the two, the agent flailed — it even attempted git
+          # commit/push — and never posted, leaving the progress comment frozen
+          # with unchecked todos. Run without it so the prompt's posting
+          # instructions are the only ones in effect.
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
