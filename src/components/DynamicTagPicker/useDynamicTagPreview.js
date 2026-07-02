@@ -67,7 +67,8 @@ export function useDynamicTagPreview({ source, args, postId, size }) {
 		return {
 			id: editor.getCurrentPostId?.() || current.id || 0,
 			type: editor.getCurrentPostType?.() || current.type || '',
-			title: editor.getEditedPostAttribute?.('title') ?? current.title ?? '',
+			title:
+				editor.getEditedPostAttribute?.('title') ?? current.title ?? '',
 			excerpt:
 				editor.getEditedPostAttribute?.('excerpt') ??
 				current.excerpt ??

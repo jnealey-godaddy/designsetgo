@@ -127,7 +127,6 @@ export default function AdvancedPanel({ attributes, setAttributes, clientId }) {
 					/>
 				</DsgoInspectorPanel.Item>
 			)}
-
 		</DsgoInspectorPanel>
 	);
 }

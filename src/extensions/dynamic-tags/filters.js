@@ -30,7 +30,10 @@ import {
 import { __, sprintf } from '@wordpress/i18n';
 import { Fragment, useState } from '@wordpress/element';
 
-import { DynamicTagButton, DynamicTagPicker } from '../../components/DynamicTagPicker';
+import {
+	DynamicTagButton,
+	DynamicTagPicker,
+} from '../../components/DynamicTagPicker';
 import { getBindableAttributes } from './bindable-attributes';
 
 // Database cylinder — the conventional "dynamic data" icon used by
@@ -101,7 +104,9 @@ function getDynamicTagsBindings({ attributes, setAttributes }) {
 		}
 
 		setAttributes({
-			metadata: Object.keys(nextMetadata).length ? nextMetadata : undefined,
+			metadata: Object.keys(nextMetadata).length
+				? nextMetadata
+				: undefined,
 		});
 	};
 
@@ -112,7 +117,8 @@ function DynamicTagsToolbar({ bindable, bindings, setBinding }) {
 	const [pickerAttribute, setPickerAttribute] = useState(null);
 
 	const isAnyConnected = Object.keys(bindings).length > 0;
-	const active = bindable.find((b) => b.attribute === pickerAttribute) || null;
+	const active =
+		bindable.find((b) => b.attribute === pickerAttribute) || null;
 	const currentValue = active ? bindings[active.attribute] || null : null;
 
 	const closePicker = () => setPickerAttribute(null);
@@ -131,10 +137,16 @@ function DynamicTagsToolbar({ bindable, bindings, setBinding }) {
 								isConnected
 									? sprintf(
 											/* translators: %s: bound source slug */
-											__('Dynamic — bound to %s', 'designsetgo'),
+											__(
+												'Dynamic — bound to %s',
+												'designsetgo'
+											),
 											bindings[only.attribute].source
 										)
-									: __('Connect to Dynamic Tag', 'designsetgo')
+									: __(
+											'Connect to Dynamic Tag',
+											'designsetgo'
+										)
 							}
 							isActive={isConnected}
 							onClick={() => setPickerAttribute(only.attribute)}
@@ -230,27 +242,33 @@ const withDynamicTagsControls = createHigherOrderComponent((BlockEdit) => {
 						initialOpen={Object.keys(bindings).length > 0}
 					>
 						<VStack spacing={3}>
-							{bindable.map(({ attribute, returns, label, subkey }) => {
-								const current = bindings[attribute] || null;
-								return (
-									<HStack
-										key={attribute}
-										justify="space-between"
-										alignment="center"
-									>
-										<span className="dsgo-dynamic-tags-extension__label">
-											{label}
-										</span>
-										<DynamicTagButton
-											value={current}
-											onChange={(next) =>
-												setBinding(attribute, next, subkey)
-											}
-											returns={returns}
-										/>
-									</HStack>
-								);
-							})}
+							{bindable.map(
+								({ attribute, returns, label, subkey }) => {
+									const current = bindings[attribute] || null;
+									return (
+										<HStack
+											key={attribute}
+											justify="space-between"
+											alignment="center"
+										>
+											<span className="dsgo-dynamic-tags-extension__label">
+												{label}
+											</span>
+											<DynamicTagButton
+												value={current}
+												onChange={(next) =>
+													setBinding(
+														attribute,
+														next,
+														subkey
+													)
+												}
+												returns={returns}
+											/>
+										</HStack>
+									);
+								}
+							)}
 						</VStack>
 					</PanelBody>
 				</InspectorControls>
