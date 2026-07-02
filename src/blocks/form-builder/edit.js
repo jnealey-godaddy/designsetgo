@@ -187,8 +187,7 @@ export default function FormBuilderEdit({
 		'--dsgo-form-input-height': inputHeight,
 		'--dsgo-form-input-padding': inputPadding,
 		'--dsgo-form-label-color': convertColorToCSSVar(fieldLabelColor),
-		'--dsgo-form-border-color':
-			convertColorToCSSVar(fieldBorderColor) || '#d1d5db',
+		'--dsgo-form-border-color': convertColorToCSSVar(fieldBorderColor),
 		'--dsgo-form-field-bg': convertColorToCSSVar(fieldBackgroundColor),
 		'--dsgo-form-border-radius': validateCSSLength(fieldBorderRadius),
 		// Button colors now applied as inline styles on button element

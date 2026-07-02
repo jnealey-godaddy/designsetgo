@@ -170,7 +170,7 @@ describe('SVG Patterns Extension', () => {
 			});
 			expect(result.attributes.dsgoSvgPatternColor).toEqual({
 				type: 'string',
-				default: '#9c92ac',
+				default: '',
 			});
 			expect(result.attributes.dsgoSvgPatternOpacity).toEqual({
 				type: 'number',

@@ -252,8 +252,9 @@ class SVG_Pattern_Renderer {
 			return $block_content;
 		}
 
-		$color   = sanitize_text_field( $processor->get_attribute( 'data-dsgo-svg-pattern-color' ) ?? '#9c92ac' );
-		$color   = sanitize_text_field( $this->resolve_color_value( $color ) );
+		$color = $processor->get_attribute( 'data-dsgo-svg-pattern-color' );
+		$color = sanitize_text_field( $color ? $color : '#9c92ac' );
+		$color = sanitize_text_field( $this->resolve_color_value( $color ) );
 		$opacity = (float) ( $processor->get_attribute( 'data-dsgo-svg-pattern-opacity' ) ?? 0.4 );
 		$scale   = (float) ( $processor->get_attribute( 'data-dsgo-svg-pattern-scale' ) ?? 1 );
 
