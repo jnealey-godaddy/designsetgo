@@ -41,6 +41,11 @@ jobs:
             3. Use inline comments for specific code issues
             4. Post a summary comment at the end
 
+            This is a READ-ONLY review. Explore with `gh pr diff/view`, `git
+            diff/log/show/status`, and read tools only. Do NOT modify, add,
+            commit, push, or delete any files — your only writes are inline
+            comments, the summary comment, and the final `gh pr review` verdict.
+
             ## Security Review (CRITICAL - Check Every Item)
             - XSS vulnerabilities: unescaped output, missing esc_html/esc_attr/wp_kses
             - SQL injection: direct variable interpolation in queries, missing $wpdb->prepare()
@@ -93,5 +98,11 @@ jobs:
             - If you only find Medium/Low issues worth noting but nothing blocking, COMMENT:
               `gh pr review ${{ github.event.pull_request.number }} --comment --body "your summary"`
 
+          # Allowlist must cover read-only exploration (git diff/log/show,
+          # cat/ls/find/grep, LS) in addition to the PR-posting tools —
+          # otherwise the reviewer burns its turn budget on denied commands and
+          # never publishes its findings or verdict. --max-turns gives the
+          # thorough multi-file review room to finish after exploring.
           claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),Read,Grep,Glob"
+            --max-turns 40
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Read,Grep,Glob,LS"
