@@ -5,14 +5,16 @@ All notable changes to the DesignSetGo plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.1] - 2026-07-01
+## [2.3.0] - 2026-07-01
 
 ### New Features
 - **Section styles on layout blocks** — Theme "section style" variations registered for the core Group / Columns / Column blocks now also apply to DesignSetGo Section, Row, and Grid, so those blocks offer the same style options in the editor Styles panel. (#434)
 - **Theme-inheritable shape dividers** — Sections can inherit a site-wide default divider shape defined at the theme level (`settings.custom.designsetgo.shapeDivider.type`), and each section can still override it. (#434)
+- **designsetgo.dev callout** — The plugin dashboard now links to [designsetgo.dev](https://designsetgo.dev), the runtime for hosting the apps you build with AI on your WordPress site.
 
 ### Changed
 - **Class-based, see-through shape dividers** — Shape dividers now render with CSS masks instead of an inline SVG. The shape region is transparent and reveals the section's own background — solid, gradient, or image — and the default height/width are left out of the saved markup unless customized. The drops, fan, steps, and slime shapes were redesigned for this see-through model. (#434)
+- **Refreshed admin branding** — Updated the plugin dashboard logo and the WordPress admin-menu icon to the current DesignSetGo brand mark.
 
 ### Bug Fixes
 - **Theme default divider now resolves** — Shape mask definitions moved to `:root` so a theme/Style-Kit default resolves correctly; previously an inheriting divider silently fell back to Wave. (#434)

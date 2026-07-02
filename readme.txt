@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.2.1
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -94,11 +94,13 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 == Changelog ==
 
-= 2.2.1 - 2026-07-01 =
+= 2.3.0 - 2026-07-01 =
 
 * **New:** Theme "section style" variations now also apply to DesignSetGo Section, Row, and Grid blocks (matching the core Group / Columns / Column blocks).
 * **New:** Sections can inherit a site-wide default shape divider set at the theme level, and each section can still override it.
+* **New:** The plugin dashboard now links to designsetgo.dev — a runtime for hosting the apps you build with AI on your WordPress site.
 * **Change:** Shape dividers now render with CSS masks instead of an inline SVG — the shape "sees through" to the section's own background (solid, gradient, or image), and the default height/width are left out of the saved markup unless customized. The drops, fan, steps, and slime shapes were redesigned for the new model.
+* **Tweak:** Refreshed the admin dashboard logo and menu icon to the current DesignSetGo brand mark.
 * **Fix:** A theme-level default shape divider now resolves correctly instead of falling back to Wave.
 * **Fix:** Sections saved with drops, fan, steps, or slime dividers before this release keep migrating silently instead of showing "Attempt Recovery."
 
