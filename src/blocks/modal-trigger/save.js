@@ -14,6 +14,8 @@ export default function save({ attributes }) {
 		align,
 		icon,
 		iconPosition,
+		iconStyle,
+		strokeWidth,
 		iconSize,
 		iconGap,
 		style,
@@ -70,12 +72,19 @@ export default function save({ attributes }) {
 		}),
 	};
 
+	// Size is only written inline when the author sets an explicit iconSize;
+	// otherwise it is omitted so the theme default token
+	// (--wp--custom--designsetgo--modal-trigger--default-size, via style.scss)
+	// applies.
+	const hasExplicitSize = typeof iconSize === 'number';
 	const iconWrapperStyles = {
+		...(hasExplicitSize && {
+			width: `${iconSize}px`,
+			height: `${iconSize}px`,
+		}),
 		display: 'flex',
 		alignItems: 'center',
 		justifyContent: 'center',
-		width: `${iconSize}px`,
-		height: `${iconSize}px`,
 		flexShrink: 0,
 	};
 
@@ -96,6 +105,12 @@ export default function save({ attributes }) {
 					className="dsgo-modal-trigger__icon dsgo-lazy-icon"
 					style={iconWrapperStyles}
 					data-icon-name={icon}
+					// Omit when unset so the injector inherits the theme default
+					// (settings.custom.designsetgo.icon.defaultStyle).
+					data-icon-style={iconStyle || undefined}
+					data-icon-stroke-width={
+						iconStyle === 'outlined' ? strokeWidth : undefined
+					}
 				/>
 			)}
 			<RichText.Content
@@ -108,6 +123,10 @@ export default function save({ attributes }) {
 					className="dsgo-modal-trigger__icon dsgo-lazy-icon"
 					style={iconWrapperStyles}
 					data-icon-name={icon}
+					data-icon-style={iconStyle || undefined}
+					data-icon-stroke-width={
+						iconStyle === 'outlined' ? strokeWidth : undefined
+					}
 				/>
 			)}
 		</button>

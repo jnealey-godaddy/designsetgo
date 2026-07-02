@@ -28,6 +28,24 @@
 			display: block;
 			fill: currentcolor; // Ensure SVG inherits color from wrapper
 		}
+
+		// Size inherited from the theme default token
+		// (--wp--custom--designsetgo--icon-list--default-size, via
+		// --dsgo-icon-list-size set inline in save.js) when the parent icon-list
+		// leaves iconSize unset. Plain icon box: exact token size. Background
+		// box: token size + the same 16px padding allowance used for explicit
+		// sizes so the +16 math stays correct in both cases.
+		&--inherit-size {
+			width: var(--dsgo-icon-list-size);
+			height: var(--dsgo-icon-list-size);
+			min-width: var(--dsgo-icon-list-size);
+
+			&[style*="background-color"] {
+				width: calc(var(--dsgo-icon-list-size) + 16px);
+				height: calc(var(--dsgo-icon-list-size) + 16px);
+				min-width: calc(var(--dsgo-icon-list-size) + 16px);
+			}
+		}
 	}
 
 	&__content {

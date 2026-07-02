@@ -64,6 +64,184 @@ const sharedSupports = {
 };
 
 /**
+ * Version 7: Before the theme icon-size / icon-style tokens
+ *
+ * The pre-token format always wrote an explicit `width:Npx;height:Npx` on the
+ * icon span and a plain `data-icon-size` (defaulting to 20), with no
+ * `data-icon-style` / `data-icon-stroke-width` attributes at all. The current
+ * version omits the inline size when the author leaves iconSize unset so the
+ * theme default token (settings.custom.designsetgo.iconButton.defaultSize)
+ * can take over, and only emits data-icon-style / data-icon-stroke-width for
+ * an explicit outlined style.
+ *
+ * The deprecated attribute schema intentionally has NO default for iconSize:
+ * an implicit-default old block re-parses to `undefined`, so the passthrough
+ * migrate lets it inherit the theme token. Blocks that set an explicit size
+ * keep their stored value as an override.
+ */
+const v7 = {
+	supports: sharedSupports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// Lazy-format block (post-v6) that still carries an inline size pair
+		// on the icon span — the signature of the pre-token serialization.
+		return (
+			innerHTML &&
+			innerHTML.includes('dsgo-lazy-icon') &&
+			/width:\s*\d+px\s*;\s*height:\s*\d+px/.test(innerHTML)
+		);
+	},
+
+	attributes: {
+		align: { type: 'string' },
+		text: { type: 'string', default: '' },
+		url: { type: 'string', default: '' },
+		linkTarget: { type: 'string', default: '_self' },
+		rel: { type: 'string', default: '' },
+		icon: { type: 'string', default: 'lightbulb' },
+		iconPosition: { type: 'string', default: 'start' },
+		iconSize: { type: 'number' },
+		iconGap: { type: 'string', default: '8px' },
+		hoverAnimation: { type: 'string', default: 'none' },
+		hoverBackgroundColor: { type: 'string', default: '' },
+		hoverTextColor: { type: 'string', default: '' },
+		modalCloseId: { type: 'string', default: '' },
+	},
+
+	save({ attributes }) {
+		const {
+			text,
+			url,
+			linkTarget,
+			rel,
+			icon,
+			iconPosition,
+			iconSize,
+			iconGap,
+			align,
+			hoverAnimation,
+			hoverBackgroundColor,
+			hoverTextColor,
+			style,
+			backgroundColor,
+			textColor,
+			fontSize,
+			modalCloseId,
+		} = attributes;
+
+		// Extract WordPress color values (must match edit.js)
+		const bgColor =
+			style?.color?.background ||
+			(backgroundColor && `var(--wp--preset--color--${backgroundColor})`);
+		const txtColor =
+			style?.color?.text ||
+			(textColor && `var(--wp--preset--color--${textColor})`);
+
+		// Extract font size (must match edit.js)
+		const fontSizeValue =
+			style?.typography?.fontSize ||
+			(fontSize && `var(--wp--preset--font-size--${fontSize})`);
+
+		// Extract padding (must match edit.js)
+		const paddingValue = style?.spacing?.padding;
+
+		// Combined styles for single element (must match edit.js)
+		const isFullWidth = align === 'full';
+		const buttonStyles = {
+			display: isFullWidth ? 'flex' : 'inline-flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			gap: iconPosition !== 'none' && icon ? iconGap : 0,
+			width: isFullWidth ? '100%' : 'auto',
+			flexDirection: iconPosition === 'end' ? 'row-reverse' : 'row',
+			...(bgColor && { backgroundColor: bgColor }),
+			...(txtColor && { color: txtColor }),
+			...(fontSizeValue && { fontSize: fontSizeValue }),
+			...(paddingValue && {
+				paddingTop: convertPaddingValue(paddingValue.top),
+				paddingRight: convertPaddingValue(paddingValue.right),
+				paddingBottom: convertPaddingValue(paddingValue.bottom),
+				paddingLeft: convertPaddingValue(paddingValue.left),
+			}),
+			...(hoverBackgroundColor && {
+				'--dsgo-button-hover-bg':
+					convertPresetToCSSVar(hoverBackgroundColor),
+			}),
+			...(hoverTextColor && {
+				'--dsgo-button-hover-color':
+					convertPresetToCSSVar(hoverTextColor),
+			}),
+		};
+
+		// Pre-token format always baked an explicit size.
+		const size = typeof iconSize === 'number' ? iconSize : 20;
+
+		// Icon wrapper styles (OLD: always explicit width/height)
+		const iconWrapperStyles = {
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			width: `${size}px`,
+			height: `${size}px`,
+			flexShrink: 0,
+		};
+
+		// Build animation class
+		let animationClass = '';
+		if (hoverAnimation === 'explicit-none') {
+			animationClass = ' dsgo-icon-button--no-hover';
+		} else if (hoverAnimation && hoverAnimation !== 'none') {
+			animationClass = ` dsgo-icon-button--${hoverAnimation}`;
+		}
+
+		const ButtonElement = url ? 'a' : 'button';
+
+		const blockProps = useBlockProps.save({
+			className: `dsgo-icon-button wp-block-button wp-block-button__link wp-element-button${animationClass}`,
+			style: buttonStyles,
+			...(url && {
+				href: url,
+				target: linkTarget,
+				rel:
+					linkTarget === '_blank'
+						? rel || 'noopener noreferrer'
+						: rel || undefined,
+			}),
+			...(!url && {
+				type: 'button',
+			}),
+			...(modalCloseId && {
+				'data-dsgo-modal-close': modalCloseId,
+			}),
+		});
+
+		return (
+			<ButtonElement {...blockProps}>
+				{iconPosition !== 'none' && icon && (
+					<span
+						className="dsgo-icon-button__icon dsgo-lazy-icon"
+						style={iconWrapperStyles}
+						data-icon-name={icon}
+						data-icon-size={size}
+					/>
+				)}
+				<RichText.Content
+					tagName="span"
+					className="dsgo-icon-button__text"
+					value={text}
+				/>
+			</ButtonElement>
+		);
+	},
+
+	migrate(attributes) {
+		// Passthrough. An implicit-default old block has iconSize === undefined
+		// here (no default in this schema), so it inherits the theme token;
+		// an explicit value is preserved as an override.
+		return attributes;
+	},
+};
+
+/**
  * Version 6: Before align-based full-width
  *
  * Changes in current version:
@@ -1292,4 +1470,4 @@ const v1 = {
 	},
 };
 
-export default [v6, v5, v4, v3, v2, v1];
+export default [v7, v6, v5, v4, v3, v2, v1];

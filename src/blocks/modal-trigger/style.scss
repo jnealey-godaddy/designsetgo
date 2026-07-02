@@ -103,6 +103,16 @@
 		justify-content: center;
 		flex-shrink: 0;
 
+		// Size falls back to the theme icon token when no explicit iconSize
+		// is set inline. An inline width/height (explicit override) wins by
+		// specificity. default-size is a unitless number in theme.json.
+		width: calc(
+			var(--wp--custom--designsetgo--modal-trigger--default-size, 20) * 1px
+		);
+		height: calc(
+			var(--wp--custom--designsetgo--modal-trigger--default-size, 20) * 1px
+		);
+
 		svg {
 			display: block;
 			width: 100%;

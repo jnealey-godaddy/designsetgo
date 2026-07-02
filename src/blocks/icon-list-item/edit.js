@@ -18,6 +18,7 @@ import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { IconPickerPanel } from './components/inspector/IconPickerPanel';
 import { LinkSettingsPanel } from './components/inspector/LinkSettingsPanel';
 import { SpacingPanel } from './components/inspector/SpacingPanel';
+import { useIconDefaults } from '../../hooks';
 
 /**
  * Icon List Item Edit Component
@@ -35,8 +36,22 @@ export default function IconListItemEdit({
 }) {
 	const { icon, linkUrl, contentGap } = attributes;
 
+	// Theme-level defaults inherited when the parent leaves size/style unset.
+	// Mirrors the resolution used in save.js (context number vs. theme token).
+	const iconDefaults = useIconDefaults({
+		sizeKey: 'iconList',
+		sizeFallback: 32,
+	});
+
 	// Get settings from parent via context
-	const iconSize = context['designsetgo/iconList/iconSize'] || 32;
+	const ctxIconSize = context['designsetgo/iconList/iconSize'];
+	const effectiveSize =
+		typeof ctxIconSize === 'number' ? ctxIconSize : iconDefaults.size;
+	const ctxIconStyle = context['designsetgo/iconList/iconStyle'];
+	const effectiveStyle = ctxIconStyle || iconDefaults.style;
+	const ctxStrokeWidth = context['designsetgo/iconList/strokeWidth'];
+	const strokeWidth =
+		typeof ctxStrokeWidth === 'number' ? ctxStrokeWidth : 1.5;
 	const iconColor = context['designsetgo/iconList/iconColor'] || '';
 	const iconBackgroundColor =
 		context['designsetgo/iconList/iconBackgroundColor'] || '';
@@ -72,25 +87,26 @@ export default function IconListItemEdit({
 		...(iconPosition === 'right' && { flexDirection: 'row-reverse' }),
 	};
 
-	// Calculate icon wrapper styles
+	// Calculate icon wrapper styles. Preview uses the effective (possibly
+	// inherited) size so the canvas matches the frontend inheritance.
 	const iconWrapperStyles = {
 		display: 'flex',
 		alignItems: 'center',
 		justifyContent: 'center',
 		...(iconBackgroundColor
 			? {
-					width: `${iconSize + 16}px`,
-					height: `${iconSize + 16}px`,
-					minWidth: `${iconSize + 16}px`,
+					width: `${effectiveSize + 16}px`,
+					height: `${effectiveSize + 16}px`,
+					minWidth: `${effectiveSize + 16}px`,
 					backgroundColor: convertColorToCSSVar(iconBackgroundColor),
 					padding: '8px',
 					borderRadius: '4px',
 					boxSizing: 'border-box',
 				}
 			: {
-					width: `${iconSize}px`,
-					height: `${iconSize}px`,
-					minWidth: `${iconSize}px`,
+					width: `${effectiveSize}px`,
+					height: `${effectiveSize}px`,
+					minWidth: `${effectiveSize}px`,
 				}),
 		...(iconColor && {
 			color: convertColorToCSSVar(iconColor),
@@ -149,7 +165,7 @@ export default function IconListItemEdit({
 					className="dsgo-icon-list-item__icon"
 					style={iconWrapperStyles}
 				>
-					{getIcon(icon)}
+					{getIcon(icon, effectiveStyle, strokeWidth)}
 				</div>
 
 				<div {...innerBlocksProps} />

@@ -10,6 +10,10 @@
 @use 'mixins' as *;
 @use 'utilities' as *;
 
+// Shared icon primitive: outlined-icon stroke rendering, needed by every
+// icon-bearing block (see src/styles/_icon-outlined.scss).
+@use 'icon-outlined' as icon-outlined;
+
 // Shared components
 @use '../components/shared/DsgoBlockPlaceholder/style' as dsgo-block-placeholder;
 

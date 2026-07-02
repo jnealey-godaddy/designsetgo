@@ -13,6 +13,10 @@
 @use './styles/utilities';
 @use './styles/block-variations';
 
+// Shared icon primitive: outlined-icon stroke rendering, needed by every
+// icon-bearing block (see src/styles/_icon-outlined.scss).
+@use './styles/icon-outlined' as icon-outlined;
+
 // Block extensions (frontend)
 // These are loaded globally because they apply to multiple blocks via filters
 @use './extensions/block-animations/animations' as block-animations;

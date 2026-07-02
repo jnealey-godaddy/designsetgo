@@ -19,7 +19,8 @@ import { useBlockProps } from '@wordpress/block-editor';
  * @return {JSX.Element} Saved divider block markup
  */
 export default function DividerSave({ attributes }) {
-	const { dividerStyle, width, thickness, iconName } = attributes;
+	const { dividerStyle, width, thickness, iconName, iconStyle, strokeWidth } =
+		attributes;
 
 	// Block wrapper props - Block Supports automatically applies color styles
 	const blockProps = useBlockProps.save({
@@ -48,6 +49,14 @@ export default function DividerSave({ attributes }) {
 						<span
 							className="dsgo-divider__icon dsgo-lazy-icon"
 							data-icon-name={iconName}
+							// Omit when unset so the injector inherits the theme
+							// default (settings.custom.designsetgo.icon.defaultStyle).
+							data-icon-style={iconStyle || undefined}
+							data-icon-stroke-width={
+								iconStyle === 'outlined'
+									? strokeWidth
+									: undefined
+							}
 						/>
 						<span
 							className="dsgo-divider__line dsgo-divider__line--right"

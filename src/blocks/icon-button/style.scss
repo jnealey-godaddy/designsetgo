@@ -95,6 +95,16 @@
 	}
 
 	&__icon {
+		// Size falls back to the theme icon-button token when no explicit
+		// iconSize is set inline. An inline width/height (explicit override)
+		// wins by specificity. defaultSize is a unitless number in theme.json.
+		width: calc(
+			var(--wp--custom--designsetgo--icon-button--default-size, 20) * 1px
+		);
+		height: calc(
+			var(--wp--custom--designsetgo--icon-button--default-size, 20) * 1px
+		);
+
 		// Size and layout styles applied via inline styles
 		svg {
 			width: 100%;

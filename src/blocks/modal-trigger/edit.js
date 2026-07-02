@@ -4,7 +4,7 @@
  * @package
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
 	InspectorControls,
@@ -16,12 +16,17 @@ import {
 	RangeControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControl as ToggleGroupControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect } from '@wordpress/data';
 import { useMemo } from '@wordpress/element';
 import { getIcon } from '../icon/utils/svg-icons';
 import { IconPicker } from '../icon/components/IconPicker';
+import { useIconDefaults } from '../../hooks';
 
 /**
  * Recursively find modal blocks in a block tree
@@ -57,6 +62,8 @@ export default function ModalTriggerEdit({
 		align,
 		icon,
 		iconPosition,
+		iconStyle,
+		strokeWidth,
 		iconSize,
 		iconGap,
 		style,
@@ -64,6 +71,15 @@ export default function ModalTriggerEdit({
 		textColor,
 		fontSize,
 	} = attributes;
+
+	// Theme-level icon defaults inherited when size/style are left unset.
+	const iconDefaults = useIconDefaults({
+		sizeKey: 'modalTrigger',
+		sizeFallback: 20,
+	});
+	const effectiveStyle = iconStyle || iconDefaults.style;
+	const effectiveSize =
+		typeof iconSize === 'number' ? iconSize : iconDefaults.size;
 
 	// Get all blocks from the editor — getBlocks returns a stable reference
 	// when blocks haven't changed, so useSelect won't cause re-renders
@@ -133,13 +149,14 @@ export default function ModalTriggerEdit({
 		}),
 	};
 
-	// Calculate icon wrapper styles
+	// Calculate icon wrapper styles. Preview uses the effective (possibly
+	// inherited) size.
 	const iconWrapperStyles = {
 		display: 'flex',
 		alignItems: 'center',
 		justifyContent: 'center',
-		width: `${iconSize}px`,
-		height: `${iconSize}px`,
+		width: `${effectiveSize}px`,
+		height: `${effectiveSize}px`,
 		flexShrink: 0,
 	};
 
@@ -164,7 +181,9 @@ export default function ModalTriggerEdit({
 							buttonStyle: 'fill',
 							icon: '',
 							iconPosition: 'none',
-							iconSize: 20,
+							iconStyle: undefined,
+							strokeWidth: 1.5,
+							iconSize: undefined,
 							iconGap: '8px',
 						})
 					}
@@ -295,20 +314,113 @@ export default function ModalTriggerEdit({
 
 					{icon && iconPosition !== 'none' && (
 						<DsgoInspectorPanel.Item
+							label={__('Icon Style', 'designsetgo')}
+							hasValue={() => typeof iconStyle === 'string'}
+							onDeselect={() =>
+								setAttributes({ iconStyle: undefined })
+							}
+							isShownByDefault
+						>
+							<ToggleGroupControl
+								label={__('Icon Style', 'designsetgo')}
+								value={effectiveStyle}
+								onChange={(value) =>
+									setAttributes({ iconStyle: value })
+								}
+								help={
+									!iconStyle &&
+									sprintf(
+										/* translators: %s: inherited icon style (Filled or Outlined). */
+										__(
+											'Inheriting theme default (%s).',
+											'designsetgo'
+										),
+										iconDefaults.style === 'outlined'
+											? __('Outlined', 'designsetgo')
+											: __('Filled', 'designsetgo')
+									)
+								}
+								isBlock
+								__nextHasNoMarginBottom
+							>
+								<ToggleGroupControlOption
+									value="filled"
+									label={__('Filled', 'designsetgo')}
+								/>
+								<ToggleGroupControlOption
+									value="outlined"
+									label={__('Outlined', 'designsetgo')}
+								/>
+							</ToggleGroupControl>
+						</DsgoInspectorPanel.Item>
+					)}
+
+					{icon &&
+						iconPosition !== 'none' &&
+						effectiveStyle === 'outlined' && (
+							<DsgoInspectorPanel.Item
+								label={__('Stroke Width', 'designsetgo')}
+								hasValue={() => strokeWidth !== 1.5}
+								onDeselect={() =>
+									setAttributes({ strokeWidth: 1.5 })
+								}
+								isShownByDefault
+							>
+								<RangeControl
+									label={__('Stroke Width', 'designsetgo')}
+									value={strokeWidth}
+									onChange={(value) =>
+										setAttributes({ strokeWidth: value })
+									}
+									min={0.5}
+									max={4}
+									step={0.5}
+									help={__(
+										'Thinner strokes work better for detailed icons',
+										'designsetgo'
+									)}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+							</DsgoInspectorPanel.Item>
+						)}
+
+					{icon && iconPosition !== 'none' && (
+						<DsgoInspectorPanel.Item
 							label={__('Icon Size (px)', 'designsetgo')}
-							hasValue={() => iconSize !== 20}
-							onDeselect={() => setAttributes({ iconSize: 20 })}
+							hasValue={() => typeof iconSize === 'number'}
+							onDeselect={() =>
+								setAttributes({ iconSize: undefined })
+							}
 							isShownByDefault
 						>
 							<RangeControl
 								label={__('Icon Size (px)', 'designsetgo')}
 								value={iconSize}
 								onChange={(value) =>
-									setAttributes({ iconSize: value })
+									setAttributes({
+										iconSize:
+											typeof value === 'number'
+												? value
+												: undefined,
+									})
 								}
 								min={12}
 								max={48}
 								step={1}
+								allowReset
+								placeholder={iconDefaults.size}
+								help={
+									typeof iconSize !== 'number' &&
+									sprintf(
+										/* translators: %d: inherited icon size in pixels. */
+										__(
+											'Inheriting theme default (%dpx).',
+											'designsetgo'
+										),
+										iconDefaults.size
+									)
+								}
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>
@@ -346,7 +458,7 @@ export default function ModalTriggerEdit({
 						className="dsgo-modal-trigger__icon"
 						style={iconWrapperStyles}
 					>
-						{getIcon(icon)}
+						{getIcon(icon, effectiveStyle, strokeWidth)}
 					</span>
 				)}
 				<RichText
@@ -362,7 +474,7 @@ export default function ModalTriggerEdit({
 						className="dsgo-modal-trigger__icon"
 						style={iconWrapperStyles}
 					>
-						{getIcon(icon)}
+						{getIcon(icon, effectiveStyle, strokeWidth)}
 					</span>
 				)}
 			</div>

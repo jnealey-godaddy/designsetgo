@@ -25,6 +25,8 @@ export default function IconButtonSave({ attributes }) {
 		rel,
 		icon,
 		iconPosition,
+		iconStyle,
+		strokeWidth,
 		iconSize,
 		iconGap,
 		align,
@@ -88,12 +90,19 @@ export default function IconButtonSave({ attributes }) {
 	};
 
 	// Calculate icon wrapper styles (must match edit.js)
+	// Size is only written inline when the author sets an explicit iconSize;
+	// otherwise it is omitted so the theme default token
+	// (--wp--custom--designsetgo--icon-button--default-size, via style.scss)
+	// applies.
+	const hasExplicitSize = typeof iconSize === 'number';
 	const iconWrapperStyles = {
 		display: 'flex',
 		alignItems: 'center',
 		justifyContent: 'center',
-		width: `${iconSize}px`,
-		height: `${iconSize}px`,
+		...(hasExplicitSize && {
+			width: `${iconSize}px`,
+			height: `${iconSize}px`,
+		}),
 		flexShrink: 0,
 	};
 
@@ -139,7 +148,16 @@ export default function IconButtonSave({ attributes }) {
 					className="dsgo-icon-button__icon dsgo-lazy-icon"
 					style={iconWrapperStyles}
 					data-icon-name={icon}
-					data-icon-size={iconSize}
+					data-icon-size={iconSize || undefined}
+					// Omit when unset so the injector inherits the theme default
+					// (settings.custom.designsetgo.icon.defaultStyle).
+					data-icon-style={iconStyle || undefined}
+					// Only emitted for explicit outlined so existing filled
+					// buttons with an explicit size stay byte-identical (no
+					// new attributes) and remain valid without migration.
+					data-icon-stroke-width={
+						iconStyle === 'outlined' ? strokeWidth : undefined
+					}
 				/>
 			)}
 			<RichText.Content

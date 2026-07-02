@@ -34,6 +34,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { useIconDefaults } from '../../hooks';
 
 /**
  * Icon Button Edit Component
@@ -60,6 +61,8 @@ export default function IconButtonEdit({
 		rel,
 		icon,
 		iconPosition,
+		iconStyle,
+		strokeWidth,
 		iconSize,
 		iconGap,
 		align,
@@ -72,6 +75,15 @@ export default function IconButtonEdit({
 		fontSize,
 		modalCloseId,
 	} = attributes;
+
+	// Theme-level icon defaults inherited when size/style are left unset.
+	const iconDefaults = useIconDefaults({
+		sizeKey: 'iconButton',
+		sizeFallback: 20,
+	});
+	const effectiveStyle = iconStyle || iconDefaults.style;
+	const effectiveSize =
+		typeof iconSize === 'number' ? iconSize : iconDefaults.size;
 
 	// Check if button is inside a modal
 	const isInsideModal = useSelect(
@@ -168,13 +180,14 @@ export default function IconButtonEdit({
 		}),
 	};
 
-	// Calculate icon wrapper styles
+	// Calculate icon wrapper styles. Preview uses the effective (possibly
+	// inherited) size so it always shows a size in the editor.
 	const iconWrapperStyles = {
 		display: 'flex',
 		alignItems: 'center',
 		justifyContent: 'center',
-		width: `${iconSize}px`,
-		height: `${iconSize}px`,
+		width: `${effectiveSize}px`,
+		height: `${effectiveSize}px`,
 		flexShrink: 0,
 	};
 
@@ -345,7 +358,9 @@ export default function IconButtonEdit({
 						setAttributes({
 							icon: 'lightbulb',
 							iconPosition: 'start',
-							iconSize: 20,
+							iconStyle: undefined,
+							strokeWidth: 1.5,
+							iconSize: undefined,
 							iconGap: '8px',
 							hoverAnimation: 'none',
 							modalCloseId: '',
@@ -355,8 +370,11 @@ export default function IconButtonEdit({
 					<ButtonSettingsPanel
 						icon={icon}
 						iconPosition={iconPosition}
+						iconStyle={iconStyle}
+						strokeWidth={strokeWidth}
 						iconSize={iconSize}
 						iconGap={iconGap}
+						iconDefaults={iconDefaults}
 						hoverAnimation={hoverAnimation}
 						adminDefaultHover={themeDefaultHover || 'none'}
 						modalCloseId={modalCloseId}
@@ -372,7 +390,7 @@ export default function IconButtonEdit({
 						className="dsgo-icon-button__icon"
 						style={iconWrapperStyles}
 					>
-						{getIcon(icon)}
+						{getIcon(icon, effectiveStyle, strokeWidth)}
 					</span>
 				)}
 				<RichText

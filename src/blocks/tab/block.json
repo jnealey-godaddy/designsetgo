@@ -28,6 +28,14 @@
 			"type": "string",
 			"default": ""
 		},
+		"iconStyle": {
+			"type": "string",
+			"enum": ["filled", "outlined"]
+		},
+		"strokeWidth": {
+			"type": "number",
+			"default": 1.5
+		},
 		"iconPosition": {
 			"type": "string",
 			"default": "none",

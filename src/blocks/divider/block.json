@@ -73,6 +73,14 @@
 		"iconName": {
 			"type": "string",
 			"default": "star"
+		},
+		"iconStyle": {
+			"type": "string",
+			"enum": ["filled", "outlined"]
+		},
+		"strokeWidth": {
+			"type": "number",
+			"default": 1.5
 		}
 	},
 	"example": {

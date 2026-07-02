@@ -1,0 +1,30 @@
+/**
+ * Shared icon "outlined" style
+ *
+ * The frontend icon injector (and the block editors) wrap an outlined icon in
+ * `.dsgo-icon-outlined` and expose the stroke width via `--icon-stroke-width`.
+ * This rule strips the filled paths and re-draws them as strokes.
+ *
+ * It lives in the always-loaded global bundle (frontend `src/style.scss` and
+ * editor `src/styles/editor.scss`) rather than a single block's stylesheet,
+ * because the outlined style is shared by every icon-bearing block
+ * (icon, icon-button, icon-list-item, modal-trigger, divider, tabs). A page
+ * using only one of those must still load this rule.
+ */
+
+.dsgo-icon-outlined {
+
+	svg {
+		fill: none !important;
+		stroke: currentcolor;
+		stroke-width: var(--icon-stroke-width, 1.5);
+		stroke-linecap: round;
+		stroke-linejoin: round;
+
+		// Ensure all paths and shapes use stroke
+		* {
+			fill: none !important;
+			stroke: currentcolor;
+		}
+	}
+}
