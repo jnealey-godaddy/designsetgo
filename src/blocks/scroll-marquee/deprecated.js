@@ -1,6 +1,14 @@
 /**
  * Scroll Marquee Block - Deprecations
  *
+ * v3: Save before border-radius moved to native border support. The
+ * `borderRadius` attribute (default '8px') was always serialized into a
+ * `--dsgo-marquee-border-radius` custom property on the wrapper, so the
+ * saved markup could never omit it. Current saves rely on the native
+ * `style.border.radius` attribute (via `__experimentalBorder`) applied
+ * directly to each image, with no forced default. This deprecation
+ * migrates the old attribute value into `style.border.radius`.
+ *
  * v2: Save before the objectFit control. The frontend CSS hard-coded
  * `object-fit: cover`, so the saved markup never emitted the
  * `--dsgo-marquee-object-fit` custom property. Current saves always
@@ -31,6 +39,135 @@ const sharedSupports = {
 		background: true,
 		text: true,
 		gradients: true,
+	},
+};
+
+const v3 = {
+	attributes: {
+		rows: {
+			type: 'array',
+			items: {
+				type: 'object',
+				properties: {
+					images: {
+						type: 'array',
+						items: {
+							type: 'object',
+							properties: {
+								id: { type: 'number' },
+								url: { type: 'string' },
+								alt: { type: 'string' },
+							},
+						},
+					},
+					direction: { type: 'string' },
+				},
+			},
+			default: [{ images: [], direction: 'left' }],
+		},
+		scrollSpeed: { type: 'number', default: 0.5 },
+		imageHeight: { type: 'string', default: '200px' },
+		imageWidth: { type: 'string', default: '300px' },
+		objectFit: {
+			type: 'string',
+			default: 'cover',
+			enum: ['cover', 'contain', 'fill', 'scale-down'],
+		},
+		gap: { type: 'string', default: '20px' },
+		rowGap: { type: 'string', default: '20px' },
+		borderRadius: { type: 'string', default: '8px' },
+	},
+	supports: sharedSupports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// Only the pre-native-border save ever emitted this custom property.
+		const hasBorderRadiusVar =
+			typeof innerHTML === 'string' &&
+			innerHTML.includes('--dsgo-marquee-border-radius');
+		if (!hasBorderRadiusVar) {
+			return false;
+		}
+		// Only claim blocks whose rows are already serialized in the
+		// comment (this format). Ancient v1 blocks parse to empty rows
+		// here and must fall through to the v1 query-source deprecation
+		// (see the identical guard on v2 below for the full rationale).
+		return (
+			Array.isArray(attributes.rows) &&
+			attributes.rows.some(
+				(row) => Array.isArray(row.images) && row.images.length > 0
+			)
+		);
+	},
+	migrate(attributes) {
+		const { borderRadius, ...rest } = attributes;
+		if (!borderRadius) {
+			return rest;
+		}
+		return {
+			...rest,
+			style: {
+				...rest.style,
+				border: {
+					...rest.style?.border,
+					radius: borderRadius,
+				},
+			},
+		};
+	},
+	save({ attributes }) {
+		const {
+			rows,
+			scrollSpeed,
+			imageHeight,
+			imageWidth,
+			objectFit,
+			gap,
+			rowGap,
+			borderRadius,
+		} = attributes;
+
+		const blockProps = useBlockProps.save({
+			className: 'dsgo-scroll-marquee',
+			'data-scroll-speed': scrollSpeed,
+			style: {
+				'--dsgo-marquee-gap': gap,
+				'--dsgo-marquee-row-gap': rowGap,
+				'--dsgo-marquee-image-height': imageHeight,
+				'--dsgo-marquee-image-width': imageWidth,
+				'--dsgo-marquee-object-fit': objectFit,
+				'--dsgo-marquee-border-radius': borderRadius,
+			},
+		});
+
+		return (
+			<div {...blockProps}>
+				{rows.map((row, rowIndex) => (
+					<div
+						key={rowIndex}
+						className="dsgo-scroll-marquee__row"
+						data-direction={row.direction}
+					>
+						<div className="dsgo-scroll-marquee__track">
+							{[...Array(6)].map((_, repeatIndex) => (
+								<div
+									key={repeatIndex}
+									className="dsgo-scroll-marquee__track-segment"
+								>
+									{row.images.map((image, imageIndex) => (
+										<img
+											key={`${repeatIndex}-${imageIndex}`}
+											src={image.url}
+											alt={image.alt || ''}
+											className="dsgo-scroll-marquee__image"
+											loading="lazy"
+										/>
+									))}
+								</div>
+							))}
+						</div>
+					</div>
+				))}
+			</div>
+		);
 	},
 };
 
@@ -302,4 +439,4 @@ const v1 = {
 	},
 };
 
-export default [v2, v1];
+export default [v3, v2, v1];

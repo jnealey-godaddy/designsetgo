@@ -354,6 +354,13 @@ class Plugin {
 	public $button_global_styles;
 
 	/**
+	 * Scroll Marquee Styles instance.
+	 *
+	 * @var Scroll_Marquee_Styles
+	 */
+	public $scroll_marquee_styles;
+
+	/**
 	 * Admin Menu instance.
 	 *
 	 * @var Admin\Admin_Menu
@@ -627,6 +634,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/features/class-overlay-header.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-icon-injector.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-button-global-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-scroll-marquee-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-extension-attributes.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-style-binding.php';
 		require_once DESIGNSETGO_PATH . 'includes/bindings/class-block-bindings-support.php';
@@ -706,6 +714,8 @@ class Plugin {
 		$this->svg_pattern_renderer = new SVG_Pattern_Renderer();
 		$this->button_global_styles = new Button_Global_Styles();
 		$this->button_global_styles->init();
+		$this->scroll_marquee_styles = new Scroll_Marquee_Styles();
+		$this->scroll_marquee_styles->init();
 		$this->llms_txt = new LLMS_Txt\Controller();
 
 		// Initialize admin-only features.

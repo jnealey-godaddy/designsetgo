@@ -9,8 +9,8 @@ export default function ScrollMarqueeSave({ attributes }) {
 		objectFit,
 		gap,
 		rowGap,
-		borderRadius,
 	} = attributes;
+	const borderRadius = attributes.style?.border?.radius;
 
 	const blockProps = useBlockProps.save({
 		className: 'dsgo-scroll-marquee',
@@ -21,7 +21,6 @@ export default function ScrollMarqueeSave({ attributes }) {
 			'--dsgo-marquee-image-height': imageHeight,
 			'--dsgo-marquee-image-width': imageWidth,
 			'--dsgo-marquee-object-fit': objectFit,
-			'--dsgo-marquee-border-radius': borderRadius,
 		},
 	});
 
@@ -47,6 +46,11 @@ export default function ScrollMarqueeSave({ attributes }) {
 										alt={image.alt || ''}
 										className="dsgo-scroll-marquee__image"
 										loading="lazy"
+										style={
+											borderRadius
+												? { borderRadius }
+												: undefined
+										}
 									/>
 								))}
 							</div>
