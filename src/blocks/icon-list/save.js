@@ -16,7 +16,15 @@ import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
  * @return {JSX.Element} Icon List save component
  */
 export default function IconListSave({ attributes }) {
-	const { layout, gap, columns, columnMinWidth, alignment } = attributes;
+	const {
+		layout,
+		gap,
+		columns,
+		columnMinWidth,
+		alignment,
+		iconStyle,
+		strokeWidth,
+	} = attributes;
 
 	// Calculate alignment value to avoid nested ternary (must match edit.js)
 	let alignItemsValue;
@@ -71,10 +79,26 @@ export default function IconListSave({ attributes }) {
 		width: '100%', // Ensure container fills available space
 	};
 
+	// Shared icon style/stroke are stamped on the wrapper so the lazy-icon
+	// injector can inherit them for descendant placeholders. WordPress does not
+	// pass block context to a static save(), so the child icon-list-item cannot
+	// read the parent iconStyle itself — the parent must expose it here. Emitted
+	// only when iconStyle is explicitly set, keeping existing content (which has
+	// no style) byte-identical and free of a deprecation.
+	const inheritedIconAttrs = iconStyle
+		? {
+				'data-dsgo-icon-style': iconStyle,
+				...(iconStyle === 'outlined' && strokeWidth
+					? { 'data-dsgo-icon-stroke-width': String(strokeWidth) }
+					: {}),
+			}
+		: {};
+
 	// Get block wrapper props
 	const blockProps = useBlockProps.save({
 		className: `dsgo-icon-list dsgo-icon-list--${layout}`,
 		style: { width: '100%' }, // Ensure block fills parent width
+		...inheritedIconAttrs,
 	});
 
 	// Get inner blocks props

@@ -112,10 +112,23 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 		width: '100%', // Ensure container fills available space
 	};
 
+	// Mirror the wrapper's inheritable icon style/stroke (see save.js) so the
+	// editor DOM matches the frontend and any editor-side lazy injection reads
+	// the same inherited values. Only emitted when iconStyle is explicitly set.
+	const inheritedIconAttrs = iconStyle
+		? {
+				'data-dsgo-icon-style': iconStyle,
+				...(iconStyle === 'outlined' && strokeWidth
+					? { 'data-dsgo-icon-stroke-width': String(strokeWidth) }
+					: {}),
+			}
+		: {};
+
 	// Get block wrapper props
 	const blockProps = useBlockProps({
 		className: `dsgo-icon-list dsgo-icon-list--${layout}`,
 		style: { width: '100%' }, // Ensure block fills parent width
+		...inheritedIconAttrs,
 	});
 
 	// Configure inner blocks
