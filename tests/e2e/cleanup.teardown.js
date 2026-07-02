@@ -15,9 +15,13 @@ test('cleanup test data', async ({}) => {
 	// net: if a test crashed before its afterEach ran, its page is removed here
 	// so a run never leaves test pages cluttering the site (and the nav header).
 	try {
-		deleteAllPagesAndPosts();
+		const didDelete = deleteAllPagesAndPosts();
 		// eslint-disable-next-line no-console
-		console.log('✓ Cleaned up test pages and posts');
+		console.log(
+			didDelete
+				? '✓ Cleaned up test pages and posts'
+				: '↷ Skipped full page/post cleanup outside CI — local content preserved'
+		);
 	} catch (e) {
 		// eslint-disable-next-line no-console
 		console.warn(

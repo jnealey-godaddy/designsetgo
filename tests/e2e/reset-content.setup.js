@@ -16,9 +16,13 @@ const { deleteAllPagesAndPosts } = require('./helpers/wp-cli');
 
 test('reset pages and posts', async () => {
 	try {
-		deleteAllPagesAndPosts();
+		const didReset = deleteAllPagesAndPosts();
 		// eslint-disable-next-line no-console
-		console.log('[reset-content] Pages and posts reset before test run');
+		console.log(
+			didReset
+				? '[reset-content] Pages and posts reset before test run'
+				: '[reset-content] Skipped full reset outside CI — local content preserved (set DSGO_E2E_RESET_CONTENT=1 to force)'
+		);
 	} catch (e) {
 		// Non-fatal: each test creates and queries its own page by ID, so a
 		// failed reset won't break the tests — but surface the cause so a
