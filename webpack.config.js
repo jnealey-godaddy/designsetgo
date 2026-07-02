@@ -42,25 +42,19 @@ const blockEntries = globSync('src/blocks/*/index.js').reduce(
 // `viewEntries`. Opt-in via `src/blocks/<name>/view.module` marker file,
 // which tells webpack to emit the script as a real ES module.
 const moduleViewEntries = {};
-const viewEntries = globSync('src/blocks/*/view.js').reduce(
-	(entries, file) => {
-		const blockName = file.match(/\/blocks\/([^/]+)\/view\.js$/)[1];
-		const markerPath = path.resolve(path.dirname(file), 'view.module');
-		if (require('fs').existsSync(markerPath)) {
-			moduleViewEntries[`blocks/${blockName}/view`] = path.resolve(
-				process.cwd(),
-				file
-			);
-		} else {
-			entries[`blocks/${blockName}/view`] = path.resolve(
-				process.cwd(),
-				file
-			);
-		}
-		return entries;
-	},
-	{}
-);
+const viewEntries = globSync('src/blocks/*/view.js').reduce((entries, file) => {
+	const blockName = file.match(/\/blocks\/([^/]+)\/view\.js$/)[1];
+	const markerPath = path.resolve(path.dirname(file), 'view.module');
+	if (require('fs').existsSync(markerPath)) {
+		moduleViewEntries[`blocks/${blockName}/view`] = path.resolve(
+			process.cwd(),
+			file
+		);
+	} else {
+		entries[`blocks/${blockName}/view`] = path.resolve(process.cwd(), file);
+	}
+	return entries;
+}, {});
 
 // Auto-detect all blocks with style.scss files (frontend CSS)
 const styleEntries = globSync('src/blocks/*/style.scss').reduce(

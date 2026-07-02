@@ -63,6 +63,8 @@
 	"providesContext": {
 		"designsetgo/iconList/layout": "layout",
 		"designsetgo/iconList/iconSize": "iconSize",
+		"designsetgo/iconList/iconStyle": "iconStyle",
+		"designsetgo/iconList/strokeWidth": "strokeWidth",
 		"designsetgo/iconList/iconColor": "iconColor",
 		"designsetgo/iconList/iconBackgroundColor": "iconBackgroundColor",
 		"designsetgo/iconList/gap": "gap",
@@ -75,8 +77,18 @@
 			"default": "vertical"
 		},
 		"iconSize": {
+			"type": "number"
+		},
+		"iconStyle": {
+			"type": "string",
+			"enum": [
+				"filled",
+				"outlined"
+			]
+		},
+		"strokeWidth": {
 			"type": "number",
-			"default": 32
+			"default": 1.5
 		},
 		"iconColor": {
 			"type": "string",

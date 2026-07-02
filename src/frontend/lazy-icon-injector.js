@@ -44,8 +44,30 @@ function initIconInjection(container = document) {
 			typeof rawIconName === 'string'
 				? rawIconName.trim().toLowerCase()
 				: '';
-		const iconStyle = placeholder.dataset.iconStyle || 'filled';
-		const strokeWidth = placeholder.dataset.iconStrokeWidth || '1.5';
+
+		// When a block leaves the style unset it inherits the theme default
+		// (settings.custom.designsetgo.icon.defaultStyle), localized as
+		// window.dsgoIconDefaults. An explicit data-icon-style always wins.
+		const defaultStyle =
+			typeof window.dsgoIconDefaults !== 'undefined' &&
+			window.dsgoIconDefaults.style
+				? window.dsgoIconDefaults.style
+				: 'filled';
+		// Icons whose block cannot serialize their own style (e.g. icon-list
+		// items, whose style is a shared parent setting that block context can't
+		// pass to a static save()) inherit from the nearest ancestor that stamps
+		// data-dsgo-icon-style. Own attribute → inherited ancestor → theme default.
+		const inheritedFrom = placeholder.dataset.iconStyle
+			? null
+			: placeholder.closest('[data-dsgo-icon-style]');
+		const iconStyle =
+			placeholder.dataset.iconStyle ||
+			inheritedFrom?.dataset.dsgoIconStyle ||
+			defaultStyle;
+		const strokeWidth =
+			placeholder.dataset.iconStrokeWidth ||
+			inheritedFrom?.dataset.dsgoIconStrokeWidth ||
+			'1.5';
 
 		// Resolve alias to canonical name if needed
 		const iconName =

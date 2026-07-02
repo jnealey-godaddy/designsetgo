@@ -17,6 +17,9 @@ import transforms from './transforms';
 import metadata from './block.json';
 import { ICON_COLOR } from '../shared/constants';
 
+// Mirror core Button's style variations (Fill, Outline, …) onto Icon Button.
+import { startMirroringButtonStyles } from './mirror-button-styles';
+
 import './editor.scss';
 import './style.scss';
 
@@ -34,3 +37,7 @@ registerBlockType(metadata.name, {
 	transforms,
 	deprecated,
 });
+
+// Start after registration so the target block exists; the mirror re-syncs on
+// store changes, so it doesn't matter whether core/button is registered yet.
+startMirroringButtonStyles();

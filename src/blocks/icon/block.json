@@ -61,7 +61,6 @@
 		},
 		"iconStyle": {
 			"type": "string",
-			"default": "filled",
 			"enum": [
 				"filled",
 				"outlined"
@@ -72,8 +71,7 @@
 			"default": 1.5
 		},
 		"iconSize": {
-			"type": "number",
-			"default": 48
+			"type": "number"
 		},
 		"rotation": {
 			"type": "number",

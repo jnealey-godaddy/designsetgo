@@ -28,6 +28,8 @@
 	"usesContext": [
 		"designsetgo/iconList/layout",
 		"designsetgo/iconList/iconSize",
+		"designsetgo/iconList/iconStyle",
+		"designsetgo/iconList/strokeWidth",
 		"designsetgo/iconList/iconColor",
 		"designsetgo/iconList/iconBackgroundColor",
 		"designsetgo/iconList/gap",

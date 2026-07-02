@@ -22,7 +22,15 @@ function sanitizeIconSlug(icon) {
 }
 
 export default function Save({ attributes }) {
-	const { uniqueId, title, anchor, icon, iconPosition } = attributes;
+	const {
+		uniqueId,
+		title,
+		anchor,
+		icon,
+		iconPosition,
+		iconStyle,
+		strokeWidth,
+	} = attributes;
 
 	const blockProps = useBlockProps.save({
 		className: 'dsgo-tab',
@@ -42,6 +50,11 @@ export default function Save({ attributes }) {
 				)
 					? iconPosition
 					: 'left',
+				// Omit when unset so the frontend nav-builder + lazy-icon
+				// injector inherit the theme default icon style.
+				'data-icon-style': iconStyle || undefined,
+				'data-icon-stroke-width':
+					iconStyle === 'outlined' ? strokeWidth : undefined,
 			}),
 	});
 

@@ -39,7 +39,16 @@
 		line-height: 1;
 		color: currentcolor;
 		transition: background-color 0.2s ease, color 0.2s ease;
-		width: fit-content;
+
+		// Size falls back to the theme icon token when no explicit iconSize
+		// is set inline. An inline width/height (explicit override) wins by
+		// specificity. defaultSize is a unitless number in theme.json.
+		width: calc(
+			var(--wp--custom--designsetgo--icon--default-size, 48) * 1px
+		);
+		height: calc(
+			var(--wp--custom--designsetgo--icon--default-size, 48) * 1px
+		);
 
 		// Ensure SVGs fill the wrapper (wrapper has explicit dimensions via inline styles)
 		svg {
@@ -130,23 +139,9 @@
 	}
 }
 
-// Outlined icon style
-.dsgo-icon-outlined {
-
-	svg {
-		fill: none !important;
-		stroke: currentcolor;
-		stroke-width: var(--icon-stroke-width, 1.5);
-		stroke-linecap: round;
-		stroke-linejoin: round;
-
-		// Ensure all paths and shapes use stroke
-		* {
-			fill: none !important;
-			stroke: currentcolor;
-		}
-	}
-}
+// Outlined icon style (.dsgo-icon-outlined) now lives in the shared global
+// bundle so every icon-bearing block can use it — see
+// src/styles/_icon-outlined.scss.
 
 // Parent container hover: apply icon background when parent is hovered
 // Uses CSS variable set by parent container (Flex, Grid, Stack)

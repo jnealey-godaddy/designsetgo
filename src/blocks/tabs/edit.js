@@ -29,7 +29,7 @@ import { copy, trash, plus } from '@wordpress/icons';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useCallback, useEffect, useRef } from '@wordpress/element';
 import { getIcon } from '../icon/utils/svg-icons';
-import { useUniqueBlockId } from '../../hooks';
+import { useUniqueBlockId, useIconDefaults } from '../../hooks';
 import {
 	encodeColorValue,
 	decodeColorValue,
@@ -72,6 +72,9 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		value: uniqueId,
 		setAttributes,
 	});
+
+	// Theme-level icon defaults inherited by child tabs whose iconStyle is unset.
+	const iconDefaults = useIconDefaults();
 
 	// Get inner blocks (tabs)
 	const { innerBlocks } = useSelect(
@@ -683,9 +686,13 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 								title,
 								icon,
 								iconPosition,
+								iconStyle,
+								strokeWidth,
 								uniqueId: tabId,
 							} = block.attributes;
 							const isActive = index === activeTab;
+							const effectiveIconStyle =
+								iconStyle || iconDefaults.style;
 
 							const placeholderLabel = sprintf(
 								/* translators: %d: tab number */
@@ -725,13 +732,21 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 								>
 									{icon && iconPosition === 'left' && (
 										<span className="dsgo-tabs__tab-icon">
-											{getIcon(icon)}
+											{getIcon(
+												icon,
+												effectiveIconStyle,
+												strokeWidth
+											)}
 										</span>
 									)}
 
 									{icon && iconPosition === 'top' && (
 										<span className="dsgo-tabs__tab-icon-top">
-											{getIcon(icon)}
+											{getIcon(
+												icon,
+												effectiveIconStyle,
+												strokeWidth
+											)}
 										</span>
 									)}
 
@@ -773,7 +788,11 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
 									{icon && iconPosition === 'right' && (
 										<span className="dsgo-tabs__tab-icon">
-											{getIcon(icon)}
+											{getIcon(
+												icon,
+												effectiveIconStyle,
+												strokeWidth
+											)}
 										</span>
 									)}
 

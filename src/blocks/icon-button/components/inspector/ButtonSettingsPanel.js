@@ -16,6 +16,10 @@ import {
 	TextControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControl as ToggleGroupControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../../components/shared';
 import { IconPicker } from '../../../icon/components/IconPicker';
@@ -37,14 +41,18 @@ const ANIMATION_LABELS = {
 export const ButtonSettingsPanel = ({
 	icon,
 	iconPosition,
+	iconStyle,
+	strokeWidth,
 	iconSize,
 	iconGap,
+	iconDefaults,
 	hoverAnimation,
 	adminDefaultHover,
 	modalCloseId,
 	isInsideModal,
 	setAttributes,
 }) => {
+	const effectiveStyle = iconStyle || iconDefaults.style;
 	const adminDefault = adminDefaultHover || 'none';
 	const defaultLabel =
 		adminDefault !== 'none'
@@ -170,18 +178,105 @@ export const ButtonSettingsPanel = ({
 
 			{iconPosition !== 'none' && (
 				<DsgoInspectorPanel.Item
+					label={__('Style', 'designsetgo')}
+					hasValue={() => typeof iconStyle === 'string'}
+					onDeselect={() => setAttributes({ iconStyle: undefined })}
+					isShownByDefault
+				>
+					<ToggleGroupControl
+						label={__('Style', 'designsetgo')}
+						value={effectiveStyle}
+						onChange={(value) =>
+							setAttributes({ iconStyle: value })
+						}
+						help={
+							!iconStyle &&
+							sprintf(
+								/* translators: %s: inherited icon style (Filled or Outlined). */
+								__(
+									'Inheriting theme default (%s).',
+									'designsetgo'
+								),
+								iconDefaults.style === 'outlined'
+									? __('Outlined', 'designsetgo')
+									: __('Filled', 'designsetgo')
+							)
+						}
+						isBlock
+						__nextHasNoMarginBottom
+					>
+						<ToggleGroupControlOption
+							value="filled"
+							label={__('Filled', 'designsetgo')}
+						/>
+						<ToggleGroupControlOption
+							value="outlined"
+							label={__('Outlined', 'designsetgo')}
+						/>
+					</ToggleGroupControl>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{iconPosition !== 'none' && effectiveStyle === 'outlined' && (
+				<DsgoInspectorPanel.Item
+					label={__('Stroke Width', 'designsetgo')}
+					hasValue={() => strokeWidth !== 1.5}
+					onDeselect={() => setAttributes({ strokeWidth: 1.5 })}
+					isShownByDefault
+				>
+					<RangeControl
+						label={__('Stroke Width', 'designsetgo')}
+						value={strokeWidth}
+						onChange={(value) =>
+							setAttributes({ strokeWidth: value })
+						}
+						min={0.5}
+						max={4}
+						step={0.5}
+						help={__(
+							'Thinner strokes work better for detailed icons',
+							'designsetgo'
+						)}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{iconPosition !== 'none' && (
+				<DsgoInspectorPanel.Item
 					label={__('Icon Size', 'designsetgo')}
-					hasValue={() => iconSize !== 20}
-					onDeselect={() => setAttributes({ iconSize: 20 })}
+					hasValue={() => typeof iconSize === 'number'}
+					onDeselect={() => setAttributes({ iconSize: undefined })}
 					isShownByDefault
 				>
 					<RangeControl
 						label={__('Icon Size', 'designsetgo')}
 						value={iconSize}
-						onChange={(value) => setAttributes({ iconSize: value })}
+						onChange={(value) =>
+							setAttributes({
+								iconSize:
+									typeof value === 'number'
+										? value
+										: undefined,
+							})
+						}
 						min={12}
 						max={48}
-						help={__('Icon size in pixels', 'designsetgo')}
+						allowReset
+						placeholder={iconDefaults.size}
+						help={
+							typeof iconSize !== 'number'
+								? sprintf(
+										/* translators: %d: inherited icon size in pixels. */
+										__(
+											'Inheriting theme default (%dpx).',
+											'designsetgo'
+										),
+										iconDefaults.size
+									)
+								: __('Icon size in pixels', 'designsetgo')
+						}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>

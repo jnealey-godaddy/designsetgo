@@ -8,8 +8,236 @@
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
-import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	convertColorToCSSVar,
+	convertPresetToCSSVar,
+} from '../../utils/convert-preset-to-css-var';
+import { validateCSSLength } from '../../utils/css-generator';
 import metadata from './block.json';
+
+/**
+ * V4 deprecation: Before the border-color fallback moved from inline style to CSS.
+ *
+ * Previously save() always forced a `--dsgo-form-border-color` custom property
+ * onto the wrapper — falling back to the literal `#d1d5db` whenever
+ * fieldBorderColor was empty. That made it impossible for hand-authored markup
+ * (patterns) to omit the property and simply inherit the block's CSS default.
+ * The fix drops the inline fallback; `.dsgo-form-builder` in style.scss now
+ * supplies `#d1d5db` as the CSS default instead.
+ */
+const v4 = {
+	attributes: metadata.attributes,
+	supports: metadata.supports,
+	isEligible(attributes) {
+		// Only content that never customized the border color is affected —
+		// the old save() forced the literal fallback in that case only.
+		return !attributes.fieldBorderColor;
+	},
+	migrate(attributes) {
+		return attributes;
+	},
+	save({ attributes }) {
+		const {
+			formId,
+			hasFields,
+			submitButtonText,
+			submitButtonAlignment,
+			submitButtonPosition,
+			ajaxSubmit,
+			successMessage,
+			errorMessage,
+			fieldSpacing,
+			inputHeight,
+			inputPadding,
+			fieldLabelColor,
+			fieldBorderColor,
+			fieldBackgroundColor,
+			fieldBorderRadius,
+			submitButtonColor,
+			submitButtonBackgroundColor,
+			submitButtonPaddingVertical,
+			submitButtonPaddingHorizontal,
+			submitButtonFontSize,
+			submitButtonHeight,
+			submitButtonHoverColor,
+			submitButtonHoverBackgroundColor,
+			enableHoneypot,
+			enableTurnstile,
+			redirectUrl,
+		} = attributes;
+
+		if (!hasFields) {
+			return null;
+		}
+
+		const formClasses = classnames('dsgo-form-builder', {
+			[`dsgo-form-builder--align-${submitButtonAlignment}`]:
+				submitButtonAlignment && submitButtonPosition === 'below',
+			'dsgo-form-builder--button-inline':
+				submitButtonPosition === 'inline',
+		});
+
+		const formStyles = {
+			'--dsgo-form-field-spacing': fieldSpacing,
+			'--dsgo-form-input-height': inputHeight,
+			'--dsgo-form-input-padding': inputPadding,
+			'--dsgo-form-label-color': convertColorToCSSVar(fieldLabelColor),
+			'--dsgo-form-border-color':
+				convertColorToCSSVar(fieldBorderColor) || '#d1d5db',
+			'--dsgo-form-field-bg': convertColorToCSSVar(fieldBackgroundColor),
+			'--dsgo-form-border-radius': validateCSSLength(fieldBorderRadius),
+		};
+
+		const blockProps = useBlockProps.save({
+			className: formClasses,
+			style: formStyles,
+			'data-form-id': formId,
+			'data-ajax-submit': ajaxSubmit,
+			'data-success-message': successMessage,
+			'data-error-message': errorMessage,
+			'data-submit-text': submitButtonText,
+			...(enableTurnstile && {
+				'data-dsgo-turnstile': 'true',
+			}),
+			...(redirectUrl && {
+				'data-redirect-url': redirectUrl,
+			}),
+		});
+
+		const { children, ...innerBlocksPropsWithoutChildren } =
+			useInnerBlocksProps.save({
+				className: 'dsgo-form__fields',
+			});
+
+		return (
+			<div {...blockProps}>
+				<form className="dsgo-form" method="post" noValidate>
+					<div {...innerBlocksPropsWithoutChildren}>
+						{children}
+						{submitButtonPosition === 'inline' && (
+							<button
+								type="submit"
+								className="dsgo-form__submit dsgo-form__submit--inline wp-element-button"
+								style={{
+									...(submitButtonColor && {
+										color: convertColorToCSSVar(
+											submitButtonColor
+										),
+									}),
+									...(submitButtonBackgroundColor && {
+										backgroundColor: convertColorToCSSVar(
+											submitButtonBackgroundColor
+										),
+									}),
+									minHeight: submitButtonHeight,
+									paddingTop: submitButtonPaddingVertical,
+									paddingBottom: submitButtonPaddingVertical,
+									paddingLeft: submitButtonPaddingHorizontal,
+									paddingRight: submitButtonPaddingHorizontal,
+									...(submitButtonFontSize && {
+										fontSize: submitButtonFontSize,
+									}),
+									...(submitButtonHoverBackgroundColor && {
+										'--dsgo-button-hover-bg':
+											convertColorToCSSVar(
+												submitButtonHoverBackgroundColor
+											),
+									}),
+									...(submitButtonHoverColor && {
+										'--dsgo-button-hover-color':
+											convertColorToCSSVar(
+												submitButtonHoverColor
+											),
+									}),
+								}}
+							>
+								{submitButtonText}
+							</button>
+						)}
+					</div>
+
+					{enableHoneypot && (
+						<input
+							type="text"
+							name="dsg_website"
+							value=""
+							tabIndex="-1"
+							autoComplete="off"
+							aria-hidden="true"
+							style={{
+								position: 'absolute',
+								left: '-9999px',
+								width: '1px',
+								height: '1px',
+								overflow: 'hidden',
+							}}
+						/>
+					)}
+
+					<input type="hidden" name="dsg_form_id" value={formId} />
+
+					{enableTurnstile && (
+						<div
+							className="dsgo-turnstile-widget"
+							data-dsgo-turnstile-container="true"
+						/>
+					)}
+
+					{submitButtonPosition === 'below' && (
+						<div className="dsgo-form__footer">
+							<button
+								type="submit"
+								className="dsgo-form__submit wp-element-button"
+								style={{
+									...(submitButtonColor && {
+										color: convertColorToCSSVar(
+											submitButtonColor
+										),
+									}),
+									...(submitButtonBackgroundColor && {
+										backgroundColor: convertColorToCSSVar(
+											submitButtonBackgroundColor
+										),
+									}),
+									minHeight: submitButtonHeight,
+									paddingTop: submitButtonPaddingVertical,
+									paddingBottom: submitButtonPaddingVertical,
+									paddingLeft: submitButtonPaddingHorizontal,
+									paddingRight: submitButtonPaddingHorizontal,
+									...(submitButtonFontSize && {
+										fontSize: submitButtonFontSize,
+									}),
+									...(submitButtonHoverBackgroundColor && {
+										'--dsgo-button-hover-bg':
+											convertColorToCSSVar(
+												submitButtonHoverBackgroundColor
+											),
+									}),
+									...(submitButtonHoverColor && {
+										'--dsgo-button-hover-color':
+											convertColorToCSSVar(
+												submitButtonHoverColor
+											),
+									}),
+								}}
+							>
+								{submitButtonText}
+							</button>
+						</div>
+					)}
+
+					<div
+						className="dsgo-form__message"
+						role="status"
+						aria-live="polite"
+						aria-atomic="true"
+						style={{ display: 'none' }}
+					/>
+				</form>
+			</div>
+		);
+	},
+};
 
 /**
  * V3 deprecation: Before convertColorToCSSVar was applied to form style properties.
@@ -609,6 +837,6 @@ const v1 = {
 	},
 };
 
-const deprecated = [v3, v2, v1];
+const deprecated = [v4, v3, v2, v1];
 
 export default deprecated;

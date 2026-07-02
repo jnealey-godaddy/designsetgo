@@ -4,19 +4,33 @@
  * Individual tab panel (child block)
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
 	InspectorControls,
 	useInnerBlocksProps,
 } from '@wordpress/block-editor';
-import { TextControl, SelectControl } from '@wordpress/components';
+import {
+	TextControl,
+	SelectControl,
+	RangeControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControl as ToggleGroupControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
+} from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect } from '@wordpress/element';
 import { IconPicker } from '../icon/components/IconPicker';
+import { useIconDefaults } from '../../hooks';
 
 export default function Edit({ attributes, setAttributes, clientId, context }) {
-	const { uniqueId, title, icon, iconPosition } = attributes;
+	const { uniqueId, title, icon, iconPosition, iconStyle, strokeWidth } =
+		attributes;
+
+	// Theme-level icon defaults inherited when style is left unset.
+	const iconDefaults = useIconDefaults();
+	const effectiveStyle = iconStyle || iconDefaults.style;
 
 	// Get context from parent Tabs block
 	const activeTab = context['designsetgo/tabs/activeTab'] || 0;
@@ -86,6 +100,8 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 						title: 'Tab',
 						icon: '',
 						iconPosition: 'none',
+						iconStyle: undefined,
+						strokeWidth: 1.5,
 						anchor: '',
 					})
 				}
@@ -168,6 +184,79 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 						/>
 					</DsgoInspectorPanel.Item>
 				)}
+
+				{iconPosition !== 'none' && icon && (
+					<DsgoInspectorPanel.Item
+						label={__('Icon Style', 'designsetgo')}
+						hasValue={() => typeof iconStyle === 'string'}
+						onDeselect={() =>
+							setAttributes({ iconStyle: undefined })
+						}
+						isShownByDefault
+					>
+						<ToggleGroupControl
+							label={__('Icon Style', 'designsetgo')}
+							value={effectiveStyle}
+							onChange={(value) =>
+								setAttributes({ iconStyle: value })
+							}
+							help={
+								!iconStyle &&
+								sprintf(
+									/* translators: %s: inherited icon style (Filled or Outlined). */
+									__(
+										'Inheriting theme default (%s).',
+										'designsetgo'
+									),
+									iconDefaults.style === 'outlined'
+										? __('Outlined', 'designsetgo')
+										: __('Filled', 'designsetgo')
+								)
+							}
+							isBlock
+							__nextHasNoMarginBottom
+						>
+							<ToggleGroupControlOption
+								value="filled"
+								label={__('Filled', 'designsetgo')}
+							/>
+							<ToggleGroupControlOption
+								value="outlined"
+								label={__('Outlined', 'designsetgo')}
+							/>
+						</ToggleGroupControl>
+					</DsgoInspectorPanel.Item>
+				)}
+
+				{iconPosition !== 'none' &&
+					icon &&
+					effectiveStyle === 'outlined' && (
+						<DsgoInspectorPanel.Item
+							label={__('Stroke Width', 'designsetgo')}
+							hasValue={() => strokeWidth !== 1.5}
+							onDeselect={() =>
+								setAttributes({ strokeWidth: 1.5 })
+							}
+							isShownByDefault
+						>
+							<RangeControl
+								label={__('Stroke Width', 'designsetgo')}
+								value={strokeWidth}
+								onChange={(value) =>
+									setAttributes({ strokeWidth: value })
+								}
+								min={0.5}
+								max={4}
+								step={0.5}
+								help={__(
+									'Thinner strokes work better for detailed icons',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
 				<DsgoInspectorPanel.Item
 					label={__('Anchor (URL Hash)', 'designsetgo')}

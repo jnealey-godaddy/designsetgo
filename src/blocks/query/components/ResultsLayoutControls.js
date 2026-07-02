@@ -122,11 +122,13 @@ export default function ResultsLayoutControls({
 			<DsgoInspectorPanel.Item
 				label={__('First item column span', 'designsetgo')}
 				hasValue={() =>
-					a.firstItemColumnSpan !== RESULTS_DEFAULTS.firstItemColumnSpan
+					a.firstItemColumnSpan !==
+					RESULTS_DEFAULTS.firstItemColumnSpan
 				}
 				onDeselect={() =>
 					set({
-						firstItemColumnSpan: RESULTS_DEFAULTS.firstItemColumnSpan,
+						firstItemColumnSpan:
+							RESULTS_DEFAULTS.firstItemColumnSpan,
 					})
 				}
 				isShownByDefault

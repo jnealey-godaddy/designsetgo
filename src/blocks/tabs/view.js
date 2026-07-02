@@ -38,10 +38,15 @@
 		/**
 		 * Create an icon element with lazy loading support securely (no innerHTML)
 		 *
-		 * @param {string} iconSlug - Sanitized icon slug
+		 * @param {string} iconSlug      - Sanitized icon slug
+		 * @param {string} [iconStyle]   - Optional icon style ('filled'|'outlined').
+		 *                               Omitted so the lazy-icon injector falls
+		 *                               back to the theme default.
+		 * @param {string} [strokeWidth] - Optional stroke width, used only when
+		 *                               iconStyle is 'outlined'.
 		 * @return {HTMLElement} Icon span element
 		 */
-		createIcon(iconSlug) {
+		createIcon(iconSlug, iconStyle, strokeWidth) {
 			const iconWrapper = document.createElement('span');
 			iconWrapper.className = 'dsgo-tabs__tab-icon dsgo-lazy-icon';
 
@@ -49,6 +54,18 @@
 			// Only allow: lowercase letters, numbers, hyphens
 			const safeIcon = iconSlug.replace(/[^a-z0-9\-]/g, '');
 			iconWrapper.setAttribute('data-icon-name', safeIcon);
+
+			// Only set when the panel provided one; otherwise the lazy-icon
+			// injector inherits the site-wide theme default icon style.
+			if (iconStyle) {
+				iconWrapper.setAttribute('data-icon-style', iconStyle);
+				if (iconStyle === 'outlined' && strokeWidth) {
+					iconWrapper.setAttribute(
+						'data-icon-stroke-width',
+						strokeWidth
+					);
+				}
+			}
 
 			return iconWrapper;
 		}
@@ -126,6 +143,8 @@
 					`Tab ${index + 1}`;
 				const icon = panel.dataset.icon;
 				const iconPosition = panel.dataset.iconPosition || 'left';
+				const iconStyle = panel.dataset.iconStyle;
+				const iconStrokeWidth = panel.dataset.iconStrokeWidth;
 
 				const button = document.createElement('button');
 				button.className = 'dsgo-tabs__tab';
@@ -153,10 +172,14 @@
 					if (iconPosition === 'top') {
 						const iconTopWrapper = document.createElement('span');
 						iconTopWrapper.className = 'dsgo-tabs__tab-icon-top';
-						iconTopWrapper.appendChild(this.createIcon(icon));
+						iconTopWrapper.appendChild(
+							this.createIcon(icon, iconStyle, iconStrokeWidth)
+						);
 						button.appendChild(iconTopWrapper);
 					} else if (iconPosition === 'left') {
-						button.appendChild(this.createIcon(icon));
+						button.appendChild(
+							this.createIcon(icon, iconStyle, iconStrokeWidth)
+						);
 					}
 				}
 
@@ -168,7 +191,9 @@
 
 				// Add right icon if needed (✅ SECURITY: Using createElement, not innerHTML)
 				if (icon && iconPosition === 'right') {
-					button.appendChild(this.createIcon(icon));
+					button.appendChild(
+						this.createIcon(icon, iconStyle, iconStrokeWidth)
+					);
 				}
 
 				// ✅ PERFORMANCE: No individual listeners - use event delegation below

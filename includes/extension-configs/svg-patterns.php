@@ -25,7 +25,7 @@ return array(
 		),
 		'dsgoSvgPatternColor'   => array(
 			'type'    => 'string',
-			'default' => '#9c92ac',
+			'default' => '',
 		),
 		'dsgoSvgPatternOpacity' => array(
 			'type'    => 'number',

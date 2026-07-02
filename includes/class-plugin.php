@@ -354,6 +354,13 @@ class Plugin {
 	public $button_global_styles;
 
 	/**
+	 * Scroll Marquee Styles instance.
+	 *
+	 * @var Scroll_Marquee_Styles
+	 */
+	public $scroll_marquee_styles;
+
+	/**
 	 * Admin Menu instance.
 	 *
 	 * @var Admin\Admin_Menu
@@ -408,6 +415,13 @@ class Plugin {
 	 * @var Section_Styles
 	 */
 	public $section_styles;
+
+	/**
+	 * Icon Button Styles instance.
+	 *
+	 * @var Icon_Button_Styles
+	 */
+	public $icon_button_styles;
 
 	/**
 	 * Sticky Header instance.
@@ -615,10 +629,12 @@ class Plugin {
 		// --- Render-time features ---
 		require_once DESIGNSETGO_PATH . 'includes/features/class-custom-css-renderer.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-section-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-icon-button-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-sticky-header.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-overlay-header.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-icon-injector.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-button-global-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-scroll-marquee-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-extension-attributes.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-style-binding.php';
 		require_once DESIGNSETGO_PATH . 'includes/bindings/class-block-bindings-support.php';
@@ -690,12 +706,16 @@ class Plugin {
 		$this->custom_css_renderer = new Custom_CSS_Renderer();
 		$this->section_styles      = new Section_Styles();
 		$this->section_styles->init();
+		$this->icon_button_styles  = new Icon_Button_Styles();
+		$this->icon_button_styles->init();
 		$this->sticky_header        = new Sticky_Header();
 		$this->overlay_header       = new Overlay_Header();
 		$this->icon_injector        = new Icon_Injector();
 		$this->svg_pattern_renderer = new SVG_Pattern_Renderer();
 		$this->button_global_styles = new Button_Global_Styles();
 		$this->button_global_styles->init();
+		$this->scroll_marquee_styles = new Scroll_Marquee_Styles();
+		$this->scroll_marquee_styles->init();
 		$this->llms_txt = new LLMS_Txt\Controller();
 
 		// Initialize admin-only features.

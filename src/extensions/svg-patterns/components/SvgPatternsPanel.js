@@ -132,7 +132,7 @@ export default function SvgPatternsPanel({
 											encodeColorValue(
 												value,
 												colorGradientSettings
-											) || DEFAULTS.color,
+											) || '',
 									}),
 								clearable: true,
 								enableAlpha: true,

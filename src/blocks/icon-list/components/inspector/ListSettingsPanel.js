@@ -8,18 +8,26 @@
  * @since 1.0.0
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	SelectControl,
 	RangeControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControl as ToggleGroupControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../../components/shared';
 
 export const ListSettingsPanel = ({
 	layout,
 	iconSize,
+	iconStyle,
+	strokeWidth,
+	effectiveStyle,
+	iconDefaults,
 	gap,
 	iconPosition,
 	columns,
@@ -210,21 +218,102 @@ export const ListSettingsPanel = ({
 
 			<DsgoInspectorPanel.Item
 				label={__('Icon Size', 'designsetgo')}
-				hasValue={() => iconSize !== 32}
-				onDeselect={() => setAttributes({ iconSize: 32 })}
+				hasValue={() => typeof iconSize === 'number'}
+				onDeselect={() => setAttributes({ iconSize: undefined })}
 				isShownByDefault
 			>
 				<RangeControl
 					label={__('Icon Size', 'designsetgo')}
 					value={iconSize}
-					onChange={(value) => setAttributes({ iconSize: value })}
+					onChange={(value) =>
+						setAttributes({
+							iconSize:
+								typeof value === 'number' ? value : undefined,
+						})
+					}
 					min={16}
 					max={128}
-					help={__('Default icon size for all items', 'designsetgo')}
+					allowReset
+					placeholder={iconDefaults?.size}
+					help={
+						typeof iconSize !== 'number'
+							? sprintf(
+									/* translators: %d: inherited icon size in pixels. */
+									__(
+										'Inheriting theme default (%dpx).',
+										'designsetgo'
+									),
+									iconDefaults?.size
+								)
+							: __(
+									'Default icon size for all items',
+									'designsetgo'
+								)
+					}
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
 			</DsgoInspectorPanel.Item>
+
+			<DsgoInspectorPanel.Item
+				label={__('Icon Style', 'designsetgo')}
+				hasValue={() => typeof iconStyle === 'string'}
+				onDeselect={() => setAttributes({ iconStyle: undefined })}
+				isShownByDefault
+			>
+				<ToggleGroupControl
+					label={__('Icon Style', 'designsetgo')}
+					value={effectiveStyle}
+					onChange={(value) => setAttributes({ iconStyle: value })}
+					help={
+						!iconStyle &&
+						sprintf(
+							/* translators: %s: inherited icon style (Filled or Outlined). */
+							__('Inheriting theme default (%s).', 'designsetgo'),
+							iconDefaults?.style === 'outlined'
+								? __('Outlined', 'designsetgo')
+								: __('Filled', 'designsetgo')
+						)
+					}
+					isBlock
+					__nextHasNoMarginBottom
+				>
+					<ToggleGroupControlOption
+						value="filled"
+						label={__('Filled', 'designsetgo')}
+					/>
+					<ToggleGroupControlOption
+						value="outlined"
+						label={__('Outlined', 'designsetgo')}
+					/>
+				</ToggleGroupControl>
+			</DsgoInspectorPanel.Item>
+
+			{effectiveStyle === 'outlined' && (
+				<DsgoInspectorPanel.Item
+					label={__('Stroke Width', 'designsetgo')}
+					hasValue={() => strokeWidth !== 1.5}
+					onDeselect={() => setAttributes({ strokeWidth: 1.5 })}
+					isShownByDefault
+				>
+					<RangeControl
+						label={__('Stroke Width', 'designsetgo')}
+						value={strokeWidth}
+						onChange={(value) =>
+							setAttributes({ strokeWidth: value })
+						}
+						min={0.5}
+						max={4}
+						step={0.5}
+						help={__(
+							'Thinner strokes work better for detailed icons',
+							'designsetgo'
+						)}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
 
 			<DsgoInspectorPanel.Item
 				label={__('Gap', 'designsetgo')}

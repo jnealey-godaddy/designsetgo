@@ -18,10 +18,11 @@ import {
 	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { getIcon } from './utils/svg-icons';
 import { IconPicker } from './components/IconPicker';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { useIconDefaults } from '../../hooks';
 
 /**
  * Edit component
@@ -51,6 +52,12 @@ export default function IconEdit({
 		isDecorative,
 	} = attributes;
 
+	// Theme-level icon defaults inherited when size/style are left unset.
+	const iconDefaults = useIconDefaults();
+	const effectiveStyle = iconStyle || iconDefaults.style;
+	const effectiveSize =
+		typeof iconSize === 'number' ? iconSize : iconDefaults.size;
+
 	// Get hover icon background from parent container context
 	const parentHoverIconBg = context['designsetgo/hoverIconBackgroundColor'];
 
@@ -67,10 +74,10 @@ export default function IconEdit({
 		},
 	});
 
-	// Icon wrapper styles
+	// Icon wrapper styles. Preview uses the effective (possibly inherited) size.
 	const iconWrapperStyle = {
-		width: `${iconSize}px`,
-		height: `${iconSize}px`,
+		width: `${effectiveSize}px`,
+		height: `${effectiveSize}px`,
 		display: 'inline-flex',
 		alignItems: 'center',
 		justifyContent: 'center',
@@ -89,9 +96,9 @@ export default function IconEdit({
 					resetAll={() =>
 						setAttributes({
 							icon: 'star',
-							iconStyle: 'filled',
+							iconStyle: undefined,
 							strokeWidth: 1.5,
-							iconSize: 48,
+							iconSize: undefined,
 							rotation: 0,
 							linkUrl: '',
 							linkTarget: '_self',
@@ -115,17 +122,30 @@ export default function IconEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Style', 'designsetgo')}
-						hasValue={() => iconStyle !== 'filled'}
+						hasValue={() => typeof iconStyle === 'string'}
 						onDeselect={() =>
-							setAttributes({ iconStyle: 'filled' })
+							setAttributes({ iconStyle: undefined })
 						}
 						isShownByDefault
 					>
 						<ToggleGroupControl
 							label={__('Style', 'designsetgo')}
-							value={iconStyle}
+							value={effectiveStyle}
 							onChange={(value) =>
 								setAttributes({ iconStyle: value })
+							}
+							help={
+								!iconStyle &&
+								sprintf(
+									/* translators: %s: inherited icon style (Filled or Outlined). */
+									__(
+										'Inheriting theme default (%s).',
+										'designsetgo'
+									),
+									iconDefaults.style === 'outlined'
+										? __('Outlined', 'designsetgo')
+										: __('Filled', 'designsetgo')
+								)
 							}
 							isBlock
 							__nextHasNoMarginBottom
@@ -141,7 +161,7 @@ export default function IconEdit({
 						</ToggleGroupControl>
 					</DsgoInspectorPanel.Item>
 
-					{iconStyle === 'outlined' && (
+					{effectiveStyle === 'outlined' && (
 						<DsgoInspectorPanel.Item
 							label={__('Stroke Width', 'designsetgo')}
 							hasValue={() => strokeWidth !== 1.5}
@@ -171,18 +191,38 @@ export default function IconEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Icon Size', 'designsetgo')}
-						hasValue={() => iconSize !== 48}
-						onDeselect={() => setAttributes({ iconSize: 48 })}
+						hasValue={() => typeof iconSize === 'number'}
+						onDeselect={() =>
+							setAttributes({ iconSize: undefined })
+						}
 						isShownByDefault
 					>
 						<RangeControl
 							label={__('Icon Size', 'designsetgo')}
 							value={iconSize}
 							onChange={(value) =>
-								setAttributes({ iconSize: value })
+								setAttributes({
+									iconSize:
+										typeof value === 'number'
+											? value
+											: undefined,
+								})
 							}
 							min={16}
 							max={200}
+							allowReset
+							placeholder={iconDefaults.size}
+							help={
+								typeof iconSize !== 'number' &&
+								sprintf(
+									/* translators: %d: inherited icon size in pixels. */
+									__(
+										'Inheriting theme default (%dpx).',
+										'designsetgo'
+									),
+									iconDefaults.size
+								)
+							}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
@@ -321,7 +361,7 @@ export default function IconEdit({
 
 			<div {...blockProps}>
 				<div className="dsgo-icon__wrapper" style={iconWrapperStyle}>
-					{getIcon(icon, iconStyle, strokeWidth)}
+					{getIcon(icon, effectiveStyle, strokeWidth)}
 				</div>
 			</div>
 		</>

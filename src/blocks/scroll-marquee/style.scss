@@ -9,7 +9,6 @@
 	--dsgo-marquee-image-height: 200px;
 	--dsgo-marquee-image-width: 300px;
 	--dsgo-marquee-object-fit: cover;
-	--dsgo-marquee-border-radius: 8px;
 
 	// Respect parent container width like other blocks
 	position: relative;
@@ -57,7 +56,6 @@
 		height: var(--dsgo-marquee-image-height);
 		width: var(--dsgo-marquee-image-width);
 		object-fit: var(--dsgo-marquee-object-fit, cover);
-		border-radius: var(--dsgo-marquee-border-radius);
 		flex-shrink: 0; // Prevent images from shrinking
 		display: block;
 	}

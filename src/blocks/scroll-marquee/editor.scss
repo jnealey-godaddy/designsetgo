@@ -23,7 +23,6 @@
 	--dsgo-marquee-row-gap: 20px;
 	--dsgo-marquee-image-height: 200px;
 	--dsgo-marquee-image-width: 300px;
-	--dsgo-marquee-border-radius: 8px;
 
 	position: relative;
 	overflow: hidden;
@@ -81,7 +80,6 @@
 		height: var(--dsgo-marquee-image-height);
 		width: var(--dsgo-marquee-image-width);
 		object-fit: cover;
-		border-radius: var(--dsgo-marquee-border-radius);
 		flex-shrink: 0;
 		display: block;
 		border: 2px solid #e0e0e0;

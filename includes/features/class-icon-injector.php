@@ -107,6 +107,50 @@ class Icon_Injector {
 			'dsgoIconAliases',
 			designsetgo_get_icon_aliases()
 		);
+
+		// Provide theme-level icon defaults so blocks that leave size/style
+		// unset inherit the value configured in theme.json under
+		// settings.custom.designsetgo.icon.
+		wp_localize_script(
+			'designsetgo-icon-injector',
+			'dsgoIconDefaults',
+			self::get_icon_defaults()
+		);
+	}
+
+	/**
+	 * Resolve the theme-level icon defaults from global settings.
+	 *
+	 * Reads settings.custom.designsetgo.icon from theme.json (or a Style Kit)
+	 * and falls back to the plugin defaults when unset.
+	 *
+	 * @return array{size:int,style:string} Resolved icon defaults.
+	 */
+	public static function get_icon_defaults() {
+		$icon_settings = array();
+
+		if ( function_exists( 'wp_get_global_settings' ) ) {
+			$icon_settings = wp_get_global_settings( array( 'custom', 'designsetgo', 'icon' ) );
+		}
+
+		if ( ! is_array( $icon_settings ) ) {
+			$icon_settings = array();
+		}
+
+		$size = isset( $icon_settings['defaultSize'] ) ? absint( $icon_settings['defaultSize'] ) : 48;
+		if ( $size <= 0 ) {
+			$size = 48;
+		}
+
+		$style = isset( $icon_settings['defaultStyle'] ) ? (string) $icon_settings['defaultStyle'] : 'filled';
+		if ( ! in_array( $style, array( 'filled', 'outlined' ), true ) ) {
+			$style = 'filled';
+		}
+
+		return array(
+			'size'  => $size,
+			'style' => $style,
+		);
 	}
 
 	/**

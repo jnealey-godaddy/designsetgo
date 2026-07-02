@@ -97,24 +97,9 @@
 	}
 }
 
-// CRITICAL: Must be duplicated from style.scss for editor/frontend parity
-// Outlined icon style
-.dsgo-icon-outlined {
-
-	svg {
-		fill: none !important;
-		stroke: currentcolor;
-		stroke-width: var(--icon-stroke-width, 1.5);
-		stroke-linecap: round;
-		stroke-linejoin: round;
-
-		// Ensure all paths and shapes use stroke
-		* {
-			fill: none !important;
-			stroke: currentcolor;
-		}
-	}
-}
+// Outlined icon style (.dsgo-icon-outlined) now lives in the shared global
+// editor bundle (src/styles/editor.scss @use 'icon-outlined'), so it no longer
+// needs duplicating here.
 
 // CRITICAL: Must duplicate from style.scss for editor/frontend parity
 // Parent container hover: apply icon background when parent is hovered

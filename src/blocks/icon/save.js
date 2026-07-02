@@ -49,10 +49,16 @@ export default function IconSave({ attributes }) {
 		},
 	});
 
-	// Icon wrapper styles
+	// Icon wrapper styles.
+	// Size is only written inline when the author sets an explicit iconSize;
+	// otherwise it is omitted so the theme default token
+	// (--wp--custom--designsetgo--icon--default-size, via style.scss) applies.
+	const hasExplicitSize = typeof iconSize === 'number';
 	const iconWrapperStyle = {
-		width: `${iconSize}px`,
-		height: `${iconSize}px`,
+		...(hasExplicitSize && {
+			width: `${iconSize}px`,
+			height: `${iconSize}px`,
+		}),
 		display: 'inline-flex',
 		alignItems: 'center',
 		justifyContent: 'center',
@@ -97,7 +103,9 @@ export default function IconSave({ attributes }) {
 			className="dsgo-icon__wrapper dsgo-lazy-icon"
 			style={iconWrapperStyle}
 			data-icon-name={icon}
-			data-icon-style={iconStyle}
+			// Omit when unset so the injector inherits the theme default
+			// (settings.custom.designsetgo.icon.defaultStyle).
+			data-icon-style={iconStyle || undefined}
 			data-icon-stroke-width={strokeWidth}
 			{...ariaAttributes}
 		/>

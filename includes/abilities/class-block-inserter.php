@@ -1770,8 +1770,10 @@ class Block_Inserter {
 		if ( $field_label_color ) {
 			$style_parts[] = '--dsgo-form-label-color:' . esc_attr( $field_label_color );
 		}
-		// fieldBorderColor defaults to #d1d5db if empty.
-		$style_parts[] = '--dsgo-form-border-color:' . esc_attr( $field_border_color ? $field_border_color : '#d1d5db' );
+		// Omit when empty — .dsgo-form-builder in style.scss supplies the #d1d5db default.
+		if ( $field_border_color ) {
+			$style_parts[] = '--dsgo-form-border-color:' . esc_attr( $field_border_color );
+		}
 		if ( $field_background_color ) {
 			$style_parts[] = '--dsgo-form-field-bg:' . esc_attr( $field_background_color );
 		}

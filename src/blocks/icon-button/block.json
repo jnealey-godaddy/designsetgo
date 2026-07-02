@@ -101,9 +101,16 @@
 			"type": "string",
 			"default": "start"
 		},
-		"iconSize": {
+		"iconStyle": {
+			"type": "string",
+			"enum": ["filled", "outlined"]
+		},
+		"strokeWidth": {
 			"type": "number",
-			"default": 20
+			"default": 1.5
+		},
+		"iconSize": {
+			"type": "number"
 		},
 		"iconGap": {
 			"type": "string",

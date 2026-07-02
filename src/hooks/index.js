@@ -9,3 +9,4 @@
 export { useUniqueBlockId } from './useUniqueBlockId';
 export { useBlockColors } from './useBlockColors';
 export { default as useTablistKeyboard } from './useTablistKeyboard';
+export { useIconDefaults } from './useIconDefaults';

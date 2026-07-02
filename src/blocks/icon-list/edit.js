@@ -22,6 +22,7 @@ import {
 	encodeColorValue,
 	decodeColorValue,
 } from '../../utils/encode-color-value';
+import { useIconDefaults } from '../../hooks';
 
 /**
  * Icon List Edit Component
@@ -36,6 +37,8 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 	const {
 		layout,
 		iconSize,
+		iconStyle,
+		strokeWidth,
 		iconColor,
 		iconBackgroundColor,
 		gap,
@@ -48,6 +51,13 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
+
+	// Theme-level icon defaults inherited when size/style are left unset.
+	const iconDefaults = useIconDefaults({
+		sizeKey: 'iconList',
+		sizeFallback: 32,
+	});
+	const effectiveStyle = iconStyle || iconDefaults.style;
 
 	// Calculate alignment value to avoid nested ternary
 	let alignItemsValue;
@@ -102,10 +112,23 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 		width: '100%', // Ensure container fills available space
 	};
 
+	// Mirror the wrapper's inheritable icon style/stroke (see save.js) so the
+	// editor DOM matches the frontend and any editor-side lazy injection reads
+	// the same inherited values. Only emitted when iconStyle is explicitly set.
+	const inheritedIconAttrs = iconStyle
+		? {
+				'data-dsgo-icon-style': iconStyle,
+				...(iconStyle === 'outlined' && strokeWidth
+					? { 'data-dsgo-icon-stroke-width': String(strokeWidth) }
+					: {}),
+			}
+		: {};
+
 	// Get block wrapper props
 	const blockProps = useBlockProps({
 		className: `dsgo-icon-list dsgo-icon-list--${layout}`,
 		style: { width: '100%' }, // Ensure block fills parent width
+		...inheritedIconAttrs,
 	});
 
 	// Configure inner blocks
@@ -188,7 +211,9 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 					resetAll={() =>
 						setAttributes({
 							layout: 'vertical',
-							iconSize: 32,
+							iconSize: undefined,
+							iconStyle: undefined,
+							strokeWidth: 1.5,
 							gap: '24px',
 							iconPosition: 'left',
 							columns: 1,
@@ -201,6 +226,10 @@ export default function IconListEdit({ attributes, setAttributes, clientId }) {
 					<ListSettingsPanel
 						layout={layout}
 						iconSize={iconSize}
+						iconStyle={iconStyle}
+						strokeWidth={strokeWidth}
+						effectiveStyle={effectiveStyle}
+						iconDefaults={iconDefaults}
 						gap={gap}
 						iconPosition={iconPosition}
 						columns={columns}

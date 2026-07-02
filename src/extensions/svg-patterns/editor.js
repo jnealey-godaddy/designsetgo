@@ -201,8 +201,10 @@ function addSvgPatternSaveProps(extraProps, blockType, attributes) {
 			.join(' '),
 		style: extraProps.style || {},
 		'data-dsgo-svg-pattern': dsgoSvgPatternType,
+		// Omit when unset — the server-side renderer falls back to its own
+		// default color, so a hand-authored pattern can leave this off too.
 		'data-dsgo-svg-pattern-color':
-			convertColorToCSSVar(dsgoSvgPatternColor) || '',
+			convertColorToCSSVar(dsgoSvgPatternColor),
 		'data-dsgo-svg-pattern-opacity': String(safeOpacity),
 		'data-dsgo-svg-pattern-scale': String(safeScale),
 	};

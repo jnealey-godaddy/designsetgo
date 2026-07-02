@@ -31,8 +31,8 @@ export default function ScrollMarqueeEdit({
 		objectFit,
 		gap,
 		rowGap,
-		borderRadius,
 	} = attributes;
+	const borderRadius = attributes.style?.border?.radius;
 
 	const imageInlineStyle = {
 		height: imageHeight,
@@ -56,7 +56,6 @@ export default function ScrollMarqueeEdit({
 			'--dsgo-marquee-image-height': imageHeight,
 			'--dsgo-marquee-image-width': imageWidth,
 			'--dsgo-marquee-object-fit': objectFit,
-			'--dsgo-marquee-border-radius': borderRadius,
 		},
 	});
 
@@ -116,7 +115,6 @@ export default function ScrollMarqueeEdit({
 							objectFit: 'cover',
 							gap: '20px',
 							rowGap: '20px',
-							borderRadius: '8px',
 						})
 					}
 				>
@@ -236,25 +234,6 @@ export default function ScrollMarqueeEdit({
 								'How each image fills its box. Cover crops to fill; Contain fits the whole image and may letterbox.',
 								'designsetgo'
 							)}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-					</DsgoInspectorPanel.Item>
-
-					<DsgoInspectorPanel.Item
-						label={__('Border Radius', 'designsetgo')}
-						hasValue={() => borderRadius !== '8px'}
-						onDeselect={() =>
-							setAttributes({ borderRadius: '8px' })
-						}
-						isShownByDefault
-					>
-						<UnitControl
-							label={__('Border Radius', 'designsetgo')}
-							value={borderRadius}
-							onChange={(value) =>
-								setAttributes({ borderRadius: value })
-							}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>

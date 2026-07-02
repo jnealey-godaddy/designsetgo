@@ -41,8 +41,7 @@ import domReady from '@wordpress/dom-ready';
 const SCALAR_RESOLVERS = {
 	'designsetgo/post-title': {
 		label: __('Post title', 'designsetgo'),
-		entityField: (record) =>
-			record?.title?.rendered ?? record?.title ?? '',
+		entityField: (record) => record?.title?.rendered ?? record?.title ?? '',
 		editorField: (editor) => {
 			const live = editor?.getEditedPostAttribute?.('title');
 			if (typeof live === 'string') {
