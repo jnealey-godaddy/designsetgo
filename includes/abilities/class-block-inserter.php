@@ -185,15 +185,10 @@ class Block_Inserter {
 			}
 		}
 
-		// Generate HTML for standalone DesignSetGo blocks (form fields, etc.).
-		// Only runs if wrapper HTML was not generated above.
-		if ( 0 === strpos( $block_name, 'designsetgo/' ) && empty( $inner_blocks ) && empty( $innerHTML ) && ! self::is_dynamic_block( $block_name ) ) {
-			$block_html = self::generate_designsetgo_block_html( $block_name, $attrs );
-			if ( ! empty( $block_html ) ) {
-				$innerHTML      = $block_html;
-				$innerContent[] = $block_html;
-			}
-		}
+		// Form-field blocks (and the map) are dynamic/server-rendered, so they
+		// serialize to a bare self-closing comment with no inner HTML — nothing
+		// to build here. is_dynamic_block() above keeps them out of the
+		// wrapper-HTML path too.
 
 		// Strip attributes that match block.json defaults so serialize_block
 		// doesn't include them in the block comment (WordPress omits defaults).
@@ -1864,18 +1859,6 @@ class Block_Inserter {
 			'closing' => $closing,
 		);
 	}
-
-	/**
-	 * Generate HTML for DesignSetGo blocks without inner blocks.
-	 *
-	 * @param string               $block_name Block name.
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @return string|null Generated HTML or null if not supported.
-	 */
-	private static function generate_designsetgo_block_html( string $block_name, array $attributes ): ?string {
-		return Form_Field_Html_Generator::generate( $block_name, $attributes );
-	}
-
 
 	/**
 	 * Generate HTML for core WordPress blocks.
