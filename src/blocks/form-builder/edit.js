@@ -181,16 +181,50 @@ export default function FormBuilderEdit({
 		'dsgo-form-builder--button-inline': submitButtonPosition === 'inline',
 	});
 
-	// Apply form settings as CSS custom properties
+	// Apply form settings as CSS custom properties - MUST MATCH save.js.
+	// Spacing/sizing tokens are only written when explicitly set; otherwise they
+	// inherit the theme.json custom properties defined in style.scss.
 	const formStyles = {
-		'--dsgo-form-field-spacing': fieldSpacing,
-		'--dsgo-form-input-height': inputHeight,
-		'--dsgo-form-input-padding': inputPadding,
+		...(fieldSpacing && { '--dsgo-form-field-spacing': fieldSpacing }),
+		...(inputHeight && { '--dsgo-form-input-height': inputHeight }),
+		...(inputPadding && { '--dsgo-form-input-padding': inputPadding }),
 		'--dsgo-form-label-color': convertColorToCSSVar(fieldLabelColor),
 		'--dsgo-form-border-color': convertColorToCSSVar(fieldBorderColor),
 		'--dsgo-form-field-bg': convertColorToCSSVar(fieldBackgroundColor),
 		'--dsgo-form-border-radius': validateCSSLength(fieldBorderRadius),
 		// Button colors now applied as inline styles on button element
+	};
+
+	// Submit button style - MUST MATCH save.js. Sizing is only written when
+	// explicitly set; otherwise the button inherits the theme's global button
+	// styles via wp-element-button.
+	const submitButtonStyle = {
+		...(submitButtonColor && {
+			color: convertColorToCSSVar(submitButtonColor),
+		}),
+		...(submitButtonBackgroundColor && {
+			backgroundColor: convertColorToCSSVar(submitButtonBackgroundColor),
+		}),
+		...(submitButtonHeight && { minHeight: submitButtonHeight }),
+		...(submitButtonPaddingVertical && {
+			paddingTop: submitButtonPaddingVertical,
+			paddingBottom: submitButtonPaddingVertical,
+		}),
+		...(submitButtonPaddingHorizontal && {
+			paddingLeft: submitButtonPaddingHorizontal,
+			paddingRight: submitButtonPaddingHorizontal,
+		}),
+		...(submitButtonFontSize && { fontSize: submitButtonFontSize }),
+		...(submitButtonHoverBackgroundColor && {
+			'--dsgo-button-hover-bg': convertColorToCSSVar(
+				submitButtonHoverBackgroundColor
+			),
+		}),
+		...(submitButtonHoverColor && {
+			'--dsgo-button-hover-color': convertColorToCSSVar(
+				submitButtonHoverColor
+			),
+		}),
 	};
 
 	const blockProps = useBlockProps({
@@ -256,13 +290,13 @@ export default function FormBuilderEdit({
 							errorMessage:
 								'There was an error submitting the form. Please try again.',
 							redirectUrl: '',
-							fieldSpacing: '1.5rem',
-							inputHeight: '44px',
-							inputPadding: '0.75rem',
+							fieldSpacing: '',
+							inputHeight: '',
+							inputPadding: '',
 							fieldBorderRadius: '',
-							submitButtonHeight: '44px',
-							submitButtonPaddingVertical: '0.75rem',
-							submitButtonPaddingHorizontal: '2rem',
+							submitButtonHeight: '',
+							submitButtonPaddingVertical: '',
+							submitButtonPaddingHorizontal: '',
 							submitButtonFontSize: '',
 							enableHoneypot: true,
 							enableRateLimit: true,
@@ -393,9 +427,9 @@ export default function FormBuilderEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Button Height', 'designsetgo')}
-						hasValue={() => submitButtonHeight !== '44px'}
+						hasValue={() => submitButtonHeight !== ''}
 						onDeselect={() =>
-							setAttributes({ submitButtonHeight: '44px' })
+							setAttributes({ submitButtonHeight: '' })
 						}
 						isShownByDefault
 					>
@@ -404,7 +438,7 @@ export default function FormBuilderEdit({
 							value={submitButtonHeight}
 							onChange={(value) =>
 								setAttributes({
-									submitButtonHeight: value || '44px',
+									submitButtonHeight: value || '',
 								})
 							}
 							units={[
@@ -425,12 +459,10 @@ export default function FormBuilderEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Button Padding (Vertical)', 'designsetgo')}
-						hasValue={() =>
-							submitButtonPaddingVertical !== '0.75rem'
-						}
+						hasValue={() => submitButtonPaddingVertical !== ''}
 						onDeselect={() =>
 							setAttributes({
-								submitButtonPaddingVertical: '0.75rem',
+								submitButtonPaddingVertical: '',
 							})
 						}
 						isShownByDefault
@@ -443,8 +475,7 @@ export default function FormBuilderEdit({
 							value={submitButtonPaddingVertical}
 							onChange={(value) =>
 								setAttributes({
-									submitButtonPaddingVertical:
-										value || '0.75rem',
+									submitButtonPaddingVertical: value || '',
 								})
 							}
 							units={[
@@ -465,12 +496,10 @@ export default function FormBuilderEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Button Padding (Horizontal)', 'designsetgo')}
-						hasValue={() =>
-							submitButtonPaddingHorizontal !== '2rem'
-						}
+						hasValue={() => submitButtonPaddingHorizontal !== ''}
 						onDeselect={() =>
 							setAttributes({
-								submitButtonPaddingHorizontal: '2rem',
+								submitButtonPaddingHorizontal: '',
 							})
 						}
 						isShownByDefault
@@ -483,8 +512,7 @@ export default function FormBuilderEdit({
 							value={submitButtonPaddingHorizontal}
 							onChange={(value) =>
 								setAttributes({
-									submitButtonPaddingHorizontal:
-										value || '2rem',
+									submitButtonPaddingHorizontal: value || '',
 								})
 							}
 							units={[
@@ -537,10 +565,8 @@ export default function FormBuilderEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Field Spacing', 'designsetgo')}
-						hasValue={() => fieldSpacing !== '1.5rem'}
-						onDeselect={() =>
-							setAttributes({ fieldSpacing: '1.5rem' })
-						}
+						hasValue={() => fieldSpacing !== ''}
+						onDeselect={() => setAttributes({ fieldSpacing: '' })}
 						isShownByDefault
 					>
 						<UnitControl
@@ -548,7 +574,7 @@ export default function FormBuilderEdit({
 							value={fieldSpacing}
 							onChange={(value) =>
 								setAttributes({
-									fieldSpacing: value || '1.5rem',
+									fieldSpacing: value || '',
 								})
 							}
 							units={[
@@ -569,17 +595,15 @@ export default function FormBuilderEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Input Height', 'designsetgo')}
-						hasValue={() => inputHeight !== '44px'}
-						onDeselect={() =>
-							setAttributes({ inputHeight: '44px' })
-						}
+						hasValue={() => inputHeight !== ''}
+						onDeselect={() => setAttributes({ inputHeight: '' })}
 						isShownByDefault
 					>
 						<UnitControl
 							label={__('Input Height', 'designsetgo')}
 							value={inputHeight}
 							onChange={(value) =>
-								setAttributes({ inputHeight: value || '44px' })
+								setAttributes({ inputHeight: value || '' })
 							}
 							units={[
 								{ value: 'px', label: 'px', default: 44 },
@@ -599,10 +623,8 @@ export default function FormBuilderEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Input Padding', 'designsetgo')}
-						hasValue={() => inputPadding !== '0.75rem'}
-						onDeselect={() =>
-							setAttributes({ inputPadding: '0.75rem' })
-						}
+						hasValue={() => inputPadding !== ''}
+						onDeselect={() => setAttributes({ inputPadding: '' })}
 						isShownByDefault
 					>
 						<UnitControl
@@ -610,7 +632,7 @@ export default function FormBuilderEdit({
 							value={inputPadding}
 							onChange={(value) =>
 								setAttributes({
-									inputPadding: value || '0.75rem',
+									inputPadding: value || '',
 								})
 							}
 							units={[
@@ -1279,38 +1301,7 @@ export default function FormBuilderEdit({
 							type="button"
 							className={`dsgo-form__submit dsgo-form__submit--inline wp-element-button${submitAnimationClass}`}
 							disabled
-							style={{
-								...(submitButtonColor && {
-									color: convertColorToCSSVar(
-										submitButtonColor
-									),
-								}),
-								...(submitButtonBackgroundColor && {
-									backgroundColor: convertColorToCSSVar(
-										submitButtonBackgroundColor
-									),
-								}),
-								minHeight: submitButtonHeight,
-								paddingTop: submitButtonPaddingVertical,
-								paddingBottom: submitButtonPaddingVertical,
-								paddingLeft: submitButtonPaddingHorizontal,
-								paddingRight: submitButtonPaddingHorizontal,
-								...(submitButtonFontSize && {
-									fontSize: submitButtonFontSize,
-								}),
-								...(submitButtonHoverBackgroundColor && {
-									'--dsgo-button-hover-bg':
-										convertColorToCSSVar(
-											submitButtonHoverBackgroundColor
-										),
-								}),
-								...(submitButtonHoverColor && {
-									'--dsgo-button-hover-color':
-										convertColorToCSSVar(
-											submitButtonHoverColor
-										),
-								}),
-							}}
+							style={submitButtonStyle}
 						>
 							{submitButtonText}
 						</button>
@@ -1323,38 +1314,7 @@ export default function FormBuilderEdit({
 							type="button"
 							className={`dsgo-form__submit wp-element-button${submitAnimationClass}`}
 							disabled
-							style={{
-								...(submitButtonColor && {
-									color: convertColorToCSSVar(
-										submitButtonColor
-									),
-								}),
-								...(submitButtonBackgroundColor && {
-									backgroundColor: convertColorToCSSVar(
-										submitButtonBackgroundColor
-									),
-								}),
-								minHeight: submitButtonHeight,
-								paddingTop: submitButtonPaddingVertical,
-								paddingBottom: submitButtonPaddingVertical,
-								paddingLeft: submitButtonPaddingHorizontal,
-								paddingRight: submitButtonPaddingHorizontal,
-								...(submitButtonFontSize && {
-									fontSize: submitButtonFontSize,
-								}),
-								...(submitButtonHoverBackgroundColor && {
-									'--dsgo-button-hover-bg':
-										convertColorToCSSVar(
-											submitButtonHoverBackgroundColor
-										),
-								}),
-								...(submitButtonHoverColor && {
-									'--dsgo-button-hover-color':
-										convertColorToCSSVar(
-											submitButtonHoverColor
-										),
-								}),
-							}}
+							style={submitButtonStyle}
 						>
 							{submitButtonText}
 						</button>

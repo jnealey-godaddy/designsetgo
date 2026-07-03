@@ -52,16 +52,52 @@ export default function FormBuilderSave({ attributes }) {
 		'dsgo-form-builder--button-inline': submitButtonPosition === 'inline',
 	});
 
-	// Apply form settings as CSS custom properties - MUST MATCH edit.js
+	// Apply form settings as CSS custom properties - MUST MATCH edit.js.
+	// Spacing/sizing tokens are only written when the author set an explicit
+	// value; when omitted they fall back to the theme.json custom properties
+	// (--wp--custom--designsetgo--form--*) defined in style.scss, so a pattern
+	// can drop them to inherit the theme.
 	const formStyles = {
-		'--dsgo-form-field-spacing': fieldSpacing,
-		'--dsgo-form-input-height': inputHeight,
-		'--dsgo-form-input-padding': inputPadding,
+		...(fieldSpacing && { '--dsgo-form-field-spacing': fieldSpacing }),
+		...(inputHeight && { '--dsgo-form-input-height': inputHeight }),
+		...(inputPadding && { '--dsgo-form-input-padding': inputPadding }),
 		'--dsgo-form-label-color': convertColorToCSSVar(fieldLabelColor),
 		'--dsgo-form-border-color': convertColorToCSSVar(fieldBorderColor),
 		'--dsgo-form-field-bg': convertColorToCSSVar(fieldBackgroundColor),
 		'--dsgo-form-border-radius': validateCSSLength(fieldBorderRadius),
 		// Button colors now applied as inline styles on button element
+	};
+
+	// Submit button style - MUST MATCH edit.js. Sizing (height/padding/font) is
+	// only written when explicitly set; otherwise the button inherits the
+	// theme's global button styles via the wp-element-button class.
+	const submitButtonStyle = {
+		...(submitButtonColor && {
+			color: convertColorToCSSVar(submitButtonColor),
+		}),
+		...(submitButtonBackgroundColor && {
+			backgroundColor: convertColorToCSSVar(submitButtonBackgroundColor),
+		}),
+		...(submitButtonHeight && { minHeight: submitButtonHeight }),
+		...(submitButtonPaddingVertical && {
+			paddingTop: submitButtonPaddingVertical,
+			paddingBottom: submitButtonPaddingVertical,
+		}),
+		...(submitButtonPaddingHorizontal && {
+			paddingLeft: submitButtonPaddingHorizontal,
+			paddingRight: submitButtonPaddingHorizontal,
+		}),
+		...(submitButtonFontSize && { fontSize: submitButtonFontSize }),
+		...(submitButtonHoverBackgroundColor && {
+			'--dsgo-button-hover-bg': convertColorToCSSVar(
+				submitButtonHoverBackgroundColor
+			),
+		}),
+		...(submitButtonHoverColor && {
+			'--dsgo-button-hover-color': convertColorToCSSVar(
+				submitButtonHoverColor
+			),
+		}),
 	};
 
 	const blockProps = useBlockProps.save({
@@ -95,38 +131,7 @@ export default function FormBuilderSave({ attributes }) {
 						<button
 							type="submit"
 							className="dsgo-form__submit dsgo-form__submit--inline wp-element-button"
-							style={{
-								...(submitButtonColor && {
-									color: convertColorToCSSVar(
-										submitButtonColor
-									),
-								}),
-								...(submitButtonBackgroundColor && {
-									backgroundColor: convertColorToCSSVar(
-										submitButtonBackgroundColor
-									),
-								}),
-								minHeight: submitButtonHeight,
-								paddingTop: submitButtonPaddingVertical,
-								paddingBottom: submitButtonPaddingVertical,
-								paddingLeft: submitButtonPaddingHorizontal,
-								paddingRight: submitButtonPaddingHorizontal,
-								...(submitButtonFontSize && {
-									fontSize: submitButtonFontSize,
-								}),
-								...(submitButtonHoverBackgroundColor && {
-									'--dsgo-button-hover-bg':
-										convertColorToCSSVar(
-											submitButtonHoverBackgroundColor
-										),
-								}),
-								...(submitButtonHoverColor && {
-									'--dsgo-button-hover-color':
-										convertColorToCSSVar(
-											submitButtonHoverColor
-										),
-								}),
-							}}
+							style={submitButtonStyle}
 						>
 							{submitButtonText}
 						</button>
@@ -168,38 +173,7 @@ export default function FormBuilderSave({ attributes }) {
 						<button
 							type="submit"
 							className="dsgo-form__submit wp-element-button"
-							style={{
-								...(submitButtonColor && {
-									color: convertColorToCSSVar(
-										submitButtonColor
-									),
-								}),
-								...(submitButtonBackgroundColor && {
-									backgroundColor: convertColorToCSSVar(
-										submitButtonBackgroundColor
-									),
-								}),
-								minHeight: submitButtonHeight,
-								paddingTop: submitButtonPaddingVertical,
-								paddingBottom: submitButtonPaddingVertical,
-								paddingLeft: submitButtonPaddingHorizontal,
-								paddingRight: submitButtonPaddingHorizontal,
-								...(submitButtonFontSize && {
-									fontSize: submitButtonFontSize,
-								}),
-								...(submitButtonHoverBackgroundColor && {
-									'--dsgo-button-hover-bg':
-										convertColorToCSSVar(
-											submitButtonHoverBackgroundColor
-										),
-								}),
-								...(submitButtonHoverColor && {
-									'--dsgo-button-hover-color':
-										convertColorToCSSVar(
-											submitButtonHoverColor
-										),
-								}),
-							}}
+							style={submitButtonStyle}
 						>
 							{submitButtonText}
 						</button>
