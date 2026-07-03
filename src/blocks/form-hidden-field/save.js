@@ -1,26 +1,13 @@
 /**
  * Form Hidden Field Block - Save Component
  *
- * @since 1.0.0
+ * Dynamic block rendered server-side via render.php. No static HTML is saved,
+ * so the serialized block is a single self-closing comment and this field's
+ * markup can never trip block validation. Historical static markup is
+ * migrated by ./deprecated.js.
+ *
+ * @return {null} Null because this is a dynamic block.
  */
-
-import { useBlockProps } from '@wordpress/block-editor';
-
-export default function FormHiddenFieldSave({ attributes }) {
-	const { fieldName, value } = attributes;
-
-	const blockProps = useBlockProps.save({
-		className: 'dsgo-form-field dsgo-form-field--hidden',
-	});
-
-	return (
-		<div {...blockProps}>
-			<input
-				type="hidden"
-				name={fieldName}
-				value={value}
-				data-field-type="hidden"
-			/>
-		</div>
-	);
+export default function save() {
+	return null;
 }

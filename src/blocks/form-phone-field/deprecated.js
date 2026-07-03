@@ -3,6 +3,11 @@
  *
  * Newest → oldest. WordPress tries each in order until one matches.
  *
+ * vStatic reproduces the last STATIC save (the block is now server-rendered via
+ * render.php; save() returns null). isEligible matches any stored static phone
+ * field so existing content — and the current block-patterns HTML — migrates
+ * silently (passthrough) with no "Attempt Recovery" warning.
+ *
  * @since 2.0.32
  */
 
@@ -125,6 +130,111 @@ function getPlaceholderText(placeholder, phoneFormat) {
 			return '';
 	}
 }
+
+/**
+ * vStatic: the last static markup, immediately before the block became
+ * server-rendered. Identical output to v4's save(), but matches ANY current-
+ * format phone field (data-dsgo-country-code, empty <select>, `flex:1`) since
+ * the dynamic block saves no inner HTML and never matches this signature.
+ */
+const vStatic = {
+	supports: sharedSupports,
+	attributes: sharedAttributes,
+
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// Any stored static phone field carries this wrapper class; the dynamic
+		// block saves no inner HTML, so it never matches.
+		return (
+			Boolean(innerHTML) && innerHTML.includes('dsgo-form-field--phone')
+		);
+	},
+
+	save({ attributes }) {
+		const {
+			fieldName,
+			label,
+			placeholder,
+			helpText,
+			required,
+			defaultValue,
+			phoneFormat,
+			showCountryCode,
+			countryCode,
+			autoFormat,
+			fieldWidth,
+		} = attributes;
+
+		const blockProps = getSaveBlockProps(fieldWidth);
+
+		const fieldId = `field-${fieldName}`;
+
+		return (
+			<div {...blockProps}>
+				<label htmlFor={fieldId} className="dsgo-form-field__label">
+					{label}
+					{required && (
+						<span
+							className="dsgo-form-field__required"
+							aria-label="required"
+						>
+							*
+						</span>
+					)}
+				</label>
+
+				<div
+					className="dsgo-form-field__phone-wrapper"
+					style={{ display: 'flex', gap: '0.5rem' }}
+					data-auto-format={autoFormat}
+				>
+					{showCountryCode && (
+						// Options are intentionally empty here — view.js hydrates this
+						// <select> at runtime from the shared COUNTRY_CODES constant.
+						// The form already requires JS for auto-formatting, so the
+						// no-JS experience is an accepted trade-off.
+						<select
+							name={`${fieldName}_country_code`}
+							className="dsgo-form-field__country-code"
+							data-dsgo-country-code={countryCode}
+							style={{ minWidth: '85px', flexShrink: 0 }}
+							aria-label="Country Code"
+						/>
+					)}
+					<input
+						type="tel"
+						id={fieldId}
+						name={fieldName}
+						className="dsgo-form-field__input"
+						placeholder={getPlaceholderText(
+							placeholder,
+							phoneFormat
+						)}
+						required={required || undefined}
+						defaultValue={defaultValue || undefined}
+						pattern={getPattern(phoneFormat)}
+						aria-describedby={
+							helpText ? `${fieldId}-help` : undefined
+						}
+						aria-required={required ? 'true' : undefined}
+						data-field-type="tel"
+						data-phone-format={phoneFormat}
+						style={{ flex: '1' }}
+					/>
+				</div>
+
+				{helpText && (
+					<p id={`${fieldId}-help`} className="dsgo-form-field__help">
+						{helpText}
+					</p>
+				)}
+			</div>
+		);
+	},
+
+	migrate(attributes) {
+		return attributes;
+	},
+};
 
 /**
  * Version 4: React serializes numeric `flex: 1` as `flex:1px` (it treats
@@ -645,4 +755,4 @@ const v1 = {
 	},
 };
 
-export default [v4, v3, v2, v1];
+export default [vStatic, v4, v3, v2, v1];
