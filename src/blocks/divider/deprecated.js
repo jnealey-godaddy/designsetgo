@@ -40,6 +40,82 @@ const sharedSupports = {
 };
 
 /**
+ * Lazy-placeholder format — the last STATIC version, before the Divider became
+ * server-rendered (dynamic).
+ *
+ * Static dividers using the "icon" style saved a `.dsgo-lazy-icon` placeholder
+ * injected client-side; the dynamic block now renders the SVG in PHP
+ * (render.php) and its save() returns null. This deprecation reproduces the
+ * placeholder markup and migrates existing content untouched (passthrough),
+ * avoiding the "Attempt Recovery" warning.
+ */
+const vLazy = {
+	supports: sharedSupports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		return Boolean(innerHTML) && innerHTML.includes('dsgo-lazy-icon');
+	},
+	attributes: {
+		dividerStyle: { type: 'string', default: 'solid' },
+		width: { type: 'number', default: 100 },
+		thickness: { type: 'number', default: 2 },
+		iconName: { type: 'string', default: 'star' },
+		iconStyle: { type: 'string', enum: ['filled', 'outlined'] },
+		strokeWidth: { type: 'number', default: 1.5 },
+	},
+	save({ attributes }) {
+		const {
+			dividerStyle,
+			width,
+			thickness,
+			iconName,
+			iconStyle,
+			strokeWidth,
+		} = attributes;
+
+		const blockProps = useBlockProps.save({
+			className: `dsgo-divider dsgo-divider--${dividerStyle}`,
+		});
+
+		const containerStyle = { width: `${width}%` };
+		const lineStyle = { height: `${thickness}px` };
+
+		return (
+			<div {...blockProps}>
+				<div className="dsgo-divider__container" style={containerStyle}>
+					{dividerStyle === 'icon' ? (
+						<div className="dsgo-divider__icon-wrapper">
+							<span
+								className="dsgo-divider__line dsgo-divider__line--left"
+								style={lineStyle}
+							/>
+							<span
+								className="dsgo-divider__icon dsgo-lazy-icon"
+								data-icon-name={iconName}
+								data-icon-style={iconStyle || undefined}
+								data-icon-stroke-width={
+									iconStyle === 'outlined'
+										? strokeWidth
+										: undefined
+								}
+							/>
+							<span
+								className="dsgo-divider__line dsgo-divider__line--right"
+								style={lineStyle}
+							/>
+						</div>
+					) : (
+						<div className="dsgo-divider__line" style={lineStyle} />
+					)}
+				</div>
+			</div>
+		);
+	},
+	migrate(attributes) {
+		return attributes;
+	},
+};
+
+/**
  * Version 1: Before lazy loading icon library
  *
  * Changes in current version:
@@ -118,4 +194,4 @@ const v1 = {
 	},
 };
 
-export default [v1];
+export default [vLazy, v1];
