@@ -66,6 +66,132 @@ function sanitizeUrl(url) {
 }
 
 /**
+ * Lazy-placeholder format — the last STATIC version, in use immediately before
+ * the Icon block became server-rendered (dynamic).
+ *
+ * Static icons saved a `.dsgo-lazy-icon` placeholder whose SVG was injected
+ * client-side. The dynamic block now renders the SVG in PHP (render.php) and its
+ * save() returns null, so any stored placeholder markup would otherwise trip the
+ * editor's "Attempt Recovery" warning. This deprecation reproduces that markup
+ * and migrates existing content untouched (passthrough).
+ *
+ * isEligible matches ANY lazy-icon placeholder, so it also covers the earlier
+ * always-inline-size format that v2 handled — both simply migrate to the dynamic
+ * block with their attributes preserved.
+ */
+const vLazy = {
+	supports: sharedSupports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		return Boolean(innerHTML) && innerHTML.includes('dsgo-lazy-icon');
+	},
+
+	attributes: {
+		icon: { type: 'string', default: 'star' },
+		iconStyle: { type: 'string', enum: ['filled', 'outlined'] },
+		strokeWidth: { type: 'number', default: 1.5 },
+		iconSize: { type: 'number' },
+		rotation: { type: 'number', default: 0 },
+		linkUrl: { type: 'string', default: '' },
+		linkTarget: { type: 'string', default: '_self' },
+		linkRel: { type: 'string', default: '' },
+		ariaLabel: { type: 'string', default: '' },
+		isDecorative: { type: 'boolean', default: false },
+	},
+
+	save({ attributes }) {
+		const {
+			icon,
+			iconStyle,
+			strokeWidth,
+			iconSize,
+			rotation,
+			linkUrl,
+			linkTarget,
+			linkRel,
+			ariaLabel,
+			isDecorative,
+		} = attributes;
+
+		const blockProps = useBlockProps.save({
+			className: 'dsgo-icon',
+			style: {
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center',
+			},
+		});
+
+		// Size is only written inline when explicitly set; otherwise the theme
+		// default token (via style.scss) applies.
+		const hasExplicitSize = typeof iconSize === 'number';
+		const iconWrapperStyle = {
+			...(hasExplicitSize && {
+				width: `${iconSize}px`,
+				height: `${iconSize}px`,
+			}),
+			display: 'inline-flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			transform: rotation !== 0 ? `rotate(${rotation}deg)` : undefined,
+			borderRadius: 'inherit',
+		};
+
+		const getAriaAttributes = () => {
+			if (isDecorative) {
+				return { role: 'presentation', 'aria-hidden': 'true' };
+			}
+			if (ariaLabel) {
+				return { role: 'img', 'aria-label': ariaLabel };
+			}
+			const fallbackLabel = icon
+				.replace(/-/g, ' ')
+				.replace(/\b\w/g, (l) => l.toUpperCase());
+			return { role: 'img', 'aria-label': fallbackLabel };
+		};
+
+		const ariaAttributes = getAriaAttributes();
+
+		const iconElement = (
+			<div
+				className="dsgo-icon__wrapper dsgo-lazy-icon"
+				style={iconWrapperStyle}
+				data-icon-name={icon}
+				data-icon-style={iconStyle || undefined}
+				data-icon-stroke-width={strokeWidth}
+				{...ariaAttributes}
+			/>
+		);
+
+		const safeUrl = sanitizeUrl(linkUrl);
+
+		return (
+			<div {...blockProps}>
+				{safeUrl ? (
+					<a
+						href={safeUrl}
+						target={linkTarget}
+						rel={
+							linkTarget === '_blank'
+								? linkRel || 'noopener noreferrer'
+								: linkRel || undefined
+						}
+					>
+						{iconElement}
+					</a>
+				) : (
+					iconElement
+				)}
+			</div>
+		);
+	},
+
+	migrate(attributes) {
+		// The static→dynamic switch changes no attributes.
+		return attributes;
+	},
+};
+
+/**
  * Version 2: Before the theme icon-size / icon-style tokens
  *
  * The pre-token format always wrote an explicit `width:Npx;height:Npx` on the
@@ -367,4 +493,4 @@ const v1 = {
 	},
 };
 
-export default [v2, v1];
+export default [vLazy, v2, v1];

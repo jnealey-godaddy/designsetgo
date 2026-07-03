@@ -28,7 +28,8 @@ class Icon_Injector {
 	 * @var array
 	 */
 	private $icon_blocks = array(
-		'designsetgo/icon',
+		// designsetgo/icon renders its SVG server-side (render.php) and no longer
+		// emits a .dsgo-lazy-icon placeholder, so it does not need the injector.
 		'designsetgo/icon-button',
 		'designsetgo/icon-list-item',
 		'designsetgo/divider',
