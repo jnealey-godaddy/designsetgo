@@ -122,5 +122,6 @@
 	"editorStyle": "file:./index.css",
 	"style": "file:./index.css",
 	"viewScript": "file:./view.js",
-	"viewStyle": "file:./view.css"
+	"viewStyle": "file:./view.css",
+	"render": "file:./render.php"
 }
