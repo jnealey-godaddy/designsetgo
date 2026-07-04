@@ -197,7 +197,9 @@ class Delete_Block extends Abstract_Ability {
 		$updated = wp_update_post(
 			array(
 				'ID'           => $post_id,
-				'post_content' => serialize_blocks( $blocks ),
+				// Slash so wp_update_post()'s internal wp_unslash() doesn't strip
+				// JSON-escape backslashes from block-comment attributes.
+				'post_content' => wp_slash( serialize_blocks( $blocks ) ),
 			),
 			true
 		);

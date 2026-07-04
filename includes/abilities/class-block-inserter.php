@@ -78,11 +78,15 @@ class Block_Inserter {
 		// Serialize blocks back to content.
 		$content = serialize_blocks( $blocks );
 
-		// Update post.
+		// Update post. wp_update_post() runs wp_unslash() on every field, which
+		// would strip the JSON-escape backslashes serialize_blocks() writes into
+		// block-comment attributes (\n, \", \\, \uXXXX). Slash first so the stored
+		// content is byte-identical to what we serialized — critical now that
+		// dynamic blocks carry their text in attributes rather than innerHTML.
 		$updated = wp_update_post(
 			array(
 				'ID'           => $post->ID,
-				'post_content' => $content,
+				'post_content' => wp_slash( $content ),
 			),
 			true
 		);
