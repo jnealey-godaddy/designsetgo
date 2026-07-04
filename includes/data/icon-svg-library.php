@@ -68,7 +68,9 @@ function designsetgo_render_icon_svg( $icon_name, $style = 'filled', $stroke_wid
 	}
 
 	if ( 'outlined' === $style ) {
-		$stroke = is_numeric( $stroke_width ) ? (float) $stroke_width : 1.5;
+		// Callers always pass a numeric stroke width (both render.php sites cast
+		// the attribute to float), so a plain cast is safe — no is_numeric guard.
+		$stroke = (float) $stroke_width;
 
 		return sprintf(
 			'<span class="dsgo-icon-outlined" style="display:contents;--icon-stroke-width:%s">%s</span>',

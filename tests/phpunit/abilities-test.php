@@ -1082,7 +1082,11 @@ class Test_Add_Block_Round_Trip extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Map: privacy mode must serialize the same overlay branch as save.js.
+	 * Map: privacy mode must render the same overlay branch as the old save.js.
+	 *
+	 * The map is now a dynamic block (save() returns null), so the overlay lives
+	 * in render.php and the stored innerHTML is empty — we assert against the
+	 * server-rendered output instead.
 	 */
 	public function test_map_privacy_mode_matches_save_output() {
 		$block = $this->insert_and_parse(
@@ -1097,7 +1101,7 @@ class Test_Add_Block_Round_Trip extends WP_UnitTestCase {
 			$this->markTestSkipped( 'designsetgo/map block not registered (build folder missing).' );
 		}
 
-		$html = $block['innerHTML'];
+		$html = render_block( $block );
 
 		$this->assertStringContainsString(
 			'dsgo-map__privacy-overlay',
@@ -1144,7 +1148,7 @@ class Test_Add_Block_Round_Trip extends WP_UnitTestCase {
 
 		$this->assertStringContainsString(
 			'This map will load content from external services. Click to load and view the map.',
-			$block['innerHTML'],
+			render_block( $block ),
 			'Privacy-mode maps must use the block.json default privacy notice when none is provided.'
 		);
 	}

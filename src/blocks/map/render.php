@@ -98,7 +98,11 @@ foreach ( $data_attributes as $key => $value ) {
 }
 
 if ( $privacy_mode ) {
-	$notice = '' !== $privacy_note ? $privacy_note : __( 'Click to load map', 'designsetgo' );
+	// Fallback mirrors the block.json default so render.php stays self-consistent
+	// even if it is ever invoked with attributes that weren't merged with defaults.
+	$notice = '' !== $privacy_note
+		? $privacy_note
+		: __( 'This map will load content from external services. Click to load and view the map.', 'designsetgo' );
 
 	$inner  = '<div class="dsgo-map__privacy-overlay"><div class="dsgo-map__privacy-content">';
 	$inner .= '<svg class="dsgo-map__privacy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>';
