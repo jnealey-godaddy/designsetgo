@@ -209,6 +209,13 @@ test.describe('Icon block — dynamic render', () => {
 		expect(await getInvalidBlockNames(page)).not.toContain(
 			'designsetgo/icon'
 		);
+
+		// Guard against a vacuous pass: confirm the block actually survived the
+		// parse/deprecation pipeline rather than being silently dropped (which
+		// would also leave getInvalidBlockNames empty).
+		const { invalid, names } = await parseValidity(page, LEGACY_ICON);
+		expect(names).toContain('designsetgo/icon');
+		expect(invalid).toEqual([]);
 	});
 });
 
@@ -276,6 +283,13 @@ test.describe('Divider block — dynamic render', () => {
 		expect(await getInvalidBlockNames(page)).not.toContain(
 			'designsetgo/divider'
 		);
+
+		// Guard against a vacuous pass: confirm the block actually survived the
+		// parse/deprecation pipeline rather than being silently dropped (which
+		// would also leave getInvalidBlockNames empty).
+		const { invalid, names } = await parseValidity(page, LEGACY_DIVIDER);
+		expect(names).toContain('designsetgo/divider');
+		expect(invalid).toEqual([]);
 	});
 });
 

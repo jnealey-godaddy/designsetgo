@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $field_name         = isset( $attributes['fieldName'] ) ? (string) $attributes['fieldName'] : '';
-$label              = isset( $attributes['label'] ) ? (string) $attributes['label'] : __( 'I agree to the terms and conditions', 'designsetgo' );
+$label              = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
 $help_text          = isset( $attributes['helpText'] ) ? (string) $attributes['helpText'] : '';
 $required           = ! empty( $attributes['required'] );
 $checked_by_default = ! empty( $attributes['checkedByDefault'] );

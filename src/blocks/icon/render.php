@@ -41,13 +41,14 @@ if ( ! function_exists( 'designsetgo_render_icon' ) ) {
 		$default_size  = isset( $defaults['size'] ) ? (int) $defaults['size'] : 48;
 		$default_style = isset( $defaults['style'] ) ? (string) $defaults['style'] : 'filled';
 
-		$icon          = ! empty( $attributes['icon'] ) ? (string) $attributes['icon'] : 'star';
-		$icon_style    = ! empty( $attributes['iconStyle'] ) ? (string) $attributes['iconStyle'] : $default_style;
-		$stroke_width  = isset( $attributes['strokeWidth'] ) ? (float) $attributes['strokeWidth'] : 1.5;
-		$icon_size     = isset( $attributes['iconSize'] ) ? (int) $attributes['iconSize'] : $default_size;
-		$rotation      = isset( $attributes['rotation'] ) ? (int) $attributes['rotation'] : 0;
-		$is_decorative = ! empty( $attributes['isDecorative'] );
-		$aria_label    = isset( $attributes['ariaLabel'] ) ? (string) $attributes['ariaLabel'] : '';
+		$icon              = ! empty( $attributes['icon'] ) ? (string) $attributes['icon'] : 'star';
+		$icon_style        = ! empty( $attributes['iconStyle'] ) ? (string) $attributes['iconStyle'] : $default_style;
+		$stroke_width      = isset( $attributes['strokeWidth'] ) ? (float) $attributes['strokeWidth'] : 1.5;
+		$has_explicit_size = isset( $attributes['iconSize'] );
+		$icon_size         = $has_explicit_size ? (int) $attributes['iconSize'] : $default_size;
+		$rotation          = isset( $attributes['rotation'] ) ? (int) $attributes['rotation'] : 0;
+		$is_decorative     = ! empty( $attributes['isDecorative'] );
+		$aria_label        = isset( $attributes['ariaLabel'] ) ? (string) $attributes['ariaLabel'] : '';
 
 		// Trusted SVG markup from the shared library (filled, or outlined wrapper).
 		$svg = designsetgo_render_icon_svg( $icon, $icon_style, $stroke_width );
@@ -55,11 +56,15 @@ if ( ! function_exists( 'designsetgo_render_icon' ) ) {
 			return '';
 		}
 
-		// Wrapper inline styles — mirror the pre-dynamic save output for parity.
-		$wrapper_style = sprintf(
-			'width:%1$dpx;height:%1$dpx;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit;',
-			$icon_size
-		);
+		// Wrapper inline styles. Width/height are baked inline only when the author
+		// set an explicit iconSize; left unset, sizing falls to the kit-tunable
+		// `--wp--custom--designsetgo--icon--default-size` CSS var (see style.scss),
+		// mirroring the pre-dynamic lazy save's hasExplicitSize behaviour so a Style
+		// Kit / theme.json icon size is not silently overridden by an inline style.
+		$wrapper_style = 'display:inline-flex;align-items:center;justify-content:center;border-radius:inherit;';
+		if ( $has_explicit_size ) {
+			$wrapper_style = sprintf( 'width:%1$dpx;height:%1$dpx;', $icon_size ) . $wrapper_style;
+		}
 		if ( 0 !== $rotation ) {
 			$wrapper_style .= sprintf( 'transform:rotate(%ddeg);', $rotation );
 		}

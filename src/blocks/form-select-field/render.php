@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $field_name  = isset( $attributes['fieldName'] ) ? (string) $attributes['fieldName'] : '';
-$label       = isset( $attributes['label'] ) ? (string) $attributes['label'] : __( 'Select Option', 'designsetgo' );
+$label       = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
 $help_text   = isset( $attributes['helpText'] ) ? (string) $attributes['helpText'] : '';
 $required    = ! empty( $attributes['required'] );
 $default_val = isset( $attributes['defaultValue'] ) ? (string) $attributes['defaultValue'] : '';
@@ -64,6 +64,10 @@ foreach ( $options as $option ) {
 		continue;
 	}
 
+	// Honour the editor's "Default Value" control by pre-selecting the matching
+	// option. The removed static save() never did this, so a select where an
+	// author set a Default Value now reflects it on the frontend — an intentional
+	// fix of a control that was previously a silent no-op.
 	$selected = ( '' !== $default_val && $option_value === $default_val ) ? ' selected' : '';
 
 	$select .= '<option value="' . esc_attr( $option_value ) . '"' . $selected . '>' . esc_html( $option_label ) . '</option>';

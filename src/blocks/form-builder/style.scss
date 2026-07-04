@@ -68,8 +68,14 @@
 
 	// Submit button - hover behavior mirrors icon-button defaults
 	&__submit {
-		// No color/background rules - let theme handle via wp-element-button
-		// Custom colors and sizing applied as inline styles via block attributes
+		// No color/background rules - let theme handle via wp-element-button.
+		// Custom colors and sizing applied as inline styles via block attributes.
+		// Intentional asymmetry with the field tokens above: those custom
+		// properties fall back to the old hardcoded pixel defaults, so migrated
+		// forms stay pixel-stable. The submit button deliberately has NO such
+		// fallback — when its height/padding attributes are unset (or stripped on
+		// migration) it inherits the theme's global button styling (wp-element-button)
+		// rather than a baked 44px, which is the requested behaviour.
 
 		// Hover animation support
 		overflow: hidden;

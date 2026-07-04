@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $field_name  = isset( $attributes['fieldName'] ) ? (string) $attributes['fieldName'] : '';
-$label       = isset( $attributes['label'] ) ? (string) $attributes['label'] : __( 'Website URL', 'designsetgo' );
+$label       = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
 $placeholder = isset( $attributes['placeholder'] ) ? (string) $attributes['placeholder'] : 'https://example.com';
 $help_text   = isset( $attributes['helpText'] ) ? (string) $attributes['helpText'] : '';
 $required    = ! empty( $attributes['required'] );
