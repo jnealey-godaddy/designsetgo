@@ -11,6 +11,7 @@
  */
 
 import { useBlockProps } from '@wordpress/block-editor';
+import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 
 export default function save( { attributes } ) {
 	const { shape, height, width, flipX, flipY, fillColor } = attributes;
@@ -18,7 +19,8 @@ export default function save( { attributes } ) {
 	const style = {};
 
 	if ( fillColor ) {
-		style[ '--dsgo-section-divider-fill' ] = fillColor;
+		style[ '--dsgo-section-divider-fill' ] =
+			convertColorToCSSVar( fillColor );
 	}
 
 	if ( typeof height === 'number' ) {

@@ -69,6 +69,20 @@ describe( 'section-divider save', () => {
 		);
 	} );
 
+	it( 'converts a preset fill color to a CSS var', () => {
+		const html = serializeWith( {
+			fillColor: 'var:preset|color|accent-3',
+		} );
+		expect( html ).toContain(
+			'--dsgo-section-divider-fill:var(--wp--preset--color--accent-3)'
+		);
+		// The raw preset token must not leak into the CSS value (it's only
+		// valid in the block-comment attribute header, not as a CSS var).
+		expect( html ).not.toContain(
+			'--dsgo-section-divider-fill:var:preset'
+		);
+	} );
+
 	it( 'emits flip transforms only when flipped', () => {
 		expect( serializeWith( { flipX: true } ) ).toContain(
 			'--dsgo-shape-flip-x:-1'

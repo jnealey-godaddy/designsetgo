@@ -18,6 +18,7 @@ import {
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 } from '@wordpress/block-editor';
 import { useBlockColors } from '../../hooks';
+import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import SectionDividerControls from './components/SectionDividerControls';
 
 export default function SectionDividerEdit( {
@@ -38,7 +39,8 @@ export default function SectionDividerEdit( {
 	const style = {};
 
 	if ( fillColor ) {
-		style[ '--dsgo-section-divider-fill' ] = fillColor;
+		style[ '--dsgo-section-divider-fill' ] =
+			convertColorToCSSVar( fillColor );
 	}
 
 	if ( typeof height === 'number' ) {
