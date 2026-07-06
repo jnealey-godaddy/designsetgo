@@ -43,19 +43,25 @@ if ( ! function_exists( 'designsetgo_render_pill' ) ) {
 
 		$wrapper = get_block_wrapper_attributes( array( 'class' => 'dsgo-pill' ) );
 
-		// Inline declarations WordPress placed on the wrapper. Colour/background/
-		// border ones belong on the inner span (the visible pill); everything else
-		// (padding, margin, typography) stays on the wrapper — matching the old
-		// static save() which only moved colour + border.
-		$move_props  = array(
-			'color',
-			'background-color',
-			'background',
-			'border-color',
-			'border-width',
-			'border-style',
-			'border-radius',
-		);
+		// The visible pill is the inner `.dsgo-pill__content` span, so the colour,
+		// background and border inline styles that get_block_wrapper_attributes()
+		// places on the wrapper are moved onto the span here (the same transfer the
+		// old static save() did). Everything else — padding, margin, typography —
+		// stays on the wrapper.
+		//
+		// A declaration moves when its property is `color` or belongs to the
+		// `background` / `border` groups (prefix match, not an exact-name list), so
+		// unlinked per-corner radius (`border-top-left-radius`) and per-side borders
+		// (`border-top-color`, …) move too — an exact-name list silently left those
+		// on the wrapper, where they never reached the visible span.
+		//
+		// This reads/rewrites the wrapper's `style` as a string, which couples to
+		// get_block_wrapper_attributes()'s output: double-quoted and `esc_attr()`-
+		// escaped (so any `"` in a value is `&quot;`, never a bare quote that would
+		// break the `[^"]*` capture) and `;`-joined. Splitting on `;` is safe for
+		// this block because none of its enabled supports (colour, gradient, border;
+		// no background-image) can produce a value containing a literal `;`. Revisit
+		// if background-image — or any other `;`-bearing value — is ever supported.
 		$inner_decls = array();
 		$keep_decls  = array();
 
@@ -65,8 +71,11 @@ if ( ! function_exists( 'designsetgo_render_pill' ) ) {
 				if ( '' === $declaration ) {
 					continue;
 				}
-				$property = trim( strtok( $declaration, ':' ) );
-				if ( in_array( $property, $move_props, true ) ) {
+				$property = strtolower( trim( strtok( $declaration, ':' ) ) );
+				$move     = 0 === strpos( $property, 'color' )
+					|| 0 === strpos( $property, 'background' )
+					|| 0 === strpos( $property, 'border' );
+				if ( $move ) {
 					$inner_decls[] = $declaration;
 				} else {
 					$keep_decls[] = $declaration;
