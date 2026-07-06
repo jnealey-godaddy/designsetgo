@@ -38,6 +38,51 @@ function designsetgo_get_icon_svg( $icon_name ) {
 }
 
 /**
+ * Render an icon SVG, applying the "outlined" wrapper when requested.
+ *
+ * Mirrors the JS getIcon() helper (src/blocks/icon/utils/svg-icons.js): the
+ * stored markup is the filled variant, and "outlined" is produced purely in CSS
+ * via the shared `.dsgo-icon-outlined` rule (src/styles/_icon-outlined.scss),
+ * which strips the fills and redraws paths as strokes sized by
+ * `--icon-stroke-width`. Falls back to the 'star' icon for unknown names, the
+ * same as the JS helper.
+ *
+ * The returned markup is trusted (hardcoded SVG from this library) and is safe
+ * to echo without escaping.
+ *
+ * @param string    $icon_name    Icon name or alias.
+ * @param string    $style        'filled' (default) or 'outlined'.
+ * @param float|int $stroke_width Stroke width for the outlined style.
+ * @return string SVG markup (optionally wrapped for the outlined style).
+ */
+function designsetgo_render_icon_svg( $icon_name, $style = 'filled', $stroke_width = 1.5 ) {
+	$svg = designsetgo_get_icon_svg( $icon_name );
+
+	// Mirror the JS fallback to the 'star' icon for unknown names.
+	if ( '' === $svg ) {
+		$svg = designsetgo_get_icon_svg( 'star' );
+	}
+
+	if ( '' === $svg ) {
+		return '';
+	}
+
+	if ( 'outlined' === $style ) {
+		// Callers always pass a numeric stroke width (both render.php sites cast
+		// the attribute to float), so a plain cast is safe — no is_numeric guard.
+		$stroke = (float) $stroke_width;
+
+		return sprintf(
+			'<span class="dsgo-icon-outlined" style="display:contents;--icon-stroke-width:%s">%s</span>',
+			esc_attr( (string) $stroke ),
+			$svg
+		);
+	}
+
+	return $svg;
+}
+
+/**
  * Get all available icons
  *
  * @return array Associative array of icon_name => svg_markup.

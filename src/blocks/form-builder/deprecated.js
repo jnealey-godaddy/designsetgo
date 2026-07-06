@@ -25,8 +25,228 @@ import metadata from './block.json';
  * The fix drops the inline fallback; `.dsgo-form-builder` in style.scss now
  * supplies `#d1d5db` as the CSS default instead.
  */
+// Attribute schema frozen at the spacing / sizing defaults that were baked into
+// the wrapper + submit button UNCONDITIONALLY before those tokens became
+// nullable and theme-inheritable. Every deprecation below parses implicit
+// (unset) forms with these, so its save() reproduces the values actually
+// present in the stored HTML — even though the live block.json now defaults them
+// to '' (inherit).
+const legacyAttributes = {
+	...metadata.attributes,
+	fieldSpacing: { type: 'string', default: '1.5rem' },
+	inputHeight: { type: 'string', default: '44px' },
+	inputPadding: { type: 'string', default: '0.75rem' },
+	submitButtonHeight: { type: 'string', default: '44px' },
+	submitButtonPaddingVertical: { type: 'string', default: '0.75rem' },
+	submitButtonPaddingHorizontal: { type: 'string', default: '2rem' },
+};
+
+/**
+ * V5 deprecation: before the spacing / sizing tokens became nullable
+ * (removable) and the submit button inherited the theme's global button styles.
+ *
+ * The old save() wrote --dsgo-form-field-spacing / --dsgo-form-input-height /
+ * --dsgo-form-input-padding on the wrapper and min-height / padding on the
+ * button for every form, even at their defaults. The current save() omits them
+ * at their defaults so the form inherits the theme. isEligible matches any form
+ * that baked the input-height token (all pre-change forms did); migrate strips
+ * values that equal the old defaults so they inherit, keeping real overrides.
+ */
+const v5 = {
+	attributes: legacyAttributes,
+	supports: metadata.supports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		return (
+			Boolean(innerHTML) && innerHTML.includes('--dsgo-form-input-height')
+		);
+	},
+	migrate(attributes) {
+		const strip = (value, def) => (value === def ? '' : value);
+		return {
+			...attributes,
+			fieldSpacing: strip(attributes.fieldSpacing, '1.5rem'),
+			inputHeight: strip(attributes.inputHeight, '44px'),
+			inputPadding: strip(attributes.inputPadding, '0.75rem'),
+			submitButtonHeight: strip(attributes.submitButtonHeight, '44px'),
+			submitButtonPaddingVertical: strip(
+				attributes.submitButtonPaddingVertical,
+				'0.75rem'
+			),
+			submitButtonPaddingHorizontal: strip(
+				attributes.submitButtonPaddingHorizontal,
+				'2rem'
+			),
+		};
+	},
+	save({ attributes }) {
+		const {
+			formId,
+			hasFields,
+			submitButtonText,
+			submitButtonAlignment,
+			submitButtonPosition,
+			ajaxSubmit,
+			successMessage,
+			errorMessage,
+			fieldSpacing,
+			inputHeight,
+			inputPadding,
+			fieldLabelColor,
+			fieldBorderColor,
+			fieldBackgroundColor,
+			fieldBorderRadius,
+			submitButtonColor,
+			submitButtonBackgroundColor,
+			submitButtonPaddingVertical,
+			submitButtonPaddingHorizontal,
+			submitButtonFontSize,
+			submitButtonHeight,
+			submitButtonHoverColor,
+			submitButtonHoverBackgroundColor,
+			enableHoneypot,
+			enableTurnstile,
+			redirectUrl,
+		} = attributes;
+
+		if (!hasFields) {
+			return null;
+		}
+
+		const formClasses = classnames('dsgo-form-builder', {
+			[`dsgo-form-builder--align-${submitButtonAlignment}`]:
+				submitButtonAlignment && submitButtonPosition === 'below',
+			'dsgo-form-builder--button-inline':
+				submitButtonPosition === 'inline',
+		});
+
+		const formStyles = {
+			'--dsgo-form-field-spacing': fieldSpacing,
+			'--dsgo-form-input-height': inputHeight,
+			'--dsgo-form-input-padding': inputPadding,
+			'--dsgo-form-label-color': convertColorToCSSVar(fieldLabelColor),
+			'--dsgo-form-border-color': convertColorToCSSVar(fieldBorderColor),
+			'--dsgo-form-field-bg': convertColorToCSSVar(fieldBackgroundColor),
+			'--dsgo-form-border-radius': validateCSSLength(fieldBorderRadius),
+		};
+
+		const submitButtonStyle = {
+			...(submitButtonColor && {
+				color: convertColorToCSSVar(submitButtonColor),
+			}),
+			...(submitButtonBackgroundColor && {
+				backgroundColor: convertColorToCSSVar(
+					submitButtonBackgroundColor
+				),
+			}),
+			minHeight: submitButtonHeight,
+			paddingTop: submitButtonPaddingVertical,
+			paddingBottom: submitButtonPaddingVertical,
+			paddingLeft: submitButtonPaddingHorizontal,
+			paddingRight: submitButtonPaddingHorizontal,
+			...(submitButtonFontSize && { fontSize: submitButtonFontSize }),
+			...(submitButtonHoverBackgroundColor && {
+				'--dsgo-button-hover-bg': convertColorToCSSVar(
+					submitButtonHoverBackgroundColor
+				),
+			}),
+			...(submitButtonHoverColor && {
+				'--dsgo-button-hover-color': convertColorToCSSVar(
+					submitButtonHoverColor
+				),
+			}),
+		};
+
+		const blockProps = useBlockProps.save({
+			className: formClasses,
+			style: formStyles,
+			'data-form-id': formId,
+			'data-ajax-submit': ajaxSubmit,
+			'data-success-message': successMessage,
+			'data-error-message': errorMessage,
+			'data-submit-text': submitButtonText,
+			...(enableTurnstile && {
+				'data-dsgo-turnstile': 'true',
+			}),
+			...(redirectUrl && {
+				'data-redirect-url': redirectUrl,
+			}),
+		});
+
+		const { children, ...innerBlocksPropsWithoutChildren } =
+			useInnerBlocksProps.save({
+				className: 'dsgo-form__fields',
+			});
+
+		return (
+			<div {...blockProps}>
+				<form className="dsgo-form" method="post" noValidate>
+					<div {...innerBlocksPropsWithoutChildren}>
+						{children}
+						{submitButtonPosition === 'inline' && (
+							<button
+								type="submit"
+								className="dsgo-form__submit dsgo-form__submit--inline wp-element-button"
+								style={submitButtonStyle}
+							>
+								{submitButtonText}
+							</button>
+						)}
+					</div>
+
+					{enableHoneypot && (
+						<input
+							type="text"
+							name="dsg_website"
+							value=""
+							tabIndex="-1"
+							autoComplete="off"
+							aria-hidden="true"
+							style={{
+								position: 'absolute',
+								left: '-9999px',
+								width: '1px',
+								height: '1px',
+								overflow: 'hidden',
+							}}
+						/>
+					)}
+
+					<input type="hidden" name="dsg_form_id" value={formId} />
+
+					{enableTurnstile && (
+						<div
+							className="dsgo-turnstile-widget"
+							data-dsgo-turnstile-container="true"
+						/>
+					)}
+
+					{submitButtonPosition === 'below' && (
+						<div className="dsgo-form__footer">
+							<button
+								type="submit"
+								className="dsgo-form__submit wp-element-button"
+								style={submitButtonStyle}
+							>
+								{submitButtonText}
+							</button>
+						</div>
+					)}
+
+					<div
+						className="dsgo-form__message"
+						role="status"
+						aria-live="polite"
+						aria-atomic="true"
+						style={{ display: 'none' }}
+					/>
+				</form>
+			</div>
+		);
+	},
+};
+
 const v4 = {
-	attributes: metadata.attributes,
+	attributes: legacyAttributes,
 	supports: metadata.supports,
 	isEligible(attributes) {
 		// Only content that never customized the border color is affected —
@@ -252,7 +472,7 @@ const v4 = {
  * submitButtonHoverBackgroundColor on the button, and the hasFields early-return.
  */
 const v3 = {
-	attributes: metadata.attributes,
+	attributes: legacyAttributes,
 	supports: metadata.supports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
 		// v3 blocks have raw empty CSS vars rendered as `--dsgo-form-label-color:;`
@@ -429,7 +649,7 @@ const v3 = {
  * content generated by the site-designer-api predates these additions.
  */
 const v2 = {
-	attributes: metadata.attributes,
+	attributes: legacyAttributes,
 	supports: metadata.supports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
 		// v2 blocks lack aria-hidden on honeypot and aria-atomic on message div
@@ -648,7 +868,7 @@ const v2 = {
  * up block attributes directly from post content when processing submissions.
  */
 const v1 = {
-	attributes: metadata.attributes,
+	attributes: legacyAttributes,
 	supports: metadata.supports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
 		// v1 blocks have email config exposed as data attributes
@@ -837,6 +1057,6 @@ const v1 = {
 	},
 };
 
-const deprecated = [v4, v3, v2, v1];
+const deprecated = [v5, v4, v3, v2, v1];
 
 export default deprecated;

@@ -108,7 +108,11 @@ class Block_Configurator {
 		$updated = wp_update_post(
 			array(
 				'ID'           => $post->ID,
-				'post_content' => $content,
+				// wp_update_post() runs wp_unslash() on every field, which would
+				// strip the JSON-escape backslashes serialize_blocks() writes into
+				// block-comment attributes (\n, \", \\, \uXXXX). Slash first so the
+				// stored content is byte-identical to what we serialized.
+				'post_content' => wp_slash( $content ),
 			),
 			true
 		);
@@ -462,7 +466,11 @@ class Block_Configurator {
 		$result = wp_update_post(
 			array(
 				'ID'           => $post->ID,
-				'post_content' => $content,
+				// wp_update_post() runs wp_unslash() on every field, which would
+				// strip the JSON-escape backslashes serialize_blocks() writes into
+				// block-comment attributes (\n, \", \\, \uXXXX). Slash first so the
+				// stored content is byte-identical to what we serialized.
+				'post_content' => wp_slash( $content ),
 			),
 			true
 		);
@@ -628,7 +636,11 @@ class Block_Configurator {
 		$result = wp_update_post(
 			array(
 				'ID'           => $post->ID,
-				'post_content' => $content,
+				// wp_update_post() runs wp_unslash() on every field, which would
+				// strip the JSON-escape backslashes serialize_blocks() writes into
+				// block-comment attributes (\n, \", \\, \uXXXX). Slash first so the
+				// stored content is byte-identical to what we serialized.
+				'post_content' => wp_slash( $content ),
 			),
 			true
 		);

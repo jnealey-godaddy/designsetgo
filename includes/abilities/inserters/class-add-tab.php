@@ -182,7 +182,9 @@ class Add_Tab extends Abstract_Ability {
 		$updated = wp_update_post(
 			array(
 				'ID'           => $post_id,
-				'post_content' => $new_content,
+				// Slash so wp_update_post()'s internal wp_unslash() doesn't strip
+				// JSON-escape backslashes from block-comment attributes.
+				'post_content' => wp_slash( $new_content ),
 			),
 			true
 		);

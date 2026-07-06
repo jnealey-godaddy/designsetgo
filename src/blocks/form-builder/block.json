@@ -63,15 +63,15 @@
 		},
 		"fieldSpacing": {
 			"type": "string",
-			"default": "1.5rem"
+			"default": ""
 		},
 		"inputHeight": {
 			"type": "string",
-			"default": "44px"
+			"default": ""
 		},
 		"inputPadding": {
 			"type": "string",
-			"default": "0.75rem"
+			"default": ""
 		},
 		"fieldLabelColor": {
 			"type": "string",
@@ -99,11 +99,11 @@
 		},
 		"submitButtonPaddingVertical": {
 			"type": "string",
-			"default": "0.75rem"
+			"default": ""
 		},
 		"submitButtonPaddingHorizontal": {
 			"type": "string",
-			"default": "2rem"
+			"default": ""
 		},
 		"submitButtonFontSize": {
 			"type": "string",
@@ -111,7 +111,7 @@
 		},
 		"submitButtonHeight": {
 			"type": "string",
-			"default": "44px"
+			"default": ""
 		},
 		"submitButtonHoverColor": {
 			"type": "string",

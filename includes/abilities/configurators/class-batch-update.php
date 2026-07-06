@@ -224,7 +224,9 @@ class Batch_Update extends Abstract_Ability {
 		$updated = wp_update_post(
 			array(
 				'ID'           => $post_id,
-				'post_content' => $content,
+				// Slash so wp_update_post()'s internal wp_unslash() doesn't strip
+				// JSON-escape backslashes from block-comment attributes.
+				'post_content' => wp_slash( $content ),
 			),
 			true
 		);

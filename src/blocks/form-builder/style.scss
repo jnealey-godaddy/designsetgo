@@ -5,8 +5,23 @@
  */
 
 .dsgo-form-builder {
-	// CSS Custom Properties (set from block attributes)
-	--dsgo-form-field-spacing: 1.5rem;
+	// CSS Custom Properties. These are the inherited defaults: each reads a
+	// theme.json custom property (settings.custom.designsetgo.form.*, which a
+	// Style Kit can set) and falls back to a sane value. When the author sets an
+	// explicit value on the block it is written as an inline style that overrides
+	// the token here; when omitted, the form inherits the theme.
+	--dsgo-form-field-spacing: var(
+		--wp--custom--designsetgo--form--field-spacing,
+		1.5rem
+	);
+	--dsgo-form-input-height: var(
+		--wp--custom--designsetgo--form--input-height,
+		44px
+	);
+	--dsgo-form-input-padding: var(
+		--wp--custom--designsetgo--form--input-padding,
+		0.75rem
+	);
 	--dsgo-form-label-color: inherit;
 	--dsgo-form-border-color: #d1d5db;
 	--dsgo-form-border-radius: 0.375rem;
@@ -53,8 +68,14 @@
 
 	// Submit button - hover behavior mirrors icon-button defaults
 	&__submit {
-		// No color/background rules - let theme handle via wp-element-button
-		// Custom colors and sizing applied as inline styles via block attributes
+		// No color/background rules - let theme handle via wp-element-button.
+		// Custom colors and sizing applied as inline styles via block attributes.
+		// Intentional asymmetry with the field tokens above: those custom
+		// properties fall back to the old hardcoded pixel defaults, so migrated
+		// forms stay pixel-stable. The submit button deliberately has NO such
+		// fallback — when its height/padding attributes are unset (or stripped on
+		// migration) it inherits the theme's global button styling (wp-element-button)
+		// rather than a baked 44px, which is the requested behaviour.
 
 		// Hover animation support
 		overflow: hidden;
