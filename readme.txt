@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.3.1
+Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -94,10 +94,19 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 == Changelog ==
 
-= 2.3.1 - 2026-07-02 =
+= 2.4.0 - 2026-07-06 =
 
+* **New:** The Icon block has a Fill / Outline style toggle and inherits a theme-defined default size, so icons match your design out of the box.
+* **New:** Icon Button now inherits the core Button block's style variations (Fill, Outline, and any your theme adds).
+* **New:** Scrolling Gallery now uses WordPress's native border controls (width, style, color, and radius) in place of the old single border-radius field.
+* **Improved:** Icon, Divider, Map, and all form field blocks now render dynamically, so they always reflect your current theme — change a design token once and every instance updates, with cleaner saved markup.
+* **Improved:** Form Builder fields inherit spacing and sizing from your theme, so forms match the rest of your site automatically.
+* **Improved:** Map markers can now take their color from your theme.
+* **Fix:** Icon List items now show their fill / outline and stroke on the frontend, matching the editor.
+* **Fix:** SVG Patterns and Form Builder no longer bake default colors into saved markup, so they inherit your theme's colors.
+* **Fix:** Content with quotes or backslashes saved through AI-assisted edits (Abilities API) is no longer altered.
 * **Fix:** Scrolling Gallery blocks saved by older versions or patterns (image rows stored in the markup rather than the block comment) keep migrating silently instead of showing "Attempt Recovery."
-* **Internal:** A local pre-commit run of the end-to-end tests no longer resets the developer's pages and posts — the content wipe is now limited to CI.
+* **Note:** Existing Icon, Divider, Map, and form blocks migrate automatically — no action required.
 
 = 2.3.0 - 2026-07-01 =
 
