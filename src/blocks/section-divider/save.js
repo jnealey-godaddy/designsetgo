@@ -5,48 +5,25 @@
  * `is-shape-<slug>` CSS mask-image library the section block's shape
  * dividers use). Custom props are emitted only when they differ from the
  * CSS-inherited default, so a fully-default divider serializes as bare
- * `is-shape-inherit` markup with no inline style.
+ * `is-shape-inherit` markup with no inline style. The style + shape-class
+ * logic is shared with edit.js via ./utils so the two can't drift.
  *
  * @since 2.7.0
  */
 
 import { useBlockProps } from '@wordpress/block-editor';
-import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { getDividerStyle, getDividerShapeClass } from './utils';
 
 export default function save( { attributes } ) {
-	const { shape, height, width, flipX, flipY, fillColor } = attributes;
-
-	const style = {};
-
-	if ( fillColor ) {
-		style[ '--dsgo-section-divider-fill' ] =
-			convertColorToCSSVar( fillColor );
-	}
-
-	if ( typeof height === 'number' ) {
-		style[ '--dsgo-shape-height' ] = `${ height }px`;
-	}
-
-	if ( width !== 100 ) {
-		style[ '--dsgo-shape-width' ] = `${ width }%`;
-	}
-
-	if ( flipX ) {
-		style[ '--dsgo-shape-flip-x' ] = -1;
-	}
-
-	if ( flipY ) {
-		style[ '--dsgo-shape-flip-y' ] = -1;
-	}
-
-	const shapeClass =
-		shape === 'inherit' ? 'is-shape-inherit' : `is-shape-${ shape }`;
+	const style = getDividerStyle( attributes );
+	const shapeClass = getDividerShapeClass( attributes.shape );
 
 	return (
 		<div { ...useBlockProps.save() }>
 			<div
 				className={ `dsgo-section-divider__shape dsgo-shape-divider ${ shapeClass }` }
 				style={ Object.keys( style ).length ? style : undefined }
+				aria-hidden="true"
 			/>
 		</div>
 	);

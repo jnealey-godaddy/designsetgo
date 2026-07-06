@@ -44,13 +44,21 @@ export default function SectionDividerControls( {
 				<SelectControl
 					label={ __( 'Shape', 'designsetgo' ) }
 					value={ shape }
-					options={ [
-						{
-							label: __( 'Theme default', 'designsetgo' ),
-							value: 'inherit',
-						},
-						...getShapeDividerOptions(),
-					] }
+					options={ ( () => {
+						// Strip the leading "None" (value: '') option — this
+						// block has no "off" state (to remove a divider you
+						// delete the block); selecting it would emit a bare
+						// `is-shape-` class and paint an unmasked rectangle.
+						// Mirrors src/blocks/section/components/ShapeDividerControls.js.
+						const [ , ...shapes ] = getShapeDividerOptions();
+						return [
+							{
+								label: __( 'Theme default', 'designsetgo' ),
+								value: 'inherit',
+							},
+							...shapes,
+						];
+					} )() }
 					onChange={ ( value ) => setAttributes( { shape: value } ) }
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
@@ -65,7 +73,7 @@ export default function SectionDividerControls( {
 			>
 				<RangeControl
 					label={ __( 'Height', 'designsetgo' ) }
-					value={ height ?? '' }
+					value={ height }
 					onChange={ ( value ) =>
 						setAttributes( { height: value ?? null } )
 					}
