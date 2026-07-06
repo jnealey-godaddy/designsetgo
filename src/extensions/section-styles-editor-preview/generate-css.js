@@ -109,24 +109,24 @@ function borderDeclarations(border) {
 			if (!edge || typeof edge !== 'object') {
 				return;
 			}
-			if (edge.color) {
+			if (isSet(edge.color)) {
 				out.push(`border-${side}-color:${toCssValue(edge.color)}`);
 			}
-			if (edge.width) {
+			if (isSet(edge.width)) {
 				out.push(`border-${side}-width:${edge.width}`);
 			}
-			if (edge.style) {
+			if (isSet(edge.style)) {
 				out.push(`border-${side}-style:${edge.style}`);
 			}
 		});
 	} else {
-		if (border.color) {
+		if (isSet(border.color)) {
 			out.push(`border-color:${toCssValue(border.color)}`);
 		}
-		if (border.width) {
+		if (isSet(border.width)) {
 			out.push(`border-width:${border.width}`);
 		}
-		if (border.style) {
+		if (isSet(border.style)) {
 			out.push(`border-style:${border.style}`);
 		}
 	}
@@ -259,7 +259,18 @@ export function buildVariationCss(blocksConfig) {
 
 	let css = '';
 	TARGET_SUFFIXES.forEach((suffix) => {
+		const ownVariations =
+			blocksConfig[`designsetgo/${suffix}`]?.variations || {};
 		slugs.forEach((slug) => {
+			// Parity with Section_Styles::mirror_variation_styles(): never
+			// clobber a variation the DSGo block defines for itself. The editor
+			// already previews that one natively (it lives under the block's own
+			// name), and the server mirror skips broadcasting onto it — so
+			// emitting the core-container version here would reintroduce the
+			// preview/frontend divergence this overlay exists to prevent.
+			if (slug in ownVariations) {
+				return;
+			}
 			const declarations = variationDeclarations(merged[slug]);
 			if (declarations) {
 				css += `.wp-block-designsetgo-${suffix}.is-style-${slug}{${declarations}}\n`;

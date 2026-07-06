@@ -65,6 +65,12 @@ describe('variationDeclarations', () => {
 		).toBe('background:linear-gradient(#000,#fff)');
 	});
 
+	it('preserves a zero border-width override (falsy-but-set)', () => {
+		expect(
+			variationDeclarations({ border: { width: '0', style: 'none' } })
+		).toBe('border-width:0;border-style:none');
+	});
+
 	it('emits flat border with radius', () => {
 		expect(
 			variationDeclarations({
@@ -157,6 +163,29 @@ describe('buildVariationCss', () => {
 				'core/group': { variations: { empty: {} } },
 			})
 		).toBe('');
+	});
+
+	it('skips a target that defines its own explicit variation for the slug', () => {
+		const css = buildVariationCss({
+			'core/group': {
+				variations: {
+					'section-2': { border: { width: '5px', style: 'solid' } },
+				},
+			},
+			// The section block has its own explicit section-2 — the editor
+			// previews that natively and the server mirror protects it, so the
+			// overlay must not emit the core-container version onto it.
+			'designsetgo/section': {
+				variations: { 'section-2': { color: { text: '#000' } } },
+			},
+		});
+		expect(css).not.toContain(
+			'.wp-block-designsetgo-section.is-style-section-2{'
+		);
+		// Other targets without their own explicit variation still get it.
+		expect(css).toContain(
+			'.wp-block-designsetgo-counter.is-style-section-2{'
+		);
 	});
 
 	it('first source block wins on slug collision', () => {

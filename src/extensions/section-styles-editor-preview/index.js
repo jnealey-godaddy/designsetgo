@@ -128,28 +128,26 @@ function SectionStylePreview() {
 	}, [css, scheduleInject]);
 
 	// Re-assert the overlay when the canvas iframe (re)mounts — switching
-	// devices, entering/leaving fullscreen, etc. recreate the canvas document.
-	// Only react to added <iframe> nodes so we skip the editor's constant
-	// content mutations.
+	// devices, entering/leaving fullscreen, etc. recreate the canvas document
+	// and drop the overlay. Rather than inspect every mutation (the editor
+	// churns the DOM constantly while typing), we debounce: after mutations
+	// settle we re-inject once. `injectStyles` is idempotent, so this is a
+	// no-op unless the canvas was actually replaced.
 	useEffect(() => {
-		const addsIframe = (mutations) =>
-			mutations.some((mutation) =>
-				Array.from(mutation.addedNodes).some(
-					(node) =>
-						node.nodeType === 1 &&
-						(node.nodeName === 'IFRAME' ||
-							(node.querySelector &&
-								node.querySelector('iframe')))
-				)
-			);
-
-		const observer = new window.MutationObserver((mutations) => {
-			if (addsIframe(mutations)) {
-				scheduleInject();
+		let timer = null;
+		const observer = new window.MutationObserver(() => {
+			if (timer) {
+				window.clearTimeout(timer);
 			}
+			timer = window.setTimeout(scheduleInject, 300);
 		});
 		observer.observe(document.body, { childList: true, subtree: true });
-		return () => observer.disconnect();
+		return () => {
+			if (timer) {
+				window.clearTimeout(timer);
+			}
+			observer.disconnect();
+		};
 	}, [scheduleInject]);
 
 	return null;
