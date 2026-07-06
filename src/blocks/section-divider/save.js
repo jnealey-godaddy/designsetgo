@@ -14,15 +14,15 @@
 import { useBlockProps } from '@wordpress/block-editor';
 import { getDividerStyle, getDividerShapeClass } from './utils';
 
-export default function save( { attributes } ) {
-	const style = getDividerStyle( attributes );
-	const shapeClass = getDividerShapeClass( attributes.shape );
+export default function save({ attributes }) {
+	const style = getDividerStyle(attributes);
+	const shapeClass = getDividerShapeClass(attributes.shape);
 
 	return (
-		<div { ...useBlockProps.save() }>
+		<div {...useBlockProps.save()}>
 			<div
-				className={ `dsgo-section-divider__shape dsgo-shape-divider ${ shapeClass }` }
-				style={ Object.keys( style ).length ? style : undefined }
+				className={`dsgo-section-divider__shape dsgo-shape-divider ${shapeClass}`}
+				style={Object.keys(style).length ? style : undefined}
 				aria-hidden="true"
 			/>
 		</div>

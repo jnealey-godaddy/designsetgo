@@ -20,7 +20,7 @@ import './style.scss';
 /**
  * Register Section Divider Block
  */
-registerBlockType( metadata.name, {
+registerBlockType(metadata.name, {
 	...metadata,
 	icon: {
 		src: (
@@ -41,4 +41,4 @@ registerBlockType( metadata.name, {
 	},
 	edit,
 	save,
-} );
+});

@@ -26,29 +26,28 @@ export {
  * @param {Object} attributes Block attributes.
  * @return {Object} Inline style object (may be empty).
  */
-export function getDividerStyle( attributes ) {
+export function getDividerStyle(attributes) {
 	const { height, width, flipX, flipY, fillColor } = attributes;
 	const style = {};
 
-	if ( fillColor ) {
-		style[ '--dsgo-section-divider-fill' ] =
-			convertColorToCSSVar( fillColor );
+	if (fillColor) {
+		style['--dsgo-section-divider-fill'] = convertColorToCSSVar(fillColor);
 	}
 
-	if ( typeof height === 'number' ) {
-		style[ '--dsgo-shape-height' ] = `${ height }px`;
+	if (typeof height === 'number') {
+		style['--dsgo-shape-height'] = `${height}px`;
 	}
 
-	if ( width !== 100 ) {
-		style[ '--dsgo-shape-width' ] = `${ width }%`;
+	if (width !== 100) {
+		style['--dsgo-shape-width'] = `${width}%`;
 	}
 
-	if ( flipX ) {
-		style[ '--dsgo-shape-flip-x' ] = -1;
+	if (flipX) {
+		style['--dsgo-shape-flip-x'] = -1;
 	}
 
-	if ( flipY ) {
-		style[ '--dsgo-shape-flip-y' ] = -1;
+	if (flipY) {
+		style['--dsgo-shape-flip-y'] = -1;
 	}
 
 	return style;
@@ -60,6 +59,6 @@ export function getDividerStyle( attributes ) {
  * @param {string} shape Shape slug or 'inherit'.
  * @return {string} Marker class.
  */
-export function getDividerShapeClass( shape ) {
-	return shape === 'inherit' ? 'is-shape-inherit' : `is-shape-${ shape }`;
+export function getDividerShapeClass(shape) {
+	return shape === 'inherit' ? 'is-shape-inherit' : `is-shape-${shape}`;
 }

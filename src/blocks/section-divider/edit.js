@@ -21,21 +21,21 @@ import { useBlockColors } from '../../hooks';
 import { getDividerStyle, getDividerShapeClass } from './utils';
 import SectionDividerControls from './components/SectionDividerControls';
 
-export default function SectionDividerEdit( {
+export default function SectionDividerEdit({
 	attributes,
 	setAttributes,
 	clientId,
-} ) {
-	const { settings: colorSettings, colorGradientSettings } = useBlockColors( {
+}) {
+	const { settings: colorSettings, colorGradientSettings } = useBlockColors({
 		attributes,
 		setAttributes,
-		entries: [ { label: __( 'Fill', 'designsetgo' ), attribute: 'fillColor' } ],
-	} );
+		entries: [{ label: __('Fill', 'designsetgo'), attribute: 'fillColor' }],
+	});
 
 	// Derived from the same ./utils helpers save.js uses, so the editor
 	// canvas matches the frontend output byte for byte.
-	const style = getDividerStyle( attributes );
-	const shapeClass = getDividerShapeClass( attributes.shape );
+	const style = getDividerStyle(attributes);
+	const shapeClass = getDividerShapeClass(attributes.shape);
 
 	const blockProps = useBlockProps();
 
@@ -43,25 +43,25 @@ export default function SectionDividerEdit( {
 		<>
 			<InspectorControls>
 				<SectionDividerControls
-					attributes={ attributes }
-					setAttributes={ setAttributes }
-					clientId={ clientId }
+					attributes={attributes}
+					setAttributes={setAttributes}
+					clientId={clientId}
 				/>
 			</InspectorControls>
 
 			<InspectorControls group="color">
 				<ColorGradientSettingsDropdown
-					panelId={ clientId }
-					title={ __( 'Color', 'designsetgo' ) }
-					settings={ colorSettings }
-					{ ...colorGradientSettings }
+					panelId={clientId}
+					title={__('Color', 'designsetgo')}
+					settings={colorSettings}
+					{...colorGradientSettings}
 				/>
 			</InspectorControls>
 
-			<div { ...blockProps }>
+			<div {...blockProps}>
 				<div
-					className={ `dsgo-section-divider__shape dsgo-shape-divider ${ shapeClass }` }
-					style={ Object.keys( style ).length ? style : undefined }
+					className={`dsgo-section-divider__shape dsgo-shape-divider ${shapeClass}`}
+					style={Object.keys(style).length ? style : undefined}
 					aria-hidden="true"
 				/>
 			</div>

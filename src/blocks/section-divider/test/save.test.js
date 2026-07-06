@@ -35,68 +35,65 @@ import save from '../save';
 // registerBlockType() reject the block and causes createBlock()/serialize()
 // to silently no-op (self-closing comment, save() never called). Register
 // it so save() actually runs.
-setCategories( [ { slug: 'design', title: 'Design' } ] );
+setCategories([{ slug: 'design', title: 'Design' }]);
 
-registerBlockType( metadata.name, { ...metadata, save, edit: () => null } );
+registerBlockType(metadata.name, { ...metadata, save, edit: () => null });
 
-const serializeWith = ( attrs ) =>
-	serialize( createBlock( metadata.name, attrs ) );
+const serializeWith = (attrs) => serialize(createBlock(metadata.name, attrs));
 
-describe( 'section-divider save', () => {
-	it( 'serializes a default divider as bare inherit markup (no style)', () => {
-		const html = serializeWith( {} );
-		expect( html ).toContain( 'dsgo-section-divider__shape' );
-		expect( html ).toContain( 'is-shape-inherit' );
-		expect( html ).not.toContain( 'style=' );
-		expect( html ).not.toContain( '--dsgo-shape-height' );
-	} );
+describe('section-divider save', () => {
+	it('serializes a default divider as bare inherit markup (no style)', () => {
+		const html = serializeWith({});
+		expect(html).toContain('dsgo-section-divider__shape');
+		expect(html).toContain('is-shape-inherit');
+		expect(html).not.toContain('style=');
+		expect(html).not.toContain('--dsgo-shape-height');
+	});
 
-	it( 'emits the shape slug class when set', () => {
-		const html = serializeWith( { shape: 'wave' } );
-		expect( html ).toContain( 'is-shape-wave' );
-		expect( html ).not.toContain( 'is-shape-inherit' );
-	} );
+	it('emits the shape slug class when set', () => {
+		const html = serializeWith({ shape: 'wave' });
+		expect(html).toContain('is-shape-wave');
+		expect(html).not.toContain('is-shape-inherit');
+	});
 
-	it( 'emits height var only when height is a number', () => {
-		expect( serializeWith( { height: 140 } ) ).toContain(
+	it('emits height var only when height is a number', () => {
+		expect(serializeWith({ height: 140 })).toContain(
 			'--dsgo-shape-height:140px'
 		);
-	} );
+	});
 
-	it( 'emits fill var only when fillColor is set', () => {
-		expect( serializeWith( { fillColor: '#ff0000' } ) ).toContain(
+	it('emits fill var only when fillColor is set', () => {
+		expect(serializeWith({ fillColor: '#ff0000' })).toContain(
 			'--dsgo-section-divider-fill:#ff0000'
 		);
-	} );
+	});
 
-	it( 'converts a preset fill color to a CSS var', () => {
-		const html = serializeWith( {
+	it('converts a preset fill color to a CSS var', () => {
+		const html = serializeWith({
 			fillColor: 'var:preset|color|accent-3',
-		} );
-		expect( html ).toContain(
+		});
+		expect(html).toContain(
 			'--dsgo-section-divider-fill:var(--wp--preset--color--accent-3)'
 		);
 		// The raw preset token must not leak into the CSS value (it's only
 		// valid in the block-comment attribute header, not as a CSS var).
-		expect( html ).not.toContain(
-			'--dsgo-section-divider-fill:var:preset'
-		);
-	} );
+		expect(html).not.toContain('--dsgo-section-divider-fill:var:preset');
+	});
 
-	it( 'emits flip transforms only when flipped', () => {
-		expect( serializeWith( { flipX: true } ) ).toContain(
+	it('emits flip transforms only when flipped', () => {
+		expect(serializeWith({ flipX: true })).toContain(
 			'--dsgo-shape-flip-x:-1'
 		);
-		expect( serializeWith( { flipY: true } ) ).toContain(
+		expect(serializeWith({ flipY: true })).toContain(
 			'--dsgo-shape-flip-y:-1'
 		);
-		expect( serializeWith( {} ) ).not.toContain( '--dsgo-shape-flip' );
-	} );
+		expect(serializeWith({})).not.toContain('--dsgo-shape-flip');
+	});
 
-	it( 'emits width var only when width differs from 100', () => {
-		expect( serializeWith( { width: 150 } ) ).toContain(
+	it('emits width var only when width differs from 100', () => {
+		expect(serializeWith({ width: 150 })).toContain(
 			'--dsgo-shape-width:150%'
 		);
-		expect( serializeWith( {} ) ).not.toContain( '--dsgo-shape-width' );
-	} );
-} );
+		expect(serializeWith({})).not.toContain('--dsgo-shape-width');
+	});
+});
