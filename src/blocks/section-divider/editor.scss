@@ -1,0 +1,8 @@
+/**
+ * Section Divider — editor
+ *
+ * Imports the identical frontend ruleset so the editor preview matches
+ * the saved output (CLAUDE.md: style.scss and editor.scss must agree).
+ */
+
+@use 'style';

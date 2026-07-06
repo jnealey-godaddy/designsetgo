@@ -25,7 +25,7 @@ export default function save( { attributes } ) {
 		style[ '--dsgo-shape-height' ] = `${ height }px`;
 	}
 
-	if ( width && width !== 100 ) {
+	if ( width !== 100 ) {
 		style[ '--dsgo-shape-width' ] = `${ width }%`;
 	}
 
