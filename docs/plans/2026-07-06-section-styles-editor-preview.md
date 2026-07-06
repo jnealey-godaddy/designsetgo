@@ -52,6 +52,26 @@ already preview correctly), so this is additive and low-risk.
 - `src/index.js` — add the import.
 - `tests/unit/extensions/section-styles-editor-preview/generate-css.test.js`.
 
+## Known limitations
+
+- **Partial property coverage.** The PHP mirror copies the *entire* variation
+  style object onto the DSGo blocks, so any property propagates to the
+  frontend. This editor overlay reproduces only the common box-decoration
+  subset (background / gradient / text color, border, radius, spacing, shadow,
+  font-size, line-height). If an author customizes a section style with a
+  property outside that subset (e.g. `typography.letterSpacing` /
+  `textTransform`, `elements.link`, `filter` / duotone, `dimensions.minHeight`),
+  the *editor preview* will still diverge from the saved frontend output for
+  that property. This is not a regression (the pre-overlay state was worse — no
+  border/radius preview at all), but it means the overlay is a best-effort
+  preview, not a full re-implementation of WP's theme.json → CSS pipeline.
+  Extending coverage means adding to `variationDeclarations()`.
+- **JS/PHP list parity** is enforced by `php-parity.test.js` (fails if
+  `TARGET_SUFFIXES` / `SOURCE_BLOCKS` drift from the PHP `$container_blocks` /
+  `$source_blocks`), rather than a runtime data pipeline — the lists change
+  rarely and a static list avoids coupling the editor bundle to a localized
+  global.
+
 ## Verification
 
 - Unit: CSS generation for color/border(flat+split)/radius/spacing/shadow +

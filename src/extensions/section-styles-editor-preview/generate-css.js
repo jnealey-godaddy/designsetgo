@@ -141,7 +141,7 @@ function borderDeclarations(border) {
 				bottomRight: 'bottom-right',
 			};
 			Object.keys(corners).forEach((key) => {
-				if (border.radius[key]) {
+				if (isSet(border.radius[key])) {
 					out.push(
 						`border-${corners[key]}-radius:${border.radius[key]}`
 					);

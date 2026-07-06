@@ -129,11 +129,18 @@ function SectionStylePreview() {
 
 	// Re-assert the overlay when the canvas iframe (re)mounts — switching
 	// devices, entering/leaving fullscreen, etc. recreate the canvas document
-	// and drop the overlay. Rather than inspect every mutation (the editor
-	// churns the DOM constantly while typing), we debounce: after mutations
-	// settle we re-inject once. `injectStyles` is idempotent, so this is a
-	// no-op unless the canvas was actually replaced.
+	// and drop the overlay. Observe the visual-editor wrapper rather than
+	// `document.body`: the wrapper only mutates when the iframe itself is
+	// swapped (typing/selection churn happens inside the iframe's own
+	// document, which this observer does not see), so it fires rarely. The
+	// debounce coalesces bursts and `injectStyles` is idempotent, so a
+	// settle-triggered re-inject is a no-op unless the canvas was replaced.
 	useEffect(() => {
+		const root =
+			document.querySelector(
+				'.editor-visual-editor, .edit-post-visual-editor, .edit-site-visual-editor, .interface-interface-skeleton__content'
+			) || document.body;
+
 		let timer = null;
 		const observer = new window.MutationObserver(() => {
 			if (timer) {
@@ -141,7 +148,7 @@ function SectionStylePreview() {
 			}
 			timer = window.setTimeout(scheduleInject, 300);
 		});
-		observer.observe(document.body, { childList: true, subtree: true });
+		observer.observe(root, { childList: true, subtree: true });
 		return () => {
 			if (timer) {
 				window.clearTimeout(timer);
@@ -153,6 +160,6 @@ function SectionStylePreview() {
 	return null;
 }
 
-registerPlugin('designsetgo-section-style-preview', {
+registerPlugin('dsgo-section-style-preview', {
 	render: SectionStylePreview,
 });

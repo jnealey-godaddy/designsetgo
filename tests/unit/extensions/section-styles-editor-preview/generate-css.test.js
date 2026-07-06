@@ -105,6 +105,14 @@ describe('variationDeclarations', () => {
 		);
 	});
 
+	it('preserves a numeric 0 per-corner radius (falsy-but-set)', () => {
+		expect(
+			variationDeclarations({
+				border: { radius: { topLeft: 0, bottomRight: '12px' } },
+			})
+		).toBe('border-top-left-radius:0;border-bottom-right-radius:12px');
+	});
+
 	it('emits spacing, shadow and typography', () => {
 		expect(
 			variationDeclarations({
