@@ -1,5 +1,180 @@
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 
+// Shared style-transfer used by the static save() reproductions below: the
+// visible pill is the inner span, so colour/background/border inline styles that
+// useBlockProps.save() puts on the wrapper are moved onto `.dsgo-pill__content`.
+// Clone so we never mutate the object returned by useBlockProps.save().
+function splitPillStyles(blockProps) {
+	const wrapperStyle = { ...(blockProps.style || {}) };
+	const innerStyle = {};
+
+	if (wrapperStyle.backgroundColor) {
+		innerStyle.backgroundColor = wrapperStyle.backgroundColor;
+		delete wrapperStyle.backgroundColor;
+	}
+	if (wrapperStyle.background) {
+		innerStyle.background = wrapperStyle.background;
+		delete wrapperStyle.background;
+	}
+	if (wrapperStyle.color) {
+		innerStyle.color = wrapperStyle.color;
+		delete wrapperStyle.color;
+	}
+	if (wrapperStyle.borderColor) {
+		innerStyle.borderColor = wrapperStyle.borderColor;
+		delete wrapperStyle.borderColor;
+	}
+	if (wrapperStyle.borderWidth) {
+		innerStyle.borderWidth = wrapperStyle.borderWidth;
+		delete wrapperStyle.borderWidth;
+	}
+	if (wrapperStyle.borderStyle) {
+		innerStyle.borderStyle = wrapperStyle.borderStyle;
+		delete wrapperStyle.borderStyle;
+	}
+	if (wrapperStyle.borderRadius) {
+		innerStyle.borderRadius = wrapperStyle.borderRadius;
+		delete wrapperStyle.borderRadius;
+	}
+
+	return { wrapperStyle, innerStyle };
+}
+
+// Supports for the static reproductions — mirrors the block.json supports that
+// were in place while the pill was still a static block.
+const staticSupports = {
+	html: false,
+	inserter: true,
+	align: ['left', 'center', 'right'],
+	alignWide: false,
+	spacing: {
+		padding: true,
+		margin: ['top', 'bottom'],
+		__experimentalDefaultControls: {
+			padding: true,
+		},
+		__experimentalSelector: '.dsgo-pill__content',
+	},
+	color: {
+		background: true,
+		text: true,
+		gradients: true,
+		__experimentalDefaultControls: {
+			background: true,
+			text: true,
+		},
+		__experimentalSelector: '.dsgo-pill__content',
+	},
+	typography: {
+		fontSize: true,
+		lineHeight: true,
+		textAlign: true,
+		__experimentalDefaultControls: {
+			fontSize: true,
+		},
+		__experimentalSelector: '.dsgo-pill__content',
+		__experimentalFontFamily: true,
+		__experimentalFontWeight: true,
+		__experimentalFontStyle: true,
+		__experimentalTextTransform: true,
+		__experimentalTextDecoration: true,
+		__experimentalLetterSpacing: true,
+		__experimentalWritingMode: true,
+	},
+	__experimentalBorder: {
+		color: true,
+		radius: true,
+		style: true,
+		width: true,
+		__experimentalDefaultControls: {
+			radius: true,
+		},
+		__experimentalSelector: '.dsgo-pill__content',
+	},
+};
+
+// vStatic: the last STATIC version, in use immediately before the Pill block
+// became server-rendered (dynamic). Its save() baked `aligncenter` (from the old
+// `align` default of "center") and `has-small-font-size` (from the old `fontSize`
+// default of "small") into every wrapper. The dynamic block's save() now returns
+// null, so any stored static markup would trip the editor's "Attempt Recovery"
+// warning. This deprecation reproduces that markup and migrates existing content
+// silently; migrate() drops the old center/small defaults so migrated pills are
+// as clean as freshly inserted ones (see migrate() below).
+//
+// apiVersion: 2 (as with v1) disables the second getSaveContent.extraProps pass
+// that would otherwise re-add the colour/border inline styles to the wrapper div
+// that save() moves to the inner span.
+const vStatic = {
+	apiVersion: 2,
+	attributes: {
+		content: {
+			type: 'string',
+			default: '',
+		},
+		align: {
+			type: 'string',
+			default: 'center',
+		},
+		fontSize: {
+			type: 'string',
+			default: 'small',
+		},
+		style: {
+			type: 'object',
+		},
+	},
+	supports: staticSupports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// Static pills always carried an alignment class (the "center" default was
+		// baked by useBlockProps.save()). Match a dsgo-pill wrapper that has one —
+		// the pre-align legacy (no alignment class) is handled by v1 below.
+		const html = innerHTML || '';
+		return (
+			/class="[^"]*\bdsgo-pill\b/.test(html) &&
+			(html.includes('aligncenter') ||
+				html.includes('alignleft') ||
+				html.includes('alignright'))
+		);
+	},
+	save({ attributes }) {
+		const { content } = attributes;
+
+		const blockProps = useBlockProps.save({
+			className: 'dsgo-pill',
+		});
+
+		const { wrapperStyle, innerStyle } = splitPillStyles(blockProps);
+		blockProps.style = wrapperStyle;
+
+		return (
+			<div {...blockProps}>
+				<RichText.Content
+					tagName="span"
+					className="dsgo-pill__content"
+					value={content}
+					style={innerStyle}
+				/>
+			</div>
+		);
+	},
+	migrate(attributes) {
+		// Drop the old baked defaults so migrated pills stay as clean as freshly
+		// inserted ones: `align: "center"` still centres via CSS (the class-based
+		// default) and `fontSize: "small"` becomes inherited text. Explicit,
+		// non-default choices (e.g. alignright, fontSize:large) are preserved.
+		const { align, fontSize, ...rest } = attributes;
+		const migrated = { ...rest };
+		if (align && 'center' !== align) {
+			migrated.align = align;
+		}
+		if (fontSize && 'small' !== fontSize) {
+			migrated.fontSize = fontSize;
+		}
+		return migrated;
+	},
+};
+
 // v1: the pill block had no `align` attribute in the attributes schema, so
 // `useBlockProps.save()` never injected `aligncenter` even when the block
 // support's alignment defaulted to "center". After commit 9f743ef6 the
@@ -163,4 +338,4 @@ const v1 = {
 	},
 };
 
-export default [v1];
+export default [vStatic, v1];

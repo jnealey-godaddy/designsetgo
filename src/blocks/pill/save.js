@@ -1,64 +1,13 @@
 /**
- * Save component for Pill Block
+ * Pill Block - Save Component
+ *
+ * Dynamic block rendered server-side via render.php. No static HTML is saved to
+ * the database, so the serialized block is a single self-closing comment
+ * (`<!-- wp:designsetgo/pill {"content":"…"} /-->`) with no baked-in alignment
+ * or font-size classes. Historical static markup is handled by ./deprecated.js.
+ *
+ * @return {null} Null because this is a dynamic block.
  */
-import { useBlockProps, RichText } from '@wordpress/block-editor';
-
-export default function PillSave({ attributes }) {
-	const { content } = attributes;
-
-	const blockProps = useBlockProps.save({
-		className: 'dsgo-pill',
-	});
-
-	// Extract color/background styles from blockProps to apply to inner span
-	const wrapperStyle = blockProps.style || {};
-	const innerStyle = {};
-
-	// Transfer background color to inner span
-	if (wrapperStyle.backgroundColor) {
-		innerStyle.backgroundColor = wrapperStyle.backgroundColor;
-		delete wrapperStyle.backgroundColor;
-	}
-	if (wrapperStyle.background) {
-		innerStyle.background = wrapperStyle.background;
-		delete wrapperStyle.background;
-	}
-
-	// Transfer text color to inner span
-	if (wrapperStyle.color) {
-		innerStyle.color = wrapperStyle.color;
-		delete wrapperStyle.color;
-	}
-
-	// Transfer border styles to inner span
-	if (wrapperStyle.borderColor) {
-		innerStyle.borderColor = wrapperStyle.borderColor;
-		delete wrapperStyle.borderColor;
-	}
-	if (wrapperStyle.borderWidth) {
-		innerStyle.borderWidth = wrapperStyle.borderWidth;
-		delete wrapperStyle.borderWidth;
-	}
-	if (wrapperStyle.borderStyle) {
-		innerStyle.borderStyle = wrapperStyle.borderStyle;
-		delete wrapperStyle.borderStyle;
-	}
-	if (wrapperStyle.borderRadius) {
-		innerStyle.borderRadius = wrapperStyle.borderRadius;
-		delete wrapperStyle.borderRadius;
-	}
-
-	// Update blockProps with cleaned style
-	blockProps.style = wrapperStyle;
-
-	return (
-		<div {...blockProps}>
-			<RichText.Content
-				tagName="span"
-				className="dsgo-pill__content"
-				value={content}
-				style={innerStyle}
-			/>
-		</div>
-	);
+export default function PillSave() {
+	return null;
 }
