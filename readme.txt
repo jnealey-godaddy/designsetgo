@@ -94,6 +94,11 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 == Changelog ==
 
+= 2.5.0 - Unreleased =
+
+* **Improved:** The Pill block now renders dynamically — saved pills no longer bake in a fixed size or alignment, so they stay portable across patterns and AI-assisted edits and always reflect your theme.
+* **Note:** Existing pills migrate automatically. Because font size is no longer baked into the saved markup, pills that used the previous default (small) now render at their surrounding text size; set an explicit font size on any pill where you want the smaller look. Default centering is unchanged.
+
 = 2.4.0 - 2026-07-06 =
 
 * **New:** The Icon block has a Fill / Outline style toggle and inherits a theme-defined default size, so icons match your design out of the box.
