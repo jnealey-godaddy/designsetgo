@@ -31,6 +31,15 @@
 		position: relative;
 		display: flex;
 		align-items: center;
+
+		// Default track color when the author has not chosen one. Kept at
+		// :where() (zero specificity) so an inline color, a block-level
+		// background, or an FSE global style all win. No clean preset maps to
+		// a muted track, so this stays a neutral literal — but because it is
+		// no longer baked into save() markup, Global Styles can override it.
+		&:where(:not([style*="background-color"])) {
+			background-color: #e5e7eb;
+		}
 	}
 
 	// Progress bar fill
@@ -40,6 +49,12 @@
 		align-items: center;
 		justify-content: flex-end;
 		padding: 0 0.5rem;
+
+		// Default fill color when the author has not chosen one (see note on
+		// the container above).
+		&:where(:not([style*="background-color"])) {
+			background-color: var(--wp--preset--color--primary, #2563eb);
+		}
 
 		// Animated stripes
 		&--animated {

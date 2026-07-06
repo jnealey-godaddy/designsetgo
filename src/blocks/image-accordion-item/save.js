@@ -1,43 +1,29 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
-import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 
 export default function ImageAccordionItemSave({ attributes, context }) {
 	const { uniqueId, verticalAlignment, horizontalAlignment } = attributes;
 
-	// Get context from parent accordion (same as edit.js)
+	// Get context from parent accordion (same as edit.js). Note: block context
+	// is not available during save serialization, so this resolves to the
+	// default (overlay enabled) for serialized markup — matching prior behavior.
 	const enableOverlay =
 		context?.['designsetgo/imageAccordion/enableOverlay'] !== undefined
 			? context['designsetgo/imageAccordion/enableOverlay']
 			: true;
-	const overlayColor =
-		context?.['designsetgo/imageAccordion/overlayColor'] || '#000000';
-	const overlayOpacity =
-		context?.['designsetgo/imageAccordion/overlayOpacity'] || 40;
-	const overlayOpacityExpanded =
-		context?.['designsetgo/imageAccordion/overlayOpacityExpanded'] || 20;
 
 	// Same classes as edit.js - MUST MATCH
 	const itemClasses = classnames('dsgo-image-accordion-item', {
 		'dsgo-image-accordion-item--has-overlay': enableOverlay,
 	});
 
-	// Apply overlay and alignment as inline styles (same as edit.js)
-	// Note: Unitless values must be strings to prevent React from adding 'px'
-	const overlayStyles = enableOverlay
-		? {
-				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': String(overlayOpacity / 100), // Unitless
-				'--dsgo-overlay-opacity-expanded': String(
-					overlayOpacityExpanded / 100
-				), // Unitless
-			}
-		: {};
-
+	// Overlay color/opacity are no longer baked into the item markup. They
+	// cascade from the parent accordion's `--dsgo-image-accordion-overlay-*`
+	// custom properties (see style.scss), so the frontend honours the parent's
+	// overlay settings and no hex literal is serialized here.
 	const blockProps = useBlockProps.save({
 		className: itemClasses,
 		style: {
-			...overlayStyles,
 			'--dsgo-vertical-alignment': verticalAlignment || 'center',
 			'--dsgo-horizontal-alignment': horizontalAlignment || 'center',
 		},

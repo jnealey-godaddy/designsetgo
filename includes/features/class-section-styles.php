@@ -45,9 +45,25 @@ class Section_Styles {
 	 * @var array
 	 */
 	private $container_blocks = array(
+		// Top-level layout containers.
 		'designsetgo/section',
 		'designsetgo/row',
 		'designsetgo/grid',
+		// Card / surface-like containers and compound-block "items" that read
+		// as their own container surface. Section styles are layout-agnostic
+		// color/border presets, so they apply cleanly to these too.
+		'designsetgo/card',
+		'designsetgo/fifty-fifty',
+		'designsetgo/modal',
+		'designsetgo/slide',
+		'designsetgo/scroll-slide',
+		'designsetgo/tab',
+		'designsetgo/accordion-item',
+		'designsetgo/scroll-accordion-item',
+		'designsetgo/image-accordion-item',
+		'designsetgo/timeline-item',
+		'designsetgo/counter',
+		'designsetgo/flip-card-face',
 	);
 
 	/**

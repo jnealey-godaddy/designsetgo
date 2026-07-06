@@ -20,13 +20,25 @@
 	background-position: center;
 	background-repeat: no-repeat !important;
 
-	// Overlay (pseudo-element)
+	// Overlay (pseudo-element).
+	// Color/opacity cascade from the parent accordion's
+	// `--dsgo-image-accordion-overlay-*` custom properties. The short
+	// `--dsgo-overlay-*` vars (set inline by the editor preview) win when
+	// present; otherwise the parent value applies; the solid `#000` /
+	// numeric literals are the final fallbacks. The color literal is solid
+	// (not rgba) so the separate opacity var is not double-applied.
 	&--has-overlay::before {
 		content: '';
 		position: absolute;
 		inset: 0;
-		background-color: var(--dsgo-overlay-color, rgba(0, 0, 0, 0.4));
-		opacity: var(--dsgo-overlay-opacity, 0.4);
+		background-color: var(
+			--dsgo-overlay-color,
+			var(--dsgo-image-accordion-overlay-color, #000)
+		);
+		opacity: var(
+			--dsgo-overlay-opacity,
+			var(--dsgo-image-accordion-overlay-opacity, 0.4)
+		);
 		transition: opacity 0.3s ease;
 		pointer-events: none;
 		z-index: 1;
@@ -85,7 +97,10 @@
 		flex: var(--expanded-ratio, 3);
 
 		&.dsgo-image-accordion-item--has-overlay::before {
-			opacity: var(--dsgo-overlay-opacity-expanded, 0.2);
+			opacity: var(
+				--dsgo-overlay-opacity-expanded,
+				var(--dsgo-image-accordion-overlay-opacity-expanded, 0.2)
+			);
 		}
 
 		.dsgo-image-accordion-item__content {
@@ -98,7 +113,13 @@
 		flex: 1;
 
 		&.dsgo-image-accordion-item--has-overlay::before {
-			opacity: calc(var(--dsgo-overlay-opacity, 0.4) + 0.2); // Darker when collapsed
+			// Darker when collapsed
+			opacity: calc(
+				var(
+						--dsgo-overlay-opacity,
+						var(--dsgo-image-accordion-overlay-opacity, 0.4)
+					) + 0.2
+			);
 		}
 
 		.dsgo-image-accordion-item__content {
