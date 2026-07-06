@@ -56,12 +56,18 @@ private $container_blocks = array(
     'designsetgo/tab',
     'designsetgo/accordion-item',
     'designsetgo/scroll-accordion-item',
-    'designsetgo/image-accordion-item',
     'designsetgo/timeline-item',
     'designsetgo/counter',
     'designsetgo/flip-card-face',
 );
 ```
+
+`image-accordion-item` is deliberately **not** in the list. It sets
+`color.background: false` in its block.json — its surface is a background
+image + overlay — so a mirrored section style that sets a background color
+would paint behind/around the image with no author-facing control to undo it.
+Mirroring injects into `styles.blocks.…​.variations.…` independent of block
+`supports`, so the only way to honour the opt-out is to exclude the block.
 
 Source blocks unchanged (`core/group`/`columns`/`column`). The existing
 "flatten + broadcast" comment already documents the trade-off (a variation
@@ -73,8 +79,13 @@ desired behaviour here.
 - Select "Style 1–5" on a counter / accordion item / card in Twenty
   Twenty-Five; confirm it paints in editor **and** frontend.
 - Confirm the mirrored variation CSS (`.wp-block-…​.is-style-…`, specificity
-  0-2-0) wins over each block's own `style.scss`. Spot-check `flip-card-face`
-  and `counter`, which ship their own backgrounds.
+  0-2-0) wins over each block's own `style.scss`. Note that several targets
+  ship their own default background at the same specificity — `card`'s
+  `&:not([style*="background"])` is ~0-2-0, tying the mirrored selector — so
+  when specificity ties, source/cascade order decides. Spot-check every target
+  that ships a default background, not just `flip-card-face` / `counter`:
+  `card`, `accordion-item`, `scroll-accordion-item`, `tab`, `modal`, `slide`,
+  `scroll-slide`, `fifty-fifty`, `timeline-item`.
 
 ## Part B — Stop baking hex defaults into save()
 
@@ -123,9 +134,13 @@ Old content has the literal hex in its HTML, so it will not match the new
 (`reference_wp_deprecation_iseligible_mechanics`), the deprecation `save()`
 must reproduce the stored HTML exactly.
 
-- `isEligible(attributes, _, { innerHTML })` — old defaulted blocks had no
-  color attribute but the hex is in markup, e.g.
-  `!attributes.barColor && innerHTML.includes('#2563eb')`.
+- `isEligible(attributes, _, { innerHTML })` — the pre-change save baked the
+  hex literal into the markup, so match on `innerHTML` alone:
+  `innerHTML.includes('#2563eb') || innerHTML.includes('#e5e7eb')`. No
+  attribute check is needed: a block whose color was a genuine custom
+  `#2563eb` round-trips through the *current* save (matching the stored
+  markup), so it validates and never reaches this path — and even if it did,
+  `migrate` is a passthrough no-op.
 - `save()` — the current (pre-change) save function verbatim.
 - `migrate()` — passthrough (`return attributes;`); attribute schema is
   unchanged, only the emitted default moves to CSS.

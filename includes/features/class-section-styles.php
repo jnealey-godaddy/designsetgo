@@ -60,7 +60,12 @@ class Section_Styles {
 		'designsetgo/tab',
 		'designsetgo/accordion-item',
 		'designsetgo/scroll-accordion-item',
-		'designsetgo/image-accordion-item',
+		// Note: designsetgo/image-accordion-item is deliberately excluded. It
+		// sets `color.background: false` in its block.json because its surface
+		// is driven entirely by a background image + overlay. A mirrored section
+		// style that sets a background color would render behind/around that
+		// image with no author-facing control to undo it, so we respect the
+		// block's opt-out rather than inject color it can't expose.
 		'designsetgo/timeline-item',
 		'designsetgo/counter',
 		'designsetgo/flip-card-face',
