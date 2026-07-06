@@ -66,6 +66,14 @@ already preview correctly), so this is additive and low-risk.
   border/radius preview at all), but it means the overlay is a best-effort
   preview, not a full re-implementation of WP's theme.json → CSS pipeline.
   Extending coverage means adding to `variationDeclarations()`.
+- **Experimental core-data selector.** Reading the current global-styles
+  entity id uses `select('core').__experimentalGetCurrentGlobalStylesId()` —
+  there is no stable public equivalent. It's guarded (`typeof … === 'function'`)
+  so a rename/removal can't crash the editor, and a dev-only one-time
+  `console.warn` fires if it's ever missing. But if a future WP release drops
+  it, the overlay silently stops previewing; that guard + warning in
+  `index.js` is where to look if "border stopped previewing in the editor"
+  is ever reported after a core update.
 - **JS/PHP list parity** is enforced by `php-parity.test.js` (fails if
   `TARGET_SUFFIXES` / `SOURCE_BLOCKS` drift from the PHP `$container_blocks` /
   `$source_blocks`), rather than a runtime data pipeline — the lists change

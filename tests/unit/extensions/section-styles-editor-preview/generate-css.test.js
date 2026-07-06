@@ -39,6 +39,15 @@ describe('toCssValue', () => {
 		expect(toCssValue(40)).toBe(40);
 		expect(toCssValue(undefined)).toBe(undefined);
 	});
+
+	it('strips rule-breaking characters to prevent CSS injection', () => {
+		expect(toCssValue('red;}body{display:none')).toBe(
+			'redbodydisplay:none'
+		);
+		expect(toCssValue('var:preset|color|a}b')).toBe(
+			'var(--wp--preset--color--ab)'
+		);
+	});
 });
 
 describe('variationDeclarations', () => {
@@ -63,6 +72,20 @@ describe('variationDeclarations', () => {
 				color: { gradient: 'linear-gradient(#000,#fff)' },
 			})
 		).toBe('background:linear-gradient(#000,#fff)');
+	});
+
+	it('resolves preset references on border width and radius', () => {
+		expect(
+			variationDeclarations({
+				border: {
+					width: 'var:preset|spacing|40',
+					radius: 'var:custom|radius|lg',
+				},
+			})
+		).toBe(
+			'border-width:var(--wp--preset--spacing--40);' +
+				'border-radius:var(--wp--custom--radius--lg)'
+		);
 	});
 
 	it('preserves a zero border-width override (falsy-but-set)', () => {

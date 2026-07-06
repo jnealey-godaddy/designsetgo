@@ -68,6 +68,13 @@ function isSet(value) {
  * Resolve a theme.json style value to a CSS value, expanding preset/custom
  * references (`var:preset|color|accent-2` → `var(--wp--preset--color--accent-2)`).
  *
+ * Also strips characters that could terminate a declaration or rule (`{`, `}`,
+ * `;`). Values come straight from the *unsanitized* edited Global Styles record
+ * and are written via `textContent`, so this is the only guard against a
+ * crafted value escaping its rule and injecting sibling CSS into the canvas.
+ * Legitimate CSS values (colors, lengths, `var()`, gradients, `calc()`) never
+ * contain these characters, so stripping is a no-op for real data.
+ *
  * @param {*} value Raw style value.
  * @return {*} CSS-ready value.
  */
@@ -77,13 +84,14 @@ export function toCssValue(value) {
 	}
 
 	const match = value.match(/^var:(preset|custom)\|(.+)$/);
-	if (!match) {
-		return value;
-	}
+	const resolved = match
+		? `var(--wp--${match[1]}--${match[2]
+				.split('|')
+				.map(kebabCase)
+				.join('--')})`
+		: value;
 
-	const kind = match[1];
-	const path = match[2].split('|').map(kebabCase).join('--');
-	return `var(--wp--${kind}--${path})`;
+	return resolved.replace(/[{};]/g, '');
 }
 
 /**
@@ -113,10 +121,10 @@ function borderDeclarations(border) {
 				out.push(`border-${side}-color:${toCssValue(edge.color)}`);
 			}
 			if (isSet(edge.width)) {
-				out.push(`border-${side}-width:${edge.width}`);
+				out.push(`border-${side}-width:${toCssValue(edge.width)}`);
 			}
 			if (isSet(edge.style)) {
-				out.push(`border-${side}-style:${edge.style}`);
+				out.push(`border-${side}-style:${toCssValue(edge.style)}`);
 			}
 		});
 	} else {
@@ -124,10 +132,10 @@ function borderDeclarations(border) {
 			out.push(`border-color:${toCssValue(border.color)}`);
 		}
 		if (isSet(border.width)) {
-			out.push(`border-width:${border.width}`);
+			out.push(`border-width:${toCssValue(border.width)}`);
 		}
 		if (isSet(border.style)) {
-			out.push(`border-style:${border.style}`);
+			out.push(`border-style:${toCssValue(border.style)}`);
 		}
 	}
 
@@ -143,12 +151,14 @@ function borderDeclarations(border) {
 			Object.keys(corners).forEach((key) => {
 				if (isSet(border.radius[key])) {
 					out.push(
-						`border-${corners[key]}-radius:${border.radius[key]}`
+						`border-${corners[key]}-radius:${toCssValue(
+							border.radius[key]
+						)}`
 					);
 				}
 			});
 		} else {
-			out.push(`border-radius:${border.radius}`);
+			out.push(`border-radius:${toCssValue(border.radius)}`);
 		}
 	}
 
@@ -196,25 +206,25 @@ export function variationDeclarations(variation) {
 	const out = [];
 	const color = variation.color || {};
 
-	if (color.background) {
+	if (isSet(color.background)) {
 		out.push(`background-color:${toCssValue(color.background)}`);
 	}
-	if (color.gradient) {
+	if (isSet(color.gradient)) {
 		out.push(`background:${toCssValue(color.gradient)}`);
 	}
-	if (color.text) {
+	if (isSet(color.text)) {
 		out.push(`color:${toCssValue(color.text)}`);
 	}
 
 	out.push(...borderDeclarations(variation.border));
 	out.push(...spacingDeclarations(variation.spacing));
 
-	if (variation.shadow) {
+	if (isSet(variation.shadow)) {
 		out.push(`box-shadow:${toCssValue(variation.shadow)}`);
 	}
 
 	const typography = variation.typography || {};
-	if (typography.fontSize) {
+	if (isSet(typography.fontSize)) {
 		out.push(`font-size:${toCssValue(typography.fontSize)}`);
 	}
 	if (isSet(typography.lineHeight)) {

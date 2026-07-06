@@ -28,6 +28,10 @@ import { buildVariationCss } from './generate-css';
 
 const STYLE_ELEMENT_ID = 'dsgo-section-style-preview';
 
+// Whether the missing-API warning has fired (dev only). See the note in
+// SectionStylePreview.
+let warnedMissingApi = false;
+
 /**
  * Collect the documents that make up the editor canvas. Handles both the
  * iframed canvas (post/site editor) and the rare non-iframed case.
@@ -49,7 +53,13 @@ function getCanvasDocuments() {
 			}
 		});
 
-	// Non-iframed fallback: the editor writing flow lives in the main document.
+	// Non-iframed fallback: the editor writing flow lives in the main document
+	// (legacy/classic path; modern editors iframe the canvas). Here the overlay
+	// goes in the top-level <head> and is scoped only by its class selector
+	// (`.wp-block-designsetgo-{suffix}.is-style-{slug}`). Those classes only
+	// appear on DSGo blocks in the editor content, so a stray match elsewhere on
+	// the admin screen is effectively impossible — an accepted tradeoff for this
+	// rare path rather than prefixing every selector with the wrapper.
 	if (!docs.length && document.querySelector('.editor-styles-wrapper')) {
 		docs.push(document);
 	}
@@ -99,8 +109,26 @@ function injectStyles(css) {
 function SectionStylePreview() {
 	const css = useSelect((select) => {
 		const core = select(coreStore);
+
+		// NOTE: `__experimentalGetCurrentGlobalStylesId` is an experimental
+		// core-data selector — there is no stable public equivalent for the
+		// current global-styles entity id. If a future WP release renames or
+		// removes it, this overlay quietly stops working; surface that in dev
+		// so it isn't a silent "border stopped previewing" mystery. See the
+		// Known limitations section of the plan doc.
 		const getId = core.__experimentalGetCurrentGlobalStylesId;
-		const id = typeof getId === 'function' ? getId() : null;
+		if (typeof getId !== 'function') {
+			if (!warnedMissingApi && process.env.NODE_ENV !== 'production') {
+				warnedMissingApi = true;
+				// eslint-disable-next-line no-console
+				console.warn(
+					'DesignSetGo: core-data selector __experimentalGetCurrentGlobalStylesId is unavailable; section-style editor preview is disabled.'
+				);
+			}
+			return '';
+		}
+
+		const id = getId();
 		if (!id) {
 			return '';
 		}
@@ -136,24 +164,49 @@ function SectionStylePreview() {
 	// debounce coalesces bursts and `injectStyles` is idempotent, so a
 	// settle-triggered re-inject is a no-op unless the canvas was replaced.
 	useEffect(() => {
-		const root =
-			document.querySelector(
-				'.editor-visual-editor, .edit-post-visual-editor, .edit-site-visual-editor, .interface-interface-skeleton__content'
-			) || document.body;
+		let observer = null;
+		let debounce = null;
+		let retry = null;
+		let attempts = 0;
 
-		let timer = null;
-		const observer = new window.MutationObserver(() => {
-			if (timer) {
-				window.clearTimeout(timer);
+		const attach = () => {
+			const root = document.querySelector(
+				'.editor-visual-editor, .edit-post-visual-editor, .edit-site-visual-editor, .interface-interface-skeleton__content'
+			);
+
+			// If the editor shell hasn't rendered its wrapper yet (this plugin
+			// component can mount first), retry briefly rather than permanently
+			// falling back to document.body — which would reintroduce the broad
+			// observation this scoping avoids. Use body only as a last resort.
+			if (!root && attempts < 10) {
+				attempts += 1;
+				retry = window.setTimeout(attach, 300);
+				return;
 			}
-			timer = window.setTimeout(scheduleInject, 300);
-		});
-		observer.observe(root, { childList: true, subtree: true });
+
+			observer = new window.MutationObserver(() => {
+				if (debounce) {
+					window.clearTimeout(debounce);
+				}
+				debounce = window.setTimeout(scheduleInject, 300);
+			});
+			observer.observe(root || document.body, {
+				childList: true,
+				subtree: true,
+			});
+		};
+		attach();
+
 		return () => {
-			if (timer) {
-				window.clearTimeout(timer);
+			if (retry) {
+				window.clearTimeout(retry);
 			}
-			observer.disconnect();
+			if (debounce) {
+				window.clearTimeout(debounce);
+			}
+			if (observer) {
+				observer.disconnect();
+			}
 		};
 	}, [scheduleInject]);
 
