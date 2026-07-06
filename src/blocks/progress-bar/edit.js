@@ -70,11 +70,17 @@ export default function ProgressBarEdit({
 	// Calculate bar width (clamped between 0-100)
 	const barWidth = Math.min(Math.max(percentage, 0), 100);
 
+	// Resolve chosen colors; omit when unset so the CSS default (shared with
+	// the frontend) paints instead of a baked hex — keeps the editor preview
+	// matching the saved markup.
+	const barFillColor = convertColorToCSSVar(barColor);
+	const barTrackColor = convertColorToCSSVar(barBackgroundColor);
+
 	// Build bar fill styles declaratively
 	const barFillStyles = {
 		width: `${barWidth}%`,
 		height: '100%',
-		backgroundColor: convertColorToCSSVar(barColor) || '#2563eb',
+		backgroundColor: barFillColor || undefined,
 		transition: `width ${animationDuration}s ease-out`,
 		borderRadius,
 	};
@@ -90,7 +96,7 @@ export default function ProgressBarEdit({
 	const barContainerStyles = {
 		width: '100%',
 		height,
-		backgroundColor: convertColorToCSSVar(barBackgroundColor) || '#e5e7eb',
+		backgroundColor: barTrackColor || undefined,
 		borderRadius,
 		overflow: 'hidden',
 		position: 'relative',

@@ -36,11 +36,17 @@ export default function ProgressBarSave({ attributes }) {
 	// Calculate bar width (clamped between 0-100)
 	const barWidth = Math.min(Math.max(percentage, 0), 100);
 
+	// Resolve chosen colors. When unset we emit no inline color so the bar
+	// inherits the CSS default (which references an FSE preset var) instead
+	// of a baked hex literal.
+	const barFillColor = convertColorToCSSVar(barColor);
+	const barTrackColor = convertColorToCSSVar(barBackgroundColor);
+
 	// Build bar fill styles (same as edit.js)
 	const barFillStyles = {
 		width: animateOnScroll ? '0%' : `${barWidth}%`, // Start at 0 if animating
 		height: '100%',
-		backgroundColor: convertColorToCSSVar(barColor) || '#2563eb',
+		backgroundColor: barFillColor || undefined,
 		transition: `width ${animationDuration}s ease-out`,
 		borderRadius,
 	};
@@ -56,7 +62,7 @@ export default function ProgressBarSave({ attributes }) {
 	const barContainerStyles = {
 		width: '100%',
 		height,
-		backgroundColor: convertColorToCSSVar(barBackgroundColor) || '#e5e7eb',
+		backgroundColor: barTrackColor || undefined,
 		borderRadius,
 		overflow: 'hidden',
 		position: 'relative',

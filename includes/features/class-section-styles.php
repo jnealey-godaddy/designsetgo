@@ -45,9 +45,30 @@ class Section_Styles {
 	 * @var array
 	 */
 	private $container_blocks = array(
+		// Top-level layout containers.
 		'designsetgo/section',
 		'designsetgo/row',
 		'designsetgo/grid',
+		// Card / surface-like containers and compound-block "items" that read
+		// as their own container surface. Section styles are layout-agnostic
+		// color/border presets, so they apply cleanly to these too.
+		'designsetgo/card',
+		'designsetgo/fifty-fifty',
+		'designsetgo/modal',
+		'designsetgo/slide',
+		'designsetgo/scroll-slide',
+		'designsetgo/tab',
+		'designsetgo/accordion-item',
+		'designsetgo/scroll-accordion-item',
+		// Note: designsetgo/image-accordion-item is deliberately excluded. It
+		// sets `color.background: false` in its block.json because its surface
+		// is driven entirely by a background image + overlay. A mirrored section
+		// style that sets a background color would render behind/around that
+		// image with no author-facing control to undo it, so we respect the
+		// block's opt-out rather than inject color it can't expose.
+		'designsetgo/timeline-item',
+		'designsetgo/counter',
+		'designsetgo/flip-card-face',
 	);
 
 	/**
