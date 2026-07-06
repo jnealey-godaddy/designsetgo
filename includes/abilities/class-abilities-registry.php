@@ -162,10 +162,10 @@ class Abilities_Registry {
 	 * Load and instantiate abilities from a directory with given namespace.
 	 *
 	 * @param string $directory Directory path containing ability classes.
-	 * @param string $namespace PHP namespace for the classes.
+	 * @param string $class_namespace PHP namespace for the classes.
 	 * @return void
 	 */
-	private function load_abilities_from_namespace( string $directory, string $namespace ): void {
+	private function load_abilities_from_namespace( string $directory, string $class_namespace ): void {
 		if ( ! is_dir( $directory ) ) {
 			return;
 		}
@@ -177,7 +177,7 @@ class Abilities_Registry {
 		}
 
 		foreach ( $files as $file ) {
-			$class_name = $this->file_to_class_name( $file, $namespace );
+			$class_name = $this->file_to_class_name( $file, $class_namespace );
 
 			if ( class_exists( $class_name )
 				&& is_subclass_of( $class_name, Abstract_Ability::class )
@@ -195,10 +195,10 @@ class Abilities_Registry {
 	 * Handles common acronyms (CSS, CTA, FAQ, API, etc.) that should remain uppercase.
 	 *
 	 * @param string $file_path Full path to the PHP file.
-	 * @param string $namespace PHP namespace prefix.
+	 * @param string $class_namespace PHP namespace prefix.
 	 * @return string Fully qualified class name.
 	 */
-	private function file_to_class_name( string $file_path, string $namespace ): string {
+	private function file_to_class_name( string $file_path, string $class_namespace ): string {
 		// Get filename without path and extension.
 		$filename = basename( $file_path, '.php' );
 
@@ -228,7 +228,7 @@ class Abilities_Registry {
 			explode( '_', $class_name )
 		);
 
-		return $namespace . implode( '_', $parts );
+		return $class_namespace . implode( '_', $parts );
 	}
 
 	/**

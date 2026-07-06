@@ -550,12 +550,12 @@ class Controller {
 	/**
 	 * Add llms.txt reference to robots.txt output.
 	 *
-	 * @param string $output  The robots.txt content.
-	 * @param bool   $public  Whether the site is public.
+	 * @param string $output    The robots.txt content.
+	 * @param bool   $is_public Whether the site is public.
 	 * @return string Modified robots.txt content.
 	 */
-	public function add_to_robots_txt( string $output, bool $public ): string {
-		if ( ! $public ) {
+	public function add_to_robots_txt( string $output, bool $is_public ): string {
+		if ( ! $is_public ) {
 			return $output;
 		}
 

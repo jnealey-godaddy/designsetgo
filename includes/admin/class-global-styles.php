@@ -626,13 +626,13 @@ class Global_Styles {
 	 * against the CSS value allowlist in is_valid_css_value(); values that do
 	 * not match are silently dropped (empty string) rather than stored.
 	 *
-	 * @param array $array Array to sanitize.
+	 * @param array $styles_array Array to sanitize.
 	 * @return array Sanitized array.
 	 */
-	private function sanitize_styles_array( $array ) {
+	private function sanitize_styles_array( $styles_array ) {
 		$sanitized = array();
 
-		foreach ( $array as $key => $value ) {
+		foreach ( $styles_array as $key => $value ) {
 			$sanitized_key = sanitize_key( $key );
 
 			if ( is_array( $value ) ) {

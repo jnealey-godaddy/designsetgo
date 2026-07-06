@@ -313,9 +313,9 @@ class Draft_Mode_REST {
 		$placeholders = array();
 		$result       = preg_replace_callback(
 			'/<!--\s+\/?wp:[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)?\s*(?:(?P<json>\{(?:[^{}]++|(?&json))*+\})\s*)?\/?\s*-->/',
-			function ( $match ) use ( &$placeholders ) {
+			function ( $matches ) use ( &$placeholders ) {
 				$key                  = '%%DSGO_BLOCK_COMMENT_' . count( $placeholders ) . '%%';
-				$placeholders[ $key ] = $match[0];
+				$placeholders[ $key ] = $matches[0];
 				return $key;
 			},
 			$content
