@@ -2,8 +2,10 @@
  * Shape Divider Mask Library
  *
  * Defines one CSS custom property per shape divider slug. Each property
- * holds a `url(...)` data-URI SVG used as a `mask-image` by the class-based
- * shape divider (see ../style.scss). The `d`/element data below is copied
+ * holds a `url(...)` data-URI SVG consumed as a `mask-image` by the
+ * class-based shape divider: the companion `./_shape-mask-classes.scss`
+ * maps each `is-shape-<slug>` class to the matching property here. The
+ * `d`/element data below is copied
  * verbatim from src/blocks/section/utils/shape-dividers.js (SHAPE_DIVIDERS)
  * so the mask renders pixel-identical to the legacy inline-SVG renderer.
  *
