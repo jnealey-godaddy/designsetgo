@@ -5,6 +5,30 @@ All notable changes to the DesignSetGo plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - Unreleased
+
+### Changed
+- **Pill renders dynamically** — The Pill block is now server-rendered, completing the icon/divider/map/form conversion shipped in 2.4.0. A fresh pill serializes to a single self-closing block comment with no baked-in `aligncenter` / `has-small-font-size` classes, so pills stay portable across patterns and AI-assisted (Abilities API) authoring and always reflect the current theme. Existing pills migrate silently via a new deprecation; the default centered alignment is now CSS-driven and unchanged. (#439)
+- **Existing pills inherit their context font size** — The old `fontSize: "small"` default is no longer baked into saved markup, so published pills that relied on the default small size now render at their surrounding text size. Set an explicit font size on any pill that should keep the smaller look; alignment is unaffected. (#439)
+
+## [2.4.0] - 2026-07-06
+
+### New Features
+- **Icon block: fill / outline + theme default size** — The Icon block gained a Fill / Outline style toggle and inherits a theme-defined default size, so icons match your design out of the box. (#438)
+- **Icon Button inherits core Button style variations** — Fill, Outline, and any variations the theme registers.
+- **Scrolling Gallery: native border controls** — Width, style, color, and radius replace the old single border-radius field.
+
+### Changed
+- **Icon, Divider, Map, and form field blocks render dynamically** — They always reflect the current theme and store cleaner markup; existing blocks migrate automatically.
+- **Form Builder fields inherit theme spacing and sizing.**
+- **Map markers can inherit their color from the theme.**
+
+### Bug Fixes
+- **Icon List frontend parity** — Items show their fill / outline and stroke on the frontend, matching the editor.
+- **SVG Patterns / Form Builder color baking** — No longer bake default colors into saved markup, so they inherit the theme's colors.
+- **Abilities API quote / backslash handling** — Content with quotes or backslashes saved through AI-assisted edits is no longer altered.
+- **Scrolling Gallery legacy migration** — Blocks saved by older versions or patterns (image rows stored in the markup rather than the block comment) keep migrating silently instead of showing "Attempt Recovery."
+
 ## [2.3.0] - 2026-07-01
 
 ### New Features

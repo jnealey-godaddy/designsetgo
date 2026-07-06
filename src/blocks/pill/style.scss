@@ -63,11 +63,12 @@
 	// Ensure text doesn't break awkwardly
 	white-space: nowrap;
 
-	// Default styles - always applied as base, overridden by WordPress color transfers
+	// Default styles - always applied as base, overridden by WordPress color transfers.
+	// Font size intentionally inherits from context (no forced size) so the pill is
+	// never saved with a baked `has-small-font-size` class.
 	padding: 0.5em 1em;
 	background-color: var(--wp--preset--color--primary, #2563eb);
 	color: var(--wp--preset--color--base, #fff);
-	font-size: 0.875em;
 	font-weight: 500;
 	line-height: 1.5;
 }
@@ -95,8 +96,11 @@
 	margin-left: 0 !important;
 }
 
-.dsgo-pill.aligncenter:not([class*="dsgo-hide-"]),
-[class*="wp-container"] > .dsgo-pill.aligncenter:not([class*="dsgo-hide-"]) {
+// Default alignment is centered (class-based, no baked `aligncenter` attribute):
+// any pill that is not explicitly left/right aligned is centered. Explicit
+// `aligncenter` matches this too; `alignleft` / `alignright` below override it.
+.dsgo-pill:not(.alignleft):not(.alignright):not([class*="dsgo-hide-"]),
+[class*="wp-container"] > .dsgo-pill:not(.alignleft):not(.alignright):not([class*="dsgo-hide-"]) {
 	float: none !important;
 	display: flex !important;
 	justify-content: center;

@@ -42,6 +42,14 @@ const LEGACY_DIVIDER = `<!-- wp:designsetgo/divider {"dividerStyle":"icon","icon
 <div class="wp-block-designsetgo-divider dsgo-divider dsgo-divider--icon"><div class="dsgo-divider__container" style="width:100%"><div class="dsgo-divider__icon-wrapper"><span class="dsgo-divider__line dsgo-divider__line--left" style="height:2px"></span><span class="dsgo-divider__icon dsgo-lazy-icon" data-icon-name="star"></span><span class="dsgo-divider__line dsgo-divider__line--right" style="height:2px"></span></div></div></div>
 <!-- /wp:designsetgo/divider -->`;
 
+// Pre-conversion STATIC pill markup: the wrapper baked `aligncenter` (from the
+// old align default of "center") and `has-small-font-size` (from the old fontSize
+// default of "small"). The new deprecation must migrate it silently now that the
+// pill is server-rendered.
+const LEGACY_PILL = `<!-- wp:designsetgo/pill {"content":"Test"} -->
+<div class="wp-block-designsetgo-pill aligncenter dsgo-pill has-small-font-size"><span class="dsgo-pill__content">Test</span></div>
+<!-- /wp:designsetgo/pill -->`;
+
 // Authentic pre-conversion markup from the site-designer contact patterns
 // (block-patterns/patterns/contact). This is the exact shape that used to throw
 // "Block validation: Expected text ..., saw ...": the block comment carries no
@@ -289,6 +297,91 @@ test.describe('Divider block — dynamic render', () => {
 		// would also leave getInvalidBlockNames empty).
 		const { invalid, names } = await parseValidity(page, LEGACY_DIVIDER);
 		expect(names).toContain('designsetgo/divider');
+		expect(invalid).toEqual([]);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Pill block
+// ---------------------------------------------------------------------------
+test.describe('Pill block — dynamic render', () => {
+	test('fresh insert is valid and serializes without aligncenter / has-small-font-size', async ({
+		page,
+	}, testInfo) => {
+		const artifact = defineArtifact(
+			testInfo,
+			'blocks',
+			'pill',
+			'dynamic-render'
+		);
+
+		await createNewPost(page, 'page');
+		await setPostTitle(page, 'Pill Dynamic Render');
+		await insertBlock(page, 'designsetgo/pill', { content: 'New Feature' });
+
+		const canvas = getEditorCanvas(page);
+		await expect(
+			canvas.locator('[data-type="designsetgo/pill"]').first()
+		).toBeVisible({ timeout: 10000 });
+
+		expect(await getInvalidBlockNames(page)).not.toContain(
+			'designsetgo/pill'
+		);
+		await expect(
+			canvas.locator(
+				'[data-type="designsetgo/pill"] .block-editor-warning'
+			)
+		).toHaveCount(0);
+
+		// The dynamic block serializes to a single self-closing comment — no
+		// stored HTML, so no baked alignment / font-size classes.
+		const serialized = await page.evaluate(() => {
+			const blocks = wp.data
+				.select('core/block-editor')
+				.getBlocks()
+				.filter((b) => b.name === 'designsetgo/pill');
+			return wp.blocks.serialize(blocks);
+		});
+		expect(serialized).not.toContain('aligncenter');
+		expect(serialized).not.toContain('has-small-font-size');
+		await saveScreenshot(page, artifact, 'editor');
+
+		const frontendUrl = await publishAndResolveUrl(page);
+		await page.goto(frontendUrl);
+		await page.waitForLoadState('domcontentloaded');
+
+		// The pill renders its text; the wrapper carries neither baked class.
+		await expect(
+			page.locator('.wp-block-designsetgo-pill .dsgo-pill__content').first()
+		).toHaveText('New Feature', { timeout: 10000 });
+		expect(
+			await page
+				.locator(
+					'.wp-block-designsetgo-pill.aligncenter, .wp-block-designsetgo-pill.has-small-font-size'
+				)
+				.count()
+		).toBe(0);
+
+		await page.waitForLoadState('networkidle').catch(() => {});
+		await slowScrollToBottom(page);
+		await saveScreenshot(page, artifact, 'frontend');
+	});
+
+	test('legacy static markup migrates silently (no invalid content)', async ({
+		page,
+	}) => {
+		await createNewPost(page, 'page');
+		await setPostTitle(page, 'Pill Legacy Migration');
+		await insertRawMarkup(page, LEGACY_PILL);
+
+		expect(await getInvalidBlockNames(page)).not.toContain(
+			'designsetgo/pill'
+		);
+
+		// Guard against a vacuous pass: confirm the block actually survived the
+		// parse/deprecation pipeline rather than being silently dropped.
+		const { invalid, names } = await parseValidity(page, LEGACY_PILL);
+		expect(names).toContain('designsetgo/pill');
 		expect(invalid).toEqual([]);
 	});
 });

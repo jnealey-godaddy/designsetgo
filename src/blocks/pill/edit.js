@@ -11,43 +11,20 @@ export default function PillEdit({ attributes, setAttributes }) {
 		className: 'dsgo-pill',
 	});
 
-	// Extract color/background styles from blockProps to apply to inner span
-	const wrapperStyle = blockProps.style || {};
+	// The visible pill is the inner span, so move colour / background / border
+	// inline styles off the wrapper and onto it — mirroring render.php so the
+	// editor matches the frontend. Prefix-match the camelCase style keys (rather
+	// than an exact-name list) so unlinked per-corner radius (borderTopLeftRadius)
+	// and per-side borders (borderTopColor, …) transfer too.
+	const wrapperStyle = { ...(blockProps.style || {}) };
 	const innerStyle = {};
 
-	// Transfer background color to inner span
-	if (wrapperStyle.backgroundColor) {
-		innerStyle.backgroundColor = wrapperStyle.backgroundColor;
-		delete wrapperStyle.backgroundColor;
-	}
-	if (wrapperStyle.background) {
-		innerStyle.background = wrapperStyle.background;
-		delete wrapperStyle.background;
-	}
-
-	// Transfer text color to inner span
-	if (wrapperStyle.color) {
-		innerStyle.color = wrapperStyle.color;
-		delete wrapperStyle.color;
-	}
-
-	// Transfer border styles to inner span
-	if (wrapperStyle.borderColor) {
-		innerStyle.borderColor = wrapperStyle.borderColor;
-		delete wrapperStyle.borderColor;
-	}
-	if (wrapperStyle.borderWidth) {
-		innerStyle.borderWidth = wrapperStyle.borderWidth;
-		delete wrapperStyle.borderWidth;
-	}
-	if (wrapperStyle.borderStyle) {
-		innerStyle.borderStyle = wrapperStyle.borderStyle;
-		delete wrapperStyle.borderStyle;
-	}
-	if (wrapperStyle.borderRadius) {
-		innerStyle.borderRadius = wrapperStyle.borderRadius;
-		delete wrapperStyle.borderRadius;
-	}
+	Object.keys(wrapperStyle).forEach((key) => {
+		if (/^(color|background|border)/.test(key)) {
+			innerStyle[key] = wrapperStyle[key];
+			delete wrapperStyle[key];
+		}
+	});
 
 	// Update blockProps with cleaned style
 	blockProps.style = wrapperStyle;
