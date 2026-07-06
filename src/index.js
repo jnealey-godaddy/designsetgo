@@ -79,6 +79,10 @@ import './extensions/style-binding';
 // Dynamic Tags - Elementor-style per-attribute dynamic bindings on core blocks
 import './extensions/dynamic-tags';
 
+// Section Styles Editor Preview - previews user-customized section-style
+// variations (border/radius/etc.) on DSGo container blocks in the editor canvas
+import './extensions/section-styles-editor-preview';
+
 // ===== RICH TEXT FORMATS =====
 // Text Style - adds inline text styling (color, gradient, size) to selected text
 import './formats/text-style';
