@@ -40,6 +40,10 @@ import {
 	encodeColorValue,
 	decodeColorValue,
 } from '../../utils/encode-color-value';
+import {
+	hasOverlayStyleClass,
+	hoverVariationClasses,
+} from '../../utils/style-variation-classes';
 
 /**
  * Row Container Edit Component
@@ -152,10 +156,12 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 	]);
 
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
+	const hasOverlay = !!overlayColor || hasOverlayStyleClass(className);
 	const blockClassName = [
 		'dsgo-flex',
 		mobileStack && 'dsgo-flex--mobile-stack',
-		overlayColor && 'dsgo-flex--has-overlay',
+		hasOverlay && 'dsgo-flex--has-overlay',
+		...hoverVariationClasses(className, 'dsgo-flex'),
 	]
 		.filter(Boolean)
 		.join(' ');
