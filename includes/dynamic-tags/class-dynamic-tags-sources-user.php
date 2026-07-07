@@ -34,7 +34,7 @@ class UserSources {
 			'designsetgo/current-user-name',
 			__( 'Current user name', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $_args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$user = wp_get_current_user();
 				if ( 0 === (int) $user->ID ) {
 					return null;
@@ -48,7 +48,7 @@ class UserSources {
 			'designsetgo/current-user-avatar',
 			__( 'Current user avatar', 'designsetgo' ),
 			array( 'image', 'url' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$user = wp_get_current_user();
 				if ( 0 === (int) $user->ID ) {
 					return null;
@@ -67,7 +67,7 @@ class UserSources {
 			'designsetgo/current-user-url',
 			__( 'Current user website URL', 'designsetgo' ),
 			array( 'url' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $_args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$user = wp_get_current_user();
 				if ( 0 === (int) $user->ID ) {
 					return null;
@@ -92,7 +92,7 @@ class UserSources {
 			'designsetgo/current-user-email',
 			__( 'Current user email', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $_args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				/**
 				 * Enables the `designsetgo/current-user-email` source.
 				 *

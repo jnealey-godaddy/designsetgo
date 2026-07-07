@@ -35,7 +35,7 @@ class PostSources {
 			'designsetgo/post-title',
 			__( 'Post title', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				if ( ! $post_id ) {
 					return null;
@@ -50,7 +50,7 @@ class PostSources {
 			'designsetgo/post-excerpt',
 			__( 'Post excerpt', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				if ( ! $post_id ) {
 					return null;
@@ -69,7 +69,7 @@ class PostSources {
 			'designsetgo/post-date',
 			__( 'Post publish date', 'designsetgo' ),
 			array( 'text', 'date' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				if ( ! $post_id ) {
 					return null;
@@ -93,7 +93,7 @@ class PostSources {
 			'designsetgo/post-modified-date',
 			__( 'Post modified date', 'designsetgo' ),
 			array( 'text', 'date' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				if ( ! $post_id ) {
 					return null;
@@ -114,7 +114,7 @@ class PostSources {
 			'designsetgo/post-permalink',
 			__( 'Post permalink', 'designsetgo' ),
 			array( 'url' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				if ( ! $post_id ) {
 					return null;
@@ -129,7 +129,7 @@ class PostSources {
 			'designsetgo/post-id',
 			__( 'Post ID', 'designsetgo' ),
 			array( 'text', 'number' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				return $post_id ? (string) $post_id : null;
 			}
@@ -140,7 +140,7 @@ class PostSources {
 			'designsetgo/post-type',
 			__( 'Post type', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				if ( ! $post_id ) {
 					return null;
@@ -155,7 +155,7 @@ class PostSources {
 			'designsetgo/post-author-name',
 			__( 'Post author name', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				if ( ! $post_id ) {
 					return null;
@@ -174,7 +174,7 @@ class PostSources {
 			'designsetgo/post-author-url',
 			__( 'Post author archive URL', 'designsetgo' ),
 			array( 'url' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				if ( ! $post_id ) {
 					return null;
@@ -193,7 +193,7 @@ class PostSources {
 			'designsetgo/post-author-avatar-url',
 			__( 'Post author avatar', 'designsetgo' ),
 			array( 'image', 'url' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				if ( ! $post_id ) {
 					return null;
@@ -216,7 +216,7 @@ class PostSources {
 			'designsetgo/post-featured-image',
 			__( 'Post featured image', 'designsetgo' ),
 			array( 'image' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				if ( ! $post_id ) {
 					return null;
@@ -243,7 +243,7 @@ class PostSources {
 			'designsetgo/post-taxonomy',
 			__( 'Post taxonomy terms', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$post_id  = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				$taxonomy = isset( $args['taxonomy'] ) ? sanitize_key( (string) $args['taxonomy'] ) : 'category';
 				if ( ! $post_id || '' === $taxonomy || ! taxonomy_exists( $taxonomy ) ) {

@@ -33,7 +33,7 @@ class ArchiveSources {
 			'designsetgo/archive-title',
 			__( 'Archive title', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $_args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				if ( ! self::is_archive_context() ) {
 					return null;
 				}
@@ -47,7 +47,7 @@ class ArchiveSources {
 			'designsetgo/archive-description',
 			__( 'Archive description', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $_args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				if ( ! self::is_archive_context() ) {
 					return null;
 				}
@@ -64,7 +64,7 @@ class ArchiveSources {
 			'designsetgo/archive-url',
 			__( 'Archive URL', 'designsetgo' ),
 			array( 'url' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $_args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$object = get_queried_object();
 				if ( $object instanceof \WP_Term ) {
 					$url = get_term_link( $object );
