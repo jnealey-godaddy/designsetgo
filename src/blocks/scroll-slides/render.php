@@ -71,6 +71,7 @@ if ( ! function_exists( 'designsetgo_render_scroll_slides' ) ) {
 				'constrainWidth' => true,
 				'contentWidth'   => '',
 				'overlayColor'   => '',
+				'overlayOpacity' => 80,
 				'navColor'       => '',
 				'navActiveColor' => '',
 			)
@@ -111,8 +112,13 @@ if ( ! function_exists( 'designsetgo_render_scroll_slides' ) ) {
 
 		$style_parts = array();
 		if ( '' !== $atts['overlayColor'] ) {
-			$style_parts[] = '--dsgo-overlay-color:' . $color_to_css( $atts['overlayColor'] );
-			$style_parts[] = '--dsgo-overlay-opacity:0.8';
+			// Clamp to [0, 100] and fall back to 80 for non-numeric values. Mirrors
+			// the JS overlayOpacityFraction() util (src/utils/overlay-opacity.js)
+			// used by save.js/edit.js — keep the two in sync.
+			$overlay_opacity = is_numeric( $atts['overlayOpacity'] ) ? (float) $atts['overlayOpacity'] : 80.0;
+			$overlay_opacity = max( 0.0, min( 100.0, $overlay_opacity ) ) / 100;
+			$style_parts[]   = '--dsgo-overlay-color:' . $color_to_css( $atts['overlayColor'] );
+			$style_parts[]   = '--dsgo-overlay-opacity:' . rtrim( rtrim( sprintf( '%.4F', $overlay_opacity ), '0' ), '.' );
 		}
 		if ( '' !== $atts['navColor'] ) {
 			$style_parts[] = '--dsgo-nav-color:' . $color_to_css( $atts['navColor'] );

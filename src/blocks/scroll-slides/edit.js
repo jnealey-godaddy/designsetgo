@@ -19,6 +19,7 @@ import { useMemo, useState } from '@wordpress/element';
  */
 import './editor.scss';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { overlayOpacityFraction } from '../../utils/overlay-opacity';
 import ScrollSlidesPlaceholder from './components/ScrollSlidesPlaceholder';
 import ScrollSlidesInspector from './components/ScrollSlidesInspector';
 import useQueryHostPreview, {
@@ -37,6 +38,7 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 		constrainWidth,
 		contentWidth,
 		overlayColor,
+		overlayOpacity,
 		navColor,
 		navActiveColor,
 	} = attributes;
@@ -172,7 +174,9 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 			minHeight: editorHeight,
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': '0.8',
+				'--dsgo-overlay-opacity': String(
+					overlayOpacityFraction(overlayOpacity)
+				),
 			}),
 			...(navColor && {
 				'--dsgo-nav-color': convertColorToCSSVar(navColor),

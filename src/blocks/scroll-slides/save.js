@@ -7,6 +7,7 @@ import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
  * Internal dependencies
  */
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { overlayOpacityFraction } from '../../utils/overlay-opacity';
 
 export default function Save({ attributes }) {
 	const {
@@ -15,6 +16,7 @@ export default function Save({ attributes }) {
 		constrainWidth,
 		contentWidth,
 		overlayColor,
+		overlayOpacity,
 		navColor,
 		navActiveColor,
 	} = attributes;
@@ -35,7 +37,9 @@ export default function Save({ attributes }) {
 		style: {
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': '0.8',
+				'--dsgo-overlay-opacity': String(
+					overlayOpacityFraction(overlayOpacity)
+				),
 			}),
 			...(navColor && {
 				'--dsgo-nav-color': convertColorToCSSVar(navColor),

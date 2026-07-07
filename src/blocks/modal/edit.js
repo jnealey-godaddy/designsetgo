@@ -45,6 +45,7 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 		showCloseButton,
 		closeButtonPosition,
 		closeButtonSize,
+		closeButtonLabel,
 		closeButtonIconColor,
 		closeButtonBgColor,
 	} = attributes;
@@ -163,9 +164,11 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 							animationDuration: 300,
 							overlayOpacity: 80,
 							overlayBlur: 0,
+							modalLabel: '',
 							showCloseButton: true,
 							closeButtonPosition: 'inside-top-right',
 							closeButtonSize: 24,
+							closeButtonLabel: '',
 							closeOnBackdrop: true,
 							closeOnEsc: true,
 							disableBodyScroll: true,
@@ -307,7 +310,10 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 											closeButtonBgColor
 										) || undefined,
 								}}
-								aria-label={__('Close modal', 'designsetgo')}
+								aria-label={
+									closeButtonLabel?.trim() ||
+									__('Close modal', 'designsetgo')
+								}
 								disabled
 							>
 								<svg
@@ -354,10 +360,10 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 												closeButtonBgColor
 											) || undefined,
 									}}
-									aria-label={__(
-										'Close modal',
-										'designsetgo'
-									)}
+									aria-label={
+										closeButtonLabel?.trim() ||
+										__('Close modal', 'designsetgo')
+									}
 									disabled
 								>
 									<svg

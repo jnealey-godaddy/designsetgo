@@ -12,13 +12,18 @@ import { __ } from '@wordpress/i18n';
 import {
 	RangeControl,
 	SelectControl,
+	TextControl,
 	ToggleControl,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../components/shared';
 
 export default function CloseButtonSettings({ attributes, setAttributes }) {
-	const { showCloseButton, closeButtonPosition, closeButtonSize } =
-		attributes;
+	const {
+		showCloseButton,
+		closeButtonPosition,
+		closeButtonSize,
+		closeButtonLabel,
+	} = attributes;
 
 	return (
 		<>
@@ -95,6 +100,30 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 						min={16}
 						max={48}
 						step={2}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{showCloseButton && (
+				<DsgoInspectorPanel.Item
+					label={__('Close Button Label', 'designsetgo')}
+					hasValue={() => closeButtonLabel.trim() !== ''}
+					onDeselect={() => setAttributes({ closeButtonLabel: '' })}
+					isShownByDefault
+				>
+					<TextControl
+						label={__('Close Button Label', 'designsetgo')}
+						value={closeButtonLabel}
+						onChange={(value) =>
+							setAttributes({ closeButtonLabel: value })
+						}
+						placeholder={__('Close modal', 'designsetgo')}
+						help={__(
+							'Accessible label for the close button (aria-label). Defaults to "Close modal" when left blank.',
+							'designsetgo'
+						)}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>

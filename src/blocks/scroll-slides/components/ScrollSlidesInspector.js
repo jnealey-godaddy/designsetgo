@@ -16,6 +16,7 @@ import {
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
 } from '@wordpress/block-editor';
 import {
+	RangeControl,
 	ToggleControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
@@ -42,6 +43,7 @@ export default function ScrollSlidesInspector({
 		constrainWidth,
 		contentWidth,
 		overlayColor,
+		overlayOpacity,
 		navColor,
 		navActiveColor,
 	} = attributes;
@@ -61,6 +63,7 @@ export default function ScrollSlidesInspector({
 							maxHeight: '900px',
 							constrainWidth: true,
 							contentWidth: '',
+							overlayOpacity: 80,
 						})
 					}
 				>
@@ -181,6 +184,37 @@ export default function ScrollSlidesInspector({
 									{ value: 'vw', label: 'vw' },
 								]}
 								__next40pxDefaultSize
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
+
+					{overlayColor && (
+						<DsgoInspectorPanel.Item
+							label={__('Overlay Opacity', 'designsetgo')}
+							hasValue={() => overlayOpacity !== 80}
+							onDeselect={() =>
+								setAttributes({ overlayOpacity: 80 })
+							}
+							isShownByDefault
+						>
+							<RangeControl
+								label={__('Overlay Opacity', 'designsetgo')}
+								value={overlayOpacity}
+								onChange={(value) =>
+									setAttributes({
+										overlayOpacity:
+											value === undefined ? 80 : value,
+									})
+								}
+								min={0}
+								max={100}
+								step={1}
+								help={__(
+									'Opacity of the color overlay above each slide background.',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
 							/>
 						</DsgoInspectorPanel.Item>
 					)}

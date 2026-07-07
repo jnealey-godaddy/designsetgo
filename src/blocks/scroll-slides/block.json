@@ -36,6 +36,10 @@
 			"type": "string",
 			"default": ""
 		},
+		"overlayOpacity": {
+			"type": "number",
+			"default": 80
+		},
 		"overlayAutoApplied": {
 			"type": "boolean",
 			"default": false
