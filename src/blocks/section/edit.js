@@ -41,6 +41,7 @@ import {
 	convertPresetToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
 import { useBlockColors } from '../../hooks';
+import { hasOverlayStyleClass } from './utils/has-overlay-style';
 
 /**
  * Section Container Edit Component
@@ -264,11 +265,15 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
+	// Overlay enabled by explicit overlayColor OR a style-kit overlay variation
+	// (is-style-overlay-*) on className (must match save.js).
+	const hasOverlay = !!overlayColor || hasOverlayStyleClass(className);
+
 	// Build className (must match save.js)
 	const blockClassName = [
 		'dsgo-stack',
 		!constrainWidth && 'dsgo-no-width-constraint',
-		overlayColor && 'dsgo-stack--has-overlay',
+		hasOverlay && 'dsgo-stack--has-overlay',
 		(shapeDividerTop || shapeDividerBottom) &&
 			'dsgo-stack--has-shape-divider',
 	]

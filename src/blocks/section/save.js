@@ -9,6 +9,7 @@
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasOverlayStyleClass } from './utils/has-overlay-style';
 import ShapeDivider from './components/ShapeDivider';
 
 /**
@@ -56,11 +57,18 @@ export default function SectionSave({ attributes }) {
 		shapeDividerBottomBackgroundColor
 	);
 
+	// Overlay is enabled by an explicit overlayColor OR by a style-kit overlay
+	// variation (is-style-overlay-*) applied via className. In the variation
+	// case the color is supplied by the variation's stylesheet, so no inline
+	// --dsgo-overlay-color is emitted below.
+	const hasOverlay =
+		!!overlayColor || hasOverlayStyleClass(attributes.className);
+
 	// Build className with conditional no-width-constraint and overlay classes
 	const className = [
 		'dsgo-stack',
 		!constrainWidth && 'dsgo-no-width-constraint',
-		overlayColor && 'dsgo-stack--has-overlay',
+		hasOverlay && 'dsgo-stack--has-overlay',
 		(shapeDividerTop || shapeDividerBottom) &&
 			'dsgo-stack--has-shape-divider',
 	]

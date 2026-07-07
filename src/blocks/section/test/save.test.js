@@ -115,3 +115,41 @@ describe('section save - shape dividers', () => {
 		expect(bottomFlipped).not.toContain('is-flip-y');
 	});
 });
+
+describe('section save - overlay class', () => {
+	test('no overlay by default', () => {
+		const html = serialize(createBlock(metadata.name, {}));
+		expect(html).not.toContain('dsgo-stack--has-overlay');
+	});
+
+	test('overlayColor emits overlay class + inline color var', () => {
+		const html = serialize(
+			createBlock(metadata.name, { overlayColor: 'contrast' })
+		);
+		expect(html).toContain('dsgo-stack--has-overlay');
+		expect(html).toContain('--dsgo-overlay-color');
+	});
+
+	test('is-style-overlay-dark className emits overlay class without inline color var', () => {
+		const html = serialize(
+			createBlock(metadata.name, { className: 'is-style-overlay-dark' })
+		);
+		expect(html).toContain('dsgo-stack--has-overlay');
+		// Color comes from the style variation's stylesheet, not inline.
+		expect(html).not.toContain('--dsgo-overlay-color');
+	});
+
+	test('future is-style-overlay-* variations also enable the overlay', () => {
+		const html = serialize(
+			createBlock(metadata.name, { className: 'is-style-overlay-light' })
+		);
+		expect(html).toContain('dsgo-stack--has-overlay');
+	});
+
+	test('unrelated is-style-* variation does not enable the overlay', () => {
+		const html = serialize(
+			createBlock(metadata.name, { className: 'is-style-rounded' })
+		);
+		expect(html).not.toContain('dsgo-stack--has-overlay');
+	});
+});

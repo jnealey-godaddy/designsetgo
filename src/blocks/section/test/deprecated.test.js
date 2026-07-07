@@ -69,8 +69,8 @@ const OLD_SVG_MARKUP = `<!-- wp:designsetgo/section {"shapeDividerTop":"wave","s
 // background color (no explicit shapeDividerBottomColor set), matching
 // V4ShapeDivider's inheritance behavior used by deprecations v4/v5/v6.
 // Built from v4's own save() so the fixture is byte-exact.
-// deprecated.js exports deprecations newest-first: [v6, v5, v4, v3, v2, v1].
-const [, , v4Deprecation] = deprecated;
+// deprecated.js exports deprecations newest-first: [v7, v6, v5, v4, v3, v2, v1].
+const [, , , v4Deprecation] = deprecated;
 const OLD_SVG_MARKUP_BOTTOM_INHERITED = buildOldMarkup(
 	{
 		shapeDividerBottom: 'tilt',
@@ -120,8 +120,8 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 	// deprecation and shows "unexpected or invalid content". The other tests use
 	// wave/tilt, which were NOT redesigned, so they can't catch this.
 	test('deprecations reproduce frozen legacy geometry for redesigned shapes (drops)', () => {
-		// deprecated.js exports newest-first: [v6, v5, v4, v3, v2, v1].
-		const [, , v4Dep, v3Dep] = deprecated;
+		// deprecated.js exports newest-first: [v7, v6, v5, v4, v3, v2, v1].
+		const [, , , v4Dep, v3Dep] = deprecated;
 
 		[v3Dep, v4Dep].forEach((deprecation) => {
 			const markup = buildOldMarkup(
@@ -133,5 +133,73 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 			// The redesigned single-<path> arc signature must NOT appear.
 			expect(markup).not.toContain('A100,95');
 		});
+	});
+});
+
+describe('section deprecations - style-kit overlay variation migration (v7)', () => {
+	// v7 is the newest deprecation (index 0).
+	const [v7Deprecation] = deprecated;
+
+	// A section carrying a style-kit overlay variation but saved BEFORE the
+	// overlay class was derived from that variation: no dsgo-stack--has-overlay
+	// and no overlayColor attribute. Built from v7's own save() so it is a
+	// byte-faithful reproduction of that pre-change markup.
+	const OLD_OVERLAY_VARIATION_MARKUP = buildOldMarkup(
+		{ className: 'is-style-overlay-dark' },
+		v7Deprecation
+	);
+
+	test('old is-style-overlay-dark section (no overlay class) migrates silently against current save()', () => {
+		expect(OLD_OVERLAY_VARIATION_MARKUP).not.toContain(
+			'dsgo-stack--has-overlay'
+		);
+
+		const [block] = parse(OLD_OVERLAY_VARIATION_MARKUP);
+
+		// Silent migration logs an informational "Block successfully updated".
+		expect(console).toHaveInformed();
+
+		expect(block.name).toBe('designsetgo/section');
+		expect(block.isValid).toBe(true);
+		// migrate() is a passthrough — the variation class is retained and the
+		// current save() now derives the overlay class from it.
+		expect(block.attributes.className).toBe('is-style-overlay-dark');
+	});
+
+	test('isEligible detects an overlay variation lacking the overlay class', () => {
+		const html =
+			'<div class="wp-block-designsetgo-section is-style-overlay-dark dsgo-stack"><div class="dsgo-stack__inner"></div></div>';
+		expect(
+			v7Deprecation.isEligible(
+				{ className: 'is-style-overlay-dark' },
+				[],
+				{ innerHTML: html }
+			)
+		).toBe(true);
+	});
+
+	test('isEligible ignores sections that already carry the overlay class', () => {
+		const html =
+			'<div class="wp-block-designsetgo-section is-style-overlay-dark dsgo-stack dsgo-stack--has-overlay"><div class="dsgo-stack__inner"></div></div>';
+		expect(
+			v7Deprecation.isEligible(
+				{ className: 'is-style-overlay-dark' },
+				[],
+				{ innerHTML: html }
+			)
+		).toBe(false);
+	});
+
+	test('isEligible ignores sections without an overlay variation', () => {
+		const html =
+			'<div class="wp-block-designsetgo-section dsgo-stack"><div class="dsgo-stack__inner"></div></div>';
+		expect(
+			v7Deprecation.isEligible({ className: '' }, [], { innerHTML: html })
+		).toBe(false);
+	});
+
+	test('migrate is a passthrough', () => {
+		const attrs = { className: 'is-style-overlay-dark', overlayColor: '' };
+		expect(v7Deprecation.migrate(attrs)).toBe(attrs);
 	});
 });
