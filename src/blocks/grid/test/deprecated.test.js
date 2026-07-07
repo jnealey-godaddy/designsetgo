@@ -25,8 +25,10 @@ setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 registerBlockType(metadata.name, { ...metadata, save, deprecated });
 
 describe('grid deprecations - style-kit overlay variation migration', () => {
-	// deprecated.js exports newest-first: [styleVariationClasses, legacyMinWidth, v1].
-	const [styleVariationClassesDeprecation] = deprecated;
+	// deprecated.js exports: [legacyMinWidth, styleVariationClasses, v1].
+	// legacyMinWidth is first so its narrower isEligible (minmax(...) inline
+	// style) wins over styleVariationClasses when a legacy grid matches both.
+	const [, styleVariationClassesDeprecation] = deprecated;
 
 	const canonicalOverlayMarkup = serialize(
 		createBlock(metadata.name, { className: 'is-style-overlay-dark' })
@@ -97,7 +99,7 @@ describe('grid deprecations - style-kit overlay variation migration', () => {
 });
 
 describe('grid deprecations - style-kit hover variation migration', () => {
-	const [styleVariationClassesDeprecation] = deprecated;
+	const [, styleVariationClassesDeprecation] = deprecated;
 
 	const canonicalHoverMarkup = serialize(
 		createBlock(metadata.name, { className: 'is-style-hover-text-light' })
@@ -155,5 +157,64 @@ describe('grid deprecations - style-kit hover variation migration', () => {
 			hoverTextColor: '',
 		};
 		expect(styleVariationClassesDeprecation.migrate(attrs)).toBe(attrs);
+	});
+});
+
+describe('grid deprecations - legacyMinWidth precedence over styleVariationClasses', () => {
+	// A legacy grid can match BOTH deprecations' isEligible at once: a
+	// hard-coded `minmax(...)` inline style (legacyMinWidth) AND a style-kit
+	// variation class with no matching activation class (styleVariationClasses).
+	// legacyMinWidth must be listed first so it resolves for this ambiguous
+	// case — it's the only one that recovers `columnMinWidth` on migrate();
+	// styleVariationClasses.migrate() is a passthrough and would silently
+	// drop it.
+	const [legacyMinWidthDeprecation, styleVariationClassesDeprecation] =
+		deprecated;
+
+	const canonicalOverlayMarkup = serialize(
+		createBlock(metadata.name, { className: 'is-style-overlay-dark' })
+	);
+	const COMBINED_MARKUP = canonicalOverlayMarkup
+		.replace(' dsgo-grid--has-overlay', '')
+		.replace(
+			'grid-template-columns:repeat(3, 1fr)',
+			'grid-template-columns:repeat(3, minmax(200px, 1fr))'
+		);
+
+	test('combined-shape markup carries neither the overlay class nor a columnMinWidth-derived template', () => {
+		expect(COMBINED_MARKUP).not.toContain('dsgo-grid--has-overlay');
+		expect(COMBINED_MARKUP).toContain(
+			'grid-template-columns:repeat(3, minmax(200px, 1fr))'
+		);
+	});
+
+	test('both legacyMinWidth and styleVariationClasses isEligible match the combined-shape markup', () => {
+		const attributes = { className: 'is-style-overlay-dark' };
+		expect(
+			legacyMinWidthDeprecation.isEligible(attributes, [], {
+				innerHTML: COMBINED_MARKUP,
+			})
+		).toBe(true);
+		expect(
+			styleVariationClassesDeprecation.isEligible(attributes, [], {
+				innerHTML: COMBINED_MARKUP,
+			})
+		).toBe(true);
+	});
+
+	test('legacyMinWidth is listed before styleVariationClasses in the deprecation array', () => {
+		expect(deprecated.indexOf(legacyMinWidthDeprecation)).toBeLessThan(
+			deprecated.indexOf(styleVariationClassesDeprecation)
+		);
+	});
+
+	test('parsing the combined-shape markup recovers columnMinWidth instead of silently dropping it', () => {
+		const [block] = parse(COMBINED_MARKUP);
+
+		expect(console).toHaveInformed();
+
+		expect(block.name).toBe('designsetgo/grid');
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.columnMinWidth).toBe('200px');
 	});
 });

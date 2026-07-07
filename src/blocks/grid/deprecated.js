@@ -497,4 +497,10 @@ const legacyMinWidth = {
 	},
 };
 
-export default [styleVariationClasses, legacyMinWidth, v1];
+// legacyMinWidth must come before styleVariationClasses: a legacy grid can
+// match BOTH isEligible checks (a minmax(...) inline style AND a style-kit
+// variation class), and only legacyMinWidth's migrate() recovers the
+// columnMinWidth attribute from stored HTML. styleVariationClasses.migrate()
+// is a passthrough, so if it "won" for such content, columnMinWidth would be
+// silently dropped (columns collapse to 1fr) with no recovery warning.
+export default [legacyMinWidth, styleVariationClasses, v1];
