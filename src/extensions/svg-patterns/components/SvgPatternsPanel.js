@@ -20,8 +20,9 @@ import {
 	InspectorControls,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
+	useSettings,
 } from '@wordpress/block-editor';
-import { RANGES, DEFAULTS } from '../constants';
+import { RANGES, DEFAULTS, INHERIT } from '../constants';
 import {
 	PATTERNS,
 	PATTERN_IDS,
@@ -32,6 +33,7 @@ import {
 	encodeColorValue,
 	decodeColorValue,
 } from '../../../utils/encode-color-value';
+import { resolveInheritedPattern } from '../utils/resolve-inherited-pattern';
 
 /**
  * Pattern thumbnail preview
@@ -40,9 +42,10 @@ import {
  * @param {string}   props.patternId Pattern ID
  * @param {boolean}  props.isActive  Whether this pattern is selected
  * @param {Function} props.onClick   Click handler
+ * @param {string}   [props.label]   Optional label override for the tooltip
  * @return {JSX.Element} Pattern thumbnail
  */
-function PatternThumbnail({ patternId, isActive, onClick }) {
+function PatternThumbnail({ patternId, isActive, onClick, label }) {
 	const pattern = PATTERNS[patternId];
 	const bg = useMemo(
 		() => getPatternBackground(patternId, '#6b7280', 0.6, 1),
@@ -57,7 +60,7 @@ function PatternThumbnail({ patternId, isActive, onClick }) {
 		<Button
 			className={`dsgo-svg-pattern-thumb${isActive ? ' is-active' : ''}`}
 			onClick={onClick}
-			label={pattern.label}
+			label={label || pattern.label}
 			showTooltip
 		>
 			<span
@@ -95,6 +98,26 @@ export default function SvgPatternsPanel({
 		dsgoSvgPatternFixed,
 	} = attributes;
 
+	const isInherit = dsgoSvgPatternType === INHERIT;
+
+	const [themeType, themeColor, themeOpacity, themeScale] = useSettings(
+		'custom.designsetgo.svgPattern.type',
+		'custom.designsetgo.svgPattern.color',
+		'custom.designsetgo.svgPattern.opacity',
+		'custom.designsetgo.svgPattern.scale'
+	);
+
+	const inherited = useMemo(
+		() =>
+			resolveInheritedPattern({
+				type: themeType,
+				color: themeColor,
+				opacity: themeOpacity,
+				scale: themeScale,
+			}),
+		[themeType, themeColor, themeOpacity, themeScale]
+	);
+
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 
 	// Group patterns by category
@@ -113,7 +136,7 @@ export default function SvgPatternsPanel({
 	return (
 		<Fragment>
 			{/* Color Settings - In Styles > Color Panel */}
-			{dsgoSvgPatternEnabled && dsgoSvgPatternType && (
+			{dsgoSvgPatternEnabled && dsgoSvgPatternType && !isInherit && (
 				<InspectorControls group="color">
 					<ColorGradientSettingsDropdown
 						panelId={clientId}
@@ -165,6 +188,28 @@ export default function SvgPatternsPanel({
 						<>
 							{/* Pattern Picker */}
 							<div className="dsgo-svg-pattern-picker">
+								{/* Theme default (inherit) tile */}
+								<div className="dsgo-svg-pattern-picker__group">
+									<div className="dsgo-svg-pattern-picker__group-label">
+										{__('Theme', 'designsetgo')}
+									</div>
+									<div className="dsgo-svg-pattern-picker__grid">
+										<PatternThumbnail
+											patternId={inherited.type}
+											isActive={isInherit}
+											onClick={() =>
+												setAttributes({
+													dsgoSvgPatternType: INHERIT,
+												})
+											}
+											label={__(
+												'Theme default',
+												'designsetgo'
+											)}
+										/>
+									</div>
+								</div>
+
 								{Object.entries(CATEGORIES).map(
 									([catKey, catLabel]) => {
 										const ids = groupedPatterns[catKey];
@@ -211,10 +256,13 @@ export default function SvgPatternsPanel({
 									<span>
 										{__('Selected:', 'designsetgo')}{' '}
 										<strong>
-											{
-												PATTERNS[dsgoSvgPatternType]
-													?.label
-											}
+											{isInherit
+												? __(
+														'Theme default',
+														'designsetgo'
+													)
+												: PATTERNS[dsgoSvgPatternType]
+														?.label}
 										</strong>
 									</span>
 									<Button
@@ -231,37 +279,56 @@ export default function SvgPatternsPanel({
 								</HStack>
 							)}
 
-							{/* Opacity Control */}
-							<RangeControl
-								label={__('Pattern Opacity', 'designsetgo')}
-								value={dsgoSvgPatternOpacity}
-								onChange={(value) =>
-									setAttributes({
-										dsgoSvgPatternOpacity: value,
-									})
-								}
-								min={RANGES.opacity.min}
-								max={RANGES.opacity.max}
-								step={RANGES.opacity.step}
-							/>
+							{!isInherit && (
+								<>
+									{/* Opacity Control */}
+									<RangeControl
+										label={__(
+											'Pattern Opacity',
+											'designsetgo'
+										)}
+										value={dsgoSvgPatternOpacity}
+										onChange={(value) =>
+											setAttributes({
+												dsgoSvgPatternOpacity: value,
+											})
+										}
+										min={RANGES.opacity.min}
+										max={RANGES.opacity.max}
+										step={RANGES.opacity.step}
+									/>
 
-							{/* Scale Control */}
-							<RangeControl
-								label={__('Pattern Scale', 'designsetgo')}
-								value={dsgoSvgPatternScale}
-								onChange={(value) =>
-									setAttributes({
-										dsgoSvgPatternScale: value,
-									})
-								}
-								min={RANGES.scale.min}
-								max={RANGES.scale.max}
-								step={RANGES.scale.step}
-								help={__(
-									'Scale the pattern size. 1 = original size.',
-									'designsetgo'
-								)}
-							/>
+									{/* Scale Control */}
+									<RangeControl
+										label={__(
+											'Pattern Scale',
+											'designsetgo'
+										)}
+										value={dsgoSvgPatternScale}
+										onChange={(value) =>
+											setAttributes({
+												dsgoSvgPatternScale: value,
+											})
+										}
+										min={RANGES.scale.min}
+										max={RANGES.scale.max}
+										step={RANGES.scale.step}
+										help={__(
+											'Scale the pattern size. 1 = original size.',
+											'designsetgo'
+										)}
+									/>
+								</>
+							)}
+
+							{isInherit && (
+								<p className="dsgo-svg-pattern-picker__inherit-note">
+									{__(
+										'Pattern, color, opacity and scale are inherited from your theme. Choose a pattern above to customize them.',
+										'designsetgo'
+									)}
+								</p>
+							)}
 
 							{/* Fixed Background */}
 							<ToggleControl
