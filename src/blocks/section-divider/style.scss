@@ -14,6 +14,9 @@
 	// portion is clipped to the block rather than opening a horizontal page
 	// scrollbar. Mirrors .dsgo-stack--has-shape-divider on the section block.
 	overflow-x: clip;
+	// The area around/behind the masked shape (the "non-shape" background).
+	// Transparent by default so the block shows whatever sits behind it.
+	background-color: var(--dsgo-section-divider-bg, transparent);
 }
 
 :where(.dsgo-section-divider__shape) {

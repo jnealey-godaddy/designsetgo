@@ -14,7 +14,8 @@
     "width": { "type": "number", "default": 100 },
     "flipX": { "type": "boolean", "default": false },
     "flipY": { "type": "boolean", "default": false },
-    "fillColor": { "type": "string", "default": "" }
+    "fillColor": { "type": "string", "default": "" },
+    "backgroundColor": { "type": "string", "default": "" }
   },
   "supports": {
     "align": ["wide", "full"],

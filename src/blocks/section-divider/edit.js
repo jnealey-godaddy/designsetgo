@@ -18,7 +18,11 @@ import {
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 } from '@wordpress/block-editor';
 import { useBlockColors } from '../../hooks';
-import { getDividerStyle, getDividerShapeClass } from './utils';
+import {
+	getDividerStyle,
+	getDividerShapeClass,
+	getDividerWrapperStyle,
+} from './utils';
 import SectionDividerControls from './components/SectionDividerControls';
 
 export default function SectionDividerEdit({
@@ -29,7 +33,13 @@ export default function SectionDividerEdit({
 	const { settings: colorSettings, colorGradientSettings } = useBlockColors({
 		attributes,
 		setAttributes,
-		entries: [{ label: __('Fill', 'designsetgo'), attribute: 'fillColor' }],
+		entries: [
+			{
+				label: __('Background', 'designsetgo'),
+				attribute: 'backgroundColor',
+			},
+			{ label: __('Fill', 'designsetgo'), attribute: 'fillColor' },
+		],
 	});
 
 	// Derived from the same ./utils helpers save.js uses, so the editor
@@ -37,7 +47,9 @@ export default function SectionDividerEdit({
 	const style = getDividerStyle(attributes);
 	const shapeClass = getDividerShapeClass(attributes.shape);
 
-	const blockProps = useBlockProps();
+	const blockProps = useBlockProps({
+		style: getDividerWrapperStyle(attributes),
+	});
 
 	return (
 		<>

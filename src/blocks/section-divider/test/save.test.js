@@ -96,4 +96,21 @@ describe('section-divider save', () => {
 		);
 		expect(serializeWith({})).not.toContain('--dsgo-shape-width');
 	});
+
+	it('emits background var only when backgroundColor is set', () => {
+		expect(serializeWith({ backgroundColor: '#ff0000' })).toContain(
+			'--dsgo-section-divider-bg:#ff0000'
+		);
+		expect(serializeWith({})).not.toContain('--dsgo-section-divider-bg');
+	});
+
+	it('converts a preset background color to a CSS var', () => {
+		const html = serializeWith({
+			backgroundColor: 'var:preset|color|accent-3',
+		});
+		expect(html).toContain(
+			'--dsgo-section-divider-bg:var(--wp--preset--color--accent-3)'
+		);
+		expect(html).not.toContain('--dsgo-section-divider-bg:var:preset');
+	});
 });

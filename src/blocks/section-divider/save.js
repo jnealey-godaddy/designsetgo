@@ -12,14 +12,25 @@
  */
 
 import { useBlockProps } from '@wordpress/block-editor';
-import { getDividerStyle, getDividerShapeClass } from './utils';
+import {
+	getDividerStyle,
+	getDividerShapeClass,
+	getDividerWrapperStyle,
+} from './utils';
 
 export default function save({ attributes }) {
 	const style = getDividerStyle(attributes);
 	const shapeClass = getDividerShapeClass(attributes.shape);
+	const wrapperStyle = getDividerWrapperStyle(attributes);
 
 	return (
-		<div {...useBlockProps.save()}>
+		<div
+			{...useBlockProps.save({
+				style: Object.keys(wrapperStyle).length
+					? wrapperStyle
+					: undefined,
+			})}
+		>
 			<div
 				className={`dsgo-section-divider__shape dsgo-shape-divider ${shapeClass}`}
 				style={Object.keys(style).length ? style : undefined}

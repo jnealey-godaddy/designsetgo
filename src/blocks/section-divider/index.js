@@ -7,7 +7,7 @@
  * @since 2.7.0
  */
 
-import { registerBlockType } from '@wordpress/blocks';
+import { registerBlockType, registerBlockVariation } from '@wordpress/blocks';
 
 import edit from './edit';
 import save from './save';
@@ -41,4 +41,19 @@ registerBlockType(metadata.name, {
 	},
 	edit,
 	save,
+});
+
+// A freshly inserted divider should show a visible shape immediately, even
+// on themes with no `--wp--custom--designsetgo--shape-divider--color` set.
+// A default block variation only changes the INSERT-time attributes — the
+// block.json schema default for `fillColor` stays `""`, so parsed/existing
+// content and a manually cleared color still fall through to theme.json
+// global styles (see utils/getDividerStyle).
+registerBlockVariation(metadata.name, {
+	name: 'default',
+	title: metadata.title,
+	description: metadata.description,
+	isDefault: true,
+	attributes: { fillColor: '#000000' },
+	scope: ['inserter', 'block'],
 });

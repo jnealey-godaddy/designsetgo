@@ -62,3 +62,24 @@ export function getDividerStyle(attributes) {
 export function getDividerShapeClass(shape) {
 	return shape === 'inherit' ? 'is-shape-inherit' : `is-shape-${shape}`;
 }
+
+/**
+ * Build the inline CSS custom-property style object for the block wrapper
+ * (the area around/behind the masked shape). Emitted only when set, so an
+ * unset background serializes with no inline style and falls through to
+ * `transparent` in CSS. Shared by edit.js and save.js.
+ *
+ * @param {Object} attributes Block attributes.
+ * @return {Object} Inline style object (may be empty).
+ */
+export function getDividerWrapperStyle(attributes) {
+	const { backgroundColor } = attributes;
+	const style = {};
+
+	if (backgroundColor) {
+		style['--dsgo-section-divider-bg'] =
+			convertColorToCSSVar(backgroundColor);
+	}
+
+	return style;
+}
