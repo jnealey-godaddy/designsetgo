@@ -187,11 +187,11 @@ class Find_Blocks extends Abstract_Ability {
 		// Query posts.
 		$posts = get_posts( // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- suppress_filters is false (see below)
 			array(
-				'post_type'      => $post_type,
-				'post_status'    => $post_status,
-				'posts_per_page' => $limit,
-				'orderby'        => 'modified',
-				'order'          => 'DESC',
+				'post_type'        => $post_type,
+				'post_status'      => $post_status,
+				'posts_per_page'   => $limit,
+				'orderby'          => 'modified',
+				'order'            => 'DESC',
 				'suppress_filters' => false,
 			)
 		);

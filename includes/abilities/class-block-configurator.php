@@ -514,7 +514,7 @@ class Block_Configurator {
 
 					// Validate block name if expected name provided.
 					if ( '' !== $expected_block_name && $block['blockName'] !== $expected_block_name ) {
-						$counter++;
+						++$counter;
 						$modified[] = $block;
 						continue;
 					}
@@ -524,7 +524,7 @@ class Block_Configurator {
 					$updated        = true;
 				}
 
-				$counter++;
+				++$counter;
 			}
 
 			// Recursively walk inner blocks.
@@ -709,7 +709,7 @@ class Block_Configurator {
 									$content_position = $idx;
 									break;
 								}
-								$null_count++;
+								++$null_count;
 							}
 						}
 
@@ -730,7 +730,7 @@ class Block_Configurator {
 					$found                 = true;
 				}
 
-				$counter++;
+				++$counter;
 			}
 
 			// Recursively search inner blocks.
@@ -954,7 +954,7 @@ class Block_Configurator {
 		// Also update innerContent array if present.
 		// Only update the FIRST string element (the opening wrapper with wp-block-* class).
 		if ( ! empty( $block['innerContent'] ) && is_array( $block['innerContent'] ) ) {
-			$updated_first = false;
+			$updated_first         = false;
 			$block['innerContent'] = array_map(
 				function ( $content ) use ( $attributes, $data_mappings, $css_modifiers, $css_var_map, $block_name, &$updated_first ) {
 					if ( ! is_string( $content ) || $updated_first ) {

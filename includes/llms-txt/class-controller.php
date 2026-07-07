@@ -182,7 +182,7 @@ class Controller {
 	 * @return string|false The redirect URL, or false to cancel the redirect.
 	 */
 	public function prevent_trailing_slash( $redirect_url, $requested_url = '' ) {
-		$is_llms     = get_query_var( 'llms_txt' ) === '1';
+		$is_llms      = get_query_var( 'llms_txt' ) === '1';
 		$is_llms_full = get_query_var( 'llms_full_txt' ) === '1';
 
 		if ( ! $is_llms && ! $is_llms_full ) {
