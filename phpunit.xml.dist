@@ -31,5 +31,6 @@
 		<env name="WP_TESTS_TITLE" value="Test Blog"/>
 		<env name="WP_PHP_BINARY" value="php"/>
 		<env name="WP_TESTS_FORCE_KNOWN_BUGS" value="false"/>
+		<env name="WP_DEBUG" value="true"/>
 	</php>
 </phpunit>

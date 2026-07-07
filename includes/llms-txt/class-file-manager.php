@@ -274,7 +274,7 @@ class File_Manager {
 			return $filesystem->is_writable( $dir );
 		}
 
-		return is_writable( $dir ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_is_writable -- WP_Filesystem unavailable; direct check is the only remaining option.
+		return is_writable( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_is_writable -- WP_Filesystem unavailable; direct check is the only remaining option.
 	}
 
 	/**

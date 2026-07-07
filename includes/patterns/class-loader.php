@@ -277,9 +277,17 @@ class Loader {
 				&& isset( $cached['version'], $cached['hash'] )
 				&& DESIGNSETGO_VERSION === $cached['version']
 			) {
-				$patterns_data = isset( $cached['patterns'] ) && is_array( $cached['patterns'] )
-					? $cached['patterns']
-					: null;
+				$patterns_data = null;
+				if ( isset( $cached['compressed'] ) && is_string( $cached['compressed'] ) ) {
+					$raw = base64_decode( $cached['compressed'], true );
+					// Validate zlib header (0x78 CMF byte) before decompressing to avoid PHP warnings.
+					if ( false !== $raw && strlen( $raw ) >= 2 && 0x78 === ord( $raw[0] ) ) {
+						$decompressed = @gzuncompress( $raw ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Forbidden, WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress() emits E_WARNING on corrupted data; no exception-based alternative exists
+						if ( false !== $decompressed ) {
+							$patterns_data = json_decode( $decompressed, true );
+						}
+					}
+				}
 
 				if ( is_array( $patterns_data ) ) {
 					// Verify file hash still matches (catches manual file edits).
@@ -353,9 +361,9 @@ class Loader {
 			set_transient(
 				$transient_key,
 				array(
-					'version'  => DESIGNSETGO_VERSION,
-					'hash'     => self::compute_files_hash( $files ),
-					'patterns' => $patterns,
+					'version'    => DESIGNSETGO_VERSION,
+					'hash'       => self::compute_files_hash( $files ),
+					'compressed' => base64_encode( gzcompress( wp_json_encode( $patterns ) ) ),
 				),
 				$cache_duration
 			);

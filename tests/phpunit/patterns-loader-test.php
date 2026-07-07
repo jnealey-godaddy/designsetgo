@@ -60,6 +60,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 		}
 
 		// Remove any test filters.
+		remove_all_filters( 'designsetgo_pattern_cache_enabled' );
 		remove_all_filters( 'designsetgo_pattern_cache_duration' );
 		remove_all_filters( 'designsetgo_pattern_post_types_map' );
 
@@ -90,6 +91,22 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 		$method_ref = $this->reflection->getMethod( $method );
 		$method_ref->setAccessible( true );
 		return $method_ref->invokeArgs( null, $args );
+	}
+
+	/**
+	 * Build a valid compressed transient payload.
+	 *
+	 * @param array  $patterns Patterns to encode.
+	 * @param string $hash     File hash to embed.
+	 * @param string $version  Plugin version string.
+	 * @return array Transient value ready for set_transient().
+	 */
+	private function make_compressed_transient( $patterns, $hash, $version = DESIGNSETGO_VERSION ) {
+		return array(
+			'version'    => $version,
+			'hash'       => $hash,
+			'compressed' => base64_encode( gzcompress( wp_json_encode( $patterns ) ) ),
+		);
 	}
 
 	// -------------------------------------------------------------------------
@@ -397,6 +414,9 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 	 * Test that cached pattern data is returned on subsequent calls.
 	 */
 	public function test_category_patterns_returns_cached_data() {
+		// Caching is disabled when WP_DEBUG is true; force it on so the transient is consulted.
+		add_filter( 'designsetgo_pattern_cache_enabled', '__return_true' );
+
 		$fake_patterns = array(
 			'designsetgo/hero/hero-test' => array(
 				'title'   => 'Test Hero',
@@ -411,11 +431,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 
 		set_transient(
 			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
-			array(
-				'version'  => DESIGNSETGO_VERSION,
-				'hash'     => $hash,
-				'patterns' => $fake_patterns,
-			),
+			$this->make_compressed_transient( $fake_patterns, $hash ),
 			DAY_IN_SECONDS
 		);
 
@@ -430,15 +446,15 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 	public function test_stale_version_cache_rebuilds() {
 		set_transient(
 			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
-			array(
-				'version'  => '0.0.0-old',
-				'hash'     => 'fake-hash',
-				'patterns' => array(
+			$this->make_compressed_transient(
+				array(
 					'designsetgo/hero/hero-fake' => array(
 						'title'   => 'Fake',
 						'content' => 'fake',
 					),
 				),
+				'fake-hash',
+				'0.0.0-old'
 			),
 			DAY_IN_SECONDS
 		);
@@ -455,15 +471,14 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 	public function test_stale_hash_cache_rebuilds() {
 		set_transient(
 			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
-			array(
-				'version'  => DESIGNSETGO_VERSION,
-				'hash'     => 'deliberately-wrong-hash',
-				'patterns' => array(
+			$this->make_compressed_transient(
+				array(
 					'designsetgo/hero/hero-fake' => array(
 						'title'   => 'Fake',
 						'content' => 'fake',
 					),
 				),
+				'deliberately-wrong-hash'
 			),
 			DAY_IN_SECONDS
 		);
@@ -492,22 +507,116 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that non-array patterns value in cache triggers a fresh scan.
+	 * Test that a non-string 'compressed' value in cache triggers a fresh scan.
 	 */
-	public function test_non_array_patterns_cache_rebuilds() {
+	public function test_non_string_compressed_cache_rebuilds() {
 		set_transient(
 			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
 			array(
-				'version'  => DESIGNSETGO_VERSION,
-				'hash'     => 'some-hash',
-				'patterns' => 'not-an-array',
+				'version'    => DESIGNSETGO_VERSION,
+				'hash'       => 'some-hash',
+				'compressed' => array( 'not' => 'a string' ),
 			),
 			DAY_IN_SECONDS
 		);
 
 		$result = $this->call_private_method( 'get_category_patterns', array( 'hero' ) );
 
-		$this->assertIsArray( $result, 'Should return fresh array, not cached string' );
+		$this->assertIsArray( $result, 'Should return fresh array when compressed is not a string' );
+		$this->assertNotEmpty( $result, 'Should return real patterns after bad cache' );
+	}
+
+	/**
+	 * Test that an invalid base64 string in 'compressed' triggers a fresh scan.
+	 */
+	public function test_corrupted_base64_cache_rebuilds() {
+		set_transient(
+			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			array(
+				'version'    => DESIGNSETGO_VERSION,
+				'hash'       => 'some-hash',
+				'compressed' => '!!! not valid base64 !!!',
+			),
+			DAY_IN_SECONDS
+		);
+
+		$result = $this->call_private_method( 'get_category_patterns', array( 'hero' ) );
+
+		$this->assertIsArray( $result );
+		$this->assertNotEmpty( $result, 'Should return real patterns after invalid base64' );
+	}
+
+	/**
+	 * Test that base64-encoded bytes with wrong zlib header trigger a fresh scan.
+	 *
+	 * GzCompress() always produces a 0x78 CMF byte first. Data starting with a
+	 * different byte fails the header check before gzuncompress() is called.
+	 */
+	public function test_invalid_zlib_header_cache_rebuilds() {
+		// 0xFF is not a valid zlib CMF byte.
+		$bad_raw    = "\xFF\xFE" . str_repeat( 'x', 20 );
+		$compressed = base64_encode( $bad_raw );
+
+		set_transient(
+			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			array(
+				'version'    => DESIGNSETGO_VERSION,
+				'hash'       => 'some-hash',
+				'compressed' => $compressed,
+			),
+			DAY_IN_SECONDS
+		);
+
+		$result = $this->call_private_method( 'get_category_patterns', array( 'hero' ) );
+
+		$this->assertIsArray( $result );
+		$this->assertNotEmpty( $result, 'Should return real patterns after invalid zlib header' );
+	}
+
+	/**
+	 * Test that valid zlib header but corrupted body triggers a fresh scan.
+	 */
+	public function test_corrupted_zlib_body_cache_rebuilds() {
+		// Valid CMF byte (0x78) but the rest is garbage — gzuncompress() will return false.
+		$bad_raw    = "\x78\x9C" . str_repeat( "\xAB", 20 );
+		$compressed = base64_encode( $bad_raw );
+
+		set_transient(
+			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			array(
+				'version'    => DESIGNSETGO_VERSION,
+				'hash'       => 'some-hash',
+				'compressed' => $compressed,
+			),
+			DAY_IN_SECONDS
+		);
+
+		$result = $this->call_private_method( 'get_category_patterns', array( 'hero' ) );
+
+		$this->assertIsArray( $result );
+		$this->assertNotEmpty( $result, 'Should return real patterns after corrupted zlib body' );
+	}
+
+	/**
+	 * Test that valid zlib wrapping non-array JSON triggers a fresh scan.
+	 */
+	public function test_non_array_json_compressed_cache_rebuilds() {
+		$compressed = base64_encode( gzcompress( '"just a string"' ) );
+
+		set_transient(
+			Loader::CACHE_TRANSIENT_PREFIX . 'hero',
+			array(
+				'version'    => DESIGNSETGO_VERSION,
+				'hash'       => 'some-hash',
+				'compressed' => $compressed,
+			),
+			DAY_IN_SECONDS
+		);
+
+		$result = $this->call_private_method( 'get_category_patterns', array( 'hero' ) );
+
+		$this->assertIsArray( $result );
+		$this->assertNotEmpty( $result, 'Should return real patterns when decompressed JSON is not an array' );
 	}
 
 	/**
@@ -525,11 +634,7 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 		foreach ( array( 'hero', 'homepage', 'content' ) as $category ) {
 			set_transient(
 				Loader::CACHE_TRANSIENT_PREFIX . $category,
-				array(
-					'version'  => DESIGNSETGO_VERSION,
-					'hash'     => 'test',
-					'patterns' => array(),
-				),
+				$this->make_compressed_transient( array(), 'test' ),
 				DAY_IN_SECONDS
 			);
 		}
@@ -859,6 +964,9 @@ class Test_Patterns_Loader extends WP_UnitTestCase {
 	 */
 	public function test_cache_duration_filter() {
 		$custom_duration = HOUR_IN_SECONDS;
+
+		// Enable caching for this test (normally disabled when WP_DEBUG is true).
+		add_filter( 'designsetgo_pattern_cache_enabled', '__return_true' );
 
 		add_filter(
 			'designsetgo_pattern_cache_duration',
