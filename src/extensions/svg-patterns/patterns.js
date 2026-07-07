@@ -117,10 +117,13 @@ export function getPatternBackground(patternId, color, opacity, scale = 1) {
 		return null;
 	}
 
-	const pattern = PATTERNS[patternId];
-	if (!pattern) {
+	// Own-property check, not a truthy bracket lookup: inherited
+	// Object.prototype names ("constructor", "toString", …) must not resolve
+	// to a function here and blow up the destructure below.
+	if (!Object.prototype.hasOwnProperty.call(PATTERNS, patternId)) {
 		return null;
 	}
+	const pattern = PATTERNS[patternId];
 
 	const safeScale = Math.max(0.25, Math.min(4, Number(scale) || 1));
 	const svg = buildPatternSvg(pattern, color, opacity);

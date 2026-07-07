@@ -36,3 +36,20 @@ export const RANGES = {
 		step: 0.25,
 	},
 };
+
+/**
+ * Sentinel value for dsgoSvgPatternType meaning "inherit the theme's
+ * SVG pattern preset from settings.custom.designsetgo.svgPattern".
+ */
+export const INHERIT = 'inherit';
+
+/**
+ * In-plugin fallback preset used when a block inherits but the theme
+ * (Style Kit) sets nothing. Each field falls back independently.
+ */
+export const INHERIT_FALLBACK = {
+	type: 'dot-grid',
+	color: DEFAULTS.color,
+	opacity: DEFAULTS.opacity,
+	scale: DEFAULTS.scale,
+};
