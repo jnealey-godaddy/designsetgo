@@ -291,9 +291,9 @@ class Controller {
 	 * Handle post save - invalidate cache and regenerate markdown file.
 	 *
 	 * @param int      $post_id Post ID.
-	 * @param \WP_Post $post    Post object.
+	 * @param \WP_Post $_post   Post object (unused).
 	 */
-	public function handle_post_save( int $post_id, \WP_Post $post ): void {
+	public function handle_post_save( int $post_id, \WP_Post $_post ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress hook callback signature
 		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
 			return;
 		}

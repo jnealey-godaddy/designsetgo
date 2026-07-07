@@ -1052,10 +1052,10 @@ class Plugin {
 	 * Blocks with explicit animations or "no animation" override are unchanged.
 	 *
 	 * @param string $block_content Rendered block content.
-	 * @param array  $block         Block data including attrs.
+	 * @param array  $_block        Block data including attrs (unused).
 	 * @return string Modified block content.
 	 */
-	public function apply_default_icon_button_hover( $block_content, $block ) {
+	public function apply_default_icon_button_hover( $block_content, $_block ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress hook callback signature
 		if ( empty( $block_content ) ) {
 			return $block_content;
 		}
@@ -1112,10 +1112,10 @@ class Plugin {
 	 * admin settings > theme.json > none.
 	 *
 	 * @param string $block_content Rendered block content.
-	 * @param array  $block         Block data including attrs.
+	 * @param array  $_block        Block data including attrs (unused).
 	 * @return string Modified block content.
 	 */
-	public function apply_default_form_button_hover( $block_content, $block ) {
+	public function apply_default_form_button_hover( $block_content, $_block ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress hook callback signature
 		if ( empty( $block_content ) ) {
 			return $block_content;
 		}

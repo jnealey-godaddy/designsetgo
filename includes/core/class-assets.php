@@ -286,13 +286,13 @@ class Assets {
 	 * Defers non-critical block CSS using media attribute technique.
 	 * Reduces render-blocking CSS by ~100-160ms per PageSpeed Insights.
 	 *
-	 * @param string $html   Link tag HTML.
-	 * @param string $handle Style handle.
-	 * @param string $href   Style URL.
-	 * @param string $media  Media attribute.
+	 * @param string $html    Link tag HTML.
+	 * @param string $handle  Style handle.
+	 * @param string $_href   Style URL (unused).
+	 * @param string $_media  Media attribute (unused).
 	 * @return string Modified link tag.
 	 */
-	public function optimize_css_loading( $html, $handle, $href, $media ) {
+	public function optimize_css_loading( $html, $handle, $_href, $_media ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress hook callback signature
 		// Only modify our block styles on frontend.
 		if ( is_admin() || strpos( $handle, 'designsetgo-' ) === false ) {
 			return $html;

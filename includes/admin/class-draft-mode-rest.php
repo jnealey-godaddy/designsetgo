@@ -489,7 +489,7 @@ class Draft_Mode_REST {
 	 * @param \WP_REST_Request $_request Request object (unused).
 	 * @return bool True if user has permission, false otherwise.
 	 */
-	public function check_read_permission( $_request ) {
+	public function check_read_permission( $_request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- REST API callback signature
 		return current_user_can( 'edit_pages' );
 	}
 

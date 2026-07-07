@@ -1055,10 +1055,10 @@ class Block_Configurator {
 	 * @param array<string, string> $data_mappings Data attribute mappings.
 	 * @param array<string, mixed>  $css_modifiers CSS modifier mappings.
 	 * @param array<string, string> $css_var_map  CSS variable mappings.
-	 * @param string                $block_name   Block name.
+	 * @param string                $_block_name  Block name (unused).
 	 * @return string Updated HTML.
 	 */
-	private static function update_html_content( string $html, array $attributes, array $data_mappings, array $css_modifiers, array $css_var_map, string $block_name ): string {
+	private static function update_html_content( string $html, array $attributes, array $data_mappings, array $css_modifiers, array $css_var_map, string $_block_name ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- ability interface signature
 		foreach ( $attributes as $key => $value ) {
 			$string_value = self::value_to_string( $value );
 
