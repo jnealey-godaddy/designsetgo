@@ -11,6 +11,10 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import {
+	hasOverlayStyleClass,
+	hoverVariationClasses,
+} from '../../utils/style-variation-classes';
 
 /**
  * Grid Container Save Component
@@ -31,6 +35,7 @@ export default function GridSave({ attributes }) {
 		rowGap,
 		columnGap,
 		alignItems,
+		overlayColor,
 		hoverBackgroundColor,
 		hoverTextColor,
 		hoverIconBackgroundColor,
@@ -38,13 +43,24 @@ export default function GridSave({ attributes }) {
 		style,
 	} = attributes;
 
-	// Build className with conditional classes
+	// Overlay is enabled by an explicit overlayColor OR by a style-kit overlay
+	// variation (is-style-overlay-*) applied via className. In the variation
+	// case the color is supplied by the variation's stylesheet, so no inline
+	// --dsgo-overlay-color is emitted below.
+	const hasOverlay =
+		!!overlayColor || hasOverlayStyleClass(attributes.className);
+
+	// Build className with conditional classes. Hover activation classes are
+	// emitted for hover style variations so their class-gated CSS can activate
+	// (the inline-`style` gate can't see a variation stylesheet's vars).
 	const className = [
 		'dsgo-grid',
 		`dsgo-grid-cols-${desktopColumns}`,
 		`dsgo-grid-cols-tablet-${tabletColumns}`,
 		`dsgo-grid-cols-mobile-${mobileColumns}`,
 		!constrainWidth && 'dsgo-no-width-constraint',
+		hasOverlay && 'dsgo-grid--has-overlay',
+		...hoverVariationClasses(attributes.className, 'dsgo-grid'),
 	]
 		.filter(Boolean)
 		.join(' ');
@@ -70,6 +86,10 @@ export default function GridSave({ attributes }) {
 				'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
 					hoverButtonBackgroundColor
 				),
+			}),
+			...(overlayColor && {
+				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+				'--dsgo-overlay-opacity': '0.8',
 			}),
 		},
 	});

@@ -9,6 +9,11 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import {
+	hasOverlayStyleClass,
+	hoverVariationClasses,
+} from '../../utils/style-variation-classes';
+import metadata from './block.json';
 
 /**
  * Convert WordPress vertical alignment value to CSS align-items value.
@@ -100,6 +105,137 @@ const sharedSupports = {
 			style: true,
 			width: true,
 		},
+	},
+};
+
+// Version 5: Before style-kit overlay/hover variation detection. The current
+// save() also emits `dsgo-flex--has-overlay` when a style-kit overlay
+// variation (`is-style-overlay-*`) is present on className, and emits
+// `dsgo-flex--has-hover-{text,icon,button}` activation classes for the
+// matching `is-style-hover-*` variation families — both mirroring Section's
+// behavior. Rows saved with such a variation but no matching class in their
+// stored HTML fail validation against the new save().
+//
+// isEligible targets exactly that signature (a variation on className with
+// no matching class in the stored HTML) so those rows migrate SILENTLY.
+// save() reproduces this block's pre-change output (overlay class from
+// overlayColor only, no hover activation classes) so it also byte-matches on
+// WP versions that still validate the deprecation's save() before migrating.
+// migrate() is a passthrough — only the serialised class differs, not the
+// attribute values; the current save() then re-renders with the classes
+// derived from the variation.
+const v5 = {
+	supports: metadata.supports,
+	attributes: { ...metadata.attributes },
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		if (!innerHTML || !innerHTML.includes('dsgo-flex')) {
+			return false;
+		}
+
+		const overlayMismatch =
+			hasOverlayStyleClass(attributes.className) &&
+			!innerHTML.includes('dsgo-flex--has-overlay');
+
+		const hoverMismatch = hoverVariationClasses(
+			attributes.className,
+			'dsgo-flex'
+		).some((activationClass) => !innerHTML.includes(activationClass));
+
+		return overlayMismatch || hoverMismatch;
+	},
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			constrainWidth,
+			contentWidth,
+			overlayColor,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			mobileStack,
+			layout,
+		} = attributes;
+
+		// Pre-change className: overlay class from overlayColor ONLY, no hover
+		// activation classes.
+		const className = [
+			'dsgo-flex',
+			mobileStack && 'dsgo-flex--mobile-stack',
+			!constrainWidth && 'dsgo-no-width-constraint',
+			overlayColor && 'dsgo-flex--has-overlay',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+		const blockProps = useBlockProps.save({
+			className,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+				...(overlayColor && {
+					'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+					'--dsgo-overlay-opacity': '0.8',
+				}),
+			},
+		});
+
+		const rawGapValue = attributes.style?.spacing?.blockGap;
+		const gapValue = convertPresetToCSSVar(rawGapValue);
+
+		if (blockProps.style?.gap) {
+			delete blockProps.style.gap;
+		}
+
+		const alignItems = getAlignItemsValue(layout?.verticalAlignment);
+		const innerStyle = {
+			display: 'flex',
+			justifyContent: layout?.justifyContent || 'left',
+			...(alignItems && { alignItems }),
+			flexWrap: layout?.flexWrap || 'nowrap',
+			...(gapValue && { gap: gapValue }),
+		};
+
+		if (constrainWidth) {
+			innerStyle.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyle.marginLeft = 'auto';
+			innerStyle.marginRight = 'auto';
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-flex__inner',
+			style: innerStyle,
+		});
+
+		return (
+			<TagName {...blockProps}>
+				<div {...innerBlocksProps} />
+			</TagName>
+		);
+	},
+	migrate(attributes) {
+		// Only the serialised class differs; the current save() derives it
+		// from the style variation on className, so no attribute change.
+		return attributes;
 	},
 };
 
@@ -690,4 +826,4 @@ const v1 = {
 	},
 };
 
-export default [v4, v3, v2, v1];
+export default [v5, v4, v3, v2, v1];

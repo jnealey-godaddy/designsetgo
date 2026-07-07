@@ -12,6 +12,10 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import {
+	hasOverlayStyleClass,
+	hoverVariationClasses,
+} from '../../utils/style-variation-classes';
 
 /**
  * Convert WordPress vertical alignment value to CSS align-items value
@@ -58,12 +62,22 @@ export default function RowSave({ attributes }) {
 		layout,
 	} = attributes;
 
-	// Build className with conditional classes
+	// Overlay is enabled by an explicit overlayColor OR by a style-kit overlay
+	// variation (is-style-overlay-*) applied via className. In the variation
+	// case the color is supplied by the variation's stylesheet, so no inline
+	// --dsgo-overlay-color is emitted below.
+	const hasOverlay =
+		!!overlayColor || hasOverlayStyleClass(attributes.className);
+
+	// Build className with conditional classes. Hover activation classes are
+	// emitted for hover style variations so their class-gated CSS can activate
+	// (the inline-`style` gate can't see a variation stylesheet's vars).
 	const className = [
 		'dsgo-flex',
 		mobileStack && 'dsgo-flex--mobile-stack',
 		!constrainWidth && 'dsgo-no-width-constraint',
-		overlayColor && 'dsgo-flex--has-overlay',
+		hasOverlay && 'dsgo-flex--has-overlay',
+		...hoverVariationClasses(attributes.className, 'dsgo-flex'),
 	]
 		.filter(Boolean)
 		.join(' ');

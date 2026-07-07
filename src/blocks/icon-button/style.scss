@@ -146,13 +146,15 @@
 // CRITICAL: Check if PARENT container has the variable, not the button itself
 // CRITICAL: Use __inner wrapper to avoid triggering on outer padding areas
 // CRITICAL: Use direct child selector (>) to only affect direct children
-// The `--has-hover-button` selector adds Section style-variation support
-// (is-style-hover-button-*) alongside the inline-var (attribute) gate. The class
-// is only emitted for that variation, so the !important override never clobbers
-// a button whose parent has no hover-button color set.
+// The `--has-hover-button` selectors add Row, Grid, and Section style-variation
+// support (is-style-hover-button-*) alongside the inline-var (attribute) gate.
+// The class is only emitted for that variation, so the !important override
+// never clobbers a button whose parent has no hover-button color set.
 .dsgo-flex[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-flex__inner > .dsgo-icon-button,
 .dsgo-grid[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-grid__inner > .dsgo-icon-button,
 .dsgo-stack[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-stack__inner > .dsgo-icon-button,
+.dsgo-flex--has-hover-button:hover .dsgo-flex__inner > .dsgo-icon-button,
+.dsgo-grid--has-hover-button:hover .dsgo-grid__inner > .dsgo-icon-button,
 .dsgo-stack--has-hover-button:hover .dsgo-stack__inner > .dsgo-icon-button {
 	background-color: var(--dsgo-parent-hover-button-bg) !important;
 	transition: background-color 0.3s ease;

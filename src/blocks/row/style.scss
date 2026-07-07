@@ -166,4 +166,28 @@
 			}
 		}
 	}
+
+	// Hover text color activation class — for style-kit `is-style-hover-text-*`
+	// variations, whose stylesheet supplies the var (the inline `[style*=…]`
+	// gate can't see a variation stylesheet's var).
+	&--has-hover-text:hover {
+		color: var(--dsgo-hover-text-color) !important;
+
+		h1,
+		h2,
+		h3,
+		h4,
+		h5,
+		h6,
+		p,
+		a,
+		span,
+		li,
+		td,
+		th,
+		.wp-block-heading,
+		.wp-block-paragraph {
+			color: var(--dsgo-hover-text-color) !important;
+		}
+	}
 }
