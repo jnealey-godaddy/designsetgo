@@ -20,7 +20,6 @@ import {
 	InspectorControls,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
-	useSettings,
 } from '@wordpress/block-editor';
 import { RANGES, DEFAULTS, INHERIT } from '../constants';
 import {
@@ -33,7 +32,7 @@ import {
 	encodeColorValue,
 	decodeColorValue,
 } from '../../../utils/encode-color-value';
-import { resolveInheritedPattern } from '../utils/resolve-inherited-pattern';
+import { useInheritedSvgPattern } from '../use-inherited-svg-pattern';
 
 /**
  * Pattern thumbnail preview
@@ -100,23 +99,8 @@ export default function SvgPatternsPanel({
 
 	const isInherit = dsgoSvgPatternType === INHERIT;
 
-	const [themeType, themeColor, themeOpacity, themeScale] = useSettings(
-		'custom.designsetgo.svgPattern.type',
-		'custom.designsetgo.svgPattern.color',
-		'custom.designsetgo.svgPattern.opacity',
-		'custom.designsetgo.svgPattern.scale'
-	);
-
-	const inherited = useMemo(
-		() =>
-			resolveInheritedPattern({
-				type: themeType,
-				color: themeColor,
-				opacity: themeOpacity,
-				scale: themeScale,
-			}),
-		[themeType, themeColor, themeOpacity, themeScale]
-	);
+	// Resolved theme preset, shared with the editor preview HOC via this hook.
+	const inherited = useInheritedSvgPattern();
 
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 

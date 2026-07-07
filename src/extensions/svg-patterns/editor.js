@@ -8,15 +8,12 @@ import { addFilter } from '@wordpress/hooks';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { Fragment, useMemo } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
-import {
-	store as blockEditorStore,
-	useSettings,
-} from '@wordpress/block-editor';
+import { store as blockEditorStore } from '@wordpress/block-editor';
 import SvgPatternsPanel from './components/SvgPatternsPanel';
 import { SUPPORTED_BLOCKS, DEFAULTS, INHERIT } from './constants';
 import { getPatternBackground, PATTERNS, PATTERN_IDS } from './patterns';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
-import { resolveInheritedPattern } from './utils/resolve-inherited-pattern';
+import { useInheritedSvgPattern } from './use-inherited-svg-pattern';
 
 /**
  * Add SVG pattern controls to the block editor
@@ -67,26 +64,9 @@ const addSvgPatternEditorStyles = createHigherOrderComponent(
 
 			const isInherit = dsgoSvgPatternType === INHERIT;
 
-			// Theme preset lives at settings.custom.designsetgo.svgPattern.
-			// useSettings reads one leaf at a time; pull the four fields we need.
-			const [themeType, themeColor, themeOpacity, themeScale] =
-				useSettings(
-					'custom.designsetgo.svgPattern.type',
-					'custom.designsetgo.svgPattern.color',
-					'custom.designsetgo.svgPattern.opacity',
-					'custom.designsetgo.svgPattern.scale'
-				);
-
-			const inherited = useMemo(
-				() =>
-					resolveInheritedPattern({
-						type: themeType,
-						color: themeColor,
-						opacity: themeOpacity,
-						scale: themeScale,
-					}),
-				[themeType, themeColor, themeOpacity, themeScale]
-			);
+			// Theme preset (settings.custom.designsetgo.svgPattern), resolved
+			// with fallbacks. Shared with the inspector panel via this hook.
+			const inherited = useInheritedSvgPattern();
 
 			const isActive =
 				dsgoSvgPatternEnabled &&

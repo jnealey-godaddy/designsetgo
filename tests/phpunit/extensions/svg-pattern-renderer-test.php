@@ -40,6 +40,9 @@ class SvgPatternRendererTest extends WP_UnitTestCase {
 	 * Remove any injected theme.json data between tests.
 	 */
 	public function tear_down(): void {
+		// The renderer's constructor registers this on every set_up(); drop it
+		// so callbacks against dead instances don't accumulate across the suite.
+		remove_filter( 'render_block', array( $this->renderer, 'inject_svg_pattern' ), 10 );
 		remove_all_filters( 'wp_theme_json_data_theme' );
 		wp_clean_theme_json_cache();
 		parent::tear_down();
