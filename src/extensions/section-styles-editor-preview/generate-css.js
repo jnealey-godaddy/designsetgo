@@ -69,11 +69,14 @@ function isSet(value) {
  * references (`var:preset|color|accent-2` → `var(--wp--preset--color--accent-2)`).
  *
  * Also strips characters that could terminate a declaration or rule (`{`, `}`,
- * `;`). Values come straight from the *unsanitized* edited Global Styles record
- * and are written via `textContent`, so this is the only guard against a
- * crafted value escaping its rule and injecting sibling CSS into the canvas.
- * Legitimate CSS values (colors, lengths, `var()`, gradients, `calc()`) never
- * contain these characters, so stripping is a no-op for real data.
+ * `;`) and the backslash (`\`) that CSS would otherwise decode into those same
+ * characters via hex escapes (e.g. `\7b` → `{`), which would slip past a
+ * literal-character strip. Values come straight from the *unsanitized* edited
+ * Global Styles record and are written via `textContent`, so this is the only
+ * guard against a crafted value escaping its rule and injecting sibling CSS
+ * into the canvas. Legitimate CSS values (colors, lengths, `var()`, gradients,
+ * `calc()`) never contain these characters, so stripping is a no-op for real
+ * data.
  *
  * @param {*} value Raw style value.
  * @return {*} CSS-ready value.
@@ -91,7 +94,7 @@ export function toCssValue(value) {
 				.join('--')})`
 		: value;
 
-	return resolved.replace(/[{};]/g, '');
+	return resolved.replace(/[{};\\]/g, '');
 }
 
 /**
@@ -228,7 +231,7 @@ export function variationDeclarations(variation) {
 		out.push(`font-size:${toCssValue(typography.fontSize)}`);
 	}
 	if (isSet(typography.lineHeight)) {
-		out.push(`line-height:${typography.lineHeight}`);
+		out.push(`line-height:${toCssValue(typography.lineHeight)}`);
 	}
 
 	return out.join(';');

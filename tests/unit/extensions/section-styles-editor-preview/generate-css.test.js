@@ -48,6 +48,13 @@ describe('toCssValue', () => {
 			'var(--wp--preset--color--ab)'
 		);
 	});
+
+	it('strips backslashes so CSS hex escapes cannot re-form rule-breaking characters', () => {
+		// `\7b`/`\7d` would decode to `{`/`}` in the browser's CSS tokenizer,
+		// slipping past a literal-character strip. Removing the backslash
+		// neutralizes the escape.
+		expect(toCssValue('0\\7b color:red\\7d')).toBe('07b color:red7d');
+	});
 });
 
 describe('variationDeclarations', () => {
@@ -150,6 +157,20 @@ describe('variationDeclarations', () => {
 				'box-shadow:var(--wp--preset--shadow--natural);' +
 				'font-size:var(--wp--preset--font-size--large)'
 		);
+	});
+
+	it('routes line-height through toCssValue (preset resolution + injection strip)', () => {
+		expect(
+			variationDeclarations({
+				typography: { lineHeight: 'var:custom|lineHeight|tight' },
+			})
+		).toBe('line-height:var(--wp--custom--line-height--tight)');
+		// Injection guard applies to line-height like every other property.
+		expect(
+			variationDeclarations({
+				typography: { lineHeight: '1.5;}body{display:none' },
+			})
+		).toBe('line-height:1.5bodydisplay:none');
 	});
 });
 
