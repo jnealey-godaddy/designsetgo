@@ -7,6 +7,7 @@ import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
  * Internal dependencies
  */
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { overlayOpacityFraction } from '../../utils/overlay-opacity';
 
 export default function Save({ attributes }) {
 	const {
@@ -29,13 +30,6 @@ export default function Save({ attributes }) {
 		.filter(Boolean)
 		.join(' ');
 
-	// Clamp to [0, 100] and fall back to the 80 default for non-finite values,
-	// mirroring render.php so the JS and PHP paths agree on out-of-range input.
-	const overlayOpacityFraction =
-		(Number.isFinite(overlayOpacity)
-			? Math.min(100, Math.max(0, overlayOpacity))
-			: 80) / 100;
-
 	const blockProps = useBlockProps.save({
 		className,
 		'data-dsgo-min-height': minHeight || '100vh',
@@ -43,7 +37,9 @@ export default function Save({ attributes }) {
 		style: {
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': String(overlayOpacityFraction),
+				'--dsgo-overlay-opacity': String(
+					overlayOpacityFraction(overlayOpacity)
+				),
 			}),
 			...(navColor && {
 				'--dsgo-nav-color': convertColorToCSSVar(navColor),

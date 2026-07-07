@@ -19,6 +19,7 @@ import { useMemo, useState } from '@wordpress/element';
  */
 import './editor.scss';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { overlayOpacityFraction } from '../../utils/overlay-opacity';
 import ScrollSlidesPlaceholder from './components/ScrollSlidesPlaceholder';
 import ScrollSlidesInspector from './components/ScrollSlidesInspector';
 import useQueryHostPreview, {
@@ -166,13 +167,6 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 
 	const hasEditorBg = Object.keys(editorBgStyle).length > 0;
 
-	// Clamp to [0, 100] and fall back to the 80 default for non-finite values,
-	// mirroring render.php and save.js so the preview matches the frontend.
-	const overlayOpacityFraction =
-		(Number.isFinite(overlayOpacity)
-			? Math.min(100, Math.max(0, overlayOpacity))
-			: 80) / 100;
-
 	const blockProps = useBlockProps({
 		className: blockClassName,
 		'data-dsgo-active-slide': clampedActive,
@@ -180,7 +174,9 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 			minHeight: editorHeight,
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': String(overlayOpacityFraction),
+				'--dsgo-overlay-opacity': String(
+					overlayOpacityFraction(overlayOpacity)
+				),
 			}),
 			...(navColor && {
 				'--dsgo-nav-color': convertColorToCSSVar(navColor),
