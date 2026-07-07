@@ -84,7 +84,7 @@ class Icon_Injector {
 			return;
 		}
 
-		$asset = include $asset_file;
+		$asset = include $asset_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 		wp_register_script(
 			'designsetgo-icon-injector',

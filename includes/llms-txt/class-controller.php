@@ -122,7 +122,7 @@ class Controller {
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
 		add_action( 'admin_notices', array( $this->conflict_detector, 'maybe_show_notice' ) );
 		add_action( 'admin_init', array( $this->conflict_detector, 'handle_dismiss_action' ) );
-		add_filter( 'robots_txt', array( $this, 'add_to_robots_txt' ), 10, 2 );
+		add_filter( 'robots_txt', array( $this, 'add_to_robots_txt' ), 10, 2 ); // phpcs:ignore WordPressVIPMinimum.Hooks.RestrictedHooks.robots_txt -- llms.txt is a static file pointer; cache flush is done on llms-txt settings save
 	}
 
 	/**

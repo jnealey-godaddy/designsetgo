@@ -159,7 +159,7 @@ class Draft_Mode_Preview {
 
 		// Check if user has opted out via cookie.
 		if ( isset( $_COOKIE[ self::COOKIE_LIVE_MODE ] ) ) {
-			$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_LIVE_MODE ] ) );
+			$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_LIVE_MODE ] ) ); // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- admin-only draft-mode endpoint; not subject to page caching
 			if ( ! empty( $cookie_value ) ) {
 				// Cookie stores the opt-out timestamp. If a new draft was
 				// created after the user opted out, auto-reset to preview.
@@ -313,7 +313,7 @@ class Draft_Mode_Preview {
 					'samesite' => 'Lax',
 				)
 			);
-			$_COOKIE[ self::COOKIE_LIVE_MODE ] = $now;
+			$_COOKIE[ self::COOKIE_LIVE_MODE ] = $now; // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- admin-only draft-mode endpoint; not subject to page caching
 		} else {
 			// Opt back into preview — remove cookie.
 			setcookie(
@@ -328,7 +328,7 @@ class Draft_Mode_Preview {
 					'samesite' => 'Lax',
 				)
 			);
-			unset( $_COOKIE[ self::COOKIE_LIVE_MODE ] );
+			unset( $_COOKIE[ self::COOKIE_LIVE_MODE ] ); // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- admin-only draft-mode endpoint; not subject to page caching
 		}
 
 		// Reset cached state.

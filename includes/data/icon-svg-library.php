@@ -286,7 +286,7 @@ function designsetgo_get_icon_aliases() {
 		return $aliases;
 	}
 
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local plugin file.
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Reading local plugin file.
 	$aliases = json_decode( file_get_contents( $file ), true ) ?? array();
 
 	return $aliases;

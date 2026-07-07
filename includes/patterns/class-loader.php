@@ -343,7 +343,7 @@ class Loader {
 			}
 
 			// Load pattern file.
-			$pattern = require $real_file;
+			$pattern = require $real_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path validated against plugin directory via realpath() before this point
 
 			// Validate pattern structure.
 			if ( is_array( $pattern ) && isset( $pattern['content'] ) ) {

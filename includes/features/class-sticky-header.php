@@ -72,7 +72,7 @@ class Sticky_Header {
 		$asset_file = DESIGNSETGO_PATH . 'build/utils/sticky-header.asset.php';
 
 		if ( file_exists( $asset_file ) ) {
-			$asset = include $asset_file;
+			$asset = include $asset_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 			// Enqueue compiled CSS (extracted by webpack from sticky-header.scss).
 			$css_file = DESIGNSETGO_PATH . 'build/utils/sticky-header.css';

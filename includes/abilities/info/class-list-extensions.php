@@ -292,7 +292,7 @@ class List_Extensions extends Abstract_Ability {
 
 		foreach ( $files as $file ) {
 			$name   = basename( $file, '.php' );
-			$config = include $file;
+			$config = include $file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory via glob()
 
 			if ( ! is_array( $config ) || ! isset( $config['attributes'] ) ) {
 				continue;

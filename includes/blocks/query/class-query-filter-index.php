@@ -382,7 +382,7 @@ class FilterIndex {
 			}
 		}
 
-		wp_cache_set( $cache_key, $counts, self::CACHE_GROUP, self::CACHE_TTL );
+		wp_cache_set( $cache_key, $counts, self::CACHE_GROUP, self::CACHE_TTL ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- CACHE_TTL = 300 seconds (VIP minimum)
 
 		return $counts;
 	}

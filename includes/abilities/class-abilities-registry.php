@@ -84,7 +84,7 @@ class Abilities_Registry {
 		$base_path = __DIR__;
 
 		// Load base abstract classes (already loaded, but for clarity).
-		require_once $base_path . '/class-abstract-ability.php';
+		require_once $base_path . '/class-abstract-ability.php'; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory
 
 		// Load helper classes (must be before abstract-configurator-ability which depends on Block_Schema_Loader).
 		$helpers = array(
@@ -97,12 +97,12 @@ class Abilities_Registry {
 		foreach ( $helpers as $helper ) {
 			$helper_path = $base_path . '/' . $helper;
 			if ( file_exists( $helper_path ) ) {
-				require_once $helper_path;
+				require_once $helper_path; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory
 			}
 		}
 
 		// Load abstract configurator after helpers (depends on Block_Schema_Loader).
-		require_once $base_path . '/class-abstract-configurator-ability.php';
+		require_once $base_path . '/class-abstract-configurator-ability.php'; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory
 
 		// Load ability classes from subdirectories.
 		$this->load_abilities_from_directory( $base_path . '/info' );
@@ -130,7 +130,7 @@ class Abilities_Registry {
 		}
 
 		foreach ( $files as $file ) {
-			require_once $file;
+			require_once $file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory via glob()
 		}
 	}
 

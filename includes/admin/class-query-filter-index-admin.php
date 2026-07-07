@@ -73,7 +73,7 @@ class Query_Filter_Index_Admin {
 			return;
 		}
 
-		$asset = include $asset_file;
+		$asset = include $asset_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 		wp_enqueue_script(
 			'dsgo-query-filter-index-dashboard',

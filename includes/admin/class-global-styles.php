@@ -394,7 +394,7 @@ class Global_Styles {
 			return;
 		}
 
-		$asset_file = include $asset_file_path;
+		$asset_file = include $asset_file_path; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 		if ( ! is_array( $asset_file ) ) {
 			wp_trigger_error( __METHOD__, 'DesignSetGo: Invalid admin asset file format.', E_USER_NOTICE );

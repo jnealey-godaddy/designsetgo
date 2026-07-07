@@ -274,7 +274,7 @@ class Negotiation_Handler {
 					$normalized_path = wp_normalize_path( $resolved_path );
 
 					if ( 0 === strpos( $normalized_path, $normalized_dir ) && is_readable( $resolved_path ) ) {
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file, containment-checked.
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Local file, containment-checked.
 						$content = file_get_contents( $resolved_path );
 						if ( is_string( $content ) && '' !== $content ) {
 							return $content;

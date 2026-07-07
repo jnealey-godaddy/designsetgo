@@ -536,7 +536,7 @@ class Controller {
 	public static function render( array $attributes, array $context ) {
 		$helpers = DESIGNSETGO_PATH . 'build/blocks/query/render-helpers.php';
 		if ( file_exists( $helpers ) ) {
-			require_once $helpers;
+			require_once $helpers; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 			if ( function_exists( 'designsetgo_query_render_region' ) ) {
 				return designsetgo_query_render_region( $attributes, $context );
 			}

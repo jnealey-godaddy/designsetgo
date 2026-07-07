@@ -800,7 +800,7 @@ class Plugin {
 		$asset_file = DESIGNSETGO_PATH . 'build/block-category-icon.asset.php';
 
 		if ( file_exists( $asset_file ) ) {
-			$asset = include $asset_file;
+			$asset = include $asset_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 			wp_enqueue_script(
 				'designsetgo-block-category-icon',
@@ -844,7 +844,7 @@ class Plugin {
 		$llms_asset_file = DESIGNSETGO_PATH . 'build/llms-txt.asset.php';
 
 		if ( file_exists( $llms_asset_file ) ) {
-			$llms_asset = include $llms_asset_file;
+			$llms_asset = include $llms_asset_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 			wp_enqueue_script(
 				'dsgo-llms-txt-panel',
@@ -859,7 +859,7 @@ class Plugin {
 		$overlay_asset_file = DESIGNSETGO_PATH . 'build/overlay-header.asset.php';
 
 		if ( file_exists( $overlay_asset_file ) ) {
-			$overlay_asset = include $overlay_asset_file;
+			$overlay_asset = include $overlay_asset_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 			wp_enqueue_script(
 				'dsgo-overlay-header-panel',
