@@ -111,7 +111,7 @@ class Get_Global_CSS extends Abstract_Ability {
 	/**
 	 * Execute the ability.
 	 *
-	 * @param array<string, mixed> $input Ignored — no inputs.
+	 * @param array<string, mixed> $_input Ignored — no inputs.
 	 * @return array<string, mixed>
 	 */
 	public function execute( array $_input ): array {

@@ -98,7 +98,7 @@ class File_Manager {
 			return $wp_filesystem->put_contents( $path, $content, FS_CHMOD_FILE );
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Fallback when WP_Filesystem is unavailable. This is the primary path on managed hosts (WP Engine, Kinsta, Pantheon) where no FTP constants are defined and the web user owns the files; also fires during unit tests and early bootstrap.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents -- Fallback when WP_Filesystem is unavailable; primary path on managed hosts where web user owns files.
 		return false !== file_put_contents( $path, $content );
 	}
 
@@ -128,7 +128,7 @@ class File_Manager {
 			return $wp_filesystem->delete( $path );
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Fallback when WP_Filesystem is unavailable; same scenarios as fs_put_contents().
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- Fallback when WP_Filesystem is unavailable; same scenarios as fs_put_contents().
 		return unlink( $path );
 	}
 
@@ -272,7 +272,7 @@ class File_Manager {
 			WP_Filesystem();
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Fallback when WP_Filesystem fails.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_is_writable -- Fallback when WP_Filesystem fails.
 		return $wp_filesystem ? $wp_filesystem->is_writable( $dir ) : is_writable( $dir );
 	}
 

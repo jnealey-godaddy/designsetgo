@@ -141,7 +141,7 @@ class Form_Security {
 		$response = wp_remote_post(
 			'https://challenges.cloudflare.com/turnstile/v0/siteverify',
 			array(
-				'timeout' => 5,
+				'timeout' => 5, // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout.timeout_timeout -- Cloudflare Turnstile verification; 5s is intentional for third-party auth
 				'body'    => array(
 					'secret'   => $secret_key,
 					'response' => $token,
@@ -191,9 +191,11 @@ class Form_Security {
 	 * @return string IP address.
 	 */
 	public function get_client_ip(): string {
+		// phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders -- REMOTE_ADDR validated; used only for Turnstile anti-spam, not auth or caching
 		$remote_addr = isset( $_SERVER['REMOTE_ADDR'] )
 			? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
 			: 'unknown';
+		// phpcs:enable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 
 		if ( 'unknown' === $remote_addr ) {
 			return 'unknown';

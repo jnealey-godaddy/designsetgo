@@ -303,7 +303,7 @@ abstract class Abstract_Configurator_Ability extends Abstract_Ability {
 	 * Default implementation returns attributes as-is.
 	 *
 	 * @param array<string, mixed> $attributes Attributes from input.
-	 * @param array<string, mixed> $input      Full input array.
+	 * @param array<string, mixed> $_input     Full input array (unused in base; override uses it).
 	 * @return array<string, mixed>|WP_Error Transformed attributes or error.
 	 */
 	protected function transform_attributes( array $attributes, array $_input ) {

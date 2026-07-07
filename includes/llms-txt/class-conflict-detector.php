@@ -70,9 +70,9 @@ class Conflict_Detector {
 			WP_Filesystem();
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Fallback when WP_Filesystem fails.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_is_writable -- Fallback when WP_Filesystem fails.
 		$file_writable = $wp_filesystem ? $wp_filesystem->is_writable( $file_path ) : is_writable( $file_path );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Fallback when WP_Filesystem fails.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_is_writable -- Fallback when WP_Filesystem fails.
 		$dir_writable  = $wp_filesystem ? $wp_filesystem->is_writable( $parent_dir ) : is_writable( $parent_dir );
 
 		return array(
@@ -166,7 +166,7 @@ class Conflict_Detector {
 			);
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Renaming a sibling file within the same site-root directory; WP_Filesystem has no equivalent atomic rename.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_rename -- Renaming a sibling file; WP_Filesystem has no equivalent atomic rename.
 		$result = rename( $file_path, $backup_path );
 
 		if ( ! $result ) {
