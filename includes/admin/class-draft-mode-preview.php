@@ -227,6 +227,7 @@ class Draft_Mode_Preview {
 				'meta_key'       => Draft_Mode::META_HAS_DRAFT,
 				'posts_per_page' => $posts_per_page,
 				'fields'         => 'ids',
+				'suppress_filters' => false,
 			)
 		);
 

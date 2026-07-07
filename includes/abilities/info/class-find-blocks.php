@@ -192,6 +192,7 @@ class Find_Blocks extends Abstract_Ability {
 				'posts_per_page' => $limit,
 				'orderby'        => 'modified',
 				'order'          => 'DESC',
+				'suppress_filters' => false,
 			)
 		);
 
