@@ -5,29 +5,34 @@ All notable changes to the DesignSetGo plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.5.0] - Unreleased
-
-### Changed
-- **Pill renders dynamically** — The Pill block is now server-rendered, completing the icon/divider/map/form conversion shipped in 2.4.0. A fresh pill serializes to a single self-closing block comment with no baked-in `aligncenter` / `has-small-font-size` classes, so pills stay portable across patterns and AI-assisted (Abilities API) authoring and always reflect the current theme. Existing pills migrate silently via a new deprecation; the default centered alignment is now CSS-driven and unchanged. (#439)
-- **Existing pills inherit their context font size** — The old `fontSize: "small"` default is no longer baked into saved markup, so published pills that relied on the default small size now render at their surrounding text size. Set an explicit font size on any pill that should keep the smaller look; alignment is unaffected. (#439)
-
-## [2.4.0] - 2026-07-06
+## [2.4.0] - Unreleased
 
 ### New Features
+- **Section Divider block** — New standalone block for dropping a full-width shape divider between any two blocks, independent of Section's own divider. Shape, height, and fill color default to the theme's Style Kit setting and can be overridden per instance. (#441)
 - **Icon block: fill / outline + theme default size** — The Icon block gained a Fill / Outline style toggle and inherits a theme-defined default size, so icons match your design out of the box. (#438)
 - **Icon Button inherits core Button style variations** — Fill, Outline, and any variations the theme registers.
 - **Scrolling Gallery: native border controls** — Width, style, color, and radius replace the old single border-radius field.
+- **SVG Patterns: theme-inheritable default** — A pattern can inherit a "Theme default" preset (type, color, opacity, scale) set at the theme level, so a Style Kit can restyle every pattern site-wide; each block can still override it. (#446)
+- **Row & Grid: Style Kit overlay and hover-state variations** — Row and Grid now support the same background-overlay and hover-state style variations as Section, so a Style Kit's overlay/hover styling applies consistently across all three layout blocks. (#445, #447)
 
 ### Changed
 - **Icon, Divider, Map, and form field blocks render dynamically** — They always reflect the current theme and store cleaner markup; existing blocks migrate automatically.
+- **Pill renders dynamically** — The Pill block is now server-rendered, completing the icon/divider/map/form conversion. A fresh pill serializes to a single self-closing block comment with no baked-in `aligncenter` / `has-small-font-size` classes, so pills stay portable across patterns and AI-assisted (Abilities API) authoring and always reflect the current theme. Existing pills migrate silently via a new deprecation; the default centered alignment is now CSS-driven and unchanged. (#439)
+- **Existing pills inherit their context font size** — The old `fontSize: "small"` default is no longer baked into saved markup, so published pills that relied on the default small size now render at their surrounding text size. Set an explicit font size on any pill that should keep the smaller look; alignment is unaffected. (#439)
 - **Form Builder fields inherit theme spacing and sizing.**
 - **Map markers can inherit their color from the theme.**
+- **Section styles extend to more container blocks** — Card, Fifty/Fifty, Modal, Slide, Scroll Slide, Tab, Accordion Item, Scroll Accordion Item, Image Accordion Item, Timeline Item, Counter, and Flip Card Face now pick up theme-registered section styles (e.g. core's Style 1–5), matching Section, Row, and Grid. (#440)
+- **Progress Bar no longer bakes a default color into saved markup** — An unset bar/track color now inherits the theme instead of a fixed hex value. (#440)
 
 ### Bug Fixes
 - **Icon List frontend parity** — Items show their fill / outline and stroke on the frontend, matching the editor.
 - **SVG Patterns / Form Builder color baking** — No longer bake default colors into saved markup, so they inherit the theme's colors.
 - **Abilities API quote / backslash handling** — Content with quotes or backslashes saved through AI-assisted edits is no longer altered.
 - **Scrolling Gallery legacy migration** — Blocks saved by older versions or patterns (image rows stored in the markup rather than the block comment) keep migrating silently instead of showing "Attempt Recovery."
+- **Image Accordion overlay now reaches the frontend** — A parent Image Accordion's overlay color/opacity previously never rendered on its items on the frontend; it now applies correctly. (#440)
+- **Section style customizations preview live in the editor** — Border, radius, and other section-style tweaks made in Global Styles now show up immediately on Section, Row, Grid, and the rest of the container family in the editor canvas, matching what already rendered on the frontend. (#443)
+- **Section overlay style variations now render** — Sections using an `is-style-overlay-*` Style Kit variation (instead of the overlay color picker) now correctly show the overlay. (#445)
+- **Scroll Accordion: removed a stray editor-only border** — A gradient bar shown down the left edge of Scroll Accordion items in the editor, with no frontend equivalent, has been removed. (#442)
 
 ## [2.3.0] - 2026-07-01
 

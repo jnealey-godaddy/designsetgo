@@ -9,7 +9,7 @@ Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-53 native blocks + 16 universal extensions for the WordPress block editor. Forms, dynamic post lists, animations, layouts — no page builder needed.
+54 native blocks + 16 universal extensions for the WordPress block editor. Forms, dynamic post lists, animations, layouts — no page builder needed.
 
 == Description ==
 
@@ -22,22 +22,22 @@ DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to 
 = Why DesignSetGo =
 
 * **Native blocks, not a page builder.** Editor matches frontend. Static content stays put if you deactivate; dynamic blocks need the plugin to render. No proprietary markup, no lock-in.
-* **53 blocks replace 5+ plugins.** Forms, sliders, tabs, accordions, modals, maps, breadcrumbs, timelines, comparison tables, and the new Dynamic Query family.
+* **54 blocks replace 5+ plugins.** Forms, sliders, tabs, accordions, modals, maps, breadcrumbs, timelines, comparison tables, and the new Dynamic Query family.
 * **16 extensions enhance ANY block** — including core and third-party blocks. Animations, parallax, sticky headers, responsive visibility, hover effects, conditional visibility.
 * **Complete form builder built in.** AJAX, spam protection (Cloudflare Turnstile included), email notifications, submission dashboard. No Contact Form 7 required.
 * **Performance first.** CSS bundle under 10 KB gzipped, no jQuery, per-block on-demand assets. PageSpeed scores stay high.
 * **WordPress-standard everything.** theme.json, FSE, Block Bindings, REST API, WP-CLI, Schema.org markup, WCAG 2.1 AA accessible.
 
-= New in 2.1 =
+= New in 2.4 =
 
-* **Dynamic Query** — display any posts, users, terms, or relationship fields with filters, search, sort, and pagination (numbered, load-more, or infinite scroll). Faceted result counts, nested loops, group-by, server-rendered with editable templates.
-* **Dynamic Tags** — bind any block's text, link, or image to live data: post meta, ACF, Meta Box, Pods, JetEngine, or your own source. Works on DesignSetGo blocks and core blocks via the WordPress 6.9+ Block Bindings API.
-* **Conditional Visibility** — show or hide any block by meta, taxonomy, login state, or position in a query loop, with AND/OR rules.
-* **Hover Effects** extension, grid column toolbar with row span, per-URL Markdown for AI clients via the `Accept: text/markdown` request header.
+* **Section Divider** — a standalone shape-divider block you can drop between any two blocks, on top of Section's own built-in divider.
+* **Style Kit theming, extended** — SVG Patterns and more container blocks (Card, Modal, Tab, Timeline Item, and others) now pick up your theme's Style Kit defaults, the same way Section already does.
+* **More blocks render dynamically** — Icon, Divider, Map, form fields, and now Pill always reflect your current theme instead of baking in a snapshot at save time.
+* **Row & Grid overlay/hover styling** — background overlays and hover-state styling from your Style Kit now work on Row and Grid, matching Section.
 
 = What's Inside =
 
-* **Layout** (3) — Grid, Row, Section with shape dividers
+* **Layout** (4) — Grid, Row, Section with shape dividers, Section Divider
 * **Forms** (13) — full builder with 11 field types and admin dashboard
 * **Interactive** (15) — Tabs, Accordion, Modal, Modal Trigger, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counter, Progress, Comparison Table, Timeline
 * **Dynamic Query** (6) — Query, Pagination, Filter, Results, Group Header, No Results
@@ -94,24 +94,28 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 == Changelog ==
 
-= 2.5.0 - Unreleased =
+= 2.4.0 - Unreleased =
 
-* **Improved:** The Pill block now renders dynamically — saved pills no longer bake in a fixed size or alignment, so they stay portable across patterns and AI-assisted edits and always reflect your theme.
-* **Note:** Existing pills migrate automatically. Because font size is no longer baked into the saved markup, pills that used the previous default (small) now render at their surrounding text size; set an explicit font size on any pill where you want the smaller look. Default centering is unchanged.
-
-= 2.4.0 - 2026-07-06 =
-
+* **New:** Section Divider — a new block for dropping a full-width shape divider between any two blocks. Shape, height, and color default to your theme's Style Kit setting and can be overridden per instance.
 * **New:** The Icon block has a Fill / Outline style toggle and inherits a theme-defined default size, so icons match your design out of the box.
 * **New:** Icon Button now inherits the core Button block's style variations (Fill, Outline, and any your theme adds).
 * **New:** Scrolling Gallery now uses WordPress's native border controls (width, style, color, and radius) in place of the old single border-radius field.
+* **New:** SVG Patterns can inherit a "Theme default" preset set at the theme level, so a Style Kit can restyle every pattern across your site at once — each block can still opt out and set its own.
+* **New:** Row and Grid now support the same background-overlay and hover-state style options as Section, so a Style Kit's overlay and hover styling applies consistently across all three layout blocks.
 * **Improved:** Icon, Divider, Map, and all form field blocks now render dynamically, so they always reflect your current theme — change a design token once and every instance updates, with cleaner saved markup.
+* **Improved:** The Pill block now renders dynamically — saved pills no longer bake in a fixed size or alignment, so they stay portable across patterns and AI-assisted edits and always reflect your theme.
 * **Improved:** Form Builder fields inherit spacing and sizing from your theme, so forms match the rest of your site automatically.
 * **Improved:** Map markers can now take their color from your theme.
+* **Improved:** Section style options (like core's Style 1–5) now also apply to Card, Fifty/Fifty, Modal, Slide, Scroll Slide, Tab, Accordion Item, Scroll Accordion Item, Image Accordion Item, Timeline Item, Counter, and Flip Card Face — matching Section, Row, and Grid.
 * **Fix:** Icon List items now show their fill / outline and stroke on the frontend, matching the editor.
 * **Fix:** SVG Patterns and Form Builder no longer bake default colors into saved markup, so they inherit your theme's colors.
 * **Fix:** Content with quotes or backslashes saved through AI-assisted edits (Abilities API) is no longer altered.
 * **Fix:** Scrolling Gallery blocks saved by older versions or patterns (image rows stored in the markup rather than the block comment) keep migrating silently instead of showing "Attempt Recovery."
-* **Note:** Existing Icon, Divider, Map, and form blocks migrate automatically — no action required.
+* **Fix:** An Image Accordion's overlay color and opacity now correctly reach the frontend — previously they only showed in the editor.
+* **Fix:** Section-style customizations made in your Style Kit (like a custom border or corner radius) now preview live in the editor, matching what already appeared on the published page.
+* **Fix:** Sections using a Style Kit overlay variation now actually show the overlay.
+* **Fix:** Scroll Accordion no longer shows a stray colored bar down the left edge of items in the editor.
+* **Note:** Existing Icon, Divider, Map, Pill, and form blocks migrate automatically — no action required.
 
 = 2.3.0 - 2026-07-01 =
 
