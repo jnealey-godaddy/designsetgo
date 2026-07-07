@@ -72,8 +72,8 @@ const OLD_SVG_MARKUP = `<!-- wp:designsetgo/section {"shapeDividerTop":"wave","s
 // background color (no explicit shapeDividerBottomColor set), matching
 // V4ShapeDivider's inheritance behavior used by deprecations v4/v5/v6.
 // Built from v4's own save() so the fixture is byte-exact.
-// deprecated.js exports deprecations newest-first: [v7, v6, v5, v4, v3, v2, v1].
-const [, , , v4Deprecation] = deprecated;
+// deprecated.js exports deprecations newest-first: [v8, v7, v6, v5, v4, v3, v2, v1].
+const [, , , , v4Deprecation] = deprecated;
 const OLD_SVG_MARKUP_BOTTOM_INHERITED = buildOldMarkup(
 	{
 		shapeDividerBottom: 'tilt',
@@ -123,8 +123,8 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 	// deprecation and shows "unexpected or invalid content". The other tests use
 	// wave/tilt, which were NOT redesigned, so they can't catch this.
 	test('deprecations reproduce frozen legacy geometry for redesigned shapes (drops)', () => {
-		// deprecated.js exports newest-first: [v7, v6, v5, v4, v3, v2, v1].
-		const [, , , v4Dep, v3Dep] = deprecated;
+		// deprecated.js exports newest-first: [v8, v7, v6, v5, v4, v3, v2, v1].
+		const [, , , , v4Dep, v3Dep] = deprecated;
 
 		[v3Dep, v4Dep].forEach((deprecation) => {
 			const markup = buildOldMarkup(
@@ -140,8 +140,8 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 });
 
 describe('section deprecations - style-kit overlay variation migration (v7)', () => {
-	// v7 is the newest deprecation (index 0).
-	const [v7Deprecation] = deprecated;
+	// deprecated.js exports newest-first: [v8, v7, v6, v5, v4, v3, v2, v1].
+	const [, v7Deprecation] = deprecated;
 
 	// Reproduce content saved BEFORE this change by taking what the block
 	// ACTUALLY serializes today (carrying block.json defaults such as the
@@ -186,6 +186,28 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 		expect(getBlockContent(block)).toContain('dsgo-stack--has-overlay');
 	});
 
+	test('migration retains shapeDividerTopColor/shapeDividerBottomColor (v7 attribute schema must declare them)', () => {
+		// v6/block.json both declare these legacy/preview-only swatch
+		// attributes. If v7.attributes omitted them, WP would parse the
+		// stored comment JSON without them (a deprecation's own `attributes`
+		// schema is used exclusively, not merged with the current block
+		// type), and migrate()'s passthrough would silently drop the values.
+		const markupWithShapeColors = serialize(
+			createBlock(metadata.name, {
+				className: 'is-style-overlay-dark',
+				shapeDividerTopColor: 'contrast',
+				shapeDividerBottomColor: 'accent',
+			})
+		).replace(' dsgo-stack--has-overlay', '');
+
+		const [block] = parse(markupWithShapeColors);
+
+		expect(console).toHaveInformed();
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.shapeDividerTopColor).toBe('contrast');
+		expect(block.attributes.shapeDividerBottomColor).toBe('accent');
+	});
+
 	test('isEligible detects an overlay variation lacking the overlay class', () => {
 		const html =
 			'<div class="wp-block-designsetgo-section is-style-overlay-dark dsgo-stack"><div class="dsgo-stack__inner"></div></div>';
@@ -221,5 +243,109 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 	test('migrate is a passthrough', () => {
 		const attrs = { className: 'is-style-overlay-dark', overlayColor: '' };
 		expect(v7Deprecation.migrate(attrs)).toBe(attrs);
+	});
+});
+
+describe('section deprecations - style-kit hover variation migration (v8)', () => {
+	// deprecated.js exports newest-first: [v8, v7, v6, v5, v4, v3, v2, v1].
+	const [v8Deprecation] = deprecated;
+
+	// Reproduce content saved BEFORE hover-variation classes existed by taking
+	// the block's REAL current serialization and stripping the hover-text
+	// activation class it now adds. Deriving from the real save() (rather than
+	// v8's own save()) keeps this a genuine regression guard — see the
+	// identical rationale on the v7 overlay fixture above.
+	const canonicalHoverMarkup = serialize(
+		createBlock(metadata.name, { className: 'is-style-hover-text-light' })
+	);
+	const OLD_HOVER_VARIATION_MARKUP = canonicalHoverMarkup.replace(
+		' dsgo-stack--has-hover-text',
+		''
+	);
+
+	test('canonical markup carries the hover-text activation class', () => {
+		expect(canonicalHoverMarkup).toContain('dsgo-stack--has-hover-text');
+		expect(OLD_HOVER_VARIATION_MARKUP).not.toContain(
+			'dsgo-stack--has-hover-text'
+		);
+	});
+
+	test('old is-style-hover-text-light section (no activation class) migrates silently against current save()', () => {
+		const [block] = parse(OLD_HOVER_VARIATION_MARKUP);
+
+		expect(console).toHaveInformed();
+
+		expect(block.name).toBe('designsetgo/section');
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.className).toBe('is-style-hover-text-light');
+		// The migrated block re-serializes with the activation class restored.
+		expect(getBlockContent(block)).toContain('dsgo-stack--has-hover-text');
+	});
+
+	test('isEligible detects a hover-text variation lacking its activation class', () => {
+		const html =
+			'<div class="wp-block-designsetgo-section is-style-hover-text-light dsgo-stack"><div class="dsgo-stack__inner"></div></div>';
+		expect(
+			v8Deprecation.isEligible(
+				{ className: 'is-style-hover-text-light' },
+				[],
+				{ innerHTML: html }
+			)
+		).toBe(true);
+	});
+
+	test('isEligible detects a hover-icon variation lacking its activation class', () => {
+		const html =
+			'<div class="wp-block-designsetgo-section is-style-hover-icon-blue dsgo-stack"><div class="dsgo-stack__inner"></div></div>';
+		expect(
+			v8Deprecation.isEligible(
+				{ className: 'is-style-hover-icon-blue' },
+				[],
+				{ innerHTML: html }
+			)
+		).toBe(true);
+	});
+
+	test('isEligible ignores sections that already carry the matching activation class', () => {
+		const html =
+			'<div class="wp-block-designsetgo-section is-style-hover-text-light dsgo-stack dsgo-stack--has-hover-text"><div class="dsgo-stack__inner"></div></div>';
+		expect(
+			v8Deprecation.isEligible(
+				{ className: 'is-style-hover-text-light' },
+				[],
+				{ innerHTML: html }
+			)
+		).toBe(false);
+	});
+
+	test('isEligible detects a partial mismatch when only one of several hover families is missing its class', () => {
+		const html =
+			'<div class="wp-block-designsetgo-section is-style-hover-text-light is-style-hover-icon-blue dsgo-stack dsgo-stack--has-hover-icon"><div class="dsgo-stack__inner"></div></div>';
+		expect(
+			v8Deprecation.isEligible(
+				{
+					className:
+						'is-style-hover-text-light is-style-hover-icon-blue',
+				},
+				[],
+				{ innerHTML: html }
+			)
+		).toBe(true);
+	});
+
+	test('isEligible ignores sections without a hover variation', () => {
+		const html =
+			'<div class="wp-block-designsetgo-section dsgo-stack"><div class="dsgo-stack__inner"></div></div>';
+		expect(
+			v8Deprecation.isEligible({ className: '' }, [], { innerHTML: html })
+		).toBe(false);
+	});
+
+	test('migrate is a passthrough', () => {
+		const attrs = {
+			className: 'is-style-hover-text-light',
+			hoverTextColor: '',
+		};
+		expect(v8Deprecation.migrate(attrs)).toBe(attrs);
 	});
 });
