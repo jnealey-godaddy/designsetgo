@@ -79,7 +79,7 @@ class Core_Handlers {
 				if ( ! empty( $text ) ) {
 					$prefix  = $ordered ? "{$index}. " : '- ';
 					$items[] = $prefix . $text;
-					$index++;
+					++$index;
 				}
 			}
 		} else {
@@ -92,7 +92,7 @@ class Core_Handlers {
 					if ( ! empty( $text ) ) {
 						$prefix  = $ordered ? "{$index}. " : '- ';
 						$items[] = $prefix . $text;
-						$index++;
+						++$index;
 					}
 				}
 			}

@@ -98,11 +98,7 @@ function designsetgo_deactivate() {
 
 	// Remove physical llms.txt if we wrote it.
 	if ( get_option( 'designsetgo_llms_txt_physical' ) ) {
-		$file_path = ABSPATH . 'llms.txt';
-		if ( file_exists( $file_path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- Plugin deactivation cleanup; WP_Filesystem not available during uninstall hooks.
-			unlink( $file_path );
-		}
+		\DesignSetGo\LLMS_Txt\File_Manager::fs_delete( ABSPATH . 'llms.txt' );
 		delete_option( 'designsetgo_llms_txt_physical' );
 	}
 }

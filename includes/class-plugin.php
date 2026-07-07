@@ -707,7 +707,7 @@ class Plugin {
 		$this->custom_css_renderer = new Custom_CSS_Renderer();
 		$this->section_styles      = new Section_Styles();
 		$this->section_styles->init();
-		$this->icon_button_styles  = new Icon_Button_Styles();
+		$this->icon_button_styles = new Icon_Button_Styles();
 		$this->icon_button_styles->init();
 		$this->sticky_header        = new Sticky_Header();
 		$this->overlay_header       = new Overlay_Header();

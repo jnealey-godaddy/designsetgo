@@ -205,8 +205,12 @@ class Generator {
 					$real_dir  = realpath( $this->file_manager->get_directory() );
 
 					if ( $real_path && $real_dir && 0 === strpos( wp_normalize_path( $real_path ), wp_normalize_path( trailingslashit( $real_dir ) ) ) && file_exists( $real_path ) ) {
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Reading local static file after path validation.
-						$markdown = file_get_contents( $real_path );
+						global $wp_filesystem;
+						if ( ! function_exists( 'WP_Filesystem' ) ) {
+							require_once ABSPATH . 'wp-admin/includes/file.php';
+						}
+						WP_Filesystem();
+						$markdown = $wp_filesystem->get_contents( $real_path );
 						if ( false === $markdown ) {
 							$markdown = '';
 						}
@@ -324,15 +328,15 @@ class Generator {
 		$args = apply_filters(
 			'designsetgo_llms_txt_query_args',
 			array(
-				'post_type'      => $post_type,
-				'post_status'    => 'publish',
-				'posts_per_page' => $posts_limit,
-				'orderby'        => 'menu_order date',
-				'order'          => 'ASC',
-				'has_password'    => false, // Exclude password-protected posts.
-				'suppress_filters' => false,
+				'post_type'        => $post_type,
+				'post_status'      => 'publish',
+				'posts_per_page'   => $posts_limit,
+				'orderby'          => 'menu_order date',
+				'order'            => 'ASC',
+				'has_password'     => false, // Exclude password-protected posts.
+				'suppress_filters' => false, // Enables object caching.
 				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Required for exclusion feature.
-				'meta_query'     => array(
+				'meta_query'       => array(
 					'relation' => 'OR',
 					// Include posts without the meta key (not explicitly excluded).
 					array(
@@ -350,7 +354,7 @@ class Generator {
 			$post_type
 		);
 
-		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- suppress_filters is false in $args
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- suppress_filters=false is set in $args; static analysis cannot see it through apply_filters().
 		return get_posts( $args );
 	}
 

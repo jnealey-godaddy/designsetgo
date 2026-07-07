@@ -163,8 +163,8 @@ class Draft_Mode_Preview {
 			if ( ! empty( $cookie_value ) ) {
 				// Cookie stores the opt-out timestamp. If a new draft was
 				// created after the user opted out, auto-reset to preview.
-				$opt_out_time     = (int) $cookie_value;
-				$last_draft_time  = (int) get_option( self::OPTION_LAST_DRAFT_CREATED, 0 );
+				$opt_out_time    = (int) $cookie_value;
+				$last_draft_time = (int) get_option( self::OPTION_LAST_DRAFT_CREATED, 0 );
 
 				if ( 0 === $last_draft_time || $opt_out_time >= $last_draft_time ) {
 					$this->is_preview_active = false;
@@ -309,7 +309,7 @@ class Draft_Mode_Preview {
 					'path'     => COOKIEPATH,
 					'domain'   => COOKIE_DOMAIN,
 					'secure'   => is_ssl(),
-					'httponly'  => true,
+					'httponly' => true,
 					'samesite' => 'Lax',
 				)
 			);
@@ -324,7 +324,7 @@ class Draft_Mode_Preview {
 					'path'     => COOKIEPATH,
 					'domain'   => COOKIE_DOMAIN,
 					'secure'   => is_ssl(),
-					'httponly'  => true,
+					'httponly' => true,
 					'samesite' => 'Lax',
 				)
 			);

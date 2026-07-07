@@ -16,11 +16,11 @@ return array(
 	),
 	'exclude'    => array(), // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- Extension block-exclusion list, not a get_posts() query.
 	'attributes' => array(
-		'enableRevealOnHover'  => array(
+		'enableRevealOnHover' => array(
 			'type'    => 'boolean',
 			'default' => false,
 		),
-		'revealAnimationType'  => array(
+		'revealAnimationType' => array(
 			'type'    => 'string',
 			'default' => 'fade',
 		),

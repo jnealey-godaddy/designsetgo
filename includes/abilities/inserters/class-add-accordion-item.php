@@ -326,13 +326,13 @@ class Add_Accordion_Item extends Abstract_Ability {
 		$header_id = $unique_id . '-header';
 		$panel_id  = $unique_id . '-panel';
 
-		$item_class   = 'dsgo-accordion-item ' . ( $is_open ? 'dsgo-accordion-item--open' : 'dsgo-accordion-item--closed' );
+		$item_class    = 'dsgo-accordion-item ' . ( $is_open ? 'dsgo-accordion-item--open' : 'dsgo-accordion-item--closed' );
 		$trigger_class = 'dsgo-accordion-item__trigger dsgo-accordion-item__trigger--icon-' . $icon_position;
 
 		// Generate icon SVG based on style.
 		$icon_html = '';
 		if ( 'none' !== $icon_style ) {
-			$icon_svg = $this->get_icon_svg( $icon_style, $is_open );
+			$icon_svg  = $this->get_icon_svg( $icon_style, $is_open );
 			$icon_html = '<span class="dsgo-accordion-item__icon" aria-hidden="true">' . $icon_svg . '</span>';
 		}
 

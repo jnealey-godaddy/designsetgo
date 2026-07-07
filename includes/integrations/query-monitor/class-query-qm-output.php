@@ -76,7 +76,7 @@ class OutputHtml extends \QM_Output_Html {
 				__( 'Found posts', 'designsetgo' )   => $r['found_posts'],
 				__( 'Duration (ms)', 'designsetgo' ) => $r['duration_ms'],
 				__( 'WP_Query args', 'designsetgo' ) => '<pre class="dsgo-qm-pre">' . esc_html( wp_json_encode( $r['wp_args'], JSON_PRETTY_PRINT ) ) . '</pre>',
-				__( 'SQL', 'designsetgo' )            => '<code>' . esc_html( $r['sql'] ) . '</code>',
+				__( 'SQL', 'designsetgo' )           => '<code>' . esc_html( $r['sql'] ) . '</code>',
 			);
 
 			foreach ( $rows as $label => $value ) {

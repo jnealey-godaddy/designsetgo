@@ -95,9 +95,9 @@ class FilterIndex {
 			return self::$table_exists;
 		}
 		global $wpdb;
-		$table_name          = self::table_name();
+		$table_name = self::table_name();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- SHOW TABLES LIKE is the correct idiom; prepare() handles escaping.
-		self::$table_exists  = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) ) ) === $table_name );
+		self::$table_exists = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table_name ) ) ) === $table_name );
 		return self::$table_exists;
 	}
 

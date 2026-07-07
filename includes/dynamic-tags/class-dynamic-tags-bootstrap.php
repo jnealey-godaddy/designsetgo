@@ -90,7 +90,7 @@ class Bootstrap {
 				'enum' => array( 'url', 'id', 'alt', 'width', 'height', 'title', 'caption' ),
 			),
 		);
-		$key_arg = array(
+		$key_arg          = array(
 			'key' => array(
 				'type'     => 'string',
 				'required' => true,

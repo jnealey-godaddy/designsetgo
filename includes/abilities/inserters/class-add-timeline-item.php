@@ -170,7 +170,7 @@ class Add_Timeline_Item extends Abstract_Ability {
 
 		// Find the timeline block.
 		$timeline_found = false;
-		$blocks = $this->add_item_to_timeline(
+		$blocks         = $this->add_item_to_timeline(
 			$blocks,
 			$timeline_client_id,
 			$date,

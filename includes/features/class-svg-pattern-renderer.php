@@ -312,7 +312,9 @@ class SVG_Pattern_Renderer {
 		}
 
 		// Shared normalization for both paths.
-		$color   = sanitize_text_field( $this->resolve_color_value( sanitize_text_field( $color ) ) );
+		$color = sanitize_text_field( $this->resolve_color_value( sanitize_text_field( $color ) ) );
+
+		// Clamp values.
 		$opacity = max( 0.05, min( 1, $opacity ) );
 		$scale   = max( 0.25, min( 4, $scale ) );
 

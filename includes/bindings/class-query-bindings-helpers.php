@@ -230,7 +230,7 @@ if ( ! function_exists( 'designsetgo_extract_bindings_subvalue' ) ) :
 	 * @return mixed Scalar sub-value, or null when the sub-key is not present.
 	 */
 	function designsetgo_extract_bindings_subvalue( array $value, $subkey ) {
-		$subkey = strtolower( (string) $subkey );
+		$subkey  = strtolower( (string) $subkey );
 		$allowed = array( 'url', 'id', 'alt', 'width', 'height', 'title', 'caption' );
 		if ( ! in_array( $subkey, $allowed, true ) ) {
 			$subkey = 'url';

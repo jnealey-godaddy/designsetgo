@@ -86,7 +86,7 @@ class Controller {
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_key',
 					),
-					'config'    => array(
+					'config'     => array(
 						'type'     => 'object',
 						'required' => true,
 					),
@@ -332,7 +332,7 @@ class Controller {
 		return rest_ensure_response(
 			array(
 				'unregistered' => true,
-				'filter_key'    => $key,
+				'filter_key'   => $key,
 			)
 		);
 	}
@@ -411,7 +411,7 @@ class Controller {
 		return rest_ensure_response(
 			array(
 				'registered' => true,
-				'filter_key'  => sanitize_key( $key ),
+				'filter_key' => sanitize_key( $key ),
 				'config'     => FilterRegistry::get( $key ),
 			)
 		);
