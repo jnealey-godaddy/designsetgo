@@ -205,12 +205,8 @@ class Generator {
 					$real_dir  = realpath( $this->file_manager->get_directory() );
 
 					if ( $real_path && $real_dir && 0 === strpos( wp_normalize_path( $real_path ), wp_normalize_path( trailingslashit( $real_dir ) ) ) && file_exists( $real_path ) ) {
-						global $wp_filesystem;
-						if ( ! function_exists( 'WP_Filesystem' ) ) {
-							require_once ABSPATH . 'wp-admin/includes/file.php';
-						}
-						WP_Filesystem();
-						$markdown = $wp_filesystem->get_contents( $real_path );
+						$filesystem = File_Manager::filesystem();
+						$markdown   = $filesystem ? $filesystem->get_contents( $real_path ) : false;
 						if ( false === $markdown ) {
 							$markdown = '';
 						}

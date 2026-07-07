@@ -18,6 +18,10 @@
 namespace DesignSetGo;
 
 // Exit if accessed directly.
+use DesignSetGo\LLMS_Txt\Controller;
+use DesignSetGo\LLMS_Txt\File_Manager;
+use DesignSetGo\Patterns\Loader;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -57,7 +61,7 @@ require_once DESIGNSETGO_PATH . 'includes/patterns/placeholder-images.php';
  * Initialize the plugin.
  */
 function designsetgo_init() {
-	return \DesignSetGo\Plugin::instance();
+	return Plugin::instance();
 }
 
 // Kick off the plugin.
@@ -77,10 +81,10 @@ function designsetgo_activate() {
 	// Schedule rewrite rules flush for llms.txt feature.
 	// Uses transient-based approach since rewrite rules aren't registered yet.
 	require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-controller.php';
-	\DesignSetGo\LLMS_Txt\Controller::schedule_flush_rewrite_rules();
+	Controller::schedule_flush_rewrite_rules();
 
 	// Clear cached pattern file list so new/changed patterns are picked up.
-	\DesignSetGo\Patterns\Loader::clear_cache();
+	Loader::clear_cache();
 }
 register_activation_hook( __FILE__, 'DesignSetGo\designsetgo_activate' );
 
@@ -98,7 +102,7 @@ function designsetgo_deactivate() {
 
 	// Remove physical llms.txt if we wrote it.
 	if ( get_option( 'designsetgo_llms_txt_physical' ) ) {
-		\DesignSetGo\LLMS_Txt\File_Manager::fs_delete( ABSPATH . 'llms.txt' );
+		File_Manager::fs_delete( File_Manager::site_root_path() . 'llms.txt' );
 		delete_option( 'designsetgo_llms_txt_physical' );
 	}
 }

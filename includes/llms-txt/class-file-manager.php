@@ -266,10 +266,15 @@ class File_Manager {
 
 		$this->maybe_write_htaccess( $root );
 
-		// Use WP_Filesystem for the writability check.
+		// Use WP_Filesystem for the writability check; fall back to direct PHP on
+		// hosts where WP_Filesystem requires interactive credentials (FTP/SSH).
 		$filesystem = self::filesystem();
 
-		return $filesystem ? $filesystem->is_writable( $dir ) : false;
+		if ( $filesystem ) {
+			return $filesystem->is_writable( $dir );
+		}
+
+		return is_writable( $dir ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_is_writable -- WP_Filesystem unavailable; direct check is the only remaining option.
 	}
 
 	/**
