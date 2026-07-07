@@ -109,7 +109,7 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 			{showCloseButton && (
 				<DsgoInspectorPanel.Item
 					label={__('Close Button Label', 'designsetgo')}
-					hasValue={() => closeButtonLabel !== ''}
+					hasValue={() => closeButtonLabel.trim() !== ''}
 					onDeselect={() => setAttributes({ closeButtonLabel: '' })}
 					isShownByDefault
 				>

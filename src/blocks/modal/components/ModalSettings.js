@@ -25,7 +25,7 @@ export default function ModalSettings({ attributes, setAttributes }) {
 		<>
 			<DsgoInspectorPanel.Item
 				label={__('Accessible Label', 'designsetgo')}
-				hasValue={() => modalLabel !== ''}
+				hasValue={() => modalLabel.trim() !== ''}
 				onDeselect={() => setAttributes({ modalLabel: '' })}
 				isShownByDefault
 			>
