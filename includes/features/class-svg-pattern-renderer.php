@@ -38,6 +38,16 @@ class SVG_Pattern_Renderer {
 	private $svg_cache = array();
 
 	/**
+	 * Per-request cache of the resolved inherited preset.
+	 *
+	 * The theme preset can't change within a request, so resolve it once
+	 * rather than per inheriting block (mirrors the get_patterns() cache).
+	 *
+	 * @var array{type:string,color:string,opacity:float,scale:float}|null
+	 */
+	private $inherited_preset = null;
+
+	/**
 	 * In-plugin fallback preset for inherited SVG patterns (mirrors the JS
 	 * INHERIT_FALLBACK in constants.js). Used when the theme sets nothing.
 	 *
@@ -77,6 +87,10 @@ class SVG_Pattern_Renderer {
 	 * @return array{type:string,color:string,opacity:float,scale:float}
 	 */
 	private function resolve_inherited_pattern( $patterns ) {
+		if ( null !== $this->inherited_preset ) {
+			return $this->inherited_preset;
+		}
+
 		$preset = function_exists( 'wp_get_global_settings' )
 			? wp_get_global_settings( array( 'custom', 'designsetgo', 'svgPattern' ) )
 			: null;
@@ -103,12 +117,14 @@ class SVG_Pattern_Renderer {
 			? (float) $preset['scale']
 			: self::INHERIT_FALLBACK['scale'];
 
-		return array(
+		$this->inherited_preset = array(
 			'type'    => $type,
 			'color'   => $color,
 			'opacity' => $opacity,
 			'scale'   => $scale,
 		);
+
+		return $this->inherited_preset;
 	}
 
 	/**
