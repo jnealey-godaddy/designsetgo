@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Scrolling Gallery: native border controls** — Width, style, color, and radius replace the old single border-radius field.
 - **SVG Patterns: theme-inheritable default** — A pattern can inherit a "Theme default" preset (type, color, opacity, scale) set at the theme level, so a Style Kit can restyle every pattern site-wide; each block can still override it. (#446)
 - **Row & Grid: Style Kit overlay and hover-state variations** — Row and Grid now support the same background-overlay and hover-state style variations as Section, so a Style Kit's overlay/hover styling applies consistently across all three layout blocks. (#445, #447)
+- **Scroll Slides: overlay opacity control** — The color overlay above each slide's background is now adjustable via an "Overlay Opacity" slider instead of a fixed 80%, so contrast can be tuned when the background image is bright. Existing blocks are unchanged (they keep the 80% default).
+- **Modal: accessible label controls** — New "Accessible Label" and "Close Button Label" fields let authors customize the dialog's and close button's `aria-label` for screen readers. Both default to the previous English strings ("Modal" / "Close modal") when left empty, so existing modals are unchanged.
 
 ### Changed
 - **Icon, Divider, Map, and form field blocks render dynamically** — They always reflect the current theme and store cleaner markup; existing blocks migrate automatically.
@@ -25,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Progress Bar no longer bakes a default color into saved markup** — An unset bar/track color now inherits the theme instead of a fixed hex value. (#440)
 
 ### Bug Fixes
+- **Modal: custom accessible label now works** — The dialog's `aria-label` read a `modalLabel` attribute that was never registered, so a custom label could never take effect and it always fell back to "Modal". The attribute is now registered and wired to the new "Accessible Label" control.
 - **Icon List frontend parity** — Items show their fill / outline and stroke on the frontend, matching the editor.
 - **SVG Patterns / Form Builder color baking** — No longer bake default colors into saved markup, so they inherit the theme's colors.
 - **Abilities API quote / backslash handling** — Content with quotes or backslashes saved through AI-assisted edits is no longer altered.

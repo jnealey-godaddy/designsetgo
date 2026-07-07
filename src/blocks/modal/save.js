@@ -43,6 +43,7 @@ export default function save({ attributes }) {
 		showCloseButton,
 		closeButtonPosition,
 		closeButtonSize,
+		closeButtonLabel,
 		closeButtonIconColor,
 		closeButtonBgColor,
 		disableBodyScroll,
@@ -103,7 +104,7 @@ export default function save({ attributes }) {
 					convertColorToCSSVar(closeButtonBgColor) || undefined,
 			}}
 			type="button"
-			aria-label={__('Close modal', 'designsetgo')}
+			aria-label={closeButtonLabel || __('Close modal', 'designsetgo')}
 		>
 			<svg
 				width="100%"

@@ -15,6 +15,7 @@ export default function Save({ attributes }) {
 		constrainWidth,
 		contentWidth,
 		overlayColor,
+		overlayOpacity,
 		navColor,
 		navActiveColor,
 	} = attributes;
@@ -35,7 +36,7 @@ export default function Save({ attributes }) {
 		style: {
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': '0.8',
+				'--dsgo-overlay-opacity': String(overlayOpacity / 100),
 			}),
 			...(navColor && {
 				'--dsgo-nav-color': convertColorToCSSVar(navColor),

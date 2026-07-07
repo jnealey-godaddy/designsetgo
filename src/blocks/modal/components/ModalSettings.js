@@ -18,10 +18,30 @@ import {
 import { DsgoInspectorPanel } from '../../../components/shared';
 
 export default function ModalSettings({ attributes, setAttributes }) {
-	const { modalId, width, maxWidth, height, maxHeight } = attributes;
+	const { modalId, modalLabel, width, maxWidth, height, maxHeight } =
+		attributes;
 
 	return (
 		<>
+			<DsgoInspectorPanel.Item
+				label={__('Accessible Label', 'designsetgo')}
+				hasValue={() => modalLabel !== ''}
+				onDeselect={() => setAttributes({ modalLabel: '' })}
+				isShownByDefault
+			>
+				<TextControl
+					label={__('Accessible Label', 'designsetgo')}
+					value={modalLabel}
+					onChange={(value) => setAttributes({ modalLabel: value })}
+					help={__(
+						'Describes the modal for screen readers (aria-label). Defaults to "Modal" when empty.',
+						'designsetgo'
+					)}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
+
 			<DsgoInspectorPanel.Item
 				label={__('Modal ID', 'designsetgo')}
 				hasValue={() =>
