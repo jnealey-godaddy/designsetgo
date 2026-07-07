@@ -1113,7 +1113,7 @@ class Block_Configurator {
 				$html = preg_replace( '/class="([^"]*)"/', 'class="$1 ' . esc_attr( $new_class ) . '"', $html, 1 );
 			}
 		} elseif ( is_array( $modifier ) ) {
-			// Handle boolean/value mapping (e.g., {"true": "dsgo-accordion--border-between", "false": ""}).
+			// Handle boolean/value mapping — map each modifier value to its CSS class name.
 			$string_value = self::value_to_string( $value );
 			$old_class    = null;
 			$new_class    = null;

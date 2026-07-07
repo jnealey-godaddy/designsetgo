@@ -1223,7 +1223,7 @@ JS;
 		$inner_content    = array( $open_tag );
 		$inner_html_parts = array( $open_tag );
 
-		foreach ( $inner_blocks as $inner_block ) {
+		foreach ( $inner_blocks as $_inner_block ) {
 			$inner_content[]    = null;
 			$inner_html_parts[] = '';
 		}
