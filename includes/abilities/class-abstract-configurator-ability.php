@@ -306,7 +306,7 @@ abstract class Abstract_Configurator_Ability extends Abstract_Ability {
 	 * @param array<string, mixed> $input      Full input array.
 	 * @return array<string, mixed>|WP_Error Transformed attributes or error.
 	 */
-	protected function transform_attributes( array $attributes, array $input ) {
+	protected function transform_attributes( array $attributes, array $_input ) {
 		// By default, sanitize and return as-is.
 		return Block_Configurator::sanitize_attributes( $attributes );
 	}

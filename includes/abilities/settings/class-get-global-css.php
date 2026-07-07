@@ -114,7 +114,7 @@ class Get_Global_CSS extends Abstract_Ability {
 	 * @param array<string, mixed> $input Ignored — no inputs.
 	 * @return array<string, mixed>
 	 */
-	public function execute( array $input ): array {
+	public function execute( array $_input ): array {
 		$stylesheet = get_stylesheet();
 		$post       = wp_get_custom_css_post( $stylesheet );
 

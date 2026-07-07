@@ -205,7 +205,7 @@ class Generator {
 					$real_dir  = realpath( $this->file_manager->get_directory() );
 
 					if ( $real_path && $real_dir && 0 === strpos( wp_normalize_path( $real_path ), wp_normalize_path( trailingslashit( $real_dir ) ) ) && file_exists( $real_path ) ) {
-						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading local static file.
+						// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Reading local static file after path validation.
 						$markdown = file_get_contents( $real_path );
 						if ( false === $markdown ) {
 							$markdown = '';
@@ -329,7 +329,8 @@ class Generator {
 				'posts_per_page' => $posts_limit,
 				'orderby'        => 'menu_order date',
 				'order'          => 'ASC',
-				'has_password'   => false, // Exclude password-protected posts.
+				'has_password'    => false, // Exclude password-protected posts.
+				'suppress_filters' => false,
 				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Required for exclusion feature.
 				'meta_query'     => array(
 					'relation' => 'OR',
@@ -349,6 +350,7 @@ class Generator {
 			$post_type
 		);
 
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- suppress_filters is false in $args
 		return get_posts( $args );
 	}
 

@@ -77,6 +77,13 @@
 		</properties>
 	</rule>
 
+	<!-- Variables starting with _ are intentionally unused ($_ prefix convention) -->
+	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis">
+		<properties>
+			<property name="ignoreUnusedRegexp" value="/^_/"/>
+		</properties>
+	</rule>
+
 	<!-- Minimum PHP version -->
 	<config name="minimum_supported_wp_version" value="6.0"/>
 	<config name="testVersion" value="7.4-"/>

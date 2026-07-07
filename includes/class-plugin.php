@@ -902,7 +902,7 @@ class Plugin {
 	 * @param \WP_Post $post       Current post object (unused).
 	 * @return array Modified categories.
 	 */
-	public function register_block_category( $categories, $post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	public function register_block_category( $categories, $_post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$categories[] = array(
 			'slug'  => 'designsetgo',
 			'title' => __( 'DesignSetGo', 'designsetgo' ),

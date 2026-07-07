@@ -196,7 +196,7 @@ class Loader {
 	private static function compute_files_hash( $files ) {
 		$parts = array();
 		foreach ( $files as $file ) {
-			$mtime = @filemtime( $file );
+			$mtime = @filemtime( $file ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Forbidden, WordPress.PHP.NoSilencedErrors.Discouraged -- filemtime() may warn on non-existent files; false-return check below handles the error
 			if ( false !== $mtime ) {
 				$parts[] = basename( $file ) . ':' . $mtime;
 			}
@@ -279,7 +279,7 @@ class Loader {
 				if ( isset( $cached['compressed'] ) && is_string( $cached['compressed'] ) ) {
 					$raw = base64_decode( $cached['compressed'] );
 					if ( false !== $raw ) {
-						$decompressed = @gzuncompress( $raw );
+						$decompressed = @gzuncompress( $raw ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Forbidden, WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress() returns false on failure; no exception-based alternative
 						if ( false !== $decompressed ) {
 							$patterns_data = json_decode( $decompressed, true );
 						}

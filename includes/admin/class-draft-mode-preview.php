@@ -219,7 +219,7 @@ class Draft_Mode_Preview {
 		$posts_per_page = (int) apply_filters( 'designsetgo_preview_draft_limit', 100 );
 
 		// Find all pages that have drafts.
-		$pages_with_drafts = get_posts(
+		$pages_with_drafts = get_posts( // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- suppress_filters is false (see below)
 			array(
 				'post_type'      => 'page',
 				'post_status'    => 'publish',
