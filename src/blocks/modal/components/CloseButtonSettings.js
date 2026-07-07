@@ -121,7 +121,7 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 						}
 						placeholder={__('Close modal', 'designsetgo')}
 						help={__(
-							'Accessible label for the close button (aria-label). Defaults to "Close modal" when empty.',
+							'Accessible label for the close button (aria-label). Defaults to "Close modal" when left blank.',
 							'designsetgo'
 						)}
 						__next40pxDefaultSize

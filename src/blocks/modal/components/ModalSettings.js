@@ -35,7 +35,7 @@ export default function ModalSettings({ attributes, setAttributes }) {
 					onChange={(value) => setAttributes({ modalLabel: value })}
 					placeholder={__('Modal', 'designsetgo')}
 					help={__(
-						'Describes the modal for screen readers (aria-label). Defaults to "Modal" when empty.',
+						'Describes the modal for screen readers (aria-label). Defaults to "Modal" when left blank.',
 						'designsetgo'
 					)}
 					__next40pxDefaultSize
