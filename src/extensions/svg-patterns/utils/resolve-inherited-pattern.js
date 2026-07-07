@@ -9,7 +9,7 @@
  */
 
 import { INHERIT_FALLBACK, RANGES } from '../constants';
-import { PATTERNS } from '../pattern-data';
+import { PATTERN_IDS } from '../pattern-data';
 
 /**
  * Clamp a numeric preset value into a range, falling back when it isn't a
@@ -39,8 +39,12 @@ function clampNumber(value, min, max, fallback) {
 export function resolveInheritedPattern(preset) {
 	const p = preset && typeof preset === 'object' ? preset : {};
 
+	// Use the PATTERN_IDS allowlist (own keys), not a truthy PATTERNS[type]
+	// bracket lookup — the latter would accept inherited Object.prototype
+	// property names like "constructor"/"toString" as valid patterns, which
+	// then crash getPatternBackground() when it destructures a missing shape.
 	const type =
-		typeof p.type === 'string' && PATTERNS[p.type]
+		typeof p.type === 'string' && PATTERN_IDS.includes(p.type)
 			? p.type
 			: INHERIT_FALLBACK.type;
 

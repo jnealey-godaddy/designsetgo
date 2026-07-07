@@ -39,6 +39,22 @@ test('rejects an unknown theme pattern slug and falls back', () => {
 	expect(bad.type).toBe(INHERIT_FALLBACK.type);
 });
 
+test('rejects Object.prototype property names as pattern types', () => {
+	// A truthy PATTERNS[type] lookup would accept these; the PATTERN_IDS
+	// allowlist must not, or getPatternBackground() crashes downstream.
+	[
+		'constructor',
+		'toString',
+		'hasOwnProperty',
+		'valueOf',
+		'__proto__',
+	].forEach((name) => {
+		const resolved = resolveInheritedPattern({ type: name });
+		expect(resolved.type).toBe(INHERIT_FALLBACK.type);
+		expect(PATTERNS[resolved.type]).toBeDefined();
+	});
+});
+
 test('clamps zero opacity/scale to the range minimum (matches PHP)', () => {
 	// PHP clamps opacity to >= 0.05 and scale to >= 0.25; 0 must NOT fall
 	// back to the default (which would render differently on the frontend).
