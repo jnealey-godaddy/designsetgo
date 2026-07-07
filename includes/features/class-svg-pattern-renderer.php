@@ -38,6 +38,19 @@ class SVG_Pattern_Renderer {
 	private $svg_cache = array();
 
 	/**
+	 * In-plugin fallback preset for inherited SVG patterns (mirrors the JS
+	 * INHERIT_FALLBACK in constants.js). Used when the theme sets nothing.
+	 *
+	 * @var array{type:string,color:string,opacity:float,scale:float}
+	 */
+	private const INHERIT_FALLBACK = array(
+		'type'    => 'dot-grid',
+		'color'   => '#9c92ac',
+		'opacity' => 0.4,
+		'scale'   => 1.0,
+	);
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -54,6 +67,43 @@ class SVG_Pattern_Renderer {
 			$this->patterns = \designsetgo_get_svg_pattern_data();
 		}
 		return $this->patterns;
+	}
+
+	/**
+	 * Resolve the inherited SVG pattern preset from theme global settings,
+	 * applying per-field in-plugin fallbacks.
+	 *
+	 * @param array $patterns Known pattern definitions (allowlist for type).
+	 * @return array{type:string,color:string,opacity:float,scale:float}
+	 */
+	private function resolve_inherited_pattern( $patterns ) {
+		$preset = wp_get_global_settings( array( 'custom', 'designsetgo', 'svgPattern' ) );
+		if ( ! is_array( $preset ) ) {
+			$preset = array();
+		}
+
+		$type = isset( $preset['type'] ) && is_string( $preset['type'] ) && isset( $patterns[ $preset['type'] ] )
+			? $preset['type']
+			: self::INHERIT_FALLBACK['type'];
+
+		$color = isset( $preset['color'] ) && is_string( $preset['color'] ) && '' !== $preset['color']
+			? $preset['color']
+			: self::INHERIT_FALLBACK['color'];
+
+		$opacity = isset( $preset['opacity'] ) && is_numeric( $preset['opacity'] )
+			? (float) $preset['opacity']
+			: self::INHERIT_FALLBACK['opacity'];
+
+		$scale = isset( $preset['scale'] ) && is_numeric( $preset['scale'] )
+			? (float) $preset['scale']
+			: self::INHERIT_FALLBACK['scale'];
+
+		return array(
+			'type'    => $type,
+			'color'   => $color,
+			'opacity' => $opacity,
+			'scale'   => $scale,
+		);
 	}
 
 	/**
@@ -246,19 +296,27 @@ class SVG_Pattern_Renderer {
 			return $block_content;
 		}
 
-		// Validate pattern type against known patterns (allowlist).
 		$patterns = $this->get_patterns();
-		if ( ! isset( $patterns[ $pattern_type ] ) ) {
-			return $block_content;
+
+		if ( 'inherit' === $pattern_type ) {
+			$preset       = $this->resolve_inherited_pattern( $patterns );
+			$pattern_type = $preset['type'];
+			$color        = $preset['color'];
+			$opacity      = $preset['opacity'];
+			$scale        = $preset['scale'];
+		} else {
+			// Validate pattern type against known patterns (allowlist).
+			if ( ! isset( $patterns[ $pattern_type ] ) ) {
+				return $block_content;
+			}
+			$color   = $processor->get_attribute( 'data-dsgo-svg-pattern-color' );
+			$color   = $color ? $color : '#9c92ac';
+			$opacity = (float) ( $processor->get_attribute( 'data-dsgo-svg-pattern-opacity' ) ?? 0.4 );
+			$scale   = (float) ( $processor->get_attribute( 'data-dsgo-svg-pattern-scale' ) ?? 1 );
 		}
 
-		$color = $processor->get_attribute( 'data-dsgo-svg-pattern-color' );
-		$color = sanitize_text_field( $color ? $color : '#9c92ac' );
-		$color = sanitize_text_field( $this->resolve_color_value( $color ) );
-		$opacity = (float) ( $processor->get_attribute( 'data-dsgo-svg-pattern-opacity' ) ?? 0.4 );
-		$scale   = (float) ( $processor->get_attribute( 'data-dsgo-svg-pattern-scale' ) ?? 1 );
-
-		// Clamp values.
+		// Shared normalization for both paths.
+		$color   = sanitize_text_field( $this->resolve_color_value( sanitize_text_field( $color ) ) );
 		$opacity = max( 0.05, min( 1, $opacity ) );
 		$scale   = max( 0.25, min( 4, $scale ) );
 
