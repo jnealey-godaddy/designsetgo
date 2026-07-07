@@ -158,6 +158,8 @@
 .dsgo-flex[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-flex__inner > .dsgo-icon,
 .dsgo-grid[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-grid__inner > .dsgo-icon,
 .dsgo-stack[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-stack__inner > .dsgo-icon,
+.dsgo-flex--has-hover-icon:hover .dsgo-flex__inner > .dsgo-icon,
+.dsgo-grid--has-hover-icon:hover .dsgo-grid__inner > .dsgo-icon,
 .dsgo-stack--has-hover-icon:hover .dsgo-stack__inner > .dsgo-icon {
 	background-color: var(--dsgo-parent-hover-icon-bg) !important;
 	transition: background-color 0.3s ease;

@@ -64,6 +64,8 @@
 .dsgo-flex[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-flex__inner > .dsgo-icon-button .dsgo-icon-button__wrapper,
 .dsgo-grid[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-grid__inner > .dsgo-icon-button .dsgo-icon-button__wrapper,
 .dsgo-stack[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-stack__inner > .dsgo-icon-button .dsgo-icon-button__wrapper,
+.dsgo-flex--has-hover-button:hover .dsgo-flex__inner > .dsgo-icon-button .dsgo-icon-button__wrapper,
+.dsgo-grid--has-hover-button:hover .dsgo-grid__inner > .dsgo-icon-button .dsgo-icon-button__wrapper,
 .dsgo-stack--has-hover-button:hover .dsgo-stack__inner > .dsgo-icon-button .dsgo-icon-button__wrapper {
 	background-color: var(--dsgo-parent-hover-button-bg) !important;
 	transition: background-color 0.3s ease;
