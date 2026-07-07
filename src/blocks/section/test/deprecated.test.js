@@ -22,6 +22,9 @@ import {
 	setCategories,
 	parse,
 	getSaveContent,
+	createBlock,
+	serialize,
+	getBlockContent,
 	// eslint-disable-next-line import/no-unresolved
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
 import metadata from '../block.json';
@@ -140,20 +143,35 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 	// v7 is the newest deprecation (index 0).
 	const [v7Deprecation] = deprecated;
 
-	// A section carrying a style-kit overlay variation but saved BEFORE the
-	// overlay class was derived from that variation: no dsgo-stack--has-overlay
-	// and no overlayColor attribute. Built from v7's own save() so it is a
-	// byte-faithful reproduction of that pre-change markup.
-	const OLD_OVERLAY_VARIATION_MARKUP = buildOldMarkup(
-		{ className: 'is-style-overlay-dark' },
-		v7Deprecation
+	// Reproduce content saved BEFORE this change by taking what the block
+	// ACTUALLY serializes today (carrying block.json defaults such as the
+	// spacing padding) and stripping the overlay class. Deriving the fixture
+	// from the real save() — rather than from v7's own save() — is what makes
+	// this a genuine regression guard: v7's `save()` only byte-matches this
+	// markup when v7's attribute schema reproduces block.json's `style` default
+	// (the padding). An earlier version of v7 that omitted that default passed a
+	// tautological buildOldMarkup(v7) fixture but failed against real content.
+	const canonicalMarkup = serialize(
+		createBlock(metadata.name, { className: 'is-style-overlay-dark' })
+	);
+	const OLD_OVERLAY_VARIATION_MARKUP = canonicalMarkup.replace(
+		' dsgo-stack--has-overlay',
+		''
 	);
 
-	test('old is-style-overlay-dark section (no overlay class) migrates silently against current save()', () => {
+	test('canonical markup carries the overlay class and the default spacing padding', () => {
+		// Guards the fixture itself: if either signal disappears the migration
+		// test below stops being meaningful.
+		expect(canonicalMarkup).toContain('dsgo-stack--has-overlay');
 		expect(OLD_OVERLAY_VARIATION_MARKUP).not.toContain(
 			'dsgo-stack--has-overlay'
 		);
+		expect(OLD_OVERLAY_VARIATION_MARKUP).toContain(
+			'--wp--preset--spacing--50'
+		);
+	});
 
+	test('old is-style-overlay-dark section (no overlay class) migrates silently against current save()', () => {
 		const [block] = parse(OLD_OVERLAY_VARIATION_MARKUP);
 
 		// Silent migration logs an informational "Block successfully updated".
@@ -164,6 +182,8 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 		// migrate() is a passthrough — the variation class is retained and the
 		// current save() now derives the overlay class from it.
 		expect(block.attributes.className).toBe('is-style-overlay-dark');
+		// The migrated block re-serializes with the overlay class restored.
+		expect(getBlockContent(block)).toContain('dsgo-stack--has-overlay');
 	});
 
 	test('isEligible detects an overlay variation lacking the overlay class', () => {

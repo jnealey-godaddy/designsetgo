@@ -289,7 +289,23 @@ const v7 = {
 		tagName: { type: 'string', default: 'div' },
 		constrainWidth: { type: 'boolean', default: true },
 		contentWidth: { type: 'string', default: '' },
-		style: { type: 'object' },
+		// Mirror block.json's `style` default. Without it, migration parses
+		// `style` as undefined and v7.save() omits the default spacing padding,
+		// so it no longer byte-matches stored markup (which carries the padding)
+		// and the deprecation never fires. Must stay in sync with block.json.
+		style: {
+			type: 'object',
+			default: {
+				spacing: {
+					padding: {
+						top: 'var:preset|spacing|50',
+						bottom: 'var:preset|spacing|50',
+						left: 'var:preset|spacing|30',
+						right: 'var:preset|spacing|30',
+					},
+				},
+			},
+		},
 		hoverBackgroundColor: { type: 'string', default: '' },
 		hoverTextColor: { type: 'string', default: '' },
 		hoverIconBackgroundColor: { type: 'string', default: '' },
