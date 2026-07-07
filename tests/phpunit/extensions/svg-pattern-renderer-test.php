@@ -120,6 +120,52 @@ class SvgPatternRendererTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A themed color in the block-attribute shorthand (var:preset|color|slug)
+	 * resolves to its palette hex, matching the editor resolver which accepts
+	 * both that form and var(--wp--preset--color--slug).
+	 */
+	public function test_inherit_resolves_preset_slug_color_shorthand() {
+		add_filter(
+			'wp_theme_json_data_theme',
+			static function ( $theme_json ) {
+				return $theme_json->update_with(
+					array(
+						'version'  => 2,
+						'settings' => array(
+							'color'  => array(
+								'palette' => array(
+									array(
+										'slug'  => 'dsgotest',
+										'color' => '#abcdef',
+										'name'  => 'DSGo Test',
+									),
+								),
+							),
+							'custom' => array(
+								'designsetgo' => array(
+									'svgPattern' => array(
+										'type'  => 'dot-grid',
+										'color' => 'var:preset|color|dsgotest',
+									),
+								),
+							),
+						),
+					)
+				);
+			}
+		);
+		wp_clean_theme_json_cache();
+
+		$html   = '<div class="has-dsgo-svg-pattern" data-dsgo-svg-pattern="inherit"></div>';
+		$result = $this->renderer->inject_svg_pattern( $html, $this->make_block( $html ) );
+
+		// rawurlencode('#abcdef') === '%23abcdef' inside the SVG data URI.
+		$this->assertStringContainsString( '%23abcdef', $result );
+		// The in-plugin gray fallback must NOT win once the slug resolves.
+		$this->assertStringNotContainsString( '%239c92ac', $result );
+	}
+
+	/**
 	 * An unknown themed pattern slug falls back to dot-grid, not a broken render.
 	 */
 	public function test_inherit_rejects_unknown_theme_type() {

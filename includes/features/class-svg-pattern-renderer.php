@@ -116,9 +116,10 @@ class SVG_Pattern_Renderer {
 	 *
 	 * CSS variables cannot be used inside SVG data URIs because the SVG
 	 * is an external document that doesn't inherit the page's CSS custom
-	 * properties. This method extracts the slug from
-	 * "var(--wp--preset--color--{slug})" and looks up the actual hex
-	 * value in the global settings palette.
+	 * properties. This method extracts the slug from either the CSS-var form
+	 * "var(--wp--preset--color--{slug})" or the block-attribute shorthand
+	 * "var:preset|color|{slug}" and looks up the actual hex value in the
+	 * global settings palette.
 	 *
 	 * @param string $color Color value, possibly a CSS variable.
 	 * @return string Resolved hex color or the original value.
@@ -128,8 +129,11 @@ class SVG_Pattern_Renderer {
 			return $color;
 		}
 
-		// Match CSS variable format: var(--wp--preset--color--{slug}).
-		if ( ! preg_match( '/^var\(--wp--preset--color--(.+)\)$/', $color, $matches ) ) {
+		// Accept both the CSS-var form var(--wp--preset--color--{slug}) and the
+		// block-attribute shorthand var:preset|color|{slug}, mirroring the
+		// editor resolver so inherited theme colors resolve identically.
+		if ( ! preg_match( '/^var\(--wp--preset--color--(.+)\)$/', $color, $matches )
+			&& ! preg_match( '/^var:preset\|color\|(.+)$/', $color, $matches ) ) {
 			return $color;
 		}
 
