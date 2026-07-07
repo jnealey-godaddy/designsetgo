@@ -11,7 +11,7 @@ import { useSelect } from '@wordpress/data';
 import { store as blockEditorStore } from '@wordpress/block-editor';
 import SvgPatternsPanel from './components/SvgPatternsPanel';
 import { SUPPORTED_BLOCKS, DEFAULTS, INHERIT } from './constants';
-import { getPatternBackground, PATTERNS, PATTERN_IDS } from './patterns';
+import { getPatternBackground, PATTERN_IDS } from './patterns';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { useInheritedSvgPattern } from './use-inherited-svg-pattern';
 
@@ -71,7 +71,7 @@ const addSvgPatternEditorStyles = createHigherOrderComponent(
 			const isActive =
 				dsgoSvgPatternEnabled &&
 				dsgoSvgPatternType &&
-				(isInherit || PATTERNS[dsgoSvgPatternType]);
+				(isInherit || PATTERN_IDS.includes(dsgoSvgPatternType));
 
 			const effectiveRawColor = isInherit
 				? inherited.color
