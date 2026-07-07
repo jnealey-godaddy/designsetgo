@@ -44,6 +44,10 @@ import {
 	encodeColorValue,
 	decodeColorValue,
 } from '../../utils/encode-color-value';
+import {
+	hasOverlayStyleClass,
+	hoverVariationClasses,
+} from '../../utils/style-variation-classes';
 
 /**
  * Grid Container Edit Component
@@ -69,6 +73,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		columnGap,
 		alignItems,
 		textAlign,
+		overlayColor,
 		hoverBackgroundColor,
 		hoverTextColor,
 		hoverIconBackgroundColor,
@@ -126,9 +131,19 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	);
 
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
+	const hasOverlay = !!overlayColor || hasOverlayStyleClass(className);
 	const TagName = tagName || 'div';
 	const blockProps = useBlockProps({
-		className: `dsgo-grid dsgo-grid-cols-${desktopColumns} dsgo-grid-cols-tablet-${tabletColumns} dsgo-grid-cols-mobile-${mobileColumns}`,
+		className: [
+			'dsgo-grid',
+			`dsgo-grid-cols-${desktopColumns}`,
+			`dsgo-grid-cols-tablet-${tabletColumns}`,
+			`dsgo-grid-cols-mobile-${mobileColumns}`,
+			hasOverlay && 'dsgo-grid--has-overlay',
+			...hoverVariationClasses(className, 'dsgo-grid'),
+		]
+			.filter(Boolean)
+			.join(' '),
 		style: {
 			...(hoverBackgroundColor && {
 				'--dsgo-hover-bg-color':
@@ -146,6 +161,10 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 				'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
 					hoverButtonBackgroundColor
 				),
+			}),
+			...(overlayColor && {
+				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+				'--dsgo-overlay-opacity': '0.8',
 			}),
 		},
 	});
@@ -280,6 +299,23 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 					panelId={clientId}
 					title={__('Hover Settings', 'designsetgo')}
 					settings={[
+						{
+							label: __('Overlay Color', 'designsetgo'),
+							colorValue: decodeColorValue(
+								overlayColor,
+								colorGradientSettings
+							),
+							onColorChange: (color) =>
+								setAttributes({
+									overlayColor:
+										encodeColorValue(
+											color,
+											colorGradientSettings
+										) || '',
+								}),
+							enableAlpha: true,
+							clearable: true,
+						},
 						{
 							label: __('Hover Background Color', 'designsetgo'),
 							colorValue: decodeColorValue(

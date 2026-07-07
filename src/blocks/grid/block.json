@@ -148,6 +148,10 @@
 			"type": "string",
 			"default": ""
 		},
+		"overlayColor": {
+			"type": "string",
+			"default": ""
+		},
 		"constrainWidth": {
 			"type": "boolean",
 			"default": false
