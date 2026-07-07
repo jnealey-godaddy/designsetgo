@@ -22,7 +22,7 @@
 import { registerPlugin } from '@wordpress/plugins';
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
-import { useEffect, useRef } from '@wordpress/element';
+import { useEffect, useMemo, useRef } from '@wordpress/element';
 
 import { buildVariationCss } from './generate-css';
 
@@ -107,7 +107,14 @@ function injectStyles(css) {
  * @return {null} No visible output.
  */
 function SectionStylePreview() {
-	const css = useSelect((select) => {
+	// Subscribe only to the global-styles `styles.blocks` config. `useSelect`
+	// re-runs this on every core-data store update, but `getEditedEntityRecord`
+	// is memoized (returns a stable reference until the record actually
+	// changes), so the returned value is reference-stable across unrelated
+	// editor churn. The expensive `buildVariationCss` is deferred to the
+	// `useMemo` below, keyed on that reference, so it only recomputes on real
+	// Global Styles edits — not on every keystroke elsewhere in the editor.
+	const blocksConfig = useSelect((select) => {
 		const core = select(coreStore);
 
 		// NOTE: `__experimentalGetCurrentGlobalStylesId` is an experimental
@@ -125,17 +132,19 @@ function SectionStylePreview() {
 					'DesignSetGo: core-data selector __experimentalGetCurrentGlobalStylesId is unavailable; section-style editor preview is disabled.'
 				);
 			}
-			return '';
+			return undefined;
 		}
 
 		const id = getId();
 		if (!id) {
-			return '';
+			return undefined;
 		}
 
 		const record = core.getEditedEntityRecord('root', 'globalStyles', id);
-		return buildVariationCss(record?.styles?.blocks);
+		return record?.styles?.blocks;
 	}, []);
+
+	const css = useMemo(() => buildVariationCss(blocksConfig), [blocksConfig]);
 
 	// Keep the latest CSS available to deferred/observer callbacks without
 	// re-subscribing, and so stale retries always write the current value.
