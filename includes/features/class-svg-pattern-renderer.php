@@ -77,7 +77,9 @@ class SVG_Pattern_Renderer {
 	 * @return array{type:string,color:string,opacity:float,scale:float}
 	 */
 	private function resolve_inherited_pattern( $patterns ) {
-		$preset = wp_get_global_settings( array( 'custom', 'designsetgo', 'svgPattern' ) );
+		$preset = function_exists( 'wp_get_global_settings' )
+			? wp_get_global_settings( array( 'custom', 'designsetgo', 'svgPattern' ) )
+			: null;
 		if ( ! is_array( $preset ) ) {
 			$preset = array();
 		}
@@ -90,11 +92,14 @@ class SVG_Pattern_Renderer {
 			? $preset['color']
 			: self::INHERIT_FALLBACK['color'];
 
-		$opacity = isset( $preset['opacity'] ) && is_numeric( $preset['opacity'] )
+		// Match the JS resolver's strict numeric check: accept only real
+		// int/float values (theme.json numbers parse as such), not numeric
+		// strings, so editor preview and frontend never diverge.
+		$opacity = isset( $preset['opacity'] ) && ( is_int( $preset['opacity'] ) || is_float( $preset['opacity'] ) )
 			? (float) $preset['opacity']
 			: self::INHERIT_FALLBACK['opacity'];
 
-		$scale = isset( $preset['scale'] ) && is_numeric( $preset['scale'] )
+		$scale = isset( $preset['scale'] ) && ( is_int( $preset['scale'] ) || is_float( $preset['scale'] ) )
 			? (float) $preset['scale']
 			: self::INHERIT_FALLBACK['scale'];
 

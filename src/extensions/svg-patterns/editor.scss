@@ -32,6 +32,14 @@
 		margin-bottom: 12px;
 		font-size: 12px;
 	}
+
+	// Shown in place of the color/opacity/scale controls while inheriting.
+	&__inherit-note {
+		margin: 8px 0 4px;
+		font-size: 12px;
+		font-style: italic;
+		color: #757575;
+	}
 }
 
 // Pattern thumbnail button — scoped specificity to avoid !important
