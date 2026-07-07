@@ -8,8 +8,28 @@
  * @package
  */
 
-import { INHERIT_FALLBACK } from '../constants';
+import { INHERIT_FALLBACK, RANGES } from '../constants';
 import { PATTERNS } from '../pattern-data';
+
+/**
+ * Clamp a numeric preset value into a range, falling back when it isn't a
+ * finite number. Mirrors the PHP renderer's `max( min, min( max, value ) )`
+ * clamps so editor preview and frontend render never diverge (e.g. a theme
+ * opacity of 0 clamps to the range minimum in both places, not to the
+ * fallback in one and the minimum in the other).
+ *
+ * @param {*}      value    Raw preset value.
+ * @param {number} min      Range minimum.
+ * @param {number} max      Range maximum.
+ * @param {number} fallback Value used when `value` isn't a finite number.
+ * @return {number} Clamped value or the fallback.
+ */
+function clampNumber(value, min, max, fallback) {
+	if (typeof value !== 'number' || !Number.isFinite(value)) {
+		return fallback;
+	}
+	return Math.max(min, Math.min(max, value));
+}
 
 /**
  * @param {?Object} preset Raw theme preset object, or nullish.
@@ -29,11 +49,19 @@ export function resolveInheritedPattern(preset) {
 			? p.color
 			: INHERIT_FALLBACK.color;
 
-	const opacity =
-		typeof p.opacity === 'number' ? p.opacity : INHERIT_FALLBACK.opacity;
+	const opacity = clampNumber(
+		p.opacity,
+		RANGES.opacity.min,
+		RANGES.opacity.max,
+		INHERIT_FALLBACK.opacity
+	);
 
-	const scale =
-		typeof p.scale === 'number' ? p.scale : INHERIT_FALLBACK.scale;
+	const scale = clampNumber(
+		p.scale,
+		RANGES.scale.min,
+		RANGES.scale.max,
+		INHERIT_FALLBACK.scale
+	);
 
 	return { type, color, opacity, scale };
 }
