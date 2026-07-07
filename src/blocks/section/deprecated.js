@@ -11,6 +11,11 @@ import {
 } from '../../utils/convert-preset-to-css-var';
 import { getLegacyShapeDivider } from './utils/legacy-shape-dividers';
 import { sanitizeColor } from './utils/sanitize-color';
+import {
+	hasOverlayStyleClass,
+	hoverVariationClasses,
+} from './utils/has-overlay-style';
+import ShapeDivider from './components/ShapeDivider';
 
 // Shared supports for deprecations (must match what was in block.json when blocks were saved).
 // Without this, useBlockProps.save() in deprecated save functions won't generate
@@ -264,6 +269,429 @@ function V4ShapeDivider({
 		</div>
 	);
 }
+
+// Version 8: Pre-hover-variation-classes output. The current save() also
+// emits `dsgo-stack--has-hover-text` / `-icon` / `-button` when a style-kit
+// hover variation (`is-style-hover-{text,icon,button}-*`) is present on
+// className, so the corresponding `!important` hover override can activate
+// from a variation's stylesheet instead of only the inline-style gate.
+// Sections saved with such a variation but no matching `dsgo-stack--has-hover-*`
+// class in their stored HTML therefore mismatch the current save() — an
+// "invalid content" mismatch, the same failure mode v7 fixes for the overlay
+// class.
+//
+// isEligible targets that signature (a hover-variation family present on
+// className whose activation class is missing from the stored HTML) so those
+// blocks migrate SILENTLY. save() reproduces the pre-hover-variation-classes
+// output — i.e. v7's *current* (non-deprecated) behavior at the time hover
+// classes were added, which already includes the overlay-variation class
+// derivation from v7/60c99058, just without the hover activation classes —
+// so it also byte-matches on WP versions that still validate the
+// deprecation's save() before migrating. migrate() is a passthrough — only
+// the serialised class differs, not the attribute values; the current save()
+// then re-derives the hover classes from the variation.
+const v8 = {
+	supports: sharedSupports,
+	attributes: {
+		align: { type: 'string', default: 'full' },
+		tagName: { type: 'string', default: 'div' },
+		constrainWidth: { type: 'boolean', default: true },
+		contentWidth: { type: 'string', default: '' },
+		// Mirror block.json's `style` default (see v7's identical note).
+		style: {
+			type: 'object',
+			default: {
+				spacing: {
+					padding: {
+						top: 'var:preset|spacing|50',
+						bottom: 'var:preset|spacing|50',
+						left: 'var:preset|spacing|30',
+						right: 'var:preset|spacing|30',
+					},
+				},
+			},
+		},
+		hoverBackgroundColor: { type: 'string', default: '' },
+		hoverTextColor: { type: 'string', default: '' },
+		hoverIconBackgroundColor: { type: 'string', default: '' },
+		hoverButtonBackgroundColor: { type: 'string', default: '' },
+		overlayColor: { type: 'string', default: '' },
+		shapeDividerTop: { type: 'string', default: '' },
+		shapeDividerTopColor: { type: 'string', default: '' },
+		shapeDividerTopHeight: { type: 'number', default: 100 },
+		shapeDividerTopWidth: { type: 'number', default: 100 },
+		shapeDividerTopFlipX: { type: 'boolean', default: false },
+		shapeDividerTopFlipY: { type: 'boolean', default: false },
+		shapeDividerTopFront: { type: 'boolean', default: false },
+		shapeDividerTopBackgroundColor: { type: 'string', default: '' },
+		shapeDividerBottom: { type: 'string', default: '' },
+		shapeDividerBottomColor: { type: 'string', default: '' },
+		shapeDividerBottomHeight: { type: 'number', default: 100 },
+		shapeDividerBottomWidth: { type: 'number', default: 100 },
+		shapeDividerBottomFlipX: { type: 'boolean', default: false },
+		shapeDividerBottomFlipY: { type: 'boolean', default: false },
+		shapeDividerBottomFront: { type: 'boolean', default: false },
+		shapeDividerBottomBackgroundColor: { type: 'string', default: '' },
+	},
+	/**
+	 * Silently migrate sections that carry a style-kit hover variation
+	 * (`is-style-hover-{text,icon,button}-*`) but whose stored HTML predates
+	 * the matching `dsgo-stack--has-hover-*` activation class being derived
+	 * from that variation.
+	 *
+	 * @param {Object} attributes      Block attributes.
+	 * @param {Array}  innerBlocks     Inner blocks.
+	 * @param {Object} extra           Extra data.
+	 * @param {string} extra.innerHTML Stored serialised HTML.
+	 * @return {boolean} True when a hover-variation family is present without
+	 *                    its matching activation class in the stored HTML.
+	 */
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		if (!innerHTML || !innerHTML.includes('dsgo-stack')) {
+			return false;
+		}
+
+		return hoverVariationClasses(attributes.className).some(
+			(activationClass) => !innerHTML.includes(activationClass)
+		);
+	},
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			constrainWidth,
+			contentWidth,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			overlayColor,
+			shapeDividerTop,
+			shapeDividerTopBackgroundColor,
+			shapeDividerTopHeight,
+			shapeDividerTopWidth,
+			shapeDividerTopFlipX,
+			shapeDividerTopFlipY,
+			shapeDividerTopFront,
+			shapeDividerBottom,
+			shapeDividerBottomBackgroundColor,
+			shapeDividerBottomHeight,
+			shapeDividerBottomWidth,
+			shapeDividerBottomFlipX,
+			shapeDividerBottomFlipY,
+			shapeDividerBottomFront,
+		} = attributes;
+
+		const shapeDividerTopBandColor = convertColorToCSSVar(
+			shapeDividerTopBackgroundColor
+		);
+		const shapeDividerBottomBandColor = convertColorToCSSVar(
+			shapeDividerBottomBackgroundColor
+		);
+
+		// Pre-hover-variation-classes className: overlay class already derives
+		// from the style variation (v7/60c99058), but no hover activation classes.
+		const hasOverlay =
+			!!overlayColor || hasOverlayStyleClass(attributes.className);
+		const className = [
+			'dsgo-stack',
+			!constrainWidth && 'dsgo-no-width-constraint',
+			hasOverlay && 'dsgo-stack--has-overlay',
+			(shapeDividerTop || shapeDividerBottom) &&
+				'dsgo-stack--has-shape-divider',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+		const blockProps = useBlockProps.save({
+			className,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+				...(overlayColor && {
+					'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+					'--dsgo-overlay-opacity': '0.8',
+				}),
+			},
+		});
+
+		const innerStyle = {};
+		if (constrainWidth) {
+			innerStyle.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyle.marginLeft = 'auto';
+			innerStyle.marginRight = 'auto';
+		}
+
+		if (shapeDividerTop) {
+			innerStyle.paddingTop = `${shapeDividerTopHeight || 100}px`;
+		}
+		if (shapeDividerBottom) {
+			innerStyle.paddingBottom = `${shapeDividerBottomHeight || 100}px`;
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-stack__inner',
+			style: innerStyle,
+		});
+
+		return (
+			<TagName {...blockProps}>
+				<ShapeDivider
+					shape={shapeDividerTop}
+					position="top"
+					height={shapeDividerTopHeight}
+					width={shapeDividerTopWidth}
+					flipX={shapeDividerTopFlipX}
+					flipY={shapeDividerTopFlipY}
+					front={shapeDividerTopFront}
+					bandColor={shapeDividerTopBandColor}
+				/>
+				<div {...innerBlocksProps} />
+				<ShapeDivider
+					shape={shapeDividerBottom}
+					position="bottom"
+					height={shapeDividerBottomHeight}
+					width={shapeDividerBottomWidth}
+					flipX={shapeDividerBottomFlipX}
+					flipY={shapeDividerBottomFlipY}
+					front={shapeDividerBottomFront}
+					bandColor={shapeDividerBottomBandColor}
+				/>
+			</TagName>
+		);
+	},
+	migrate(attributes) {
+		// Only the serialised hover-activation classes differ; the current
+		// save() derives them from the style variation on className, so no
+		// attribute change.
+		return attributes;
+	},
+};
+
+// Version 7: Overlay class from overlayColor only (before style-kit overlay
+// variations). The current save() also emits `dsgo-stack--has-overlay` when a
+// style-kit overlay variation (`is-style-overlay-*`) is present on className,
+// so the overlay color can move out of the `overlayColor` attribute and into
+// the variation's stylesheet. Sections saved with such a variation but no
+// `overlayColor` therefore lack `dsgo-stack--has-overlay` in their stored HTML
+// while the new save() adds it — an "invalid content" mismatch.
+//
+// isEligible targets exactly that signature (overlay variation on className +
+// no overlay class in the stored HTML) so those blocks migrate SILENTLY. save()
+// reproduces the pre-change output (overlay class from `overlayColor` only) so
+// it also byte-matches on WP versions that still validate the deprecation's
+// save() before migrating. migrate() is a passthrough — only the serialised
+// class differs, not the attribute values; the current save() then re-renders
+// the block with the overlay class derived from the variation.
+const v7 = {
+	supports: sharedSupports,
+	attributes: {
+		align: { type: 'string', default: 'full' },
+		tagName: { type: 'string', default: 'div' },
+		constrainWidth: { type: 'boolean', default: true },
+		contentWidth: { type: 'string', default: '' },
+		// Mirror block.json's `style` default. Without it, migration parses
+		// `style` as undefined and v7.save() omits the default spacing padding,
+		// so it no longer byte-matches stored markup (which carries the padding)
+		// and the deprecation never fires. Must stay in sync with block.json.
+		style: {
+			type: 'object',
+			default: {
+				spacing: {
+					padding: {
+						top: 'var:preset|spacing|50',
+						bottom: 'var:preset|spacing|50',
+						left: 'var:preset|spacing|30',
+						right: 'var:preset|spacing|30',
+					},
+				},
+			},
+		},
+		hoverBackgroundColor: { type: 'string', default: '' },
+		hoverTextColor: { type: 'string', default: '' },
+		hoverIconBackgroundColor: { type: 'string', default: '' },
+		hoverButtonBackgroundColor: { type: 'string', default: '' },
+		overlayColor: { type: 'string', default: '' },
+		shapeDividerTop: { type: 'string', default: '' },
+		shapeDividerTopColor: { type: 'string', default: '' },
+		shapeDividerTopHeight: { type: 'number', default: 100 },
+		shapeDividerTopWidth: { type: 'number', default: 100 },
+		shapeDividerTopFlipX: { type: 'boolean', default: false },
+		shapeDividerTopFlipY: { type: 'boolean', default: false },
+		shapeDividerTopFront: { type: 'boolean', default: false },
+		shapeDividerTopBackgroundColor: { type: 'string', default: '' },
+		shapeDividerBottom: { type: 'string', default: '' },
+		shapeDividerBottomColor: { type: 'string', default: '' },
+		shapeDividerBottomHeight: { type: 'number', default: 100 },
+		shapeDividerBottomWidth: { type: 'number', default: 100 },
+		shapeDividerBottomFlipX: { type: 'boolean', default: false },
+		shapeDividerBottomFlipY: { type: 'boolean', default: false },
+		shapeDividerBottomFront: { type: 'boolean', default: false },
+		shapeDividerBottomBackgroundColor: { type: 'string', default: '' },
+	},
+	/**
+	 * Silently migrate sections that carry a style-kit overlay variation
+	 * (`is-style-overlay-*`) but whose stored HTML predates the overlay class
+	 * being derived from that variation.
+	 *
+	 * @param {Object} attributes      Block attributes.
+	 * @param {Array}  innerBlocks     Inner blocks.
+	 * @param {Object} extra           Extra data.
+	 * @param {string} extra.innerHTML Stored serialised HTML.
+	 * @return {boolean} True when the pre-variation overlay signature is found.
+	 */
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		return !!(
+			hasOverlayStyleClass(attributes.className) &&
+			innerHTML &&
+			innerHTML.includes('dsgo-stack') &&
+			!innerHTML.includes('dsgo-stack--has-overlay')
+		);
+	},
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			constrainWidth,
+			contentWidth,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			overlayColor,
+			shapeDividerTop,
+			shapeDividerTopBackgroundColor,
+			shapeDividerTopHeight,
+			shapeDividerTopWidth,
+			shapeDividerTopFlipX,
+			shapeDividerTopFlipY,
+			shapeDividerTopFront,
+			shapeDividerBottom,
+			shapeDividerBottomBackgroundColor,
+			shapeDividerBottomHeight,
+			shapeDividerBottomWidth,
+			shapeDividerBottomFlipX,
+			shapeDividerBottomFlipY,
+			shapeDividerBottomFront,
+		} = attributes;
+
+		const shapeDividerTopBandColor = convertColorToCSSVar(
+			shapeDividerTopBackgroundColor
+		);
+		const shapeDividerBottomBandColor = convertColorToCSSVar(
+			shapeDividerBottomBackgroundColor
+		);
+
+		// Pre-change className: overlay class from overlayColor ONLY.
+		const className = [
+			'dsgo-stack',
+			!constrainWidth && 'dsgo-no-width-constraint',
+			overlayColor && 'dsgo-stack--has-overlay',
+			(shapeDividerTop || shapeDividerBottom) &&
+				'dsgo-stack--has-shape-divider',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+		const blockProps = useBlockProps.save({
+			className,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+				...(overlayColor && {
+					'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+					'--dsgo-overlay-opacity': '0.8',
+				}),
+			},
+		});
+
+		const innerStyle = {};
+		if (constrainWidth) {
+			innerStyle.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyle.marginLeft = 'auto';
+			innerStyle.marginRight = 'auto';
+		}
+
+		if (shapeDividerTop) {
+			innerStyle.paddingTop = `${shapeDividerTopHeight || 100}px`;
+		}
+		if (shapeDividerBottom) {
+			innerStyle.paddingBottom = `${shapeDividerBottomHeight || 100}px`;
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-stack__inner',
+			style: innerStyle,
+		});
+
+		return (
+			<TagName {...blockProps}>
+				<ShapeDivider
+					shape={shapeDividerTop}
+					position="top"
+					height={shapeDividerTopHeight}
+					width={shapeDividerTopWidth}
+					flipX={shapeDividerTopFlipX}
+					flipY={shapeDividerTopFlipY}
+					front={shapeDividerTopFront}
+					bandColor={shapeDividerTopBandColor}
+				/>
+				<div {...innerBlocksProps} />
+				<ShapeDivider
+					shape={shapeDividerBottom}
+					position="bottom"
+					height={shapeDividerBottomHeight}
+					width={shapeDividerBottomWidth}
+					flipX={shapeDividerBottomFlipX}
+					flipY={shapeDividerBottomFlipY}
+					front={shapeDividerBottomFront}
+					bandColor={shapeDividerBottomBandColor}
+				/>
+			</TagName>
+		);
+	},
+	migrate(attributes) {
+		// Only the serialised overlay class differs; the current save() derives
+		// it from the style variation on className, so no attribute change.
+		return attributes;
+	},
+};
 
 // Version 6: Block animations extension before lean serialization.
 // In commit 634833e5, addAnimationSaveProps was changed to only output data
@@ -1349,4 +1777,4 @@ const v1 = {
 };
 
 // Export deprecations in reverse chronological order (newest first)
-export default [v6, v5, v4, v3, v2, v1];
+export default [v8, v7, v6, v5, v4, v3, v2, v1];

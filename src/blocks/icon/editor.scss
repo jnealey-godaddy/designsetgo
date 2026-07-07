@@ -108,9 +108,12 @@
 // CRITICAL: Use __inner wrapper to avoid triggering on outer padding areas
 // CRITICAL: Exclude icons that are inside nested containers
 // This changes the block's background color, which the wrapper inherits
+// See style.scss: the --has-hover-icon selector adds Section style-variation
+// support alongside the inline-var (attribute) gate.
 .dsgo-flex[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-flex__inner > .dsgo-icon,
 .dsgo-grid[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-grid__inner > .dsgo-icon,
-.dsgo-stack[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-stack__inner > .dsgo-icon {
+.dsgo-stack[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-stack__inner > .dsgo-icon,
+.dsgo-stack--has-hover-icon:hover .dsgo-stack__inner > .dsgo-icon {
 	background-color: var(--dsgo-parent-hover-icon-bg) !important;
 	transition: background-color 0.3s ease;
 }
