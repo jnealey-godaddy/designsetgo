@@ -28,15 +28,21 @@
 
 	// Hover background overlay - works with both gradients and solid colors
 	// Using ::after pseudo-element allows smooth opacity transition
-	// z-index: 0 (below overlay ::before and content)
-	&[style*="--dsgo-hover-bg-color"]::after {
+	// z-index: 0 (below overlay ::before and content).
+	// The layer is always present but transparent until --dsgo-hover-bg-color is
+	// set, so fading it in on hover is a no-op when there is no hover color. This
+	// (rather than an inline-`[style*=…]` gate) lets the color come from EITHER
+	// the block's inline attribute OR a section style variation's stylesheet
+	// (`.is-style-*{ --dsgo-hover-bg-color: … }`). Additive overlay — no base
+	// value is clobbered — so no class-based activation is needed.
+	&::after {
 		content: '';
 		position: absolute;
 		top: 0;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background: var(--dsgo-hover-bg-color);
+		background: var(--dsgo-hover-bg-color, transparent);
 		opacity: 0;
 		transition: opacity 0.3s ease;
 		pointer-events: none;
@@ -445,15 +451,20 @@
 	}
 
 	// Hover background and text colors using CSS custom properties
-	// CRITICAL: Only apply hover when variables are actually set on THIS element
 	&:hover {
-		// Fade in the hover background overlay (::after pseudo-element)
-		// This allows smooth transition from gradient to solid color
-		&[style*="--dsgo-hover-bg-color"]::after {
+		// Fade in the hover background overlay (::after pseudo-element). Safe
+		// when no hover color is set — the layer is transparent, so this is a
+		// visual no-op. Works with an inline attribute or a style variation.
+		&::after {
 			opacity: 1;
 		}
 
-		// Only apply text color if hover text color is set
+		// Hover text color still uses an inline-`[style*=…]` gate: unlike the
+		// additive ::after overlay, it overrides the base `color` with
+		// !important, so applying it when unset would clobber the section's own
+		// text color. A style-variation stylesheet can't satisfy this selector —
+		// making it variation-settable needs class-based activation (see PR).
+		// CRITICAL: Only apply hover text when the variable is set on THIS element.
 		&[style*="--dsgo-hover-text-color"] {
 			color: var(--dsgo-hover-text-color) !important;
 
