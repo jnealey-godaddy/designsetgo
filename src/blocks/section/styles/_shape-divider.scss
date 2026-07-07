@@ -7,9 +7,11 @@
  * the single canonical slug list. It is @used by BOTH style.scss (frontend)
  * and editor.scss so the two stay byte-identical without duplication.
  *
- * The per-shape `--dsgo-shape--<slug>` custom properties live in the
- * companion `_shape-masks.scss`, @used below so the masks and the `@each`
- * that consumes them travel together.
+ * The per-shape `--dsgo-shape--<slug>` custom properties, the slug list,
+ * the per-slug mask assignment, and the `is-shape-inherit` resolver are
+ * block-agnostic and live in the shared `_shape-mask-classes.scss` /
+ * `_shape-masks.scss` partials (src/styles/shared/), @used below so this
+ * block only owns the section-specific painting.
  *
  * Z-index hierarchy:
  * - Shape dividers (default): z-index 1
@@ -19,19 +21,7 @@
  * @since 2.6.0
  */
 
-@use 'shape-masks';
-
-// One entry per slug from getShapeDividerNames()
-// (src/blocks/section/utils/shape-dividers.js) — keep this list in sync.
-// This is the ONLY SCSS copy of the slug list.
-$dsgo-shape-slugs: (
-	'wave', 'wave-double', 'wave-layered', 'wave-asymmetric',
-	'tilt', 'tilt-reverse', 'curve', 'curve-asymmetric',
-	'triangle', 'triangle-asymmetric', 'arrow', 'arrow-wide',
-	'peaks', 'peaks-soft', 'zigzag', 'book',
-	'clouds', 'drops', 'split', 'fan',
-	'steps', 'torn', 'slime'
-);
+@use '../../../styles/shared/shape-mask-classes';
 
 // Sub-pixel edge bleed. The band is painted right up to the ::before box edge,
 // so at fractional browser zoom (90/110/125%) a hairline rounding gap can open
@@ -112,20 +102,6 @@ $dsgo-shape-bleed: 1px;
 // Bring to front - display above content.
 :where(.dsgo-shape-divider.is-front) {
 	z-index: 2;
-}
-
-// Per-shape mask assignment, generated from the single slug list above.
-@each $dsgo-shape-slug in $dsgo-shape-slugs {
-
-	:where(.dsgo-shape-divider.is-shape-#{$dsgo-shape-slug}) {
-		--dsgo-shape-mask: var(--dsgo-shape--#{$dsgo-shape-slug});
-	}
-}
-
-// Theme-default shape: resolves to the theme.json custom shape-divider type,
-// falling back to "wave" when the theme doesn't define one.
-:where(.dsgo-shape-divider.is-shape-inherit) {
-	--dsgo-shape-mask: var(--wp--custom--designsetgo--shape-divider--type, var(--dsgo-shape--wave));
 }
 
 // Fan: a TONAL ray divider, not a see-through knockout. Its mask carries its

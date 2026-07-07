@@ -1,6 +1,15 @@
 # Claude Memory - DesignSetGo
 
-## icon-list / icon-list-item: fill/outline toggle + theme default size token (agent: icon-list-icon-parity-2026-07-02)
+## Section-divider block Task 1 — extracted shared shape-mask CSS primitives (agent: section-divider-task1-2026-07-06, branch: claude/section-divider-block, worktree: .worktrees/section-divider)
+
+Pure CSS reorg prep for the upcoming standalone `designsetgo/section-divider` block, which will reuse the section block's shape-mask library.
+
+- Moved `src/blocks/section/styles/_shape-masks.scss` → `src/styles/shared/_shape-masks.scss` (byte-identical, verified via `diff`).
+- New `src/styles/shared/_shape-mask-classes.scss` — holds the `$dsgo-shape-slugs` list, the `@each` per-slug `--dsgo-shape-mask` assignment, and the `is-shape-inherit` resolver (all block-agnostic). `@use`s sibling `shape-masks`.
+- `src/blocks/section/styles/_shape-divider.scss` now `@use '../../../styles/shared/shape-mask-classes';` and keeps only section-specific painting: `::before` two-layer knockout, bleed, position, flip, `is-front`, `is-shape-fan` single-layer override, `.dsgo-stack--has-shape-divider` stacking.
+- Only reference to the old path was inside `_shape-divider.scss` itself (its own `@use` + two `$dsgo-shape-slugs` usages) — no other SCSS file imported `_shape-masks.scss` directly. `ShapeDivider.js` had a doc-comment mentioning the old filename; updated for accuracy (non-functional).
+- Verified: `npm run build` clean; `build/blocks/section/style-index.css` (frontend) and `build/blocks/section/index.css` (editor) both still contain the mask data-URIs, `is-shape-inherit`, and `is-shape-fan`; `npx jest src/blocks/section/` → 10/10 passed (baseline unchanged).
+- Commit `8af7da6c` — next task builds the new `designsetgo/section-divider` block on top of these shared partials.
 
 Mirrored the two `designsetgo/icon` features onto the `designsetgo/icon-list` (parent) + `designsetgo/icon-list-item` (child) pair, matching the `iconSize`/`iconColor` context-propagation pattern already used by that block family.
 

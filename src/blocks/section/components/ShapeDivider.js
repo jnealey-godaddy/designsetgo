@@ -3,9 +3,10 @@
  *
  * Renders a class-based shape divider `<div>` for section blocks. The shape
  * itself is painted by CSS via `mask-image` (see
- * `src/blocks/section/styles/_shape-divider.scss` and `_shape-masks.scss`) —
- * this component only emits the marker classes and CSS custom properties the
- * stylesheet reads. No inline `<svg>` is rendered.
+ * `src/blocks/section/styles/_shape-divider.scss` and the shared
+ * `src/styles/shared/_shape-masks.scss` / `_shape-mask-classes.scss`
+ * partials) — this component only emits the marker classes and CSS custom
+ * properties the stylesheet reads. No inline `<svg>` is rendered.
  *
  * Used in both edit.js and save.js for consistent rendering.
  *

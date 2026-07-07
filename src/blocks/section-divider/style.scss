@@ -1,0 +1,39 @@
+/**
+ * Section Divider — frontend
+ *
+ * Standalone solid-filled shape divider. The `is-shape-*` marker classes
+ * and mask library come from the shared primitives; here we just paint the
+ * masked box with the fill color (attribute → theme token → base preset).
+ */
+
+@use '../../styles/shared/shape-mask-classes';
+
+:where(.wp-block-designsetgo-section-divider) {
+	line-height: 0;
+	// Contain shapes wider than 100% (Width range 100–300%) so the over-wide
+	// portion is clipped to the block rather than opening a horizontal page
+	// scrollbar. Mirrors .dsgo-stack--has-shape-divider on the section block.
+	overflow-x: clip;
+	// The area around/behind the masked shape (the "non-shape" background).
+	// Transparent by default so the block shows whatever sits behind it.
+	background-color: var(--dsgo-section-divider-bg, transparent);
+}
+
+:where(.dsgo-section-divider__shape) {
+	display: block;
+	position: relative;
+	width: var(--dsgo-shape-width, 100%);
+	height: var(--dsgo-shape-height,
+		var(--wp--custom--designsetgo--shape-divider--height, 100px));
+	// Centre shapes wider than 100%: `margin-inline: auto` cannot centre an
+	// over-constrained (wider-than-container) box — its auto margins resolve
+	// to 0 and the shape overflows to one side. Offset by half the overflow
+	// instead; resolves to 0 at the default 100% and grows symmetrically.
+	// Matches the section block's shape-divider centering.
+	left: calc((100% - var(--dsgo-shape-width, 100%)) / 2);
+	background-color: var(--dsgo-section-divider-fill,
+		var(--wp--custom--designsetgo--shape-divider--color, var(--wp--preset--color--base)));
+	-webkit-mask: var(--dsgo-shape-mask) no-repeat center / 100% 100%;
+	mask: var(--dsgo-shape-mask) no-repeat center / 100% 100%;
+	transform: scaleX(var(--dsgo-shape-flip-x, 1)) scaleY(var(--dsgo-shape-flip-y, 1));
+}
