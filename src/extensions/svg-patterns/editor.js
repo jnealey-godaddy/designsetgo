@@ -10,7 +10,7 @@ import { Fragment, useMemo } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import { store as blockEditorStore } from '@wordpress/block-editor';
 import SvgPatternsPanel from './components/SvgPatternsPanel';
-import { SUPPORTED_BLOCKS, DEFAULTS } from './constants';
+import { SUPPORTED_BLOCKS, DEFAULTS, INHERIT } from './constants';
 import { getPatternBackground, PATTERNS, PATTERN_IDS } from './patterns';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 
@@ -164,7 +164,7 @@ addFilter(
  * @param {Object} attributes Block attributes
  * @return {Object} Modified props
  */
-function addSvgPatternSaveProps(extraProps, blockType, attributes) {
+export function addSvgPatternSaveProps(extraProps, blockType, attributes) {
 	const {
 		dsgoSvgPatternEnabled,
 		dsgoSvgPatternType,
@@ -173,13 +173,26 @@ function addSvgPatternSaveProps(extraProps, blockType, attributes) {
 		dsgoSvgPatternScale,
 	} = attributes;
 
+	const isInherit = dsgoSvgPatternType === INHERIT;
+
 	if (
 		!SUPPORTED_BLOCKS.includes(blockType.name) ||
 		!dsgoSvgPatternEnabled ||
 		!dsgoSvgPatternType ||
-		!PATTERN_IDS.includes(dsgoSvgPatternType)
+		(!isInherit && !PATTERN_IDS.includes(dsgoSvgPatternType))
 	) {
 		return extraProps;
+	}
+
+	if (isInherit) {
+		return {
+			...extraProps,
+			className: [extraProps.className, 'has-dsgo-svg-pattern']
+				.filter(Boolean)
+				.join(' '),
+			style: extraProps.style || {},
+			'data-dsgo-svg-pattern': INHERIT,
+		};
 	}
 
 	const safeOpacity =
