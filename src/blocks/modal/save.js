@@ -55,9 +55,8 @@ export default function save({ attributes }) {
 		role: 'dialog',
 		'aria-modal': 'true',
 		// Use aria-label for accessibility; do not set aria-labelledby unless title element is guaranteed
-		'aria-label': attributes.modalLabel
-			? attributes.modalLabel
-			: __('Modal', 'designsetgo'),
+		'aria-label':
+			attributes.modalLabel?.trim() || __('Modal', 'designsetgo'),
 		'aria-hidden': 'true',
 		'data-dsgo-modal': 'true',
 		'data-modal-id': modalId,
@@ -104,7 +103,9 @@ export default function save({ attributes }) {
 					convertColorToCSSVar(closeButtonBgColor) || undefined,
 			}}
 			type="button"
-			aria-label={closeButtonLabel || __('Close modal', 'designsetgo')}
+			aria-label={
+				closeButtonLabel?.trim() || __('Close modal', 'designsetgo')
+			}
 		>
 			<svg
 				width="100%"

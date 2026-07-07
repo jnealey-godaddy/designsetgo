@@ -311,7 +311,7 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 										) || undefined,
 								}}
 								aria-label={
-									closeButtonLabel ||
+									closeButtonLabel?.trim() ||
 									__('Close modal', 'designsetgo')
 								}
 								disabled
@@ -361,7 +361,7 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 											) || undefined,
 									}}
 									aria-label={
-										closeButtonLabel ||
+										closeButtonLabel?.trim() ||
 										__('Close modal', 'designsetgo')
 									}
 									disabled

@@ -33,6 +33,7 @@ export default function ModalSettings({ attributes, setAttributes }) {
 					label={__('Accessible Label', 'designsetgo')}
 					value={modalLabel}
 					onChange={(value) => setAttributes({ modalLabel: value })}
+					placeholder={__('Modal', 'designsetgo')}
 					help={__(
 						'Describes the modal for screen readers (aria-label). Defaults to "Modal" when empty.',
 						'designsetgo'
