@@ -8,11 +8,15 @@ import { addFilter } from '@wordpress/hooks';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { Fragment, useMemo } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
-import { store as blockEditorStore } from '@wordpress/block-editor';
+import {
+	store as blockEditorStore,
+	useSettings,
+} from '@wordpress/block-editor';
 import SvgPatternsPanel from './components/SvgPatternsPanel';
 import { SUPPORTED_BLOCKS, DEFAULTS, INHERIT } from './constants';
 import { getPatternBackground, PATTERNS, PATTERN_IDS } from './patterns';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { resolveInheritedPattern } from './utils/resolve-inherited-pattern';
 
 /**
  * Add SVG pattern controls to the block editor
@@ -61,10 +65,37 @@ const addSvgPatternEditorStyles = createHigherOrderComponent(
 				dsgoSvgPatternFixed,
 			} = attributes;
 
+			const isInherit = dsgoSvgPatternType === INHERIT;
+
+			// Theme preset lives at settings.custom.designsetgo.svgPattern.
+			// useSettings reads one leaf at a time; pull the four fields we need.
+			const [themeType, themeColor, themeOpacity, themeScale] =
+				useSettings(
+					'custom.designsetgo.svgPattern.type',
+					'custom.designsetgo.svgPattern.color',
+					'custom.designsetgo.svgPattern.opacity',
+					'custom.designsetgo.svgPattern.scale'
+				);
+
+			const inherited = useMemo(
+				() =>
+					resolveInheritedPattern({
+						type: themeType,
+						color: themeColor,
+						opacity: themeOpacity,
+						scale: themeScale,
+					}),
+				[themeType, themeColor, themeOpacity, themeScale]
+			);
+
 			const isActive =
 				dsgoSvgPatternEnabled &&
 				dsgoSvgPatternType &&
-				PATTERNS[dsgoSvgPatternType];
+				(isInherit || PATTERNS[dsgoSvgPatternType]);
+
+			const effectiveRawColor = isInherit
+				? inherited.color
+				: dsgoSvgPatternColor;
 
 			// Resolve preset color slugs to hex values. CSS variables
 			// cannot be used inside SVG data URIs because the SVG is an
@@ -72,28 +103,31 @@ const addSvgPatternEditorStyles = createHigherOrderComponent(
 			const resolvedColor = useSelect(
 				(select) => {
 					if (
-						!dsgoSvgPatternColor ||
-						typeof dsgoSvgPatternColor !== 'string'
+						!effectiveRawColor ||
+						typeof effectiveRawColor !== 'string'
 					) {
 						return DEFAULTS.color;
 					}
 
-					// Parse WordPress preset format: var:preset|color|{slug}
-					const presetMatch = dsgoSvgPatternColor.match(
+					// Accept both var:preset|color|slug and var(--wp--preset--color--slug).
+					const presetMatch = effectiveRawColor.match(
 						/^var:preset\|color\|(.+)$/
 					);
-					if (!presetMatch) {
+					const cssVarMatch = effectiveRawColor.match(
+						/^var\(--wp--preset--color--(.+)\)$/
+					);
+					const slug = presetMatch?.[1] || cssVarMatch?.[1];
+					if (!slug) {
 						// Already a raw color value (hex, rgb, etc.)
-						return dsgoSvgPatternColor;
+						return effectiveRawColor;
 					}
 
-					const slug = presetMatch[1];
 					const settings = select(blockEditorStore).getSettings();
 					const colors = settings.colors || [];
 					const found = colors.find((c) => c.slug === slug);
 					return found?.color || DEFAULTS.color;
 				},
-				[dsgoSvgPatternColor]
+				[effectiveRawColor]
 			);
 
 			// Memoize SVG generation to avoid re-encoding on every render
@@ -101,14 +135,23 @@ const addSvgPatternEditorStyles = createHigherOrderComponent(
 				if (!isActive) {
 					return null;
 				}
+				const effType = isInherit ? inherited.type : dsgoSvgPatternType;
+				const effOpacity = isInherit
+					? inherited.opacity
+					: (dsgoSvgPatternOpacity ?? DEFAULTS.opacity);
+				const effScale = isInherit
+					? inherited.scale
+					: (dsgoSvgPatternScale ?? DEFAULTS.scale);
 				return getPatternBackground(
-					dsgoSvgPatternType,
+					effType,
 					resolvedColor,
-					dsgoSvgPatternOpacity ?? DEFAULTS.opacity,
-					dsgoSvgPatternScale ?? DEFAULTS.scale
+					effOpacity,
+					effScale
 				);
 			}, [
 				isActive,
+				isInherit,
+				inherited,
 				dsgoSvgPatternType,
 				resolvedColor,
 				dsgoSvgPatternOpacity,
