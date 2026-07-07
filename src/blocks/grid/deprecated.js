@@ -9,6 +9,10 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import {
+	hasOverlayStyleClass,
+	hoverVariationClasses,
+} from '../../utils/style-variation-classes';
 import metadata from './block.json';
 
 // Captures the column min width from a `minmax(<width>, 1fr)` grid track.
@@ -77,6 +81,153 @@ const sharedSupports = {
 			style: true,
 			width: true,
 		},
+	},
+};
+
+// Before style-kit overlay/hover variation detection (and, for overlay,
+// before the `overlayColor` attribute existed at all). The current save()
+// emits `dsgo-grid--has-overlay` when a style-kit overlay variation
+// (`is-style-overlay-*`) is present on className (or `overlayColor` is set),
+// and emits `dsgo-grid--has-hover-{text,icon,button}` activation classes for
+// the matching `is-style-hover-*` variation families — mirroring Section's
+// behavior. Grids saved with such a variation but no matching class in their
+// stored HTML fail validation against the new save().
+//
+// Note the asymmetry with Row's equivalent deprecation: the overlay branch
+// here can ONLY ever be reached via a className variation, never via
+// `overlayColor` — that attribute didn't exist on Grid before this change, so
+// no stored Grid content could have set it. That's intentional, not a gap to
+// "fix" for symmetry.
+//
+// isEligible targets exactly that signature (a variation on className with
+// no matching class in the stored HTML) so those grids migrate SILENTLY.
+// save() reproduces this file's pre-change output (no overlay logic at all,
+// no hover activation classes) so it also byte-matches on WP versions that
+// still validate the deprecation's save() before migrating. migrate() is a
+// passthrough — only the serialised class differs, not the attribute
+// values; the current save() then re-renders with the classes derived from
+// the variation (and, for overlay, the new overlayColor attribute default
+// of '').
+const styleVariationClasses = {
+	supports: metadata.supports,
+	attributes: { ...metadata.attributes },
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		if (!innerHTML || !innerHTML.includes('dsgo-grid')) {
+			return false;
+		}
+
+		const overlayMismatch =
+			hasOverlayStyleClass(attributes.className) &&
+			!innerHTML.includes('dsgo-grid--has-overlay');
+
+		const hoverMismatch = hoverVariationClasses(
+			attributes.className,
+			'dsgo-grid'
+		).some((activationClass) => !innerHTML.includes(activationClass));
+
+		return overlayMismatch || hoverMismatch;
+	},
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			constrainWidth,
+			contentWidth,
+			desktopColumns,
+			tabletColumns,
+			mobileColumns,
+			rowGap,
+			columnGap,
+			alignItems,
+			columnMinWidth,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			style,
+		} = attributes;
+
+		// Pre-change className: no overlay support at all, no hover
+		// activation classes.
+		const className = [
+			'dsgo-grid',
+			`dsgo-grid-cols-${desktopColumns}`,
+			`dsgo-grid-cols-tablet-${tabletColumns}`,
+			`dsgo-grid-cols-mobile-${mobileColumns}`,
+			!constrainWidth && 'dsgo-no-width-constraint',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+		const blockProps = useBlockProps.save({
+			className,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+			},
+		});
+
+		const blockGapValue = style?.spacing?.blockGap;
+		const isBlockGapObject =
+			typeof blockGapValue === 'object' && blockGapValue !== null;
+		const blockGapRow = convertPresetToCSSVar(
+			isBlockGapObject ? blockGapValue?.top : blockGapValue
+		);
+		const blockGapColumn = convertPresetToCSSVar(
+			isBlockGapObject ? blockGapValue?.left : blockGapValue
+		);
+		const defaultGap = 'var(--wp--preset--spacing--50)';
+
+		const innerStyles = {
+			display: 'grid',
+			gridTemplateColumns: columnMinWidth
+				? `repeat(${desktopColumns || 3}, minmax(${columnMinWidth}, 1fr))`
+				: `repeat(${desktopColumns || 3}, 1fr)`,
+			alignItems: alignItems || 'stretch',
+			rowGap: blockGapRow || rowGap || defaultGap,
+			columnGap: blockGapColumn || columnGap || defaultGap,
+		};
+
+		if (constrainWidth) {
+			innerStyles.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyles.marginLeft = 'auto';
+			innerStyles.marginRight = 'auto';
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-grid__inner',
+			style: innerStyles,
+		});
+
+		return (
+			<TagName {...blockProps}>
+				<div {...innerBlocksProps} />
+			</TagName>
+		);
+	},
+	migrate(attributes) {
+		// Only the serialised class differs; the current save() derives it
+		// from the style variation (and the new overlayColor attribute,
+		// which defaults to '' for this old content) so no attribute change.
+		return attributes;
 	},
 };
 
@@ -346,4 +497,4 @@ const legacyMinWidth = {
 	},
 };
 
-export default [legacyMinWidth, v1];
+export default [styleVariationClasses, legacyMinWidth, v1];
