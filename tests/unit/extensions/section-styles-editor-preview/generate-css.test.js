@@ -254,4 +254,24 @@ describe('buildVariationCss', () => {
 		);
 		expect(css).not.toContain('#999');
 	});
+
+	it('drops a variation slug that is not a safe CSS-class token', () => {
+		const css = buildVariationCss({
+			'core/group': {
+				variations: {
+					'evil}body{display:none': {
+						color: { background: '#f00' },
+					},
+					safe: { color: { text: '#111' } },
+				},
+			},
+		});
+		// The crafted slug can't reach the selector at all.
+		expect(css).not.toContain('display:none');
+		expect(css).not.toContain('evil');
+		// Legitimate sibling variation still emits.
+		expect(css).toContain(
+			'.wp-block-designsetgo-section.is-style-safe{color:#111}'
+		);
+	});
 });

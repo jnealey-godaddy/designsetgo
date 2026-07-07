@@ -54,6 +54,25 @@ function kebabCase(segment) {
 }
 
 /**
+ * Whether a variation slug is safe to splice into a CSS selector.
+ *
+ * Style *values* are guarded by `toCssValue()`, but the slug is interpolated
+ * directly into `.wp-block-designsetgo-{suffix}.is-style-{slug}{…}`. Since the
+ * slug comes from the *unsanitized* edited Global Styles record (its keys are
+ * `Object.keys(styles.blocks.{block}.variations)`), a crafted key containing
+ * `{`/`}` could otherwise close the rule and inject sibling CSS into the canvas.
+ * We allow-list the `sanitize_title()` character set: a real block-style
+ * variation only ever produces an `is-style-` class from a sanitized name, so a
+ * slug outside this set can never match a rendered block and is safely dropped.
+ *
+ * @param {string} slug Variation slug.
+ * @return {boolean} True when the slug is a safe CSS-class token.
+ */
+function isSafeSlug(slug) {
+	return typeof slug === 'string' && /^[a-zA-Z0-9_-]+$/.test(slug);
+}
+
+/**
  * Whether a style value is present (allows `0` / empty string, excludes
  * null/undefined).
  *
@@ -259,6 +278,11 @@ export function buildVariationCss(blocksConfig) {
 			return;
 		}
 		Object.keys(variations).forEach((slug) => {
+			// Drop slugs that aren't a safe CSS-class token before they can
+			// reach the selector (mirrors the value guard in `toCssValue`).
+			if (!isSafeSlug(slug)) {
+				return;
+			}
 			if (!(slug in merged)) {
 				merged[slug] = variations[slug];
 			}
