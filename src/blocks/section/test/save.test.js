@@ -153,3 +153,50 @@ describe('section save - overlay class', () => {
 		expect(html).not.toContain('dsgo-stack--has-overlay');
 	});
 });
+
+describe('section save - hover variation activation classes', () => {
+	test('no hover activation classes by default', () => {
+		const html = serialize(createBlock(metadata.name, {}));
+		expect(html).not.toContain('dsgo-stack--has-hover-text');
+		expect(html).not.toContain('dsgo-stack--has-hover-icon');
+		expect(html).not.toContain('dsgo-stack--has-hover-button');
+	});
+
+	test('is-style-hover-text-* emits only the hover-text activation class', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				className: 'is-style-hover-text-light',
+			})
+		);
+		expect(html).toContain('dsgo-stack--has-hover-text');
+		expect(html).not.toContain('dsgo-stack--has-hover-icon');
+		expect(html).not.toContain('dsgo-stack--has-hover-button');
+	});
+
+	test('is-style-hover-icon-* emits only the hover-icon activation class', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				className: 'is-style-hover-icon-blue',
+			})
+		);
+		expect(html).toContain('dsgo-stack--has-hover-icon');
+		expect(html).not.toContain('dsgo-stack--has-hover-text');
+	});
+
+	test('is-style-hover-button-* emits only the hover-button activation class', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				className: 'is-style-hover-button-accent',
+			})
+		);
+		expect(html).toContain('dsgo-stack--has-hover-button');
+		expect(html).not.toContain('dsgo-stack--has-hover-icon');
+	});
+
+	test('setting a hover attribute alone does NOT add an activation class (inline gate handles it)', () => {
+		const html = serialize(
+			createBlock(metadata.name, { hoverTextColor: 'contrast' })
+		);
+		expect(html).not.toContain('dsgo-stack--has-hover-text');
+	});
+});

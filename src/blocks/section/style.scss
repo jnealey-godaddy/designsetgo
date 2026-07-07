@@ -450,30 +450,29 @@
 		}
 	}
 
-	// Hover background and text colors using CSS custom properties
-	&:hover {
-		// Fade in the hover background overlay (::after pseudo-element). Safe
-		// when no hover color is set — the layer is transparent, so this is a
-		// visual no-op. Works with an inline attribute or a style variation.
-		&::after {
-			opacity: 1;
-		}
+	// Fade in the hover background overlay (::after pseudo-element). Safe when no
+	// hover color is set — the layer is transparent, so this is a visual no-op.
+	// Works with an inline attribute or a style variation.
+	&:hover::after {
+		opacity: 1;
+	}
 
-		// Hover text color still uses an inline-`[style*=…]` gate: unlike the
-		// additive ::after overlay, it overrides the base `color` with
-		// !important, so applying it when unset would clobber the section's own
-		// text color. A style-variation stylesheet can't satisfy this selector —
-		// making it variation-settable needs class-based activation (see PR).
-		// CRITICAL: Only apply hover text when the variable is set on THIS element.
-		&[style*="--dsgo-hover-text-color"] {
+	// Hover text color overrides the base `color` with !important, so it must be
+	// gated to "only when set" or it would clobber the section's own text color.
+	// Two gates cover both sources:
+	//   [style*=…]        — inline var from the block's hoverTextColor attribute
+	//   --has-hover-text  — emitted by the block for an is-style-hover-text-*
+	//                       variation, whose stylesheet supplies the var (the
+	//                       inline gate can't see a stylesheet-set var)
+	&[style*="--dsgo-hover-text-color"]:hover,
+	&--has-hover-text:hover {
+		color: var(--dsgo-hover-text-color) !important;
+
+		// Apply text color to all text elements for consistency
+		h1, h2, h3, h4, h5, h6, p, a, span, li, td, th,
+		.wp-block-heading,
+		.wp-block-paragraph {
 			color: var(--dsgo-hover-text-color) !important;
-
-			// Apply text color to all text elements for consistency
-			h1, h2, h3, h4, h5, h6, p, a, span, li, td, th,
-			.wp-block-heading,
-			.wp-block-paragraph {
-				color: var(--dsgo-hover-text-color) !important;
-			}
 		}
 	}
 }

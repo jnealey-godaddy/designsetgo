@@ -293,25 +293,24 @@ $inline-block-data-types: (
 	}
 
 	// Hover background and text colors using CSS custom properties (must match style.scss)
-	&:hover {
-		// Fade in the hover background overlay (::after). Safe when unset — the
-		// layer is transparent. Works with an inline attribute or a variation.
-		&::after {
-			opacity: 1;
-		}
+	// Fade in the hover background overlay (::after). Safe when unset — the layer
+	// is transparent. Works with an inline attribute or a variation.
+	&:hover::after {
+		opacity: 1;
+	}
 
-		// Hover text stays inline-gated (overrides base color with !important;
-		// applying it when unset would clobber the section's own text color).
-		// CRITICAL: Only apply hover text when the variable is set on THIS element.
-		&[style*="--dsgo-hover-text-color"] {
+	// Hover text: inline-gated for the attribute, class-gated (--has-hover-text)
+	// for an is-style-hover-text-* variation whose stylesheet supplies the var.
+	// Must match style.scss.
+	&[style*="--dsgo-hover-text-color"]:hover,
+	&--has-hover-text:hover {
+		color: var(--dsgo-hover-text-color) !important;
+
+		// Apply text color to all text elements for consistency
+		h1, h2, h3, h4, h5, h6, p, a, span, li, td, th,
+		.wp-block-heading,
+		.wp-block-paragraph {
 			color: var(--dsgo-hover-text-color) !important;
-
-			// Apply text color to all text elements for consistency
-			h1, h2, h3, h4, h5, h6, p, a, span, li, td, th,
-			.wp-block-heading,
-			.wp-block-paragraph {
-				color: var(--dsgo-hover-text-color) !important;
-			}
 		}
 	}
 }

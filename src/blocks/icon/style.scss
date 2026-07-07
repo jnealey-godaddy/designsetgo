@@ -148,10 +148,17 @@
 // CRITICAL: Check if PARENT container has the variable, not the icon itself
 // CRITICAL: Use __inner wrapper to avoid triggering on outer padding areas
 // CRITICAL: Exclude icons that are inside nested containers
-// This changes the block's background color, which the wrapper inherits
+// This changes the block's background color, which the wrapper inherits.
+// The `[style*=…]` selectors activate from the parent's inline var (its
+// hoverIconBackgroundColor attribute). The `.dsgo-stack--has-hover-icon`
+// selector activates from a Section `is-style-hover-icon-*` style variation,
+// whose stylesheet supplies the var — the inline gate can't see it. The class
+// is only emitted for that variation, so the !important override never clobbers
+// an icon whose parent has no hover-icon color set.
 .dsgo-flex[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-flex__inner > .dsgo-icon,
 .dsgo-grid[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-grid__inner > .dsgo-icon,
-.dsgo-stack[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-stack__inner > .dsgo-icon {
+.dsgo-stack[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-stack__inner > .dsgo-icon,
+.dsgo-stack--has-hover-icon:hover .dsgo-stack__inner > .dsgo-icon {
 	background-color: var(--dsgo-parent-hover-icon-bg) !important;
 	transition: background-color 0.3s ease;
 }

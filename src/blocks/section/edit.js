@@ -41,7 +41,10 @@ import {
 	convertPresetToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
 import { useBlockColors } from '../../hooks';
-import { hasOverlayStyleClass } from './utils/has-overlay-style';
+import {
+	hasOverlayStyleClass,
+	hoverVariationClasses,
+} from './utils/has-overlay-style';
 
 /**
  * Section Container Edit Component
@@ -276,6 +279,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		hasOverlay && 'dsgo-stack--has-overlay',
 		(shapeDividerTop || shapeDividerBottom) &&
 			'dsgo-stack--has-shape-divider',
+		...hoverVariationClasses(className),
 	]
 		.filter(Boolean)
 		.join(' ');

@@ -9,7 +9,10 @@
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
-import { hasOverlayStyleClass } from './utils/has-overlay-style';
+import {
+	hasOverlayStyleClass,
+	hoverVariationClasses,
+} from './utils/has-overlay-style';
 import ShapeDivider from './components/ShapeDivider';
 
 /**
@@ -64,13 +67,17 @@ export default function SectionSave({ attributes }) {
 	const hasOverlay =
 		!!overlayColor || hasOverlayStyleClass(attributes.className);
 
-	// Build className with conditional no-width-constraint and overlay classes
+	// Build className with conditional no-width-constraint and overlay classes.
+	// Hover activation classes are emitted for hover style variations so their
+	// class-gated CSS can activate (the inline-`style` gate can't see a variation
+	// stylesheet's vars). The inline-attribute hover path keeps its own gate.
 	const className = [
 		'dsgo-stack',
 		!constrainWidth && 'dsgo-no-width-constraint',
 		hasOverlay && 'dsgo-stack--has-overlay',
 		(shapeDividerTop || shapeDividerBottom) &&
 			'dsgo-stack--has-shape-divider',
+		...hoverVariationClasses(attributes.className),
 	]
 		.filter(Boolean)
 		.join(' ');
