@@ -138,41 +138,12 @@ class SVG_Pattern_Renderer {
 	 * global settings palette.
 	 *
 	 * @param string $color Color value, possibly a CSS variable.
-	 * @return string Resolved hex color or the original value.
+	 * @return string Resolved hex color or the original value. Unresolved preset
+	 *               references pass through unchanged; is_valid_color() catches
+	 *               them downstream and substitutes the pattern default.
 	 */
 	private function resolve_color_value( $color ) {
-		if ( ! is_string( $color ) || '' === $color ) {
-			return $color;
-		}
-
-		// Accept both the CSS-var form var(--wp--preset--color--{slug}) and the
-		// block-attribute shorthand var:preset|color|{slug}, mirroring the
-		// editor resolver so inherited theme colors resolve identically.
-		if ( ! preg_match( '/^var\(--wp--preset--color--(.+)\)$/', $color, $matches )
-			&& ! preg_match( '/^var:preset\|color\|(.+)$/', $color, $matches ) ) {
-			return $color;
-		}
-
-		$slug    = $matches[1];
-		$palette = wp_get_global_settings( array( 'color', 'palette' ) );
-
-		if ( ! is_array( $palette ) ) {
-			return $color;
-		}
-
-		// Palette is grouped by origin (theme, default, custom).
-		foreach ( $palette as $origin_colors ) {
-			if ( ! is_array( $origin_colors ) ) {
-				continue;
-			}
-			foreach ( $origin_colors as $entry ) {
-				if ( isset( $entry['slug'], $entry['color'] ) && is_string( $entry['color'] ) && $entry['slug'] === $slug ) {
-					return $entry['color'];
-				}
-			}
-		}
-
-		return $color;
+		return designsetgo_resolve_preset_color( $color );
 	}
 
 	/**

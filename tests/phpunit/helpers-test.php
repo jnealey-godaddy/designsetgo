@@ -199,4 +199,73 @@ class Test_Helpers extends WP_UnitTestCase {
 		// Zero should be allowed.
 		$this->assertEquals( '0', designsetgo_sanitize_css_value( '0', 'size' ) );
 	}
+
+	/**
+	 * Non-preset values pass through designsetgo_resolve_preset_color unchanged.
+	 */
+	public function test_resolve_preset_color_passes_through_raw_values() {
+		// Raw colors are returned as-is (legacy hex, rgb, named).
+		$this->assertEquals( '#e74c3c', designsetgo_resolve_preset_color( '#e74c3c' ) );
+		$this->assertEquals( 'rgb(1, 2, 3)', designsetgo_resolve_preset_color( 'rgb(1, 2, 3)' ) );
+		$this->assertEquals( 'rebeccapurple', designsetgo_resolve_preset_color( 'rebeccapurple' ) );
+
+		// Empty / non-string input is returned untouched.
+		$this->assertEquals( '', designsetgo_resolve_preset_color( '' ) );
+		$this->assertNull( designsetgo_resolve_preset_color( null ) );
+	}
+
+	/**
+	 * An unresolvable preset reference honors the optional fallback.
+	 */
+	public function test_resolve_preset_color_unresolved_preset() {
+		$missing = 'var:preset|color|definitely-not-a-real-slug';
+
+		// Without a fallback the original token is returned.
+		$this->assertEquals( $missing, designsetgo_resolve_preset_color( $missing ) );
+
+		// With a fallback the safe default is substituted.
+		$this->assertEquals( '#e74c3c', designsetgo_resolve_preset_color( $missing, '#e74c3c' ) );
+	}
+
+	/**
+	 * A preset reference whose slug exists in the palette resolves to its color.
+	 */
+	public function test_resolve_preset_color_resolves_from_palette() {
+		$inject = static function ( $theme_json ) {
+			return $theme_json->update_with(
+				array(
+					'version'  => 2,
+					'settings' => array(
+						'color' => array(
+							'palette' => array(
+								array(
+									'slug'  => 'accent-2',
+									'color' => '#F5B684',
+									'name'  => 'Accent 2',
+								),
+							),
+						),
+					),
+				)
+			);
+		};
+
+		add_filter( 'wp_theme_json_data_theme', $inject );
+		\WP_Theme_JSON_Resolver::clean_cached_data();
+
+		try {
+			// Both the block-attribute shorthand and the CSS-var form resolve.
+			$this->assertEquals(
+				'#F5B684',
+				designsetgo_resolve_preset_color( 'var:preset|color|accent-2', '#e74c3c' )
+			);
+			$this->assertEquals(
+				'#F5B684',
+				designsetgo_resolve_preset_color( 'var(--wp--preset--color--accent-2)' )
+			);
+		} finally {
+			remove_filter( 'wp_theme_json_data_theme', $inject );
+			\WP_Theme_JSON_Resolver::clean_cached_data();
+		}
+	}
 }

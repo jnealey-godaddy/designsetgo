@@ -196,11 +196,20 @@ function designsetgo_is_dsg_block( $block_name ) {
  * actual color value instead. This looks up the slug in the global settings
  * palette and returns the resolved color, leaving raw values untouched.
  *
- * @param string $color Color value, possibly a preset reference.
- * @return string Resolved color, or the original value when it is not a preset
- *                or the slug is not found in the palette.
+ * When the value is a preset reference but the slug is not present in the
+ * current palette — e.g. content authored under a theme whose palette a later
+ * theme dropped — the token cannot be used as a CSS color. Pass $fallback to
+ * substitute a safe default in that case; when omitted, the original token is
+ * returned unchanged (matching WordPress' own pass-through behavior).
+ *
+ * @param string      $color    Color value, possibly a preset reference.
+ * @param string|null $fallback Value returned when the color is a preset
+ *                              reference whose slug is not found in the
+ *                              palette. Default null (return the original).
+ * @return string Resolved color, the $fallback for an unresolvable preset, or
+ *                the original value when it is not a preset reference.
  */
-function designsetgo_resolve_preset_color( $color ) {
+function designsetgo_resolve_preset_color( $color, $fallback = null ) {
 	if ( ! is_string( $color ) || '' === $color ) {
 		return $color;
 	}
@@ -217,21 +226,20 @@ function designsetgo_resolve_preset_color( $color ) {
 		? wp_get_global_settings( array( 'color', 'palette' ) )
 		: null;
 
-	if ( ! is_array( $palette ) ) {
-		return $color;
-	}
-
-	// Palette is grouped by origin (theme, default, custom).
-	foreach ( $palette as $origin_colors ) {
-		if ( ! is_array( $origin_colors ) ) {
-			continue;
-		}
-		foreach ( $origin_colors as $entry ) {
-			if ( isset( $entry['slug'], $entry['color'] ) && is_string( $entry['color'] ) && $entry['slug'] === $slug ) {
-				return $entry['color'];
+	if ( is_array( $palette ) ) {
+		// Palette is grouped by origin (theme, default, custom).
+		foreach ( $palette as $origin_colors ) {
+			if ( ! is_array( $origin_colors ) ) {
+				continue;
+			}
+			foreach ( $origin_colors as $entry ) {
+				if ( isset( $entry['slug'], $entry['color'] ) && is_string( $entry['color'] ) && $entry['slug'] === $slug ) {
+					return $entry['color'];
+				}
 			}
 		}
 	}
 
-	return $color;
+	// Preset reference that could not be resolved to a palette color.
+	return null === $fallback ? $color : $fallback;
 }

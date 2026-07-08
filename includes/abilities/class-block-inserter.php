@@ -804,10 +804,11 @@ class Block_Inserter {
 				$address            = isset( $attributes['dsgoAddress'] ) ? $attributes['dsgoAddress'] : '';
 				$marker_icon        = isset( $attributes['dsgoMarkerIcon'] ) ? $attributes['dsgoMarkerIcon'] : '📍';
 				$marker_color       = isset( $attributes['dsgoMarkerColor'] ) ? $attributes['dsgoMarkerColor'] : '#e74c3c';
-					// Resolve theme palette presets (var:preset|color|{slug}) to a
-					// concrete color; the marker is drawn by view.js, which cannot
-					// inherit the page's CSS custom properties.
-					$marker_color = designsetgo_resolve_preset_color( $marker_color );
+				// Resolve theme palette presets (var:preset|color|{slug}) to a
+				// concrete color; the marker is drawn by view.js, which cannot
+				// inherit the page's CSS custom properties. Fall back to the block
+				// default when the preset's slug is missing from the palette.
+				$marker_color       = designsetgo_resolve_preset_color( $marker_color, '#e74c3c' );
 				$height             = isset( $attributes['dsgoHeight'] ) ? $attributes['dsgoHeight'] : '400px';
 				$aspect_ratio       = isset( $attributes['dsgoAspectRatio'] ) ? $attributes['dsgoAspectRatio'] : 'custom';
 				$privacy_mode       = isset( $attributes['dsgoPrivacyMode'] ) ? $attributes['dsgoPrivacyMode'] : false;
