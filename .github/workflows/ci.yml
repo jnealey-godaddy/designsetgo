@@ -2,7 +2,6 @@ name: CI
 
 on:
   pull_request:
-    branches: [ main, 'release/**' ]
   push:
     branches: [ main, 'release/**' ]
 
@@ -138,15 +137,36 @@ jobs:
         continue-on-error: true
 
   # ─── PHP lint & static analysis (matrix only where needed) ───
+  setup-php-matrix:
+    name: Setup PHP Lint Matrix
+    runs-on: ubuntu-latest
+    permissions: {}
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    steps:
+      - name: Determine matrix
+        id: set-matrix
+        run: |
+          if [ "${{ github.event_name }}" == "push" ] || \
+             [ "${{ github.base_ref }}" == "main" ] || \
+             [[ "${{ github.base_ref }}" == release/* ]]; then
+            # Full matrix for main/release pushes or PRs targeting those branches
+            echo 'matrix={"php-version":["7.4","8.0","8.1","8.2","8.3"]}' >> $GITHUB_OUTPUT
+          else
+            # Feature-branch PRs: lint against latest PHP only for fast feedback
+            echo 'matrix={"php-version":["8.3"]}' >> $GITHUB_OUTPUT
+          fi
+
   lint-php:
     name: PHP ${{ matrix.php-version }} Lint & Analysis
+    needs: [setup-php-matrix]
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     strategy:
-      matrix:
-        php-version: ['7.4', '8.0', '8.1', '8.2', '8.3']
+      matrix: ${{ fromJSON(needs.setup-php-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout code
