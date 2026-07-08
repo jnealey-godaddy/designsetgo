@@ -8,6 +8,7 @@
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitNumber } from '../../utils/has-explicit-value';
 
 /**
  * Icon List Item Save Component
@@ -26,7 +27,7 @@ export default function IconListItemSave({ attributes, context = {} }) {
 	// the item inherits the theme default token via CSS custom properties
 	// (see iconWrapperStyles below) instead of an inline pixel value.
 	const ctxIconSize = context['designsetgo/iconList/iconSize'];
-	const hasExplicitSize = typeof ctxIconSize === 'number';
+	const hasExplicitSize = hasExplicitNumber(ctxIconSize);
 	const iconColor = context['designsetgo/iconList/iconColor'] || '';
 	const iconBackgroundColor =
 		context['designsetgo/iconList/iconBackgroundColor'] || '';
@@ -125,7 +126,7 @@ export default function IconListItemSave({ attributes, context = {} }) {
 	// stylesheet default (.dsgo-icon-list-item__content, resolving through
 	// --dsgo-icon-list-content-gap / the theme token) owns it and kits/patterns
 	// can retheme it. Mirrors icon-button's iconGap.
-	const hasExplicitContentGap = typeof contentGap === 'number';
+	const hasExplicitContentGap = hasExplicitNumber(contentGap);
 	const innerBlocksProps = useInnerBlocksProps.save({
 		className: 'dsgo-icon-list-item__content',
 		style: {

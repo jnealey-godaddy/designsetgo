@@ -85,20 +85,20 @@ describe('icon-list-item deprecations - v3 kit-controllable gaps/size', () => {
 		expect(OLD_MARKUP).toContain('flex-direction:column;gap:8px');
 	});
 
-	test('old item (inline gaps + inline size var) migrates silently', () => {
+	test('old item (inline gaps + inline size var) migrates silently and pins the content gap', () => {
 		const [block] = parse(OLD_MARKUP);
 
 		expect(console).toHaveInformed();
 		expect(block.name).toBe('designsetgo/icon-list-item');
 		expect(block.isValid).toBe(true);
-		// Default (8) contentGap is stripped so it inherits going forward.
-		expect(block.attributes.contentGap).toBeUndefined();
-		// Re-serialized with the current save(): no inline item gap, no inline
-		// size var, no inline content gap.
+		// Passthrough migrate pins the content gap (8) the old markup carried.
+		expect(block.attributes.contentGap).toBe(8);
 		const content = getBlockContent(block);
+		// The item gap and inherited size var move to CSS (no longer inline)...
 		expect(content).not.toMatch(/align-items:[^;"]+;gap:/);
 		expect(content).not.toContain('--dsgo-icon-list-size');
-		expect(content).not.toMatch(/gap:/);
+		// ...but the pinned content gap is re-emitted inline.
+		expect(content).toContain('gap:8px');
 	});
 
 	test('old item with an explicit content gap keeps it after migration', () => {
@@ -153,8 +153,9 @@ describe('icon-list-item deprecations - v3 kit-controllable gaps/size', () => {
 		).toBe(false);
 	});
 
-	test('migrate drops a default (8) contentGap but preserves an explicit one', () => {
+	test('migrate is a passthrough that pins values (never strips defaults)', () => {
 		expect(v3Deprecation.migrate({ contentGap: 8, icon: 'star' })).toEqual({
+			contentGap: 8,
 			icon: 'star',
 		});
 		expect(v3Deprecation.migrate({ contentGap: 20, icon: 'star' })).toEqual(

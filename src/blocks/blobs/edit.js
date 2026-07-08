@@ -28,6 +28,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 
 export default function BlobsEdit({ attributes, setAttributes, clientId }) {
 	const wrapperRef = useRef(null);
@@ -82,7 +83,7 @@ export default function BlobsEdit({ attributes, setAttributes, clientId }) {
 	// Only add the class + kit-controllable custom property when the author
 	// sets an explicit maxWidth; the stylesheet owns the actual max-width and
 	// centering margins.
-	const hasMaxWidth = typeof maxWidth === 'string' && maxWidth.trim() !== '';
+	const hasMaxWidth = hasExplicitString(maxWidth);
 
 	// Get block props with our wrapper class
 	const blockProps = useBlockProps({

@@ -7,6 +7,7 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 
 export default function BlobsSave({ attributes }) {
 	const {
@@ -43,7 +44,7 @@ export default function BlobsSave({ attributes }) {
 	// max-width and centering margins live in the stylesheet, not inline. The
 	// class + var are only added when the author sets an explicit maxWidth, so
 	// unset blobs serialize byte-identically to the pre-maxWidth output.
-	const hasMaxWidth = typeof maxWidth === 'string' && maxWidth.trim() !== '';
+	const hasMaxWidth = hasExplicitString(maxWidth);
 
 	// Get block props with our wrapper class
 	const blockProps = useBlockProps.save({

@@ -24,6 +24,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 import ImageAccordionPlaceholder from './components/ImageAccordionPlaceholder';
 
 export default function ImageAccordionEdit({
@@ -106,9 +107,8 @@ export default function ImageAccordionEdit({
 	// value (parity with save.js). Left unset they are omitted so the stylesheet
 	// default owns them and the editor preview reflects the theme token / literal
 	// fallback rather than a baked-in magic number.
-	const hasExplicitHeight =
-		typeof height === 'string' && height.trim() !== '';
-	const hasExplicitGap = typeof gap === 'string' && gap.trim() !== '';
+	const hasExplicitHeight = hasExplicitString(height);
+	const hasExplicitGap = hasExplicitString(gap);
 
 	// Apply settings as CSS custom properties for consistent styling
 	// Note: Unitless values must be strings to prevent React from adding 'px'

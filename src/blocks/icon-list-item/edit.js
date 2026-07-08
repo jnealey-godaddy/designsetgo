@@ -18,6 +18,7 @@ import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { IconPickerPanel } from './components/inspector/IconPickerPanel';
 import { LinkSettingsPanel } from './components/inspector/LinkSettingsPanel';
 import { SpacingPanel } from './components/inspector/SpacingPanel';
+import { hasExplicitNumber } from '../../utils/has-explicit-value';
 import { useIconDefaults } from '../../hooks';
 
 /**
@@ -125,7 +126,7 @@ export default function IconListItemEdit({
 	// Configure inner blocks with paragraph as default template. Content gap is
 	// inline only for an explicit author value (must match save.js); otherwise
 	// the stylesheet default owns it.
-	const hasExplicitContentGap = typeof contentGap === 'number';
+	const hasExplicitContentGap = hasExplicitNumber(contentGap);
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-icon-list-item__content',

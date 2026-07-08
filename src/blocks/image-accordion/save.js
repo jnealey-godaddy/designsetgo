@@ -1,6 +1,7 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 
 export default function ImageAccordionSave({ attributes }) {
 	const {
@@ -27,9 +28,8 @@ export default function ImageAccordionSave({ attributes }) {
 	// (resolving through --dsgo-image-accordion-<prop> → the theme token → the
 	// literal fallback) and Style Kits / patterns can retheme them without
 	// fighting a baked-in magic number. MUST MATCH edit.js.
-	const hasExplicitHeight =
-		typeof height === 'string' && height.trim() !== '';
-	const hasExplicitGap = typeof gap === 'string' && gap.trim() !== '';
+	const hasExplicitHeight = hasExplicitString(height);
+	const hasExplicitGap = hasExplicitString(gap);
 
 	// Apply settings as CSS custom properties - MUST MATCH edit.js
 	// Note: Unitless values must be strings to prevent React from adding 'px'

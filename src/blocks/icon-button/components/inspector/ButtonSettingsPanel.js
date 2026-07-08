@@ -293,6 +293,11 @@ export const ButtonSettingsPanel = ({
 					<UnitControl
 						label={__('Icon Gap', 'designsetgo')}
 						value={iconGap}
+						// Static placeholder = the literal fallback in the
+						// stylesheet chain. It won't reflect a kit override of
+						// --dsgo-icon-button-gap / the theme token (a known
+						// limitation of static placeholders); the empty field
+						// always means "inherit the themed default".
 						placeholder="8px"
 						onChange={(value) => setAttributes({ iconGap: value })}
 						units={[

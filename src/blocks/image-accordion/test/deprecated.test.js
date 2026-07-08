@@ -161,6 +161,22 @@ describe('image-accordion deprecations - v1 themeable height/gap migration', () 
 		).toBe(false);
 	});
 
+	test('isEligible ignores a valid accordion whose NESTED accordion sets height+gap', () => {
+		// Regression: the outer accordion is inherited (no inline height/gap on
+		// its own root), but an item nests another image-accordion that has both
+		// props inline. Scoping the check to the outer wrapper's own opening tag
+		// keeps the outer, valid block from being false-migrated (which would pin
+		// the legacy 500px/4px onto it).
+		const nestedHTML =
+			'<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--hover" style="--dsgo-image-accordion-expanded-ratio:3">' +
+			'<div class="dsgo-image-accordion__items">' +
+			'<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--hover" style="--dsgo-image-accordion-height:600px;--dsgo-image-accordion-gap:8px;--dsgo-image-accordion-expanded-ratio:3"></div>' +
+			'</div></div>';
+		expect(
+			v1Deprecation.isEligible({}, [], { innerHTML: nestedHTML })
+		).toBe(false);
+	});
+
 	test('migrate is a passthrough that pins values (never strips defaults)', () => {
 		expect(
 			v1Deprecation.migrate({

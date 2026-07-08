@@ -219,14 +219,12 @@ const v3 = {
 		);
 	},
 	migrate(attributes) {
-		// Strip a default (8) contentGap so it inherits the themeable default
-		// (the current save() then omits the inline content gap); an explicit
-		// non-default value is preserved and re-emitted inline.
-		const { contentGap, ...rest } = attributes;
-		if (typeof contentGap === 'number' && contentGap !== 8) {
-			return { ...rest, contentGap };
-		}
-		return rest;
+		// Passthrough: pin whatever contentGap the old markup carried (an
+		// implicit-default item re-parses to this schema's default of 8) so an
+		// existing item renders exactly as authored. We do not strip a
+		// default-valued gap back to "inherit" — matching image-accordion /
+		// scroll-marquee / icon-button. New content inherits by omitting it.
+		return attributes;
 	},
 };
 

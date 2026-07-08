@@ -34,6 +34,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 import { useIconDefaults } from '../../hooks';
 
 /**
@@ -153,7 +154,7 @@ export default function IconButtonEdit({
 	// Gap parity with save.js: omit entirely when no icon; inline only for an
 	// explicit author gap, otherwise the stylesheet default owns it.
 	const hasIcon = iconPosition !== 'none' && !!icon;
-	const hasExplicitGap = typeof iconGap === 'string' && iconGap.trim() !== '';
+	const hasExplicitGap = hasExplicitString(iconGap);
 
 	const isFullWidth = align === 'full';
 	const buttonStyles = {

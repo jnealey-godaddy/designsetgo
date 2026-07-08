@@ -83,15 +83,29 @@ const sharedSupports = {
 const v8 = {
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
-		// Old serialization = an icon button with an inline gap but without the
-		// new marker class. New markup either carries --has-icon (icon present,
-		// possibly with an explicit inline gap) or omits gap altogether (no
-		// icon), so this signature is unique to the pre-refactor output.
+		if (!innerHTML) {
+			return false;
+		}
+		// Old serialization = an icon button with an inline gap on the root but
+		// without the new marker class. Scope the check to the button's OWN
+		// opening tag: `text` is free-form RichText serialized into innerHTML, so
+		// scanning the whole string could false-match a valid icon-less button
+		// whose label happens to contain "gap:". The first `dsgo-icon-button`
+		// occurrence is the root's class (its __icon/__text children appear
+		// later), so we take the opening tag around it.
+		const rootIdx = innerHTML.indexOf('dsgo-icon-button');
+		if (rootIdx === -1) {
+			return false;
+		}
+		const tagStart = innerHTML.lastIndexOf('<', rootIdx);
+		const tagEnd = innerHTML.indexOf('>', rootIdx);
+		if (tagStart === -1 || tagEnd === -1) {
+			return false;
+		}
+		const openingTag = innerHTML.slice(tagStart, tagEnd + 1);
 		return (
-			!!innerHTML &&
-			innerHTML.includes('dsgo-icon-button') &&
-			!innerHTML.includes('dsgo-icon-button--has-icon') &&
-			/gap:\s*[^;"]+/.test(innerHTML)
+			!openingTag.includes('dsgo-icon-button--has-icon') &&
+			/gap:\s*[^;"]+/.test(openingTag)
 		);
 	},
 
@@ -240,14 +254,14 @@ const v8 = {
 	},
 
 	migrate(attributes) {
-		const { iconGap, ...rest } = attributes;
-		// An old block at the 8px default inherits the themeable default (drop
-		// the attribute so save() omits the inline gap); an explicit non-default
-		// gap is preserved and re-emitted inline by the current save().
-		if (iconGap && iconGap !== '8px') {
-			return { ...rest, iconGap };
-		}
-		return rest;
+		// Passthrough: pin whatever iconGap the old markup carried (an
+		// implicit-default block re-parses to this schema's '8px' default) so an
+		// existing button renders exactly as authored. We do not strip a
+		// default-valued gap back to "inherit" — old markup can't tell an
+		// explicit 8px from an implicit one, so stripping could silently un-pin a
+		// deliberate choice. This matches image-accordion / scroll-marquee;
+		// new content and patterns inherit by omitting the attribute.
+		return attributes;
 	},
 };
 

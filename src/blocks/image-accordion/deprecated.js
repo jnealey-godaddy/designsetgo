@@ -70,18 +70,31 @@ const sharedSupports = {
 const v1 = {
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
+		if (!innerHTML) {
+			return false;
+		}
 		// Old serialization always baked BOTH the height and gap custom
-		// properties inline. The current save() omits a custom property whenever
-		// its value is left unset, so any content that mismatches the current
-		// save() while still carrying both inline props is pre-refactor markup.
-		// (A current, valid block matches the current save() and never reaches a
-		// deprecation; requiring both props keeps this signature off new content
-		// that sets only one of the two explicitly.)
+		// properties inline on the accordion root. Scope the check to the
+		// wrapper's OWN opening tag: an item's content accepts arbitrary nested
+		// blocks (including another image-accordion whose explicit height/gap
+		// props would otherwise appear in this innerHTML), so scanning the whole
+		// subtree could false-match a valid outer accordion and silently pin the
+		// legacy 500px/4px defaults onto it. The first `dsgo-image-accordion`
+		// occurrence is the outer root's class (children/nested accordions come
+		// later), so we take the opening tag around it.
+		const rootIdx = innerHTML.indexOf('dsgo-image-accordion');
+		if (rootIdx === -1) {
+			return false;
+		}
+		const tagStart = innerHTML.lastIndexOf('<', rootIdx);
+		const tagEnd = innerHTML.indexOf('>', rootIdx);
+		if (tagStart === -1 || tagEnd === -1) {
+			return false;
+		}
+		const openingTag = innerHTML.slice(tagStart, tagEnd + 1);
 		return (
-			!!innerHTML &&
-			innerHTML.includes('dsgo-image-accordion') &&
-			innerHTML.includes('--dsgo-image-accordion-height:') &&
-			innerHTML.includes('--dsgo-image-accordion-gap:')
+			openingTag.includes('--dsgo-image-accordion-height:') &&
+			openingTag.includes('--dsgo-image-accordion-gap:')
 		);
 	},
 

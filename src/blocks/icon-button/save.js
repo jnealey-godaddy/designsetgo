@@ -9,6 +9,10 @@
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 import { convertPaddingValue } from './utils/padding';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	hasExplicitString,
+	hasExplicitNumber,
+} from '../../utils/has-explicit-value';
 
 /**
  * Icon Button Save Component
@@ -68,7 +72,7 @@ export default function IconButtonSave({ attributes }) {
 	// unset it is omitted so the stylesheet default (.dsgo-icon-button--has-icon)
 	// owns it and kits/patterns can retheme via --dsgo-icon-button-gap or the
 	// --wp--custom--designsetgo--icon-button--gap token. Mirrors iconSize.
-	const hasExplicitGap = typeof iconGap === 'string' && iconGap.trim() !== '';
+	const hasExplicitGap = hasExplicitString(iconGap);
 
 	// Combined styles for single element (must match edit.js)
 	// Visual styles (colors, padding, font size, hover) + layout styles (flexbox)
@@ -104,7 +108,7 @@ export default function IconButtonSave({ attributes }) {
 	// otherwise it is omitted so the theme default token
 	// (--wp--custom--designsetgo--icon-button--default-size, via style.scss)
 	// applies.
-	const hasExplicitSize = typeof iconSize === 'number';
+	const hasExplicitSize = hasExplicitNumber(iconSize);
 	const iconWrapperStyles = {
 		display: 'flex',
 		alignItems: 'center',

@@ -108,15 +108,17 @@ describe('icon-button deprecations - v8 themeable-gap migration', () => {
 		expect(OLD_NO_ICON_MARKUP).toContain('gap:0');
 	});
 
-	test('old icon button (inline gap, no marker class) migrates silently', () => {
+	test('old icon button (inline gap, no marker class) migrates silently and pins the gap', () => {
 		const [block] = parse(OLD_ICON_MARKUP);
 
 		expect(console).toHaveInformed();
 		expect(block.name).toBe('designsetgo/icon-button');
 		expect(block.isValid).toBe(true);
-		// Re-serialized with the current save(): marker class present, no gap.
+		// Passthrough migrate pins the gap the old markup carried; the current
+		// save() re-emits it inline and adds the marker class.
+		expect(block.attributes.iconGap).toBe('8px');
 		expect(getBlockContent(block)).toContain('dsgo-icon-button--has-icon');
-		expect(getBlockContent(block)).not.toMatch(/gap:/);
+		expect(getBlockContent(block)).toContain('gap:8px');
 	});
 
 	test('old icon-less button (gap:0) migrates silently', () => {
@@ -169,8 +171,20 @@ describe('icon-button deprecations - v8 themeable-gap migration', () => {
 		).toBe(false);
 	});
 
-	test('migrate drops a default (8px) gap but preserves an explicit one', () => {
+	test('isEligible ignores a valid icon-less button whose label contains "gap:"', () => {
+		// `text` is free-form RichText serialized into innerHTML; scoping the
+		// check to the button's own opening tag keeps a label like
+		// "Mind the gap: ..." from false-triggering the deprecation.
+		const html =
+			'<a class="wp-block-designsetgo-icon-button dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;width:auto;flex-direction:row" href="#"><span class="dsgo-icon-button__text">Mind the gap: watch your step</span></a>';
+		expect(v8Deprecation.isEligible({}, [], { innerHTML: html })).toBe(
+			false
+		);
+	});
+
+	test('migrate is a passthrough that pins values (never strips defaults)', () => {
 		expect(v8Deprecation.migrate({ iconGap: '8px', text: 'x' })).toEqual({
+			iconGap: '8px',
 			text: 'x',
 		});
 		expect(v8Deprecation.migrate({ iconGap: '12px', text: 'x' })).toEqual({
