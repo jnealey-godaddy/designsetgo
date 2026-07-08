@@ -136,6 +136,24 @@ describe('blobs deprecations - v3 native max-width migration', () => {
 		);
 	});
 
+	test('v3 isEligible ignores a native blob whose NESTED child uses the generic max-width extension', () => {
+		// Regression: a valid native Blobs block (own maxWidth via
+		// --dsgo-blob-max-width on the wrapper root) containing a nested child
+		// that the still-active generic extension stamped with the same
+		// dsgo-has-max-width class + a raw inline max-width. The old-format
+		// signature lives only on the nested child, not the wrapper's own
+		// opening tag, so it must NOT be flagged (else its maxWidth would be
+		// silently dropped and the block marked invalid).
+		const nestedHTML =
+			'<div class="wp-block-designsetgo-blobs dsgo-blobs-wrapper dsgo-has-max-width" style="--dsgo-blob-max-width:800px">' +
+			'<div class="dsgo-blobs__content">' +
+			'<p class="dsgo-has-max-width" style="max-width:400px;margin-left:auto;margin-right:auto">Nested</p>' +
+			'</div></div>';
+		expect(
+			v3Deprecation.isEligible({}, [], { innerHTML: nestedHTML })
+		).toBe(false);
+	});
+
 	test('v3 migrate maps dsgoMaxWidth onto maxWidth and drops the legacy key', () => {
 		expect(
 			v3Deprecation.migrate({ dsgoMaxWidth: '800px', size: '80%' })

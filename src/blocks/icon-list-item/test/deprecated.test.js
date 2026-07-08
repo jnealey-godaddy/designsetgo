@@ -136,6 +136,23 @@ describe('icon-list-item deprecations - v3 kit-controllable gaps/size', () => {
 		);
 	});
 
+	test('isEligible ignores an item whose NESTED content emits align-items;gap', () => {
+		// Regression: the item root opening tag has align-items but no adjacent
+		// inline gap (current save()); a nested block inside the content area
+		// happens to inline `align-items:center;gap:8px`. Scoping the check to
+		// the item's own opening tag must keep this valid item from being
+		// false-migrated.
+		const nestedHTML =
+			'<div class="dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start">' +
+			'<span class="dsgo-icon-list-item__icon"></span>' +
+			'<div class="dsgo-icon-list-item__content">' +
+			'<div class="wp-block-columns" style="align-items:center;gap:8px">Nested</div>' +
+			'</div></div>';
+		expect(
+			v3Deprecation.isEligible({}, [], { innerHTML: nestedHTML })
+		).toBe(false);
+	});
+
 	test('migrate drops a default (8) contentGap but preserves an explicit one', () => {
 		expect(v3Deprecation.migrate({ contentGap: 8, icon: 'star' })).toEqual({
 			icon: 'star',

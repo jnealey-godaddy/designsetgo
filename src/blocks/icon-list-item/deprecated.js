@@ -60,15 +60,28 @@ const sharedSupports = {
 const v3 = {
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
+		if (!innerHTML) {
+			return false;
+		}
 		// Old serialization baked the icon↔content gap on the item root right
-		// after align-items. The current save() omits it, and no other element
-		// pairs align-items with an inline gap, so this signature is unique to
-		// the pre-refactor item wrapper.
-		return (
-			!!innerHTML &&
-			innerHTML.includes('dsgo-icon-list-item') &&
-			/align-items:[^;"]+;gap:/.test(innerHTML)
-		);
+		// after align-items; the current save() omits it. Scope the check to the
+		// item wrapper's OWN opening tag rather than the whole subtree: the
+		// content area accepts arbitrary nested blocks, and matching their inline
+		// styles could false-migrate a valid current item if some nested block
+		// ever emits align-items directly followed by gap. The first
+		// `dsgo-icon-list-item` occurrence is the root's class (its __icon /
+		// __content children appear later), so we take the opening tag around it.
+		const wrapperIdx = innerHTML.indexOf('dsgo-icon-list-item');
+		if (wrapperIdx === -1) {
+			return false;
+		}
+		const tagStart = innerHTML.lastIndexOf('<', wrapperIdx);
+		const tagEnd = innerHTML.indexOf('>', wrapperIdx);
+		if (tagStart === -1 || tagEnd === -1) {
+			return false;
+		}
+		const openingTag = innerHTML.slice(tagStart, tagEnd + 1);
+		return /align-items:[^;"]+;gap:/.test(openingTag);
 	},
 	attributes: {
 		icon: { type: 'string', default: 'star' },
