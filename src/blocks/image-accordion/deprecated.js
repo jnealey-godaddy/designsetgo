@@ -9,6 +9,7 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
 
 /**
  * Shared supports definition for the deprecated version.
@@ -70,28 +71,17 @@ const sharedSupports = {
 const v1 = {
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
-		if (!innerHTML) {
-			return false;
-		}
 		// Old serialization always baked BOTH the height and gap custom
 		// properties inline on the accordion root. Scope the check to the
 		// wrapper's OWN opening tag: an item's content accepts arbitrary nested
 		// blocks (including another image-accordion whose explicit height/gap
 		// props would otherwise appear in this innerHTML), so scanning the whole
 		// subtree could false-match a valid outer accordion and silently pin the
-		// legacy 500px/4px defaults onto it. The first `dsgo-image-accordion`
-		// occurrence is the outer root's class (children/nested accordions come
-		// later), so we take the opening tag around it.
-		const rootIdx = innerHTML.indexOf('dsgo-image-accordion');
-		if (rootIdx === -1) {
+		// legacy 500px/4px defaults onto it.
+		const openingTag = getOwnOpeningTag(innerHTML, 'dsgo-image-accordion');
+		if (!openingTag) {
 			return false;
 		}
-		const tagStart = innerHTML.lastIndexOf('<', rootIdx);
-		const tagEnd = innerHTML.indexOf('>', rootIdx);
-		if (tagStart === -1 || tagEnd === -1) {
-			return false;
-		}
-		const openingTag = innerHTML.slice(tagStart, tagEnd + 1);
 		return (
 			openingTag.includes('--dsgo-image-accordion-height:') &&
 			openingTag.includes('--dsgo-image-accordion-gap:')

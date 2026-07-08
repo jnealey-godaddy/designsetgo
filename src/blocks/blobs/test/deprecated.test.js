@@ -62,6 +62,25 @@ describe('blobs save() - native max-width', () => {
 		expect(markup).not.toContain('margin-left:auto');
 	});
 
+	test('a left/right-aligned blob with maxWidth keeps its align class alongside dsgo-has-max-width', () => {
+		// The align-aware anchoring is CSS-only (style.scss keys margins off the
+		// alignleft/alignright classes WordPress adds to the wrapper). This guards
+		// that both classes are present on the same element so the anchoring hook
+		// can apply — i.e. a left/right-aligned + max-width blob is not silently
+		// re-centered.
+		const left = serialize(
+			createBlock(metadata.name, { align: 'left', maxWidth: '800px' })
+		);
+		expect(left).toContain('alignleft');
+		expect(left).toContain('dsgo-has-max-width');
+
+		const right = serialize(
+			createBlock(metadata.name, { align: 'right', maxWidth: '800px' })
+		);
+		expect(right).toContain('alignright');
+		expect(right).toContain('dsgo-has-max-width');
+	});
+
 	test('a maxWidth-unset blob re-parses valid with no migration', () => {
 		const markup = serialize(
 			createBlock(metadata.name, {

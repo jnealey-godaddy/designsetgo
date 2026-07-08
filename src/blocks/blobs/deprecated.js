@@ -12,6 +12,7 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
 
 /**
  * Shared supports for all deprecated versions.
@@ -131,31 +132,18 @@ const v3 = {
 		},
 	},
 	isEligible(attributes, innerBlocks, { innerHTML }) {
-		if (!innerHTML) {
-			return false;
-		}
 		// Scope the check to the Blobs wrapper's OWN opening tag. Blobs accepts
 		// arbitrary nested blocks, and the generic max-width extension still
 		// stamps the same `dsgo-has-max-width` class + a raw inline `max-width:`
 		// onto any non-excluded nested child — so scanning the whole subtree
 		// could false-match a valid *native* Blobs block that merely contains
-		// such a child, dropping its maxWidth and marking it invalid. The
-		// wrapper is the block's root element; isolate just its opening tag.
-		// Old extension markup put the raw max-width on the wrapper root; the new
-		// native format writes `--dsgo-blob-max-width` there instead (excluded by
-		// the `[^-]` guard). The first `dsgo-blobs-wrapper` occurrence is the
-		// root's class (children never carry it), so we take the element opening
-		// tag around it.
-		const wrapperIdx = innerHTML.indexOf('dsgo-blobs-wrapper');
-		if (wrapperIdx === -1) {
+		// such a child. Old extension markup put the raw max-width on the wrapper
+		// root; the new native format writes `--dsgo-blob-max-width` there
+		// instead (excluded by the `[^-]` guard).
+		const openingTag = getOwnOpeningTag(innerHTML, 'dsgo-blobs-wrapper');
+		if (!openingTag) {
 			return false;
 		}
-		const tagStart = innerHTML.lastIndexOf('<', wrapperIdx);
-		const tagEnd = innerHTML.indexOf('>', wrapperIdx);
-		if (tagStart === -1 || tagEnd === -1) {
-			return false;
-		}
-		const openingTag = innerHTML.slice(tagStart, tagEnd + 1);
 		return (
 			openingTag.includes('dsgo-has-max-width') &&
 			/(?:^|[^-])max-width:/.test(openingTag)

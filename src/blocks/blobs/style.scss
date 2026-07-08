@@ -44,6 +44,24 @@
 		max-width: var(--dsgo-blob-max-width, var(--wp--custom--designsetgo--blobs--max-width, 100%));
 		margin-left: auto;
 		margin-right: auto;
+
+		// Anchor the constrained box to the block's alignment instead of always
+		// centering, preserving the behavior of the generic max-width extension
+		// this replaces. Keyed on the align classes WordPress puts on the
+		// wrapper (alignleft/alignright) and core's text-align classes
+		// (has-text-align-*), so either control anchors the box. The extra class
+		// raises specificity above the centering rule, so no !important needed.
+		&.alignleft,
+		&.has-text-align-left {
+			margin-left: 0;
+			margin-right: auto;
+		}
+
+		&.alignright,
+		&.has-text-align-right {
+			margin-left: auto;
+			margin-right: 0;
+		}
 	}
 }
 

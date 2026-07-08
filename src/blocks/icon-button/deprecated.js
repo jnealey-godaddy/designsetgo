@@ -13,6 +13,7 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
 
 /**
  * Shared supports definition for all deprecated versions.
@@ -83,26 +84,15 @@ const sharedSupports = {
 const v8 = {
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
-		if (!innerHTML) {
-			return false;
-		}
 		// Old serialization = an icon button with an inline gap on the root but
 		// without the new marker class. Scope the check to the button's OWN
 		// opening tag: `text` is free-form RichText serialized into innerHTML, so
 		// scanning the whole string could false-match a valid icon-less button
-		// whose label happens to contain "gap:". The first `dsgo-icon-button`
-		// occurrence is the root's class (its __icon/__text children appear
-		// later), so we take the opening tag around it.
-		const rootIdx = innerHTML.indexOf('dsgo-icon-button');
-		if (rootIdx === -1) {
+		// whose label happens to contain "gap:".
+		const openingTag = getOwnOpeningTag(innerHTML, 'dsgo-icon-button');
+		if (!openingTag) {
 			return false;
 		}
-		const tagStart = innerHTML.lastIndexOf('<', rootIdx);
-		const tagEnd = innerHTML.indexOf('>', rootIdx);
-		if (tagStart === -1 || tagEnd === -1) {
-			return false;
-		}
-		const openingTag = innerHTML.slice(tagStart, tagEnd + 1);
 		return (
 			!openingTag.includes('dsgo-icon-button--has-icon') &&
 			/gap:\s*[^;"]+/.test(openingTag)
