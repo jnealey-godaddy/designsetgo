@@ -9,7 +9,6 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
-import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
 
 /**
  * Shared supports definition for the deprecated version.
@@ -67,26 +66,20 @@ const sharedSupports = {
  * stripping could silently un-pin a value the author deliberately chose and let
  * a later Style Kit / theme.json change it. New content and patterns get the
  * themeable default by simply omitting the attribute (current save()).
+ *
+ * There is deliberately NO `isEligible` here. Only genuinely old content needs
+ * migrating, and that content is invalid against the current save() (which omits
+ * the props it always baked), so it reaches this deprecation through the normal
+ * save()-matching path regardless. An `isEligible` would only add the ability to
+ * force-migrate blocks that are ALREADY valid — and because the old "always
+ * both props inline" markup is byte-identical to a current block that simply
+ * sets both height and gap explicitly, such a check can't tell them apart and
+ * would needlessly route valid, deliberately-customized accordions through
+ * migrate() on every parse. Leaving it out means valid content is skipped and
+ * only invalid old markup migrates.
  */
 const v1 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
-		// Old serialization always baked BOTH the height and gap custom
-		// properties inline on the accordion root. Scope the check to the
-		// wrapper's OWN opening tag: an item's content accepts arbitrary nested
-		// blocks (including another image-accordion whose explicit height/gap
-		// props would otherwise appear in this innerHTML), so scanning the whole
-		// subtree could false-match a valid outer accordion and silently pin the
-		// legacy 500px/4px defaults onto it.
-		const openingTag = getOwnOpeningTag(innerHTML, 'dsgo-image-accordion');
-		if (!openingTag) {
-			return false;
-		}
-		return (
-			openingTag.includes('--dsgo-image-accordion-height:') &&
-			openingTag.includes('--dsgo-image-accordion-gap:')
-		);
-	},
 
 	attributes: {
 		height: {

@@ -120,19 +120,16 @@ describe('image-accordion deprecations - v1 themeable height/gap migration', () 
 		);
 	});
 
-	test('a current block whose explicit height equals the old default is NOT routed through the deprecation and keeps its value', () => {
+	test('a current block whose explicit height equals the old default is NOT migrated', () => {
 		// Regression guard: height "500px" (gap unset) is a plausible explicit
 		// author choice equal to the historical default. The current save() emits
 		// only the height prop, so this markup matches the current save() and is
-		// valid WITHOUT any deprecation — the value must survive untouched.
+		// valid WITHOUT any deprecation — the value survives untouched. There is
+		// no toHaveInformed() assertion, so if a spurious migration fired the
+		// jest-console matcher would fail this test.
 		const currentMarkup = serialize(
 			createBlock(metadata.name, { height: '500px' })
 		);
-		// isEligible must not flag it (only the height prop is present, not gap).
-		expect(
-			v1Deprecation.isEligible({}, [], { innerHTML: currentMarkup })
-		).toBe(false);
-
 		const [block] = parse(currentMarkup);
 		expect(block.isValid).toBe(true);
 		expect(block.attributes.height).toBe('500px');
@@ -141,40 +138,25 @@ describe('image-accordion deprecations - v1 themeable height/gap migration', () 
 		);
 	});
 
-	test('isEligible flags old markup (both inline height + gap custom props)', () => {
-		expect(
-			v1Deprecation.isEligible({}, [], { innerHTML: OLD_MARKUP })
-		).toBe(true);
-	});
-
-	test('isEligible ignores current default markup and single-prop markup', () => {
-		expect(v1Deprecation.isEligible({}, [], { innerHTML: canonical })).toBe(
-			false
+	test('a current block with BOTH height and gap explicit is NOT force-migrated', () => {
+		// The old "always both props inline" markup is byte-identical to a current
+		// block that sets both height and gap explicitly. With no isEligible, this
+		// valid block matches the current save() and is skipped (no migration
+		// pass, no spurious console.info — which the jest-console matcher would
+		// otherwise flag as unexpected).
+		const currentMarkup = serialize(
+			createBlock(metadata.name, { height: '700px', gap: '20px' })
 		);
-		// A current block that sets only one of the two explicitly carries only
-		// one inline prop → not the old always-both signature.
-		const heightOnly = serialize(
-			createBlock(metadata.name, { height: '600px' })
+		const [block] = parse(currentMarkup);
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.height).toBe('700px');
+		expect(block.attributes.gap).toBe('20px');
+		expect(getBlockContent(block)).toContain(
+			'--dsgo-image-accordion-height:700px'
 		);
-		expect(
-			v1Deprecation.isEligible({}, [], { innerHTML: heightOnly })
-		).toBe(false);
-	});
-
-	test('isEligible ignores a valid accordion whose NESTED accordion sets height+gap', () => {
-		// Regression: the outer accordion is inherited (no inline height/gap on
-		// its own root), but an item nests another image-accordion that has both
-		// props inline. Scoping the check to the outer wrapper's own opening tag
-		// keeps the outer, valid block from being false-migrated (which would pin
-		// the legacy 500px/4px onto it).
-		const nestedHTML =
-			'<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--hover" style="--dsgo-image-accordion-expanded-ratio:3">' +
-			'<div class="dsgo-image-accordion__items">' +
-			'<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--hover" style="--dsgo-image-accordion-height:600px;--dsgo-image-accordion-gap:8px;--dsgo-image-accordion-expanded-ratio:3"></div>' +
-			'</div></div>';
-		expect(
-			v1Deprecation.isEligible({}, [], { innerHTML: nestedHTML })
-		).toBe(false);
+		expect(getBlockContent(block)).toContain(
+			'--dsgo-image-accordion-gap:20px'
+		);
 	});
 
 	test('migrate is a passthrough that pins values (never strips defaults)', () => {

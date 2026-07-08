@@ -112,19 +112,16 @@ const v4 = {
 		rowGap: { type: 'string', default: '20px' },
 	},
 	supports: currentSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
-		// Only the pre-`auto` save baked the 300px default width inline. The
-		// current save emits `auto` for the default, so this exact substring
-		// never appears in current default-width markup. Require the absence of
-		// the border-radius var so this doesn't wrongly claim the older
-		// v3/v2/v1 (border-radius-bearing) shapes, which have their own
-		// deprecations further down the list.
-		return (
-			typeof innerHTML === 'string' &&
-			innerHTML.includes('--dsgo-marquee-image-width:300px') &&
-			!innerHTML.includes('--dsgo-marquee-border-radius')
-		);
-	},
+	// No `isEligible`: only genuinely pre-`auto` content needs migrating, and it
+	// is invalid against the current save() (which emits `auto` for the default
+	// width, not `300px`), so it reaches this deprecation through save()-matching
+	// regardless. An `isEligible` would only add the ability to force-migrate
+	// ALREADY-valid blocks, and a current block where the author explicitly picks
+	// `imageWidth: "300px"` (reachable once "Auto width" is toggled off) is
+	// byte-identical to the old default markup — so such a check can't tell them
+	// apart and would needlessly route valid content through migrate() on every
+	// parse. save()-matching naturally skips valid content and also keeps the
+	// older border-radius-bearing shapes routing to their own deprecations.
 	migrate(attributes) {
 		// Passthrough. An old default-width block re-parses against this
 		// schema (imageWidth default '300px') to imageWidth === '300px', which

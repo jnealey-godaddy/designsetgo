@@ -99,28 +99,22 @@ describe('scroll-marquee deprecations - v4 auto-width migration', () => {
 		expect(OLD_BODY).toContain('--dsgo-marquee-image-width:300px');
 	});
 
-	test('isEligible flags old default-width markup', () => {
-		expect(
-			v4Deprecation.isEligible({}, [], { innerHTML: OLD_MARKUP })
-		).toBe(true);
-	});
-
-	test('isEligible ignores current (auto) markup', () => {
-		expect(v4Deprecation.isEligible({}, [], { innerHTML: canonical })).toBe(
-			false
+	test('a current marquee with an explicit 300px width is NOT force-migrated', () => {
+		// The old default-width markup is byte-identical to a current marquee
+		// whose author explicitly picks imageWidth "300px" (reachable once "Auto
+		// width" is toggled off). With no isEligible, this valid block matches the
+		// current save() and is skipped — no migration pass and no spurious
+		// console.info (which the jest-console matcher would otherwise flag as
+		// unexpected, failing this test).
+		const currentMarkup = serialize(
+			createBlock(metadata.name, { rows: ROWS, imageWidth: '300px' })
 		);
-	});
-
-	test('isEligible ignores older border-radius-bearing markup', () => {
-		const oldBorderRadiusMarkup = OLD_MARKUP.replace(
-			'--dsgo-marquee-object-fit:cover',
-			'--dsgo-marquee-object-fit:cover;--dsgo-marquee-border-radius:8px'
+		const [block] = parse(currentMarkup);
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.imageWidth).toBe('300px');
+		expect(getBlockContent(block)).toContain(
+			'--dsgo-marquee-image-width:300px'
 		);
-		expect(
-			v4Deprecation.isEligible({}, [], {
-				innerHTML: oldBorderRadiusMarkup,
-			})
-		).toBe(false);
 	});
 
 	test('migrate is passthrough (keeps 300px from the deprecation schema)', () => {
