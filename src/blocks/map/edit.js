@@ -114,11 +114,17 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 							),
 							onColorChange: (color) =>
 								setAttributes({
-									dsgoMarkerColor:
-										encodeColorValue(
-											color,
-											colorGradientSettings
-										) || '#e74c3c',
+									// Store the preset reference for palette
+									// picks; on clear, store '' so render.php's
+									// attribute → kit setting → default fallback
+									// chain drives the color instead of baking a
+									// hex into the block.
+									dsgoMarkerColor: color
+										? encodeColorValue(
+												color,
+												colorGradientSettings
+											)
+										: '',
 								}),
 							enableAlpha: true,
 							clearable: true,

@@ -207,8 +207,9 @@ function designsetgo_is_dsg_block( $block_name ) {
  * @param string|null $fallback Value returned when the color is a preset
  *                              reference whose slug is not found in the
  *                              palette. Default null (return the original).
- * @return string Resolved color, the $fallback for an unresolvable preset, or
- *                the original value when it is not a preset reference.
+ * @return mixed Resolved color string, the $fallback for an unresolvable
+ *               preset, or the original value (which may be null / non-string)
+ *               when it is not a preset reference.
  */
 function designsetgo_resolve_preset_color( $color, $fallback = null ) {
 	if ( ! is_string( $color ) || '' === $color ) {
