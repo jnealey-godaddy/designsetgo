@@ -202,7 +202,8 @@ function designsetgo_is_dsg_block( $block_name ) {
  * substitute a safe default in that case; when omitted, the original token is
  * returned unchanged (matching WordPress' own pass-through behavior).
  *
- * @param string      $color    Color value, possibly a preset reference.
+ * @param mixed       $color    Color value, possibly a preset reference.
+ *                              Non-string / empty input is returned as-is.
  * @param string|null $fallback Value returned when the color is a preset
  *                              reference whose slug is not found in the
  *                              palette. Default null (return the original).

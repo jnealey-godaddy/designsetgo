@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Progress Bar no longer bakes a default color into saved markup** — An unset bar/track color now inherits the theme instead of a fixed hex value. (#440)
 
 ### Bug Fixes
+- **Map marker color tracks the theme palette** — Choosing a theme color (e.g. Accent 2) for a Map marker now stores a theme-palette reference (`var:preset|color|{slug}`) instead of a baked-in hex, so the marker follows Style Kit color changes. It resolves to a concrete color at render time, falling back to the block default when a palette color is missing. (#449)
 - **Modal: custom accessible label now works** — The dialog's `aria-label` read a `modalLabel` attribute that was never registered, so a custom label could never take effect and it always fell back to "Modal". The attribute is now registered and wired to the new "Accessible Label" control.
 - **Icon List frontend parity** — Items show their fill / outline and stroke on the frontend, matching the editor.
 - **SVG Patterns / Form Builder color baking** — No longer bake default colors into saved markup, so they inherit the theme's colors.
