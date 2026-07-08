@@ -22,7 +22,7 @@ export const SpacingPanel = ({ contentGap, setAttributes }) => {
 		<PanelBody title={__('Spacing', 'designsetgo')} initialOpen={false}>
 			<RangeControl
 				label={__('Content Gap', 'designsetgo')}
-				value={contentGap}
+				value={contentGap ?? 8}
 				onChange={(value) => setAttributes({ contentGap: value })}
 				min={0}
 				max={64}

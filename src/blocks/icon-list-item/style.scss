@@ -5,8 +5,18 @@
  */
 
 .dsgo-icon-list-item {
-	// Layout styles applied via inline styles (display, flex-direction, gap)
+	// Layout styles (display, flex-direction, align-items) applied via inline
+	// styles. The icon↔content gap is owned here (not inline) so Style Kits and
+	// patterns can retheme it. Default: 16px inline layout, 12px stacked
+	// (--icon-top, below). Resolution order mirrors the icon size chain:
+	//   1. --dsgo-icon-list-gap — Style Kit CSS / semantic class hook.
+	//   2. --wp--custom--designsetgo--icon-list--gap — theme.json token.
+	//   3. 16px — literal fallback (the historical default).
 	position: relative;
+	gap: var(
+		--dsgo-icon-list-gap,
+		var(--wp--custom--designsetgo--icon-list--gap, 16px)
+	);
 	transition: opacity 0.2s ease;
 
 	&__icon {
@@ -29,13 +39,29 @@
 			fill: currentcolor; // Ensure SVG inherits color from wrapper
 		}
 
-		// Size inherited from the theme default token
-		// (--wp--custom--designsetgo--icon-list--default-size, via
-		// --dsgo-icon-list-size set inline in save.js) when the parent icon-list
-		// leaves iconSize unset. Plain icon box: exact token size. Background
-		// box: token size + the same 16px padding allowance used for explicit
-		// sizes so the +16 math stays correct in both cases.
+		// Size inherited from the theme default token when the parent icon-list
+		// leaves iconSize unset. save() no longer bakes --dsgo-icon-list-size
+		// inline; the stylesheet owns it here so kits and patterns can retheme
+		// it. The consuming rules below still read var(--dsgo-icon-list-size);
+		// its default is now sourced from a kit hook + the theme token:
+		//   1. --dsgo-icon-list-icon-size — Style Kit CSS / semantic class hook.
+		//   2. --wp--custom--designsetgo--icon-list--default-size — theme.json
+		//      token (unitless number × 1px).
+		//   3. 32 — literal fallback (the historical default).
+		// Plain icon box: exact token size. Background box: token size + the
+		// same 16px padding allowance used for explicit sizes so the +16 math
+		// stays correct in both cases.
 		&--inherit-size {
+			--dsgo-icon-list-size: var(
+				--dsgo-icon-list-icon-size,
+				calc(
+					var(
+						--wp--custom--designsetgo--icon-list--default-size,
+						32
+					) * 1px
+				)
+			);
+
 			width: var(--dsgo-icon-list-size);
 			height: var(--dsgo-icon-list-size);
 			min-width: var(--dsgo-icon-list-size);
@@ -52,6 +78,17 @@
 		flex: 1;
 		min-width: 0; // Prevent flex item overflow
 		width: 100%; // Ensure content fills available space
+
+		// Gap between content blocks. Owned here (not inline) unless the author
+		// sets an explicit contentGap, which save() writes inline and wins by
+		// specificity. Resolution order:
+		//   1. --dsgo-icon-list-content-gap — Style Kit CSS / semantic class.
+		//   2. --wp--custom--designsetgo--icon-list--content-gap — theme.json.
+		//   3. 8px — literal fallback (the historical default).
+		gap: var(
+			--dsgo-icon-list-content-gap,
+			var(--wp--custom--designsetgo--icon-list--content-gap, 8px)
+		);
 
 		// Remove margins from all blocks in content area (InnerBlocks)
 		// This prevents excessive spacing since icon list item has its own gap setting
@@ -140,6 +177,14 @@
 
 	// Icon position variations
 	&--icon-top {
+		// Stacked layout uses a tighter default gap (12px). Same layered chain
+		// as the base gap, with its own kit hook / token so a stacked list can
+		// be rethemed independently. Placed after the base rule so it wins by
+		// source order at equal specificity.
+		gap: var(
+			--dsgo-icon-list-gap-top,
+			var(--wp--custom--designsetgo--icon-list--gap-top, 12px)
+		);
 
 		.dsgo-icon-list-item__content {
 			width: 100%;
