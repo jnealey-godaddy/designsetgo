@@ -67,6 +67,9 @@
 			"type": "string",
 			"default": ""
 		},
+		"maxWidth": {
+			"type": "string"
+		},
 		"enableOverlay": {
 			"type": "boolean",
 			"default": false

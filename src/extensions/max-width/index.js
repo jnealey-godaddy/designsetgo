@@ -27,6 +27,10 @@ const EXCLUDED_BLOCKS = [
 	'designsetgo/section',
 	'designsetgo/row',
 	'designsetgo/grid',
+	// Blobs ships its own native, kit-controllable max-width control
+	// (attribute `maxWidth` → `--dsgo-blob-max-width`), so it opts out of the
+	// generic extension to avoid a duplicate control and conflicting markup.
+	'designsetgo/blobs',
 ];
 
 // Lazy-load editor components
