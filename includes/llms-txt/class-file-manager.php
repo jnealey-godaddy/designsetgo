@@ -77,9 +77,14 @@ class File_Manager {
 	 *
 	 * Loads the WP_Filesystem API on demand so callers are safe to use outside
 	 * of an `admin_init` context (e.g. from a REST route or a save_post hook).
-	 * Returns null when the filesystem cannot be initialised — a genuine error
-	 * condition (missing credentials / unwritable environment) that callers
-	 * must surface rather than silently working around.
+	 *
+	 * WP_Filesystem is the idiomatic WordPress file API and is always available
+	 * in a standard WP environment. It abstracts the underlying transport so the
+	 * same code works on hosts that restrict direct filesystem access and require
+	 * FTP or SSH credentials — falling back to raw PHP functions (file_put_contents,
+	 * unlink, etc.) would bypass that abstraction entirely and silently break those
+	 * hosts. Returning null signals a genuine, unrecoverable error that callers
+	 * must surface to the user rather than paper over with a direct-write fallback.
 	 *
 	 * @return \WP_Filesystem_Base|null Filesystem instance, or null if it could not be initialised.
 	 */
@@ -99,6 +104,12 @@ class File_Manager {
 	/**
 	 * Write content to a file via WP_Filesystem.
 	 *
+	 * Returns false (without a direct-PHP fallback) when WP_Filesystem cannot be
+	 * initialised. This is intentional: WP_Filesystem is the canonical WordPress
+	 * file API and transparently handles direct, FTP, and SSH transports. A raw
+	 * file_put_contents() fallback would silently bypass FTP/SSH support on
+	 * managed or restricted hosts.
+	 *
 	 * @param string $path    Absolute path to the file to write.
 	 * @param string $content File content.
 	 * @return bool True on success, false if the filesystem is unavailable or the write fails.
@@ -115,6 +126,10 @@ class File_Manager {
 
 	/**
 	 * Delete a file via WP_Filesystem.
+	 *
+	 * Returns false (without a direct-PHP fallback) when WP_Filesystem cannot be
+	 * initialised — same rationale as fs_put_contents(): WP_Filesystem covers
+	 * FTP/SSH hosts and falling back to unlink() would bypass that.
 	 *
 	 * @param string $path Absolute path to the file to delete.
 	 * @return bool True on success or when the file did not exist, false if the filesystem is unavailable or the delete fails.

@@ -63,7 +63,13 @@ class Conflict_Detector {
 
 		$parent_dir = dirname( $file_path );
 
-		// Use WP_Filesystem for writability checks.
+		// Use WP_Filesystem for writability checks — the idiomatic WordPress way.
+		// WP_Filesystem abstracts direct, FTP, and SSH transports, so a raw
+		// is_writable() fallback would silently misreport writability on FTP/SSH
+		// hosts where direct access is intentionally restricted. Treating the file
+		// as non-writable when WP_Filesystem is unavailable is correct: it surfaces
+		// the problem to the user (via the "rename manually" notice) rather than
+		// allowing an operation that may not actually work.
 		$filesystem = File_Manager::filesystem();
 
 		$file_writable = $filesystem ? $filesystem->is_writable( $file_path ) : false;
