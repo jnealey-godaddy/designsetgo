@@ -8,8 +8,22 @@
 	// CSS Custom Properties (set from block attributes)
 	--transition-duration: var(--dsgo-image-accordion-transition, 0.5s);
 	--expanded-ratio: var(--dsgo-image-accordion-expanded-ratio, 3);
-	--accordion-gap: var(--dsgo-image-accordion-gap, 4px);
-	--accordion-height: var(--dsgo-image-accordion-height, 500px);
+
+	// Gap and height default here (not inline from save()) so Style Kits and
+	// patterns can retheme them. An explicit author value is written inline as
+	// --dsgo-image-accordion-<prop> by save() and wins the first slot; unset it
+	// falls through to the theme token, then the literal historical default.
+	//   gap:    --dsgo-image-accordion-gap → --wp--preset--spacing--20 → 4px
+	//   height: --dsgo-image-accordion-height
+	//           → --wp--custom--designsetgo--image-accordion--height → 500px
+	--accordion-gap: var(
+		--dsgo-image-accordion-gap,
+		var(--wp--preset--spacing--20, 4px)
+	);
+	--accordion-height: var(
+		--dsgo-image-accordion-height,
+		var(--wp--custom--designsetgo--image-accordion--height, 500px)
+	);
 
 	display: flex;
 	flex-direction: row;

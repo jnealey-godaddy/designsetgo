@@ -1,0 +1,195 @@
+/**
+ * Image Accordion Block - Deprecated Versions
+ *
+ * Handles backward compatibility for blocks saved with previous versions.
+ *
+ * @since 1.0.0
+ */
+
+import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
+import classnames from 'classnames';
+import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+
+/**
+ * Shared supports definition for the deprecated version.
+ * Mirrors the current block.json supports.
+ */
+const sharedSupports = {
+	anchor: true,
+	align: ['wide', 'full'],
+	html: false,
+	inserter: true,
+	spacing: {
+		margin: true,
+		padding: false,
+		blockGap: false,
+		__experimentalDefaultControls: {
+			margin: true,
+		},
+	},
+	color: {
+		background: false,
+		text: true,
+		link: true,
+		__experimentalDefaultControls: {
+			text: true,
+		},
+	},
+	typography: {
+		fontSize: true,
+		lineHeight: true,
+		__experimentalDefaultControls: {
+			fontSize: true,
+		},
+		__experimentalFontFamily: true,
+		__experimentalFontWeight: true,
+	},
+};
+
+/**
+ * Version 1: Before the themeable height/gap refactor
+ *
+ * The pre-refactor format always baked `--dsgo-image-accordion-height` and
+ * `--dsgo-image-accordion-gap` inline on the root element (from attribute
+ * defaults "500px" / "4px"), so patterns had to override them with magic
+ * numbers and Style Kits could not retheme them. The current version omits both
+ * custom properties when the author leaves them unset and lets the stylesheet
+ * default (`.dsgo-image-accordion`, resolving through the theme token then the
+ * literal fallback) own them; an explicit author value is still written inline.
+ *
+ * The deprecated attribute schema keeps the old "500px" / "4px" defaults so an
+ * implicit-default old block re-parses to those values; `migrate` then strips
+ * them so the block inherits the themeable default, while any explicit
+ * non-default value is preserved as an override.
+ */
+const v1 = {
+	supports: sharedSupports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// Old serialization always baked the height custom property inline. The
+		// new default-valued markup omits it entirely, so its presence is the
+		// signature of pre-refactor content.
+		return (
+			!!innerHTML &&
+			innerHTML.includes('dsgo-image-accordion') &&
+			innerHTML.includes('--dsgo-image-accordion-height:')
+		);
+	},
+
+	attributes: {
+		height: {
+			type: 'string',
+			default: '500px',
+		},
+		gap: {
+			type: 'string',
+			default: '4px',
+		},
+		expandedRatio: {
+			type: 'number',
+			default: 3,
+		},
+		transitionDuration: {
+			type: 'string',
+			default: '0.5s',
+		},
+		enableOverlay: {
+			type: 'boolean',
+			default: true,
+		},
+		overlayColor: {
+			type: 'string',
+			default: '#000000',
+		},
+		overlayOpacity: {
+			type: 'number',
+			default: 40,
+		},
+		overlayOpacityExpanded: {
+			type: 'number',
+			default: 20,
+		},
+		triggerType: {
+			type: 'string',
+			default: 'hover',
+			enum: ['hover', 'click'],
+		},
+		defaultExpanded: {
+			type: 'number',
+			default: 0,
+		},
+	},
+
+	save({ attributes }) {
+		const {
+			height,
+			gap,
+			expandedRatio,
+			transitionDuration,
+			enableOverlay,
+			overlayColor,
+			overlayOpacity,
+			overlayOpacityExpanded,
+			triggerType,
+			defaultExpanded,
+		} = attributes;
+
+		// Same classes as edit.js - MUST MATCH EXACTLY
+		const accordionClasses = classnames('dsgo-image-accordion', {
+			'dsgo-image-accordion--hover': triggerType === 'hover',
+			'dsgo-image-accordion--click': triggerType === 'click',
+		});
+
+		// OLD: height and gap were always baked inline from the attribute defaults.
+		// Note: Unitless values must be strings to prevent React from adding 'px'
+		const customStyles = {
+			'--dsgo-image-accordion-height': height,
+			'--dsgo-image-accordion-gap': gap,
+			'--dsgo-image-accordion-expanded-ratio': String(expandedRatio), // Unitless
+			'--dsgo-image-accordion-transition': transitionDuration,
+			'--dsgo-image-accordion-overlay-color':
+				convertColorToCSSVar(overlayColor),
+			'--dsgo-image-accordion-overlay-opacity': String(
+				overlayOpacity / 100
+			), // Unitless
+			'--dsgo-image-accordion-overlay-opacity-expanded': String(
+				overlayOpacityExpanded / 100
+			), // Unitless
+		};
+
+		// Use .save() variant for save function
+		const blockProps = useBlockProps.save({
+			className: accordionClasses,
+			style: customStyles,
+			'data-trigger-type': triggerType,
+			'data-default-expanded': defaultExpanded,
+			'data-enable-overlay': enableOverlay,
+		});
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-image-accordion__items',
+		});
+
+		return (
+			<div {...blockProps}>
+				<div {...innerBlocksProps} />
+			</div>
+		);
+	},
+
+	migrate(attributes) {
+		// Drop a default height/gap so the block inherits the themeable
+		// stylesheet default; preserve an explicit non-default value as an
+		// inline override re-emitted by the current save().
+		const { height, gap, ...rest } = attributes;
+		const next = { ...rest };
+		if (height && height !== '500px') {
+			next.height = height;
+		}
+		if (gap && gap !== '4px') {
+			next.gap = gap;
+		}
+		return next;
+	},
+};
+
+export default [v1];
