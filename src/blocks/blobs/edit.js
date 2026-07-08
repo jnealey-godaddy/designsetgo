@@ -28,6 +28,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 
 export default function BlobsEdit({ attributes, setAttributes, clientId }) {
 	const wrapperRef = useRef(null);
@@ -38,6 +39,7 @@ export default function BlobsEdit({ attributes, setAttributes, clientId }) {
 		animationEasing,
 		size,
 		height,
+		maxWidth,
 		enableOverlay,
 		overlayColor,
 		overlayOpacity,
@@ -77,10 +79,21 @@ export default function BlobsEdit({ attributes, setAttributes, clientId }) {
 		'--dsgo-blob-animation-easing': animationEasing,
 	};
 
+	// Optional max-width constraint on the wrapper - MUST MATCH save.js.
+	// Only add the class + kit-controllable custom property when the author
+	// sets an explicit maxWidth; the stylesheet owns the actual max-width and
+	// centering margins.
+	const hasMaxWidth = hasExplicitString(maxWidth);
+
 	// Get block props with our wrapper class
 	const blockProps = useBlockProps({
-		className: 'dsgo-blobs-wrapper',
+		className: classnames('dsgo-blobs-wrapper', {
+			'dsgo-has-max-width': hasMaxWidth,
+		}),
 		ref: wrapperRef,
+		...(hasMaxWidth && {
+			style: { '--dsgo-blob-max-width': maxWidth },
+		}),
 	});
 
 	// Transfer background styles from wrapper to blob in editor
@@ -222,6 +235,7 @@ export default function BlobsEdit({ attributes, setAttributes, clientId }) {
 							animationEasing: 'ease-in-out',
 							size: '300px',
 							height: '',
+							maxWidth: undefined,
 							overlayOpacity: 80,
 						})
 					}
@@ -324,6 +338,37 @@ export default function BlobsEdit({ attributes, setAttributes, clientId }) {
 							placeholder={size}
 							help={__(
 								'Height of the blob shape. Defaults to width if empty.',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Max Width', 'designsetgo')}
+						hasValue={() => !!maxWidth}
+						onDeselect={() =>
+							setAttributes({ maxWidth: undefined })
+						}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Max Width', 'designsetgo')}
+							value={maxWidth || ''}
+							onChange={(value) =>
+								setAttributes({
+									maxWidth: value || undefined,
+								})
+							}
+							units={[
+								{ value: 'px', label: 'px', default: 800 },
+								{ value: '%', label: '%', default: 100 },
+								{ value: 'vw', label: 'vw', default: 60 },
+								{ value: 'rem', label: 'rem', default: 50 },
+							]}
+							help={__(
+								'Constrain the blob wrapper width and center it. Leave empty for no constraint.',
 								'designsetgo'
 							)}
 							__next40pxDefaultSize

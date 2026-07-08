@@ -7,6 +7,7 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 
 export default function BlobsSave({ attributes }) {
 	const {
@@ -16,6 +17,7 @@ export default function BlobsSave({ attributes }) {
 		animationEasing,
 		size,
 		height,
+		maxWidth,
 		enableOverlay,
 		overlayColor,
 		overlayOpacity,
@@ -36,9 +38,22 @@ export default function BlobsSave({ attributes }) {
 		'--dsgo-blob-animation-easing': animationEasing,
 	};
 
+	// Optional max-width constraint on the wrapper - MUST MATCH edit.js.
+	// Emitted as a kit-controllable CSS custom property so themes/kits can
+	// retheme via --dsgo-blob-max-width or the blobs max-width token; the raw
+	// max-width and centering margins live in the stylesheet, not inline. The
+	// class + var are only added when the author sets an explicit maxWidth, so
+	// unset blobs serialize byte-identically to the pre-maxWidth output.
+	const hasMaxWidth = hasExplicitString(maxWidth);
+
 	// Get block props with our wrapper class
 	const blockProps = useBlockProps.save({
-		className: 'dsgo-blobs-wrapper',
+		className: classnames('dsgo-blobs-wrapper', {
+			'dsgo-has-max-width': hasMaxWidth,
+		}),
+		...(hasMaxWidth && {
+			style: { '--dsgo-blob-max-width': maxWidth },
+		}),
 	});
 
 	const innerBlocksProps = useInnerBlocksProps.save({

@@ -18,12 +18,10 @@
 	"icon": "images-alt2",
 	"attributes": {
 		"height": {
-			"type": "string",
-			"default": "500px"
+			"type": "string"
 		},
 		"gap": {
-			"type": "string",
-			"default": "4px"
+			"type": "string"
 		},
 		"expandedRatio": {
 			"type": "number",
@@ -103,9 +101,7 @@
 		}
 	},
 	"example": {
-		"attributes": {
-			"height": "500px"
-		},
+		"attributes": {},
 		"innerBlocks": [
 			{
 				"name": "designsetgo/image-accordion-item",

@@ -1,6 +1,7 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 
 export default function ImageAccordionSave({ attributes }) {
 	const {
@@ -22,11 +23,21 @@ export default function ImageAccordionSave({ attributes }) {
 		'dsgo-image-accordion--click': triggerType === 'click',
 	});
 
+	// Height and gap are written inline ONLY when the author sets an explicit
+	// value. Left unset they are omitted so the stylesheet default owns them
+	// (resolving through --dsgo-image-accordion-<prop> → the theme token → the
+	// literal fallback) and Style Kits / patterns can retheme them without
+	// fighting a baked-in magic number. MUST MATCH edit.js.
+	const hasExplicitHeight = hasExplicitString(height);
+	const hasExplicitGap = hasExplicitString(gap);
+
 	// Apply settings as CSS custom properties - MUST MATCH edit.js
 	// Note: Unitless values must be strings to prevent React from adding 'px'
 	const customStyles = {
-		'--dsgo-image-accordion-height': height,
-		'--dsgo-image-accordion-gap': gap,
+		...(hasExplicitHeight && {
+			'--dsgo-image-accordion-height': height,
+		}),
+		...(hasExplicitGap && { '--dsgo-image-accordion-gap': gap }),
 		'--dsgo-image-accordion-expanded-ratio': String(expandedRatio), // Unitless
 		'--dsgo-image-accordion-transition': transitionDuration,
 		'--dsgo-image-accordion-overlay-color':

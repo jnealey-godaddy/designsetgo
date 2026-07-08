@@ -12,9 +12,15 @@
 	.dsgo-image-accordion__items {
 		display: flex;
 		flex-direction: row;
-		gap: var(--accordion-gap, 4px);
+
+		// Reuse the resolved custom properties from style.scss (loaded in the
+		// editor too), which already fold the full author-inline → theme-token →
+		// literal chain into --accordion-gap / --accordion-height on the
+		// ancestor. Re-nesting the chain here would be dead fallback that could
+		// drift out of sync, so just read the resolved values.
+		gap: var(--accordion-gap);
 		width: 100%;
-		height: 500px; // Fixed height for editor preview
+		height: var(--accordion-height);
 	}
 
 	.dsgo-image-accordion-item {

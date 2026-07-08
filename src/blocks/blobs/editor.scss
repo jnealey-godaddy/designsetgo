@@ -33,6 +33,27 @@
 	&.alignright > .dsgo-blobs {
 		margin-left: auto;
 	}
+
+	// Native max-width constraint (must match style.scss). Mirrors the
+	// frontend kit-controllable var chain so the editor preview matches.
+	&.dsgo-has-max-width {
+		max-width: var(--dsgo-blob-max-width, var(--wp--custom--designsetgo--blobs--max-width, 100%));
+		margin-left: auto;
+		margin-right: auto;
+
+		// Align-aware anchoring — must match style.scss.
+		&.alignleft,
+		&.has-text-align-left {
+			margin-left: 0;
+			margin-right: auto;
+		}
+
+		&.alignright,
+		&.has-text-align-right {
+			margin-left: auto;
+			margin-right: 0;
+		}
+	}
 }
 
 // Editor: Enable blob animations for WYSIWYG editing

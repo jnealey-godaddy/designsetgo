@@ -83,7 +83,7 @@
 		},
 		"imageWidth": {
 			"type": "string",
-			"default": "300px"
+			"default": "auto"
 		},
 		"objectFit": {
 			"type": "string",

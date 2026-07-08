@@ -1,6 +1,18 @@
 /**
  * Scroll Marquee Block - Deprecations
  *
+ * v4: Save before `imageWidth` defaulted to `auto`. The default width was
+ * `300px`, which (as a default) is never serialized into the block comment,
+ * so default-width blocks baked `--dsgo-marquee-image-width:300px` inline
+ * with an empty comment. The current save emits `auto` for that default, so
+ * those blocks fail validation against it. This deprecation reproduces the
+ * pre-`auto` save (imageWidth default `300px`) and re-parses the empty
+ * comment to `imageWidth: '300px'`; the passthrough migrate keeps it as an
+ * explicit value so existing designs stay byte-identical (only brand-new
+ * blocks pick up the `auto` default). Everything else matches the current
+ * save (native border radius applied per image), so only the imageWidth
+ * default drives the migration.
+ *
  * v3: Save before border-radius moved to native border support. The
  * `borderRadius` attribute (default '8px') was always serialized into a
  * `--dsgo-marquee-border-radius` custom property on the wrapper, so the
@@ -48,6 +60,134 @@ const sharedSupports = {
 		background: true,
 		text: true,
 		gradients: true,
+	},
+};
+
+// Mirrors the current block.json supports (adds native border radius, applied
+// per image with skipSerialization). Used by v4, which reproduces the current
+// save verbatim except for the pre-`auto` imageWidth default.
+const currentSupports = {
+	...sharedSupports,
+	__experimentalBorder: {
+		radius: true,
+		__experimentalSkipSerialization: true,
+		__experimentalDefaultControls: {
+			radius: true,
+		},
+	},
+};
+
+const v4 = {
+	attributes: {
+		rows: {
+			type: 'array',
+			items: {
+				type: 'object',
+				properties: {
+					images: {
+						type: 'array',
+						items: {
+							type: 'object',
+							properties: {
+								id: { type: 'number' },
+								url: { type: 'string' },
+								alt: { type: 'string' },
+							},
+						},
+					},
+					direction: { type: 'string' },
+				},
+			},
+			default: [{ images: [], direction: 'left' }],
+		},
+		scrollSpeed: { type: 'number', default: 0.5 },
+		imageHeight: { type: 'string', default: '200px' },
+		imageWidth: { type: 'string', default: '300px' },
+		objectFit: {
+			type: 'string',
+			default: 'cover',
+			enum: ['cover', 'contain', 'fill', 'scale-down'],
+		},
+		gap: { type: 'string', default: '20px' },
+		rowGap: { type: 'string', default: '20px' },
+	},
+	supports: currentSupports,
+	// No `isEligible`: only genuinely pre-`auto` content needs migrating, and it
+	// is invalid against the current save() (which emits `auto` for the default
+	// width, not `300px`), so it reaches this deprecation through save()-matching
+	// regardless. An `isEligible` would only add the ability to force-migrate
+	// ALREADY-valid blocks, and a current block where the author explicitly picks
+	// `imageWidth: "300px"` (reachable once "Auto width" is toggled off) is
+	// byte-identical to the old default markup — so such a check can't tell them
+	// apart and would needlessly route valid content through migrate() on every
+	// parse. save()-matching naturally skips valid content and also keeps the
+	// older border-radius-bearing shapes routing to their own deprecations.
+	migrate(attributes) {
+		// Passthrough. An old default-width block re-parses against this
+		// schema (imageWidth default '300px') to imageWidth === '300px', which
+		// is kept as an explicit value so the current save re-emits 300px and
+		// the visual is preserved. Only new blocks inherit the 'auto' default.
+		return attributes;
+	},
+	save({ attributes }) {
+		const {
+			rows,
+			scrollSpeed,
+			imageHeight,
+			imageWidth,
+			objectFit,
+			gap,
+			rowGap,
+		} = attributes;
+		const borderRadius = attributes.style?.border?.radius;
+
+		const blockProps = useBlockProps.save({
+			className: 'dsgo-scroll-marquee',
+			'data-scroll-speed': scrollSpeed,
+			style: {
+				'--dsgo-marquee-gap': gap,
+				'--dsgo-marquee-row-gap': rowGap,
+				'--dsgo-marquee-image-height': imageHeight,
+				'--dsgo-marquee-image-width': imageWidth,
+				'--dsgo-marquee-object-fit': objectFit,
+			},
+		});
+
+		return (
+			<div {...blockProps}>
+				{rows.map((row, rowIndex) => (
+					<div
+						key={rowIndex}
+						className="dsgo-scroll-marquee__row"
+						data-direction={row.direction}
+					>
+						<div className="dsgo-scroll-marquee__track">
+							{[...Array(6)].map((_, repeatIndex) => (
+								<div
+									key={repeatIndex}
+									className="dsgo-scroll-marquee__track-segment"
+								>
+									{row.images.map((image, imageIndex) => (
+										<img
+											key={`${repeatIndex}-${imageIndex}`}
+											src={image.url}
+											alt={image.alt || ''}
+											className="dsgo-scroll-marquee__image"
+											loading="lazy"
+											style={
+												borderRadius
+													? { borderRadius }
+													: undefined
+											}
+										/>
+									))}
+								</div>
+							))}
+						</div>
+					</div>
+				))}
+			</div>
+		);
 	},
 };
 
@@ -565,4 +705,4 @@ const v1 = {
 	},
 };
 
-export default [v3, v2, v1ObjectFit, v1];
+export default [v4, v3, v2, v1ObjectFit, v1];

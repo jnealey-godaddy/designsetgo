@@ -24,6 +24,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 import ImageAccordionPlaceholder from './components/ImageAccordionPlaceholder';
 
 export default function ImageAccordionEdit({
@@ -102,11 +103,20 @@ export default function ImageAccordionEdit({
 		'dsgo-image-accordion--click': triggerType === 'click',
 	});
 
+	// Height and gap are written inline ONLY when the author sets an explicit
+	// value (parity with save.js). Left unset they are omitted so the stylesheet
+	// default owns them and the editor preview reflects the theme token / literal
+	// fallback rather than a baked-in magic number.
+	const hasExplicitHeight = hasExplicitString(height);
+	const hasExplicitGap = hasExplicitString(gap);
+
 	// Apply settings as CSS custom properties for consistent styling
 	// Note: Unitless values must be strings to prevent React from adding 'px'
 	const customStyles = {
-		'--dsgo-image-accordion-height': height,
-		'--dsgo-image-accordion-gap': gap,
+		...(hasExplicitHeight && {
+			'--dsgo-image-accordion-height': height,
+		}),
+		...(hasExplicitGap && { '--dsgo-image-accordion-gap': gap }),
 		'--dsgo-image-accordion-expanded-ratio': String(expandedRatio), // Unitless
 		'--dsgo-image-accordion-transition': transitionDuration,
 		'--dsgo-image-accordion-overlay-color':
@@ -156,8 +166,8 @@ export default function ImageAccordionEdit({
 					panelId={clientId}
 					resetAll={() =>
 						setAttributes({
-							height: '500px',
-							gap: '4px',
+							height: undefined,
+							gap: undefined,
 							expandedRatio: 3,
 							transitionDuration: '0.5s',
 							triggerType: 'hover',
@@ -170,15 +180,15 @@ export default function ImageAccordionEdit({
 				>
 					<DsgoInspectorPanel.Item
 						label={__('Height', 'designsetgo')}
-						hasValue={() => height !== '500px'}
-						onDeselect={() => setAttributes({ height: '500px' })}
+						hasValue={() => !!height}
+						onDeselect={() => setAttributes({ height: undefined })}
 						isShownByDefault
 					>
 						<UnitControl
 							label={__('Height', 'designsetgo')}
 							value={height}
 							onChange={(value) =>
-								setAttributes({ height: value || '500px' })
+								setAttributes({ height: value || undefined })
 							}
 							units={[
 								{ value: 'px', label: 'px', default: 500 },
@@ -198,15 +208,15 @@ export default function ImageAccordionEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Gap Between Items', 'designsetgo')}
-						hasValue={() => gap !== '4px'}
-						onDeselect={() => setAttributes({ gap: '4px' })}
+						hasValue={() => !!gap}
+						onDeselect={() => setAttributes({ gap: undefined })}
 						isShownByDefault
 					>
 						<UnitControl
 							label={__('Gap Between Items', 'designsetgo')}
 							value={gap}
 							onChange={(value) =>
-								setAttributes({ gap: value || '4px' })
+								setAttributes({ gap: value || undefined })
 							}
 							units={[
 								{ value: 'px', label: 'px', default: 4 },

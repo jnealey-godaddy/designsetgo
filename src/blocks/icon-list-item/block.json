@@ -42,8 +42,7 @@
 			"default": "star"
 		},
 		"contentGap": {
-			"type": "number",
-			"default": 8
+			"type": "number"
 		},
 		"linkUrl": {
 			"type": "string",

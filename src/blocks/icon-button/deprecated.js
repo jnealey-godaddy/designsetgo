@@ -9,7 +9,11 @@
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 import { getIcon } from '../icon/utils/svg-icons';
 import { convertPaddingValue } from './utils/padding';
-import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	convertPresetToCSSVar,
+	convertColorToCSSVar,
+} from '../../utils/convert-preset-to-css-var';
+import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
 
 /**
  * Shared supports definition for all deprecated versions.
@@ -61,6 +65,194 @@ const sharedSupports = {
 		},
 	},
 	shadow: true,
+};
+
+/**
+ * Version 8: Before the themeable icon-gap refactor
+ *
+ * The pre-refactor format always baked the icon↔text gap inline on the root
+ * button element (`gap:0` with no icon, `gap:<iconGap>` with one) and carried
+ * no `dsgo-icon-button--has-icon` marker class. The current version omits the
+ * gap entirely when there is no icon, writes it inline only for an explicit
+ * author override, and otherwise lets the stylesheet default
+ * (`.dsgo-icon-button--has-icon`, resolving through --dsgo-icon-button-gap /
+ * the theme token) own it — so kits and patterns can retheme the gap.
+ *
+ * Everything else (the post-v7 icon size/style token handling) is reproduced
+ * verbatim so only the gap markup drives the migration.
+ */
+const v8 = {
+	supports: sharedSupports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// Old serialization = an icon button with an inline gap on the root but
+		// without the new marker class. Scope the check to the button's OWN
+		// opening tag: `text` is free-form RichText serialized into innerHTML, so
+		// scanning the whole string could false-match a valid icon-less button
+		// whose label happens to contain "gap:".
+		const openingTag = getOwnOpeningTag(innerHTML, 'dsgo-icon-button');
+		if (!openingTag) {
+			return false;
+		}
+		return (
+			!openingTag.includes('dsgo-icon-button--has-icon') &&
+			/gap:\s*[^;"]+/.test(openingTag)
+		);
+	},
+
+	attributes: {
+		align: { type: 'string' },
+		text: { type: 'string', default: '' },
+		url: { type: 'string', default: '' },
+		linkTarget: { type: 'string', default: '_self' },
+		rel: { type: 'string', default: '' },
+		icon: { type: 'string', default: 'lightbulb' },
+		iconPosition: { type: 'string', default: 'start' },
+		iconStyle: { type: 'string', enum: ['filled', 'outlined'] },
+		strokeWidth: { type: 'number', default: 1.5 },
+		iconSize: { type: 'number' },
+		iconGap: { type: 'string', default: '8px' },
+		hoverAnimation: { type: 'string', default: 'none' },
+		hoverBackgroundColor: { type: 'string', default: '' },
+		hoverTextColor: { type: 'string', default: '' },
+		modalCloseId: { type: 'string', default: '' },
+	},
+
+	save({ attributes }) {
+		const {
+			text,
+			url,
+			linkTarget,
+			rel,
+			icon,
+			iconPosition,
+			iconStyle,
+			strokeWidth,
+			iconSize,
+			iconGap,
+			align,
+			hoverAnimation,
+			hoverBackgroundColor,
+			hoverTextColor,
+			style,
+			backgroundColor,
+			textColor,
+			fontSize,
+			modalCloseId,
+		} = attributes;
+
+		const bgColor =
+			style?.color?.background ||
+			(backgroundColor && `var(--wp--preset--color--${backgroundColor})`);
+		const txtColor =
+			style?.color?.text ||
+			(textColor && `var(--wp--preset--color--${textColor})`);
+
+		const fontSizeValue =
+			style?.typography?.fontSize ||
+			(fontSize && `var(--wp--preset--font-size--${fontSize})`);
+
+		const paddingValue = style?.spacing?.padding;
+
+		const isFullWidth = align === 'full';
+		const buttonStyles = {
+			display: isFullWidth ? 'flex' : 'inline-flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			gap: iconPosition !== 'none' && icon ? iconGap : 0,
+			width: isFullWidth ? '100%' : 'auto',
+			flexDirection: iconPosition === 'end' ? 'row-reverse' : 'row',
+			...(bgColor && { backgroundColor: bgColor }),
+			...(txtColor && { color: txtColor }),
+			...(fontSizeValue && { fontSize: fontSizeValue }),
+			...(paddingValue && {
+				paddingTop: convertPaddingValue(paddingValue.top),
+				paddingRight: convertPaddingValue(paddingValue.right),
+				paddingBottom: convertPaddingValue(paddingValue.bottom),
+				paddingLeft: convertPaddingValue(paddingValue.left),
+			}),
+			...(hoverBackgroundColor && {
+				'--dsgo-button-hover-bg':
+					convertColorToCSSVar(hoverBackgroundColor),
+			}),
+			...(hoverTextColor && {
+				'--dsgo-button-hover-color':
+					convertColorToCSSVar(hoverTextColor),
+			}),
+		};
+
+		const hasExplicitSize = typeof iconSize === 'number';
+		const iconWrapperStyles = {
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			...(hasExplicitSize && {
+				width: `${iconSize}px`,
+				height: `${iconSize}px`,
+			}),
+			flexShrink: 0,
+		};
+
+		let animationClass = '';
+		if (hoverAnimation === 'explicit-none') {
+			animationClass = ' dsgo-icon-button--no-hover';
+		} else if (hoverAnimation && hoverAnimation !== 'none') {
+			animationClass = ` dsgo-icon-button--${hoverAnimation}`;
+		}
+
+		const ButtonElement = url ? 'a' : 'button';
+
+		const blockProps = useBlockProps.save({
+			className: `dsgo-icon-button wp-block-button wp-block-button__link wp-element-button${animationClass}`,
+			style: buttonStyles,
+			...(url && {
+				href: url,
+				target: linkTarget,
+				rel:
+					linkTarget === '_blank'
+						? rel || 'noopener noreferrer'
+						: rel || undefined,
+			}),
+			...(!url && {
+				type: 'button',
+			}),
+			...(modalCloseId && {
+				'data-dsgo-modal-close': modalCloseId,
+			}),
+		});
+
+		return (
+			<ButtonElement {...blockProps}>
+				{iconPosition !== 'none' && icon && (
+					<span
+						className="dsgo-icon-button__icon dsgo-lazy-icon"
+						style={iconWrapperStyles}
+						data-icon-name={icon}
+						data-icon-size={iconSize || undefined}
+						data-icon-style={iconStyle || undefined}
+						data-icon-stroke-width={
+							iconStyle === 'outlined' ? strokeWidth : undefined
+						}
+					/>
+				)}
+				<RichText.Content
+					tagName="span"
+					className="dsgo-icon-button__text"
+					value={text}
+				/>
+			</ButtonElement>
+		);
+	},
+
+	migrate(attributes) {
+		// Passthrough: pin whatever iconGap the old markup carried (an
+		// implicit-default block re-parses to this schema's '8px' default) so an
+		// existing button renders exactly as authored. We do not strip a
+		// default-valued gap back to "inherit" — old markup can't tell an
+		// explicit 8px from an implicit one, so stripping could silently un-pin a
+		// deliberate choice. This matches image-accordion / scroll-marquee;
+		// new content and patterns inherit by omitting the attribute.
+		return attributes;
+	},
 };
 
 /**
@@ -1470,4 +1662,4 @@ const v1 = {
 	},
 };
 
-export default [v7, v6, v5, v4, v3, v2, v1];
+export default [v8, v7, v6, v5, v4, v3, v2, v1];

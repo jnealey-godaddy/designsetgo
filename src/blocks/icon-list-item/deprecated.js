@@ -8,7 +8,11 @@
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import { getIcon } from '../icon/utils/svg-icons';
-import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	convertPresetToCSSVar,
+	convertColorToCSSVar,
+} from '../../utils/convert-preset-to-css-var';
+import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
 
 /**
  * Shared supports definition for all deprecated versions.
@@ -21,6 +25,196 @@ const sharedSupports = {
 	spacing: {
 		margin: false,
 		padding: false,
+	},
+};
+
+/**
+ * Version 3: Before the kit-controllable gaps + icon-size tokens
+ *
+ * The pre-refactor format baked several design defaults as raw inline pixel
+ * values in save():
+ *  - the icon↔content gap on the item root (`gap:12px` stacked / `gap:16px`
+ *    inline) — a position-derived default, never an author attribute;
+ *  - the content gap on the inner content div (`gap:<contentGap>px`, defaulting
+ *    to 8);
+ *  - in the INHERITED icon-size case, `--dsgo-icon-list-size` set inline to the
+ *    theme default token calc.
+ *
+ * The current version moves all three defaults into the stylesheet (keyed on
+ * the existing position / inherit-size modifier classes, resolving through
+ * layered `--dsgo-icon-list-*` / `--wp--custom--designsetgo--icon-list--*`
+ * chains) so Style Kits and patterns can retheme them and patterns can omit
+ * them and inherit. save() now emits the item gap and the inline
+ * `--dsgo-icon-list-size` never, and the content gap only for an explicit
+ * author value. The EXPLICIT icon-size case (inline width/height/minWidth) is
+ * unchanged.
+ *
+ * `isEligible` matches the pre-refactor signature: a `gap:` written directly
+ * after `align-items:` on the item root — the current save() no longer emits
+ * that, and it is unique to the item wrapper (the content div's inline gap is
+ * never preceded by align-items). `save()` reproduces the old output verbatim
+ * (item gap inline, content gap inline at the default 8, inline
+ * `--dsgo-icon-list-size` in the inherited case) so every existing block —
+ * explicit or inherited size — validates. `migrate()` strips a default (8)
+ * contentGap so it inherits the themeable default, preserving an explicit one.
+ */
+const v3 = {
+	supports: sharedSupports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// Old serialization baked the icon↔content gap on the item root right
+		// after align-items; the current save() omits it. Scope the check to the
+		// item wrapper's OWN opening tag rather than the whole subtree: the
+		// content area accepts arbitrary nested blocks, and matching their inline
+		// styles could false-migrate a valid current item if some nested block
+		// ever emits align-items directly followed by gap.
+		const openingTag = getOwnOpeningTag(innerHTML, 'dsgo-icon-list-item');
+		if (!openingTag) {
+			return false;
+		}
+		return /align-items:[^;"]+;gap:/.test(openingTag);
+	},
+	attributes: {
+		icon: { type: 'string', default: 'star' },
+		contentGap: { type: 'number', default: 8 },
+		linkUrl: { type: 'string', default: '' },
+		linkTarget: { type: 'string', default: '_self' },
+		linkRel: { type: 'string', default: '' },
+	},
+	save({ attributes, context = {} }) {
+		const { icon, linkUrl, linkTarget, linkRel, contentGap } = attributes;
+
+		const ctxIconSize = context['designsetgo/iconList/iconSize'];
+		const hasExplicitSize = typeof ctxIconSize === 'number';
+		const iconColor = context['designsetgo/iconList/iconColor'] || '';
+		const iconBackgroundColor =
+			context['designsetgo/iconList/iconBackgroundColor'] || '';
+		const iconPosition =
+			context['designsetgo/iconList/iconPosition'] || 'left';
+		const iconVerticalAlignment =
+			context['designsetgo/iconList/iconVerticalAlignment'] || 'top';
+		const ctxIconStyle =
+			context['designsetgo/iconList/iconStyle'] || undefined;
+		const ctxStrokeWidth = context['designsetgo/iconList/strokeWidth'];
+
+		const getTextAlign = () => {
+			if (iconPosition === 'top') {
+				return 'center';
+			}
+			if (iconPosition === 'right') {
+				return 'right';
+			}
+			return 'left';
+		};
+
+		const getVerticalAlignItems = () => {
+			if (iconPosition === 'top') {
+				return 'center';
+			}
+			return iconVerticalAlignment === 'center' ? 'center' : 'flex-start';
+		};
+
+		// OLD: item gap always baked inline.
+		const itemStyles = {
+			display: 'flex',
+			flexDirection: iconPosition === 'top' ? 'column' : 'row',
+			alignItems: getVerticalAlignItems(),
+			gap: iconPosition === 'top' ? '12px' : '16px',
+			...(iconPosition === 'right' && { flexDirection: 'row-reverse' }),
+		};
+
+		// OLD: inherited size set --dsgo-icon-list-size inline; explicit size
+		// baked width/height/minWidth.
+		let sizeStyles;
+		if (hasExplicitSize) {
+			const explicitSize = iconBackgroundColor
+				? ctxIconSize + 16
+				: ctxIconSize;
+			sizeStyles = {
+				width: `${explicitSize}px`,
+				height: `${explicitSize}px`,
+				minWidth: `${explicitSize}px`,
+			};
+		} else {
+			sizeStyles = {
+				'--dsgo-icon-list-size':
+					'calc(var(--wp--custom--designsetgo--icon-list--default-size, 32) * 1px)',
+			};
+		}
+
+		const iconWrapperStyles = {
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			...sizeStyles,
+			...(iconBackgroundColor && {
+				backgroundColor: convertColorToCSSVar(iconBackgroundColor),
+				padding: '8px',
+				borderRadius: '4px',
+				boxSizing: 'border-box',
+			}),
+			...(iconColor && {
+				color: convertColorToCSSVar(iconColor),
+				'--dsgo-icon-color': convertColorToCSSVar(iconColor),
+			}),
+		};
+
+		const blockProps = useBlockProps.save({
+			className: `dsgo-icon-list-item dsgo-icon-list-item--icon-${iconPosition}`,
+			style: itemStyles,
+		});
+
+		// OLD: content gap always baked inline.
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-icon-list-item__content',
+			style: {
+				textAlign: getTextAlign(),
+				display: 'flex',
+				flexDirection: 'column',
+				gap: `${contentGap}px`,
+			},
+		});
+
+		const ItemWrapper = linkUrl ? 'a' : 'div';
+		const wrapperProps = linkUrl
+			? {
+					...blockProps,
+					href: linkUrl,
+					target: linkTarget,
+					rel: linkRel || undefined,
+				}
+			: blockProps;
+
+		const iconClassName = [
+			'dsgo-icon-list-item__icon',
+			'dsgo-lazy-icon',
+			!hasExplicitSize && 'dsgo-icon-list-item__icon--inherit-size',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		return (
+			<ItemWrapper {...wrapperProps}>
+				<div
+					className={iconClassName}
+					style={iconWrapperStyles}
+					data-icon-name={icon}
+					data-icon-style={ctxIconStyle}
+					data-icon-stroke-width={
+						ctxIconStyle === 'outlined' ? ctxStrokeWidth : undefined
+					}
+				/>
+
+				<div {...innerBlocksProps} />
+			</ItemWrapper>
+		);
+	},
+	migrate(attributes) {
+		// Passthrough: pin whatever contentGap the old markup carried (an
+		// implicit-default item re-parses to this schema's default of 8) so an
+		// existing item renders exactly as authored. We do not strip a
+		// default-valued gap back to "inherit" — matching image-accordion /
+		// scroll-marquee / icon-button. New content inherits by omitting it.
+		return attributes;
 	},
 };
 
@@ -321,4 +515,4 @@ const v1 = {
 	},
 };
 
-export default [v2, v1];
+export default [v3, v2, v1];

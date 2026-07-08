@@ -1,0 +1,169 @@
+/**
+ * Icon List Item Block - Kit-Controllable Gaps/Size Deprecation Tests
+ *
+ * Verifies:
+ *  - the current save() no longer bakes the icon↔content gap on the item root,
+ *    omits the content gap unless the author sets an explicit value, and does
+ *    not set --dsgo-icon-list-size inline in the inherited-size case;
+ *  - OLD icon-list-items (inline item gap `gap:16px`/`gap:12px`, inline content
+ *    gap, inline --dsgo-icon-list-size) still parse cleanly against the current
+ *    save() + v3 deprecation instead of showing WordPress's "unexpected or
+ *    invalid content / Attempt Recovery" warning.
+ *
+ * The block reads its size/style/position from parent CONTEXT. In these tests
+ * no parent is present, so context is empty and both the current save() and the
+ * deprecated save() resolve to their inherited defaults (icon-left, size
+ * inherited). We derive byte-exact OLD markup from the current canonical output
+ * via string-replace, mirroring the icon-button deprecation tests.
+ */
+
+import {
+	registerBlockType,
+	setCategories,
+	parse,
+	createBlock,
+	serialize,
+	getBlockContent,
+	// eslint-disable-next-line import/no-unresolved
+} from '@wordpress/block-editor/node_modules/@wordpress/blocks';
+import metadata from '../block.json';
+import save from '../save';
+import deprecated from '../deprecated';
+
+setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
+
+registerBlockType(metadata.name, { ...metadata, save, deprecated });
+
+// deprecated.js exports newest-first: [v3, v2, v1].
+const [v3Deprecation] = deprecated;
+
+const INHERITED_SIZE_VAR =
+	'--dsgo-icon-list-size:calc(var(--wp--custom--designsetgo--icon-list--default-size, 32) * 1px)';
+
+describe('icon-list-item save() - kit-controllable gaps/size', () => {
+	test('default item omits the item gap and the inline inherited-size var', () => {
+		const markup = serialize(createBlock(metadata.name, {}));
+		// Item root no longer carries an inline gap.
+		expect(markup).not.toMatch(/align-items:[^;"]+;gap:/);
+		// Inherited size is owned by CSS, not baked inline.
+		expect(markup).not.toContain('--dsgo-icon-list-size');
+		// The inherit-size marker class is still emitted for CSS to key on.
+		expect(markup).toContain('dsgo-icon-list-item__icon--inherit-size');
+	});
+
+	test('unset contentGap omits the inline content gap', () => {
+		const markup = serialize(createBlock(metadata.name, {}));
+		expect(markup).not.toMatch(/gap:/);
+	});
+
+	test('explicit contentGap is written inline (author override wins)', () => {
+		const markup = serialize(
+			createBlock(metadata.name, { contentGap: 12 })
+		);
+		expect(markup).toContain('gap:12px');
+	});
+});
+
+describe('icon-list-item deprecations - v3 kit-controllable gaps/size', () => {
+	// Canonical (current) output for a default block, empty context.
+	const canonical = serialize(createBlock(metadata.name, {}));
+
+	// Derive byte-exact OLD markup: the pre-refactor format baked the item gap
+	// right after align-items, set --dsgo-icon-list-size inline on the icon box
+	// (inherited-size case), and always wrote the content gap (default 8px).
+	const OLD_MARKUP = canonical
+		.replace('align-items:flex-start', 'align-items:flex-start;gap:16px')
+		.replace(
+			'justify-content:center',
+			`justify-content:center;${INHERITED_SIZE_VAR}`
+		)
+		.replace('flex-direction:column', 'flex-direction:column;gap:8px');
+
+	test('derived old markup differs from canonical as expected', () => {
+		expect(OLD_MARKUP).toMatch(/align-items:flex-start;gap:16px/);
+		expect(OLD_MARKUP).toContain(INHERITED_SIZE_VAR);
+		expect(OLD_MARKUP).toContain('flex-direction:column;gap:8px');
+	});
+
+	test('old item (inline gaps + inline size var) migrates silently and pins the content gap', () => {
+		const [block] = parse(OLD_MARKUP);
+
+		expect(console).toHaveInformed();
+		expect(block.name).toBe('designsetgo/icon-list-item');
+		expect(block.isValid).toBe(true);
+		// Passthrough migrate pins the content gap (8) the old markup carried.
+		expect(block.attributes.contentGap).toBe(8);
+		const content = getBlockContent(block);
+		// The item gap and inherited size var move to CSS (no longer inline)...
+		expect(content).not.toMatch(/align-items:[^;"]+;gap:/);
+		expect(content).not.toContain('--dsgo-icon-list-size');
+		// ...but the pinned content gap is re-emitted inline.
+		expect(content).toContain('gap:8px');
+	});
+
+	test('old item with an explicit content gap keeps it after migration', () => {
+		const canonicalExplicit = serialize(
+			createBlock(metadata.name, { contentGap: 20 })
+		);
+		// Old explicit-gap markup: same inline content gap:20px, plus the item
+		// gap + inline size var that the current save() no longer emits.
+		const oldExplicit = canonicalExplicit
+			.replace(
+				'align-items:flex-start',
+				'align-items:flex-start;gap:16px'
+			)
+			.replace(
+				'justify-content:center',
+				`justify-content:center;${INHERITED_SIZE_VAR}`
+			);
+
+		const [block] = parse(oldExplicit);
+		expect(console).toHaveInformed();
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.contentGap).toBe(20);
+		expect(getBlockContent(block)).toContain('gap:20px');
+	});
+
+	test('isEligible flags old markup (inline item gap after align-items)', () => {
+		expect(
+			v3Deprecation.isEligible({}, [], { innerHTML: OLD_MARKUP })
+		).toBe(true);
+	});
+
+	test('isEligible ignores current markup', () => {
+		expect(v3Deprecation.isEligible({}, [], { innerHTML: canonical })).toBe(
+			false
+		);
+	});
+
+	test('isEligible ignores an item whose NESTED content emits align-items;gap', () => {
+		// Regression: the item root opening tag has align-items but no adjacent
+		// inline gap (current save()); a nested block inside the content area
+		// happens to inline `align-items:center;gap:8px`. Scoping the check to
+		// the item's own opening tag must keep this valid item from being
+		// false-migrated.
+		const nestedHTML =
+			'<div class="dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start">' +
+			'<span class="dsgo-icon-list-item__icon"></span>' +
+			'<div class="dsgo-icon-list-item__content">' +
+			'<div class="wp-block-columns" style="align-items:center;gap:8px">Nested</div>' +
+			'</div></div>';
+		expect(
+			v3Deprecation.isEligible({}, [], { innerHTML: nestedHTML })
+		).toBe(false);
+	});
+
+	test('migrate is a passthrough that pins values (never strips defaults)', () => {
+		expect(v3Deprecation.migrate({ contentGap: 8, icon: 'star' })).toEqual({
+			contentGap: 8,
+			icon: 'star',
+		});
+		expect(v3Deprecation.migrate({ contentGap: 20, icon: 'star' })).toEqual(
+			{ contentGap: 20, icon: 'star' }
+		);
+		// An already-inherited (undefined) contentGap stays inherited.
+		expect(v3Deprecation.migrate({ icon: 'star' })).toEqual({
+			icon: 'star',
+		});
+	});
+});

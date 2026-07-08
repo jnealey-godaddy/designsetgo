@@ -8,6 +8,7 @@ import {
 import {
 	RangeControl,
 	SelectControl,
+	ToggleControl,
 	Button,
 	Notice,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
@@ -111,7 +112,7 @@ export default function ScrollMarqueeEdit({
 						setAttributes({
 							scrollSpeed: 0.5,
 							imageHeight: '200px',
-							imageWidth: '300px',
+							imageWidth: 'auto',
 							objectFit: 'cover',
 							gap: '20px',
 							rowGap: '20px',
@@ -183,21 +184,38 @@ export default function ScrollMarqueeEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Image Width', 'designsetgo')}
-						hasValue={() => imageWidth !== '300px'}
-						onDeselect={() =>
-							setAttributes({ imageWidth: '300px' })
-						}
+						hasValue={() => imageWidth !== 'auto'}
+						onDeselect={() => setAttributes({ imageWidth: 'auto' })}
 						isShownByDefault
 					>
-						<UnitControl
-							label={__('Image Width', 'designsetgo')}
-							value={imageWidth}
-							onChange={(value) =>
-								setAttributes({ imageWidth: value })
+						<ToggleControl
+							label={__(
+								'Auto width (from aspect ratio)',
+								'designsetgo'
+							)}
+							checked={imageWidth === 'auto'}
+							onChange={(isAuto) =>
+								setAttributes({
+									imageWidth: isAuto ? 'auto' : '300px',
+								})
 							}
-							__next40pxDefaultSize
+							help={__(
+								'Let each image keep its natural aspect ratio, sizing its width from the height.',
+								'designsetgo'
+							)}
 							__nextHasNoMarginBottom
 						/>
+						{imageWidth !== 'auto' && (
+							<UnitControl
+								label={__('Image Width', 'designsetgo')}
+								value={imageWidth}
+								onChange={(value) =>
+									setAttributes({ imageWidth: value })
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						)}
 					</DsgoInspectorPanel.Item>
 
 					<DsgoInspectorPanel.Item

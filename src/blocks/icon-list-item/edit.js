@@ -18,6 +18,7 @@ import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { IconPickerPanel } from './components/inspector/IconPickerPanel';
 import { LinkSettingsPanel } from './components/inspector/LinkSettingsPanel';
 import { SpacingPanel } from './components/inspector/SpacingPanel';
+import { hasExplicitNumber } from '../../utils/has-explicit-value';
 import { useIconDefaults } from '../../hooks';
 
 /**
@@ -78,12 +79,14 @@ export default function IconListItemEdit({
 		return iconVerticalAlignment === 'center' ? 'center' : 'flex-start';
 	};
 
-	// Calculate item layout styles
+	// Calculate item layout styles. The icon↔content gap is owned by the
+	// stylesheet (keyed on the position modifier classes) so it is NOT written
+	// inline here — this keeps the editor preview in lock-step with save.js and
+	// lets kits/patterns retheme the gap. See style.scss.
 	const itemStyles = {
 		display: 'flex',
 		flexDirection: iconPosition === 'top' ? 'column' : 'row',
 		alignItems: getVerticalAlignItems(),
-		gap: iconPosition === 'top' ? '12px' : '16px',
 		...(iconPosition === 'right' && { flexDirection: 'row-reverse' }),
 	};
 
@@ -120,7 +123,10 @@ export default function IconListItemEdit({
 		style: itemStyles,
 	});
 
-	// Configure inner blocks with paragraph as default template
+	// Configure inner blocks with paragraph as default template. Content gap is
+	// inline only for an explicit author value (must match save.js); otherwise
+	// the stylesheet default owns it.
+	const hasExplicitContentGap = hasExplicitNumber(contentGap);
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-icon-list-item__content',
@@ -128,7 +134,7 @@ export default function IconListItemEdit({
 				textAlign: getTextAlign(),
 				display: 'flex',
 				flexDirection: 'column',
-				gap: `${contentGap}px`,
+				...(hasExplicitContentGap && { gap: `${contentGap}px` }),
 			},
 		},
 		{

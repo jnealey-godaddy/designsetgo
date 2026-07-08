@@ -34,6 +34,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 import { useIconDefaults } from '../../hooks';
 
 /**
@@ -150,12 +151,17 @@ export default function IconButtonEdit({
 	// Combined styles for single element (must match save.js)
 	// Visual styles (colors, padding, font size, hover) + layout styles (flexbox)
 	// Use flex for full-width (alignfull), inline-flex for auto
+	// Gap parity with save.js: omit entirely when no icon; inline only for an
+	// explicit author gap, otherwise the stylesheet default owns it.
+	const hasIcon = iconPosition !== 'none' && !!icon;
+	const hasExplicitGap = hasExplicitString(iconGap);
+
 	const isFullWidth = align === 'full';
 	const buttonStyles = {
 		display: isFullWidth ? 'flex' : 'inline-flex',
 		alignItems: 'center',
 		justifyContent: 'center',
-		gap: iconPosition !== 'none' && icon ? iconGap : 0,
+		...(hasIcon && hasExplicitGap && { gap: iconGap }),
 		width: isFullWidth ? '100%' : 'auto',
 		flexDirection: iconPosition === 'end' ? 'row-reverse' : 'row',
 		...(bgColor && { backgroundColor: bgColor }),
@@ -219,9 +225,11 @@ export default function IconButtonEdit({
 	// WordPress automatically adds alignfull class when align="full"
 	const ButtonElement = 'div'; // Always div in editor to preserve editability
 
+	const iconClass = hasIcon ? ' dsgo-icon-button--has-icon' : '';
+
 	const blockProps = useBlockProps({
 		ref,
-		className: `dsgo-icon-button wp-block-button wp-block-button__link wp-element-button${animationClass}`,
+		className: `dsgo-icon-button wp-block-button wp-block-button__link wp-element-button${iconClass}${animationClass}`,
 		style: buttonStyles,
 	});
 
@@ -361,7 +369,7 @@ export default function IconButtonEdit({
 							iconStyle: undefined,
 							strokeWidth: 1.5,
 							iconSize: undefined,
-							iconGap: '8px',
+							iconGap: undefined,
 							hoverAnimation: 'none',
 							modalCloseId: '',
 						})

@@ -8,6 +8,7 @@
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitNumber } from '../../utils/has-explicit-value';
 
 /**
  * Icon List Item Save Component
@@ -26,7 +27,7 @@ export default function IconListItemSave({ attributes, context = {} }) {
 	// the item inherits the theme default token via CSS custom properties
 	// (see iconWrapperStyles below) instead of an inline pixel value.
 	const ctxIconSize = context['designsetgo/iconList/iconSize'];
-	const hasExplicitSize = typeof ctxIconSize === 'number';
+	const hasExplicitSize = hasExplicitNumber(ctxIconSize);
 	const iconColor = context['designsetgo/iconList/iconColor'] || '';
 	const iconBackgroundColor =
 		context['designsetgo/iconList/iconBackgroundColor'] || '';
@@ -58,21 +59,27 @@ export default function IconListItemSave({ attributes, context = {} }) {
 		return iconVerticalAlignment === 'center' ? 'center' : 'flex-start';
 	};
 
-	// Calculate item layout styles (must match edit.js)
+	// Calculate item layout styles (must match edit.js).
+	// The icon↔content gap is NOT written inline: it is a position-derived
+	// design default (12px stacked / 16px inline), owned by the stylesheet so
+	// Style Kits and patterns can retheme it. It resolves through a layered
+	// chain keyed on the position modifier classes
+	// (.dsgo-icon-list-item / --icon-top), see style.scss:
+	//   var(--dsgo-icon-list-gap[-top], var(--wp--custom--…--gap[-top], 16|12px))
+	// There is no author attribute for this gap, so there is no inline override.
 	const itemStyles = {
 		display: 'flex',
 		flexDirection: iconPosition === 'top' ? 'column' : 'row',
 		alignItems: getVerticalAlignItems(),
-		gap: iconPosition === 'top' ? '12px' : '16px',
 		...(iconPosition === 'right' && { flexDirection: 'row-reverse' }),
 	};
 
 	// Calculate icon wrapper styles (must match edit.js).
 	// When the parent has an explicit iconSize, keep today's inline pixel
 	// output exactly (byte-identical for existing content). When inherited,
-	// omit the inline width/height/minWidth and instead set the
-	// --dsgo-icon-list-size custom property so style.scss can resolve both
-	// the icon box and the +16 background box from the theme default token.
+	// emit NO inline size — the stylesheet owns --dsgo-icon-list-size on the
+	// .dsgo-icon-list-item__icon--inherit-size class and resolves both the icon
+	// box and the +16 background box from a kit hook + the theme default token.
 	let sizeStyles;
 	if (hasExplicitSize) {
 		const explicitSize = iconBackgroundColor
@@ -84,10 +91,11 @@ export default function IconListItemSave({ attributes, context = {} }) {
 			minWidth: `${explicitSize}px`,
 		};
 	} else {
-		sizeStyles = {
-			'--dsgo-icon-list-size':
-				'calc(var(--wp--custom--designsetgo--icon-list--default-size, 32) * 1px)',
-		};
+		// Inherited size: emit NOTHING inline. The stylesheet owns
+		// --dsgo-icon-list-size on the .dsgo-icon-list-item__icon--inherit-size
+		// class (sourced from a kit hook + the theme default token), so kits and
+		// patterns can retheme it. See style.scss.
+		sizeStyles = {};
 	}
 
 	const iconWrapperStyles = {
@@ -113,14 +121,19 @@ export default function IconListItemSave({ attributes, context = {} }) {
 		style: itemStyles,
 	});
 
-	// Configure inner blocks props
+	// Configure inner blocks props. The content gap is written inline ONLY for
+	// an explicit author value; left unset (undefined) it is omitted so the
+	// stylesheet default (.dsgo-icon-list-item__content, resolving through
+	// --dsgo-icon-list-content-gap / the theme token) owns it and kits/patterns
+	// can retheme it. Mirrors icon-button's iconGap.
+	const hasExplicitContentGap = hasExplicitNumber(contentGap);
 	const innerBlocksProps = useInnerBlocksProps.save({
 		className: 'dsgo-icon-list-item__content',
 		style: {
 			textAlign: getTextAlign(),
 			display: 'flex',
 			flexDirection: 'column',
-			gap: `${contentGap}px`,
+			...(hasExplicitContentGap && { gap: `${contentGap}px` }),
 		},
 	});
 
