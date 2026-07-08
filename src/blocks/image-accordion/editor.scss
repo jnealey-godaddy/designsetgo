@@ -13,24 +13,14 @@
 		display: flex;
 		flex-direction: row;
 
-		// Mirror the themeable defaults from style.scss so the editor preview
-		// reflects the resolved gap/height (author inline value → theme token →
-		// literal fallback) instead of a hard-coded magic number.
-		gap: var(
-			--accordion-gap,
-			var(
-				--dsgo-image-accordion-gap,
-				var(--wp--preset--spacing--20, 4px)
-			)
-		);
+		// Reuse the resolved custom properties from style.scss (loaded in the
+		// editor too), which already fold the full author-inline → theme-token →
+		// literal chain into --accordion-gap / --accordion-height on the
+		// ancestor. Re-nesting the chain here would be dead fallback that could
+		// drift out of sync, so just read the resolved values.
+		gap: var(--accordion-gap);
 		width: 100%;
-		height: var(
-			--accordion-height,
-			var(
-				--dsgo-image-accordion-height,
-				var(--wp--custom--designsetgo--image-accordion--height, 500px)
-			)
-		);
+		height: var(--accordion-height);
 	}
 
 	.dsgo-image-accordion-item {

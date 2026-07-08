@@ -58,20 +58,30 @@ const sharedSupports = {
  * literal fallback) own them; an explicit author value is still written inline.
  *
  * The deprecated attribute schema keeps the old "500px" / "4px" defaults so an
- * implicit-default old block re-parses to those values; `migrate` then strips
- * them so the block inherits the themeable default, while any explicit
- * non-default value is preserved as an override.
+ * implicit-default old block re-parses to those values; `migrate` is a
+ * passthrough that PINS whatever height/gap the old markup carried, so an
+ * existing accordion keeps rendering exactly as authored. It intentionally does
+ * NOT strip default-valued height/gap back to "inherit": in the old format an
+ * explicit "500px"/"4px" and an implicit default are byte-identical, so
+ * stripping could silently un-pin a value the author deliberately chose and let
+ * a later Style Kit / theme.json change it. New content and patterns get the
+ * themeable default by simply omitting the attribute (current save()).
  */
 const v1 = {
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
-		// Old serialization always baked the height custom property inline. The
-		// new default-valued markup omits it entirely, so its presence is the
-		// signature of pre-refactor content.
+		// Old serialization always baked BOTH the height and gap custom
+		// properties inline. The current save() omits a custom property whenever
+		// its value is left unset, so any content that mismatches the current
+		// save() while still carrying both inline props is pre-refactor markup.
+		// (A current, valid block matches the current save() and never reaches a
+		// deprecation; requiring both props keeps this signature off new content
+		// that sets only one of the two explicitly.)
 		return (
 			!!innerHTML &&
 			innerHTML.includes('dsgo-image-accordion') &&
-			innerHTML.includes('--dsgo-image-accordion-height:')
+			innerHTML.includes('--dsgo-image-accordion-height:') &&
+			innerHTML.includes('--dsgo-image-accordion-gap:')
 		);
 	},
 
@@ -177,18 +187,13 @@ const v1 = {
 	},
 
 	migrate(attributes) {
-		// Drop a default height/gap so the block inherits the themeable
-		// stylesheet default; preserve an explicit non-default value as an
-		// inline override re-emitted by the current save().
-		const { height, gap, ...rest } = attributes;
-		const next = { ...rest };
-		if (height && height !== '500px') {
-			next.height = height;
-		}
-		if (gap && gap !== '4px') {
-			next.gap = gap;
-		}
-		return next;
+		// Passthrough: pin whatever height/gap the old markup carried (they are
+		// re-parsed from this schema's "500px"/"4px" defaults for an
+		// implicit-default block) so the accordion renders exactly as before.
+		// We deliberately do not strip default values back to "inherit" — old
+		// content can't distinguish an explicit default from an implicit one, so
+		// stripping risks silently changing an author's deliberate choice.
+		return attributes;
 	},
 };
 
