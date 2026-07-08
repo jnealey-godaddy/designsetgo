@@ -256,8 +256,8 @@ jobs:
         id: set-matrix
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            # PRs: test boundary pairs (oldest + newest) for fast feedback
-            echo 'matrix={"include":[{"php":"7.4","wordpress":"6.7"},{"php":"8.3","wordpress":"latest"}]}' >> $GITHUB_OUTPUT
+            # PRs: latest PHP + latest WordPress only for fast feedback
+            echo 'matrix={"include":[{"php":"8.3","wordpress":"latest"}]}' >> $GITHUB_OUTPUT
           else
             # Main push: full matrix for comprehensive coverage
             echo 'matrix={"php":["7.4","8.0","8.1","8.2","8.3"],"wordpress":["6.7","6.8","6.9","latest"]}' >> $GITHUB_OUTPUT
