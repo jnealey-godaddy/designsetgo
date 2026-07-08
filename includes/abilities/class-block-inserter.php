@@ -803,7 +803,18 @@ class Block_Inserter {
 				$zoom               = isset( $attributes['dsgoZoom'] ) ? intval( $attributes['dsgoZoom'] ) : 13;
 				$address            = isset( $attributes['dsgoAddress'] ) ? $attributes['dsgoAddress'] : '';
 				$marker_icon        = isset( $attributes['dsgoMarkerIcon'] ) ? $attributes['dsgoMarkerIcon'] : '📍';
-				$marker_color       = isset( $attributes['dsgoMarkerColor'] ) ? $attributes['dsgoMarkerColor'] : '#e74c3c';
+				// Treat an unset OR explicitly-cleared ('') marker color as the
+				// block default, mirroring render.php — the editor now stores ''
+				// on clear, and the resolver short-circuits empty strings before
+				// consulting its own fallback.
+				$marker_color       = ( isset( $attributes['dsgoMarkerColor'] ) && '' !== $attributes['dsgoMarkerColor'] )
+					? $attributes['dsgoMarkerColor']
+					: '#e74c3c';
+				// Resolve theme palette presets (var:preset|color|{slug}) to a
+				// concrete color; the marker is drawn by view.js, which cannot
+				// inherit the page's CSS custom properties. Fall back to the block
+				// default when the preset's slug is missing from the palette.
+				$marker_color       = designsetgo_resolve_preset_color( $marker_color, '#e74c3c' );
 				$height             = isset( $attributes['dsgoHeight'] ) ? $attributes['dsgoHeight'] : '400px';
 				$aspect_ratio       = isset( $attributes['dsgoAspectRatio'] ) ? $attributes['dsgoAspectRatio'] : 'custom';
 				$privacy_mode       = isset( $attributes['dsgoPrivacyMode'] ) ? $attributes['dsgoPrivacyMode'] : false;

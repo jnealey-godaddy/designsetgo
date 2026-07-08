@@ -16,6 +16,10 @@ import {
 import classnames from 'classnames';
 
 import { DsgoInspectorPanel } from '../../components/shared';
+import {
+	encodeColorValue,
+	decodeColorValue,
+} from '../../utils/encode-color-value';
 // Inspector Panel
 import MapSettingsPanel from './components/inspector/MapSettingsPanel';
 
@@ -100,14 +104,34 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 			<InspectorControls group="color">
 				<ColorGradientSettingsDropdown
 					panelId={clientId}
-					title={__('Marker Color', 'designsetgo')}
+					title={__('Google Maps Marker Color', 'designsetgo')}
 					settings={[
 						{
-							label: __('Marker Color', 'designsetgo'),
-							colorValue: dsgoMarkerColor,
+							// Only the Google Maps provider draws a recolorable
+							// pin (PinElement); the OpenStreetMap marker is the
+							// Marker Icon emoji as-is, which CSS color can't
+							// change. Label makes that scope clear in the UI.
+							label: __(
+								'Google Maps Marker Color',
+								'designsetgo'
+							),
+							colorValue: decodeColorValue(
+								dsgoMarkerColor,
+								colorGradientSettings
+							),
 							onColorChange: (color) =>
 								setAttributes({
-									dsgoMarkerColor: color || '#e74c3c',
+									// Store the preset reference for palette
+									// picks; on clear, store '' so render.php's
+									// attribute → kit setting → default fallback
+									// chain drives the color instead of baking a
+									// hex into the block.
+									dsgoMarkerColor: color
+										? encodeColorValue(
+												color,
+												colorGradientSettings
+											)
+										: '',
 								}),
 							enableAlpha: true,
 							clearable: true,

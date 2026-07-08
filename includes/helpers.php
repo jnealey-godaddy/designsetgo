@@ -184,3 +184,64 @@ function designsetgo_sanitize_css_color( $value ) {
 function designsetgo_is_dsg_block( $block_name ) {
 	return strpos( $block_name, 'designsetgo/' ) === 0;
 }
+
+/**
+ * Resolve a WordPress preset color reference to its concrete value.
+ *
+ * Color controls store theme palette selections as the WordPress preset
+ * shorthand "var:preset|color|{slug}" (or the legacy CSS-variable form
+ * "var(--wp--preset--color--{slug})") so the block stays in sync with theme
+ * color changes. Some consumers — SVG data URIs, JavaScript map markers, or
+ * any context that cannot inherit the page's CSS custom properties — need the
+ * actual color value instead. This looks up the slug in the global settings
+ * palette and returns the resolved color, leaving raw values untouched.
+ *
+ * When the value is a preset reference but the slug is not present in the
+ * current palette — e.g. content authored under a theme whose palette a later
+ * theme dropped — the token cannot be used as a CSS color. Pass $fallback to
+ * substitute a safe default in that case; when omitted, the original token is
+ * returned unchanged (matching WordPress' own pass-through behavior).
+ *
+ * @param mixed       $color    Color value, possibly a preset reference.
+ *                              Non-string / empty input is returned as-is.
+ * @param string|null $fallback Value returned when the color is a preset
+ *                              reference whose slug is not found in the
+ *                              palette. Default null (return the original).
+ * @return mixed Resolved color string, the $fallback for an unresolvable
+ *               preset, or the original value (which may be null / non-string)
+ *               when it is not a preset reference.
+ */
+function designsetgo_resolve_preset_color( $color, $fallback = null ) {
+	if ( ! is_string( $color ) || '' === $color ) {
+		return $color;
+	}
+
+	// Accept both the block-attribute shorthand var:preset|color|{slug} and the
+	// CSS-var form var(--wp--preset--color--{slug}).
+	if ( ! preg_match( '/^var:preset\|color\|(.+)$/', $color, $matches )
+		&& ! preg_match( '/^var\(--wp--preset--color--(.+)\)$/', $color, $matches ) ) {
+		return $color;
+	}
+
+	$slug    = $matches[1];
+	$palette = function_exists( 'wp_get_global_settings' )
+		? wp_get_global_settings( array( 'color', 'palette' ) )
+		: null;
+
+	if ( is_array( $palette ) ) {
+		// Palette is grouped by origin (theme, default, custom).
+		foreach ( $palette as $origin_colors ) {
+			if ( ! is_array( $origin_colors ) ) {
+				continue;
+			}
+			foreach ( $origin_colors as $entry ) {
+				if ( isset( $entry['slug'], $entry['color'] ) && is_string( $entry['color'] ) && $entry['slug'] === $slug ) {
+					return $entry['color'];
+				}
+			}
+		}
+	}
+
+	// Preset reference that could not be resolved to a palette color.
+	return null === $fallback ? $color : $fallback;
+}
