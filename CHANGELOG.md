@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Section style customizations preview live in the editor** — Border, radius, and other section-style tweaks made in Global Styles now show up immediately on Section, Row, Grid, and the rest of the container family in the editor canvas, matching what already rendered on the frontend. (#443)
 - **Section overlay style variations now render** — Sections using an `is-style-overlay-*` Style Kit variation (instead of the overlay color picker) now correctly show the overlay. (#445)
 - **Scroll Accordion: removed a stray editor-only border** — A gradient bar shown down the left edge of Scroll Accordion items in the editor, with no frontend equivalent, has been removed. (#442)
+- **Blobs / Icon List Item migrations no longer scan nested block markup** — Both blocks accept arbitrary nested content, and their new deprecations' eligibility checks previously scanned the entire block subtree for an old-format signature. A nested block emitting similar-looking markup (e.g. the still-active generic max-width extension on a non-excluded child, or `align-items`/`gap` from an unrelated nested block) could false-positive the check and silently drop a valid block's attributes on re-parse. Both checks are now scoped to the block's own wrapper tag.
 
 ## [2.3.0] - 2026-07-01
 
