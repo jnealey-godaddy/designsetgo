@@ -59,6 +59,12 @@ if ( '' === $marker_color ) {
  */
 $marker_color = (string) apply_filters( 'designsetgo_map_marker_color', $marker_color, $attributes, $block );
 
+// The color control stores theme palette selections as the preset shorthand
+// "var:preset|color|{slug}" so the block tracks theme changes. Resolve it to a
+// concrete value here: the marker is drawn by view.js (e.g. a Google Maps pin),
+// which cannot inherit the page's CSS custom properties.
+$marker_color = designsetgo_resolve_preset_color( $marker_color );
+
 // Clamp coordinates / zoom to valid ranges (mirrors save.js).
 $safe_lat  = max( -90, min( 90, $latitude ) );
 $safe_lng  = max( -180, min( 180, $longitude ) );

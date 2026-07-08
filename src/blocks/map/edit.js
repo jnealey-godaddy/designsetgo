@@ -16,6 +16,10 @@ import {
 import classnames from 'classnames';
 
 import { DsgoInspectorPanel } from '../../components/shared';
+import {
+	encodeColorValue,
+	decodeColorValue,
+} from '../../utils/encode-color-value';
 // Inspector Panel
 import MapSettingsPanel from './components/inspector/MapSettingsPanel';
 
@@ -104,10 +108,17 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 					settings={[
 						{
 							label: __('Marker Color', 'designsetgo'),
-							colorValue: dsgoMarkerColor,
+							colorValue: decodeColorValue(
+								dsgoMarkerColor,
+								colorGradientSettings
+							),
 							onColorChange: (color) =>
 								setAttributes({
-									dsgoMarkerColor: color || '#e74c3c',
+									dsgoMarkerColor:
+										encodeColorValue(
+											color,
+											colorGradientSettings
+										) || '#e74c3c',
 								}),
 							enableAlpha: true,
 							clearable: true,
