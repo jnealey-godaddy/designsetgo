@@ -113,8 +113,7 @@
 			"type": "number"
 		},
 		"iconGap": {
-			"type": "string",
-			"default": "8px"
+			"type": "string"
 		},
 		"hoverAnimation": {
 			"type": "string",

@@ -60,6 +60,16 @@ export default function IconButtonSave({ attributes }) {
 	// Extract padding (must match edit.js)
 	const paddingValue = style?.spacing?.padding;
 
+	// Icon presence gates the icon↔text gap. When there is no icon the button
+	// has a single flex child, so a gap is inert — we omit it entirely rather
+	// than serialize an inert `gap:0`.
+	const hasIcon = iconPosition !== 'none' && !!icon;
+	// Gap is written inline ONLY when the author sets an explicit iconGap. Left
+	// unset it is omitted so the stylesheet default (.dsgo-icon-button--has-icon)
+	// owns it and kits/patterns can retheme via --dsgo-icon-button-gap or the
+	// --wp--custom--designsetgo--icon-button--gap token. Mirrors iconSize.
+	const hasExplicitGap = typeof iconGap === 'string' && iconGap.trim() !== '';
+
 	// Combined styles for single element (must match edit.js)
 	// Visual styles (colors, padding, font size, hover) + layout styles (flexbox)
 	// Use flex for full-width (alignfull), inline-flex for auto
@@ -68,7 +78,7 @@ export default function IconButtonSave({ attributes }) {
 		display: isFullWidth ? 'flex' : 'inline-flex',
 		alignItems: 'center',
 		justifyContent: 'center',
-		gap: iconPosition !== 'none' && icon ? iconGap : 0,
+		...(hasIcon && hasExplicitGap && { gap: iconGap }),
 		width: isFullWidth ? '100%' : 'auto',
 		flexDirection: iconPosition === 'end' ? 'row-reverse' : 'row',
 		...(bgColor && { backgroundColor: bgColor }),
@@ -122,8 +132,13 @@ export default function IconButtonSave({ attributes }) {
 	// WordPress automatically adds alignfull class when align="full"
 	const ButtonElement = url ? 'a' : 'button';
 
+	// `--has-icon` lets the stylesheet apply the default icon↔text gap only when
+	// an icon is actually present, and marks the new (gap-omitting) markup so the
+	// deprecation can distinguish it from pre-token content.
+	const iconClass = hasIcon ? ' dsgo-icon-button--has-icon' : '';
+
 	const blockProps = useBlockProps.save({
-		className: `dsgo-icon-button wp-block-button wp-block-button__link wp-element-button${animationClass}`,
+		className: `dsgo-icon-button wp-block-button wp-block-button__link wp-element-button${iconClass}${animationClass}`,
 		style: buttonStyles,
 		...(url && {
 			href: url,

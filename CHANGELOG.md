@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Map markers can inherit their color from the theme.**
 - **Section styles extend to more container blocks** — Card, Fifty/Fifty, Modal, Slide, Scroll Slide, Tab, Accordion Item, Scroll Accordion Item, Image Accordion Item, Timeline Item, Counter, and Flip Card Face now pick up theme-registered section styles (e.g. core's Style 1–5), matching Section, Row, and Grid. (#440)
 - **Progress Bar no longer bakes a default color into saved markup** — An unset bar/track color now inherits the theme instead of a fixed hex value. (#440)
+- **Icon Button icon gap and size are themeable** — The icon↔text gap is no longer baked inline: it resolves from a kit-controllable CSS custom property (`--dsgo-icon-button-gap` → the `--wp--custom--designsetgo--icon-button--gap` token → `8px`) and is omitted entirely when the button has no icon. Icon size gained the same kit hook (`--dsgo-icon-button-size`) ahead of the existing theme token. Buttons with an icon now carry a `dsgo-icon-button--has-icon` class; an explicit author gap is still written inline and wins. Existing buttons migrate automatically.
 
 ### Bug Fixes
 - **Modal: custom accessible label now works** — The dialog's `aria-label` read a `modalLabel` attribute that was never registered, so a custom label could never take effect and it always fell back to "Modal". The attribute is now registered and wired to the new "Accessible Label" control.

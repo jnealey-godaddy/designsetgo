@@ -94,15 +94,41 @@
 		}
 	}
 
+	// Icon↔text gap default. Emitted here (not inline) so kits and patterns can
+	// retheme it. Scoped to --has-icon so single-child (icon-less) buttons get
+	// no gap. Resolution order mirrors the icon size chain below:
+	//   1. --dsgo-icon-button-gap — Style Kit CSS / semantic class hook.
+	//   2. --wp--custom--designsetgo--icon-button--gap — theme.json token.
+	//   3. 8px — literal fallback (the historical default).
+	// An explicit author gap is written inline by save() and wins by specificity.
+	&--has-icon {
+		gap: var(
+			--dsgo-icon-button-gap,
+			var(--wp--custom--designsetgo--icon-button--gap, 8px)
+		);
+	}
+
 	&__icon {
-		// Size falls back to the theme icon-button token when no explicit
+		// Size falls back through a kit-controllable chain when no explicit
 		// iconSize is set inline. An inline width/height (explicit override)
-		// wins by specificity. defaultSize is a unitless number in theme.json.
+		// wins by specificity. Resolution order:
+		//   1. --dsgo-icon-button-size — settable by a Style Kit's CSS or a
+		//      semantic class (kits that can only write --wp--preset--* / their
+		//      own vars use this hook).
+		//   2. --wp--custom--designsetgo--icon-button--default-size — theme.json
+		//      settings.custom.designsetgo.iconButton.defaultSize.
+		//   3. 20 — literal fallback. All are unitless numbers × 1px.
 		width: calc(
-			var(--wp--custom--designsetgo--icon-button--default-size, 20) * 1px
+			var(
+				--dsgo-icon-button-size,
+				var(--wp--custom--designsetgo--icon-button--default-size, 20)
+			) * 1px
 		);
 		height: calc(
-			var(--wp--custom--designsetgo--icon-button--default-size, 20) * 1px
+			var(
+				--dsgo-icon-button-size,
+				var(--wp--custom--designsetgo--icon-button--default-size, 20)
+			) * 1px
 		);
 
 		// Size and layout styles applied via inline styles

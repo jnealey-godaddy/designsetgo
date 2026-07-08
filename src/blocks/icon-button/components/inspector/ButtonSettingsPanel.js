@@ -286,13 +286,14 @@ export const ButtonSettingsPanel = ({
 			{iconPosition !== 'none' && (
 				<DsgoInspectorPanel.Item
 					label={__('Icon Gap', 'designsetgo')}
-					hasValue={() => iconGap !== '8px'}
-					onDeselect={() => setAttributes({ iconGap: '8px' })}
+					hasValue={() => iconGap !== undefined && iconGap !== ''}
+					onDeselect={() => setAttributes({ iconGap: undefined })}
 					isShownByDefault
 				>
 					<UnitControl
 						label={__('Icon Gap', 'designsetgo')}
 						value={iconGap}
+						placeholder="8px"
 						onChange={(value) => setAttributes({ iconGap: value })}
 						units={[
 							{ value: 'px', label: 'px' },
