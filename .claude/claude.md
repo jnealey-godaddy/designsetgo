@@ -20,6 +20,7 @@
 - **Extensions**: Use `addFilter()` with explicit block name allowlist
 - **File Structure**: `src/blocks/{block}/` → index.js (registration), edit.js, save.js, components/, utils/
 - **Asset Loading**: Enqueue in `enqueue_block_assets` with `is_admin()` check
+- **render.php**: Always wrap all logic in a named `designsetgo_render_{block_slug}()` function (guarded by `function_exists`) and call it at the bottom. This keeps variables function-scoped and avoids `NonPrefixedVariableFound` PCP warnings. See `dynamic-image/render.php` as the canonical example.
 
 ### Shared Primitives First
 
