@@ -104,10 +104,17 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 			<InspectorControls group="color">
 				<ColorGradientSettingsDropdown
 					panelId={clientId}
-					title={__('Marker Color', 'designsetgo')}
+					title={__('Google Maps Marker Color', 'designsetgo')}
 					settings={[
 						{
-							label: __('Marker Color', 'designsetgo'),
+							// Only the Google Maps provider draws a recolorable
+							// pin (PinElement); the OpenStreetMap marker is the
+							// Marker Icon emoji as-is, which CSS color can't
+							// change. Label makes that scope clear in the UI.
+							label: __(
+								'Google Maps Marker Color',
+								'designsetgo'
+							),
 							colorValue: decodeColorValue(
 								dsgoMarkerColor,
 								colorGradientSettings
