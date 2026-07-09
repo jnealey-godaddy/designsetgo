@@ -86,16 +86,25 @@ class File_Manager {
 	 * hosts. Returning null signals a genuine, unrecoverable error that callers
 	 * must surface to the user rather than paper over with a direct-write fallback.
 	 *
+	 * file.php is always loaded here (not only when $wp_filesystem is unset) so
+	 * that FS_CHMOD_FILE is guaranteed to be defined before fs_put_contents() uses
+	 * it. If $wp_filesystem were already set by external code that loaded file.php
+	 * via a different path, skipping the require_once would leave FS_CHMOD_FILE
+	 * undefined and PHP 8 would throw a fatal Undefined constant error.
+	 *
 	 * @return \WP_Filesystem_Base|null Filesystem instance, or null if it could not be initialised.
 	 */
 	public static function filesystem(): ?\WP_Filesystem_Base {
 		global $wp_filesystem;
 
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
 		if ( ! $wp_filesystem ) {
-			if ( ! function_exists( 'WP_Filesystem' ) ) {
-				require_once ABSPATH . 'wp-admin/includes/file.php';
+			if ( false === WP_Filesystem() ) {
+				return null;
 			}
-			WP_Filesystem();
 		}
 
 		return $wp_filesystem instanceof \WP_Filesystem_Base ? $wp_filesystem : null;
