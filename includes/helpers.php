@@ -96,8 +96,8 @@ function designsetgo_sanitize_css_size( $value ) {
 	// Allow CSS math functions with safe values only.
 	// Examples: calc(100% - 20px), clamp(1rem, 2vw, 3rem), min(50%, 300px), max(100px, 10vw).
 	if ( preg_match( '/^(calc|clamp|min|max)\s*\([\d\s\.,\+\-\*\/\(\)%a-z]+\)$/i', $value ) ) {
-		// Additional validation: no dangerous functions inside.
-		if ( ! preg_match( '/(expression|url|attr|var)/i', $value ) ) {
+		// Additional validation: no dangerous functions inside, and parens must be balanced.
+		if ( ! preg_match( '/(expression|url|attr|var)/i', $value ) && substr_count( $value, '(' ) === substr_count( $value, ')' ) ) {
 			return $value;
 		}
 	}

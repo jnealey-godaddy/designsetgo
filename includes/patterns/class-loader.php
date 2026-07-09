@@ -280,9 +280,9 @@ class Loader {
 				$patterns_data = null;
 				if ( isset( $cached['compressed'] ) && is_string( $cached['compressed'] ) ) {
 					$raw = base64_decode( $cached['compressed'], true );
-					// Validate zlib header (0x78 CMF byte) before decompressing to avoid PHP warnings.
-					if ( false !== $raw && strlen( $raw ) >= 2 && 0x78 === ord( $raw[0] ) ) {
-						$decompressed = @gzuncompress( $raw ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Forbidden, WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress() emits E_WARNING on corrupted data; no exception-based alternative exists
+					// Validate zlib header: CMF byte 0x78 (deflate, 32 KB window) + header checksum ((CMF*256+FLG)%31===0).
+					if ( false !== $raw && strlen( $raw ) >= 2 && 0x78 === ord( $raw[0] ) && 0 === ( ( ord( $raw[0] ) * 256 + ord( $raw[1] ) ) % 31 ) ) {
+						$decompressed = @gzuncompress( $raw, 10 * 1024 * 1024 ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Forbidden, WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress() emits E_WARNING on corrupted data; no exception-based alternative exists. 10 MiB cap guards against a zip-bomb in a tampered transient.
 						if ( false !== $decompressed ) {
 							$patterns_data = json_decode( $decompressed, true );
 						}

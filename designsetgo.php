@@ -100,10 +100,14 @@ function designsetgo_deactivate() {
 		wp_unschedule_event( $timestamp, 'designsetgo_cleanup_old_submissions' );
 	}
 
-	// Remove physical llms.txt if we wrote it.
+	// Remove physical llms.txt if we wrote it. Only clear the ownership option when
+	// the delete actually succeeds — if the filesystem is unavailable (e.g. FTP host
+	// without credentials), leave the option intact so the plugin still knows it owns
+	// the file on next activation rather than misreporting it as a third-party conflict.
 	if ( get_option( 'designsetgo_llms_txt_physical' ) ) {
-		File_Manager::fs_delete( File_Manager::site_root_path() . 'llms.txt' );
-		delete_option( 'designsetgo_llms_txt_physical' );
+		if ( File_Manager::fs_delete( File_Manager::site_root_path() . 'llms.txt' ) ) {
+			delete_option( 'designsetgo_llms_txt_physical' );
+		}
 	}
 }
 register_deactivation_hook( __FILE__, 'DesignSetGo\designsetgo_deactivate' );

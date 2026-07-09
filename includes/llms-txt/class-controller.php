@@ -496,9 +496,9 @@ class Controller {
 			return;
 		}
 
-		File_Manager::fs_delete( File_Manager::site_root_path() . 'llms.txt' );
-
-		delete_option( self::PHYSICAL_FILE_OPTION );
+		if ( File_Manager::fs_delete( File_Manager::site_root_path() . 'llms.txt' ) ) {
+			delete_option( self::PHYSICAL_FILE_OPTION );
+		}
 	}
 
 	/**
@@ -542,9 +542,9 @@ class Controller {
 			return;
 		}
 
-		File_Manager::fs_delete( File_Manager::site_root_path() . 'llms-full.txt' );
-
-		delete_option( self::PHYSICAL_FULL_FILE_OPTION );
+		if ( File_Manager::fs_delete( File_Manager::site_root_path() . 'llms-full.txt' ) ) {
+			delete_option( self::PHYSICAL_FULL_FILE_OPTION );
+		}
 	}
 
 	/**

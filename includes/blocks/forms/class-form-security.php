@@ -138,6 +138,11 @@ class Form_Security {
 			return true;
 		}
 
+		// 3s timeout is intentional. Turnstile runs on Cloudflare's edge network and
+		// should respond in well under a second; this verification call blocks the
+		// form submission response, so a generous timeout directly penalises customer
+		// experience. On timeout, wp_remote_post() returns a WP_Error and we degrade
+		// gracefully (let the submission through) rather than punish the user.
 		$response = wp_remote_post(
 			'https://challenges.cloudflare.com/turnstile/v0/siteverify',
 			array(
