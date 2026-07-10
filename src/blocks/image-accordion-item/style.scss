@@ -61,11 +61,14 @@
 	// its static save() markup because block context is unavailable at save time
 	// (see image-accordion-item/save.js), so the scrim is suppressed here, keyed
 	// off the parent accordion's `data-enable-overlay="false"` marker rather than
-	// off a class the item can't drop. Deliberately NOT wrapped in :where(): the
-	// added ancestor attribute takes this to (0,3,1) so it beats the base
-	// ::before on specificity, not on source order. Editor parity is automatic —
-	// the editor never emits `--has-overlay` when the overlay is off, because
-	// context IS available in edit.js.
+	// off a class the item can't drop. `display: none` is the only `display`
+	// declaration on this pseudo-element, so it wins outright today regardless of
+	// specificity — no other rule competes for the property. It is deliberately
+	// left un-`:where()`'d so that specificity stays defensive: if a competing
+	// `display` on `::before` is ever added elsewhere, this ancestor-scoped
+	// selector (0,3,1) still wins on specificity rather than depending on source
+	// order. Editor parity is automatic — the editor never emits `--has-overlay`
+	// when the overlay is off, because context IS available in edit.js.
 	.dsgo-image-accordion[data-enable-overlay='false'] &--has-overlay::before {
 		display: none;
 	}
