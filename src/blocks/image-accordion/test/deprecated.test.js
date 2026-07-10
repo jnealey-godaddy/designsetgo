@@ -81,6 +81,34 @@ describe('image-accordion save() - themeable overlay', () => {
 			'--dsgo-image-accordion-overlay-opacity-expanded'
 		);
 	});
+
+	test('an explicit overlay opacity of 0 is emitted (not treated as unset)', () => {
+		// hasExplicitNumber() uses a typeof guard, not truthiness, so a
+		// deliberately transparent scrim (0) must serialise as an explicit
+		// `:0` value rather than being dropped to the inherit fallback (which
+		// would resolve to the 0.4 literal — the opposite of what was chosen).
+		// Guards against a future "simplification" of the predicate to truthiness.
+		const markup = serialize(
+			createBlock(metadata.name, {
+				overlayOpacity: 0,
+				overlayOpacityExpanded: 0,
+			})
+		);
+		expect(markup).toContain('--dsgo-image-accordion-overlay-opacity:0');
+		expect(markup).toContain(
+			'--dsgo-image-accordion-overlay-opacity-expanded:0'
+		);
+	});
+
+	test('a block with an explicit overlay opacity of 0 stays valid without migration', () => {
+		// The 0 value is byte-stable through the current save() (no deprecation
+		// pass), so it must not be routed through a migration that could strip it.
+		const [block] = parse(
+			serialize(createBlock(metadata.name, { overlayOpacity: 0 }))
+		);
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.overlayOpacity).toBe(0);
+	});
 });
 
 describe('image-accordion deprecations - v2 themeable overlay migration', () => {
