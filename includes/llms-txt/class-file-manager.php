@@ -73,63 +73,88 @@ class File_Manager {
 	}
 
 	/**
-	 * Write content to a file using WP_Filesystem, falling back to file_put_contents().
+	 * Initialise WP_Filesystem on demand and return the global instance.
 	 *
-	 * Initialises WP_Filesystem on demand so the method is safe to call outside
+	 * Loads the WP_Filesystem API on demand so callers are safe to use outside
 	 * of an `admin_init` context (e.g. from a REST route or a save_post hook).
-	 * On managed hosts (WP Engine, Kinsta, Pantheon) the web user cannot write
-	 * to ABSPATH directly, but WP_Filesystem succeeds via stored FTP constants.
 	 *
-	 * @param string $path    Absolute path to the file to write.
-	 * @param string $content File content.
-	 * @return bool True on success, false on failure.
+	 * WP_Filesystem is the idiomatic WordPress file API and is always available
+	 * in a standard WP environment. It abstracts the underlying transport so the
+	 * same code works on hosts that restrict direct filesystem access and require
+	 * FTP or SSH credentials — falling back to raw PHP functions (file_put_contents,
+	 * unlink, etc.) would bypass that abstraction entirely and silently break those
+	 * hosts. Returning null signals a genuine, unrecoverable error that callers
+	 * must surface to the user rather than paper over with a direct-write fallback.
+	 *
+	 * file.php is always loaded here (not only when $wp_filesystem is unset) so
+	 * that FS_CHMOD_FILE is guaranteed to be defined before fs_put_contents() uses
+	 * it. If $wp_filesystem were already set by external code that loaded file.php
+	 * via a different path, skipping the require_once would leave FS_CHMOD_FILE
+	 * undefined and PHP 8 would throw a fatal Undefined constant error.
+	 *
+	 * @return \WP_Filesystem_Base|null Filesystem instance, or null if it could not be initialised.
 	 */
-	public static function fs_put_contents( string $path, string $content ): bool {
+	public static function filesystem(): ?\WP_Filesystem_Base {
 		global $wp_filesystem;
 
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
 		if ( ! $wp_filesystem ) {
-			if ( ! function_exists( 'WP_Filesystem' ) ) {
-				require_once ABSPATH . 'wp-admin/includes/file.php';
+			if ( false === WP_Filesystem() ) {
+				return null;
 			}
-			WP_Filesystem();
 		}
 
-		if ( $wp_filesystem ) {
-			return $wp_filesystem->put_contents( $path, $content, FS_CHMOD_FILE );
-		}
-
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Fallback when WP_Filesystem is unavailable. This is the primary path on managed hosts (WP Engine, Kinsta, Pantheon) where no FTP constants are defined and the web user owns the files; also fires during unit tests and early bootstrap.
-		return false !== file_put_contents( $path, $content );
+		return $wp_filesystem instanceof \WP_Filesystem_Base ? $wp_filesystem : null;
 	}
 
 	/**
-	 * Delete a file using WP_Filesystem, falling back to unlink().
+	 * Write content to a file via WP_Filesystem.
 	 *
-	 * Uses the same on-demand WP_Filesystem initialisation as fs_put_contents().
+	 * Returns false (without a direct-PHP fallback) when WP_Filesystem cannot be
+	 * initialised. This is intentional: WP_Filesystem is the canonical WordPress
+	 * file API and transparently handles direct, FTP, and SSH transports. A raw
+	 * file_put_contents() fallback would silently bypass FTP/SSH support on
+	 * managed or restricted hosts.
+	 *
+	 * @param string $path    Absolute path to the file to write.
+	 * @param string $content File content.
+	 * @return bool True on success, false if the filesystem is unavailable or the write fails.
+	 */
+	public static function fs_put_contents( string $path, string $content ): bool {
+		$filesystem = self::filesystem();
+
+		if ( ! $filesystem ) {
+			return false;
+		}
+
+		return $filesystem->put_contents( $path, $content, FS_CHMOD_FILE );
+	}
+
+	/**
+	 * Delete a file via WP_Filesystem.
+	 *
+	 * Returns false (without a direct-PHP fallback) when WP_Filesystem cannot be
+	 * initialised — same rationale as fs_put_contents(): WP_Filesystem covers
+	 * FTP/SSH hosts and falling back to unlink() would bypass that.
 	 *
 	 * @param string $path Absolute path to the file to delete.
-	 * @return bool True on success or when the file did not exist, false on failure.
+	 * @return bool True on success or when the file did not exist, false if the filesystem is unavailable or the delete fails.
 	 */
 	public static function fs_delete( string $path ): bool {
 		if ( ! file_exists( $path ) ) {
 			return true;
 		}
 
-		global $wp_filesystem;
+		$filesystem = self::filesystem();
 
-		if ( ! $wp_filesystem ) {
-			if ( ! function_exists( 'WP_Filesystem' ) ) {
-				require_once ABSPATH . 'wp-admin/includes/file.php';
-			}
-			WP_Filesystem();
+		if ( ! $filesystem ) {
+			return false;
 		}
 
-		if ( $wp_filesystem ) {
-			return $wp_filesystem->delete( $path );
-		}
-
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Fallback when WP_Filesystem is unavailable; same scenarios as fs_put_contents().
-		return unlink( $path );
+		return $filesystem->delete( $path );
 	}
 
 	/**
@@ -265,15 +290,13 @@ class File_Manager {
 
 		$this->maybe_write_htaccess( $root );
 
-		// Use WP_Filesystem for writability check, with fallback to native function.
-		global $wp_filesystem;
-		if ( ! $wp_filesystem ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-			WP_Filesystem();
+		$filesystem = self::filesystem();
+
+		if ( ! $filesystem ) {
+			return false;
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Fallback when WP_Filesystem fails.
-		return $wp_filesystem ? $wp_filesystem->is_writable( $dir ) : is_writable( $dir );
+		return $filesystem->is_writable( $dir );
 	}
 
 	/**

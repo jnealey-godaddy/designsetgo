@@ -84,7 +84,7 @@ class Abilities_Registry {
 		$base_path = __DIR__;
 
 		// Load base abstract classes (already loaded, but for clarity).
-		require_once $base_path . '/class-abstract-ability.php';
+		require_once $base_path . '/class-abstract-ability.php'; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory
 
 		// Load helper classes (must be before abstract-configurator-ability which depends on Block_Schema_Loader).
 		$helpers = array(
@@ -97,12 +97,12 @@ class Abilities_Registry {
 		foreach ( $helpers as $helper ) {
 			$helper_path = $base_path . '/' . $helper;
 			if ( file_exists( $helper_path ) ) {
-				require_once $helper_path;
+				require_once $helper_path; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory
 			}
 		}
 
 		// Load abstract configurator after helpers (depends on Block_Schema_Loader).
-		require_once $base_path . '/class-abstract-configurator-ability.php';
+		require_once $base_path . '/class-abstract-configurator-ability.php'; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory
 
 		// Load ability classes from subdirectories.
 		$this->load_abilities_from_directory( $base_path . '/info' );
@@ -130,7 +130,7 @@ class Abilities_Registry {
 		}
 
 		foreach ( $files as $file ) {
-			require_once $file;
+			require_once $file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory via glob()
 		}
 	}
 
@@ -162,10 +162,10 @@ class Abilities_Registry {
 	 * Load and instantiate abilities from a directory with given namespace.
 	 *
 	 * @param string $directory Directory path containing ability classes.
-	 * @param string $namespace PHP namespace for the classes.
+	 * @param string $class_namespace PHP namespace for the classes.
 	 * @return void
 	 */
-	private function load_abilities_from_namespace( string $directory, string $namespace ): void {
+	private function load_abilities_from_namespace( string $directory, string $class_namespace ): void {
 		if ( ! is_dir( $directory ) ) {
 			return;
 		}
@@ -177,7 +177,7 @@ class Abilities_Registry {
 		}
 
 		foreach ( $files as $file ) {
-			$class_name = $this->file_to_class_name( $file, $namespace );
+			$class_name = $this->file_to_class_name( $file, $class_namespace );
 
 			if ( class_exists( $class_name )
 				&& is_subclass_of( $class_name, Abstract_Ability::class )
@@ -195,10 +195,10 @@ class Abilities_Registry {
 	 * Handles common acronyms (CSS, CTA, FAQ, API, etc.) that should remain uppercase.
 	 *
 	 * @param string $file_path Full path to the PHP file.
-	 * @param string $namespace PHP namespace prefix.
+	 * @param string $class_namespace PHP namespace prefix.
 	 * @return string Fully qualified class name.
 	 */
-	private function file_to_class_name( string $file_path, string $namespace ): string {
+	private function file_to_class_name( string $file_path, string $class_namespace ): string {
 		// Get filename without path and extension.
 		$filename = basename( $file_path, '.php' );
 
@@ -228,7 +228,7 @@ class Abilities_Registry {
 			explode( '_', $class_name )
 		);
 
-		return $namespace . implode( '_', $parts );
+		return $class_namespace . implode( '_', $parts );
 	}
 
 	/**

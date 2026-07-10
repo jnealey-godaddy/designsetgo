@@ -35,52 +35,52 @@ return array(
 	),
 	'exclude'    => array(), // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- Extension block-exclusion list, not a get_posts() query.
 	'attributes' => array(
-		'dsgoParallaxEnabled'       => array(
+		'dsgoParallaxEnabled'         => array(
 			'type'    => 'boolean',
 			'default' => false,
 		),
-		'dsgoParallaxDirection'     => array(
+		'dsgoParallaxDirection'       => array(
 			'type'    => 'string',
 			'default' => 'up',
 		),
-		'dsgoParallaxSpeed'         => array(
+		'dsgoParallaxSpeed'           => array(
 			'type'    => 'number',
 			'default' => 5,
 		),
-		'dsgoParallaxViewportStart' => array(
+		'dsgoParallaxViewportStart'   => array(
 			'type'    => 'number',
 			'default' => 0,
 		),
-		'dsgoParallaxViewportEnd'   => array(
+		'dsgoParallaxViewportEnd'     => array(
 			'type'    => 'number',
 			'default' => 100,
 		),
-		'dsgoParallaxRelativeTo'    => array(
+		'dsgoParallaxRelativeTo'      => array(
 			'type'    => 'string',
 			'default' => 'viewport',
 		),
-		'dsgoParallaxDesktop'       => array(
+		'dsgoParallaxDesktop'         => array(
 			'type'    => 'boolean',
 			'default' => true,
 		),
-		'dsgoParallaxTablet'        => array(
+		'dsgoParallaxTablet'          => array(
 			'type'    => 'boolean',
 			'default' => true,
 		),
-		'dsgoParallaxMobile'            => array(
+		'dsgoParallaxMobile'          => array(
 			'type'    => 'boolean',
 			'default' => false,
 		),
-		'dsgoParallaxRotateEnabled'     => array(
+		'dsgoParallaxRotateEnabled'   => array(
 			'type'    => 'boolean',
 			'default' => false,
 		),
-		'dsgoParallaxRotateDirection'   => array(
+		'dsgoParallaxRotateDirection' => array(
 			'type'    => 'string',
 			'default' => 'cw',
 			'enum'    => array( 'cw', 'ccw' ),
 		),
-		'dsgoParallaxRotateSpeed'       => array(
+		'dsgoParallaxRotateSpeed'     => array(
 			'type'    => 'number',
 			'default' => 3,
 		),

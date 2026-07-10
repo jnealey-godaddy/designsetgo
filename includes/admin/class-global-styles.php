@@ -52,14 +52,14 @@ class Global_Styles {
 				),
 				'custom'  => array(
 					'designsetgo' => array(
-						'borderRadius'          => array(
+						'borderRadius'           => array(
 							'none'   => '0',
 							'small'  => '0.25rem',
 							'medium' => '0.5rem',
 							'large'  => '1rem',
 							'full'   => '9999px',
 						),
-						'shadow'                => array(
+						'shadow'                 => array(
 							'small'  => '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
 							'medium' => '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
 							'large'  => '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
@@ -99,7 +99,7 @@ class Global_Styles {
 					'bottom' => 'var(--wp--preset--spacing--40, 1.5rem)',
 				),
 			);
-			$dsg_settings['styles']['blocks']['designsetgo/tab']['spacing'] = array(
+			$dsg_settings['styles']['blocks']['designsetgo/tab']['spacing']  = array(
 				'padding'  => array(
 					'top'    => 'var(--wp--preset--spacing--50, 2rem)',
 					'bottom' => 'var(--wp--preset--spacing--50, 2rem)',
@@ -394,7 +394,7 @@ class Global_Styles {
 			return;
 		}
 
-		$asset_file = include $asset_file_path;
+		$asset_file = include $asset_file_path; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 		if ( ! is_array( $asset_file ) ) {
 			wp_trigger_error( __METHOD__, 'DesignSetGo: Invalid admin asset file format.', E_USER_NOTICE );
@@ -550,7 +550,7 @@ class Global_Styles {
 			if ( is_array( $value ) ) {
 				$sanitized[ $sanitized_key ] = $this->sanitize_styles_array( $value );
 			} else {
-				$text = sanitize_text_field( $value );
+				$text                        = sanitize_text_field( $value );
 				$sanitized[ $sanitized_key ] = $this->is_valid_css_value( $text ) ? $text : '';
 			}
 		}
@@ -626,13 +626,13 @@ class Global_Styles {
 	 * against the CSS value allowlist in is_valid_css_value(); values that do
 	 * not match are silently dropped (empty string) rather than stored.
 	 *
-	 * @param array $array Array to sanitize.
+	 * @param array $styles_array Array to sanitize.
 	 * @return array Sanitized array.
 	 */
-	private function sanitize_styles_array( $array ) {
+	private function sanitize_styles_array( $styles_array ) {
 		$sanitized = array();
 
-		foreach ( $array as $key => $value ) {
+		foreach ( $styles_array as $key => $value ) {
 			$sanitized_key = sanitize_key( $key );
 
 			if ( is_array( $value ) ) {
@@ -642,7 +642,7 @@ class Global_Styles {
 			} elseif ( is_bool( $value ) ) {
 				$sanitized[ $sanitized_key ] = (bool) $value;
 			} else {
-				$text = sanitize_text_field( $value );
+				$text                        = sanitize_text_field( $value );
 				$sanitized[ $sanitized_key ] = $this->is_valid_css_value( $text ) ? $text : '';
 			}
 		}

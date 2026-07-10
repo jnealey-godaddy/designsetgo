@@ -32,7 +32,7 @@ class Bindings {
 	public function register() {
 		designsetgo_register_bindings_source(
 			'designsetgo/post-meta',
-			function ( $args, $block = null, $attribute_name = 'content' ) {
+			function ( $args, $_block = null, $_attribute_name = 'content' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress block bindings source callback signature
 				$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 				$key     = isset( $args['key'] ) ? sanitize_text_field( (string) $args['key'] ) : '';
 				if ( ! $post_id || '' === $key ) {
@@ -50,7 +50,7 @@ class Bindings {
 		if ( function_exists( 'get_field' ) ) {
 			designsetgo_register_bindings_source(
 				'designsetgo/acf',
-				function ( $args, $block = null, $attribute_name = 'content' ) {
+				function ( $args, $_block = null, $_attribute_name = 'content' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress block bindings source callback signature
 					$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 					$key     = isset( $args['key'] ) ? sanitize_text_field( (string) $args['key'] ) : '';
 					if ( ! $post_id || '' === $key ) {
@@ -100,12 +100,12 @@ class Bindings {
 	 * fall back to the block's full `available_context` via Reflection so
 	 * authors don't have to modify core blocks.
 	 *
-	 * @param array          $args           Binding args (expects 'key').
-	 * @param \WP_Block|null $block          The current block instance.
-	 * @param string         $attribute_name The bound attribute name.
+	 * @param array          $args             Binding args (expects 'key').
+	 * @param \WP_Block|null $block            The current block instance.
+	 * @param string         $_attribute_name  The bound attribute name (unused).
 	 * @return string|null
 	 */
-	public function get_group_context_value( array $args, $block = null, $attribute_name = 'content' ) {
+	public function get_group_context_value( array $args, $block = null, $_attribute_name = 'content' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress block bindings source callback signature
 		$key = isset( $args['key'] ) ? (string) $args['key'] : 'groupLabel';
 		if ( 'groupValue' !== $key ) {
 			$key = 'groupLabel';

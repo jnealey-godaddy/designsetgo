@@ -65,17 +65,17 @@ class Draft_Mode_REST {
 
 		// Global attributes that should be allowed on most elements.
 		$global_attrs = array(
-			'id'          => true,
-			'class'       => true,
-			'style'       => true,
-			'title'       => true,
-			'role'        => true,
-			'tabindex'    => true,
-			'aria-*'      => true,
-			'data-*'      => true,
-			'hidden'      => true,
-			'lang'        => true,
-			'dir'         => true,
+			'id'       => true,
+			'class'    => true,
+			'style'    => true,
+			'title'    => true,
+			'role'     => true,
+			'tabindex' => true,
+			'aria-*'   => true,
+			'data-*'   => true,
+			'hidden'   => true,
+			'lang'     => true,
+			'dir'      => true,
 		);
 
 		// Add global attributes to common elements that blocks use.
@@ -177,36 +177,36 @@ class Draft_Mode_REST {
 		$svg_attrs = array_merge(
 			$global_attrs,
 			array(
-				'xmlns'              => true,
-				'viewbox'            => true,
+				'xmlns'               => true,
+				'viewbox'             => true,
 				'preserveaspectratio' => true,
-				'width'              => true,
-				'height'             => true,
-				'fill'               => true,
-				'stroke'             => true,
-				'stroke-width'       => true,
-				'stroke-linecap'     => true,
-				'stroke-linejoin'    => true,
-				'opacity'            => true,
-				'transform'          => true,
-				'x'                  => true,
-				'y'                  => true,
-				'x1'                 => true,
-				'y1'                 => true,
-				'x2'                 => true,
-				'y2'                 => true,
-				'cx'                 => true,
-				'cy'                 => true,
-				'r'                  => true,
-				'rx'                 => true,
-				'ry'                 => true,
-				'd'                  => true,
-				'points'             => true,
-				'fill-rule'          => true,
-				'clip-rule'          => true,
-				'clip-path'          => true,
-				'mask'               => true,
-				'filter'             => true,
+				'width'               => true,
+				'height'              => true,
+				'fill'                => true,
+				'stroke'              => true,
+				'stroke-width'        => true,
+				'stroke-linecap'      => true,
+				'stroke-linejoin'     => true,
+				'opacity'             => true,
+				'transform'           => true,
+				'x'                   => true,
+				'y'                   => true,
+				'x1'                  => true,
+				'y1'                  => true,
+				'x2'                  => true,
+				'y2'                  => true,
+				'cx'                  => true,
+				'cy'                  => true,
+				'r'                   => true,
+				'rx'                  => true,
+				'ry'                  => true,
+				'd'                   => true,
+				'points'              => true,
+				'fill-rule'           => true,
+				'clip-rule'           => true,
+				'clip-path'           => true,
+				'mask'                => true,
+				'filter'              => true,
 			)
 		);
 
@@ -244,8 +244,8 @@ class Draft_Mode_REST {
 		$allowed['stop'] = array_merge(
 			$svg_attrs,
 			array(
-				'offset'     => true,
-				'stop-color' => true,
+				'offset'       => true,
+				'stop-color'   => true,
 				'stop-opacity' => true,
 			)
 		);
@@ -267,8 +267,8 @@ class Draft_Mode_REST {
 			)
 		);
 
-		$allowed['video'] = $media_attrs;
-		$allowed['audio'] = $media_attrs;
+		$allowed['video']  = $media_attrs;
+		$allowed['audio']  = $media_attrs;
 		$allowed['source'] = array(
 			'src'   => true,
 			'type'  => true,
@@ -313,9 +313,9 @@ class Draft_Mode_REST {
 		$placeholders = array();
 		$result       = preg_replace_callback(
 			'/<!--\s+\/?wp:[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)?\s*(?:(?P<json>\{(?:[^{}]++|(?&json))*+\})\s*)?\/?\s*-->/',
-			function ( $match ) use ( &$placeholders ) {
+			function ( $matches ) use ( &$placeholders ) {
 				$key                  = '%%DSGO_BLOCK_COMMENT_' . count( $placeholders ) . '%%';
-				$placeholders[ $key ] = $match[0];
+				$placeholders[ $key ] = $matches[0];
 				return $key;
 			},
 			$content
@@ -341,13 +341,13 @@ class Draft_Mode_REST {
 		$svg_case_map = array(
 			'viewbox'             => 'viewBox',
 			'preserveaspectratio' => 'preserveAspectRatio',
-			'basefrequency'      => 'baseFrequency',
-			'stddeviation'       => 'stdDeviation',
-			'patternunits'       => 'patternUnits',
-			'gradientunits'      => 'gradientUnits',
-			'gradienttransform'  => 'gradientTransform',
-			'patterntransform'   => 'patternTransform',
-			'clippathunits'      => 'clipPathUnits',
+			'basefrequency'       => 'baseFrequency',
+			'stddeviation'        => 'stdDeviation',
+			'patternunits'        => 'patternUnits',
+			'gradientunits'       => 'gradientUnits',
+			'gradienttransform'   => 'gradientTransform',
+			'patterntransform'    => 'patternTransform',
+			'clippathunits'       => 'clipPathUnits',
 		);
 
 		foreach ( $svg_case_map as $lower => $camel ) {
@@ -377,12 +377,12 @@ class Draft_Mode_REST {
 						'description'       => __( 'The ID of the published page to create a draft of.', 'designsetgo' ),
 					),
 					'content' => array(
-						'required'          => false,
-						'type'              => 'string',
+						'required'    => false,
+						'type'        => 'string',
 						// No sanitize_callback - wp_kses breaks block content (strips CSS, corrupts unicode).
-						'description'       => __( 'Optional content to use instead of published content (captures unsaved edits).', 'designsetgo' ),
+						'description' => __( 'Optional content to use instead of published content (captures unsaved edits).', 'designsetgo' ),
 					),
-					'title' => array(
+					'title'   => array(
 						'required'          => false,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
@@ -489,7 +489,7 @@ class Draft_Mode_REST {
 	 * @param \WP_REST_Request $_request Request object (unused).
 	 * @return bool True if user has permission, false otherwise.
 	 */
-	public function check_read_permission( $_request ) {
+	public function check_read_permission( $_request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- REST API callback signature
 		return current_user_can( 'edit_pages' );
 	}
 
@@ -548,12 +548,12 @@ class Draft_Mode_REST {
 
 		return rest_ensure_response(
 			array(
-				'success'      => true,
-				'draft_id'     => $result,
-				'edit_url'     => get_edit_post_link( $result, 'raw' ),
-				'message'      => __( 'Draft created successfully.', 'designsetgo' ),
-				'draft_title'  => $draft_post->post_title,
-				'original_id'  => $post_id,
+				'success'     => true,
+				'draft_id'    => $result,
+				'edit_url'    => get_edit_post_link( $result, 'raw' ),
+				'message'     => __( 'Draft created successfully.', 'designsetgo' ),
+				'draft_title' => $draft_post->post_title,
+				'original_id' => $post_id,
 			)
 		);
 	}
@@ -642,8 +642,8 @@ class Draft_Mode_REST {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function get_status_endpoint( $request ) {
-		$post_id  = $request->get_param( 'post_id' );
-		$post     = get_post( $post_id );
+		$post_id = $request->get_param( 'post_id' );
+		$post    = get_post( $post_id );
 
 		// Check object-level permission for the specific post.
 		if ( $post && ! current_user_can( 'edit_post', $post_id ) ) {

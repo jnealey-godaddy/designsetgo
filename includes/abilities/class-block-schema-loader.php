@@ -511,7 +511,7 @@ class Block_Schema_Loader {
 			return null;
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Reading local plugin block.json file.
 		$contents = file_get_contents( $path );
 
 		if ( false === $contents ) {

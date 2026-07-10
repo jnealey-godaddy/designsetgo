@@ -173,7 +173,7 @@ class Form_Handler {
 				'callback'            => array( $this, 'handle_form_submission' ),
 				'permission_callback' => '__return_true', // Public endpoint - see DocBlock above for security measures.
 				'args'                => array(
-					'formId'           => array(
+					'formId'          => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
@@ -181,24 +181,24 @@ class Form_Handler {
 							return is_string( $param ) && ! empty( $param );
 						},
 					),
-					'fields'           => array(
+					'fields'          => array(
 						'required'          => true,
 						'type'              => 'array',
 						'validate_callback' => function ( $param ) {
 							return is_array( $param );
 						},
 					),
-					'honeypot'         => array(
+					'honeypot'        => array(
 						'required' => false,
 						'type'     => 'string',
 						'default'  => '',
 					),
-					'timestamp'        => array(
+					'timestamp'       => array(
 						'required' => false,
 						'type'     => 'string',
 						'default'  => '',
 					),
-					'turnstile_token'  => array(
+					'turnstile_token' => array(
 						'type'              => 'string',
 						'default'           => '',
 						'sanitize_callback' => 'sanitize_text_field',
@@ -260,9 +260,9 @@ class Form_Handler {
 		// Fallback (2/60s) is intentionally stricter than the block-level default
 		// — it only applies to orphaned/legacy submissions where the per-block
 		// configuration is missing.
-		$block_attrs      = $this->get_form_block_attributes( $form_id );
-		$rate_limit_count = isset( $block_attrs['rateLimitCount'] ) ? absint( $block_attrs['rateLimitCount'] ) : 2;
-		$rate_limit_window = isset( $block_attrs['rateLimitWindow'] ) ? absint( $block_attrs['rateLimitWindow'] ) : 60;
+		$block_attrs        = $this->get_form_block_attributes( $form_id );
+		$rate_limit_count   = isset( $block_attrs['rateLimitCount'] ) ? absint( $block_attrs['rateLimitCount'] ) : 2;
+		$rate_limit_window  = isset( $block_attrs['rateLimitWindow'] ) ? absint( $block_attrs['rateLimitWindow'] ) : 60;
 		$turnstile_required = ! empty( $block_attrs['enableTurnstile'] );
 
 		// Honeypot spam check (only if enabled in settings).
@@ -323,10 +323,10 @@ class Form_Handler {
 				continue;
 			}
 
-			$field_name          = sanitize_text_field( $field['name'] );
-			$field_value         = $field['value'];
+			$field_name           = sanitize_text_field( $field['name'] );
+			$field_value          = $field['value'];
 			$submitted_field_type = isset( $field['type'] ) ? sanitize_text_field( $field['type'] ) : 'text';
-			$field_type          = isset( $form_field_types[ $field_name ] )
+			$field_type           = isset( $form_field_types[ $field_name ] )
 				? $form_field_types[ $field_name ]
 				: $submitted_field_type;
 
@@ -753,7 +753,7 @@ class Form_Handler {
 		$email_body      = isset( $block_attrs['emailBody'] ) ? $block_attrs['emailBody'] : '';
 		// emailReplyTo is a field NAME reference (e.g., "email"), not an email address.
 		// The actual email value is extracted from submitted fields and sanitized below (line ~650).
-		$email_reply_to  = isset( $block_attrs['emailReplyTo'] ) ? $block_attrs['emailReplyTo'] : '';
+		$email_reply_to = isset( $block_attrs['emailReplyTo'] ) ? $block_attrs['emailReplyTo'] : '';
 
 		// Strip newlines from header-used values to prevent injection (defense in depth).
 		$newline_chars   = array( "\r", "\n", '%0a', '%0d' );

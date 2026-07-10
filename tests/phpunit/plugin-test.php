@@ -54,33 +54,6 @@ class Test_Plugin extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that blocks are registered.
-	 *
-	 * Note: This test is skipped because block registration requires
-	 * built JavaScript assets which may not be available in test environment.
-	 */
-	public function test_blocks_registered() {
-		$this->markTestSkipped( 'Block registration requires built assets and init hook execution' );
-
-		$registry = WP_Block_Type_Registry::get_instance();
-
-		// Test a few core blocks from the plugin
-		$blocks_to_test = array(
-			'designsetgo/flex',
-			'designsetgo/grid',
-			'designsetgo/stack',
-			'designsetgo/tabs',
-		);
-
-		foreach ( $blocks_to_test as $block_name ) {
-			$this->assertTrue(
-				$registry->is_registered( $block_name ),
-				"Block {$block_name} should be registered"
-			);
-		}
-	}
-
-	/**
 	 * Test that plugin version is valid.
 	 */
 	public function test_valid_version() {

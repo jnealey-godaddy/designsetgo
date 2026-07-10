@@ -119,7 +119,7 @@ class Registry {
 	 * }
 	 */
 	public function register_source( $slug, array $meta ) {
-		$defaults = array(
+		$defaults               = array(
 			'label'        => $slug,
 			'group'        => 'post',
 			'returns'      => array( 'text' ),

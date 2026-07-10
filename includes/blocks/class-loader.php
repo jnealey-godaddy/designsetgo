@@ -56,7 +56,7 @@ class Loader {
 			}
 			$asset_file = str_replace( '.js', '.asset.php', $src_path );
 			$version    = file_exists( $asset_file )
-				? ( include $asset_file )['version'] ?? false
+				? ( include $asset_file )['version'] ?? false // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 				: filemtime( $src_path );
 
 			// Deregister first — wp_register_script_module is a no-op if the id
@@ -111,7 +111,7 @@ class Loader {
 				continue;
 			}
 
-			$asset_data = include $asset_file;
+			$asset_data = include $asset_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 			// Register the script.
 			wp_register_script(

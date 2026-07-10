@@ -732,10 +732,10 @@ class Settings {
 	 *
 	 * @param mixed  $value     The value to sanitize.
 	 * @param string $sanitizer The sanitizer type.
-	 * @param mixed  $default   The default value to fall back to.
+	 * @param mixed  $fallback  The fallback value to return if sanitization fails.
 	 * @return mixed Sanitized value.
 	 */
-	private static function sanitize_value( $value, string $sanitizer, $default ) {
+	private static function sanitize_value( $value, string $sanitizer, $fallback ) {
 		switch ( $sanitizer ) {
 			case 'bool':
 				return (bool) $value;
@@ -749,13 +749,13 @@ class Settings {
 				return sanitize_textarea_field( $value );
 			case 'hex_color':
 				$color = sanitize_hex_color( $value );
-				return $color ? $color : $default;
+				return $color ? $color : $fallback;
 			case 'key':
 				return sanitize_key( $value );
 			case 'text_list':
-				return is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : $default;
+				return is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : $fallback;
 			case 'key_list':
-				return is_array( $value ) ? array_map( 'sanitize_key', $value ) : $default;
+				return is_array( $value ) ? array_map( 'sanitize_key', $value ) : $fallback;
 			default:
 				return sanitize_text_field( $value );
 		}

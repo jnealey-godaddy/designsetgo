@@ -138,10 +138,15 @@ class Form_Security {
 			return true;
 		}
 
+		// 3s timeout is intentional. Turnstile runs on Cloudflare's edge network and
+		// should respond in well under a second; this verification call blocks the
+		// form submission response, so a generous timeout directly penalises customer
+		// experience. On timeout, wp_remote_post() returns a WP_Error and we degrade
+		// gracefully (let the submission through) rather than punish the user.
 		$response = wp_remote_post(
 			'https://challenges.cloudflare.com/turnstile/v0/siteverify',
 			array(
-				'timeout' => 5,
+				'timeout' => 3,
 				'body'    => array(
 					'secret'   => $secret_key,
 					'response' => $token,
@@ -191,51 +196,90 @@ class Form_Security {
 	 * @return string IP address.
 	 */
 	public function get_client_ip(): string {
-		$remote_addr = isset( $_SERVER['REMOTE_ADDR'] )
-			? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
-			: 'unknown';
+		// REMOTE_ADDR is set by the web server from the TCP peer. Validate it as a
+		// real IP address so we never return a spoofed or malformed value.
+		$remote_addr = $this->read_valid_ip( 'REMOTE_ADDR' );
 
-		if ( 'unknown' === $remote_addr ) {
+		if ( null === $remote_addr ) {
 			return 'unknown';
 		}
 
 		$trusted_proxies = apply_filters( 'designsetgo_trusted_proxies', array() );
 
-		if ( empty( $trusted_proxies ) || ! is_array( $trusted_proxies ) ) {
+		// Forwarded headers are only trustworthy when the connecting host is a
+		// known proxy; otherwise a client could set them to spoof its address.
+		if ( empty( $trusted_proxies ) || ! is_array( $trusted_proxies )
+			|| ! $this->is_trusted_proxy( $remote_addr, $trusted_proxies ) ) {
 			return $remote_addr;
 		}
 
-		if ( ! $this->is_trusted_proxy( $remote_addr, $trusted_proxies ) ) {
-			return $remote_addr;
-		}
-
+		// Ordered most-specific-first. The first header yielding a public,
+		// routable address wins; comma-separated chains are walked left to right.
 		$proxy_headers = array(
-			'HTTP_X_FORWARDED_FOR',
-			'HTTP_X_REAL_IP',
 			'HTTP_CF_CONNECTING_IP',
+			'HTTP_X_REAL_IP',
+			'HTTP_X_FORWARDED_FOR',
 			'HTTP_X_CLUSTER_CLIENT_IP',
 			'HTTP_CLIENT_IP',
 		);
 
 		foreach ( $proxy_headers as $header ) {
-			if ( empty( $_SERVER[ $header ] ) ) {
-				continue;
-			}
+			$ip = $this->read_forwarded_ip( $header );
 
-			$ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
-
-			if ( strpos( $ip, ',' ) !== false ) {
-				$ip = explode( ',', $ip )[0];
-			}
-
-			$ip = trim( $ip );
-
-			if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+			if ( null !== $ip ) {
 				return $ip;
 			}
 		}
 
 		return $remote_addr;
+	}
+
+	/**
+	 * Read a $_SERVER key and return it only if it is a valid IP address.
+	 *
+	 * Accepts both IPv4 and IPv6. Returns null when the key is absent, empty,
+	 * or not a syntactically valid IP.
+	 *
+	 * @param string $key $_SERVER key to read (e.g. 'REMOTE_ADDR').
+	 * @return string|null Validated IP address, or null.
+	 */
+	private function read_valid_ip( string $key ): ?string {
+		if ( empty( $_SERVER[ $key ] ) ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders -- Value is validated with filter_var( FILTER_VALIDATE_IP ) before it is returned or used.
+		$value = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) );
+
+		return filter_var( $value, FILTER_VALIDATE_IP ) ? $value : null;
+	}
+
+	/**
+	 * Extract the first public, routable IP from a forwarded proxy header.
+	 *
+	 * Handles single values and comma-separated chains (X-Forwarded-For style),
+	 * skipping private and reserved ranges so we return the real client address.
+	 *
+	 * @param string $key $_SERVER key to read (e.g. 'HTTP_X_FORWARDED_FOR').
+	 * @return string|null First valid public IP, or null.
+	 */
+	private function read_forwarded_ip( string $key ): ?string {
+		if ( empty( $_SERVER[ $key ] ) ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders -- Each candidate is validated with filter_var( FILTER_VALIDATE_IP ) below before use.
+		$raw = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) );
+
+		foreach ( explode( ',', $raw ) as $candidate ) {
+			$candidate = trim( $candidate );
+
+			if ( filter_var( $candidate, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				return $candidate;
+			}
+		}
+
+		return null;
 	}
 
 	/**

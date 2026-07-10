@@ -275,8 +275,8 @@ class Custom_CSS_Renderer {
 		// sees the actual character.
 		$css = preg_replace_callback(
 			'/\\\\([0-9a-fA-F]{1,6})\s?/',
-			static function ( $match ) {
-				$codepoint = hexdec( $match[1] );
+			static function ( $matches ) {
+				$codepoint = hexdec( $matches[1] );
 				// Reject null and out-of-range codepoints.
 				if ( 0 === $codepoint || $codepoint > 0x10FFFF ) {
 					return '';

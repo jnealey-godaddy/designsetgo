@@ -397,8 +397,8 @@ class FilterIndexRebuilder {
 		}
 
 		// Always surface a live row count and normalise required keys.
-		$index_table             = FilterIndex::table_name();
-		$status['total_rows']    = FilterIndex::table_exists()
+		$index_table          = FilterIndex::table_name();
+		$status['total_rows'] = FilterIndex::table_exists()
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- live count for status output; %i correctly escapes the identifier.
 			? (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $index_table ) )
 			: 0;

@@ -18,6 +18,15 @@ use WP_REST_Request;
  */
 class Test_Security_Fixes extends WP_UnitTestCase {
 	/**
+	 * @var int
+	 */
+	protected int $admin_user;
+
+	/**
+	 * @var int
+	 */
+	protected int $regular_user;
+	/**
 	 * Set up test environment
 	 */
 	public function set_up() {

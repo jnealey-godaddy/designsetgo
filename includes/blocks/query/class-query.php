@@ -86,7 +86,7 @@ class Controller {
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_key',
 					),
-					'config'    => array(
+					'config'     => array(
 						'type'     => 'object',
 						'required' => true,
 					),
@@ -332,7 +332,7 @@ class Controller {
 		return rest_ensure_response(
 			array(
 				'unregistered' => true,
-				'filter_key'    => $key,
+				'filter_key'   => $key,
 			)
 		);
 	}
@@ -411,7 +411,7 @@ class Controller {
 		return rest_ensure_response(
 			array(
 				'registered' => true,
-				'filter_key'  => sanitize_key( $key ),
+				'filter_key' => sanitize_key( $key ),
 				'config'     => FilterRegistry::get( $key ),
 			)
 		);
@@ -536,7 +536,7 @@ class Controller {
 	public static function render( array $attributes, array $context ) {
 		$helpers = DESIGNSETGO_PATH . 'build/blocks/query/render-helpers.php';
 		if ( file_exists( $helpers ) ) {
-			require_once $helpers;
+			require_once $helpers; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 			if ( function_exists( 'designsetgo_query_render_region' ) ) {
 				return designsetgo_query_render_region( $attributes, $context );
 			}

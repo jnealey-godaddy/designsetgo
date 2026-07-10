@@ -27,7 +27,7 @@ function designsetgo_get_svg_pattern_data() {
 	return array(
 		// ── MINIMAL ──────────────────────────────────────
 
-		'dot-grid'         => array(
+		'dot-grid'          => array(
 			'width'  => 24,
 			'height' => 24,
 			'paths'  => array(
@@ -35,7 +35,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'cross-grid'       => array(
+		'cross-grid'        => array(
 			'width'  => 24,
 			'height' => 24,
 			'paths'  => array(
@@ -43,7 +43,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'diagonal-lines'   => array(
+		'diagonal-lines'    => array(
 			'width'  => 6,
 			'height' => 6,
 			'paths'  => array(
@@ -51,7 +51,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'horizontal-lines' => array(
+		'horizontal-lines'  => array(
 			'width'  => 24,
 			'height' => 24,
 			'paths'  => array(
@@ -59,7 +59,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'diagonal-stripes' => array(
+		'diagonal-stripes'  => array(
 			'width'  => 40,
 			'height' => 40,
 			'paths'  => array(
@@ -67,7 +67,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'dashes'           => array(
+		'dashes'            => array(
 			'width'  => 20,
 			'height' => 20,
 			'paths'  => array(
@@ -75,7 +75,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'polka-dots'       => array(
+		'polka-dots'        => array(
 			'width'  => 20,
 			'height' => 20,
 			'paths'  => array(
@@ -85,7 +85,7 @@ function designsetgo_get_svg_pattern_data() {
 
 		// ── GEOMETRIC ────────────────────────────────────
 
-		'hexagons'           => array(
+		'hexagons'          => array(
 			'width'  => 28,
 			'height' => 49,
 			'paths'  => array(
@@ -93,7 +93,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'diamond-grid'       => array(
+		'diamond-grid'      => array(
 			'width'  => 20,
 			'height' => 20,
 			'paths'  => array(
@@ -104,7 +104,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'chevrons'           => array(
+		'chevrons'          => array(
 			'width'  => 28,
 			'height' => 12,
 			'paths'  => array(
@@ -112,7 +112,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'flipped-diamonds'   => array(
+		'flipped-diamonds'  => array(
 			'width'  => 16,
 			'height' => 32,
 			'paths'  => array(
@@ -123,7 +123,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'triangle-grid'      => array(
+		'triangle-grid'     => array(
 			'width'  => 40,
 			'height' => 40,
 			'paths'  => array(
@@ -134,7 +134,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'falling-triangles'  => array(
+		'falling-triangles' => array(
 			'width'  => 36,
 			'height' => 72,
 			'paths'  => array(
@@ -145,7 +145,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'glamorous'          => array(
+		'glamorous'         => array(
 			'width'  => 180,
 			'height' => 180,
 			'paths'  => array(
@@ -153,7 +153,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'architect'          => array(
+		'architect'         => array(
 			'width'  => 100,
 			'height' => 199,
 			'paths'  => array(
@@ -161,7 +161,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'hideout'            => array(
+		'hideout'           => array(
 			'width'  => 40,
 			'height' => 40,
 			'paths'  => array(
@@ -172,7 +172,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'brick-wall'         => array(
+		'brick-wall'        => array(
 			'width'  => 42,
 			'height' => 44,
 			'paths'  => array(
@@ -185,7 +185,7 @@ function designsetgo_get_svg_pattern_data() {
 
 		// ── ORGANIC ──────────────────────────────────────
 
-		'topography'         => array(
+		'topography'        => array(
 			'width'  => 600,
 			'height' => 600,
 			'paths'  => array(
@@ -193,7 +193,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'waves'              => array(
+		'waves'             => array(
 			'width'  => 120,
 			'height' => 40,
 			'paths'  => array(
@@ -205,7 +205,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'grain'              => array(
+		'grain'             => array(
 			'width'  => 4,
 			'height' => 4,
 			'paths'  => array(
@@ -213,7 +213,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'ripples'            => array(
+		'ripples'           => array(
 			'width'  => 48,
 			'height' => 48,
 			'paths'  => array(
@@ -225,7 +225,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'bubbles'            => array(
+		'bubbles'           => array(
 			'width'  => 100,
 			'height' => 100,
 			'paths'  => array(
@@ -233,7 +233,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'wiggle'             => array(
+		'wiggle'            => array(
 			'width'  => 52,
 			'height' => 26,
 			'paths'  => array(
@@ -246,7 +246,7 @@ function designsetgo_get_svg_pattern_data() {
 
 		// ── TEXTURE ──────────────────────────────────────
 
-		'crosshatch'         => array(
+		'crosshatch'        => array(
 			'width'  => 8,
 			'height' => 8,
 			'paths'  => array(
@@ -254,7 +254,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'noise'              => array(
+		'noise'             => array(
 			'width'  => 16,
 			'height' => 16,
 			'paths'  => array(
@@ -262,7 +262,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'stipple'            => array(
+		'stipple'           => array(
 			'width'  => 60,
 			'height' => 60,
 			'paths'  => array(
@@ -270,7 +270,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'linen'              => array(
+		'linen'             => array(
 			'width'  => 4,
 			'height' => 4,
 			'paths'  => array(
@@ -280,7 +280,7 @@ function designsetgo_get_svg_pattern_data() {
 
 		// ── DEPTH ────────────────────────────────────────
 
-		'scales'             => array(
+		'scales'            => array(
 			'width'  => 48,
 			'height' => 24,
 			'paths'  => array(
@@ -294,7 +294,7 @@ function designsetgo_get_svg_pattern_data() {
 
 		// ── TECHNICAL ────────────────────────────────────
 
-		'circuit-board'      => array(
+		'circuit-board'     => array(
 			'width'  => 304,
 			'height' => 304,
 			'paths'  => array(
@@ -305,7 +305,7 @@ function designsetgo_get_svg_pattern_data() {
 			),
 		),
 
-		'graph-paper'        => array(
+		'graph-paper'       => array(
 			'width'  => 100,
 			'height' => 100,
 			'paths'  => array(

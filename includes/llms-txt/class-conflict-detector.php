@@ -63,17 +63,17 @@ class Conflict_Detector {
 
 		$parent_dir = dirname( $file_path );
 
-		// Use WP_Filesystem for writability checks, with fallback to native functions.
-		global $wp_filesystem;
-		if ( ! $wp_filesystem ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-			WP_Filesystem();
-		}
+		// Use WP_Filesystem for writability checks — the idiomatic WordPress way.
+		// WP_Filesystem abstracts direct, FTP, and SSH transports, so a raw
+		// is_writable() fallback would silently misreport writability on FTP/SSH
+		// hosts where direct access is intentionally restricted. Treating the file
+		// as non-writable when WP_Filesystem is unavailable is correct: it surfaces
+		// the problem to the user (via the "rename manually" notice) rather than
+		// allowing an operation that may not actually work.
+		$filesystem = File_Manager::filesystem();
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Fallback when WP_Filesystem fails.
-		$file_writable = $wp_filesystem ? $wp_filesystem->is_writable( $file_path ) : is_writable( $file_path );
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_is_writable -- Fallback when WP_Filesystem fails.
-		$dir_writable  = $wp_filesystem ? $wp_filesystem->is_writable( $parent_dir ) : is_writable( $parent_dir );
+		$file_writable = $filesystem ? $filesystem->is_writable( $file_path ) : false;
+		$dir_writable  = $filesystem ? $filesystem->is_writable( $parent_dir ) : false;
 
 		return array(
 			'path'       => $file_path,
@@ -166,8 +166,16 @@ class Conflict_Detector {
 			);
 		}
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.rename_rename -- Renaming a sibling file within the same site-root directory; WP_Filesystem has no equivalent atomic rename.
-		$result = rename( $file_path, $backup_path );
+		$filesystem = File_Manager::filesystem();
+
+		if ( ! $filesystem ) {
+			return new \WP_Error(
+				'filesystem_unavailable',
+				__( 'Could not access the filesystem. Please rename or delete the file manually via FTP or your hosting file manager.', 'designsetgo' )
+			);
+		}
+
+		$result = $filesystem->move( $file_path, $backup_path );
 
 		if ( ! $result ) {
 			return new \WP_Error(

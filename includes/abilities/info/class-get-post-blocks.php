@@ -283,11 +283,11 @@ class Get_Post_Blocks extends Abstract_Ability {
 				'attrs'      => $block['attrs'] ?? array(),
 			);
 
-			$counter++;
+			++$counter;
 
 			// Include innerHTML summary (truncated).
 			if ( ! empty( $block['innerHTML'] ) ) {
-				$html = trim( $block['innerHTML'] );
+				$html                 = trim( $block['innerHTML'] );
 				$cleaned['innerHTML'] = strlen( $html ) > 200 ? substr( $html, 0, 200 ) . '...' : $html;
 			}
 

@@ -79,7 +79,7 @@ class Core_Handlers {
 				if ( ! empty( $text ) ) {
 					$prefix  = $ordered ? "{$index}. " : '- ';
 					$items[] = $prefix . $text;
-					$index++;
+					++$index;
 				}
 			}
 		} else {
@@ -92,7 +92,7 @@ class Core_Handlers {
 					if ( ! empty( $text ) ) {
 						$prefix  = $ordered ? "{$index}. " : '- ';
 						$items[] = $prefix . $text;
-						$index++;
+						++$index;
 					}
 				}
 			}
@@ -185,20 +185,20 @@ class Core_Handlers {
 	/**
 	 * Handle core/separator and designsetgo/divider blocks.
 	 *
-	 * @param array $block Block data.
+	 * @param array $_block Block data (unused).
 	 * @return string Markdown.
 	 */
-	public function handle_separator( array $block ): string {
+	public function handle_separator( array $_block ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- WordPress hook callback signature
 		return '---';
 	}
 
 	/**
 	 * Handle core/spacer block.
 	 *
-	 * @param array $block Block data.
+	 * @param array $_block Block data (unused).
 	 * @return string Markdown.
 	 */
-	public function handle_spacer( array $block ): string {
+	public function handle_spacer( array $_block ): string { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- WordPress hook callback signature
 		return '';
 	}
 

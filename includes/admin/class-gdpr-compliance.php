@@ -551,11 +551,11 @@ We implement appropriate security measures to protect your personal data from un
 				'no_found_rows'  => false,
 			)
 		);
-		$total = $total_query->found_posts;
+		$total       = $total_query->found_posts;
 
 		// Get submissions older than 30 days.
-		$thirty_days_ago   = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
-		$old_query = new WP_Query(
+		$thirty_days_ago = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
+		$old_query       = new WP_Query(
 			array(
 				'post_type'      => 'dsgo_form_submission',
 				'post_status'    => 'any',

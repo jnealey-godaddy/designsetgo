@@ -196,7 +196,10 @@ class Loader {
 	private static function compute_files_hash( $files ) {
 		$parts = array();
 		foreach ( $files as $file ) {
-			$mtime = @filemtime( $file );
+			if ( ! file_exists( $file ) ) {
+				continue;
+			}
+			$mtime = filemtime( $file );
 			if ( false !== $mtime ) {
 				$parts[] = basename( $file ) . ':' . $mtime;
 			}
@@ -248,8 +251,8 @@ class Loader {
 	 * @return array<string, array> Pattern slug => pattern data array.
 	 */
 	private function get_category_patterns( $category ) {
-		$patterns_dir = DESIGNSETGO_PATH . 'patterns/';
-		$category_dir = $patterns_dir . $category . '/';
+		$patterns_dir  = DESIGNSETGO_PATH . 'patterns/';
+		$category_dir  = $patterns_dir . $category . '/';
 		$transient_key = self::CACHE_TRANSIENT_PREFIX . $category;
 
 		// Skip cache in debug mode so new/removed patterns are picked up immediately.
@@ -274,18 +277,16 @@ class Loader {
 				&& isset( $cached['version'], $cached['hash'] )
 				&& DESIGNSETGO_VERSION === $cached['version']
 			) {
-				// Decompress patterns if stored compressed, or read directly.
 				$patterns_data = null;
 				if ( isset( $cached['compressed'] ) && is_string( $cached['compressed'] ) ) {
-					$raw = base64_decode( $cached['compressed'] );
-					if ( false !== $raw ) {
-						$decompressed = @gzuncompress( $raw );
+					$raw = base64_decode( $cached['compressed'], true );
+					// Validate zlib header: CMF byte 0x78 (deflate, 32 KB window) + header checksum ((CMF*256+FLG)%31===0).
+					if ( false !== $raw && strlen( $raw ) >= 2 && 0x78 === ord( $raw[0] ) && 0 === ( ( ord( $raw[0] ) * 256 + ord( $raw[1] ) ) % 31 ) ) {
+						$decompressed = @gzuncompress( $raw, 10 * 1024 * 1024 ); // phpcs:ignore Generic.PHP.NoSilencedErrors.Forbidden, WordPress.PHP.NoSilencedErrors.Discouraged -- gzuncompress() emits E_WARNING on corrupted data; no exception-based alternative exists. 10 MiB cap guards against a zip-bomb in a tampered transient.
 						if ( false !== $decompressed ) {
 							$patterns_data = json_decode( $decompressed, true );
 						}
 					}
-				} elseif ( isset( $cached['patterns'] ) && is_array( $cached['patterns'] ) ) {
-					$patterns_data = $cached['patterns'];
 				}
 
 				if ( is_array( $patterns_data ) ) {
@@ -343,30 +344,26 @@ class Loader {
 			}
 
 			// Load pattern file.
-			$pattern = require $real_file;
+			$pattern = require $real_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- $real_file is validated via realpath() and directory-traversal check above
 
 			// Validate pattern structure.
 			if ( is_array( $pattern ) && isset( $pattern['content'] ) ) {
-				$slug = 'designsetgo/' . sanitize_key( $category ) . '/' . sanitize_key( basename( $file, '.php' ) );
+				$slug              = 'designsetgo/' . sanitize_key( $category ) . '/' . sanitize_key( basename( $file, '.php' ) );
 				$patterns[ $slug ] = $pattern;
 			}
 		}
 
-		// Cache the full pattern data for this category (compressed to stay
-		// within transient size limits for MySQL and object cache backends).
 		/** This filter is documented in includes/patterns/class-loader.php */
 		if ( apply_filters( 'designsetgo_pattern_cache_enabled', ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) ) {
 			/** This filter is documented in includes/patterns/class-loader.php */
 			$cache_duration = (int) apply_filters( 'designsetgo_pattern_cache_duration', DAY_IN_SECONDS );
-
-			$compressed = base64_encode( gzcompress( wp_json_encode( $patterns ) ) );
 
 			set_transient(
 				$transient_key,
 				array(
 					'version'    => DESIGNSETGO_VERSION,
 					'hash'       => self::compute_files_hash( $files ),
-					'compressed' => $compressed,
+					'compressed' => base64_encode( gzcompress( wp_json_encode( $patterns ) ) ),
 				),
 				$cache_duration
 			);

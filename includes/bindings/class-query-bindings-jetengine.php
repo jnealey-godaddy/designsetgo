@@ -76,12 +76,12 @@ class JetEngineBindings {
 	 * applies JetEngine field-type formatting (dates, files, relations). Falls
 	 * back to raw get_post_meta() when the listings data object is unavailable.
 	 *
-	 * @param array          $args           Binding args. Expects 'key' (JetEngine field name).
-	 * @param \WP_Block|null $block          The current block instance.
-	 * @param string         $attribute_name The bound attribute name.
+	 * @param array          $args             Binding args. Expects 'key' (JetEngine field name).
+	 * @param \WP_Block|null $_block           The current block instance (unused).
+	 * @param string         $_attribute_name  The bound attribute name (unused).
 	 * @return string|null
 	 */
-	public static function get_value( $args, $block = null, $attribute_name = 'content' ) {
+	public static function get_value( $args, $_block = null, $_attribute_name = 'content' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress block bindings source callback signature
 		$post_id = (int) ( $args['__dsgo_post_id'] ?? 0 );
 		$key     = isset( $args['key'] ) ? sanitize_text_field( (string) $args['key'] ) : '';
 		if ( ! $post_id || '' === $key ) {

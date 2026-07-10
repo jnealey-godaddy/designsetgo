@@ -28,6 +28,20 @@
 		<exclude name="WordPress.Files.FileName"/>
 	</rule>
 
+	<!-- WordPress VIP platform coding standards -->
+	<rule ref="WordPressVIPMinimum">
+		<!-- Valid on activation/deactivation for rewrite rule cleanup -->
+		<exclude name="WordPressVIPMinimum.Functions.RestrictedFunctions.flush_rewrite_rules_flush_rewrite_rules"/>
+		<!-- HTTP_USER_AGENT read only in POST REST/ajax handlers; not subject to page caching -->
+		<exclude name="WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__"/>
+		<!-- REMOTE_ADDR used only for server-side rate limiting; no viable client-side alternative -->
+		<exclude name="WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__"/>
+		<!-- wp_mail is used for single transactional form emails, not bulk mail -->
+		<exclude name="WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail"/>
+		<!-- setcookie() used only in admin-facing draft-mode toggle endpoint; not subject to page caching -->
+		<exclude name="WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie"/>
+	</rule>
+
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
@@ -60,6 +74,13 @@
 	<rule ref="WordPress.WP.AlternativeFunctions">
 		<properties>
 			<property name="exclude" value="file_get_contents"/>
+		</properties>
+	</rule>
+
+	<!-- Variables starting with _ are intentionally unused ($_ prefix convention) -->
+	<rule ref="VariableAnalysis.CodeAnalysis.VariableAnalysis">
+		<properties>
+			<property name="ignoreUnusedRegexp" value="/^_/"/>
 		</properties>
 	</rule>
 

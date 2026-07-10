@@ -153,10 +153,10 @@ class List_Blocks extends Abstract_Ability {
 	 * @return array<string, mixed>
 	 */
 	public function execute( array $input ): array {
-		$category      = $input['category'] ?? 'all';
-		$detail        = $input['detail'] ?? 'summary';
-		$block_filter  = $input['blocks'] ?? array();
-		$use_full      = 'full' === $detail;
+		$category     = $input['category'] ?? 'all';
+		$detail       = $input['detail'] ?? 'summary';
+		$block_filter = $input['blocks'] ?? array();
+		$use_full     = 'full' === $detail;
 
 		// Get all DesignSetGo blocks.
 		$all_blocks = $this->get_all_blocks( $use_full );

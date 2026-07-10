@@ -98,7 +98,7 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 			return;
 		}
 
-		designsetgo_uninstall_step(
+		@designsetgo_uninstall_step(
 			'test failure',
 			function () {
 				throw new \RuntimeException( 'Simulated error' );
@@ -123,7 +123,7 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 			return;
 		}
 
-		designsetgo_uninstall_step(
+		@designsetgo_uninstall_step(
 			'test failure',
 			function () {
 				throw new \RuntimeException( 'Simulated error' );
@@ -163,7 +163,7 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 	 * Test that invalid CSS size returns null (error path executes).
 	 */
 	public function test_sanitize_css_size_returns_null_on_invalid() {
-		$result = designsetgo_sanitize_css_size( 'not-a-size' );
+		$result = @designsetgo_sanitize_css_size( 'not-a-size' );
 		$this->assertNull( $result );
 	}
 
@@ -176,7 +176,7 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 			return;
 		}
 
-		designsetgo_sanitize_css_size( 'not-a-size' );
+		@designsetgo_sanitize_css_size( 'not-a-size' );
 
 		$this->assertCount( 1, $this->captured_notices );
 		$this->assertStringContainsString( 'Invalid CSS size value rejected', $this->captured_notices[0]['message'] );
@@ -197,7 +197,7 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 	 * Test that invalid CSS color returns null (error path executes).
 	 */
 	public function test_sanitize_css_color_returns_null_on_invalid() {
-		$result = designsetgo_sanitize_css_color( 'definitely-not-a-color' );
+		$result = @designsetgo_sanitize_css_color( 'definitely-not-a-color' );
 		$this->assertNull( $result );
 	}
 
@@ -210,7 +210,7 @@ class Test_WP_Trigger_Error extends WP_UnitTestCase {
 			return;
 		}
 
-		designsetgo_sanitize_css_color( 'definitely-not-a-color' );
+		@designsetgo_sanitize_css_color( 'definitely-not-a-color' );
 
 		$this->assertCount( 1, $this->captured_notices );
 		$this->assertStringContainsString( 'Invalid CSS color value rejected', $this->captured_notices[0]['message'] );

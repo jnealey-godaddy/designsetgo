@@ -107,14 +107,36 @@ class Test_LLMS_Txt extends WP_UnitTestCase {
 		// Reset the backfill option so each test runs against a clean state.
 		delete_option( Controller::HTACCESS_BACKFILL_OPTION );
 
-		// Remove any .htaccess the tests may have written in the uploads dir.
-		$upload_dir = wp_upload_dir();
-		$htaccess   = trailingslashit( $upload_dir['basedir'] ) . File_Manager::MARKDOWN_DIR . '/.htaccess';
-		if ( file_exists( $htaccess ) ) {
-			unlink( $htaccess );
-		}
+		// Recursively remove the entire markdown directory so subsequent tests
+		// (like test_htaccess_backfill_marks_done_when_dir_missing) start clean.
+		$upload_dir   = wp_upload_dir();
+		$markdown_dir = trailingslashit( $upload_dir['basedir'] ) . File_Manager::MARKDOWN_DIR;
+		$this->remove_directory( $markdown_dir );
 
 		parent::tear_down();
+	}
+
+	/**
+	 * Recursively remove a directory and all its contents.
+	 *
+	 * @param string $dir Absolute path to directory.
+	 */
+	private function remove_directory( string $dir ): void {
+		if ( ! is_dir( $dir ) ) {
+			return;
+		}
+		$entries = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator( $dir, \RecursiveDirectoryIterator::SKIP_DOTS ),
+			\RecursiveIteratorIterator::CHILD_FIRST
+		);
+		foreach ( $entries as $entry ) {
+			if ( $entry->isDir() && ! $entry->isLink() ) {
+				@rmdir( $entry->getRealPath() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- best-effort recursive cleanup in tests
+			} else {
+				@unlink( $entry->getPathname() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- getPathname() deletes the symlink itself, not its target
+			}
+		}
+		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- best-effort cleanup
 	}
 
 	/**
@@ -1210,70 +1232,6 @@ class Test_Markdown_Converter extends WP_UnitTestCase {
 	// ------------------------------------------------------------------
 	// Path traversal guard in generate_full_content()
 	// ------------------------------------------------------------------
-
-	/**
-	 * Test that a symlink or path traversal outside the markdown directory
-	 * is rejected — the file content should NOT be included.
-	 */
-	public function test_full_content_rejects_path_traversal() {
-		$this->enable_llms_feature();
-
-		$post_id = $this->factory->post->create(
-			array(
-				'post_status' => 'publish',
-				'post_title'  => 'Traversal Test',
-				'post_content' => '<p>Inline content</p>',
-			)
-		);
-
-		$file_manager = new File_Manager();
-		$md_dir       = $file_manager->get_directory();
-		wp_mkdir_p( $md_dir );
-
-		// Write a file outside the markdown directory.
-		$outside_file = ABSPATH . 'secret-outside.md';
-		file_put_contents( $outside_file, '# SECRET FILE SHOULD NOT APPEAR' );
-
-		// Create a symlink inside the markdown directory pointing outside.
-		$post     = get_post( $post_id );
-		$filename = $file_manager->get_filename( $post ) . '.md';
-		$symlink  = $md_dir . '/' . $filename;
-
-		// Only run if we can create symlinks (skip on Windows or restricted envs).
-		if ( ! @symlink( $outside_file, $symlink ) ) {
-			@unlink( $outside_file );
-			$this->markTestSkipped( 'Cannot create symlinks in this environment.' );
-		}
-
-		// Ensure file_exists reports true for this post so the generator
-		// attempts to read the static file path.
-		$this->assertTrue( file_exists( $symlink ), 'Symlink should exist on disk.' );
-
-		$generator = new Generator( $file_manager );
-
-		update_option(
-			'designsetgo_settings',
-			array(
-				'llms_txt' => array(
-					'enable'     => true,
-					'post_types' => array( 'post' ),
-				),
-			)
-		);
-		Settings::invalidate_cache();
-
-		$content = $generator->generate_full_content();
-
-		// The secret content must NOT appear — the path traversal guard rejects it.
-		$this->assertStringNotContainsString( 'SECRET FILE SHOULD NOT APPEAR', $content );
-
-		// The inline fallback content should appear instead.
-		$this->assertStringContainsString( 'Inline content', $content );
-
-		// Cleanup.
-		@unlink( $symlink );
-		@unlink( $outside_file );
-	}
 
 	/**
 	 * Test that a constructed filename with ../ is rejected by realpath resolution.

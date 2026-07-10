@@ -707,7 +707,7 @@ class Plugin {
 		$this->custom_css_renderer = new Custom_CSS_Renderer();
 		$this->section_styles      = new Section_Styles();
 		$this->section_styles->init();
-		$this->icon_button_styles  = new Icon_Button_Styles();
+		$this->icon_button_styles = new Icon_Button_Styles();
 		$this->icon_button_styles->init();
 		$this->sticky_header        = new Sticky_Header();
 		$this->overlay_header       = new Overlay_Header();
@@ -800,7 +800,7 @@ class Plugin {
 		$asset_file = DESIGNSETGO_PATH . 'build/block-category-icon.asset.php';
 
 		if ( file_exists( $asset_file ) ) {
-			$asset = include $asset_file;
+			$asset = include $asset_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 			wp_enqueue_script(
 				'designsetgo-block-category-icon',
@@ -844,7 +844,7 @@ class Plugin {
 		$llms_asset_file = DESIGNSETGO_PATH . 'build/llms-txt.asset.php';
 
 		if ( file_exists( $llms_asset_file ) ) {
-			$llms_asset = include $llms_asset_file;
+			$llms_asset = include $llms_asset_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 			wp_enqueue_script(
 				'dsgo-llms-txt-panel',
@@ -859,7 +859,7 @@ class Plugin {
 		$overlay_asset_file = DESIGNSETGO_PATH . 'build/overlay-header.asset.php';
 
 		if ( file_exists( $overlay_asset_file ) ) {
-			$overlay_asset = include $overlay_asset_file;
+			$overlay_asset = include $overlay_asset_file; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 			wp_enqueue_script(
 				'dsgo-overlay-header-panel',
@@ -899,10 +899,10 @@ class Plugin {
 	 * Register DesignSetGo block category.
 	 *
 	 * @param array    $categories Block categories.
-	 * @param \WP_Post $post       Current post object (unused).
+	 * @param \WP_Post $_post      Current post object (unused).
 	 * @return array Modified categories.
 	 */
-	public function register_block_category( $categories, $post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	public function register_block_category( $categories, $_post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$categories[] = array(
 			'slug'  => 'designsetgo',
 			'title' => __( 'DesignSetGo', 'designsetgo' ),
@@ -1052,10 +1052,10 @@ class Plugin {
 	 * Blocks with explicit animations or "no animation" override are unchanged.
 	 *
 	 * @param string $block_content Rendered block content.
-	 * @param array  $block         Block data including attrs.
+	 * @param array  $_block        Block data including attrs (unused).
 	 * @return string Modified block content.
 	 */
-	public function apply_default_icon_button_hover( $block_content, $block ) {
+	public function apply_default_icon_button_hover( $block_content, $_block ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress hook callback signature
 		if ( empty( $block_content ) ) {
 			return $block_content;
 		}
@@ -1112,10 +1112,10 @@ class Plugin {
 	 * admin settings > theme.json > none.
 	 *
 	 * @param string $block_content Rendered block content.
-	 * @param array  $block         Block data including attrs.
+	 * @param array  $_block        Block data including attrs (unused).
 	 * @return string Modified block content.
 	 */
-	public function apply_default_form_button_hover( $block_content, $block ) {
+	public function apply_default_form_button_hover( $block_content, $_block ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress hook callback signature
 		if ( empty( $block_content ) ) {
 			return $block_content;
 		}

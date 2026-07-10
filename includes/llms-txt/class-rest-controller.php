@@ -359,7 +359,8 @@ class REST_Controller {
 		}
 
 		// Rate limit: 30 requests per minute per IP.
-		$ip       = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? 'unknown' ) );
+		$raw_ip   = sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ?? '' ) ); // phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
+		$ip       = filter_var( $raw_ip, FILTER_VALIDATE_IP ) ? $raw_ip : 'unknown';
 		$rate_key = 'dsgo_llms_rate_' . md5( $ip );
 		$count    = (int) get_transient( $rate_key );
 		if ( $count > 30 ) {

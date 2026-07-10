@@ -30,7 +30,7 @@ class SiteSources {
 			'designsetgo/site-title',
 			__( 'Site title', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $_args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$value = get_bloginfo( 'name' );
 				return '' === $value ? null : (string) $value;
 			}
@@ -41,7 +41,7 @@ class SiteSources {
 			'designsetgo/site-tagline',
 			__( 'Site tagline', 'designsetgo' ),
 			array( 'text' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $_args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$value = get_bloginfo( 'description' );
 				return '' === $value ? null : (string) $value;
 			}
@@ -52,7 +52,7 @@ class SiteSources {
 			'designsetgo/site-url',
 			__( 'Site URL', 'designsetgo' ),
 			array( 'url' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $_args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$url = home_url( '/' );
 				return $url ? (string) $url : null;
 			}
@@ -63,7 +63,7 @@ class SiteSources {
 			'designsetgo/site-logo',
 			__( 'Site logo', 'designsetgo' ),
 			array( 'image' ),
-			static function ( $args, $block, $attr ) {
+			static function ( $args, $_block, $_attr ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- required by register_block_bindings_source() callback signature
 				$logo_id = (int) get_option( 'site_logo' );
 				if ( ! $logo_id ) {
 					$logo_id = (int) get_theme_mod( 'custom_logo' );

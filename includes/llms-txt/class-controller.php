@@ -122,7 +122,7 @@ class Controller {
 		add_action( 'rest_api_init', array( $this->rest_controller, 'register_routes' ) );
 		add_action( 'admin_notices', array( $this->conflict_detector, 'maybe_show_notice' ) );
 		add_action( 'admin_init', array( $this->conflict_detector, 'handle_dismiss_action' ) );
-		add_filter( 'robots_txt', array( $this, 'add_to_robots_txt' ), 10, 2 );
+		add_filter( 'robots_txt', array( $this, 'add_to_robots_txt' ), 10, 2 ); // phpcs:ignore WordPressVIPMinimum.Hooks.RestrictedHooks.robots_txt -- llms.txt is a static file pointer; cache flush is done on llms-txt settings save
 	}
 
 	/**
@@ -182,7 +182,7 @@ class Controller {
 	 * @return string|false The redirect URL, or false to cancel the redirect.
 	 */
 	public function prevent_trailing_slash( $redirect_url, $requested_url = '' ) {
-		$is_llms     = get_query_var( 'llms_txt' ) === '1';
+		$is_llms      = get_query_var( 'llms_txt' ) === '1';
 		$is_llms_full = get_query_var( 'llms_full_txt' ) === '1';
 
 		if ( ! $is_llms && ! $is_llms_full ) {
@@ -291,9 +291,9 @@ class Controller {
 	 * Handle post save - invalidate cache and regenerate markdown file.
 	 *
 	 * @param int      $post_id Post ID.
-	 * @param \WP_Post $post    Post object.
+	 * @param \WP_Post $_post   Post object (unused).
 	 */
-	public function handle_post_save( int $post_id, \WP_Post $post ): void {
+	public function handle_post_save( int $post_id, \WP_Post $_post ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress hook callback signature
 		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
 			return;
 		}
@@ -496,9 +496,9 @@ class Controller {
 			return;
 		}
 
-		File_Manager::fs_delete( File_Manager::site_root_path() . 'llms.txt' );
-
-		delete_option( self::PHYSICAL_FILE_OPTION );
+		if ( File_Manager::fs_delete( File_Manager::site_root_path() . 'llms.txt' ) ) {
+			delete_option( self::PHYSICAL_FILE_OPTION );
+		}
 	}
 
 	/**
@@ -542,20 +542,20 @@ class Controller {
 			return;
 		}
 
-		File_Manager::fs_delete( File_Manager::site_root_path() . 'llms-full.txt' );
-
-		delete_option( self::PHYSICAL_FULL_FILE_OPTION );
+		if ( File_Manager::fs_delete( File_Manager::site_root_path() . 'llms-full.txt' ) ) {
+			delete_option( self::PHYSICAL_FULL_FILE_OPTION );
+		}
 	}
 
 	/**
 	 * Add llms.txt reference to robots.txt output.
 	 *
-	 * @param string $output  The robots.txt content.
-	 * @param bool   $public  Whether the site is public.
+	 * @param string $output    The robots.txt content.
+	 * @param bool   $is_public Whether the site is public.
 	 * @return string Modified robots.txt content.
 	 */
-	public function add_to_robots_txt( string $output, bool $public ): string {
-		if ( ! $public ) {
+	public function add_to_robots_txt( string $output, bool $is_public ): string {
+		if ( ! $is_public ) {
 			return $output;
 		}
 

@@ -95,11 +95,9 @@ class Test_Helpers extends WP_UnitTestCase {
 		// CSS math functions.
 		$this->assertEquals( 'calc(100% - 20px)', designsetgo_sanitize_css_size( 'calc(100% - 20px)' ) );
 
-		// Note: clamp/min/max with commas currently not supported by regex (would need to add comma to character class).
-		// These should return null until the sanitize function is enhanced.
-		$this->assertNull( designsetgo_sanitize_css_size( 'clamp(1rem, 2vw, 3rem)' ) );
-		$this->assertNull( designsetgo_sanitize_css_size( 'min(50%, 300px)' ) );
-		$this->assertNull( designsetgo_sanitize_css_size( 'max(100px, 10vw)' ) );
+		$this->assertEquals( 'clamp(1rem, 2vw, 3rem)', designsetgo_sanitize_css_size( 'clamp(1rem, 2vw, 3rem)' ) );
+		$this->assertEquals( 'min(50%, 300px)', designsetgo_sanitize_css_size( 'min(50%, 300px)' ) );
+		$this->assertEquals( 'max(100px, 10vw)', designsetgo_sanitize_css_size( 'max(100px, 10vw)' ) );
 	}
 
 	/**
@@ -107,19 +105,19 @@ class Test_Helpers extends WP_UnitTestCase {
 	 */
 	public function test_sanitize_css_size_invalid() {
 		// Dangerous functions should return null.
-		$this->assertNull( designsetgo_sanitize_css_size( 'expression(alert(1))' ) );
-		$this->assertNull( designsetgo_sanitize_css_size( 'url(javascript:alert(1))' ) );
-		$this->assertNull( designsetgo_sanitize_css_size( 'calc(var(--malicious))' ) );
-		$this->assertNull( designsetgo_sanitize_css_size( 'attr(data-evil)' ) );
+		$this->assertNull( @designsetgo_sanitize_css_size( 'expression(alert(1))' ) );
+		$this->assertNull( @designsetgo_sanitize_css_size( 'url(javascript:alert(1))' ) );
+		$this->assertNull( @designsetgo_sanitize_css_size( 'calc(var(--malicious))' ) );
+		$this->assertNull( @designsetgo_sanitize_css_size( 'attr(data-evil)' ) );
 
 		// Invalid formats.
-		$this->assertNull( designsetgo_sanitize_css_size( '24' ) ); // Missing unit.
-		$this->assertNull( designsetgo_sanitize_css_size( 'invalid' ) );
-		$this->assertNull( designsetgo_sanitize_css_size( '<script>alert(1)</script>' ) );
+		$this->assertNull( @designsetgo_sanitize_css_size( '24' ) ); // Missing unit.
+		$this->assertNull( @designsetgo_sanitize_css_size( 'invalid' ) );
+		$this->assertNull( @designsetgo_sanitize_css_size( '<script>alert(1)</script>' ) );
 
 		// Empty values.
-		$this->assertNull( designsetgo_sanitize_css_size( '' ) );
-		$this->assertNull( designsetgo_sanitize_css_size( null ) );
+		$this->assertNull( @designsetgo_sanitize_css_size( '' ) );
+		$this->assertNull( @designsetgo_sanitize_css_size( null ) );
 	}
 
 	/**
@@ -155,25 +153,25 @@ class Test_Helpers extends WP_UnitTestCase {
 	 */
 	public function test_sanitize_css_color_invalid() {
 		// Invalid formats.
-		$this->assertNull( designsetgo_sanitize_css_color( '#gg0000' ) ); // Invalid hex.
+		$this->assertNull( @designsetgo_sanitize_css_color( '#gg0000' ) ); // Invalid hex.
 
 		// Note: rgb(256, 0, 0) passes regex validation (doesn't check numeric ranges).
 		// This is a known limitation - the sanitizer validates format, not RGB value ranges.
 		$this->assertEquals( 'rgb(256, 0, 0)', designsetgo_sanitize_css_color( 'rgb(256, 0, 0)' ) );
 
-		$this->assertNull( designsetgo_sanitize_css_color( 'invalid-color' ) );
+		$this->assertNull( @designsetgo_sanitize_css_color( 'invalid-color' ) );
 
 		// Dangerous content.
-		$this->assertNull( designsetgo_sanitize_css_color( 'url(javascript:alert(1))' ) );
-		$this->assertNull( designsetgo_sanitize_css_color( 'expression(alert(1))' ) );
+		$this->assertNull( @designsetgo_sanitize_css_color( 'url(javascript:alert(1))' ) );
+		$this->assertNull( @designsetgo_sanitize_css_color( 'expression(alert(1))' ) );
 
 		// Custom properties from non-WP sources.
-		$this->assertNull( designsetgo_sanitize_css_color( 'var(--malicious)' ) );
-		$this->assertNull( designsetgo_sanitize_css_color( 'var(--custom-evil)' ) );
+		$this->assertNull( @designsetgo_sanitize_css_color( 'var(--malicious)' ) );
+		$this->assertNull( @designsetgo_sanitize_css_color( 'var(--custom-evil)' ) );
 
 		// Empty values.
-		$this->assertNull( designsetgo_sanitize_css_color( '' ) );
-		$this->assertNull( designsetgo_sanitize_css_color( null ) );
+		$this->assertNull( @designsetgo_sanitize_css_color( '' ) );
+		$this->assertNull( @designsetgo_sanitize_css_color( null ) );
 	}
 
 	/**

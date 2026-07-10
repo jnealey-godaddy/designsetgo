@@ -159,12 +159,12 @@ class Draft_Mode_Preview {
 
 		// Check if user has opted out via cookie.
 		if ( isset( $_COOKIE[ self::COOKIE_LIVE_MODE ] ) ) {
-			$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_LIVE_MODE ] ) );
+			$cookie_value = sanitize_text_field( wp_unslash( $_COOKIE[ self::COOKIE_LIVE_MODE ] ) ); // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- admin-only draft-mode endpoint; not subject to page caching
 			if ( ! empty( $cookie_value ) ) {
 				// Cookie stores the opt-out timestamp. If a new draft was
 				// created after the user opted out, auto-reset to preview.
-				$opt_out_time     = (int) $cookie_value;
-				$last_draft_time  = (int) get_option( self::OPTION_LAST_DRAFT_CREATED, 0 );
+				$opt_out_time    = (int) $cookie_value;
+				$last_draft_time = (int) get_option( self::OPTION_LAST_DRAFT_CREATED, 0 );
 
 				if ( 0 === $last_draft_time || $opt_out_time >= $last_draft_time ) {
 					$this->is_preview_active = false;
@@ -219,14 +219,15 @@ class Draft_Mode_Preview {
 		$posts_per_page = (int) apply_filters( 'designsetgo_preview_draft_limit', 100 );
 
 		// Find all pages that have drafts.
-		$pages_with_drafts = get_posts(
+		$pages_with_drafts = get_posts( // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- suppress_filters is false (see below)
 			array(
-				'post_type'      => 'page',
-				'post_status'    => 'publish',
+				'post_type'        => 'page',
+				'post_status'      => 'publish',
 				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Bounded by posts_per_page (default 100, filterable), fetches IDs only, and the result is cached in a transient for 10 minutes; the meta lookup runs at most once per cache window.
-				'meta_key'       => Draft_Mode::META_HAS_DRAFT,
-				'posts_per_page' => $posts_per_page,
-				'fields'         => 'ids',
+				'meta_key'         => Draft_Mode::META_HAS_DRAFT,
+				'posts_per_page'   => $posts_per_page,
+				'fields'           => 'ids',
+				'suppress_filters' => false,
 			)
 		);
 
@@ -308,11 +309,11 @@ class Draft_Mode_Preview {
 					'path'     => COOKIEPATH,
 					'domain'   => COOKIE_DOMAIN,
 					'secure'   => is_ssl(),
-					'httponly'  => true,
+					'httponly' => true,
 					'samesite' => 'Lax',
 				)
 			);
-			$_COOKIE[ self::COOKIE_LIVE_MODE ] = $now;
+			$_COOKIE[ self::COOKIE_LIVE_MODE ] = $now; // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- admin-only draft-mode endpoint; not subject to page caching
 		} else {
 			// Opt back into preview — remove cookie.
 			setcookie(
@@ -323,11 +324,11 @@ class Draft_Mode_Preview {
 					'path'     => COOKIEPATH,
 					'domain'   => COOKIE_DOMAIN,
 					'secure'   => is_ssl(),
-					'httponly'  => true,
+					'httponly' => true,
 					'samesite' => 'Lax',
 				)
 			);
-			unset( $_COOKIE[ self::COOKIE_LIVE_MODE ] );
+			unset( $_COOKIE[ self::COOKIE_LIVE_MODE ] ); // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- admin-only draft-mode endpoint; not subject to page caching
 		}
 
 		// Reset cached state.

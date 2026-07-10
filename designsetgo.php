@@ -18,6 +18,10 @@
 namespace DesignSetGo;
 
 // Exit if accessed directly.
+use DesignSetGo\LLMS_Txt\Controller;
+use DesignSetGo\LLMS_Txt\File_Manager;
+use DesignSetGo\Patterns\Loader;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -57,7 +61,7 @@ require_once DESIGNSETGO_PATH . 'includes/patterns/placeholder-images.php';
  * Initialize the plugin.
  */
 function designsetgo_init() {
-	return \DesignSetGo\Plugin::instance();
+	return Plugin::instance();
 }
 
 // Kick off the plugin.
@@ -77,10 +81,10 @@ function designsetgo_activate() {
 	// Schedule rewrite rules flush for llms.txt feature.
 	// Uses transient-based approach since rewrite rules aren't registered yet.
 	require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-controller.php';
-	\DesignSetGo\LLMS_Txt\Controller::schedule_flush_rewrite_rules();
+	Controller::schedule_flush_rewrite_rules();
 
 	// Clear cached pattern file list so new/changed patterns are picked up.
-	\DesignSetGo\Patterns\Loader::clear_cache();
+	Loader::clear_cache();
 }
 register_activation_hook( __FILE__, 'DesignSetGo\designsetgo_activate' );
 
@@ -96,14 +100,14 @@ function designsetgo_deactivate() {
 		wp_unschedule_event( $timestamp, 'designsetgo_cleanup_old_submissions' );
 	}
 
-	// Remove physical llms.txt if we wrote it.
+	// Remove physical llms.txt if we wrote it. Only clear the ownership option when
+	// the delete actually succeeds — if the filesystem is unavailable (e.g. FTP host
+	// without credentials), leave the option intact so the plugin still knows it owns
+	// the file on next activation rather than misreporting it as a third-party conflict.
 	if ( get_option( 'designsetgo_llms_txt_physical' ) ) {
-		$file_path = ABSPATH . 'llms.txt';
-		if ( file_exists( $file_path ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink -- Direct file operation required.
-			unlink( $file_path );
+		if ( File_Manager::fs_delete( File_Manager::site_root_path() . 'llms.txt' ) ) {
+			delete_option( 'designsetgo_llms_txt_physical' );
 		}
-		delete_option( 'designsetgo_llms_txt_physical' );
 	}
 }
 register_deactivation_hook( __FILE__, 'DesignSetGo\designsetgo_deactivate' );

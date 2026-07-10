@@ -77,7 +77,7 @@ class Assets {
 			return;
 		}
 
-		$asset_file = include $asset_file_path;
+		$asset_file = include $asset_file_path; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 		if ( ! is_array( $asset_file ) || ! isset( $asset_file['dependencies'] ) || ! isset( $asset_file['version'] ) ) {
 			wp_trigger_error( __METHOD__, 'DesignSetGo: Invalid editor asset file format.', E_USER_NOTICE );
@@ -218,7 +218,7 @@ class Assets {
 			return;
 		}
 
-		$frontend_asset = include $frontend_asset_path;
+		$frontend_asset = include $frontend_asset_path; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
 
 		if ( ! is_array( $frontend_asset ) || ! isset( $frontend_asset['dependencies'] ) || ! isset( $frontend_asset['version'] ) ) {
 			wp_trigger_error( __METHOD__, 'DesignSetGo: Invalid frontend asset file format.', E_USER_NOTICE );
@@ -286,13 +286,13 @@ class Assets {
 	 * Defers non-critical block CSS using media attribute technique.
 	 * Reduces render-blocking CSS by ~100-160ms per PageSpeed Insights.
 	 *
-	 * @param string $html   Link tag HTML.
-	 * @param string $handle Style handle.
-	 * @param string $href   Style URL.
-	 * @param string $media  Media attribute.
+	 * @param string $html    Link tag HTML.
+	 * @param string $handle  Style handle.
+	 * @param string $_href   Style URL (unused).
+	 * @param string $_media  Media attribute (unused).
 	 * @return string Modified link tag.
 	 */
-	public function optimize_css_loading( $html, $handle, $href, $media ) {
+	public function optimize_css_loading( $html, $handle, $_href, $_media ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- WordPress hook callback signature
 		// Only modify our block styles on frontend.
 		if ( is_admin() || strpos( $handle, 'designsetgo-' ) === false ) {
 			return $html;
@@ -390,7 +390,7 @@ class Assets {
 			$css_file = DESIGNSETGO_PATH . "build/blocks/{$block}/style-index.css";
 
 			if ( file_exists( $css_file ) && is_readable( $css_file ) ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading own plugin build asset, not user-supplied path.
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Reading own plugin build asset; path validated with file_exists/is_readable above.
 				$css = file_get_contents( $css_file );
 
 				// Minify: Remove comments and extra whitespace.

@@ -124,7 +124,7 @@ class Test_Uninstall extends WP_UnitTestCase {
 		$this->assertTrue( function_exists( 'designsetgo_uninstall_step' ), 'Helper function should exist after uninstall.php is loaded' );
 
 		// Should not throw even when callback throws.
-		designsetgo_uninstall_step(
+		@designsetgo_uninstall_step(
 			'test step',
 			function () {
 				throw new \RuntimeException( 'Simulated failure' );
