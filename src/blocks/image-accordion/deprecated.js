@@ -15,14 +15,22 @@ import { hasExplicitString } from '../../utils/has-explicit-value';
  * Strip overlay attributes whose stored value still equals the historical
  * default so migrated content inherits the scrim from the theme token
  * (--wp--custom--designsetgo--image-accordion--overlay-*) instead of a baked-in
- * value. An explicitly-customised overlay (any value other than the old default)
- * is preserved. Every other attribute — height, gap, triggerType, etc. — passes
- * through untouched, so height/gap pinning in v1 is unaffected.
+ * value. An overlay value that differs from the old default is preserved. Every
+ * other attribute — height, gap, triggerType, etc. — passes through untouched,
+ * so height/gap pinning in v1 is unaffected.
  *
  * Old defaults: overlayColor #000000, overlayOpacity 40, overlayOpacityExpanded
  * 20. These were serialized into every block's markup because block.json carried
  * them as attribute defaults; dropping the attribute here lets the current
  * save() omit the custom property so the stylesheet default can own it.
+ *
+ * NOTE the deliberate asymmetry with v1's height/gap pinning. Both cases share
+ * the same ambiguity: in the old always-baked markup an overlay value the author
+ * set explicitly to the default is byte-indistinguishable from an implicit
+ * default, exactly as with height/gap. We resolve that ambiguity oppositely on
+ * purpose — height/gap stay pinned to avoid resizing existing layouts, while the
+ * scrim is made theme-controllable, accepting that a deliberately-default value
+ * is treated as inherit. This is a design choice, not a provable inference.
  *
  * @param {Object} attributes Attributes parsed under a deprecated schema.
  * @return {Object} A new attributes object with default-valued overlay dropped.
@@ -216,11 +224,11 @@ const v1 = {
 	migrate(attributes) {
 		// Pin whatever height/gap the old markup carried (they are re-parsed from
 		// this schema's "500px"/"4px" defaults for an implicit-default block) so
-		// the accordion keeps its authored dimensions — height/gap can't tell an
-		// explicit default from an implicit one, so we never strip them. The
-		// overlay is different: v1-era markup ALWAYS baked all three overlay props
-		// from block.json defaults, so a default-valued overlay here is provably
-		// implicit and is dropped to inherit the theme token (same policy as v2).
+		// the accordion keeps its authored dimensions. Overlay props are instead
+		// stripped-to-inherit when they equal the old default. Both groups have
+		// the same explicit-vs-implicit ambiguity in the old always-baked markup;
+		// the opposite treatment is a deliberate policy split, not a provable one
+		// — see migrateOverlayDefaultsToInherit for the rationale.
 		return migrateOverlayDefaultsToInherit(attributes);
 	},
 };
