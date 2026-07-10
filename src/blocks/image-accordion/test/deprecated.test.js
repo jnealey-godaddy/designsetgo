@@ -31,8 +31,8 @@ setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
 registerBlockType(metadata.name, { ...metadata, save, deprecated });
 
-// deprecated.js exports newest-first: [v1].
-const [v1Deprecation] = deprecated;
+// deprecated.js exports newest-first: [v2, v1].
+const [v2Deprecation, v1Deprecation] = deprecated;
 
 describe('image-accordion save() - themeable height/gap', () => {
 	test('default (unset) save omits the inline height/gap custom props', () => {
@@ -174,5 +174,113 @@ describe('image-accordion deprecations - v1 themeable height/gap migration', () 
 				triggerType: 'hover',
 			})
 		).toEqual({ height: '600px', gap: '12px', triggerType: 'hover' });
+	});
+});
+
+describe('image-accordion save() - overlay gated on enableOverlay', () => {
+	test('overlay enabled (default) emits the overlay props and data-enable-overlay', () => {
+		const markup = serialize(createBlock(metadata.name));
+		expect(markup).toContain('--dsgo-image-accordion-overlay-color:');
+		expect(markup).toContain('--dsgo-image-accordion-overlay-opacity:');
+		expect(markup).toContain(
+			'--dsgo-image-accordion-overlay-opacity-expanded:'
+		);
+		expect(markup).toContain('data-enable-overlay="true"');
+	});
+
+	test('overlay disabled omits all three overlay props and data-enable-overlay', () => {
+		const markup = serialize(
+			createBlock(metadata.name, { enableOverlay: false })
+		);
+		expect(markup).not.toContain('--dsgo-image-accordion-overlay-color:');
+		expect(markup).not.toContain('--dsgo-image-accordion-overlay-opacity:');
+		expect(markup).not.toContain(
+			'--dsgo-image-accordion-overlay-opacity-expanded:'
+		);
+		expect(markup).not.toContain('data-enable-overlay');
+		// Non-overlay custom props are still present.
+		expect(markup).toContain('--dsgo-image-accordion-expanded-ratio:');
+		expect(markup).toContain('data-trigger-type="hover"');
+	});
+
+	test('overlay disabled ignores custom overlay opacity/color attribute values', () => {
+		// Even with non-default overlay values set, disabling the overlay must
+		// leave no overlay trace in the markup — the whole point of the fix.
+		// Inspect the rendered HTML only — the attribute values still live in the
+		// block comment (that is correct; they persist so re-enabling restores
+		// them), they just must not surface in the markup.
+		const html = getBlockContent(
+			createBlock(metadata.name, {
+				enableOverlay: false,
+				overlayOpacity: 60,
+				overlayOpacityExpanded: 35,
+				overlayColor: '#123456',
+			})
+		);
+		expect(html).not.toContain('--dsgo-image-accordion-overlay');
+		expect(html).not.toContain('#123456');
+		expect(html).not.toContain('data-enable-overlay');
+	});
+});
+
+describe('image-accordion deprecations - v2 overlay-gating migration', () => {
+	test('an overlay-ON block matches the current save() directly (no deprecation)', () => {
+		// The enabled output is byte-identical to v2, so overlay-on content is
+		// valid without any migration. No toHaveInformed() assertion here means a
+		// spurious deprecation pass would trip the jest-console matcher.
+		const markup = serialize(createBlock(metadata.name));
+		const [block] = parse(markup);
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.enableOverlay).toBe(true);
+		expect(getBlockContent(block)).toContain('data-enable-overlay="true"');
+	});
+
+	test('old overlay-OFF markup (overlay props + data-enable-overlay="false") migrates silently and re-serializes lean', () => {
+		// Reconstruct the v2 overlay-off format: the overlay props and
+		// data-enable-overlay were baked in even with the overlay disabled.
+		// Build it from a current disabled block, then splice the stale bits back.
+		const disabled = serialize(
+			createBlock(metadata.name, { enableOverlay: false })
+		);
+		const OLD_OFF = disabled
+			.replace(
+				'--dsgo-image-accordion-transition:0.5s',
+				'--dsgo-image-accordion-transition:0.5s;--dsgo-image-accordion-overlay-color:#000000;--dsgo-image-accordion-overlay-opacity:0.4;--dsgo-image-accordion-overlay-opacity-expanded:0.2'
+			)
+			.replace(
+				'data-default-expanded="0"',
+				'data-default-expanded="0" data-enable-overlay="false"'
+			);
+
+		// Sanity: the stale markup really carries the bits the current save drops.
+		expect(OLD_OFF).toContain(
+			'--dsgo-image-accordion-overlay-color:#000000'
+		);
+		expect(OLD_OFF).toContain('data-enable-overlay="false"');
+
+		const [block] = parse(OLD_OFF);
+
+		expect(console).toHaveInformed();
+		expect(block.name).toBe('designsetgo/image-accordion');
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.enableOverlay).toBe(false);
+		// Re-serialized markup drops the dead overlay props and the marker.
+		const migrated = getBlockContent(block);
+		expect(migrated).not.toContain('--dsgo-image-accordion-overlay');
+		expect(migrated).not.toContain('data-enable-overlay');
+	});
+
+	test('v2 migrate is a passthrough', () => {
+		expect(
+			v2Deprecation.migrate({
+				enableOverlay: false,
+				overlayOpacity: 40,
+				triggerType: 'hover',
+			})
+		).toEqual({
+			enableOverlay: false,
+			overlayOpacity: 40,
+			triggerType: 'hover',
+		});
 	});
 });

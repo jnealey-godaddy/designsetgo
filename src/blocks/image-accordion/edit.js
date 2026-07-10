@@ -110,6 +110,22 @@ export default function ImageAccordionEdit({
 	const hasExplicitHeight = hasExplicitString(height);
 	const hasExplicitGap = hasExplicitString(gap);
 
+	// Overlay custom properties are emitted only when the overlay is enabled
+	// (parity with save.js) so the editor preview matches the frontend: with the
+	// overlay off the items skip `--has-overlay` and these values go unused.
+	const overlayStyles = enableOverlay
+		? {
+				'--dsgo-image-accordion-overlay-color':
+					convertColorToCSSVar(overlayColor),
+				'--dsgo-image-accordion-overlay-opacity': String(
+					overlayOpacity / 100
+				), // Unitless
+				'--dsgo-image-accordion-overlay-opacity-expanded': String(
+					overlayOpacityExpanded / 100
+				), // Unitless
+			}
+		: {};
+
 	// Apply settings as CSS custom properties for consistent styling
 	// Note: Unitless values must be strings to prevent React from adding 'px'
 	const customStyles = {
@@ -119,12 +135,7 @@ export default function ImageAccordionEdit({
 		...(hasExplicitGap && { '--dsgo-image-accordion-gap': gap }),
 		'--dsgo-image-accordion-expanded-ratio': String(expandedRatio), // Unitless
 		'--dsgo-image-accordion-transition': transitionDuration,
-		'--dsgo-image-accordion-overlay-color':
-			convertColorToCSSVar(overlayColor),
-		'--dsgo-image-accordion-overlay-opacity': String(overlayOpacity / 100), // Unitless
-		'--dsgo-image-accordion-overlay-opacity-expanded': String(
-			overlayOpacityExpanded / 100
-		), // Unitless
+		...overlayStyles,
 	};
 
 	// Block wrapper props

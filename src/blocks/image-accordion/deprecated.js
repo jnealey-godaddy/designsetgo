@@ -193,4 +193,148 @@ const v1 = {
 	},
 };
 
-export default [v1];
+/**
+ * Version 2: Before overlay output was gated on `enableOverlay`
+ *
+ * This format (post height/gap refactor) always baked the three overlay custom
+ * properties (`--dsgo-image-accordion-overlay-color` / `-opacity` /
+ * `-opacity-expanded`) and a `data-enable-overlay` marker onto the root element,
+ * even when the overlay was disabled. Because the item's overlay pseudo-element
+ * is gated on the `--has-overlay` class (driven by the enableOverlay context,
+ * not this markup), those properties were dead weight whenever the overlay was
+ * off — and, more importantly, an author could not remove them from a pattern's
+ * HTML because save() regenerated them from the (still-set) attributes.
+ *
+ * The current save() emits the overlay properties and `data-enable-overlay` ONLY
+ * when `enableOverlay` is true. The enabled output is byte-identical to this
+ * version, so overlay-on blocks (the overwhelming majority, since enableOverlay
+ * defaults true) match the current save() directly and never reach this
+ * deprecation. Only overlay-off blocks — which this version serialized WITH the
+ * now-omitted overlay properties and `data-enable-overlay="false"` — mismatch the
+ * current save() and are routed here so they re-serialize into the leaner format.
+ *
+ * `migrate` is a passthrough: the attributes already describe the block exactly
+ * (enableOverlay:false plus whatever overlay values were set), so no attribute
+ * change is needed — only a re-save into the current markup. There is no
+ * `isEligible`: the enabled output is byte-identical to the current save(), so
+ * a valid overlay-on block can't be told apart from current markup and must not
+ * be force-migrated; only the genuinely stale overlay-off markup reaches here.
+ */
+const v2 = {
+	supports: sharedSupports,
+
+	attributes: {
+		height: {
+			type: 'string',
+		},
+		gap: {
+			type: 'string',
+		},
+		expandedRatio: {
+			type: 'number',
+			default: 3,
+		},
+		transitionDuration: {
+			type: 'string',
+			default: '0.5s',
+		},
+		enableOverlay: {
+			type: 'boolean',
+			default: true,
+		},
+		overlayColor: {
+			type: 'string',
+			default: '#000000',
+		},
+		overlayOpacity: {
+			type: 'number',
+			default: 40,
+		},
+		overlayOpacityExpanded: {
+			type: 'number',
+			default: 20,
+		},
+		triggerType: {
+			type: 'string',
+			default: 'hover',
+			enum: ['hover', 'click'],
+		},
+		defaultExpanded: {
+			type: 'number',
+			default: 0,
+		},
+	},
+
+	save({ attributes }) {
+		const {
+			height,
+			gap,
+			expandedRatio,
+			transitionDuration,
+			enableOverlay,
+			overlayColor,
+			overlayOpacity,
+			overlayOpacityExpanded,
+			triggerType,
+			defaultExpanded,
+		} = attributes;
+
+		// Same classes as edit.js - MUST MATCH EXACTLY
+		const accordionClasses = classnames('dsgo-image-accordion', {
+			'dsgo-image-accordion--hover': triggerType === 'hover',
+			'dsgo-image-accordion--click': triggerType === 'click',
+		});
+
+		// Height/gap already omit-when-unset (post-refactor). The distinguishing
+		// trait of this version is that the overlay props and data-enable-overlay
+		// were ALWAYS written, regardless of enableOverlay.
+		const hasExplicitHeight =
+			typeof height === 'string' && height.trim() !== '';
+		const hasExplicitGap = typeof gap === 'string' && gap.trim() !== '';
+
+		const customStyles = {
+			...(hasExplicitHeight && {
+				'--dsgo-image-accordion-height': height,
+			}),
+			...(hasExplicitGap && { '--dsgo-image-accordion-gap': gap }),
+			'--dsgo-image-accordion-expanded-ratio': String(expandedRatio), // Unitless
+			'--dsgo-image-accordion-transition': transitionDuration,
+			'--dsgo-image-accordion-overlay-color':
+				convertColorToCSSVar(overlayColor),
+			'--dsgo-image-accordion-overlay-opacity': String(
+				overlayOpacity / 100
+			), // Unitless
+			'--dsgo-image-accordion-overlay-opacity-expanded': String(
+				overlayOpacityExpanded / 100
+			), // Unitless
+		};
+
+		const blockProps = useBlockProps.save({
+			className: accordionClasses,
+			style: customStyles,
+			'data-trigger-type': triggerType,
+			'data-default-expanded': defaultExpanded,
+			'data-enable-overlay': enableOverlay,
+		});
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-image-accordion__items',
+		});
+
+		return (
+			<div {...blockProps}>
+				<div {...innerBlocksProps} />
+			</div>
+		);
+	},
+
+	migrate(attributes) {
+		// Passthrough: attributes already describe the block; only the markup
+		// changes (overlay props/data-enable-overlay dropped when disabled).
+		return attributes;
+	},
+};
+
+// Newest-first: v2 (overlay always emitted) is newer than v1 (height/gap
+// always inline). WordPress tries them in this order after the current save().
+export default [v2, v1];

@@ -31,6 +31,28 @@ export default function ImageAccordionSave({ attributes }) {
 	const hasExplicitHeight = hasExplicitString(height);
 	const hasExplicitGap = hasExplicitString(gap);
 
+	// The overlay custom properties (color/opacity/opacity-expanded) and the
+	// data-enable-overlay marker are emitted ONLY when the overlay is enabled.
+	// Nothing consumes them when the overlay is off — the item skips the
+	// `--has-overlay` class (driven by the enableOverlay context, not this
+	// markup), so its overlay pseudo-element never renders and these values are
+	// dead weight. Omitting them keeps the saved markup honest (overlay off →
+	// no overlay styling in the HTML) and lets patterns/authors turn the overlay
+	// off and have it actually gone instead of save() regenerating it from the
+	// attribute defaults. MUST MATCH edit.js.
+	const overlayStyles = enableOverlay
+		? {
+				'--dsgo-image-accordion-overlay-color':
+					convertColorToCSSVar(overlayColor),
+				'--dsgo-image-accordion-overlay-opacity': String(
+					overlayOpacity / 100
+				), // Unitless
+				'--dsgo-image-accordion-overlay-opacity-expanded': String(
+					overlayOpacityExpanded / 100
+				), // Unitless
+			}
+		: {};
+
 	// Apply settings as CSS custom properties - MUST MATCH edit.js
 	// Note: Unitless values must be strings to prevent React from adding 'px'
 	const customStyles = {
@@ -40,12 +62,7 @@ export default function ImageAccordionSave({ attributes }) {
 		...(hasExplicitGap && { '--dsgo-image-accordion-gap': gap }),
 		'--dsgo-image-accordion-expanded-ratio': String(expandedRatio), // Unitless
 		'--dsgo-image-accordion-transition': transitionDuration,
-		'--dsgo-image-accordion-overlay-color':
-			convertColorToCSSVar(overlayColor),
-		'--dsgo-image-accordion-overlay-opacity': String(overlayOpacity / 100), // Unitless
-		'--dsgo-image-accordion-overlay-opacity-expanded': String(
-			overlayOpacityExpanded / 100
-		), // Unitless
+		...overlayStyles,
 	};
 
 	// Use .save() variant for save function
@@ -54,7 +71,10 @@ export default function ImageAccordionSave({ attributes }) {
 		style: customStyles,
 		'data-trigger-type': triggerType,
 		'data-default-expanded': defaultExpanded,
-		'data-enable-overlay': enableOverlay,
+		// Emit the boolean marker only when the overlay is on so the enabled
+		// output stays byte-identical to prior versions (data-enable-overlay="true")
+		// and a disabled overlay leaves no trace in the markup.
+		...(enableOverlay && { 'data-enable-overlay': enableOverlay }),
 	});
 
 	const innerBlocksProps = useInnerBlocksProps.save({
