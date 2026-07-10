@@ -17,13 +17,35 @@
 	background-position: center;
 	background-repeat: no-repeat !important;
 
-	// Overlay (pseudo-element) - same as frontend
+	// Overlay (pseudo-element) - MUST MATCH the four-layer cascade in style.scss.
+	// Solid #000 fallback (not rgba) so the separate opacity var is not
+	// double-applied; short → parent → theme token → literal, same as frontend.
+	// (Previously drifted to `rgba(0,0,0,0.4)` + `0.4`; harmless only while the
+	// editor unconditionally set the short vars — which it no longer does.)
 	&--has-overlay::before {
 		content: '';
 		position: absolute;
 		inset: 0;
-		background-color: var(--dsgo-overlay-color, rgba(0, 0, 0, 0.4));
-		opacity: var(--dsgo-overlay-opacity, 0.4);
+		background-color: var(
+			--dsgo-overlay-color,
+			var(
+				--dsgo-image-accordion-overlay-color,
+				var(
+					--wp--custom--designsetgo--image-accordion--overlay-color,
+					#000
+				)
+			)
+		);
+		opacity: var(
+			--dsgo-overlay-opacity,
+			var(
+				--dsgo-image-accordion-overlay-opacity,
+				var(
+					--wp--custom--designsetgo--image-accordion--overlay-opacity,
+					0.4
+				)
+			)
+		);
 		pointer-events: none;
 		z-index: 1;
 	}

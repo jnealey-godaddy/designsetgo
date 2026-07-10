@@ -25,8 +25,8 @@ return array(
 <!-- /wp:designsetgo/section -->
 
 <!-- wp:designsetgo/image-accordion {"gap":"8px","overlayOpacity":30,"overlayOpacityExpanded":10} -->
-<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--hover" style="--dsgo-image-accordion-height:500px;--dsgo-image-accordion-gap:8px;--dsgo-image-accordion-expanded-ratio:3;--dsgo-image-accordion-transition:0.5s;--dsgo-image-accordion-overlay-color:#000000;--dsgo-image-accordion-overlay-opacity:0.3;--dsgo-image-accordion-overlay-opacity-expanded:0.1" data-trigger-type="hover" data-default-expanded="0" data-enable-overlay="true"><div class="dsgo-image-accordion__items"><!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-1","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-portrait}}"}}}} -->
-<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-1" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
+<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--hover" style="--dsgo-image-accordion-gap:8px;--dsgo-image-accordion-expanded-ratio:3;--dsgo-image-accordion-transition:0.5s;--dsgo-image-accordion-overlay-opacity:0.3;--dsgo-image-accordion-overlay-opacity-expanded:0.1" data-trigger-type="hover" data-default-expanded="0" data-enable-overlay="true"><div class="dsgo-image-accordion__items"><!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-1","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-portrait}}"}}}} -->
+<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-1" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size">Dashboard</h3>
 <!-- /wp:heading -->
 
@@ -36,7 +36,7 @@ return array(
 <!-- /wp:designsetgo/image-accordion-item -->
 
 <!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-2","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-portrait}}"}}}} -->
-<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-2" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
+<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-2" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size">Reports</h3>
 <!-- /wp:heading -->
 
@@ -46,7 +46,7 @@ return array(
 <!-- /wp:designsetgo/image-accordion-item -->
 
 <!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-3","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-portrait}}"}}}} -->
-<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-3" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
+<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-3" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size">Team Hub</h3>
 <!-- /wp:heading -->
 
@@ -56,7 +56,7 @@ return array(
 <!-- /wp:designsetgo/image-accordion-item -->
 
 <!-- wp:designsetgo/image-accordion-item {"uniqueId":"acc-4","className":"dsgo-image-accordion__item","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-portrait}}"}}}} -->
-<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-4" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
+<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion__item" style="--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="acc-4" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"level":3,"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size">Integrations</h3>
 <!-- /wp:heading -->
 

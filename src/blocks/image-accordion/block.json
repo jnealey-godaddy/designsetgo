@@ -36,16 +36,13 @@
 			"default": true
 		},
 		"overlayColor": {
-			"type": "string",
-			"default": "#000000"
+			"type": "string"
 		},
 		"overlayOpacity": {
-			"type": "number",
-			"default": 40
+			"type": "number"
 		},
 		"overlayOpacityExpanded": {
-			"type": "number",
-			"default": 20
+			"type": "number"
 		},
 		"triggerType": {
 			"type": "string",

@@ -25,8 +25,8 @@ return array(
 <!-- /wp:designsetgo/section -->
 
 <!-- wp:designsetgo/image-accordion {"gap":"8px","overlayOpacity":60,"triggerType":"click"} -->
-<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--click" style="--dsgo-image-accordion-height:500px;--dsgo-image-accordion-gap:8px;--dsgo-image-accordion-expanded-ratio:3;--dsgo-image-accordion-transition:0.5s;--dsgo-image-accordion-overlay-color:#000000;--dsgo-image-accordion-overlay-opacity:0.6;--dsgo-image-accordion-overlay-opacity-expanded:0.2" data-trigger-type="click" data-default-expanded="0" data-enable-overlay="true"><div class="dsgo-image-accordion__items"><!-- wp:designsetgo/image-accordion-item {"uniqueId":"image-accordion-item-c1urrq0fn","className":"dsgo-image-accordion-item\u002d\u002dexpanded","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-landscape}}","source":"file","title":"Robert Chen"},"backgroundSize":"cover"}}} -->
-<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion-item--expanded" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="image-accordion-item-c1urrq0fn" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"textAlign":"center","placeholder":"Add title…"} -->
+<div class="wp-block-designsetgo-image-accordion dsgo-image-accordion dsgo-image-accordion--click" style="--dsgo-image-accordion-gap:8px;--dsgo-image-accordion-expanded-ratio:3;--dsgo-image-accordion-transition:0.5s;--dsgo-image-accordion-overlay-opacity:0.6" data-trigger-type="click" data-default-expanded="0" data-enable-overlay="true"><div class="dsgo-image-accordion__items"><!-- wp:designsetgo/image-accordion-item {"uniqueId":"image-accordion-item-c1urrq0fn","className":"dsgo-image-accordion-item\u002d\u002dexpanded","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-landscape}}","source":"file","title":"Robert Chen"},"backgroundSize":"cover"}}} -->
+<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay dsgo-image-accordion-item--expanded" style="--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="image-accordion-item-c1urrq0fn" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"textAlign":"center","placeholder":"Add title…"} -->
 <h2 class="wp-block-heading has-text-align-center">Robert Chen</h2>
 <!-- /wp:heading -->
 
@@ -36,7 +36,7 @@ return array(
 <!-- /wp:designsetgo/image-accordion-item -->
 
 <!-- wp:designsetgo/image-accordion-item {"uniqueId":"image-accordion-item-tok6k95ps","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-landscape}}","source":"file","title":"Emma Williams"},"backgroundSize":"cover"}}} -->
-<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="image-accordion-item-tok6k95ps" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"textAlign":"center","placeholder":"Add title…"} -->
+<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay" style="--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="image-accordion-item-tok6k95ps" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"textAlign":"center","placeholder":"Add title…"} -->
 <h2 class="wp-block-heading has-text-align-center">Emma Williams</h2>
 <!-- /wp:heading -->
 
@@ -46,7 +46,7 @@ return array(
 <!-- /wp:designsetgo/image-accordion-item -->
 
 <!-- wp:designsetgo/image-accordion-item {"uniqueId":"image-accordion-item-lz3rkm6iz","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-landscape}}","source":"file","title":"David Kim"},"backgroundSize":"cover"}}} -->
-<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="image-accordion-item-lz3rkm6iz" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"textAlign":"center","placeholder":"Add title…"} -->
+<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay" style="--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="image-accordion-item-lz3rkm6iz" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"textAlign":"center","placeholder":"Add title…"} -->
 <h2 class="wp-block-heading has-text-align-center">David Kim</h2>
 <!-- /wp:heading -->
 
@@ -56,7 +56,7 @@ return array(
 <!-- /wp:designsetgo/image-accordion-item -->
 
 <!-- wp:designsetgo/image-accordion-item {"uniqueId":"image-accordion-item-rtuqb3jhx","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-landscape}}","source":"file","title":"Sophie Brown"},"backgroundSize":"cover"}}} -->
-<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="image-accordion-item-rtuqb3jhx" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"textAlign":"center","placeholder":"Add title…"} -->
+<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay" style="--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="image-accordion-item-rtuqb3jhx" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"textAlign":"center","placeholder":"Add title…"} -->
 <h2 class="wp-block-heading has-text-align-center">Sophie Brown</h2>
 <!-- /wp:heading -->
 
@@ -66,7 +66,7 @@ return array(
 <!-- /wp:designsetgo/image-accordion-item -->
 
 <!-- wp:designsetgo/image-accordion-item {"uniqueId":"image-accordion-item-85dt4892n","style":{"background":{"backgroundImage":{"url":"{{dsgo:placeholder-landscape}}","source":"file","title":"Michael Torres"},"backgroundSize":"cover"}}} -->
-<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay" style="--dsgo-overlay-color:#000000;--dsgo-overlay-opacity:0.4;--dsgo-overlay-opacity-expanded:0.2;--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="image-accordion-item-85dt4892n" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"textAlign":"center","placeholder":"Add title…"} -->
+<div class="wp-block-designsetgo-image-accordion-item dsgo-image-accordion-item dsgo-image-accordion-item--has-overlay" style="--dsgo-vertical-alignment:center;--dsgo-horizontal-alignment:center" data-unique-id="image-accordion-item-85dt4892n" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content"><!-- wp:heading {"textAlign":"center","placeholder":"Add title…"} -->
 <h2 class="wp-block-heading has-text-align-center">Michael Torres</h2>
 <!-- /wp:heading -->
 
