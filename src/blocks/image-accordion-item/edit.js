@@ -11,7 +11,6 @@ import { useSelect } from '@wordpress/data';
 import { SelectControl, ToolbarGroup } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
 import classnames from 'classnames';
-import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 
 export default function ImageAccordionItemEdit({
 	attributes,
@@ -68,17 +67,17 @@ export default function ImageAccordionItemEdit({
 		});
 	};
 
-	// Get context from parent accordion
+	// Only the on/off state is read from context here; it toggles the
+	// `--has-overlay` class. The scrim's color/opacity are NOT re-emitted on the
+	// item — they inherit down the DOM from the parent accordion's
+	// `--dsgo-image-accordion-overlay-*` custom properties (set inline by the
+	// parent's edit.js when explicit) and fall through to the theme token /
+	// literal in style.scss. Re-defaulting them here (e.g. `|| 40`) would pin a
+	// value that outranks the theme token and desync the editor from the frontend.
 	const enableOverlay =
 		context['designsetgo/imageAccordion/enableOverlay'] !== undefined
 			? context['designsetgo/imageAccordion/enableOverlay']
 			: true;
-	const overlayColor =
-		context['designsetgo/imageAccordion/overlayColor'] || '#000000';
-	const overlayOpacity =
-		context['designsetgo/imageAccordion/overlayOpacity'] || 40;
-	const overlayOpacityExpanded =
-		context['designsetgo/imageAccordion/overlayOpacityExpanded'] || 20;
 
 	// Generate unique ID for accessibility
 	useEffect(() => {
@@ -95,22 +94,11 @@ export default function ImageAccordionItemEdit({
 		'is-expanded': isExpanded,
 	});
 
-	// Apply overlay and alignment as inline styles
-	// Note: Unitless values must be strings to prevent React from adding 'px'
-	const overlayStyles = enableOverlay
-		? {
-				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': String(overlayOpacity / 100), // Unitless
-				'--dsgo-overlay-opacity-expanded': String(
-					overlayOpacityExpanded / 100
-				), // Unitless
-			}
-		: {};
-
+	// Only alignment is written inline; the overlay scrim inherits from the
+	// parent accordion's custom properties (see the enableOverlay comment above).
 	const blockProps = useBlockProps({
 		className: itemClasses,
 		style: {
-			...overlayStyles,
 			'--dsgo-vertical-alignment': verticalAlignment,
 			'--dsgo-horizontal-alignment': horizontalAlignment,
 		},

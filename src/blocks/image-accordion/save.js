@@ -1,7 +1,10 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
-import { hasExplicitString } from '../../utils/has-explicit-value';
+import {
+	hasExplicitString,
+	hasExplicitNumber,
+} from '../../utils/has-explicit-value';
 
 export default function ImageAccordionSave({ attributes }) {
 	const {
@@ -31,6 +34,19 @@ export default function ImageAccordionSave({ attributes }) {
 	const hasExplicitHeight = hasExplicitString(height);
 	const hasExplicitGap = hasExplicitString(gap);
 
+	// Overlay color/opacity/opacity-expanded follow the same explicit-or-omit
+	// contract as height/gap: each is written inline ONLY when the author set it.
+	// Left unset the property is omitted so the item's stylesheet default owns it,
+	// resolving through the parent var → the theme token
+	// (--wp--custom--designsetgo--image-accordion--overlay-*) → the literal
+	// fallback. This lets Style Kits / patterns retheme the scrim without a
+	// baked-in magic number and keeps the scrim ENABLED. MUST MATCH edit.js.
+	const hasExplicitColor = hasExplicitString(overlayColor);
+	const hasExplicitOpacity = hasExplicitNumber(overlayOpacity);
+	const hasExplicitOpacityExpanded = hasExplicitNumber(
+		overlayOpacityExpanded
+	);
+
 	// Apply settings as CSS custom properties - MUST MATCH edit.js
 	// Note: Unitless values must be strings to prevent React from adding 'px'
 	const customStyles = {
@@ -40,12 +56,20 @@ export default function ImageAccordionSave({ attributes }) {
 		...(hasExplicitGap && { '--dsgo-image-accordion-gap': gap }),
 		'--dsgo-image-accordion-expanded-ratio': String(expandedRatio), // Unitless
 		'--dsgo-image-accordion-transition': transitionDuration,
-		'--dsgo-image-accordion-overlay-color':
-			convertColorToCSSVar(overlayColor),
-		'--dsgo-image-accordion-overlay-opacity': String(overlayOpacity / 100), // Unitless
-		'--dsgo-image-accordion-overlay-opacity-expanded': String(
-			overlayOpacityExpanded / 100
-		), // Unitless
+		...(hasExplicitColor && {
+			'--dsgo-image-accordion-overlay-color':
+				convertColorToCSSVar(overlayColor),
+		}),
+		...(hasExplicitOpacity && {
+			'--dsgo-image-accordion-overlay-opacity': String(
+				overlayOpacity / 100
+			), // Unitless
+		}),
+		...(hasExplicitOpacityExpanded && {
+			'--dsgo-image-accordion-overlay-opacity-expanded': String(
+				overlayOpacityExpanded / 100
+			), // Unitless
+		}),
 	};
 
 	// Use .save() variant for save function

@@ -24,7 +24,10 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
-import { hasExplicitString } from '../../utils/has-explicit-value';
+import {
+	hasExplicitString,
+	hasExplicitNumber,
+} from '../../utils/has-explicit-value';
 import ImageAccordionPlaceholder from './components/ImageAccordionPlaceholder';
 
 export default function ImageAccordionEdit({
@@ -110,6 +113,16 @@ export default function ImageAccordionEdit({
 	const hasExplicitHeight = hasExplicitString(height);
 	const hasExplicitGap = hasExplicitString(gap);
 
+	// Overlay props are written inline ONLY when the author set them (parity with
+	// save.js). Left unset they are omitted so the editor preview inherits the
+	// same parent-var → theme-token → literal cascade the frontend uses, rather
+	// than pinning a magic number that would outrank the theme token.
+	const hasExplicitColor = hasExplicitString(overlayColor);
+	const hasExplicitOpacity = hasExplicitNumber(overlayOpacity);
+	const hasExplicitOpacityExpanded = hasExplicitNumber(
+		overlayOpacityExpanded
+	);
+
 	// Apply settings as CSS custom properties for consistent styling
 	// Note: Unitless values must be strings to prevent React from adding 'px'
 	const customStyles = {
@@ -119,12 +132,20 @@ export default function ImageAccordionEdit({
 		...(hasExplicitGap && { '--dsgo-image-accordion-gap': gap }),
 		'--dsgo-image-accordion-expanded-ratio': String(expandedRatio), // Unitless
 		'--dsgo-image-accordion-transition': transitionDuration,
-		'--dsgo-image-accordion-overlay-color':
-			convertColorToCSSVar(overlayColor),
-		'--dsgo-image-accordion-overlay-opacity': String(overlayOpacity / 100), // Unitless
-		'--dsgo-image-accordion-overlay-opacity-expanded': String(
-			overlayOpacityExpanded / 100
-		), // Unitless
+		...(hasExplicitColor && {
+			'--dsgo-image-accordion-overlay-color':
+				convertColorToCSSVar(overlayColor),
+		}),
+		...(hasExplicitOpacity && {
+			'--dsgo-image-accordion-overlay-opacity': String(
+				overlayOpacity / 100
+			), // Unitless
+		}),
+		...(hasExplicitOpacityExpanded && {
+			'--dsgo-image-accordion-overlay-opacity-expanded': String(
+				overlayOpacityExpanded / 100
+			), // Unitless
+		}),
 	};
 
 	// Block wrapper props
@@ -173,8 +194,9 @@ export default function ImageAccordionEdit({
 							triggerType: 'hover',
 							defaultExpanded: 0,
 							enableOverlay: true,
-							overlayOpacity: 40,
-							overlayOpacityExpanded: 20,
+							overlayColor: undefined,
+							overlayOpacity: undefined,
+							overlayOpacityExpanded: undefined,
 						})
 					}
 				>
@@ -373,9 +395,9 @@ export default function ImageAccordionEdit({
 								'Overlay Opacity (Default)',
 								'designsetgo'
 							)}
-							hasValue={() => overlayOpacity !== 40}
+							hasValue={() => overlayOpacity !== undefined}
 							onDeselect={() =>
-								setAttributes({ overlayOpacity: 40 })
+								setAttributes({ overlayOpacity: undefined })
 							}
 							isShownByDefault
 						>
@@ -384,14 +406,14 @@ export default function ImageAccordionEdit({
 									'Overlay Opacity (Default)',
 									'designsetgo'
 								)}
-								value={overlayOpacity}
+								value={overlayOpacity ?? 40}
 								onChange={(value) =>
 									setAttributes({ overlayOpacity: value })
 								}
 								min={0}
 								max={100}
 								help={__(
-									'Opacity when item is not expanded',
+									'Opacity when collapsed. Reset (⋮) to inherit the theme default.',
 									'designsetgo'
 								)}
 								__next40pxDefaultSize
@@ -406,9 +428,13 @@ export default function ImageAccordionEdit({
 								'Overlay Opacity (Expanded)',
 								'designsetgo'
 							)}
-							hasValue={() => overlayOpacityExpanded !== 20}
+							hasValue={() =>
+								overlayOpacityExpanded !== undefined
+							}
 							onDeselect={() =>
-								setAttributes({ overlayOpacityExpanded: 20 })
+								setAttributes({
+									overlayOpacityExpanded: undefined,
+								})
 							}
 							isShownByDefault
 						>
@@ -417,7 +443,7 @@ export default function ImageAccordionEdit({
 									'Overlay Opacity (Expanded)',
 									'designsetgo'
 								)}
-								value={overlayOpacityExpanded}
+								value={overlayOpacityExpanded ?? 20}
 								onChange={(value) =>
 									setAttributes({
 										overlayOpacityExpanded: value,
@@ -426,7 +452,7 @@ export default function ImageAccordionEdit({
 								min={0}
 								max={100}
 								help={__(
-									'Opacity when item is expanded',
+									'Opacity when expanded. Reset (⋮) to inherit the theme default.',
 									'designsetgo'
 								)}
 								__next40pxDefaultSize

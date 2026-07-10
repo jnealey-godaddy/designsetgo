@@ -21,27 +21,53 @@
 	background-repeat: no-repeat !important;
 
 	// Overlay (pseudo-element).
-	// Color/opacity cascade from the parent accordion's
-	// `--dsgo-image-accordion-overlay-*` custom properties. The short
-	// `--dsgo-overlay-*` vars (set inline by the editor preview) win when
-	// present; otherwise the parent value applies; the solid `#000` /
-	// numeric literals are the final fallbacks. The color literal is solid
-	// (not rgba) so the separate opacity var is not double-applied.
+	// Color/opacity resolve through a four-layer cascade, highest priority first:
+	//   1. --dsgo-overlay-*                        (short vars: PHP block inserter)
+	//   2. --dsgo-image-accordion-overlay-*        (parent inline, when explicit)
+	//   3. --wp--custom--designsetgo--image-accordion--overlay-*  (theme token)
+	//   4. solid #000 / numeric literal            (shipped fallback)
+	// The color literal is solid (not rgba) so the separate opacity var is not
+	// double-applied.
 	&--has-overlay::before {
 		content: '';
 		position: absolute;
 		inset: 0;
 		background-color: var(
 			--dsgo-overlay-color,
-			var(--dsgo-image-accordion-overlay-color, #000)
+			var(
+				--dsgo-image-accordion-overlay-color,
+				var(
+					--wp--custom--designsetgo--image-accordion--overlay-color,
+					#000
+				)
+			)
 		);
 		opacity: var(
 			--dsgo-overlay-opacity,
-			var(--dsgo-image-accordion-overlay-opacity, 0.4)
+			var(
+				--dsgo-image-accordion-overlay-opacity,
+				var(
+					--wp--custom--designsetgo--image-accordion--overlay-opacity,
+					0.4
+				)
+			)
 		);
 		transition: opacity 0.3s ease;
 		pointer-events: none;
 		z-index: 1;
+	}
+
+	// Enable Overlay = off. The item still carries the `--has-overlay` class in
+	// its static save() markup because block context is unavailable at save time
+	// (see image-accordion-item/save.js), so the scrim is suppressed here, keyed
+	// off the parent accordion's `data-enable-overlay="false"` marker rather than
+	// off a class the item can't drop. Deliberately NOT wrapped in :where(): the
+	// added ancestor attribute takes this to (0,3,1) so it beats the base
+	// ::before on specificity, not on source order. Editor parity is automatic —
+	// the editor never emits `--has-overlay` when the overlay is off, because
+	// context IS available in edit.js.
+	.dsgo-image-accordion[data-enable-overlay='false'] &--has-overlay::before {
+		display: none;
 	}
 
 	// Content wrapper
@@ -99,7 +125,13 @@
 		&.dsgo-image-accordion-item--has-overlay::before {
 			opacity: var(
 				--dsgo-overlay-opacity-expanded,
-				var(--dsgo-image-accordion-overlay-opacity-expanded, 0.2)
+				var(
+					--dsgo-image-accordion-overlay-opacity-expanded,
+					var(
+						--wp--custom--designsetgo--image-accordion--overlay-opacity-expanded,
+						0.2
+					)
+				)
 			);
 		}
 
@@ -117,7 +149,13 @@
 			opacity: calc(
 				var(
 						--dsgo-overlay-opacity,
-						var(--dsgo-image-accordion-overlay-opacity, 0.4)
+						var(
+							--dsgo-image-accordion-overlay-opacity,
+							var(
+								--wp--custom--designsetgo--image-accordion--overlay-opacity,
+								0.4
+							)
+						)
 					) + 0.2
 			);
 		}
