@@ -157,6 +157,7 @@ export default function SvgPatternsPanel({
 					initialOpen={false}
 				>
 					<ToggleControl
+						__nextHasNoMarginBottom
 						label={__('Enable SVG pattern', 'designsetgo')}
 						checked={dsgoSvgPatternEnabled}
 						onChange={(value) =>
@@ -267,6 +268,8 @@ export default function SvgPatternsPanel({
 								<>
 									{/* Opacity Control */}
 									<RangeControl
+										__next40pxDefaultSize
+										__nextHasNoMarginBottom
 										label={__(
 											'Pattern Opacity',
 											'designsetgo'
@@ -284,6 +287,8 @@ export default function SvgPatternsPanel({
 
 									{/* Scale Control */}
 									<RangeControl
+										__next40pxDefaultSize
+										__nextHasNoMarginBottom
 										label={__(
 											'Pattern Scale',
 											'designsetgo'

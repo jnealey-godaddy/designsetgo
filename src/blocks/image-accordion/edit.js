@@ -18,6 +18,7 @@ import {
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect } from '@wordpress/data';
+import { useMemo } from '@wordpress/element';
 import classnames from 'classnames';
 import {
 	encodeColorValue,
@@ -53,52 +54,52 @@ export default function ImageAccordionEdit({
 
 	// Single subscription powers both the placeholder gate and the
 	// default-expanded picker so Gutenberg only tracks one subscriber for
-	// this block's inner-block list.
-	const { hasInnerBlocks, itemOptions } = useSelect(
-		(select) => {
-			const children =
-				select(blockEditorStore).getBlock(clientId)?.innerBlocks || [];
-			const options = [
-				{
-					label: __('None (no item expanded)', 'designsetgo'),
-					value: '0',
-				},
-			];
-			children.forEach((child, index) => {
-				const heading = child.innerBlocks?.find(
-					(inner) => inner.name === 'core/heading'
-				);
-				const raw = heading?.attributes?.content ?? '';
-				// DOMParser handles malformed/unterminated tags safely
-				// (unlike a naive regex).
-				const parsed = new window.DOMParser().parseFromString(
-					String(raw),
-					'text/html'
-				);
-				const text = (parsed.body.textContent || '')
-					.trim()
-					.slice(0, 40);
-				const label = text
-					? sprintf(
-							/* translators: %1$d: item position, %2$s: item title */
-							__('Item %1$d: %2$s', 'designsetgo'),
-							index + 1,
-							text
-						)
-					: sprintf(
-							/* translators: %d: item position */
-							__('Item %d', 'designsetgo'),
-							index + 1
-						);
-				options.push({ label, value: String(index + 1) });
-			});
-			return {
-				hasInnerBlocks: children.length > 0,
-				itemOptions: options,
-			};
-		},
+	// this block's inner-block list. Only the (store-memoized) innerBlocks
+	// reference is selected here — the itemOptions array is derived below
+	// via useMemo so useSelect's own return value stays referentially
+	// stable when nothing relevant changed.
+	const children = useSelect(
+		(select) =>
+			select(blockEditorStore).getBlock(clientId)?.innerBlocks || [],
 		[clientId]
 	);
+	const hasInnerBlocks = children.length > 0;
+
+	const itemOptions = useMemo(() => {
+		const options = [
+			{
+				label: __('None (no item expanded)', 'designsetgo'),
+				value: '0',
+			},
+		];
+		children.forEach((child, index) => {
+			const heading = child.innerBlocks?.find(
+				(inner) => inner.name === 'core/heading'
+			);
+			const raw = heading?.attributes?.content ?? '';
+			// DOMParser handles malformed/unterminated tags safely
+			// (unlike a naive regex).
+			const parsed = new window.DOMParser().parseFromString(
+				String(raw),
+				'text/html'
+			);
+			const text = (parsed.body.textContent || '').trim().slice(0, 40);
+			const label = text
+				? sprintf(
+						/* translators: %1$d: item position, %2$s: item title */
+						__('Item %1$d: %2$s', 'designsetgo'),
+						index + 1,
+						text
+					)
+				: sprintf(
+						/* translators: %d: item position */
+						__('Item %d', 'designsetgo'),
+						index + 1
+					);
+			options.push({ label, value: String(index + 1) });
+		});
+		return options;
+	}, [children]);
 
 	// Declaratively calculate classes based on attributes
 	const accordionClasses = classnames('dsgo-image-accordion', {
