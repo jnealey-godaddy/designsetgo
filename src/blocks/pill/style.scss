@@ -50,6 +50,18 @@
 	}
 }
 
+// Default text size. A pill is a badge, so it reads small unless the author says
+// otherwise. This lives in CSS rather than a `fontSize: "small"` attribute default
+// so save() never bakes `has-small-font-size` into the markup and the size stays
+// themeable. `:where()` drops it to zero specificity, so any explicit choice wins
+// without !important: a preset adds `has-*-font-size` to this wrapper (0,1,0), and
+// a custom size is emitted against `.dsgo-pill__content` by the fontSize support's
+// `__experimentalSelector`. The inner span has no font-size of its own, so it
+// inherits whichever of these applies.
+:where(.dsgo-pill) {
+	font-size: var(--wp--preset--font-size--small, 0.875rem);
+}
+
 .dsgo-pill__content {
 	// Inline-block so background wraps tightly around text
 	display: inline-block;
@@ -64,8 +76,8 @@
 	white-space: nowrap;
 
 	// Default styles - always applied as base, overridden by WordPress color transfers.
-	// Font size intentionally inherits from context (no forced size) so the pill is
-	// never saved with a baked `has-small-font-size` class.
+	// Font size is inherited from the wrapper (see the `:where(.dsgo-pill)` default
+	// above); declaring one here would shadow the wrapper's `has-*-font-size` class.
 	padding: 0.5em 1em;
 	background-color: var(--wp--preset--color--primary, #2563eb);
 	color: var(--wp--preset--color--base, #fff);
