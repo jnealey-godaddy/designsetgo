@@ -432,7 +432,10 @@ class Block_Inserter {
 				$flip_duration  = isset( $attributes['flipDuration'] ) ? $attributes['flipDuration'] : '0.6s';
 
 				$outer_class = 'wp-block-designsetgo-flip-card dsgo-flip-card dsgo-flip-card--' . esc_attr( $flip_trigger ) . ' dsgo-flip-card--effect-' . esc_attr( $flip_effect ) . ' dsgo-flip-card--' . esc_attr( $flip_direction );
-				$outer_style = '--dsgo-flip-duration:' . esc_attr( $flip_duration ) . ';width:100%';
+				// `width:100%` is no longer serialized — style.scss owns it (see
+				// save.js). Emitting it here would produce markup save() never
+				// generates, so the block would fail validation on first open.
+				$outer_style = '--dsgo-flip-duration:' . esc_attr( $flip_duration );
 				$data_attrs  = ' data-flip-trigger="' . esc_attr( $flip_trigger ) . '" data-flip-effect="' . esc_attr( $flip_effect ) . '" data-flip-direction="' . esc_attr( $flip_direction ) . '"';
 
 				return array(
@@ -738,7 +741,11 @@ class Block_Inserter {
 				$outer_class     = 'wp-block-designsetgo-countdown-timer dsgo-countdown-timer dsgo-countdown-timer--' . esc_attr( $layout );
 
 				$inner_html  = '<div class="dsgo-countdown-timer__units">' . $units_html . '</div>';
-				$inner_html .= '<div class="dsgo-countdown-timer__completion-message" style="display:none">' . esc_html( $completion_message ) . '</div>';
+				// No inline display:none — style.scss hides this by default (view.js
+				// reveals it by setting an inline display:block, which wins either
+				// way). save.js stopped serializing it, so emitting it here would
+				// produce markup save() never generates and fail validation.
+				$inner_html .= '<div class="dsgo-countdown-timer__completion-message">' . esc_html( $completion_message ) . '</div>';
 
 				return array(
 					'opening' => '<div class="' . esc_attr( $outer_class ) . '" style="' . esc_attr( $container_style ) . '"' . $data_attrs . '>' . $inner_html,
@@ -1018,38 +1025,37 @@ class Block_Inserter {
 				$link_url    = isset( $attributes['linkUrl'] ) ? $attributes['linkUrl'] : '';
 				$link_target = isset( $attributes['linkTarget'] ) ? $attributes['linkTarget'] : '';
 				$link_rel    = isset( $attributes['linkRel'] ) ? $attributes['linkRel'] : '';
-				$content_gap = isset( $attributes['contentGap'] ) ? intval( $attributes['contentGap'] ) : 8;
-				// These values typically come from parent block context, read from attributes if provided.
-				$icon_size     = isset( $attributes['iconSize'] ) ? intval( $attributes['iconSize'] ) : 32;
-				$icon_position = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'left';
 
-				// Calculate text alignment.
-				$text_align = 'left';
-				if ( 'top' === $icon_position ) {
-					$text_align = 'center';
-				} elseif ( 'right' === $icon_position ) {
-					$text_align = 'right';
+				// Everything below must reproduce save.js's output for an
+				// EMPTY block context, because that is the only output that
+				// exists in stored markup: WordPress does not pass block context
+				// to save(), so the parent Icon List's iconSize / iconPosition /
+				// colours resolve to their defaults there and the item inherits
+				// them from CSS at render time instead.
+				//
+				// Concretely that means: icon-left, no inline icon size (the
+				// `--inherit-size` class hands sizing to the theme token), no
+				// item gap, and the icon box's layout coming from style.scss.
+				// Reading iconSize / iconPosition off $attributes here — as this
+				// branch used to — produced markup save() never generates, so an
+				// AI-inserted item failed validation the first time it was opened.
+				$text_align     = 'left';
+				$flex_direction = 'row';
+				$item_align     = 'flex-start';
+				$item_style     = 'display:flex;flex-direction:' . $flex_direction . ';align-items:' . $item_align;
+
+				// Content gap: written inline only for an explicit author value,
+				// mirroring save.js (the attribute has no default).
+				$content_style = 'text-align:' . $text_align . ';display:flex;flex-direction:column';
+				if ( isset( $attributes['contentGap'] ) && is_numeric( $attributes['contentGap'] ) ) {
+					$content_style .= ';gap:' . intval( $attributes['contentGap'] ) . 'px';
 				}
 
-				// Item styles.
-				$flex_direction = 'top' === $icon_position ? 'column' : 'row';
-				if ( 'right' === $icon_position ) {
-					$flex_direction = 'row-reverse';
-				}
-				$item_align = 'top' === $icon_position ? 'center' : 'flex-start';
-				$item_gap   = 'top' === $icon_position ? '12px' : '16px';
-				$item_style = 'display:flex;flex-direction:' . $flex_direction . ';align-items:' . $item_align . ';gap:' . $item_gap;
+				$outer_class = 'wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left';
 
-				// Icon wrapper styles.
-				$icon_style = 'display:flex;align-items:center;justify-content:center;width:' . $icon_size . 'px;height:' . $icon_size . 'px;min-width:' . $icon_size . 'px';
-
-				// Content styles.
-				$content_style = 'text-align:' . $text_align . ';display:flex;flex-direction:column;gap:' . $content_gap . 'px';
-
-				$outer_class = 'wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-' . esc_attr( $icon_position );
-
-				// Build icon HTML.
-				$icon_html = '<div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="' . esc_attr( $icon_style ) . '" data-icon-name="' . esc_attr( $icon ) . '"></div>';
+				// No inline style on the icon box: layout lives in style.scss and
+				// size resolves from --dsgo-icon-list-size via the inherit-size class.
+				$icon_html = '<div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="' . esc_attr( $icon ) . '"></div>';
 
 				// Build element (div or link).
 				$tag         = $link_url ? 'a' : 'div';
@@ -1510,11 +1516,16 @@ class Block_Inserter {
 			case 'designsetgo/scroll-accordion':
 				$align_items = isset( $attributes['alignItems'] ) ? $attributes['alignItems'] : 'flex-start';
 
-				// Inner styles.
-				$inner_style = 'display:flex;flex-direction:column;align-items:' . esc_attr( $align_items );
+				// Must match save.js: the constant layout (`width`/`align-self`
+				// on the root, `display`/`flex-direction` on the items wrapper)
+				// lives in style.scss and is no longer serialized. Only the
+				// author-controlled alignItems is written inline. Emitting the
+				// constants here would produce markup save() never generates, so
+				// the block would fail validation on first open.
+				$inner_style = 'align-items:' . esc_attr( $align_items );
 
 				return array(
-					'opening' => '<div class="wp-block-designsetgo-scroll-accordion dsgo-scroll-accordion" style="width:100%;align-self:stretch"><div class="dsgo-scroll-accordion__items" style="' . esc_attr( $inner_style ) . '">',
+					'opening' => '<div class="wp-block-designsetgo-scroll-accordion dsgo-scroll-accordion"><div class="dsgo-scroll-accordion__items" style="' . esc_attr( $inner_style ) . '">',
 					'closing' => '</div></div>',
 				);
 
