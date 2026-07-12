@@ -15,7 +15,7 @@ import classnames from 'classnames';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
 import { HOVER_EFFECTS, SUPPORTED_BLOCKS } from './constants';
 
-// Editor-only styles (frontend styles live in src/styles/style.scss)
+// Editor-only styles (frontend styles live in src/style.scss)
 import './editor.scss';
 
 const HoverEffectsPanel = lazy(

@@ -15,5 +15,5 @@ import './attributes';
 // Import editor controls
 import './editor';
 
-// Note: style.scss is imported in src/styles/style.scss for frontend
+// Note: style.scss is imported in src/style.scss for frontend
 // Note: frontend.js is imported in src/frontend.js

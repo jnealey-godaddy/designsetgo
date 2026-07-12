@@ -13,4 +13,4 @@ import './attributes';
 // Import editor controls
 import './editor';
 
-// Note: animations.scss is imported in src/styles/style.scss for frontend only
+// Note: animations.scss is imported in src/style.scss for frontend only

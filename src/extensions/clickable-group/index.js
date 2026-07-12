@@ -14,7 +14,7 @@ import { lazy, Suspense } from '@wordpress/element';
 import classnames from 'classnames';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
 
-// Import editor styles only (frontend styles imported in src/styles/style.scss)
+// Import editor styles only (frontend styles imported in src/style.scss)
 import './editor.scss';
 
 // Note: frontend.js is imported in src/frontend.js for frontend-only loading

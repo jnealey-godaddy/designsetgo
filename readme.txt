@@ -117,7 +117,11 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 * **Fix:** Section-style customizations made in your Style Kit (like a custom border or corner radius) now preview live in the editor, matching what already appeared on the published page.
 * **Fix:** Sections using a Style Kit overlay variation now actually show the overlay.
 * **Fix:** Scroll Accordion no longer shows a stray colored bar down the left edge of items in the editor.
-* **Note:** Existing Icon, Divider, Map, Pill, and form blocks migrate automatically — no action required.
+* **Fix:** Pill, Icon, Icon Button, and Modal Trigger no longer escape your page's content column when positioned left, right, or center — they previously could align to the edge of the outer container instead of your theme's content width.
+* **Change:** Icon Button and Modal Trigger now stack instead of sitting side-by-side by default. Fixing the positioning bug above required making them block-level elements, so two placed one after another now each take their own line; use a Row block to place them side-by-side intentionally.
+* **Change:** Icon Button and Modal Trigger's "stretch full width" option is now a dedicated Full Width setting instead of reusing WordPress's Full Width alignment. Inside a Section — where nearly all usage lives — the rendered result is unchanged.
+* **Change:** Icon background and border colors now hug the icon itself instead of spanning the full content column.
+* **Note:** Existing Icon, Divider, Map, Pill, Icon Button, Modal Trigger, and form blocks migrate automatically — no action required.
 
 = 2.3.0 - 2026-07-01 =
 
@@ -153,6 +157,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.4.0 =
+Pill, Icon, Icon Button, and Modal Trigger now stay inside your page's content column when positioned (previously they could escape it). Adjacent Icon Buttons/Modal Triggers now stack instead of sitting side-by-side, and their "stretch full width" option is a new Full Width setting rather than WordPress's Full Width alignment (identical result inside a Section). Existing content migrates automatically.
 
 = 2.2.0 =
 Responsive Column Min Width for Grid and Icon List, Scrolling Gallery image-fit control, automatic migration of legacy block markup (no more "Attempt Recovery"), form-border and max-width alignment fixes, PHP 7.4 support, and a Plugin Check + security pass.

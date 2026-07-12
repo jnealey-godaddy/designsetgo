@@ -178,9 +178,11 @@ export default [v1];
 - Removed attribute: `Object.prototype.hasOwnProperty.call(attributes, 'removedAttr')`
 - Combined: use `&&` / `||` to narrow matches when multiple versions exist
 
+**A deprecation's `supports` block must declare the full support set that version actually had.** If it omits a group, WordPress strips those attributes (`backgroundColor`, `textColor`, `gradient`, `borderColor`, `fontSize`, `style`, …) **before `migrate()` runs** — silently and unrecoverably, with no warning. The specific trap that bit us: typography supports must use the `__experimental` keys (`__experimentalFontFamily`, `__experimentalFontWeight`, `__experimentalLetterSpacing`) — the un-prefixed names silently fail `hasBlockSupport()`, so the support looks declared but isn't. And **deprecations do not cascade**: exactly one entry runs for a given stored block, so every existing `migrate()` — not just the newest one — must land on the *current* attribute schema, or older content silently loses whatever the newest migrate() alone would have added.
+
 ### Style Imports (MANDATORY)
 
-Add to `src/styles/style.scss` (frontend) AND `src/styles/editor.scss` (editor)
+Add to `src/style.scss` (frontend — the real webpack `style-index` entry, see `webpack.config.js`) AND `src/styles/editor.scss` (editor). `src/styles/style.scss` looks like the frontend entry but is dead code — nothing imports it; don't add to it.
 Verify: `grep -i "class-name" build/style-index.css`
 
 ### Pre-Commit
@@ -196,7 +198,7 @@ npm run lint:php
 
 ## Common Pitfalls
 
-1. Frontend imports missing → Add to `src/styles/style.scss`
+1. Frontend imports missing → Add to `src/style.scss` (not `src/styles/style.scss` — that file is dead code)
 2. style.scss ≠ editor.scss → Edit BOTH
 3. Plain `<InnerBlocks />` → Use `useInnerBlocksProps()`
 4. Only test editor → Test frontend too
@@ -211,6 +213,20 @@ npm run lint:php
 - **External Links**: `window.open(url, '_blank'); win.opener = null`
 - **Context**: `providesContext` in parent, `usesContext` in child
 - **!important**: Only for accessibility, user expectation, or WP core override
+
+### Horizontal positioning: justification, not `align`
+
+Never use `supports.align: ["left","center","right"]` to position a block horizontally. In WordPress, `align: left|right` means *float out toward the page edge* — core's constrained layout explicitly excludes `.alignleft` / `.alignright` from the content-size cap (`> :where(:not(.alignleft):not(.alignright):not(.alignfull))` in `wp-includes/block-supports/layout.php`), so an aligned block gets `max-width: none` and escapes the content column, pinning itself to the full-width container's padding edge instead. Icon Button and Modal Trigger had it worse: their block root *was* the `<a>`/`<button>` with `display: inline-flex`, and auto margins do nothing on an inline-level box, so core's `max-width` never bound at all.
+
+Instead follow the `core/buttons` model:
+
+- The block root is a **block-level positioning wrapper** — `.dsgo-justify` plus `.dsgo-justify--{left|center|right}` from a `justification` attribute. **Never give the wrapper `width: fit-content`** — a shrink-wrapped box makes core's `max-width` cap inert and the auto margins then resolve against the full-width container. That was the original bug.
+- The **visible element sits inside** and shrink-wraps.
+- All *visual* supports (color, border, typography, shadow, padding) must be routed to that inner element, never left on the wrapper: `__experimentalSkipSerialization` plus the `__experimentalUse*Props` / `__experimentalGet*ClassesAndStyles` helpers for static blocks, `designsetgo_route_visual_supports()` (`includes/block-support-routing.php`) for dynamic ones. A CSS "neutralizer" on the wrapper does **not** work — it ties on specificity with WordPress's own `.has-*-background-color { … !important }` rules and loses on source order, and it never fires for class-driven preset gradients at all.
+- When the block root differs from the visually-styled element, declare `selectors.root` in `block.json` (core's `core/button` does exactly this) so theme.json / Global Styles target the right element.
+- `align` keeps its real meaning: `wide` / `full` bleed only, on the wrapper.
+
+Shared primitives: `getJustificationClass()` (`src/utils/justification.js`) and `<DsgoJustificationToolbar>` (`src/components/shared/DsgoJustificationToolbar`).
 
 ## Shared Authoring Primitives (Theme 5/6)
 
