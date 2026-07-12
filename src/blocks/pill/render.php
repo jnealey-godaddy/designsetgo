@@ -62,11 +62,14 @@ if ( ! function_exists( 'designsetgo_render_pill' ) ) {
 
 		// Colour, background, border and padding paint the visible pill, not the
 		// full-column-width positioning wrapper. Margin and typography stay put.
+		// 'background' is not a separate entry: the pill has no distinct WP
+		// background-image support, so backgrounds live under 'color'
+		// (style.color.background) and 'color' already routes them.
 		return designsetgo_route_visual_supports(
 			$html,
 			$attributes,
 			'dsgo-pill__content',
-			array( 'color', 'background', 'border', 'spacing.padding' )
+			array( 'color', 'border', 'spacing.padding' )
 		);
 	}
 }

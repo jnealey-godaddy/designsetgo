@@ -349,16 +349,29 @@ const v1 = {
  * self-closing comment and there is no HTML to reproduce. Only the attribute
  * schema changed: `align: left|center|right` became `justification`, because
  * core's constrained layout excludes aligned blocks from the content-size cap.
+ *
+ * `supports` MUST declare the full support set (color / border / spacing /
+ * typography), not just `align`. WP re-runs the `blocks.registerBlockType`
+ * filters (color.js, border.js, spacing.js, typography.js, align.js) against
+ * EACH deprecation entry at registration time, and those filters add
+ * `backgroundColor` / `textColor` / `gradient` / `borderColor` / `fontSize` /
+ * `style` to `attributes` only when the matching support is present. A
+ * `supports` block that declares only `align` — as an earlier version of this
+ * entry did — silently tells WordPress the old pill had no colour, border or
+ * typography supports, so `getBlockAttributes()` strips those attributes
+ * before `migrate()` ever runs, permanently discarding stored styling. This
+ * is the same full set `staticSupports` already declares for vStatic/v1 (the
+ * dynamic pill at this point in history had identical color/border/spacing/
+ * typography config, just without a static `save()`), so it's reused here
+ * rather than duplicated. `__experimentalSkipSerialization` (added later)
+ * only affects serialization, not attribute registration, so its absence
+ * here doesn't change which attributes survive.
  */
 const vAlign = {
 	attributes: {
 		content: { type: 'string', default: '' },
 	},
-	supports: {
-		html: false,
-		align: ['left', 'center', 'right'],
-		alignWide: false,
-	},
+	supports: staticSupports,
 	isEligible(attributes) {
 		return Object.prototype.hasOwnProperty.call(attributes, 'align');
 	},
