@@ -14,6 +14,10 @@
 // icon-bearing block (see src/styles/_icon-outlined.scss).
 @use 'icon-outlined' as icon-outlined;
 
+// Shared justification primitive: content-column positioning wrapper used by
+// Pill, Icon, Icon Button, and Modal Trigger (see src/styles/_justification.scss).
+@use 'justification' as *;
+
 // Shared components
 @use '../components/shared/DsgoBlockPlaceholder/style' as dsgo-block-placeholder;
 

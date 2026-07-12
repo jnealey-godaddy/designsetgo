@@ -1,0 +1,26 @@
+/**
+ * Content-column positioning wrapper.
+ *
+ * The block root is a plain block-level box. That is the whole point: core's
+ * constrained layout gives every non-aligned direct child
+ * `max-width: var(--wp--style--global--content-size)` plus auto margins, so the
+ * wrapper lands exactly on the content column, like a paragraph. The visible
+ * element inside shrink-wraps and is positioned with justify-content.
+ *
+ * Do NOT add `width: fit-content` here — a shrink-wrapped box makes the
+ * content-size cap inert and the auto margins resolve against the full-width
+ * container instead of the column. That was the original bug.
+ */
+
+.dsgo-justify {
+	display: flex;
+	justify-content: flex-start;
+
+	&--center {
+		justify-content: center;
+	}
+
+	&--right {
+		justify-content: flex-end;
+	}
+}

@@ -12,6 +12,10 @@
 @use 'utilities' as *;
 @use 'block-variations' as *;
 
+// Shared justification primitive: content-column positioning wrapper used by
+// Pill, Icon, Icon Button, and Modal Trigger (see src/styles/_justification.scss).
+@use 'justification' as *;
+
 // Block animations extension (frontend)
 @use '../extensions/block-animations/animations' as block-animations;
 
