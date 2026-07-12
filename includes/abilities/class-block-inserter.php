@@ -1021,9 +1021,14 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/icon-list-item':
-				$icon        = isset( $attributes['icon'] ) ? $attributes['icon'] : 'star';
-				$link_url    = isset( $attributes['linkUrl'] ) ? $attributes['linkUrl'] : '';
-				$link_target = isset( $attributes['linkTarget'] ) ? $attributes['linkTarget'] : '';
+				$icon     = isset( $attributes['icon'] ) ? $attributes['icon'] : 'star';
+				$link_url = isset( $attributes['linkUrl'] ) ? $attributes['linkUrl'] : '';
+				// Same as icon-button below: block.json defaults linkTarget to
+				// `_self`, so save() always emits target alongside href. Defaulting
+				// to '' here suppressed it and linked items failed validation.
+				$link_target = isset( $attributes['linkTarget'] ) && '' !== $attributes['linkTarget']
+					? $attributes['linkTarget']
+					: '_self';
 				$link_rel    = isset( $attributes['linkRel'] ) ? $attributes['linkRel'] : '';
 
 				// Everything below must reproduce save.js's output for an
@@ -1039,14 +1044,13 @@ class Block_Inserter {
 				// Reading iconSize / iconPosition off $attributes here — as this
 				// branch used to — produced markup save() never generates, so an
 				// AI-inserted item failed validation the first time it was opened.
-				$text_align     = 'left';
-				$flex_direction = 'row';
-				$item_align     = 'flex-start';
-				$item_style     = 'display:flex;flex-direction:' . $flex_direction . ';align-items:' . $item_align;
+				// row / flex-start / left are save.js's empty-context values, not
+				// choices made here — hence the literals rather than variables.
+				$item_style = 'display:flex;flex-direction:row;align-items:flex-start';
 
 				// Content gap: written inline only for an explicit author value,
 				// mirroring save.js (the attribute has no default).
-				$content_style = 'text-align:' . $text_align . ';display:flex;flex-direction:column';
+				$content_style = 'text-align:left;display:flex;flex-direction:column';
 				if ( isset( $attributes['contentGap'] ) && is_numeric( $attributes['contentGap'] ) ) {
 					$content_style .= ';gap:' . intval( $attributes['contentGap'] ) . 'px';
 				}
@@ -1076,10 +1080,17 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/icon-button':
-				$text           = isset( $attributes['text'] ) ? $attributes['text'] : '';
-				$url            = isset( $attributes['url'] ) ? $attributes['url'] : '';
-				$link_target    = isset( $attributes['linkTarget'] ) ? $attributes['linkTarget'] : '';
-				$rel            = isset( $attributes['rel'] ) ? $attributes['rel'] : '';
+				$text = isset( $attributes['text'] ) ? $attributes['text'] : '';
+				$url  = isset( $attributes['url'] ) ? $attributes['url'] : '';
+				// `_self`, not '', is block.json's default for linkTarget — so a
+				// parsed block always has one and save() always emits
+				// target="_self" alongside href. Defaulting to '' here suppressed
+				// the attribute and every AI-inserted LINKED icon button failed
+				// validation on first open.
+				$link_target = isset( $attributes['linkTarget'] ) && '' !== $attributes['linkTarget']
+					? $attributes['linkTarget']
+					: '_self';
+				$rel         = isset( $attributes['rel'] ) ? $attributes['rel'] : '';
 				$icon           = isset( $attributes['icon'] ) ? $attributes['icon'] : 'lightbulb';
 				$icon_position  = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'start';
 				$icon_size      = isset( $attributes['iconSize'] ) ? intval( $attributes['iconSize'] ) : 20;
@@ -1088,9 +1099,18 @@ class Block_Inserter {
 				$modal_close_id = isset( $attributes['modalCloseId'] ) ? $attributes['modalCloseId'] : '';
 
 				// save.js omits data-icon-style / data-icon-stroke-width unless
-				// the author sets them, so mirror that here.
-				$icon_style_attr = isset( $attributes['iconStyle'] ) ? $attributes['iconStyle'] : '';
-				$stroke_width    = isset( $attributes['strokeWidth'] ) ? $attributes['strokeWidth'] : 1.5;
+				// the author sets them, so mirror that here. Both are validated
+				// against block.json rather than passed through: callers of this
+				// Ability are AI agents, so an out-of-enum iconStyle would emit a
+				// data-icon-style the frontend injector doesn't understand, and a
+				// non-scalar strokeWidth would stringify to "Array" (and warn).
+				$icon_style_attr = '';
+				if ( isset( $attributes['iconStyle'] ) && in_array( $attributes['iconStyle'], array( 'filled', 'outlined' ), true ) ) {
+					$icon_style_attr = $attributes['iconStyle'];
+				}
+				$stroke_width = ( isset( $attributes['strokeWidth'] ) && is_numeric( $attributes['strokeWidth'] ) )
+					? (float) $attributes['strokeWidth']
+					: 1.5;
 
 				// Read the current `justification`/`fullWidth` attributes; fall
 				// back to the legacy `align` for callers that still pass it.
