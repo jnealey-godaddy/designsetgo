@@ -6,13 +6,13 @@
  * border, spacing), not just `align`. WP re-runs the
  * `blocks.registerBlockType` filters (color.js, border.js, spacing.js,
  * align.js) against EACH deprecation entry at registration time, and those
- * filters only add `backgroundColor` / `textColor` / `gradient` /
- * `borderColor` / `style` to a deprecation's `attributes` schema when the
- * matching support is declared THERE. A `supports` block naively written as
- * only `{ align: [...] }` silently strips those attributes in
+ * filters only add `backgroundColor` / `textColor` / `borderColor` / `style`
+ * to a deprecation's `attributes` schema when the matching support is
+ * declared THERE. A `supports` block naively written as only
+ * `{ align: [...] }` silently strips those attributes in
  * `getBlockAttributes()` before `migrate()` ever runs — every styled,
- * align-positioned dynamic icon would lose its background/text color,
- * gradient, and border the next time the page was opened and saved.
+ * align-positioned dynamic icon would lose its background/text color and
+ * border the next time the page was opened and saved.
  *
  * These tests go through the real `parse()` pipeline (not a direct
  * `migrate()` call) because that is the only place this class of bug is
@@ -118,13 +118,13 @@ describe('Icon deprecation - a dynamic icon authored with align migrates silentl
 
 /**
  * The Critical bug class described in the file docblock: a styled,
- * align-positioned dynamic icon (preset background + preset gradient +
- * border colour + explicit align) must migrate with NO visual attribute
- * dropped, and `justification` set. Before the fix, `vAlign.supports` only
- * declared `align`, so backgroundColor/gradient/borderColor were silently
- * stripped by getBlockAttributes() before migrate() ran (confirmed by
- * stashing the `color`/`__experimentalBorder` groups out of vAlign.supports
- * and re-running this test — it fails with all three attributes undefined).
+ * align-positioned dynamic icon (preset background + border colour +
+ * explicit align) must migrate with NO visual attribute dropped, and
+ * `justification` set. Before the fix, `vAlign.supports` only declared
+ * `align`, so backgroundColor/borderColor were silently stripped by
+ * getBlockAttributes() before migrate() ran (confirmed by stashing the
+ * `color`/`__experimentalBorder` groups out of vAlign.supports and
+ * re-running this test — it fails with both attributes undefined).
  */
 describe('Icon deprecation - styled icon retains visual attributes through migration', () => {
 	beforeAll(() => {
@@ -140,27 +140,25 @@ describe('Icon deprecation - styled icon retains visual attributes through migra
 		unregisterBlockType(metadata.name);
 	});
 
-	it('vAlign: a styled, align-positioned dynamic icon keeps background/gradient/border', () => {
+	it('vAlign: a styled, align-positioned dynamic icon keeps background/border', () => {
 		const [block] = parse(
-			'<!-- wp:designsetgo/icon {"icon":"star","align":"right","backgroundColor":"accent-3","gradient":"purple-to-blue","borderColor":"contrast","style":{"border":{"radius":"4px"}}} /-->'
+			'<!-- wp:designsetgo/icon {"icon":"star","align":"right","backgroundColor":"accent-3","borderColor":"contrast","style":{"border":{"radius":"4px"}}} /-->'
 		);
 
 		expect(block.isValid).toBe(true);
 		expect(block.attributes.justification).toBe('right');
 		expect(block.attributes.align).toBeUndefined();
 		expect(block.attributes.backgroundColor).toBe('accent-3');
-		expect(block.attributes.gradient).toBe('purple-to-blue');
 		expect(block.attributes.borderColor).toBe('contrast');
 		expect(block.attributes.style.border.radius).toBe('4px');
 	});
 
 	it('vAlign.supports declares the full visual support set (regression guard)', () => {
 		// A `supports` object that only lists `align` is exactly the bug this
-		// guards: WP would never register backgroundColor/gradient/borderColor
-		// as attributes for this deprecation at all.
+		// guards: WP would never register backgroundColor/borderColor as
+		// attributes for this deprecation at all.
 		expect(vAlign.supports.color).toBeTruthy();
 		expect(vAlign.supports.color.background).toBe(true);
-		expect(vAlign.supports.color.gradients).toBe(true);
 		expect(vAlign.supports.__experimentalBorder).toBeTruthy();
 		expect(vAlign.supports.spacing).toBeTruthy();
 	});

@@ -87,9 +87,9 @@ function sanitizeUrl(url) {
  * supports, so `getBlockAttributes()` strips those attributes before
  * `migrate()` ever runs, permanently discarding stored styling — the exact
  * bug found and fixed on Pill's equivalent deprecation. `sharedSupports`
- * already carries color/border/spacing, so it's reused here with `gradients`
- * added to color (the current, non-deprecated block.json now supports
- * gradients too) and `align` narrowed to the pre-justification set.
+ * already carries color/border/spacing (Icon's actual historical support
+ * set — no gradients), so it's reused here as-is with only `align` narrowed
+ * to the pre-justification set.
  */
 const vAlign = {
 	attributes: {
@@ -104,10 +104,7 @@ const vAlign = {
 		ariaLabel: { type: 'string', default: '' },
 		isDecorative: { type: 'boolean', default: false },
 	},
-	supports: {
-		...sharedSupports,
-		color: { ...sharedSupports.color, gradients: true },
-	},
+	supports: sharedSupports,
 	isEligible(attributes) {
 		return ['left', 'center', 'right'].includes(attributes.align);
 	},
