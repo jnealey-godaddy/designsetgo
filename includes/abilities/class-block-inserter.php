@@ -1081,6 +1081,11 @@ class Block_Inserter {
 				$hover_anim     = isset( $attributes['hoverAnimation'] ) ? $attributes['hoverAnimation'] : 'none';
 				$modal_close_id = isset( $attributes['modalCloseId'] ) ? $attributes['modalCloseId'] : '';
 
+				// save.js omits data-icon-style / data-icon-stroke-width unless
+				// the author sets them, so mirror that here.
+				$icon_style_attr = isset( $attributes['iconStyle'] ) ? $attributes['iconStyle'] : '';
+				$stroke_width    = isset( $attributes['strokeWidth'] ) ? $attributes['strokeWidth'] : 1.5;
+
 				// Read the current `justification`/`fullWidth` attributes; fall
 				// back to the legacy `align` for callers that still pass it.
 				$justification = isset( $attributes['justification'] )
@@ -1118,11 +1123,31 @@ class Block_Inserter {
 				}
 				$button_style = implode( ';', $style_parts );
 
-				// Icon HTML.
+				// Icon HTML. Must match save.js: the icon span's layout
+				// (display/align-items/justify-content/flex-shrink) lives in
+				// style.scss, and width/height + data-icon-size are written ONLY
+				// when the caller sets an explicit numeric iconSize — otherwise
+				// the theme size token owns it. Emitting them unconditionally
+				// (as this did) produced markup save() would never generate, so
+				// the block validator flagged AI-inserted buttons as invalid.
 				$icon_html = '';
 				if ( $has_icon ) {
-					$icon_style = 'display:flex;align-items:center;justify-content:center;width:' . $icon_size . 'px;height:' . $icon_size . 'px;flex-shrink:0';
-					$icon_html  = '<span class="dsgo-icon-button__icon dsgo-lazy-icon" style="' . esc_attr( $icon_style ) . '" data-icon-name="' . esc_attr( $icon ) . '" data-icon-size="' . esc_attr( (string) $icon_size ) . '"></span>';
+					$has_explicit_size = isset( $attributes['iconSize'] ) && is_numeric( $attributes['iconSize'] );
+					$icon_attrs        = '';
+					if ( $has_explicit_size ) {
+						$icon_attrs .= ' style="' . esc_attr( 'width:' . $icon_size . 'px;height:' . $icon_size . 'px' ) . '"';
+					}
+					$icon_attrs .= ' data-icon-name="' . esc_attr( $icon ) . '"';
+					if ( $has_explicit_size ) {
+						$icon_attrs .= ' data-icon-size="' . esc_attr( (string) $icon_size ) . '"';
+					}
+					if ( $icon_style_attr ) {
+						$icon_attrs .= ' data-icon-style="' . esc_attr( $icon_style_attr ) . '"';
+					}
+					if ( 'outlined' === $icon_style_attr ) {
+						$icon_attrs .= ' data-icon-stroke-width="' . esc_attr( (string) $stroke_width ) . '"';
+					}
+					$icon_html = '<span class="dsgo-icon-button__icon dsgo-lazy-icon"' . $icon_attrs . '></span>';
 				}
 
 				// Text HTML.
