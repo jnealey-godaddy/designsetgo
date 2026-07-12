@@ -924,4 +924,58 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		}
 		delete_option( 'designsetgo_settings' );
 	}
+
+	/**
+	 * Submitted values keep their backslashes.
+	 *
+	 * update_metadata() unslashes whatever it is handed, so storing already-unslashed
+	 * field values strips a level of escaping and silently eats backslashes out of
+	 * user content (a pasted "C:\Users\me" became "C:Usersme"). Regression guard for
+	 * the wp_slash() in store_submission().
+	 */
+	public function test_store_submission_preserves_backslashes_in_field_values() {
+		$fields = array(
+			'win_path' => array(
+				'value' => 'C:\Users\me\report.txt',
+				'type'  => 'text',
+			),
+			'message'  => array(
+				'value' => 'a backslash \ and an escape \n stay put',
+				'type'  => 'textarea',
+			),
+		);
+
+		$post_id = $this->call_private_method( 'store_submission', array( 'form-slash-test', $fields ) );
+		$this->assertNotWPError( $post_id );
+
+		$stored = get_post_meta( $post_id, '_dsg_form_fields', true );
+
+		$this->assertSame( 'C:\Users\me\report.txt', $stored['win_path']['value'] );
+		$this->assertSame( 'a backslash \ and an escape \n stay put', $stored['message']['value'] );
+
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Characters that are not backslashes are unaffected by the re-slashing.
+	 *
+	 * Guards the other direction: wp_slash() must not leave literal escape characters
+	 * behind in quotes or double up anything already correct.
+	 */
+	public function test_store_submission_does_not_corrupt_quotes_or_unicode() {
+		$fields = array(
+			'name' => array(
+				'value' => 'O\'Brien "Tester" & Sons — ünïcode',
+				'type'  => 'text',
+			),
+		);
+
+		$post_id = $this->call_private_method( 'store_submission', array( 'form-quote-test', $fields ) );
+		$this->assertNotWPError( $post_id );
+
+		$stored = get_post_meta( $post_id, '_dsg_form_fields', true );
+		$this->assertSame( 'O\'Brien "Tester" & Sons — ünïcode', $stored['name']['value'] );
+
+		wp_delete_post( $post_id, true );
+	}
 }
