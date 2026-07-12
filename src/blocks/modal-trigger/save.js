@@ -1,17 +1,39 @@
 /**
  * Modal Trigger Block - Save Component
  *
+ * Renders the frontend output for the modal trigger.
+ *
+ * The block root is a plain block-level "justification wrapper" (`.dsgo-justify`)
+ * that core's constrained layout caps at the content column — align: left/right
+ * is deliberately NOT used here, since core excludes aligned blocks from that cap
+ * (see wp-includes/block-supports/layout.php). The visible button shrink-wraps
+ * inside it and is positioned via `justify-content` from the `justification`
+ * attribute. Visual supports (border/color/typography) are skip-serialized off
+ * the wrapper in block.json and re-derived here with the official block-support
+ * helpers so they land on the button, not the invisible wrapper.
+ *
  * @package
  */
 
-import { useBlockProps, RichText } from '@wordpress/block-editor';
+import {
+	useBlockProps,
+	RichText,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalGetBorderClassesAndStyles as getBorderClassesAndStyles,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalGetColorClassesAndStyles as getColorClassesAndStyles,
+	getTypographyClassesAndStyles,
+} from '@wordpress/block-editor';
+import clsx from 'clsx';
+import { getJustificationClass } from '../../utils/justification';
 
 export default function save({ attributes }) {
 	const {
 		targetModalId,
 		text,
 		buttonStyle,
-		align,
+		justification,
+		fullWidth,
 		icon,
 		iconPosition,
 		iconStyle,
@@ -19,45 +41,27 @@ export default function save({ attributes }) {
 		iconSize,
 		iconGap,
 		style,
-		backgroundColor,
-		textColor,
-		fontSize,
 	} = attributes;
 
-	// Extract WordPress color values (must match edit.js)
-	// Custom colors come from style.color.background (hex/rgb)
-	// Preset colors come from backgroundColor/textColor (slugs that need conversion)
-	const bgColor =
-		style?.color?.background ||
-		(backgroundColor && `var(--wp--preset--color--${backgroundColor})`);
-	const txtColor =
-		style?.color?.text ||
-		(textColor && `var(--wp--preset--color--${textColor})`);
+	// The wrapper is the block root: a plain block-level box that core's
+	// constrained layout caps at the content column. It carries NO visual
+	// styles (those are skip-serialized in block.json and re-applied to the
+	// button below).
+	const blockProps = useBlockProps.save({
+		className: clsx('dsgo-justify', getJustificationClass(justification)),
+	});
 
-	// Extract font size (must match edit.js)
-	// Custom font sizes come from style.typography.fontSize (px/rem/em)
-	// Preset font sizes come from fontSize (slug that needs conversion)
-	const fontSizeValue =
-		style?.typography?.fontSize ||
-		(fontSize && `var(--wp--preset--font-size--${fontSize})`);
-
-	// Extract padding (must match edit.js)
+	const border = getBorderClassesAndStyles(attributes);
+	const colors = getColorClassesAndStyles(attributes);
+	const typography = getTypographyClassesAndStyles(attributes);
 	const paddingValue = style?.spacing?.padding;
+	const hasIcon = iconPosition !== 'none' && !!icon;
 
-	// Calculate if full width based on alignment
-	const isFullWidth = align === 'full';
-
-	// Calculate button styles
 	const buttonStyles = {
-		display: isFullWidth ? 'flex' : 'inline-flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		width: isFullWidth ? '100%' : 'auto',
-		gap: iconPosition !== 'none' && icon ? iconGap : undefined,
-		flexDirection: iconPosition === 'end' ? 'row-reverse' : 'row',
-		...(bgColor && { backgroundColor: bgColor }),
-		...(txtColor && { color: txtColor }),
-		...(fontSizeValue && { fontSize: fontSizeValue }),
+		...border.style,
+		...colors.style,
+		...typography.style,
+		...(hasIcon && iconGap && { gap: iconGap }),
 		...(paddingValue?.top !== undefined && {
 			paddingTop: paddingValue.top,
 		}),
@@ -72,63 +76,58 @@ export default function save({ attributes }) {
 		}),
 	};
 
+	const buttonClasses = clsx(
+		'dsgo-modal-trigger',
+		`dsgo-modal-trigger--${buttonStyle}`,
+		'wp-block-button',
+		'wp-block-button__link',
+		'wp-element-button',
+		border.className,
+		colors.className,
+		typography.className,
+		fullWidth && 'dsgo-modal-trigger--full-width',
+		iconPosition === 'end' && 'dsgo-modal-trigger--icon-end'
+	);
+
 	// Size is only written inline when the author sets an explicit iconSize;
 	// otherwise it is omitted so the theme default token
 	// (--wp--custom--designsetgo--modal-trigger--default-size, via style.scss)
 	// applies.
 	const hasExplicitSize = typeof iconSize === 'number';
-	const iconWrapperStyles = {
-		...(hasExplicitSize && {
-			width: `${iconSize}px`,
-			height: `${iconSize}px`,
-		}),
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		flexShrink: 0,
-	};
-
-	// wp-block-button and wp-element-button enable theme.json button styles
-	// wp-block-button__link ensures theme compatibility
-	// WordPress automatically adds alignment classes (alignleft, aligncenter, alignright, alignfull)
-	const blockProps = useBlockProps.save({
-		className: `dsgo-modal-trigger dsgo-modal-trigger--${buttonStyle} wp-block-button wp-block-button__link wp-element-button`,
-		style: buttonStyles,
-		'data-dsgo-modal-trigger': targetModalId,
-		type: 'button',
-	});
+	const iconSpan = hasIcon && (
+		<span
+			className="dsgo-modal-trigger__icon dsgo-lazy-icon"
+			style={{
+				...(hasExplicitSize && {
+					width: `${iconSize}px`,
+					height: `${iconSize}px`,
+				}),
+			}}
+			data-icon-name={icon}
+			// Omit when unset so the injector inherits the theme default
+			// (settings.custom.designsetgo.icon.defaultStyle).
+			data-icon-style={iconStyle || undefined}
+			data-icon-stroke-width={
+				iconStyle === 'outlined' ? strokeWidth : undefined
+			}
+		/>
+	);
 
 	return (
-		<button {...blockProps}>
-			{icon && iconPosition === 'start' && (
-				<span
-					className="dsgo-modal-trigger__icon dsgo-lazy-icon"
-					style={iconWrapperStyles}
-					data-icon-name={icon}
-					// Omit when unset so the injector inherits the theme default
-					// (settings.custom.designsetgo.icon.defaultStyle).
-					data-icon-style={iconStyle || undefined}
-					data-icon-stroke-width={
-						iconStyle === 'outlined' ? strokeWidth : undefined
-					}
+		<div {...blockProps}>
+			<button
+				className={buttonClasses}
+				style={buttonStyles}
+				type="button"
+				data-dsgo-modal-trigger={targetModalId}
+			>
+				{iconSpan}
+				<RichText.Content
+					tagName="span"
+					value={text}
+					className="dsgo-modal-trigger__text"
 				/>
-			)}
-			<RichText.Content
-				tagName="span"
-				value={text}
-				className="dsgo-modal-trigger__text"
-			/>
-			{icon && iconPosition === 'end' && (
-				<span
-					className="dsgo-modal-trigger__icon dsgo-lazy-icon"
-					style={iconWrapperStyles}
-					data-icon-name={icon}
-					data-icon-style={iconStyle || undefined}
-					data-icon-stroke-width={
-						iconStyle === 'outlined' ? strokeWidth : undefined
-					}
-				/>
-			)}
-		</button>
+			</button>
+		</div>
 	);
 }

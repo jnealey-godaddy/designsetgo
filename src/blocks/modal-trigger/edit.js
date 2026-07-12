@@ -1,6 +1,12 @@
 /**
  * Modal Trigger Block - Editor Component
  *
+ * The block root is a plain block-level "justification wrapper" (`.dsgo-justify`)
+ * that core's constrained layout caps at the content column. The visible button
+ * (always a `div` in the editor, to preserve editability) shrink-wraps inside it.
+ * Visual supports are re-derived with the hook variants of the block-support
+ * helpers so the editor canvas matches the frontend save() output.
+ *
  * @package
  */
 
@@ -9,11 +15,17 @@ import {
 	useBlockProps,
 	InspectorControls,
 	RichText,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalUseBorderProps as useBorderProps,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalUseColorProps as useColorProps,
+	getTypographyClassesAndStyles,
 } from '@wordpress/block-editor';
 import {
 	SelectControl,
 	Notice,
 	RangeControl,
+	ToggleControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
@@ -21,12 +33,15 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
+import clsx from 'clsx';
 import { DsgoInspectorPanel } from '../../components/shared';
+import DsgoJustificationToolbar from '../../components/shared/DsgoJustificationToolbar';
 import { useSelect } from '@wordpress/data';
 import { useMemo } from '@wordpress/element';
 import { getIcon } from '../icon/utils/svg-icons';
 import { IconPicker } from '../icon/components/IconPicker';
 import { useIconDefaults } from '../../hooks';
+import { getJustificationClass } from '../../utils/justification';
 
 /**
  * Recursively find modal blocks in a block tree
@@ -59,7 +74,8 @@ export default function ModalTriggerEdit({
 		targetModalId,
 		text,
 		buttonStyle,
-		align,
+		justification,
+		fullWidth,
 		icon,
 		iconPosition,
 		iconStyle,
@@ -67,9 +83,6 @@ export default function ModalTriggerEdit({
 		iconSize,
 		iconGap,
 		style,
-		backgroundColor,
-		textColor,
-		fontSize,
 	} = attributes;
 
 	// Theme-level icon defaults inherited when size/style are left unset.
@@ -101,40 +114,26 @@ export default function ModalTriggerEdit({
 		})),
 	];
 
-	// Extract WordPress color values
-	// Custom colors come from style.color.background (hex/rgb)
-	// Preset colors come from backgroundColor/textColor (slugs that need conversion)
-	const bgColor =
-		style?.color?.background ||
-		(backgroundColor && `var(--wp--preset--color--${backgroundColor})`);
-	const txtColor =
-		style?.color?.text ||
-		(textColor && `var(--wp--preset--color--${textColor})`);
-
-	// Extract font size
-	// Custom font sizes come from style.typography.fontSize (px/rem/em)
-	// Preset font sizes come from fontSize (slug that needs conversion)
-	const fontSizeValue =
-		style?.typography?.fontSize ||
-		(fontSize && `var(--wp--preset--font-size--${fontSize})`);
+	// block.json skip-serializes border and typography off the wrapper, so
+	// useBlockProps() below no longer carries them — there is nothing to
+	// neutralise. The visible button is the inner element, so re-derive the
+	// same classes/styles with the official block-support helpers (identical
+	// to how core/button applies them to its inner link) and apply them there
+	// instead, mirroring save.js so the editor canvas matches the frontend.
+	const border = useBorderProps(attributes);
+	const colors = useColorProps(attributes);
+	const typography = getTypographyClassesAndStyles(attributes);
 
 	// Extract padding - WordPress stores it in style.spacing.padding
 	const paddingValue = style?.spacing?.padding;
 
-	// Calculate if full width based on alignment
-	const isFullWidth = align === 'full';
+	const hasIcon = iconPosition !== 'none' && !!icon;
 
-	// Calculate button styles
 	const buttonStyles = {
-		display: isFullWidth ? 'flex' : 'inline-flex',
-		alignItems: 'center',
-		justifyContent: 'center',
-		width: isFullWidth ? '100%' : 'auto',
-		gap: iconPosition !== 'none' && icon ? iconGap : 0,
-		flexDirection: iconPosition === 'end' ? 'row-reverse' : 'row',
-		...(bgColor && { backgroundColor: bgColor }),
-		...(txtColor && { color: txtColor }),
-		...(fontSizeValue && { fontSize: fontSizeValue }),
+		...border.style,
+		...colors.style,
+		...typography.style,
+		...(hasIcon && iconGap && { gap: iconGap }),
 		...(paddingValue?.top !== undefined && {
 			paddingTop: paddingValue.top,
 		}),
@@ -150,7 +149,7 @@ export default function ModalTriggerEdit({
 	};
 
 	// Calculate icon wrapper styles. Preview uses the effective (possibly
-	// inherited) size.
+	// inherited) size so it always shows a size in the editor.
 	const iconWrapperStyles = {
 		display: 'flex',
 		alignItems: 'center',
@@ -160,16 +159,30 @@ export default function ModalTriggerEdit({
 		flexShrink: 0,
 	};
 
-	// wp-block-button and wp-element-button enable theme.json button styles
-	// wp-block-button__link ensures theme compatibility
-	// WordPress automatically adds alignment classes (alignleft, aligncenter, alignright, alignfull)
+	const buttonClasses = clsx(
+		'dsgo-modal-trigger',
+		`dsgo-modal-trigger--${buttonStyle}`,
+		'wp-block-button',
+		'wp-block-button__link',
+		'wp-element-button',
+		border.className,
+		colors.className,
+		typography.className,
+		fullWidth && 'dsgo-modal-trigger--full-width',
+		iconPosition === 'end' && 'dsgo-modal-trigger--icon-end'
+	);
+
 	const blockProps = useBlockProps({
-		className: `dsgo-modal-trigger dsgo-modal-trigger--${buttonStyle} wp-block-button wp-block-button__link wp-element-button`,
-		style: buttonStyles,
+		className: clsx('dsgo-justify', getJustificationClass(justification)),
 	});
 
 	return (
 		<>
+			<DsgoJustificationToolbar
+				value={justification}
+				onChange={(value) => setAttributes({ justification: value })}
+			/>
+
 			<InspectorControls>
 				<DsgoInspectorPanel
 					title={__('Settings', 'designsetgo')}
@@ -185,6 +198,7 @@ export default function ModalTriggerEdit({
 							strokeWidth: 1.5,
 							iconSize: undefined,
 							iconGap: '8px',
+							fullWidth: false,
 						})
 					}
 				>
@@ -449,34 +463,44 @@ export default function ModalTriggerEdit({
 							/>
 						</DsgoInspectorPanel.Item>
 					)}
+
+					<DsgoInspectorPanel.Item
+						label={__('Full width', 'designsetgo')}
+						hasValue={() => !!fullWidth}
+						onDeselect={() => setAttributes({ fullWidth: false })}
+						isShownByDefault
+					>
+						<ToggleControl
+							__nextHasNoMarginBottom
+							label={__('Full width', 'designsetgo')}
+							checked={!!fullWidth}
+							onChange={(value) =>
+								setAttributes({ fullWidth: value })
+							}
+						/>
+					</DsgoInspectorPanel.Item>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>
-				{icon && iconPosition === 'start' && (
-					<span
-						className="dsgo-modal-trigger__icon"
-						style={iconWrapperStyles}
-					>
-						{getIcon(icon, effectiveStyle, strokeWidth)}
-					</span>
-				)}
-				<RichText
-					tagName="span"
-					value={text}
-					onChange={(value) => setAttributes({ text: value })}
-					placeholder={__('Button text…', 'designsetgo')}
-					allowedFormats={['core/bold', 'core/italic']}
-					className="dsgo-modal-trigger__text"
-				/>
-				{icon && iconPosition === 'end' && (
-					<span
-						className="dsgo-modal-trigger__icon"
-						style={iconWrapperStyles}
-					>
-						{getIcon(icon, effectiveStyle, strokeWidth)}
-					</span>
-				)}
+				<div className={buttonClasses} style={buttonStyles}>
+					{icon && iconPosition !== 'none' && (
+						<span
+							className="dsgo-modal-trigger__icon"
+							style={iconWrapperStyles}
+						>
+							{getIcon(icon, effectiveStyle, strokeWidth)}
+						</span>
+					)}
+					<RichText
+						tagName="span"
+						value={text}
+						onChange={(value) => setAttributes({ text: value })}
+						placeholder={__('Button text…', 'designsetgo')}
+						allowedFormats={['core/bold', 'core/italic']}
+						className="dsgo-modal-trigger__text"
+					/>
+				</div>
 			</div>
 		</>
 	);

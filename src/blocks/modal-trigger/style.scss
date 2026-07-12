@@ -27,6 +27,10 @@
 }
 
 .dsgo-modal-trigger {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: auto;
 	overflow: hidden; // Clip contents to border-radius (from any source)
 
 	// Structural/behavioral styles (not theme-overridable)
@@ -36,6 +40,19 @@
 	transition: all 0.2s ease;
 	user-select: none;
 	font-family: inherit;
+
+	&--icon-end {
+		flex-direction: row-reverse;
+	}
+
+	// Fill the positioning wrapper — which core has already capped at the
+	// content column. Replaces the old `align: full` "stretch the button"
+	// meaning; see `.dsgo-justify` (src/styles/_justification.scss) for the
+	// wrapper itself.
+	&--full-width {
+		display: flex;
+		width: 100%;
+	}
 
 	&:hover,
 	&:focus {
@@ -49,46 +66,6 @@
 
 	&:active {
 		transform: translateY(0);
-	}
-
-	// ============================================================================
-	// WIDTH & ALIGNMENT
-	// ============================================================================
-	// Width is controlled via WordPress alignment (alignfull for full-width)
-
-	// Full width: Button spans the full container width (via WordPress alignfull)
-	&.alignfull:not([class*="dsgo-hide-"]) {
-		display: flex !important;
-		width: 100% !important;
-		max-width: 100% !important;
-	}
-
-	// WordPress alignment support for non-full-width buttons
-	// Constrain button width and use margin for alignment
-	// CRITICAL: Must override inline display: inline-flex with display: flex for auto margins to work
-	// NOTE: Margins don't use !important so user-set margins can override
-	// float: none overrides WordPress flow layout which applies float:left/right to aligned blocks,
-	// causing them to sit beside adjacent content (e.g. headings) in Group blocks
-	&.aligncenter:not(.alignfull):not([class*="dsgo-hide-"]) {
-		float: none !important;
-		display: flex !important;
-		width: fit-content !important;
-		margin-left: auto;
-		margin-right: auto;
-	}
-
-	&.alignleft:not(.alignfull):not([class*="dsgo-hide-"]) {
-		float: none !important;
-		display: flex !important;
-		width: fit-content !important;
-		margin-right: auto;
-	}
-
-	&.alignright:not(.alignfull):not([class*="dsgo-hide-"]) {
-		float: none !important;
-		display: flex !important;
-		width: fit-content !important;
-		margin-left: auto;
 	}
 
 	&__text {
