@@ -176,10 +176,10 @@ Complete reference guide for all DesignSetGo blocks organized by category.
 ### Icon
 **Name**: `designsetgo/icon`
 **Category**: Design
-**Description**: Display icons from a library of 500+ icons with optional shapes, animations, and hover effects.
+**Description**: Display icons from a library of 160+ icons with optional shapes, animations, and hover effects.
 
 **Key Features**:
-- 500+ icon library
+- 160+ icon library
 - Multiple icon shapes (circle, square, rounded)
 - Size customization
 - Color controls (icon, background, border)

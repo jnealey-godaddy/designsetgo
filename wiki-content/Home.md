@@ -27,7 +27,7 @@
 - **[Image Accordion](Image-Accordion-Block)** - Expandable image panels for portfolios and galleries
 
 ### Content Elements
-- **[Icon](Icon-Block)** - 500+ icons with shapes, animations, and hover effects
+- **[Icon](Icon-Block)** - 160+ icons with shapes, animations, and hover effects
 - **[Icon Button](Icon-Button-Block)** - Icon-based buttons with multiple styles
 - **[Icon List](Icon-List-Block)** - Lists with custom icons for each item
 - **[Pill](Pill-Block)** - Badge/tag components with customizable styles

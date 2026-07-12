@@ -42,7 +42,7 @@ DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to 
 * **Interactive** (15) — Tabs, Accordion, Modal, Modal Trigger, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counter, Progress, Comparison Table, Timeline
 * **Dynamic Query** (6) — Query, Pagination, Filter, Results, Group Header, No Results
 * **Typography & Navigation** — Advanced Heading, Breadcrumbs (Schema.org), Table of Contents
-* **Visual** (9) — 500+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image
+* **Visual** (9) — 160+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image
 * **Media & Location** — Fifty Fifty split layout, Map (Google Maps + OpenStreetMap)
 * **WooCommerce** — Product Categories Grid, Product Showcase Hero
 * **Extensions** (16) — Animations, Parallax, Text Reveal, Expanding Background, Sticky Header, Hover Effects, Clickable Groups, Background Video, Responsive Visibility, Conditional Visibility, Max Width, Custom CSS, Grid Span, Grid Mobile Order, SVG Patterns (25+), Reveal Control
@@ -87,7 +87,7 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 2. Tabs block with horizontal orientation, icons, and multiple style options
 3. Accordion block with collapsible panels and smooth animations
 4. Counter Group block with animated statistics and number formatting
-5. Icon block with 500+ icons, shape styles, and customization options
+5. Icon block with 160+ icons, shape styles, and customization options
 6. Progress Bar block with animated fills and multiple display styles
 7. Block animation controls showing entrance effects and timing options
 10. Mobile responsive preview in the editor

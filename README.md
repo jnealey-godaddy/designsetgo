@@ -43,7 +43,7 @@ See [CLAUDE.md](.claude/CLAUDE.md) for development learnings and best practices.
 | Category | Features |
 |----------|----------|
 | **🤖 AI Integration** | **WordPress Abilities API** — First plugin with AI-native programmatic access. **Per-URL Markdown** — any published URL returns Markdown when a client sends `Accept: text/markdown`, passes the acceptmarkdown.com contract. |
-| **Blocks** | **53 blocks** across 8+ categories: **Layout (3)** - Row, Section, Grid; **Forms (13)** - Complete form system with AJAX, spam protection, 11 field types; **Interactive (15)** - Tabs, Accordion, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counters, Progress, Comparison Table, Timeline, Modal, Modal Trigger; **Dynamic Query (6)** - Query, Pagination, Filter, Results, Group Header, No Results; **Typography & Navigation (3)** - Advanced Heading, Breadcrumbs (Schema.org), Table of Contents; **Visual (9)** - 500+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image; **Media & Location (2)** - Fifty Fifty split layout, Map (OSM + Google Maps); **WooCommerce (2)** - Product Categories Grid, Product Showcase Hero |
+| **Blocks** | **53 blocks** across 8+ categories: **Layout (3)** - Row, Section, Grid; **Forms (13)** - Complete form system with AJAX, spam protection, 11 field types; **Interactive (15)** - Tabs, Accordion, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counters, Progress, Comparison Table, Timeline, Modal, Modal Trigger; **Dynamic Query (6)** - Query, Pagination, Filter, Results, Group Header, No Results; **Typography & Navigation (3)** - Advanced Heading, Breadcrumbs (Schema.org), Table of Contents; **Visual (9)** - 160+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image; **Media & Location (2)** - Fifty Fifty split layout, Map (OSM + Google Maps); **WooCommerce (2)** - Product Categories Grid, Product Showcase Hero |
 | **Extensions** | **16 Extensions** - Block Animations (24 effects), Sticky Header, Clickable Groups, Background Video, Responsive Visibility, Hover Effects, Conditional Visibility, Dynamic Tags, Style Binding, SVG Patterns (25+), Max Width, Custom CSS, Grid Span, Grid Mobile Order, Reveal Control, Text Alignment Inheritance |
 | **Patterns** | Pre-designed layouts (Hero, CTA, Features, FAQ) |
 | **FSE Ready** | Full Site Editing compatible, theme.json integration, dual categorization |
@@ -162,7 +162,7 @@ npm run plugin-zip
 - Plus child blocks: Accordion Item, Tab, Slide, Flip Card Face, Image Accordion Item, Scroll Accordion Item, Counter, Timeline Item
 
 #### Content & UI Elements (10 Blocks)
-- **Icon** - 500+ icons with shapes, sizes, and animations
+- **Icon** - 160+ icons with shapes, sizes, and animations
 - **Icon Button** - Icon-based buttons with extensive styling options
 - **Icon List** - Lists with custom icons and formatting
 - **Card** - Content cards with images, headers, and call-to-action buttons
