@@ -37,7 +37,8 @@
 			"__experimentalDefaultControls": {
 				"padding": true
 			},
-			"__experimentalSelector": ".dsgo-pill__content"
+			"__experimentalSelector": ".dsgo-pill__content",
+			"__experimentalSkipSerialization": [ "padding" ]
 		},
 		"color": {
 			"background": true,
@@ -47,7 +48,8 @@
 				"background": true,
 				"text": true
 			},
-			"__experimentalSelector": ".dsgo-pill__content"
+			"__experimentalSelector": ".dsgo-pill__content",
+			"__experimentalSkipSerialization": true
 		},
 		"typography": {
 			"fontSize": true,
@@ -73,7 +75,8 @@
 			"__experimentalDefaultControls": {
 				"radius": true
 			},
-			"__experimentalSelector": ".dsgo-pill__content"
+			"__experimentalSelector": ".dsgo-pill__content",
+			"__experimentalSkipSerialization": true
 		}
 	},
 	"example": {

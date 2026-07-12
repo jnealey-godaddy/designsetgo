@@ -27,19 +27,3 @@
 	transition: all 0.2s ease-in-out;
 	white-space: nowrap;
 }
-
-// The editor has no render.php, so useBlockProps still puts colour/border on the
-// wrapper. Neutralise it there and inherit it onto the visible pill so the canvas
-// matches the frontend.
-.wp-block-designsetgo-pill {
-	background: none !important;
-	border: 0 !important;
-
-	&[style*="background"] .dsgo-pill__content {
-		background: inherit;
-	}
-
-	&[style*="color"] .dsgo-pill__content {
-		color: inherit;
-	}
-}
