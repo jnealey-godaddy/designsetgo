@@ -13,26 +13,62 @@
 }
 
 .dsgo-icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: auto;
 	overflow: hidden; // Clip contents to border-radius (from any source)
+	text-decoration: none !important;
+
+	// Core prints `.wp-block-button__link { display: inline-block }` in an inline
+	// <style> that lands after this stylesheet. At equal specificity (0,1,0) it
+	// wins on source order, the anchor becomes a block box, and the icon span
+	// (display:flex) stacks above the text instead of sitting beside it. Chaining
+	// both classes takes this to (0,2,0) so the flex layout no longer depends on
+	// load order.
+	&.wp-block-button__link {
+		display: inline-flex;
+	}
+
+	&--icon-end {
+		flex-direction: row-reverse;
+	}
+
+	// Fill the positioning wrapper — which core has already capped at the
+	// content column. Replaces the old `align: full` "stretch the button"
+	// meaning; see `.dsgo-justify` (src/styles/_justification.scss) for the
+	// wrapper itself.
+	&--full-width {
+		display: flex;
+		width: 100%;
+	}
 
 	// ============================================================================
-	// WIDTH & ALIGNMENT
+	// LEGACY SUPPORT: pre-justification-wrapper markup (deprecated.js v9 and
+	// older; align: left|center|right|full support removed from block.json)
 	// ============================================================================
-	// Width is controlled via WordPress alignment (alignfull for full-width)
+	// Before the justification wrapper, the block root WAS this element
+	// (`useBlockProps.save()` was called directly on the `<a>`/`<button>`),
+	// so WordPress's `align` support put `alignleft`/`aligncenter`/
+	// `alignright`/`alignfull` classes directly alongside `dsgo-icon-button`
+	// on the same tag. Icon Button is a STATIC block (its own `save.js`
+	// output is what's stored), so that markup is exactly what's still in
+	// the database until the author re-opens and re-saves the block — there
+	// is no PHP re-render to migrate it on the frontend.
 
-	// Full width: Button spans the full container width (via WordPress alignfull)
+	// New markup never reproduces this: the wrapper (`.wp-block-designsetgo-
+	// icon-button`, which can still carry `alignwide`/`alignfull` from the
+	// current `align: ["wide","full"]` support) and the button
+	// (`.dsgo-icon-button`) are different elements, and the button itself
+	// never carries any align class. So these compound selectors — requiring
+	// BOTH classes on the same tag — only ever match old, un-migrated stored
+	// HTML.
 	&.alignfull:not([class*="dsgo-hide-"]) {
 		display: flex !important;
 		width: 100% !important;
 		max-width: 100% !important;
 	}
 
-	// WordPress alignment support for non-full-width buttons
-	// Constrain button width and use margin for alignment
-	// CRITICAL: Must override inline display: inline-flex with display: flex for auto margins to work
-	// NOTE: Margins don't use !important so user-set margins can override
-	// float: none overrides WordPress flow layout which applies float:left/right to aligned blocks,
-	// causing them to sit beside adjacent content (e.g. headings) in Group blocks
 	&.aligncenter:not(.alignfull):not([class*="dsgo-hide-"]) {
 		float: none !important;
 		display: flex !important;
@@ -55,9 +91,8 @@
 		margin-left: auto;
 	}
 
-	// Visual styles and interactions on outer wrapper (where background/border are applied)
+	// Visual styles and interactions
 	// wp-element-button class inherits theme.json button styles
-	text-decoration: none !important;
 	transition: all 0.2s ease;
 	cursor: pointer;
 	font-family: inherit;
@@ -156,11 +191,20 @@
 // text/border colour reset to the inherited (theme) colour. A user-set colour
 // still wins via its higher-specificity inline style, mirroring core's
 // has-background / has-text-color behaviour.
-// The `:root .dsgo-icon-button.wp-block-button__link` selector matches the
-// specificity of the generated default-colour rule (theme.json block styles set
-// the Icon Button's fill background/text), so `transparent` + the inherited
-// colour actually win here; the extra `.is-style-outline` class pushes it past.
-:root .dsgo-icon-button.wp-block-button__link.is-style-outline {
+// `is-style-outline` (from the block's `className` attribute) lands on the
+// justification WRAPPER, not the button — useBlockProps.save() moved there
+// with the rest of the block root. The compound
+// `.wp-block-designsetgo-icon-button.is-style-outline .dsgo-icon-button`
+// selector mirrors exactly what WP_Theme_JSON::get_block_style_variation_selector()
+// generates for theme.json-driven variations against a two-part
+// `selectors.root` (see block.json), so this hand-written rule stays
+// consistent with the native mechanism. The extra compounded classes push
+// specificity well past the generated default-colour rule (which now also
+// targets the wrapper+button pair via `selectors.root`), so `transparent` +
+// the inherited colour still win here; a user-set colour still wins via its
+// higher-specificity inline style, mirroring core's has-background /
+// has-text-color behaviour.
+:root .wp-block-designsetgo-icon-button.is-style-outline .dsgo-icon-button.wp-block-button__link {
 	border: 2px solid currentcolor;
 	background-color: transparent;
 	color: currentcolor;
@@ -176,12 +220,17 @@
 // support (is-style-hover-button-*) alongside the inline-var (attribute) gate.
 // The class is only emitted for that variation, so the !important override
 // never clobbers a button whose parent has no hover-button color set.
-.dsgo-flex[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-flex__inner > .dsgo-icon-button,
-.dsgo-grid[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-grid__inner > .dsgo-icon-button,
-.dsgo-stack[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-stack__inner > .dsgo-icon-button,
-.dsgo-flex--has-hover-button:hover .dsgo-flex__inner > .dsgo-icon-button,
-.dsgo-grid--has-hover-button:hover .dsgo-grid__inner > .dsgo-icon-button,
-.dsgo-stack--has-hover-button:hover .dsgo-stack__inner > .dsgo-icon-button {
+// The direct child of *__inner is now the justification wrapper
+// (`.wp-block-designsetgo-icon-button`, WP's own auto class — always present
+// regardless of the `dsgo-icon-button` custom class, which now lives on the
+// inner button), so the actual `.dsgo-icon-button` element being painted is a
+// descendant of that, not a direct child.
+.dsgo-flex[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-flex__inner > .wp-block-designsetgo-icon-button .dsgo-icon-button,
+.dsgo-grid[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-grid__inner > .wp-block-designsetgo-icon-button .dsgo-icon-button,
+.dsgo-stack[style*="--dsgo-parent-hover-button-bg"]:hover .dsgo-stack__inner > .wp-block-designsetgo-icon-button .dsgo-icon-button,
+.dsgo-flex--has-hover-button:hover .dsgo-flex__inner > .wp-block-designsetgo-icon-button .dsgo-icon-button,
+.dsgo-grid--has-hover-button:hover .dsgo-grid__inner > .wp-block-designsetgo-icon-button .dsgo-icon-button,
+.dsgo-stack--has-hover-button:hover .dsgo-stack__inner > .wp-block-designsetgo-icon-button .dsgo-icon-button {
 	background-color: var(--dsgo-parent-hover-button-bg) !important;
 	transition: background-color 0.3s ease;
 }

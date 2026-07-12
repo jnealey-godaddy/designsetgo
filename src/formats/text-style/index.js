@@ -10,7 +10,7 @@
  */
 
 import './editor.scss';
-// Note: style.scss is imported in src/styles/style.scss for frontend loading
+// Note: style.scss is imported in src/style.scss for frontend loading
 
 import { __ } from '@wordpress/i18n';
 import {

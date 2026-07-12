@@ -61,9 +61,7 @@ return array(
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"var:preset|spacing|30","bottom":"var:preset|spacing|30","left":"var:preset|spacing|30","right":"var:preset|spacing|30"},"blockGap":"0"},"border":{"radius":"0 0 16px 16px"}},"backgroundColor":"base"} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack has-base-background-color has-background" style="border-radius:0 0 16px 16px;padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"},"margin":{"bottom":"var:preset|spacing|20"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="margin-bottom:var(--wp--preset--spacing--20);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/row {"style":{"spacing":{"blockGap":"var:preset|spacing|30","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","justifyContent":"left","flexWrap":"nowrap"}} -->
-<div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/icon {"icon":"location","iconSize":20,"style":{"color":{"text":"#6366f1"}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon has-text-color" style="color:#6366f1;display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="location" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Location"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/icon {"icon":"location","iconSize":20,"style":{"color":{"text":"#6366f1"}}} /-->
 
 <!-- wp:paragraph {"fontSize":"small"} -->
 <p class="has-small-font-size">123 Business Avenue, New York, NY 10001</p>
@@ -73,9 +71,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"},"margin":{"bottom":"var:preset|spacing|20"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="margin-bottom:var(--wp--preset--spacing--20);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/row {"style":{"spacing":{"blockGap":"var:preset|spacing|30","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","justifyContent":"left","flexWrap":"nowrap"}} -->
-<div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/icon {"icon":"phone","iconSize":20,"style":{"color":{"text":"#6366f1"}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon has-text-color" style="color:#6366f1;display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="phone" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Phone"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/icon {"icon":"phone","iconSize":20,"style":{"color":{"text":"#6366f1"}}} /-->
 
 <!-- wp:paragraph {"fontSize":"small"} -->
 <p class="has-small-font-size">+1 (555) 123-4567</p>
@@ -85,9 +81,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"},"margin":{"bottom":"var:preset|spacing|20"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="margin-bottom:var(--wp--preset--spacing--20);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/row {"style":{"spacing":{"blockGap":"var:preset|spacing|30","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","justifyContent":"left","flexWrap":"nowrap"}} -->
-<div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/icon {"icon":"envelope","iconSize":20,"style":{"color":{"text":"#6366f1"}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon has-text-color" style="color:#6366f1;display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="envelope" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Envelope"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/icon {"icon":"envelope","iconSize":20,"style":{"color":{"text":"#6366f1"}}} /-->
 
 <!-- wp:paragraph {"fontSize":"small"} -->
 <p class="has-small-font-size">hello@company.com</p>
@@ -97,9 +91,7 @@ return array(
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/row {"style":{"spacing":{"blockGap":"var:preset|spacing|30","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","justifyContent":"left","flexWrap":"nowrap"}} -->
-<div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/icon {"icon":"clock","iconSize":20,"style":{"color":{"text":"#6366f1"}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon has-text-color" style="color:#6366f1;display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="clock" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Clock"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:left;flex-wrap:nowrap;gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/icon {"icon":"clock","iconSize":20,"style":{"color":{"text":"#6366f1"}}} /-->
 
 <!-- wp:paragraph {"fontSize":"small"} -->
 <p class="has-small-font-size">Mon - Fri: 9:00 AM - 6:00 PM</p>

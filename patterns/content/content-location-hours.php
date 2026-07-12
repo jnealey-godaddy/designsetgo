@@ -26,9 +26,7 @@ return array(
 
 <!-- wp:group {"style":{"spacing":{"margin":{"top":"var:preset|spacing|40"},"blockGap":"var:preset|spacing|30"}},"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group" style="margin-top:var(--wp--preset--spacing--40)"><!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"top"}} -->
-<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"location","style":{"color":{"text":"#d97706"}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon has-text-color" style="color:#d97706;display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="location" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Location"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"location","style":{"color":{"text":"#d97706"}}} /-->
 
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group"><!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"600"}}} -->
@@ -42,9 +40,7 @@ return array(
 <!-- /wp:group -->
 
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"top"}} -->
-<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"clock","style":{"color":{"text":"#d97706"}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon has-text-color" style="color:#d97706;display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="clock" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Clock"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"clock","style":{"color":{"text":"#d97706"}}} /-->
 
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group"><!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"600"}}} -->
@@ -58,9 +54,7 @@ return array(
 <!-- /wp:group -->
 
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"top"}} -->
-<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"phone","style":{"color":{"text":"#d97706"}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon has-text-color" style="color:#d97706;display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="phone" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Phone"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"phone","style":{"color":{"text":"#d97706"}}} /-->
 
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group"><!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"600"}}} -->
@@ -74,8 +68,8 @@ return array(
 <!-- /wp:group --></div>
 <!-- /wp:group -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Make a Reservation","url":"#","icon":"calendar","backgroundColor":"contrast","textColor":"base","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|40","right":"var:preset|spacing|40"},"margin":{"top":"var:preset|spacing|40"}},"border":{"radius":"50px"}}} -->
-<a class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="border-radius:50px;margin-top:var(--wp--preset--spacing--40);display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;flex-direction:row;background-color:var(--wp--preset--color--contrast);color:var(--wp--preset--color--base);padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--40)" href="#" target="_self"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0" data-icon-name="calendar" data-icon-size="20"></span><span class="dsgo-icon-button__text">Make a Reservation</span></a>
+<!-- wp:designsetgo/icon-button {"text":"Make a Reservation","url":"#","icon":"calendar","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|40","right":"var:preset|spacing|40"},"margin":{"top":"var:preset|spacing|40"}},"border":{"radius":"50px"}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left" style="margin-top:var(--wp--preset--spacing--40)"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-base-color has-contrast-background-color has-text-color has-background dsgo-icon-button--has-icon" style="border-radius:50px;gap:8px;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--40)" href="#" target="_self"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="calendar"></span><span class="dsgo-icon-button__text">Make a Reservation</span></a></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section -->
 

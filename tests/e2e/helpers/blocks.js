@@ -119,7 +119,86 @@ async function insertBlockByName(page, name, overrides = {}) {
 	);
 }
 
+/**
+ * Insert a block NESTED one level inside a parent container block (e.g.
+ * `designsetgo/section` or `designsetgo/row`), rather than at the top level
+ * of the post. The parent is inserted at the top level (optionally with
+ * explicit attribute overrides — e.g. `{ constrainWidth: true }`, since Row
+ * defaults `constrainWidth` to false); the child is built the same way
+ * insertBlockByName() would build a top-level block (example attributes
+ * merged with any override).
+ *
+ * @param {import('@playwright/test').Page}            page               - Playwright page object.
+ * @param {string}                                     parentName         - Parent block name, e.g. 'designsetgo/section'.
+ * @param {string}                                     childName          - Child block name, e.g. 'designsetgo/pill'.
+ * @param {{attributes?: object, innerBlocks?: Array}} [childOverrides]   - Optional override spec for the child.
+ * @param {Object}                                     [parentAttributes] - Optional explicit attributes for the parent container.
+ * @return {Promise<{parentClientId: string, childClientId: string, blockCount: number}>} Inserted ids + top-level count.
+ */
+async function insertNestedBlockByName(
+	page,
+	parentName,
+	childName,
+	childOverrides = {},
+	parentAttributes = {}
+) {
+	return page.evaluate(
+		({ parent, child, ov, parentAttrs }) => {
+			const { createBlock, getBlockType } = wp.blocks;
+			const dispatch = wp.data.dispatch('core/block-editor');
+			const select = wp.data.select('core/block-editor');
+
+			const type = getBlockType(child);
+			if (!type) {
+				throw new Error('Block not registered: ' + child);
+			}
+
+			const build = (spec) =>
+				createBlock(
+					spec.name,
+					spec.attributes || {},
+					(spec.innerBlocks || []).map(build)
+				);
+
+			let childBlock;
+			if (ov && (ov.attributes || ov.innerBlocks)) {
+				childBlock = createBlock(
+					child,
+					ov.attributes || {},
+					(ov.innerBlocks || []).map(build)
+				);
+			} else if (type.example) {
+				childBlock = createBlock(
+					child,
+					type.example.attributes || {},
+					(type.example.innerBlocks || []).map(build)
+				);
+			} else {
+				childBlock = createBlock(child);
+			}
+
+			const parentBlock = createBlock(parent, parentAttrs || {}, [
+				childBlock,
+			]);
+
+			dispatch.insertBlocks(parentBlock);
+			return {
+				parentClientId: parentBlock.clientId,
+				childClientId: childBlock.clientId,
+				blockCount: select.getBlockCount(),
+			};
+		},
+		{
+			parent: parentName,
+			child: childName,
+			ov: childOverrides,
+			parentAttrs: parentAttributes,
+		}
+	);
+}
+
 module.exports = {
 	listTopLevelDesignSetGoBlocks,
 	insertBlockByName,
+	insertNestedBlockByName,
 };

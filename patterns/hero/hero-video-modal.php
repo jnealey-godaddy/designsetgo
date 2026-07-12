@@ -24,7 +24,7 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:designsetgo/modal-trigger {"targetModalId":"video-demo-modal","backgroundColor":"base","textColor":"contrast","style":{"elements":{"link":{"color":{"text":"var:preset|color|contrast"}}}}} -->
-<button class="wp-block-designsetgo-modal-trigger dsgo-modal-trigger dsgo-modal-trigger--fill wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;width:auto;flex-direction:row;background-color:var(--wp--preset--color--base);color:var(--wp--preset--color--contrast)" data-dsgo-modal-trigger="video-demo-modal" type="button"><span class="dsgo-modal-trigger__text">Open Modal</span></button>
+<div class="wp-block-designsetgo-modal-trigger dsgo-justify dsgo-justify--left"><button class="dsgo-modal-trigger dsgo-modal-trigger--fill wp-block-button wp-block-button__link wp-element-button has-contrast-color has-base-background-color has-text-color has-background has-link-color" type="button" data-dsgo-modal-trigger="video-demo-modal"><span class="dsgo-modal-trigger__text">Open Modal</span></button></div>
 <!-- /wp:designsetgo/modal-trigger -->
 
 <!-- wp:designsetgo/modal {"modalId":"video-demo-modal","width":"900px","overlayOpacity":90} -->

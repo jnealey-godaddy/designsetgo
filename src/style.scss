@@ -17,6 +17,10 @@
 // icon-bearing block (see src/styles/_icon-outlined.scss).
 @use './styles/icon-outlined' as icon-outlined;
 
+// Shared justification primitive: content-column positioning wrapper used by
+// Pill, Icon, Icon Button, and Modal Trigger (see src/styles/_justification.scss).
+@use './styles/justification' as justification;
+
 // Block extensions (frontend)
 // These are loaded globally because they apply to multiple blocks via filters
 @use './extensions/block-animations/animations' as block-animations;

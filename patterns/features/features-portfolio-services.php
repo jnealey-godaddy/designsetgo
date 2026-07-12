@@ -26,9 +26,7 @@ return array(
 
 <!-- wp:designsetgo/grid {"style":{"spacing":{"blockGap":"var:preset|spacing|30","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-3 dsgo-grid-cols-tablet-2 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(3, 1fr);align-items:stretch;row-gap:var(--wp--preset--spacing--30);column-gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/section -->
-<div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/icon {"icon":"blocks","align":"left","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|20"}}}} -->
-<div class="wp-block-designsetgo-icon alignleft dsgo-icon" style="margin-bottom:var(--wp--preset--spacing--20);display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="blocks" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Blocks"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/icon {"icon":"blocks","justification":"left","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|20"}}}} /-->
 
 <!-- wp:heading {"level":3,"fontSize":"large"} -->
 <h3 class="wp-block-heading has-large-font-size">Product Design</h3>
@@ -40,9 +38,7 @@ return array(
 <!-- /wp:designsetgo/section -->
 
 <!-- wp:designsetgo/section -->
-<div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/icon {"icon":"user","align":"left","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|20"}}}} -->
-<div class="wp-block-designsetgo-icon alignleft dsgo-icon" style="margin-bottom:var(--wp--preset--spacing--20);display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="user" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="User"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/icon {"icon":"user","justification":"left","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|20"}}}} /-->
 
 <!-- wp:heading {"level":3,"fontSize":"large"} -->
 <h3 class="wp-block-heading has-large-font-size">UI/UX Design</h3>
@@ -54,9 +50,7 @@ return array(
 <!-- /wp:designsetgo/section -->
 
 <!-- wp:designsetgo/section -->
-<div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/icon {"icon":"rocket","align":"left","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|20"}}}} -->
-<div class="wp-block-designsetgo-icon alignleft dsgo-icon" style="margin-bottom:var(--wp--preset--spacing--20);display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="rocket" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Rocket"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/icon {"icon":"rocket","justification":"left","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|20"}}}} /-->
 
 <!-- wp:heading {"level":3,"fontSize":"large"} -->
 <h3 class="wp-block-heading has-large-font-size">Brand Identity</h3>

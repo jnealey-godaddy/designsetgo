@@ -15,24 +15,26 @@
 // Frontend block classes (for save.js output)
 // NOTE: .wp-block-buttons is intentionally excluded — it's a layout container
 // that needs full width for its justify-content to position child buttons
+// NOTE: Pill, Icon, and Icon Button are intentionally excluded — their root
+// is now a block-level `.dsgo-justify` positioning wrapper (see
+// src/styles/_justification.scss), which core's constrained layout already
+// caps at the content column exactly like a paragraph. An `align-self` from
+// this list would fight `.dsgo-justify`'s own cross-axis handling; the
+// editor gets that fit-content sizing for free from
+// `.dsgo-stack__inner > .wp-block { width: 100% }` plus `.dsgo-justify`
+// itself, with no dedicated align-self rule needed. Modal Trigger was never
+// added to these lists.
 $inline-block-classes: (
-	'.dsgo-pill',
-	'.wp-block-designsetgo-pill',
-	'.dsgo-icon',
-	'.wp-block-designsetgo-icon',
 	'.dsgo-counter',
 	'.wp-block-designsetgo-counter',
-	'.wp-block-button',
-	'.dsgo-icon-button',
-	'.wp-block-designsetgo-icon-button'
+	'.wp-block-button'
 );
 
 // Editor data-type attributes (for edit.js output - blocks are wrapped in [data-type] elements)
 // NOTE: core/buttons is intentionally excluded — it's a layout container, not an inline block
+// NOTE: designsetgo/pill, designsetgo/icon, and designsetgo/icon-button are
+// intentionally excluded — see $inline-block-classes above.
 $inline-block-data-types: (
-	'[data-type="designsetgo/pill"]',
-	'[data-type="designsetgo/icon"]',
-	'[data-type="designsetgo/icon-button"]',
 	'[data-type="designsetgo/counter"]',
 	'[data-type="core/button"]'
 );
@@ -318,19 +320,21 @@ $inline-block-data-types: (
 // CRITICAL: Override WordPress's generated contentSize constraints for inline blocks (editor)
 // WordPress generates rules like .wp-container-{block}-is-layout-{hash} > :where(...) { max-width: 1200px }
 // We need to override these for blocks that should shrink to content
+
+// Icon, Icon Button, and Pill are deliberately NOT listed here — the editor
+// mirror of the same exclusion in style.scss. Their `.dsgo-justify` wrapper
+// must keep WordPress's generated content-size cap; that cap is exactly what
+// makes the wrapper land on the content column (see
+// src/styles/_justification.scss). `max-width: none` here would reintroduce
+// the escape bug the wrapper exists to fix. Counter and core/button are
+// untouched.
 [class*="wp-container-designsetgo-stack"] {
 
 	> [data-block] {
 
-		> .dsgo-pill,
-		> .wp-block-designsetgo-pill,
-		> .dsgo-icon,
-		> .wp-block-designsetgo-icon,
 		> .dsgo-counter,
 		> .wp-block-designsetgo-counter,
-		> .wp-block-button,
-		> .dsgo-icon-button,
-		> .wp-block-designsetgo-icon-button {
+		> .wp-block-button {
 			width: auto !important;
 			max-width: none !important;
 		}

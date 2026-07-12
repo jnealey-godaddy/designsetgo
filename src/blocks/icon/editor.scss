@@ -7,14 +7,12 @@
 @use './components/icon-picker';
 
 .dsgo-icon {
-	// Editor-specific styles to improve UX
+	// Editor-specific styles to improve UX. `.dsgo-justify` (shared, imported
+	// into src/styles/editor.scss) supplies display:flex + justify-content —
+	// no width/display duplicated here. See style.scss for the frontend
+	// rationale (positioning wrapper only, deliberately not shrink-wrapped).
 	position: relative;
-	width: fit-content;
-	max-width: fit-content; // Prevent expansion beyond content
-	min-width: 24px; // Ensure block is always visible in editor
-	display: inline-flex;
 	align-items: center;
-	justify-content: center;
 	line-height: 1; // Prevent inherited line-height (1.4) from creating extra vertical space
 
 	// Selected state
@@ -79,14 +77,6 @@
 		}
 	}
 
-	// WordPress color support applies background to this outer element.
-	// The wrapper must stay transparent to prevent double-layered backgrounds
-	// (two stacked semi-transparent layers would appear darker over the icon).
-	&.has-background .dsgo-icon__wrapper,
-	&[style*="background-color"] .dsgo-icon__wrapper {
-		background-color: transparent !important;
-	}
-
 	// Accessibility: Respect prefers-reduced-motion (editor context)
 	@media (prefers-reduced-motion: reduce) {
 
@@ -107,15 +97,16 @@
 // CRITICAL: Check if PARENT container has the variable, not the icon itself
 // CRITICAL: Use __inner wrapper to avoid triggering on outer padding areas
 // CRITICAL: Exclude icons that are inside nested containers
-// This changes the block's background color, which the wrapper inherits
+// Targets .dsgo-icon__wrapper (shrink-wrapped visible icon box), NOT .dsgo-icon
+// (the block-level positioning wrapper) — see style.scss for the rationale.
 // See style.scss: the --has-hover-icon selector adds Section style-variation
 // support alongside the inline-var (attribute) gate.
-.dsgo-flex[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-flex__inner > .dsgo-icon,
-.dsgo-grid[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-grid__inner > .dsgo-icon,
-.dsgo-stack[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-stack__inner > .dsgo-icon,
-.dsgo-flex--has-hover-icon:hover .dsgo-flex__inner > .dsgo-icon,
-.dsgo-grid--has-hover-icon:hover .dsgo-grid__inner > .dsgo-icon,
-.dsgo-stack--has-hover-icon:hover .dsgo-stack__inner > .dsgo-icon {
+.dsgo-flex[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-flex__inner > .dsgo-icon .dsgo-icon__wrapper,
+.dsgo-grid[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-grid__inner > .dsgo-icon .dsgo-icon__wrapper,
+.dsgo-stack[style*="--dsgo-parent-hover-icon-bg"]:hover .dsgo-stack__inner > .dsgo-icon .dsgo-icon__wrapper,
+.dsgo-flex--has-hover-icon:hover .dsgo-flex__inner > .dsgo-icon .dsgo-icon__wrapper,
+.dsgo-grid--has-hover-icon:hover .dsgo-grid__inner > .dsgo-icon .dsgo-icon__wrapper,
+.dsgo-stack--has-hover-icon:hover .dsgo-stack__inner > .dsgo-icon .dsgo-icon__wrapper {
 	background-color: var(--dsgo-parent-hover-icon-bg) !important;
 	transition: background-color 0.3s ease;
 }

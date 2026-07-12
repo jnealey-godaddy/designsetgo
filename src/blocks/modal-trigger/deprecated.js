@@ -10,8 +10,52 @@ import { useBlockProps, RichText } from '@wordpress/block-editor';
 import { getIcon } from '../icon/utils/svg-icons';
 
 /**
+ * Every deprecation must land on the CURRENT attribute schema — deprecations do
+ * not cascade, so exactly one migrate() runs for any given stored block. All
+ * four deprecations below (v4 down to v1) carried `align: left|center|right|full`;
+ * the current block uses a `justification` wrapper + `fullWidth` toggle instead,
+ * because core's constrained layout excludes aligned blocks (`alignleft`/
+ * `alignright`) from the content-size cap (see wp-includes/block-supports/layout.php),
+ * and the block root moved from the `<button>` itself to a block-level
+ * positioning wrapper (v4's own eligibility signature) that core CAN cap.
+ * `align: "full"` used to mean "stretch the button to 100%"; that meaning now
+ * lives in `fullWidth` since `full` on the wrapper instead bleeds the wrapper
+ * itself edge-to-edge, matching every other WordPress `alignfull` block.
+ *
+ * @param {Object} attributes Attributes as sourced from a matched deprecation.
+ *                            May or may not include `align`, depending on
+ *                            whether the old markup set it.
+ * @return {Object} Attributes with `align` replaced by `justification`/`fullWidth`.
+ */
+function migrateAlign(attributes) {
+	const { align, ...rest } = attributes;
+	return {
+		...rest,
+		justification: ['left', 'center', 'right'].includes(align)
+			? align
+			: 'left',
+		fullWidth: align === 'full',
+	};
+}
+
+/**
  * Shared supports for all deprecated versions.
- * Uses __experimentalBorder (the historical name) instead of border.
+ * Uses __experimentalBorder (the historical name) instead of border. This is
+ * also the exact supports block the (now-superseded) current block.json
+ * carried immediately before the justification-wrapper refactor — including
+ * `color.__experimentalSkipSerialization` (already present pre-refactor) but
+ * NOT the new border/typography skip-serialization, which only applies to the
+ * post-refactor block whose root moved to the wrapper.
+ *
+ * typography MUST use the __experimental-prefixed keys
+ * (__experimentalFontFamily / __experimentalFontWeight /
+ * __experimentalLetterSpacing) — those are what WP's `hasBlockSupport()`
+ * actually checks (see packages/block-editor/src/hooks/font-family.js et
+ * al.). Un-prefixed `fontFamily`/`fontWeight`/`letterSpacing` keys here are
+ * silently ignored by WP's support-detection filters, so `core/fontFamily/
+ * addAttribute` never registers a `fontFamily` attribute on the
+ * deprecation and any stored `fontFamily` value is stripped from parsed
+ * attributes before `migrate()` ever runs — silent, unrecoverable data loss.
  */
 const sharedSupports = {
 	anchor: true,
@@ -39,9 +83,9 @@ const sharedSupports = {
 	typography: {
 		fontSize: true,
 		lineHeight: true,
-		fontFamily: true,
-		fontWeight: true,
-		letterSpacing: true,
+		__experimentalFontFamily: true,
+		__experimentalFontWeight: true,
+		__experimentalLetterSpacing: true,
 	},
 	__experimentalBorder: {
 		color: true,
@@ -51,6 +95,161 @@ const sharedSupports = {
 		__experimentalDefaultControls: {
 			radius: true,
 		},
+	},
+};
+
+/**
+ * Version 4: Before the justification wrapper
+ *
+ * The block root USED to be the `<button>` itself, positioned via WordPress's
+ * `align: left|center|right|full` support. That was a misuse: core's
+ * constrained layout excludes `.alignleft`/`.alignright` from the content-size
+ * cap (see wp-includes/block-supports/layout.php), and an inline-flex root
+ * makes auto margins inert even when `align: center` narrowly worked. The
+ * current version introduces a block-level `.dsgo-justify` wrapper as the
+ * block root — which core CAN cap at the content column — with the button
+ * shrink-wrapped inside it and positioned via `justify-content` from a new
+ * `justification` attribute. `align: "full"` used to mean "stretch the button
+ * to 100%"; that meaning now lives in the `fullWidth` attribute, since `full`
+ * on the wrapper instead bleeds the wrapper itself edge-to-edge.
+ *
+ * `supports` here is `sharedSupports` — the exact supports block the
+ * (now-superseded) current block.json carried immediately before this change.
+ */
+const v4 = {
+	supports: sharedSupports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// Pre-wrapper markup: the block root IS the button, not a `<div>`.
+		return !!innerHTML && !innerHTML.trimStart().startsWith('<div');
+	},
+
+	attributes: {
+		align: { type: 'string' },
+		targetModalId: { type: 'string', default: '' },
+		text: { type: 'string', default: 'Open Modal' },
+		buttonStyle: { type: 'string', default: 'fill' },
+		icon: { type: 'string', default: '' },
+		iconPosition: { type: 'string', default: 'none' },
+		iconStyle: { type: 'string', enum: ['filled', 'outlined'] },
+		strokeWidth: { type: 'number', default: 1.5 },
+		iconSize: { type: 'number' },
+		iconGap: { type: 'string', default: '8px' },
+	},
+
+	// Verbatim copy of the pre-wrapper save.js: single `<button>` root
+	// carrying inline display/width/flexDirection and the align classes, with
+	// icon rendered as two conditional spans (start/end).
+	save({ attributes }) {
+		const {
+			targetModalId,
+			text,
+			buttonStyle,
+			align,
+			icon,
+			iconPosition,
+			iconStyle,
+			strokeWidth,
+			iconSize,
+			iconGap,
+			style,
+			backgroundColor,
+			textColor,
+			fontSize,
+		} = attributes;
+
+		const bgColor =
+			style?.color?.background ||
+			(backgroundColor && `var(--wp--preset--color--${backgroundColor})`);
+		const txtColor =
+			style?.color?.text ||
+			(textColor && `var(--wp--preset--color--${textColor})`);
+
+		const fontSizeValue =
+			style?.typography?.fontSize ||
+			(fontSize && `var(--wp--preset--font-size--${fontSize})`);
+
+		const paddingValue = style?.spacing?.padding;
+
+		const isFullWidth = align === 'full';
+
+		const buttonStyles = {
+			display: isFullWidth ? 'flex' : 'inline-flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			width: isFullWidth ? '100%' : 'auto',
+			gap: iconPosition !== 'none' && icon ? iconGap : undefined,
+			flexDirection: iconPosition === 'end' ? 'row-reverse' : 'row',
+			...(bgColor && { backgroundColor: bgColor }),
+			...(txtColor && { color: txtColor }),
+			...(fontSizeValue && { fontSize: fontSizeValue }),
+			...(paddingValue?.top !== undefined && {
+				paddingTop: paddingValue.top,
+			}),
+			...(paddingValue?.right !== undefined && {
+				paddingRight: paddingValue.right,
+			}),
+			...(paddingValue?.bottom !== undefined && {
+				paddingBottom: paddingValue.bottom,
+			}),
+			...(paddingValue?.left !== undefined && {
+				paddingLeft: paddingValue.left,
+			}),
+		};
+
+		const hasExplicitSize = typeof iconSize === 'number';
+		const iconWrapperStyles = {
+			...(hasExplicitSize && {
+				width: `${iconSize}px`,
+				height: `${iconSize}px`,
+			}),
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			flexShrink: 0,
+		};
+
+		const blockProps = useBlockProps.save({
+			className: `dsgo-modal-trigger dsgo-modal-trigger--${buttonStyle} wp-block-button wp-block-button__link wp-element-button`,
+			style: buttonStyles,
+			'data-dsgo-modal-trigger': targetModalId,
+			type: 'button',
+		});
+
+		return (
+			<button {...blockProps}>
+				{icon && iconPosition === 'start' && (
+					<span
+						className="dsgo-modal-trigger__icon dsgo-lazy-icon"
+						style={iconWrapperStyles}
+						data-icon-name={icon}
+						data-icon-style={iconStyle || undefined}
+						data-icon-stroke-width={
+							iconStyle === 'outlined' ? strokeWidth : undefined
+						}
+					/>
+				)}
+				<RichText.Content
+					tagName="span"
+					value={text}
+					className="dsgo-modal-trigger__text"
+				/>
+				{icon && iconPosition === 'end' && (
+					<span
+						className="dsgo-modal-trigger__icon dsgo-lazy-icon"
+						style={iconWrapperStyles}
+						data-icon-name={icon}
+						data-icon-style={iconStyle || undefined}
+						data-icon-stroke-width={
+							iconStyle === 'outlined' ? strokeWidth : undefined
+						}
+					/>
+				)}
+			</button>
+		);
+	},
+
+	migrate(attributes) {
+		return migrateAlign(attributes);
 	},
 };
 
@@ -199,10 +398,11 @@ const v3 = {
 	},
 
 	migrate(attributes) {
-		// Passthrough. An implicit-default old block has iconSize/iconStyle
+		// Passthrough (plus the shared align→justification/fullWidth
+		// conversion). An implicit-default old block has iconSize/iconStyle
 		// === undefined here (no default in this schema), so it inherits the
 		// theme token; explicit values are preserved as overrides.
-		return attributes;
+		return migrateAlign(attributes);
 	},
 };
 
@@ -324,12 +524,17 @@ const v2 = {
 		);
 	},
 	migrate(attributes) {
-		// Migrate width to align
+		// This version only ever encoded a boolean auto/full toggle via the
+		// legacy `width` attribute — it never stored left/center/right — so
+		// merge it into `align` (preserving any align a user separately set
+		// via the toolbar, since sharedSupports.align was active even though
+		// this version's own save() never read it) and run it through the
+		// shared conversion, exactly like v1 below.
 		const { width, ...rest } = attributes;
-		return {
+		return migrateAlign({
 			...rest,
-			align: width === 'full' ? 'full' : undefined,
-		};
+			align: width === 'full' ? 'full' : rest.align,
+		});
 	},
 };
 
@@ -452,13 +657,13 @@ const v1 = {
 		);
 	},
 	migrate(attributes) {
-		// Migrate width to align
+		// Same width→align merge as v2, then the shared conversion.
 		const { width, ...rest } = attributes;
-		return {
+		return migrateAlign({
 			...rest,
-			align: width === 'full' ? 'full' : undefined,
-		};
+			align: width === 'full' ? 'full' : rest.align,
+		});
 	},
 };
 
-export default [v3, v2, v1];
+export default [v4, v3, v2, v1];

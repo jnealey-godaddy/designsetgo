@@ -66,6 +66,61 @@ function sanitizeUrl(url) {
 }
 
 /**
+ * vAlign — `align: left|center|right` replaced by `justification`.
+ *
+ * Icon was already dynamic here (save() === null), so the stored markup for a
+ * modern icon is a self-closing comment — there is no HTML to reproduce. Only
+ * the attribute schema changed: `align: left|center|right` became
+ * `justification`, because core's constrained layout excludes aligned blocks
+ * from the content-size cap (see wp-includes/block-supports/layout.php). Icon
+ * keeps `align: wide|full` (unaffected — those stay in supports on the
+ * current block), so isEligible narrows to exactly the three values being
+ * converted.
+ *
+ * `supports` MUST declare the full support set (color / border / spacing),
+ * not just `align`. WP re-runs the `blocks.registerBlockType` filters
+ * (color.js, border.js, spacing.js, align.js) against EACH deprecation entry
+ * at registration time, and those filters add `backgroundColor` / `textColor`
+ * / `gradient` / `borderColor` / `style` to `attributes` only when the
+ * matching support is present. A `supports` block that declares only `align`
+ * silently tells WordPress the old icon had no colour/border/spacing
+ * supports, so `getBlockAttributes()` strips those attributes before
+ * `migrate()` ever runs, permanently discarding stored styling — the exact
+ * bug found and fixed on Pill's equivalent deprecation. `sharedSupports`
+ * already carries color/border/spacing (Icon's actual historical support
+ * set — no gradients), so it's reused here as-is with only `align` narrowed
+ * to the pre-justification set.
+ */
+const vAlign = {
+	attributes: {
+		icon: { type: 'string', default: 'star' },
+		iconStyle: { type: 'string', enum: ['filled', 'outlined'] },
+		strokeWidth: { type: 'number', default: 1.5 },
+		iconSize: { type: 'number' },
+		rotation: { type: 'number', default: 0 },
+		linkUrl: { type: 'string', default: '' },
+		linkTarget: { type: 'string', default: '_self' },
+		linkRel: { type: 'string', default: '' },
+		ariaLabel: { type: 'string', default: '' },
+		isDecorative: { type: 'boolean', default: false },
+	},
+	supports: sharedSupports,
+	isEligible(attributes) {
+		return ['left', 'center', 'right'].includes(attributes.align);
+	},
+	save() {
+		return null;
+	},
+	migrate(attributes) {
+		// isEligible() already narrowed align to left|center|right, so no
+		// wide/full branch is needed here (contrast with vLazy/v2/v1 below,
+		// whose isEligible does not filter on align's value).
+		const { align, ...rest } = attributes;
+		return { ...rest, justification: align };
+	},
+};
+
+/**
  * Lazy-placeholder format — the last STATIC version, in use immediately before
  * the Icon block became server-rendered (dynamic).
  *
@@ -186,8 +241,18 @@ const vLazy = {
 	},
 
 	migrate(attributes) {
-		// The static→dynamic switch changes no attributes.
-		return attributes;
+		// Deprecations do not cascade — a legacy lazy-placeholder icon matches
+		// THIS entry, never vAlign above, so migrate() must land on the
+		// CURRENT schema (justification) itself, not the intermediate `align`
+		// schema. wide/full stay on align; left/center/right become
+		// justification.
+		const { align, ...rest } = attributes;
+		const isJustify = ['left', 'center', 'right'].includes(align);
+		return {
+			...rest,
+			...(isJustify ? {} : { align }),
+			justification: isJustify ? align : 'center',
+		};
 	},
 };
 
@@ -317,10 +382,20 @@ const v2 = {
 	},
 
 	migrate(attributes) {
-		// Passthrough. An implicit-default old block has iconSize/iconStyle
-		// === undefined here (no default in this schema), so it inherits the
-		// theme token; explicit values are preserved as overrides.
-		return attributes;
+		// iconSize/iconStyle: passthrough as before — an implicit-default old
+		// block has them === undefined here (no default in this schema), so
+		// it inherits the theme token; explicit values are preserved as
+		// overrides. align: deprecations do not cascade — a legacy pre-token
+		// icon matches THIS entry, never vAlign above, so migrate() must land
+		// on the CURRENT schema (justification) itself. wide/full stay on
+		// align; left/center/right become justification.
+		const { align, ...rest } = attributes;
+		const isJustify = ['left', 'center', 'right'].includes(align);
+		return {
+			...rest,
+			...(isJustify ? {} : { align }),
+			justification: isJustify ? align : 'center',
+		};
 	},
 };
 
@@ -488,9 +563,19 @@ const v1 = {
 		);
 	},
 	migrate(attributes) {
-		// No attribute changes needed - only save function changed
-		return attributes;
+		// Save function changed (lazy-loading icon library), plus align:
+		// deprecations do not cascade — a legacy v1 icon matches THIS entry,
+		// never vAlign above, so migrate() must land on the CURRENT schema
+		// (justification) itself. wide/full stay on align; left/center/right
+		// become justification.
+		const { align, ...rest } = attributes;
+		const isJustify = ['left', 'center', 'right'].includes(align);
+		return {
+			...rest,
+			...(isJustify ? {} : { align }),
+			justification: isJustify ? align : 'center',
+		};
 	},
 };
 
-export default [vLazy, v2, v1];
+export default [vAlign, vLazy, v2, v1];

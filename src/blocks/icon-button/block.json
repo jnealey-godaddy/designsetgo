@@ -22,9 +22,7 @@
 	"supports": {
 		"anchor": true,
 		"align": [
-			"left",
-			"center",
-			"right",
+			"wide",
 			"full"
 		],
 		"alignWide": true,
@@ -54,17 +52,21 @@
 		"typography": {
 			"fontSize": true,
 			"lineHeight": true,
+			"__experimentalSkipSerialization": true,
 			"__experimentalDefaultControls": {
 				"fontSize": true
 			},
 			"__experimentalFontWeight": true
 		},
-		"shadow": true,
+		"shadow": {
+			"__experimentalSkipSerialization": true
+		},
 		"__experimentalBorder": {
 			"color": true,
 			"radius": true,
 			"style": true,
 			"width": true,
+			"__experimentalSkipSerialization": true,
 			"__experimentalDefaultControls": {
 				"color": true,
 				"radius": true,
@@ -73,9 +75,18 @@
 			}
 		}
 	},
+	"selectors": {
+		"root": ".wp-block-designsetgo-icon-button .dsgo-icon-button"
+	},
 	"attributes": {
-		"align": {
-			"type": "string"
+		"justification": {
+			"type": "string",
+			"enum": [ "left", "center", "right" ],
+			"default": "left"
+		},
+		"fullWidth": {
+			"type": "boolean",
+			"default": false
 		},
 		"text": {
 			"type": "string",

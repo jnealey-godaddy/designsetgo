@@ -13,11 +13,51 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import {
+	hasExplicitString,
+	hasExplicitNumber,
+} from '../../utils/has-explicit-value';
 import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
+
+/**
+ * Every deprecation must land on the CURRENT attribute schema — deprecations do
+ * not cascade, so exactly one migrate() runs for any given stored block. All
+ * nine deprecations below (v9 down to v1) carried `align: left|center|right|full`;
+ * the current block uses a `justification` wrapper + `fullWidth` toggle instead,
+ * because core's constrained layout excludes aligned blocks (`alignleft`/
+ * `alignright`) from the content-size cap (see wp-includes/block-supports/layout.php),
+ * and the block root moved from the `<a>`/`<button>` itself to a block-level
+ * positioning wrapper (v9's own eligibility signature) that core CAN cap.
+ * `align: "full"` used to mean "stretch the button to 100%"; that meaning now
+ * lives in `fullWidth` since `full` on the wrapper instead bleeds the wrapper
+ * itself edge-to-edge, matching every other WordPress `alignfull` block.
+ *
+ * @param {Object} attributes Attributes as sourced from a matched deprecation.
+ *                            May or may not include `align`, depending on
+ *                            whether the old markup set it.
+ * @return {Object} Attributes with `align` replaced by `justification`/`fullWidth`.
+ */
+function migrateAlign(attributes) {
+	const { align, ...rest } = attributes;
+	return {
+		...rest,
+		justification: ['left', 'center', 'right'].includes(align)
+			? align
+			: 'left',
+		fullWidth: align === 'full',
+	};
+}
 
 /**
  * Shared supports definition for all deprecated versions.
  * Mirrors block.json supports but uses __experimentalBorder (the historical key).
+ *
+ * typography.fontWeight must use the __experimental-prefixed key
+ * (`__experimentalFontWeight`, matching `v9Supports` below and the live
+ * block.json) — that's what WP's `hasBlockSupport()` actually checks. The
+ * live block.json does NOT declare `__experimentalFontFamily`, so unlike
+ * fontWeight there is no dedicated `fontFamily` attribute to lose here; the
+ * un-prefixed key was cosmetically wrong only, not a data-loss bug.
  */
 const sharedSupports = {
 	anchor: true,
@@ -47,7 +87,7 @@ const sharedSupports = {
 	typography: {
 		fontSize: true,
 		lineHeight: true,
-		fontWeight: true,
+		__experimentalFontWeight: true,
 		__experimentalDefaultControls: {
 			fontSize: true,
 		},
@@ -65,6 +105,238 @@ const sharedSupports = {
 		},
 	},
 	shadow: true,
+};
+
+/**
+ * Version 9: Before the justification wrapper
+ *
+ * The block root USED to be the `<a>`/`<button>` itself, positioned via
+ * WordPress's `align: left|center|right|full` support. That was a misuse: core's
+ * constrained layout excludes `.alignleft`/`.alignright` from the content-size
+ * cap (see wp-includes/block-supports/layout.php), and an inline-flex root makes
+ * auto margins inert even when `align: center` narrowly worked. The current
+ * version introduces a block-level `.dsgo-justify` wrapper as the block root —
+ * which core CAN cap at the content column — with the button shrink-wrapped
+ * inside it and positioned via `justify-content` from a new `justification`
+ * attribute. `align: "full"` used to mean "stretch the button to 100%"; that
+ * meaning now lives in the `fullWidth` attribute, since `full` on the wrapper
+ * instead bleeds the wrapper itself edge-to-edge.
+ *
+ * `supports` here is the exact supports block the (now-superseded) current
+ * block.json carried immediately before this change — including
+ * `color.__experimentalSkipSerialization` (already present pre-refactor) but
+ * NOT the new border/typography/shadow skip-serialization, which only applies
+ * to the post-refactor block whose root moved to the wrapper.
+ */
+const v9Supports = {
+	anchor: true,
+	align: ['left', 'center', 'right', 'full'],
+	alignWide: true,
+	html: false,
+	inserter: true,
+	spacing: {
+		margin: true,
+		padding: true,
+		__experimentalSkipSerialization: ['padding'],
+		__experimentalDefaultControls: {
+			margin: true,
+			padding: true,
+		},
+	},
+	color: {
+		background: true,
+		text: true,
+		gradients: true,
+		__experimentalSkipSerialization: true,
+		__experimentalDefaultControls: {
+			background: true,
+			text: true,
+		},
+	},
+	typography: {
+		fontSize: true,
+		lineHeight: true,
+		__experimentalDefaultControls: {
+			fontSize: true,
+		},
+		__experimentalFontWeight: true,
+	},
+	shadow: true,
+	__experimentalBorder: {
+		color: true,
+		radius: true,
+		style: true,
+		width: true,
+		__experimentalDefaultControls: {
+			color: true,
+			radius: true,
+			style: true,
+			width: true,
+		},
+	},
+};
+
+const v9 = {
+	supports: v9Supports,
+	isEligible(attributes, innerBlocks, { innerHTML }) {
+		// Pre-wrapper markup: the block root IS the button/link, not a `<div>`.
+		return !!innerHTML && !innerHTML.trimStart().startsWith('<div');
+	},
+
+	attributes: {
+		align: { type: 'string' },
+		text: { type: 'string', default: '' },
+		url: { type: 'string', default: '' },
+		linkTarget: { type: 'string', default: '_self' },
+		rel: { type: 'string', default: '' },
+		icon: { type: 'string', default: 'lightbulb' },
+		iconPosition: { type: 'string', default: 'start' },
+		iconStyle: { type: 'string', enum: ['filled', 'outlined'] },
+		strokeWidth: { type: 'number', default: 1.5 },
+		iconSize: { type: 'number' },
+		iconGap: { type: 'string' },
+		hoverAnimation: { type: 'string', default: 'none' },
+		hoverBackgroundColor: { type: 'string', default: '' },
+		hoverTextColor: { type: 'string', default: '' },
+		modalCloseId: { type: 'string', default: '' },
+	},
+
+	// Verbatim copy of the pre-wrapper save.js: single-element `<a>`/`<button>`
+	// root carrying inline display/width/flexDirection and the align classes.
+	save({ attributes }) {
+		const {
+			text,
+			url,
+			linkTarget,
+			rel,
+			icon,
+			iconPosition,
+			iconStyle,
+			strokeWidth,
+			iconSize,
+			iconGap,
+			align,
+			hoverAnimation,
+			hoverBackgroundColor,
+			hoverTextColor,
+			style,
+			backgroundColor,
+			textColor,
+			fontSize,
+			modalCloseId,
+		} = attributes;
+
+		const bgColor =
+			style?.color?.background ||
+			(backgroundColor && `var(--wp--preset--color--${backgroundColor})`);
+		const txtColor =
+			style?.color?.text ||
+			(textColor && `var(--wp--preset--color--${textColor})`);
+
+		const fontSizeValue =
+			style?.typography?.fontSize ||
+			(fontSize && `var(--wp--preset--font-size--${fontSize})`);
+
+		const paddingValue = style?.spacing?.padding;
+
+		const hasIcon = iconPosition !== 'none' && !!icon;
+		const hasExplicitGap = hasExplicitString(iconGap);
+
+		const isFullWidth = align === 'full';
+		const buttonStyles = {
+			display: isFullWidth ? 'flex' : 'inline-flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			...(hasIcon && hasExplicitGap && { gap: iconGap }),
+			width: isFullWidth ? '100%' : 'auto',
+			flexDirection: iconPosition === 'end' ? 'row-reverse' : 'row',
+			...(bgColor && { backgroundColor: bgColor }),
+			...(txtColor && { color: txtColor }),
+			...(fontSizeValue && { fontSize: fontSizeValue }),
+			...(paddingValue && {
+				paddingTop: convertPaddingValue(paddingValue.top),
+				paddingRight: convertPaddingValue(paddingValue.right),
+				paddingBottom: convertPaddingValue(paddingValue.bottom),
+				paddingLeft: convertPaddingValue(paddingValue.left),
+			}),
+			...(hoverBackgroundColor && {
+				'--dsgo-button-hover-bg':
+					convertColorToCSSVar(hoverBackgroundColor),
+			}),
+			...(hoverTextColor && {
+				'--dsgo-button-hover-color':
+					convertColorToCSSVar(hoverTextColor),
+			}),
+		};
+
+		const hasExplicitSize = hasExplicitNumber(iconSize);
+		const iconWrapperStyles = {
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			...(hasExplicitSize && {
+				width: `${iconSize}px`,
+				height: `${iconSize}px`,
+			}),
+			flexShrink: 0,
+		};
+
+		let animationClass = '';
+		if (hoverAnimation === 'explicit-none') {
+			animationClass = ' dsgo-icon-button--no-hover';
+		} else if (hoverAnimation && hoverAnimation !== 'none') {
+			animationClass = ` dsgo-icon-button--${hoverAnimation}`;
+		}
+
+		const ButtonElement = url ? 'a' : 'button';
+
+		const iconClass = hasIcon ? ' dsgo-icon-button--has-icon' : '';
+
+		const blockProps = useBlockProps.save({
+			className: `dsgo-icon-button wp-block-button wp-block-button__link wp-element-button${iconClass}${animationClass}`,
+			style: buttonStyles,
+			...(url && {
+				href: url,
+				target: linkTarget,
+				rel:
+					linkTarget === '_blank'
+						? rel || 'noopener noreferrer'
+						: rel || undefined,
+			}),
+			...(!url && {
+				type: 'button',
+			}),
+			...(modalCloseId && {
+				'data-dsgo-modal-close': modalCloseId,
+			}),
+		});
+
+		return (
+			<ButtonElement {...blockProps}>
+				{iconPosition !== 'none' && icon && (
+					<span
+						className="dsgo-icon-button__icon dsgo-lazy-icon"
+						style={iconWrapperStyles}
+						data-icon-name={icon}
+						data-icon-size={iconSize || undefined}
+						data-icon-style={iconStyle || undefined}
+						data-icon-stroke-width={
+							iconStyle === 'outlined' ? strokeWidth : undefined
+						}
+					/>
+				)}
+				<RichText.Content
+					tagName="span"
+					className="dsgo-icon-button__text"
+					value={text}
+				/>
+			</ButtonElement>
+		);
+	},
+
+	migrate(attributes) {
+		return migrateAlign(attributes);
+	},
 };
 
 /**
@@ -244,14 +516,15 @@ const v8 = {
 	},
 
 	migrate(attributes) {
-		// Passthrough: pin whatever iconGap the old markup carried (an
+		// Passthrough (plus the shared align→justification/fullWidth
+		// conversion): pin whatever iconGap the old markup carried (an
 		// implicit-default block re-parses to this schema's '8px' default) so an
 		// existing button renders exactly as authored. We do not strip a
 		// default-valued gap back to "inherit" — old markup can't tell an
 		// explicit 8px from an implicit one, so stripping could silently un-pin a
 		// deliberate choice. This matches image-accordion / scroll-marquee;
 		// new content and patterns inherit by omitting the attribute.
-		return attributes;
+		return migrateAlign(attributes);
 	},
 };
 
@@ -426,10 +699,11 @@ const v7 = {
 	},
 
 	migrate(attributes) {
-		// Passthrough. An implicit-default old block has iconSize === undefined
+		// Passthrough (plus the shared align→justification/fullWidth
+		// conversion). An implicit-default old block has iconSize === undefined
 		// here (no default in this schema), so it inherits the theme token;
 		// an explicit value is preserved as an override.
-		return attributes;
+		return migrateAlign(attributes);
 	},
 };
 
@@ -632,13 +906,14 @@ const v6 = {
 		);
 	},
 	migrate(attributes) {
-		// Migrate width="100%" to align="full"
+		// Migrate width="100%" to align="full", then run the shared
+		// align→justification/fullWidth conversion to land on the current schema.
 		const { width, ...rest } = attributes;
-		return {
+		return migrateAlign({
 			...rest,
 			align: width === '100%' ? 'full' : attributes.align,
 			width: 'auto', // Reset width to auto (no longer used)
-		};
+		});
 	},
 };
 
@@ -840,14 +1115,15 @@ const v5 = {
 		);
 	},
 	migrate(attributes) {
-		// Convert old percentage widths to auto, and 100% to alignfull
+		// Convert old percentage widths to auto, and 100% to alignfull, then run
+		// the shared align→justification/fullWidth conversion.
 		const { width, ...rest } = attributes;
 		const isFullWidth = width === '100%';
-		return {
+		return migrateAlign({
 			...rest,
 			align: isFullWidth ? 'full' : attributes.align,
 			width: 'auto', // Reset width to auto (no longer used for full-width)
-		};
+		});
 	},
 };
 
@@ -1068,8 +1344,10 @@ const v4 = {
 		);
 	},
 	migrate(attributes) {
-		// No attribute changes needed - only save function changed
-		return attributes;
+		// No other attribute changes needed - only save function changed. Still
+		// runs the shared align→justification/fullWidth conversion so this
+		// version lands on the current schema too (deprecations do not cascade).
+		return migrateAlign(attributes);
 	},
 };
 
@@ -1267,8 +1545,10 @@ const v3 = {
 		);
 	},
 	migrate(attributes) {
-		// No attribute changes needed - only save function changed
-		return attributes;
+		// No other attribute changes needed - only save function changed. Still
+		// runs the shared align→justification/fullWidth conversion so this
+		// version lands on the current schema too (deprecations do not cascade).
+		return migrateAlign(attributes);
 	},
 };
 
@@ -1464,8 +1744,10 @@ const v2 = {
 		);
 	},
 	migrate(attributes) {
-		// No attribute changes needed - only save function changed
-		return attributes;
+		// No other attribute changes needed - only save function changed. Still
+		// runs the shared align→justification/fullWidth conversion so this
+		// version lands on the current schema too (deprecations do not cascade).
+		return migrateAlign(attributes);
 	},
 };
 
@@ -1657,9 +1939,11 @@ const v1 = {
 		);
 	},
 	migrate(attributes) {
-		// No attribute changes needed - only save function changed
-		return attributes;
+		// No other attribute changes needed - only save function changed. Still
+		// runs the shared align→justification/fullWidth conversion so this
+		// version lands on the current schema too (deprecations do not cascade).
+		return migrateAlign(attributes);
 	},
 };
 
-export default [v8, v7, v6, v5, v4, v3, v2, v1];
+export default [v9, v8, v7, v6, v5, v4, v3, v2, v1];

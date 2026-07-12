@@ -463,11 +463,26 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/icon':
+				// Dead branch: Icon is a dynamic block (render.php), so
+				// is_dynamic_block() keeps this switch from ever being
+				// reached for it (see convert_to_block_array() above) — the
+				// block always serializes to a bare comment and is rendered
+				// server-side. Kept in sync with the current markup anyway
+				// (rather than deleted) in case that gate is ever revisited;
+				// same treatment as the Pill case below.
 				$icon_name    = isset( $attributes['icon'] ) ? $attributes['icon'] : ( isset( $attributes['iconName'] ) ? $attributes['iconName'] : 'star' );
 				$icon_style   = isset( $attributes['iconStyle'] ) ? $attributes['iconStyle'] : 'filled';
 				$stroke_width = isset( $attributes['strokeWidth'] ) ? $attributes['strokeWidth'] : '1.5';
 				$icon_size    = isset( $attributes['iconSize'] ) ? intval( $attributes['iconSize'] ) : ( isset( $attributes['size'] ) ? intval( $attributes['size'] ) : 48 );
 				$aria_label   = isset( $attributes['ariaLabel'] ) ? $attributes['ariaLabel'] : ucwords( str_replace( '-', ' ', $icon_name ) );
+
+				// `align` was removed when `justification` replaced it.
+				$justification = isset( $attributes['justification'] )
+					? $attributes['justification']
+					: ( isset( $attributes['align'] ) ? $attributes['align'] : 'center' );
+				if ( ! in_array( $justification, array( 'left', 'center', 'right' ), true ) ) {
+					$justification = 'center';
+				}
 
 				$wrapper_style = 'width:' . $icon_size . 'px;height:' . $icon_size . 'px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit';
 
@@ -477,8 +492,10 @@ class Block_Inserter {
 				$inner_html .= ' data-icon-stroke-width="' . esc_attr( $stroke_width ) . '"';
 				$inner_html .= ' role="img" aria-label="' . esc_attr( $aria_label ) . '"></div>';
 
+				$wrapper_class = 'wp-block-designsetgo-icon dsgo-icon dsgo-justify dsgo-justify--' . $justification;
+
 				return array(
-					'opening' => '<div class="wp-block-designsetgo-icon dsgo-icon" style="display:flex;align-items:center;justify-content:center">' . $inner_html,
+					'opening' => '<div class="' . esc_attr( $wrapper_class ) . '">' . $inner_html,
 					'closing' => '</div>',
 				);
 
@@ -778,16 +795,24 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/pill':
-				$content = isset( $attributes['content'] ) ? $attributes['content'] : '';
-				$align   = isset( $attributes['align'] ) ? $attributes['align'] : 'center';
-
-				// Build class list matching useBlockProps.save output.
-				$class_parts = array( 'wp-block-designsetgo-pill' );
-				if ( $align ) {
-					$class_parts[] = 'align' . $align;
+				// Dead branch: Pill is a dynamic block (render.php), so
+				// is_dynamic_block() keeps this switch from ever being
+				// reached for it (see convert_to_block_array() above) — the
+				// block always serializes to a bare comment and is rendered
+				// server-side. Kept in sync with the current markup anyway
+				// (rather than deleted) in case that gate is ever revisited;
+				// `align` was removed when `justification` replaced it, and
+				// the pre-dynamic `wp-block-designsetgo-pill align{value}
+				// dsgo-pill has-small-font-size` shape below is stale.
+				$content       = isset( $attributes['content'] ) ? $attributes['content'] : '';
+				$justification = isset( $attributes['justification'] )
+					? $attributes['justification']
+					: ( isset( $attributes['align'] ) ? $attributes['align'] : 'center' );
+				if ( ! in_array( $justification, array( 'left', 'center', 'right' ), true ) ) {
+					$justification = 'center';
 				}
-				$class_parts[] = 'dsgo-pill';
-				$class_parts[] = 'has-small-font-size';
+
+				$class_parts = array( 'wp-block-designsetgo-pill', 'dsgo-pill', 'dsgo-justify', 'dsgo-justify--' . $justification );
 
 				$inner_html = '<span class="dsgo-pill__content">' . wp_kses_post( $content ) . '</span>';
 
@@ -1052,34 +1077,50 @@ class Block_Inserter {
 				$icon           = isset( $attributes['icon'] ) ? $attributes['icon'] : 'lightbulb';
 				$icon_position  = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'start';
 				$icon_size      = isset( $attributes['iconSize'] ) ? intval( $attributes['iconSize'] ) : 20;
-				$icon_gap       = isset( $attributes['iconGap'] ) ? $attributes['iconGap'] : '8px';
-				$align          = isset( $attributes['align'] ) ? $attributes['align'] : '';
+				$icon_gap       = isset( $attributes['iconGap'] ) ? $attributes['iconGap'] : '';
 				$hover_anim     = isset( $attributes['hoverAnimation'] ) ? $attributes['hoverAnimation'] : 'none';
 				$modal_close_id = isset( $attributes['modalCloseId'] ) ? $attributes['modalCloseId'] : '';
 
-				// Build classes.
-				$class_parts = array( 'wp-block-designsetgo-icon-button', 'dsgo-icon-button', 'wp-block-button', 'wp-block-button__link', 'wp-element-button' );
+				// Read the current `justification`/`fullWidth` attributes; fall
+				// back to the legacy `align` for callers that still pass it.
+				$justification = isset( $attributes['justification'] )
+					? $attributes['justification']
+					: ( isset( $attributes['align'] ) ? $attributes['align'] : 'left' );
+				if ( ! in_array( $justification, array( 'left', 'center', 'right' ), true ) ) {
+					$justification = 'left';
+				}
+				$full_width = ! empty( $attributes['fullWidth'] ) || ( isset( $attributes['align'] ) && 'full' === $attributes['align'] );
+
+				$has_icon = 'none' !== $icon_position && $icon;
+
+				// Build the button's own classes (matches the current save.js
+				// marker-class scheme: gap is themed via `--has-icon`, not baked
+				// inline, unless the author sets an explicit iconGap).
+				$class_parts = array( 'dsgo-icon-button', 'wp-block-button', 'wp-block-button__link', 'wp-element-button' );
+				if ( $has_icon ) {
+					$class_parts[] = 'dsgo-icon-button--has-icon';
+				}
+				if ( $full_width ) {
+					$class_parts[] = 'dsgo-icon-button--full-width';
+				}
+				if ( 'end' === $icon_position ) {
+					$class_parts[] = 'dsgo-icon-button--icon-end';
+				}
 				if ( $hover_anim && 'none' !== $hover_anim ) {
 					$class_parts[] = 'dsgo-icon-button--' . $hover_anim;
 				}
 
-				// Build button styles.
-				$is_full_width  = 'full' === $align;
-				$flex_direction = 'end' === $icon_position ? 'row-reverse' : 'row';
-				$gap_value      = ( 'none' !== $icon_position && $icon ) ? $icon_gap : '0';
-				$style_parts    = array(
-					'display:' . ( $is_full_width ? 'flex' : 'inline-flex' ),
-					'align-items:center',
-					'justify-content:center',
-					'gap:' . esc_attr( $gap_value ),
-					'width:' . ( $is_full_width ? '100%' : 'auto' ),
-					'flex-direction:' . $flex_direction,
-				);
-				$button_style   = implode( ';', $style_parts );
+				// Layout (display/width/flex-direction) lives in style.scss now,
+				// not inline — only an explicit author gap is written inline.
+				$style_parts = array();
+				if ( $has_icon && '' !== $icon_gap ) {
+					$style_parts[] = 'gap:' . esc_attr( $icon_gap );
+				}
+				$button_style = implode( ';', $style_parts );
 
 				// Icon HTML.
 				$icon_html = '';
-				if ( 'none' !== $icon_position && $icon ) {
+				if ( $has_icon ) {
 					$icon_style = 'display:flex;align-items:center;justify-content:center;width:' . $icon_size . 'px;height:' . $icon_size . 'px;flex-shrink:0';
 					$icon_html  = '<span class="dsgo-icon-button__icon dsgo-lazy-icon" style="' . esc_attr( $icon_style ) . '" data-icon-name="' . esc_attr( $icon ) . '" data-icon-size="' . esc_attr( (string) $icon_size ) . '"></span>';
 				}
@@ -1110,9 +1151,16 @@ class Block_Inserter {
 
 				$inner_html = $icon_html . $text_html;
 
+				// The block root is a block-level justification wrapper — core's
+				// constrained layout caps IT at the content column — with the
+				// button shrink-wrapped inside it (see save.js). Matches
+				// `getJustificationClass()` (src/utils/justification.js).
+				$wrapper_class      = 'wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--' . $justification;
+				$button_style_attr  = '' !== $button_style ? ' style="' . esc_attr( $button_style ) . '"' : '';
+
 				return array(
-					'opening' => '<' . $tag . ' class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( $button_style ) . '"' . $extra_attrs . '>' . $inner_html,
-					'closing' => '</' . $tag . '>',
+					'opening' => '<div class="' . esc_attr( $wrapper_class ) . '"><' . $tag . ' class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $button_style_attr . $extra_attrs . '>' . $inner_html,
+					'closing' => '</' . $tag . '></div>',
 				);
 
 			case 'designsetgo/modal':
@@ -1212,26 +1260,84 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/modal-trigger':
-				$text          = isset( $attributes['text'] ) ? $attributes['text'] : 'Open Modal';
-				$button_style  = isset( $attributes['buttonStyle'] ) ? $attributes['buttonStyle'] : 'fill';
-				$width_style   = isset( $attributes['widthStyle'] ) ? $attributes['widthStyle'] : 'auto';
-				$icon          = isset( $attributes['icon'] ) ? $attributes['icon'] : '';
-				$icon_position = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'start';
+				$target_modal_id = isset( $attributes['targetModalId'] ) ? $attributes['targetModalId'] : '';
+				$text            = isset( $attributes['text'] ) ? $attributes['text'] : 'Open Modal';
+				$button_style    = isset( $attributes['buttonStyle'] ) ? $attributes['buttonStyle'] : 'fill';
+				$icon            = isset( $attributes['icon'] ) ? $attributes['icon'] : '';
+				$icon_position   = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'none';
+				$icon_gap        = isset( $attributes['iconGap'] ) ? $attributes['iconGap'] : '8px';
+				$icon_style      = isset( $attributes['iconStyle'] ) ? $attributes['iconStyle'] : '';
+				$stroke_width    = isset( $attributes['strokeWidth'] ) ? $attributes['strokeWidth'] : 1.5;
 
-				$outer_class = 'wp-block-designsetgo-modal-trigger dsgo-modal-trigger dsgo-modal-trigger--' . esc_attr( $button_style ) . ' dsgo-modal-trigger--width-' . esc_attr( $width_style );
-
-				$flex_direction    = 'end' === $icon_position ? 'row-reverse' : 'row';
-				$button_style_attr = 'flex-direction:' . $flex_direction;
-
-				$inner_html = '<button class="dsgo-modal-trigger__button" data-dsgo-modal-trigger="" style="' . esc_attr( $button_style_attr ) . '" type="button">';
-				if ( $icon && 'none' !== $icon_position ) {
-					$inner_html .= '<span class="dsgo-modal-trigger__icon dsgo-lazy-icon" data-icon-name="' . esc_attr( $icon ) . '"></span>';
+				// Read the current `justification`/`fullWidth` attributes; fall
+				// back to the legacy `align` for callers that still pass it
+				// (mirrors the icon-button case above).
+				$justification = isset( $attributes['justification'] )
+					? $attributes['justification']
+					: ( isset( $attributes['align'] ) ? $attributes['align'] : 'left' );
+				if ( ! in_array( $justification, array( 'left', 'center', 'right' ), true ) ) {
+					$justification = 'left';
 				}
+				$full_width = ! empty( $attributes['fullWidth'] ) || ( isset( $attributes['align'] ) && 'full' === $attributes['align'] );
+
+				$has_icon = 'none' !== $icon_position && $icon;
+
+				// Button classes — must match save.js's clsx() list exactly, or
+				// the block validator flags AI-inserted triggers as invalid.
+				$class_parts = array(
+					'dsgo-modal-trigger',
+					'dsgo-modal-trigger--' . $button_style,
+					'wp-block-button',
+					'wp-block-button__link',
+					'wp-element-button',
+				);
+				if ( $full_width ) {
+					$class_parts[] = 'dsgo-modal-trigger--full-width';
+				}
+				if ( 'end' === $icon_position ) {
+					$class_parts[] = 'dsgo-modal-trigger--icon-end';
+				}
+
+				// save.js writes the gap inline whenever there is an icon and an
+				// iconGap (which defaults to 8px); layout lives in style.scss.
+				$button_style_attr = '';
+				if ( $has_icon && '' !== $icon_gap ) {
+					$button_style_attr = ' style="' . esc_attr( 'gap:' . $icon_gap ) . '"';
+				}
+
+				// Icon span — size is only baked inline when the caller sets an
+				// explicit numeric iconSize, so the theme token owns it otherwise.
+				$icon_html = '';
+				if ( $has_icon ) {
+					$icon_attrs = '';
+					if ( isset( $attributes['iconSize'] ) && is_numeric( $attributes['iconSize'] ) ) {
+						$size        = intval( $attributes['iconSize'] );
+						$icon_attrs .= ' style="' . esc_attr( 'width:' . $size . 'px;height:' . $size . 'px' ) . '"';
+					}
+					$icon_attrs .= ' data-icon-name="' . esc_attr( $icon ) . '"';
+					if ( $icon_style ) {
+						$icon_attrs .= ' data-icon-style="' . esc_attr( $icon_style ) . '"';
+					}
+					if ( 'outlined' === $icon_style ) {
+						$icon_attrs .= ' data-icon-stroke-width="' . esc_attr( (string) $stroke_width ) . '"';
+					}
+					$icon_html = '<span class="dsgo-modal-trigger__icon dsgo-lazy-icon"' . $icon_attrs . '></span>';
+				}
+
+				$inner_html  = '<button class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $button_style_attr;
+				$inner_html .= ' type="button" data-dsgo-modal-trigger="' . esc_attr( $target_modal_id ) . '">';
+				$inner_html .= $icon_html;
 				$inner_html .= '<span class="dsgo-modal-trigger__text">' . wp_kses_post( $text ) . '</span>';
 				$inner_html .= '</button>';
 
+				// The block root is a block-level justification wrapper — core's
+				// constrained layout caps IT at the content column — with the
+				// button shrink-wrapped inside it (see save.js). Matches
+				// `getJustificationClass()` (src/utils/justification.js).
+				$wrapper_class = 'wp-block-designsetgo-modal-trigger dsgo-justify dsgo-justify--' . $justification;
+
 				return array(
-					'opening' => '<div class="' . esc_attr( $outer_class ) . '" style="display:inline-block">' . $inner_html,
+					'opening' => '<div class="' . esc_attr( $wrapper_class ) . '">' . $inner_html,
 					'closing' => '</div>',
 				);
 

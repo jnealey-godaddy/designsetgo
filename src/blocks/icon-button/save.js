@@ -3,16 +3,34 @@
  *
  * Renders the frontend output for the icon button.
  *
+ * The block root is a plain block-level "justification wrapper" (`.dsgo-justify`)
+ * that core's constrained layout caps at the content column — align: left/right
+ * is deliberately NOT used here, since core excludes aligned blocks from that cap
+ * (see wp-includes/block-supports/layout.php). The visible button shrink-wraps
+ * inside it and is positioned via `justify-content` from the `justification`
+ * attribute. Visual supports (border/color/shadow/typography) are skip-serialized
+ * off the wrapper in block.json and re-derived here with the official block-support
+ * helpers so they land on the button, not the invisible wrapper.
+ *
  * @since 1.0.0
  */
 
-import { useBlockProps, RichText } from '@wordpress/block-editor';
+import {
+	useBlockProps,
+	RichText,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalGetBorderClassesAndStyles as getBorderClassesAndStyles,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalGetColorClassesAndStyles as getColorClassesAndStyles,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalGetShadowClassesAndStyles as getShadowClassesAndStyles,
+	getTypographyClassesAndStyles,
+} from '@wordpress/block-editor';
+import clsx from 'clsx';
 import { convertPaddingValue } from './utils/padding';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
-import {
-	hasExplicitString,
-	hasExplicitNumber,
-} from '../../utils/has-explicit-value';
+import { hasExplicitString } from '../../utils/has-explicit-value';
+import { getJustificationClass } from '../../utils/justification';
 
 /**
  * Icon Button Save Component
@@ -33,35 +51,26 @@ export default function IconButtonSave({ attributes }) {
 		strokeWidth,
 		iconSize,
 		iconGap,
-		align,
+		justification,
+		fullWidth,
 		hoverAnimation,
 		hoverBackgroundColor,
 		hoverTextColor,
 		style,
-		backgroundColor,
-		textColor,
-		fontSize,
 		modalCloseId,
 	} = attributes;
 
-	// Extract WordPress color values (must match edit.js)
-	// Custom colors come from style.color.background (hex/rgb)
-	// Preset colors come from backgroundColor/textColor (slugs that need conversion)
-	const bgColor =
-		style?.color?.background ||
-		(backgroundColor && `var(--wp--preset--color--${backgroundColor})`);
-	const txtColor =
-		style?.color?.text ||
-		(textColor && `var(--wp--preset--color--${textColor})`);
+	// The wrapper is the block root: a plain block-level box that core's
+	// constrained layout caps at the content column. It carries NO visual styles
+	// (those are skip-serialized in block.json and re-applied to the button below).
+	const blockProps = useBlockProps.save({
+		className: clsx('dsgo-justify', getJustificationClass(justification)),
+	});
 
-	// Extract font size (must match edit.js)
-	// Custom font sizes come from style.typography.fontSize (px/rem/em)
-	// Preset font sizes come from fontSize (slug that needs conversion)
-	const fontSizeValue =
-		style?.typography?.fontSize ||
-		(fontSize && `var(--wp--preset--font-size--${fontSize})`);
-
-	// Extract padding (must match edit.js)
+	const border = getBorderClassesAndStyles(attributes);
+	const colors = getColorClassesAndStyles(attributes);
+	const shadow = getShadowClassesAndStyles(attributes);
+	const typography = getTypographyClassesAndStyles(attributes);
 	const paddingValue = style?.spacing?.padding;
 
 	// Icon presence gates the icon↔text gap. When there is no icon the button
@@ -71,23 +80,15 @@ export default function IconButtonSave({ attributes }) {
 	// Gap is written inline ONLY when the author sets an explicit iconGap. Left
 	// unset it is omitted so the stylesheet default (.dsgo-icon-button--has-icon)
 	// owns it and kits/patterns can retheme via --dsgo-icon-button-gap or the
-	// --wp--custom--designsetgo--icon-button--gap token. Mirrors iconSize.
+	// --wp--custom--designsetgo--icon-button--gap token.
 	const hasExplicitGap = hasExplicitString(iconGap);
 
-	// Combined styles for single element (must match edit.js)
-	// Visual styles (colors, padding, font size, hover) + layout styles (flexbox)
-	// Use flex for full-width (alignfull), inline-flex for auto
-	const isFullWidth = align === 'full';
 	const buttonStyles = {
-		display: isFullWidth ? 'flex' : 'inline-flex',
-		alignItems: 'center',
-		justifyContent: 'center',
+		...border.style,
+		...colors.style,
+		...shadow.style,
+		...typography.style,
 		...(hasIcon && hasExplicitGap && { gap: iconGap }),
-		width: isFullWidth ? '100%' : 'auto',
-		flexDirection: iconPosition === 'end' ? 'row-reverse' : 'row',
-		...(bgColor && { backgroundColor: bgColor }),
-		...(txtColor && { color: txtColor }),
-		...(fontSizeValue && { fontSize: fontSizeValue }),
 		...(paddingValue && {
 			paddingTop: convertPaddingValue(paddingValue.top),
 			paddingRight: convertPaddingValue(paddingValue.right),
@@ -103,12 +104,12 @@ export default function IconButtonSave({ attributes }) {
 		}),
 	};
 
-	// Calculate icon wrapper styles (must match edit.js)
-	// Size is only written inline when the author sets an explicit iconSize;
-	// otherwise it is omitted so the theme default token
+	// Calculate icon wrapper styles (must match edit.js). Size is only written
+	// inline when the author sets an explicit iconSize; otherwise it is omitted
+	// so the theme default token
 	// (--wp--custom--designsetgo--icon-button--default-size, via style.scss)
 	// applies.
-	const hasExplicitSize = hasExplicitNumber(iconSize);
+	const hasExplicitSize = typeof iconSize === 'number';
 	const iconWrapperStyles = {
 		display: 'flex',
 		alignItems: 'center',
@@ -120,70 +121,66 @@ export default function IconButtonSave({ attributes }) {
 		flexShrink: 0,
 	};
 
-	// Build animation class (must match edit.js)
-	// "none" = use site default (no class, PHP will inject default at render)
-	// "explicit-none" = explicitly no animation (marker class blocks PHP injection)
-	let animationClass = '';
-	if (hoverAnimation === 'explicit-none') {
-		animationClass = ' dsgo-icon-button--no-hover';
-	} else if (hoverAnimation && hoverAnimation !== 'none') {
-		animationClass = ` dsgo-icon-button--${hoverAnimation}`;
-	}
-
-	// Single element with all classes and styles combined
-	// wp-block-button and wp-element-button enable theme.json button styles
-	// wp-block-button__link ensures theme compatibility
-	// WordPress automatically adds alignfull class when align="full"
 	const ButtonElement = url ? 'a' : 'button';
 
-	// `--has-icon` lets the stylesheet apply the default icon↔text gap only when
-	// an icon is actually present, and marks the new (gap-omitting) markup so the
-	// deprecation can distinguish it from pre-token content.
-	const iconClass = hasIcon ? ' dsgo-icon-button--has-icon' : '';
-
-	const blockProps = useBlockProps.save({
-		className: `dsgo-icon-button wp-block-button wp-block-button__link wp-element-button${iconClass}${animationClass}`,
-		style: buttonStyles,
-		...(url && {
-			href: url,
-			target: linkTarget,
-			rel:
-				linkTarget === '_blank'
-					? rel || 'noopener noreferrer'
-					: rel || undefined,
-		}),
-		...(!url && {
-			type: 'button',
-		}),
-		...(modalCloseId && {
-			'data-dsgo-modal-close': modalCloseId,
-		}),
-	});
+	const buttonClasses = clsx(
+		'dsgo-icon-button',
+		'wp-block-button',
+		'wp-block-button__link',
+		'wp-element-button',
+		border.className,
+		colors.className,
+		shadow.className,
+		typography.className,
+		hasIcon && 'dsgo-icon-button--has-icon',
+		fullWidth && 'dsgo-icon-button--full-width',
+		hoverAnimation === 'explicit-none' && 'dsgo-icon-button--no-hover',
+		hoverAnimation &&
+			hoverAnimation !== 'none' &&
+			hoverAnimation !== 'explicit-none' &&
+			`dsgo-icon-button--${hoverAnimation}`,
+		iconPosition === 'end' && 'dsgo-icon-button--icon-end'
+	);
 
 	return (
-		<ButtonElement {...blockProps}>
-			{iconPosition !== 'none' && icon && (
-				<span
-					className="dsgo-icon-button__icon dsgo-lazy-icon"
-					style={iconWrapperStyles}
-					data-icon-name={icon}
-					data-icon-size={iconSize || undefined}
-					// Omit when unset so the injector inherits the theme default
-					// (settings.custom.designsetgo.icon.defaultStyle).
-					data-icon-style={iconStyle || undefined}
-					// Only emitted for explicit outlined so existing filled
-					// buttons with an explicit size stay byte-identical (no
-					// new attributes) and remain valid without migration.
-					data-icon-stroke-width={
-						iconStyle === 'outlined' ? strokeWidth : undefined
-					}
+		<div {...blockProps}>
+			<ButtonElement
+				className={buttonClasses}
+				style={buttonStyles}
+				{...(url && {
+					href: url,
+					target: linkTarget,
+					rel:
+						linkTarget === '_blank'
+							? rel || 'noopener noreferrer'
+							: rel || undefined,
+				})}
+				{...(!url && { type: 'button' })}
+				{...(modalCloseId && { 'data-dsgo-modal-close': modalCloseId })}
+			>
+				{hasIcon && (
+					<span
+						className="dsgo-icon-button__icon dsgo-lazy-icon"
+						style={iconWrapperStyles}
+						data-icon-name={icon}
+						data-icon-size={iconSize || undefined}
+						// Omit when unset so the injector inherits the theme default
+						// (settings.custom.designsetgo.icon.defaultStyle).
+						data-icon-style={iconStyle || undefined}
+						// Only emitted for explicit outlined so existing filled
+						// buttons with an explicit size stay byte-identical (no
+						// new attributes) and remain valid without migration.
+						data-icon-stroke-width={
+							iconStyle === 'outlined' ? strokeWidth : undefined
+						}
+					/>
+				)}
+				<RichText.Content
+					tagName="span"
+					className="dsgo-icon-button__text"
+					value={text}
 				/>
-			)}
-			<RichText.Content
-				tagName="span"
-				className="dsgo-icon-button__text"
-				value={text}
-			/>
-		</ButtonElement>
+			</ButtonElement>
+		</div>
 	);
 }

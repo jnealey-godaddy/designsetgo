@@ -27,7 +27,18 @@
 }
 
 .dsgo-modal-trigger {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: auto;
 	overflow: hidden; // Clip contents to border-radius (from any source)
+
+	// See icon-button/style.scss: core's inline `.wp-block-button__link
+	// { display: inline-block }` ties on specificity and wins on source order,
+	// which turns this into a block box and stacks the icon above the label.
+	&.wp-block-button__link {
+		display: inline-flex;
+	}
 
 	// Structural/behavioral styles (not theme-overridable)
 	gap: 8px;
@@ -37,38 +48,45 @@
 	user-select: none;
 	font-family: inherit;
 
-	&:hover,
-	&:focus {
-		text-decoration: none !important;
+	&--icon-end {
+		flex-direction: row-reverse;
 	}
 
-	&:focus {
-		outline: 2px solid currentcolor;
-		outline-offset: 2px;
-	}
-
-	&:active {
-		transform: translateY(0);
+	// Fill the positioning wrapper — which core has already capped at the
+	// content column. Replaces the old `align: full` "stretch the button"
+	// meaning; see `.dsgo-justify` (src/styles/_justification.scss) for the
+	// wrapper itself.
+	&--full-width {
+		display: flex;
+		width: 100%;
 	}
 
 	// ============================================================================
-	// WIDTH & ALIGNMENT
+	// LEGACY SUPPORT: pre-justification-wrapper markup (deprecated.js v4 and
+	// older; align: left|center|right|full support removed from block.json)
 	// ============================================================================
-	// Width is controlled via WordPress alignment (alignfull for full-width)
+	// Before the justification wrapper, the block root WAS this element
+	// (`useBlockProps.save()` was called directly on the `<button>`), so
+	// WordPress's `align` support put `alignleft`/`aligncenter`/`alignright`/
+	// `alignfull` classes directly alongside `dsgo-modal-trigger` on the same
+	// tag. Modal Trigger is a STATIC block (its own `save.js` output is
+	// what's stored), so that markup is exactly what's still in the database
+	// until the author re-opens and re-saves the block — there is no PHP
+	// re-render to migrate it on the frontend.
 
-	// Full width: Button spans the full container width (via WordPress alignfull)
+	// New markup never reproduces this: the wrapper
+	// (`.wp-block-designsetgo-modal-trigger`, which can still carry
+	// `alignwide`/`alignfull` from the current `align: ["wide","full"]`
+	// support) and the button (`.dsgo-modal-trigger`) are different
+	// elements, and the button itself never carries any align class. So
+	// these compound selectors — requiring BOTH classes on the same tag —
+	// only ever match old, un-migrated stored HTML.
 	&.alignfull:not([class*="dsgo-hide-"]) {
 		display: flex !important;
 		width: 100% !important;
 		max-width: 100% !important;
 	}
 
-	// WordPress alignment support for non-full-width buttons
-	// Constrain button width and use margin for alignment
-	// CRITICAL: Must override inline display: inline-flex with display: flex for auto margins to work
-	// NOTE: Margins don't use !important so user-set margins can override
-	// float: none overrides WordPress flow layout which applies float:left/right to aligned blocks,
-	// causing them to sit beside adjacent content (e.g. headings) in Group blocks
 	&.aligncenter:not(.alignfull):not([class*="dsgo-hide-"]) {
 		float: none !important;
 		display: flex !important;
@@ -89,6 +107,20 @@
 		display: flex !important;
 		width: fit-content !important;
 		margin-left: auto;
+	}
+
+	&:hover,
+	&:focus {
+		text-decoration: none !important;
+	}
+
+	&:focus {
+		outline: 2px solid currentcolor;
+		outline-offset: 2px;
+	}
+
+	&:active {
+		transform: translateY(0);
 	}
 
 	&__text {

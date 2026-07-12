@@ -67,11 +67,13 @@ describe('Icon block theme-token deprecation', () => {
 	 * @return {string} Legacy inner HTML.
 	 */
 	function legacySaveContent(attrs) {
-		// deprecated[] is [vLazy, v2, v1] since the block became server-rendered
-		// (a lazy-placeholder deprecation was prepended). v2 — the token
-		// deprecation that bakes unconditional width/height + data-icon-style —
-		// is the one that reproduces the pre-token 48px markup, at index 1.
-		const v2 = deprecated[1];
+		// deprecated[] is [vAlign, vLazy, v2, v1]: vAlign (align → justification,
+		// still dynamic/save()===null) was prepended ahead of vLazy (the
+		// static→dynamic switch), which is itself ahead of v2/v1. v2 — the
+		// token deprecation that bakes unconditional width/height +
+		// data-icon-style — is the one that reproduces the pre-token 48px
+		// markup, at index 2.
+		const v2 = deprecated[2];
 		const TEMP = 'designsetgo/icon-legacy-temp';
 		registerBlockType(TEMP, {
 			...metadata,

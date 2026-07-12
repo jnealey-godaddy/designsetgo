@@ -58,6 +58,12 @@ require_once DESIGNSETGO_PATH . 'includes/features/breadcrumbs-functions.php';
 require_once DESIGNSETGO_PATH . 'includes/patterns/placeholder-images.php';
 
 /**
+ * Load block-support routing helper (used by dynamic blocks whose wrapper is
+ * a content-column positioning box, e.g. Pill, Icon).
+ */
+require_once DESIGNSETGO_PATH . 'includes/block-support-routing.php';
+
+/**
  * Initialize the plugin.
  */
 function designsetgo_init() {

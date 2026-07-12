@@ -43,6 +43,18 @@ parameters:
 		# Allow dynamic properties (common in WordPress)
 		- '#Access to an undefined property#'
 
+		# wp_style_engine_get_styles() only sets 'css' when a style group actually has
+		# declarations, then array_filter()s the result (wp-includes/style-engine.php).
+		# So 'css' is genuinely absent for any group with no styles — the common case.
+		# The wordpress-stubs signature wrongly types it as always-present, which makes
+		# PHPStan call our (necessary) isset() redundant. The guard stays; the stub is wrong.
+		# count pins this to the two style-engine 'css' guards it is justified for,
+		# so the other isset() calls in the file stay analysed.
+		-
+			identifier: isset.offset
+			path: includes/block-support-routing.php
+			count: 2
+
 		# Ignore missing array typehints (common in WordPress)
 		-
 			identifier: missingType.iterableValue

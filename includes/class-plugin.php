@@ -1095,11 +1095,19 @@ class Plugin {
 			return $block_content;
 		}
 
-		// Use WP_HTML_Tag_Processor for safe class injection.
+		// Use WP_HTML_Tag_Processor for safe class injection. The block root is
+		// a justification wrapper (`.wp-block-designsetgo-icon-button`); the
+		// actual button/link carries `.dsgo-icon-button` one level in. Walking
+		// tags until we find that class also transparently handles un-migrated
+		// legacy markup, where the button IS the first (and only) tag.
 		$processor = new \WP_HTML_Tag_Processor( $block_content );
-		if ( $processor->next_tag() ) {
+		while ( $processor->next_tag() ) {
+			if ( ! $processor->has_class( 'dsgo-icon-button' ) ) {
+				continue;
+			}
 			$processor->add_class( 'dsgo-icon-button--' . $default );
 			$block_content = $processor->get_updated_html();
+			break;
 		}
 
 		return $block_content;

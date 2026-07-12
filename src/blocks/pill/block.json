@@ -18,17 +18,19 @@
 		"content": {
 			"type": "string",
 			"default": ""
+		},
+		"justification": {
+			"type": "string",
+			"enum": [ "left", "center", "right" ],
+			"default": "center"
+		},
+		"align": {
+			"type": "string"
 		}
 	},
 	"supports": {
 		"html": false,
 		"inserter": true,
-		"align": [
-			"left",
-			"center",
-			"right"
-		],
-		"alignWide": false,
 		"spacing": {
 			"padding": true,
 			"margin": [
@@ -38,7 +40,8 @@
 			"__experimentalDefaultControls": {
 				"padding": true
 			},
-			"__experimentalSelector": ".dsgo-pill__content"
+			"__experimentalSelector": ".dsgo-pill__content",
+			"__experimentalSkipSerialization": [ "padding" ]
 		},
 		"color": {
 			"background": true,
@@ -48,7 +51,8 @@
 				"background": true,
 				"text": true
 			},
-			"__experimentalSelector": ".dsgo-pill__content"
+			"__experimentalSelector": ".dsgo-pill__content",
+			"__experimentalSkipSerialization": true
 		},
 		"typography": {
 			"fontSize": true,
@@ -74,7 +78,8 @@
 			"__experimentalDefaultControls": {
 				"radius": true
 			},
-			"__experimentalSelector": ".dsgo-pill__content"
+			"__experimentalSelector": ".dsgo-pill__content",
+			"__experimentalSkipSerialization": true
 		}
 	},
 	"example": {

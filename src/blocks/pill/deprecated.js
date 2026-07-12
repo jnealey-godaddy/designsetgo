@@ -159,19 +159,19 @@ const vStatic = {
 		);
 	},
 	migrate(attributes) {
-		// Drop the old baked defaults so migrated pills stay as clean as freshly
-		// inserted ones: `align: "center"` still centres via CSS (the class-based
-		// default) and `fontSize: "small"` becomes inherited text. Explicit,
-		// non-default choices (e.g. alignright, fontSize:large) are preserved.
+		// Deprecations do not cascade — a legacy static pill matches THIS entry,
+		// never vAlign below, so migrate() must land on the CURRENT schema
+		// (justification), not the intermediate `align` schema.
 		const { align, fontSize, ...rest } = attributes;
-		const migrated = { ...rest };
-		if (align && 'center' !== align) {
-			migrated.align = align;
-		}
-		if (fontSize && 'small' !== fontSize) {
-			migrated.fontSize = fontSize;
-		}
-		return migrated;
+		return {
+			...rest,
+			// `small` was the old baked default; drop it so no has-small-font-size
+			// class is re-serialized. Explicit non-default sizes are preserved.
+			...(fontSize && fontSize !== 'small' ? { fontSize } : {}),
+			justification: ['left', 'center', 'right'].includes(align)
+				? align
+				: 'center',
+		};
 	},
 };
 
@@ -180,7 +180,8 @@ const vStatic = {
 // support's alignment defaulted to "center". After commit 9f743ef6 the
 // attribute was added with `default: "center"`, causing current save() to
 // emit `aligncenter` — which mismatches all legacy patterns that omit the
-// attribute. Markup-only change → passthrough migrate.
+// attribute. v1 predates `align` entirely, so every v1 pill was centred;
+// migrate() lands directly on `justification: "center"` (see below).
 //
 // Two extra rules needed for inline deprecated block types:
 //
@@ -334,8 +335,65 @@ const v1 = {
 		);
 	},
 	migrate(attributes) {
-		return attributes;
+		// v1 predates `align` entirely (no attribute in ITS schema), so there is
+		// nothing to read from a v1-matched block — every v1 pill was rendered
+		// centred. Still destructure `align` out (consistent with every other
+		// migrate() on this branch) rather than relying on it being absent: WP
+		// re-runs the `blocks.registerBlockType` filters (align.js included)
+		// against each deprecation entry at registration time, so if a future
+		// edit ever adds `align` back to v1's `supports`, a stored value would
+		// otherwise be spread into the migrated attributes and silently
+		// override the `justification` set immediately after it.
+		const { align, ...rest } = attributes;
+		return { ...rest, justification: 'center' };
 	},
 };
 
-export default [vStatic, v1];
+/**
+ * v3 — `align` replaced by `justification`.
+ *
+ * The pill was already dynamic here (save() === null), so the stored markup is a
+ * self-closing comment and there is no HTML to reproduce. Only the attribute
+ * schema changed: `align: left|center|right` became `justification`, because
+ * core's constrained layout excludes aligned blocks from the content-size cap.
+ *
+ * `supports` MUST declare the full support set (color / border / spacing /
+ * typography), not just `align`. WP re-runs the `blocks.registerBlockType`
+ * filters (color.js, border.js, spacing.js, typography.js, align.js) against
+ * EACH deprecation entry at registration time, and those filters add
+ * `backgroundColor` / `textColor` / `gradient` / `borderColor` / `fontSize` /
+ * `style` to `attributes` only when the matching support is present. A
+ * `supports` block that declares only `align` — as an earlier version of this
+ * entry did — silently tells WordPress the old pill had no colour, border or
+ * typography supports, so `getBlockAttributes()` strips those attributes
+ * before `migrate()` ever runs, permanently discarding stored styling. This
+ * is the same full set `staticSupports` already declares for vStatic/v1 (the
+ * dynamic pill at this point in history had identical color/border/spacing/
+ * typography config, just without a static `save()`), so it's reused here
+ * rather than duplicated. `__experimentalSkipSerialization` (added later)
+ * only affects serialization, not attribute registration, so its absence
+ * here doesn't change which attributes survive.
+ */
+const vAlign = {
+	attributes: {
+		content: { type: 'string', default: '' },
+	},
+	supports: staticSupports,
+	isEligible(attributes) {
+		return Object.prototype.hasOwnProperty.call(attributes, 'align');
+	},
+	save() {
+		return null;
+	},
+	migrate(attributes) {
+		const { align, ...rest } = attributes;
+		return {
+			...rest,
+			justification: ['left', 'center', 'right'].includes(align)
+				? align
+				: 'center',
+		};
+	},
+};
+
+export default [vAlign, vStatic, v1];

@@ -22,7 +22,8 @@ const transforms = {
 					url,
 					linkTarget,
 					rel,
-					align,
+					justification,
+					fullWidth,
 					style,
 					backgroundColor,
 					textColor,
@@ -47,17 +48,8 @@ const transforms = {
 					...(anchor && { anchor }),
 					...(style && { style }),
 					// core/button width attribute accepts 25/50/75/100 (percentage)
-					...(align === 'full' && { width: 100 }),
+					...(fullWidth && { width: 100 }),
 				};
-
-				// Map DSG align to core/buttons layout justifyContent
-				// left/center/right alignment is handled by the parent container
-				const alignToJustify = {
-					left: 'left',
-					center: 'center',
-					right: 'right',
-				};
-				const justifyContent = alignToJustify[align];
 
 				// core/button must be wrapped in core/buttons
 				const innerButton = createBlock(
@@ -70,7 +62,7 @@ const transforms = {
 					{
 						layout: {
 							type: 'flex',
-							...(justifyContent && { justifyContent }),
+							justifyContent: justification || 'left',
 						},
 					},
 					[innerButton]
