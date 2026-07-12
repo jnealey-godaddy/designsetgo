@@ -391,7 +391,7 @@ See [BLOCK-TEMPLATE-EDIT.js](./templates/BLOCK-TEMPLATE-EDIT.js) for complete ex
 - **Interactive blocks**: 15 (Tabs, Accordion, Modal, Modal Trigger, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counter Group, Progress Bar, Comparison Table, Timeline)
 - **Dynamic Query blocks**: 6 (Query, Pagination, Filter, Results, Group Header, No Results)
 - **Typography & Navigation**: 3 (Advanced Heading, Breadcrumbs, Table of Contents)
-- **Visual blocks**: 9 (500+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image)
+- **Visual blocks**: 9 (160+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image)
 - **Media & Location**: 2 (Fifty Fifty, Map)
 - **WooCommerce blocks**: 2 (Product Categories Grid, Product Showcase Hero)
 - **Extensions**: 16

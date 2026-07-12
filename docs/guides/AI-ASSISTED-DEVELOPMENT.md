@@ -747,7 +747,7 @@ After AI generates code, always:
 **Initial prompt:**
 ```
 "Create an Icon block that:
-- Supports 500+ icons from a curated library
+- Supports 160+ icons from a curated library
 - Has size controls (px, %, em, rem)
 - Supports color controls (text, background)
 - Has alignment options
