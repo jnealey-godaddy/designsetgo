@@ -50,10 +50,13 @@ class Loader {
 	 * to fill the button.
 	 *
 	 * Overriding `version` here fixes it for every block at once and removes the
-	 * need to remember to bump 66 block.json files on each release. Blocks that
-	 * deliberately pin their own version keep it.
+	 * need to remember to bump 66 block.json files on each release. The override
+	 * is UNCONDITIONAL: a version a block.json pins for itself is discarded too
+	 * (`scroll-marquee` pins 1.2.0), because cache-busting needs a single source
+	 * of truth. A per-block pin cannot serve that purpose — it only busts when
+	 * someone remembers to bump it, which is the bug this exists to remove.
 	 *
-	 * @since 2.4.1
+	 * @since 2.4.0
 	 *
 	 * @param array $metadata Parsed block.json metadata.
 	 * @return array Metadata with the asset version synced to the plugin version.

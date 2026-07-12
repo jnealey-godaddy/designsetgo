@@ -45,16 +45,29 @@ class Block_Asset_Version_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_it_overrides_a_block_that_pinned_its_own_version() {
-		$metadata = apply_filters(
-			'block_type_metadata',
-			array(
-				'name'    => 'designsetgo/icon-list-item',
-				'version' => '1.2.0',
-			)
+	/**
+	 * The override is deliberately unconditional. scroll-marquee is the one block
+	 * that really pins its own version (1.2.0), and that pin is discarded: a
+	 * per-block pin only busts when someone remembers to bump it, which is the
+	 * failure mode this fix exists to remove. Read its real block.json rather than
+	 * a fabricated fixture, so this test tracks the codebase.
+	 */
+	public function test_it_overrides_a_block_that_pins_its_own_version() {
+		$file = DESIGNSETGO_PATH . 'src/blocks/scroll-marquee/block.json';
+
+		$this->assertFileExists( $file );
+
+		$metadata = json_decode( file_get_contents( $file ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local test fixture.
+
+		$this->assertNotSame(
+			DESIGNSETGO_VERSION,
+			$metadata['version'],
+			'This test is only meaningful while scroll-marquee pins a version of its own.'
 		);
 
-		$this->assertSame( DESIGNSETGO_VERSION, $metadata['version'] );
+		$filtered = apply_filters( 'block_type_metadata', $metadata );
+
+		$this->assertSame( DESIGNSETGO_VERSION, $filtered['version'] );
 	}
 
 	public function test_it_supplies_a_version_when_block_json_omits_one() {
