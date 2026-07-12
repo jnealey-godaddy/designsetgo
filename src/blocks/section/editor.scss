@@ -320,7 +320,7 @@ $inline-block-data-types: (
 // CRITICAL: Override WordPress's generated contentSize constraints for inline blocks (editor)
 // WordPress generates rules like .wp-container-{block}-is-layout-{hash} > :where(...) { max-width: 1200px }
 // We need to override these for blocks that should shrink to content
-//
+
 // Icon, Icon Button, and Pill are deliberately NOT listed here — the editor
 // mirror of the same exclusion in style.scss. Their `.dsgo-justify` wrapper
 // must keep WordPress's generated content-size cap; that cap is exactly what
