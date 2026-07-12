@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.4.0] - Unreleased
 
+### Fixed
+- **Block assets now cache-bust on release.** WordPress versions a block's own CSS/JS with the `version` field from its `block.json` (`wp-includes/blocks.php`), and nearly every block here still carried the scaffolded `"version": "1.0.0"` — so `build/blocks/{block}/index.css?ver=1.0.0` was byte-identical across every release and browsers/CDNs kept serving the copy they had cached from an older version of the plugin. Any CSS-only fix to any block therefore never reached existing users. `Blocks\Loader::sync_asset_version()` now forces every DesignSetGo block's asset version to `DESIGNSETGO_VERSION` via the `block_type_metadata` filter. The bug was invisible in development because WP uses a `filemtime()` when `SCRIPT_DEBUG` is on and only falls back to the block.json version in production.
+
 ### New Features
 - **Section Divider block** — New standalone block for dropping a full-width shape divider between any two blocks, independent of Section's own divider. Shape, height, and fill color default to the theme's Style Kit setting and can be overridden per instance. (#441)
 - **Icon block: fill / outline + theme default size** — The Icon block gained a Fill / Outline style toggle and inherits a theme-defined default size, so icons match your design out of the box. (#438)
