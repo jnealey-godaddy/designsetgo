@@ -7,6 +7,16 @@
  * existing content renders identically — but with no client-side icon injection
  * (no `.dsgo-lazy-icon` placeholder, no data-* attributes).
  *
+ * The block root (`.dsgo-icon`) is a plain block-level positioning wrapper —
+ * core's constrained layout caps it at the theme's content width, exactly like
+ * a paragraph. The visible icon is the inner `.dsgo-icon__wrapper` element,
+ * which shrink-wraps and is positioned inside the wrapper via `justify-content`
+ * (`.dsgo-justify`, driven by the `justification` attribute). All visual block
+ * supports (color, background, border, padding) are routed from the wrapper to
+ * that element by the shared `designsetgo_route_visual_supports()` helper —
+ * otherwise a background or border would paint across the whole content column
+ * instead of hugging the icon.
+ *
  * @package DesignSetGo
  * @since 2.4.0
  *
@@ -103,14 +113,26 @@ if ( ! function_exists( 'designsetgo_render_icon' ) ) {
 			);
 		}
 
+		$justification = isset( $attributes['justification'] ) ? (string) $attributes['justification'] : 'center';
+		$justify_class = in_array( $justification, array( 'left', 'center', 'right' ), true )
+			? ' dsgo-justify--' . $justification
+			: '';
+
 		$wrapper_attributes = get_block_wrapper_attributes(
-			array(
-				'class' => 'dsgo-icon',
-				'style' => 'display:flex;align-items:center;justify-content:center;',
-			)
+			array( 'class' => 'dsgo-icon dsgo-justify' . $justify_class )
 		);
 
-		return sprintf( '<div %s>%s</div>', $wrapper_attributes, $icon_html );
+		$html = sprintf( '<div %s>%s</div>', $wrapper_attributes, $icon_html );
+
+		// The wrapper is now a full-column-width positioning box, so a background,
+		// border or padding on it would paint across the column instead of hugging
+		// the icon. Move them to the icon box.
+		return designsetgo_route_visual_supports(
+			$html,
+			$attributes,
+			'dsgo-icon__wrapper',
+			array( 'color', 'border', 'spacing.padding' )
+		);
 	}
 }
 

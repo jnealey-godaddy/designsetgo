@@ -7,7 +7,17 @@
  * @since 1.0.0
  */
 
-import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
+import classnames from 'classnames';
+import {
+	useBlockProps,
+	InspectorControls,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalUseColorProps as useColorProps,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalUseBorderProps as useBorderProps,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalGetSpacingClassesAndStyles as getSpacingClassesAndStyles,
+} from '@wordpress/block-editor';
 import {
 	RangeControl,
 	ToggleControl,
@@ -18,6 +28,8 @@ import {
 	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import DsgoJustificationToolbar from '../../components/shared/DsgoJustificationToolbar';
+import { getJustificationClass } from '../../utils/justification';
 import { __, sprintf } from '@wordpress/i18n';
 import { getIcon } from './utils/svg-icons';
 import { IconPicker } from './components/IconPicker';
@@ -50,6 +62,8 @@ export default function IconEdit({
 		linkTarget,
 		ariaLabel,
 		isDecorative,
+		justification,
+		style,
 	} = attributes;
 
 	// Theme-level icon defaults inherited when size/style are left unset.
@@ -62,16 +76,29 @@ export default function IconEdit({
 	const parentHoverIconBg = context['designsetgo/hoverIconBackgroundColor'];
 
 	const blockProps = useBlockProps({
-		className: 'dsgo-icon',
-		style: {
-			display: 'flex',
-			alignItems: 'center',
-			justifyContent: 'center',
-			...(parentHoverIconBg && {
+		className: `dsgo-icon dsgo-justify ${getJustificationClass(
+			justification
+		)}`.trim(),
+		...(parentHoverIconBg && {
+			style: {
 				'--dsgo-parent-hover-icon-bg':
 					convertColorToCSSVar(parentHoverIconBg),
-			}),
-		},
+			},
+		}),
+	});
+
+	// block.json skip-serializes color, border, and spacing.padding off the
+	// wrapper, so useBlockProps() above no longer carries them — there is
+	// nothing to neutralise. The visible icon is the inner .dsgo-icon__wrapper
+	// element, so re-derive the same classes/styles with the official
+	// block-support helpers (identical to how core/button applies them to its
+	// inner link) and apply them there instead, mirroring render.php's
+	// designsetgo_route_visual_supports() so the editor canvas matches the
+	// frontend.
+	const colorProps = useColorProps(attributes);
+	const borderProps = useBorderProps(attributes);
+	const paddingProps = getSpacingClassesAndStyles({
+		style: { spacing: { padding: style?.spacing?.padding } },
 	});
 
 	// Icon wrapper styles. Preview uses the effective (possibly inherited) size.
@@ -82,12 +109,26 @@ export default function IconEdit({
 		alignItems: 'center',
 		justifyContent: 'center',
 		transform: rotation !== 0 ? `rotate(${rotation}deg)` : undefined,
-		// borderRadius inherits from parent for shape variants
+		// borderRadius inherits from parent for shape variants, unless an
+		// explicit border radius is set via the native Border support.
 		borderRadius: 'inherit',
+		...borderProps.style,
+		...colorProps.style,
+		...paddingProps.style,
 	};
+
+	const iconWrapperClassName = classnames(
+		'dsgo-icon__wrapper',
+		colorProps.className,
+		borderProps.className
+	);
 
 	return (
 		<>
+			<DsgoJustificationToolbar
+				value={justification}
+				onChange={(value) => setAttributes({ justification: value })}
+			/>
 			<InspectorControls>
 				<DsgoInspectorPanel
 					title={__('Settings', 'designsetgo')}
@@ -360,7 +401,7 @@ export default function IconEdit({
 			</InspectorControls>
 
 			<div {...blockProps}>
-				<div className="dsgo-icon__wrapper" style={iconWrapperStyle}>
+				<div className={iconWrapperClassName} style={iconWrapperStyle}>
 					{getIcon(icon, effectiveStyle, strokeWidth)}
 				</div>
 			</div>
