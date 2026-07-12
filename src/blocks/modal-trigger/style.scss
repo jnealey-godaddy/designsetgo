@@ -33,6 +33,13 @@
 	width: auto;
 	overflow: hidden; // Clip contents to border-radius (from any source)
 
+	// See icon-button/style.scss: core's inline `.wp-block-button__link
+	// { display: inline-block }` ties on specificity and wins on source order,
+	// which turns this into a block box and stacks the icon above the label.
+	&.wp-block-button__link {
+		display: inline-flex;
+	}
+
 	// Structural/behavioral styles (not theme-overridable)
 	gap: 8px;
 	text-decoration: none;

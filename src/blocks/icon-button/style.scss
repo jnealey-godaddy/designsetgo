@@ -20,6 +20,16 @@
 	overflow: hidden; // Clip contents to border-radius (from any source)
 	text-decoration: none !important;
 
+	// Core prints `.wp-block-button__link { display: inline-block }` in an inline
+	// <style> that lands after this stylesheet. At equal specificity (0,1,0) it
+	// wins on source order, the anchor becomes a block box, and the icon span
+	// (display:flex) stacks above the text instead of sitting beside it. Chaining
+	// both classes takes this to (0,2,0) so the flex layout no longer depends on
+	// load order.
+	&.wp-block-button__link {
+		display: inline-flex;
+	}
+
 	&--icon-end {
 		flex-direction: row-reverse;
 	}
