@@ -2,13 +2,17 @@
 /**
  * Tests for the Pill block server render.
  *
- * The visible pill is the inner `.dsgo-pill__content` span, so colour, background
- * and border inline styles are moved off the wrapper onto that span (padding /
- * typography stay on the wrapper). render.php computes both style strings from the
- * structured `style` attribute via the Style Engine, so this guards the split —
- * in particular that unlinked PER-CORNER border-radius and per-side border styles
- * (the case that a per-property allowlist or a `;`-split would silently miss)
- * reach the span, not the wrapper.
+ * The `.dsgo-pill` wrapper is a plain block-level positioning box that core's
+ * constrained layout caps at the content column; the visible pill is the inner
+ * `.dsgo-pill__content` span. So colour, background, border AND padding inline
+ * styles are moved off the wrapper onto that span via the shared
+ * `designsetgo_route_visual_supports()` helper — otherwise padding/background/
+ * border would apply to the full-column-width wrapper instead of the pill.
+ * Margin and typography stay on the wrapper. render.php computes both style
+ * strings from the structured `style` attribute via the Style Engine, so this
+ * guards the split — in particular that unlinked PER-CORNER border-radius and
+ * per-side border styles (the case that a per-property allowlist or a `;`-split
+ * would silently miss) reach the span, not the wrapper.
  *
  * @group pill
  */
@@ -100,8 +104,8 @@ class DesignSetGo_Pill_Render_Test extends WP_UnitTestCase {
 		$wrapper_style = $this->style_of( $html, 'div' );
 		$span_style    = $this->style_of( $html, 'span' );
 
-		// Colour + every border declaration (incl. all four per-corner radii) moved
-		// to the visible span.
+		// Colour + padding + every border declaration (incl. all four per-corner
+		// radii) moved to the visible span.
 		$this->assertStringContainsString( 'color:#0000ff', $span_style );
 		$this->assertStringContainsString( 'border-color:#ff0000', $span_style );
 		$this->assertStringContainsString( 'border-width:2px', $span_style );
@@ -109,10 +113,12 @@ class DesignSetGo_Pill_Render_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'border-top-right-radius:2px', $span_style );
 		$this->assertStringContainsString( 'border-bottom-left-radius:4px', $span_style );
 		$this->assertStringContainsString( 'border-bottom-right-radius:8px', $span_style );
+		$this->assertStringContainsString( 'padding-top:4px', $span_style );
 
-		// The wrapper keeps padding but carries no colour/border declarations — if
-		// any stayed here they would never reach the visible pill (the span).
-		$this->assertStringContainsString( 'padding', $wrapper_style );
+		// The wrapper (a full-column-width positioning box) carries no colour,
+		// border or padding declarations — if any stayed here they would paint
+		// across the whole content column instead of hugging the visible pill.
+		$this->assertStringNotContainsString( 'padding', $wrapper_style );
 		$this->assertStringNotContainsString( 'border', $wrapper_style );
 		$this->assertStringNotContainsString( 'color', $wrapper_style );
 	}
@@ -123,5 +129,45 @@ class DesignSetGo_Pill_Render_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'class="dsgo-pill__content"', $html );
 		$this->assertSame( '', $this->style_of( $html, 'div' ) );
 		$this->assertSame( '', $this->style_of( $html, 'span' ) );
+	}
+
+	public function test_wrapper_carries_the_justification_class() {
+		// designsetgo_render_pill() is called via $this->render() (not directly)
+		// because get_block_wrapper_attributes() reads WP_Block_Supports::$block_to_render,
+		// which only the render() helper populates — see its docblock above.
+		$html = $this->render(
+			array(
+				'content'       => 'Hi',
+				'justification' => 'left',
+			)
+		);
+
+		$this->assertStringContainsString( 'dsgo-justify', $html );
+		$this->assertStringContainsString( 'dsgo-justify--left', $html );
+	}
+
+	public function test_padding_lands_on_the_pill_not_the_full_width_wrapper() {
+		$html = $this->render(
+			array(
+				'content' => 'Hi',
+				'style'   => array(
+					'spacing' => array(
+						'padding' => array( 'top' => '12px' ),
+						'margin'  => array( 'top' => '30px' ),
+					),
+				),
+			)
+		);
+
+		// Padding must be on the visible pill; margin stays on the wrapper. Uses
+		// style_of() plus a plain substring check rather than a single attribute-
+		// order-dependent regex, because WP_HTML_Tag_Processor::set_attribute()
+		// inserts a new `style` attribute before pre-existing attributes such as
+		// `class`, so a regex anchored to `class="…" … style="…"` order is not
+		// reliable.
+		$this->assertStringContainsString( 'class="dsgo-pill__content"', $html );
+		$this->assertStringContainsString( 'padding-top:12px', $this->style_of( $html, 'span' ) );
+		$this->assertStringContainsString( 'margin-top:30px', $this->style_of( $html, 'div' ) );
+		$this->assertStringNotContainsString( 'padding-top', $this->style_of( $html, 'div' ) );
 	}
 }

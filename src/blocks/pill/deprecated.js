@@ -159,19 +159,19 @@ const vStatic = {
 		);
 	},
 	migrate(attributes) {
-		// Drop the old baked defaults so migrated pills stay as clean as freshly
-		// inserted ones: `align: "center"` still centres via CSS (the class-based
-		// default) and `fontSize: "small"` becomes inherited text. Explicit,
-		// non-default choices (e.g. alignright, fontSize:large) are preserved.
+		// Deprecations do not cascade — a legacy static pill matches THIS entry,
+		// never vAlign below, so migrate() must land on the CURRENT schema
+		// (justification), not the intermediate `align` schema.
 		const { align, fontSize, ...rest } = attributes;
-		const migrated = { ...rest };
-		if (align && 'center' !== align) {
-			migrated.align = align;
-		}
-		if (fontSize && 'small' !== fontSize) {
-			migrated.fontSize = fontSize;
-		}
-		return migrated;
+		return {
+			...rest,
+			// `small` was the old baked default; drop it so no has-small-font-size
+			// class is re-serialized. Explicit non-default sizes are preserved.
+			...(fontSize && fontSize !== 'small' ? { fontSize } : {}),
+			justification: ['left', 'center', 'right'].includes(align)
+				? align
+				: 'center',
+		};
 	},
 };
 
@@ -180,7 +180,8 @@ const vStatic = {
 // support's alignment defaulted to "center". After commit 9f743ef6 the
 // attribute was added with `default: "center"`, causing current save() to
 // emit `aligncenter` — which mismatches all legacy patterns that omit the
-// attribute. Markup-only change → passthrough migrate.
+// attribute. v1 predates `align` entirely, so every v1 pill was centred;
+// migrate() lands directly on `justification: "center"` (see below).
 //
 // Two extra rules needed for inline deprecated block types:
 //
@@ -334,8 +335,45 @@ const v1 = {
 		);
 	},
 	migrate(attributes) {
-		return attributes;
+		// v1 predates `align` entirely (no attribute in its schema), so there is
+		// nothing to read — every v1 pill was rendered centred. Land on the
+		// current schema's default directly.
+		return { ...attributes, justification: 'center' };
 	},
 };
 
-export default [vStatic, v1];
+/**
+ * v3 — `align` replaced by `justification`.
+ *
+ * The pill was already dynamic here (save() === null), so the stored markup is a
+ * self-closing comment and there is no HTML to reproduce. Only the attribute
+ * schema changed: `align: left|center|right` became `justification`, because
+ * core's constrained layout excludes aligned blocks from the content-size cap.
+ */
+const vAlign = {
+	attributes: {
+		content: { type: 'string', default: '' },
+	},
+	supports: {
+		html: false,
+		align: ['left', 'center', 'right'],
+		alignWide: false,
+	},
+	isEligible(attributes) {
+		return Object.prototype.hasOwnProperty.call(attributes, 'align');
+	},
+	save() {
+		return null;
+	},
+	migrate(attributes) {
+		const { align, ...rest } = attributes;
+		return {
+			...rest,
+			justification: ['left', 'center', 'right'].includes(align)
+				? align
+				: 'center',
+		};
+	},
+};
+
+export default [vAlign, vStatic, v1];

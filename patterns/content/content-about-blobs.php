@@ -29,7 +29,7 @@ return array(
 
 <!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}},"layout":{"gridColumn":"span 1"}}} -->
 <div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner"><!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"className":"has-dsgo-text-reveal"} -->
-<div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint has-dsgo-text-reveal" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner"><!-- wp:designsetgo/pill {"align":"left","content":"About Us","backgroundColor":"#6366f1","textColor":"#ffffff","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|30"}}}} -->
+<div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint has-dsgo-text-reveal" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner"><!-- wp:designsetgo/pill {"justification":"left","content":"About Us","backgroundColor":"#6366f1","textColor":"#ffffff","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|30"}}}} -->
 <div class="wp-block-designsetgo-pill alignleft dsgo-pill has-ffffff-color has-6366-f-1-background-color has-text-color has-background has-small-font-size" style="margin-bottom:var(--wp--preset--spacing--30)"><span class="dsgo-pill__content">About Us</span></div>
 <!-- /wp:designsetgo/pill -->
 

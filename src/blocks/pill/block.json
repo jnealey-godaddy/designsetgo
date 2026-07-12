@@ -18,17 +18,16 @@
 		"content": {
 			"type": "string",
 			"default": ""
+		},
+		"justification": {
+			"type": "string",
+			"enum": [ "left", "center", "right" ],
+			"default": "center"
 		}
 	},
 	"supports": {
 		"html": false,
 		"inserter": true,
-		"align": [
-			"left",
-			"center",
-			"right"
-		],
-		"alignWide": false,
 		"spacing": {
 			"padding": true,
 			"margin": [

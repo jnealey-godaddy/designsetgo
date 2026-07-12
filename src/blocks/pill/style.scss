@@ -1,132 +1,27 @@
 /**
  * Pill Block Frontend Styles
+ *
+ * `.dsgo-pill` is a positioning wrapper only — `.dsgo-justify` (shared) gives it
+ * `display: flex` and the justify-content. It is deliberately NOT shrink-wrapped:
+ * a block-level, auto-width box is what lets core's constrained layout cap it at
+ * the content column. Colour/background/border/padding are routed to
+ * `.dsgo-pill__content` in render.php.
  */
 
-.dsgo-pill {
-	// Container display - block so pills stack vertically
-	// Inner content is inline-block for tight wrapping
-	display: block;
-
-	// Remove background/color styles from wrapper when using WordPress color controls
-	// These should apply to the inner span, not the outer div
-	&[class*="has-"][class*="-background-color"],
-	&[class*="has-"][class*="-color"]:not([class*="-background-color"]),
-	&.has-background,
-	&.has-text-color {
-		background-color: transparent !important;
-		color: inherit !important;
-	}
-
-	// Transfer WordPress color classes from wrapper to inner span
-	// Background colors
-	@each $color in (primary, secondary, tertiary, contrast, base, base-2, accent, accent-2, accent-3, accent-4, accent-5) {
-		&.has-#{$color}-background-color .dsgo-pill__content {
-			background-color: var(--wp--preset--color--#{$color}) !important;
-		}
-	}
-
-	// Text colors
-	@each $color in (primary, secondary, tertiary, contrast, base, base-2, accent, accent-2, accent-3, accent-4, accent-5) {
-		&.has-#{$color}-color .dsgo-pill__content {
-			color: var(--wp--preset--color--#{$color}) !important;
-		}
-	}
-
-	// Gradient backgrounds
-	&.has-background[style*="background"] .dsgo-pill__content {
-		background: inherit !important;
-	}
-
-	// Custom colors (inline styles)
-	&[style*="background-color"] .dsgo-pill__content {
-		background-color: inherit !important;
-	}
-
-	// Transfer inline text color to inner content
-	// Note: We check for " color:" with space to avoid matching "background-color"
-	&[style*=" color:"] .dsgo-pill__content,
-	&[style*=";color:"] .dsgo-pill__content {
-		color: inherit !important;
-	}
-}
-
 // Default text size. A pill is a badge, so it reads small unless the author says
-// otherwise. This lives in CSS rather than a `fontSize: "small"` attribute default
-// so save() never bakes `has-small-font-size` into the markup and the size stays
-// themeable. `:where()` drops it to zero specificity, so any explicit choice wins
-// without !important: a preset adds `has-*-font-size` to this wrapper (0,1,0), and
-// a custom size is emitted against `.dsgo-pill__content` by the fontSize support's
-// `__experimentalSelector`. The inner span has no font-size of its own, so it
-// inherits whichever of these applies.
+// otherwise. `:where()` drops it to zero specificity so any explicit choice wins.
 :where(.dsgo-pill) {
 	font-size: var(--wp--preset--font-size--small, 0.875rem);
 }
 
 .dsgo-pill__content {
-	// Inline-block so background wraps tightly around text
 	display: inline-block;
-
-	// Pill shape (fully rounded corners) - fallback if not set via supports
 	border-radius: 999px;
-
-	// Smooth transitions for interactive states
 	transition: all 0.2s ease-in-out;
-
-	// Ensure text doesn't break awkwardly
 	white-space: nowrap;
-
-	// Default styles - always applied as base, overridden by WordPress color transfers.
-	// Font size is inherited from the wrapper (see the `:where(.dsgo-pill)` default
-	// above); declaring one here would shadow the wrapper's `has-*-font-size` class.
 	padding: 0.5em 1em;
 	background-color: var(--wp--preset--color--primary, #2563eb);
 	color: var(--wp--preset--color--base, #fff);
 	font-weight: 500;
 	line-height: 1.5;
-}
-
-// When inside a flex or grid container (Row/Grid blocks), prevent the pill from
-// stretching to fill available space. Without this, display:block items stretch
-// by default as flex/grid children.
-.is-layout-flex > .dsgo-pill,
-.is-layout-grid > .dsgo-pill {
-	width: fit-content;
-}
-
-// Alignment support - use flexbox to position the inner inline-block content
-// Important is needed to override Stack block's width: auto !important
-// Higher specificity selector to override Stack container rules
-// float: none overrides WordPress flow layout which applies float:left/right to aligned blocks,
-// causing them to sit beside adjacent content (e.g. headings) in Group blocks
-.dsgo-pill.alignleft:not([class*="dsgo-hide-"]),
-[class*="wp-container"] > .dsgo-pill.alignleft:not([class*="dsgo-hide-"]) {
-	float: none !important;
-	display: flex !important;
-	justify-content: flex-start;
-	width: fit-content !important;
-	margin-right: auto !important;
-	margin-left: 0 !important;
-}
-
-// Default alignment is centered (class-based, no baked `aligncenter` attribute):
-// any pill that is not explicitly left/right aligned is centered. Explicit
-// `aligncenter` matches this too; `alignleft` / `alignright` below override it.
-.dsgo-pill:not(.alignleft):not(.alignright):not([class*="dsgo-hide-"]),
-[class*="wp-container"] > .dsgo-pill:not(.alignleft):not(.alignright):not([class*="dsgo-hide-"]) {
-	float: none !important;
-	display: flex !important;
-	justify-content: center;
-	width: fit-content !important;
-	margin-left: auto !important;
-	margin-right: auto !important;
-}
-
-.dsgo-pill.alignright:not([class*="dsgo-hide-"]),
-[class*="wp-container"] > .dsgo-pill.alignright:not([class*="dsgo-hide-"]) {
-	float: none !important;
-	display: flex !important;
-	justify-content: flex-end;
-	width: fit-content !important;
-	margin-left: auto !important;
-	margin-right: 0 !important;
 }

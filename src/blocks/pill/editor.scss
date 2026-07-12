@@ -1,54 +1,10 @@
 /**
  * Pill Block Editor Styles
+ *
+ * `.dsgo-justify` (shared, imported into src/styles/editor.scss) gives the
+ * `.dsgo-pill` wrapper `display: flex` and justify-content — no alignment rules
+ * are duplicated here. See style.scss for the frontend rationale.
  */
-
-.dsgo-pill {
-	// Container display - block so pills stack vertically
-	// Inner content is inline-block for tight wrapping
-	display: block;
-
-	// Remove background/color styles from wrapper when using WordPress color controls
-	// These should apply to the inner span, not the outer div
-	&[class*="has-"][class*="-background-color"],
-	&[class*="has-"][class*="-color"]:not([class*="-background-color"]),
-	&.has-background,
-	&.has-text-color {
-		background-color: transparent !important;
-		color: inherit !important;
-	}
-
-	// Transfer WordPress color classes from wrapper to inner span (same as frontend)
-	// Background colors
-	@each $color in (primary, secondary, tertiary, contrast, base, base-2, accent, accent-2, accent-3, accent-4, accent-5) {
-		&.has-#{$color}-background-color .dsgo-pill__content {
-			background-color: var(--wp--preset--color--#{$color}) !important;
-		}
-	}
-
-	// Text colors
-	@each $color in (primary, secondary, tertiary, contrast, base, base-2, accent, accent-2, accent-3, accent-4, accent-5) {
-		&.has-#{$color}-color .dsgo-pill__content {
-			color: var(--wp--preset--color--#{$color}) !important;
-		}
-	}
-
-	// Gradient backgrounds
-	&.has-background[style*="background"] .dsgo-pill__content {
-		background: inherit !important;
-	}
-
-	// Custom colors (inline styles)
-	&[style*="background-color"] .dsgo-pill__content {
-		background-color: inherit !important;
-	}
-
-	// Transfer inline text color to inner content
-	// Note: We check for " color:" with space to avoid matching "background-color"
-	&[style*=" color:"] .dsgo-pill__content,
-	&[style*=";color:"] .dsgo-pill__content {
-		color: inherit !important;
-	}
-}
 
 .dsgo-pill__content {
 	// Cursor indication for editing
@@ -72,49 +28,18 @@
 	white-space: nowrap;
 }
 
-// When inside a flex or grid container (Row/Grid blocks), prevent the pill from
-// stretching to fill available space. Without this, display:block items stretch
-// by default as flex/grid children.
-.is-layout-flex > .dsgo-pill,
-.is-layout-grid > .dsgo-pill {
-	width: fit-content;
-}
+// The editor has no render.php, so useBlockProps still puts colour/border on the
+// wrapper. Neutralise it there and inherit it onto the visible pill so the canvas
+// matches the frontend.
+.wp-block-designsetgo-pill {
+	background: none !important;
+	border: 0 !important;
 
-// Alignment support - CRITICAL: Must be duplicated from style.scss for editor/frontend parity
-// Use flexbox to position the inner inline-block content
-// Important is needed to override Stack block's width: auto !important
-// Higher specificity selector to override Stack container rules
-// float: none overrides WordPress flow layout which applies float:left/right to aligned blocks,
-// causing them to sit beside adjacent content (e.g. headings) in Group blocks
-.dsgo-pill.alignleft,
-[class*="wp-container"] > .dsgo-pill.alignleft {
-	float: none !important;
-	display: flex !important;
-	justify-content: flex-start;
-	width: fit-content !important;
-	margin-right: auto !important;
-	margin-left: 0 !important;
-}
+	&[style*="background"] .dsgo-pill__content {
+		background: inherit;
+	}
 
-// Default alignment is centered (class-based, no baked `aligncenter` attribute):
-// any pill that is not explicitly left/right aligned is centered. Explicit
-// `aligncenter` matches this too; `alignleft` / `alignright` override it.
-.dsgo-pill:not(.alignleft):not(.alignright),
-[class*="wp-container"] > .dsgo-pill:not(.alignleft):not(.alignright) {
-	float: none !important;
-	display: flex !important;
-	justify-content: center;
-	width: fit-content !important;
-	margin-left: auto !important;
-	margin-right: auto !important;
-}
-
-.dsgo-pill.alignright,
-[class*="wp-container"] > .dsgo-pill.alignright {
-	float: none !important;
-	display: flex !important;
-	justify-content: flex-end;
-	width: fit-content !important;
-	margin-left: auto !important;
-	margin-right: 0 !important;
+	&[style*="color"] .dsgo-pill__content {
+		color: inherit;
+	}
 }

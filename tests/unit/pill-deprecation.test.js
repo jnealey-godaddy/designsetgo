@@ -34,11 +34,12 @@ import metadata from '../../src/blocks/pill/block.json';
 import save from '../../src/blocks/pill/save';
 import deprecated from '../../src/blocks/pill/deprecated';
 
-// vStatic is the first (newest) deprecation — the last static version.
-const [vStatic] = deprecated;
+// deprecated is [vAlign, vStatic, v1] — vAlign (newest) is the last DYNAMIC
+// version positioned with `align`; vStatic is the last STATIC version.
+const [, vStatic] = deprecated;
 
 describe('Pill deprecation - vStatic.migrate()', () => {
-	it('drops the old baked center/small defaults', () => {
+	it('drops the old baked center/small defaults and lands on justification', () => {
 		const migrated = vStatic.migrate({
 			content: 'Test',
 			align: 'center',
@@ -47,28 +48,31 @@ describe('Pill deprecation - vStatic.migrate()', () => {
 
 		expect(migrated).not.toHaveProperty('align');
 		expect(migrated).not.toHaveProperty('fontSize');
+		expect(migrated.justification).toBe('center');
 		expect(migrated.content).toBe('Test');
 	});
 
-	it('preserves an explicit non-default alignment and font size', () => {
+	it('preserves an explicit non-default font size and converts alignment to justification', () => {
 		const migrated = vStatic.migrate({
 			content: 'Test',
 			align: 'right',
 			fontSize: 'large',
 		});
 
-		expect(migrated.align).toBe('right');
+		expect(migrated).not.toHaveProperty('align');
+		expect(migrated.justification).toBe('right');
 		expect(migrated.fontSize).toBe('large');
 		expect(migrated.content).toBe('Test');
 	});
 
-	it('preserves an explicit alignment even when no font size is set', () => {
+	it('converts an explicit alignment even when no font size is set', () => {
 		const migrated = vStatic.migrate({
 			content: 'Test',
 			align: 'left',
 		});
 
-		expect(migrated.align).toBe('left');
+		expect(migrated).not.toHaveProperty('align');
+		expect(migrated.justification).toBe('left');
 		expect(migrated).not.toHaveProperty('fontSize');
 	});
 });
@@ -107,8 +111,9 @@ describe('Pill deprecation - explicit legacy markup migrates silently', () => {
 		expect(block).toBeTruthy();
 		expect(block.name).toBe(metadata.name);
 		expect(block.isValid).toBe(true);
-		expect(block.attributes.align).toBe('right');
+		expect(block.attributes.justification).toBe('right');
 		expect(block.attributes.fontSize).toBe('large');
+		expect(block.attributes.align).toBeUndefined();
 	});
 
 	it('re-serializes clean: attributes kept, no baked classes in dynamic output', () => {
@@ -117,10 +122,21 @@ describe('Pill deprecation - explicit legacy markup migrates silently', () => {
 		expect(console).toHaveInformed();
 
 		const serialized = serialize(block);
-		expect(serialized).toContain('"align":"right"');
+		expect(serialized).toContain('"justification":"right"');
 		expect(serialized).toContain('"fontSize":"large"');
+		expect(serialized).not.toContain('"align"');
 		// Dynamic block → self-closing comment, no stored HTML / baked classes.
 		expect(serialized).not.toContain('has-large-font-size');
 		expect(serialized).not.toContain('<div');
+	});
+
+	it('migrates a dynamic pill authored with align into justification', () => {
+		const [block] = parse(
+			'<!-- wp:designsetgo/pill {"content":"Hi","align":"left"} /-->'
+		);
+
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.justification).toBe('left');
+		expect(block.attributes.align).toBeUndefined();
 	});
 });

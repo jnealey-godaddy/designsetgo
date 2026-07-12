@@ -3,12 +3,16 @@
  */
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, RichText } from '@wordpress/block-editor';
+import DsgoJustificationToolbar from '../../components/shared/DsgoJustificationToolbar';
+import { getJustificationClass } from '../../utils/justification';
 
 export default function PillEdit({ attributes, setAttributes }) {
-	const { content } = attributes;
+	const { content, justification } = attributes;
 
 	const blockProps = useBlockProps({
-		className: 'dsgo-pill',
+		className: `dsgo-pill dsgo-justify ${getJustificationClass(
+			justification
+		)}`.trim(),
 	});
 
 	// The visible pill is the inner span, so move colour / background / border
@@ -30,18 +34,24 @@ export default function PillEdit({ attributes, setAttributes }) {
 	blockProps.style = wrapperStyle;
 
 	return (
-		<div {...blockProps}>
-			<RichText
-				tagName="span"
-				className="dsgo-pill__content"
-				value={content}
-				onChange={(newContent) =>
-					setAttributes({ content: newContent })
-				}
-				placeholder={__('Add pill text…', 'designsetgo')}
-				allowedFormats={['core/bold', 'core/italic']}
-				style={innerStyle}
+		<>
+			<DsgoJustificationToolbar
+				value={justification}
+				onChange={(value) => setAttributes({ justification: value })}
 			/>
-		</div>
+			<div {...blockProps}>
+				<RichText
+					tagName="span"
+					className="dsgo-pill__content"
+					value={content}
+					onChange={(newContent) =>
+						setAttributes({ content: newContent })
+					}
+					placeholder={__('Add pill text…', 'designsetgo')}
+					allowedFormats={['core/bold', 'core/italic']}
+					style={innerStyle}
+				/>
+			</div>
+		</>
 	);
 }
