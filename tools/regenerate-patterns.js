@@ -8,6 +8,14 @@
  * Recovery") the next time an author inserts that pattern and WordPress
  * tries to validate it.
  *
+ * DYNAMIC DesignSetGo blocks (render.php, no save.js — e.g. designsetgo/pill,
+ * designsetgo/icon) have no save() to `require()`. Their correct serialized
+ * form is a bare self-closing comment (`<!-- wp:{block} {...} /-->`) — the
+ * real `save: () => null` a plain block registered with no `save` key would
+ * get from `@wordpress/blocks` — so registerDesignSetGoBlock() below falls
+ * back to that when a block's directory has no save.js, instead of throwing
+ * on the missing `require()`.
+ *
  * This module finds every `<!-- wp:{block} ... -->...<!-- /wp:{block} -->`
  * region for the given block name inside the patterns directory, parses it
  * with the real `@wordpress/blocks` parser (running the block's registered
@@ -100,8 +108,15 @@ function registerDesignSetGoBlock(blockName) {
 
 	// eslint-disable-next-line global-require, import/no-dynamic-require
 	const metadata = require(path.join(blockDir, 'block.json'));
+
+	// Dynamic blocks (render.php) have no save.js — their correct serialized
+	// form is a self-closing comment, i.e. `save: () => null`. Static blocks
+	// require() their real save.js so the full markup is reproduced.
+	const saveJsPath = path.join(blockDir, 'save.js');
 	// eslint-disable-next-line global-require, import/no-dynamic-require
-	const save = require(path.join(blockDir, 'save.js')).default;
+	const save = fs.existsSync(saveJsPath)
+		? require(saveJsPath).default
+		: () => null;
 
 	let deprecated;
 	const deprecatedPath = path.join(blockDir, 'deprecated.js');

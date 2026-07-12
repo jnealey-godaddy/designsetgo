@@ -335,10 +335,17 @@ const v1 = {
 		);
 	},
 	migrate(attributes) {
-		// v1 predates `align` entirely (no attribute in its schema), so there is
-		// nothing to read — every v1 pill was rendered centred. Land on the
-		// current schema's default directly.
-		return { ...attributes, justification: 'center' };
+		// v1 predates `align` entirely (no attribute in ITS schema), so there is
+		// nothing to read from a v1-matched block — every v1 pill was rendered
+		// centred. Still destructure `align` out (consistent with every other
+		// migrate() on this branch) rather than relying on it being absent: WP
+		// re-runs the `blocks.registerBlockType` filters (align.js included)
+		// against each deprecation entry at registration time, so if a future
+		// edit ever adds `align` back to v1's `supports`, a stored value would
+		// otherwise be spread into the migrated attributes and silently
+		// override the `justification` set immediately after it.
+		const { align, ...rest } = attributes;
+		return { ...rest, justification: 'center' };
 	},
 };
 

@@ -132,7 +132,7 @@ export const modalTemplates = [
 				'designsetgo/icon-button',
 				{
 					text: __('Shop Now', 'designsetgo'),
-					width: 'full',
+					fullWidth: true,
 					icon: 'cart',
 					iconPosition: 'end',
 				},
@@ -342,7 +342,6 @@ export const modalTemplates = [
 								'designsetgo/icon-button',
 								{
 									text: __('Add to Cart', 'designsetgo'),
-									width: 'auto',
 									icon: 'cart',
 									iconPosition: 'start',
 								},
@@ -399,7 +398,6 @@ export const modalTemplates = [
 						'designsetgo/icon-button',
 						{
 							text: __('Learn More', 'designsetgo'),
-							width: 'auto',
 							icon: 'info',
 							iconPosition: 'start',
 							url: '#privacy-policy',
@@ -409,7 +407,6 @@ export const modalTemplates = [
 						'designsetgo/icon-button',
 						{
 							text: __('Accept', 'designsetgo'),
-							width: 'auto',
 							icon: 'yes',
 							iconPosition: 'end',
 							modalCloseId: 'true',
@@ -509,7 +506,7 @@ export const modalTemplates = [
 								{
 									text: __('Download', 'designsetgo'),
 									icon: 'download',
-									align: 'left',
+									justification: 'left',
 								},
 							],
 						],

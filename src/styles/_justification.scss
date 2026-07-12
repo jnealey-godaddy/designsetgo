@@ -24,3 +24,28 @@
 		justify-content: flex-end;
 	}
 }
+
+/**
+ * Section and Grid may configure their OWN cross-axis alignment (e.g.
+ * Section's default layout is `{type:"flex", justifyContent:"center"}`,
+ * which core renders as `align-items: center` — that shrink-wraps every
+ * flex child, including this wrapper, to its own content width). Once
+ * shrink-wrapped, `.dsgo-justify`'s `justify-content` has no free space left
+ * to distribute, so `justification` becomes inert — the same failure mode
+ * as the `width: fit-content` bug this file's own header forbids, just
+ * arriving from the PARENT's layout instead of a sibling stylesheet.
+ * `align-self`/`justify-self: stretch` claim the full cross-axis size for
+ * this one item, independent of whatever alignment the parent uses for
+ * other children.
+ *
+ * Row (`.dsgo-flex__inner`) is deliberately excluded: Row's main axis is
+ * horizontal, so its children intentionally keep their natural (shrink-
+ * wrapped) width — that's what lets multiple Icon Buttons/Pills sit side by
+ * side in one row (see CHANGELOG: "use a Row block to place them side by
+ * side intentionally"). Stretching here would break that.
+ */
+.dsgo-stack__inner > .dsgo-justify,
+.dsgo-grid__inner > .dsgo-justify {
+	align-self: stretch;
+	justify-self: stretch;
+}

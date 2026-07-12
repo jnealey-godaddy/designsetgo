@@ -170,43 +170,47 @@
 		// would override it, breaking Pill/Icon/Button alignment inheritance.
 
 		// Inline blocks WITH explicit alignment - override section alignment
+
+		// Icon Button is a STATIC block: `.alignleft`/`.aligncenter`/`.alignright`
+		// alongside `.wp-block-designsetgo-icon-button` on the same element only
+		// ever appears in un-migrated legacy markup (pre-justification-wrapper —
+		// see icon-button/deprecated.js v9); new markup never emits an align
+		// class on this element at all. Icon and Pill are DYNAMIC and always
+		// re-render through the current justification-wrapper markup, which also
+		// never emits these classes — so they no longer belong in this list; this
+		// rule is legacy-icon-button-only now. Counter is untouched (separate
+		// block, unaffected by the justification-wrapper refactor).
 		> :where(
-			.wp-block-designsetgo-icon,
 			.wp-block-designsetgo-icon-button,
-			.wp-block-designsetgo-pill,
 			.wp-block-designsetgo-counter
 		).aligncenter {
 			align-self: center !important;
 		}
 
 		> :where(
-			.wp-block-designsetgo-icon,
 			.wp-block-designsetgo-icon-button,
-			.wp-block-designsetgo-pill,
 			.wp-block-designsetgo-counter
 		).alignleft {
 			align-self: flex-start !important;
 		}
 
 		> :where(
-			.wp-block-designsetgo-icon,
 			.wp-block-designsetgo-icon-button,
-			.wp-block-designsetgo-pill,
 			.wp-block-designsetgo-counter
 		).alignright {
 			align-self: flex-end !important;
 		}
 
 		// Block-level elements WITH explicit alignment
-		> .aligncenter:not(.wp-block-designsetgo-icon):not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-pill):not(.wp-block-designsetgo-counter) {
+		> .aligncenter:not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-counter) {
 			align-self: center !important;
 		}
 
-		> .alignright:not(.wp-block-designsetgo-icon):not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-pill):not(.wp-block-designsetgo-counter) {
+		> .alignright:not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-counter) {
 			align-self: flex-end !important;
 		}
 
-		> .alignleft:not(.wp-block-designsetgo-icon):not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-pill):not(.wp-block-designsetgo-counter) {
+		> .alignleft:not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-counter) {
 			align-self: flex-start !important;
 		}
 
@@ -236,14 +240,19 @@
 
 		// CRITICAL: Inline/shrink-wrap blocks should respect alignment
 		// These blocks should shrink to content width so they can be centered/aligned
-		> .dsgo-pill,
-		> .dsgo-icon,
-		> .wp-block-designsetgo-icon,
+
+		// Icon, Icon Button, and Pill are NOT listed here (unlike the legacy
+		// version of this rule): their block root is now a `.dsgo-justify`
+		// content-column positioning wrapper that must stay stretched to the
+		// section's available width — its OWN `justify-content` (driven by the
+		// `justification` attribute) is what positions the shrink-wrapped
+		// visible element inside it. Forcing `width: auto !important` here
+		// removes that free space and makes `justification` inert, reproducing
+		// the content-column escape bug the wrapper exists to fix. Counter and
+		// core/button are untouched (unaffected by that refactor).
 		> .dsgo-counter,
 		> .wp-block-designsetgo-counter,
-		> .wp-block-button,
-		> .dsgo-icon-button,
-		> .wp-block-designsetgo-icon-button {
+		> .wp-block-button {
 			align-self: flex-start; // Override to allow alignment
 			width: auto !important; // Shrink to content
 			max-width: none !important; // Remove WordPress's 1200px contentSize constraint
@@ -318,15 +327,15 @@
 
 	// When width constraints ARE enabled, allow blocks to be constrained
 	&:not(.dsgo-no-width-constraint) .dsgo-stack__inner.is-layout-flex {
-		// Inline blocks still shrink to content
-		> .dsgo-pill,
-		> .dsgo-icon,
-		> .wp-block-designsetgo-icon,
+		// Inline blocks still shrink to content.
+
+		// Icon, Icon Button, and Pill are deliberately NOT listed here (see the
+		// matching comment on the `.dsgo-no-width-constraint` branch above) —
+		// their `.dsgo-justify` wrapper must stay stretched so its own
+		// `justify-content` can position the visible element inside it.
 		> .dsgo-counter,
 		> .wp-block-designsetgo-counter,
-		> .wp-block-button,
-		> .dsgo-icon-button,
-		> .wp-block-designsetgo-icon-button {
+		> .wp-block-button {
 			align-self: flex-start;
 			width: auto !important;
 		}
@@ -337,76 +346,66 @@
 		}
 	}
 
-	// Section center alignment - apply to inline blocks WITHOUT their own alignment
+	// Section center/right/left alignment - apply to inline blocks WITHOUT
+	// their own alignment.
+
+	// Icon, Icon Button, and Pill are deliberately NOT listed here (see the
+	// matching comment above): forcing their `.dsgo-justify` wrapper's
+	// `align-self` from the SECTION's own justifyContent setting overrides the
+	// wrapper's required `stretch` and makes the block's OWN `justification`
+	// attribute inert (the wrapper shrinks to content, so its internal
+	// `justify-content` has no free space left to distribute) — exactly the
+	// content-column escape bug the wrapper exists to fix. Counter and
+	// core/button are untouched.
 	.dsgo-stack__inner.is-layout-flex.is-content-justification-center {
 
 		> :where(
-			.dsgo-pill,
-			.wp-block-designsetgo-pill,
-			.dsgo-icon,
-			.wp-block-designsetgo-icon,
 			.dsgo-counter,
 			.wp-block-designsetgo-counter,
-			.wp-block-button,
-			.dsgo-icon-button,
-			.wp-block-designsetgo-icon-button
+			.wp-block-button
 		):not(.alignleft):not(.alignright):not(.aligncenter) {
 			align-self: center;
 		}
 	}
 
-	// Section right alignment - apply to inline blocks WITHOUT their own alignment
 	.dsgo-stack__inner.is-layout-flex.is-content-justification-right {
 
 		> :where(
-			.dsgo-pill,
-			.wp-block-designsetgo-pill,
-			.dsgo-icon,
-			.wp-block-designsetgo-icon,
 			.dsgo-counter,
 			.wp-block-designsetgo-counter,
-			.wp-block-button,
-			.dsgo-icon-button,
-			.wp-block-designsetgo-icon-button
+			.wp-block-button
 		):not(.alignleft):not(.alignright):not(.aligncenter) {
 			align-self: flex-end;
 		}
 	}
 
-	// Section left alignment - apply to inline blocks WITHOUT their own alignment
 	.dsgo-stack__inner.is-layout-flex.is-content-justification-left {
 
 		> :where(
-			.dsgo-pill,
-			.wp-block-designsetgo-pill,
-			.dsgo-icon,
-			.wp-block-designsetgo-icon,
 			.dsgo-counter,
 			.wp-block-designsetgo-counter,
-			.wp-block-button,
-			.dsgo-icon-button,
-			.wp-block-designsetgo-icon-button
+			.wp-block-button
 		):not(.alignleft):not(.alignright):not(.aligncenter) {
 			align-self: flex-start;
 		}
 	}
 
-	// Text alignment helpers for inline-width children
+	// Text alignment helpers for inline-width children.
+
+	// Icon, Icon Button, and Pill are deliberately NOT listed here (see the
+	// matching comment above the content-justification rules) — their
+	// `.dsgo-justify` wrapper must stay stretched so its own attribute-driven
+	// `justify-content` positions the visible element, independent of the
+	// section's text-align setting. Counter and core/button are untouched.
 	&,
 	&.has-text-align-left,
 	&[style*='text-align:left'] {
 
 		.dsgo-stack__inner.is-layout-flex
 			> :where(
-				.dsgo-pill,
-				.wp-block-designsetgo-pill,
-				.dsgo-icon,
-				.wp-block-designsetgo-icon,
 				.dsgo-counter,
 				.wp-block-designsetgo-counter,
-				.wp-block-button,
-				.dsgo-icon-button,
-				.wp-block-designsetgo-icon-button
+				.wp-block-button
 			) {
 			align-self: flex-start;
 		}
@@ -417,15 +416,9 @@
 
 		.dsgo-stack__inner.is-layout-flex
 			> :where(
-				.dsgo-pill,
-				.wp-block-designsetgo-pill,
-				.dsgo-icon,
-				.wp-block-designsetgo-icon,
 				.dsgo-counter,
 				.wp-block-designsetgo-counter,
-				.wp-block-button,
-				.dsgo-icon-button,
-				.wp-block-designsetgo-icon-button
+				.wp-block-button
 			) {
 			align-self: center;
 		}
@@ -436,15 +429,9 @@
 
 		.dsgo-stack__inner.is-layout-flex
 			> :where(
-				.dsgo-pill,
-				.wp-block-designsetgo-pill,
-				.dsgo-icon,
-				.wp-block-designsetgo-icon,
 				.dsgo-counter,
 				.wp-block-designsetgo-counter,
-				.wp-block-button,
-				.dsgo-icon-button,
-				.wp-block-designsetgo-icon-button
+				.wp-block-button
 			) {
 			align-self: flex-end;
 		}
@@ -480,17 +467,18 @@
 // CRITICAL: Override WordPress's generated contentSize constraints for inline blocks
 // WordPress generates rules like .wp-container-{block}-is-layout-{hash} > :where(...) { max-width: 1200px }
 // We need to override these for blocks that should shrink to content
+
+// Icon, Icon Button, and Pill are deliberately NOT listed here: their
+// `.dsgo-justify` wrapper must keep WordPress's generated content-size cap —
+// that cap is exactly what makes the wrapper land on the content column
+// (see src/styles/_justification.scss). Removing it here would reintroduce
+// the escape bug the wrapper exists to fix. Counter and core/button are
+// untouched.
 [class*="wp-container-designsetgo-stack"] {
 
-	> .dsgo-pill,
-	> .wp-block-designsetgo-pill,
-	> .dsgo-icon,
-	> .wp-block-designsetgo-icon,
 	> .dsgo-counter,
 	> .wp-block-designsetgo-counter,
-	> .wp-block-button,
-	> .dsgo-icon-button,
-	> .wp-block-designsetgo-icon-button {
+	> .wp-block-button {
 		width: auto !important;
 		max-width: none !important;
 	}

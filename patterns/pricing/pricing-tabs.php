@@ -86,9 +86,7 @@ return array(
 <!-- /wp:designsetgo/section -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}},"border":{"radius":"16px","width":"2px","color":"#6366f1"}},"backgroundColor":"base","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"fadeInUp","dsgoAnimationDuration":500,"dsgoAnimationDelay":100} -->
-<div class="wp-block-designsetgo-section alignfull dsgo-stack has-border-color has-base-background-color has-background has-dsgo-animation dsgo-animation-fadeInUp" style="border-color:#6366f1;border-width:2px;border-radius:16px;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInUp" data-dsgo-exit-animation="" data-dsgo-animation-trigger="scroll" data-dsgo-animation-duration="500" data-dsgo-animation-delay="100" data-dsgo-animation-easing="ease-out" data-dsgo-animation-offset="100" data-dsgo-animation-once="true"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/pill {"justification":"left","content":"Most Popular","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|15"}},"border":{"radius":"50px"},"color":{"background":"#6366f1","text":"#ffffff"}}} -->
-<div class="wp-block-designsetgo-pill alignleft dsgo-pill has-text-color has-background has-small-font-size" style="margin-bottom:var(--wp--preset--spacing--15)"><span class="dsgo-pill__content" style="background-color:#6366f1;color:#ffffff;border-radius:50px">Most Popular</span></div>
-<!-- /wp:designsetgo/pill -->
+<div class="wp-block-designsetgo-section alignfull dsgo-stack has-border-color has-base-background-color has-background has-dsgo-animation dsgo-animation-fadeInUp" style="border-color:#6366f1;border-width:2px;border-radius:16px;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInUp" data-dsgo-exit-animation="" data-dsgo-animation-trigger="scroll" data-dsgo-animation-duration="500" data-dsgo-animation-delay="100" data-dsgo-animation-easing="ease-out" data-dsgo-animation-offset="100" data-dsgo-animation-once="true"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/pill {"content":"Most Popular","justification":"left","fontSize":"small","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|15"}},"border":{"radius":"50px"},"color":{"background":"#6366f1","text":"#ffffff"}}} /-->
 
 <!-- wp:heading {"level":3,"fontSize":"large"} -->
 <h3 class="wp-block-heading has-large-font-size">Professional</h3>
@@ -227,9 +225,7 @@ return array(
 <p class="has-text-color" style="color:#64748b">/month</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/pill {"content":"Save $48","style":{"border":{"radius":"50px"},"color":{"background":"rgba(16,185,129,0.1)","text":"#10b981"}}} -->
-<div class="wp-block-designsetgo-pill dsgo-pill has-text-color has-background has-small-font-size"><span class="dsgo-pill__content" style="background-color:rgba(16,185,129,0.1);color:#10b981;border-radius:50px">Save $48</span></div>
-<!-- /wp:designsetgo/pill --></div></div>
+<!-- wp:designsetgo/pill {"content":"Save $48","fontSize":"small","style":{"border":{"radius":"50px"},"color":{"background":"rgba(16,185,129,0.1)","text":"#10b981"}}} /--></div></div>
 <!-- /wp:designsetgo/row -->
 
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|15"}},"color":{"text":"#64748b"}},"fontSize":"small"} -->
@@ -272,9 +268,7 @@ return array(
 <!-- /wp:designsetgo/section -->
 
 <!-- wp:designsetgo/section {"style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}},"border":{"radius":"16px","width":"2px","color":"#6366f1"}},"backgroundColor":"base"} -->
-<div class="wp-block-designsetgo-section alignfull dsgo-stack has-border-color has-base-background-color has-background" style="border-color:#6366f1;border-width:2px;border-radius:16px;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/pill {"content":"Most Popular","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|15"}},"border":{"radius":"50px"},"color":{"background":"#6366f1","text":"#ffffff"}}} -->
-<div class="wp-block-designsetgo-pill dsgo-pill has-text-color has-background has-small-font-size" style="margin-bottom:var(--wp--preset--spacing--15)"><span class="dsgo-pill__content" style="background-color:#6366f1;color:#ffffff;border-radius:50px">Most Popular</span></div>
-<!-- /wp:designsetgo/pill -->
+<div class="wp-block-designsetgo-section alignfull dsgo-stack has-border-color has-base-background-color has-background" style="border-color:#6366f1;border-width:2px;border-radius:16px;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)"><div class="dsgo-stack__inner" style="max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto"><!-- wp:designsetgo/pill {"content":"Most Popular","fontSize":"small","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|15"}},"border":{"radius":"50px"},"color":{"background":"#6366f1","text":"#ffffff"}}} /-->
 
 <!-- wp:heading {"level":3,"fontSize":"large"} -->
 <h3 class="wp-block-heading has-large-font-size">Professional</h3>
@@ -289,9 +283,7 @@ return array(
 <p class="has-text-color" style="color:#64748b">/month</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/pill {"content":"Save $120","style":{"border":{"radius":"50px"},"color":{"background":"rgba(16,185,129,0.1)","text":"#10b981"}}} -->
-<div class="wp-block-designsetgo-pill dsgo-pill has-text-color has-background has-small-font-size"><span class="dsgo-pill__content" style="background-color:rgba(16,185,129,0.1);color:#10b981;border-radius:50px">Save $120</span></div>
-<!-- /wp:designsetgo/pill --></div></div>
+<!-- wp:designsetgo/pill {"content":"Save $120","fontSize":"small","style":{"border":{"radius":"50px"},"color":{"background":"rgba(16,185,129,0.1)","text":"#10b981"}}} /--></div></div>
 <!-- /wp:designsetgo/row -->
 
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|15"}},"color":{"text":"#64748b"}},"fontSize":"small"} -->
@@ -353,9 +345,7 @@ return array(
 <p class="has-text-color" style="color:#64748b">/month</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/pill {"content":"Save $240","style":{"border":{"radius":"50px"},"color":{"background":"rgba(16,185,129,0.1)","text":"#10b981"}}} -->
-<div class="wp-block-designsetgo-pill dsgo-pill has-text-color has-background has-small-font-size"><span class="dsgo-pill__content" style="background-color:rgba(16,185,129,0.1);color:#10b981;border-radius:50px">Save $240</span></div>
-<!-- /wp:designsetgo/pill --></div></div>
+<!-- wp:designsetgo/pill {"content":"Save $240","fontSize":"small","style":{"border":{"radius":"50px"},"color":{"background":"rgba(16,185,129,0.1)","text":"#10b981"}}} /--></div></div>
 <!-- /wp:designsetgo/row -->
 
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|15"}},"color":{"text":"#64748b"}},"fontSize":"small"} -->

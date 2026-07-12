@@ -23,6 +23,16 @@
  * the same post content, so a regression that reintroduces a shrink-wrapped
  * or aligned wrapper is caught even though the markup-level tests would still
  * pass.
+ *
+ * A second, narrower class of the same bug only shows up NESTED inside a
+ * Section/Row/Grid: src/styles/_utilities.scss has its own, separate set of
+ * "shrink these inline-ish blocks to fit-content" rules for children of
+ * `.dsgo-stack__inner` / `.dsgo-flex__inner`, which — if it lists these four
+ * blocks' root class — reapplies the exact `width: fit-content !important`
+ * shrink-wrap `_justification.scss` forbids, independent of anything at the
+ * top level. Every case below therefore runs three times: at the top level,
+ * nested one level inside `designsetgo/section`, and nested one level inside
+ * `designsetgo/row`.
  */
 
 const { test, expect } = require('@playwright/test');
@@ -31,7 +41,7 @@ const {
 	getEditorCanvas,
 	getInvalidBlockNames,
 } = require('./helpers/wordpress');
-const { insertBlockByName } = require('./helpers/blocks');
+const { insertBlockByName, insertNestedBlockByName } = require('./helpers/blocks');
 const {
 	installVideoCapture,
 	installPublishedPageCleanup,
@@ -74,32 +84,84 @@ const BLOCKS = [
 	},
 ];
 
+// Containers to nest the block under test inside, in addition to the top
+// level. `null` means "top level, directly in post content" (the original
+// coverage).
+//
+// `strictEdges` distinguishes two fundamentally different container models:
+//
+// - Top level and Section (`.dsgo-stack__inner`, a COLUMN-direction flex
+//   layout) both give the block's `.dsgo-justify` wrapper the full available
+//   cross-axis width, so `justification` positions the visible element at an
+//   exact, predictable edge — same assertions as top level.
+// - Row (`.dsgo-flex__inner`, a ROW-direction flex layout) deliberately does
+//   NOT stretch a lone child on its main axis — that's what lets multiple
+//   Icon Buttons/Pills sit side by side at their natural width (see
+//   CHANGELOG: "use a Row block to place them side by side intentionally").
+//   A single child's own `justification` therefore has no free space to
+//   move within; positioning a group of Row children is Row's OWN
+//   `layout.justifyContent`, not each child's `justification`. Row still
+//   gets `constrainWidth: true` explicitly (its block.json default is
+//   `false`, unlike Section) so its own bounds are well-defined, and the
+//   meaningful invariant to assert there is CONTAINMENT — the block must
+//   never escape past the row's own bounds into the full-width container,
+//   which is the actual regression class this spec guards against.
+const CONTAINERS = [
+	{ label: 'top level', parentName: null, strictEdges: true },
+	{
+		label: 'nested in designsetgo/section',
+		parentName: 'designsetgo/section',
+		strictEdges: true,
+	},
+	{
+		label: 'nested in designsetgo/row',
+		parentName: 'designsetgo/row',
+		parentAttributes: { constrainWidth: true },
+		strictEdges: false,
+	},
+];
+
 /**
  * Publish a new page containing a reference `core/paragraph` followed by the
- * block under test (top level — NOT inside a Section, whose inner div is
- * already capped to content width and would mask the bug), then measure the
- * frontend bounding boxes of the paragraph's content column and the block's
- * visible element.
+ * block under test — either at the top level, or nested one level inside a
+ * container block (Section/Row) — then measure the frontend bounding boxes
+ * of the paragraph's content column and the block's visible element.
  *
- * @param {import('@playwright/test').Page} page          - Playwright page.
- * @param {Object}                          block         - Entry from BLOCKS.
- * @param {string}                          justification - 'left' | 'center' | 'right'.
+ * @param {import('@playwright/test').Page} page               - Playwright page.
+ * @param {Object}                          block              - Entry from BLOCKS.
+ * @param {string}                          justification      - 'left' | 'center' | 'right'.
+ * @param {string|null}                     [parentName]       - Optional container block name to nest inside.
+ * @param {object}                          [parentAttributes] - Optional explicit attributes for the parent container.
  * @return {Promise<{columnRect: {left: number, right: number}, blockRect: {left: number, right: number}}>}
  *         Left/right edges of the content column and the block's visible element.
  */
-async function measureJustifiedBlock(page, block, justification) {
+async function measureJustifiedBlock(
+	page,
+	block,
+	justification,
+	parentName = null,
+	parentAttributes = {}
+) {
 	await createNewPost(page, 'page');
 	await setPostTitle(
 		page,
-		`Justification: ${block.name.split('/').pop()} (${justification})`
+		`Justification: ${block.name.split('/').pop()} (${justification}) ${parentName ? `in ${parentName}` : 'top level'}`
 	);
 
 	await insertBlockByName(page, 'core/paragraph', {
 		attributes: { content: 'Reference paragraph' },
 	});
-	const { clientId } = await insertBlockByName(page, block.name, {
-		attributes: { ...block.attributes, justification },
-	});
+
+	const attributes = { ...block.attributes, justification };
+	const { clientId } = parentName
+		? await insertNestedBlockByName(
+				page,
+				parentName,
+				block.name,
+				{ attributes },
+				parentAttributes
+			).then((r) => ({ clientId: r.childClientId }))
+		: await insertBlockByName(page, block.name, { attributes });
 
 	// Wait for the inserted block to appear in the canvas — a real DOM signal
 	// that React has finished rendering, rather than a fixed timeout.
@@ -136,66 +198,90 @@ async function measureJustifiedBlock(page, block, justification) {
 
 test.describe('Content-column justification — layout regression guard', () => {
 	for (const block of BLOCKS) {
-		test(`${block.name} left-justified sits on the content column, not the container edge`, async ({
-			page,
-		}) => {
-			const { columnRect, blockRect } = await measureJustifiedBlock(
+		for (const container of CONTAINERS) {
+			test(`${block.name} left-justified sits on the content column, not the container edge (${container.label})`, async ({
 				page,
-				block,
-				'left'
-			);
+			}) => {
+				const { columnRect, blockRect } = await measureJustifiedBlock(
+					page,
+					block,
+					'left',
+					container.parentName,
+					container.parentAttributes
+				);
 
-			// "Left-justified" means the left edge of the content column — the
-			// same x as a normal paragraph in the same post content — NOT the
-			// left edge of the full-width container. Before the fix this was
-			// 50 (container padding edge) vs 206 (content column).
-			expect(Math.abs(blockRect.left - columnRect.left)).toBeLessThan(
-				TOLERANCE
-			);
-		});
+				// "Left-justified" means the left edge of the content column — the
+				// same x as a normal paragraph in the same post content — NOT the
+				// left edge of the full-width container. Before the fix this was
+				// 50 (container padding edge) vs 206 (content column). This holds
+				// for every container: `justify-content: flex-start` is the
+				// default even where a lone child can't be pushed elsewhere (Row).
+				expect(
+					Math.abs(blockRect.left - columnRect.left)
+				).toBeLessThan(TOLERANCE);
+			});
 
-		test(`${block.name} right-justified sits on the content column's right edge`, async ({
-			page,
-		}) => {
-			const { columnRect, blockRect } = await measureJustifiedBlock(
+			test(`${block.name} right-justified sits on the content column's right edge (${container.label})`, async ({
 				page,
-				block,
-				'right'
-			);
+			}) => {
+				const { columnRect, blockRect } = await measureJustifiedBlock(
+					page,
+					block,
+					'right',
+					container.parentName,
+					container.parentAttributes
+				);
 
-			// Mirrors the left-justified assertion: `alignright` was excluded
-			// from core's content-size cap exactly like `alignleft`, so the
-			// right edge must land on the column's right edge, not the
-			// container's.
-			expect(Math.abs(blockRect.right - columnRect.right)).toBeLessThan(
-				TOLERANCE
-			);
-			expect(blockRect.left).toBeGreaterThanOrEqual(
-				columnRect.left - TOLERANCE
-			);
-		});
+				if (container.strictEdges) {
+					// Mirrors the left-justified assertion: `alignright` was
+					// excluded from core's content-size cap exactly like
+					// `alignleft`, so the right edge must land on the column's
+					// right edge, not the container's.
+					expect(
+						Math.abs(blockRect.right - columnRect.right)
+					).toBeLessThan(TOLERANCE);
+					expect(blockRect.left).toBeGreaterThanOrEqual(
+						columnRect.left - TOLERANCE
+					);
+				} else {
+					// Row: a lone child has no free main-axis space to move
+					// into (see CONTAINERS comment above), so `justification`
+					// has no visible effect here — the meaningful invariant is
+					// that it still stays inside the row's own bounds instead
+					// of escaping past them.
+					expect(blockRect.left).toBeGreaterThanOrEqual(
+						columnRect.left - TOLERANCE
+					);
+					expect(blockRect.right).toBeLessThanOrEqual(
+						columnRect.right + TOLERANCE
+					);
+				}
+			});
 
-		test(`${block.name} center-justified stays inside the content column, not merely centered on the full-width container`, async ({
-			page,
-		}) => {
-			const { columnRect, blockRect } = await measureJustifiedBlock(
+			test(`${block.name} center-justified stays inside the content column, not merely centered on the full-width container (${container.label})`, async ({
 				page,
-				block,
-				'center'
-			);
+			}) => {
+				const { columnRect, blockRect } = await measureJustifiedBlock(
+					page,
+					block,
+					'center',
+					container.parentName,
+					container.parentAttributes
+				);
 
-			// A shrink-wrapped box centered on the full-width container can
-			// still LOOK centered — the container and the content column
-			// usually share the same center point — so centering alone can't
-			// tell the two boxes apart. Containment can: if the wrapper lost
-			// its content-size cap, a wide enough element would spill past
-			// the column's edges even while still appearing centered.
-			expect(blockRect.left).toBeGreaterThanOrEqual(
-				columnRect.left - TOLERANCE
-			);
-			expect(blockRect.right).toBeLessThanOrEqual(
-				columnRect.right + TOLERANCE
-			);
-		});
+				// A shrink-wrapped box centered on the full-width container can
+				// still LOOK centered — the container and the content column
+				// usually share the same center point — so centering alone can't
+				// tell the two boxes apart. Containment can: if the wrapper lost
+				// its content-size cap, a wide enough element would spill past
+				// the column's edges even while still appearing centered.
+				expect(blockRect.left).toBeGreaterThanOrEqual(
+					columnRect.left - TOLERANCE
+				);
+				expect(blockRect.right).toBeLessThanOrEqual(
+					columnRect.right + TOLERANCE
+				);
+			});
+		}
 	}
 });

@@ -26,9 +26,7 @@ return array(
 
 <!-- wp:group {"style":{"spacing":{"margin":{"top":"var:preset|spacing|40"},"blockGap":"var:preset|spacing|30"}},"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group" style="margin-top:var(--wp--preset--spacing--40)"><!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"top"}} -->
-<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"location","style":{"color":{"text":"#d97706"}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon has-text-color" style="color:#d97706;display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="location" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Location"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"location","style":{"color":{"text":"#d97706"}}} /-->
 
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group"><!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"600"}}} -->
@@ -42,9 +40,7 @@ return array(
 <!-- /wp:group -->
 
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"top"}} -->
-<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"clock","style":{"color":{"text":"#d97706"}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon has-text-color" style="color:#d97706;display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="clock" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Clock"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"clock","style":{"color":{"text":"#d97706"}}} /-->
 
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group"><!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"600"}}} -->
@@ -58,9 +54,7 @@ return array(
 <!-- /wp:group -->
 
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"top"}} -->
-<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"phone","style":{"color":{"text":"#d97706"}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon has-text-color" style="color:#d97706;display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="phone" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Phone"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-group"><!-- wp:designsetgo/icon {"icon":"phone","style":{"color":{"text":"#d97706"}}} /-->
 
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group"><!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"600"}}} -->

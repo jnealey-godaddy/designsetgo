@@ -17,6 +17,25 @@
  * otherwise a background or border would paint across the whole content column
  * instead of hugging the icon.
  *
+ * `align` support narrowed from `left|center|right|wide|full` to `wide|full`
+ * when `justification` replaced the left/center/right values, but WordPress's
+ * `wp_register_alignment_support()` always registers the `align` ATTRIBUTE
+ * with the full historical enum regardless of what `supports.align` lists —
+ * the block.json subset only trims the editor's toolbar buttons. So a
+ * published Icon that has never been re-opened and re-saved (deprecations
+ * only run in the editor) can still carry a stored `align: "left"` here.
+ * That value is read as a legacy justification fallback below. It is
+ * intentionally NOT passed through to `get_block_wrapper_attributes()`'s
+ * `class` argument for wide/full handling — `align` stays in `$attributes`
+ * (untouched) so WordPress's own alignment-support code (invoked internally
+ * by `get_block_wrapper_attributes()`) still emits `alignwide`/`alignfull`
+ * for the current, legitimate use of those two values. It ALSO, unavoidably,
+ * emits a stale `alignleft`/`aligncenter`/`alignright` class from that same
+ * mechanism for un-migrated legacy content — style.scss neutralizes that
+ * class back to the content-column cap so the original escape bug does not
+ * resurface for un-migrated content (see the `.alignleft`/`.aligncenter`/
+ * `.alignright` rules there).
+ *
  * @package DesignSetGo
  * @since 2.4.0
  *
@@ -113,7 +132,18 @@ if ( ! function_exists( 'designsetgo_render_icon' ) ) {
 			);
 		}
 
-		$justification = isset( $attributes['justification'] ) ? (string) $attributes['justification'] : 'center';
+		// A stored `align` of left/center/right only ever exists on un-migrated
+		// legacy content (the deprecation strips it on first editor re-save,
+		// and a fresh icon never writes one) — so ITS presence, not
+		// `justification`'s value, is what identifies "not yet migrated"
+		// here. `justification` always reads back as a value (its own
+		// block.json default fills in when the key is missing), so it cannot
+		// be used to detect that. `align: wide|full` is unrelated (still a
+		// live, current feature) and is left alone.
+		$legacy_align = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
+		$justification = in_array( $legacy_align, array( 'left', 'center', 'right' ), true )
+			? $legacy_align
+			: ( isset( $attributes['justification'] ) ? (string) $attributes['justification'] : 'center' );
 		$justify_class = in_array( $justification, array( 'left', 'center', 'right' ), true )
 			? ' dsgo-justify--' . $justification
 			: '';

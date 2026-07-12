@@ -260,7 +260,6 @@ const variations = [
 						'designsetgo/icon-button',
 						{
 							text: __('Learn More', 'designsetgo'),
-							width: 'auto',
 							icon: 'info',
 							iconPosition: 'start',
 						},
@@ -269,7 +268,6 @@ const variations = [
 						'designsetgo/icon-button',
 						{
 							text: __('Accept', 'designsetgo'),
-							width: 'auto',
 							icon: 'yes',
 							iconPosition: 'end',
 						},

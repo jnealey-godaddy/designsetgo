@@ -54,6 +54,54 @@
 		width: 100%;
 	}
 
+	// ============================================================================
+	// LEGACY SUPPORT: pre-justification-wrapper markup (deprecated.js v4 and
+	// older; align: left|center|right|full support removed from block.json)
+	// ============================================================================
+	// Before the justification wrapper, the block root WAS this element
+	// (`useBlockProps.save()` was called directly on the `<button>`), so
+	// WordPress's `align` support put `alignleft`/`aligncenter`/`alignright`/
+	// `alignfull` classes directly alongside `dsgo-modal-trigger` on the same
+	// tag. Modal Trigger is a STATIC block (its own `save.js` output is
+	// what's stored), so that markup is exactly what's still in the database
+	// until the author re-opens and re-saves the block — there is no PHP
+	// re-render to migrate it on the frontend.
+
+	// New markup never reproduces this: the wrapper
+	// (`.wp-block-designsetgo-modal-trigger`, which can still carry
+	// `alignwide`/`alignfull` from the current `align: ["wide","full"]`
+	// support) and the button (`.dsgo-modal-trigger`) are different
+	// elements, and the button itself never carries any align class. So
+	// these compound selectors — requiring BOTH classes on the same tag —
+	// only ever match old, un-migrated stored HTML.
+	&.alignfull:not([class*="dsgo-hide-"]) {
+		display: flex !important;
+		width: 100% !important;
+		max-width: 100% !important;
+	}
+
+	&.aligncenter:not(.alignfull):not([class*="dsgo-hide-"]) {
+		float: none !important;
+		display: flex !important;
+		width: fit-content !important;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	&.alignleft:not(.alignfull):not([class*="dsgo-hide-"]) {
+		float: none !important;
+		display: flex !important;
+		width: fit-content !important;
+		margin-right: auto;
+	}
+
+	&.alignright:not(.alignfull):not([class*="dsgo-hide-"]) {
+		float: none !important;
+		display: flex !important;
+		width: fit-content !important;
+		margin-left: auto;
+	}
+
 	&:hover,
 	&:focus {
 		text-decoration: none !important;

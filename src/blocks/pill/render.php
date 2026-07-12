@@ -18,6 +18,16 @@
  * otherwise a background or border would paint across the whole content column
  * instead of hugging the pill.
  *
+ * `align` support was removed entirely when `justification` replaced it, but
+ * block.json still registers an explicit `align` attribute (attributes
+ * registered directly are kept regardless of `supports`) purely as a
+ * migration shim: deprecations only run in the editor, so a published pill
+ * that has never been re-opened and re-saved still has `align` in its stored
+ * comment and NO `justification` key. Without this shim, `align` would be
+ * silently stripped before render.php ever sees it (WordPress drops
+ * attributes the block type doesn't register) and the pill would render at
+ * `justification`'s default ("center"), moving existing left/right pills.
+ *
  * @package DesignSetGo
  * @since 2.5.0
  *
@@ -43,8 +53,18 @@ if ( ! function_exists( 'designsetgo_render_pill' ) ) {
 	function designsetgo_render_pill( $attributes, $content, $block ) {
 		unset( $content, $block );
 
-		$text          = isset( $attributes['content'] ) ? (string) $attributes['content'] : '';
-		$justification = isset( $attributes['justification'] ) ? (string) $attributes['justification'] : 'center';
+		$text = isset( $attributes['content'] ) ? (string) $attributes['content'] : '';
+
+		// A stored `align` key only ever exists on un-migrated legacy content
+		// (the deprecation strips it on first editor re-save, and a fresh
+		// pill never writes one) — so its presence, not `justification`'s
+		// value, is what identifies "not yet migrated" here. `justification`
+		// always reads back as a value (its own block.json default fills in
+		// when the key is missing), so it cannot be used to detect that.
+		$legacy_align = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
+		$justification = in_array( $legacy_align, array( 'left', 'center', 'right' ), true )
+			? $legacy_align
+			: ( isset( $attributes['justification'] ) ? (string) $attributes['justification'] : 'center' );
 
 		$justify_class = in_array( $justification, array( 'left', 'center', 'right' ), true )
 			? ' dsgo-justify--' . $justification

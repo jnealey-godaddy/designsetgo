@@ -17,6 +17,9 @@
 	"usesContext": [
 		"designsetgo/hoverIconBackgroundColor"
 	],
+	"selectors": {
+		"root": ".wp-block-designsetgo-icon .dsgo-icon__wrapper"
+	},
 	"supports": {
 		"anchor": true,
 		"align": [

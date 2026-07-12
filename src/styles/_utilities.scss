@@ -145,26 +145,19 @@ body.dsgo-show-focus-outlines :where(.wp-site-blocks *:focus-visible) {
 	/**
 	 * B. Intrinsic Width Blocks (Inline Elements)
 	 * These blocks maintain their natural inline sizing
+	 *
+	 * Icon, Pill, Icon Button, and Modal Trigger are NOT listed here: their
+	 * block root is now a `.dsgo-justify` content-column positioning wrapper
+	 * (see src/styles/_justification.scss), and it must stay block-level /
+	 * flex-stretched so it has real width for `justify-content` to position
+	 * the shrink-wrapped visible element inside it. Forcing `width:
+	 * fit-content !important` here reproduces the original content-column
+	 * escape bug the wrapper exists to fix.
 	 */
-	> .wp-block-designsetgo-icon,
-	> .wp-block-designsetgo-pill,
 	> .wp-block-designsetgo-counter:not([style*="width"]) {
 		width: fit-content !important;
 		max-width: fit-content !important;
 		display: inline-flex;
-	}
-
-	// Icon Button - inline button with icon (unless alignfull)
-	> .wp-block-designsetgo-icon-button:not(.alignfull) {
-		width: auto;
-		display: inline-flex;
-	}
-
-	// Icon Button full-width (alignfull) - allow it to span container width
-	> .wp-block-designsetgo-icon-button.alignfull {
-		width: 100% !important;
-		max-width: 100% !important;
-		display: flex;
 	}
 }
 
@@ -182,24 +175,17 @@ body.dsgo-show-focus-outlines :where(.wp-site-blocks *:focus-visible) {
 	/**
 	 * B. Intrinsic Width Blocks (Inline Elements)
 	 * These blocks maintain their natural inline sizing
-	 * NOTE: Icon Button with alignfull is excluded - it should span full width
+	 *
+	 * Icon, Icon Button, Pill, and Modal Trigger are NOT listed here: their
+	 * block root is now a `.dsgo-justify` content-column positioning wrapper
+	 * (see src/styles/_justification.scss). As a flex item here it already
+	 * sizes to its content naturally (row-direction flex items default to
+	 * shrink-to-fit) without a `width: fit-content !important` override —
+	 * and that override is what breaks `justify-content` positioning and the
+	 * icon-button `fullWidth` toggle (the wrapper never gets real free space
+	 * to distribute, and `fullWidth`'s 100% width is clamped straight back
+	 * to fit-content).
 	 */
-	> .wp-block-designsetgo-icon,
-	> .wp-block-designsetgo-icon-button:not(.alignfull),
-	> .wp-block-designsetgo-pill,
-	> .wp-block-designsetgo-modal-trigger {
-		width: fit-content !important;
-		max-width: fit-content !important;
-		display: inline-flex;
-	}
-
-	// Icon Button full-width (alignfull): allow it to span container width
-	> .wp-block-designsetgo-icon-button.alignfull {
-		width: 100% !important;
-		max-width: 100% !important;
-		display: flex;
-	}
-
 	> .wp-block-designsetgo-counter:not([style*="width"]) {
 		width: auto;
 		display: inline-flex;

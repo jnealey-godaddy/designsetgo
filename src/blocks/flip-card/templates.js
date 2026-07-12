@@ -184,7 +184,7 @@ const flipCardTemplates = [
 					'designsetgo/icon-button',
 					{
 						text: __('Get started', 'designsetgo'),
-						align: 'center',
+						justification: 'center',
 					},
 				],
 			]),

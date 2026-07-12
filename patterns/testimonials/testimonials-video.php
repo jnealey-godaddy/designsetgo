@@ -22,9 +22,7 @@ return array(
 <!-- /wp:designsetgo/section -->
 
 <!-- wp:designsetgo/section {"constrainWidth":false,"style":{"spacing":{"padding":{"top":"0","bottom":"0","left":"0","right":"0"}},"layout":{"gridColumn":"span 4"}},"dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"fadeInRight"} -->
-<div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint has-dsgo-animation dsgo-animation-fadeInRight" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInRight"><div class="dsgo-stack__inner"><!-- wp:designsetgo/icon {"icon":"quote","className":"dsgo-lazy-icon","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|30"}}}} -->
-<div class="wp-block-designsetgo-icon dsgo-icon dsgo-lazy-icon" style="margin-bottom:var(--wp--preset--spacing--30);display:flex;align-items:center;justify-content:center"><div class="dsgo-icon__wrapper dsgo-lazy-icon" style="width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit" data-icon-name="quote" data-icon-style="filled" data-icon-stroke-width="1.5" role="img" aria-label="Quote"></div></div>
-<!-- /wp:designsetgo/icon -->
+<div class="wp-block-designsetgo-section alignfull dsgo-stack dsgo-no-width-constraint has-dsgo-animation dsgo-animation-fadeInRight" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInRight"><div class="dsgo-stack__inner"><!-- wp:designsetgo/icon {"icon":"quote","className":"dsgo-lazy-icon","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|30"}}}} /-->
 
 <!-- wp:paragraph {"style":{"typography":{"fontSize":"1.25rem","lineHeight":"1.6"}},"textColor":"contrast"} -->
 <p class="has-contrast-color has-text-color" style="font-size:1.25rem;line-height:1.6">Working with this team transformed our business. Their innovative approach and dedication to excellence helped us achieve results we never thought possible.</p>
