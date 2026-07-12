@@ -11,7 +11,6 @@
  */
 
 .dsgo-icon {
-	align-items: center; // .dsgo-justify only sets justify-content, not align-items
 	line-height: 1; // Prevent inherited line-height from creating extra vertical space
 
 	// Link wrapper
@@ -106,34 +105,14 @@
 	}
 }
 
-// ============================================================================
-// LEGACY SUPPORT: stale `align: left|center|right` on un-migrated content
-// ============================================================================
-// Icon is a DYNAMIC block (render.php), so WordPress's alignment-support
-// code re-derives an `align{value}` class from the block's STORED attributes
-// on every render — using the full historical left/center/right/wide/full
-// enum, regardless of block.json's current `align: ["wide","full"]` subset
-// (see render.php's docblock). Deprecations only run in the editor, so a
-// published Icon that has never been re-opened and re-saved can still carry
-// a stored `align: "left"` and render with a stale `alignleft` class next to
-// `.dsgo-icon`. That excludes it from core's constrained-layout content-size
-// cap (`.is-layout-constrained > :where(:not(.alignleft)...)`) and
-// reproduces the exact content-column escape bug this refactor fixes.
-
-// New/migrated content never carries left/center/right in `align` (the
-// deprecation strips it on first re-save; a fresh icon never writes one), so
-// this compound selector — which requires both classes on the same element —
-// only ever matches un-migrated legacy markup. `alignwide`/`alignfull` are
-// untouched: those stay a live, current feature and must keep escaping the
-// column as core intends.
-.dsgo-icon.alignleft,
-.dsgo-icon.aligncenter,
-.dsgo-icon.alignright {
-	float: none !important;
-	max-width: var(--wp--style--global--content-size) !important;
-	margin-left: auto !important;
-	margin-right: auto !important;
-}
+// LEGACY SUPPORT for stale `align: left|center|right` on un-migrated content
+// used to live here as a CSS neutralizer on `.dsgo-icon.alignleft` etc. It's
+// gone: `align-self`'s cross-axis positioning is overridden by that stale
+// class's own `margin: auto` in flexbox, so the neutralizer always recentred
+// the wrapper instead of respecting `justify-content`. render.php now strips
+// the stale alignleft/aligncenter/alignright class from the wrapper directly
+// (see its docblock) — `alignwide`/`alignfull` are untouched there, so those
+// still escape the column as core intends.
 
 // Outlined icon style (.dsgo-icon-outlined) now lives in the shared global
 // bundle so every icon-bearing block can use it — see

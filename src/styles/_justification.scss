@@ -14,6 +14,13 @@
 
 .dsgo-justify {
 	display: flex;
+	// The visible element inside is shrink-wrapped on the inline axis by
+	// `justify-content` below, but this wrapper itself is block-level and
+	// spans the full cross-axis (see file header) — without `align-items`,
+	// a flex row with no explicit cross-axis alignment defaults to
+	// `stretch`, which stretches the shrink-wrapped child to the wrapper's
+	// full height instead of sizing to its own content.
+	align-items: center;
 	justify-content: flex-start;
 
 	&--center {
@@ -34,9 +41,20 @@
  * to distribute, so `justification` becomes inert — the same failure mode
  * as the `width: fit-content` bug this file's own header forbids, just
  * arriving from the PARENT's layout instead of a sibling stylesheet.
- * `align-self`/`justify-self: stretch` claim the full cross-axis size for
- * this one item, independent of whatever alignment the parent uses for
- * other children.
+ * Claiming the full cross-axis size for this one item (independent of
+ * whatever alignment the parent uses for other children) fixes that — but
+ * the CSS property that means "cross axis" is NOT the same for the two
+ * container types below, because Stack and Grid don't share a layout model:
+ *
+ * - Stack (`.dsgo-stack__inner`) is a COLUMN-direction flexbox, so its
+ *   cross axis is horizontal — `align-self: stretch` is correct there.
+ * - Grid (`.dsgo-grid__inner`) is a CSS grid, where `align-self` is the
+ *   BLOCK (vertical) axis and `justify-self` is the INLINE (horizontal)
+ *   axis — the opposite of flexbox's naming. `justify-self: stretch` is the
+ *   correct property for "claim full horizontal width"; `align-self` must
+ *   be left alone (default `auto`) so the wrapper follows the Grid's own
+ *   author-set `alignItems` (top/center/bottom/stretch) instead of always
+ *   stretching to the full row height.
  *
  * Row (`.dsgo-flex__inner`) is deliberately excluded: Row's main axis is
  * horizontal, so its children intentionally keep their natural (shrink-
@@ -44,8 +62,10 @@
  * side in one row (see CHANGELOG: "use a Row block to place them side by
  * side intentionally"). Stretching here would break that.
  */
-.dsgo-stack__inner > .dsgo-justify,
-.dsgo-grid__inner > .dsgo-justify {
+.dsgo-stack__inner > .dsgo-justify {
 	align-self: stretch;
+}
+
+.dsgo-grid__inner > .dsgo-justify {
 	justify-self: stretch;
 }

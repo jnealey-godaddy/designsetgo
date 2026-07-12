@@ -48,6 +48,7 @@ const {
 	setPostTitle,
 	publishAndResolveUrl,
 } = require('./helpers/artifacts');
+const { cli, shellArg, deletePostIds } = require('./helpers/wp-cli');
 
 // Record a video per test when DSGO_RECORD_VIDEO=1 (screenshots only by default).
 installVideoCapture(test);
@@ -283,5 +284,199 @@ test.describe('Content-column justification — layout regression guard', () => 
 				);
 			});
 		}
+	}
+});
+
+/**
+ * Height (in px) of a `core/spacer` used to force a tall Grid row. Explicit
+ * `height` on a grid item is a definite size, so CSS Grid's `align-self:
+ * stretch` cannot override it and `grid-auto-rows: auto` sizes the row to
+ * fit it — a stable, alignItems-independent "row height" reference. Every
+ * justified block's own natural height (well under 100px) sits nowhere near
+ * this, so a generous 60% threshold below comfortably separates "sized to
+ * content" from "stretched to the row."
+ */
+const GRID_SPACER_HEIGHT = 320;
+
+/**
+ * Publish a page with a two-column `designsetgo/grid` (`alignItems` as
+ * given) whose first cell is a `core/spacer` (forces the row to
+ * `GRID_SPACER_HEIGHT`) and second cell is the block under test, then
+ * measure both cells' rendered heights on the frontend.
+ *
+ * Guards CRITICAL A: `.dsgo-grid__inner > .dsgo-justify` used to set
+ * `align-self: stretch` — in a CSS GRID (unlike flexbox) `align-self` is the
+ * BLOCK (vertical) axis, not the inline axis, so it stretched every
+ * justified block to the full row height and silently overrode the Grid's
+ * own author-set `alignItems`.
+ *
+ * @param {import('@playwright/test').Page} page        - Playwright page.
+ * @param {Object}                          block       - Entry from BLOCKS.
+ * @param {string}                          alignItems  - Grid `alignItems` value to test.
+ * @return {Promise<{spacerHeight: number, blockHeight: number}>} Rendered heights.
+ */
+async function measureGridAlignItems(page, block, alignItems) {
+	await createNewPost(page, 'page');
+	await setPostTitle(
+		page,
+		`Grid alignItems=${alignItems}: ${block.name.split('/').pop()}`
+	);
+
+	const { clientId } = await page.evaluate(
+		({ blockName, attrs, alignItemsValue, spacerHeight }) => {
+			const { createBlock } = wp.blocks;
+			const dispatch = wp.data.dispatch('core/block-editor');
+
+			const spacerBlock = createBlock('core/spacer', {
+				height: `${spacerHeight}px`,
+			});
+			const testBlock = createBlock(blockName, attrs);
+			const gridBlock = createBlock(
+				'designsetgo/grid',
+				{ alignItems: alignItemsValue, desktopColumns: 2 },
+				[spacerBlock, testBlock]
+			);
+
+			dispatch.insertBlocks(gridBlock);
+
+			return { clientId: testBlock.clientId };
+		},
+		{
+			blockName: block.name,
+			attrs: { ...block.attributes, justification: 'center' },
+			alignItemsValue: alignItems,
+			spacerHeight: GRID_SPACER_HEIGHT,
+		}
+	);
+
+	const canvas = getEditorCanvas(page);
+	await canvas
+		.locator(`[data-block="${clientId}"]`)
+		.first()
+		.waitFor({ state: 'attached', timeout: 10000 });
+
+	expect(await getInvalidBlockNames(page)).toEqual([]);
+
+	const frontendUrl = await publishAndResolveUrl(page);
+	await page.goto(frontendUrl);
+	await page.waitForLoadState('domcontentloaded');
+
+	const spacerHeight = await page
+		.locator('.wp-block-spacer')
+		.first()
+		.evaluate((el) => el.getBoundingClientRect().height);
+
+	const blockHeight = await page
+		.locator(block.selector)
+		.first()
+		.evaluate((el) => el.getBoundingClientRect().height);
+
+	return { spacerHeight, blockHeight };
+}
+
+test.describe('Content-column justification — Grid alignItems regression guard (Critical A)', () => {
+	for (const block of BLOCKS) {
+		test(`${block.name} does not stretch to the Grid row height when alignItems is 'center'`, async ({
+			page,
+		}) => {
+			const { spacerHeight, blockHeight } = await measureGridAlignItems(
+				page,
+				block,
+				'center'
+			);
+
+			// Sanity check the reference itself actually forced a tall row —
+			// otherwise a false pass could hide a broken fixture rather than a
+			// fixed bug.
+			expect(spacerHeight).toBeGreaterThanOrEqual(
+				GRID_SPACER_HEIGHT - TOLERANCE
+			);
+
+			// Before the fix this was ~spacerHeight (e.g. 339px for a 339px
+			// row) — the visible element stretched to fill the row instead of
+			// sizing to its own content and being centred by the Grid's
+			// alignItems.
+			expect(blockHeight).toBeLessThan(spacerHeight * 0.6);
+		});
+	}
+});
+
+test.describe('Content-column justification — legacy align regression guard (Critical B)', () => {
+	// Un-migrated stored markup is created directly via WP-CLI (bypassing the
+	// block editor entirely) so the raw `align` attribute survives exactly as
+	// legacy content would have it — the editor's live block type would never
+	// let us author this combination today. Tracked and cleaned up manually
+	// since these pages never pass through publishAndResolveUrl().
+	const pageIds = [];
+
+	test.afterEach(() => {
+		if (pageIds.length) {
+			deletePostIds(pageIds.splice(0, pageIds.length));
+		}
+	});
+
+	for (const align of ['left', 'right']) {
+		test(`un-migrated Icon with stored align:"${align}" inside a Section sits on the content column's ${align} edge`, async ({
+			page,
+		}) => {
+			// Icon is a dynamic block (save() returns null), so a stored
+			// instance serializes as a single self-closing comment — exactly
+			// what pre-2.4.0 content still has: `align` present, no
+			// `justification` key.
+			const markup = [
+				'<!-- wp:paragraph -->',
+				'<p>Reference paragraph</p>',
+				'<!-- /wp:paragraph -->',
+				'',
+				'<!-- wp:designsetgo/section -->',
+				'<div class="wp-block-designsetgo-section dsgo-stack"><div class="dsgo-stack__inner">',
+				`<!-- wp:designsetgo/icon {"icon":"star","align":"${align}"} /-->`,
+				'</div></div>',
+				'<!-- /wp:designsetgo/section -->',
+			].join('\n');
+
+			const out = cli(
+				'wp post create --post_type=page --post_status=publish --porcelain ' +
+					`--post_title=${shellArg(`Legacy Icon align=${align} in Section E2E`)} ` +
+					`--post_content=${shellArg(markup)}`
+			);
+			const pageId = (out.match(/\d+/) || [])[0];
+			expect(pageId, 'created page id').toBeTruthy();
+			pageIds.push(pageId);
+
+			await page.goto(`/?page_id=${pageId}`);
+			await page.waitForLoadState('domcontentloaded');
+
+			const columnRect = await page
+				.locator('.wp-block-post-content > p')
+				.first()
+				.evaluate((el) => {
+					const rect = el.getBoundingClientRect();
+					return { left: rect.left, right: rect.right };
+				});
+
+			const iconRect = await page
+				.locator('.dsgo-icon__wrapper')
+				.first()
+				.evaluate((el) => {
+					const rect = el.getBoundingClientRect();
+					return { left: rect.left, right: rect.right };
+				});
+
+			// Before the fix, core's own `margin-left/right: auto` (from the
+			// stale alignleft/alignright class render.php unavoidably emitted
+			// alongside .dsgo-justify) overrode the wrapper's flexbox
+			// `justify-content`, centring BOTH left- and right-aligned icons
+			// at the same x position regardless of `align`.
+			if (align === 'left') {
+				expect(Math.abs(iconRect.left - columnRect.left)).toBeLessThan(
+					TOLERANCE
+				);
+			} else {
+				expect(
+					Math.abs(iconRect.right - columnRect.right)
+				).toBeLessThan(TOLERANCE);
+			}
+		});
 	}
 });

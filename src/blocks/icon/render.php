@@ -31,10 +31,13 @@
  * by `get_block_wrapper_attributes()`) still emits `alignwide`/`alignfull`
  * for the current, legitimate use of those two values. It ALSO, unavoidably,
  * emits a stale `alignleft`/`aligncenter`/`alignright` class from that same
- * mechanism for un-migrated legacy content — style.scss neutralizes that
- * class back to the content-column cap so the original escape bug does not
- * resurface for un-migrated content (see the `.alignleft`/`.aligncenter`/
- * `.alignright` rules there).
+ * mechanism for un-migrated legacy content. That class is redundant — the
+ * legacy justification fallback below already put the correct
+ * `dsgo-justify--{left|center|right}` class on this same wrapper — and
+ * actively wrong: `margin-left/right: auto` (from core's own alignment CSS)
+ * overrides `align-self` in flexbox, so it recentres the wrapper regardless
+ * of `justify-content`. It is stripped from the wrapper below rather than
+ * neutralized in CSS.
  *
  * @package DesignSetGo
  * @since 2.4.0
@@ -153,6 +156,20 @@ if ( ! function_exists( 'designsetgo_render_icon' ) ) {
 		);
 
 		$html = sprintf( '<div %s>%s</div>', $wrapper_attributes, $icon_html );
+
+		// Strip the stale alignleft/aligncenter/alignright class WordPress's
+		// align support unavoidably adds for un-migrated legacy content (see
+		// docblock above) — the `dsgo-justify--{value}` class already
+		// positions the wrapper correctly, and the stale class's `margin:
+		// auto` fights it. alignwide/alignfull are left untouched: those
+		// remain a live, current feature and must keep escaping the column.
+		$align_processor = new WP_HTML_Tag_Processor( $html );
+		if ( $align_processor->next_tag() ) {
+			$align_processor->remove_class( 'alignleft' );
+			$align_processor->remove_class( 'aligncenter' );
+			$align_processor->remove_class( 'alignright' );
+			$html = $align_processor->get_updated_html();
+		}
 
 		// The wrapper is now a full-column-width positioning box, so a background,
 		// border or padding on it would paint across the column instead of hugging
