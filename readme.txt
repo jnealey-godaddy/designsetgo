@@ -118,6 +118,7 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 * **Fix:** Sections using a Style Kit overlay variation now actually show the overlay.
 * **Fix:** Scroll Accordion no longer shows a stray colored bar down the left edge of items in the editor.
 * **Fix:** Pill, Icon, Icon Button, and Modal Trigger no longer escape your page's content column when positioned left, right, or center — they previously could align to the edge of the outer container instead of your theme's content width.
+* **Change:** Left, center, and right positioning for Pill, Icon, Icon Button, and Modal Trigger has moved from the toolbar's Align control to a new Justify control in the same toolbar. Align now offers only Wide and Full, matching how WordPress's own Buttons block works. Your existing positioning carries over automatically.
 * **Change:** Icon Button and Modal Trigger now stack instead of sitting side-by-side by default. Fixing the positioning bug above required making them block-level elements, so two placed one after another now each take their own line; use a Row block to place them side-by-side intentionally.
 * **Change:** Icon Button and Modal Trigger's "stretch full width" option is now a dedicated Full Width setting instead of reusing WordPress's Full Width alignment. Inside a Section — where nearly all usage lives — the rendered result is unchanged.
 * **Change:** Icon background and border colors now hug the icon itself instead of spanning the full content column.
