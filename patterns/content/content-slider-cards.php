@@ -39,8 +39,8 @@ return array(
 <p class="has-small-font-size">Our optimized infrastructure ensures sub-second load times for all your pages and assets.</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Learn More","icon":"arrow-right","iconPosition":"end","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="margin-top:var(--wp--preset--spacing--30);display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;flex-direction:row-reverse" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0" data-icon-name="arrow-right" data-icon-size="20"></span><span class="dsgo-icon-button__text">Learn More</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Learn More","icon":"arrow-right","iconPosition":"end","iconGap":"8px","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left" style="margin-top:var(--wp--preset--spacing--30)"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="gap:8px" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">Learn More</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/slide -->
@@ -59,8 +59,8 @@ return array(
 <p class="has-small-font-size">Bank-level encryption and security protocols protect your data around the clock.</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Learn More","icon":"arrow-right","iconPosition":"end","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="margin-top:var(--wp--preset--spacing--30);display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;flex-direction:row-reverse" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0" data-icon-name="arrow-right" data-icon-size="20"></span><span class="dsgo-icon-button__text">Learn More</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Learn More","icon":"arrow-right","iconPosition":"end","iconGap":"8px","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left" style="margin-top:var(--wp--preset--spacing--30)"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="gap:8px" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">Learn More</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/slide -->
@@ -79,8 +79,8 @@ return array(
 <p class="has-small-font-size">Work together seamlessly with real-time editing and commenting features.</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Learn More","icon":"arrow-right","iconPosition":"end","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="margin-top:var(--wp--preset--spacing--30);display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;flex-direction:row-reverse" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0" data-icon-name="arrow-right" data-icon-size="20"></span><span class="dsgo-icon-button__text">Learn More</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Learn More","icon":"arrow-right","iconPosition":"end","iconGap":"8px","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left" style="margin-top:var(--wp--preset--spacing--30)"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="gap:8px" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">Learn More</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/slide -->
@@ -99,8 +99,8 @@ return array(
 <p class="has-small-font-size">Track performance metrics and gain actionable insights with our powerful dashboard.</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Learn More","icon":"arrow-right","iconPosition":"end","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="margin-top:var(--wp--preset--spacing--30);display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;flex-direction:row-reverse" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0" data-icon-name="arrow-right" data-icon-size="20"></span><span class="dsgo-icon-button__text">Learn More</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Learn More","icon":"arrow-right","iconPosition":"end","iconGap":"8px","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left" style="margin-top:var(--wp--preset--spacing--30)"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="gap:8px" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">Learn More</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/slide -->
@@ -119,8 +119,8 @@ return array(
 <p class="has-small-font-size">Content delivered from edge locations worldwide for minimal latency everywhere.</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Learn More","icon":"arrow-right","iconPosition":"end","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="margin-top:var(--wp--preset--spacing--30);display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;flex-direction:row-reverse" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0" data-icon-name="arrow-right" data-icon-size="20"></span><span class="dsgo-icon-button__text">Learn More</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Learn More","icon":"arrow-right","iconPosition":"end","iconGap":"8px","style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left" style="margin-top:var(--wp--preset--spacing--30)"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="gap:8px" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">Learn More</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/slide --></div></div></div>

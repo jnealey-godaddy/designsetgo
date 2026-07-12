@@ -4,6 +4,12 @@
  * Button with optional icon at start or end.
  * Link is managed via the inline toolbar, following the core Button block pattern.
  *
+ * The block root is a plain block-level "justification wrapper" (`.dsgo-justify`)
+ * that core's constrained layout caps at the content column. The visible button
+ * (always a `div` in the editor, to preserve editability) shrink-wraps inside it.
+ * Visual supports are re-derived with the hook variants of the block-support
+ * helpers so the editor canvas matches the frontend save() output.
+ *
  * @since 1.0.0
  */
 
@@ -21,9 +27,18 @@ import {
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalUseBorderProps as useBorderProps,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalUseColorProps as useColorProps,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalGetShadowClassesAndStyles as getShadowClassesAndStyles,
+	getTypographyClassesAndStyles,
 } from '@wordpress/block-editor';
-import { ToolbarButton, Popover } from '@wordpress/components';
+import { ToolbarButton, Popover, ToggleControl } from '@wordpress/components';
+import clsx from 'clsx';
 import { DsgoInspectorPanel } from '../../components/shared';
+import DsgoJustificationToolbar from '../../components/shared/DsgoJustificationToolbar';
 import { link as linkIcon } from '@wordpress/icons';
 import { useSelect } from '@wordpress/data';
 import { getIcon } from '../icon/utils/svg-icons';
@@ -36,6 +51,7 @@ import {
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { hasExplicitString } from '../../utils/has-explicit-value';
 import { useIconDefaults } from '../../hooks';
+import { getJustificationClass } from '../../utils/justification';
 
 /**
  * Icon Button Edit Component
@@ -66,14 +82,12 @@ export default function IconButtonEdit({
 		strokeWidth,
 		iconSize,
 		iconGap,
-		align,
+		justification,
+		fullWidth,
 		hoverAnimation,
 		hoverBackgroundColor,
 		hoverTextColor,
 		style,
-		backgroundColor,
-		textColor,
-		fontSize,
 		modalCloseId,
 	} = attributes;
 
@@ -128,45 +142,32 @@ export default function IconButtonEdit({
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 
-	// Extract WordPress color values
-	// Custom colors come from style.color.background (hex/rgb)
-	// Preset colors come from backgroundColor/textColor (slugs that need conversion)
-	const bgColor =
-		style?.color?.background ||
-		(backgroundColor && `var(--wp--preset--color--${backgroundColor})`);
-	const txtColor =
-		style?.color?.text ||
-		(textColor && `var(--wp--preset--color--${textColor})`);
-
-	// Extract font size
-	// Custom font sizes come from style.typography.fontSize (px/rem/em)
-	// Preset font sizes come from fontSize (slug that needs conversion)
-	const fontSizeValue =
-		style?.typography?.fontSize ||
-		(fontSize && `var(--wp--preset--font-size--${fontSize})`);
+	// block.json skip-serializes border, color, shadow, and typography off the
+	// wrapper, so useBlockProps() below no longer carries them — there is
+	// nothing to neutralise. The visible button is the inner element, so
+	// re-derive the same classes/styles with the official block-support
+	// helpers (identical to how core/button applies them to its inner link)
+	// and apply them there instead, mirroring save.js so the editor canvas
+	// matches the frontend.
+	const border = useBorderProps(attributes);
+	const colors = useColorProps(attributes);
+	const shadow = getShadowClassesAndStyles(attributes);
+	const typography = getTypographyClassesAndStyles(attributes);
 
 	// Extract padding - WordPress stores it in style.spacing.padding
 	const paddingValue = style?.spacing?.padding;
 
-	// Combined styles for single element (must match save.js)
-	// Visual styles (colors, padding, font size, hover) + layout styles (flexbox)
-	// Use flex for full-width (alignfull), inline-flex for auto
 	// Gap parity with save.js: omit entirely when no icon; inline only for an
 	// explicit author gap, otherwise the stylesheet default owns it.
 	const hasIcon = iconPosition !== 'none' && !!icon;
 	const hasExplicitGap = hasExplicitString(iconGap);
 
-	const isFullWidth = align === 'full';
 	const buttonStyles = {
-		display: isFullWidth ? 'flex' : 'inline-flex',
-		alignItems: 'center',
-		justifyContent: 'center',
+		...border.style,
+		...colors.style,
+		...shadow.style,
+		...typography.style,
 		...(hasIcon && hasExplicitGap && { gap: iconGap }),
-		width: isFullWidth ? '100%' : 'auto',
-		flexDirection: iconPosition === 'end' ? 'row-reverse' : 'row',
-		...(bgColor && { backgroundColor: bgColor }),
-		...(txtColor && { color: txtColor }),
-		...(fontSizeValue && { fontSize: fontSizeValue }),
 		...(paddingValue && {
 			paddingTop: convertPaddingValue(paddingValue.top),
 			paddingRight: convertPaddingValue(paddingValue.right),
@@ -213,28 +214,34 @@ export default function IconButtonEdit({
 		effectiveAnimation = null;
 	}
 
-	// Build animation class
-	const animationClass =
-		effectiveAnimation && effectiveAnimation !== 'none'
-			? ` dsgo-icon-button--${effectiveAnimation}`
-			: '';
-
-	// Single element with all classes and styles combined
-	// wp-block-button and wp-element-button enable theme.json button styles
-	// wp-block-button__link ensures theme compatibility
-	// WordPress automatically adds alignfull class when align="full"
-	const ButtonElement = 'div'; // Always div in editor to preserve editability
-
-	const iconClass = hasIcon ? ' dsgo-icon-button--has-icon' : '';
+	const buttonClasses = clsx(
+		'dsgo-icon-button',
+		'wp-block-button',
+		'wp-block-button__link',
+		'wp-element-button',
+		border.className,
+		colors.className,
+		shadow.className,
+		typography.className,
+		hasIcon && 'dsgo-icon-button--has-icon',
+		fullWidth && 'dsgo-icon-button--full-width',
+		effectiveAnimation &&
+			effectiveAnimation !== 'none' &&
+			`dsgo-icon-button--${effectiveAnimation}`,
+		iconPosition === 'end' && 'dsgo-icon-button--icon-end'
+	);
 
 	const blockProps = useBlockProps({
-		ref,
-		className: `dsgo-icon-button wp-block-button wp-block-button__link wp-element-button${iconClass}${animationClass}`,
-		style: buttonStyles,
+		className: clsx('dsgo-justify', getJustificationClass(justification)),
 	});
 
 	return (
 		<>
+			<DsgoJustificationToolbar
+				value={justification}
+				onChange={(value) => setAttributes({ justification: value })}
+			/>
+
 			<BlockControls group="block">
 				<ToolbarButton
 					name="link"
@@ -372,6 +379,7 @@ export default function IconButtonEdit({
 							iconGap: undefined,
 							hoverAnimation: 'none',
 							modalCloseId: '',
+							fullWidth: false,
 						})
 					}
 				>
@@ -389,29 +397,46 @@ export default function IconButtonEdit({
 						isInsideModal={isInsideModal}
 						setAttributes={setAttributes}
 					/>
+					<DsgoInspectorPanel.Item
+						label={__('Full width', 'designsetgo')}
+						hasValue={() => !!fullWidth}
+						onDeselect={() => setAttributes({ fullWidth: false })}
+						isShownByDefault
+					>
+						<ToggleControl
+							__nextHasNoMarginBottom
+							label={__('Full width', 'designsetgo')}
+							checked={!!fullWidth}
+							onChange={(value) =>
+								setAttributes({ fullWidth: value })
+							}
+						/>
+					</DsgoInspectorPanel.Item>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 
-			<ButtonElement {...blockProps}>
-				{iconPosition !== 'none' && icon && (
-					<span
-						className="dsgo-icon-button__icon"
-						style={iconWrapperStyles}
-					>
-						{getIcon(icon, effectiveStyle, strokeWidth)}
-					</span>
-				)}
-				<RichText
-					ref={richTextRef}
-					tagName="span"
-					className="dsgo-icon-button__text"
-					value={text}
-					onChange={(value) => setAttributes({ text: value })}
-					placeholder={__('Button text…', 'designsetgo')}
-					allowedFormats={['core/bold', 'core/italic']}
-					withoutInteractiveFormatting
-				/>
-			</ButtonElement>
+			<div {...blockProps}>
+				<div ref={ref} className={buttonClasses} style={buttonStyles}>
+					{iconPosition !== 'none' && icon && (
+						<span
+							className="dsgo-icon-button__icon"
+							style={iconWrapperStyles}
+						>
+							{getIcon(icon, effectiveStyle, strokeWidth)}
+						</span>
+					)}
+					<RichText
+						ref={richTextRef}
+						tagName="span"
+						className="dsgo-icon-button__text"
+						value={text}
+						onChange={(value) => setAttributes({ text: value })}
+						placeholder={__('Button text…', 'designsetgo')}
+						allowedFormats={['core/bold', 'core/italic']}
+						withoutInteractiveFormatting
+					/>
+				</div>
+			</div>
 		</>
 	);
 }

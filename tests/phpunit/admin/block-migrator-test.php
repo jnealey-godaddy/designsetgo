@@ -143,4 +143,101 @@ class DesignSetGo_Block_Migrator_Test extends WP_UnitTestCase {
 		// section + row + icon-button = 3 convertible blocks; core blocks ignored.
 		$this->assertSame( 3, $this->invoke( 'count_dsgo_blocks', array( $blocks ) ) );
 	}
+
+	/**
+	 * Convert_icon_button() reads the current `justification` attribute (not
+	 * the legacy `align`) to build core/buttons' layout.justifyContent.
+	 */
+	public function test_convert_icon_button_reads_justification() {
+		$block = array(
+			'blockName' => 'designsetgo/icon-button',
+			'attrs'     => array(
+				'text'          => 'Go',
+				'justification' => 'center',
+			),
+		);
+
+		$converted = $this->invoke( 'convert_icon_button', array( $block ) );
+
+		$this->assertSame( 'core/buttons', $converted['blockName'] );
+		$this->assertSame( 'center', $converted['attrs']['layout']['justifyContent'] );
+	}
+
+	/**
+	 * Un-migrated content (still carrying the legacy `align` attribute, no
+	 * `justification`) must still resolve correctly — the admin tool has to
+	 * handle content that predates this attribute rename too.
+	 */
+	public function test_convert_icon_button_falls_back_to_legacy_align() {
+		$block = array(
+			'blockName' => 'designsetgo/icon-button',
+			'attrs'     => array(
+				'text'  => 'Go',
+				'align' => 'right',
+			),
+		);
+
+		$converted = $this->invoke( 'convert_icon_button', array( $block ) );
+
+		$this->assertSame( 'right', $converted['attrs']['layout']['justifyContent'] );
+	}
+
+	/**
+	 * `fullWidth: true` maps to core/button's `width: 100`, matching the
+	 * legacy `align: "full"` meaning ("stretch the button to 100%") that
+	 * moved to the new attribute.
+	 */
+	public function test_convert_icon_button_full_width_maps_to_button_width() {
+		$block = array(
+			'blockName' => 'designsetgo/icon-button',
+			'attrs'     => array(
+				'text'      => 'Go',
+				'fullWidth' => true,
+			),
+		);
+
+		$converted     = $this->invoke( 'convert_icon_button', array( $block ) );
+		$button_block  = $converted['innerBlocks'][0];
+
+		$this->assertSame( 'core/button', $button_block['blockName'] );
+		$this->assertSame( 100, $button_block['attrs']['width'] );
+	}
+
+	/**
+	 * Legacy `align: "full"` (pre-migration content) also maps to
+	 * core/button's `width: 100`, same as the modern `fullWidth` attribute.
+	 */
+	public function test_convert_icon_button_legacy_align_full_maps_to_button_width() {
+		$block = array(
+			'blockName' => 'designsetgo/icon-button',
+			'attrs'     => array(
+				'text'  => 'Go',
+				'align' => 'full',
+			),
+		);
+
+		$converted    = $this->invoke( 'convert_icon_button', array( $block ) );
+		$button_block = $converted['innerBlocks'][0];
+
+		$this->assertSame( 100, $button_block['attrs']['width'] );
+	}
+
+	/**
+	 * Neither `fullWidth` nor `align: "full"` set: core/button must not
+	 * receive a `width` attribute at all (auto width).
+	 */
+	public function test_convert_icon_button_without_full_width_omits_button_width() {
+		$block = array(
+			'blockName' => 'designsetgo/icon-button',
+			'attrs'     => array(
+				'text'          => 'Go',
+				'justification' => 'left',
+			),
+		);
+
+		$converted    = $this->invoke( 'convert_icon_button', array( $block ) );
+		$button_block = $converted['innerBlocks'][0];
+
+		$this->assertArrayNotHasKey( 'width', $button_block['attrs'] );
+	}
 }

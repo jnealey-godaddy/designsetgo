@@ -990,6 +990,14 @@ JS;
 			$button_attrs['style'] = $attrs['style'];
 		}
 
+		// core/button width attribute accepts 25/50/75/100 (percentage). Read
+		// the current `fullWidth` boolean first; fall back to the legacy
+		// `align: "full"` (which used to mean "stretch the button to 100%"
+		// before that meaning moved to `fullWidth`) for un-migrated content.
+		if ( ! empty( $attrs['fullWidth'] ) || ( isset( $attrs['align'] ) && 'full' === $attrs['align'] ) ) {
+			$button_attrs['width'] = 100;
+		}
+
 		// Build button link classes.
 		$link_classes = array( 'wp-block-button__link', 'wp-element-button' );
 
@@ -1066,19 +1074,14 @@ JS;
 			'innerContent' => array( $button_html ),
 		);
 
-		// Build core/buttons wrapper layout.
+		// Build core/buttons wrapper layout. Read `justification` first (the
+		// current icon-button attribute); fall back to the legacy `align` so
+		// this admin tool still handles un-migrated content.
 		$buttons_layout = array( 'type' => 'flex' );
 
-		if ( ! empty( $attrs['align'] ) ) {
-			$align_map = array(
-				'left'   => 'left',
-				'center' => 'center',
-				'right'  => 'right',
-			);
-
-			if ( isset( $align_map[ $attrs['align'] ] ) ) {
-				$buttons_layout['justifyContent'] = $align_map[ $attrs['align'] ];
-			}
+		$justify = isset( $attrs['justification'] ) ? $attrs['justification'] : ( isset( $attrs['align'] ) ? $attrs['align'] : '' );
+		if ( in_array( $justify, array( 'left', 'center', 'right' ), true ) ) {
+			$buttons_layout['justifyContent'] = $justify;
 		}
 
 		$buttons_attrs = array( 'layout' => $buttons_layout );

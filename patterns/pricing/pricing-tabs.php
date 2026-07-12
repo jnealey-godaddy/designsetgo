@@ -80,8 +80,8 @@ return array(
 <!-- /wp:designsetgo/icon-list-item --></div></div>
 <!-- /wp:designsetgo/icon-list -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Get Started","iconPosition":"none","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;gap:0;width:auto;flex-direction:row;background-color:var(--wp--preset--color--contrast);color:var(--wp--preset--color--base)" type="button"><span class="dsgo-icon-button__text">Get Started</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Get Started","iconPosition":"none","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-base-color has-contrast-background-color has-text-color has-background has-link-color" type="button"><span class="dsgo-icon-button__text">Get Started</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section -->
 
@@ -144,8 +144,8 @@ return array(
 <!-- /wp:designsetgo/icon-list-item --></div></div>
 <!-- /wp:designsetgo/icon-list -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Get Started","iconPosition":"none","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;gap:0;width:auto;flex-direction:row;background-color:var(--wp--preset--color--contrast);color:var(--wp--preset--color--base)" type="button"><span class="dsgo-icon-button__text">Get Started</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Get Started","iconPosition":"none","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-base-color has-contrast-background-color has-text-color has-background has-link-color" type="button"><span class="dsgo-icon-button__text">Get Started</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section -->
 
@@ -204,8 +204,8 @@ return array(
 <!-- /wp:designsetgo/icon-list-item --></div></div>
 <!-- /wp:designsetgo/icon-list -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Contact Sales","iconPosition":"none","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;gap:0;width:auto;flex-direction:row;background-color:var(--wp--preset--color--contrast);color:var(--wp--preset--color--base)" type="button"><span class="dsgo-icon-button__text">Contact Sales</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Contact Sales","iconPosition":"none","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-base-color has-contrast-background-color has-text-color has-background has-link-color" type="button"><span class="dsgo-icon-button__text">Contact Sales</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/grid --></div></div>
@@ -266,8 +266,8 @@ return array(
 <!-- /wp:designsetgo/icon-list-item --></div></div>
 <!-- /wp:designsetgo/icon-list -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Get Started","iconPosition":"none","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;gap:0;width:auto;flex-direction:row;background-color:var(--wp--preset--color--contrast);color:var(--wp--preset--color--base)" type="button"><span class="dsgo-icon-button__text">Get Started</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Get Started","iconPosition":"none","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-base-color has-contrast-background-color has-text-color has-background has-link-color" type="button"><span class="dsgo-icon-button__text">Get Started</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section -->
 
@@ -334,8 +334,8 @@ return array(
 <!-- /wp:designsetgo/icon-list-item --></div></div>
 <!-- /wp:designsetgo/icon-list -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Get Started","iconPosition":"none","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;gap:0;width:auto;flex-direction:row;background-color:var(--wp--preset--color--contrast);color:var(--wp--preset--color--base)" type="button"><span class="dsgo-icon-button__text">Get Started</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Get Started","iconPosition":"none","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-base-color has-contrast-background-color has-text-color has-background has-link-color" type="button"><span class="dsgo-icon-button__text">Get Started</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section -->
 
@@ -398,8 +398,8 @@ return array(
 <!-- /wp:designsetgo/icon-list-item --></div></div>
 <!-- /wp:designsetgo/icon-list -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Contact Sales","iconPosition":"none","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;gap:0;width:auto;flex-direction:row;background-color:var(--wp--preset--color--contrast);color:var(--wp--preset--color--base)" type="button"><span class="dsgo-icon-button__text">Contact Sales</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Contact Sales","iconPosition":"none","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-base-color has-contrast-background-color has-text-color has-background has-link-color" type="button"><span class="dsgo-icon-button__text">Contact Sales</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/grid --></div></div>

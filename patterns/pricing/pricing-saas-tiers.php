@@ -60,8 +60,8 @@ return array(
 <!-- /wp:list-item --></ul>
 <!-- /wp:list -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Purchase","icon":"arrow-right","iconPosition":"end"} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;flex-direction:row-reverse" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0" data-icon-name="arrow-right" data-icon-size="20"></span><span class="dsgo-icon-button__text">Purchase</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Purchase","icon":"arrow-right","iconPosition":"end","iconGap":"8px"} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="gap:8px" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">Purchase</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section -->
 
@@ -108,8 +108,8 @@ return array(
 <!-- /wp:list-item --></ul>
 <!-- /wp:list -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Purchase","icon":"arrow-right","iconPosition":"end","backgroundColor":"base","textColor":"contrast","style":{"elements":{"link":{"color":{"text":"var:preset|color|contrast"}}}}} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;flex-direction:row-reverse;background-color:var(--wp--preset--color--base);color:var(--wp--preset--color--contrast)" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0" data-icon-name="arrow-right" data-icon-size="20"></span><span class="dsgo-icon-button__text">Purchase</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Purchase","icon":"arrow-right","iconPosition":"end","iconGap":"8px","backgroundColor":"base","textColor":"contrast","style":{"elements":{"link":{"color":{"text":"var:preset|color|contrast"}}}}} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-contrast-color has-base-background-color has-text-color has-background has-link-color dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="gap:8px" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">Purchase</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section -->
 
@@ -152,8 +152,8 @@ return array(
 <!-- /wp:list-item --></ul>
 <!-- /wp:list -->
 
-<!-- wp:designsetgo/icon-button {"align":"left","text":"Purchase","icon":"arrow-right","iconPosition":"end"} -->
-<button class="wp-block-designsetgo-icon-button alignleft dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;width:auto;flex-direction:row-reverse" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0" data-icon-name="arrow-right" data-icon-size="20"></span><span class="dsgo-icon-button__text">Purchase</span></button>
+<!-- wp:designsetgo/icon-button {"text":"Purchase","icon":"arrow-right","iconPosition":"end","iconGap":"8px"} -->
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="gap:8px" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">Purchase</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/grid --></div></div>
