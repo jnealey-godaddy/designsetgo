@@ -159,7 +159,7 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 == Upgrade Notice ==
 
 = 2.4.0 =
-Pill, Icon, Icon Button, and Modal Trigger now stay inside your page's content column when positioned (previously they could escape it). Adjacent Icon Buttons/Modal Triggers now stack instead of sitting side-by-side, and their "stretch full width" option is a new Full Width setting rather than WordPress's Full Width alignment (identical result inside a Section). Existing Icon content updates automatically; existing Pill, Icon Button, and Modal Trigger content keeps rendering as before until the post is next opened and re-saved in the editor.
+Pill, Icon, Icon Button, and Modal Trigger now stay inside the page content column when positioned. Adjacent Icon Buttons and Modal Triggers now stack instead of sitting side-by-side. Existing content renders as before until each post is re-saved. See the changelog.
 
 = 2.2.0 =
 Responsive Column Min Width for Grid and Icon List, Scrolling Gallery image-fit control, automatic migration of legacy block markup (no more "Attempt Recovery"), form-border and max-width alignment fixes, PHP 7.4 support, and a Plugin Check + security pass.
