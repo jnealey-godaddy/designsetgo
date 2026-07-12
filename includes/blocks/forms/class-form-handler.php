@@ -657,11 +657,19 @@ class Form_Handler {
 		}
 
 		// Store form data as post meta.
+		//
+		// update_metadata() runs wp_unslash() on every value it stores, so it expects
+		// SLASHED input. Everything below has already been unslashed (REST params
+		// arrive unslashed; the no-JS $_POST path unslashes explicitly), so passing
+		// these straight through would strip one level of escaping and silently eat
+		// backslashes out of submitted content — "C:\Users\me" would land as
+		// "C:Usersme". Re-slash the user-controlled values to survive that unslash.
+		// wp_slash() walks arrays, so $fields is covered in full.
 		update_post_meta( $post_id, '_dsg_form_id', $form_id );
-		update_post_meta( $post_id, '_dsg_form_fields', $fields );
+		update_post_meta( $post_id, '_dsg_form_fields', wp_slash( $fields ) );
 		update_post_meta( $post_id, '_dsg_submission_ip', $this->security->get_client_ip() );
-		update_post_meta( $post_id, '_dsg_submission_user_agent', $this->get_user_agent() );
-		update_post_meta( $post_id, '_dsg_submission_referer', wp_get_referer() );
+		update_post_meta( $post_id, '_dsg_submission_user_agent', wp_slash( $this->get_user_agent() ) );
+		update_post_meta( $post_id, '_dsg_submission_referer', wp_slash( wp_get_referer() ) );
 		update_post_meta( $post_id, '_dsg_submission_date', current_time( 'mysql' ) );
 
 		// Clear cached form submission count.

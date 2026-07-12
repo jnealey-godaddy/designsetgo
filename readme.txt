@@ -110,6 +110,7 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 * **Fix:** Icon List items now show their fill / outline and stroke on the frontend, matching the editor.
 * **Fix:** SVG Patterns and Form Builder no longer bake default colors into saved markup, so they inherit your theme's colors.
 * **Fix:** Content with quotes or backslashes saved through AI-assisted edits (Abilities API) is no longer altered.
+* **Fix:** Form submissions no longer drop backslashes — a message containing a file path like C:\Users\me or a code snippet was previously saved with the backslashes stripped. Submitted values are now stored exactly as entered.
 * **Fix:** Scrolling Gallery blocks saved by older versions or patterns (image rows stored in the markup rather than the block comment) keep migrating silently instead of showing "Attempt Recovery."
 * **Fix:** An Image Accordion's overlay color and opacity now correctly reach the frontend — previously they only showed in the editor. Turning "Enable Overlay" off now also removes the overlay on the frontend, not just in the editor.
 * **Improved:** An Image Accordion's overlay color and opacity now inherit from your theme's Style Kit (with per-block overrides) instead of being baked into each block, so a Style Kit can restyle every accordion's scrim at once. Note: existing accordions left at the old default overlay will follow a theme overlay token once one is set, so their scrim can change appearance when a Style Kit defines one — with no edit to the page.
