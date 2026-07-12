@@ -14,18 +14,17 @@ import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 export default function Save({ attributes }) {
 	const { alignItems } = attributes;
 
+	// Only the author-controlled cross-axis alignment is serialized. The
+	// constant layout (`width:100%; align-self:stretch` on the root,
+	// `display:flex; flex-direction:column` on the items) is declared verbatim
+	// in style.scss — baking it into every saved block added nothing and made it
+	// unthemeable, since an inline style beats any stylesheet rule.
 	const innerStyles = {
-		display: 'flex',
-		flexDirection: 'column',
 		alignItems: alignItems || 'flex-start',
 	};
 
 	const blockProps = useBlockProps.save({
 		className: 'dsgo-scroll-accordion',
-		style: {
-			width: '100%',
-			alignSelf: 'stretch',
-		},
 	});
 
 	const innerBlocksProps = useInnerBlocksProps.save({

@@ -144,6 +144,18 @@
 	}
 
 	&__icon {
+		// Layout constants. These used to be serialized into every saved
+		// button as an inline style (display/align-items/justify-content/
+		// flex-shrink never varied by attribute) — which bloated the markup
+		// and, because inline beats any stylesheet rule, made them
+		// unthemeable. They live here now; only an explicit iconSize is still
+		// written inline. Mirrors modal-trigger's `&__icon`, which has always
+		// done it this way.
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+
 		// Size falls back through a kit-controllable chain when no explicit
 		// iconSize is set inline. An inline width/height (explicit override)
 		// wins by specificity. Resolution order:

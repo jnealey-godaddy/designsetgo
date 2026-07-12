@@ -189,13 +189,12 @@ export default function IconButtonEdit({
 
 	// Calculate icon wrapper styles. Preview uses the effective (possibly
 	// inherited) size so it always shows a size in the editor.
+	// Layout comes from style.scss (.dsgo-icon-button__icon), which the editor
+	// canvas loads too — only the size is set here, using the effective
+	// (possibly inherited) value so the preview always shows a size.
 	const iconWrapperStyles = {
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
 		width: `${effectiveSize}px`,
 		height: `${effectiveSize}px`,
-		flexShrink: 0,
 	};
 
 	// Read the site-wide default hover animation from theme.json custom settings.

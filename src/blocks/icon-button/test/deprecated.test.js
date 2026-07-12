@@ -22,16 +22,18 @@ import {
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
 import metadata from '../block.json';
 import save from '../save';
-import deprecated from '../deprecated';
+import deprecated, { v9, v8 } from '../deprecated';
 
 setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
 registerBlockType(metadata.name, { ...metadata, save, deprecated });
 
-// deprecated.js exports newest-first: [v9, v8, v7, ...]. v9 (the justification
-// wrapper) was prepended ahead of v8 (the themeable-gap migration) — see
-// src/blocks/icon-button/deprecated.js.
-const [v9Deprecation, v8Deprecation] = deprecated;
+// Address versions by NAME, not position. deprecated.js exports newest-first,
+// so `const [v9Deprecation] = deprecated` silently re-points at the wrong entry
+// the moment a newer deprecation is prepended — which is exactly what happened
+// when v10 (the inline-icon-layout removal) was added ahead of v9.
+const v9Deprecation = v9;
+const v8Deprecation = v8;
 
 // getSaveContent() renders EXACTLY the attributes object it is given — unlike
 // createBlock()/parse(), it does not fill in a deprecation's own schema

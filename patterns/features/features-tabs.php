@@ -27,8 +27,8 @@ return array(
 <!-- wp:designsetgo/tabs {"uniqueId":"b68ae674","activeTab":2,"alignment":"center","tabStyle":"pills","tabHoverColor":"#111111"} -->
 <div class="wp-block-designsetgo-tabs dsgo-tabs dsgo-tabs-b68ae674 dsgo-tabs--horizontal dsgo-tabs--pills dsgo-tabs--align-center" data-active-tab="2" data-mobile-breakpoint="768" data-mobile-mode="accordion" data-deep-linking="false" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0;font-size:var(--wp--preset--font-size--large);--dsgo-tabs-gap:8px;--dsgo-tab-color-hover:#111111"><div class="dsgo-tabs__nav" role="tablist"></div><div class="dsgo-tabs__panels"><!-- wp:designsetgo/tab {"uniqueId":"6cfde7d3","title":"Design","anchor":"tab-1"} -->
 <div class="wp-block-designsetgo-tab dsgo-tab" role="tabpanel" aria-labelledby="tab-6cfde7d3" aria-label="Design" id="panel-tab-1" hidden style="padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40)"><div class="dsgo-tab__content"><!-- wp:designsetgo/icon-list {"iconColor":"accent"} -->
-<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Visual Block Builder</h4>
 <!-- /wp:heading -->
 
@@ -37,8 +37,8 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Pre-built Patterns</h4>
 <!-- /wp:heading -->
 
@@ -47,8 +47,8 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Global Styles</h4>
 <!-- /wp:heading -->
 
@@ -57,8 +57,8 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Animation Library</h4>
 <!-- /wp:heading -->
 
@@ -71,8 +71,8 @@ return array(
 
 <!-- wp:designsetgo/tab {"uniqueId":"693abbb3","title":"Development","anchor":"tab-2"} -->
 <div class="wp-block-designsetgo-tab dsgo-tab" role="tabpanel" aria-labelledby="tab-693abbb3" aria-label="Development" id="panel-tab-2" hidden style="padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40)"><div class="dsgo-tab__content"><!-- wp:designsetgo/icon-list {"iconColor":"accent"} -->
-<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Clean Code Output</h4>
 <!-- /wp:heading -->
 
@@ -81,8 +81,8 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Developer Hooks</h4>
 <!-- /wp:heading -->
 
@@ -91,8 +91,8 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">REST API Ready</h4>
 <!-- /wp:heading -->
 
@@ -101,8 +101,8 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Performance Optimized</h4>
 <!-- /wp:heading -->
 
@@ -115,8 +115,8 @@ return array(
 
 <!-- wp:designsetgo/tab {"uniqueId":"e7985167","title":"Marketing","anchor":"tab-3"} -->
 <div class="wp-block-designsetgo-tab dsgo-tab" role="tabpanel" aria-labelledby="tab-e7985167" aria-label="Marketing" id="panel-tab-3" hidden style="padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40)"><div class="dsgo-tab__content"><!-- wp:designsetgo/icon-list {"iconColor":"accent"} -->
-<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">SEO Optimized</h4>
 <!-- /wp:heading -->
 
@@ -125,8 +125,8 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Conversion Blocks</h4>
 <!-- /wp:heading -->
 
@@ -135,8 +135,8 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Social Proof</h4>
 <!-- /wp:heading -->
 
@@ -145,8 +145,8 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"circle-check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"circle-check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="circle-check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Analytics Ready</h4>
 <!-- /wp:heading -->
 

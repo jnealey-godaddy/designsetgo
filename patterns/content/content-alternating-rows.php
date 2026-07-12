@@ -46,20 +46,20 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:designsetgo/icon-list {"iconSize":18,"iconColor":"#10b981"} -->
-<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Market research &amp; analysis</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Goal setting &amp; KPIs</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Resource allocation</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item --></div></div>
@@ -84,20 +84,20 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:designsetgo/icon-list {"iconSize":18,"iconColor":"#10b981"} -->
-<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">User-centered design</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Agile development</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Quality assurance</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item --></div></div>
@@ -134,20 +134,20 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:designsetgo/icon-list {"iconSize":18,"iconColor":"#10b981"} -->
-<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Seamless deployment</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Performance monitoring</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"check"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"check","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading">Continuous optimization</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item --></div></div>

@@ -39,13 +39,13 @@ const {
 
 import metadata from '../../../../src/blocks/icon-button/block.json';
 import save from '../../../../src/blocks/icon-button/save';
-import deprecated from '../../../../src/blocks/icon-button/deprecated';
+import deprecated, { v9 } from '../../../../src/blocks/icon-button/deprecated';
 
 setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
-// deprecated.js exports newest-first: [v9, v8, ...]. v9 is the pre-wrapper
-// deprecation added for the justification-wrapper refactor.
-const [v9] = deprecated;
+// v9 is the pre-wrapper deprecation added for the justification-wrapper
+// refactor. Imported by name: positional destructuring breaks whenever a
+// newer deprecation is prepended.
 
 // A styled legacy icon button, exactly as it would have been stored before
 // this change: preset background + preset text colour + preset border

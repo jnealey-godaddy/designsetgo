@@ -29,7 +29,7 @@ return array(
 
 <!-- wp:designsetgo/row {"style":{"spacing":{"margin":{"top":"var:preset|spacing|50"},"blockGap":"var:preset|spacing|20","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","justifyContent":"center","flexWrap":"wrap"},"dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"fadeInUp","dsgoAnimationDelay":300} -->
 <div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint has-dsgo-animation dsgo-animation-fadeInUp" style="margin-top:var(--wp--preset--spacing--50);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0" data-dsgo-animation-enabled="true" data-dsgo-entrance-animation="fadeInUp" data-dsgo-animation-delay="300"><div class="dsgo-flex__inner" style="display:flex;justify-content:center;flex-wrap:wrap;gap:var(--wp--preset--spacing--20)"><!-- wp:designsetgo/icon-button {"text":"View Properties","url":"#properties","icon":"arrow-right","iconPosition":"end","iconGap":"8px","className":"has-text-color has-background","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}},"border":{"radius":"0"},"color":{"background":"#d4af37","text":"#0f172a"}}} -->
-<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left has-text-color has-background"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-text-color has-background dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="border-radius:0;color:#0f172a;background-color:#d4af37;gap:8px;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--50)" href="#properties" target="_self"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">View Properties</span></a></div>
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left has-text-color has-background"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-text-color has-background dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="border-radius:0;color:#0f172a;background-color:#d4af37;gap:8px;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--50)" href="#properties" target="_self"><span class="dsgo-icon-button__icon dsgo-lazy-icon" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">View Properties</span></a></div>
 <!-- /wp:designsetgo/icon-button -->
 
 <!-- wp:designsetgo/icon-button {"text":"Schedule Consultation","url":"#contact","icon":"","iconPosition":"none","iconGap":"8px","className":"has-text-color has-background","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}},"border":{"radius":"0","width":"1px","color":"rgba(255,255,255,0.5)"},"color":{"background":"transparent","text":"#ffffff"}}} -->
@@ -148,7 +148,7 @@ return array(
 
 <!-- wp:designsetgo/row {"style":{"spacing":{"margin":{"top":"var:preset|spacing|50"},"blockGap":"var:preset|spacing|20","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","justifyContent":"center","flexWrap":"wrap"}} -->
 <div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="margin-top:var(--wp--preset--spacing--50);padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:center;flex-wrap:wrap;gap:var(--wp--preset--spacing--20)"><!-- wp:designsetgo/icon-button {"text":"View All Properties","url":"#all-properties","icon":"arrow-right","iconPosition":"end","iconGap":"8px","className":"has-text-color has-background","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}},"border":{"radius":"0"},"color":{"background":"#d4af37","text":"#0f172a"}}} -->
-<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left has-text-color has-background"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-text-color has-background dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="border-radius:0;color:#0f172a;background-color:#d4af37;gap:8px;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--50)" href="#all-properties" target="_self"><span class="dsgo-icon-button__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;flex-shrink:0" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">View All Properties</span></a></div>
+<div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left has-text-color has-background"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-text-color has-background dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="border-radius:0;color:#0f172a;background-color:#d4af37;gap:8px;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--50)" href="#all-properties" target="_self"><span class="dsgo-icon-button__icon dsgo-lazy-icon" data-icon-name="arrow-right"></span><span class="dsgo-icon-button__text">View All Properties</span></a></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/row --></div><div class="dsgo-shape-divider dsgo-shape-divider--bottom is-shape-tilt-reverse" style="--dsgo-shape-height:60px" aria-hidden="true"></div></div>
 <!-- /wp:designsetgo/section -->
@@ -166,86 +166,86 @@ return array(
 
 <!-- wp:designsetgo/grid {"style":{"spacing":{"blockGap":"var:preset|spacing|30","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
 <div class="wp-block-designsetgo-grid alignfull dsgo-grid dsgo-grid-cols-3 dsgo-grid-cols-tablet-2 dsgo-grid-cols-mobile-1 dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-grid__inner" style="display:grid;grid-template-columns:repeat(3, 1fr);align-items:stretch;row-gap:var(--wp--preset--spacing--30);column-gap:var(--wp--preset--spacing--30)"><!-- wp:designsetgo/flip-card -->
-<div class="wp-block-designsetgo-flip-card dsgo-flip-card dsgo-flip-card--hover dsgo-flip-card--effect-flip dsgo-flip-card--horizontal" style="--dsgo-flip-duration:0.6s;width:100%" data-flip-trigger="hover" data-flip-effect="flip" data-flip-direction="horizontal"><div class="dsgo-flip-card__container"><!-- wp:designsetgo/flip-card-face {"side":"front","className":"dsgo-flip-card__face\u002d\u002dfront","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}},"border":{"radius":"0"},"color":{"gradient":"linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%)"}}} -->
-<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__front dsgo-flip-card__face--front has-background" style="border-radius:0;background:linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%);padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--40)"><!-- wp:designsetgo/icon {"icon":"home","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"zoomIn","dsgoAnimationDuration":500,"style":{"color":{"text":"#d4af37"}}} /-->
-
+<div class="wp-block-designsetgo-flip-card dsgo-flip-card dsgo-flip-card--hover dsgo-flip-card--effect-flip dsgo-flip-card--horizontal" style="--dsgo-flip-duration:0.6s" data-flip-trigger="hover" data-flip-effect="flip" data-flip-direction="horizontal"><div class="dsgo-flip-card__container"><!-- wp:designsetgo/flip-card-face {"side":"front","className":"dsgo-flip-card__face\u002d\u002dfront","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}},"border":{"radius":"0"},"color":{"gradient":"linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%)"}}} -->
+<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__front dsgo-flip-card__face--front has-background" style="border-radius:0;background:linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%);padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--40)">
+<!-- wp:designsetgo/icon {"icon":"home","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"zoomIn","dsgoAnimationDuration":500,"style":{"color":{"text":"#d4af37"}}} /-->
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}},"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size" style="margin-top:var(--wp--preset--spacing--30)">Buyer Representation</h3>
 <!-- /wp:heading -->
-
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|10"}},"color":{"text":"rgba(255,255,255,0.6)"}},"fontSize":"small"} -->
 <p class="has-text-color has-small-font-size" style="color:rgba(255,255,255,0.6);margin-top:var(--wp--preset--spacing--10)">Hover to learn more</p>
-<!-- /wp:paragraph --></div>
+<!-- /wp:paragraph -->
+</div>
 <!-- /wp:designsetgo/flip-card-face -->
 
 <!-- wp:designsetgo/flip-card-face {"side":"back","className":"dsgo-flip-card__face\u002d\u002dback","backgroundColor":"base-2","style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}},"border":{"radius":"0"}}} -->
-<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__back dsgo-flip-card__face--back has-base-2-background-color has-background" style="border-radius:0;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)"><!-- wp:heading {"level":3,"fontSize":"medium"} -->
+<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__back dsgo-flip-card__face--back has-base-2-background-color has-background" style="border-radius:0;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)">
+<!-- wp:heading {"level":3,"fontSize":"medium"} -->
 <h3 class="wp-block-heading has-medium-font-size">Buyer Representation</h3>
 <!-- /wp:heading -->
-
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|15"}}},"fontSize":"small"} -->
 <p class="has-small-font-size" style="margin-top:var(--wp--preset--spacing--15)">Our expert agents guide you through every step of finding and acquiring your perfect property. From initial search to closing, we negotiate on your behalf to secure the best terms.</p>
 <!-- /wp:paragraph -->
-
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|15"}},"color":{"text":"#d4af37"},"typography":{"fontStyle":"normal","fontWeight":"600"}},"fontSize":"small"} -->
 <p class="has-text-color has-small-font-size" style="color:#d4af37;margin-top:var(--wp--preset--spacing--15);font-style:normal;font-weight:600">Learn more →</p>
-<!-- /wp:paragraph --></div>
+<!-- /wp:paragraph -->
+</div>
 <!-- /wp:designsetgo/flip-card-face --></div></div>
 <!-- /wp:designsetgo/flip-card -->
 
 <!-- wp:designsetgo/flip-card -->
-<div class="wp-block-designsetgo-flip-card dsgo-flip-card dsgo-flip-card--hover dsgo-flip-card--effect-flip dsgo-flip-card--horizontal" style="--dsgo-flip-duration:0.6s;width:100%" data-flip-trigger="hover" data-flip-effect="flip" data-flip-direction="horizontal"><div class="dsgo-flip-card__container"><!-- wp:designsetgo/flip-card-face {"side":"front","className":"dsgo-flip-card__face\u002d\u002dfront","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}},"border":{"radius":"0"},"color":{"gradient":"linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%)"}}} -->
-<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__front dsgo-flip-card__face--front has-background" style="border-radius:0;background:linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%);padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--40)"><!-- wp:designsetgo/icon {"icon":"chart","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"zoomIn","dsgoAnimationDuration":500,"dsgoAnimationDelay":100,"style":{"color":{"text":"#d4af37"}}} /-->
-
+<div class="wp-block-designsetgo-flip-card dsgo-flip-card dsgo-flip-card--hover dsgo-flip-card--effect-flip dsgo-flip-card--horizontal" style="--dsgo-flip-duration:0.6s" data-flip-trigger="hover" data-flip-effect="flip" data-flip-direction="horizontal"><div class="dsgo-flip-card__container"><!-- wp:designsetgo/flip-card-face {"side":"front","className":"dsgo-flip-card__face\u002d\u002dfront","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}},"border":{"radius":"0"},"color":{"gradient":"linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%)"}}} -->
+<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__front dsgo-flip-card__face--front has-background" style="border-radius:0;background:linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%);padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--40)">
+<!-- wp:designsetgo/icon {"icon":"chart","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"zoomIn","dsgoAnimationDuration":500,"dsgoAnimationDelay":100,"style":{"color":{"text":"#d4af37"}}} /-->
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}},"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size" style="margin-top:var(--wp--preset--spacing--30)">Property Valuation</h3>
 <!-- /wp:heading -->
-
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|10"}},"color":{"text":"rgba(255,255,255,0.6)"}},"fontSize":"small"} -->
 <p class="has-text-color has-small-font-size" style="color:rgba(255,255,255,0.6);margin-top:var(--wp--preset--spacing--10)">Hover to learn more</p>
-<!-- /wp:paragraph --></div>
+<!-- /wp:paragraph -->
+</div>
 <!-- /wp:designsetgo/flip-card-face -->
 
 <!-- wp:designsetgo/flip-card-face {"side":"back","className":"dsgo-flip-card__face\u002d\u002dback","backgroundColor":"base-2","style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}},"border":{"radius":"0"}}} -->
-<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__back dsgo-flip-card__face--back has-base-2-background-color has-background" style="border-radius:0;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)"><!-- wp:heading {"level":3,"fontSize":"medium"} -->
+<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__back dsgo-flip-card__face--back has-base-2-background-color has-background" style="border-radius:0;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)">
+<!-- wp:heading {"level":3,"fontSize":"medium"} -->
 <h3 class="wp-block-heading has-medium-font-size">Property Valuation</h3>
 <!-- /wp:heading -->
-
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|15"}}},"fontSize":"small"} -->
 <p class="has-small-font-size" style="margin-top:var(--wp--preset--spacing--15)">Receive accurate, data-driven valuations backed by our deep knowledge of luxury markets. We analyze comparable sales, market trends, and unique property features.</p>
 <!-- /wp:paragraph -->
-
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|15"}},"color":{"text":"#d4af37"},"typography":{"fontStyle":"normal","fontWeight":"600"}},"fontSize":"small"} -->
 <p class="has-text-color has-small-font-size" style="color:#d4af37;margin-top:var(--wp--preset--spacing--15);font-style:normal;font-weight:600">Learn more →</p>
-<!-- /wp:paragraph --></div>
+<!-- /wp:paragraph -->
+</div>
 <!-- /wp:designsetgo/flip-card-face --></div></div>
 <!-- /wp:designsetgo/flip-card -->
 
 <!-- wp:designsetgo/flip-card -->
-<div class="wp-block-designsetgo-flip-card dsgo-flip-card dsgo-flip-card--hover dsgo-flip-card--effect-flip dsgo-flip-card--horizontal" style="--dsgo-flip-duration:0.6s;width:100%" data-flip-trigger="hover" data-flip-effect="flip" data-flip-direction="horizontal"><div class="dsgo-flip-card__container"><!-- wp:designsetgo/flip-card-face {"side":"front","className":"dsgo-flip-card__face\u002d\u002dfront","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}},"border":{"radius":"0"},"color":{"gradient":"linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%)"}}} -->
-<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__front dsgo-flip-card__face--front has-background" style="border-radius:0;background:linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%);padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--40)"><!-- wp:designsetgo/icon {"icon":"globe","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"zoomIn","dsgoAnimationDuration":500,"dsgoAnimationDelay":200,"style":{"color":{"text":"#d4af37"}}} /-->
-
+<div class="wp-block-designsetgo-flip-card dsgo-flip-card dsgo-flip-card--hover dsgo-flip-card--effect-flip dsgo-flip-card--horizontal" style="--dsgo-flip-duration:0.6s" data-flip-trigger="hover" data-flip-effect="flip" data-flip-direction="horizontal"><div class="dsgo-flip-card__container"><!-- wp:designsetgo/flip-card-face {"side":"front","className":"dsgo-flip-card__face\u002d\u002dfront","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}},"border":{"radius":"0"},"color":{"gradient":"linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%)"}}} -->
+<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__front dsgo-flip-card__face--front has-background" style="border-radius:0;background:linear-gradient(135deg,rgb(15,23,42) 0%,rgb(30,41,59) 100%);padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--40)">
+<!-- wp:designsetgo/icon {"icon":"globe","dsgoAnimationEnabled":true,"dsgoEntranceAnimation":"zoomIn","dsgoAnimationDuration":500,"dsgoAnimationDelay":200,"style":{"color":{"text":"#d4af37"}}} /-->
 <!-- wp:heading {"level":3,"style":{"spacing":{"margin":{"top":"var:preset|spacing|30"}}},"textColor":"base","fontSize":"large"} -->
 <h3 class="wp-block-heading has-base-color has-text-color has-large-font-size" style="margin-top:var(--wp--preset--spacing--30)">Global Reach</h3>
 <!-- /wp:heading -->
-
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|10"}},"color":{"text":"rgba(255,255,255,0.6)"}},"fontSize":"small"} -->
 <p class="has-text-color has-small-font-size" style="color:rgba(255,255,255,0.6);margin-top:var(--wp--preset--spacing--10)">Hover to learn more</p>
-<!-- /wp:paragraph --></div>
+<!-- /wp:paragraph -->
+</div>
 <!-- /wp:designsetgo/flip-card-face -->
 
 <!-- wp:designsetgo/flip-card-face {"side":"back","className":"dsgo-flip-card__face\u002d\u002dback","backgroundColor":"base-2","style":{"spacing":{"padding":{"top":"var:preset|spacing|40","bottom":"var:preset|spacing|40","left":"var:preset|spacing|30","right":"var:preset|spacing|30"}},"border":{"radius":"0"}}} -->
-<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__back dsgo-flip-card__face--back has-base-2-background-color has-background" style="border-radius:0;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)"><!-- wp:heading {"level":3,"fontSize":"medium"} -->
+<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__back dsgo-flip-card__face--back has-base-2-background-color has-background" style="border-radius:0;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--30)">
+<!-- wp:heading {"level":3,"fontSize":"medium"} -->
 <h3 class="wp-block-heading has-medium-font-size">Global Reach</h3>
 <!-- /wp:heading -->
-
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|15"}}},"fontSize":"small"} -->
 <p class="has-small-font-size" style="margin-top:var(--wp--preset--spacing--15)">Access exclusive listings worldwide through our international network. From New York penthouses to Mediterranean villas, we connect you with extraordinary properties globally.</p>
 <!-- /wp:paragraph -->
-
 <!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"var:preset|spacing|15"}},"color":{"text":"#d4af37"},"typography":{"fontStyle":"normal","fontWeight":"600"}},"fontSize":"small"} -->
 <p class="has-text-color has-small-font-size" style="color:#d4af37;margin-top:var(--wp--preset--spacing--15);font-style:normal;font-weight:600">Learn more →</p>
-<!-- /wp:paragraph --></div>
+<!-- /wp:paragraph -->
+</div>
 <!-- /wp:designsetgo/flip-card-face --></div></div>
 <!-- /wp:designsetgo/flip-card --></div></div>
 <!-- /wp:designsetgo/grid --></div></div>

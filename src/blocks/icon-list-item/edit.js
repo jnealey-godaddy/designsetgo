@@ -92,10 +92,9 @@ export default function IconListItemEdit({
 
 	// Calculate icon wrapper styles. Preview uses the effective (possibly
 	// inherited) size so the canvas matches the frontend inheritance.
+	// Layout comes from style.scss (.dsgo-icon-list-item__icon), which the
+	// editor canvas loads too — only size/colour are set here.
 	const iconWrapperStyles = {
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
 		...(iconBackgroundColor
 			? {
 					width: `${effectiveSize + 16}px`,

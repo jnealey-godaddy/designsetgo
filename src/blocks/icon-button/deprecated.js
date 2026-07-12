@@ -6,7 +6,18 @@
  * @since 1.0.0
  */
 
-import { useBlockProps, RichText } from '@wordpress/block-editor';
+import {
+	useBlockProps,
+	RichText,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalGetBorderClassesAndStyles as getBorderClassesAndStyles,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalGetColorClassesAndStyles as getColorClassesAndStyles,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalGetShadowClassesAndStyles as getShadowClassesAndStyles,
+	getTypographyClassesAndStyles,
+} from '@wordpress/block-editor';
+import clsx from 'clsx';
 import { getIcon } from '../icon/utils/svg-icons';
 import { convertPaddingValue } from './utils/padding';
 import {
@@ -18,6 +29,7 @@ import {
 	hasExplicitNumber,
 } from '../../utils/has-explicit-value';
 import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
+import { getJustificationClass } from '../../utils/justification';
 
 /**
  * Every deprecation must land on the CURRENT attribute schema — deprecations do
@@ -173,6 +185,246 @@ const v9Supports = {
 			style: true,
 			width: true,
 		},
+	},
+};
+
+/**
+ * Attributes and supports as of v10 — identical to the current block. Only the
+ * MARKUP changed, so these are re-declared (not migrated) below.
+ */
+const v10Attributes = {
+	justification: {
+		type: 'string',
+		enum: ['left', 'center', 'right'],
+		default: 'left',
+	},
+	fullWidth: { type: 'boolean', default: false },
+	text: { type: 'string', default: '' },
+	url: { type: 'string', default: '' },
+	linkTarget: { type: 'string', default: '_self' },
+	rel: { type: 'string', default: '' },
+	icon: { type: 'string', default: 'lightbulb' },
+	iconPosition: { type: 'string', default: 'start' },
+	iconStyle: { type: 'string', enum: ['filled', 'outlined'] },
+	strokeWidth: { type: 'number', default: 1.5 },
+	iconSize: { type: 'number' },
+	iconGap: { type: 'string' },
+	hoverAnimation: { type: 'string', default: 'none' },
+	hoverBackgroundColor: { type: 'string', default: '' },
+	hoverTextColor: { type: 'string', default: '' },
+	modalCloseId: { type: 'string', default: '' },
+};
+
+const v10Supports = {
+	anchor: true,
+	align: ['wide', 'full'],
+	alignWide: true,
+	html: false,
+	inserter: true,
+	spacing: {
+		margin: true,
+		padding: true,
+		__experimentalSkipSerialization: ['padding'],
+		__experimentalDefaultControls: { margin: true, padding: true },
+	},
+	color: {
+		background: true,
+		text: true,
+		gradients: true,
+		__experimentalSkipSerialization: true,
+		__experimentalDefaultControls: { background: true, text: true },
+	},
+	typography: {
+		fontSize: true,
+		lineHeight: true,
+		__experimentalSkipSerialization: true,
+		__experimentalDefaultControls: { fontSize: true },
+		__experimentalFontWeight: true,
+	},
+	shadow: { __experimentalSkipSerialization: true },
+	__experimentalBorder: {
+		color: true,
+		radius: true,
+		style: true,
+		width: true,
+		__experimentalSkipSerialization: true,
+		__experimentalDefaultControls: {
+			color: true,
+			radius: true,
+			style: true,
+			width: true,
+		},
+	},
+};
+
+/**
+ * Inline icon layout — the version immediately before the icon span's constant
+ * layout declarations moved to style.scss.
+ *
+ * The icon `<span>` used to serialize
+ * `display:flex;align-items:center;justify-content:center;flex-shrink:0` into
+ * every saved button. None of it varied by attribute, so it now lives in
+ * `.dsgo-icon-button__icon` (style.scss) and only an explicit `iconSize` is
+ * still written inline. Nothing else changed — same attributes, same supports,
+ * same classes — so migrate() is a passthrough.
+ *
+ * NOTE on the isEligible signature: WordPress calls
+ * `isEligible(attributes, innerBlocks, { blockNode, block })` — there is NO
+ * `innerHTML` key on that third argument (see the `apply-block-deprecated-
+ * versions.js` parser in the `wordpress/blocks` package). The stored markup is
+ * reached via `blockNode.innerHTML` / `block.originalContent`. It only matters
+ * for a block that is otherwise VALID: for an invalid one WordPress skips
+ * isEligible entirely and picks the deprecation whose save() reproduces the
+ * stored HTML. An icon-less button's markup is unchanged by this version, so it
+ * stays valid and must NOT be matched here — hence the icon-span-specific test.
+ */
+const v10 = {
+	attributes: v10Attributes,
+	supports: v10Supports,
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const html = blockNode?.innerHTML ?? block?.originalContent ?? '';
+		return (
+			html.includes('dsgo-icon-button__icon') &&
+			html.includes('display:flex')
+		);
+	},
+	migrate(attributes) {
+		// Markup-only change.
+		return attributes;
+	},
+	save({ attributes }) {
+		const {
+			text,
+			url,
+			linkTarget,
+			rel,
+			icon,
+			iconPosition,
+			iconStyle,
+			strokeWidth,
+			iconSize,
+			iconGap,
+			justification,
+			fullWidth,
+			hoverAnimation,
+			hoverBackgroundColor,
+			hoverTextColor,
+			style,
+			modalCloseId,
+		} = attributes;
+
+		const blockProps = useBlockProps.save({
+			className: clsx(
+				'dsgo-justify',
+				getJustificationClass(justification)
+			),
+		});
+
+		const border = getBorderClassesAndStyles(attributes);
+		const colors = getColorClassesAndStyles(attributes);
+		const shadow = getShadowClassesAndStyles(attributes);
+		const typography = getTypographyClassesAndStyles(attributes);
+		const paddingValue = style?.spacing?.padding;
+
+		const hasIcon = iconPosition !== 'none' && !!icon;
+		const hasExplicitGap = hasExplicitString(iconGap);
+
+		const buttonStyles = {
+			...border.style,
+			...colors.style,
+			...shadow.style,
+			...typography.style,
+			...(hasIcon && hasExplicitGap && { gap: iconGap }),
+			...(paddingValue && {
+				paddingTop: convertPaddingValue(paddingValue.top),
+				paddingRight: convertPaddingValue(paddingValue.right),
+				paddingBottom: convertPaddingValue(paddingValue.bottom),
+				paddingLeft: convertPaddingValue(paddingValue.left),
+			}),
+			...(hoverBackgroundColor && {
+				'--dsgo-button-hover-bg':
+					convertColorToCSSVar(hoverBackgroundColor),
+			}),
+			...(hoverTextColor && {
+				'--dsgo-button-hover-color':
+					convertColorToCSSVar(hoverTextColor),
+			}),
+		};
+
+		// The layout constants this deprecation exists to remove.
+		const hasExplicitSize = typeof iconSize === 'number';
+		const iconWrapperStyles = {
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			...(hasExplicitSize && {
+				width: `${iconSize}px`,
+				height: `${iconSize}px`,
+			}),
+			flexShrink: 0,
+		};
+
+		const ButtonElement = url ? 'a' : 'button';
+
+		const buttonClasses = clsx(
+			'dsgo-icon-button',
+			'wp-block-button',
+			'wp-block-button__link',
+			'wp-element-button',
+			border.className,
+			colors.className,
+			shadow.className,
+			typography.className,
+			hasIcon && 'dsgo-icon-button--has-icon',
+			fullWidth && 'dsgo-icon-button--full-width',
+			hoverAnimation === 'explicit-none' && 'dsgo-icon-button--no-hover',
+			hoverAnimation &&
+				hoverAnimation !== 'none' &&
+				hoverAnimation !== 'explicit-none' &&
+				`dsgo-icon-button--${hoverAnimation}`,
+			iconPosition === 'end' && 'dsgo-icon-button--icon-end'
+		);
+
+		return (
+			<div {...blockProps}>
+				<ButtonElement
+					className={buttonClasses}
+					style={buttonStyles}
+					{...(url && {
+						href: url,
+						target: linkTarget,
+						rel:
+							linkTarget === '_blank'
+								? rel || 'noopener noreferrer'
+								: rel || undefined,
+					})}
+					{...(!url && { type: 'button' })}
+					{...(modalCloseId && {
+						'data-dsgo-modal-close': modalCloseId,
+					})}
+				>
+					{hasIcon && (
+						<span
+							className="dsgo-icon-button__icon dsgo-lazy-icon"
+							style={iconWrapperStyles}
+							data-icon-name={icon}
+							data-icon-size={iconSize || undefined}
+							data-icon-style={iconStyle || undefined}
+							data-icon-stroke-width={
+								iconStyle === 'outlined'
+									? strokeWidth
+									: undefined
+							}
+						/>
+					)}
+					<RichText.Content
+						tagName="span"
+						className="dsgo-icon-button__text"
+						value={text}
+					/>
+				</ButtonElement>
+			</div>
+		);
 	},
 };
 
@@ -1946,4 +2198,10 @@ const v1 = {
 	},
 };
 
-export default [v9, v8, v7, v6, v5, v4, v3, v2, v1];
+// Named exports so tests can address a specific version instead of destructuring
+// by position. Positional selection (`const [v9] = deprecated`) silently
+// re-points at the wrong entry the moment a newer deprecation is prepended —
+// which is exactly what happened when v10 was added.
+export { v10, v9, v8, v7, v6, v5, v4, v3, v2, v1 };
+
+export default [v10, v9, v8, v7, v6, v5, v4, v3, v2, v1];

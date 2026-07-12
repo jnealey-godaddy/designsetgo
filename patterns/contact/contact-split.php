@@ -25,26 +25,26 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:designsetgo/icon-list {"iconColor":"vivid-cyan-blue","gap":"12px","style":{"spacing":{"margin":{"top":"var:preset|spacing|50"}}}} -->
-<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="margin-top:var(--wp--preset--spacing--50);width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"envelope"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="envelope"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="margin-top:var(--wp--preset--spacing--50);width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;width:100%"><!-- wp:designsetgo/icon-list-item {"icon":"envelope","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="envelope"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading"><strong>Email us: </strong>hello@example.com</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"phone"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="phone"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"phone","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="phone"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading"><strong>Call Us: </strong>123-456-7890</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"location"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="location"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"location","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="location"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading"><strong>Visit Us:</strong> Address Here</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 
-<!-- wp:designsetgo/icon-list-item {"icon":"clock"} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start;gap:16px"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon" style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-width:32px" data-icon-name="clock"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
+<!-- wp:designsetgo/icon-list-item {"icon":"clock","contentGap":8} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="clock"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…"} -->
 <h4 class="wp-block-heading"><strong>Hours:</strong> Mon-Fri: 9AM - 6PM EST</h4>
 <!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item --></div></div>

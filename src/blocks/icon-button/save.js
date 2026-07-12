@@ -109,16 +109,17 @@ export default function IconButtonSave({ attributes }) {
 	// so the theme default token
 	// (--wp--custom--designsetgo--icon-button--default-size, via style.scss)
 	// applies.
+	// Layout (display/align-items/justify-content/flex-shrink) is NOT serialized
+	// here — it is constant for every button, so it lives in style.scss
+	// (.dsgo-icon-button__icon). Only an explicit iconSize is written inline;
+	// with none set this object is empty and React emits no style attribute at
+	// all, matching modal-trigger's save().
 	const hasExplicitSize = typeof iconSize === 'number';
 	const iconWrapperStyles = {
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
 		...(hasExplicitSize && {
 			width: `${iconSize}px`,
 			height: `${iconSize}px`,
 		}),
-		flexShrink: 0,
 	};
 
 	const ButtonElement = url ? 'a' : 'button';

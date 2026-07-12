@@ -73,9 +73,11 @@ import {
 	registerBlockType,
 	unregisterBlockType,
 	setCategories,
+	setUnregisteredTypeHandlerName,
 	parse,
 	serialize,
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
+import { createElement, RawHTML } from '@wordpress/element';
 // Wires up universal editor extensions' `blocks.registerBlockType` /
 // `blocks.getSaveContent.extraProps` filters as a side effect of import,
 // exactly like the real editor bundle (src/index.js loads these — and only
@@ -97,12 +99,123 @@ import '../src/extensions/block-animations';
 const REPO_ROOT = path.resolve(__dirname, '..');
 
 /**
+ * Passthrough handler for every block type that is NOT the regeneration target.
+ *
+ * THIS IS LOAD-BEARING. Only the target block type gets registered below, so a
+ * pattern that nests OTHER blocks inside the target — `core/heading` and
+ * `core/paragraph` inside a `designsetgo/icon-list-item`, or
+ * `designsetgo/flip-card-face` inside a `designsetgo/flip-card` — hits
+ * unregistered block types when the region is parsed. Without a fallback,
+ * WordPress's parser DROPS those blocks outright and serialize() writes back an
+ * empty container: real headings, paragraphs and icons silently deleted from the
+ * pattern file, with no error. (That is not hypothetical — it destroyed content
+ * in 16 pattern files before this handler existed.)
+ *
+ * Registering a fallback makes the parser route unknown blocks through
+ * createMissingBlockType(), which preserves their full delimited markup —
+ * nested children included — in `originalContent`. serialize() then short-
+ * circuits for the fallback type (see serializeBlock in @wordpress/blocks) and
+ * emits that stored markup verbatim, so inner blocks round-trip byte-for-byte
+ * while the TARGET block still re-renders through its real save().
+ *
+ * @see assertNoContentLoss below, which fails loudly if this ever regresses.
+ */
+const PASSTHROUGH_BLOCK = 'designsetgo/regenerate-passthrough';
+
+export function registerPassthroughHandler() {
+	// Categories must exist before any registerBlockType call, or WordPress warns
+	// "registered with an invalid category" — this runs before
+	// registerDesignSetGoBlock(), which sets them too (setCategories is idempotent).
+	setCategories([
+		{ slug: 'designsetgo', title: 'DesignSetGo' },
+		{ slug: 'design', title: 'Design' },
+	]);
+
+	registerBlockType(PASSTHROUGH_BLOCK, {
+		title: 'Regenerate passthrough',
+		category: 'designsetgo',
+		// EVERY support must be off. `className` in particular: with it on,
+		// WordPress's getSaveContent.extraProps filter puts a
+		// `wp-block-designsetgo-regenerate-passthrough` class on the save
+		// element, and RawHTML renders a real <div> wrapper as soon as it
+		// receives any prop (it only emits raw markup when propless). That
+		// silently injects a bogus <div> around the preserved inner blocks in
+		// every regenerated pattern — see assertNoPassthroughLeak below.
+		supports: {
+			className: false,
+			customClassName: false,
+			anchor: false,
+			html: false,
+			inserter: false,
+			reusable: false,
+			lock: false,
+		},
+		attributes: {
+			originalName: { type: 'string' },
+			originalContent: { type: 'string' },
+			originalUndelimitedContent: { type: 'string' },
+		},
+		save: ({ attributes }) =>
+			createElement(RawHTML, null, attributes.originalContent || ''),
+	});
+	setUnregisteredTypeHandlerName(PASSTHROUGH_BLOCK);
+}
+
+/**
+ * Counts every block-comment opener, keyed by block name.
+ *
+ * @param {string} markup Serialized block markup.
+ * @return {Object<string, number>} name → occurrences.
+ */
+function countBlockComments(markup) {
+	const counts = {};
+	const re = /<!--\s*wp:([a-z0-9-]+\/[a-z0-9-]+|[a-z0-9-]+)/gi;
+	let m;
+	// eslint-disable-next-line no-cond-assign
+	while ((m = re.exec(markup)) !== null) {
+		const name = m[1].includes('/') ? m[1] : `core/${m[1]}`;
+		counts[name] = (counts[name] || 0) + 1;
+	}
+	return counts;
+}
+
+/**
+ * Hard guard: regeneration must only ever rewrite the TARGET block's own
+ * markup. It must never add or remove a block. Silent block loss is the single
+ * most damaging way this tool can fail — it deletes real authored content from
+ * pattern files and looks like a clean diff — so it is an exception, not a
+ * warning.
+ *
+ * @param {string} before   Region markup before regeneration.
+ * @param {string} after    Region markup after regeneration.
+ * @param {string} filePath File being rewritten (for the error message).
+ * @throws {Error} If any block name's occurrence count changed.
+ */
+function assertNoContentLoss(before, after, filePath) {
+	const b = countBlockComments(before);
+	const a = countBlockComments(after);
+	const names = new Set([...Object.keys(b), ...Object.keys(a)]);
+
+	const drift = [...names]
+		.filter((name) => (b[name] || 0) !== (a[name] || 0))
+		.map((name) => `${name}: ${b[name] || 0} -> ${a[name] || 0}`);
+
+	if (drift.length > 0) {
+		throw new Error(
+			`Block count changed while regenerating ${filePath} — refusing to write.\n` +
+				`This means inner blocks were dropped (or duplicated) instead of round-tripping.\n` +
+				drift.map((d) => `  ${d}`).join('\n')
+		);
+	}
+}
+
+/**
  * Registers a DesignSetGo block by slug, loading block.json/save.js/
  * deprecated.js from src/blocks/{slug}/.
  *
  * @param {string} blockName Full block name, e.g. "designsetgo/icon-button".
  */
-function registerDesignSetGoBlock(blockName) {
+export function registerDesignSetGoBlock(blockName) {
 	const slug = blockName.replace('designsetgo/', '');
 	const blockDir = path.join(REPO_ROOT, 'src/blocks', slug);
 
@@ -183,6 +296,25 @@ export function findBlockRegions(content, blockName) {
 }
 
 /**
+ * The passthrough block is an internal scaffold. Not one byte of it may reach a
+ * pattern file — if its name or class shows up in the output, the handler
+ * rendered a wrapper instead of raw markup (see registerPassthroughHandler).
+ *
+ * @param {string} after    Regenerated region markup.
+ * @param {string} filePath File being rewritten (for the error message).
+ * @throws {Error} If the passthrough leaked into the output.
+ */
+function assertNoPassthroughLeak(after, filePath) {
+	if (after.includes('regenerate-passthrough')) {
+		throw new Error(
+			`The passthrough handler leaked into ${filePath} — refusing to write.\n` +
+				`It must render inner blocks as raw markup, not wrap them. Check that ALL\n` +
+				`supports (className especially) are disabled on ${PASSTHROUGH_BLOCK}.`
+		);
+	}
+}
+
+/**
  * Regenerates every occurrence of `blockName` inside a single file's
  * content. Parses+serializes each region in isolation (not the whole file —
  * these are PHP files with surrounding non-block PHP/HTML), so only the
@@ -190,9 +322,14 @@ export function findBlockRegions(content, blockName) {
  *
  * @param {string} content   Original file content.
  * @param {string} blockName Full block name.
+ * @param {string} filePath  File being rewritten, used in guard error messages.
  * @return {{content: string, changed: number}} New content + change count.
  */
-export function regenerateBlockRegions(content, blockName) {
+export function regenerateBlockRegions(
+	content,
+	blockName,
+	filePath = '(inline)'
+) {
 	const regions = findBlockRegions(content, blockName);
 	if (regions.length === 0) {
 		return { content, changed: 0 };
@@ -210,6 +347,15 @@ export function regenerateBlockRegions(content, blockName) {
 			);
 		}
 		const regenerated = serialize(block);
+
+		// Never write a region that gained or lost a block. See
+		// assertNoContentLoss — silent inner-block deletion is this tool's
+		// worst failure mode and must be fatal, not silent.
+		assertNoContentLoss(region.markup, regenerated, filePath);
+		// ...and never write one where the passthrough handler leaked its own
+		// markup into the output. The block-count check above cannot see this:
+		// a stray wrapper <div> adds no block comment.
+		assertNoPassthroughLeak(regenerated, filePath);
 
 		result += content.slice(cursor, region.start);
 		result += regenerated;
@@ -234,6 +380,10 @@ export function regenerateBlockRegions(content, blockName) {
  * @return {{filesChanged: string[], regionsChanged: number}} Summary.
  */
 export function regeneratePatterns({ blockName, dryRun = false }) {
+	// Must come first: any block nested inside the target that is not the
+	// target itself resolves through this handler and round-trips verbatim.
+	// Without it the parser silently deletes them. See registerPassthroughHandler.
+	registerPassthroughHandler();
 	registerDesignSetGoBlock(blockName);
 
 	try {
@@ -249,7 +399,8 @@ export function regeneratePatterns({ blockName, dryRun = false }) {
 			const original = fs.readFileSync(file, 'utf8');
 			const { content, changed } = regenerateBlockRegions(
 				original,
-				blockName
+				blockName,
+				path.relative(REPO_ROOT, file)
 			);
 
 			if (changed > 0) {
@@ -264,5 +415,6 @@ export function regeneratePatterns({ blockName, dryRun = false }) {
 		return { filesChanged, regionsChanged };
 	} finally {
 		unregisterBlockType(blockName);
+		unregisterBlockType(PASSTHROUGH_BLOCK);
 	}
 }

@@ -23,19 +23,38 @@ import {
 	parse,
 	createBlock,
 	serialize,
+	getSaveContent,
 	getBlockContent,
 	// eslint-disable-next-line import/no-unresolved
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
 import metadata from '../block.json';
 import save from '../save';
-import deprecated from '../deprecated';
+import deprecated, { v3, v4 } from '../deprecated';
 
 setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
 registerBlockType(metadata.name, { ...metadata, save, deprecated });
 
-// deprecated.js exports newest-first: [v3, v2, v1].
-const [v3Deprecation] = deprecated;
+// Address versions by NAME, not position — deprecated.js exports newest-first,
+// so positional destructuring silently re-points at the wrong entry as soon as
+// a newer deprecation (v4) is prepended.
+const v3Deprecation = v3;
+
+// The v3 fixtures below are derived by string-patching the markup as it existed
+// BEFORE the v4 (inline-icon-layout) change — i.e. v4.save(), not the current
+// save(). Patching the current output would silently stop matching the moment
+// save() drops one of the declarations being patched, which is exactly what
+// happened when v4 removed `justify-content:center` from the icon box.
+const v4BlockType = { name: metadata.name, ...v4 };
+const v4Defaults = Object.fromEntries(
+	Object.entries(v4.attributes)
+		.filter(([, schema]) => 'default' in schema)
+		.map(([key, schema]) => [key, schema.default])
+);
+const preV4Canonical = `<!-- wp:designsetgo/icon-list-item -->${getSaveContent(
+	v4BlockType,
+	v4Defaults
+)}<!-- /wp:designsetgo/icon-list-item -->`;
 
 const INHERITED_SIZE_VAR =
 	'--dsgo-icon-list-size:calc(var(--wp--custom--designsetgo--icon-list--default-size, 32) * 1px)';
@@ -65,13 +84,16 @@ describe('icon-list-item save() - kit-controllable gaps/size', () => {
 });
 
 describe('icon-list-item deprecations - v3 kit-controllable gaps/size', () => {
-	// Canonical (current) output for a default block, empty context.
+	// Canonical (current) output for a default block, empty context — used below
+	// to confirm v3's isEligible() correctly ignores genuinely current markup.
 	const canonical = serialize(createBlock(metadata.name, {}));
 
-	// Derive byte-exact OLD markup: the pre-refactor format baked the item gap
-	// right after align-items, set --dsgo-icon-list-size inline on the icon box
+	// Derive byte-exact OLD markup from the PRE-v4 output (which still carried
+	// the icon box's inline layout, including the `justify-content:center` this
+	// patch anchors on). The v3-era format additionally baked the item gap right
+	// after align-items, set --dsgo-icon-list-size inline on the icon box
 	// (inherited-size case), and always wrote the content gap (default 8px).
-	const OLD_MARKUP = canonical
+	const OLD_MARKUP = preV4Canonical
 		.replace('align-items:flex-start', 'align-items:flex-start;gap:16px')
 		.replace(
 			'justify-content:center',
@@ -102,12 +124,14 @@ describe('icon-list-item deprecations - v3 kit-controllable gaps/size', () => {
 	});
 
 	test('old item with an explicit content gap keeps it after migration', () => {
-		const canonicalExplicit = serialize(
-			createBlock(metadata.name, { contentGap: 20 })
-		);
+		// Same derivation rule: patch the PRE-v4 output, not the current one.
+		const preV4Explicit = `<!-- wp:designsetgo/icon-list-item {"contentGap":20} -->${getSaveContent(
+			v4BlockType,
+			{ ...v4Defaults, contentGap: 20 }
+		)}<!-- /wp:designsetgo/icon-list-item -->`;
 		// Old explicit-gap markup: same inline content gap:20px, plus the item
 		// gap + inline size var that the current save() no longer emits.
-		const oldExplicit = canonicalExplicit
+		const oldExplicit = preV4Explicit
 			.replace(
 				'align-items:flex-start',
 				'align-items:flex-start;gap:16px'
