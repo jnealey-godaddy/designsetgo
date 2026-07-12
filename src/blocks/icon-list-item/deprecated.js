@@ -58,6 +58,170 @@ const sharedSupports = {
  * explicit or inherited size — validates. `migrate()` strips a default (8)
  * contentGap so it inherits the themeable default, preserving an explicit one.
  */
+/**
+ * Inline icon layout — the version before the icon box's constant layout
+ * declarations moved to style.scss.
+ *
+ * The icon `<div>` serialized `display:flex; align-items:center;
+ * justify-content:center` into every saved item. None of it varied by attribute
+ * (size and colour, which DO vary, are still inline), so it now lives on
+ * `.dsgo-icon-list-item__icon` in style.scss — an inline style beat any
+ * stylesheet rule, so a Style Kit could never retheme the icon box.
+ *
+ * Markup-only change: same attributes, same classes — migrate() is a passthrough.
+ *
+ * NOTE: WordPress calls isEligible(attributes, innerBlocks, { blockNode, block })
+ * — there is no `innerHTML` key on that third argument. Like v3 below, the check
+ * is scoped to the icon element's OWN attributes rather than the whole subtree,
+ * since the content area accepts arbitrary nested blocks whose inline styles
+ * could otherwise false-match.
+ */
+const v4 = {
+	supports: sharedSupports,
+	attributes: {
+		icon: { type: 'string', default: 'star' },
+		contentGap: { type: 'number' },
+		linkUrl: { type: 'string', default: '' },
+		linkTarget: { type: 'string', default: '_self' },
+		linkRel: { type: 'string', default: '' },
+	},
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const html = blockNode?.innerHTML ?? block?.originalContent ?? '';
+		// Match the icon box's own style attribute carrying the layout trio.
+		return /class="[^"]*dsgo-icon-list-item__icon[^"]*"\s+style="display:flex;align-items:center;justify-content:center/.test(
+			html
+		);
+	},
+	migrate(attributes) {
+		// Markup-only change.
+		return attributes;
+	},
+	save({ attributes, context = {} }) {
+		const { icon, linkUrl, linkTarget, linkRel, contentGap } = attributes;
+
+		const ctxIconSize = context['designsetgo/iconList/iconSize'];
+		const hasExplicitSize =
+			typeof ctxIconSize === 'number' && !Number.isNaN(ctxIconSize);
+		const iconColor = context['designsetgo/iconList/iconColor'] || '';
+		const iconBackgroundColor =
+			context['designsetgo/iconList/iconBackgroundColor'] || '';
+		const iconPosition =
+			context['designsetgo/iconList/iconPosition'] || 'left';
+		const iconVerticalAlignment =
+			context['designsetgo/iconList/iconVerticalAlignment'] || 'top';
+		const ctxIconStyle =
+			context['designsetgo/iconList/iconStyle'] || undefined;
+		const ctxStrokeWidth = context['designsetgo/iconList/strokeWidth'];
+
+		const getTextAlign = () => {
+			if (iconPosition === 'top') {
+				return 'center';
+			}
+			if (iconPosition === 'right') {
+				return 'right';
+			}
+			return 'left';
+		};
+
+		const getVerticalAlignItems = () => {
+			if (iconPosition === 'top') {
+				return 'center';
+			}
+			return iconVerticalAlignment === 'center' ? 'center' : 'flex-start';
+		};
+
+		const itemStyles = {
+			display: 'flex',
+			flexDirection: iconPosition === 'top' ? 'column' : 'row',
+			alignItems: getVerticalAlignItems(),
+			...(iconPosition === 'right' && { flexDirection: 'row-reverse' }),
+		};
+
+		let sizeStyles;
+		if (hasExplicitSize) {
+			const explicitSize = iconBackgroundColor
+				? ctxIconSize + 16
+				: ctxIconSize;
+			sizeStyles = {
+				width: `${explicitSize}px`,
+				height: `${explicitSize}px`,
+				minWidth: `${explicitSize}px`,
+			};
+		} else {
+			sizeStyles = {};
+		}
+
+		// The layout constants this deprecation exists to remove.
+		const iconWrapperStyles = {
+			display: 'flex',
+			alignItems: 'center',
+			justifyContent: 'center',
+			...sizeStyles,
+			...(iconBackgroundColor && {
+				backgroundColor: convertColorToCSSVar(iconBackgroundColor),
+				padding: '8px',
+				borderRadius: '4px',
+				boxSizing: 'border-box',
+			}),
+			...(iconColor && {
+				color: convertColorToCSSVar(iconColor),
+				'--dsgo-icon-color': convertColorToCSSVar(iconColor),
+			}),
+		};
+
+		const blockProps = useBlockProps.save({
+			className: `dsgo-icon-list-item dsgo-icon-list-item--icon-${iconPosition}`,
+			style: itemStyles,
+		});
+
+		const hasExplicitContentGap =
+			typeof contentGap === 'number' && !Number.isNaN(contentGap);
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-icon-list-item__content',
+			style: {
+				textAlign: getTextAlign(),
+				display: 'flex',
+				flexDirection: 'column',
+				...(hasExplicitContentGap && { gap: `${contentGap}px` }),
+			},
+		});
+
+		const ItemWrapper = linkUrl ? 'a' : 'div';
+		const wrapperProps = linkUrl
+			? {
+					...blockProps,
+					href: linkUrl,
+					target: linkTarget,
+					rel: linkRel || undefined,
+				}
+			: blockProps;
+
+		const iconClassName = [
+			'dsgo-icon-list-item__icon',
+			'dsgo-lazy-icon',
+			!hasExplicitSize && 'dsgo-icon-list-item__icon--inherit-size',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		return (
+			<ItemWrapper {...wrapperProps}>
+				<div
+					className={iconClassName}
+					style={iconWrapperStyles}
+					data-icon-name={icon}
+					data-icon-style={ctxIconStyle}
+					data-icon-stroke-width={
+						ctxIconStyle === 'outlined' ? ctxStrokeWidth : undefined
+					}
+				/>
+
+				<div {...innerBlocksProps} />
+			</ItemWrapper>
+		);
+	},
+};
+
 const v3 = {
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, { innerHTML }) {
@@ -515,4 +679,6 @@ const v1 = {
 	},
 };
 
-export default [v3, v2, v1];
+export { v4, v3, v2, v1 };
+
+export default [v4, v3, v2, v1];

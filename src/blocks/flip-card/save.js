@@ -21,9 +21,11 @@ export default function FlipCardSave({ attributes }) {
 	// Block wrapper props
 	const blockProps = useBlockProps.save({
 		className: `dsgo-flip-card dsgo-flip-card--${flipTrigger} dsgo-flip-card--effect-${flipEffect} dsgo-flip-card--${flipDirection}`,
+		// `width: 100%` is NOT serialized — it is constant for every card and
+		// style.scss already declares it on `.dsgo-flip-card`. Only the
+		// author-controlled flip duration is written inline.
 		style: {
 			'--dsgo-flip-duration': flipDuration,
-			width: '100%',
 		},
 		'data-flip-trigger': flipTrigger,
 		'data-flip-effect': flipEffect,

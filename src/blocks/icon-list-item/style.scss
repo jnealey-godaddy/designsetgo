@@ -20,7 +20,14 @@
 	transition: opacity 0.2s ease;
 
 	&__icon {
-		// Size and color applied via inline styles
+		// Layout constants. These used to be serialized into every saved item
+		// (display/align-items/justify-content never varied by attribute),
+		// which bloated the markup and — because inline beats any stylesheet
+		// rule — made the icon box unthemeable. Size and colour are still
+		// applied inline, since those ARE attribute-driven.
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		flex-shrink: 0;
 
 		// Use CSS custom property if set, otherwise inherit from parent

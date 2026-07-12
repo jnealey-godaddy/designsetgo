@@ -98,10 +98,10 @@ export default function IconListItemSave({ attributes, context = {} }) {
 		sizeStyles = {};
 	}
 
+	// Layout (display/align-items/justify-content) is NOT serialized — it is
+	// constant for every item, so it lives on `.dsgo-icon-list-item__icon` in
+	// style.scss. Size and colour stay inline: those are attribute-driven.
 	const iconWrapperStyles = {
-		display: 'flex',
-		alignItems: 'center',
-		justifyContent: 'center',
 		...sizeStyles,
 		...(iconBackgroundColor && {
 			backgroundColor: convertColorToCSSVar(iconBackgroundColor),

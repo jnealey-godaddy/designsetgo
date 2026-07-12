@@ -132,10 +132,13 @@ export default function save({ attributes }) {
 					</div>
 				))}
 			</div>
-			<div
-				className="dsgo-countdown-timer__completion-message"
-				style={{ display: 'none' }}
-			>
+			{/*
+			 * Hidden by default via style.scss
+			 * (`.dsgo-countdown-timer__completion-message { display: none }`),
+			 * not an inline style — view.js reveals it by setting
+			 * `style.display = 'block'`, which beats the stylesheet rule anyway.
+			 */}
+			<div className="dsgo-countdown-timer__completion-message">
 				{completionMessage}
 			</div>
 		</div>
