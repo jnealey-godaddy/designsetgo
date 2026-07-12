@@ -113,9 +113,11 @@ describe('modal-trigger save', () => {
 		expect(html).toContain('dsgo-modal-trigger--full-width');
 	});
 
-	it('defaults justification to left with no explicit class suffix', () => {
+	it('defaults justification to left, emitting the dsgo-justify--left suffix', () => {
 		const html = serialize(createBlock(metadata.name, { text: 'Open' }));
-		expect(html).toMatch(/class="[^"]*dsgo-justify(?!--)/);
+		expect(html).toMatch(
+			/<div class="[^"]*wp-block-designsetgo-modal-trigger[^"]*dsgo-justify dsgo-justify--left/
+		);
 	});
 });
 
@@ -182,6 +184,46 @@ describe('modal-trigger deprecations - v4 styled trigger retains visual attribut
 		expect(v4.supports.__experimentalBorder).toBeTruthy();
 		expect(v4.supports.typography).toBeTruthy();
 		expect(v4.supports.typography.fontSize).toBe(true);
+
+		// WP's hasBlockSupport() only recognises the __experimental-prefixed
+		// typography keys (see packages/block-editor/src/hooks/font-family.js
+		// et al.) — un-prefixed `fontFamily`/`fontWeight`/`letterSpacing` are
+		// silently ignored, which is exactly what let fontFamily go missing
+		// pre-fix. Assert the prefixed keys specifically, not just truthiness
+		// of the typography object.
+		expect(v4.supports.typography.__experimentalFontFamily).toBe(true);
+		expect(v4.supports.typography.__experimentalFontWeight).toBe(true);
+		expect(v4.supports.typography.__experimentalLetterSpacing).toBe(true);
+	});
+
+	it('migrates a legacy trigger carrying an explicit fontFamily preset without losing it', () => {
+		// Minimal styled-legacy fixture: just enough to prove fontFamily
+		// survives migration alongside the align→justification conversion.
+		// WP only registers a `fontFamily` attribute on a deprecation when
+		// that deprecation's `supports.typography.__experimentalFontFamily`
+		// is `true`; if the key is wrong (un-prefixed), the attribute is never
+		// registered and `fontFamily` is stripped from parsed attributes
+		// before migrate() ever runs.
+		const FONT_FAMILY_LEGACY_COMMENT = {
+			text: 'Open',
+			targetModalId: 'm1',
+			align: 'right',
+			fontFamily: 'heading',
+		};
+
+		const v4BlockType = { name: metadata.name, ...v4 };
+		const attrs = withDefaults(v4BlockType, FONT_FAMILY_LEGACY_COMMENT);
+		const html = getSaveContent(v4BlockType, attrs);
+		const markup = `<!-- wp:${metadata.name} ${JSON.stringify(FONT_FAMILY_LEGACY_COMMENT)} -->${html}<!-- /wp:${metadata.name} -->`;
+
+		const [block] = parse(markup);
+
+		expect(console).toHaveInformed();
+		expect(block.isValid).toBe(true);
+
+		// The bug this guards: fontFamily must NOT be undefined.
+		expect(block.attributes.fontFamily).toBe('heading');
+		expect(block.attributes.justification).toBe('right');
 	});
 
 	it('fails when v4.supports is stripped down to only `align` (proves the test above has teeth)', () => {

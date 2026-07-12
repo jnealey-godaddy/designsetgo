@@ -51,6 +51,13 @@ function migrateAlign(attributes) {
 /**
  * Shared supports definition for all deprecated versions.
  * Mirrors block.json supports but uses __experimentalBorder (the historical key).
+ *
+ * typography.fontWeight must use the __experimental-prefixed key
+ * (`__experimentalFontWeight`, matching `v9Supports` below and the live
+ * block.json) — that's what WP's `hasBlockSupport()` actually checks. The
+ * live block.json does NOT declare `__experimentalFontFamily`, so unlike
+ * fontWeight there is no dedicated `fontFamily` attribute to lose here; the
+ * un-prefixed key was cosmetically wrong only, not a data-loss bug.
  */
 const sharedSupports = {
 	anchor: true,
@@ -80,7 +87,7 @@ const sharedSupports = {
 	typography: {
 		fontSize: true,
 		lineHeight: true,
-		fontWeight: true,
+		__experimentalFontWeight: true,
 		__experimentalDefaultControls: {
 			fontSize: true,
 		},

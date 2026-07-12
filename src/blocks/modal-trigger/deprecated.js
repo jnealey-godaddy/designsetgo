@@ -46,6 +46,16 @@ function migrateAlign(attributes) {
  * `color.__experimentalSkipSerialization` (already present pre-refactor) but
  * NOT the new border/typography skip-serialization, which only applies to the
  * post-refactor block whose root moved to the wrapper.
+ *
+ * typography MUST use the __experimental-prefixed keys
+ * (__experimentalFontFamily / __experimentalFontWeight /
+ * __experimentalLetterSpacing) — those are what WP's `hasBlockSupport()`
+ * actually checks (see packages/block-editor/src/hooks/font-family.js et
+ * al.). Un-prefixed `fontFamily`/`fontWeight`/`letterSpacing` keys here are
+ * silently ignored by WP's support-detection filters, so `core/fontFamily/
+ * addAttribute` never registers a `fontFamily` attribute on the
+ * deprecation and any stored `fontFamily` value is stripped from parsed
+ * attributes before `migrate()` ever runs — silent, unrecoverable data loss.
  */
 const sharedSupports = {
 	anchor: true,
@@ -73,9 +83,9 @@ const sharedSupports = {
 	typography: {
 		fontSize: true,
 		lineHeight: true,
-		fontFamily: true,
-		fontWeight: true,
-		letterSpacing: true,
+		__experimentalFontFamily: true,
+		__experimentalFontWeight: true,
+		__experimentalLetterSpacing: true,
 	},
 	__experimentalBorder: {
 		color: true,
