@@ -930,6 +930,11 @@ class Form_Handler {
 		// Subject: do NOT escape. Strip newlines so a submitted value cannot
 		// smuggle in an extra mail header (PHPMailer would also catch this, but
 		// the intent belongs here rather than depending on a downstream library).
+		// The `%0a`/`%0d` literals mirror the header-injection strip at the top of
+		// this method: a value can arrive percent-encoded from a source that was
+		// not URL-decoded, and stripping both forms is cheaper than proving no
+		// such path exists. The trade-off — a subject legitimately containing the
+		// text "%0a" loses it — is negligible against a header-injection strip.
 		$newlines                     = array( "\r", "\n", '%0a', '%0d' );
 		$subject_tags                 = array_map(
 			static function ( $value ) use ( $newlines ) {
@@ -961,7 +966,11 @@ class Form_Handler {
 
 		// Add Reply-To if specified and field exists.
 		if ( ! empty( $email_reply_to ) && isset( $fields[ $email_reply_to ] ) ) {
-			$reply_to_value = is_array( $fields[ $email_reply_to ] ) ? $fields[ $email_reply_to ]['value'] : $fields[ $email_reply_to ];
+			// Flatten through the shared helper: a multi-value field yields an
+			// array, and handing that to str_replace()/sanitize_email() below is a
+			// PHP 8 TypeError (strlen() on an array) that would take down the whole
+			// notification. self::stringify_field_value() guarantees a string.
+			$reply_to_value = self::stringify_field_value( $fields[ $email_reply_to ] );
 
 			// Strip newlines to prevent email header injection.
 			$reply_to_value = str_replace( array( "\r", "\n", '%0a', '%0d' ), '', $reply_to_value );

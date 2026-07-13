@@ -243,6 +243,54 @@ class Form_Email_Escaping_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A multi-value field chosen as the Reply-To source must not fatal.
+	 *
+	 * emailReplyTo names a field; if that field is multi-value it arrives as an
+	 * array, and handing an array to sanitize_email() is a PHP 8 TypeError
+	 * (strlen() on array) that would take the whole notification down. The
+	 * extraction must flatten through the shared helper first.
+	 */
+	public function test_multi_value_reply_to_field_does_not_fatal() {
+		$this->configure_form_with_reply_to( 'contact' );
+
+		$handler = new \DesignSetGo\Blocks\Form_Handler();
+		$method  = new ReflectionMethod( $handler, 'send_email_notification' );
+		$method->setAccessible( true );
+
+		// 'contact' resolves to a multi-value field — the crashing shape.
+		$method->invoke(
+			$handler,
+			'test-form',
+			array( 'contact' => array( 'value' => array( 'a@example.org', 'b@example.org' ) ) ),
+			126
+		);
+
+		$this->assertNotNull( $this->sent, 'Notification fataled on a multi-value reply-to field.' );
+	}
+
+	/**
+	 * Publish a form whose emailReplyTo points at the given field name.
+	 *
+	 * @param string $field_name Field to use as the Reply-To source.
+	 */
+	private function configure_form_with_reply_to( $field_name ) {
+		self::factory()->post->create(
+			array(
+				'post_status'  => 'publish',
+				'post_content' => '<!-- wp:designsetgo/form-builder ' . wp_json_encode(
+					array(
+						'formId'       => 'test-form',
+						'enableEmail'  => true,
+						'emailTo'      => 'owner@example.org',
+						'emailReplyTo' => $field_name,
+						'emailBody'    => '<p>{all_fields}</p>',
+					)
+				) . ' --><div class="wp-block-designsetgo-form-builder"></div><!-- /wp:designsetgo/form-builder -->',
+			)
+		);
+	}
+
+	/**
 	 * @return array<string, array{0: mixed}>
 	 */
 	public function malformed_field_provider() {
