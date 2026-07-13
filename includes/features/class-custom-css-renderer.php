@@ -263,30 +263,16 @@ class Custom_CSS_Renderer {
 	private function sanitize_css( $css ) {
 		$original_css = $css;
 
-		// Normalize CSS escape sequences BEFORE any pattern matching. CSS
-		// permits arbitrary unicode escapes and null bytes inside tokens,
-		// e.g. `java\0script:` or `java\000073cript:`, which would bypass
-		// regex strips like `/javascript:/i` if left in place. Decode them
-		// to the real characters so downstream checks see the actual text
-		// (and legitimate content like `content: "\2192";` is preserved).
-		$css = str_replace( "\0", '', $css );
-		// CSS unicode escape: backslash + 1..6 hex digits, optional trailing
-		// whitespace. Decode to the referenced codepoint so pattern matching
-		// sees the actual character.
-		$css = preg_replace_callback(
-			'/\\\\([0-9a-fA-F]{1,6})\s?/',
-			static function ( $matches ) {
-				$codepoint = hexdec( $matches[1] );
-				// Reject null and out-of-range codepoints.
-				if ( 0 === $codepoint || $codepoint > 0x10FFFF ) {
-					return '';
-				}
-				return mb_chr( $codepoint, 'UTF-8' );
-			},
-			$css
-		);
-		// Any remaining backslash escapes of ASCII printable chars.
-		$css = preg_replace( '/\\\\([\x20-\x7E])/', '$1', $css );
+		// Normalize CSS escape sequences BEFORE any pattern matching. CSS permits
+		// arbitrary unicode escapes and null bytes inside tokens, e.g.
+		// `java\0script:` or `java\000073cript:`, which would bypass regex strips
+		// like `/javascript:/i` if left in place.
+		//
+		// This logic used to live here, privately — which is exactly why the
+		// plugin's two OTHER CSS sanitizers (Abilities\CSS_Sanitizer and
+		// StyleBinding) shipped without it and were bypassable. It now lives in
+		// designsetgo_normalize_css_escapes() so all three share one definition.
+		$css = designsetgo_normalize_css_escapes( $css );
 
 		// Remove script tags and all HTML tags.
 		$css = preg_replace( '/<script\b[^>]*>(.*?)<\/script>/is', '', $css );

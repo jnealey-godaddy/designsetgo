@@ -77,10 +77,28 @@ class StyleBinding {
 			// Reject values that could execute code or break out of the
 			// declaration: url(), expression(), javascript:/data: schemes,
 			// CSS curly braces, and embedded semicolons.
-			if ( preg_match( '/url\s*\(|expression\s*\(|javascript:|data:/i', $value ) ) {
+			//
+			// Test the ESCAPE-DECODED value, never the raw one. CSS escapes are
+			// resolved by the browser before the declaration applies, so a raw
+			// match here is trivially bypassed: `\75\72\6c(//evil.test)` is
+			// `url(//evil.test)` to a browser but matches none of the patterns
+			// below as written. See designsetgo_normalize_css_escapes().
+			$probe = designsetgo_normalize_css_escapes( (string) $value );
+
+			if ( preg_match( '/url\s*\(|expression\s*\(|javascript:|data:/i', $probe ) ) {
 				continue;
 			}
-			if ( false !== strpbrk( $value, ';{}' ) ) {
+			if ( false !== strpbrk( $probe, ';{}' ) ) {
+				continue;
+			}
+
+			// Defence in depth: reject any value that carried an escape at all.
+			// Style bindings resolve to lengths, colours and keywords, none of
+			// which have any legitimate reason to be escaped — so rather than
+			// depend on this decoder agreeing with every browser's tokenizer on
+			// every edge case, refuse the value outright when the two forms
+			// differ. The cost of a false reject is one binding not applying.
+			if ( $probe !== (string) $value ) {
 				continue;
 			}
 

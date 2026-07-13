@@ -38,6 +38,78 @@ function designsetgo_generate_block_id() {
 }
 
 /**
+ * Decode CSS escape sequences so pattern matching sees the real characters.
+ *
+ * CSS lets any character inside a token be written as a backslash escape, and
+ * the browser decodes it before the declaration is applied. So `\75\72\6c(...)`
+ * IS `url(...)` to a browser, and `java\0script:` IS `javascript:` — but a naive
+ * `/url\s*\(/i` or `/javascript:/i` sees neither. Every dangerous-pattern check
+ * in this plugin MUST normalize through here first, or it is trivially bypassed
+ * by an attacker who simply escapes a character.
+ *
+ * Decoding is deliberately lossy in the safe direction, and callers use the
+ * result in one of two ways:
+ *
+ * - As a DETECTION PROBE only, keeping the original value for output — this is
+ *   what StyleBinding does (it matches the decoded `$probe`, emits the raw
+ *   `$value`, and rejects when they differ).
+ * - As the OUTPUT itself — CSS_Sanitizer::sanitize() returns the decoded string,
+ *   because for a full sanitizer the normalized form IS the sanitized form.
+ *
+ * Both are fine here: a legitimate content escape (`content: "\2192"`) decodes to
+ * the real glyph, which is what the browser would render anyway. A caller taking
+ * the second path must run its own dangerous-pattern pass on the decoded output
+ * (as CSS_Sanitizer does); this function only guarantees "no encoding left to
+ * hide behind", not "safe to echo".
+ *
+ * @since 2.4.0
+ *
+ * @param string $css CSS text to normalize.
+ * @return string CSS with escape sequences and null bytes resolved.
+ */
+function designsetgo_normalize_css_escapes( $css ) {
+	if ( ! is_string( $css ) || '' === $css ) {
+		return '';
+	}
+
+	// Null bytes are ignored by CSS tokenizers but break naive regexes.
+	$css = str_replace( "\0", '', $css );
+
+	// Unicode escape: backslash + 1..6 hex digits + optional single whitespace.
+	$css = preg_replace_callback(
+		'/\\\\([0-9a-fA-F]{1,6})\s?/',
+		static function ( $matches ) {
+			$codepoint = hexdec( $matches[1] );
+
+			// Drop anything that is not a Unicode scalar value: null, out of
+			// range, and the surrogate range (U+D800..U+DFFF, which a lone `\d800`
+			// escape would otherwise produce). mb_chr() returns false for a
+			// surrogate, and preg_replace_callback() requires a string back — so
+			// today that silently coerces to '', and in a stricter context it is a
+			// TypeError. The CSS spec says to treat these as U+FFFD; dropping them
+			// is the same thing for our purpose, which is producing text safe to
+			// pattern-match. This function is the shared security boundary for
+			// three sanitizers, so it does not get to be fragile.
+			if (
+				0 === $codepoint
+				|| $codepoint > 0x10FFFF
+				|| ( $codepoint >= 0xD800 && $codepoint <= 0xDFFF )
+			) {
+				return '';
+			}
+
+			return (string) mb_chr( $codepoint, 'UTF-8' );
+		},
+		(string) $css
+	);
+
+	// Any remaining backslash escape of a printable ASCII char, e.g. `\u rl(`.
+	$css = preg_replace( '/\\\\([\x20-\x7E])/', '$1', (string) $css );
+
+	return (string) $css;
+}
+
+/**
  * Sanitize CSS value with strict validation.
  *
  * Prevents CSS injection attacks by validating against allowed patterns.

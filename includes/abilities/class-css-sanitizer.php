@@ -23,6 +23,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 class CSS_Sanitizer {
 
 	/**
+	 * Maximum encoding layers peeled before a value is rejected as unconverged.
+	 *
+	 * Real CSS carries zero or one layer of entity/escape encoding. Anything
+	 * needing more is layered deliberately, so the ceiling is generous for
+	 * legitimate input and still finite against an attacker choosing the depth.
+	 *
+	 * @var int
+	 */
+	private const MAX_DECODE_PASSES = 10;
+
+	/**
 	 * Dangerous CSS patterns that could be used for XSS attacks.
 	 *
 	 * @var array<string>
@@ -81,15 +92,47 @@ class CSS_Sanitizer {
 		// Remove null bytes and other control characters first.
 		$css = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $css );
 
-		// Decode HTML entities BEFORE stripping tags to catch encoded attacks.
-		// e.g., &lt;script&gt; becomes <script> which can then be stripped.
-		$css = html_entity_decode( $css, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		/*
+		 * Peel off ALL encoding layers before any tag-stripping or pattern
+		 * matching. There are two independent ones — HTML entities and CSS escape
+		 * sequences — and each can hide the other, in either order:
+		 *
+		 *   `&#92;75rl(...)`   an entity hides a CSS escape that hides `url(`
+		 *   `\3c script\3e`    a CSS escape hides a tag from wp_strip_all_tags()
+		 *
+		 * So no fixed sequence of "decode entities, then decode escapes" is
+		 * enough: whichever runs last exposes a layer the other already walked
+		 * past. Decode to a fixed point instead, then strip and match on text with
+		 * no encoding left to hide behind.
+		 *
+		 * html_entity_decode() resolves exactly ONE layer of entity nesting per
+		 * call, so an attacker can choose the depth:
+		 *
+		 *   &amp;amp;amp;amp;amp;#106;avascript:alert(1)
+		 *
+		 * takes six passes to reach `javascript:`. Any cap can therefore be
+		 * outrun. What matters is what happens when it IS outrun: returning the
+		 * half-decoded string would hand `&#106;avascript:` to a caller that puts
+		 * it in an HTML attribute, where the browser finishes the decode for the
+		 * attacker. So non-convergence is a REJECTION, not a best effort — the
+		 * cap is high enough that no legitimate CSS reaches it (real CSS has zero
+		 * or one layer), and anything that does is layered on purpose.
+		 */
+		$passes = 0;
+		do {
+			$previous = $css;
+			$css      = html_entity_decode( $css, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+			$css      = \designsetgo_normalize_css_escapes( $css );
+			++$passes;
+		} while ( $css !== $previous && $passes < self::MAX_DECODE_PASSES );
 
-		// Remove HTML tags after decoding.
-		$css = wp_strip_all_tags( $css );
+		if ( $css !== $previous ) {
+			return '/* blocked */';
+		}
 
-		// Decode again in case of double-encoding attacks, then strip again.
-		$css = html_entity_decode( $css, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		// Only now can tag-stripping see every tag: a CSS-escaped `\3c script\3e`
+		// has been decoded to a real `<script>` above, so this removes it. Before
+		// the decode loop it would have sailed straight through.
 		$css = wp_strip_all_tags( $css );
 
 		// Remove dangerous patterns.

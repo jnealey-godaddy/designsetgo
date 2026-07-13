@@ -130,3 +130,8 @@ tasks.txt
 #Claude
 .claude/claude-memory.md
 .worktrees/
+
+# Security audit output. These enumerate unpatched findings with exploit paths,
+# so they must never land in a public repo — track the fixes, not the writeup.
+SECURITY-REVIEW.md
+SECURITY-AUDIT.md
