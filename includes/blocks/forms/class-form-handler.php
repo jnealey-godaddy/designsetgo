@@ -828,25 +828,44 @@ class Form_Handler {
 			);
 		}
 
+		// Every value below is interpolated into an HTML email body (the headers
+		// set `Content-Type: text/html`, see below), so each one is escaped here.
+		// The {all_fields} aggregate further down always did this; the per-field
+		// tags did not, which let a submitter put arbitrary markup — a fake
+		// "click here" link, a tracking pixel, a spoofed message — straight into
+		// the site owner's inbox via any template using {message} or {name}.
 		$merge_tags = array(
-			'{form_id}'       => $form_id,
-			'{submission_id}' => $submission_id,
-			'{page_url}'      => $current_url,
-			'{site_name}'     => get_bloginfo( 'name' ),
-			'{date}'          => current_time( 'mysql' ),
+			'{form_id}'       => esc_html( $form_id ),
+			'{submission_id}' => esc_html( (string) $submission_id ),
+			'{page_url}'      => esc_html( $current_url ),
+			'{site_name}'     => esc_html( get_bloginfo( 'name' ) ),
+			'{date}'          => esc_html( current_time( 'mysql' ) ),
 		);
 
 		// Add field values to merge tags.
 		foreach ( $fields as $field_name => $field_data ) {
-			$merge_tags[ '{' . $field_name . '}' ] = is_array( $field_data ) ? $field_data['value'] : $field_data;
+			$value = is_array( $field_data ) ? $field_data['value'] : $field_data;
+
+			if ( is_array( $value ) ) {
+				$value = implode( ', ', array_map( 'strval', $value ) );
+			}
+
+			$merge_tags[ '{' . $field_name . '}' ] = esc_html( (string) $value );
 		}
 
 		// Build all_fields list.
 		$all_fields_html = '';
 		foreach ( $fields as $field_name => $field_data ) {
-			$value            = is_array( $field_data ) ? $field_data['value'] : $field_data;
+			$value = is_array( $field_data ) ? $field_data['value'] : $field_data;
+
+			// A multi-value field (checkbox group, multi-select) arrives as an
+			// array; esc_html() would raise on it.
+			if ( is_array( $value ) ) {
+				$value = implode( ', ', array_map( 'strval', $value ) );
+			}
+
 			$label            = ucwords( str_replace( array( '_', '-' ), ' ', $field_name ) );
-			$all_fields_html .= sprintf( "<strong>%s:</strong> %s<br>\n", esc_html( $label ), esc_html( $value ) );
+			$all_fields_html .= sprintf( "<strong>%s:</strong> %s<br>\n", esc_html( $label ), esc_html( (string) $value ) );
 		}
 		$merge_tags['{all_fields}'] = $all_fields_html;
 

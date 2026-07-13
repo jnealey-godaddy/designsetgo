@@ -2046,8 +2046,20 @@ class Block_Inserter {
 	 * @return string Generated HTML.
 	 */
 	private static function generate_core_block_html( string $block_name, string $content, array $attributes ): string {
-		$text_align = isset( $attributes['textAlign'] ) ? ' has-text-align-' . $attributes['textAlign'] : '';
-		$align      = isset( $attributes['align'] ) ? ' has-text-align-' . $attributes['align'] : '';
+		// These land inside class="...", so an arbitrary value would break out of
+		// the attribute: textAlign of `center" onmouseover="alert(1)` yields a
+		// live event handler. They are alignment keywords, so rather than merely
+		// escape them, constrain them to the set core actually emits — then the
+		// value is provably safe rather than safe-looking. Anything else is
+		// dropped, which is also the correct rendering for a nonsense alignment.
+		$allowed_alignments = array( 'left', 'center', 'right', 'justify' );
+
+		$text_align = ( isset( $attributes['textAlign'] ) && in_array( $attributes['textAlign'], $allowed_alignments, true ) )
+			? ' has-text-align-' . $attributes['textAlign']
+			: '';
+		$align      = ( isset( $attributes['align'] ) && in_array( $attributes['align'], $allowed_alignments, true ) )
+			? ' has-text-align-' . $attributes['align']
+			: '';
 
 		switch ( $block_name ) {
 			case 'core/heading':

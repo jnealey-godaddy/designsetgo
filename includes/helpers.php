@@ -38,6 +38,56 @@ function designsetgo_generate_block_id() {
 }
 
 /**
+ * Decode CSS escape sequences so pattern matching sees the real characters.
+ *
+ * CSS lets any character inside a token be written as a backslash escape, and
+ * the browser decodes it before the declaration is applied. So `\75\72\6c(...)`
+ * IS `url(...)` to a browser, and `java\0script:` IS `javascript:` — but a naive
+ * `/url\s*\(/i` or `/javascript:/i` sees neither. Every dangerous-pattern check
+ * in this plugin MUST normalize through here first, or it is trivially bypassed
+ * by an attacker who simply escapes a character.
+ *
+ * Decoding is deliberately lossy in the safe direction: it exists to feed
+ * REJECTION checks, not to produce CSS for output. Legitimate content escapes
+ * (`content: "\2192"`) decode to the real glyph, which is what the browser would
+ * render anyway.
+ *
+ * @since 2.4.0
+ *
+ * @param string $css CSS text to normalize.
+ * @return string CSS with escape sequences and null bytes resolved.
+ */
+function designsetgo_normalize_css_escapes( $css ) {
+	if ( ! is_string( $css ) || '' === $css ) {
+		return '';
+	}
+
+	// Null bytes are ignored by CSS tokenizers but break naive regexes.
+	$css = str_replace( "\0", '', $css );
+
+	// Unicode escape: backslash + 1..6 hex digits + optional single whitespace.
+	$css = preg_replace_callback(
+		'/\\\\([0-9a-fA-F]{1,6})\s?/',
+		static function ( $matches ) {
+			$codepoint = hexdec( $matches[1] );
+
+			// Drop null and out-of-range codepoints rather than emit garbage.
+			if ( 0 === $codepoint || $codepoint > 0x10FFFF ) {
+				return '';
+			}
+
+			return mb_chr( $codepoint, 'UTF-8' );
+		},
+		(string) $css
+	);
+
+	// Any remaining backslash escape of a printable ASCII char, e.g. `\u rl(`.
+	$css = preg_replace( '/\\\\([\x20-\x7E])/', '$1', (string) $css );
+
+	return (string) $css;
+}
+
+/**
  * Sanitize CSS value with strict validation.
  *
  * Prevents CSS injection attacks by validating against allowed patterns.

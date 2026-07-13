@@ -70,6 +70,34 @@
 			return iconWrapper;
 		}
 
+		/**
+		 * Resolve a panel from a URL fragment.
+		 *
+		 * The fragment is whatever is in the address bar, and it is NOT a valid
+		 * CSS selector in the general case: `#2024`, `#a b` and `#!` all make
+		 * querySelector throw SyntaxError. Thrown from init(), that took out
+		 * EVERY tabs block on the page, not just the deep link. Escape the
+		 * fragment, and still treat a throw as "no match" rather than fatal.
+		 *
+		 * @param {string} hash Fragment with the leading '#' already removed.
+		 * @return {Element|null} The matching panel, or null.
+		 */
+		findPanelByHash(hash) {
+			if (!hash) {
+				return null;
+			}
+
+			try {
+				const escape = window.CSS && window.CSS.escape;
+				const selector = escape
+					? `#${window.CSS.escape(hash)}`
+					: `#${hash}`;
+				return this.element.querySelector(selector);
+			} catch {
+				return null;
+			}
+		}
+
 		init() {
 			// Build tab navigation from panels
 			this.buildNavigation();
@@ -92,7 +120,7 @@
 			if (this.enableDeepLinking) {
 				const hash = window.location.hash.substring(1);
 				if (hash) {
-					const panel = this.element.querySelector(`#${hash}`);
+					const panel = this.findPanelByHash(hash);
 					if (panel) {
 						const index = Array.from(this.panels).indexOf(panel);
 						if (index !== -1) {
@@ -364,7 +392,7 @@
 			window.addEventListener('hashchange', () => {
 				const newHash = window.location.hash.substring(1);
 				if (newHash) {
-					const panel = this.element.querySelector(`#${newHash}`);
+					const panel = this.findPanelByHash(newHash);
 					if (panel) {
 						const index = Array.from(this.panels).indexOf(panel);
 						if (index !== -1) {

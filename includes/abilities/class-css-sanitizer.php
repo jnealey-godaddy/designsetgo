@@ -92,6 +92,13 @@ class CSS_Sanitizer {
 		$css = html_entity_decode( $css, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 		$css = wp_strip_all_tags( $css );
 
+		// Decode CSS escape sequences before pattern matching, for the same
+		// reason the HTML entities are decoded above: the browser resolves them
+		// before applying the declaration, so `expression\28 1\29` and
+		// `java\0script:` are live code that the patterns below — which match
+		// literal text — would otherwise walk straight past.
+		$css = \designsetgo_normalize_css_escapes( $css );
+
 		// Remove dangerous patterns.
 		foreach ( self::$dangerous_patterns as $pattern ) {
 			$css = preg_replace( $pattern, '/* blocked */', $css );
