@@ -14,6 +14,7 @@ import {
 	hoverVariationClasses,
 } from '../../utils/style-variation-classes';
 import metadata from './block.json';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 // Captures the column min width from a `minmax(<width>, 1fr)` grid track.
 const MIN_WIDTH_RE = /minmax\(\s*(\d+(?:\.\d+)?[a-z%]+)\s*,\s*1fr\s*\)/i;
@@ -111,7 +112,8 @@ const sharedSupports = {
 const styleVariationClasses = {
 	supports: metadata.supports,
 	attributes: { ...metadata.attributes },
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		if (!innerHTML || !innerHTML.includes('dsgo-grid')) {
 			return false;
 		}
@@ -258,10 +260,11 @@ const v1 = {
 			type: 'string',
 		},
 	},
-	isEligible(attributes) {
-		// v1 blocks don't have the align attribute - used className for alignment
-		return attributes.align === undefined;
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard,
+	// `attributes.align === undefined`, matched nearly every CURRENT grid too:
+	// `align` has no default, so it is absent from the raw comment attributes on
+	// any grid the author never aligned wide/full.
 	save({ attributes }) {
 		const {
 			hoverBackgroundColor,
@@ -378,9 +381,18 @@ const legacyMinWidth = {
 			attribute: 'style',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
+		// A minmax() track alone does NOT mean "legacy": the current save() emits
+		// one too, as soon as columnMinWidth is set. What marks the old
+		// AI-generated pattern content is the track being baked into the HTML with
+		// no columnMinWidth in the block comment — and migrate() below recovers it
+		// from the markup. A current grid that renders minmax() always carries the
+		// attribute (it is non-default, so WordPress serializes it), so requiring
+		// its absence excludes current content without missing any legacy content.
 		return (
 			!!innerHTML &&
+			!attributes.columnMinWidth &&
 			/grid-template-columns:\s*repeat\([^)]*minmax/i.test(innerHTML)
 		);
 	},

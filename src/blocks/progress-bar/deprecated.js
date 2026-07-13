@@ -16,11 +16,13 @@
 import { useBlockProps } from '@wordpress/block-editor';
 import metadata from './block.json';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 const v1 = {
 	attributes: metadata.attributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		if (typeof innerHTML !== 'string') {
 			return false;
 		}

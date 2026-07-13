@@ -1,4 +1,5 @@
 import { useBlockProps, RichText } from '@wordpress/block-editor';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 // Shared style-transfer used by the static save() reproductions below: the
 // visible pill is the inner span, so colour/background/border inline styles that
@@ -125,7 +126,8 @@ const vStatic = {
 		},
 	},
 	supports: staticSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Static pills always carried an alignment class (the "center" default was
 		// baked by useBlockProps.save()). Match a dsgo-pill wrapper that has one —
 		// the pre-align legacy (no alignment class) is handled by v1 below.
@@ -266,7 +268,8 @@ const v1 = {
 			__experimentalSelector: '.dsgo-pill__content',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Legacy saves lack `aligncenter` even when no explicit align was
 		// stored (the default "center" was not yet an attribute). Current
 		// saves always emit `aligncenter` for the default. Match only the

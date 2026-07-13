@@ -7,6 +7,7 @@
 import { useBlockProps } from '@wordpress/block-editor';
 import { __, sprintf } from '@wordpress/i18n';
 import classnames from 'classnames';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Shared supports for all deprecated versions.
@@ -73,7 +74,8 @@ const vStatic = {
 		dsgoMapStyle: { type: 'string', default: 'standard' },
 	},
 
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return (
 			Boolean(innerHTML) &&
 			innerHTML.includes('dsgo-map') &&

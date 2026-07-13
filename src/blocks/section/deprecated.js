@@ -16,6 +16,7 @@ import {
 	hoverVariationClasses,
 } from './utils/has-overlay-style';
 import ShapeDivider from './components/ShapeDivider';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 // Shared supports for deprecations (must match what was in block.json when blocks were saved).
 // Without this, useBlockProps.save() in deprecated save functions won't generate
@@ -342,11 +343,13 @@ const v8 = {
 	 * @param {Object} attributes      Block attributes.
 	 * @param {Array}  innerBlocks     Inner blocks.
 	 * @param {Object} extra           Extra data.
-	 * @param {string} extra.innerHTML Stored serialised HTML.
+	 * @param {Object} extra.blockNode Raw parsed block (carries innerHTML).
+	 * @param {Object} extra.block     Parsed block (carries originalContent).
 	 * @return {boolean} True when a hover-variation family is present without
 	 *                    its matching activation class in the stored HTML.
 	 */
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		if (!innerHTML || !innerHTML.includes('dsgo-stack')) {
 			return false;
 		}
@@ -555,10 +558,12 @@ const v7 = {
 	 * @param {Object} attributes      Block attributes.
 	 * @param {Array}  innerBlocks     Inner blocks.
 	 * @param {Object} extra           Extra data.
-	 * @param {string} extra.innerHTML Stored serialised HTML.
+	 * @param {Object} extra.blockNode Raw parsed block (carries innerHTML).
+	 * @param {Object} extra.block     Parsed block (carries originalContent).
 	 * @return {boolean} True when the pre-variation overlay signature is found.
 	 */
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return !!(
 			hasOverlayStyleClass(attributes.className) &&
 			innerHTML &&
@@ -760,11 +765,13 @@ const v6 = {
 	 *
 	 * @param {Object} attributes      - Block attributes
 	 * @param {Array}  innerBlocks     - Inner blocks
-	 * @param {Object} extra           - Extra data including innerHTML
-	 * @param {string} extra.innerHTML - The stored serialised HTML
+	 * @param {Object} extra           - Extra data
+	 * @param {Object} extra.blockNode - Raw parsed block (carries innerHTML)
+	 * @param {Object} extra.block     - Parsed block (carries originalContent)
 	 * @return {boolean} True when the legacy animation-attrs pattern is detected
 	 */
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return !!(
 			attributes.dsgoAnimationEnabled &&
 			innerHTML &&
@@ -1018,9 +1025,10 @@ const v5 = {
 		shapeDividerBottomFront: { type: 'boolean', default: false },
 		shapeDividerBottomBackgroundColor: { type: 'string', default: '' },
 	},
-	isEligible(attributes) {
-		return !!(attributes.shapeDividerTop || attributes.shapeDividerBottom);
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard was
+	// just "has a shape divider", which is equally true of a CURRENT section —
+	// three separate versions shared it, so a divider claimed all three.
 	save({ attributes }) {
 		const {
 			tagName = 'div',
@@ -1199,9 +1207,10 @@ const v4 = {
 		shapeDividerBottomFront: { type: 'boolean', default: false },
 		shapeDividerBottomBackgroundColor: { type: 'string', default: '' },
 	},
-	isEligible(attributes) {
-		return !!(attributes.shapeDividerTop || attributes.shapeDividerBottom);
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard was
+	// just "has a shape divider", which is equally true of a CURRENT section —
+	// three separate versions shared it, so a divider claimed all three.
 	save({ attributes }) {
 		const {
 			tagName = 'div',
@@ -1372,10 +1381,10 @@ const v3 = {
 		shapeDividerBottomFront: { type: 'boolean', default: false },
 		shapeDividerBottomBackgroundColor: { type: 'string', default: '' },
 	},
-	isEligible(attributes) {
-		// Matches blocks with shape dividers from before background color inheritance
-		return !!(attributes.shapeDividerTop || attributes.shapeDividerBottom);
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard was
+	// just "has a shape divider", which is equally true of a CURRENT section —
+	// three separate versions shared it, so a divider claimed all three.
 	save({ attributes }) {
 		const {
 			tagName = 'div',
@@ -1545,23 +1554,12 @@ const v2 = {
 			default: '',
 		},
 	},
-	/**
-	 * Determine if this deprecation should be used
-	 * Matches blocks created before shape dividers were added
-	 *
-	 * @param {Object} attributes Block attributes
-	 * @return {boolean} True if block matches this deprecation
-	 */
-	isEligible(attributes) {
-		// This deprecation is for blocks without shape divider attributes
-		// If any shape divider attribute exists, this is not the right version
-		// Use constrainWidth to distinguish v2 from v1 (v1 used layout.contentSize)
-		return (
-			!attributes.shapeDividerTop &&
-			!attributes.shapeDividerBottom &&
-			Object.prototype.hasOwnProperty.call(attributes, 'constrainWidth')
-		);
-	},
+	// Matches blocks created before shape dividers were added.
+	//
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard keyed on
+	// `constrainWidth` being present in the comment, which is true of any CURRENT
+	// section whose constrainWidth is non-default — so it claimed current content.
 	save({ attributes }) {
 		const {
 			tagName = 'div',
@@ -1671,18 +1669,11 @@ const v1 = {
 			type: 'string',
 		},
 	},
-	/**
-	 * Determine if this deprecation should be used
-	 * Matches blocks created before align attribute was added
-	 *
-	 * @param {Object} attributes Block attributes
-	 * @return {boolean} True if block matches this deprecation
-	 */
-	isEligible(attributes) {
-		// This deprecation is for the earliest blocks without align attribute
-		// They used className for alignment instead
-		return attributes.align === undefined;
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard,
+	// `attributes.align === undefined`, matched nearly every CURRENT section:
+	// `align` has no default, so it is absent from the raw comment attributes on
+	// any section the author never aligned wide/full.
 	save({ attributes }) {
 		const {
 			hoverBackgroundColor,

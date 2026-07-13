@@ -14,6 +14,7 @@ import {
 } from '../../utils/convert-preset-to-css-var';
 import { validateCSSLength } from '../../utils/css-generator';
 import metadata from './block.json';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * V4 deprecation: Before the border-color fallback moved from inline style to CSS.
@@ -55,9 +56,18 @@ const legacyAttributes = {
 const v5 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
+		// The var alone does NOT mean "legacy": the current save() emits it too,
+		// as soon as inputHeight is set. The old save() wrote it UNCONDITIONALLY,
+		// with a baked default, which is why legacy content carries it while the
+		// block comment has no inputHeight. Current content that renders the var
+		// always carries the attribute (non-default, so WordPress serializes it),
+		// so requiring its absence excludes current content only.
 		return (
-			Boolean(innerHTML) && innerHTML.includes('--dsgo-form-input-height')
+			Boolean(innerHTML) &&
+			!attributes.inputHeight &&
+			innerHTML.includes('--dsgo-form-input-height')
 		);
 	},
 	migrate(attributes) {
@@ -248,11 +258,12 @@ const v5 = {
 const v4 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes) {
-		// Only content that never customized the border color is affected —
-		// the old save() forced the literal fallback in that case only.
-		return !attributes.fieldBorderColor;
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard,
+	// `!attributes.fieldBorderColor`, was true of every CURRENT form that simply
+	// never customised the border colour, so it claimed current content. Whether
+	// the old forced-fallback markup is actually present is decided by matching
+	// this version's save() against the stored HTML, which is the real test.
 	migrate(attributes) {
 		return attributes;
 	},
@@ -474,7 +485,8 @@ const v4 = {
 const v3 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v3 blocks have raw empty CSS vars rendered as `--dsgo-form-label-color:;`
 		return innerHTML && innerHTML.includes('--dsgo-form-label-color:;');
 	},
@@ -651,7 +663,8 @@ const v3 = {
 const v2 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v2 blocks lack aria-hidden on honeypot and aria-atomic on message div
 		return (
 			innerHTML &&
@@ -870,7 +883,8 @@ const v2 = {
 const v1 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v1 blocks have email config exposed as data attributes
 		return innerHTML && innerHTML.includes('data-enable-email');
 	},

@@ -1,6 +1,7 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
 
@@ -72,7 +73,8 @@ const v2 = {
 			width: true,
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Match blocks saved with the original height/arrowSize defaults
 		// (height was always emitted; arrowSize default was 48px not 24px).
 		return (

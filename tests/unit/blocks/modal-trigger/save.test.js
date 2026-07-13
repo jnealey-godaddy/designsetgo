@@ -326,7 +326,23 @@ describe('modal-trigger deprecations - legacy nested-div migration', () => {
 			.replace(/<!--[\s\S]*?-->$/, '');
 
 		// isEligible itself opts out for this shape…
-		expect(v4.isEligible({}, [], { innerHTML })).toBe(false);
+		// NB: the third argument must be `{ blockNode }` — that is what WordPress
+		// actually passes. A bare `{ innerHTML }` is not a shape isEligible ever
+		// receives, so asserting against it would pass vacuously (the guard would
+		// read '' and return false regardless of the markup).
+		expect(v4.isEligible({}, [], { blockNode: { innerHTML } })).toBe(false);
+
+		// …and that `false` is a real answer, not an always-false guard: the
+		// pre-wrapper shape v4 IS meant to catch (block root = the button) returns
+		// true through the very same call.
+		expect(
+			v4.isEligible({}, [], {
+				blockNode: {
+					innerHTML:
+						'<button class="dsgo-modal-trigger wp-block-button__link">Open</button>',
+				},
+			})
+		).toBe(true);
 
 		// …and even if it hadn't, the actual migrated block above did not
 		// route through v4: v4's schema has no `width` attribute, so a

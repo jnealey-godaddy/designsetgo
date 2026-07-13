@@ -150,14 +150,18 @@ describe('icon-list-item deprecations - v3 kit-controllable gaps/size', () => {
 
 	test('isEligible flags old markup (inline item gap after align-items)', () => {
 		expect(
-			v3Deprecation.isEligible({}, [], { innerHTML: OLD_MARKUP })
+			v3Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: OLD_MARKUP },
+			})
 		).toBe(true);
 	});
 
 	test('isEligible ignores current markup', () => {
-		expect(v3Deprecation.isEligible({}, [], { innerHTML: canonical })).toBe(
-			false
-		);
+		expect(
+			v3Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: canonical },
+			})
+		).toBe(false);
 	});
 
 	test('isEligible ignores an item whose NESTED content emits align-items;gap', () => {
@@ -173,7 +177,9 @@ describe('icon-list-item deprecations - v3 kit-controllable gaps/size', () => {
 			'<div class="wp-block-columns" style="align-items:center;gap:8px">Nested</div>' +
 			'</div></div>';
 		expect(
-			v3Deprecation.isEligible({}, [], { innerHTML: nestedHTML })
+			v3Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: nestedHTML },
+			})
 		).toBe(false);
 	});
 

@@ -19,12 +19,14 @@ import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import metadata from './block.json';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 const v1 = {
 	attributes: metadata.attributes,
 	supports: metadata.supports,
 	usesContext: metadata.usesContext,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Only the pre-change save emitted the short overlay custom property.
 		return (
 			typeof innerHTML === 'string' &&

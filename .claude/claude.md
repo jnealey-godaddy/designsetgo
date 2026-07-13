@@ -148,35 +148,46 @@ See [`docs/plans/2026-04-17-theme-3-inspector-ia.md`](../docs/plans/2026-04-17-t
 
 Required when changing: attribute schema, HTML structure, or removing attributes.
 
-**Every deprecation MUST have all three**: `isEligible`, `save`, and `migrate`.
+**`save()` is what makes migration silent — not `isEligible`.** WordPress applies a deprecation like this (`@wordpress/blocks` → `api/parser/apply-block-deprecated-versions.js`):
 
-- `isEligible(attributes, innerBlocks, { innerHTML })` — Lets WordPress skip save validation and go straight to migration (silent, no warning). Use attribute checks or innerHTML pattern matching to identify the old version.
-- `save()` — The old save function (best effort reproduction of old output).
-- `migrate(attributes, innerBlocks)` — Transforms old attributes to new format. Use passthrough `return attributes;` if only HTML structure changed.
+```js
+const { isEligible = stubFalse } = deprecatedDefinitions[i];
+if ( block.isValid && ! isEligible( parsedAttributes, block.innerBlocks, { blockNode, block } ) ) continue;
+// ...then: does THIS version's save() reproduce the stored HTML? If not, skip it.
+```
 
-Without `isEligible`, users see "Unexpected or invalid content" warnings with an "Attempt Recovery" button instead of silent auto-migration.
+Read that `block.isValid &&` carefully — it drives everything:
+
+- **The block is INVALID** (the normal case: markup changed, so stored HTML no longer matches the current `save()`). `block.isValid` is `false`, the condition short-circuits, and **`isEligible` is never called**. WordPress picks the version whose `save()` reproduces the stored HTML. Silent, no "Attempt Recovery". A markup-change deprecation therefore needs **no `isEligible` at all** — and adding one buys nothing.
+- **The block is VALID.** `isEligible` is the *only* thing consulted, and returning `true` opts an otherwise-fine block into a re-migration. This is the *only* reason `isEligible` exists: an attribute-only migration where markup did not change.
+
+So: **`isEligible` is a switch for migrating VALID blocks. It cannot rescue invalid ones, and it never suppresses an "Attempt Recovery" warning — only a `save()` that reproduces the stored HTML does that.**
+
+Two traps that follow, both of which have bitten us:
+
+1. **The third argument is `{ blockNode, block }` — there is no `innerHTML` key.** Reach the markup via `blockNode.innerHTML` (or `block.originalContent`). Destructuring `{ innerHTML }` yields `undefined`, so a guard like `innerHTML && innerHTML.includes(...)` silently returns `false` forever. It *looks* like it works, because the invalid-block path above carries the migration regardless.
+
+2. **"Attribute absent from the comment" does NOT mean "old block".** `attributes` here is the raw comment JSON, and WordPress never serializes an attribute whose value equals its default. `attributes.align === undefined` or `typeof attributes.iconPosition === 'undefined'` is therefore just as true of a brand-new block that left the value alone. Guards like that claim *current* content, and then `migrate()` runs it through a schema that predates the block's newer attributes — silently dropping them.
 
 ```javascript
 const v1 = {
-	attributes: { /* old attribute schema */ },
-	isEligible(attributes, innerBlocks, { innerHTML }) {
-		// Identify old blocks by attribute signature or HTML patterns
-		return !Object.prototype.hasOwnProperty.call(attributes, 'newAttribute');
-		// or: return innerHTML && !innerHTML.includes('new-class');
-	},
-	save({ attributes }) { /* old save output */ },
-	migrate(attributes) {
+	attributes: { /* the FULL attribute schema this version had */ },
+	supports: { /* the FULL support set this version had */ },
+	save({ attributes }) { /* reproduce the old output byte-for-byte */ },
+	migrate( attributes ) {
 		return { ...attributes, newAttribute: 'default' };
 	},
+	// isEligible ONLY if markup did not change and you must migrate a VALID
+	// block. Key it on the stored markup, never on an attribute's absence:
+	isEligible( attributes, innerBlocks, { blockNode, block } = {} ) {
+		const html = blockNode?.innerHTML ?? block?.originalContent ?? '';
+		return html.includes( 'old-class' ) && ! html.includes( 'new-class' );
+	},
 };
-export default [v1];
+export default [ v1 ];
 ```
 
-**Detection strategies for `isEligible`**:
-- Missing new attribute: `!Object.prototype.hasOwnProperty.call(attributes, 'newAttr')` (not `!attributes.newAttr` — falsy values like `false`/`0`/`""` would match incorrectly)
-- Old HTML pattern: `innerHTML && !innerHTML.includes('new-class')`
-- Removed attribute: `Object.prototype.hasOwnProperty.call(attributes, 'removedAttr')`
-- Combined: use `&&` / `||` to narrow matches when multiple versions exist
+`tests/unit/deprecations-isEligible.test.js` pins the invariant: no deprecation may claim a block's own current `save()` output, and every block must round-trip `createBlock → serialize → parse` without losing an attribute.
 
 **A deprecation's `supports` block must declare the full support set that version actually had.** If it omits a group, WordPress strips those attributes (`backgroundColor`, `textColor`, `gradient`, `borderColor`, `fontSize`, `style`, …) **before `migrate()` runs** — silently and unrecoverably, with no warning. The specific trap that bit us: typography supports must use the `__experimental` keys (`__experimentalFontFamily`, `__experimentalFontWeight`, `__experimentalLetterSpacing`) — the un-prefixed names silently fail `hasBlockSupport()`, so the support looks declared but isn't. And **deprecations do not cascade**: exactly one entry runs for a given stored block, so every existing `migrate()` — not just the newest one — must land on the *current* attribute schema, or older content silently loses whatever the newest migrate() alone would have added.
 
@@ -205,7 +216,8 @@ npm run lint:php
 5. Change shared utility → Test ALL consumers
 6. Broad CSS selectors → Scope to block
 7. Change attributes → Create deprecation first
-8. Deprecation without `isEligible` → Users see "Attempt Recovery" warning instead of silent migration
+8. Deprecation whose `save()` doesn't reproduce the stored HTML → Users see "Attempt Recovery". (Adding `isEligible` does NOT fix this — see Deprecations above.)
+9. `isEligible` keyed on an attribute being absent → claims *current* content, because WordPress omits default-valued attributes from the block comment
 
 ## Key Patterns
 

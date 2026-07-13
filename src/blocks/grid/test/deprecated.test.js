@@ -63,7 +63,7 @@ describe('grid deprecations - style-kit overlay variation migration', () => {
 			styleVariationClassesDeprecation.isEligible(
 				{ className: 'is-style-overlay-dark' },
 				[],
-				{ innerHTML: html }
+				{ blockNode: { innerHTML: html } }
 			)
 		).toBe(true);
 	});
@@ -75,7 +75,7 @@ describe('grid deprecations - style-kit overlay variation migration', () => {
 			styleVariationClassesDeprecation.isEligible(
 				{ className: 'is-style-overlay-dark' },
 				[],
-				{ innerHTML: html }
+				{ blockNode: { innerHTML: html } }
 			)
 		).toBe(false);
 	});
@@ -84,11 +84,9 @@ describe('grid deprecations - style-kit overlay variation migration', () => {
 		const html =
 			'<div class="wp-block-designsetgo-grid dsgo-grid"><div class="dsgo-grid__inner"></div></div>';
 		expect(
-			styleVariationClassesDeprecation.isEligible(
-				{ className: '' },
-				[],
-				{ innerHTML: html }
-			)
+			styleVariationClassesDeprecation.isEligible({ className: '' }, [], {
+				blockNode: { innerHTML: html },
+			})
 		).toBe(false);
 	});
 
@@ -134,7 +132,7 @@ describe('grid deprecations - style-kit hover variation migration', () => {
 			styleVariationClassesDeprecation.isEligible(
 				{ className: 'is-style-hover-icon-blue' },
 				[],
-				{ innerHTML: html }
+				{ blockNode: { innerHTML: html } }
 			)
 		).toBe(true);
 	});
@@ -143,11 +141,9 @@ describe('grid deprecations - style-kit hover variation migration', () => {
 		const html =
 			'<div class="wp-block-designsetgo-grid dsgo-grid"><div class="dsgo-grid__inner"></div></div>';
 		expect(
-			styleVariationClassesDeprecation.isEligible(
-				{ className: '' },
-				[],
-				{ innerHTML: html }
-			)
+			styleVariationClassesDeprecation.isEligible({ className: '' }, [], {
+				blockNode: { innerHTML: html },
+			})
 		).toBe(false);
 	});
 
@@ -192,12 +188,12 @@ describe('grid deprecations - legacyMinWidth precedence over styleVariationClass
 		const attributes = { className: 'is-style-overlay-dark' };
 		expect(
 			legacyMinWidthDeprecation.isEligible(attributes, [], {
-				innerHTML: COMBINED_MARKUP,
+				blockNode: { innerHTML: COMBINED_MARKUP },
 			})
 		).toBe(true);
 		expect(
 			styleVariationClassesDeprecation.isEligible(attributes, [], {
-				innerHTML: COMBINED_MARKUP,
+				blockNode: { innerHTML: COMBINED_MARKUP },
 			})
 		).toBe(true);
 	});

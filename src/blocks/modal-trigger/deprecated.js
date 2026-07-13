@@ -8,6 +8,7 @@
 
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 import { getIcon } from '../icon/utils/svg-icons';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Every deprecation must land on the CURRENT attribute schema — deprecations do
@@ -118,7 +119,8 @@ const sharedSupports = {
  */
 const v4 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Pre-wrapper markup: the block root IS the button, not a `<div>`.
 		return !!innerHTML && !innerHTML.trimStart().startsWith('<div');
 	},
@@ -272,7 +274,8 @@ const v4 = {
  */
 const v3 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Current-structure block (single <button>, dsgo-lazy-icon) that still
 		// carries an inline size pair — the signature of the pre-token
 		// serialization. Exclude the legacy nested wrapper+button markup
@@ -452,7 +455,8 @@ const v2 = {
 			default: '8px',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v2 blocks have dsgo-lazy-icon class but still use two-div wrapper+button structure
 		// and have dsgo-modal-trigger--width-* classes
 		return (
@@ -581,7 +585,8 @@ const v1 = {
 			default: '8px',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v1 blocks have inline SVG icons (no dsgo-lazy-icon class)
 		return (
 			innerHTML &&

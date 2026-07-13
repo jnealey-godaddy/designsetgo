@@ -8,6 +8,7 @@
 
 import { useBlockProps } from '@wordpress/block-editor';
 import { getIcon } from './utils/svg-icons';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Shared supports definition for all deprecated versions.
@@ -136,7 +137,8 @@ const vAlign = {
  */
 const vLazy = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return Boolean(innerHTML) && innerHTML.includes('dsgo-lazy-icon');
 	},
 
@@ -272,7 +274,8 @@ const vLazy = {
  */
 const v2 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Lazy-format block (post-v1) that still carries an inline size pair —
 		// the signature of the pre-token serialization.
 		return (
@@ -409,7 +412,8 @@ const v2 = {
  */
 const v1 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v1 is eligible if the block DOES NOT have dsgo-lazy-icon class
 		// New blocks use dsgo-lazy-icon for frontend injection
 		// Old blocks have inline SVG without this class

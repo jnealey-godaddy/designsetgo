@@ -11,6 +11,7 @@
 
 import { useBlockProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Supports definition for deprecated versions.
@@ -42,7 +43,8 @@ const vStatic = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Any stored static email field carries this wrapper class; the dynamic
 		// block saves no inner HTML, so it never matches.
 		return (
@@ -163,7 +165,8 @@ const v1 = {
 		},
 	},
 
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v1 blocks lack aria-required on input
 		return (
 			innerHTML &&
