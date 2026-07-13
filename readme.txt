@@ -94,7 +94,7 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 == Changelog ==
 
-= 2.4.0 - Unreleased =
+= 2.4.0 - 2026-07-12 =
 
 * **New:** Section Divider — a new block for dropping a full-width shape divider between any two blocks. Shape, height, and color default to your theme's Style Kit setting and can be overridden per instance.
 * **New:** The Icon block has a Fill / Outline style toggle and inherits a theme-defined default size, so icons match your design out of the box.
@@ -117,6 +117,8 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 * **Fix:** Section-style customizations made in your Style Kit (like a custom border or corner radius) now preview live in the editor, matching what already appeared on the published page.
 * **Fix:** Sections using a Style Kit overlay variation now actually show the overlay.
 * **Fix:** Scroll Accordion no longer shows a stray colored bar down the left edge of items in the editor.
+* **Security:** Hardened form notification emails, dynamic CSS handling, and AI-assisted block insertion. Submitted form values are now escaped before they appear in notification emails, so a submission can no longer inject markup into your inbox; dynamic style values are checked more strictly; and a Tabs block with an unusual page anchor in the URL no longer stops working. These strengthen existing protections — no known exploit was involved.
+* **Fix:** Tab and Blobs blocks no longer quietly lose a setting when a page is opened in the editor. A Tab's icon stroke width and a Blob's height could be reset to their defaults simply by opening the post, because the block was being run through an out-of-date upgrade path that predated those settings. Both now survive.
 * **Fix:** Block styles now refresh properly when you update the plugin. Each block's stylesheet was being served from your browser's cache with the same address every release, so a visual fix to a block could keep showing the old styling until the cache happened to clear itself. If you saw an oversized icon inside an Icon Button after updating, a hard refresh cleared it — and it will not come back.
 * **Fix:** Pill, Icon, Icon Button, and Modal Trigger no longer escape your page's content column when positioned left, right, or center — they previously could align to the edge of the outer container instead of your theme's content width.
 * **Change:** Left, center, and right positioning for Pill, Icon, Icon Button, and Modal Trigger has moved from the toolbar's Align control to a new Justify control in the same toolbar. Align now offers only Wide and Full, matching how WordPress's own Buttons block works. Your existing positioning carries over automatically.
