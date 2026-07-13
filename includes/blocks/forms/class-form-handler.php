@@ -735,17 +735,44 @@ class Form_Handler {
 	 * that value is itself an array for a multi-value field (checkbox group,
 	 * multi-select) — which esc_html() would raise on.
 	 *
+	 * The whole point of this helper is that EVERY shape is safe to stringify, so
+	 * it must not assume the shape it is handed. A submission is attacker-shaped
+	 * data: an array with no `value` key, or one nesting arrays inside arrays,
+	 * would make a plain strval() emit an "Array to string conversion" warning.
+	 * Flattening recurses instead.
+	 *
 	 * @param mixed $field_data Raw submitted field.
 	 * @return string Flattened value.
 	 */
 	private static function stringify_field_value( $field_data ) {
-		$value = is_array( $field_data ) && isset( $field_data['value'] ) ? $field_data['value'] : $field_data;
+		$value = ( is_array( $field_data ) && array_key_exists( 'value', $field_data ) )
+			? $field_data['value']
+			: $field_data;
 
+		return self::flatten_value( $value );
+	}
+
+	/**
+	 * Recursively reduce any value to a display string.
+	 *
+	 * @param mixed $value Value of arbitrary shape.
+	 * @return string Flattened value.
+	 */
+	private static function flatten_value( $value ) {
 		if ( is_array( $value ) ) {
-			return implode( ', ', array_map( 'strval', $value ) );
+			return implode( ', ', array_map( array( self::class, 'flatten_value' ), $value ) );
 		}
 
-		return (string) $value;
+		if ( is_bool( $value ) ) {
+			return $value ? '1' : '';
+		}
+
+		if ( null === $value || is_scalar( $value ) ) {
+			return (string) $value;
+		}
+
+		// Objects/resources have no meaningful representation in an email.
+		return '';
 	}
 
 	/**

@@ -64,6 +64,57 @@ class CSS_Escape_Bypass_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A lone surrogate is not a Unicode scalar value.
+	 *
+	 * mb_chr() returns false for U+D800..U+DFFF, and preg_replace_callback()
+	 * requires a string back — so `\d800` coerces false to '' today and would be
+	 * a TypeError under stricter settings. This function is the shared boundary
+	 * for three sanitizers, so it must not be fragile on hostile input.
+	 *
+	 * @dataProvider surrogate_provider
+	 *
+	 * @param string $input Escape sequence.
+	 */
+	public function test_normalizer_drops_lone_surrogates_without_error( $input ) {
+		$result = designsetgo_normalize_css_escapes( $input . 'url(x)' );
+
+		$this->assertIsString( $result );
+		// The surrogate is dropped; the rest of the value is untouched.
+		$this->assertSame( 'url(x)', $result );
+	}
+
+	/**
+	 * @return array<string, array{0: string}>
+	 */
+	public function surrogate_provider() {
+		return array(
+			'high surrogate'    => array( '\d800' ),
+			'low surrogate'     => array( '\dfff' ),
+			'mid surrogate'     => array( '\dc00' ),
+			'above Unicode max' => array( '\110000' ),
+		);
+	}
+
+	/**
+	 * Pin the platform hazard the surrogate guard exists for.
+	 *
+	 * Be honest about what the test above can and cannot prove: WITHOUT the guard,
+	 * `\d800` still yields '' — because mb_chr() returns FALSE and
+	 * preg_replace_callback() coerces that bool to an empty string. Same output,
+	 * by accident. So no output-level assertion can fail on the unguarded code
+	 * today; the guard makes correct behaviour intentional rather than incidental,
+	 * and keeps the callback's contract (return a string) honest for stricter PHP.
+	 *
+	 * This test pins the underlying fact, so if a future PHP/mbstring changes it,
+	 * we find out here rather than through a TypeError in a sanitizer.
+	 */
+	public function test_mb_chr_returns_false_for_a_surrogate() {
+		$this->assertFalse( mb_chr( 0xD800, 'UTF-8' ) );
+		$this->assertFalse( mb_chr( 0xDFFF, 'UTF-8' ) );
+		$this->assertIsString( mb_chr( 0x73, 'UTF-8' ) );
+	}
+
+	/**
 	 * Abilities\CSS_Sanitizer must not be fooled by escapes.
 	 *
 	 * @dataProvider dangerous_css_provider

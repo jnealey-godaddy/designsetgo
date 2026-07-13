@@ -214,4 +214,45 @@ class Form_Email_Escaping_Test extends WP_UnitTestCase {
 		$this->assertNotNull( $this->sent );
 		$this->assertStringContainsString( 'billing, sales', (string) $this->sent['message'] );
 	}
+
+	/**
+	 * A submission is attacker-shaped data, so no field shape may warn or fatal.
+	 *
+	 * An array with no 'value' key, or arrays nested inside arrays, would make a
+	 * plain strval() emit "Array to string conversion". The helper exists
+	 * precisely so that every shape is safe, so it has to actually be.
+	 *
+	 * @dataProvider malformed_field_provider
+	 *
+	 * @param mixed $field_data A field of hostile / malformed shape.
+	 */
+	public function test_no_field_shape_raises( $field_data ) {
+		$this->configure_form();
+
+		// Any PHP warning here (e.g. "Array to string conversion") becomes a
+		// failure, which is exactly what we want to pin.
+		$handler = new \DesignSetGo\Blocks\Form_Handler();
+		$method  = new ReflectionMethod( $handler, 'send_email_notification' );
+		$method->setAccessible( true );
+
+		$method->invoke( $handler, 'test-form', array( 'message' => $field_data ), 125 );
+
+		$this->assertNotNull( $this->sent );
+		$this->assertIsString( $this->sent['message'] );
+		$this->assertIsString( $this->sent['subject'] );
+	}
+
+	/**
+	 * @return array<string, array{0: mixed}>
+	 */
+	public function malformed_field_provider() {
+		return array(
+			'array with no value key' => array( array( 'unexpected' => 'shape' ) ),
+			'nested arrays'           => array( array( 'value' => array( array( 'a', 'b' ), 'c' ) ) ),
+			'deeply nested'           => array( array( array( array( 'x' ) ) ) ),
+			'bool'                    => array( true ),
+			'null'                    => array( null ),
+			'int'                     => array( 42 ),
+		);
+	}
 }

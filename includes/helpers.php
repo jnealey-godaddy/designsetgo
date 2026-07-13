@@ -71,12 +71,24 @@ function designsetgo_normalize_css_escapes( $css ) {
 		static function ( $matches ) {
 			$codepoint = hexdec( $matches[1] );
 
-			// Drop null and out-of-range codepoints rather than emit garbage.
-			if ( 0 === $codepoint || $codepoint > 0x10FFFF ) {
+			// Drop anything that is not a Unicode scalar value: null, out of
+			// range, and the surrogate range (U+D800..U+DFFF, which a lone `\d800`
+			// escape would otherwise produce). mb_chr() returns false for a
+			// surrogate, and preg_replace_callback() requires a string back — so
+			// today that silently coerces to '', and in a stricter context it is a
+			// TypeError. The CSS spec says to treat these as U+FFFD; dropping them
+			// is the same thing for our purpose, which is producing text safe to
+			// pattern-match. This function is the shared security boundary for
+			// three sanitizers, so it does not get to be fragile.
+			if (
+				0 === $codepoint
+				|| $codepoint > 0x10FFFF
+				|| ( $codepoint >= 0xD800 && $codepoint <= 0xDFFF )
+			) {
 				return '';
 			}
 
-			return mb_chr( $codepoint, 'UTF-8' );
+			return (string) mb_chr( $codepoint, 'UTF-8' );
 		},
 		(string) $css
 	);
