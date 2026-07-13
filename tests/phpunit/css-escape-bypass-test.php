@@ -180,6 +180,51 @@ class CSS_Escape_Bypass_Test extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Deeply-nested entity encoding must be REJECTED, not returned half-decoded.
+	 *
+	 * html_entity_decode() peels exactly one layer per call, so an attacker can
+	 * pick a nesting depth that outruns any fixed pass count:
+	 *
+	 *   &amp;amp;amp;amp;amp;#106;avascript:alert(1)   (6 layers -> javascript:)
+	 *
+	 * The danger is not the depth, it is what a bounded loop does when it runs
+	 * out: returning `&#106;avascript:` looks harmless to the pattern checks here
+	 * but a browser finishes the decode once it lands in an HTML attribute. So an
+	 * unconverged value is dropped wholesale rather than passed through partly
+	 * decoded.
+	 *
+	 * @dataProvider deep_nesting_provider
+	 *
+	 * @param string $css       Attacker-supplied CSS.
+	 * @param string $forbidden Token that must not survive in any form.
+	 */
+	public function test_css_sanitizer_rejects_unconverged_deep_nesting( $css, $forbidden ) {
+		$sanitized = CSS_Sanitizer::sanitize( $css );
+
+		$this->assertStringNotContainsString( $forbidden, $sanitized, $css );
+		// The residual half-decoded entity must not leak either.
+		$this->assertStringNotContainsString( 'avascript', $sanitized, $css );
+	}
+
+	/**
+	 * @return array<string, array{0: string, 1: string}>
+	 */
+	public function deep_nesting_provider() {
+		return array(
+			// Six entity layers — one more than the old cap of five.
+			'6-layer entity javascript' => array(
+				'.a{color:red} &amp;amp;amp;amp;amp;#106;avascript:alert(1)',
+				'javascript:',
+			),
+			// Well past the ceiling, to prove the cap-then-reject holds.
+			'12-layer entity expression' => array(
+				'.a{} ' . str_repeat( 'amp;', 12 ) . '&#101;xpression(alert(1))',
+				'expression(',
+			),
+		);
+	}
+
 	public function test_css_sanitizer_still_passes_ordinary_css() {
 		$sanitized = CSS_Sanitizer::sanitize( '.a{color:red;margin:10px;}' );
 

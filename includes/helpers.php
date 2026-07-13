@@ -47,10 +47,20 @@ function designsetgo_generate_block_id() {
  * in this plugin MUST normalize through here first, or it is trivially bypassed
  * by an attacker who simply escapes a character.
  *
- * Decoding is deliberately lossy in the safe direction: it exists to feed
- * REJECTION checks, not to produce CSS for output. Legitimate content escapes
- * (`content: "\2192"`) decode to the real glyph, which is what the browser would
- * render anyway.
+ * Decoding is deliberately lossy in the safe direction, and callers use the
+ * result in one of two ways:
+ *
+ * - As a DETECTION PROBE only, keeping the original value for output — this is
+ *   what StyleBinding does (it matches the decoded `$probe`, emits the raw
+ *   `$value`, and rejects when they differ).
+ * - As the OUTPUT itself — CSS_Sanitizer::sanitize() returns the decoded string,
+ *   because for a full sanitizer the normalized form IS the sanitized form.
+ *
+ * Both are fine here: a legitimate content escape (`content: "\2192"`) decodes to
+ * the real glyph, which is what the browser would render anyway. A caller taking
+ * the second path must run its own dangerous-pattern pass on the decoded output
+ * (as CSS_Sanitizer does); this function only guarantees "no encoding left to
+ * hide behind", not "safe to echo".
  *
  * @since 2.4.0
  *
