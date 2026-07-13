@@ -383,8 +383,16 @@ const legacyMinWidth = {
 	},
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
+		// A minmax() track alone does NOT mean "legacy": the current save() emits
+		// one too, as soon as columnMinWidth is set. What marks the old
+		// AI-generated pattern content is the track being baked into the HTML with
+		// no columnMinWidth in the block comment — and migrate() below recovers it
+		// from the markup. A current grid that renders minmax() always carries the
+		// attribute (it is non-default, so WordPress serializes it), so requiring
+		// its absence excludes current content without missing any legacy content.
 		return (
 			!!innerHTML &&
+			!attributes.columnMinWidth &&
 			/grid-template-columns:\s*repeat\([^)]*minmax/i.test(innerHTML)
 		);
 	},

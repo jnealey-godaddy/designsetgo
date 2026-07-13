@@ -449,16 +449,11 @@ const v3 = {
 			type: 'string',
 		},
 	},
-	isEligible(attributes, innerBlocks, extra) {
-		const innerHTML = getDeprecatedBlockHTML(extra);
-		// v3 blocks have tagName (added in v3) and dsgo-flex__inner but no align-items
-		return (
-			Object.prototype.hasOwnProperty.call(attributes, 'tagName') &&
-			innerHTML &&
-			innerHTML.includes('dsgo-flex__inner') &&
-			!innerHTML.includes('align-items')
-		);
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard fired on
+	// any CURRENT row with a non-default tagName, because the rest of its
+	// signature — the dsgo-flex__inner wrapper, and no `align-items` when
+	// alignItems sits at its default — is exactly what the current save() emits.
 	save({ attributes }) {
 		const {
 			tagName = 'div',
@@ -596,15 +591,12 @@ const v2 = {
 			type: 'string',
 		},
 	},
-	isEligible(attributes) {
-		// v2 blocks have align (introduced in v2) but not tagName (added in v3)
-		// v1 blocks don't have align, tagName, or constrainWidth
-		return (
-			Object.prototype.hasOwnProperty.call(attributes, 'align') &&
-			!Object.prototype.hasOwnProperty.call(attributes, 'tagName') &&
-			!Object.prototype.hasOwnProperty.call(attributes, 'constrainWidth')
-		);
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard read
+	// "has align, but no tagName and no constrainWidth" as "old block" — but
+	// WordPress omits any attribute sitting at its default from the comment, so an
+	// aligned CURRENT row with a default tagName and constrainWidth looks
+	// identical. It claimed current content.
 	save({ attributes }) {
 		const {
 			hoverBackgroundColor,

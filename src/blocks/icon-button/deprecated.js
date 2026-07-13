@@ -803,10 +803,16 @@ const v7 = {
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
-		// Lazy-format block (post-v6) that still carries an inline size pair
-		// on the icon span — the signature of the pre-token serialization.
+		// Lazy-format block (post-v6) that still carries an inline size pair on the
+		// icon span — the signature of the pre-token serialization, which baked the
+		// pair in even at the IMPLICIT default size. The current save() writes it
+		// only for an explicit iconSize, and that value is then in the block
+		// comment; so an inline size pair with NO iconSize attribute is what
+		// actually identifies this era. Without that conjunct the guard also
+		// claimed every current icon-button with an explicit iconSize.
 		return (
 			innerHTML &&
+			attributes.iconSize === undefined &&
 			innerHTML.includes('dsgo-lazy-icon') &&
 			/width:\s*\d+px\s*;\s*height:\s*\d+px/.test(innerHTML)
 		);

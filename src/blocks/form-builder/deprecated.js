@@ -58,8 +58,16 @@ const v5 = {
 	supports: metadata.supports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
+		// The var alone does NOT mean "legacy": the current save() emits it too,
+		// as soon as inputHeight is set. The old save() wrote it UNCONDITIONALLY,
+		// with a baked default, which is why legacy content carries it while the
+		// block comment has no inputHeight. Current content that renders the var
+		// always carries the attribute (non-default, so WordPress serializes it),
+		// so requiring its absence excludes current content only.
 		return (
-			Boolean(innerHTML) && innerHTML.includes('--dsgo-form-input-height')
+			Boolean(innerHTML) &&
+			!attributes.inputHeight &&
+			innerHTML.includes('--dsgo-form-input-height')
 		);
 	},
 	migrate(attributes) {

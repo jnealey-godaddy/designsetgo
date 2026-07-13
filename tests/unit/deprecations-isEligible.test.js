@@ -54,6 +54,77 @@ const blocksWithDeprecations = fs
 	)
 	.map((slug) => `designsetgo/${slug}`);
 
+/**
+ * A value that differs from the attribute's default, so the attribute actually
+ * lands in the block comment AND in save()'s output.
+ *
+ * Testing only `createBlock(name, {})` would miss any guard keyed on markup that
+ * a DEFAULT block never emits — grid's `repeat(N, minmax(...))` track, for one,
+ * which only appears once `columnMinWidth` is set. Those guards are precisely
+ * the ones that can quietly start claiming current content.
+ *
+ * @param {Object} schema The attribute's block.json schema.
+ * @return {*} A non-default value, or `undefined` to skip this attribute.
+ */
+function nonDefaultValue(schema) {
+	if (schema.enum) {
+		return schema.enum.find((v) => v !== schema.default);
+	}
+
+	switch (schema.type) {
+		case 'boolean':
+			return !schema.default;
+		case 'number':
+		case 'integer':
+			return (schema.default ?? 0) + 1;
+		case 'string':
+			// A length + unit reads as valid CSS wherever a value is interpolated
+			// into a style, and as an ordinary string everywhere else.
+			return schema.default === '7px' ? '9px' : '7px';
+		default:
+			// Objects/arrays (style, lock, metadata, border…) have no meaningful
+			// generic probe; the defaults case already covers them.
+			return undefined;
+	}
+}
+
+/**
+ * One probe per attribute, each isolating a single non-default value, plus the
+ * all-defaults case. `align` is driven off `supports.align` rather than the
+ * attribute schema, since its legal values live there — and it is the attribute
+ * three of the removed guards keyed on.
+ *
+ * @param {string} name Block name.
+ * @return {Array<{label: string, attrs: Object}>} Probes.
+ */
+function probesFor(name) {
+	const blockType = getBlockType(name);
+	const probes = [{ label: 'defaults', attrs: {} }];
+
+	const alignSupport = blockType.supports?.align;
+	if (Array.isArray(alignSupport)) {
+		alignSupport.forEach((align) =>
+			probes.push({ label: `align=${align}`, attrs: { align } })
+		);
+	}
+
+	Object.entries(blockType.attributes ?? {}).forEach(([attr, schema]) => {
+		if (attr === 'align' || schema.source) {
+			return;
+		}
+		const value = nonDefaultValue(schema);
+		if (value === undefined) {
+			return;
+		}
+		probes.push({
+			label: `${attr}=${JSON.stringify(value)}`,
+			attrs: { [attr]: value },
+		});
+	});
+
+	return probes;
+}
+
 describe('deprecations must not reclaim current content', () => {
 	beforeAll(() => {
 		blocksWithDeprecations.forEach(registerDesignSetGoBlock);
@@ -64,41 +135,54 @@ describe('deprecations must not reclaim current content', () => {
 	});
 
 	describe.each(blocksWithDeprecations)('%s', (name) => {
-		// Canonical current markup: what save() produces for this block today.
-		const markup = () => serialize(createBlock(name, {}));
-
 		it('parses its own current save() output as valid', () => {
-			const [block] = parse(markup());
+			const [block] = parse(serialize(createBlock(name, {})));
 			expect(block.name).toBe(name);
 			expect(block.isValid).toBe(true);
 		});
 
+		// Swept across every single-attribute variant, not just the defaults: a
+		// guard only reachable via non-default markup would otherwise never be
+		// exercised here.
 		it('is not claimed by any of its own deprecations', () => {
-			const html = markup();
-			const [block] = parse(html);
-			const [blockNode] = parseRaw(html);
 			const { deprecated = [] } = getBlockType(name);
+			const claimed = [];
 
-			const claimed = deprecated
-				.map((dep, i) => ({
-					i,
-					eligible: Boolean(
+			probesFor(name).forEach(({ label, attrs }) => {
+				const html = serialize(createBlock(name, attrs));
+				const [block] = parse(html);
+				const [blockNode] = parseRaw(html);
+
+				deprecated.forEach((dep, i) => {
+					const eligible = Boolean(
 						dep.isEligible?.(blockNode.attrs, block.innerBlocks, {
 							blockNode,
 							block,
 						})
-					),
-				}))
-				.filter((d) => d.eligible)
-				.map((d) => `deprecated[${d.i}]`);
+					);
+					if (eligible) {
+						claimed.push(`deprecated[${i}] claims ${label}`);
+					}
+				});
+			});
 
 			expect(claimed).toEqual([]);
 		});
 
 		it('round-trips its attributes without migration', () => {
-			const block = createBlock(name, {});
-			const [reparsed] = parse(serialize(block));
-			expect(reparsed.attributes).toEqual(block.attributes);
+			const lost = [];
+
+			probesFor(name).forEach(({ label, attrs }) => {
+				const block = createBlock(name, attrs);
+				const [reparsed] = parse(serialize(block));
+				try {
+					expect(reparsed.attributes).toEqual(block.attributes);
+				} catch {
+					lost.push(label);
+				}
+			});
+
+			expect(lost).toEqual([]);
 		});
 	});
 });
