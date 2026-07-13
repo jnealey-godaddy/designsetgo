@@ -81,23 +81,32 @@ class CSS_Sanitizer {
 		// Remove null bytes and other control characters first.
 		$css = preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $css );
 
-		// Decode HTML entities BEFORE stripping tags to catch encoded attacks.
-		// e.g., &lt;script&gt; becomes <script> which can then be stripped.
-		$css = html_entity_decode( $css, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		// Peel off ALL encoding layers before any tag-stripping or pattern
+		// matching. There are two independent ones — HTML entities and CSS escape
+		// sequences — and each can hide the other, in either order:
+		//
+		// `&#92;75rl(...)`      entity hides a CSS escape that hides `url(`
+		// `\3c script\3e`       CSS escape hides a tag from wp_strip_all_tags()
+		//
+		// So no fixed sequence of "decode entities, then decode escapes" is
+		// enough: whichever runs last can expose a layer the other already
+		// walked past. Decode to a fixed point instead, then strip and match on
+		// text that has no encoding left to hide behind.
+		//
+		// The loop is bounded; each pass strictly shrinks or leaves the string,
+		// so it converges quickly and the cap is a backstop, not a limit.
+		$passes = 0;
+		do {
+			$previous = $css;
+			$css      = html_entity_decode( $css, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+			$css      = \designsetgo_normalize_css_escapes( $css );
+			++$passes;
+		} while ( $css !== $previous && $passes < 5 );
 
-		// Remove HTML tags after decoding.
+		// Only now can tag-stripping see every tag: a CSS-escaped `\3c script\3e`
+		// has been decoded to a real `<script>` above, so this removes it. Before
+		// the decode loop it would have sailed straight through.
 		$css = wp_strip_all_tags( $css );
-
-		// Decode again in case of double-encoding attacks, then strip again.
-		$css = html_entity_decode( $css, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
-		$css = wp_strip_all_tags( $css );
-
-		// Decode CSS escape sequences before pattern matching, for the same
-		// reason the HTML entities are decoded above: the browser resolves them
-		// before applying the declaration, so `expression\28 1\29` and
-		// `java\0script:` are live code that the patterns below — which match
-		// literal text — would otherwise walk straight past.
-		$css = \designsetgo_normalize_css_escapes( $css );
 
 		// Remove dangerous patterns.
 		foreach ( self::$dangerous_patterns as $pattern ) {

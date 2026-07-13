@@ -91,6 +91,44 @@ class CSS_Escape_Bypass_Test extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Encoding layers must be peeled to a fixed point BEFORE tag-stripping.
+	 *
+	 * There are two independent layers — HTML entities and CSS escapes — and each
+	 * can hide the other. `\3c script\3e` does not look like a tag to
+	 * wp_strip_all_tags(), so if escapes are decoded AFTER the strip, a literal
+	 * <script> reappears in the output with nothing left to catch it. Conversely
+	 * `&#92;75rl(` hides a CSS escape behind an entity. Neither ordering alone is
+	 * sufficient, which is why sanitize() now decodes until the string is stable.
+	 *
+	 * @dataProvider nested_encoding_provider
+	 *
+	 * @param string $css       Attacker-supplied CSS.
+	 * @param string $forbidden Text that must not survive.
+	 */
+	public function test_css_sanitizer_peels_nested_encodings( $css, $forbidden ) {
+		$sanitized = CSS_Sanitizer::sanitize( '.a{color:red;}' . $css );
+
+		$this->assertStringNotContainsString(
+			$forbidden,
+			$sanitized,
+			'A nested encoding survived sanitize(): ' . $css
+		);
+	}
+
+	/**
+	 * @return array<string, array{0: string, 1: string}>
+	 */
+	public function nested_encoding_provider() {
+		return array(
+			// CSS escape hiding a tag from wp_strip_all_tags().
+			'escaped script tag'   => array( '\3c script\3e alert(1)\3c /script\3e', '<script' ),
+			'escaped img onerror'  => array( '\3c img src=x onerror=alert(1)\3e', '<img' ),
+			// HTML entity hiding a CSS escape hiding a dangerous token.
+			'entity-wrapped escape' => array( '&#92;65xpression(alert(1))', 'expression(' ),
+		);
+	}
+
 	public function test_css_sanitizer_still_passes_ordinary_css() {
 		$sanitized = CSS_Sanitizer::sanitize( '.a{color:red;margin:10px;}' );
 

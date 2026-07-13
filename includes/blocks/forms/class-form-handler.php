@@ -729,6 +729,26 @@ class Form_Handler {
 	}
 
 	/**
+	 * Flatten a submitted field to a string.
+	 *
+	 * A field arrives either as a bare scalar or as `array( 'value' => … )`, and
+	 * that value is itself an array for a multi-value field (checkbox group,
+	 * multi-select) — which esc_html() would raise on.
+	 *
+	 * @param mixed $field_data Raw submitted field.
+	 * @return string Flattened value.
+	 */
+	private static function stringify_field_value( $field_data ) {
+		$value = is_array( $field_data ) && isset( $field_data['value'] ) ? $field_data['value'] : $field_data;
+
+		if ( is_array( $value ) ) {
+			return implode( ', ', array_map( 'strval', $value ) );
+		}
+
+		return (string) $value;
+	}
+
+	/**
 	 * Send email notification with form submission data.
 	 *
 	 * Email configuration is read from the server-side block attributes (stored
@@ -828,46 +848,69 @@ class Form_Handler {
 			);
 		}
 
-		// Every value below is interpolated into an HTML email body (the headers
-		// set `Content-Type: text/html`, see below), so each one is escaped here.
-		// The {all_fields} aggregate further down always did this; the per-field
-		// tags did not, which let a submitter put arbitrary markup — a fake
-		// "click here" link, a tracking pixel, a spoofed message — straight into
-		// the site owner's inbox via any template using {message} or {name}.
-		$merge_tags = array(
-			'{form_id}'       => esc_html( $form_id ),
-			'{submission_id}' => esc_html( (string) $submission_id ),
-			'{page_url}'      => esc_html( $current_url ),
-			'{site_name}'     => esc_html( get_bloginfo( 'name' ) ),
-			'{date}'          => esc_html( current_time( 'mysql' ) ),
+		/*
+		 * Merge tags land in TWO places with different rules, so they need two
+		 * maps. Sharing one is what made the first cut of this fix wrong.
+		 *
+		 * BODY is HTML (`Content-Type: text/html`), so values MUST be esc_html()'d
+		 * or a submitter puts arbitrary markup in the owner's inbox.
+		 *
+		 * SUBJECT is a plain-text mail header. It is never parsed as markup, so
+		 * escaping it is not protection, it is corruption: a site named
+		 * "Bob's Bakery & Sons" would arrive as "Bob&#039;s Bakery &amp; Sons".
+		 * What the subject actually needs is newline stripping, or a submitted
+		 * value could inject a second mail header.
+		 *
+		 * The subject is a documented merge-tag target ("Use {field_name} for
+		 * dynamic values" in the Form Builder inspector), so this is a real
+		 * authoring surface, not a theoretical one.
+		 */
+		// WordPress stores `blogname` ALREADY HTML-escaped — sanitize_option() runs
+		// esc_html() on save — so get_bloginfo('name') hands back
+		// `Bob&#039;s Bakery &amp; Sons`. Decoding it here is what makes these
+		// genuinely raw values, and is the same thing core does when it puts the
+		// site name into an email (see wp_new_user_notification()). The body map
+		// re-escapes it below; the subject, being plain text, wants it as typed.
+		$raw_values = array(
+			'{form_id}'       => (string) $form_id,
+			'{submission_id}' => (string) $submission_id,
+			'{page_url}'      => (string) $current_url,
+			'{site_name}'     => wp_specialchars_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES ),
+			'{date}'          => (string) current_time( 'mysql' ),
 		);
 
-		// Add field values to merge tags.
 		foreach ( $fields as $field_name => $field_data ) {
-			$value = is_array( $field_data ) ? $field_data['value'] : $field_data;
-
-			if ( is_array( $value ) ) {
-				$value = implode( ', ', array_map( 'strval', $value ) );
-			}
-
-			$merge_tags[ '{' . $field_name . '}' ] = esc_html( (string) $value );
+			$raw_values[ '{' . $field_name . '}' ] = self::stringify_field_value( $field_data );
 		}
 
-		// Build all_fields list.
+		// The {all_fields} summary is markup by construction, so it is built once
+		// per context rather than escaped generically: HTML for the body, and a
+		// flat one-liner for the subject (where tags would be nonsense).
 		$all_fields_html = '';
+		$all_fields_text = array();
 		foreach ( $fields as $field_name => $field_data ) {
-			$value = is_array( $field_data ) ? $field_data['value'] : $field_data;
+			$value = self::stringify_field_value( $field_data );
+			$label = ucwords( str_replace( array( '_', '-' ), ' ', $field_name ) );
 
-			// A multi-value field (checkbox group, multi-select) arrives as an
-			// array; esc_html() would raise on it.
-			if ( is_array( $value ) ) {
-				$value = implode( ', ', array_map( 'strval', $value ) );
-			}
-
-			$label            = ucwords( str_replace( array( '_', '-' ), ' ', $field_name ) );
-			$all_fields_html .= sprintf( "<strong>%s:</strong> %s<br>\n", esc_html( $label ), esc_html( (string) $value ) );
+			$all_fields_html  .= sprintf( "<strong>%s:</strong> %s<br>\n", esc_html( $label ), esc_html( $value ) );
+			$all_fields_text[] = $label . ': ' . $value;
 		}
-		$merge_tags['{all_fields}'] = $all_fields_html;
+
+		// Body: escape every value. {all_fields} is already escaped internally.
+		$body_tags                 = array_map( 'esc_html', $raw_values );
+		$body_tags['{all_fields}'] = $all_fields_html;
+
+		// Subject: do NOT escape. Strip newlines so a submitted value cannot
+		// smuggle in an extra mail header (PHPMailer would also catch this, but
+		// the intent belongs here rather than depending on a downstream library).
+		$newlines                     = array( "\r", "\n", '%0a', '%0d' );
+		$subject_tags                 = array_map(
+			static function ( $value ) use ( $newlines ) {
+				return str_replace( $newlines, ' ', $value );
+			},
+			$raw_values
+		);
+		$subject_tags['{all_fields}'] = str_replace( $newlines, ' ', implode( '; ', $all_fields_text ) );
 
 		// Default email body if empty.
 		if ( empty( $email_body ) ) {
@@ -876,9 +919,9 @@ class Form_Handler {
 			$email_body = sanitize_textarea_field( $email_body );
 		}
 
-		// Replace merge tags in subject and body.
-		$email_subject = str_replace( array_keys( $merge_tags ), array_values( $merge_tags ), $email_subject );
-		$email_body    = str_replace( array_keys( $merge_tags ), array_values( $merge_tags ), $email_body );
+		// Replace merge tags — each context with its own map (see above).
+		$email_subject = str_replace( array_keys( $subject_tags ), array_values( $subject_tags ), $email_subject );
+		$email_body    = str_replace( array_keys( $body_tags ), array_values( $body_tags ), $email_body );
 
 		// Convert line breaks to <br> for HTML email.
 		$email_body = nl2br( $email_body );

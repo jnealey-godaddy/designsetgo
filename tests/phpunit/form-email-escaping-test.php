@@ -48,19 +48,29 @@ class Form_Email_Escaping_Test extends WP_UnitTestCase {
 			self::factory()->user->create( array( 'role' => 'administrator' ) )
 		);
 
-		// The handler deliberately reads email config from the SAVED BLOCK rather
-		// than the request, so a real published post has to exist for it to find.
-		// The body uses a per-field {message} tag — the exact shape that was
-		// interpolating submitter input into HTML unescaped.
+	}
+
+	/**
+	 * Publish a post carrying the form block.
+	 *
+	 * The handler deliberately reads email config from the SAVED BLOCK rather
+	 * than the request (so it can't be tampered with client-side), which means a
+	 * real published post has to exist for it to find. Both templates use
+	 * per-field merge tags — the exact shape at issue.
+	 *
+	 * @param string $subject_template Subject line, may contain merge tags.
+	 */
+	private function configure_form( $subject_template = 'New submission' ) {
 		self::factory()->post->create(
 			array(
 				'post_status'  => 'publish',
 				'post_content' => '<!-- wp:designsetgo/form-builder ' . wp_json_encode(
 					array(
-						'formId'      => 'test-form',
-						'enableEmail' => true,
-						'emailTo'     => 'owner@example.org',
-						'emailBody'   => '<p>Message: {message}</p><p>Topics: {topics}</p>',
+						'formId'       => 'test-form',
+						'enableEmail'  => true,
+						'emailTo'      => 'owner@example.org',
+						'emailSubject' => $subject_template,
+						'emailBody'    => '<p>Message: {message}</p><p>Topics: {topics}</p>',
 					)
 				) . ' --><div class="wp-block-designsetgo-form-builder"></div><!-- /wp:designsetgo/form-builder -->',
 			)
@@ -70,10 +80,13 @@ class Form_Email_Escaping_Test extends WP_UnitTestCase {
 	/**
 	 * Invoke the private notification builder with a hostile submission.
 	 *
-	 * @param string $payload Attacker-supplied field value.
+	 * @param string $payload          Attacker-supplied field value.
+	 * @param string $subject_template Subject line, may contain merge tags.
 	 * @return string The rendered email body.
 	 */
-	private function send_with_payload( $payload ) {
+	private function send_with_payload( $payload, $subject_template = 'New submission' ) {
+		$this->configure_form( $subject_template );
+
 		$handler = new \DesignSetGo\Blocks\Form_Handler();
 
 		$method = new ReflectionMethod( $handler, 'send_email_notification' );
@@ -138,9 +151,54 @@ class Form_Email_Escaping_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The SUBJECT is a plain-text mail header, not HTML.
+	 *
+	 * The first cut of this fix shared one esc_html()'d merge-tag map between the
+	 * body and the subject, which corrupted the subject: a site called
+	 * "Bob's Bakery & Sons" arrived as "Bob&#039;s Bakery &amp; Sons". Escaping a
+	 * header is not protection, it is mojibake — and the original suite only ever
+	 * asserted on the body, so it sailed through.
+	 */
+	public function test_subject_is_not_html_escaped() {
+		update_option( 'blogname', "Bob's Bakery & Sons" );
+
+		$this->send_with_payload( 'anything', '{site_name}: new enquiry' );
+
+		$subject = (string) $this->sent['subject'];
+
+		$this->assertSame( "Bob's Bakery & Sons: new enquiry", $subject );
+		$this->assertStringNotContainsString( '&amp;', $subject );
+		$this->assertStringNotContainsString( '&#039;', $subject );
+	}
+
+	/**
+	 * A field value reaching the subject must not be able to add a mail header.
+	 */
+	public function test_subject_merge_tags_cannot_inject_a_header() {
+		$this->send_with_payload( "hi\r\nBcc: victim@example.org", 'Re: {message}' );
+
+		$subject = (string) $this->sent['subject'];
+
+		$this->assertStringNotContainsString( "\n", $subject );
+		$this->assertStringNotContainsString( "\r", $subject );
+	}
+
+	/**
+	 * Escaping the body must not have been traded away for the subject fix.
+	 */
+	public function test_body_is_still_escaped_while_subject_is_not() {
+		$this->send_with_payload( '<script>alert(1)</script>', 'Re: {message}' );
+
+		$this->assertStringNotContainsString( '<script>', (string) $this->sent['message'] );
+		$this->assertStringContainsString( '<script>', (string) $this->sent['subject'] );
+	}
+
+	/**
 	 * A multi-value field arrives as an array; esc_html() would raise on it.
 	 */
 	public function test_array_field_values_do_not_fatal() {
+		$this->configure_form();
+
 		$handler = new \DesignSetGo\Blocks\Form_Handler();
 
 		$method = new ReflectionMethod( $handler, 'send_email_notification' );
