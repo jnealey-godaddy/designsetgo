@@ -136,7 +136,8 @@ const vAlign = {
  */
 const vLazy = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		return Boolean(innerHTML) && innerHTML.includes('dsgo-lazy-icon');
 	},
 
@@ -272,7 +273,8 @@ const vLazy = {
  */
 const v2 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Lazy-format block (post-v1) that still carries an inline size pair —
 		// the signature of the pre-token serialization.
 		return (
@@ -409,7 +411,8 @@ const v2 = {
  */
 const v1 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v1 is eligible if the block DOES NOT have dsgo-lazy-icon class
 		// New blocks use dsgo-lazy-icon for frontend injection
 		// Old blocks have inline SVG without this class

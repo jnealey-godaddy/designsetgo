@@ -73,7 +73,8 @@ const vStatic = {
 		dsgoMapStyle: { type: 'string', default: 'standard' },
 	},
 
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		return (
 			Boolean(innerHTML) &&
 			innerHTML.includes('dsgo-map') &&

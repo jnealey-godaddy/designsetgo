@@ -72,7 +72,8 @@ const v2 = {
 			width: true,
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Match blocks saved with the original height/arrowSize defaults
 		// (height was always emitted; arrowSize default was 48px not 24px).
 		return (

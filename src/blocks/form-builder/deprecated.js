@@ -55,7 +55,8 @@ const legacyAttributes = {
 const v5 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		return (
 			Boolean(innerHTML) && innerHTML.includes('--dsgo-form-input-height')
 		);
@@ -248,11 +249,12 @@ const v5 = {
 const v4 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes) {
-		// Only content that never customized the border color is affected —
-		// the old save() forced the literal fallback in that case only.
-		return !attributes.fieldBorderColor;
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard,
+	// `!attributes.fieldBorderColor`, was true of every CURRENT form that simply
+	// never customised the border colour, so it claimed current content. Whether
+	// the old forced-fallback markup is actually present is decided by matching
+	// this version's save() against the stored HTML, which is the real test.
 	migrate(attributes) {
 		return attributes;
 	},
@@ -474,7 +476,8 @@ const v4 = {
 const v3 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v3 blocks have raw empty CSS vars rendered as `--dsgo-form-label-color:;`
 		return innerHTML && innerHTML.includes('--dsgo-form-label-color:;');
 	},
@@ -651,7 +654,8 @@ const v3 = {
 const v2 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v2 blocks lack aria-hidden on honeypot and aria-atomic on message div
 		return (
 			innerHTML &&
@@ -870,7 +874,8 @@ const v2 = {
 const v1 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v1 blocks have email config exposed as data attributes
 		return innerHTML && innerHTML.includes('data-enable-email');
 	},

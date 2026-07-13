@@ -59,9 +59,11 @@ describe('row deprecations - style-kit overlay variation migration', () => {
 		const html =
 			'<div class="wp-block-designsetgo-row is-style-overlay-dark dsgo-flex"><div class="dsgo-flex__inner"></div></div>';
 		expect(
-			v5Deprecation.isEligible({ className: 'is-style-overlay-dark' }, [], {
-				innerHTML: html,
-			})
+			v5Deprecation.isEligible(
+				{ className: 'is-style-overlay-dark' },
+				[],
+				{ blockNode: { innerHTML: html } }
+			)
 		).toBe(true);
 	});
 
@@ -69,9 +71,11 @@ describe('row deprecations - style-kit overlay variation migration', () => {
 		const html =
 			'<div class="wp-block-designsetgo-row is-style-overlay-dark dsgo-flex dsgo-flex--has-overlay"><div class="dsgo-flex__inner"></div></div>';
 		expect(
-			v5Deprecation.isEligible({ className: 'is-style-overlay-dark' }, [], {
-				innerHTML: html,
-			})
+			v5Deprecation.isEligible(
+				{ className: 'is-style-overlay-dark' },
+				[],
+				{ blockNode: { innerHTML: html } }
+			)
 		).toBe(false);
 	});
 
@@ -79,7 +83,9 @@ describe('row deprecations - style-kit overlay variation migration', () => {
 		const html =
 			'<div class="wp-block-designsetgo-row dsgo-flex"><div class="dsgo-flex__inner"></div></div>';
 		expect(
-			v5Deprecation.isEligible({ className: '' }, [], { innerHTML: html })
+			v5Deprecation.isEligible({ className: '' }, [], {
+				blockNode: { innerHTML: html },
+			})
 		).toBe(false);
 	});
 
@@ -125,7 +131,7 @@ describe('row deprecations - style-kit hover variation migration', () => {
 			v5Deprecation.isEligible(
 				{ className: 'is-style-hover-icon-blue' },
 				[],
-				{ innerHTML: html }
+				{ blockNode: { innerHTML: html } }
 			)
 		).toBe(true);
 	});
@@ -134,7 +140,9 @@ describe('row deprecations - style-kit hover variation migration', () => {
 		const html =
 			'<div class="wp-block-designsetgo-row dsgo-flex"><div class="dsgo-flex__inner"></div></div>';
 		expect(
-			v5Deprecation.isEligible({ className: '' }, [], { innerHTML: html })
+			v5Deprecation.isEligible({ className: '' }, [], {
+				blockNode: { innerHTML: html },
+			})
 		).toBe(false);
 	});
 

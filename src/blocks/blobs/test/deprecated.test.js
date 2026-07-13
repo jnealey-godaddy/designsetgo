@@ -138,21 +138,27 @@ describe('blobs deprecations - v3 native max-width migration', () => {
 
 	test('v3 isEligible flags old extension markup', () => {
 		expect(
-			v3Deprecation.isEligible({}, [], { innerHTML: OLD_MARKUP })
+			v3Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: OLD_MARKUP },
+			})
 		).toBe(true);
 	});
 
 	test('v3 isEligible ignores current native markup', () => {
-		expect(v3Deprecation.isEligible({}, [], { innerHTML: canonical })).toBe(
-			false
-		);
+		expect(
+			v3Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: canonical },
+			})
+		).toBe(false);
 	});
 
 	test('v3 isEligible ignores a plain (no max-width) blob', () => {
 		const plain = serialize(createBlock(metadata.name, { size: '300px' }));
-		expect(v3Deprecation.isEligible({}, [], { innerHTML: plain })).toBe(
-			false
-		);
+		expect(
+			v3Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: plain },
+			})
+		).toBe(false);
 	});
 
 	test('v3 isEligible ignores a native blob whose NESTED child uses the generic max-width extension', () => {
@@ -169,7 +175,9 @@ describe('blobs deprecations - v3 native max-width migration', () => {
 			'<p class="dsgo-has-max-width" style="max-width:400px;margin-left:auto;margin-right:auto">Nested</p>' +
 			'</div></div>';
 		expect(
-			v3Deprecation.isEligible({}, [], { innerHTML: nestedHTML })
+			v3Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: nestedHTML },
+			})
 		).toBe(false);
 	});
 

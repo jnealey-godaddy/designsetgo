@@ -97,7 +97,8 @@ const v1 = {
 			},
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		return !!innerHTML && innerHTML.includes('--dsgo-accordion-open-bg:;');
 	},
 	save({ attributes }) {

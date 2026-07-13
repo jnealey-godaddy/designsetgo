@@ -118,7 +118,8 @@ const sharedSupports = {
  */
 const v4 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Pre-wrapper markup: the block root IS the button, not a `<div>`.
 		return !!innerHTML && !innerHTML.trimStart().startsWith('<div');
 	},
@@ -272,7 +273,8 @@ const v4 = {
  */
 const v3 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Current-structure block (single <button>, dsgo-lazy-icon) that still
 		// carries an inline size pair — the signature of the pre-token
 		// serialization. Exclude the legacy nested wrapper+button markup
@@ -452,7 +454,8 @@ const v2 = {
 			default: '8px',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v2 blocks have dsgo-lazy-icon class but still use two-div wrapper+button structure
 		// and have dsgo-modal-trigger--width-* classes
 		return (
@@ -581,7 +584,8 @@ const v1 = {
 			default: '8px',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v1 blocks have inline SVG icons (no dsgo-lazy-icon class)
 		return (
 			innerHTML &&

@@ -20,7 +20,8 @@ import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 const v1 = {
 	attributes: metadata.attributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		if (typeof innerHTML !== 'string') {
 			return false;
 		}

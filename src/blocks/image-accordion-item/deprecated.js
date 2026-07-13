@@ -24,7 +24,8 @@ const v1 = {
 	attributes: metadata.attributes,
 	supports: metadata.supports,
 	usesContext: metadata.usesContext,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Only the pre-change save emitted the short overlay custom property.
 		return (
 			typeof innerHTML === 'string' &&

@@ -342,11 +342,13 @@ const v8 = {
 	 * @param {Object} attributes      Block attributes.
 	 * @param {Array}  innerBlocks     Inner blocks.
 	 * @param {Object} extra           Extra data.
-	 * @param {string} extra.innerHTML Stored serialised HTML.
+	 * @param {Object} extra.blockNode Raw parsed block (carries innerHTML).
+	 * @param {Object} extra.block     Parsed block (carries originalContent).
 	 * @return {boolean} True when a hover-variation family is present without
 	 *                    its matching activation class in the stored HTML.
 	 */
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		if (!innerHTML || !innerHTML.includes('dsgo-stack')) {
 			return false;
 		}
@@ -555,10 +557,12 @@ const v7 = {
 	 * @param {Object} attributes      Block attributes.
 	 * @param {Array}  innerBlocks     Inner blocks.
 	 * @param {Object} extra           Extra data.
-	 * @param {string} extra.innerHTML Stored serialised HTML.
+	 * @param {Object} extra.blockNode Raw parsed block (carries innerHTML).
+	 * @param {Object} extra.block     Parsed block (carries originalContent).
 	 * @return {boolean} True when the pre-variation overlay signature is found.
 	 */
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		return !!(
 			hasOverlayStyleClass(attributes.className) &&
 			innerHTML &&
@@ -760,11 +764,13 @@ const v6 = {
 	 *
 	 * @param {Object} attributes      - Block attributes
 	 * @param {Array}  innerBlocks     - Inner blocks
-	 * @param {Object} extra           - Extra data including innerHTML
-	 * @param {string} extra.innerHTML - The stored serialised HTML
+	 * @param {Object} extra           - Extra data
+	 * @param {Object} extra.blockNode - Raw parsed block (carries innerHTML)
+	 * @param {Object} extra.block     - Parsed block (carries originalContent)
 	 * @return {boolean} True when the legacy animation-attrs pattern is detected
 	 */
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		return !!(
 			attributes.dsgoAnimationEnabled &&
 			innerHTML &&
@@ -1671,18 +1677,11 @@ const v1 = {
 			type: 'string',
 		},
 	},
-	/**
-	 * Determine if this deprecation should be used
-	 * Matches blocks created before align attribute was added
-	 *
-	 * @param {Object} attributes Block attributes
-	 * @return {boolean} True if block matches this deprecation
-	 */
-	isEligible(attributes) {
-		// This deprecation is for the earliest blocks without align attribute
-		// They used className for alignment instead
-		return attributes.align === undefined;
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard,
+	// `attributes.align === undefined`, matched nearly every CURRENT section:
+	// `align` has no default, so it is absent from the raw comment attributes on
+	// any section the author never aligned wide/full.
 	save({ attributes }) {
 		const {
 			hoverBackgroundColor,

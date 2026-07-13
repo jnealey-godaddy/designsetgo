@@ -215,7 +215,7 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 			v7Deprecation.isEligible(
 				{ className: 'is-style-overlay-dark' },
 				[],
-				{ innerHTML: html }
+				{ blockNode: { innerHTML: html } }
 			)
 		).toBe(true);
 	});
@@ -227,7 +227,7 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 			v7Deprecation.isEligible(
 				{ className: 'is-style-overlay-dark' },
 				[],
-				{ innerHTML: html }
+				{ blockNode: { innerHTML: html } }
 			)
 		).toBe(false);
 	});
@@ -236,7 +236,9 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 		const html =
 			'<div class="wp-block-designsetgo-section dsgo-stack"><div class="dsgo-stack__inner"></div></div>';
 		expect(
-			v7Deprecation.isEligible({ className: '' }, [], { innerHTML: html })
+			v7Deprecation.isEligible({ className: '' }, [], {
+				blockNode: { innerHTML: html },
+			})
 		).toBe(false);
 	});
 
@@ -289,7 +291,7 @@ describe('section deprecations - style-kit hover variation migration (v8)', () =
 			v8Deprecation.isEligible(
 				{ className: 'is-style-hover-text-light' },
 				[],
-				{ innerHTML: html }
+				{ blockNode: { innerHTML: html } }
 			)
 		).toBe(true);
 	});
@@ -301,7 +303,7 @@ describe('section deprecations - style-kit hover variation migration (v8)', () =
 			v8Deprecation.isEligible(
 				{ className: 'is-style-hover-icon-blue' },
 				[],
-				{ innerHTML: html }
+				{ blockNode: { innerHTML: html } }
 			)
 		).toBe(true);
 	});
@@ -313,7 +315,7 @@ describe('section deprecations - style-kit hover variation migration (v8)', () =
 			v8Deprecation.isEligible(
 				{ className: 'is-style-hover-text-light' },
 				[],
-				{ innerHTML: html }
+				{ blockNode: { innerHTML: html } }
 			)
 		).toBe(false);
 	});
@@ -328,7 +330,7 @@ describe('section deprecations - style-kit hover variation migration (v8)', () =
 						'is-style-hover-text-light is-style-hover-icon-blue',
 				},
 				[],
-				{ innerHTML: html }
+				{ blockNode: { innerHTML: html } }
 			)
 		).toBe(true);
 	});
@@ -337,7 +339,9 @@ describe('section deprecations - style-kit hover variation migration (v8)', () =
 		const html =
 			'<div class="wp-block-designsetgo-section dsgo-stack"><div class="dsgo-stack__inner"></div></div>';
 		expect(
-			v8Deprecation.isEligible({ className: '' }, [], { innerHTML: html })
+			v8Deprecation.isEligible({ className: '' }, [], {
+				blockNode: { innerHTML: html },
+			})
 		).toBe(false);
 	});
 

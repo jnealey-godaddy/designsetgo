@@ -224,19 +224,27 @@ describe('icon-button deprecations - v8 themeable-gap migration', () => {
 
 	test('isEligible flags old markup (inline gap, no marker class)', () => {
 		expect(
-			v8Deprecation.isEligible({}, [], { innerHTML: OLD_ICON_MARKUP })
+			v8Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: OLD_ICON_MARKUP },
+			})
 		).toBe(true);
 		expect(
-			v8Deprecation.isEligible({}, [], { innerHTML: OLD_NO_ICON_MARKUP })
+			v8Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: OLD_NO_ICON_MARKUP },
+			})
 		).toBe(true);
 	});
 
 	test('isEligible ignores current markup', () => {
 		expect(
-			v8Deprecation.isEligible({}, [], { innerHTML: canonicalIcon })
+			v8Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: canonicalIcon },
+			})
 		).toBe(false);
 		expect(
-			v8Deprecation.isEligible({}, [], { innerHTML: canonicalNoIcon })
+			v8Deprecation.isEligible({}, [], {
+				blockNode: { innerHTML: canonicalNoIcon },
+			})
 		).toBe(false);
 	});
 
@@ -246,9 +254,9 @@ describe('icon-button deprecations - v8 themeable-gap migration', () => {
 		// "Mind the gap: ..." from false-triggering the deprecation.
 		const html =
 			'<a class="wp-block-designsetgo-icon-button dsgo-icon-button wp-block-button wp-block-button__link wp-element-button" style="display:inline-flex;align-items:center;justify-content:center;width:auto;flex-direction:row" href="#"><span class="dsgo-icon-button__text">Mind the gap: watch your step</span></a>';
-		expect(v8Deprecation.isEligible({}, [], { innerHTML: html })).toBe(
-			false
-		);
+		expect(
+			v8Deprecation.isEligible({}, [], { blockNode: { innerHTML: html } })
+		).toBe(false);
 	});
 
 	test('migrate is a passthrough that pins values (never strips defaults), plus the align→justification/fullWidth conversion', () => {

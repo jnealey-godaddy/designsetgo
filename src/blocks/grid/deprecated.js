@@ -111,7 +111,8 @@ const sharedSupports = {
 const styleVariationClasses = {
 	supports: metadata.supports,
 	attributes: { ...metadata.attributes },
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		if (!innerHTML || !innerHTML.includes('dsgo-grid')) {
 			return false;
 		}
@@ -258,10 +259,11 @@ const v1 = {
 			type: 'string',
 		},
 	},
-	isEligible(attributes) {
-		// v1 blocks don't have the align attribute - used className for alignment
-		return attributes.align === undefined;
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard,
+	// `attributes.align === undefined`, matched nearly every CURRENT grid too:
+	// `align` has no default, so it is absent from the raw comment attributes on
+	// any grid the author never aligned wide/full.
 	save({ attributes }) {
 		const {
 			hoverBackgroundColor,
@@ -378,7 +380,8 @@ const legacyMinWidth = {
 			attribute: 'style',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		return (
 			!!innerHTML &&
 			/grid-template-columns:\s*repeat\([^)]*minmax/i.test(innerHTML)

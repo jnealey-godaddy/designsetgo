@@ -127,7 +127,8 @@ const sharedSupports = {
 const v5 = {
 	supports: metadata.supports,
 	attributes: { ...metadata.attributes },
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		if (!innerHTML || !innerHTML.includes('dsgo-flex')) {
 			return false;
 		}
@@ -447,7 +448,8 @@ const v3 = {
 			type: 'string',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v3 blocks have tagName (added in v3) and dsgo-flex__inner but no align-items
 		return (
 			Object.prototype.hasOwnProperty.call(attributes, 'tagName') &&
@@ -721,13 +723,11 @@ const v1 = {
 			type: 'string',
 		},
 	},
-	isEligible(attributes) {
-		// v1 blocks don't have align attribute - used className for alignment
-		return (
-			attributes.align === undefined &&
-			!Object.prototype.hasOwnProperty.call(attributes, 'constrainWidth')
-		);
-	},
+	// No isEligible: markup-change deprecation, reached by save-matching on an
+	// INVALID block (WordPress skips isEligible for those). The old guard,
+	// `attributes.align === undefined && !hasOwnProperty('constrainWidth')`,
+	// matched CURRENT rows too — neither attribute is serialized into the
+	// comment when it sits at its default, so "absent" does not mean "old".
 	save({ attributes }) {
 		const {
 			hoverBackgroundColor,

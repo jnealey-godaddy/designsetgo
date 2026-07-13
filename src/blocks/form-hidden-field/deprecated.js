@@ -37,7 +37,8 @@ const vStatic = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Any stored static hidden field carries this wrapper class; the
 		// dynamic block saves no inner HTML, so it never matches.
 		return (

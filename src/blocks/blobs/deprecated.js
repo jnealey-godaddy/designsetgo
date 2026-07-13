@@ -131,7 +131,8 @@ const v3 = {
 			default: '',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Scope the check to the Blobs wrapper's OWN opening tag. Blobs accepts
 		// arbitrary nested blocks, and the generic max-width extension still
 		// stamps the same `dsgo-has-max-width` class + a raw inline `max-width:`
@@ -275,7 +276,8 @@ const v1 = {
 			default: 50,
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v1 blocks have no wrapper div - the dsgo-blobs class is directly on the block wrapper
 		return innerHTML && !innerHTML.includes('dsgo-blobs-wrapper');
 	},
@@ -373,14 +375,19 @@ const v2 = {
 			default: 80,
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
-		// v2 blocks have dsgo-blobs-wrapper but no align attribute
-		return (
-			innerHTML &&
-			innerHTML.includes('dsgo-blobs-wrapper') &&
-			attributes.align === undefined
-		);
-	},
+	// No isEligible: v2's save() output is byte-identical to the current save()
+	// whenever `height` and `maxWidth` are unset (both are omitted from the
+	// markup in that case), so a v2-era block simply parses as VALID today and
+	// never needs migrating. It stays in the array because a v2 block that DID
+	// set an overlay colour still differs (convertPresetToCSSVar vs the current
+	// convertColorToCSSVar) and reaches this version by save-matching.
+	//
+	// The old guard was `innerHTML.includes('dsgo-blobs-wrapper') &&
+	// attributes.align === undefined`. The current save() still emits that
+	// wrapper class, and `align` has no default so it is absent from the comment
+	// on any block the author never aligned — i.e. the guard matched current
+	// content. It then migrated it through a schema that predates `height` /
+	// `maxWidth`, silently dropping both.
 	save({ attributes }) {
 		const {
 			blobShape,

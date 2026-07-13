@@ -36,7 +36,8 @@ const v1 = {
 			attribute: 'style',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		return !!innerHTML && innerHTML.includes('minmax(min(100%');
 	},
 	save({ attributes }) {

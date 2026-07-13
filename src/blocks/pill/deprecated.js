@@ -125,7 +125,8 @@ const vStatic = {
 		},
 	},
 	supports: staticSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Static pills always carried an alignment class (the "center" default was
 		// baked by useBlockProps.save()). Match a dsgo-pill wrapper that has one —
 		// the pre-align legacy (no alignment class) is handled by v1 below.
@@ -266,7 +267,8 @@ const v1 = {
 			__experimentalSelector: '.dsgo-pill__content',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Legacy saves lack `aligncenter` even when no explicit align was
 		// stored (the default "center" was not yet an attribute). Current
 		// saves always emit `aligncenter` for the default. Match only the

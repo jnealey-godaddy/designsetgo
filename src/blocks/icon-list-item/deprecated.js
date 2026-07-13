@@ -224,7 +224,8 @@ const v4 = {
 
 const v3 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Old serialization baked the icon↔content gap on the item root right
 		// after align-items; the current save() omits it. Scope the check to the
 		// item wrapper's OWN opening tag rather than the whole subtree: the
@@ -414,7 +415,8 @@ const v3 = {
  */
 const v2 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		return (
 			innerHTML &&
 			innerHTML.includes('dsgo-lazy-icon') &&
@@ -570,7 +572,8 @@ const v1 = {
 			default: '',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v1 blocks have inline SVG icons instead of dsgo-lazy-icon class
 		return innerHTML && !innerHTML.includes('dsgo-lazy-icon');
 	},

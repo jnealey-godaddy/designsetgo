@@ -42,7 +42,8 @@ const vStatic = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Any stored static email field carries this wrapper class; the dynamic
 		// block saves no inner HTML, so it never matches.
 		return (
@@ -163,7 +164,8 @@ const v1 = {
 		},
 	},
 
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v1 blocks lack aria-required on input
 		return (
 			innerHTML &&

@@ -51,7 +51,8 @@ const sharedSupports = {
  */
 const vLazy = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		return Boolean(innerHTML) && innerHTML.includes('dsgo-lazy-icon');
 	},
 	attributes: {
@@ -142,7 +143,8 @@ const v1 = {
 			default: 'star',
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v1 blocks have inline SVG icons instead of dsgo-lazy-icon class
 		return innerHTML && !innerHTML.includes('dsgo-lazy-icon');
 	},

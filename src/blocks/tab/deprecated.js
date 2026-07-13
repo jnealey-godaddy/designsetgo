@@ -33,11 +33,22 @@ const sharedSupports = {
  */
 const v1 = {
 	supports: sharedSupports,
-	isEligible(attributes) {
-		// v1 is eligible if iconPosition attribute doesn't exist
-		// This was added in the current version
-		return typeof attributes.iconPosition === 'undefined';
-	},
+
+	// No isEligible: this is a MARKUP-change deprecation, and WordPress only
+	// consults isEligible for a block that is still VALID
+	// (`if (block.isValid && !isEligible(...)) continue;` — see
+	// @wordpress/blocks → api/parser/apply-block-deprecated-versions.js). A v1
+	// block's markup no longer matches the current save(), so it parses INVALID,
+	// isEligible is skipped entirely, and WordPress picks this version because
+	// its save() reproduces the stored HTML. There is nothing left for an
+	// isEligible to do here.
+	//
+	// It used to test `typeof attributes.iconPosition === 'undefined'`, which is
+	// unsound: `attributes` here is the RAW comment JSON, and WordPress never
+	// serializes an attribute equal to its default. A current tab left at the
+	// default iconPosition ('none') therefore also has no `iconPosition` key, so
+	// the guard claimed current content — and because v1's schema predates
+	// `strokeWidth`, migrate() silently dropped it.
 
 	attributes: {
 		uniqueId: {

@@ -47,7 +47,8 @@ const vStatic = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// Any stored static text field carries this wrapper class; the dynamic
 		// block saves no inner HTML, so it never matches.
 		return (
@@ -163,7 +164,8 @@ const v1 = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
+		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
 		// v1 blocks lack aria-required on input
 		return (
 			innerHTML &&
