@@ -27,6 +27,48 @@ class Loader {
 		add_action( 'init', array( $this, 'setup_script_translations' ), 15 ); // After blocks are registered.
 		add_action( 'init', array( $this, 'fix_view_module_dependencies' ), 20 ); // After blocks register their modules.
 		add_filter( 'block_type_metadata', array( $this, 'add_shared_dependencies' ) );
+		add_filter( 'block_type_metadata', array( $this, 'sync_asset_version' ) );
+	}
+
+	/**
+	 * Version every block's own CSS/JS with the PLUGIN version.
+	 *
+	 * WordPress uses a block's `version` field from block.json as the
+	 * cache-busting `?ver=` on the assets that block.json declares —
+	 * `$block_version = isset( $metadata['version'] ) ? $metadata['version'] : false;`
+	 * in wp-includes/blocks.php. Nearly every block here still carries the
+	 * scaffolded `"version": "1.0.0"`, so `build/blocks/{block}/index.css?ver=1.0.0`
+	 * is byte-identical across every release: browsers and CDNs keep serving the
+	 * copy they cached from an older version of the plugin, forever. The plugin's
+	 * global stylesheet does not have this problem — it is enqueued with
+	 * DESIGNSETGO_VERSION and busts correctly — which is what masked it.
+	 *
+	 * That means a CSS-only fix to any block silently fails to reach existing
+	 * users. It bit us in 2.4: Icon Button's icon layout moved out of the saved
+	 * markup and into the stylesheet, so the markup began depending on CSS that
+	 * cached browsers never received — the icon lost its box and its SVG expanded
+	 * to fill the button.
+	 *
+	 * Overriding `version` here fixes it for every block at once and removes the
+	 * need to remember to bump 66 block.json files on each release. The override
+	 * is UNCONDITIONAL: a version a block.json pins for itself is discarded too
+	 * (`scroll-marquee` pins 1.2.0), because cache-busting needs a single source
+	 * of truth. A per-block pin cannot serve that purpose — it only busts when
+	 * someone remembers to bump it, which is the bug this exists to remove.
+	 *
+	 * @since 2.4.0
+	 *
+	 * @param array $metadata Parsed block.json metadata.
+	 * @return array Metadata with the asset version synced to the plugin version.
+	 */
+	public function sync_asset_version( $metadata ) {
+		if ( ! isset( $metadata['name'] ) || 0 !== strpos( $metadata['name'], 'designsetgo/' ) ) {
+			return $metadata;
+		}
+
+		$metadata['version'] = DESIGNSETGO_VERSION;
+
+		return $metadata;
 	}
 
 	/**
