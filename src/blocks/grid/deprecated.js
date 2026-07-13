@@ -14,6 +14,7 @@ import {
 	hoverVariationClasses,
 } from '../../utils/style-variation-classes';
 import metadata from './block.json';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 // Captures the column min width from a `minmax(<width>, 1fr)` grid track.
 const MIN_WIDTH_RE = /minmax\(\s*(\d+(?:\.\d+)?[a-z%]+)\s*,\s*1fr\s*\)/i;
@@ -111,8 +112,8 @@ const sharedSupports = {
 const styleVariationClasses = {
 	supports: metadata.supports,
 	attributes: { ...metadata.attributes },
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		if (!innerHTML || !innerHTML.includes('dsgo-grid')) {
 			return false;
 		}
@@ -380,8 +381,8 @@ const legacyMinWidth = {
 			attribute: 'style',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return (
 			!!innerHTML &&
 			/grid-template-columns:\s*repeat\([^)]*minmax/i.test(innerHTML)

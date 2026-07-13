@@ -6,6 +6,7 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Internal dependencies
@@ -158,8 +159,8 @@ const v3 = {
 		unitGap: { type: 'string', default: '1rem' },
 		unitPadding: { type: 'string', default: '1.5rem' },
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const html = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const html = getDeprecatedBlockHTML(extra);
 		return (
 			html.includes('dsgo-countdown-timer__completion-message') &&
 			html.includes('display:none')

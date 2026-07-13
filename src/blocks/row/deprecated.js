@@ -14,6 +14,7 @@ import {
 	hoverVariationClasses,
 } from '../../utils/style-variation-classes';
 import metadata from './block.json';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Convert WordPress vertical alignment value to CSS align-items value.
@@ -127,8 +128,8 @@ const sharedSupports = {
 const v5 = {
 	supports: metadata.supports,
 	attributes: { ...metadata.attributes },
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		if (!innerHTML || !innerHTML.includes('dsgo-flex')) {
 			return false;
 		}
@@ -448,8 +449,8 @@ const v3 = {
 			type: 'string',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v3 blocks have tagName (added in v3) and dsgo-flex__inner but no align-items
 		return (
 			Object.prototype.hasOwnProperty.call(attributes, 'tagName') &&

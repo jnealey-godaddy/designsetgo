@@ -13,6 +13,7 @@
 
 import { useBlockProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Supports definition for deprecated versions.
@@ -141,8 +142,8 @@ const vStatic = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Any stored static phone field carries this wrapper class; the dynamic
 		// block saves no inner HTML, so it never matches.
 		return (
@@ -254,8 +255,8 @@ const v4 = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Legacy era: current-format <select> (data-dsgo-country-code, no
 		// <option> children) but with `flex:1px` on the <input> — React added
 		// `px` to the numeric `flex: 1` value. The fixed save.js uses the
@@ -360,8 +361,8 @@ const v3 = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Has country code class, inline options, but no data-dsgo-country-code,
 		// no `selected`, and no `defaultvalue`
 		return (
@@ -479,8 +480,8 @@ const v2 = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v2 blocks have hardcoded country code options with selected attribute
 		return (
 			innerHTML &&
@@ -654,8 +655,8 @@ const v1 = {
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v1 blocks use defaultValue on select instead of selected on options
 		return (
 			innerHTML &&

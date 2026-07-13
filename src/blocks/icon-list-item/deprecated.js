@@ -13,6 +13,7 @@ import {
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
 import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Shared supports definition for all deprecated versions.
@@ -85,8 +86,8 @@ const v4 = {
 		linkTarget: { type: 'string', default: '_self' },
 		linkRel: { type: 'string', default: '' },
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const html = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const html = getDeprecatedBlockHTML(extra);
 		// Match the icon box's own style attribute carrying the layout trio.
 		return /class="[^"]*dsgo-icon-list-item__icon[^"]*"\s+style="display:flex;align-items:center;justify-content:center/.test(
 			html
@@ -224,8 +225,8 @@ const v4 = {
 
 const v3 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Old serialization baked the icon↔content gap on the item root right
 		// after align-items; the current save() omits it. Scope the check to the
 		// item wrapper's OWN opening tag rather than the whole subtree: the
@@ -415,8 +416,8 @@ const v3 = {
  */
 const v2 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return (
 			innerHTML &&
 			innerHTML.includes('dsgo-lazy-icon') &&
@@ -572,8 +573,8 @@ const v1 = {
 			default: '',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v1 blocks have inline SVG icons instead of dsgo-lazy-icon class
 		return innerHTML && !innerHTML.includes('dsgo-lazy-icon');
 	},

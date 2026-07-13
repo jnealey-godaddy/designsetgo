@@ -1,6 +1,7 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 // v1: save() emitted empty --dsgo-accordion-* custom properties even when the
 // colors were unset; current save() omits them. Markup-only change → passthrough
@@ -97,8 +98,8 @@ const v1 = {
 			},
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return !!innerHTML && innerHTML.includes('--dsgo-accordion-open-bg:;');
 	},
 	save({ attributes }) {

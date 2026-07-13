@@ -5,6 +5,7 @@
  */
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Inline layout constants — the version before the constant layout moved to
@@ -43,8 +44,8 @@ const v1 = {
 		typography: { fontSize: true, lineHeight: true },
 		layout: { allowEditing: false },
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const html = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const html = getDeprecatedBlockHTML(extra);
 		return (
 			html.includes('dsgo-scroll-accordion') &&
 			html.includes('align-self:stretch')

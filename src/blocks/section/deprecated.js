@@ -16,6 +16,7 @@ import {
 	hoverVariationClasses,
 } from './utils/has-overlay-style';
 import ShapeDivider from './components/ShapeDivider';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 // Shared supports for deprecations (must match what was in block.json when blocks were saved).
 // Without this, useBlockProps.save() in deprecated save functions won't generate
@@ -347,8 +348,8 @@ const v8 = {
 	 * @return {boolean} True when a hover-variation family is present without
 	 *                    its matching activation class in the stored HTML.
 	 */
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		if (!innerHTML || !innerHTML.includes('dsgo-stack')) {
 			return false;
 		}
@@ -561,8 +562,8 @@ const v7 = {
 	 * @param {Object} extra.block     Parsed block (carries originalContent).
 	 * @return {boolean} True when the pre-variation overlay signature is found.
 	 */
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return !!(
 			hasOverlayStyleClass(attributes.className) &&
 			innerHTML &&
@@ -769,8 +770,8 @@ const v6 = {
 	 * @param {Object} extra.block     - Parsed block (carries originalContent)
 	 * @return {boolean} True when the legacy animation-attrs pattern is detected
 	 */
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return !!(
 			attributes.dsgoAnimationEnabled &&
 			innerHTML &&

@@ -13,6 +13,7 @@ import {
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
 import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Shared supports for all deprecated versions.
@@ -131,8 +132,8 @@ const v3 = {
 			default: '',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Scope the check to the Blobs wrapper's OWN opening tag. Blobs accepts
 		// arbitrary nested blocks, and the generic max-width extension still
 		// stamps the same `dsgo-has-max-width` class + a raw inline `max-width:`
@@ -276,8 +277,8 @@ const v1 = {
 			default: 50,
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v1 blocks have no wrapper div - the dsgo-blobs class is directly on the block wrapper
 		return innerHTML && !innerHTML.includes('dsgo-blobs-wrapper');
 	},

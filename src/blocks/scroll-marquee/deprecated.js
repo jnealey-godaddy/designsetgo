@@ -46,6 +46,7 @@
  */
 
 import { useBlockProps } from '@wordpress/block-editor';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 const sharedSupports = {
 	anchor: true,
@@ -227,8 +228,8 @@ const v3 = {
 		borderRadius: { type: 'string', default: '8px' },
 	},
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Only the pre-native-border save ever emitted this custom property.
 		const hasBorderRadiusVar =
 			typeof innerHTML === 'string' &&
@@ -352,8 +353,8 @@ const v2 = {
 		borderRadius: { type: 'string', default: '8px' },
 	},
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Old (pre-objectFit) saves never emitted this custom property.
 		const hasObjectFitVar =
 			typeof innerHTML === 'string' &&
@@ -536,8 +537,8 @@ const v1ObjectFit = {
 		rowGap: { type: 'string', default: '20px' },
 	},
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		if (typeof innerHTML !== 'string') {
 			return false;
 		}

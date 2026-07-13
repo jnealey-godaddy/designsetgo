@@ -6,6 +6,7 @@
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import metadata from './block.json';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 // Matches the responsive grid value `…minmax(min(100%, <width>), 1fr)` and
 // captures the <width> so it can be recovered into the columnMinWidth attribute.
@@ -36,8 +37,8 @@ const v1 = {
 			attribute: 'style',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return !!innerHTML && innerHTML.includes('minmax(min(100%');
 	},
 	save({ attributes }) {

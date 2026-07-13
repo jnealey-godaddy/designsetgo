@@ -14,6 +14,7 @@ import {
 } from '../../utils/convert-preset-to-css-var';
 import { validateCSSLength } from '../../utils/css-generator';
 import metadata from './block.json';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * V4 deprecation: Before the border-color fallback moved from inline style to CSS.
@@ -55,8 +56,8 @@ const legacyAttributes = {
 const v5 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return (
 			Boolean(innerHTML) && innerHTML.includes('--dsgo-form-input-height')
 		);
@@ -476,8 +477,8 @@ const v4 = {
 const v3 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v3 blocks have raw empty CSS vars rendered as `--dsgo-form-label-color:;`
 		return innerHTML && innerHTML.includes('--dsgo-form-label-color:;');
 	},
@@ -654,8 +655,8 @@ const v3 = {
 const v2 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v2 blocks lack aria-hidden on honeypot and aria-atomic on message div
 		return (
 			innerHTML &&
@@ -874,8 +875,8 @@ const v2 = {
 const v1 = {
 	attributes: legacyAttributes,
 	supports: metadata.supports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v1 blocks have email config exposed as data attributes
 		return innerHTML && innerHTML.includes('data-enable-email');
 	},

@@ -30,6 +30,7 @@ import {
 } from '../../utils/has-explicit-value';
 import { getOwnOpeningTag } from '../../utils/get-own-opening-tag';
 import { getJustificationClass } from '../../utils/justification';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Every deprecation must land on the CURRENT attribute schema — deprecations do
@@ -281,8 +282,8 @@ const v10Supports = {
 const v10 = {
 	attributes: v10Attributes,
 	supports: v10Supports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const html = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const html = getDeprecatedBlockHTML(extra);
 		return (
 			html.includes('dsgo-icon-button__icon') &&
 			html.includes('display:flex')
@@ -430,8 +431,8 @@ const v10 = {
 
 const v9 = {
 	supports: v9Supports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Pre-wrapper markup: the block root IS the button/link, not a `<div>`.
 		return !!innerHTML && !innerHTML.trimStart().startsWith('<div');
 	},
@@ -608,8 +609,8 @@ const v9 = {
  */
 const v8 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Old serialization = an icon button with an inline gap on the root but
 		// without the new marker class. Scope the check to the button's OWN
 		// opening tag: `text` is free-form RichText serialized into innerHTML, so
@@ -800,8 +801,8 @@ const v8 = {
  */
 const v7 = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// Lazy-format block (post-v6) that still carries an inline size pair
 		// on the icon span — the signature of the pre-token serialization.
 		return (
@@ -1027,8 +1028,8 @@ const v6 = {
 			default: '',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v6 blocks use flex (not inline-flex) for full-width; v5 always uses inline-flex
 		return (
 			innerHTML &&
@@ -1237,8 +1238,8 @@ const v5 = {
 			default: '',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v5 blocks use inline-flex for all widths (including 100%) and raw width value
 		return (
 			innerHTML &&
@@ -1450,8 +1451,8 @@ const v4 = {
 			default: '',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v4 blocks have the two-div structure with dsgo-icon-button__wrapper
 		return (
 			innerHTML &&
@@ -1673,8 +1674,8 @@ const v3 = {
 			default: '',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v3 blocks have inline display/width styles on outer wrapper and dsgo-icon-button__wrapper without wp-block-button__link
 		return (
 			innerHTML &&
@@ -1875,8 +1876,8 @@ const v2 = {
 			default: '',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v2 blocks have inline SVG icons (no dsgo-lazy-icon class)
 		return (
 			innerHTML &&
@@ -2070,8 +2071,8 @@ const v1 = {
 			default: '',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v1 blocks don't have splitPaddingStyles and render icon position differently
 		// They also don't have dsgo-lazy-icon and have role="button" on non-link wrappers
 		return (

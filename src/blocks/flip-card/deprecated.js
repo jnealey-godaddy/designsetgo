@@ -5,6 +5,7 @@
  */
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Inline `width: 100%` — the version before that constant moved to style.scss.
@@ -54,8 +55,8 @@ const v1 = {
 			__experimentalDefaultControls: { margin: true },
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const html = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const html = getDeprecatedBlockHTML(extra);
 		return html.includes('dsgo-flip-card') && html.includes('width:100%');
 	},
 	migrate(attributes) {

@@ -8,6 +8,7 @@
 
 import { useBlockProps } from '@wordpress/block-editor';
 import { getIcon } from '../shared/icon-utils';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
  * Shared supports for all deprecated versions.
@@ -51,8 +52,8 @@ const sharedSupports = {
  */
 const vLazy = {
 	supports: sharedSupports,
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		return Boolean(innerHTML) && innerHTML.includes('dsgo-lazy-icon');
 	},
 	attributes: {
@@ -143,8 +144,8 @@ const v1 = {
 			default: 'star',
 		},
 	},
-	isEligible(attributes, innerBlocks, { blockNode, block } = {}) {
-		const innerHTML = blockNode?.innerHTML ?? block?.originalContent ?? '';
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
 		// v1 blocks have inline SVG icons instead of dsgo-lazy-icon class
 		return innerHTML && !innerHTML.includes('dsgo-lazy-icon');
 	},
