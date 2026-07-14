@@ -721,7 +721,7 @@ class Form_Handler {
 
 		wp_localize_script(
 			$handle,
-			'dsgoIntegrations',
+			'dsgo_integrations',
 			array(
 				'turnstileSiteKey' => ! empty( $integrations_settings['turnstile_site_key'] ) ? esc_js( $integrations_settings['turnstile_site_key'] ) : '',
 			)
