@@ -978,4 +978,119 @@ class Test_Form_Handler extends WP_UnitTestCase {
 
 		wp_delete_post( $post_id, true );
 	}
+
+	/**
+	 * Run the registered turnstile_token validate_callback against a value.
+	 *
+	 * Exercises the real route registration rather than a copy of the rule, so the
+	 * test still fails if the endpoint stops validating the token altogether.
+	 *
+	 * @param mixed $value Token value to validate.
+	 * @return true|WP_Error Validation result.
+	 */
+	private function validate_turnstile_token( $value ) {
+		$routes = rest_get_server()->get_routes();
+		$args   = $routes['/designsetgo/v1/form/submit'][0]['args'];
+
+		$this->assertArrayHasKey( 'turnstile_token', $args );
+		$this->assertArrayHasKey( 'validate_callback', $args['turnstile_token'] );
+
+		return call_user_func( $args['turnstile_token']['validate_callback'], $value );
+	}
+
+	/**
+	 * A real Turnstile token is dot-delimited, so the validator must accept dots.
+	 *
+	 * The original rule was /^[a-zA-Z0-9_-]+$/, which has no '.' in the character
+	 * class, so every genuine Cloudflare token was rejected with a 400 and
+	 * Turnstile was unusable whenever it was switched on.
+	 */
+	public function test_turnstile_token_accepts_real_dot_delimited_token() {
+		$token = '0.hVo2rjF4Kd_ZjXcLp-9QwT.MTcwOTMyMTQ1Ng.abc123XYZ_-.f00ba7';
+
+		$this->assertTrue( $this->validate_turnstile_token( $token ) );
+	}
+
+	/**
+	 * Cloudflare's documented dummy token must validate too.
+	 */
+	public function test_turnstile_token_accepts_cloudflare_dummy_token() {
+		$this->assertTrue( $this->validate_turnstile_token( 'XXXX.DUMMY.TOKEN.XXXX' ) );
+	}
+
+	/**
+	 * Empty token stays valid: the form degrades gracefully when Turnstile fails
+	 * to issue one, and verification is skipped rather than blocking submission.
+	 */
+	public function test_turnstile_token_accepts_empty_value() {
+		$this->assertTrue( $this->validate_turnstile_token( '' ) );
+	}
+
+	/**
+	 * Cloudflare caps tokens at 2048 characters; anything longer is not a token.
+	 */
+	public function test_turnstile_token_rejects_token_over_length_limit() {
+		$result = $this->validate_turnstile_token( str_repeat( 'a', 2049 ) );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'invalid_turnstile_token', $result->get_error_code() );
+	}
+
+	/**
+	 * A token at exactly the documented ceiling is still a valid token.
+	 */
+	public function test_turnstile_token_accepts_token_at_length_limit() {
+		$this->assertTrue( $this->validate_turnstile_token( str_repeat( 'a', 2048 ) ) );
+	}
+
+	/**
+	 * Whitespace and control characters never appear in a token; reject them
+	 * rather than forwarding junk to Cloudflare's siteverify endpoint.
+	 */
+	public function test_turnstile_token_rejects_whitespace_and_control_characters() {
+		$values = array( 'tok en', "tok\nen", "tok\ten", "tok\0en" );
+
+		foreach ( $values as $value ) {
+			$result = $this->validate_turnstile_token( $value );
+
+			$this->assertWPError( $result, sprintf( 'Expected %s to be rejected.', wp_json_encode( $value ) ) );
+			$this->assertSame( 'invalid_turnstile_token', $result->get_error_code() );
+		}
+	}
+
+	/**
+	 * Non-string input must not blow up the validator.
+	 */
+	public function test_turnstile_token_rejects_non_string() {
+		$this->assertWPError( $this->validate_turnstile_token( array( 'nope' ) ) );
+	}
+
+	/**
+	 * End-to-end guard on the reported symptom: submitting a real dot-delimited
+	 * token returned "400 Invalid parameter(s): turnstile_token" and the request
+	 * never reached the handler. Whatever else the submission does, it must not
+	 * fail parameter validation on the token any more.
+	 */
+	public function test_rest_endpoint_does_not_reject_real_turnstile_token_as_invalid_param() {
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
+		$request->set_body_params(
+			array(
+				'formId'          => 'test-form',
+				'fields'          => array(),
+				'turnstile_token' => '0.hVo2rjF4Kd_ZjXcLp-9QwT.MTcwOTMyMTQ1Ng.abc123XYZ_-.f00ba7',
+			)
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+		$code     = isset( $data['code'] ) ? $data['code'] : '';
+
+		$this->assertNotSame( 'rest_invalid_param', $code, 'Token must not fail REST parameter validation.' );
+
+		// Belt and braces: even if some other rest_invalid_param fires, it must not
+		// be about turnstile_token.
+		if ( 'rest_invalid_param' === $code ) {
+			$this->assertArrayNotHasKey( 'turnstile_token', $data['data']['params'] );
+		}
+	}
 }
