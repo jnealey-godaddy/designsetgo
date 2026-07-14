@@ -91,7 +91,7 @@ designsetgo_uninstall_step(
 				 WHERE option_name LIKE %s
 				    OR option_name LIKE %s
 				    OR option_name LIKE %s",
-				$wpdb->esc_like( '_transient_form_submit_' ) . '%',
+				$wpdb->esc_like( '_transient_dsgo_form_submit_' ) . '%',
 				$wpdb->esc_like( '_transient_dsgo_has_blocks_' ) . '%',
 				$wpdb->esc_like( '_transient_dsgo_form_submissions_count' ) . '%'
 			)
@@ -105,7 +105,7 @@ designsetgo_uninstall_step(
 				 WHERE option_name LIKE %s
 				    OR option_name LIKE %s
 				    OR option_name LIKE %s",
-				$wpdb->esc_like( '_transient_timeout_form_submit_' ) . '%',
+				$wpdb->esc_like( '_transient_timeout_dsgo_form_submit_' ) . '%',
 				$wpdb->esc_like( '_transient_timeout_dsgo_has_blocks_' ) . '%',
 				$wpdb->esc_like( '_transient_timeout_dsgo_form_submissions_count' ) . '%'
 			)
