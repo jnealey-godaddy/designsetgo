@@ -132,7 +132,6 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 					__nextHasNoMarginBottom
 				/>
 				{dsgoProvider === 'googlemaps' &&
-					// eslint-disable-next-line camelcase
 					(window.dsgo_integrations?.googleMapsApiKey ? (
 						<Notice
 							status="success"

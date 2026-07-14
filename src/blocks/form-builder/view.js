@@ -110,7 +110,6 @@ function initFormBuilder() {
 			'[data-dsgo-turnstile-container]'
 		);
 		const turnstileSiteKey =
-			// eslint-disable-next-line camelcase
 			window.dsgo_integrations?.turnstileSiteKey ?? null;
 		let turnstileTokenField = null;
 
