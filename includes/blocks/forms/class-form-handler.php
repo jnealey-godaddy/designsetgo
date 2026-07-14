@@ -203,17 +203,30 @@ class Form_Handler {
 						'default'           => '',
 						'sanitize_callback' => 'sanitize_text_field',
 						'validate_callback' => function ( $value ) {
-							// Empty is valid (graceful degradation).
-							if ( empty( $value ) ) {
-								return true;
-							}
-							// Turnstile tokens are alphanumeric with hyphens/underscores.
-							if ( ! preg_match( '/^[a-zA-Z0-9_-]+$/', $value ) ) {
+							if ( ! is_string( $value ) ) {
 								return new \WP_Error(
 									'invalid_turnstile_token',
 									__( 'Invalid Turnstile token format.', 'designsetgo' )
 								);
 							}
+
+							// Empty is valid (graceful degradation).
+							if ( '' === $value ) {
+								return true;
+							}
+
+							// The token is opaque: Cloudflare only guarantees it is at most
+							// 2048 characters, and its alphabet is not contractual. Real tokens
+							// are dot-delimited, so do not try to parse their structure —
+							// bound the length and reject anything that is not printable ASCII
+							// (whitespace, newlines, NUL) before forwarding it to siteverify.
+							if ( strlen( $value ) > 2048 || ! preg_match( '/^[!-~]+$/', $value ) ) {
+								return new \WP_Error(
+									'invalid_turnstile_token',
+									__( 'Invalid Turnstile token format.', 'designsetgo' )
+								);
+							}
+
 							return true;
 						},
 					),
