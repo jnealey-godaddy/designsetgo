@@ -36,6 +36,31 @@ class Draft_Mode {
 	const META_DRAFT_CREATED = '_dsgo_draft_created';
 
 	/**
+	 * Maximum nesting depth scanned by meta_rejection_reason().
+	 *
+	 * Anything deeper is rejected (fail closed), capping recursion so a
+	 * maliciously deep payload cannot overflow the stack.
+	 */
+	const MAX_OBJECT_SCAN_DEPTH = 20;
+
+	/**
+	 * Rejection reason: the value is, or contains, a PHP object.
+	 *
+	 * A hostile payload. Never copied anywhere.
+	 */
+	const REJECT_OBJECT = 'object';
+
+	/**
+	 * Rejection reason: the value nests deeper than MAX_OBJECT_SCAN_DEPTH.
+	 *
+	 * Unlike REJECT_OBJECT this says nothing about whether the value is
+	 * hostile — only that it is too deep to vet within the recursion cap. It
+	 * may well be legitimate data (deeply nested page-builder or ACF
+	 * configuration), so such a key is left untouched rather than deleted.
+	 */
+	const REJECT_DEPTH = 'depth';
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -366,10 +391,14 @@ class Draft_Mode {
 			foreach ( $values as $value ) {
 				$unserialized = maybe_unserialize( $value );
 				// Reject PHP objects (including objects nested inside arrays)
-				// to prevent object injection.
-				if ( self::contains_object( $unserialized ) ) {
+				// to prevent object injection, and anything too deep to vet.
+				$reason = self::meta_rejection_reason( $unserialized );
+
+				if ( '' !== $reason ) {
+					self::log_skipped_meta( $key, $reason, $source_id, 'the draft will not carry this key' );
 					continue;
 				}
+
 				add_post_meta( $target_id, $key, $unserialized );
 			}
 		}
@@ -408,9 +437,25 @@ class Draft_Mode {
 			if ( in_array( $key, $preserve_keys, true ) ) {
 				continue;
 			}
-			if ( ! isset( $draft_meta[ $key ] ) ) {
-				delete_post_meta( $original_id, $key );
+
+			if ( isset( $draft_meta[ $key ] ) ) {
+				continue;
 			}
+
+			// The key is on the original but not on the draft. Normally that
+			// means the author removed it, and the deletion should be synced.
+			// But copy_post_meta() may simply have refused to copy it — in
+			// which case the author never saw it, let alone removed it, and
+			// deleting here would destroy meta they never touched. Only sync
+			// the deletion when the value was actually copyable.
+			$reason = self::values_rejection_reason( $original_meta[ $key ] );
+
+			if ( '' !== $reason ) {
+				self::log_skipped_meta( $key, $reason, $original_id, 'it was left untouched on the original rather than deleted' );
+				continue;
+			}
+
+			delete_post_meta( $original_id, $key );
 		}
 
 		foreach ( $draft_meta as $key => $values ) {
@@ -418,16 +463,24 @@ class Draft_Mode {
 				continue;
 			}
 
+			// Vet every value for this key before touching the original.
+			// delete_post_meta() below is destructive, so a key with even one
+			// unwritable value must be left alone entirely — deleting it and
+			// then declining to write the replacement back would wipe meta the
+			// original already had. Reject PHP objects (including objects
+			// nested inside arrays) to prevent object injection, and anything
+			// too deep to vet.
+			$reason = self::values_rejection_reason( $values );
+
+			if ( '' !== $reason ) {
+				self::log_skipped_meta( $key, $reason, $draft_id, 'the original keeps its existing value' );
+				continue;
+			}
+
 			delete_post_meta( $original_id, $key );
 
 			foreach ( $values as $value ) {
-				$unserialized = maybe_unserialize( $value );
-				// Reject PHP objects (including objects nested inside arrays)
-				// to prevent object injection.
-				if ( self::contains_object( $unserialized ) ) {
-					continue;
-				}
-				add_post_meta( $original_id, $key, $unserialized );
+				add_post_meta( $original_id, $key, maybe_unserialize( $value ) );
 			}
 		}
 	}
@@ -466,28 +519,104 @@ class Draft_Mode {
 	}
 
 	/**
-	 * Recursively determine whether a value is, or contains, a PHP object.
+	 * Reason a meta value must not be copied, or '' when it is safe to copy.
 	 *
 	 * A plain is_object() check misses objects nested inside arrays (e.g. a
 	 * serialized payload like `a:1:{i:0;O:8:"stdClass":0:{}}`), which would
 	 * still trigger object injection when stored and later unserialized.
 	 *
+	 * Recursion is bounded by self::MAX_OBJECT_SCAN_DEPTH. A structure deeper
+	 * than that is rejected (fail closed), eliminating any stack-overflow risk
+	 * from a maliciously deep payload. The two rejection reasons are reported
+	 * separately because they mean different things: REJECT_OBJECT is a hostile
+	 * payload, while REJECT_DEPTH may be perfectly legitimate data that is
+	 * simply too deep to vet, and so must be preserved rather than destroyed.
+	 *
 	 * @param mixed $value Value to inspect (already passed through maybe_unserialize()).
-	 * @return bool True if the value is an object or any nested array element is.
+	 * @param int   $depth Current recursion depth (internal).
+	 * @return string self::REJECT_OBJECT, self::REJECT_DEPTH, or '' when safe.
 	 */
-	private static function contains_object( $value ) {
+	private static function meta_rejection_reason( $value, $depth = 0 ) {
 		if ( is_object( $value ) ) {
-			return true;
+			return self::REJECT_OBJECT;
 		}
 
 		if ( is_array( $value ) ) {
+			if ( $depth >= self::MAX_OBJECT_SCAN_DEPTH ) {
+				return self::REJECT_DEPTH;
+			}
+
 			foreach ( $value as $item ) {
-				if ( self::contains_object( $item ) ) {
-					return true;
+				$reason = self::meta_rejection_reason( $item, $depth + 1 );
+
+				if ( '' !== $reason ) {
+					return $reason;
 				}
 			}
 		}
 
-		return false;
+		return '';
+	}
+
+	/**
+	 * Reason none of a meta key's stored values may be copied, or '' when safe.
+	 *
+	 * @param array $values Raw values as returned by get_post_meta( $id ) (still serialized).
+	 * @return string self::REJECT_OBJECT, self::REJECT_DEPTH, or '' when safe.
+	 */
+	private static function values_rejection_reason( $values ) {
+		foreach ( (array) $values as $value ) {
+			$reason = self::meta_rejection_reason( maybe_unserialize( $value ) );
+
+			if ( '' !== $reason ) {
+				return $reason;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Record a meta key that the object scanner refused to copy.
+	 *
+	 * Skipping is deliberate, but otherwise invisible: the symptom an author
+	 * reports is only ever "some meta didn't carry over." Fire an action so the
+	 * decision is observable, and under WP_DEBUG emit a notice naming the key
+	 * and the reason. The value itself is never logged — it may hold a secret.
+	 *
+	 * @param string $key      Meta key that was skipped.
+	 * @param string $reason   self::REJECT_OBJECT or self::REJECT_DEPTH.
+	 * @param int    $post_id  Post the meta was read from.
+	 * @param string $outcome  Human-readable description of what was done instead.
+	 */
+	private static function log_skipped_meta( $key, $reason, $post_id, $outcome ) {
+		/**
+		 * Fires when the object scanner refuses to copy a meta key.
+		 *
+		 * @param string $key     Meta key that was skipped.
+		 * @param string $reason  'object' (PHP object rejected) or 'depth'
+		 *                        (nests deeper than MAX_OBJECT_SCAN_DEPTH).
+		 * @param int    $post_id Post the meta was read from.
+		 * @param string $outcome What happened to the key instead.
+		 */
+		do_action( 'designsetgo_draft_meta_skipped', $key, $reason, $post_id, $outcome );
+
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			return;
+		}
+
+		$because = self::REJECT_DEPTH === $reason
+			? sprintf( 'it nests deeper than the %d-level scan cap', self::MAX_OBJECT_SCAN_DEPTH )
+			: 'it contains a PHP object';
+
+		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only diagnostic; the alternative is a silent skip that is impossible to support.
+			sprintf(
+				'DesignSetGo: meta key "%1$s" on post %2$d was not copied because %3$s; %4$s.',
+				$key,
+				(int) $post_id,
+				$because,
+				$outcome
+			)
+		);
 	}
 }

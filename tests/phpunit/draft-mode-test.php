@@ -159,6 +159,95 @@ class Test_Draft_Mode extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that meta nested deeper than the recursion cap is rejected (fail closed).
+	 *
+	 * The object guard stops recursing at MAX_OBJECT_SCAN_DEPTH and treats
+	 * anything deeper as suspect, so a pathologically deep payload is skipped
+	 * rather than copied — and cannot overflow the stack. Normally-shallow
+	 * arrays (covered above) still copy.
+	 */
+	public function test_create_draft_skips_meta_nested_beyond_depth_cap() {
+		// Wrap a scalar in arrays well past the 20-level cap (no object present).
+		$deep = 'leaf';
+		for ( $i = 0; $i < 25; $i++ ) {
+			$deep = array( $deep );
+		}
+		update_post_meta( $this->page_id, 'too_deep_meta', $deep );
+		update_post_meta( $this->page_id, 'safe_meta', 'keep-me' );
+
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->assertIsInt( $draft_id );
+
+		// Over-deep meta is not copied.
+		$this->assertSame( '', get_post_meta( $draft_id, 'too_deep_meta', true ) );
+		// Safe meta still copies.
+		$this->assertSame( 'keep-me', get_post_meta( $draft_id, 'safe_meta', true ) );
+	}
+
+	/**
+	 * Test that publishing does not delete meta the scanner refused to copy.
+	 *
+	 * Because an over-deep value never reaches the draft, publishing would
+	 * otherwise read its absence from the draft as "the author deleted it" and
+	 * sync that deletion to the original — destroying data the author never
+	 * touched. The depth cap says only "too deep to vet", not "hostile", so
+	 * such a key must be left untouched rather than deleted.
+	 */
+	public function test_publish_draft_preserves_meta_too_deep_to_copy() {
+		$deep = 'leaf';
+		for ( $i = 0; $i < 25; $i++ ) {
+			$deep = array( $deep );
+		}
+		update_post_meta( $this->page_id, 'too_deep_meta', $deep );
+		update_post_meta( $this->page_id, 'safe_meta', 'keep-me' );
+
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->assertIsInt( $draft_id );
+		// Precondition: the deep key really was withheld from the draft.
+		$this->assertSame( '', get_post_meta( $draft_id, 'too_deep_meta', true ) );
+
+		$this->draft_mode->publish_draft( $draft_id );
+
+		// The original keeps the deep meta it always had.
+		$this->assertSame( $deep, get_post_meta( $this->page_id, 'too_deep_meta', true ) );
+		// And ordinary meta still round-trips.
+		$this->assertSame( 'keep-me', get_post_meta( $this->page_id, 'safe_meta', true ) );
+	}
+
+	/**
+	 * Test that a skipped meta key is observable rather than silently dropped.
+	 *
+	 * A silent skip surfaces to the author only as "some meta didn't carry
+	 * over", which is undiagnosable. Fire an action naming the key and reason.
+	 */
+	public function test_skipped_meta_fires_action_with_reason() {
+		$skipped = array();
+		add_action(
+			'designsetgo_draft_meta_skipped',
+			function ( $key, $reason ) use ( &$skipped ) {
+				$skipped[ $key ] = $reason;
+			},
+			10,
+			2
+		);
+
+		$deep = 'leaf';
+		for ( $i = 0; $i < 25; $i++ ) {
+			$deep = array( $deep );
+		}
+		update_post_meta( $this->page_id, 'too_deep_meta', $deep );
+		update_post_meta( $this->page_id, 'object_meta', new \stdClass() );
+		update_post_meta( $this->page_id, 'safe_meta', 'keep-me' );
+
+		$this->draft_mode->create_draft( $this->page_id );
+
+		$this->assertSame( \DesignSetGo\Admin\Draft_Mode::REJECT_DEPTH, $skipped['too_deep_meta'] ?? null );
+		$this->assertSame( \DesignSetGo\Admin\Draft_Mode::REJECT_OBJECT, $skipped['object_meta'] ?? null );
+		// Copyable meta must not be reported as skipped.
+		$this->assertArrayNotHasKey( 'safe_meta', $skipped );
+	}
+
+	/**
 	 * Test creating draft fails for invalid post ID.
 	 */
 	public function test_create_draft_invalid_post() {

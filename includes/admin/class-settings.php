@@ -29,8 +29,29 @@ class Settings {
 	 * never reach the browser. The write path treats an incoming value equal
 	 * to this placeholder as "unchanged" and preserves the stored secret. A
 	 * real secret will never equal this string.
+	 *
+	 * Pure ASCII so it is byte-identical across encodings and opcode caches; a
+	 * value this distinctive will not collide with a legitimate secret.
+	 *
+	 * Migration note: this placeholder changed from the prior '••••••••' on
+	 * upgrade. A browser that still has the old settings form cached at deploy
+	 * time echoes the old placeholder back on submit. The write path accepts
+	 * LEGACY_REDACTED_PLACEHOLDER as "unchanged" too, so that stale submit
+	 * preserves the stored secret instead of overwriting it. See
+	 * is_redaction_placeholder().
 	 */
-	const REDACTED_PLACEHOLDER = '••••••••';
+	const REDACTED_PLACEHOLDER = '__DSGO_REDACTED__';
+
+	/**
+	 * Legacy redaction placeholder served by builds before REDACTED_PLACEHOLDER
+	 * became ASCII.
+	 *
+	 * Eight U+2022 bullets. Defined with \u escapes so the bytes are exact
+	 * regardless of how this file is saved or cached in an opcode cache. Only
+	 * ever accepted on write (treated as "unchanged"); read paths emit
+	 * REDACTED_PLACEHOLDER exclusively, so this is never sent to a browser.
+	 */
+	const LEGACY_REDACTED_PLACEHOLDER = "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}";
 
 	/**
 	 * Constructor
@@ -501,6 +522,22 @@ class Settings {
 	}
 
 	/**
+	 * Whether an incoming secret value is a redaction placeholder meaning
+	 * "unchanged — keep the stored secret rather than persisting this value".
+	 *
+	 * Accepts both the current placeholder and the legacy one so a browser
+	 * holding a stale settings form at upgrade time cannot overwrite the real
+	 * secret with the old bullet string.
+	 *
+	 * @param mixed $value Submitted field value.
+	 * @return bool True when the value is a placeholder and must not be saved.
+	 */
+	private static function is_redaction_placeholder( $value ): bool {
+		return self::REDACTED_PLACEHOLDER === $value
+			|| self::LEGACY_REDACTED_PLACEHOLDER === $value;
+	}
+
+	/**
 	 * Return a copy of $settings with write-only secrets replaced by the
 	 * redaction placeholder.
 	 *
@@ -856,7 +893,7 @@ class Settings {
 			$secret_fields = self::write_only_secret_keys()[ $key ] ?? array();
 			foreach ( $secret_fields as $secret_field ) {
 				if ( isset( $settings[ $key ][ $secret_field ] )
-					&& self::REDACTED_PLACEHOLDER === $settings[ $key ][ $secret_field ] ) {
+					&& self::is_redaction_placeholder( $settings[ $key ][ $secret_field ] ) ) {
 					unset( $group_values[ $secret_field ] );
 				}
 			}
