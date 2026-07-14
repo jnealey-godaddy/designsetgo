@@ -105,7 +105,7 @@ class Test_Uninstall extends WP_UnitTestCase {
 				 WHERE option_name LIKE %s
 				    OR option_name LIKE %s
 				    OR option_name LIKE %s",
-				$wpdb->esc_like( '_transient_form_submit_' ) . '%',
+				$wpdb->esc_like( '_transient_dsgo_form_submit_' ) . '%',
 				$wpdb->esc_like( '_transient_dsgo_has_blocks_' ) . '%',
 				$wpdb->esc_like( '_transient_dsgo_form_submissions_count' ) . '%'
 			)
