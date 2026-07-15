@@ -84,8 +84,17 @@ class Button_Global_Styles {
 	 * @var string[]
 	 */
 	private const VARIATION_SELECTOR_TEMPLATES = array(
-		'.wp-block-designsetgo-icon-button.is-style-{name} .dsgo-icon-button.wp-block-button__link',
-		'.dsgo-form__submit.dsgo-form__submit--{name}.wp-element-button',
+		// Icon Button: the variation class sits on the wrapper (`is-style-{name}`)
+		// — a different namespace from the block's `dsgo-icon-button--{anim}`
+		// hover-animation classes — so it can never collide.
+		'icon_button' => '.wp-block-designsetgo-icon-button.is-style-{name} .dsgo-icon-button.wp-block-button__link',
+		// Form submit: the variation class shares the `dsgo-form__submit--{x}`
+		// modifier namespace with hover-animation classes that
+		// apply_default_form_button_hover() stamps on real buttons (e.g.
+		// `dsgo-form__submit--lift`). Emitted only for non-animation slugs — see
+		// build_variation_selector() — so a variation named like an animation can
+		// never repaint a button that merely carries that animation class.
+		'form_submit' => '.dsgo-form__submit.dsgo-form__submit--{name}.wp-element-button',
 	);
 
 	/**
@@ -263,6 +272,13 @@ class Button_Global_Styles {
 	 * base button rule. Colours therefore stay defined once (in the kit /
 	 * theme.json) and are projected onto the icon button / form submit here.
 	 *
+	 * Intentional trade-off: this reads only the `core/button` variation node, not
+	 * a per-block override at `styles.blocks.designsetgo/icon-button.variations.*`
+	 * (which the Site Editor exposes because `Icon_Button_Styles` registers the
+	 * variations for the block). Such a per-block override never rendered anyway —
+	 * WordPress emits it as a `:where()`-wrapped (0,1,0) rule that loses to the
+	 * base button rule — so honouring it is deferred rather than a regression.
+	 *
 	 * @param array $block_styles The core/button block styles from Global Styles.
 	 * @return string Generated CSS, or empty string when there are no variations.
 	 */
@@ -316,8 +332,18 @@ class Button_Global_Styles {
 	 * @return string Selector list, each part prefixed with `:root`.
 	 */
 	private function build_variation_selector( $slug, $pseudo = '' ) {
+		$is_animation_slug = in_array( $slug, Plugin::ALLOWED_HOVER_ANIMATIONS, true );
+
 		$parts = array();
-		foreach ( self::VARIATION_SELECTOR_TEMPLATES as $template ) {
+		foreach ( self::VARIATION_SELECTOR_TEMPLATES as $key => $template ) {
+			// The form-submit modifier namespace is shared with hover animations,
+			// so never emit a form-submit variation rule for an animation slug —
+			// it would repaint any button that merely carries that animation
+			// class. The icon-button selector (wrapper `is-style-{name}`) has no
+			// such collision and is always emitted.
+			if ( 'form_submit' === $key && $is_animation_slug ) {
+				continue;
+			}
 			$parts[] = ':root ' . str_replace( '{name}', $slug, $template ) . $pseudo;
 		}
 		return implode( ",\n", $parts );

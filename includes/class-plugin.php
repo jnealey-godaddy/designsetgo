@@ -25,7 +25,17 @@ class Plugin {
 	 *
 	 * @var string[]
 	 */
-	private const ALLOWED_HOVER_ANIMATIONS = array(
+	/**
+	 * Hover-animation slugs stamped onto buttons as `--{slug}` modifiers.
+	 *
+	 * Public so features that emit button CSS (e.g. Button_Global_Styles) can
+	 * avoid colliding with this class namespace — the form submit uses the same
+	 * `dsgo-form__submit--{x}` modifier space for both animations and style
+	 * variations.
+	 *
+	 * @var string[]
+	 */
+	public const ALLOWED_HOVER_ANIMATIONS = array(
 		'fill-diagonal',
 		'zoom-in',
 		'slide-left',

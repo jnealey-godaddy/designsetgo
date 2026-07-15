@@ -153,6 +153,49 @@ class Button_Global_Styles_Variations_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A variation named like a hover animation never emits a form-submit rule.
+	 *
+	 * `apply_default_form_button_hover()` stamps `dsgo-form__submit--{animation}`
+	 * on real buttons, so a variation named e.g. `lift` must NOT emit
+	 * `.dsgo-form__submit.dsgo-form__submit--lift` (it would repaint any button
+	 * with the `--lift` hover animation). The icon-button selector (wrapper
+	 * `is-style-{name}`) is a separate namespace and is still emitted.
+	 *
+	 * @dataProvider animation_slug_provider
+	 *
+	 * @param string $slug A reserved hover-animation slug.
+	 */
+	public function test_animation_named_variation_skips_form_submit( $slug ) {
+		$css = $this->call(
+			'build_variation_css',
+			array( $this->block_styles( array( $slug => array( 'color' => array( 'background' => '#f00' ) ) ) ) )
+		);
+
+		$this->assertStringNotContainsString(
+			'.dsgo-form__submit.dsgo-form__submit--' . $slug,
+			$css,
+			'Form-submit selector must not reuse a hover-animation slug.'
+		);
+		$this->assertStringContainsString(
+			'.wp-block-designsetgo-icon-button.is-style-' . $slug . ' .dsgo-icon-button',
+			$css,
+			'Icon-button selector (separate namespace) should still be emitted.'
+		);
+	}
+
+	/**
+	 * A couple of the reserved hover-animation slugs.
+	 *
+	 * @return array
+	 */
+	public function animation_slug_provider() {
+		return array(
+			'lift'   => array( 'lift' ),
+			'shrink' => array( 'shrink' ),
+		);
+	}
+
+	/**
 	 * Two raw names that normalise to the same slug emit a single rule set.
 	 */
 	public function test_dedupes_slugs() {
