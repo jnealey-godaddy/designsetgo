@@ -248,6 +248,97 @@ class Test_Draft_Mode extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that publishing does not delete meta an integrator excluded from copying.
+	 *
+	 * designsetgo_draft_excluded_meta_keys keeps a key off the draft on purpose.
+	 * That key's absence from the draft is therefore not the author deleting it,
+	 * and publishing must not sync a deletion the author never made. The value is
+	 * perfectly copyable, so the object/depth guard alone does not catch this.
+	 */
+	public function test_publish_draft_preserves_excluded_meta_keys() {
+		add_filter(
+			'designsetgo_draft_excluded_meta_keys',
+			function ( $keys ) {
+				$keys[] = 'thirdparty_bookkeeping';
+				return $keys;
+			}
+		);
+
+		update_post_meta( $this->page_id, 'thirdparty_bookkeeping', 'do-not-lose-me' );
+		update_post_meta( $this->page_id, 'safe_meta', 'keep-me' );
+
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->assertIsInt( $draft_id );
+		// Precondition: the exclusion really did keep the key off the draft.
+		$this->assertSame( '', get_post_meta( $draft_id, 'thirdparty_bookkeeping', true ) );
+
+		$this->draft_mode->publish_draft( $draft_id );
+
+		// The original keeps the key the integrator deliberately withheld.
+		$this->assertSame( 'do-not-lose-me', get_post_meta( $this->page_id, 'thirdparty_bookkeeping', true ) );
+		$this->assertSame( 'keep-me', get_post_meta( $this->page_id, 'safe_meta', true ) );
+	}
+
+	/**
+	 * Test that the depth cap can be raised for legitimately deep data.
+	 *
+	 * Without an escape hatch, a site whose data genuinely nests past the default
+	 * would have that meta withheld from every draft with no recourse.
+	 */
+	public function test_scan_depth_filter_allows_deeper_meta() {
+		add_filter(
+			'designsetgo_draft_max_object_scan_depth',
+			function () {
+				return 40;
+			}
+		);
+
+		$deep = 'leaf';
+		for ( $i = 0; $i < 25; $i++ ) {
+			$deep = array( $deep );
+		}
+		// 25 levels: over the default cap of 20, under the filtered cap of 40.
+		update_post_meta( $this->page_id, 'deep_but_allowed', $deep );
+
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->assertIsInt( $draft_id );
+
+		$this->assertSame( $deep, get_post_meta( $draft_id, 'deep_but_allowed', true ) );
+	}
+
+	/**
+	 * Test that the depth filter cannot remove the recursion bound.
+	 *
+	 * The cap exists to stop a hostile payload overflowing the stack, so a filter
+	 * may relax it but must not be able to hand that guarantee away. A value past
+	 * the absolute ceiling stays rejected however high the filter reaches.
+	 */
+	public function test_scan_depth_filter_is_clamped_to_absolute_max() {
+		add_filter(
+			'designsetgo_draft_max_object_scan_depth',
+			function () {
+				return PHP_INT_MAX;
+			}
+		);
+
+		$absolute = \DesignSetGo\Admin\Draft_Mode::ABSOLUTE_MAX_OBJECT_SCAN_DEPTH;
+
+		$deep = 'leaf';
+		for ( $i = 0; $i < $absolute + 10; $i++ ) {
+			$deep = array( $deep );
+		}
+		update_post_meta( $this->page_id, 'absurdly_deep', $deep );
+		update_post_meta( $this->page_id, 'safe_meta', 'keep-me' );
+
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->assertIsInt( $draft_id );
+
+		// Still rejected: the clamp holds even against PHP_INT_MAX.
+		$this->assertSame( '', get_post_meta( $draft_id, 'absurdly_deep', true ) );
+		$this->assertSame( 'keep-me', get_post_meta( $draft_id, 'safe_meta', true ) );
+	}
+
+	/**
 	 * Test creating draft fails for invalid post ID.
 	 */
 	public function test_create_draft_invalid_post() {
