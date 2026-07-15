@@ -870,29 +870,10 @@ class Plugin {
 			);
 		}
 
-		// Localize excluded blocks setting for extension filtering.
-		// This is done outside the block-category-icon conditional because
-		// the 'designsetgo-extensions' script is registered separately in the Assets class.
-		if ( wp_script_is( 'designsetgo-extensions', 'registered' ) || wp_script_is( 'designsetgo-extensions', 'enqueued' ) ) {
-			$settings        = $settings ?? \DesignSetGo\Admin\Settings::get_settings();
-			$excluded_blocks = isset( $settings['excluded_blocks'] ) ? $settings['excluded_blocks'] : array();
-
-			$enabled_extensions = isset( $settings['enabled_extensions'] ) ? (array) $settings['enabled_extensions'] : array();
-
-			wp_localize_script(
-				'designsetgo-extensions',
-				'dsgoSettings',
-				array(
-					'excludedBlocks'         => $excluded_blocks,
-					'defaultIconButtonHover' => isset( $settings['animations']['default_icon_button_hover'] )
-						? sanitize_key( $settings['animations']['default_icon_button_hover'] )
-						: 'fill-diagonal',
-					// Empty list = all extensions enabled (matches the
-					// PHP convention in Block_Manager::should_load_extension).
-					'enabledExtensions'      => array_values( array_map( 'sanitize_key', $enabled_extensions ) ),
-				)
-			);
-		}
+		// The `dsgoSettings` payload (excluded blocks, extension allowlist) is
+		// intentionally NOT localized here. It rides `enqueue_block_assets`
+		// instead so it reaches the iframed editor canvas — see
+		// Assets::localize_extension_settings() for the full rationale.
 	}
 
 	/**

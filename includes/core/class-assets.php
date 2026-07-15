@@ -92,11 +92,51 @@ class Assets {
 			true
 		);
 
+		// Ship window.dsgoSettings into the iframe alongside this script.
+		// @see Assets::localize_extension_settings() for why this hook.
+		$this->localize_extension_settings();
+
 		wp_enqueue_style(
 			'designsetgo-extensions',
 			DESIGNSETGO_URL . 'build/index.css',
 			array( 'wp-edit-blocks' ), // Dashicons loads automatically in admin.
 			$asset_file['version']
+		);
+	}
+
+	/**
+	 * Localize DesignSetGo settings for the block extension bundle.
+	 *
+	 * Exposes the user's excluded-blocks list and extension allowlist to the
+	 * editor iframe as `window.dsgoSettings`, consumed by shouldExtendBlock()
+	 * and the per-extension gating (e.g. dynamic-tags).
+	 *
+	 * This is the single source of truth for WHY the payload rides
+	 * `enqueue_block_assets` (the hook enqueue_editor_assets() runs on): that is
+	 * the only hook whose scripts WordPress prints into the iframed editor
+	 * canvas via _wp_get_iframed_editor_assets(), where the extensions actually
+	 * execute. Localizing on `enqueue_block_editor_assets` would attach to the
+	 * outer editor frame only and never reach the iframe, silently disabling
+	 * both the exclusion list and the extension allowlist.
+	 */
+	private function localize_extension_settings() {
+		$settings = \DesignSetGo\Admin\Settings::get_settings();
+
+		$excluded_blocks    = isset( $settings['excluded_blocks'] ) ? (array) $settings['excluded_blocks'] : array();
+		$enabled_extensions = isset( $settings['enabled_extensions'] ) ? (array) $settings['enabled_extensions'] : array();
+
+		wp_localize_script(
+			'designsetgo-extensions',
+			'dsgoSettings',
+			array(
+				'excludedBlocks'         => array_values( $excluded_blocks ),
+				'defaultIconButtonHover' => isset( $settings['animations']['default_icon_button_hover'] )
+					? sanitize_key( $settings['animations']['default_icon_button_hover'] )
+					: 'fill-diagonal',
+				// Empty list = all extensions enabled (matches the
+				// PHP convention in Block_Manager::should_load_extension).
+				'enabledExtensions'      => array_values( array_map( 'sanitize_key', $enabled_extensions ) ),
+			)
 		);
 	}
 
