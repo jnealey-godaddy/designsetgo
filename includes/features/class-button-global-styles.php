@@ -62,6 +62,71 @@ class Button_Global_Styles {
 	);
 
 	/**
+	 * Per-primitive selector templates for block-style variations.
+	 *
+	 * `{name}` is replaced with a variation slug (e.g. `secondary`). Each template
+	 * is emitted at a specificity that beats the base button rule (0,3,0) so a
+	 * Global Styles variation actually wins on DSGo's single-element buttons —
+	 * the same cascade problem the hand-written `is-style-outline` rule solves,
+	 * generalised so every registered variation works with no per-variation CSS.
+	 *
+	 * - Icon Button: variation class on the wrapper, styling the inner button
+	 *   (0,5,0). Matches the hand-written `is-style-outline` rule in
+	 *   `src/blocks/icon-button/style.scss`.
+	 * - Form submit: variation modifier compounded on the button (0,4,0). Matches
+	 *   the `submitButtonVariation` classes added in #469; until that merges this
+	 *   half is a harmless no-op (no element carries the class yet).
+	 *
+	 * Modal Trigger is intentionally omitted: it uses its own `buttonStyle`
+	 * attribute (`dsgo-modal-trigger--{style}`) rather than block-style
+	 * variations, so projecting `core/button` variations onto it needs a separate
+	 * decision (mirror `is-style-*` onto it, or map to `buttonStyle`).
+	 *
+	 * @var string[]
+	 */
+	private const VARIATION_SELECTOR_TEMPLATES = array(
+		// Icon Button: the variation class sits on the wrapper (`is-style-{name}`)
+		// — a different namespace from the block's `dsgo-icon-button--{anim}`
+		// hover-animation classes — so it can never collide.
+		'icon_button' => '.wp-block-designsetgo-icon-button.is-style-{name} .dsgo-icon-button.wp-block-button__link',
+		// Form submit: the variation class shares the `dsgo-form__submit--{x}`
+		// modifier namespace with hover-animation classes that
+		// apply_default_form_button_hover() stamps on real buttons (e.g.
+		// `dsgo-form__submit--lift`). Emitted only for non-animation slugs — see
+		// build_variation_selector() — so a variation named like an animation can
+		// never repaint a button that merely carries that animation class.
+		'form_submit' => '.dsgo-form__submit.dsgo-form__submit--{name}.wp-element-button',
+	);
+
+	/**
+	 * Variation slugs already handled elsewhere, so the generator skips them.
+	 *
+	 * - `fill`: the default filled look, already produced by the base rule.
+	 * - `outline`: hand-written in `src/blocks/icon-button/style.scss`.
+	 *
+	 * Both are candidates to migrate INTO this generator (and drop the
+	 * hand-written CSS) once the approach is agreed — see the class docblock.
+	 *
+	 * @var string[]
+	 */
+	private const SKIP_VARIATIONS = array( 'fill', 'outline' );
+
+	/**
+	 * Non-animation modifier suffixes reserved in the `dsgo-form__submit--{x}`
+	 * namespace.
+	 *
+	 * The form submit shares that namespace between style variations and other
+	 * modifiers. Besides the hover animations (Plugin::ALLOWED_HOVER_ANIMATIONS),
+	 * the block/plugin stamp these layout/state modifiers on real buttons:
+	 * `--inline` (inline position), `--loading` (AJAX submit), `--no-hover`
+	 * (hover opt-out). A variation whose slug matches any of them must not emit a
+	 * form-submit rule, or it would repaint every button carrying that modifier.
+	 *
+	 * @var string[]
+	 */
+	private const RESERVED_FORM_SUBMIT_SUFFIXES = array( 'inline', 'loading', 'no-hover' );
+
+	/**
 	 * Block names that need Global Styles button CSS.
 	 *
 	 * @var string[]
@@ -204,11 +269,140 @@ class Button_Global_Styles {
 		// Merge: block-level overrides element-level.
 		$merged = $this->merge_styles( $element_styles, $block_styles );
 
-		if ( empty( $merged ) ) {
+		$css = empty( $merged ) ? '' : $this->build_css( $merged );
+
+		// Project each registered core/button style variation onto DSGo's button
+		// primitives at winning specificity, so semantic variations (primary,
+		// secondary, …) work without per-variation hand-written CSS.
+		$css .= $this->build_variation_css( $block_styles );
+
+		return $css;
+	}
+
+	/**
+	 * Build CSS for each core/button block-style variation, scoped to DSGo's
+	 * button primitives.
+	 *
+	 * Reads `styles.blocks.core/button.variations.{name}` from Global Styles and
+	 * emits one rule per primitive per variation, at a specificity that beats the
+	 * base button rule. Colours therefore stay defined once (in the kit /
+	 * theme.json) and are projected onto the icon button / form submit here.
+	 *
+	 * Intentional trade-off: this reads only the `core/button` variation node, not
+	 * a per-block override at `styles.blocks.designsetgo/icon-button.variations.*`
+	 * (which the Site Editor exposes because `Icon_Button_Styles` registers the
+	 * variations for the block). Such a per-block override never rendered anyway —
+	 * WordPress emits it as a `:where()`-wrapped (0,1,0) rule that loses to the
+	 * base button rule — so honouring it is deferred rather than a regression.
+	 *
+	 * @param array $block_styles The core/button block styles from Global Styles.
+	 * @return string Generated CSS, or empty string when there are no variations.
+	 */
+	private function build_variation_css( $block_styles ) {
+		if ( ! is_array( $block_styles ) || empty( $block_styles['variations'] ) || ! is_array( $block_styles['variations'] ) ) {
 			return '';
 		}
 
-		return $this->build_css( $merged );
+		$css  = '';
+		$seen = array();
+
+		foreach ( $block_styles['variations'] as $name => $variation_styles ) {
+			if ( ! is_array( $variation_styles ) ) {
+				continue;
+			}
+
+			$slug = $this->sanitize_variation_name( $name );
+			// Skip empties, already-handled variations, and any slug that
+			// collapses onto one already emitted (e.g. `Primary` and `primary`),
+			// so we never write the same selector twice.
+			if ( '' === $slug || in_array( $slug, self::SKIP_VARIATIONS, true ) || isset( $seen[ $slug ] ) ) {
+				continue;
+			}
+			$seen[ $slug ] = true;
+
+			// Normal-state declarations (color/border/typography/etc.). Reuses
+			// the same extractor as the base rule, which only reads the known
+			// appearance keys, so unexpected variation keys are ignored.
+			$css .= $this->render_rule(
+				$this->build_variation_selector( $slug ),
+				$this->extract_declarations( $variation_styles )
+			);
+
+			// Hover state, if the variation defines one.
+			if ( ! empty( $variation_styles[':hover'] ) ) {
+				$css .= $this->render_rule(
+					$this->build_variation_selector( $slug, ':hover' ),
+					$this->extract_hover_declarations( $variation_styles[':hover'] )
+				);
+			}
+		}
+
+		return $css;
+	}
+
+	/**
+	 * Build the comma-joined selector for a variation across every primitive.
+	 *
+	 * @param string $slug   Sanitised variation slug.
+	 * @param string $pseudo Optional pseudo-class suffix (e.g. ':hover').
+	 * @return string Selector list, each part prefixed with `:root`.
+	 */
+	private function build_variation_selector( $slug, $pseudo = '' ) {
+		$reserved_for_form_submit = in_array( $slug, Plugin::ALLOWED_HOVER_ANIMATIONS, true )
+			|| in_array( $slug, self::RESERVED_FORM_SUBMIT_SUFFIXES, true );
+
+		$parts = array();
+		foreach ( self::VARIATION_SELECTOR_TEMPLATES as $key => $template ) {
+			// The form-submit modifier namespace is shared with hover animations
+			// and the layout/state modifiers (--inline/--loading/--no-hover), so
+			// never emit a form-submit variation rule for a slug that matches one
+			// — it would repaint any button that merely carries that modifier.
+			// The icon-button selector (wrapper `is-style-{name}`) has no such
+			// collision and is always emitted.
+			if ( 'form_submit' === $key && $reserved_for_form_submit ) {
+				continue;
+			}
+			$parts[] = ':root ' . str_replace( '{name}', $slug, $template ) . $pseudo;
+		}
+		return implode( ",\n", $parts );
+	}
+
+	/**
+	 * Sanitise a variation slug for safe use in a selector.
+	 *
+	 * Block-style variation slugs are lowercase letters, digits and hyphens;
+	 * anything else is stripped so the value can never break out of the selector.
+	 *
+	 * @param int|string $name Raw variation key from Global Styles.
+	 * @return string Safe slug, or empty string when nothing valid remains.
+	 */
+	private function sanitize_variation_name( $name ) {
+		// Array keys arrive as int or string, and PHP casts numeric-looking
+		// string keys to int — so a slug like `2024` would otherwise be dropped.
+		// Normalise to string before sanitising.
+		$name = (string) $name;
+		if ( '' === $name ) {
+			return '';
+		}
+		return preg_replace( '/[^a-z0-9\-]/', '', strtolower( $name ) );
+	}
+
+	/**
+	 * Format a single CSS rule from a selector and its declarations.
+	 *
+	 * Shared by the base-button and variation passes so both produce identical
+	 * formatting. Returns an empty string when there are no declarations, so the
+	 * caller can skip emitting an empty `{}` block.
+	 *
+	 * @param string   $selector     Full (comma-joined) selector.
+	 * @param string[] $declarations Array of "property:value" strings.
+	 * @return string A formatted CSS rule, or empty string.
+	 */
+	private function render_rule( $selector, $declarations ) {
+		if ( empty( $declarations ) ) {
+			return '';
+		}
+		return $selector . " {\n\t" . implode( ";\n\t", $declarations ) . ";\n}\n";
 	}
 
 	/**
@@ -256,14 +450,6 @@ class Button_Global_Styles {
 	 * @return string Generated CSS.
 	 */
 	private function build_css( $styles ) {
-		$declarations = $this->extract_declarations( $styles );
-
-		if ( empty( $declarations ) ) {
-			return '';
-		}
-
-		$rule = implode( ";\n\t", $declarations );
-
 		// Build selector: :root .dsgo-icon-button.wp-block-button__link, ...
 		$selector_parts = array();
 		foreach ( self::BLOCK_SELECTORS as $sel ) {
@@ -271,23 +457,24 @@ class Button_Global_Styles {
 		}
 		$selector = implode( ",\n", $selector_parts );
 
-		$css = $selector . " {\n\t" . $rule . ";\n}\n";
+		$css = $this->render_rule( $selector, $this->extract_declarations( $styles ) );
+
+		// No base declarations means there is no button styling to emit; keep the
+		// prior contract of returning '' so callers treat it as "no CSS".
+		if ( '' === $css ) {
+			return '';
+		}
 
 		// Handle hover state if present.
 		if ( ! empty( $styles[':hover'] ) ) {
-			$hover_declarations = $this->extract_hover_declarations( $styles[':hover'] );
-
-			if ( ! empty( $hover_declarations ) ) {
-				$hover_rule = implode( ";\n\t", $hover_declarations );
-
-				$hover_parts = array();
-				foreach ( self::BLOCK_SELECTORS as $sel ) {
-					$hover_parts[] = ':root ' . $sel . ':hover';
-				}
-				$hover_selector = implode( ",\n", $hover_parts );
-
-				$css .= $hover_selector . " {\n\t" . $hover_rule . ";\n}\n";
+			$hover_parts = array();
+			foreach ( self::BLOCK_SELECTORS as $sel ) {
+				$hover_parts[] = ':root ' . $sel . ':hover';
 			}
+			$css .= $this->render_rule(
+				implode( ",\n", $hover_parts ),
+				$this->extract_hover_declarations( $styles[':hover'] )
+			);
 		}
 
 		return $css;
