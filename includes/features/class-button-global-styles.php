@@ -111,6 +111,21 @@ class Button_Global_Styles {
 	private const SKIP_VARIATIONS = array( 'fill', 'outline' );
 
 	/**
+	 * Non-animation modifier suffixes reserved in the `dsgo-form__submit--{x}`
+	 * namespace.
+	 *
+	 * The form submit shares that namespace between style variations and other
+	 * modifiers. Besides the hover animations (Plugin::ALLOWED_HOVER_ANIMATIONS),
+	 * the block/plugin stamp these layout/state modifiers on real buttons:
+	 * `--inline` (inline position), `--loading` (AJAX submit), `--no-hover`
+	 * (hover opt-out). A variation whose slug matches any of them must not emit a
+	 * form-submit rule, or it would repaint every button carrying that modifier.
+	 *
+	 * @var string[]
+	 */
+	private const RESERVED_FORM_SUBMIT_SUFFIXES = array( 'inline', 'loading', 'no-hover' );
+
+	/**
 	 * Block names that need Global Styles button CSS.
 	 *
 	 * @var string[]
@@ -332,16 +347,18 @@ class Button_Global_Styles {
 	 * @return string Selector list, each part prefixed with `:root`.
 	 */
 	private function build_variation_selector( $slug, $pseudo = '' ) {
-		$is_animation_slug = in_array( $slug, Plugin::ALLOWED_HOVER_ANIMATIONS, true );
+		$reserved_for_form_submit = in_array( $slug, Plugin::ALLOWED_HOVER_ANIMATIONS, true )
+			|| in_array( $slug, self::RESERVED_FORM_SUBMIT_SUFFIXES, true );
 
 		$parts = array();
 		foreach ( self::VARIATION_SELECTOR_TEMPLATES as $key => $template ) {
-			// The form-submit modifier namespace is shared with hover animations,
-			// so never emit a form-submit variation rule for an animation slug —
-			// it would repaint any button that merely carries that animation
-			// class. The icon-button selector (wrapper `is-style-{name}`) has no
-			// such collision and is always emitted.
-			if ( 'form_submit' === $key && $is_animation_slug ) {
+			// The form-submit modifier namespace is shared with hover animations
+			// and the layout/state modifiers (--inline/--loading/--no-hover), so
+			// never emit a form-submit variation rule for a slug that matches one
+			// — it would repaint any button that merely carries that modifier.
+			// The icon-button selector (wrapper `is-style-{name}`) has no such
+			// collision and is always emitted.
+			if ( 'form_submit' === $key && $reserved_for_form_submit ) {
 				continue;
 			}
 			$parts[] = ':root ' . str_replace( '{name}', $slug, $template ) . $pseudo;

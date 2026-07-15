@@ -18,18 +18,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Plugin {
 	/**
-	 * Allowed hover animation slugs for Icon Button blocks.
-	 *
-	 * Single source of truth used by both the regex check and the
-	 * allowlist validation in apply_default_icon_button_hover().
-	 *
-	 * @var string[]
-	 */
-	/**
 	 * Hover-animation slugs stamped onto buttons as `--{slug}` modifiers.
 	 *
+	 * Single source of truth for the regex check and allowlist validation in
+	 * apply_default_icon_button_hover() / apply_default_form_button_hover().
 	 * Public so features that emit button CSS (e.g. Button_Global_Styles) can
-	 * avoid colliding with this class namespace — the form submit uses the same
+	 * avoid colliding with this namespace — the form submit uses the same
 	 * `dsgo-form__submit--{x}` modifier space for both animations and style
 	 * variations.
 	 *

@@ -153,19 +153,20 @@ class Button_Global_Styles_Variations_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A variation named like a hover animation never emits a form-submit rule.
+	 * A variation named like a reserved form-submit modifier skips the form rule.
 	 *
-	 * `apply_default_form_button_hover()` stamps `dsgo-form__submit--{animation}`
-	 * on real buttons, so a variation named e.g. `lift` must NOT emit
-	 * `.dsgo-form__submit.dsgo-form__submit--lift` (it would repaint any button
-	 * with the `--lift` hover animation). The icon-button selector (wrapper
-	 * `is-style-{name}`) is a separate namespace and is still emitted.
+	 * The block/plugin stamp `dsgo-form__submit--{x}` on real buttons for hover
+	 * animations (`--lift`, …) and layout/state (`--inline`, `--loading`,
+	 * `--no-hover`). A variation named like one of those must NOT emit
+	 * `.dsgo-form__submit.dsgo-form__submit--{x}` (it would repaint any button
+	 * carrying that modifier). The icon-button selector (wrapper `is-style-{name}`)
+	 * is a separate namespace and is still emitted.
 	 *
-	 * @dataProvider animation_slug_provider
+	 * @dataProvider reserved_slug_provider
 	 *
-	 * @param string $slug A reserved hover-animation slug.
+	 * @param string $slug A reserved form-submit modifier slug.
 	 */
-	public function test_animation_named_variation_skips_form_submit( $slug ) {
+	public function test_reserved_slug_variation_skips_form_submit( $slug ) {
 		$css = $this->call(
 			'build_variation_css',
 			array( $this->block_styles( array( $slug => array( 'color' => array( 'background' => '#f00' ) ) ) ) )
@@ -174,7 +175,7 @@ class Button_Global_Styles_Variations_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString(
 			'.dsgo-form__submit.dsgo-form__submit--' . $slug,
 			$css,
-			'Form-submit selector must not reuse a hover-animation slug.'
+			'Form-submit selector must not reuse a reserved modifier slug.'
 		);
 		$this->assertStringContainsString(
 			'.wp-block-designsetgo-icon-button.is-style-' . $slug . ' .dsgo-icon-button',
@@ -184,14 +185,17 @@ class Button_Global_Styles_Variations_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A couple of the reserved hover-animation slugs.
+	 * Reserved form-submit modifier slugs: hover animations + layout/state.
 	 *
 	 * @return array
 	 */
-	public function animation_slug_provider() {
+	public function reserved_slug_provider() {
 		return array(
-			'lift'   => array( 'lift' ),
-			'shrink' => array( 'shrink' ),
+			'animation lift'   => array( 'lift' ),
+			'animation shrink' => array( 'shrink' ),
+			'layout inline'    => array( 'inline' ),
+			'state loading'    => array( 'loading' ),
+			'state no-hover'   => array( 'no-hover' ),
 		);
 	}
 

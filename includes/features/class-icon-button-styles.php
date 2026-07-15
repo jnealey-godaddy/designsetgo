@@ -66,11 +66,13 @@ class Icon_Button_Styles {
 	 * Register, for the Icon Button, every block style variation registered for
 	 * core/button that carries theme.json styling.
 	 *
-	 * This is what lets the mirrored `styles.blocks.designsetgo/icon-button.
-	 * variations.{slug}` survive WordPress's theme.json sanitization (which drops
-	 * variations that are not registered block styles for the block) and renders
-	 * on the front end. Core's Fill/Outline are registered client-side and carry
-	 * no theme.json data, so they are handled separately by
+	 * This makes the variations appear in the editor Styles panel and be valid to
+	 * apply on the Icon Button. Their *rendering* is handled by
+	 * {@see \DesignSetGo\Button_Global_Styles}, which projects
+	 * `core/button.variations.*` at winning specificity (see the class docblock) —
+	 * this class no longer mirrors styling into the Icon Button's own theme.json
+	 * node. Core's Fill/Outline are registered client-side and carry no theme.json
+	 * data, so they are handled separately by
 	 * src/blocks/icon-button/mirror-button-styles.js instead.
 	 */
 	public function register_mirrored_variations() {
