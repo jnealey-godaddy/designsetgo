@@ -57,10 +57,17 @@ export default function FormBuilderSave({ attributes }) {
 	// block-inserter) so a stray attribute value never reaches the class name.
 	// Kits (and section/group style variations) paint the class; style.scss ships
 	// a self-contained fallback. MUST MATCH edit.js.
+	//
+	// The `is-style-` prefix is deliberate: the `dsgo-form__submit--*` modifier
+	// namespace is shared by layout (`--inline`), state (`--loading`,
+	// `--no-hover`) and every hover animation, so a variation living there would
+	// collide with a like-named modifier. `is-style-{name}` is a separate
+	// namespace (and matches how the icon button names its variations), so the two
+	// can never clash.
 	const submitVariationClass = SUBMIT_BUTTON_VARIATIONS.includes(
 		submitButtonVariation
 	)
-		? ` dsgo-form__submit--${submitButtonVariation}`
+		? ` is-style-${submitButtonVariation}`
 		: '';
 
 	// Same classes as edit.js - MUST MATCH

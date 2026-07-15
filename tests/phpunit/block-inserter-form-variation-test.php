@@ -43,8 +43,8 @@ class Block_Inserter_Form_Variation_Test extends WP_UnitTestCase {
 	public function test_default_emits_no_variation_class() {
 		$html = $this->submit_html( array( 'formId' => 't' ) );
 		$this->assertStringContainsString( 'class="dsgo-form__submit wp-element-button"', $html );
-		$this->assertStringNotContainsString( 'dsgo-form__submit--secondary', $html );
-		$this->assertStringNotContainsString( 'dsgo-form__submit--outline', $html );
+		$this->assertStringNotContainsString( 'is-style-secondary', $html );
+		$this->assertStringNotContainsString( 'is-style-outline', $html );
 	}
 
 	/**
@@ -61,9 +61,9 @@ class Block_Inserter_Form_Variation_Test extends WP_UnitTestCase {
 				'submitButtonVariation' => $variation,
 			)
 		);
-		// Order must match save.js: `dsgo-form__submit--{variation}` before `wp-element-button`.
+		// Order must match save.js: `is-style-{variation}` before `wp-element-button`.
 		$this->assertStringContainsString(
-			'class="dsgo-form__submit dsgo-form__submit--' . $variation . ' wp-element-button"',
+			'class="dsgo-form__submit is-style-' . $variation . ' wp-element-button"',
 			$html
 		);
 	}
@@ -92,7 +92,7 @@ class Block_Inserter_Form_Variation_Test extends WP_UnitTestCase {
 			)
 		);
 		$this->assertStringContainsString(
-			'class="dsgo-form__submit dsgo-form__submit--inline dsgo-form__submit--secondary wp-element-button"',
+			'class="dsgo-form__submit dsgo-form__submit--inline is-style-secondary wp-element-button"',
 			$html
 		);
 	}
@@ -111,9 +111,9 @@ class Block_Inserter_Form_Variation_Test extends WP_UnitTestCase {
 				'submitButtonVariation' => $variation,
 			)
 		);
-		// Falls back to the plain submit class; no variation modifier, no breakout.
+		// Falls back to the plain submit class; no variation class, no breakout.
 		$this->assertStringContainsString( 'class="dsgo-form__submit wp-element-button"', $html );
-		$this->assertStringNotContainsString( 'dsgo-form__submit--' . $variation, $html );
+		$this->assertStringNotContainsString( 'is-style-' . $variation, $html );
 	}
 
 	/**

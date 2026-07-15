@@ -73,9 +73,13 @@ class Button_Global_Styles {
 	 * - Icon Button: variation class on the wrapper, styling the inner button
 	 *   (0,5,0). Matches the hand-written `is-style-outline` rule in
 	 *   `src/blocks/icon-button/style.scss`.
-	 * - Form submit: variation modifier compounded on the button (0,4,0). Matches
-	 *   the `submitButtonVariation` classes added in #469; until that merges this
-	 *   half is a harmless no-op (no element carries the class yet).
+	 * - Form submit: variation class compounded on the button (0,4,0). Matches the
+	 *   `submitButtonVariation` classes emitted by the form builder.
+	 *
+	 * Both primitives carry the variation in the `is-style-{name}` namespace, kept
+	 * deliberately separate from each block's `--{modifier}` hover/layout/state
+	 * classes, so a variation named like a modifier can never collide — no
+	 * per-slug skip logic is required.
 	 *
 	 * Modal Trigger is intentionally omitted: it uses its own `buttonStyle`
 	 * attribute (`dsgo-modal-trigger--{style}`) rather than block-style
@@ -85,17 +89,10 @@ class Button_Global_Styles {
 	 * @var string[]
 	 */
 	private const VARIATION_SELECTOR_TEMPLATES = array(
-		// Icon Button: the variation class sits on the wrapper (`is-style-{name}`)
-		// — a different namespace from the block's `dsgo-icon-button--{anim}`
-		// hover-animation classes — so it can never collide.
+		// Icon Button: the variation class sits on the wrapper.
 		'icon_button' => '.wp-block-designsetgo-icon-button.is-style-{name} .dsgo-icon-button.wp-block-button__link',
-		// Form submit: the variation class shares the `dsgo-form__submit--{x}`
-		// modifier namespace with hover-animation classes that
-		// apply_default_form_button_hover() stamps on real buttons (e.g.
-		// `dsgo-form__submit--lift`). Emitted only for non-animation slugs — see
-		// build_variation_selector() — so a variation named like an animation can
-		// never repaint a button that merely carries that animation class.
-		'form_submit' => '.dsgo-form__submit.dsgo-form__submit--{name}.wp-element-button',
+		// Form submit: the variation class sits on the button itself.
+		'form_submit' => '.dsgo-form__submit.is-style-{name}.wp-element-button',
 	);
 
 	/**
@@ -110,21 +107,6 @@ class Button_Global_Styles {
 	 * @var string[]
 	 */
 	private const SKIP_VARIATIONS = array( 'fill', 'outline' );
-
-	/**
-	 * Non-animation modifier suffixes reserved in the `dsgo-form__submit--{x}`
-	 * namespace.
-	 *
-	 * The form submit shares that namespace between style variations and other
-	 * modifiers. Besides the hover animations (Plugin::ALLOWED_HOVER_ANIMATIONS),
-	 * the block/plugin stamp these layout/state modifiers on real buttons:
-	 * `--inline` (inline position), `--loading` (AJAX submit), `--no-hover`
-	 * (hover opt-out). A variation whose slug matches any of them must not emit a
-	 * form-submit rule, or it would repaint every button carrying that modifier.
-	 *
-	 * @var string[]
-	 */
-	private const RESERVED_FORM_SUBMIT_SUFFIXES = array( 'inline', 'loading', 'no-hover' );
 
 	/**
 	 * Block names that need Global Styles button CSS.
@@ -343,25 +325,18 @@ class Button_Global_Styles {
 	/**
 	 * Build the comma-joined selector for a variation across every primitive.
 	 *
+	 * Every primitive carries the variation in the `is-style-{name}` namespace
+	 * (see VARIATION_SELECTOR_TEMPLATES), separate from each block's
+	 * `--{modifier}` classes, so no slug can collide with a layout/state/animation
+	 * modifier and every template is emitted unconditionally.
+	 *
 	 * @param string $slug   Sanitised variation slug.
 	 * @param string $pseudo Optional pseudo-class suffix (e.g. ':hover').
 	 * @return string Selector list, each part prefixed with `:root`.
 	 */
 	private function build_variation_selector( $slug, $pseudo = '' ) {
-		$reserved_for_form_submit = in_array( $slug, Plugin::ALLOWED_HOVER_ANIMATIONS, true )
-			|| in_array( $slug, self::RESERVED_FORM_SUBMIT_SUFFIXES, true );
-
 		$parts = array();
-		foreach ( self::VARIATION_SELECTOR_TEMPLATES as $key => $template ) {
-			// The form-submit modifier namespace is shared with hover animations
-			// and the layout/state modifiers (--inline/--loading/--no-hover), so
-			// never emit a form-submit variation rule for a slug that matches one
-			// — it would repaint any button that merely carries that modifier.
-			// The icon-button selector (wrapper `is-style-{name}`) has no such
-			// collision and is always emitted.
-			if ( 'form_submit' === $key && $reserved_for_form_submit ) {
-				continue;
-			}
+		foreach ( self::VARIATION_SELECTOR_TEMPLATES as $template ) {
 			$parts[] = ':root ' . str_replace( '{name}', $slug, $template ) . $pseudo;
 		}
 		return implode( ",\n", $parts );
