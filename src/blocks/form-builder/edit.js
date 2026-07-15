@@ -425,7 +425,7 @@ export default function FormBuilderEdit({
 								setAttributes({ submitButtonVariation: value })
 							}
 							help={__(
-								'Semantic style for the submit button. Themes and section styles can restyle these; useful for forms on alternate backgrounds.',
+								'Semantic style for the submit button, useful for forms on alternate backgrounds. A custom Button Background/Text Color (in the Color panel) is applied inline and takes precedence over Secondary/Outline — clear it to use the ghost style.',
 								'designsetgo'
 							)}
 							__next40pxDefaultSize
