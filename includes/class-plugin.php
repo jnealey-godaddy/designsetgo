@@ -870,14 +870,10 @@ class Plugin {
 			);
 		}
 
-		// Note: The `dsgoSettings` payload (excluded blocks, extension
-		// allowlist) is localized in Assets::enqueue_editor_assets() on the
-		// `enqueue_block_assets` hook. That is the ONLY hook whose scripts are
-		// printed into the iframed editor canvas (via
-		// _wp_get_iframed_editor_assets()), where the block extensions actually
-		// run. Localizing here on `enqueue_block_editor_assets` would attach to
-		// the outer editor frame only and never reach the iframe, so
-		// shouldExtendBlock() would fall back to an empty exclusion list.
+		// The `dsgoSettings` payload (excluded blocks, extension allowlist) is
+		// intentionally NOT localized here. It rides `enqueue_block_assets`
+		// instead so it reaches the iframed editor canvas — see
+		// Assets::localize_extension_settings() for the full rationale.
 	}
 
 	/**

@@ -76,4 +76,36 @@ class Test_Extension_Settings_Localize extends WP_UnitTestCase {
 			'The configured excluded block must be present in the iframe payload.'
 		);
 	}
+
+	/**
+	 * The enabled-extensions allowlist must reach the iframe too.
+	 *
+	 * The same localization bug also disabled per-extension gating (e.g.
+	 * dynamic-tags, which reads window.dsgoSettings.enabledExtensions inside
+	 * the iframe). Cover it so a regression in either field is caught.
+	 */
+	public function test_enabled_extensions_localized_onto_extensions_script() {
+		set_current_screen( 'edit-post' );
+
+		update_option(
+			Settings::OPTION_NAME,
+			array( 'enabled_extensions' => array( 'dynamic-tags' ) )
+		);
+		Settings::invalidate_cache();
+
+		do_action( 'enqueue_block_assets' );
+
+		$data = wp_scripts()->get_data( 'designsetgo-extensions', 'data' );
+
+		$this->assertIsString(
+			$data,
+			'dsgoSettings must be localized on the same hook that enqueues the extensions script.'
+		);
+		$this->assertStringContainsString( 'enabledExtensions', $data );
+		$this->assertStringContainsString(
+			'dynamic-tags',
+			$data,
+			'The configured enabled extension must be present in the iframe payload.'
+		);
+	}
 }
