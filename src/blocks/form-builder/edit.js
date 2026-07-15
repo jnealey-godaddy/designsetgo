@@ -38,6 +38,10 @@ import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { validateCSSLength } from '../../utils/css-generator';
 import FormBuilderPlaceholder from './components/FormBuilderPlaceholder';
 
+// Non-default submitButtonVariation values from block.json. Allowlisted before
+// interpolation into the class name. MUST MATCH save.js.
+const SUBMIT_BUTTON_VARIATIONS = ['secondary', 'outline'];
+
 // Blocks that Gutenberg identifies as form fields for the reply-to dropdown.
 const EMAILABLE_FIELD_BLOCKS = new Set([
 	'designsetgo/form-text-field',
@@ -131,11 +135,13 @@ export default function FormBuilderEdit({
 			? ` dsgo-form__submit--${effectiveAnimation}`
 			: '';
 
-	// Optional semantic style for the submit button - MUST MATCH save.js.
-	const submitVariationClass =
-		submitButtonVariation && submitButtonVariation !== 'default'
-			? ` dsgo-form__submit--${submitButtonVariation}`
-			: '';
+	// Optional semantic style for the submit button, allowlisted against the
+	// block.json enum before interpolation - MUST MATCH save.js.
+	const submitVariationClass = SUBMIT_BUTTON_VARIATIONS.includes(
+		submitButtonVariation
+	)
+		? ` dsgo-form__submit--${submitButtonVariation}`
+		: '';
 
 	useUniqueBlockId({
 		clientId,

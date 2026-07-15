@@ -297,13 +297,17 @@
 	border-width: 1px;
 }
 
-// Keep the ghost look on :hover deterministically. The base Global-Styles hover
-// rule (`:root .dsgo-form__submit.wp-element-button:hover`, 0,4,0) would
-// otherwise fill these solid on hover — but only when a theme/Style Kit sets a
-// button hover colour, and the outcome was source-order dependent. `:hover` here
-// is 0,5,0 so the ghost stays transparent. A kit that wants a hover fill for
-// these variations defines it under `core/button.variations.{name}:hover`, which
-// Button_Global_Styles projects at matching specificity.
+// Keep the ghost look on :hover against the base Global-Styles hover rule
+// (`:root .dsgo-form__submit.wp-element-button:hover`, 0,4,0), which would
+// otherwise fill these solid on hover when a theme/Style Kit sets a button hover
+// colour. `:hover` here is 0,5,0 so the ghost stays transparent.
+// NOTE: this intentionally does NOT override a per-instance custom hover
+// background — the "instant hover-bg" rule below uses
+// `background-color: var(--dsgo-button-hover-bg) !important`, which still wins.
+// That mirrors the base custom-colour precedence (a hand-picked colour beats the
+// ghost variation, as the Button Style control's help text notes). A kit that
+// wants a hover fill for these variations defines it under
+// `core/button.variations.{name}:hover`, which Button_Global_Styles projects.
 :root .dsgo-form__submit--secondary.dsgo-form__submit.wp-element-button:hover,
 :root .dsgo-form__submit--outline.dsgo-form__submit.wp-element-button:hover {
 	background-color: transparent;
