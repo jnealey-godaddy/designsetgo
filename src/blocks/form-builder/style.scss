@@ -123,7 +123,6 @@
 		&.dsgo-form__submit--loading {
 			text-indent: -9999px;
 			white-space: nowrap;
-			overflow: hidden;
 			pointer-events: none;
 
 			&::after {
@@ -296,6 +295,19 @@
 
 :root .dsgo-form__submit--secondary.dsgo-form__submit.wp-element-button {
 	border-width: 1px;
+}
+
+// Keep the ghost look on :hover deterministically. The base Global-Styles hover
+// rule (`:root .dsgo-form__submit.wp-element-button:hover`, 0,4,0) would
+// otherwise fill these solid on hover — but only when a theme/Style Kit sets a
+// button hover colour, and the outcome was source-order dependent. `:hover` here
+// is 0,5,0 so the ghost stays transparent. A kit that wants a hover fill for
+// these variations defines it under `core/button.variations.{name}:hover`, which
+// Button_Global_Styles projects at matching specificity.
+:root .dsgo-form__submit--secondary.dsgo-form__submit.wp-element-button:hover,
+:root .dsgo-form__submit--outline.dsgo-form__submit.wp-element-button:hover {
+	background-color: transparent;
+	border-color: currentcolor;
 }
 
 :root .dsgo-form__submit--outline.dsgo-form__submit.wp-element-button {
