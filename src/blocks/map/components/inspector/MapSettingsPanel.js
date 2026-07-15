@@ -132,7 +132,7 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 					__nextHasNoMarginBottom
 				/>
 				{dsgoProvider === 'googlemaps' &&
-					(window.dsgo_integrations?.googleMapsApiKey ? (
+					(window.dsgoIntegrations?.googleMapsApiKey ? (
 						<Notice
 							status="success"
 							isDismissible={false}

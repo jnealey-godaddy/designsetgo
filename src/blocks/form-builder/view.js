@@ -8,7 +8,7 @@
 
 import { __ } from '@wordpress/i18n';
 
-/* global designsetgoForm, sessionStorage */
+/* global designsetgoForm, dsgoIntegrations, sessionStorage */
 
 // Track Turnstile script loading state
 let turnstileScriptLoaded = false;
@@ -110,7 +110,9 @@ function initFormBuilder() {
 			'[data-dsgo-turnstile-container]'
 		);
 		const turnstileSiteKey =
-			window.dsgo_integrations?.turnstileSiteKey ?? null;
+			typeof dsgoIntegrations !== 'undefined'
+				? dsgoIntegrations.turnstileSiteKey
+				: null;
 		let turnstileTokenField = null;
 
 		if (turnstileEnabled) {
