@@ -271,7 +271,8 @@ class Button_Global_Styles {
 			return '';
 		}
 
-		$css = '';
+		$css  = '';
+		$seen = array();
 
 		foreach ( $block_styles['variations'] as $name => $variation_styles ) {
 			if ( ! is_array( $variation_styles ) ) {
@@ -279,26 +280,28 @@ class Button_Global_Styles {
 			}
 
 			$slug = $this->sanitize_variation_name( $name );
-			if ( '' === $slug || in_array( $slug, self::SKIP_VARIATIONS, true ) ) {
+			// Skip empties, already-handled variations, and any slug that
+			// collapses onto one already emitted (e.g. `Primary` and `primary`),
+			// so we never write the same selector twice.
+			if ( '' === $slug || in_array( $slug, self::SKIP_VARIATIONS, true ) || isset( $seen[ $slug ] ) ) {
 				continue;
 			}
+			$seen[ $slug ] = true;
 
 			// Normal-state declarations (color/border/typography/etc.). Reuses
 			// the same extractor as the base rule, which only reads the known
 			// appearance keys, so unexpected variation keys are ignored.
-			$declarations = $this->extract_declarations( $variation_styles );
-			if ( ! empty( $declarations ) ) {
-				$rule = implode( ";\n\t", $declarations );
-				$css .= $this->build_variation_selector( $slug ) . " {\n\t" . $rule . ";\n}\n";
-			}
+			$css .= $this->render_rule(
+				$this->build_variation_selector( $slug ),
+				$this->extract_declarations( $variation_styles )
+			);
 
 			// Hover state, if the variation defines one.
 			if ( ! empty( $variation_styles[':hover'] ) ) {
-				$hover_declarations = $this->extract_hover_declarations( $variation_styles[':hover'] );
-				if ( ! empty( $hover_declarations ) ) {
-					$hover_rule = implode( ";\n\t", $hover_declarations );
-					$css       .= $this->build_variation_selector( $slug, ':hover' ) . " {\n\t" . $hover_rule . ";\n}\n";
-				}
+				$css .= $this->render_rule(
+					$this->build_variation_selector( $slug, ':hover' ),
+					$this->extract_hover_declarations( $variation_styles[':hover'] )
+				);
 			}
 		}
 
@@ -326,14 +329,36 @@ class Button_Global_Styles {
 	 * Block-style variation slugs are lowercase letters, digits and hyphens;
 	 * anything else is stripped so the value can never break out of the selector.
 	 *
-	 * @param mixed $name Raw variation key from Global Styles.
+	 * @param int|string $name Raw variation key from Global Styles.
 	 * @return string Safe slug, or empty string when nothing valid remains.
 	 */
 	private function sanitize_variation_name( $name ) {
-		if ( ! is_string( $name ) || '' === $name ) {
+		// Array keys arrive as int or string, and PHP casts numeric-looking
+		// string keys to int — so a slug like `2024` would otherwise be dropped.
+		// Normalise to string before sanitising.
+		$name = (string) $name;
+		if ( '' === $name ) {
 			return '';
 		}
 		return preg_replace( '/[^a-z0-9\-]/', '', strtolower( $name ) );
+	}
+
+	/**
+	 * Format a single CSS rule from a selector and its declarations.
+	 *
+	 * Shared by the base-button and variation passes so both produce identical
+	 * formatting. Returns an empty string when there are no declarations, so the
+	 * caller can skip emitting an empty `{}` block.
+	 *
+	 * @param string   $selector     Full (comma-joined) selector.
+	 * @param string[] $declarations Array of "property:value" strings.
+	 * @return string A formatted CSS rule, or empty string.
+	 */
+	private function render_rule( $selector, $declarations ) {
+		if ( empty( $declarations ) ) {
+			return '';
+		}
+		return $selector . " {\n\t" . implode( ";\n\t", $declarations ) . ";\n}\n";
 	}
 
 	/**
@@ -381,14 +406,6 @@ class Button_Global_Styles {
 	 * @return string Generated CSS.
 	 */
 	private function build_css( $styles ) {
-		$declarations = $this->extract_declarations( $styles );
-
-		if ( empty( $declarations ) ) {
-			return '';
-		}
-
-		$rule = implode( ";\n\t", $declarations );
-
 		// Build selector: :root .dsgo-icon-button.wp-block-button__link, ...
 		$selector_parts = array();
 		foreach ( self::BLOCK_SELECTORS as $sel ) {
@@ -396,23 +413,24 @@ class Button_Global_Styles {
 		}
 		$selector = implode( ",\n", $selector_parts );
 
-		$css = $selector . " {\n\t" . $rule . ";\n}\n";
+		$css = $this->render_rule( $selector, $this->extract_declarations( $styles ) );
+
+		// No base declarations means there is no button styling to emit; keep the
+		// prior contract of returning '' so callers treat it as "no CSS".
+		if ( '' === $css ) {
+			return '';
+		}
 
 		// Handle hover state if present.
 		if ( ! empty( $styles[':hover'] ) ) {
-			$hover_declarations = $this->extract_hover_declarations( $styles[':hover'] );
-
-			if ( ! empty( $hover_declarations ) ) {
-				$hover_rule = implode( ";\n\t", $hover_declarations );
-
-				$hover_parts = array();
-				foreach ( self::BLOCK_SELECTORS as $sel ) {
-					$hover_parts[] = ':root ' . $sel . ':hover';
-				}
-				$hover_selector = implode( ",\n", $hover_parts );
-
-				$css .= $hover_selector . " {\n\t" . $hover_rule . ";\n}\n";
+			$hover_parts = array();
+			foreach ( self::BLOCK_SELECTORS as $sel ) {
+				$hover_parts[] = ':root ' . $sel . ':hover';
 			}
+			$css .= $this->render_rule(
+				implode( ",\n", $hover_parts ),
+				$this->extract_hover_declarations( $styles[':hover'] )
+			);
 		}
 
 		return $css;
