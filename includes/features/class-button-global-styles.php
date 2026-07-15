@@ -74,7 +74,8 @@ class Button_Global_Styles {
 	 *   (0,5,0). Matches the hand-written `is-style-outline` rule in
 	 *   `src/blocks/icon-button/style.scss`.
 	 * - Form submit: variation modifier compounded on the button (0,4,0). Matches
-	 *   the `submitButtonVariation` classes in `src/blocks/form-builder/`.
+	 *   the `submitButtonVariation` classes added in #469; until that merges this
+	 *   half is a harmless no-op (no element carries the class yet).
 	 *
 	 * Modal Trigger is intentionally omitted: it uses its own `buttonStyle`
 	 * attribute (`dsgo-modal-trigger--{style}`) rather than block-style

@@ -51,29 +51,18 @@ class Icon_Button_Styles {
 	 * Initialize the class and set up hooks.
 	 */
 	public function init() {
-		// Register the core/button variation names for our block so they appear
-		// in the editor Styles panel and are valid to apply. The *rendering* of
-		// each variation is handled by {@see \DesignSetGo\Button_Global_Styles},
-		// which projects `core/button.variations.*` onto the Icon Button at a
-		// specificity that beats the base button rule — WordPress's own
-		// theme.json output for a mirrored variation is `:where()`-wrapped (0,1,0)
-		// and loses to that base rule, so mirroring the styles here would only
-		// emit a dead, out-ranked duplicate.
+		// Registration only (editor Styles panel + validity). Rendering is
+		// Button_Global_Styles' job — see the class docblock for why the old
+		// theme.json style-mirror was removed.
 		add_action( 'init', array( $this, 'register_mirrored_variations' ), 20 );
 	}
 
 	/**
 	 * Register, for the Icon Button, every block style variation registered for
-	 * core/button that carries theme.json styling.
-	 *
-	 * This makes the variations appear in the editor Styles panel and be valid to
-	 * apply on the Icon Button. Their *rendering* is handled by
-	 * {@see \DesignSetGo\Button_Global_Styles}, which projects
-	 * `core/button.variations.*` at winning specificity (see the class docblock) —
-	 * this class no longer mirrors styling into the Icon Button's own theme.json
-	 * node. Core's Fill/Outline are registered client-side and carry no theme.json
-	 * data, so they are handled separately by
-	 * src/blocks/icon-button/mirror-button-styles.js instead.
+	 * core/button that carries theme.json styling — so they appear in the editor
+	 * Styles panel and are valid to apply. Rendering is handled elsewhere; see the
+	 * class docblock. Core's Fill/Outline are registered client-side (no theme.json
+	 * data) and mirrored by src/blocks/icon-button/mirror-button-styles.js instead.
 	 */
 	public function register_mirrored_variations() {
 		if ( ! class_exists( '\WP_Block_Styles_Registry' ) ) {
