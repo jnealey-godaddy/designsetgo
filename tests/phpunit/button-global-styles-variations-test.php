@@ -15,6 +15,8 @@
 use DesignSetGo\Button_Global_Styles;
 
 /**
+ * Tests for projecting core/button style variations onto DSGo button primitives.
+ *
  * @group buttons
  * @group global-styles
  */
@@ -87,7 +89,11 @@ class Button_Global_Styles_Variations_Test extends WP_UnitTestCase {
 					array(
 						'secondary' => array(
 							'color'  => array( 'background' => 'transparent' ),
-							'border' => array( 'color' => 'currentColor', 'width' => '2px', 'style' => 'solid' ),
+							'border' => array(
+								'color' => 'currentColor',
+								'width' => '2px',
+								'style' => 'solid',
+							),
 						),
 					)
 				),
@@ -179,8 +185,8 @@ class Button_Global_Styles_Variations_Test extends WP_UnitTestCase {
 				$this->block_styles(
 					array(
 						'header-cta' => array(
-							'color'   => array( 'background' => '#e0653a' ),
-							':hover'  => array( 'color' => array( 'background' => '#c94f28' ) ),
+							'color'  => array( 'background' => '#e0653a' ),
+							':hover' => array( 'color' => array( 'background' => '#c94f28' ) ),
 						),
 					)
 				),
