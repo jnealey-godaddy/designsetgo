@@ -298,8 +298,25 @@
 // ============================================================================
 // Custom hover colors via CSS variables (same pattern as icon-button)
 
-// No animation — instant background transition
-.dsgo-form__submit[style*="--dsgo-button-hover-bg"]:not([class*="dsgo-form__submit--"]):hover {
+// No animation — instant background transition.
+// Excludes the hover-animation modifiers explicitly (kept in sync with
+// ALLOWED_HOVER_ANIMATIONS in class-plugin.php). This must NOT be a substring
+// match on `dsgo-form__submit--*`: the style-variation modifiers (`--secondary`,
+// `--outline`) share that prefix, so a substring `:not()` would treat them as
+// animations and silently drop the custom hover background on a variation button
+// that has no animation set.
+.dsgo-form__submit[style*="--dsgo-button-hover-bg"]:hover:not(
+	.dsgo-form__submit--fill-diagonal,
+	.dsgo-form__submit--zoom-in,
+	.dsgo-form__submit--lift,
+	.dsgo-form__submit--shrink,
+	.dsgo-form__submit--border-pulse,
+	.dsgo-form__submit--border-glow,
+	.dsgo-form__submit--slide-left,
+	.dsgo-form__submit--slide-right,
+	.dsgo-form__submit--slide-down,
+	.dsgo-form__submit--slide-up
+) {
 	background-color: var(--dsgo-button-hover-bg) !important;
 	opacity: 1;
 	transition: background-color 0.3s ease;
