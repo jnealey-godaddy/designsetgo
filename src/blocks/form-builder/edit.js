@@ -63,6 +63,7 @@ export default function FormBuilderEdit({
 		submitButtonText,
 		submitButtonAlignment,
 		submitButtonPosition,
+		submitButtonVariation,
 		ajaxSubmit,
 		successMessage,
 		errorMessage,
@@ -128,6 +129,12 @@ export default function FormBuilderEdit({
 	const submitAnimationClass =
 		effectiveAnimation && effectiveAnimation !== 'none'
 			? ` dsgo-form__submit--${effectiveAnimation}`
+			: '';
+
+	// Optional semantic style for the submit button - MUST MATCH save.js.
+	const submitVariationClass =
+		submitButtonVariation && submitButtonVariation !== 'default'
+			? ` dsgo-form__submit--${submitButtonVariation}`
 			: '';
 
 	useUniqueBlockId({
@@ -284,6 +291,7 @@ export default function FormBuilderEdit({
 							submitButtonText: 'Submit',
 							submitButtonAlignment: 'left',
 							submitButtonPosition: 'below',
+							submitButtonVariation: 'default',
 							ajaxSubmit: true,
 							successMessage:
 								'Thank you! Your form has been submitted successfully.',
@@ -381,6 +389,43 @@ export default function FormBuilderEdit({
 							}
 							help={__(
 								'Place button below all fields or inline with the last field (useful for subscribe forms)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Button Style', 'designsetgo')}
+						hasValue={() => submitButtonVariation !== 'default'}
+						onDeselect={() =>
+							setAttributes({ submitButtonVariation: 'default' })
+						}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Button Style', 'designsetgo')}
+							value={submitButtonVariation}
+							options={[
+								{
+									label: __('Default', 'designsetgo'),
+									value: 'default',
+								},
+								{
+									label: __('Secondary', 'designsetgo'),
+									value: 'secondary',
+								},
+								{
+									label: __('Outline', 'designsetgo'),
+									value: 'outline',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ submitButtonVariation: value })
+							}
+							help={__(
+								'Semantic style for the submit button. Themes and section styles can restyle these; useful for forms on alternate backgrounds.',
 								'designsetgo'
 							)}
 							__next40pxDefaultSize
@@ -1299,7 +1344,7 @@ export default function FormBuilderEdit({
 					{submitButtonPosition === 'inline' && (
 						<button
 							type="button"
-							className={`dsgo-form__submit dsgo-form__submit--inline wp-element-button${submitAnimationClass}`}
+							className={`dsgo-form__submit dsgo-form__submit--inline${submitVariationClass} wp-element-button${submitAnimationClass}`}
 							disabled
 							style={submitButtonStyle}
 						>
@@ -1312,7 +1357,7 @@ export default function FormBuilderEdit({
 					<div className="dsgo-form__footer">
 						<button
 							type="button"
-							className={`dsgo-form__submit wp-element-button${submitAnimationClass}`}
+							className={`dsgo-form__submit${submitVariationClass} wp-element-button${submitAnimationClass}`}
 							disabled
 							style={submitButtonStyle}
 						>

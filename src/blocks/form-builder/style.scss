@@ -267,6 +267,33 @@
 }
 
 // ============================================================================
+// SUBMIT BUTTON STYLE VARIATIONS (submitButtonVariation attribute)
+// ============================================================================
+// Self-contained "ghost" fallback — transparent fill + current-color border,
+// text following the surrounding color — so a secondary/outline submit button
+// reads on ANY background without a Style Kit, matching how the kit itself
+// defines `secondary`/`outline`. Themes/kits give `.dsgo-form__submit` a filled
+// primary look via a `:root … .dsgo-form__submit.wp-element-button` rule (0,3,0),
+// so these are compounded to 0,4,0 (`:root` + three element classes) to win —
+// the same approach as the icon-button `outline` style. Kits and section/group
+// style variations can repaint the same classes. MUST match save.js.
+:root .dsgo-form__submit--secondary.dsgo-form__submit.wp-element-button,
+:root .dsgo-form__submit--outline.dsgo-form__submit.wp-element-button {
+	background-color: transparent;
+	color: inherit;
+	border-style: solid;
+	border-color: currentcolor;
+}
+
+:root .dsgo-form__submit--secondary.dsgo-form__submit.wp-element-button {
+	border-width: 1px;
+}
+
+:root .dsgo-form__submit--outline.dsgo-form__submit.wp-element-button {
+	border-width: 2px;
+}
+
+// ============================================================================
 // HOVER COLORS
 // ============================================================================
 // Custom hover colors via CSS variables (same pattern as icon-button)

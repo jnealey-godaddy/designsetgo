@@ -45,6 +45,15 @@
 				"inline"
 			]
 		},
+		"submitButtonVariation": {
+			"type": "string",
+			"default": "default",
+			"enum": [
+				"default",
+				"secondary",
+				"outline"
+			]
+		},
 		"ajaxSubmit": {
 			"type": "boolean",
 			"default": true
