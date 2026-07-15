@@ -300,13 +300,14 @@
 
 // No animation — instant background transition.
 // Excludes the hover-animation modifiers explicitly (kept in sync with
-// ALLOWED_HOVER_ANIMATIONS in class-plugin.php), plus the `--loading` state.
-// This must NOT be a substring match on `dsgo-form__submit--*`: the
-// style-variation modifiers (`--secondary`, `--outline`) share that prefix, so a
-// substring `:not()` would treat them as animations and silently drop the custom
-// hover background on a variation button that has no animation set. `--loading`
-// stays excluded (as it was under the old substring guard) so the spinner state
-// never flashes the hover colour.
+// ALLOWED_HOVER_ANIMATIONS in class-plugin.php), plus the `--loading` and
+// `--no-hover` states. This must NOT be a substring match on
+// `dsgo-form__submit--*`: the style-variation modifiers (`--secondary`,
+// `--outline`) share that prefix, so a substring `:not()` would treat them as
+// animations and silently drop the custom hover background on a variation button
+// that has no animation set. `--loading` (spinner) and `--no-hover` (explicit
+// opt-out honoured by apply_default_form_button_hover()) stay excluded — as they
+// were under the old substring guard — so neither flashes the hover colour.
 .dsgo-form__submit[style*="--dsgo-button-hover-bg"]:hover:not(
 	.dsgo-form__submit--fill-diagonal,
 	.dsgo-form__submit--zoom-in,
@@ -318,7 +319,8 @@
 	.dsgo-form__submit--slide-right,
 	.dsgo-form__submit--slide-down,
 	.dsgo-form__submit--slide-up,
-	.dsgo-form__submit--loading
+	.dsgo-form__submit--loading,
+	.dsgo-form__submit--no-hover
 ) {
 	background-color: var(--dsgo-button-hover-bg) !important;
 	opacity: 1;
