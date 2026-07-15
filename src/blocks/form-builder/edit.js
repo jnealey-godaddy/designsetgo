@@ -38,6 +38,10 @@ import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { validateCSSLength } from '../../utils/css-generator';
 import FormBuilderPlaceholder from './components/FormBuilderPlaceholder';
 
+// Non-default submitButtonVariation values from block.json. Allowlisted before
+// interpolation into the class name. MUST MATCH save.js.
+const SUBMIT_BUTTON_VARIATIONS = ['secondary', 'outline'];
+
 // Blocks that Gutenberg identifies as form fields for the reply-to dropdown.
 const EMAILABLE_FIELD_BLOCKS = new Set([
 	'designsetgo/form-text-field',
@@ -63,6 +67,7 @@ export default function FormBuilderEdit({
 		submitButtonText,
 		submitButtonAlignment,
 		submitButtonPosition,
+		submitButtonVariation,
 		ajaxSubmit,
 		successMessage,
 		errorMessage,
@@ -129,6 +134,14 @@ export default function FormBuilderEdit({
 		effectiveAnimation && effectiveAnimation !== 'none'
 			? ` dsgo-form__submit--${effectiveAnimation}`
 			: '';
+
+	// Optional semantic style for the submit button, allowlisted against the
+	// block.json enum before interpolation - MUST MATCH save.js.
+	const submitVariationClass = SUBMIT_BUTTON_VARIATIONS.includes(
+		submitButtonVariation
+	)
+		? ` dsgo-form__submit--${submitButtonVariation}`
+		: '';
 
 	useUniqueBlockId({
 		clientId,
@@ -284,6 +297,7 @@ export default function FormBuilderEdit({
 							submitButtonText: 'Submit',
 							submitButtonAlignment: 'left',
 							submitButtonPosition: 'below',
+							submitButtonVariation: 'default',
 							ajaxSubmit: true,
 							successMessage:
 								'Thank you! Your form has been submitted successfully.',
@@ -381,6 +395,43 @@ export default function FormBuilderEdit({
 							}
 							help={__(
 								'Place button below all fields or inline with the last field (useful for subscribe forms)',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Button Style', 'designsetgo')}
+						hasValue={() => submitButtonVariation !== 'default'}
+						onDeselect={() =>
+							setAttributes({ submitButtonVariation: 'default' })
+						}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Button Style', 'designsetgo')}
+							value={submitButtonVariation}
+							options={[
+								{
+									label: __('Default', 'designsetgo'),
+									value: 'default',
+								},
+								{
+									label: __('Secondary', 'designsetgo'),
+									value: 'secondary',
+								},
+								{
+									label: __('Outline', 'designsetgo'),
+									value: 'outline',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes({ submitButtonVariation: value })
+							}
+							help={__(
+								'Semantic style for the submit button, useful for forms on alternate backgrounds. A custom Button Background/Text Color (in the Color panel) is applied inline and takes precedence over Secondary/Outline — clear it to use the ghost style.',
 								'designsetgo'
 							)}
 							__next40pxDefaultSize
@@ -1299,7 +1350,7 @@ export default function FormBuilderEdit({
 					{submitButtonPosition === 'inline' && (
 						<button
 							type="button"
-							className={`dsgo-form__submit dsgo-form__submit--inline wp-element-button${submitAnimationClass}`}
+							className={`dsgo-form__submit dsgo-form__submit--inline${submitVariationClass} wp-element-button${submitAnimationClass}`}
 							disabled
 							style={submitButtonStyle}
 						>
@@ -1312,7 +1363,7 @@ export default function FormBuilderEdit({
 					<div className="dsgo-form__footer">
 						<button
 							type="button"
-							className={`dsgo-form__submit wp-element-button${submitAnimationClass}`}
+							className={`dsgo-form__submit${submitVariationClass} wp-element-button${submitAnimationClass}`}
 							disabled
 							style={submitButtonStyle}
 						>

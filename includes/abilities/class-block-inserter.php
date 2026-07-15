@@ -1899,6 +1899,7 @@ class Block_Inserter {
 		$submit_button_text               = $attributes['submitButtonText'] ?? 'Submit';
 		$submit_button_alignment          = $attributes['submitButtonAlignment'] ?? 'left';
 		$submit_button_position           = $attributes['submitButtonPosition'] ?? 'below';
+		$submit_button_variation          = $attributes['submitButtonVariation'] ?? 'default';
 		$ajax_submit                      = $attributes['ajaxSubmit'] ?? true;
 		$success_message                  = $attributes['successMessage'] ?? 'Thank you! Your form has been submitted successfully.';
 		$error_message                    = $attributes['errorMessage'] ?? 'There was an error submitting the form. Please try again.';
@@ -1923,6 +1924,12 @@ class Block_Inserter {
 		$email_from_email                 = $attributes['emailFromEmail'] ?? '';
 		$email_reply_to                   = $attributes['emailReplyTo'] ?? '';
 		$email_body                       = $attributes['emailBody'] ?? '';
+
+		// Submit-button style variation class - must match save.js. Validated
+		// against the block.json enum so an AI-supplied value can't inject markup.
+		$submit_button_variation_class = in_array( $submit_button_variation, array( 'secondary', 'outline' ), true )
+			? ' dsgo-form__submit--' . $submit_button_variation
+			: '';
 
 		// Build classes - must match save.js.
 		$classes = $block_class;
@@ -1999,7 +2006,7 @@ class Block_Inserter {
 
 		// Inline button goes inside fields wrapper, before closing.
 		if ( 'inline' === $submit_button_position ) {
-			$closing .= '<button type="submit" class="dsgo-form__submit dsgo-form__submit--inline wp-element-button" style="' . $button_style . '">' . esc_html( $submit_button_text ) . '</button>';
+			$closing .= '<button type="submit" class="dsgo-form__submit dsgo-form__submit--inline' . $submit_button_variation_class . ' wp-element-button" style="' . $button_style . '">' . esc_html( $submit_button_text ) . '</button>';
 		}
 
 		// Close fields wrapper.
@@ -2021,7 +2028,7 @@ class Block_Inserter {
 		// Footer with button (below position).
 		if ( 'below' === $submit_button_position ) {
 			$closing .= '<div class="dsgo-form__footer">';
-			$closing .= '<button type="submit" class="dsgo-form__submit wp-element-button" style="' . $button_style . '">' . esc_html( $submit_button_text ) . '</button>';
+			$closing .= '<button type="submit" class="dsgo-form__submit' . $submit_button_variation_class . ' wp-element-button" style="' . $button_style . '">' . esc_html( $submit_button_text ) . '</button>';
 			$closing .= '</div>';
 		}
 

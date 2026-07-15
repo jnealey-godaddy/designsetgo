@@ -112,9 +112,17 @@
 			width: auto;
 		}
 
-		// Loading state
+		// Loading state.
+		// Hide the label with text-indent, NOT `color: transparent`: the
+		// Global-Styles button rules (Button_Global_Styles, 0,3,0) and the style
+		// variations (0,4,0) out-specify a plain `color` override, so it would
+		// fail to hide the text — and forcing it would also blank the spinner
+		// below, which paints with `currentColor`. text-indent pushes the label
+		// out of view while keeping currentColor real for the spinner, and needs
+		// no specificity war because nothing else sets it.
 		&.dsgo-form__submit--loading {
-			color: transparent;
+			text-indent: -9999px;
+			white-space: nowrap;
 			pointer-events: none;
 
 			&::after {
@@ -267,12 +275,78 @@
 }
 
 // ============================================================================
+// SUBMIT BUTTON STYLE VARIATIONS (submitButtonVariation attribute)
+// ============================================================================
+// Self-contained "ghost" fallback — transparent fill + current-color border,
+// text following the surrounding color — so a secondary/outline submit button
+// reads on ANY background without a Style Kit, matching how the kit itself
+// defines `secondary`/`outline`. Themes/kits give `.dsgo-form__submit` a filled
+// primary look via a `:root … .dsgo-form__submit.wp-element-button` rule (0,3,0),
+// so these are compounded to 0,4,0 (`:root` + three element classes) to win —
+// the same approach as the icon-button `outline` style. Kits and section/group
+// style variations can repaint the same classes. MUST match save.js.
+:root .dsgo-form__submit--secondary.dsgo-form__submit.wp-element-button,
+:root .dsgo-form__submit--outline.dsgo-form__submit.wp-element-button {
+	background-color: transparent;
+	color: inherit;
+	border-style: solid;
+	border-color: currentcolor;
+}
+
+:root .dsgo-form__submit--secondary.dsgo-form__submit.wp-element-button {
+	border-width: 1px;
+}
+
+// Keep the ghost look on :hover against the base Global-Styles hover rule
+// (`:root .dsgo-form__submit.wp-element-button:hover`, 0,4,0), which would
+// otherwise fill these solid on hover when a theme/Style Kit sets a button hover
+// colour. `:hover` here is 0,5,0 so the ghost stays transparent.
+// NOTE: this intentionally does NOT override a per-instance custom hover
+// background — the "instant hover-bg" rule below uses
+// `background-color: var(--dsgo-button-hover-bg) !important`, which still wins.
+// That mirrors the base custom-colour precedence (a hand-picked colour beats the
+// ghost variation, as the Button Style control's help text notes). A kit that
+// wants a hover fill for these variations defines it under
+// `core/button.variations.{name}:hover`, which Button_Global_Styles projects.
+:root .dsgo-form__submit--secondary.dsgo-form__submit.wp-element-button:hover,
+:root .dsgo-form__submit--outline.dsgo-form__submit.wp-element-button:hover {
+	background-color: transparent;
+	border-color: currentcolor;
+}
+
+:root .dsgo-form__submit--outline.dsgo-form__submit.wp-element-button {
+	border-width: 2px;
+}
+
+// ============================================================================
 // HOVER COLORS
 // ============================================================================
 // Custom hover colors via CSS variables (same pattern as icon-button)
 
-// No animation — instant background transition
-.dsgo-form__submit[style*="--dsgo-button-hover-bg"]:not([class*="dsgo-form__submit--"]):hover {
+// No animation — instant background transition.
+// Excludes the hover-animation modifiers explicitly (kept in sync with
+// ALLOWED_HOVER_ANIMATIONS in class-plugin.php), plus the `--loading` and
+// `--no-hover` states. This must NOT be a substring match on
+// `dsgo-form__submit--*`: the style-variation modifiers (`--secondary`,
+// `--outline`) share that prefix, so a substring `:not()` would treat them as
+// animations and silently drop the custom hover background on a variation button
+// that has no animation set. `--loading` (spinner) and `--no-hover` (explicit
+// opt-out honoured by apply_default_form_button_hover()) stay excluded — as they
+// were under the old substring guard — so neither flashes the hover colour.
+.dsgo-form__submit[style*="--dsgo-button-hover-bg"]:hover:not(
+	.dsgo-form__submit--fill-diagonal,
+	.dsgo-form__submit--zoom-in,
+	.dsgo-form__submit--lift,
+	.dsgo-form__submit--shrink,
+	.dsgo-form__submit--border-pulse,
+	.dsgo-form__submit--border-glow,
+	.dsgo-form__submit--slide-left,
+	.dsgo-form__submit--slide-right,
+	.dsgo-form__submit--slide-down,
+	.dsgo-form__submit--slide-up,
+	.dsgo-form__submit--loading,
+	.dsgo-form__submit--no-hover
+) {
 	background-color: var(--dsgo-button-hover-bg) !important;
 	opacity: 1;
 	transition: background-color 0.3s ease;

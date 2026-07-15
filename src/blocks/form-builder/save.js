@@ -9,6 +9,10 @@ import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { validateCSSLength } from '../../utils/css-generator';
 
+// Non-default submitButtonVariation values from block.json. Allowlisted before
+// interpolation into the class name. MUST MATCH edit.js.
+const SUBMIT_BUTTON_VARIATIONS = ['secondary', 'outline'];
+
 export default function FormBuilderSave({ attributes }) {
 	const {
 		formId,
@@ -16,6 +20,7 @@ export default function FormBuilderSave({ attributes }) {
 		submitButtonText,
 		submitButtonAlignment,
 		submitButtonPosition,
+		submitButtonVariation,
 		ajaxSubmit,
 		successMessage,
 		errorMessage,
@@ -44,6 +49,19 @@ export default function FormBuilderSave({ attributes }) {
 	if (!hasFields) {
 		return null;
 	}
+
+	// Optional semantic style for the submit button (e.g. secondary/outline for
+	// forms placed on alternate backgrounds). The class is only appended for a
+	// non-default variation, so existing forms serialize byte-identically and
+	// need no deprecation. Validated against the block.json enum (like the PHP
+	// block-inserter) so a stray attribute value never reaches the class name.
+	// Kits (and section/group style variations) paint the class; style.scss ships
+	// a self-contained fallback. MUST MATCH edit.js.
+	const submitVariationClass = SUBMIT_BUTTON_VARIATIONS.includes(
+		submitButtonVariation
+	)
+		? ` dsgo-form__submit--${submitButtonVariation}`
+		: '';
 
 	// Same classes as edit.js - MUST MATCH
 	const formClasses = classnames('dsgo-form-builder', {
@@ -130,7 +148,7 @@ export default function FormBuilderSave({ attributes }) {
 					{submitButtonPosition === 'inline' && (
 						<button
 							type="submit"
-							className="dsgo-form__submit dsgo-form__submit--inline wp-element-button"
+							className={`dsgo-form__submit dsgo-form__submit--inline${submitVariationClass} wp-element-button`}
 							style={submitButtonStyle}
 						>
 							{submitButtonText}
@@ -172,7 +190,7 @@ export default function FormBuilderSave({ attributes }) {
 					<div className="dsgo-form__footer">
 						<button
 							type="submit"
-							className="dsgo-form__submit wp-element-button"
+							className={`dsgo-form__submit${submitVariationClass} wp-element-button`}
 							style={submitButtonStyle}
 						>
 							{submitButtonText}

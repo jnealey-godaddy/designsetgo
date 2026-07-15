@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Cloudflare Turnstile no longer rejects every submission it protects.** Turnstile was unusable on any site that enabled it: the form endpoint validated `turnstile_token` against `/^[a-zA-Z0-9_-]+$/`, which has no `.` in the character class, but real Turnstile tokens are dot-delimited. The widget rendered and issued its token normally, then every submission failed REST parameter validation with `400 Invalid parameter(s): turnstile_token` before reaching the handler — so enabling Turnstile silently broke the form instead of protecting it. The token is opaque (Cloudflare guarantees only a 2048-character ceiling and does not contract its alphabet), so the validator no longer tries to parse its structure: it bounds the length and rejects only what a token can never contain — whitespace, newlines, and other non-printable bytes — before forwarding the value to `siteverify`. Non-string input is now rejected cleanly rather than reaching `preg_match()` as a PHP 8 `TypeError`. Pre-existing in the shipped 2.4.0 tag, and backed by a regression test that dispatches the real route and fails against the unpatched code. (#466)
 
+### New Features
+- **Form Builder: submit button style (Secondary / Outline)** — The submit button gains a Button Style control (`default` / `secondary` / `outline`) that emits a `dsgo-form__submit--{variation}` class, so a form placed on an alternate background can use a secondary/outline button and section/group style variations can restyle it. Ships a self-contained ghost fallback (transparent + current-color border) scoped above the theme's filled-button rule; Style Kits repaint the same class. Default output is byte-identical, so existing forms are untouched and need no migration. (#469)
+
 ## [2.4.0] - 2026-07-12
 
 ### Security
