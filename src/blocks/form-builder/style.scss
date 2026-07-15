@@ -112,9 +112,18 @@
 			width: auto;
 		}
 
-		// Loading state
+		// Loading state.
+		// Hide the label with text-indent, NOT `color: transparent`: the
+		// Global-Styles button rules (Button_Global_Styles, 0,3,0) and the style
+		// variations (0,4,0) out-specify a plain `color` override, so it would
+		// fail to hide the text — and forcing it would also blank the spinner
+		// below, which paints with `currentColor`. text-indent pushes the label
+		// out of view while keeping currentColor real for the spinner, and needs
+		// no specificity war because nothing else sets it.
 		&.dsgo-form__submit--loading {
-			color: transparent;
+			text-indent: -9999px;
+			white-space: nowrap;
+			overflow: hidden;
 			pointer-events: none;
 
 			&::after {
