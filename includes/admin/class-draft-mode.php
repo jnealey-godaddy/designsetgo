@@ -36,12 +36,23 @@ class Draft_Mode {
 	const META_DRAFT_CREATED = '_dsgo_draft_created';
 
 	/**
-	 * Maximum nesting depth scanned by meta_rejection_reason().
+	 * Default maximum nesting depth scanned by meta_rejection_reason().
 	 *
 	 * Anything deeper is rejected (fail closed), capping recursion so a
-	 * maliciously deep payload cannot overflow the stack.
+	 * maliciously deep payload cannot overflow the stack. Raise it for a
+	 * specific site with the designsetgo_draft_max_object_scan_depth filter.
 	 */
 	const MAX_OBJECT_SCAN_DEPTH = 20;
+
+	/**
+	 * Hard ceiling on the scan depth, whatever the filter asks for.
+	 *
+	 * The depth cap's whole purpose is to bound recursion, so the filter that
+	 * relaxes it must not be able to remove that bound entirely. This sits far
+	 * above any plausible real structure and far below a stack overflow, so the
+	 * guarantee holds no matter what an integrator passes.
+	 */
+	const ABSOLUTE_MAX_OBJECT_SCAN_DEPTH = 200;
 
 	/**
 	 * Rejection reason: the value is, or contains, a PHP object.
@@ -51,12 +62,14 @@ class Draft_Mode {
 	const REJECT_OBJECT = 'object';
 
 	/**
-	 * Rejection reason: the value nests deeper than MAX_OBJECT_SCAN_DEPTH.
+	 * Rejection reason: the value nests deeper than the resolved scan cap.
 	 *
+	 * The cap defaults to MAX_OBJECT_SCAN_DEPTH but is filterable, so the bound
+	 * that actually applies is whatever get_max_object_scan_depth() resolves.
 	 * Unlike REJECT_OBJECT this says nothing about whether the value is
-	 * hostile — only that it is too deep to vet within the recursion cap. It
-	 * may well be legitimate data (deeply nested page-builder or ACF
-	 * configuration), so such a key is left untouched rather than deleted.
+	 * hostile — only that it is too deep to vet within that cap. It may well be
+	 * legitimate data (deeply nested page-builder or ACF configuration), so such
+	 * a key is left untouched rather than deleted.
 	 */
 	const REJECT_DEPTH = 'depth';
 
@@ -365,23 +378,9 @@ class Draft_Mode {
 	private function copy_post_meta( $source_id, $target_id ) {
 		$meta = get_post_meta( $source_id );
 
-		$excluded_keys = array(
-			'_edit_lock',
-			'_edit_last',
-			self::META_DRAFT_OF,
-			self::META_HAS_DRAFT,
-			self::META_DRAFT_CREATED,
-			'_wp_old_slug',
-			'_wp_old_date',
-		);
-
-		/**
-		 * Filter the meta keys to copy when creating a draft.
-		 *
-		 * @param array $excluded_keys Keys to exclude from copying.
-		 * @param int   $source_id     Source post ID.
-		 */
-		$excluded_keys = apply_filters( 'designsetgo_draft_excluded_meta_keys', $excluded_keys, $source_id );
+		// Resolve both filters once for the whole copy, not per key or per value.
+		$excluded_keys = self::get_excluded_meta_keys( $source_id );
+		$max_depth     = self::get_max_object_scan_depth();
 
 		foreach ( $meta as $key => $values ) {
 			if ( in_array( $key, $excluded_keys, true ) ) {
@@ -392,10 +391,10 @@ class Draft_Mode {
 				$unserialized = maybe_unserialize( $value );
 				// Reject PHP objects (including objects nested inside arrays)
 				// to prevent object injection, and anything too deep to vet.
-				$reason = self::meta_rejection_reason( $unserialized );
+				$reason = self::meta_rejection_reason( $unserialized, 0, $max_depth );
 
 				if ( '' !== $reason ) {
-					self::log_skipped_meta( $key, $reason, $source_id, 'the draft will not carry this key' );
+					self::log_skipped_meta( $key, $reason, $source_id, 'the draft will not carry this key', $max_depth );
 					continue;
 				}
 
@@ -433,6 +432,10 @@ class Draft_Mode {
 		$draft_meta    = get_post_meta( $draft_id );
 		$original_meta = get_post_meta( $original_id );
 
+		// Resolve both filters once for the whole publish, not per key or per value.
+		$excluded_keys = self::get_excluded_meta_keys( $original_id );
+		$max_depth     = self::get_max_object_scan_depth();
+
 		foreach ( array_keys( $original_meta ) as $key ) {
 			if ( in_array( $key, $preserve_keys, true ) ) {
 				continue;
@@ -444,14 +447,19 @@ class Draft_Mode {
 
 			// The key is on the original but not on the draft. Normally that
 			// means the author removed it, and the deletion should be synced.
-			// But copy_post_meta() may simply have refused to copy it — in
-			// which case the author never saw it, let alone removed it, and
-			// deleting here would destroy meta they never touched. Only sync
-			// the deletion when the value was actually copyable.
-			$reason = self::values_rejection_reason( $original_meta[ $key ] );
+			// But it may never have been copied in the first place — either
+			// because an integrator excluded it, or because the scanner refused
+			// it — in which case the author never saw the key, let alone removed
+			// it, and deleting here would destroy meta they never touched. Only
+			// sync the deletion when the key really was copyable.
+			if ( in_array( $key, $excluded_keys, true ) ) {
+				continue;
+			}
+
+			$reason = self::values_rejection_reason( $original_meta[ $key ], $max_depth );
 
 			if ( '' !== $reason ) {
-				self::log_skipped_meta( $key, $reason, $original_id, 'it was left untouched on the original rather than deleted' );
+				self::log_skipped_meta( $key, $reason, $original_id, 'it was left untouched on the original rather than deleted', $max_depth );
 				continue;
 			}
 
@@ -470,10 +478,10 @@ class Draft_Mode {
 			// original already had. Reject PHP objects (including objects
 			// nested inside arrays) to prevent object injection, and anything
 			// too deep to vet.
-			$reason = self::values_rejection_reason( $values );
+			$reason = self::values_rejection_reason( $values, $max_depth );
 
 			if ( '' !== $reason ) {
-				self::log_skipped_meta( $key, $reason, $draft_id, 'the original keeps its existing value' );
+				self::log_skipped_meta( $key, $reason, $draft_id, 'the original keeps its existing value', $max_depth );
 				continue;
 			}
 
@@ -519,35 +527,122 @@ class Draft_Mode {
 	}
 
 	/**
+	 * Meta keys that are never copied from a post to its draft.
+	 *
+	 * Shared by copy_post_meta() and sync_post_meta(): the copy step uses it to
+	 * decide what to leave behind, and the publish step uses it to recognise
+	 * that such a key's absence from the draft means "never copied" rather than
+	 * "the author deleted it". Reading it from one place is what keeps those two
+	 * answers in agreement.
+	 *
+	 * @param int $post_id Post the meta is read from.
+	 * @return array Meta keys to exclude from copying.
+	 */
+	private static function get_excluded_meta_keys( $post_id ) {
+		$excluded_keys = array(
+			'_edit_lock',
+			'_edit_last',
+			self::META_DRAFT_OF,
+			self::META_HAS_DRAFT,
+			self::META_DRAFT_CREATED,
+			'_wp_old_slug',
+			'_wp_old_date',
+		);
+
+		/**
+		 * Filter the meta keys to copy when creating a draft.
+		 *
+		 * The callback must be a pure function of $post_id: it has to return the
+		 * same list for a given post when the draft is created and again when it
+		 * is published. copy_post_meta() consults it to decide what to leave off
+		 * the draft, and sync_post_meta() consults it again on publish to tell an
+		 * excluded key's absence from the draft ("never copied") apart from a key
+		 * the author deleted. A callback that varies with mutable state (an
+		 * option, a transient, the clock) can excise a key at copy time and admit
+		 * it at publish time, at which point the deletion sync destroys it — the
+		 * same meta loss this exclusion is meant to prevent.
+		 *
+		 * @param array $excluded_keys Keys to exclude from copying.
+		 * @param int   $post_id       Source post ID.
+		 */
+		return apply_filters( 'designsetgo_draft_excluded_meta_keys', $excluded_keys, $post_id );
+	}
+
+	/**
+	 * Maximum nesting depth the object scanner will descend.
+	 *
+	 * Filterable so a site with legitimately deep but object-free data (some
+	 * ACF repeater / flexible-content and page-builder configurations nest well
+	 * past the default) can opt into copying it, rather than having it withheld
+	 * from every draft with no recourse.
+	 *
+	 * The result is clamped to ABSOLUTE_MAX_OBJECT_SCAN_DEPTH. The cap exists to
+	 * bound recursion, and a filter must not be able to hand that guarantee back
+	 * to an attacker — so raising it is allowed, but only within a range that is
+	 * still nowhere near a stack overflow.
+	 *
+	 * @return int Depth to scan, at least 1 and at most ABSOLUTE_MAX_OBJECT_SCAN_DEPTH.
+	 */
+	private static function get_max_object_scan_depth() {
+		/**
+		 * Filter the maximum nesting depth scanned when vetting meta for objects.
+		 *
+		 * Anything deeper is rejected (fail closed) and withheld from the draft.
+		 * Values are clamped to the range 1..ABSOLUTE_MAX_OBJECT_SCAN_DEPTH.
+		 *
+		 * Like designsetgo_draft_excluded_meta_keys, this must be stable across a
+		 * draft's create->publish lifetime: a key withheld as too deep at copy
+		 * time is recognised as "never copied" on publish by re-vetting it at the
+		 * current cap. Raising the cap between the two calls (for example a deploy
+		 * that changes the value while a draft is open) makes that key vet as
+		 * copyable on publish, and the deletion sync then destroys it. Prefer a
+		 * constant over reading mutable state here.
+		 *
+		 * @param int $depth Default self::MAX_OBJECT_SCAN_DEPTH.
+		 */
+		$depth = (int) apply_filters( 'designsetgo_draft_max_object_scan_depth', self::MAX_OBJECT_SCAN_DEPTH );
+
+		return max( 1, min( $depth, self::ABSOLUTE_MAX_OBJECT_SCAN_DEPTH ) );
+	}
+
+	/**
 	 * Reason a meta value must not be copied, or '' when it is safe to copy.
 	 *
 	 * A plain is_object() check misses objects nested inside arrays (e.g. a
 	 * serialized payload like `a:1:{i:0;O:8:"stdClass":0:{}}`), which would
 	 * still trigger object injection when stored and later unserialized.
 	 *
-	 * Recursion is bounded by self::MAX_OBJECT_SCAN_DEPTH. A structure deeper
-	 * than that is rejected (fail closed), eliminating any stack-overflow risk
-	 * from a maliciously deep payload. The two rejection reasons are reported
+	 * Recursion is bounded by the resolved depth cap ($max_depth, which defaults
+	 * to self::MAX_OBJECT_SCAN_DEPTH but is filterable). A structure deeper than
+	 * that is rejected (fail closed), eliminating any stack-overflow risk from a
+	 * maliciously deep payload. The two rejection reasons are reported
 	 * separately because they mean different things: REJECT_OBJECT is a hostile
 	 * payload, while REJECT_DEPTH may be perfectly legitimate data that is
 	 * simply too deep to vet, and so must be preserved rather than destroyed.
 	 *
-	 * @param mixed $value Value to inspect (already passed through maybe_unserialize()).
-	 * @param int   $depth Current recursion depth (internal).
+	 * @param mixed    $value     Value to inspect (already passed through maybe_unserialize()).
+	 * @param int      $depth     Current recursion depth (internal).
+	 * @param int|null $max_depth Resolved depth cap; looked up once on entry and
+	 *                            passed down, so the filter runs once per scan
+	 *                            rather than once per nested element.
 	 * @return string self::REJECT_OBJECT, self::REJECT_DEPTH, or '' when safe.
 	 */
-	private static function meta_rejection_reason( $value, $depth = 0 ) {
+	private static function meta_rejection_reason( $value, $depth = 0, $max_depth = null ) {
+		if ( null === $max_depth ) {
+			$max_depth = self::get_max_object_scan_depth();
+		}
+
 		if ( is_object( $value ) ) {
 			return self::REJECT_OBJECT;
 		}
 
 		if ( is_array( $value ) ) {
-			if ( $depth >= self::MAX_OBJECT_SCAN_DEPTH ) {
+			if ( $depth >= $max_depth ) {
 				return self::REJECT_DEPTH;
 			}
 
 			foreach ( $value as $item ) {
-				$reason = self::meta_rejection_reason( $item, $depth + 1 );
+				$reason = self::meta_rejection_reason( $item, $depth + 1, $max_depth );
 
 				if ( '' !== $reason ) {
 					return $reason;
@@ -561,12 +656,19 @@ class Draft_Mode {
 	/**
 	 * Reason none of a meta key's stored values may be copied, or '' when safe.
 	 *
-	 * @param array $values Raw values as returned by get_post_meta( $id ) (still serialized).
+	 * @param array    $values    Raw values as returned by get_post_meta( $id ) (still serialized).
+	 * @param int|null $max_depth Resolved depth cap. Pass the value already
+	 *                            resolved for the surrounding loop so the filter
+	 *                            is not re-run per key; null resolves it once here.
 	 * @return string self::REJECT_OBJECT, self::REJECT_DEPTH, or '' when safe.
 	 */
-	private static function values_rejection_reason( $values ) {
+	private static function values_rejection_reason( $values, $max_depth = null ) {
+		if ( null === $max_depth ) {
+			$max_depth = self::get_max_object_scan_depth();
+		}
+
 		foreach ( (array) $values as $value ) {
-			$reason = self::meta_rejection_reason( maybe_unserialize( $value ) );
+			$reason = self::meta_rejection_reason( maybe_unserialize( $value ), 0, $max_depth );
 
 			if ( '' !== $reason ) {
 				return $reason;
@@ -584,18 +686,19 @@ class Draft_Mode {
 	 * decision is observable, and under WP_DEBUG emit a notice naming the key
 	 * and the reason. The value itself is never logged — it may hold a secret.
 	 *
-	 * @param string $key      Meta key that was skipped.
-	 * @param string $reason   self::REJECT_OBJECT or self::REJECT_DEPTH.
-	 * @param int    $post_id  Post the meta was read from.
-	 * @param string $outcome  Human-readable description of what was done instead.
+	 * @param string   $key       Meta key that was skipped.
+	 * @param string   $reason    self::REJECT_OBJECT or self::REJECT_DEPTH.
+	 * @param int      $post_id   Post the meta was read from.
+	 * @param string   $outcome   Human-readable description of what was done instead.
+	 * @param int|null $max_depth Resolved depth cap for the message; null resolves it once here.
 	 */
-	private static function log_skipped_meta( $key, $reason, $post_id, $outcome ) {
+	private static function log_skipped_meta( $key, $reason, $post_id, $outcome, $max_depth = null ) {
 		/**
 		 * Fires when the object scanner refuses to copy a meta key.
 		 *
 		 * @param string $key     Meta key that was skipped.
 		 * @param string $reason  'object' (PHP object rejected) or 'depth'
-		 *                        (nests deeper than MAX_OBJECT_SCAN_DEPTH).
+		 *                        (nests deeper than the resolved scan cap).
 		 * @param int    $post_id Post the meta was read from.
 		 * @param string $outcome What happened to the key instead.
 		 */
@@ -605,8 +708,15 @@ class Draft_Mode {
 			return;
 		}
 
+		if ( null === $max_depth ) {
+			$max_depth = self::get_max_object_scan_depth();
+		}
+
 		$because = self::REJECT_DEPTH === $reason
-			? sprintf( 'it nests deeper than the %d-level scan cap', self::MAX_OBJECT_SCAN_DEPTH )
+			? sprintf(
+				'it nests deeper than the %d-level scan cap (raise it with the designsetgo_draft_max_object_scan_depth filter)',
+				$max_depth
+			)
 			: 'it contains a PHP object';
 
 		error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only diagnostic; the alternative is a silent skip that is impossible to support.
