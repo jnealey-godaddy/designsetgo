@@ -62,6 +62,46 @@ class Button_Global_Styles {
 	);
 
 	/**
+	 * Per-primitive selector templates for block-style variations.
+	 *
+	 * `{name}` is replaced with a variation slug (e.g. `secondary`). Each template
+	 * is emitted at a specificity that beats the base button rule (0,3,0) so a
+	 * Global Styles variation actually wins on DSGo's single-element buttons —
+	 * the same cascade problem the hand-written `is-style-outline` rule solves,
+	 * generalised so every registered variation works with no per-variation CSS.
+	 *
+	 * - Icon Button: variation class on the wrapper, styling the inner button
+	 *   (0,5,0). Matches the hand-written `is-style-outline` rule in
+	 *   `src/blocks/icon-button/style.scss`.
+	 * - Form submit: variation modifier compounded on the button (0,4,0). Matches
+	 *   the `submitButtonVariation` classes in `src/blocks/form-builder/`.
+	 *
+	 * Modal Trigger is intentionally omitted: it uses its own `buttonStyle`
+	 * attribute (`dsgo-modal-trigger--{style}`) rather than block-style
+	 * variations, so projecting `core/button` variations onto it needs a separate
+	 * decision (mirror `is-style-*` onto it, or map to `buttonStyle`).
+	 *
+	 * @var string[]
+	 */
+	private const VARIATION_SELECTOR_TEMPLATES = array(
+		'.wp-block-designsetgo-icon-button.is-style-{name} .dsgo-icon-button.wp-block-button__link',
+		'.dsgo-form__submit.dsgo-form__submit--{name}.wp-element-button',
+	);
+
+	/**
+	 * Variation slugs already handled elsewhere, so the generator skips them.
+	 *
+	 * - `fill`: the default filled look, already produced by the base rule.
+	 * - `outline`: hand-written in `src/blocks/icon-button/style.scss`.
+	 *
+	 * Both are candidates to migrate INTO this generator (and drop the
+	 * hand-written CSS) once the approach is agreed — see the class docblock.
+	 *
+	 * @var string[]
+	 */
+	private const SKIP_VARIATIONS = array( 'fill', 'outline' );
+
+	/**
 	 * Block names that need Global Styles button CSS.
 	 *
 	 * @var string[]
@@ -204,11 +244,96 @@ class Button_Global_Styles {
 		// Merge: block-level overrides element-level.
 		$merged = $this->merge_styles( $element_styles, $block_styles );
 
-		if ( empty( $merged ) ) {
+		$css = empty( $merged ) ? '' : $this->build_css( $merged );
+
+		// Project each registered core/button style variation onto DSGo's button
+		// primitives at winning specificity, so semantic variations (primary,
+		// secondary, …) work without per-variation hand-written CSS.
+		$css .= $this->build_variation_css( $block_styles );
+
+		return $css;
+	}
+
+	/**
+	 * Build CSS for each core/button block-style variation, scoped to DSGo's
+	 * button primitives.
+	 *
+	 * Reads `styles.blocks.core/button.variations.{name}` from Global Styles and
+	 * emits one rule per primitive per variation, at a specificity that beats the
+	 * base button rule. Colours therefore stay defined once (in the kit /
+	 * theme.json) and are projected onto the icon button / form submit here.
+	 *
+	 * @param array $block_styles The core/button block styles from Global Styles.
+	 * @return string Generated CSS, or empty string when there are no variations.
+	 */
+	private function build_variation_css( $block_styles ) {
+		if ( ! is_array( $block_styles ) || empty( $block_styles['variations'] ) || ! is_array( $block_styles['variations'] ) ) {
 			return '';
 		}
 
-		return $this->build_css( $merged );
+		$css = '';
+
+		foreach ( $block_styles['variations'] as $name => $variation_styles ) {
+			if ( ! is_array( $variation_styles ) ) {
+				continue;
+			}
+
+			$slug = $this->sanitize_variation_name( $name );
+			if ( '' === $slug || in_array( $slug, self::SKIP_VARIATIONS, true ) ) {
+				continue;
+			}
+
+			// Normal-state declarations (color/border/typography/etc.). Reuses
+			// the same extractor as the base rule, which only reads the known
+			// appearance keys, so unexpected variation keys are ignored.
+			$declarations = $this->extract_declarations( $variation_styles );
+			if ( ! empty( $declarations ) ) {
+				$rule = implode( ";\n\t", $declarations );
+				$css .= $this->build_variation_selector( $slug ) . " {\n\t" . $rule . ";\n}\n";
+			}
+
+			// Hover state, if the variation defines one.
+			if ( ! empty( $variation_styles[':hover'] ) ) {
+				$hover_declarations = $this->extract_hover_declarations( $variation_styles[':hover'] );
+				if ( ! empty( $hover_declarations ) ) {
+					$hover_rule = implode( ";\n\t", $hover_declarations );
+					$css       .= $this->build_variation_selector( $slug, ':hover' ) . " {\n\t" . $hover_rule . ";\n}\n";
+				}
+			}
+		}
+
+		return $css;
+	}
+
+	/**
+	 * Build the comma-joined selector for a variation across every primitive.
+	 *
+	 * @param string $slug   Sanitised variation slug.
+	 * @param string $pseudo Optional pseudo-class suffix (e.g. ':hover').
+	 * @return string Selector list, each part prefixed with `:root`.
+	 */
+	private function build_variation_selector( $slug, $pseudo = '' ) {
+		$parts = array();
+		foreach ( self::VARIATION_SELECTOR_TEMPLATES as $template ) {
+			$parts[] = ':root ' . str_replace( '{name}', $slug, $template ) . $pseudo;
+		}
+		return implode( ",\n", $parts );
+	}
+
+	/**
+	 * Sanitise a variation slug for safe use in a selector.
+	 *
+	 * Block-style variation slugs are lowercase letters, digits and hyphens;
+	 * anything else is stripped so the value can never break out of the selector.
+	 *
+	 * @param mixed $name Raw variation key from Global Styles.
+	 * @return string Safe slug, or empty string when nothing valid remains.
+	 */
+	private function sanitize_variation_name( $name ) {
+		if ( ! is_string( $name ) || '' === $name ) {
+			return '';
+		}
+		return preg_replace( '/[^a-z0-9\-]/', '', strtolower( $name ) );
 	}
 
 	/**
