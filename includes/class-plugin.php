@@ -23,9 +23,10 @@ class Plugin {
 	 * Single source of truth for the regex check and allowlist validation in
 	 * apply_default_icon_button_hover() / apply_default_form_button_hover().
 	 * Public so features that emit button CSS (e.g. Button_Global_Styles) can
-	 * avoid colliding with this namespace — the form submit uses the same
-	 * `dsgo-form__submit--{x}` modifier space for both animations and style
-	 * variations.
+	 * validate against the same list. Style variations deliberately live in a
+	 * separate namespace (`is-style-{x}`), disjoint from these
+	 * `dsgo-form__submit--{x}` / `dsgo-icon-button--{x}` animation modifiers, so a
+	 * variation can never collide with a like-named animation.
 	 *
 	 * @var string[]
 	 */

@@ -1927,8 +1927,10 @@ class Block_Inserter {
 
 		// Submit-button style variation class - must match save.js. Validated
 		// against the block.json enum so an AI-supplied value can't inject markup.
+		// The `is-style-` namespace (not `dsgo-form__submit--*`) keeps it clear of
+		// the layout/state/animation modifiers that share the BEM namespace.
 		$submit_button_variation_class = in_array( $submit_button_variation, array( 'secondary', 'outline' ), true )
-			? ' dsgo-form__submit--' . $submit_button_variation
+			? ' is-style-' . $submit_button_variation
 			: '';
 
 		// Build classes - must match save.js.

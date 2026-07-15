@@ -136,11 +136,13 @@ export default function FormBuilderEdit({
 			: '';
 
 	// Optional semantic style for the submit button, allowlisted against the
-	// block.json enum before interpolation - MUST MATCH save.js.
+	// block.json enum before interpolation - MUST MATCH save.js. Uses the
+	// `is-style-` namespace (not `dsgo-form__submit--*`) so it can never collide
+	// with the layout/state/animation modifiers that share that BEM namespace.
 	const submitVariationClass = SUBMIT_BUTTON_VARIATIONS.includes(
 		submitButtonVariation
 	)
-		? ` dsgo-form__submit--${submitButtonVariation}`
+		? ` is-style-${submitButtonVariation}`
 		: '';
 
 	useUniqueBlockId({

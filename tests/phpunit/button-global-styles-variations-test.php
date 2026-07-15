@@ -105,9 +105,9 @@ class Button_Global_Styles_Variations_Test extends WP_UnitTestCase {
 			'.wp-block-designsetgo-icon-button.is-style-secondary .dsgo-icon-button.wp-block-button__link',
 			$css
 		);
-		// Form submit: modifier compounded on the button.
+		// Form submit: variation class compounded on the button.
 		$this->assertStringContainsString(
-			'.dsgo-form__submit.dsgo-form__submit--secondary.wp-element-button',
+			'.dsgo-form__submit.is-style-secondary.wp-element-button',
 			$css
 		);
 		$this->assertStringContainsString( 'background-color:transparent', $css );
@@ -153,43 +153,47 @@ class Button_Global_Styles_Variations_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A variation named like a reserved form-submit modifier skips the form rule.
+	 * A variation whose slug matches a `dsgo-form__submit--*` modifier now emits a
+	 * form-submit rule safely, because variations live in the separate
+	 * `is-style-*` namespace — there is nothing left to collide with.
 	 *
 	 * The block/plugin stamp `dsgo-form__submit--{x}` on real buttons for hover
 	 * animations (`--lift`, …) and layout/state (`--inline`, `--loading`,
-	 * `--no-hover`). A variation named like one of those must NOT emit
-	 * `.dsgo-form__submit.dsgo-form__submit--{x}` (it would repaint any button
-	 * carrying that modifier). The icon-button selector (wrapper `is-style-{name}`)
-	 * is a separate namespace and is still emitted.
+	 * `--no-hover`). A like-named variation must still land in `is-style-{x}` and
+	 * never in that BEM modifier namespace, so it can't repaint a button that
+	 * merely carries the modifier.
 	 *
-	 * @dataProvider reserved_slug_provider
+	 * @dataProvider modifier_named_slug_provider
 	 *
-	 * @param string $slug A reserved form-submit modifier slug.
+	 * @param string $slug A slug that used to collide with a form-submit modifier.
 	 */
-	public function test_reserved_slug_variation_skips_form_submit( $slug ) {
+	public function test_modifier_named_slug_stays_in_is_style_namespace( $slug ) {
 		$css = $this->call(
 			'build_variation_css',
 			array( $this->block_styles( array( $slug => array( 'color' => array( 'background' => '#f00' ) ) ) ) )
 		);
 
-		$this->assertStringNotContainsString(
-			'.dsgo-form__submit.dsgo-form__submit--' . $slug,
-			$css,
-			'Form-submit selector must not reuse a reserved modifier slug.'
-		);
+		// Emitted for the form submit, in the is-style namespace...
 		$this->assertStringContainsString(
-			'.wp-block-designsetgo-icon-button.is-style-' . $slug . ' .dsgo-icon-button',
+			'.dsgo-form__submit.is-style-' . $slug . '.wp-element-button',
 			$css,
-			'Icon-button selector (separate namespace) should still be emitted.'
+			'Form-submit variation should be emitted in the is-style namespace.'
+		);
+		// ...and never in the modifier namespace it used to share.
+		$this->assertStringNotContainsString(
+			'.dsgo-form__submit--' . $slug,
+			$css,
+			'Variation must not reuse the dsgo-form__submit--* modifier namespace.'
 		);
 	}
 
 	/**
-	 * Reserved form-submit modifier slugs: hover animations + layout/state.
+	 * Slugs that once collided with a form-submit modifier: hover animations +
+	 * layout/state.
 	 *
 	 * @return array
 	 */
-	public function reserved_slug_provider() {
+	public function modifier_named_slug_provider() {
 		return array(
 			'animation lift'   => array( 'lift' ),
 			'animation shrink' => array( 'shrink' ),
