@@ -62,12 +62,14 @@ class Draft_Mode {
 	const REJECT_OBJECT = 'object';
 
 	/**
-	 * Rejection reason: the value nests deeper than MAX_OBJECT_SCAN_DEPTH.
+	 * Rejection reason: the value nests deeper than the resolved scan cap.
 	 *
+	 * The cap defaults to MAX_OBJECT_SCAN_DEPTH but is filterable, so the bound
+	 * that actually applies is whatever get_max_object_scan_depth() resolves.
 	 * Unlike REJECT_OBJECT this says nothing about whether the value is
-	 * hostile — only that it is too deep to vet within the recursion cap. It
-	 * may well be legitimate data (deeply nested page-builder or ACF
-	 * configuration), so such a key is left untouched rather than deleted.
+	 * hostile — only that it is too deep to vet within that cap. It may well be
+	 * legitimate data (deeply nested page-builder or ACF configuration), so such
+	 * a key is left untouched rather than deleted.
 	 */
 	const REJECT_DEPTH = 'depth';
 
@@ -610,9 +612,10 @@ class Draft_Mode {
 	 * serialized payload like `a:1:{i:0;O:8:"stdClass":0:{}}`), which would
 	 * still trigger object injection when stored and later unserialized.
 	 *
-	 * Recursion is bounded by self::MAX_OBJECT_SCAN_DEPTH. A structure deeper
-	 * than that is rejected (fail closed), eliminating any stack-overflow risk
-	 * from a maliciously deep payload. The two rejection reasons are reported
+	 * Recursion is bounded by the resolved depth cap ($max_depth, which defaults
+	 * to self::MAX_OBJECT_SCAN_DEPTH but is filterable). A structure deeper than
+	 * that is rejected (fail closed), eliminating any stack-overflow risk from a
+	 * maliciously deep payload. The two rejection reasons are reported
 	 * separately because they mean different things: REJECT_OBJECT is a hostile
 	 * payload, while REJECT_DEPTH may be perfectly legitimate data that is
 	 * simply too deep to vet, and so must be preserved rather than destroyed.
@@ -695,7 +698,7 @@ class Draft_Mode {
 		 *
 		 * @param string $key     Meta key that was skipped.
 		 * @param string $reason  'object' (PHP object rejected) or 'depth'
-		 *                        (nests deeper than MAX_OBJECT_SCAN_DEPTH).
+		 *                        (nests deeper than the resolved scan cap).
 		 * @param int    $post_id Post the meta was read from.
 		 * @param string $outcome What happened to the key instead.
 		 */
