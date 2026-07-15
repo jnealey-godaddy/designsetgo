@@ -545,6 +545,16 @@ class Draft_Mode {
 		/**
 		 * Filter the meta keys to copy when creating a draft.
 		 *
+		 * The callback must be a pure function of $post_id: it has to return the
+		 * same list for a given post when the draft is created and again when it
+		 * is published. copy_post_meta() consults it to decide what to leave off
+		 * the draft, and sync_post_meta() consults it again on publish to tell an
+		 * excluded key's absence from the draft ("never copied") apart from a key
+		 * the author deleted. A callback that varies with mutable state (an
+		 * option, a transient, the clock) can excise a key at copy time and admit
+		 * it at publish time, at which point the deletion sync destroys it — the
+		 * same meta loss this exclusion is meant to prevent.
+		 *
 		 * @param array $excluded_keys Keys to exclude from copying.
 		 * @param int   $post_id       Source post ID.
 		 */
@@ -572,6 +582,14 @@ class Draft_Mode {
 		 *
 		 * Anything deeper is rejected (fail closed) and withheld from the draft.
 		 * Values are clamped to the range 1..ABSOLUTE_MAX_OBJECT_SCAN_DEPTH.
+		 *
+		 * Like designsetgo_draft_excluded_meta_keys, this must be stable across a
+		 * draft's create->publish lifetime: a key withheld as too deep at copy
+		 * time is recognised as "never copied" on publish by re-vetting it at the
+		 * current cap. Raising the cap between the two calls (for example a deploy
+		 * that changes the value while a draft is open) makes that key vet as
+		 * copyable on publish, and the deletion sync then destroys it. Prefer a
+		 * constant over reading mutable state here.
 		 *
 		 * @param int $depth Default self::MAX_OBJECT_SCAN_DEPTH.
 		 */
