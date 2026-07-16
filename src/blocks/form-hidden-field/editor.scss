@@ -4,8 +4,8 @@
  * @since 1.0.0
  */
 
-// Import the main frontend styles
-@import './style';
+// Load the main frontend styles
+@use './style';
 
 // Show in editor with visual indicator
 .dsgo-form-field--hidden {

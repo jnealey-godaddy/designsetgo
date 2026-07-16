@@ -42,7 +42,11 @@
 				)
 			)
 		);
-		opacity: var(
+		// Resolve the four-layer opacity cascade once into a single custom
+		// property. The collapsed state below adds 0.2 to it inside calc();
+		// referencing this flat var (no nested var() fallbacks) sidesteps a
+		// postcss-calc parse bug that chokes on nested var() inside calc().
+		--dsgo-resolved-overlay-opacity: var(
 			--dsgo-overlay-opacity,
 			var(
 				--dsgo-image-accordion-overlay-opacity,
@@ -52,6 +56,7 @@
 				)
 			)
 		);
+		opacity: var(--dsgo-resolved-overlay-opacity);
 		transition: opacity 0.3s ease;
 		pointer-events: none;
 		z-index: 1;
@@ -148,19 +153,10 @@
 		flex: 1;
 
 		&.dsgo-image-accordion-item--has-overlay::before {
-			// Darker when collapsed
-			opacity: calc(
-				var(
-						--dsgo-overlay-opacity,
-						var(
-							--dsgo-image-accordion-overlay-opacity,
-							var(
-								--wp--custom--designsetgo--image-accordion--overlay-opacity,
-								0.4
-							)
-						)
-					) + 0.2
-			);
+			// Darker when collapsed. --dsgo-resolved-overlay-opacity is set on
+			// the base &--has-overlay::before rule, which always co-applies to
+			// this same pseudo-element, so the flat var resolves here.
+			opacity: calc(var(--dsgo-resolved-overlay-opacity) + 0.2);
 		}
 
 		.dsgo-image-accordion-item__content {
