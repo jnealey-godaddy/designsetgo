@@ -118,7 +118,7 @@ class OutputHtml extends \QM_Output_Html {
 add_filter(
 	'qm/outputter/html',
 	static function ( array $outputters, \QM_Collectors $collectors ) {
-		$collector = $collectors::get( 'dsgo_queries' );
+		$collector = \QM_Collectors::get( 'dsgo_queries' );
 		if ( $collector instanceof \QM_Collector ) {
 			$outputters['dsgo_queries'] = new OutputHtml( $collector );
 		}
