@@ -131,6 +131,7 @@
     "webpack": "^5.105.0",
     "diff": "^4.0.4",
     "serialize-javascript": "^7.0.5",
-    "minimatch": "^3.1.4"
+    "minimatch": "^3.1.4",
+    "websocket-driver": "^0.7.5"
   }
 }

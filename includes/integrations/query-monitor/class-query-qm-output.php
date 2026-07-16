@@ -117,6 +117,12 @@ class OutputHtml extends \QM_Output_Html {
 
 add_filter(
 	'qm/outputter/html',
+	// QM's dispatcher passes the QM_Collectors singleton *object* as the second
+	// argument, so the typed `\QM_Collectors` parameter is load-bearing: it is
+	// what lets this callback accept that argument at all (declaring `array`
+	// here was the bug this integration was fixed for). The collector is read
+	// back through the static accessor, which resolves to the same singleton,
+	// so the parameter itself is intentionally not used in the body.
 	static function ( array $outputters, \QM_Collectors $collectors ) {
 		$collector = \QM_Collectors::get( 'dsgo_queries' );
 		if ( $collector instanceof \QM_Collector ) {

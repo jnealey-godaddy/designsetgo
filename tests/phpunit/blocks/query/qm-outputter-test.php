@@ -25,6 +25,12 @@
 
 // Minimal stand-ins for the Query Monitor base classes, only defined when the
 // real plugin is absent (the CI case). They match QM's real class shapes.
+//
+// NOTE: these are process-global and guarded only by class_exists(), so they
+// are shared by every test in the run. This is currently the only QM
+// stub-based test; if more are added, extract these into a shared fixture or
+// trait so the stub shapes live in one place and can't drift or depend on load
+// order.
 if ( ! class_exists( 'QM_Collector' ) ) {
 	class QM_Collector {
 		public $id   = '';
