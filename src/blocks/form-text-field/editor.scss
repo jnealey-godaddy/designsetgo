@@ -6,8 +6,8 @@
  * @since 1.0.0
  */
 
-// Import the main frontend styles for base styling
-@import './style';
+// Load the main frontend styles for base styling
+@use './style';
 
 // Editor-specific overrides
 .editor-styles-wrapper {
