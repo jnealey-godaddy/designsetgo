@@ -35,6 +35,15 @@
 		bottom: 0;
 		z-index: 1; // Relative z-index within modal container (modal is z-index: 1050 globally)
 		transition: opacity 0.3s ease;
+		// Default scrim color. An author-set overlay color is written inline by
+		// save() and wins; otherwise the theme token owns it:
+		//   1. --wp--custom--designsetgo--modal--overlay-color — theme.json /
+		//      Style Kit token.
+		//   2. #000 — the historical baked-in default.
+		background-color: var(
+			--wp--custom--designsetgo--modal--overlay-color,
+			#000
+		);
 	}
 
 	// Dialog Container

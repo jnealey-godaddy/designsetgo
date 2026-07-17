@@ -7,6 +7,7 @@
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import { __ } from '@wordpress/i18n';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 import { transferStylesToContent } from './utils/style-transfer';
 
 export default function save({ attributes }) {
@@ -51,7 +52,11 @@ export default function save({ attributes }) {
 
 	const blockProps = useBlockProps.save({
 		className: 'dsgo-modal',
-		id: modalId,
+		// Omit a blank id: React serializes `id=""`, which the anchor support
+		// (sourced from the id attribute) would re-parse as anchor: "". In
+		// real content modalId is always seeded by useUniqueBlockId; the
+		// blank-id case only exists pre-seed and is covered by deprecated v1.
+		id: modalId || undefined,
 		role: 'dialog',
 		'aria-modal': 'true',
 		// Use aria-label for accessibility; do not set aria-labelledby unless title element is guaranteed
@@ -84,8 +89,15 @@ export default function save({ attributes }) {
 		'data-navigation-position': navigationPosition,
 	});
 
+	// Backdrop color is written inline ONLY when the author set it explicitly.
+	// Left unset it is omitted so the stylesheet default owns it (resolving
+	// through --wp--custom--designsetgo--modal--overlay-color → the literal
+	// black fallback) and Style Kits / patterns can retheme the scrim without
+	// fighting a baked-in default. MUST MATCH edit.js.
 	const overlayStyle = {
-		backgroundColor: convertColorToCSSVar(overlayColor),
+		...(hasExplicitString(overlayColor) && {
+			backgroundColor: convertColorToCSSVar(overlayColor),
+		}),
 		opacity: overlayOpacity / 100,
 		backdropFilter: overlayBlur > 0 ? `blur(${overlayBlur}px)` : undefined,
 	};

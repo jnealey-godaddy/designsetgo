@@ -32,6 +32,7 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { hasExplicitString } from '../../utils/has-explicit-value';
 
 export default function ModalEdit({ attributes, setAttributes, clientId }) {
 	const {
@@ -236,13 +237,16 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 							),
 							onColorChange: (color) =>
 								setAttributes({
+									// Clearing the color removes the attribute
+									// so the backdrop inherits the stylesheet
+									// default (theme token → black).
 									overlayColor:
 										encodeColorValue(
 											color,
 											colorGradientSettings
-										) || '#000000',
+										) || undefined,
 								}),
-							clearable: false,
+							clearable: true,
 							enableAlpha: true,
 						},
 						{
@@ -288,7 +292,11 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 				<div
 					className="dsgo-modal-editor-preview__backdrop"
 					style={{
-						backgroundColor: convertColorToCSSVar(overlayColor),
+						// MUST MATCH save.js: color only when explicitly set,
+						// else the stylesheet default owns it.
+						...(hasExplicitString(overlayColor) && {
+							backgroundColor: convertColorToCSSVar(overlayColor),
+						}),
 						opacity: overlayOpacity / 100,
 					}}
 				/>

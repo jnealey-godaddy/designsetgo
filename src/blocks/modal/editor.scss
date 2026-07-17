@@ -20,6 +20,12 @@
 		bottom: 0;
 		pointer-events: none;
 		border-radius: 4px;
+		// Mirror the frontend default scrim (style.scss): inline author color
+		// wins, else theme token, else the historical black.
+		background-color: var(
+			--wp--custom--designsetgo--modal--overlay-color,
+			#000
+		);
 	}
 
 	&__dialog {

@@ -13,6 +13,7 @@ import './editor.scss';
 
 import Edit from './edit';
 import save from './save';
+import deprecated from './deprecated';
 import metadata from './block.json';
 import variations from './variations';
 import { ICON_COLOR } from '../shared/constants';
@@ -30,5 +31,6 @@ registerBlockType(metadata.name, {
 	},
 	edit: Edit,
 	save,
+	deprecated,
 	variations,
 });
