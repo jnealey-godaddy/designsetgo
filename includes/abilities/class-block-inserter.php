@@ -2188,6 +2188,25 @@ class Block_Inserter {
 				}
 				break;
 
+			case 'designsetgo/modal':
+				// Trim overlayColor HERE, where both consumers (the wrapper
+				// HTML builder and the serialized comment attrs) still share
+				// one array — save.js's hasExplicitString()/
+				// convertColorToCSSVar() never trim, so an untrimmed stored
+				// value would regenerate different markup on first parse and
+				// fail validation. Whitespace-only means "not set": drop the
+				// attribute so the scrim inherits the stylesheet default,
+				// matching an editor-cleared color.
+				if ( isset( $attributes['overlayColor'] ) ) {
+					$trimmed_overlay = trim( (string) $attributes['overlayColor'] );
+					if ( '' === $trimmed_overlay ) {
+						unset( $attributes['overlayColor'] );
+					} else {
+						$attributes['overlayColor'] = $trimmed_overlay;
+					}
+				}
+				break;
+
 			case 'designsetgo/counter':
 				// Ensure uniqueId is set for element ID.
 				if ( ! isset( $attributes['uniqueId'] ) ) {

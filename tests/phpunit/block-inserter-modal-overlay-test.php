@@ -103,6 +103,46 @@ class Block_Inserter_Modal_Overlay_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A padded overlayColor is trimmed in BOTH the comment attrs and the HTML.
+	 *
+	 * The trim must happen in normalize_block_attributes(), before the attrs
+	 * array forks into the wrapper-HTML builder and the serialized comment —
+	 * a function-local trim in the HTML builder alone would store the padded
+	 * value in the comment, and save.js (which never trims) would regenerate
+	 * var(--wp--preset--color-- #ff0000) on first parse and fail validation.
+	 */
+	public function test_padded_overlay_color_is_trimmed_in_comment_attrs_and_html() {
+		$markup = Block_Inserter::build_block_markup(
+			'designsetgo/modal',
+			array(
+				'modalId'      => 'm1',
+				'overlayColor' => ' #ff0000',
+			)
+		);
+
+		$this->assertStringContainsString( '"overlayColor":"#ff0000"', $markup );
+		$this->assertStringNotContainsString( '" #ff0000"', $markup );
+		$this->assertStringContainsString( 'background-color:#ff0000;opacity:0.8', $markup );
+	}
+
+	/**
+	 * A whitespace-only overlayColor is dropped from both consumers entirely.
+	 */
+	public function test_whitespace_only_overlay_color_is_dropped_entirely() {
+		$markup = Block_Inserter::build_block_markup(
+			'designsetgo/modal',
+			array(
+				'modalId'      => 'm1',
+				'overlayColor' => '   ',
+			)
+		);
+
+		$this->assertStringNotContainsString( 'overlayColor', $markup );
+		$this->assertStringNotContainsString( 'background-color', $markup );
+		$this->assertStringContainsString( 'style="opacity:0.8"', $markup );
+	}
+
+	/**
 	 * The id attribute mirrors save.js: present when modalId is set, omitted when blank.
 	 */
 	public function test_id_attribute_present_for_explicit_modal_id_and_omitted_when_blank() {
