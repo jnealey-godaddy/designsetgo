@@ -434,14 +434,18 @@ const v1 = {
 	},
 
 	migrate(attributes) {
-		// Drop the default-valued backdrop color so the block inherits the
-		// theme token; an explicit non-default color and every other attribute
+		// Drop the `anchor` this schema sources from the legacy wrapper's id
+		// (v1Supports.anchor materializes it on every old block since the id
+		// is always modalId) — anchor support is gone from the current
+		// block.json, so the value is orphaned data. Also drop a
+		// default-valued backdrop color so the block inherits the theme
+		// token; an explicit non-default color and every other attribute
 		// pass through untouched.
-		if (attributes.overlayColor === '#000000') {
-			const { overlayColor, ...rest } = attributes;
-			return rest;
+		const { anchor, ...rest } = attributes;
+		if (rest.overlayColor === '#000000') {
+			delete rest.overlayColor;
 		}
-		return attributes;
+		return rest;
 	},
 };
 

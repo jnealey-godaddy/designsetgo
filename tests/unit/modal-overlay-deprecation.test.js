@@ -74,6 +74,9 @@ describe('Modal - baked backdrop color deprecation', () => {
 		expect(block.isValid).toBe(true);
 		expect(block.name).toBe(metadata.name);
 		expect(block.attributes.overlayColor).toBeUndefined();
+		// The v1 schema's anchor support sources `anchor` from the wrapper id;
+		// migrate() must strip it since current block.json dropped anchor.
+		expect(block.attributes.anchor).toBeUndefined();
 	});
 
 	it('preserves an explicitly customised backdrop color through migration', () => {
