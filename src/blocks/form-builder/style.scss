@@ -216,13 +216,13 @@
 	.dsgo-form__submit--inline {
 		flex: 0 0 auto;
 		width: auto;
-		// Align button bottom with input bottom — compensates for the
-		// form field's internal label-to-input gap (0.5rem)
-		margin-bottom: 0.5rem;
+		// No bottom margin: the container's align-items: flex-end already puts
+		// the button's bottom on the input's bottom (the input is the field's
+		// last child; row spacing is flex gap, not field margin). The old
+		// 0.5rem "label gap compensation" lifted the button out of alignment.
 
 		// Mobile: stack below the field with spacing
 		@media (max-width: 768px) {
-			margin-bottom: 0;
 			margin-top: 0.5rem;
 		}
 	}

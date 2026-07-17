@@ -1240,8 +1240,9 @@ class Block_Inserter {
 				$nav_position            = isset( $attributes['navigationPosition'] ) ? $attributes['navigationPosition'] : 'sides';
 				$width                   = isset( $attributes['width'] ) ? $attributes['width'] : '600px';
 				$max_width               = isset( $attributes['maxWidth'] ) ? $attributes['maxWidth'] : '90vw';
-				$overlay_color           = isset( $attributes['overlayColor'] ) ? $attributes['overlayColor'] : '#000000';
+				$overlay_color           = isset( $attributes['overlayColor'] ) ? trim( (string) $attributes['overlayColor'] ) : '';
 				$overlay_opacity         = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 80;
+				$overlay_blur            = isset( $attributes['overlayBlur'] ) ? intval( $attributes['overlayBlur'] ) : 0;
 				$show_close_button       = isset( $attributes['showCloseButton'] ) ? $attributes['showCloseButton'] : true;
 				$close_button_position   = isset( $attributes['closeButtonPosition'] ) ? $attributes['closeButtonPosition'] : 'inside-top-right';
 				$close_button_size       = isset( $attributes['closeButtonSize'] ) ? intval( $attributes['closeButtonSize'] ) : 24;
@@ -1272,8 +1273,21 @@ class Block_Inserter {
 				$data_attrs .= ' data-navigation-style="' . esc_attr( $nav_style ) . '"';
 				$data_attrs .= ' data-navigation-position="' . esc_attr( $nav_position ) . '"';
 
-				// Overlay styles.
-				$overlay_style = 'background-color:' . esc_attr( $overlay_color ) . ';opacity:' . ( $overlay_opacity / 100 );
+				// Overlay styles. save.js writes background-color ONLY when the
+				// author set overlayColor explicitly (hasExplicitString) — left
+				// unset, the stylesheet default owns the scrim
+				// (--wp--custom--designsetgo--modal--overlay-color → #000) — so
+				// mirror that here, and the property order (background-color,
+				// opacity, backdrop-filter), or the block fails validation on
+				// first edit.
+				$overlay_style = '';
+				if ( '' !== $overlay_color ) {
+					$overlay_style .= 'background-color:' . esc_attr( self::convert_color_value_to_css_var( $overlay_color ) ) . ';';
+				}
+				$overlay_style .= 'opacity:' . ( $overlay_opacity / 100 );
+				if ( $overlay_blur > 0 ) {
+					$overlay_style .= ';backdrop-filter:blur(' . $overlay_blur . 'px)';
+				}
 
 				// Content styles.
 				$content_style = 'border-style:none;border-width:0px;width:' . esc_attr( $width ) . ';max-width:' . esc_attr( $max_width );
@@ -1305,8 +1319,12 @@ class Block_Inserter {
 				}
 				$closing_html .= '</div></div></div>';
 
+				// save.js omits the id attribute while modalId is blank
+				// (React would render id=""), so mirror that here too.
+				$id_attr = '' !== $modal_id ? ' id="' . esc_attr( $modal_id ) . '"' : '';
+
 				return array(
-					'opening' => '<div id="' . esc_attr( $modal_id ) . '" role="dialog" aria-modal="true" aria-label="Modal" aria-hidden="true"' . $data_attrs . ' class="' . esc_attr( $outer_class ) . '">' . $inner_html,
+					'opening' => '<div' . $id_attr . ' role="dialog" aria-modal="true" aria-label="Modal" aria-hidden="true"' . $data_attrs . ' class="' . esc_attr( $outer_class ) . '">' . $inner_html,
 					'closing' => $closing_html,
 				);
 
@@ -2167,6 +2185,25 @@ class Block_Inserter {
 				// Ensure uniqueId is set for accessibility attributes.
 				if ( ! isset( $attributes['uniqueId'] ) ) {
 					$attributes['uniqueId'] = 'accordion-item-' . wp_generate_uuid4();
+				}
+				break;
+
+			case 'designsetgo/modal':
+				// Trim overlayColor HERE, where both consumers (the wrapper
+				// HTML builder and the serialized comment attrs) still share
+				// one array — save.js's hasExplicitString()/
+				// convertColorToCSSVar() never trim, so an untrimmed stored
+				// value would regenerate different markup on first parse and
+				// fail validation. Whitespace-only means "not set": drop the
+				// attribute so the scrim inherits the stylesheet default,
+				// matching an editor-cleared color.
+				if ( isset( $attributes['overlayColor'] ) ) {
+					$trimmed_overlay = trim( (string) $attributes['overlayColor'] );
+					if ( '' === $trimmed_overlay ) {
+						unset( $attributes['overlayColor'] );
+					} else {
+						$attributes['overlayColor'] = $trimmed_overlay;
+					}
 				}
 				break;
 

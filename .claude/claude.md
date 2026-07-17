@@ -163,7 +163,9 @@ Read that `block.isValid &&` carefully — it drives everything:
 
 So: **`isEligible` is a switch for migrating VALID blocks. It cannot rescue invalid ones, and it never suppresses an "Attempt Recovery" warning — only a `save()` that reproduces the stored HTML does that.**
 
-Two traps that follow, both of which have bitten us:
+Three traps that follow, all of which have bitten us:
+
+0. **Every deprecation entry must redeclare `apiVersion`.** `apiVersion` is in `DEPRECATED_ENTRY_KEYS`, so WordPress strips it from the block type when building the deprecated type — without `apiVersion: 3` (or `2`) on the entry itself, the deprecation's `save()` runs under apiVersion ≤ 1 semantics, `useBlockProps.save()` produces different markup, and the entry **silently never validates** (the block stays invalid with no hint why). See `pill/deprecated.js` and `modal/deprecated.js`.
 
 1. **The third argument is `{ blockNode, block }` — there is no `innerHTML` key.** Reach the markup via `blockNode.innerHTML` (or `block.originalContent`). Destructuring `{ innerHTML }` yields `undefined`, so a guard like `innerHTML && innerHTML.includes(...)` silently returns `false` forever. It *looks* like it works, because the invalid-block path above carries the migration regardless.
 
@@ -171,6 +173,7 @@ Two traps that follow, both of which have bitten us:
 
 ```javascript
 const v1 = {
+	apiVersion: 3, // REQUIRED — see trap 0
 	attributes: { /* the FULL attribute schema this version had */ },
 	supports: { /* the FULL support set this version had */ },
 	save({ attributes }) { /* reproduce the old output byte-for-byte */ },

@@ -16,7 +16,7 @@
 	"textdomain": "designsetgo",
 	"icon": "feedback",
 	"supports": {
-		"anchor": true,
+		"anchor": false,
 		"align": false,
 		"html": false,
 		"customClassName": true,
@@ -195,8 +195,7 @@
 			"default": 80
 		},
 		"overlayColor": {
-			"type": "string",
-			"default": "#000000"
+			"type": "string"
 		},
 		"overlayBlur": {
 			"type": "number",

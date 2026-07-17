@@ -53,12 +53,24 @@
 		}
 	}
 
-	// Fix inline button alignment in editor.
-	// The block editor wraps each inner block in a div which shifts flex
-	// alignment relative to the frontend. Reset the bottom margin so the
-	// button bottom aligns with the input bottom under align-items: flex-end.
-	.dsgo-form-builder--button-inline .dsgo-form__submit--inline {
-		margin-bottom: 0;
+	// Inline-button mode in the editor. The frontend auto-sizes the last field
+	// with `.dsgo-form-field:last-of-type` (style.scss), but in the editor the
+	// fields container also holds the block appender — a trailing div — so
+	// `:last-of-type` stops matching the last FIELD and its authored
+	// `flex-basis: 100%` inline style keeps the button on its own row.
+	// `:not(:has(~ .dsgo-form-field))` selects the last field regardless of
+	// what non-field siblings follow. Editor-only, so `:has()` is safe.
+	.dsgo-form-builder--button-inline {
+
+		.dsgo-form-field:not(:has(~ .dsgo-form-field)) {
+			flex: 1 1 0 !important;
+			max-width: none !important;
+
+			// Mirror the frontend's mobile stacking.
+			@media (max-width: 768px) {
+				flex-basis: 100% !important;
+			}
+		}
 	}
 
 	// Empty state hint for form fields
