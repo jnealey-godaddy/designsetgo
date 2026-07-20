@@ -48,7 +48,17 @@ export function useGridRowMatch(
 	clientId,
 	{ matchRowHeights, desktopColumns, tabletColumns, mobileColumns }
 ) {
-	// Per-card direct child counts (the frontend counts these from the DOM).
+	// Per-card row counts. This is a block-count approximation: it counts each
+	// card's direct child *blocks*, whereas the frontend (view.js
+	// countCardRows) counts rendered DOM *elements*. They're equal for normal
+	// content, but can diverge for blocks that don't map 1:1 to a rendered root
+	// element — e.g. a `core/block` (reusable / synced pattern) reference counts
+	// as one block here but unpacks to N sibling elements on the page, and a
+	// block whose save() renders nothing counts as one block but zero elements.
+	// The effect is a cosmetic editor↔page difference in `--dsgo-row-count`; it
+	// is never serialized (this only drives the editor preview), so it can't
+	// corrupt content. Resolving reusable refs to their real element count would
+	// need the entity store and isn't worth it for this edge.
 	// Unsupported card blocks contribute 0 so they don't inflate the row count.
 	const cardChildCounts = useSelect(
 		(select) => {

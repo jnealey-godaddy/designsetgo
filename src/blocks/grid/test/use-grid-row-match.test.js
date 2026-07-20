@@ -93,6 +93,25 @@ describe('useGridRowMatch - supported card block names', () => {
 			matchRowCount: 0,
 		});
 	});
+
+	test('counts by block, not rendered elements (documents the core/block approximation)', () => {
+		// A Section card whose content includes a core/block (reusable/synced)
+		// reference: this counts the reference as ONE block, even though it
+		// unpacks to multiple sibling elements on the frontend. This pins the
+		// known block-count approximation (see the comment in the hook).
+		const section = {
+			name: 'designsetgo/section',
+			innerBlocks: [
+				{ name: 'core/heading', innerBlocks: [] },
+				{ name: 'core/block', innerBlocks: [] }, // ref → 1 here, N on page
+				{ name: 'core/button', innerBlocks: [] },
+			],
+		};
+		expect(run([section])).toEqual({
+			isRowMatchActive: true,
+			matchRowCount: 3,
+		});
+	});
 });
 
 describe('useGridRowMatch - gating', () => {
