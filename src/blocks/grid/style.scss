@@ -295,7 +295,10 @@
 // Gating on `@supports` makes those browsers keep the normal flex/stack layout.
 @supports (grid-template-rows: subgrid) {
 
-	.dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
+	// Direct child (`>`): `.dsgo-grid__inner` is always the immediate child of
+	// the `.dsgo-grid` wrapper, and this scoping keeps a match-rows grid from
+	// reaching into a nested grid's inner in one of its own cards.
+	.dsgo-grid--match-rows > .dsgo-grid__inner--rows-matched {
 
 		// Only the supported card containers become subgrids — Section
 		// (.dsgo-stack), Flex (.dsgo-flex), and Group (.wp-block-group). An
