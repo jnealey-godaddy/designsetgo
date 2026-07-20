@@ -267,3 +267,42 @@
 	margin-block-start: 0 !important;
 	margin-block-end: 0 !important;
 }
+
+// ===================================================================
+// ROW MATCHING (SUBGRID) — "Align Rows" toggle
+// ===================================================================
+// Lines up each row of card content across columns (images, headings,
+// dividers, buttons) so cards with unequal amounts of text stay aligned,
+// with no wasted whitespace when they don't.
+// How it works: each direct child of the inner grid becomes a CSS subgrid
+// spanning `--dsgo-row-count` row tracks. Because the cards auto-place onto
+// the same implicit rows, those shared tracks size to the tallest content in
+// each row across all columns, so the image / heading / text / button rows all
+// line up. Section/Stack cards nest their content under `.dsgo-stack__inner`,
+// so that wrapper is made a *nested* subgrid too (spanning the same tracks) —
+// this keeps the wrapper's own gap, so the card's Block Spacing still controls
+// the vertical rhythm inside the card (keep it consistent across cards so the
+// rows stay aligned).
+// `--dsgo-row-count` and the `--rows-matched` activation class are published
+// by view.js on the frontend (and edit.js in the editor). Gating the subgrid
+// rules on `--rows-matched` means that if the script never runs, cards simply
+// fall back to their normal stacked layout — no broken single-row collapse.
+.dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
+
+	> * {
+		display: grid;
+		grid-template-rows: subgrid;
+		grid-row: span var(--dsgo-row-count, 1);
+	}
+
+	// Section/Stack inner wrapper → nested subgrid spanning the card's tracks.
+	// Keeps its own block gap while its content blocks land on the shared rows.
+	// Drop the wrapper's width constraint so it fills the grid cell.
+	> .dsgo-stack > .dsgo-stack__inner {
+		display: grid;
+		grid-template-rows: subgrid;
+		grid-row: span var(--dsgo-row-count, 1);
+		max-width: none !important;
+		margin-inline: 0 !important;
+	}
+}

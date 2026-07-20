@@ -35,6 +35,7 @@ export default function GridSave({ attributes }) {
 		rowGap,
 		columnGap,
 		alignItems,
+		matchRowHeights,
 		overlayColor,
 		hoverBackgroundColor,
 		hoverTextColor,
@@ -59,6 +60,7 @@ export default function GridSave({ attributes }) {
 		`dsgo-grid-cols-tablet-${tabletColumns}`,
 		`dsgo-grid-cols-mobile-${mobileColumns}`,
 		!constrainWidth && 'dsgo-no-width-constraint',
+		matchRowHeights && 'dsgo-grid--match-rows',
 		hasOverlay && 'dsgo-grid--has-overlay',
 		...hoverVariationClasses(attributes.className, 'dsgo-grid'),
 	]

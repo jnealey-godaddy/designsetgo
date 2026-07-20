@@ -1,9 +1,11 @@
 # Grid Container Block - User Guide
 
-**Version**: 2.1.0
+**Version**: 2.2.0
 **Category**: Design
 **Keywords**: grid, columns, layout, container, responsive
 
+> **Updated in 2.2.0** — "Align Rows" toggle: line up card rows (headings, dividers, buttons) across columns via CSS subgrid.
+>
 > **Updated in 2.1.0** — Column picker added to the block toolbar; row span control added for grid children; empty appender width fixed.
 
 ## Overview
@@ -51,6 +53,13 @@ A column picker sits in the block toolbar whenever the Grid block is selected. C
 - **Start**: Items align to top.
 - **Center**: Items center vertically.
 - **End**: Items align to bottom.
+
+**Align Rows**
+- **Off** (Default): Each card flows independently; a card with more text pushes its own heading, divider, and button down, so those elements don't line up across columns.
+- **On**: Lines up each row of card content across columns using CSS subgrid. The image row, heading row, body row, and button row each grow to the tallest card in that row, so headings, dividers, and CTAs stay on the same line even when the copy length differs — with no wasted whitespace when it doesn't.
+- **Best with cards that share the same structure** (e.g. every card is image → heading → text → button). The alignment matches content top-to-bottom by position, so cards should contain the same sequence of blocks.
+- The per-card row count is detected automatically at runtime, so it works on any grid of matching cards without extra configuration.
+- **Spacing note**: The spacing *inside* each card still follows that card's own **Block Spacing** — keep it consistent across the cards so the rows line up. The grid's **Row/Column Gap** controls the space *between* cards.
 
 ### Gap Settings Panel
 

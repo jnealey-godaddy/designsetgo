@@ -353,3 +353,31 @@ body:has(.dsgo-stack__inner .dsgo-grid.is-selected) {
 	margin-block-start: 0 !important;
 	margin-block-end: 0 !important;
 }
+
+// ========================================
+// ROW MATCHING (SUBGRID) — "Align Rows" toggle (EDITOR)
+// CRITICAL: Must mirror style.scss for editor/frontend parity. apiVersion 3
+// merges data-block onto each block's root element, so the grid's inner
+// children are the cards (.dsgo-stack) directly and their content blocks are
+// direct children of .dsgo-stack__inner — the frontend selectors apply as-is.
+// edit.js publishes --dsgo-row-count and the --rows-matched activation class
+// (view.js does this on the frontend).
+// ========================================
+.dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
+
+	> * {
+		display: grid;
+		grid-template-rows: subgrid;
+		grid-row: span var(--dsgo-row-count, 1);
+	}
+
+	// Section/Stack inner wrapper → nested subgrid spanning the card's tracks.
+	// Keeps its own block gap while its content blocks land on the shared rows.
+	> .dsgo-stack > .dsgo-stack__inner {
+		display: grid;
+		grid-template-rows: subgrid;
+		grid-row: span var(--dsgo-row-count, 1);
+		max-width: none !important;
+		margin-inline: 0 !important;
+	}
+}

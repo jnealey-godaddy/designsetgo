@@ -72,6 +72,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		rowGap,
 		columnGap,
 		alignItems,
+		matchRowHeights,
 		textAlign,
 		overlayColor,
 		hoverBackgroundColor,
@@ -130,6 +131,30 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		[clientId]
 	);
 
+	// "Align Rows": the subgrid CSS needs the per-card row count. On the
+	// frontend view.js measures it from the DOM at runtime; in the editor
+	// view.js doesn't run, so derive it here from the tallest card's direct
+	// child count (matching the frontend contract) and publish the same
+	// `--dsgo-row-count` var + activation class the stylesheet gates on.
+	const matchRowCount = useSelect(
+		(select) => {
+			if (!matchRowHeights) {
+				return 0;
+			}
+			const { getBlock } = select(blockEditorStore);
+			const block = getBlock(clientId);
+			return (block?.innerBlocks || []).reduce(
+				(max, card) => Math.max(max, card?.innerBlocks?.length || 0),
+				0
+			);
+		},
+		[clientId, matchRowHeights]
+	);
+
+	// Subgrid alignment only applies with 2+ columns and a known row count.
+	const isRowMatchActive =
+		matchRowHeights && desktopColumns > 1 && matchRowCount > 0;
+
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
 	const hasOverlay = !!overlayColor || hasOverlayStyleClass(className);
 	const TagName = tagName || 'div';
@@ -139,6 +164,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 			`dsgo-grid-cols-${desktopColumns}`,
 			`dsgo-grid-cols-tablet-${tabletColumns}`,
 			`dsgo-grid-cols-mobile-${mobileColumns}`,
+			matchRowHeights && 'dsgo-grid--match-rows',
 			hasOverlay && 'dsgo-grid--has-overlay',
 			...hoverVariationClasses(className, 'dsgo-grid'),
 		]
@@ -203,10 +229,20 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		innerStyles.marginRight = 'auto';
 	}
 
+	// Row-matching: publish the per-card span so the subgrid CSS can activate.
+	if (isRowMatchActive) {
+		innerStyles['--dsgo-row-count'] = matchRowCount;
+	}
+
 	// Merge inner blocks props with inner styles
 	const innerBlocksProps = useInnerBlocksProps(
 		{
-			className: 'dsgo-grid__inner',
+			className: [
+				'dsgo-grid__inner',
+				isRowMatchActive && 'dsgo-grid__inner--rows-matched',
+			]
+				.filter(Boolean)
+				.join(' '),
 			style: innerStyles,
 		},
 		{
@@ -417,6 +453,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							tabletColumns: 2,
 							mobileColumns: 1,
 							alignItems: 'stretch',
+							matchRowHeights: false,
 							rowGap: '',
 							columnGap: '',
 							constrainWidth: false,
@@ -575,6 +612,28 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 								'designsetgo'
 							)}
 							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Align Rows', 'designsetgo')}
+						hasValue={() => matchRowHeights === true}
+						onDeselect={() =>
+							setAttributes({ matchRowHeights: false })
+						}
+						isShownByDefault
+					>
+						<ToggleControl
+							label={__('Align Rows', 'designsetgo')}
+							checked={!!matchRowHeights}
+							onChange={(value) =>
+								setAttributes({ matchRowHeights: value })
+							}
+							help={__(
+								'Line up each row of card content (images, headings, buttons) across columns, so cards with different amounts of text stay aligned. Best with cards that share the same structure.',
+								'designsetgo'
+							)}
 							__nextHasNoMarginBottom
 						/>
 					</DsgoInspectorPanel.Item>
