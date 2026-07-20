@@ -138,9 +138,9 @@
 			if (!rowHost) {
 				return 0;
 			}
-			return Array.from(rowHost.children).filter(
-				(node) => node.nodeType === 1
-			).length;
+			// `.children` is an HTMLCollection — element nodes only (unlike
+			// `.childNodes`), so no text/comment filtering is needed.
+			return rowHost.children.length;
 		}
 
 		/**
