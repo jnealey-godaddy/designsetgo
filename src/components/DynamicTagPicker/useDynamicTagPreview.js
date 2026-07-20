@@ -146,6 +146,11 @@ export function useDynamicTagPreview({ source, args, postId, size }) {
 		return () => {
 			clearTimeout(timerRef.current);
 		};
+		// `argsKey` (JSON.stringify(args)) tracks `args` by value, and the
+		// individual editedPost fields cover everything resolveFromEditor reads
+		// — depending on the raw `args`/`editedPost` objects would re-run on
+		// every identity change.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		source,
 		argsKey,
