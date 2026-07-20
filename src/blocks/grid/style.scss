@@ -313,7 +313,19 @@
 		> .wp-block-group {
 			display: grid;
 			grid-template-rows: subgrid;
-			grid-row: span var(--dsgo-row-count, 1);
+			// Align Rows must own the card's grid placement, and both overrides
+			// need `!important` to beat the Grid Span extension
+			// (extensions/grid-span), which sets inline `grid-row`/`grid-column`
+			// on this same card root for a custom Row/Column Span.
+			// - `grid-row` must equal --dsgo-row-count so the nested wrapper can
+			//   subgrid over the same tracks.
+			// - `grid-column` is forced to a single column: a multi-column card
+			//   disrupts auto-placement so siblings land on different row tracks
+			//   and stop aligning.
+			// So a per-card Row/Column Span is overridden while Align Rows is on
+			// (documented in GRID.md).
+			grid-row: span var(--dsgo-row-count, 1) !important;
+			grid-column: auto !important;
 		}
 
 		// Section/Flex inner wrapper → nested subgrid spanning the card's
