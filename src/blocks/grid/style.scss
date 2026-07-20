@@ -297,11 +297,15 @@
 
 	.dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
 
-		// Exclude the editor's `.block-list-appender` "+" sibling (this
-		// stylesheet also loads in the editor). The class never exists on the
-		// frontend, so this is a no-op there and keeps editor/frontend parity.
-		/* stylelint-disable-next-line selector-class-pattern */
-		> *:not(.block-list-appender) {
+		// Only the supported card containers become subgrids — Section
+		// (.dsgo-stack), Flex (.dsgo-flex), and Group (.wp-block-group). An
+		// allowlist (rather than `> *`) leaves incompatible blocks untouched:
+		// the Card block, whose root relies on its own flex layout, keeps that
+		// layout, and the editor's `.block-list-appender` "+" sibling is
+		// naturally excluded (it matches none of these).
+		> .dsgo-stack,
+		> .dsgo-flex,
+		> .wp-block-group {
 			display: grid;
 			grid-template-rows: subgrid;
 			grid-row: span var(--dsgo-row-count, 1);

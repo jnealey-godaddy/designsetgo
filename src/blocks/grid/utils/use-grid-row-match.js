@@ -11,6 +11,15 @@ import { useSelect } from '@wordpress/data';
 import { store as blockEditorStore } from '@wordpress/block-editor';
 import { deriveRowMatch } from './derive-row-match';
 
+// Card containers that participate in row matching, mirroring the CSS allowlist
+// (Section / Flex / Group). Other blocks (e.g. the Card block) are left alone,
+// so they neither align nor inflate the shared row count.
+const SUPPORTED_CARD_BLOCKS = [
+	'designsetgo/section',
+	'designsetgo/flex',
+	'core/group',
+];
+
 /**
  * Derive the editor's row-matching state for a Grid block.
  *
@@ -27,12 +36,15 @@ export function useGridRowMatch(
 	{ matchRowHeights, desktopColumns, tabletColumns, mobileColumns }
 ) {
 	// Per-card direct child counts (the frontend counts these from the DOM).
+	// Unsupported card blocks contribute 0 so they don't inflate the row count.
 	const cardChildCounts = useSelect(
 		(select) => {
 			const { getBlock } = select(blockEditorStore);
 			const block = getBlock(clientId);
-			return (block?.innerBlocks || []).map(
-				(card) => card?.innerBlocks?.length || 0
+			return (block?.innerBlocks || []).map((card) =>
+				SUPPORTED_CARD_BLOCKS.includes(card?.name)
+					? card?.innerBlocks?.length || 0
+					: 0
 			);
 		},
 		[clientId]

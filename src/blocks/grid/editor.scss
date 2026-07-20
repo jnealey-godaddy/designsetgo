@@ -355,39 +355,10 @@ body:has(.dsgo-stack__inner .dsgo-grid.is-selected) {
 }
 
 // ========================================
-// ROW MATCHING (SUBGRID) — "Align Rows" toggle (EDITOR)
-// CRITICAL: Must mirror style.scss for editor/frontend parity. apiVersion 3
-// merges data-block onto each block's root element, so the grid's inner
-// children are the cards (.dsgo-stack) directly and their content blocks are
-// direct children of .dsgo-stack__inner — the frontend selectors apply as-is.
-// edit.js publishes --dsgo-row-count and the --rows-matched activation class
-// (view.js does this on the frontend). Wrapped in @supports so browsers without
-// subgrid keep the normal flex/stack layout — see style.scss for the rationale.
+// ROW MATCHING (SUBGRID) — "Align Rows" toggle
+// The activation styles live only in style.scss. Its `style` handle (from
+// block.json) loads in the editor too, and apiVersion 3 gives the editor the
+// same `.dsgo-grid__inner > .dsgo-stack > .dsgo-stack__inner` structure as the
+// frontend, so the frontend rules apply as-is in the canvas — no editor copy
+// needed (avoids a two-file sync risk).
 // ========================================
-@supports (grid-template-rows: subgrid) {
-
-	.dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
-
-		// Exclude the editor's `.block-list-appender` "+" sibling (rendered as a
-		// direct child of the inner when the grid is selected, and it carries
-		// `data-block`), or it gets pulled into the subgrid and mispositioned.
-		/* stylelint-disable-next-line selector-class-pattern */
-		> *:not(.block-list-appender) {
-			display: grid;
-			grid-template-rows: subgrid;
-			grid-row: span var(--dsgo-row-count, 1);
-		}
-
-		// Section/Flex inner wrapper → nested subgrid spanning the card's
-		// tracks. Keeps its own block gap while its content blocks land on the
-		// shared rows.
-		> .dsgo-stack > .dsgo-stack__inner,
-		> .dsgo-flex > .dsgo-flex__inner {
-			display: grid;
-			grid-template-rows: subgrid;
-			grid-row: span var(--dsgo-row-count, 1);
-			max-width: none !important;
-			margin-inline: 0 !important;
-		}
-	}
-}

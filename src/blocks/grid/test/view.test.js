@@ -97,6 +97,26 @@ describe('grid view.js - DSGGrid', () => {
 		expect(grid.countCardRows(card)).toBe(3);
 	});
 
+	test('countCardRows counts a Group card by its direct children', () => {
+		const grid = new DSGGrid(buildGrid());
+		const card = document.createElement('div');
+		card.className = 'wp-block-group';
+		for (let i = 0; i < 2; i++) {
+			card.appendChild(document.createElement('div'));
+		}
+		expect(grid.countCardRows(card)).toBe(2);
+	});
+
+	test('countCardRows returns 0 for an unsupported card (e.g. Card block)', () => {
+		const grid = new DSGGrid(buildGrid());
+		const card = document.createElement('div');
+		card.className = 'dsgo-card';
+		const inner = document.createElement('div');
+		inner.className = 'dsgo-card__inner';
+		card.append(document.createElement('div'), inner); // background + inner
+		expect(grid.countCardRows(card)).toBe(0);
+	});
+
 	test('applyRowMatching activates with 2+ columns and publishes the row count', () => {
 		const grid = new DSGGrid(buildGrid({ cards: 3, rows: 4 }));
 		grid.applyRowMatching(3);

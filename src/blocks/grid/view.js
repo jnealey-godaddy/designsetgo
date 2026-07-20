@@ -115,20 +115,26 @@
 		}
 
 		/**
-		 * Count the content rows a card contributes to the subgrid. Section and
-		 * Flex cards nest their content under `.dsgo-stack__inner` /
-		 * `.dsgo-flex__inner` (re-subgridded in CSS); other cards (e.g. Group)
-		 * expose their content blocks directly.
+		 * Count the content rows a card contributes to the subgrid. Mirrors the
+		 * CSS allowlist: Section (`.dsgo-stack__inner`) and Flex
+		 * (`.dsgo-flex__inner`) cards count their wrapper's children, Group
+		 * (`.wp-block-group`) counts its own children, and anything else (e.g.
+		 * the Card block, which the CSS also leaves alone) returns 0 so it
+		 * neither aligns nor inflates the shared row count.
 		 *
 		 * @param {HTMLElement} child A direct child (card) of the inner grid.
-		 * @return {number} Number of element rows in the card.
+		 * @return {number} Number of element rows in the card (0 if unsupported).
 		 */
 		countCardRows(child) {
-			const wrapper =
+			const rowHost =
 				child.querySelector(
 					':scope > .dsgo-stack__inner, :scope > .dsgo-flex__inner'
-				) || child;
-			return Array.from(wrapper.children).filter(
+				) ||
+				(child.classList.contains('wp-block-group') ? child : null);
+			if (!rowHost) {
+				return 0;
+			}
+			return Array.from(rowHost.children).filter(
 				(node) => node.nodeType === 1
 			).length;
 		}
