@@ -84,6 +84,19 @@ describe('grid view.js - DSGGrid', () => {
 		expect(grid.countCardRows(card)).toBe(4);
 	});
 
+	test('countCardRows also counts a Flex card (.dsgo-flex__inner)', () => {
+		const grid = new DSGGrid(buildGrid());
+		const card = document.createElement('div');
+		card.className = 'dsgo-flex';
+		const wrap = document.createElement('div');
+		wrap.className = 'dsgo-flex__inner';
+		for (let i = 0; i < 3; i++) {
+			wrap.appendChild(document.createElement('div'));
+		}
+		card.appendChild(wrap);
+		expect(grid.countCardRows(card)).toBe(3);
+	});
+
 	test('applyRowMatching activates with 2+ columns and publishes the row count', () => {
 		const grid = new DSGGrid(buildGrid({ cards: 3, rows: 4 }));
 		grid.applyRowMatching(3);

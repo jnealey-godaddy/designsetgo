@@ -48,7 +48,7 @@ import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
 } from '../../utils/style-variation-classes';
-import { deriveRowMatch } from './utils/derive-row-match';
+import { useGridRowMatch } from './utils/use-grid-row-match';
 
 /**
  * Grid Container Edit Component
@@ -132,43 +132,16 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		[clientId]
 	);
 
-	// "Align Rows": the subgrid CSS needs the per-card row count. On the
-	// frontend view.js measures it from the DOM at runtime; in the editor
-	// view.js doesn't run, so derive it here from each card's direct child
-	// count and publish the same `--dsgo-row-count` var + activation class the
-	// stylesheet gates on.
-	const cardChildCounts = useSelect(
-		(select) => {
-			const { getBlock } = select(blockEditorStore);
-			const block = getBlock(clientId);
-			return (block?.innerBlocks || []).map(
-				(card) => card?.innerBlocks?.length || 0
-			);
-		},
-		[clientId]
-	);
-
-	// The editor's device-preview toggle resizes the canvas, so the responsive
-	// column @media queries fire just like the frontend. Derive the columns
-	// actually in effect at the previewed width so subgrid alignment clears
-	// when the preview collapses the grid to a single column (mirrors view.js).
-	const previewDeviceType = useSelect(
-		(select) =>
-			select('core/editor')?.getDeviceType?.() ??
-			select('core/edit-post')?.__experimentalGetPreviewDeviceType?.() ??
-			'Desktop',
-		[]
-	);
-
-	const { isActive: isRowMatchActive, rowCount: matchRowCount } =
-		deriveRowMatch({
-			matchRowHeights,
-			cardChildCounts,
-			deviceType: previewDeviceType,
-			desktopColumns,
-			tabletColumns,
-			mobileColumns,
-		});
+	// "Align Rows": derive whether the subgrid is active and the per-card row
+	// count to publish (`--dsgo-row-count` + activation class). The frontend
+	// measures this from the DOM in view.js; in the editor the hook reads it
+	// from the block tree and the previewed device width.
+	const { isRowMatchActive, matchRowCount } = useGridRowMatch(clientId, {
+		matchRowHeights,
+		desktopColumns,
+		tabletColumns,
+		mobileColumns,
+	});
 
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
 	const hasOverlay = !!overlayColor || hasOverlayStyleClass(className);

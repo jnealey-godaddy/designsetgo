@@ -378,10 +378,11 @@ body:has(.dsgo-stack__inner .dsgo-grid.is-selected) {
 			grid-row: span var(--dsgo-row-count, 1);
 		}
 
-		// Section/Stack inner wrapper → nested subgrid spanning the card's
+		// Section/Flex inner wrapper → nested subgrid spanning the card's
 		// tracks. Keeps its own block gap while its content blocks land on the
 		// shared rows.
-		> .dsgo-stack > .dsgo-stack__inner {
+		> .dsgo-stack > .dsgo-stack__inner,
+		> .dsgo-flex > .dsgo-flex__inner {
 			display: grid;
 			grid-template-rows: subgrid;
 			grid-row: span var(--dsgo-row-count, 1);

@@ -115,16 +115,19 @@
 		}
 
 		/**
-		 * Count the content rows a card contributes to the subgrid. Section /
-		 * Stack cards nest their content under `.dsgo-stack__inner` (flattened
-		 * with `display: contents` in CSS); other cards expose content directly.
+		 * Count the content rows a card contributes to the subgrid. Section and
+		 * Flex cards nest their content under `.dsgo-stack__inner` /
+		 * `.dsgo-flex__inner` (re-subgridded in CSS); other cards (e.g. Group)
+		 * expose their content blocks directly.
 		 *
 		 * @param {HTMLElement} child A direct child (card) of the inner grid.
 		 * @return {number} Number of element rows in the card.
 		 */
 		countCardRows(child) {
 			const wrapper =
-				child.querySelector(':scope > .dsgo-stack__inner') || child;
+				child.querySelector(
+					':scope > .dsgo-stack__inner, :scope > .dsgo-flex__inner'
+				) || child;
 			return Array.from(wrapper.children).filter(
 				(node) => node.nodeType === 1
 			).length;
