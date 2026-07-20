@@ -58,7 +58,8 @@ A column picker sits in the block toolbar whenever the Grid block is selected. C
 - **Off** (Default): Each card flows independently; a card with more text pushes its own heading, divider, and button down, so those elements don't line up across columns.
 - **On**: Lines up each row of card content across columns using CSS subgrid. The image row, heading row, body row, and button row each grow to the tallest card in that row, so headings, dividers, and CTAs stay on the same line even when the copy length differs — with no wasted whitespace when it doesn't.
 - **Best with cards that share the same structure** (e.g. every card is image → heading → text → button). The alignment matches content top-to-bottom by position, so cards should contain the same sequence of blocks.
-- The per-card row count is detected automatically at runtime, so it works on any grid of matching cards without extra configuration.
+- **Designed for Section/Group cards** whose direct children are the content blocks (image, heading, text, button). The row count is detected from each card's direct child elements, and the tallest card wins for the whole grid. Cards that wrap their content in extra markup — such as the **Card** block or any block that renders its own background/badge/inner `<div>`s — will report the wrong row count and can throw the alignment off. For those, leave Align Rows off (or use plain Section/Group cards).
+- The per-card row count is detected automatically at runtime, so it works on any grid of matching Section/Group cards without extra configuration.
 - **Spacing note**: The spacing *inside* each card still follows that card's own **Block Spacing** — keep it consistent across the cards so the rows line up. The grid's **Row/Column Gap** controls the space *between* cards.
 
 ### Gap Settings Panel

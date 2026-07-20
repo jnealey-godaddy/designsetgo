@@ -151,9 +151,24 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		[clientId, matchRowHeights]
 	);
 
+	// The editor's device-preview toggle resizes the canvas, so the responsive
+	// column @media queries fire just like the frontend. Mirror view.js and
+	// derive the columns actually in effect at the previewed width, so subgrid
+	// alignment clears when the preview collapses the grid to a single column.
+	const previewDeviceType = useSelect(
+		(select) =>
+			select('core/editor')?.getDeviceType?.() ??
+			select('core/edit-post')?.__experimentalGetPreviewDeviceType?.() ??
+			'Desktop',
+		[]
+	);
+	const effectiveColumns =
+		{ Mobile: mobileColumns, Tablet: tabletColumns }[previewDeviceType] ??
+		desktopColumns;
+
 	// Subgrid alignment only applies with 2+ columns and a known row count.
 	const isRowMatchActive =
-		matchRowHeights && desktopColumns > 1 && matchRowCount > 0;
+		matchRowHeights && effectiveColumns > 1 && matchRowCount > 0;
 
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
 	const hasOverlay = !!overlayColor || hasOverlayStyleClass(className);

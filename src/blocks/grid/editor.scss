@@ -365,7 +365,11 @@ body:has(.dsgo-stack__inner .dsgo-grid.is-selected) {
 // ========================================
 .dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
 
-	> * {
+	// Exclude the editor's `.block-list-appender` "+" sibling (rendered as a
+	// direct child of the inner when the grid is selected, and it carries
+	// `data-block`), or it gets pulled into the subgrid and mispositioned.
+	/* stylelint-disable-next-line selector-class-pattern */
+	> *:not(.block-list-appender) {
 		display: grid;
 		grid-template-rows: subgrid;
 		grid-row: span var(--dsgo-row-count, 1);

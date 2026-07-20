@@ -289,7 +289,11 @@
 // fall back to their normal stacked layout — no broken single-row collapse.
 .dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
 
-	> * {
+	// Exclude the editor's `.block-list-appender` "+" sibling (this stylesheet
+	// also loads in the editor). The class never exists on the frontend, so
+	// this is a no-op there and keeps editor/frontend parity.
+	/* stylelint-disable-next-line selector-class-pattern */
+	> *:not(.block-list-appender) {
 		display: grid;
 		grid-template-rows: subgrid;
 		grid-row: span var(--dsgo-row-count, 1);
