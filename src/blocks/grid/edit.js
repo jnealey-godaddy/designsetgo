@@ -48,6 +48,7 @@ import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
 } from '../../utils/style-variation-classes';
+import { deriveRowMatch } from './utils/derive-row-match';
 
 /**
  * Grid Container Edit Component
@@ -133,28 +134,24 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 
 	// "Align Rows": the subgrid CSS needs the per-card row count. On the
 	// frontend view.js measures it from the DOM at runtime; in the editor
-	// view.js doesn't run, so derive it here from the tallest card's direct
-	// child count (matching the frontend contract) and publish the same
-	// `--dsgo-row-count` var + activation class the stylesheet gates on.
-	const matchRowCount = useSelect(
+	// view.js doesn't run, so derive it here from each card's direct child
+	// count and publish the same `--dsgo-row-count` var + activation class the
+	// stylesheet gates on.
+	const cardChildCounts = useSelect(
 		(select) => {
-			if (!matchRowHeights) {
-				return 0;
-			}
 			const { getBlock } = select(blockEditorStore);
 			const block = getBlock(clientId);
-			return (block?.innerBlocks || []).reduce(
-				(max, card) => Math.max(max, card?.innerBlocks?.length || 0),
-				0
+			return (block?.innerBlocks || []).map(
+				(card) => card?.innerBlocks?.length || 0
 			);
 		},
-		[clientId, matchRowHeights]
+		[clientId]
 	);
 
 	// The editor's device-preview toggle resizes the canvas, so the responsive
-	// column @media queries fire just like the frontend. Mirror view.js and
-	// derive the columns actually in effect at the previewed width, so subgrid
-	// alignment clears when the preview collapses the grid to a single column.
+	// column @media queries fire just like the frontend. Derive the columns
+	// actually in effect at the previewed width so subgrid alignment clears
+	// when the preview collapses the grid to a single column (mirrors view.js).
 	const previewDeviceType = useSelect(
 		(select) =>
 			select('core/editor')?.getDeviceType?.() ??
@@ -162,13 +159,16 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 			'Desktop',
 		[]
 	);
-	const effectiveColumns =
-		{ Mobile: mobileColumns, Tablet: tabletColumns }[previewDeviceType] ??
-		desktopColumns;
 
-	// Subgrid alignment only applies with 2+ columns and a known row count.
-	const isRowMatchActive =
-		matchRowHeights && effectiveColumns > 1 && matchRowCount > 0;
+	const { isActive: isRowMatchActive, rowCount: matchRowCount } =
+		deriveRowMatch({
+			matchRowHeights,
+			cardChildCounts,
+			deviceType: previewDeviceType,
+			desktopColumns,
+			tabletColumns,
+			mobileColumns,
+		});
 
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
 	const hasOverlay = !!overlayColor || hasOverlayStyleClass(className);

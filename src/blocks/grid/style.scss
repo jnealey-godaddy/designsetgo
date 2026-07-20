@@ -287,26 +287,35 @@
 // by view.js on the frontend (and edit.js in the editor). Gating the subgrid
 // rules on `--rows-matched` means that if the script never runs, cards simply
 // fall back to their normal stacked layout — no broken single-row collapse.
-.dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
+// The whole activation is wrapped in `@supports (grid-template-rows: subgrid)`.
+// Without this guard, browsers that lack subgrid (Chrome < 117, older Safari /
+// Android WebView) would drop `grid-template-rows: subgrid` as invalid but
+// still apply `display: grid` + `grid-row: span …`, turning the Section
+// wrapper into a bare template-less grid and breaking its flex card layout.
+// Gating on `@supports` makes those browsers keep the normal flex/stack layout.
+@supports (grid-template-rows: subgrid) {
 
-	// Exclude the editor's `.block-list-appender` "+" sibling (this stylesheet
-	// also loads in the editor). The class never exists on the frontend, so
-	// this is a no-op there and keeps editor/frontend parity.
-	/* stylelint-disable-next-line selector-class-pattern */
-	> *:not(.block-list-appender) {
-		display: grid;
-		grid-template-rows: subgrid;
-		grid-row: span var(--dsgo-row-count, 1);
-	}
+	.dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
 
-	// Section/Stack inner wrapper → nested subgrid spanning the card's tracks.
-	// Keeps its own block gap while its content blocks land on the shared rows.
-	// Drop the wrapper's width constraint so it fills the grid cell.
-	> .dsgo-stack > .dsgo-stack__inner {
-		display: grid;
-		grid-template-rows: subgrid;
-		grid-row: span var(--dsgo-row-count, 1);
-		max-width: none !important;
-		margin-inline: 0 !important;
+		// Exclude the editor's `.block-list-appender` "+" sibling (this
+		// stylesheet also loads in the editor). The class never exists on the
+		// frontend, so this is a no-op there and keeps editor/frontend parity.
+		/* stylelint-disable-next-line selector-class-pattern */
+		> *:not(.block-list-appender) {
+			display: grid;
+			grid-template-rows: subgrid;
+			grid-row: span var(--dsgo-row-count, 1);
+		}
+
+		// Section/Stack inner wrapper → nested subgrid spanning the card's
+		// tracks. Keeps its own block gap while its content blocks land on the
+		// shared rows. Drop the wrapper's width constraint so it fills the cell.
+		> .dsgo-stack > .dsgo-stack__inner {
+			display: grid;
+			grid-template-rows: subgrid;
+			grid-row: span var(--dsgo-row-count, 1);
+			max-width: none !important;
+			margin-inline: 0 !important;
+		}
 	}
 }

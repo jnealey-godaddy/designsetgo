@@ -361,27 +361,32 @@ body:has(.dsgo-stack__inner .dsgo-grid.is-selected) {
 // children are the cards (.dsgo-stack) directly and their content blocks are
 // direct children of .dsgo-stack__inner — the frontend selectors apply as-is.
 // edit.js publishes --dsgo-row-count and the --rows-matched activation class
-// (view.js does this on the frontend).
+// (view.js does this on the frontend). Wrapped in @supports so browsers without
+// subgrid keep the normal flex/stack layout — see style.scss for the rationale.
 // ========================================
-.dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
+@supports (grid-template-rows: subgrid) {
 
-	// Exclude the editor's `.block-list-appender` "+" sibling (rendered as a
-	// direct child of the inner when the grid is selected, and it carries
-	// `data-block`), or it gets pulled into the subgrid and mispositioned.
-	/* stylelint-disable-next-line selector-class-pattern */
-	> *:not(.block-list-appender) {
-		display: grid;
-		grid-template-rows: subgrid;
-		grid-row: span var(--dsgo-row-count, 1);
-	}
+	.dsgo-grid--match-rows .dsgo-grid__inner--rows-matched {
 
-	// Section/Stack inner wrapper → nested subgrid spanning the card's tracks.
-	// Keeps its own block gap while its content blocks land on the shared rows.
-	> .dsgo-stack > .dsgo-stack__inner {
-		display: grid;
-		grid-template-rows: subgrid;
-		grid-row: span var(--dsgo-row-count, 1);
-		max-width: none !important;
-		margin-inline: 0 !important;
+		// Exclude the editor's `.block-list-appender` "+" sibling (rendered as a
+		// direct child of the inner when the grid is selected, and it carries
+		// `data-block`), or it gets pulled into the subgrid and mispositioned.
+		/* stylelint-disable-next-line selector-class-pattern */
+		> *:not(.block-list-appender) {
+			display: grid;
+			grid-template-rows: subgrid;
+			grid-row: span var(--dsgo-row-count, 1);
+		}
+
+		// Section/Stack inner wrapper → nested subgrid spanning the card's
+		// tracks. Keeps its own block gap while its content blocks land on the
+		// shared rows.
+		> .dsgo-stack > .dsgo-stack__inner {
+			display: grid;
+			grid-template-rows: subgrid;
+			grid-row: span var(--dsgo-row-count, 1);
+			max-width: none !important;
+			margin-inline: 0 !important;
+		}
 	}
 }
