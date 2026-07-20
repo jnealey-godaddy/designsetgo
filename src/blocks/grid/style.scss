@@ -316,9 +316,16 @@
 		// Section/Flex inner wrapper → nested subgrid spanning the card's
 		// tracks. Keeps its own block gap while its content blocks land on the
 		// shared rows. Drop the wrapper's width constraint so it fills the cell.
+		// `display` needs `!important`: the Row block sets `display: flex`
+		// inline on `.dsgo-flex__inner` (row/save.js), and an inline style
+		// always beats a stylesheet selector — without `!important` the wrapper
+		// stays flex and its content never lands on the subgrid rows (the
+		// Section wrapper uses WordPress's `.is-layout-flex` *class*, which the
+		// selector already outranks, so this is harmless there). Same reason the
+		// `max-width`/`margin-inline` overrides below are `!important`.
 		> .dsgo-stack > .dsgo-stack__inner,
 		> .dsgo-flex > .dsgo-flex__inner {
-			display: grid;
+			display: grid !important;
 			grid-template-rows: subgrid;
 			grid-row: span var(--dsgo-row-count, 1);
 			max-width: none !important;
