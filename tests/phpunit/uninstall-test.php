@@ -37,7 +37,7 @@ class Test_Uninstall extends WP_UnitTestCase {
 		update_option( 'designsetgo_llms_txt_physical', true );
 
 		// Transients.
-		set_transient( 'form_submit_127_0_0_1', 1, HOUR_IN_SECONDS );
+		set_transient( 'dsgo_form_submit_test', 1, HOUR_IN_SECONDS );
 		set_transient( 'dsgo_has_blocks_123', true, DAY_IN_SECONDS );
 		set_transient( 'dsgo_form_submissions_count', 5, DAY_IN_SECONDS );
 
@@ -105,7 +105,7 @@ class Test_Uninstall extends WP_UnitTestCase {
 				 WHERE option_name LIKE %s
 				    OR option_name LIKE %s
 				    OR option_name LIKE %s",
-				$wpdb->esc_like( '_transient_form_submit_' ) . '%',
+				$wpdb->esc_like( '_transient_dsgo_form_submit_' ) . '%',
 				$wpdb->esc_like( '_transient_dsgo_has_blocks_' ) . '%',
 				$wpdb->esc_like( '_transient_dsgo_form_submissions_count' ) . '%'
 			)

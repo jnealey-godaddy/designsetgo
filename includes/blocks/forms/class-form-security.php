@@ -83,7 +83,7 @@ class Form_Security {
 	 */
 	public function check_rate_limit( string $form_id, int $block_max = 3 ) {
 		$ip_address = $this->get_client_ip();
-		$key        = 'form_submit_' . $form_id . '_' . md5( $ip_address );
+		$key        = 'dsgo_form_submit_' . md5( $form_id ) . '_' . md5( $ip_address );
 		$count      = get_transient( $key );
 
 		$max_submissions = apply_filters( 'designsetgo_form_rate_limit_count', $block_max, $form_id );
@@ -109,7 +109,7 @@ class Form_Security {
 	 */
 	public function increment_rate_limit( string $form_id, int $block_window = 60 ): void {
 		$ip_address = $this->get_client_ip();
-		$key        = 'form_submit_' . $form_id . '_' . md5( $ip_address );
+		$key        = 'dsgo_form_submit_' . md5( $form_id ) . '_' . md5( $ip_address );
 		$count      = get_transient( $key );
 
 		$time_window = apply_filters( 'designsetgo_form_rate_limit_window', $block_window, $form_id );

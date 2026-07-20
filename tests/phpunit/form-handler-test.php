@@ -366,7 +366,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		$_SERVER['REMOTE_ADDR'] = '192.168.1.3';
 		$form_id                = 'test-form-3';
 		$ip_hash                = md5( '192.168.1.3' );
-		$key                    = 'form_submit_' . $form_id . '_' . $ip_hash;
+		$key                    = 'dsgo_form_submit_' . md5( $form_id ) . '_' . $ip_hash;
 
 		// Set transient to max submissions (3 by default).
 		set_transient( $key, 3, 60 );
