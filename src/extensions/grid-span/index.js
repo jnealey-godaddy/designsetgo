@@ -14,7 +14,7 @@ import { __ } from '@wordpress/i18n';
 import { addFilter } from '@wordpress/hooks';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
 import { InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, RangeControl } from '@wordpress/components';
+import { PanelBody, RangeControl, Notice } from '@wordpress/components';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { useSelect } from '@wordpress/data';
 
@@ -86,6 +86,10 @@ const withGridSpanControls = createHigherOrderComponent((BlockEdit) => {
 		// Get max columns from parent Grid
 		const maxColumns = parentBlock?.attributes?.desktopColumns || 12;
 
+		// The parent Grid's "Align Rows" owns each card's grid placement, so it
+		// overrides Column/Row Span. Surface that here so it isn't a surprise.
+		const alignRowsActive = !!parentBlock?.attributes?.matchRowHeights;
+
 		return (
 			<>
 				<BlockEdit {...props} />
@@ -95,6 +99,18 @@ const withGridSpanControls = createHigherOrderComponent((BlockEdit) => {
 							title={__('Grid Settings', 'designsetgo')}
 							initialOpen={false}
 						>
+							{alignRowsActive && (
+								<Notice
+									status="warning"
+									isDismissible={false}
+									className="dsgo-grid-span__align-rows-notice"
+								>
+									{__(
+										'The parent Grid’s “Align Rows” is on, which overrides Column and Row Span (each card fills one column and the shared rows). Turn Align Rows off to use these.',
+										'designsetgo'
+									)}
+								</Notice>
+							)}
 							<RangeControl
 								label={__('Column Span', 'designsetgo')}
 								value={dsgoColumnSpan}
