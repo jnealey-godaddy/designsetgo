@@ -61,7 +61,7 @@ A column picker sits in the block toolbar whenever the Grid block is selected. C
 - **Applies to Section, Flex, and Group cards** whose direct children are the content blocks (image, heading, text, button). The row count is detected from each card's direct child elements, and the tallest card wins for the whole grid. Other blocks — such as the **Card** block, or anything that renders its own background/badge/inner `<div>`s — are left untouched: they keep their normal layout but won't participate in the alignment. So for a grid you want aligned, use Section/Flex/Group cards.
 - The per-card row count is detected automatically at runtime, so it works on any grid of matching Section/Flex/Group cards without extra configuration.
 - **Spacing note**: The spacing *inside* each card still follows that card's own **Block Spacing** — keep it consistent across the cards so the rows line up. The grid's **Row/Column Gap** controls the space *between* cards.
-- **Layout note**: While Align Rows is on, a Section/Flex card lays its content out on the shared grid rows, so that card's own **Justify Content / vertical alignment** setting no longer applies (the row tracks position the content). Turn Align Rows off to go back to per-card flex justification.
+- **Layout note**: While Align Rows is on, a Section/Flex card lays its content out on the shared grid rows, so that card's own **Justify Content / vertical alignment** and **Constrain Inner Width** settings no longer apply (the row tracks position and full-bleed the content). Turn Align Rows off to go back to the card's own flex layout.
 
 ### Gap Settings Panel
 

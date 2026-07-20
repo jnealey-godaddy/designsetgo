@@ -122,6 +122,10 @@
 		 * the Card block, which the CSS also leaves alone) returns 0 so it
 		 * neither aligns nor inflates the shared row count.
 		 *
+		 * The "supported cards" set is defined in four places — see the note on
+		 * SUPPORTED_CARD_BLOCKS in utils/use-grid-row-match.js. This one and the
+		 * CSS match by class (rename-proof); the editor list matches by name.
+		 *
 		 * @param {HTMLElement} child A direct child (card) of the inner grid.
 		 * @return {number} Number of element rows in the card (0 if unsupported).
 		 */

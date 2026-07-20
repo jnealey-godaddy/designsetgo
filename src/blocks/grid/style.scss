@@ -302,7 +302,9 @@
 		// allowlist (rather than `> *`) leaves incompatible blocks untouched:
 		// the Card block, whose root relies on its own flex layout, keeps that
 		// layout, and the editor's `.block-list-appender` "+" sibling is
-		// naturally excluded (it matches none of these).
+		// naturally excluded (it matches none of these). NOTE: this set is also
+		// encoded in view.js and utils/use-grid-row-match.js — keep them in sync
+		// (see the note on SUPPORTED_CARD_BLOCKS there).
 		> .dsgo-stack,
 		> .dsgo-flex,
 		> .wp-block-group {

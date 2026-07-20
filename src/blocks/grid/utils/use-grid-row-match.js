@@ -11,13 +11,26 @@ import { useSelect } from '@wordpress/data';
 import { store as blockEditorStore } from '@wordpress/block-editor';
 import { deriveRowMatch } from './derive-row-match';
 
-// Card containers that participate in row matching, mirroring the CSS allowlist
-// (Section / Flex / Group). Other blocks (e.g. the Card block) are left alone,
-// so they neither align nor inflate the shared row count.
+// Card containers that participate in row matching. The set of "supported
+// cards" is encoded in FOUR places that must stay in correspondence — keep
+// this list in sync with them:
+//   1. style.scss  — subgrid allowlist        (.dsgo-stack, .dsgo-flex, .wp-block-group)
+//   2. style.scss  — nested-wrapper rule      (.dsgo-stack__inner, .dsgo-flex__inner)
+//   3. view.js     — countCardRows()          (same DOM classes)
+//   4. this list   — editor block names       (below)
+//
+// The three CSS/DOM checks match by class, which is rename-proof (Section still
+// renders `.dsgo-stack`, Row still renders `.dsgo-flex`). This list matches by
+// block NAME, which changed in the stack→section / flex→row rename, so it must
+// include BOTH the current and legacy names or the editor preview drifts from
+// the frontend. Other blocks (e.g. the Card block) are intentionally absent, so
+// they neither align nor inflate the shared row count.
 const SUPPORTED_CARD_BLOCKS = [
-	'designsetgo/section',
-	'designsetgo/flex',
-	'core/group',
+	'designsetgo/section', // renders .dsgo-stack / .dsgo-stack__inner
+	'designsetgo/stack', // legacy alias of section
+	'designsetgo/row', // renders .dsgo-flex / .dsgo-flex__inner
+	'designsetgo/flex', // legacy alias of row
+	'core/group', // renders .wp-block-group
 ];
 
 /**
