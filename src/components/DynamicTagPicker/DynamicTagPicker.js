@@ -19,7 +19,9 @@ import { useState, useEffect, useMemo } from '@wordpress/element';
 import {
 	Modal,
 	Button,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
 	__experimentalVStack as VStack,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
 	__experimentalHStack as HStack,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';

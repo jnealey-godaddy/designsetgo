@@ -74,11 +74,13 @@ export default function EditorPreviewList({
 	});
 
 	// Select the active data path.
-	const { records, hasResolved } = isPostsLike
-		? postsData
-		: isRelationship
-			? relationshipData
-			: remoteData;
+	let activeData = remoteData;
+	if (isPostsLike) {
+		activeData = postsData;
+	} else if (isRelationship) {
+		activeData = relationshipData;
+	}
+	const { records, hasResolved } = activeData;
 
 	if (!hasResolved) {
 		return (
@@ -242,14 +244,14 @@ function buildGroupLabel(item, groupBy) {
  * Render records partitioned by their groupBy value, with a simple placeholder
  * heading for each group.
  *
- * @param {Object} props
- * @param          props.records
- * @param          props.attributes
- * @param          props.innerBlocks
- * @param          props.innerBlocksProps
- * @param          props.context
- * @param          props.groupBy
- * @param          props.renderedItems
+ * @param {Object}   props
+ * @param {Array}    props.records
+ * @param {Object}   props.attributes
+ * @param {Array}    props.innerBlocks
+ * @param {Object}   props.innerBlocksProps
+ * @param {Object}   props.context
+ * @param {Object}   props.groupBy
+ * @param {Function} props.renderedItems
  */
 function GroupedPreviewList({
 	records,

@@ -56,9 +56,9 @@ function compare(actual, op, expected) {
 		case 'lt':
 			return Number(actual) < Number(expected);
 		case 'empty':
-			return actual === '' || actual == null;
+			return actual === '' || actual === null || actual === undefined;
 		case 'not_empty':
-			return actual !== '' && actual != null;
+			return actual !== '' && actual !== null && actual !== undefined;
 		case 'equals':
 		default:
 			return String(actual) === String(expected);

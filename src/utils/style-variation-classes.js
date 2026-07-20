@@ -48,9 +48,9 @@ const HOVER_VARIATION_FAMILIES = [
  *
  * @param {string} [className]    The block's `className` attribute value.
  * @param {string} blockClassName The block's own class prefix (e.g.
- *                                 `dsgo-stack`, `dsgo-flex`, `dsgo-grid`) —
- *                                 activation classes are emitted as
- *                                 `${blockClassName}--${suffix}`.
+ *                                `dsgo-stack`, `dsgo-flex`, `dsgo-grid`) —
+ *                                activation classes are emitted as
+ *                                `${blockClassName}--${suffix}`.
  * @return {string[]} Activation classes to add (possibly empty).
  */
 export function hoverVariationClasses(className, blockClassName) {

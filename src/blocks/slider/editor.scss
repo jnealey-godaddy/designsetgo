@@ -155,15 +155,6 @@
 	}
 }
 
-// Editor: Block toolbar
-.wp-block-designsetgo-slider {
-
-	.block-editor-block-list__block {
-		margin-top: 0;
-		margin-bottom: 0;
-	}
-}
-
 // Editor-only slide navigator
 .dsgo-slider__nav--editor-only {
 	display: flex;
@@ -273,6 +264,12 @@
 // the slide's text content wraps to absurd heights.
 // ---------------------------------------------------------------------------
 .wp-block-designsetgo-slider {
+
+	// Editor: Block toolbar
+	.block-editor-block-list__block {
+		margin-top: 0;
+		margin-bottom: 0;
+	}
 
 	.dsgo-slider__editor-template-slot {
 		flex: 0 0 calc((100% - (var(--dsgo-slider-gap) * (var(--dsgo-slider-slides-per-view) - 1))) / var(--dsgo-slider-slides-per-view));

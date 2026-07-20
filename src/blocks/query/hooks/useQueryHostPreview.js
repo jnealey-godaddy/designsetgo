@@ -47,7 +47,7 @@ import useRenderedItems from './useRenderedItems';
  *   hasResolved: boolean,
  *   serverHtml: Array<string>|null,
  *   loading: boolean,
- * }}
+ * }} Preview state for the host query block.
  */
 export default function useQueryHostPreview({
 	attributes,
@@ -82,11 +82,13 @@ export default function useQueryHostPreview({
 			!!queryId,
 	});
 
-	const { records, hasResolved } = isPostsLike
-		? postsData
-		: isRelationship
-			? relationshipData
-			: remoteData;
+	let activeData = remoteData;
+	if (isPostsLike) {
+		activeData = postsData;
+	} else if (isRelationship) {
+		activeData = relationshipData;
+	}
+	const { records, hasResolved } = activeData;
 
 	return {
 		records,

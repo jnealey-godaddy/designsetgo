@@ -1305,11 +1305,11 @@ export default function SliderEdit({
  * InnerBlocks slot (the template slide), items 1..N are read-only server-
  * rendered slides. Each item is wrapped in a BlockContextProvider so any
  * Block Bindings inside the template resolve against the iterated post.
- * @param root0
- * @param root0.innerBlocksProps
- * @param root0.preview
- * @param root0.parentQueryAttrs
- * @param root0.outerContext
+ * @param {Object} root0
+ * @param {Object} root0.innerBlocksProps
+ * @param {Object} root0.preview
+ * @param {Object} root0.parentQueryAttrs
+ * @param {Object} root0.outerContext
  */
 function QueryModeTrack({
 	innerBlocksProps,
