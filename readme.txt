@@ -94,10 +94,6 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 == Changelog ==
 
-= 2.4.1 =
-
-* **New:** Grid — an **Align Rows** option that lines up each row of card content (images, headings, dividers, buttons) across columns using CSS subgrid, so cards with different amounts of text stay aligned with no wasted whitespace. Works with Section, Row, and Group cards; off by default.
-
 = 2.4.0 - 2026-07-12 =
 
 * **New:** Section Divider — a new block for dropping a full-width shape divider between any two blocks. Shape, height, and color default to your theme's Style Kit setting and can be overridden per instance.
