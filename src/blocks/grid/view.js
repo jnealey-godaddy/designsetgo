@@ -19,6 +19,12 @@
 			this.tabletBreakpoint = 1024;
 			this.mobileBreakpoint = 767;
 
+			// "Align Rows" — publish the per-card subgrid row count so the
+			// stylesheet's subgrid rules can activate (see style.scss).
+			this.matchRows = element.classList.contains(
+				'dsgo-grid--match-rows'
+			);
+
 			this.init();
 		}
 
@@ -75,14 +81,100 @@
 		handleResize() {
 			const config = this.getResponsiveColumns();
 
+			// Effective columns at the current breakpoint (desktop reports
+			// null, so fall back to the desktop column class).
+			const effectiveColumns =
+				config.columns === null
+					? this.getDesktopColumns()
+					: config.columns;
+
 			// Desktop: Remove all constraints
 			if (config.breakpoint === 'desktop') {
 				this.removeConstraints();
+			} else {
+				// Mobile/Tablet: Constrain spans
+				this.applyConstraints(config.columns);
+			}
+
+			this.applyRowMatching(effectiveColumns);
+		}
+
+		/**
+		 * Read the configured desktop column count from the `dsgo-grid-cols-{n}`
+		 * class (the desktop breakpoint sets no responsive override).
+		 *
+		 * @return {number} Column count (defaults to 1 if none found).
+		 */
+		getDesktopColumns() {
+			for (let i = 12; i >= 1; i--) {
+				if (this.element.classList.contains(`dsgo-grid-cols-${i}`)) {
+					return i;
+				}
+			}
+			return 1;
+		}
+
+		/**
+		 * Count the content rows a card contributes to the subgrid. Mirrors the
+		 * CSS allowlist: Section (`.dsgo-stack__inner`) and Flex
+		 * (`.dsgo-flex__inner`) cards count their wrapper's children, Group
+		 * (`.wp-block-group`) counts its own children, and anything else (e.g.
+		 * the Card block, which the CSS also leaves alone) returns 0 so it
+		 * neither aligns nor inflates the shared row count.
+		 *
+		 * The "supported cards" set is defined in four places — see the note on
+		 * SUPPORTED_CARD_BLOCKS in utils/use-grid-row-match.js. This one and the
+		 * CSS match by class (rename-proof); the editor list matches by name.
+		 *
+		 * @param {HTMLElement} child A direct child (card) of the inner grid.
+		 * @return {number} Number of element rows in the card (0 if unsupported).
+		 */
+		countCardRows(child) {
+			const rowHost =
+				child.querySelector(
+					':scope > .dsgo-stack__inner, :scope > .dsgo-flex__inner'
+				) ||
+				(child.classList.contains('wp-block-group') ? child : null);
+			if (!rowHost) {
+				return 0;
+			}
+			// `.children` is an HTMLCollection — element nodes only (unlike
+			// `.childNodes`), so no text/comment filtering is needed.
+			return rowHost.children.length;
+		}
+
+		/**
+		 * Activate (or clear) subgrid row matching. Only meaningful with 2+
+		 * columns; on a single column the cards stack and need no alignment.
+		 *
+		 * @param {number} effectiveColumns Columns at the current breakpoint.
+		 */
+		applyRowMatching(effectiveColumns) {
+			if (!this.matchRows) {
 				return;
 			}
 
-			// Mobile/Tablet: Constrain spans
-			this.applyConstraints(config.columns);
+			const MATCHED = 'dsgo-grid__inner--rows-matched';
+
+			if (!effectiveColumns || effectiveColumns <= 1) {
+				this.inner.classList.remove(MATCHED);
+				this.inner.style.removeProperty('--dsgo-row-count');
+				return;
+			}
+
+			const rowCount = Array.from(this.inner.children).reduce(
+				(max, child) => Math.max(max, this.countCardRows(child)),
+				0
+			);
+
+			if (rowCount < 1) {
+				this.inner.classList.remove(MATCHED);
+				this.inner.style.removeProperty('--dsgo-row-count');
+				return;
+			}
+
+			this.inner.style.setProperty('--dsgo-row-count', String(rowCount));
+			this.inner.classList.add(MATCHED);
 		}
 
 		applyConstraints(maxColumns) {

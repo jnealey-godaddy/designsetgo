@@ -1,9 +1,11 @@
 # Grid Container Block - User Guide
 
-**Version**: 2.1.0
+**Version**: 2.2.0
 **Category**: Design
 **Keywords**: grid, columns, layout, container, responsive
 
+> **Updated in 2.2.0** — "Align Rows" toggle: line up card rows (headings, dividers, buttons) across columns via CSS subgrid.
+>
 > **Updated in 2.1.0** — Column picker added to the block toolbar; row span control added for grid children; empty appender width fixed.
 
 ## Overview
@@ -51,6 +53,15 @@ A column picker sits in the block toolbar whenever the Grid block is selected. C
 - **Start**: Items align to top.
 - **Center**: Items center vertically.
 - **End**: Items align to bottom.
+
+**Align Rows**
+- **Off** (Default): Each card flows independently; a card with more text pushes its own heading, divider, and button down, so those elements don't line up across columns.
+- **On**: Lines up each row of card content across columns using CSS subgrid. The image row, heading row, body row, and button row each grow to the tallest card in that row, so headings, dividers, and CTAs stay on the same line even when the copy length differs — with no wasted whitespace when it doesn't.
+- **Best with cards that share the same structure** (e.g. every card is image → heading → text → button). The alignment matches content top-to-bottom by position, so cards should contain the same sequence of blocks.
+- **Applies to Section, Row, and Group cards** whose direct children are the content blocks (image, heading, text, button). The row count is detected from each card's direct child elements, and the tallest card wins for the whole grid. Other blocks — such as the **Card** block, or anything that renders its own background/badge/inner `<div>`s — are left untouched: they keep their normal layout but won't participate in the alignment. So for a grid you want aligned, use Section/Row/Group cards.
+- The per-card row count is detected automatically at runtime, so it works on any grid of matching Section/Row/Group cards without extra configuration.
+- **Spacing note**: The spacing *inside* each card still follows that card's own **Block Spacing** — keep it consistent across the cards so the rows line up. The grid's **Row/Column Gap** controls the space *between* cards.
+- **Layout note**: While Align Rows is on, a card's content is placed on the shared grid rows, which **replaces the card's own layout**. A Section/Row card's own **Justify Content / vertical alignment** and its own **Constrain Inner Width** setting no longer apply (the Grid block's own Constrain Inner Width is unaffected), and a **Group** card's own **Row/Grid layout** is overridden — its content is laid out as single-column rows (so don't use Align Rows on Group cards that rely on their own multi-column layout). Align Rows also owns each card's grid placement (each card occupies a single column and spans the shared rows), so a per-card **Row Span** or **Column Span** (the Grid Span controls) is overridden while it's on, and the Grid's own **Align Items** (Start/Center/End) is forced to stretch so cards fill their rows. Turn Align Rows off to restore the card's own layout.
 
 ### Gap Settings Panel
 

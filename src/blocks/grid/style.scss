@@ -267,3 +267,90 @@
 	margin-block-start: 0 !important;
 	margin-block-end: 0 !important;
 }
+
+// ===================================================================
+// ROW MATCHING (SUBGRID) — "Align Rows" toggle
+// ===================================================================
+// Lines up each row of card content across columns (images, headings,
+// dividers, buttons) so cards with unequal amounts of text stay aligned,
+// with no wasted whitespace when they don't.
+// How it works: each direct child of the inner grid becomes a CSS subgrid
+// spanning `--dsgo-row-count` row tracks. Because the cards auto-place onto
+// the same implicit rows, those shared tracks size to the tallest content in
+// each row across all columns, so the image / heading / text / button rows all
+// line up. Section/Stack cards nest their content under `.dsgo-stack__inner`,
+// so that wrapper is made a *nested* subgrid too (spanning the same tracks) —
+// this keeps the wrapper's own gap, so the card's Block Spacing still controls
+// the vertical rhythm inside the card (keep it consistent across cards so the
+// rows stay aligned).
+// `--dsgo-row-count` and the `--rows-matched` activation class are published
+// by view.js on the frontend (and edit.js in the editor). Gating the subgrid
+// rules on `--rows-matched` means that if the script never runs, cards simply
+// fall back to their normal stacked layout — no broken single-row collapse.
+// The whole activation is wrapped in `@supports (grid-template-rows: subgrid)`.
+// Without this guard, browsers that lack subgrid (Chrome < 117, older Safari /
+// Android WebView) would drop `grid-template-rows: subgrid` as invalid but
+// still apply `display: grid` + `grid-row: span …`, turning the Section
+// wrapper into a bare template-less grid and breaking its flex card layout.
+// Gating on `@supports` makes those browsers keep the normal flex/stack layout.
+@supports (grid-template-rows: subgrid) {
+
+	// Direct child (`>`): `.dsgo-grid__inner` is always the immediate child of
+	// the `.dsgo-grid` wrapper, and this scoping keeps a match-rows grid from
+	// reaching into a nested grid's inner in one of its own cards.
+	.dsgo-grid--match-rows > .dsgo-grid__inner--rows-matched {
+
+		// Only the supported card containers become subgrids — Section
+		// (.dsgo-stack), Flex (.dsgo-flex), and Group (.wp-block-group). An
+		// allowlist (rather than `> *`) leaves incompatible blocks untouched:
+		// the Card block, whose root relies on its own flex layout, keeps that
+		// layout, and the editor's `.block-list-appender` "+" sibling is
+		// naturally excluded (it matches none of these). NOTE: this set is also
+		// encoded in view.js and utils/use-grid-row-match.js — keep them in sync
+		// (see the note on SUPPORTED_CARD_BLOCKS there).
+		> .dsgo-stack,
+		> .dsgo-flex,
+		> .wp-block-group {
+			display: grid;
+			grid-template-rows: subgrid;
+			// Align Rows must own the card's grid placement, and both overrides
+			// need `!important` to beat the Grid Span extension
+			// (extensions/grid-span), which sets inline `grid-row`/`grid-column`
+			// on this same card root for a custom Row/Column Span.
+			// - `grid-row` must equal --dsgo-row-count so the nested wrapper can
+			//   subgrid over the same tracks.
+			// - `grid-column` is forced to a single column: a multi-column card
+			//   disrupts auto-placement so siblings land on different row tracks
+			//   and stop aligning.
+			// So a per-card Row/Column Span is overridden while Align Rows is on
+			// (documented in GRID.md).
+			grid-row: span var(--dsgo-row-count, 1) !important;
+			grid-column: auto !important;
+			// The card must fill its row-span area for the subgrid tracks to
+			// line up. The Grid's Align Items control (Start/Center/End) sets
+			// `align-items` on the inner; `align-self: stretch` on the card
+			// overrides it so a non-stretch setting can't collapse the card off
+			// its tracks and break alignment.
+			align-self: stretch;
+		}
+
+		// Section/Flex inner wrapper → nested subgrid spanning the card's
+		// tracks. Keeps its own block gap while its content blocks land on the
+		// shared rows. Drop the wrapper's width constraint so it fills the cell.
+		// `display` needs `!important`: the Row block sets `display: flex`
+		// inline on `.dsgo-flex__inner` (row/save.js), and an inline style
+		// always beats a stylesheet selector — without `!important` the wrapper
+		// stays flex and its content never lands on the subgrid rows (the
+		// Section wrapper uses WordPress's `.is-layout-flex` *class*, which the
+		// selector already outranks, so this is harmless there). Same reason the
+		// `max-width`/`margin-inline` overrides below are `!important`.
+		> .dsgo-stack > .dsgo-stack__inner,
+		> .dsgo-flex > .dsgo-flex__inner {
+			display: grid !important;
+			grid-template-rows: subgrid;
+			grid-row: span var(--dsgo-row-count, 1);
+			max-width: none !important;
+			margin-inline: 0 !important;
+		}
+	}
+}

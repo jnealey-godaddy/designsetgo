@@ -163,6 +163,10 @@
 		"columnMinWidth": {
 			"type": "string",
 			"default": ""
+		},
+		"matchRowHeights": {
+			"type": "boolean",
+			"default": false
 		}
 	},
 	"providesContext": {

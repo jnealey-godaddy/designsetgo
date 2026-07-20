@@ -353,3 +353,12 @@ body:has(.dsgo-stack__inner .dsgo-grid.is-selected) {
 	margin-block-start: 0 !important;
 	margin-block-end: 0 !important;
 }
+
+// ========================================
+// ROW MATCHING (SUBGRID) — "Align Rows" toggle
+// The activation styles live only in style.scss. Its `style` handle (from
+// block.json) loads in the editor too, and apiVersion 3 gives the editor the
+// same `.dsgo-grid__inner > .dsgo-stack > .dsgo-stack__inner` structure as the
+// frontend, so the frontend rules apply as-is in the canvas — no editor copy
+// needed (avoids a two-file sync risk).
+// ========================================
