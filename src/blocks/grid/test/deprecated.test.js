@@ -25,10 +25,9 @@ setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 registerBlockType(metadata.name, { ...metadata, save, deprecated });
 
 describe('grid deprecations - style-kit overlay variation migration', () => {
-	// deprecated.js exports: [legacyMinWidth, styleVariationClasses, v1].
-	// legacyMinWidth is first so its narrower isEligible (minmax(...) inline
-	// style) wins over styleVariationClasses when a legacy grid matches both.
-	const [, styleVariationClassesDeprecation] = deprecated;
+	// deprecated.js exports:
+	// [legacyResponsiveTabletClass, legacyMinWidth, styleVariationClasses, v1].
+	const [, , styleVariationClassesDeprecation] = deprecated;
 
 	const canonicalOverlayMarkup = serialize(
 		createBlock(metadata.name, { className: 'is-style-overlay-dark' })
@@ -97,7 +96,7 @@ describe('grid deprecations - style-kit overlay variation migration', () => {
 });
 
 describe('grid deprecations - style-kit hover variation migration', () => {
-	const [, styleVariationClassesDeprecation] = deprecated;
+	const [, , styleVariationClassesDeprecation] = deprecated;
 
 	const canonicalHoverMarkup = serialize(
 		createBlock(metadata.name, { className: 'is-style-hover-text-light' })
@@ -164,7 +163,7 @@ describe('grid deprecations - legacyMinWidth precedence over styleVariationClass
 	// case — it's the only one that recovers `columnMinWidth` on migrate();
 	// styleVariationClasses.migrate() is a passthrough and would silently
 	// drop it.
-	const [legacyMinWidthDeprecation, styleVariationClassesDeprecation] =
+	const [, legacyMinWidthDeprecation, styleVariationClassesDeprecation] =
 		deprecated;
 
 	const canonicalOverlayMarkup = serialize(
