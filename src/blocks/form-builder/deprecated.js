@@ -42,6 +42,212 @@ const legacyAttributes = {
 	submitButtonPaddingHorizontal: { type: 'string', default: '2rem' },
 };
 
+// Non-default submitButtonVariation values — kept in sync with save.js so the v6
+// snapshot below reproduces the historical class names.
+const V6_SUBMIT_BUTTON_VARIATIONS = ['secondary', 'outline'];
+
+/**
+ * V6 deprecation: before `submitButtonText` became HTML-sourced.
+ *
+ * The old save() wrote the label into the button text AND duplicated it into a
+ * `data-submit-text` attribute on the wrapper. That data attribute is unused on
+ * the frontend (view.js restores the label from `button.textContent`), and the
+ * duplication meant translating the visible button text left `data-submit-text`
+ * stale — so save() regenerated it and the block failed validation
+ * ("Attempt recovery"). The current save() drops `data-submit-text` and sources
+ * `submitButtonText` from the button text (single source of truth).
+ *
+ * This entry reproduces the old markup (with `data-submit-text`) so existing
+ * forms stay valid; `submitButtonText` is parsed from the block comment here (it
+ * was a static attribute then), and the block re-serializes without the data
+ * attribute on next save. Markup-change deprecation — reached by save-matching on
+ * the now-invalid stored HTML, so no isEligible is needed.
+ */
+const v6 = {
+	apiVersion: metadata.apiVersion,
+	attributes: {
+		...metadata.attributes,
+		submitButtonText: { type: 'string', default: 'Submit' },
+	},
+	supports: metadata.supports,
+	save({ attributes }) {
+		const {
+			formId,
+			hasFields,
+			submitButtonText,
+			submitButtonAlignment,
+			submitButtonPosition,
+			submitButtonVariation,
+			ajaxSubmit,
+			successMessage,
+			errorMessage,
+			fieldSpacing,
+			inputHeight,
+			inputPadding,
+			fieldLabelColor,
+			fieldBorderColor,
+			fieldBackgroundColor,
+			fieldBorderRadius,
+			submitButtonColor,
+			submitButtonBackgroundColor,
+			submitButtonPaddingVertical,
+			submitButtonPaddingHorizontal,
+			submitButtonFontSize,
+			submitButtonHeight,
+			submitButtonHoverColor,
+			submitButtonHoverBackgroundColor,
+			enableHoneypot,
+			enableTurnstile,
+			redirectUrl,
+		} = attributes;
+
+		if (!hasFields) {
+			return null;
+		}
+
+		const submitVariationClass = V6_SUBMIT_BUTTON_VARIATIONS.includes(
+			submitButtonVariation
+		)
+			? ` is-style-${submitButtonVariation}`
+			: '';
+
+		const formClasses = classnames('dsgo-form-builder', {
+			[`dsgo-form-builder--align-${submitButtonAlignment}`]:
+				submitButtonAlignment && submitButtonPosition === 'below',
+			'dsgo-form-builder--button-inline':
+				submitButtonPosition === 'inline',
+		});
+
+		const formStyles = {
+			...(fieldSpacing && { '--dsgo-form-field-spacing': fieldSpacing }),
+			...(inputHeight && { '--dsgo-form-input-height': inputHeight }),
+			...(inputPadding && { '--dsgo-form-input-padding': inputPadding }),
+			'--dsgo-form-label-color': convertColorToCSSVar(fieldLabelColor),
+			'--dsgo-form-border-color': convertColorToCSSVar(fieldBorderColor),
+			'--dsgo-form-field-bg': convertColorToCSSVar(fieldBackgroundColor),
+			'--dsgo-form-border-radius': validateCSSLength(fieldBorderRadius),
+		};
+
+		const submitButtonStyle = {
+			...(submitButtonColor && {
+				color: convertColorToCSSVar(submitButtonColor),
+			}),
+			...(submitButtonBackgroundColor && {
+				backgroundColor: convertColorToCSSVar(
+					submitButtonBackgroundColor
+				),
+			}),
+			...(submitButtonHeight && { minHeight: submitButtonHeight }),
+			...(submitButtonPaddingVertical && {
+				paddingTop: submitButtonPaddingVertical,
+				paddingBottom: submitButtonPaddingVertical,
+			}),
+			...(submitButtonPaddingHorizontal && {
+				paddingLeft: submitButtonPaddingHorizontal,
+				paddingRight: submitButtonPaddingHorizontal,
+			}),
+			...(submitButtonFontSize && { fontSize: submitButtonFontSize }),
+			...(submitButtonHoverBackgroundColor && {
+				'--dsgo-button-hover-bg': convertColorToCSSVar(
+					submitButtonHoverBackgroundColor
+				),
+			}),
+			...(submitButtonHoverColor && {
+				'--dsgo-button-hover-color': convertColorToCSSVar(
+					submitButtonHoverColor
+				),
+			}),
+		};
+
+		const blockProps = useBlockProps.save({
+			className: formClasses,
+			style: formStyles,
+			'data-form-id': formId,
+			'data-ajax-submit': ajaxSubmit,
+			'data-success-message': successMessage,
+			'data-error-message': errorMessage,
+			'data-submit-text': submitButtonText,
+			...(enableTurnstile && {
+				'data-dsgo-turnstile': 'true',
+			}),
+			...(redirectUrl && {
+				'data-redirect-url': redirectUrl,
+			}),
+		});
+
+		const { children, ...innerBlocksPropsWithoutChildren } =
+			useInnerBlocksProps.save({
+				className: 'dsgo-form__fields',
+			});
+
+		return (
+			<div {...blockProps}>
+				<form className="dsgo-form" method="post" noValidate>
+					<div {...innerBlocksPropsWithoutChildren}>
+						{children}
+						{submitButtonPosition === 'inline' && (
+							<button
+								type="submit"
+								className={`dsgo-form__submit dsgo-form__submit--inline${submitVariationClass} wp-element-button`}
+								style={submitButtonStyle}
+							>
+								{submitButtonText}
+							</button>
+						)}
+					</div>
+
+					{enableHoneypot && (
+						<input
+							type="text"
+							name="dsg_website"
+							value=""
+							tabIndex="-1"
+							autoComplete="off"
+							aria-hidden="true"
+							style={{
+								position: 'absolute',
+								left: '-9999px',
+								width: '1px',
+								height: '1px',
+								overflow: 'hidden',
+							}}
+						/>
+					)}
+
+					<input type="hidden" name="dsg_form_id" value={formId} />
+
+					{enableTurnstile && (
+						<div
+							className="dsgo-turnstile-widget"
+							data-dsgo-turnstile-container="true"
+						/>
+					)}
+
+					{submitButtonPosition === 'below' && (
+						<div className="dsgo-form__footer">
+							<button
+								type="submit"
+								className={`dsgo-form__submit${submitVariationClass} wp-element-button`}
+								style={submitButtonStyle}
+							>
+								{submitButtonText}
+							</button>
+						</div>
+					)}
+
+					<div
+						className="dsgo-form__message"
+						role="status"
+						aria-live="polite"
+						aria-atomic="true"
+						style={{ display: 'none' }}
+					/>
+				</form>
+			</div>
+		);
+	},
+};
+
 /**
  * V5 deprecation: before the spacing / sizing tokens became nullable
  * (removable) and the submit button inherited the theme's global button styles.
@@ -1071,6 +1277,6 @@ const v1 = {
 	},
 };
 
-const deprecated = [v5, v4, v3, v2, v1];
+const deprecated = [v6, v5, v4, v3, v2, v1];
 
 export default deprecated;
