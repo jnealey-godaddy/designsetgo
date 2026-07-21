@@ -82,6 +82,8 @@
 		},
 		"label": {
 			"type": "string",
+			"source": "text",
+			"selector": ".dsgo-counter__label",
 			"default": ""
 		},
 		"showIcon": {

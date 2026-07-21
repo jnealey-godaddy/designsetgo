@@ -20,6 +20,8 @@
 	"attributes": {
 		"title": {
 			"type": "string",
+			"source": "html",
+			"selector": ".dsgo-accordion-item__title",
 			"default": "Accordion Item"
 		},
 		"isOpen": {
