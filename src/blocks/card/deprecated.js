@@ -42,17 +42,19 @@ import metadata from './block.json';
  */
 
 /**
- * Whether `className` appears as a whole class token in the markup (delimited by
- * a quote or whitespace) rather than as a bare substring, so a future sibling
- * class that merely starts with `className` (e.g. a hypothetical
- * `dsgo-card__body-x`) can't be mistaken for the field's own element.
+ * Whether `className` appears as a whole class token inside a `class="..."`
+ * attribute value. Scoping to the class attribute (not the whole markup) and
+ * requiring token boundaries (start-of-value or whitespace on the left, quote or
+ * whitespace on the right) avoids two false positives: a sibling class that
+ * merely starts with `className` (e.g. a hypothetical `dsgo-card__body-x`), and
+ * the class-name string happening to appear in a field's own RichText body text.
  *
  * @param {string} html      The stored block markup.
  * @param {string} className The class name to look for.
  * @return {boolean} Whether the class token is present.
  */
 const hasClassToken = (html, className) =>
-	new RegExp(`(?:^|[\\s"])${className}(?=[\\s"])`).test(html);
+	new RegExp(`class="(?:[^"]*\\s)?${className}(?=[\\s"])`).test(html);
 
 /**
  * True when a field has text (from the block comment) but its element is absent

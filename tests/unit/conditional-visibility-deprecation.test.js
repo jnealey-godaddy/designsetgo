@@ -190,4 +190,41 @@ describe('card title/subtitle/bodyText/badgeText (show-toggles)', () => {
 			expect(serialize(block)).toContain(`${className}--hidden`);
 		}
 	);
+
+	it('still migrates a hidden title when visible body text mentions the title class name', () => {
+		// The isEligible guard scans markup for the title element's class. Body
+		// copy that literally contains "dsgo-card__title" must NOT be mistaken for
+		// the (removed) title element, or the hidden title would fail to migrate.
+		const shown = serialize(
+			createBlock('designsetgo/card', {
+				title: 'Hidden Heading',
+				showTitle: false,
+				bodyText: 'Style it with the dsgo-card__title class.',
+				showBody: true,
+			})
+		);
+		const legacy = shown
+			.replace(
+				/<h3 class="dsgo-card__title[^"]*">Hidden Heading<\/h3>/,
+				''
+			)
+			// Pre-fix content stored every text field statically in the comment.
+			.replace(
+				/^<!-- wp:designsetgo\/card (\{.*?\}) -->/,
+				(full, json) => {
+					const attrs = JSON.parse(json);
+					attrs.title = 'Hidden Heading';
+					attrs.bodyText =
+						'Style it with the dsgo-card__title class.';
+					return `<!-- wp:designsetgo/card ${JSON.stringify(attrs)} -->`;
+				}
+			);
+		// Sanity: the visible body text really does contain the title class token.
+		expect(legacy).toContain('dsgo-card__title class.');
+
+		const [block] = parse(legacy);
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.title).toBe('Hidden Heading');
+		expect(serialize(block)).toContain('dsgo-card__title--hidden');
+	});
 });

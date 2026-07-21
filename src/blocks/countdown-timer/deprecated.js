@@ -805,20 +805,22 @@ const v1 = {
 export { v3, v2, v1 };
 
 /**
- * V4 deprecation: before `completionMessage` became sourced from the wrapper's
- * `data-completion-message` attribute and the message div was rendered empty.
+ * V4 deprecation: before `completionMessage` became sourced from the message
+ * div's text and the redundant `data-completion-message` attribute was dropped.
  *
  * The message was stored twice — on `data-completion-message` AND as the text of
  * the (CSS-hidden) `.dsgo-countdown-timer__completion-message` div. view.js only
  * reads the data attribute, so the baked div text was redundant; translating that
  * hidden text left the data attribute stale and the block failed validation. The
- * current save() renders the div empty and sources `completionMessage` from the
- * data attribute (single source of truth).
+ * current save() keeps the message as the div's text and sources
+ * `completionMessage` from it (single source of truth), dropping the redundant
+ * data attribute.
  *
- * This reproduces the immediately-previous markup (div carries the text, no inline
- * style — that inline style is the older v3 era) so existing timers stay valid and
- * re-serialize with an empty message div. Markup-change deprecation, reached by
- * save-matching on the now-invalid stored HTML — no isEligible.
+ * This reproduces the immediately-previous markup (div text PLUS the
+ * `data-completion-message` attribute, no inline style — that inline style is the
+ * older v3 era) so existing timers stay valid and re-serialize without the data
+ * attribute. Markup-change deprecation, reached by save-matching on the
+ * now-invalid stored HTML — no isEligible.
  */
 const v4 = {
 	apiVersion: 3,
