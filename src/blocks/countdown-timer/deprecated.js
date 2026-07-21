@@ -804,4 +804,145 @@ const v1 = {
 
 export { v3, v2, v1 };
 
-export default [v3, v2, v1];
+/**
+ * V4 deprecation: before `completionMessage` became sourced from the wrapper's
+ * `data-completion-message` attribute and the message div was rendered empty.
+ *
+ * The message was stored twice — on `data-completion-message` AND as the text of
+ * the (CSS-hidden) `.dsgo-countdown-timer__completion-message` div. view.js only
+ * reads the data attribute, so the baked div text was redundant; translating that
+ * hidden text left the data attribute stale and the block failed validation. The
+ * current save() renders the div empty and sources `completionMessage` from the
+ * data attribute (single source of truth).
+ *
+ * This reproduces the immediately-previous markup (div carries the text, no inline
+ * style — that inline style is the older v3 era) so existing timers stay valid and
+ * re-serialize with an empty message div. Markup-change deprecation, reached by
+ * save-matching on the now-invalid stored HTML — no isEligible.
+ */
+const v4 = {
+	apiVersion: 3,
+	supports: v3Supports,
+	// completionMessage is sourced from the div text (same as the current save);
+	// this entry differs only by ALSO emitting the redundant data-completion-message
+	// attribute, so it reproduces the pre-fix markup for content that still has it.
+	attributes: {
+		...v3.attributes,
+		completionMessage: {
+			type: 'string',
+			source: 'text',
+			selector: '.dsgo-countdown-timer__completion-message',
+			default: 'The countdown has ended!',
+		},
+	},
+	save({ attributes }) {
+		const {
+			targetDateTime,
+			timezone,
+			showDays,
+			showHours,
+			showMinutes,
+			showSeconds,
+			layout,
+			completionAction,
+			completionMessage,
+			numberColor,
+			labelColor,
+			unitBackgroundColor,
+			unitBorder,
+			unitBorderRadius,
+			unitGap,
+			unitPadding,
+		} = attributes;
+
+		const unitStyle = {
+			backgroundColor:
+				convertColorToCSSVar(unitBackgroundColor) || 'transparent',
+			borderColor:
+				unitBorder?.color ||
+				'var(--wp--preset--color--accent-2, currentColor)',
+			borderWidth: unitBorder?.width || '2px',
+			borderStyle: unitBorder?.style || 'solid',
+			borderRadius: `${unitBorderRadius}px`,
+			padding: unitPadding || '1.5rem',
+		};
+
+		const numberStyle = {
+			color:
+				convertColorToCSSVar(numberColor) ||
+				'var(--wp--preset--color--accent-2, currentColor)',
+		};
+
+		const labelStyle = {
+			color: convertColorToCSSVar(labelColor) || 'currentColor',
+		};
+
+		const containerStyle = {
+			gap: unitGap || '1rem',
+		};
+
+		const blockProps = useBlockProps.save({
+			className: `dsgo-countdown-timer dsgo-countdown-timer--${layout}`,
+			style: containerStyle,
+			'data-target-datetime': targetDateTime,
+			'data-timezone': timezone,
+			'data-show-days': showDays,
+			'data-show-hours': showHours,
+			'data-show-minutes': showMinutes,
+			'data-show-seconds': showSeconds,
+			'data-completion-action': completionAction,
+			'data-completion-message': completionMessage,
+		});
+
+		const units = [];
+
+		if (showDays) {
+			units.push({ type: 'days', label: 'Days', value: '00' });
+		}
+
+		if (showHours) {
+			units.push({ type: 'hours', label: 'Hours', value: '00' });
+		}
+
+		if (showMinutes) {
+			units.push({ type: 'minutes', label: 'Min', value: '00' });
+		}
+
+		if (showSeconds) {
+			units.push({ type: 'seconds', label: 'Sec', value: '00' });
+		}
+
+		return (
+			<div {...blockProps}>
+				<div className="dsgo-countdown-timer__units">
+					{units.map((unit) => (
+						<div
+							key={unit.type}
+							className="dsgo-countdown-timer__unit"
+							data-unit-type={unit.type}
+							style={unitStyle}
+						>
+							<div
+								className="dsgo-countdown-timer__number"
+								style={numberStyle}
+							>
+								{unit.value}
+							</div>
+							<div
+								className="dsgo-countdown-timer__label"
+								style={labelStyle}
+							>
+								{unit.label}
+							</div>
+						</div>
+					))}
+				</div>
+				<div className="dsgo-countdown-timer__completion-message">
+					{completionMessage}
+				</div>
+			</div>
+		);
+	},
+};
+
+export default [v4, v3, v2, v1];

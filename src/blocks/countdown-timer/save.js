@@ -69,7 +69,6 @@ export default function save({ attributes }) {
 		'data-show-minutes': showMinutes,
 		'data-show-seconds': showSeconds,
 		'data-completion-action': completionAction,
-		'data-completion-message': completionMessage,
 	});
 
 	// Build initial display (will be updated by frontend JS)
@@ -133,10 +132,15 @@ export default function save({ attributes }) {
 				))}
 			</div>
 			{/*
+			 * The message text is the single source of truth (sourced into the
+			 * `completionMessage` attribute), so it stays translatable via the
+			 * visible text and no longer needs a duplicate `data-completion-message`
+			 * copy on the wrapper — that duplication meant translating one copy
+			 * left the other stale and failed validation.
+			 *
 			 * Hidden by default via style.scss
-			 * (`.dsgo-countdown-timer__completion-message { display: none }`),
-			 * not an inline style — view.js reveals it by setting
-			 * `style.display = 'block'`, which beats the stylesheet rule anyway.
+			 * (`.dsgo-countdown-timer__completion-message { display: none }`);
+			 * view.js reveals it by setting `style.display = 'block'`.
 			 */}
 			<div className="dsgo-countdown-timer__completion-message">
 				{completionMessage}

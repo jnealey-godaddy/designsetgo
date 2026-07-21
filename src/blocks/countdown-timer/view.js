@@ -112,7 +112,6 @@ function updateCountdownDisplay(timer, timeData) {
  */
 function handleCompletion(timer) {
 	const completionAction = timer.dataset.completionAction;
-	const completionMessage = timer.dataset.completionMessage;
 
 	if (completionAction === 'hide') {
 		// Hide the entire timer
@@ -131,8 +130,9 @@ function handleCompletion(timer) {
 		}
 
 		if (messageContainer) {
+			// The message text is already server-rendered inside this element
+			// (sourced into the `completionMessage` attribute); just reveal it.
 			messageContainer.style.display = 'block';
-			messageContainer.textContent = completionMessage;
 		}
 	}
 }

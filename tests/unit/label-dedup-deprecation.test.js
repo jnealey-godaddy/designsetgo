@@ -79,3 +79,46 @@ describe('form-builder submitButtonText (data-submit-text dedup)', () => {
 		expect(serialize(block)).not.toContain('data-submit-text');
 	});
 });
+
+describe('countdown-timer completionMessage (message-div dedup)', () => {
+	it('translating the visible message keeps the block valid', () => {
+		const stored = serialize(
+			createBlock('designsetgo/countdown-timer', {
+				completionMessage: 'The countdown has ended!',
+			})
+		);
+		// The message lives once — in the div text. No duplicate data attribute.
+		expect(stored).toContain('>The countdown has ended!</div>');
+		expect(stored).not.toContain('data-completion-message');
+
+		const translated = stored
+			.split('>The countdown has ended!</div>')
+			.join('>Odbrojavanje je završeno!</div>');
+		const [block] = parse(translated);
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.completionMessage).toBe(
+			'Odbrojavanje je završeno!'
+		);
+	});
+
+	it('migrates legacy markup that carried the redundant data-completion-message', () => {
+		// Reconstruct pre-fix markup: data-completion-message on the wrapper +
+		// the same text baked into the div.
+		const base = serialize(
+			createBlock('designsetgo/countdown-timer', {
+				completionMessage: 'Almost there!',
+			})
+		);
+		const legacy = base.replace(
+			/(data-completion-action="[^"]*")/,
+			'$1 data-completion-message="Almost there!"'
+		);
+
+		const [block] = parse(legacy);
+		expect(console).toHaveInformed();
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.completionMessage).toBe('Almost there!');
+		// Re-serialization drops the redundant data attribute.
+		expect(serialize(block)).not.toContain('data-completion-message');
+	});
+});
