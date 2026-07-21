@@ -95,3 +95,97 @@ describe('table-of-contents titleText (show-toggle)', () => {
 		expect(serialize(block)).toContain('>Legacy heading</div>');
 	});
 });
+
+describe('card title/subtitle/bodyText/badgeText (show-toggles)', () => {
+	const FIELDS = [
+		['title', 'showTitle', 'dsgo-card__title', 'Our Story', 'Naša priča'],
+		[
+			'subtitle',
+			'showSubtitle',
+			'dsgo-card__subtitle',
+			'Since 2010',
+			'Od 2010.',
+		],
+		[
+			'bodyText',
+			'showBody',
+			'dsgo-card__body',
+			'We dance salsa',
+			'Plešemo salsu',
+		],
+		['badgeText', 'showBadge', 'dsgo-card__badge', 'New', 'Novo'],
+	];
+
+	it.each(FIELDS)(
+		'%s: translating the visible text keeps the block valid',
+		(field, showFlag, className, english, translated) => {
+			const stored = serialize(
+				createBlock('designsetgo/card', { [field]: english })
+			);
+			expect(stored).toContain(english);
+
+			const [block] = parse(
+				stored.split(`>${english}<`).join(`>${translated}<`)
+			);
+			expect(block.isValid).toBe(true);
+			expect(block.attributes[field]).toBe(translated);
+		}
+	);
+
+	it.each(FIELDS)(
+		'%s: preserves the text when the field is toggled off',
+		(field, showFlag, className, english) => {
+			const block = createBlock('designsetgo/card', {
+				[field]: english,
+				[showFlag]: false,
+			});
+			const [reparsed] = parse(serialize(block));
+			expect(reparsed.isValid).toBe(true);
+			expect(reparsed.attributes[showFlag]).toBe(false);
+			expect(reparsed.attributes[field]).toBe(english);
+			// The element stays in the markup, hidden via the modifier class.
+			expect(serialize(reparsed)).toContain(`${className}--hidden`);
+		}
+	);
+
+	it.each(FIELDS)(
+		'%s: migrates legacy hidden-field markup (no element, text in the comment)',
+		(field, showFlag, className, english) => {
+			// Reconstruct pre-fix markup: the field toggled off meant NO element,
+			// and the text lived in the block comment.
+			const shown = serialize(
+				createBlock('designsetgo/card', {
+					[field]: english,
+					[showFlag]: false,
+				})
+			);
+			const legacy = shown
+				// Drop the (now always-rendered, hidden) field element.
+				.replace(
+					new RegExp(`<[a-z0-9]+ class="${className}[^"]*"[^>]*>${english}</[a-z0-9]+>`),
+					''
+				)
+				// Put the text back into the block comment, where it lived pre-fix.
+				.replace(
+					/^<!-- wp:designsetgo\/card (\{.*?\}) -->/,
+					(full, json) => {
+						const attrs = JSON.parse(json);
+						attrs[field] = english;
+						return `<!-- wp:designsetgo/card ${JSON.stringify(
+							attrs
+						)} -->`;
+					}
+				);
+
+			// The current save() already validates this block (the hidden field's
+			// text sources to '' → nothing renders → matches), so the isEligible
+			// deprecation migrates it silently — no console notice, unlike a
+			// markup-change (invalid-block) migration.
+			const [block] = parse(legacy);
+			expect(block.isValid).toBe(true);
+			expect(block.attributes[field]).toBe(english);
+			// Re-serializes with the always-present, hidden element.
+			expect(serialize(block)).toContain(`${className}--hidden`);
+		}
+	);
+});

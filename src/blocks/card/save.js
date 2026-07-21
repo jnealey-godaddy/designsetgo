@@ -7,6 +7,7 @@ import {
 	RichText,
 } from '@wordpress/block-editor';
 import { __ } from '@wordpress/i18n';
+import clsx from 'clsx';
 import { isValidImageUrl } from '../../utils/is-valid-image-url';
 
 /**
@@ -113,16 +114,22 @@ export default function CardSave({ attributes }) {
 	// Content alignment class
 	const contentAlignmentClass = `dsgo-card__content--${contentAlignment}`;
 
-	// Render badge
+	// Render badge. The badge element stays in the markup whenever there is badge
+	// text so `badgeText` always has an element to be sourced from; the "hide
+	// badge" toggle applies a `--hidden` modifier (CSS display:none) instead of
+	// dropping the element, which would reset the sourced text on reload.
 	const renderBadge = () => {
-		if (!showBadge || !badgeText) {
+		if (!badgeText) {
 			return null;
 		}
 
-		const badgeClass =
+		const badgeClass = clsx(
+			'dsgo-card__badge',
 			badgeStyle === 'floating'
-				? `dsgo-card__badge dsgo-card__badge--floating dsgo-card__badge--${badgeFloatingPosition}`
-				: `dsgo-card__badge dsgo-card__badge--inline dsgo-card__badge--${badgeInlinePosition}`;
+				? `dsgo-card__badge--floating dsgo-card__badge--${badgeFloatingPosition}`
+				: `dsgo-card__badge--inline dsgo-card__badge--${badgeInlinePosition}`,
+			!showBadge && 'dsgo-card__badge--hidden'
+		);
 
 		return (
 			<span
@@ -190,10 +197,12 @@ export default function CardSave({ attributes }) {
 				badgeInlinePosition === 'above-title' &&
 				renderBadge()}
 
-			{showTitle && title && (
+			{title && (
 				<RichText.Content
 					tagName="h3"
-					className="dsgo-card__title"
+					className={clsx('dsgo-card__title', {
+						'dsgo-card__title--hidden': !showTitle,
+					})}
 					value={title}
 				/>
 			)}
@@ -202,18 +211,22 @@ export default function CardSave({ attributes }) {
 				badgeInlinePosition === 'below-title' &&
 				renderBadge()}
 
-			{showSubtitle && subtitle && (
+			{subtitle && (
 				<RichText.Content
 					tagName="p"
-					className="dsgo-card__subtitle"
+					className={clsx('dsgo-card__subtitle', {
+						'dsgo-card__subtitle--hidden': !showSubtitle,
+					})}
 					value={subtitle}
 				/>
 			)}
 
-			{showBody && bodyText && (
+			{bodyText && (
 				<RichText.Content
 					tagName="p"
-					className="dsgo-card__body"
+					className={clsx('dsgo-card__body', {
+						'dsgo-card__body--hidden': !showBody,
+					})}
 					value={bodyText}
 				/>
 			)}

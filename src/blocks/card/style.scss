@@ -105,6 +105,16 @@
 	line-height: 1.6;
 }
 
+// The title / subtitle / body / badge elements are always rendered so their text
+// can be sourced from the DOM (surviving visibility toggles); these modifiers
+// hide the ones the author has turned off, instead of dropping them from markup.
+.dsgo-card__title--hidden,
+.dsgo-card__subtitle--hidden,
+.dsgo-card__body--hidden,
+.dsgo-card__badge--hidden {
+	display: none;
+}
+
 .dsgo-card__cta {
 	margin-top: auto;
 	display: flex;
