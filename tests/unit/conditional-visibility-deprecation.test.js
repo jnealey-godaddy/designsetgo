@@ -162,7 +162,9 @@ describe('card title/subtitle/bodyText/badgeText (show-toggles)', () => {
 			const legacy = shown
 				// Drop the (now always-rendered, hidden) field element.
 				.replace(
-					new RegExp(`<[a-z0-9]+ class="${className}[^"]*"[^>]*>${english}</[a-z0-9]+>`),
+					new RegExp(
+						`<[a-z0-9]+ class="${className}[^"]*"[^>]*>${english}</[a-z0-9]+>`
+					),
 					''
 				)
 				// Put the text back into the block comment, where it lived pre-fix.

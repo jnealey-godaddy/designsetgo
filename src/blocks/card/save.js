@@ -7,7 +7,7 @@ import {
 	RichText,
 } from '@wordpress/block-editor';
 import { __ } from '@wordpress/i18n';
-import clsx from 'clsx';
+import classnames from 'classnames';
 import { isValidImageUrl } from '../../utils/is-valid-image-url';
 
 /**
@@ -123,7 +123,7 @@ export default function CardSave({ attributes }) {
 			return null;
 		}
 
-		const badgeClass = clsx(
+		const badgeClass = classnames(
 			'dsgo-card__badge',
 			badgeStyle === 'floating'
 				? `dsgo-card__badge--floating dsgo-card__badge--${badgeFloatingPosition}`
@@ -200,7 +200,7 @@ export default function CardSave({ attributes }) {
 			{title && (
 				<RichText.Content
 					tagName="h3"
-					className={clsx('dsgo-card__title', {
+					className={classnames('dsgo-card__title', {
 						'dsgo-card__title--hidden': !showTitle,
 					})}
 					value={title}
@@ -214,7 +214,7 @@ export default function CardSave({ attributes }) {
 			{subtitle && (
 				<RichText.Content
 					tagName="p"
-					className={clsx('dsgo-card__subtitle', {
+					className={classnames('dsgo-card__subtitle', {
 						'dsgo-card__subtitle--hidden': !showSubtitle,
 					})}
 					value={subtitle}
@@ -224,7 +224,7 @@ export default function CardSave({ attributes }) {
 			{bodyText && (
 				<RichText.Content
 					tagName="p"
-					className={clsx('dsgo-card__body', {
+					className={classnames('dsgo-card__body', {
 						'dsgo-card__body--hidden': !showBody,
 					})}
 					value={bodyText}
