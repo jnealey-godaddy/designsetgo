@@ -1305,6 +1305,14 @@ const v7 = {
 	supports: metadata.supports,
 	attributes: {
 		...legacyAttributes,
+		// The site-designer generator writes custom success/error copy into the
+		// wrapper's data-* attributes without mirroring it into the block
+		// comment, so we source both from the HTML. The selector reaches the
+		// wrapper's OWN attribute because hpq runs matchers against a body whose
+		// innerHTML is the raw block markup: the wrapper <div> is a child of that
+		// body, so `body.querySelector('[data-success-message]')` finds it (a
+		// root-only, selector-less `source: 'attribute'` would return the default
+		// instead — querySelector never matches the node it's called on).
 		successMessage: {
 			type: 'string',
 			source: 'attribute',
