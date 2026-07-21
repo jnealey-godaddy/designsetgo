@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.4.0
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -94,7 +94,7 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 == Changelog ==
 
-= 2.5.0 - 2026-07-20 =
+= 2.5.0 - 2026-07-21 =
 
 * **New:** Grid — an "Align Rows" option that lines up each row of card content (image, heading, text, button) across columns, so cards with different amounts of text stay aligned with no ragged whitespace. Works with Section, Row, and Group cards, and is off by default so existing grids are unchanged.
 * **New:** Form Builder — the submit button now has a Button Style control (Default, Secondary, or Outline), so a form placed on a colored background can use a matching button. Your theme's button style variations apply to it too, and AI-assisted form inserts respect the chosen style.

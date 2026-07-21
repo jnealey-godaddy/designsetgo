@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.5.0] - 2026-07-20
+## [2.5.0] - 2026-07-21
 
 ### New Features
 - **Grid: Align Rows (CSS subgrid)** — A new Grid option that lines up each row of card content (images, headings, dividers, buttons) across columns using CSS subgrid, so cards with different amounts of text stay aligned with no wasted whitespace. Works with Section, Row, and Group cards; the per-card row count is detected at runtime and the whole thing is `@supports`-guarded so browsers without subgrid fall back to the normal stacked layout. Off by default, so existing grids serialize byte-identically (no deprecation). (#477)
