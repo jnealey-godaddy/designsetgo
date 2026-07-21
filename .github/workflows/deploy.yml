@@ -1,32 +1,79 @@
+# Deploy to WordPress.org
+#
+# Fires on any pushed git tag. Two release channels, chosen by the tag name
+# (WordPress-core style — see scripts/lib/version.js):
+#
+#   X.Y.Z            → STABLE. Full release via the 10up action: writes SVN
+#                      /trunk + /tags/X.Y.Z. Because readme.txt "Stable tag"
+#                      is bumped to match, the auto-update channel ships it to
+#                      every user.
+#
+#   X.Y.Z-beta<N>    → PRE-RELEASE. Committed ONLY to SVN /tags/<version> by a
+#   X.Y.Z-rc<N>        custom step; /trunk is never touched. WordPress.org
+#                      still auto-builds a zip at
+#                      downloads.wordpress.org/plugin/designsetgo.<version>.zip
+#                      for opt-in testers, but since /trunk's "Stable tag" is
+#                      unchanged, the stable auto-update channel never sees it.
+#
+# The Stable-tag rule is the linchpin: WordPress.org serves whatever /trunk's
+# readme.txt "Stable tag" names. scripts/release-meta.js --validate enforces
+# that pre-release tags keep it pinned to the last stable version, and that
+# stable tags match everywhere. Use `npm run version:set -- <version>` to set
+# all version sites correctly before tagging.
+
 name: Deploy to WordPress.org
 
 on:
   push:
     tags:
       - '*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag to (re)deploy, e.g. 2.5.0-beta1'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (pre-release path only): stage the tag but do not commit to SVN'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
-  tag:
-    name: New tag
+  deploy:
+    name: Deploy
     runs-on: ubuntu-latest
     permissions:
-      contents: read  # Required for actions/checkout
+      contents: read # Required for actions/checkout
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Determine release type
+        id: meta
+        env:
+          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: node scripts/release-meta.js "$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Validate version metadata
+        env:
+          TAG: ${{ steps.meta.outputs.version }}
+        run: node scripts/release-meta.js --validate "$TAG"
+
       - name: Build plugin
         run: npm run build
 
-      - name: WordPress Plugin Deploy
+      # STABLE — full release (trunk + tag + Stable tag bump → all users).
+      - name: WordPress Plugin Deploy (stable)
+        if: steps.meta.outputs.prerelease == 'false'
         uses: 10up/action-wordpress-plugin-deploy@stable
         env:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
@@ -34,3 +81,59 @@ jobs:
           SLUG: designsetgo
         with:
           generate-zip: true
+
+      # PRE-RELEASE — tag-only SVN commit; /trunk and its Stable tag untouched.
+      - name: WordPress Plugin Deploy (pre-release, tag only)
+        if: steps.meta.outputs.prerelease == 'true'
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: designsetgo
+          VERSION: ${{ steps.meta.outputs.version }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          sudo apt-get update
+          sudo apt-get install -y subversion rsync
+
+          SVN_URL="https://plugins.svn.wordpress.org/${SLUG}/"
+          SVN_DIR="/tmp/svn-${SLUG}"
+
+          echo "➤ Shallow checkout of SVN root (no trunk)..."
+          svn checkout --depth=empty "$SVN_URL" "$SVN_DIR" \
+            --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive
+
+          cd "$SVN_DIR"
+
+          echo "➤ Fetching tag names only..."
+          svn update --set-depth=immediates tags --non-interactive
+
+          if [ -d "tags/$VERSION" ]; then
+            echo "ℹ︎ Version $VERSION already published to SVN tags — nothing to do."
+            exit 0
+          fi
+
+          echo "➤ Staging build into tags/$VERSION (trunk is never touched)..."
+          mkdir -p "tags/$VERSION"
+          rsync -rc --exclude='.svn' \
+            --exclude-from="$GITHUB_WORKSPACE/.distignore" \
+            "$GITHUB_WORKSPACE/" "tags/$VERSION/"
+
+          svn add "tags/$VERSION" --force --auto-props --parents --depth infinity -q
+
+          echo "➤ Staged changes:"
+          svn status
+
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            echo "➤ DRY RUN: not committing. Summary of what would be added:"
+            svn diff --summarize
+            exit 0
+          fi
+
+          echo "➤ Committing pre-release tag $VERSION..."
+          svn commit -m "Release pre-release $VERSION (tag only; stable channel untouched)" \
+            --username "$SVN_USERNAME" --password "$SVN_PASSWORD" --non-interactive
+
+          echo "✓ Pre-release $VERSION deployed to tags only."
+          echo "  Testers: https://downloads.wordpress.org/plugin/${SLUG}.${VERSION}.zip"

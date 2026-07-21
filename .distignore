@@ -33,6 +33,7 @@ package-lock.json
 webpack.config.js
 tsconfig.json
 lint-staged.config.js
+/scripts
 
 # ===================
 # Testing
