@@ -129,8 +129,6 @@
 		},
 		"badgeText": {
 			"type": "string",
-			"source": "text",
-			"selector": ".dsgo-card__badge",
 			"default": ""
 		},
 		"badgeStyle": {
@@ -169,20 +167,14 @@
 		},
 		"title": {
 			"type": "string",
-			"source": "html",
-			"selector": ".dsgo-card__title",
 			"default": ""
 		},
 		"subtitle": {
 			"type": "string",
-			"source": "html",
-			"selector": ".dsgo-card__subtitle",
 			"default": ""
 		},
 		"bodyText": {
 			"type": "string",
-			"source": "html",
-			"selector": ".dsgo-card__body",
 			"default": ""
 		},
 		"overlayOpacity": {

@@ -24,27 +24,32 @@ import { registerDesignSetGoBlock } from '../../tools/regenerate-patterns';
 
 // [ block, attribute, English value, translated value ]
 const CASES = [
+	// Only blocks whose label element is ALWAYS present when the text is set —
+	// i.e. rendered unconditionally, or gated solely on the text's own presence
+	// (`{title && …}`). For those, an absent element means empty text, so the
+	// sourced value can never silently diverge from what the author typed.
 	['designsetgo/icon-button', 'text', 'View Classes', 'Pogledaj časove'],
 	['designsetgo/modal-trigger', 'text', 'Open Modal', 'Otvori'],
-	['designsetgo/card', 'title', 'Our Story', 'Naša priča'],
-	['designsetgo/card', 'subtitle', 'Since 2010', 'Od 2010.'],
-	['designsetgo/card', 'bodyText', 'We dance salsa', 'Plešemo salsu'],
-	['designsetgo/card', 'badgeText', 'New', 'Novo'],
 	['designsetgo/accordion-item', 'title', 'Question', 'Pitanje'],
 	['designsetgo/timeline-item', 'title', 'Founded', 'Osnovano'],
 	['designsetgo/timeline-item', 'date', 'March 2010', 'Mart 2010.'],
 	['designsetgo/counter', 'label', 'Members', 'Članovi'],
-	[
-		'designsetgo/table-of-contents',
-		'titleText',
-		'Table of Contents',
-		'Sadržaj',
-	],
-	// NOTE: form-builder (submitButtonText) and countdown-timer
-	// (completionMessage) are intentionally excluded. Each duplicates its label
-	// into a `data-*` attribute on the wrapper AND the visible text, so sourcing
-	// alone can't fix them — the redundant data attribute must be removed, which
-	// is a markup change requiring a deprecation. Tracked as a separate follow-up.
+	// EXCLUDED — must NOT be sourced without a companion save.js/deprecation fix:
+	//
+	// - card (title/subtitle/bodyText/badgeText) and table-of-contents (titleText)
+	//   render their label ONLY when a SEPARATE boolean toggle is on
+	//   (`{showTitle && title && …}`). A sourced attribute is recomputed from the
+	//   HTML, so toggling visibility off removes the element and resets the value
+	//   to its default — silent data loss. Fixing them means always rendering the
+	//   element (hidden via class) + a deprecation to preserve existing hidden
+	//   content, so they belong with the group below.
+	//
+	// - form-builder (submitButtonText) and countdown-timer (completionMessage)
+	//   duplicate the label into a `data-*` attribute on the wrapper AND the
+	//   visible text; a partial translation desyncs the two copies. The redundant
+	//   data attribute must be removed — a markup change requiring a deprecation.
+	//
+	// All four are tracked for one consolidated deprecation-based follow-up.
 ];
 
 const BLOCKS = [...new Set(CASES.map(([name]) => name))];
