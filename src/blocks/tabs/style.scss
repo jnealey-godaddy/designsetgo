@@ -294,6 +294,14 @@
 	&.dsgo-tabs--pills {
 		// Override color variable for pills - white text on colored background
 		--dsgo-tab-color-active: #fff;
+		// Hover text follows the active *background* color (the accent), not
+		// the active *text* color (white) — white hover text would be
+		// invisible on the light hover background. A user-set hover color
+		// (inline --dsgo-tab-color-hover) still wins over this default.
+		--dsgo-tab-color-hover: var(
+			--dsgo-tab-bg-active,
+			var(--wp--preset--color--accent-2, #2563eb)
+		);
 
 		.dsgo-tabs__nav {
 			border-bottom: none;
