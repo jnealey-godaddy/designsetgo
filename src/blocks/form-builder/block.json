@@ -26,6 +26,8 @@
 		},
 		"submitButtonText": {
 			"type": "string",
+			"source": "text",
+			"selector": ".dsgo-form__submit",
 			"default": "Submit"
 		},
 		"submitButtonAlignment": {

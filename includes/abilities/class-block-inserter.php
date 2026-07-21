@@ -735,12 +735,15 @@ class Block_Inserter {
 				$data_attrs .= ' data-show-minutes="' . ( $show_minutes ? 'true' : 'false' ) . '"';
 				$data_attrs .= ' data-show-seconds="' . ( $show_seconds ? 'true' : 'false' ) . '"';
 				$data_attrs .= ' data-completion-action="' . esc_attr( $completion_action ) . '"';
-				$data_attrs .= ' data-completion-message="' . esc_attr( $completion_message ) . '"';
+				// completionMessage is sourced from the message div's text (below),
+				// not a wrapper attribute — save.js no longer emits
+				// data-completion-message, so emitting it here would produce markup
+				// save() never generates and fail validation.
 
 				$container_style = 'gap:' . esc_attr( $unit_gap );
 				$outer_class     = 'wp-block-designsetgo-countdown-timer dsgo-countdown-timer dsgo-countdown-timer--' . esc_attr( $layout );
 
-				$inner_html  = '<div class="dsgo-countdown-timer__units">' . $units_html . '</div>';
+				$inner_html = '<div class="dsgo-countdown-timer__units">' . $units_html . '</div>';
 				// No inline display:none — style.scss hides this by default (view.js
 				// reveals it by setting an inline display:block, which wins either
 				// way). save.js stopped serializing it, so emitting it here would
@@ -829,17 +832,17 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/map':
-				$provider           = isset( $attributes['dsgoProvider'] ) ? $attributes['dsgoProvider'] : 'openstreetmap';
-				$latitude           = isset( $attributes['dsgoLatitude'] ) ? floatval( $attributes['dsgoLatitude'] ) : 40.7128;
-				$longitude          = isset( $attributes['dsgoLongitude'] ) ? floatval( $attributes['dsgoLongitude'] ) : -74.006;
-				$zoom               = isset( $attributes['dsgoZoom'] ) ? intval( $attributes['dsgoZoom'] ) : 13;
-				$address            = isset( $attributes['dsgoAddress'] ) ? $attributes['dsgoAddress'] : '';
-				$marker_icon        = isset( $attributes['dsgoMarkerIcon'] ) ? $attributes['dsgoMarkerIcon'] : '📍';
+				$provider    = isset( $attributes['dsgoProvider'] ) ? $attributes['dsgoProvider'] : 'openstreetmap';
+				$latitude    = isset( $attributes['dsgoLatitude'] ) ? floatval( $attributes['dsgoLatitude'] ) : 40.7128;
+				$longitude   = isset( $attributes['dsgoLongitude'] ) ? floatval( $attributes['dsgoLongitude'] ) : -74.006;
+				$zoom        = isset( $attributes['dsgoZoom'] ) ? intval( $attributes['dsgoZoom'] ) : 13;
+				$address     = isset( $attributes['dsgoAddress'] ) ? $attributes['dsgoAddress'] : '';
+				$marker_icon = isset( $attributes['dsgoMarkerIcon'] ) ? $attributes['dsgoMarkerIcon'] : '📍';
 				// Treat an unset OR explicitly-cleared ('') marker color as the
 				// block default, mirroring render.php — the editor now stores ''
 				// on clear, and the resolver short-circuits empty strings before
 				// consulting its own fallback.
-				$marker_color       = ( isset( $attributes['dsgoMarkerColor'] ) && '' !== $attributes['dsgoMarkerColor'] )
+				$marker_color = ( isset( $attributes['dsgoMarkerColor'] ) && '' !== $attributes['dsgoMarkerColor'] )
 					? $attributes['dsgoMarkerColor']
 					: '#e74c3c';
 				// Resolve theme palette presets (var:preset|color|{slug}) to a
@@ -939,15 +942,22 @@ class Block_Inserter {
 					$content_class .= 'dsgo-card__content--' . esc_attr( $content_alignment );
 				}
 
+				// title/subtitle/bodyText are DOM-sourced, so the element must stay
+				// in the markup whenever the text is non-empty (matching save.js) —
+				// a hidden field carries the `--hidden` modifier instead of being
+				// omitted, otherwise the sourced text would be silently lost.
 				$content_html = '';
-				if ( $show_title && $title ) {
-					$content_html .= '<h3 class="dsgo-card__title">' . wp_kses_post( $title ) . '</h3>';
+				if ( $title ) {
+					$title_class   = 'dsgo-card__title' . ( $show_title ? '' : ' dsgo-card__title--hidden' );
+					$content_html .= '<h3 class="' . esc_attr( $title_class ) . '">' . wp_kses_post( $title ) . '</h3>';
 				}
-				if ( $show_subtitle && $subtitle ) {
-					$content_html .= '<p class="dsgo-card__subtitle">' . wp_kses_post( $subtitle ) . '</p>';
+				if ( $subtitle ) {
+					$subtitle_class = 'dsgo-card__subtitle' . ( $show_subtitle ? '' : ' dsgo-card__subtitle--hidden' );
+					$content_html  .= '<p class="' . esc_attr( $subtitle_class ) . '">' . wp_kses_post( $subtitle ) . '</p>';
 				}
-				if ( $show_body && $body_text ) {
-					$content_html .= '<p class="dsgo-card__body">' . wp_kses_post( $body_text ) . '</p>';
+				if ( $body_text ) {
+					$body_class    = 'dsgo-card__body' . ( $show_body ? '' : ' dsgo-card__body--hidden' );
+					$content_html .= '<p class="' . esc_attr( $body_class ) . '">' . wp_kses_post( $body_text ) . '</p>';
 				}
 
 				// CTA area for inner blocks.
@@ -1087,10 +1097,10 @@ class Block_Inserter {
 				// target="_self" alongside href. Defaulting to '' here suppressed
 				// the attribute and every AI-inserted LINKED icon button failed
 				// validation on first open.
-				$link_target = isset( $attributes['linkTarget'] ) && '' !== $attributes['linkTarget']
+				$link_target    = isset( $attributes['linkTarget'] ) && '' !== $attributes['linkTarget']
 					? $attributes['linkTarget']
 					: '_self';
-				$rel         = isset( $attributes['rel'] ) ? $attributes['rel'] : '';
+				$rel            = isset( $attributes['rel'] ) ? $attributes['rel'] : '';
 				$icon           = isset( $attributes['icon'] ) ? $attributes['icon'] : 'lightbulb';
 				$icon_position  = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'start';
 				$icon_size      = isset( $attributes['iconSize'] ) ? intval( $attributes['iconSize'] ) : 20;
@@ -1206,8 +1216,8 @@ class Block_Inserter {
 				// constrained layout caps IT at the content column — with the
 				// button shrink-wrapped inside it (see save.js). Matches
 				// `getJustificationClass()` (src/utils/justification.js).
-				$wrapper_class      = 'wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--' . $justification;
-				$button_style_attr  = '' !== $button_style ? ' style="' . esc_attr( $button_style ) . '"' : '';
+				$wrapper_class     = 'wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--' . $justification;
+				$button_style_attr = '' !== $button_style ? ' style="' . esc_attr( $button_style ) . '"' : '';
 
 				return array(
 					'opening' => '<div class="' . esc_attr( $wrapper_class ) . '"><' . $tag . ' class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $button_style_attr . $extra_attrs . '>' . $inner_html,
@@ -1468,11 +1478,14 @@ class Block_Inserter {
 
 				// Inner HTML.
 				$inner_html = '<div class="dsgo-table-of-contents__content">';
-				if ( $show_title ) {
-					$inner_html .= '<div class="dsgo-table-of-contents__title">' . esc_html( $title_text ) . '</div>';
-				}
-				$inner_html .= '<' . $list_tag . ' class="dsgo-table-of-contents__list"></' . $list_tag . '>';
-				$inner_html .= '</div>';
+				// titleText is DOM-sourced, so the title element is always rendered
+				// (matching save.js) and hidden via the `--hidden` modifier when the
+				// toggle is off, rather than being omitted — otherwise a hidden
+				// title's text would be silently lost on reload.
+				$toc_title_class = 'dsgo-table-of-contents__title' . ( $show_title ? '' : ' dsgo-table-of-contents__title--hidden' );
+				$inner_html     .= '<div class="' . esc_attr( $toc_title_class ) . '">' . esc_html( $title_text ) . '</div>';
+				$inner_html     .= '<' . $list_tag . ' class="dsgo-table-of-contents__list"></' . $list_tag . '>';
+				$inner_html     .= '</div>';
 
 				return array(
 					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $data_attrs . '>' . $inner_html,
@@ -1984,7 +1997,9 @@ class Block_Inserter {
 			'data-ajax-submit="' . ( $ajax_submit ? 'true' : 'false' ) . '"',
 			'data-success-message="' . esc_attr( $success_message ) . '"',
 			'data-error-message="' . esc_attr( $error_message ) . '"',
-			'data-submit-text="' . esc_attr( $submit_button_text ) . '"',
+			// submitButtonText is sourced from the submit button's text, not a
+			// wrapper attribute — save.js no longer emits data-submit-text, so
+			// emitting it here would fail block validation.
 			'data-enable-email="' . ( $enable_email ? 'true' : 'false' ) . '"',
 			'data-email-to="' . esc_attr( $email_to ) . '"',
 			'data-email-subject="' . esc_attr( $email_subject ) . '"',

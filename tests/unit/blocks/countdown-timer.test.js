@@ -58,6 +58,9 @@ function createTimerFixture({
 	const messageEl = document.createElement('div');
 	messageEl.classList.add('dsgo-countdown-timer__completion-message');
 	messageEl.style.display = 'none';
+	// The message text is server-rendered into this element (sourced into the
+	// completionMessage attribute); view.js just reveals it on completion.
+	messageEl.textContent = completionMessage;
 	timer.appendChild(messageEl);
 
 	document.body.appendChild(timer);

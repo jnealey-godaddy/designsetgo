@@ -132,7 +132,6 @@ export default function FormBuilderSave({ attributes }) {
 		'data-ajax-submit': ajaxSubmit,
 		'data-success-message': successMessage,
 		'data-error-message': errorMessage,
-		'data-submit-text': submitButtonText,
 		...(enableTurnstile && {
 			'data-dsgo-turnstile': 'true',
 		}),

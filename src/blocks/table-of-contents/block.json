@@ -63,6 +63,8 @@
 		},
 		"titleText": {
 			"type": "string",
+			"source": "text",
+			"selector": ".dsgo-table-of-contents__title",
 			"default": "Table of Contents"
 		},
 		"scrollSmooth": {

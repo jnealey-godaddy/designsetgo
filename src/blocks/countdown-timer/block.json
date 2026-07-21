@@ -103,6 +103,8 @@
 		},
 		"completionMessage": {
 			"type": "string",
+			"source": "text",
+			"selector": ".dsgo-countdown-timer__completion-message",
 			"default": "The countdown has ended!"
 		},
 		"numberColor": {

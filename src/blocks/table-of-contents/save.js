@@ -73,11 +73,21 @@ export default function Save({ attributes }) {
 	return (
 		<div {...blockProps}>
 			<div className="dsgo-table-of-contents__content">
-				{showTitle && (
-					<div className="dsgo-table-of-contents__title">
-						{titleText}
-					</div>
-				)}
+				{/*
+				 * The title element is ALWAYS rendered (matching the previous
+				 * `showTitle`-gated markup for shown titles) so `titleText` has a
+				 * stable element to be sourced from — otherwise toggling the title
+				 * off would drop the element and reset the text on reload. When the
+				 * title is hidden it carries a `--hidden` modifier (CSS display:none)
+				 * instead of being omitted from the tree.
+				 */}
+				<div
+					className={classnames('dsgo-table-of-contents__title', {
+						'dsgo-table-of-contents__title--hidden': !showTitle,
+					})}
+				>
+					{titleText}
+				</div>
 				{/* Placeholder - frontend JS will populate this */}
 				<ListTag className="dsgo-table-of-contents__list" />
 			</div>
