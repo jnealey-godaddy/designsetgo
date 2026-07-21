@@ -1,4 +1,5 @@
 import { __ } from '@wordpress/i18n';
+// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
 import { Button, __experimentalVStack as VStack } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { parse, serialize } from '@wordpress/blocks';

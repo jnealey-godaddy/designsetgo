@@ -2,6 +2,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import {
 	Button,
 	SelectControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
 	__experimentalVStack as VStack,
 } from '@wordpress/components';
 
@@ -15,14 +16,14 @@ import {
  *   depth        - number (0 = root)
  *   renderClause - (clause, idx, updateEntry, removeEntry) => JSX — renders one leaf clause
  *   newClause    - object — default shape for a new leaf clause
- * @param root0
- * @param root0.group
- * @param root0.onChange
- * @param root0.onRemove
- * @param root0.depth
- * @param root0.renderClause
- * @param root0.newClause
- * @param root0.isAddDisabled
+ * @param {Object}   root0
+ * @param {Object}   root0.group
+ * @param {Function} root0.onChange
+ * @param {Function} [root0.onRemove]
+ * @param {number}   root0.depth
+ * @param {Function} root0.renderClause
+ * @param {Object}   root0.newClause
+ * @param {boolean}  [root0.isAddDisabled]
  */
 export default function ClauseGroupShell({
 	group,

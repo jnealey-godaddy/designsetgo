@@ -10,8 +10,6 @@ import { Spinner, Notice } from '@wordpress/components';
 import { __, sprintf } from '@wordpress/i18n';
 
 export default function PreviewPanel({ preview, returns = [] }) {
-	const isImage = returns.includes('image');
-
 	if (preview.status === 'idle') {
 		return null;
 	}
@@ -50,6 +48,8 @@ export default function PreviewPanel({ preview, returns = [] }) {
 			</Notice>
 		);
 	}
+
+	const isImage = returns.includes('image');
 
 	if (isImage && preview.value && typeof preview.value === 'object') {
 		return (

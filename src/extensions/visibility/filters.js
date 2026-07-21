@@ -77,7 +77,10 @@ const withVisibilityGate = createHigherOrderComponent(
 
 		// Only gate inside query-item previews. If the item index context key is
 		// absent we are on the main canvas and must not hide anything.
-		if (ctx['designsetgo/itemIndex'] == null) {
+		if (
+			ctx['designsetgo/itemIndex'] === null ||
+			ctx['designsetgo/itemIndex'] === undefined
+		) {
 			return <BlockListBlock {...props} />;
 		}
 

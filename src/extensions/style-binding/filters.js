@@ -6,7 +6,9 @@ import {
 	Button,
 	SelectControl,
 	TextControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
 	__experimentalHStack as HStack,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
 	__experimentalVStack as VStack,
 } from '@wordpress/components';
 import { createHigherOrderComponent } from '@wordpress/compose';
