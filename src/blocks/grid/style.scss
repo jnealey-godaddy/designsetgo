@@ -92,6 +92,7 @@
 		> * {
 			min-width: 0;     // Allow shrinking below content width
 			min-height: 0;    // Allow shrinking vertically
+			overflow-wrap: anywhere; // Break long words/URLs so they don't overflow the cell
 		}
 
 		// CRITICAL: Block-level elements need full width for text-align to work properly

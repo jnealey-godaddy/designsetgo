@@ -81,6 +81,8 @@
 		},
 		"text": {
 			"type": "string",
+			"source": "html",
+			"selector": ".dsgo-modal-trigger__text",
 			"default": "Open Modal"
 		},
 		"buttonStyle": {

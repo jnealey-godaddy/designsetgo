@@ -21,10 +21,14 @@
 	"attributes": {
 		"date": {
 			"type": "string",
+			"source": "html",
+			"selector": ".dsgo-timeline-item__date",
 			"default": ""
 		},
 		"title": {
 			"type": "string",
+			"source": "html",
+			"selector": ".dsgo-timeline-item__title",
 			"default": ""
 		},
 		"icon": {
