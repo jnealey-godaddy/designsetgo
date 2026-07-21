@@ -49,6 +49,12 @@
         font-weight: 600;
         margin: 0;
         color: inherit;
+
+        // The title element is always present so `titleText` can be sourced from
+        // it; this modifier hides it when the author turns the title off.
+        &--hidden {
+            display: none;
+        }
     }
 
     &__list {
