@@ -359,6 +359,162 @@ const v1 = {
 };
 
 /**
+ * Site-designer responsive-grid markup where the tablet column count lived in a
+ * `className` (e.g. `dsgo-grid-cols-tablet-1`) rather than the `tabletColumns`
+ * attribute — and the block comment's `tabletColumns` drifted away from it.
+ *
+ * These grids combine the legacy min-width-in-CSS shape (see `legacyMinWidth`
+ * below) with a `dsgo-grid-cols-tablet-N` class supplied through `className`,
+ * while the comment still carries a stale `tabletColumns` (usually the default).
+ * The current save() emits a SECOND tablet class from that attribute
+ * (`dsgo-grid-cols-tablet-2`), which the stored markup never had, so the block
+ * fails validation. WordPress compares the `class` attribute as an unordered
+ * SET, so reproducing the class set exactly is what matters.
+ *
+ * This entry omits the attribute-derived tablet class (the stored one comes from
+ * `className`) and reproduces the inner grid-template-columns verbatim from the
+ * captured style, so the block validates. migrate() recovers the min width into
+ * `columnMinWidth`, lifts the real tablet count out of the class into
+ * `tabletColumns`, and drops the now-redundant `dsgo-grid-cols-tablet-N` class —
+ * after which the current save() reproduces the (now consistent) markup.
+ */
+const legacyResponsiveTabletClass = {
+	supports: sharedSupports,
+	attributes: {
+		...metadata.attributes,
+		legacyInnerStyle: {
+			type: 'string',
+			source: 'attribute',
+			selector: '.dsgo-grid__inner',
+			attribute: 'style',
+		},
+	},
+	// No isEligible: markup-change deprecation, reached by save-matching on the
+	// invalid stored HTML. The omitted tablet class means this only matches grids
+	// whose stored class set lacks an attribute-derived tablet class (i.e. it came
+	// from className) — normal grids keep their tablet class and fall through.
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			constrainWidth,
+			contentWidth,
+			desktopColumns,
+			mobileColumns,
+			rowGap,
+			columnGap,
+			alignItems,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			style,
+			legacyInnerStyle,
+		} = attributes;
+
+		// NOTE: no `dsgo-grid-cols-tablet-${tabletColumns}` — the stored tablet
+		// class is supplied via className, and adding one from the drifted
+		// attribute would introduce a class the stored markup never had.
+		const className = [
+			'dsgo-grid',
+			`dsgo-grid-cols-${desktopColumns}`,
+			`dsgo-grid-cols-mobile-${mobileColumns}`,
+			!constrainWidth && 'dsgo-no-width-constraint',
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+		const blockProps = useBlockProps.save({
+			className,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+			},
+		});
+
+		const blockGapValue = style?.spacing?.blockGap;
+		const isBlockGapObject =
+			typeof blockGapValue === 'object' && blockGapValue !== null;
+		const blockGapRow = convertPresetToCSSVar(
+			isBlockGapObject ? blockGapValue?.top : blockGapValue
+		);
+		const blockGapColumn = convertPresetToCSSVar(
+			isBlockGapObject ? blockGapValue?.left : blockGapValue
+		);
+		const defaultGap = 'var(--wp--preset--spacing--50)';
+
+		const gtc = (legacyInnerStyle || '').match(
+			/grid-template-columns:\s*([^;]+)/i
+		);
+
+		const innerStyles = {
+			display: 'grid',
+			gridTemplateColumns: gtc
+				? gtc[1].trim()
+				: `repeat(${desktopColumns || 3}, 1fr)`,
+			alignItems: alignItems || 'stretch',
+			rowGap: blockGapRow || rowGap || defaultGap,
+			columnGap: blockGapColumn || columnGap || defaultGap,
+		};
+
+		if (constrainWidth) {
+			innerStyles.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyles.marginLeft = 'auto';
+			innerStyles.marginRight = 'auto';
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-grid__inner',
+			style: innerStyles,
+		});
+
+		return (
+			<TagName {...blockProps}>
+				<div {...innerBlocksProps} />
+			</TagName>
+		);
+	},
+	migrate(attributes) {
+		const { legacyInnerStyle, className, ...rest } = attributes;
+		const gtc = (legacyInnerStyle || '').match(
+			/grid-template-columns:\s*([^;]+)/i
+		);
+		const mm = gtc ? gtc[1].match(MIN_WIDTH_RE) : null;
+		const tabletMatch = (className || '').match(
+			/dsgo-grid-cols-tablet-(\d+)/
+		);
+		const cleanClassName = (className || '')
+			.split(/\s+/)
+			.filter((c) => c && !/^dsgo-grid-cols-tablet-\d+$/.test(c))
+			.join(' ');
+		return {
+			...rest,
+			columnMinWidth: mm ? mm[1] : '',
+			...(tabletMatch && { tabletColumns: Number(tabletMatch[1]) }),
+			className: cleanClassName || undefined,
+		};
+	},
+};
+
+/**
  * Legacy responsive-grid markup from gd-pattern-library patterns.
  *
  * AI-generated patterns hard-coded `grid-template-columns: repeat(N, minmax(
@@ -515,4 +671,9 @@ const legacyMinWidth = {
 // columnMinWidth attribute from stored HTML. styleVariationClasses.migrate()
 // is a passthrough, so if it "won" for such content, columnMinWidth would be
 // silently dropped (columns collapse to 1fr) with no recovery warning.
-export default [legacyMinWidth, styleVariationClasses, v1];
+export default [
+	legacyResponsiveTabletClass,
+	legacyMinWidth,
+	styleVariationClasses,
+	v1,
+];
