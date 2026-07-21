@@ -42,6 +42,19 @@ import metadata from './block.json';
  */
 
 /**
+ * Whether `className` appears as a whole class token in the markup (delimited by
+ * a quote or whitespace) rather than as a bare substring, so a future sibling
+ * class that merely starts with `className` (e.g. a hypothetical
+ * `dsgo-card__body-x`) can't be mistaken for the field's own element.
+ *
+ * @param {string} html      The stored block markup.
+ * @param {string} className The class name to look for.
+ * @return {boolean} Whether the class token is present.
+ */
+const hasClassToken = (html, className) =>
+	new RegExp(`(?:^|[\\s"])${className}(?=[\\s"])`).test(html);
+
+/**
  * True when a field has text (from the block comment) but its element is absent
  * from the stored markup — i.e. it was saved while the field was toggled off.
  *
@@ -51,7 +64,7 @@ import metadata from './block.json';
  * @return {boolean} Whether the field's element is missing from the markup.
  */
 const isTextMissingFromMarkup = (text, className, html) =>
-	Boolean(text) && !html.includes(className);
+	Boolean(text) && !hasClassToken(html, className);
 
 const v1 = {
 	apiVersion: metadata.apiVersion,

@@ -20,11 +20,18 @@ Follow-up to PR #482. Those 5 "always-present label" blocks were fixed by adding
 - Today: rendered as `data-completion-message` on the wrapper AND as the text of
   the hidden `.dsgo-countdown-timer__completion-message` div. The div is
   `display:none` and JS overwrites its text from `data-completion-message` on
-  completion (view.js:135), so the div's server text is redundant.
-- Fix: render the div EMPTY; source `completionMessage` from the
-  `data-completion-message` attribute (`source: 'attribute'`).
-- Deprecation: snapshot current save (div contains text) + static
-  `completionMessage`; `migrate` identity. `apiVersion: 3`. No isEligible.
+  completion (view.js:135), so the wrapper's data-attribute copy is redundant.
+- Fix (as shipped): keep the message as the div's text and source
+  `completionMessage` from it (`source: 'text'`, selector
+  `.dsgo-countdown-timer__completion-message`) — a single source of truth that
+  stays translatable. Remove the duplicate `data-completion-message` attribute
+  and simplify view.js to just reveal the already server-rendered div.
+  (An earlier draft sourced from the `data-completion-message` attribute via
+  `source: 'attribute'`, but WordPress does not resolve a root-wrapper attribute
+  source here, and it would have made the message untranslatable.)
+- Deprecation: snapshot the old markup (div text + `data-completion-message`),
+  `completionMessage` sourced from the div; `migrate` identity. `apiVersion: 3`.
+  No isEligible.
 
 ## Shape B — conditionally-rendered label (data-preserving isEligible deprecation)
 
