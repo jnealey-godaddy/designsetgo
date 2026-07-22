@@ -137,7 +137,6 @@ $dsgo-shape-bleed: 1px;
 // that hasn't opted into a spacing preset — would otherwise reserve NO room and
 // let content sit under the shape. These :where() rules reserve space keyed to
 // the actual divider siblings, so only the present position(s) get padding.
-// -
 // The reserved amount MATCHES the divider height: save() exposes it on the
 // wrapper as `--dsgo-shape-clearance-{top,bottom}` for any non-default height,
 // so a 300px divider clears 300px, not a flat 100px. The `100px` fallback is
