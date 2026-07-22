@@ -131,6 +131,24 @@ $dsgo-shape-bleed: 1px;
 	}
 }
 
+// Default content clearance. save() emits inner padding ONLY when the author
+// sets an explicit "Content Clearance" spacing (a preset token or raw length),
+// so a brand-new divider — or one inserted by the Abilities API or a pattern
+// that hasn't opted into a spacing preset — would otherwise reserve NO room and
+// let content sit under the shape. These :where() rules give a sensible default
+// (the default divider height, 100px) keyed to the actual divider siblings, so
+// only the present position(s) reserve space. Zero specificity means any
+// explicit inline padding from save() always wins. Legacy content stays exact:
+// its deprecation migrate() carries the old height into an explicit spacing
+// value, which serializes as inline padding and overrides this fallback.
+:where(.dsgo-shape-divider--top + .dsgo-stack__inner) {
+	padding-top: 100px;
+}
+
+:where(.dsgo-stack__inner:has(+ .dsgo-shape-divider--bottom)) {
+	padding-bottom: 100px;
+}
+
 // Respect user preference for reduced motion.
 @media (prefers-reduced-motion: reduce) {
 

@@ -242,9 +242,24 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 		).toBe(false);
 	});
 
-	test('migrate is a passthrough', () => {
+	test('migrate adds no clearance when the section has no divider', () => {
 		const attrs = { className: 'is-style-overlay-dark', overlayColor: '' };
-		expect(v7Deprecation.migrate(attrs)).toBe(attrs);
+		const migrated = v7Deprecation.migrate(attrs);
+		expect(migrated).toEqual(attrs);
+		expect(migrated.shapeDividerTopSpacing).toBeUndefined();
+		expect(migrated.shapeDividerBottomSpacing).toBeUndefined();
+	});
+
+	test('migrate carries height-derived clearance for a v7-signature divider (cascade fix)', () => {
+		// A block that matches v7's own signature never reaches v9.migrate(), so
+		// the height→spacing carry-over must run here too or the clearance is
+		// silently dropped. See migrateShapeDividerSpacing in deprecated.js.
+		const migrated = v7Deprecation.migrate({
+			className: 'is-style-overlay-dark',
+			shapeDividerTop: 'wave',
+			shapeDividerTopHeight: 80,
+		});
+		expect(migrated.shapeDividerTopSpacing).toBe('80px');
 	});
 });
 
@@ -345,12 +360,63 @@ describe('section deprecations - style-kit hover variation migration (v8)', () =
 		).toBe(false);
 	});
 
-	test('migrate is a passthrough', () => {
+	test('migrate adds no clearance when the section has no divider', () => {
 		const attrs = {
 			className: 'is-style-hover-text-light',
 			hoverTextColor: '',
 		};
-		expect(v8Deprecation.migrate(attrs)).toBe(attrs);
+		const migrated = v8Deprecation.migrate(attrs);
+		expect(migrated).toEqual(attrs);
+		expect(migrated.shapeDividerTopSpacing).toBeUndefined();
+		expect(migrated.shapeDividerBottomSpacing).toBeUndefined();
+	});
+
+	test('migrate carries height-derived clearance for a v8-signature divider (cascade fix)', () => {
+		// This is the exact gap the original PR missed: a divider section that
+		// also carries a hover variation matches v8, not v9, so v9.migrate()
+		// never runs. Without the carry-over here the section keeps its shape
+		// divider but loses its clearance on the next save.
+		const migrated = v8Deprecation.migrate({
+			className: 'is-style-hover-text-light',
+			shapeDividerBottom: 'wave',
+			shapeDividerBottomHeight: 120,
+		});
+		expect(migrated.shapeDividerBottomSpacing).toBe('120px');
+	});
+
+	test('a real v8-signature divider section (hover variation + divider) migrates silently AND keeps its clearance end-to-end', () => {
+		// End-to-end guard for the cascade gap: build byte-faithful v8-era
+		// markup (a bottom divider with height-derived px clearance, a hover
+		// variation, and NO activation class), then run it through the real
+		// parse()/deprecation pipeline. It must route to v8 (not v9), migrate
+		// silently, and come out the other side with BOTH the restored hover
+		// activation class and its clearance preserved as an explicit spacing.
+		const markup = buildOldMarkup(
+			{
+				className: 'is-style-hover-text-light',
+				shapeDividerBottom: 'wave',
+				shapeDividerBottomHeight: 120,
+				backgroundColor: 'contrast',
+			},
+			v8Deprecation
+		);
+
+		const [block] = parse(markup);
+
+		// A silent migration logs an info (WordPress's "Block successfully
+		// updated"), which @wordpress/jest-console requires be asserted. Its
+		// presence — with no accompanying warning/error — is what "silent"
+		// (no "Attempt Recovery") means here.
+		expect(console).toHaveInformed();
+
+		expect(block.name).toBe('designsetgo/section');
+		expect(block.isValid).toBe(true);
+		// The carry-over ran through v8, not v9.
+		expect(block.attributes.shapeDividerBottomSpacing).toBe('120px');
+		// Re-serialized markup keeps the clearance and restores the hover class.
+		const content = getBlockContent(block);
+		expect(content).toContain('padding-bottom:120px');
+		expect(content).toContain('dsgo-stack--has-hover-text');
 	});
 });
 

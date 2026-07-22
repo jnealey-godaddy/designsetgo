@@ -447,6 +447,10 @@ class Abilities_Smoke_Test extends WP_UnitTestCase {
 		$this->assertSame( 'wave', $blocks[0]['attrs']['shapeDividerBottom'] );
 		$this->assertSame( '#ffffff', $blocks[0]['attrs']['shapeDividerBottomColor'] );
 		$this->assertSame( 100, $blocks[0]['attrs']['shapeDividerBottomHeight'] );
+		// Clearance is no longer derived from height automatically, so the
+		// configurator must set it explicitly or AI-inserted dividers render
+		// with content overlapping the shape.
+		$this->assertSame( '100px', $blocks[0]['attrs']['shapeDividerBottomSpacing'] );
 	}
 
 	/**

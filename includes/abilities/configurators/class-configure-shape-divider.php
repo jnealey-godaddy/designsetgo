@@ -406,6 +406,14 @@ class Configure_Shape_Divider extends Abstract_Ability {
 				$attributes[ 'shapeDivider' . $pos . 'Width' ] = $width;
 			}
 
+			// Reserve inner content clearance so content is not overlapped by the
+			// shape. The block no longer derives this automatically from height —
+			// clearance is an explicit `shapeDivider{Pos}Spacing` value — so set a
+			// raw px length matching the shape height (default 100), mirroring the
+			// pre-2.6 auto-clearance. An author can later swap it for a theme
+			// spacing preset in the inspector.
+			$attributes[ 'shapeDivider' . $pos . 'Spacing' ] = ( $height ?? 100 ) . 'px';
+
 			$attributes[ 'shapeDivider' . $pos . 'FlipX' ] = $flip_x;
 			$attributes[ 'shapeDivider' . $pos . 'FlipY' ] = $flip_y;
 			$attributes[ 'shapeDivider' . $pos . 'Front' ] = $in_front;

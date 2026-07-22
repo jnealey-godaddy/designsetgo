@@ -6,7 +6,7 @@
  * @since 1.4.2
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { useSettings } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -147,6 +147,26 @@ function ShapeDividerPanel({
 	sectionBackgroundColor = '',
 	sectionTextColor = '',
 }) {
+	// A clearance carried over from legacy content is a raw length (e.g. "80px"
+	// from a pre-2.6 divider height) that matches no preset token. Surface it as
+	// a synthetic option so the control shows the active value instead of
+	// appearing blank — otherwise an editor could silently overwrite a preserved
+	// value while thinking nothing was set.
+	const clearanceOptions =
+		spacing && !spacingOptions.some((option) => option.value === spacing)
+			? [
+					...spacingOptions,
+					{
+						label: sprintf(
+							/* translators: %s: the raw CSS length currently applied as clearance. */
+							__('Custom (%s)', 'designsetgo'),
+							spacing
+						),
+						value: spacing,
+					},
+				]
+			: spacingOptions;
+
 	return (
 		<PanelBody title={title} initialOpen={false}>
 			<SelectControl
@@ -210,7 +230,7 @@ function ShapeDividerPanel({
 					<SelectControl
 						label={__('Content Clearance', 'designsetgo')}
 						value={spacing || ''}
-						options={spacingOptions}
+						options={clearanceOptions}
 						onChange={(value) =>
 							onChange({ spacing: value || undefined })
 						}

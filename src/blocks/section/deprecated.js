@@ -18,6 +18,43 @@ import {
 import ShapeDivider from './components/ShapeDivider';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
+/**
+ * Carry a legacy height-derived shape-divider clearance into the new
+ * `shapeDivider{Top,Bottom}Spacing` attribute as a raw CSS length, preserving
+ * the exact pre-2.6 clearance (`${height || 100}px`). The current save()
+ * serializes a raw length unchanged, so the stored padding is reproduced on
+ * the next render.
+ *
+ * This MUST be shared by every shape-divider-era deprecation (v3–v9), not just
+ * the newest: WordPress runs exactly ONE deprecation entry per stored block —
+ * whichever version's save() reproduces the stored HTML — so a block that
+ * matches an older signature (e.g. an overlay/hover variation missing its
+ * activation class) never reaches v9.migrate(). If the carry-over lived only in
+ * v9, that block would migrate successfully but silently lose its clearance,
+ * since the current save() emits inner padding only when a spacing attribute is
+ * set. See CLAUDE.md, "deprecations do not cascade".
+ *
+ * @param {Object} attributes Parsed block attributes.
+ * @return {Object} Attributes with the spacing carry-over applied.
+ */
+function migrateShapeDividerSpacing(attributes) {
+	const migrated = { ...attributes };
+	if (attributes.shapeDividerTop && !attributes.shapeDividerTopSpacing) {
+		migrated.shapeDividerTopSpacing = `${
+			attributes.shapeDividerTopHeight || 100
+		}px`;
+	}
+	if (
+		attributes.shapeDividerBottom &&
+		!attributes.shapeDividerBottomSpacing
+	) {
+		migrated.shapeDividerBottomSpacing = `${
+			attributes.shapeDividerBottomHeight || 100
+		}px`;
+	}
+	return migrated;
+}
+
 // Shared supports for deprecations (must match what was in block.json when blocks were saved).
 // Without this, useBlockProps.save() in deprecated save functions won't generate
 // the correct classes/styles (has-*-color, padding, etc.), causing validation to fail.
@@ -461,24 +498,8 @@ const v9 = {
 	},
 	migrate(attributes) {
 		// Preserve the exact clearance by carrying the old height-derived px
-		// value into the new spacing attribute as a raw CSS length. The current
-		// save() converts a raw length through unchanged, so it reproduces the
-		// stored padding byte-for-byte on the next render.
-		const migrated = { ...attributes };
-		if (attributes.shapeDividerTop && !attributes.shapeDividerTopSpacing) {
-			migrated.shapeDividerTopSpacing = `${
-				attributes.shapeDividerTopHeight || 100
-			}px`;
-		}
-		if (
-			attributes.shapeDividerBottom &&
-			!attributes.shapeDividerBottomSpacing
-		) {
-			migrated.shapeDividerBottomSpacing = `${
-				attributes.shapeDividerBottomHeight || 100
-			}px`;
-		}
-		return migrated;
+		// value into the new spacing attribute as a raw CSS length.
+		return migrateShapeDividerSpacing(attributes);
 	},
 };
 
@@ -693,10 +714,11 @@ const v8 = {
 		);
 	},
 	migrate(attributes) {
-		// Only the serialised hover-activation classes differ; the current
-		// save() derives them from the style variation on className, so no
-		// attribute change.
-		return attributes;
+		// The serialised hover-activation classes differ (the current save()
+		// derives them from the style variation on className). Also carry the
+		// legacy height-derived clearance into the new spacing attribute — a
+		// block matching THIS signature never reaches v9.migrate().
+		return migrateShapeDividerSpacing(attributes);
 	},
 };
 
@@ -903,9 +925,11 @@ const v7 = {
 		);
 	},
 	migrate(attributes) {
-		// Only the serialised overlay class differs; the current save() derives
-		// it from the style variation on className, so no attribute change.
-		return attributes;
+		// The serialised overlay class differs (the current save() derives it
+		// from the style variation on className). Also carry the legacy
+		// height-derived clearance into the new spacing attribute — a block
+		// matching THIS signature never reaches v9.migrate().
+		return migrateShapeDividerSpacing(attributes);
 	},
 };
 
@@ -1182,7 +1206,10 @@ const v6 = {
 		);
 	},
 	migrate(attributes) {
-		return attributes;
+		// Carry the legacy height-derived clearance into the new spacing
+		// attribute. A block matching THIS signature never reaches v9.migrate(),
+		// so the carry-over must run here too (see migrateShapeDividerSpacing).
+		return migrateShapeDividerSpacing(attributes);
 	},
 };
 
@@ -1383,7 +1410,10 @@ const v5 = {
 		);
 	},
 	migrate(attributes) {
-		return attributes;
+		// Carry the legacy height-derived clearance into the new spacing
+		// attribute. A block matching THIS signature never reaches v9.migrate(),
+		// so the carry-over must run here too (see migrateShapeDividerSpacing).
+		return migrateShapeDividerSpacing(attributes);
 	},
 };
 
@@ -1557,7 +1587,10 @@ const v4 = {
 		);
 	},
 	migrate(attributes) {
-		return attributes;
+		// Carry the legacy height-derived clearance into the new spacing
+		// attribute. A block matching THIS signature never reaches v9.migrate(),
+		// so the carry-over must run here too (see migrateShapeDividerSpacing).
+		return migrateShapeDividerSpacing(attributes);
 	},
 };
 
@@ -1717,7 +1750,10 @@ const v3 = {
 		);
 	},
 	migrate(attributes) {
-		return attributes;
+		// Carry the legacy height-derived clearance into the new spacing
+		// attribute. A block matching THIS signature never reaches v9.migrate(),
+		// so the carry-over must run here too (see migrateShapeDividerSpacing).
+		return migrateShapeDividerSpacing(attributes);
 	},
 };
 

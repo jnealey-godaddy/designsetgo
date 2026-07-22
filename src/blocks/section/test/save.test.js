@@ -116,6 +116,77 @@ describe('section save - shape dividers', () => {
 	});
 });
 
+describe('section save - shape divider content clearance', () => {
+	// The clearance is inner padding on `.dsgo-stack__inner`. The section's OWN
+	// block padding lives on the OUTER wrapper (`.dsgo-stack`), so assertions
+	// must be scoped to the inner element's style — a whole-HTML substring match
+	// would collide with the wrapper's default `spacing|50`/`30` padding. The
+	// clearance tests also use `spacing|70` (not the default `50`) so a match
+	// can only come from the clearance, never the wrapper default.
+	const innerStyle = (html) => {
+		const match = html.match(
+			/class="dsgo-stack__inner"[^>]*style="([^"]*)"/
+		);
+		return match ? match[1] : '';
+	};
+
+	test('a spacing preset token serializes to inner padding CSS var (top)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopSpacing: 'var:preset|spacing|70',
+			})
+		);
+		expect(innerStyle(html)).toContain(
+			'padding-top:var(--wp--preset--spacing--70)'
+		);
+	});
+
+	test('a spacing preset token serializes to inner padding CSS var (bottom)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerBottom: 'wave',
+				shapeDividerBottomSpacing: 'var:preset|spacing|70',
+			})
+		);
+		expect(innerStyle(html)).toContain(
+			'padding-bottom:var(--wp--preset--spacing--70)'
+		);
+	});
+
+	test('a raw CSS length (e.g. a migrated legacy value) passes through unchanged', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopSpacing: '80px',
+			})
+		);
+		expect(innerStyle(html)).toContain('padding-top:80px');
+	});
+
+	test('a divider with NO clearance set emits no inner padding (CSS fallback owns the default)', () => {
+		const html = serialize(
+			createBlock(metadata.name, { shapeDividerTop: 'wave' })
+		);
+		expect(innerStyle(html)).not.toContain('padding');
+	});
+
+	test('clearance is not emitted for a position that has no divider', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopSpacing: 'var:preset|spacing|70',
+				// bottom spacing set but no bottom divider — must be ignored
+				shapeDividerBottomSpacing: 'var:preset|spacing|70',
+			})
+		);
+		expect(innerStyle(html)).toContain(
+			'padding-top:var(--wp--preset--spacing--70)'
+		);
+		expect(innerStyle(html)).not.toContain('padding-bottom');
+	});
+});
+
 describe('section save - overlay class', () => {
 	test('no overlay by default', () => {
 		const html = serialize(createBlock(metadata.name, {}));
