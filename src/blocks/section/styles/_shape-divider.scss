@@ -146,6 +146,21 @@ $dsgo-shape-bleed: 1px;
 // padding from save() always wins. Legacy content stays exact: its deprecation
 // migrate() carries the old height into an explicit spacing value, which
 // serializes as inline padding and overrides this fallback.
+// Reset the clearance variables on every section wrapper. Custom properties
+// inherit through the ENTIRE descendant subtree, not just to the element that
+// declared them, so without this a Section nested inside another Section would
+// inherit the ancestor's `--dsgo-shape-clearance-*` and reserve the wrong
+// amount (a nested default-height divider would pick up the outer's 300px
+// instead of its own 100px default). save() sets the real per-instance value
+// inline on the wrapper that needs it — an inline style always beats this
+// stylesheet declaration, so that wrapper keeps its real value while every
+// other wrapper resets to `initial` and falls back to the `, 100px` default
+// below.
+.dsgo-stack {
+	--dsgo-shape-clearance-top: initial;
+	--dsgo-shape-clearance-bottom: initial;
+}
+
 :where(.dsgo-shape-divider--top + .dsgo-stack__inner) {
 	padding-top: var(--dsgo-shape-clearance-top, 100px);
 }

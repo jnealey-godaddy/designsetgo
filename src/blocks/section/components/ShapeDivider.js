@@ -28,6 +28,20 @@ function clamp(value, min, max) {
 }
 
 /**
+ * Resolve the height a shape divider actually paints from its raw height
+ * attribute, applying the same default + clamp the component renders with
+ * (default 100, clamped to 10–500px). Exported so save()/edit() can size the
+ * inner content clearance to the divider's real rendered height instead of the
+ * raw, possibly out-of-range, attribute value.
+ *
+ * @param {number} height Raw height attribute (px).
+ * @return {number} Rendered height in px (10–500).
+ */
+export function getRenderedShapeHeight(height) {
+	return clamp(Number(height) || 100, 10, 500);
+}
+
+/**
  * Shape Divider Component
  *
  * @param {Object}  props           Component props
@@ -61,7 +75,7 @@ export default function ShapeDivider({
 	}
 
 	// Validate and clamp numeric values
-	const safeHeight = clamp(Number(height) || 100, 10, 500);
+	const safeHeight = getRenderedShapeHeight(height);
 	const safeWidth = clamp(Number(width) || 100, 100, 300);
 
 	// Sanitize color values

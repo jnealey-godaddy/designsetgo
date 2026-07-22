@@ -194,6 +194,30 @@ describe('section save - shape divider content clearance', () => {
 		expect(html).not.toContain('--dsgo-shape-clearance-top');
 	});
 
+	test('the clearance var tracks the divider’s clamped render height, not a raw out-of-range value', () => {
+		// ShapeDivider clamps height to 10–500; a stored 1000 (only reachable via
+		// a direct REST/programmatic edit) renders at 500, so the reserved
+		// clearance must be 500px, not 1000px.
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 1000,
+			})
+		);
+		expect(html).toContain('--dsgo-shape-clearance-top:500px');
+		expect(html).not.toContain('--dsgo-shape-clearance-top:1000px');
+	});
+
+	test('a falsy height (0) renders at 100px, so no clearance var is emitted (100px fallback matches)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 0,
+			})
+		);
+		expect(html).not.toContain('--dsgo-shape-clearance-top');
+	});
+
 	test('an explicit clearance suppresses the wrapper var (inline inner padding wins)', () => {
 		const html = serialize(
 			createBlock(metadata.name, {

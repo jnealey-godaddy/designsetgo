@@ -16,7 +16,9 @@ import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
 } from './utils/has-overlay-style';
-import ShapeDivider from './components/ShapeDivider';
+import ShapeDivider, {
+	getRenderedShapeHeight,
+} from './components/ShapeDivider';
 
 /**
  * Section Container Save Component
@@ -113,22 +115,28 @@ export default function SectionSave({ attributes }) {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
 				'--dsgo-overlay-opacity': '0.8',
 			}),
-			// Default content clearance: expose the divider height on the
-			// wrapper so the stylesheet fallback (see _shape-divider.scss)
-			// reserves inner padding that MATCHES the divider height instead of
-			// a flat default. Omitted at the default 100px (the stylesheet's own
-			// fallback covers it) and when an explicit "Content Clearance"
-			// spacing is set (its inline padding on the inner wins). Must match
-			// edit.js EXACTLY.
+			// Default content clearance: expose the divider's RENDERED height on
+			// the wrapper so the stylesheet fallback (see _shape-divider.scss)
+			// reserves inner padding that MATCHES what the divider paints
+			// instead of a flat default. Uses getRenderedShapeHeight so the
+			// value tracks the divider's own clamp (10–500, default 100) rather
+			// than a raw out-of-range attribute. Omitted at the default 100px
+			// (the stylesheet's own fallback covers it) and when an explicit
+			// "Content Clearance" spacing is set (its inline padding wins). Must
+			// match edit.js EXACTLY.
 			...(shapeDividerTop &&
 				!shapeDividerTopSpacing &&
-				(shapeDividerTopHeight || 100) !== 100 && {
-					'--dsgo-shape-clearance-top': `${shapeDividerTopHeight}px`,
+				getRenderedShapeHeight(shapeDividerTopHeight) !== 100 && {
+					'--dsgo-shape-clearance-top': `${getRenderedShapeHeight(
+						shapeDividerTopHeight
+					)}px`,
 				}),
 			...(shapeDividerBottom &&
 				!shapeDividerBottomSpacing &&
-				(shapeDividerBottomHeight || 100) !== 100 && {
-					'--dsgo-shape-clearance-bottom': `${shapeDividerBottomHeight}px`,
+				getRenderedShapeHeight(shapeDividerBottomHeight) !== 100 && {
+					'--dsgo-shape-clearance-bottom': `${getRenderedShapeHeight(
+						shapeDividerBottomHeight
+					)}px`,
 				}),
 		},
 	});

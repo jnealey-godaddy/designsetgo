@@ -411,8 +411,13 @@ class Configure_Shape_Divider extends Abstract_Ability {
 			// clearance is an explicit `shapeDivider{Pos}Spacing` value — so set a
 			// raw px length matching the shape height (default 100), mirroring the
 			// pre-2.6 auto-clearance. An author can later swap it for a theme
-			// spacing preset in the inspector.
-			$attributes[ 'shapeDivider' . $pos . 'Spacing' ] = ( $height ?? 100 ) . 'px';
+			// spacing preset in the inspector. A falsy height — notably the
+			// schema-valid `0`, which ShapeDivider.js renders as the 100px default
+			// via `Number(height) || 100` — maps to the same 100px clearance the
+			// divider actually paints instead of `0px`.
+			$clearance_height = $height ? $height : 100;
+
+			$attributes[ 'shapeDivider' . $pos . 'Spacing' ] = $clearance_height . 'px';
 
 			$attributes[ 'shapeDivider' . $pos . 'FlipX' ] = $flip_x;
 			$attributes[ 'shapeDivider' . $pos . 'FlipY' ] = $flip_y;

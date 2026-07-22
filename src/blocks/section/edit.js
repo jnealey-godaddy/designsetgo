@@ -31,7 +31,9 @@ import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
 import { createBlock } from '@wordpress/blocks';
 import ShapeDividerControls from './components/ShapeDividerControls';
-import ShapeDivider from './components/ShapeDivider';
+import ShapeDivider, {
+	getRenderedShapeHeight,
+} from './components/ShapeDivider';
 import {
 	encodeColorValue,
 	decodeColorValue,
@@ -314,17 +316,21 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
 				'--dsgo-overlay-opacity': '0.8',
 			}),
-			// Default content clearance matched to the divider height (must
-			// match save.js EXACTLY). See save.js for the full rationale.
+			// Default content clearance matched to the divider's rendered height
+			// (must match save.js EXACTLY). See save.js for the full rationale.
 			...(shapeDividerTop &&
 				!shapeDividerTopSpacing &&
-				(shapeDividerTopHeight || 100) !== 100 && {
-					'--dsgo-shape-clearance-top': `${shapeDividerTopHeight}px`,
+				getRenderedShapeHeight(shapeDividerTopHeight) !== 100 && {
+					'--dsgo-shape-clearance-top': `${getRenderedShapeHeight(
+						shapeDividerTopHeight
+					)}px`,
 				}),
 			...(shapeDividerBottom &&
 				!shapeDividerBottomSpacing &&
-				(shapeDividerBottomHeight || 100) !== 100 && {
-					'--dsgo-shape-clearance-bottom': `${shapeDividerBottomHeight}px`,
+				getRenderedShapeHeight(shapeDividerBottomHeight) !== 100 && {
+					'--dsgo-shape-clearance-bottom': `${getRenderedShapeHeight(
+						shapeDividerBottomHeight
+					)}px`,
 				}),
 		},
 	});
