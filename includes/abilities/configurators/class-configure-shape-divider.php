@@ -406,6 +406,17 @@ class Configure_Shape_Divider extends Abstract_Ability {
 				$attributes[ 'shapeDivider' . $pos . 'Width' ] = $width;
 			}
 
+			// Deliberately no `shapeDivider{Pos}Spacing` (content clearance) here.
+			// Clearance is derived live from the divider's rendered height by the
+			// stylesheet fallback (see `_shape-divider.scss` +
+			// `getRenderedShapeHeight()` in save.js/edit.js), so an omitted spacing
+			// still clears content that matches the divider height. Writing an
+			// explicit px snapshot instead would go stale on a partial follow-up
+			// call: `Height` uses patch semantics (only written when passed), but a
+			// snapshot spacing would be re-written every call and could then reserve
+			// the wrong amount against an unchanged height. Leaving it unset keeps
+			// this path consistent with the editor's default-clearance behavior.
+
 			$attributes[ 'shapeDivider' . $pos . 'FlipX' ] = $flip_x;
 			$attributes[ 'shapeDivider' . $pos . 'FlipY' ] = $flip_y;
 			$attributes[ 'shapeDivider' . $pos . 'Front' ] = $in_front;

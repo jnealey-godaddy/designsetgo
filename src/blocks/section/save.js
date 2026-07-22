@@ -8,12 +8,17 @@
  */
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
-import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	convertColorToCSSVar,
+	convertPresetToCSSVar,
+} from '../../utils/convert-preset-to-css-var';
 import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
 } from './utils/has-overlay-style';
-import ShapeDivider from './components/ShapeDivider';
+import ShapeDivider, {
+	getRenderedShapeHeight,
+} from './components/ShapeDivider';
 
 /**
  * Section Container Save Component
@@ -40,6 +45,7 @@ export default function SectionSave({ attributes }) {
 		shapeDividerTopFlipX,
 		shapeDividerTopFlipY,
 		shapeDividerTopFront,
+		shapeDividerTopSpacing,
 		shapeDividerBottom,
 		shapeDividerBottomBackgroundColor,
 		shapeDividerBottomHeight,
@@ -47,6 +53,7 @@ export default function SectionSave({ attributes }) {
 		shapeDividerBottomFlipX,
 		shapeDividerBottomFlipY,
 		shapeDividerBottomFront,
+		shapeDividerBottomSpacing,
 	} = attributes;
 
 	// Shape divider band: explicit color only. Omit when unset so the
@@ -108,6 +115,29 @@ export default function SectionSave({ attributes }) {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
 				'--dsgo-overlay-opacity': '0.8',
 			}),
+			// Default content clearance: expose the divider's RENDERED height on
+			// the wrapper so the stylesheet fallback (see _shape-divider.scss)
+			// reserves inner padding that MATCHES what the divider paints
+			// instead of a flat default. Uses getRenderedShapeHeight so the
+			// value tracks the divider's own clamp (10–500, default 100) rather
+			// than a raw out-of-range attribute. Omitted at the default 100px
+			// (the stylesheet's own fallback covers it) and when an explicit
+			// "Content Clearance" spacing is set (its inline padding wins). Must
+			// match edit.js EXACTLY.
+			...(shapeDividerTop &&
+				!shapeDividerTopSpacing &&
+				getRenderedShapeHeight(shapeDividerTopHeight) !== 100 && {
+					'--dsgo-shape-clearance-top': `${getRenderedShapeHeight(
+						shapeDividerTopHeight
+					)}px`,
+				}),
+			...(shapeDividerBottom &&
+				!shapeDividerBottomSpacing &&
+				getRenderedShapeHeight(shapeDividerBottomHeight) !== 100 && {
+					'--dsgo-shape-clearance-bottom': `${getRenderedShapeHeight(
+						shapeDividerBottomHeight
+					)}px`,
+				}),
 		},
 	});
 
@@ -121,12 +151,17 @@ export default function SectionSave({ attributes }) {
 		innerStyle.marginRight = 'auto';
 	}
 
-	// Add padding to clear shape dividers (must match edit.js EXACTLY)
-	if (shapeDividerTop) {
-		innerStyle.paddingTop = `${shapeDividerTopHeight || 100}px`;
+	// Inner content clearance for shape dividers. The value is a block-user
+	// defined WordPress spacing token (var:preset|spacing|NN) or a raw CSS
+	// length; serialize exactly what was set and emit nothing when unset.
+	// Must match edit.js EXACTLY.
+	if (shapeDividerTop && shapeDividerTopSpacing) {
+		innerStyle.paddingTop = convertPresetToCSSVar(shapeDividerTopSpacing);
 	}
-	if (shapeDividerBottom) {
-		innerStyle.paddingBottom = `${shapeDividerBottomHeight || 100}px`;
+	if (shapeDividerBottom && shapeDividerBottomSpacing) {
+		innerStyle.paddingBottom = convertPresetToCSSVar(
+			shapeDividerBottomSpacing
+		);
 	}
 
 	// Merge inner blocks props without the outer block props

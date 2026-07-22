@@ -447,6 +447,57 @@ class Abilities_Smoke_Test extends WP_UnitTestCase {
 		$this->assertSame( 'wave', $blocks[0]['attrs']['shapeDividerBottom'] );
 		$this->assertSame( '#ffffff', $blocks[0]['attrs']['shapeDividerBottomColor'] );
 		$this->assertSame( 100, $blocks[0]['attrs']['shapeDividerBottomHeight'] );
+		// Clearance is NOT stored as a snapshot attribute — it is derived live
+		// from the divider's rendered height by the stylesheet fallback, so an
+		// omitted spacing still clears content matched to the height and a
+		// partial follow-up call can't stale it.
+		$this->assertArrayNotHasKey( 'shapeDividerBottomSpacing', $blocks[0]['attrs'] );
+	}
+
+	/**
+	 * A partial follow-up call (no height) must not disturb a previously-set
+	 * divider height or introduce a stale clearance snapshot.
+	 */
+	public function test_configure_shape_divider_partial_update_preserves_height(): void {
+		$content = '<!-- wp:designsetgo/section -->'
+			. '<div class="wp-block-designsetgo-section"></div>'
+			. '<!-- /wp:designsetgo/section -->';
+		$post_id = $this->create_block_post( $content );
+
+		$ability = new Configure_Shape_Divider();
+
+		// First call establishes a tall divider.
+		$ability->execute(
+			array(
+				'post_id'     => $post_id,
+				'block_index' => 0,
+				'shape'       => 'wave',
+				'position'    => 'bottom',
+				'height'      => 300,
+			)
+		);
+
+		// Second call tweaks only the flip, without re-passing height.
+		$result = $ability->execute(
+			array(
+				'post_id'     => $post_id,
+				'block_index' => 0,
+				'shape'       => 'wave',
+				'position'    => 'bottom',
+				'flipX'       => true,
+			)
+		);
+		$this->assertTrue( $result['success'] );
+
+		$post   = get_post( $post_id );
+		$blocks = parse_blocks( $post->post_content );
+		$blocks = array_values( array_filter( $blocks, fn( $b ) => ! empty( $b['blockName'] ) ) );
+
+		// Height is preserved (patch semantics) and no stale clearance snapshot
+		// was written that would under-reserve against the 300px divider.
+		$this->assertSame( 300, $blocks[0]['attrs']['shapeDividerBottomHeight'] );
+		$this->assertTrue( $blocks[0]['attrs']['shapeDividerBottomFlipX'] );
+		$this->assertArrayNotHasKey( 'shapeDividerBottomSpacing', $blocks[0]['attrs'] );
 	}
 
 	/**

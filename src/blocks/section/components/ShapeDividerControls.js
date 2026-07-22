@@ -6,7 +6,8 @@
  * @since 1.4.2
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
+import { useSettings } from '@wordpress/block-editor';
 import {
 	PanelBody,
 	SelectControl,
@@ -121,6 +122,8 @@ function ShapePreview({
  * @param {boolean}  props.flipX                  Flip horizontal
  * @param {boolean}  props.flipY                  Flip vertical
  * @param {boolean}  props.front                  Bring to front
+ * @param {string}   props.spacing                Inner content clearance (spacing token)
+ * @param {Array}    props.spacingOptions         SelectControl options for the clearance
  * @param {boolean}  props.isBottom               Whether this is a bottom divider
  * @param {Function} props.onChange               Callback for attribute changes
  * @param {string}   props.sectionBackgroundColor Section background color
@@ -137,11 +140,33 @@ function ShapeDividerPanel({
 	flipX,
 	flipY,
 	front,
+	spacing,
+	spacingOptions,
 	isBottom,
 	onChange,
 	sectionBackgroundColor = '',
 	sectionTextColor = '',
 }) {
+	// A clearance carried over from legacy content is a raw length (e.g. "80px"
+	// from a pre-2.6 divider height) that matches no preset token. Surface it as
+	// a synthetic option so the control shows the active value instead of
+	// appearing blank — otherwise an editor could silently overwrite a preserved
+	// value while thinking nothing was set.
+	const clearanceOptions =
+		spacing && !spacingOptions.some((option) => option.value === spacing)
+			? [
+					...spacingOptions,
+					{
+						label: sprintf(
+							/* translators: %s: the raw CSS length currently applied as clearance. */
+							__('Custom (%s)', 'designsetgo'),
+							spacing
+						),
+						value: spacing,
+					},
+				]
+			: spacingOptions;
+
 	return (
 		<PanelBody title={title} initialOpen={false}>
 			<SelectControl
@@ -196,6 +221,21 @@ function ShapeDividerPanel({
 						step={1}
 						help={__(
 							'Stretch the shape wider for more dramatic effect.',
+							'designsetgo'
+						)}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+
+					<SelectControl
+						label={__('Content Clearance', 'designsetgo')}
+						value={spacing || ''}
+						options={clearanceOptions}
+						onChange={(value) =>
+							onChange({ spacing: value || undefined })
+						}
+						help={__(
+							'Inner padding reserved so content clears the shape divider. Leave on Default to match the divider height, or pick a theme spacing preset.',
 							'designsetgo'
 						)}
 						__next40pxDefaultSize
@@ -263,6 +303,7 @@ export default function ShapeDividerControls({
 		shapeDividerTopFlipX,
 		shapeDividerTopFlipY,
 		shapeDividerTopFront,
+		shapeDividerTopSpacing,
 		shapeDividerBottom,
 		shapeDividerBottomColor,
 		shapeDividerBottomBackgroundColor,
@@ -271,12 +312,31 @@ export default function ShapeDividerControls({
 		shapeDividerBottomFlipX,
 		shapeDividerBottomFlipY,
 		shapeDividerBottomFront,
+		shapeDividerBottomSpacing,
 		// Video background attribute (from extension)
 		dsgoVideoUrl,
 	} = attributes;
 
 	// Check if video background is enabled
 	const hasVideoBackground = !!dsgoVideoUrl;
+
+	// Theme spacing presets → SelectControl options. Values use the standard
+	// WordPress `var:preset|spacing|NN` token so save() can serialize the exact
+	// same value all other padding uses.
+	const [spacingSizes] = useSettings('spacing.spacingSizes');
+	const spacingOptions = [
+		// Not "None": clearing the value falls back to the height-matched CSS
+		// default (see _shape-divider.scss), not zero padding — so the label
+		// reflects that to avoid implying content will sit flush to the shape.
+		{
+			label: __('Default (matches divider height)', 'designsetgo'),
+			value: '',
+		},
+		...(Array.isArray(spacingSizes) ? spacingSizes : []).map((size) => ({
+			label: size.name,
+			value: `var:preset|spacing|${size.slug}`,
+		})),
+	];
 
 	// Handler for top shape divider changes
 	const handleTopChange = (changes) => {
@@ -289,6 +349,7 @@ export default function ShapeDividerControls({
 			flipX: 'shapeDividerTopFlipX',
 			flipY: 'shapeDividerTopFlipY',
 			front: 'shapeDividerTopFront',
+			spacing: 'shapeDividerTopSpacing',
 		};
 		const newAttrs = {};
 		Object.entries(changes).forEach(([key, value]) => {
@@ -310,6 +371,7 @@ export default function ShapeDividerControls({
 			flipX: 'shapeDividerBottomFlipX',
 			flipY: 'shapeDividerBottomFlipY',
 			front: 'shapeDividerBottomFront',
+			spacing: 'shapeDividerBottomSpacing',
 		};
 		const newAttrs = {};
 		Object.entries(changes).forEach(([key, value]) => {
@@ -361,6 +423,8 @@ export default function ShapeDividerControls({
 				flipX={shapeDividerTopFlipX}
 				flipY={shapeDividerTopFlipY}
 				front={shapeDividerTopFront}
+				spacing={shapeDividerTopSpacing}
+				spacingOptions={spacingOptions}
 				isBottom={false}
 				onChange={handleTopChange}
 				sectionBackgroundColor={sectionBackgroundColor}
@@ -376,6 +440,8 @@ export default function ShapeDividerControls({
 				flipX={shapeDividerBottomFlipX}
 				flipY={shapeDividerBottomFlipY}
 				front={shapeDividerBottomFront}
+				spacing={shapeDividerBottomSpacing}
+				spacingOptions={spacingOptions}
 				isBottom={true}
 				onChange={handleBottomChange}
 				sectionBackgroundColor={sectionBackgroundColor}

@@ -116,6 +116,138 @@ describe('section save - shape dividers', () => {
 	});
 });
 
+describe('section save - shape divider content clearance', () => {
+	// The clearance is inner padding on `.dsgo-stack__inner`. The section's OWN
+	// block padding lives on the OUTER wrapper (`.dsgo-stack`), so assertions
+	// must be scoped to the inner element's style — a whole-HTML substring match
+	// would collide with the wrapper's default `spacing|50`/`30` padding. The
+	// clearance tests also use `spacing|70` (not the default `50`) so a match
+	// can only come from the clearance, never the wrapper default.
+	const innerStyle = (html) => {
+		const match = html.match(
+			/class="dsgo-stack__inner"[^>]*style="([^"]*)"/
+		);
+		return match ? match[1] : '';
+	};
+
+	test('a spacing preset token serializes to inner padding CSS var (top)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopSpacing: 'var:preset|spacing|70',
+			})
+		);
+		expect(innerStyle(html)).toContain(
+			'padding-top:var(--wp--preset--spacing--70)'
+		);
+	});
+
+	test('a spacing preset token serializes to inner padding CSS var (bottom)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerBottom: 'wave',
+				shapeDividerBottomSpacing: 'var:preset|spacing|70',
+			})
+		);
+		expect(innerStyle(html)).toContain(
+			'padding-bottom:var(--wp--preset--spacing--70)'
+		);
+	});
+
+	test('a raw CSS length (e.g. a migrated legacy value) passes through unchanged', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopSpacing: '80px',
+			})
+		);
+		expect(innerStyle(html)).toContain('padding-top:80px');
+	});
+
+	test('a divider with NO clearance set emits no inner padding (CSS fallback owns the default)', () => {
+		const html = serialize(
+			createBlock(metadata.name, { shapeDividerTop: 'wave' })
+		);
+		expect(innerStyle(html)).not.toContain('padding');
+	});
+
+	test('a non-default height with no explicit clearance exposes a height-matched wrapper var', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 300,
+			})
+		);
+		// The stylesheet fallback reads this so the reserved padding matches the
+		// 300px divider instead of a flat 100px. No inline inner padding.
+		expect(html).toContain('--dsgo-shape-clearance-top:300px');
+		expect(innerStyle(html)).not.toContain('padding');
+	});
+
+	test('a default-height (100) divider emits no clearance var (100px stylesheet fallback covers it)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 100,
+			})
+		);
+		expect(html).not.toContain('--dsgo-shape-clearance-top');
+	});
+
+	test('the clearance var tracks the divider’s clamped render height, not a raw out-of-range value', () => {
+		// ShapeDivider clamps height to 10–500; a stored 1000 (only reachable via
+		// a direct REST/programmatic edit) renders at 500, so the reserved
+		// clearance must be 500px, not 1000px.
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 1000,
+			})
+		);
+		expect(html).toContain('--dsgo-shape-clearance-top:500px');
+		expect(html).not.toContain('--dsgo-shape-clearance-top:1000px');
+	});
+
+	test('a falsy height (0) renders at 100px, so no clearance var is emitted (100px fallback matches)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 0,
+			})
+		);
+		expect(html).not.toContain('--dsgo-shape-clearance-top');
+	});
+
+	test('an explicit clearance suppresses the wrapper var (inline inner padding wins)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 300,
+				shapeDividerTopSpacing: 'var:preset|spacing|70',
+			})
+		);
+		expect(html).not.toContain('--dsgo-shape-clearance-top');
+		expect(innerStyle(html)).toContain(
+			'padding-top:var(--wp--preset--spacing--70)'
+		);
+	});
+
+	test('clearance is not emitted for a position that has no divider', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopSpacing: 'var:preset|spacing|70',
+				// bottom spacing set but no bottom divider — must be ignored
+				shapeDividerBottomSpacing: 'var:preset|spacing|70',
+			})
+		);
+		expect(innerStyle(html)).toContain(
+			'padding-top:var(--wp--preset--spacing--70)'
+		);
+		expect(innerStyle(html)).not.toContain('padding-bottom');
+	});
+});
+
 describe('section save - overlay class', () => {
 	test('no overlay by default', () => {
 		const html = serialize(createBlock(metadata.name, {}));

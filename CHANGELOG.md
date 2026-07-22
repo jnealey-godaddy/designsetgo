@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Section shape-divider clearance is author-defined, so preset-spacing patterns no longer show "Attempt Recovery."** The inner content clearance that keeps content from sitting under a shape divider was derived from the divider height and serialized as a hardcoded `padding-top:${height}px`, so a pattern that expressed that clearance as a theme spacing token (`var(--wp--preset--spacing--NN)`) could never byte-match `save()` and failed block validation. Clearance is now an explicit `shapeDivider{Top,Bottom}Spacing` attribute driven by a "Content Clearance" inspector control (theme spacing presets), serialized as inner padding only when set. A `v9` deprecation reproduces the old height-derived output and migrates it into the new attribute; the height→spacing carry-over is shared by every shape-divider-era deprecation (`v3`–`v9`), not just the newest, so a section matching an older signature (e.g. a divider that also carries an overlay/hover style variation) still migrates silently instead of losing its clearance. A brand-new divider with no explicit clearance falls back to a CSS default that matches the divider's own height (its height is exposed on the wrapper as `--dsgo-shape-clearance-{top,bottom}` and read by a sibling-keyed `:where()` rule, so a 300px divider clears 300px, not a flat amount, and only the present position reserves space); the same height-matched fallback covers AI-inserted dividers from the Abilities API "Configure Shape Divider" flow, which stores no clearance snapshot of its own. Migrated raw-px values surface as a "Custom (…)" option in the control so a preserved value is never silently overwritten.
+
 ## [2.5.0] - 2026-07-21
 
 ### New Features
