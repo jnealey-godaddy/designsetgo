@@ -8,7 +8,10 @@
  */
 
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
-import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import {
+	convertColorToCSSVar,
+	convertPresetToCSSVar,
+} from '../../utils/convert-preset-to-css-var';
 import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
@@ -40,6 +43,7 @@ export default function SectionSave({ attributes }) {
 		shapeDividerTopFlipX,
 		shapeDividerTopFlipY,
 		shapeDividerTopFront,
+		shapeDividerTopSpacing,
 		shapeDividerBottom,
 		shapeDividerBottomBackgroundColor,
 		shapeDividerBottomHeight,
@@ -47,6 +51,7 @@ export default function SectionSave({ attributes }) {
 		shapeDividerBottomFlipX,
 		shapeDividerBottomFlipY,
 		shapeDividerBottomFront,
+		shapeDividerBottomSpacing,
 	} = attributes;
 
 	// Shape divider band: explicit color only. Omit when unset so the
@@ -121,12 +126,17 @@ export default function SectionSave({ attributes }) {
 		innerStyle.marginRight = 'auto';
 	}
 
-	// Add padding to clear shape dividers (must match edit.js EXACTLY)
-	if (shapeDividerTop) {
-		innerStyle.paddingTop = `${shapeDividerTopHeight || 100}px`;
+	// Inner content clearance for shape dividers. The value is a block-user
+	// defined WordPress spacing token (var:preset|spacing|NN) or a raw CSS
+	// length; serialize exactly what was set and emit nothing when unset.
+	// Must match edit.js EXACTLY.
+	if (shapeDividerTop && shapeDividerTopSpacing) {
+		innerStyle.paddingTop = convertPresetToCSSVar(shapeDividerTopSpacing);
 	}
-	if (shapeDividerBottom) {
-		innerStyle.paddingBottom = `${shapeDividerBottomHeight || 100}px`;
+	if (shapeDividerBottom && shapeDividerBottomSpacing) {
+		innerStyle.paddingBottom = convertPresetToCSSVar(
+			shapeDividerBottomSpacing
+		);
 	}
 
 	// Merge inner blocks props without the outer block props

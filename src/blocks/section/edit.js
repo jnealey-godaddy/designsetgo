@@ -78,6 +78,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		shapeDividerTopFlipX,
 		shapeDividerTopFlipY,
 		shapeDividerTopFront,
+		shapeDividerTopSpacing,
 		shapeDividerBottom,
 		shapeDividerBottomBackgroundColor,
 		shapeDividerBottomHeight,
@@ -85,6 +86,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		shapeDividerBottomFlipX,
 		shapeDividerBottomFlipY,
 		shapeDividerBottomFront,
+		shapeDividerBottomSpacing,
 	} = attributes;
 
 	// Get section's effective background color for shape divider fill default.
@@ -324,12 +326,17 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		innerStyle.marginRight = 'auto';
 	}
 
-	// Add padding to clear shape dividers (must match save.js EXACTLY)
-	if (shapeDividerTop) {
-		innerStyle.paddingTop = `${shapeDividerTopHeight || 100}px`;
+	// Inner content clearance for shape dividers. The value is a block-user
+	// defined WordPress spacing token (var:preset|spacing|NN) or a raw CSS
+	// length; serialize exactly what was set and emit nothing when unset.
+	// Must match save.js EXACTLY.
+	if (shapeDividerTop && shapeDividerTopSpacing) {
+		innerStyle.paddingTop = convertPresetToCSSVar(shapeDividerTopSpacing);
 	}
-	if (shapeDividerBottom) {
-		innerStyle.paddingBottom = `${shapeDividerBottomHeight || 100}px`;
+	if (shapeDividerBottom && shapeDividerBottomSpacing) {
+		innerStyle.paddingBottom = convertPresetToCSSVar(
+			shapeDividerBottomSpacing
+		);
 	}
 
 	// Merge inner blocks props

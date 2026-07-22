@@ -72,8 +72,8 @@ const OLD_SVG_MARKUP = `<!-- wp:designsetgo/section {"shapeDividerTop":"wave","s
 // background color (no explicit shapeDividerBottomColor set), matching
 // V4ShapeDivider's inheritance behavior used by deprecations v4/v5/v6.
 // Built from v4's own save() so the fixture is byte-exact.
-// deprecated.js exports deprecations newest-first: [v8, v7, v6, v5, v4, v3, v2, v1].
-const [, , , , v4Deprecation] = deprecated;
+// deprecated.js exports deprecations newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
+const [, , , , , v4Deprecation] = deprecated;
 const OLD_SVG_MARKUP_BOTTOM_INHERITED = buildOldMarkup(
 	{
 		shapeDividerBottom: 'tilt',
@@ -123,8 +123,8 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 	// deprecation and shows "unexpected or invalid content". The other tests use
 	// wave/tilt, which were NOT redesigned, so they can't catch this.
 	test('deprecations reproduce frozen legacy geometry for redesigned shapes (drops)', () => {
-		// deprecated.js exports newest-first: [v8, v7, v6, v5, v4, v3, v2, v1].
-		const [, , , , v4Dep, v3Dep] = deprecated;
+		// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
+		const [, , , , , v4Dep, v3Dep] = deprecated;
 
 		[v3Dep, v4Dep].forEach((deprecation) => {
 			const markup = buildOldMarkup(
@@ -140,8 +140,8 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 });
 
 describe('section deprecations - style-kit overlay variation migration (v7)', () => {
-	// deprecated.js exports newest-first: [v8, v7, v6, v5, v4, v3, v2, v1].
-	const [, v7Deprecation] = deprecated;
+	// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
+	const [, , v7Deprecation] = deprecated;
 
 	// Reproduce content saved BEFORE this change by taking what the block
 	// ACTUALLY serializes today (carrying block.json defaults such as the
@@ -249,8 +249,8 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 });
 
 describe('section deprecations - style-kit hover variation migration (v8)', () => {
-	// deprecated.js exports newest-first: [v8, v7, v6, v5, v4, v3, v2, v1].
-	const [v8Deprecation] = deprecated;
+	// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
+	const [, v8Deprecation] = deprecated;
 
 	// Reproduce content saved BEFORE hover-variation classes existed by taking
 	// the block's REAL current serialization and stripping the hover-text
@@ -351,5 +351,70 @@ describe('section deprecations - style-kit hover variation migration (v8)', () =
 			hoverTextColor: '',
 		};
 		expect(v8Deprecation.migrate(attrs)).toBe(attrs);
+	});
+});
+
+describe('section deprecations - height-derived px clearance migration (v9)', () => {
+	// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
+	const [v9Deprecation] = deprecated;
+
+	// v9's own save() reproduces the pre-change output: the inner container's
+	// shape-divider clearance is derived from the divider height and emitted as
+	// a px value. The current save() instead serializes the new
+	// shapeDivider{Top,Bottom}Spacing attributes and emits nothing when unset,
+	// so this markup is invalid against current save() and reaches v9 by
+	// save-matching.
+	test('old top-divider section migrates its height-derived px clearance into shapeDividerTopSpacing', () => {
+		const markup = buildOldMarkup(
+			{ shapeDividerTop: 'wave', shapeDividerTopHeight: 80 },
+			v9Deprecation
+		);
+		// Guards the fixture: the old height-derived padding must be present.
+		expect(markup).toContain('padding-top:80px');
+
+		const [block] = parse(markup);
+
+		// Silent migration logs an informational "Block successfully updated".
+		expect(console).toHaveInformed();
+
+		expect(block.name).toBe('designsetgo/section');
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.shapeDividerTop).toBe('wave');
+		// migrate() carries the height-derived px into the new spacing attribute
+		// as a raw CSS length.
+		expect(block.attributes.shapeDividerTopSpacing).toBe('80px');
+		// The current save() converts the raw length through unchanged, so the
+		// exact clearance survives the round trip byte-for-byte.
+		expect(getBlockContent(block)).toContain('padding-top:80px');
+	});
+
+	test('old bottom-divider section migrates its clearance into shapeDividerBottomSpacing', () => {
+		const markup = buildOldMarkup(
+			{ shapeDividerBottom: 'tilt', shapeDividerBottomHeight: 120 },
+			v9Deprecation
+		);
+		expect(markup).toContain('padding-bottom:120px');
+
+		const [block] = parse(markup);
+
+		expect(console).toHaveInformed();
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.shapeDividerBottomSpacing).toBe('120px');
+		expect(getBlockContent(block)).toContain('padding-bottom:120px');
+	});
+
+	test('migrate leaves an already-set spacing attribute untouched', () => {
+		const migrated = v9Deprecation.migrate({
+			shapeDividerTop: 'wave',
+			shapeDividerTopHeight: 80,
+			shapeDividerTopSpacing: 'var:preset|spacing|50',
+		});
+		expect(migrated.shapeDividerTopSpacing).toBe('var:preset|spacing|50');
+	});
+
+	test('migrate is a no-op for sections without a divider', () => {
+		const migrated = v9Deprecation.migrate({ shapeDividerTop: '' });
+		expect(migrated.shapeDividerTopSpacing).toBeUndefined();
+		expect(migrated.shapeDividerBottomSpacing).toBeUndefined();
 	});
 });

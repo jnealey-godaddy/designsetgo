@@ -7,6 +7,7 @@
  */
 
 import { __ } from '@wordpress/i18n';
+import { useSettings } from '@wordpress/block-editor';
 import {
 	PanelBody,
 	SelectControl,
@@ -121,6 +122,8 @@ function ShapePreview({
  * @param {boolean}  props.flipX                  Flip horizontal
  * @param {boolean}  props.flipY                  Flip vertical
  * @param {boolean}  props.front                  Bring to front
+ * @param {string}   props.spacing                Inner content clearance (spacing token)
+ * @param {Array}    props.spacingOptions         SelectControl options for the clearance
  * @param {boolean}  props.isBottom               Whether this is a bottom divider
  * @param {Function} props.onChange               Callback for attribute changes
  * @param {string}   props.sectionBackgroundColor Section background color
@@ -137,6 +140,8 @@ function ShapeDividerPanel({
 	flipX,
 	flipY,
 	front,
+	spacing,
+	spacingOptions,
 	isBottom,
 	onChange,
 	sectionBackgroundColor = '',
@@ -196,6 +201,21 @@ function ShapeDividerPanel({
 						step={1}
 						help={__(
 							'Stretch the shape wider for more dramatic effect.',
+							'designsetgo'
+						)}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+
+					<SelectControl
+						label={__('Content Clearance', 'designsetgo')}
+						value={spacing || ''}
+						options={spacingOptions}
+						onChange={(value) =>
+							onChange({ spacing: value || undefined })
+						}
+						help={__(
+							'Inner padding reserved so content clears the shape divider. Uses a theme spacing preset.',
 							'designsetgo'
 						)}
 						__next40pxDefaultSize
@@ -263,6 +283,7 @@ export default function ShapeDividerControls({
 		shapeDividerTopFlipX,
 		shapeDividerTopFlipY,
 		shapeDividerTopFront,
+		shapeDividerTopSpacing,
 		shapeDividerBottom,
 		shapeDividerBottomColor,
 		shapeDividerBottomBackgroundColor,
@@ -271,12 +292,25 @@ export default function ShapeDividerControls({
 		shapeDividerBottomFlipX,
 		shapeDividerBottomFlipY,
 		shapeDividerBottomFront,
+		shapeDividerBottomSpacing,
 		// Video background attribute (from extension)
 		dsgoVideoUrl,
 	} = attributes;
 
 	// Check if video background is enabled
 	const hasVideoBackground = !!dsgoVideoUrl;
+
+	// Theme spacing presets → SelectControl options. Values use the standard
+	// WordPress `var:preset|spacing|NN` token so save() can serialize the exact
+	// same value all other padding uses.
+	const [spacingSizes] = useSettings('spacing.spacingSizes');
+	const spacingOptions = [
+		{ label: __('None', 'designsetgo'), value: '' },
+		...(Array.isArray(spacingSizes) ? spacingSizes : []).map((size) => ({
+			label: size.name,
+			value: `var:preset|spacing|${size.slug}`,
+		})),
+	];
 
 	// Handler for top shape divider changes
 	const handleTopChange = (changes) => {
@@ -289,6 +323,7 @@ export default function ShapeDividerControls({
 			flipX: 'shapeDividerTopFlipX',
 			flipY: 'shapeDividerTopFlipY',
 			front: 'shapeDividerTopFront',
+			spacing: 'shapeDividerTopSpacing',
 		};
 		const newAttrs = {};
 		Object.entries(changes).forEach(([key, value]) => {
@@ -310,6 +345,7 @@ export default function ShapeDividerControls({
 			flipX: 'shapeDividerBottomFlipX',
 			flipY: 'shapeDividerBottomFlipY',
 			front: 'shapeDividerBottomFront',
+			spacing: 'shapeDividerBottomSpacing',
 		};
 		const newAttrs = {};
 		Object.entries(changes).forEach(([key, value]) => {
@@ -361,6 +397,8 @@ export default function ShapeDividerControls({
 				flipX={shapeDividerTopFlipX}
 				flipY={shapeDividerTopFlipY}
 				front={shapeDividerTopFront}
+				spacing={shapeDividerTopSpacing}
+				spacingOptions={spacingOptions}
 				isBottom={false}
 				onChange={handleTopChange}
 				sectionBackgroundColor={sectionBackgroundColor}
@@ -376,6 +414,8 @@ export default function ShapeDividerControls({
 				flipX={shapeDividerBottomFlipX}
 				flipY={shapeDividerBottomFlipY}
 				front={shapeDividerBottomFront}
+				spacing={shapeDividerBottomSpacing}
+				spacingOptions={spacingOptions}
 				isBottom={true}
 				onChange={handleBottomChange}
 				sectionBackgroundColor={sectionBackgroundColor}

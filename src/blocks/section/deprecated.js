@@ -271,6 +271,217 @@ function V4ShapeDivider({
 	);
 }
 
+// Version 9: Height-derived pixel clearance padding. Before this version the
+// inner container's shape-divider clearance was computed from the divider
+// height — `padding-top:${shapeDividerTopHeight || 100}px` (and the bottom
+// equivalent) — so save() could only ever emit a px value the author could not
+// control. The current save() instead serializes the block-user-defined
+// `shapeDividerTopSpacing` / `shapeDividerBottomSpacing` attributes (a WordPress
+// spacing token) and emits NOTHING when they are unset. Sections saved before
+// this change carry the px padding in their stored HTML while the new save()
+// emits none — a markup mismatch that invalidates the block.
+//
+// This is a markup-change deprecation: WordPress reaches it by byte-matching
+// this frozen save() against the stored HTML of an INVALID block (isEligible is
+// skipped for invalid blocks), so no isEligible is declared. save() reproduces
+// the pre-change output exactly — including the hover-variation activation
+// classes the current save() derives (v8 predates those, so v9 must sit ahead
+// of v8 to claim divider blocks that also carry a hover variation). migrate()
+// maps the old height-derived px value into the new spacing attribute as a raw
+// CSS length so the exact clearance is preserved and the current save() round-
+// trips it byte-for-byte.
+const v9 = {
+	apiVersion: 3,
+	supports: sharedSupports,
+	attributes: {
+		align: { type: 'string', default: 'full' },
+		tagName: { type: 'string', default: 'div' },
+		constrainWidth: { type: 'boolean', default: true },
+		contentWidth: { type: 'string', default: '' },
+		// Mirror block.json's `style` default (see v7's identical note).
+		style: {
+			type: 'object',
+			default: {
+				spacing: {
+					padding: {
+						top: 'var:preset|spacing|50',
+						bottom: 'var:preset|spacing|50',
+						left: 'var:preset|spacing|30',
+						right: 'var:preset|spacing|30',
+					},
+				},
+			},
+		},
+		hoverBackgroundColor: { type: 'string', default: '' },
+		hoverTextColor: { type: 'string', default: '' },
+		hoverIconBackgroundColor: { type: 'string', default: '' },
+		hoverButtonBackgroundColor: { type: 'string', default: '' },
+		overlayColor: { type: 'string', default: '' },
+		shapeDividerTop: { type: 'string', default: '' },
+		shapeDividerTopColor: { type: 'string', default: '' },
+		shapeDividerTopHeight: { type: 'number', default: 100 },
+		shapeDividerTopWidth: { type: 'number', default: 100 },
+		shapeDividerTopFlipX: { type: 'boolean', default: false },
+		shapeDividerTopFlipY: { type: 'boolean', default: false },
+		shapeDividerTopFront: { type: 'boolean', default: false },
+		shapeDividerTopBackgroundColor: { type: 'string', default: '' },
+		shapeDividerBottom: { type: 'string', default: '' },
+		shapeDividerBottomColor: { type: 'string', default: '' },
+		shapeDividerBottomHeight: { type: 'number', default: 100 },
+		shapeDividerBottomWidth: { type: 'number', default: 100 },
+		shapeDividerBottomFlipX: { type: 'boolean', default: false },
+		shapeDividerBottomFlipY: { type: 'boolean', default: false },
+		shapeDividerBottomFront: { type: 'boolean', default: false },
+		shapeDividerBottomBackgroundColor: { type: 'string', default: '' },
+	},
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			constrainWidth,
+			contentWidth,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			overlayColor,
+			shapeDividerTop,
+			shapeDividerTopBackgroundColor,
+			shapeDividerTopHeight,
+			shapeDividerTopWidth,
+			shapeDividerTopFlipX,
+			shapeDividerTopFlipY,
+			shapeDividerTopFront,
+			shapeDividerBottom,
+			shapeDividerBottomBackgroundColor,
+			shapeDividerBottomHeight,
+			shapeDividerBottomWidth,
+			shapeDividerBottomFlipX,
+			shapeDividerBottomFlipY,
+			shapeDividerBottomFront,
+		} = attributes;
+
+		const shapeDividerTopBandColor = convertColorToCSSVar(
+			shapeDividerTopBackgroundColor
+		);
+		const shapeDividerBottomBandColor = convertColorToCSSVar(
+			shapeDividerBottomBackgroundColor
+		);
+
+		// Current-era className: overlay class from overlayColor OR overlay
+		// variation, plus hover-variation activation classes.
+		const hasOverlay =
+			!!overlayColor || hasOverlayStyleClass(attributes.className);
+		const className = [
+			'dsgo-stack',
+			!constrainWidth && 'dsgo-no-width-constraint',
+			hasOverlay && 'dsgo-stack--has-overlay',
+			(shapeDividerTop || shapeDividerBottom) &&
+				'dsgo-stack--has-shape-divider',
+			...hoverVariationClasses(attributes.className),
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+		const blockProps = useBlockProps.save({
+			className,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+				...(overlayColor && {
+					'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+					'--dsgo-overlay-opacity': '0.8',
+				}),
+			},
+		});
+
+		const innerStyle = {};
+		if (constrainWidth) {
+			innerStyle.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyle.marginLeft = 'auto';
+			innerStyle.marginRight = 'auto';
+		}
+
+		// Old behavior: clearance padding derived from the divider height.
+		if (shapeDividerTop) {
+			innerStyle.paddingTop = `${shapeDividerTopHeight || 100}px`;
+		}
+		if (shapeDividerBottom) {
+			innerStyle.paddingBottom = `${shapeDividerBottomHeight || 100}px`;
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-stack__inner',
+			style: innerStyle,
+		});
+
+		return (
+			<TagName {...blockProps}>
+				<ShapeDivider
+					shape={shapeDividerTop}
+					position="top"
+					height={shapeDividerTopHeight}
+					width={shapeDividerTopWidth}
+					flipX={shapeDividerTopFlipX}
+					flipY={shapeDividerTopFlipY}
+					front={shapeDividerTopFront}
+					bandColor={shapeDividerTopBandColor}
+				/>
+				<div {...innerBlocksProps} />
+				<ShapeDivider
+					shape={shapeDividerBottom}
+					position="bottom"
+					height={shapeDividerBottomHeight}
+					width={shapeDividerBottomWidth}
+					flipX={shapeDividerBottomFlipX}
+					flipY={shapeDividerBottomFlipY}
+					front={shapeDividerBottomFront}
+					bandColor={shapeDividerBottomBandColor}
+				/>
+			</TagName>
+		);
+	},
+	migrate(attributes) {
+		// Preserve the exact clearance by carrying the old height-derived px
+		// value into the new spacing attribute as a raw CSS length. The current
+		// save() converts a raw length through unchanged, so it reproduces the
+		// stored padding byte-for-byte on the next render.
+		const migrated = { ...attributes };
+		if (attributes.shapeDividerTop && !attributes.shapeDividerTopSpacing) {
+			migrated.shapeDividerTopSpacing = `${
+				attributes.shapeDividerTopHeight || 100
+			}px`;
+		}
+		if (
+			attributes.shapeDividerBottom &&
+			!attributes.shapeDividerBottomSpacing
+		) {
+			migrated.shapeDividerBottomSpacing = `${
+				attributes.shapeDividerBottomHeight || 100
+			}px`;
+		}
+		return migrated;
+	},
+};
+
 // Version 8: Pre-hover-variation-classes output. The current save() also
 // emits `dsgo-stack--has-hover-text` / `-icon` / `-button` when a style-kit
 // hover variation (`is-style-hover-{text,icon,button}-*`) is present on
@@ -1768,4 +1979,4 @@ const v1 = {
 };
 
 // Export deprecations in reverse chronological order (newest first)
-export default [v8, v7, v6, v5, v4, v3, v2, v1];
+export default [v9, v8, v7, v6, v5, v4, v3, v2, v1];
