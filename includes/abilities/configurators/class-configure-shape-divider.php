@@ -406,18 +406,16 @@ class Configure_Shape_Divider extends Abstract_Ability {
 				$attributes[ 'shapeDivider' . $pos . 'Width' ] = $width;
 			}
 
-			// Reserve inner content clearance so content is not overlapped by the
-			// shape. The block no longer derives this automatically from height —
-			// clearance is an explicit `shapeDivider{Pos}Spacing` value — so set a
-			// raw px length matching the shape height (default 100), mirroring the
-			// pre-2.6 auto-clearance. An author can later swap it for a theme
-			// spacing preset in the inspector. A falsy height — notably the
-			// schema-valid `0`, which ShapeDivider.js renders as the 100px default
-			// via `Number(height) || 100` — maps to the same 100px clearance the
-			// divider actually paints instead of `0px`.
-			$clearance_height = $height ? $height : 100;
-
-			$attributes[ 'shapeDivider' . $pos . 'Spacing' ] = $clearance_height . 'px';
+			// Deliberately no `shapeDivider{Pos}Spacing` (content clearance) here.
+			// Clearance is derived live from the divider's rendered height by the
+			// stylesheet fallback (see `_shape-divider.scss` +
+			// `getRenderedShapeHeight()` in save.js/edit.js), so an omitted spacing
+			// still clears content that matches the divider height. Writing an
+			// explicit px snapshot instead would go stale on a partial follow-up
+			// call: `Height` uses patch semantics (only written when passed), but a
+			// snapshot spacing would be re-written every call and could then reserve
+			// the wrong amount against an unchanged height. Leaving it unset keeps
+			// this path consistent with the editor's default-clearance behavior.
 
 			$attributes[ 'shapeDivider' . $pos . 'FlipX' ] = $flip_x;
 			$attributes[ 'shapeDivider' . $pos . 'FlipY' ] = $flip_y;

@@ -1019,14 +1019,14 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $result, 'Height 0 should be accepted.' );
 		$this->assertTrue( $result['success'] );
 
-		// height 0 renders as a 100px divider (ShapeDivider.js coalesces the
-		// falsy height via `Number(height) || 100`), so the clearance must be
-		// 100px, not the literal `0px` a `?? 100` coalesce would have produced —
-		// otherwise content sits under the 100px-tall shape.
+		// No clearance snapshot is stored (see build_shape_attributes) — the
+		// stylesheet fallback derives clearance from the divider's rendered
+		// height, which for height 0 clamps to the 100px default, so content
+		// still clears the shape without a `0px` snapshot being written.
 		$post   = get_post( $post_id );
 		$blocks = parse_blocks( $post->post_content );
 		$blocks = array_values( array_filter( $blocks, fn( $b ) => ! empty( $b['blockName'] ) ) );
-		$this->assertSame( '100px', $blocks[0]['attrs']['shapeDividerBottomSpacing'] );
+		$this->assertArrayNotHasKey( 'shapeDividerBottomSpacing', $blocks[0]['attrs'] );
 	}
 
 	// -------------------------------------------------------------------------
