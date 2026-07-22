@@ -235,7 +235,7 @@ function ShapeDividerPanel({
 							onChange({ spacing: value || undefined })
 						}
 						help={__(
-							'Inner padding reserved so content clears the shape divider. Uses a theme spacing preset.',
+							'Inner padding reserved so content clears the shape divider. Leave on Default to match the divider height, or pick a theme spacing preset.',
 							'designsetgo'
 						)}
 						__next40pxDefaultSize
@@ -325,7 +325,13 @@ export default function ShapeDividerControls({
 	// same value all other padding uses.
 	const [spacingSizes] = useSettings('spacing.spacingSizes');
 	const spacingOptions = [
-		{ label: __('None', 'designsetgo'), value: '' },
+		// Not "None": clearing the value falls back to the height-matched CSS
+		// default (see _shape-divider.scss), not zero padding — so the label
+		// reflects that to avoid implying content will sit flush to the shape.
+		{
+			label: __('Default (matches divider height)', 'designsetgo'),
+			value: '',
+		},
 		...(Array.isArray(spacingSizes) ? spacingSizes : []).map((size) => ({
 			label: size.name,
 			value: `var:preset|spacing|${size.slug}`,
