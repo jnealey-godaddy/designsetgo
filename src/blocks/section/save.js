@@ -113,6 +113,23 @@ export default function SectionSave({ attributes }) {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
 				'--dsgo-overlay-opacity': '0.8',
 			}),
+			// Default content clearance: expose the divider height on the
+			// wrapper so the stylesheet fallback (see _shape-divider.scss)
+			// reserves inner padding that MATCHES the divider height instead of
+			// a flat default. Omitted at the default 100px (the stylesheet's own
+			// fallback covers it) and when an explicit "Content Clearance"
+			// spacing is set (its inline padding on the inner wins). Must match
+			// edit.js EXACTLY.
+			...(shapeDividerTop &&
+				!shapeDividerTopSpacing &&
+				(shapeDividerTopHeight || 100) !== 100 && {
+					'--dsgo-shape-clearance-top': `${shapeDividerTopHeight}px`,
+				}),
+			...(shapeDividerBottom &&
+				!shapeDividerBottomSpacing &&
+				(shapeDividerBottomHeight || 100) !== 100 && {
+					'--dsgo-shape-clearance-bottom': `${shapeDividerBottomHeight}px`,
+				}),
 		},
 	});
 

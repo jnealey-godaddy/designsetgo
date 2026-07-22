@@ -171,6 +171,43 @@ describe('section save - shape divider content clearance', () => {
 		expect(innerStyle(html)).not.toContain('padding');
 	});
 
+	test('a non-default height with no explicit clearance exposes a height-matched wrapper var', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 300,
+			})
+		);
+		// The stylesheet fallback reads this so the reserved padding matches the
+		// 300px divider instead of a flat 100px. No inline inner padding.
+		expect(html).toContain('--dsgo-shape-clearance-top:300px');
+		expect(innerStyle(html)).not.toContain('padding');
+	});
+
+	test('a default-height (100) divider emits no clearance var (100px stylesheet fallback covers it)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 100,
+			})
+		);
+		expect(html).not.toContain('--dsgo-shape-clearance-top');
+	});
+
+	test('an explicit clearance suppresses the wrapper var (inline inner padding wins)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 300,
+				shapeDividerTopSpacing: 'var:preset|spacing|70',
+			})
+		);
+		expect(html).not.toContain('--dsgo-shape-clearance-top');
+		expect(innerStyle(html)).toContain(
+			'padding-top:var(--wp--preset--spacing--70)'
+		);
+	});
+
 	test('clearance is not emitted for a position that has no divider', () => {
 		const html = serialize(
 			createBlock(metadata.name, {

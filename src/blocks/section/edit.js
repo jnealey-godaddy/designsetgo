@@ -314,6 +314,18 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
 				'--dsgo-overlay-opacity': '0.8',
 			}),
+			// Default content clearance matched to the divider height (must
+			// match save.js EXACTLY). See save.js for the full rationale.
+			...(shapeDividerTop &&
+				!shapeDividerTopSpacing &&
+				(shapeDividerTopHeight || 100) !== 100 && {
+					'--dsgo-shape-clearance-top': `${shapeDividerTopHeight}px`,
+				}),
+			...(shapeDividerBottom &&
+				!shapeDividerBottomSpacing &&
+				(shapeDividerBottomHeight || 100) !== 100 && {
+					'--dsgo-shape-clearance-bottom': `${shapeDividerBottomHeight}px`,
+				}),
 		},
 	});
 
