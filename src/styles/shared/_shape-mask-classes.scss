@@ -18,7 +18,9 @@ $dsgo-shape-slugs: (
 	'triangle', 'triangle-asymmetric', 'arrow', 'arrow-wide',
 	'peaks', 'peaks-soft', 'zigzag', 'book',
 	'clouds', 'drops', 'split', 'fan',
-	'steps', 'torn', 'slime'
+	'steps', 'torn', 'slime',
+	'triangle-layered', 'triangle-layered-extra', 'curvy-triangle-layered',
+	'symmetric-waves-layered', 'side-triangle-layered', 'side-triangle-layered-extra'
 );
 
 @each $dsgo-shape-slug in $dsgo-shape-slugs {

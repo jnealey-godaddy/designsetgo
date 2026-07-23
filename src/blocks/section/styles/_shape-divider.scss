@@ -104,13 +104,23 @@ $dsgo-shape-bleed: 1px;
 	z-index: 2;
 }
 
-// Fan: a TONAL ray divider, not a see-through knockout. Its mask carries its
-// own opacity layers, so we replace the two-layer XOR/exclude mask (which would
-// invert those layers into muddy translucency) with a single-layer mask. The
-// band colour is then painted over the section at the mask's graduated alpha —
-// producing layered rays that fade out from the centre, with the section's own
-// background showing between them.
-:where(.dsgo-shape-divider.is-shape-fan)::before {
+// TONAL dividers (fan, triangle-layered, triangle-layered-extra,
+// curvy-triangle-layered, symmetric-waves-layered, side-triangle-layered,
+// side-triangle-layered-extra): band-colour overlays, not see-through knockouts.
+// Their masks carry their own opacity layers, so we replace the two-layer
+// XOR/exclude mask (which would invert those layers into muddy translucency)
+// with a single-layer mask. The band colour is painted over the section at the
+// mask's graduated alpha — the drawn layers read as tonal band colour and the
+// undrawn areas show the section's own background through them.
+:where(
+	.dsgo-shape-divider.is-shape-fan,
+	.dsgo-shape-divider.is-shape-triangle-layered,
+	.dsgo-shape-divider.is-shape-triangle-layered-extra,
+	.dsgo-shape-divider.is-shape-curvy-triangle-layered,
+	.dsgo-shape-divider.is-shape-symmetric-waves-layered,
+	.dsgo-shape-divider.is-shape-side-triangle-layered,
+	.dsgo-shape-divider.is-shape-side-triangle-layered-extra
+)::before {
 	-webkit-mask-image: var(--dsgo-shape-mask);
 	-webkit-mask-composite: source-over;
 	mask-image: var(--dsgo-shape-mask);

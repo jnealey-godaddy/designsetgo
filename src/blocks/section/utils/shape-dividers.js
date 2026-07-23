@@ -134,6 +134,85 @@ export const SHAPE_DIVIDERS = {
 	slime: (
 		<path d="M0,120 L0,40 L67,40 Q57,94 110,94 Q163,94 153,40 L253,40 Q248,110 275,110 Q302,110 297,40 L414,40 Q405,80 450,80 Q495,80 486,40 L614,40 Q608,108 640,108 Q672,108 666,40 L788,40 Q777,90 835,90 Q893,90 882,40 L994,40 Q989,110 1015,110 Q1041,110 1036,40 L1119,40 Q1112,84 1150,84 Q1188,84 1181,40 L1200,40 L1200,120 Z" />
 	),
+
+	// Triangle layered — solid triangle rising from the bottom with a reversed
+	// (transparent) triangle notch at the top-center; two tonal layers. Rendered
+	// as a band-colour overlay (see .is-shape-triangle-layered in
+	// _shape-divider.scss), so the transparent notch shows the section background.
+	'triangle-layered': (
+		<>
+			<path
+				d="M0,112 L600,50 L0,0 Z M1200,112 L600,50 L1200,0 Z"
+				opacity="0.5"
+			/>
+			<path d="M0,120 H1200 V112 L600,50 L0,112 Z" />
+		</>
+	),
+
+	// Triangle layered extra — same as triangle-layered but the side wings carry
+	// three tonal layers (solid / less-solid / less-less-solid).
+	'triangle-layered-extra': (
+		<>
+			<path
+				d="M0,50 L600,50 L0,0 Z M1200,50 L600,50 L1200,0 Z"
+				opacity="0.3"
+			/>
+			<path
+				d="M0,112 L600,50 L0,50 Z M1200,112 L600,50 L1200,50 Z"
+				opacity="0.6"
+			/>
+			<path d="M0,120 H1200 V112 L600,50 L0,112 Z" />
+		</>
+	),
+
+	// Curvy triangle layered — triangle-layered with the edge between the
+	// transparent notch and each half-solid wing curved up (as if a circle
+	// sits below it).
+	'curvy-triangle-layered': (
+		<>
+			<path
+				d="M0,120 L0,0 C300,0 550,60 600,120 Z M1200,120 L1200,0 C900,0 650,60 600,120 Z"
+				opacity="0.5"
+			/>
+			<path d="M0,120 H1200 V107 C950,95 720,65 600,5 C480,65 250,95 0,107 Z" />
+		</>
+	),
+
+	// Symmetric waves layered — three tonal scalloped-wave layers.
+	'symmetric-waves-layered': (
+		<>
+			<path
+				d="M0,120 H1200 V55 C1050,55 1050,15 900,15 C750,15 750,55 600,55 C450,55 450,15 300,15 C150,15 150,55 0,55 Z"
+				opacity="0.3"
+			/>
+			<path
+				d="M0,120 H1200 V30 C1050,30 1050,70 900,70 C750,70 750,30 600,30 C450,30 450,70 300,70 C150,70 150,30 0,30 Z"
+				opacity="0.5"
+			/>
+			<path d="M0,120 H1200 V82 C1050,82 1050,42 900,42 C750,42 750,82 600,82 C450,82 450,42 300,42 C150,42 150,82 0,82 Z" />
+		</>
+	),
+
+	// Side triangle layered — a solid triangle plus a half-tone wedge, a two-tone
+	// tonal band (see .is-shape-side-triangle-layered in _shape-divider.scss).
+	// Both paths feed the band mask (--dsgo-shape--side-triangle-layered).
+	'side-triangle-layered': (
+		<>
+			<path d="M1200,0 L0,60 L0,120 Z" opacity="0.5" />
+			<path d="M1200,0 L1200,120 L0,120 Z" />
+		</>
+	),
+
+	// Side triangle layered extra — the same band with an added quarter-tone
+	// wedge for a deeper three-tone step
+	// (see .is-shape-side-triangle-layered-extra in _shape-divider.scss).
+	'side-triangle-layered-extra': (
+		<>
+			<path d="M1200,0 L0,0 L0,60 Z" opacity="0.25" />
+			<path d="M1200,0 L0,60 L0,120 Z" opacity="0.5" />
+			<path d="M1200,0 L1200,120 L0,120 Z" />
+		</>
+	),
 };
 
 /**
@@ -176,6 +255,30 @@ export function getShapeDividerOptions() {
 		{ label: __('Steps', 'designsetgo'), value: 'steps' },
 		{ label: __('Torn Paper', 'designsetgo'), value: 'torn' },
 		{ label: __('Slime', 'designsetgo'), value: 'slime' },
+		{
+			label: __('Triangle Layered', 'designsetgo'),
+			value: 'triangle-layered',
+		},
+		{
+			label: __('Triangle Layered Extra', 'designsetgo'),
+			value: 'triangle-layered-extra',
+		},
+		{
+			label: __('Curvy Triangle Layered', 'designsetgo'),
+			value: 'curvy-triangle-layered',
+		},
+		{
+			label: __('Symmetric Waves Layered', 'designsetgo'),
+			value: 'symmetric-waves-layered',
+		},
+		{
+			label: __('Side Triangle Layered', 'designsetgo'),
+			value: 'side-triangle-layered',
+		},
+		{
+			label: __('Side Triangle Layered Extra', 'designsetgo'),
+			value: 'side-triangle-layered-extra',
+		},
 	];
 }
 
