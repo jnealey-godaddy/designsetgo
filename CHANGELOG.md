@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.1] - 2026-07-23
+
 ### New Features
 - **Section Shape Divider: six new layered/tonal dividers** — The Section block's Shape Divider control gains six options that paint as single-layer band overlays (band colour at the mask's graduated alpha) rather than see-through knockouts: `triangle-layered` and `triangle-layered-extra` (a centered peak with one or two half-tone back layers), `curvy-triangle-layered` (a soft curved peak with a half-tone curved layer behind it), `symmetric-waves-layered` (stacked rows of symmetric wave crests at 0.3 / 0.5 / solid), and `side-triangle-layered` / `side-triangle-layered-extra` (an asymmetric diagonal band anchored at the top-right corner, in two- and three-tone). Each is wired through the shared mask library, the section block's tonal single-layer group, the inspector preview + option label, and the "Configure Shape Divider" ability's allowed shape values. (#489)
 
