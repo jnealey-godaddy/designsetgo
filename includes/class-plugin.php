@@ -646,6 +646,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/bindings/class-block-bindings-support.php';
 		require_once DESIGNSETGO_PATH . 'includes/data/svg-pattern-data.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-svg-pattern-renderer.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-animation-defaults.php';
 
 		// LLMS TXT classes.
 		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-file-manager.php';

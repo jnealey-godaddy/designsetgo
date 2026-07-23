@@ -1,0 +1,118 @@
+<?php
+/**
+ * Per-block-type animation defaults resolver.
+ *
+ * Merges the admin-option defaults over theme.json / Style-Kit defaults
+ * (read via wp_get_global_settings) and resolves the effective config for a
+ * given block name, honouring exact-name-then-namespace-wildcard precedence.
+ *
+ * @package DesignSetGo
+ * @since 2.6.0
+ */
+
+namespace DesignSetGo;
+
+use DesignSetGo\Admin\Settings;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Resolver for global per-block-type animation defaults.
+ */
+class Animation_Defaults {
+
+	/**
+	 * Resolve the effective enabled flag + per-block-name config map.
+	 *
+	 * Precedence per block name: admin option overrides theme.json / Style Kit.
+	 * Enabled when either the admin gate or the global gate is true.
+	 *
+	 * @return array{enabled: bool, map: array<string, array>}
+	 */
+	public static function get_effective() {
+		$settings      = Settings::get_settings();
+		$admin_enabled = ! empty( $settings['animations']['block_animations_enabled'] );
+		$admin_list    = isset( $settings['animations']['block_animations'] ) && is_array( $settings['animations']['block_animations'] )
+			? $settings['animations']['block_animations']
+			: array();
+
+		// Fetch the 'designsetgo' custom-settings node as a whole rather than
+		// requesting 'blockAnimations'/'blockAnimationsEnabled' as leaf paths
+		// directly. wp_get_global_settings() falls back to returning the
+		// *entire* merged settings tree — not null/false — when a requested
+		// path doesn't resolve (see `_wp_array_get( $settings, $path,
+		// $settings )` in wp-includes/global-styles-and-settings.php), which
+		// would make `! empty( ... )` always true for an unset leaf. Reading
+		// the parent node and doing plain array access below avoids that trap.
+		$global_custom = wp_get_global_settings( array( 'custom', 'designsetgo' ) );
+		$global_custom = is_array( $global_custom ) ? $global_custom : array();
+
+		$global_list = isset( $global_custom['blockAnimations'] ) && is_array( $global_custom['blockAnimations'] )
+			? $global_custom['blockAnimations']
+			: array();
+
+		$global_enabled = ! empty( $global_custom['blockAnimationsEnabled'] );
+
+		// Global (theme.json / Style Kit) first, admin overrides per block name.
+		$map = array();
+		foreach ( array( $global_list, $admin_list ) as $list ) {
+			foreach ( $list as $entry ) {
+				if ( is_array( $entry ) && ! empty( $entry['block'] ) ) {
+					$map[ (string) $entry['block'] ] = self::normalize_entry( $entry );
+				}
+			}
+		}
+
+		return array(
+			'enabled' => ( $admin_enabled || $global_enabled ),
+			'map'     => $map,
+		);
+	}
+
+	/**
+	 * Resolve the config for a single block name, or null if none applies.
+	 *
+	 * @param string $block_name Block name (e.g. "core/button").
+	 * @return array|null Normalized config or null.
+	 */
+	public static function resolve_for_block( $block_name ) {
+		$effective = self::get_effective();
+		if ( ! $effective['enabled'] ) {
+			return null;
+		}
+
+		$map = $effective['map'];
+		if ( isset( $map[ $block_name ] ) ) {
+			return $map[ $block_name ];
+		}
+
+		$slash = strpos( $block_name, '/' );
+		if ( false !== $slash ) {
+			$wildcard = substr( $block_name, 0, $slash + 1 ) . '*';
+			if ( isset( $map[ $wildcard ] ) ) {
+				return $map[ $wildcard ];
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Fill missing config fields with the extension's attribute defaults.
+	 *
+	 * @param array $entry Raw entry.
+	 * @return array Normalized config (no 'block' key).
+	 */
+	private static function normalize_entry( $entry ) {
+		return array(
+			'entrance' => isset( $entry['entrance'] ) ? (string) $entry['entrance'] : '',
+			'exit'     => isset( $entry['exit'] ) ? (string) $entry['exit'] : '',
+			'trigger'  => isset( $entry['trigger'] ) ? (string) $entry['trigger'] : 'scroll',
+			'duration' => isset( $entry['duration'] ) ? (int) $entry['duration'] : 600,
+			'delay'    => isset( $entry['delay'] ) ? (int) $entry['delay'] : 0,
+			'easing'   => isset( $entry['easing'] ) ? (string) $entry['easing'] : 'ease-out',
+			'offset'   => isset( $entry['offset'] ) ? (int) $entry['offset'] : 100,
+			'once'     => isset( $entry['once'] ) ? (bool) $entry['once'] : true,
+		);
+	}
+}
