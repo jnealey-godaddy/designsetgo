@@ -123,6 +123,8 @@ class Settings {
 				'default_easing'                 => 'ease-in-out',
 				'respect_prefers_reduced_motion' => true,
 				'default_icon_button_hover'      => 'fill-diagonal',
+				'block_animations_enabled'       => false,
+				'block_animations'               => array(),
 			),
 			'security'           => array(
 				'log_ip_addresses' => true,
@@ -604,6 +606,12 @@ class Settings {
 		$existing = get_option( self::OPTION_NAME, array() );
 		$merged   = array_replace_recursive( $existing, $sanitized );
 
+		// List fields must be replaced wholesale — array_replace_recursive
+		// merges lists by numeric index, which would strand stale entries.
+		if ( isset( $sanitized['animations']['block_animations'] ) ) {
+			$merged['animations']['block_animations'] = $sanitized['animations']['block_animations'];
+		}
+
 		update_option( self::OPTION_NAME, $merged );
 		self::invalidate_cache();
 
@@ -718,6 +726,8 @@ class Settings {
 				'default_easing'                 => 'text',
 				'respect_prefers_reduced_motion' => 'bool',
 				'default_icon_button_hover'      => 'key',
+				'block_animations_enabled'       => 'bool',
+				'block_animations'               => 'block_animations',
 			),
 			'security'           => array(
 				'log_ip_addresses' => 'bool',
@@ -793,6 +803,8 @@ class Settings {
 				return is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : $fallback;
 			case 'key_list':
 				return is_array( $value ) ? array_map( 'sanitize_key', $value ) : $fallback;
+			case 'block_animations':
+				return self::sanitize_block_animations_list( is_array( $value ) ? $value : array() );
 			default:
 				return sanitize_text_field( $value );
 		}
@@ -824,6 +836,65 @@ class Settings {
 			return '';
 		}
 		return sanitize_text_field( $trimmed );
+	}
+
+	/**
+	 * Sanitize the per-block-type animation defaults list.
+	 *
+	 * Each entry must name a valid block (exact name or `namespace/*`) and
+	 * carry at least an entrance or exit animation. Enum fields fall back to
+	 * their defaults on an unknown value; numeric fields are clamped.
+	 *
+	 * @param array $value Raw list of entries.
+	 * @return array Sanitized list (re-indexed).
+	 */
+	public static function sanitize_block_animations_list( array $value ): array {
+		$entrances = array( 'fadeIn', 'fadeInUp', 'fadeInDown', 'fadeInLeft', 'fadeInRight', 'slideInUp', 'slideInDown', 'slideInLeft', 'slideInRight', 'zoomIn', 'bounceIn', 'flipInX', 'flipInY' );
+		$exits     = array( 'fadeOut', 'fadeOutUp', 'fadeOutDown', 'fadeOutLeft', 'fadeOutRight', 'slideOutUp', 'slideOutDown', 'slideOutLeft', 'slideOutRight', 'zoomOut', 'bounceOut' );
+		$triggers  = array( 'scroll', 'load', 'hover', 'click' );
+		$easings   = array( 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' );
+
+		$clean = array();
+		foreach ( $value as $entry ) {
+			if ( ! is_array( $entry ) || empty( $entry['block'] ) ) {
+				continue;
+			}
+
+			$block = (string) $entry['block'];
+			// namespace/name or namespace/* — lowercase letters, digits, hyphens.
+			if ( ! preg_match( '#^[a-z0-9-]+/(\*|[a-z0-9-]+)$#', $block ) ) {
+				continue;
+			}
+
+			$entrance = isset( $entry['entrance'] ) && in_array( (string) $entry['entrance'], $entrances, true ) ? (string) $entry['entrance'] : '';
+			$exit     = isset( $entry['exit'] ) && in_array( (string) $entry['exit'], $exits, true ) ? (string) $entry['exit'] : '';
+
+			// An entry that animates nothing is meaningless.
+			if ( '' === $entrance && '' === $exit ) {
+				continue;
+			}
+
+			$trigger  = isset( $entry['trigger'] ) && in_array( (string) $entry['trigger'], $triggers, true ) ? (string) $entry['trigger'] : 'scroll';
+			$easing   = isset( $entry['easing'] ) && in_array( (string) $entry['easing'], $easings, true ) ? (string) $entry['easing'] : 'ease-out';
+			$duration = isset( $entry['duration'] ) ? max( 100, min( 5000, absint( $entry['duration'] ) ) ) : 600;
+			$delay    = isset( $entry['delay'] ) ? max( 0, min( 5000, absint( $entry['delay'] ) ) ) : 0;
+			$offset   = isset( $entry['offset'] ) ? max( 0, min( 1000, absint( $entry['offset'] ) ) ) : 100;
+			$once     = isset( $entry['once'] ) ? (bool) $entry['once'] : true;
+
+			$clean[] = array(
+				'block'    => $block,
+				'entrance' => $entrance,
+				'exit'     => $exit,
+				'trigger'  => $trigger,
+				'duration' => $duration,
+				'delay'    => $delay,
+				'easing'   => $easing,
+				'offset'   => $offset,
+				'once'     => $once,
+			);
+		}
+
+		return $clean;
 	}
 
 	/**
