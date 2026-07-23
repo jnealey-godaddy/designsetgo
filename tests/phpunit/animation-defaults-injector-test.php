@@ -117,4 +117,52 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 		);
 		$this->assertSame( $html, $out );
 	}
+
+	/**
+	 * The injector is a no-op while rendering in the admin (e.g. block editor previews).
+	 */
+	public function test_skips_in_admin_context() {
+		set_current_screen( 'edit-post' );
+		$this->assertTrue( is_admin() );
+		$html = '<div class="wp-block-button">x</div>';
+		$out  = $this->injector->inject(
+			$html,
+			array(
+				'blockName' => 'core/button',
+				'attrs'     => array(),
+			)
+		);
+		$this->assertSame( $html, $out );
+		set_current_screen( 'front' );
+	}
+
+	/**
+	 * An empty block name and empty block content are both left untouched.
+	 */
+	public function test_skips_empty_blockname_and_empty_content() {
+		// Empty block name -> unchanged.
+		$html = '<div class="wp-block-button">x</div>';
+		$this->assertSame(
+			$html,
+			$this->injector->inject(
+				$html,
+				array(
+					'blockName' => '',
+					'attrs'     => array(),
+				)
+			)
+		);
+
+		// Empty content -> unchanged.
+		$this->assertSame(
+			'',
+			$this->injector->inject(
+				'',
+				array(
+					'blockName' => 'core/button',
+					'attrs'     => array(),
+				)
+			)
+		);
+	}
 }
