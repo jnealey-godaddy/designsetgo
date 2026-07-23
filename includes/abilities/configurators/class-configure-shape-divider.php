@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Configure_Shape_Divider extends Abstract_Ability {
 
 	/**
-	 * All 23 valid shape divider names from shape-dividers.js.
+	 * All 29 valid shape divider names from shape-dividers.js.
 	 *
 	 * @var array<string>
 	 */
@@ -55,6 +55,12 @@ class Configure_Shape_Divider extends Abstract_Ability {
 		'steps',
 		'torn',
 		'slime',
+		'triangle-layered',
+		'triangle-layered-extra',
+		'curvy-triangle-layered',
+		'symmetric-waves-layered',
+		'side-triangle-layered',
+		'side-triangle-layered-extra',
 	);
 
 	/**
@@ -74,7 +80,7 @@ class Configure_Shape_Divider extends Abstract_Ability {
 	public function get_config(): array {
 		return array(
 			'label'               => __( 'Configure Shape Divider', 'designsetgo' ),
-			'description'         => __( 'Adds or updates shape dividers on a section block. Supports top, bottom, or both positions with 23 shape types, custom colors, height, width, flip, and layering options.', 'designsetgo' ),
+			'description'         => __( 'Adds or updates shape dividers on a section block. Supports top, bottom, or both positions with 29 shape types, custom colors, height, width, flip, and layering options.', 'designsetgo' ),
 			'category'            => 'blocks',
 			'input_schema'        => $this->get_input_schema(),
 			'output_schema'       => Block_Configurator::get_default_output_schema(),
@@ -112,7 +118,7 @@ class Configure_Shape_Divider extends Abstract_Ability {
 				),
 				'shape'           => array(
 					'type'        => 'string',
-					'description' => __( 'Shape type. Available: wave, wave-double, wave-layered, wave-asymmetric, tilt, tilt-reverse, curve, curve-asymmetric, triangle, triangle-asymmetric, arrow, arrow-wide, peaks, peaks-soft, zigzag, book, clouds, drops, split, fan, steps, torn, slime', 'designsetgo' ),
+					'description' => __( 'Shape type. Available: wave, wave-double, wave-layered, wave-asymmetric, tilt, tilt-reverse, curve, curve-asymmetric, triangle, triangle-asymmetric, arrow, arrow-wide, peaks, peaks-soft, zigzag, book, clouds, drops, split, fan, steps, torn, slime, triangle-layered, triangle-layered-extra, curvy-triangle-layered, symmetric-waves-layered, side-triangle-layered, side-triangle-layered-extra', 'designsetgo' ),
 					'enum'        => self::VALID_SHAPES,
 				),
 				'color'           => array(
@@ -200,7 +206,7 @@ class Configure_Shape_Divider extends Abstract_Ability {
 			);
 		}
 
-		// Validate shape is one of the 23 known values.
+		// Validate shape is one of the known values.
 		if ( ! in_array( $shape, self::VALID_SHAPES, true ) ) {
 			return $this->error(
 				'validation_failed',
