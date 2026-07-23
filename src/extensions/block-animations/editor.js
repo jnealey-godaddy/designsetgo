@@ -51,6 +51,7 @@ const withAnimationControls = createHigherOrderComponent((BlockEdit) => {
 				<InspectorControls>
 					<Suspense fallback={null}>
 						<AnimationPanel
+							name={name}
 							attributes={attributes}
 							setAttributes={setAttributes}
 						/>

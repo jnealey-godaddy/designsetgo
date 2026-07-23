@@ -1,19 +1,24 @@
 /**
  * Block Animations - Settings Panel
  *
- * Panel component for configuring block animations
+ * Panel for the per-block animation tri-state (Inherit / Custom / Off),
+ * the Custom controls, and the inherited-theme-default indicator.
  *
  * @package
  * @since 1.0.0
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	PanelBody,
 	ToggleControl,
 	SelectControl,
 	RangeControl,
 	Notice,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControl as ToggleGroupControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
 import {
 	ANIMATION_TYPES,
@@ -21,18 +26,33 @@ import {
 	ANIMATION_DURATIONS,
 	ANIMATION_EASINGS,
 } from '../constants';
+import { resolveBlockAnimationDefault } from '../resolve-default';
 
 /**
- * Animation Settings Panel
+ * Human label for an entrance/exit value.
  *
- * @param {Object}   props               Component props
- * @param {Object}   props.attributes    Block attributes
- * @param {Function} props.setAttributes Function to update attributes
- * @return {JSX.Element} Animation panel component
+ * @param {string} value Animation value.
+ * @return {string} Label or the raw value.
  */
-export default function AnimationPanel({ attributes, setAttributes }) {
+function animationLabel(value) {
+	const all = [...ANIMATION_TYPES.entrance, ...ANIMATION_TYPES.exit];
+	const found = all.find((opt) => opt.value === value);
+	return found ? found.label : value;
+}
+
+/**
+ * Animation Settings Panel.
+ *
+ * @param {Object}   props               Component props.
+ * @param {string}   props.name          Block name.
+ * @param {Object}   props.attributes    Block attributes.
+ * @param {Function} props.setAttributes Attribute setter.
+ * @return {JSX.Element} Panel.
+ */
+export default function AnimationPanel({ name, attributes, setAttributes }) {
 	const {
 		dsgoAnimationEnabled,
+		dsgoAnimationOptOut,
 		dsgoEntranceAnimation,
 		dsgoExitAnimation,
 		dsgoAnimationTrigger,
@@ -43,26 +63,90 @@ export default function AnimationPanel({ attributes, setAttributes }) {
 		dsgoAnimationOnce,
 	} = attributes;
 
+	// Derive tri-state from the two attributes.
+	let mode = 'inherit';
+	if (dsgoAnimationEnabled) {
+		mode = 'custom';
+	} else if (dsgoAnimationOptOut) {
+		mode = 'off';
+	}
+
+	const themeDefault = resolveBlockAnimationDefault(name);
+
+	const onModeChange = (value) => {
+		if (value === 'custom') {
+			setAttributes({
+				dsgoAnimationEnabled: true,
+				dsgoAnimationOptOut: false,
+			});
+		} else if (value === 'off') {
+			setAttributes({
+				dsgoAnimationEnabled: false,
+				dsgoAnimationOptOut: true,
+			});
+		} else {
+			setAttributes({
+				dsgoAnimationEnabled: false,
+				dsgoAnimationOptOut: false,
+			});
+		}
+	};
+
 	return (
 		<PanelBody
 			title={__('Animations', 'designsetgo')}
 			initialOpen={false}
 			icon="video-alt3"
 		>
-			<ToggleControl
-				label={__('Enable Animations', 'designsetgo')}
-				checked={dsgoAnimationEnabled}
-				onChange={(value) =>
-					setAttributes({ dsgoAnimationEnabled: value })
-				}
-				help={__(
-					'Add entrance and exit animations to this block',
-					'designsetgo'
-				)}
+			<ToggleGroupControl
+				label={__('Animation', 'designsetgo')}
+				value={mode}
+				isBlock
+				onChange={onModeChange}
 				__nextHasNoMarginBottom
-			/>
+				__next40pxDefaultSize
+			>
+				<ToggleGroupControlOption
+					value="inherit"
+					label={__('Theme', 'designsetgo')}
+				/>
+				<ToggleGroupControlOption
+					value="custom"
+					label={__('Custom', 'designsetgo')}
+				/>
+				<ToggleGroupControlOption
+					value="off"
+					label={__('Off', 'designsetgo')}
+				/>
+			</ToggleGroupControl>
 
-			{dsgoAnimationEnabled && (
+			{mode === 'inherit' && themeDefault && (
+				<Notice status="info" isDismissible={false}>
+					{sprintf(
+						/* translators: 1: animation name, 2: trigger, 3: duration in ms. */
+						__(
+							'Inheriting theme animation: %1$s · %2$s · %3$dms',
+							'designsetgo'
+						),
+						animationLabel(
+							themeDefault.entrance || themeDefault.exit
+						),
+						themeDefault.trigger,
+						themeDefault.duration
+					)}
+				</Notice>
+			)}
+
+			{mode === 'inherit' && !themeDefault && (
+				<Notice status="info" isDismissible={false}>
+					{__(
+						'No theme animation for this block type.',
+						'designsetgo'
+					)}
+				</Notice>
+			)}
+
+			{mode === 'custom' && (
 				<>
 					<SelectControl
 						label={__('Entrance Animation', 'designsetgo')}
@@ -87,8 +171,6 @@ export default function AnimationPanel({ attributes, setAttributes }) {
 							...ANIMATION_TYPES.exit,
 						]}
 						onChange={(value) => {
-							// When exit animation is selected with scroll trigger,
-							// disable "animate once" so the animation can repeat
 							if (value && dsgoAnimationTrigger === 'scroll') {
 								setAttributes({
 									dsgoExitAnimation: value,

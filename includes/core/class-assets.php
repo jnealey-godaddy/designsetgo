@@ -121,6 +121,7 @@ class Assets {
 	 */
 	private function localize_extension_settings() {
 		$settings = \DesignSetGo\Admin\Settings::get_settings();
+		$anim     = \DesignSetGo\Animation_Defaults::get_effective();
 
 		$excluded_blocks    = isset( $settings['excluded_blocks'] ) ? (array) $settings['excluded_blocks'] : array();
 		$enabled_extensions = isset( $settings['enabled_extensions'] ) ? (array) $settings['enabled_extensions'] : array();
@@ -136,8 +137,24 @@ class Assets {
 				// Empty list = all extensions enabled (matches the
 				// PHP convention in Block_Manager::should_load_extension).
 				'enabledExtensions'      => array_values( array_map( 'sanitize_key', $enabled_extensions ) ),
+				'blockAnimations'        => self::block_animations_for_editor( $anim['map'] ),
+				'blockAnimationsEnabled' => (bool) $anim['enabled'],
 			)
 		);
+	}
+
+	/**
+	 * Flatten the resolved animation-defaults map to a list for the editor.
+	 *
+	 * @param array $map Block-name => config map from Animation_Defaults::get_effective().
+	 * @return array<int, array> List of entries with a `block` key.
+	 */
+	private static function block_animations_for_editor( array $map ) {
+		$list = array();
+		foreach ( $map as $block => $config ) {
+			$list[] = array_merge( array( 'block' => $block ), $config );
+		}
+		return $list;
 	}
 
 	/**
