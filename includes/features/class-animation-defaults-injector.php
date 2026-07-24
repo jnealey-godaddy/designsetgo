@@ -23,7 +23,15 @@ class Animation_Defaults_Injector {
 	 * Register hooks.
 	 */
 	public function init() {
-		add_filter( 'render_block', array( $this, 'inject' ), 10, 2 );
+		// Priority 9: must run BEFORE Assets::maybe_enqueue_frontend_on_render()
+		// (registered at the default priority 10). That method decides whether
+		// to enqueue the frontend CSS/JS bundle by scanning the already-rendered
+		// $block_content for a "dsgo-" substring. If this injector ran at 10 too,
+		// registration order would put the enqueue check first, so it would see
+		// pre-injection markup (no "dsgo-" yet) and skip enqueuing — leaving an
+		// inherited animation's classes/data-attributes on the page with no CSS
+		// keyframes or IntersectionObserver JS to drive them.
+		add_filter( 'render_block', array( $this, 'inject' ), 9, 2 );
 	}
 
 	/**
@@ -49,6 +57,12 @@ class Animation_Defaults_Injector {
 		}
 		// Off state — explicit opt-out.
 		if ( ! empty( $attrs['dsgoAnimationOptOut'] ) ) {
+			return $block_content;
+		}
+
+		// Respect the same exclusions as the block-animations extension:
+		// its own skip list plus the user-configured excludedBlocks.
+		if ( Extension_Attributes::is_block_excluded( $block['blockName'], array( 'core/freeform', 'core-embed/*' ) ) ) {
 			return $block_content;
 		}
 

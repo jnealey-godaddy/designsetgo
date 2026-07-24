@@ -186,6 +186,23 @@ class Extension_Attributes {
 	}
 
 	/**
+	 * Whether a block is excluded from an extension's reach — combines an
+	 * extension-specific exclusion list with the user-configured excluded_blocks.
+	 *
+	 * Public wrapper around the internal exclusion matcher so render-time
+	 * features (e.g. the animation-defaults injector) apply the same
+	 * exclusions as attribute registration.
+	 *
+	 * @param string $block_type       Block name.
+	 * @param array  $extra_exclusions Extension-specific exclusions (exact or namespace/* ).
+	 * @return bool Whether the block is excluded.
+	 */
+	public static function is_block_excluded( $block_type, array $extra_exclusions = array() ) {
+		return self::is_excluded( $block_type, $extra_exclusions )
+			|| self::is_excluded( $block_type, self::get_excluded_blocks() );
+	}
+
+	/**
 	 * Get user-configured excluded blocks from plugin settings.
 	 *
 	 * Cached after first call to avoid repeated option lookups.
