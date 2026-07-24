@@ -4,7 +4,10 @@
  * @package
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
+import { useState, useEffect, useMemo } from '@wordpress/element';
+import apiFetch from '@wordpress/api-fetch';
+import { trash } from '@wordpress/icons';
 import {
 	Card,
 	CardHeader,
@@ -12,6 +15,7 @@ import {
 	ToggleControl,
 	RangeControl,
 	SelectControl,
+	ComboboxControl,
 	TextControl,
 	Button,
 } from '@wordpress/components';
@@ -59,6 +63,57 @@ const NEW_ROW = {
 };
 
 const AnimationsPanel = ({ settings, updateSetting }) => {
+	// Registered block types for the picker. null = loading, false = failed
+	// (falls back to a plain text field), array = loaded.
+	const [blockTypes, setBlockTypes] = useState(null);
+
+	useEffect(() => {
+		let active = true;
+		apiFetch({
+			path: '/wp/v2/block-types?context=view&_fields=name,title',
+		})
+			.then((types) => {
+				if (active) {
+					setBlockTypes(Array.isArray(types) ? types : []);
+				}
+			})
+			.catch(() => {
+				if (active) {
+					setBlockTypes(false);
+				}
+			});
+		return () => {
+			active = false;
+		};
+	}, []);
+
+	// Searchable options for the block-type picker: namespace wildcards first
+	// (e.g. "core/* — all core blocks"), then every registered block as
+	// "Title — name", alphabetically. Empty until the fetch resolves.
+	const blockOptions = useMemo(() => {
+		if (!Array.isArray(blockTypes)) {
+			return [];
+		}
+		const namespaces = [
+			...new Set(blockTypes.map((b) => b.name.split('/')[0])),
+		].sort();
+		const wildcards = namespaces.map((ns) => ({
+			value: `${ns}/*`,
+			label: `${ns}/* — ${sprintf(
+				// translators: %s is a block namespace, e.g. "core".
+				__('all %s blocks', 'designsetgo'),
+				ns
+			)}`,
+		}));
+		const blocks = blockTypes
+			.map((b) => ({
+				value: b.name,
+				label: `${b.title} — ${b.name}`,
+			}))
+			.sort((a, b) => a.label.localeCompare(b.label));
+		return [...wildcards, ...blocks];
+	}, [blockTypes]);
+
 	return (
 		<Card className="designsetgo-settings-panel">
 			<CardHeader>
@@ -366,42 +421,98 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 														},
 													];
 
+										const rowBlockOptions =
+											row.block &&
+											!blockOptions.some(
+												(o) => o.value === row.block
+											)
+												? [
+														...blockOptions,
+														{
+															value: row.block,
+															label: row.block,
+														},
+													]
+												: blockOptions;
+										const blockLoadFailed =
+											blockTypes === false;
+
 										return (
 											<div
 												key={index}
 												className="designsetgo-block-animations__row"
 											>
-												<TextControl
-													label={__(
-														'Block type',
-														'designsetgo'
+												<div className="designsetgo-block-animations__block">
+													{blockLoadFailed ? (
+														<TextControl
+															label={__(
+																'Block type',
+																'designsetgo'
+															)}
+															value={row.block}
+															placeholder="core/button"
+															onChange={(value) =>
+																update({
+																	block: value,
+																})
+															}
+															help={
+																blockInvalid
+																	? __(
+																			'Invalid format — use a block name like core/button or a namespace wildcard like designsetgo/*.',
+																			'designsetgo'
+																		)
+																	: __(
+																			'Exact block name (core/button) or a namespace wildcard (designsetgo/*).',
+																			'designsetgo'
+																		)
+															}
+															className={
+																blockInvalid
+																	? 'designsetgo-block-animations__block-input is-invalid'
+																	: 'designsetgo-block-animations__block-input'
+															}
+															__nextHasNoMarginBottom
+															__next40pxDefaultSize
+														/>
+													) : (
+														<ComboboxControl
+															className="designsetgo-block-animations__block-input"
+															label={__(
+																'Block type',
+																'designsetgo'
+															)}
+															value={
+																row.block ||
+																null
+															}
+															options={
+																rowBlockOptions
+															}
+															onChange={(value) =>
+																update({
+																	block:
+																		value ||
+																		'',
+																})
+															}
+															help={
+																blockTypes ===
+																null
+																	? __(
+																			'Loading block types…',
+																			'designsetgo'
+																		)
+																	: __(
+																			'Search a block, or pick a namespace wildcard like designsetgo/*.',
+																			'designsetgo'
+																		)
+															}
+															__next40pxDefaultSize
+															__nextHasNoMarginBottom
+														/>
 													)}
-													value={row.block}
-													placeholder="core/button"
-													onChange={(value) =>
-														update({
-															block: value,
-														})
-													}
-													help={
-														blockInvalid
-															? __(
-																	'Invalid format — use a block name like core/button or a namespace wildcard like designsetgo/*.',
-																	'designsetgo'
-																)
-															: __(
-																	'Exact block name (core/button) or a namespace wildcard (designsetgo/*).',
-																	'designsetgo'
-																)
-													}
-													className={
-														blockInvalid
-															? 'designsetgo-block-animations__block-input is-invalid'
-															: 'designsetgo-block-animations__block-input'
-													}
-													__nextHasNoMarginBottom
-													__next40pxDefaultSize
-												/>
+												</div>
 												<SelectControl
 													label={__(
 														'Entrance',
@@ -451,15 +562,15 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 													__next40pxDefaultSize
 												/>
 												<Button
-													isDestructive
-													variant="tertiary"
-													onClick={remove}
-												>
-													{__(
-														'Remove',
+													className="designsetgo-block-animations__remove"
+													icon={trash}
+													label={__(
+														'Remove block type',
 														'designsetgo'
 													)}
-												</Button>
+													isDestructive
+													onClick={remove}
+												/>
 											</div>
 										);
 									})}
