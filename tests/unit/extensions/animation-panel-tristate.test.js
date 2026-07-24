@@ -64,6 +64,29 @@ describe('AnimationPanel tri-state', () => {
 		).toBeInTheDocument();
 	});
 
+	it('shows both entrance and exit in the indicator when the default has both', () => {
+		window.dsgoSettings = {
+			blockAnimationsEnabled: true,
+			blockAnimations: [
+				{
+					block: 'core/cover',
+					entrance: 'fadeInUp',
+					exit: 'fadeOut',
+					trigger: 'scroll',
+					duration: 600,
+				},
+			],
+		};
+		render(
+			<AnimationPanel
+				name="core/cover"
+				attributes={{}}
+				setAttributes={() => {}}
+			/>
+		);
+		expect(screen.getByText(/Fade In Up \/ Fade Out/)).toBeInTheDocument();
+	});
+
 	it('shows the no-default message when none applies', () => {
 		render(
 			<AnimationPanel

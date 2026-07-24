@@ -64,7 +64,7 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 			array(
 				'blockName' => 'core/button',
 				'attrs'     => array(),
-			) 
+			)
 		);
 
 		$this->assertStringContainsString( 'has-dsgo-animation', $out );
@@ -83,7 +83,7 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 			array(
 				'blockName' => 'core/button',
 				'attrs'     => array( 'dsgoAnimationEnabled' => true ),
-			) 
+			)
 		);
 		$this->assertSame( $html, $out );
 	}
@@ -98,7 +98,7 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 			array(
 				'blockName' => 'core/button',
 				'attrs'     => array( 'dsgoAnimationOptOut' => true ),
-			) 
+			)
 		);
 		$this->assertSame( $html, $out );
 	}
@@ -113,7 +113,7 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 			array(
 				'blockName' => 'core/paragraph',
 				'attrs'     => array(),
-			) 
+			)
 		);
 		$this->assertSame( $html, $out );
 	}

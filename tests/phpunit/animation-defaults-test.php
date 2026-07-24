@@ -58,7 +58,7 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 					'block'    => 'core/button',
 					'entrance' => 'fadeInUp',
 				),
-			) 
+			)
 		);
 		$this->assertNull( Animation_Defaults::resolve_for_block( 'core/button' ) );
 	}

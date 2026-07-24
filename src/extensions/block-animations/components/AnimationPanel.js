@@ -128,9 +128,10 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 							'Inheriting theme animation: %1$s · %2$s · %3$dms',
 							'designsetgo'
 						),
-						animationLabel(
-							themeDefault.entrance || themeDefault.exit
-						),
+						[themeDefault.entrance, themeDefault.exit]
+							.filter(Boolean)
+							.map(animationLabel)
+							.join(' / '),
 						themeDefault.trigger,
 						themeDefault.duration
 					)}

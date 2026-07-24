@@ -348,6 +348,24 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 												row.block
 											);
 
+										// The server accepts any duration in the
+										// 100–5000ms range; keep a non-preset value
+										// (e.g. one set via the settings REST /
+										// abilities API) representable in the select
+										// instead of showing nothing selected.
+										const durationOptions =
+											DURATION_OPTIONS.some(
+												(o) => o.value === row.duration
+											)
+												? DURATION_OPTIONS
+												: [
+														...DURATION_OPTIONS,
+														{
+															label: `${row.duration}ms`,
+															value: row.duration,
+														},
+													];
+
 										return (
 											<div
 												key={index}
@@ -420,7 +438,7 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 														'designsetgo'
 													)}
 													value={row.duration}
-													options={DURATION_OPTIONS}
+													options={durationOptions}
 													onChange={(value) =>
 														update({
 															duration: parseInt(
