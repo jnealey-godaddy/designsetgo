@@ -841,9 +841,11 @@ class Settings {
 	/**
 	 * Sanitize the per-block-type animation defaults list.
 	 *
-	 * Each entry must name a valid block (exact name or `namespace/*`) and
-	 * carry at least an entrance or exit animation. Enum fields fall back to
-	 * their defaults on an unknown value; numeric fields are clamped.
+	 * Each entry targets one or more valid blocks (exact name or `namespace/*`)
+	 * and must carry at least an entrance or exit animation. Enum fields fall
+	 * back to their defaults on an unknown value; numeric fields are clamped.
+	 * A block name may only appear once across the whole list — see
+	 * dedupe_block_animation_targets().
 	 *
 	 * @param array $value Raw list of entries.
 	 * @return array Sanitized list (re-indexed).
@@ -851,13 +853,12 @@ class Settings {
 	public static function sanitize_block_animations_list( array $value ): array {
 		$clean = array();
 		foreach ( $value as $entry ) {
-			if ( ! is_array( $entry ) || empty( $entry['block'] ) ) {
+			if ( ! is_array( $entry ) ) {
 				continue;
 			}
 
-			$block = (string) $entry['block'];
-			// namespace/name or namespace/* — lowercase letters, digits, hyphens.
-			if ( ! preg_match( '#^[a-z0-9-]+/(\*|[a-z0-9-]+)$#', $block ) ) {
+			$blocks = self::sanitize_block_animation_targets( $entry );
+			if ( empty( $blocks ) ) {
 				continue;
 			}
 
@@ -868,10 +869,90 @@ class Settings {
 				continue;
 			}
 
-			$clean[] = array( 'block' => $block ) + $fields;
+			$clean[] = array( 'blocks' => $blocks ) + $fields;
 		}
 
-		return $clean;
+		return self::dedupe_block_animation_targets( $clean );
+	}
+
+	/**
+	 * Extract and validate the block names a single entry targets.
+	 *
+	 * Reads the `blocks` list, falling back to the historical singular `block`
+	 * key so theme.json / Style Kits authored against the first shape of this
+	 * feature keep resolving. Each name must be an exact `namespace/name` or a
+	 * `namespace/*` wildcard; anything else is dropped. Duplicates within the
+	 * entry are collapsed.
+	 *
+	 * Shared by the admin-option sanitizer and Animation_Defaults::get_effective()
+	 * so theme.json-sourced names get the same format validation as admin ones.
+	 *
+	 * @param array $entry Raw entry.
+	 * @return array<int, string> Validated block names (may be empty).
+	 */
+	public static function sanitize_block_animation_targets( array $entry ): array {
+		$raw = array();
+		if ( isset( $entry['blocks'] ) && is_array( $entry['blocks'] ) ) {
+			$raw = $entry['blocks'];
+		} elseif ( isset( $entry['block'] ) && is_string( $entry['block'] ) ) {
+			$raw = array( $entry['block'] );
+		}
+
+		$blocks = array();
+		foreach ( $raw as $block ) {
+			if ( ! is_string( $block ) ) {
+				continue;
+			}
+
+			$block = trim( $block );
+			// namespace/name or namespace/* — lowercase letters, digits, hyphens.
+			if ( ! preg_match( '#^[a-z0-9-]+/(\*|[a-z0-9-]+)$#', $block ) ) {
+				continue;
+			}
+
+			if ( ! in_array( $block, $blocks, true ) ) {
+				$blocks[] = $block;
+			}
+		}
+
+		return $blocks;
+	}
+
+	/**
+	 * Ensure no block name is claimed by more than one entry.
+	 *
+	 * Animation_Defaults::get_effective() builds a `block name => config` map,
+	 * so a name claimed twice silently resolves to whichever entry was written
+	 * last. Rather than persist rows that can never take effect, strip the
+	 * earlier claims here — matching the map's last-wins precedence — and drop
+	 * any entry left targeting nothing.
+	 *
+	 * @param array $list Sanitized entries, in author order.
+	 * @return array Entries with unique targets (re-indexed).
+	 */
+	private static function dedupe_block_animation_targets( array $list ): array {
+		$seen  = array();
+		$clean = array();
+
+		foreach ( array_reverse( $list ) as $entry ) {
+			$blocks = array();
+			foreach ( $entry['blocks'] as $block ) {
+				if ( isset( $seen[ $block ] ) ) {
+					continue;
+				}
+				$seen[ $block ] = true;
+				$blocks[]       = $block;
+			}
+
+			if ( empty( $blocks ) ) {
+				continue;
+			}
+
+			$entry['blocks'] = $blocks;
+			$clean[]         = $entry;
+		}
+
+		return array_reverse( $clean );
 	}
 
 	/**

@@ -30,7 +30,8 @@ These defaults must be authorable in **theme.json global styles** (by theme devs
    block overrides (Custom) or opts out (Off).
 5. **Type keying:** **exact block name** (e.g. `core/button`), with optional
    `namespace/*` wildcards (same syntax `excludedBlocks` already uses). Respects the
-   existing `excludedBlocks` list.
+   existing `excludedBlocks` list. One entry may target **several** block names, so a
+   single animation rule can cover e.g. every button variant on the site.
 6. **Editor behavior:** inherited animation is shown as an **indicator** in the inspector,
    not played live in the canvas (consistent with today, where animations don't run in the
    editor).
@@ -39,7 +40,6 @@ These defaults must be authorable in **theme.json global styles** (by theme devs
 
 ## Non-goals (YAGNI)
 
-- Semantic families ("Buttons" fanning out to several block names).
 - Named/reusable animation presets ("Subtle" / "Bold").
 - Per-post or per-template overrides of the global defaults.
 - Playing inherited animations live in the editor canvas.
@@ -99,11 +99,12 @@ These defaults must be authorable in **theme.json global styles** (by theme devs
 "settings": { "custom": { "designsetgo": {
   "blockAnimationsEnabled": true,
   "blockAnimations": [
-    { "block": "core/button",   "entrance": "fadeInUp", "exit": "",
+    { "blocks": ["core/button", "designsetgo/icon-button"],
+      "entrance": "fadeInUp", "exit": "",
       "trigger": "scroll", "duration": 600, "delay": 0,
       "easing": "ease-out", "offset": 100, "once": true },
-    { "block": "core/image",    "entrance": "zoomIn", "duration": 800 },
-    { "block": "designsetgo/*", "entrance": "fadeIn" }
+    { "blocks": ["core/image"],    "entrance": "zoomIn", "duration": 800 },
+    { "blocks": ["designsetgo/*"], "entrance": "fadeIn" }
   ]
 } } }
 ```
@@ -111,9 +112,15 @@ These defaults must be authorable in **theme.json global styles** (by theme devs
 - **An array of entries**, not an object keyed by block name. Block names contain `/`, which
   would generate malformed `--wp--custom--designsetgo--…` CSS custom properties. Array
   indices (`--…--block-animations--0--entrance`) are valid and harmless.
-- Each entry: `block` (required, exact name or `namespace/*`) plus any subset of the animation
-  config fields. Omitted fields fall back to the extension's own attribute defaults
+- Each entry: `blocks` (required, a list of exact names and/or `namespace/*` wildcards) plus
+  any subset of the animation config fields. Every block listed shares that one config.
+  Omitted fields fall back to the extension's own attribute defaults
   (scroll / 600 / 0 / ease-out / 100 / once=true).
+- The singular `block: "core/button"` form is still accepted and normalized to a
+  one-element `blocks` list, so theme.json authored against the first shape keeps resolving.
+- A block name may appear in only one entry. If two entries claim it, the later one wins
+  (the resolver builds a `name → config` map); the admin sanitizer strips the earlier
+  claim so the stored list can't contain a rule that never takes effect.
 - `blockAnimationsEnabled` is the master gate.
 
 ### Admin option storage

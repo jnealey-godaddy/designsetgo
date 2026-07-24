@@ -905,16 +905,12 @@
 		align-self: flex-end;
 	}
 
-	&__block-input.is-invalid {
-
-		.components-text-control__input {
-			border-color: #cc1818;
-			box-shadow: 0 0 0 1px #cc1818;
-		}
-
-		.components-base-control__help {
-			color: #cc1818;
-		}
+	// Matches core's own control help text, which FormTokenField lacks.
+	&__hint {
+		margin: 8px 0 0;
+		font-size: 12px;
+		font-style: normal;
+		color: #757575;
 	}
 }
 

@@ -99,6 +99,11 @@ class Settings_Schema {
 								'type'                 => 'object',
 								'additionalProperties' => false,
 								'properties'           => array(
+									'blocks'   => array(
+										'type'  => 'array',
+										'items' => array( 'type' => 'string' ),
+									),
+									// Legacy singular form, still accepted on input.
 									'block'    => array( 'type' => 'string' ),
 									'entrance' => array( 'type' => 'string' ),
 									'exit'     => array( 'type' => 'string' ),

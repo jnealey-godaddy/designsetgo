@@ -34,30 +34,56 @@ class Settings_Block_Animations_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The sanitizer should drop entries with an invalid block name or no
+	 * The sanitizer should drop entries with no valid block name or no
 	 * animation, and fall back enum fields to their defaults.
 	 */
 	public function test_sanitizer_drops_invalid_block_and_enum_values() {
 		$clean = Settings::sanitize_block_animations_list(
 			array(
 				array(
-					'block'    => 'core/button',
+					'blocks'   => array( 'core/button' ),
 					'entrance' => 'fadeInUp',
 					'trigger'  => 'bogus',
 					'duration' => 999999,
 				),
 				array(
-					'block'    => 'not a block name',
+					'blocks'   => array( 'not a block name' ),
 					'entrance' => 'fadeIn',
-				), // Invalid name -> dropped.
-				array( 'entrance' => 'fadeIn' ), // No block -> dropped.
-				array( 'block' => 'core/quote' ), // No entrance/exit -> dropped.
+				), // No valid name -> dropped.
+				array( 'entrance' => 'fadeIn' ), // No blocks -> dropped.
+				array( 'blocks' => array( 'core/quote' ) ), // No entrance/exit -> dropped.
 			)
 		);
 		$this->assertCount( 1, $clean );
-		$this->assertSame( 'core/button', $clean[0]['block'] );
+		$this->assertSame( array( 'core/button' ), $clean[0]['blocks'] );
 		$this->assertSame( 'scroll', $clean[0]['trigger'] ); // Bogus -> default.
 		$this->assertSame( 5000, $clean[0]['duration'] ); // Clamped to max.
+	}
+
+	/**
+	 * An entry may target several blocks; invalid names within it are dropped
+	 * without discarding the entry, and duplicates are collapsed.
+	 */
+	public function test_sanitizer_keeps_multiple_targets_and_drops_bad_ones() {
+		$clean = Settings::sanitize_block_animations_list(
+			array(
+				array(
+					'blocks'   => array(
+						'core/button',
+						'  designsetgo/icon-button  ', // Trimmed.
+						'Core/Button', // Uppercase -> invalid.
+						'core/button', // Duplicate within the entry.
+						'designsetgo/*',
+					),
+					'entrance' => 'fadeInUp',
+				),
+			)
+		);
+		$this->assertCount( 1, $clean );
+		$this->assertSame(
+			array( 'core/button', 'designsetgo/icon-button', 'designsetgo/*' ),
+			$clean[0]['blocks']
+		);
 	}
 
 	/**
@@ -67,13 +93,80 @@ class Settings_Block_Animations_Test extends WP_UnitTestCase {
 		$clean = Settings::sanitize_block_animations_list(
 			array(
 				array(
-					'block'    => 'designsetgo/*',
+					'blocks'   => array( 'designsetgo/*' ),
 					'entrance' => 'fadeIn',
 				),
 			)
 		);
 		$this->assertCount( 1, $clean );
-		$this->assertSame( 'designsetgo/*', $clean[0]['block'] );
+		$this->assertSame( array( 'designsetgo/*' ), $clean[0]['blocks'] );
+	}
+
+	/**
+	 * The historical singular `block` key is still accepted on input and
+	 * normalized to the `blocks` list, so theme.json / Style Kits authored
+	 * against the first shape of this feature keep working.
+	 */
+	public function test_sanitizer_accepts_legacy_singular_block_key() {
+		$clean = Settings::sanitize_block_animations_list(
+			array(
+				array(
+					'block'    => 'core/button',
+					'entrance' => 'fadeIn',
+				),
+			)
+		);
+		$this->assertCount( 1, $clean );
+		$this->assertSame( array( 'core/button' ), $clean[0]['blocks'] );
+	}
+
+	/**
+	 * A block name claimed by two entries would silently resolve to the later
+	 * one (get_effective() builds a name => config map), so the sanitizer
+	 * strips the earlier claim rather than persisting a rule that can never
+	 * take effect.
+	 */
+	public function test_sanitizer_dedupes_a_block_claimed_by_two_entries() {
+		$clean = Settings::sanitize_block_animations_list(
+			array(
+				array(
+					'blocks'   => array( 'core/button', 'core/image' ),
+					'entrance' => 'fadeInUp',
+				),
+				array(
+					'blocks'   => array( 'core/button' ),
+					'entrance' => 'zoomIn',
+				),
+			)
+		);
+		$this->assertCount( 2, $clean );
+		// Earlier entry keeps only the target the later one doesn't claim.
+		$this->assertSame( array( 'core/image' ), $clean[0]['blocks'] );
+		$this->assertSame( 'fadeInUp', $clean[0]['entrance'] );
+		// Last claim wins, matching the resolver's map precedence.
+		$this->assertSame( array( 'core/button' ), $clean[1]['blocks'] );
+		$this->assertSame( 'zoomIn', $clean[1]['entrance'] );
+	}
+
+	/**
+	 * An entry left with no targets after deduping is dropped entirely.
+	 */
+	public function test_sanitizer_drops_entry_fully_claimed_by_a_later_one() {
+		$clean = Settings::sanitize_block_animations_list(
+			array(
+				array(
+					'blocks'   => array( 'core/button' ),
+					'entrance' => 'fadeInUp',
+				),
+				array(
+					'blocks'   => array( 'core/button' ),
+					'entrance' => 'zoomIn',
+				),
+			)
+		);
+		$this->assertCount( 1, $clean );
+		$this->assertSame( array( 'core/button' ), $clean[0]['blocks'] );
+		$this->assertSame( 'zoomIn', $clean[0]['entrance'] );
 	}
 
 	/**
@@ -86,11 +179,11 @@ class Settings_Block_Animations_Test extends WP_UnitTestCase {
 				'animations' => array(
 					'block_animations' => array(
 						array(
-							'block'    => 'core/button',
+							'blocks'   => array( 'core/button' ),
 							'entrance' => 'fadeInUp',
 						),
 						array(
-							'block'    => 'core/image',
+							'blocks'   => array( 'core/image' ),
 							'entrance' => 'zoomIn',
 						),
 					),
@@ -102,7 +195,7 @@ class Settings_Block_Animations_Test extends WP_UnitTestCase {
 				'animations' => array(
 					'block_animations' => array(
 						array(
-							'block'    => 'core/heading',
+							'blocks'   => array( 'core/heading' ),
 							'entrance' => 'fadeIn',
 						),
 					),
@@ -111,6 +204,6 @@ class Settings_Block_Animations_Test extends WP_UnitTestCase {
 		);
 		$saved = Settings::get_settings()['animations']['block_animations'];
 		$this->assertCount( 1, $saved );
-		$this->assertSame( 'core/heading', $saved[0]['block'] );
+		$this->assertSame( array( 'core/heading' ), $saved[0]['blocks'] );
 	}
 }

@@ -55,7 +55,7 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 			false,
 			array(
 				array(
-					'block'    => 'core/button',
+					'blocks'   => array( 'core/button' ),
 					'entrance' => 'fadeInUp',
 				),
 			)
@@ -71,7 +71,7 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 			true,
 			array(
 				array(
-					'block'    => 'core/button',
+					'blocks'   => array( 'core/button' ),
 					'entrance' => 'fadeInUp',
 				),
 			)
@@ -90,7 +90,7 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 			true,
 			array(
 				array(
-					'block'    => 'designsetgo/*',
+					'blocks'   => array( 'designsetgo/*' ),
 					'entrance' => 'fadeIn',
 				),
 			)
@@ -107,11 +107,11 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 			true,
 			array(
 				array(
-					'block'    => 'designsetgo/*',
+					'blocks'   => array( 'designsetgo/*' ),
 					'entrance' => 'fadeIn',
 				),
 				array(
-					'block'    => 'designsetgo/section',
+					'blocks'   => array( 'designsetgo/section' ),
 					'entrance' => 'zoomIn',
 				),
 			)
@@ -136,7 +136,7 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 									'blockAnimationsEnabled' => true,
 									'blockAnimations' => array(
 										array(
-											'block'    => 'core/button',
+											'blocks'   => array( 'core/button' ),
 											'entrance' => 'fadeIn',
 										),
 									),
@@ -154,7 +154,7 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 			true,
 			array(
 				array(
-					'block'    => 'core/button',
+					'blocks'   => array( 'core/button' ),
 					'entrance' => 'zoomIn',
 				),
 			)
@@ -179,7 +179,7 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 									'blockAnimationsEnabled' => true,
 									'blockAnimations' => array(
 										array(
-											'block'    => 'core/image',
+											'blocks'   => array( 'core/image' ),
 											'entrance' => 'zoomIn',
 										),
 									),
@@ -219,7 +219,7 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 									'blockAnimationsEnabled' => true,
 									'blockAnimations' => array(
 										array(
-											'block'    => 'core/quote',
+											'blocks'   => array( 'core/quote' ),
 											'entrance' => 'fadeIn',
 											'trigger'  => 'bogus',   // Invalid -> 'scroll'.
 											'easing'   => 'garbage', // Invalid -> 'ease-out'.
@@ -243,5 +243,125 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 		$this->assertSame( 'ease-out', $config['easing'] );
 		$this->assertSame( 5000, $config['duration'] );
 		$this->assertSame( 1000, $config['offset'] );
+	}
+
+	/**
+	 * One entry may target several blocks; each resolves to the same config.
+	 */
+	public function test_entry_targeting_multiple_blocks_resolves_for_each() {
+		$this->set_option(
+			true,
+			array(
+				array(
+					'blocks'   => array( 'core/button', 'designsetgo/icon-button' ),
+					'entrance' => 'zoomIn',
+				),
+			)
+		);
+
+		$this->assertSame( 'zoomIn', Animation_Defaults::resolve_for_block( 'core/button' )['entrance'] );
+		$this->assertSame( 'zoomIn', Animation_Defaults::resolve_for_block( 'designsetgo/icon-button' )['entrance'] );
+		$this->assertNull( Animation_Defaults::resolve_for_block( 'core/paragraph' ) );
+	}
+
+	/**
+	 * A multi-target entry may mix exact names and a namespace wildcard, and
+	 * an exact entry elsewhere still beats that wildcard.
+	 */
+	public function test_multi_target_entry_mixes_exact_and_wildcard() {
+		$this->set_option(
+			true,
+			array(
+				array(
+					'blocks'   => array( 'core/button', 'designsetgo/*' ),
+					'entrance' => 'fadeIn',
+				),
+				array(
+					'blocks'   => array( 'designsetgo/section' ),
+					'entrance' => 'bounceIn',
+				),
+			)
+		);
+
+		$this->assertSame( 'fadeIn', Animation_Defaults::resolve_for_block( 'core/button' )['entrance'] );
+		$this->assertSame( 'fadeIn', Animation_Defaults::resolve_for_block( 'designsetgo/row' )['entrance'] );
+		$this->assertSame( 'bounceIn', Animation_Defaults::resolve_for_block( 'designsetgo/section' )['entrance'] );
+	}
+
+	/**
+	 * The historical singular `block` key still resolves, so a theme.json /
+	 * Style Kit authored against the first shape of this feature keeps working.
+	 */
+	public function test_legacy_singular_block_key_still_resolves() {
+		add_filter(
+			'wp_theme_json_data_theme',
+			function ( $data ) {
+				return $data->update_with(
+					array(
+						'version'  => 2,
+						'settings' => array(
+							'custom' => array(
+								'designsetgo' => array(
+									'blockAnimationsEnabled' => true,
+									'blockAnimations' => array(
+										array(
+											'block'    => 'core/list',
+											'entrance' => 'slideInUp',
+										),
+									),
+								),
+							),
+						),
+					)
+				);
+			}
+		);
+		wp_clean_theme_json_cache();
+		$this->set_option( false, array() );
+
+		$this->assertSame( 'slideInUp', Animation_Defaults::resolve_for_block( 'core/list' )['entrance'] );
+	}
+
+	/**
+	 * A theme.json entry whose block name is malformed is rejected outright
+	 * rather than sitting in the map under a key nothing can ever match — the
+	 * same format validation the admin sanitizer applies.
+	 */
+	public function test_theme_json_entry_with_malformed_block_name_is_ignored() {
+		add_filter(
+			'wp_theme_json_data_theme',
+			function ( $data ) {
+				return $data->update_with(
+					array(
+						'version'  => 2,
+						'settings' => array(
+							'custom' => array(
+								'designsetgo' => array(
+									'blockAnimationsEnabled' => true,
+									'blockAnimations' => array(
+										array(
+											'blocks'   => array( 'Core/Button', 'no-slash' ),
+											'entrance' => 'fadeIn',
+										),
+										array(
+											// Padded name is trimmed, not rejected.
+											'blocks'   => array( '  core/code  ' ),
+											'entrance' => 'zoomIn',
+										),
+									),
+								),
+							),
+						),
+					)
+				);
+			}
+		);
+		wp_clean_theme_json_cache();
+		$this->set_option( false, array() );
+
+		$effective = Animation_Defaults::get_effective();
+		$this->assertArrayNotHasKey( 'Core/Button', $effective['map'] );
+		$this->assertArrayNotHasKey( 'no-slash', $effective['map'] );
+		$this->assertSame( 'zoomIn', Animation_Defaults::resolve_for_block( 'core/code' )['entrance'] );
 	}
 }

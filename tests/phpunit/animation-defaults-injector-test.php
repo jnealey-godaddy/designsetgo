@@ -35,7 +35,7 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 					'block_animations_enabled' => true,
 					'block_animations'         => array(
 						array(
-							'block'    => 'core/button',
+							'blocks'   => array( 'core/button' ),
 							'entrance' => 'fadeInUp',
 							'duration' => 800,
 						),
@@ -193,7 +193,7 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 					'block_animations_enabled' => true,
 					'block_animations'         => array(
 						array(
-							'block'    => 'core/*',
+							'blocks'   => array( 'core/*' ),
 							'entrance' => 'fadeIn',
 						),
 					),
@@ -229,7 +229,7 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 					'block_animations_enabled' => true,
 					'block_animations'         => array(
 						array(
-							'block'    => 'core/*',
+							'blocks'   => array( 'core/*' ),
 							'entrance' => 'fadeIn',
 						),
 					),
@@ -257,7 +257,7 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 					'block_animations_enabled' => true,
 					'block_animations'         => array(
 						array(
-							'block'    => 'core/*',
+							'blocks'   => array( 'core/*' ),
 							'entrance' => 'fadeIn',
 						),
 					),

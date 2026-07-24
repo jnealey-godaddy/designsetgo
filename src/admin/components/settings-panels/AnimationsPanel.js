@@ -15,8 +15,7 @@ import {
 	ToggleControl,
 	RangeControl,
 	SelectControl,
-	ComboboxControl,
-	TextControl,
+	FormTokenField,
 	Button,
 } from '@wordpress/components';
 
@@ -50,8 +49,13 @@ const DURATION_OPTIONS = [
 	{ label: __('Very Slow (2000ms)', 'designsetgo'), value: 2000 },
 ];
 
+// Mirrors the PHP sanitizer's pattern (Settings::sanitize_block_animation_targets)
+// so a typed token the backend would drop is refused up front rather than
+// vanishing silently on save.
+const BLOCK_NAME_PATTERN = /^[a-z0-9-]+\/(\*|[a-z0-9-]+)$/;
+
 const NEW_ROW = {
-	block: '',
+	blocks: [],
 	entrance: 'fadeInUp',
 	exit: '',
 	trigger: 'scroll',
@@ -113,6 +117,34 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 			.sort((a, b) => a.label.localeCompare(b.label));
 		return [...wildcards, ...blocks];
 	}, [blockTypes]);
+
+	// FormTokenField works in display strings, but we persist canonical block
+	// names — keep a map each way so tokens round-trip.
+	const { labelByName, nameByLabel, suggestions } = useMemo(() => {
+		const byName = {};
+		const byLabel = {};
+		blockOptions.forEach((option) => {
+			byName[option.value] = option.label;
+			byLabel[option.label] = option.value;
+		});
+		return {
+			labelByName: byName,
+			nameByLabel: byLabel,
+			suggestions: blockOptions.map((option) => option.label),
+		};
+	}, [blockOptions]);
+
+	// A token is either a label we offered ("Button — core/button") or a block
+	// name typed by hand; both resolve to the canonical name.
+	const tokenToName = (token) => {
+		const raw = (
+			typeof token === 'string' ? token : token?.value || ''
+		).trim();
+		return nameByLabel[raw] || raw;
+	};
+
+	const validateToken = (token) =>
+		BLOCK_NAME_PATTERN.test(tokenToName(token));
 
 	return (
 		<Card className="designsetgo-settings-panel">
@@ -393,16 +425,6 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 												)
 											);
 
-										// Mirror the PHP sanitizer's block-name
-										// pattern so a mistyped entry (which the
-										// backend silently drops on save) is
-										// flagged before the admin leaves the page.
-										const blockInvalid =
-											row.block !== '' &&
-											!/^[a-z0-9-]+\/(\*|[a-z0-9-]+)$/.test(
-												row.block
-											);
-
 										// The server accepts any duration in the
 										// 100–5000ms range; keep a non-preset value
 										// (e.g. one set via the settings REST /
@@ -421,21 +443,14 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 														},
 													];
 
-										const rowBlockOptions =
-											row.block &&
-											!blockOptions.some(
-												(o) => o.value === row.block
-											)
-												? [
-														...blockOptions,
-														{
-															value: row.block,
-															label: row.block,
-														},
-													]
-												: blockOptions;
-										const blockLoadFailed =
-											blockTypes === false;
+										const blocks = Array.isArray(row.blocks)
+											? row.blocks
+											: [];
+										// Show the friendly label where we have one, else the
+										// raw name (a block from a plugin since deactivated).
+										const tokens = blocks.map(
+											(name) => labelByName[name] || name
+										);
 
 										return (
 											<div
@@ -443,75 +458,58 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 												className="designsetgo-block-animations__row"
 											>
 												<div className="designsetgo-block-animations__block">
-													{blockLoadFailed ? (
-														<TextControl
-															label={__(
-																'Block type',
+													<FormTokenField
+														className="designsetgo-block-animations__block-input"
+														label={__(
+															'Block types',
+															'designsetgo'
+														)}
+														value={tokens}
+														suggestions={
+															suggestions
+														}
+														onChange={(next) =>
+															update({
+																blocks: [
+																	...new Set(
+																		next.map(
+																			tokenToName
+																		)
+																	),
+																],
+															})
+														}
+														__experimentalValidateInput={
+															validateToken
+														}
+														__experimentalExpandOnFocus
+														__experimentalAutoSelectFirstMatch
+														__experimentalShowHowTo={
+															false
+														}
+														__next40pxDefaultSize
+														__nextHasNoMarginBottom
+													/>
+													<p className="designsetgo-block-animations__hint">
+														{blockTypes === null &&
+															__(
+																'Loading block types…',
 																'designsetgo'
 															)}
-															value={row.block}
-															placeholder="core/button"
-															onChange={(value) =>
-																update({
-																	block: value,
-																})
-															}
-															help={
-																blockInvalid
-																	? __(
-																			'Invalid format — use a block name like core/button or a namespace wildcard like designsetgo/*.',
-																			'designsetgo'
-																		)
-																	: __(
-																			'Exact block name (core/button) or a namespace wildcard (designsetgo/*).',
-																			'designsetgo'
-																		)
-															}
-															className={
-																blockInvalid
-																	? 'designsetgo-block-animations__block-input is-invalid'
-																	: 'designsetgo-block-animations__block-input'
-															}
-															__nextHasNoMarginBottom
-															__next40pxDefaultSize
-														/>
-													) : (
-														<ComboboxControl
-															className="designsetgo-block-animations__block-input"
-															label={__(
-																'Block type',
+														{blockTypes !== null &&
+															blocks.length ===
+																0 &&
+															__(
+																'Add at least one block type — this rule is skipped until you do.',
 																'designsetgo'
 															)}
-															value={
-																row.block ||
-																null
-															}
-															options={
-																rowBlockOptions
-															}
-															onChange={(value) =>
-																update({
-																	block:
-																		value ||
-																		'',
-																})
-															}
-															help={
-																blockTypes ===
-																null
-																	? __(
-																			'Loading block types…',
-																			'designsetgo'
-																		)
-																	: __(
-																			'Search a block, or pick a namespace wildcard like designsetgo/*.',
-																			'designsetgo'
-																		)
-															}
-															__next40pxDefaultSize
-															__nextHasNoMarginBottom
-														/>
-													)}
+														{blockTypes !== null &&
+															blocks.length > 0 &&
+															__(
+																'Search for blocks to add, or pick a namespace wildcard like designsetgo/*. Every block listed here shares this animation.',
+																'designsetgo'
+															)}
+													</p>
 												</div>
 												<SelectControl
 													label={__(
@@ -590,7 +588,10 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 											)
 										}
 									>
-										{__('Add block type', 'designsetgo')}
+										{__(
+											'Add animation rule',
+											'designsetgo'
+										)}
 									</Button>
 								</div>
 							)}

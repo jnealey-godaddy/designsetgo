@@ -54,11 +54,27 @@ class Animation_Defaults {
 		$global_enabled = ! empty( $global_custom['blockAnimationsEnabled'] );
 
 		// Global (theme.json / Style Kit) first, admin overrides per block name.
+		// Each entry may target several block names, so it expands to one map
+		// key per name; a name claimed twice resolves to the later entry.
 		$map = array();
 		foreach ( array( $global_list, $admin_list ) as $list ) {
 			foreach ( $list as $entry ) {
-				if ( is_array( $entry ) && ! empty( $entry['block'] ) ) {
-					$map[ (string) $entry['block'] ] = self::normalize_entry( $entry );
+				if ( ! is_array( $entry ) ) {
+					continue;
+				}
+
+				// Validate the target names with the same helper the admin
+				// sanitizer uses, so a malformed theme.json name (stray
+				// whitespace, wrong case, missing slash) is rejected outright
+				// instead of sitting in the map under a key nothing can match.
+				$blocks = Settings::sanitize_block_animation_targets( $entry );
+				if ( empty( $blocks ) ) {
+					continue;
+				}
+
+				$config = self::normalize_entry( $entry );
+				foreach ( $blocks as $block ) {
+					$map[ $block ] = $config;
 				}
 			}
 		}
