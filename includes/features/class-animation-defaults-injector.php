@@ -20,6 +20,18 @@ defined( 'ABSPATH' ) || exit;
 class Animation_Defaults_Injector {
 
 	/**
+	 * Cached effective defaults for the current request.
+	 *
+	 * Reused across every block in a single request. get_effective() reads
+	 * cached settings but re-merges the global+admin lists into a map on each
+	 * call; caching the result on this instance (one per request) avoids
+	 * repeating that merge for every rendered block.
+	 *
+	 * @var array|null
+	 */
+	private $effective = null;
+
+	/**
 	 * Register hooks.
 	 */
 	public function init() {
@@ -61,12 +73,17 @@ class Animation_Defaults_Injector {
 		}
 
 		// Respect the same exclusions as the block-animations extension:
-		// its own skip list plus the user-configured excludedBlocks.
-		if ( Extension_Attributes::is_block_excluded( $block['blockName'], array( 'core/freeform', 'core-embed/*' ) ) ) {
+		// its own skip list (single-sourced from the extension config) plus
+		// the user-configured excludedBlocks.
+		if ( Extension_Attributes::is_block_excluded( $block['blockName'], Extension_Attributes::get_extension_exclusions( 'block-animations' ) ) ) {
 			return $block_content;
 		}
 
-		$config = Animation_Defaults::resolve_for_block( $block['blockName'] );
+		if ( null === $this->effective ) {
+			$this->effective = Animation_Defaults::get_effective();
+		}
+
+		$config = Animation_Defaults::resolve_from_map( $this->effective, $block['blockName'] );
 		if ( null === $config ) {
 			return $block_content;
 		}

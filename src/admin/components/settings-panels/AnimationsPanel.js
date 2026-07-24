@@ -338,6 +338,16 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 												)
 											);
 
+										// Mirror the PHP sanitizer's block-name
+										// pattern so a mistyped entry (which the
+										// backend silently drops on save) is
+										// flagged before the admin leaves the page.
+										const blockInvalid =
+											row.block !== '' &&
+											!/^[a-z0-9-]+\/(\*|[a-z0-9-]+)$/.test(
+												row.block
+											);
+
 										return (
 											<div
 												key={index}
@@ -354,6 +364,22 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 														update({
 															block: value,
 														})
+													}
+													help={
+														blockInvalid
+															? __(
+																	'Invalid format — use a block name like core/button or a namespace wildcard like designsetgo/*.',
+																	'designsetgo'
+																)
+															: __(
+																	'Exact block name (core/button) or a namespace wildcard (designsetgo/*).',
+																	'designsetgo'
+																)
+													}
+													className={
+														blockInvalid
+															? 'designsetgo-block-animations__block-input is-invalid'
+															: 'designsetgo-block-animations__block-input'
 													}
 													__nextHasNoMarginBottom
 													__next40pxDefaultSize

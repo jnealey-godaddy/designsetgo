@@ -198,4 +198,50 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 'zoomIn', Animation_Defaults::resolve_for_block( 'core/image' )['entrance'] );
 	}
+
+	/**
+	 * A theme.json / Style-Kit entry with invalid values is validated and
+	 * clamped the same way an admin-submitted entry would be (validation
+	 * parity) — an unknown trigger/easing falls back to the default and an
+	 * out-of-range duration/offset is clamped, rather than reaching the
+	 * frontend as raw data-* attributes.
+	 */
+	public function test_theme_json_entry_is_validated_like_admin() {
+		add_filter(
+			'wp_theme_json_data_theme',
+			function ( $data ) {
+				return $data->update_with(
+					array(
+						'version'  => 2,
+						'settings' => array(
+							'custom' => array(
+								'designsetgo' => array(
+									'blockAnimationsEnabled' => true,
+									'blockAnimations' => array(
+										array(
+											'block'    => 'core/quote',
+											'entrance' => 'fadeIn',
+											'trigger'  => 'bogus',   // Invalid -> 'scroll'.
+											'easing'   => 'garbage', // Invalid -> 'ease-out'.
+											'duration' => 999999,    // Out of range -> 5000.
+											'offset'   => 99999,     // Out of range -> 1000.
+										),
+									),
+								),
+							),
+						),
+					)
+				);
+			}
+		);
+		wp_clean_theme_json_cache();
+		$this->set_option( false, array() );
+
+		$config = Animation_Defaults::resolve_for_block( 'core/quote' );
+		$this->assertSame( 'fadeIn', $config['entrance'] );
+		$this->assertSame( 'scroll', $config['trigger'] );
+		$this->assertSame( 'ease-out', $config['easing'] );
+		$this->assertSame( 5000, $config['duration'] );
+		$this->assertSame( 1000, $config['offset'] );
+	}
 }

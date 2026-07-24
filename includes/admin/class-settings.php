@@ -849,11 +849,6 @@ class Settings {
 	 * @return array Sanitized list (re-indexed).
 	 */
 	public static function sanitize_block_animations_list( array $value ): array {
-		$entrances = array( 'fadeIn', 'fadeInUp', 'fadeInDown', 'fadeInLeft', 'fadeInRight', 'slideInUp', 'slideInDown', 'slideInLeft', 'slideInRight', 'zoomIn', 'bounceIn', 'flipInX', 'flipInY' );
-		$exits     = array( 'fadeOut', 'fadeOutUp', 'fadeOutDown', 'fadeOutLeft', 'fadeOutRight', 'slideOutUp', 'slideOutDown', 'slideOutLeft', 'slideOutRight', 'zoomOut', 'bounceOut' );
-		$triggers  = array( 'scroll', 'load', 'hover', 'click' );
-		$easings   = array( 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' );
-
 		$clean = array();
 		foreach ( $value as $entry ) {
 			if ( ! is_array( $entry ) || empty( $entry['block'] ) ) {
@@ -866,35 +861,49 @@ class Settings {
 				continue;
 			}
 
-			$entrance = isset( $entry['entrance'] ) && in_array( (string) $entry['entrance'], $entrances, true ) ? (string) $entry['entrance'] : '';
-			$exit     = isset( $entry['exit'] ) && in_array( (string) $entry['exit'], $exits, true ) ? (string) $entry['exit'] : '';
+			$fields = self::sanitize_block_animation_fields( $entry );
 
 			// An entry that animates nothing is meaningless.
-			if ( '' === $entrance && '' === $exit ) {
+			if ( '' === $fields['entrance'] && '' === $fields['exit'] ) {
 				continue;
 			}
 
-			$trigger  = isset( $entry['trigger'] ) && in_array( (string) $entry['trigger'], $triggers, true ) ? (string) $entry['trigger'] : 'scroll';
-			$easing   = isset( $entry['easing'] ) && in_array( (string) $entry['easing'], $easings, true ) ? (string) $entry['easing'] : 'ease-out';
-			$duration = isset( $entry['duration'] ) ? max( 100, min( 5000, absint( $entry['duration'] ) ) ) : 600;
-			$delay    = isset( $entry['delay'] ) ? max( 0, min( 5000, absint( $entry['delay'] ) ) ) : 0;
-			$offset   = isset( $entry['offset'] ) ? max( 0, min( 1000, absint( $entry['offset'] ) ) ) : 100;
-			$once     = isset( $entry['once'] ) ? (bool) $entry['once'] : true;
-
-			$clean[] = array(
-				'block'    => $block,
-				'entrance' => $entrance,
-				'exit'     => $exit,
-				'trigger'  => $trigger,
-				'duration' => $duration,
-				'delay'    => $delay,
-				'easing'   => $easing,
-				'offset'   => $offset,
-				'once'     => $once,
-			);
+			$clean[] = array( 'block' => $block ) + $fields;
 		}
 
 		return $clean;
+	}
+
+	/**
+	 * Validate + normalize the animation-config fields of a single entry.
+	 *
+	 * Enforces the enum whitelist (entrance/exit/trigger/easing) and numeric
+	 * clamps (duration/delay/offset), filling defaults for missing or invalid
+	 * values. Does NOT include the `block` key and never drops the entry — it
+	 * always returns a complete 8-field config. Shared by the admin-option
+	 * sanitizer (above) and the resolve-time normalizer in Animation_Defaults
+	 * so theme.json / Style-Kit entries get the same guarantees as
+	 * admin-submitted ones.
+	 *
+	 * @param array $entry Raw entry (may contain a `block` key, ignored here).
+	 * @return array{entrance:string,exit:string,trigger:string,duration:int,delay:int,easing:string,offset:int,once:bool}
+	 */
+	public static function sanitize_block_animation_fields( array $entry ): array {
+		$entrances = array( 'fadeIn', 'fadeInUp', 'fadeInDown', 'fadeInLeft', 'fadeInRight', 'slideInUp', 'slideInDown', 'slideInLeft', 'slideInRight', 'zoomIn', 'bounceIn', 'flipInX', 'flipInY' );
+		$exits     = array( 'fadeOut', 'fadeOutUp', 'fadeOutDown', 'fadeOutLeft', 'fadeOutRight', 'slideOutUp', 'slideOutDown', 'slideOutLeft', 'slideOutRight', 'zoomOut', 'bounceOut' );
+		$triggers  = array( 'scroll', 'load', 'hover', 'click' );
+		$easings   = array( 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' );
+
+		return array(
+			'entrance' => isset( $entry['entrance'] ) && in_array( (string) $entry['entrance'], $entrances, true ) ? (string) $entry['entrance'] : '',
+			'exit'     => isset( $entry['exit'] ) && in_array( (string) $entry['exit'], $exits, true ) ? (string) $entry['exit'] : '',
+			'trigger'  => isset( $entry['trigger'] ) && in_array( (string) $entry['trigger'], $triggers, true ) ? (string) $entry['trigger'] : 'scroll',
+			'duration' => isset( $entry['duration'] ) ? max( 100, min( 5000, absint( $entry['duration'] ) ) ) : 600,
+			'delay'    => isset( $entry['delay'] ) ? max( 0, min( 5000, absint( $entry['delay'] ) ) ) : 0,
+			'easing'   => isset( $entry['easing'] ) && in_array( (string) $entry['easing'], $easings, true ) ? (string) $entry['easing'] : 'ease-out',
+			'offset'   => isset( $entry['offset'] ) ? max( 0, min( 1000, absint( $entry['offset'] ) ) ) : 100,
+			'once'     => isset( $entry['once'] ) ? (bool) $entry['once'] : true,
+		);
 	}
 
 	/**

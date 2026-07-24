@@ -76,8 +76,23 @@ class Animation_Defaults {
 	 * @return array|null Normalized config or null.
 	 */
 	public static function resolve_for_block( $block_name ) {
-		$effective = self::get_effective();
-		if ( ! $effective['enabled'] ) {
+		return self::resolve_from_map( self::get_effective(), $block_name );
+	}
+
+	/**
+	 * Resolve a block name against an already-computed get_effective() result.
+	 *
+	 * Pure lookup (no settings reads), so a caller that processes many blocks —
+	 * e.g. the render_block injector — can call get_effective() once per request
+	 * and reuse the result here for every block instead of recomputing the map.
+	 * Exact-name match wins; otherwise the block's `namespace/*` wildcard.
+	 *
+	 * @param array  $effective  Result of get_effective() (`enabled` + `map`).
+	 * @param string $block_name Block name (e.g. "core/button").
+	 * @return array|null Normalized config or null.
+	 */
+	public static function resolve_from_map( array $effective, $block_name ) {
+		if ( empty( $effective['enabled'] ) ) {
 			return null;
 		}
 
@@ -98,21 +113,17 @@ class Animation_Defaults {
 	}
 
 	/**
-	 * Fill missing config fields with the extension's attribute defaults.
+	 * Validate + normalize an entry's config fields.
+	 *
+	 * Delegates to the same validator the admin-option sanitizer uses, so
+	 * theme.json / Style-Kit sourced entries get the identical enum whitelist
+	 * and numeric clamps as admin-submitted ones (e.g. an out-of-range
+	 * `duration` or an unknown `trigger` is corrected rather than injected raw).
 	 *
 	 * @param array $entry Raw entry.
 	 * @return array Normalized config (no 'block' key).
 	 */
 	private static function normalize_entry( $entry ) {
-		return array(
-			'entrance' => isset( $entry['entrance'] ) ? (string) $entry['entrance'] : '',
-			'exit'     => isset( $entry['exit'] ) ? (string) $entry['exit'] : '',
-			'trigger'  => isset( $entry['trigger'] ) ? (string) $entry['trigger'] : 'scroll',
-			'duration' => isset( $entry['duration'] ) ? (int) $entry['duration'] : 600,
-			'delay'    => isset( $entry['delay'] ) ? (int) $entry['delay'] : 0,
-			'easing'   => isset( $entry['easing'] ) ? (string) $entry['easing'] : 'ease-out',
-			'offset'   => isset( $entry['offset'] ) ? (int) $entry['offset'] : 100,
-			'once'     => isset( $entry['once'] ) ? (bool) $entry['once'] : true,
-		);
+		return Settings::sanitize_block_animation_fields( $entry );
 	}
 }
