@@ -253,3 +253,21 @@ Task 4 built `DesignSetGo\Animation_Defaults_Injector` (`includes/features/class
 Note: unlike `Animation_Defaults` (Task 3, static-only, no plugin.php property), the injector needed all three plugin.php touch-points since `init()` is an instance method that must actually run to register the `render_block` filter — a static resolver has no such registration step.
 
 The brief's suggested test command (`composer run-script test -- --filter ...`) does NOT work in this environment; use `npx @wordpress/env run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit --filter Animation_Defaults_Injector_Test` instead (confirmed working for both RED and GREEN). Test file needed the same phpcs docblock nits as Task 3's sibling file (`animation-defaults-test.php`): a short description line before `@group animations`, and full `/** ... * @var X */` blocks instead of one-liners — `phpcbf` fixed array formatting automatically, docblocks needed manual adds. The injector class itself (`class-animation-defaults-injector.php`) was phpcs-clean straight from the brief's verbatim code, zero fixes needed. Full run: `--group animations` → 10/10 passing (6 from Task 3 + 4 from Task 4).
+
+### Task 8: CHANGELOG, build/test sweep, code-review cleanups (agent: task-8-final-sweep-2026-07-23)
+
+Final task of the `claude/theme-animation-defaults` feature (Tasks 1-7 already merged onto the branch). Three folded-in cleanups from code review, then full verification:
+
+1. CHANGELOG.md — added the "Theme animation defaults" bullet under a new `### New Features` heading in the (previously header-less) `## [Unreleased]` section.
+2. `includes/abilities/settings/class-update-settings.php` (~line 60) — appended one sentence to the `annotations.instructions` string clarifying that `animations.block_animations` is force-replaced wholesale, unlike the positional-merge behavior documented for the rest of the list fields. Doc-string only, no logic touched.
+3. `src/admin/style.scss` — appended `.designsetgo-block-animations` / `&__row` rules (brief-specified, verbatim) right before the `// Responsive` block at the end of the file. `AnimationsPanel.js` already emitted these classes with no styling.
+
+Verification (all green, no regressions):
+- `npm run build` — clean, only pre-existing asset-size warnings (slider/section/modal/icon-button/form-builder over the 48.8 KiB budget — unrelated to this feature).
+- `grep -c dsgoAnimationOptOut build/*.js` → `build/ext-block-animations.js:1`, `build/index.js:1`. `grep -c designsetgo-block-animations build/admin.css` → `1`.
+- `npm run test:unit` — 196 suites / 5010 tests, all passing.
+- PHP: the brief's `composer run-script test` does NOT work in this environment (confirmed again, consistent with Tasks 3-4 notes below) — use `npx @wordpress/env run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit`. Full suite: 980 tests / 4367 assertions, all passing.
+- `npm run lint:js` / `lint:css` / `lint:php` — all exit 0, no output/errors on any of the three.
+- Manual browser smoke test (brief Step 7: admin toggle → frontend fade-in → per-block Off/Custom override) was NOT performed — flagged in the Task 8 report as a recommended human follow-up; a subagent cannot reliably drive a browser, and the opt-out render path is already covered by the Task 4 PHP injector unit tests.
+
+Committed CHANGELOG + doc-string + SCSS together as a single `docs(changelog):` commit (no code/logic changes, so no build artifact commit needed beyond what npm run build already produces at release time).
