@@ -520,6 +520,28 @@ describe('section deprecations - height-derived px clearance migration (v9)', ()
 		expect(getBlockContent(block)).not.toContain('--dsgo-shape-height');
 	});
 
+	test.each([
+		['zero', 0],
+		['negative', -50],
+	])(
+		'a legacy %s height collapses to inherit instead of pinning an unusable clearance',
+		(_label, bad) => {
+			// The renderer refuses these as explicit sizes (isExplicitShapeSize
+			// requires > 0), so the divider paints at the theme token height. If
+			// migrate() disagreed and treated them as explicit, it would pin
+			// `padding-top:0px`/`-50px` against that token-height divider and put
+			// content under the shape — the exact desync the null branch exists to
+			// prevent. A legacy 0 is reachable: configure-shape-divider allows
+			// `minimum => 0` for height.
+			const migrated = v9Deprecation.migrate({
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: bad,
+			});
+			expect(migrated.shapeDividerTopHeight).toBeNull();
+			expect(migrated.shapeDividerTopSpacing).toBeUndefined();
+		}
+	);
+
 	test('an explicit legacy height keeps its exact pinned clearance', () => {
 		// The other side of the split: a real author choice is preserved
 		// verbatim, so its rendering cannot shift under a theme token.

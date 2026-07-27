@@ -16,6 +16,10 @@ import {
 	hoverVariationClasses,
 } from './utils/has-overlay-style';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
+// The SAME predicate the live renderer uses. Migration and render must agree on
+// what counts as an explicit size, or a pinned clearance can desync from the
+// divider it is meant to clear — see isUntouchedLegacyShapeSize below.
+import { isExplicitShapeSize } from '../../utils/shape-size';
 
 // The height/width every shape-divider deprecation schema defaults to. A legacy
 // block carrying this value never had it written to the block comment (
@@ -24,18 +28,28 @@ import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 const LEGACY_DEFAULT_SHAPE_SIZE = 100;
 
 /**
- * Whether a legacy size attribute sat at the historical default, i.e. the
- * author never touched it.
+ * Whether a legacy size attribute should be treated as "never touched", and so
+ * collapsed to `null` to inherit the theme token.
+ *
+ * Two cases, and BOTH must route here or the divider desyncs from its
+ * clearance:
+ *
+ * 1. The historical default (100) — indistinguishable from untouched, since
+ *    WordPress omits default-valued attributes from the block comment.
+ * 2. Anything the renderer will not accept as an explicit size. This delegates
+ *    to the same `isExplicitShapeSize` predicate the live component uses rather
+ *    than hand-rolling a second definition, because the two MUST agree. A
+ *    legacy `shapeDividerTopHeight: 0` is reachable (the Abilities API's
+ *    `configure-shape-divider` has always allowed `minimum => 0` for height),
+ *    and if this treated 0 as explicit while the renderer treated it as unset,
+ *    migrate() would pin `padding-top:0px` against a divider painting at the
+ *    theme token height — putting content under the shape.
  *
  * @param {number|null|undefined} value Parsed size attribute.
  * @return {boolean} True when the value is indistinguishable from untouched.
  */
 function isUntouchedLegacyShapeSize(value) {
-	return (
-		value === undefined ||
-		value === null ||
-		value === LEGACY_DEFAULT_SHAPE_SIZE
-	);
+	return !isExplicitShapeSize(value) || value === LEGACY_DEFAULT_SHAPE_SIZE;
 }
 
 /**
