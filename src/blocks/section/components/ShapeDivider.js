@@ -37,8 +37,12 @@ function clamp(value, min, max) {
  * theme.json token" (`--wp--custom--designsetgo--shape-divider--height` /
  * `--width`, resolved in `_shape-divider.scss`), so anything that is not a
  * usable positive number must collapse to `null` rather than to a hard-coded
- * default. Non-positive values (reachable only via the Abilities API, whose
- * range check allows 0) are treated as unset for the same reason.
+ * default. Non-positive values are treated as unset for the same reason: they
+ * cannot mean "paint nothing", so inheriting is the only sane reading. A zero
+ * height is genuinely reachable — the Abilities API's `configure-shape-divider`
+ * schema sets `minimum => 0` for height — while a non-positive width is not
+ * (that schema's width minimum is 50), so for width this is purely defensive
+ * against hand-edited markup or a REST write to post content.
  *
  * @param {number|null|undefined} value Raw attribute value.
  * @param {number}                min   Lower clamp bound.
