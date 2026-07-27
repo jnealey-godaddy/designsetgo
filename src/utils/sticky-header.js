@@ -77,6 +77,61 @@ import './sticky-header.scss';
 	let lastScrollY = window.scrollY;
 	let ticking = false;
 
+	// The element whose height the overlay pull-up in `_sticky-header.scss`
+	// consumes — the template part that is a direct child of `.wp-site-blocks`.
+	// The sticky selector above is deliberately broader (it matches any template
+	// part containing a navigation), so on most themes it also matches the FOOTER.
+	// Without this narrower check every matched part would write the shared
+	// `--dsgo-overlay-header-height` custom property and the last one in DOM order
+	// — the footer — would win, pulling page content up by the footer's height
+	// instead of the header's.
+	const overlayTargetSelector =
+		'.wp-site-blocks > header.wp-block-template-part, .wp-site-blocks > .wp-block-template-part:not(footer):first-of-type';
+
+	/**
+	 * Resolve the single element the overlay header height should be measured from.
+	 *
+	 * @return {HTMLElement|null} Overlay header element, or null when absent.
+	 */
+	function getOverlayTarget() {
+		return document.querySelector(overlayTargetSelector);
+	}
+
+	/**
+	 * Pad the first content section so it clears the overlay header.
+	 *
+	 * The overlay pull-up in `_sticky-header.scss` slides the content block up
+	 * by the header height so the hero's *background* runs behind the header —
+	 * that is the point of the overlay. Without this, the hero's *content* ends
+	 * up underneath the header too.
+	 *
+	 * The header height is added on top of whatever padding the pattern already
+	 * set, so authored spacing survives. The authored value is kept as a CSS
+	 * string rather than a pixel snapshot so fluid presets
+	 * (`var(--wp--preset--spacing--60)` resolves to a `clamp()`) keep responding
+	 * to viewport changes, and the header height is referenced through the live
+	 * custom property so a resize needs no re-run.
+	 *
+	 * @param {HTMLElement} header Overlay header element
+	 */
+	function applyOverlayHeroPadding(header) {
+		const hero = header.nextElementSibling?.firstElementChild;
+		if (!hero) {
+			return;
+		}
+
+		// Cache the authored padding before overwriting it — otherwise a second
+		// run would nest our calc() inside itself and compound the clearance.
+		if (typeof hero.dataset.dsgoOverlayBasePaddingTop !== 'string') {
+			hero.dataset.dsgoOverlayBasePaddingTop =
+				hero.style.paddingTop ||
+				window.getComputedStyle(hero).paddingTop ||
+				'0px';
+		}
+
+		hero.style.paddingTop = `calc(${hero.dataset.dsgoOverlayBasePaddingTop} + var(--dsgo-overlay-header-height, 0px))`;
+	}
+
 	/**
 	 * Set up overlay header height measurement for a header element.
 	 * Measures the header so CSS can pull content up by the right amount.
@@ -85,6 +140,10 @@ import './sticky-header.scss';
 	 */
 	function setupOverlayHeaderHeight(header) {
 		if (!document.body.classList.contains('dsgo-page-overlay-header')) {
+			return;
+		}
+
+		if (header !== getOverlayTarget()) {
 			return;
 		}
 
@@ -118,6 +177,7 @@ import './sticky-header.scss';
 			);
 		};
 		setHeaderHeight();
+		applyOverlayHeroPadding(header);
 		window.addEventListener('resize', setHeaderHeight);
 		window.addEventListener('load', setHeaderHeight, { once: true });
 	}
