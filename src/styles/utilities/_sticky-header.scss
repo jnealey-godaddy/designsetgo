@@ -290,8 +290,13 @@ $dsgo-overlay-bg-targets: ".wp-block-group, .wp-block-columns, .wp-block-column,
  * they sit over the hero image and become unreadable without one: buttons and
  * other author-styled calls to action, submenu dropdowns, and the mobile menu
  * overlay.
+ *
+ * Wrapped in `:where()` so the exclusion chain contributes no specificity. Six
+ * chained `:not()`s would otherwise push these rules well above the
+ * `.has-background` selector they replace, and the whole point is to stay
+ * cascade-neutral — the `!important` below is what does the overriding.
  */
-$dsgo-overlay-bg-exceptions: ":not(.wp-block-button__link):not(.wp-element-button):not(.wp-block-navigation__submenu-container):not(.wp-block-navigation__submenu-container *):not(.wp-block-navigation__responsive-container):not(.wp-block-navigation__responsive-container *)";
+$dsgo-overlay-bg-exceptions: ":where(:not(.wp-block-button__link):not(.wp-element-button):not(.wp-block-navigation__submenu-container):not(.wp-block-navigation__submenu-container *):not(.wp-block-navigation__responsive-container):not(.wp-block-navigation__responsive-container *))";
 
 /**
  * Overlay: force inner header sections transparent so they don't show

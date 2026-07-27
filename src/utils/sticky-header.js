@@ -101,16 +101,26 @@ import './sticky-header.scss';
 	 * Pad the first content section so it clears the overlay header.
 	 *
 	 * The overlay pull-up in `_sticky-header.scss` slides the content block up
-	 * by the header height so the hero's *background* runs behind the header —
-	 * that is the point of the overlay. Without this, the hero's *content* ends
-	 * up underneath the header too.
+	 * by the header height so the first section's *background* runs behind the
+	 * header — that is the point of the overlay. This padding is the exact
+	 * counterpart: it applies to the same element the negative margin does, so
+	 * the section's *content* lands back where it started instead of being
+	 * occluded. That invariant is why the clearance is applied unconditionally
+	 * rather than sniffing for a "hero"-shaped block; whatever comes first has
+	 * already been pulled under the header and needs the same amount back.
+	 *
+	 * Authors who do want the content under the header (a full-bleed section
+	 * that deliberately runs behind a transparent nav, say) opt out by setting
+	 * `--dsgo-overlay-hero-clearance: 0px` on the block.
 	 *
 	 * The header height is added on top of whatever padding the pattern already
-	 * set, so authored spacing survives. The authored value is kept as a CSS
-	 * string rather than a pixel snapshot so fluid presets
-	 * (`var(--wp--preset--spacing--60)` resolves to a `clamp()`) keep responding
-	 * to viewport changes, and the header height is referenced through the live
-	 * custom property so a resize needs no re-run.
+	 * set, so authored spacing survives. Both terms of the calc() stay live —
+	 * the clearance reads the custom property JS keeps updated, so a resize
+	 * needs no re-run. The authored term keeps its original CSS string, so when
+	 * the block serializes its padding inline (how WordPress writes block
+	 * spacing) a fluid preset stays fluid. Padding inherited from a stylesheet
+	 * instead has no inline string to preserve, so it falls back to a resolved
+	 * pixel snapshot taken at init.
 	 *
 	 * @param {HTMLElement} header Overlay header element
 	 */
@@ -129,7 +139,7 @@ import './sticky-header.scss';
 				'0px';
 		}
 
-		hero.style.paddingTop = `calc(${hero.dataset.dsgoOverlayBasePaddingTop} + var(--dsgo-overlay-header-height, 0px))`;
+		hero.style.paddingTop = `calc(${hero.dataset.dsgoOverlayBasePaddingTop} + var(--dsgo-overlay-hero-clearance, var(--dsgo-overlay-header-height, 0px)))`;
 	}
 
 	/**
