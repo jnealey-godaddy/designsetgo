@@ -364,4 +364,51 @@ class Animation_Defaults_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'no-slash', $effective['map'] );
 		$this->assertSame( 'zoomIn', Animation_Defaults::resolve_for_block( 'core/code' )['entrance'] );
 	}
+
+	/**
+	 * The admin sanitizer drops an entry that animates nothing; theme.json
+	 * entries must get the same guard. An entrance that fails the enum
+	 * whitelist falls back to '', and without this the entry would still
+	 * occupy a map key — the injector would then attach the animation
+	 * machinery (has-dsgo-animation, so opacity:0 until triggered) for an
+	 * animation with no keyframes to run.
+	 */
+	public function test_theme_json_entry_that_animates_nothing_is_dropped() {
+		add_filter(
+			'wp_theme_json_data_theme',
+			function ( $data ) {
+				return $data->update_with(
+					array(
+						'version'  => 2,
+						'settings' => array(
+							'custom' => array(
+								'designsetgo' => array(
+									'blockAnimationsEnabled' => true,
+									'blockAnimations' => array(
+										array(
+											// Typo'd entrance, no exit -> animates nothing.
+											'blocks'   => array( 'core/quote' ),
+											'entrance' => 'bogus-typo',
+										),
+										array(
+											// Exit alone is still a real animation.
+											'blocks' => array( 'core/code' ),
+											'exit'   => 'fadeOut',
+										),
+									),
+								),
+							),
+						),
+					)
+				);
+			}
+		);
+		wp_clean_theme_json_cache();
+		$this->set_option( false, array() );
+
+		$effective = Animation_Defaults::get_effective();
+		$this->assertArrayNotHasKey( 'core/quote', $effective['map'] );
+		$this->assertNull( Animation_Defaults::resolve_for_block( 'core/quote' ) );
+		$this->assertSame( 'fadeOut', Animation_Defaults::resolve_for_block( 'core/code' )['exit'] );
+	}
 }

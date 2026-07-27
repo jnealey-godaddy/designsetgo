@@ -73,6 +73,18 @@ class Animation_Defaults {
 				}
 
 				$config = self::normalize_entry( $entry );
+
+				// Same "an entry that animates nothing is meaningless" guard the
+				// admin sanitizer applies. Without it a theme.json entrance that
+				// fails the enum whitelist (a typo) falls back to '' but still
+				// occupies a map key, and the injector then attaches the
+				// animation machinery — has-dsgo-animation, so opacity:0 until
+				// triggered — for an animation with no keyframes to run.
+				// A no-op for the admin list, which is already sanitized.
+				if ( '' === $config['entrance'] && '' === $config['exit'] ) {
+					continue;
+				}
+
 				foreach ( $blocks as $block ) {
 					$map[ $block ] = $config;
 				}

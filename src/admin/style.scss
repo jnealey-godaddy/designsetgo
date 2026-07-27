@@ -876,6 +876,13 @@
 .designsetgo-block-animations {
 	margin-top: 12px;
 
+	// Scope note: what this panel can set vs. what only theme.json can.
+	&__intro {
+		margin: 0 0 12px;
+		font-size: 12px;
+		color: #757575;
+	}
+
 	&__row {
 		display: flex;
 		flex-wrap: wrap;

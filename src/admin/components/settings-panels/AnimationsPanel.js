@@ -5,7 +5,7 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
-import { useState, useEffect, useMemo } from '@wordpress/element';
+import { useState, useEffect, useMemo, useRef } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 import { trash } from '@wordpress/icons';
 import {
@@ -70,6 +70,39 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 	// Registered block types for the picker. null = loading, false = failed
 	// (falls back to a plain text field), array = loaded.
 	const [blockTypes, setBlockTypes] = useState(null);
+
+	// One stable key per row. The id can't live on the row itself — rows are
+	// persisted settings objects and the sanitizer drops unknown keys — so it
+	// is tracked positionally here and spliced alongside the list. Keying on
+	// the array index instead lets React reuse a deleted row's DOM node for
+	// its successor, which can strand FormTokenField's internal uncommitted
+	// input text on the wrong row.
+	const rowCount = (settings?.animations?.block_animations || []).length;
+	const nextRowId = useRef(0);
+	const [rowIds, setRowIds] = useState(() =>
+		Array.from({ length: rowCount }, () => `row-${nextRowId.current++}`)
+	);
+	const addRowId = () =>
+		setRowIds((ids) => [...ids, `row-${nextRowId.current++}`]);
+
+	// Add/remove keep their own ids in step, so a length mismatch here only
+	// happens when the list changed from outside this component.
+	useEffect(() => {
+		setRowIds((prev) => {
+			if (prev.length === rowCount) {
+				return prev;
+			}
+			return prev.length < rowCount
+				? [
+						...prev,
+						...Array.from(
+							{ length: rowCount - prev.length },
+							() => `row-${nextRowId.current++}`
+						),
+					]
+				: prev.slice(0, rowCount);
+		});
+	}, [rowCount]);
 
 	useEffect(() => {
 		let active = true;
@@ -394,6 +427,12 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 
 							{settings?.animations?.block_animations_enabled && (
 								<div className="designsetgo-block-animations">
+									<p className="designsetgo-block-animations__intro">
+										{__(
+											'Each rule sets an entrance, trigger and duration. The advanced options — exit animation, delay, easing and animate-once — are supported by the same data model but are only authorable in theme.json under settings.custom.designsetgo.blockAnimations.',
+											'designsetgo'
+										)}
+									</p>
 									{(
 										settings?.animations
 											?.block_animations || []
@@ -413,7 +452,12 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 												next
 											);
 										};
-										const remove = () =>
+										const remove = () => {
+											setRowIds((ids) =>
+												ids.filter(
+													(_, i) => i !== index
+												)
+											);
 											updateSetting(
 												'animations',
 												'block_animations',
@@ -421,6 +465,7 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 													(r, i) => i !== index
 												)
 											);
+										};
 
 										// The server accepts any duration in the
 										// 100–5000ms range; keep a non-preset value
@@ -499,7 +544,7 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 
 										return (
 											<div
-												key={index}
+												key={rowIds[index] || index}
 												className="designsetgo-block-animations__row"
 											>
 												<div className="designsetgo-block-animations__block">
@@ -634,7 +679,8 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 
 									<Button
 										variant="secondary"
-										onClick={() =>
+										onClick={() => {
+											addRowId();
 											updateSetting(
 												'animations',
 												'block_animations',
@@ -644,8 +690,8 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 														[]),
 													{ ...NEW_ROW },
 												]
-											)
-										}
+											);
+										}}
 									>
 										{__(
 											'Add animation rule',
