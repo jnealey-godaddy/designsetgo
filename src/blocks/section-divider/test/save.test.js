@@ -90,11 +90,20 @@ describe('section-divider save', () => {
 		expect(serializeWith({})).not.toContain('--dsgo-shape-flip');
 	});
 
-	it('emits width var only when width differs from 100', () => {
+	it('emits width var only for an explicit width', () => {
 		expect(serializeWith({ width: 150 })).toContain(
 			'--dsgo-shape-width:150%'
 		);
 		expect(serializeWith({})).not.toContain('--dsgo-shape-width');
+	});
+
+	it('emits an explicit 100% width so it can pin against a theme token', () => {
+		// Width is nullable, so 100 is an author choice, not "unset". It must
+		// serialize, otherwise a theme.json
+		// settings.custom.designsetgo.shapeDivider.width would silently win.
+		expect(serializeWith({ width: 100 })).toContain(
+			'--dsgo-shape-width:100%'
+		);
 	});
 
 	it('emits background var only when backgroundColor is set', () => {

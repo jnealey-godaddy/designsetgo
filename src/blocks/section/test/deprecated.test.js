@@ -469,6 +469,30 @@ describe('section deprecations - height-derived px clearance migration (v9)', ()
 		expect(getBlockContent(block)).toContain('padding-bottom:120px');
 	});
 
+	// Regression guard for the nullable height/width change. v7/v8/v9 all render
+	// a FROZEN copy of the class-based divider, not the live component: their
+	// attribute schemas still default height/width to 100, and at that value the
+	// historical component emitted NO size custom property. If those versions
+	// ever rendered the live component again, this markup — a v9 divider left at
+	// the old default height — would stop byte-matching and every such section
+	// would surface "unexpected or invalid content".
+	test('a v9 divider left at the old default height still migrates silently', () => {
+		const markup = buildOldMarkup(
+			{ shapeDividerTop: 'wave' },
+			v9Deprecation
+		);
+		// Guards the fixture: default height meant a flat 100px clearance and no
+		// inline size var at all.
+		expect(markup).toContain('padding-top:100px');
+		expect(markup).not.toContain('--dsgo-shape-height');
+
+		const [block] = parse(markup);
+
+		expect(console).toHaveInformed();
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.shapeDividerTopSpacing).toBe('100px');
+	});
+
 	test('migrate leaves an already-set spacing attribute untouched', () => {
 		const migrated = v9Deprecation.migrate({
 			shapeDividerTop: 'wave',
@@ -482,5 +506,56 @@ describe('section deprecations - height-derived px clearance migration (v9)', ()
 		const migrated = v9Deprecation.migrate({ shapeDividerTop: '' });
 		expect(migrated.shapeDividerTopSpacing).toBeUndefined();
 		expect(migrated.shapeDividerBottomSpacing).toBeUndefined();
+	});
+});
+
+describe('section - nullable shape divider height/width (theme inheritance)', () => {
+	// shapeDivider{Top,Bottom}{Height,Width} used to default to 100 and emit no
+	// custom property at that value. They now default to null ("inherit the
+	// theme.json token"), which needs NO deprecation precisely because the
+	// serialized markup is unchanged: WordPress never wrote the attribute to the
+	// comment while it equalled the old default, and save() emitted no size var
+	// then either. These tests pin both halves of that claim.
+	const legacyDefaultSizeMarkup = `<!-- wp:designsetgo/section {"shapeDividerTop":"wave"} -->\n${getSaveContent(
+		{ ...metadata, save },
+		{ ...createBlock(metadata.name).attributes, shapeDividerTop: 'wave' },
+		[]
+	)}\n<!-- /wp:designsetgo/section -->`;
+
+	test('the fixture carries no inline size var, as pre-change content did', () => {
+		expect(legacyDefaultSizeMarkup).toContain('is-shape-wave');
+		expect(legacyDefaultSizeMarkup).not.toContain('--dsgo-shape-height');
+		expect(legacyDefaultSizeMarkup).not.toContain('--dsgo-shape-width');
+	});
+
+	test('content saved at the old default size stays valid and resolves to inherit', () => {
+		const [block] = parse(legacyDefaultSizeMarkup);
+
+		// No "Block successfully updated" info here: the block matches the
+		// current save() outright, so no deprecation runs at all.
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.shapeDividerTopHeight).toBeNull();
+		expect(block.attributes.shapeDividerTopWidth).toBeNull();
+	});
+
+	test('an explicitly-sized legacy divider keeps its exact size', () => {
+		const markup = `<!-- wp:designsetgo/section {"shapeDividerTop":"wave","shapeDividerTopHeight":80,"shapeDividerTopWidth":140} -->\n${getSaveContent(
+			{ ...metadata, save },
+			{
+				...createBlock(metadata.name).attributes,
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 80,
+				shapeDividerTopWidth: 140,
+			},
+			[]
+		)}\n<!-- /wp:designsetgo/section -->`;
+
+		const [block] = parse(markup);
+
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.shapeDividerTopHeight).toBe(80);
+		expect(block.attributes.shapeDividerTopWidth).toBe(140);
+		expect(getBlockContent(block)).toContain('--dsgo-shape-height:80px');
+		expect(getBlockContent(block)).toContain('--dsgo-shape-width:140%');
 	});
 });

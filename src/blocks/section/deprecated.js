@@ -15,7 +15,6 @@ import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
 } from './utils/has-overlay-style';
-import ShapeDivider from './components/ShapeDivider';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 /**
@@ -308,6 +307,76 @@ function V4ShapeDivider({
 	);
 }
 
+/**
+ * V7ShapeDivider — frozen copy of the class-based divider as v7, v8 and v9
+ * wrote it.
+ *
+ * Those three versions share the CURRENT class-based markup contract (mask
+ * classes + `--dsgo-shape-*` custom properties, no inline <svg>), so they
+ * originally rendered the live `ShapeDivider` component. That stopped being
+ * safe once height/width became nullable: their attribute schemas still
+ * default both to 100, and the live component now emits an explicit
+ * `--dsgo-shape-height:100px` / `--dsgo-shape-width:100%` for that value
+ * whereas the historical output emitted no size property at all. Sharing the
+ * live component would therefore break byte-matching for every section saved
+ * at the old default size and surface "unexpected or invalid content".
+ *
+ * Frozen here instead, at the emit-only-when-it-differs-from-100 contract.
+ * Do not "simplify" this back to the live component.
+ *
+ * @param {Object}  root0           Component props
+ * @param {string}  root0.shape     Shape slug or 'inherit'
+ * @param {string}  root0.position  Position (top/bottom)
+ * @param {number}  root0.height    Shape height in px
+ * @param {number}  root0.width     Shape width percentage
+ * @param {boolean} root0.flipX     Flip horizontal
+ * @param {boolean} root0.flipY     Flip vertical
+ * @param {boolean} root0.front     Bring to front
+ * @param {string}  root0.bandColor Band color beside the shape
+ */
+function V7ShapeDivider({
+	shape,
+	position = 'top',
+	height = 100,
+	width = 100,
+	flipX = false,
+	flipY = false,
+	front = false,
+	bandColor,
+}) {
+	if (!shape) {
+		return null;
+	}
+
+	const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+	const safeHeight = clamp(Number(height) || 100, 10, 500);
+	const safeWidth = clamp(Number(width) || 100, 100, 300);
+	const safeBandColor = sanitizeColor(bandColor);
+
+	const flipYActive = position === 'bottom' ? !flipY : flipY;
+
+	const className = [
+		'dsgo-shape-divider',
+		`dsgo-shape-divider--${position}`,
+		`is-shape-${shape}`,
+		flipX && 'is-flip-x',
+		flipYActive && 'is-flip-y',
+		front && 'is-front',
+	]
+		.filter(Boolean)
+		.join(' ');
+
+	const style = {
+		...(safeHeight !== 100 && { '--dsgo-shape-height': `${safeHeight}px` }),
+		...(safeWidth !== 100 && { '--dsgo-shape-width': `${safeWidth}%` }),
+		...(safeBandColor && { '--dsgo-shape-band': safeBandColor }),
+	};
+
+	const styleProps = Object.keys(style).length > 0 ? { style } : {};
+
+	return <div className={className} {...styleProps} aria-hidden="true" />;
+}
+
 // Version 9: Height-derived pixel clearance padding. Before this version the
 // inner container's shape-divider clearance was computed from the divider
 // height — `padding-top:${shapeDividerTopHeight || 100}px` (and the bottom
@@ -472,7 +541,7 @@ const v9 = {
 
 		return (
 			<TagName {...blockProps}>
-				<ShapeDivider
+				<V7ShapeDivider
 					shape={shapeDividerTop}
 					position="top"
 					height={shapeDividerTopHeight}
@@ -483,7 +552,7 @@ const v9 = {
 					bandColor={shapeDividerTopBandColor}
 				/>
 				<div {...innerBlocksProps} />
-				<ShapeDivider
+				<V7ShapeDivider
 					shape={shapeDividerBottom}
 					position="bottom"
 					height={shapeDividerBottomHeight}
@@ -689,7 +758,7 @@ const v8 = {
 
 		return (
 			<TagName {...blockProps}>
-				<ShapeDivider
+				<V7ShapeDivider
 					shape={shapeDividerTop}
 					position="top"
 					height={shapeDividerTopHeight}
@@ -700,7 +769,7 @@ const v8 = {
 					bandColor={shapeDividerTopBandColor}
 				/>
 				<div {...innerBlocksProps} />
-				<ShapeDivider
+				<V7ShapeDivider
 					shape={shapeDividerBottom}
 					position="bottom"
 					height={shapeDividerBottomHeight}
@@ -900,7 +969,7 @@ const v7 = {
 
 		return (
 			<TagName {...blockProps}>
-				<ShapeDivider
+				<V7ShapeDivider
 					shape={shapeDividerTop}
 					position="top"
 					height={shapeDividerTopHeight}
@@ -911,7 +980,7 @@ const v7 = {
 					bandColor={shapeDividerTopBandColor}
 				/>
 				<div {...innerBlocksProps} />
-				<ShapeDivider
+				<V7ShapeDivider
 					shape={shapeDividerBottom}
 					position="bottom"
 					height={shapeDividerBottomHeight}

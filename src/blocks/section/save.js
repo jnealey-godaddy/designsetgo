@@ -119,21 +119,23 @@ export default function SectionSave({ attributes }) {
 			// the wrapper so the stylesheet fallback (see _shape-divider.scss)
 			// reserves inner padding that MATCHES what the divider paints
 			// instead of a flat default. Uses getRenderedShapeHeight so the
-			// value tracks the divider's own clamp (10–500, default 100) rather
-			// than a raw out-of-range attribute. Omitted at the default 100px
-			// (the stylesheet's own fallback covers it) and when an explicit
-			// "Content Clearance" spacing is set (its inline padding wins). Must
-			// match edit.js EXACTLY.
+			// value tracks the divider's own clamp (10–500) rather than a raw
+			// out-of-range attribute. Omitted when the height is unset — the
+			// divider then inherits the theme.json height token and the
+			// stylesheet resolves the clearance from that SAME token, so
+			// pinning a px snapshot here would desync the two. Also omitted when
+			// an explicit "Content Clearance" spacing is set (its inline padding
+			// wins). Must match edit.js EXACTLY.
 			...(shapeDividerTop &&
 				!shapeDividerTopSpacing &&
-				getRenderedShapeHeight(shapeDividerTopHeight) !== 100 && {
+				getRenderedShapeHeight(shapeDividerTopHeight) !== null && {
 					'--dsgo-shape-clearance-top': `${getRenderedShapeHeight(
 						shapeDividerTopHeight
 					)}px`,
 				}),
 			...(shapeDividerBottom &&
 				!shapeDividerBottomSpacing &&
-				getRenderedShapeHeight(shapeDividerBottomHeight) !== 100 && {
+				getRenderedShapeHeight(shapeDividerBottomHeight) !== null && {
 					'--dsgo-shape-clearance-bottom': `${getRenderedShapeHeight(
 						shapeDividerBottomHeight
 					)}px`,

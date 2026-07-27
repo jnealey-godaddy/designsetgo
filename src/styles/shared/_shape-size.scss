@@ -1,0 +1,35 @@
+/**
+ * Shape divider size cascade — shared, block-agnostic.
+ *
+ * Resolves the height and width every shape divider paints at, from the
+ * most specific source to the least:
+ *
+ *   1. `--dsgo-shape-height` / `--dsgo-shape-width` — emitted inline by
+ *      save() ONLY when the author set an explicit value on that divider.
+ *   2. `--wp--custom--designsetgo--shape-divider--{height,width}` — the
+ *      theme.json / Style Kit tokens under
+ *      `settings.custom.designsetgo.shapeDivider.{height,width}`.
+ *   3. The plugin defaults, `100px` and `100%`.
+ *
+ * The chain is hoisted into flat custom properties rather than written
+ * inline at each use site because postcss-calc cannot parse a nested
+ * `var()` fallback inside `calc()` — and both consumers centre over-wide
+ * shapes with a calc() on the resolved width.
+ *
+ * Declared on `.dsgo-shape-divider` itself (not inherited from an ancestor),
+ * so a Section nested inside another Section resolves its OWN size instead
+ * of picking up the outer section's inline override.
+ *
+ * @used by src/blocks/section/styles/_shape-divider.scss (the section
+ * block's top/bottom dividers) and src/blocks/section-divider/style.scss
+ * (the standalone divider block).
+ *
+ * @since 2.7.1
+ */
+
+:where(.dsgo-shape-divider) {
+	--dsgo-shape-height-resolved: var(--dsgo-shape-height,
+		var(--wp--custom--designsetgo--shape-divider--height, 100px));
+	--dsgo-shape-width-resolved: var(--dsgo-shape-width,
+		var(--wp--custom--designsetgo--shape-divider--width, 100%));
+}

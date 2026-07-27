@@ -34,11 +34,16 @@ export function getDividerStyle(attributes) {
 		style['--dsgo-section-divider-fill'] = convertColorToCSSVar(fillColor);
 	}
 
+	// Height and width are nullable: unset means "inherit the theme.json token"
+	// (settings.custom.designsetgo.shapeDivider.{height,width}, resolved by the
+	// shared `_shape-size.scss` cascade), so the var is emitted only for an
+	// explicit author value — including one equal to the plugin default, which
+	// is how an author pins a divider against a theme token saying otherwise.
 	if (typeof height === 'number') {
 		style['--dsgo-shape-height'] = `${height}px`;
 	}
 
-	if (width !== 100) {
+	if (typeof width === 'number') {
 		style['--dsgo-shape-width'] = `${width}%`;
 	}
 

@@ -62,7 +62,11 @@ describe('section save - shape dividers', () => {
 		).toContain('is-shape-inherit');
 	});
 
-	test('default divider omits height/width custom props (CSS defaults apply)', () => {
+	test('default divider omits height/width custom props (theme tokens apply)', () => {
+		// With no inline var the stylesheet cascade resolves the size from
+		// `--wp--custom--designsetgo--shape-divider--{height,width}` and only
+		// then from the 100px / 100% plugin defaults, so an untouched divider
+		// must serialize with NO size custom property at all.
 		const html = serialize(
 			createBlock(metadata.name, { shapeDividerTop: 'wave' })
 		);
@@ -71,7 +75,7 @@ describe('section save - shape dividers', () => {
 		expect(html).not.toContain('--dsgo-shape-width');
 	});
 
-	test('non-default height is emitted', () => {
+	test('an explicit height is emitted', () => {
 		const html = serialize(
 			createBlock(metadata.name, {
 				shapeDividerTop: 'wave',
@@ -79,6 +83,22 @@ describe('section save - shape dividers', () => {
 			})
 		);
 		expect(html).toContain('--dsgo-shape-height:80px');
+	});
+
+	test('an explicit height/width of the plugin default still serializes', () => {
+		// Height and width are nullable, so 100 is an author choice rather than
+		// "unset". Both must serialize — otherwise a theme.json
+		// settings.custom.designsetgo.shapeDivider.{height,width} token would
+		// silently override a divider the author deliberately pinned.
+		const html = serialize(
+			createBlock(metadata.name, {
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 100,
+				shapeDividerTopWidth: 100,
+			})
+		);
+		expect(html).toContain('--dsgo-shape-height:100px');
+		expect(html).toContain('--dsgo-shape-width:100%');
 	});
 
 	test('shape region carries no fill var (transparent / see-through)', () => {
@@ -171,7 +191,7 @@ describe('section save - shape divider content clearance', () => {
 		expect(innerStyle(html)).not.toContain('padding');
 	});
 
-	test('a non-default height with no explicit clearance exposes a height-matched wrapper var', () => {
+	test('an explicit height with no explicit clearance exposes a height-matched wrapper var', () => {
 		const html = serialize(
 			createBlock(metadata.name, {
 				shapeDividerTop: 'wave',
@@ -184,14 +204,26 @@ describe('section save - shape divider content clearance', () => {
 		expect(innerStyle(html)).not.toContain('padding');
 	});
 
-	test('a default-height (100) divider emits no clearance var (100px stylesheet fallback covers it)', () => {
+	test('a divider with an unset height emits no clearance var (both sides inherit the theme token)', () => {
+		// Unset height means the divider paints at the theme.json height token;
+		// the clearance stylesheet falls back to that SAME token, so pinning a
+		// px snapshot here would desync the padding from the shape.
+		const html = serialize(
+			createBlock(metadata.name, { shapeDividerTop: 'wave' })
+		);
+		expect(html).not.toContain('--dsgo-shape-clearance-top');
+	});
+
+	test('an explicit height of 100 still emits the clearance var', () => {
+		// The divider pins itself to 100px against any theme token, so the
+		// clearance has to pin to 100px too rather than inherit the token.
 		const html = serialize(
 			createBlock(metadata.name, {
 				shapeDividerTop: 'wave',
 				shapeDividerTopHeight: 100,
 			})
 		);
-		expect(html).not.toContain('--dsgo-shape-clearance-top');
+		expect(html).toContain('--dsgo-shape-clearance-top:100px');
 	});
 
 	test('the clearance var tracks the divider’s clamped render height, not a raw out-of-range value', () => {
@@ -208,7 +240,10 @@ describe('section save - shape divider content clearance', () => {
 		expect(html).not.toContain('--dsgo-shape-clearance-top:1000px');
 	});
 
-	test('a falsy height (0) renders at 100px, so no clearance var is emitted (100px fallback matches)', () => {
+	test('a non-positive height (0) is treated as unset, so no size or clearance var is emitted', () => {
+		// 0 is only reachable via the Abilities API, whose range check allows
+		// it. It cannot mean "paint nothing", so it collapses to unset and the
+		// divider inherits the theme token like any untouched divider.
 		const html = serialize(
 			createBlock(metadata.name, {
 				shapeDividerTop: 'wave',
@@ -216,6 +251,7 @@ describe('section save - shape divider content clearance', () => {
 			})
 		);
 		expect(html).not.toContain('--dsgo-shape-clearance-top');
+		expect(html).not.toContain('--dsgo-shape-height');
 	});
 
 	test('an explicit clearance suppresses the wrapper var (inline inner padding wins)', () => {

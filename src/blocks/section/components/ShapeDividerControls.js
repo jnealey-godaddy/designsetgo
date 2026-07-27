@@ -201,13 +201,25 @@ function ShapeDividerPanel({
 						sectionTextColor={sectionTextColor}
 					/>
 
+					{/* Height and Width are nullable: clearing them falls back
+					    to the theme.json tokens
+					    settings.custom.designsetgo.shapeDivider.{height,width}
+					    (then to 100px / 100%), which is why both use allowReset
+					    and normalize an undefined reset back to null. */}
 					<RangeControl
 						label={__('Height', 'designsetgo')}
 						value={height}
-						onChange={(value) => onChange({ height: value })}
+						onChange={(value) =>
+							onChange({ height: value ?? null })
+						}
 						min={10}
 						max={500}
 						step={1}
+						allowReset
+						help={__(
+							'Reset to inherit the theme’s divider height.',
+							'designsetgo'
+						)}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
@@ -215,12 +227,13 @@ function ShapeDividerPanel({
 					<RangeControl
 						label={__('Width', 'designsetgo')}
 						value={width}
-						onChange={(value) => onChange({ width: value })}
+						onChange={(value) => onChange({ width: value ?? null })}
 						min={100}
 						max={300}
 						step={1}
+						allowReset
 						help={__(
-							'Stretch the shape wider for more dramatic effect.',
+							'Stretch the shape wider for more dramatic effect. Reset to inherit the theme’s divider width.',
 							'designsetgo'
 						)}
 						__next40pxDefaultSize

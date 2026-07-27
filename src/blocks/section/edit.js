@@ -320,14 +320,14 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 			// (must match save.js EXACTLY). See save.js for the full rationale.
 			...(shapeDividerTop &&
 				!shapeDividerTopSpacing &&
-				getRenderedShapeHeight(shapeDividerTopHeight) !== 100 && {
+				getRenderedShapeHeight(shapeDividerTopHeight) !== null && {
 					'--dsgo-shape-clearance-top': `${getRenderedShapeHeight(
 						shapeDividerTopHeight
 					)}px`,
 				}),
 			...(shapeDividerBottom &&
 				!shapeDividerBottomSpacing &&
-				getRenderedShapeHeight(shapeDividerBottomHeight) !== 100 && {
+				getRenderedShapeHeight(shapeDividerBottomHeight) !== null && {
 					'--dsgo-shape-clearance-bottom': `${getRenderedShapeHeight(
 						shapeDividerBottomHeight
 					)}px`,

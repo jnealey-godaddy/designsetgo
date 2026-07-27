@@ -7,6 +7,7 @@
  */
 
 @use '../../styles/shared/shape-mask-classes';
+@use '../../styles/shared/shape-size';
 
 :where(.wp-block-designsetgo-section-divider) {
 	line-height: 0;
@@ -22,15 +23,16 @@
 :where(.dsgo-section-divider__shape) {
 	display: block;
 	position: relative;
-	width: var(--dsgo-shape-width, 100%);
-	height: var(--dsgo-shape-height,
-		var(--wp--custom--designsetgo--shape-divider--height, 100px));
+	// `--dsgo-shape-{height,width}-resolved` come from the shared size cascade
+	// (@used above): inline attribute var → theme.json token → plugin default.
+	width: var(--dsgo-shape-width-resolved);
+	height: var(--dsgo-shape-height-resolved);
 	// Centre shapes wider than 100%: `margin-inline: auto` cannot centre an
 	// over-constrained (wider-than-container) box — its auto margins resolve
 	// to 0 and the shape overflows to one side. Offset by half the overflow
 	// instead; resolves to 0 at the default 100% and grows symmetrically.
 	// Matches the section block's shape-divider centering.
-	left: calc((100% - var(--dsgo-shape-width, 100%)) / 2);
+	left: calc((100% - var(--dsgo-shape-width-resolved)) / 2);
 	background-color: var(--dsgo-section-divider-fill,
 		var(--wp--custom--designsetgo--shape-divider--color, var(--wp--preset--color--base)));
 	-webkit-mask: var(--dsgo-shape-mask) no-repeat center / 100% 100%;

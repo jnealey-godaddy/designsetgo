@@ -8,10 +8,11 @@
  * and editor.scss so the two stay byte-identical without duplication.
  *
  * The per-shape `--dsgo-shape--<slug>` custom properties, the slug list,
- * the per-slug mask assignment, and the `is-shape-inherit` resolver are
- * block-agnostic and live in the shared `_shape-mask-classes.scss` /
- * `_shape-masks.scss` partials (src/styles/shared/), @used below so this
- * block only owns the section-specific painting.
+ * the per-slug mask assignment, the `is-shape-inherit` resolver, and the
+ * height/width theme-token cascade are block-agnostic and live in the shared
+ * `_shape-mask-classes.scss` / `_shape-masks.scss` / `_shape-size.scss`
+ * partials (src/styles/shared/), @used below so this block only owns the
+ * section-specific painting.
  *
  * Z-index hierarchy:
  * - Shape dividers (default): z-index 1
@@ -22,6 +23,7 @@
  */
 
 @use '../../../styles/shared/shape-mask-classes';
+@use '../../../styles/shared/shape-size';
 
 // Sub-pixel edge bleed. The band is painted right up to the ::before box edge,
 // so at fractional browser zoom (90/110/125%) a hairline rounding gap can open
@@ -35,13 +37,15 @@
 // section's own background, so there is no seam to cover there.
 $dsgo-shape-bleed: 1px;
 
+// `--dsgo-shape-{height,width}-resolved` come from the shared size cascade
+// (@used above): inline attribute var → theme.json token → plugin default.
 :where(.dsgo-shape-divider) {
 	position: absolute;
 	// Centre shapes wider than 100% (width attr range 100–300%); resolves to
 	// 0 at the default 100% and offsets symmetrically as width grows.
-	left: calc((100% - var(--dsgo-shape-width, 100%)) / 2);
-	width: var(--dsgo-shape-width, 100%);
-	height: var(--dsgo-shape-height, 100px);
+	left: calc((100% - var(--dsgo-shape-width-resolved)) / 2);
+	width: var(--dsgo-shape-width-resolved);
+	height: var(--dsgo-shape-height-resolved);
 	pointer-events: none;
 	z-index: 1;
 
@@ -148,11 +152,12 @@ $dsgo-shape-bleed: 1px;
 // let content sit under the shape. These :where() rules reserve space keyed to
 // the actual divider siblings, so only the present position(s) get padding.
 // The reserved amount MATCHES the divider height: save() exposes it on the
-// wrapper as `--dsgo-shape-clearance-{top,bottom}` for any non-default height,
-// so a 300px divider clears 300px, not a flat 100px. The `100px` fallback is
-// the default divider height, used when that variable is absent (the divider is
-// at its default 100px height). Zero specificity means any explicit inline
-// padding from save() always wins. Legacy content stays exact: its deprecation
+// wrapper as `--dsgo-shape-clearance-{top,bottom}` for any explicitly-set
+// height, so a 300px divider clears 300px, not a flat 100px. When no explicit
+// height is set the divider inherits the theme.json height token, so the
+// clearance falls through to that SAME token — keeping the two in step — and
+// only then to the `100px` plugin default. Zero specificity means any explicit
+// inline padding from save() always wins. Legacy content stays exact: its deprecation
 // migrate() carries the old height into an explicit spacing value, which
 // serializes as inline padding and overrides this fallback.
 // Reset the clearance variables on every section wrapper. Custom properties
@@ -171,11 +176,13 @@ $dsgo-shape-bleed: 1px;
 }
 
 :where(.dsgo-shape-divider--top + .dsgo-stack__inner) {
-	padding-top: var(--dsgo-shape-clearance-top, 100px);
+	padding-top: var(--dsgo-shape-clearance-top,
+		var(--wp--custom--designsetgo--shape-divider--height, 100px));
 }
 
 :where(.dsgo-stack__inner:has(+ .dsgo-shape-divider--bottom)) {
-	padding-bottom: var(--dsgo-shape-clearance-bottom, 100px);
+	padding-bottom: var(--dsgo-shape-clearance-bottom,
+		var(--wp--custom--designsetgo--shape-divider--height, 100px));
 }
 
 // Respect user preference for reduced motion.
