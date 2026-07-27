@@ -85,7 +85,14 @@ export default function SectionDividerControls({
 					max={500}
 					step={1}
 					allowReset
-					placeholder={__('Theme default', 'designsetgo')}
+					// No `placeholder` here: RangeControl does not accept one
+					// (it is absent from the component's props and types, and
+					// RangeControl does not spread unknown props), so it was
+					// inert. `help` carries the inherit hint instead.
+					help={__(
+						'Reset to inherit the theme’s divider height.',
+						'designsetgo'
+					)}
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>

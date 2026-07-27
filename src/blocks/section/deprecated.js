@@ -17,12 +17,79 @@ import {
 } from './utils/has-overlay-style';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
+// The height/width every shape-divider deprecation schema defaults to. A legacy
+// block carrying this value never had it written to the block comment (
+// WordPress omits default-valued attributes), so it cannot represent a
+// deliberate author choice — it is simply "never touched".
+const LEGACY_DEFAULT_SHAPE_SIZE = 100;
+
 /**
- * Carry a legacy height-derived shape-divider clearance into the new
- * `shapeDivider{Top,Bottom}Spacing` attribute as a raw CSS length, preserving
- * the exact pre-2.6 clearance (`${height || 100}px`). The current save()
- * serializes a raw length unchanged, so the stored padding is reproduced on
- * the next render.
+ * Whether a legacy size attribute sat at the historical default, i.e. the
+ * author never touched it.
+ *
+ * @param {number|null|undefined} value Parsed size attribute.
+ * @return {boolean} True when the value is indistinguishable from untouched.
+ */
+function isUntouchedLegacyShapeSize(value) {
+	return (
+		value === undefined ||
+		value === null ||
+		value === LEGACY_DEFAULT_SHAPE_SIZE
+	);
+}
+
+/**
+ * Migrate one position's legacy shape-divider size + clearance.
+ *
+ * Two cases, and the split matters:
+ *
+ * - **The author set an explicit height.** Preserve it, and carry the legacy
+ *   height-derived clearance into `shapeDivider{Position}Spacing` as a raw CSS
+ *   length (`${height}px`), exactly as before. The current save() serializes a
+ *   raw length unchanged, so the stored padding is reproduced on next render.
+ * - **The height was never touched (the historical default 100).** Collapse it
+ *   to `null` so the block starts inheriting the theme.json height token like
+ *   any untouched divider, and deliberately DO NOT pin a clearance. Pinning one
+ *   here is the trap: the divider would resolve its height from the token while
+ *   the clearance stayed frozen at 100px, so on a theme setting a 200px divider
+ *   the content would sit under the shape. Leaving the clearance unset routes
+ *   BOTH through the same `--wp--custom--designsetgo--shape-divider--height`
+ *   fallback in `_shape-divider.scss`, so they cannot desync. With no token set
+ *   the fallback is 100px — byte-identical rendering to the legacy output.
+ *
+ * Width is independent of clearance, so it collapses on its own terms.
+ *
+ * @param {Object} attributes Parsed block attributes.
+ * @param {Object} migrated   Mutable migration target.
+ * @param {string} position   'Top' or 'Bottom'.
+ */
+function migrateShapeDividerPosition(attributes, migrated, position) {
+	if (!attributes[`shapeDivider${position}`]) {
+		return;
+	}
+
+	const heightKey = `shapeDivider${position}Height`;
+	const widthKey = `shapeDivider${position}Width`;
+	const spacingKey = `shapeDivider${position}Spacing`;
+
+	if (isUntouchedLegacyShapeSize(attributes[widthKey])) {
+		migrated[widthKey] = null;
+	}
+
+	if (isUntouchedLegacyShapeSize(attributes[heightKey])) {
+		migrated[heightKey] = null;
+		return;
+	}
+
+	if (!attributes[spacingKey]) {
+		migrated[spacingKey] = `${attributes[heightKey]}px`;
+	}
+}
+
+/**
+ * Carry a legacy shape divider's height-derived clearance and size attributes
+ * onto the current schema. See `migrateShapeDividerPosition` for the per-
+ * position rules.
  *
  * This MUST be shared by every shape-divider-era deprecation (v3–v9), not just
  * the newest: WordPress runs exactly ONE deprecation entry per stored block —
@@ -34,23 +101,12 @@ import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
  * set. See CLAUDE.md, "deprecations do not cascade".
  *
  * @param {Object} attributes Parsed block attributes.
- * @return {Object} Attributes with the spacing carry-over applied.
+ * @return {Object} Attributes with the carry-over applied.
  */
 function migrateShapeDividerSpacing(attributes) {
 	const migrated = { ...attributes };
-	if (attributes.shapeDividerTop && !attributes.shapeDividerTopSpacing) {
-		migrated.shapeDividerTopSpacing = `${
-			attributes.shapeDividerTopHeight || 100
-		}px`;
-	}
-	if (
-		attributes.shapeDividerBottom &&
-		!attributes.shapeDividerBottomSpacing
-	) {
-		migrated.shapeDividerBottomSpacing = `${
-			attributes.shapeDividerBottomHeight || 100
-		}px`;
-	}
+	migrateShapeDividerPosition(attributes, migrated, 'Top');
+	migrateShapeDividerPosition(attributes, migrated, 'Bottom');
 	return migrated;
 }
 
