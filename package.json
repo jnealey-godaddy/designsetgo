@@ -125,14 +125,20 @@
   ],
   "overrides": {
     "@babel/runtime": "^7.26.10",
-    "webpack-dev-server": "^5.2.2",
+    "webpack-dev-server": "^6.0.0",
     "glob": "^10.0.0",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.3.0",
+    "@babel/core": "^7.29.7",
+    "http-proxy-middleware": "^2.0.10",
+    "adm-zip": "^0.6.0",
     "webpack": "^5.105.0",
     "diff": "^4.0.4",
     "serialize-javascript": "^7.0.5",
     "minimatch": "^3.1.4",
     "websocket-driver": "^0.7.5",
-    "seroval": "^1.5.6"
+    "seroval": "^1.5.6",
+    "postcss": "^8.5.23",
+    "markdown-it": "^14.3.0",
+    "linkify-it": "^6.1.0"
   }
 }
