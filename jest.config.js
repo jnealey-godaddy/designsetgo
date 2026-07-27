@@ -39,7 +39,8 @@ module.exports = {
 
 	// Module name mapper for CSS and asset files
 	moduleNameMapper: {
-		'\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+		'\\.(css|less|scss|sass)$':
+			'<rootDir>/tests/unit/__mocks__/styleMock.js',
 		'\\.(jpg|jpeg|png|gif|svg|eot|otf|webp|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
 			'<rootDir>/tests/unit/__mocks__/fileMock.js',
 		// @wordpress/editor and @wordpress/notices pull in heavy WP store internals
