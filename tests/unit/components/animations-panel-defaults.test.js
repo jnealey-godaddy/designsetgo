@@ -299,6 +299,50 @@ describe('Admin AnimationsPanel — block-type defaults', () => {
 		);
 	});
 
+	it('remounts every row when the server drops one, so no key outlives its data', async () => {
+		// The sanitizer removes an entry whose targets were all claimed by a
+		// later rule, and that can happen at any index. Rows carry no
+		// server-side identity, so a surviving id can't be matched back to its
+		// row — patching the tail would leave ids keyed to the wrong rows.
+		const { rerender } = render(
+			<AnimationsPanel
+				settings={settingsWith([
+					{ ...ROW, blocks: ['core/quote'] },
+					{ ...ROW, blocks: ['core/button'] },
+					{ ...ROW, blocks: ['core/image'] },
+				])}
+				updateSetting={jest.fn()}
+			/>
+		);
+		await screen.findByText('Button — core/button');
+
+		// A React key isn't observable in the DOM, but its effect is: reusing a
+		// key keeps the very same node object, changing it mounts a new one.
+		const before = [
+			...document.querySelectorAll('.designsetgo-block-animations__row'),
+		];
+		expect(before).toHaveLength(3);
+
+		// Server dropped the FIRST row; rows 2 and 3 shift up by one.
+		rerender(
+			<AnimationsPanel
+				settings={settingsWith([
+					{ ...ROW, blocks: ['core/button'] },
+					{ ...ROW, blocks: ['core/image'] },
+				])}
+				updateSetting={jest.fn()}
+			/>
+		);
+
+		const after = [
+			...document.querySelectorAll('.designsetgo-block-animations__row'),
+		];
+		expect(after).toHaveLength(2);
+		// No surviving row reuses a node that belonged to a different row's
+		// data — which tail-truncating the ids would have done.
+		after.forEach((node) => expect(before).not.toContain(node));
+	});
+
 	it('says the block list failed to load rather than looking like an empty one', async () => {
 		// Without its own branch, a failed fetch renders exactly like a
 		// successful one that returned nothing — the admin gets no signal that

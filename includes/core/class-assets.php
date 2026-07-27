@@ -139,6 +139,12 @@ class Assets {
 				'enabledExtensions'      => array_values( array_map( 'sanitize_key', $enabled_extensions ) ),
 				'blockAnimations'        => self::block_animations_for_editor( $anim['map'] ),
 				'blockAnimationsEnabled' => (bool) $anim['enabled'],
+				// The block-animations extension's own exclude list, so
+				// resolveBlockAnimationDefault() reads it from the same config
+				// file the injector does instead of hardcoding a copy.
+				'blockAnimationExclusions' => array_values(
+					\DesignSetGo\Extension_Attributes::get_extension_exclusions( 'block-animations' )
+				),
 			)
 		);
 	}

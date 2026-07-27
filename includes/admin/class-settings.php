@@ -975,13 +975,17 @@ class Settings {
 		$triggers  = array( 'scroll', 'load', 'hover', 'click' );
 		$easings   = array( 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' );
 
+		// is_string() before the cast, matching sanitize_block_animation_targets():
+		// a theme.json entry that nests an array under one of these keys would
+		// otherwise emit "Array to string conversion" on every request that
+		// resolves the block type, before falling through to the default anyway.
 		return array(
-			'entrance' => isset( $entry['entrance'] ) && in_array( (string) $entry['entrance'], $entrances, true ) ? (string) $entry['entrance'] : '',
-			'exit'     => isset( $entry['exit'] ) && in_array( (string) $entry['exit'], $exits, true ) ? (string) $entry['exit'] : '',
-			'trigger'  => isset( $entry['trigger'] ) && in_array( (string) $entry['trigger'], $triggers, true ) ? (string) $entry['trigger'] : 'scroll',
+			'entrance' => isset( $entry['entrance'] ) && is_string( $entry['entrance'] ) && in_array( $entry['entrance'], $entrances, true ) ? $entry['entrance'] : '',
+			'exit'     => isset( $entry['exit'] ) && is_string( $entry['exit'] ) && in_array( $entry['exit'], $exits, true ) ? $entry['exit'] : '',
+			'trigger'  => isset( $entry['trigger'] ) && is_string( $entry['trigger'] ) && in_array( $entry['trigger'], $triggers, true ) ? $entry['trigger'] : 'scroll',
 			'duration' => isset( $entry['duration'] ) ? max( 100, min( 5000, absint( $entry['duration'] ) ) ) : 600,
 			'delay'    => isset( $entry['delay'] ) ? max( 0, min( 5000, absint( $entry['delay'] ) ) ) : 0,
-			'easing'   => isset( $entry['easing'] ) && in_array( (string) $entry['easing'], $easings, true ) ? (string) $entry['easing'] : 'ease-out',
+			'easing'   => isset( $entry['easing'] ) && is_string( $entry['easing'] ) && in_array( $entry['easing'], $easings, true ) ? $entry['easing'] : 'ease-out',
 			'offset'   => isset( $entry['offset'] ) ? max( 0, min( 1000, absint( $entry['offset'] ) ) ) : 100,
 			'once'     => isset( $entry['once'] ) ? (bool) $entry['once'] : true,
 		);

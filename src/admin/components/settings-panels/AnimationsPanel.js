@@ -90,22 +90,26 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 		setRowIds((ids) => [...ids, `row-${nextRowId.current++}`]);
 
 	// Add/remove keep their own ids in step, so a length mismatch here only
-	// happens when the list changed from outside this component.
+	// happens when the list changed from outside this component — in practice
+	// a save round-trip whose sanitizer dropped rows (an entry whose targets
+	// were all claimed by a later one is removed wholesale).
+	//
+	// Rows carry no server-side identity, so there is nothing to match the
+	// surviving rows back to their old ids: the drop can happen at any index,
+	// and patching the tail would leave every id after it keyed to the wrong
+	// row — the exact misalignment these ids exist to prevent. Regenerate the
+	// whole set instead. Every row remounts, which is the right outcome when
+	// the list changed underneath the author: uncommitted token text belongs
+	// to data the server has already rewritten.
 	useEffect(() => {
-		setRowIds((prev) => {
-			if (prev.length === rowCount) {
-				return prev;
-			}
-			return prev.length < rowCount
-				? [
-						...prev,
-						...Array.from(
-							{ length: rowCount - prev.length },
-							() => `row-${nextRowId.current++}`
-						),
-					]
-				: prev.slice(0, rowCount);
-		});
+		setRowIds((prev) =>
+			prev.length === rowCount
+				? prev
+				: Array.from(
+						{ length: rowCount },
+						() => `row-${nextRowId.current++}`
+					)
+		);
 	}, [rowCount]);
 
 	useEffect(() => {

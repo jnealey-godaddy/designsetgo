@@ -16,6 +16,10 @@ describe('resolveBlockAnimationDefault — exclusions', () => {
 		window.dsgoSettings = {
 			blockAnimationsEnabled: true,
 			excludedBlocks: [],
+			// Localized from the block-animations extension config, the same
+			// list Extension_Attributes::get_extension_exclusions() feeds the
+			// injector.
+			blockAnimationExclusions: ['core/freeform', 'core-embed/*'],
 			blockAnimations: [
 				{ block: 'core/*', entrance: 'fadeInUp', trigger: 'scroll' },
 				{ block: 'acme/widget', entrance: 'zoomIn', trigger: 'scroll' },
@@ -59,6 +63,27 @@ describe('resolveBlockAnimationDefault — exclusions', () => {
 		// itself, which the injector reads via get_extension_exclusions().
 		expect(resolveBlockAnimationDefault('core/freeform')).toBeNull();
 		expect(resolveBlockAnimationDefault('core-embed/twitter')).toBeNull();
+	});
+
+	it('reads the static exclusions from the localized config, not a hardcoded copy', () => {
+		// Adding to the PHP extension config must reach the editor without a
+		// matching JS edit — that single-source guarantee is the point.
+		window.dsgoSettings.blockAnimationExclusions = ['core/quote'];
+
+		expect(resolveBlockAnimationDefault('core/quote')).toBeNull();
+		// ...and a name only the old hardcoded list knew about is no longer
+		// special-cased once the config stops naming it.
+		expect(resolveBlockAnimationDefault('core/freeform')?.entrance).toBe(
+			'fadeInUp'
+		);
+	});
+
+	it('survives a missing exclusions payload', () => {
+		// An editor page served before the new key shipped must not throw.
+		delete window.dsgoSettings.blockAnimationExclusions;
+		expect(resolveBlockAnimationDefault('core/heading')?.entrance).toBe(
+			'fadeInUp'
+		);
 	});
 
 	it('still returns null when the feature gate is off', () => {

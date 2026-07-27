@@ -1,11 +1,16 @@
 import { shouldExtendBlock } from '../../utils/should-extend-block';
 
-// Mirrors the block-animations extension config's own `exclude` list, which
-// Animation_Defaults_Injector honours server-side via
-// Extension_Attributes::get_extension_exclusions( 'block-animations' ), and
-// the same pair withAnimationControls already skips in editor.js.
-const isStaticallyExcluded = (blockName) =>
-	blockName === 'core/freeform' || blockName.startsWith('core-embed/');
+// The block-animations extension's own exclude list, localized from the same
+// config file Animation_Defaults_Injector reads via
+// Extension_Attributes::get_extension_exclusions( 'block-animations' ) — so
+// changing that config propagates here instead of needing a matching edit.
+// Entries are exact names or `namespace/*` patterns, matching is_excluded().
+const isStaticallyExcluded = (blockName, patterns) =>
+	patterns.some((pattern) =>
+		pattern.endsWith('/*')
+			? blockName.startsWith(pattern.slice(0, -1))
+			: blockName === pattern
+	);
 
 /**
  * Resolve the effective theme animation default for a block name from the
@@ -28,7 +33,13 @@ export function resolveBlockAnimationDefault(blockName) {
 	// keys are already dropped when the list is localized; this catches the
 	// case that can only be settled against a concrete name — an excluded
 	// block matching a `namespace/*` entry.
-	if (!shouldExtendBlock(blockName) || isStaticallyExcluded(blockName)) {
+	const exclusions = Array.isArray(settings.blockAnimationExclusions)
+		? settings.blockAnimationExclusions
+		: [];
+	if (
+		!shouldExtendBlock(blockName) ||
+		isStaticallyExcluded(blockName, exclusions)
+	) {
 		return null;
 	}
 
