@@ -4,9 +4,11 @@
  * Renders a class-based shape divider `<div>` for section blocks. The shape
  * itself is painted by CSS via `mask-image` (see
  * `src/blocks/section/styles/_shape-divider.scss` and the shared
- * `src/styles/shared/_shape-masks.scss` / `_shape-mask-classes.scss`
- * partials) — this component only emits the marker classes and CSS custom
- * properties the stylesheet reads. No inline `<svg>` is rendered.
+ * `src/styles/shared/_shape-masks.scss` / `_shape-mask-classes.scss` /
+ * `_shape-size.scss` partials) — this component only emits the marker classes
+ * and CSS custom properties the stylesheet reads. No inline `<svg>` is
+ * rendered, and a size property is emitted only for an explicit author value
+ * so the theme.json token cascade in `_shape-size.scss` can fill in the rest.
  *
  * Used in both edit.js and save.js for consistent rendering.
  *
@@ -14,31 +16,27 @@
  */
 
 import { sanitizeColor } from '../utils/sanitize-color';
-
-/**
- * Clamp a value between min and max
- *
- * @param {number} value - Value to clamp
- * @param {number} min   - Minimum value
- * @param {number} max   - Maximum value
- * @return {number} Clamped value
- */
-function clamp(value, min, max) {
-	return Math.min(Math.max(value, min), max);
-}
+// Shared with the standalone Section Divider block — see src/utils/shape-size.js
+// for why "is this an explicit size?" is one decision but the clamp is not.
+import { normalizeShapeSize } from '../../../utils/shape-size';
 
 /**
  * Resolve the height a shape divider actually paints from its raw height
- * attribute, applying the same default + clamp the component renders with
- * (default 100, clamped to 10–500px). Exported so save()/edit() can size the
- * inner content clearance to the divider's real rendered height instead of the
- * raw, possibly out-of-range, attribute value.
+ * attribute, applying the same clamp the component renders with (10–500px).
+ * Exported so save()/edit() can size the inner content clearance to the
+ * divider's real rendered height instead of the raw, possibly out-of-range,
+ * attribute value.
  *
- * @param {number} height Raw height attribute (px).
- * @return {number} Rendered height in px (10–500).
+ * Returns `null` when no explicit height is set — the divider then inherits
+ * the theme token, and the clearance must inherit it too (the stylesheet
+ * fallback on `--dsgo-shape-clearance-*` reads the same token), so save()
+ * emits no wrapper variable at all in that case.
+ *
+ * @param {number|null|undefined} height Raw height attribute (px).
+ * @return {number|null} Rendered height in px (10–500), or null when unset.
  */
 export function getRenderedShapeHeight(height) {
-	return clamp(Number(height) || 100, 10, 500);
+	return normalizeShapeSize(height, 10, 500);
 }
 
 /**
@@ -48,8 +46,8 @@ export function getRenderedShapeHeight(height) {
  * @param {string}  props.shape     Shape slug (from getShapeDividerNames()), 'inherit' for the
  *                                  theme default, or falsy to render nothing.
  * @param {string}  props.position  'top' or 'bottom'
- * @param {number}  props.height    Height in pixels
- * @param {number}  props.width     Width percentage (100-300)
+ * @param {number}  props.height    Height in pixels (10-500), or null to inherit the theme token
+ * @param {number}  props.width     Width percentage (100-300), or null to inherit the theme token
  * @param {boolean} props.flipX     Flip horizontally
  * @param {boolean} props.flipY     Flip vertically
  * @param {boolean} props.front     Bring to front (above content)
@@ -62,8 +60,8 @@ export function getRenderedShapeHeight(height) {
 export default function ShapeDivider({
 	shape,
 	position = 'top',
-	height = 100,
-	width = 100,
+	height = null,
+	width = null,
 	flipX = false,
 	flipY = false,
 	front = false,
@@ -74,9 +72,11 @@ export default function ShapeDivider({
 		return null;
 	}
 
-	// Validate and clamp numeric values
+	// Validate and clamp numeric values. Both collapse to null when the author
+	// set nothing, so the CSS custom property is omitted and the stylesheet's
+	// theme.json → hard-coded fallback chain resolves the size instead.
 	const safeHeight = getRenderedShapeHeight(height);
-	const safeWidth = clamp(Number(width) || 100, 100, 300);
+	const safeWidth = normalizeShapeSize(width, 100, 300);
 
 	// Sanitize color values
 	const safeBandColor = sanitizeColor(bandColor);
@@ -101,13 +101,19 @@ export default function ShapeDivider({
 		.filter(Boolean)
 		.join(' ');
 
-	// Build inline styles, emitting a custom property ONLY when it differs from
-	// the CSS default, so a default divider serializes with no inline style at
-	// all. The stylesheet supplies the fallbacks: `var(--dsgo-shape-height,
-	// 100px)`, `var(--dsgo-shape-width, 100%)`, and the base color for the band.
+	// Build inline styles, emitting a custom property ONLY when the author set
+	// an explicit value, so an untouched divider serializes with no inline
+	// style at all and inherits the theme. The stylesheet supplies the
+	// fallback chains — `--dsgo-shape-height` →
+	// `--wp--custom--designsetgo--shape-divider--height` → 100px, and the same
+	// shape for width and the band color. An explicit value is always emitted,
+	// including one that equals the plugin default, because that is how an
+	// author pins a divider against a theme token that says otherwise.
 	const style = {
-		...(safeHeight !== 100 && { '--dsgo-shape-height': `${safeHeight}px` }),
-		...(safeWidth !== 100 && { '--dsgo-shape-width': `${safeWidth}%` }),
+		...(safeHeight !== null && {
+			'--dsgo-shape-height': `${safeHeight}px`,
+		}),
+		...(safeWidth !== null && { '--dsgo-shape-width': `${safeWidth}%` }),
 		...(safeBandColor && { '--dsgo-shape-band': safeBandColor }),
 	};
 

@@ -469,6 +469,94 @@ describe('section deprecations - height-derived px clearance migration (v9)', ()
 		expect(getBlockContent(block)).toContain('padding-bottom:120px');
 	});
 
+	// Regression guard for the nullable height/width change. v7/v8/v9 all render
+	// a FROZEN copy of the class-based divider, not the live component: their
+	// attribute schemas still default height/width to 100, and at that value the
+	// historical component emitted NO size custom property. If those versions
+	// ever rendered the live component again, this markup — a v9 divider left at
+	// the old default height — would stop byte-matching and every such section
+	// would surface "unexpected or invalid content".
+	test('a v9 divider left at the old default height still migrates silently', () => {
+		const markup = buildOldMarkup(
+			{ shapeDividerTop: 'wave' },
+			v9Deprecation
+		);
+		// Guards the fixture: default height meant a flat 100px clearance and no
+		// inline size var at all.
+		expect(markup).toContain('padding-top:100px');
+		expect(markup).not.toContain('--dsgo-shape-height');
+
+		const [block] = parse(markup);
+
+		expect(console).toHaveInformed();
+		expect(block.isValid).toBe(true);
+	});
+
+	test('an untouched legacy height/width collapses to inherit, with no pinned clearance', () => {
+		// The deprecation schemas still default height/width to 100, so a
+		// legacy block arrives at migrate() carrying an explicit 100 that the
+		// author never chose (WordPress omits default-valued attributes from
+		// the comment, so 100 is indistinguishable from untouched). Left alone,
+		// that explicit 100 would be re-serialized and permanently opt the
+		// section OUT of the theme.json size tokens this release adds.
+		const markup = buildOldMarkup(
+			{ shapeDividerTop: 'wave' },
+			v9Deprecation
+		);
+
+		const [block] = parse(markup);
+
+		// Silent migration logs an informational "Block successfully updated".
+		expect(console).toHaveInformed();
+
+		expect(block.attributes.shapeDividerTopHeight).toBeNull();
+		expect(block.attributes.shapeDividerTopWidth).toBeNull();
+		// Critically, NO pinned clearance either. A pinned 100px would freeze
+		// the padding while the divider itself followed the theme token, so a
+		// theme setting a 200px divider would push content under the shape.
+		// Unset routes both through the same token fallback.
+		expect(block.attributes.shapeDividerTopSpacing).toBeUndefined();
+		expect(getBlockContent(block)).not.toContain('padding-top:100px');
+		expect(getBlockContent(block)).not.toContain('--dsgo-shape-height');
+	});
+
+	test.each([
+		['zero', 0],
+		['negative', -50],
+	])(
+		'a legacy %s height collapses to inherit instead of pinning an unusable clearance',
+		(_label, bad) => {
+			// The renderer refuses these as explicit sizes (isExplicitShapeSize
+			// requires > 0), so the divider paints at the theme token height. If
+			// migrate() disagreed and treated them as explicit, it would pin
+			// `padding-top:0px`/`-50px` against that token-height divider and put
+			// content under the shape — the exact desync the null branch exists to
+			// prevent. A legacy 0 is reachable: configure-shape-divider allows
+			// `minimum => 0` for height.
+			const migrated = v9Deprecation.migrate({
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: bad,
+			});
+			expect(migrated.shapeDividerTopHeight).toBeNull();
+			expect(migrated.shapeDividerTopSpacing).toBeUndefined();
+		}
+	);
+
+	test('an explicit legacy height keeps its exact pinned clearance', () => {
+		// The other side of the split: a real author choice is preserved
+		// verbatim, so its rendering cannot shift under a theme token.
+		const migrated = v9Deprecation.migrate({
+			shapeDividerTop: 'wave',
+			shapeDividerTopHeight: 80,
+			shapeDividerTopWidth: 100,
+		});
+		expect(migrated.shapeDividerTopHeight).toBe(80);
+		expect(migrated.shapeDividerTopSpacing).toBe('80px');
+		// Width is independent of clearance, so an untouched width still
+		// collapses to inherit even when the height was explicit.
+		expect(migrated.shapeDividerTopWidth).toBeNull();
+	});
+
 	test('migrate leaves an already-set spacing attribute untouched', () => {
 		const migrated = v9Deprecation.migrate({
 			shapeDividerTop: 'wave',
@@ -482,5 +570,56 @@ describe('section deprecations - height-derived px clearance migration (v9)', ()
 		const migrated = v9Deprecation.migrate({ shapeDividerTop: '' });
 		expect(migrated.shapeDividerTopSpacing).toBeUndefined();
 		expect(migrated.shapeDividerBottomSpacing).toBeUndefined();
+	});
+});
+
+describe('section - nullable shape divider height/width (theme inheritance)', () => {
+	// shapeDivider{Top,Bottom}{Height,Width} used to default to 100 and emit no
+	// custom property at that value. They now default to null ("inherit the
+	// theme.json token"), which needs NO deprecation precisely because the
+	// serialized markup is unchanged: WordPress never wrote the attribute to the
+	// comment while it equalled the old default, and save() emitted no size var
+	// then either. These tests pin both halves of that claim.
+	const legacyDefaultSizeMarkup = `<!-- wp:designsetgo/section {"shapeDividerTop":"wave"} -->\n${getSaveContent(
+		{ ...metadata, save },
+		{ ...createBlock(metadata.name).attributes, shapeDividerTop: 'wave' },
+		[]
+	)}\n<!-- /wp:designsetgo/section -->`;
+
+	test('the fixture carries no inline size var, as pre-change content did', () => {
+		expect(legacyDefaultSizeMarkup).toContain('is-shape-wave');
+		expect(legacyDefaultSizeMarkup).not.toContain('--dsgo-shape-height');
+		expect(legacyDefaultSizeMarkup).not.toContain('--dsgo-shape-width');
+	});
+
+	test('content saved at the old default size stays valid and resolves to inherit', () => {
+		const [block] = parse(legacyDefaultSizeMarkup);
+
+		// No "Block successfully updated" info here: the block matches the
+		// current save() outright, so no deprecation runs at all.
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.shapeDividerTopHeight).toBeNull();
+		expect(block.attributes.shapeDividerTopWidth).toBeNull();
+	});
+
+	test('an explicitly-sized legacy divider keeps its exact size', () => {
+		const markup = `<!-- wp:designsetgo/section {"shapeDividerTop":"wave","shapeDividerTopHeight":80,"shapeDividerTopWidth":140} -->\n${getSaveContent(
+			{ ...metadata, save },
+			{
+				...createBlock(metadata.name).attributes,
+				shapeDividerTop: 'wave',
+				shapeDividerTopHeight: 80,
+				shapeDividerTopWidth: 140,
+			},
+			[]
+		)}\n<!-- /wp:designsetgo/section -->`;
+
+		const [block] = parse(markup);
+
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.shapeDividerTopHeight).toBe(80);
+		expect(block.attributes.shapeDividerTopWidth).toBe(140);
+		expect(getBlockContent(block)).toContain('--dsgo-shape-height:80px');
+		expect(getBlockContent(block)).toContain('--dsgo-shape-width:140%');
 	});
 });

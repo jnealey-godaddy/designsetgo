@@ -150,11 +150,11 @@
 		},
 		"shapeDividerTopHeight": {
 			"type": "number",
-			"default": 100
+			"default": null
 		},
 		"shapeDividerTopWidth": {
 			"type": "number",
-			"default": 100
+			"default": null
 		},
 		"shapeDividerTopFlipX": {
 			"type": "boolean",
@@ -185,11 +185,11 @@
 		},
 		"shapeDividerBottomHeight": {
 			"type": "number",
-			"default": 100
+			"default": null
 		},
 		"shapeDividerBottomWidth": {
 			"type": "number",
-			"default": 100
+			"default": null
 		},
 		"shapeDividerBottomFlipX": {
 			"type": "boolean",
@@ -225,8 +225,8 @@
 			"overlayColor": "Semi-transparent overlay color for background images",
 			"shapeDividerTop": "Shape divider style for the top edge. Accepted values: \"\" (off), \"inherit\" (theme default), or a shape slug (wave, tilt, curve, etc.)",
 			"shapeDividerTopColor": "Editor-preview-only / legacy. Since the see-through refactor the top shape region is transparent and reveals the section's own background, so this no longer affects rendered output; only the inspector preview swatch reads it, and it is retained for migrated content.",
-			"shapeDividerTopHeight": "Height of the top shape divider in pixels",
-			"shapeDividerTopWidth": "Width stretch percentage of the top shape divider",
+			"shapeDividerTopHeight": "Height of the top shape divider in pixels (10-500). Null inherits the theme.json token settings.custom.designsetgo.shapeDivider.height, falling back to 100px.",
+			"shapeDividerTopWidth": "Width stretch percentage of the top shape divider (100-300). Null inherits the theme.json token settings.custom.designsetgo.shapeDivider.width, falling back to 100%.",
 			"shapeDividerTopFlipX": "Flip the top shape divider horizontally",
 			"shapeDividerTopFlipY": "Flip the top shape divider vertically (inverts the per-position default; bottom dividers flip by default)",
 			"shapeDividerTopFront": "Render the top shape divider in front of content",
@@ -234,8 +234,8 @@
 			"shapeDividerTopSpacing": "Inner content clearance below the top shape divider, as a WordPress spacing value (e.g. \"var:preset|spacing|50\" or a raw CSS length). Serialized to padding-top on the inner container; emits nothing when unset.",
 			"shapeDividerBottom": "Shape divider style for the bottom edge. Accepted values: \"\" (off), \"inherit\" (theme default), or a shape slug",
 			"shapeDividerBottomColor": "Editor-preview-only / legacy. Since the see-through refactor the bottom shape region is transparent and reveals the section's own background, so this no longer affects rendered output; only the inspector preview swatch reads it, and it is retained for migrated content.",
-			"shapeDividerBottomHeight": "Height of the bottom shape divider in pixels",
-			"shapeDividerBottomWidth": "Width stretch percentage of the bottom shape divider",
+			"shapeDividerBottomHeight": "Height of the bottom shape divider in pixels (10-500). Null inherits the theme.json token settings.custom.designsetgo.shapeDivider.height, falling back to 100px.",
+			"shapeDividerBottomWidth": "Width stretch percentage of the bottom shape divider (100-300). Null inherits the theme.json token settings.custom.designsetgo.shapeDivider.width, falling back to 100%.",
 			"shapeDividerBottomFlipX": "Flip the bottom shape divider horizontally",
 			"shapeDividerBottomFlipY": "Flip the bottom shape divider vertically (inverts the per-position default; bottom dividers flip by default)",
 			"shapeDividerBottomFront": "Render the bottom shape divider in front of content",

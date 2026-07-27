@@ -33,7 +33,7 @@ export default function SectionDividerControls({
 				setAttributes({
 					shape: 'inherit',
 					height: null,
-					width: 100,
+					width: null,
 					flipX: false,
 					flipY: false,
 				})
@@ -85,7 +85,14 @@ export default function SectionDividerControls({
 					max={500}
 					step={1}
 					allowReset
-					placeholder={__('Theme default', 'designsetgo')}
+					// No `placeholder` here: RangeControl does not accept one
+					// (it is absent from the component's props and types, and
+					// RangeControl does not spread unknown props), so it was
+					// inert. `help` carries the inherit hint instead.
+					help={__(
+						'Reset to inherit the theme’s divider height.',
+						'designsetgo'
+					)}
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
@@ -93,19 +100,22 @@ export default function SectionDividerControls({
 
 			<DsgoInspectorPanel.Item
 				label={__('Width', 'designsetgo')}
-				hasValue={() => width !== 100}
-				onDeselect={() => setAttributes({ width: 100 })}
+				hasValue={() => width !== null}
+				onDeselect={() => setAttributes({ width: null })}
 				isShownByDefault
 			>
 				<RangeControl
 					label={__('Width', 'designsetgo')}
 					value={width}
-					onChange={(value) => setAttributes({ width: value ?? 100 })}
+					onChange={(value) =>
+						setAttributes({ width: value ?? null })
+					}
 					min={100}
 					max={300}
 					step={1}
+					allowReset
 					help={__(
-						'Stretch the shape wider for more dramatic effect.',
+						'Stretch the shape wider for more dramatic effect. Reset to inherit the theme’s divider width.',
 						'designsetgo'
 					)}
 					__next40pxDefaultSize
