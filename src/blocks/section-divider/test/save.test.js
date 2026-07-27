@@ -97,6 +97,32 @@ describe('section-divider save', () => {
 		expect(serializeWith({})).not.toContain('--dsgo-shape-width');
 	});
 
+	it.each([
+		['zero', 0],
+		['negative', -50],
+		['NaN', NaN],
+	])(
+		'treats a %s size as unset rather than serializing it',
+		(_label, bad) => {
+			// `typeof x === 'number'` is true for all three, so a bare typeof guard
+			// would emit `--dsgo-shape-height:NaNpx` / `-50px`. None can mean "paint
+			// nothing", so they collapse to unset and inherit the theme token.
+			const html = serializeWith({ height: bad, width: bad });
+			expect(html).not.toContain('--dsgo-shape-height');
+			expect(html).not.toContain('--dsgo-shape-width');
+		}
+	);
+
+	it('passes an out-of-slider-range size through unclamped', () => {
+		// Deliberately unlike the Section block, whose dividers are absolutely
+		// positioned and so clamp to 10-500. This block is its own box, so a
+		// hand-authored 600px is harmless — and clamping it would rewrite
+		// stored content and invalidate the block for no benefit.
+		expect(serializeWith({ height: 600 })).toContain(
+			'--dsgo-shape-height:600px'
+		);
+	});
+
 	it('emits an explicit 100% width so it can pin against a theme token', () => {
 		// Width is nullable, so 100 is an author choice, not "unset". It must
 		// serialize, otherwise a theme.json

@@ -16,44 +16,9 @@
  */
 
 import { sanitizeColor } from '../utils/sanitize-color';
-
-/**
- * Clamp a value between min and max
- *
- * @param {number} value - Value to clamp
- * @param {number} min   - Minimum value
- * @param {number} max   - Maximum value
- * @return {number} Clamped value
- */
-function clamp(value, min, max) {
-	return Math.min(Math.max(value, min), max);
-}
-
-/**
- * Normalize a raw numeric shape-divider attribute into an explicit author
- * value or `null` for "not set".
- *
- * Height and width are nullable by design: an unset value means "inherit the
- * theme.json token" (`--wp--custom--designsetgo--shape-divider--height` /
- * `--width`, resolved in `_shape-divider.scss`), so anything that is not a
- * usable positive number must collapse to `null` rather than to a hard-coded
- * default. Non-positive values are treated as unset for the same reason: they
- * cannot mean "paint nothing", so inheriting is the only sane reading. A zero
- * height is genuinely reachable — the Abilities API's `configure-shape-divider`
- * schema sets `minimum => 0` for height — while a non-positive width is not
- * (that schema's width minimum is 50), so for width this is purely defensive
- * against hand-edited markup or a REST write to post content.
- *
- * @param {number|null|undefined} value Raw attribute value.
- * @param {number}                min   Lower clamp bound.
- * @param {number}                max   Upper clamp bound.
- * @return {number|null} Clamped number, or null when the author set nothing.
- */
-function normalizeShapeSize(value, min, max) {
-	return typeof value === 'number' && Number.isFinite(value) && value > 0
-		? clamp(value, min, max)
-		: null;
-}
+// Shared with the standalone Section Divider block — see src/utils/shape-size.js
+// for why "is this an explicit size?" is one decision but the clamp is not.
+import { normalizeShapeSize } from '../../../utils/shape-size';
 
 /**
  * Resolve the height a shape divider actually paints from its raw height
