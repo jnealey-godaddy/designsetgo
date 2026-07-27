@@ -143,9 +143,6 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 		return nameByLabel[raw] || raw;
 	};
 
-	const validateToken = (token) =>
-		BLOCK_NAME_PATTERN.test(tokenToName(token));
-
 	return (
 		<Card className="designsetgo-settings-panel">
 			<CardHeader>
@@ -452,6 +449,54 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 											(name) => labelByName[name] || name
 										);
 
+										// A block may only be claimed by one rule. The
+										// sanitizer resolves a double claim by handing the
+										// block to the LAST row and stripping it from the
+										// earlier one (dedupe_block_animation_targets) — so
+										// keep the conflict from being authored at all
+										// rather than letting it resolve invisibly on save.
+										// Exact names only: `core/*` and `core/button` are
+										// distinct map keys server-side (exact beats
+										// wildcard), so they are a legitimate pairing.
+										const claimedElsewhere = new Set(
+											list
+												.filter((r, i) => i !== index)
+												.flatMap((r) =>
+													Array.isArray(r.blocks)
+														? r.blocks
+														: []
+												)
+										);
+										const rowSuggestions =
+											suggestions.filter(
+												(label) =>
+													!claimedElsewhere.has(
+														nameByLabel[label] ||
+															label
+													)
+											);
+										const validateRowToken = (token) => {
+											const name = tokenToName(token);
+											return (
+												BLOCK_NAME_PATTERN.test(name) &&
+												!claimedElsewhere.has(name)
+											);
+										};
+
+										// A list that arrived already-conflicting (saved
+										// through the settings REST route / abilities API
+										// rather than this UI) can't be fixed by the guards
+										// above — say which targets this row is about to
+										// lose instead of letting them vanish on reload.
+										const losingTo = blocks.filter((name) =>
+											list.some(
+												(r, i) =>
+													i > index &&
+													Array.isArray(r.blocks) &&
+													r.blocks.includes(name)
+											)
+										);
+
 										return (
 											<div
 												key={index}
@@ -466,7 +511,7 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 														)}
 														value={tokens}
 														suggestions={
-															suggestions
+															rowSuggestions
 														}
 														onChange={(next) =>
 															update({
@@ -480,7 +525,7 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 															})
 														}
 														__experimentalValidateInput={
-															validateToken
+															validateRowToken
 														}
 														__experimentalExpandOnFocus
 														__experimentalAutoSelectFirstMatch
@@ -510,6 +555,20 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 																'designsetgo'
 															)}
 													</p>
+													{losingTo.length > 0 && (
+														<p className="designsetgo-block-animations__hint designsetgo-block-animations__hint--warning">
+															{sprintf(
+																/* translators: %s is a comma-separated list of block names, e.g. "core/button, core/heading". */
+																__(
+																	'Also claimed by a later rule, which wins: %s. These will be dropped from this rule when you save.',
+																	'designsetgo'
+																),
+																losingTo.join(
+																	', '
+																)
+															)}
+														</p>
+													)}
 												</div>
 												<SelectControl
 													label={__(

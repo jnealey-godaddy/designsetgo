@@ -230,4 +230,95 @@ describe('Admin AnimationsPanel — block-type defaults', () => {
 			]
 		);
 	});
+
+	it('hides blocks another rule already claims from a row’s suggestions', async () => {
+		render(
+			<AnimationsPanel
+				settings={settingsWith([
+					{ ...ROW, blocks: ['core/button'] },
+					{ ...ROW, blocks: ['core/image'] },
+				])}
+				updateSetting={jest.fn()}
+			/>
+		);
+		await screen.findByText('Button — core/button');
+
+		const optionsFor = (rowIndex) =>
+			[
+				...screen
+					.getAllByTestId('suggestions')
+					[rowIndex].querySelectorAll('option'),
+			].map((o) => o.value);
+
+		// Each row may still offer its own targets, but never the other row's —
+		// the server would resolve that double claim by silently stripping it.
+		expect(optionsFor(0)).not.toContain('Image — core/image');
+		expect(optionsFor(1)).not.toContain('Button — core/button');
+
+		// A wildcard is a distinct key server-side (exact beats wildcard), so
+		// claiming `core/button` must not withdraw `core/*` from either row.
+		expect(optionsFor(0)).toContain('core/* — all core blocks');
+		expect(optionsFor(1)).toContain('core/* — all core blocks');
+	});
+
+	it('refuses a hand-typed block name that another rule already claims', async () => {
+		const updateSetting = jest.fn();
+
+		render(
+			<AnimationsPanel
+				settings={settingsWith([
+					{ ...ROW, blocks: ['core/button'] },
+					{ ...ROW, blocks: ['core/image'] },
+				])}
+				updateSetting={updateSetting}
+			/>
+		);
+		await screen.findByText('Button — core/button');
+
+		// Filtering suggestions alone would leave the name typeable, so the
+		// per-row validator refuses it too.
+		fireEvent.change(screen.getAllByLabelText('add-token')[0], {
+			target: { value: 'core/image' },
+		});
+		expect(updateSetting).not.toHaveBeenCalled();
+
+		// An unclaimed name still goes through.
+		fireEvent.change(screen.getAllByLabelText('add-token')[0], {
+			target: { value: 'acme/widget' },
+		});
+		expect(updateSetting).toHaveBeenCalledWith(
+			'animations',
+			'block_animations',
+			[
+				expect.objectContaining({
+					blocks: ['core/button', 'acme/widget'],
+				}),
+				expect.objectContaining({ blocks: ['core/image'] }),
+			]
+		);
+	});
+
+	it('warns which targets a row loses when the stored list already conflicts', async () => {
+		// A list saved through the REST route / abilities API can arrive with a
+		// double claim this UI never allowed — the sanitizer will hand the block
+		// to the last rule, so say so rather than letting it vanish on reload.
+		render(
+			<AnimationsPanel
+				settings={settingsWith([
+					{ ...ROW, blocks: ['core/button', 'core/image'] },
+					{ ...ROW, blocks: ['core/image'] },
+				])}
+				updateSetting={jest.fn()}
+			/>
+		);
+
+		expect(
+			await screen.findByText(/Also claimed by a later rule/i)
+		).toHaveTextContent('core/image');
+
+		// Only the losing (earlier) row is warned about, not the winner.
+		expect(
+			screen.getAllByText(/Also claimed by a later rule/i)
+		).toHaveLength(1);
+	});
 });

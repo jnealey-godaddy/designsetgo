@@ -911,6 +911,12 @@
 		font-size: 12px;
 		font-style: normal;
 		color: #757575;
+
+		// A conflict this UI can no longer prevent (the list arrived
+		// already-conflicting) — core's warning amber, which clears AA on white.
+		&--warning {
+			color: #914d05;
+		}
 	}
 }
 
