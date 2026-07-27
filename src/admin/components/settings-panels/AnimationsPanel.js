@@ -67,8 +67,12 @@ const NEW_ROW = {
 };
 
 const AnimationsPanel = ({ settings, updateSetting }) => {
-	// Registered block types for the picker. null = loading, false = failed
-	// (falls back to a plain text field), array = loaded.
+	// Registered block types for the picker. null = loading, false = the fetch
+	// failed, array = loaded. There is no separate text-field fallback: the
+	// picker degrades to freeform typing, since FormTokenField still accepts a
+	// hand-typed name and __experimentalValidateInput enforces the same block
+	// name format either way. Only the suggestion list and the friendly
+	// "Title — name" labels are lost.
 	const [blockTypes, setBlockTypes] = useState(null);
 
 	// One stable key per row. The id can't live on the row itself — rows are
@@ -586,14 +590,25 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 																'Loading block types…',
 																'designsetgo'
 															)}
-														{blockTypes !== null &&
+														{/* A failed fetch would otherwise read exactly like a
+															successful one with nothing to suggest. */}
+														{false === blockTypes &&
+															__(
+																'Could not load the block list — type a block name like core/button, or a namespace wildcard like designsetgo/*.',
+																'designsetgo'
+															)}
+														{Array.isArray(
+															blockTypes
+														) &&
 															blocks.length ===
 																0 &&
 															__(
 																'Add at least one block type — this rule is skipped until you do.',
 																'designsetgo'
 															)}
-														{blockTypes !== null &&
+														{Array.isArray(
+															blockTypes
+														) &&
 															blocks.length > 0 &&
 															__(
 																'Search for blocks to add, or pick a namespace wildcard like designsetgo/*. Every block listed here shares this animation.',

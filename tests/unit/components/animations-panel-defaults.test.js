@@ -101,6 +101,7 @@ jest.mock('@wordpress/components', () => {
 	};
 });
 
+import apiFetch from '@wordpress/api-fetch';
 import AnimationsPanel from '../../../src/admin/components/settings-panels/AnimationsPanel';
 
 const settingsWith = (rows) => ({
@@ -296,6 +297,30 @@ describe('Admin AnimationsPanel — block-type defaults', () => {
 				expect.objectContaining({ blocks: ['core/image'] }),
 			]
 		);
+	});
+
+	it('says the block list failed to load rather than looking like an empty one', async () => {
+		// Without its own branch, a failed fetch renders exactly like a
+		// successful one that returned nothing — the admin gets no signal that
+		// suggestions are missing rather than simply unmatched.
+		apiFetch.mockImplementationOnce(() =>
+			Promise.reject(new Error('network'))
+		);
+
+		render(
+			<AnimationsPanel
+				settings={settingsWith([ROW])}
+				updateSetting={jest.fn()}
+			/>
+		);
+
+		expect(
+			await screen.findByText(/Could not load the block list/i)
+		).toBeInTheDocument();
+
+		// The picker degrades to freeform typing rather than a text-field
+		// swap, so the input is still there and still validated.
+		expect(screen.getByLabelText('add-token')).toBeInTheDocument();
 	});
 
 	it('warns which targets a row loses when the stored list already conflicts', async () => {
