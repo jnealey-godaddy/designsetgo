@@ -125,6 +125,19 @@ import './sticky-header.scss';
 	 * @param {HTMLElement} header Overlay header element
 	 */
 	function applyOverlayHeroPadding(header) {
+		// `header.nextElementSibling` is exactly what the CSS pull-up targets
+		// (`.wp-site-blocks > header.wp-block-template-part + *`), so the two stay
+		// anchored to the same element by construction. The clearance then goes one
+		// level in, onto that element's first child, and that step is deliberate:
+		// padding the pulled-up element itself would push its whole box back down
+		// and cancel the overlay, whereas padding the first block inside it moves
+		// only the content while the block's background stays under the header.
+		//
+		// That assumes the standard block-theme shape — content wrapper, then the
+		// first block. A theme with an extra wrapper level lands the clearance on
+		// that wrapper instead; the overlay degrades to "background no longer runs
+		// under the header" rather than misplacing content, so it is left
+		// unguarded rather than heuristically sniffing for the painted block.
 		const hero = header.nextElementSibling?.firstElementChild;
 		if (!hero) {
 			return;
