@@ -274,10 +274,35 @@ body:not(.block-editor-page).dsgo-page-overlay-header header.wp-block-template-p
 }
 
 /**
+ * Elements inside the overlay header whose background must be forced
+ * transparent.
+ *
+ * Matching on `.has-background` alone is not enough. A theme can paint a
+ * container background from a *block style variation* (Twenty Twenty-Five's
+ * `is-style-header-section`) or from `styles.blocks` in theme.json — neither
+ * puts a `.has-background` class on the element, so the header stayed opaque.
+ * Matching the container block classes catches those cases too.
+ */
+$dsgo-overlay-bg-targets: ".wp-block-group, .wp-block-columns, .wp-block-column, .wp-block-cover, .wp-block-cover__background, .wp-block-designsetgo-section, .wp-block-designsetgo-row, .wp-block-designsetgo-grid, .has-background";
+
+/**
+ * Elements that must keep their background while the header is transparent —
+ * they sit over the hero image and become unreadable without one: buttons and
+ * other author-styled calls to action, submenu dropdowns, and the mobile menu
+ * overlay.
+ *
+ * Wrapped in `:where()` so the exclusion chain contributes no specificity. Six
+ * chained `:not()`s would otherwise push these rules well above the
+ * `.has-background` selector they replace, and the whole point is to stay
+ * cascade-neutral — the `!important` below is what does the overriding.
+ */
+$dsgo-overlay-bg-exceptions: ":where(:not(.wp-block-button__link):not(.wp-element-button):not(.wp-block-navigation__submenu-container):not(.wp-block-navigation__submenu-container *):not(.wp-block-navigation__responsive-container):not(.wp-block-navigation__responsive-container *))";
+
+/**
  * Overlay: force inner header sections transparent so they don't show
  * through over the hero. Uses :where() for zero specificity.
  */
-body:not(.block-editor-page).dsgo-page-overlay-header:not(.dsgo-page-overlay-skip-top-bar) :where(header.wp-block-template-part, .wp-block-template-part:not(footer):first-of-type) .has-background {
+body:not(.block-editor-page).dsgo-page-overlay-header:not(.dsgo-page-overlay-skip-top-bar) :where(header.wp-block-template-part, .wp-block-template-part:not(footer):first-of-type) :is(#{$dsgo-overlay-bg-targets})#{$dsgo-overlay-bg-exceptions} {
 	background-color: transparent !important;
 	background-image: none !important;
 }
@@ -286,8 +311,8 @@ body:not(.block-editor-page).dsgo-page-overlay-header:not(.dsgo-page-overlay-ski
  * Overlay + Skip Top Bar: only strip backgrounds from the nav row area
  * (second child onwards), preserving the top bar's background.
  */
-body:not(.block-editor-page).dsgo-page-overlay-header.dsgo-page-overlay-skip-top-bar :where(header.wp-block-template-part, .wp-block-template-part:not(footer):first-of-type) > * > :not(:first-child) .has-background,
-body:not(.block-editor-page).dsgo-page-overlay-header.dsgo-page-overlay-skip-top-bar :where(header.wp-block-template-part, .wp-block-template-part:not(footer):first-of-type) > * > :not(:first-child).has-background {
+body:not(.block-editor-page).dsgo-page-overlay-header.dsgo-page-overlay-skip-top-bar :where(header.wp-block-template-part, .wp-block-template-part:not(footer):first-of-type) > * > :not(:first-child) :is(#{$dsgo-overlay-bg-targets})#{$dsgo-overlay-bg-exceptions},
+body:not(.block-editor-page).dsgo-page-overlay-header.dsgo-page-overlay-skip-top-bar :where(header.wp-block-template-part, .wp-block-template-part:not(footer):first-of-type) > * > :is(#{$dsgo-overlay-bg-targets}):not(:first-child)#{$dsgo-overlay-bg-exceptions} {
 	background-color: transparent !important;
 	background-image: none !important;
 }
