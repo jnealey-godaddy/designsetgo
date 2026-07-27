@@ -157,6 +157,23 @@ class Extension_Attributes {
 	}
 
 	/**
+	 * Get an extension's own exclusion list from its config file.
+	 *
+	 * Single source of truth for render-time features that need to mirror an
+	 * extension's block coverage (e.g. the animation-defaults injector reusing
+	 * the block-animations extension's `exclude` list) without hardcoding it.
+	 *
+	 * @param string $slug Extension slug (config filename without .php).
+	 * @return array Exclusion patterns (exact names or `namespace/*`), or empty.
+	 */
+	public static function get_extension_exclusions( $slug ) {
+		$extensions = self::get_extensions();
+		return isset( $extensions[ $slug ]['exclude'] ) && is_array( $extensions[ $slug ]['exclude'] )
+			? $extensions[ $slug ]['exclude']
+			: array();
+	}
+
+	/**
 	 * Check if a block name matches an exclusion list.
 	 *
 	 * Supports exact matches (e.g. 'core/freeform') and namespace
@@ -183,6 +200,23 @@ class Extension_Attributes {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Whether a block is excluded from an extension's reach — combines an
+	 * extension-specific exclusion list with the user-configured excluded_blocks.
+	 *
+	 * Public wrapper around the internal exclusion matcher so render-time
+	 * features (e.g. the animation-defaults injector) apply the same
+	 * exclusions as attribute registration.
+	 *
+	 * @param string $block_type       Block name.
+	 * @param array  $extra_exclusions Extension-specific exclusions (exact or namespace/* ).
+	 * @return bool Whether the block is excluded.
+	 */
+	public static function is_block_excluded( $block_type, array $extra_exclusions = array() ) {
+		return self::is_excluded( $block_type, $extra_exclusions )
+			|| self::is_excluded( $block_type, self::get_excluded_blocks() );
 	}
 
 	/**

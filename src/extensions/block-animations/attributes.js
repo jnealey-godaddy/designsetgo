@@ -70,6 +70,10 @@ function addAnimationAttributes(settings, name) {
 				type: 'boolean',
 				default: DEFAULT_ANIMATION_SETTINGS.once,
 			},
+			dsgoAnimationOptOut: {
+				type: 'boolean',
+				default: false,
+			},
 		},
 	};
 }

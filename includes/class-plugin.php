@@ -464,6 +464,13 @@ class Plugin {
 	public $svg_pattern_renderer;
 
 	/**
+	 * Animation defaults injector.
+	 *
+	 * @var Animation_Defaults_Injector
+	 */
+	public $animation_defaults_injector;
+
+	/**
 	 * LLMS TXT instance.
 	 *
 	 * @var LLMS_Txt\Controller
@@ -646,6 +653,8 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/bindings/class-block-bindings-support.php';
 		require_once DESIGNSETGO_PATH . 'includes/data/svg-pattern-data.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-svg-pattern-renderer.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-animation-defaults.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-animation-defaults-injector.php';
 
 		// LLMS TXT classes.
 		require_once DESIGNSETGO_PATH . 'includes/llms-txt/class-file-manager.php';
@@ -718,6 +727,10 @@ class Plugin {
 		$this->overlay_header       = new Overlay_Header();
 		$this->icon_injector        = new Icon_Injector();
 		$this->svg_pattern_renderer = new SVG_Pattern_Renderer();
+
+		$this->animation_defaults_injector = new Animation_Defaults_Injector();
+		$this->animation_defaults_injector->init();
+
 		$this->button_global_styles = new Button_Global_Styles();
 		$this->button_global_styles->init();
 		$this->scroll_marquee_styles = new Scroll_Marquee_Styles();

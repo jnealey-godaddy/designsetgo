@@ -121,6 +121,7 @@ class Assets {
 	 */
 	private function localize_extension_settings() {
 		$settings = \DesignSetGo\Admin\Settings::get_settings();
+		$anim     = \DesignSetGo\Animation_Defaults::get_effective();
 
 		$excluded_blocks    = isset( $settings['excluded_blocks'] ) ? (array) $settings['excluded_blocks'] : array();
 		$enabled_extensions = isset( $settings['enabled_extensions'] ) ? (array) $settings['enabled_extensions'] : array();
@@ -136,8 +137,44 @@ class Assets {
 				// Empty list = all extensions enabled (matches the
 				// PHP convention in Block_Manager::should_load_extension).
 				'enabledExtensions'      => array_values( array_map( 'sanitize_key', $enabled_extensions ) ),
+				'blockAnimations'        => self::block_animations_for_editor( $anim['map'] ),
+				'blockAnimationsEnabled' => (bool) $anim['enabled'],
+				// The block-animations extension's own exclude list, so
+				// resolveBlockAnimationDefault() reads it from the same config
+				// file the injector does instead of hardcoding a copy.
+				'blockAnimationExclusions' => array_values(
+					\DesignSetGo\Extension_Attributes::get_extension_exclusions( 'block-animations' )
+				),
 			)
 		);
+	}
+
+	/**
+	 * Flatten the resolved animation-defaults map to a list for the editor.
+	 *
+	 * Drops entries the render-time injector would refuse anyway, so the
+	 * editor's "Inheriting theme animation" indicator can't promise an
+	 * animation the frontend will never apply. Only exact-name keys can be
+	 * settled here — a `namespace/*` entry is a pattern, not a block, and
+	 * some of the blocks it matches may be excluded while others are not, so
+	 * resolveBlockAnimationDefault() re-checks the concrete block name
+	 * against `excludedBlocks` on the editor side.
+	 *
+	 * @param array $map Block-name => config map from Animation_Defaults::get_effective().
+	 * @return array<int, array> List of entries with a `block` key.
+	 */
+	private static function block_animations_for_editor( array $map ) {
+		$exclusions = \DesignSetGo\Extension_Attributes::get_extension_exclusions( 'block-animations' );
+
+		$list = array();
+		foreach ( $map as $block => $config ) {
+			$is_wildcard = ( '*' === substr( (string) $block, -1 ) );
+			if ( ! $is_wildcard && \DesignSetGo\Extension_Attributes::is_block_excluded( $block, $exclusions ) ) {
+				continue;
+			}
+			$list[] = array_merge( array( 'block' => $block ), $config );
+		}
+		return $list;
 	}
 
 	/**

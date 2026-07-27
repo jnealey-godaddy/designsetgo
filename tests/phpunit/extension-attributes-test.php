@@ -237,4 +237,19 @@ class Test_Extension_Attributes extends WP_UnitTestCase {
 		// expanding-background, sticky-header-controls, text-reveal.
 		$this->assertCount( 15, $files, 'Should have 15 extension config files.' );
 	}
+
+	/**
+	 * Reads an extension's own exclude list from its config file.
+	 *
+	 * The getter is the single source the animation-defaults injector reads
+	 * instead of hardcoding core/freeform + core-embed/*.
+	 */
+	public function test_get_extension_exclusions_returns_config_list() {
+		$exclusions = \DesignSetGo\Extension_Attributes::get_extension_exclusions( 'block-animations' );
+		$this->assertContains( 'core/freeform', $exclusions );
+		$this->assertContains( 'core-embed/*', $exclusions );
+
+		// An unknown extension slug yields an empty list, not a warning.
+		$this->assertSame( array(), \DesignSetGo\Extension_Attributes::get_extension_exclusions( 'does-not-exist' ) );
+	}
 }

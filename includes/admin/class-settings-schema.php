@@ -92,6 +92,30 @@ class Settings_Schema {
 						'default_easing'                 => array( 'type' => 'string' ),
 						'respect_prefers_reduced_motion' => array( 'type' => 'boolean' ),
 						'default_icon_button_hover'      => array( 'type' => 'string' ),
+						'block_animations_enabled'       => array( 'type' => 'boolean' ),
+						'block_animations'               => array(
+							'type'  => 'array',
+							'items' => array(
+								'type'                 => 'object',
+								'additionalProperties' => false,
+								'properties'           => array(
+									'blocks'   => array(
+										'type'  => 'array',
+										'items' => array( 'type' => 'string' ),
+									),
+									// Legacy singular form, still accepted on input.
+									'block'    => array( 'type' => 'string' ),
+									'entrance' => array( 'type' => 'string' ),
+									'exit'     => array( 'type' => 'string' ),
+									'trigger'  => array( 'type' => 'string' ),
+									'duration' => array( 'type' => 'integer' ),
+									'delay'    => array( 'type' => 'integer' ),
+									'easing'   => array( 'type' => 'string' ),
+									'offset'   => array( 'type' => 'integer' ),
+									'once'     => array( 'type' => 'boolean' ),
+								),
+							),
+						),
 					),
 				),
 				'security'           => array(

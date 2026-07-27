@@ -65,4 +65,45 @@ class DesignSetGo_Block_Animation_Attributes_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'wp-block-designsetgo-stack', $result );
 		$this->assertStringContainsString( 'has-dsgo-animation', $result );
 	}
+
+	/**
+	 * Parts helper returns empty arrays when animation is disabled.
+	 */
+	public function test_parts_empty_when_disabled() {
+		$parts = designsetgo_get_animation_parts( array( 'dsgoAnimationEnabled' => false ) );
+		$this->assertSame( array(), $parts['classes'] );
+		$this->assertSame( array(), $parts['attrs'] );
+	}
+
+	/**
+	 * Parts helper emits entrance class + enabled flag; omits default-valued data attrs.
+	 */
+	public function test_parts_entrance_and_nondefaults() {
+		$parts = designsetgo_get_animation_parts(
+			array(
+				'dsgoAnimationEnabled'  => true,
+				'dsgoEntranceAnimation' => 'fadeInUp',
+				'dsgoAnimationDuration' => 800, // non-default -> present
+				'dsgoAnimationTrigger'  => 'scroll', // default -> absent
+			)
+		);
+		$this->assertContains( 'has-dsgo-animation', $parts['classes'] );
+		$this->assertContains( 'dsgo-animation-fadeInUp', $parts['classes'] );
+		$this->assertSame( 'true', $parts['attrs']['data-dsgo-animation-enabled'] );
+		$this->assertSame( 'fadeInUp', $parts['attrs']['data-dsgo-entrance-animation'] );
+		$this->assertSame( '800', $parts['attrs']['data-dsgo-animation-duration'] );
+		$this->assertArrayNotHasKey( 'data-dsgo-animation-trigger', $parts['attrs'] );
+	}
+
+	/**
+	 * Refactored string helper still matches the parts it is built from.
+	 */
+	public function test_string_helper_matches_parts() {
+		$attrs  = array( 'dsgoAnimationEnabled' => true, 'dsgoEntranceAnimation' => 'zoomIn', 'dsgoAnimationOnce' => false );
+		$string = designsetgo_get_animation_attributes( $attrs );
+		$this->assertStringContainsString( 'has-dsgo-animation', $string['classes'] );
+		$this->assertStringContainsString( 'dsgo-animation-zoomIn', $string['classes'] );
+		$this->assertStringContainsString( 'data-dsgo-animation-enabled="true"', $string['attrs'] );
+		$this->assertStringContainsString( 'data-dsgo-animation-once="false"', $string['attrs'] );
+	}
 }

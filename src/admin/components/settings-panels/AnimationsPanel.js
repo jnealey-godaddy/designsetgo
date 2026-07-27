@@ -4,7 +4,10 @@
  * @package
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
+import { useState, useEffect, useMemo, useRef } from '@wordpress/element';
+import apiFetch from '@wordpress/api-fetch';
+import { trash } from '@wordpress/icons';
 import {
 	Card,
 	CardHeader,
@@ -12,9 +15,175 @@ import {
 	ToggleControl,
 	RangeControl,
 	SelectControl,
+	FormTokenField,
+	Button,
 } from '@wordpress/components';
 
+const ENTRANCE_OPTIONS = [
+	{ label: __('Fade In', 'designsetgo'), value: 'fadeIn' },
+	{ label: __('Fade In Up', 'designsetgo'), value: 'fadeInUp' },
+	{ label: __('Fade In Down', 'designsetgo'), value: 'fadeInDown' },
+	{ label: __('Fade In Left', 'designsetgo'), value: 'fadeInLeft' },
+	{ label: __('Fade In Right', 'designsetgo'), value: 'fadeInRight' },
+	{ label: __('Slide In Up', 'designsetgo'), value: 'slideInUp' },
+	{ label: __('Slide In Down', 'designsetgo'), value: 'slideInDown' },
+	{ label: __('Slide In Left', 'designsetgo'), value: 'slideInLeft' },
+	{ label: __('Slide In Right', 'designsetgo'), value: 'slideInRight' },
+	{ label: __('Zoom In', 'designsetgo'), value: 'zoomIn' },
+	{ label: __('Bounce In', 'designsetgo'), value: 'bounceIn' },
+	{ label: __('Flip In X', 'designsetgo'), value: 'flipInX' },
+	{ label: __('Flip In Y', 'designsetgo'), value: 'flipInY' },
+];
+
+const TRIGGER_OPTIONS = [
+	{ label: __('On Scroll', 'designsetgo'), value: 'scroll' },
+	{ label: __('On Load', 'designsetgo'), value: 'load' },
+	{ label: __('On Hover', 'designsetgo'), value: 'hover' },
+	{ label: __('On Click', 'designsetgo'), value: 'click' },
+];
+
+const DURATION_OPTIONS = [
+	{ label: __('Fast (300ms)', 'designsetgo'), value: 300 },
+	{ label: __('Normal (600ms)', 'designsetgo'), value: 600 },
+	{ label: __('Slow (1000ms)', 'designsetgo'), value: 1000 },
+	{ label: __('Very Slow (2000ms)', 'designsetgo'), value: 2000 },
+];
+
+// Mirrors the PHP sanitizer's pattern (Settings::sanitize_block_animation_targets)
+// so a typed token the backend would drop is refused up front rather than
+// vanishing silently on save.
+const BLOCK_NAME_PATTERN = /^[a-z0-9-]+\/(\*|[a-z0-9-]+)$/;
+
+const NEW_ROW = {
+	blocks: [],
+	entrance: 'fadeInUp',
+	exit: '',
+	trigger: 'scroll',
+	duration: 600,
+	delay: 0,
+	easing: 'ease-out',
+	offset: 100,
+	once: true,
+};
+
 const AnimationsPanel = ({ settings, updateSetting }) => {
+	// Registered block types for the picker. null = loading, false = the fetch
+	// failed, array = loaded. There is no separate text-field fallback: the
+	// picker degrades to freeform typing, since FormTokenField still accepts a
+	// hand-typed name and __experimentalValidateInput enforces the same block
+	// name format either way. Only the suggestion list and the friendly
+	// "Title — name" labels are lost.
+	const [blockTypes, setBlockTypes] = useState(null);
+
+	// One stable key per row. The id can't live on the row itself — rows are
+	// persisted settings objects and the sanitizer drops unknown keys — so it
+	// is tracked positionally here and spliced alongside the list. Keying on
+	// the array index instead lets React reuse a deleted row's DOM node for
+	// its successor, which can strand FormTokenField's internal uncommitted
+	// input text on the wrong row.
+	const rowCount = (settings?.animations?.block_animations || []).length;
+	const nextRowId = useRef(0);
+	const [rowIds, setRowIds] = useState(() =>
+		Array.from({ length: rowCount }, () => `row-${nextRowId.current++}`)
+	);
+	const addRowId = () =>
+		setRowIds((ids) => [...ids, `row-${nextRowId.current++}`]);
+
+	// Add/remove keep their own ids in step, so a length mismatch here only
+	// happens when the list changed from outside this component — in practice
+	// a save round-trip whose sanitizer dropped rows (an entry whose targets
+	// were all claimed by a later one is removed wholesale).
+	//
+	// Rows carry no server-side identity, so there is nothing to match the
+	// surviving rows back to their old ids: the drop can happen at any index,
+	// and patching the tail would leave every id after it keyed to the wrong
+	// row — the exact misalignment these ids exist to prevent. Regenerate the
+	// whole set instead. Every row remounts, which is the right outcome when
+	// the list changed underneath the author: uncommitted token text belongs
+	// to data the server has already rewritten.
+	useEffect(() => {
+		setRowIds((prev) =>
+			prev.length === rowCount
+				? prev
+				: Array.from(
+						{ length: rowCount },
+						() => `row-${nextRowId.current++}`
+					)
+		);
+	}, [rowCount]);
+
+	useEffect(() => {
+		let active = true;
+		apiFetch({
+			path: '/wp/v2/block-types?context=view&_fields=name,title',
+		})
+			.then((types) => {
+				if (active) {
+					setBlockTypes(Array.isArray(types) ? types : []);
+				}
+			})
+			.catch(() => {
+				if (active) {
+					setBlockTypes(false);
+				}
+			});
+		return () => {
+			active = false;
+		};
+	}, []);
+
+	// Searchable options for the block-type picker: namespace wildcards first
+	// (e.g. "core/* — all core blocks"), then every registered block as
+	// "Title — name", alphabetically. Empty until the fetch resolves.
+	const blockOptions = useMemo(() => {
+		if (!Array.isArray(blockTypes)) {
+			return [];
+		}
+		const namespaces = [
+			...new Set(blockTypes.map((b) => b.name.split('/')[0])),
+		].sort();
+		const wildcards = namespaces.map((ns) => ({
+			value: `${ns}/*`,
+			label: `${ns}/* — ${sprintf(
+				// translators: %s is a block namespace, e.g. "core".
+				__('all %s blocks', 'designsetgo'),
+				ns
+			)}`,
+		}));
+		const blocks = blockTypes
+			.map((b) => ({
+				value: b.name,
+				label: `${b.title} — ${b.name}`,
+			}))
+			.sort((a, b) => a.label.localeCompare(b.label));
+		return [...wildcards, ...blocks];
+	}, [blockTypes]);
+
+	// FormTokenField works in display strings, but we persist canonical block
+	// names — keep a map each way so tokens round-trip.
+	const { labelByName, nameByLabel, suggestions } = useMemo(() => {
+		const byName = {};
+		const byLabel = {};
+		blockOptions.forEach((option) => {
+			byName[option.value] = option.label;
+			byLabel[option.label] = option.value;
+		});
+		return {
+			labelByName: byName,
+			nameByLabel: byLabel,
+			suggestions: blockOptions.map((option) => option.label),
+		};
+	}, [blockOptions]);
+
+	// A token is either a label we offered ("Button — core/button") or a block
+	// name typed by hand; both resolve to the canonical name.
+	const tokenToName = (token) => {
+		const raw = (
+			typeof token === 'string' ? token : token?.value || ''
+		).trim();
+		return nameByLabel[raw] || raw;
+	};
+
 	return (
 		<Card className="designsetgo-settings-panel">
 			<CardHeader>
@@ -234,6 +403,322 @@ const AnimationsPanel = ({ settings, updateSetting }) => {
 								}
 								__nextHasNoMarginBottom
 							/>
+						</div>
+
+						<div className="designsetgo-settings-section">
+							<h3 className="designsetgo-section-heading">
+								{__('Theme Animation Defaults', 'designsetgo')}
+							</h3>
+
+							<ToggleControl
+								label={__(
+									'Enable theme animation defaults',
+									'designsetgo'
+								)}
+								help={__(
+									'Automatically animate every block of a chosen type. Individual blocks can override or opt out.',
+									'designsetgo'
+								)}
+								checked={
+									settings?.animations
+										?.block_animations_enabled || false
+								}
+								onChange={(value) =>
+									updateSetting(
+										'animations',
+										'block_animations_enabled',
+										value
+									)
+								}
+								__nextHasNoMarginBottom
+							/>
+
+							{settings?.animations?.block_animations_enabled && (
+								<div className="designsetgo-block-animations">
+									<p className="designsetgo-block-animations__intro">
+										{__(
+											'Each rule sets an entrance, trigger and duration. The advanced options — exit animation, delay, easing and animate-once — are supported by the same data model but are only authorable in theme.json under settings.custom.designsetgo.blockAnimations.',
+											'designsetgo'
+										)}
+									</p>
+									{(
+										settings?.animations
+											?.block_animations || []
+									).map((row, index) => {
+										const list =
+											settings.animations
+												.block_animations;
+										const update = (patch) => {
+											const next = list.map((r, i) =>
+												i === index
+													? { ...r, ...patch }
+													: r
+											);
+											updateSetting(
+												'animations',
+												'block_animations',
+												next
+											);
+										};
+										const remove = () => {
+											setRowIds((ids) =>
+												ids.filter(
+													(_, i) => i !== index
+												)
+											);
+											updateSetting(
+												'animations',
+												'block_animations',
+												list.filter(
+													(r, i) => i !== index
+												)
+											);
+										};
+
+										// The server accepts any duration in the
+										// 100–5000ms range; keep a non-preset value
+										// (e.g. one set via the settings REST /
+										// abilities API) representable in the select
+										// instead of showing nothing selected.
+										const durationOptions =
+											DURATION_OPTIONS.some(
+												(o) => o.value === row.duration
+											)
+												? DURATION_OPTIONS
+												: [
+														...DURATION_OPTIONS,
+														{
+															label: `${row.duration}ms`,
+															value: row.duration,
+														},
+													];
+
+										const blocks = Array.isArray(row.blocks)
+											? row.blocks
+											: [];
+										// Show the friendly label where we have one, else the
+										// raw name (a block from a plugin since deactivated).
+										const tokens = blocks.map(
+											(name) => labelByName[name] || name
+										);
+
+										// A block may only be claimed by one rule. The
+										// sanitizer resolves a double claim by handing the
+										// block to the LAST row and stripping it from the
+										// earlier one (dedupe_block_animation_targets) — so
+										// keep the conflict from being authored at all
+										// rather than letting it resolve invisibly on save.
+										// Exact names only: `core/*` and `core/button` are
+										// distinct map keys server-side (exact beats
+										// wildcard), so they are a legitimate pairing.
+										const claimedElsewhere = new Set(
+											list
+												.filter((r, i) => i !== index)
+												.flatMap((r) =>
+													Array.isArray(r.blocks)
+														? r.blocks
+														: []
+												)
+										);
+										const rowSuggestions =
+											suggestions.filter(
+												(label) =>
+													!claimedElsewhere.has(
+														nameByLabel[label] ||
+															label
+													)
+											);
+										const validateRowToken = (token) => {
+											const name = tokenToName(token);
+											return (
+												BLOCK_NAME_PATTERN.test(name) &&
+												!claimedElsewhere.has(name)
+											);
+										};
+
+										// A list that arrived already-conflicting (saved
+										// through the settings REST route / abilities API
+										// rather than this UI) can't be fixed by the guards
+										// above — say which targets this row is about to
+										// lose instead of letting them vanish on reload.
+										const losingTo = blocks.filter((name) =>
+											list.some(
+												(r, i) =>
+													i > index &&
+													Array.isArray(r.blocks) &&
+													r.blocks.includes(name)
+											)
+										);
+
+										return (
+											<div
+												key={rowIds[index] || index}
+												className="designsetgo-block-animations__row"
+											>
+												<div className="designsetgo-block-animations__block">
+													<FormTokenField
+														className="designsetgo-block-animations__block-input"
+														label={__(
+															'Block types',
+															'designsetgo'
+														)}
+														value={tokens}
+														suggestions={
+															rowSuggestions
+														}
+														onChange={(next) =>
+															update({
+																blocks: [
+																	...new Set(
+																		next.map(
+																			tokenToName
+																		)
+																	),
+																],
+															})
+														}
+														__experimentalValidateInput={
+															validateRowToken
+														}
+														__experimentalExpandOnFocus
+														__experimentalAutoSelectFirstMatch
+														__experimentalShowHowTo={
+															false
+														}
+														__next40pxDefaultSize
+														__nextHasNoMarginBottom
+													/>
+													<p className="designsetgo-block-animations__hint">
+														{blockTypes === null &&
+															__(
+																'Loading block types…',
+																'designsetgo'
+															)}
+														{/* A failed fetch would otherwise read exactly like a
+															successful one with nothing to suggest. */}
+														{false === blockTypes &&
+															__(
+																'Could not load the block list — type a block name like core/button, or a namespace wildcard like designsetgo/*.',
+																'designsetgo'
+															)}
+														{Array.isArray(
+															blockTypes
+														) &&
+															blocks.length ===
+																0 &&
+															__(
+																'Add at least one block type — this rule is skipped until you do.',
+																'designsetgo'
+															)}
+														{Array.isArray(
+															blockTypes
+														) &&
+															blocks.length > 0 &&
+															__(
+																'Search for blocks to add, or pick a namespace wildcard like designsetgo/*. Every block listed here shares this animation.',
+																'designsetgo'
+															)}
+													</p>
+													{losingTo.length > 0 && (
+														<p className="designsetgo-block-animations__hint designsetgo-block-animations__hint--warning">
+															{sprintf(
+																/* translators: %s is a comma-separated list of block names, e.g. "core/button, core/heading". */
+																__(
+																	'Also claimed by a later rule, which wins: %s. These will be dropped from this rule when you save.',
+																	'designsetgo'
+																),
+																losingTo.join(
+																	', '
+																)
+															)}
+														</p>
+													)}
+												</div>
+												<SelectControl
+													label={__(
+														'Entrance',
+														'designsetgo'
+													)}
+													value={row.entrance}
+													options={ENTRANCE_OPTIONS}
+													onChange={(value) =>
+														update({
+															entrance: value,
+														})
+													}
+													__nextHasNoMarginBottom
+													__next40pxDefaultSize
+												/>
+												<SelectControl
+													label={__(
+														'Trigger',
+														'designsetgo'
+													)}
+													value={row.trigger}
+													options={TRIGGER_OPTIONS}
+													onChange={(value) =>
+														update({
+															trigger: value,
+														})
+													}
+													__nextHasNoMarginBottom
+													__next40pxDefaultSize
+												/>
+												<SelectControl
+													label={__(
+														'Duration',
+														'designsetgo'
+													)}
+													value={row.duration}
+													options={durationOptions}
+													onChange={(value) =>
+														update({
+															duration: parseInt(
+																value,
+																10
+															),
+														})
+													}
+													__nextHasNoMarginBottom
+													__next40pxDefaultSize
+												/>
+												<Button
+													className="designsetgo-block-animations__remove"
+													icon={trash}
+													label={__(
+														'Remove block type',
+														'designsetgo'
+													)}
+													isDestructive
+													onClick={remove}
+												/>
+											</div>
+										);
+									})}
+
+									<Button
+										variant="secondary"
+										onClick={() => {
+											addRowId();
+											updateSetting(
+												'animations',
+												'block_animations',
+												[
+													...(settings.animations
+														.block_animations ||
+														[]),
+													{ ...NEW_ROW },
+												]
+											);
+										}}
+									>
+										{__(
+											'Add animation rule',
+											'designsetgo'
+										)}
+									</Button>
+								</div>
+							)}
 						</div>
 					</div>
 				)}

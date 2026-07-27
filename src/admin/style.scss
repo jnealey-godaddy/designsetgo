@@ -873,6 +873,60 @@
 	margin-left: 8px;
 }
 
+.designsetgo-block-animations {
+	margin-top: 12px;
+
+	// Scope note: what this panel can set vs. what only theme.json can.
+	&__intro {
+		margin: 0 0 12px;
+		font-size: 12px;
+		color: #757575;
+	}
+
+	&__row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: 12px 16px;
+		padding: 16px;
+		margin-bottom: 12px;
+		border: 1px solid #dcdcde;
+		border-radius: 6px;
+		background: #fff;
+
+		// Default: the Entrance / Trigger / Duration selects share the
+		// second row and grow evenly.
+		> * {
+			flex: 1 1 150px;
+		}
+	}
+
+	// The block-type picker spans the full first row.
+	&__block {
+		flex: 1 1 100%;
+	}
+
+	// Compact icon button, aligned to the bottom of the selects row.
+	&__remove {
+		flex: 0 0 auto;
+		align-self: flex-end;
+	}
+
+	// Matches core's own control help text, which FormTokenField lacks.
+	&__hint {
+		margin: 8px 0 0;
+		font-size: 12px;
+		font-style: normal;
+		color: #757575;
+
+		// A conflict this UI can no longer prevent (the list arrived
+		// already-conflicting) — core's warning amber, which clears AA on white.
+		&--warning {
+			color: #914d05;
+		}
+	}
+}
+
 // Responsive
 @media (max-width: 782px) {
 

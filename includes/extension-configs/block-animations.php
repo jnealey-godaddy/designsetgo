@@ -48,5 +48,9 @@ return array(
 			'type'    => 'boolean',
 			'default' => true,
 		),
+		'dsgoAnimationOptOut'   => array(
+			'type'    => 'boolean',
+			'default' => false,
+		),
 	),
 );

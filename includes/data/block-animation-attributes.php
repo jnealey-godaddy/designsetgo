@@ -14,6 +14,75 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Get animation classes/attributes as structured arrays.
+ *
+ * Raw (unescaped) values — callers are responsible for escaping. Returns
+ * empty arrays unless dsgoAnimationEnabled is truthy.
+ *
+ * @param array $attributes Block attributes array.
+ * @return array{classes: string[], attrs: array<string,string>}
+ */
+function designsetgo_get_animation_parts( $attributes ) {
+	$enabled = isset( $attributes['dsgoAnimationEnabled'] ) ? $attributes['dsgoAnimationEnabled'] : false;
+	if ( ! $enabled ) {
+		return array(
+			'classes' => array(),
+			'attrs'   => array(),
+		);
+	}
+
+	$classes = array( 'has-dsgo-animation' );
+	$attrs   = array( 'data-dsgo-animation-enabled' => 'true' );
+
+	$entrance = isset( $attributes['dsgoEntranceAnimation'] ) ? (string) $attributes['dsgoEntranceAnimation'] : '';
+	if ( '' !== $entrance ) {
+		$classes[]                             = 'dsgo-animation-' . $entrance;
+		$attrs['data-dsgo-entrance-animation'] = $entrance;
+	}
+
+	$exit = isset( $attributes['dsgoExitAnimation'] ) ? (string) $attributes['dsgoExitAnimation'] : '';
+	if ( '' !== $exit ) {
+		$classes[]                        = 'dsgo-animation-exit-' . $exit;
+		$attrs['data-dsgo-exit-animation'] = $exit;
+	}
+
+	$trigger = isset( $attributes['dsgoAnimationTrigger'] ) ? (string) $attributes['dsgoAnimationTrigger'] : 'scroll';
+	if ( 'scroll' !== $trigger ) {
+		$attrs['data-dsgo-animation-trigger'] = $trigger;
+	}
+
+	$duration = isset( $attributes['dsgoAnimationDuration'] ) ? (int) $attributes['dsgoAnimationDuration'] : 600;
+	if ( 600 !== $duration ) {
+		$attrs['data-dsgo-animation-duration'] = (string) $duration;
+	}
+
+	$delay = isset( $attributes['dsgoAnimationDelay'] ) ? (int) $attributes['dsgoAnimationDelay'] : 0;
+	if ( 0 !== $delay ) {
+		$attrs['data-dsgo-animation-delay'] = (string) $delay;
+	}
+
+	$easing = isset( $attributes['dsgoAnimationEasing'] ) ? (string) $attributes['dsgoAnimationEasing'] : 'ease-out';
+	if ( 'ease-out' !== $easing ) {
+		$attrs['data-dsgo-animation-easing'] = $easing;
+	}
+
+	$offset = isset( $attributes['dsgoAnimationOffset'] ) ? (int) $attributes['dsgoAnimationOffset'] : 100;
+	if ( 100 !== $offset ) {
+		$attrs['data-dsgo-animation-offset'] = (string) $offset;
+	}
+
+	$once = isset( $attributes['dsgoAnimationOnce'] ) ? (bool) $attributes['dsgoAnimationOnce'] : true;
+	if ( ! $once ) {
+		$attrs['data-dsgo-animation-once'] = 'false';
+	}
+
+	return array(
+		'classes' => $classes,
+		'attrs'   => $attrs,
+	);
+}
+
+/**
  * Get animation data attributes from block attributes
  *
  * Extracts animation-related attributes and returns them as
@@ -23,84 +92,20 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return array Array of data attributes for animations.
  */
 function designsetgo_get_animation_attributes( $attributes ) {
-	$animation_attrs   = array();
-	$animation_classes = array();
+	$parts = designsetgo_get_animation_parts( $attributes );
 
-	// Check if animations are enabled.
-	$animation_enabled = isset( $attributes['dsgoAnimationEnabled'] ) ? $attributes['dsgoAnimationEnabled'] : false;
-
-	if ( ! $animation_enabled ) {
+	if ( empty( $parts['classes'] ) && empty( $parts['attrs'] ) ) {
 		return array(
 			'classes' => '',
 			'attrs'   => '',
 		);
 	}
 
-	// Add animation classes.
-	$animation_classes[] = 'has-dsgo-animation';
+	$classes_string = implode( ' ', array_map( 'esc_attr', $parts['classes'] ) );
 
-	// Add entrance animation class.
-	$entrance_animation = isset( $attributes['dsgoEntranceAnimation'] ) ? $attributes['dsgoEntranceAnimation'] : '';
-	if ( $entrance_animation ) {
-		$animation_classes[] = 'dsgo-animation-' . esc_attr( $entrance_animation );
-	}
-
-	// Add exit animation class.
-	$exit_animation = isset( $attributes['dsgoExitAnimation'] ) ? $attributes['dsgoExitAnimation'] : '';
-	if ( $exit_animation ) {
-		$animation_classes[] = 'dsgo-animation-exit-' . esc_attr( $exit_animation );
-	}
-
-	// Always include the enabled flag and animation type(s) — required by frontend JS.
-	$animation_attrs['data-dsgo-animation-enabled'] = 'true';
-
-	if ( $entrance_animation ) {
-		$animation_attrs['data-dsgo-entrance-animation'] = esc_attr( $entrance_animation );
-	}
-
-	if ( $exit_animation ) {
-		$animation_attrs['data-dsgo-exit-animation'] = esc_attr( $exit_animation );
-	}
-
-	// Only output settings that differ from defaults to keep markup lean.
-	// Defaults: trigger=scroll, duration=600, delay=0, easing=ease-out, offset=100, once=true.
-	$trigger = isset( $attributes['dsgoAnimationTrigger'] ) ? $attributes['dsgoAnimationTrigger'] : 'scroll';
-	if ( 'scroll' !== $trigger ) {
-		$animation_attrs['data-dsgo-animation-trigger'] = esc_attr( $trigger );
-	}
-
-	$duration = isset( $attributes['dsgoAnimationDuration'] ) ? (int) $attributes['dsgoAnimationDuration'] : 600;
-	if ( 600 !== $duration ) {
-		$animation_attrs['data-dsgo-animation-duration'] = esc_attr( (string) $duration );
-	}
-
-	$delay = isset( $attributes['dsgoAnimationDelay'] ) ? (int) $attributes['dsgoAnimationDelay'] : 0;
-	if ( 0 !== $delay ) {
-		$animation_attrs['data-dsgo-animation-delay'] = esc_attr( (string) $delay );
-	}
-
-	$easing = isset( $attributes['dsgoAnimationEasing'] ) ? $attributes['dsgoAnimationEasing'] : 'ease-out';
-	if ( 'ease-out' !== $easing ) {
-		$animation_attrs['data-dsgo-animation-easing'] = esc_attr( $easing );
-	}
-
-	$offset = isset( $attributes['dsgoAnimationOffset'] ) ? (int) $attributes['dsgoAnimationOffset'] : 100;
-	if ( 100 !== $offset ) {
-		$animation_attrs['data-dsgo-animation-offset'] = esc_attr( (string) $offset );
-	}
-
-	$once = isset( $attributes['dsgoAnimationOnce'] ) ? (bool) $attributes['dsgoAnimationOnce'] : true;
-	if ( ! $once ) {
-		$animation_attrs['data-dsgo-animation-once'] = 'false';
-	}
-
-	// Convert classes array to string.
-	$classes_string = implode( ' ', $animation_classes );
-
-	// Convert data attributes array to string.
 	$attrs_string = '';
-	foreach ( $animation_attrs as $key => $value ) {
-		$attrs_string .= ' ' . $key . '="' . $value . '"';
+	foreach ( $parts['attrs'] as $key => $value ) {
+		$attrs_string .= ' ' . $key . '="' . esc_attr( $value ) . '"';
 	}
 
 	return array(

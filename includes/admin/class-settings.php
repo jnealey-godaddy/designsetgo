@@ -123,6 +123,8 @@ class Settings {
 				'default_easing'                 => 'ease-in-out',
 				'respect_prefers_reduced_motion' => true,
 				'default_icon_button_hover'      => 'fill-diagonal',
+				'block_animations_enabled'       => false,
+				'block_animations'               => array(),
 			),
 			'security'           => array(
 				'log_ip_addresses' => true,
@@ -604,6 +606,12 @@ class Settings {
 		$existing = get_option( self::OPTION_NAME, array() );
 		$merged   = array_replace_recursive( $existing, $sanitized );
 
+		// List fields must be replaced wholesale — array_replace_recursive
+		// merges lists by numeric index, which would strand stale entries.
+		if ( isset( $sanitized['animations']['block_animations'] ) ) {
+			$merged['animations']['block_animations'] = $sanitized['animations']['block_animations'];
+		}
+
 		update_option( self::OPTION_NAME, $merged );
 		self::invalidate_cache();
 
@@ -718,6 +726,8 @@ class Settings {
 				'default_easing'                 => 'text',
 				'respect_prefers_reduced_motion' => 'bool',
 				'default_icon_button_hover'      => 'key',
+				'block_animations_enabled'       => 'bool',
+				'block_animations'               => 'block_animations',
 			),
 			'security'           => array(
 				'log_ip_addresses' => 'bool',
@@ -793,6 +803,8 @@ class Settings {
 				return is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : $fallback;
 			case 'key_list':
 				return is_array( $value ) ? array_map( 'sanitize_key', $value ) : $fallback;
+			case 'block_animations':
+				return self::sanitize_block_animations_list( is_array( $value ) ? $value : array() );
 			default:
 				return sanitize_text_field( $value );
 		}
@@ -824,6 +836,159 @@ class Settings {
 			return '';
 		}
 		return sanitize_text_field( $trimmed );
+	}
+
+	/**
+	 * Sanitize the per-block-type animation defaults list.
+	 *
+	 * Each entry targets one or more valid blocks (exact name or `namespace/*`)
+	 * and must carry at least an entrance or exit animation. Enum fields fall
+	 * back to their defaults on an unknown value; numeric fields are clamped.
+	 * A block name may only appear once across the whole list — see
+	 * dedupe_block_animation_targets().
+	 *
+	 * @param array $value Raw list of entries.
+	 * @return array Sanitized list (re-indexed).
+	 */
+	public static function sanitize_block_animations_list( array $value ): array {
+		$clean = array();
+		foreach ( $value as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$blocks = self::sanitize_block_animation_targets( $entry );
+			if ( empty( $blocks ) ) {
+				continue;
+			}
+
+			$fields = self::sanitize_block_animation_fields( $entry );
+
+			// An entry that animates nothing is meaningless.
+			if ( '' === $fields['entrance'] && '' === $fields['exit'] ) {
+				continue;
+			}
+
+			$clean[] = array( 'blocks' => $blocks ) + $fields;
+		}
+
+		return self::dedupe_block_animation_targets( $clean );
+	}
+
+	/**
+	 * Extract and validate the block names a single entry targets.
+	 *
+	 * Reads the `blocks` list, falling back to the historical singular `block`
+	 * key so theme.json / Style Kits authored against the first shape of this
+	 * feature keep resolving. Each name must be an exact `namespace/name` or a
+	 * `namespace/*` wildcard; anything else is dropped. Duplicates within the
+	 * entry are collapsed.
+	 *
+	 * Shared by the admin-option sanitizer and Animation_Defaults::get_effective()
+	 * so theme.json-sourced names get the same format validation as admin ones.
+	 *
+	 * @param array $entry Raw entry.
+	 * @return array<int, string> Validated block names (may be empty).
+	 */
+	public static function sanitize_block_animation_targets( array $entry ): array {
+		$raw = array();
+		if ( isset( $entry['blocks'] ) && is_array( $entry['blocks'] ) ) {
+			$raw = $entry['blocks'];
+		} elseif ( isset( $entry['block'] ) && is_string( $entry['block'] ) ) {
+			$raw = array( $entry['block'] );
+		}
+
+		$blocks = array();
+		foreach ( $raw as $block ) {
+			if ( ! is_string( $block ) ) {
+				continue;
+			}
+
+			$block = trim( $block );
+			// namespace/name or namespace/* — lowercase letters, digits, hyphens.
+			if ( ! preg_match( '#^[a-z0-9-]+/(\*|[a-z0-9-]+)$#', $block ) ) {
+				continue;
+			}
+
+			if ( ! in_array( $block, $blocks, true ) ) {
+				$blocks[] = $block;
+			}
+		}
+
+		return $blocks;
+	}
+
+	/**
+	 * Ensure no block name is claimed by more than one entry.
+	 *
+	 * Animation_Defaults::get_effective() builds a `block name => config` map,
+	 * so a name claimed twice silently resolves to whichever entry was written
+	 * last. Rather than persist rows that can never take effect, strip the
+	 * earlier claims here — matching the map's last-wins precedence — and drop
+	 * any entry left targeting nothing.
+	 *
+	 * @param array $list Sanitized entries, in author order.
+	 * @return array Entries with unique targets (re-indexed).
+	 */
+	private static function dedupe_block_animation_targets( array $list ): array {
+		$seen  = array();
+		$clean = array();
+
+		foreach ( array_reverse( $list ) as $entry ) {
+			$blocks = array();
+			foreach ( $entry['blocks'] as $block ) {
+				if ( isset( $seen[ $block ] ) ) {
+					continue;
+				}
+				$seen[ $block ] = true;
+				$blocks[]       = $block;
+			}
+
+			if ( empty( $blocks ) ) {
+				continue;
+			}
+
+			$entry['blocks'] = $blocks;
+			$clean[]         = $entry;
+		}
+
+		return array_reverse( $clean );
+	}
+
+	/**
+	 * Validate + normalize the animation-config fields of a single entry.
+	 *
+	 * Enforces the enum whitelist (entrance/exit/trigger/easing) and numeric
+	 * clamps (duration/delay/offset), filling defaults for missing or invalid
+	 * values. Does NOT include the `block` key and never drops the entry — it
+	 * always returns a complete 8-field config. Shared by the admin-option
+	 * sanitizer (above) and the resolve-time normalizer in Animation_Defaults
+	 * so theme.json / Style-Kit entries get the same guarantees as
+	 * admin-submitted ones.
+	 *
+	 * @param array $entry Raw entry (may contain a `block` key, ignored here).
+	 * @return array{entrance:string,exit:string,trigger:string,duration:int,delay:int,easing:string,offset:int,once:bool}
+	 */
+	public static function sanitize_block_animation_fields( array $entry ): array {
+		$entrances = array( 'fadeIn', 'fadeInUp', 'fadeInDown', 'fadeInLeft', 'fadeInRight', 'slideInUp', 'slideInDown', 'slideInLeft', 'slideInRight', 'zoomIn', 'bounceIn', 'flipInX', 'flipInY' );
+		$exits     = array( 'fadeOut', 'fadeOutUp', 'fadeOutDown', 'fadeOutLeft', 'fadeOutRight', 'slideOutUp', 'slideOutDown', 'slideOutLeft', 'slideOutRight', 'zoomOut', 'bounceOut' );
+		$triggers  = array( 'scroll', 'load', 'hover', 'click' );
+		$easings   = array( 'ease', 'ease-in', 'ease-out', 'ease-in-out', 'linear', 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' );
+
+		// is_string() before the cast, matching sanitize_block_animation_targets():
+		// a theme.json entry that nests an array under one of these keys would
+		// otherwise emit "Array to string conversion" on every request that
+		// resolves the block type, before falling through to the default anyway.
+		return array(
+			'entrance' => isset( $entry['entrance'] ) && is_string( $entry['entrance'] ) && in_array( $entry['entrance'], $entrances, true ) ? $entry['entrance'] : '',
+			'exit'     => isset( $entry['exit'] ) && is_string( $entry['exit'] ) && in_array( $entry['exit'], $exits, true ) ? $entry['exit'] : '',
+			'trigger'  => isset( $entry['trigger'] ) && is_string( $entry['trigger'] ) && in_array( $entry['trigger'], $triggers, true ) ? $entry['trigger'] : 'scroll',
+			'duration' => isset( $entry['duration'] ) ? max( 100, min( 5000, absint( $entry['duration'] ) ) ) : 600,
+			'delay'    => isset( $entry['delay'] ) ? max( 0, min( 5000, absint( $entry['delay'] ) ) ) : 0,
+			'easing'   => isset( $entry['easing'] ) && is_string( $entry['easing'] ) && in_array( $entry['easing'], $easings, true ) ? $entry['easing'] : 'ease-out',
+			'offset'   => isset( $entry['offset'] ) ? max( 0, min( 1000, absint( $entry['offset'] ) ) ) : 100,
+			'once'     => isset( $entry['once'] ) ? (bool) $entry['once'] : true,
+		);
 	}
 
 	/**
