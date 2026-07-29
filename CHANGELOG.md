@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-07-29
+
 ### New Features
 - **Theme animation defaults**: set an entrance animation per block type (e.g. all Buttons fade in) once, in Settings → DesignSetGo → Animations or in theme.json (`settings.custom.designsetgo.blockAnimations`). Every block of that type inherits it automatically; individual blocks can override (Custom) or opt out (Off). The settings panel exposes block types, entrance, trigger and duration; the advanced options the same data model supports — exit animation, delay, easing and animate-once — are authorable in theme.json only for this release. One rule can target several block types at once — search and pick them from the block list, or choose a `namespace/*` wildcard.
 

@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.5.1
+Stable tag: 2.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,12 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.6.0 - 2026-07-29 =
+
+* **New:** Theme animation defaults — set an entrance animation once per block type (e.g. all Buttons fade in) under Settings → DesignSetGo → Animations, or in your theme's `theme.json`. Every block of that type inherits it automatically, and any individual block can override it (Custom) or opt out (Off). One rule can target several block types at once, including `namespace/*` wildcards.
+* **Fix:** The per-page Overlay Header is transparent again and no longer pulls page content up by the footer's height. The header height was being measured from the wrong element on themes whose footer also contains a navigation block, which sliced the top off the hero; and the header stayed opaque on themes that paint it from a style variation or `theme.json` rather than a background class. Your first content section now also clears the header while its background still runs behind it.
+* **Fix:** Section shape dividers now honour your theme's divider height and width tokens. Previously a theme (or Style Kit) could set the default divider shape but not its size — the Section block's top/bottom dividers ignored both size tokens. Untouched dividers now inherit the theme's size (and reserve matching content clearance), while any size you set explicitly still wins. The Height/Width sliders gain a Reset that returns them to the theme default. Existing content is unchanged.
 
 = 2.5.1 - 2026-07-23 =
 
