@@ -118,8 +118,15 @@ body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-heade
 		color var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out;
 }
 
+/**
+ * Prefer the theme's secondary surface preset; themes without a `base-2`
+ * slug (Twenty Twenty-*) resolve to the historical near-white.
+ */
 .dsgo-sticky-bg-on-scroll.wp-block-template-part.dsgo-scrolled {
-	background-color: var(--dsgo-sticky-scroll-bg-color, rgba(255, 255, 255, 0.95));
+	background-color: var(
+		--dsgo-sticky-scroll-bg-color,
+		color-mix(in srgb, var(--wp--preset--color--base-2, #fff) 95%, transparent)
+	);
 	color: var(--dsgo-sticky-scroll-text-color, inherit);
 
 	/* Apply text color to navigation elements only — excludes buttons with user-set colors */
@@ -207,9 +214,21 @@ body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-heade
 		box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5);
 	}
 
+	/**
+	 * `contrast`/`base` rather than `base-2` here: this rule hardcodes a light
+	 * foreground, and those two slugs are guaranteed to oppose each other in
+	 * any palette, so the pairing stays readable in light *and* dark themes.
+	 * Themes with neither slug resolve to black-on-white, as before.
+	 */
 	.dsgo-sticky-bg-on-scroll.wp-block-template-part.dsgo-scrolled {
-		background-color: var(--dsgo-sticky-scroll-bg-color, rgba(0, 0, 0, 0.95));
-		color: var(--dsgo-sticky-scroll-text-color, rgba(255, 255, 255, 0.95));
+		background-color: var(
+			--dsgo-sticky-scroll-bg-color,
+			color-mix(in srgb, var(--wp--preset--color--contrast, #000) 95%, transparent)
+		);
+		color: var(
+			--dsgo-sticky-scroll-text-color,
+			color-mix(in srgb, var(--wp--preset--color--base, #fff) 95%, transparent)
+		);
 
 		.wp-block-navigation a,
 		.wp-block-navigation a:hover,
@@ -226,12 +245,18 @@ body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-heade
 		.wp-block-site-title a:focus-visible,
 		.wp-block-site-title a:visited,
 		.wp-block-site-title a:active {
-			color: var(--dsgo-sticky-scroll-text-color, rgba(255, 255, 255, 0.95));
+			color: var(
+				--dsgo-sticky-scroll-text-color,
+				color-mix(in srgb, var(--wp--preset--color--base, #fff) 95%, transparent)
+			);
 		}
 
 		.wp-block-navigation__submenu-icon svg,
 		.wp-block-navigation__responsive-container-open svg {
-			fill: var(--dsgo-sticky-scroll-text-color, rgba(255, 255, 255, 0.95));
+			fill: var(
+				--dsgo-sticky-scroll-text-color,
+				color-mix(in srgb, var(--wp--preset--color--base, #fff) 95%, transparent)
+			);
 		}
 	}
 }
@@ -348,10 +373,18 @@ body:not(.block-editor-page).admin-bar.dsgo-page-overlay-header header.wp-block-
  * Overlay Scroll Background
  * When scrolled past threshold, fade in the solid background.
  * Position stays fixed — only background-color transitions.
+ *
+ * Overlay headers never enter the JS branch that sets
+ * --dsgo-sticky-scroll-bg-color (see utils/sticky-header.js), so this fallback
+ * is the value that actually renders. Prefer the theme's secondary surface;
+ * themes without a `base-2` slug keep the historical near-white.
  */
 body:not(.block-editor-page).dsgo-page-overlay-header .wp-block-template-part.dsgo-scrolled:not(footer):first-of-type,
 body:not(.block-editor-page).dsgo-page-overlay-header header.wp-block-template-part.dsgo-scrolled {
-	background-color: var(--dsgo-sticky-scroll-bg-color, rgba(255, 255, 255, 0.95));
+	background-color: var(
+		--dsgo-sticky-scroll-bg-color,
+		color-mix(in srgb, var(--wp--preset--color--base-2, #fff) 95%, transparent)
+	);
 }
 
 /**
