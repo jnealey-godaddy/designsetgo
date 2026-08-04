@@ -25,6 +25,47 @@ use DesignSetGo\Admin\Settings;
 class Test_Extension_Settings_Localize extends WP_UnitTestCase {
 
 	/**
+	 * Decode the JSON object out of a `var dsgoSettings = {...};` payload.
+	 *
+	 * Assert against the decoded array rather than searching the raw string:
+	 * `wp_localize_script()` runs the payload through `wp_json_encode()`, and
+	 * whether that escapes a forward slash (`gravityforms\/form`) or leaves it
+	 * bare varies by WordPress version. A substring search for a value
+	 * containing `/` therefore passes on some versions of WP and fails on
+	 * others for reasons that have nothing to do with the behaviour under test.
+	 *
+	 * WP_Scripts::localize() appends rather than replaces
+	 * (`$script = "$data\n$script"`), so a handle localized more than once
+	 * carries several newline-joined `var … = {…};` statements. Decode the last
+	 * dsgoSettings one — that is the payload the current test produced.
+	 *
+	 * @param string $data Localized script data.
+	 * @return array Decoded settings payload.
+	 */
+	private function decode_localized_settings( $data ) {
+		$prefix = 'var dsgoSettings = ';
+
+		$statements = array_filter(
+			array_map( 'trim', explode( "\n", $data ) ),
+			static function ( $line ) use ( $prefix ) {
+				return 0 === strpos( $line, $prefix );
+			}
+		);
+
+		$this->assertNotEmpty(
+			$statements,
+			'Expected a dsgoSettings statement in the localized payload.'
+		);
+
+		$json    = rtrim( substr( (string) end( $statements ), strlen( $prefix ) ), ';' );
+		$decoded = json_decode( $json, true );
+
+		$this->assertIsArray( $decoded, 'The dsgoSettings payload should decode as JSON.' );
+
+		return $decoded;
+	}
+
+	/**
 	 * Reset scripts and screen after each test.
 	 */
 	public function tear_down() {
@@ -70,9 +111,13 @@ class Test_Extension_Settings_Localize extends WP_UnitTestCase {
 			'dsgoSettings must be localized on the same hook that enqueues the extensions script.'
 		);
 		$this->assertStringContainsString( 'dsgoSettings', $data );
-		$this->assertStringContainsString(
+
+		$settings = $this->decode_localized_settings( $data );
+
+		$this->assertArrayHasKey( 'excludedBlocks', $settings );
+		$this->assertContains(
 			'gravityforms/form',
-			$data,
+			$settings['excludedBlocks'],
 			'The configured excluded block must be present in the iframe payload.'
 		);
 	}
@@ -101,10 +146,12 @@ class Test_Extension_Settings_Localize extends WP_UnitTestCase {
 			$data,
 			'dsgoSettings must be localized on the same hook that enqueues the extensions script.'
 		);
-		$this->assertStringContainsString( 'enabledExtensions', $data );
-		$this->assertStringContainsString(
+		$settings = $this->decode_localized_settings( $data );
+
+		$this->assertArrayHasKey( 'enabledExtensions', $settings );
+		$this->assertContains(
 			'dynamic-tags',
-			$data,
+			$settings['enabledExtensions'],
 			'The configured enabled extension must be present in the iframe payload.'
 		);
 	}
