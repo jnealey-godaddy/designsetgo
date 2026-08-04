@@ -455,7 +455,7 @@ function initFormBuilder() {
 
 				if (!restBlocked) {
 					// Try REST API first
-					const restResponse = await fetch(designsetgoForm.restUrl, {
+					let restResponse = await fetch(designsetgoForm.restUrl, {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json',
@@ -463,6 +463,47 @@ function initFormBuilder() {
 						},
 						body: requestBody,
 					});
+
+					// A full-page cache can serve markup that outlives the
+					// nonce baked into it — nonces last ~24h, and cache TTLs
+					// routinely exceed that. handle_form_submission() only
+					// verifies a nonce that is *present*, so a stale one is
+					// rejected where an absent one is accepted. Retry once
+					// without it rather than stranding the visitor; the
+					// endpoint is public by design (anonymous visitors never
+					// have a nonce), so this concedes nothing an attacker
+					// couldn't already do by submitting anonymously.
+					if (restResponse.status === 403) {
+						let staleNonce = false;
+						try {
+							const errorData = await restResponse.clone().json();
+							// `rest_cookie_invalid_nonce` is the one that fires
+							// in practice: core's rest_cookie_check_errors()
+							// rejects a bad X-WP-Nonce during authentication,
+							// before handle_form_submission() is ever reached.
+							// The plugin's own `invalid_nonce` is kept for the
+							// case where core lets the request through.
+							staleNonce =
+								errorData.code ===
+									'rest_cookie_invalid_nonce' ||
+								errorData.code === 'invalid_nonce';
+						} catch {
+							// Body isn't valid JSON — not our nonce error.
+						}
+
+						if (staleNonce) {
+							restResponse = await fetch(
+								designsetgoForm.restUrl,
+								{
+									method: 'POST',
+									headers: {
+										'Content-Type': 'application/json',
+									},
+									body: requestBody,
+								}
+							);
+						}
+					}
 
 					if (restResponse.ok) {
 						result = await restResponse.json();
