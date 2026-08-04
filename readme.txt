@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.6.0
+Stable tag: 2.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,13 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.6.1 - 2026-08-04 =
+
+* **Fix:** Turning on "background on scroll" without choosing a color now gives you your theme's background, rather than no background at all. The header also darkens or lightens its text to match, so it stays readable whichever way your theme's palette runs.
+* **Fix:** Forms on pages served from a full-page cache no longer fail with "Security verification failed. Please refresh the page and try again." A cached page can outlive the security token baked into it, and the form had no way to recover; it now quietly retries and submits successfully.
+* **Fix:** The scrolled sticky/overlay header now picks up your theme's colors instead of always fading in to a near-white bar. Pages using the per-page Overlay Header never reached the code that applies your chosen scroll background, so they fell back to a hardcoded white that looked out of place on darker palettes. The header now prefers your theme's secondary surface color, and in dark mode pairs your palette's contrast and base colors so the text stays readable. Themes that don't define those colors look exactly as they did before, and any scroll background you set explicitly still wins.
+* **Fix:** Forms placed outside the main post content — a newsletter signup in the footer, a form in a template part, synced pattern, or block widget — no longer fail every submission. The form looked and behaved normally right up until Submit, then silently failed because the data it needs to talk to the server was only attached when the form lived in the page's own content.
 
 = 2.6.0 - 2026-07-29 =
 
