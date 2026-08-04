@@ -706,14 +706,20 @@ class Form_Handler {
 	 * Localize script with nonce and REST URL.
 	 */
 	public function localize_form_script() {
-		// Only enqueue if form block is present on the page.
-		if ( ! has_block( 'designsetgo/form-builder' ) ) {
-			return;
-		}
-
-		// Get the form-builder view script handle.
-		$asset_file = include DESIGNSETGO_PATH . 'build/blocks/form-builder/view.asset.php';
-		$handle     = 'designsetgo-form-builder-view-script';
+		// Deliberately unconditional. This used to be guarded by
+		// has_block( 'designsetgo/form-builder' ), which only inspects the
+		// current post's content — so a form living in a template part
+		// (a newsletter signup in the footer), a synced pattern, a block
+		// widget, or anything rendered via do_blocks() never matched. The
+		// block still rendered and WordPress still enqueued its viewScript,
+		// so view.js ran with designsetgoForm undefined and every submission
+		// died on a ReferenceError.
+		//
+		// No guard is needed: wp_localize_script() only attaches data to a
+		// registered handle. WordPress enqueues the block's viewScript at
+		// render time, and the data is printed only if that happens — on a
+		// page with no form, this outputs nothing.
+		$handle = 'designsetgo-form-builder-view-script';
 
 		// Localize with nonce and REST URL.
 		wp_localize_script(
