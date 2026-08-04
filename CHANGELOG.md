@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Forms outside post content — a newsletter signup in the footer, most commonly — no longer fail every submission with "designsetgoForm is not defined."** The script that carries the form's REST URL and nonces was localized behind a `has_block( 'designsetgo/form-builder' )` guard, and that check only inspects the current post's content. A form living in a template part, a synced pattern, a block widget, or anything rendered through `do_blocks()` never matched it, so the guard returned early and the payload was never attached — while the block itself still rendered and WordPress still enqueued its `viewScript`. The form therefore looked completely fine right up until someone pressed Submit, at which point `view.js` hit an undefined `designsetgoForm` and the submission died client-side. The guard is removed rather than taught to scan template parts, which would still have missed synced patterns, widgets and `do_blocks()` while adding per-request cost. Removing it is free: `wp_localize_script()` only attaches data to a *registered* handle, and that data is printed only when the script is actually enqueued — which happens at block render time — so a page with no form still emits nothing, leaking neither nonce nor payload. (#496)
+
 ## [2.6.0] - 2026-07-29
 
 ### New Features
