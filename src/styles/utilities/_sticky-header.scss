@@ -118,9 +118,34 @@ body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-heade
 		color var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out;
 }
 
+/**
+ * Every theme-preset cascade below is gated on this feature query, and the
+ * gating is load-bearing rather than defensive.
+ *
+ * A declaration containing var() is only syntax-checked after substitution, so
+ * a color-mix() the browser doesn't understand makes the declaration "invalid
+ * at computed-value time" — which resets background-color to its initial value
+ * (transparent), *not* to any earlier declaration in the cascade. Declaring the
+ * literal first and the color-mix() second therefore does not degrade
+ * gracefully; the second declaration parses cleanly, wins, and only then fails.
+ * @supports is the only construct that keeps a color-mix()-less browser on the
+ * literal.
+ */
+$dsgo-color-mix-support: "(background-color: color-mix(in srgb, red 95%, transparent))";
+
+/**
+ * Prefer the theme's secondary surface preset; themes without a `base-2`
+ * slug (Twenty Twenty-*) resolve to the historical near-white.
+ */
 .dsgo-sticky-bg-on-scroll.wp-block-template-part.dsgo-scrolled {
-	background-color: var(--dsgo-sticky-scroll-bg-color, rgba(255, 255, 255, 0.95));
+	--dsgo-sticky-scrolled-bg: rgba(255, 255, 255, 0.95);
+
+	background-color: var(--dsgo-sticky-scroll-bg-color, var(--dsgo-sticky-scrolled-bg));
 	color: var(--dsgo-sticky-scroll-text-color, inherit);
+
+	@supports #{$dsgo-color-mix-support} {
+		--dsgo-sticky-scrolled-bg: color-mix(in srgb, var(--wp--preset--color--base-2, #fff) 95%, transparent);
+	}
 
 	/* Apply text color to navigation elements only — excludes buttons with user-set colors */
 	.wp-block-navigation a,
@@ -207,9 +232,27 @@ body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-heade
 		box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5);
 	}
 
+	/**
+	 * `contrast`/`base` rather than `base-2` here: this rule hardcodes a light
+	 * foreground, and those two slugs are guaranteed to oppose each other in
+	 * any palette, so the pairing stays readable in light *and* dark themes.
+	 * Themes with neither slug resolve to black-on-white, as before.
+	 *
+	 * --dsgo-sticky-dark-fg is hoisted because the foreground is read from
+	 * three places below; see $dsgo-color-mix-support for why the preset
+	 * cascade lives in a feature query.
+	 */
 	.dsgo-sticky-bg-on-scroll.wp-block-template-part.dsgo-scrolled {
-		background-color: var(--dsgo-sticky-scroll-bg-color, rgba(0, 0, 0, 0.95));
-		color: var(--dsgo-sticky-scroll-text-color, rgba(255, 255, 255, 0.95));
+		--dsgo-sticky-scrolled-bg: rgba(0, 0, 0, 0.95);
+		--dsgo-sticky-dark-fg: rgba(255, 255, 255, 0.95);
+
+		background-color: var(--dsgo-sticky-scroll-bg-color, var(--dsgo-sticky-scrolled-bg));
+		color: var(--dsgo-sticky-scroll-text-color, var(--dsgo-sticky-dark-fg));
+
+		@supports #{$dsgo-color-mix-support} {
+			--dsgo-sticky-scrolled-bg: color-mix(in srgb, var(--wp--preset--color--contrast, #000) 95%, transparent);
+			--dsgo-sticky-dark-fg: color-mix(in srgb, var(--wp--preset--color--base, #fff) 95%, transparent);
+		}
 
 		.wp-block-navigation a,
 		.wp-block-navigation a:hover,
@@ -226,12 +269,12 @@ body:not(.block-editor-page).admin-bar .wp-block-template-part.dsgo-sticky-heade
 		.wp-block-site-title a:focus-visible,
 		.wp-block-site-title a:visited,
 		.wp-block-site-title a:active {
-			color: var(--dsgo-sticky-scroll-text-color, rgba(255, 255, 255, 0.95));
+			color: var(--dsgo-sticky-scroll-text-color, var(--dsgo-sticky-dark-fg));
 		}
 
 		.wp-block-navigation__submenu-icon svg,
 		.wp-block-navigation__responsive-container-open svg {
-			fill: var(--dsgo-sticky-scroll-text-color, rgba(255, 255, 255, 0.95));
+			fill: var(--dsgo-sticky-scroll-text-color, var(--dsgo-sticky-dark-fg));
 		}
 	}
 }
@@ -348,10 +391,21 @@ body:not(.block-editor-page).admin-bar.dsgo-page-overlay-header header.wp-block-
  * Overlay Scroll Background
  * When scrolled past threshold, fade in the solid background.
  * Position stays fixed — only background-color transitions.
+ *
+ * Overlay headers never enter the JS branch that sets
+ * --dsgo-sticky-scroll-bg-color (see utils/sticky-header.js), so this fallback
+ * is the value that actually renders. Prefer the theme's secondary surface;
+ * themes without a `base-2` slug keep the historical near-white.
  */
 body:not(.block-editor-page).dsgo-page-overlay-header .wp-block-template-part.dsgo-scrolled:not(footer):first-of-type,
 body:not(.block-editor-page).dsgo-page-overlay-header header.wp-block-template-part.dsgo-scrolled {
-	background-color: var(--dsgo-sticky-scroll-bg-color, rgba(255, 255, 255, 0.95));
+	--dsgo-sticky-scrolled-bg: rgba(255, 255, 255, 0.95);
+
+	background-color: var(--dsgo-sticky-scroll-bg-color, var(--dsgo-sticky-scrolled-bg));
+
+	@supports #{$dsgo-color-mix-support} {
+		--dsgo-sticky-scrolled-bg: color-mix(in srgb, var(--wp--preset--color--base-2, #fff) 95%, transparent);
+	}
 }
 
 /**
