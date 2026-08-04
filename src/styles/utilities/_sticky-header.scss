@@ -139,12 +139,23 @@ $dsgo-color-mix-support: "(background-color: color-mix(in srgb, red 95%, transpa
  */
 .dsgo-sticky-bg-on-scroll.wp-block-template-part.dsgo-scrolled {
 	--dsgo-sticky-scrolled-bg: rgba(255, 255, 255, 0.95);
+	--dsgo-sticky-scrolled-fg: inherit;
 
 	background-color: var(--dsgo-sticky-scroll-bg-color, var(--dsgo-sticky-scrolled-bg));
-	color: var(--dsgo-sticky-scroll-text-color, inherit);
+	color: var(--dsgo-sticky-scroll-text-color, var(--dsgo-sticky-scrolled-fg));
 
+	/**
+	 * The foreground moves with the background: `base-2` is theme-defined and
+	 * carries no guarantee of lightness, so leaving the text on `inherit`
+	 * would put the theme's body colour on the theme's own surface colour —
+	 * near-1:1 contrast for any palette whose `base-2` is dark. `contrast` is
+	 * guaranteed to oppose the `base` family in any theme.json palette, so the
+	 * pair stays legible; a theme defining neither slug resolves to exactly the
+	 * historical near-white-on-inherited.
+	 */
 	@supports #{$dsgo-color-mix-support} {
 		--dsgo-sticky-scrolled-bg: color-mix(in srgb, var(--wp--preset--color--base-2, #fff) 95%, transparent);
+		--dsgo-sticky-scrolled-fg: var(--wp--preset--color--contrast, inherit);
 	}
 
 	/* Apply text color to navigation elements only — excludes buttons with user-set colors */
@@ -163,13 +174,16 @@ $dsgo-color-mix-support: "(background-color: color-mix(in srgb, red 95%, transpa
 	.wp-block-site-title a:focus-visible,
 	.wp-block-site-title a:visited,
 	.wp-block-site-title a:active {
-		color: var(--dsgo-sticky-scroll-text-color, inherit);
+		color: var(--dsgo-sticky-scroll-text-color, var(--dsgo-sticky-scrolled-fg));
 		transition: color var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out;
 	}
 
 	/* Navigation SVG icons (hamburger, submenu arrows) */
 	.wp-block-navigation__submenu-icon svg,
 	.wp-block-navigation__responsive-container-open svg {
+
+		/* currentColor, not the fg var: `fill: inherit` would take the parent's
+		   fill rather than the resolved text colour. */
 		fill: var(--dsgo-sticky-scroll-text-color, currentColor);
 		transition: fill var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out;
 	}

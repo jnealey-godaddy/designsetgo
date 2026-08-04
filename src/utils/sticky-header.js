@@ -352,11 +352,13 @@ import './sticky-header.scss';
 					bgColor
 				);
 			} else {
-				// No color set — override CSS fallback so no background applies
-				header.style.setProperty(
-					'--dsgo-sticky-scroll-bg-color',
-					'transparent'
-				);
+				// No color set — leave the property unset so the stylesheet's
+				// theme-preset cascade governs. Writing a sentinel here would
+				// satisfy the var() and mask the fallback chain in
+				// _sticky-header.scss entirely, which is what made "background
+				// on scroll" resolve to no background at all when no colour
+				// was configured.
+				header.style.removeProperty('--dsgo-sticky-scroll-bg-color');
 			}
 
 			if (settings.textScrollColor) {
@@ -365,10 +367,7 @@ import './sticky-header.scss';
 					settings.textScrollColor
 				);
 			} else {
-				header.style.setProperty(
-					'--dsgo-sticky-scroll-text-color',
-					'inherit'
-				);
+				header.style.removeProperty('--dsgo-sticky-scroll-text-color');
 			}
 		}
 	}
