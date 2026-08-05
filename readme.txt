@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.6.1
+Stable tag: 2.6.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,11 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.6.2 - 2026-08-05 =
+
+* **Fix:** Sticky and overlay headers keep working on sites that replace page content without a full browser reload — an AI page builder or an AJAX-driven theme, for example. After one of those updates the header stayed where it belonged but stopped fading in its background as you scrolled, and only a full page refresh brought the behaviour back.
+* **Fix:** The footer no longer paints the sticky header's drop shadow across its own top edge when you scroll. Most themes put a navigation menu in the footer, and that alone was enough for the footer to be treated as a second header.
 
 = 2.6.1 - 2026-08-04 =
 
