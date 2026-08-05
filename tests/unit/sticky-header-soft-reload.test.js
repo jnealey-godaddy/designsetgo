@@ -210,6 +210,23 @@ describe('sticky header across a soft reload', () => {
 		expect(rebuilt.classList.contains('dsgo-scroll-up')).toBe(false);
 	});
 
+	it('does not hide the header on a refresh that finds a moved viewport', () => {
+		window.dsgStickyHeaderSettings.hideOnScrollDown = true;
+		buildSite();
+		loadStickyHeader();
+
+		scrollTo(400);
+
+		// Viewport further down than the last reported scroll — a resize can
+		// land here when a mobile URL bar collapses.
+		window.scrollY = 800;
+		const rebuilt = softReloadFullBody();
+
+		// A refresh is not a scroll. Judged against the stale 400 this reads as
+		// downward and slides the header off-screen until the next real scroll.
+		expect(rebuilt.classList.contains('dsgo-scroll-down')).toBe(false);
+	});
+
 	it('leaves the footer template part out of the scrolled state', () => {
 		buildSite();
 		loadStickyHeader();

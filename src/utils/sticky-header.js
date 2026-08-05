@@ -489,6 +489,13 @@ import './sticky-header.scss';
 	 * Drop any header that has left the document, then run `callback` against
 	 * the ones still connected.
 	 *
+	 * Pruning is deliberately lazy rather than observer-driven. The event that
+	 * detaches a header is the same one that replaces it — a soft navigation
+	 * ends by dispatching `dsgo-content-loaded`, which runs initAll() and so
+	 * reaches this function — so the detached node is dropped as part of the
+	 * swap, not at some later scroll. A MutationObserver would buy nothing for
+	 * that path and cost a permanent observer on every page.
+	 *
 	 * @param {(header: HTMLElement) => void} callback Per-header work
 	 */
 	function forEachLiveHeader(callback) {
@@ -581,19 +588,22 @@ import './sticky-header.scss';
 	 * cannot compound.
 	 */
 	function refreshAll() {
+		// A refresh is a position resync, not a scroll, so the reference
+		// advances *before* the loop: handleScroll() then compares the current
+		// position against itself and resolves to the visible state, rather than
+		// against wherever the viewport sat before a swap or a resize moved it.
+		// Judged against that stale value a refresh could hand the header
+		// `dsgo-scroll-down` and slide it out of view until the next real scroll
+		// event corrected it. Before the listeners were batched, every
+		// handleScroll() call ended by syncing this, which had the same effect —
+		// the reference was always current by the time a refresh read it.
+		lastScrollY = window.scrollY;
+
 		forEachLiveHeader((header) => {
 			setupOverlayHeaderHeight(header);
 			applyTopBarOffset(header);
 			handleScroll(header);
 		});
-
-		// Same reference advance handleScrollAll() makes, for the same reason:
-		// every handleScroll() call used to end by syncing this, so a refresh
-		// triggered by resize, load, or a soft navigation kept the direction
-		// reference current. Leaving it stale here would have the next real
-		// scroll event judge up-vs-down against a position the viewport has
-		// already moved away from.
-		lastScrollY = window.scrollY;
 	}
 
 	/**
