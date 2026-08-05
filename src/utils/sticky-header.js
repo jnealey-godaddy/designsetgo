@@ -586,6 +586,14 @@ import './sticky-header.scss';
 			applyTopBarOffset(header);
 			handleScroll(header);
 		});
+
+		// Same reference advance handleScrollAll() makes, for the same reason:
+		// every handleScroll() call used to end by syncing this, so a refresh
+		// triggered by resize, load, or a soft navigation kept the direction
+		// reference current. Leaving it stale here would have the next real
+		// scroll event judge up-vs-down against a position the viewport has
+		// already moved away from.
+		lastScrollY = window.scrollY;
 	}
 
 	/**

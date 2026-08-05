@@ -86,8 +86,34 @@ function loadStickyHeader() {
 	});
 }
 
+// Captured before the spies below replace them.
+const addDocumentListener = document.addEventListener.bind(document);
+const addWindowListener = window.addEventListener.bind(window);
+
 describe('sticky header across a soft reload', () => {
+	// jsdom hands every test in a file the same document and window, and
+	// jest.isolateModules only resets the module registry — the listeners a
+	// previous test's module instance bound to those globals stay put. Each
+	// instance then keeps its own `headers` set and its own `lastScrollY`, so a
+	// later test sees several instances racing over the same header and the
+	// staler reference wins. Track what gets bound and unbind it per test.
+	let boundListeners = [];
+
 	beforeEach(() => {
+		boundListeners = [];
+		jest.spyOn(document, 'addEventListener').mockImplementation(
+			(type, handler, options) => {
+				boundListeners.push([document, type, handler, options]);
+				addDocumentListener(type, handler, options);
+			}
+		);
+		jest.spyOn(window, 'addEventListener').mockImplementation(
+			(type, handler, options) => {
+				boundListeners.push([window, type, handler, options]);
+				addWindowListener(type, handler, options);
+			}
+		);
+
 		jest.useFakeTimers();
 		// Run rAF callbacks off the timer queue so the gate can be stepped.
 		window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
@@ -104,6 +130,11 @@ describe('sticky header across a soft reload', () => {
 	});
 
 	afterEach(() => {
+		boundListeners.forEach(([target, type, handler, options]) =>
+			target.removeEventListener(type, handler, options)
+		);
+		boundListeners = [];
+		jest.restoreAllMocks();
 		jest.useRealTimers();
 	});
 
@@ -158,6 +189,25 @@ describe('sticky header across a soft reload', () => {
 			scrollTo(0);
 			expect(header.classList.contains('dsgo-scrolled')).toBe(false);
 		}
+	});
+
+	it('keeps the scroll-direction reference current across a swap', () => {
+		window.dsgStickyHeaderSettings.hideOnScrollDown = true;
+		buildSite();
+		loadStickyHeader();
+
+		scrollTo(400);
+
+		// The swap can land the viewport somewhere else — a shorter page clamps
+		// the offset — without a `scroll` event having reported it yet.
+		window.scrollY = 100;
+		const rebuilt = softReloadFullBody();
+
+		// Genuinely downward from 100. Judged against the pre-swap 400 it would
+		// read as upward instead.
+		scrollTo(300);
+		expect(rebuilt.classList.contains('dsgo-scroll-down')).toBe(true);
+		expect(rebuilt.classList.contains('dsgo-scroll-up')).toBe(false);
 	});
 
 	it('leaves the footer template part out of the scrolled state', () => {
