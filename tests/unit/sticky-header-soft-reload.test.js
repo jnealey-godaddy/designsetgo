@@ -227,6 +227,52 @@ describe('sticky header across a soft reload', () => {
 		expect(rebuilt.classList.contains('dsgo-scroll-down')).toBe(false);
 	});
 
+	/**
+	 * Event types bound on `window` so far this test.
+	 *
+	 * @return {string[]} Bound event types.
+	 */
+	function windowListenerTypes() {
+		return boundListeners
+			.filter(([target]) => target === window)
+			.map(([, type]) => type);
+	}
+
+	it('binds no scroll or resize listener when nothing matches', () => {
+		// A classic theme renders no template part, but the script still loads.
+		document.body.innerHTML = '<div class="entry-content"></div>';
+
+		loadStickyHeader();
+
+		expect(windowListenerTypes()).not.toContain('scroll');
+		expect(windowListenerTypes()).not.toContain('resize');
+	});
+
+	it('binds them once a swap introduces the first header', () => {
+		document.body.innerHTML = '<div class="entry-content"></div>';
+		loadStickyHeader();
+
+		const header = softReloadFullBody();
+		expect(windowListenerTypes()).toContain('scroll');
+
+		scrollTo(400);
+		expect(header.classList.contains('dsgo-scrolled')).toBe(true);
+	});
+
+	it('binds the scroll listener only once across repeated swaps', () => {
+		buildSite();
+		loadStickyHeader();
+
+		for (let i = 0; i < 3; i++) {
+			softReloadFullBody();
+		}
+
+		const scrollListeners = windowListenerTypes().filter(
+			(type) => type === 'scroll'
+		);
+		expect(scrollListeners).toHaveLength(1);
+	});
+
 	it('leaves the footer template part out of the scrolled state', () => {
 		buildSite();
 		loadStickyHeader();
