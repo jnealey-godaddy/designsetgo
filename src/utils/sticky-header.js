@@ -45,8 +45,14 @@ import './sticky-header.scss';
 
 	// Default selector — used when the admin-provided customSelector is empty
 	// or invalid (a typo would otherwise throw DOMException and kill all JS).
+	//
+	// `:not(footer)` mirrors the stylesheet, which excludes footers from every
+	// sticky rule. Most themes put a navigation in the footer too, so without it
+	// the `:has(.wp-block-navigation)` clause matches the footer template part
+	// and hands it `dsgo-scrolled` — which the shadow and shrink-logo rules act
+	// on, dropping a header shadow across the top of the footer on scroll.
 	const defaultSelector =
-		'body:not(.block-editor-page) .wp-block-template-part:first-of-type, body:not(.block-editor-page) header.wp-block-template-part, body:not(.block-editor-page) .wp-block-template-part:has(.wp-block-navigation), body:not(.block-editor-page) .wp-block-template-part:has(.is-position-sticky)';
+		'body:not(.block-editor-page) .wp-block-template-part:not(footer):first-of-type, body:not(.block-editor-page) header.wp-block-template-part, body:not(.block-editor-page) .wp-block-template-part:not(footer):has(.wp-block-navigation), body:not(.block-editor-page) .wp-block-template-part:not(footer):has(.is-position-sticky)';
 
 	const selector = settings.customSelector || defaultSelector;
 
@@ -76,6 +82,24 @@ import './sticky-header.scss';
 	// State tracking
 	let lastScrollY = window.scrollY;
 	let ticking = false;
+
+	// Every header currently under management. The window listeners are bound
+	// once, at the bottom of init(), and iterate this set — never one listener
+	// per header. Both halves of that matter:
+	//
+	// 1. `ticking` above is a single shared rAF gate. With a listener per
+	//    header, the first one registered wins the gate on every scroll event
+	//    and only clears it after its own callback has run, so every listener
+	//    registered later is starved permanently. That silently broke any page
+	//    matching two headers (a footer template part containing a navigation
+	//    matches the default selector too).
+	// 2. A soft reload that swaps the DOM leaves the previous header's listener
+	//    bound to a detached node — which, being the first registered, is
+	//    exactly the listener that keeps winning the gate. The live header then
+	//    never gets `dsgo-scrolled` and a hard reload is the only recovery.
+	//    Holding the headers in a prunable set is what lets a swapped-out
+	//    header actually stop being serviced.
+	const headers = new Set();
 
 	// The element whose height the overlay pull-up in `_sticky-header.scss`
 	// consumes — the template part that is a direct child of `.wp-site-blocks`.
@@ -156,8 +180,13 @@ import './sticky-header.scss';
 	}
 
 	/**
-	 * Set up overlay header height measurement for a header element.
-	 * Measures the header so CSS can pull content up by the right amount.
+	 * Measure the overlay header so CSS can pull content up by the right amount,
+	 * and give the first content block that height back as padding.
+	 *
+	 * Re-entrant by design: the shared resize/load listeners in init() and the
+	 * soft-reload refresh both call this again rather than each binding their
+	 * own listener per header, which is what used to leak a listener — and a
+	 * stale header reference — on every content swap.
 	 *
 	 * @param {HTMLElement} header Header element
 	 */
@@ -201,8 +230,6 @@ import './sticky-header.scss';
 		};
 		setHeaderHeight();
 		applyOverlayHeroPadding(header);
-		window.addEventListener('resize', setHeaderHeight);
-		window.addEventListener('load', setHeaderHeight, { once: true });
 	}
 
 	/**
@@ -456,23 +483,95 @@ import './sticky-header.scss';
 				header.classList.remove('dsgo-scroll-down');
 			}
 		}
+	}
 
-		lastScrollY = scrollY;
+	/**
+	 * Drop any header that has left the document, then run `callback` against
+	 * the ones still connected.
+	 *
+	 * Pruning is deliberately lazy rather than observer-driven. The event that
+	 * detaches a header is the same one that replaces it — a soft navigation
+	 * ends by dispatching `dsgo-content-loaded`, which runs initAll() and so
+	 * reaches this function — so the detached node is dropped as part of the
+	 * swap, not at some later scroll. A MutationObserver would buy nothing for
+	 * that path and cost a permanent observer on every page.
+	 *
+	 * @param {(header: HTMLElement) => void} callback Per-header work
+	 */
+	function forEachLiveHeader(callback) {
+		headers.forEach((header) => {
+			if (header.isConnected) {
+				callback(header);
+			} else {
+				headers.delete(header);
+			}
+		});
+	}
+
+	/**
+	 * Apply the scroll state to every managed header.
+	 *
+	 * `lastScrollY` advances once for the whole batch rather than inside
+	 * handleScroll: updating it per header would leave every header after the
+	 * first comparing against the current position, so hide-on-scroll-down
+	 * would never resolve a direction for any of them.
+	 */
+	function handleScrollAll() {
+		forEachLiveHeader(handleScroll);
+		lastScrollY = window.scrollY;
 	}
 
 	/**
 	 * Request animation frame wrapper for scroll handling
-	 *
-	 * @param {HTMLElement} header Header element
 	 */
-	function onScroll(header) {
+	function onScroll() {
 		if (!ticking) {
 			window.requestAnimationFrame(() => {
-				handleScroll(header);
+				handleScrollAll();
 				ticking = false;
 			});
 			ticking = true;
 		}
+	}
+
+	/**
+	 * Bind the shared scroll and resize listeners, once, the first time a header
+	 * registers.
+	 *
+	 * These two were previously bound inside initStickyHeader(), so a page whose
+	 * theme matched no template part — a classic theme, most often, since the
+	 * stylesheet and script load everywhere — bound neither. Binding them
+	 * eagerly in init() instead would have that page schedule a rAF on every
+	 * scroll event just to walk an empty set. Deferring to first registration
+	 * keeps the old "no headers, no listeners" property while still binding only
+	 * one listener no matter how many headers arrive, which is the whole point
+	 * of the batching. A header introduced later by a soft navigation binds them
+	 * then.
+	 */
+	let scrollListenersBound = false;
+	function bindScrollListeners() {
+		if (scrollListenersBound) {
+			return;
+		}
+		scrollListenersBound = true;
+
+		window.addEventListener('scroll', onScroll, { passive: true });
+
+		// Handle resize for mobile breakpoint changes
+		let resizeTimeout;
+		window.addEventListener('resize', () => {
+			clearTimeout(resizeTimeout);
+			resizeTimeout = setTimeout(() => {
+				refreshAll();
+				forEachLiveHeader((header) => {
+					// Re-measure logos only when not currently scrolled so we
+					// capture the true natural size, not the shrunk size.
+					if (!header.classList.contains('dsgo-scrolled')) {
+						measureLogos(header);
+					}
+				});
+			}, 150);
+		});
 	}
 
 	/**
@@ -486,9 +585,6 @@ import './sticky-header.scss';
 			return;
 		}
 		header.dataset.dsgoInitialized = 'true';
-
-		// Set up overlay header height measurement (if applicable)
-		setupOverlayHeaderHeight(header);
 
 		// Apply custom properties
 		applyCustomProperties(header);
@@ -513,27 +609,41 @@ import './sticky-header.scss';
 		// Apply top bar offset (negative top so top bar scrolls away first)
 		applyTopBarOffset(header);
 
-		// Handle initial state
-		handleScroll(header);
+		// Hand the header to the shared window listeners, binding them if this is
+		// the first one. The overlay measurement and the initial scroll state
+		// follow from refreshAll(), once every header is registered.
+		headers.add(header);
+		bindScrollListeners();
+	}
 
-		// Add scroll listener
-		window.addEventListener('scroll', () => onScroll(header), {
-			passive: true,
-		});
+	/**
+	 * Re-run every measurement that depends on surrounding DOM, for all managed
+	 * headers. Called once per init and again after each soft navigation.
+	 *
+	 * A soft reload that replaces only the content wrapper leaves the header
+	 * element — and therefore its `dsgoInitialized` flag — intact, so
+	 * initStickyHeader() short-circuits for it. The block the overlay clearance
+	 * was written to lives in the swapped region though, and comes back without
+	 * it, dropping the first section under the header. Re-running is safe: the
+	 * clearance caches the authored padding on the element it writes to, so it
+	 * cannot compound.
+	 */
+	function refreshAll() {
+		// A refresh is a position resync, not a scroll, so the reference
+		// advances *before* the loop: handleScroll() then compares the current
+		// position against itself and resolves to the visible state, rather than
+		// against wherever the viewport sat before a swap or a resize moved it.
+		// Judged against that stale value a refresh could hand the header
+		// `dsgo-scroll-down` and slide it out of view until the next real scroll
+		// event corrected it. Before the listeners were batched, every
+		// handleScroll() call ended by syncing this, which had the same effect —
+		// the reference was always current by the time a refresh read it.
+		lastScrollY = window.scrollY;
 
-		// Handle resize for mobile breakpoint changes
-		let resizeTimeout;
-		window.addEventListener('resize', () => {
-			clearTimeout(resizeTimeout);
-			resizeTimeout = setTimeout(() => {
-				handleScroll(header);
-				applyTopBarOffset(header);
-				// Re-measure logos only when not currently scrolled so we
-				// capture the true natural size, not the shrunk size.
-				if (!header.classList.contains('dsgo-scrolled')) {
-					measureLogos(header);
-				}
-			}, 150);
+		forEachLiveHeader((header) => {
+			setupOverlayHeaderHeight(header);
+			applyTopBarOffset(header);
+			handleScroll(header);
 		});
 	}
 
@@ -541,8 +651,8 @@ import './sticky-header.scss';
 	 * Initialize all sticky headers found in the DOM
 	 */
 	function initAll() {
-		const headers = safeQueryAll(selector);
-		headers.forEach(initStickyHeader);
+		safeQueryAll(selector).forEach(initStickyHeader);
+		refreshAll();
 	}
 
 	/**
@@ -556,15 +666,14 @@ import './sticky-header.scss';
 			initAll();
 		}
 
-		// Re-run top bar offset and logo measurement after all resources load.
-		// Late-loading fonts/images can change the top bar height and the
-		// logo's rendered size measured at DOMContentLoaded.
+		// Re-run measurement after all resources load. Late-loading fonts and
+		// images change the header height, the top bar height, and the logo's
+		// rendered size measured at DOMContentLoaded.
 		window.addEventListener(
 			'load',
 			() => {
-				const headers = safeQueryAll(selector);
-				headers.forEach((header) => {
-					applyTopBarOffset(header);
+				refreshAll();
+				forEachLiveHeader((header) => {
 					if (!header.classList.contains('dsgo-scrolled')) {
 						measureLogos(header);
 					}

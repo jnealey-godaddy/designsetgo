@@ -271,3 +271,19 @@ Verification (all green, no regressions):
 - Manual browser smoke test (brief Step 7: admin toggle → frontend fade-in → per-block Off/Custom override) was NOT performed — flagged in the Task 8 report as a recommended human follow-up; a subagent cannot reliably drive a browser, and the opt-out render path is already covered by the Task 4 PHP injector unit tests.
 
 Committed CHANGELOG + doc-string + SCSS together as a single `docs(changelog):` commit (no code/logic changes, so no build artifact commit needed beyond what npm run build already produces at release time).
+
+### Sticky header dies after an Airo soft reload (agent: sticky-header-soft-reload-2026-08-05)
+
+Reported by a dev testing Airo for WordPress: switching style cards on a page with an overlay header leaves the header transparent but scrolling no longer fades in the background; only a hard reload recovers it.
+
+Root cause is entirely in `src/utils/sticky-header.js`, but the trigger lives cross-repo:
+
+- Airo's soft reload (`wp-site-designer-mu-plugins` → `packages/native-ui/src/utils/frontendRefresh.ts`, `softReload()`) tries eight `CONTENT_SELECTORS` (`main#main`, `main.site-main`, `#primary`, `main`, `#content`, `.site-content`, `#page`, `.site`) and swaps only that wrapper. When none match it replaces the whole `<body>`.
+- Airo overrides TT5's `page` template with `header template part + wp:post-content + footer template part` — **zero** of those selectors render, so every Airo *page* takes the full-`<body>` branch and the header template part is destroyed and rebuilt. (Its `home`/`single` templates do keep a `<main>`, so blog routes were unaffected — which is why this only showed up on pages.)
+- `sticky-header.js` bound one `scroll` listener per header but gated them all behind a single module-scoped `ticking` flag. The first listener registered claimed the gate every frame and released it only after its own callback, starving every later one. Nothing unbound the listener for a header the swap detached — and that dead listener, being oldest, was the gate holder. Verified in Chrome: after the swap the **detached** header kept receiving `dsgo-scrolled` while the live one never did.
+
+Fix: bind the window listeners once and iterate a prunable `headers` Set (`forEachLiveHeader` drops detached nodes); move `lastScrollY` out of `handleScroll` so it advances once per batch instead of per header; drop the per-header `resize`/`load` listeners that `setupOverlayHeaderHeight` used to bind (they leaked one pair per swap) and fold that measurement into the shared handlers via `refreshAll()`, which also re-applies the overlay hero clearance after a content-wrapper swap.
+
+Un-masking note: the shared gate had been hiding a second bug. The default selector's `:has(.wp-block-navigation)` clause matches the **footer** template part on most themes, so once both were serviced the footer picked up `dsgo-scrolled` and rendered the header's box-shadow across its top. Added `:not(footer)` to the three footer-reachable clauses, mirroring the `:not(footer)` the stylesheet already uses.
+
+Regression test: `tests/unit/sticky-header-soft-reload.test.js` (3 of its 5 cases fail against the unfixed source). Full suite 334 suites / 9334 tests green; build + `lint:js` clean.

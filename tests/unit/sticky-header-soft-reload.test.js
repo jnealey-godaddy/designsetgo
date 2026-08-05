@@ -1,0 +1,288 @@
+/**
+ * Sticky header survival across a soft reload — sticky-header.js scroll wiring
+ *
+ * Airo's AJAX soft reload swaps the DOM in place. When the page template exposes
+ * no content wrapper (`main`, `#content`, `.site`…) the swap replaces the whole
+ * `<body>`, so the header template part is destroyed and rebuilt.
+ *
+ * That used to leave the header permanently dead:
+ *
+ * 1. Each header got its own `scroll` listener, but they shared one
+ *    module-scoped rAF gate. The first listener registered claimed the gate on
+ *    every scroll event and only released it after its own callback, starving
+ *    every listener registered later.
+ * 2. Nothing dropped the listener belonging to a header the swap had detached —
+ *    and that dead listener, being the oldest, was exactly the one holding the
+ *    gate. The live header never received `dsgo-scrolled`, so the scrolled
+ *    background never appeared until a full page reload.
+ *
+ * The same shared gate silently starved the second match on any page where the
+ * selector matched twice, which is every theme whose footer holds a navigation.
+ */
+
+const HEADER_HEIGHT = 80;
+
+/**
+ * Build a block-theme body: header template part, content, and a footer that
+ * also contains a navigation.
+ *
+ * @return {HTMLElement} The header template part.
+ */
+function buildSite() {
+	document.body.className = 'dsgo-page-overlay-header';
+	document.body.innerHTML = `
+		<div class="wp-site-blocks">
+			<header class="wp-block-template-part">
+				<div class="wp-block-group">
+					<nav class="wp-block-navigation"></nav>
+				</div>
+			</header>
+			<div class="entry-content">
+				<div class="wp-block-cover"></div>
+			</div>
+			<footer class="wp-block-template-part">
+				<div class="wp-block-group">
+					<nav class="wp-block-navigation"></nav>
+				</div>
+			</footer>
+		</div>
+	`;
+
+	const header = document.querySelector('.wp-site-blocks > header');
+	header.getBoundingClientRect = () => ({ height: HEADER_HEIGHT, top: 0 });
+	return header;
+}
+
+/**
+ * Replace the whole `<body>`, the way softReload() does when no content
+ * wrapper matches, and fire the event the swap dispatches afterwards.
+ *
+ * @return {HTMLElement} The rebuilt header template part.
+ */
+function softReloadFullBody() {
+	buildSite();
+	document.dispatchEvent(new Event('dsgo-content-loaded'));
+	return document.querySelector('.wp-site-blocks > header');
+}
+
+/**
+ * Scroll and let the rAF-gated handler run.
+ *
+ * @param {number} y Target scroll position.
+ */
+function scrollTo(y) {
+	window.scrollY = y;
+	window.dispatchEvent(new Event('scroll'));
+	jest.runOnlyPendingTimers();
+}
+
+/**
+ * Load sticky-header.js fresh. The module is an IIFE that inits on import, so
+ * the DOM has to be in place first.
+ */
+function loadStickyHeader() {
+	jest.isolateModules(() => {
+		require('../../src/utils/sticky-header.js');
+	});
+}
+
+// Captured before the spies below replace them.
+const addDocumentListener = document.addEventListener.bind(document);
+const addWindowListener = window.addEventListener.bind(window);
+
+describe('sticky header across a soft reload', () => {
+	// jsdom hands every test in a file the same document and window, and
+	// jest.isolateModules only resets the module registry — the listeners a
+	// previous test's module instance bound to those globals stay put. Each
+	// instance then keeps its own `headers` set and its own `lastScrollY`, so a
+	// later test sees several instances racing over the same header and the
+	// staler reference wins. Track what gets bound and unbind it per test.
+	let boundListeners = [];
+
+	beforeEach(() => {
+		boundListeners = [];
+		jest.spyOn(document, 'addEventListener').mockImplementation(
+			(type, handler, options) => {
+				boundListeners.push([document, type, handler, options]);
+				addDocumentListener(type, handler, options);
+			}
+		);
+		jest.spyOn(window, 'addEventListener').mockImplementation(
+			(type, handler, options) => {
+				boundListeners.push([window, type, handler, options]);
+				addWindowListener(type, handler, options);
+			}
+		);
+
+		jest.useFakeTimers();
+		// Run rAF callbacks off the timer queue so the gate can be stepped.
+		window.requestAnimationFrame = (cb) => setTimeout(cb, 0);
+		window.scrollY = 0;
+		document.documentElement.removeAttribute('style');
+		document.body.className = '';
+		document.body.innerHTML = '';
+		window.dsgStickyHeaderSettings = {
+			enable: true,
+			mobileEnabled: true,
+			mobileBreakpoint: 768,
+			scrollThreshold: 50,
+		};
+	});
+
+	afterEach(() => {
+		boundListeners.forEach(([target, type, handler, options]) =>
+			target.removeEventListener(type, handler, options)
+		);
+		boundListeners = [];
+		jest.restoreAllMocks();
+		jest.useRealTimers();
+	});
+
+	it('toggles dsgo-scrolled on the live header before any swap', () => {
+		const header = buildSite();
+		loadStickyHeader();
+
+		scrollTo(400);
+		expect(header.classList.contains('dsgo-scrolled')).toBe(true);
+
+		scrollTo(0);
+		expect(header.classList.contains('dsgo-scrolled')).toBe(false);
+	});
+
+	it('services the rebuilt header after a full-body swap', () => {
+		const original = buildSite();
+		loadStickyHeader();
+
+		scrollTo(400);
+		expect(original.classList.contains('dsgo-scrolled')).toBe(true);
+		scrollTo(0);
+
+		const rebuilt = softReloadFullBody();
+		expect(rebuilt).not.toBe(original);
+
+		scrollTo(400);
+		expect(rebuilt.classList.contains('dsgo-scrolled')).toBe(true);
+
+		scrollTo(0);
+		expect(rebuilt.classList.contains('dsgo-scrolled')).toBe(false);
+	});
+
+	it('stops servicing a header the swap detached', () => {
+		const original = buildSite();
+		loadStickyHeader();
+
+		softReloadFullBody();
+		scrollTo(400);
+
+		expect(original.isConnected).toBe(false);
+		expect(original.classList.contains('dsgo-scrolled')).toBe(false);
+	});
+
+	it('keeps working across repeated swaps', () => {
+		buildSite();
+		loadStickyHeader();
+
+		for (let i = 0; i < 4; i++) {
+			const header = softReloadFullBody();
+			scrollTo(400);
+			expect(header.classList.contains('dsgo-scrolled')).toBe(true);
+			scrollTo(0);
+			expect(header.classList.contains('dsgo-scrolled')).toBe(false);
+		}
+	});
+
+	it('keeps the scroll-direction reference current across a swap', () => {
+		window.dsgStickyHeaderSettings.hideOnScrollDown = true;
+		buildSite();
+		loadStickyHeader();
+
+		scrollTo(400);
+
+		// The swap can land the viewport somewhere else — a shorter page clamps
+		// the offset — without a `scroll` event having reported it yet.
+		window.scrollY = 100;
+		const rebuilt = softReloadFullBody();
+
+		// Genuinely downward from 100. Judged against the pre-swap 400 it would
+		// read as upward instead.
+		scrollTo(300);
+		expect(rebuilt.classList.contains('dsgo-scroll-down')).toBe(true);
+		expect(rebuilt.classList.contains('dsgo-scroll-up')).toBe(false);
+	});
+
+	it('does not hide the header on a refresh that finds a moved viewport', () => {
+		window.dsgStickyHeaderSettings.hideOnScrollDown = true;
+		buildSite();
+		loadStickyHeader();
+
+		scrollTo(400);
+
+		// Viewport further down than the last reported scroll — a resize can
+		// land here when a mobile URL bar collapses.
+		window.scrollY = 800;
+		const rebuilt = softReloadFullBody();
+
+		// A refresh is not a scroll. Judged against the stale 400 this reads as
+		// downward and slides the header off-screen until the next real scroll.
+		expect(rebuilt.classList.contains('dsgo-scroll-down')).toBe(false);
+	});
+
+	/**
+	 * Event types bound on `window` so far this test.
+	 *
+	 * @return {string[]} Bound event types.
+	 */
+	function windowListenerTypes() {
+		return boundListeners
+			.filter(([target]) => target === window)
+			.map(([, type]) => type);
+	}
+
+	it('binds no scroll or resize listener when nothing matches', () => {
+		// A classic theme renders no template part, but the script still loads.
+		document.body.innerHTML = '<div class="entry-content"></div>';
+
+		loadStickyHeader();
+
+		expect(windowListenerTypes()).not.toContain('scroll');
+		expect(windowListenerTypes()).not.toContain('resize');
+	});
+
+	it('binds them once a swap introduces the first header', () => {
+		document.body.innerHTML = '<div class="entry-content"></div>';
+		loadStickyHeader();
+
+		const header = softReloadFullBody();
+		expect(windowListenerTypes()).toContain('scroll');
+
+		scrollTo(400);
+		expect(header.classList.contains('dsgo-scrolled')).toBe(true);
+	});
+
+	it('binds the scroll listener only once across repeated swaps', () => {
+		buildSite();
+		loadStickyHeader();
+
+		for (let i = 0; i < 3; i++) {
+			softReloadFullBody();
+		}
+
+		const scrollListeners = windowListenerTypes().filter(
+			(type) => type === 'scroll'
+		);
+		expect(scrollListeners).toHaveLength(1);
+	});
+
+	it('leaves the footer template part out of the scrolled state', () => {
+		buildSite();
+		loadStickyHeader();
+
+		scrollTo(400);
+
+		// The footer holds a navigation, so the pre-fix selector matched it.
+		// Handing it dsgo-scrolled paints the header's shadow and shrinks its
+		// logo — the stylesheet excludes footers from every sticky rule.
+		const footer = document.querySelector('.wp-site-blocks > footer');
+		expect(footer.classList.contains('dsgo-scrolled')).toBe(false);
+	});
+});
