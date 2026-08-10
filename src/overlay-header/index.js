@@ -70,8 +70,8 @@ const OverlayHeaderPanel = () => {
 		setMeta({ ...meta, dsgo_overlay_skip_top_bar: value });
 	};
 
-	// Only show for content post types.
-	if (!postType || postType === 'attachment') {
+	// Only show for pages — template parts and other post types don't support meta.
+	if (postType !== 'page') {
 		return null;
 	}
 
