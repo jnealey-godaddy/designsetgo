@@ -24,13 +24,10 @@ import {
  * Overlay Header Panel Component
  */
 const OverlayHeaderPanel = () => {
-	const { postType, postTypeObject } = useSelect((select) => {
-		const type = select('core/editor').getCurrentPostType();
-		return {
-			postType: type,
-			postTypeObject: select('core').getPostType(type),
-		};
-	}, []);
+	const postType = useSelect(
+		(select) => select('core/editor').getCurrentPostType(),
+		[]
+	);
 
 	const colors = useSelect((select) => {
 		const settings = select('core/block-editor').getSettings();
@@ -73,9 +70,8 @@ const OverlayHeaderPanel = () => {
 		setMeta({ ...meta, dsgo_overlay_skip_top_bar: value });
 	};
 
-	// Only show for viewable post types that support meta (matches PHP registration surface).
-	// Excludes template parts, templates, navigation, and other block-editor-only types.
-	if (!postTypeObject?.viewable || postType === 'attachment') {
+	// Hide when meta is undefined — covers both loading state and unregistered post types.
+	if (typeof meta === 'undefined') {
 		return null;
 	}
 
