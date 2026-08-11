@@ -155,3 +155,62 @@ describe('grid view.js - DSGGrid', () => {
 		).toBe(false);
 	});
 });
+
+describe('grid view.js - rendered column count gates row matching', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+		jest.restoreAllMocks();
+	});
+
+	/**
+	 * jsdom does no layout, so stub the resolved track list the way a browser
+	 * would report it: space-separated used values, one per rendered column.
+	 *
+	 * @param {number} count Rendered column count to report.
+	 */
+	function stubTracks(count) {
+		const real = window.getComputedStyle.bind(window);
+		jest.spyOn(window, 'getComputedStyle').mockImplementation((el) => {
+			if (el.classList.contains('dsgo-grid__inner')) {
+				return { gridTemplateColumns: '364px '.repeat(count).trim() };
+			}
+			return real(el);
+		});
+	}
+
+	test('reads the rendered count off the resolved track list', () => {
+		stubTracks(2);
+		const grid = new DSGGrid(buildGrid({ cols: 3 }));
+		expect(grid.getRenderedColumns(3)).toBe(2);
+	});
+
+	test('falls back to the configured count when the track list is unreadable', () => {
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			gridTemplateColumns: 'none',
+		});
+		const grid = new DSGGrid(buildGrid({ cols: 3 }));
+		expect(grid.getRenderedColumns(3)).toBe(3);
+	});
+
+	test('a 3-column grid wrapped to one column does not activate row matching', () => {
+		// The regression: cards spanning --dsgo-row-count row tracks in a
+		// single-column grid absorb the row gaps and inflate for no benefit.
+		stubTracks(1);
+		const grid = new DSGGrid(buildGrid({ cols: 3, cards: 3, rows: 4 }));
+		grid.handleResize();
+		expect(
+			grid.inner.classList.contains('dsgo-grid__inner--rows-matched')
+		).toBe(false);
+		expect(grid.inner.style.getPropertyValue('--dsgo-row-count')).toBe('');
+	});
+
+	test('a 3-column grid still rendering 3 columns activates as before', () => {
+		stubTracks(3);
+		const grid = new DSGGrid(buildGrid({ cols: 3, cards: 3, rows: 4 }));
+		grid.handleResize();
+		expect(
+			grid.inner.classList.contains('dsgo-grid__inner--rows-matched')
+		).toBe(true);
+		expect(grid.inner.style.getPropertyValue('--dsgo-row-count')).toBe('4');
+	});
+});

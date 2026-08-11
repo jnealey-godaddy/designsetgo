@@ -34,7 +34,7 @@ import {
 } from '@wordpress/components';
 import { grid as gridIcon } from '@wordpress/icons';
 import { DsgoInspectorPanel } from '../../components/shared';
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, useRef } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import {
 	convertPresetToCSSVar,
@@ -50,6 +50,7 @@ import {
 } from '../../utils/style-variation-classes';
 import { useGridRowMatch } from './utils/use-grid-row-match';
 import { getGridTemplateColumns } from './grid-columns';
+import { useRenderedColumns } from './utils/use-rendered-columns';
 
 /**
  * Grid Container Edit Component
@@ -137,12 +138,21 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	// count to publish (`--dsgo-row-count` + activation class). The frontend
 	// measures this from the DOM in view.js; in the editor the hook reads it
 	// from the block tree and the previewed device width.
-	const { isRowMatchActive, matchRowCount } = useGridRowMatch(clientId, {
-		matchRowHeights,
-		desktopColumns,
-		tabletColumns,
-		mobileColumns,
-	});
+	const { isRowMatchActive: isRowMatchConfigured, matchRowCount } =
+		useGridRowMatch(clientId, {
+			matchRowHeights,
+			desktopColumns,
+			tabletColumns,
+			mobileColumns,
+		});
+
+	// The configured column count is an upper bound — a column min width can
+	// drop a column rather than overflow (see ./grid-columns.js). Row matching
+	// is only meaningful once the grid actually renders 2+ columns; below that
+	// the row-track spans just absorb row gaps and inflate every card.
+	const innerRef = useRef();
+	const renderedColumns = useRenderedColumns(innerRef, desktopColumns || 3);
+	const isRowMatchActive = isRowMatchConfigured && renderedColumns > 1;
 
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
 	const hasOverlay = !!overlayColor || hasOverlayStyleClass(className);
@@ -229,6 +239,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	// Merge inner blocks props with inner styles
 	const innerBlocksProps = useInnerBlocksProps(
 		{
+			ref: innerRef,
 			className: [
 				'dsgo-grid__inner',
 				isRowMatchActive && 'dsgo-grid__inner--rows-matched',
