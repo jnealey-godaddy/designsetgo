@@ -134,6 +134,31 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		[clientId]
 	);
 
+	// Calculate inner styles declaratively (must match save.js EXACTLY)
+	// IMPORTANT: Always provide a default gap to prevent overlapping items
+	// Priority: blockGap (WordPress spacing) → custom rowGap/columnGap → preset fallback
+	// WordPress 6.1+ stores blockGap as object {top, left} for separate row/column gaps
+	// Also need to convert preset format (var:preset|spacing|X) to CSS variable
+	const blockGapValue = style?.spacing?.blockGap;
+	const isBlockGapObject =
+		typeof blockGapValue === 'object' && blockGapValue !== null;
+	const blockGapRow = convertPresetToCSSVar(
+		isBlockGapObject ? blockGapValue?.top : blockGapValue
+	);
+	const blockGapColumn = convertPresetToCSSVar(
+		isBlockGapObject ? blockGapValue?.left : blockGapValue
+	);
+	const defaultGap = 'var(--wp--preset--spacing--50)';
+	const resolvedColumnGap = blockGapColumn || columnGap || defaultGap;
+
+	// The desktop track list, shared by the inner styles below and the
+	// rendered-column measurement (which re-measures whenever it changes).
+	const gridTemplateColumns = getGridTemplateColumns(
+		columnMinWidth,
+		desktopColumns,
+		resolvedColumnGap
+	);
+
 	// "Align Rows": derive whether the subgrid is active and the per-card row
 	// count to publish (`--dsgo-row-count` + activation class). The frontend
 	// measures this from the DOM in view.js; in the editor the hook reads it
@@ -151,7 +176,11 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	// is only meaningful once the grid actually renders 2+ columns; below that
 	// the row-track spans just absorb row gaps and inflate every card.
 	const innerRef = useRef();
-	const renderedColumns = useRenderedColumns(innerRef, desktopColumns || 3);
+	const renderedColumns = useRenderedColumns(
+		innerRef,
+		desktopColumns || 3,
+		gridTemplateColumns
+	);
 	const isRowMatchActive = isRowMatchConfigured && renderedColumns > 1;
 
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
@@ -194,30 +223,9 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		},
 	});
 
-	// Calculate inner styles declaratively (must match save.js EXACTLY)
-	// IMPORTANT: Always provide a default gap to prevent overlapping items
-	// Priority: blockGap (WordPress spacing) → custom rowGap/columnGap → preset fallback
-	// WordPress 6.1+ stores blockGap as object {top, left} for separate row/column gaps
-	// Also need to convert preset format (var:preset|spacing|X) to CSS variable
-	const blockGapValue = style?.spacing?.blockGap;
-	const isBlockGapObject =
-		typeof blockGapValue === 'object' && blockGapValue !== null;
-	const blockGapRow = convertPresetToCSSVar(
-		isBlockGapObject ? blockGapValue?.top : blockGapValue
-	);
-	const blockGapColumn = convertPresetToCSSVar(
-		isBlockGapObject ? blockGapValue?.left : blockGapValue
-	);
-	const defaultGap = 'var(--wp--preset--spacing--50)';
-	const resolvedColumnGap = blockGapColumn || columnGap || defaultGap;
-
 	const innerStyles = {
 		display: 'grid',
-		gridTemplateColumns: getGridTemplateColumns(
-			columnMinWidth,
-			desktopColumns,
-			resolvedColumnGap
-		),
+		gridTemplateColumns,
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,
 		columnGap: resolvedColumnGap,

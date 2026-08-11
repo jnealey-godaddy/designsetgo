@@ -38,18 +38,23 @@ function readColumnCount(element, fallback) {
 /**
  * Track the rendered column count of the element held by `ref`.
  *
- * @param {Object} ref      Ref holding the grid container element.
- * @param {number} fallback Count to report before the first measurement, and
- *                          whenever the track list can't be read.
+ * @param {Object} ref       Ref holding the grid container element.
+ * @param {number} fallback  Count to report before the first measurement, and
+ *                           whenever the track list can't be read.
+ * @param {string} trackList The authored `grid-template-columns` value. Never
+ *                           read — it's the re-measure trigger. Editing the
+ *                           column min width or the gap changes the resolved
+ *                           track count without necessarily resizing the
+ *                           container itself, so the observer alone can leave
+ *                           the count stale.
  * @return {number} Rendered column count.
  */
-export function useRenderedColumns(ref, fallback) {
+export function useRenderedColumns(ref, fallback, trackList) {
 	const [columns, setColumns] = useState(fallback);
 
 	useEffect(() => {
 		const element = ref.current;
-		const view = element?.ownerDocument?.defaultView;
-		if (!element || !view?.ResizeObserver) {
+		if (!element) {
 			return undefined;
 		}
 
@@ -61,12 +66,22 @@ export function useRenderedColumns(ref, fallback) {
 			setColumns((current) => (current === next ? current : next));
 		};
 
+		// Measure BEFORE subscribing, so the count is right even where
+		// ResizeObserver is missing. The observer only adds the ability to keep
+		// the count right; going without it must not pin the value at the
+		// configured count forever, which would leave row matching active on a
+		// grid that has actually wrapped to one column.
 		measure();
+
+		const view = element.ownerDocument?.defaultView;
+		if (!view?.ResizeObserver) {
+			return undefined;
+		}
 
 		const observer = new view.ResizeObserver(measure);
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, [ref, fallback]);
+	}, [ref, fallback, trackList]);
 
 	return columns;
 }
