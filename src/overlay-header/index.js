@@ -70,8 +70,8 @@ const OverlayHeaderPanel = () => {
 		setMeta({ ...meta, dsgo_overlay_skip_top_bar: value });
 	};
 
-	// Only show for content post types.
-	if (!postType || postType === 'attachment') {
+	// Hide when meta is undefined — covers both loading state and unregistered post types.
+	if (typeof meta === 'undefined') {
 		return null;
 	}
 
