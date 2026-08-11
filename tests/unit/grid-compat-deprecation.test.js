@@ -41,11 +41,14 @@ describe('grid site-designer compatibility deprecation (responsive tablet class)
 		expect(block.attributes.columnMinWidth).toBe('480px');
 		expect(block.attributes.className).toBeUndefined();
 
-		// Re-serializes to consistent current markup: one tablet-1 class, minmax
+		// Re-serializes to consistent current markup: one tablet-1 class, track
 		// rebuilt from the attribute.
 		const out = serialize(block);
 		expect(out).toContain('dsgo-grid-cols-tablet-1');
 		expect(out).not.toContain('dsgo-grid-cols-tablet-2');
-		expect(out).toContain('minmax(480px, 1fr)');
+		// Rebuilt from the attribute in the current auto-fill form, which drops a
+		// column instead of overflowing when 2 x 480px can't fit the container.
+		expect(out).toContain('repeat(auto-fill');
+		expect(out).toContain('max(480px');
 	});
 });

@@ -82,11 +82,21 @@
 			const config = this.getResponsiveColumns();
 
 			// Effective columns at the current breakpoint (desktop reports
-			// null, so fall back to the desktop column class).
-			const effectiveColumns =
+			// null, so fall back to the desktop column class), then narrowed
+			// to what the grid is actually rendering — a column min width can
+			// drop a column instead of overflowing.
+			//
+			// Only Align Rows consumes this, and the measurement forces a
+			// synchronous layout flush, so skip it entirely for grids without
+			// the feature: `applyRowMatching()` treats a falsy count the same
+			// way it treats a single column, and returns before using it.
+			const configuredColumns =
 				config.columns === null
 					? this.getDesktopColumns()
 					: config.columns;
+			const effectiveColumns = this.matchRows
+				? this.getRenderedColumns(configuredColumns)
+				: null;
 
 			// Desktop: Remove all constraints
 			if (config.breakpoint === 'desktop') {
@@ -112,6 +122,40 @@
 				}
 			}
 			return 1;
+		}
+
+		/**
+		 * Count the columns the grid is ACTUALLY rendering, by reading the
+		 * resolved track list off the computed style.
+		 *
+		 * This can be fewer than the configured desktop count: the column min
+		 * width builds an `auto-fill` track list that drops a column rather
+		 * than overflowing the container (see utils/grid-columns.js). Row
+		 * matching must key off the rendered count, not the configured one —
+		 * a card spanning `--dsgo-row-count` row tracks in a grid that has
+		 * wrapped to a single column absorbs the row gaps between those tracks
+		 * and grows taller for no benefit, since there is nothing beside it to
+		 * align to.
+		 *
+		 * @param {number} fallback Count to use when the track list is
+		 *                          unreadable (detached or `display: none`).
+		 * @return {number} Rendered column count.
+		 */
+		getRenderedColumns(fallback) {
+			const tracks = window.getComputedStyle(
+				this.inner
+			).gridTemplateColumns;
+
+			// 'none' (no grid), '' (detached / jsdom without layout), or any
+			// unresolved value: fall back to the configured count.
+			if (!tracks || tracks === 'none') {
+				return fallback;
+			}
+
+			// Resolved track lists are space-separated used values
+			// ('364px 364px 364px'). `minmax()`/`repeat()` only survive here if
+			// the browser could not resolve them, which the guard above covers.
+			return tracks.split(/\s+/).filter(Boolean).length || fallback;
 		}
 
 		/**
