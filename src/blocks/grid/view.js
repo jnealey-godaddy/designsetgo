@@ -85,11 +85,18 @@
 			// null, so fall back to the desktop column class), then narrowed
 			// to what the grid is actually rendering — a column min width can
 			// drop a column instead of overflowing.
+			//
+			// Only Align Rows consumes this, and the measurement forces a
+			// synchronous layout flush, so skip it entirely for grids without
+			// the feature: `applyRowMatching()` treats a falsy count the same
+			// way it treats a single column, and returns before using it.
 			const configuredColumns =
 				config.columns === null
 					? this.getDesktopColumns()
 					: config.columns;
-			const effectiveColumns = this.getRenderedColumns(configuredColumns);
+			const effectiveColumns = this.matchRows
+				? this.getRenderedColumns(configuredColumns)
+				: null;
 
 			// Desktop: Remove all constraints
 			if (config.breakpoint === 'desktop') {

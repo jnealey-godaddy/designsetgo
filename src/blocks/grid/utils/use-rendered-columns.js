@@ -12,7 +12,7 @@
  * The frontend does the same measurement in view.js (`getRenderedColumns`).
  */
 
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useLayoutEffect } from '@wordpress/element';
 
 /**
  * Read the resolved track count off an element's computed style.
@@ -52,7 +52,11 @@ function readColumnCount(element, fallback) {
 export function useRenderedColumns(ref, fallback, trackList) {
 	const [columns, setColumns] = useState(fallback);
 
-	useEffect(() => {
+	// Layout effect, not a plain effect: this runs after the DOM is in place but
+	// BEFORE paint, so a grid that actually wraps never paints a frame with row
+	// matching on. State starts at the configured count, which is only correct
+	// for a grid that doesn't wrap.
+	useLayoutEffect(() => {
 		const element = ref.current;
 		if (!element) {
 			return undefined;

@@ -214,3 +214,27 @@ describe('grid view.js - rendered column count gates row matching', () => {
 		expect(grid.inner.style.getPropertyValue('--dsgo-row-count')).toBe('4');
 	});
 });
+
+describe('grid view.js - measurement is skipped without Align Rows', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+		jest.restoreAllMocks();
+	});
+
+	test('does not measure when Align Rows is off', () => {
+		// getComputedStyle forces a synchronous layout flush, and only Align
+		// Rows consumes the result — a page full of plain grids must not pay
+		// for a reflow each on every resize.
+		const grid = new DSGGrid(buildGrid({ match: false }));
+		const spy = jest.spyOn(grid, 'getRenderedColumns');
+		grid.handleResize();
+		expect(spy).not.toHaveBeenCalled();
+	});
+
+	test('still measures when Align Rows is on', () => {
+		const grid = new DSGGrid(buildGrid({ match: true }));
+		const spy = jest.spyOn(grid, 'getRenderedColumns');
+		grid.handleResize();
+		expect(spy).toHaveBeenCalled();
+	});
+});
