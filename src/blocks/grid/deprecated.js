@@ -233,6 +233,135 @@ const styleVariationClasses = {
 	},
 };
 
+// Before the column min width switched from a fixed `repeat(N, minmax(<min>,
+// 1fr))` track list to the auto-fill form in ./grid-columns.js. The fixed
+// repeat count could never drop a track, so a grid whose columns could not
+// all fit their min width (a narrow theme contentSize, say) overflowed its
+// container instead of wrapping items to the next row.
+//
+// Markup changed, so stored grids with a columnMinWidth are invalid against
+// the current save() and WordPress picks this entry by reproducing their HTML
+// — no isEligible needed, and none wanted (grids WITHOUT a columnMinWidth are
+// byte-identical under both forms and must not be re-migrated). migrate() is
+// a passthrough: only the serialised track list differs, no attribute does.
+//
+// This entry is listed FIRST so it wins over styleVariationClasses, whose
+// save() collapses to the same output for content with no style variation.
+const fixedColumnMinWidthTracks = {
+	apiVersion: 3,
+	supports: metadata.supports,
+	attributes: { ...metadata.attributes },
+	save({ attributes }) {
+		const {
+			tagName = 'div',
+			constrainWidth,
+			contentWidth,
+			columnMinWidth,
+			desktopColumns,
+			tabletColumns,
+			mobileColumns,
+			rowGap,
+			columnGap,
+			alignItems,
+			matchRowHeights,
+			overlayColor,
+			hoverBackgroundColor,
+			hoverTextColor,
+			hoverIconBackgroundColor,
+			hoverButtonBackgroundColor,
+			style,
+		} = attributes;
+
+		const hasOverlay =
+			!!overlayColor || hasOverlayStyleClass(attributes.className);
+
+		const className = [
+			'dsgo-grid',
+			`dsgo-grid-cols-${desktopColumns}`,
+			`dsgo-grid-cols-tablet-${tabletColumns}`,
+			`dsgo-grid-cols-mobile-${mobileColumns}`,
+			!constrainWidth && 'dsgo-no-width-constraint',
+			matchRowHeights && 'dsgo-grid--match-rows',
+			hasOverlay && 'dsgo-grid--has-overlay',
+			...hoverVariationClasses(attributes.className, 'dsgo-grid'),
+		]
+			.filter(Boolean)
+			.join(' ');
+
+		const TagName = tagName || 'div';
+		const blockProps = useBlockProps.save({
+			className,
+			style: {
+				...(hoverBackgroundColor && {
+					'--dsgo-hover-bg-color':
+						convertColorToCSSVar(hoverBackgroundColor),
+				}),
+				...(hoverTextColor && {
+					'--dsgo-hover-text-color':
+						convertColorToCSSVar(hoverTextColor),
+				}),
+				...(hoverIconBackgroundColor && {
+					'--dsgo-parent-hover-icon-bg': convertColorToCSSVar(
+						hoverIconBackgroundColor
+					),
+				}),
+				...(hoverButtonBackgroundColor && {
+					'--dsgo-parent-hover-button-bg': convertColorToCSSVar(
+						hoverButtonBackgroundColor
+					),
+				}),
+				...(overlayColor && {
+					'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
+					'--dsgo-overlay-opacity': '0.8',
+				}),
+			},
+		});
+
+		const blockGapValue = style?.spacing?.blockGap;
+		const isBlockGapObject =
+			typeof blockGapValue === 'object' && blockGapValue !== null;
+		const blockGapRow = convertPresetToCSSVar(
+			isBlockGapObject ? blockGapValue?.top : blockGapValue
+		);
+		const blockGapColumn = convertPresetToCSSVar(
+			isBlockGapObject ? blockGapValue?.left : blockGapValue
+		);
+		const defaultGap = 'var(--wp--preset--spacing--50)';
+
+		const innerStyles = {
+			display: 'grid',
+			gridTemplateColumns: columnMinWidth
+				? `repeat(${desktopColumns || 3}, minmax(${columnMinWidth}, 1fr))`
+				: `repeat(${desktopColumns || 3}, 1fr)`,
+			alignItems: alignItems || 'stretch',
+			rowGap: blockGapRow || rowGap || defaultGap,
+			columnGap: blockGapColumn || columnGap || defaultGap,
+		};
+
+		if (constrainWidth) {
+			innerStyles.maxWidth =
+				contentWidth ||
+				'var(--wp--style--global--content-size, 1140px)';
+			innerStyles.marginLeft = 'auto';
+			innerStyles.marginRight = 'auto';
+		}
+
+		const innerBlocksProps = useInnerBlocksProps.save({
+			className: 'dsgo-grid__inner',
+			style: innerStyles,
+		});
+
+		return (
+			<TagName {...blockProps}>
+				<div {...innerBlocksProps} />
+			</TagName>
+		);
+	},
+	migrate(attributes) {
+		return attributes;
+	},
+};
+
 // Version 1: Before align attribute - used className for alignment
 const v1 = {
 	supports: sharedSupports,
@@ -671,7 +800,17 @@ const legacyMinWidth = {
 // columnMinWidth attribute from stored HTML. styleVariationClasses.migrate()
 // is a passthrough, so if it "won" for such content, columnMinWidth would be
 // silently dropped (columns collapse to 1fr) with no recovery warning.
+// Named exports exist so tests can reference an entry without depending on its
+// position in the array below.
+export {
+	fixedColumnMinWidthTracks,
+	legacyResponsiveTabletClass,
+	legacyMinWidth,
+	styleVariationClasses,
+};
+
 export default [
+	fixedColumnMinWidthTracks,
 	legacyResponsiveTabletClass,
 	legacyMinWidth,
 	styleVariationClasses,

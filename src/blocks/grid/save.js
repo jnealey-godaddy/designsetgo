@@ -15,6 +15,7 @@ import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
 } from '../../utils/style-variation-classes';
+import { getGridTemplateColumns } from './grid-columns';
 
 /**
  * Grid Container Save Component
@@ -111,15 +112,18 @@ export default function GridSave({ attributes }) {
 		isBlockGapObject ? blockGapValue?.left : blockGapValue
 	);
 	const defaultGap = 'var(--wp--preset--spacing--50)';
+	const resolvedColumnGap = blockGapColumn || columnGap || defaultGap;
 
 	const innerStyles = {
 		display: 'grid',
-		gridTemplateColumns: columnMinWidth
-			? `repeat(${desktopColumns || 3}, minmax(${columnMinWidth}, 1fr))`
-			: `repeat(${desktopColumns || 3}, 1fr)`,
+		gridTemplateColumns: getGridTemplateColumns(
+			columnMinWidth,
+			desktopColumns,
+			resolvedColumnGap
+		),
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,
-		columnGap: blockGapColumn || columnGap || defaultGap,
+		columnGap: resolvedColumnGap,
 	};
 
 	// Apply width constraints to inner container

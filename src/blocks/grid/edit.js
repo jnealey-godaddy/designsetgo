@@ -49,6 +49,7 @@ import {
 	hoverVariationClasses,
 } from '../../utils/style-variation-classes';
 import { useGridRowMatch } from './utils/use-grid-row-match';
+import { getGridTemplateColumns } from './grid-columns';
 
 /**
  * Grid Container Edit Component
@@ -198,15 +199,18 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		isBlockGapObject ? blockGapValue?.left : blockGapValue
 	);
 	const defaultGap = 'var(--wp--preset--spacing--50)';
+	const resolvedColumnGap = blockGapColumn || columnGap || defaultGap;
 
 	const innerStyles = {
 		display: 'grid',
-		gridTemplateColumns: columnMinWidth
-			? `repeat(${desktopColumns || 3}, minmax(${columnMinWidth}, 1fr))`
-			: `repeat(${desktopColumns || 3}, 1fr)`,
+		gridTemplateColumns: getGridTemplateColumns(
+			columnMinWidth,
+			desktopColumns,
+			resolvedColumnGap
+		),
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,
-		columnGap: blockGapColumn || columnGap || defaultGap,
+		columnGap: resolvedColumnGap,
 	};
 
 	// Apply width constraints if enabled
@@ -796,7 +800,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 							help={__(
-								'Sets a minimum width for each column via minmax(value, 1fr) so columns never get narrower than this. Columns still drop to the tablet/mobile counts on smaller screens.',
+								'Sets a minimum width for each column. Columns never get narrower than this — if they would, one wraps to the next row instead of overflowing the container. Columns still drop to the tablet/mobile counts on smaller screens.',
 								'designsetgo'
 							)}
 						/>
