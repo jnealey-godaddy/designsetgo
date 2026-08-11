@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 2.6.2
+Stable tag: 2.6.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -93,6 +93,11 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.6.3 - 2026-08-11 =
+
+* **Fix:** Grid columns with a minimum width set no longer run past the edge of the page. On a theme with a narrower content width, a grid asking for more columns than could fit at that minimum pushed its columns straight out of the content area. The grid now drops to fewer columns and wraps the extra items onto the next row, and still shows your chosen number of columns whenever there's room for them. Existing grids are unchanged.
+* **Fix:** The Overlay Header panel no longer causes an error when editing a template part in the Site Editor. The panel now appears only where the setting actually applies.
 
 = 2.6.2 - 2026-08-05 =
 
