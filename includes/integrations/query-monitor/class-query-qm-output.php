@@ -123,7 +123,8 @@ add_filter(
 	// here was the bug this integration was fixed for). The collector is read
 	// back through the static accessor, which resolves to the same singleton,
 	// so the parameter itself is intentionally not used in the body.
-	static function ( array $outputters, \QM_Collectors $collectors ) {
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter -- required for the callback signature QM's dispatcher expects, see comment above.
+	static function ( array $outputters, \QM_Collectors $_collectors ) {
 		$collector = \QM_Collectors::get( 'dsgo_queries' );
 		if ( $collector instanceof \QM_Collector ) {
 			$outputters['dsgo_queries'] = new OutputHtml( $collector );
