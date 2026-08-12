@@ -342,8 +342,8 @@ class FilterIndexRebuilder {
 			);
 		} while ( $ids_count === $batch_size );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is our own controlled constant obtained via FilterIndex::table_name().
-		$total_rows = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE filter_key = %s", $key ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- live count for the rebuild status; %i correctly escapes the identifier.
+		$total_rows = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE filter_key = %s', $table, $key ) );
 
 		self::write_status(
 			array(
