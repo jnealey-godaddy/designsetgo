@@ -42,7 +42,7 @@ function designsetgo_get_animation_parts( $attributes ) {
 
 	$exit = isset( $attributes['dsgoExitAnimation'] ) ? (string) $attributes['dsgoExitAnimation'] : '';
 	if ( '' !== $exit ) {
-		$classes[]                        = 'dsgo-animation-exit-' . $exit;
+		$classes[]                         = 'dsgo-animation-exit-' . $exit;
 		$attrs['data-dsgo-exit-animation'] = $exit;
 	}
 

@@ -927,14 +927,14 @@ class Settings {
 	 * earlier claims here — matching the map's last-wins precedence — and drop
 	 * any entry left targeting nothing.
 	 *
-	 * @param array $list Sanitized entries, in author order.
+	 * @param array $entries Sanitized entries, in author order.
 	 * @return array Entries with unique targets (re-indexed).
 	 */
-	private static function dedupe_block_animation_targets( array $list ): array {
+	private static function dedupe_block_animation_targets( array $entries ): array {
 		$seen  = array();
 		$clean = array();
 
-		foreach ( array_reverse( $list ) as $entry ) {
+		foreach ( array_reverse( $entries ) as $entry ) {
 			$blocks = array();
 			foreach ( $entry['blocks'] as $block ) {
 				if ( isset( $seen[ $block ] ) ) {
