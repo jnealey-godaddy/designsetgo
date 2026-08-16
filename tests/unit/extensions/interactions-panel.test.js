@@ -12,7 +12,9 @@ describe('InteractionsPanel', () => {
 	it('appends a default interaction with a generated id on add', () => {
 		const onChange = jest.fn();
 		render(<InteractionsPanel value={[]} onChange={onChange} />);
-		fireEvent.click(screen.getByRole('button', { name: /add interaction/i }));
+		fireEvent.click(
+			screen.getByRole('button', { name: /add interaction/i })
+		);
 		expect(onChange).toHaveBeenCalledTimes(1);
 		const next = onChange.mock.calls[0][0];
 		expect(next).toHaveLength(1);
@@ -31,7 +33,9 @@ describe('InteractionsPanel', () => {
 				onChange={() => {}}
 			/>
 		);
-		expect(screen.getAllByRole('button', { name: /remove/i })).toHaveLength(2);
+		expect(screen.getAllByRole('button', { name: /remove/i })).toHaveLength(
+			2
+		);
 	});
 
 	it('removes the correct interaction by id', () => {

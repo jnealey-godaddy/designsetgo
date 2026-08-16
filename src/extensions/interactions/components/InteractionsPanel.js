@@ -5,7 +5,11 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { Button, __experimentalVStack as VStack } from '@wordpress/components';
+import {
+	Button,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
+	__experimentalVStack as VStack,
+} from '@wordpress/components';
 import { DEFAULT_INTERACTION } from '../constants';
 import { InteractionRow } from './InteractionRow';
 

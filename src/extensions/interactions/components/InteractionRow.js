@@ -10,6 +10,7 @@ import {
 	TextControl,
 	ToggleControl,
 	Button,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis -- no stable export in @wordpress/components
 	__experimentalVStack as VStack,
 } from '@wordpress/components';
 import { TRIGGERS, ACTIONS, TARGET_MODES } from '../constants';
@@ -108,7 +109,12 @@ export function InteractionRow({ interaction, onChange, onRemove }) {
 				onChange={set('once')}
 			/>
 
-			<Button isDestructive variant="tertiary" size="small" onClick={onRemove}>
+			<Button
+				isDestructive
+				variant="tertiary"
+				size="small"
+				onClick={onRemove}
+			>
 				{__('Remove interaction', 'designsetgo')}
 			</Button>
 		</VStack>
