@@ -27,10 +27,15 @@ const withInteractionControls = createHigherOrderComponent(
 		return (
 			<>
 				<BlockEdit {...props} />
-				<InspectorControls group="advanced">
+				{/* Top-level Settings, not the Advanced group: interactions
+				   are behaviour, and sit alongside Animations / Hover Effects.
+				   Advanced is for identifiers and escape hatches. */}
+				<InspectorControls>
 					<PanelBody
 						title={__('Interactions', 'designsetgo')}
-						initialOpen={false}
+						initialOpen={
+							!!props.attributes.dsgoInteractions?.length
+						}
 					>
 						<InteractionsPanel
 							value={attributes.dsgoInteractions}
