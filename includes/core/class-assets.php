@@ -130,15 +130,15 @@ class Assets {
 			'designsetgo-extensions',
 			'dsgoSettings',
 			array(
-				'excludedBlocks'         => array_values( $excluded_blocks ),
-				'defaultIconButtonHover' => isset( $settings['animations']['default_icon_button_hover'] )
+				'excludedBlocks'           => array_values( $excluded_blocks ),
+				'defaultIconButtonHover'   => isset( $settings['animations']['default_icon_button_hover'] )
 					? sanitize_key( $settings['animations']['default_icon_button_hover'] )
 					: 'fill-diagonal',
 				// Empty list = all extensions enabled (matches the
 				// PHP convention in Block_Manager::should_load_extension).
-				'enabledExtensions'      => array_values( array_map( 'sanitize_key', $enabled_extensions ) ),
-				'blockAnimations'        => self::block_animations_for_editor( $anim['map'] ),
-				'blockAnimationsEnabled' => (bool) $anim['enabled'],
+				'enabledExtensions'        => array_values( array_map( 'sanitize_key', $enabled_extensions ) ),
+				'blockAnimations'          => self::block_animations_for_editor( $anim['map'] ),
+				'blockAnimationsEnabled'   => (bool) $anim['enabled'],
 				// The block-animations extension's own exclude list, so
 				// resolveBlockAnimationDefault() reads it from the same config
 				// file the injector does instead of hardcoding a copy.

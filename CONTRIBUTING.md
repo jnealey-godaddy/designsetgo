@@ -791,4 +791,4 @@ Thank you for contributing to DesignSetGo! Every contribution, no matter how sma
 
 ---
 
-**License**: GPL-2.0-or-later | **Version**: 2.0.23 | **WordPress**: 6.7+ | **PHP**: 8.0+
+**License**: GPL-2.0-or-later | **Version**: 2.6.3 | **WordPress**: 6.7+ | **PHP**: 7.4+
