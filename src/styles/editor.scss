@@ -28,6 +28,10 @@
 @use '../extensions/reveal-control/editor' as reveal-control;
 @use '../extensions/expanding-background/editor' as expanding-background;
 
+// Interaction Layers: the frontend support classes are reused verbatim in the
+// canvas so an author previewing a hidden state sees the same result.
+@use '../extensions/interactions/style' as interactions;
+
 // Rich text formats (editor)
 @use '../formats/text-style/editor' as text-style;
 
