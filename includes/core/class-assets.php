@@ -320,13 +320,26 @@ class Assets {
 
 		// Interaction layers runtime. Registered always, enqueued only when a
 		// rendered block actually carries data-dsgo-interactions.
-		wp_register_script(
-			'designsetgo-interactions',
-			DESIGNSETGO_URL . 'build/extensions/interactions.js',
-			array(),
-			DESIGNSETGO_VERSION,
-			true
-		);
+		//
+		// The generated asset file is the source of truth for dependencies:
+		// hardcoding array() silently breaks the runtime the moment the bundle
+		// picks up a @wordpress/* import, because webpack externalises those
+		// to globals that were never enqueued.
+		$interactions_asset_path = DESIGNSETGO_PATH . 'build/extensions/interactions.asset.php';
+
+		if ( file_exists( $interactions_asset_path ) && is_readable( $interactions_asset_path ) ) {
+			$interactions_asset = include $interactions_asset_path; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
+
+			if ( is_array( $interactions_asset ) && isset( $interactions_asset['dependencies'], $interactions_asset['version'] ) ) {
+				wp_register_script(
+					'designsetgo-interactions',
+					DESIGNSETGO_URL . 'build/extensions/interactions.js',
+					$interactions_asset['dependencies'],
+					$interactions_asset['version'],
+					true
+				);
+			}
+		}
 	}
 
 	/**

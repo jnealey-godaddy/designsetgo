@@ -1,9 +1,12 @@
 import {
 	TRIGGERS,
 	ACTIONS,
+	ACTION_GROUPS,
 	TARGET_MODES,
 	ACTION_VALUE_FIELD,
 	OFFSET_ACTIONS,
+	VISIBILITY_ACTIONS,
+	HIDDEN_CLASS,
 	DEFAULT_INTERACTION,
 } from '../../../src/extensions/interactions/constants';
 
@@ -21,16 +24,52 @@ describe('interactions constants', () => {
 
 	it('exposes every action as a value/label pair', () => {
 		expect(ACTIONS.map((a) => a.value)).toEqual([
+			'show',
+			'hide',
+			'toggleVisibility',
 			'toggleClass',
 			'addClass',
 			'removeClass',
 			'setAttribute',
+			'removeAttribute',
 			'scrollTo',
+			'scrollToTop',
 			'openModal',
 			'closeModal',
+			'submitForm',
+			'playMedia',
+			'pauseMedia',
+			'toggleMedia',
 			'copyToClipboard',
+			'focusTarget',
+			'dispatchEvent',
 		]);
 		ACTIONS.forEach((a) => expect(typeof a.label).toBe('string'));
+	});
+
+	it('assigns every action to a declared group', () => {
+		const keys = ACTION_GROUPS.map((g) => g.key);
+		ACTIONS.forEach((a) => {
+			expect(keys).toContain(a.group);
+		});
+	});
+
+	it('leaves no group empty', () => {
+		ACTION_GROUPS.forEach((g) => {
+			expect(ACTIONS.some((a) => a.group === g.key)).toBe(true);
+		});
+	});
+
+	it('names the visibility actions and the class they toggle', () => {
+		expect(VISIBILITY_ACTIONS).toEqual([
+			'show',
+			'hide',
+			'toggleVisibility',
+		]);
+		expect(HIDDEN_CLASS).toBe('dsgo-interaction-hidden');
+		VISIBILITY_ACTIONS.forEach((action) => {
+			expect(ACTIONS.map((a) => a.value)).toContain(action);
+		});
 	});
 
 	it('exposes the three target modes', () => {
@@ -64,7 +103,21 @@ describe('interactions constants', () => {
 	});
 
 	it('labels the shared value field for every action that takes one', () => {
-		const valueless = ['scrollTo'];
+		// These act on the target itself and need no payload, so the value
+		// field is hidden for them rather than shown with a guessed label.
+		const valueless = [
+			'show',
+			'hide',
+			'toggleVisibility',
+			'removeAttribute',
+			'scrollTo',
+			'scrollToTop',
+			'submitForm',
+			'playMedia',
+			'pauseMedia',
+			'toggleMedia',
+			'focusTarget',
+		];
 		ACTIONS.forEach(({ value }) => {
 			if (valueless.includes(value)) {
 				expect(ACTION_VALUE_FIELD[value]).toBeUndefined();

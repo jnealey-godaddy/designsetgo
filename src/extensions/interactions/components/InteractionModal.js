@@ -25,12 +25,17 @@ import {
 import {
 	TRIGGERS,
 	ACTIONS,
+	ACTION_GROUPS,
 	TARGET_MODES,
 	ACTION_VALUE_FIELD,
 	OFFSET_ACTIONS,
 } from '../constants';
+
 import { useSelectorMatchCount } from '../useSelectorMatchCount';
 import { useCanvasPicker } from '../useCanvasPicker';
+
+/** Actions whose payload is an attribute name. */
+const ATTRIBUTE_ACTIONS = ['setAttribute', 'removeAttribute'];
 
 /**
  * Help text describing how many elements the selector currently matches.
@@ -180,16 +185,35 @@ export function InteractionModal({ interaction, onChange, onClose }) {
 					</VStack>
 				)}
 
+				{/* Grouped rather than a flat list: there are enough actions
+				   now that scanning one long select is the slow part. */}
 				<SelectControl
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 					label={__('Do', 'designsetgo')}
 					value={interaction.action}
-					options={ACTIONS}
 					onChange={set('action')}
-				/>
+				>
+					{ACTION_GROUPS.map((group) => {
+						const inGroup = ACTIONS.filter(
+							(a) => a.group === group.key
+						);
+						if (!inGroup.length) {
+							return null;
+						}
+						return (
+							<optgroup key={group.key} label={group.label}>
+								{inGroup.map((a) => (
+									<option key={a.value} value={a.value}>
+										{a.label}
+									</option>
+								))}
+							</optgroup>
+						);
+					})}
+				</SelectControl>
 
-				{'setAttribute' === interaction.action && (
+				{ATTRIBUTE_ACTIONS.includes(interaction.action) && (
 					<TextControl
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
