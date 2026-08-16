@@ -1,6 +1,9 @@
 /**
  * Interaction Layers - Panel
  *
+ * The sidebar surface: a scannable list plus an Add button. Editing an
+ * interaction opens InteractionModal.
+ *
  * @package
  */
 
@@ -13,6 +16,7 @@ import {
 import { useState } from '@wordpress/element';
 import { DEFAULT_INTERACTION } from '../constants';
 import { InteractionRow } from './InteractionRow';
+import { InteractionModal } from './InteractionModal';
 
 /**
  * Generate a short id that is stable across saves.
@@ -37,27 +41,27 @@ function makeId() {
 export function InteractionsPanel({ value, onChange }) {
 	const interactions = Array.isArray(value) ? value : [];
 
-	// Only one row is expanded at a time; a freshly added one opens itself
-	// so the author lands directly on the controls they need to fill in.
-	const [openId, setOpenId] = useState(null);
+	// Which interaction the modal is editing, by id. Null means closed.
+	const [editingId, setEditingId] = useState(null);
+	const editing = interactions.find((i) => i.id === editingId) || null;
 
 	const add = () => {
 		const id = makeId();
-		setOpenId(id);
 		onChange([...interactions, { ...DEFAULT_INTERACTION, id }]);
+		// A new interaction is empty and useless until configured, so open
+		// the editor rather than making the author find the row.
+		setEditingId(id);
 	};
 
 	const update = (id) => (next) =>
 		onChange(interactions.map((i) => (i.id === id ? next : i)));
 
 	const remove = (id) => () => {
-		if (openId === id) {
-			setOpenId(null);
+		if (editingId === id) {
+			setEditingId(null);
 		}
 		onChange(interactions.filter((i) => i.id !== id));
 	};
-
-	const toggle = (id) => () => setOpenId(openId === id ? null : id);
 
 	return (
 		<VStack spacing={3} className="dsgo-interactions-panel">
@@ -74,9 +78,7 @@ export function InteractionsPanel({ value, onChange }) {
 				<InteractionRow
 					key={interaction.id}
 					interaction={interaction}
-					isOpen={openId === interaction.id}
-					onToggle={toggle(interaction.id)}
-					onChange={update(interaction.id)}
+					onEdit={() => setEditingId(interaction.id)}
 					onRemove={remove(interaction.id)}
 				/>
 			))}
@@ -84,6 +86,14 @@ export function InteractionsPanel({ value, onChange }) {
 			<Button variant="secondary" onClick={add}>
 				{__('Add interaction', 'designsetgo')}
 			</Button>
+
+			{editing && (
+				<InteractionModal
+					interaction={editing}
+					onChange={update(editing.id)}
+					onClose={() => setEditingId(null)}
+				/>
+			)}
 		</VStack>
 	);
 }

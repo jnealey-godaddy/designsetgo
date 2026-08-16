@@ -1,6 +1,16 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { InteractionsPanel } from '../../../src/extensions/interactions/components/InteractionsPanel';
 
+// The modal's picker talks to the block-editor store, which has no provider
+// in a unit test. Only the picker needs it, so it is stubbed here.
+jest.mock('../../../src/extensions/interactions/useCanvasPicker', () => ({
+	useCanvasPicker: () => ({
+		isPicking: false,
+		startPicking: jest.fn(),
+		cancelPicking: jest.fn(),
+	}),
+}));
+
 const TWO = [
 	{
 		id: 'a',
@@ -45,12 +55,12 @@ describe('InteractionsPanel', () => {
 		expect(next[0].id.length).toBeGreaterThan(0);
 	});
 
-	it('renders one collapsed row per interaction', () => {
+	it('renders one summary row per interaction, with no controls inline', () => {
 		render(<InteractionsPanel value={TWO} onChange={() => {}} />);
 		expect(
 			screen.getAllByRole('button', { name: /remove interaction/i })
 		).toHaveLength(2);
-		// Collapsed: no controls rendered, only the summaries.
+		// The sidebar is a list, not an editor.
 		expect(screen.queryByLabelText('When')).not.toBeInTheDocument();
 	});
 
@@ -62,18 +72,33 @@ describe('InteractionsPanel', () => {
 		expect(screen.getByText(/Hover → Add class two/)).toBeInTheDocument();
 	});
 
-	it('expands a row when its summary is clicked', () => {
+	it('opens the detail modal when a row is clicked', () => {
 		render(<InteractionsPanel value={TWO} onChange={() => {}} />);
 		fireEvent.click(screen.getByText(/Click → Toggle class one/));
+		expect(
+			screen.getByRole('dialog', { name: /edit interaction/i })
+		).toBeInTheDocument();
 		expect(screen.getByLabelText('When')).toBeInTheDocument();
 	});
 
-	it('keeps only one row expanded at a time', () => {
+	it('edits the interaction the modal was opened for', () => {
+		const onChange = jest.fn();
+		render(<InteractionsPanel value={TWO} onChange={onChange} />);
+		fireEvent.click(screen.getByText(/Hover → Add class two/));
+		fireEvent.change(screen.getByLabelText('When'), {
+			target: { value: 'inView' },
+		});
+		const next = onChange.mock.calls[0][0];
+		expect(next[1].trigger).toBe('inView');
+		// The other interaction is untouched.
+		expect(next[0]).toEqual(TWO[0]);
+	});
+
+	it('closes the modal on Done', () => {
 		render(<InteractionsPanel value={TWO} onChange={() => {}} />);
 		fireEvent.click(screen.getByText(/Click → Toggle class one/));
-		fireEvent.click(screen.getByText(/Hover → Add class two/));
-		// Still exactly one "When" control on screen, not two.
-		expect(screen.getAllByLabelText('When')).toHaveLength(1);
+		fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+		expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 	});
 
 	it('removes the correct interaction by id', () => {
