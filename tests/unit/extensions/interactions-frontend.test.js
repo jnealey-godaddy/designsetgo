@@ -169,7 +169,7 @@ describe('interactions frontend runtime', () => {
 			{
 				id: 'a',
 				trigger: 'keydown',
-				attributeName: 'Escape',
+				key: 'Escape',
 				targetMode: 'selector',
 				targetSelector: '#panel',
 				action: 'addClass',
@@ -188,6 +188,48 @@ describe('interactions frontend runtime', () => {
 		expect(
 			document.getElementById('panel').classList.contains('closed')
 		).toBe(true);
+	});
+
+	it('fires a keydown interaction on any key when no key is configured', () => {
+		const src = mount([
+			{
+				id: 'a',
+				trigger: 'keydown',
+				key: '',
+				targetMode: 'selector',
+				targetSelector: '#panel',
+				action: 'addClass',
+				value: 'any',
+			},
+		]);
+		src.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'q', bubbles: true })
+		);
+		expect(document.getElementById('panel').classList.contains('any')).toBe(
+			true
+		);
+	});
+
+	it('does not treat an attribute name as a keyboard key', () => {
+		// attributeName and key were once the same field. If they are still
+		// conflated, this setAttribute config would gate on the wrong value.
+		const src = mount([
+			{
+				id: 'a',
+				trigger: 'keydown',
+				attributeName: 'aria-expanded',
+				targetMode: 'selector',
+				targetSelector: '#panel',
+				action: 'setAttribute',
+				value: 'true',
+			},
+		]);
+		src.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+		);
+		expect(
+			document.getElementById('panel').getAttribute('aria-expanded')
+		).toBe('true');
 	});
 
 	it('survives malformed JSON without throwing', () => {

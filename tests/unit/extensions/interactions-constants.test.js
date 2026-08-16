@@ -2,6 +2,8 @@ import {
 	TRIGGERS,
 	ACTIONS,
 	TARGET_MODES,
+	ACTION_VALUE_FIELD,
+	OFFSET_ACTIONS,
 	DEFAULT_INTERACTION,
 } from '../../../src/extensions/interactions/constants';
 
@@ -48,8 +50,35 @@ describe('interactions constants', () => {
 			action: 'toggleClass',
 			value: '',
 			attributeName: '',
+			key: '',
 			once: false,
 			offset: 0,
+		});
+	});
+
+	it('keeps the keyboard key separate from the attribute name', () => {
+		// They were one overloaded field; a keydown that sets an attribute
+		// needs both at once, so they must not share storage.
+		expect(DEFAULT_INTERACTION).toHaveProperty('key');
+		expect(DEFAULT_INTERACTION).toHaveProperty('attributeName');
+	});
+
+	it('labels the shared value field for every action that takes one', () => {
+		const valueless = ['scrollTo'];
+		ACTIONS.forEach(({ value }) => {
+			if (valueless.includes(value)) {
+				expect(ACTION_VALUE_FIELD[value]).toBeUndefined();
+				return;
+			}
+			expect(ACTION_VALUE_FIELD[value]).toBeDefined();
+			expect(typeof ACTION_VALUE_FIELD[value].label).toBe('string');
+		});
+	});
+
+	it('marks scroll actions as offset-aware', () => {
+		expect(OFFSET_ACTIONS).toEqual(['scrollTo']);
+		OFFSET_ACTIONS.forEach((action) => {
+			expect(ACTIONS.map((a) => a.value)).toContain(action);
 		});
 	});
 });

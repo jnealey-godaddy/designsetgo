@@ -33,6 +33,59 @@ export const TARGET_MODES = [
 	{ value: 'parent', label: __('Closest ancestor', 'designsetgo') },
 ];
 
+/**
+ * Per-action copy for the shared `value` field.
+ *
+ * `value` carries a different thing for every action, so the control has to
+ * relabel itself or the author is left guessing what to type. Actions absent
+ * from this table take no value at all and the field is hidden.
+ */
+export const ACTION_VALUE_FIELD = {
+	toggleClass: {
+		label: __('Class name', 'designsetgo'),
+		help: __(
+			'Without the leading dot. For example: is-open',
+			'designsetgo'
+		),
+	},
+	addClass: {
+		label: __('Class name', 'designsetgo'),
+		help: __(
+			'Without the leading dot. For example: is-open',
+			'designsetgo'
+		),
+	},
+	removeClass: {
+		label: __('Class name', 'designsetgo'),
+		help: __(
+			'Without the leading dot. For example: is-open',
+			'designsetgo'
+		),
+	},
+	setAttribute: {
+		label: __('Attribute value', 'designsetgo'),
+		help: __('For example: true', 'designsetgo'),
+	},
+	openModal: {
+		label: __('Modal ID', 'designsetgo'),
+		help: __('The HTML anchor of the modal block to open.', 'designsetgo'),
+	},
+	closeModal: {
+		label: __('Modal ID', 'designsetgo'),
+		help: __(
+			'Leave empty to close whichever modal is open.',
+			'designsetgo'
+		),
+	},
+	copyToClipboard: {
+		label: __('Text to copy', 'designsetgo'),
+		help: __("Leave empty to copy the target's own text.", 'designsetgo'),
+	},
+};
+
+/** Actions that scroll, and so respect the offset field. */
+export const OFFSET_ACTIONS = ['scrollTo'];
+
 export const DEFAULT_INTERACTION = {
 	id: '',
 	trigger: 'click',
@@ -41,6 +94,7 @@ export const DEFAULT_INTERACTION = {
 	action: 'toggleClass',
 	value: '',
 	attributeName: '',
+	key: '',
 	once: false,
 	offset: 0,
 };

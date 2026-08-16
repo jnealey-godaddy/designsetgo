@@ -1,7 +1,9 @@
 import { addFilter } from '@wordpress/hooks';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { InspectorControls } from '@wordpress/block-editor';
+import { PanelBody } from '@wordpress/components';
 import { Fragment } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
 import VisibilityPanel from './VisibilityPanel';
 import evaluateRules from './evaluateRules';
 
@@ -39,12 +41,17 @@ const withVisibilityPanel = createHigherOrderComponent(
 			<Fragment>
 				<BlockEdit {...props} />
 				<InspectorControls group="advanced">
-					<VisibilityPanel
-						value={props.attributes.dsgoVisibility}
-						onChange={(value) =>
-							props.setAttributes({ dsgoVisibility: value })
-						}
-					/>
+					<PanelBody
+						title={__('Visibility', 'designsetgo')}
+						initialOpen={!!props.attributes.dsgoVisibility}
+					>
+						<VisibilityPanel
+							value={props.attributes.dsgoVisibility}
+							onChange={(value) =>
+								props.setAttributes({ dsgoVisibility: value })
+							}
+						/>
+					</PanelBody>
 				</InspectorControls>
 			</Fragment>
 		);

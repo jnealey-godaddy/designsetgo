@@ -31,6 +31,7 @@
 // Interaction Layers: the frontend support classes are reused verbatim in the
 // canvas so an author previewing a hidden state sees the same result.
 @use '../extensions/interactions/style' as interactions;
+@use '../extensions/interactions/editor' as interactions-editor;
 
 // Rich text formats (editor)
 @use '../formats/text-style/editor' as text-style;

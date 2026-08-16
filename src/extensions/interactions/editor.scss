@@ -1,0 +1,49 @@
+/**
+ * Interaction Layers - Editor styles
+ *
+ * Chrome for the inspector rows. Without a border each collapsed row runs
+ * into the next one and the list reads as one block of text.
+ */
+
+.dsgo-interactions-panel__empty {
+	margin: 0;
+	color: #757575;
+	font-size: 12px;
+}
+
+.dsgo-interaction-row {
+	border: 1px solid #e0e0e0;
+	border-radius: 2px;
+}
+
+.dsgo-interaction-row__header {
+	padding: 0 4px 0 0;
+}
+
+// The toggle is a full-width text button, not an icon button: the summary
+// line is the row's label and must be part of the click target.
+.dsgo-interaction-row__toggle.components-button {
+	flex: 1;
+	height: auto;
+	min-height: 40px;
+	padding: 8px;
+	text-align: left;
+	white-space: normal;
+}
+
+.dsgo-interaction-row__summary {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	overflow-wrap: anywhere;
+}
+
+.dsgo-interaction-row__target {
+	color: #757575;
+	font-family: monospace;
+	font-size: 11px;
+}
+
+.dsgo-interaction-row__body {
+	padding: 0 8px 12px;
+}

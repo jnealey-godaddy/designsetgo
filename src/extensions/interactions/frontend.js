@@ -86,8 +86,8 @@ function fire(el, trigger, event) {
 		}
 		if (
 			'keydown' === trigger &&
-			interaction.attributeName &&
-			event?.key !== interaction.attributeName
+			interaction.key &&
+			event?.key !== interaction.key
 		) {
 			return;
 		}
