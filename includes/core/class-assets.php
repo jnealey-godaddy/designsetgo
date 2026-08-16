@@ -33,6 +33,13 @@ class Assets {
 	private $dashicons_enqueued = false;
 
 	/**
+	 * Whether the interaction layers runtime has been enqueued for this request.
+	 *
+	 * @var bool
+	 */
+	private $interactions_enqueued = false;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -310,6 +317,16 @@ class Assets {
 			$frontend_asset['version'],
 			true
 		);
+
+		// Interaction layers runtime. Registered always, enqueued only when a
+		// rendered block actually carries data-dsgo-interactions.
+		wp_register_script(
+			'designsetgo-interactions',
+			DESIGNSETGO_URL . 'build/extensions/interactions.js',
+			array(),
+			DESIGNSETGO_VERSION,
+			true
+		);
 	}
 
 	/**
@@ -341,6 +358,16 @@ class Assets {
 				wp_enqueue_script( 'designsetgo-frontend' );
 				$this->frontend_enqueued = true;
 			}
+		}
+
+		// Interaction layers: only ship the runtime when a block declares one.
+		if (
+			! $this->interactions_enqueued
+			&& ! empty( $block_content )
+			&& strpos( $block_content, 'data-dsgo-interactions' ) !== false
+		) {
+			wp_enqueue_script( 'designsetgo-interactions' );
+			$this->interactions_enqueued = true;
 		}
 
 		// Enqueue Dashicons only for tabs/accordion blocks (saves 40KB otherwise).
