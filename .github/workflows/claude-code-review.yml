@@ -11,6 +11,11 @@ on:
 jobs:
   claude-review:
     runs-on: ubuntu-latest
+    # Fork PRs never get an OIDC token from GitHub (it's withheld for pull_request
+    # events from forks, independent of the id-token permission below), so the
+    # app-token exchange always fails before any review can happen. Skip cleanly
+    # instead of failing loudly on something this workflow cannot do.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       pull-requests: write
