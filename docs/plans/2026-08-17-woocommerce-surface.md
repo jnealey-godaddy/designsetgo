@@ -116,7 +116,8 @@ The spike is documentation, not code: build a DSGo Query with `postType: product
 Woo's own product blocks inside, load the frontend, record what works. Item 1 is then
 scoped to what the spike proves is missing.
 
-What survives the spike regardless, and justifies Item 1 no matter the outcome:
+What was expected to survive the spike regardless, and justify Item 1 no matter the
+outcome:
 
 1. **Style bindings.** `dsgoStyleBinding` driving `--dsgo-progress` from stock quantity.
    No Woo block can do this — it is the entire Stock Bar feature.
@@ -126,6 +127,65 @@ What survives the spike regardless, and justifies Item 1 no matter the outcome:
    typography controls, rather than accepting Woo's markup.
 4. **Fields Woo has no block for.** Discount percent, stock quantity as a *number*, raw
    unformatted price.
+
+#### Spike result — run 2026-08-17, WooCommerce 11.0.1 / WP 6.9
+
+**The suspicion was correct, and Item 1 shrinks substantially.** WooCommerce's own
+product blocks render correctly inside a `designsetgo/query` product loop today, with no
+DSGo work at all.
+
+Method: `designsetgo_query_render()` called directly with `source: posts`,
+`postType: product`, and an `inner_html` item template of Woo blocks — the same path the
+front end takes. Plus each block rendered in isolation through `WP_Block` with only
+`postId` / `postType` context, to confirm it is genuinely the context doing the work.
+
+Woo registers **59** `woocommerce/product*` blocks. The display ones declare
+`uses_context: query, queryId, postId` — and `postId` alone is sufficient, which is
+exactly what `render-posts.php` supplies per item.
+
+| Block | Result inside `designsetgo/query` |
+|---|---|
+| `product-price` | ✅ Full `<del>`/`<ins>` sale markup, currency, screen-reader text |
+| `product-sku` | ✅ `SKU: SPIKE-001` |
+| `product-image` | ✅ Image, links to product, nests its own sale badge |
+| `product-rating` | ✅ `Rated 4.00 out of 5 based on 1 customer rating` |
+| `product-rating-stars` | ✅ Renders |
+| `product-stock-indicator` | ✅ `9 in stock` |
+| `product-sale-badge` | ✅ Renders |
+| `product-button` | ✅ **Renders a working Add to cart / View cart** |
+| `core/post-title` | ✅ Renders |
+| `product-summary` | Empty — product had no description. Correct, not broken. |
+
+Two initially-ambiguous "empty" results were chased down rather than assumed:
+`product-rating` was empty only until the product had an approved review, and
+`product-summary` only because the fixture had no description. Both are correct
+behaviour.
+
+**Consequences for scope:**
+
+- **Items 1's display sources are redundant.** `woo-sku`, availability text, rating,
+  sale badge, and taxonomy sources would all duplicate a working Woo block. Do not build
+  them.
+- **`woo-price-html` is *mostly* redundant** with `woocommerce/product-price`. It retains
+  a narrower justification — driving a *DSGo* block (a price inside a `pill` or
+  `advanced-heading` with DSGo typography) rather than accepting Woo's markup — but it is
+  no longer the centrepiece of Item 1.
+- **The raw scalars are the real, unduplicated gap.** No Woo block exposes them, and they
+  are what `dsgoStyleBinding` needs. Confirmed available on the product object:
+  `get_price()` → `25.00`, `get_regular_price()` → `40.00`, `get_stock_quantity()` → `9`
+  (int), `get_average_rating()` → `4.00`, computed discount → `38%`.
+- **Item 3's button is partly redundant too.** `woocommerce/product-button` already works
+  in the loop, including the AJAX add. DSGo's remaining justification for its own button
+  is design-system styling and cart-drawer integration — *not* function. That materially
+  weakens Item 3 and should be weighed before building it.
+
+**Net:** Item 1 drops from ~12 sources to roughly 5 — `woo-price-raw`,
+`woo-regular-price`, `woo-discount-percent`, `woo-stock-quantity`, `woo-average-rating`
+— plus `woo-price-html` kept deliberately for DSGo-block-driving. Everything else defers
+to Woo's own blocks, which should be documented as the recommended approach.
+
+**Note:** D3's open WP 6.7/6.8 HTML-escaping risk shrinks with this, since `price-html`
+is no longer load-bearing. The scalars are plain text and unaffected either way.
 
 ### D5 — Extend the `posts` query source; no new enum value
 
@@ -263,10 +323,10 @@ Five units, each its own branch (`claude/woo-*`) and PR, off a clean `main`.
 | # | Unit | Gates | Notes |
 |---|------|-------|-------|
 | 0 | Test infrastructure | Everything | Woo in wp-env, PHPStan stubs, product fixtures |
-| — | Spike | Item 1's scope | Findings written back into this doc. No code. |
-| 1 | Bindings sources | — | Scoped by the spike |
-| 2 | Woo-aware Query + filters | — | Independent of Item 3 |
-| 3 | Button + count + drawer | — | Lands last and alone, so it stays revertable |
+| — | Spike | Item 1's scope | ✅ Done — see D4. Woo's blocks already work in the loop. |
+| 1 | Bindings sources | — | **Re-scoped to ~5 scalar sources** by the spike |
+| 2 | Woo-aware Query + filters | — | Unaffected by the spike; independent of Item 3 |
+| 3 | Button + count + drawer | — | **Weakened by the spike** — reconsider before building |
 
 ### Unit 0 — Test infrastructure
 
