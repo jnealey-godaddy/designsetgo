@@ -199,6 +199,70 @@ class Schema_Output_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * An ENTITY-ENCODED closing tag cannot break out either.
+	 *
+	 * Text is stripped before entities are decoded, so `&lt;/script&gt;` in the
+	 * saved markup survives strip_tags() and only becomes a literal
+	 * `</script>` afterwards. That ordering is deliberate — decoding first
+	 * would let strip_tags() delete text the page actually displays, e.g. an
+	 * answer that literally reads "<b>bold</b>" — so the breakout is stopped at
+	 * output instead, where every source of the sequence is covered at once.
+	 * This test is what makes that safe to rely on.
+	 */
+	public function test_entity_encoded_closing_script_tag_cannot_break_out() {
+		$head = $this->head_for(
+			$this->accordion_markup(
+				'faq',
+				'Ends with &lt;/script&gt;&lt;script&gt;alert(1)&lt;/script&gt;',
+				'Answer.'
+			)
+		);
+
+		// No real element boundary was created.
+		$this->assertStringNotContainsString( '</script><script>alert(1)', $head );
+
+		preg_match(
+			'#<script type="application/ld\+json">(.*?)</script>#s',
+			$head,
+			$matches
+		);
+
+		$this->assertNotEmpty( $matches );
+
+		$decoded = json_decode( $matches[1], true );
+		$this->assertNotNull( $decoded );
+
+		// The author's text is preserved verbatim inside the JSON string —
+		// escaped for the script context, not mangled.
+		$this->assertSame(
+			'Ends with </script><script>alert(1)</script>',
+			$decoded['@graph'][0]['mainEntity'][0]['name']
+		);
+	}
+
+	/**
+	 * Escaped markup an author typed as literal text survives as text.
+	 */
+	public function test_literal_markup_in_an_answer_is_preserved_not_stripped() {
+		$head = $this->head_for(
+			$this->accordion_markup( 'faq', 'Formatting?', 'Use &lt;b&gt;bold&lt;/b&gt; for emphasis.' )
+		);
+
+		preg_match(
+			'#<script type="application/ld\+json">(.*?)</script>#s',
+			$head,
+			$matches
+		);
+
+		$decoded = json_decode( $matches[1], true );
+
+		$this->assertSame(
+			'Use <b>bold</b> for emphasis.',
+			$decoded['@graph'][0]['mainEntity'][0]['acceptedAnswer']['text']
+		);
+	}
+
+	/**
 	 * Archives are not singular, so nothing is emitted.
 	 */
 	public function test_emits_nothing_on_an_archive() {

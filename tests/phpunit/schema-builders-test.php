@@ -384,6 +384,54 @@ class Schema_Builders_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Text in a SIBLING after the title must not be absorbed.
+	 *
+	 * A sibling sits at the same breadcrumb depth as the matched element, so a
+	 * depth comparison of `< $found` never terminates on it — collection only
+	 * stopped once the walk climbed out past the parent. Today the icon that
+	 * follows the title is an <svg> with no text nodes, so nothing leaked; the
+	 * moment anything text-bearing was added after the title (a screen-reader
+	 * label, a badge, a different icon style) it would have been concatenated
+	 * onto the question with no test failing.
+	 */
+	public function test_title_extractor_stops_at_the_end_of_the_matched_element() {
+		$html = '<div class="dsgo-accordion-item__header"><button type="button">'
+			. '<span class="dsgo-accordion-item__title">Real question?</span>'
+			. '<span class="dsgo-accordion-item__icon">LEAKED</span>'
+			. '</button></div>';
+
+		$this->assertSame(
+			'Real question?',
+			designsetgo_schema_text_from_html( $html, 'dsgo-accordion-item__title' )
+		);
+	}
+
+	/**
+	 * Nested markup inside the title is still collected in full.
+	 */
+	public function test_title_extractor_collects_nested_text() {
+		$html = '<span class="dsgo-accordion-item__title">A <em>nested <b>deep</b></em> title</span>'
+			. '<span class="other">LEAKED</span>';
+
+		$this->assertSame(
+			'A nested deep title',
+			designsetgo_schema_text_from_html( $html, 'dsgo-accordion-item__title' )
+		);
+	}
+
+	/**
+	 * An empty title element yields '' rather than the following sibling.
+	 */
+	public function test_title_extractor_handles_an_empty_element() {
+		$html = '<span class="dsgo-accordion-item__title"></span><span>LEAKED</span>';
+
+		$this->assertSame(
+			'',
+			designsetgo_schema_text_from_html( $html, 'dsgo-accordion-item__title' )
+		);
+	}
+
+	/**
 	 * The title extractor returns '' when the element is absent.
 	 */
 	public function test_title_extractor_returns_empty_for_missing_element() {

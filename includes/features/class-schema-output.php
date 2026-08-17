@@ -45,13 +45,23 @@ class SchemaOutput {
 	 *
 	 * @param array  $blocks Parsed blocks.
 	 * @param string $title  Page title, passed to builders that need it.
+	 * @param array  $seen   Synced-pattern IDs already expanded, guarding cycles.
 	 * @return array List of schema graph nodes.
 	 */
-	public function collect( array $blocks, $title = '' ) {
+	public function collect( array $blocks, $title = '', array $seen = array() ) {
 		$nodes = array();
 
 		foreach ( $blocks as $block ) {
 			if ( ! is_array( $block ) ) {
+				continue;
+			}
+
+			// A synced pattern keeps its markup in a wp_block post; the page
+			// only stores a reference. Without expanding it, an FAQ defined
+			// once in a shared pattern would emit nothing on every page that
+			// uses it, with nothing to tell the author why.
+			if ( 'core/block' === ( isset( $block['blockName'] ) ? $block['blockName'] : '' ) ) {
+				$nodes = array_merge( $nodes, $this->collect_from_reference( $block, $title, $seen ) );
 				continue;
 			}
 
@@ -72,11 +82,48 @@ class SchemaOutput {
 			}
 
 			if ( ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
-				$nodes = array_merge( $nodes, $this->collect( $block['innerBlocks'], $title ) );
+				$nodes = array_merge( $nodes, $this->collect( $block['innerBlocks'], $title, $seen ) );
 			}
 		}
 
 		return $nodes;
+	}
+
+	/**
+	 * Expand a synced pattern reference and collect from its content.
+	 *
+	 * @param array  $block Parsed core/block block.
+	 * @param string $title Page title.
+	 * @param array  $seen  Reference IDs already expanded on this branch.
+	 * @return array List of schema graph nodes.
+	 */
+	private function collect_from_reference( array $block, $title, array $seen ) {
+		$ref = isset( $block['attrs']['ref'] ) ? (int) $block['attrs']['ref'] : 0;
+
+		// A pattern that references itself, directly or through another
+		// pattern, would otherwise recurse until the request dies.
+		if ( $ref <= 0 || in_array( $ref, $seen, true ) ) {
+			return array();
+		}
+
+		$seen[] = $ref;
+
+		$reference = get_post( $ref );
+
+		if ( ! $reference instanceof \WP_Post || 'wp_block' !== $reference->post_type ) {
+			return array();
+		}
+
+		if ( 'publish' !== $reference->post_status ) {
+			return array();
+		}
+
+		if ( false === strpos( $reference->post_content, 'dsgoSchema' )
+			&& false === strpos( $reference->post_content, 'wp:block ' ) ) {
+			return array();
+		}
+
+		return $this->collect( parse_blocks( $reference->post_content ), $title, $seen );
 	}
 
 	/**
@@ -93,9 +140,11 @@ class SchemaOutput {
 			return;
 		}
 
-		// Cheap bail before the comparatively expensive parse. Every opted-in
-		// block carries the attribute name in its block comment.
-		if ( false === strpos( $post->post_content, 'dsgoSchema' ) ) {
+		// Cheap bail before the comparatively expensive parse. An opted-in block
+		// carries the attribute name in its block comment — unless it lives in
+		// a synced pattern, in which case the page only holds the reference.
+		if ( false === strpos( $post->post_content, 'dsgoSchema' )
+			&& false === strpos( $post->post_content, 'wp:block ' ) ) {
 			return;
 		}
 
