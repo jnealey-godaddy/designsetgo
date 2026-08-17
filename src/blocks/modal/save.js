@@ -23,6 +23,24 @@ import { transferStylesToContent } from './utils/style-transfer';
 const PANEL_EDGES = ['left', 'right', 'top', 'bottom'];
 const DEFAULT_PANEL_EDGE = 'right';
 
+/**
+ * A single, plain CSS length — the only thing the Panel Size UnitControl can
+ * produce.
+ *
+ * panelSize is interpolated into the root's style attribute as
+ * `--dsgo-panel-size:<value>`. React does not escape `;` there, so an
+ * unvalidated value appends further declarations to the modal root:
+ * `10px;position:fixed;inset:0;background:red` emits all four. Reaching that
+ * needs post-edit capability and it only yields CSS, not script — but the same
+ * rigor applied to panelEdge belongs here.
+ *
+ * Deliberately an ALLOW-list. A denylist of dangerous substrings is the pattern
+ * that had to be patched three times on the interaction-layers PR.
+ */
+const CSS_LENGTH =
+	/^(0|\d+(\.\d+)?(px|rem|em|%|vw|vh|vmin|vmax|ch|ex|pt|pc|cm|mm|in))$/;
+const DEFAULT_PANEL_SIZE = '24rem';
+
 export default function save({ attributes }) {
 	const {
 		modalId,
@@ -83,7 +101,11 @@ export default function save({ attributes }) {
 	// Kept on the wrapper rather than folded into blockProps.style, which
 	// transferStylesToContent() relocates onto .dsgo-modal__content — a
 	// descendant of the .dsgo-modal__dialog that consumes this property.
-	const panelStyle = isPanel ? { '--dsgo-panel-size': panelSize } : undefined;
+	const safeSize = CSS_LENGTH.test(String(panelSize ?? ''))
+		? panelSize
+		: DEFAULT_PANEL_SIZE;
+
+	const panelStyle = isPanel ? { '--dsgo-panel-size': safeSize } : undefined;
 
 	const blockProps = useBlockProps.save({
 		className: `dsgo-modal${panelClasses}`,

@@ -111,6 +111,59 @@ describe('modal panel mode', () => {
 		expect(html).not.toContain('dsgo-modal--panel-right');
 	});
 
+	/**
+	 * Read the root element's style attribute.
+	 *
+	 * @param {string} html Serialized block markup.
+	 * @return {string} The style attribute value, or ''.
+	 */
+	const rootStyle = (html) => {
+		const root = html.slice(
+			html.indexOf('<div'),
+			html.indexOf('>', html.indexOf('<div'))
+		);
+		return root.match(/ style="([^"]*)"/)?.[1] ?? '';
+	};
+
+	it.each([
+		['24rem', '24rem'],
+		['300px', '300px'],
+		['50%', '50%'],
+		['80vw', '80vw'],
+		['0', '0'],
+		['12.5rem', '12.5rem'],
+	])('passes the plain CSS length %p through', (input, expected) => {
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			panelSize: input,
+		});
+		expect(rootStyle(serialize(block))).toBe(
+			`--dsgo-panel-size:${expected}`
+		);
+	});
+
+	it.each([
+		['appends declarations', '10px;position:fixed;inset:0;background:red'],
+		['appends one declaration', '10px;background:red'],
+		['url() value', 'url(https://evil.example/x)'],
+		['no unit', '24'],
+		['unknown unit', '24parsecs'],
+		['expression', 'expression(alert(1))'],
+		['empty', ''],
+		['whitespace', ' 24rem '],
+	])('rejects a crafted panelSize (%s)', (_name, input) => {
+		// The value is interpolated into --dsgo-panel-size:<value> and React
+		// does not escape ';', so an unvalidated value appends further
+		// declarations to the modal root.
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			panelSize: input,
+		});
+		expect(rootStyle(serialize(block))).toBe('--dsgo-panel-size:24rem');
+	});
+
 	it('keeps the dialog role and modal semantics in panel mode', () => {
 		const block = createBlock('designsetgo/modal', {
 			modalId: 'm1',

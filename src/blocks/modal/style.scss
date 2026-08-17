@@ -642,12 +642,11 @@ body.dsgo-modal-open {
 // The shared reduced-motion rule above already forces `transform: none` on
 // .dsgo-modal__dialog, so the panel simply appears in place rather than
 // sliding. This only removes the transition so nothing eases.
-@media (prefers-reduced-motion: reduce) {
-
-	.dsgo-modal--panel .dsgo-modal__dialog {
-		transition: none !important;
-	}
-}
+// No panel-specific prefers-reduced-motion rule is needed. The block-wide rule
+// near the top of this file already targets `.dsgo-modal .dsgo-modal__dialog`
+// with `transition: none !important; transform: none !important`, and a panel
+// root carries BOTH .dsgo-modal and .dsgo-modal--panel — so a panel dialog is
+// matched by it, appearing in place with no slide.
 
 // A panel wider or taller than the viewport is already clamped by the
 // unconditional `max-width: 100%` / `max-height: 100%` on the dialog above —

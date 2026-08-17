@@ -163,6 +163,82 @@ class Block_Inserter_Modal_Panel_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A plain CSS length passes through untouched.
+	 *
+	 * @dataProvider good_size_provider
+	 *
+	 * @param string $size Panel size.
+	 */
+	public function test_valid_panel_size_passes_through( $size ) {
+		$html = $this->opening_html(
+			array(
+				'modalId'     => 'm1',
+				'displayMode' => 'panel',
+				'panelSize'   => $size,
+			)
+		);
+
+		$this->assertStringContainsString( 'style="--dsgo-panel-size:' . $size . '"', $html );
+	}
+
+	/**
+	 * Lengths the Panel Size control can produce.
+	 *
+	 * @return array[] Valid sizes.
+	 */
+	public function good_size_provider() {
+		return array(
+			'rem'     => array( '24rem' ),
+			'px'      => array( '300px' ),
+			'percent' => array( '50%' ),
+			'vw'      => array( '80vw' ),
+			'zero'    => array( '0' ),
+			'decimal' => array( '12.5rem' ),
+		);
+	}
+
+	/**
+	 * A crafted panelSize must not append declarations to the modal root.
+	 *
+	 * esc_attr() prevents breaking out of style="..." but not a ';' that starts
+	 * another declaration, so the value needs an allow-list of its own.
+	 *
+	 * @dataProvider bad_size_provider
+	 *
+	 * @param string $size Crafted panel size.
+	 */
+	public function test_crafted_panel_size_falls_back_to_default( $size ) {
+		$html = $this->opening_html(
+			array(
+				'modalId'     => 'm1',
+				'displayMode' => 'panel',
+				'panelSize'   => $size,
+			)
+		);
+
+		$this->assertStringContainsString( 'style="--dsgo-panel-size:24rem"', $html );
+		$this->assertStringNotContainsString( 'position:fixed', $html );
+		$this->assertStringNotContainsString( 'background:red', $html );
+	}
+
+	/**
+	 * Values that must never reach the style attribute.
+	 *
+	 * @return array[] Crafted sizes.
+	 */
+	public function bad_size_provider() {
+		return array(
+			'appends declarations' => array( '10px;position:fixed;inset:0;background:red' ),
+			'appends one'          => array( '10px;background:red' ),
+			'url value'            => array( 'url(https://evil.example/x)' ),
+			'no unit'              => array( '24' ),
+			'unknown unit'         => array( '24parsecs' ),
+			'expression'           => array( 'expression(alert(1))' ),
+			'empty'                => array( '' ),
+		);
+	}
+
+	/**
 	 * Panel mode must not write dialog dimensions onto the content.
 	 */
 	public function test_panel_mode_omits_inline_content_dimensions() {

@@ -1257,7 +1257,14 @@ class Block_Inserter {
 				if ( ! in_array( $panel_edge, array( 'left', 'right', 'top', 'bottom' ), true ) ) {
 					$panel_edge = 'right';
 				}
-				$panel_size            = isset( $attributes['panelSize'] ) ? $attributes['panelSize'] : '24rem';
+				$panel_size            = isset( $attributes['panelSize'] ) ? (string) $attributes['panelSize'] : '24rem';
+				// Mirror save.js: allow-list a single plain CSS length. This is
+				// interpolated into `--dsgo-panel-size:<value>`, and esc_attr()
+				// stops an attribute break-out but not a `;` that appends
+				// further declarations to the modal root.
+				if ( ! preg_match( '/^(0|\d+(\.\d+)?(px|rem|em|%|vw|vh|vmin|vmax|ch|ex|pt|pc|cm|mm|in))$/', $panel_size ) ) {
+					$panel_size = '24rem';
+				}
 				$is_panel              = 'panel' === $display_mode;
 				$overlay_color         = isset( $attributes['overlayColor'] ) ? trim( (string) $attributes['overlayColor'] ) : '';
 				$overlay_opacity       = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 80;
