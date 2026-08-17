@@ -18,17 +18,28 @@ if ( ! function_exists( 'designsetgo_chart_geometry' ) ) {
 	 * The plot is inset from the viewport to leave room for axis tick labels
 	 * on the left and value labels above the tallest bar or point.
 	 *
-	 * @param array $attributes Block attributes.
-	 * @param array $rows       Chart rows.
-	 * @param bool  $has_grid   Whether the grid is drawn.
+	 * @param array  $attributes Block attributes.
+	 * @param array  $rows       Chart rows.
+	 * @param bool   $has_grid   Whether the grid is drawn.
+	 * @param string $type       Chart type.
 	 * @return array Geometry context.
 	 */
-	function designsetgo_chart_geometry( array $attributes, array $rows, $has_grid ) {
+	function designsetgo_chart_geometry( array $attributes, array $rows, $has_grid, $type = 'bar' ) {
 		$height      = max( 80, min( 800, (int) ( isset( $attributes['height'] ) ? $attributes['height'] : 240 ) ) );
 		$show_values = ! isset( $attributes['showValues'] ) || (bool) $attributes['showValues'];
 		$pad_left    = $has_grid ? 44 : 0;
 		$pad_top     = $show_values ? 18 : 0;
 		$bounds      = designsetgo_chart_bounds( wp_list_pluck( $rows, 'value' ) );
+		$tick_count  = 5;
+
+		// Round the axis outwards so bars and gridlines land on round numbers.
+		// Applied whether or not the grid is drawn, so toggling it never
+		// rescales the series.
+		if ( 'donut' !== $type ) {
+			$nice       = designsetgo_chart_nice_bounds( $bounds['min'], $bounds['max'], $tick_count );
+			$bounds     = $nice;
+			$tick_count = $nice['count'];
+		}
 
 		return array(
 			'width'       => 600,
@@ -39,6 +50,7 @@ if ( ! function_exists( 'designsetgo_chart_geometry' ) ) {
 			'plot_h'      => $height - $pad_top,
 			'min'         => $bounds['min'],
 			'max'         => $bounds['max'],
+			'tick_count'  => $tick_count,
 			'show_values' => $show_values,
 		);
 	}
@@ -71,7 +83,7 @@ if ( ! function_exists( 'designsetgo_render_chart' ) ) {
 		$has_grid = 'donut' !== $type
 			&& ( ! isset( $attributes['showGrid'] ) || (bool) $attributes['showGrid'] );
 
-		$geo    = designsetgo_chart_geometry( $attributes, $rows, $has_grid );
+		$geo    = designsetgo_chart_geometry( $attributes, $rows, $has_grid, $type );
 		$colors = designsetgo_chart_palette( $attributes, count( $rows ) );
 
 		if ( 'donut' === $type ) {

@@ -187,10 +187,77 @@ if ( ! function_exists( 'designsetgo_chart_ticks' ) ) {
 		$ticks = array();
 
 		for ( $i = 0; $i < $count; $i++ ) {
-			$ticks[] = $min + $step * $i;
+			// Repeated addition of a fractional step accumulates binary noise
+			// (0.1 * 2 => 0.20000000000000004), so settle each tick.
+			$ticks[] = round( $min + $step * $i, 10 );
 		}
 
 		return $ticks;
+	}
+}
+
+if ( ! function_exists( 'designsetgo_chart_nice_step' ) ) {
+	/**
+	 * Round a raw step up to the nearest "nice" interval.
+	 *
+	 * Readers parse 0/10/20/30 instantly and 0/8.13/16.25 not at all, so the
+	 * step is snapped to 1, 2, 2.5, or 5 times a power of ten.
+	 *
+	 * @param float $raw Unrounded step.
+	 * @return float Nice step, always greater than zero.
+	 */
+	function designsetgo_chart_nice_step( $raw ) {
+		$raw = abs( (float) $raw );
+
+		if ( $raw <= 0.0 ) {
+			return 1.0;
+		}
+
+		$magnitude  = pow( 10, floor( log10( $raw ) ) );
+		$normalised = $raw / $magnitude;
+
+		foreach ( array( 1.0, 2.0, 2.5, 5.0, 10.0 ) as $candidate ) {
+			if ( $normalised <= $candidate ) {
+				return $candidate * $magnitude;
+			}
+		}
+
+		return 10.0 * $magnitude;
+	}
+}
+
+if ( ! function_exists( 'designsetgo_chart_nice_bounds' ) ) {
+	/**
+	 * Widen bounds outwards so every axis tick is a round number.
+	 *
+	 * @param float $min    Data minimum.
+	 * @param float $max    Data maximum.
+	 * @param int   $target Preferred number of ticks.
+	 * @return array{min: float, max: float, count: int} Nice bounds.
+	 */
+	function designsetgo_chart_nice_bounds( $min, $max, $target = 5 ) {
+		$min    = (float) $min;
+		$max    = (float) $max;
+		$target = max( 2, (int) $target );
+		$range  = $max - $min;
+
+		if ( $range <= 0.0 ) {
+			$range = abs( $max ) > 0 ? abs( $max ) : 1.0;
+		}
+
+		$step = designsetgo_chart_nice_step( $range / ( $target - 1 ) );
+		$low  = floor( $min / $step ) * $step;
+		$high = ceil( $max / $step ) * $step;
+
+		if ( $high === $low ) {
+			$high = $low + $step;
+		}
+
+		return array(
+			'min'   => (float) $low,
+			'max'   => (float) $high,
+			'count' => (int) round( ( $high - $low ) / $step ) + 1,
+		);
 	}
 }
 

@@ -53,8 +53,17 @@
 		flex-shrink: 0;
 	}
 
-	&.dsgo-chart--donut .dsgo-chart__canvas {
-		max-width: 24rem;
-		margin-inline: auto;
+	&.dsgo-chart--donut {
+
+		.dsgo-chart__canvas {
+			max-width: 24rem;
+			margin-inline: auto;
+		}
+
+		// The donut is displayed far smaller than its 600-unit viewBox, so its
+		// labels need a larger user-unit size to stay legible once scaled.
+		.dsgo-chart__value {
+			font-size: 20px;
+		}
 	}
 }

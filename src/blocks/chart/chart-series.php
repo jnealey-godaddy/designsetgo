@@ -27,16 +27,18 @@ if ( ! function_exists( 'designsetgo_chart_value_label' ) ) {
 	/**
 	 * Render a single value label.
 	 *
-	 * @param float  $x    Centre x.
-	 * @param float  $y    Baseline y.
-	 * @param string $text Display text.
+	 * @param float  $x      Centre x.
+	 * @param float  $y      Baseline y.
+	 * @param string $text   Display text.
+	 * @param string $anchor Text anchor.
 	 * @return string Text element markup.
 	 */
-	function designsetgo_chart_value_label( $x, $y, $text ) {
+	function designsetgo_chart_value_label( $x, $y, $text, $anchor = 'middle' ) {
 		return sprintf(
-			'<text class="dsgo-chart__value" x="%s" y="%s" text-anchor="middle">%s</text>',
+			'<text class="dsgo-chart__value" x="%s" y="%s" text-anchor="%s">%s</text>',
 			esc_attr( designsetgo_chart_number( $x ) ),
 			esc_attr( designsetgo_chart_number( $y ) ),
+			esc_attr( $anchor ),
 			esc_html( $text )
 		);
 	}
@@ -50,7 +52,11 @@ if ( ! function_exists( 'designsetgo_chart_grid' ) ) {
 	 * @return string SVG fragment.
 	 */
 	function designsetgo_chart_grid( array $geo ) {
-		$ticks = designsetgo_chart_ticks( $geo['min'], $geo['max'], 5 );
+		$ticks = designsetgo_chart_ticks(
+			$geo['min'],
+			$geo['max'],
+			isset( $geo['tick_count'] ) ? $geo['tick_count'] : 5
+		);
 		$out   = '';
 
 		foreach ( $ticks as $tick ) {
@@ -169,10 +175,20 @@ if ( ! function_exists( 'designsetgo_chart_line' ) ) {
 			);
 
 			if ( $geo['show_values'] ) {
+				// Pull the end labels inwards so they do not overhang the axis.
+				$anchor = 'middle';
+
+				if ( $count > 1 && 0 === $i ) {
+					$anchor = 'start';
+				} elseif ( $count > 1 && $count - 1 === $i ) {
+					$anchor = 'end';
+				}
+
 				$out .= designsetgo_chart_value_label(
 					$x,
 					$y - 8,
-					designsetgo_chart_format_value( $value )
+					designsetgo_chart_format_value( $value ),
+					$anchor
 				);
 			}
 		}

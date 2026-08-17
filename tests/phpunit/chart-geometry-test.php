@@ -156,6 +156,60 @@ class Chart_Geometry_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The axis is rounded out to numbers a reader recognises.
+	 */
+	public function test_nice_bounds_rounds_the_axis_outwards() {
+		$nice = designsetgo_chart_nice_bounds( 0, 32.5, 5 );
+		$this->assertSame( 0.0, $nice['min'] );
+		$this->assertSame( 40.0, $nice['max'] );
+		$this->assertSame( 5, $nice['count'] );
+	}
+
+	/**
+	 * Nice bounds always contain the original range.
+	 */
+	public function test_nice_bounds_never_clips_the_data() {
+		$nice = designsetgo_chart_nice_bounds( -3, 24, 5 );
+		$this->assertLessThanOrEqual( -3.0, $nice['min'] );
+		$this->assertGreaterThanOrEqual( 24.0, $nice['max'] );
+	}
+
+	/**
+	 * Every tick across nice bounds is itself a round number.
+	 */
+	public function test_nice_bounds_produce_round_ticks() {
+		$nice  = designsetgo_chart_nice_bounds( 0, 32.5, 5 );
+		$ticks = designsetgo_chart_ticks( $nice['min'], $nice['max'], $nice['count'] );
+		$this->assertSame( array( 0.0, 10.0, 20.0, 30.0, 40.0 ), $ticks );
+	}
+
+	/**
+	 * A tiny range still yields sensible sub-unit ticks.
+	 */
+	public function test_nice_bounds_handle_a_fractional_range() {
+		$nice  = designsetgo_chart_nice_bounds( 0, 0.42, 5 );
+		$ticks = designsetgo_chart_ticks( $nice['min'], $nice['max'], $nice['count'] );
+
+		foreach ( $ticks as $tick ) {
+			$this->assertSame(
+				$tick,
+				round( $tick, 4 ),
+				'Tick ' . $tick . ' is not a clean value.'
+			);
+		}
+
+		$this->assertGreaterThanOrEqual( 0.42, $nice['max'] );
+	}
+
+	/**
+	 * A flat range does not collapse into a zero-height axis.
+	 */
+	public function test_nice_bounds_of_a_zero_range_still_spans() {
+		$nice = designsetgo_chart_nice_bounds( 5, 5, 5 );
+		$this->assertGreaterThan( $nice['min'], $nice['max'] );
+	}
+
+	/**
 	 * Whole numbers display without a pointless ".00".
 	 */
 	public function test_format_value_drops_a_trailing_zero_decimal() {
