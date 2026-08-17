@@ -631,6 +631,13 @@ const variations = [
 			['core/paragraph', { content: '' }],
 		],
 		isActive: ['displayMode'],
+		// Deliberately NOT scope: ['block'] like the nine variations above.
+		// Those are content templates offered inside the modal's own placeholder
+		// once you have already chosen a modal. An off-canvas panel is a
+		// different structural choice — an author looking for a slide-in menu
+		// searches the inserter for "panel", not for "modal" — so it is exposed
+		// as its own inserter entry and transform target, the way core exposes
+		// media-text alongside columns.
 		scope: ['inserter', 'transform'],
 	},
 ];

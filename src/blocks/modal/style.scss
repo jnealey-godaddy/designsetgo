@@ -649,16 +649,6 @@ body.dsgo-modal-open {
 	}
 }
 
-// A panel wider or taller than the viewport should never overflow it.
-@media (max-width: 480px) {
-
-	.dsgo-modal--panel.dsgo-modal--panel-left .dsgo-modal__dialog,
-	.dsgo-modal--panel.dsgo-modal--panel-right .dsgo-modal__dialog {
-		width: min(var(--dsgo-panel-size, 24rem), 100vw);
-	}
-
-	.dsgo-modal--panel .dsgo-modal__content {
-		max-height: 100%;
-		border-radius: 0;
-	}
-}
+// A panel wider or taller than the viewport is already clamped by the
+// unconditional `max-width: 100%` / `max-height: 100%` on the dialog above —
+// at every viewport width, not just on small screens. No breakpoint needed.

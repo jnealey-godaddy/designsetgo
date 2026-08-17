@@ -10,6 +10,19 @@ import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { hasExplicitString } from '../../utils/has-explicit-value';
 import { transferStylesToContent } from './utils/style-transfer';
 
+/**
+ * Edges a panel can anchor to.
+ *
+ * The inspector only ever writes one of these, but createBlock(), hand-edited
+ * post content and third-party code can put anything in the attribute. An
+ * unrecognised value would emit a dsgo-modal--panel-<value> class that matches
+ * no rule in style.scss, leaving the dialog `position: fixed` with no offsets —
+ * a small box floating mid-viewport, with no validation error to signal it.
+ * Clamping here keeps that state unreachable from the markup.
+ */
+const PANEL_EDGES = ['left', 'right', 'top', 'bottom'];
+const DEFAULT_PANEL_EDGE = 'right';
+
 export default function save({ attributes }) {
 	const {
 		modalId,
@@ -59,8 +72,12 @@ export default function save({ attributes }) {
 	// tests/unit/modal-panel-save.test.js pins that.
 	const isPanel = 'panel' === displayMode;
 
+	const safeEdge = PANEL_EDGES.includes(panelEdge)
+		? panelEdge
+		: DEFAULT_PANEL_EDGE;
+
 	const panelClasses = isPanel
-		? ` dsgo-modal--panel dsgo-modal--panel-${panelEdge}`
+		? ` dsgo-modal--panel dsgo-modal--panel-${safeEdge}`
 		: '';
 
 	// Kept on the wrapper rather than folded into blockProps.style, which

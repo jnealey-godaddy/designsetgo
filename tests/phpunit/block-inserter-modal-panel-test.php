@@ -130,6 +130,39 @@ class Block_Inserter_Modal_Panel_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * An unrecognised edge is clamped, mirroring save.js.
+	 *
+	 * @dataProvider bad_edge_provider
+	 *
+	 * @param mixed $edge Unrecognised panelEdge value.
+	 */
+	public function test_unrecognised_panel_edge_clamps_to_default( $edge ) {
+		$html = $this->opening_html(
+			array(
+				'modalId'     => 'm1',
+				'displayMode' => 'panel',
+				'panelEdge'   => $edge,
+			)
+		);
+
+		$this->assertStringContainsString( 'dsgo-modal--panel-right"', $html );
+	}
+
+	/**
+	 * Values the inspector cannot produce but callers can.
+	 *
+	 * @return array[] Bad edge values.
+	 */
+	public function bad_edge_provider() {
+		return array(
+			'unknown word' => array( 'diagonal' ),
+			'empty string' => array( '' ),
+			'wrong case'   => array( 'RIGHT' ),
+			'injection'    => array( 'left" onload="x' ),
+		);
+	}
+
+	/**
 	 * Panel mode must not write dialog dimensions onto the content.
 	 */
 	public function test_panel_mode_omits_inline_content_dimensions() {

@@ -4,7 +4,7 @@
  * The first two tests are the ones that matter for existing content: adding
  * displayMode/panelEdge/panelSize must leave a default-mode modal's stored
  * markup character-identical, or every modal already in the wild needs a
- * deprecation. See docs/plans/2026-08-16-offcanvas-panel.md.
+ * deprecation.
  */
 
 // Import the block API from the copy nested under @wordpress/block-editor — the
@@ -75,6 +75,41 @@ describe('modal panel mode', () => {
 			expect(reparsed.attributes.displayMode).toBe('panel');
 		}
 	);
+
+	it.each(['diagonal', '', 'RIGHT', 'left; }', undefined])(
+		'clamps an unrecognised panelEdge (%p) to the default edge',
+		(edge) => {
+			// The inspector cannot produce these, but createBlock(), hand-edited
+			// post content and third-party code can. An unrecognised value emits
+			// a class matching no rule in style.scss, leaving the dialog
+			// position: fixed with no offsets — a small box floating
+			// mid-viewport, with no validation error to signal it.
+			const block = createBlock('designsetgo/modal', {
+				modalId: 'm1',
+				displayMode: 'panel',
+				panelEdge: edge,
+			});
+			// Match the emitted edge class rather than asserting a substring is
+			// absent: for edge === '' the naive negative check would compare
+			// against 'dsgo-modal--panel-', which IS a substring of the correct
+			// 'dsgo-modal--panel-right' and would pass vacuously.
+			const emitted = serialize(block).match(
+				/dsgo-modal--panel-(\S*?)(?=["\s])/
+			);
+			expect(emitted?.[1]).toBe('right');
+		}
+	);
+
+	it('leaves a recognised panelEdge alone', () => {
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			panelEdge: 'top',
+		});
+		const html = serialize(block);
+		expect(html).toContain('dsgo-modal--panel-top');
+		expect(html).not.toContain('dsgo-modal--panel-right');
+	});
 
 	it('keeps the dialog role and modal semantics in panel mode', () => {
 		const block = createBlock('designsetgo/modal', {

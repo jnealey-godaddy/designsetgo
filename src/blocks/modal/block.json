@@ -184,10 +184,20 @@
 		},
 		"displayMode": {
 			"type": "string",
+			"enum": [
+				"dialog",
+				"panel"
+			],
 			"default": "dialog"
 		},
 		"panelEdge": {
 			"type": "string",
+			"enum": [
+				"left",
+				"right",
+				"top",
+				"bottom"
+			],
 			"default": "right"
 		},
 		"panelSize": {

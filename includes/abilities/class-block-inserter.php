@@ -1252,14 +1252,19 @@ class Block_Inserter {
 				$max_width               = isset( $attributes['maxWidth'] ) ? $attributes['maxWidth'] : '90vw';
 				$display_mode            = isset( $attributes['displayMode'] ) ? $attributes['displayMode'] : 'dialog';
 				$panel_edge              = isset( $attributes['panelEdge'] ) ? $attributes['panelEdge'] : 'right';
-				$panel_size              = isset( $attributes['panelSize'] ) ? $attributes['panelSize'] : '24rem';
-				$is_panel                = 'panel' === $display_mode;
-				$overlay_color           = isset( $attributes['overlayColor'] ) ? trim( (string) $attributes['overlayColor'] ) : '';
-				$overlay_opacity         = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 80;
-				$overlay_blur            = isset( $attributes['overlayBlur'] ) ? intval( $attributes['overlayBlur'] ) : 0;
-				$show_close_button       = isset( $attributes['showCloseButton'] ) ? $attributes['showCloseButton'] : true;
-				$close_button_position   = isset( $attributes['closeButtonPosition'] ) ? $attributes['closeButtonPosition'] : 'inside-top-right';
-				$close_button_size       = isset( $attributes['closeButtonSize'] ) ? intval( $attributes['closeButtonSize'] ) : 24;
+				// Mirror save.js: clamp to a known edge, or the emitted class
+				// matches no CSS rule and the panel floats mid-viewport.
+				if ( ! in_array( $panel_edge, array( 'left', 'right', 'top', 'bottom' ), true ) ) {
+					$panel_edge = 'right';
+				}
+				$panel_size            = isset( $attributes['panelSize'] ) ? $attributes['panelSize'] : '24rem';
+				$is_panel              = 'panel' === $display_mode;
+				$overlay_color         = isset( $attributes['overlayColor'] ) ? trim( (string) $attributes['overlayColor'] ) : '';
+				$overlay_opacity       = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 80;
+				$overlay_blur          = isset( $attributes['overlayBlur'] ) ? intval( $attributes['overlayBlur'] ) : 0;
+				$show_close_button     = isset( $attributes['showCloseButton'] ) ? $attributes['showCloseButton'] : true;
+				$close_button_position = isset( $attributes['closeButtonPosition'] ) ? $attributes['closeButtonPosition'] : 'inside-top-right';
+				$close_button_size     = isset( $attributes['closeButtonSize'] ) ? intval( $attributes['closeButtonSize'] ) : 24;
 
 				// Build data attributes.
 				$data_attrs  = ' data-dsgo-modal="true"';
