@@ -1,0 +1,278 @@
+/**
+ * Off-canvas panel mode on the modal block.
+ *
+ * The first two tests are the ones that matter for existing content: adding
+ * displayMode/panelEdge/panelSize must leave a default-mode modal's stored
+ * markup character-identical, or every modal already in the wild needs a
+ * deprecation.
+ */
+
+// Import the block API from the copy nested under @wordpress/block-editor — the
+// SAME instance useBlockProps.save() talks to. Jest resolves two copies of
+// @wordpress/blocks and save() renders empty across instances. See the header
+// of tests/unit/deprecations-isEligible.test.js for the full explanation.
+import {
+	createBlock,
+	serialize,
+	parse,
+	// eslint-disable-next-line import/no-unresolved
+} from '@wordpress/block-editor/node_modules/@wordpress/blocks';
+import fs from 'fs';
+import path from 'path';
+import '../../src/blocks/modal';
+
+describe('modal panel mode', () => {
+	it('emits no panel class in the default dialog mode', () => {
+		const block = createBlock('designsetgo/modal', { modalId: 'm1' });
+		const html = serialize(block);
+		expect(html).not.toContain('dsgo-modal--panel');
+	});
+
+	it('writes nothing about displayMode into the block comment by default', () => {
+		const block = createBlock('designsetgo/modal', { modalId: 'm1' });
+		const html = serialize(block);
+		expect(html).not.toContain('displayMode');
+		expect(html).not.toContain('panelEdge');
+		expect(html).not.toContain('panelSize');
+	});
+
+	it('emits no panel size custom property in the default dialog mode', () => {
+		const block = createBlock('designsetgo/modal', { modalId: 'm1' });
+		expect(serialize(block)).not.toContain('--dsgo-panel-size');
+	});
+
+	it('emits the panel classes when panel mode is on', () => {
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			panelEdge: 'left',
+		});
+		const html = serialize(block);
+		expect(html).toContain('dsgo-modal--panel');
+		expect(html).toContain('dsgo-modal--panel-left');
+	});
+
+	it('sets the panel size custom property in panel mode', () => {
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			panelSize: '30rem',
+		});
+		expect(serialize(block)).toContain('--dsgo-panel-size:30rem');
+	});
+
+	it.each(['left', 'right', 'top', 'bottom'])(
+		'round-trips a %s panel without becoming invalid',
+		(edge) => {
+			const block = createBlock('designsetgo/modal', {
+				modalId: 'm1',
+				displayMode: 'panel',
+				panelEdge: edge,
+			});
+			const [reparsed] = parse(serialize(block));
+			expect(reparsed.isValid).toBe(true);
+			expect(reparsed.attributes.panelEdge).toBe(edge);
+			expect(reparsed.attributes.displayMode).toBe('panel');
+		}
+	);
+
+	it.each(['diagonal', '', 'RIGHT', 'left; }', undefined])(
+		'clamps an unrecognised panelEdge (%p) to the default edge',
+		(edge) => {
+			// The inspector cannot produce these, but createBlock(), hand-edited
+			// post content and third-party code can. An unrecognised value emits
+			// a class matching no rule in style.scss, leaving the dialog
+			// position: fixed with no offsets — a small box floating
+			// mid-viewport, with no validation error to signal it.
+			const block = createBlock('designsetgo/modal', {
+				modalId: 'm1',
+				displayMode: 'panel',
+				panelEdge: edge,
+			});
+			// Match the emitted edge class rather than asserting a substring is
+			// absent: for edge === '' the naive negative check would compare
+			// against 'dsgo-modal--panel-', which IS a substring of the correct
+			// 'dsgo-modal--panel-right' and would pass vacuously.
+			const emitted = serialize(block).match(
+				/dsgo-modal--panel-(\S*?)(?=["\s])/
+			);
+			expect(emitted?.[1]).toBe('right');
+		}
+	);
+
+	it('leaves a recognised panelEdge alone', () => {
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			panelEdge: 'top',
+		});
+		const html = serialize(block);
+		expect(html).toContain('dsgo-modal--panel-top');
+		expect(html).not.toContain('dsgo-modal--panel-right');
+	});
+
+	/**
+	 * Read the root element's style attribute.
+	 *
+	 * @param {string} html Serialized block markup.
+	 * @return {string} The style attribute value, or ''.
+	 */
+	const rootStyle = (html) => {
+		const root = html.slice(
+			html.indexOf('<div'),
+			html.indexOf('>', html.indexOf('<div'))
+		);
+		return root.match(/ style="([^"]*)"/)?.[1] ?? '';
+	};
+
+	it.each([
+		['24rem', '24rem'],
+		['300px', '300px'],
+		['50%', '50%'],
+		['80vw', '80vw'],
+		['0', '0'],
+		['12.5rem', '12.5rem'],
+	])('passes the plain CSS length %p through', (input, expected) => {
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			panelSize: input,
+		});
+		expect(rootStyle(serialize(block))).toBe(
+			`--dsgo-panel-size:${expected}`
+		);
+	});
+
+	it.each([
+		['appends declarations', '10px;position:fixed;inset:0;background:red'],
+		['appends one declaration', '10px;background:red'],
+		['url() value', 'url(https://evil.example/x)'],
+		['no unit', '24'],
+		['unknown unit', '24parsecs'],
+		['expression', 'expression(alert(1))'],
+		['empty', ''],
+		['whitespace', ' 24rem '],
+	])('rejects a crafted panelSize (%s)', (_name, input) => {
+		// The value is interpolated into --dsgo-panel-size:<value> and React
+		// does not escape ';', so an unvalidated value appends further
+		// declarations to the modal root.
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			panelSize: input,
+		});
+		expect(rootStyle(serialize(block))).toBe('--dsgo-panel-size:24rem');
+	});
+
+	it('keeps the dialog role and modal semantics in panel mode', () => {
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+		});
+		const html = serialize(block);
+		expect(html).toContain('role="dialog"');
+		expect(html).toContain('aria-modal="true"');
+	});
+
+	it('keeps the panel size property on the root, where the dialog can read it', () => {
+		// transferStylesToContent() moves the wrapper's style object onto
+		// .dsgo-modal__content. If --dsgo-panel-size rode along it would land
+		// on a descendant of the element that consumes it, and every panel
+		// would silently fall back to the stylesheet default.
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			panelSize: '30rem',
+		});
+		const html = serialize(block);
+		const rootTag = html.slice(0, html.indexOf('>', html.indexOf('<div')));
+		expect(rootTag).toContain('--dsgo-panel-size:30rem');
+	});
+
+	it('writes no inline dialog dimensions onto the content in panel mode', () => {
+		// An inline width outranks the stylesheet's
+		// .dsgo-modal--panel .dsgo-modal__content { width: 100% }. The content
+		// then only APPEARS to fill the panel because flex-shrink clamps it —
+		// which stops the moment the panel is wider than that inline width.
+		// Top and bottom panels span the viewport, so they hit that always.
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			width: '600px',
+			maxWidth: '90vw',
+		});
+		const html = serialize(block);
+		const contentIndex = html.indexOf('dsgo-modal__content');
+		const contentTag = html.slice(
+			html.lastIndexOf('<div', contentIndex),
+			html.indexOf('>', contentIndex)
+		);
+		expect(contentTag).not.toContain('width:600px');
+		expect(contentTag).not.toContain('max-width:90vw');
+	});
+
+	it('still writes the dialog dimensions in the default dialog mode', () => {
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			width: '600px',
+			maxWidth: '90vw',
+		});
+		const html = serialize(block);
+		const contentIndex = html.indexOf('dsgo-modal__content');
+		const contentTag = html.slice(
+			html.lastIndexOf('<div', contentIndex),
+			html.indexOf('>', contentIndex)
+		);
+		expect(contentTag).toContain('width:600px');
+		expect(contentTag).toContain('max-width:90vw');
+	});
+
+	it('leaves the panel classes off the content element', () => {
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			panelEdge: 'left',
+		});
+		const html = serialize(block);
+		const contentIndex = html.indexOf('dsgo-modal__content');
+		const contentTagStart = html.lastIndexOf('<div', contentIndex);
+		const contentTag = html.slice(
+			contentTagStart,
+			html.indexOf('>', contentIndex)
+		);
+		expect(contentTag).not.toContain('dsgo-modal--panel');
+	});
+});
+
+describe('panel size custom property plumbing', () => {
+	const scss = fs.readFileSync(
+		path.join(__dirname, '../../src/blocks/modal/style.scss'),
+		'utf8'
+	);
+
+	it('never declares --dsgo-panel-size, only reads it', () => {
+		// save() writes --dsgo-panel-size on the block ROOT. Declaring it
+		// anywhere on .dsgo-modal__dialog (or a descendant) shadows that
+		// inherited value, so every panel silently renders at the default no
+		// matter what the author picked — invisible unless you test a
+		// non-default size. The default belongs in the var() fallback instead.
+		const declarations = scss
+			.split('\n')
+			.map((line, i) => [i + 1, line])
+			.filter(
+				([, line]) =>
+					/(^|[^(])--dsgo-panel-size\s*:/.test(line) &&
+					!line.trim().startsWith('//')
+			);
+
+		expect(declarations).toEqual([]);
+	});
+
+	it('supplies the default through a var() fallback at every use site', () => {
+		const uses = scss.match(/var\(\s*--dsgo-panel-size[^)]*\)/g) || [];
+		expect(uses.length).toBeGreaterThan(0);
+		uses.forEach((use) => {
+			expect(use).toMatch(/var\(\s*--dsgo-panel-size\s*,\s*[^)]+\)/);
+		});
+	});
+});

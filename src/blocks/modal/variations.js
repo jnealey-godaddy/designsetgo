@@ -596,6 +596,50 @@ const variations = [
 		],
 		scope: ['block'],
 	},
+	{
+		name: 'off-canvas',
+		title: __('Off-Canvas Panel', 'designsetgo'),
+		description: __(
+			'A panel that slides in from the edge of the screen. Useful for menus, filters, and carts.',
+			'designsetgo'
+		),
+		icon: 'align-right',
+		attributes: {
+			displayMode: 'panel',
+			panelEdge: 'right',
+			panelSize: '24rem',
+			// 'fade' rather than 'none': the panel's slide is a transform on
+			// the dialog, and dsgo-modal--animation-none sets
+			// `transition: none !important` on that same element, which would
+			// suppress it. 'fade' only animates opacity, so the two compose.
+			animationType: 'fade',
+			overlayOpacity: 40,
+			closeOnBackdrop: true,
+			closeOnEsc: true,
+			showCloseButton: true,
+			// Outside positions sit at -12px, which a screen-edge panel clips.
+			closeButtonPosition: 'inside-top-right',
+		},
+		innerBlocks: [
+			[
+				'core/heading',
+				{
+					level: 2,
+					content: __('Menu', 'designsetgo'),
+				},
+			],
+			['core/paragraph', { content: '' }],
+		],
+		isActive: ['displayMode'],
+		// Deliberately NOT scope: ['block'] like the nine variations above.
+		// Those are content templates offered inside the modal's own placeholder
+		// once you have already chosen a modal. An off-canvas panel is a
+		// different structural choice — an author looking for a slide-in menu
+		// searches the inserter for "panel", not for "modal" — so it is exposed
+		// as its own inserter entry and transform target, the way core exposes
+		// media-text alongside columns.
+		scope: ['inserter', 'transform'],
+	},
 ];
 
 export default variations;
