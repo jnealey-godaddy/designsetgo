@@ -346,6 +346,49 @@ class Chart_Render_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Donut labels are drawn clear of the ring.
+	 *
+	 * Text sitting on a slice has to contrast with a colour the author chose,
+	 * which cannot be guaranteed — outside the ring it contrasts with the page.
+	 */
+	public function test_donut_labels_sit_outside_the_ring() {
+		$html = $this->render(
+			array(
+				'chartType'  => 'donut',
+				'data'       => $this->sample(),
+				'showValues' => true,
+				'height'     => 240,
+			)
+		);
+
+		preg_match_all(
+			'/<text class="dsgo-chart__value" x="([-\d.]+)" y="([-\d.]+)"/',
+			$html,
+			$matches,
+			PREG_SET_ORDER
+		);
+
+		$this->assertNotEmpty( $matches, 'No donut value labels were rendered.' );
+
+		// Mirrors designsetgo_chart_donut(): half of min(600, 240), less the
+		// 4-unit inset and the 26-unit label gutter.
+		$radius = 240 / 2 - 4 - 26;
+		$cx     = 300.0;
+		$cy     = 120.0;
+
+		foreach ( $matches as $match ) {
+			$distance = sqrt(
+				pow( (float) $match[1] - $cx, 2 ) + pow( (float) $match[2] - $cy, 2 )
+			);
+			$this->assertGreaterThan(
+				$radius,
+				$distance,
+				'A donut label was drawn on top of the ring.'
+			);
+		}
+	}
+
+	/**
 	 * The legend is emitted by default and can be turned off.
 	 */
 	public function test_legend_can_be_turned_off() {
@@ -379,6 +422,68 @@ class Chart_Render_Test extends WP_UnitTestCase {
 			)
 		);
 		$this->assertStringNotContainsString( 'javascript:', $html );
+	}
+
+	/**
+	 * A theme preset chosen in the colour picker renders as its CSS variable.
+	 */
+	public function test_palette_converts_a_preset_token_to_a_css_variable() {
+		$html = $this->render(
+			array(
+				'chartType' => 'bar',
+				'data'      => $this->sample(),
+				'palette'   => array( 'var:preset|color|accent-3' ),
+			)
+		);
+		$this->assertStringContainsString(
+			'var(--wp--preset--color--accent-3)',
+			$html
+		);
+		$this->assertStringNotContainsString( 'var:preset', $html );
+	}
+
+	/**
+	 * A custom hex colour is passed through untouched.
+	 */
+	public function test_palette_passes_through_a_custom_hex() {
+		$html = $this->render(
+			array(
+				'chartType' => 'bar',
+				'data'      => $this->sample(),
+				'palette'   => array( '#ff8800' ),
+			)
+		);
+		$this->assertStringContainsString( '#ff8800', $html );
+	}
+
+	/**
+	 * Setting one series colour leaves the other series on their defaults.
+	 */
+	public function test_palette_is_positional_not_cycled() {
+		$html = $this->render(
+			array(
+				'chartType' => 'bar',
+				'data'      => $this->sample(),
+				'palette'   => array( '#ff8800' ),
+			)
+		);
+		$this->assertSame( 1, substr_count( $html, 'fill="#ff8800"' ) );
+		$this->assertStringContainsString( 'var(--wp--preset--color--', $html );
+	}
+
+	/**
+	 * A gap in the palette falls back to the default for that series only.
+	 */
+	public function test_palette_tolerates_an_empty_slot() {
+		$html = $this->render(
+			array(
+				'chartType' => 'bar',
+				'data'      => $this->sample(),
+				'palette'   => array( '', '#ff8800' ),
+			)
+		);
+		$this->assertStringContainsString( 'fill="#ff8800"', $html );
+		$this->assertStringContainsString( 'var(--wp--preset--color--', $html );
 	}
 
 	/**

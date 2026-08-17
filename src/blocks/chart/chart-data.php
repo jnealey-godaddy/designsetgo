@@ -109,7 +109,30 @@ if ( ! function_exists( 'designsetgo_chart_safe_color' ) ) {
 			}
 		}
 
-		return $color;
+		return designsetgo_chart_preset_to_css( $color );
+	}
+}
+
+if ( ! function_exists( 'designsetgo_chart_preset_to_css' ) ) {
+	/**
+	 * Convert WordPress's stored preset format into a CSS value.
+	 *
+	 * The colour picker stores theme presets as `var:preset|color|{slug}` so a
+	 * chart follows the site palette when the theme changes. Custom colours are
+	 * stored raw and pass through untouched.
+	 *
+	 * @param string $color Stored colour value.
+	 * @return string CSS colour value.
+	 */
+	function designsetgo_chart_preset_to_css( $color ) {
+		if ( 0 !== strpos( $color, 'var:preset|color|' ) ) {
+			return $color;
+		}
+
+		$slug = substr( $color, strlen( 'var:preset|color|' ) );
+		$slug = preg_replace( '/[^a-zA-Z0-9_-]/', '', $slug );
+
+		return '' === $slug ? '' : 'var(--wp--preset--color--' . $slug . ')';
 	}
 }
 
@@ -125,27 +148,25 @@ if ( ! function_exists( 'designsetgo_chart_palette' ) ) {
 	 * @return array List of CSS colour strings.
 	 */
 	function designsetgo_chart_palette( array $attributes, $count ) {
-		$palette = array();
+		$chosen = isset( $attributes['palette'] ) && is_array( $attributes['palette'] )
+			? array_values( $attributes['palette'] )
+			: array();
 
-		if ( isset( $attributes['palette'] ) && is_array( $attributes['palette'] ) ) {
-			$palette = array_values(
-				array_filter( array_map( 'designsetgo_chart_safe_color', $attributes['palette'] ) )
-			);
-		}
-
-		if ( empty( $palette ) ) {
-			$palette = array(
-				'var(--wp--preset--color--primary, #3858e9)',
-				'var(--wp--preset--color--secondary, #4ab866)',
-				'var(--wp--preset--color--tertiary, #f0b849)',
-				'var(--wp--preset--color--accent, #d94f4f)',
-			);
-		}
+		$defaults = array(
+			'var(--wp--preset--color--primary, #3858e9)',
+			'var(--wp--preset--color--secondary, #4ab866)',
+			'var(--wp--preset--color--tertiary, #f0b849)',
+			'var(--wp--preset--color--accent, #d94f4f)',
+		);
 
 		$out = array();
 
 		for ( $i = 0; $i < $count; $i++ ) {
-			$out[] = $palette[ $i % count( $palette ) ];
+			// Positional, not cycled: colouring one series must leave the
+			// others on their defaults.
+			$color = isset( $chosen[ $i ] ) ? designsetgo_chart_safe_color( $chosen[ $i ] ) : '';
+
+			$out[] = '' !== $color ? $color : $defaults[ $i % count( $defaults ) ];
 		}
 
 		return $out;

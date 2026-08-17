@@ -15,6 +15,7 @@ import {
 import ServerSideRender from '@wordpress/server-side-render';
 import { DsgoInspectorPanel } from '../../components/shared';
 import { DataEditor } from './components/DataEditor';
+import { SeriesColors } from './components/SeriesColors';
 
 const TYPES = [
 	{ value: 'bar', label: __('Bar', 'designsetgo') },
@@ -37,6 +38,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		showLegend,
 		showGrid,
 		showValues,
+		palette,
 		label,
 	} = attributes;
 	const blockProps = useBlockProps();
@@ -239,6 +241,13 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 					)}
 				</DsgoInspectorPanel>
 			</InspectorControls>
+
+			<SeriesColors
+				rows={data}
+				palette={palette}
+				clientId={clientId}
+				onChange={(value) => setAttributes({ palette: value })}
+			/>
 
 			<div {...blockProps}>
 				<ServerSideRender

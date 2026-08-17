@@ -27,18 +27,20 @@ if ( ! function_exists( 'designsetgo_chart_value_label' ) ) {
 	/**
 	 * Render a single value label.
 	 *
-	 * @param float  $x      Centre x.
-	 * @param float  $y      Baseline y.
-	 * @param string $text   Display text.
-	 * @param string $anchor Text anchor.
+	 * @param float  $x        Centre x.
+	 * @param float  $y        Baseline y.
+	 * @param string $text     Display text.
+	 * @param string $anchor   Text anchor.
+	 * @param string $baseline Optional dominant-baseline.
 	 * @return string Text element markup.
 	 */
-	function designsetgo_chart_value_label( $x, $y, $text, $anchor = 'middle' ) {
+	function designsetgo_chart_value_label( $x, $y, $text, $anchor = 'middle', $baseline = '' ) {
 		return sprintf(
-			'<text class="dsgo-chart__value" x="%s" y="%s" text-anchor="%s">%s</text>',
+			'<text class="dsgo-chart__value" x="%s" y="%s" text-anchor="%s"%s>%s</text>',
 			esc_attr( designsetgo_chart_number( $x ) ),
 			esc_attr( designsetgo_chart_number( $y ) ),
 			esc_attr( $anchor ),
+			'' === $baseline ? '' : ' dominant-baseline="' . esc_attr( $baseline ) . '"',
 			esc_html( $text )
 		);
 	}
@@ -209,11 +211,16 @@ if ( ! function_exists( 'designsetgo_chart_donut' ) ) {
 	function designsetgo_chart_donut( array $rows, array $colors, array $geo ) {
 		$values = array_map( 'abs', wp_list_pluck( $rows, 'value' ) );
 		$total  = array_sum( $values );
-		$radius = min( $geo['width'], $geo['height'] ) / 2 - 4;
-		$cx     = $geo['width'] / 2;
-		$cy     = $geo['height'] / 2;
-		$cursor = 0.0;
-		$out    = '';
+
+		// Labels sit outside the ring so they read against the page background
+		// rather than against whatever colour the author gave the slice — dark
+		// text on a mid-tone fill is unreadable and cannot be predicted here.
+		$label_room = $geo['show_values'] ? 26 : 0;
+		$radius     = min( $geo['width'], $geo['height'] ) / 2 - 4 - $label_room;
+		$cx         = $geo['width'] / 2;
+		$cy         = $geo['height'] / 2;
+		$cursor     = 0.0;
+		$out        = '';
 
 		foreach ( array_values( $rows ) as $i => $row ) {
 			$share = $total > 0 ? abs( $row['value'] ) / $total : 0.0;
@@ -233,11 +240,25 @@ if ( ! function_exists( 'designsetgo_chart_donut' ) ) {
 			);
 
 			if ( $geo['show_values'] ) {
-				$rad = deg2rad( $mid - 90 );
+				$rad  = deg2rad( $mid - 90 );
+				$edge = $radius + 10;
+				$dx   = cos( $rad );
+
+				// Push the text away from the ring on whichever side it sits.
+				$anchor = 'middle';
+
+				if ( $dx > 0.25 ) {
+					$anchor = 'start';
+				} elseif ( $dx < -0.25 ) {
+					$anchor = 'end';
+				}
+
 				$out .= designsetgo_chart_value_label(
-					$cx + ( $radius * 0.8 ) * cos( $rad ),
-					$cy + ( $radius * 0.8 ) * sin( $rad ),
-					designsetgo_chart_format_value( $share * 100 ) . '%'
+					$cx + $edge * $dx,
+					$cy + $edge * sin( $rad ),
+					designsetgo_chart_format_value( $share * 100 ) . '%',
+					$anchor,
+					'middle'
 				);
 			}
 		}

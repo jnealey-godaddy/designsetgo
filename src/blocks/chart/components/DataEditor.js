@@ -30,7 +30,7 @@ export function DataEditor({ value, onChange }) {
 		);
 
 	return (
-		<Flex direction="column" gap={3} className="dsgo-chart-data-editor">
+		<Flex direction="column" gap={3}>
 			{rows.map((row, index) => (
 				<Flex
 					// The rows have no stable identity of their own — reordering
