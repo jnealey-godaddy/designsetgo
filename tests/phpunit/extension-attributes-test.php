@@ -231,12 +231,12 @@ class Test_Extension_Attributes extends WP_UnitTestCase {
 		$config_dir = DESIGNSETGO_PATH . 'includes/extension-configs/';
 		$files      = glob( $config_dir . '*.php' );
 
-		// 18 extensions: background-video, block-animations, clickable-group,
+		// 19 extensions: background-video, block-animations, clickable-group,
 		// custom-css, expanding-background, grid-mobile-order, grid-span,
 		// interactions, max-width, responsive, reveal-container, reveal-control,
-		// sticky-header-controls, style-binding, svg-patterns, text-reveal,
-		// vertical-parallax, visibility.
-		$this->assertCount( 18, $files, 'Should have 18 extension config files.' );
+		// schema, sticky-header-controls, style-binding, svg-patterns,
+		// text-reveal, vertical-parallax, visibility.
+		$this->assertCount( 19, $files, 'Should have 19 extension config files.' );
 	}
 
 	/**

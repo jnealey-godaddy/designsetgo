@@ -82,6 +82,9 @@ import './extensions/dynamic-tags';
 // Interaction Layers - binds triggers (click/hover/in-view) to actions on any block
 import './extensions/interactions';
 
+// Schema - opts a block into emitting schema.org JSON-LD in the page head
+import './extensions/schema';
+
 // Section Styles Editor Preview - previews user-customized section-style
 // variations (border/radius/etc.) on DSGo container blocks in the editor canvas
 import './extensions/section-styles-editor-preview';
