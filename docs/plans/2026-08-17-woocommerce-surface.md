@@ -47,6 +47,26 @@ data stores, the cart, and order line items; they carry an enormous support surf
 themes and payment gateways; and they compete head-on with entrenched paid plugins. That
 is a different product, not a block library.
 
+## D0 — Use WooCommerce's own blocks first
+
+**The governing principle, and it supersedes parts of D6 through D9.** This is the
+project's "does WordPress already provide this?" rule applied to WooCommerce.
+
+Two spikes established how much Woo already ships:
+
+| Need | WooCommerce already provides | DSGo builds |
+|---|---|---|
+| Price, SKU, rating, image, stock text, sale badge | `woocommerce/product-*` display blocks, working in a DSGo loop | nothing |
+| Add to cart, incl. **variations, quantity, grouped** | `woocommerce/add-to-cart-with-options` family (no parent constraint) | nothing |
+| Cart count + drawer | `woocommerce/mini-cart` (renders standalone) | nothing |
+| Filter UI (price, attribute, rating, status, active) | `woocommerce/product-filters` + children | nothing |
+| Raw scalars for CSS custom properties | — | 6 bindings sources (Item 1) |
+| Catalog-correct product queries in a DSGo loop | — | Woo-aware query args (Item 2) |
+| Letting Woo's filters drive a DSGo loop | — | URL-param consumption (Item 2) |
+
+DesignSetGo builds only the last three rows. Everything else is documentation pointing at
+Woo's blocks.
+
 ## Decisions
 
 Every one of these was settled deliberately. Where a decision has a cost, the cost is
@@ -259,7 +279,42 @@ before building it.**
 **Cost:** one filter type whose data path differs from every other filter type. Needs a
 comment explaining why.
 
-### D7 — Store API for JS, plain form as fallback, no `wc_fragments`
+#### Item 2 — as built
+
+`src/blocks/query/render-woo.php` (new file — `render-posts.php` and
+`render-helpers.php` both already exceed the 300-line cap, so adding to them would make a
+pre-existing problem worse). Called from `designsetgo_query_build_posts_args()` after the
+generic taxonomy filters, so it can safely AND against whatever they built. No-ops unless
+Woo is active **and** the query targets `product`.
+
+Attributes added to `designsetgo/query`: `wooCatalogVisibility` (default `true`),
+`wooFeatured`, `wooOnSale`, `wooStockStatus`.
+
+URL params consumed, names read from WooCommerce's source rather than assumed:
+`min_price` / `max_price` (`ProductFilterPrice`), `filter_stock_status`
+(`ProductFilterStatus`), `rating_filter` (`RatingFilter`), and `filter_<attr>` +
+`query_type_<attr>` for attribute taxonomies.
+
+**Why the attribute mapping is needed at all:** Woo strips the `pa_` prefix in URLs, so
+`pa_color` travels as `filter_color`. The generic `filter_<taxonomy>` loop in
+`render-posts.php` checks `taxonomy_exists( 'color' )`, gets false, and skips it silently.
+So Woo's attribute filters were inert against a DSGo query — not mis-applied, just ignored.
+`render-woo.php` maps `filter_<slug>` → `pa_<slug>`, and explicitly skips any slug that is
+already a real taxonomy so the two handlers cannot double-apply and silently over-narrow.
+
+**DEVIATION FROM D6 — price filtering uses `_price` meta, not `wc_product_meta_lookup`.**
+D6 chose the lookup table. On implementation, WooCommerce's own
+`ProductCollection\QueryBuilder::get_filter_by_price_query()` turned out to use a `_price`
+meta_query for exactly this URL-param path (it reserves the lookup-table `posts_clauses`
+join for the Product Collection block's own `priceRange` *attribute*). Since the entire
+point of this feature is consuming Woo's filter blocks, matching Woo's own query semantics
+byte-for-byte matters more than the storage choice — otherwise the results DSGo returns
+could differ from what Woo's own price slider implies. D6's actual requirement, no new
+DSGo schema and no duplicated index, is preserved either way. A variable product stores one
+`_price` row per variation, so this means "any variation falls in range", which is what
+Woo's slider presents. **Flagged for your call — revertible to the lookup-table join.**
+
+### ~~D7 — Store API for JS, plain form as fallback, no `wc_fragments`~~ (SUPERSEDED)
 
 - **JS path:** `POST /wp-json/wc/store/v1/cart/add-item` with the `Nonce` header. Returns
   the whole cart object, so the drawer and the count both update from one response.
@@ -276,7 +331,7 @@ server-printed, or every cached page shows the previous visitor's count.
 **Open:** minimum WooCommerce version. Both Store API `v1` and `wc_product_meta_lookup`
 have floors that need pinning.
 
-### D8 — The button delegates to Woo's product API; no per-type branching
+### ~~D8 — The button delegates to Woo's product API~~ (SUPERSEDED)
 
 Render entirely from `$product->add_to_cart_url()`, `add_to_cart_text()`,
 `is_purchasable()`, `is_in_stock()`, and `supports( 'ajax_add_to_cart' )`.
@@ -294,7 +349,30 @@ correctness.
 and an author who overrides it to "Add to cart" will show that on a variable product where
 it is a lie. Needs either an editor warning or a documented convention.
 
-### D9 — Fixed drawer template driven by an IAPI store
+### ~~D9 — Fixed drawer template driven by an IAPI store~~ (SUPERSEDED)
+
+**Item 3 is cut. D7, D8, and D9 all answered questions WooCommerce had already answered.**
+
+A second spike found both halves already shipped, standalone, with no parent or ancestor
+constraint:
+
+- **`woocommerce/mini-cart`** renders standalone — verified, produces a working
+  cart-count badge and drawer. That is D9 and the cart-count half of D7.
+- **`woocommerce/add-to-cart-with-options`**, with `-quantity-selector`,
+  `-variation-selector`, `-variation-selector-attribute`, `-grouped-product-selector`,
+  and `-grouped-product-item` descendants. That is D8 — *including the variation picker
+  that D8 explicitly deferred and the roadmap listed as out-of-scope Woo depth.*
+
+A DSGo cart trio would add design-system styling and avoid the `wc-blocks` bundle, and
+nothing else. That does not justify owning cart line-item rendering, Store API nonce
+handling under page caching, or the classic-fragments question.
+
+**This also retires the open line-item ownership question.** It needed no answer, because
+the unit that raised it is not being built.
+
+The superseded text below is kept for the reasoning, not as a plan of record.
+
+#### Original D9 text
 
 **Acknowledged first:** WooCommerce already ships `woocommerce/mini-cart`, which already
 *is* a cart drawer with a count badge. Item 3 is not filling a functional gap — it is
@@ -357,8 +435,8 @@ Five units, each its own branch (`claude/woo-*`) and PR, off a clean `main`.
 | 0 | Test infrastructure | Everything | Woo in wp-env, PHPStan stubs, product fixtures |
 | — | Spike | Item 1's scope | ✅ Done — see D4. Woo's blocks already work in the loop. |
 | 1 | Bindings sources | — | ✅ Done — 6 sources, re-scoped by the spike |
-| 2 | Woo-aware Query + filters | — | Unaffected by the spike; independent of Item 3 |
-| 3 | Button + count + drawer | — | **Weakened by the spike** — reconsider before building |
+| 2 | Woo-aware Query + Woo filter params | — | ✅ Done — no DSGo filter UI built (D0) |
+| 3 | Button + count + drawer | — | ❌ **CUT** — `mini-cart` + `add-to-cart-with-options` already ship it |
 
 ### Unit 0 — Test infrastructure
 

@@ -529,6 +529,19 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			);
 		}
 
+		// WooCommerce catalog rules + the URL params Woo's own filter blocks emit.
+		// Applied after the generic taxonomy filters so it can see, and safely
+		// AND against, whatever they built.
+		if ( ! function_exists( 'designsetgo_query_apply_woo_args' ) ) {
+			$woo_helpers = __DIR__ . '/render-woo.php';
+			if ( file_exists( $woo_helpers ) ) {
+				require_once $woo_helpers;
+			}
+		}
+		if ( function_exists( 'designsetgo_query_apply_woo_args' ) ) {
+			$args = designsetgo_query_apply_woo_args( $args, $atts, $params );
+		}
+
 		// URL-param sort override (?sort=orderby.DIR).
 		if ( isset( $params['sort'] ) && is_string( $params['sort'] ) && '' !== $params['sort'] ) {
 			$parts           = explode( '.', $params['sort'], 2 );

@@ -321,6 +321,11 @@ module.exports = [
 						to: 'blocks/query/render-relationship.php',
 						noErrorOnMissing: true,
 					},
+					{
+						from: 'src/blocks/query/render-woo.php',
+						to: 'blocks/query/render-woo.php',
+						noErrorOnMissing: true,
+					},
 					// Copy chart block helper PHP files to build so render.php
 					// can require_once them from build/blocks/chart/. A glob so
 					// renaming one cannot silently outrun this config; these are

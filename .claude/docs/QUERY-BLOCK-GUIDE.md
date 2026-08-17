@@ -217,6 +217,34 @@ The main reason the raw scalars exist. No WooCommerce block exposes a numeric st
 
 Style bindings resolve any registered `designsetgo/*` source, so the same pattern works for `woo-discount-percent` or `woo-average-rating`.
 
+### Product queries
+
+Set `postType` to `product`. Four Woo-only attributes apply, and they only take effect when WooCommerce is active:
+
+| Attribute | Default | Effect |
+|---|---|---|
+| `wooCatalogVisibility` | `true` | Excludes `exclude-from-catalog` products, plus `outofstock` when the store's "hide out of stock items" option is on |
+| `wooFeatured` | `false` | Only featured products |
+| `wooOnSale` | `false` | Only products currently on sale (intersects `post__in`, so it composes with the manual and relationship sources) |
+| `wooStockStatus` | `[]` | `_stock_status` IN the given values |
+
+**Leave `wooCatalogVisibility` on unless you mean it.** A plain `WP_Query` with `post_type=product` is *not* a Woo catalog query — it ignores the `product_visibility` taxonomy, so hidden and excluded products leak into the loop.
+
+#### Recipe — filter a DSGo query with WooCommerce's own filter blocks
+
+You do **not** need a DSGo filter for products. Drop `woocommerce/product-filters` (with its price / attribute / rating / status children) anywhere on the page, and `designsetgo/query` reads the URL params they emit:
+
+| Param | Source | Becomes |
+|---|---|---|
+| `min_price` / `max_price` | `product-filter-price` | `_price` meta query, matching Woo's own semantics |
+| `filter_stock_status` | `product-filter-status` | `_stock_status` meta query |
+| `rating_filter` | `product-filter-rating` | `product_visibility` `rated-N` terms |
+| `filter_<attr>`, `query_type_<attr>` | `product-filter-attribute` | `pa_<attr>` taxonomy; `and` switches IN → AND |
+
+Woo strips the `pa_` prefix in URLs, so `pa_color` arrives as `filter_color`. DSGo maps it back. A `filter_<name>` that *is* already a real taxonomy is left to the generic taxonomy handler instead, so the two never double-apply.
+
+Woo's filter blocks navigate by URL rather than targeting a `queryId`, which is exactly why this works across the two systems.
+
 ---
 
 ## URL params for filters
