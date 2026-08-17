@@ -2,13 +2,34 @@
 /**
  * Chart block data resolution.
  *
- * Turns block attributes into a clean list of rows, resolves the series
- * colours, and renders the accessible data table.
+ * Turns block attributes into a clean list of rows and renders the accessible
+ * data table and legend. Colour resolution lives in `chart-colors.php`.
  *
  * @package DesignSetGo
  */
 
 defined( 'ABSPATH' ) || exit;
+
+if ( ! function_exists( 'designsetgo_chart_max_rows' ) ) {
+	/**
+	 * The most rows a single chart will draw.
+	 *
+	 * @return int Row cap, never below one.
+	 */
+	function designsetgo_chart_max_rows() {
+		/**
+		 * Filter the chart row cap.
+		 *
+		 * Raise it for a data set that genuinely needs more, bearing in mind
+		 * that every row adds markup to the response on every request.
+		 *
+		 * @param int $max Maximum rows drawn. Default 200.
+		 */
+		$max = (int) apply_filters( 'designsetgo_chart_max_rows', 200 );
+
+		return max( 1, $max );
+	}
+}
 
 if ( ! function_exists( 'designsetgo_chart_rows' ) ) {
 	/**
@@ -16,9 +37,12 @@ if ( ! function_exists( 'designsetgo_chart_rows' ) ) {
 	 *
 	 * @param array         $attributes Block attributes.
 	 * @param WP_Block|null $block      Block instance, for post context.
+	 * @param int|null      $total      Receives the source row count before the
+	 *                                  cap, so the caller can say what was cut
+	 *                                  without decoding the source twice.
 	 * @return array List of array{label: string, value: float}.
 	 */
-	function designsetgo_chart_rows( array $attributes, $block = null ) {
+	function designsetgo_chart_rows( array $attributes, $block = null, &$total = null ) {
 		$raw = isset( $attributes['data'] ) && is_array( $attributes['data'] )
 			? $attributes['data']
 			: array();
@@ -28,6 +52,15 @@ if ( ! function_exists( 'designsetgo_chart_rows' ) ) {
 		if ( 'meta' === $source && ! empty( $attributes['metaKey'] ) ) {
 			$raw = designsetgo_chart_meta_rows( (string) $attributes['metaKey'], $block );
 		}
+
+		// The meta path reads whatever an import script or a field plugin wrote,
+		// which is not bounded by an author's patience the way typed rows are.
+		// The cap is a legibility limit first and a cost limit second: the plot
+		// is 600 units wide, so 200 rows already puts each bar under three units
+		// and the chart stops carrying meaning long before it gets expensive.
+		$raw   = (array) $raw;
+		$total = count( $raw );
+		$raw   = array_slice( $raw, 0, designsetgo_chart_max_rows() );
 
 		$rows = array();
 
@@ -137,95 +170,6 @@ if ( ! function_exists( 'designsetgo_chart_meta_rows' ) ) {
 	}
 }
 
-if ( ! function_exists( 'designsetgo_chart_safe_color' ) ) {
-	/**
-	 * Reject a colour string that could smuggle behaviour into an attribute.
-	 *
-	 * Charts accept raw CSS colours so authors can use `var()` references, so
-	 * the value cannot simply be run through `sanitize_hex_color()`.
-	 *
-	 * @param string $color Candidate colour.
-	 * @return string The colour, or an empty string when unsafe.
-	 */
-	function designsetgo_chart_safe_color( $color ) {
-		$color = trim( sanitize_text_field( (string) $color ) );
-
-		if ( '' === $color ) {
-			return '';
-		}
-
-		$lower = strtolower( $color );
-
-		foreach ( array( 'javascript:', 'expression(', 'url(', '<', '@import' ) as $needle ) {
-			if ( false !== strpos( $lower, $needle ) ) {
-				return '';
-			}
-		}
-
-		return designsetgo_chart_preset_to_css( $color );
-	}
-}
-
-if ( ! function_exists( 'designsetgo_chart_preset_to_css' ) ) {
-	/**
-	 * Convert WordPress's stored preset format into a CSS value.
-	 *
-	 * The colour picker stores theme presets as `var:preset|color|{slug}` so a
-	 * chart follows the site palette when the theme changes. Custom colours are
-	 * stored raw and pass through untouched.
-	 *
-	 * @param string $color Stored colour value.
-	 * @return string CSS colour value.
-	 */
-	function designsetgo_chart_preset_to_css( $color ) {
-		if ( 0 !== strpos( $color, 'var:preset|color|' ) ) {
-			return $color;
-		}
-
-		$slug = substr( $color, strlen( 'var:preset|color|' ) );
-		$slug = preg_replace( '/[^a-zA-Z0-9_-]/', '', $slug );
-
-		return '' === $slug ? '' : 'var(--wp--preset--color--' . $slug . ')';
-	}
-}
-
-if ( ! function_exists( 'designsetgo_chart_palette' ) ) {
-	/**
-	 * Resolve the series colours.
-	 *
-	 * Falls back to theme.json custom properties so charts inherit the site
-	 * palette rather than hard-coding brand colours.
-	 *
-	 * @param array $attributes Block attributes.
-	 * @param int   $count      Number of series needed.
-	 * @return array List of CSS colour strings.
-	 */
-	function designsetgo_chart_palette( array $attributes, $count ) {
-		$chosen = isset( $attributes['palette'] ) && is_array( $attributes['palette'] )
-			? array_values( $attributes['palette'] )
-			: array();
-
-		$defaults = array(
-			'var(--wp--preset--color--primary, #3858e9)',
-			'var(--wp--preset--color--secondary, #4ab866)',
-			'var(--wp--preset--color--tertiary, #f0b849)',
-			'var(--wp--preset--color--accent, #d94f4f)',
-		);
-
-		$out = array();
-
-		for ( $i = 0; $i < $count; $i++ ) {
-			// Positional, not cycled: colouring one series must leave the
-			// others on their defaults.
-			$color = isset( $chosen[ $i ] ) ? designsetgo_chart_safe_color( $chosen[ $i ] ) : '';
-
-			$out[] = '' !== $color ? $color : $defaults[ $i % count( $defaults ) ];
-		}
-
-		return $out;
-	}
-}
-
 if ( ! function_exists( 'designsetgo_chart_data_table' ) ) {
 	/**
 	 * Render the visually-hidden data table.
@@ -235,13 +179,29 @@ if ( ! function_exists( 'designsetgo_chart_data_table' ) ) {
 	 *
 	 * @param array  $rows  Chart rows.
 	 * @param string $label Chart label.
+	 * @param int    $total Source row count, to disclose a truncated chart.
 	 * @return string Table markup.
 	 */
-	function designsetgo_chart_data_table( array $rows, $label ) {
-		$out = '<table class="screen-reader-text">';
+	function designsetgo_chart_data_table( array $rows, $label, $total = 0 ) {
+		$out     = '<table class="screen-reader-text">';
+		$caption = '' !== $label ? $label : '';
 
-		if ( '' !== $label ) {
-			$out .= '<caption>' . esc_html( $label ) . '</caption>';
+		// A truncated chart that says nothing is indistinguishable from a
+		// complete one, and this table is the only place the full count could
+		// have been checked, so it is where the shortfall has to be declared.
+		if ( $total > count( $rows ) ) {
+			$note = sprintf(
+				/* translators: 1: rows shown, 2: rows in the source. */
+				__( 'Showing the first %1$s of %2$s rows.', 'designsetgo' ),
+				number_format_i18n( count( $rows ) ),
+				number_format_i18n( $total )
+			);
+
+			$caption = '' === $caption ? $note : $caption . ' ' . $note;
+		}
+
+		if ( '' !== $caption ) {
+			$out .= '<caption>' . esc_html( $caption ) . '</caption>';
 		}
 
 		$out .= '<thead><tr><th scope="col">' . esc_html__( 'Label', 'designsetgo' )

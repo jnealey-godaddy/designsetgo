@@ -9,6 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 require_once __DIR__ . '/chart-geometry.php';
 require_once __DIR__ . '/chart-data.php';
+require_once __DIR__ . '/chart-colors.php';
 require_once __DIR__ . '/chart-series.php';
 require_once __DIR__ . '/chart-axis.php';
 
@@ -75,7 +76,8 @@ if ( ! function_exists( 'designsetgo_render_chart' ) ) {
 	 */
 	function designsetgo_render_chart( $attributes, $content = '', $block = null ) {
 		$attributes = (array) $attributes;
-		$rows       = designsetgo_chart_rows( $attributes, $block );
+		$total      = 0;
+		$rows       = designsetgo_chart_rows( $attributes, $block, $total );
 
 		if ( empty( $rows ) ) {
 			return '';
@@ -105,6 +107,10 @@ if ( ! function_exists( 'designsetgo_render_chart' ) ) {
 
 		$geo = designsetgo_chart_geometry( $attributes, $rows, $has_grid, $type );
 
+		// True when the axis carries every category name, which is what lets
+		// the legend be optional in the first place.
+		$axis_names_all = false;
+
 		if ( 'donut' === $type ) {
 			$svg = designsetgo_chart_donut( $rows, $colors, $geo );
 		} else {
@@ -116,6 +122,8 @@ if ( ! function_exists( 'designsetgo_render_chart' ) ) {
 
 			$plot .= designsetgo_chart_category_labels( $rows, $geo, $type );
 
+			$axis_names_all = 1 === designsetgo_chart_label_interval( $rows, $geo['plot_w'] );
+
 			$svg = sprintf(
 				'<g class="dsgo-chart__plot" transform="translate(%s, %s)">%s</g>',
 				esc_attr( (string) $geo['pad_left'] ),
@@ -124,14 +132,22 @@ if ( ! function_exists( 'designsetgo_render_chart' ) ) {
 			);
 		}
 
-		// A donut has no axis to label, so its legend is the only sighted route
-		// from a slice to its category and cannot be turned off.
-		$show_legend = 'donut' === $type
+		// The legend may only be turned off when something else on the page
+		// still names every category. A donut has no axis at all, and a dense
+		// axis drops names to stay readable — in both cases the legend is the
+		// only remaining sighted route from a mark to its category.
+		$show_legend = ! $axis_names_all
 			|| ! isset( $attributes['showLegend'] )
 			|| (bool) $attributes['showLegend'];
 
 		$legend = $show_legend ? designsetgo_chart_legend( $rows, $colors ) : '';
 		$label  = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
+
+		// Only the cap is worth disclosing. Rows also fall out for being
+		// non-numeric, or negative on a donut, and reporting those as a
+		// shortfall would cry wolf on charts that are behaving exactly as
+		// documented.
+		$disclosed = $total > designsetgo_chart_max_rows() ? $total : 0;
 
 		$wrapper = get_block_wrapper_attributes(
 			array( 'class' => 'dsgo-chart dsgo-chart--' . $type )
@@ -144,7 +160,7 @@ if ( ! function_exists( 'designsetgo_render_chart' ) ) {
 			(int) $geo['height'],
 			$svg, // Every interpolation above is individually escaped.
 			$legend,
-			designsetgo_chart_data_table( $rows, $label )
+			designsetgo_chart_data_table( $rows, $label, $disclosed )
 		);
 	}
 }

@@ -661,6 +661,207 @@ class Chart_Render_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A colour cannot append declarations of its own to the legend swatch's
+	 * style attribute. `esc_attr()` does not stop this — the payload is valid
+	 * markup — so the character allowlist is what has to hold.
+	 */
+	public function test_palette_rejects_a_css_declaration_injection() {
+		$html = $this->render(
+			array(
+				'chartType' => 'bar',
+				'data'      => $this->sample(),
+				'palette'   => array( 'red;position:fixed;inset:0;z-index:99999' ),
+			)
+		);
+
+		$this->assertStringNotContainsString( 'position:fixed', $html );
+		$this->assertStringNotContainsString( 'z-index', $html );
+	}
+
+	/**
+	 * The allowlist refuses the shapes an encoding trick would arrive in, while
+	 * every colour form the picker can actually produce still survives it.
+	 */
+	public function test_safe_color_allowlist_boundaries() {
+		$rejected = array(
+			'red;color:blue',
+			'red}body{display:none',
+			'\0075rl(#x)',
+			'url(#evil)',
+			'expression(alert(1))',
+			'javascript:alert(1)',
+			'"onload="alert(1)',
+			'@import "x"',
+		);
+
+		foreach ( $rejected as $value ) {
+			$this->assertSame(
+				'',
+				designsetgo_chart_safe_color( $value ),
+				"Accepted an unsafe colour: {$value}"
+			);
+		}
+
+		$accepted = array(
+			'#ff8800',
+			'rgb(255, 136, 0)',
+			'rgba(255, 136, 0, 0.5)',
+			'hsl(210 50% 40% / 0.5)',
+			'rebeccapurple',
+			'var(--wp--preset--color--primary)',
+			'var(--wp--preset--color--primary, #3858e9)',
+			'color-mix(in srgb, red 50%, blue)',
+		);
+
+		foreach ( $accepted as $value ) {
+			$this->assertSame(
+				$value,
+				designsetgo_chart_safe_color( $value ),
+				"Rejected a legitimate colour: {$value}"
+			);
+		}
+	}
+
+	/**
+	 * Rows are capped, and the cap is filterable.
+	 */
+	public function test_rows_are_capped() {
+		$rows = array();
+
+		for ( $i = 0; $i < 500; $i++ ) {
+			$rows[] = array(
+				'label' => 'R' . $i,
+				'value' => $i,
+			);
+		}
+
+		$this->assertCount( 200, designsetgo_chart_rows( array( 'data' => $rows ) ) );
+
+		$raise = static function () {
+			return 5;
+		};
+		add_filter( 'designsetgo_chart_max_rows', $raise );
+		$this->assertCount( 5, designsetgo_chart_rows( array( 'data' => $rows ) ) );
+		remove_filter( 'designsetgo_chart_max_rows', $raise );
+	}
+
+	/**
+	 * A truncated chart says so in the data table — the table is the only place
+	 * the full count could have been checked, and a silent cap is
+	 * indistinguishable from complete data.
+	 */
+	public function test_a_truncated_chart_discloses_the_shortfall() {
+		$rows = array();
+
+		for ( $i = 0; $i < 250; $i++ ) {
+			$rows[] = array(
+				'label' => 'R' . $i,
+				'value' => $i + 1,
+			);
+		}
+
+		$html = $this->render(
+			array(
+				'chartType' => 'bar',
+				'data'      => $rows,
+			)
+		);
+		$this->assertStringContainsString( 'Showing the first 200 of 250 rows.', $html );
+	}
+
+	/**
+	 * Rows dropped for being unusable are not reported as a truncation — a
+	 * donut legitimately discards negatives and must not cry wolf about it.
+	 */
+	public function test_dropped_rows_are_not_reported_as_truncation() {
+		$html = $this->render(
+			array(
+				'chartType' => 'donut',
+				'data'      => array(
+					array(
+						'label' => 'Keep',
+						'value' => 10,
+					),
+					array(
+						'label' => 'Drop',
+						'value' => -1,
+					),
+				),
+			)
+		);
+		$this->assertStringNotContainsString( 'Showing the first', $html );
+	}
+
+	/**
+	 * Dense axes drop labels to stay readable, and the legend comes back when
+	 * they do, so the full set of category names never leaves the page.
+	 */
+	public function test_a_dense_axis_thins_labels_and_restores_the_legend() {
+		$rows = array();
+
+		for ( $i = 0; $i < 40; $i++ ) {
+			$rows[] = array(
+				'label' => 'September ' . $i,
+				'value' => $i + 1,
+			);
+		}
+
+		$html = $this->render(
+			array(
+				'chartType'  => 'bar',
+				'data'       => $rows,
+				'showLegend' => false,
+			)
+		);
+
+		$drawn = substr_count( $html, 'dsgo-chart__category' );
+		$this->assertGreaterThan( 0, $drawn, 'The axis lost every label.' );
+		$this->assertLessThan( 40, $drawn, 'Dense labels were not thinned.' );
+
+		$this->assertStringContainsString(
+			'dsgo-chart__legend',
+			$html,
+			'A thinned axis must bring the legend back.'
+		);
+		$this->assertSame( 40, substr_count( $html, 'dsgo-chart__legend-item' ) );
+	}
+
+	/**
+	 * A sparse axis still honours `showLegend: false` — the thinning rule must
+	 * not quietly pin the legend on for every chart.
+	 */
+	public function test_a_sparse_axis_still_honours_a_hidden_legend() {
+		$html = $this->render(
+			array(
+				'chartType'  => 'bar',
+				'data'       => $this->sample(),
+				'showLegend' => false,
+			)
+		);
+		$this->assertStringNotContainsString( 'dsgo-chart__legend', $html );
+	}
+
+	/**
+	 * Near-zero negatives format as "0", never "-0".
+	 *
+	 * Pinned rather than guarded: `number_format()` has not returned "-0.00"
+	 * since before the plugin's PHP floor, verified on 7.4 and 8.3, so this
+	 * records the reliance instead of adding an unreachable branch.
+	 */
+	public function test_near_zero_negatives_never_format_as_minus_zero() {
+		foreach ( array( -0.001, -0.004, -0.0, 0.0 ) as $value ) {
+			$this->assertSame(
+				'0',
+				designsetgo_chart_format_value( $value ),
+				"Formatted {$value} with a signed zero."
+			);
+		}
+
+		// A value that genuinely rounds away from zero keeps its sign.
+		$this->assertSame( '-0.01', designsetgo_chart_format_value( -0.006 ) );
+	}
+
+	/**
 	 * A caller-supplied palette colour is sanitised before it reaches the markup.
 	 */
 	public function test_palette_rejects_a_javascript_url() {

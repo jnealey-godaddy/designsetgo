@@ -75,6 +75,46 @@ if ( ! function_exists( 'designsetgo_chart_zero_y' ) ) {
 	}
 }
 
+if ( ! function_exists( 'designsetgo_chart_label_interval' ) ) {
+	/**
+	 * How many rows to skip between drawn category labels.
+	 *
+	 * Twelve categories of "September" overlap into an unreadable smear if all
+	 * are drawn, so past a density threshold only every Nth is written — the
+	 * axis still orients the reader, and `designsetgo_render_chart()` forces the
+	 * legend back on when this returns more than 1, so the complete set of
+	 * category names never disappears from the page.
+	 *
+	 * @param array $rows   Chart rows.
+	 * @param float $plot_w Plot width in user units.
+	 * @return int Interval, one or greater.
+	 */
+	function designsetgo_chart_label_interval( array $rows, $plot_w ) {
+		$count = count( $rows );
+
+		if ( $count < 2 ) {
+			return 1;
+		}
+
+		$longest = 0;
+
+		foreach ( $rows as $row ) {
+			$longest = max( $longest, mb_strlen( $row['label'] ) );
+		}
+
+		if ( 0 === $longest ) {
+			return 1;
+		}
+
+		// Font size is 14 user units; ~0.6em per character is a safe average
+		// for proportional text, plus a space of padding between neighbours.
+		$needed    = $longest * 14 * 0.6 + 8;
+		$available = $plot_w / $count;
+
+		return (int) max( 1, ceil( $needed / max( 1, $available ) ) );
+	}
+}
+
 if ( ! function_exists( 'designsetgo_chart_category_labels' ) ) {
 	/**
 	 * Render the x-axis category labels.
@@ -95,13 +135,14 @@ if ( ! function_exists( 'designsetgo_chart_category_labels' ) ) {
 			return '';
 		}
 
-		$out  = '';
-		$slot = $geo['plot_w'] / $count;
-		$step = $count > 1 ? $geo['plot_w'] / ( $count - 1 ) : 0;
-		$y    = $geo['plot_h'] + 16;
+		$out      = '';
+		$slot     = $geo['plot_w'] / $count;
+		$step     = $count > 1 ? $geo['plot_w'] / ( $count - 1 ) : 0;
+		$y        = $geo['plot_h'] + 16;
+		$interval = designsetgo_chart_label_interval( $rows, $geo['plot_w'] );
 
 		foreach ( array_values( $rows ) as $i => $row ) {
-			if ( '' === $row['label'] ) {
+			if ( '' === $row['label'] || 0 !== $i % $interval ) {
 				continue;
 			}
 
