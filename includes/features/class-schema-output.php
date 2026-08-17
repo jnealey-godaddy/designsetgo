@@ -43,10 +43,11 @@ class SchemaOutput {
 	 *
 	 * Public so it can be unit-tested without a request.
 	 *
-	 * @param array $blocks Parsed blocks.
+	 * @param array  $blocks Parsed blocks.
+	 * @param string $title  Page title, passed to builders that need it.
 	 * @return array List of schema graph nodes.
 	 */
-	public function collect( array $blocks ) {
+	public function collect( array $blocks, $title = '' ) {
 		$nodes = array();
 
 		foreach ( $blocks as $block ) {
@@ -60,7 +61,9 @@ class SchemaOutput {
 				$builder = self::BUILDERS[ $type ];
 
 				if ( function_exists( $builder ) ) {
-					$node = call_user_func( $builder, $block );
+					// Builders that do not need the title simply ignore the
+					// extra argument.
+					$node = call_user_func( $builder, $block, $title );
 
 					if ( is_array( $node ) && ! empty( $node ) ) {
 						$nodes[] = $node;
@@ -69,7 +72,7 @@ class SchemaOutput {
 			}
 
 			if ( ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
-				$nodes = array_merge( $nodes, $this->collect( $block['innerBlocks'] ) );
+				$nodes = array_merge( $nodes, $this->collect( $block['innerBlocks'], $title ) );
 			}
 		}
 
@@ -96,7 +99,7 @@ class SchemaOutput {
 			return;
 		}
 
-		$nodes = $this->collect( parse_blocks( $post->post_content ) );
+		$nodes = $this->collect( parse_blocks( $post->post_content ), get_the_title( $post ) );
 
 		/**
 		 * Filter the schema graph nodes before output.

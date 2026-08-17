@@ -283,6 +283,62 @@ class Schema_Builders_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The title is a parameter, so HowTo.name needs no request state.
+	 *
+	 * This test deliberately performs no go_to() and touches no global $post —
+	 * if the builder reached for get_the_title() again, name would be absent.
+	 */
+	public function test_howto_takes_its_name_from_the_title_argument() {
+		$schema = designsetgo_schema_build_howto(
+			$this->accordion(
+				array(
+					array(
+						'q' => 'Install',
+						'a' => 'Upload the zip.',
+					),
+				),
+				'howto'
+			),
+			'How to install the plugin'
+		);
+
+		$this->assertSame( 'How to install the plugin', $schema['name'] );
+	}
+
+	/**
+	 * With no title, name is omitted rather than emitted empty.
+	 */
+	public function test_howto_omits_name_when_no_title_is_given() {
+		$schema = designsetgo_schema_build_howto(
+			$this->accordion(
+				array(
+					array(
+						'q' => 'Install',
+						'a' => 'Upload the zip.',
+					),
+				),
+				'howto'
+			)
+		);
+
+		$this->assertArrayNotHasKey( 'name', $schema );
+	}
+
+	/**
+	 * A dynamic block in an answer contributes no text and is never executed.
+	 */
+	public function test_text_extraction_ignores_a_dynamic_block() {
+		$text = designsetgo_schema_text_from_blocks(
+			parse_blocks(
+				'<!-- wp:paragraph --><p>Real answer.</p><!-- /wp:paragraph -->'
+				. '<!-- wp:some-plugin/dynamic /-->'
+			)
+		);
+
+		$this->assertSame( 'Real answer.', $text );
+	}
+
+	/**
 	 * An empty accordion produces no HowTo.
 	 */
 	public function test_howto_of_an_empty_accordion_is_null() {

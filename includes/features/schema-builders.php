@@ -80,27 +80,41 @@ if ( ! function_exists( 'designsetgo_schema_text_from_html' ) ) {
 
 if ( ! function_exists( 'designsetgo_schema_text_from_blocks' ) ) {
 	/**
-	 * Render inner blocks and reduce them to plain text.
+	 * Reduce inner blocks to the plain text of their SAVED markup.
+	 *
+	 * Deliberately serializes rather than renders. render_block() executes each
+	 * block's render_callback, and this runs on wp_head — before the main loop
+	 * renders the very same blocks for display. Any dynamic block inside an
+	 * answer (Query Loop, Latest Posts, a form) would therefore run twice per
+	 * request: doubled queries and HTTP calls, and non-idempotent side effects
+	 * fired twice. It would also render incorrectly, because render_block()
+	 * builds a fresh root WP_Block with no ancestor-supplied context.
+	 *
+	 * serialize_blocks() reconstructs the stored markup and executes nothing.
+	 * Block delimiters are HTML comments, which strip_tags() removes along with
+	 * the tags. A dynamic block contributes no text — correct, since its output
+	 * is not knowable here and is not part of the authored answer.
 	 *
 	 * @param array $blocks Parsed inner blocks.
 	 * @return string Plain text, whitespace collapsed.
 	 */
 	function designsetgo_schema_text_from_blocks( array $blocks ) {
-		$html = '';
+		$blocks = array_values(
+			array_filter(
+				$blocks,
+				static function ( $block ) {
+					// parse_blocks() emits nameless blocks for the whitespace
+					// between siblings.
+					return is_array( $block ) && ! empty( $block['blockName'] );
+				}
+			)
+		);
 
-		foreach ( $blocks as $block ) {
-			if ( ! is_array( $block ) ) {
-				continue;
-			}
-
-			// parse_blocks() emits nameless blocks for the whitespace between
-			// siblings; rendering them is harmless but pointless.
-			if ( empty( $block['blockName'] ) ) {
-				continue;
-			}
-
-			$html .= render_block( $block );
+		if ( empty( $blocks ) ) {
+			return '';
 		}
+
+		$html = serialize_blocks( $blocks );
 
 		// Separate at every tag boundary before stripping. Without this,
 		// `<p>One.</p><p>Two.</p>` reduces to "One.Two." — two sentences fused
@@ -203,10 +217,15 @@ if ( ! function_exists( 'designsetgo_schema_build_howto' ) ) {
 	/**
 	 * Build HowTo schema from an accordion.
 	 *
-	 * @param array $block Parsed accordion block.
+	 * The title is a parameter rather than a get_the_title() call so this stays
+	 * a pure function of its arguments, per the contract at the top of the file.
+	 * SchemaOutput::render() already holds the post and passes it through.
+	 *
+	 * @param array  $block Parsed accordion block.
+	 * @param string $title Page title, used as HowTo.name. Optional.
 	 * @return array|null Schema graph node, or null when unusable.
 	 */
-	function designsetgo_schema_build_howto( array $block ) {
+	function designsetgo_schema_build_howto( array $block, $title = '' ) {
 		$pairs = designsetgo_schema_accordion_pairs( $block );
 
 		if ( empty( $pairs ) ) {
@@ -229,10 +248,10 @@ if ( ! function_exists( 'designsetgo_schema_build_howto' ) ) {
 			'step'  => $steps,
 		);
 
-		$title = trim( wp_strip_all_tags( (string) get_the_title() ) );
+		$title = trim( wp_strip_all_tags( (string) $title ) );
 
-		// HowTo.name is required by Google. Only claim one when there is a real
-		// post title to use — outside the loop get_the_title() returns ''.
+		// HowTo.name is required by Google, but claiming an empty one is worse
+		// than omitting it.
 		if ( '' !== $title ) {
 			$schema['name'] = $title;
 		}
