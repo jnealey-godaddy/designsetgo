@@ -26,6 +26,17 @@ parameters:
 		- designsetgo.php
 		- phpstan-constants.php
 
+	# WooCommerce stubs let us analyse the Woo integration surface (bindings sources,
+	# product-aware query args, cart blocks) instead of excluding it the way the
+	# Query Monitor integration above is excluded for lack of stubs. Every Woo call
+	# site is still runtime-guarded — the stubs are a static-analysis aid only.
+	#
+	# scanFiles, not bootstrapFiles: PHPStan *executes* bootstrap files, and the Woo
+	# stubs define thousands of classes, which pushes the analysis past a 1G memory
+	# limit. scanFiles registers the symbols without executing them.
+	scanFiles:
+		- vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+
 	ignoreErrors:
 		# WordPress globals
 		- '#Undefined variable: \$wpdb#'
