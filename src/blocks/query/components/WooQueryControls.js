@@ -1,20 +1,14 @@
 import { __ } from '@wordpress/i18n';
-import { ToggleControl, FormTokenField } from '@wordpress/components';
+import { ToggleControl, CheckboxControl } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../components/shared';
 
+// WooCommerce only ever has these three. A free-text control here would let a
+// typo through and silently produce a filter that matches nothing.
 const STOCK_STATUSES = [
 	{ value: 'instock', label: __('In stock', 'designsetgo') },
 	{ value: 'outofstock', label: __('Out of stock', 'designsetgo') },
 	{ value: 'onbackorder', label: __('On backorder', 'designsetgo') },
 ];
-
-const STOCK_LABELS = STOCK_STATUSES.map((status) => status.label);
-
-const labelToValue = (label) =>
-	STOCK_STATUSES.find((status) => status.label === label)?.value ?? label;
-
-const valueToLabel = (value) =>
-	STOCK_STATUSES.find((status) => status.value === value)?.label ?? value;
 
 /**
  * WooCommerce-only query controls.
@@ -108,18 +102,24 @@ export default function WooQueryControls({ attributes, setAttributes }) {
 				onDeselect={() => setAttributes({ wooStockStatus: [] })}
 				isShownByDefault
 			>
-				<FormTokenField
-					label={__('Stock status', 'designsetgo')}
-					value={(wooStockStatus || []).map(valueToLabel)}
-					suggestions={STOCK_LABELS}
-					onChange={(tokens) =>
-						setAttributes({
-							wooStockStatus: tokens.map(labelToValue),
-						})
-					}
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
+				{STOCK_STATUSES.map(({ value, label }) => (
+					<CheckboxControl
+						key={value}
+						label={label}
+						checked={(wooStockStatus || []).includes(value)}
+						onChange={(isChecked) => {
+							const current = wooStockStatus || [];
+							setAttributes({
+								wooStockStatus: isChecked
+									? [...current, value]
+									: current.filter(
+											(status) => status !== value
+										),
+							});
+						}}
+						__nextHasNoMarginBottom
+					/>
+				))}
 			</DsgoInspectorPanel.Item>
 		</>
 	);

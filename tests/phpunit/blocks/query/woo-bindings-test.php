@@ -208,6 +208,87 @@ class DesignSetGo_Woo_Bindings_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * An html-returning source is refused by the style-binding path.
+	 *
+	 * A style binding produces a CSS value, so markup has no business there.
+	 * Not an XSS route — the tag processor escapes into the style attribute — but
+	 * it would silently emit a garbled declaration.
+	 */
+	public function test_html_returning_source_is_refused_by_style_bindings() {
+		$product_id = DesignSetGo_Woo_Product_Factory::create_simple(
+			array(
+				'regular_price' => '40.00',
+				'sale_price'    => '25.00',
+			)
+		);
+
+		$GLOBALS['designsetgo_parent_stack'] = array( array( 'postId' => $product_id ) );
+
+		$style_binding = new \DesignSetGo\StyleBinding();
+
+		$html = $style_binding->apply_style_bindings(
+			'<div class="wp-block">X</div>',
+			array(
+				'blockName'   => 'core/group',
+				'attrs'       => array(
+					'dsgoStyleBinding' => array(
+						'--dsgo-price' => array(
+							'source' => 'designsetgo/woo-price-html',
+							'args'   => array(),
+						),
+					),
+				),
+				'innerBlocks' => array(),
+				'innerContent' => array(),
+				'innerHTML'   => '',
+			)
+		);
+
+		unset( $GLOBALS['designsetgo_parent_stack'] );
+
+		$this->assertStringNotContainsString( '--dsgo-price', $html );
+		$this->assertStringNotContainsString( 'woocommerce-Price-amount', $html );
+	}
+
+	/**
+	 * A scalar source is still accepted, so the guard is not over-broad.
+	 */
+	public function test_scalar_source_still_resolves_after_the_markup_guard() {
+		$product_id = DesignSetGo_Woo_Product_Factory::create_simple(
+			array(
+				'regular_price' => '40.00',
+				'sale_price'    => '25.00',
+			)
+		);
+
+		$GLOBALS['designsetgo_parent_stack'] = array( array( 'postId' => $product_id ) );
+
+		$style_binding = new \DesignSetGo\StyleBinding();
+
+		$html = $style_binding->apply_style_bindings(
+			'<div class="wp-block">X</div>',
+			array(
+				'blockName'   => 'core/group',
+				'attrs'       => array(
+					'dsgoStyleBinding' => array(
+						'--dsgo-discount' => array(
+							'source' => 'designsetgo/woo-discount-percent',
+							'args'   => array(),
+						),
+					),
+				),
+				'innerBlocks' => array(),
+				'innerContent' => array(),
+				'innerHTML'   => '',
+			)
+		);
+
+		unset( $GLOBALS['designsetgo_parent_stack'] );
+
+		$this->assertStringContainsString( '--dsgo-discount:38', $html );
+	}
+
+	/**
 	 * A keyed source with no key still resolves to nothing.
 	 *
 	 * Guards the refactor that made the `key` requirement conditional: custom

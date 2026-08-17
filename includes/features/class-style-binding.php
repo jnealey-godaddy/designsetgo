@@ -250,6 +250,20 @@ class StyleBinding {
 			return null;
 		}
 
+		// A style binding produces a CSS value, so a source that returns markup
+		// has no business here. `designsetgo/woo-price-html` is the live example:
+		// its `<span class="woocommerce-Price-amount">…</span>` would be handed to
+		// a custom property. Not an XSS route — WP_HTML_Tag_Processor escapes into
+		// the style attribute and the caller rejects `;{}` — but it would silently
+		// produce a garbled declaration with no feedback to the author.
+		//
+		// Sources unknown to the Dynamic Tags registry are still allowed, so a
+		// third-party source registered only through
+		// designsetgo_register_bindings_source() keeps working.
+		if ( $this->source_returns_markup( $source ) ) {
+			return null;
+		}
+
 		// Pre-resolved so the source does not re-derive it from block context,
 		// which does not exist on the style-binding path.
 		$args['__dsgo_post_id'] = $post_id;
@@ -257,6 +271,29 @@ class StyleBinding {
 		$value = $registered->get_value( $args, null, 'style' );
 
 		return is_scalar( $value ) ? (string) $value : null;
+	}
+
+	/**
+	 * Whether a source declares that it returns markup rather than a scalar.
+	 *
+	 * Reads the Dynamic Tags registry metadata, which is where `returns` lives.
+	 * Returns false for sources the registry does not know about, so unregistered
+	 * third-party sources keep their existing behaviour.
+	 *
+	 * @param string $source Source identifier.
+	 * @return bool True when the source declares an `html` return type.
+	 */
+	private function source_returns_markup( string $source ): bool {
+		if ( ! class_exists( '\DesignSetGo\Blocks\DynamicTags\Registry' ) ) {
+			return false;
+		}
+
+		$meta = \DesignSetGo\Blocks\DynamicTags\Registry::instance()->get_source( $source );
+		if ( null === $meta ) {
+			return false;
+		}
+
+		return in_array( 'html', (array) ( $meta['returns'] ?? array() ), true );
 	}
 
 	/**
