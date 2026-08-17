@@ -220,6 +220,14 @@ module.exports = [
 				'utils',
 				'sticky-header.js'
 			),
+			// Interaction layers frontend runtime
+			'extensions/interactions': path.resolve(
+				process.cwd(),
+				'src',
+				'extensions',
+				'interactions',
+				'frontend.js'
+			),
 			// Icon injector frontend script
 			'frontend/lazy-icon-injector': path.resolve(
 				process.cwd(),
@@ -312,6 +320,16 @@ module.exports = [
 						from: 'src/blocks/query/render-relationship.php',
 						to: 'blocks/query/render-relationship.php',
 						noErrorOnMissing: true,
+					},
+					// Copy chart block helper PHP files to build so render.php
+					// can require_once them from build/blocks/chart/. A glob so
+					// renaming one cannot silently outrun this config; these are
+					// required unconditionally, so a miss must fail the build
+					// rather than fatal at render time.
+					{
+						from: 'src/blocks/chart/chart-*.php',
+						to: 'blocks/chart/[name][ext]',
+						noErrorOnMissing: false,
 					},
 				],
 			}),

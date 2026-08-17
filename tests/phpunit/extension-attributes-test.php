@@ -231,11 +231,46 @@ class Test_Extension_Attributes extends WP_UnitTestCase {
 		$config_dir = DESIGNSETGO_PATH . 'includes/extension-configs/';
 		$files      = glob( $config_dir . '*.php' );
 
-		// 16 extensions: responsive, custom-css, block-animations, grid-span,
-		// grid-mobile-order, max-width, reveal-control, reveal-container,
-		// background-video, clickable-group, vertical-parallax, svg-patterns,
-		// expanding-background, sticky-header-controls, text-reveal.
-		$this->assertCount( 15, $files, 'Should have 15 extension config files.' );
+		// 18 extensions: background-video, block-animations, clickable-group,
+		// custom-css, expanding-background, grid-mobile-order, grid-span,
+		// interactions, max-width, responsive, reveal-container, reveal-control,
+		// sticky-header-controls, style-binding, svg-patterns, text-reveal,
+		// vertical-parallax, visibility.
+		$this->assertCount( 18, $files, 'Should have 18 extension config files.' );
+	}
+
+	/**
+	 * Every attribute a JS extension adds must also be known to PHP.
+	 *
+	 * Core's block-renderer REST route validates the payload with
+	 * `additionalProperties: false`, and ServerSideRender expands the payload
+	 * to every client-registered attribute. An attribute registered only in JS
+	 * therefore makes every server-rendered preview fail with
+	 * "Invalid parameter(s): attributes".
+	 */
+	public function test_js_only_extension_attributes_are_mirrored_server_side() {
+		$args = apply_filters(
+			'register_block_type_args',
+			array( 'attributes' => array() ),
+			'designsetgo/chart'
+		);
+
+		$this->assertArrayHasKey( 'dsgoVisibility', $args['attributes'] );
+		$this->assertArrayHasKey( 'dsgoStyleBinding', $args['attributes'] );
+	}
+
+	/**
+	 * The blocks those two extensions skip in JS are skipped in PHP too.
+	 */
+	public function test_visibility_and_style_binding_respect_their_blocklist() {
+		$args = apply_filters(
+			'register_block_type_args',
+			array( 'attributes' => array() ),
+			'core/template-part'
+		);
+
+		$this->assertArrayNotHasKey( 'dsgoVisibility', $args['attributes'] );
+		$this->assertArrayNotHasKey( 'dsgoStyleBinding', $args['attributes'] );
 	}
 
 	/**

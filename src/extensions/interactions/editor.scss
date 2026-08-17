@@ -1,0 +1,80 @@
+/**
+ * Interaction Layers - Editor styles
+ *
+ * Chrome for the sidebar list, the detail modal, and the canvas picker.
+ */
+
+.dsgo-interactions-panel__empty {
+	margin: 0;
+	color: #757575;
+	font-size: 12px;
+}
+
+.dsgo-interaction-row {
+	border: 1px solid #e0e0e0;
+	border-radius: 2px;
+	padding-right: 4px;
+}
+
+// The edit button is a full-width text button, not an icon button: the
+// summary line is the row's label and must be part of the click target.
+.dsgo-interaction-row__edit.components-button {
+	flex: 1;
+	height: auto;
+	min-height: 40px;
+	padding: 8px;
+	text-align: left;
+	white-space: normal;
+}
+
+.dsgo-interaction-row__summary {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	overflow-wrap: anywhere;
+}
+
+.dsgo-interaction-row__target {
+	color: #757575;
+	font-family: monospace;
+	font-size: 11px;
+}
+
+.dsgo-interaction-modal {
+	max-width: 460px;
+}
+
+.dsgo-interaction-modal__selector {
+	flex: 1;
+}
+
+.dsgo-interaction-modal__hint {
+	margin: 0;
+	color: #757575;
+	font-size: 12px;
+}
+
+// While picking, the modal shrinks to a prompt in the corner and its overlay
+// stops covering the canvas, so blocks stay visible and clickable.
+.dsgo-interaction-modal__overlay.is-picking {
+	background: transparent;
+	pointer-events: none;
+	align-items: flex-end;
+	justify-content: flex-end;
+	padding: 24px;
+
+	.dsgo-interaction-modal.is-picking {
+		pointer-events: auto;
+		max-width: 320px;
+		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+	}
+}
+
+// Applied to blocks inside the canvas iframe while picking. This rule ships
+// in build/index.css, which is enqueued on `enqueue_block_assets` and so is
+// printed into the iframe as well as the admin document.
+.dsgo-interaction-picking {
+	outline: 2px solid var(--wp-admin-theme-color, #3858e9) !important;
+	outline-offset: -2px;
+	cursor: crosshair !important;
+}

@@ -144,7 +144,8 @@ class Form_Security {
 		// experience. On timeout, wp_remote_post() returns a WP_Error and we degrade
 		// gracefully (let the submission through) rather than punish the user.
 		$response = wp_remote_post(
-			'https://challenges.cloudflare.com/turnstile/v0/siteverify', // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Cloudflare's documented Turnstile server-side verification endpoint; a required API call for this opt-in anti-spam feature, not asset offloading.
+			// phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Server-side Turnstile verification API endpoint, not an offloaded asset. The sniff matches any `cloudflare.com` host in any string; no image, script, style or other content is loaded from it.
+			'https://challenges.cloudflare.com/turnstile/v0/siteverify',
 			array(
 				'timeout' => 3,
 				'body'    => array(

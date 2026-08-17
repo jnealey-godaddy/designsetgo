@@ -79,6 +79,9 @@ import './extensions/style-binding';
 // Dynamic Tags - Elementor-style per-attribute dynamic bindings on core blocks
 import './extensions/dynamic-tags';
 
+// Interaction Layers - binds triggers (click/hover/in-view) to actions on any block
+import './extensions/interactions';
+
 // Section Styles Editor Preview - previews user-customized section-style
 // variations (border/radius/etc.) on DSGo container blocks in the editor canvas
 import './extensions/section-styles-editor-preview';

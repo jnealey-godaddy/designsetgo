@@ -492,6 +492,13 @@ class Plugin {
 	public $style_binding;
 
 	/**
+	 * Interaction layers instance.
+	 *
+	 * @var Interactions
+	 */
+	public $interactions;
+
+	/**
 	 * Block Bindings Support instance.
 	 *
 	 * @var Block_Bindings_Support
@@ -650,6 +657,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/features/class-scroll-marquee-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-extension-attributes.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-style-binding.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-interactions.php';
 		require_once DESIGNSETGO_PATH . 'includes/bindings/class-block-bindings-support.php';
 		require_once DESIGNSETGO_PATH . 'includes/data/svg-pattern-data.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-svg-pattern-renderer.php';
@@ -701,6 +709,7 @@ class Plugin {
 		$this->blocks                 = new Blocks\Loader();
 		$this->extension_attrs        = new Extension_Attributes();
 		$this->style_binding          = new StyleBinding();
+		$this->interactions           = new Interactions();
 		$this->block_bindings_support = new Block_Bindings_Support();
 		$this->block_bindings_support->register();
 		$this->modal_hooks      = new Blocks\Modal_Hooks();
