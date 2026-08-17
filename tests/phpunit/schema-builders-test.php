@@ -306,6 +306,73 @@ class Schema_Builders_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The title gets the same entity treatment as the step text.
+	 *
+	 * Without this the same graph carried "Tea &amp; Coffee" as the HowTo name
+	 * beside a step reading "Tea & coffee?" — raw entities in structured data
+	 * are wrong data, not just untidy.
+	 */
+	public function test_howto_decodes_entities_in_its_name() {
+		$schema = designsetgo_schema_build_howto(
+			$this->accordion(
+				array(
+					array(
+						'q' => 'Tea &amp; coffee?',
+						'a' => 'Both.',
+					),
+				),
+				'howto'
+			),
+			'Tea &amp; Coffee &mdash; a guide'
+		);
+
+		$this->assertSame( 'Tea & Coffee — a guide', $schema['name'] );
+
+		// The point is that both halves agree.
+		$this->assertSame( 'Tea & coffee?', $schema['step'][0]['name'] );
+	}
+
+	/**
+	 * Markup in the title is stripped, as it is everywhere else.
+	 */
+	public function test_howto_strips_markup_from_its_name() {
+		$schema = designsetgo_schema_build_howto(
+			$this->accordion(
+				array(
+					array(
+						'q' => 'Install',
+						'a' => 'Upload.',
+					),
+				),
+				'howto'
+			),
+			'How to <em>install</em> it'
+		);
+
+		$this->assertSame( 'How to install it', $schema['name'] );
+	}
+
+	/**
+	 * A title of only markup collapses to nothing, so name is omitted.
+	 */
+	public function test_howto_omits_a_name_that_reduces_to_empty() {
+		$schema = designsetgo_schema_build_howto(
+			$this->accordion(
+				array(
+					array(
+						'q' => 'Install',
+						'a' => 'Upload.',
+					),
+				),
+				'howto'
+			),
+			'<span> </span>'
+		);
+
+		$this->assertArrayNotHasKey( 'name', $schema );
+	}
+
+	/**
 	 * With no title, name is omitted rather than emitted empty.
 	 */
 	public function test_howto_omits_name_when_no_title_is_given() {

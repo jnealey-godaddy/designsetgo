@@ -118,12 +118,31 @@ class SchemaOutput {
 			return array();
 		}
 
-		if ( false === strpos( $reference->post_content, 'dsgoSchema' )
-			&& false === strpos( $reference->post_content, 'wp:block ' ) ) {
+		if ( ! $this->may_contain_schema( $reference->post_content ) ) {
 			return array();
 		}
 
 		return $this->collect( parse_blocks( $reference->post_content ), $title, $seen );
+	}
+
+
+	/**
+	 * Could this content hold an opted-in block?
+	 *
+	 * A cheap string test used to skip the comparatively expensive
+	 * parse_blocks() on the overwhelming majority of posts. An opted-in block
+	 * carries the attribute name in its block comment — unless it lives in a
+	 * synced pattern, in which case only the reference is present here and the
+	 * attribute is in the referenced wp_block post.
+	 *
+	 * @param string $content Post content.
+	 * @return bool Whether the content is worth parsing.
+	 */
+	private function may_contain_schema( $content ) {
+		$content = (string) $content;
+
+		return false !== strpos( $content, 'dsgoSchema' )
+			|| false !== strpos( $content, 'wp:block ' );
 	}
 
 	/**
@@ -140,11 +159,7 @@ class SchemaOutput {
 			return;
 		}
 
-		// Cheap bail before the comparatively expensive parse. An opted-in block
-		// carries the attribute name in its block comment — unless it lives in
-		// a synced pattern, in which case the page only holds the reference.
-		if ( false === strpos( $post->post_content, 'dsgoSchema' )
-			&& false === strpos( $post->post_content, 'wp:block ' ) ) {
+		if ( ! $this->may_contain_schema( $post->post_content ) ) {
 			return;
 		}
 

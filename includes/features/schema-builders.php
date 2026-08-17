@@ -248,7 +248,14 @@ if ( ! function_exists( 'designsetgo_schema_build_howto' ) ) {
 			'step'  => $steps,
 		);
 
-		$title = trim( wp_strip_all_tags( (string) $title ) );
+		// Same treatment the question/answer text gets: strip, then decode.
+		// Without the decode a title stored as "Tea &amp; Coffee" reaches the
+		// graph with the entity intact, while the steps beside it are already
+		// decoded — the one page emitting both "Tea &amp; Coffee" and
+		// "Tea & coffee?".
+		$title = wp_strip_all_tags( (string) $title );
+		$title = html_entity_decode( $title, ENT_QUOTES, 'UTF-8' );
+		$title = trim( preg_replace( '/\s+/u', ' ', $title ) );
 
 		// HowTo.name is required by Google, but claiming an empty one is worse
 		// than omitting it.
