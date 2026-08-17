@@ -47,8 +47,20 @@ if ( ! function_exists( 'designsetgo_schema_text_from_html' ) ) {
 
 		while ( $processor->next_token() ) {
 			if ( $found ) {
-				// Collect text until the subtree closes. Breadcrumbs shrink back
-				// past the opening depth once the element ends.
+				// Stop at the matched element's own closing tag.
+				//
+				// This reads as though it could not do that — a following
+				// SIBLING opens at the same depth as the match, so a `<`
+				// comparison would not terminate on it. What makes it work is
+				// token ORDER: WP_HTML_Processor pops the breadcrumb stack
+				// before visiting a closer, so the matched element's closer
+				// reports its PARENT's depth (strictly less than $found) and is
+				// visited before any sibling. Descendants report deeper, so
+				// nested markup inside the title is still collected in full.
+				//
+				// tests/phpunit/schema-builders-test.php has the traced token
+				// walk, plus a sibling carrying real text that fails loudly if
+				// this ever stops holding.
 				if ( count( $processor->get_breadcrumbs() ) < $found ) {
 					break;
 				}

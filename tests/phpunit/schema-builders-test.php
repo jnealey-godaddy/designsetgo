@@ -453,13 +453,26 @@ class Schema_Builders_Test extends WP_UnitTestCase {
 	/**
 	 * Text in a SIBLING after the title must not be absorbed.
 	 *
-	 * A sibling sits at the same breadcrumb depth as the matched element, so a
-	 * depth comparison of `< $found` never terminates on it — collection only
-	 * stopped once the walk climbed out past the parent. Today the icon that
-	 * follows the title is an <svg> with no text nodes, so nothing leaked; the
-	 * moment anything text-bearing was added after the title (a screen-reader
-	 * label, a badge, a different icon style) it would have been concatenated
-	 * onto the question with no test failing.
+	 * The stop condition is `count( get_breadcrumbs() ) < $found`, and it is
+	 * reasonable to read that as unable to stop at the title's own closing tag,
+	 * since a FOLLOWING SIBLING opens at the same depth as the title itself.
+	 * That reading misses the order of tokens: WP_HTML_Processor pops the
+	 * breadcrumb stack BEFORE visiting a closing tag, so the matched element's
+	 * own closer reports its PARENT's depth, which is strictly less than
+	 * $found — and it is visited before the sibling. Traced over
+	 * `<div><button><span class="t">Q</span><span class="i">LEAKED</span>…`:
+	 *
+	 *   #tag:DIV           depth=3
+	 *   #tag:BUTTON        depth=4
+	 *   #tag:SPAN          depth=5   <- match, $found = 5
+	 *   #text "Q"          depth=6   <- collected
+	 *   #tag:SPAN(close)   depth=4   <- 4 < 5, loop breaks HERE
+	 *   #tag:SPAN          depth=5   <- never reached
+	 *   #text "LEAKED"     depth=6   <- never reached
+	 *
+	 * This test exists so that stays true. It is deliberately built from a
+	 * text-bearing sibling rather than the real markup, whose icon is an <svg>
+	 * with no text nodes and so could not detect a regression.
 	 */
 	public function test_title_extractor_stops_at_the_end_of_the_matched_element() {
 		$html = '<div class="dsgo-accordion-item__header"><button type="button">'
@@ -482,6 +495,26 @@ class Schema_Builders_Test extends WP_UnitTestCase {
 
 		$this->assertSame(
 			'A nested deep title',
+			designsetgo_schema_text_from_html( $html, 'dsgo-accordion-item__title' )
+		);
+	}
+
+	/**
+	 * A nested element of the SAME tag must not end collection early.
+	 *
+	 * This is the trap in "just break on a closing <span>": the inner span's
+	 * closer arrives first, and keying off tag name alone would drop the "and
+	 * more" that follows it. Any future rewrite of the stop condition has to
+	 * keep this passing.
+	 */
+	public function test_title_extractor_survives_a_nested_element_of_the_same_tag() {
+		$html = '<span class="dsgo-accordion-item__title">'
+			. 'Start <span class="inner">middle</span> and more'
+			. '</span>'
+			. '<span class="sibling">LEAKED</span>';
+
+		$this->assertSame(
+			'Start middle and more',
 			designsetgo_schema_text_from_html( $html, 'dsgo-accordion-item__title' )
 		);
 	}
