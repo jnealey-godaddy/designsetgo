@@ -19,6 +19,7 @@ const FIRED = new WeakMap(); // Element -> Set of interaction ids already fired.
 
 let delegatesAttached = false;
 let observer = null;
+let keydownElements = [];
 
 /**
  * Read and parse an element's interaction list.
@@ -125,13 +126,16 @@ function sourceFor(target) {
 }
 
 /**
- * Elements carrying a keydown interaction.
+ * Rebuild the cache of elements carrying a keydown interaction.
  *
- * @return {Element[]} Matching elements, possibly empty.
+ * Key presses are page-scoped, so the alternative is querying the DOM and
+ * re-parsing every interaction's JSON on every keystroke anywhere on the
+ * page — including while the visitor is typing in a form field. The cache is
+ * refreshed by initInteractions(), which already runs after a DOM swap.
  */
-function keydownTargets() {
-	return Array.from(document.querySelectorAll(`[${ATTR}]`)).filter((el) =>
-		readInteractions(el).some((i) => 'keydown' === i.trigger)
+function refreshKeydownTargets() {
+	keydownElements = Array.from(document.querySelectorAll(`[${ATTR}]`)).filter(
+		(el) => readInteractions(el).some((i) => 'keydown' === i.trigger)
 	);
 }
 
@@ -171,7 +175,7 @@ function attachDelegates() {
 		// wherever focus happens to be. Scoping this to the focused element
 		// made keydown unreachable on any non-focusable block, since nothing
 		// gives a plain div focus.
-		keydownTargets().forEach((el) => fire(el, 'keydown', e));
+		keydownElements.forEach((el) => fire(el, 'keydown', e));
 
 		// Space/Enter activating a synthesised button IS focus-scoped: it
 		// stands in for a real click on the element the visitor is on.
@@ -314,6 +318,7 @@ export function initInteractions(root = document) {
 	ensureKeyboardSemantics(root);
 	seedExpandedState(root);
 	observeInView(root);
+	refreshKeydownTargets();
 }
 
 if ('undefined' !== typeof document) {

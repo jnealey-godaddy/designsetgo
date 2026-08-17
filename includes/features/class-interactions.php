@@ -65,9 +65,12 @@ class Interactions {
 			return $block_content;
 		}
 
-		// A static block already carries the attribute from save(). Writing it
-		// again would be harmless but pointless, and re-encoding risks drift
-		// between the stored markup and what we would produce here.
+		// A static block already carries the attribute from save(). Leave it
+		// exactly as stored: re-encoding it here would mean the markup in the
+		// database and the markup served could drift apart.
+		//
+		// Note this is why sanitize() below is a normalisation step for the
+		// dynamic path, not a filter applied to all stored content.
 		if ( null !== $processor->get_attribute( 'data-dsgo-interactions' ) ) {
 			return $block_content;
 		}
@@ -84,15 +87,40 @@ class Interactions {
 	}
 
 	/**
-	 * Reduce stored interactions to the known schema.
+	 * Read one string field from a raw interaction.
 	 *
-	 * Attributes arrive from post content, which an editor with `unfiltered_html`
-	 * controls. Echoing arbitrary stored JSON back into an attribute would let
-	 * unexpected keys ride along; the frontend ignores them, but emitting only
-	 * what the runtime reads keeps the payload small and the contract explicit.
+	 * Block attributes are parsed from post content and are not validated
+	 * against the block schema, so a value here can be any JSON type — an
+	 * array arrives intact via a direct REST write. Casting that to string
+	 * raises "Array to string conversion", which surfaces in the response
+	 * when display_errors is on.
+	 *
+	 * @param array  $interaction Raw interaction.
+	 * @param string $key         Field name.
+	 * @param string $default     Value to use when absent or non-scalar.
+	 * @return string The field value.
+	 */
+	private static function string_field( array $interaction, $key, $default = '' ) {
+		if ( ! isset( $interaction[ $key ] ) || ! is_scalar( $interaction[ $key ] ) ) {
+			return $default;
+		}
+
+		return (string) $interaction[ $key ];
+	}
+
+	/**
+	 * Build the runtime payload from stored interaction attributes.
+	 *
+	 * This is not a security boundary. It runs only on the dynamic-block path,
+	 * because static blocks already carry the attribute from save() and are
+	 * returned untouched above — so it cannot be relied on to neutralise
+	 * anything in stored content generally. What it does do is give the
+	 * dynamic path a fixed shape: only keys the frontend actually reads are
+	 * emitted, each coerced to the type the runtime expects, so unexpected
+	 * stored values cannot produce a malformed attribute or a PHP notice.
 	 *
 	 * @param array $interactions Raw interaction list.
-	 * @return array Sanitized list.
+	 * @return array Normalized list.
 	 */
 	private static function sanitize( array $interactions ) {
 		$clean = array();
@@ -103,16 +131,18 @@ class Interactions {
 			}
 
 			$clean[] = array(
-				'id'             => isset( $interaction['id'] ) ? (string) $interaction['id'] : '',
-				'trigger'        => isset( $interaction['trigger'] ) ? (string) $interaction['trigger'] : 'click',
-				'targetMode'     => isset( $interaction['targetMode'] ) ? (string) $interaction['targetMode'] : 'self',
-				'targetSelector' => isset( $interaction['targetSelector'] ) ? (string) $interaction['targetSelector'] : '',
-				'action'         => isset( $interaction['action'] ) ? (string) $interaction['action'] : '',
-				'value'          => isset( $interaction['value'] ) ? (string) $interaction['value'] : '',
-				'attributeName'  => isset( $interaction['attributeName'] ) ? (string) $interaction['attributeName'] : '',
-				'key'            => isset( $interaction['key'] ) ? (string) $interaction['key'] : '',
+				'id'             => self::string_field( $interaction, 'id' ),
+				'trigger'        => self::string_field( $interaction, 'trigger', 'click' ),
+				'targetMode'     => self::string_field( $interaction, 'targetMode', 'self' ),
+				'targetSelector' => self::string_field( $interaction, 'targetSelector' ),
+				'action'         => self::string_field( $interaction, 'action' ),
+				'value'          => self::string_field( $interaction, 'value' ),
+				'attributeName'  => self::string_field( $interaction, 'attributeName' ),
+				'key'            => self::string_field( $interaction, 'key' ),
 				'once'           => ! empty( $interaction['once'] ),
-				'offset'         => isset( $interaction['offset'] ) ? (float) $interaction['offset'] : 0,
+				'offset'         => isset( $interaction['offset'] ) && is_numeric( $interaction['offset'] )
+					? (float) $interaction['offset']
+					: 0,
 			);
 		}
 

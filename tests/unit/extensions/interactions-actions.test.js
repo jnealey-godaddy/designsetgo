@@ -1,3 +1,5 @@
+/* global navigator */
+
 import {
 	runAction,
 	registerAction,
@@ -73,6 +75,50 @@ describe('interaction actions', () => {
 			runAction('setAttribute', [target], { attributeName, value });
 			expect(target.hasAttribute(attributeName)).toBe(false);
 		});
+
+		it('refuses srcdoc, whose value is raw HTML', () => {
+			// No URL-scheme check can catch this: srcdoc is parsed as markup,
+			// so <script> in the value executes directly. An author without
+			// unfiltered_html could otherwise script every visitor via any
+			// iframe on the page.
+			document.body.innerHTML = '<iframe id="f"></iframe>';
+			const frame = document.getElementById('f');
+
+			runAction('setAttribute', [frame], {
+				attributeName: 'srcdoc',
+				value: '<script>alert(1)</script>',
+			});
+
+			expect(frame.hasAttribute('srcdoc')).toBe(false);
+		});
+
+		it.each(['SRCDOC', 'SrcDoc'])('refuses srcdoc as %s', (name) => {
+			document.body.innerHTML = '<iframe id="f"></iframe>';
+			const frame = document.getElementById('f');
+			runAction('setAttribute', [frame], {
+				attributeName: name,
+				value: '<script>alert(1)</script>',
+			});
+			expect(frame.hasAttribute('srcdoc')).toBe(false);
+		});
+
+		it.each(['script', 'base', 'meta'])(
+			'refuses to write to a <%s> element',
+			(tag) => {
+				// <base href> repoints every relative URL on the page and
+				// <meta http-equiv=refresh> redirects it. Neither is a
+				// legitimate interaction target.
+				document.body.innerHTML = `<${tag} id="x"></${tag}>`;
+				const el = document.getElementById('x');
+
+				runAction('setAttribute', [el], {
+					attributeName: 'href',
+					value: 'https://evil.example',
+				});
+
+				expect(el.hasAttribute('href')).toBe(false);
+			}
+		);
 
 		it('still allows an ordinary href', () => {
 			runAction('setAttribute', [target], {
@@ -335,6 +381,23 @@ describe('interaction actions', () => {
 			target.setAttribute('tabindex', '0');
 			runAction('focusTarget', [target], {});
 			expect(target.getAttribute('tabindex')).toBe('0');
+		});
+	});
+
+	describe('clipboard', () => {
+		it('swallows a denied clipboard permission', async () => {
+			const rejection = Promise.reject(new Error('denied'));
+			navigator.clipboard = { writeText: jest.fn(() => rejection) };
+
+			expect(() =>
+				runAction('copyToClipboard', [target], { value: 'x' })
+			).not.toThrow();
+
+			// An uncaught rejection here would surface in the visitor's
+			// console as an error from our script.
+			await expect(rejection.catch(() => 'handled')).resolves.toBe(
+				'handled'
+			);
 		});
 	});
 

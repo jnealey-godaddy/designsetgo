@@ -13,17 +13,29 @@
 // See visibility-contract.js.
 import { HIDDEN_CLASS } from './visibility-contract';
 
-// Attributes an author may never set. Event handlers execute script; `style`
-// is allowed because it cannot execute, but `on*` is a direct XSS vector.
+// There are exactly three ways an HTML attribute can introduce script, and
+// each needs its own check. Missing any one of them reopens the hole the
+// other two were written to close.
+//
+// 1. Event handlers — the value IS script.
 const FORBIDDEN_ATTRIBUTE = /^on/i;
 
-// Attributes whose value is fetched or navigated to. A `javascript:` or
-// `data:` value on any of these executes script just as surely as an
-// `on*` handler would.
+// 2. Raw-HTML attributes — the value is parsed as markup, so no URL scheme
+//    check can catch it. `srcdoc` on an <iframe> is the whole document.
+const HTML_VALUED_ATTRIBUTE = /^srcdoc$/i;
+
+// 3. URL attributes — the value is fetched or navigated to, so a
+//    `javascript:` scheme executes.
 const URL_ATTRIBUTE =
 	/^(href|src|srcset|action|formaction|data|poster|background|ping|xlink:href)$/i;
 
 const DANGEROUS_URL = /^\s*(javascript|data|vbscript):/i;
+
+// Page-level directive elements. Almost nothing an author legitimately wants
+// to do with an interaction involves rewriting these, and several attacks do
+// — <base href> silently repoints every relative URL on the page, and
+// <meta http-equiv="refresh"> redirects it.
+const FORBIDDEN_TARGET = /^(SCRIPT|BASE|META)$/;
 
 /**
  * Split an author-supplied class string into individual, usable class names.
@@ -65,7 +77,7 @@ export function isAttributeAllowed(name, value) {
 		return false;
 	}
 
-	if (FORBIDDEN_ATTRIBUTE.test(name)) {
+	if (FORBIDDEN_ATTRIBUTE.test(name) || HTML_VALUED_ATTRIBUTE.test(name)) {
 		return false;
 	}
 
@@ -74,6 +86,16 @@ export function isAttributeAllowed(name, value) {
 	}
 
 	return true;
+}
+
+/**
+ * Whether an element may be written to at all.
+ *
+ * @param {Element} el Candidate target.
+ * @return {boolean} True when the element is a safe target.
+ */
+export function isTargetAllowed(el) {
+	return !!el && !FORBIDDEN_TARGET.test(el.tagName || '');
 }
 
 /**
@@ -177,16 +199,22 @@ export const actionRegistry = {
 		if (!isAttributeAllowed(attributeName, value)) {
 			return;
 		}
-		eachTarget(targets, (el) =>
-			el.setAttribute(attributeName, value ?? '')
-		);
+		eachTarget(targets, (el) => {
+			if (isTargetAllowed(el)) {
+				el.setAttribute(attributeName, value ?? '');
+			}
+		});
 	},
 
 	removeAttribute(targets, { attributeName }) {
 		if (!isAttributeAllowed(attributeName, '')) {
 			return;
 		}
-		eachTarget(targets, (el) => el.removeAttribute(attributeName));
+		eachTarget(targets, (el) => {
+			if (isTargetAllowed(el)) {
+				el.removeAttribute(attributeName);
+			}
+		});
 	},
 
 	scrollToTop() {
@@ -298,7 +326,9 @@ export const actionRegistry = {
 
 	copyToClipboard(targets, { value }) {
 		const text = value || (targets || [])[0]?.textContent || '';
-		navigator.clipboard?.writeText(text);
+		// A denied clipboard permission rejects; unhandled, that surfaces in
+		// the visitor's console as an error from our script.
+		navigator.clipboard?.writeText(text)?.catch(() => {});
 	},
 };
 

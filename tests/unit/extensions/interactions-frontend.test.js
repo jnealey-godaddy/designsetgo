@@ -285,6 +285,44 @@ describe('interactions frontend runtime', () => {
 		).toBe(true);
 	});
 
+	it('picks up keydown interactions added after a DOM swap', () => {
+		// The keydown list is cached to avoid re-parsing every interaction on
+		// the page on each keystroke. That cache must be refreshed whenever
+		// initInteractions runs, or soft-reload navigations go dead.
+		mount([
+			{
+				id: 'a',
+				trigger: 'click',
+				targetMode: 'self',
+				action: 'addClass',
+				value: 'x',
+			},
+		]);
+
+		document.body.innerHTML = `
+			<div id="late" data-dsgo-interactions='${JSON.stringify([
+				{
+					id: 'b',
+					trigger: 'keydown',
+					key: 'Escape',
+					targetMode: 'selector',
+					targetSelector: '#panel2',
+					action: 'addClass',
+					value: 'late-hit',
+				},
+			])}'></div>
+			<div id="panel2"></div>
+		`;
+		initInteractions();
+
+		document.body.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+		);
+		expect(
+			document.getElementById('panel2').classList.contains('late-hit')
+		).toBe(true);
+	});
+
 	it('keeps one failing interaction from killing the others', () => {
 		const src = mount([
 			{

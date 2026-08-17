@@ -59,7 +59,7 @@ class Test_Interactions_Render extends WP_UnitTestCase {
 	/**
 	 * A dynamic block's rendered markup gains the attribute.
 	 *
-	 * save() returns null on dynamic blocks, so the JS extraProps filter never
+	 * Dynamic blocks return null from save(), so the JS extraProps filter never
 	 * runs for them and this is the only path that can add the attribute.
 	 */
 	public function test_injects_into_dynamic_block_markup() {
@@ -154,6 +154,63 @@ class Test_Interactions_Render extends WP_UnitTestCase {
 
 		$this->assertStringNotContainsString( 'surpise', $html );
 		$this->assertStringNotContainsString( '<script>', $html );
+	}
+
+	/**
+	 * A non-scalar field does not raise "Array to string conversion".
+	 *
+	 * Block attributes are parsed from post content and are not validated
+	 * against the block schema, so a direct REST write can put any JSON type
+	 * here. A PHP notice would leak into the response when display_errors
+	 * is on.
+	 */
+	public function test_tolerates_non_scalar_field_values() {
+		$html = $this->interactions->inject_interactions(
+			'<div>x</div>',
+			$this->block(
+				array(
+					array(
+						'id'             => array( 'not', 'a', 'string' ),
+						'action'         => 'hide',
+						'targetSelector' => array( 'nested' => true ),
+						'offset'         => 'not-a-number',
+					),
+				)
+			)
+		);
+
+		$processor = new WP_HTML_Tag_Processor( $html );
+		$processor->next_tag();
+		$decoded = json_decode( $processor->get_attribute( 'data-dsgo-interactions' ), true );
+
+		$this->assertSame( '', $decoded[0]['id'] );
+		$this->assertSame( '', $decoded[0]['targetSelector'] );
+		// json_encode drops a zero fraction, so this round-trips as int.
+		$this->assertSame( 0, $decoded[0]['offset'] );
+		$this->assertSame( 'hide', $decoded[0]['action'] );
+	}
+
+	/**
+	 * A numeric offset survives normalisation.
+	 */
+	public function test_keeps_a_numeric_offset() {
+		$html = $this->interactions->inject_interactions(
+			'<div>x</div>',
+			$this->block(
+				array(
+					array(
+						'action' => 'scrollTo',
+						'offset' => 80,
+					),
+				)
+			)
+		);
+
+		$processor = new WP_HTML_Tag_Processor( $html );
+		$processor->next_tag();
+		$decoded = json_decode( $processor->get_attribute( 'data-dsgo-interactions' ), true );
+
+		$this->assertSame( 80, $decoded[0]['offset'] );
 	}
 
 	/**
