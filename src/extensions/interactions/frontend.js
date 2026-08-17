@@ -20,6 +20,7 @@ const FIRED = new WeakMap(); // Element -> Set of interaction ids already fired.
 let delegatesAttached = false;
 let observer = null;
 let keydownElements = [];
+const observed = new Set(); // Elements handed to the IntersectionObserver.
 
 /**
  * Read and parse an element's interaction list.
@@ -227,6 +228,7 @@ function observeInView(root) {
 						.every((i) => i.once);
 					if (allOnce) {
 						observer.unobserve(entry.target);
+						observed.delete(entry.target);
 					}
 				});
 			},
@@ -234,12 +236,24 @@ function observeInView(root) {
 		);
 	}
 
+	// A soft-reload navigation replaces the content region, detaching every
+	// element observed for the old page. IntersectionObserver holds a strong
+	// reference to its targets, so without this they — and their subtrees —
+	// stay alive for the life of the tab.
+	observed.forEach((el) => {
+		if (!el.isConnected) {
+			observer.unobserve(el);
+			observed.delete(el);
+		}
+	});
+
 	root.querySelectorAll(`[${ATTR}]`).forEach((el) => {
 		const needsInView = readInteractions(el).some(
 			(i) => 'inView' === i.trigger
 		);
 		if (needsInView) {
 			observer.observe(el);
+			observed.add(el);
 		}
 	});
 }

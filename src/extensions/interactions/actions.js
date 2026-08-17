@@ -29,7 +29,29 @@ const HTML_VALUED_ATTRIBUTE = /^srcdoc$/i;
 const URL_ATTRIBUTE =
 	/^(href|src|srcset|action|formaction|data|poster|background|ping|xlink:href)$/i;
 
-const DANGEROUS_URL = /^\s*(javascript|data|vbscript):/i;
+const DANGEROUS_SCHEME = /^(javascript|data|vbscript):/i;
+
+// Browsers strip ASCII tab, newline and carriage return from ANYWHERE in a
+// URL before resolving its scheme (WHATWG URL, "URL parsing"), and trim
+// leading C0 controls and spaces. So `jav&#9;ascript:alert(1)` is dead text
+// to a naive regex but live script to the browser — the classic filter
+// evasion. Normalise the same way before testing the scheme.
+//
+// This strips every C0 control and space rather than just tab/LF/CR: being
+// stricter than the parser can only reject a URL whose scheme contains a
+// control character, which no legitimate URL does.
+// eslint-disable-next-line no-control-regex -- removing control characters is the point
+const URL_NOISE = /[\u0000-\u0020\u007F]/g;
+
+/**
+ * Whether a value resolves to a scheme that executes script.
+ *
+ * @param {string} value Raw attribute value.
+ * @return {boolean} True when the browser would treat it as a script URL.
+ */
+export function isDangerousUrl(value) {
+	return DANGEROUS_SCHEME.test(String(value ?? '').replace(URL_NOISE, ''));
+}
 
 // Page-level directive elements. Almost nothing an author legitimately wants
 // to do with an interaction involves rewriting these, and several attacks do
@@ -81,7 +103,7 @@ export function isAttributeAllowed(name, value) {
 		return false;
 	}
 
-	if (URL_ATTRIBUTE.test(name) && DANGEROUS_URL.test(String(value ?? ''))) {
+	if (URL_ATTRIBUTE.test(name) && isDangerousUrl(value)) {
 		return false;
 	}
 
@@ -105,7 +127,7 @@ export function isTargetAllowed(el) {
  * <video>, so the block the author targets is rarely the media itself.
  *
  * @param {Element} el Target element.
- * @return {Element|null}|null} The media element, or null.
+ * @return {Element|null} The media element, or null.
  */
 export function mediaIn(el) {
 	if (!el) {
