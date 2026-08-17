@@ -34,6 +34,7 @@
 @use './extensions/text-reveal/style' as text-reveal;
 @use './extensions/expanding-background/style' as expanding-background;
 @use './extensions/svg-patterns/style' as svg-patterns;
+@use './extensions/interactions/style' as interactions;
 
 // Shared components
 @use './components/shared/DsgoBlockPlaceholder/style' as dsgo-block-placeholder;

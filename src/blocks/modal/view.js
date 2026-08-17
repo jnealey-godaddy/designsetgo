@@ -1684,6 +1684,62 @@
 	}
 
 	/**
+	 * Initialize programmatic open/close control.
+	 *
+	 * Lets any code — notably the interaction layers extension — open or
+	 * close a modal by dispatching `dsgo-modal-open` / `dsgo-modal-close`
+	 * on `document` with `detail.modalId`.
+	 *
+	 * A modal instance dispatches these same event names on its own element
+	 * with `bubbles: true` to announce a state change. Those bubble up to
+	 * `document` and would re-enter this handler, so we only act on events
+	 * dispatched directly on `document` — an announcement always has an
+	 * element as its target, a command always has `document`.
+	 */
+	function initProgrammaticControl() {
+		if (document.dsgoModalControlInitialized) {
+			return;
+		}
+		document.dsgoModalControlInitialized = true;
+
+		document.addEventListener('dsgo-modal-open', (e) => {
+			if (e.target !== document) {
+				return;
+			}
+			const modal = document.getElementById(e.detail?.modalId);
+			if (
+				modal &&
+				modal.dsgoModalInstance &&
+				!modal.dsgoModalInstance.isOpen
+			) {
+				modal.dsgoModalInstance.open();
+			}
+		});
+
+		document.addEventListener('dsgo-modal-close', (e) => {
+			if (e.target !== document) {
+				return;
+			}
+			const modalId = e.detail?.modalId;
+
+			// No id closes whichever modal is currently open.
+			const modals = modalId
+				? [document.getElementById(modalId)]
+				: Array.from(document.querySelectorAll('[data-dsgo-modal]'));
+
+			modals.forEach((modal) => {
+				if (
+					modal &&
+					modal.dsgoModalInstance &&
+					modal.dsgoModalInstance.isOpen
+				) {
+					modal.dsgoModalInstance.close();
+				}
+			});
+		});
+	}
+
+	/**
 	 * Initialize on DOM ready
 	 */
 	if (document.readyState === 'loading') {
@@ -1692,12 +1748,14 @@
 			initTriggers();
 			initCloseTriggers();
 			initHashLinkTriggers();
+			initProgrammaticControl();
 		});
 	} else {
 		initModals();
 		initTriggers();
 		initCloseTriggers();
 		initHashLinkTriggers();
+		initProgrammaticControl();
 	}
 
 	/**
@@ -1708,6 +1766,7 @@
 		initTriggers();
 		initCloseTriggers();
 		initHashLinkTriggers();
+		initProgrammaticControl();
 	});
 
 	/**

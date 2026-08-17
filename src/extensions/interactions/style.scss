@@ -1,0 +1,14 @@
+/**
+ * Interaction Layers - Styles
+ *
+ * Minimal support classes. Authors supply their own state classes; these
+ * are the two we document as always available.
+ */
+
+:where(.dsgo-interaction-hidden) {
+	display: none !important; // Intentional: a hidden state must beat block styles.
+}
+
+:where([data-dsgo-interactions][role="button"]) {
+	cursor: pointer;
+}

@@ -220,6 +220,14 @@ module.exports = [
 				'utils',
 				'sticky-header.js'
 			),
+			// Interaction layers frontend runtime
+			'extensions/interactions': path.resolve(
+				process.cwd(),
+				'src',
+				'extensions',
+				'interactions',
+				'frontend.js'
+			),
 			// Icon injector frontend script
 			'frontend/lazy-icon-injector': path.resolve(
 				process.cwd(),

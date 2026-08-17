@@ -33,6 +33,13 @@ class Assets {
 	private $dashicons_enqueued = false;
 
 	/**
+	 * Whether the interaction layers runtime has been enqueued for this request.
+	 *
+	 * @var bool
+	 */
+	private $interactions_enqueued = false;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -310,6 +317,29 @@ class Assets {
 			$frontend_asset['version'],
 			true
 		);
+
+		// Interaction layers runtime. Registered always, enqueued only when a
+		// rendered block actually carries data-dsgo-interactions.
+		//
+		// The generated asset file is the source of truth for dependencies:
+		// hardcoding array() silently breaks the runtime the moment the bundle
+		// picks up a @wordpress/* import, because webpack externalises those
+		// to globals that were never enqueued.
+		$interactions_asset_path = DESIGNSETGO_PATH . 'build/extensions/interactions.asset.php';
+
+		if ( file_exists( $interactions_asset_path ) && is_readable( $interactions_asset_path ) ) {
+			$interactions_asset = include $interactions_asset_path; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
+
+			if ( is_array( $interactions_asset ) && isset( $interactions_asset['dependencies'], $interactions_asset['version'] ) ) {
+				wp_register_script(
+					'designsetgo-interactions',
+					DESIGNSETGO_URL . 'build/extensions/interactions.js',
+					$interactions_asset['dependencies'],
+					$interactions_asset['version'],
+					true
+				);
+			}
+		}
 	}
 
 	/**
@@ -341,6 +371,16 @@ class Assets {
 				wp_enqueue_script( 'designsetgo-frontend' );
 				$this->frontend_enqueued = true;
 			}
+		}
+
+		// Interaction layers: only ship the runtime when a block declares one.
+		if (
+			! $this->interactions_enqueued
+			&& ! empty( $block_content )
+			&& strpos( $block_content, 'data-dsgo-interactions' ) !== false
+		) {
+			wp_enqueue_script( 'designsetgo-interactions' );
+			$this->interactions_enqueued = true;
 		}
 
 		// Enqueue Dashicons only for tabs/accordion blocks (saves 40KB otherwise).
