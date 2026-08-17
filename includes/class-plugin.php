@@ -499,6 +499,13 @@ class Plugin {
 	public $interactions;
 
 	/**
+	 * Schema JSON-LD output instance.
+	 *
+	 * @var SchemaOutput
+	 */
+	public $schema_output;
+
+	/**
 	 * Block Bindings Support instance.
 	 *
 	 * @var Block_Bindings_Support
@@ -658,6 +665,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/features/class-extension-attributes.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-style-binding.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-interactions.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-schema-output.php';
 		require_once DESIGNSETGO_PATH . 'includes/bindings/class-block-bindings-support.php';
 		require_once DESIGNSETGO_PATH . 'includes/data/svg-pattern-data.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-svg-pattern-renderer.php';
@@ -710,6 +718,7 @@ class Plugin {
 		$this->extension_attrs        = new Extension_Attributes();
 		$this->style_binding          = new StyleBinding();
 		$this->interactions           = new Interactions();
+		$this->schema_output          = new SchemaOutput();
 		$this->block_bindings_support = new Block_Bindings_Support();
 		$this->block_bindings_support->register();
 		$this->modal_hooks      = new Blocks\Modal_Hooks();
