@@ -534,8 +534,10 @@ body.dsgo-modal-open {
 .dsgo-modal--panel {
 
 	.dsgo-modal__dialog {
-		--dsgo-panel-size: 24rem;
-
+		// The default lives in the var() fallback at each use site, NOT as a
+		// declaration here. save() writes --dsgo-panel-size on the block ROOT,
+		// and a declaration on this element would shadow that inherited value —
+		// pinning every panel to the default no matter what the author chose.
 		position: fixed;
 		margin: 0;
 		padding: 0;
@@ -560,7 +562,7 @@ body.dsgo-modal-open {
 	&.dsgo-modal--panel-right .dsgo-modal__dialog {
 		top: 0;
 		bottom: 0;
-		width: var(--dsgo-panel-size);
+		width: var(--dsgo-panel-size, 24rem);
 		height: 100%;
 	}
 
@@ -570,7 +572,7 @@ body.dsgo-modal-open {
 		left: 0;
 		right: 0;
 		width: 100%;
-		height: var(--dsgo-panel-size);
+		height: var(--dsgo-panel-size, 24rem);
 	}
 
 	&.dsgo-modal--panel-left .dsgo-modal__dialog {
@@ -647,7 +649,7 @@ body.dsgo-modal-open {
 
 	.dsgo-modal--panel.dsgo-modal--panel-left .dsgo-modal__dialog,
 	.dsgo-modal--panel.dsgo-modal--panel-right .dsgo-modal__dialog {
-		width: min(var(--dsgo-panel-size), 100vw);
+		width: min(var(--dsgo-panel-size, 24rem), 100vw);
 	}
 
 	.dsgo-modal--panel .dsgo-modal__content {

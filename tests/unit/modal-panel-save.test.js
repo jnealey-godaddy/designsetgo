@@ -17,6 +17,8 @@ import {
 	parse,
 	// eslint-disable-next-line import/no-unresolved
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
+import fs from 'fs';
+import path from 'path';
 import '../../src/blocks/modal';
 
 describe('modal panel mode', () => {
@@ -113,5 +115,38 @@ describe('modal panel mode', () => {
 			html.indexOf('>', contentIndex)
 		);
 		expect(contentTag).not.toContain('dsgo-modal--panel');
+	});
+});
+
+describe('panel size custom property plumbing', () => {
+	const scss = fs.readFileSync(
+		path.join(__dirname, '../../src/blocks/modal/style.scss'),
+		'utf8'
+	);
+
+	it('never declares --dsgo-panel-size, only reads it', () => {
+		// save() writes --dsgo-panel-size on the block ROOT. Declaring it
+		// anywhere on .dsgo-modal__dialog (or a descendant) shadows that
+		// inherited value, so every panel silently renders at the default no
+		// matter what the author picked — invisible unless you test a
+		// non-default size. The default belongs in the var() fallback instead.
+		const declarations = scss
+			.split('\n')
+			.map((line, i) => [i + 1, line])
+			.filter(
+				([, line]) =>
+					/(^|[^(])--dsgo-panel-size\s*:/.test(line) &&
+					!line.trim().startsWith('//')
+			);
+
+		expect(declarations).toEqual([]);
+	});
+
+	it('supplies the default through a var() fallback at every use site', () => {
+		const uses = scss.match(/var\(\s*--dsgo-panel-size[^)]*\)/g) || [];
+		expect(uses.length).toBeGreaterThan(0);
+		uses.forEach((use) => {
+			expect(use).toMatch(/var\(\s*--dsgo-panel-size\s*,\s*[^)]+\)/);
+		});
 	});
 });
