@@ -1,0 +1,94 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "designsetgo/chart",
+	"version": "1.0.0",
+	"title": "Chart",
+	"category": "designsetgo",
+	"description": "Display data as a bar, line, or donut chart. No JavaScript required.",
+	"keywords": [ "chart", "graph", "data", "bar", "donut", "statistics" ],
+	"textdomain": "designsetgo",
+	"icon": "chart-bar",
+	"usesContext": [ "postId", "postType" ],
+	"supports": {
+		"anchor": true,
+		"align": [ "wide", "full" ],
+		"html": false,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"typography": {
+			"fontSize": true,
+			"__experimentalFontFamily": true
+		},
+		"color": {
+			"background": true,
+			"text": true,
+			"__experimentalDefaultControls": {
+				"text": true
+			}
+		}
+	},
+	"attributes": {
+		"chartType": {
+			"type": "string",
+			"default": "bar"
+		},
+		"data": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "object"
+			}
+		},
+		"dataSource": {
+			"type": "string",
+			"default": "manual"
+		},
+		"metaKey": {
+			"type": "string",
+			"default": ""
+		},
+		"height": {
+			"type": "number",
+			"default": 240
+		},
+		"showValues": {
+			"type": "boolean",
+			"default": true
+		},
+		"showLegend": {
+			"type": "boolean",
+			"default": true
+		},
+		"showGrid": {
+			"type": "boolean",
+			"default": true
+		},
+		"palette": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "string"
+			}
+		},
+		"label": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"example": {
+		"attributes": {
+			"chartType": "bar",
+			"data": [
+				{ "label": "Q1", "value": 42 },
+				{ "label": "Q2", "value": 68 },
+				{ "label": "Q3", "value": 55 }
+			]
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php"
+}

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### New Features
+- **Chart block**: display data as a bar, line, or donut chart. Rows are typed in the inspector or read from a post meta field holding a JSON array of `{label, value}` objects, and each row takes its own colour from the theme palette. The chart is drawn as inline SVG on the server — no charting library, and no JavaScript on the frontend at all.
+
+  Accessibility is built into the output rather than bolted on. The SVG is `aria-hidden` and paired with a visually-hidden data table carrying the same numbers, and colour is never the only channel that identifies a category: bar and line charts name their categories on the axis, donuts name them in a legend that cannot be switched off because a donut has no axis to carry them. Dense axes thin their labels to stay readable, and the otherwise-optional legend returns automatically whenever they do, so every category is always named somewhere a sighted reader can find it.
+
+  The geometry is built to avoid misreporting the data. Bars are drawn from zero rather than from the axis minimum — with a baseline when the axis crosses zero — so a negative value reads as a downward bar instead of a short upward one. Donut rows of zero or less are left out of the chart, the legend, and the data table alike, since a slice is a share of a total and a negative has no share. A chart draws at most 200 rows (filterable via `designsetgo_chart_max_rows`), which is already past the point where a 600-unit-wide plot can render a distinguishable bar; when the cap bites, the data table reports how many rows were left out rather than passing a truncated chart off as a complete one.
+
+  Meta-bound charts read post meta through the same `post_password_required()` / `is_post_publicly_viewable()` / `read_post` gates as `StyleBinding::resolve()` and the block bindings adapter, so a chart inside a Query Loop cannot surface data those paths would withhold. Palette colours are validated against a character allowlist — everything a CSS colour needs (`var()` with fallbacks, `rgb()`, `hsl()`, `color-mix()`, hex, named) and nothing an injection does, so a colour cannot append declarations of its own to the legend swatch's `style` attribute.
+
+### Fixed
+- **`ServerSideRender` now works for any block.** `dsgoVisibility` and `dsgoStyleBinding` were registered on the client only, via `blocks.registerBlockType` filters. `ServerSideRender` re-expands the attributes it is given against the *server's* registered schema and core validates that with `additionalProperties: false`, so a block carrying either attribute had every preview rejected with a 400 — and no amount of client-side filtering could fix it, because the expansion happens after the payload leaves the editor. Both attributes are now mirrored server-side through the existing extension-attribute registry, with block exclusion lists byte-identical to the JS ones.
+
 ## [2.6.2] - 2026-08-05
 
 ### Fixed

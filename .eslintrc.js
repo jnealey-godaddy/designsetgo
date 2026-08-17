@@ -1,4 +1,8 @@
 module.exports = {
+	// Stop ESLint walking above the project. Git worktrees live under
+	// .claude/worktrees/, so without this ESLint also loads the parent
+	// checkout's config and reports a duplicate-plugin error.
+	root: true,
 	extends: ['plugin:@wordpress/eslint-plugin/recommended'],
 	rules: {
 		'import/no-extraneous-dependencies': 'off',

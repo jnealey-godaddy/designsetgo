@@ -321,6 +321,16 @@ module.exports = [
 						to: 'blocks/query/render-relationship.php',
 						noErrorOnMissing: true,
 					},
+					// Copy chart block helper PHP files to build so render.php
+					// can require_once them from build/blocks/chart/. A glob so
+					// renaming one cannot silently outrun this config; these are
+					// required unconditionally, so a miss must fail the build
+					// rather than fatal at render time.
+					{
+						from: 'src/blocks/chart/chart-*.php',
+						to: 'blocks/chart/[name][ext]',
+						noErrorOnMissing: false,
+					},
 				],
 			}),
 			// Bundle analyzer - run with: ANALYZE=true npm run build
