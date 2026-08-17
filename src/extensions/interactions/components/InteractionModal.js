@@ -9,7 +9,7 @@
  */
 
 import { __, _n, sprintf } from '@wordpress/i18n';
-import { useCallback } from '@wordpress/element';
+import { useCallback, useState } from '@wordpress/element';
 import {
 	Modal,
 	SelectControl,
@@ -29,6 +29,7 @@ import {
 	TARGET_MODES,
 	ACTION_VALUE_FIELD,
 	OFFSET_ACTIONS,
+	HIDDEN_CLASS,
 } from '../constants';
 
 import { useSelectorMatchCount } from '../useSelectorMatchCount';
@@ -74,14 +75,25 @@ export function InteractionModal({ interaction, onChange, onClose }) {
 
 	const usesSelector = 'self' !== interaction.targetMode;
 
+	// Set when a picked block cannot carry a generated class, so the picker
+	// produced nothing usable. Telling the author why beats a silently
+	// unchanged field.
+	const [pickFailed, setPickFailed] = useState(false);
+
 	const handlePick = useCallback(
-		(selector) =>
+		(selector) => {
+			if (!selector) {
+				setPickFailed(true);
+				return;
+			}
+			setPickFailed(false);
 			onChange({
 				...interaction,
 				targetMode:
 					'parent' === interaction.targetMode ? 'parent' : 'selector',
 				targetSelector: selector,
-			}),
+			});
+		},
 		[interaction, onChange]
 	);
 
@@ -177,7 +189,19 @@ export function InteractionModal({ interaction, onChange, onClose }) {
 								{__('Pick on canvas', 'designsetgo')}
 							</Button>
 						</HStack>
-						{selectorHelp(matchCount) && (
+						{pickFailed && (
+							<Notice
+								status="warning"
+								isDismissible={false}
+								onRemove={() => setPickFailed(false)}
+							>
+								{__(
+									'That block cannot be given a CSS class, so it cannot be targeted automatically. Give it an HTML anchor under Advanced, then enter #your-anchor here.',
+									'designsetgo'
+								)}
+							</Notice>
+						)}
+						{!pickFailed && selectorHelp(matchCount) && (
 							<p className="dsgo-interaction-modal__hint">
 								{selectorHelp(matchCount)}
 							</p>
@@ -263,6 +287,19 @@ export function InteractionModal({ interaction, onChange, onClose }) {
 					checked={!!interaction.once}
 					onChange={set('once')}
 				/>
+
+				{'show' === interaction.action && (
+					<Notice status="info" isDismissible={false}>
+						{sprintf(
+							/* translators: %s: CSS class name. */
+							__(
+								'For this to reveal anything, the target must start hidden. Add the class %s to it under Advanced → Additional CSS class(es).',
+								'designsetgo'
+							),
+							HIDDEN_CLASS
+						)}
+					</Notice>
+				)}
 
 				{'click' === interaction.trigger && (
 					<Notice status="info" isDismissible={false}>

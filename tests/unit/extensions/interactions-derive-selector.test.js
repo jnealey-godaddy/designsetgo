@@ -91,4 +91,30 @@ describe('deriveSelector', () => {
 	it('returns empty for a missing block', () => {
 		expect(deriveSelector(null, jest.fn())).toBe('');
 	});
+
+	it('refuses to tag a block that will not serialise a className', () => {
+		// core/html and friends declare supports.customClassName: false, so a
+		// generated class works in the editor and silently vanishes on save —
+		// leaving a selector that matches nothing on the frontend.
+		const tag = jest.fn();
+		const selector = deriveSelector(
+			{ clientId: 'a', attributes: {} },
+			tag,
+			false
+		);
+
+		expect(selector).toBe('');
+		expect(tag).not.toHaveBeenCalled();
+	});
+
+	it('still uses an anchor on a block that cannot take a className', () => {
+		const tag = jest.fn();
+		expect(
+			deriveSelector(
+				{ clientId: 'a', attributes: { anchor: 'raw' } },
+				tag,
+				false
+			)
+		).toBe('#raw');
+	});
 });

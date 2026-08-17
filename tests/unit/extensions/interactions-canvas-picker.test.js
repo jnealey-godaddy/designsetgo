@@ -23,6 +23,13 @@ jest.mock('@wordpress/data', () => ({
 
 jest.mock('@wordpress/block-editor', () => ({ store: 'core/block-editor' }));
 
+// The real @wordpress/blocks pulls in the data store, which the stub above
+// cannot satisfy. Only hasBlockSupport is used here.
+const mockHasBlockSupport = jest.fn(() => true);
+jest.mock('@wordpress/blocks', () => ({
+	hasBlockSupport: (...a) => mockHasBlockSupport(...a),
+}));
+
 function Harness({ onPick }) {
 	const { isPicking, startPicking } = useCanvasPicker(onPick);
 	return (
@@ -54,8 +61,10 @@ describe('useCanvasPicker', () => {
 	beforeEach(() => {
 		jest.clearAllMocks();
 		mockGetSelectedBlockClientId.mockReturnValue('origin-block');
+		mockHasBlockSupport.mockReturnValue(true);
 		mockGetBlock.mockReturnValue({
 			clientId: 'target-block',
+			name: 'core/group',
 			attributes: { anchor: 'hero' },
 		});
 		document.body.innerHTML = `
@@ -99,7 +108,7 @@ describe('useCanvasPicker', () => {
 			realClick(document.querySelector('[data-block]'));
 		});
 
-		expect(onPick).toHaveBeenCalledWith('#hero');
+		expect(onPick).toHaveBeenCalledWith('#hero', expect.anything());
 	});
 
 	it('leaves picking mode after a pick so the editor can reopen', () => {
@@ -142,6 +151,28 @@ describe('useCanvasPicker', () => {
 		expect(onPick).not.toHaveBeenCalled();
 		// Clicks off-block stay live so the author can reach the Cancel button.
 		expect(events.mousedown.defaultPrevented).toBe(false);
+	});
+
+	it('reports no selector for a block that cannot carry a class', () => {
+		// core/html declares supports.customClassName: false, so a generated
+		// class would never serialise and the selector would match nothing.
+		mockHasBlockSupport.mockReturnValue(false);
+		mockGetBlock.mockReturnValue({
+			clientId: 'raw',
+			name: 'core/html',
+			attributes: {},
+		});
+
+		const onPick = jest.fn();
+		render(<Harness onPick={onPick} />);
+		fireEvent.click(screen.getByRole('button'));
+
+		act(() => {
+			realClick(document.querySelector('[data-block]'));
+		});
+
+		expect(onPick).toHaveBeenCalledWith('', expect.anything());
+		expect(mockUpdateBlockAttributes).not.toHaveBeenCalled();
 	});
 
 	it('cancels on Escape', () => {

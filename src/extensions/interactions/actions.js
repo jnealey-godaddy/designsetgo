@@ -9,12 +9,91 @@
 /* global navigator */
 
 // Import from the leaf module, never from ./constants — that module pulls in
-// @wordpress/i18n, which is not available in this bundle. See hidden-class.js.
-import { HIDDEN_CLASS } from './hidden-class';
+// @wordpress/i18n, which is not available in this bundle.
+// See visibility-contract.js.
+import { HIDDEN_CLASS } from './visibility-contract';
 
 // Attributes an author may never set. Event handlers execute script; `style`
 // is allowed because it cannot execute, but `on*` is a direct XSS vector.
 const FORBIDDEN_ATTRIBUTE = /^on/i;
+
+// Attributes whose value is fetched or navigated to. A `javascript:` or
+// `data:` value on any of these executes script just as surely as an
+// `on*` handler would.
+const URL_ATTRIBUTE =
+	/^(href|src|srcset|action|formaction|data|poster|background|ping|xlink:href)$/i;
+
+const DANGEROUS_URL = /^\s*(javascript|data|vbscript):/i;
+
+/**
+ * Split an author-supplied class string into individual, usable class names.
+ *
+ * `classList.add()` throws InvalidCharacterError on an empty string or one
+ * containing whitespace — and a throw here escapes the delegated document
+ * listener, killing every interaction that would have run after it. Authors
+ * reasonably type `.is-open` (copying a selector) or `a b` (two classes), so
+ * both are normalised rather than rejected.
+ *
+ * @param {string} value Raw class value from the interaction config.
+ * @return {string[]} Zero or more valid class names.
+ */
+export function parseClassNames(value) {
+	if ('string' !== typeof value) {
+		return [];
+	}
+
+	return value
+		.split(/[\s,]+/)
+		.map((name) => name.trim().replace(/^\./, ''))
+		.filter(Boolean);
+}
+
+/**
+ * Whether an attribute may be written by the setAttribute action.
+ *
+ * @param {string} name  Attribute name.
+ * @param {string} value Attribute value.
+ * @return {boolean} True when writing it is safe.
+ */
+export function isAttributeAllowed(name, value) {
+	if (!name || 'string' !== typeof name) {
+		return false;
+	}
+
+	// setAttribute throws on a name that is not a valid XML name.
+	if (!/^[a-zA-Z_:][-a-zA-Z0-9_:.]*$/.test(name)) {
+		return false;
+	}
+
+	if (FORBIDDEN_ATTRIBUTE.test(name)) {
+		return false;
+	}
+
+	if (URL_ATTRIBUTE.test(name) && DANGEROUS_URL.test(String(value ?? ''))) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Find the media element for a target.
+ *
+ * Media blocks wrap their element: core/video renders a <figure> around the
+ * <video>, so the block the author targets is rarely the media itself.
+ *
+ * @param {Element} el Target element.
+ * @return {Element|null}|null} The media element, or null.
+ */
+export function mediaIn(el) {
+	if (!el) {
+		return null;
+	}
+	if ('function' === typeof el.play && 'function' === typeof el.pause) {
+		return el;
+	}
+	return el.querySelector?.('video, audio') || null;
+}
 
 function eachTarget(targets, fn) {
 	(targets || []).forEach((el) => el && fn(el));
@@ -69,28 +148,33 @@ export const actionRegistry = {
 	},
 
 	toggleClass(targets, { value }) {
-		if (!value) {
+		const names = parseClassNames(value);
+		if (!names.length) {
 			return;
 		}
-		eachTarget(targets, (el) => el.classList.toggle(value));
+		eachTarget(targets, (el) =>
+			names.forEach((name) => el.classList.toggle(name))
+		);
 	},
 
 	addClass(targets, { value }) {
-		if (!value) {
+		const names = parseClassNames(value);
+		if (!names.length) {
 			return;
 		}
-		eachTarget(targets, (el) => el.classList.add(value));
+		eachTarget(targets, (el) => el.classList.add(...names));
 	},
 
 	removeClass(targets, { value }) {
-		if (!value) {
+		const names = parseClassNames(value);
+		if (!names.length) {
 			return;
 		}
-		eachTarget(targets, (el) => el.classList.remove(value));
+		eachTarget(targets, (el) => el.classList.remove(...names));
 	},
 
 	setAttribute(targets, { attributeName, value }) {
-		if (!attributeName || FORBIDDEN_ATTRIBUTE.test(attributeName)) {
+		if (!isAttributeAllowed(attributeName, value)) {
 			return;
 		}
 		eachTarget(targets, (el) =>
@@ -99,7 +183,7 @@ export const actionRegistry = {
 	},
 
 	removeAttribute(targets, { attributeName }) {
-		if (!attributeName || FORBIDDEN_ATTRIBUTE.test(attributeName)) {
+		if (!isAttributeAllowed(attributeName, '')) {
 			return;
 		}
 		eachTarget(targets, (el) => el.removeAttribute(attributeName));
@@ -114,9 +198,15 @@ export const actionRegistry = {
 
 	submitForm(targets) {
 		const el = (targets || [])[0];
-		// The target may be the form itself or anything inside it.
+		if (!el) {
+			return;
+		}
+		// The natural target is the form-builder block, whose wrapper is a
+		// <div> containing the <form> — so look down as well as up.
 		const form =
-			'FORM' === el?.tagName ? el : el?.closest?.('form') || null;
+			'FORM' === el.tagName
+				? el
+				: el.closest?.('form') || el.querySelector?.('form') || null;
 		if (!form) {
 			return;
 		}
@@ -128,22 +218,23 @@ export const actionRegistry = {
 	},
 
 	playMedia(targets) {
-		eachTarget(targets, (el) => el.play?.());
+		eachTarget(targets, (el) => mediaIn(el)?.play?.());
 	},
 
 	pauseMedia(targets) {
-		eachTarget(targets, (el) => el.pause?.());
+		eachTarget(targets, (el) => mediaIn(el)?.pause?.());
 	},
 
 	toggleMedia(targets) {
 		eachTarget(targets, (el) => {
-			if ('function' !== typeof el.play) {
+			const media = mediaIn(el);
+			if (!media || 'function' !== typeof media.play) {
 				return;
 			}
-			if (el.paused) {
-				el.play();
+			if (media.paused) {
+				media.play();
 			} else {
-				el.pause();
+				media.pause();
 			}
 		});
 	},

@@ -1,4 +1,4 @@
-/* global KeyboardEvent */
+/* global KeyboardEvent, MouseEvent */
 
 import { initInteractions } from '../../../src/extensions/interactions/frontend';
 
@@ -230,6 +230,107 @@ describe('interactions frontend runtime', () => {
 		expect(
 			document.getElementById('panel').getAttribute('aria-expanded')
 		).toBe('true');
+	});
+
+	it('does not re-fire hover as the pointer crosses child elements', () => {
+		// mouseenter is delivered in capture for descendants too. Resolving
+		// with closest() would fire again on every child, flip-flopping a
+		// toggle as the pointer moved across the block's contents.
+		const src = mount([
+			{
+				id: 'a',
+				trigger: 'hover',
+				targetMode: 'selector',
+				targetSelector: '#panel',
+				action: 'toggleClass',
+				value: 'is-open',
+			},
+		]);
+		const child = document.createElement('span');
+		src.appendChild(child);
+
+		src.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+		expect(
+			document.getElementById('panel').classList.contains('is-open')
+		).toBe(true);
+
+		// Pointer moves onto a child — must not toggle back off.
+		child.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+		expect(
+			document.getElementById('panel').classList.contains('is-open')
+		).toBe(true);
+	});
+
+	it('fires a keydown interaction regardless of where focus is', () => {
+		// A plain div never receives focus, so scoping keydown to the focused
+		// element made the trigger unreachable on most blocks.
+		mount([
+			{
+				id: 'a',
+				trigger: 'keydown',
+				key: 'Escape',
+				targetMode: 'selector',
+				targetSelector: '#panel',
+				action: 'addClass',
+				value: 'closed',
+			},
+		]);
+
+		// Dispatched on the body, nowhere near the source element.
+		document.body.dispatchEvent(
+			new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+		);
+		expect(
+			document.getElementById('panel').classList.contains('closed')
+		).toBe(true);
+	});
+
+	it('keeps one failing interaction from killing the others', () => {
+		const src = mount([
+			{
+				id: 'bad',
+				trigger: 'click',
+				targetMode: 'selector',
+				targetSelector: '#panel',
+				action: 'setAttribute',
+				attributeName: '1 invalid name',
+				value: 'x',
+			},
+			{
+				id: 'good',
+				trigger: 'click',
+				targetMode: 'selector',
+				targetSelector: '#panel',
+				action: 'addClass',
+				value: 'survived',
+			},
+		]);
+
+		expect(() => src.click()).not.toThrow();
+		expect(
+			document.getElementById('panel').classList.contains('survived')
+		).toBe(true);
+	});
+
+	it('publishes the starting state of a visibility control', () => {
+		document.body.innerHTML = `
+			<button id="src" data-dsgo-interactions='${JSON.stringify([
+				{
+					id: 'a',
+					trigger: 'click',
+					targetMode: 'selector',
+					targetSelector: '#panel',
+					action: 'toggleVisibility',
+				},
+			])}'></button>
+			<div id="panel" class="dsgo-interaction-hidden"></div>
+		`;
+		initInteractions();
+
+		// Without this the trigger says nothing until the first click.
+		expect(
+			document.getElementById('src').getAttribute('aria-expanded')
+		).toBe('false');
 	});
 
 	it('survives malformed JSON without throwing', () => {

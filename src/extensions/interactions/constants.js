@@ -184,15 +184,9 @@ export const ACTION_VALUE_FIELD = {
 	},
 };
 
-/**
- * Actions that show or hide their target.
- *
- * Grouped so the runtime can mirror the resulting state onto the trigger as
- * `aria-expanded` without every action having to remember to.
- */
-export const VISIBILITY_ACTIONS = ['show', 'hide', 'toggleVisibility'];
-
-export { HIDDEN_CLASS } from './hidden-class';
+// Re-exported so editor code has one import site for interaction constants.
+// The values live in a dependency-free module; see visibility-contract.js.
+export { HIDDEN_CLASS, VISIBILITY_ACTIONS } from './visibility-contract';
 
 /** Actions that scroll, and so respect the offset field. */
 export const OFFSET_ACTIONS = ['scrollTo'];

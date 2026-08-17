@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from '@wordpress/element';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { store as blockEditorStore } from '@wordpress/block-editor';
+import { hasBlockSupport } from '@wordpress/blocks';
 import { deriveSelector } from './derive-selector';
 
 const HIGHLIGHT_CLASS = 'dsgo-interaction-picking';
@@ -123,7 +124,14 @@ export function useCanvasPicker(onPick) {
 			swallow(e);
 
 			const block = getBlock(el.getAttribute('data-block'));
-			onPick(deriveSelector(block, updateBlockAttributes));
+			const supportsClassName = block
+				? hasBlockSupport(block.name, 'customClassName', true)
+				: true;
+
+			onPick(
+				deriveSelector(block, updateBlockAttributes, supportsClassName),
+				{ block, supportsClassName }
+			);
 			cancelPicking();
 		};
 

@@ -62,6 +62,60 @@ describe('interaction actions', () => {
 		expect(target.hasAttribute('onclick')).toBe(false);
 	});
 
+	describe('hostile input', () => {
+		it.each([
+			['href', 'javascript:alert(1)'],
+			['src', ' javascript:alert(1)'],
+			['formaction', 'JavaScript:alert(1)'],
+			['href', 'data:text/html,<script>alert(1)</script>'],
+			['href', 'vbscript:msgbox(1)'],
+		])('refuses to set %s to a script URL (%s)', (attributeName, value) => {
+			runAction('setAttribute', [target], { attributeName, value });
+			expect(target.hasAttribute(attributeName)).toBe(false);
+		});
+
+		it('still allows an ordinary href', () => {
+			runAction('setAttribute', [target], {
+				attributeName: 'href',
+				value: 'https://example.com',
+			});
+			expect(target.getAttribute('href')).toBe('https://example.com');
+		});
+
+		it('refuses an attribute name setAttribute would throw on', () => {
+			// An invalid XML name throws InvalidCharacterError, which would
+			// escape the delegated listener and kill every later interaction.
+			expect(() =>
+				runAction('setAttribute', [target], {
+					attributeName: '1bad name',
+					value: 'x',
+				})
+			).not.toThrow();
+			expect(target.attributes).toHaveLength(1); // id only
+		});
+
+		it.each([
+			['.is-open', 'is-open'],
+			['  is-open  ', 'is-open'],
+		])('normalises the class value %s', (input, expected) => {
+			runAction('addClass', [target], { value: input });
+			expect(target.classList.contains(expected)).toBe(true);
+		});
+
+		it('applies every class when given several', () => {
+			runAction('addClass', [target], { value: 'one two' });
+			expect(target.classList.contains('one')).toBe(true);
+			expect(target.classList.contains('two')).toBe(true);
+		});
+
+		it('does not throw on a class value that is only punctuation', () => {
+			expect(() =>
+				runAction('addClass', [target], { value: '  .  ' })
+			).not.toThrow();
+			expect(target.classList.length).toBe(0);
+		});
+	});
+
 	it('applies to every element in the target list', () => {
 		document.body.innerHTML = '<i class="x"></i><i class="x"></i>';
 		const many = Array.from(document.querySelectorAll('.x'));
@@ -212,6 +266,18 @@ describe('interaction actions', () => {
 		it('ignores a target that is not a media element', () => {
 			expect(() => runAction('toggleMedia', [target], {})).not.toThrow();
 		});
+
+		it('descends into a wrapper to find the media', () => {
+			// core/video renders <figure><video>…</video></figure>, so the
+			// block an author targets is the figure, not the media element.
+			document.body.innerHTML = '<figure id="f"><video></video></figure>';
+			const figure = document.getElementById('f');
+			const video = figure.querySelector('video');
+			video.play = jest.fn();
+
+			runAction('playMedia', [figure], {});
+			expect(video.play).toHaveBeenCalled();
+		});
 	});
 
 	describe('forms', () => {
@@ -231,6 +297,18 @@ describe('interaction actions', () => {
 			form.requestSubmit = jest.fn();
 
 			runAction('submitForm', [form], {});
+			expect(form.requestSubmit).toHaveBeenCalled();
+		});
+
+		it('descends into a wrapper to find the form', () => {
+			// The form-builder block's wrapper is a <div> around the <form>,
+			// so the natural target is an ancestor, not a descendant.
+			document.body.innerHTML =
+				'<div id="wrap"><form id="f"></form></div>';
+			const form = document.getElementById('f');
+			form.requestSubmit = jest.fn();
+
+			runAction('submitForm', [document.getElementById('wrap')], {});
 			expect(form.requestSubmit).toHaveBeenCalled();
 		});
 

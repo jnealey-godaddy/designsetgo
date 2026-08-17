@@ -43,12 +43,19 @@ export function makeTargetClass() {
 /**
  * Derive a selector for a block, tagging the block if it has no identifier.
  *
- * @param {Object}   block    The block object from the block editor store.
- * @param {Function} tagBlock Called as ( clientId, attributes ) when the
- *                            block must be given a class to be targetable.
- * @return {string} A CSS selector such as `#hero` or `.my-panel`.
+ * @param {Object}   block             The block object from the block editor store.
+ * @param {Function} tagBlock          Called as ( clientId, attributes ) when the
+ *                                     block must be given a class to be targetable.
+ * @param {boolean}  supportsClassName Whether the block serialises a custom
+ *                                     className. Blocks declaring
+ *                                     `supports.customClassName: false`
+ *                                     (core/html, core/shortcode, …) silently
+ *                                     drop it, which would leave a selector
+ *                                     that matches nothing on the frontend.
+ * @return {string} A CSS selector such as `#hero` or `.my-panel`, or an empty
+ * string when the block cannot be targeted automatically.
  */
-export function deriveSelector(block, tagBlock) {
+export function deriveSelector(block, tagBlock, supportsClassName = true) {
 	if (!block) {
 		return '';
 	}
@@ -62,6 +69,13 @@ export function deriveSelector(block, tagBlock) {
 	const existing = firstCustomClass(className);
 	if (existing) {
 		return `.${existing}`;
+	}
+
+	// Writing a class this block will not serialise produces a selector that
+	// works in the editor and silently fails on the frontend — worse than
+	// admitting we cannot target it.
+	if (!supportsClassName) {
+		return '';
 	}
 
 	// Nothing stable to hook onto — give the block a class of its own.

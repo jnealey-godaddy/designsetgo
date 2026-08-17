@@ -21,7 +21,7 @@ const FRONTEND_GRAPH = [
 	'frontend.js',
 	'resolve-target.js',
 	'actions.js',
-	'hidden-class.js',
+	'visibility-contract.js',
 ];
 
 const read = (file) => fs.readFileSync(path.join(EXT_DIR, file), 'utf8');
