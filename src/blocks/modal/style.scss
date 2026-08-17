@@ -511,3 +511,147 @@ body.dsgo-modal-open {
 		}
 	}
 }
+
+/**
+ * Off-Canvas Panel Mode
+ *
+ * The modal's overlay, focus trap, scroll lock, Escape handling and trigger
+ * machinery all still apply — only the dialog's positioning and its entry
+ * transform change.
+ *
+ * The mode classes live on the block ROOT (.dsgo-modal), which is the
+ * full-screen fixed overlay, but the box that actually slides is
+ * .dsgo-modal__dialog. Everything below is therefore scoped
+ * `.dsgo-modal--panel .dsgo-modal__dialog`, never the root itself.
+ *
+ * Specificity note: the per-animation rules above are
+ * `.dsgo-modal--animation-x.dsgo-modal--open .dsgo-modal__dialog` (0,3,0) and
+ * several of them set `transform` on this same element. The state rules here
+ * carry the edge class as well (0,4,0) so a panel left on `slide-up` cannot
+ * compose two transforms into a visible double-move.
+ */
+
+.dsgo-modal--panel {
+
+	.dsgo-modal__dialog {
+		--dsgo-panel-size: 24rem;
+
+		position: fixed;
+		margin: 0;
+		padding: 0;
+		max-width: 100%;
+		max-height: 100%;
+		align-items: stretch;
+		justify-content: stretch;
+		transition: transform 0.3s ease;
+		will-change: transform;
+	}
+
+	.dsgo-modal__content {
+		width: 100%;
+		height: 100%;
+		max-height: 100%;
+		border-radius: 0;
+		overflow-y: auto;
+	}
+
+	// Left / right panels span the full viewport height and are sized by width.
+	&.dsgo-modal--panel-left .dsgo-modal__dialog,
+	&.dsgo-modal--panel-right .dsgo-modal__dialog {
+		top: 0;
+		bottom: 0;
+		width: var(--dsgo-panel-size);
+		height: 100%;
+	}
+
+	// Top / bottom panels span the full viewport width and are sized by height.
+	&.dsgo-modal--panel-top .dsgo-modal__dialog,
+	&.dsgo-modal--panel-bottom .dsgo-modal__dialog {
+		left: 0;
+		right: 0;
+		width: 100%;
+		height: var(--dsgo-panel-size);
+	}
+
+	&.dsgo-modal--panel-left .dsgo-modal__dialog {
+		left: 0;
+	}
+
+	&.dsgo-modal--panel-right .dsgo-modal__dialog {
+		right: 0;
+	}
+
+	&.dsgo-modal--panel-top .dsgo-modal__dialog {
+		top: 0;
+	}
+
+	&.dsgo-modal--panel-bottom .dsgo-modal__dialog {
+		bottom: 0;
+	}
+}
+
+// Resting position: off-screen, in the direction of the anchoring edge.
+// `--opening` is the frame before the reveal; `--closing` is the exit.
+.dsgo-modal--panel.dsgo-modal--panel-left.dsgo-modal--opening .dsgo-modal__dialog,
+.dsgo-modal--panel.dsgo-modal--panel-left.dsgo-modal--closing .dsgo-modal__dialog {
+	transform: translateX(-100%);
+}
+
+.dsgo-modal--panel.dsgo-modal--panel-right.dsgo-modal--opening .dsgo-modal__dialog,
+.dsgo-modal--panel.dsgo-modal--panel-right.dsgo-modal--closing .dsgo-modal__dialog {
+	transform: translateX(100%);
+}
+
+.dsgo-modal--panel.dsgo-modal--panel-top.dsgo-modal--opening .dsgo-modal__dialog,
+.dsgo-modal--panel.dsgo-modal--panel-top.dsgo-modal--closing .dsgo-modal__dialog {
+	transform: translateY(-100%);
+}
+
+.dsgo-modal--panel.dsgo-modal--panel-bottom.dsgo-modal--opening .dsgo-modal__dialog,
+.dsgo-modal--panel.dsgo-modal--panel-bottom.dsgo-modal--closing .dsgo-modal__dialog {
+	transform: translateY(100%);
+}
+
+// Revealed. Also overrides any transform the chosen animationType would apply.
+.dsgo-modal--panel.dsgo-modal--panel-left.dsgo-modal--open .dsgo-modal__dialog,
+.dsgo-modal--panel.dsgo-modal--panel-right.dsgo-modal--open .dsgo-modal__dialog,
+.dsgo-modal--panel.dsgo-modal--panel-top.dsgo-modal--open .dsgo-modal__dialog,
+.dsgo-modal--panel.dsgo-modal--panel-bottom.dsgo-modal--open .dsgo-modal__dialog {
+	transform: translate(0, 0);
+}
+
+// A panel is edge-anchored, so the outside close-button positions (which sit at
+// -12px) would be clipped by the viewport. Pull them inside.
+.dsgo-modal--panel .dsgo-modal__close--top-right {
+	top: 12px;
+	right: 12px;
+}
+
+.dsgo-modal--panel .dsgo-modal__close--top-left {
+	top: 12px;
+	left: 12px;
+}
+
+// The shared reduced-motion rule above already forces `transform: none` on
+// .dsgo-modal__dialog, so the panel simply appears in place rather than
+// sliding. This only removes the transition so nothing eases.
+@media (prefers-reduced-motion: reduce) {
+
+	.dsgo-modal--panel .dsgo-modal__dialog {
+		transition: none !important;
+	}
+}
+
+// A panel wider or taller than the viewport should never overflow it.
+@media (max-width: 480px) {
+
+	.dsgo-modal--panel.dsgo-modal--panel-left .dsgo-modal__dialog,
+	.dsgo-modal--panel.dsgo-modal--panel-right .dsgo-modal__dialog {
+		width: min(var(--dsgo-panel-size), 100vw);
+	}
+
+	.dsgo-modal--panel .dsgo-modal__content {
+		max-height: 100%;
+		border-radius: 0;
+	}
+}
