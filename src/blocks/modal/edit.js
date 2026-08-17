@@ -49,6 +49,7 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 		closeButtonLabel,
 		closeButtonIconColor,
 		closeButtonBgColor,
+		displayMode,
 	} = attributes;
 
 	useUniqueBlockId({
@@ -106,14 +107,16 @@ export default function ModalEdit({ attributes, setAttributes, clientId }) {
 		className: 'dsgo-modal-editor-preview',
 	});
 
-	// Transfer block support styles from wrapper to content using shared utility
+	// Transfer block support styles from wrapper to content using shared utility.
+	// MUST MATCH save.js: panel mode writes no inline dimensions, because the
+	// panel is sized by panelSize on the dialog.
 	const { contentStyle, wrapperProps, contentClasses } =
-		transferStylesToContent(blockProps, {
-			width,
-			maxWidth,
-			height,
-			maxHeight,
-		});
+		transferStylesToContent(
+			blockProps,
+			'panel' === displayMode
+				? {}
+				: { width, maxWidth, height, maxHeight }
+		);
 
 	const innerBlocksProps = useInnerBlocksProps(
 		{

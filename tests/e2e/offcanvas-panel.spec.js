@@ -104,6 +104,50 @@ test.describe('Off-canvas panel', () => {
 		await expect(page.locator('body')).not.toHaveClass(/dsgo-modal-open/);
 	});
 
+	test('content fills the panel on a full-width bottom panel', async ({
+		page,
+	}, testInfo) => {
+		defineArtifact(testInfo, 'blocks', 'modal', 'offcanvas-fill');
+
+		await createNewPost(page, 'page');
+		await setPostTitle(page, 'Off-canvas fill');
+		await seedModal(
+			page,
+			{ displayMode: 'panel', panelEdge: 'bottom' },
+			'dsgo-modal-e2e-fill'
+		);
+
+		const url = await publishAndResolveUrl(page);
+		await page.goto(url);
+		await page.locator('[data-dsgo-modal-trigger]').click();
+
+		// A bottom panel spans the viewport, so it is always wider than the
+		// dialog-mode `width: 600px`. If that inline width is written onto
+		// .dsgo-modal__content it outranks the stylesheet and the content sits
+		// at 648px pinned to the left instead of filling the panel. Height is
+		// the box-sizing case: without border-box the 24px padding is added to
+		// `height: 100%` and the content overflows the panel by 48px.
+		const fill = await page.evaluate(() => {
+			const root = document.querySelector('#dsgo-modal-e2e-fill');
+			const d = root
+				.querySelector('.dsgo-modal__dialog')
+				.getBoundingClientRect();
+			const c = root
+				.querySelector('.dsgo-modal__content')
+				.getBoundingClientRect();
+			return {
+				widthDelta: Math.abs(c.width - d.width),
+				heightDelta: Math.abs(c.height - d.height),
+				withinViewport:
+					c.bottom <= window.innerHeight + 1 &&
+					c.right <= window.innerWidth + 1,
+			};
+		});
+		expect(fill.widthDelta).toBeLessThan(2);
+		expect(fill.heightDelta).toBeLessThan(2);
+		expect(fill.withinViewport).toBe(true);
+	});
+
 	test('opens from an interaction-layers openModal action', async ({
 		page,
 	}, testInfo) => {

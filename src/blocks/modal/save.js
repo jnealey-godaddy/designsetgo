@@ -156,14 +156,20 @@ export default function save({ attributes }) {
 		</button>
 	) : null;
 
-	// Transfer block support styles from wrapper to content using shared utility
+	// Transfer block support styles from wrapper to content using shared utility.
+	//
+	// A panel is sized by panelSize on the dialog, so the dialog-mode dimensions
+	// must NOT be written inline onto the content. An inline `width: 600px`
+	// outranks the stylesheet's `.dsgo-modal--panel .dsgo-modal__content
+	// { width: 100% }`, and the content then only appears to fill the panel
+	// because flex-shrink clamps it — which stops working the moment the panel
+	// is wider than that inline width. Top and bottom panels span the viewport,
+	// so they hit that case almost always. MUST MATCH edit.js.
 	const { contentStyle, wrapperProps, contentClasses } =
-		transferStylesToContent(blockProps, {
-			width,
-			maxWidth,
-			height,
-			maxHeight,
-		});
+		transferStylesToContent(
+			blockProps,
+			isPanel ? {} : { width, maxWidth, height, maxHeight }
+		);
 
 	const innerBlocksProps = useInnerBlocksProps.save({
 		className: ['dsgo-modal__content', ...contentClasses].join(' '),

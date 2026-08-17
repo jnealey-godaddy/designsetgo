@@ -101,6 +101,44 @@ describe('modal panel mode', () => {
 		expect(rootTag).toContain('--dsgo-panel-size:30rem');
 	});
 
+	it('writes no inline dialog dimensions onto the content in panel mode', () => {
+		// An inline width outranks the stylesheet's
+		// .dsgo-modal--panel .dsgo-modal__content { width: 100% }. The content
+		// then only APPEARS to fill the panel because flex-shrink clamps it —
+		// which stops the moment the panel is wider than that inline width.
+		// Top and bottom panels span the viewport, so they hit that always.
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			displayMode: 'panel',
+			width: '600px',
+			maxWidth: '90vw',
+		});
+		const html = serialize(block);
+		const contentIndex = html.indexOf('dsgo-modal__content');
+		const contentTag = html.slice(
+			html.lastIndexOf('<div', contentIndex),
+			html.indexOf('>', contentIndex)
+		);
+		expect(contentTag).not.toContain('width:600px');
+		expect(contentTag).not.toContain('max-width:90vw');
+	});
+
+	it('still writes the dialog dimensions in the default dialog mode', () => {
+		const block = createBlock('designsetgo/modal', {
+			modalId: 'm1',
+			width: '600px',
+			maxWidth: '90vw',
+		});
+		const html = serialize(block);
+		const contentIndex = html.indexOf('dsgo-modal__content');
+		const contentTag = html.slice(
+			html.lastIndexOf('<div', contentIndex),
+			html.indexOf('>', contentIndex)
+		);
+		expect(contentTag).toContain('width:600px');
+		expect(contentTag).toContain('max-width:90vw');
+	});
+
 	it('leaves the panel classes off the content element', () => {
 		const block = createBlock('designsetgo/modal', {
 			modalId: 'm1',
