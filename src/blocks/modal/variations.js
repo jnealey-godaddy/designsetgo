@@ -596,6 +596,43 @@ const variations = [
 		],
 		scope: ['block'],
 	},
+	{
+		name: 'off-canvas',
+		title: __('Off-Canvas Panel', 'designsetgo'),
+		description: __(
+			'A panel that slides in from the edge of the screen. Useful for menus, filters, and carts.',
+			'designsetgo'
+		),
+		icon: 'align-right',
+		attributes: {
+			displayMode: 'panel',
+			panelEdge: 'right',
+			panelSize: '24rem',
+			// 'fade' rather than 'none': the panel's slide is a transform on
+			// the dialog, and dsgo-modal--animation-none sets
+			// `transition: none !important` on that same element, which would
+			// suppress it. 'fade' only animates opacity, so the two compose.
+			animationType: 'fade',
+			overlayOpacity: 40,
+			closeOnBackdrop: true,
+			closeOnEsc: true,
+			showCloseButton: true,
+			// Outside positions sit at -12px, which a screen-edge panel clips.
+			closeButtonPosition: 'inside-top-right',
+		},
+		innerBlocks: [
+			[
+				'core/heading',
+				{
+					level: 2,
+					content: __('Menu', 'designsetgo'),
+				},
+			],
+			['core/paragraph', { content: '' }],
+		],
+		isActive: ['displayMode'],
+		scope: ['inserter', 'transform'],
+	},
 ];
 
 export default variations;

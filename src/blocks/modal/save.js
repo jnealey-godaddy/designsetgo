@@ -34,6 +34,9 @@ export default function save({ attributes }) {
 		maxWidth,
 		height,
 		maxHeight,
+		displayMode,
+		panelEdge,
+		panelSize,
 		animationType,
 		animationDuration,
 		overlayOpacity,
@@ -50,8 +53,23 @@ export default function save({ attributes }) {
 		disableBodyScroll,
 	} = attributes;
 
+	// Off-canvas panel mode. Every branch below is gated on displayMode being
+	// something other than its 'dialog' default, so a modal that predates this
+	// feature emits character-identical markup and needs no deprecation.
+	// tests/unit/modal-panel-save.test.js pins that.
+	const isPanel = 'panel' === displayMode;
+
+	const panelClasses = isPanel
+		? ` dsgo-modal--panel dsgo-modal--panel-${panelEdge}`
+		: '';
+
+	// Kept on the wrapper rather than folded into blockProps.style, which
+	// transferStylesToContent() relocates onto .dsgo-modal__content — a
+	// descendant of the .dsgo-modal__dialog that consumes this property.
+	const panelStyle = isPanel ? { '--dsgo-panel-size': panelSize } : undefined;
+
 	const blockProps = useBlockProps.save({
-		className: 'dsgo-modal',
+		className: `dsgo-modal${panelClasses}`,
 		// Omit a blank id: React serializes `id=""`, which the anchor support
 		// (sourced from the id attribute) would re-parse as anchor: "". In
 		// real content modalId is always seeded by useUniqueBlockId; the
@@ -153,7 +171,7 @@ export default function save({ attributes }) {
 	});
 
 	return (
-		<div {...wrapperProps}>
+		<div {...wrapperProps} style={panelStyle}>
 			<div
 				className="dsgo-modal__backdrop"
 				style={overlayStyle}
