@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### New Features
+- **Chart block**: display data as a bar, line, or donut chart. Rows are typed in the inspector or read from a post meta field holding a JSON array of `{label, value}` objects, and each row takes its own colour from the theme palette. The chart is drawn as inline SVG on the server — no charting library, and no JavaScript on the frontend at all. The SVG is `aria-hidden` and paired with a visually-hidden data table carrying the same numbers, so colour is never the only channel: category names sit on the axis for bar and line charts and in the legend for donuts, and the legend cannot be turned off for a donut because it has no axis to label. Bars are drawn from zero rather than from the axis minimum, with a baseline when the axis crosses zero, so a negative value reads as a downward bar instead of a short upward one. Donut rows of zero or less are dropped from the chart, legend, and data table alike — a slice is a share of a total, and a negative has no share.
+
+### Fixed
+- **`ServerSideRender` now works for any block, not just the chart block.** `dsgoVisibility` and `dsgoStyleBinding` were registered on the client only, via `blocks.registerBlockType` filters. `ServerSideRender` re-expands the attributes it is given against the *server's* registered schema and core validates that with `additionalProperties: false`, so a block carrying either attribute had every preview rejected with a 400 — and no amount of client-side filtering could fix it, because the expansion happens after the payload leaves the editor. Both attributes are now mirrored server-side through the existing extension-attribute registry, with block exclusion lists byte-identical to the JS ones.
+- **A chart bound to a post meta field no longer renders meta from posts the visitor cannot read.** `designsetgo_chart_meta_rows()` checked `is_protected_meta()` but not the post's own visibility, so a chart inside a Query Loop that landed on a private or password-protected post published that post's meta to anonymous visitors — data every other binding path in the plugin withholds. It now applies the same `post_password_required()` / `is_post_publicly_viewable()` / `read_post` gates as `StyleBinding::resolve()` and the block bindings adapter.
+
 ## [2.6.2] - 2026-08-05
 
 ### Fixed

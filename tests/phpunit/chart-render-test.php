@@ -411,6 +411,256 @@ class Chart_Render_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A donut has no axis, so its legend is the only sighted route from a
+	 * slice to its category and must survive `showLegend: false`.
+	 */
+	public function test_donut_legend_cannot_be_turned_off() {
+		$html = $this->render(
+			array(
+				'chartType'  => 'donut',
+				'data'       => $this->sample(),
+				'showLegend' => false,
+			)
+		);
+		$this->assertStringContainsString( 'dsgo-chart__legend', $html );
+		$this->assertStringContainsString( 'Q1', $html );
+	}
+
+	/**
+	 * Category names live on the axis, so hiding the legend never leaves a
+	 * sighted reader unable to tell which bar is which.
+	 */
+	public function test_category_labels_survive_a_hidden_legend() {
+		foreach ( array( 'bar', 'line' ) as $type ) {
+			$html = $this->render(
+				array(
+					'chartType'  => $type,
+					'data'       => $this->sample(),
+					'showLegend' => false,
+				)
+			);
+
+			$this->assertStringNotContainsString( 'dsgo-chart__legend', $html );
+			$this->assertMatchesRegularExpression(
+				'/<text class="dsgo-chart__category"[^>]*>Q1<\/text>/',
+				$html,
+				"The {$type} chart lost its category labels."
+			);
+		}
+	}
+
+	/**
+	 * A negative bar hangs below the zero line rather than being drawn upward
+	 * from the axis floor, where it would read as a small positive value.
+	 */
+	public function test_negative_bars_hang_below_the_zero_baseline() {
+		$html = $this->render(
+			array(
+				'chartType' => 'bar',
+				'showGrid'  => false,
+				'data'      => array(
+					array(
+						'label' => 'Up',
+						'value' => 10,
+					),
+					array(
+						'label' => 'Down',
+						'value' => -10,
+					),
+				),
+			)
+		);
+
+		$this->assertStringContainsString(
+			'dsgo-chart__baseline',
+			$html,
+			'An axis crossing zero must draw a baseline.'
+		);
+
+		preg_match_all(
+			'/<line class="dsgo-chart__baseline"[^>]*y1="([\d.-]+)"/',
+			$html,
+			$baseline
+		);
+		$this->assertNotEmpty( $baseline[1] );
+		$zero = (float) $baseline[1][0];
+
+		preg_match_all(
+			'/<rect class="dsgo-chart__bar"[^>]*y="([\d.-]+)" width="[\d.-]+" height="([\d.-]+)"/',
+			$html,
+			$bars,
+			PREG_SET_ORDER
+		);
+		$this->assertCount( 2, $bars );
+
+		// SVG y grows downward: the positive bar's top is above zero and its
+		// foot lands on it; the negative bar starts at zero and grows down.
+		$this->assertLessThan( $zero, (float) $bars[0][1] );
+		$this->assertEqualsWithDelta( $zero, (float) $bars[0][1] + (float) $bars[0][2], 0.5 );
+		$this->assertEqualsWithDelta( $zero, (float) $bars[1][1], 0.5 );
+		$this->assertGreaterThan( $zero, (float) $bars[1][1] + (float) $bars[1][2] );
+
+		// Equal magnitudes must produce equal bar heights.
+		$this->assertEqualsWithDelta( (float) $bars[0][2], (float) $bars[1][2], 0.5 );
+	}
+
+	/**
+	 * A donut cannot show a share of a negative, so such rows leave the chart,
+	 * the legend, and the data table together rather than one of the three.
+	 */
+	public function test_donut_drops_non_positive_rows_everywhere() {
+		$html = $this->render(
+			array(
+				'chartType' => 'donut',
+				'data'      => array(
+					array(
+						'label' => 'Keep',
+						'value' => 10,
+					),
+					array(
+						'label' => 'Drop',
+						'value' => -10,
+					),
+					array(
+						'label' => 'Zero',
+						'value' => 0,
+					),
+				),
+			)
+		);
+
+		$this->assertSame( 1, substr_count( $html, 'dsgo-chart__slice' ) );
+		$this->assertSame( 1, substr_count( $html, 'dsgo-chart__legend-item' ) );
+		$this->assertStringContainsString( 'Keep', $html );
+		$this->assertStringNotContainsString( 'Drop', $html );
+		$this->assertStringNotContainsString( 'Zero', $html );
+
+		// The single surviving row is the whole total.
+		$this->assertStringContainsString( '100%', $html );
+	}
+
+	/**
+	 * A donut with nothing positive left to draw renders nothing at all.
+	 */
+	public function test_donut_with_only_negative_rows_renders_nothing() {
+		$html = $this->render(
+			array(
+				'chartType' => 'donut',
+				'data'      => array(
+					array(
+						'label' => 'Loss',
+						'value' => -10,
+					),
+				),
+			)
+		);
+		$this->assertStringNotContainsString( 'dsgo-chart', $html );
+	}
+
+	/**
+	 * The legend swatches describe the line's own point colours; a legend that
+	 * claimed a colour mapping the chart did not honour would be worse than no
+	 * legend, because it is one of the two non-colour a11y channels.
+	 */
+	public function test_line_points_use_their_own_palette_slot() {
+		$html = $this->render(
+			array(
+				'chartType' => 'line',
+				'data'      => $this->sample(),
+				'palette'   => array( '#111111', '#222222' ),
+			)
+		);
+
+		preg_match_all(
+			'/<circle class="dsgo-chart__point"[^>]*fill="([^"]+)"/',
+			$html,
+			$points
+		);
+		$this->assertSame( array( '#111111', '#222222' ), $points[1] );
+
+		preg_match_all(
+			'/<span class="dsgo-chart__swatch" style="background:([^"]+)"/',
+			$html,
+			$swatches
+		);
+		$this->assertSame( $points[1], $swatches[1] );
+	}
+
+	/**
+	 * Meta rows are refused for a post the visitor cannot read, matching the
+	 * gates every other binding path in the plugin applies.
+	 */
+	public function test_meta_rows_are_refused_for_a_private_post() {
+		$post_id = self::factory()->post->create(
+			array( 'post_status' => 'private' )
+		);
+		update_post_meta( $post_id, 'dsgo_chart_data', wp_json_encode( $this->sample() ) );
+
+		$block = new WP_Block(
+			array(
+				'blockName' => 'designsetgo/chart',
+				'attrs'     => array(),
+			),
+			array( 'postId' => $post_id )
+		);
+
+		wp_set_current_user( 0 );
+		$this->assertSame(
+			array(),
+			designsetgo_chart_meta_rows( 'dsgo_chart_data', $block ),
+			'Private post meta leaked to an anonymous visitor.'
+		);
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$this->assertCount(
+			2,
+			designsetgo_chart_meta_rows( 'dsgo_chart_data', $block ),
+			'An editor with read access should still see the data.'
+		);
+		wp_set_current_user( 0 );
+	}
+
+	/**
+	 * Meta rows are refused while a post's password is outstanding.
+	 */
+	public function test_meta_rows_are_refused_for_a_password_protected_post() {
+		$post_id = self::factory()->post->create(
+			array( 'post_password' => 'secret' )
+		);
+		update_post_meta( $post_id, 'dsgo_chart_data', wp_json_encode( $this->sample() ) );
+
+		$block = new WP_Block(
+			array(
+				'blockName' => 'designsetgo/chart',
+				'attrs'     => array(),
+			),
+			array( 'postId' => $post_id )
+		);
+
+		$this->assertSame( array(), designsetgo_chart_meta_rows( 'dsgo_chart_data', $block ) );
+	}
+
+	/**
+	 * A non-scalar label in stored JSON is dropped, not cast — casting an array
+	 * to string raises a notice that would print into the page under WP_DEBUG.
+	 */
+	public function test_a_non_scalar_label_does_not_raise_a_notice() {
+		$rows = designsetgo_chart_rows(
+			array(
+				'data' => array(
+					array(
+						'label' => array( 'nested' ),
+						'value' => 5,
+					),
+				),
+			)
+		);
+
+		$this->assertSame( '', $rows[0]['label'] );
+		$this->assertSame( 5.0, $rows[0]['value'] );
+	}
+
+	/**
 	 * A caller-supplied palette colour is sanitised before it reaches the markup.
 	 */
 	public function test_palette_rejects_a_javascript_url() {

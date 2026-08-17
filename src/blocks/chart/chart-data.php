@@ -36,13 +36,52 @@ if ( ! function_exists( 'designsetgo_chart_rows' ) ) {
 				continue;
 			}
 
+			// Meta-sourced labels come from arbitrary stored JSON, so a
+			// non-scalar would raise "Array to string conversion" on cast.
+			$label = isset( $row['label'] ) && is_scalar( $row['label'] )
+				? (string) $row['label']
+				: '';
+
 			$rows[] = array(
-				'label' => isset( $row['label'] ) ? (string) $row['label'] : '',
+				'label' => $label,
 				'value' => (float) $row['value'],
 			);
 		}
 
 		return $rows;
+	}
+}
+
+if ( ! function_exists( 'designsetgo_chart_donut_rows' ) ) {
+	/**
+	 * Drop the rows a donut cannot represent, keeping colours aligned.
+	 *
+	 * A slice is a share of a total, and a negative has no share. Rendering one
+	 * as its absolute value would show a positive slice for a negative number,
+	 * so the row is removed from the chart, the legend, and the data table
+	 * alike rather than being silently misrepresented in one of them.
+	 *
+	 * @param array $rows   Chart rows.
+	 * @param array $colors Series colours, positional against $rows.
+	 * @return array{rows: array, colors: array} The filtered pair.
+	 */
+	function designsetgo_chart_donut_rows( array $rows, array $colors ) {
+		$kept_rows   = array();
+		$kept_colors = array();
+
+		foreach ( array_values( $rows ) as $i => $row ) {
+			if ( $row['value'] <= 0 ) {
+				continue;
+			}
+
+			$kept_rows[]   = $row;
+			$kept_colors[] = isset( $colors[ $i ] ) ? $colors[ $i ] : '';
+		}
+
+		return array(
+			'rows'   => $kept_rows,
+			'colors' => $kept_colors,
+		);
 	}
 }
 
@@ -65,6 +104,20 @@ if ( ! function_exists( 'designsetgo_chart_meta_rows' ) ) {
 		$post_id = isset( $block->context['postId'] ) ? $block->context['postId'] : get_the_ID();
 
 		if ( ! $post_id ) {
+			return array();
+		}
+
+		// Same gates as the block bindings adapter and StyleBinding::resolve()
+		// (includes/features/class-style-binding.php) so a chart cannot leak
+		// meta those paths would withhold — e.g. a chart inside a Query Loop
+		// that lands on a private or password-protected post.
+		$post = get_post( $post_id );
+
+		if ( ! $post || post_password_required( $post ) ) {
+			return array();
+		}
+
+		if ( ! is_post_publicly_viewable( $post ) && ! current_user_can( 'read_post', $post_id ) ) {
 			return array();
 		}
 

@@ -10,6 +10,7 @@ defined( 'ABSPATH' ) || exit;
 require_once __DIR__ . '/chart-geometry.php';
 require_once __DIR__ . '/chart-data.php';
 require_once __DIR__ . '/chart-series.php';
+require_once __DIR__ . '/chart-axis.php';
 
 if ( ! function_exists( 'designsetgo_chart_geometry' ) ) {
 	/**
@@ -32,6 +33,12 @@ if ( ! function_exists( 'designsetgo_chart_geometry' ) ) {
 		$bounds      = designsetgo_chart_bounds( wp_list_pluck( $rows, 'value' ) );
 		$tick_count  = 5;
 
+		// Reserve room under the plot for the x-axis category labels, but only
+		// when there is something to write there.
+		$has_categories = 'donut' !== $type
+			&& (bool) array_filter( wp_list_pluck( $rows, 'label' ), 'strlen' );
+		$pad_bottom     = $has_categories ? 22 : 0;
+
 		// Round the axis outwards so bars and gridlines land on round numbers.
 		// Applied whether or not the grid is drawn, so toggling it never
 		// rescales the series.
@@ -46,8 +53,9 @@ if ( ! function_exists( 'designsetgo_chart_geometry' ) ) {
 			'height'      => $height,
 			'pad_left'    => $pad_left,
 			'pad_top'     => $pad_top,
+			'pad_bottom'  => $pad_bottom,
 			'plot_w'      => 600 - $pad_left,
-			'plot_h'      => $height - $pad_top,
+			'plot_h'      => max( 1, $height - $pad_top - $pad_bottom ),
 			'min'         => $bounds['min'],
 			'max'         => $bounds['max'],
 			'tick_count'  => $tick_count,
@@ -83,8 +91,19 @@ if ( ! function_exists( 'designsetgo_render_chart' ) ) {
 		$has_grid = 'donut' !== $type
 			&& ( ! isset( $attributes['showGrid'] ) || (bool) $attributes['showGrid'] );
 
-		$geo    = designsetgo_chart_geometry( $attributes, $rows, $has_grid, $type );
 		$colors = designsetgo_chart_palette( $attributes, count( $rows ) );
+
+		if ( 'donut' === $type ) {
+			$filtered = designsetgo_chart_donut_rows( $rows, $colors );
+			$rows     = $filtered['rows'];
+			$colors   = $filtered['colors'];
+
+			if ( empty( $rows ) ) {
+				return '';
+			}
+		}
+
+		$geo = designsetgo_chart_geometry( $attributes, $rows, $has_grid, $type );
 
 		if ( 'donut' === $type ) {
 			$svg = designsetgo_chart_donut( $rows, $colors, $geo );
@@ -95,6 +114,8 @@ if ( ! function_exists( 'designsetgo_render_chart' ) ) {
 				? designsetgo_chart_line( $rows, $colors, $geo )
 				: designsetgo_chart_bars( $rows, $colors, $geo );
 
+			$plot .= designsetgo_chart_category_labels( $rows, $geo, $type );
+
 			$svg = sprintf(
 				'<g class="dsgo-chart__plot" transform="translate(%s, %s)">%s</g>',
 				esc_attr( (string) $geo['pad_left'] ),
@@ -103,9 +124,14 @@ if ( ! function_exists( 'designsetgo_render_chart' ) ) {
 			);
 		}
 
-		$show_legend = ! isset( $attributes['showLegend'] ) || (bool) $attributes['showLegend'];
-		$legend      = $show_legend ? designsetgo_chart_legend( $rows, $colors ) : '';
-		$label       = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
+		// A donut has no axis to label, so its legend is the only sighted route
+		// from a slice to its category and cannot be turned off.
+		$show_legend = 'donut' === $type
+			|| ! isset( $attributes['showLegend'] )
+			|| (bool) $attributes['showLegend'];
+
+		$legend = $show_legend ? designsetgo_chart_legend( $rows, $colors ) : '';
+		$label  = isset( $attributes['label'] ) ? (string) $attributes['label'] : '';
 
 		$wrapper = get_block_wrapper_attributes(
 			array( 'class' => 'dsgo-chart dsgo-chart--' . $type )

@@ -16,6 +16,7 @@ import ServerSideRender from '@wordpress/server-side-render';
 import { DsgoInspectorPanel } from '../../components/shared';
 import { DataEditor } from './components/DataEditor';
 import { SeriesColors } from './components/SeriesColors';
+import { stripWrapperAttributes } from './utils/strip-wrapper-attributes';
 
 const TYPES = [
 	{ value: 'bar', label: __('Bar', 'designsetgo') },
@@ -27,6 +28,10 @@ const SOURCES = [
 	{ value: 'manual', label: __('Enter data', 'designsetgo') },
 	{ value: 'meta', label: __('Post meta field', 'designsetgo') },
 ];
+
+// Meta-sourced rows are only known to the server, so offer a fixed set of
+// palette slots rather than hiding the colour controls entirely.
+const META_SERIES_SLOTS = 6;
 
 export default function Edit({ attributes, setAttributes, clientId }) {
 	const {
@@ -65,6 +70,14 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 							options={TYPES}
 							onChange={(value) =>
 								setAttributes({ chartType: value })
+							}
+							help={
+								'donut' === chartType
+									? __(
+											'Slices are shares of a total, so rows of zero or less are left out.',
+											'designsetgo'
+										)
+									: undefined
 							}
 						/>
 					</DsgoInspectorPanel.Item>
@@ -175,21 +188,31 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 						/>
 					</DsgoInspectorPanel.Item>
 
-					<DsgoInspectorPanel.Item
-						label={__('Legend', 'designsetgo')}
-						hasValue={() => true !== showLegend}
-						onDeselect={() => setAttributes({ showLegend: true })}
-						isShownByDefault
-					>
-						<ToggleControl
-							__nextHasNoMarginBottom
-							label={__('Show legend', 'designsetgo')}
-							checked={showLegend}
-							onChange={(value) =>
-								setAttributes({ showLegend: value })
+					{/* A donut has no axis to label, so its legend is the only
+					    sighted route from a slice to its category. */}
+					{'donut' !== chartType && (
+						<DsgoInspectorPanel.Item
+							label={__('Legend', 'designsetgo')}
+							hasValue={() => true !== showLegend}
+							onDeselect={() =>
+								setAttributes({ showLegend: true })
 							}
-						/>
-					</DsgoInspectorPanel.Item>
+							isShownByDefault
+						>
+							<ToggleControl
+								__nextHasNoMarginBottom
+								label={__('Show legend', 'designsetgo')}
+								checked={showLegend}
+								onChange={(value) =>
+									setAttributes({ showLegend: value })
+								}
+								help={__(
+									'Category names stay on the axis either way.',
+									'designsetgo'
+								)}
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
 
 					<DsgoInspectorPanel.Item
 						label={__('Values', 'designsetgo')}
@@ -243,7 +266,11 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 			</InspectorControls>
 
 			<SeriesColors
-				rows={data}
+				rows={
+					'meta' === dataSource
+						? Array.from({ length: META_SERIES_SLOTS }, () => ({}))
+						: data
+				}
 				palette={palette}
 				clientId={clientId}
 				onChange={(value) => setAttributes({ palette: value })}
@@ -252,7 +279,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 			<div {...blockProps}>
 				<ServerSideRender
 					block="designsetgo/chart"
-					attributes={attributes}
+					attributes={stripWrapperAttributes(attributes)}
 					EmptyResponsePlaceholder={() => (
 						<p>
 							{__(

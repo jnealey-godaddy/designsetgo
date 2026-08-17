@@ -1,11 +1,25 @@
 /**
  * Chart Block - Frontend styles
- *
- * `screen-reader-text` is a core class — it is deliberately not redefined here.
  */
 
 .wp-block-designsetgo-chart {
 	margin: 0;
+
+	// `screen-reader-text` ships in core's common.css, but a theme that
+	// dequeues wp-block-library would turn the hidden data table into a
+	// visible one under every chart. Scoped copy, same as the slider block.
+	/* stylelint-disable-next-line selector-class-pattern */
+	.screen-reader-text {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
+	}
 
 	.dsgo-chart__canvas {
 		display: block;
@@ -20,13 +34,23 @@
 		opacity: 0.15;
 	}
 
-	.dsgo-chart__tick,
-	.dsgo-chart__value {
-		fill: currentcolor;
-		font-size: 12px;
+	.dsgo-chart__baseline {
+		stroke: currentcolor;
+		stroke-width: 1;
+		opacity: 0.45;
 	}
 
-	.dsgo-chart__tick {
+	.dsgo-chart__tick,
+	.dsgo-chart__value,
+	.dsgo-chart__category {
+		fill: currentcolor;
+		// The 600-unit viewBox is usually painted narrower than that, so user
+		// units shrink; 14 keeps axis text readable in a mobile column.
+		font-size: 14px;
+	}
+
+	.dsgo-chart__tick,
+	.dsgo-chart__category {
 		opacity: 0.7;
 	}
 

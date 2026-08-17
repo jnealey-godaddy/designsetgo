@@ -322,21 +322,14 @@ module.exports = [
 						noErrorOnMissing: true,
 					},
 					// Copy chart block helper PHP files to build so render.php
-					// can require_once them from build/blocks/chart/.
+					// can require_once them from build/blocks/chart/. A glob so
+					// renaming one cannot silently outrun this config; these are
+					// required unconditionally, so a miss must fail the build
+					// rather than fatal at render time.
 					{
-						from: 'src/blocks/chart/chart-geometry.php',
-						to: 'blocks/chart/chart-geometry.php',
-						noErrorOnMissing: true,
-					},
-					{
-						from: 'src/blocks/chart/chart-data.php',
-						to: 'blocks/chart/chart-data.php',
-						noErrorOnMissing: true,
-					},
-					{
-						from: 'src/blocks/chart/chart-series.php',
-						to: 'blocks/chart/chart-series.php',
-						noErrorOnMissing: true,
+						from: 'src/blocks/chart/chart-*.php',
+						to: 'blocks/chart/[name][ext]',
+						noErrorOnMissing: false,
 					},
 				],
 			}),
