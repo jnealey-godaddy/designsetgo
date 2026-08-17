@@ -187,6 +187,38 @@ to Woo's own blocks, which should be documented as the recommended approach.
 **Note:** D3's open WP 6.7/6.8 HTML-escaping risk shrinks with this, since `price-html`
 is no longer load-bearing. The scalars are plain text and unaffected either way.
 
+#### Item 1 — as built
+
+`includes/dynamic-tags/class-dynamic-tags-sources-woo.php`, registered from
+`Bootstrap::register_sources()`. Six sources, in a new `woocommerce` registry group
+(order 60) that only registers when Woo is active, so the picker never offers a source
+that cannot resolve:
+
+`woo-price-html` (html), `woo-price`, `woo-regular-price`, `woo-discount-percent`,
+`woo-stock-quantity`, `woo-average-rating`.
+
+Deliberate null-vs-zero choices, each pinned by a test: an unmanaged-stock product returns
+`null` rather than `0` (a stock bar rendered empty-but-present is a different and wrong
+claim from "this product has no stock concept"), an unreviewed product returns `null`
+rather than `0.00`, and a product not on sale returns `null` rather than `0`.
+
+**A blocker surfaced that would have made Item 1 pointless.** `StyleBinding::resolve()`
+was a hardcoded switch over the five *keyed* custom-field sources, fronted by
+`if ( ! $key || ! $post_id ) return null;`. The Woo sources take no `key`, so every one of
+them would have resolved to `null` on the style-binding path — meaning the stock bar, the
+single justification for this unit after the spike, would not have worked.
+
+Fixed by having the switch's `default` delegate to any registered `designsetgo/`-prefixed
+bindings source (`resolve_registered_source()`), with the `key` requirement narrowed to a
+`KEYED_SOURCES` list so the existing five behave byte-identically. This also means the
+`post-*` and `archive-*` sources now work in style bindings, which they never did. Both
+directions are pinned by tests.
+
+One PHPStan ignore added: `WP_Block_Bindings_Source::get_value()`'s `$block_instance`
+parameter is **untyped in core**, so passing `null` is legal — verified by reading
+`wp-includes/class-wp-block-bindings-source.php` in the running container. Only the stub's
+docblock claims `WP_Block`. The pre-existing bindings tests rely on the same call.
+
 ### D5 — Extend the `posts` query source; no new enum value
 
 `source` stays `posts | users | terms | manual | current | relationship`. A seventh value
@@ -324,7 +356,7 @@ Five units, each its own branch (`claude/woo-*`) and PR, off a clean `main`.
 |---|------|-------|-------|
 | 0 | Test infrastructure | Everything | Woo in wp-env, PHPStan stubs, product fixtures |
 | — | Spike | Item 1's scope | ✅ Done — see D4. Woo's blocks already work in the loop. |
-| 1 | Bindings sources | — | **Re-scoped to ~5 scalar sources** by the spike |
+| 1 | Bindings sources | — | ✅ Done — 6 sources, re-scoped by the spike |
 | 2 | Woo-aware Query + filters | — | Unaffected by the spike; independent of Item 3 |
 | 3 | Button + count + drawer | — | **Weakened by the spike** — reconsider before building |
 

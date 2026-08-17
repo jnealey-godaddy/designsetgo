@@ -49,7 +49,9 @@ class Bootstrap {
 	}
 
 	/**
-	 * Registers the four source families and the custom-field metadata.
+	 * Registers the source families and the custom-field metadata.
+	 *
+	 * WooSources no-ops unless WooCommerce is active.
 	 */
 	public function register_sources() {
 		$registry = Registry::instance();
@@ -58,6 +60,7 @@ class Bootstrap {
 		SiteSources::register( $registry );
 		ArchiveSources::register( $registry );
 		UserSources::register( $registry );
+		WooSources::register( $registry );
 
 		$this->register_custom_field_metadata( $registry );
 

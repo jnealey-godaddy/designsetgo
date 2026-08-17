@@ -192,6 +192,31 @@ The `key` arg is passed through `sanitize_text_field()`. Note that `sanitize_key
 
 In the block editor, open the bound block's toolbar → **Bind** → pick **Post meta (DesignSetGo)** or **ACF Field (DesignSetGo)** from the source list, then enter the meta key. The editor shows a placeholder; the value renders on the frontend inside the query loop.
 
+### WooCommerce sources
+
+Registered only when WooCommerce is active. They take **no `key` arg** — each addresses one product field.
+
+| Source | Returns | Notes |
+|---|---|---|
+| `designsetgo/woo-price-html` | HTML | Woo's own `get_price_html()` — correct for variable-product ranges, tax suffixes, and sale `<del>`/`<ins>` |
+| `designsetgo/woo-price` | Number | Raw current price, e.g. `25.00`. **Variable products report the minimum**, not the range |
+| `designsetgo/woo-regular-price` | Number | Raw pre-sale price |
+| `designsetgo/woo-discount-percent` | Number | Whole number, e.g. `38`. `null` when not on sale |
+| `designsetgo/woo-stock-quantity` | Number | Integer. `null` when the product doesn't manage stock — which is not the same as `0` |
+| `designsetgo/woo-average-rating` | Number | `null` when the product has no reviews, rather than a misleading `0.00` |
+
+**Prefer WooCommerce's own blocks for plain display.** `woocommerce/product-price`, `product-sku`, `product-rating`, `product-image`, `product-stock-indicator`, and `product-button` all work inside a `designsetgo/query` product loop already — they read the `postId` context the loop supplies. Reach for these sources when you need something Woo has no block for: a raw number for a style binding, or product data inside a *DesignSetGo* block.
+
+#### Recipe — stock bar
+
+The main reason the raw scalars exist. No WooCommerce block exposes a numeric stock value, so nothing else can drive a progress bar:
+
+```html
+<!-- wp:designsetgo/progress-bar {"dsgoStyleBinding":{"--dsgo-progress":{"source":"designsetgo/woo-stock-quantity"}}} /-->
+```
+
+Style bindings resolve any registered `designsetgo/*` source, so the same pattern works for `woo-discount-percent` or `woo-average-rating`.
+
 ---
 
 ## URL params for filters

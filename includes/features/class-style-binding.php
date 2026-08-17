@@ -20,6 +20,22 @@ defined( 'ABSPATH' ) || exit;
 class StyleBinding {
 
 	/**
+	 * Sources that address a named custom field and are meaningless without one.
+	 *
+	 * Keyless sources (designsetgo/woo-*, post-*, archive-*) are resolved via
+	 * resolve_registered_source() instead.
+	 *
+	 * @var string[]
+	 */
+	private const KEYED_SOURCES = array(
+		'designsetgo/post-meta',
+		'designsetgo/acf',
+		'designsetgo/metabox',
+		'designsetgo/pods',
+		'designsetgo/jetengine',
+	);
+
+	/**
 	 * Constructor — registers the render_block filter.
 	 */
 	public function __construct() {
@@ -132,7 +148,14 @@ class StyleBinding {
 		$post_id = $this->current_post_id();
 		$key     = sanitize_text_field( (string) ( $args['key'] ?? '' ) );
 
-		if ( ! $key || ! $post_id ) {
+		if ( ! $post_id ) {
+			return null;
+		}
+
+		// The custom-field sources below are meaningless without a key, and this
+		// used to be an unconditional guard. Keyless sources (designsetgo/woo-*,
+		// post-*, archive-*) resolve through the registered-source path instead.
+		if ( '' === $key && in_array( $source, self::KEYED_SOURCES, true ) ) {
 			return null;
 		}
 
@@ -149,7 +172,7 @@ class StyleBinding {
 		if ( ! is_post_publicly_viewable( $post ) && ! current_user_can( 'read_post', $post_id ) ) {
 			return null;
 		}
-		if ( is_protected_meta( $key, 'post' ) ) {
+		if ( '' !== $key && is_protected_meta( $key, 'post' ) ) {
 			return null;
 		}
 
@@ -188,8 +211,52 @@ class StyleBinding {
 				return is_scalar( $val ) ? (string) $val : null;
 
 			default:
-				return null;
+				return $this->resolve_registered_source( $source, $args, $post_id );
 		}
+	}
+
+	/**
+	 * Resolve a value from a registered DesignSetGo block-bindings source.
+	 *
+	 * The switch above predates the keyless sources (`designsetgo/woo-*`,
+	 * `post-*`, `archive-*`), which take no `key` argument and so could never
+	 * satisfy it. Rather than extend the switch every time a source is added,
+	 * delegate to whatever is registered.
+	 *
+	 * This is what makes a stock bar possible: `progress-bar` with
+	 * `--dsgo-progress` bound to `designsetgo/woo-stock-quantity`. No
+	 * WooCommerce block exposes a numeric stock value, so nothing else can.
+	 *
+	 * Restricted to the `designsetgo/` prefix so third-party bindings sources
+	 * are not silently exposed to the style layer, and the resolved value still
+	 * passes through the dangerous-value rejection in the caller.
+	 *
+	 * @param string $source  Source identifier.
+	 * @param array  $args    Source arguments.
+	 * @param int    $post_id Resolved post ID.
+	 * @return string|null Resolved value, or null if unresolvable.
+	 */
+	private function resolve_registered_source( string $source, array $args, int $post_id ): ?string {
+		if ( 0 !== strpos( $source, 'designsetgo/' ) ) {
+			return null;
+		}
+
+		if ( ! function_exists( 'get_block_bindings_source' ) ) {
+			return null;
+		}
+
+		$registered = get_block_bindings_source( $source );
+		if ( null === $registered ) {
+			return null;
+		}
+
+		// Pre-resolved so the source does not re-derive it from block context,
+		// which does not exist on the style-binding path.
+		$args['__dsgo_post_id'] = $post_id;
+
+		$value = $registered->get_value( $args, null, 'style' );
+
+		return is_scalar( $value ) ? (string) $value : null;
 	}
 
 	/**
