@@ -321,6 +321,23 @@ module.exports = [
 						to: 'blocks/query/render-relationship.php',
 						noErrorOnMissing: true,
 					},
+					// Copy chart block helper PHP files to build so render.php
+					// can require_once them from build/blocks/chart/.
+					{
+						from: 'src/blocks/chart/chart-geometry.php',
+						to: 'blocks/chart/chart-geometry.php',
+						noErrorOnMissing: true,
+					},
+					{
+						from: 'src/blocks/chart/chart-data.php',
+						to: 'blocks/chart/chart-data.php',
+						noErrorOnMissing: true,
+					},
+					{
+						from: 'src/blocks/chart/chart-series.php',
+						to: 'blocks/chart/chart-series.php',
+						noErrorOnMissing: true,
+					},
 				],
 			}),
 			// Bundle analyzer - run with: ANALYZE=true npm run build
