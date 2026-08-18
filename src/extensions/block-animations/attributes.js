@@ -74,6 +74,14 @@ function addAnimationAttributes(settings, name) {
 				type: 'boolean',
 				default: false,
 			},
+			dsgoStaggerEnabled: {
+				type: 'boolean',
+				default: DEFAULT_ANIMATION_SETTINGS.staggerEnabled,
+			},
+			dsgoStaggerStep: {
+				type: 'number',
+				default: DEFAULT_ANIMATION_SETTINGS.staggerStep,
+			},
 		},
 	};
 }

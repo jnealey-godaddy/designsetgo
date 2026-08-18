@@ -86,4 +86,6 @@ export const DEFAULT_ANIMATION_SETTINGS = {
 	easing: 'ease-out',
 	offset: 100, // Pixels from viewport to trigger
 	once: true, // Only animate once
+	staggerEnabled: false, // Animate direct children in sequence
+	staggerStep: 80, // Milliseconds between each child
 };

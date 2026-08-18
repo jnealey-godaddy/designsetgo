@@ -61,6 +61,8 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 		dsgoAnimationEasing,
 		dsgoAnimationOffset,
 		dsgoAnimationOnce,
+		dsgoStaggerEnabled,
+		dsgoStaggerStep,
 	} = attributes;
 
 	// Derive tri-state from the two attributes.
@@ -295,6 +297,38 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 								__nextHasNoMarginBottom
 							/>
 						</>
+					)}
+
+					<ToggleControl
+						label={__('Stagger Children', 'designsetgo')}
+						checked={!!dsgoStaggerEnabled}
+						onChange={(value) =>
+							setAttributes({ dsgoStaggerEnabled: value })
+						}
+						help={__(
+							'Animate this block\u2019s direct children in sequence instead of the block itself.',
+							'designsetgo'
+						)}
+						__nextHasNoMarginBottom
+					/>
+
+					{dsgoStaggerEnabled && (
+						<RangeControl
+							label={__('Stagger Step (ms)', 'designsetgo')}
+							value={dsgoStaggerStep}
+							onChange={(value) =>
+								setAttributes({ dsgoStaggerStep: value })
+							}
+							min={0}
+							max={500}
+							step={10}
+							help={__(
+								'Delay added between each child',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
 					)}
 
 					{!dsgoEntranceAnimation && !dsgoExitAnimation && (

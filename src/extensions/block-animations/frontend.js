@@ -46,6 +46,20 @@ function initBlockAnimations() {
 		element.style.animationDelay = `${delay}ms`;
 		element.style.animationTimingFunction = easing;
 
+		// Mirror them as custom properties. A stagger container animates its
+		// children rather than itself, and the animation-* longhands above do
+		// not inherit - custom properties do.
+		element.style.setProperty('--dsgo-animation-duration', `${duration}ms`);
+		element.style.setProperty('--dsgo-animation-delay', `${delay}ms`);
+		element.style.setProperty('--dsgo-animation-easing', easing);
+
+		if (element.dataset.dsgoStaggerStep) {
+			element.style.setProperty(
+				'--dsgo-stagger-step',
+				`${element.dataset.dsgoStaggerStep}ms`
+			);
+		}
+
 		// Apply trigger-specific behavior
 		switch (trigger) {
 			case 'load':

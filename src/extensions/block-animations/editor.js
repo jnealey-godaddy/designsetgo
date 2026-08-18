@@ -119,6 +119,8 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 		dsgoAnimationEasing,
 		dsgoAnimationOffset,
 		dsgoAnimationOnce,
+		dsgoStaggerEnabled,
+		dsgoStaggerStep,
 	} = attributes;
 
 	// Skip if animations not enabled
@@ -158,6 +160,16 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 		dataAttributes['data-dsgo-animation-once'] = dsgoAnimationOnce
 			? 'true'
 			: 'false';
+	}
+
+	// Stagger moves the motion from this block onto its direct children, so it
+	// is only meaningful once an animation has actually been chosen.
+	if (dsgoStaggerEnabled && (dsgoEntranceAnimation || dsgoExitAnimation)) {
+		dataAttributes['data-dsgo-stagger'] = 'true';
+
+		if (dsgoStaggerStep !== DEFAULT_ANIMATION_SETTINGS.staggerStep) {
+			dataAttributes['data-dsgo-stagger-step'] = dsgoStaggerStep;
+		}
 	}
 
 	// Build animation classes
