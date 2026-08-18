@@ -82,6 +82,10 @@ function addAnimationAttributes(settings, name) {
 				type: 'number',
 				default: DEFAULT_ANIMATION_SETTINGS.staggerStep,
 			},
+			dsgoScrollLinked: {
+				type: 'boolean',
+				default: DEFAULT_ANIMATION_SETTINGS.scrollLinked,
+			},
 		},
 	};
 }

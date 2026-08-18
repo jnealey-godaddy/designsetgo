@@ -121,6 +121,7 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 		dsgoAnimationOnce,
 		dsgoStaggerEnabled,
 		dsgoStaggerStep,
+		dsgoScrollLinked,
 	} = attributes;
 
 	// Skip if animations not enabled
@@ -162,9 +163,20 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 			: 'false';
 	}
 
+	// Scrubbing drives the block's own entrance from scroll position, so it
+	// needs an entrance animation and it rules stagger out - the two want the
+	// keyframes on different elements. The panel hides stagger when this is on.
+	if (dsgoScrollLinked && dsgoEntranceAnimation) {
+		dataAttributes['data-dsgo-scroll-linked'] = 'true';
+	}
+
 	// Stagger moves the motion from this block onto its direct children, so it
 	// is only meaningful once an animation has actually been chosen.
-	if (dsgoStaggerEnabled && (dsgoEntranceAnimation || dsgoExitAnimation)) {
+	if (
+		dsgoStaggerEnabled &&
+		!dsgoScrollLinked &&
+		(dsgoEntranceAnimation || dsgoExitAnimation)
+	) {
 		dataAttributes['data-dsgo-stagger'] = 'true';
 
 		if (dsgoStaggerStep !== DEFAULT_ANIMATION_SETTINGS.staggerStep) {

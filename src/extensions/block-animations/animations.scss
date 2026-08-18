@@ -97,6 +97,41 @@ body:not(.block-editor-page):not(.wp-admin) {
 	}
 
 	// ============================================
+	// SCROLL-LINKED INTERPOLATION
+	// ============================================
+	// `animation-timeline: view()` scrubs the entrance keyframes against the
+	// element's position in the viewport instead of playing them on a clock,
+	// so no class toggle is involved and frontend.js skips these elements.
+	// Where the property is unsupported the whole @supports block is dropped
+	// and only the opacity reset below survives, which is the correct
+	// degradation for decorative motion: visible content, no animation.
+
+	.has-dsgo-animation[data-dsgo-scroll-linked="true"]:not(.dsgo-entrance-active):not(.dsgo-exit-active) {
+		opacity: 1;
+	}
+
+	@supports (animation-timeline: view()) {
+
+		.has-dsgo-animation[data-dsgo-scroll-linked="true"] {
+			// Duration stays `auto` so the timeline, not a clock, sets progress.
+			animation-fill-mode: both;
+			animation-name: var(--dsgo-animation-name);
+			animation-range: entry 0% cover 40%;
+			animation-timeline: view();
+			animation-timing-function: linear;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+
+		.has-dsgo-animation[data-dsgo-scroll-linked="true"] {
+			animation: none !important; // Accessibility override.
+			animation-timeline: auto !important; // Accessibility override.
+			opacity: 1 !important; // Accessibility override.
+		}
+	}
+
+	// ============================================
 	// CHILD STAGGER
 	// ============================================
 	// With stagger on, the container stops animating and its direct children

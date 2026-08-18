@@ -30,6 +30,13 @@ function initBlockAnimations() {
 
 	// Process each animated element
 	animatedElements.forEach((element) => {
+		// Scroll-linked elements are driven entirely by CSS animation-timeline.
+		// Toggling the entrance class here would put a second, clock-driven
+		// animation on the same element and the two would fight.
+		if (element.dataset.dsgoScrollLinked === 'true') {
+			return;
+		}
+
 		// Prevent duplicate initialization
 		if (element.dataset.dsgoAnimationInitialized) {
 			return;

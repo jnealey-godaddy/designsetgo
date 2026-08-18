@@ -88,4 +88,5 @@ export const DEFAULT_ANIMATION_SETTINGS = {
 	once: true, // Only animate once
 	staggerEnabled: false, // Animate direct children in sequence
 	staggerStep: 80, // Milliseconds between each child
+	scrollLinked: false, // Scrub the entrance against scroll position
 };

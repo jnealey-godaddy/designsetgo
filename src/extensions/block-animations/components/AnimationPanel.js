@@ -63,6 +63,7 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 		dsgoAnimationOnce,
 		dsgoStaggerEnabled,
 		dsgoStaggerStep,
+		dsgoScrollLinked,
 	} = attributes;
 
 	// Derive tri-state from the two attributes.
@@ -300,19 +301,35 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 					)}
 
 					<ToggleControl
-						label={__('Stagger Children', 'designsetgo')}
-						checked={!!dsgoStaggerEnabled}
+						label={__('Scrub With Scroll', 'designsetgo')}
+						checked={!!dsgoScrollLinked}
 						onChange={(value) =>
-							setAttributes({ dsgoStaggerEnabled: value })
+							setAttributes({ dsgoScrollLinked: value })
 						}
+						disabled={!dsgoEntranceAnimation}
 						help={__(
-							'Animate this block\u2019s direct children in sequence instead of the block itself.',
+							'The entrance animation follows scroll position instead of playing once. Requires a recent browser; older browsers show the block with no animation.',
 							'designsetgo'
 						)}
 						__nextHasNoMarginBottom
 					/>
 
-					{dsgoStaggerEnabled && (
+					{!dsgoScrollLinked && (
+						<ToggleControl
+							label={__('Stagger Children', 'designsetgo')}
+							checked={!!dsgoStaggerEnabled}
+							onChange={(value) =>
+								setAttributes({ dsgoStaggerEnabled: value })
+							}
+							help={__(
+								'Animate this block\u2019s direct children in sequence instead of the block itself.',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					)}
+
+					{dsgoStaggerEnabled && !dsgoScrollLinked && (
 						<RangeControl
 							label={__('Stagger Step (ms)', 'designsetgo')}
 							value={dsgoStaggerStep}
