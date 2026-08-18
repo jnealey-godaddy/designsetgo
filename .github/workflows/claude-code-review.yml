@@ -28,6 +28,36 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Re-reviewing the entire PR diff on every push made the reviewer
+      # re-litigate settled code: on PR #518 it re-raised a finding the author
+      # had already fixed two commits earlier, and posted the same comment
+      # twice in one run. On `synchronize` we hand it only the newly pushed
+      # commits; `opened`/`reopened`/`ready_for_review` still get the full diff.
+      #
+      # `github.event.before` can be unreachable (force-push that orphans it),
+      # so verify both SHAs resolve and that the range is non-empty before
+      # trusting it. Any doubt falls back to the full-diff review.
+      - name: Determine review scope
+        id: scope
+        env:
+          ACTION: ${{ github.event.action }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+        run: |
+          scope=full
+          range=""
+          if [ "$ACTION" = "synchronize" ] \
+            && [ -n "$BEFORE" ] && [ -n "$AFTER" ] \
+            && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null \
+            && git cat-file -e "${AFTER}^{commit}" 2>/dev/null \
+            && [ -n "$(git rev-list -n 1 "${BEFORE}..${AFTER}" 2>/dev/null)" ]; then
+            scope=incremental
+            range="${BEFORE}...${AFTER}"
+          fi
+          echo "scope=$scope" >> "$GITHUB_OUTPUT"
+          echo "range=$range" >> "$GITHUB_OUTPUT"
+          echo "Review scope: $scope ${range}"
+
       - name: Run Claude Code Review
         id: claude-review
         uses: anthropics/claude-code-action@v1
@@ -44,70 +74,160 @@ jobs:
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
+            REVIEW SCOPE: ${{ steps.scope.outputs.scope }}
+            DIFF RANGE: ${{ steps.scope.outputs.range }}
 
-            You are reviewing a WordPress plugin codebase. Perform a thorough code review.
+            You are reviewing a WordPress plugin codebase.
 
-            ## Instructions
-            1. First, run `gh pr diff ${{ github.event.pull_request.number }}` to see all changes
-            2. Read and analyze every changed file carefully
-            3. Use inline comments for specific code issues
-            4. Post a summary comment at the end
+            This is a READ-ONLY review. Explore with `gh pr diff/view`, `gh api`
+            (GET only), `git diff/log/show/status`, and read tools only. Do NOT
+            modify, add, commit, push, or delete any files — your only writes
+            are inline comments, the summary comment, and the final
+            `gh pr review` verdict.
 
-            This is a READ-ONLY review. Explore with `gh pr diff/view`, `git
-            diff/log/show/status`, and read tools only. Do NOT modify, add,
-            commit, push, or delete any files — your only writes are inline
-            comments, the summary comment, and the final `gh pr review` verdict.
+            ## Step 0 — Read the review history FIRST (do this before anything else)
 
-            ## Security Review (CRITICAL - Check Every Item)
-            - XSS vulnerabilities: unescaped output, missing esc_html/esc_attr/wp_kses
-            - SQL injection: direct variable interpolation in queries, missing $wpdb->prepare()
-            - CSRF: missing nonce verification on forms/AJAX
-            - Sanitization ordering: HTML entities must be decoded BEFORE tag stripping
-            - Input validation: validate and sanitize all user inputs
-            - File operations: path traversal, unsafe file uploads
+            Previous runs of this workflow have already reviewed this PR. Fetch
+            what they said:
+
+            ```
+            gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments --paginate
+            gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews --paginate
+            ```
+
+            Build a list of every issue already raised. Then, for the rest of
+            this review:
+
+            - Do NOT re-report an issue that is already in that list, even if
+              you would word it differently or assign it a different severity.
+            - Do NOT re-report an issue the author has since fixed. Check the
+              current code before assuming a past comment still applies.
+            - If a past finding is still unfixed AND is Critical or High, you may
+              restate it once in the summary — one line, referencing the existing
+              comment. Do not file a new inline comment for it.
+            - Do NOT post the same finding twice within this run either. Before
+              each inline comment, check you have not already filed it.
+
+            ## Step 1 — Get the diff
+
+            - If REVIEW SCOPE is `incremental`: review ONLY the newly pushed
+              commits. Run `git diff ${{ steps.scope.outputs.range }}` to see
+              them, and `git log --oneline ${{ steps.scope.outputs.range }}` for
+              context. Earlier commits in this PR were reviewed by previous runs
+              — do not re-review them. You may still READ surrounding code and
+              unchanged files to understand the new changes correctly.
+            - If REVIEW SCOPE is `full`: run
+              `gh pr diff ${{ github.event.pull_request.number }}` and review the
+              whole PR.
+
+            Read every changed file carefully, in full — not just the diff hunks.
+
+            ## Pass 1 — Security and correctness (MANDATORY, do this first and completely)
+
+            This pass is the reason the review exists. Finish it before you look
+            at anything else. Work through each item deliberately against the
+            actual code:
+
+            **Security**
             - Authentication/authorization: capability checks, nonce validation
+            - Content disclosure: does this path expose data the viewer should not
+              see? Check `post_password_required()`, post status (draft/private/
+              trashed), `current_user_can()`, and post-type `public`/`viewable`
+              flags on ANY code that reads post content, meta, or user data and
+              emits it to the page or an API response
+            - XSS: unescaped output, missing esc_html/esc_attr/esc_url/wp_kses
+            - SQL injection: variable interpolation in queries, missing $wpdb->prepare()
+            - CSRF: missing nonce verification on forms/AJAX/REST
+            - Sanitization ordering: HTML entities must be decoded BEFORE tag stripping
+            - Input validation: validate and sanitize all user input
+            - File operations: path traversal, unsafe uploads
 
-            ## Logic and Correctness
+            **Correctness**
             - Off-by-one errors, boundary conditions
-            - Null/undefined checks, type coercion issues
-            - Validation logic flaws (e.g., incorrectly rejecting falsy values like 0, false, '0')
+            - Null/undefined checks, type coercion
+            - Validation logic that wrongly rejects falsy values (0, false, '0', '')
             - Race conditions, timing issues
             - Error handling gaps
-            - Edge cases not covered
+            - Edge cases not covered by the tests in this PR
 
-            ## Code Quality
-            - DRY violations: duplicated code that should be extracted
-            - Functions doing too many things
-            - Missing or incorrect error handling
-            - Inconsistent patterns within the codebase
-            - Unused variables or dead code
-
-            ## WordPress Best Practices
-            - Proper hook usage and priorities
+            **WordPress correctness**
+            - Hook usage and priorities; is this hook firing at the right time?
             - Correct use of WordPress APIs
-            - Proper enqueueing of scripts/styles
-            - Translation function usage
+            - Script/style enqueueing
+            - Translation function usage and text domain
 
-            ## Output Format
-            For each issue found:
-            1. Use `mcp__github_inline_comment__create_inline_comment` to add inline comments on specific lines
-            2. Clearly state: SEVERITY (Critical/High/Medium/Low), the problem, and how to fix it
+            For every finding in this pass, state a concrete failure scenario:
+            the input or state that triggers it, and the wrong result. If you
+            cannot describe how it actually breaks, it is not a Pass 1 finding.
 
-            Post a final summary comment using `gh pr comment` with:
-            - Count of issues by severity
-            - Key findings that need attention
+            ## Pass 2 — Code quality (OPTIONAL — skip it unless something genuinely warrants it)
+
+            Only after Pass 1 is complete. This pass exists to catch structural
+            problems, not to generate output. Report something here only if you
+            would raise it unprompted in a review of code you owned:
+
+            - Duplicated logic that has already caused, or is likely to cause,
+              the two copies to drift apart
+            - A function doing enough unrelated things that it is hard to change safely
+            - A pattern inconsistent with the rest of this codebase
+            - Dead code
+
+            Do NOT report: micro-optimizations with no measured impact, style
+            preferences, hypothetical future refactors, test-code fragility that
+            would fail loudly anyway, or "consider extracting this" on code that
+            is currently correct and readable. Most PRs should produce zero
+            Pass 2 findings.
+
+            ## Severity floor
+
+            An empty review is a normal, expected, GOOD outcome. A clean diff
+            deserves a clean review. Do not manufacture findings to fill the
+            output format, and do not lower your bar as a PR goes through
+            successive rounds of fixes — later rounds should usually produce
+            FEWER findings, not more.
+
+            Before filing any comment, apply this test:
+
+            - **Critical/High** — a security hole, data loss, or a bug that will
+              affect real users. File it.
+            - **Medium** — a real bug in a path users will hit, or a correctness
+              problem that will bite on a plausible input. File it.
+            - **Low** — file ONLY if it is a genuine correctness risk that
+              happens to be narrow in scope. If it is a preference, a nit, a
+              micro-optimization, or "this could be tidier," DO NOT FILE IT.
+
+            When in doubt on a Low, drop it. A review of three real findings is
+            worth more than one of three real findings and nine nits.
+
+            ## Output format
+
+            For each finding:
+            1. Use `mcp__github_inline_comment__create_inline_comment` on the specific line
+            2. State SEVERITY (Critical/High/Medium/Low), the concrete failure
+               scenario, and how to fix it
+
+            Then post one summary comment with
+            `gh pr comment ${{ github.event.pull_request.number }}`:
+            - Which scope you reviewed (incremental vs full), and for incremental,
+              the commits covered
+            - Count of findings by severity
+            - Any still-unfixed Critical/High from previous runs (one line each)
             - Overall assessment
 
-            Be thorough - a shallow review that misses real issues is worse than no review.
-            If you find NO issues, explain what you checked and why the code is correct.
+            If you found nothing, say so plainly and briefly: what you checked in
+            Pass 1 and that it came back clean. Do not pad this into a long
+            justification.
 
-            ## Final Verdict
-            After completing your review, submit a formal PR review:
-            - If you find NO Critical or High severity issues, APPROVE the PR:
+            ## Final verdict
+
+            Submit a formal PR review. On an incremental run, your verdict covers
+            the newly pushed commits.
+
+            - No Critical or High findings → approve:
               `gh pr review ${{ github.event.pull_request.number }} --approve --body "your summary"`
-            - If you find any Critical or High severity issues, REQUEST CHANGES:
+            - Any Critical or High finding → request changes:
               `gh pr review ${{ github.event.pull_request.number }} --request-changes --body "your summary"`
-            - If you only find Medium/Low issues worth noting but nothing blocking, COMMENT:
+            - Only Medium findings worth noting, nothing blocking → comment:
               `gh pr review ${{ github.event.pull_request.number }} --comment --body "your summary"`
 
           # Allowlist must cover read-only exploration (git diff/log/show,
@@ -115,6 +235,12 @@ jobs:
           # otherwise the reviewer burns its turn budget on denied commands and
           # never publishes its findings or verdict. --max-turns gives the
           # thorough multi-file review room to finish after exploring.
+          #
+          # The two `gh api repos/.../pulls/<n>/{comments,reviews}` entries are
+          # what let Step 0 read prior runs' findings so it stops duplicating
+          # them. They are scoped to this PR's own comment/review endpoints; the
+          # workflow token already carries pull-requests:write for `gh pr
+          # comment`, so this grants no new reach.
           claude_args: |
             --max-turns 100
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Read,Grep,Glob,LS"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Read,Grep,Glob,LS"
