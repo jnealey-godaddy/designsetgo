@@ -603,6 +603,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-site.php';
 		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-archive.php';
 		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-user.php';
+		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-sources-woo.php';
 		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-field-discovery.php';
 		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-image-resolver.php';
 		require_once DESIGNSETGO_PATH . 'includes/dynamic-tags/class-dynamic-tags-rest.php';

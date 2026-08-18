@@ -457,7 +457,14 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 * @return array
 	 */
 	function designsetgo_query_extract_params_from_request() {
-		$allowed = apply_filters( 'designsetgo_query_url_params', array( 'q', 'sort' ) );
+		// `filter_*` is accepted wildcard-style below. The rest are WooCommerce's
+		// own filter-block query vars, read from its source: min_price/max_price
+		// (ProductFilterPrice), rating_filter (RatingFilter), and query_type_<attr>
+		// which pairs with filter_<attr> to switch IN vs AND.
+		$allowed = apply_filters(
+			'designsetgo_query_url_params',
+			array( 'q', 'sort', 'min_price', 'max_price', 'rating_filter' )
+		);
 		$params  = array();
 
 		if ( empty( $_GET ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -469,7 +476,9 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			if ( '' === $key ) {
 				continue;
 			}
-			if ( ! in_array( $key, $allowed, true ) && 0 !== strpos( $key, 'filter_' ) ) {
+			if ( ! in_array( $key, $allowed, true )
+				&& 0 !== strpos( $key, 'filter_' )
+				&& 0 !== strpos( $key, 'query_type_' ) ) {
 				continue;
 			}
 			if ( is_array( $value ) ) {

@@ -192,6 +192,59 @@ The `key` arg is passed through `sanitize_text_field()`. Note that `sanitize_key
 
 In the block editor, open the bound block's toolbar → **Bind** → pick **Post meta (DesignSetGo)** or **ACF Field (DesignSetGo)** from the source list, then enter the meta key. The editor shows a placeholder; the value renders on the frontend inside the query loop.
 
+### WooCommerce sources
+
+Registered only when WooCommerce is active. They take **no `key` arg** — each addresses one product field.
+
+| Source | Returns | Notes |
+|---|---|---|
+| `designsetgo/woo-price-html` | HTML | Woo's own `get_price_html()` — correct for variable-product ranges, tax suffixes, and sale `<del>`/`<ins>` |
+| `designsetgo/woo-price` | Number | Raw current price, e.g. `25.00`. **Variable products report the minimum**, not the range |
+| `designsetgo/woo-regular-price` | Number | Raw pre-sale price |
+| `designsetgo/woo-discount-percent` | Number | Whole number, e.g. `38`. `null` when not on sale |
+| `designsetgo/woo-stock-quantity` | Number | Integer. `null` when the product doesn't manage stock — which is not the same as `0` |
+| `designsetgo/woo-average-rating` | Number | `null` when the product has no reviews, rather than a misleading `0.00` |
+
+**Prefer WooCommerce's own blocks for plain display.** `woocommerce/product-price`, `product-sku`, `product-rating`, `product-image`, `product-stock-indicator`, and `product-button` all work inside a `designsetgo/query` product loop already — they read the `postId` context the loop supplies. Reach for these sources when you need something Woo has no block for: a raw number for a style binding, or product data inside a *DesignSetGo* block.
+
+#### Recipe — stock bar
+
+The main reason the raw scalars exist. No WooCommerce block exposes a numeric stock value, so nothing else can drive a progress bar:
+
+```html
+<!-- wp:designsetgo/progress-bar {"dsgoStyleBinding":{"--dsgo-progress":{"source":"designsetgo/woo-stock-quantity"}}} /-->
+```
+
+Style bindings resolve any registered `designsetgo/*` source, so the same pattern works for `woo-discount-percent` or `woo-average-rating`.
+
+### Product queries
+
+Set `postType` to `product`. Four Woo-only attributes apply, and they only take effect when WooCommerce is active:
+
+| Attribute | Default | Effect |
+|---|---|---|
+| `wooCatalogVisibility` | `true` | Excludes `exclude-from-catalog` products, plus `outofstock` when the store's "hide out of stock items" option is on |
+| `wooFeatured` | `false` | Only featured products |
+| `wooOnSale` | `false` | Only products currently on sale (intersects `post__in`, so it composes with the manual and relationship sources) |
+| `wooStockStatus` | `[]` | `_stock_status` IN the given values |
+
+**Leave `wooCatalogVisibility` on unless you mean it.** A plain `WP_Query` with `post_type=product` is *not* a Woo catalog query — it ignores the `product_visibility` taxonomy, so hidden and excluded products leak into the loop.
+
+#### Recipe — filter a DSGo query with WooCommerce's own filter blocks
+
+You do **not** need a DSGo filter for products. Drop `woocommerce/product-filters` (with its price / attribute / rating / status children) anywhere on the page, and `designsetgo/query` reads the URL params they emit:
+
+| Param | Source | Becomes |
+|---|---|---|
+| `min_price` / `max_price` | `product-filter-price` | `_price` meta query, matching Woo's own semantics |
+| `filter_stock_status` | `product-filter-status` | `_stock_status` meta query |
+| `rating_filter` | `product-filter-rating` | `product_visibility` `rated-N` terms |
+| `filter_<attr>`, `query_type_<attr>` | `product-filter-attribute` | `pa_<attr>` taxonomy; `and` switches IN → AND |
+
+Woo strips the `pa_` prefix in URLs, so `pa_color` arrives as `filter_color`. DSGo maps it back. A `filter_<name>` that *is* already a real taxonomy is left to the generic taxonomy handler instead, so the two never double-apply.
+
+Woo's filter blocks navigate by URL rather than targeting a `queryId`, which is exactly why this works across the two systems.
+
 ---
 
 ## URL params for filters

@@ -60,6 +60,26 @@ if ( ! $wp_tests_dir || ! file_exists( $wp_tests_dir . '/includes/functions.php'
 require_once $wp_tests_dir . '/includes/functions.php';
 
 /**
+ * Manually load WooCommerce, when it is present.
+ *
+ * The WordPress test suite runs against its own freshly-installed database, in
+ * which no plugins are active — activation state from the dev site does not carry
+ * over. So a WooCommerce that `wp plugin list` reports as "active" is still absent
+ * from the test run unless it is required here explicitly.
+ *
+ * Loaded at priority 5 so WooCommerce is defined before DesignSetGo, whose Woo
+ * blocks gate on `class_exists( 'WooCommerce' )`.
+ */
+function _manually_load_woocommerce() {
+	$woocommerce = WP_CONTENT_DIR . '/plugins/woocommerce/woocommerce.php';
+
+	if ( file_exists( $woocommerce ) ) {
+		require_once $woocommerce;
+	}
+}
+tests_add_filter( 'muplugins_loaded', '_manually_load_woocommerce', 5 );
+
+/**
  * Manually load the plugin being tested.
  */
 function _manually_load_plugin() {
@@ -69,3 +89,20 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
 // Start up the WordPress testing environment
 require $wp_tests_dir . '/includes/bootstrap.php';
+
+// Create WooCommerce's tables. Product CRUD writes to wc_product_meta_lookup and
+// friends, so loading the plugin alone is not enough — without this, every fixture
+// fails on a missing table.
+if ( class_exists( 'WC_Install' ) ) {
+	WC_Install::install();
+
+	// install() defers the roles/caps population to a shutdown hook in some flows;
+	// the object cache must be reset so the freshly-created tables are visible.
+	if ( function_exists( 'wp_cache_flush' ) ) {
+		wp_cache_flush();
+	}
+}
+
+// Shared test helpers. Loaded after the WordPress bootstrap because they guard on
+// ABSPATH, which is only defined once WordPress itself has loaded.
+require_once __DIR__ . '/helpers/class-woo-product-factory.php';

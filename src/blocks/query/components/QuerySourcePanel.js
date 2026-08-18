@@ -10,6 +10,7 @@ import {
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../components/shared';
 import TemplateIO from './TemplateIO';
+import WooQueryControls from './WooQueryControls';
 
 export const GROUP_BY_OPTIONS = [
 	{ value: 'none', label: __('None', 'designsetgo') },
@@ -278,6 +279,11 @@ export default function QuerySourcePanel({
 					__nextHasNoMarginBottom
 				/>
 			</DsgoInspectorPanel.Item>
+
+			<WooQueryControls
+				attributes={attributes}
+				setAttributes={setAttributes}
+			/>
 
 			<DsgoInspectorPanel.Item
 				label={__('Template I/O', 'designsetgo')}

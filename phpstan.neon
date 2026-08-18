@@ -26,6 +26,17 @@ parameters:
 		- designsetgo.php
 		- phpstan-constants.php
 
+	# WooCommerce stubs let us analyse the Woo integration surface (bindings sources,
+	# product-aware query args, cart blocks) instead of excluding it the way the
+	# Query Monitor integration above is excluded for lack of stubs. Every Woo call
+	# site is still runtime-guarded — the stubs are a static-analysis aid only.
+	#
+	# scanFiles, not bootstrapFiles: PHPStan *executes* bootstrap files, and the Woo
+	# stubs define thousands of classes, which pushes the analysis past a 1G memory
+	# limit. scanFiles registers the symbols without executing them.
+	scanFiles:
+		- vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+
 	ignoreErrors:
 		# WordPress globals
 		- '#Undefined variable: \$wpdb#'
@@ -39,6 +50,13 @@ parameters:
 
 		# WP_CLI class is excluded from analysis; suppress the call-site reference in class-plugin.php
 		- '#Call to static method register\(\) on an unknown class DesignSetGo\\Blocks\\Query\\FilterIndexCLI#'
+
+		# WP_Block_Bindings_Source::get_value()'s $block_instance parameter is UNTYPED in
+		# core (wp-includes/class-wp-block-bindings-source.php: `public function get_value(
+		# array $source_args, $block_instance, string $attribute_name )`), so null is a
+		# legal argument — the style-binding path has no WP_Block to pass, and the existing
+		# bindings tests rely on the same call. Only the stub's docblock says WP_Block.
+		- '#Parameter \#2 \$block_instance of method WP_Block_Bindings_Source::get_value\(\) expects WP_Block, null given#'
 
 		# Allow dynamic properties (common in WordPress)
 		- '#Access to an undefined property#'

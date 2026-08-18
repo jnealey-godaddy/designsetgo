@@ -17,7 +17,14 @@ per-block chunks was found.
 
 Deliberately **out of scope**: global-classes / Style Manager / Stylebook (fights
 `theme.json` and Global Styles, violates the WP-native-first principle), 3D / Spline /
-Rive, Figma-to-blocks conversion, WooCommerce depth.
+Rive, Figma-to-blocks conversion.
+
+WooCommerce was originally excluded here as "Woo depth". That was right about the depth
+features and wrong about the surface ones — roughly a third of GreenShift's Woo blocks are
+single-field displays that, given Block Bindings and the Query block, are bindings rather
+than blocks. The exclusion is now named specifically — **variation swatches, variation
+galleries, product bundles / combos, attribute groups, 360° / 3D viewers** — and the
+surface work moved into Plan 8.
 
 ## Global Constraints
 
@@ -72,6 +79,7 @@ Ordered by leverage. Each is independently shippable.
 | 5 | [Off-Canvas Panel](2026-08-16-offcanvas-panel.md) | Modal already has the machinery; this is mostly CSS and a variation. |
 | 6 | [Social Share Block](2026-08-16-social-share-block.md) | Small, frequently requested, zero dependencies. |
 | 7 | [Animation Depth](2026-08-16-animation-depth.md) | Matches most of their GSAP addon with zero JS library. |
+| 8 | [WooCommerce Surface](2026-08-17-woocommerce-surface.md) | Their ~26 Woo blocks collapse to bindings + Query attributes + one cart trio. Compounds with Query and style bindings. |
 
 ## Sequencing note
 
