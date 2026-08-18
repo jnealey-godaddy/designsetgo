@@ -64,6 +64,7 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 		dsgoStaggerEnabled,
 		dsgoStaggerStep,
 		dsgoScrollLinked,
+		dsgoSvgDraw,
 	} = attributes;
 
 	// Derive tri-state from the two attributes.
@@ -358,6 +359,17 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 					)}
 				</>
 			)}
+
+			<ToggleControl
+				label={__('Draw SVG Strokes', 'designsetgo')}
+				checked={!!dsgoSvgDraw}
+				onChange={(value) => setAttributes({ dsgoSvgDraw: value })}
+				help={__(
+					'Draw the outlines of any SVG inside this block when it enters the viewport. Only shapes with a stroke are visible while drawing.',
+					'designsetgo'
+				)}
+				__nextHasNoMarginBottom
+			/>
 		</PanelBody>
 	);
 }

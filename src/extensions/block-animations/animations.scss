@@ -575,3 +575,31 @@ body:not(.block-editor-page):not(.wp-admin) {
 	}
 }
 
+// ============================================
+// SVG PATH DRAWING
+// ============================================
+// svg-draw.js measures each shape and sets stroke-dasharray/dashoffset
+// inline; this transition animates the offset back to zero.
+
+.dsgo-svg-draw-ready {
+	--dsgo-svg-draw-duration: 1.5s;
+
+	:where(path, line, polyline, circle, ellipse, rect) {
+		transition: stroke-dashoffset var(--dsgo-svg-draw-duration, 1.5s) ease-in-out;
+	}
+}
+
+.dsgo-svg-draw-active {
+
+	:where(path, line, polyline, circle, ellipse, rect) {
+		stroke-dashoffset: 0 !important; // Overrides the inline priming value.
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.dsgo-svg-draw-ready :where(path, line, polyline, circle, ellipse, rect) {
+		stroke-dashoffset: 0 !important; // Accessibility override.
+		transition: none;
+	}
+}

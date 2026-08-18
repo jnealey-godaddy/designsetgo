@@ -122,11 +122,17 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 		dsgoStaggerEnabled,
 		dsgoStaggerStep,
 		dsgoScrollLinked,
+		dsgoSvgDraw,
 	} = attributes;
+
+	// SVG drawing targets descendant strokes rather than this block's own
+	// opacity, so it is independent of the entrance/exit system and has to
+	// survive the animations-disabled return below.
+	const svgDrawProps = dsgoSvgDraw ? { 'data-dsgo-svg-draw': 'true' } : {};
 
 	// Skip if animations not enabled
 	if (!dsgoAnimationEnabled) {
-		return extraProps;
+		return dsgoSvgDraw ? { ...extraProps, ...svgDrawProps } : extraProps;
 	}
 
 	// Always include the enabled flag and animation type(s) — these are required
@@ -198,6 +204,7 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 	return {
 		...extraProps,
 		...dataAttributes,
+		...svgDrawProps,
 		className: className.trim(),
 	};
 }

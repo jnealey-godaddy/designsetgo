@@ -89,4 +89,5 @@ export const DEFAULT_ANIMATION_SETTINGS = {
 	staggerEnabled: false, // Animate direct children in sequence
 	staggerStep: 80, // Milliseconds between each child
 	scrollLinked: false, // Scrub the entrance against scroll position
+	svgDraw: false, // Draw descendant SVG strokes on entering the viewport
 };

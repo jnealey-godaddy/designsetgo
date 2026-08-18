@@ -86,6 +86,10 @@ function addAnimationAttributes(settings, name) {
 				type: 'boolean',
 				default: DEFAULT_ANIMATION_SETTINGS.scrollLinked,
 			},
+			dsgoSvgDraw: {
+				type: 'boolean',
+				default: DEFAULT_ANIMATION_SETTINGS.svgDraw,
+			},
 		},
 	};
 }

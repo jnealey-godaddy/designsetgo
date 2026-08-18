@@ -30,6 +30,9 @@ import './utils/focus-outline.js';
 // Block animations - scroll-triggered, hover, click animations
 import './extensions/block-animations/frontend.js';
 
+// Block animations - SVG stroke drawing (needs runtime path measurement)
+import './extensions/block-animations/svg-draw.js';
+
 // Clickable group - makes containers clickable with link functionality
 import './extensions/clickable-group/frontend.js';
 
