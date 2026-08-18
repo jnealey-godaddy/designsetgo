@@ -50,6 +50,10 @@ function addTextRevealAttributes(settings, name) {
 				type: 'number',
 				default: DEFAULT_TEXT_REVEAL_SETTINGS.transitionDuration,
 			},
+			dsgoTextRevealEffect: {
+				type: 'string',
+				default: DEFAULT_TEXT_REVEAL_SETTINGS.effect,
+			},
 		},
 	};
 }

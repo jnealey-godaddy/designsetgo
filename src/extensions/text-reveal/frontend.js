@@ -13,6 +13,8 @@
 // Store observers for cleanup
 const activeObservers = new WeakMap();
 
+const UNIT_CLASS = 'dsgo-text-reveal-unit';
+
 /**
  * Check if user prefers reduced motion
  *
@@ -25,12 +27,26 @@ function prefersReducedMotion() {
 /**
  * Wrap text nodes in spans for word or character split mode
  *
+ * Uses a TreeWalker so inline markup (links, emphasis) survives the split.
+ * Units are indexed continuously across text nodes, which is what the
+ * "Fade & Rise" effect stages its transition delays on.
+ *
  * @param {HTMLElement} element   The element to process
  * @param {string}      splitMode 'word' or 'character'
  */
-function wrapTextNodes(element, splitMode) {
+export function wrapTextNodes(element, splitMode) {
+	// Already split - re-running would nest units inside units.
+	if (element.querySelector(`.${UNIT_CLASS}`)) {
+		return;
+	}
+
 	// Preserve original text content for screen readers
 	const originalText = element.textContent;
+
+	if (!originalText || !originalText.trim()) {
+		return;
+	}
+
 	element.setAttribute('aria-label', originalText);
 	// Use TreeWalker to find all text nodes while preserving HTML structure
 	const walker = document.createTreeWalker(
@@ -49,6 +65,26 @@ function wrapTextNodes(element, splitMode) {
 		}
 	}
 
+	// Index runs across the whole element, not per text node, so a heading
+	// broken up by a link still staggers in reading order.
+	let index = 0;
+
+	/**
+	 * Build one unit span.
+	 *
+	 * @param {string} text Unit text.
+	 * @return {HTMLElement} The span.
+	 */
+	const makeUnit = (text) => {
+		const span = document.createElement('span');
+		span.className = UNIT_CLASS;
+		span.setAttribute('aria-hidden', 'true');
+		span.style.setProperty('--dsgo-unit-index', String(index));
+		span.textContent = text;
+		index++;
+		return span;
+	};
+
 	// Process each text node
 	textNodes.forEach((textNode) => {
 		const parent = textNode.parentNode;
@@ -62,11 +98,7 @@ function wrapTextNodes(element, splitMode) {
 					// Preserve spaces without wrapping
 					fragment.appendChild(document.createTextNode(' '));
 				} else {
-					const span = document.createElement('span');
-					span.className = 'dsgo-text-reveal-unit';
-					span.setAttribute('aria-hidden', 'true');
-					span.textContent = char;
-					fragment.appendChild(span);
+					fragment.appendChild(makeUnit(char));
 				}
 			});
 		} else {
@@ -77,11 +109,7 @@ function wrapTextNodes(element, splitMode) {
 					// Preserve whitespace without wrapping
 					fragment.appendChild(document.createTextNode(word));
 				} else if (word) {
-					const span = document.createElement('span');
-					span.className = 'dsgo-text-reveal-unit';
-					span.setAttribute('aria-hidden', 'true');
-					span.textContent = word;
-					fragment.appendChild(span);
+					fragment.appendChild(makeUnit(word));
 				}
 			});
 		}
@@ -149,6 +177,11 @@ function initTextReveal(element) {
 	const revealColor = element.dataset.dsgoTextRevealColor || '#2563eb';
 	const splitMode = element.dataset.dsgoTextRevealSplitMode || 'word';
 	const transition = element.dataset.dsgoTextRevealTransition || 150;
+	const effect = element.dataset.dsgoTextRevealEffect || 'color';
+
+	// The effect decides what each unit does once it is revealed; the reveal
+	// order itself is the same scroll-progress walk either way.
+	element.classList.add(`dsgo-text-reveal--${effect}`);
 
 	// Set CSS custom properties (base color inherits from the block's text color)
 	element.style.setProperty('--dsgo-text-reveal-color', revealColor);
@@ -161,7 +194,7 @@ function initTextReveal(element) {
 	wrapTextNodes(element, splitMode);
 
 	// Get all spans
-	const spans = element.querySelectorAll('.dsgo-text-reveal-unit');
+	const spans = element.querySelectorAll(`.${UNIT_CLASS}`);
 	const totalUnits = spans.length;
 
 	if (totalUnits === 0) {

@@ -78,6 +78,7 @@ function addTextRevealSaveProps(extraProps, blockType, attributes) {
 		dsgoTextRevealColor,
 		dsgoTextRevealSplitMode,
 		dsgoTextRevealTransition,
+		dsgoTextRevealEffect,
 	} = attributes;
 
 	// Skip if text reveal not enabled
@@ -92,6 +93,7 @@ function addTextRevealSaveProps(extraProps, blockType, attributes) {
 			convertColorToCSSVar(dsgoTextRevealColor) || '',
 		'data-dsgo-text-reveal-split-mode': dsgoTextRevealSplitMode || 'word',
 		'data-dsgo-text-reveal-transition': dsgoTextRevealTransition || 150,
+		'data-dsgo-text-reveal-effect': dsgoTextRevealEffect || 'color',
 	};
 
 	// Add class
