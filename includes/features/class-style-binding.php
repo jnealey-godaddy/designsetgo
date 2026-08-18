@@ -270,7 +270,23 @@ class StyleBinding {
 
 		$value = $registered->get_value( $args, null, 'style' );
 
-		return is_scalar( $value ) ? (string) $value : null;
+		if ( ! is_scalar( $value ) ) {
+			return null;
+		}
+
+		$value = (string) $value;
+
+		// Structural backstop, independent of the declared `returns` above. That
+		// check trusts registry metadata, and nothing validates a source's
+		// declaration against what it actually returns — a source could claim
+		// `text` and emit markup. No valid CSS value contains angle brackets, so
+		// reject them outright and the guarantee no longer rests on metadata
+		// being accurate.
+		if ( false !== strpbrk( $value, '<>' ) ) {
+			return null;
+		}
+
+		return $value;
 	}
 
 	/**
@@ -279,6 +295,14 @@ class StyleBinding {
 	 * Reads the Dynamic Tags registry metadata, which is where `returns` lives.
 	 * Returns false for sources the registry does not know about, so unregistered
 	 * third-party sources keep their existing behaviour.
+	 *
+	 * MAINTAINER NOTE: this is an advisory check, not a guarantee. Nothing at
+	 * registration time validates that a source's declared `returns` matches what
+	 * its callback actually produces, so a source could declare `text` and emit
+	 * markup. The caller therefore also applies a structural `<>` rejection that
+	 * does not depend on this metadata. When adding a source that returns markup,
+	 * declare `returns` as `array( 'html' )` so it is refused here explicitly
+	 * rather than relying on that backstop.
 	 *
 	 * @param string $source Source identifier.
 	 * @return bool True when the source declares an `html` return type.

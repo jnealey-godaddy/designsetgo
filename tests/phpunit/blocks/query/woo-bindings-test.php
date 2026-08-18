@@ -289,6 +289,62 @@ class DesignSetGo_Woo_Bindings_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Markup is refused even when a source misdeclares its return type.
+	 *
+	 * The `returns` check is advisory — nothing validates a source's declaration
+	 * against what it actually emits. This pins the structural backstop, so the
+	 * guarantee does not rest on registry metadata being accurate.
+	 */
+	public function test_markup_is_refused_even_when_returns_metadata_lies() {
+		$post_id = self::factory()->post->create();
+
+		designsetgo_register_bindings_source(
+			'designsetgo/test-lying-source',
+			static function () {
+				return '<span>nope</span>';
+			},
+			array( 'label' => 'Lying source' )
+		);
+
+		// Declares `text` while emitting markup — the case the backstop exists for.
+		\DesignSetGo\Blocks\DynamicTags\Registry::instance()->register_source(
+			'designsetgo/test-lying-source',
+			array(
+				'label'   => 'Lying source',
+				'group'   => 'post',
+				'returns' => array( 'text' ),
+			)
+		);
+
+		$GLOBALS['designsetgo_parent_stack'] = array( array( 'postId' => $post_id ) );
+
+		$style_binding = new \DesignSetGo\StyleBinding();
+
+		$html = $style_binding->apply_style_bindings(
+			'<div class="wp-block">X</div>',
+			array(
+				'blockName'    => 'core/group',
+				'attrs'        => array(
+					'dsgoStyleBinding' => array(
+						'--dsgo-lie' => array(
+							'source' => 'designsetgo/test-lying-source',
+							'args'   => array(),
+						),
+					),
+				),
+				'innerBlocks'  => array(),
+				'innerContent' => array(),
+				'innerHTML'    => '',
+			)
+		);
+
+		unset( $GLOBALS['designsetgo_parent_stack'] );
+
+		$this->assertStringNotContainsString( '--dsgo-lie', $html );
+		$this->assertStringNotContainsString( 'nope', $html );
+	}
+
+	/**
 	 * A keyed source with no key still resolves to nothing.
 	 *
 	 * Guards the refactor that made the `key` requirement conditional: custom

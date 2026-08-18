@@ -136,11 +136,13 @@ class WooSources {
 					return null;
 				}
 
-				$rating = (float) $product->get_average_rating();
+				// Read once: the cast is only for the comparison, while the
+				// returned value keeps Woo's own formatting (e.g. '4.00').
+				$rating = $product->get_average_rating();
 
 				// A product with no reviews rates 0.0; report nothing rather than
 				// a misleading zero, matching how Woo's own rating block hides.
-				return $rating > 0 ? (string) $product->get_average_rating() : null;
+				return (float) $rating > 0 ? (string) $rating : null;
 			}
 		);
 	}

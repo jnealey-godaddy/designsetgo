@@ -197,6 +197,15 @@ if ( ! function_exists( 'designsetgo_query_apply_woo_atts' ) ) {
 
 		$stock = isset( $atts['wooStockStatus'] ) ? array_filter( (array) $atts['wooStockStatus'] ) : array();
 
+		// NOTE: this clause and the `filter_stock_status` URL param clause in
+		// designsetgo_query_apply_woo_params() are ANDed together, so they
+		// intersect rather than override. That is intentional — the attribute is
+		// the author's standing constraint and the URL param is the visitor's
+		// filter, and a visitor should not be able to widen past what the author
+		// allowed. The consequence is that a disjoint combination (author allows
+		// only `instock`, visitor filters `outofstock`) legitimately returns zero
+		// products. Pair the block with `designsetgo/query-no-results` so that
+		// reads as an empty state rather than a broken page.
 		if ( ! empty( $stock ) ) {
 			designsetgo_query_append_meta_clause(
 				$args,
@@ -255,8 +264,13 @@ if ( ! function_exists( 'designsetgo_query_apply_woo_params' ) ) {
 		}
 
 		if ( ! empty( $params['filter_stock_status'] ) ) {
-			$statuses = designsetgo_query_woo_split( $params['filter_stock_status'] );
+			// sanitize_key() to match the wooStockStatus attribute path; Woo's
+			// statuses are all lowercase slugs, so nothing valid is lost.
+			$statuses = array_map( 'sanitize_key', designsetgo_query_woo_split( $params['filter_stock_status'] ) );
+			$statuses = array_values( array_filter( $statuses ) );
 
+			// ANDs with any wooStockStatus attribute clause rather than replacing
+			// it — see the note in designsetgo_query_apply_woo_atts().
 			if ( ! empty( $statuses ) ) {
 				designsetgo_query_append_meta_clause(
 					$args,
