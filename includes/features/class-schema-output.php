@@ -114,7 +114,10 @@ class SchemaOutput {
 			return array();
 		}
 
-		if ( 'publish' !== $reference->post_status ) {
+		// Mirrors core's render_block_core_block(), which refuses a pattern that
+		// is unpublished OR password-protected. Emitting schema for content core
+		// declines to render would disclose it through the back door.
+		if ( 'publish' !== $reference->post_status || ! empty( $reference->post_password ) ) {
 			return array();
 		}
 
@@ -156,6 +159,16 @@ class SchemaOutput {
 		$post = get_post();
 
 		if ( ! $post instanceof \WP_Post || ! has_blocks( $post->post_content ) ) {
+			return;
+		}
+
+		// A protected post is still singular, and get_post() still hands back
+		// the full content — WordPress only substitutes the password form at
+		// the_content, which runs long after wp_head. Without this the
+		// questions, answers and title would sit in view-source for anyone,
+		// password or not. Matches the guard in class-style-binding.php,
+		// class-query-bindings-helpers.php and the llms-txt classes.
+		if ( post_password_required( $post ) ) {
 			return;
 		}
 

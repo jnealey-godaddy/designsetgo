@@ -174,6 +174,29 @@ class Schema_Synced_Pattern_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A password-protected pattern contributes nothing.
+	 *
+	 * Core's render_block_core_block() refuses to render one, so emitting its
+	 * questions and answers into the head would disclose content the page
+	 * itself never shows.
+	 */
+	public function test_a_password_protected_pattern_is_ignored() {
+		$ref = self::factory()->post->create(
+			array(
+				'post_type'     => 'wp_block',
+				'post_status'   => 'publish',
+				'post_password' => 'hunter2',
+				'post_content'  => $this->accordion(),
+			)
+		);
+
+		$head = $this->head_for( '<!-- wp:block {"ref":' . $ref . '} /-->' );
+
+		$this->assertStringNotContainsString( 'application/ld+json', $head );
+		$this->assertStringNotContainsString( 'Synced question?', $head );
+	}
+
+	/**
 	 * A reference to a post that is not a pattern is ignored.
 	 */
 	public function test_a_reference_to_a_non_pattern_post_is_ignored() {

@@ -263,6 +263,92 @@ class Schema_Output_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A password-protected post must not disclose its content.
+	 *
+	 * is_singular() is still true and get_post() still returns the full object
+	 * for a protected post — the front end substitutes the password form at
+	 * the_content, not before it. wp_head runs earlier still, so without an
+	 * explicit gate the questions, answers and title would be readable in view
+	 * source by anyone, password or not.
+	 */
+	public function test_emits_nothing_for_a_password_protected_post() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_title'    => 'Secret guide',
+				'post_password' => 'hunter2',
+				'post_content'  => $this->accordion_markup( 'faq', 'Secret question?', 'Secret answer.' ),
+			)
+		);
+
+		$this->go_to( get_permalink( $post_id ) );
+
+		ob_start();
+		do_action( 'wp_head' );
+		$head = ob_get_clean();
+
+		$this->assertStringNotContainsString( 'application/ld+json', $head );
+		$this->assertStringNotContainsString( 'Secret question?', $head );
+		$this->assertStringNotContainsString( 'Secret answer.', $head );
+	}
+
+	/**
+	 * The same protection applies to a HowTo, whose name is the post title.
+	 */
+	public function test_emits_nothing_for_a_password_protected_howto() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_title'    => 'Secret HowTo title',
+				'post_password' => 'hunter2',
+				'post_content'  => $this->accordion_markup( 'howto', 'Step one', 'Do the thing.' ),
+			)
+		);
+
+		$this->go_to( get_permalink( $post_id ) );
+
+		ob_start();
+		do_action( 'wp_head' );
+		$head = ob_get_clean();
+
+		// The title legitimately appears in <title>; what must not appear is a
+		// JSON-LD payload carrying it, or any of the protected step content.
+		$this->assertStringNotContainsString( 'application/ld+json', $head );
+		$this->assertStringNotContainsString( '@graph', $head );
+		$this->assertStringNotContainsString( 'Step one', $head );
+		$this->assertStringNotContainsString( 'Do the thing.', $head );
+	}
+
+	/**
+	 * Once the password is supplied, the schema is emitted as normal.
+	 */
+	public function test_emits_schema_once_the_password_has_been_entered() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_password' => 'hunter2',
+				'post_content'  => $this->accordion_markup( 'faq', 'Secret question?', 'Secret answer.' ),
+			)
+		);
+
+		// This is how wp-login.php stores a correct password. It must be a
+		// phpass hash specifically: post_password_required() rejects anything
+		// not starting with $P$B before it ever checks the value, so a bcrypt
+		// hash from wp_hash_password() would read as "still locked".
+		require_once ABSPATH . WPINC . '/class-phpass.php';
+		$hasher                                 = new PasswordHash( 8, true );
+		$_COOKIE[ 'wp-postpass_' . COOKIEHASH ] = $hasher->HashPassword( 'hunter2' );
+
+		$this->go_to( get_permalink( $post_id ) );
+
+		ob_start();
+		do_action( 'wp_head' );
+		$head = ob_get_clean();
+
+		unset( $_COOKIE[ 'wp-postpass_' . COOKIEHASH ] );
+
+		$this->assertStringContainsString( 'FAQPage', $head );
+		$this->assertStringContainsString( 'Secret question?', $head );
+	}
+
+	/**
 	 * Archives are not singular, so nothing is emitted.
 	 */
 	public function test_emits_nothing_on_an_archive() {
