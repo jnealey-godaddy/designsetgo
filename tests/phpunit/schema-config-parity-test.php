@@ -81,6 +81,20 @@ class Schema_Config_Parity_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The runtime builder map lists the same blocks as the config.
+	 *
+	 * This is the list that actually gates collection. If it drifted from the
+	 * other two, a block could carry the control and the registered attribute
+	 * yet never produce schema — or the reverse.
+	 */
+	public function test_builder_map_matches_the_config() {
+		$builders = \DesignSetGo\SchemaOutput::supported_blocks();
+		sort( $builders );
+
+		$this->assertSame( $this->php_blocks(), $builders );
+	}
+
+	/**
 	 * The attribute name and default agree with the JS registration.
 	 */
 	public function test_php_config_declares_the_expected_attribute() {

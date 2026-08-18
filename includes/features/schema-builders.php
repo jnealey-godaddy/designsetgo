@@ -90,6 +90,41 @@ if ( ! function_exists( 'designsetgo_schema_text_from_html' ) ) {
 	}
 }
 
+if ( ! function_exists( 'designsetgo_schema_normalize_text' ) ) {
+	/**
+	 * Reduce a fragment of saved HTML to schema-ready plain text.
+	 *
+	 * The single definition of that sequence. It was duplicated between the
+	 * answer text and the HowTo title, and the entity-decoding step was once
+	 * fixed in one place and missed in the other — the same page emitting
+	 * "Tea &amp; Coffee" beside "Tea & coffee?".
+	 *
+	 * Order matters and is deliberate:
+	 *
+	 * 1. Separate at tag boundaries, or `<p>One.</p><p>Two.</p>` fuses into
+	 *    "One.Two.". The extra spaces collapse in step 4.
+	 * 2. Strip tags.
+	 * 3. THEN decode entities. Decoding first would let strip_tags() delete
+	 *    text the page actually displays — an answer reading "<b>bold</b>"
+	 *    would come back as "bold". A decoded `</script>` cannot break the
+	 *    JSON-LD element: SchemaOutput::render() escapes the slash after
+	 *    encoding, which covers every source of that sequence at once.
+	 * 4. Collapse whitespace and trim.
+	 *
+	 * @param string $html Saved HTML.
+	 * @return string Plain text.
+	 */
+	function designsetgo_schema_normalize_text( $html ) {
+		$html = str_replace( '<', ' <', (string) $html );
+
+		$text = wp_strip_all_tags( $html );
+		$text = html_entity_decode( $text, ENT_QUOTES, 'UTF-8' );
+		$text = preg_replace( '/\s+/u', ' ', $text );
+
+		return trim( (string) $text );
+	}
+}
+
 if ( ! function_exists( 'designsetgo_schema_text_from_blocks' ) ) {
 	/**
 	 * Reduce inner blocks to the plain text of their SAVED markup.
@@ -126,20 +161,7 @@ if ( ! function_exists( 'designsetgo_schema_text_from_blocks' ) ) {
 			return '';
 		}
 
-		$html = serialize_blocks( $blocks );
-
-		// Separate at every tag boundary before stripping. Without this,
-		// `<p>One.</p><p>Two.</p>` reduces to "One.Two." — two sentences fused
-		// into one token, which is poor structured data. The extra spaces are
-		// collapsed immediately below, so inline markup is unaffected:
-		// "Hello <strong>world</strong>" still yields "Hello world".
-		$html = str_replace( '<', ' <', $html );
-
-		$text = wp_strip_all_tags( $html );
-		$text = html_entity_decode( $text, ENT_QUOTES, 'UTF-8' );
-		$text = preg_replace( '/\s+/u', ' ', $text );
-
-		return trim( (string) $text );
+		return designsetgo_schema_normalize_text( serialize_blocks( $blocks ) );
 	}
 }
 
@@ -260,14 +282,9 @@ if ( ! function_exists( 'designsetgo_schema_build_howto' ) ) {
 			'step'  => $steps,
 		);
 
-		// Same treatment the question/answer text gets: strip, then decode.
-		// Without the decode a title stored as "Tea &amp; Coffee" reaches the
-		// graph with the entity intact, while the steps beside it are already
-		// decoded — the one page emitting both "Tea &amp; Coffee" and
-		// "Tea & coffee?".
-		$title = wp_strip_all_tags( (string) $title );
-		$title = html_entity_decode( $title, ENT_QUOTES, 'UTF-8' );
-		$title = trim( preg_replace( '/\s+/u', ' ', $title ) );
+		// Exactly the treatment the question and answer text gets — see the
+		// helper for why that matters.
+		$title = designsetgo_schema_normalize_text( $title );
 
 		// HowTo.name is required by Google, but claiming an empty one is worse
 		// than omitting it.

@@ -22,14 +22,37 @@ require_once DESIGNSETGO_PATH . 'includes/features/schema-builders.php';
 class SchemaOutput {
 
 	/**
-	 * Map a dsgoSchema value to its builder function.
+	 * Which builder handles which schema type, per block.
 	 *
-	 * @var array<string, string>
+	 * Keyed by block name first, deliberately. The allowlist otherwise exists
+	 * only in the editor UI and in the server-side attribute registration, and
+	 * neither constrains what parse_blocks() hands this collector: a
+	 * hand-written block comment (the editor's Code view suffices — no
+	 * unfiltered_html required) could put dsgoSchema on any block and have a
+	 * builder run against its children. Keying on the block name is what makes
+	 * "only blocks with a builder behind them" true at runtime rather than
+	 * merely in the UI.
+	 *
+	 * Keep the block names in step with includes/extension-configs/schema.php;
+	 * Schema_Config_Parity_Test enforces it.
+	 *
+	 * @var array<string, array<string, string>>
 	 */
 	private const BUILDERS = array(
-		'faq'   => 'designsetgo_schema_build_faq',
-		'howto' => 'designsetgo_schema_build_howto',
+		'designsetgo/accordion' => array(
+			'faq'   => 'designsetgo_schema_build_faq',
+			'howto' => 'designsetgo_schema_build_howto',
+		),
 	);
+
+	/**
+	 * Block names this collector will build schema for.
+	 *
+	 * @return array List of block names.
+	 */
+	public static function supported_blocks() {
+		return array_keys( self::BUILDERS );
+	}
 
 	/**
 	 * Hook the head output.
@@ -65,10 +88,11 @@ class SchemaOutput {
 				continue;
 			}
 
+			$name = isset( $block['blockName'] ) ? $block['blockName'] : '';
 			$type = isset( $block['attrs']['dsgoSchema'] ) ? $block['attrs']['dsgoSchema'] : 'none';
 
-			if ( is_string( $type ) && isset( self::BUILDERS[ $type ] ) ) {
-				$builder = self::BUILDERS[ $type ];
+			if ( is_string( $type ) && isset( self::BUILDERS[ $name ][ $type ] ) ) {
+				$builder = self::BUILDERS[ $name ][ $type ];
 
 				if ( function_exists( $builder ) ) {
 					// Builders that do not need the title simply ignore the

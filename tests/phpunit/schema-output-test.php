@@ -349,6 +349,43 @@ class Schema_Output_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The attribute alone must not summon a builder on any block.
+	 *
+	 * The allowlist lives in the editor UI and in the server-side attribute
+	 * registration, but neither constrains what parse_blocks() hands the
+	 * collector at runtime. A hand-written block comment — the editor's Code
+	 * view is enough, no unfiltered_html needed — could put dsgoSchema on any
+	 * block and have the FAQ builder run against its children.
+	 *
+	 * No privilege escalation and no XSS, but it contradicts the stated design
+	 * that only blocks with a builder behind them generate schema.
+	 */
+	public function test_the_attribute_on_a_non_allowlisted_block_is_ignored() {
+		$content = '<!-- wp:group {"dsgoSchema":"faq"} --><div class="wp-block-group">'
+			// Real accordion items, so the builder would find usable pairs.
+			. '<!-- wp:designsetgo/accordion-item -->'
+			. '<div class="dsgo-accordion-item"><div class="dsgo-accordion-item__header">'
+			. '<span class="dsgo-accordion-item__title">Smuggled question?</span></div>'
+			. '<div class="dsgo-accordion-item__content">'
+			. '<!-- wp:paragraph --><p>Smuggled answer.</p><!-- /wp:paragraph -->'
+			. '</div></div>'
+			. '<!-- /wp:designsetgo/accordion-item -->'
+			. '</div><!-- /wp:group -->';
+
+		$head = $this->head_for( $content );
+
+		$this->assertStringNotContainsString( 'application/ld+json', $head );
+		$this->assertStringNotContainsString( 'Smuggled question?', $head );
+	}
+
+	/**
+	 * The allowlisted block still works, so the check is not simply blocking.
+	 */
+	public function test_the_allowlisted_block_still_emits() {
+		$this->assertStringContainsString( 'FAQPage', $this->head_for( $this->accordion_markup() ) );
+	}
+
+	/**
 	 * Archives are not singular, so nothing is emitted.
 	 */
 	public function test_emits_nothing_on_an_archive() {
