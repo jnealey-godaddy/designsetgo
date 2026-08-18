@@ -18,6 +18,22 @@ require_once DESIGNSETGO_PATH . 'includes/features/schema-builders.php';
  * blocks are static (a save.js, no render.php), and their data — including the
  * HTML-sourced accordion title — only exists in the saved markup. wp_head also
  * runs before the content, so a render_block collector would be too late.
+ *
+ * SCOPE: the singular post's own content, plus any synced patterns it
+ * references. An accordion placed directly in a block template or template
+ * part is deliberately NOT collected. Such a block appears on every page using
+ * that template, and FAQPage markup is supposed to describe the page it sits
+ * on — emitting one site-wide FAQ across every URL is the structured-data spam
+ * this feature's opt-in default exists to avoid. A site that genuinely wants
+ * template-level schema can add it through the `designsetgo_schema_nodes`
+ * filter, where the decision is explicit and per-site.
+ *
+ * COST: the strpos() pair below short-circuits a page with no schema in well
+ * under a microsecond. A deliberately heavy page — three synced patterns
+ * holding sixty question/answer pairs, plus a hundred other blocks — costs
+ * about 7.5ms. That is not worth a transient: invalidating one would mean
+ * tracking which posts reference which patterns, and stale structured data is
+ * a worse failure than the parse it saves.
  */
 class SchemaOutput {
 
