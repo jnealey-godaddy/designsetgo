@@ -302,6 +302,20 @@ So Woo's attribute filters were inert against a DSGo query — not mis-applied, 
 `render-woo.php` maps `filter_<slug>` → `pa_<slug>`, and explicitly skips any slug that is
 already a real taxonomy so the two handlers cannot double-apply and silently over-narrow.
 
+**KNOWN LIMITATION — relationship loops over products get no Woo filtering.**
+`render-relationship.php` delegates to the posts renderer (`source=manual`), so it does
+reach `designsetgo_query_apply_woo_args()` — but the same override forces
+`post_type=any`, and `designsetgo_query_targets_products()` only matches `product`. So a
+"related products" loop driven by a relationship field applies **no catalog visibility**:
+hidden and `exclude-from-catalog` products can appear in it.
+
+Not fixed here because the fix is not free. Broadening the check to accept `any` would
+start applying `product_visibility` and on-sale filtering to *mixed-type* relationship
+loops, where a related item might legitimately be a post or a page. The clean fix is
+probably for the relationship renderer to pass the resolved item post types through rather
+than flattening to `any`, which is a change to that renderer, not to this file. Pinned by
+`test_post_type_any_is_untouched()` so the boundary cannot move silently.
+
 **DEVIATION FROM D6 — price filtering uses `_price` meta, not `wc_product_meta_lookup`.**
 D6 chose the lookup table. On implementation, WooCommerce's own
 `ProductCollection\QueryBuilder::get_filter_by_price_query()` turned out to use a `_price`

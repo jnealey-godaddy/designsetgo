@@ -188,8 +188,16 @@ if ( ! function_exists( 'designsetgo_query_apply_woo_atts' ) ) {
 		if ( ! empty( $atts['wooOnSale'] ) && function_exists( 'wc_get_product_ids_on_sale' ) ) {
 			$on_sale = wc_get_product_ids_on_sale();
 
-			// Intersect rather than overwrite: another feature (manual source,
-			// relationship source) may already have constrained post__in.
+			// Intersect rather than overwrite: the manual source sets post__in in
+			// designsetgo_query_build_posts_args(), and the designsetgo_query_args
+			// filter can too.
+			//
+			// The relationship source does reach this file — render-relationship.php
+			// delegates to the posts renderer with source=manual — but that same
+			// override forces post_type=any, so designsetgo_query_targets_products()
+			// returns false and nothing here runs for it. A relationship loop over
+			// products therefore gets no catalog-visibility filtering; see the test
+			// pinning that boundary.
 			$args['post__in'] = isset( $args['post__in'] ) && ! empty( $args['post__in'] )
 				? array_values( array_intersect( (array) $args['post__in'], $on_sale ) )
 				: ( empty( $on_sale ) ? array( 0 ) : $on_sale );

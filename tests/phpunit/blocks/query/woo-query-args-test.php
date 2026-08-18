@@ -100,6 +100,38 @@ class DesignSetGo_Woo_Query_Args_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A post_type=any query is untouched, which is what relationship loops are.
+	 *
+	 * render-relationship.php delegates to the posts renderer with source=manual,
+	 * so it DOES reach designsetgo_query_apply_woo_args() — but it also forces
+	 * post_type=any, so targets_products() returns false and nothing applies.
+	 *
+	 * Pinning this because the boundary is easy to move by accident: broadening
+	 * targets_products() to accept 'any' would silently start applying
+	 * product_visibility and on-sale filtering to mixed-type relationship loops.
+	 * The trade-off is that a relationship loop over products gets no
+	 * catalog-visibility filtering today.
+	 */
+	public function test_post_type_any_is_untouched() {
+		$args = array(
+			'post_type' => 'any',
+			'post__in'  => array( 1, 2 ),
+		);
+
+		$this->assertSame(
+			$args,
+			designsetgo_query_apply_woo_args(
+				$args,
+				array(
+					'wooOnSale'  => true,
+					'wooFeatured' => true,
+				),
+				array( 'min_price' => '10' )
+			)
+		);
+	}
+
+	/**
 	 * Catalog visibility excludes hidden products by default.
 	 */
 	public function test_catalog_visibility_applies_by_default() {
