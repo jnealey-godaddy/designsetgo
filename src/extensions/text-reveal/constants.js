@@ -14,6 +14,7 @@ export const DEFAULT_TEXT_REVEAL_SETTINGS = {
 	enabled: false,
 	revealColor: '#2563eb', // Blue (blue-600) - color text transitions to
 	splitMode: 'word', // 'word' or 'character'
+	effect: 'color', // 'color' sweep or 'rise' (fade + rise per unit)
 	transitionDuration: 150, // ms per word/char transition
 };
 

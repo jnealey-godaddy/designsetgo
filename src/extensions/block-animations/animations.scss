@@ -7,6 +7,56 @@
  * @since 1.0.0
  */
 
+// The elements a stagger container actually animates.
+// DSGo container blocks follow the two-div pattern - the block root wraps a
+// `*__inner` div holding the real items (grid, row, section, ...) - so `> *`
+// from the root would find one wrapper, not six children. Reach through it
+// when it is there, and fall back to direct children when it is not. Where
+// `:has()` is unsupported only that second rule drops out, which costs a
+// plain container its stagger rather than breaking the page.
+@mixin dsgo-stagger-items {
+
+	> [class*="__inner"] > * {
+		@content;
+	}
+
+	&:not(:has(> [class*="__inner"])) > * {
+		@content;
+	}
+}
+
+// Keyframe names, keyed by the attribute value that selects them. Kept as maps
+// so the class rules and the stagger rules below cannot drift apart.
+$dsgo-entrance-keyframes: (
+	"fadeIn": "dsgFadeIn",
+	"fadeInUp": "dsgFadeInUp",
+	"fadeInDown": "dsgFadeInDown",
+	"fadeInLeft": "dsgFadeInLeft",
+	"fadeInRight": "dsgFadeInRight",
+	"slideInUp": "dsgSlideInUp",
+	"slideInDown": "dsgSlideInDown",
+	"slideInLeft": "dsgSlideInLeft",
+	"slideInRight": "dsgSlideInRight",
+	"zoomIn": "dsgZoomIn",
+	"bounceIn": "dsgBounceIn",
+	"flipInX": "dsgFlipInX",
+	"flipInY": "dsgFlipInY",
+);
+
+$dsgo-exit-keyframes: (
+	"fadeOut": "dsgFadeOut",
+	"fadeOutUp": "dsgFadeOutUp",
+	"fadeOutDown": "dsgFadeOutDown",
+	"fadeOutLeft": "dsgFadeOutLeft",
+	"fadeOutRight": "dsgFadeOutRight",
+	"slideOutUp": "dsgSlideOutUp",
+	"slideOutDown": "dsgSlideOutDown",
+	"slideOutLeft": "dsgSlideOutLeft",
+	"slideOutRight": "dsgSlideOutRight",
+	"zoomOut": "dsgZoomOut",
+	"bounceOut": "dsgBounceOut",
+);
+
 // Base animation class - only hide on frontend, not in editor
 body:not(.block-editor-page):not(.wp-admin) {
 
@@ -37,107 +87,139 @@ body:not(.block-editor-page):not(.wp-admin) {
 		}
 	}
 
-	// Entrance animations - apply animation names to active blocks
-	.dsgo-entrance-active {
+	// Entrance animations - apply animation names to active blocks.
+	// The keyframe name is also published as a custom property, because a
+	// stagger container has to hand its animation down to its children and
+	// animation-name is not an inherited property while a custom property is.
+	@each $name, $keyframe in $dsgo-entrance-keyframes {
 
-		&.dsgo-animation-fadeIn {
-			animation-name: dsgFadeIn;
+		.dsgo-animation-#{$name} {
+			--dsgo-animation-name: #{$keyframe};
 		}
 
-		&.dsgo-animation-fadeInUp {
-			animation-name: dsgFadeInUp;
-		}
-
-		&.dsgo-animation-fadeInDown {
-			animation-name: dsgFadeInDown;
-		}
-
-		&.dsgo-animation-fadeInLeft {
-			animation-name: dsgFadeInLeft;
-		}
-
-		&.dsgo-animation-fadeInRight {
-			animation-name: dsgFadeInRight;
-		}
-
-		&.dsgo-animation-slideInUp {
-			animation-name: dsgSlideInUp;
-		}
-
-		&.dsgo-animation-slideInDown {
-			animation-name: dsgSlideInDown;
-		}
-
-		&.dsgo-animation-slideInLeft {
-			animation-name: dsgSlideInLeft;
-		}
-
-		&.dsgo-animation-slideInRight {
-			animation-name: dsgSlideInRight;
-		}
-
-		&.dsgo-animation-zoomIn {
-			animation-name: dsgZoomIn;
-		}
-
-		&.dsgo-animation-bounceIn {
-			animation-name: dsgBounceIn;
-		}
-
-		&.dsgo-animation-flipInX {
-			animation-name: dsgFlipInX;
-		}
-
-		&.dsgo-animation-flipInY {
-			animation-name: dsgFlipInY;
+		.dsgo-entrance-active.dsgo-animation-#{$name} {
+			animation-name: #{$keyframe};
 		}
 	}
 
 	// Exit animations - apply animation names to active blocks
-	.dsgo-exit-active {
+	@each $name, $keyframe in $dsgo-exit-keyframes {
 
-		&.dsgo-animation-exit-fadeOut {
-			animation-name: dsgFadeOut;
+		.dsgo-animation-exit-#{$name} {
+			--dsgo-animation-exit-name: #{$keyframe};
 		}
 
-		&.dsgo-animation-exit-fadeOutUp {
-			animation-name: dsgFadeOutUp;
+		.dsgo-exit-active.dsgo-animation-exit-#{$name} {
+			animation-name: #{$keyframe};
+		}
+	}
+
+	// ============================================
+	// SCROLL-LINKED INTERPOLATION
+	// ============================================
+	// `animation-timeline: view()` scrubs the entrance keyframes against the
+	// element's position in the viewport instead of playing them on a clock,
+	// so no class toggle is involved and frontend.js skips these elements.
+	// Where the property is unsupported the whole @supports block is dropped
+	// and only the opacity reset below survives, which is the correct
+	// degradation for decorative motion: visible content, no animation.
+
+	.has-dsgo-animation[data-dsgo-scroll-linked="true"]:not(.dsgo-entrance-active):not(.dsgo-exit-active) {
+		opacity: 1;
+	}
+
+	@supports (animation-timeline: view()) {
+
+		.has-dsgo-animation[data-dsgo-scroll-linked="true"] {
+			// Duration stays `auto` so the timeline, not a clock, sets progress.
+			animation-fill-mode: both;
+			animation-name: var(--dsgo-animation-name);
+			animation-range: entry 0% cover 40%;
+			animation-timeline: view();
+			animation-timing-function: linear;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+
+		.has-dsgo-animation[data-dsgo-scroll-linked="true"] {
+			animation: none !important; // Accessibility override.
+			animation-timeline: auto !important; // Accessibility override.
+			opacity: 1 !important; // Accessibility override.
+		}
+	}
+
+	// ============================================
+	// CHILD STAGGER
+	// ============================================
+	// With stagger on, the container stops animating and its direct children
+	// carry the motion instead, each delayed by a multiple of the step.
+	// Bounded at 20 children: past that the delay outlasts any plausible
+	// viewport dwell time, and an unbounded loop would only bloat the sheet.
+
+	.has-dsgo-animation[data-dsgo-stagger="true"] {
+
+		// The container is a plain box now - only the items move.
+		&.dsgo-entrance-active,
+		&.dsgo-exit-active {
+			animation-name: none;
 		}
 
-		&.dsgo-animation-exit-fadeOutDown {
-			animation-name: dsgFadeOutDown;
+		// ...so it must not sit at opacity 0 waiting for a class that is
+		// doing nothing for it. The items hide instead.
+		&:not(.dsgo-entrance-active):not(.dsgo-exit-active) {
+			opacity: 1;
+
+			@include dsgo-stagger-items {
+				opacity: 0;
+			}
 		}
 
-		&.dsgo-animation-exit-fadeOutLeft {
-			animation-name: dsgFadeOutLeft;
+		@include dsgo-stagger-items {
+			animation-duration: var(--dsgo-animation-duration, 600ms);
+			animation-fill-mode: both;
+			animation-timing-function: var(--dsgo-animation-easing, ease-out);
 		}
 
-		&.dsgo-animation-exit-fadeOutRight {
-			animation-name: dsgFadeOutRight;
+		&.dsgo-entrance-active {
+
+			@include dsgo-stagger-items {
+				animation-name: var(--dsgo-animation-name);
+			}
 		}
 
-		&.dsgo-animation-exit-slideOutUp {
-			animation-name: dsgSlideOutUp;
+		&.dsgo-exit-active {
+
+			@include dsgo-stagger-items {
+				animation-name: var(--dsgo-animation-exit-name);
+			}
 		}
 
-		&.dsgo-animation-exit-slideOutDown {
-			animation-name: dsgSlideOutDown;
+		// Two rules per index, never one selector list: a selector list is not
+		// forgiving, so a browser without `:has()` would drop the `__inner`
+		// branch along with the branch it cannot parse and two-div containers
+		// would animate with no stagger at all. Split, they degrade the way
+		// the mixin above promises - the plain-container branch drops, the
+		// two-div branch keeps its delays.
+		@for $i from 1 through 20 {
+			$delay: calc(var(--dsgo-animation-delay, 0ms) + var(--dsgo-stagger-step, 80ms) * #{$i - 1});
+
+			> [class*="__inner"] > :nth-child(#{$i}) {
+				animation-delay: $delay;
+			}
+
+			&:not(:has(> [class*="__inner"])) > :nth-child(#{$i}) {
+				animation-delay: $delay;
+			}
 		}
 
-		&.dsgo-animation-exit-slideOutLeft {
-			animation-name: dsgSlideOutLeft;
-		}
+		@media (prefers-reduced-motion: reduce) {
 
-		&.dsgo-animation-exit-slideOutRight {
-			animation-name: dsgSlideOutRight;
-		}
-
-		&.dsgo-animation-exit-zoomOut {
-			animation-name: dsgZoomOut;
-		}
-
-		&.dsgo-animation-exit-bounceOut {
-			animation-name: dsgBounceOut;
+			@include dsgo-stagger-items {
+				animation: none !important; // Accessibility override.
+				animation-delay: 0s !important; // Accessibility override.
+				opacity: 1 !important; // Accessibility override.
+			}
 		}
 	}
 }
@@ -528,3 +610,31 @@ body:not(.block-editor-page):not(.wp-admin) {
 	}
 }
 
+// ============================================
+// SVG PATH DRAWING
+// ============================================
+// svg-draw.js measures each shape and sets stroke-dasharray/dashoffset
+// inline; this transition animates the offset back to zero.
+
+.dsgo-svg-draw-ready {
+	--dsgo-svg-draw-duration: 1.5s;
+
+	:where(path, line, polyline, circle, ellipse, rect) {
+		transition: stroke-dashoffset var(--dsgo-svg-draw-duration, 1.5s) ease-in-out;
+	}
+}
+
+.dsgo-svg-draw-active {
+
+	:where(path, line, polyline, circle, ellipse, rect) {
+		stroke-dashoffset: 0 !important; // Overrides the inline priming value.
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.dsgo-svg-draw-ready :where(path, line, polyline, circle, ellipse, rect) {
+		stroke-dashoffset: 0 !important; // Accessibility override.
+		transition: none;
+	}
+}

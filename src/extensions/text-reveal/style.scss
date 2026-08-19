@@ -29,3 +29,39 @@
 		transition: none;
 	}
 }
+
+// "Fade & Rise" effect - each unit fades up into place as it is revealed,
+// instead of only changing colour. Reveal order is unchanged.
+.has-dsgo-text-reveal.dsgo-text-reveal--rise {
+
+	.dsgo-text-reveal-unit {
+		display: inline-block;
+		opacity: 0;
+		transform: translateY(0.4em);
+		transition:
+			opacity var(--dsgo-text-reveal-transition, 150ms) ease-out,
+			transform var(--dsgo-text-reveal-transition, 150ms) ease-out;
+
+		// No `will-change` here on purpose. In character split mode every
+		// character is its own unit, and a hint on each one would promote a
+		// layer per character for the whole life of the page. Opacity and
+		// transform are already compositor-friendly; the hint buys nothing
+		// that would pay for that.
+
+		&.is-revealed {
+			// Rise does not recolour; it inherits the block's own text colour.
+			color: inherit;
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.has-dsgo-text-reveal.dsgo-text-reveal--rise .dsgo-text-reveal-unit {
+		opacity: 1 !important; // Accessibility override.
+		transform: none !important; // Accessibility override.
+		transition: none;
+	}
+}

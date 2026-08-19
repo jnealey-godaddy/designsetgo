@@ -30,6 +30,13 @@ function initBlockAnimations() {
 
 	// Process each animated element
 	animatedElements.forEach((element) => {
+		// Scroll-linked elements are driven entirely by CSS animation-timeline.
+		// Toggling the entrance class here would put a second, clock-driven
+		// animation on the same element and the two would fight.
+		if (element.dataset.dsgoScrollLinked === 'true') {
+			return;
+		}
+
 		// Prevent duplicate initialization
 		if (element.dataset.dsgoAnimationInitialized) {
 			return;
@@ -45,6 +52,20 @@ function initBlockAnimations() {
 		element.style.animationDuration = `${duration}ms`;
 		element.style.animationDelay = `${delay}ms`;
 		element.style.animationTimingFunction = easing;
+
+		// Mirror them as custom properties. A stagger container animates its
+		// children rather than itself, and the animation-* longhands above do
+		// not inherit - custom properties do.
+		element.style.setProperty('--dsgo-animation-duration', `${duration}ms`);
+		element.style.setProperty('--dsgo-animation-delay', `${delay}ms`);
+		element.style.setProperty('--dsgo-animation-easing', easing);
+
+		if (element.dataset.dsgoStaggerStep) {
+			element.style.setProperty(
+				'--dsgo-stagger-step',
+				`${element.dataset.dsgoStaggerStep}ms`
+			);
+		}
 
 		// Apply trigger-specific behavior
 		switch (trigger) {

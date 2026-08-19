@@ -119,11 +119,20 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 		dsgoAnimationEasing,
 		dsgoAnimationOffset,
 		dsgoAnimationOnce,
+		dsgoStaggerEnabled,
+		dsgoStaggerStep,
+		dsgoScrollLinked,
+		dsgoSvgDraw,
 	} = attributes;
+
+	// SVG drawing targets descendant strokes rather than this block's own
+	// opacity, so it is independent of the entrance/exit system and has to
+	// survive the animations-disabled return below.
+	const svgDrawProps = dsgoSvgDraw ? { 'data-dsgo-svg-draw': 'true' } : {};
 
 	// Skip if animations not enabled
 	if (!dsgoAnimationEnabled) {
-		return extraProps;
+		return dsgoSvgDraw ? { ...extraProps, ...svgDrawProps } : extraProps;
 	}
 
 	// Always include the enabled flag and animation type(s) — these are required
@@ -131,11 +140,28 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 		'data-dsgo-animation-enabled': 'true',
 	};
 
+	// Scrubbing drives the block's own entrance from the scroll timeline, so
+	// it needs an entrance animation, and it only means anything on the
+	// scroll trigger: frontend.js skips scroll-linked elements entirely, so
+	// emitting it on a click- or hover-triggered block would swallow that
+	// trigger - and, for click, the tabindex/role=button keyboard affordance
+	// with it. Existing content can still carry the combination, so the check
+	// lives here as well as in the panel.
+	const isScrubbing =
+		!!dsgoScrollLinked &&
+		!!dsgoEntranceAnimation &&
+		dsgoAnimationTrigger === 'scroll';
+
+	// frontend.js never wires up the exit trigger for a scrubbed element, so
+	// emitting exit markup alongside it would advertise an animation that can
+	// never fire. Dropped here; the panel hides its control to match.
+	const exitAnimation = isScrubbing ? '' : dsgoExitAnimation;
+
 	if (dsgoEntranceAnimation) {
 		dataAttributes['data-dsgo-entrance-animation'] = dsgoEntranceAnimation;
 	}
-	if (dsgoExitAnimation) {
-		dataAttributes['data-dsgo-exit-animation'] = dsgoExitAnimation;
+	if (exitAnimation) {
+		dataAttributes['data-dsgo-exit-animation'] = exitAnimation;
 	}
 
 	// Only output settings that differ from defaults to keep markup lean
@@ -160,6 +186,24 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 			: 'false';
 	}
 
+	if (isScrubbing) {
+		dataAttributes['data-dsgo-scroll-linked'] = 'true';
+	}
+
+	// Stagger moves the motion from this block onto its direct children, so it
+	// is only meaningful once an animation has actually been chosen.
+	if (
+		dsgoStaggerEnabled &&
+		!isScrubbing &&
+		(dsgoEntranceAnimation || exitAnimation)
+	) {
+		dataAttributes['data-dsgo-stagger'] = 'true';
+
+		if (dsgoStaggerStep !== DEFAULT_ANIMATION_SETTINGS.staggerStep) {
+			dataAttributes['data-dsgo-stagger-step'] = dsgoStaggerStep;
+		}
+	}
+
 	// Build animation classes
 	let className = extraProps.className || '';
 	className += ' has-dsgo-animation';
@@ -167,13 +211,14 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 	if (dsgoEntranceAnimation) {
 		className += ` dsgo-animation-${dsgoEntranceAnimation}`;
 	}
-	if (dsgoExitAnimation) {
-		className += ` dsgo-animation-exit-${dsgoExitAnimation}`;
+	if (exitAnimation) {
+		className += ` dsgo-animation-exit-${exitAnimation}`;
 	}
 
 	return {
 		...extraProps,
 		...dataAttributes,
+		...svgDrawProps,
 		className: className.trim(),
 	};
 }

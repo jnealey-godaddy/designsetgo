@@ -44,6 +44,7 @@ export default function TextRevealPanel({
 		dsgoTextRevealColor,
 		dsgoTextRevealSplitMode,
 		dsgoTextRevealTransition,
+		dsgoTextRevealEffect,
 	} = attributes;
 
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
@@ -52,6 +53,11 @@ export default function TextRevealPanel({
 	const splitModeOptions = [
 		{ label: __('Word', 'designsetgo'), value: 'word' },
 		{ label: __('Character', 'designsetgo'), value: 'character' },
+	];
+
+	const effectOptions = [
+		{ label: __('Color Sweep', 'designsetgo'), value: 'color' },
+		{ label: __('Fade & Rise', 'designsetgo'), value: 'rise' },
 	];
 
 	const transitionDurationOptions = [
@@ -77,7 +83,7 @@ export default function TextRevealPanel({
 							setAttributes({ dsgoTextRevealEnabled: value })
 						}
 						help={__(
-							'Reveal text color progressively as users scroll',
+							'Reveal text word by word as users scroll',
 							'designsetgo'
 						)}
 						__nextHasNoMarginBottom
@@ -86,6 +92,23 @@ export default function TextRevealPanel({
 
 					{dsgoTextRevealEnabled && (
 						<>
+							<SelectControl
+								label={__('Effect', 'designsetgo')}
+								value={dsgoTextRevealEffect}
+								options={effectOptions}
+								onChange={(value) =>
+									setAttributes({
+										dsgoTextRevealEffect: value,
+									})
+								}
+								help={__(
+									'Recolour each unit, or fade and lift it into place',
+									'designsetgo'
+								)}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+
 							<SelectControl
 								label={__('Split Mode', 'designsetgo')}
 								value={dsgoTextRevealSplitMode}
@@ -145,8 +168,9 @@ export default function TextRevealPanel({
 				</PanelBody>
 			</InspectorControls>
 
-			{/* Color controls in the Colors group */}
-			{dsgoTextRevealEnabled && (
+			{/* Color controls in the Colors group. The rise effect keeps the
+			    block's own text colour, so a reveal colour would do nothing. */}
+			{dsgoTextRevealEnabled && dsgoTextRevealEffect !== 'rise' && (
 				<InspectorControls group="color">
 					<ColorGradientSettingsDropdown
 						panelId={clientId}
