@@ -54,12 +54,25 @@ function designsetgo_get_animation_parts( $attributes ) {
 		$attrs['data-dsgo-entrance-animation'] = $entrance;
 	}
 
-	$scroll_linked = ! empty( $attributes['dsgoScrollLinked'] ) && '' !== $entrance;
+	$trigger = isset( $attributes['dsgoAnimationTrigger'] ) ? (string) $attributes['dsgoAnimationTrigger'] : 'scroll';
+	if ( 'scroll' !== $trigger ) {
+		$attrs['data-dsgo-animation-trigger'] = $trigger;
+	}
 
-	// Scrubbing hands the entrance to the scroll timeline, and frontend.js
-	// skips those elements entirely - it never wires up the exit trigger.
-	// Exit markup alongside it would advertise an animation that can never
-	// fire, so it is dropped here exactly as the save path drops it.
+	// Scrubbing hands the entrance to the scroll timeline, so it needs an
+	// entrance animation and it only means anything on the scroll trigger:
+	// frontend.js skips scroll-linked elements entirely, so emitting it on a
+	// click- or hover-triggered block would swallow that trigger - and, for
+	// click, the tabindex/role=button keyboard affordance with it. Existing
+	// content can still carry the combination, which is why the trigger is
+	// checked here and not only in the panel.
+	$scroll_linked = ! empty( $attributes['dsgoScrollLinked'] )
+		&& '' !== $entrance
+		&& 'scroll' === $trigger;
+
+	// frontend.js never wires up the exit trigger for a scrubbed element, so
+	// exit markup alongside it would advertise an animation that can never
+	// fire. Dropped here exactly as the save path drops it.
 	$exit = isset( $attributes['dsgoExitAnimation'] ) ? (string) $attributes['dsgoExitAnimation'] : '';
 	if ( $scroll_linked ) {
 		$exit = '';
@@ -67,11 +80,6 @@ function designsetgo_get_animation_parts( $attributes ) {
 	if ( '' !== $exit ) {
 		$classes[]                         = 'dsgo-animation-exit-' . $exit;
 		$attrs['data-dsgo-exit-animation'] = $exit;
-	}
-
-	$trigger = isset( $attributes['dsgoAnimationTrigger'] ) ? (string) $attributes['dsgoAnimationTrigger'] : 'scroll';
-	if ( 'scroll' !== $trigger ) {
-		$attrs['data-dsgo-animation-trigger'] = $trigger;
 	}
 
 	$duration = isset( $attributes['dsgoAnimationDuration'] ) ? (int) $attributes['dsgoAnimationDuration'] : 600;

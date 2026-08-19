@@ -180,6 +180,71 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Scrubbing only means anything on the scroll trigger.
+	 *
+	 * The frontend runtime skips scroll-linked elements before it wires any
+	 * trigger up, so emitting the flag on a click-triggered block would
+	 * swallow the click handler and its keyboard affordance with it.
+	 */
+	public function test_scrubbing_is_ignored_on_a_non_scroll_trigger() {
+		$parts = designsetgo_get_animation_parts(
+			array(
+				'dsgoAnimationEnabled'  => true,
+				'dsgoEntranceAnimation' => 'fadeInUp',
+				'dsgoScrollLinked'      => true,
+				'dsgoAnimationTrigger'  => 'click',
+			)
+		);
+
+		$this->assertArrayNotHasKey( 'data-dsgo-scroll-linked', $parts['attrs'] );
+	}
+
+	/**
+	 * The trigger gate also governs what scrubbing suppresses.
+	 *
+	 * A legacy block carrying the scroll-linked flag on a click trigger is not
+	 * scrubbing, so it must keep the exit animation and the stagger that a
+	 * genuinely scrubbed block gives up.
+	 */
+	public function test_non_scroll_trigger_keeps_what_scrubbing_would_suppress() {
+		$parts = designsetgo_get_animation_parts(
+			array(
+				'dsgoAnimationEnabled'  => true,
+				'dsgoEntranceAnimation' => 'fadeInUp',
+				'dsgoExitAnimation'     => 'fadeOut',
+				'dsgoScrollLinked'      => true,
+				'dsgoStaggerEnabled'    => true,
+				'dsgoAnimationTrigger'  => 'click',
+			)
+		);
+
+		$this->assertSame( 'fadeOut', $parts['attrs']['data-dsgo-exit-animation'] );
+		$this->assertContains( 'dsgo-animation-exit-fadeOut', $parts['classes'] );
+		$this->assertSame( 'true', $parts['attrs']['data-dsgo-stagger'] );
+	}
+
+	/**
+	 * A dynamic block must not lose its click wiring to a stale flag either.
+	 */
+	public function test_dynamic_block_with_legacy_click_scrubbing_is_not_marked_scrolled() {
+		$html = $this->injector->inject(
+			'<div class="wp-block-dsgotest-dynamic">rendered</div>',
+			$this->block(
+				'dsgotest/dynamic',
+				array(
+					'dsgoAnimationEnabled'  => true,
+					'dsgoEntranceAnimation' => 'fadeInUp',
+					'dsgoScrollLinked'      => true,
+					'dsgoAnimationTrigger'  => 'click',
+				)
+			)
+		);
+
+		$this->assertStringNotContainsString( 'data-dsgo-scroll-linked', $html );
+		$this->assertStringContainsString( 'data-dsgo-animation-trigger="click"', $html );
+	}
+
+	/**
 	 * Stagger needs an animation to move onto the children.
 	 */
 	public function test_stagger_without_any_animation_chosen_is_dropped() {
