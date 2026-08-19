@@ -28,8 +28,12 @@ function prefersReducedMotion() {
  * Wrap text nodes in spans for word or character split mode
  *
  * Uses a TreeWalker so inline markup (links, emphasis) survives the split.
- * Units are indexed continuously across text nodes, which is what the
- * "Fade & Rise" effect stages its transition delays on.
+ * Each unit carries its running position as `--dsgo-unit-index`, indexed
+ * continuously across text nodes so a heading broken up by a link still
+ * counts in reading order. The shipped effects do not read it - reveal
+ * order comes from the scroll-progress walk in `updateRevealProgress`, and
+ * a per-unit transition delay on top of that would only lag it - but it is
+ * a stable hook for author CSS.
  *
  * @param {HTMLElement} element   The element to process
  * @param {string}      splitMode 'word' or 'character'
@@ -65,8 +69,6 @@ export function wrapTextNodes(element, splitMode) {
 		}
 	}
 
-	// Index runs across the whole element, not per text node, so a heading
-	// broken up by a link still staggers in reading order.
 	let index = 0;
 
 	/**
@@ -119,13 +121,31 @@ export function wrapTextNodes(element, splitMode) {
 }
 
 /**
+ * Scroll distance still available below the current position.
+ *
+ * @return {number} Pixels of remaining document scroll, never negative.
+ */
+function remainingScroll() {
+	const doc = document.documentElement;
+	const maxScroll = Math.max(
+		0,
+		Math.max(
+			doc.scrollHeight,
+			document.body ? document.body.scrollHeight : 0
+		) - window.innerHeight
+	);
+
+	return Math.max(0, maxScroll - (window.scrollY || doc.scrollTop || 0));
+}
+
+/**
  * Update reveal progress based on scroll position
  *
  * @param {HTMLElement} element    The text reveal element
  * @param {NodeList}    spans      All span units
  * @param {number}      totalUnits Total number of units
  */
-function updateRevealProgress(element, spans, totalUnits) {
+export function updateRevealProgress(element, spans, totalUnits) {
 	const rect = element.getBoundingClientRect();
 	const viewportHeight = window.innerHeight;
 
@@ -135,16 +155,29 @@ function updateRevealProgress(element, spans, totalUnits) {
 	const elementHeight = rect.height;
 
 	// Start revealing slightly after element enters viewport (20% into viewport)
-	// Finish revealing when element center reaches viewport center
 	const scrollStart = viewportHeight * 0.8; // Element starts reveal at 80% down viewport
-	const scrollEnd = viewportHeight / 2; // Element center at viewport center
 
 	// Calculate progress based on element center position
 	const elementCenter = elementTop + elementHeight / 2;
+
+	// Finish revealing when the element's centre reaches the viewport centre -
+	// unless the page runs out of scroll first. Text near the bottom of a
+	// document, or on a page too short to scroll at all, can never travel that
+	// far, and a reveal that never completes leaves the "Fade & Rise" effect's
+	// units permanently at opacity 0: invisible copy, not a missing flourish.
+	// So when the natural finish line is out of reach, it moves down to the
+	// highest position the element can actually get to. Centre and remaining
+	// scroll fall at the same rate, so that position is fixed rather than a
+	// target that recedes with every frame.
+	const highestReachableCenter = elementCenter - remainingScroll();
+	const scrollEnd = Math.max(viewportHeight / 2, highestReachableCenter);
+
 	const scrollRange = scrollStart - scrollEnd;
 
-	// Progress from 0 (just entered) to 1 (center of viewport)
-	let progress = (scrollStart - elementCenter) / scrollRange;
+	// Progress from 0 (just entered) to 1 (fully revealed). A non-positive
+	// range means the element is already as far up as it will ever get.
+	let progress =
+		scrollRange > 0 ? (scrollStart - elementCenter) / scrollRange : 1;
 
 	// Clamp progress between 0 and 1
 	progress = Math.max(0, Math.min(1, progress));

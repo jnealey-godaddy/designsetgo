@@ -140,13 +140,22 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 		'data-dsgo-animation-enabled': 'true',
 	};
 
-	// Scrubbing hands the block's entrance to the scroll timeline, and
-	// frontend.js skips those elements entirely - it never wires up the exit
-	// trigger. Emitting exit markup alongside it would advertise an animation
-	// that can never fire, so the exit animation is dropped here and the panel
-	// hides its control while scrubbing is on.
-	const exitAnimation =
-		dsgoScrollLinked && dsgoEntranceAnimation ? '' : dsgoExitAnimation;
+	// Scrubbing drives the block's own entrance from the scroll timeline, so
+	// it needs an entrance animation, and it only means anything on the
+	// scroll trigger: frontend.js skips scroll-linked elements entirely, so
+	// emitting it on a click- or hover-triggered block would swallow that
+	// trigger - and, for click, the tabindex/role=button keyboard affordance
+	// with it. Existing content can still carry the combination, so the check
+	// lives here as well as in the panel.
+	const isScrubbing =
+		!!dsgoScrollLinked &&
+		!!dsgoEntranceAnimation &&
+		dsgoAnimationTrigger === 'scroll';
+
+	// frontend.js never wires up the exit trigger for a scrubbed element, so
+	// emitting exit markup alongside it would advertise an animation that can
+	// never fire. Dropped here; the panel hides its control to match.
+	const exitAnimation = isScrubbing ? '' : dsgoExitAnimation;
 
 	if (dsgoEntranceAnimation) {
 		dataAttributes['data-dsgo-entrance-animation'] = dsgoEntranceAnimation;
@@ -177,10 +186,7 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 			: 'false';
 	}
 
-	// Scrubbing drives the block's own entrance from scroll position, so it
-	// needs an entrance animation and it rules stagger out - the two want the
-	// keyframes on different elements. The panel hides stagger when this is on.
-	if (dsgoScrollLinked && dsgoEntranceAnimation) {
+	if (isScrubbing) {
 		dataAttributes['data-dsgo-scroll-linked'] = 'true';
 	}
 
@@ -188,7 +194,7 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 	// is only meaningful once an animation has actually been chosen.
 	if (
 		dsgoStaggerEnabled &&
-		!dsgoScrollLinked &&
+		!isScrubbing &&
 		(dsgoEntranceAnimation || exitAnimation)
 	) {
 		dataAttributes['data-dsgo-stagger'] = 'true';

@@ -41,7 +41,12 @@
 		transition:
 			opacity var(--dsgo-text-reveal-transition, 150ms) ease-out,
 			transform var(--dsgo-text-reveal-transition, 150ms) ease-out;
-		will-change: opacity, transform;
+
+		// No `will-change` here on purpose. In character split mode every
+		// character is its own unit, and a hint on each one would promote a
+		// layer per character for the whole life of the page. Opacity and
+		// transform are already compositor-friendly; the hint buys nothing
+		// that would pay for that.
 
 		&.is-revealed {
 			// Rise does not recolour; it inherits the block's own text colour.

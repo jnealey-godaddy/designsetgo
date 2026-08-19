@@ -74,15 +74,42 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A block already opted into its own animation (Custom state) is left untouched.
+	 * A static block already opted into its own animation (Custom state) is
+	 * left untouched: the save filter baked its markup at save time, and the
+	 * editor validates the stored HTML against that same save().
+	 *
+	 * This used to hold for every block. It cannot: a dynamic block has no
+	 * save output for that filter to write to, so its explicit settings are
+	 * applied at render time instead. See
+	 * DesignSetGo_Animation_Dynamic_Block_Test.
 	 */
-	public function test_skips_custom_state_block() {
-		$html = '<div class="wp-block-button">x</div>';
+	public function test_skips_custom_state_static_block() {
+		$html = '<p class="wp-block-paragraph">x</p>';
+		$out  = $this->injector->inject(
+			$html,
+			array(
+				'blockName' => 'core/paragraph',
+				'attrs'     => array( 'dsgoAnimationEnabled' => true ),
+			)
+		);
+		$this->assertSame( $html, $out );
+	}
+
+	/**
+	 * core/button declares a render_callback *and* a save(), so it reads as
+	 * dynamic while its stored markup is still authored by the save filter.
+	 * The already-applied guard is what keeps that markup from being rewritten.
+	 */
+	public function test_skips_custom_state_block_whose_markup_is_already_baked() {
+		$html = '<div class="wp-block-button has-dsgo-animation dsgo-animation-fadeIn" data-dsgo-animation-enabled="true">x</div>';
 		$out  = $this->injector->inject(
 			$html,
 			array(
 				'blockName' => 'core/button',
-				'attrs'     => array( 'dsgoAnimationEnabled' => true ),
+				'attrs'     => array(
+					'dsgoAnimationEnabled'  => true,
+					'dsgoEntranceAnimation' => 'fadeIn',
+				),
 			)
 		);
 		$this->assertSame( $html, $out );

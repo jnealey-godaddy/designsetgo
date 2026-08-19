@@ -95,4 +95,41 @@ describe('block-animations save props', () => {
 		expect(props).not.toHaveProperty('data-dsgo-scroll-linked');
 		expect(props['data-dsgo-exit-animation']).toBe('fade-out');
 	});
+
+	// frontend.js returns early for scroll-linked elements, before it wires
+	// any trigger up. Emitting the attribute on a click-triggered block would
+	// swallow the click handler and the tabindex/role=button that comes with
+	// it, leaving a block that looks interactive and is not.
+	it('drops scrubbing on triggers other than scroll', () => {
+		['click', 'hover', 'load'].forEach((trigger) => {
+			const props = save('core/group', {
+				...base,
+				dsgoAnimationTrigger: trigger,
+				dsgoScrollLinked: true,
+			});
+
+			expect(props).not.toHaveProperty('data-dsgo-scroll-linked');
+		});
+	});
+
+	it('keeps the exit animation when scrubbing was dropped for the trigger', () => {
+		const props = save('core/group', {
+			...base,
+			dsgoAnimationTrigger: 'hover',
+			dsgoExitAnimation: 'fade-out',
+			dsgoScrollLinked: true,
+		});
+
+		expect(props['data-dsgo-exit-animation']).toBe('fade-out');
+	});
+
+	it('still emits scrubbing on the scroll trigger', () => {
+		const props = save('core/group', {
+			...base,
+			dsgoAnimationTrigger: 'scroll',
+			dsgoScrollLinked: true,
+		});
+
+		expect(props['data-dsgo-scroll-linked']).toBe('true');
+	});
 });

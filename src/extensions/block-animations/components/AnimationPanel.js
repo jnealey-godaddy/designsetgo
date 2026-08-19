@@ -161,7 +161,15 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 							...ANIMATION_TYPES.entrance,
 						]}
 						onChange={(value) =>
-							setAttributes({ dsgoEntranceAnimation: value })
+							// Scrubbing has nothing to drive without an
+							// entrance animation, and its own toggle is
+							// disabled in that state - clearing it here is
+							// what keeps the block from getting stranded
+							// with scrubbing on and no way to turn it off.
+							setAttributes({
+								dsgoEntranceAnimation: value,
+								...(value ? {} : { dsgoScrollLinked: false }),
+							})
 						}
 						help={__('Animation when block appears', 'designsetgo')}
 						__next40pxDefaultSize
@@ -211,7 +219,16 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 						value={dsgoAnimationTrigger}
 						options={ANIMATION_TRIGGERS}
 						onChange={(value) =>
-							setAttributes({ dsgoAnimationTrigger: value })
+							// Scrubbing reads the scroll timeline, so it only
+							// means anything on the scroll trigger. Clearing
+							// it here keeps the attribute honest instead of
+							// leaving a setting that silently does nothing.
+							setAttributes({
+								dsgoAnimationTrigger: value,
+								...(value === 'scroll'
+									? {}
+									: { dsgoScrollLinked: false }),
+							})
 						}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
@@ -314,19 +331,25 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 						</>
 					)}
 
-					<ToggleControl
-						label={__('Scrub With Scroll', 'designsetgo')}
-						checked={!!dsgoScrollLinked}
-						onChange={(value) =>
-							setAttributes({ dsgoScrollLinked: value })
-						}
-						disabled={!dsgoEntranceAnimation}
-						help={__(
-							'The entrance animation follows scroll position instead of playing once. Requires a recent browser; older browsers show the block with no animation.',
-							'designsetgo'
-						)}
-						__nextHasNoMarginBottom
-					/>
+					{/* Scrubbing replaces the scroll trigger's own
+					    class toggling with a scroll timeline, so it is
+					    meaningless on the load/hover/click triggers and is
+					    hidden there rather than offered as a dead setting. */}
+					{dsgoAnimationTrigger === 'scroll' && (
+						<ToggleControl
+							label={__('Scrub With Scroll', 'designsetgo')}
+							checked={!!dsgoScrollLinked}
+							onChange={(value) =>
+								setAttributes({ dsgoScrollLinked: value })
+							}
+							disabled={!dsgoEntranceAnimation}
+							help={__(
+								'The entrance animation follows scroll position instead of playing once. Requires a recent browser; older browsers show the block with no animation.',
+								'designsetgo'
+							)}
+							__nextHasNoMarginBottom
+						/>
+					)}
 
 					{!dsgoScrollLinked && (
 						<ToggleControl

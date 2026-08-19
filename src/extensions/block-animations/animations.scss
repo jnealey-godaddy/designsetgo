@@ -195,11 +195,21 @@ body:not(.block-editor-page):not(.wp-admin) {
 			}
 		}
 
+		// Two rules per index, never one selector list: a selector list is not
+		// forgiving, so a browser without `:has()` would drop the `__inner`
+		// branch along with the branch it cannot parse and two-div containers
+		// would animate with no stagger at all. Split, they degrade the way
+		// the mixin above promises - the plain-container branch drops, the
+		// two-div branch keeps its delays.
 		@for $i from 1 through 20 {
+			$delay: calc(var(--dsgo-animation-delay, 0ms) + var(--dsgo-stagger-step, 80ms) * #{$i - 1});
 
-			> [class*="__inner"] > :nth-child(#{$i}),
+			> [class*="__inner"] > :nth-child(#{$i}) {
+				animation-delay: $delay;
+			}
+
 			&:not(:has(> [class*="__inner"])) > :nth-child(#{$i}) {
-				animation-delay: calc(var(--dsgo-animation-delay, 0ms) + var(--dsgo-stagger-step, 80ms) * #{$i - 1});
+				animation-delay: $delay;
 			}
 		}
 
