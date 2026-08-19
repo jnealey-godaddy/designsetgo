@@ -168,30 +168,43 @@ export default function AnimationPanel({ name, attributes, setAttributes }) {
 						__nextHasNoMarginBottom
 					/>
 
-					<SelectControl
-						label={__('Exit Animation (Optional)', 'designsetgo')}
-						value={dsgoExitAnimation}
-						options={[
-							{ label: __('None', 'designsetgo'), value: '' },
-							...ANIMATION_TYPES.exit,
-						]}
-						onChange={(value) => {
-							if (value && dsgoAnimationTrigger === 'scroll') {
-								setAttributes({
-									dsgoExitAnimation: value,
-									dsgoAnimationOnce: false,
-								});
-							} else {
-								setAttributes({ dsgoExitAnimation: value });
-							}
-						}}
-						help={__(
-							'Animation when block disappears',
-							'designsetgo'
-						)}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
+					{/* Scrubbing drives the entrance from the scroll timeline
+					    and frontend.js never wires an exit trigger for those
+					    elements, so an exit animation could not fire. Hidden
+					    rather than left accepting a dead setting - the same
+					    treatment stagger gets below. */}
+					{!dsgoScrollLinked && (
+						<SelectControl
+							label={__(
+								'Exit Animation (Optional)',
+								'designsetgo'
+							)}
+							value={dsgoExitAnimation}
+							options={[
+								{ label: __('None', 'designsetgo'), value: '' },
+								...ANIMATION_TYPES.exit,
+							]}
+							onChange={(value) => {
+								if (
+									value &&
+									dsgoAnimationTrigger === 'scroll'
+								) {
+									setAttributes({
+										dsgoExitAnimation: value,
+										dsgoAnimationOnce: false,
+									});
+								} else {
+									setAttributes({ dsgoExitAnimation: value });
+								}
+							}}
+							help={__(
+								'Animation when block disappears',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					)}
 
 					<SelectControl
 						label={__('Animation Trigger', 'designsetgo')}

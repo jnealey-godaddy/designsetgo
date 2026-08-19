@@ -140,11 +140,19 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 		'data-dsgo-animation-enabled': 'true',
 	};
 
+	// Scrubbing hands the block's entrance to the scroll timeline, and
+	// frontend.js skips those elements entirely - it never wires up the exit
+	// trigger. Emitting exit markup alongside it would advertise an animation
+	// that can never fire, so the exit animation is dropped here and the panel
+	// hides its control while scrubbing is on.
+	const exitAnimation =
+		dsgoScrollLinked && dsgoEntranceAnimation ? '' : dsgoExitAnimation;
+
 	if (dsgoEntranceAnimation) {
 		dataAttributes['data-dsgo-entrance-animation'] = dsgoEntranceAnimation;
 	}
-	if (dsgoExitAnimation) {
-		dataAttributes['data-dsgo-exit-animation'] = dsgoExitAnimation;
+	if (exitAnimation) {
+		dataAttributes['data-dsgo-exit-animation'] = exitAnimation;
 	}
 
 	// Only output settings that differ from defaults to keep markup lean
@@ -181,7 +189,7 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 	if (
 		dsgoStaggerEnabled &&
 		!dsgoScrollLinked &&
-		(dsgoEntranceAnimation || dsgoExitAnimation)
+		(dsgoEntranceAnimation || exitAnimation)
 	) {
 		dataAttributes['data-dsgo-stagger'] = 'true';
 
@@ -197,8 +205,8 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 	if (dsgoEntranceAnimation) {
 		className += ` dsgo-animation-${dsgoEntranceAnimation}`;
 	}
-	if (dsgoExitAnimation) {
-		className += ` dsgo-animation-exit-${dsgoExitAnimation}`;
+	if (exitAnimation) {
+		className += ` dsgo-animation-exit-${exitAnimation}`;
 	}
 
 	return {

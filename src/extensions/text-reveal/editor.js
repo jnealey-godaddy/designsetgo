@@ -10,7 +10,7 @@
 import { addFilter } from '@wordpress/hooks';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import TextRevealPanel from './components/TextRevealPanel';
-import { SUPPORTED_BLOCKS } from './constants';
+import { DEFAULT_TEXT_REVEAL_SETTINGS, SUPPORTED_BLOCKS } from './constants';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 
 /**
@@ -93,8 +93,19 @@ function addTextRevealSaveProps(extraProps, blockType, attributes) {
 			convertColorToCSSVar(dsgoTextRevealColor) || '',
 		'data-dsgo-text-reveal-split-mode': dsgoTextRevealSplitMode || 'word',
 		'data-dsgo-text-reveal-transition': dsgoTextRevealTransition || 150,
-		'data-dsgo-text-reveal-effect': dsgoTextRevealEffect || 'color',
 	};
+
+	// Only emitted when it differs from the default. Content saved before this
+	// attribute existed has no such attribute in its stored HTML, so emitting
+	// it unconditionally would make every existing text-reveal block fail
+	// validation on the next editor load. The frontend already falls back to
+	// 'color' when the attribute is absent.
+	if (
+		dsgoTextRevealEffect &&
+		dsgoTextRevealEffect !== DEFAULT_TEXT_REVEAL_SETTINGS.effect
+	) {
+		dataAttributes['data-dsgo-text-reveal-effect'] = dsgoTextRevealEffect;
+	}
 
 	// Add class
 	let className = extraProps.className || '';
