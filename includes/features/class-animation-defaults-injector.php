@@ -63,9 +63,16 @@ class Animation_Defaults_Injector {
 
 		$attrs = isset( $block['attrs'] ) && is_array( $block['attrs'] ) ? $block['attrs'] : array();
 
-		// Custom state — block owns its animation (already baked at save).
-		if ( ! empty( $attrs['dsgoAnimationEnabled'] ) ) {
-			return $block_content;
+		// Custom state — the block owns its animation. For a static block the
+		// save filter already baked it into the stored markup; a dynamic block
+		// has no save output for that filter to touch, so its settings only
+		// reach the frontend if they are applied here.
+		if ( ! empty( $attrs['dsgoAnimationEnabled'] ) || ! empty( $attrs['dsgoSvgDraw'] ) ) {
+			return $this->apply_parts(
+				$block_content,
+				designsetgo_get_animation_parts( $attrs ),
+				$block['blockName']
+			);
 		}
 		// Off state — explicit opt-out.
 		if ( ! empty( $attrs['dsgoAnimationOptOut'] ) ) {
@@ -102,7 +109,28 @@ class Animation_Defaults_Injector {
 			)
 		);
 
-		if ( empty( $parts['classes'] ) ) {
+		return $this->apply_parts( $block_content, $parts );
+	}
+
+	/**
+	 * Write animation classes/attributes onto a rendered block's root tag.
+	 *
+	 * @param string      $block_content Rendered block HTML.
+	 * @param array       $parts         Output of designsetgo_get_animation_parts().
+	 * @param string|null $block_name    Block name, when the caller needs the
+	 *                                   static/dynamic distinction below.
+	 * @return string Possibly-modified HTML.
+	 */
+	private function apply_parts( $block_content, $parts, $block_name = null ) {
+		if ( empty( $parts['classes'] ) && empty( $parts['attrs'] ) ) {
+			return $block_content;
+		}
+
+		// A static block's markup is authored by the save filter and validated
+		// against it in the editor. Touching it here would both duplicate the
+		// classes and desync stored content from save(). Only server-rendered
+		// blocks, which that filter cannot reach, are ours to modify.
+		if ( null !== $block_name && ! $this->is_dynamic( $block_name ) ) {
 			return $block_content;
 		}
 
@@ -111,8 +139,13 @@ class Animation_Defaults_Injector {
 			return $block_content;
 		}
 
-		// Belt-and-suspenders: never double-apply.
-		if ( $processor->has_class( 'has-dsgo-animation' ) ) {
+		// Never double-apply. This is what keeps hybrid block types honest:
+		// core/button and friends declare a render_callback *and* a save(),
+		// so they read as dynamic while their stored markup already carries
+		// whatever the save filter baked. Seeing it here means the save path
+		// won, and this one must not touch it.
+		if ( $processor->has_class( 'has-dsgo-animation' )
+			|| null !== $processor->get_attribute( 'data-dsgo-svg-draw' ) ) {
 			return $block_content;
 		}
 
@@ -124,5 +157,21 @@ class Animation_Defaults_Injector {
 		}
 
 		return $processor->get_updated_html();
+	}
+
+	/**
+	 * Whether a block type renders on the server.
+	 *
+	 * An unregistered type is treated as static: without a registration there
+	 * is nothing to prove it renders server-side, and leaving markup alone is
+	 * the safe default.
+	 *
+	 * @param string $block_name Block name.
+	 * @return bool True when the type has a render callback.
+	 */
+	private function is_dynamic( $block_name ) {
+		$type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
+
+		return $type instanceof \WP_Block_Type && $type->is_dynamic();
 	}
 }

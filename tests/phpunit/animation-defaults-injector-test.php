@@ -96,8 +96,10 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * core/button declares a render_callback *and* a save(), so it reads as
-	 * dynamic while its stored markup is still authored by the save filter.
+	 * Hybrid types keep their baked markup.
+	 *
+	 * The core/button type declares a render_callback *and* a save(), so it
+	 * reads as dynamic while its stored markup is still authored by the save filter.
 	 * The already-applied guard is what keeps that markup from being rewritten.
 	 */
 	public function test_skips_custom_state_block_whose_markup_is_already_baked() {

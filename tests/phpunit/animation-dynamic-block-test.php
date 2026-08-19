@@ -7,10 +7,13 @@
  * for a dynamic block, so the same settings have to be applied at render time
  * or they reach the frontend as nothing at all.
  *
- * @group animation
+ * @package DesignSetGo
+ * @group   animation
  */
 
 /**
+ * Render-time application of explicit animation settings.
+ *
  * @group animation
  */
 class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
@@ -22,6 +25,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 	 */
 	private $injector;
 
+	/**
+	 * Register a dynamic and a static block type to inject against.
+	 */
 	public function set_up() {
 		parent::set_up();
 
@@ -39,6 +45,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		register_block_type( 'dsgotest/static', array() );
 	}
 
+	/**
+	 * Drop the test block types.
+	 */
 	public function tear_down() {
 		unregister_block_type( 'dsgotest/dynamic' );
 		unregister_block_type( 'dsgotest/static' );
@@ -63,6 +72,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 	// The parts helper — must mirror addAnimationSaveProps() in editor.js.
 	// -----------------------------------------------------------------
 
+	/**
+	 * SVG drawing is independent of the entrance/exit system.
+	 */
 	public function test_svg_draw_is_emitted_even_when_animations_are_disabled() {
 		$parts = designsetgo_get_animation_parts( array( 'dsgoSvgDraw' => true ) );
 
@@ -70,6 +82,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertNotContains( 'has-dsgo-animation', $parts['classes'] );
 	}
 
+	/**
+	 * Scrubbing needs an entrance animation to drive.
+	 */
 	public function test_scroll_linked_is_emitted_with_an_entrance_animation() {
 		$parts = designsetgo_get_animation_parts(
 			array(
@@ -82,6 +97,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertSame( 'true', $parts['attrs']['data-dsgo-scroll-linked'] );
 	}
 
+	/**
+	 * Scrubbing with nothing to scrub emits nothing.
+	 */
 	public function test_scroll_linked_without_an_entrance_animation_is_dropped() {
 		$parts = designsetgo_get_animation_parts(
 			array(
@@ -93,6 +111,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'data-dsgo-scroll-linked', $parts['attrs'] );
 	}
 
+	/**
+	 * The exit trigger never fires for a scrubbed block.
+	 */
 	public function test_scrubbing_drops_the_exit_animation() {
 		$parts = designsetgo_get_animation_parts(
 			array(
@@ -107,6 +128,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertNotContains( 'dsgo-animation-exit-fadeOut', $parts['classes'] );
 	}
 
+	/**
+	 * A non-default step travels with the stagger flag.
+	 */
 	public function test_stagger_is_emitted_with_a_non_default_step() {
 		$parts = designsetgo_get_animation_parts(
 			array(
@@ -121,6 +145,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertSame( '120', $parts['attrs']['data-dsgo-stagger-step'] );
 	}
 
+	/**
+	 * Default values stay out of the markup, as on the save path.
+	 */
 	public function test_default_stagger_step_is_left_out_of_the_markup() {
 		$parts = designsetgo_get_animation_parts(
 			array(
@@ -135,6 +162,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'data-dsgo-stagger-step', $parts['attrs'] );
 	}
 
+	/**
+	 * The two want the keyframes on different elements.
+	 */
 	public function test_stagger_and_scrubbing_are_mutually_exclusive() {
 		$parts = designsetgo_get_animation_parts(
 			array(
@@ -149,6 +179,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'data-dsgo-stagger', $parts['attrs'] );
 	}
 
+	/**
+	 * Stagger needs an animation to move onto the children.
+	 */
 	public function test_stagger_without_any_animation_chosen_is_dropped() {
 		$parts = designsetgo_get_animation_parts(
 			array(
@@ -164,6 +197,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 	// The injector — explicit settings on a server-rendered block.
 	// -----------------------------------------------------------------
 
+	/**
+	 * The regression this fix exists for.
+	 */
 	public function test_dynamic_block_gets_its_explicit_animation_injected() {
 		$html = $this->injector->inject(
 			'<div class="wp-block-dsgotest-dynamic">rendered</div>',
@@ -182,6 +218,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'data-dsgo-entrance-animation="fadeInUp"', $html );
 	}
 
+	/**
+	 * Stagger reaches server-rendered blocks too.
+	 */
 	public function test_dynamic_block_gets_stagger_and_step_injected() {
 		$html = $this->injector->inject(
 			'<div class="wp-block-dsgotest-dynamic">rendered</div>',
@@ -200,6 +239,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'data-dsgo-stagger-step="120"', $html );
 	}
 
+	/**
+	 * SVG drawing works with the animation system switched off.
+	 */
 	public function test_dynamic_block_gets_svg_draw_without_any_animation() {
 		$html = $this->injector->inject(
 			'<div class="wp-block-dsgotest-dynamic">rendered</div>',
@@ -231,6 +273,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertSame( $saved, $html );
 	}
 
+	/**
+	 * Running twice must be a no-op.
+	 */
 	public function test_already_injected_markup_is_not_double_applied() {
 		$content = '<div class="wp-block-dsgotest-dynamic has-dsgo-animation dsgo-animation-fadeInUp">rendered</div>';
 
@@ -263,6 +308,9 @@ class DesignSetGo_Animation_Dynamic_Block_Test extends WP_UnitTestCase {
 		$this->assertSame( $content, $html );
 	}
 
+	/**
+	 * An explicit opt-out beats any configured theme default.
+	 */
 	public function test_opt_out_still_suppresses_everything() {
 		$content = '<div class="wp-block-dsgotest-dynamic">rendered</div>';
 

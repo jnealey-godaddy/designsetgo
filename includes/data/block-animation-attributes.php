@@ -16,23 +16,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Get animation classes/attributes as structured arrays.
  *
- * Raw (unescaped) values — callers are responsible for escaping. Returns
- * empty arrays unless dsgoAnimationEnabled is truthy.
+ * Raw (unescaped) values — callers are responsible for escaping. Mirrors
+ * addAnimationSaveProps() in src/extensions/block-animations/editor.js: the
+ * two must emit identical markup, because a block is served by whichever of
+ * them applies (save filter for static blocks, render filter for dynamic
+ * ones). Returns only the SVG-draw attribute unless dsgoAnimationEnabled is
+ * truthy — that one effect is independent of the entrance/exit system.
  *
  * @param array $attributes Block attributes array.
  * @return array{classes: string[], attrs: array<string,string>}
  */
 function designsetgo_get_animation_parts( $attributes ) {
+	$classes = array();
+	$attrs   = array();
+
+	// SVG drawing targets descendant strokes rather than this block's own
+	// opacity, so it is independent of the entrance/exit system and survives
+	// the animations-disabled return below.
+	if ( ! empty( $attributes['dsgoSvgDraw'] ) ) {
+		$attrs['data-dsgo-svg-draw'] = 'true';
+	}
+
 	$enabled = isset( $attributes['dsgoAnimationEnabled'] ) ? $attributes['dsgoAnimationEnabled'] : false;
 	if ( ! $enabled ) {
 		return array(
-			'classes' => array(),
-			'attrs'   => array(),
+			'classes' => $classes,
+			'attrs'   => $attrs,
 		);
 	}
 
-	$classes = array( 'has-dsgo-animation' );
-	$attrs   = array( 'data-dsgo-animation-enabled' => 'true' );
+	$classes[]                            = 'has-dsgo-animation';
+	$attrs['data-dsgo-animation-enabled'] = 'true';
 
 	$entrance = isset( $attributes['dsgoEntranceAnimation'] ) ? (string) $attributes['dsgoEntranceAnimation'] : '';
 	if ( '' !== $entrance ) {
@@ -40,7 +54,16 @@ function designsetgo_get_animation_parts( $attributes ) {
 		$attrs['data-dsgo-entrance-animation'] = $entrance;
 	}
 
+	$scroll_linked = ! empty( $attributes['dsgoScrollLinked'] ) && '' !== $entrance;
+
+	// Scrubbing hands the entrance to the scroll timeline, and frontend.js
+	// skips those elements entirely - it never wires up the exit trigger.
+	// Exit markup alongside it would advertise an animation that can never
+	// fire, so it is dropped here exactly as the save path drops it.
 	$exit = isset( $attributes['dsgoExitAnimation'] ) ? (string) $attributes['dsgoExitAnimation'] : '';
+	if ( $scroll_linked ) {
+		$exit = '';
+	}
 	if ( '' !== $exit ) {
 		$classes[]                         = 'dsgo-animation-exit-' . $exit;
 		$attrs['data-dsgo-exit-animation'] = $exit;
@@ -74,6 +97,26 @@ function designsetgo_get_animation_parts( $attributes ) {
 	$once = isset( $attributes['dsgoAnimationOnce'] ) ? (bool) $attributes['dsgoAnimationOnce'] : true;
 	if ( ! $once ) {
 		$attrs['data-dsgo-animation-once'] = 'false';
+	}
+
+	if ( $scroll_linked ) {
+		$attrs['data-dsgo-scroll-linked'] = 'true';
+	}
+
+	// Stagger moves the motion onto the block's children, so it needs an
+	// animation to move and it rules scrubbing out - the two want the
+	// keyframes on different elements.
+	$stagger = ! empty( $attributes['dsgoStaggerEnabled'] )
+		&& ! $scroll_linked
+		&& ( '' !== $entrance || '' !== $exit );
+
+	if ( $stagger ) {
+		$attrs['data-dsgo-stagger'] = 'true';
+
+		$step = isset( $attributes['dsgoStaggerStep'] ) ? (int) $attributes['dsgoStaggerStep'] : 80;
+		if ( 80 !== $step ) {
+			$attrs['data-dsgo-stagger-step'] = (string) $step;
+		}
 	}
 
 	return array(
