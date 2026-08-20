@@ -1,0 +1,57 @@
+.wp-block-designsetgo-hotspot {
+	--dsgo-hotspot-tooltip-width: 240px;
+	--dsgo-hotspot-marker-color: #fff;
+	--dsgo-hotspot-marker-background: #111;
+	--dsgo-hotspot-tooltip-background: #111;
+	--dsgo-hotspot-tooltip-color: #fff;
+
+	:where(.dsgo-hotspot__image-wrap) {
+		position: relative;
+		display: block;
+	}
+
+	:where(.dsgo-hotspot__image) {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	:where(.dsgo-hotspot__image--empty) {
+		min-height: 16rem;
+		background: #f0f0f0;
+	}
+
+	:where(.dsgo-hotspot__items) {
+		position: absolute;
+		inset: 0;
+	}
+
+	&.dsgo-hotspot--position-top .dsgo-hotspot-item--position-inherit :where(.dsgo-hotspot-item__tooltip) {
+		bottom: calc(100% + .75rem);
+		left: 50%;
+		transform: translateX(-50%);
+	}
+
+	&.dsgo-hotspot--position-right .dsgo-hotspot-item--position-inherit :where(.dsgo-hotspot-item__tooltip) {
+		left: calc(100% + .75rem);
+		top: 50%;
+		transform: translateY(-50%);
+	}
+
+	&.dsgo-hotspot--position-bottom .dsgo-hotspot-item--position-inherit :where(.dsgo-hotspot-item__tooltip) {
+		left: 50%;
+		top: calc(100% + .75rem);
+		transform: translateX(-50%);
+	}
+
+	&.dsgo-hotspot--position-left .dsgo-hotspot-item--position-inherit :where(.dsgo-hotspot-item__tooltip) {
+		right: calc(100% + .75rem);
+		top: 50%;
+		transform: translateY(-50%);
+	}
+
+	&.dsgo-hotspot--animation-pulse .dsgo-hotspot-item--animation-inherit :where(.dsgo-hotspot-item__marker) {
+		animation: dsgo-hotspot-pulse 1.8s ease-in-out infinite;
+		animation-delay: calc(var(--dsgo-hotspot-sequence-order) * var(--dsgo-hotspot-sequence-duration));
+	}
+}
