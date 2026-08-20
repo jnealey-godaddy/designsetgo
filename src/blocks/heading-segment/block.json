@@ -35,6 +35,23 @@
 		"animatedWords": {
 			"type": "array",
 			"default": []
+		},
+		"animatedHeadlineShape": {
+			"type": "string",
+			"enum": [
+				"",
+				"circle",
+				"curly",
+				"underline",
+				"double",
+				"double-underline",
+				"underline-zigzag",
+				"zigzag",
+				"diagonal",
+				"strikethrough",
+				"x"
+			],
+			"default": ""
 		}
 	},
 	"usesContext": [

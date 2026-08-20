@@ -58,6 +58,13 @@
 	}
 }
 
+.dsgo-advanced-heading__animation-notice {
+	margin: 0;
+	padding: 12px;
+	border-left: 3px solid var(--wp-components-color-accent, #3858e9);
+	background: var(--wp-components-color-gray-100, #f0f0f0);
+}
+
 // Text alignment support in editor
 .dsgo-advanced-heading.has-text-align-left .dsgo-advanced-heading__inner {
 	text-align: left;

@@ -30,6 +30,10 @@
 		},
 		"textAlign": {
 			"type": "string"
+		},
+		"animatedHeadline": {
+			"type": "object",
+			"default": null
 		}
 	},
 	"providesContext": {

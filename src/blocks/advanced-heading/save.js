@@ -10,6 +10,7 @@
 import classnames from 'classnames';
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { normalizeAnimatedHeadline } from './components/AnimatedHeadlinePanel';
 
 const HEADING_LEVELS = [1, 2, 3, 4, 5, 6];
 
@@ -21,9 +22,10 @@ const HEADING_LEVELS = [1, 2, 3, 4, 5, 6];
  * @return {JSX.Element} Saved advanced heading block markup
  */
 export default function AdvancedHeadingSave({ attributes }) {
-	const { level = 2, textAlign } = attributes;
+	const { animatedHeadline, level = 2, textAlign } = attributes;
 	const validLevel = HEADING_LEVELS.includes(level) ? level : 2;
 	const TagName = `h${validLevel}`;
+	const headline = normalizeAnimatedHeadline(animatedHeadline);
 
 	const blockGap = convertPresetToCSSVar(attributes.style?.spacing?.blockGap);
 
@@ -33,9 +35,36 @@ export default function AdvancedHeadingSave({ attributes }) {
 		}),
 	});
 
+	const innerStyle = {
+		...(blockGap ? { '--dsgo-segment-gap': blockGap } : {}),
+		...(headline
+			? {
+					'--dsgo-animated-headline-duration': `${headline.duration}ms`,
+					'--dsgo-animated-headline-delay': `${headline.delay}ms`,
+				}
+			: {}),
+	};
 	const innerBlocksProps = useInnerBlocksProps.save({
-		className: 'dsgo-advanced-heading__inner',
-		style: blockGap ? { '--dsgo-segment-gap': blockGap } : undefined,
+		className: classnames('dsgo-advanced-heading__inner', {
+			'dsgo-advanced-heading__inner--rotating':
+				headline?.mode === 'rotating',
+			'dsgo-advanced-heading__inner--highlighted':
+				headline?.mode === 'highlighted',
+		}),
+		style: Object.keys(innerStyle).length ? innerStyle : undefined,
+		...(headline
+			? {
+					'data-dsgo-animated-headline': 'true',
+					'data-dsgo-animated-headline-mode': headline.mode,
+					'data-dsgo-animated-headline-effect': headline.effect,
+					'data-dsgo-animated-headline-shape': headline.shape,
+					'data-dsgo-animated-headline-duration': headline.duration,
+					'data-dsgo-animated-headline-delay': headline.delay,
+					'data-dsgo-animated-headline-loop': headline.loop
+						? 'true'
+						: 'false',
+				}
+			: {}),
 	});
 
 	return (

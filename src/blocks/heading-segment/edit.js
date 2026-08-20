@@ -12,6 +12,7 @@
  */
 
 import { __ } from '@wordpress/i18n';
+import classnames from 'classnames';
 import {
 	InspectorControls,
 	RichText,
@@ -23,6 +24,7 @@ import { DsgoInspectorPanel } from '../../components/shared';
 import AnimatedWordsControl, {
 	normalizeAnimatedWords,
 } from './components/AnimatedWordsControl';
+import HighlightShape, { HIGHLIGHT_PATHS } from './components/HighlightShape';
 import {
 	getHeadingSegmentAnimationForRole,
 	getHeadingSegmentAnimationForWords,
@@ -43,13 +45,22 @@ export default function HeadingSegmentEdit({
 	clientId,
 	setAttributes,
 }) {
-	const { animatedWords = [], content, headlineRole = 'normal' } = attributes;
+	const {
+		animatedHeadlineShape,
+		animatedWords = [],
+		content,
+		headlineRole = 'normal',
+	} = attributes;
 	const animation = normalizeHeadingSegmentAnimation({
 		headlineRole,
 		animatedWords,
 	});
 	const words = animation.animatedWords;
 	const isAnimated = animation.headlineRole === 'animated';
+	const highlightShape =
+		isAnimated && HIGHLIGHT_PATHS[animatedHeadlineShape]
+			? animatedHeadlineShape
+			: '';
 
 	useEffect(() => {
 		const wordsMatch =
@@ -63,7 +74,9 @@ export default function HeadingSegmentEdit({
 	}, [animatedWords, animation, headlineRole, setAttributes, words]);
 
 	const blockProps = useBlockProps({
-		className: 'dsgo-heading-segment',
+		className: classnames('dsgo-heading-segment', {
+			'dsgo-heading-segment--highlighted': Boolean(highlightShape),
+		}),
 	});
 
 	return (
@@ -152,9 +165,15 @@ export default function HeadingSegmentEdit({
 
 			<span {...blockProps}>
 				{isAnimated ? (
-					<span className="dsgo-heading-segment__animated">
-						{words[0] || __('Add animated words…', 'designsetgo')}
-					</span>
+					<>
+						<span className="dsgo-heading-segment__animated">
+							{words[0] ||
+								__('Add animated words…', 'designsetgo')}
+						</span>
+						{highlightShape && (
+							<HighlightShape shape={highlightShape} />
+						)}
+					</>
 				) : (
 					<RichText
 						tagName="span"
