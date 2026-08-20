@@ -44,7 +44,7 @@ describe('animated headline save', () => {
 		);
 	});
 
-	test('ignores legacy link fields while saving a bounded rotating headline', () => {
+	test('saves a bounded rotating headline without encoding link data attributes', () => {
 		const html = serialize(
 			createHeading(
 				{
@@ -76,6 +76,50 @@ describe('animated headline save', () => {
 		expect(html).not.toContain('data-dsgo-animated-headline-target');
 		expect(html).not.toContain('data-dsgo-animated-headline-rel');
 		expect(html.match(/dsgo-heading-segment__animated/g)).toHaveLength(1);
+	});
+
+	test('wraps a valid headline URL in a real sanitized anchor', () => {
+		const html = serialize(
+			createHeading(
+				{
+					animatedHeadline: {
+						mode: 'rotating',
+						url: 'https://example.com/work',
+						target: '_blank',
+						rel: 'nofollow',
+					},
+				},
+				{
+					headlineRole: 'animated',
+					animatedWords: ['Creative', 'Effective'],
+				}
+			)
+		);
+
+		expect(html).toContain(
+			'<a class="dsgo-advanced-heading__link" href="https://example.com/work" target="_blank" rel="nofollow noopener noreferrer"><h2'
+		);
+		expect(html).not.toContain('data-dsgo-animated-headline-url');
+	});
+
+	test('does not turn an unsafe headline URL into an anchor', () => {
+		const html = serialize(
+			createHeading(
+				{
+					animatedHeadline: {
+						mode: 'rotating',
+						url: 'javascript:alert(1)',
+					},
+				},
+				{
+					headlineRole: 'animated',
+					animatedWords: ['Creative', 'Effective'],
+				}
+			)
+		);
+
+		expect(html).not.toContain('dsgo-advanced-heading__link');
+		expect(html).not.toContain('href="javascript:alert(1)"');
 	});
 
 	test('nests a decorative highlight SVG with the selected animated segment', () => {

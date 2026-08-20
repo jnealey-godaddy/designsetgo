@@ -3,6 +3,7 @@ import {
 	RangeControl,
 	Notice,
 	SelectControl,
+	TextControl,
 	ToggleControl,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../components/shared/DsgoInspectorPanel';
@@ -39,12 +40,24 @@ export const DEFAULT_ANIMATED_HEADLINE = {
 	duration: 2500,
 	delay: 0,
 	loop: true,
+	url: '',
+	target: '',
+	rel: '',
 };
 
 const DURATION_MIN = 250;
 const DURATION_MAX = 10000;
 const DELAY_MIN = 0;
 const DELAY_MAX = 10000;
+const SAFE_PROTOCOLS = ['http:', 'https:', 'mailto:', 'tel:'];
+const SAFE_TARGETS = ['_blank', '_self', '_parent', '_top'];
+const SAFE_REL_TOKENS = [
+	'nofollow',
+	'noopener',
+	'noreferrer',
+	'sponsored',
+	'ugc',
+];
 
 function clamp(value, minimum, maximum, fallback) {
 	const number = Number(value);
@@ -54,6 +67,57 @@ function clamp(value, minimum, maximum, fallback) {
 	}
 
 	return Math.min(maximum, Math.max(minimum, Math.round(number)));
+}
+
+/**
+ * Normalize a heading link to the only values the static save may emit.
+ *
+ * @param {Object} value Candidate headline data.
+ * @return {Object|null} Safe anchor properties, or null when no usable URL.
+ */
+export function normalizeAnimatedHeadlineLink(value = {}) {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+		return null;
+	}
+
+	const url = typeof value.url === 'string' ? value.url.trim() : '';
+
+	if (!url) {
+		return null;
+	}
+
+	let protocol;
+
+	try {
+		protocol = new URL(url, 'https://designsetgo.invalid').protocol;
+	} catch {
+		return null;
+	}
+
+	const isRelative = /^(?:\/[^/]|#|\?)/.test(url);
+
+	if (!isRelative && !SAFE_PROTOCOLS.includes(protocol)) {
+		return null;
+	}
+
+	const target = SAFE_TARGETS.includes(value.target) ? value.target : '';
+	const relTokens =
+		typeof value.rel === 'string'
+			? value.rel
+					.toLowerCase()
+					.split(/\s+/)
+					.filter((token) => SAFE_REL_TOKENS.includes(token))
+			: [];
+
+	if (target === '_blank') {
+		relTokens.push('noopener', 'noreferrer');
+	}
+
+	return {
+		url,
+		target,
+		rel: [...new Set(relTokens)].join(' '),
+	};
 }
 
 /**
@@ -90,6 +154,11 @@ export function normalizeAnimatedHeadline(value) {
 			DEFAULT_ANIMATED_HEADLINE.delay
 		),
 		loop: value.loop !== false,
+		...(normalizeAnimatedHeadlineLink(value) || {
+			url: '',
+			target: '',
+			rel: '',
+		}),
 	};
 }
 
@@ -269,6 +338,30 @@ export default function AnimatedHeadlinePanel({
 					/>
 				</DsgoInspectorPanel.Item>
 			)}
+
+			<DsgoInspectorPanel.Item
+				label={__('Headline link', 'designsetgo')}
+				hasValue={() => Boolean(value.url)}
+				onDeselect={() => update({ url: '', target: '', rel: '' })}
+				isShownByDefault
+			>
+				<TextControl
+					label={__('URL', 'designsetgo')}
+					type="url"
+					value={value.url}
+					onChange={(url) => update({ url })}
+					__next40pxDefaultSize
+					__nextHasNoMarginBottom
+				/>
+				<ToggleControl
+					label={__('Open in new tab', 'designsetgo')}
+					checked={value.target === '_blank'}
+					onChange={(openInNewTab) =>
+						update({ target: openInNewTab ? '_blank' : '' })
+					}
+					__nextHasNoMarginBottom
+				/>
+			</DsgoInspectorPanel.Item>
 		</>
 	);
 }

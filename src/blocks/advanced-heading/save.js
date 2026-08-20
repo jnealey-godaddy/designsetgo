@@ -10,7 +10,10 @@
 import classnames from 'classnames';
 import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
-import { normalizeAnimatedHeadline } from './components/AnimatedHeadlinePanel';
+import {
+	normalizeAnimatedHeadline,
+	normalizeAnimatedHeadlineLink,
+} from './components/AnimatedHeadlinePanel';
 
 const HEADING_LEVELS = [1, 2, 3, 4, 5, 6];
 
@@ -26,6 +29,7 @@ export default function AdvancedHeadingSave({ attributes }) {
 	const validLevel = HEADING_LEVELS.includes(level) ? level : 2;
 	const TagName = `h${validLevel}`;
 	const headline = normalizeAnimatedHeadline(animatedHeadline);
+	const link = normalizeAnimatedHeadlineLink(animatedHeadline);
 
 	const blockGap = convertPresetToCSSVar(attributes.style?.spacing?.blockGap);
 
@@ -67,9 +71,22 @@ export default function AdvancedHeadingSave({ attributes }) {
 			: {}),
 	});
 
+	const heading = <TagName {...innerBlocksProps} />;
+
 	return (
 		<div {...blockProps}>
-			<TagName {...innerBlocksProps} />
+			{link ? (
+				<a
+					className="dsgo-advanced-heading__link"
+					href={link.url}
+					{...(link.target ? { target: link.target } : {})}
+					{...(link.rel ? { rel: link.rel } : {})}
+				>
+					{heading}
+				</a>
+			) : (
+				heading
+			)}
 		</div>
 	);
 }

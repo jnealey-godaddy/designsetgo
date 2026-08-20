@@ -3,6 +3,18 @@
  */
 
 .dsgo-advanced-heading {
+
+	.dsgo-advanced-heading__link {
+		color: inherit;
+		display: block;
+		text-decoration: inherit;
+	}
+
+	.dsgo-advanced-heading__link:focus-visible {
+		outline: 2px solid currentcolor;
+		outline-offset: 0.15em;
+	}
+
 	// Reset margin on the heading element itself — spacing
 	// is handled by WordPress Block Supports on the wrapper
 	.dsgo-advanced-heading__inner {
@@ -16,7 +28,7 @@
 		margin-inline-start: var(--dsgo-segment-gap, 0);
 	}
 
-	.dsgo-advanced-heading__inner--rotating .dsgo-heading-segment__animated {
+	.dsgo-advanced-heading__inner--rotating .dsgo-heading-segment__animated.is-active {
 		display: inline-block;
 		animation-duration: var(--dsgo-animated-headline-duration, 2500ms);
 		animation-delay: var(--dsgo-animated-headline-delay, 0ms);
@@ -28,43 +40,51 @@
 		animation-iteration-count: 1;
 	}
 
-	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='typing'] .dsgo-heading-segment__animated {
+	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='typing'] .dsgo-heading-segment__animated.is-active {
 		animation-name: dsgo-animated-headline-typing;
 		animation-timing-function: steps(12, end);
 	}
 
-	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='clip'] .dsgo-heading-segment__animated {
+	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='clip'] .dsgo-heading-segment__animated.is-active {
 		animation-name: dsgo-animated-headline-clip;
 	}
 
-	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='flip'] .dsgo-heading-segment__animated {
+	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='flip'] .dsgo-heading-segment__animated.is-active {
 		animation-name: dsgo-animated-headline-flip;
 	}
 
-	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='swirl'] .dsgo-heading-segment__animated {
+	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='swirl'] .dsgo-heading-segment__animated.is-active {
 		animation-name: dsgo-animated-headline-swirl;
 	}
 
-	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='blinds'] .dsgo-heading-segment__animated {
+	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='blinds'] .dsgo-heading-segment__animated.is-active {
 		animation-name: dsgo-animated-headline-blinds;
 	}
 
-	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='drop-in'] .dsgo-heading-segment__animated {
+	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='drop-in'] .dsgo-heading-segment__animated.is-active {
 		animation-name: dsgo-animated-headline-drop-in;
 	}
 
-	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='wave'] .dsgo-heading-segment__animated {
+	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='wave'] .dsgo-heading-segment__animated.is-active {
 		animation-name: dsgo-animated-headline-wave;
 	}
 
-	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='slide'] .dsgo-heading-segment__animated {
+	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='slide'] .dsgo-heading-segment__animated.is-active {
 		animation-name: dsgo-animated-headline-slide;
 	}
 
-	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='slide-down'] .dsgo-heading-segment__animated {
+	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='slide-down'] .dsgo-heading-segment__animated.is-active {
 		animation-name: dsgo-animated-headline-slide-down;
 	}
 
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.dsgo-advanced-heading .dsgo-advanced-heading__inner--rotating .dsgo-heading-segment__animated.is-active {
+		animation: none;
+		transition: none;
+	}
 }
 
 // Text alignment support

@@ -59,6 +59,19 @@ describe('wrapTextNodes', () => {
 		expect(units(el)).toHaveLength(3);
 	});
 
+	it('is idempotent for a single animated word reused by another effect', () => {
+		document.body.innerHTML =
+			'<span id="animated" aria-live="polite">Animated</span>';
+		const animated = document.getElementById('animated');
+
+		wrapTextNodes(animated, 'character');
+		wrapTextNodes(animated, 'character');
+
+		expect(units(animated)).toHaveLength(8);
+		expect(animated).toHaveAttribute('aria-label', 'Animated');
+		expect(animated).toHaveAttribute('aria-live', 'polite');
+	});
+
 	it('keeps inline markup rather than flattening it', () => {
 		document.body.innerHTML = '<h2 id="t">Hi <a href="#">link</a></h2>';
 		const withMarkup = document.getElementById('t');
