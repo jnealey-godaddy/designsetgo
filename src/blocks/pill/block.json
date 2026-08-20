@@ -14,6 +14,16 @@
 	],
 	"textdomain": "designsetgo",
 	"icon": "tag",
+	"selectors": {
+		"root": ".wp-block-designsetgo-pill",
+		"color": ".wp-block-designsetgo-pill .dsgo-pill__content",
+		"border": ".wp-block-designsetgo-pill .dsgo-pill__content",
+		"typography": ".wp-block-designsetgo-pill .dsgo-pill__content",
+		"spacing": {
+			"root": ".wp-block-designsetgo-pill",
+			"padding": ".wp-block-designsetgo-pill .dsgo-pill__content"
+		}
+	},
 	"attributes": {
 		"content": {
 			"type": "string",
