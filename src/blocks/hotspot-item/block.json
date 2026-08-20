@@ -22,7 +22,7 @@
     "tooltipPosition": { "type": "string", "default": "inherit", "enum": ["inherit", "top", "right", "bottom", "left"] },
     "tooltipWidth": { "type": "number" },
     "trigger": { "type": "string", "default": "inherit", "enum": ["inherit", "click", "hover"] },
-    "animation": { "type": "string", "default": "inherit", "enum": ["inherit", "none", "pulse"] },
+    "animation": { "type": "string", "default": "inherit", "enum": ["inherit", "none", "pulse", "scale", "fade"] },
     "sequenceOrder": { "type": "number", "default": 0 }
   },
   "usesContext": [

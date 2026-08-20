@@ -16,7 +16,7 @@
     "trigger": { "type": "string", "default": "click", "enum": ["click", "hover"] },
     "tooltipPosition": { "type": "string", "default": "top", "enum": ["top", "right", "bottom", "left"] },
     "tooltipWidth": { "type": "number", "default": 240 },
-    "animation": { "type": "string", "default": "pulse", "enum": ["none", "pulse"] },
+    "animation": { "type": "string", "default": "pulse", "enum": ["none", "pulse", "scale", "fade"] },
     "sequenceDuration": { "type": "number", "default": 0 },
     "markerColor": { "type": "string", "default": "" },
     "markerBackgroundColor": { "type": "string", "default": "" },
@@ -50,5 +50,6 @@
   },
   "editorScript": "file:./index.js",
   "editorStyle": "file:./index.css",
-  "style": "file:./style-index.css"
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js"
 }

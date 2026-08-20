@@ -30,14 +30,18 @@ export default function HotspotItemSave({ attributes }) {
 	const safeUrl = getSafeHotspotUrl(url);
 	const markerAccessibleLabel =
 		icon && !label ? __('Hotspot', 'designsetgo') : undefined;
+	const isLinkedMarker = !!safeUrl;
 	const markerProps = {
 		className: 'dsgo-hotspot-item__marker',
 		id: markerId,
-		...(trigger === 'click' && {
-			'aria-expanded': 'false',
-			'aria-controls': tooltipId,
-		}),
-		...(trigger === 'hover' && { 'aria-describedby': tooltipId }),
+		...(!isLinkedMarker &&
+			trigger === 'click' && {
+				'aria-expanded': 'false',
+				'aria-controls': tooltipId,
+			}),
+		...(isLinkedMarker || trigger === 'hover'
+			? { 'aria-describedby': tooltipId }
+			: {}),
 		'aria-label': markerAccessibleLabel,
 		'data-dsgo-hotspot-marker': 'true',
 	};
@@ -75,6 +79,8 @@ export default function HotspotItemSave({ attributes }) {
 				id={tooltipId}
 				role="tooltip"
 				data-dsgo-hotspot-tooltip="true"
+				hidden
+				aria-hidden="true"
 			>
 				<RichText.Content tagName="span" value={tooltip} />
 			</div>

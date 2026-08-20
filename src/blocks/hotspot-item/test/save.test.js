@@ -15,6 +15,14 @@ import hotspotSave from '../../hotspot/save';
 import { getSafeHotspotUrl } from '../utils';
 
 const styleSource = readFileSync(resolve(__dirname, '../style.scss'), 'utf8');
+const inspectorSource = readFileSync(
+	resolve(__dirname, '../components/HotspotItemInspector.js'),
+	'utf8'
+);
+const hotspotInspectorSource = readFileSync(
+	resolve(__dirname, '../../hotspot/components/HotspotInspector.js'),
+	'utf8'
+);
 
 setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
@@ -63,6 +71,11 @@ describe('hotspot item save', () => {
 
 		expect(linkHtml).toContain('<a');
 		expect(linkHtml).toContain('href="https://example.test/product"');
+		expect(linkHtml).toContain(
+			'aria-describedby="dsgo-hotspot-tooltip-linked"'
+		);
+		expect(linkHtml).not.toContain('aria-controls=');
+		expect(linkHtml).not.toContain('aria-expanded=');
 		expect(buttonHtml).toContain('<button');
 		expect(buttonHtml).not.toContain('href=');
 	});
@@ -220,6 +233,36 @@ describe('hotspot item save', () => {
 		expect(styleSource).not.toMatch(
 			/\.dsgo-hotspot-item__marker:focus-visible\s*\+\s*\.dsgo-hotspot-item__tooltip/
 		);
+	});
+
+	test('saves the tooltip hidden and announced as collapsed by default', () => {
+		const html = serialize(
+			createBlock(metadata.name, { uniqueId: 'closed-tooltip' })
+		);
+
+		expect(html).toMatch(/data-dsgo-hotspot-tooltip="true"[^>]*hidden/);
+		expect(html).toContain('aria-hidden="true"');
+	});
+
+	test('offers scale and fade animation choices consistently', () => {
+		expect(hotspotMetadata.attributes.animation.enum).toEqual([
+			'none',
+			'pulse',
+			'scale',
+			'fade',
+		]);
+		expect(metadata.attributes.animation.enum).toEqual([
+			'inherit',
+			'none',
+			'pulse',
+			'scale',
+			'fade',
+		]);
+
+		for (const value of ['scale', 'fade']) {
+			expect(inspectorSource).toContain(`value: '${value}'`);
+			expect(hotspotInspectorSource).toContain(`value: '${value}'`);
+		}
 	});
 
 	test('clears a duplicated item id through the parent toolbar override', () => {

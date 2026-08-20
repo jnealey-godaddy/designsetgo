@@ -180,6 +180,14 @@ export default function HotspotInspector({
 								label: __('Pulse', 'designsetgo'),
 								value: 'pulse',
 							},
+							{
+								label: __('Scale', 'designsetgo'),
+								value: 'scale',
+							},
+							{
+								label: __('Fade', 'designsetgo'),
+								value: 'fade',
+							},
 							{ label: __('None', 'designsetgo'), value: 'none' },
 						]}
 						onChange={(value) =>
