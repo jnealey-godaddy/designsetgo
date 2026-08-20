@@ -16,6 +16,10 @@
 	],
 	"textdomain": "designsetgo",
 	"icon": "controls-repeat",
+	"selectors": {
+		"root": ".wp-block-designsetgo-scroll-marquee",
+		"border": ".wp-block-designsetgo-scroll-marquee .dsgo-scroll-marquee__image"
+	},
 	"supports": {
 		"anchor": true,
 		"align": false,

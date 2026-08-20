@@ -63,7 +63,11 @@
 		}
 	},
 	"selectors": {
-		"root": ".wp-block-designsetgo-modal-trigger .dsgo-modal-trigger"
+		"root": ".wp-block-designsetgo-modal-trigger .dsgo-modal-trigger",
+		"spacing": {
+			"root": ".wp-block-designsetgo-modal-trigger .dsgo-modal-trigger",
+			"margin": ".wp-block-designsetgo-modal-trigger"
+		}
 	},
 	"attributes": {
 		"justification": {

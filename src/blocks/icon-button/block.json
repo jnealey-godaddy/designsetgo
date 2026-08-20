@@ -76,7 +76,11 @@
 		}
 	},
 	"selectors": {
-		"root": ".wp-block-designsetgo-icon-button .dsgo-icon-button"
+		"root": ".wp-block-designsetgo-icon-button .dsgo-icon-button",
+		"spacing": {
+			"root": ".wp-block-designsetgo-icon-button .dsgo-icon-button",
+			"margin": ".wp-block-designsetgo-icon-button"
+		}
 	},
 	"attributes": {
 		"justification": {

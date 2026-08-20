@@ -18,7 +18,11 @@
 		"designsetgo/hoverIconBackgroundColor"
 	],
 	"selectors": {
-		"root": ".wp-block-designsetgo-icon .dsgo-icon__wrapper"
+		"root": ".wp-block-designsetgo-icon .dsgo-icon__wrapper",
+		"spacing": {
+			"root": ".wp-block-designsetgo-icon .dsgo-icon__wrapper",
+			"margin": ".wp-block-designsetgo-icon"
+		}
 	},
 	"supports": {
 		"anchor": true,
