@@ -13,6 +13,7 @@
 // of tests/unit/deprecations-isEligible.test.js for the full explanation.
 import {
 	createBlock,
+	getBlockType,
 	serialize,
 	parse,
 	// eslint-disable-next-line import/no-unresolved
@@ -22,6 +23,18 @@ import path from 'path';
 import '../../src/blocks/modal';
 
 describe('modal panel mode', () => {
+	it('labels panel-mode blocks as Off-Canvas Panel in editor controls', () => {
+		const blockType = getBlockType('designsetgo/modal');
+
+		expect(blockType.__experimentalLabel({ displayMode: 'panel' })).toBe(
+			'Off-Canvas Panel'
+		);
+		expect(
+			blockType.__experimentalLabel({ displayMode: 'dialog' })
+		).toBeUndefined();
+		expect(blockType.title).toBe('Modal');
+	});
+
 	it('emits no panel class in the default dialog mode', () => {
 		const block = createBlock('designsetgo/modal', { modalId: 'm1' });
 		const html = serialize(block);

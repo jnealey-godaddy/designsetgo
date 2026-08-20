@@ -126,7 +126,7 @@ const CONTAINERS = [
  * Publish a new page containing a reference `core/paragraph` followed by the
  * block under test — either at the top level, or nested one level inside a
  * container block (Section/Row) — then measure the frontend bounding boxes
- * of the paragraph's content column and the block's visible element.
+ * of the relevant positioning context and the block's visible element.
  *
  * @param {import('@playwright/test').Page} page               - Playwright page.
  * @param {Object}                          block              - Entry from BLOCKS.
@@ -178,8 +178,18 @@ async function measureJustifiedBlock(
 	await page.goto(frontendUrl);
 	await page.waitForLoadState('domcontentloaded');
 
+	// A nested Section owns its own horizontal content edge (including its
+	// responsive padding), and a Row owns its own bounds. Compare the visible
+	// element with that actual positioning context rather than a paragraph
+	// outside the container, which is a different layout context on mobile.
+	const positioningContextSelector =
+		parentName === 'designsetgo/section'
+			? '.wp-block-designsetgo-section > .dsgo-stack__inner'
+			: parentName === 'designsetgo/row'
+				? '.wp-block-designsetgo-row > .dsgo-flex__inner'
+				: '.wp-block-post-content > p';
 	const columnRect = await page
-		.locator('.wp-block-post-content > p')
+		.locator(positioningContextSelector)
 		.first()
 		.evaluate((el) => {
 			const rect = el.getBoundingClientRect();
@@ -346,7 +356,15 @@ async function measureGridAlignItems(page, block, alignItems) {
 			const testBlock = createBlock(blockName, attrs);
 			const gridBlock = createBlock(
 				'designsetgo/grid',
-				{ alignItems: alignItemsValue, desktopColumns: 2 },
+				// This test needs both items in the same grid row at every viewport
+				// to measure cross-axis alignment. The Grid's intentional mobile
+				// default is one column, so pin the fixture to two columns here.
+				{
+					alignItems: alignItemsValue,
+					desktopColumns: 2,
+					tabletColumns: 2,
+					mobileColumns: 2,
+				},
 				[spacerBlock, testBlock]
 			);
 
