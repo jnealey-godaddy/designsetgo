@@ -23,6 +23,18 @@
 			"source": "html",
 			"selector": ".dsgo-heading-segment__text",
 			"default": ""
+		},
+		"headlineRole": {
+			"type": "string",
+			"enum": [
+				"normal",
+				"animated"
+			],
+			"default": "normal"
+		},
+		"animatedWords": {
+			"type": "array",
+			"default": []
 		}
 	},
 	"usesContext": [

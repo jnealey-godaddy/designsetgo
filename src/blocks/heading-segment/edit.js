@@ -12,41 +12,168 @@
  */
 
 import { __ } from '@wordpress/i18n';
-import { useBlockProps, RichText } from '@wordpress/block-editor';
+import {
+	InspectorControls,
+	RichText,
+	useBlockProps,
+} from '@wordpress/block-editor';
+import { SelectControl } from '@wordpress/components';
+import { useEffect } from '@wordpress/element';
+import { DsgoInspectorPanel } from '../../components/shared';
+import AnimatedWordsControl, {
+	normalizeAnimatedWords,
+} from './components/AnimatedWordsControl';
+import {
+	getHeadingSegmentAnimationForRole,
+	getHeadingSegmentAnimationForWords,
+	normalizeHeadingSegmentAnimation,
+} from './utils';
 
 /**
  * Heading Segment Edit Component
  *
  * @param {Object}   props               - Component props
  * @param {Object}   props.attributes    - Block attributes
+ * @param {string}   props.clientId      - Block client ID.
  * @param {Function} props.setAttributes - Function to update attributes
  * @return {JSX.Element} Heading segment edit component
  */
-export default function HeadingSegmentEdit({ attributes, setAttributes }) {
-	const { content } = attributes;
+export default function HeadingSegmentEdit({
+	attributes,
+	clientId,
+	setAttributes,
+}) {
+	const { animatedWords = [], content, headlineRole = 'normal' } = attributes;
+	const animation = normalizeHeadingSegmentAnimation({
+		headlineRole,
+		animatedWords,
+	});
+	const words = animation.animatedWords;
+	const isAnimated = animation.headlineRole === 'animated';
+
+	useEffect(() => {
+		const wordsMatch =
+			Array.isArray(animatedWords) &&
+			animatedWords.length === words.length &&
+			animatedWords.every((word, index) => word === words[index]);
+
+		if (headlineRole !== animation.headlineRole || !wordsMatch) {
+			setAttributes(animation);
+		}
+	}, [animatedWords, animation, headlineRole, setAttributes, words]);
 
 	const blockProps = useBlockProps({
 		className: 'dsgo-heading-segment',
 	});
 
 	return (
-		<span {...blockProps}>
-			<RichText
-				tagName="span"
-				className="dsgo-heading-segment__text"
-				value={content}
-				onChange={(newContent) =>
-					setAttributes({ content: newContent })
-				}
-				placeholder={__('Heading text…', 'designsetgo')}
-				allowedFormats={[
-					'core/bold',
-					'core/italic',
-					'core/strikethrough',
-					'core/superscript',
-					'core/subscript',
-				]}
-			/>
-		</span>
+		<>
+			<InspectorControls>
+				<DsgoInspectorPanel
+					title={__('Settings', 'designsetgo')}
+					panelName="settings"
+					panelId={clientId}
+					resetAll={() =>
+						setAttributes({
+							headlineRole: 'normal',
+							animatedWords: [],
+						})
+					}
+				>
+					<DsgoInspectorPanel.Item
+						label={__('Segment role', 'designsetgo')}
+						hasValue={() => headlineRole !== 'normal'}
+						onDeselect={() =>
+							setAttributes({
+								headlineRole: 'normal',
+								animatedWords: [],
+							})
+						}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Segment role', 'designsetgo')}
+							value={headlineRole}
+							options={[
+								{
+									label: __('Normal text', 'designsetgo'),
+									value: 'normal',
+								},
+								{
+									label: __('Animated words', 'designsetgo'),
+									value: 'animated',
+								},
+							]}
+							onChange={(value) =>
+								setAttributes(
+									getHeadingSegmentAnimationForRole(
+										{ content, animatedWords: words },
+										value
+									)
+								)
+							}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+
+					{isAnimated && (
+						<DsgoInspectorPanel.Item
+							label={__('Animated words', 'designsetgo')}
+							hasValue={() => words.length > 0}
+							onDeselect={() =>
+								setAttributes(
+									getHeadingSegmentAnimationForWords(
+										{ headlineRole, animatedWords: words },
+										[]
+									)
+								)
+							}
+							isShownByDefault
+						>
+							<AnimatedWordsControl
+								value={words}
+								onChange={(nextWords) =>
+									setAttributes(
+										getHeadingSegmentAnimationForWords(
+											{
+												headlineRole,
+												animatedWords: words,
+											},
+											normalizeAnimatedWords(nextWords)
+										)
+									)
+								}
+							/>
+						</DsgoInspectorPanel.Item>
+					)}
+				</DsgoInspectorPanel>
+			</InspectorControls>
+
+			<span {...blockProps}>
+				{isAnimated ? (
+					<span className="dsgo-heading-segment__animated">
+						{words[0] || __('Add animated words…', 'designsetgo')}
+					</span>
+				) : (
+					<RichText
+						tagName="span"
+						className="dsgo-heading-segment__text"
+						value={content}
+						onChange={(newContent) =>
+							setAttributes({ content: newContent, ...animation })
+						}
+						placeholder={__('Heading text…', 'designsetgo')}
+						allowedFormats={[
+							'core/bold',
+							'core/italic',
+							'core/strikethrough',
+							'core/superscript',
+							'core/subscript',
+						]}
+					/>
+				)}
+			</span>
+		</>
 	);
 }

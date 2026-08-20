@@ -9,6 +9,7 @@
  */
 
 import { useBlockProps, RichText } from '@wordpress/block-editor';
+import { normalizeHeadingSegmentAnimation } from './utils';
 
 /**
  * Heading Segment Save Function
@@ -19,8 +20,11 @@ import { useBlockProps, RichText } from '@wordpress/block-editor';
  */
 export default function HeadingSegmentSave({ attributes }) {
 	const { content } = attributes;
+	const animation = normalizeHeadingSegmentAnimation(attributes);
+	const { animatedWords: words, headlineRole } = animation;
+	const isAnimated = headlineRole === 'animated';
 
-	if (!content || !content.trim()) {
+	if (!isAnimated && (!content || !content.trim())) {
 		return null;
 	}
 
@@ -30,11 +34,20 @@ export default function HeadingSegmentSave({ attributes }) {
 
 	return (
 		<span {...blockProps}>
-			<RichText.Content
-				tagName="span"
-				className="dsgo-heading-segment__text"
-				value={content}
-			/>
+			{isAnimated ? (
+				<span
+					className="dsgo-heading-segment__animated"
+					data-dsgo-animated-words={JSON.stringify(words)}
+				>
+					{words[0]}
+				</span>
+			) : (
+				<RichText.Content
+					tagName="span"
+					className="dsgo-heading-segment__text"
+					value={content}
+				/>
+			)}
 		</span>
 	);
 }
