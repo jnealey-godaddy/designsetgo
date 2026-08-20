@@ -7,6 +7,7 @@
  */
 
 import { registerBlockType } from '@wordpress/blocks';
+import { __ } from '@wordpress/i18n';
 
 import './style.scss';
 import './editor.scss';
@@ -33,4 +34,10 @@ registerBlockType(metadata.name, {
 	save,
 	deprecated,
 	variations,
+	// Keep the one-block variation model while giving editor controls and
+	// assistive technology the name authors selected in the inserter.
+	__experimentalLabel: ({ displayMode }) =>
+		displayMode === 'panel'
+			? __('Off-Canvas Panel', 'designsetgo')
+			: undefined,
 });
