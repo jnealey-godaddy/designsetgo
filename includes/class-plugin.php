@@ -132,6 +132,8 @@ class Plugin {
 		'lineargradient',
 		'radialgradient',
 		'stop',
+		'text',
+		'textpath',
 	);
 
 	/**
@@ -179,6 +181,9 @@ class Plugin {
 		'aria-label'          => true,
 		'role'                => true,
 		'focusable'           => true,
+		'href'                => true,
+		'startoffset'         => true,
+		'direction'           => true,
 		// Gradient stop attributes.
 		'offset'              => true,
 		'stop-color'          => true,

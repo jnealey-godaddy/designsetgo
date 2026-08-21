@@ -1,0 +1,7 @@
+.wp-block-designsetgo-text-path {
+	min-height: 6rem;
+
+	:where(.dsgo-text-path__guide) {
+		pointer-events: none;
+	}
+}
