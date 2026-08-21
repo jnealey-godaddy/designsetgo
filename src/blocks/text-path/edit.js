@@ -2,14 +2,22 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 	InspectorControls,
+	store as blockEditorStore,
 	useBlockProps,
 } from '@wordpress/block-editor';
+import { useSelect } from '@wordpress/data';
+import { useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { useBlockColors, useUniqueBlockId } from '../../hooks';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import TextPathControls from './components/TextPathControls';
 import TextPathGraphic from './components/TextPathGraphic';
-import { clamp, getSafeTextPathColor, getSafeTextPathUrl } from './utils';
+import {
+	clamp,
+	findFirstTextPathBlockClientId,
+	getSafeTextPathColor,
+	getSafeTextPathUrl,
+} from './utils';
 
 export default function TextPathEdit({ attributes, setAttributes, clientId }) {
 	useUniqueBlockId({
@@ -19,6 +27,23 @@ export default function TextPathEdit({ attributes, setAttributes, clientId }) {
 		setAttributes,
 		prefix: 'text-path-',
 	});
+	const hasDuplicateUniqueId = useSelect(
+		(select) => {
+			const firstOwnerClientId = findFirstTextPathBlockClientId(
+				select(blockEditorStore).getBlocks(),
+				attributes.uniqueId
+			);
+
+			return !!firstOwnerClientId && firstOwnerClientId !== clientId;
+		},
+		[clientId, attributes.uniqueId]
+	);
+
+	useEffect(() => {
+		if (hasDuplicateUniqueId) {
+			setAttributes({ uniqueId: '' });
+		}
+	}, [hasDuplicateUniqueId, setAttributes]);
 	const safeUrl = getSafeTextPathUrl(attributes.url);
 	const rotation = clamp(attributes.rotation, -360, 360);
 	const safeGuideColor = getSafeTextPathColor(attributes.guideColor);

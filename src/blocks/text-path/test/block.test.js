@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import metadata from '../block.json';
 import { v1 as legacyTextPath } from '../deprecated';
+import { findFirstTextPathBlockClientId } from '../utils';
 
 describe('text path block', () => {
 	test('ships a block manifest', () => {
@@ -47,5 +48,31 @@ describe('text path block', () => {
 		expect(editorStyles).not.toContain(
 			'\n\t.dsgo-text-path__link-target {'
 		);
+	});
+
+	test('keeps the first Text Path block as the owner of a duplicated path ID', () => {
+		const firstClientId = findFirstTextPathBlockClientId(
+			[
+				{
+					clientId: 'first',
+					name: 'designsetgo/text-path',
+					attributes: { uniqueId: 'shared-path' },
+				},
+				{
+					clientId: 'group',
+					name: 'core/group',
+					innerBlocks: [
+						{
+							clientId: 'duplicate',
+							name: 'designsetgo/text-path',
+							attributes: { uniqueId: 'shared-path' },
+						},
+					],
+				},
+			],
+			'shared-path'
+		);
+
+		expect(firstClientId).toBe('first');
 	});
 });
