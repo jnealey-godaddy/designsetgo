@@ -271,6 +271,25 @@ module.exports = [
 			// Copy block style variations and admin assets to build directory
 			new CopyWebpackPlugin({
 				patterns: [
+					// Every registered block needs its current metadata beside the
+					// compiled assets so WordPress can discover view scripts and styles.
+					{
+						from: 'src/blocks/*/block.json',
+						to: ({ absoluteFilename }) => {
+							const normalized = absoluteFilename.replace(
+								/\\/g,
+								'/'
+							);
+							const match = normalized.match(
+								/blocks\/([^/]+)\/block\.json$/
+							);
+
+							return match
+								? `blocks/${match[1]}/block.json`
+								: 'blocks/[name][ext]';
+						},
+						noErrorOnMissing: false,
+					},
 					{
 						from: 'src/blocks/*/styles/*.json',
 						to: ({ absoluteFilename }) => {
