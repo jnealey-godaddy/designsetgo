@@ -13,6 +13,7 @@ import { HOTSPOT_ITEM_DUPLICATE_OVERRIDES } from '../constants';
 import hotspotMetadata from '../../hotspot/block.json';
 import hotspotSave from '../../hotspot/save';
 import { getSafeHotspotUrl } from '../utils';
+import { v1 as legacyHotspotItem } from '../deprecated';
 
 const styleSource = readFileSync(resolve(__dirname, '../style.scss'), 'utf8');
 const inspectorSource = readFileSync(
@@ -102,6 +103,20 @@ describe('hotspot item save', () => {
 		);
 
 		expect(html).toContain('aria-label="Hotspot"');
+	});
+
+	test('gives the default plus marker a meaningful accessible label', () => {
+		const html = serialize(
+			createBlock(metadata.name, { uniqueId: 'default-marker' })
+		);
+
+		expect(html).toContain('aria-label="Hotspot"');
+		expect(legacyHotspotItem.apiVersion).toBe(3);
+		expect(
+			legacyHotspotItem.isEligible({}, [], {
+				blockNode: { innerHTML: '<button>+</button>' },
+			})
+		).toBe(true);
 	});
 
 	test('inherits non-default parent behavior without serializing child fallbacks', () => {

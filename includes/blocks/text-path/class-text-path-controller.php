@@ -16,6 +16,23 @@ class Controller {
 
 	const MAX_LENGTH = 12288;
 
+	const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+
+	const NUMBER_PATTERN = '[+-]?(?:(?:\\d+\\.\\d*|\\.\\d+|\\d+)(?:[eE][+-]?\\d+)?)';
+
+	const PATH_ARGUMENT_COUNTS = array(
+		'A' => 7,
+		'C' => 6,
+		'H' => 1,
+		'L' => 2,
+		'M' => 2,
+		'Q' => 4,
+		'S' => 4,
+		'T' => 2,
+		'V' => 1,
+		'Z' => 0,
+	);
+
 	/**
 	 * Registers the safe SVG extraction route.
 	 *
@@ -95,7 +112,13 @@ class Controller {
 		$document_element = $document->documentElement;
 		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOMElement exposes this native property.
 		$root_name = $document_element ? $document_element->localName : '';
-		if ( ! $loaded || ! $document_element || 'svg' !== strtolower( $root_name ) ) {
+		if (
+			! $loaded ||
+			! $document_element ||
+			'svg' !== strtolower( $root_name ) ||
+			// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOMElement exposes this native property.
+			self::SVG_NAMESPACE !== $document_element->namespaceURI
+		) {
 			return null;
 		}
 
@@ -103,7 +126,7 @@ class Controller {
 		foreach ( $root->getElementsByTagName( '*' ) as $element ) {
 			// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOMElement exposes this native property.
 			$element_name = $element->localName;
-			if ( 'path' !== strtolower( $element_name ) ) {
+			if ( in_array( strtolower( $element_name ), array( 'script', 'foreignobject' ), true ) ) {
 				return null;
 			}
 		}
@@ -112,7 +135,7 @@ class Controller {
 		if ( ! $view_box ) {
 			return null;
 		}
-		foreach ( $root->getElementsByTagName( 'path' ) as $path ) {
+		foreach ( $root->getElementsByTagNameNS( self::SVG_NAMESPACE, 'path' ) as $path ) {
 			$d = trim( $path->getAttribute( 'd' ) );
 			if ( self::is_safe_path( $d ) ) {
 				return array(
@@ -135,10 +158,10 @@ class Controller {
 		$parts = preg_split( '/[\s,]+/', trim( (string) $view_box ) );
 		if (
 			4 !== count( $parts ) ||
-			! is_numeric( $parts[0] ) ||
-			! is_numeric( $parts[1] ) ||
-			! is_numeric( $parts[2] ) ||
-			! is_numeric( $parts[3] ) ||
+			! self::is_safe_number( $parts[0] ) ||
+			! self::is_safe_number( $parts[1] ) ||
+			! self::is_safe_number( $parts[2] ) ||
+			! self::is_safe_number( $parts[3] ) ||
 			(float) $parts[2] <= 0 ||
 			(float) $parts[3] <= 0
 		) {
@@ -154,9 +177,123 @@ class Controller {
 	 * @return bool Whether the path data is safe to store.
 	 */
 	private static function is_safe_path( $path ) {
-		return '' !== $path &&
-			self::MAX_LENGTH >= strlen( $path ) &&
-			preg_match( '/^[MmLlHhVvCcSsQqTtAaZz0-9eE+\-.,\s]+$/', $path ) &&
-			preg_match( '/[Mm]/', $path );
+		if ( '' === $path || self::MAX_LENGTH < strlen( $path ) ) {
+			return false;
+		}
+
+		$matches = array();
+		if ( ! preg_match_all( '/[AaCcHhLlMmQqSsTtVvZz]|' . self::NUMBER_PATTERN . '/', $path, $matches, PREG_OFFSET_CAPTURE ) ) {
+			return false;
+		}
+
+		$tokens = array();
+		$cursor = 0;
+		foreach ( $matches[0] as $match ) {
+			$token  = $match[0];
+			$offset = $match[1];
+			if ( ! self::is_legal_path_separator( substr( $path, $cursor, $offset - $cursor ), end( $tokens ), $token ) ) {
+				return false;
+			}
+			$tokens[] = $token;
+			$cursor   = $offset + strlen( $token );
+		}
+
+		if ( ! $tokens || ! preg_match( '/^\s*$/', substr( $path, $cursor ) ) ) {
+			return false;
+		}
+
+		$command              = null;
+		$argument_index       = 0;
+		$has_move             = false;
+		$has_drawable_segment = false;
+		$ends_with_close      = false;
+
+		foreach ( $tokens as $token ) {
+			if ( self::is_path_command( $token ) ) {
+				if ( $command && ( 0 === $argument_index || 0 !== $argument_index % self::PATH_ARGUMENT_COUNTS[ $command ] ) ) {
+					return false;
+				}
+
+				$command        = strtoupper( $token );
+				$argument_index = 0;
+				if ( 'Z' === $command ) {
+					$command         = null;
+					$ends_with_close = true;
+					continue;
+				}
+
+				$ends_with_close = false;
+				if ( ! $has_move && 'M' !== $command ) {
+					return false;
+				}
+				if ( 'M' === $command ) {
+					$has_move = true;
+				}
+				continue;
+			}
+
+			if ( ! $command || ! self::is_safe_number( $token ) ) {
+				return false;
+			}
+
+			if (
+				'A' === $command &&
+				( 3 === $argument_index % self::PATH_ARGUMENT_COUNTS['A'] || 4 === $argument_index % self::PATH_ARGUMENT_COUNTS['A'] ) &&
+				'0' !== $token &&
+				'1' !== $token
+			) {
+				return false;
+			}
+
+			if ( 'M' !== $command || $argument_index >= self::PATH_ARGUMENT_COUNTS['M'] ) {
+				$has_drawable_segment = true;
+			}
+			++$argument_index;
+			$ends_with_close = false;
+		}
+
+		return $has_move &&
+			$has_drawable_segment &&
+			( $ends_with_close || ( $command && $argument_index > 0 && 0 === $argument_index % self::PATH_ARGUMENT_COUNTS[ $command ] ) );
+	}
+
+	/**
+	 * Determines whether a token is a finite SVG number accepted by the editor.
+	 *
+	 * @param string $value Candidate numeric token.
+	 * @return bool Whether the token is a finite SVG number.
+	 */
+	private static function is_safe_number( $value ) {
+		return 1 === preg_match( '/^' . self::NUMBER_PATTERN . '$/', $value ) && is_finite( (float) $value );
+	}
+
+	/**
+	 * Determines whether a token is an allowed SVG path command.
+	 *
+	 * @param string $token Candidate command token.
+	 * @return bool Whether the token is a supported path command.
+	 */
+	private static function is_path_command( $token ) {
+		return 1 === preg_match( '/^[AaCcHhLlMmQqSsTtVvZz]$/', $token );
+	}
+
+	/**
+	 * Matches the editor's separator rules between path data tokens.
+	 *
+	 * @param string       $separator Text between two path tokens.
+	 * @param string|false $previous Previous token, if any.
+	 * @param string       $next Next token.
+	 * @return bool Whether the separator is allowed.
+	 */
+	private static function is_legal_path_separator( $separator, $previous, $next ) {
+		if ( '' === $separator || preg_match( '/^\s+$/', $separator ) ) {
+			return true;
+		}
+
+		return 1 === preg_match( '/^\s*,\s*$/', $separator ) &&
+			$previous &&
+			$next &&
+			! self::is_path_command( $previous ) &&
+			! self::is_path_command( $next );
 	}
 }

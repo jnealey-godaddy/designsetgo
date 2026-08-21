@@ -29,7 +29,9 @@ export default function HotspotItemSave({ attributes }) {
 	const tooltipId = `dsgo-hotspot-tooltip-${uniqueId || 'item'}`;
 	const safeUrl = getSafeHotspotUrl(url);
 	const markerAccessibleLabel =
-		icon && !label ? __('Hotspot', 'designsetgo') : undefined;
+		icon || !label || label === '+'
+			? __('Hotspot', 'designsetgo')
+			: undefined;
 	const isLinkedMarker = !!safeUrl;
 	const markerProps = {
 		className: 'dsgo-hotspot-item__marker',

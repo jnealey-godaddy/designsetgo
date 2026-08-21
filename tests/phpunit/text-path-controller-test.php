@@ -7,11 +7,17 @@
 
 use DesignSetGo\Blocks\Text_Path\Controller;
 
+/**
+ * Tests the Text Path SVG extraction controller.
+ */
 class DesignSetGo_Text_Path_Controller_Test extends WP_UnitTestCase {
 
-	public function test_parse_svg_path_returns_only_normalized_first_path_data() {
+	/**
+	 * Allows standard SVG metadata and grouping elements while extracting a path.
+	 */
+	public function test_parse_svg_path_returns_only_normalized_first_path_data_from_safe_svg_structure() {
 		$result = Controller::parse_svg_path(
-			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0, 0, 100, 50"><path d="M 0 0 L 100 50" /><path d="M 1 1 L 2 2" /></svg>'
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0, 0, 100, 50"><title>Example</title><defs><path id="guide" d="M 0 0 L 100 50" /></defs><g><circle cx="50" cy="25" r="10" /></g><path d="M 1 1 L 2 2" /></svg>'
 		);
 
 		$this->assertSame(
@@ -24,6 +30,37 @@ class DesignSetGo_Text_Path_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Rejects path data that does not match the editor grammar.
+	 *
+	 * @dataProvider invalid_path_data_provider
+	 *
+	 * @param string $path_data Path data that the editor would reject.
+	 */
+	public function test_parse_svg_path_rejects_path_data_the_editor_would_reject( $path_data ) {
+		$this->assertNull(
+			Controller::parse_svg_path(
+				'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="' . $path_data . '" /></svg>'
+			)
+		);
+	}
+
+	/**
+	 * Provides path data that is syntactically permitted by a character
+	 * allowlist but invalid according to the shared editor grammar.
+	 *
+	 * @return array<string, array{string}>
+	 */
+	public function invalid_path_data_provider() {
+		return array(
+			'initial_command_is_not_move' => array( 'L 1 1 M 0 0 L 2 2' ),
+			'incomplete_move_arguments'   => array( 'M 0 L 1 2' ),
+			'illegal_arc_flags'           => array( 'M 0 0 A 5 5 0 2 1 10 10' ),
+		);
+	}
+
+	/**
+	 * Rejects unsafe or structurally invalid SVG documents.
+	 *
 	 * @dataProvider invalid_svg_provider
 	 *
 	 * @param string $svg Invalid SVG input.
@@ -33,24 +70,29 @@ class DesignSetGo_Text_Path_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Supplies SVG markup that must never be accepted for Text Path data.
+	 * Provides SVG markup that must never be accepted for Text Path data.
 	 *
 	 * @return array<string, array{string}>
 	 */
 	public function invalid_svg_provider() {
 		return array(
-			'doctype'        => array( '<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M 0 0 L 10 10" /></svg>' ),
-			'entity'         => array( '<!ENTITY test "value"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M 0 0 L 10 10" /></svg>' ),
-			'script'         => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><script>alert(1)</script><path d="M 0 0 L 10 10" /></svg>' ),
-			'foreign_object' => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><foreignObject><div>Unsafe</div></foreignObject><path d="M 0 0 L 10 10" /></svg>' ),
-			'disallowed_tag' => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" /><path d="M 0 0 L 10 10" /></svg>' ),
-			'non_svg_root'   => array( '<html><path d="M 0 0 L 10 10" /></html>' ),
-			'missing_path'   => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>' ),
-			'malformed_xml'  => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M 0 0 L 10 10"></svg>' ),
-			'oversized'      => array( str_repeat( ' ', 12 * 1024 + 1 ) ),
+			'doctype'                => array( '<!DOCTYPE svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M 0 0 L 10 10" /></svg>' ),
+			'entity'                 => array( '<!ENTITY test "value"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M 0 0 L 10 10" /></svg>' ),
+			'script'                 => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><script>alert(1)</script><path d="M 0 0 L 10 10" /></svg>' ),
+			'foreign_object'         => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><foreignObject><div>Unsafe</div></foreignObject><path d="M 0 0 L 10 10" /></svg>' ),
+			'non_svg_root'           => array( '<html><path d="M 0 0 L 10 10" /></html>' ),
+			'non_svg_namespace'      => array( '<svg xmlns="https://example.test/not-svg" viewBox="0 0 10 10"><path d="M 0 0 L 10 10" /></svg>' ),
+			'non_svg_path_namespace' => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path xmlns="https://example.test/not-svg" d="M 0 0 L 10 10" /></svg>' ),
+			'non_finite_view_box'    => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1e309 10"><path d="M 0 0 L 10 10" /></svg>' ),
+			'missing_path'           => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>' ),
+			'malformed_xml'          => array( '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M 0 0 L 10 10"></svg>' ),
+			'oversized'              => array( str_repeat( ' ', 12 * 1024 + 1 ) ),
 		);
 	}
 
+	/**
+	 * Registers the extraction endpoint with the expected request contract.
+	 */
 	public function test_route_is_registered_as_authenticated_post_endpoint() {
 		do_action( 'rest_api_init' );
 		$routes = rest_get_server()->get_routes();
@@ -58,6 +100,9 @@ class DesignSetGo_Text_Path_Controller_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( '/designsetgo/v1/text-path/extract', $routes );
 	}
 
+	/**
+	 * Denies the endpoint to users who cannot upload files.
+	 */
 	public function test_permission_callback_denies_user_without_upload_files() {
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
@@ -68,6 +113,9 @@ class DesignSetGo_Text_Path_Controller_Test extends WP_UnitTestCase {
 		$this->assertSame( 403, $result->get_error_data()['status'] );
 	}
 
+	/**
+	 * Returns only normalized path data for an authorized request.
+	 */
 	public function test_authenticated_uploader_receives_only_path_data() {
 		$user_id = self::factory()->user->create( array( 'role' => 'author' ) );
 		wp_set_current_user( $user_id );

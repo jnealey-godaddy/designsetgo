@@ -56,6 +56,7 @@ export default function HeadingSegmentEdit({
 		animatedWords = [],
 		content,
 		headlineRole = 'normal',
+		normalContent = '',
 	} = attributes;
 	const animation = normalizeHeadingSegmentAnimation({
 		headlineRole,
@@ -123,20 +124,32 @@ export default function HeadingSegmentEdit({
 					panelName="settings"
 					panelId={clientId}
 					resetAll={() =>
-						setAttributes({
-							headlineRole: 'normal',
-							animatedWords: [],
-						})
+						setAttributes(
+							getHeadingSegmentAnimationForRole(
+								{
+									content,
+									normalContent,
+									animatedWords: words,
+								},
+								'normal'
+							)
+						)
 					}
 				>
 					<DsgoInspectorPanel.Item
 						label={__('Segment role', 'designsetgo')}
 						hasValue={() => headlineRole !== 'normal'}
 						onDeselect={() =>
-							setAttributes({
-								headlineRole: 'normal',
-								animatedWords: [],
-							})
+							setAttributes(
+								getHeadingSegmentAnimationForRole(
+									{
+										content,
+										normalContent,
+										animatedWords: words,
+									},
+									'normal'
+								)
+							)
 						}
 						isShownByDefault
 					>
@@ -156,7 +169,11 @@ export default function HeadingSegmentEdit({
 							onChange={(value) =>
 								setAttributes(
 									getHeadingSegmentAnimationForRole(
-										{ content, animatedWords: words },
+										{
+											content,
+											normalContent,
+											animatedWords: words,
+										},
 										value
 									)
 								)
@@ -175,7 +192,9 @@ export default function HeadingSegmentEdit({
 									setAttributes(
 										getHeadingSegmentAnimationForWords(
 											{
+												content,
 												headlineRole,
+												normalContent,
 												animatedWords: words,
 											},
 											[]
@@ -190,7 +209,9 @@ export default function HeadingSegmentEdit({
 										setAttributes(
 											getHeadingSegmentAnimationForWords(
 												{
+													content,
 													headlineRole,
+													normalContent,
 													animatedWords: words,
 												},
 												normalizeAnimatedWords(

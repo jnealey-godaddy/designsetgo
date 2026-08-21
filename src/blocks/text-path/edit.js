@@ -6,7 +6,7 @@ import {
 	useBlockProps,
 } from '@wordpress/block-editor';
 import { useSelect } from '@wordpress/data';
-import { useEffect } from '@wordpress/element';
+import { useEffect, useMemo } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { useBlockColors, useUniqueBlockId } from '../../hooks';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
@@ -27,17 +27,24 @@ export default function TextPathEdit({ attributes, setAttributes, clientId }) {
 		setAttributes,
 		prefix: 'text-path-',
 	});
-	const hasDuplicateUniqueId = useSelect(
+	const blocks = useSelect(
 		(select) => {
-			const firstOwnerClientId = findFirstTextPathBlockClientId(
-				select(blockEditorStore).getBlocks(),
-				attributes.uniqueId
-			);
+			if (!attributes.uniqueId) {
+				return null;
+			}
 
-			return !!firstOwnerClientId && firstOwnerClientId !== clientId;
+			return select(blockEditorStore).getBlocks();
 		},
-		[clientId, attributes.uniqueId]
+		[attributes.uniqueId]
 	);
+	const hasDuplicateUniqueId = useMemo(() => {
+		const firstOwnerClientId = findFirstTextPathBlockClientId(
+			blocks,
+			attributes.uniqueId
+		);
+
+		return !!firstOwnerClientId && firstOwnerClientId !== clientId;
+	}, [blocks, clientId, attributes.uniqueId]);
 
 	useEffect(() => {
 		if (hasDuplicateUniqueId) {

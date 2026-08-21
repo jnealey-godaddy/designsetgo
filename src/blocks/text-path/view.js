@@ -1,4 +1,4 @@
-/* global requestAnimationFrame */
+/* global cancelAnimationFrame, requestAnimationFrame */
 
 const MOTION_SELECTOR = '[data-dsgo-text-path-motion="true"]';
 const MIN_DURATION = 2;
@@ -113,7 +113,8 @@ function renderFrame(state, timestamp) {
 		state.startTime = timestamp;
 	}
 
-	const elapsed = (timestamp - state.startTime) / 1000;
+	const elapsed =
+		state.elapsedBeforeRun + (timestamp - state.startTime) / 1000;
 	const progress = (elapsed / state.duration) * 100;
 	const movement = state.direction === 'reverse' ? -progress : progress;
 	const offset =
@@ -125,6 +126,7 @@ function renderFrame(state, timestamp) {
 					state.maximumOffset
 				);
 	state.textPath.setAttribute('startOffset', `${offset}%`);
+	state.elapsed = elapsed;
 	state.frame = requestAnimationFrame((nextTimestamp) =>
 		renderFrame(state, nextTimestamp)
 	);
@@ -135,10 +137,19 @@ function start(state) {
 		return;
 	}
 
+	state.elapsedBeforeRun = state.elapsed;
 	state.startTime = null;
 	state.frame = requestAnimationFrame((timestamp) =>
 		renderFrame(state, timestamp)
 	);
+}
+
+function pause(state) {
+	if (state.frame !== null) {
+		cancelAnimationFrame(state.frame);
+	}
+	state.frame = null;
+	state.startTime = null;
 }
 
 function attachVisibilityListener() {
@@ -149,6 +160,12 @@ function attachVisibilityListener() {
 	visibilityListenerAttached = true;
 	document.addEventListener('visibilitychange', () => {
 		if (document.hidden) {
+			document.querySelectorAll(MOTION_SELECTOR).forEach((block) => {
+				const state = motionStates.get(block);
+				if (state) {
+					pause(state);
+				}
+			});
 			return;
 		}
 		document.querySelectorAll(MOTION_SELECTOR).forEach((block) => {
@@ -184,7 +201,14 @@ export function initTextPathMotion(root = document) {
 			return;
 		}
 
-		const state = { ...settings, block, frame: null, startTime: null };
+		const state = {
+			...settings,
+			block,
+			elapsed: 0,
+			elapsedBeforeRun: 0,
+			frame: null,
+			startTime: null,
+		};
 		motionStates.set(block, state);
 		start(state);
 	});

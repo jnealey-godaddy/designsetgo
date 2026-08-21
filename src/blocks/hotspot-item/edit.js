@@ -56,6 +56,10 @@ export default function HotspotItemEdit({
 		trigger === 'inherit'
 			? context['designsetgo/hotspot/trigger'] || 'click'
 			: trigger;
+	const markerAccessibleLabel =
+		icon || !label || label === '+'
+			? __('Hotspot', 'designsetgo')
+			: undefined;
 	const blockProps = useBlockProps({
 		className: `dsgo-hotspot-item dsgo-hotspot-item--position-${effectivePosition} dsgo-hotspot-item--animation-${effectiveAnimation} dsgo-hotspot-item--origin-x-${originX} dsgo-hotspot-item--origin-y-${originY}`,
 		style: {
@@ -83,7 +87,7 @@ export default function HotspotItemEdit({
 				<button
 					className="dsgo-hotspot-item__marker"
 					type="button"
-					aria-label={label || __('Hotspot', 'designsetgo')}
+					aria-label={markerAccessibleLabel}
 					aria-expanded={isTooltipOpen}
 					onClick={(event) => {
 						event.preventDefault();

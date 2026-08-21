@@ -13,7 +13,7 @@ import {
 	FlexItem,
 	TextControl,
 } from '@wordpress/components';
-import { useEffect, useMemo, useState } from '@wordpress/element';
+import { useEffect, useMemo, useRef, useState } from '@wordpress/element';
 import { normalizeAnimatedWords as normalizeWords } from '../utils';
 
 export function normalizeAnimatedWords(words) {
@@ -32,8 +32,18 @@ export default function AnimatedWordsControl({ value, onChange }) {
 	const words = useMemo(() => normalizeAnimatedWords(value), [value]);
 	const [newWord, setNewWord] = useState('');
 	const [draftWords, setDraftWords] = useState(words);
+	const previousWords = useRef(words);
 
 	useEffect(() => {
+		const valueChanged =
+			previousWords.current.length !== words.length ||
+			previousWords.current.some((word, index) => word !== words[index]);
+
+		if (!valueChanged) {
+			return;
+		}
+
+		previousWords.current = words;
 		setDraftWords(words);
 	}, [words]);
 

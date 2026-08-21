@@ -1,6 +1,7 @@
 import {
 	createBlock,
 	getBlockType,
+	parse,
 	registerBlockType,
 	serialize,
 	setCategories,
@@ -120,10 +121,63 @@ describe('animated heading segment save', () => {
 			'animated'
 		);
 
-		expect(animation).toEqual({
+		expect(animation).toMatchObject({
 			headlineRole: 'animated',
 			animatedWords: ['First word'],
+			normalContent: '<strong>First word</strong>',
 		});
+	});
+
+	test('persists normal content while a segment is animated', () => {
+		const animation = getHeadingSegmentAnimationForRole(
+			{
+				content: 'Original normal content',
+				headlineRole: 'normal',
+				animatedWords: [],
+			},
+			'animated'
+		);
+		const html = serialize(
+			createBlock(metadata.name, {
+				content: 'Original normal content',
+				...animation,
+			})
+		);
+
+		expect(animation).toMatchObject({
+			headlineRole: 'animated',
+			animatedWords: ['Original normal content'],
+			normalContent: 'Original normal content',
+		});
+		expect(html).toContain('"normalContent":"Original normal content"');
+	});
+
+	test('round trips preserved normal content through an animated save', () => {
+		const animation = getHeadingSegmentAnimationForRole(
+			{
+				content: 'Original normal content',
+				headlineRole: 'normal',
+				animatedWords: [],
+			},
+			'animated'
+		);
+		const [reloaded] = parse(
+			serialize(
+				createBlock(metadata.name, {
+					content: 'Original normal content',
+					...animation,
+				})
+			)
+		);
+		const demoted = getHeadingSegmentAnimationForRole(
+			reloaded.attributes,
+			'normal'
+		);
+
+		expect(reloaded.attributes.normalContent).toBe(
+			'Original normal content'
+		);
+		expect(demoted.content).toBe('Original normal content');
 	});
 
 	test('decodes RichText entities and preserves line breaks when seeding animation words', () => {
@@ -136,9 +190,10 @@ describe('animated heading segment save', () => {
 			'animated'
 		);
 
-		expect(animation).toEqual({
+		expect(animation).toMatchObject({
 			headlineRole: 'animated',
 			animatedWords: ['R&D\nResearch'],
+			normalContent: 'R&amp;D<br><strong>Research</strong>',
 		});
 	});
 
@@ -163,6 +218,63 @@ describe('animated heading segment save', () => {
 			animatedWords: [],
 		});
 		expect(html).not.toContain('"animatedWords"');
+	});
+
+	test('recovers readable normal content when a saved animated segment is demoted', () => {
+		const animation = getHeadingSegmentAnimationForRole(
+			{
+				content: '',
+				headlineRole: 'animated',
+				animatedWords: ['Recovered word', 'Next word'],
+			},
+			'normal'
+		);
+		const html = serialize(createBlock(metadata.name, animation));
+
+		expect(animation).toEqual({
+			content: 'Recovered word',
+			headlineRole: 'normal',
+			animatedWords: [],
+		});
+		expect(html).toContain('Recovered word');
+		expect(html).not.toContain('dsgo-heading-segment__animated');
+	});
+
+	test('restores its original normal content after an animated save is reloaded', () => {
+		const animation = getHeadingSegmentAnimationForRole(
+			{
+				content: '',
+				normalContent: 'Original normal content',
+				headlineRole: 'animated',
+				animatedWords: ['Animated word', 'Next word'],
+			},
+			'normal'
+		);
+
+		expect(animation).toMatchObject({
+			content: 'Original normal content',
+			headlineRole: 'normal',
+			animatedWords: [],
+			normalContent: '',
+		});
+	});
+
+	test('preserves normal content while an author edits animated words', () => {
+		const animation = getHeadingSegmentAnimationForWords(
+			{
+				content: '',
+				normalContent: 'Original normal content',
+				headlineRole: 'animated',
+				animatedWords: ['First word'],
+			},
+			['Updated word']
+		);
+
+		expect(animation).toEqual({
+			normalContent: 'Original normal content',
+			headlineRole: 'animated',
+			animatedWords: ['Updated word'],
+		});
 	});
 
 	test('switches to normal and clears words when an author removes the final word', () => {
@@ -202,5 +314,21 @@ describe('animated heading segment save', () => {
 		fireEvent.keyDown(input, { key: 'Enter' });
 
 		expect(onChange).toHaveBeenLastCalledWith(['After']);
+	});
+
+	test('keeps an uncommitted draft when a parent rerenders with equivalent words', () => {
+		const onChange = jest.fn();
+		const { rerender } = render(
+			<AnimatedWordsControl value={['Before']} onChange={onChange} />
+		);
+		const input = screen.getByLabelText('Animated word');
+
+		fireEvent.change(input, { target: { value: 'Draft' } });
+		rerender(
+			<AnimatedWordsControl value={['Before']} onChange={onChange} />
+		);
+
+		expect(screen.getByLabelText('Animated word')).toHaveValue('Draft');
+		expect(onChange).not.toHaveBeenCalled();
 	});
 });

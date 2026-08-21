@@ -1,6 +1,7 @@
 import { useBlockProps } from '@wordpress/block-editor';
 import { createElement } from '@wordpress/element';
 import { getTextPathData } from '../../utils/svg-paths';
+import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 import { getSafeTextPathUrl, getTextPathId } from './utils';
 
 function LegacyTextPathGraphic({ attributes }) {
@@ -47,6 +48,7 @@ function LegacyTextPathGraphic({ attributes }) {
 }
 
 const v1 = {
+	apiVersion: 3,
 	attributes: {
 		text: { type: 'string', default: 'Text on a path' },
 		pathType: { type: 'string', default: 'wave' },
@@ -75,7 +77,9 @@ const v1 = {
 			__experimentalLetterSpacing: true,
 		},
 	},
-	isEligible(attributes, innerBlocks, { innerHTML }) {
+	isEligible(attributes, innerBlocks, extra) {
+		const innerHTML = getDeprecatedBlockHTML(extra);
+
 		return Boolean(
 			innerHTML && !innerHTML.includes('data-dsgo-text-path-offset')
 		);

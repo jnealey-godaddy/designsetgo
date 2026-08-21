@@ -30,6 +30,47 @@ describe('text path motion', () => {
 		).toBe('55%');
 	});
 
+	test('resumes from its current offset after the document becomes visible again', () => {
+		const frames = [];
+		window.matchMedia = jest.fn(() => ({ matches: false }));
+		global.requestAnimationFrame = jest.fn((callback) => {
+			frames.push(callback);
+			return frames.length;
+		});
+		global.cancelAnimationFrame = jest.fn();
+		document.body.innerHTML = `
+			<div data-dsgo-text-path-motion="true" data-dsgo-text-path-motion-duration="12" data-dsgo-text-path-motion-direction="forward">
+				<svg><text><textPath data-dsgo-text-path-offset="5" startOffset="5%">Moving text</textPath></text></svg>
+			</div>
+		`;
+
+		jest.isolateModules(() => {
+			require('../view');
+		});
+		frames.shift()(1000);
+		frames.shift()(7000);
+		expect(
+			document.querySelector('textPath').getAttribute('startOffset')
+		).toBe('55%');
+
+		Object.defineProperty(document, 'hidden', {
+			configurable: true,
+			value: true,
+		});
+		document.dispatchEvent(new Event('visibilitychange'));
+		Object.defineProperty(document, 'hidden', {
+			configurable: true,
+			value: false,
+		});
+		document.dispatchEvent(new Event('visibilitychange'));
+
+		frames.pop()(17000);
+
+		expect(
+			document.querySelector('textPath').getAttribute('startOffset')
+		).toBe('55%');
+	});
+
 	test('keeps animated text on an open spiral path instead of running it off the end', () => {
 		const frames = [];
 		window.matchMedia = jest.fn(() => ({ matches: false }));

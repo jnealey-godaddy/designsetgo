@@ -4,6 +4,39 @@ export const clamp = (value, minimum, maximum) =>
 export const getTextPathId = (uniqueId) =>
 	`dsgo-text-path-${uniqueId || 'path'}`;
 
+const textPathOwnersByBlockTree = new WeakMap();
+
+const getTextPathOwners = (blocks) => {
+	if (!Array.isArray(blocks)) {
+		return new Map();
+	}
+
+	const cachedOwners = textPathOwnersByBlockTree.get(blocks);
+	if (cachedOwners) {
+		return cachedOwners;
+	}
+
+	const owners = new Map();
+	const collectOwners = (candidates) => {
+		for (const block of candidates || []) {
+			if (
+				block?.name === 'designsetgo/text-path' &&
+				block?.attributes?.uniqueId &&
+				!owners.has(block.attributes.uniqueId)
+			) {
+				owners.set(block.attributes.uniqueId, block.clientId);
+			}
+
+			collectOwners(block?.innerBlocks);
+		}
+	};
+
+	collectOwners(blocks);
+	textPathOwnersByBlockTree.set(blocks, owners);
+
+	return owners;
+};
+
 /**
  * Finds the first Text Path block that owns a saved path ID, including blocks
  * nested inside layout containers.
@@ -17,24 +50,7 @@ export const findFirstTextPathBlockClientId = (blocks, uniqueId) => {
 		return null;
 	}
 
-	for (const block of blocks || []) {
-		if (
-			block?.name === 'designsetgo/text-path' &&
-			block?.attributes?.uniqueId === uniqueId
-		) {
-			return block.clientId;
-		}
-
-		const nestedOwner = findFirstTextPathBlockClientId(
-			block?.innerBlocks,
-			uniqueId
-		);
-		if (nestedOwner) {
-			return nestedOwner;
-		}
-	}
-
-	return null;
+	return getTextPathOwners(blocks).get(uniqueId) || null;
 };
 
 export const getSafeTextPathUrl = (url) => {

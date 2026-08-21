@@ -36,6 +36,10 @@
 			"type": "array",
 			"default": []
 		},
+		"normalContent": {
+			"type": "string",
+			"default": ""
+		},
 		"animatedHeadlineShape": {
 			"type": "string",
 			"enum": [

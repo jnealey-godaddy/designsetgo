@@ -11,7 +11,10 @@
 import classnames from 'classnames';
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 import HighlightShape, { HIGHLIGHT_PATHS } from './components/HighlightShape';
-import { normalizeHeadingSegmentAnimation } from './utils';
+import {
+	normalizeAnimatedWords,
+	normalizeHeadingSegmentAnimation,
+} from './utils';
 
 /**
  * Heading Segment Save Function
@@ -25,12 +28,20 @@ export default function HeadingSegmentSave({ attributes }) {
 	const animation = normalizeHeadingSegmentAnimation(attributes);
 	const { animatedWords: words, headlineRole } = animation;
 	const isAnimated = headlineRole === 'animated';
+	const normalContent =
+		(typeof content === 'string' && content.trim() ? content : '') ||
+		(!isAnimated && typeof attributes.normalContent === 'string'
+			? attributes.normalContent
+			: '') ||
+		(!isAnimated
+			? normalizeAnimatedWords(attributes.animatedWords)[0]
+			: '');
 	const highlightShape =
 		isAnimated && HIGHLIGHT_PATHS[animatedHeadlineShape]
 			? animatedHeadlineShape
 			: '';
 
-	if (!isAnimated && (!content || !content.trim())) {
+	if (!isAnimated && !normalContent) {
 		return null;
 	}
 
@@ -58,7 +69,7 @@ export default function HeadingSegmentSave({ attributes }) {
 				<RichText.Content
 					tagName="span"
 					className="dsgo-heading-segment__text"
-					value={content}
+					value={normalContent}
 				/>
 			)}
 		</span>

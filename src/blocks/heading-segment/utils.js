@@ -62,47 +62,105 @@ export function normalizeHeadingSegmentAnimation({
  *
  * @param {Object} attributes               Heading segment attributes.
  * @param {string} attributes.content       Segment rich-text HTML.
+ * @param {string} attributes.normalContent Serialized normal RichText HTML.
  * @param {Array}  attributes.animatedWords Current animated words.
  * @param {string} nextRole                 Requested segment role.
  * @return {Object} Valid role and word list for the attribute update.
  */
 export function getHeadingSegmentAnimationForRole(
-	{ content = '', animatedWords = [] } = {},
+	{ content = '', normalContent = '', animatedWords = [] } = {},
 	nextRole
 ) {
+	const currentContent = typeof content === 'string' ? content : '';
+	const preservedContent =
+		typeof normalContent === 'string' ? normalContent : '';
+
 	if (nextRole !== 'animated') {
-		return normalizeHeadingSegmentAnimation({
+		const words = normalizeAnimatedWords(animatedWords);
+		const normalAnimation = normalizeHeadingSegmentAnimation({
 			headlineRole: 'normal',
 			animatedWords: [],
 		});
+
+		// `content` is sourced from the normal RichText span, which an animated
+		// save intentionally omits. When an animated segment is parsed again,
+		// retain a readable normal fallback from its first saved word.
+		if (currentContent.trim()) {
+			return {
+				...normalAnimation,
+				...(preservedContent ? { normalContent: '' } : {}),
+			};
+		}
+
+		const recoveredContent = preservedContent.trim() || words[0] || '';
+
+		if (recoveredContent) {
+			return {
+				...normalAnimation,
+				content: recoveredContent,
+				...(preservedContent ? { normalContent: '' } : {}),
+			};
+		}
+
+		return normalAnimation;
 	}
 
-	const words = normalizeAnimatedWords(animatedWords);
 	const fallbackWords = normalizeAnimatedWords([
 		getTextContent(create({ html: content })),
 	]);
+	const words = normalizeAnimatedWords(animatedWords);
 
-	return normalizeHeadingSegmentAnimation({
+	const animation = normalizeHeadingSegmentAnimation({
 		headlineRole: 'animated',
 		animatedWords: words.length > 0 ? words : fallbackWords,
 	});
+	const contentToPreserve = preservedContent.trim() || currentContent;
+
+	return contentToPreserve
+		? { ...animation, normalContent: contentToPreserve }
+		: animation;
 }
 
 /**
  * Apply an author-edited word list without leaving an orphaned role behind.
  *
  * @param {Object} attributes               Heading segment attributes.
+ * @param {string} attributes.content       Segment rich-text HTML.
  * @param {string} attributes.headlineRole  Current segment role.
+ * @param {string} attributes.normalContent Serialized normal RichText HTML.
  * @param {Array}  attributes.animatedWords Current animated words.
  * @param {Array}  nextWords                Edited word list.
  * @return {Object} Valid role and word list for the attribute update.
  */
 export function getHeadingSegmentAnimationForWords(
-	{ headlineRole = 'normal', animatedWords = [] } = {},
+	{
+		content = '',
+		headlineRole = 'normal',
+		normalContent = '',
+		animatedWords = [],
+	} = {},
 	nextWords
 ) {
-	return normalizeHeadingSegmentAnimation({
+	const words = nextWords ?? animatedWords;
+
+	if (
+		headlineRole !== 'animated' ||
+		normalizeAnimatedWords(words).length === 0
+	) {
+		return getHeadingSegmentAnimationForRole(
+			{ content, normalContent, animatedWords: words },
+			'normal'
+		);
+	}
+
+	const animation = normalizeHeadingSegmentAnimation({
 		headlineRole,
-		animatedWords: nextWords ?? animatedWords,
+		animatedWords: words,
 	});
+	const preservedContent =
+		typeof normalContent === 'string' ? normalContent : '';
+
+	return preservedContent.trim()
+		? { ...animation, normalContent: preservedContent }
+		: animation;
 }

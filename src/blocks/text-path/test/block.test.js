@@ -25,15 +25,20 @@ describe('text path block', () => {
 
 	test('keeps the first saved markup version as a silent migration', () => {
 		expect(existsSync(resolve(__dirname, '../deprecated.js'))).toBe(true);
+		expect(legacyTextPath.apiVersion).toBe(3);
 		expect(
 			legacyTextPath.isEligible({}, [], {
-				innerHTML: '<textPath href="#legacy">Text</textPath>',
+				blockNode: {
+					innerHTML: '<textPath href="#legacy">Text</textPath>',
+				},
 			})
 		).toBe(true);
 		expect(
 			legacyTextPath.isEligible({}, [], {
-				innerHTML:
-					'<textPath data-dsgo-text-path-offset="0">Text</textPath>',
+				blockNode: {
+					innerHTML:
+						'<textPath data-dsgo-text-path-offset="0">Text</textPath>',
+				},
 			})
 		).toBe(false);
 	});
@@ -83,5 +88,26 @@ describe('text path block', () => {
 		);
 
 		expect(firstClientId).toBe('first');
+	});
+
+	test('defers duplicate-ID tree scans until an ID exists and the block tree changes', () => {
+		const editSource = readFileSync(
+			resolve(__dirname, '../edit.js'),
+			'utf8'
+		);
+		const utilitiesSource = readFileSync(
+			resolve(__dirname, '../utils.js'),
+			'utf8'
+		);
+
+		expect(editSource).toContain('if (!attributes.uniqueId)');
+		expect(editSource).toContain('return null;');
+		expect(editSource).toContain('const hasDuplicateUniqueId = useMemo(');
+		expect(
+			editSource.lastIndexOf('findFirstTextPathBlockClientId')
+		).toBeGreaterThan(
+			editSource.indexOf('const hasDuplicateUniqueId = useMemo(')
+		);
+		expect(utilitiesSource).toContain('new WeakMap()');
 	});
 });
