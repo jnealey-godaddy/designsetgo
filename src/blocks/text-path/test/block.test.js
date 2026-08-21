@@ -50,6 +50,15 @@ describe('text path block', () => {
 		);
 	});
 
+	test('opts the animated SVG out of browser scroll anchoring', () => {
+		const styles = readFileSync(
+			resolve(__dirname, '../style.scss'),
+			'utf8'
+		);
+
+		expect(styles).toContain('overflow-anchor: none;');
+	});
+
 	test('keeps the first Text Path block as the owner of a duplicated path ID', () => {
 		const firstClientId = findFirstTextPathBlockClientId(
 			[
