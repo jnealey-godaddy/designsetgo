@@ -3,10 +3,12 @@ import {
 	serialize,
 	getBlockType,
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import metadata from '../block.json';
 import save from '../save';
+import HotspotCanvas from '../components/HotspotCanvas';
 
 const canvasSource = readFileSync(
 	resolve(__dirname, '../components/HotspotCanvas.js'),
@@ -67,11 +69,57 @@ describe('hotspot save', () => {
 	test('uses direct marker placement without numeric coordinate controls', () => {
 		expect(canvasSource).toContain('onPointerDown={handlePointerDown}');
 		expect(canvasSource).toContain('onKeyDown={handleKeyDown}');
+		expect(canvasSource).toContain("closest('.dsgo-hotspot-item__marker')");
 		expect(canvasSource).not.toContain('RangeControl');
 		expect(canvasSource).not.toContain('dsgo-hotspot__coordinate-controls');
 		expect(editorStyleSource).not.toContain(
 			'dsgo-hotspot__coordinate-controls'
 		);
+	});
+
+	test('does not move a marker when its tooltip text is clicked', () => {
+		const onCoordinateChange = jest.fn();
+		const rectangleSpy = jest
+			.spyOn(window.HTMLElement.prototype, 'getBoundingClientRect')
+			.mockReturnValue({
+				bottom: 100,
+				height: 100,
+				left: 0,
+				right: 100,
+				top: 0,
+				width: 100,
+			});
+
+		render(
+			<HotspotCanvas
+				imageUrl=""
+				imageAlt=""
+				innerBlocksProps={{
+					children: (
+						<div data-dsgo-hotspot-item-editor="marker-1">
+							<button className="dsgo-hotspot-item__marker">
+								1
+							</button>
+							<span>Editable tooltip text</span>
+						</div>
+					),
+				}}
+				selectedItem={{
+					attributes: { x: 50, y: 50 },
+					clientId: 'marker-1',
+				}}
+				onCoordinateChange={onCoordinateChange}
+			/>
+		);
+
+		fireEvent.pointerDown(screen.getByText('Editable tooltip text'), {
+			clientX: 75,
+			clientY: 25,
+			pointerId: 1,
+		});
+
+		expect(onCoordinateChange).not.toHaveBeenCalled();
+		rectangleSpy.mockRestore();
 	});
 
 	test('can focus the editor canvas on the selected hotspot without changing saved output', () => {

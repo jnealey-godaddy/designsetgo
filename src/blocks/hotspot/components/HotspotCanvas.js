@@ -47,10 +47,11 @@ export default function HotspotCanvas({
 	};
 
 	const handlePointerDown = (event) => {
-		const marker = event.target.closest('[data-dsgo-hotspot-item-editor]');
+		const marker = event.target.closest('.dsgo-hotspot-item__marker');
+		const item = marker?.closest('[data-dsgo-hotspot-item-editor]');
 		if (
-			!marker ||
-			marker.dataset.dsgoHotspotItemEditor !== selectedItem?.clientId
+			!item ||
+			item.dataset.dsgoHotspotItemEditor !== selectedItem?.clientId
 		) {
 			return;
 		}
@@ -77,8 +78,9 @@ export default function HotspotCanvas({
 		if (!selectedItem || !keys.includes(event.key)) {
 			return;
 		}
-		const marker = event.target.closest('[data-dsgo-hotspot-item-editor]');
-		if (marker?.dataset.dsgoHotspotItemEditor !== selectedItem.clientId) {
+		const marker = event.target.closest('.dsgo-hotspot-item__marker');
+		const item = marker?.closest('[data-dsgo-hotspot-item-editor]');
+		if (item?.dataset.dsgoHotspotItemEditor !== selectedItem.clientId) {
 			return;
 		}
 		event.preventDefault();
