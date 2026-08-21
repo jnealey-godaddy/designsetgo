@@ -1,5 +1,4 @@
 import { __, sprintf } from '@wordpress/i18n';
-import { RangeControl } from '@wordpress/components';
 import { useRef, useState } from '@wordpress/element';
 
 const clampCoordinate = (value) => Math.max(0, Math.min(100, value));
@@ -148,32 +147,6 @@ export default function HotspotCanvas({
 				)}
 				<div {...innerBlocksProps} />
 			</div>
-			{selectedItem && (
-				<div className="dsgo-hotspot__coordinate-controls">
-					<RangeControl
-						label={__('Horizontal position', 'designsetgo')}
-						value={Number(selectedItem.attributes.x) || 0}
-						onChange={(x) =>
-							onCoordinateChange(selectedItem, { x })
-						}
-						min={0}
-						max={100}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-					<RangeControl
-						label={__('Vertical position', 'designsetgo')}
-						value={Number(selectedItem.attributes.y) || 0}
-						onChange={(y) =>
-							onCoordinateChange(selectedItem, { y })
-						}
-						min={0}
-						max={100}
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-					/>
-				</div>
-			)}
 			<div
 				className="screen-reader-text"
 				aria-live="polite"

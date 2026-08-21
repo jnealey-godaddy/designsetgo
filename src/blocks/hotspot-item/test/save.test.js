@@ -226,6 +226,20 @@ describe('hotspot item save', () => {
 		);
 	});
 
+	test('uses a marker-sized positioning box so editor layout cannot separate the tooltip', () => {
+		const positioningRule = styleSource.slice(
+			0,
+			styleSource.indexOf(':where(.dsgo-hotspot-item__marker)')
+		);
+
+		expect(positioningRule).toContain('position: absolute;');
+		expect(positioningRule).toContain('width: 2.5rem;');
+		expect(positioningRule).toContain('height: 2.5rem;');
+		expect(styleSource).toMatch(
+			/\.dsgo-hotspot-item__marker[\s\S]*?width:\s*2\.5rem;[\s\S]*?height:\s*2\.5rem;/
+		);
+	});
+
 	test('keeps tooltips closed until the Task 5 state controller opens them', () => {
 		expect(styleSource).not.toMatch(
 			/\.dsgo-hotspot-item__marker:hover\s*\+\s*\.dsgo-hotspot-item__tooltip/

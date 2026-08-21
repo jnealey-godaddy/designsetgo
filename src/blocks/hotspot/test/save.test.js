@@ -3,8 +3,19 @@ import {
 	serialize,
 	getBlockType,
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import metadata from '../block.json';
 import save from '../save';
+
+const canvasSource = readFileSync(
+	resolve(__dirname, '../components/HotspotCanvas.js'),
+	'utf8'
+);
+const editorStyleSource = readFileSync(
+	resolve(__dirname, '../editor.scss'),
+	'utf8'
+);
 
 describe('hotspot save', () => {
 	beforeAll(() => {
@@ -37,5 +48,15 @@ describe('hotspot save', () => {
 
 		expect(html).toContain('src="https://example.test/hotspot.jpg"');
 		expect(html).toContain('alt="A product marked with hotspots"');
+	});
+
+	test('uses direct marker placement without numeric coordinate controls', () => {
+		expect(canvasSource).toContain('onPointerDown={handlePointerDown}');
+		expect(canvasSource).toContain('onKeyDown={handleKeyDown}');
+		expect(canvasSource).not.toContain('RangeControl');
+		expect(canvasSource).not.toContain('dsgo-hotspot__coordinate-controls');
+		expect(editorStyleSource).not.toContain(
+			'dsgo-hotspot__coordinate-controls'
+		);
 	});
 });

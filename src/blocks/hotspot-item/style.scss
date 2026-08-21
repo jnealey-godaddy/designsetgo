@@ -3,6 +3,8 @@
 	--dsgo-hotspot-translate-y: -50%;
 
 	position: absolute;
+	width: 2.5rem;
+	height: 2.5rem;
 	left: var(--dsgo-hotspot-x);
 	top: var(--dsgo-hotspot-y);
 	z-index: 1;
