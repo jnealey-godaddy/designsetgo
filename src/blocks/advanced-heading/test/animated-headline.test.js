@@ -5,10 +5,15 @@ import {
 	serialize,
 	setCategories,
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import headingMetadata from '../block.json';
 import headingSave from '../save';
 import segmentMetadata from '../../heading-segment/block.json';
 import segmentSave from '../../heading-segment/save';
+
+const editorSource = readFileSync(resolve(__dirname, '../editor.scss'), 'utf8');
+const editSource = readFileSync(resolve(__dirname, '../edit.js'), 'utf8');
 
 setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
@@ -41,6 +46,15 @@ describe('animated headline save', () => {
 
 		expect(html).toBe(
 			'<!-- wp:designsetgo/advanced-heading -->\n<div class="wp-block-designsetgo-advanced-heading dsgo-advanced-heading"><h2 class="dsgo-advanced-heading__inner"><!-- wp:designsetgo/heading-segment -->\n<span class="wp-block-designsetgo-heading-segment dsgo-heading-segment"><span class="dsgo-heading-segment__text">Creative</span></span>\n<!-- /wp:designsetgo/heading-segment --></h2></div>\n<!-- /wp:designsetgo/advanced-heading -->'
+		);
+	});
+
+	test('adds an editor-only fallback gap before a non-leading animated segment', () => {
+		expect(editorSource).toMatch(
+			/\.dsgo-heading-segment:not\(:first-child\)\s+\.dsgo-heading-segment__animated\s*\{\s*margin-inline-start:\s*var\(--dsgo-animated-segment-gap\);/
+		);
+		expect(editSource).toContain(
+			"'--dsgo-animated-segment-gap': blockGap ? '0' : '.2em'"
 		);
 	});
 

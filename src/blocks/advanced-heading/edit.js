@@ -166,7 +166,10 @@ export default function AdvancedHeadingEdit({
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'dsgo-advanced-heading__inner',
-			style: blockGap ? { '--dsgo-segment-gap': blockGap } : undefined,
+			style: {
+				...(blockGap ? { '--dsgo-segment-gap': blockGap } : {}),
+				'--dsgo-animated-segment-gap': blockGap ? '0' : '.2em',
+			},
 		},
 		{
 			allowedBlocks: ALLOWED_BLOCKS,
