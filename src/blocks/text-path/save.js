@@ -12,6 +12,7 @@ const clamp = (value, minimum, maximum, fallback) => {
 
 export default function TextPathSave({ attributes }) {
 	const {
+		circleBackgroundColor,
 		guideColor,
 		guideOpacity,
 		guideStrokeWidth,
@@ -19,15 +20,23 @@ export default function TextPathSave({ attributes }) {
 		motionDirection,
 		motionDuration,
 		pathWidth,
+		pathAlignment,
 		rotation,
 		url,
 		target,
 	} = attributes;
 	const safeUrl = getSafeTextPathUrl(url);
 	const safeGuideColor = getSafeTextPathColor(guideColor);
+	const safeCircleBackgroundColor = getSafeTextPathColor(
+		circleBackgroundColor
+	);
 	const safeRotation = clamp(rotation, -360, 360, 0);
 	const blockProps = useBlockProps.save({
-		className: 'dsgo-text-path',
+		className: `dsgo-text-path${
+			pathAlignment === 'center' || pathAlignment === 'right'
+				? ` dsgo-text-path--align-${pathAlignment}`
+				: ''
+		}`,
 		style: {
 			'--dsgo-text-path-rotation': `${safeRotation}deg`,
 			'--dsgo-text-path-guide-opacity': String(
@@ -40,6 +49,11 @@ export default function TextPathSave({ attributes }) {
 			...(safeGuideColor && {
 				'--dsgo-text-path-guide-color':
 					convertColorToCSSVar(safeGuideColor),
+			}),
+			...(safeCircleBackgroundColor && {
+				'--dsgo-text-path-circle-background': convertColorToCSSVar(
+					safeCircleBackgroundColor
+				),
 			}),
 		},
 		...(motion && {

@@ -4,4 +4,11 @@
 	:where(.dsgo-text-path__guide) {
 		pointer-events: none;
 	}
+
+}
+
+.dsgo-text-path__link-target {
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid #ddd;
 }

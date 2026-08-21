@@ -22,6 +22,9 @@ export default function TextPathEdit({ attributes, setAttributes, clientId }) {
 	const safeUrl = getSafeTextPathUrl(attributes.url);
 	const rotation = clamp(attributes.rotation, -360, 360);
 	const safeGuideColor = getSafeTextPathColor(attributes.guideColor);
+	const safeCircleBackgroundColor = getSafeTextPathColor(
+		attributes.circleBackgroundColor
+	);
 	const { settings: guideColorSettings, colorGradientSettings } =
 		useBlockColors({
 			attributes,
@@ -31,10 +34,23 @@ export default function TextPathEdit({ attributes, setAttributes, clientId }) {
 					label: __('Guide line', 'designsetgo'),
 					attribute: 'guideColor',
 				},
+				...(attributes.pathType === 'circle'
+					? [
+							{
+								label: __('Circle background', 'designsetgo'),
+								attribute: 'circleBackgroundColor',
+							},
+						]
+					: []),
 			],
 		});
 	const blockProps = useBlockProps({
-		className: 'dsgo-text-path',
+		className: `dsgo-text-path${
+			attributes.pathAlignment === 'center' ||
+			attributes.pathAlignment === 'right'
+				? ` dsgo-text-path--align-${attributes.pathAlignment}`
+				: ''
+		}`,
 		style: {
 			'--dsgo-text-path-rotation': `${rotation}deg`,
 			'--dsgo-text-path-guide-opacity': String(
@@ -53,6 +69,11 @@ export default function TextPathEdit({ attributes, setAttributes, clientId }) {
 			...(safeGuideColor && {
 				'--dsgo-text-path-guide-color':
 					convertColorToCSSVar(safeGuideColor),
+			}),
+			...(safeCircleBackgroundColor && {
+				'--dsgo-text-path-circle-background': convertColorToCSSVar(
+					safeCircleBackgroundColor
+				),
 			}),
 		},
 		...(attributes.motion && {
@@ -83,7 +104,7 @@ export default function TextPathEdit({ attributes, setAttributes, clientId }) {
 			<InspectorControls group="color">
 				<ColorGradientSettingsDropdown
 					panelId={clientId}
-					title={__('Guide line color', 'designsetgo')}
+					title={__('Path colors', 'designsetgo')}
 					settings={guideColorSettings}
 					{...colorGradientSettings}
 				/>

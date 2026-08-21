@@ -63,6 +63,24 @@ describe('text path save', () => {
 		expect(html).toContain('--dsgo-text-path-width:60%');
 	});
 
+	test('keeps a circle background inside the SVG and aligns a narrower path', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				pathType: 'circle',
+				circleBackgroundColor: '#fef3c7',
+				pathWidth: 60,
+				pathAlignment: 'center',
+			})
+		);
+
+		expect(html).toContain('dsgo-text-path--align-center');
+		expect(html).toContain('--dsgo-text-path-circle-background:#fef3c7');
+		expect(html).toContain('dsgo-text-path__circle-background');
+		expect(html).toMatch(
+			/<svg[^>]*><circle class="dsgo-text-path__circle-background"/
+		);
+	});
+
 	test('keeps the SVG font size independent from typography support classes', () => {
 		const html = serialize(createBlock(metadata.name));
 

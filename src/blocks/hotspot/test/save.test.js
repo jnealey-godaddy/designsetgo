@@ -12,6 +12,8 @@ const canvasSource = readFileSync(
 	resolve(__dirname, '../components/HotspotCanvas.js'),
 	'utf8'
 );
+const editorSource = readFileSync(resolve(__dirname, '../edit.js'), 'utf8');
+const saveSource = readFileSync(resolve(__dirname, '../save.js'), 'utf8');
 const editorStyleSource = readFileSync(
 	resolve(__dirname, '../editor.scss'),
 	'utf8'
@@ -58,5 +60,15 @@ describe('hotspot save', () => {
 		expect(editorStyleSource).not.toContain(
 			'dsgo-hotspot__coordinate-controls'
 		);
+	});
+
+	test('can focus the editor canvas on the selected hotspot without changing saved output', () => {
+		expect(editorSource).toContain('showOnlySelected');
+		expect(editorSource).toContain('Show only selected hotspot');
+		expect(editorSource).toContain('dsgo-hotspot--editor-selected-only');
+		expect(editorStyleSource).toContain(
+			'dsgo-hotspot--editor-selected-only'
+		);
+		expect(saveSource).not.toContain('editor-selected-only');
 	});
 });

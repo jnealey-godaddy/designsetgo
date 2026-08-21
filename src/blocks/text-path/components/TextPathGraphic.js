@@ -1,4 +1,4 @@
-import { getTextPathData, getTextPathId } from '../utils';
+import { getSafeTextPathColor, getTextPathData, getTextPathId } from '../utils';
 
 const clamp = (value, minimum, maximum, fallback) => {
 	const number = Number(value);
@@ -13,6 +13,10 @@ export default function TextPathGraphic({ attributes }) {
 	const startOffset = `${clamp(attributes.startOffset, -100, 100, 0)}%`;
 	const fontSize = clamp(attributes.pathFontSize, 1, 400, 54);
 	const wordSpacing = clamp(attributes.wordSpacing, -40, 100, 0);
+	const hasCircleBackground = Boolean(
+		attributes.pathType === 'circle' &&
+			getSafeTextPathColor(attributes.circleBackgroundColor)
+	);
 
 	return (
 		<svg
@@ -20,6 +24,15 @@ export default function TextPathGraphic({ attributes }) {
 			role="img"
 			aria-label={attributes.text || undefined}
 		>
+			{hasCircleBackground && (
+				<circle
+					className="dsgo-text-path__circle-background"
+					cx="500"
+					cy="500"
+					r="500"
+					aria-hidden="true"
+				/>
+			)}
 			<defs>
 				<path id={pathId} d={path.d} />
 			</defs>

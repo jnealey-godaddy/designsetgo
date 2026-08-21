@@ -13,6 +13,7 @@ function renderHeadline({
 	effect = 'typing',
 	duration = '250',
 	delay = '0',
+	direction = 'forward',
 	loop = 'true',
 } = {}) {
 	document.body.innerHTML = `
@@ -24,6 +25,7 @@ function renderHeadline({
 				data-dsgo-animated-headline-effect="${effect}"
 				data-dsgo-animated-headline-duration="${duration}"
 				data-dsgo-animated-headline-delay="${delay}"
+				data-dsgo-animated-headline-direction="${direction}"
 				data-dsgo-animated-headline-loop="${loop}"
 			>
 				<span class="dsgo-heading-segment"><span class="dsgo-heading-segment__animated" data-dsgo-animated-words='${JSON.stringify(words)}'>${words[0]}</span></span>
@@ -65,6 +67,7 @@ describe('advanced heading frontend animation', () => {
 
 	it('keeps exactly one active, readable word for every rotating effect', () => {
 		const heading = renderHeadline({ effect: 'flip' });
+		heading.removeAttribute('data-dsgo-animated-headline-direction');
 
 		initAnimatedHeadlines();
 
@@ -89,9 +92,36 @@ describe('advanced heading frontend animation', () => {
 		expect(intervalSpy).toHaveBeenCalledTimes(1);
 	});
 
+	it('rotates the authored words in reverse when selected', () => {
+		const heading = renderHeadline({ direction: 'reverse' });
+
+		initAnimatedHeadlines();
+		expect(
+			heading.querySelector('.dsgo-heading-segment__animated')
+		).toHaveTextContent('Final');
+		jest.advanceTimersByTime(250);
+
+		expect(
+			heading.querySelector('.dsgo-heading-segment__animated')
+		).toHaveTextContent('Second');
+	});
+
 	it('keeps the static first word and creates no timer under reduced motion', () => {
 		reduceMotion = true;
 		const heading = renderHeadline();
+
+		initAnimatedHeadlines();
+		jest.advanceTimersByTime(1000);
+
+		expect(
+			heading.querySelector('.dsgo-heading-segment__animated')
+		).toHaveTextContent('First');
+		expect(intervalSpy).not.toHaveBeenCalled();
+	});
+
+	it('keeps the saved first word under reduced motion when reverse is selected', () => {
+		reduceMotion = true;
+		const heading = renderHeadline({ direction: 'reverse' });
 
 		initAnimatedHeadlines();
 		jest.advanceTimersByTime(1000);

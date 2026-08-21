@@ -28,6 +28,7 @@ const MAX_DURATION = 10000;
 const MAX_DELAY = 10000;
 const MAX_WORDS = 50;
 const MAX_WORD_LENGTH = 200;
+const ROTATING_DIRECTIONS = new Set(['forward', 'reverse']);
 
 // A heading has at most one interval regardless of re-initialisation.
 const headlineStates = new WeakMap();
@@ -110,11 +111,14 @@ function getSettings(heading) {
 		MAX_DELAY
 	);
 	const loop = heading.dataset.dsgoAnimatedHeadlineLoop;
+	const direction =
+		heading.dataset.dsgoAnimatedHeadlineDirection || 'forward';
 
 	if (
 		duration === null ||
 		delay === null ||
-		!['true', 'false'].includes(loop)
+		!['true', 'false'].includes(loop) ||
+		!ROTATING_DIRECTIONS.has(direction)
 	) {
 		return null;
 	}
@@ -122,6 +126,7 @@ function getSettings(heading) {
 	return {
 		delay,
 		duration,
+		direction,
 		effect,
 		loop: loop === 'true',
 		wordElement,
@@ -179,19 +184,28 @@ function advance(state) {
 		return;
 	}
 
-	if (state.index === state.words.length - 1) {
+	const nextIndex = state.index + (state.direction === 'reverse' ? -1 : 1);
+
+	if (nextIndex < 0 || nextIndex >= state.words.length) {
 		if (!state.loop) {
+			state.completed = true;
 			pause(state);
 			return;
 		}
-		state.index = 0;
+
+		state.index =
+			state.direction === 'reverse' ? state.words.length - 1 : 0;
 	} else {
-		state.index++;
+		state.index = nextIndex;
 	}
 
 	renderCurrentWord(state);
 
-	if (!state.loop && state.index === state.words.length - 1) {
+	if (
+		!state.loop &&
+		state.index ===
+			(state.direction === 'reverse' ? 0 : state.words.length - 1)
+	) {
 		state.completed = true;
 		pause(state);
 	}
@@ -270,10 +284,20 @@ export function initAnimatedHeadlines(root = document) {
 			return;
 		}
 
+		// Leave the server-saved first word untouched when motion is disabled.
+		// In particular, reverse rotation otherwise swaps in the last word before
+		// `resume()` has a chance to decline the animation.
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			return;
+		}
+
 		const state = {
 			...settings,
 			heading,
-			index: 0,
+			index:
+				settings.direction === 'reverse'
+					? settings.words.length - 1
+					: 0,
 			timer: null,
 			completed: false,
 		};

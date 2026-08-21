@@ -64,6 +64,12 @@ export default function AdvancedHeadingSave({ attributes }) {
 					'data-dsgo-animated-headline-shape': headline.shape,
 					'data-dsgo-animated-headline-duration': headline.duration,
 					'data-dsgo-animated-headline-delay': headline.delay,
+					...(headline.direction !== 'forward'
+						? {
+								'data-dsgo-animated-headline-direction':
+									headline.direction,
+							}
+						: {}),
 					'data-dsgo-animated-headline-loop': headline.loop
 						? 'true'
 						: 'false',

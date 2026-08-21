@@ -20,6 +20,8 @@ export const ROTATING_EFFECTS = [
 	'slide-down',
 ];
 
+export const ROTATING_DIRECTIONS = ['forward', 'reverse'];
+
 export const HIGHLIGHT_SHAPES = [
 	'circle',
 	'curly',
@@ -39,6 +41,7 @@ export const DEFAULT_ANIMATED_HEADLINE = {
 	shape: 'circle',
 	duration: 2500,
 	delay: 0,
+	direction: 'forward',
 	loop: true,
 	url: '',
 	target: '',
@@ -153,6 +156,9 @@ export function normalizeAnimatedHeadline(value) {
 			DELAY_MAX,
 			DEFAULT_ANIMATED_HEADLINE.delay
 		),
+		direction: ROTATING_DIRECTIONS.includes(value.direction)
+			? value.direction
+			: DEFAULT_ANIMATED_HEADLINE.direction,
 		loop: value.loop !== false,
 		...(normalizeAnimatedHeadlineLink(value) || {
 			url: '',
@@ -247,6 +253,43 @@ export default function AnimatedHeadlinePanel({
 								value: effect,
 							}))}
 							onChange={(effect) => update({ effect })}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+					<DsgoInspectorPanel.Item
+						label={__('Direction', 'designsetgo')}
+						hasValue={() =>
+							value.direction !==
+							DEFAULT_ANIMATED_HEADLINE.direction
+						}
+						onDeselect={() =>
+							update({
+								direction: DEFAULT_ANIMATED_HEADLINE.direction,
+							})
+						}
+						isShownByDefault
+					>
+						<SelectControl
+							label={__('Direction', 'designsetgo')}
+							value={value.direction}
+							options={[
+								{
+									label: __(
+										'Forward (first to last)',
+										'designsetgo'
+									),
+									value: 'forward',
+								},
+								{
+									label: __(
+										'Reverse (last to first)',
+										'designsetgo'
+									),
+									value: 'reverse',
+								},
+							]}
+							onChange={(direction) => update({ direction })}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>

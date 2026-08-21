@@ -92,6 +92,40 @@ describe('animated headline save', () => {
 		expect(html.match(/dsgo-heading-segment__animated/g)).toHaveLength(1);
 	});
 
+	test('saves a reverse rotation direction only when an author selects it', () => {
+		const reverseHtml = serialize(
+			createHeading(
+				{
+					animatedHeadline: {
+						mode: 'rotating',
+						effect: 'slide',
+						direction: 'reverse',
+					},
+				},
+				{
+					headlineRole: 'animated',
+					animatedWords: ['First', 'Last'],
+				}
+			)
+		);
+		const defaultHtml = serialize(
+			createHeading(
+				{ animatedHeadline: { mode: 'rotating' } },
+				{
+					headlineRole: 'animated',
+					animatedWords: ['First', 'Last'],
+				}
+			)
+		);
+
+		expect(reverseHtml).toContain(
+			'data-dsgo-animated-headline-direction="reverse"'
+		);
+		expect(defaultHtml).not.toContain(
+			'data-dsgo-animated-headline-direction'
+		);
+	});
+
 	test('wraps a valid headline URL in a real sanitized anchor', () => {
 		const html = serialize(
 			createHeading(

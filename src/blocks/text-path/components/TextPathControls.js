@@ -61,9 +61,11 @@ export default function TextPathControls({
 			customPath: null,
 			showPath: false,
 			guideColor: '',
+			circleBackgroundColor: '',
 			guideOpacity: 0.35,
 			guideStrokeWidth: 2,
 			pathWidth: 100,
+			pathAlignment: 'left',
 			direction: 'ltr',
 			url: '',
 			target: false,
@@ -81,6 +83,7 @@ export default function TextPathControls({
 			guideOpacity: 0.35,
 			guideStrokeWidth: 2,
 			pathWidth: 100,
+			pathAlignment: 'left',
 		});
 
 	return (
@@ -191,12 +194,14 @@ export default function TextPathControls({
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
-					<ToggleControl
-						label={__('Open in new tab', 'designsetgo')}
-						checked={attributes.target}
-						onChange={(target) => setAttributes({ target })}
-						__nextHasNoMarginBottom
-					/>
+					<div className="dsgo-text-path__link-target">
+						<ToggleControl
+							label={__('Open in new tab', 'designsetgo')}
+							checked={attributes.target}
+							onChange={(target) => setAttributes({ target })}
+							__nextHasNoMarginBottom
+						/>
+					</div>
 				</DsgoInspectorPanel.Item>
 			</DsgoInspectorPanel>
 			<DsgoInspectorPanel
@@ -250,6 +255,33 @@ export default function TextPathControls({
 						min={25}
 						max={100}
 						step={1}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+				<DsgoInspectorPanel.Item
+					label={__('Path alignment', 'designsetgo')}
+					hasValue={() => attributes.pathAlignment !== 'left'}
+					onDeselect={() => setAttributes({ pathAlignment: 'left' })}
+					isShownByDefault
+				>
+					<SelectControl
+						label={__('Path alignment', 'designsetgo')}
+						value={attributes.pathAlignment}
+						options={[
+							{ label: __('Left', 'designsetgo'), value: 'left' },
+							{
+								label: __('Center', 'designsetgo'),
+								value: 'center',
+							},
+							{
+								label: __('Right', 'designsetgo'),
+								value: 'right',
+							},
+						]}
+						onChange={(pathAlignment) =>
+							setAttributes({ pathAlignment })
+						}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
@@ -381,12 +413,6 @@ export default function TextPathControls({
 					</>
 				)}
 			</DsgoInspectorPanel>
-			<DsgoInspectorPanel
-				title={__('Advanced', 'designsetgo')}
-				panelName="advanced"
-				panelId={clientId}
-				resetAll={() => {}}
-			/>
 		</>
 	);
 }

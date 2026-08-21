@@ -3,4 +3,12 @@
 	:where(.dsgo-hotspot__image-wrap--editor) {
 		min-height: 12rem;
 	}
+
+	&.dsgo-hotspot--editor-selected-only {
+
+		:where(.dsgo-hotspot-item:not(.is-selected)) {
+			visibility: hidden;
+			pointer-events: none;
+		}
+	}
 }

@@ -1,4 +1,4 @@
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import metadata from '../block.json';
 import { v1 as legacyTextPath } from '../deprecated';
@@ -35,5 +35,17 @@ describe('text path block', () => {
 					'<textPath data-dsgo-text-path-offset="0">Text</textPath>',
 			})
 		).toBe(false);
+	});
+
+	test('keeps link target spacing outside the canvas-only editor selector', () => {
+		const editorStyles = readFileSync(
+			resolve(__dirname, '../editor.scss'),
+			'utf8'
+		);
+
+		expect(editorStyles).toContain('\n.dsgo-text-path__link-target {');
+		expect(editorStyles).not.toContain(
+			'\n\t.dsgo-text-path__link-target {'
+		);
 	});
 });

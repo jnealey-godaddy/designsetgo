@@ -8,7 +8,10 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 } from '@wordpress/block-editor';
+import { ToolbarButton } from '@wordpress/components';
 import { useDispatch, useSelect } from '@wordpress/data';
+import { useState } from '@wordpress/element';
+import { seen, unseen } from '@wordpress/icons';
 import DsgoChildToolbar from '../../components/shared/DsgoChildToolbar';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { useBlockColors } from '../../hooks';
@@ -24,6 +27,7 @@ const TEMPLATE = [
 ];
 
 export default function HotspotEdit({ attributes, setAttributes, clientId }) {
+	const [showOnlySelected, setShowOnlySelected] = useState(false);
 	const {
 		imageUrl,
 		imageAlt,
@@ -72,7 +76,11 @@ export default function HotspotEdit({ attributes, setAttributes, clientId }) {
 	);
 	const selectedItem = selectedIndex >= 0 ? innerBlocks[selectedIndex] : null;
 	const blockProps = useBlockProps({
-		className: `dsgo-hotspot dsgo-hotspot--position-${attributes.tooltipPosition} dsgo-hotspot--animation-${attributes.animation}`,
+		className: `dsgo-hotspot dsgo-hotspot--position-${attributes.tooltipPosition} dsgo-hotspot--animation-${attributes.animation}${
+			showOnlySelected && selectedItem
+				? ' dsgo-hotspot--editor-selected-only'
+				: ''
+		}`,
 		style: {
 			'--dsgo-hotspot-tooltip-width': `${tooltipWidth}px`,
 			'--dsgo-hotspot-sequence-duration': `${sequenceDuration}ms`,
@@ -108,6 +116,18 @@ export default function HotspotEdit({ attributes, setAttributes, clientId }) {
 	return (
 		<>
 			<BlockControls group="block">
+				<ToolbarButton
+					icon={showOnlySelected ? seen : unseen}
+					label={
+						showOnlySelected
+							? __('Show all hotspots', 'designsetgo')
+							: __('Show only selected hotspot', 'designsetgo')
+					}
+					onClick={() => setShowOnlySelected((current) => !current)}
+					isPressed={showOnlySelected}
+					disabled={!selectedItem}
+					showTooltip
+				/>
 				<DsgoChildToolbar
 					parentClientId={clientId}
 					childBlockName="designsetgo/hotspot-item"

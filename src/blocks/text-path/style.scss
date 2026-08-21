@@ -10,6 +10,15 @@
 		transform-origin: center;
 	}
 
+	&.dsgo-text-path--align-center :where(svg) {
+		margin-right: auto;
+		margin-left: auto;
+	}
+
+	&.dsgo-text-path--align-right :where(svg) {
+		margin-left: auto;
+	}
+
 	:where(text) {
 		fill: currentcolor;
 	}
@@ -19,6 +28,10 @@
 		stroke: var(--dsgo-text-path-guide-color, currentcolor);
 		stroke-width: var(--dsgo-text-path-guide-stroke-width, 2);
 		opacity: var(--dsgo-text-path-guide-opacity, 0.35);
+	}
+
+	:where(.dsgo-text-path__circle-background) {
+		fill: var(--dsgo-text-path-circle-background);
 	}
 
 	:where(a) {
