@@ -90,8 +90,16 @@
 
 @keyframes dsgo-hotspot-pulse {
 
-	50% {
-		box-shadow: 0 0 0 .5rem rgb(0 0 0 / 0%);
+	0% {
+		box-shadow: 0 0 0 0 rgb(0 0 0 / .4);
+	}
+
+	70% {
+		box-shadow: 0 0 0 .75rem rgb(0 0 0 / 0%);
+	}
+
+	100% {
+		box-shadow: 0 0 0 0 rgb(0 0 0 / 0%);
 	}
 }
 

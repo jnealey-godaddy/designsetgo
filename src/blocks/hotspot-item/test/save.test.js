@@ -249,6 +249,15 @@ describe('hotspot item save', () => {
 		);
 	});
 
+	test('starts pulse animations with a visible ring before it expands and fades', () => {
+		expect(styleSource).toMatch(
+			/@keyframes dsgo-hotspot-pulse\s*\{\s*0%\s*\{\s*box-shadow:\s*0 0 0 0 rgb\(0 0 0 \/ \.4\);/
+		);
+		expect(styleSource).toMatch(
+			/70%\s*\{\s*box-shadow:\s*0 0 0 \.75rem rgb\(0 0 0 \/ 0%\);/
+		);
+	});
+
 	test('saves the tooltip hidden and announced as collapsed by default', () => {
 		const html = serialize(
 			createBlock(metadata.name, { uniqueId: 'closed-tooltip' })
