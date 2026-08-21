@@ -1,5 +1,7 @@
 /* global DOMParser */
 
+import { __ } from '@wordpress/i18n';
+
 /**
  * Safe SVG path data utilities for the Text Path block.
  *
@@ -38,7 +40,7 @@ const PATH_ARGUMENT_COUNTS = {
  * Stable text-path presets. Keep these paths as data, not generated SVG, so
  * both editor and frontend renderers can use the same safe values.
  */
-export const TEXT_PATH_PRESETS = Object.freeze({
+export const TEXT_PATH_SHAPES = Object.freeze({
 	wave: Object.freeze({
 		viewBox: '0 0 1000 200',
 		d: 'M 0 100 C 250 0 750 200 1000 100',
@@ -64,6 +66,71 @@ export const TEXT_PATH_PRESETS = Object.freeze({
 		d: 'M 500 500 C 500 250 850 250 850 500 C 850 850 150 850 150 500 C 150 50 950 50 950 500',
 	}),
 });
+
+// Backwards-compatible name for consumers that adopted the initial API.
+export const TEXT_PATH_PRESETS = TEXT_PATH_SHAPES;
+
+const getTextPathArcSize = (value) => {
+	if (value === undefined || value === null || value === '') {
+		return 100;
+	}
+
+	const number = Number(value);
+	return Number.isFinite(number)
+		? Math.round(Math.max(0, Math.min(100, number)))
+		: 100;
+};
+
+/**
+ * Get Text Path shape options for SelectControl.
+ *
+ * @return {Array} Shape options with translated labels.
+ */
+export function getTextPathShapeOptions() {
+	return [
+		{ label: __('Wave', 'designsetgo'), value: 'wave' },
+		{ label: __('Arc', 'designsetgo'), value: 'arc' },
+		{ label: __('Circle', 'designsetgo'), value: 'circle' },
+		{ label: __('Line', 'designsetgo'), value: 'line' },
+		{ label: __('Oval', 'designsetgo'), value: 'oval' },
+		{ label: __('Spiral', 'designsetgo'), value: 'spiral' },
+	];
+}
+
+/**
+ * Resolve one of the shared Text Path shapes.
+ *
+ * @param {string} shapeName Shared shape slug.
+ * @return {{viewBox: string, d: string}|null} Shape data or null.
+ */
+export function getTextPathShape(shapeName) {
+	return TEXT_PATH_SHAPES[shapeName] || null;
+}
+
+/**
+ * Resolve safe path data from the shared Text Path shape library.
+ *
+ * @param {Object} attributes Text Path attributes.
+ * @return {{viewBox: string, d: string}} Resolved path data.
+ */
+export function getTextPathData(attributes = {}) {
+	const { pathType, customPath, arcSize } = attributes;
+
+	if (pathType === 'custom') {
+		return normaliseTextPathData(customPath) || TEXT_PATH_SHAPES.wave;
+	}
+
+	if (pathType === 'arc') {
+		const controlY = 200 - getTextPathArcSize(arcSize) * 2;
+
+		return {
+			...TEXT_PATH_SHAPES.arc,
+			d: `M 0 200 Q 500 ${controlY} 1000 200`,
+		};
+	}
+
+	return getTextPathShape(pathType) || TEXT_PATH_SHAPES.wave;
+}
 
 function isSafeNumber(value) {
 	return NUMBER_TOKEN_PATTERN.test(value) && Number.isFinite(Number(value));

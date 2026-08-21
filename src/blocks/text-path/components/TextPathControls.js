@@ -6,13 +6,10 @@ import {
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { DsgoInspectorPanel } from '../../../components/shared/DsgoInspectorPanel';
-import { TEXT_PATH_PRESETS } from '../../../utils/svg-paths';
+import { getTextPathShapeOptions } from '../../../utils/svg-paths';
 import CustomPathUpload from './CustomPathUpload';
 
-const presetOptions = Object.keys(TEXT_PATH_PRESETS).map((value) => ({
-	label: value[0].toUpperCase() + value.slice(1),
-	value,
-}));
+const presetOptions = getTextPathShapeOptions();
 
 const STYLE_CONTROLS = [
 	{

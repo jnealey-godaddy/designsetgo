@@ -1,4 +1,6 @@
 import {
+	getTextPathData,
+	getTextPathShapeOptions,
 	TEXT_PATH_PRESETS,
 	extractTextPathFromSvg,
 	normaliseTextPathData,
@@ -18,6 +20,25 @@ describe('text path presets', () => {
 		Object.values(TEXT_PATH_PRESETS).forEach((preset) => {
 			expect(normaliseTextPathData(preset)).toEqual(preset);
 		});
+	});
+
+	it('uses the shared shape registry for options and arc geometry', () => {
+		expect(getTextPathShapeOptions()).toEqual([
+			{ label: 'Wave', value: 'wave' },
+			{ label: 'Arc', value: 'arc' },
+			{ label: 'Circle', value: 'circle' },
+			{ label: 'Line', value: 'line' },
+			{ label: 'Oval', value: 'oval' },
+			{ label: 'Spiral', value: 'spiral' },
+		]);
+
+		expect(getTextPathData({ pathType: 'arc', arcSize: 0 })).toEqual({
+			viewBox: '0 0 1000 200',
+			d: 'M 0 200 Q 500 200 1000 200',
+		});
+		expect(getTextPathData({ pathType: 'missing' })).toEqual(
+			TEXT_PATH_PRESETS.wave
+		);
 	});
 });
 

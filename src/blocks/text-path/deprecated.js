@@ -1,6 +1,7 @@
 import { useBlockProps } from '@wordpress/block-editor';
 import { createElement } from '@wordpress/element';
-import { getSafeTextPathUrl, getTextPathData, getTextPathId } from './utils';
+import { getTextPathData } from '../../utils/svg-paths';
+import { getSafeTextPathUrl, getTextPathId } from './utils';
 
 function LegacyTextPathGraphic({ attributes }) {
 	const path = getTextPathData(attributes);

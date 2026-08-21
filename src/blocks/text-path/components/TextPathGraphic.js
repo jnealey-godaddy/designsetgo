@@ -1,4 +1,5 @@
-import { getSafeTextPathColor, getTextPathData, getTextPathId } from '../utils';
+import { getTextPathData } from '../../../utils/svg-paths';
+import { getSafeTextPathColor, getTextPathId } from '../utils';
 
 const clamp = (value, minimum, maximum, fallback) => {
 	const number = Number(value);
