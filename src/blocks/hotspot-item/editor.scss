@@ -1,6 +1,10 @@
 .wp-block-designsetgo-hotspot-item {
 
 	:where(.dsgo-hotspot-item__tooltip) {
+		display: none;
+	}
+
+	:where(.dsgo-hotspot-item__tooltip.is-open) {
 		display: block;
 		min-width: 10rem;
 		opacity: .9;

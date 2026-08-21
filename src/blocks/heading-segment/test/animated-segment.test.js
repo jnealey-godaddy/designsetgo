@@ -6,6 +6,8 @@ import {
 	setCategories,
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import metadata from '../block.json';
 import save from '../save';
 import AnimatedWordsControl from '../components/AnimatedWordsControl';
@@ -14,6 +16,8 @@ import {
 	getHeadingSegmentAnimationForWords,
 } from '../utils';
 
+const editorSource = readFileSync(resolve(__dirname, '../edit.js'), 'utf8');
+
 setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
 if (!getBlockType(metadata.name)) {
@@ -21,6 +25,12 @@ if (!getBlockType(metadata.name)) {
 }
 
 describe('animated heading segment save', () => {
+	test('exposes parent-owned animation controls while animated words are selected', () => {
+		expect(editorSource).toContain('AnimatedHeadlinePanel');
+		expect(editorSource).toContain('parentClientId');
+		expect(editorSource).toContain('updateBlockAttributes');
+	});
+
 	test('keeps a normal segment byte-identical to the existing saved markup', () => {
 		const html = serialize(
 			createBlock(metadata.name, {

@@ -217,12 +217,6 @@ export default function HotspotInspector({
 					/>
 				</DsgoInspectorPanel.Item>
 			</DsgoInspectorPanel>
-			<DsgoInspectorPanel
-				title={__('Advanced', 'designsetgo')}
-				panelName="advanced"
-				panelId={clientId}
-				resetAll={() => {}}
-			/>
 		</>
 	);
 }

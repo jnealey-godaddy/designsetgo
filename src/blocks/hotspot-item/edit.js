@@ -4,6 +4,7 @@ import {
 	RichText,
 	useBlockProps,
 } from '@wordpress/block-editor';
+import { useState } from '@wordpress/element';
 import { useUniqueBlockId } from '../../hooks';
 import HotspotItemInspector from './components/HotspotItemInspector';
 
@@ -16,6 +17,7 @@ export default function HotspotItemEdit({
 	clientId,
 	context,
 }) {
+	const [isTooltipOpen, setTooltipOpen] = useState(false);
 	const {
 		uniqueId,
 		x,
@@ -82,13 +84,19 @@ export default function HotspotItemEdit({
 					className="dsgo-hotspot-item__marker"
 					type="button"
 					aria-label={label || __('Hotspot', 'designsetgo')}
-					onClick={(event) => event.preventDefault()}
+					aria-expanded={isTooltipOpen}
+					onClick={(event) => {
+						event.preventDefault();
+						setTooltipOpen((isOpen) => !isOpen);
+					}}
 				>
 					{icon || label || '+'}
 				</button>
 				<RichText
 					tagName="span"
-					className="dsgo-hotspot-item__tooltip"
+					className={`dsgo-hotspot-item__tooltip${
+						isTooltipOpen ? ' is-open' : ''
+					}`}
 					value={tooltip}
 					onChange={(value) => setAttributes({ tooltip: value })}
 					placeholder={__('Describe this hotspot…', 'designsetgo')}

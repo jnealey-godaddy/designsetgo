@@ -16,11 +16,17 @@ import classnames from 'classnames';
 import {
 	InspectorControls,
 	RichText,
+	store as blockEditorStore,
 	useBlockProps,
 } from '@wordpress/block-editor';
 import { SelectControl } from '@wordpress/components';
+import { useDispatch, useSelect } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
 import { DsgoInspectorPanel } from '../../components/shared';
+import AnimatedHeadlinePanel, {
+	DEFAULT_ANIMATED_HEADLINE,
+	normalizeAnimatedHeadline,
+} from '../advanced-heading/components/AnimatedHeadlinePanel';
 import AnimatedWordsControl, {
 	normalizeAnimatedWords,
 } from './components/AnimatedWordsControl';
@@ -61,6 +67,36 @@ export default function HeadingSegmentEdit({
 		isAnimated && HIGHLIGHT_PATHS[animatedHeadlineShape]
 			? animatedHeadlineShape
 			: '';
+	const { updateBlockAttributes } = useDispatch(blockEditorStore);
+	const { animatedSegmentCount, parentAnimatedHeadline, parentClientId } =
+		useSelect(
+			(select) => {
+				const editor = select(blockEditorStore);
+				const rootClientId = editor.getBlockRootClientId(clientId);
+				const parent = editor.getBlock(rootClientId);
+				const isAdvancedHeading =
+					parent?.name === 'designsetgo/advanced-heading';
+
+				return {
+					parentClientId: isAdvancedHeading ? rootClientId : null,
+					parentAnimatedHeadline: isAdvancedHeading
+						? parent.attributes.animatedHeadline
+						: null,
+					animatedSegmentCount: isAdvancedHeading
+						? parent.innerBlocks.filter(
+								(block) =>
+									block.name ===
+										'designsetgo/heading-segment' &&
+									block.attributes.headlineRole === 'animated'
+							).length
+						: 0,
+				};
+			},
+			[clientId]
+		);
+	const normalizedParentHeadline = normalizeAnimatedHeadline(
+		parentAnimatedHeadline
+	);
 
 	useEffect(() => {
 		const wordsMatch =
@@ -131,34 +167,56 @@ export default function HeadingSegmentEdit({
 					</DsgoInspectorPanel.Item>
 
 					{isAnimated && (
-						<DsgoInspectorPanel.Item
-							label={__('Animated words', 'designsetgo')}
-							hasValue={() => words.length > 0}
-							onDeselect={() =>
-								setAttributes(
-									getHeadingSegmentAnimationForWords(
-										{ headlineRole, animatedWords: words },
-										[]
-									)
-								)
-							}
-							isShownByDefault
-						>
-							<AnimatedWordsControl
-								value={words}
-								onChange={(nextWords) =>
+						<>
+							<DsgoInspectorPanel.Item
+								label={__('Animated words', 'designsetgo')}
+								hasValue={() => words.length > 0}
+								onDeselect={() =>
 									setAttributes(
 										getHeadingSegmentAnimationForWords(
 											{
 												headlineRole,
 												animatedWords: words,
 											},
-											normalizeAnimatedWords(nextWords)
+											[]
 										)
 									)
 								}
-							/>
-						</DsgoInspectorPanel.Item>
+								isShownByDefault
+							>
+								<AnimatedWordsControl
+									value={words}
+									onChange={(nextWords) =>
+										setAttributes(
+											getHeadingSegmentAnimationForWords(
+												{
+													headlineRole,
+													animatedWords: words,
+												},
+												normalizeAnimatedWords(
+													nextWords
+												)
+											)
+										)
+									}
+								/>
+							</DsgoInspectorPanel.Item>
+							{parentClientId && (
+								<AnimatedHeadlinePanel
+									value={
+										normalizedParentHeadline ||
+										DEFAULT_ANIMATED_HEADLINE
+									}
+									segmentCount={animatedSegmentCount}
+									onChange={(next) =>
+										updateBlockAttributes(parentClientId, {
+											animatedHeadline:
+												normalizeAnimatedHeadline(next),
+										})
+									}
+								/>
+							)}
+						</>
 					)}
 				</DsgoInspectorPanel>
 			</InspectorControls>

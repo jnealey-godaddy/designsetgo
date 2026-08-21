@@ -18,6 +18,18 @@ const editorStyleSource = readFileSync(
 	resolve(__dirname, '../editor.scss'),
 	'utf8'
 );
+const inspectorSource = readFileSync(
+	resolve(__dirname, '../components/HotspotInspector.js'),
+	'utf8'
+);
+const itemEditorSource = readFileSync(
+	resolve(__dirname, '../../hotspot-item/edit.js'),
+	'utf8'
+);
+const itemEditorStyleSource = readFileSync(
+	resolve(__dirname, '../../hotspot-item/editor.scss'),
+	'utf8'
+);
 
 describe('hotspot save', () => {
 	beforeAll(() => {
@@ -70,5 +82,18 @@ describe('hotspot save', () => {
 			'dsgo-hotspot--editor-selected-only'
 		);
 		expect(saveSource).not.toContain('editor-selected-only');
+	});
+
+	test('keeps editor tooltips closed until their marker is clicked', () => {
+		expect(itemEditorSource).toContain('isTooltipOpen');
+		expect(itemEditorSource).toContain('setTooltipOpen');
+		expect(itemEditorStyleSource).toContain(
+			'.dsgo-hotspot-item__tooltip.is-open'
+		);
+		expect(itemEditorStyleSource).toContain('display: none');
+	});
+
+	test('does not add an empty custom Advanced inspector panel', () => {
+		expect(inspectorSource).not.toContain('panelName="advanced"');
 	});
 });
