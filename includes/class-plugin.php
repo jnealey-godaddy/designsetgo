@@ -594,6 +594,7 @@ class Plugin {
 		// --- Blocks: Query engine ---
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-template-controller.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/text-path/class-text-path-controller.php';
 		// --- Block Bindings (cross-cutting) ---
 		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings-helpers.php';
 		require_once DESIGNSETGO_PATH . 'includes/bindings/class-query-bindings.php';
@@ -727,6 +728,7 @@ class Plugin {
 		$this->form_submissions = new Blocks\Form_Submissions();
 		$this->query_controller = new Blocks\Query\Controller();
 		add_action( 'rest_api_init', array( 'DesignSetGo\Blocks\Query\Template_Controller', 'register_routes' ) );
+		add_action( 'rest_api_init', array( 'DesignSetGo\Blocks\Text_Path\Controller', 'register_routes' ) );
 		$this->query_bindings = new Blocks\Query\Bindings();
 		$this->dynamic_tags   = new Blocks\DynamicTags\Bootstrap();
 		$this->filter_index   = new Blocks\Query\FilterIndex();
