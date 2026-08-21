@@ -44,6 +44,18 @@ const STYLE_CONTROLS = [
 		max: 100,
 		step: 1,
 	},
+	{
+		label: __('Path padding', 'designsetgo'),
+		help: __(
+			'Move text away from the path. Use a negative value for the opposite side.',
+			'designsetgo'
+		),
+		attribute: 'pathPadding',
+		defaultValue: 0,
+		min: -200,
+		max: 200,
+		step: 1,
+	},
 ];
 
 export default function TextPathControls({
@@ -75,6 +87,7 @@ export default function TextPathControls({
 			rotation: 0,
 			startOffset: 0,
 			wordSpacing: 0,
+			pathPadding: 0,
 			motion: false,
 			motionDuration: 12,
 			motionDirection: 'forward',
@@ -234,7 +247,15 @@ export default function TextPathControls({
 				resetAll={resetStyle}
 			>
 				{STYLE_CONTROLS.map(
-					({ label, attribute, defaultValue, min, max, step }) => (
+					({
+						label,
+						help,
+						attribute,
+						defaultValue,
+						min,
+						max,
+						step,
+					}) => (
 						<DsgoInspectorPanel.Item
 							key={attribute}
 							label={label}
@@ -257,6 +278,7 @@ export default function TextPathControls({
 								min={min}
 								max={max}
 								step={step}
+								help={help}
 								__next40pxDefaultSize
 								__nextHasNoMarginBottom
 							/>

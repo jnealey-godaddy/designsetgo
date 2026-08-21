@@ -75,6 +75,10 @@
 			"type": "number",
 			"default": 0
 		},
+		"pathPadding": {
+			"type": "number",
+			"default": 0
+		},
 		"motion": {
 			"type": "boolean",
 			"default": false

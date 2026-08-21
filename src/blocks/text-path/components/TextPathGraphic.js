@@ -14,6 +14,7 @@ export default function TextPathGraphic({ attributes }) {
 	const startOffset = `${clamp(attributes.startOffset, -100, 100, 0)}%`;
 	const fontSize = clamp(attributes.pathFontSize, 1, 400, 54);
 	const wordSpacing = clamp(attributes.wordSpacing, -40, 100, 0);
+	const pathPadding = clamp(attributes.pathPadding, -200, 200, 0);
 	const hasCircleBackground = Boolean(
 		attributes.pathType === 'circle' &&
 			getSafeTextPathColor(attributes.circleBackgroundColor)
@@ -52,7 +53,11 @@ export default function TextPathGraphic({ attributes }) {
 					startOffset={startOffset}
 					data-dsgo-text-path-offset={startOffset.replace('%', '')}
 				>
-					{attributes.text}
+					{pathPadding === 0 ? (
+						attributes.text
+					) : (
+						<tspan dy={pathPadding}>{attributes.text}</tspan>
+					)}
 				</textPath>
 			</text>
 		</svg>

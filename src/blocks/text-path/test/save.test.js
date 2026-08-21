@@ -58,6 +58,13 @@ describe('text path save', () => {
 		expect(halfHtml).toContain('d="M 0 200 Q 500 100 1000 200"');
 	});
 
+	test('offsets text from its SVG path without changing outer block padding', () => {
+		const html = serialize(createBlock(metadata.name, { pathPadding: 36 }));
+
+		expect(html).toContain('<tspan dy="36">Text on a path</tspan>');
+		expect(html).not.toContain('--dsgo-text-path-padding');
+	});
+
 	test('saves independent guide-line color, opacity, width, and path width', () => {
 		const html = serialize(
 			createBlock(metadata.name, {
