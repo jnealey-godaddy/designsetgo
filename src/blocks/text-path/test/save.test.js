@@ -46,6 +46,18 @@ describe('text path save', () => {
 		expect(visibleHtml).toContain('dsgo-text-path__guide');
 	});
 
+	test('lets an arc range from flat to its full curve', () => {
+		const flatHtml = serialize(
+			createBlock(metadata.name, { pathType: 'arc', arcSize: 0 })
+		);
+		const halfHtml = serialize(
+			createBlock(metadata.name, { pathType: 'arc', arcSize: 50 })
+		);
+
+		expect(flatHtml).toContain('d="M 0 200 Q 500 200 1000 200"');
+		expect(halfHtml).toContain('d="M 0 200 Q 500 100 1000 200"');
+	});
+
 	test('saves independent guide-line color, opacity, width, and path width', () => {
 		const html = serialize(
 			createBlock(metadata.name, {

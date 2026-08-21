@@ -23,6 +23,10 @@
 			"type": "string",
 			"default": "wave"
 		},
+		"arcSize": {
+			"type": "number",
+			"default": 100
+		},
 		"customPath": {
 			"type": "object",
 			"default": null

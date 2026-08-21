@@ -58,6 +58,7 @@ export default function TextPathControls({
 		setAttributes({
 			text: 'Text on a path',
 			pathType: 'wave',
+			arcSize: 100,
 			customPath: null,
 			showPath: false,
 			guideColor: '',
@@ -141,6 +142,31 @@ export default function TextPathControls({
 						/>
 					)}
 				</DsgoInspectorPanel.Item>
+				{attributes.pathType === 'arc' && (
+					<DsgoInspectorPanel.Item
+						label={__('Arc size', 'designsetgo')}
+						hasValue={() => attributes.arcSize !== 100}
+						onDeselect={() => setAttributes({ arcSize: 100 })}
+						isShownByDefault
+					>
+						<RangeControl
+							label={__('Arc size', 'designsetgo')}
+							help={__(
+								'0 is flat; 100 is the full curve.',
+								'designsetgo'
+							)}
+							value={attributes.arcSize}
+							onChange={(arcSize) =>
+								setAttributes({ arcSize: arcSize ?? 100 })
+							}
+							min={0}
+							max={100}
+							step={1}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
+				)}
 				<DsgoInspectorPanel.Item
 					label={__('Show path', 'designsetgo')}
 					hasValue={() => attributes.showPath}
