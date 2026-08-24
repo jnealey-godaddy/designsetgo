@@ -266,6 +266,52 @@ describe('animated heading segment save', () => {
 		expect(repromoted.preservedAnimatedWords).toEqual([]);
 	});
 
+	test('parks the list when an author clears the final animated word', () => {
+		// Removing the last word demotes through the words helper, which must
+		// forward the parked list rather than dropping it on the way to the
+		// role helper.
+		const demoted = getHeadingSegmentAnimationForWords(
+			{
+				content: '',
+				headlineRole: 'animated',
+				animatedWords: ['Design', 'Build'],
+			},
+			[]
+		);
+
+		expect(demoted.headlineRole).toBe('normal');
+		expect(demoted.preservedAnimatedWords).toEqual(['Design', 'Build']);
+	});
+
+	test('leaves an already-parked list untouched when there is nothing to park', () => {
+		const result = getHeadingSegmentAnimationForWords(
+			{
+				content: 'Plain',
+				headlineRole: 'normal',
+				animatedWords: [],
+				preservedAnimatedWords: ['Design', 'Build'],
+			},
+			[]
+		);
+
+		// setAttributes merges, so omitting the key keeps the parked list
+		// rather than overwriting it with an empty array.
+		expect(result).not.toHaveProperty('preservedAnimatedWords');
+	});
+
+	test('forwards the parked list from every editor call site', () => {
+		// The helpers read `preservedAnimatedWords` off the attributes object,
+		// but edit.js hands them a hand-built object rather than `attributes`.
+		// Omitting the key there silently disables restoration.
+		const roleCalls =
+			editorSource.split('animatedWords: words,').length - 1;
+		const forwarded =
+			editorSource.split('preservedAnimatedWords,').length - 1;
+
+		expect(roleCalls).toBeGreaterThan(0);
+		expect(forwarded).toBe(roleCalls);
+	});
+
 	test('parks nothing when a demoted segment had no words to lose', () => {
 		const demoted = getHeadingSegmentAnimationForRole(
 			{
@@ -383,6 +429,31 @@ describe('animated heading segment save', () => {
 			{ headlineRole: 'animated', animatedWords: ['Only word'] },
 			[]
 		);
+		const html = serialize(createBlock(metadata.name, animation));
+
+		expect(animation).toEqual({
+			headlineRole: 'normal',
+			animatedWords: [],
+			// The segment had no normal content of its own, so the word it
+			// just lost becomes its readable text instead of leaving an empty
+			// segment that save() drops entirely.
+			content: 'Only word',
+			preservedAnimatedWords: ['Only word'],
+		});
+		expect(html).not.toContain('"headlineRole":"animated"');
+		expect(html).not.toContain('"animatedWords"');
+		expect(html).toContain('Only word');
+	});
+
+	test('keeps existing normal content when an author removes the final word', () => {
+		const animation = getHeadingSegmentAnimationForWords(
+			{
+				content: 'Static segment',
+				headlineRole: 'animated',
+				animatedWords: ['Only word'],
+			},
+			[]
+		);
 		const html = serialize(
 			createBlock(metadata.name, {
 				content: 'Static segment',
@@ -390,12 +461,7 @@ describe('animated heading segment save', () => {
 			})
 		);
 
-		expect(animation).toEqual({
-			headlineRole: 'normal',
-			animatedWords: [],
-		});
-		expect(html).not.toContain('"headlineRole":"animated"');
-		expect(html).not.toContain('"animatedWords"');
+		expect(animation).not.toHaveProperty('content');
 		expect(html).toContain('Static segment');
 	});
 

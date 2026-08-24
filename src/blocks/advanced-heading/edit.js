@@ -18,8 +18,8 @@ import {
 } from '@wordpress/block-editor';
 import { ToolbarGroup, ToolbarDropdownMenu } from '@wordpress/components';
 import { heading as headingIcon } from '@wordpress/icons';
-import { useDispatch, useSelect } from '@wordpress/data';
-import { useEffect } from '@wordpress/element';
+import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
+import { useEffect, useMemo } from '@wordpress/element';
 import { DsgoInspectorPanel } from '../../components/shared/DsgoInspectorPanel';
 import { convertPresetToCSSVar } from '../../utils/convert-preset-to-css-var';
 import AnimatedHeadlinePanel, {
@@ -60,22 +60,66 @@ export default function AdvancedHeadingEdit({
 	const validLevel = HEADING_LEVELS.includes(level) ? level : 2;
 	const TagName = `h${validLevel}`;
 	const { updateBlockAttributes } = useDispatch('core/block-editor');
-	const { innerBlocks, selectedBlockClientId } = useSelect(
+	const registry = useRegistry();
+	// Select strings, not blocks. `getBlock()` rebuilds the whole subtree on
+	// every store change and hands back a new `innerBlocks` array each time,
+	// which re-renders this heading on every unrelated keystroke.
+	const { segmentSignature, selectedBlockClientId } = useSelect(
 		(select) => {
-			const block = select('core/block-editor').getBlock(clientId);
+			const {
+				getBlockAttributes,
+				getBlockName,
+				getBlockOrder,
+				getSelectedBlockClientId,
+			} = select('core/block-editor');
 
 			return {
-				innerBlocks: block?.innerBlocks || [],
-				selectedBlockClientId:
-					select('core/block-editor').getSelectedBlockClientId(),
+				segmentSignature: getBlockOrder(clientId)
+					.filter(
+						(childClientId) =>
+							getBlockName(childClientId) ===
+							'designsetgo/heading-segment'
+					)
+					.map((childClientId) => {
+						const childAttributes =
+							getBlockAttributes(childClientId) || {};
+
+						return [
+							childClientId,
+							childAttributes.headlineRole === 'animated'
+								? 'animated'
+								: 'normal',
+							childAttributes.animatedHeadlineShape || '',
+						].join('|');
+					})
+					.join(','),
+				selectedBlockClientId: getSelectedBlockClientId(),
 			};
 		},
 		[clientId]
 	);
-	const animatedSegments = innerBlocks.filter(
-		(block) =>
-			block.name === 'designsetgo/heading-segment' &&
-			block.attributes.headlineRole === 'animated'
+	const segments = useMemo(
+		() =>
+			segmentSignature
+				? segmentSignature.split(',').map((entry) => {
+						const [
+							segmentClientId,
+							headlineRole,
+							animatedHeadlineShape,
+						] = entry.split('|');
+
+						return {
+							clientId: segmentClientId,
+							headlineRole,
+							animatedHeadlineShape,
+						};
+					})
+				: [],
+		[segmentSignature]
+	);
+	const animatedSegments = useMemo(
+		() => segments.filter((segment) => segment.headlineRole === 'animated'),
+		[segments]
 	);
 	const normalizedHeadline = normalizeAnimatedHeadline(animatedHeadline);
 
@@ -88,18 +132,25 @@ export default function AdvancedHeadingEdit({
 			return;
 		}
 
-		animatedSegments.forEach((block) => {
-			if (block.clientId !== selectedAnimatedSegment.clientId) {
+		animatedSegments.forEach((segment) => {
+			if (segment.clientId !== selectedAnimatedSegment.clientId) {
 				updateBlockAttributes(
-					block.clientId,
+					segment.clientId,
 					getHeadingSegmentAnimationForRole(
-						block.attributes,
+						registry
+							.select('core/block-editor')
+							.getBlockAttributes(segment.clientId) || {},
 						'normal'
 					)
 				);
 			}
 		});
-	}, [animatedSegments, selectedBlockClientId, updateBlockAttributes]);
+	}, [
+		animatedSegments,
+		registry,
+		selectedBlockClientId,
+		updateBlockAttributes,
+	]);
 
 	useEffect(() => {
 		if (animatedSegments.length === 1) {
@@ -132,28 +183,19 @@ export default function AdvancedHeadingEdit({
 				? normalizedHeadline.shape
 				: '';
 
-		innerBlocks.forEach((block) => {
-			if (block.name !== 'designsetgo/heading-segment') {
-				return;
-			}
-
+		segments.forEach((segment) => {
 			const nextShape =
-				block.clientId === animatedSegment?.clientId
+				segment.clientId === animatedSegment?.clientId
 					? highlightShape
 					: '';
 
-			if (block.attributes.animatedHeadlineShape !== nextShape) {
-				updateBlockAttributes(block.clientId, {
+			if (segment.animatedHeadlineShape !== nextShape) {
+				updateBlockAttributes(segment.clientId, {
 					animatedHeadlineShape: nextShape,
 				});
 			}
 		});
-	}, [
-		animatedSegments,
-		innerBlocks,
-		normalizedHeadline,
-		updateBlockAttributes,
-	]);
+	}, [animatedSegments, segments, normalizedHeadline, updateBlockAttributes]);
 
 	const blockGap = convertPresetToCSSVar(attributes.style?.spacing?.blockGap);
 

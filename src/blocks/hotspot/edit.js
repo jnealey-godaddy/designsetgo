@@ -38,12 +38,22 @@ export default function HotspotEdit({ attributes, setAttributes, clientId }) {
 		tooltipBackgroundColor,
 		tooltipTextColor,
 	} = attributes;
-	const { innerBlocks, selectedBlockId } = useSelect(
+	// Select the child order and only the selected child. `getBlock(clientId)`
+	// rebuilds the whole subtree on every store change and returns a new
+	// `innerBlocks` array each time, re-rendering this block for edits that
+	// have nothing to do with it.
+	const { itemClientIds, selectedBlockId, selectedItem } = useSelect(
 		(select) => {
 			const editor = select(blockEditorStore);
+			const order = editor.getBlockOrder(clientId);
+			const selected = editor.getSelectedBlockClientId();
+
 			return {
-				innerBlocks: editor.getBlock(clientId)?.innerBlocks || [],
-				selectedBlockId: editor.getSelectedBlockClientId(),
+				itemClientIds: order,
+				selectedBlockId: selected,
+				selectedItem: order.includes(selected)
+					? editor.getBlock(selected)
+					: null,
 			};
 		},
 		[clientId]
@@ -71,10 +81,9 @@ export default function HotspotEdit({ attributes, setAttributes, clientId }) {
 			},
 		],
 	});
-	const selectedIndex = innerBlocks.findIndex(
-		(item) => item.clientId === selectedBlockId
-	);
-	const selectedItem = selectedIndex >= 0 ? innerBlocks[selectedIndex] : null;
+	const selectedIndex = selectedItem
+		? itemClientIds.indexOf(selectedBlockId)
+		: -1;
 	const blockProps = useBlockProps({
 		className: `dsgo-hotspot dsgo-hotspot--position-${attributes.tooltipPosition} dsgo-hotspot--animation-${attributes.animation}${
 			showOnlySelected && selectedItem

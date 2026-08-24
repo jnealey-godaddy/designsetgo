@@ -57,6 +57,7 @@ export default function HeadingSegmentEdit({
 		content,
 		headlineRole = 'normal',
 		normalContent = '',
+		preservedAnimatedWords = [],
 	} = attributes;
 	const animation = normalizeHeadingSegmentAnimation({
 		headlineRole,
@@ -130,6 +131,7 @@ export default function HeadingSegmentEdit({
 									content,
 									normalContent,
 									animatedWords: words,
+									preservedAnimatedWords,
 								},
 								'normal'
 							)
@@ -146,6 +148,7 @@ export default function HeadingSegmentEdit({
 										content,
 										normalContent,
 										animatedWords: words,
+										preservedAnimatedWords,
 									},
 									'normal'
 								)
@@ -173,6 +176,7 @@ export default function HeadingSegmentEdit({
 											content,
 											normalContent,
 											animatedWords: words,
+											preservedAnimatedWords,
 										},
 										value
 									)
@@ -196,6 +200,7 @@ export default function HeadingSegmentEdit({
 												headlineRole,
 												normalContent,
 												animatedWords: words,
+												preservedAnimatedWords,
 											},
 											[]
 										)
@@ -213,6 +218,7 @@ export default function HeadingSegmentEdit({
 													headlineRole,
 													normalContent,
 													animatedWords: words,
+													preservedAnimatedWords,
 												},
 												normalizeAnimatedWords(
 													nextWords

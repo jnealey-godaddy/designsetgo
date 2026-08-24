@@ -150,12 +150,13 @@ export function getHeadingSegmentAnimationForRole(
 /**
  * Apply an author-edited word list without leaving an orphaned role behind.
  *
- * @param {Object} attributes               Heading segment attributes.
- * @param {string} attributes.content       Segment rich-text HTML.
- * @param {string} attributes.headlineRole  Current segment role.
- * @param {string} attributes.normalContent Serialized normal RichText HTML.
- * @param {Array}  attributes.animatedWords Current animated words.
- * @param {Array}  nextWords                Edited word list.
+ * @param {Object} attributes                        Heading segment attributes.
+ * @param {string} attributes.content                Segment rich-text HTML.
+ * @param {string} attributes.headlineRole           Current segment role.
+ * @param {string} attributes.normalContent          Serialized normal RichText HTML.
+ * @param {Array}  attributes.animatedWords          Current animated words.
+ * @param {Array}  attributes.preservedAnimatedWords Word list parked by an earlier demotion.
+ * @param {Array}  nextWords                         Edited word list.
  * @return {Object} Valid role and word list for the attribute update.
  */
 export function getHeadingSegmentAnimationForWords(
@@ -164,6 +165,7 @@ export function getHeadingSegmentAnimationForWords(
 		headlineRole = 'normal',
 		normalContent = '',
 		animatedWords = [],
+		preservedAnimatedWords = [],
 	} = {},
 	nextWords
 ) {
@@ -173,8 +175,18 @@ export function getHeadingSegmentAnimationForWords(
 		headlineRole !== 'animated' ||
 		normalizeAnimatedWords(words).length === 0
 	) {
+		// Park and recover from the list being cleared, not from the empty
+		// result of clearing it.
+		const wordsToPreserve =
+			normalizeAnimatedWords(words).length > 0 ? words : animatedWords;
+
 		return getHeadingSegmentAnimationForRole(
-			{ content, normalContent, animatedWords: words },
+			{
+				content,
+				normalContent,
+				animatedWords: wordsToPreserve,
+				preservedAnimatedWords,
+			},
 			'normal'
 		);
 	}
