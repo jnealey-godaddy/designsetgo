@@ -52,7 +52,13 @@ export default function useQueryItemHost(clientId) {
 	return useSelect(
 		(select) => {
 			const { getBlockParents, getBlock } = select(blockEditorStore);
-			const queryId = getBlockParents(clientId).find(
+			// `ascending: true` — getBlockParents() otherwise reverses the walk
+			// to root-first, and .find() would resolve the OUTERMOST enclosing
+			// query rather than the nearest one. The server registry is keyed
+			// per queryId and so is always nearest-scoped; a pagination block
+			// inside a nested query has to match that or the editor previews a
+			// sentinel for a host that is not the one about to render it.
+			const queryId = getBlockParents(clientId, true).find(
 				(parentId) => getBlock(parentId)?.name === 'designsetgo/query'
 			);
 			if (!queryId) {

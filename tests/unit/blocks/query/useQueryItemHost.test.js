@@ -23,24 +23,49 @@ jest.mock('@wordpress/block-editor', () => ({
 let mockStore;
 
 /**
- * Stand up a block tree: a query with the given direct children, and a
- * pagination block nested inside it.
+ * Build a store over a fixed ancestor chain.
+ *
+ * `getBlockParents` reproduces the real selector's contract: the walk collects
+ * nearest-first and is reversed to root-first unless `ascending` is set. A mock
+ * that ignores the flag cannot tell a nearest-first lookup from an outermost
+ * one, which is how the ordering bug reached review.
+ *
+ * @param {Object}   blocks    clientId -> block, for every ancestor.
+ * @param {string[]} ancestors Ancestor clientIds of 'target', nearest first.
+ * @return {Object} A minimal block-editor store.
+ */
+function storeWithAncestors(blocks, ancestors) {
+	return {
+		getBlockParents: (clientId, ascending = false) => {
+			if (clientId !== 'target') {
+				return [];
+			}
+			return ascending ? [...ancestors] : [...ancestors].reverse();
+		},
+		getBlock: (clientId) => blocks[clientId] || null,
+	};
+}
+
+/**
+ * Stand up the common case: one query with the given direct children, holding
+ * the block under test.
  *
  * @param {string[]} childNames Direct child block names of the query.
  * @return {Object} A minimal block-editor store.
  */
 function storeWithQueryChildren(childNames) {
-	const query = {
-		name: 'designsetgo/query',
-		innerBlocks: childNames.map((name) => ({ name, innerBlocks: [] })),
-	};
-	const blocks = { 'query-1': query };
-
-	return {
-		getBlockParents: (clientId) =>
-			clientId === 'pagination-1' ? ['query-1'] : [],
-		getBlock: (clientId) => blocks[clientId] || null,
-	};
+	return storeWithAncestors(
+		{
+			'query-1': {
+				name: 'designsetgo/query',
+				innerBlocks: childNames.map((name) => ({
+					name,
+					innerBlocks: [],
+				})),
+			},
+		},
+		['query-1']
+	);
 }
 
 describe('hostSupportsInfiniteScroll', () => {
@@ -65,7 +90,7 @@ describe('useQueryItemHost', () => {
 			'designsetgo/query-pagination',
 		]);
 
-		const { result } = renderHook(() => useQueryItemHost('pagination-1'));
+		const { result } = renderHook(() => useQueryItemHost('target'));
 		expect(result.current).toBe('designsetgo/slider');
 	});
 
@@ -75,14 +100,14 @@ describe('useQueryItemHost', () => {
 			'designsetgo/query-pagination',
 		]);
 
-		const { result } = renderHook(() => useQueryItemHost('pagination-1'));
+		const { result } = renderHook(() => useQueryItemHost('target'));
 		expect(result.current).toBe(GRID_ITEM_HOST_BLOCK);
 	});
 
 	it('reports no host when the query has none', () => {
 		mockStore = storeWithQueryChildren(['core/paragraph']);
 
-		const { result } = renderHook(() => useQueryItemHost('pagination-1'));
+		const { result } = renderHook(() => useQueryItemHost('target'));
 		expect(result.current).toBe('');
 	});
 
@@ -91,5 +116,33 @@ describe('useQueryItemHost', () => {
 
 		const { result } = renderHook(() => useQueryItemHost('orphan'));
 		expect(result.current).toBe('');
+	});
+
+	it('resolves the nearest enclosing query, not the outermost', () => {
+		// A grid query whose per-item template holds a second query presenting
+		// its own results in a carousel. The server registry is keyed per
+		// queryId and resolves the inner host; scanning ancestors root-first
+		// would answer with the outer grid instead, so the editor would preview
+		// a live sentinel for a host the front end is about to degrade.
+		mockStore = storeWithAncestors(
+			{
+				'query-outer': {
+					name: 'designsetgo/query',
+					innerBlocks: [
+						{ name: 'designsetgo/query-results', innerBlocks: [] },
+					],
+				},
+				'query-inner': {
+					name: 'designsetgo/query',
+					innerBlocks: [
+						{ name: 'designsetgo/slider', innerBlocks: [] },
+					],
+				},
+			},
+			['query-inner', 'query-outer']
+		);
+
+		const { result } = renderHook(() => useQueryItemHost('target'));
+		expect(result.current).toBe('designsetgo/slider');
 	});
 });
