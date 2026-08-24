@@ -40,6 +40,10 @@
 			"type": "string",
 			"default": ""
 		},
+		"preservedAnimatedWords": {
+			"type": "array",
+			"default": []
+		},
 		"animatedHeadlineShape": {
 			"type": "string",
 			"enum": [

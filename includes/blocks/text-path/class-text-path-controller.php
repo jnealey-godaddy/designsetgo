@@ -306,9 +306,11 @@ class Controller {
 			return true;
 		}
 
+		// Compare against '' rather than relying on truthiness: the token '0' is
+		// falsy in PHP, which would reject ordinary path data such as 'M0,0'.
 		return 1 === preg_match( '/^\s*,\s*$/', $separator ) &&
-			$previous &&
-			$next &&
+			is_string( $previous ) && '' !== $previous &&
+			is_string( $next ) && '' !== $next &&
 			! self::is_path_command( $previous ) &&
 			! self::is_path_command( $next );
 	}

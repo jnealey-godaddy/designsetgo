@@ -87,8 +87,19 @@ export default function HotspotItemInspector({
 						type="url"
 						label={__('Link', 'designsetgo')}
 						value={url}
-						onChange={(value) =>
-							setAttributes({ url: getSafeHotspotUrl(value) })
+						// Store the raw value. Sanitizing per keystroke wipes
+						// the field at the intermediate `http:` and `http://`
+						// states, which makes an http link untypable by hand.
+						// `save()` applies getSafeHotspotUrl at render time, so
+						// an unusable value is never emitted as markup.
+						onChange={(value) => setAttributes({ url: value })}
+						help={
+							url && !getSafeHotspotUrl(url)
+								? __(
+										'Only https, http, mailto, and tel links are used. This link will be ignored.',
+										'designsetgo'
+									)
+								: undefined
 						}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom

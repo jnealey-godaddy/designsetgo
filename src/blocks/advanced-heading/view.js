@@ -135,6 +135,29 @@ function getSettings(heading) {
 }
 
 /**
+ * Announce the rotating words once, statically, instead of on every change.
+ *
+ * The visible word can change as often as every MIN_DURATION milliseconds and
+ * a looping headline never stops, so a live region on the rotating element
+ * would re-announce indefinitely. Hiding that element and reading the whole
+ * list once conveys the same content without the churn. This runs only when
+ * the animation actually starts, so a reduced-motion or scriptless visitor
+ * keeps the saved first word as ordinary readable content.
+ *
+ * @param {Object} state Runtime heading state.
+ */
+function addAccessibleWordSummary(state) {
+	const { wordElement, words } = state;
+	const summary = document.createElement('span');
+
+	summary.className = 'screen-reader-text';
+	summary.textContent = words.join(', ');
+
+	wordElement.setAttribute('aria-hidden', 'true');
+	wordElement.after(summary);
+}
+
+/**
  * Keep one actual word readable, using Text Reveal’s established splitter
  * only for the typing effect. Other effects animate the word as one unit.
  *
@@ -150,10 +173,6 @@ function renderCurrentWord(state) {
 	// every new word without adding a second animation implementation.
 	void wordElement.offsetWidth;
 	wordElement.classList.add('is-active');
-	wordElement.setAttribute('aria-live', 'polite');
-	wordElement.setAttribute('aria-atomic', 'true');
-	wordElement.setAttribute('aria-label', word);
-	wordElement.removeAttribute('aria-hidden');
 
 	if (TEXT_REVEAL_EFFECTS.has(state.effect)) {
 		wrapTextNodes(wordElement, 'character');
@@ -302,6 +321,7 @@ export function initAnimatedHeadlines(root = document) {
 			completed: false,
 		};
 		headlineStates.set(heading, state);
+		addAccessibleWordSummary(state);
 		renderCurrentWord(state);
 		resume(state);
 	});

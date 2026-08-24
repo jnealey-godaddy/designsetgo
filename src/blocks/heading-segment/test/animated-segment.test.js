@@ -197,6 +197,67 @@ describe('animated heading segment save', () => {
 		});
 	});
 
+	test('restores the full word list when a demoted segment is animated again', () => {
+		const demoted = getHeadingSegmentAnimationForRole(
+			{
+				content: '',
+				headlineRole: 'animated',
+				animatedWords: ['Design', 'Build', 'Ship'],
+			},
+			'normal'
+		);
+
+		// A normal segment must not carry an animated payload, so the list is
+		// parked rather than dropped.
+		expect(demoted.animatedWords).toEqual([]);
+		expect(demoted.preservedAnimatedWords).toEqual([
+			'Design',
+			'Build',
+			'Ship',
+		]);
+
+		const repromoted = getHeadingSegmentAnimationForRole(
+			{
+				content: demoted.content ?? '',
+				headlineRole: 'normal',
+				animatedWords: [],
+				preservedAnimatedWords: demoted.preservedAnimatedWords,
+			},
+			'animated'
+		);
+
+		expect(repromoted.animatedWords).toEqual(['Design', 'Build', 'Ship']);
+		expect(repromoted.preservedAnimatedWords).toEqual([]);
+	});
+
+	test('parks nothing when a demoted segment had no words to lose', () => {
+		const demoted = getHeadingSegmentAnimationForRole(
+			{
+				content: 'Plain text',
+				headlineRole: 'normal',
+				animatedWords: [],
+			},
+			'normal'
+		);
+
+		expect(demoted.preservedAnimatedWords).toBeUndefined();
+	});
+
+	test('prefers an explicit word list over a parked one', () => {
+		const animation = getHeadingSegmentAnimationForRole(
+			{
+				content: '',
+				headlineRole: 'normal',
+				animatedWords: ['Current'],
+				preservedAnimatedWords: ['Old', 'Stale'],
+			},
+			'animated'
+		);
+
+		expect(animation.animatedWords).toEqual(['Current']);
+		expect(animation.preservedAnimatedWords).toEqual([]);
+	});
+
 	test('clears stale words atomically when an author selects the normal role', () => {
 		const animation = getHeadingSegmentAnimationForRole(
 			{
@@ -216,6 +277,7 @@ describe('animated heading segment save', () => {
 		expect(animation).toEqual({
 			headlineRole: 'normal',
 			animatedWords: [],
+			preservedAnimatedWords: ['Stale word'],
 		});
 		expect(html).not.toContain('"animatedWords"');
 	});
@@ -235,6 +297,9 @@ describe('animated heading segment save', () => {
 			content: 'Recovered word',
 			headlineRole: 'normal',
 			animatedWords: [],
+			// Parked so re-animating the segment restores both words rather
+			// than collapsing the list to the recovered first word.
+			preservedAnimatedWords: ['Recovered word', 'Next word'],
 		});
 		expect(html).toContain('Recovered word');
 		expect(html).not.toContain('dsgo-heading-segment__animated');

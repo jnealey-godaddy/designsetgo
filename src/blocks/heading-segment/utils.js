@@ -60,15 +60,25 @@ export function normalizeHeadingSegmentAnimation({
  * first word only if the author has not already supplied a valid word list.
  * An empty segment stays normal until the author provides text to animate.
  *
- * @param {Object} attributes               Heading segment attributes.
- * @param {string} attributes.content       Segment rich-text HTML.
- * @param {string} attributes.normalContent Serialized normal RichText HTML.
- * @param {Array}  attributes.animatedWords Current animated words.
- * @param {string} nextRole                 Requested segment role.
+ * A segment demoted to normal parks its word list in `preservedAnimatedWords`
+ * so promoting it again restores the full list instead of the single word the
+ * demotion left as content.
+ *
+ * @param {Object} attributes                        Heading segment attributes.
+ * @param {string} attributes.content                Segment rich-text HTML.
+ * @param {string} attributes.normalContent          Serialized normal RichText HTML.
+ * @param {Array}  attributes.animatedWords          Current animated words.
+ * @param {Array}  attributes.preservedAnimatedWords Word list parked by an earlier demotion.
+ * @param {string} nextRole                          Requested segment role.
  * @return {Object} Valid role and word list for the attribute update.
  */
 export function getHeadingSegmentAnimationForRole(
-	{ content = '', normalContent = '', animatedWords = [] } = {},
+	{
+		content = '',
+		normalContent = '',
+		animatedWords = [],
+		preservedAnimatedWords = [],
+	} = {},
 	nextRole
 ) {
 	const currentContent = typeof content === 'string' ? content : '';
@@ -77,10 +87,17 @@ export function getHeadingSegmentAnimationForRole(
 
 	if (nextRole !== 'animated') {
 		const words = normalizeAnimatedWords(animatedWords);
-		const normalAnimation = normalizeHeadingSegmentAnimation({
-			headlineRole: 'normal',
-			animatedWords: [],
-		});
+		const normalAnimation = {
+			...normalizeHeadingSegmentAnimation({
+				headlineRole: 'normal',
+				animatedWords: [],
+			}),
+			// Demotion clears `animatedWords` so a normal segment never carries
+			// an animated payload. Park the list instead of discarding it, so
+			// re-promoting the segment restores every word the author wrote
+			// rather than collapsing the list to its first entry.
+			...(words.length > 0 ? { preservedAnimatedWords: words } : {}),
+		};
 
 		// `content` is sourced from the normal RichText span, which an animated
 		// save intentionally omits. When an animated segment is parsed again,
@@ -109,11 +126,20 @@ export function getHeadingSegmentAnimationForRole(
 		getTextContent(create({ html: content })),
 	]);
 	const words = normalizeAnimatedWords(animatedWords);
+	const parkedWords = normalizeAnimatedWords(preservedAnimatedWords);
+	// A segment demoted earlier parked its full list; prefer it over the single
+	// word the demotion left behind as content.
+	const restoredWords = parkedWords.length > 0 ? parkedWords : fallbackWords;
 
-	const animation = normalizeHeadingSegmentAnimation({
-		headlineRole: 'animated',
-		animatedWords: words.length > 0 ? words : fallbackWords,
-	});
+	const animation = {
+		...normalizeHeadingSegmentAnimation({
+			headlineRole: 'animated',
+			animatedWords: words.length > 0 ? words : restoredWords,
+		}),
+		// Consume the parked list only when there was one; an ordinary
+		// promotion should not write an empty attribute.
+		...(parkedWords.length > 0 ? { preservedAnimatedWords: [] } : {}),
+	};
 	const contentToPreserve = preservedContent.trim() || currentContent;
 
 	return contentToPreserve

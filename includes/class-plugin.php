@@ -134,6 +134,7 @@ class Plugin {
 		'stop',
 		'text',
 		'textpath',
+		'tspan',
 	);
 
 	/**
@@ -184,6 +185,10 @@ class Plugin {
 		'href'                => true,
 		'startoffset'         => true,
 		'direction'           => true,
+		// <tspan> offsets: Text Path wraps its text in a <tspan dy> when
+		// pathPadding is non-zero, so both axes must survive wp_kses_post().
+		'dx'                  => true,
+		'dy'                  => true,
 		// Gradient stop attributes.
 		'offset'              => true,
 		'stop-color'          => true,

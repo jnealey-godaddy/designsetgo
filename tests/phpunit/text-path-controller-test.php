@@ -30,6 +30,41 @@ class DesignSetGo_Text_Path_Controller_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Accepts comma-separated path data, including zero coordinates.
+	 *
+	 * The token '0' is falsy in PHP, so a truthiness-based separator guard
+	 * silently rejects ordinary path data such as 'M0,0' that the editor's
+	 * JavaScript twin accepts.
+	 *
+	 * @dataProvider comma_separated_path_data_provider
+	 *
+	 * @param string $path_data Comma-separated path data the editor accepts.
+	 */
+	public function test_parse_svg_path_accepts_comma_separated_zero_coordinates( $path_data ) {
+		$result = Controller::parse_svg_path(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="' . $path_data . '" /></svg>'
+		);
+
+		$this->assertNotNull( $result );
+		$this->assertSame( $path_data, $result['d'] );
+	}
+
+	/**
+	 * Provides comma-separated path data the shared editor grammar accepts.
+	 *
+	 * @return array<string, array{string}>
+	 */
+	public function comma_separated_path_data_provider() {
+		return array(
+			'zero_move_and_line'   => array( 'M0,0 L10,10' ),
+			'zero_move_and_close'  => array( 'M0,0 L10,10 Z' ),
+			'mixed_separators'     => array( 'M0,0 L10 10' ),
+			'non_zero_coordinates' => array( 'M0.5,0.5 L1,1' ),
+			'zero_curve_arguments' => array( 'M0,0 C1,1 0,0 3,3' ),
+		);
+	}
+
+	/**
 	 * Rejects path data that does not match the editor grammar.
 	 *
 	 * @dataProvider invalid_path_data_provider
@@ -55,6 +90,9 @@ class DesignSetGo_Text_Path_Controller_Test extends WP_UnitTestCase {
 			'initial_command_is_not_move' => array( 'L 1 1 M 0 0 L 2 2' ),
 			'incomplete_move_arguments'   => array( 'M 0 L 1 2' ),
 			'illegal_arc_flags'           => array( 'M 0 0 A 5 5 0 2 1 10 10' ),
+			'comma_before_command'        => array( 'M0,0,L10,10' ),
+			'comma_after_command'         => array( 'M,0 0 L10 10' ),
+			'trailing_comma'              => array( 'M0 0 L10 10,' ),
 		);
 	}
 

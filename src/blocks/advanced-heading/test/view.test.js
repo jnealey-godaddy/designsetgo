@@ -76,8 +76,40 @@ describe('advanced heading frontend animation', () => {
 		);
 		expect(active).toHaveLength(1);
 		expect(active[0]).toHaveTextContent('First');
-		expect(active[0]).not.toHaveAttribute('aria-hidden');
-		expect(active[0]).toHaveAttribute('aria-live', 'polite');
+	});
+
+	it('announces the words once instead of on every rotation', () => {
+		const heading = renderHeadline({ effect: 'flip' });
+
+		initAnimatedHeadlines();
+
+		const word = heading.querySelector('.dsgo-heading-segment__animated');
+		const summary = heading.querySelector('.screen-reader-text');
+
+		// A looping headline changes word as often as every 250ms, so a live
+		// region on the rotating element would re-announce indefinitely.
+		expect(word).toHaveAttribute('aria-hidden', 'true');
+		expect(word).not.toHaveAttribute('aria-live');
+		expect(summary).toHaveTextContent('First, Second, Final');
+
+		jest.advanceTimersByTime(1000);
+
+		expect(word).toHaveAttribute('aria-hidden', 'true');
+		expect(word).not.toHaveAttribute('aria-live');
+		expect(heading.querySelectorAll('.screen-reader-text')).toHaveLength(1);
+	});
+
+	it('leaves the saved word readable when motion is reduced', () => {
+		reduceMotion = true;
+		const heading = renderHeadline({ effect: 'flip' });
+
+		initAnimatedHeadlines();
+
+		const word = heading.querySelector('.dsgo-heading-segment__animated');
+
+		expect(word).not.toHaveAttribute('aria-hidden');
+		expect(word).toHaveTextContent('First');
+		expect(heading.querySelector('.screen-reader-text')).toBeNull();
 	});
 
 	it('stops on the final word when looping is disabled', () => {
