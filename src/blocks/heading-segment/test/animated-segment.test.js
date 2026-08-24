@@ -197,6 +197,42 @@ describe('animated heading segment save', () => {
 		});
 	});
 
+	test('keeps a reloaded animated segment readable when it is demoted', () => {
+		// The animated save() renders no `.dsgo-heading-segment__text`, so a
+		// reloaded segment parses back with an empty html-sourced `content`.
+		// Demotion must recover readable text from the word list or the
+		// segment's save() returns null and it disappears from the heading.
+		const animated = getHeadingSegmentAnimationForRole(
+			{
+				content: '',
+				headlineRole: 'normal',
+				animatedWords: ['Alpha', 'Beta'],
+			},
+			'animated'
+		);
+		const [reloaded] = parse(
+			serialize(createBlock(metadata.name, animated))
+		);
+
+		expect(reloaded.isValid).toBe(true);
+		expect(reloaded.attributes.content).toBe('');
+
+		const demoted = getHeadingSegmentAnimationForRole(
+			reloaded.attributes,
+			'normal'
+		);
+		const html = serialize(
+			createBlock(metadata.name, {
+				...reloaded.attributes,
+				...demoted,
+			})
+		);
+
+		expect(demoted.content).toBe('Alpha');
+		expect(html).toContain('dsgo-heading-segment__text');
+		expect(html).toContain('Alpha');
+	});
+
 	test('restores the full word list when a demoted segment is animated again', () => {
 		const demoted = getHeadingSegmentAnimationForRole(
 			{

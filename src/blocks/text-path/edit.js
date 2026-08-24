@@ -6,7 +6,7 @@ import {
 	useBlockProps,
 } from '@wordpress/block-editor';
 import { useSelect } from '@wordpress/data';
-import { useEffect, useMemo } from '@wordpress/element';
+import { useEffect } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { useBlockColors, useUniqueBlockId } from '../../hooks';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
@@ -14,7 +14,7 @@ import TextPathControls from './components/TextPathControls';
 import TextPathGraphic from './components/TextPathGraphic';
 import {
 	clamp,
-	findFirstTextPathBlockClientId,
+	findFirstTextPathClientId,
 	getSafeTextPathColor,
 	getSafeTextPathUrl,
 } from './utils';
@@ -27,24 +27,30 @@ export default function TextPathEdit({ attributes, setAttributes, clientId }) {
 		setAttributes,
 		prefix: 'text-path-',
 	});
-	const blocks = useSelect(
+	// Selecting a boolean keeps this block out of the re-render path for every
+	// unrelated store change, and the scan reads a flat client-ID list instead
+	// of materialising the whole block tree.
+	const hasDuplicateUniqueId = useSelect(
 		(select) => {
 			if (!attributes.uniqueId) {
-				return null;
+				return false;
 			}
 
-			return select(blockEditorStore).getBlocks();
-		},
-		[attributes.uniqueId]
-	);
-	const hasDuplicateUniqueId = useMemo(() => {
-		const firstOwnerClientId = findFirstTextPathBlockClientId(
-			blocks,
-			attributes.uniqueId
-		);
+			const {
+				getBlockAttributes,
+				getBlockName,
+				getClientIdsWithDescendants,
+			} = select(blockEditorStore);
+			const ownerClientId = findFirstTextPathClientId(
+				getClientIdsWithDescendants(),
+				attributes.uniqueId,
+				{ getBlockAttributes, getBlockName }
+			);
 
-		return !!firstOwnerClientId && firstOwnerClientId !== clientId;
-	}, [blocks, clientId, attributes.uniqueId]);
+			return !!ownerClientId && ownerClientId !== clientId;
+		},
+		[attributes.uniqueId, clientId]
+	);
 
 	useEffect(() => {
 		if (hasDuplicateUniqueId) {

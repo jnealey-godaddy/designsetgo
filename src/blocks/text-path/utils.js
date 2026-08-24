@@ -4,53 +4,44 @@ export const clamp = (value, minimum, maximum) =>
 export const getTextPathId = (uniqueId) =>
 	`dsgo-text-path-${uniqueId || 'path'}`;
 
-const textPathOwnersByBlockTree = new WeakMap();
-
-const getTextPathOwners = (blocks) => {
-	if (!Array.isArray(blocks)) {
-		return new Map();
-	}
-
-	const cachedOwners = textPathOwnersByBlockTree.get(blocks);
-	if (cachedOwners) {
-		return cachedOwners;
-	}
-
-	const owners = new Map();
-	const collectOwners = (candidates) => {
-		for (const block of candidates || []) {
-			if (
-				block?.name === 'designsetgo/text-path' &&
-				block?.attributes?.uniqueId &&
-				!owners.has(block.attributes.uniqueId)
-			) {
-				owners.set(block.attributes.uniqueId, block.clientId);
-			}
-
-			collectOwners(block?.innerBlocks);
-		}
-	};
-
-	collectOwners(blocks);
-	textPathOwnersByBlockTree.set(blocks, owners);
-
-	return owners;
-};
+const TEXT_PATH_BLOCK_NAME = 'designsetgo/text-path';
 
 /**
- * Finds the first Text Path block that owns a saved path ID, including blocks
- * nested inside layout containers.
+ * Find the Text Path block that owns a unique ID.
  *
- * @param {Array}  blocks   Editor blocks to search.
- * @param {string} uniqueId Saved Text Path ID.
- * @return {string|null} First matching block client ID, if any.
+ * Takes a flat client-ID list and the store's per-block selectors rather than a
+ * block tree: `getBlocks()` materialises every block on every store change, so
+ * scanning it re-walked the whole document on each keystroke. `clientIds` comes
+ * from `getClientIdsWithDescendants()`, which only changes when block order
+ * changes.
+ *
+ * @param {Array}    clientIds                    Flat list of client IDs to scan.
+ * @param {string}   uniqueId                     Unique ID to find the owner of.
+ * @param {Object}   selectors                    Block editor store selectors.
+ * @param {Function} selectors.getBlockName       Resolves a client ID to a block name.
+ * @param {Function} selectors.getBlockAttributes Resolves a client ID to its attributes.
+ * @return {string|null} Client ID of the first owner, or null.
  */
-export const findFirstTextPathBlockClientId = (blocks, uniqueId) => {
-	if (!uniqueId) {
+export const findFirstTextPathClientId = (
+	clientIds,
+	uniqueId,
+	{ getBlockName, getBlockAttributes } = {}
+) => {
+	if (!uniqueId || !Array.isArray(clientIds)) {
 		return null;
 	}
 
-	return getTextPathOwners(blocks).get(uniqueId) || null;
+	for (const clientId of clientIds) {
+		if (getBlockName?.(clientId) !== TEXT_PATH_BLOCK_NAME) {
+			continue;
+		}
+
+		if (getBlockAttributes?.(clientId)?.uniqueId === uniqueId) {
+			return clientId;
+		}
+	}
+
+	return null;
 };
 
 export const getSafeTextPathUrl = (url) => {

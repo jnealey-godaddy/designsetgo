@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import metadata from '../block.json';
 import { v1 as legacyTextPath } from '../deprecated';
-import { findFirstTextPathBlockClientId } from '../utils';
+import { findFirstTextPathClientId } from '../utils';
 
 describe('text path block', () => {
 	test('ships a block manifest', () => {
@@ -65,49 +65,71 @@ describe('text path block', () => {
 	});
 
 	test('keeps the first Text Path block as the owner of a duplicated path ID', () => {
-		const firstClientId = findFirstTextPathBlockClientId(
-			[
-				{
-					clientId: 'first',
-					name: 'designsetgo/text-path',
-					attributes: { uniqueId: 'shared-path' },
-				},
-				{
-					clientId: 'group',
-					name: 'core/group',
-					innerBlocks: [
-						{
-							clientId: 'duplicate',
-							name: 'designsetgo/text-path',
-							attributes: { uniqueId: 'shared-path' },
-						},
-					],
-				},
-			],
-			'shared-path'
-		);
+		// getClientIdsWithDescendants() returns document order, so a nested
+		// duplicate still resolves to the block that appears first.
+		const blocks = {
+			first: {
+				name: 'designsetgo/text-path',
+				attributes: { uniqueId: 'shared-path' },
+			},
+			group: { name: 'core/group', attributes: {} },
+			duplicate: {
+				name: 'designsetgo/text-path',
+				attributes: { uniqueId: 'shared-path' },
+			},
+		};
+		const selectors = {
+			getBlockName: (clientId) => blocks[clientId]?.name,
+			getBlockAttributes: (clientId) => blocks[clientId]?.attributes,
+		};
 
-		expect(firstClientId).toBe('first');
+		expect(
+			findFirstTextPathClientId(
+				['first', 'group', 'duplicate'],
+				'shared-path',
+				selectors
+			)
+		).toBe('first');
+		expect(
+			findFirstTextPathClientId(
+				['group', 'duplicate', 'first'],
+				'shared-path',
+				selectors
+			)
+		).toBe('duplicate');
+		expect(findFirstTextPathClientId(['first'], '', selectors)).toBeNull();
+		expect(
+			findFirstTextPathClientId(['group'], 'shared-path', selectors)
+		).toBeNull();
 	});
 
-	test('defers duplicate-ID tree scans until an ID exists and the block tree changes', () => {
+	test('scans a flat client-ID list rather than the whole block tree', () => {
 		const editSource = readFileSync(
 			resolve(__dirname, '../edit.js'),
 			'utf8'
 		);
-		const utilitiesSource = readFileSync(
-			resolve(__dirname, '../utils.js'),
-			'utf8'
-		);
 
+		// getBlocks() rebuilds every block on every store change, so a scan
+		// over it re-walks the document on each keystroke and hands back a new
+		// reference that re-renders this block too.
+		expect(editSource).not.toContain('getBlocks()');
+		expect(editSource).toContain('getClientIdsWithDescendants()');
 		expect(editSource).toContain('if (!attributes.uniqueId)');
-		expect(editSource).toContain('return null;');
-		expect(editSource).toContain('const hasDuplicateUniqueId = useMemo(');
-		expect(
-			editSource.lastIndexOf('findFirstTextPathBlockClientId')
-		).toBeGreaterThan(
-			editSource.indexOf('const hasDuplicateUniqueId = useMemo(')
-		);
-		expect(utilitiesSource).toContain('new WeakMap()');
+		expect(editSource).toContain('return false;');
+	});
+
+	test('stops scanning at the first owner it finds', () => {
+		const visited = [];
+		const selectors = {
+			getBlockName: (clientId) => {
+				visited.push(clientId);
+				return 'designsetgo/text-path';
+			},
+			getBlockAttributes: () => ({ uniqueId: 'shared-path' }),
+		};
+
+		findFirstTextPathClientId(['a', 'b', 'c'], 'shared-path', selectors);
+
+		expect(visited).toEqual(['a']);
 	});
 });
