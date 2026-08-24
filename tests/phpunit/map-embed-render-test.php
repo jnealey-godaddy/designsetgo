@@ -26,6 +26,22 @@ class Map_Embed_Render_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Read one query parameter out of a built URL.
+	 *
+	 * Substring assertions are unsafe here: 'z=13' contains 'z=1', so a clamp
+	 * regression would pass unnoticed.
+	 *
+	 * @param string $url  Built embed URL.
+	 * @param string $name Parameter name.
+	 * @return string|null Decoded parameter value.
+	 */
+	private function param( $url, $name ) {
+		parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $params );
+
+		return isset( $params[ $name ] ) ? $params[ $name ] : null;
+	}
+
+	/**
 	 * The block is registered, so the suite exercises real markup.
 	 */
 	public function test_the_block_is_registered() {
@@ -54,7 +70,7 @@ class Map_Embed_Render_Test extends WP_UnitTestCase {
 	public function test_url_builder_prefers_address_over_coordinates() {
 		$url = designsetgo_map_embed_url( '123 Main St, Springfield', 40.7128, -74.006, 13 );
 
-		$this->assertStringContainsString( 'q=123+Main+St%2C+Springfield', $url );
+		$this->assertSame( '123 Main St, Springfield', $this->param( $url, 'q' ) );
 		$this->assertStringNotContainsString( '40.7128', $url );
 	}
 
@@ -64,15 +80,41 @@ class Map_Embed_Render_Test extends WP_UnitTestCase {
 	public function test_url_builder_falls_back_to_coordinates() {
 		$url = designsetgo_map_embed_url( '', 40.7128, -74.006, 13 );
 
-		$this->assertStringContainsString( 'q=40.7128%2C-74.006', $url );
+		$this->assertSame( '40.7128,-74.006', $this->param( $url, 'q' ) );
 	}
 
 	/**
 	 * Zoom is clamped into Google's supported range.
 	 */
 	public function test_url_builder_clamps_zoom() {
-		$this->assertStringContainsString( 'z=20', designsetgo_map_embed_url( '', 0, 0, 99 ) );
-		$this->assertStringContainsString( 'z=1', designsetgo_map_embed_url( '', 0, 0, -5 ) );
+		$this->assertSame( '20', $this->param( designsetgo_map_embed_url( '', 0, 0, 99 ), 'z' ) );
+		$this->assertSame( '1', $this->param( designsetgo_map_embed_url( '', 0, 0, -5 ), 'z' ) );
+	}
+
+	/**
+	 * A zero zoom clamps up to 1 rather than falling back to the default.
+	 *
+	 * Pins the value the JS twin (buildEmbedUrl) must agree with; a falsy
+	 * check on that side would substitute the attribute default of 13 and
+	 * drift the editor preview away from this render.
+	 */
+	public function test_url_builder_clamps_zero_zoom_to_one() {
+		$this->assertSame( '1', $this->param( designsetgo_map_embed_url( '', 0, 0, 0 ), 'z' ) );
+	}
+
+	/**
+	 * Unparseable zoom values cast to 0, which then clamps to 1.
+	 */
+	public function test_url_builder_treats_unparseable_zoom_as_the_minimum() {
+		$this->assertSame( '1', $this->param( designsetgo_map_embed_url( '', 0, 0, 'abc' ), 'z' ) );
+		$this->assertSame( '1', $this->param( designsetgo_map_embed_url( '', 0, 0, null ), 'z' ) );
+	}
+
+	/**
+	 * A fractional zoom truncates toward zero.
+	 */
+	public function test_url_builder_truncates_fractional_zoom() {
+		$this->assertSame( '7', $this->param( designsetgo_map_embed_url( '', 0, 0, 7.9 ), 'z' ) );
 	}
 
 	/**
@@ -81,7 +123,7 @@ class Map_Embed_Render_Test extends WP_UnitTestCase {
 	public function test_url_builder_flattens_multiline_addresses() {
 		$url = designsetgo_map_embed_url( "123 Main St\nSpringfield, IL", 0, 0, 13 );
 
-		$this->assertStringContainsString( 'q=123+Main+St%2C+Springfield%2C+IL', $url );
+		$this->assertSame( '123 Main St, Springfield, IL', $this->param( $url, 'q' ) );
 		$this->assertStringNotContainsString( '%0A', $url );
 	}
 

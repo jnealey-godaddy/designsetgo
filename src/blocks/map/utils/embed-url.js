@@ -39,7 +39,18 @@ export function buildEmbedUrl(address, latitude, longitude, zoom) {
 		? flattened
 		: `${formatCoordinate(latitude)},${formatCoordinate(longitude)}`;
 
-	const safeZoom = Math.max(1, Math.min(20, parseInt(zoom, 10) || 13));
+	// Mirror PHP's max(1, min(20, (int) $zoom)) exactly. Two traps: `|| 13`
+	// would treat a zoom of 0 as missing and substitute the attribute default
+	// where PHP clamps to 1, and PHP's (int) cast turns any unparseable value
+	// into 0 (which then clamps to 1) rather than a default. The block UI's
+	// RangeControl has min={1}, but patterns and the API can set dsgoZoom
+	// freely, and a mismatch here shows one zoom in the editor preview and
+	// another on the front end.
+	const parsedZoom = parseInt(zoom, 10);
+	const safeZoom = Math.max(
+		1,
+		Math.min(20, Number.isFinite(parsedZoom) ? parsedZoom : 0)
+	);
 
 	const params = new URLSearchParams({
 		q: query,
