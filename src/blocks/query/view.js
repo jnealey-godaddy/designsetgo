@@ -19,6 +19,10 @@ import {
 	stampFeedPositions as dsgoStampFeedPositions,
 	announceResultCount as dsgoAnnounceResultCount,
 	collectParams as dsgoCollectParamsShared,
+	itemContainerSelector as dsgoItemContainerSelector,
+	extractRenderedItems as dsgoExtractRenderedItems,
+	notifyContentUpdated as dsgoNotifyContentUpdated,
+	notifyItemsAppended as dsgoNotifyItemsAppended,
 } from './view-helpers.js';
 
 // Events already processed by the IAPI store (first render). Used by the
@@ -266,25 +270,20 @@ function dsgoGetContextFromDom(el) {
 }
 
 function dsgoGetQueryContainer(queryId, el) {
-	// The grid <ul> / <ol> / <div> is the actual item container — it carries
-	// `data-dsgo-query-results-role="container"` + the matching query id.
+	// The item container carries `data-dsgo-query-results-role="container"` +
+	// the matching query id — the grid <ul>/<ol>/<div> for query-results, the
+	// track for a slider host, the panels wrapper for scroll-slides.
 	// The outer .dsgo-query-region wrapper ALSO carries data-dsgo-query-id
 	// (so view.js can target the whole region for full swaps), so targeting
 	// [data-dsgo-query-id] alone would match the region and cause load-more
 	// to append new items after the pagination button instead of into the
-	// grid. Scope by role to always land inside the grid.
+	// item container. Scope by role to always land inside it.
 	const doc = el?.ownerDocument || document;
+	const selector = dsgoItemContainerSelector(queryId);
 	// Prefer scoping via the enclosing region so nested queries on the same
 	// page can't collide even when another query shares the same queryId.
 	const region = el?.closest(`[data-dsgo-query-region="${queryId}"]`);
-	return (
-		region?.querySelector(
-			`[data-dsgo-query-results-role="container"][data-dsgo-query-id="${queryId}"]`
-		) ||
-		doc.querySelector(
-			`[data-dsgo-query-results-role="container"][data-dsgo-query-id="${queryId}"]`
-		)
-	);
+	return region?.querySelector(selector) || doc.querySelector(selector);
 }
 
 function dsgoGetRestConfig(ctx) {
@@ -368,13 +367,17 @@ async function dsgoLoadMorePlain(ctx, button) {
 			data.html || '',
 			'text/html'
 		);
-		const newItems = doc.querySelectorAll('.dsgo-query__item');
+		const newItems = dsgoExtractRenderedItems(doc, ctx.queryId);
 
 		if (newItems.length) {
 			const firstNew = newItems[0];
 			newItems.forEach((el) => container.appendChild(el));
 
 			dsgoStampFeedPositions(container);
+			// Carousel hosts derive clone counts, dot counts and track
+			// dimensions from the item count they saw at init, so appending
+			// silently would leave the new slides unreachable.
+			dsgoNotifyItemsAppended(container, ctx.queryId, newItems.length);
 			if (Number.isFinite(data.totalItems)) {
 				dsgoAnnounceResultCount(ctx.queryId, data.totalItems);
 			}
@@ -815,6 +818,10 @@ function* dsgoQueryRefresh(ctx, url) {
 			// block-render output in designsetgo_query_render_region().
 			region.innerHTML = newRegion.innerHTML;
 			dsgoInitInfiniteObservers(region);
+			// The swap replaced every element inside the region, including any
+			// block with a frontend runtime (a slider host, counters, maps).
+			// Without this they stay inert until the next full page load.
+			dsgoNotifyContentUpdated(region, 'query-refresh');
 		}
 
 		// Sync the browser URL without a page reload.
@@ -941,6 +948,10 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 			// block-render output in designsetgo_query_render_region().
 			region.innerHTML = newRegion.innerHTML;
 			dsgoInitInfiniteObservers(region);
+			// The swap replaced every element inside the region, including any
+			// block with a frontend runtime (a slider host, counters, maps).
+			// Without this they stay inert until the next full page load.
+			dsgoNotifyContentUpdated(region, 'query-refresh');
 		}
 
 		window.history.replaceState({}, '', url.toString());

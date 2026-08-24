@@ -10,6 +10,99 @@
  */
 
 /**
+ * Selector for the element that actually holds a query's rendered items.
+ *
+ * Every item host tags its item container with this role/id pair —
+ * designsetgo/query-results on its grid, designsetgo/slider on its track,
+ * designsetgo/scroll-slides on its panels wrapper — so the shared plumbing
+ * here works the same whichever presentation the author chose.
+ *
+ * @param {string} queryId The query ID.
+ * @return {string} A CSS selector for that query's item container.
+ */
+export function itemContainerSelector(queryId) {
+	return `[data-dsgo-query-results-role="container"][data-dsgo-query-id="${queryId}"]`;
+}
+
+/**
+ * Pull the freshly rendered items out of a parsed REST region response.
+ *
+ * Reads the item container's element children rather than matching on
+ * `.dsgo-query__item`: that class only exists on the grid host's <li>
+ * wrappers, so a class-based match would find nothing for a carousel host
+ * (whose items are bare `designsetgo/slide` renders) and would flatten
+ * `<section class="dsgo-query-group">` wrappers when grouping is on.
+ *
+ * @param {Document} doc     Parsed response document.
+ * @param {string}   queryId The query ID.
+ * @return {Element[]} Items to append, in document order.
+ */
+export function extractRenderedItems(doc, queryId) {
+	if (!doc) {
+		return [];
+	}
+	const container = doc.querySelector(itemContainerSelector(queryId));
+	if (container) {
+		return Array.from(container.children);
+	}
+	// Legacy trees render the item template as a direct child of the query
+	// with no host block at all, so there is no container to read.
+	return Array.from(doc.querySelectorAll('.dsgo-query__item'));
+}
+
+/**
+ * Tell the rest of the plugin that a chunk of DOM was replaced or extended.
+ *
+ * Blocks with a frontend runtime (slider, counters, flip cards, maps…) can
+ * be inside a query region, and a filter refresh swaps that region's
+ * innerHTML wholesale — leaving the replacement markup inert unless someone
+ * says so. `dsgo-content-loaded` is the plugin-wide re-init signal already
+ * used for bfcache restores, so reusing it here means every block that
+ * already listens gets query refreshes for free.
+ *
+ * @param {Element|null} root   The element whose contents changed.
+ * @param {string}       source Short label for the trigger, for listeners that care.
+ */
+export function notifyContentUpdated(root, source) {
+	const doc =
+		root?.ownerDocument ||
+		(typeof document !== 'undefined' ? document : null);
+	if (!doc) {
+		return;
+	}
+	doc.dispatchEvent(
+		new CustomEvent('dsgo-content-loaded', {
+			detail: { source, container: root },
+		})
+	);
+}
+
+/**
+ * Tell an item host that new items were appended to its container.
+ *
+ * Distinct from notifyContentUpdated(): nothing was replaced, so blocks that
+ * key their init on the element identity (the slider caches its instance per
+ * element) would treat the container as already initialised and never notice
+ * the new children. The host listens for this on the container itself and
+ * re-syncs whatever it derived from the old item count.
+ *
+ * @param {Element|null} container The item container that grew.
+ * @param {string}       queryId   The query ID.
+ * @param {number}       added     How many items were appended.
+ */
+export function notifyItemsAppended(container, queryId, added) {
+	if (!container) {
+		return;
+	}
+	container.dispatchEvent(
+		new CustomEvent('dsgo-query-items-appended', {
+			bubbles: true,
+			detail: { queryId, added },
+		})
+	);
+}
+
+/**
  * Track live IntersectionObservers by their sentinel element so filter-refresh
  * innerHTML swaps can disconnect them before the sentinel becomes detached.
  */

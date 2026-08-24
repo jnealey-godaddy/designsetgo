@@ -1,320 +1,373 @@
 /**
- * Slider Block - Frontend JavaScript
- * Handles all slider interactions: navigation, auto-play, swipe, drag, keyboard
+ * Slider — frontend runtime.
+ *
+ * Owns slide navigation and the state that follows from it: which slide is
+ * current, where the track sits, what assistive tech is told, and which nav
+ * chrome is enabled. Configuration parsing, chrome construction, gestures,
+ * autoplay and scroll-driven mode live in ./view/.
+ *
+ * The same runtime drives an authored slider and a Loop Carousel — a slider
+ * acting as the item host inside designsetgo/query. In that mode the track
+ * doubles as the query's item container, so its children can change after
+ * init (load-more appends slides); `refresh()` is how the slider is told.
  */
 
-/* global requestAnimationFrame */
+/* global requestAnimationFrame, ResizeObserver */
 
-const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
+import { parseSliderConfig, slidesPerViewFor } from './view/config';
+import {
+	buildArrows,
+	buildDots,
+	updateDots,
+	buildAnnouncer,
+} from './view/chrome';
+import { initSwipe, initDrag } from './view/gestures';
+import AutoplayController from './view/autoplay';
+import ScrollDrivenController from './view/scroll-driven';
+
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+const RESIZE_DEBOUNCE_MS = 250;
 
 class DSGSlider {
 	constructor(element) {
 		this.slider = element;
 		this.viewport = element.querySelector('.dsgo-slider__viewport');
 		this.track = element.querySelector('.dsgo-slider__track');
-		this.originalSlides = Array.from(
-			element.querySelectorAll('.dsgo-slide')
-		);
+		this.originalSlides = this.readSlides();
+		// Set before the bail-out below: an instance that never initialised is
+		// still registered, so destroy() has to be safe to call on it.
+		this.teardowns = [];
 
-		if (this.originalSlides.length === 0) {
+		if (!this.track || this.originalSlides.length === 0) {
 			return;
 		}
 
-		// Parse configuration from data attributes
-		this.config = this.parseConfig();
+		this.config = parseSliderConfig(element);
+		this.baseTransitionDuration = this.config.transitionDuration;
+		this.baseTransitionDurationMs = this.config.transitionDurationMs;
 
-		// State
-		this.currentIndex = parseInt(this.config.activeSlide) || 0;
+		this.currentIndex = this.config.activeSlide;
+		this.currentOffset = 0;
 		this.isAnimating = false;
-		this.autoplayTimer = null;
-		this.isInViewport = false;
-		this.touchStartX = 0;
-		this.touchEndX = 0;
-		this.dragStartX = 0;
-		this.isDragging = false;
+		this.isDestroyed = false;
 		this.cloneCount = 0;
 		this.realSlideCount = this.originalSlides.length;
-
-		// Performance: Cache slide dimensions (updated on resize only)
 		this.cachedSlideWidth = 0;
 		this.cachedGap = 0;
+		this.slidesPerView = slidesPerViewFor(this.config, window.innerWidth);
 
-		// Setup infinite loop clones if needed
-		if (this.config.loop && this.config.effect === 'slide') {
+		if (this.usesClones()) {
 			this.setupInfiniteLoop();
+			// activeSlide counts real slides; the prepended clones shift it.
+			this.currentIndex += this.cloneCount;
 		}
+		this.slides = this.readSlides();
 
-		// Get all slides (including clones)
-		this.slides = Array.from(this.track.querySelectorAll('.dsgo-slide'));
-
-		// Initialize
 		this.init();
 	}
 
-	parseConfig() {
-		const effect = this.slider.dataset.effect || 'slide';
-		const requiresSingleSlideEffect = SINGLE_SLIDE_EFFECTS.includes(effect);
-		const scrollDriven = this.slider.dataset.scrollDriven === 'true';
+	/** @return {HTMLElement[]} Slides currently in the track, clones included. */
+	readSlides() {
+		return Array.from(this.track?.querySelectorAll('.dsgo-slide') || []);
+	}
 
+	/** @return {boolean} Whether this configuration duplicates slides to loop. */
+	usesClones() {
+		return this.config.loop && this.config.effect === 'slide';
+	}
+
+	/** @return {number} Whole slides visible at the current viewport width. */
+	perView() {
+		return Math.max(1, Math.ceil(this.slidesPerView));
+	}
+
+	/**
+	 * The first and last index the track may rest on.
+	 *
+	 * Without this clamp a slider showing three slides at a time keeps
+	 * advancing until the last slide is flush left, scrolling two slots of
+	 * empty track into view and leaving the next arrow enabled the whole way.
+	 *
+	 * @return {{min: number, max: number}} Inclusive navigation bounds.
+	 */
+	navBounds() {
+		if (this.cloneCount > 0) {
+			return {
+				min: this.cloneCount,
+				max: this.cloneCount + this.realSlideCount - 1,
+			};
+		}
 		return {
-			slidesPerView: requiresSingleSlideEffect
-				? 1
-				: parseFloat(this.slider.dataset.slidesPerView) || 1,
-			slidesPerViewTablet: requiresSingleSlideEffect
-				? 1
-				: parseFloat(this.slider.dataset.slidesPerViewTablet) || 1,
-			slidesPerViewMobile: requiresSingleSlideEffect
-				? 1
-				: parseFloat(this.slider.dataset.slidesPerViewMobile) || 1,
-			effect,
-			transitionDuration:
-				this.slider.dataset.transitionDuration || '0.5s',
-			transitionEasing:
-				this.slider.dataset.transitionEasing || 'ease-in-out',
-			autoplay: scrollDriven
-				? false
-				: this.slider.dataset.autoplay === 'true',
-			autoplayInterval:
-				parseInt(this.slider.dataset.autoplayInterval) || 3000,
-			pauseOnHover: this.slider.dataset.pauseOnHover === 'true',
-			pauseOnInteraction:
-				this.slider.dataset.pauseOnInteraction === 'true',
-			loop: scrollDriven ? false : this.slider.dataset.loop === 'true',
-			draggable: this.slider.dataset.draggable === 'true',
-			swipeable: this.slider.dataset.swipeable === 'true',
-			freeMode: this.slider.dataset.freeMode === 'true',
-			centeredSlides: this.slider.dataset.centeredSlides === 'true',
-			showArrows: scrollDriven
-				? false
-				: this.slider.dataset.showArrows === 'true',
-			showDots: scrollDriven
-				? false
-				: this.slider.dataset.showDots === 'true',
-			mobileBreakpoint:
-				parseInt(this.slider.dataset.mobileBreakpoint) || 768,
-			tabletBreakpoint:
-				parseInt(this.slider.dataset.tabletBreakpoint) || 1024,
-			activeSlide: parseInt(this.slider.dataset.activeSlide) || 0,
-			scrollDriven,
-			scrollDrivenSpeed:
-				parseFloat(this.slider.dataset.scrollDrivenSpeed) || 1,
+			min: 0,
+			max: Math.max(0, this.slides.length - this.perView()),
 		};
 	}
 
+	/** @return {number} How many dots represent the reachable positions. */
+	dotCount() {
+		if (this.cloneCount > 0 || this.config.loop) {
+			return this.realSlideCount;
+		}
+		return Math.max(1, this.realSlideCount - this.perView() + 1);
+	}
+
 	setupInfiniteLoop() {
-		// Determine how many slides to clone (based on slides per view)
-		const slidesToClone = Math.ceil(this.config.slidesPerView);
+		// Never clone more slides than exist: `slidesPerView: 3` over two
+		// authored slides used to walk the source index negative and throw on
+		// `undefined.cloneNode`, killing the slider outright.
+		const slidesToClone = Math.min(
+			Math.ceil(this.slidesPerView),
+			this.originalSlides.length
+		);
 		this.cloneCount = slidesToClone;
 
-		// Clone last N slides and prepend to track
-		for (
-			let i = this.originalSlides.length - slidesToClone;
-			i < this.originalSlides.length;
-			i++
-		) {
-			const clone = this.originalSlides[i].cloneNode(true);
-			clone.classList.add('dsgo-slide--clone');
-			clone.classList.add('dsgo-slide--clone-before');
+		const addClone = (source, position) => {
+			const clone = source.cloneNode(true);
+			clone.classList.add(
+				'dsgo-slide--clone',
+				`dsgo-slide--clone-${position}`
+			);
 			clone.setAttribute('aria-hidden', 'true');
-			clone.removeAttribute('id'); // Remove any IDs from clones
-			this.track.insertBefore(clone, this.track.firstChild);
-		}
+			clone.removeAttribute('id');
+			// Duplicated anchors would otherwise appear twice in the tab order.
+			clone
+				.querySelectorAll('[id]')
+				.forEach((node) => node.removeAttribute('id'));
+			return clone;
+		};
 
-		// Clone first N slides and append to track
-		for (let i = 0; i < slidesToClone; i++) {
-			const clone = this.originalSlides[i].cloneNode(true);
-			clone.classList.add('dsgo-slide--clone');
-			clone.classList.add('dsgo-slide--clone-after');
-			clone.setAttribute('aria-hidden', 'true');
-			clone.removeAttribute('id'); // Remove any IDs from clones
-			this.track.appendChild(clone);
-		}
-
-		// Adjust currentIndex to account for prepended clones
-		this.currentIndex = this.currentIndex + this.cloneCount;
+		const tail = this.originalSlides.slice(-slidesToClone);
+		tail.forEach((slide) => {
+			this.track.insertBefore(
+				addClone(slide, 'before'),
+				this.track.firstChild
+			);
+		});
+		this.originalSlides.slice(0, slidesToClone).forEach((slide) => {
+			this.track.appendChild(addClone(slide, 'after'));
+		});
 	}
 
 	init() {
-		// Build navigation
 		if (this.config.showArrows) {
-			this.buildArrows();
+			this.buildArrowChrome();
 		}
 		if (this.config.showDots) {
-			this.buildDots();
+			this.buildDotChrome();
 		}
+		this.announcer = buildAnnouncer(this.slider);
 
-		// Add screen reader announcement region
-		this.buildAnnouncementRegion();
-
-		// Initialize non-scroll-driven features before RAF
-		// (scroll-driven init must wait for cached dimensions)
 		if (!this.config.scrollDriven) {
 			if (this.config.swipeable) {
-				this.initSwipe();
+				this.teardowns.push(
+					initSwipe(this.track, {
+						onNext: () => this.userNext(),
+						onPrev: () => this.userPrev(),
+					})
+				);
 			}
 			if (this.config.draggable) {
-				this.initDrag();
+				this.teardowns.push(
+					initDrag(this.track, {
+						getOffset: () => this.currentOffset,
+						setOffset: (px) => this.setRawOffset(px),
+						onNext: () => this.userNext(),
+						onPrev: () => this.userPrev(),
+						onCancel: () => this.goToSlide(this.currentIndex),
+					})
+				);
 			}
 			if (this.config.autoplay) {
-				this.observeVisibility();
+				this.autoplay = new AutoplayController(this.slider, {
+					interval: this.config.autoplayInterval,
+					pauseOnHover: this.config.pauseOnHover,
+					advance: () => this.next(),
+				});
 			}
-
 			this.initKeyboard();
+			// A Loop Carousel's track is the query's item container: load-more
+			// appends slides to this very element, so the instance survives but
+			// its clone count, dots and dimensions do not.
+			this.listen(this.slider, 'dsgo-query-items-appended', (event) =>
+				this.onItemsAppended(Number(event.detail?.added) || 0)
+			);
 		}
 
-		// Performance: Calculate and cache dimensions once
-		// Use requestAnimationFrame to ensure layout is complete
 		requestAnimationFrame(() => {
 			this.updateDimensions();
 
 			if (this.config.scrollDriven) {
-				// Scroll-driven mode: init after dimensions are cached
-				// Skip goToSlide() — scroll-driven position is set by
-				// updateScrollDrivenPosition(), and updateARIA() would
-				// incorrectly hide all non-first slides from screen readers
-				this.initScrollDriven();
+				this.scrollDriven = new ScrollDrivenController(this);
 			} else {
-				// Set initial slide
 				this.goToSlide(this.currentIndex, false);
 			}
 
-			// If dimensions are still 0, recalculate after a short delay
-			// This handles cases where CSS hasn't fully applied yet
+			// Zero width means CSS had not applied yet; re-measure shortly.
 			if (this.cachedSlideWidth === 0) {
-				setTimeout(() => {
-					this.updateDimensions();
-					if (this.config.scrollDriven) {
-						this.updateScrollDrivenDimensions();
-						this.updateScrollDrivenStickyTop();
-						this.updateScrollDrivenPosition();
-					} else {
-						this.goToSlide(this.currentIndex, false);
-					}
-				}, 100);
+				setTimeout(() => this.remeasure(), 100);
 			}
 		});
 
 		this.initResponsive();
-
-		// Check reduced motion preference
-		this.respectReducedMotion();
+		this.initReducedMotion();
 	}
 
 	/**
-	 * Update cached slide dimensions
-	 * Performance optimization: Only called on init and resize
+	 * Register a listener and remember how to remove it.
+	 *
+	 * @param {EventTarget} target  Listener target.
+	 * @param {string}      type    Event name.
+	 * @param {Function}    handler Listener.
+	 * @param {Object}      options addEventListener options.
 	 */
+	listen(target, type, handler, options) {
+		target.addEventListener(type, handler, options);
+		this.teardowns.push(() =>
+			target.removeEventListener(type, handler, options)
+		);
+	}
+
+	buildArrowChrome() {
+		const { container, prev, next } = buildArrows(this.slider, {
+			onPrev: () => this.userPrev(),
+			onNext: () => this.userNext(),
+		});
+		this.arrowsContainer = container;
+		this.prevArrow = prev;
+		this.nextArrow = next;
+		this.updateArrows();
+	}
+
+	buildDotChrome() {
+		const { container, dots } = buildDots(
+			this.slider,
+			this.dotCount(),
+			this.activeDotIndex(),
+			(dotIndex) => this.userGoTo(this.slideIndexForDot(dotIndex)),
+			this.dotsContainer
+		);
+		this.dotsContainer = container;
+		this.dots = dots;
+	}
+
+	/**
+	 * @param {number} dotIndex Zero-based dot.
+	 * @return {number} The slide index that dot navigates to.
+	 */
+	slideIndexForDot(dotIndex) {
+		return this.cloneCount > 0 ? dotIndex + this.cloneCount : dotIndex;
+	}
+
+	/** @return {number} The dot representing the current position. */
+	activeDotIndex() {
+		if (this.cloneCount > 0) {
+			return this.getRealIndex(this.currentIndex);
+		}
+		return Math.min(this.currentIndex, this.dotCount() - 1);
+	}
+
 	updateDimensions() {
+		this.slidesPerView = slidesPerViewFor(this.config, window.innerWidth);
 		if (this.slides.length === 0) {
 			return;
 		}
-
-		// Batch read all layout properties at once (prevents layout thrashing)
+		// Batch the layout reads together so we thrash at most once.
 		this.cachedSlideWidth = this.slides[0].offsetWidth;
 		this.cachedGap =
 			parseFloat(window.getComputedStyle(this.track).gap) || 0;
 	}
 
-	buildArrows() {
-		// Remove editor-only arrows if present
-		const editorArrows = this.slider.querySelector(
-			'.dsgo-slider__arrows--editor-only'
-		);
-		if (editorArrows) {
-			editorArrows.remove();
+	/** Re-measure and re-apply the current position without rebuilding. */
+	remeasure() {
+		if (this.isDestroyed) {
+			return;
 		}
-
-		const arrowsContainer = document.createElement('div');
-		arrowsContainer.className = 'dsgo-slider__arrows';
-
-		// Build arrows via DOM APIs instead of innerHTML. The strings are
-		// static today, but appendChild keeps the pattern safe if a future
-		// change ever interpolates user content into the label.
-		const prevBtn = document.createElement('button');
-		prevBtn.type = 'button';
-		prevBtn.className = 'dsgo-slider__arrow dsgo-slider__arrow--prev';
-		prevBtn.setAttribute('aria-label', 'Previous slide');
-		const prevSpan = document.createElement('span');
-		prevSpan.textContent = '‹';
-		prevBtn.appendChild(prevSpan);
-
-		const nextBtn = document.createElement('button');
-		nextBtn.type = 'button';
-		nextBtn.className = 'dsgo-slider__arrow dsgo-slider__arrow--next';
-		nextBtn.setAttribute('aria-label', 'Next slide');
-		const nextSpan = document.createElement('span');
-		nextSpan.textContent = '›';
-		nextBtn.appendChild(nextSpan);
-
-		arrowsContainer.appendChild(prevBtn);
-		arrowsContainer.appendChild(nextBtn);
-
-		this.slider.appendChild(arrowsContainer);
-
-		this.prevArrow = prevBtn;
-		this.nextArrow = nextBtn;
-
-		this.prevArrow.addEventListener('click', () => this.prev());
-		this.nextArrow.addEventListener('click', () => this.next());
-
-		this.updateArrows();
+		this.updateDimensions();
+		if (this.scrollDriven) {
+			this.scrollDriven.resize();
+		} else {
+			this.goToSlide(this.currentIndex, false);
+		}
 	}
 
-	buildDots() {
-		// Remove editor-only dots if present
-		const editorDots = this.slider.querySelector(
-			'.dsgo-slider__dots--editor-only'
-		);
-		if (editorDots) {
-			editorDots.remove();
+	/**
+	 * Rebuild everything derived from the slide set, keeping the reader's place.
+	 *
+	 * Called when the track's children change (a Loop Carousel loading another
+	 * page) and when a breakpoint change alters how many slides are on screen,
+	 * since both invalidate the clone count and the dot count.
+	 */
+	refresh() {
+		if (this.isDestroyed || this.config.scrollDriven) {
+			return;
 		}
 
-		const dotsContainer = document.createElement('div');
-		dotsContainer.className = 'dsgo-slider__dots';
-		dotsContainer.setAttribute('role', 'tablist');
-		dotsContainer.setAttribute('aria-label', 'Slide navigation');
-
-		// Only create dots for real slides, not clones
-		const dotCount =
-			this.cloneCount > 0 ? this.realSlideCount : this.slides.length;
-
-		for (let i = 0; i < dotCount; i++) {
-			const dot = document.createElement('button');
-			dot.type = 'button';
-			dot.className = 'dsgo-slider__dot';
-			dot.setAttribute('role', 'tab');
-			dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
-			const realIndex = this.cloneCount > 0 ? i + this.cloneCount : i;
-			dot.setAttribute(
-				'aria-selected',
-				realIndex === this.currentIndex ? 'true' : 'false'
-			);
-			dot.addEventListener('click', () => this.goToSlide(realIndex));
-			dotsContainer.appendChild(dot);
+		const authored = this.readSlides().filter(
+			(slide) => !slide.classList.contains('dsgo-slide--clone')
+		);
+		if (authored.length === 0) {
+			return;
 		}
 
-		this.slider.appendChild(dotsContainer);
-		this.dots = Array.from(
-			dotsContainer.querySelectorAll('.dsgo-slider__dot')
+		// Capture the reader's position before the clone bookkeeping resets.
+		const realIndex = this.getRealIndex(this.currentIndex);
+
+		this.track
+			.querySelectorAll('.dsgo-slide--clone')
+			.forEach((clone) => clone.remove());
+		this.cloneCount = 0;
+		this.originalSlides = authored;
+		this.realSlideCount = authored.length;
+		if (this.usesClones()) {
+			this.setupInfiniteLoop();
+		}
+		this.slides = this.readSlides();
+
+		const bounds = this.navBounds();
+		this.currentIndex = Math.max(
+			bounds.min,
+			Math.min(
+				this.cloneCount > 0 ? realIndex + this.cloneCount : realIndex,
+				bounds.max
+			)
 		);
-		this.updateDots();
+
+		if (this.config.showDots) {
+			this.buildDotChrome();
+		}
+
+		this.updateDimensions();
+		this.goToSlide(this.currentIndex, false);
+
+		// New slides arrive without the inline transition suppression the
+		// existing ones carry.
+		if (this.reducedMotionQuery) {
+			this.applyReducedMotion(this.reducedMotionQuery.matches);
+		}
 	}
 
-	buildAnnouncementRegion() {
-		// Create visually hidden region for screen reader announcements
-		const announcer = document.createElement('div');
-		announcer.className = 'dsgo-slider__announcer';
-		announcer.setAttribute('role', 'status');
-		announcer.setAttribute('aria-live', 'polite');
-		announcer.setAttribute('aria-atomic', 'true');
-		announcer.style.position = 'absolute';
-		announcer.style.left = '-9999px';
-		announcer.style.width = '1px';
-		announcer.style.height = '1px';
-		announcer.style.overflow = 'hidden';
+	/**
+	 * Take up the slides a Load more click just added.
+	 *
+	 * Advancing is what the reader asked for — they pressed a button below a
+	 * carousel they had already worked through — and it is also what makes the
+	 * new slides reachable: query view.js hands focus to the first new item for
+	 * the screen-reader handoff, and an off-screen slide is `inert`, which
+	 * refuses focus outright.
+	 *
+	 * @param {number} added How many slides were appended.
+	 */
+	onItemsAppended(added) {
+		this.refresh();
+		if (added <= 0 || this.isDestroyed) {
+			return;
+		}
 
-		this.slider.appendChild(announcer);
-		this.announcer = announcer;
+		const firstNew = Math.max(0, this.realSlideCount - added);
+		const target =
+			this.cloneCount > 0 ? firstNew + this.cloneCount : firstNew;
+		const { min, max } = this.navBounds();
+		this.goToSlide(Math.max(min, Math.min(target, max)));
 	}
 
 	goToSlide(index, animate = true) {
@@ -324,59 +377,30 @@ class DSGSlider {
 
 		const previousIndex = this.currentIndex;
 
-		// Handle loop mode with clones (slide effect)
-		if (
-			this.config.loop &&
-			this.cloneCount > 0 &&
-			this.config.effect === 'slide'
-		) {
-			// Allow moving to clones, they will be handled in applySlideTransition
+		if (this.cloneCount > 0) {
+			// Clones make every index reachable; applySlideTransition jumps
+			// back to the matching real slide once the transition finishes.
 			this.currentIndex = index;
-		}
-		// Handle loop mode without clones (other effects)
-		else if (this.config.loop) {
-			if (index < 0) {
-				index = this.slides.length - 1;
-			}
-			if (index >= this.slides.length) {
-				index = 0;
-			}
-			this.currentIndex = index;
-		}
-		// No loop - clamp to valid range
-		else {
-			this.currentIndex = Math.max(
-				0,
-				Math.min(index, this.slides.length - 1)
-			);
-		}
-
-		if (!animate) {
-			this.isAnimating = false;
+		} else if (this.config.loop) {
+			const count = this.slides.length;
+			this.currentIndex = ((index % count) + count) % count;
 		} else {
-			this.isAnimating = true;
+			const { min, max } = this.navBounds();
+			this.currentIndex = Math.max(min, Math.min(index, max));
 		}
 
-		// Apply transition based on effect type
+		this.isAnimating = animate;
+
 		if (this.config.effect === 'slide') {
 			this.applySlideTransition(animate);
-		} else if (this.config.effect === 'fade') {
-			this.applyFadeTransition();
-		} else if (this.config.effect === 'zoom') {
-			this.applyZoomTransition();
+		} else {
+			this.applyActiveClass();
 		}
 
-		// Update navigation
 		this.updateArrows();
-		this.updateDots();
+		updateDots(this.dots || [], this.activeDotIndex());
 		this.updateARIA();
 
-		// Pause autoplay on interaction
-		if (this.config.pauseOnInteraction && this.autoplayTimer) {
-			this.stopAutoplay();
-		}
-
-		// Dispatch custom event (use real index for event)
 		const realIndex = this.getRealIndex(this.currentIndex);
 		this.slider.dispatchEvent(
 			new CustomEvent('dsgo-slider-change', {
@@ -387,98 +411,87 @@ class DSGSlider {
 			})
 		);
 
-		// Announce slide change to screen readers
-		if (this.announcer && animate) {
-			const totalSlides =
-				this.cloneCount > 0 ? this.realSlideCount : this.slides.length;
-			this.announcer.textContent = `Slide ${realIndex + 1} of ${totalSlides}`;
-		}
-
-		// Reset animating state
 		if (animate) {
-			const duration = parseFloat(this.config.transitionDuration) * 1000;
 			setTimeout(() => {
 				this.isAnimating = false;
-			}, duration);
+			}, this.config.transitionDurationMs);
 		}
 	}
 
+	/**
+	 * Write a track translation without disturbing the settled position.
+	 *
+	 * Drag uses this for every intermediate frame; `currentOffset` keeps
+	 * pointing at the slide we would snap back to if the drag is cancelled.
+	 *
+	 * @param {number} px Translation in pixels.
+	 */
+	setRawOffset(px) {
+		if (this.config.effect !== 'slide') {
+			return;
+		}
+		this.track.style.transform = `translateX(${px}px)`;
+	}
+
 	applySlideTransition(animate = true) {
-		// Performance: Use cached dimensions instead of reading layout
 		const offset = -(
 			this.currentIndex *
 			(this.cachedSlideWidth + this.cachedGap)
 		);
+		this.currentOffset = offset;
 
-		// Apply transition
 		if (!animate) {
 			this.track.style.transition = 'none';
 			this.track.style.transform = `translateX(${offset}px)`;
-			// Force browser to apply styles immediately
+			// Force a style flush so the next transition starts from here.
 			void this.track.offsetHeight;
 			this.track.style.transition = '';
-		} else {
-			this.track.style.transform = `translateX(${offset}px)`;
-
-			// For infinite loop: check if we're on a clone and need to jump to real slide
-			if (this.cloneCount > 0) {
-				const duration =
-					parseFloat(this.config.transitionDuration) * 1000;
-				setTimeout(() => {
-					let needsJump = false;
-					let newIndex = this.currentIndex;
-
-					// If we're on a clone after the real slides, jump to the corresponding real slide at the start
-					if (
-						this.currentIndex >=
-						this.cloneCount + this.realSlideCount
-					) {
-						newIndex =
-							this.cloneCount +
-							(this.currentIndex -
-								(this.cloneCount + this.realSlideCount));
-						needsJump = true;
-					}
-					// If we're on a clone before the real slides, jump to the corresponding real slide at the end
-					else if (this.currentIndex < this.cloneCount) {
-						newIndex =
-							this.cloneCount +
-							this.realSlideCount -
-							(this.cloneCount - this.currentIndex);
-						needsJump = true;
-					}
-
-					if (needsJump) {
-						this.currentIndex = newIndex;
-						const jumpOffset = -(
-							newIndex *
-							(this.cachedSlideWidth + this.cachedGap)
-						);
-						this.track.style.transition = 'none';
-						this.track.style.transform = `translateX(${jumpOffset}px)`;
-						// Force browser to apply styles immediately
-						void this.track.offsetHeight;
-						this.track.style.transition = '';
-
-						// Update navigation after jump
-						this.updateDots();
-						this.updateARIA();
-					}
-				}, duration);
-			}
+			return;
 		}
-	}
 
-	applyFadeTransition() {
-		this.slides.forEach((slide, index) => {
-			slide.classList.toggle(
-				'dsgo-slide--active',
-				index === this.currentIndex
+		this.track.style.transform = `translateX(${offset}px)`;
+
+		if (this.cloneCount === 0) {
+			return;
+		}
+
+		setTimeout(() => {
+			const jumped = this.jumpTargetForClone();
+			if (jumped === null || this.isDestroyed) {
+				return;
+			}
+			this.currentIndex = jumped;
+			this.currentOffset = -(
+				jumped *
+				(this.cachedSlideWidth + this.cachedGap)
 			);
-		});
+			this.track.style.transition = 'none';
+			this.track.style.transform = `translateX(${this.currentOffset}px)`;
+			void this.track.offsetHeight;
+			this.track.style.transition = '';
+			updateDots(this.dots || [], this.activeDotIndex());
+			this.updateARIA();
+		}, this.config.transitionDurationMs);
 	}
 
-	applyZoomTransition() {
+	/**
+	 * @return {number|null} The real-slide index to snap to, or null when the
+	 *                       track is already resting on a real slide.
+	 */
+	jumpTargetForClone() {
+		const firstReal = this.cloneCount;
+		const afterLastReal = this.cloneCount + this.realSlideCount;
+
+		if (this.currentIndex >= afterLastReal) {
+			return firstReal + (this.currentIndex - afterLastReal);
+		}
+		if (this.currentIndex < firstReal) {
+			return afterLastReal - (firstReal - this.currentIndex);
+		}
+		return null;
+	}
+
+	applyActiveClass() {
 		this.slides.forEach((slide, index) => {
 			slide.classList.toggle(
 				'dsgo-slide--active',
@@ -495,487 +508,252 @@ class DSGSlider {
 		this.goToSlide(this.currentIndex - 1);
 	}
 
+	/**
+	 * Navigation the reader asked for, as opposed to an autoplay tick.
+	 *
+	 * `pauseOnInteraction` used to be checked inside goToSlide, where autoplay's
+	 * own advance satisfied it — so an autoplaying slider stopped for good after
+	 * one tick. Only these entry points count as interaction.
+	 *
+	 * @param {number} index Slide index to move to.
+	 */
+	userGoTo(index) {
+		if (this.config.pauseOnInteraction) {
+			this.autoplay?.stop();
+		}
+		this.goToSlide(index);
+		this.announce();
+	}
+
+	userNext() {
+		this.userGoTo(this.currentIndex + 1);
+	}
+
+	userPrev() {
+		this.userGoTo(this.currentIndex - 1);
+	}
+
+	/** Tell screen readers where the reader has landed. */
+	announce() {
+		if (!this.announcer) {
+			return;
+		}
+		const total =
+			this.cloneCount > 0 ? this.realSlideCount : this.slides.length;
+		this.announcer.textContent = `Slide ${
+			this.getRealIndex(this.currentIndex) + 1
+		} of ${total}`;
+	}
+
 	updateArrows() {
 		if (!this.prevArrow || !this.nextArrow) {
 			return;
 		}
-
-		if (!this.config.loop) {
-			// For non-loop, account for clones in the index
-			const minIndex = this.cloneCount;
-			const maxIndex =
-				this.cloneCount > 0
-					? this.cloneCount + this.realSlideCount - 1
-					: this.slides.length - 1;
-			this.prevArrow.disabled = this.currentIndex === minIndex;
-			this.nextArrow.disabled = this.currentIndex === maxIndex;
-		} else {
+		if (this.config.loop) {
 			this.prevArrow.disabled = false;
 			this.nextArrow.disabled = false;
+			return;
 		}
+		const { min, max } = this.navBounds();
+		this.prevArrow.disabled = this.currentIndex <= min;
+		this.nextArrow.disabled = this.currentIndex >= max;
 	}
 
 	getRealIndex(index) {
 		if (this.cloneCount === 0) {
 			return index;
 		}
-
-		// Convert any index to its real slide equivalent
-		const adjustedIndex = index - this.cloneCount;
-		if (adjustedIndex < 0) {
-			return this.realSlideCount + adjustedIndex;
-		} else if (adjustedIndex >= this.realSlideCount) {
-			return adjustedIndex - this.realSlideCount;
+		const adjusted = index - this.cloneCount;
+		if (adjusted < 0) {
+			return this.realSlideCount + adjusted;
 		}
-		return adjustedIndex;
-	}
-
-	updateDots() {
-		if (!this.dots) {
-			return;
+		if (adjusted >= this.realSlideCount) {
+			return adjusted - this.realSlideCount;
 		}
-
-		const realIndex = this.getRealIndex(this.currentIndex);
-
-		this.dots.forEach((dot, index) => {
-			const isActive = index === realIndex;
-			dot.classList.toggle('dsgo-slider__dot--active', isActive);
-			dot.setAttribute('aria-selected', isActive ? 'true' : 'false');
-		});
+		return adjusted;
 	}
 
 	updateARIA() {
-		// In scroll-driven mode all slides are visible in the horizontal
-		// strip — hiding non-active slides from AT would be incorrect
+		// Scroll-driven mode shows the whole strip at once, so nothing in it is
+		// hidden from assistive tech.
 		if (this.config.scrollDriven) {
 			return;
 		}
 
+		const first = this.currentIndex;
+		const last = this.currentIndex + this.perView() - 1;
+
 		this.slides.forEach((slide, index) => {
-			const isActive = index === this.currentIndex;
-			slide.setAttribute('aria-hidden', !isActive ? 'true' : 'false');
-			slide.setAttribute('tabindex', isActive ? '0' : '-1');
+			// Clones duplicate real slides, so they stay hidden from assistive
+			// tech for their whole life — the original is always in the DOM too.
+			if (slide.classList.contains('dsgo-slide--clone')) {
+				return;
+			}
+			const isVisible = index >= first && index <= last;
+			slide.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+			// tabindex on the slide would not keep Tab out of the links inside
+			// it, which is how focus used to land in an aria-hidden subtree.
+			slide.toggleAttribute('inert', !isVisible);
 		});
 	}
 
-	// Swipe support (touch devices)
-	initSwipe() {
-		this.track.addEventListener(
-			'touchstart',
-			(e) => {
-				this.touchStartX = e.touches[0].clientX;
-			},
-			{ passive: true }
-		);
-
-		this.track.addEventListener(
-			'touchend',
-			(e) => {
-				this.touchEndX = e.changedTouches[0].clientX;
-				this.handleSwipe();
-			},
-			{ passive: true }
-		);
-	}
-
-	handleSwipe() {
-		const diff = this.touchStartX - this.touchEndX;
-		const threshold = 50;
-
-		if (Math.abs(diff) > threshold) {
-			if (diff > 0) {
-				this.next();
-			} else {
-				this.prev();
-			}
-		}
-	}
-
-	// Drag support (mouse)
-	initDrag() {
-		let startX = 0;
-		let currentTranslate = 0;
-		let previousTranslate = 0;
-
-		// ✅ Store bound functions for cleanup
-		this.handleMouseMove = (e) => {
-			if (!this.isDragging) {
-				return;
-			}
-
-			const currentX = e.clientX;
-			const diff = currentX - startX;
-			currentTranslate = previousTranslate + diff;
-
-			if (this.config.effect === 'slide') {
-				this.track.style.transform = `translateX(${currentTranslate}px)`;
-			}
-		};
-
-		this.handleMouseUp = () => {
-			if (!this.isDragging) {
-				return;
-			}
-
-			this.isDragging = false;
-			this.track.style.cursor = 'grab';
-
-			const diff = currentTranslate - previousTranslate;
-			const threshold = 50;
-
-			if (Math.abs(diff) > threshold) {
-				if (diff < 0) {
-					this.next();
-				} else {
-					this.prev();
-				}
-			} else {
-				this.goToSlide(this.currentIndex); // Snap back
-			}
-		};
-
-		this.handleMouseDown = (e) => {
-			this.isDragging = true;
-			startX = e.clientX;
-			this.track.style.cursor = 'grabbing';
-			previousTranslate = currentTranslate;
-		};
-
-		// Add event listeners
-		this.track.addEventListener('mousedown', this.handleMouseDown);
-		document.addEventListener('mousemove', this.handleMouseMove);
-		document.addEventListener('mouseup', this.handleMouseUp);
-
-		this.track.style.cursor = 'grab';
-	}
-
-	// Keyboard navigation
 	initKeyboard() {
-		this.slider.addEventListener('keydown', (e) => {
+		this.listen(this.slider, 'keydown', (event) => {
+			const target = event.target;
+			if (target !== this.slider && !this.slider.contains(target)) {
+				return;
+			}
+			// Arrow keys belong to the field the reader is typing in.
 			if (
-				e.target !== this.slider &&
-				!this.slider.contains(e.target.ownerDocument.activeElement)
+				target?.closest?.(
+					'input, textarea, select, [contenteditable="true"]'
+				)
 			) {
 				return;
 			}
 
-			switch (e.key) {
+			const bounds = this.navBounds();
+			switch (event.key) {
 				case 'ArrowLeft':
-					e.preventDefault();
-					this.prev();
+					event.preventDefault();
+					this.userPrev();
 					break;
 				case 'ArrowRight':
-					e.preventDefault();
-					this.next();
+					event.preventDefault();
+					this.userNext();
 					break;
 				case 'Home':
-					e.preventDefault();
-					this.goToSlide(0);
+					event.preventDefault();
+					this.userGoTo(bounds.min);
 					break;
 				case 'End':
-					e.preventDefault();
-					this.goToSlide(this.slides.length - 1);
+					event.preventDefault();
+					this.userGoTo(bounds.max);
+					break;
+				default:
 					break;
 			}
 		});
 
-		// Make slider focusable
 		if (!this.slider.hasAttribute('tabindex')) {
 			this.slider.setAttribute('tabindex', '0');
 		}
 	}
 
-	// Responsive handling
 	initResponsive() {
-		let resizeTimer;
-		// ✅ Store handler for cleanup
-		this.handleResize = () => {
-			clearTimeout(resizeTimer);
-			resizeTimer = setTimeout(() => {
-				if (!this.isDestroyed) {
-					// Performance: Recalculate dimensions on resize
-					this.updateDimensions();
-					if (this.config.scrollDriven) {
-						this.updateScrollDrivenDimensions();
-						this.updateScrollDrivenStickyTop();
-						this.updateScrollDrivenPosition();
-					} else {
-						this.goToSlide(this.currentIndex, false);
-					}
+		let timer;
+		const onResize = () => {
+			clearTimeout(timer);
+			timer = setTimeout(() => {
+				if (this.isDestroyed) {
+					return;
 				}
-			}, 250);
+				const before = this.perView();
+				this.updateDimensions();
+				if (this.scrollDriven) {
+					this.scrollDriven.resize();
+				} else if (this.perView() !== before) {
+					// A breakpoint change alters the clone count and how many
+					// dots there are, neither of which re-measuring fixes.
+					this.refresh();
+				} else {
+					this.goToSlide(this.currentIndex, false);
+				}
+			}, RESIZE_DEBOUNCE_MS);
 		};
-		window.addEventListener('resize', this.handleResize);
+
+		this.listen(window, 'resize', onResize);
+		this.teardowns.push(() => clearTimeout(timer));
+
+		// A slider inside a grid or a collapsing sidebar changes width without
+		// the window ever resizing, and the cached slide width goes stale.
+		if (typeof ResizeObserver !== 'undefined' && this.viewport) {
+			this.resizeObserver = new ResizeObserver(onResize);
+			this.resizeObserver.observe(this.viewport);
+		}
 	}
 
-	// Auto-play with IntersectionObserver
-	observeVisibility() {
-		const observer = new window.IntersectionObserver(
-			(entries) => {
-				entries.forEach((entry) => {
-					this.isInViewport = entry.isIntersecting;
-					if (this.isInViewport) {
-						this.startAutoplay();
-					} else {
-						this.stopAutoplay();
-					}
-				});
-			},
-			{ threshold: 0.5 }
-		);
+	initReducedMotion() {
+		const query = window.matchMedia(REDUCED_MOTION_QUERY);
+		this.reducedMotionQuery = query;
+		this.applyReducedMotion(query.matches);
 
-		observer.observe(this.slider);
-
-		// Pause on hover
-		if (this.config.pauseOnHover) {
-			this.slider.addEventListener('mouseenter', () =>
-				this.stopAutoplay()
+		const onChange = (event) => this.applyReducedMotion(event.matches);
+		// Safari below 14 only has the deprecated listener API.
+		if (typeof query.addEventListener === 'function') {
+			query.addEventListener('change', onChange);
+			this.teardowns.push(() =>
+				query.removeEventListener('change', onChange)
 			);
-			this.slider.addEventListener('mouseleave', () => {
-				if (this.isInViewport) {
-					this.startAutoplay();
-				}
-			});
-		}
-	}
-
-	startAutoplay() {
-		if (!this.config.autoplay || this.autoplayTimer) {
-			return;
-		}
-
-		this.autoplayTimer = setInterval(() => {
-			this.next();
-		}, this.config.autoplayInterval);
-	}
-
-	stopAutoplay() {
-		if (this.autoplayTimer) {
-			clearInterval(this.autoplayTimer);
-			this.autoplayTimer = null;
-		}
-	}
-
-	// Respect reduced motion preference
-	respectReducedMotion() {
-		const prefersReducedMotion = window.matchMedia(
-			'(prefers-reduced-motion: reduce)'
-		).matches;
-
-		if (prefersReducedMotion) {
-			this.config.transitionDuration = '0s';
-			this.track.style.transition = 'none';
-			this.slides.forEach((slide) => {
-				slide.style.transition = 'none';
-			});
-
-			// Disable autoplay for reduced motion
-			if (this.config.autoplay) {
-				this.stopAutoplay();
-			}
+		} else if (typeof query.addListener === 'function') {
+			query.addListener(onChange);
+			this.teardowns.push(() => query.removeListener(onChange));
 		}
 	}
 
 	/**
-	 * Initialize scroll-driven horizontal mode
-	 * Wraps the slider in a pin spacer, makes slider sticky,
-	 * and maps vertical scroll progress to horizontal translateX
+	 * @param {boolean} prefersReduced Whether motion should be suppressed.
 	 */
-	initScrollDriven() {
-		// Create pin spacer wrapper
-		this.pinSpacer = document.createElement('div');
-		this.pinSpacer.className = 'dsgo-slider-pin-spacer';
-		this.slider.parentNode.insertBefore(this.pinSpacer, this.slider);
-		this.pinSpacer.appendChild(this.slider);
+	applyReducedMotion(prefersReduced) {
+		this.config.transitionDuration = prefersReduced
+			? '0s'
+			: this.baseTransitionDuration;
+		this.config.transitionDurationMs = prefersReduced
+			? 0
+			: this.baseTransitionDurationMs;
 
-		// Disable track transition for smooth scroll-driven animation
-		this.track.style.transition = 'none';
-
-		// Calculate and set dimensions
-		this.updateScrollDrivenDimensions();
-
-		// Center the sticky slider vertically in the viewport
-		this.updateScrollDrivenStickyTop();
-
-		// Build progress dots for scroll-driven mode
-		this.buildScrollDrivenProgress();
-
-		// Bind scroll handler with requestAnimationFrame throttle
-		this.scrollDrivenTicking = false;
-		this.handleScrollDriven = () => {
-			if (!this.scrollDrivenTicking) {
-				this.scrollDrivenTicking = true;
-				requestAnimationFrame(() => {
-					this.updateScrollDrivenPosition();
-					this.scrollDrivenTicking = false;
-				});
-			}
-		};
-
-		window.addEventListener('scroll', this.handleScrollDriven, {
-			passive: true,
+		const transition = prefersReduced ? 'none' : '';
+		this.track.style.transition = transition;
+		this.slides.forEach((slide) => {
+			slide.style.transition = transition;
 		});
 
-		// Initial position
-		this.updateScrollDrivenPosition();
+		// Suspending rather than stopping means turning the OS setting back off
+		// resumes autoplay instead of leaving the slider permanently frozen.
+		this.autoplay?.setSuspended('reduced-motion', prefersReduced);
 	}
 
-	/**
-	 * Calculate dimensions for scroll-driven mode
-	 */
-	updateScrollDrivenDimensions() {
-		const sliderHeight = this.slider.offsetHeight;
-		const viewportWidth = this.viewport.offsetWidth;
-
-		// Total track width (all slides + gaps)
-		const slideCount = this.originalSlides.length;
-		const slideWidth =
-			this.cachedSlideWidth || this.originalSlides[0].offsetWidth;
-		const gap =
-			this.cachedGap ||
-			parseFloat(window.getComputedStyle(this.track).gap) ||
-			0;
-		const totalTrackWidth =
-			slideCount * slideWidth + (slideCount - 1) * gap;
-
-		// How much the track needs to scroll horizontally
-		this.scrollDrivenMaxOffset = Math.max(
-			0,
-			totalTrackWidth - viewportWidth
-		);
-
-		// Total scroll distance for the pin spacer
-		// scrollDrivenSpeed multiplier controls how much vertical scroll maps to horizontal travel
-		const scrollDistance =
-			this.scrollDrivenMaxOffset * this.config.scrollDrivenSpeed;
-
-		// Set pin spacer height: slider height + extra scroll room
-		this.pinSpacer.style.height = `${sliderHeight + scrollDistance}px`;
-	}
-
-	/**
-	 * Center the sticky slider vertically in the viewport
-	 * Calculates offset so the slider pins at the middle of the screen
-	 */
-	updateScrollDrivenStickyTop() {
-		const sliderHeight = this.slider.offsetHeight;
-		this.scrollDrivenStickyTop = Math.max(
-			0,
-			(window.innerHeight - sliderHeight) / 2
-		);
-		this.slider.style.top = `${this.scrollDrivenStickyTop}px`;
-	}
-
-	/**
-	 * Build progress bar indicator for scroll-driven mode
-	 */
-	buildScrollDrivenProgress() {
-		const dotsContainer = document.createElement('div');
-		dotsContainer.className = 'dsgo-slider__scroll-progress';
-		dotsContainer.setAttribute('aria-hidden', 'true');
-
-		const progressBar = document.createElement('div');
-		progressBar.className = 'dsgo-slider__scroll-progress-bar';
-		dotsContainer.appendChild(progressBar);
-
-		this.slider.appendChild(dotsContainer);
-		this.scrollProgressBar = progressBar;
-	}
-
-	/**
-	 * Update the horizontal position based on vertical scroll progress
-	 */
-	updateScrollDrivenPosition() {
-		if (!this.pinSpacer) {
-			return;
-		}
-
-		// Respect reduced motion — don't animate track via scroll
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			return;
-		}
-
-		const sliderHeight = this.slider.offsetHeight;
-		const scrollableDistance = this.pinSpacer.offsetHeight - sliderHeight;
-
-		if (scrollableDistance <= 0) {
-			return;
-		}
-
-		// Calculate progress: 0 when slider first pins at center, 1 when it unpins
-		// Account for stickyTop offset so pinning starts when spacer reaches the centered position
-		const spacerRect = this.pinSpacer.getBoundingClientRect();
-		const scrolledIntoSpacer =
-			(this.scrollDrivenStickyTop || 0) - spacerRect.top;
-		const progress = Math.max(
-			0,
-			Math.min(1, scrolledIntoSpacer / scrollableDistance)
-		);
-
-		// Map progress to horizontal offset
-		const offset = -(progress * this.scrollDrivenMaxOffset);
-		this.track.style.transform = `translate3d(${offset}px, 0, 0)`;
-
-		// Update progress bar
-		if (this.scrollProgressBar) {
-			this.scrollProgressBar.style.width = `${progress * 100}%`;
-		}
-	}
-
-	/**
-	 * Cleanup method to prevent memory leaks
-	 * Removes all event listeners and clears timers
-	 *
-	 * PERFORMANCE FIX: Prevents memory leaks from accumulating
-	 * document-level event listeners on pages with multiple sliders
-	 */
 	destroy() {
-		// Stop autoplay timer
-		this.stopAutoplay();
-
-		// Remove drag event listeners
-		if (this.handleMouseMove) {
-			document.removeEventListener('mousemove', this.handleMouseMove);
-		}
-		if (this.handleMouseUp) {
-			document.removeEventListener('mouseup', this.handleMouseUp);
-		}
-		if (this.handleMouseDown && this.track) {
-			this.track.removeEventListener('mousedown', this.handleMouseDown);
-		}
-
-		// Remove resize listener
-		if (this.handleResize) {
-			window.removeEventListener('resize', this.handleResize);
-		}
-
-		// Remove scroll-driven listener
-		if (this.handleScrollDriven) {
-			window.removeEventListener('scroll', this.handleScrollDriven);
-		}
-
-		// Unwrap from pin spacer
-		if (this.pinSpacer && this.pinSpacer.parentNode) {
-			this.pinSpacer.parentNode.insertBefore(this.slider, this.pinSpacer);
-			this.pinSpacer.remove();
-		}
-
-		// Mark as destroyed
 		this.isDestroyed = true;
+		this.autoplay?.destroy();
+		this.scrollDriven?.destroy();
+		this.resizeObserver?.disconnect();
+		this.teardowns.forEach((teardown) => teardown());
+		this.teardowns = [];
 	}
 }
 
-// Store slider instances for cleanup
-const sliderInstances = new WeakMap();
+// ---------------------------------------------------------------------------
+// Bootstrap
+// ---------------------------------------------------------------------------
 
-// Store timeout IDs for cleanup
+/** Instance per slider element, so re-init passes skip live sliders. */
+const sliderInstances = new WeakMap();
+/** Strong refs, so detached instances can be found and torn down. */
+const liveInstances = new Set();
+/** Pending image-wait timeouts, cleared when the slider initialises. */
 const sliderTimeouts = new WeakMap();
 
 /**
- * Get images and their loading state for a slider
+ * Tear down instances whose element has left the document.
  *
- * @param {HTMLElement} slider - The slider element to check
- * @return {{images: HTMLImageElement[], allLoaded: boolean}} Object containing images array and loading state
+ * A Dynamic Query filter refresh replaces the whole region's innerHTML, so a
+ * carousel host is swapped for a fresh element. Without this the old
+ * instance's document- and window-level listeners live on for the rest of the
+ * page's life, one leaked set per filter change.
+ */
+function pruneDetachedSliders() {
+	liveInstances.forEach((instance) => {
+		if (!instance.slider.isConnected) {
+			instance.destroy();
+			liveInstances.delete(instance);
+		}
+	});
+}
+
+/**
+ * @param {HTMLElement} slider Slider root.
+ * @return {{images: HTMLImageElement[], allLoaded: boolean}} Image load state.
  */
 function getImageLoadState(slider) {
 	const images = Array.from(slider.querySelectorAll('img'));
@@ -986,17 +764,13 @@ function getImageLoadState(slider) {
 }
 
 /**
- * Initialize a single slider instance
- *
- * @param {HTMLElement} slider - The slider element to initialize
+ * @param {HTMLElement} slider Slider root.
  */
 function initializeSlider(slider) {
-	// Avoid double initialization
 	if (sliderInstances.has(slider)) {
 		return;
 	}
 
-	// Clear any pending timeout for this slider
 	const timeoutId = sliderTimeouts.get(slider);
 	if (timeoutId) {
 		clearTimeout(timeoutId);
@@ -1005,99 +779,85 @@ function initializeSlider(slider) {
 
 	const instance = new DSGSlider(slider);
 	sliderInstances.set(slider, instance);
+	liveInstances.add(instance);
 }
 
 /**
- * Initialize sliders after ensuring images are loaded
+ * Initialise every slider on the page, waiting on images where it matters.
+ *
+ * Slide width is read from layout, so initialising before images have sized
+ * their slides caches a width of zero and the track never moves.
  */
 function initializeSliders() {
-	const sliders = document.querySelectorAll('.dsgo-slider');
+	pruneDetachedSliders();
 
-	sliders.forEach((slider) => {
+	document.querySelectorAll('.dsgo-slider').forEach((slider) => {
 		const { images, allLoaded } = getImageLoadState(slider);
 
 		if (allLoaded) {
-			// Images already loaded, initialize immediately
 			initializeSlider(slider);
-		} else {
-			// Wait for images to load
-			let loadedCount = 0;
-			const totalImages = images.length;
+			return;
+		}
 
-			const checkAndInitialize = () => {
-				if (loadedCount === totalImages) {
-					initializeSlider(slider);
-				}
-			};
-
-			const onImageLoad = () => {
-				loadedCount++;
-				checkAndInitialize();
-			};
-
-			images.forEach((img) => {
-				if (img.complete) {
-					loadedCount++;
-				} else {
-					// Attach both load and error listeners to ensure slider initializes
-					// even if images fail to load (broken images shouldn't prevent initialization)
-					img.addEventListener('load', onImageLoad, { once: true });
-					img.addEventListener('error', onImageLoad, { once: true });
-
-					// Re-check in case image loaded between check and listener attachment
-					// This prevents a race condition where the image loads after the
-					// complete check but before the listener is attached
-					if (img.complete) {
-						// Remove listeners to prevent double-counting
-						// If image loaded after listener attachment, both the listener
-						// and this check would increment loadedCount for the same image
-						img.removeEventListener('load', onImageLoad);
-						img.removeEventListener('error', onImageLoad);
-						loadedCount++;
-					}
-				}
-			});
-
-			// Initialize if all images completed during listener setup
+		let loadedCount = 0;
+		const checkAndInitialize = () => {
+			if (loadedCount === images.length) {
+				initializeSlider(slider);
+			}
+		};
+		const onImageLoad = () => {
+			loadedCount++;
 			checkAndInitialize();
+		};
 
-			// Fallback: Initialize after timeout if images take too long
-			const timeoutId = setTimeout(() => {
+		images.forEach((img) => {
+			if (img.complete) {
+				loadedCount++;
+				return;
+			}
+			// A broken image must not block initialisation, so error counts too.
+			img.addEventListener('load', onImageLoad, { once: true });
+			img.addEventListener('error', onImageLoad, { once: true });
+
+			// The image may have finished between the check above and the
+			// listeners landing; drop them so it is not counted twice.
+			if (img.complete) {
+				img.removeEventListener('load', onImageLoad);
+				img.removeEventListener('error', onImageLoad);
+				loadedCount++;
+			}
+		});
+
+		checkAndInitialize();
+
+		sliderTimeouts.set(
+			slider,
+			setTimeout(() => {
 				if (!sliderInstances.has(slider)) {
 					initializeSlider(slider);
 				}
-			}, 3000);
-
-			// Store timeout ID for cleanup
-			sliderTimeouts.set(slider, timeoutId);
-		}
+			}, 3000)
+		);
 	});
 }
 
-// Initialize on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', initializeSliders);
 
-// Re-initialize after soft navigation (bfcache, AJAX)
+// Soft navigation: bfcache restore, and Dynamic Query filter refreshes that
+// replace a carousel host's markup wholesale.
 document.addEventListener('dsgo-content-loaded', initializeSliders);
 
-// Also initialize on load event as backup (ensures all resources loaded)
-window.addEventListener('load', () => {
-	// Initialize any sliders that weren't initialized yet
-	const sliders = document.querySelectorAll('.dsgo-slider');
-	sliders.forEach((slider) => {
-		if (!sliderInstances.has(slider)) {
-			initializeSlider(slider);
-		}
-	});
-});
+// Backstop for sliders whose images were still settling at DOMContentLoaded.
+window.addEventListener('load', initializeSliders);
 
-// Cleanup on page unload (prevents memory leaks on SPA navigation)
-window.addEventListener('beforeunload', () => {
-	const sliders = document.querySelectorAll('.dsgo-slider');
-	sliders.forEach((slider) => {
-		const instance = sliderInstances.get(slider);
-		if (instance && instance.destroy) {
-			instance.destroy();
-		}
-	});
+// `pagehide` rather than `beforeunload`: registering a beforeunload listener
+// makes the page ineligible for the back/forward cache, which is exactly the
+// navigation our own `pageshow` re-init path exists to serve. A page entering
+// the bfcache keeps its instances so the restore finds them live.
+window.addEventListener('pagehide', (event) => {
+	if (event.persisted) {
+		return;
+	}
+	liveInstances.forEach((instance) => instance.destroy());
+	liveInstances.clear();
 });

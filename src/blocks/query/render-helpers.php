@@ -20,6 +20,14 @@
  *                                              render state (pages, items, page).
  *                                              Used by pagination + no-results
  *                                              siblings (Tasks 13, 15).
+ *  - designsetgo_query_set_item_host() / designsetgo_query_get_item_host()
+ *                                              In-memory per-request registry
+ *                                              of which layout block presented
+ *                                              each Query ID's results, paired
+ *                                              with
+ *                                              designsetgo_query_host_supports_infinite_scroll()
+ *                                              so the pagination sibling can
+ *                                              adapt to a carousel host.
  *
  * @package DesignSetGo
  * @since 2.1.0
@@ -104,6 +112,85 @@ if ( ! function_exists( 'designsetgo_query_item_host_block_names' ) ) :
 			)
 		);
 		return array_values( array_filter( array_map( 'strval', (array) $hosts ) ) );
+	}
+
+endif;
+
+if ( ! function_exists( 'designsetgo_query_set_item_host' ) ) :
+
+	/**
+	 * Record which item host block rendered a given Query ID this request.
+	 *
+	 * Sibling blocks render after the host, so they can read this to adapt
+	 * their own output to the presentation the author chose — the pagination
+	 * block uses it to decide whether infinite scroll is viable.
+	 *
+	 * Not a persistent cache — lives only for the current request, alongside
+	 * designsetgo_query_set_last_state().
+	 *
+	 * @param string $query_id  Unique query identifier.
+	 * @param string $host_name Block name of the resolved item host.
+	 */
+	function designsetgo_query_set_item_host( $query_id, $host_name ) {
+		if ( ! isset( $GLOBALS['designsetgo_query_item_hosts'] ) || ! is_array( $GLOBALS['designsetgo_query_item_hosts'] ) ) {
+			$GLOBALS['designsetgo_query_item_hosts'] = array();
+		}
+		$GLOBALS['designsetgo_query_item_hosts'][ (string) $query_id ] = (string) $host_name;
+	}
+
+	/**
+	 * Retrieve the item host block name recorded for a Query ID.
+	 *
+	 * @param string $query_id Unique query identifier.
+	 * @return string Block name, or '' when the host has not rendered yet.
+	 */
+	function designsetgo_query_get_item_host( $query_id ) {
+		$hosts = isset( $GLOBALS['designsetgo_query_item_hosts'] ) ? (array) $GLOBALS['designsetgo_query_item_hosts'] : array();
+		return isset( $hosts[ (string) $query_id ] ) ? (string) $hosts[ (string) $query_id ] : '';
+	}
+
+endif;
+
+if ( ! function_exists( 'designsetgo_query_host_supports_infinite_scroll' ) ) :
+
+	/**
+	 * Whether an item host can carry infinite-scroll pagination.
+	 *
+	 * Infinite scroll hangs on a sentinel element placed after the items: as
+	 * the reader scrolls down the document and the sentinel enters the
+	 * viewport, the next page loads. That signal only exists when the items
+	 * grow the page vertically.
+	 *
+	 * Carousel-shaped hosts (slider, scroll-slides) lay their items out inside
+	 * a fixed-height viewport, so the sentinel's position no longer tracks how
+	 * far the reader has got through the results. It sits just below the
+	 * carousel, where it either intersects on first paint — firing page after
+	 * page until the query is exhausted — or never intersects at all. Neither
+	 * is pagination, so the presentation wins and the pagination block falls
+	 * back to a Load more button (see query-pagination/render.php).
+	 *
+	 * @param string $host_name Item host block name.
+	 * @return bool True when the host grows vertically with its items.
+	 */
+	function designsetgo_query_host_supports_infinite_scroll( $host_name ) {
+		$host_name = (string) $host_name;
+
+		// An empty host name means no host block rendered (legacy trees where
+		// the template blocks are direct children of the query). Those emit a
+		// vertical grid, so infinite scroll is fine.
+		$supported = ( '' === $host_name || 'designsetgo/query-results' === $host_name );
+
+		/**
+		 * Filter whether an item host supports infinite-scroll pagination.
+		 *
+		 * Third-party hosts registered via `designsetgo_query_item_host_block_names`
+		 * default to unsupported (they are non-grid by definition); return true
+		 * here if the host does grow the page vertically as items are appended.
+		 *
+		 * @param bool   $supported Whether infinite scroll is viable.
+		 * @param string $host_name Item host block name.
+		 */
+		return (bool) apply_filters( 'designsetgo_query_host_supports_infinite_scroll', $supported, $host_name );
 	}
 
 endif;
@@ -642,6 +729,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 		// presentation and treat all children as template blocks.
 		$effective_attrs = $attributes;
 		$template_blocks = array();
+		$host_name       = '';
 
 		if ( $results_child ) {
 			$host_name       = (string) ( $results_child['blockName'] ?? '' );
@@ -695,6 +783,11 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 		}
 
 		if ( '' !== $query_id ) {
+			// Record the resolved host so sibling blocks rendered later in the
+			// tree can adapt to the presentation — designsetgo/query-pagination
+			// reads it to decide whether infinite scroll is viable in a carousel.
+			designsetgo_query_set_item_host( $query_id, $host_name );
+
 			$template_html = '';
 			foreach ( $template_blocks as $tb ) {
 				if ( function_exists( 'serialize_block' ) ) {
