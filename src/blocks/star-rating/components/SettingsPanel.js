@@ -16,6 +16,8 @@ import {
 	__experimentalToggleGroupControl as ToggleGroupControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalVStack as VStack,
 } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { DsgoInspectorPanel } from '../../../components/shared';
@@ -174,24 +176,30 @@ export default function SettingsPanel({
 				}
 				isShownByDefault
 			>
-				<ToggleControl
-					label={__('Show value', 'designsetgo')}
-					checked={showValue}
-					onChange={(value) => setAttributes({ showValue: value })}
-					__nextHasNoMarginBottom
-				/>
-				{showValue && (
+				<VStack spacing={3}>
 					<ToggleControl
-						label={__('Show scale', 'designsetgo')}
-						help={__(
-							'Renders "4.5/5" instead of "4.5".',
-							'designsetgo'
-						)}
-						checked={showMax}
-						onChange={(value) => setAttributes({ showMax: value })}
+						label={__('Show value', 'designsetgo')}
+						checked={showValue}
+						onChange={(value) =>
+							setAttributes({ showValue: value })
+						}
 						__nextHasNoMarginBottom
 					/>
-				)}
+					{showValue && (
+						<ToggleControl
+							label={__('Show scale', 'designsetgo')}
+							help={__(
+								'Renders "4.5/5" instead of "4.5".',
+								'designsetgo'
+							)}
+							checked={showMax}
+							onChange={(value) =>
+								setAttributes({ showMax: value })
+							}
+							__nextHasNoMarginBottom
+						/>
+					)}
+				</VStack>
 			</DsgoInspectorPanel.Item>
 
 			<DsgoInspectorPanel.Item
@@ -209,48 +217,52 @@ export default function SettingsPanel({
 				}
 				isShownByDefault
 			>
-				<ToggleControl
-					label={__('Show rating count', 'designsetgo')}
-					checked={showCount}
-					onChange={(value) => setAttributes({ showCount: value })}
-					__nextHasNoMarginBottom
-				/>
-				{showCount && (
-					<>
-						<RangeControl
-							label={__('Number of ratings', 'designsetgo')}
-							value={ratingCount}
-							onChange={(value) =>
-								setAttributes({
-									ratingCount:
-										typeof value === 'number'
-											? value
-											: DEFAULTS.ratingCount,
-								})
-							}
-							min={0}
-							max={1000}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-						<TextControl
-							label={__('Count format', 'designsetgo')}
-							help={
-								/* translators: %s is a literal placeholder token the author types, not a value substituted here. */
-								__(
-									'%s is replaced by the number of ratings.',
-									'designsetgo'
-								)
-							}
-							value={countTemplate}
-							onChange={(value) =>
-								setAttributes({ countTemplate: value })
-							}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-					</>
-				)}
+				<VStack spacing={3}>
+					<ToggleControl
+						label={__('Show rating count', 'designsetgo')}
+						checked={showCount}
+						onChange={(value) =>
+							setAttributes({ showCount: value })
+						}
+						__nextHasNoMarginBottom
+					/>
+					{showCount && (
+						<>
+							<RangeControl
+								label={__('Number of ratings', 'designsetgo')}
+								value={ratingCount}
+								onChange={(value) =>
+									setAttributes({
+										ratingCount:
+											typeof value === 'number'
+												? value
+												: DEFAULTS.ratingCount,
+									})
+								}
+								min={0}
+								max={1000}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+							<TextControl
+								label={__('Count format', 'designsetgo')}
+								help={
+									/* translators: %s is a literal placeholder token the author types, not a value substituted here. */
+									__(
+										'%s is replaced by the number of ratings.',
+										'designsetgo'
+									)
+								}
+								value={countTemplate}
+								onChange={(value) =>
+									setAttributes({ countTemplate: value })
+								}
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							/>
+						</>
+					)}
+				</VStack>
 			</DsgoInspectorPanel.Item>
 		</DsgoInspectorPanel>
 	);
