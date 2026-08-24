@@ -46,12 +46,23 @@ describe('schema attribute', () => {
 		expect(SCHEMA_TYPES['designsetgo/accordion'][0].value).toBe('none');
 	});
 
+	it('offers exactly none, aggregate-rating and review for star-rating', () => {
+		const values = SCHEMA_TYPES['designsetgo/star-rating'].map(
+			(t) => t.value
+		);
+		expect(values).toEqual(['none', 'aggregate-rating', 'review']);
+	});
+
 	it('only registers blocks that have a matching server-side builder', () => {
 		// A control offering a type with no builder behind it is a no-op that
 		// looks like a feature. comparison-table and card were in the original
 		// plan for Review, but neither block holds rating data, so neither is
-		// listed here until a builder exists.
-		expect(SCHEMA_BLOCKS).toEqual(['designsetgo/accordion']);
+		// listed here until a builder exists — star-rating is here precisely
+		// because it does, and ships one.
+		expect(SCHEMA_BLOCKS).toEqual([
+			'designsetgo/accordion',
+			'designsetgo/star-rating',
+		]);
 	});
 
 	it('leaves existing attributes untouched', () => {

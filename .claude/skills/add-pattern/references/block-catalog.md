@@ -433,6 +433,23 @@ Key attributes:
   barStyle (string), animateOnScroll (boolean)
 ```
 
+### designsetgo/star-rating
+
+Star rating over a numeric value. Server-rendered, so `rating` and `ratingCount`
+can be connected through Block Bindings (post meta, ACF, `designsetgo/woo-average-rating`).
+
+```text
+Key attributes:
+  rating (number), maxRating (number)
+  precision ("exact"|"half"|"full")
+  icon (string), iconStyle ("filled"|"outlined")
+  iconSize (number), iconGap (number)
+  ratingColor (string), trackColor (string)
+  showValue (boolean), showMax (boolean)
+  showCount (boolean), ratingCount (number), countTemplate (string)
+  justification ("left"|"center"|"right")
+```
+
 ### designsetgo/countdown-timer
 
 Countdown to a target date/time.

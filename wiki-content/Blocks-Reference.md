@@ -275,6 +275,24 @@ Complete reference guide for all DesignSetGo blocks organized by category.
 
 ---
 
+### Star Rating
+**Name**: `designsetgo/star-rating`
+**Category**: Widgets
+**Description**: Show a rating as a row of stars, from a fixed value or a dynamic source.
+
+**Key Features**:
+- Server-rendered, so `rating` and `ratingCount` can be connected through Block Bindings (post meta, ACF, `designsetgo/woo-average-rating`)
+- Whole, half or exact partial stars — the fraction is a CSS clip, not a half-star asset
+- Any icon from the shared library, filled or outlined, with its own size and gap
+- Optional value ("4.5" or "4.5/5") and rating count with an author-set format
+- Separate colours for rated and unrated icons
+- Reads out as one sentence ("Rated 4.5 out of 5, based on 128 ratings"); the visual parts are hidden from assistive tech
+- Optional schema.org output: an `AggregateRating` or `Review` node in the page's JSON-LD graph
+
+**Use Cases**: Testimonials, review cards, product ratings, comparison tables
+
+---
+
 ### Blobs
 **Name**: `designsetgo/blobs`
 **Category**: Design
@@ -515,6 +533,7 @@ Most blocks include:
 | Pill | Design | - | ❌ | ✅ | ✅ |
 | Counter | Widgets | Child* | ✅ | ❌ | ✅ |
 | Progress Bar | Widgets | - | ✅ | ❌ | ✅ |
+| Star Rating | Widgets | - | ❌ | ❌ | ✅ |
 | Blobs | Design | - | ✅ | ❌ | ✅ |
 | Scroll Marquee | Design | - | ✅ | ❌ | ✅ |
 | Fifty Fifty | Design | - | ❌ | ❌ | ✅ |

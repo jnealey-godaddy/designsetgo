@@ -1,0 +1,156 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "designsetgo/star-rating",
+  "version": "1.0.0",
+  "title": "Star Rating",
+  "category": "designsetgo",
+  "description": "Show a rating as stars — from a fixed value or bound to post meta, ACF or a WooCommerce average rating.",
+  "keywords": [
+    "rating",
+    "stars",
+    "review",
+    "score",
+    "testimonial"
+  ],
+  "textdomain": "designsetgo",
+  "icon": "star-half",
+  "usesContext": [
+    "postId",
+    "postType"
+  ],
+  "selectors": {
+    "root": ".wp-block-designsetgo-star-rating .dsgo-star-rating__inner",
+    "spacing": {
+      "root": ".wp-block-designsetgo-star-rating .dsgo-star-rating__inner",
+      "margin": ".wp-block-designsetgo-star-rating"
+    }
+  },
+  "supports": {
+    "anchor": true,
+    "html": false,
+    "inserter": true,
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "__experimentalDefaultControls": {
+        "margin": false,
+        "padding": false
+      },
+      "__experimentalSkipSerialization": [ "padding" ]
+    },
+    "color": {
+      "background": true,
+      "text": true,
+      "__experimentalDefaultControls": {
+        "text": true
+      },
+      "__experimentalSkipSerialization": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "__experimentalFontFamily": true,
+      "__experimentalFontWeight": true,
+      "__experimentalDefaultControls": {
+        "fontSize": true
+      }
+    },
+    "__experimentalBorder": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true,
+      "__experimentalDefaultControls": {
+        "radius": false
+      },
+      "__experimentalSkipSerialization": true
+    }
+  },
+  "attributes": {
+    "rating": {
+      "type": "number",
+      "default": 4.5
+    },
+    "maxRating": {
+      "type": "number",
+      "default": 5
+    },
+    "precision": {
+      "type": "string",
+      "enum": [ "exact", "half", "full" ],
+      "default": "half"
+    },
+    "icon": {
+      "type": "string",
+      "default": "star"
+    },
+    "iconStyle": {
+      "type": "string",
+      "enum": [ "filled", "outlined" ],
+      "default": "filled"
+    },
+    "iconSize": {
+      "type": "number",
+      "default": 24
+    },
+    "iconGap": {
+      "type": "number",
+      "default": 4
+    },
+    "ratingColor": {
+      "type": "string",
+      "default": ""
+    },
+    "trackColor": {
+      "type": "string",
+      "default": ""
+    },
+    "showValue": {
+      "type": "boolean",
+      "default": false
+    },
+    "showMax": {
+      "type": "boolean",
+      "default": false
+    },
+    "ratingCount": {
+      "type": "number",
+      "default": 0
+    },
+    "showCount": {
+      "type": "boolean",
+      "default": false
+    },
+    "countTemplate": {
+      "type": "string",
+      "default": "(%s)"
+    },
+    "justification": {
+      "type": "string",
+      "enum": [ "left", "center", "right" ],
+      "default": "left"
+    },
+    "schemaItemName": {
+      "type": "string",
+      "default": ""
+    },
+    "schemaAuthor": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "example": {
+    "attributes": {
+      "rating": 4.5,
+      "showValue": true,
+      "showCount": true,
+      "ratingCount": 128,
+      "iconSize": 28
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./index.css",
+  "render": "file:./render.php"
+}

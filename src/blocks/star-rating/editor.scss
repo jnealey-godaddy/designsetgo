@@ -1,0 +1,14 @@
+/**
+ * Star Rating — editor styles.
+ *
+ * The canvas reuses style.scss verbatim (index.js imports both, and block.json
+ * points `editorStyle` and `style` at the same built file). Only the empty
+ * state needs editor-specific treatment: a rating of 0 renders no filled
+ * icons, which is indistinguishable from a broken block until you click it.
+ */
+
+.wp-block-designsetgo-star-rating {
+	// A zero rating still shows the track, so the block stays selectable and
+	// visible in the canvas rather than collapsing to nothing.
+	min-height: var(--dsgo-star-rating-size, 24px);
+}

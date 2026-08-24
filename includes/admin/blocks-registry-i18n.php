@@ -97,6 +97,8 @@ __( 'Counter', 'designsetgo' );
 __( 'Individual animated counter', 'designsetgo' );
 __( 'Progress Bar', 'designsetgo' );
 __( 'Animated progress indicators', 'designsetgo' );
+__( 'Star Rating', 'designsetgo' );
+__( 'Star rating from a fixed value or a dynamic source', 'designsetgo' );
 __( 'Countdown Timer', 'designsetgo' );
 __( 'Display a countdown timer to a specific date and time', 'designsetgo' );
 __( 'Map', 'designsetgo' );
