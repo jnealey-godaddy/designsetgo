@@ -23,6 +23,43 @@
 			"source": "html",
 			"selector": ".dsgo-heading-segment__text",
 			"default": ""
+		},
+		"headlineRole": {
+			"type": "string",
+			"enum": [
+				"normal",
+				"animated"
+			],
+			"default": "normal"
+		},
+		"animatedWords": {
+			"type": "array",
+			"default": []
+		},
+		"normalContent": {
+			"type": "string",
+			"default": ""
+		},
+		"preservedAnimatedWords": {
+			"type": "array",
+			"default": []
+		},
+		"animatedHeadlineShape": {
+			"type": "string",
+			"enum": [
+				"",
+				"circle",
+				"curly",
+				"underline",
+				"double",
+				"double-underline",
+				"underline-zigzag",
+				"zigzag",
+				"diagonal",
+				"strikethrough",
+				"x"
+			],
+			"default": ""
 		}
 	},
 	"usesContext": [

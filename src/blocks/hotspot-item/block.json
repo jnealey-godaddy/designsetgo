@@ -1,0 +1,39 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "designsetgo/hotspot-item",
+  "version": "1.0.0",
+  "title": "Hotspot Item",
+  "category": "designsetgo",
+  "description": "A marker within a Hotspot image.",
+  "textdomain": "designsetgo",
+  "icon": "location-alt",
+  "parent": ["designsetgo/hotspot"],
+  "attributes": {
+    "uniqueId": { "type": "string", "default": "" },
+    "x": { "type": "number", "default": 50 },
+    "y": { "type": "number", "default": 50 },
+    "originX": { "type": "string", "default": "center", "enum": ["left", "center", "right"] },
+    "originY": { "type": "string", "default": "center", "enum": ["top", "center", "bottom"] },
+    "label": { "type": "string", "default": "+" },
+    "icon": { "type": "string", "default": "" },
+    "url": { "type": "string", "default": "" },
+    "tooltip": { "type": "string", "default": "Add a description" },
+    "tooltipPosition": { "type": "string", "default": "inherit", "enum": ["inherit", "top", "right", "bottom", "left"] },
+    "tooltipWidth": { "type": "number" },
+    "trigger": { "type": "string", "default": "inherit", "enum": ["inherit", "click", "hover"] },
+    "animation": { "type": "string", "default": "inherit", "enum": ["inherit", "none", "pulse", "scale", "fade"] },
+    "sequenceOrder": { "type": "number", "default": 0 }
+  },
+  "usesContext": [
+    "designsetgo/hotspot/trigger",
+    "designsetgo/hotspot/tooltipPosition",
+    "designsetgo/hotspot/tooltipWidth",
+    "designsetgo/hotspot/animation",
+    "designsetgo/hotspot/sequenceDuration"
+  ],
+  "supports": { "html": false, "inserter": false, "reusable": false },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css"
+}

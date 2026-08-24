@@ -13,6 +13,12 @@
 	.dsgo-heading-segment + .dsgo-heading-segment {
 		margin-inline-start: var(--dsgo-segment-gap, 0);
 	}
+
+	// Animated segments do not have editable trailing whitespace. Keep their
+	// editor canvas readable without changing the saved/frontend text flow.
+	.dsgo-heading-segment:not(:first-child) .dsgo-heading-segment__animated {
+		margin-inline-start: var(--dsgo-animated-segment-gap);
+	}
 }
 
 // Heading level picker in the inspector
@@ -56,6 +62,13 @@
 		border-color: var(--wp-components-color-foreground, #1e1e1e);
 		color: var(--wp-components-color-background, #fff);
 	}
+}
+
+.dsgo-advanced-heading__animation-notice {
+	margin: 0;
+	padding: 12px;
+	border-left: 3px solid var(--wp-components-color-accent, #3858e9);
+	background: var(--wp-components-color-gray-100, #f0f0f0);
 }
 
 // Text alignment support in editor

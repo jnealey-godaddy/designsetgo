@@ -1,0 +1,43 @@
+.wp-block-designsetgo-text-path {
+	overflow-anchor: none;
+
+	:where(svg) {
+		display: block;
+		width: var(--dsgo-text-path-width, 100%);
+		max-width: 100%;
+		height: auto;
+		overflow: visible;
+		transform: rotate(var(--dsgo-text-path-rotation, 0deg));
+		transform-origin: center;
+	}
+
+	&.dsgo-text-path--align-center :where(svg) {
+		margin-right: auto;
+		margin-left: auto;
+	}
+
+	&.dsgo-text-path--align-right :where(svg) {
+		margin-left: auto;
+	}
+
+	:where(text) {
+		fill: currentcolor;
+	}
+
+	:where(.dsgo-text-path__guide) {
+		fill: none;
+		stroke: var(--dsgo-text-path-guide-color, currentcolor);
+		stroke-width: var(--dsgo-text-path-guide-stroke-width, 2);
+		opacity: var(--dsgo-text-path-guide-opacity, 0.35);
+	}
+
+	:where(.dsgo-text-path__circle-background) {
+		fill: var(--dsgo-text-path-circle-background);
+	}
+
+	:where(a) {
+		display: block;
+		color: inherit;
+		text-decoration: none;
+	}
+}

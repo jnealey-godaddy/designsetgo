@@ -1,0 +1,112 @@
+.wp-block-designsetgo-hotspot {
+	--dsgo-hotspot-tooltip-width: 240px;
+	--dsgo-hotspot-marker-color: #fff;
+	--dsgo-hotspot-marker-background: #111;
+	--dsgo-hotspot-tooltip-background: #111;
+	--dsgo-hotspot-tooltip-color: #fff;
+
+	:where(.dsgo-hotspot__image-wrap) {
+		position: relative;
+		display: block;
+	}
+
+	:where(.dsgo-hotspot__image) {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	:where(.dsgo-hotspot__image--empty) {
+		min-height: 16rem;
+		background: #f0f0f0;
+	}
+
+	:where(.dsgo-hotspot__items) {
+		position: absolute;
+		inset: 0;
+	}
+
+	&.dsgo-hotspot--position-top .dsgo-hotspot-item--position-inherit :where(.dsgo-hotspot-item__tooltip) {
+		bottom: calc(100% + .75rem);
+		left: 50%;
+		transform: translateX(-50%);
+	}
+
+	&.dsgo-hotspot--position-right .dsgo-hotspot-item--position-inherit :where(.dsgo-hotspot-item__tooltip) {
+		left: calc(100% + .75rem);
+		top: 50%;
+		transform: translateY(-50%);
+	}
+
+	&.dsgo-hotspot--position-bottom .dsgo-hotspot-item--position-inherit :where(.dsgo-hotspot-item__tooltip) {
+		left: 50%;
+		top: calc(100% + .75rem);
+		transform: translateX(-50%);
+	}
+
+	&.dsgo-hotspot--position-left .dsgo-hotspot-item--position-inherit :where(.dsgo-hotspot-item__tooltip) {
+		right: calc(100% + .75rem);
+		top: 50%;
+		transform: translateY(-50%);
+	}
+
+	&.dsgo-hotspot--animation-pulse .dsgo-hotspot-item--animation-inherit :where(.dsgo-hotspot-item__marker) {
+		animation: dsgo-hotspot-pulse 1.8s ease-in-out infinite;
+		animation-delay: calc(var(--dsgo-hotspot-sequence-order) * var(--dsgo-hotspot-sequence-duration));
+	}
+
+	:where(.dsgo-hotspot-item.is-active) {
+		z-index: 3;
+	}
+
+	:where(.dsgo-hotspot-item__tooltip.is-open) {
+		display: block;
+		opacity: 1;
+		pointer-events: auto;
+		animation: dsgo-hotspot-tooltip-in .2s ease-out;
+	}
+
+	&.dsgo-hotspot--animation-scale .dsgo-hotspot-item--animation-inherit :where(.dsgo-hotspot-item__marker),
+	:where(.dsgo-hotspot-item--animation-scale .dsgo-hotspot-item__marker) {
+		animation: dsgo-hotspot-scale 1.8s ease-in-out infinite;
+		animation-delay: calc(var(--dsgo-hotspot-sequence-order) * var(--dsgo-hotspot-sequence-duration));
+	}
+
+	&.dsgo-hotspot--animation-fade .dsgo-hotspot-item--animation-inherit :where(.dsgo-hotspot-item__marker),
+	:where(.dsgo-hotspot-item--animation-fade .dsgo-hotspot-item__marker) {
+		animation: dsgo-hotspot-fade 1.8s ease-in-out infinite;
+		animation-delay: calc(var(--dsgo-hotspot-sequence-order) * var(--dsgo-hotspot-sequence-duration));
+	}
+}
+
+@keyframes dsgo-hotspot-scale {
+
+	50% {
+		transform: scale(1.15);
+	}
+}
+
+@keyframes dsgo-hotspot-fade {
+
+	50% {
+		opacity: .55;
+	}
+}
+
+@keyframes dsgo-hotspot-tooltip-in {
+
+	from {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.wp-block-designsetgo-hotspot {
+
+		:where(.dsgo-hotspot-item__marker, .dsgo-hotspot-item__tooltip) {
+			animation: none !important;
+			transition: none !important;
+		}
+	}
+}

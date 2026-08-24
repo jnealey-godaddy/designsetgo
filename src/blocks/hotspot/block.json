@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "designsetgo/hotspot",
+  "version": "1.0.0",
+  "title": "Hotspot",
+  "category": "designsetgo",
+  "description": "Place interactive markers over an image.",
+  "keywords": ["image", "tooltip", "marker", "hotspot"],
+  "textdomain": "designsetgo",
+  "icon": "location-alt",
+  "attributes": {
+    "imageId": { "type": "number" },
+    "imageUrl": { "type": "string", "default": "" },
+    "imageAlt": { "type": "string", "default": "" },
+    "trigger": { "type": "string", "default": "click", "enum": ["click", "hover"] },
+    "tooltipPosition": { "type": "string", "default": "top", "enum": ["top", "right", "bottom", "left"] },
+    "tooltipWidth": { "type": "number", "default": 240 },
+    "animation": { "type": "string", "default": "pulse", "enum": ["none", "pulse", "scale", "fade"] },
+    "sequenceDuration": { "type": "number", "default": 0 },
+    "markerColor": { "type": "string", "default": "" },
+    "markerBackgroundColor": { "type": "string", "default": "" },
+    "tooltipBackgroundColor": { "type": "string", "default": "" },
+    "tooltipTextColor": { "type": "string", "default": "" }
+  },
+  "allowedBlocks": ["designsetgo/hotspot-item"],
+  "providesContext": {
+    "designsetgo/hotspot/trigger": "trigger",
+    "designsetgo/hotspot/tooltipPosition": "tooltipPosition",
+    "designsetgo/hotspot/tooltipWidth": "tooltipWidth",
+    "designsetgo/hotspot/animation": "animation",
+    "designsetgo/hotspot/sequenceDuration": "sequenceDuration"
+  },
+  "supports": {
+    "anchor": true,
+    "align": ["wide", "full"],
+    "html": false,
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "__experimentalDefaultControls": { "margin": true, "padding": false }
+    }
+  },
+  "example": {
+    "attributes": { "imageUrl": "https://s.w.org/images/core/5.3/MtBlanc1.jpg", "imageAlt": "Mountains" },
+    "innerBlocks": [
+      { "name": "designsetgo/hotspot-item", "attributes": { "label": "View" } },
+      { "name": "designsetgo/hotspot-item", "attributes": { "label": "Details", "x": 70, "y": 65 } }
+    ]
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js"
+}

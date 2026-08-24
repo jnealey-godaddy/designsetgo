@@ -1,0 +1,145 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "designsetgo/text-path",
+	"version": "1.0.0",
+	"title": "Text Path",
+	"category": "designsetgo",
+	"description": "Flow text along an SVG path.",
+	"keywords": [
+		"text",
+		"svg",
+		"path",
+		"curve"
+	],
+	"textdomain": "designsetgo",
+	"icon": "text",
+	"attributes": {
+		"text": {
+			"type": "string",
+			"default": "Text on a path"
+		},
+		"pathType": {
+			"type": "string",
+			"default": "wave"
+		},
+		"arcSize": {
+			"type": "number",
+			"default": 100
+		},
+		"customPath": {
+			"type": "object",
+			"default": null
+		},
+		"startOffset": {
+			"type": "number",
+			"default": 0
+		},
+		"showPath": {
+			"type": "boolean",
+			"default": false
+		},
+		"guideColor": {
+			"type": "string",
+			"default": ""
+		},
+		"circleBackgroundColor": {
+			"type": "string",
+			"default": ""
+		},
+		"guideOpacity": {
+			"type": "number",
+			"default": 0.35
+		},
+		"guideStrokeWidth": {
+			"type": "number",
+			"default": 2
+		},
+		"pathWidth": {
+			"type": "number",
+			"default": 100
+		},
+		"pathAlignment": {
+			"type": "string",
+			"default": "left"
+		},
+		"pathFontSize": {
+			"type": "number",
+			"default": 54
+		},
+		"rotation": {
+			"type": "number",
+			"default": 0
+		},
+		"wordSpacing": {
+			"type": "number",
+			"default": 0
+		},
+		"pathPadding": {
+			"type": "number",
+			"default": 0
+		},
+		"motion": {
+			"type": "boolean",
+			"default": false
+		},
+		"motionDuration": {
+			"type": "number",
+			"default": 12
+		},
+		"motionDirection": {
+			"type": "string",
+			"default": "forward"
+		},
+		"direction": {
+			"type": "string",
+			"default": "ltr"
+		},
+		"url": {
+			"type": "string",
+			"default": ""
+		},
+		"target": {
+			"type": "boolean",
+			"default": false
+		},
+		"rel": {
+			"type": "string",
+			"default": ""
+		},
+		"uniqueId": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"anchor": true,
+		"html": false,
+		"color": {
+			"text": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalLetterSpacing": true
+		}
+	},
+	"example": {
+		"attributes": {
+			"text": "Create something remarkable",
+			"pathType": "arc",
+			"showPath": true,
+			"uniqueId": "example"
+		}
+	},
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./index.css",
+	"viewScript": "file:./view.js"
+}
