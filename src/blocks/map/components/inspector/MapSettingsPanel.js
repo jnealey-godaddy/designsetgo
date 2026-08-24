@@ -25,6 +25,27 @@ import { geocodeAddress } from '../../utils/geocoding';
 const DEFAULT_PRIVACY_NOTICE =
 	'This map will load content from external services. Click to load and view the map.';
 
+/**
+ * Help text describing what each provider costs the author.
+ *
+ * @param {string} provider - Current dsgoProvider value.
+ * @return {string} Help text.
+ */
+function providerHelp(provider) {
+	if (provider === 'googlemaps') {
+		return __('Requires a Google Maps API key.', 'designsetgo');
+	}
+
+	if (provider === 'googlemaps-embed') {
+		return __(
+			'No API key needed. Google renders the map in an embedded frame, so the marker icon, marker color, and map style settings do not apply.',
+			'designsetgo'
+		);
+	}
+
+	return __('Privacy-friendly and free to use.', 'designsetgo');
+}
+
 export default function MapSettingsPanel({ attributes, setAttributes }) {
 	const {
 		dsgoProvider,
@@ -39,6 +60,10 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 		dsgoPrivacyMode,
 		dsgoPrivacyNotice,
 	} = attributes;
+
+	// Google owns the rendering in embed mode, so the marker and style controls
+	// would be dead UI — hide them rather than let them silently do nothing.
+	const isEmbedProvider = dsgoProvider === 'googlemaps-embed';
 
 	const [isSearching, setIsSearching] = useState(false);
 	const [searchError, setSearchError] = useState('');
@@ -115,19 +140,16 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 							),
 							value: 'googlemaps',
 						},
+						{
+							label: __(
+								'Google Maps (No API key)',
+								'designsetgo'
+							),
+							value: 'googlemaps-embed',
+						},
 					]}
 					onChange={(value) => setAttributes({ dsgoProvider: value })}
-					help={
-						dsgoProvider === 'openstreetmap'
-							? __(
-									'Privacy-friendly and free to use.',
-									'designsetgo'
-								)
-							: __(
-									'Requires a Google Maps API key.',
-									'designsetgo'
-								)
-					}
+					help={providerHelp(dsgoProvider)}
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>
@@ -302,26 +324,28 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 				/>
 			</DsgoInspectorPanel.Item>
 
-			<DsgoInspectorPanel.Item
-				label={__('Marker Icon', 'designsetgo')}
-				hasValue={() => dsgoMarkerIcon !== '📍'}
-				onDeselect={() => setAttributes({ dsgoMarkerIcon: '📍' })}
-				isShownByDefault
-			>
-				<TextControl
+			{!isEmbedProvider && (
+				<DsgoInspectorPanel.Item
 					label={__('Marker Icon', 'designsetgo')}
-					value={dsgoMarkerIcon}
-					onChange={(value) =>
-						setAttributes({ dsgoMarkerIcon: value || '📍' })
-					}
-					help={__(
-						'Enter an emoji or icon character.',
-						'designsetgo'
-					)}
-					__next40pxDefaultSize
-					__nextHasNoMarginBottom
-				/>
-			</DsgoInspectorPanel.Item>
+					hasValue={() => dsgoMarkerIcon !== '📍'}
+					onDeselect={() => setAttributes({ dsgoMarkerIcon: '📍' })}
+					isShownByDefault
+				>
+					<TextControl
+						label={__('Marker Icon', 'designsetgo')}
+						value={dsgoMarkerIcon}
+						onChange={(value) =>
+							setAttributes({ dsgoMarkerIcon: value || '📍' })
+						}
+						help={__(
+							'Enter an emoji or icon character.',
+							'designsetgo'
+						)}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
 
 			<DsgoInspectorPanel.Item
 				label={__('Aspect Ratio', 'designsetgo')}

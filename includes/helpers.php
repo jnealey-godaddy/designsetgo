@@ -317,3 +317,62 @@ function designsetgo_resolve_preset_color( $color, $fallback = null ) {
 	// Preset reference that could not be resolved to a palette color.
 	return null === $fallback ? $color : $fallback;
 }
+
+/**
+ * Builds a keyless Google Maps embed URL for the Map block.
+ *
+ * Uses the long-standing `output=embed` share URL rather than the official
+ * Maps Embed API (`google.com/maps/embed/v1/*`), because the latter still
+ * requires a Cloud API key even though it is free and unmetered. This form
+ * needs no key at all, which is the whole point of the `googlemaps-embed`
+ * provider. It is undocumented, so the keyed Maps JavaScript API path stays
+ * in place as the supported option.
+ *
+ * Google geocodes the `q` parameter itself, so an address is passed through
+ * verbatim and the block's Nominatim lookup is skipped entirely.
+ *
+ * @since 2.6.0
+ *
+ * @param string $address   Street address. Preferred over coordinates when set.
+ * @param float  $latitude  Latitude, used when $address is empty.
+ * @param float  $longitude Longitude, used when $address is empty.
+ * @param int    $zoom      Zoom level; clamped to Google's 1–20 range.
+ * @return string Fully-formed embed URL (not escaped — escape at output).
+ */
+function designsetgo_map_embed_url( $address, $latitude, $longitude, $zoom ) {
+	// Flatten multi-line addresses the way the block's geocoder does, so the
+	// two providers resolve the same author input to the same place.
+	$address = preg_replace( '/[\r\n]+/', ', ', (string) $address );
+	$address = trim( preg_replace( '/\s+/', ' ', $address ) );
+
+	if ( '' !== $address ) {
+		$query = $address;
+	} else {
+		$query = designsetgo_format_coordinate( $latitude ) . ',' . designsetgo_format_coordinate( $longitude );
+	}
+
+	$args = array(
+		'q'      => $query,
+		'z'      => (string) max( 1, min( 20, (int) $zoom ) ),
+		'output' => 'embed',
+	);
+
+	return 'https://maps.google.com/maps?' . http_build_query( $args );
+}
+
+/**
+ * Formats a coordinate for a map URL without exponent or trailing-zero noise.
+ *
+ * @since 2.6.0
+ *
+ * @param float $value Coordinate value.
+ * @return string Plain decimal representation.
+ */
+function designsetgo_format_coordinate( $value ) {
+	$formatted = number_format( (float) $value, 6, '.', '' );
+
+	// Trim trailing zeros, then a bare trailing separator ("0.000000" → "0").
+	$formatted = rtrim( $formatted, '0' );
+
+	return rtrim( $formatted, '.' );
+}
