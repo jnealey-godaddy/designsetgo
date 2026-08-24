@@ -210,7 +210,7 @@ class Controller {
 
 		foreach ( $tokens as $token ) {
 			if ( self::is_path_command( $token ) ) {
-				if ( $command && ( 0 === $argument_index || 0 !== $argument_index % self::PATH_ARGUMENT_COUNTS[ $command ] ) ) {
+				if ( $command && ! self::is_complete_argument_run( $command, $argument_index ) ) {
 					return false;
 				}
 
@@ -254,7 +254,23 @@ class Controller {
 
 		return $has_move &&
 			$has_drawable_segment &&
-			( $ends_with_close || ( $command && $argument_index > 0 && 0 === $argument_index % self::PATH_ARGUMENT_COUNTS[ $command ] ) );
+			( $ends_with_close || ( $command && self::is_complete_argument_run( $command, $argument_index ) ) );
+	}
+
+	/**
+	 * Determines whether a command's arguments form one or more complete runs.
+	 *
+	 * @param string $command        Uppercase path command.
+	 * @param int    $argument_index Number of arguments consumed for the command.
+	 * @return bool Whether the argument count is a positive multiple of the command's arity.
+	 */
+	private static function is_complete_argument_run( $command, $argument_index ) {
+		$count = isset( self::PATH_ARGUMENT_COUNTS[ $command ] ) ? self::PATH_ARGUMENT_COUNTS[ $command ] : 0;
+		if ( $count < 1 ) {
+			return false;
+		}
+
+		return $argument_index > 0 && 0 === $argument_index % $count;
 	}
 
 	/**
