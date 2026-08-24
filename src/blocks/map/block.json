@@ -22,7 +22,8 @@
 			"default": "openstreetmap",
 			"enum": [
 				"openstreetmap",
-				"googlemaps"
+				"googlemaps",
+				"googlemaps-embed"
 			]
 		},
 		"dsgoLatitude": {

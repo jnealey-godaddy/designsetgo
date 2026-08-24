@@ -32,8 +32,22 @@
 		z-index: 1;
 	}
 
+	// Keyless Google embed. Positioned like &__container so the aspect-ratio
+	// padding trick above works for the iframe too.
+	&__iframe {
+		position: absolute;
+		top: 0;
+		left: 0;
+		display: block;
+		width: 100%;
+		height: 100%;
+		border: 0;
+		z-index: 1;
+	}
+
 	// Custom height (no aspect ratio)
-	&:not([class*='dsgo-map--aspect-']) &__container {
+	&:not([class*='dsgo-map--aspect-']) &__container,
+	&:not([class*='dsgo-map--aspect-']) &__iframe {
 		position: relative;
 		height: 100%;
 	}

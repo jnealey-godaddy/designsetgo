@@ -23,6 +23,13 @@
 			justify-content: center;
 		}
 
+		// Live embed preview. Pointer events are off so clicking the map
+		// selects the block instead of being swallowed by Google's iframe —
+		// the front end keeps the map fully interactive.
+		&__iframe {
+			pointer-events: none;
+		}
+
 		// Preview placeholder (non-privacy mode)
 		&__preview-placeholder {
 			width: 100%;
