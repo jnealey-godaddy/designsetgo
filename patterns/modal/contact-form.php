@@ -14,7 +14,7 @@ return array(
 	'categories' => array( 'dsgo-modal' ),
 	'viewportWidth' => 1200,
 	'content'    => '<!-- wp:group {"metadata":{"categories":["dsgo-modal"],"patternName":"designsetgo/modal/contact-form","name":"Contact Form Modal"},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group"><!-- wp:designsetgo/icon-button {"text":"Contact Us","url":"#dsgo-modal-contact","icon":"envelope","iconGap":"8px"} -->
+<div class="wp-block-group"><!-- wp:designsetgo/icon-button {"url":"#dsgo-modal-contact","icon":"envelope","iconGap":"8px"} -->
 <div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button dsgo-icon-button--has-icon" style="gap:8px" href="#dsgo-modal-contact" target="_self"><span class="dsgo-icon-button__icon dsgo-lazy-icon" data-icon-name="envelope"></span><span class="dsgo-icon-button__text">Contact Us</span></a></div>
 <!-- /wp:designsetgo/icon-button -->
 
