@@ -75,6 +75,14 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 [Documentation](https://designsetgoblocks.com/docs/), the [support forum](https://wordpress.org/support/plugin/designsetgo/), or [GitHub](https://github.com/jnealey-godaddy/designsetgo).
 
+= Can I test beta / release-candidate versions? =
+
+Yes. Ahead of a stable release we publish beta and release-candidate builds to WordPress.org without pushing them to the normal auto-update channel, so regular installs are never affected. To try one, download the versioned zip and install it over your current copy:
+
+`https://downloads.wordpress.org/plugin/designsetgo.VERSION.zip`
+
+Replace `VERSION` with the pre-release you want, e.g. `2.5.0-beta1` or `2.5.0-rc1`. To return to the stable channel, reinstall the latest stable version the same way (or from the plugin directory). Please report beta feedback on [GitHub](https://github.com/jnealey-godaddy/designsetgo).
+
 == Screenshots ==
 
 1. Container block with responsive grid layout and video background support
