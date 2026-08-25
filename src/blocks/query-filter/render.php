@@ -23,6 +23,59 @@ defined( 'ABSPATH' ) || exit;
 // become callable after the if-block executes).
 // ---------------------------------------------------------------------------
 
+if ( ! function_exists( 'designsetgo_query_filter_collect_term_scope' ) ) :
+
+	/**
+	 * Collect the term IDs a query's taxQuery allows (or forbids) for one taxonomy.
+	 *
+	 * Walks the same nested clause/group shape the server builder understands
+	 * (see designsetgo_build_tax_query_entry()), gathering leaf clauses that
+	 * name this taxonomy. `IN` narrows the offer list; `NOT IN` removes from
+	 * it. Clauses for other taxonomies are ignored — they constrain which
+	 * posts match, not which terms of *this* taxonomy are worth offering.
+	 *
+	 * Deliberately shallow about boolean structure: an `OR` group could in
+	 * principle make an `IN` clause non-binding, so the narrowing here is a
+	 * best effort at "do not advertise what this query cannot return" rather
+	 * than an exact solve. Erring toward a shorter list is the safer side —
+	 * the alternative is what shipped, which advertised everything.
+	 *
+	 * @param array  $entry    A taxQuery, group, or leaf clause.
+	 * @param string $taxonomy Taxonomy slug the filter renders.
+	 * @param array  $allowed  Accumulator for allowed term IDs (by reference).
+	 * @param array  $blocked  Accumulator for forbidden term IDs (by reference).
+	 * @return void
+	 */
+	function designsetgo_query_filter_collect_term_scope( array $entry, $taxonomy, array &$allowed, array &$blocked ) {
+		if ( isset( $entry['clauses'] ) && is_array( $entry['clauses'] ) ) {
+			foreach ( $entry['clauses'] as $child ) {
+				if ( is_array( $child ) ) {
+					designsetgo_query_filter_collect_term_scope( $child, $taxonomy, $allowed, $blocked );
+				}
+			}
+			return;
+		}
+
+		if ( empty( $entry['taxonomy'] ) || empty( $entry['terms'] ) ) {
+			return;
+		}
+		if ( sanitize_key( (string) $entry['taxonomy'] ) !== $taxonomy ) {
+			return;
+		}
+
+		$terms    = array_filter( array_map( 'absint', (array) $entry['terms'] ) );
+		$operator = isset( $entry['operator'] ) ? strtoupper( (string) $entry['operator'] ) : 'IN';
+
+		if ( 'NOT IN' === $operator ) {
+			$blocked = array_merge( $blocked, $terms );
+			return;
+		}
+		// IN and AND both mean "only these terms are in play".
+		$allowed = array_merge( $allowed, $terms );
+	}
+
+endif;
+
 if ( ! function_exists( 'designsetgo_query_filter_render_search' ) ) :
 
 	/**
@@ -117,17 +170,27 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 	 * @param bool   $show_counts     Whether to append (N) counts to option labels.
 	 * @param array  $active_filters  Current active filter state for intersection counts.
 	 * @param string $post_type       Optional post-type scope for counts.
+	 * @param array  $term_include    Term IDs the parent query allows, if any.
+	 * @param array  $term_exclude    Term IDs the parent query excludes, if any.
 	 */
-	function designsetgo_query_filter_render_select( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '' ) {
+	function designsetgo_query_filter_render_select( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '', $term_include = array(), $term_exclude = array() ) {
 		if ( ! taxonomy_exists( $filter_taxonomy ) ) {
 			return;
 		}
-		$terms = get_terms(
-			array(
-				'taxonomy'   => $filter_taxonomy,
-				'hide_empty' => false,
-			)
+		$term_args = array(
+			'taxonomy'   => $filter_taxonomy,
+			'hide_empty' => false,
 		);
+		// Narrowed by the parent query's own taxQuery, so the filter cannot
+		// offer a term the query has already excluded.
+		if ( ! empty( $term_include ) ) {
+			$term_args['include'] = array_values( array_unique( $term_include ) );
+		}
+		if ( ! empty( $term_exclude ) ) {
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- a NOT IN clause on the parent query is exactly an exclusion; the list is the author's own small set, not user input.
+			$term_args['exclude'] = array_values( array_unique( $term_exclude ) );
+		}
+		$terms = get_terms( $term_args );
 		if ( is_wp_error( $terms ) || empty( $terms ) ) {
 			return;
 		}
@@ -201,17 +264,29 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 	 * @param bool   $show_counts     Whether to append (N) counts to option labels.
 	 * @param array  $active_filters  Current active filter state for intersection counts.
 	 * @param string $post_type       Optional post-type scope for counts.
+	 * @param string $orientation     Layout direction for the checkbox list.
+	 * @param string $style           Visual style variant.
+	 * @param array  $term_include    Term IDs the parent query allows, if any.
+	 * @param array  $term_exclude    Term IDs the parent query excludes, if any.
 	 */
-	function designsetgo_query_filter_render_checkbox( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '', $orientation = 'vertical', $style = 'default' ) {
+	function designsetgo_query_filter_render_checkbox( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '', $orientation = 'vertical', $style = 'default', $term_include = array(), $term_exclude = array() ) {
 		if ( ! taxonomy_exists( $filter_taxonomy ) ) {
 			return;
 		}
-		$terms = get_terms(
-			array(
-				'taxonomy'   => $filter_taxonomy,
-				'hide_empty' => false,
-			)
+		$term_args = array(
+			'taxonomy'   => $filter_taxonomy,
+			'hide_empty' => false,
 		);
+		// Narrowed by the parent query's own taxQuery, so the filter cannot
+		// offer a term the query has already excluded.
+		if ( ! empty( $term_include ) ) {
+			$term_args['include'] = array_values( array_unique( $term_include ) );
+		}
+		if ( ! empty( $term_exclude ) ) {
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- a NOT IN clause on the parent query is exactly an exclusion; the list is the author's own small set, not user input.
+			$term_args['exclude'] = array_values( array_unique( $term_exclude ) );
+		}
+		$terms = get_terms( $term_args );
 		if ( is_wp_error( $terms ) || empty( $terms ) ) {
 			return;
 		}
@@ -488,6 +563,23 @@ if ( 'posts' === $designsetgo_query_source && isset( $block->context['designsetg
 	$designsetgo_query_post_type = sanitize_key( (string) $block->context['designsetgo/queryPostType'] );
 }
 
+// Term scope: a filter must not offer a term its own query has already ruled
+// out. The parent query's `taxQuery` reaches us through context; clauses for
+// THIS taxonomy narrow the option list, so a query restricted to four
+// categories stops advertising every other category on the site — each of
+// which would have shown a non-zero count and then returned no results,
+// because the count comes from the index and knows nothing about the query.
+$designsetgo_term_include = array();
+$designsetgo_term_exclude = array();
+if ( isset( $block->context['designsetgo/queryTaxQuery'] ) ) {
+	designsetgo_query_filter_collect_term_scope(
+		(array) $block->context['designsetgo/queryTaxQuery'],
+		$designsetgo_filter_taxonomy,
+		$designsetgo_term_include,
+		$designsetgo_term_exclude
+	);
+}
+
 // Whether to show (N) counts next to filter options (default: true).
 $designsetgo_show_counts = ! isset( $attributes['showCounts'] ) || (bool) $attributes['showCounts'];
 
@@ -605,7 +697,7 @@ switch ( $designsetgo_filter_kind ) {
 		designsetgo_query_filter_render_sort( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_sort_options );
 		break;
 	case 'select':
-		designsetgo_query_filter_render_select( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type );
+		designsetgo_query_filter_render_select( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type, $designsetgo_term_include, $designsetgo_term_exclude );
 		break;
 	case 'active':
 		designsetgo_query_filter_render_active( $designsetgo_filter_wrapper, $designsetgo_filter_label );
@@ -615,6 +707,6 @@ switch ( $designsetgo_filter_kind ) {
 		break;
 	case 'checkbox':
 	default:
-		designsetgo_query_filter_render_checkbox( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type, $designsetgo_filter_orientation, $designsetgo_filter_style );
+		designsetgo_query_filter_render_checkbox( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type, $designsetgo_filter_orientation, $designsetgo_filter_style, $designsetgo_term_include, $designsetgo_term_exclude );
 		break;
 }
