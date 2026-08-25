@@ -5,11 +5,11 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.6.3
+Stable tag: 2.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-54 native blocks + 16 universal extensions for the WordPress block editor. Forms, dynamic post lists, animations, layouts — no page builder needed.
+58 native blocks + 18 universal extensions for the WordPress block editor. Forms, dynamic post lists, animations, layouts — no page builder needed.
 
 == Description ==
 
@@ -22,18 +22,11 @@ DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to 
 = Why DesignSetGo =
 
 * **Native blocks, not a page builder.** Editor matches frontend. Static content stays put if you deactivate; dynamic blocks need the plugin to render. No proprietary markup, no lock-in.
-* **54 blocks replace 5+ plugins.** Forms, sliders, tabs, accordions, modals, maps, breadcrumbs, timelines, comparison tables, and the new Dynamic Query family.
-* **16 extensions enhance ANY block** — including core and third-party blocks. Animations, parallax, sticky headers, responsive visibility, hover effects, conditional visibility.
+* **58 blocks replace 5+ plugins.** Forms, sliders, tabs, accordions, modals, maps, breadcrumbs, timelines, comparison tables, and the new Dynamic Query family.
+* **18 extensions enhance ANY block** — including core and third-party blocks. Animations, parallax, sticky headers, responsive visibility, hover effects, conditional visibility.
 * **Complete form builder built in.** AJAX, spam protection (Cloudflare Turnstile included), email notifications, submission dashboard. No Contact Form 7 required.
 * **Performance first.** CSS bundle under 10 KB gzipped, no jQuery, per-block on-demand assets. PageSpeed scores stay high.
 * **WordPress-standard everything.** theme.json, FSE, Block Bindings, REST API, WP-CLI, Schema.org markup, WCAG 2.1 AA accessible.
-
-= New in 2.4 =
-
-* **Section Divider** — a standalone shape-divider block you can drop between any two blocks, on top of Section's own built-in divider.
-* **Style Kit theming, extended** — SVG Patterns and more container blocks (Card, Modal, Tab, Timeline Item, and others) now pick up your theme's Style Kit defaults, the same way Section already does.
-* **More blocks render dynamically** — Icon, Divider, Map, form fields, and now Pill always reflect your current theme instead of baking in a snapshot at save time.
-* **Row & Grid overlay/hover styling** — background overlays and hover-state styling from your Style Kit now work on Row and Grid, matching Section.
 
 = What's Inside =
 
@@ -42,10 +35,11 @@ DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to 
 * **Interactive** (15) — Tabs, Accordion, Modal, Modal Trigger, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counter, Progress, Comparison Table, Timeline
 * **Dynamic Query** (6) — Query, Pagination, Filter, Results, Group Header, No Results
 * **Typography & Navigation** — Advanced Heading, Breadcrumbs (Schema.org), Table of Contents
-* **Visual** (9) — 160+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image
+* **Visual** (12) — 160+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image, Hotspot, Star Rating, Text Path
+* **Data** (1) — Chart (bar, line, donut — no charting library loaded)
 * **Media & Location** — Fifty Fifty split layout, Map (Google Maps + OpenStreetMap)
-* **WooCommerce** — Product Categories Grid, Product Showcase Hero
-* **Extensions** (16) — Animations, Parallax, Text Reveal, Expanding Background, Sticky Header, Hover Effects, Clickable Groups, Background Video, Responsive Visibility, Conditional Visibility, Max Width, Custom CSS, Grid Span, Grid Mobile Order, SVG Patterns (25+), Reveal Control
+* **WooCommerce** — Product Categories Grid, Product Showcase Hero, product bindings, product-aware Dynamic Query
+* **Extensions** (18) — Animations, Interactions, Schema.org Markup, Parallax, Text Reveal, Expanding Background, Sticky Header, Hover Effects, Clickable Groups, Background Video, Responsive Visibility, Conditional Visibility, Max Width, Custom CSS, Grid Span, Grid Mobile Order, SVG Patterns (25+), Reveal Control
 * **Plus** — Text Style inline format, llms.txt + per-URL Markdown for AI, form submissions dashboard, draft mode for published pages
 
 == Installation ==
@@ -93,6 +87,28 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.7.0 - 2026-08-25 =
+
+* **New:** Chart — bar, line, and donut charts drawn as plain SVG, with a colour control per bar or slice. Type the data in by hand or read it from a post meta field. No charting library is loaded, and every chart also emits a screen-reader data table so the numbers are readable without the picture.
+* **New:** Star Rating — show a rating as stars, either a fixed value or pulled from post meta, ACF, or a product's WooCommerce average rating. Ships with a Reviews pattern, and can feed its value into review structured data.
+* **New:** Hotspot — place interactive markers over an image, each with its own tooltip. Fully keyboard accessible.
+* **New:** Text Path — flow a line of text along a wave, arc, circle, oval, spiral, straight line, or an SVG path of your own, with controls for arc size, rotation, word spacing, and padding, plus an optional motion mode that travels the text along the path.
+* **New:** Animated Headline — Advanced Heading gains two headline modes. Rotating cycles a list of phrases through one of nine effects (typing, clip, flip, swirl, blinds, drop-in, wave, slide, slide-down), forward or in reverse, with duration, delay, and loop controls. Highlighted draws a hand-drawn mark behind or through a phrase — circle, curly, underline, double underline, zigzag, diagonal, strikethrough, or an X.
+* **New:** Interactions — a new extension on every block. Bind a trigger (click, hover, scroll into view, exit intent, keypress) to an action on any other block: toggle a class, set an attribute, scroll to it, open or close a modal, show or hide something, play or pause media, focus a form field, or copy to clipboard. Edited in a modal with a point-and-click target picker on the canvas.
+* **New:** Schema.org markup — opt an Accordion into FAQ or How-to structured data, and a Star Rating into Review or Aggregate rating. Nothing is emitted unless you deliberately choose a type, and password-protected content is never exposed.
+* **New:** Off-canvas panel — Modal gains a panel mode that slides in from any edge, available as its own block variation, with a size control. It keeps the modal's focus trap, Escape handling, scroll lock, and triggers.
+* **New:** Deeper animations — four additions to the Animations extension: stagger a container's children, scroll-linked animation that tracks the scroll position rather than firing once, SVG path drawing, and per-word or per-character text reveal with fade and rise. All CSS-driven, no animation library, and every one is fully disabled under "reduce motion".
+* **New:** WooCommerce — Dynamic Query gains product controls (catalog visibility, featured, on sale, stock status) and reads the URL parameters WooCommerce's own filter blocks emit, so Woo's filter UI can drive a DesignSetGo loop. Six new binding sources expose raw product values — price, regular price, discount percent, stock quantity, average rating, and Woo's formatted price — for text and for dynamic CSS, so a stock bar or a discount badge is just a bound value.
+* **New:** Map — a keyless Google Maps option that needs no API key at all, and loads no JavaScript on the page. The existing keyed Google and OpenStreetMap options are unchanged, and privacy mode still holds the map back until the visitor clicks Load Map.
+* **New:** Loop Carousel — Slider and Scroll Slides now work properly as Dynamic Query layouts. Load more and filters work inside a carousel; infinite scroll, which cannot work inside a fixed-height viewport, degrades to a Load more button, and the editor says so up front with a one-click switch instead of leaving readers stranded on page one.
+* **Fix:** Slider — a batch of fixes that apply to any slider, not just query-driven ones: responsive slides-per-view was read and then ignored; a multi-slide slider scrolled past its own last slide; asking for more slides per view than there were slides broke the block; dragging snapped back to the first slide; a vertical scroll changed slides; autoplay stopped after one tick, and kept running in background tabs and under "reduce motion"; keyboard focus could land on an off-screen slide; a duration entered in milliseconds froze the slider; and every page containing a slider was excluded from the browser's back/forward cache.
+* **Fix:** One click on Load more no longer fetches and appends the next page twice — eight new posts could arrive as twelve items.
+* **Fix:** A Loop Carousel placed inside another query's template previewed the outer query's posts in the editor while the frontend correctly showed the inner one's.
+* **Improved:** WordPress 7.1 support. 7.1 lets you set per-viewport (mobile/tablet) style values on any block; those values now land on the same element as the desktop value for Pill, Scroll Marquee, Icon, Icon Button, and Modal Trigger, instead of a mobile background smearing across the content column or a mobile margin doubling up. This also corrects where theme.json styles for those blocks apply. Tested up to WordPress 7.1.
+* **Improved:** AI and agent tooling — the Abilities API discovery endpoints now describe the plugin accurately. Categories, block groupings, and the WooCommerce binding group were all reported wrongly, so filtering returned partial or empty results; all 20 abilities now also declare whether they read or write, and the documentation covers all of them.
+* **Fix:** Advanced Heading and Hotspot editing is smoother on long pages, duplicating a Text Path no longer breaks the original's shape, and hotspot tooltips sit on their markers instead of drifting away from them.
+* **Fix:** Translations — removed a JavaScript translation catalog whose files were keyed so that WordPress could never load them, and regenerated the translation template.
 
 = 2.6.3 - 2026-08-11 =
 
@@ -203,6 +219,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.7.0 =
+Four new blocks (Chart, Star Rating, Hotspot, Text Path), an Interactions extension for wiring any block to any other, Schema.org markup, animated headlines, an off-canvas panel mode for Modal, deeper animations, WooCommerce product bindings and product-aware queries, a keyless Google Maps option, and a large batch of Slider fixes. Tested up to WordPress 7.1. No content migration required.
 
 = 2.4.0 =
 Pill, Icon, Icon Button, and Modal Trigger now stay inside the page content column when positioned. Adjacent Icon Buttons and Modal Triggers now stack instead of sitting side-by-side. Existing content renders as before until each post is re-saved. See the changelog.
