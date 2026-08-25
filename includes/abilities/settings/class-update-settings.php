@@ -56,6 +56,8 @@ class Update_Settings extends Abstract_Ability {
 			'show_in_rest'        => true,
 			'keywords'            => array( 'settings', 'config', 'configure', 'preferences', 'options' ),
 			'annotations'         => array(
+				'readonly'     => false,
+				'destructive'  => false,
 				'idempotent'   => true,
 				'instructions' => 'Call get-settings first to see current values. Submit only the keys you want to change — omitted keys remain untouched. Empty arrays for enabled_blocks or enabled_extensions mean "all enabled". To replace a list field (enabled_blocks, enabled_extensions, excluded_blocks) entirely, fetch the current value first and resubmit the full desired array — lists are merged positionally (by index), not replaced wholesale. The exception is animations.block_animations, which is always replaced wholesale with whatever you submit.',
 			),

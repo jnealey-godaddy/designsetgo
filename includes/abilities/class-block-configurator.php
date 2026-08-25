@@ -38,7 +38,7 @@ class Block_Configurator {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return new WP_Error(
-				'invalid_post',
+				'designsetgo_invalid_post',
 				__( 'Post not found.', 'designsetgo' ),
 				array( 'status' => 404 )
 			);
@@ -47,7 +47,7 @@ class Block_Configurator {
 		// Check permissions.
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return new WP_Error(
-				'permission_denied',
+				'designsetgo_permission_denied',
 				__( 'You do not have permission to edit this post.', 'designsetgo' ),
 				array( 'status' => 403 )
 			);
@@ -95,7 +95,7 @@ class Block_Configurator {
 
 		if ( 0 === $updated_count ) {
 			return new WP_Error(
-				'block_not_found',
+				'designsetgo_block_not_found',
 				__( 'No matching blocks found to update.', 'designsetgo' ),
 				array( 'status' => 404 )
 			);
@@ -397,7 +397,7 @@ class Block_Configurator {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return new WP_Error(
-				'invalid_post',
+				'designsetgo_invalid_post',
 				__( 'Post not found.', 'designsetgo' ),
 				array( 'status' => 404 )
 			);
@@ -406,7 +406,7 @@ class Block_Configurator {
 		// Check permissions.
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return new WP_Error(
-				'permission_denied',
+				'designsetgo_permission_denied',
 				__( 'You do not have permission to edit this post.', 'designsetgo' ),
 				array( 'status' => 403 )
 			);
@@ -436,7 +436,7 @@ class Block_Configurator {
 		if ( ! $updated ) {
 			if ( ! empty( $matched_name ) && '' !== $expected_block_name && $matched_name !== $expected_block_name ) {
 				return new WP_Error(
-					'block_name_mismatch',
+					'designsetgo_block_name_mismatch',
 					sprintf(
 						/* translators: 1: expected block name, 2: actual block name, 3: block index */
 						__( 'Expected block "%1$s" at index %3$d, but found "%2$s".', 'designsetgo' ),
@@ -449,7 +449,7 @@ class Block_Configurator {
 			}
 
 			return new WP_Error(
-				'block_not_found',
+				'designsetgo_block_not_found',
 				sprintf(
 					/* translators: %d: block index */
 					__( 'No block found at index %d.', 'designsetgo' ),
@@ -567,7 +567,7 @@ class Block_Configurator {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return new WP_Error(
-				'invalid_post',
+				'designsetgo_invalid_post',
 				__( 'Post not found.', 'designsetgo' ),
 				array( 'status' => 404 )
 			);
@@ -576,7 +576,7 @@ class Block_Configurator {
 		// Check permissions.
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return new WP_Error(
-				'permission_denied',
+				'designsetgo_permission_denied',
 				__( 'You do not have permission to edit this post.', 'designsetgo' ),
 				array( 'status' => 403 )
 			);
@@ -586,7 +586,7 @@ class Block_Configurator {
 		$block_registry = \WP_Block_Type_Registry::get_instance();
 		if ( ! $block_registry->get_registered( $block_name ) ) {
 			return new WP_Error(
-				'invalid_input',
+				'designsetgo_invalid_input',
 				sprintf(
 					/* translators: %s: block name */
 					__( 'Block type "%s" is not registered.', 'designsetgo' ),
@@ -619,7 +619,7 @@ class Block_Configurator {
 
 		if ( ! $found ) {
 			return new WP_Error(
-				'block_not_found',
+				'designsetgo_block_not_found',
 				sprintf(
 					/* translators: %d: block index */
 					__( 'No parent block found at index %d.', 'designsetgo' ),

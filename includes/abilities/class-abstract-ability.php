@@ -183,7 +183,7 @@ abstract class Abstract_Ability {
 
 		if ( ! $post ) {
 			return new WP_Error(
-				'invalid_post',
+				'designsetgo_invalid_post',
 				__( 'Post not found.', 'designsetgo' ),
 				array( 'status' => 404 )
 			);
@@ -254,25 +254,25 @@ abstract class Abstract_Ability {
 	 */
 	private function get_default_status_for_error( string $code ): int {
 		$status_map = array(
-			'invalid_post'             => 404,
-			'post_not_found'           => 404,
-			'block_not_found'          => 404,
-			'not_found'                => 404,
-			'permission_denied'        => 403,
-			'rest_forbidden'           => 403,
-			'unauthorized'             => 401,
-			'missing_post_id'          => 400,
-			'missing_block_name'       => 400,
-			'missing_settings'         => 400,
-			'missing_animation'        => 400,
-			'missing_faqs'             => 400,
-			'missing_css'              => 400,
-			'missing_operations'       => 400,
-			'missing_block_identifier' => 400,
-			'missing_attributes'       => 400,
-			'invalid_input'            => 400,
-			'validation_failed'        => 400,
-			'block_name_mismatch'      => 400,
+			'designsetgo_invalid_post'             => 404,
+			'designsetgo_post_not_found'           => 404,
+			'designsetgo_block_not_found'          => 404,
+			'designsetgo_not_found'                => 404,
+			'designsetgo_permission_denied'        => 403,
+			'rest_forbidden'                       => 403,
+			'designsetgo_unauthorized'             => 401,
+			'designsetgo_missing_post_id'          => 400,
+			'designsetgo_missing_block_name'       => 400,
+			'designsetgo_missing_settings'         => 400,
+			'designsetgo_missing_animation'        => 400,
+			'designsetgo_missing_faqs'             => 400,
+			'designsetgo_missing_css'              => 400,
+			'designsetgo_missing_operations'       => 400,
+			'designsetgo_missing_block_identifier' => 400,
+			'designsetgo_missing_attributes'       => 400,
+			'designsetgo_invalid_input'            => 400,
+			'designsetgo_validation_failed'        => 400,
+			'designsetgo_block_name_mismatch'      => 400,
 		);
 
 		return $status_map[ $code ] ?? 400; // Default to Bad Request.
@@ -341,7 +341,7 @@ abstract class Abstract_Ability {
 					$valid = rest_validate_value_from_schema( $value, $schema['properties'][ $key ], $key );
 					if ( is_wp_error( $valid ) ) {
 						return $this->error(
-							'validation_failed',
+							'designsetgo_validation_failed',
 							$valid->get_error_message(),
 							array( 'field' => $key )
 						);

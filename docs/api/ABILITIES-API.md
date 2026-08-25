@@ -20,13 +20,22 @@ The WordPress Abilities API is a new core initiative that creates a structured w
 
 ## Available Abilities
 
-DesignSetGo provides a focused set of abilities across 3 categories:
+DesignSetGo registers **20 abilities** in 3 registered categories. The
+category an ability is registered in — `info`, `blocks`, or `settings` — is
+what `/wp-json/wp-abilities/v1/categories` reports and what the `category`
+filter on `list-abilities` accepts.
 
-- **Info** - Discover abilities, list blocks, list extensions, inspect post content, find blocks across posts (`list-abilities`, `list-blocks`, `list-extensions`, `get-post-blocks`, `find-blocks`)
-- **Inserters** - `add-block` (generic top-level), `add-child-block` (nested), plus child-block inserters (`add-accordion-item`, `add-tab`, `add-timeline-item`)
-- **Configurators** - `update-block` (generic), block-specific configurators with custom logic, and operations (`batch-update`, `delete-block`)
+| Registered category | Count | Contents |
+|---|---|---|
+| `info` | 6 | `list-abilities`, `list-blocks`, `list-extensions`, `list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks` |
+| `blocks` | 10 | `add-block`, `add-child-block`, `add-accordion-item`, `add-tab`, `add-timeline-item`, `update-block`, `batch-update`, `configure-custom-css`, `configure-shape-divider`, `delete-block` |
+| `settings` | 4 | `get-settings`, `update-settings`, `get-global-css`, `update-global-css` |
 
-### 1. Info Abilities (5)
+The groupings used as headings below (Info / Inserters / Configurators /
+Settings) are editorial. Insertion and configuration abilities all register
+in the single `blocks` category.
+
+### 1. Info Abilities (6)
 
 #### `designsetgo/list-abilities`
 
@@ -35,7 +44,8 @@ Returns a manifest of all registered DesignSetGo abilities with their names, des
 **Input:**
 ```json
 {
-  "category": "all"  // Options: "all", "inserter", "configurator", "generator", "info"
+  "category": "all",  // Options: "all", "info", "blocks", "settings"
+  "search": ""        // Optional: match name, label, description, or keywords
 }
 ```
 
@@ -57,7 +67,7 @@ Returns a manifest of all registered DesignSetGo abilities with their names, des
 
 **REST API Example:** (readonly — uses GET)
 ```bash
-curl -X GET "http://yoursite.com/wp-json/wp-abilities/v1/designsetgo/list-abilities/run?category=inserter" \
+curl -X GET "http://yoursite.com/wp-json/wp-abilities/v1/designsetgo/list-abilities/run?category=blocks" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -70,14 +80,25 @@ Lists all available DesignSetGo blocks with their metadata, attributes, and capa
 **Input:**
 ```json
 {
-  "category": "all",  // Options: "all", "layout", "interactive", "visual", "dynamic"
-  "detail": "summary" // Options: "summary", "full"
+  "group": "all",     // Options: "all", "containers", "ui", "interactive", "widgets", "forms", "uncategorized"
+  "detail": "summary", // Options: "summary", "full"
+  "blocks": []        // Optional: restrict to specific block names
 }
 ```
 
+Each returned block reports **both** `category` and `group`:
+
+- `category` is the block editor category from `block.json`, verbatim —
+  `"designsetgo"` for almost every block. It is not a useful filter, which
+  is why the filter input is `group`.
+- `group` is the plugin's own grouping, sourced from
+  `includes/admin/blocks-registry.json` (the same file behind the Blocks &
+  Extensions admin screen). Blocks registered but not yet listed in that
+  file report `"uncategorized"`.
+
 **REST API Example:** (readonly — uses GET)
 ```bash
-curl -X GET "http://yoursite.com/wp-json/wp-abilities/v1/designsetgo/list-blocks/run?category=layout" \
+curl -X GET "http://yoursite.com/wp-json/wp-abilities/v1/designsetgo/list-blocks/run?group=containers" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -476,8 +497,15 @@ Adds an item to an existing timeline container.
 | `list-abilities` | Discover all registered abilities with schemas | readonly |
 | `list-blocks` | List all available DesignSetGo blocks | readonly |
 | `list-extensions` | List all extensions with attribute schemas and applicable blocks | readonly |
+| `list-dynamic-tag-sources` | List Dynamic Tag binding sources, filterable by `returns` and `group` | readonly |
 | `get-post-blocks` | Retrieve blocks from a post with blockIndex values | readonly |
 | `find-blocks` | Search for blocks across posts by type | readonly |
+
+All info abilities are annotated `readonly: true, destructive: false,
+idempotent: true`. `list-abilities`, `list-blocks`, and `list-extensions`
+gate on the `read` capability, so any logged-in user can call them;
+`list-dynamic-tag-sources`, `get-post-blocks`, and `find-blocks` require
+`edit_posts`, and the latter two additionally check `edit_post` per post.
 
 #### Inserter Abilities
 
@@ -510,8 +538,38 @@ Adds an item to an existing timeline container.
 
 | Ability | Description | Annotation |
 |---------|-------------|------------|
-| `batch-update` | Update multiple blocks in one call | -- |
+| `batch-update` | Update multiple blocks in one call | idempotent |
 | `delete-block` | Remove blocks from a post | destructive |
+
+`delete-block` is annotated `idempotent: false` deliberately: targeting is
+by block index, and indices shift after a removal, so a repeated call
+deletes a *different* block rather than being a no-op.
+
+#### Settings Abilities
+
+These read and write plugin-level and site-level configuration rather than
+post content. All four register in the `settings` category.
+
+| Ability | Description | Capability | Annotation |
+|---------|-------------|------------|------------|
+| `get-settings` | Read all DesignSetGo settings merged with defaults | `manage_options` | readonly, idempotent |
+| `update-settings` | Apply a partial update to DesignSetGo settings | `manage_options` | idempotent |
+| `get-global-css` | Read the active theme's Additional CSS | `edit_css` | readonly, idempotent |
+| `update-global-css` | Replace the active theme's Additional CSS | `edit_css` | idempotent |
+
+Notes:
+
+- `get-settings` returns integration secrets, which is why it requires
+  `manage_options` rather than a read capability.
+- `update-settings` merges field-by-field; omitted keys are untouched. List
+  fields (`enabled_blocks`, `enabled_extensions`, `excluded_blocks`) merge
+  positionally, so resubmit the full array to replace one.
+  `animations.block_animations` is the exception — always replaced wholesale.
+- `update-global-css` **replaces** the entire Additional CSS value. Call
+  `get-global-css` first and concatenate if you mean to append.
+- `edit_css` maps to `unfiltered_html`, so editors hold it on single-site
+  installs and only super-admins hold it on multisite. This mirrors the
+  Customizer's Additional CSS panel.
 
 ---
 
@@ -641,7 +699,7 @@ All abilities return standardized error responses:
 
 ```json
 {
-  "code": "invalid_post",
+  "code": "designsetgo_invalid_post",
   "message": "Post not found.",
   "data": {
     "status": 404
@@ -651,12 +709,32 @@ All abilities return standardized error responses:
 
 ### Common Error Codes
 
-- `invalid_post` - Post ID not found
-- `permission_denied` - User lacks required capability
-- `missing_post_id` - Required post_id parameter missing
-- `missing_settings` - Required settings parameter missing
-- `invalid_attributes` - Attributes failed JSON Schema validation
-- `block_not_found` - No matching blocks found to update
+Every ability-specific code is prefixed `designsetgo_` so an orchestrating
+agent can match on codes without colliding with another plugin's.
+
+| Code | Status | Meaning |
+|---|---|---|
+| `designsetgo_invalid_post` | 404 | Post ID not found |
+| `designsetgo_block_not_found` | 404 | No matching block found |
+| `designsetgo_permission_denied` | 403 | User lacks the required capability for this post |
+| `designsetgo_missing_post_id` | 400 | Required `post_id` parameter missing |
+| `designsetgo_missing_block_name` | 400 | Required `block_name` parameter missing |
+| `designsetgo_missing_attributes` | 400 | Required `attributes` parameter missing |
+| `designsetgo_missing_operations` | 400 | `batch-update` called with no operations |
+| `designsetgo_invalid_input` | 400 | Input present but semantically wrong |
+| `designsetgo_validation_failed` | 400 | Attributes failed JSON Schema validation |
+| `designsetgo_block_name_mismatch` | 400 | Block at the given index is not the expected type |
+| `designsetgo_invalid_inner_block` | 400 | A nested block entry is malformed |
+| `designsetgo_custom_css_update_failed` | 400 | WordPress rejected the Additional CSS write |
+| `rest_forbidden` | 403 | Capability check failed before the callback ran |
+| `ability_invalid_input` | 400 | Core's schema validator rejected the input first |
+
+`rest_forbidden` keeps its unprefixed name on purpose — it is the code
+WordPress core uses for the same condition, and REST clients already match
+on it. `ability_invalid_input` comes from the Abilities API itself when the
+`input_schema` rejects a call before the execute callback runs; invoking an
+ability directly in PHP bypasses that layer and surfaces the
+`designsetgo_*` equivalent instead.
 
 ---
 
@@ -664,15 +742,27 @@ All abilities return standardized error responses:
 
 Each ability has specific permission requirements:
 
-| Category | Required Capability |
-|---------|-------------------|
-| `list-abilities` | `read` |
-| `list-blocks` | `read` |
-| `list-extensions` | `read` |
-| All other info abilities | `edit_posts` |
-| All inserter abilities | `edit_posts` |
-| All configurator abilities | `edit_posts` |
-| All generator abilities | `edit_posts` |
+| Ability | Required capability | anon | subscriber | editor | admin |
+|---|---|---|---|---|---|
+| `list-abilities`, `list-blocks`, `list-extensions` | `read` | deny | **allow** | allow | allow |
+| `list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks` | `edit_posts` | deny | deny | allow | allow |
+| All inserter and configurator abilities | `edit_posts` | deny | deny | allow | allow |
+| `get-settings`, `update-settings` | `manage_options` | deny | deny | deny | allow |
+| `get-global-css`, `update-global-css` | `edit_css` | deny | deny | allow¹ | allow |
+
+¹ `edit_css` maps to `unfiltered_html`: editors hold it on single-site
+installs, and only super-admins hold it on multisite.
+
+The three `read`-gated catalog abilities are deliberately reachable by any
+logged-in user — they expose only the block and extension inventory, which
+is not privileged. This is pinned by
+`tests/phpunit/abilities-security-test.php`.
+
+Capability checks are layered. Abilities that modify post content gate on
+`edit_posts` at the ability level and then re-check
+`current_user_can( 'edit_post', $post_id )` against the specific target post
+inside `Block_Inserter` / `Block_Configurator`, so holding `edit_posts` does
+not grant write access to a post the user cannot edit.
 
 ---
 

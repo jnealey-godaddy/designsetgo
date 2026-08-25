@@ -342,7 +342,7 @@ class Test_Validate_Input extends WP_UnitTestCase {
 			'attributes' => array( 'tagName' => 'section' ),
 		) );
 		$this->assertWPError( $result );
-		$this->assertEquals( 'missing_post_id', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_missing_post_id', $result->get_error_code() );
 	}
 
 	/**
@@ -488,7 +488,7 @@ class Test_Block_Configurator_Index extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'block_not_found', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_block_not_found', $result->get_error_code() );
 	}
 
 	/**
@@ -503,7 +503,7 @@ class Test_Block_Configurator_Index extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'block_name_mismatch', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_block_name_mismatch', $result->get_error_code() );
 	}
 
 	/**
@@ -517,7 +517,7 @@ class Test_Block_Configurator_Index extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'invalid_post', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_invalid_post', $result->get_error_code() );
 	}
 
 	/**
@@ -535,7 +535,7 @@ class Test_Block_Configurator_Index extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'permission_denied', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_permission_denied', $result->get_error_code() );
 	}
 }
 
@@ -589,7 +589,7 @@ class Test_Block_Configurator_Insert_Inner extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'invalid_post', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_invalid_post', $result->get_error_code() );
 	}
 
 	/**
@@ -603,7 +603,7 @@ class Test_Block_Configurator_Insert_Inner extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'invalid_input', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_invalid_input', $result->get_error_code() );
 	}
 
 	/**
@@ -617,7 +617,7 @@ class Test_Block_Configurator_Insert_Inner extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'block_not_found', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_block_not_found', $result->get_error_code() );
 	}
 
 	/**
@@ -634,6 +634,6 @@ class Test_Block_Configurator_Insert_Inner extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'permission_denied', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_permission_denied', $result->get_error_code() );
 	}
 }

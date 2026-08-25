@@ -50,6 +50,8 @@ class Get_Post_Blocks extends Abstract_Ability {
 			'keywords'            => array( 'content', 'inspect', 'read', 'page' ),
 			'annotations'         => array(
 				'readonly'     => true,
+				'destructive'  => false,
+				'idempotent'   => true,
 				'instructions' => 'Use this to inspect existing blocks in a post before making changes. Returns block indices needed for configurator and delete abilities.',
 			),
 		);
@@ -154,7 +156,7 @@ class Get_Post_Blocks extends Abstract_Ability {
 		// Validate post.
 		if ( ! $post_id ) {
 			return $this->error(
-				'missing_post_id',
+				'designsetgo_missing_post_id',
 				__( 'Post ID is required.', 'designsetgo' )
 			);
 		}
@@ -162,7 +164,7 @@ class Get_Post_Blocks extends Abstract_Ability {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return $this->error(
-				'invalid_post',
+				'designsetgo_invalid_post',
 				__( 'Post not found.', 'designsetgo' )
 			);
 		}

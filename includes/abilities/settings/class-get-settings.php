@@ -53,6 +53,7 @@ class Get_Settings extends Abstract_Ability {
 			'keywords'            => array( 'settings', 'config', 'options', 'preferences' ),
 			'annotations'         => array(
 				'readonly'     => true,
+				'destructive'  => false,
 				'idempotent'   => true,
 				'instructions' => 'Call this before update-settings to see current values. Results include secrets (API keys) since the caller has already been authorized via manage_options.',
 			),

@@ -13,6 +13,7 @@
 namespace DesignSetGo\Abilities\Info;
 
 use DesignSetGo\Abilities\Abstract_Ability;
+use DesignSetGo\Admin\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -49,7 +50,9 @@ class List_Blocks extends Abstract_Ability {
 			'keywords'            => array( 'available', 'library', 'catalog', 'registry' ),
 			'annotations'         => array(
 				'readonly'     => true,
-				'instructions' => 'Returns all DesignSetGo blocks with their attributes and metadata. Use category filter to narrow results. Use detail "full" with specific block names for complete attribute definitions.',
+				'destructive'  => false,
+				'idempotent'   => true,
+				'instructions' => 'Returns all DesignSetGo blocks with their attributes and metadata. Each block reports both `category` (the block editor category it registers into, almost always "designsetgo") and `group` (the plugin\'s own grouping: containers, ui, interactive, widgets, forms, or uncategorized). Filter with `group`, not `category` — `category` is near-uniform across the library and will not narrow anything. Use detail "full" with specific block names for complete attribute definitions.',
 			),
 		);
 	}
@@ -63,19 +66,19 @@ class List_Blocks extends Abstract_Ability {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'category' => array(
+				'group'  => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by category', 'designsetgo' ),
-					'enum'        => array( 'all', 'layout', 'interactive', 'visual', 'dynamic' ),
+					'description' => __( 'Filter by the plugin\'s own block grouping (the same grouping used by the Blocks & Extensions admin screen). "uncategorized" returns blocks that are registered but not yet listed in the block registry.', 'designsetgo' ),
+					'enum'        => self::get_group_enum(),
 					'default'     => 'all',
 				),
-				'detail'   => array(
+				'detail' => array(
 					'type'        => 'string',
 					'description' => __( 'Level of attribute detail. "summary" returns type/default/enum only. "full" returns complete attribute definitions including minimum, maximum, nested properties, and items for arrays.', 'designsetgo' ),
 					'enum'        => array( 'summary', 'full' ),
 					'default'     => 'summary',
 				),
-				'blocks'   => array(
+				'blocks' => array(
 					'type'        => 'array',
 					'description' => __( 'Filter to specific block names (e.g., ["designsetgo/section", "designsetgo/row"]). When combined with detail "full", limits verbose output to only the requested blocks.', 'designsetgo' ),
 					'items'       => array(
@@ -115,7 +118,11 @@ class List_Blocks extends Abstract_Ability {
 							),
 							'category'    => array(
 								'type'        => 'string',
-								'description' => __( 'Block category', 'designsetgo' ),
+								'description' => __( 'The block editor category the block registers into, verbatim from block.json (almost always "designsetgo").', 'designsetgo' ),
+							),
+							'group'       => array(
+								'type'        => 'string',
+								'description' => __( 'The plugin\'s own grouping: containers, ui, interactive, widgets, forms, or uncategorized.', 'designsetgo' ),
 							),
 							'attributes'  => array(
 								'type'        => 'object',
@@ -153,7 +160,7 @@ class List_Blocks extends Abstract_Ability {
 	 * @return array<string, mixed>
 	 */
 	public function execute( array $input ): array {
-		$category     = $input['category'] ?? 'all';
+		$group        = $input['group'] ?? 'all';
 		$detail       = $input['detail'] ?? 'summary';
 		$block_filter = $input['blocks'] ?? array();
 		$use_full     = 'full' === $detail;
@@ -171,12 +178,12 @@ class List_Blocks extends Abstract_Ability {
 			);
 		}
 
-		// Filter by category if specified.
-		if ( 'all' !== $category ) {
+		// Filter by group if specified.
+		if ( 'all' !== $group ) {
 			$all_blocks = array_filter(
 				$all_blocks,
-				function ( $block ) use ( $category ) {
-					return $block['category'] === $category;
+				function ( $block ) use ( $group ) {
+					return $block['group'] === $group;
 				}
 			);
 		}
@@ -210,7 +217,8 @@ class List_Blocks extends Abstract_Ability {
 				'name'        => $block_type->name,
 				'title'       => '' !== $block_type->title ? $block_type->title : $this->generate_title_from_name( $block_type->name ),
 				'description' => $block_type->description,
-				'category'    => $this->normalize_category( $block_type->category ?? 'designsetgo' ),
+				'category'    => $block_type->category ?? '',
+				'group'       => self::get_block_group( $block_type->name ),
 				'supports'    => $this->format_supports( $block_type->supports ?? array() ),
 				'parent'      => $block_type->parent ?? null,
 				'icon'        => is_string( $block_type->icon ) ? $block_type->icon : null,
@@ -237,44 +245,69 @@ class List_Blocks extends Abstract_Ability {
 	}
 
 	/**
-	 * Normalize block category to simplified categories for filtering.
+	 * Map a block name to the plugin's own grouping.
 	 *
-	 * Maps various block categories to four main categories:
-	 * - layout: Container and layout blocks
-	 * - interactive: Blocks with user interaction (accordions, tabs, etc.)
-	 * - visual: Display and media blocks
-	 * - dynamic: Animated and data-driven blocks
+	 * The source of truth is includes/admin/blocks-registry.json — the same
+	 * file that drives the Blocks & Extensions admin screen — so this
+	 * grouping stays in step with what site owners see there. Blocks that
+	 * are registered but not yet listed in that file report
+	 * "uncategorized" rather than being silently bucketed somewhere wrong.
 	 *
-	 * @param string $category Original block category.
-	 * @return string Normalized category.
+	 * @param string $block_name Full block name (e.g. 'designsetgo/section').
+	 * @return string Group slug.
 	 */
-	private function normalize_category( string $category ): string {
-		$category_map = array(
-			// Layout categories.
-			'designsetgo'             => 'layout',
-			'designsetgo-layout'      => 'layout',
-			'designsetgo-containers'  => 'layout',
-			'layout'                  => 'layout',
+	private static function get_block_group( string $block_name ): string {
+		$map = self::get_group_map();
 
-			// Interactive categories.
-			'designsetgo-interactive' => 'interactive',
-			'designsetgo-navigation'  => 'interactive',
-			'interactive'             => 'interactive',
+		return $map[ $block_name ] ?? 'uncategorized';
+	}
 
-			// Visual categories.
-			'designsetgo-visual'      => 'visual',
-			'designsetgo-media'       => 'visual',
-			'designsetgo-elements'    => 'visual',
-			'visual'                  => 'visual',
-			'media'                   => 'visual',
+	/**
+	 * Build the block-name => group lookup from the block registry.
+	 *
+	 * @return array<string, string>
+	 */
+	private static function get_group_map(): array {
+		static $map = null;
 
-			// Dynamic categories.
-			'designsetgo-dynamic'     => 'dynamic',
-			'designsetgo-animated'    => 'dynamic',
-			'dynamic'                 => 'dynamic',
-		);
+		if ( null !== $map ) {
+			return $map;
+		}
 
-		return $category_map[ $category ] ?? 'visual';
+		$map = array();
+
+		if ( ! class_exists( Settings::class ) ) {
+			return $map;
+		}
+
+		foreach ( Settings::get_available_blocks() as $group_slug => $group ) {
+			if ( empty( $group['blocks'] ) || ! is_array( $group['blocks'] ) ) {
+				continue;
+			}
+
+			foreach ( $group['blocks'] as $block ) {
+				if ( isset( $block['name'] ) ) {
+					$map[ $block['name'] ] = $group_slug;
+				}
+			}
+		}
+
+		return $map;
+	}
+
+	/**
+	 * Enum of accepted values for the `group` input.
+	 *
+	 * Derived from the registry so a new group added to
+	 * blocks-registry.json becomes filterable without touching this file.
+	 *
+	 * @return array<int, string>
+	 */
+	private static function get_group_enum(): array {
+		$groups = array_values( array_unique( array_values( self::get_group_map() ) ) );
+		sort( $groups );
+
+		return array_merge( array( 'all' ), $groups, array( 'uncategorized' ) );
 	}
 
 	/**

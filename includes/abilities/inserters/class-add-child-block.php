@@ -54,7 +54,10 @@ class Add_Child_Block extends Abstract_Ability {
 			'show_in_rest'        => true,
 			'keywords'            => array( 'nested', 'inner', 'append' ),
 			'annotations'         => array(
-				'idempotent' => false,
+				'readonly'    => false,
+				'destructive' => false,
+				// Each call appends another block, so repeating it is not a no-op.
+				'idempotent'  => false,
 			),
 		);
 	}
@@ -182,14 +185,14 @@ class Add_Child_Block extends Abstract_Ability {
 		// Validate required parameters.
 		if ( ! $post_id ) {
 			return $this->error(
-				'missing_post_id',
+				'designsetgo_missing_post_id',
 				__( 'Post ID is required.', 'designsetgo' )
 			);
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			return $this->error( 'invalid_post', __( 'Post not found.', 'designsetgo' ) );
+			return $this->error( 'designsetgo_invalid_post', __( 'Post not found.', 'designsetgo' ) );
 		}
 
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
@@ -198,14 +201,14 @@ class Add_Child_Block extends Abstract_Ability {
 
 		if ( null === $parent_block_index ) {
 			return $this->error(
-				'invalid_input',
+				'designsetgo_invalid_input',
 				__( 'parent_block_index is required.', 'designsetgo' )
 			);
 		}
 
 		if ( empty( $block_name ) ) {
 			return $this->error(
-				'missing_block_name',
+				'designsetgo_missing_block_name',
 				__( 'block_name is required.', 'designsetgo' )
 			);
 		}
@@ -214,7 +217,7 @@ class Add_Child_Block extends Abstract_Ability {
 		$block_name = sanitize_text_field( $block_name );
 		if ( ! preg_match( '/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/', $block_name ) ) {
 			return $this->error(
-				'invalid_input',
+				'designsetgo_invalid_input',
 				__( 'block_name must be in "namespace/block-name" format (lowercase alphanumeric and hyphens).', 'designsetgo' )
 			);
 		}

@@ -49,7 +49,10 @@ class Add_Tab extends Abstract_Ability {
 			'show_in_rest'        => true,
 			'keywords'            => array( 'tabs', 'tabbed', 'panel' ),
 			'annotations'         => array(
-				'idempotent' => false,
+				'readonly'    => false,
+				'destructive' => false,
+				// Each call appends another block, so repeating it is not a no-op.
+				'idempotent'  => false,
 			),
 		);
 	}
@@ -120,7 +123,7 @@ class Add_Tab extends Abstract_Ability {
 		// Validate required parameters.
 		if ( ! $post_id ) {
 			return $this->error(
-				'missing_post_id',
+				'designsetgo_missing_post_id',
 				__( 'Post ID is required.', 'designsetgo' )
 			);
 		}
@@ -144,7 +147,7 @@ class Add_Tab extends Abstract_Ability {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return $this->error(
-				'invalid_post',
+				'designsetgo_invalid_post',
 				__( 'Post not found.', 'designsetgo' )
 			);
 		}

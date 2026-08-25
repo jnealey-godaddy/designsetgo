@@ -52,7 +52,9 @@ class List_Abilities extends Abstract_Ability {
 			'keywords'            => array( 'discover', 'tools', 'capabilities', 'help' ),
 			'annotations'         => array(
 				'readonly'     => true,
-				'instructions' => 'Call this first to discover all available DesignSetGo abilities. Use category filter to narrow by type: inserter, configurator, or info.',
+				'destructive'  => false,
+				'idempotent'   => true,
+				'instructions' => 'Call this first to discover all available DesignSetGo abilities. Use the category filter to narrow by registered category: info (read-only discovery), blocks (insert/configure/delete blocks in post content), or settings (plugin settings and global CSS). Each entry carries its annotations, so you can tell readonly from destructive without a second lookup.',
 			),
 		);
 	}
@@ -68,8 +70,8 @@ class List_Abilities extends Abstract_Ability {
 			'properties'           => array(
 				'category' => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by ability category', 'designsetgo' ),
-					'enum'        => array( 'all', 'inserter', 'configurator', 'info', 'settings' ),
+					'description' => __( 'Filter by the category the ability is registered in. These are the same categories exposed at /wp-json/wp-abilities/v1/categories.', 'designsetgo' ),
+					'enum'        => array( 'all', 'info', 'blocks', 'settings' ),
 					'default'     => 'all',
 				),
 				'search'   => array(
@@ -110,7 +112,11 @@ class List_Abilities extends Abstract_Ability {
 							),
 							'category'     => array(
 								'type'        => 'string',
-								'description' => __( 'Ability category: inserter, configurator, or info', 'designsetgo' ),
+								'description' => __( 'The category the ability is registered in: info, blocks, or settings', 'designsetgo' ),
+							),
+							'annotations'  => array(
+								'type'        => 'object',
+								'description' => __( 'Behavioural hints — readonly, destructive, idempotent, and instructions. Absent flags default to false.', 'designsetgo' ),
 							),
 							'input_schema' => array(
 								'type'        => 'object',
@@ -151,9 +157,9 @@ class List_Abilities extends Abstract_Ability {
 		$result    = array();
 
 		foreach ( $abilities as $ability ) {
-			$config   = $ability->get_config();
+			$config   = Abstract_Ability::normalize_config( $ability->get_config() );
 			$name     = $ability->get_name();
-			$category = $this->infer_category( $name );
+			$category = $config['category'] ?? 'info';
 
 			// Filter by category if specified.
 			if ( 'all' !== $category_filter && $category !== $category_filter ) {
@@ -174,6 +180,7 @@ class List_Abilities extends Abstract_Ability {
 				'label'        => $label,
 				'description'  => $description,
 				'category'     => $category,
+				'annotations'  => (object) ( $config['meta']['annotations'] ?? array() ),
 				'input_schema' => $config['input_schema'] ?? array(),
 			);
 		}
@@ -231,56 +238,5 @@ class List_Abilities extends Abstract_Ability {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Infer the ability category from its name.
-	 *
-	 * Uses naming conventions:
-	 * - insert-*, add-* → inserter
-	 * - configure-*, apply-*, batch-*, delete-*, update-* → configurator
-	 * - list-*, get-*, find-* → info
-	 * - *-settings → settings (takes precedence over the prefix rules)
-	 *
-	 * @param string $name Ability name (e.g., 'designsetgo/add-block').
-	 * @return string Category: inserter, configurator, info, or settings.
-	 */
-	private function infer_category( string $name ): string {
-		// Remove namespace prefix.
-		$short_name = str_replace( 'designsetgo/', '', $name );
-
-		// Suffix-based overrides run first so names like "update-settings"
-		// aren't mis-bucketed as configurators.
-		$suffix_map = array(
-			'-settings' => 'settings',
-		);
-
-		foreach ( $suffix_map as $suffix => $category ) {
-			$suffix_len = strlen( $suffix );
-			if ( strlen( $short_name ) >= $suffix_len && 0 === substr_compare( $short_name, $suffix, -$suffix_len ) ) {
-				return $category;
-			}
-		}
-
-		$prefix_map = array(
-			'insert-'    => 'inserter',
-			'add-'       => 'inserter',
-			'configure-' => 'configurator',
-			'apply-'     => 'configurator',
-			'batch-'     => 'configurator',
-			'delete-'    => 'configurator',
-			'update-'    => 'configurator',
-			'list-'      => 'info',
-			'get-'       => 'info',
-			'find-'      => 'info',
-		);
-
-		foreach ( $prefix_map as $prefix => $category ) {
-			if ( 0 === strpos( $short_name, $prefix ) ) {
-				return $category;
-			}
-		}
-
-		return 'configurator';
 	}
 }

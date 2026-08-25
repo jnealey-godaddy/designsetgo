@@ -48,6 +48,12 @@ class Batch_Update extends Abstract_Ability {
 			'output_schema'       => $this->get_output_schema(),
 			'permission_callback' => array( $this, 'check_permission_callback' ),
 			'keywords'            => array( 'bulk', 'multiple', 'mass' ),
+			'annotations'         => array(
+				'readonly'     => false,
+				'destructive'  => false,
+				'idempotent'   => true,
+				'instructions' => 'Applies several attribute updates to one post in a single save. Operations are matched by block name and applied in order; none of them insert or remove blocks. Call get-post-blocks first to confirm the targets exist — an operation that matches nothing is skipped silently rather than failing the batch.',
+			),
 		);
 	}
 
@@ -153,7 +159,7 @@ class Batch_Update extends Abstract_Ability {
 		// Validate post ID.
 		if ( ! $post_id ) {
 			return $this->error(
-				'missing_post_id',
+				'designsetgo_missing_post_id',
 				__( 'Post ID is required.', 'designsetgo' )
 			);
 		}
@@ -161,7 +167,7 @@ class Batch_Update extends Abstract_Ability {
 		// Validate operations.
 		if ( empty( $operations ) ) {
 			return $this->error(
-				'missing_operations',
+				'designsetgo_missing_operations',
 				__( 'At least one operation is required.', 'designsetgo' )
 			);
 		}
@@ -170,7 +176,7 @@ class Batch_Update extends Abstract_Ability {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return $this->error(
-				'invalid_post',
+				'designsetgo_invalid_post',
 				__( 'Post not found.', 'designsetgo' )
 			);
 		}

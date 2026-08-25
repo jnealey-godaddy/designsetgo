@@ -50,6 +50,8 @@ class Find_Blocks extends Abstract_Ability {
 			'keywords'            => array( 'search', 'locate', 'query', 'filter' ),
 			'annotations'         => array(
 				'readonly'     => true,
+				'destructive'  => false,
+				'idempotent'   => true,
 				'instructions' => 'Searches for blocks across posts by block name. Useful for content audits and finding blocks before bulk operations.',
 			),
 		);
@@ -154,7 +156,7 @@ class Find_Blocks extends Abstract_Ability {
 		// Validate block name.
 		if ( empty( $block_name ) ) {
 			return $this->error(
-				'missing_block_name',
+				'designsetgo_missing_block_name',
 				__( 'Block name is required.', 'designsetgo' )
 			);
 		}
