@@ -14,7 +14,7 @@ return array(
 	'categories' => array( 'dsgo-modal' ),
 	'viewportWidth' => 1200,
 	'content'    => '<!-- wp:group {"metadata":{"categories":["dsgo-modal"],"patternName":"designsetgo/modal/newsletter-signup","name":"Newsletter Signup Modal"},"layout":{"type":"constrained"}} -->
-<div class="wp-block-group"><!-- wp:designsetgo/icon-button {"text":"Subscribe to Newsletter","url":"#dsgo-modal-newsletter","icon":"envelope","iconGap":"8px","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|60","right":"var:preset|spacing|60"}}}} -->
+<div class="wp-block-group"><!-- wp:designsetgo/icon-button {"url":"#dsgo-modal-newsletter","icon":"envelope","iconGap":"8px","style":{"spacing":{"padding":{"top":"var:preset|spacing|50","bottom":"var:preset|spacing|50","left":"var:preset|spacing|60","right":"var:preset|spacing|60"}}}} -->
 <div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button dsgo-icon-button--has-icon" style="gap:8px;padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--60);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--60)" href="#dsgo-modal-newsletter" target="_self"><span class="dsgo-icon-button__icon dsgo-lazy-icon" data-icon-name="envelope"></span><span class="dsgo-icon-button__text">Subscribe to Newsletter</span></a></div>
 <!-- /wp:designsetgo/icon-button -->
 

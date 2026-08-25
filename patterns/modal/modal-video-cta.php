@@ -37,29 +37,23 @@ return array(
 <!-- wp:designsetgo/icon-list {"iconSize":16,"iconColor":"#ffffff","style":{"spacing":{"margin":{"bottom":"var:preset|spacing|40"}}}} -->
 <div class="wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--vertical" style="margin-bottom:var(--wp--preset--spacing--40);width:100%"><div class="dsgo-icon-list__items" style="display:flex;flex-direction:column;gap:24px;align-items:flex-start;width:100%">
 <!-- wp:designsetgo/icon-list-item {"icon":"check-circle","contentGap":8} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check-circle"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px">
-<!-- wp:heading {"level":4,"placeholder":"List item title…","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check-circle"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} -->
 <h4 class="wp-block-heading has-base-color has-text-color has-link-color">Quick setup in minutes</h4>
-<!-- /wp:heading -->
-</div></div>
+<!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 <!-- wp:designsetgo/icon-list-item {"icon":"check-circle","contentGap":8} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check-circle"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px">
-<!-- wp:heading {"level":4,"placeholder":"List item title…","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check-circle"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} -->
 <h4 class="wp-block-heading has-base-color has-text-color has-link-color">No coding required</h4>
-<!-- /wp:heading -->
-</div></div>
+<!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 <!-- wp:designsetgo/icon-list-item {"icon":"check-circle","contentGap":8} -->
-<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check-circle"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px">
-<!-- wp:heading {"level":4,"placeholder":"List item title…","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} -->
+<div class="wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left" style="display:flex;flex-direction:row;align-items:flex-start"><div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="check-circle"></div><div class="dsgo-icon-list-item__content" style="text-align:left;display:flex;flex-direction:column;gap:8px"><!-- wp:heading {"level":4,"placeholder":"List item title…","style":{"elements":{"link":{"color":{"text":"var:preset|color|base"}}}},"textColor":"base"} -->
 <h4 class="wp-block-heading has-base-color has-text-color has-link-color">Free 14-day trial</h4>
-<!-- /wp:heading -->
-</div></div>
+<!-- /wp:heading --></div></div>
 <!-- /wp:designsetgo/icon-list-item -->
 </div></div>
 <!-- /wp:designsetgo/icon-list -->
-<!-- wp:designsetgo/icon-button {"text":"Watch Demo","icon":"play","iconGap":"8px","backgroundColor":"base","textColor":"contrast","style":{"border":{"radius":"8px"},"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}}}} -->
+<!-- wp:designsetgo/icon-button {"icon":"play","iconGap":"8px","backgroundColor":"base","textColor":"contrast","style":{"border":{"radius":"8px"},"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|40","right":"var:preset|spacing|40"}}}} -->
 <div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-contrast-color has-base-background-color has-text-color has-background dsgo-icon-button--has-icon" style="border-radius:8px;gap:8px;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--40)" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" data-icon-name="play"></span><span class="dsgo-icon-button__text">Watch Demo</span></button></div>
 <!-- /wp:designsetgo/icon-button -->
 </div></div>
@@ -75,7 +69,7 @@ return array(
 <p class="has-text-align-center">Click the button below to trigger the modal:</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/icon-button {"justification":"center","text":"Open Video Modal","icon":"play-circle","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"border":{"radius":"8px"},"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}}}} -->
+<!-- wp:designsetgo/icon-button {"justification":"center","icon":"play-circle","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"border":{"radius":"8px"},"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}}}} -->
 <div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--center"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-base-color has-contrast-background-color has-text-color has-background dsgo-icon-button--has-icon" style="border-radius:8px;gap:8px;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--50)" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" data-icon-name="play-circle"></span><span class="dsgo-icon-button__text">Open Video Modal</span></button></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section -->',

@@ -22,7 +22,7 @@ return array(
 <p class="has-text-align-center has-medium-font-size">Get 20% off your first purchase. Use code <strong>WELCOME20</strong> at checkout.</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:designsetgo/icon-button {"justification":"center","text":"Shop Now","icon":"cart","iconPosition":"end","iconGap":"8px","style":{"spacing":{"margin":{"top":"var:preset|spacing|50"}}}} -->
+<!-- wp:designsetgo/icon-button {"justification":"center","icon":"cart","iconPosition":"end","iconGap":"8px","style":{"spacing":{"margin":{"top":"var:preset|spacing|50"}}}} -->
 <div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--center" style="margin-top:var(--wp--preset--spacing--50)"><button class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button dsgo-icon-button--has-icon dsgo-icon-button--icon-end" style="gap:8px" type="button"><span class="dsgo-icon-button__icon dsgo-lazy-icon" data-icon-name="cart"></span><span class="dsgo-icon-button__text">Shop Now</span></button></div>
 <!-- /wp:designsetgo/icon-button --><button class="dsgo-modal__close dsgo-modal__close--inside-top-right" style="width:24px;height:24px" type="button" aria-label="Close modal"><svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button></div></div></div>
 <!-- /wp:designsetgo/modal -->',

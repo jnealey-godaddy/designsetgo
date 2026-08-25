@@ -24,7 +24,7 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:group {"style":{"spacing":{"margin":{"top":"var:preset|spacing|40"}}},"layout":{"type":"flex","justifyContent":"center"}} -->
-<div class="wp-block-group" style="margin-top:var(--wp--preset--spacing--40)"><!-- wp:designsetgo/icon-button {"text":"Book Your Table Now","url":"#","icon":"calendar","iconGap":"8px","backgroundColor":"base","textColor":"contrast","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}},"border":{"radius":"50px"}}} -->
+<div class="wp-block-group" style="margin-top:var(--wp--preset--spacing--40)"><!-- wp:designsetgo/icon-button {"url":"#","icon":"calendar","iconGap":"8px","backgroundColor":"base","textColor":"contrast","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|50","right":"var:preset|spacing|50"}},"border":{"radius":"50px"}}} -->
 <div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-contrast-color has-base-background-color has-text-color has-background dsgo-icon-button--has-icon" style="border-radius:50px;gap:8px;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--50);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--50)" href="#" target="_self"><span class="dsgo-icon-button__icon dsgo-lazy-icon" data-icon-name="calendar"></span><span class="dsgo-icon-button__text">Book Your Table Now</span></a></div>
 <!-- /wp:designsetgo/icon-button --></div>
 <!-- /wp:group --></div>

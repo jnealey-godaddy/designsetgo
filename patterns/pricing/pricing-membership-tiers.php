@@ -70,7 +70,7 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/section -->
 
-<!-- wp:designsetgo/icon-button {"text":"Get Started","url":"#basic","icon":"","iconPosition":"none","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|40","right":"var:preset|spacing|40"},"margin":{"top":"var:preset|spacing|30"}},"border":{"radius":"0"}}} -->
+<!-- wp:designsetgo/icon-button {"url":"#basic","icon":"","iconPosition":"none","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|40","right":"var:preset|spacing|40"},"margin":{"top":"var:preset|spacing|30"}},"border":{"radius":"0"}}} -->
 <div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left" style="margin-top:var(--wp--preset--spacing--30)"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-base-color has-contrast-background-color has-text-color has-background" style="border-radius:0;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--40)" href="#basic" target="_self"><span class="dsgo-icon-button__text">Get Started</span></a></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section -->
@@ -126,7 +126,7 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/section -->
 
-<!-- wp:designsetgo/icon-button {"text":"Get Started","url":"#premium","icon":"","iconPosition":"none","iconGap":"8px","className":"has-text-color has-background","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|40","right":"var:preset|spacing|40"},"margin":{"top":"var:preset|spacing|30"}},"border":{"radius":"0"},"color":{"background":"#ef4444","text":"#ffffff"}}} -->
+<!-- wp:designsetgo/icon-button {"url":"#premium","icon":"","iconPosition":"none","iconGap":"8px","className":"has-text-color has-background","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|40","right":"var:preset|spacing|40"},"margin":{"top":"var:preset|spacing|30"}},"border":{"radius":"0"},"color":{"background":"#ef4444","text":"#ffffff"}}} -->
 <div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left has-text-color has-background" style="margin-top:var(--wp--preset--spacing--30)"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-text-color has-background" style="border-radius:0;color:#ffffff;background-color:#ef4444;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--40)" href="#premium" target="_self"><span class="dsgo-icon-button__text">Get Started</span></a></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section -->
@@ -180,7 +180,7 @@ return array(
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/section -->
 
-<!-- wp:designsetgo/icon-button {"text":"Get Started","url":"#elite","icon":"","iconPosition":"none","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|40","right":"var:preset|spacing|40"},"margin":{"top":"var:preset|spacing|30"}},"border":{"radius":"0"}}} -->
+<!-- wp:designsetgo/icon-button {"url":"#elite","icon":"","iconPosition":"none","iconGap":"8px","backgroundColor":"contrast","textColor":"base","style":{"spacing":{"padding":{"top":"var:preset|spacing|20","bottom":"var:preset|spacing|20","left":"var:preset|spacing|40","right":"var:preset|spacing|40"},"margin":{"top":"var:preset|spacing|30"}},"border":{"radius":"0"}}} -->
 <div class="wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--left" style="margin-top:var(--wp--preset--spacing--30)"><a class="dsgo-icon-button wp-block-button wp-block-button__link wp-element-button has-base-color has-contrast-background-color has-text-color has-background" style="border-radius:0;padding-top:var(--wp--preset--spacing--20);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--20);padding-left:var(--wp--preset--spacing--40)" href="#elite" target="_self"><span class="dsgo-icon-button__text">Get Started</span></a></div>
 <!-- /wp:designsetgo/icon-button --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
