@@ -16,6 +16,8 @@ import {
 	hoverVariationClasses,
 } from './utils/has-overlay-style';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
+import metadata from './block.json';
+import currentSave from './save';
 // The SAME predicate the live renderer uses. Migration and render must agree on
 // what counts as an explicit size, or a pinned clearance can desync from the
 // divider it is meant to clear — see isUntouchedLegacyShapeSize below.
@@ -446,6 +448,55 @@ function V7ShapeDivider({
 
 	return <div className={className} {...styleProps} aria-hidden="true" />;
 }
+
+// Version 10: Unconstrained inner container with no `constrainWidth` in the
+// block comment. This entry is the CURRENT save(), reused verbatim; the only
+// thing it changes is the default `constrainWidth` parses to — `false` instead
+// of `true` — so a stored `.dsgo-stack__inner` carrying no width style is read
+// back as "the constraint was off" rather than as broken markup.
+//
+// Two kinds of content land here, and the stored HTML says the same thing in
+// both cases:
+//
+// 1. Sections saved during the 92 minutes on 2025-11-10 between 6cbf8183 (which
+//    introduced `constrainWidth` with `default: false`) and 1bbdbefa (which
+//    flipped it to `true`). WordPress omits default-valued attributes from the
+//    block comment, so those sections stored no `constrainWidth` at all and are
+//    indistinguishable — by attributes alone — from a current section that
+//    simply left the toggle on.
+// 2. Markup that never came from save(): generated or hand-edited content that
+//    turns the constraint off the way it looks like it works, by putting
+//    `dsgo-no-width-constraint` on `className`, and writes the inner container
+//    with no style. The class is inert (the block reads `constrainWidth`), so
+//    the current save() emits a `max-width` the stored HTML lacks.
+//
+// The attributes are ambiguous but the markup is not: an inner container with no
+// width style is what an unconstrained section renders as, under every version
+// of this block. migrate() therefore writes that intent back into
+// `constrainWidth` explicitly, so it lands in the comment and the block stops
+// depending on whatever the default happens to be.
+//
+// No isEligible: a section reaching this entry is INVALID (its stored HTML does
+// not match the current save()), and WordPress skips isEligible for invalid
+// blocks — it picks the version whose save() reproduces the stored HTML. A VALID
+// section must never be claimed here, and none can be: one that left the toggle
+// on stored the inner width style, which this save() does not emit under a
+// `false` default, and one that explicitly turned it off already carries
+// `"constrainWidth":false` in its comment and matches the current save() outright.
+const v10 = {
+	apiVersion: 3,
+	// Current-era supports and schema, taken from block.json so they cannot drift
+	// out of step with the save() below, which IS the current save().
+	supports: metadata.supports,
+	attributes: {
+		...metadata.attributes,
+		constrainWidth: { type: 'boolean', default: false },
+	},
+	save: currentSave,
+	migrate(attributes) {
+		return { ...attributes, constrainWidth: false };
+	},
+};
 
 // Version 9: Height-derived pixel clearance padding. Before this version the
 // inner container's shape-divider clearance was computed from the divider
@@ -2154,4 +2205,4 @@ const v1 = {
 };
 
 // Export deprecations in reverse chronological order (newest first)
-export default [v9, v8, v7, v6, v5, v4, v3, v2, v1];
+export default [v10, v9, v8, v7, v6, v5, v4, v3, v2, v1];
