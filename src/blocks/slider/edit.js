@@ -38,6 +38,28 @@ import useQueryHostPreview, {
 } from '../query/hooks/useQueryHostPreview';
 import useParentQueryAttrs from '../query/hooks/useParentQueryAttrs';
 import QueryHostReadOnlyItem from '../query/components/QueryHostReadOnlyItem';
+import { ARROW_PATHS, ARROW_SVG_ATTRS } from './arrow-icon';
+
+/**
+ * The editor's inert arrow chevron — same path data the frontend builds, so
+ * the placeholder the author sees matches what actually renders.
+ *
+ * @param {Object} props           Component props.
+ * @param {string} props.direction Either `prev` or `next`.
+ */
+function ArrowIcon({ direction }) {
+	return (
+		<svg
+			{...ARROW_SVG_ATTRS}
+			width="1em"
+			height="1em"
+			aria-hidden="true"
+			focusable="false"
+		>
+			<path d={ARROW_PATHS[direction]} />
+		</svg>
+	);
+}
 
 const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
 
@@ -1262,7 +1284,7 @@ export default function SliderEdit({
 							aria-label={__('Previous slide', 'designsetgo')}
 							onClick={() => scrollToSlide('prev')}
 						>
-							<span>‹</span>
+							<ArrowIcon direction="prev" />
 						</button>
 						<button
 							type="button"
@@ -1270,7 +1292,7 @@ export default function SliderEdit({
 							aria-label={__('Next slide', 'designsetgo')}
 							onClick={() => scrollToSlide('next')}
 						>
-							<span>›</span>
+							<ArrowIcon direction="next" />
 						</button>
 					</div>
 				)}
