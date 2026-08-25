@@ -459,12 +459,20 @@ describe('DSGSlider - Frontend', () => {
 			const dots = slider.querySelectorAll('.dsgo-slider__dot');
 			expect(dots.length).toBe(5);
 
+			// Dots are destinations, not tabs: there are no tabpanels for
+			// them to control, so they are plain buttons in a labelled group
+			// with aria-current marking the live one.
+			expect(
+				slider.querySelector('.dsgo-slider__dots').getAttribute('role')
+			).toBe('group');
 			dots.forEach((dot, i) => {
-				expect(dot.getAttribute('role')).toBe('tab');
+				expect(dot.getAttribute('role')).toBeNull();
 				expect(dot.getAttribute('aria-label')).toBe(
 					`Go to slide ${i + 1}`
 				);
 			});
+			expect(dots[0].getAttribute('aria-current')).toBe('true');
+			expect(dots[1].getAttribute('aria-current')).toBeNull();
 		});
 
 		test('creates dots only for real slides when loop + slide (clones present)', () => {
@@ -813,8 +821,10 @@ describe('DSGSlider - Frontend', () => {
 				return origDocRemove.apply(this, args);
 			};
 
-			// Trigger beforeunload to invoke the destroy path
-			window.dispatchEvent(new Event('beforeunload'));
+			// Trigger pagehide to invoke the destroy path. beforeunload would
+			// make the page ineligible for the back/forward cache, which is
+			// why the listener moved.
+			window.dispatchEvent(new Event('pagehide'));
 
 			const resizeCalls = winRemoveSpy.mock.calls.filter(
 				([event]) => event === 'resize'

@@ -10,6 +10,180 @@
  */
 
 /**
+ * Selector for the element that actually holds a query's rendered items.
+ *
+ * Every item host tags its item container with this role/id pair —
+ * designsetgo/query-results on its grid, designsetgo/slider on its track,
+ * designsetgo/scroll-slides on its panels wrapper — so the shared plumbing
+ * here works the same whichever presentation the author chose.
+ *
+ * @param {string} queryId The query ID.
+ * @return {string} A CSS selector for that query's item container.
+ */
+export function itemContainerSelector(queryId) {
+	return `[data-dsgo-query-results-role="container"][data-dsgo-query-id="${queryId}"]`;
+}
+
+/**
+ * Pull the freshly rendered items out of a parsed REST region response.
+ *
+ * Reads the item container's element children rather than matching on
+ * `.dsgo-query__item`: that class only exists on the grid host's <li>
+ * wrappers, so a class-based match would find nothing for a carousel host
+ * (whose items are bare `designsetgo/slide` renders) and would flatten
+ * `<section class="dsgo-query-group">` wrappers when grouping is on.
+ *
+ * @param {Document} doc     Parsed response document.
+ * @param {string}   queryId The query ID.
+ * @return {Element[]} Items to append, in document order.
+ */
+export function extractRenderedItems(doc, queryId) {
+	if (!doc) {
+		return [];
+	}
+	const container = doc.querySelector(itemContainerSelector(queryId));
+	if (container) {
+		return Array.from(container.children);
+	}
+	// Legacy trees render the item template as a direct child of the query
+	// with no host block at all, so there is no container to read.
+	return Array.from(doc.querySelectorAll('.dsgo-query__item'));
+}
+
+/**
+ * Tell the rest of the plugin that a chunk of DOM was replaced or extended.
+ *
+ * Blocks with a frontend runtime (slider, counters, flip cards, maps…) can
+ * be inside a query region, and a filter refresh swaps that region's
+ * innerHTML wholesale — leaving the replacement markup inert unless someone
+ * says so. `dsgo-content-loaded` is the plugin-wide re-init signal already
+ * used for bfcache restores, so reusing it here means every block that
+ * already listens gets query refreshes for free.
+ *
+ * @param {Element|null} root   The element whose contents changed.
+ * @param {string}       source Short label for the trigger, for listeners that care.
+ */
+export function notifyContentUpdated(root, source) {
+	const doc =
+		root?.ownerDocument ||
+		(typeof document !== 'undefined' ? document : null);
+	if (!doc) {
+		return;
+	}
+	doc.dispatchEvent(
+		new CustomEvent('dsgo-content-loaded', {
+			detail: { source, container: root },
+		})
+	);
+}
+
+/**
+ * Tell an item host that new items were appended to its container.
+ *
+ * Distinct from notifyContentUpdated(): nothing was replaced, so blocks that
+ * key their init on the element identity (the slider caches its instance per
+ * element) would treat the container as already initialised and never notice
+ * the new children. The host listens for this on the container itself and
+ * re-syncs whatever it derived from the old item count.
+ *
+ * @param {Element|null} container The item container that grew.
+ * @param {string}       queryId   The query ID.
+ * @param {number}       added     How many items were appended.
+ */
+export function notifyItemsAppended(container, queryId, added) {
+	if (!container) {
+		return;
+	}
+	container.dispatchEvent(
+		new CustomEvent('dsgo-query-items-appended', {
+			bubbles: true,
+			detail: { queryId, added },
+		})
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Delegated-fallback de-duplication
+// ---------------------------------------------------------------------------
+//
+// view.js runs every interaction twice over: once through the Interactivity
+// API store action bound to the element, and once through a document-level
+// delegated listener that exists to keep working after a filter refresh has
+// replaced (and so de-hydrated) the region's markup. Only one of them may do
+// the work.
+//
+// Identity alone cannot decide it. The IAPI hands a store action a *Proxy*
+// around the native event (`wrapEventAsync()` in @wordpress/interactivity,
+// skipped only for actions wrapped in `withSyncEvent()`), so the object the
+// action marks is never the object the document listener later receives, and
+// a WeakSet of marked events matches nothing. That is what made a single
+// Load more click fire two REST requests and append the same page twice.
+//
+// What is reliable is the *ordering* and the *target*. `withScope()` runs a
+// generator action's body synchronously up to its first `yield`, from inside
+// the element's own handler — so the mark is always in place before the same
+// event bubbles to document — and `event.target` read through the proxy is
+// the identical native node. So we match on the target and drop the mark on
+// the next task, once the dispatch that set it has finished.
+
+/** Native events already claimed by a store action, when identity survives. */
+const handledEvents = new WeakSet();
+
+/** Target of the event a store action claimed during the current dispatch. */
+let handledTarget = null;
+let handledTargetTimer = null;
+
+/**
+ * Claim an event on behalf of the live Interactivity API store.
+ *
+ * @param {Event} event Event handed to the store action (possibly a Proxy).
+ */
+export function markHandledEvent(event) {
+	if (!event || typeof event !== 'object') {
+		return;
+	}
+	handledEvents.add(event);
+	handledTarget = event.target || null;
+	if (handledTargetTimer) {
+		clearTimeout(handledTargetTimer);
+	}
+	// A macrotask, not a microtask: browsers take a microtask checkpoint
+	// between listener callbacks, so a promise would clear the mark before
+	// the event reached the document-level listener it exists to stop.
+	handledTargetTimer = setTimeout(() => {
+		handledTarget = null;
+		handledTargetTimer = null;
+	}, 0);
+}
+
+/**
+ * Whether the live store already handled this event.
+ *
+ * @param {Event} event Native event seen by a delegated listener.
+ * @return {boolean} True when the delegated handler must stand down.
+ */
+export function isHandledEvent(event) {
+	if (!event || typeof event !== 'object') {
+		return false;
+	}
+	if (handledEvents.has(event)) {
+		return true;
+	}
+	return handledTarget !== null && event.target === handledTarget;
+}
+
+/**
+ * Test seam — drop any standing claim.
+ */
+export function resetHandledEvents() {
+	handledTarget = null;
+	if (handledTargetTimer) {
+		clearTimeout(handledTargetTimer);
+		handledTargetTimer = null;
+	}
+}
+
+/**
  * Track live IntersectionObservers by their sentinel element so filter-refresh
  * innerHTML swaps can disconnect them before the sentinel becomes detached.
  */

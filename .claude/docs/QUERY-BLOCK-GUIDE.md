@@ -757,6 +757,8 @@ A query-capable layout block must:
 
 3. **Join the host registry** via the `designsetgo_query_item_host_block_names` filter (or have DesignSetGo add it to the defaults). The container uses this list to resolve which child carries the per-item template.
 
+4. **Tag its item container** with `data-dsgo-query-results-role="container"` and `data-dsgo-query-id="<queryId>"` on whichever element holds the items — the grid `<ul>` for `query-results`, the track for `slider`, the panels wrapper for `scroll-slides`. `view.js` looks up that pair to append load-more results and to set `aria-busy` during a fetch. A host that omits it renders fine on first paint and then silently does nothing when the reader clicks Load more.
+
 ### How the container behaves
 
 When `designsetgo_query_render_container()` sees a registered layout host child, it:
@@ -823,10 +825,43 @@ export default function TabsEdit({ attributes, setAttributes, clientId, context 
 
 ### Sibling composition
 
-The query container still accepts `designsetgo/query-filter`, `designsetgo/query-pagination`, and `designsetgo/query-no-results` as siblings of the item host — filters and pagination continue to work whether the host is `query-results`, `slider`, or `scroll-slides`. Filter actions rebuild the stash via the IAPI REST endpoint; the layout block then re-initializes on DOM mutation.
+The query container still accepts `designsetgo/query-filter`, `designsetgo/query-pagination`, and `designsetgo/query-no-results` as siblings of the item host — filters and pagination work whether the host is `query-results`, `slider`, or `scroll-slides`.
 
-Recommended pairings:
-- Slider + `paginationKind: 'infinite'` — IntersectionObserver triggers `loadMore` as the last visible slide becomes intersected.
+**Re-initialisation.** Both refresh paths tell the page that markup changed, so a layout block with a frontend runtime comes back to life:
+
+- A **filter/sort refresh** replaces the whole region's `innerHTML`, then dispatches `dsgo-content-loaded` on `document` with `detail: { source: 'query-refresh', container: region }`. Every block that already listens for that event (the bfcache re-init hook) picks the new markup up for free. Instances bound to the old, now-detached elements must tear themselves down — `slider/view.js` prunes them on each init pass, otherwise every filter change leaks a set of document-level listeners.
+- A **load-more append** leaves the host element in place and only adds children, so an element-keyed init guard would skip it. The append dispatches `dsgo-query-items-appended` on the item container (bubbling, `detail: { queryId, added }`); the host listens and re-derives whatever it computed from the old item count. `DSGSlider` rebuilds clones, dots and cached dimensions, then advances onto the first new slide — `view.js` moves focus there for the screen-reader handoff, and an off-screen slide is `inert`, which refuses focus.
+
+  **A host whose layout derives from the item count must handle this event.** `designsetgo/slider` does. `designsetgo/scroll-slides` does not: its pin-spacer height and nav are built once at init with no teardown path, so appended panels would be unreachable. Pair scroll-slides with `numbered` pagination, or none at all.
+
+**One interaction, one request.** Every control is wired twice — the Interactivity API store action bound to the element, and the document-level delegated listener that keeps working once a refresh has de-hydrated the markup. `markHandledEvent()` / `isHandledEvent()` in `view-helpers.js` decide which one acts, and **the claim is keyed on `event.target`, not on the event object.** That is not a shortcut: the IAPI passes store actions a `Proxy` around the native event (`wrapEventAsync()`, skipped only for actions wrapped in `withSyncEvent()`), so an identity check can never match the event the delegated listener receives — which is what made a single Load more click fetch and append the same page twice. `withScope()` runs a generator action synchronously up to its first `yield`, so the claim is always in place before the event bubbles to `document`; it is released on the next task.
+
+  If you add a delegated handler here, claim through those helpers rather than by event identity, and remember that two *different* events from one gesture still count twice — blurring a search input to click Submit fires `change` and then `submit`, so the `change` handler stands down for any control inside a `form[data-wp-on--submit]`.
+
+**Pagination × presentation.** `designsetgo/query-pagination` adapts to the host:
+
+| Kind | Grid host | Carousel host (slider, scroll-slides) |
+|---|---|---|
+| `numbered` | Supported | Supported — a full page navigation, so presentation is irrelevant |
+| `loadmore` | Supported | Supported — new items append to the track and the host re-syncs |
+| `infinite` | Supported | **Degrades to `loadmore`** |
+
+Infinite scroll hangs on a sentinel below the items, reached by scrolling the page down past them. A carousel keeps its items in a fixed-height viewport, so the sentinel no longer tracks the reader's progress: it either intersects on first paint and pulls every page down at once, or is never reached. The presentation wins. `designsetgo_query_host_supports_infinite_scroll( $host_name )` is the decision — `true` only for `designsetgo/query-results` and for a query with no host block at all — and it is filterable, so a third-party host that *does* grow the page vertically can opt back in:
+
+```php
+add_filter(
+    'designsetgo_query_host_supports_infinite_scroll',
+    function ( $supported, $host_name ) {
+        return 'acme/masonry' === $host_name ? true : $supported;
+    },
+    10,
+    2
+);
+```
+
+In the editor, `designsetgo/query-pagination` shows a warning with a one-click **Switch to Load more**, previews the Load more button rather than a sentinel, and hides the two sentinel-only settings.
+
+Other pairings:
 - Scroll-slides + `designsetgo/query-group-header` — group headers become pinned section headings.
 - Slider + grouping (`groupBy` attribute) — not recommended; interleaved group headers inside a carousel are noisy. Not blocked in the editor, but call it out in your variation docs if you ship one.
 

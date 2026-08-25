@@ -82,11 +82,14 @@ Pre-configured slider variations for common use cases:
 ## Accessibility
 
 - ✅ WCAG 2.1 AA compliant
-- ✅ ARIA attributes (role, aria-label, aria-hidden, aria-selected)
+- ✅ ARIA attributes (`role`, `aria-label`, `aria-hidden`, `aria-current`)
 - ✅ Keyboard navigation
-- ✅ Screen reader announcements
-- ✅ Focus management
-- ✅ prefers-reduced-motion support
+- ✅ Screen reader announcements on user-driven navigation
+- ✅ Focus management — off-screen slides are `inert`, so their links leave the
+  tab order rather than sitting focusable inside an `aria-hidden` subtree
+- ✅ `prefers-reduced-motion` support, re-evaluated when the setting changes
+- ✅ Autoplay suspends off screen, in a background tab, and while the slider is
+  hovered or focused
 - ✅ Color contrast (customizable)
 - ✅ Touch targets (44x44px minimum)
 
@@ -107,9 +110,16 @@ slider/
 ├── index.js            # Registration and variations
 ├── edit.js             # Editor component (420 lines)
 ├── save.js             # Frontend markup (96 lines)
-├── style.scss          # Base styles (363 lines)
-├── editor.scss         # Editor-specific styles (96 lines)
-└── view.js             # Frontend JavaScript (441 lines)
+├── style.scss          # Base styles
+├── editor.scss         # Editor-specific styles
+├── render.php          # Server render — authored passthrough + query mode
+├── view.js             # Frontend runtime: navigation, ARIA, chrome state
+└── view/
+    ├── config.js       # data-* parsing, responsive slidesPerView, durations
+    ├── chrome.js       # Arrow / dot / announcer construction
+    ├── gestures.js     # Swipe and drag
+    ├── autoplay.js     # Timer plus its suspend reasons
+    └── scroll-driven.js # Pinned horizontal scroll mode
 
 slide/
 ├── block.json          # Block metadata and attributes
@@ -125,7 +135,20 @@ slide/
 - **useInnerBlocksProps**: Proper inner blocks handling
 - **Context Sharing**: Parent provides, child consumes
 - **Data Attributes**: Configuration passed to JavaScript
-- **Class-based JS**: DSGSlider class handles all interactions
+- **Class-based JS**: DSGSlider owns navigation state; `view/` modules own the
+  parts that do not need it
+- **CSS owns slides-per-view**: `style.scss` hardcodes the 768/1024 breakpoints
+  because a media query cannot read a custom property, so the block's editable
+  `mobileBreakpoint` / `tabletBreakpoint` cannot be pushed into it.
+  `slidesPerViewFor()` is therefore only a first-paint prediction;
+  `measuredSlidesPerView()` supersedes it once there is layout, and a
+  disagreement triggers `refresh()`. Do not derive clone counts, navigation
+  bounds or the ARIA window from the attributes directly.
+- **Loop Carousel**: inside a `designsetgo/query` the track doubles as the
+  query's item container, so its children can change after init. `refresh()`
+  rebuilds clones, dots and cached dimensions in response to
+  `dsgo-query-items-appended`; see
+  [the Query block guide](../../../.claude/docs/QUERY-BLOCK-GUIDE.md)
 
 ## Future Enhancements
 

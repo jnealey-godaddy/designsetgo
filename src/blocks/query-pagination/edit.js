@@ -7,6 +7,10 @@ import {
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
 import InfiniteScrollControls from './components/InfiniteScrollControls';
+import CarouselNotice from './components/CarouselNotice';
+import useQueryItemHost, {
+	hostSupportsInfiniteScroll,
+} from '../query/hooks/useQueryItemHost';
 
 /**
  * Canvas preview for the pagination block in the editor.
@@ -92,9 +96,17 @@ export default function QueryPaginationEdit({
 		alignment,
 	} = attributes;
 
-	// Determine the effective kind: paginationKind takes precedence when set
+	// Determine the requested kind: paginationKind takes precedence when set
 	// to a non-default value; fall back to mode for backwards compatibility.
-	const effectiveKind = paginationKind !== 'numbered' ? paginationKind : mode;
+	const requestedKind = paginationKind !== 'numbered' ? paginationKind : mode;
+
+	// Carousel presentation wins over infinite scroll — see CarouselNotice and
+	// designsetgo_query_host_supports_infinite_scroll(). Preview what the front
+	// end will actually render rather than a sentinel that never fires.
+	const itemHost = useQueryItemHost(clientId);
+	const degradesToLoadMore =
+		requestedKind === 'infinite' && !hostSupportsInfiniteScroll(itemHost);
+	const effectiveKind = degradesToLoadMore ? 'loadmore' : requestedKind;
 
 	const blockProps = useBlockProps({
 		className: `dsgo-query-pagination is-editor is-align-${
@@ -105,6 +117,12 @@ export default function QueryPaginationEdit({
 	return (
 		<>
 			<InspectorControls>
+				{degradesToLoadMore && (
+					<CarouselNotice
+						itemHost={itemHost}
+						setAttributes={setAttributes}
+					/>
+				)}
 				<DsgoInspectorPanel
 					title={__('Settings', 'designsetgo')}
 					panelName="settings"
@@ -218,6 +236,7 @@ export default function QueryPaginationEdit({
 							attributes={attributes}
 							setAttributes={setAttributes}
 							panelId={clientId}
+							sentinelDisabled={degradesToLoadMore}
 						/>
 					)}
 
@@ -243,9 +262,24 @@ export default function QueryPaginationEdit({
 				<PaginationPreview
 					effectiveKind={effectiveKind}
 					showPrevNext={showPrevNext}
-					labelLoadMore={labelLoadMore}
+					labelLoadMore={
+						degradesToLoadMore
+							? labelLoadMore || buttonLabelWhenPaused
+							: labelLoadMore
+					}
 					buttonLabelWhenPaused={buttonLabelWhenPaused}
 				/>
+				{degradesToLoadMore && (
+					<span
+						className="dsgo-query-pagination__fallback-hint"
+						contentEditable={false}
+					>
+						{__(
+							'Infinite scroll falls back to Load more inside a carousel.',
+							'designsetgo'
+						)}
+					</span>
+				)}
 			</div>
 		</>
 	);

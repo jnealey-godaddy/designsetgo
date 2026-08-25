@@ -162,10 +162,20 @@ if ( ! function_exists( 'designsetgo_render_scroll_slides' ) ) {
 			$inner_style = ' style="max-width:' . esc_attr( $max_width ) . ';margin-left:auto;margin-right:auto"';
 		}
 
+		// The panels wrapper is this host's item container. Same role/id pair
+		// designsetgo/query-results puts on its grid, so the shared view.js
+		// plumbing (load-more append, aria-busy) finds the element that
+		// actually holds the items. See slider/render.php for the same note.
+		$panels_attrs = sprintf(
+			'class="dsgo-scroll-slides__panels" data-dsgo-query-results-role="container" data-dsgo-query-id="%1$s"',
+			esc_attr( $query_id )
+		);
+
 		printf(
-			'<div %1$s><div class="dsgo-scroll-slides__inner"%2$s><div class="dsgo-scroll-slides__panels">%3$s</div></div></div>',
+			'<div %1$s><div class="dsgo-scroll-slides__inner"%2$s><div %3$s>%4$s</div></div></div>',
 			$wrapper_attrs, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped via get_block_wrapper_attributes().
 			$inner_style,   // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from esc_attr().
+			$panels_attrs,  // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- assembled from esc_attr() escaped parts.
 			$items_html     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- items rendered via WP_Block (WP escapes server-side).
 		);
 	}

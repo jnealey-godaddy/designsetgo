@@ -50,6 +50,20 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 			? $attributes['paginationKind']
 			: ( isset( $attributes['mode'] ) ? $attributes['mode'] : 'numbered' );
 
+		// Carousel presentation wins over infinite scroll. Infinite scroll needs
+		// a sentinel that the reader reaches by scrolling past the items; inside
+		// a slider or scroll-slides host the items sit in a fixed-height
+		// viewport, so the sentinel either intersects on first paint (loading
+		// every page at once) or is never reached. Degrade to the Load more
+		// button instead of dropping the control — the reader keeps access to
+		// the rest of the query, and the editor says so up front so the author
+		// is not surprised by the swap. See designsetgo_query_host_supports_infinite_scroll().
+		$degraded_from_infinite = false;
+		if ( 'infinite' === $pagination_kind && ! designsetgo_query_host_supports_infinite_scroll( designsetgo_query_get_item_host( $query_id ) ) ) {
+			$pagination_kind        = 'loadmore';
+			$degraded_from_infinite = true;
+		}
+
 		// Horizontal alignment of the pagination control. Drives the SCSS
 		// `is-align-{left|center|right}` modifier so the numbered flex list / load-more
 		// button / infinite sentinel all honour the setting with a single class.
@@ -115,9 +129,15 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 
 		$pagination_mode = $pagination_kind; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 		$show_prev_next  = ! isset( $attributes['showPrevNext'] ) || (bool) $attributes['showPrevNext'];
+		// A block degraded from infinite scroll never had a labelLoadMore to
+		// set — its author-facing label is buttonLabelWhenPaused, so fall back
+		// to that and the button reads the way the author configured it.
+		$fallback_label  = $degraded_from_infinite && ! empty( $attributes['buttonLabelWhenPaused'] )
+			? (string) $attributes['buttonLabelWhenPaused']
+			: __( 'Load more', 'designsetgo' );
 		$label_load_more = ! empty( $attributes['labelLoadMore'] )
 			? (string) $attributes['labelLoadMore']
-			: __( 'Load more', 'designsetgo' );
+			: $fallback_label;
 		$label_loading   = ! empty( $attributes['labelLoading'] )
 			? (string) $attributes['labelLoading']
 			: __( 'Loading…', 'designsetgo' );

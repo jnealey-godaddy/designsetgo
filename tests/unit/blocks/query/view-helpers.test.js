@@ -5,6 +5,8 @@
  * URL collection, filter action URL transforms, observer bookkeeping, and the
  * accessibility helpers (feed position stamping + result-count announcements).
  */
+
+/* global MouseEvent */
 import '@testing-library/jest-dom';
 
 import {
@@ -16,6 +18,13 @@ import {
 	applyToggleFilter,
 	applySetFilter,
 	applyResetFilters,
+	itemContainerSelector,
+	extractRenderedItems,
+	notifyContentUpdated,
+	notifyItemsAppended,
+	markHandledEvent,
+	isHandledEvent,
+	resetHandledEvents,
 } from '../../../../src/blocks/query/view-helpers.js';
 
 /**
@@ -273,5 +282,204 @@ describe('disconnectSentinelObservers', () => {
 
 	it('handles null root without throwing', () => {
 		expect(() => disconnectSentinelObservers(null)).not.toThrow();
+	});
+});
+
+describe('extractRenderedItems', () => {
+	/**
+	 * @param {string} html Region markup to parse.
+	 * @return {Document} Parsed document.
+	 */
+	function parse(html) {
+		return new window.DOMParser().parseFromString(html, 'text/html');
+	}
+
+	it('reads the grid host\u2019s items', () => {
+		const doc = parse(
+			`<ul ${'data-dsgo-query-results-role="container" data-dsgo-query-id="q1"'}>` +
+				'<li class="dsgo-query__item">A</li>' +
+				'<li class="dsgo-query__item">B</li>' +
+				'</ul>'
+		);
+
+		const items = extractRenderedItems(doc, 'q1');
+		expect(items).toHaveLength(2);
+		expect(items[0].textContent).toBe('A');
+	});
+
+	it('reads a carousel host\u2019s items, which carry no item class', () => {
+		// A non-grid host renders each item as a bare designsetgo/slide, so
+		// matching on .dsgo-query__item would find nothing at all.
+		const doc = parse(
+			'<div class="dsgo-slider__track" ' +
+				'data-dsgo-query-results-role="container" data-dsgo-query-id="q2">' +
+				'<div class="dsgo-slide">A</div>' +
+				'<div class="dsgo-slide">B</div>' +
+				'<div class="dsgo-slide">C</div>' +
+				'</div>'
+		);
+
+		const items = extractRenderedItems(doc, 'q2');
+		expect(items).toHaveLength(3);
+		expect(items.every((el) => el.classList.contains('dsgo-slide'))).toBe(
+			true
+		);
+	});
+
+	it('keeps group sections intact rather than flattening them', () => {
+		const doc = parse(
+			'<ul data-dsgo-query-results-role="container" data-dsgo-query-id="q3">' +
+				'<section class="dsgo-query-group">' +
+				'<li class="dsgo-query__item">A</li>' +
+				'</section>' +
+				'</ul>'
+		);
+
+		const items = extractRenderedItems(doc, 'q3');
+		expect(items).toHaveLength(1);
+		expect(items[0].tagName).toBe('SECTION');
+	});
+
+	it('falls back to the item class when there is no container', () => {
+		const doc = parse('<div><li class="dsgo-query__item">A</li></div>');
+
+		expect(extractRenderedItems(doc, 'q4')).toHaveLength(1);
+	});
+
+	it('returns nothing for a missing document', () => {
+		expect(extractRenderedItems(null, 'q5')).toEqual([]);
+	});
+});
+
+describe('itemContainerSelector', () => {
+	it('scopes to the role and the query id together', () => {
+		expect(itemContainerSelector('abc')).toBe(
+			'[data-dsgo-query-results-role="container"][data-dsgo-query-id="abc"]'
+		);
+	});
+});
+
+describe('re-init notifications', () => {
+	it('announces a replaced region on the document', () => {
+		const region = document.createElement('div');
+		document.body.appendChild(region);
+
+		const listener = jest.fn();
+		document.addEventListener('dsgo-content-loaded', listener);
+
+		notifyContentUpdated(region, 'query-refresh');
+
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(listener.mock.calls[0][0].detail).toEqual({
+			source: 'query-refresh',
+			container: region,
+		});
+
+		document.removeEventListener('dsgo-content-loaded', listener);
+		region.remove();
+	});
+
+	it('does not throw without a root', () => {
+		expect(() => notifyContentUpdated(null, 'query-refresh')).not.toThrow();
+	});
+
+	it('announces appended items on the container, and bubbles', () => {
+		const host = document.createElement('div');
+		const container = document.createElement('div');
+		host.appendChild(container);
+		document.body.appendChild(host);
+
+		const listener = jest.fn();
+		host.addEventListener('dsgo-query-items-appended', listener);
+
+		notifyItemsAppended(container, 'q1', 3);
+
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(listener.mock.calls[0][0].detail).toEqual({
+			queryId: 'q1',
+			added: 3,
+		});
+
+		host.remove();
+	});
+
+	it('does not throw without a container', () => {
+		expect(() => notifyItemsAppended(null, 'q1', 1)).not.toThrow();
+	});
+});
+
+describe('delegated-fallback de-duplication', () => {
+	afterEach(() => {
+		resetHandledEvents();
+		jest.useRealTimers();
+	});
+
+	it('claims a native event by identity', () => {
+		const button = document.createElement('button');
+		const event = new MouseEvent('click');
+		Object.defineProperty(event, 'target', { value: button });
+
+		expect(isHandledEvent(event)).toBe(false);
+		markHandledEvent(event);
+		expect(isHandledEvent(event)).toBe(true);
+	});
+
+	// The regression this exists for: the Interactivity API hands store
+	// actions a Proxy around the native event, so the object the action marks
+	// is never the object the document-level listener receives. Before the
+	// target-based claim, that made a single Load more click fire two REST
+	// requests and append the same page twice — in a carousel and in a grid.
+	it('claims an event the store only ever saw through a Proxy', () => {
+		const button = document.createElement('button');
+		const native = new MouseEvent('click');
+		Object.defineProperty(native, 'target', { value: button });
+		const wrapped = new Proxy(native, {
+			get(target, prop, receiver) {
+				const value = Reflect.get(target, prop, receiver);
+				return value instanceof Function ? value.bind(target) : value;
+			},
+		});
+
+		expect(wrapped).not.toBe(native);
+		markHandledEvent(wrapped);
+
+		expect(isHandledEvent(native)).toBe(true);
+	});
+
+	it('does not claim an unrelated element event', () => {
+		const claimed = document.createElement('button');
+		const other = document.createElement('button');
+		const first = new MouseEvent('click');
+		Object.defineProperty(first, 'target', { value: claimed });
+		const second = new MouseEvent('click');
+		Object.defineProperty(second, 'target', { value: other });
+
+		markHandledEvent(first);
+
+		expect(isHandledEvent(second)).toBe(false);
+	});
+
+	it('releases the claim on the next task so the next click is not swallowed', () => {
+		jest.useFakeTimers();
+		const button = document.createElement('button');
+		const first = new MouseEvent('click');
+		Object.defineProperty(first, 'target', { value: button });
+
+		markHandledEvent(first);
+
+		// A second click on the same button, after the dispatch that set the
+		// claim has finished — the delegated handler must be free to run it if
+		// the store is no longer alive for that element.
+		jest.advanceTimersByTime(1);
+		const second = new MouseEvent('click');
+		Object.defineProperty(second, 'target', { value: button });
+
+		expect(isHandledEvent(second)).toBe(false);
+	});
+
+	it('ignores non-objects', () => {
+		expect(isHandledEvent(null)).toBe(false);
+		expect(isHandledEvent(undefined)).toBe(false);
+		expect(() => markHandledEvent(null)).not.toThrow();
 	});
 });
