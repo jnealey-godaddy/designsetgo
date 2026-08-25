@@ -72,8 +72,8 @@ const OLD_SVG_MARKUP = `<!-- wp:designsetgo/section {"shapeDividerTop":"wave","s
 // background color (no explicit shapeDividerBottomColor set), matching
 // V4ShapeDivider's inheritance behavior used by deprecations v4/v5/v6.
 // Built from v4's own save() so the fixture is byte-exact.
-// deprecated.js exports deprecations newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
-const [, , , , , v4Deprecation] = deprecated;
+// deprecated.js exports deprecations newest-first: [v10, v9, v8, v7, v6, v5, v4, v3, v2, v1].
+const [, , , , , , v4Deprecation] = deprecated;
 const OLD_SVG_MARKUP_BOTTOM_INHERITED = buildOldMarkup(
 	{
 		shapeDividerBottom: 'tilt',
@@ -124,7 +124,7 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 	// wave/tilt, which were NOT redesigned, so they can't catch this.
 	test('deprecations reproduce frozen legacy geometry for redesigned shapes (drops)', () => {
 		// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
-		const [, , , , , v4Dep, v3Dep] = deprecated;
+		const [, , , , , , v4Dep, v3Dep] = deprecated;
 
 		[v3Dep, v4Dep].forEach((deprecation) => {
 			const markup = buildOldMarkup(
@@ -141,7 +141,7 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 
 describe('section deprecations - style-kit overlay variation migration (v7)', () => {
 	// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
-	const [, , v7Deprecation] = deprecated;
+	const [, , , v7Deprecation] = deprecated;
 
 	// Reproduce content saved BEFORE this change by taking what the block
 	// ACTUALLY serializes today (carrying block.json defaults such as the
@@ -265,7 +265,7 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 
 describe('section deprecations - style-kit hover variation migration (v8)', () => {
 	// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
-	const [, v8Deprecation] = deprecated;
+	const [, , v8Deprecation] = deprecated;
 
 	// Reproduce content saved BEFORE hover-variation classes existed by taking
 	// the block's REAL current serialization and stripping the hover-text
@@ -422,7 +422,7 @@ describe('section deprecations - style-kit hover variation migration (v8)', () =
 
 describe('section deprecations - height-derived px clearance migration (v9)', () => {
 	// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
-	const [v9Deprecation] = deprecated;
+	const [, v9Deprecation] = deprecated;
 
 	// v9's own save() reproduces the pre-change output: the inner container's
 	// shape-divider clearance is derived from the divider height and emitted as
@@ -621,5 +621,89 @@ describe('section - nullable shape divider height/width (theme inheritance)', ()
 		expect(block.attributes.shapeDividerTopWidth).toBe(140);
 		expect(getBlockContent(block)).toContain('--dsgo-shape-height:80px');
 		expect(getBlockContent(block)).toContain('--dsgo-shape-width:140%');
+	});
+});
+
+describe('section deprecations - unconstrained markup without the attribute (v10)', () => {
+	// Real-world content (page builders, generated markup, hand-edited post
+	// content) turns the width constraint off the way it LOOKS like it works —
+	// by putting `dsgo-no-width-constraint` on the block's `className` — and then
+	// writes an inner container with no `style` at all, which is exactly what an
+	// unconstrained section renders as.
+	//
+	// The block, though, reads `constrainWidth`, not the class. That attribute
+	// defaults to `true`, so it is absent from the comment, so the current
+	// save() emits `max-width:…;margin-left:auto;margin-right:auto` on
+	// `.dsgo-stack__inner` — one attribute the stored HTML does not have, and the
+	// section is invalid ("Attempt Recovery"). The same shape reaches us from the
+	// 92-minute window on 2025-11-10 (6cbf8183…1bbdbefa) when `constrainWidth`
+	// itself defaulted to `false`, and from any handoff that dropped the inline
+	// style.
+	//
+	// The stored markup is unambiguous about intent — no inner width style means
+	// no width constraint — so the deprecation reads it back into the attribute.
+	const unconstrainedAttrs = { className: 'dsgo-no-width-constraint' };
+	const currentHTML = getSaveContent(
+		{ ...metadata, save },
+		{ ...createBlock(metadata.name, unconstrainedAttrs).attributes },
+		[]
+	);
+	// Strip the inner width style, leaving the class list untouched — the exact
+	// difference the editor reports between generated and stored content.
+	const storedHTML = currentHTML.replace(
+		/(<div class="dsgo-stack__inner")[^>]*>/,
+		'$1>'
+	);
+	const UNCONSTRAINED_MARKUP = `<!-- wp:designsetgo/section ${JSON.stringify(
+		unconstrainedAttrs
+	)} -->\n${storedHTML}\n<!-- /wp:designsetgo/section -->`;
+
+	test('the fixture differs from current save() only by the inner width style', () => {
+		expect(currentHTML).toContain(
+			'<div class="dsgo-stack__inner" style="max-width:'
+		);
+		expect(storedHTML).toContain('<div class="dsgo-stack__inner">');
+		expect(storedHTML).not.toContain('max-width');
+	});
+
+	test('the section stays valid instead of asking for recovery', () => {
+		const [block] = parse(UNCONSTRAINED_MARKUP);
+
+		// A silent deprecation migration logs "Block successfully updated" —
+		// the desired outcome, and it must be consumed explicitly here (see the
+		// shape-divider describe above).
+		expect(console).toHaveInformed();
+
+		expect(block.name).toBe('designsetgo/section');
+		expect(block.isValid).toBe(true);
+	});
+
+	test('migration records the intent the markup expressed', () => {
+		const [block] = parse(UNCONSTRAINED_MARKUP);
+		expect(console).toHaveInformed();
+
+		expect(block.attributes.constrainWidth).toBe(false);
+	});
+
+	test('the migrated block re-serializes to the same unconstrained markup', () => {
+		const [block] = parse(UNCONSTRAINED_MARKUP);
+		expect(console).toHaveInformed();
+
+		expect(getBlockContent(block)).toContain(
+			'<div class="dsgo-stack__inner">'
+		);
+		expect(getBlockContent(block)).not.toContain('max-width');
+	});
+
+	test('a constrained section is untouched by the new deprecation', () => {
+		const constrained = `<!-- wp:designsetgo/section -->\n${getSaveContent(
+			{ ...metadata, save },
+			createBlock(metadata.name).attributes,
+			[]
+		)}\n<!-- /wp:designsetgo/section -->`;
+		const [block] = parse(constrained);
+
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.constrainWidth).toBe(true);
 	});
 });
