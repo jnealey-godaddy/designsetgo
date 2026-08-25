@@ -248,22 +248,7 @@ const v3 = {
 			)
 		);
 	},
-	migrate(attributes) {
-		const { borderRadius, ...rest } = attributes;
-		if (!borderRadius) {
-			return rest;
-		}
-		return {
-			...rest,
-			style: {
-				...rest.style,
-				border: {
-					...rest.style?.border,
-					radius: borderRadius,
-				},
-			},
-		};
-	},
+	migrate: migrateLegacyRadiusAndFit,
 	save({ attributes }) {
 		const {
 			rows,
@@ -381,11 +366,10 @@ const v2 = {
 			)
 		);
 	},
-	migrate(attributes) {
-		// objectFit's block.json default ('cover') is filled in
-		// automatically; the prior hard-coded CSS matched that value.
-		return attributes;
-	},
+	// The prior hard-coded CSS matched objectFit's 'cover' default, and the
+	// legacy borderRadius becomes a border support value — neither happens on
+	// its own. See migrateLegacyRadiusAndFit.
+	migrate: migrateLegacyRadiusAndFit,
 	save({ attributes }) {
 		const {
 			rows,
@@ -476,6 +460,51 @@ const htmlSourcedRows = {
 	},
 	default: [],
 };
+
+/**
+ * Lands a pre-`objectFit`, `borderRadius`-era block on the CURRENT schema.
+ *
+ * Two things WordPress will NOT do on a deprecation's behalf, and both are
+ * silent until an author presses Update:
+ *
+ * 1. `objectFit` is absent from these versions' schemas, so migrate() hands
+ *    back `undefined` — block.json's `'cover'` default is applied when
+ *    PARSING a comment, not to a deprecation's migrated attributes. The
+ *    current save() then emits no `--dsgo-marquee-object-fit` (React drops an
+ *    undefined style value), while the NEXT parse fills in `'cover'` and
+ *    regenerates the property. The block WordPress just wrote reads back
+ *    INVALID: "Attempt Recovery" on content that was fine a moment earlier.
+ * 2. `borderRadius` is no longer a registered attribute, and WordPress never
+ *    serializes an attribute the current block type does not declare, so the
+ *    radius is lost unless it moves onto the border support here.
+ *
+ * v3 already did (2). It lives here instead because deprecations do NOT
+ * cascade — exactly one entry runs per stored block — so every entry older
+ * than the change must carry the conversion itself. See CLAUDE.md,
+ * "deprecations do not cascade".
+ *
+ * @param {Object} attributes Attributes parsed against the deprecated schema.
+ * @return {Object} Attributes valid against the current schema.
+ */
+function migrateLegacyRadiusAndFit(attributes) {
+	const { borderRadius, ...rest } = attributes;
+	const migrated = { ...rest, objectFit: rest.objectFit ?? 'cover' };
+
+	if (!borderRadius) {
+		return migrated;
+	}
+
+	return {
+		...migrated,
+		style: {
+			...migrated.style,
+			border: {
+				...migrated.style?.border,
+				radius: borderRadius,
+			},
+		},
+	};
+}
 
 // Shared normalization for HTML-sourced deprecations: images come back
 // without ids and scrollSpeed as a string from the HTML attribute source.
@@ -650,9 +679,12 @@ const v1 = {
 		},
 	},
 	supports: sharedSupports,
-	// Shared with v1ObjectFit: normalizes HTML-sourced rows (adds id: 0) and
-	// coerces the string data-scroll-speed to a number.
-	migrate: migrateHtmlSourced,
+	// Normalizes HTML-sourced rows (adds id: 0) and coerces the string
+	// data-scroll-speed to a number, like v1ObjectFit — then lands the
+	// pre-objectFit / borderRadius-era attributes on the current schema, which
+	// v1ObjectFit does not need (it declares objectFit and has no radius).
+	migrate: (attributes) =>
+		migrateLegacyRadiusAndFit(migrateHtmlSourced(attributes)),
 	save({ attributes }) {
 		const {
 			rows,
