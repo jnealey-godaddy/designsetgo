@@ -5,6 +5,8 @@
  * URL collection, filter action URL transforms, observer bookkeeping, and the
  * accessibility helpers (feed position stamping + result-count announcements).
  */
+
+/* global MouseEvent */
 import '@testing-library/jest-dom';
 
 import {
@@ -20,6 +22,9 @@ import {
 	extractRenderedItems,
 	notifyContentUpdated,
 	notifyItemsAppended,
+	markHandledEvent,
+	isHandledEvent,
+	resetHandledEvents,
 } from '../../../../src/blocks/query/view-helpers.js';
 
 /**
@@ -400,5 +405,81 @@ describe('re-init notifications', () => {
 
 	it('does not throw without a container', () => {
 		expect(() => notifyItemsAppended(null, 'q1', 1)).not.toThrow();
+	});
+});
+
+describe('delegated-fallback de-duplication', () => {
+	afterEach(() => {
+		resetHandledEvents();
+		jest.useRealTimers();
+	});
+
+	it('claims a native event by identity', () => {
+		const button = document.createElement('button');
+		const event = new MouseEvent('click');
+		Object.defineProperty(event, 'target', { value: button });
+
+		expect(isHandledEvent(event)).toBe(false);
+		markHandledEvent(event);
+		expect(isHandledEvent(event)).toBe(true);
+	});
+
+	// The regression this exists for: the Interactivity API hands store
+	// actions a Proxy around the native event, so the object the action marks
+	// is never the object the document-level listener receives. Before the
+	// target-based claim, that made a single Load more click fire two REST
+	// requests and append the same page twice — in a carousel and in a grid.
+	it('claims an event the store only ever saw through a Proxy', () => {
+		const button = document.createElement('button');
+		const native = new MouseEvent('click');
+		Object.defineProperty(native, 'target', { value: button });
+		const wrapped = new Proxy(native, {
+			get(target, prop, receiver) {
+				const value = Reflect.get(target, prop, receiver);
+				return value instanceof Function ? value.bind(target) : value;
+			},
+		});
+
+		expect(wrapped).not.toBe(native);
+		markHandledEvent(wrapped);
+
+		expect(isHandledEvent(native)).toBe(true);
+	});
+
+	it('does not claim an unrelated element event', () => {
+		const claimed = document.createElement('button');
+		const other = document.createElement('button');
+		const first = new MouseEvent('click');
+		Object.defineProperty(first, 'target', { value: claimed });
+		const second = new MouseEvent('click');
+		Object.defineProperty(second, 'target', { value: other });
+
+		markHandledEvent(first);
+
+		expect(isHandledEvent(second)).toBe(false);
+	});
+
+	it('releases the claim on the next task so the next click is not swallowed', () => {
+		jest.useFakeTimers();
+		const button = document.createElement('button');
+		const first = new MouseEvent('click');
+		Object.defineProperty(first, 'target', { value: button });
+
+		markHandledEvent(first);
+
+		// A second click on the same button, after the dispatch that set the
+		// claim has finished — the delegated handler must be free to run it if
+		// the store is no longer alive for that element.
+		jest.advanceTimersByTime(1);
+		const second = new MouseEvent('click');
+		Object.defineProperty(second, 'target', { value: button });
+
+		expect(isHandledEvent(second)).toBe(false);
+	});
+
+	it('ignores non-objects', () => {
+		expect(isHandledEvent(null)).toBe(false);
+		expect(isHandledEvent(undefined)).toBe(false);
+		expect(() => markHandledEvent(null)).not.toThrow();
 	});
 });

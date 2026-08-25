@@ -834,6 +834,10 @@ The query container still accepts `designsetgo/query-filter`, `designsetgo/query
 
   **A host whose layout derives from the item count must handle this event.** `designsetgo/slider` does. `designsetgo/scroll-slides` does not: its pin-spacer height and nav are built once at init with no teardown path, so appended panels would be unreachable. Pair scroll-slides with `numbered` pagination, or none at all.
 
+**One interaction, one request.** Every control is wired twice — the Interactivity API store action bound to the element, and the document-level delegated listener that keeps working once a refresh has de-hydrated the markup. `markHandledEvent()` / `isHandledEvent()` in `view-helpers.js` decide which one acts, and **the claim is keyed on `event.target`, not on the event object.** That is not a shortcut: the IAPI passes store actions a `Proxy` around the native event (`wrapEventAsync()`, skipped only for actions wrapped in `withSyncEvent()`), so an identity check can never match the event the delegated listener receives — which is what made a single Load more click fetch and append the same page twice. `withScope()` runs a generator action synchronously up to its first `yield`, so the claim is always in place before the event bubbles to `document`; it is released on the next task.
+
+  If you add a delegated handler here, claim through those helpers rather than by event identity, and remember that two *different* events from one gesture still count twice — blurring a search input to click Submit fires `change` and then `submit`, so the `change` handler stands down for any control inside a `form[data-wp-on--submit]`.
+
 **Pagination × presentation.** `designsetgo/query-pagination` adapts to the host:
 
 | Kind | Grid host | Carousel host (slider, scroll-slides) |

@@ -23,12 +23,9 @@ import {
 	extractRenderedItems as dsgoExtractRenderedItems,
 	notifyContentUpdated as dsgoNotifyContentUpdated,
 	notifyItemsAppended as dsgoNotifyItemsAppended,
+	markHandledEvent as dsgoMarkHandledEvent,
+	isHandledEvent as dsgoIsHandledEvent,
 } from './view-helpers.js';
-
-// Events already processed by the IAPI store (first render). Used by the
-// delegated fallback listener so we never double-fire. The WeakSet lets the
-// browser GC events when they're done.
-const dsgoHandledEvents = new WeakSet();
 
 // Query IDs with an in-flight delegated refresh. The delegated handlers build
 // a fresh ctx object from the DOM each call, so the ctx.busy guard inside
@@ -62,7 +59,7 @@ store('designsetgo/query', {
 		 */
 		*setFilter(event) {
 			event.preventDefault?.();
-			dsgoHandledEvents.add(event);
+			dsgoMarkHandledEvent(event);
 			const { ref } = getElement();
 			// ref may be the form (submit event) or the input/select (change event).
 			const form =
@@ -100,7 +97,7 @@ store('designsetgo/query', {
 		 */
 		*toggleFilter(event) {
 			if (event) {
-				dsgoHandledEvents.add(event);
+				dsgoMarkHandledEvent(event);
 			}
 			const { ref } = getElement();
 			const paramName = ref.getAttribute('name')?.replace(/\[\]$/, '');
@@ -142,7 +139,7 @@ store('designsetgo/query', {
 		 */
 		*removeActiveFilter(event) {
 			event.preventDefault?.();
-			dsgoHandledEvents.add(event);
+			dsgoMarkHandledEvent(event);
 			const { ref } = getElement();
 			const href = ref.getAttribute('href');
 			if (!href) {
@@ -166,7 +163,7 @@ store('designsetgo/query', {
 		 */
 		*resetAll(event) {
 			event.preventDefault?.();
-			dsgoHandledEvents.add(event);
+			dsgoMarkHandledEvent(event);
 			const { ref } = getElement();
 			const href = ref.getAttribute('href');
 			const ctx = getContext();
@@ -210,21 +207,11 @@ store('designsetgo/query', {
 // swapped DOM becomes a silent no-op.
 //
 // Fix: attach document-level delegated listeners once at module load. When
-// IAPI is alive for an element, its store action fires first and marks the
-// event via dsgoHandledEvents — the delegated handler bails. When IAPI is
+// IAPI is alive for an element, its store action fires first and claims the
+// event via markHandledEvent() — the delegated handler bails. When IAPI is
 // dead (post-swap DOM), only the delegated handler runs and drives the same
-// URL-manipulation + dsgoQueryRefreshPlain() path.
-
-/**
- * Mark a native event as already handled by the Interactivity API store.
- *
- * @param {Event} event Native event object.
- */
-function dsgoMarkHandledEvent(event) {
-	if (event && typeof event === 'object') {
-		dsgoHandledEvents.add(event);
-	}
-}
+// URL-manipulation + dsgoQueryRefreshPlain() path. See view-helpers.js for
+// why the claim cannot be a plain identity check on the event object.
 
 /**
  * Serialise delegated-path network work per queryId.
@@ -526,7 +513,7 @@ function dsgoInitInfiniteObservers(root = document) {
  * @param {Event} event Native change event.
  */
 function dsgoDelegatedChange(event) {
-	if (dsgoHandledEvents.has(event)) {
+	if (dsgoIsHandledEvent(event)) {
 		return;
 	}
 	const target = event.target;
@@ -535,6 +522,14 @@ function dsgoDelegatedChange(event) {
 	}
 	const filterRoot = target.closest('.dsgo-query-filter');
 	if (!filterRoot) {
+		return;
+	}
+	// A search filter submits, and blurring its input to click Submit fires
+	// `change` first — so acting on both turns one interaction into two
+	// identical REST round-trips. The submit path owns these controls in
+	// either state: live, IAPI's setFilter runs it; de-hydrated,
+	// dsgoDelegatedSubmit does.
+	if (target.closest('form[data-wp-on--submit]')) {
 		return;
 	}
 	const rawName =
@@ -599,7 +594,7 @@ function dsgoDelegatedChange(event) {
  * @param {Event} event Native submit event.
  */
 function dsgoDelegatedSubmit(event) {
-	if (dsgoHandledEvents.has(event)) {
+	if (dsgoIsHandledEvent(event)) {
 		return;
 	}
 	const target = event.target;
@@ -640,7 +635,7 @@ function dsgoDelegatedSubmit(event) {
  * @param {Event} event Native click event.
  */
 function dsgoDelegatedClick(event) {
-	if (dsgoHandledEvents.has(event)) {
+	if (dsgoIsHandledEvent(event)) {
 		return;
 	}
 	const target = event.target;

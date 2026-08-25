@@ -75,7 +75,7 @@ export function parseSliderConfig(slider) {
 }
 
 /**
- * Resolve how many slides are on screen at the current viewport width.
+ * Predict how many slides are on screen at the current viewport width.
  *
  * style.scss sizes the slides from three custom properties behind
  * `max-width` media queries; the JS needs the same number to decide how many
@@ -83,6 +83,13 @@ export function parseSliderConfig(slider) {
  * slides, and which slides are visible to assistive tech. Reading only the
  * desktop value — as this used to — over-scrolls past the last slide and
  * mislabels visible slides as hidden on every device but the widest.
+ *
+ * This is a *prediction*, used only before there is any layout to measure.
+ * It assumes the author left `mobileBreakpoint` / `tabletBreakpoint` at the
+ * values style.scss hardcodes, which is not something the JS can enforce — a
+ * media query cannot read a custom property. Once the slider has painted,
+ * DSGSlider.measuredSlidesPerView() supersedes this by measuring the slide
+ * CSS actually rendered, so an author-moved breakpoint self-corrects.
  *
  * @param {Object} config Parsed slider config.
  * @param {number} width  Viewport width in pixels.

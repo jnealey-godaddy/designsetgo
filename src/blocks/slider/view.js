@@ -194,10 +194,18 @@ class DSGSlider {
 		}
 
 		requestAnimationFrame(() => {
+			// What the clones, bounds and dots above were built for, before
+			// there was any layout to measure.
+			const predicted = this.perView();
 			this.updateDimensions();
 
 			if (this.config.scrollDriven) {
 				this.scrollDriven = new ScrollDrivenController(this);
+			} else if (this.perView() !== predicted) {
+				// CSS disagreed with the attributes — an author-moved
+				// breakpoint, or a container narrower than the viewport.
+				// refresh() rebuilds everything derived from the count.
+				this.refresh();
 			} else {
 				this.goToSlide(this.currentIndex, false);
 			}
@@ -266,6 +274,32 @@ class DSGSlider {
 		return Math.min(this.currentIndex, this.dotCount() - 1);
 	}
 
+	/**
+	 * Slides on screen, measured from what CSS actually laid out.
+	 *
+	 * style.scss owns the breakpoints and always will: a media query cannot
+	 * read a custom property, so `mobileBreakpoint` / `tabletBreakpoint` —
+	 * both author-editable in the inspector — cannot be pushed into the
+	 * stylesheet, and slidesPerViewFor()'s answer is only right for an author
+	 * who left them at 768 / 1024. Measuring the rendered slide against the
+	 * viewport keeps the two in agreement whatever the author sets.
+	 *
+	 * @return {number} Measured slides per view, or 0 before layout settles.
+	 */
+	measuredSlidesPerView() {
+		const viewportWidth = this.viewport?.clientWidth || 0;
+		const step = this.cachedSlideWidth + this.cachedGap;
+		if (viewportWidth <= 0 || this.cachedSlideWidth <= 0 || step <= 0) {
+			return 0;
+		}
+		// The trailing slide has no gap after it, so add one back before
+		// dividing. Rounded to a tenth because sub-pixel widths otherwise
+		// measure a clean three-up as 2.997, and perView()'s Math.ceil()
+		// would then reserve — and clone — a fourth slide.
+		const measured = (viewportWidth + this.cachedGap) / step;
+		return Math.round(measured * 10) / 10;
+	}
+
 	updateDimensions() {
 		this.slidesPerView = slidesPerViewFor(this.config, window.innerWidth);
 		if (this.slides.length === 0) {
@@ -275,6 +309,14 @@ class DSGSlider {
 		this.cachedSlideWidth = this.slides[0].offsetWidth;
 		this.cachedGap =
 			parseFloat(window.getComputedStyle(this.track).gap) || 0;
+
+		// Prefer what CSS did over what the attributes predicted. The
+		// prediction above stands only until layout exists to measure —
+		// the constructor needs a slide count before first paint.
+		const measured = this.measuredSlidesPerView();
+		if (measured > 0) {
+			this.slidesPerView = measured;
+		}
 	}
 
 	/** Re-measure and re-apply the current position without rebuilding. */
@@ -282,9 +324,14 @@ class DSGSlider {
 		if (this.isDestroyed) {
 			return;
 		}
+		const before = this.perView();
 		this.updateDimensions();
 		if (this.scrollDriven) {
 			this.scrollDriven.resize();
+		} else if (this.perView() !== before) {
+			// The first measurable layout disagreed with the prediction the
+			// clones were built from; rebuild rather than move.
+			this.refresh();
 		} else {
 			this.goToSlide(this.currentIndex, false);
 		}

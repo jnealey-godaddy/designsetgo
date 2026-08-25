@@ -404,3 +404,163 @@ describe('Loop Carousel re-sync', () => {
 		).toBe(true);
 	});
 });
+
+describe('drag versus click', () => {
+	/**
+	 * @param {HTMLElement} track  Slider track.
+	 * @param {number}      travel Horizontal pixels the pointer moves.
+	 */
+	function dragBy(track, travel) {
+		track.dispatchEvent(
+			new MouseEvent('mousedown', { clientX: 500, bubbles: true })
+		);
+		document.dispatchEvent(
+			new MouseEvent('mousemove', {
+				clientX: 500 - travel,
+				bubbles: true,
+			})
+		);
+		document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+	}
+
+	// A Loop Carousel's slides are post links. Before the drag origin was
+	// fixed, drag was unusable and this never came up; now that it works, the
+	// click the browser fires after a drag would navigate the reader away.
+	test('swallows the click that follows a drag', () => {
+		const slider = createSlider({
+			slideCount: 4,
+			dataAttributes: { draggable: 'true' },
+		});
+		const link = document.createElement('a');
+		link.href = 'https://example.com/post';
+		link.textContent = 'Post';
+		trackOf(slider).firstElementChild.appendChild(link);
+		requireAndInit();
+
+		dragBy(trackOf(slider), 120);
+
+		const click = new MouseEvent('click', {
+			bubbles: true,
+			cancelable: true,
+		});
+		link.dispatchEvent(click);
+
+		expect(click.defaultPrevented).toBe(true);
+	});
+
+	test('lets a plain click through', () => {
+		const slider = createSlider({
+			slideCount: 4,
+			dataAttributes: { draggable: 'true' },
+		});
+		const link = document.createElement('a');
+		link.href = 'https://example.com/post';
+		trackOf(slider).firstElementChild.appendChild(link);
+		requireAndInit();
+
+		trackOf(slider).dispatchEvent(
+			new MouseEvent('mousedown', { clientX: 500, bubbles: true })
+		);
+		document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+
+		const click = new MouseEvent('click', {
+			bubbles: true,
+			cancelable: true,
+		});
+		link.dispatchEvent(click);
+
+		expect(click.defaultPrevented).toBe(false);
+	});
+
+	test('only swallows one click per drag', () => {
+		const slider = createSlider({
+			slideCount: 4,
+			dataAttributes: { draggable: 'true' },
+		});
+		const link = document.createElement('a');
+		link.href = 'https://example.com/post';
+		trackOf(slider).firstElementChild.appendChild(link);
+		requireAndInit();
+
+		dragBy(trackOf(slider), 120);
+
+		const swallowed = new MouseEvent('click', {
+			bubbles: true,
+			cancelable: true,
+		});
+		link.dispatchEvent(swallowed);
+		const next = new MouseEvent('click', {
+			bubbles: true,
+			cancelable: true,
+		});
+		link.dispatchEvent(next);
+
+		expect(swallowed.defaultPrevented).toBe(true);
+		expect(next.defaultPrevented).toBe(false);
+	});
+});
+
+describe('slides per view is measured, not predicted', () => {
+	/**
+	 * Give the viewport a real width so the runtime can measure it. jsdom
+	 * reports clientWidth as 0, which is the runtime's "layout is not ready"
+	 * signal and makes it fall back to the attribute prediction.
+	 *
+	 * @param {HTMLElement} slider Slider root.
+	 * @param {number}      width  Viewport width in pixels.
+	 */
+	function stubViewportWidth(slider, width) {
+		Object.defineProperty(
+			slider.querySelector('.dsgo-slider__viewport'),
+			'clientWidth',
+			{ configurable: true, value: width }
+		);
+	}
+
+	// style.scss hardcodes its breakpoints at 768/1024 and a media query
+	// cannot read a custom property, so an author who moves mobileBreakpoint
+	// gets CSS and JS disagreeing about how many slides are on screen —
+	// exactly the class of bug the responsive parsing fix was for. Measuring
+	// what CSS laid out is what keeps them together.
+	test('CSS wins when an author-moved breakpoint contradicts the attributes', () => {
+		setViewportWidth(DESKTOP_WIDTH);
+		const slider = createSlider({
+			slideCount: 6,
+			dataAttributes: {
+				slidesPerView: 3,
+				mobileBreakpoint: 400,
+				tabletBreakpoint: 600,
+			},
+		});
+		// CSS laid out one slide across the viewport, not three.
+		stubViewportWidth(slider, SLIDE_WIDTH);
+		requireAndInit();
+
+		// Prediction says 3 on screen, so the track would stop at index 3.
+		// Measurement says 1, so all six slides stay reachable.
+		for (let i = 0; i < 8; i++) {
+			pressKey(slider, 'ArrowRight');
+		}
+		expect(trackOf(slider).style.transform).toBe(
+			`translateX(-${SLIDE_WIDTH * 5}px)`
+		);
+	});
+
+	test('falls back to the attributes before there is layout to measure', () => {
+		setViewportWidth(DESKTOP_WIDTH);
+		const slider = createSlider({
+			slideCount: 6,
+			dataAttributes: { slidesPerView: 3 },
+		});
+		requireAndInit();
+
+		// clientWidth is 0 in jsdom, so the prediction stands and the track
+		// stops with the last slide on screen.
+		for (let i = 0; i < 8; i++) {
+			pressKey(slider, 'ArrowRight');
+		}
+		expect(trackOf(slider).style.transform).toBe(
+			`translateX(-${SLIDE_WIDTH * 3}px)`
+		);
+	});
+});

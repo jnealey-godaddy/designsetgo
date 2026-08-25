@@ -137,6 +137,13 @@ slide/
 - **Data Attributes**: Configuration passed to JavaScript
 - **Class-based JS**: DSGSlider owns navigation state; `view/` modules own the
   parts that do not need it
+- **CSS owns slides-per-view**: `style.scss` hardcodes the 768/1024 breakpoints
+  because a media query cannot read a custom property, so the block's editable
+  `mobileBreakpoint` / `tabletBreakpoint` cannot be pushed into it.
+  `slidesPerViewFor()` is therefore only a first-paint prediction;
+  `measuredSlidesPerView()` supersedes it once there is layout, and a
+  disagreement triggers `refresh()`. Do not derive clone counts, navigation
+  bounds or the ARIA window from the attributes directly.
 - **Loop Carousel**: inside a `designsetgo/query` the track doubles as the
   query's item container, so its children can change after init. `refresh()`
   rebuilds clones, dots and cached dimensions in response to

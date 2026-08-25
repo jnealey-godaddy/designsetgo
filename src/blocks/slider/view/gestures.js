@@ -10,6 +10,15 @@
 const THRESHOLD = 50;
 
 /**
+ * Pixels of travel past which a mouseup is a drag, not a click.
+ *
+ * Deliberately far below THRESHOLD: a 20px drag is too short to change slide
+ * but is still not someone clicking a link, and a Loop Carousel's slides are
+ * usually links.
+ */
+const CLICK_SLOP = 5;
+
+/**
  * Wire swipe navigation on a touch device.
  *
  * The horizontal distance is only acted on when it beats the vertical one:
@@ -82,12 +91,14 @@ export function initDrag(
 	let startX = 0;
 	let startOffset = 0;
 	let delta = 0;
+	let suppressClick = false;
 
 	const onMouseDown = (event) => {
 		isDragging = true;
 		startX = event.clientX;
 		startOffset = getOffset();
 		delta = 0;
+		suppressClick = false;
 		track.style.cursor = 'grabbing';
 	};
 
@@ -105,6 +116,10 @@ export function initDrag(
 		}
 		isDragging = false;
 		track.style.cursor = 'grab';
+		// The browser still fires a click on the common ancestor of mousedown
+		// and mouseup after a drag. Inside a slide that ancestor is usually
+		// the slide's own link, so without this a drag navigates away.
+		suppressClick = Math.abs(delta) > CLICK_SLOP;
 
 		if (Math.abs(delta) <= THRESHOLD) {
 			onCancel();
@@ -124,8 +139,20 @@ export function initDrag(
 		}
 	};
 
+	// Capture phase, so the link's own handler never sees it. The flag is
+	// one-shot: a click that is not the tail of a drag must always pass.
+	const onClickCapture = (event) => {
+		if (!suppressClick) {
+			return;
+		}
+		suppressClick = false;
+		event.preventDefault();
+		event.stopPropagation();
+	};
+
 	track.addEventListener('mousedown', onMouseDown);
 	track.addEventListener('dragstart', onDragStart);
+	track.addEventListener('click', onClickCapture, true);
 	document.addEventListener('mousemove', onMouseMove);
 	document.addEventListener('mouseup', onMouseUp);
 	track.style.cursor = 'grab';
@@ -133,6 +160,7 @@ export function initDrag(
 	return () => {
 		track.removeEventListener('mousedown', onMouseDown);
 		track.removeEventListener('dragstart', onDragStart);
+		track.removeEventListener('click', onClickCapture, true);
 		document.removeEventListener('mousemove', onMouseMove);
 		document.removeEventListener('mouseup', onMouseUp);
 		track.style.cursor = '';

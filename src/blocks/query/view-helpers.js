@@ -102,6 +102,87 @@ export function notifyItemsAppended(container, queryId, added) {
 	);
 }
 
+// ---------------------------------------------------------------------------
+// Delegated-fallback de-duplication
+// ---------------------------------------------------------------------------
+//
+// view.js runs every interaction twice over: once through the Interactivity
+// API store action bound to the element, and once through a document-level
+// delegated listener that exists to keep working after a filter refresh has
+// replaced (and so de-hydrated) the region's markup. Only one of them may do
+// the work.
+//
+// Identity alone cannot decide it. The IAPI hands a store action a *Proxy*
+// around the native event (`wrapEventAsync()` in @wordpress/interactivity,
+// skipped only for actions wrapped in `withSyncEvent()`), so the object the
+// action marks is never the object the document listener later receives, and
+// a WeakSet of marked events matches nothing. That is what made a single
+// Load more click fire two REST requests and append the same page twice.
+//
+// What is reliable is the *ordering* and the *target*. `withScope()` runs a
+// generator action's body synchronously up to its first `yield`, from inside
+// the element's own handler — so the mark is always in place before the same
+// event bubbles to document — and `event.target` read through the proxy is
+// the identical native node. So we match on the target and drop the mark on
+// the next task, once the dispatch that set it has finished.
+
+/** Native events already claimed by a store action, when identity survives. */
+const handledEvents = new WeakSet();
+
+/** Target of the event a store action claimed during the current dispatch. */
+let handledTarget = null;
+let handledTargetTimer = null;
+
+/**
+ * Claim an event on behalf of the live Interactivity API store.
+ *
+ * @param {Event} event Event handed to the store action (possibly a Proxy).
+ */
+export function markHandledEvent(event) {
+	if (!event || typeof event !== 'object') {
+		return;
+	}
+	handledEvents.add(event);
+	handledTarget = event.target || null;
+	if (handledTargetTimer) {
+		clearTimeout(handledTargetTimer);
+	}
+	// A macrotask, not a microtask: browsers take a microtask checkpoint
+	// between listener callbacks, so a promise would clear the mark before
+	// the event reached the document-level listener it exists to stop.
+	handledTargetTimer = setTimeout(() => {
+		handledTarget = null;
+		handledTargetTimer = null;
+	}, 0);
+}
+
+/**
+ * Whether the live store already handled this event.
+ *
+ * @param {Event} event Native event seen by a delegated listener.
+ * @return {boolean} True when the delegated handler must stand down.
+ */
+export function isHandledEvent(event) {
+	if (!event || typeof event !== 'object') {
+		return false;
+	}
+	if (handledEvents.has(event)) {
+		return true;
+	}
+	return handledTarget !== null && event.target === handledTarget;
+}
+
+/**
+ * Test seam — drop any standing claim.
+ */
+export function resetHandledEvents() {
+	handledTarget = null;
+	if (handledTargetTimer) {
+		clearTimeout(handledTargetTimer);
+		handledTargetTimer = null;
+	}
+}
+
 /**
  * Track live IntersectionObservers by their sentinel element so filter-refresh
  * innerHTML swaps can disconnect them before the sentinel becomes detached.
