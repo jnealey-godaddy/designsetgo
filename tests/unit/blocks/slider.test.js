@@ -443,6 +443,52 @@ describe('DSGSlider - Frontend', () => {
 			expect(prevBtn.getAttribute('type')).toBe('button');
 			expect(nextBtn.getAttribute('type')).toBe('button');
 		});
+
+		// The arrows were the characters ‹ and › — single-angle quotation
+		// marks, whose weight and optical centring come from whatever font the
+		// theme loads, so the same slider looked different on every site.
+		test('draws the chevron as an SVG path, not a text glyph', () => {
+			const slider = createSliderFixture({
+				dataAttributes: { showArrows: 'true' },
+			});
+			requireAndInit();
+
+			['prev', 'next'].forEach((direction) => {
+				const button = slider.querySelector(
+					`.dsgo-slider__arrow--${direction}`
+				);
+				const svg = button.querySelector('svg');
+
+				expect(svg).not.toBeNull();
+				expect(svg.querySelector('path')).not.toBeNull();
+				expect(button.textContent.trim()).toBe('');
+			});
+		});
+
+		test('hides the chevron from assistive tech, which reads the button', () => {
+			const slider = createSliderFixture({
+				dataAttributes: { showArrows: 'true' },
+			});
+			requireAndInit();
+
+			const svg = slider.querySelector('.dsgo-slider__arrow svg');
+			expect(svg.getAttribute('aria-hidden')).toBe('true');
+			expect(svg.getAttribute('focusable')).toBe('false');
+		});
+
+		test('points the two chevrons in opposite directions', () => {
+			const slider = createSliderFixture({
+				dataAttributes: { showArrows: 'true' },
+			});
+			requireAndInit();
+
+			const d = (direction) =>
+				slider
+					.querySelector(`.dsgo-slider__arrow--${direction} path`)
+					.getAttribute('d');
+
+			expect(d('prev')).not.toBe(d('next'));
+		});
 	});
 
 	// ------------------------------------------------------------------

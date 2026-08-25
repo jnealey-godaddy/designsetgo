@@ -77,3 +77,28 @@
 	transition-duration: $animation-duration-normal;
 	transition-timing-function: $animation-easing;
 }
+
+// Focus ring.
+// Restores a visible keyboard focus indicator on a control whose own styling
+// would otherwise swallow it. Two rings rather than one, because these
+// controls sit on backgrounds we do not choose — slider arrows and dots float
+// over author-supplied photography, tabs over whatever the theme paints. A
+// single colour cannot be guaranteed to contrast with both: the white ring
+// carries on dark ground, the dark halo carries on light, and one of the two
+// is always visible.
+// Pair with `&:focus { outline: none; }` ABOVE the include when a control
+// should stay unringed for pointer users — `:focus-visible` has the same
+// specificity, so source order decides and the ring wins for keyboard.
+@mixin focus-ring($offset: 2px) {
+	outline: 2px solid #fff;
+	outline-offset: $offset;
+	// Spread past the outline so the halo frames it rather than hiding under it.
+	box-shadow: 0 0 0 ($offset + 3px) rgba(0, 0, 0, 0.75);
+
+	// Forced-colors mode discards author colours, so hand focus back to the
+	// system highlight instead of leaving the control with no indicator.
+	@media (forced-colors: active) {
+		outline-color: Highlight;
+		box-shadow: none;
+	}
+}

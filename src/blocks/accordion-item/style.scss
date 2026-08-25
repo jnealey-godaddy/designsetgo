@@ -3,6 +3,8 @@
  * Enhanced UI/UX with smooth animations and better visual feedback
  */
 
+@use '../../styles/mixins' as *;
+
 .dsgo-accordion-item {
 	// Spacing between accordion items
 	margin: 0;
@@ -53,9 +55,15 @@
 			}
 		}
 
-		&:focus,
-		&:focus-visible {
+		// Pointer users keep the clean look; keyboard users get a ring back.
+		// Equal specificity, so source order decides.
+		&:focus {
 			outline: none;
+		}
+
+		&:focus-visible {
+
+			@include focus-ring;
 		}
 
 		// Active state (pressed)

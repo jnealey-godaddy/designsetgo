@@ -2,6 +2,8 @@
  * Tabs Block - Editor Styles
  */
 
+@use '../../styles/mixins' as *;
+
 // Ensure WordPress block wrapper doesn't cause overflow
 .wp-block-designsetgo-tabs {
 	max-width: 100%;
@@ -62,10 +64,15 @@
 		font-weight: 500;
 		transition: all 0.2s ease;
 
-		// Remove focus outline
-		&:focus,
-		&:focus-visible {
+		// Unringed for pointer users, ringed for keyboard — :focus-visible
+		// follows :focus at equal specificity, so it wins.
+		&:focus {
 			outline: none;
+		}
+
+		&:focus-visible {
+
+			@include focus-ring;
 		}
 
 		// Subtle hover effect
@@ -386,6 +393,11 @@
 
 			&:focus {
 				outline: none;
+			}
+
+			&:focus-visible {
+
+				@include focus-ring;
 			}
 		}
 

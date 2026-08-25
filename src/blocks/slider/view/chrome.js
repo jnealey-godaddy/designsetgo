@@ -7,6 +7,8 @@
  * the pattern safe if a label ever interpolates author content.
  */
 
+import { createArrowIcon } from '../arrow-icon';
+
 /**
  * Replace an editor-only chrome placeholder with a real one.
  *
@@ -35,21 +37,19 @@ export function buildArrows(slider, { onPrev, onNext }) {
 	const container = document.createElement('div');
 	container.className = 'dsgo-slider__arrows';
 
-	const makeArrow = (direction, glyph, label, onClick) => {
+	const makeArrow = (direction, label, onClick) => {
 		const button = document.createElement('button');
 		button.type = 'button';
 		button.className = `dsgo-slider__arrow dsgo-slider__arrow--${direction}`;
 		button.setAttribute('aria-label', label);
-		const span = document.createElement('span');
-		span.textContent = glyph;
-		button.appendChild(span);
+		button.appendChild(createArrowIcon(direction));
 		button.addEventListener('click', onClick);
 		container.appendChild(button);
 		return button;
 	};
 
-	const prev = makeArrow('prev', '‹', 'Previous slide', onPrev);
-	const next = makeArrow('next', '›', 'Next slide', onNext);
+	const prev = makeArrow('prev', 'Previous slide', onPrev);
+	const next = makeArrow('next', 'Next slide', onNext);
 
 	slider.appendChild(container);
 	return { container, prev, next };

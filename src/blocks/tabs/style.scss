@@ -2,6 +2,8 @@
  * Tabs Block - Frontend Styles
  */
 
+@use '../../styles/mixins' as *;
+
 // Ensure WordPress block wrapper doesn't cause overflow
 .wp-block-designsetgo-tabs {
 	max-width: 100%;
@@ -127,9 +129,15 @@
 			background: var(--dsgo-tab-bg-hover, transparent);
 		}
 
-		&:focus,
-		&:focus-visible {
+		// Pointer users keep the clean look; keyboard users get a ring. Same
+		// specificity, so source order decides and :focus-visible wins.
+		&:focus {
 			outline: none;
+		}
+
+		&:focus-visible {
+
+			@include focus-ring;
 		}
 
 		&.is-active {
@@ -494,7 +502,8 @@
 			margin-bottom: var(--wp--preset--spacing--40, 1.5rem);
 
 			&:focus-visible {
-				outline: none;
+
+				@include focus-ring;
 			}
 		}
 	}

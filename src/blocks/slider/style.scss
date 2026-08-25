@@ -3,6 +3,8 @@
  * CRITICAL: Must be duplicated to editor.scss for editor/frontend parity
  */
 
+@use '../../styles/mixins' as *;
+
 .dsgo-slider {
 	// CRITICAL: Ensure slider takes full width of parent container
 	// Without this, slider can collapse to 0 width inside flex containers
@@ -104,7 +106,7 @@
 		border-radius: 4px;
 		cursor: pointer;
 		pointer-events: auto;
-		transition: all 0.2s ease;
+		transition: opacity 0.2s ease, scale 0.2s ease, background-color 0.2s ease;
 		font-size: var(--dsgo-slider-arrow-size, 24px);
 		line-height: 1;
 		font-weight: 700;
@@ -129,7 +131,8 @@
 		}
 
 		&:focus-visible {
-			outline: none;
+
+			@include focus-ring;
 		}
 	}
 
@@ -202,7 +205,11 @@
 		left: 50%;
 		transform: translateX(-50%);
 		display: flex;
-		gap: 8px;
+		// 12px, not the 8px this used to be: the dots below carry a 24px
+		// pointer target, and at an 8px gap those targets overlapped, so a tap
+		// between two dots landed on whichever happened to paint last. At 12px
+		// the targets tile exactly — 12px dot + 12px gap = 24px centres.
+		gap: 12px;
 		z-index: 10;
 		padding: 8px 12px;
 		background: rgba(0, 0, 0, 0.3);
@@ -210,6 +217,7 @@
 	}
 
 	&__dot {
+		position: relative;
 		width: 12px;
 		height: 12px;
 		padding: 0;
@@ -217,7 +225,22 @@
 		border: none;
 		border-radius: 50%;
 		cursor: pointer;
-		transition: all 0.3s ease;
+		transition: background-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+
+		// A 12px dot is under WCAG 2.2 SC 2.5.8's 24px minimum, and the
+		// spacing exception does not rescue it either. Rather than draw a
+		// bigger dot — which would change every slider on every site — grow
+		// only what the pointer and touch hit: this pseudo-element is
+		// invisible and sits centred over the dot at the full 24px.
+		&::before {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 24px;
+			height: 24px;
+			transform: translate(-50%, -50%);
+		}
 
 		&:hover {
 			background: var(--dsgo-slider-dot-color, rgba(255, 255, 255, 0.8));
@@ -231,7 +254,8 @@
 		}
 
 		&:focus-visible {
-			outline: none;
+
+			@include focus-ring;
 		}
 	}
 
