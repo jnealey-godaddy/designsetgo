@@ -19,8 +19,13 @@
 
 	line-height: 1;
 
+	// The icon row cannot shrink (it is a fixed number of fixed-size icons), so
+	// without wrapping a narrow container — a card in a three-column grid, a
+	// sidebar — crushes the value and count to near-zero width and breaks them
+	// one character per line. Wrapping drops them to a second row instead.
 	&__inner {
 		display: inline-flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5em;
 		max-width: 100%;

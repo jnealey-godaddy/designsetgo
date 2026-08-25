@@ -135,4 +135,11 @@ describe('formatCount', () => {
 		// The template is author input; sprintf semantics would throw here.
 		expect(formatCount('%s of 100%', 40)).toBe('40 of 100%');
 	});
+
+	// The PHP twin runs the count through number_format_i18n(), which groups
+	// thousands. A bare String() here would print "1284" in the canvas next to
+	// "1,284" on the published page.
+	it('groups thousands the way number_format_i18n() does', () => {
+		expect(formatCount('(%s)', 1284)).toBe('(1,284)');
+	});
 });

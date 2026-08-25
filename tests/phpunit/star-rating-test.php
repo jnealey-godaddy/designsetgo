@@ -209,6 +209,34 @@ class Star_Rating_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A bound rating COUNT is no more knowable than a bound rating.
+	 *
+	 * An AggregateRating asserts a value and a count together, so publishing a
+	 * stale placeholder count beside a real rating is the same false claim.
+	 */
+	public function test_bound_rating_count_emits_nothing() {
+		$block = $this->parse_block(
+			array(
+				'dsgoSchema'    => 'aggregate-rating',
+				'rating'        => 4.6,
+				'ratingCount'   => 9999,
+				'schemaAuthor'  => 'Jordan Rivera',
+				'metadata'      => array(
+					'bindings' => array(
+						'ratingCount' => array(
+							'source' => 'designsetgo/post-meta',
+							'args'   => array( 'key' => 'review_count' ),
+						),
+					),
+				),
+			)
+		);
+
+		$this->assertSame( array(), designsetgo_schema_build_aggregate_rating( $block, 'Widget Pro' ) );
+		$this->assertSame( array(), designsetgo_schema_build_review( $block, 'Widget Pro' ) );
+	}
+
+	/**
 	 * With no item name and no page title there is nothing to attach a rating
 	 * to, and a floating rating node describes nothing.
 	 */

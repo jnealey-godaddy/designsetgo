@@ -206,7 +206,8 @@ export default function SettingsPanel({
 				label={__('Rating count', 'designsetgo')}
 				hasValue={() =>
 					showCount !== DEFAULTS.showCount ||
-					ratingCount !== DEFAULTS.ratingCount
+					ratingCount !== DEFAULTS.ratingCount ||
+					countTemplate !== DEFAULTS.countTemplate
 				}
 				onDeselect={() =>
 					setAttributes({

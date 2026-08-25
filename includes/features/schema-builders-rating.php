@@ -8,12 +8,15 @@
  *
  * WHAT THIS DELIBERATELY DOES NOT DO
  *
- * A bound rating is skipped. `SchemaOutput` reads the STORED post content, and
- * `parse_blocks()` does not resolve Block Bindings — so a rating driven by post
- * meta, ACF or `designsetgo/woo-average-rating` is not knowable here. What IS
- * in the block comment is the placeholder the author last typed in the editor,
- * and emitting that as a search-engine claim would publish a number nobody
- * meant. The two cases this leaves are both correct outcomes:
+ * A bound rating OR a bound rating count is skipped. `SchemaOutput` reads the
+ * STORED post content, and `parse_blocks()` does not resolve Block Bindings —
+ * so a value driven by post meta, ACF or `designsetgo/woo-average-rating` is
+ * not knowable here. What IS in the block comment is the placeholder the author
+ * last typed in the editor, and emitting that as a search-engine claim would
+ * publish a number nobody meant. Both bindable attributes count: an
+ * AggregateRating asserts a value AND a count, so a stale count beside a real
+ * rating is just as false as a stale rating. The two cases this leaves are
+ * both correct outcomes:
  *
  * - A testimonial or review card with a rating typed into the block — the
  *   common case — emits its node.
@@ -42,8 +45,12 @@ if ( ! function_exists( 'designsetgo_schema_rating_values' ) ) {
 	function designsetgo_schema_rating_values( array $block ) {
 		$attrs = isset( $block['attrs'] ) && is_array( $block['attrs'] ) ? $block['attrs'] : array();
 
-		// A bound rating is not readable from stored content — see file header.
-		if ( isset( $attrs['metadata']['bindings']['rating'] ) ) {
+		// A bound value is not readable from stored content — see file header.
+		// Both bindable attributes disqualify the block: an AggregateRating is
+		// a pair of claims, and publishing a stale count beside a real rating
+		// is the same false statement as publishing a stale rating.
+		if ( isset( $attrs['metadata']['bindings']['rating'] )
+			|| isset( $attrs['metadata']['bindings']['ratingCount'] ) ) {
 			return null;
 		}
 

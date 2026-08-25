@@ -94,6 +94,38 @@ export function getFillPercent(rating, maxRating, precision) {
 }
 
 /**
+ * Localise a number the way `number_format_i18n()` does on the server.
+ *
+ * The PHP twin runs every printed number through `number_format_i18n()`, so a
+ * de_DE site renders "4,5" and "1.284". Plain `String()`/`toFixed()` would
+ * print "4.5" and "1284" in the canvas and disagree with the published page.
+ *
+ * The locale comes from the document's `lang`, which WordPress prints from the
+ * site language — not from the browser's own locale, which is a different
+ * setting and would introduce a fresh mismatch. Falls back to the raw number
+ * when there is no document (unit tests) or no Intl support.
+ *
+ * @param {number} value    Number to format.
+ * @param {number} decimals Fixed decimal places.
+ * @return {string} Localised number.
+ */
+function localizeNumber(value, decimals) {
+	const lang =
+		typeof document !== 'undefined'
+			? document.documentElement?.lang?.replace('_', '-')
+			: '';
+
+	try {
+		return new Intl.NumberFormat(lang || undefined, {
+			minimumFractionDigits: decimals,
+			maximumFractionDigits: decimals,
+		}).format(value);
+	} catch (e) {
+		return decimals > 0 ? value.toFixed(decimals) : String(value);
+	}
+}
+
+/**
  * Format a rating for display next to the stars.
  *
  * Whole numbers lose the decimal ("4", not "4.0"); everything else keeps one
@@ -106,7 +138,7 @@ export function formatRatingValue(value) {
 	const numeric = Number.isFinite(Number(value)) ? Number(value) : 0;
 	const rounded = Math.round(numeric * 10) / 10;
 
-	return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+	return localizeNumber(rounded, Number.isInteger(rounded) ? 0 : 1);
 }
 
 /**
@@ -124,7 +156,7 @@ export function formatCount(template, count) {
 	const numeric = Number.isFinite(Number(count))
 		? Math.round(Number(count))
 		: 0;
-	const text = String(numeric);
+	const text = localizeNumber(numeric, 0);
 
 	if (!template || !template.includes('%s')) {
 		return text;

@@ -57,6 +57,15 @@ export default function Inspector({
 	// they stay hidden until a type is actually chosen.
 	const showSchemaFields = !!dsgoSchema && 'none' !== dsgoSchema;
 
+	// Named after the node being configured, not after the feature. The schema
+	// extension already renders a panel called "Structured Data" into this same
+	// Advanced group, and two identically titled panels in one sidebar read as
+	// a duplicate rather than as a type control plus its detail fields.
+	const schemaPanelTitle =
+		'review' === dsgoSchema
+			? __('Review Details', 'designsetgo')
+			: __('Aggregate Rating Details', 'designsetgo');
+
 	return (
 		<>
 			<InspectorControls group="color">
@@ -85,7 +94,7 @@ export default function Inspector({
 			{showSchemaFields && (
 				<InspectorControls group="advanced">
 					<DsgoInspectorPanel
-						title={__('Structured Data', 'designsetgo')}
+						title={schemaPanelTitle}
 						panelName="advanced"
 						panelId={clientId}
 						resetAll={() =>
