@@ -48,6 +48,12 @@ require_once DESIGNSETGO_PATH . 'includes/data/block-animation-attributes.php';
 require_once DESIGNSETGO_PATH . 'includes/data/icon-svg-library.php';
 
 /**
+ * Load star rating value math (used by the star-rating block and by the
+ * JSON-LD builder, which runs on wp_head before any block renders).
+ */
+require_once DESIGNSETGO_PATH . 'includes/features/star-rating-functions.php';
+
+/**
  * Load breadcrumbs helper functions (used by breadcrumbs block).
  */
 require_once DESIGNSETGO_PATH . 'includes/features/breadcrumbs-functions.php';

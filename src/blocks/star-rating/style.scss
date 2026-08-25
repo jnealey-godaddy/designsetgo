@@ -1,0 +1,110 @@
+/**
+ * Star Rating — frontend styles.
+ *
+ * The fractional star is pure CSS: two identical icon rows sit on top of each
+ * other, and the upper one is clipped to a percentage width. No JS, no
+ * half-icon assets, and any precision the author asks for — 4.3 of 5 clips at
+ * 86%, which lands mid-icon.
+ *
+ * `.dsgo-star-rating` is a positioning wrapper only (see
+ * src/styles/_justification.scss); colour, border and padding are routed to
+ * `.dsgo-star-rating__inner` by render.php.
+ */
+
+.dsgo-star-rating {
+	// Icons are sized from a custom property so the two rows cannot disagree.
+	--dsgo-star-rating-size: 24px;
+	--dsgo-star-rating-gap: 4px;
+	--dsgo-star-rating-fill: 0%;
+
+	line-height: 1;
+
+	// The icon row cannot shrink (it is a fixed number of fixed-size icons), so
+	// without wrapping a narrow container — a card in a three-column grid, a
+	// sidebar — crushes the value and count to near-zero width and breaks them
+	// one character per line. Wrapping drops them to a second row instead.
+	&__inner {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5em;
+		max-width: 100%;
+	}
+
+	// Screen readers get one sentence; every visual part is aria-hidden, so
+	// "4.5 (128)" is never spelled out as disconnected fragments.
+	&__sr-text {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	&__stars {
+		position: relative;
+		display: inline-block;
+		flex-shrink: 0;
+		line-height: 0;
+	}
+
+	&__track,
+	&__fill {
+		display: flex;
+		flex-wrap: nowrap;
+		gap: var(--dsgo-star-rating-gap);
+	}
+
+	// Unfilled icons default to a faded currentColor so the block inherits a
+	// sensible look from the theme's text colour with nothing configured.
+	&__track {
+		color: var(--dsgo-star-rating-track-color, currentcolor);
+		opacity: var(--dsgo-star-rating-track-opacity, 0.25);
+	}
+
+	// The clip is a separate element from the row it clips: a percentage width
+	// on the flex row itself would shrink its items instead of hiding them.
+	&__fill-clip {
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline-start: 0;
+		width: var(--dsgo-star-rating-fill);
+		overflow: hidden;
+	}
+
+	&__fill {
+		width: max-content;
+		color: var(--dsgo-star-rating-color, currentcolor);
+	}
+
+	&__star {
+		display: inline-flex;
+		flex: 0 0 auto;
+		width: var(--dsgo-star-rating-size);
+		height: var(--dsgo-star-rating-size);
+
+		svg {
+			display: block;
+			width: 100%;
+			height: 100%;
+		}
+	}
+
+	&__value {
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+	}
+
+	&__max {
+		opacity: 0.7;
+	}
+
+	&__count {
+		line-height: 1;
+		opacity: 0.7;
+	}
+}

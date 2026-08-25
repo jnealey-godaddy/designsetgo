@@ -187,6 +187,7 @@ class Loader {
 			'designsetgo/icon-list',
 			'designsetgo/icon-list-item',
 			'designsetgo/divider',
+			'designsetgo/star-rating',
 		);
 
 		if ( in_array( $metadata['name'], $icon_blocks, true ) ) {

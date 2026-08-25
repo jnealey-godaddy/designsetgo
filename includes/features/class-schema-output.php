@@ -10,6 +10,7 @@ namespace DesignSetGo;
 defined( 'ABSPATH' ) || exit;
 
 require_once DESIGNSETGO_PATH . 'includes/features/schema-builders.php';
+require_once DESIGNSETGO_PATH . 'includes/features/schema-builders-rating.php';
 
 /**
  * Collects opted-in blocks from the current post and prints one JSON-LD graph.
@@ -55,9 +56,13 @@ class SchemaOutput {
 	 * @var array<string, array<string, string>>
 	 */
 	private const BUILDERS = array(
-		'designsetgo/accordion' => array(
+		'designsetgo/accordion'   => array(
 			'faq'   => 'designsetgo_schema_build_faq',
 			'howto' => 'designsetgo_schema_build_howto',
+		),
+		'designsetgo/star-rating' => array(
+			'aggregate-rating' => 'designsetgo_schema_build_aggregate_rating',
+			'review'           => 'designsetgo_schema_build_review',
 		),
 	);
 

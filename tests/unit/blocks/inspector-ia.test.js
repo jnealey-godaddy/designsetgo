@@ -133,6 +133,7 @@ const MIGRATED_BLOCKS = [
 	'map',
 	'countdown-timer',
 	'dynamic-image',
+	'star-rating',
 ];
 
 // Blocks whose inspector items live in sub-components under
@@ -140,6 +141,7 @@ const MIGRATED_BLOCKS = [
 // concatenate those sources before matching so the guard holds even
 // though `edit.js` alone contains no DsgoInspectorPanel.Item calls.
 const COMPOSITE_INSPECTOR_BLOCKS = new Set([
+	'star-rating',
 	'modal',
 	'scroll-slides',
 	'icon-list',

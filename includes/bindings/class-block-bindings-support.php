@@ -14,6 +14,9 @@
  *  - `designsetgo/breadcrumbs` + `designsetgo/query-pagination` — dynamic
  *    (server-rendered) blocks where bound values flow into `render_callback`
  *    via `$block->attributes` without any further plumbing.
+ *  - `designsetgo/star-rating` — same mechanism, and the reason that block
+ *    is dynamic at all: `rating` is meant to come from post meta, ACF, or
+ *    `designsetgo/woo-average-rating`, not from a number typed once.
  *
  * On WordPress < 6.9 the filter is inert — `add_filter()` simply registers a
  * callback the core never invokes, so this file is safe to ship regardless.
@@ -45,6 +48,7 @@ class Block_Bindings_Support {
 		'designsetgo/heading-segment'  => array( 'content' ),
 		'designsetgo/breadcrumbs'      => array( 'homeText', 'prefixText' ),
 		'designsetgo/query-pagination' => array( 'labelLoadMore', 'labelLoading', 'buttonLabelWhenPaused' ),
+		'designsetgo/star-rating'      => array( 'rating', 'ratingCount' ),
 	);
 
 	/**

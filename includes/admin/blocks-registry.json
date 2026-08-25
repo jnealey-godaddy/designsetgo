@@ -204,6 +204,12 @@
 				"performance": "medium"
 			},
 			{
+				"name": "designsetgo/star-rating",
+				"title": "Star Rating",
+				"description": "Star rating from a fixed value or a dynamic source",
+				"performance": "low"
+			},
+			{
 				"name": "designsetgo/countdown-timer",
 				"title": "Countdown Timer",
 				"description": "Display a countdown timer to a specific date and time",

@@ -287,3 +287,63 @@ Fix: bind the window listeners once and iterate a prunable `headers` Set (`forEa
 Un-masking note: the shared gate had been hiding a second bug. The default selector's `:has(.wp-block-navigation)` clause matches the **footer** template part on most themes, so once both were serviced the footer picked up `dsgo-scrolled` and rendered the header's box-shadow across its top. Added `:not(footer)` to the three footer-reachable clauses, mirroring the `:not(footer)` the stylesheet already uses.
 
 Regression test: `tests/unit/sticky-header-soft-reload.test.js` (3 of its 5 cases fail against the unfixed source). Full suite 334 suites / 9334 tests green; build + `lint:js` clean.
+
+### Star Rating block — Elementor Plan 4 (agent: rating-reviews-ljx4jl, 2026-08-24)
+
+New block `designsetgo/star-rating`, plus the schema and pattern work Plan 4 asked for.
+Design notes live in `docs/plans/2026-08-24-star-rating-block.md`; the load-bearing facts:
+
+- **Dynamic on purpose.** `rating` / `ratingCount` are registered in
+  `Block_Bindings_Support::DEFAULT_SUPPORTED_ATTRIBUTES`, and that registry's own rule is
+  that a bindable attribute must be renderable from `$block->attributes` at render time.
+  A star rating has no HTML to source from, so `save()` returns `null` and `render.php`
+  does the work. Don't "optimise" it into a static block.
+- **Value math is duplicated on purpose, in exactly two files**:
+  `src/blocks/star-rating/utils/rating.js` and
+  `includes/features/star-rating-functions.php`. Three consumers must agree (editor
+  preview, render.php, JSON-LD builder). The PHP half is in `includes/` because the schema
+  builder runs on `wp_head`, before any block renders.
+- **CSS vars go on `.dsgo-star-rating__inner`, not the wrapper.**
+  `designsetgo_route_visual_supports()` rewrites the wrapper's `style` attribute wholesale,
+  so anything set there is discarded. `edit.js` mirrors this.
+- **Partial stars are a clip, not markup**: `__fill-clip` (percentage width, overflow
+  hidden) wraps `__fill`. The width must not sit on the flex row itself — that shrinks the
+  items instead of hiding them.
+- **A bound rating OR a bound rating count emits no schema node**
+  (`designsetgo_schema_rating_values()` returns null when either
+  `attrs.metadata.bindings.rating` or `...bindings.ratingCount` is set). `parse_blocks()`
+  doesn't resolve bindings, so the stored number is a stale placeholder; and on a Woo
+  product page Woo already emits its own `aggregateRating`. The count was missed on the
+  first pass — an AggregateRating asserts a value AND a count, so checking only one of two
+  bindable attributes still published a false claim.
+- Numbers printed in the canvas must go through the JS twin of `number_format_i18n()`
+  (`localizeNumber()` in `utils/rating.js`), keyed off `document.documentElement.lang` —
+  WordPress's site language, not the browser locale. Plain `String()`/`toFixed()` prints
+  "1284" where the published page prints "1.284".
+- Registries touched when adding a block: `includes/admin/blocks-registry.json` **and**
+  `blocks-registry-i18n.php`, `tests/unit/blocks/inspector-ia.test.js` (list +
+  `COMPOSITE_INSPECTOR_BLOCKS` when the panels live in `components/`),
+  `tests/unit/extensions/schema-attribute.test.js` (hard-codes the schema allowlist),
+  `wiki-content/Blocks-Reference.md`, `.claude/skills/add-pattern/references/block-catalog.md`.
+- **Any block importing `getIcon` or `IconPicker` MUST be added to `$icon_blocks` in
+  `Loader::add_shared_dependencies()`** — including a new one. Star Rating shipped without
+  it and the QA pass caught the failure mode: the editor bundle defers startup on the
+  icon-picker chunk, which is enqueued only for the blocks in that allowlist, so disabling
+  the five icon blocks in the block manager made Star Rating fail to register **silently**
+  — no console error, and existing content coming back as `core/missing`.
+  Checking that the SVG markup is inlined in `build/blocks/<name>/index.js` does NOT
+  settle this: the icon *data* inlines while the *runtime chunk* dependency remains.
+
+A real-install QA pass (commit `d26c0d7`, by the repo owner) found six issues none of the
+sandbox gates could catch — the registration failure above, the bound-count schema claim,
+locale-formatted numbers, an unwrappable inner row that crushed the value/count at ~176px,
+a schema panel titled identically to the schema extension's own, and a `hasValue` missing
+`countTemplate`. Lesson: green CI on this plugin does not substitute for loading the block
+in a real editor; say so plainly rather than implying the gates covered it.
+
+Verification in this environment: `npm run build`, `lint:js`, `lint:css`, `test:unit` all
+green. `lint:php` / `test:php` could NOT run — the sandbox's GitHub proxy only allows the
+project repo, so `composer install` cannot fetch phpcs/WPCS or PHPUnit. PHP was verified by
+`php -l` on every touched file plus a standalone harness that stubs the WP functions and
+renders the block end-to-end (including colour-injection and script-in-template attempts,
+both neutralised); `tests/phpunit/star-rating-test.php` is written but unrun.
