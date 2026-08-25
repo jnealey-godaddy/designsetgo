@@ -25,7 +25,12 @@ export default function useParentQueryAttrs(clientId, enabled = true) {
 				return null;
 			}
 			const { getBlockParents, getBlock } = select(blockEditorStore);
-			const parents = getBlockParents(clientId);
+			// `ascending: true` — getBlockParents() otherwise reverses the walk
+			// to root-first, and the loop below would answer with the OUTERMOST
+			// enclosing query. This hook feeds the layout host's editor preview,
+			// so a Loop Carousel inside a nested query would preview the outer
+			// query's posts while the front end renders the inner query's.
+			const parents = getBlockParents(clientId, true);
 			for (const parentId of parents) {
 				const parent = getBlock(parentId);
 				if (parent?.name === 'designsetgo/query') {
