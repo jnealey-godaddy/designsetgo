@@ -477,12 +477,20 @@
 	width: 100%;
 }
 
-// Double-class selector (0-2-0) so position: sticky beats
+// Pinning is scoped to the spacer, which ScrollDrivenController creates at
+// runtime. The class alone is on the block in the editor too, where there is
+// no spacer to scroll through — an unscoped sticky pins the block to the top
+// of the canvas and overlaps whatever follows it. Same reasoning covers a
+// no-JS frontend.
+// Double-class selector so position: sticky beats
 // [role="region"] { position: relative } (0-1-0) from wp-components,
 // which CoBlocks/GoDaddy plugins enqueue on the frontend.
-.dsgo-slider.dsgo-slider--scroll-driven {
+.dsgo-slider-pin-spacer > .dsgo-slider.dsgo-slider--scroll-driven {
 	position: sticky;
 	top: 0;
+}
+
+.dsgo-slider.dsgo-slider--scroll-driven {
 	overflow: hidden;
 	padding-bottom: 36px; // Room for the scroll progress bar (16px bottom + 4px bar + 16px breathing)
 
