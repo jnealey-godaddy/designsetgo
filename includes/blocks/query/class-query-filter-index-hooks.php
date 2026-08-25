@@ -20,6 +20,16 @@ defined( 'ABSPATH' ) || exit;
 class FilterIndexHooks {
 
 	/**
+	 * The designsetgo/query-filter kinds that are driven by a taxonomy.
+	 *
+	 * `search`, `sort`, `active` and `reset` carry the `taxonomy` attribute
+	 * too — it has a default and every block gets one — but never read it.
+	 *
+	 * @var string[]
+	 */
+	private const TAXONOMY_FILTER_KINDS = array( 'checkbox', 'select' );
+
+	/**
 	 * Tracks whether the hook set has been registered in this request.
 	 * A single flag (not per-hook has_action checks) so a caller that removes
 	 * just one hook — e.g. removing save_post during a bulk import — cannot
@@ -141,22 +151,71 @@ class FilterIndexHooks {
 	private static function walk_blocks_for_filters( array $blocks ): void {
 		foreach ( $blocks as $block ) {
 			if ( 'designsetgo/query-filter' === ( $block['blockName'] ?? '' ) ) {
-				$attrs    = $block['attrs'] ?? array();
-				$taxonomy = sanitize_key( (string) ( $attrs['taxonomy'] ?? '' ) );
-				if ( '' !== $taxonomy ) {
-					FilterRegistry::register(
-						$taxonomy,
-						array(
-							'type'   => 'taxonomy',
-							'source' => $taxonomy,
-						)
-					);
+				$attrs = self::with_block_defaults(
+					'designsetgo/query-filter',
+					isset( $block['attrs'] ) ? (array) $block['attrs'] : array()
+				);
+
+				// Only the taxonomy-driven kinds mean anything here. Reading
+				// defaults (above) makes `taxonomy` always present, so without
+				// this gate a search or sort filter would register a category
+				// filter it never uses.
+				$kind = isset( $attrs['filterKind'] ) ? (string) $attrs['filterKind'] : '';
+				if ( in_array( $kind, self::TAXONOMY_FILTER_KINDS, true ) ) {
+					$taxonomy = sanitize_key( (string) ( $attrs['taxonomy'] ?? '' ) );
+					if ( '' !== $taxonomy ) {
+						FilterRegistry::register(
+							$taxonomy,
+							array(
+								'type'   => 'taxonomy',
+								'source' => $taxonomy,
+							)
+						);
+					}
 				}
 			}
 			if ( ! empty( $block['innerBlocks'] ) ) {
 				self::walk_blocks_for_filters( $block['innerBlocks'] );
 			}
 		}
+	}
+
+	/**
+	 * Merge a parsed block's attributes over its registered defaults.
+	 *
+	 * `parse_blocks()` returns only what the block comment carries, and
+	 * WordPress never serializes an attribute whose value equals its
+	 * `block.json` default. Reading `$attrs['taxonomy']` directly therefore
+	 * misses every filter left on the default taxonomy — which is `category`,
+	 * the overwhelmingly common case. The symptom was silent: the filter never
+	 * registered, so `wp dsgo query index rebuild` reported "Indexed N objects
+	 * (0 rows)" and counts never rendered, with nothing anywhere saying why.
+	 *
+	 * Falls back to the raw attributes when the block type is not registered
+	 * yet, which is no worse than the behaviour this replaces.
+	 *
+	 * @param string $block_name Block type name.
+	 * @param array  $attrs      Attributes from parse_blocks().
+	 * @return array Attributes with registered defaults filled in.
+	 */
+	private static function with_block_defaults( string $block_name, array $attrs ): array {
+		if ( ! class_exists( '\WP_Block_Type_Registry' ) ) {
+			return $attrs;
+		}
+
+		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
+		if ( ! $block_type || empty( $block_type->attributes ) ) {
+			return $attrs;
+		}
+
+		$defaults = array();
+		foreach ( (array) $block_type->attributes as $key => $schema ) {
+			if ( is_array( $schema ) && array_key_exists( 'default', $schema ) ) {
+				$defaults[ $key ] = $schema['default'];
+			}
+		}
+
+		return array_merge( $defaults, $attrs );
 	}
 
 	/**

@@ -35,7 +35,8 @@
   "providesContext": {
     "designsetgo/queryId": "queryId",
     "designsetgo/querySource": "source",
-    "designsetgo/queryPostType": "postType"
+    "designsetgo/queryPostType": "postType",
+    "designsetgo/queryTaxQuery": "taxQuery"
   },
   "attributes": {
     "queryId": { "type": "string", "default": "" },

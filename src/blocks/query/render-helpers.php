@@ -871,6 +871,12 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 				'designsetgo/queryId'       => $query_id,
 				'designsetgo/querySource'   => $source,
 				'designsetgo/queryPostType' => (string) ( $attributes['postType'] ?? 'post' ),
+				// Lets a sibling narrow itself to what this query can actually
+				// return — query-filter uses it so it never offers a term the
+				// taxQuery has already excluded.
+				'designsetgo/queryTaxQuery' => isset( $attributes['taxQuery'] ) && is_array( $attributes['taxQuery'] )
+					? $attributes['taxQuery']
+					: array(),
 			)
 		);
 
