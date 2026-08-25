@@ -11,9 +11,27 @@
  * with a normally-flowed block.
  */
 const path = require('path');
-const sass = require('sass');
+const { execFileSync } = require('child_process');
 
 const STYLE = path.join(__dirname, '../../../src/blocks/slider/style.scss');
+
+// sass ships as a dart2js bundle that resolves `fs` off the global object; in
+// Jest's jsdom sandbox that lookup comes back undefined on some Node versions,
+// so compile out of process rather than requiring the module here.
+const SASS_CLI = path.join(path.dirname(require.resolve('sass')), 'sass.js');
+
+/**
+ * Compile the block stylesheet through the sass CLI.
+ *
+ * @return {string} Compiled CSS.
+ */
+function compile() {
+	return execFileSync(
+		process.execPath,
+		[SASS_CLI, '--no-source-map', STYLE],
+		{ encoding: 'utf8' }
+	);
+}
 
 /**
  * Selectors in the compiled sheet that declare `position: sticky`.
@@ -34,7 +52,7 @@ function stickySelectors(css) {
 }
 
 describe('scroll-driven slider sticky scoping', () => {
-	const css = sass.compile(STYLE, { loadPaths: [path.dirname(STYLE)] }).css;
+	const css = compile();
 
 	it('never makes the scroll-driven slider sticky outside a pin spacer', () => {
 		const offenders = stickySelectors(css)
