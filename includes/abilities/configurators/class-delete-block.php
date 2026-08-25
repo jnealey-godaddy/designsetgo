@@ -49,7 +49,11 @@ class Delete_Block extends Abstract_Ability {
 			'show_in_rest'        => true,
 			'keywords'            => array( 'remove', 'destroy', 'clear' ),
 			'annotations'         => array(
+				'readonly'     => false,
 				'destructive'  => true,
+				// Targeting is by block index, and indices shift after a removal, so
+				// a repeated call deletes a different block rather than being a no-op.
+				'idempotent'   => false,
 				'instructions' => 'Permanently removes blocks from post content. Use get-post-blocks first to identify targets. Prefer block_client_id for precise deletion.',
 			),
 		);
@@ -144,18 +148,18 @@ class Delete_Block extends Abstract_Ability {
 
 		// Validate post ID.
 		if ( ! $post_id ) {
-			return $this->error( 'missing_post_id', __( 'Post ID is required.', 'designsetgo' ) );
+			return $this->error( 'designsetgo_missing_post_id', __( 'Post ID is required.', 'designsetgo' ) );
 		}
 
 		// Need either block_name or block_client_id.
 		if ( empty( $block_name ) && empty( $block_client_id ) ) {
-			return $this->error( 'missing_block_identifier', __( 'Either block_name or block_client_id is required.', 'designsetgo' ) );
+			return $this->error( 'designsetgo_missing_block_identifier', __( 'Either block_name or block_client_id is required.', 'designsetgo' ) );
 		}
 
 		// Validate post exists.
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			return $this->error( 'invalid_post', __( 'Post not found.', 'designsetgo' ) );
+			return $this->error( 'designsetgo_invalid_post', __( 'Post not found.', 'designsetgo' ) );
 		}
 
 		// Check permission for this specific post.
@@ -190,7 +194,7 @@ class Delete_Block extends Abstract_Ability {
 
 		// Check if any blocks were deleted.
 		if ( 0 === $deleted_count ) {
-			return $this->error( 'block_not_found', __( 'No matching blocks found to delete.', 'designsetgo' ) );
+			return $this->error( 'designsetgo_block_not_found', __( 'No matching blocks found to delete.', 'designsetgo' ) );
 		}
 
 		// Serialize and update post.

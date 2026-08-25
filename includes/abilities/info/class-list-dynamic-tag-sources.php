@@ -53,6 +53,8 @@ class List_Dynamic_Tag_Sources extends Abstract_Ability {
 			'keywords'            => array( 'binding', 'dynamic', 'token', 'tag', 'source', 'data' ),
 			'annotations'         => array(
 				'readonly'     => true,
+				'destructive'  => false,
+				'idempotent'   => true,
 				'instructions' => 'Read-only catalog. Filter by `returns` (text|image|url|number|date) to narrow to sources compatible with the bound attribute, or by `group` to scope to one family. To bind a source, write `attributes.metadata.bindings.<attr> = { source: "<slug>", args: { ... } }` via update-block.',
 			),
 		);
@@ -83,12 +85,41 @@ class List_Dynamic_Tag_Sources extends Abstract_Ability {
 				),
 				'group'   => array(
 					'type'        => 'string',
-					'enum'        => array( 'post', 'site', 'archive', 'user', 'custom-fields' ),
-					'description' => __( 'Filter to a single group.', 'designsetgo' ),
+					'enum'        => $this->get_group_enum(),
+					'description' => __( 'Filter to a single group. The accepted values are the groups actually registered on this site, so conditional families (for example "woocommerce", which only exists when WooCommerce is active) appear here only when they are available.', 'designsetgo' ),
 				),
 			),
 			'additionalProperties' => false,
 		);
+	}
+
+	/**
+	 * Enum of accepted `group` values, read from the live registry.
+	 *
+	 * Hardcoding this list is how it drifted: the WooCommerce group is
+	 * registered by WooSources on init priority 6 (abilities register at
+	 * priority 9), and it was missing from the enum, so a schema with
+	 * additionalProperties:false rejected { "group": "woocommerce" }
+	 * before the callback ever ran.
+	 *
+	 * @return array<int, string>
+	 */
+	private function get_group_enum(): array {
+		$fallback = array( 'post', 'site', 'archive', 'user', 'custom-fields' );
+
+		if ( ! class_exists( Registry::class ) ) {
+			return $fallback;
+		}
+
+		$groups = array_column( Registry::instance()->all_groups(), 'slug' );
+
+		if ( empty( $groups ) ) {
+			// Registry not yet populated — fall back to the built-in groups
+			// seeded by register_default_groups().
+			return $fallback;
+		}
+
+		return array_values( $groups );
 	}
 
 	/**

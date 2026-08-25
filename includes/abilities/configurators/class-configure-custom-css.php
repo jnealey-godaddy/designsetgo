@@ -49,6 +49,12 @@ class Configure_Custom_CSS extends Abstract_Ability {
 			'output_schema'       => Block_Configurator::get_default_output_schema(),
 			'permission_callback' => array( $this, 'check_permission_callback' ),
 			'keywords'            => array( 'style', 'code', 'stylesheet' ),
+			'annotations'         => array(
+				'readonly'     => false,
+				'destructive'  => false,
+				'idempotent'   => true,
+				'instructions' => 'Sets per-block custom CSS, replacing whatever was there for the targeted breakpoint. Prefer this over update-block for the custom-css extension: it sanitizes the CSS before storing it. For site-wide CSS use update-global-css instead.',
+			),
 		);
 	}
 
@@ -124,14 +130,14 @@ class Configure_Custom_CSS extends Abstract_Ability {
 		// Validate required parameters.
 		if ( ! $post_id ) {
 			return $this->error(
-				'missing_post_id',
+				'designsetgo_missing_post_id',
 				__( 'Post ID is required.', 'designsetgo' )
 			);
 		}
 
 		if ( empty( $css ) ) {
 			return $this->error(
-				'missing_css',
+				'designsetgo_missing_css',
 				__( 'CSS settings are required.', 'designsetgo' )
 			);
 		}

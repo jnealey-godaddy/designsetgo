@@ -58,6 +58,7 @@ class Settings_Schema {
 				),
 				'performance'        => array(
 					'type'                 => 'object',
+					'description'          => __( 'Performance controls — asset loading strategy, lazy loading, and script/style deferral.', 'designsetgo' ),
 					'additionalProperties' => false,
 					'properties'           => array(
 						'conditional_loading' => array( 'type' => 'boolean' ),
@@ -69,6 +70,7 @@ class Settings_Schema {
 				),
 				'forms'              => array(
 					'type'                 => 'object',
+					'description'          => __( 'Form Builder behaviour — submission storage, retention_days, spam protection, and notification settings.', 'designsetgo' ),
 					'additionalProperties' => false,
 					'properties'           => array(
 						'enable_honeypot'      => array( 'type' => 'boolean' ),
@@ -82,6 +84,7 @@ class Settings_Schema {
 				),
 				'animations'         => array(
 					'type'                 => 'object',
+					'description'          => __( 'Animation defaults and the per-block animation registry. Note that animations.block_animations is replaced wholesale on update, unlike the other list fields.', 'designsetgo' ),
 					'additionalProperties' => false,
 					'properties'           => array(
 						'enable_animations'              => array( 'type' => 'boolean' ),
@@ -120,6 +123,7 @@ class Settings_Schema {
 				),
 				'security'           => array(
 					'type'                 => 'object',
+					'description'          => __( 'Security controls — SVG upload handling, CSS sanitization, and related hardening switches.', 'designsetgo' ),
 					'additionalProperties' => false,
 					'properties'           => array(
 						'log_ip_addresses' => array( 'type' => 'boolean' ),
@@ -129,6 +133,7 @@ class Settings_Schema {
 				),
 				'integrations'       => array(
 					'type'                 => 'object',
+					'description'          => __( 'Third-party integration credentials and endpoints. Values here include secrets, which is why reading settings requires manage_options.', 'designsetgo' ),
 					'additionalProperties' => false,
 					'properties'           => array(
 						'google_maps_api_key'  => array( 'type' => 'string' ),
@@ -138,6 +143,7 @@ class Settings_Schema {
 				),
 				'sticky_header'      => array(
 					'type'                 => 'object',
+					'description'          => __( 'Sticky header behaviour — which element sticks, the scroll offset that activates it, and shrink-on-scroll options.', 'designsetgo' ),
 					'additionalProperties' => false,
 					'properties'           => array(
 						'enable'                    => array( 'type' => 'boolean' ),
@@ -185,6 +191,7 @@ class Settings_Schema {
 				),
 				'draft_mode'         => array(
 					'type'                 => 'object',
+					'description'          => __( 'Draft Mode — lets an editor stage changes to a published page and publish them in one step.', 'designsetgo' ),
 					'additionalProperties' => false,
 					'properties'           => array(
 						'enable'                 => array( 'type' => 'boolean' ),
@@ -200,6 +207,7 @@ class Settings_Schema {
 				),
 				'llms_txt'           => array(
 					'type'                 => 'object',
+					'description'          => __( 'llms.txt generation — whether the file is served, and which post types and fields it advertises to AI crawlers.', 'designsetgo' ),
 					'additionalProperties' => false,
 					'properties'           => array(
 						'enable'            => array( 'type' => 'boolean' ),

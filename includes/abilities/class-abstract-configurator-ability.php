@@ -205,14 +205,14 @@ abstract class Abstract_Configurator_Ability extends Abstract_Ability {
 		// Validate required parameters.
 		if ( ! $post_id ) {
 			return $this->error(
-				'missing_post_id',
+				'designsetgo_missing_post_id',
 				__( 'Post ID is required.', 'designsetgo' )
 			);
 		}
 
 		if ( '' === $block_name ) {
 			return $this->error(
-				'missing_block_name',
+				'designsetgo_missing_block_name',
 				__( 'Block name is required.', 'designsetgo' )
 			);
 		}
@@ -230,7 +230,7 @@ abstract class Abstract_Configurator_Ability extends Abstract_Ability {
 		// Use count() instead of empty() to allow legitimate falsy values (0, false).
 		if ( ! is_array( $new_attributes ) || 0 === count( $new_attributes ) ) {
 			return $this->error(
-				'missing_attributes',
+				'designsetgo_missing_attributes',
 				__( 'No attributes provided to configure.', 'designsetgo' )
 			);
 		}

@@ -59,6 +59,7 @@ class Get_Global_CSS extends Abstract_Ability {
 			'keywords'            => array( 'css', 'styles', 'customizer', 'additional css', 'global', 'theme' ),
 			'annotations'         => array(
 				'readonly'     => true,
+				'destructive'  => false,
 				'idempotent'   => true,
 				'instructions' => 'Call this before update-global-css when you want to append to or modify the existing Additional CSS rather than replace it. The value is scoped to the currently active theme.',
 			),

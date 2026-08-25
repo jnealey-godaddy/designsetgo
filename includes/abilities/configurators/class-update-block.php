@@ -50,6 +50,12 @@ class Update_Block extends Abstract_Ability {
 			'output_schema'       => Block_Configurator::get_default_output_schema(),
 			'permission_callback' => array( $this, 'check_permission_callback' ),
 			'keywords'            => array( 'modify', 'change', 'edit', 'set' ),
+			'annotations'         => array(
+				'readonly'     => false,
+				'destructive'  => false,
+				'idempotent'   => true,
+				'instructions' => 'Merges the supplied attributes into a block that already exists — it never inserts one. Call get-post-blocks first to get the block index or client ID. Submitting the same attributes twice leaves the post in the same state.',
+			),
 		);
 	}
 
@@ -113,14 +119,14 @@ class Update_Block extends Abstract_Ability {
 		// Validate required parameters.
 		if ( ! $post_id ) {
 			return $this->error(
-				'missing_post_id',
+				'designsetgo_missing_post_id',
 				__( 'Post ID is required.', 'designsetgo' )
 			);
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post ) {
-			return $this->error( 'invalid_post', __( 'Post not found.', 'designsetgo' ) );
+			return $this->error( 'designsetgo_invalid_post', __( 'Post not found.', 'designsetgo' ) );
 		}
 
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
@@ -129,7 +135,7 @@ class Update_Block extends Abstract_Ability {
 
 		if ( ! is_array( $attributes ) || empty( $attributes ) ) {
 			return $this->error(
-				'missing_settings',
+				'designsetgo_missing_settings',
 				__( 'Attributes object is required and must contain at least one key-value pair to update.', 'designsetgo' )
 			);
 		}
@@ -137,7 +143,7 @@ class Update_Block extends Abstract_Ability {
 		// Validate targeting: at least one targeting method must be provided.
 		if ( null === $block_index && empty( $block_name ) && empty( $block_client_id ) ) {
 			return $this->error(
-				'invalid_input',
+				'designsetgo_invalid_input',
 				__( 'At least one targeting parameter is required: block_index, block_name, or block_client_id.', 'designsetgo' )
 			);
 		}
@@ -162,7 +168,7 @@ class Update_Block extends Abstract_Ability {
 		// Target by block name and/or client ID.
 		if ( empty( $block_name ) ) {
 			return $this->error(
-				'missing_block_name',
+				'designsetgo_missing_block_name',
 				__( 'block_name is required when block_index is not provided.', 'designsetgo' )
 			);
 		}
@@ -221,7 +227,7 @@ class Update_Block extends Abstract_Ability {
 				// For 'style', only validate it's an array/object.
 				if ( 'style' === $key && ! is_array( $value ) ) {
 					return new WP_Error(
-						'validation_failed',
+						'designsetgo_validation_failed',
 						__( 'The "style" attribute must be an object.', 'designsetgo' ),
 						array( 'status' => 400 )
 					);
@@ -233,7 +239,7 @@ class Update_Block extends Abstract_Ability {
 			// Some blocks have empty attribute schemas and accept arbitrary attributes.
 			if ( ! empty( $registered_attrs ) && ! isset( $registered_attrs[ $key ] ) ) {
 				return new WP_Error(
-					'validation_failed',
+					'designsetgo_validation_failed',
 					sprintf(
 						/* translators: 1: attribute key, 2: block name */
 						__( 'Attribute "%1$s" is not registered for block "%2$s".', 'designsetgo' ),

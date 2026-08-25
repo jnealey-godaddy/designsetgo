@@ -104,15 +104,30 @@ class List_Extensions extends Abstract_Ability {
 			'description' => 'Decorative SVG pattern overlays for container blocks.',
 			'keywords'    => array( 'pattern', 'decoration', 'overlay', 'texture' ),
 		),
+		'interactions'           => array(
+			'label'       => 'Interactions',
+			'description' => 'Event-driven interactions on any block — a trigger (click, hover, scroll into view) paired with an action (toggle a class, show/hide a target, scroll to an anchor). Stored on the dsgoInteractions attribute as an array of rules.',
+			'keywords'    => array( 'interaction', 'trigger', 'click', 'hover', 'event', 'action' ),
+		),
+		'schema'                 => array(
+			'label'       => 'Schema Output',
+			'description' => 'Emits JSON-LD structured data for the block into the page graph, so accordions become FAQPage entries and star ratings become Review/AggregateRating. Applies only to designsetgo/accordion and designsetgo/star-rating. Set via the dsgoSchema attribute.',
+			'keywords'    => array( 'schema', 'json-ld', 'structured data', 'seo', 'rich results', 'faq', 'review' ),
+		),
+		'style-binding'          => array(
+			'label'       => 'Dynamic Style Bindings',
+			'description' => 'Binds CSS properties — including custom properties like --dsgo-progress — to a dynamic source, so a value from post meta, ACF, or a WooCommerce field drives the rendered style. Shape: dsgoStyleBinding = { "<css-property>": { "source": "<slug>", "key": "<field>" } }. Dangerous values (url(, expression(, javascript:) are rejected server-side. Use list-dynamic-tag-sources to enumerate sources.',
+			'keywords'    => array( 'style', 'binding', 'dynamic', 'css variable', 'custom property', 'data' ),
+		),
+		'visibility'             => array(
+			'label'       => 'Conditional Visibility',
+			'description' => 'Shows or hides a block based on runtime conditions, evaluated on the server and mirrored in the editor. Shape: dsgoVisibility = { "operator": "AND"|"OR", "rules": [ { "type": "meta"|"taxonomy"|"index"|"auth", "op": "...", "key": "...", "value": "..." } ] }. Custom rule types can be added via the designsetgo_visibility_rule filter.',
+			'keywords'    => array( 'visibility', 'conditional', 'hide', 'show', 'rules', 'logic' ),
+		),
 		'sticky-header-controls' => array(
 			'label'       => 'Sticky Header Controls',
 			'description' => 'Configuration for sticky/fixed header behavior.',
 			'keywords'    => array( 'sticky', 'fixed', 'header', 'navigation' ),
-		),
-		'dynamic-tags'           => array(
-			'label'       => 'Dynamic Tags',
-			'description' => 'Bind block attributes (paragraph content, heading content, image url/alt, button text/url, etc.) to post / site / archive / user data or custom fields (ACF, Meta Box, Pods, JetEngine). Authors trigger the picker from the inline toolbar (database icon) or the Inspector "Dynamic Tags" panel. Bindings are written to attributes.metadata.bindings; use designsetgo/list-dynamic-tag-sources to enumerate sources.',
-			'keywords'    => array( 'binding', 'dynamic', 'data', 'acf', 'meta', 'token' ),
 		),
 	);
 
@@ -142,6 +157,8 @@ class List_Extensions extends Abstract_Ability {
 			'keywords'            => array( 'discover', 'features', 'add-ons' ),
 			'annotations'         => array(
 				'readonly'     => true,
+				'destructive'  => false,
+				'idempotent'   => true,
 				'instructions' => 'Returns all DesignSetGo extensions with attribute schemas and applicable blocks. After discovering extensions, use update-block to apply extension attributes to any applicable block. Exception: use configure-custom-css for custom CSS (it sanitizes CSS for security).',
 			),
 		);

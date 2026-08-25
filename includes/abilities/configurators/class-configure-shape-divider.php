@@ -86,6 +86,12 @@ class Configure_Shape_Divider extends Abstract_Ability {
 			'output_schema'       => Block_Configurator::get_default_output_schema(),
 			'permission_callback' => array( $this, 'check_permission_callback' ),
 			'keywords'            => array( 'separator', 'wave', 'decoration', 'border' ),
+			'annotations'         => array(
+				'readonly'     => false,
+				'destructive'  => false,
+				'idempotent'   => true,
+				'instructions' => 'Configures the shape divider on an existing section block. Re-sending the same shape and position is a no-op. Use list-blocks with detail "full" on designsetgo/section to see the accepted shape values.',
+			),
 		);
 	}
 
@@ -194,14 +200,14 @@ class Configure_Shape_Divider extends Abstract_Ability {
 		// Validate required parameters.
 		if ( ! $post_id ) {
 			return $this->error(
-				'missing_post_id',
+				'designsetgo_missing_post_id',
 				__( 'Post ID is required.', 'designsetgo' )
 			);
 		}
 
 		if ( empty( $shape ) ) {
 			return $this->error(
-				'missing_settings',
+				'designsetgo_missing_settings',
 				__( 'Shape type is required.', 'designsetgo' )
 			);
 		}
@@ -209,7 +215,7 @@ class Configure_Shape_Divider extends Abstract_Ability {
 		// Validate shape is one of the known values.
 		if ( ! in_array( $shape, self::VALID_SHAPES, true ) ) {
 			return $this->error(
-				'validation_failed',
+				'designsetgo_validation_failed',
 				sprintf(
 					/* translators: %s: shape name */
 					__( 'Invalid shape "%s". Use list-blocks with detail "full" to see all available shapes.', 'designsetgo' ),
@@ -221,13 +227,13 @@ class Configure_Shape_Divider extends Abstract_Ability {
 		// Validate color values.
 		if ( null !== $color && ! $this->is_valid_color( $color ) ) {
 			return $this->error(
-				'validation_failed',
+				'designsetgo_validation_failed',
 				__( 'Invalid color value. Must be a hex color (#rgb or #rrggbb), rgb/rgba function, hsl/hsla function, or CSS variable (var(--...)).', 'designsetgo' )
 			);
 		}
 		if ( null !== $bg_color && ! $this->is_valid_color( $bg_color ) ) {
 			return $this->error(
-				'validation_failed',
+				'designsetgo_validation_failed',
 				__( 'Invalid backgroundColor value. Must be a hex color (#rgb or #rrggbb), rgb/rgba function, hsl/hsla function, or CSS variable (var(--...)).', 'designsetgo' )
 			);
 		}
@@ -235,13 +241,13 @@ class Configure_Shape_Divider extends Abstract_Ability {
 		// Validate height/width ranges and return errors instead of silently clamping.
 		if ( null !== $height && ( $height < 0 || $height > 300 ) ) {
 			return $this->error(
-				'validation_failed',
+				'designsetgo_validation_failed',
 				__( 'Height must be between 0 and 300 pixels.', 'designsetgo' )
 			);
 		}
 		if ( null !== $width && ( $width < 50 || $width > 200 ) ) {
 			return $this->error(
-				'validation_failed',
+				'designsetgo_validation_failed',
 				__( 'Width must be between 50 and 200 percent.', 'designsetgo' )
 			);
 		}
@@ -249,7 +255,7 @@ class Configure_Shape_Divider extends Abstract_Ability {
 		// Validate targeting.
 		if ( null === $block_index && empty( $block_client_id ) ) {
 			return $this->error(
-				'invalid_input',
+				'designsetgo_invalid_input',
 				__( 'Either block_index or block_client_id is required.', 'designsetgo' )
 			);
 		}

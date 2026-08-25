@@ -110,8 +110,15 @@ designsetgo/
 │   │   └── class-block-styles.php
 │   ├── patterns/             # Pattern registration
 │   │   └── class-pattern-registry.php
-│   ├── abilities/            # WordPress Abilities API
-│   │   └── class-abilities-provider.php
+│   ├── abilities/            # WordPress Abilities API (20 abilities)
+│   │   ├── class-abilities-registry.php   # Auto-discovery + registration
+│   │   ├── class-abstract-ability.php     # Base class for every ability
+│   │   ├── class-block-inserter.php       # Shared insert helper (caps + save)
+│   │   ├── class-block-configurator.php   # Shared update helper (caps + save)
+│   │   ├── info/             # 6 read-only discovery abilities
+│   │   ├── inserters/        # 5 block-insertion abilities
+│   │   ├── configurators/    # 5 block-modification abilities
+│   │   └── settings/         # 4 settings / global-CSS abilities
 │   ├── class-plugin.php      # Main plugin class
 │   ├── class-assets.php      # Asset management
 │   └── class-i18n.php        # Internationalization
@@ -790,36 +797,56 @@ describe('Icon Block Edit', () => {
 **Location:** `includes/abilities/`
 
 The Abilities API allows AI agents to programmatically interact with blocks.
+DesignSetGo registers 20 abilities in three categories — `info`, `blocks`,
+and `settings`.
+
+Abilities are **auto-discovered**: `Abilities_Registry` globs
+`includes/abilities/{info,inserters,configurators,settings}/class-*.php`,
+instantiates every concrete `Abstract_Ability` subclass, and registers each
+on the `wp_abilities_api_init` hook. Adding a file to one of those
+directories is all that is required — there is no list to update.
 
 ```php
-// includes/abilities/class-abilities-provider.php
-class Abilities_Provider {
-  public function register_abilities() {
-    register_ability('designsetgo/list-blocks', [
-      'callback' => [$this, 'list_blocks'],
-      'schema' => [...],
-    ]);
+// includes/abilities/info/class-list-blocks.php
+class List_Blocks extends Abstract_Ability {
 
-    register_ability('designsetgo/add-block', [
-      'callback' => [$this, 'add_block'],
-      'schema' => [...],
-    ]);
+  public function get_name(): string {
+    return 'designsetgo/list-blocks';
   }
 
-  public function list_blocks($params) {
-    // Return block information
-    return [
-      'blocks' => $this->get_all_blocks(),
-    ];
+  public function get_config(): array {
+    return array(
+      'label'               => __( 'List DesignSetGo Blocks', 'designsetgo' ),
+      'description'         => __( '...', 'designsetgo' ),
+      'category'            => 'info',
+      'input_schema'        => $this->get_input_schema(),
+      'output_schema'       => $this->get_output_schema(),
+      'permission_callback' => array( $this, 'check_permission_callback' ),
+      'annotations'         => array(
+        'readonly'    => true,
+        'destructive' => false,
+        'idempotent'  => true,
+      ),
+    );
+  }
+
+  public function execute( array $input ): array {
+    return array( 'blocks' => ..., 'total' => ... );
   }
 }
 ```
 
+`Abstract_Ability::register()` normalises the config (moving
+`show_in_rest`, `public`, `annotations`, and `keywords` under `meta`, which
+is where `WP_Ability` expects them) and then calls `wp_register_ability()`.
+The call is made indirectly so Plugin Check's static "requires WP 6.9" scan
+does not flag a function that is already runtime-gated.
+
 **Usage by AI:**
 ```bash
-curl -X GET http://site.com/wp-json/wp-abilities/v1/designsetgo/list-blocks/run \
-  -u "user:pass" \
-  -d '{"category": "all"}'
+# readonly abilities route to GET
+curl -X GET "http://site.com/wp-json/wp-abilities/v1/designsetgo/list-blocks/run?group=containers" \
+  -u "user:pass"
 ```
 
 See [ABILITIES-API.md](ABILITIES-API.md) for complete documentation.

@@ -61,6 +61,8 @@ class Update_Global_CSS extends Abstract_Ability {
 			'show_in_rest'        => true,
 			'keywords'            => array( 'css', 'styles', 'customizer', 'additional css', 'global', 'theme' ),
 			'annotations'         => array(
+				'readonly'     => false,
+				'destructive'  => false,
 				'idempotent'   => true,
 				'instructions' => 'Submitting { "css": "..." } REPLACES the entire Additional CSS for the active theme — there is no merge. To append, call get-global-css first, concatenate, then submit. To clear, submit { "css": "" }. Sanitization is applied by WordPress core.',
 			),
@@ -127,7 +129,7 @@ class Update_Global_CSS extends Abstract_Ability {
 
 		if ( is_wp_error( $post ) ) {
 			return $this->error(
-				'custom_css_update_failed',
+				'designsetgo_custom_css_update_failed',
 				$post->get_error_message(),
 				array( 'wp_error_code' => $post->get_error_code() )
 			);

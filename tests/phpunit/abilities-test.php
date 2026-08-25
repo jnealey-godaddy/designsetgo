@@ -227,7 +227,7 @@ class Test_Block_Inserter extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'invalid_post', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_invalid_post', $result->get_error_code() );
 	}
 
 	/**
@@ -249,7 +249,7 @@ class Test_Block_Inserter extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'permission_denied', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_permission_denied', $result->get_error_code() );
 	}
 
 	/**
@@ -356,7 +356,7 @@ class Test_Block_Inserter extends WP_UnitTestCase {
 		$result = Block_Inserter::validate_inner_blocks( $inner_blocks );
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'invalid_inner_block', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_invalid_inner_block', $result->get_error_code() );
 	}
 
 	/**
@@ -373,7 +373,7 @@ class Test_Block_Inserter extends WP_UnitTestCase {
 		$result = Block_Inserter::validate_inner_blocks( $inner_blocks );
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'invalid_inner_block_attributes', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_invalid_inner_block_attributes', $result->get_error_code() );
 	}
 
 	/**
@@ -501,7 +501,7 @@ class Test_Block_Configurator extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'invalid_post', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_invalid_post', $result->get_error_code() );
 	}
 
 	/**
@@ -515,7 +515,7 @@ class Test_Block_Configurator extends WP_UnitTestCase {
 		);
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'block_not_found', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_block_not_found', $result->get_error_code() );
 	}
 
 	/**
@@ -708,19 +708,44 @@ class Test_Abilities_Execution extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test list-blocks ability with category filter.
+	 * Test list-blocks ability with the group filter.
+	 *
+	 * `group` is the plugin's own grouping, sourced from
+	 * includes/admin/blocks-registry.json. It replaced a synthetic
+	 * `category` filter whose enum (layout/interactive/visual/dynamic) no
+	 * block could ever match, because every block registers into the
+	 * "designsetgo" editor category.
 	 */
 	public function test_list_blocks_ability_filtered() {
 		$registry = Abilities_Registry::get_instance();
 		$ability = $registry->get_ability( 'designsetgo/list-blocks' );
 
-		$result = $ability->execute( array( 'category' => 'layout' ) );
+		$result = $ability->execute( array( 'group' => 'containers' ) );
 
 		$this->assertIsArray( $result );
+		$this->assertGreaterThan( 0, $result['total'], 'The containers group should not be empty.' );
 
-		// All returned blocks should be in layout category.
 		foreach ( $result['blocks'] as $block ) {
-			$this->assertEquals( 'layout', $block['category'] );
+			$this->assertEquals( 'containers', $block['group'] );
+		}
+	}
+
+	/**
+	 * Every block reports its editor category verbatim, and a group.
+	 */
+	public function test_list_blocks_reports_verbatim_category_and_group() {
+		$registry = Abilities_Registry::get_instance();
+		$ability  = $registry->get_ability( 'designsetgo/list-blocks' );
+
+		$result = $ability->execute( array() );
+
+		$valid_groups = array( 'containers', 'ui', 'interactive', 'widgets', 'forms', 'uncategorized' );
+
+		foreach ( $result['blocks'] as $block ) {
+			$this->assertArrayHasKey( 'group', $block );
+			$this->assertContains( $block['group'], $valid_groups );
+			// The editor category is passed through untouched, never remapped.
+			$this->assertNotEquals( 'layout', $block['category'] );
 		}
 	}
 
@@ -764,7 +789,7 @@ class Test_Abilities_Execution extends WP_UnitTestCase {
 		) );
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'missing_post_id', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_missing_post_id', $result->get_error_code() );
 	}
 
 	/**
@@ -1516,7 +1541,7 @@ class Test_Abstract_Configurator_Ability extends WP_UnitTestCase {
 		) );
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'missing_post_id', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_missing_post_id', $result->get_error_code() );
 	}
 
 	/**
@@ -1532,6 +1557,6 @@ class Test_Abstract_Configurator_Ability extends WP_UnitTestCase {
 		) );
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'missing_settings', $result->get_error_code() );
+		$this->assertEquals( 'designsetgo_missing_settings', $result->get_error_code() );
 	}
 }

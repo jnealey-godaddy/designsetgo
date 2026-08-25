@@ -39,7 +39,7 @@ class Block_Inserter {
 		$post = get_post( $post_id );
 		if ( ! $post ) {
 			return new WP_Error(
-				'invalid_post',
+				'designsetgo_invalid_post',
 				__( 'Post not found.', 'designsetgo' ),
 				array( 'status' => 404 )
 			);
@@ -48,7 +48,7 @@ class Block_Inserter {
 		// Check permissions.
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return new WP_Error(
-				'permission_denied',
+				'designsetgo_permission_denied',
 				__( 'You do not have permission to edit this post.', 'designsetgo' ),
 				array( 'status' => 403 )
 			);
@@ -1257,7 +1257,7 @@ class Block_Inserter {
 				if ( ! in_array( $panel_edge, array( 'left', 'right', 'top', 'bottom' ), true ) ) {
 					$panel_edge = 'right';
 				}
-				$panel_size            = isset( $attributes['panelSize'] ) ? (string) $attributes['panelSize'] : '24rem';
+				$panel_size = isset( $attributes['panelSize'] ) ? (string) $attributes['panelSize'] : '24rem';
 				// Mirror save.js: allow-list a single plain CSS length. This is
 				// interpolated into `--dsgo-panel-size:<value>`, and esc_attr()
 				// stops an attribute break-out but not a `;` that appends
@@ -2577,7 +2577,7 @@ class Block_Inserter {
 		foreach ( $inner_blocks as $index => $block ) {
 			if ( ! isset( $block['name'] ) || ! is_string( $block['name'] ) ) {
 				return new WP_Error(
-					'invalid_inner_block',
+					'designsetgo_invalid_inner_block',
 					sprintf(
 						/* translators: %d: Block index */
 						__( 'Inner block at index %d is missing a valid name.', 'designsetgo' ),
@@ -2588,7 +2588,7 @@ class Block_Inserter {
 
 			if ( isset( $block['attributes'] ) && ! is_array( $block['attributes'] ) ) {
 				return new WP_Error(
-					'invalid_inner_block_attributes',
+					'designsetgo_invalid_inner_block_attributes',
 					sprintf(
 						/* translators: %d: Block index */
 						__( 'Inner block at index %d has invalid attributes (must be an array).', 'designsetgo' ),
@@ -2599,7 +2599,7 @@ class Block_Inserter {
 
 			if ( isset( $block['innerBlocks'] ) && ! is_array( $block['innerBlocks'] ) ) {
 				return new WP_Error(
-					'invalid_nested_blocks',
+					'designsetgo_invalid_nested_blocks',
 					sprintf(
 						/* translators: %d: Block index */
 						__( 'Inner block at index %d has invalid innerBlocks (must be an array).', 'designsetgo' ),

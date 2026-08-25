@@ -95,7 +95,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'validation_failed', $result );
+		$this->assert_error_code( 'designsetgo_validation_failed', $result );
 	}
 
 	/**
@@ -117,7 +117,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'validation_failed', $result );
+		$this->assert_error_code( 'designsetgo_validation_failed', $result );
 	}
 
 	/**
@@ -139,7 +139,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'validation_failed', $result );
+		$this->assert_error_code( 'designsetgo_validation_failed', $result );
 	}
 
 	/**
@@ -206,7 +206,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'invalid_input', $result );
+		$this->assert_error_code( 'designsetgo_invalid_input', $result );
 	}
 
 	/**
@@ -225,7 +225,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'invalid_input', $result );
+		$this->assert_error_code( 'designsetgo_invalid_input', $result );
 	}
 
 	/**
@@ -244,7 +244,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'invalid_input', $result );
+		$this->assert_error_code( 'designsetgo_invalid_input', $result );
 	}
 
 	// -------------------------------------------------------------------------
@@ -267,7 +267,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'block_not_found', $result );
+		$this->assert_error_code( 'designsetgo_block_not_found', $result );
 	}
 
 	/**
@@ -283,7 +283,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'invalid_post', $result );
+		$this->assert_error_code( 'designsetgo_invalid_post', $result );
 	}
 
 	/**
@@ -301,7 +301,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'invalid_input', $result );
+		$this->assert_error_code( 'designsetgo_invalid_input', $result );
 	}
 
 	/**
@@ -320,7 +320,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'missing_settings', $result );
+		$this->assert_error_code( 'designsetgo_missing_settings', $result );
 	}
 
 	/**
@@ -335,7 +335,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'missing_post_id', $result );
+		$this->assert_error_code( 'designsetgo_missing_post_id', $result );
 	}
 
 	/**
@@ -355,7 +355,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'block_name_mismatch', $result );
+		$this->assert_error_code( 'designsetgo_block_name_mismatch', $result );
 	}
 
 	// -------------------------------------------------------------------------
@@ -380,7 +380,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'validation_failed', $result );
+		$this->assert_error_code( 'designsetgo_validation_failed', $result );
 	}
 
 	/**
@@ -402,7 +402,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'validation_failed', $result );
+		$this->assert_error_code( 'designsetgo_validation_failed', $result );
 	}
 
 	/**
@@ -424,7 +424,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'validation_failed', $result );
+		$this->assert_error_code( 'designsetgo_validation_failed', $result );
 	}
 
 	/**
@@ -444,7 +444,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'invalid_input', $result );
+		$this->assert_error_code( 'designsetgo_invalid_input', $result );
 	}
 
 	/**
@@ -464,7 +464,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'missing_settings', $result );
+		$this->assert_error_code( 'designsetgo_missing_settings', $result );
 	}
 
 	/**
@@ -486,7 +486,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'validation_failed', $result );
+		$this->assert_error_code( 'designsetgo_validation_failed', $result );
 	}
 
 	// -------------------------------------------------------------------------
@@ -677,7 +677,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'validation_failed', $result );
+		$this->assert_error_code( 'designsetgo_validation_failed', $result );
 	}
 
 	// -------------------------------------------------------------------------
@@ -699,7 +699,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'invalid_input', $result );
+		$this->assert_error_code( 'designsetgo_invalid_input', $result );
 	}
 
 	/**
@@ -717,7 +717,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'missing_block_name', $result );
+		$this->assert_error_code( 'designsetgo_missing_block_name', $result );
 	}
 
 	/**
@@ -736,7 +736,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'block_not_found', $result );
+		$this->assert_error_code( 'designsetgo_block_not_found', $result );
 	}
 
 	// -------------------------------------------------------------------------
@@ -902,7 +902,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'validation_failed', $result );
+		$this->assert_error_code( 'designsetgo_validation_failed', $result );
 	}
 
 	/**
@@ -924,7 +924,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'validation_failed', $result );
+		$this->assert_error_code( 'designsetgo_validation_failed', $result );
 	}
 
 	// -------------------------------------------------------------------------
@@ -987,7 +987,7 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'block_not_found', $result );
+		$this->assert_error_code( 'designsetgo_block_not_found', $result );
 	}
 
 	// -------------------------------------------------------------------------

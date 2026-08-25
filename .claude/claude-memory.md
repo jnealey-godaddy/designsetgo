@@ -347,3 +347,42 @@ project repo, so `composer install` cannot fetch phpcs/WPCS or PHPUnit. PHP was 
 `php -l` on every touched file plus a standalone harness that stubs the WP functions and
 renders the block end-to-end (including colour-injection and script-in-template attempts,
 both neutralised); `tests/phpunit/star-rating-test.php` is written but unrun.
+
+---
+
+## Session: abilities-audit-2026-08-24 (agent id: abilities-verify-01)
+
+Ran `wp-abilities-verify` over the 20 registered abilities, static then runtime
+(wp-env, WP 7.1 + Woo, Abilities API present). Report: `docs/audits/ABILITIES-VERIFICATION.md`.
+
+Things worth remembering about this tree:
+
+- **`grep 'wp_register_ability('` finds ONE call site, not 20.** Registration goes through
+  `Abstract_Ability::register()`, which calls the function *indirectly*
+  (`$fn = 'wp_register_ability'; $fn(...)`) so Plugin Check's static "requires WP 6.9" scan
+  doesn't flag it. Enumerate by reflecting over concrete `Abstract_Ability` subclasses, or at
+  runtime via `wp_get_abilities()`. Same trick for `wp_register_ability_category()`.
+- Abilities are auto-discovered by glob over
+  `includes/abilities/{info,inserters,configurators,settings}/class-*.php` — no list to update
+  when adding one. `generators/` is wired but empty.
+- **Three discovery abilities were lying about their own taxonomy** (all now fixed):
+  `list-abilities` inferred a category from the name prefix instead of reading the registered
+  one; `list-blocks` remapped every block through a dead `designsetgo-*` slug table so the
+  filter only ever returned one bucket; `list-dynamic-tag-sources` hardcoded a `group` enum
+  that omitted `woocommerce`, and with `additionalProperties:false` that made Woo sources
+  unfilterable. Lesson: hardcoded enums mirroring a live registry are the drift hotspot here.
+- `list-blocks` now sources its `group` from `includes/admin/blocks-registry.json`.
+  **That file lists only 48 of 68 blocks** — the other 20 report `group: "uncategorized"`.
+  Same file drives the Blocks & Extensions admin screen, so those 20 have no enable/disable
+  control there. Open product decision, deliberately not guessed at.
+- Ability error codes are now prefixed `designsetgo_*` (incl. the status map in
+  `Abstract_Ability::get_default_status_for_error()` and ~25 test assertions).
+  `rest_forbidden` deliberately keeps its core-conventional unprefixed name.
+- The `read` gate on `list-abilities`/`list-blocks`/`list-extensions` is INTENTIONAL —
+  `abilities-security-test.php` asserts subscribers can call them. Don't "tighten" it.
+- Per-post `edit_post` checks live inside `Block_Inserter` / `Block_Configurator`, not in the
+  ability permission callbacks. `configure-custom-css` and `configure-shape-divider` have no
+  `edit_post` call of their own and are covered entirely by the helper — verified, not a gap.
+- Env note: `docker` is at `/Applications/Docker.app/Contents/Resources/bin/docker`, not on
+  PATH by default; `php` needs `/opt/homebrew/bin`. `Map_Embed_Render_Test` has **4 failures
+  on a clean tree** — pre-existing, unrelated to abilities work.

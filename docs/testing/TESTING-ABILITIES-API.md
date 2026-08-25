@@ -188,7 +188,7 @@ curl -s -X POST \
     "name": "designsetgo/flex",
     "title": "Flex Container",
     "description": "Flexible horizontal or vertical layout container...",
-    "category": "layout",
+    "group": "containers",
     "attributes": {
       "direction": { "type": "string", "enum": ["row", "column"] },
       ...
@@ -207,7 +207,7 @@ curl -s -X POST \
   -u "$WP_USER:$WP_PASS" \
   -H "Content-Type: application/json" \
   "$WP_URL/wp-json/wp-abilities/v1/abilities/designsetgo/list-blocks/execute" \
-  -d '{"category": "layout"}' | jq '.'
+  -d '{"group": "containers"}' | jq '.'
 
 # Interactive blocks only
 curl -s -X POST \
@@ -482,7 +482,7 @@ curl -s -X POST \
 **Expected:**
 ```json
 {
-  "code": "invalid_post",
+  "code": "designsetgo_invalid_post",
   "message": "Post not found.",
   "data": {
     "status": 404
@@ -503,7 +503,7 @@ curl -s -X POST \
 **Expected:**
 ```json
 {
-  "code": "missing_post_id",
+  "code": "designsetgo_missing_post_id",
   "message": "Post ID is required.",
   ...
 }
