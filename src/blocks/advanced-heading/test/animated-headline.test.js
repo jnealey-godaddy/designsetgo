@@ -14,6 +14,8 @@ import segmentSave from '../../heading-segment/save';
 
 const editorSource = readFileSync(resolve(__dirname, '../editor.scss'), 'utf8');
 const editSource = readFileSync(resolve(__dirname, '../edit.js'), 'utf8');
+const styleSource = readFileSync(resolve(__dirname, '../style.scss'), 'utf8');
+const viewSource = readFileSync(resolve(__dirname, '../view.js'), 'utf8');
 
 setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
@@ -51,11 +53,57 @@ describe('animated headline save', () => {
 
 	test('adds an editor-only fallback gap before a non-leading animated segment', () => {
 		expect(editorSource).toMatch(
-			/\.dsgo-heading-segment:not\(:first-child\)\s+\.dsgo-heading-segment__animated\s*\{\s*margin-inline-start:\s*var\(--dsgo-animated-segment-gap\);/
+			/\.dsgo-heading-segment:not\(:first-child\)\s+\.dsgo-heading-segment__animated\s*\{\s*margin-inline-start:\s*var\(--dsgo-editor-segment-gap\);/
 		);
 		expect(editSource).toContain(
-			"'--dsgo-animated-segment-gap': blockGap ? '0' : '.2em'"
+			"'--dsgo-editor-segment-gap': blockGap ? '0' : '.2em'"
 		);
+	});
+
+	// The frontend gap between plain segments comes from the newlines the
+	// serializer puts between the inner blocks, which collapse to a single
+	// space. The editor renders the segments adjacent with no text node
+	// between them, so without this the canvas shows them run together.
+	test('adds the same editor-only fallback gap before a non-leading plain segment', () => {
+		expect(editorSource).toMatch(
+			/\.dsgo-heading-segment:not\(:first-child\)\s+\.dsgo-heading-segment__text\s*\{\s*margin-inline-start:\s*var\(--dsgo-editor-segment-gap\);/
+		);
+	});
+
+	// steps(n, end) reaches its final value only at exactly t=1, and an
+	// infinite animation restarts at that instant -- so the last 1/n of the
+	// word was never painted. jump-none paints both ends.
+	test('the typing effect never hides the end of the word', () => {
+		expect(styleSource).not.toMatch(/steps\(\s*12\s*,\s*end\s*\)/);
+		expect(styleSource).toMatch(
+			/animation-timing-function:\s*steps\(.*jump-none\s*\);/
+		);
+	});
+
+	// A fixed step count reveals a fraction of the width rather than a
+	// character, so short words typed in sub-character slivers.
+	test('the typing step count comes from the word length', () => {
+		expect(styleSource).toContain('--dsgo-typing-steps');
+		expect(viewSource).toContain('--dsgo-typing-steps');
+	});
+
+	// clip-path: inset() clips to the border box, which is the line box --
+	// shorter than the glyphs' ink, so descenders and accents were shaved.
+	test('the clip-path effects bleed past the line box vertically', () => {
+		const clipEffects = [
+			'dsgo-animated-headline-typing',
+			'dsgo-animated-headline-clip',
+			'dsgo-animated-headline-blinds',
+		];
+
+		clipEffects.forEach((name) => {
+			const frames = styleSource.slice(
+				styleSource.indexOf(`@keyframes ${name}`)
+			);
+			const body = frames.slice(0, frames.indexOf('}\n\n'));
+
+			expect(body).toContain('--dsgo-headline-bleed');
+		});
 	});
 
 	test('saves a bounded rotating headline without encoding link data attributes', () => {
