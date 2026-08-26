@@ -13,6 +13,25 @@ require_once __DIR__ . '/chart-colors.php';
 require_once __DIR__ . '/chart-series.php';
 require_once __DIR__ . '/chart-axis.php';
 
+if ( ! function_exists( 'designsetgo_chart_value_format' ) ) {
+	/**
+	 * Read the value-formatting attributes into the shape the formatter takes.
+	 *
+	 * Kept separate from the geometry so the data table, which has no
+	 * geometry context, can build the same bag from the same attributes.
+	 *
+	 * @param array $attributes Block attributes.
+	 * @return array Format options for designsetgo_chart_format_value().
+	 */
+	function designsetgo_chart_value_format( array $attributes ) {
+		return array(
+			'prefix' => isset( $attributes['valuePrefix'] ) ? (string) $attributes['valuePrefix'] : '',
+			'suffix' => isset( $attributes['valueSuffix'] ) ? (string) $attributes['valueSuffix'] : '',
+			'group'  => ! empty( $attributes['groupThousands'] ),
+		);
+	}
+}
+
 if ( ! function_exists( 'designsetgo_chart_geometry' ) ) {
 	/**
 	 * Build the geometry context for a chart.
@@ -61,6 +80,7 @@ if ( ! function_exists( 'designsetgo_chart_geometry' ) ) {
 			'max'         => $bounds['max'],
 			'tick_count'  => $tick_count,
 			'show_values' => $show_values,
+			'format'      => designsetgo_chart_value_format( $attributes ),
 		);
 	}
 }
@@ -160,7 +180,7 @@ if ( ! function_exists( 'designsetgo_render_chart' ) ) {
 			(int) $geo['height'],
 			$svg, // Every interpolation above is individually escaped.
 			$legend,
-			designsetgo_chart_data_table( $rows, $label, $disclosed )
+			designsetgo_chart_data_table( $rows, $label, $disclosed, designsetgo_chart_value_format( $attributes ) )
 		);
 	}
 }

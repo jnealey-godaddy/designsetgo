@@ -16,6 +16,7 @@ import ServerSideRender from '@wordpress/server-side-render';
 import { DsgoInspectorPanel } from '../../components/shared';
 import { DataEditor } from './components/DataEditor';
 import { SeriesColors } from './components/SeriesColors';
+import { ValueFormatControls } from './components/ValueFormatControls';
 import { stripWrapperAttributes } from './utils/strip-wrapper-attributes';
 
 const TYPES = [
@@ -43,6 +44,9 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 		showLegend,
 		showGrid,
 		showValues,
+		valuePrefix,
+		valueSuffix,
+		groupThousands,
 		palette,
 		label,
 	} = attributes;
@@ -262,6 +266,14 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 							/>
 						</DsgoInspectorPanel.Item>
 					)}
+
+					<ValueFormatControls
+						chartType={chartType}
+						valuePrefix={valuePrefix}
+						valueSuffix={valueSuffix}
+						groupThousands={groupThousands}
+						setAttributes={setAttributes}
+					/>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 

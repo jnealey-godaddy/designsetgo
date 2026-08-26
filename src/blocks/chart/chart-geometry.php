@@ -265,16 +265,50 @@ if ( ! function_exists( 'designsetgo_chart_format_value' ) ) {
 	/**
 	 * Format a value for display, dropping meaningless trailing decimals.
 	 *
-	 * @param float $value Value.
+	 * The optional format options come from the block's valuePrefix,
+	 * valueSuffix and groupThousands attributes. They are threaded through
+	 * `$geo['format']` for the SVG call sites and passed directly to the
+	 * data table. Omitting them entirely reproduces the original output, so
+	 * a caller that does not format (the donut's share-of-total label) can
+	 * keep calling with one argument.
+	 *
+	 * The prefix sits outside the minus sign, because currency is written
+	 * "-$42", never "$-42".
+	 *
+	 * @param float $value  Value.
+	 * @param array $format Optional. prefix (string), suffix (string),
+	 *                      group (bool) to insert thousands separators.
 	 * @return string Display string.
 	 */
-	function designsetgo_chart_format_value( $value ) {
-		$formatted = number_format( (float) $value, 2, '.', '' );
+	function designsetgo_chart_format_value( $value, array $format = array() ) {
+		$value  = (float) $value;
+		$prefix = isset( $format['prefix'] ) ? (string) $format['prefix'] : '';
+		$suffix = isset( $format['suffix'] ) ? (string) $format['suffix'] : '';
+		$group  = ! empty( $format['group'] );
+
+		// Work on the magnitude so the sign can be placed outside the prefix.
+		$rounded   = round( abs( $value ), 2 );
+		$formatted = number_format( $rounded, 2, '.', '' );
 
 		if ( false !== strpos( $formatted, '.' ) ) {
 			$formatted = rtrim( rtrim( $formatted, '0' ), '.' );
 		}
 
-		return '' === $formatted ? '0' : $formatted;
+		if ( '' === $formatted ) {
+			$formatted = '0';
+		}
+
+		if ( $group ) {
+			// Re-format with the locale separators, keeping exactly the
+			// decimals that survived the trim above.
+			$dot       = strpos( $formatted, '.' );
+			$decimals  = false === $dot ? 0 : strlen( $formatted ) - $dot - 1;
+			$formatted = number_format_i18n( $rounded, $decimals );
+		}
+
+		// A value that rounds away to zero is not negative.
+		$sign = ( $value < 0 && $rounded > 0 ) ? '-' : '';
+
+		return $sign . $prefix . $formatted . $suffix;
 	}
 }
