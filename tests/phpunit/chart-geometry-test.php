@@ -25,6 +25,78 @@ class Chart_Geometry_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * With no format options the helper behaves exactly as it always has.
+	 *
+	 * Every existing call site passes one argument, so a regression here
+	 * silently changes every chart already published.
+	 */
+	public function test_format_value_without_options_is_unchanged() {
+		$this->assertSame( '10', designsetgo_chart_format_value( 10.0, array() ) );
+		$this->assertSame( '3.33', designsetgo_chart_format_value( 10 / 3, array() ) );
+		$this->assertSame( '1234567', designsetgo_chart_format_value( 1234567, array() ) );
+	}
+
+	/**
+	 * A prefix leads the number and a suffix trails it.
+	 */
+	public function test_format_value_applies_prefix_and_suffix() {
+		$this->assertSame( '$42', designsetgo_chart_format_value( 42, array( 'prefix' => '$' ) ) );
+		$this->assertSame( '42%', designsetgo_chart_format_value( 42, array( 'suffix' => '%' ) ) );
+		$this->assertSame(
+			'$42 USD',
+			designsetgo_chart_format_value( 42, array( 'prefix' => '$', 'suffix' => ' USD' ) )
+		);
+	}
+
+	/**
+	 * The prefix sits outside the minus sign, the way currency is written.
+	 *
+	 * "-$42" is correct; "$-42" is not.
+	 */
+	public function test_format_value_places_a_prefix_outside_the_minus_sign() {
+		$this->assertSame( '-$42', designsetgo_chart_format_value( -42, array( 'prefix' => '$' ) ) );
+	}
+
+	/**
+	 * Grouping inserts the locale thousands separator.
+	 */
+	public function test_format_value_groups_thousands_when_asked() {
+		$this->assertSame(
+			'1,234,567',
+			designsetgo_chart_format_value( 1234567, array( 'group' => true ) )
+		);
+		$this->assertSame(
+			'$1,234,567',
+			designsetgo_chart_format_value( 1234567, array( 'group' => true, 'prefix' => '$' ) )
+		);
+	}
+
+	/**
+	 * Grouping keeps the trailing-zero trimming the ungrouped path does.
+	 */
+	public function test_format_value_grouping_still_trims_trailing_zeros() {
+		$this->assertSame( '1,000', designsetgo_chart_format_value( 1000.0, array( 'group' => true ) ) );
+		$this->assertSame( '1,000.5', designsetgo_chart_format_value( 1000.5, array( 'group' => true ) ) );
+	}
+
+	/**
+	 * Grouping a negative keeps the sign ahead of the separated digits.
+	 */
+	public function test_format_value_groups_a_negative() {
+		$this->assertSame(
+			'-1,234',
+			designsetgo_chart_format_value( -1234, array( 'group' => true ) )
+		);
+	}
+
+	/**
+	 * Zero still renders, with affixes attached.
+	 */
+	public function test_format_value_of_zero_keeps_its_affixes() {
+		$this->assertSame( '$0', designsetgo_chart_format_value( 0, array( 'prefix' => '$' ) ) );
+	}
+
+	/**
 	 * The midpoint of the input range maps to the midpoint of the output range.
 	 */
 	public function test_scale_maps_the_midpoint() {

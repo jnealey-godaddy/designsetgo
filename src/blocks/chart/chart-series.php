@@ -100,7 +100,7 @@ if ( ! function_exists( 'designsetgo_chart_bars' ) ) {
 				$out .= designsetgo_chart_value_label(
 					$i * $slot + $slot / 2,
 					$label_y,
-					designsetgo_chart_format_value( $row['value'] )
+					designsetgo_chart_format_value( $row['value'], $geo['format'] ?? array() )
 				);
 			}
 		}
@@ -170,7 +170,7 @@ if ( ! function_exists( 'designsetgo_chart_line' ) ) {
 				$out .= designsetgo_chart_value_label(
 					$x,
 					$y - 8,
-					designsetgo_chart_format_value( $value ),
+					designsetgo_chart_format_value( $value, $geo['format'] ?? array() ),
 					$anchor
 				);
 			}

@@ -260,6 +260,96 @@ class Test_Extension_Attributes extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Collects every `dsgoFoo: {` attribute a JS extension registers.
+	 *
+	 * The extensions declare their attributes as an object literal inside a
+	 * `blocks.registerBlockType` filter, so the key sits alone on its line
+	 * followed by an opening brace. Same parse-the-source approach as
+	 * schema-config-parity-test.php.
+	 *
+	 * @return array<string,string> Attribute name => file it was found in.
+	 */
+	private function parse_js_extension_attributes() {
+		$found = array();
+
+		$files = array();
+		foreach ( array( 'attributes', 'filters', 'index' ) as $basename ) {
+			// GLOB_BRACE is not available on every PHP build, so glob each name.
+			$files = array_merge( $files, glob( DESIGNSETGO_PATH . 'src/extensions/*/' . $basename . '.js' ) );
+		}
+
+		foreach ( $files as $file ) {
+			$source = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading a source file in a test.
+
+			if ( preg_match_all( '/^\s*(dsgo[A-Za-z0-9]+):\s*\{\s*$/m', $source, $matches ) ) {
+				foreach ( $matches[1] as $attribute ) {
+					$found[ $attribute ] = str_replace( DESIGNSETGO_PATH, '', $file );
+				}
+			}
+		}
+
+		return $found;
+	}
+
+	/**
+	 * Collects every attribute the PHP extension configs declare.
+	 *
+	 * @return array<string,string> Attribute name => config file basename.
+	 */
+	private function parse_php_extension_attributes() {
+		$found = array();
+
+		foreach ( glob( DESIGNSETGO_PATH . 'includes/extension-configs/*.php' ) as $file ) {
+			$config = require $file;
+
+			foreach ( array_keys( isset( $config['attributes'] ) ? $config['attributes'] : array() ) as $attribute ) {
+				$found[ $attribute ] = basename( $file );
+			}
+		}
+
+		return $found;
+	}
+
+	/**
+	 * EVERY attribute a JS extension adds must also be known to PHP.
+	 *
+	 * Core's block-renderer REST route validates the payload with
+	 * `additionalProperties: false`, and ServerSideRender expands the payload
+	 * to every client-registered attribute. An attribute registered only in JS
+	 * therefore makes every server-rendered preview fail with
+	 * "Invalid parameter(s): attributes".
+	 *
+	 * This derives both sides rather than naming attributes, because the
+	 * hardcoded version of this test kept passing while four new animation
+	 * attributes went unmirrored and broke the Chart block's preview.
+	 */
+	public function test_every_js_extension_attribute_is_mirrored_server_side() {
+		$js  = $this->parse_js_extension_attributes();
+		$php = $this->parse_php_extension_attributes();
+
+		// If the regex stops matching, fail loudly instead of passing empty.
+		$this->assertGreaterThan(
+			40,
+			count( $js ),
+			'Parsed suspiciously few JS extension attributes — the parser needs updating.'
+		);
+
+		$missing = array_diff_key( $js, $php );
+
+		$message = '';
+		foreach ( $missing as $attribute => $file ) {
+			$message .= sprintf( "\n  %s (%s)", $attribute, $file );
+		}
+
+		$this->assertSame(
+			array(),
+			$missing,
+			'These attributes are registered in JS but not in includes/extension-configs/, '
+				. 'so ServerSideRender previews will fail with a 400:' . $message
+		);
+	}
+
+	/**
 	 * The blocks those two extensions skip in JS are skipped in PHP too.
 	 */
 	public function test_visibility_and_style_binding_respect_their_blocklist() {

@@ -177,12 +177,14 @@ if ( ! function_exists( 'designsetgo_chart_data_table' ) ) {
 	 * The SVG is aria-hidden, so this table is the accessible representation
 	 * of the chart. It is always emitted.
 	 *
-	 * @param array  $rows  Chart rows.
-	 * @param string $label Chart label.
-	 * @param int    $total Source row count, to disclose a truncated chart.
+	 * @param array  $rows   Chart rows.
+	 * @param string $label  Chart label.
+	 * @param int    $total  Source row count, to disclose a truncated chart.
+	 * @param array  $format Optional. Value format options; see
+	 *                       designsetgo_chart_format_value().
 	 * @return string Table markup.
 	 */
-	function designsetgo_chart_data_table( array $rows, $label, $total = 0 ) {
+	function designsetgo_chart_data_table( array $rows, $label, $total = 0, array $format = array() ) {
 		$out     = '<table class="screen-reader-text">';
 		$caption = '' !== $label ? $label : '';
 
@@ -210,7 +212,7 @@ if ( ! function_exists( 'designsetgo_chart_data_table' ) ) {
 
 		foreach ( $rows as $row ) {
 			$out .= '<tr><th scope="row">' . esc_html( $row['label'] ) . '</th><td>'
-				. esc_html( designsetgo_chart_format_value( $row['value'] ) ) . '</td></tr>';
+				. esc_html( designsetgo_chart_format_value( $row['value'], $format ) ) . '</td></tr>';
 		}
 
 		return $out . '</tbody></table>';

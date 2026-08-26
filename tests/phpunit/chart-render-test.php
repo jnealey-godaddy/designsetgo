@@ -44,6 +44,132 @@ class Chart_Render_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The prefix and suffix reach the value labels drawn on the bars.
+	 */
+	public function test_prefix_and_suffix_reach_the_value_labels() {
+		$html = $this->render(
+			array(
+				'chartType'   => 'bar',
+				'data'        => $this->sample(),
+				'valuePrefix' => '$',
+				'showValues'  => true,
+			)
+		);
+
+		$this->assertStringContainsString( '>$10<', $html );
+		$this->assertStringContainsString( '>$20<', $html );
+	}
+
+	/**
+	 * They reach the y-axis tick labels too, so the axis matches the bars.
+	 */
+	public function test_prefix_reaches_the_axis_ticks() {
+		$html = $this->render(
+			array(
+				'chartType'   => 'bar',
+				'data'        => $this->sample(),
+				'valuePrefix' => '$',
+				'showGrid'    => true,
+			)
+		);
+
+		// The zero tick is always drawn, and carries the prefix.
+		$this->assertMatchesRegularExpression(
+			'/class="dsgo-chart__tick"[^>]*>\$0</',
+			$html
+		);
+	}
+
+	/**
+	 * They reach the screen-reader data table, the accessible representation.
+	 */
+	public function test_suffix_reaches_the_data_table() {
+		$html = $this->render(
+			array(
+				'chartType'   => 'bar',
+				'data'        => $this->sample(),
+				'valueSuffix' => '%',
+			)
+		);
+
+		$this->assertStringContainsString( '<td>10%</td>', $html );
+		$this->assertStringContainsString( '<td>20%</td>', $html );
+	}
+
+	/**
+	 * Grouping separates thousands everywhere the raw number appears.
+	 */
+	public function test_group_thousands_separates_the_value_labels() {
+		$html = $this->render(
+			array(
+				'chartType'      => 'bar',
+				'data'           => array( array( 'label' => 'A', 'value' => 1234567 ) ),
+				'groupThousands' => true,
+				'showValues'     => true,
+			)
+		);
+
+		$this->assertStringContainsString( '1,234,567', $html );
+		$this->assertStringNotContainsString( '>1234567<', $html );
+	}
+
+	/**
+	 * The donut's share label is a share of the total, not the author's value.
+	 *
+	 * Applying a currency prefix there would render "$42%", so the donut is
+	 * deliberately left out of the formatting.
+	 */
+	public function test_donut_share_labels_ignore_the_affixes() {
+		$html = $this->render(
+			array(
+				'chartType'   => 'donut',
+				'data'        => $this->sample(),
+				'valuePrefix' => '$',
+				'showValues'  => true,
+			)
+		);
+
+		// 10 of 30 and 20 of 30 -- shares, written without the prefix.
+		$this->assertStringContainsString( '>33.33%<', $html );
+		$this->assertStringNotContainsString( '$33.33%', $html );
+
+		// The table still carries it, because those are the real values.
+		$this->assertStringContainsString( '<td>$10</td>', $html );
+	}
+
+	/**
+	 * Author-supplied affixes are escaped, not injected into the markup.
+	 */
+	public function test_affixes_are_escaped() {
+		$html = $this->render(
+			array(
+				'chartType'   => 'bar',
+				'data'        => $this->sample(),
+				'valuePrefix' => '<script>x</script>',
+			)
+		);
+
+		$this->assertStringNotContainsString( '<script>x</script>', $html );
+		$this->assertStringContainsString( '&lt;script&gt;', $html );
+	}
+
+	/**
+	 * A chart that sets none of them renders exactly as it did before.
+	 */
+	public function test_unformatted_chart_is_unchanged() {
+		$html = $this->render(
+			array(
+				'chartType'  => 'bar',
+				'data'       => $this->sample(),
+				'showValues' => true,
+			)
+		);
+
+		$this->assertStringContainsString( '>10<', $html );
+		$this->assertStringContainsString( '<td>10</td>', $html );
+	}
+
+	/**
 	 * The block is registered, so the test suite is exercising real markup.
 	 */
 	public function test_the_block_is_registered() {

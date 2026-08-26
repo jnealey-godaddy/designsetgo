@@ -44,7 +44,7 @@ if ( ! function_exists( 'designsetgo_chart_grid' ) ) {
 			$out .= sprintf(
 				'<text class="dsgo-chart__tick" x="-8" y="%s" text-anchor="end" dominant-baseline="middle">%s</text>',
 				esc_attr( designsetgo_chart_number( $y ) ),
-				esc_html( designsetgo_chart_format_value( $tick ) )
+				esc_html( designsetgo_chart_format_value( $tick, $geo['format'] ?? array() ) )
 			);
 		}
 

@@ -52,5 +52,21 @@ return array(
 			'type'    => 'boolean',
 			'default' => false,
 		),
+		'dsgoStaggerEnabled'    => array(
+			'type'    => 'boolean',
+			'default' => false,
+		),
+		'dsgoStaggerStep'       => array(
+			'type'    => 'number',
+			'default' => 80,
+		),
+		'dsgoScrollLinked'      => array(
+			'type'    => 'boolean',
+			'default' => false,
+		),
+		'dsgoSvgDraw'           => array(
+			'type'    => 'boolean',
+			'default' => false,
+		),
 	),
 );

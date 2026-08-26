@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: DesignSetGo 2.6.3\n"
+"Project-Id-Version: DesignSetGo 2.7.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/designsetgo\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-17T22:30:36+00:00\n"
+"POT-Creation-Date: 2026-08-26T20:42:51+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: designsetgo\n"
@@ -21,7 +21,7 @@ msgstr ""
 #: includes/admin/class-admin-menu.php:90
 #: includes/admin/class-global-styles.php:366
 #: includes/admin/class-global-styles.php:367
-#: includes/class-plugin.php:916
+#: includes/class-plugin.php:938
 msgid "DesignSetGo"
 msgstr ""
 
@@ -32,7 +32,7 @@ msgstr ""
 
 #. Description of the plugin
 #: designsetgo.php
-msgid "Professional Gutenberg block library with 52 blocks and 16 powerful extensions - complete Form Builder, container system, interactive elements, maps, modals, breadcrumbs, timelines, scroll effects, and animations. Built with WordPress standards for guaranteed editor/frontend parity."
+msgid "Professional Gutenberg block library with 58 blocks and 18 powerful extensions - complete Form Builder, container system, interactive elements, maps, modals, breadcrumbs, timelines, scroll effects, and animations. Built with WordPress standards for guaranteed editor/frontend parity."
 msgstr ""
 
 #. Author URI of the plugin
@@ -46,14 +46,14 @@ msgid "Breadcrumb"
 msgstr ""
 
 #. translators: 1: rows shown, 2: rows in the source.
-#: build/blocks/chart/chart-data.php:195
-#: src/blocks/chart/chart-data.php:195
+#: build/blocks/chart/chart-data.php:197
+#: src/blocks/chart/chart-data.php:197
 #, php-format
 msgid "Showing the first %1$s of %2$s rows."
 msgstr ""
 
-#: build/blocks/chart/chart-data.php:207
-#: src/blocks/chart/chart-data.php:207
+#: build/blocks/chart/chart-data.php:209
+#: src/blocks/chart/chart-data.php:209
 #: build/admin/query-filter-index-dashboard.js:1
 #: build/blocks/chart/index.js:1
 #: build/blocks/counter/index.js:1
@@ -66,6 +66,7 @@ msgstr ""
 #: build/blocks/form-textarea-field/index.js:1
 #: build/blocks/form-time-field/index.js:1
 #: build/blocks/form-url-field/index.js:1
+#: build/blocks/hotspot-item/index.js:1
 #: build/blocks/query-filter/index.js:1
 #: src/admin/query-filter-index-dashboard/Dashboard.js:256
 #: src/blocks/chart/components/DataEditor.js:47
@@ -90,15 +91,17 @@ msgstr ""
 #: src/blocks/form-time-field/edit.js:139
 #: src/blocks/form-url-field/edit.js:127
 #: src/blocks/form-url-field/edit.js:135
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:49
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:55
 #: src/blocks/query-filter/edit.js:247
 #: src/blocks/query-filter/edit.js:252
 msgid "Label"
 msgstr ""
 
-#: build/blocks/chart/chart-data.php:208
+#: build/blocks/chart/chart-data.php:210
 #: includes/blocks/forms/class-form-submissions.php:123
 #: includes/integrations/query-monitor/class-query-qm-output.php:72
-#: src/blocks/chart/chart-data.php:208
+#: src/blocks/chart/chart-data.php:210
 #: build/blocks/chart/index.js:1
 #: build/blocks/form-checkbox-field/index.js:1
 #: build/blocks/form-hidden-field/index.js:1
@@ -120,15 +123,15 @@ msgstr ""
 msgid "-- Select an option --"
 msgstr ""
 
-#: build/blocks/map/render.php:120
+#: build/blocks/map/render.php:40
 #: includes/abilities/class-block-inserter.php:857
-#: src/blocks/map/render.php:120
+#: src/blocks/map/render.php:40
 msgid "This map will load content from external services. Click to load and view the map."
 msgstr ""
 
-#: build/blocks/map/render.php:125
+#: build/blocks/map/render.php:45
 #: includes/abilities/class-block-inserter.php:911
-#: src/blocks/map/render.php:125
+#: src/blocks/map/render.php:45
 #: build/blocks/map/index.js:2
 #: build/blocks/map/index.js:3
 #: src/blocks/map/deprecated.js:170
@@ -136,21 +139,21 @@ msgstr ""
 msgid "Load map. This will connect to external map services."
 msgstr ""
 
-#: build/blocks/map/render.php:125
+#: build/blocks/map/render.php:45
 #: includes/abilities/class-block-inserter.php:912
-#: src/blocks/map/render.php:125
+#: src/blocks/map/render.php:45
 #: build/blocks/map/index.js:2
 #: build/blocks/map/index.js:3
 #: src/blocks/map/deprecated.js:175
 #: src/blocks/map/deprecated.js:367
-#: src/blocks/map/edit.js:171
+#: src/blocks/map/edit.js:108
 msgid "Load Map"
 msgstr ""
 
 #. translators: %s: The address being shown on the map
-#: build/blocks/map/render.php:130
+#: build/blocks/map/render.php:141
 #: includes/abilities/class-block-inserter.php:895
-#: src/blocks/map/render.php:130
+#: src/blocks/map/render.php:141
 #: build/blocks/map/index.js:2
 #: build/blocks/map/index.js:3
 #: src/blocks/map/deprecated.js:141
@@ -159,9 +162,9 @@ msgstr ""
 msgid "Map showing %s"
 msgstr ""
 
-#: build/blocks/map/render.php:131
+#: build/blocks/map/render.php:142
 #: includes/abilities/class-block-inserter.php:898
-#: src/blocks/map/render.php:131
+#: src/blocks/map/render.php:142
 #: build/blocks/map/index.js:2
 #: build/blocks/map/index.js:3
 #: src/blocks/map/deprecated.js:142
@@ -203,21 +206,27 @@ msgstr ""
 #: build/blocks/product-showcase-hero/render.php:182
 #: src/blocks/product-showcase-hero/render.php:182
 #: build/blocks/product-showcase-hero/index.js:2
+#: build/blocks/query-results/index.js:2
+#: build/blocks/query/index.js:7
 #: src/blocks/product-showcase-hero/components/ProductPreview.js:165
+#: src/blocks/query/components/WooQueryControls.js:8
 msgid "In stock"
 msgstr ""
 
 #: build/blocks/product-showcase-hero/render.php:183
 #: src/blocks/product-showcase-hero/render.php:183
 #: build/blocks/product-showcase-hero/index.js:2
+#: build/blocks/query-results/index.js:2
+#: build/blocks/query/index.js:7
 #: src/blocks/product-showcase-hero/components/ProductPreview.js:166
+#: src/blocks/query/components/WooQueryControls.js:9
 msgid "Out of stock"
 msgstr ""
 
-#: build/blocks/query-filter/render.php:44
-#: build/blocks/query-filter/render.php:53
-#: src/blocks/query-filter/render.php:44
-#: src/blocks/query-filter/render.php:53
+#: build/blocks/query-filter/render.php:97
+#: build/blocks/query-filter/render.php:106
+#: src/blocks/query-filter/render.php:97
+#: src/blocks/query-filter/render.php:106
 #: build/blocks/query-filter/index.js:1
 #: build/blocks/query/index.js:1
 #: src/blocks/query-filter/components/FilterPreview.js:55
@@ -225,8 +234,8 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
-#: build/blocks/query-filter/render.php:52
-#: src/blocks/query-filter/render.php:52
+#: build/blocks/query-filter/render.php:105
+#: src/blocks/query-filter/render.php:105
 #: build/blocks/query-filter/index.js:1
 #: build/blocks/query/index.js:7
 #: src/blocks/query-filter/components/FilterPreview.js:46
@@ -235,29 +244,29 @@ msgstr ""
 msgid "Search…"
 msgstr ""
 
-#: build/blocks/query-filter/render.php:91
-#: src/blocks/query-filter/render.php:91
+#: build/blocks/query-filter/render.php:144
+#: src/blocks/query-filter/render.php:144
 msgid "Sort"
 msgstr ""
 
-#: build/blocks/query-filter/render.php:98
-#: src/blocks/query-filter/render.php:98
+#: build/blocks/query-filter/render.php:151
+#: src/blocks/query-filter/render.php:151
 #: build/blocks/query-filter/index.js:1
 #: src/blocks/query-filter/components/FilterPreview.js:70
 msgid "Default order"
 msgstr ""
 
-#: build/blocks/query-filter/render.php:100
-#: build/blocks/query-filter/render.php:184
-#: build/blocks/query-filter/render.php:262
-#: src/blocks/query-filter/render.php:100
-#: src/blocks/query-filter/render.php:184
-#: src/blocks/query-filter/render.php:262
+#: build/blocks/query-filter/render.php:153
+#: build/blocks/query-filter/render.php:247
+#: build/blocks/query-filter/render.php:337
+#: src/blocks/query-filter/render.php:153
+#: src/blocks/query-filter/render.php:247
+#: src/blocks/query-filter/render.php:337
 msgid "Apply filter"
 msgstr ""
 
-#: build/blocks/query-filter/render.php:182
-#: src/blocks/query-filter/render.php:182
+#: build/blocks/query-filter/render.php:245
+#: src/blocks/query-filter/render.php:245
 #: build/blocks/query-filter/index.js:1
 #: build/shared-icon-picker.js:1
 #: src/blocks/icon/components/IconPicker.js:17
@@ -265,61 +274,62 @@ msgstr ""
 msgid "All"
 msgstr ""
 
-#: build/blocks/query-filter/render.php:377
-#: src/blocks/query-filter/render.php:377
+#: build/blocks/query-filter/render.php:452
+#: src/blocks/query-filter/render.php:452
 msgid "search"
 msgstr ""
 
 #. translators: 1: filter dimension name (e.g. "category"), 2: filter value (e.g. "photography")
-#: build/blocks/query-filter/render.php:388
-#: src/blocks/query-filter/render.php:388
+#: build/blocks/query-filter/render.php:463
+#: src/blocks/query-filter/render.php:463
 #, php-format
 msgid "Remove %1$s: %2$s"
 msgstr ""
 
-#: build/blocks/query-filter/render.php:441
-#: src/blocks/query-filter/render.php:441
+#: build/blocks/query-filter/render.php:516
+#: src/blocks/query-filter/render.php:516
 #: build/blocks/query-filter/index.js:1
 #: src/blocks/query-filter/components/FilterPreview.js:122
 msgid "Reset filters"
 msgstr ""
 
-#: build/blocks/query-pagination/render.php:73
-#: build/blocks/query-pagination/render.php:120
-#: src/blocks/query-pagination/render.php:73
-#: src/blocks/query-pagination/render.php:120
+#: build/blocks/query-pagination/render.php:87
+#: build/blocks/query-pagination/render.php:137
+#: src/blocks/query-pagination/render.php:87
+#: src/blocks/query-pagination/render.php:137
 #: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/components/InfiniteScrollControls.js:100
-#: src/blocks/query-pagination/edit.js:35
-#: src/blocks/query-pagination/edit.js:51
-#: src/blocks/query-pagination/edit.js:130
-#: src/blocks/query-pagination/edit.js:182
+#: build/blocks/query-pagination/index.js:2
+#: src/blocks/query-pagination/components/InfiniteScrollControls.js:116
+#: src/blocks/query-pagination/edit.js:39
+#: src/blocks/query-pagination/edit.js:55
+#: src/blocks/query-pagination/edit.js:148
+#: src/blocks/query-pagination/edit.js:200
 msgid "Load more"
 msgstr ""
 
-#: build/blocks/query-pagination/render.php:110
-#: src/blocks/query-pagination/render.php:110
+#: build/blocks/query-pagination/render.php:124
+#: src/blocks/query-pagination/render.php:124
 msgid "Loading\\u2026"
 msgstr ""
 
-#: build/blocks/query-pagination/render.php:123
-#: src/blocks/query-pagination/render.php:123
-#: build/blocks/query-pagination/index.js:1
+#: build/blocks/query-pagination/render.php:143
+#: src/blocks/query-pagination/render.php:143
+#: build/blocks/query-pagination/index.js:2
 #: build/blocks/query/index.js:7
 #: build/ext-draft-mode.js:1
-#: src/blocks/query-pagination/edit.js:205
+#: src/blocks/query-pagination/edit.js:223
 #: src/blocks/query/components/ResultCountBadge.js:14
 #: src/extensions/draft-mode/DraftModePanel.js:91
 msgid "Loading…"
 msgstr ""
 
-#: build/blocks/query-pagination/render.php:184
-#: src/blocks/query-pagination/render.php:184
+#: build/blocks/query-pagination/render.php:204
+#: src/blocks/query-pagination/render.php:204
 msgid "Query pagination"
 msgstr ""
 
-#: build/blocks/query/render-helpers.php:245
-#: src/blocks/query/render-helpers.php:245
+#: build/blocks/query/render-helpers.php:332
+#: src/blocks/query/render-helpers.php:332
 #: build/blocks/query-results/index.js:2
 #: src/blocks/query/components/EditorPreviewList.js:214
 msgid "Uncategorized"
@@ -354,6 +364,7 @@ msgstr ""
 #: build/admin-settings.js:5
 #: build/blocks/accordion-item/index.js:1
 #: build/blocks/accordion/index.js:1
+#: build/blocks/advanced-heading/index.js:1
 #: build/blocks/blobs/index.js:1
 #: build/blocks/breadcrumbs/index.js:1
 #: build/blocks/card/index.js:1
@@ -380,6 +391,9 @@ msgstr ""
 #: build/blocks/form-time-field/index.js:1
 #: build/blocks/form-url-field/index.js:1
 #: build/blocks/grid/index.js:2
+#: build/blocks/heading-segment/index.js:1
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
 #: build/blocks/icon-button/index.js:4
 #: build/blocks/icon-list/index.js:3
 #: build/blocks/icon/index.js:1
@@ -393,7 +407,7 @@ msgstr ""
 #: build/blocks/product-showcase-hero/index.js:2
 #: build/blocks/progress-bar/index.js:1
 #: build/blocks/query-filter/index.js:1
-#: build/blocks/query-pagination/index.js:1
+#: build/blocks/query-pagination/index.js:2
 #: build/blocks/query/index.js:7
 #: build/blocks/row/index.js:1
 #: build/blocks/scroll-marquee/index.js:1
@@ -402,20 +416,23 @@ msgstr ""
 #: build/blocks/section-divider/index.js:1
 #: build/blocks/section/index.js:2
 #: build/blocks/slide/index.js:1
+#: build/blocks/star-rating/index.js:1
 #: build/blocks/sticky-sections/index.js:1
 #: build/blocks/tab/index.js:1
 #: build/blocks/table-of-contents/index.js:1
 #: build/blocks/tabs/index.js:2
+#: build/blocks/text-path/index.js:1
 #: build/blocks/timeline-item/index.js:1
 #: build/blocks/timeline/index.js:1
 #: src/admin/components/Dashboard.js:265
 #: src/admin/components/Settings.js:114
 #: src/blocks/accordion-item/edit.js:178
 #: src/blocks/accordion/edit.js:112
+#: src/blocks/advanced-heading/edit.js:253
 #: src/blocks/blobs/edit.js:227
 #: src/blocks/breadcrumbs/edit.js:138
 #: src/blocks/card/edit.js:341
-#: src/blocks/chart/edit.js:55
+#: src/blocks/chart/edit.js:59
 #: src/blocks/comparison-table/edit.js:411
 #: src/blocks/countdown-timer/edit.js:215
 #: src/blocks/counter-group/index.js:155
@@ -438,22 +455,25 @@ msgstr ""
 #: src/blocks/form-time-field/edit.js:86
 #: src/blocks/form-url-field/edit.js:82
 #: src/blocks/grid/edit.js:457
+#: src/blocks/heading-segment/edit.js:124
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:34
+#: src/blocks/hotspot/components/HotspotInspector.js:36
 #: src/blocks/icon-button/edit.js:368
 #: src/blocks/icon-list/edit.js:208
 #: src/blocks/icon/edit.js:134
 #: src/blocks/image-accordion-item/edit.js:153
 #: src/blocks/image-accordion/edit.js:186
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:150
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:169
-#: src/blocks/map/edit.js:77
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:172
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:191
+#: src/blocks/map/edit.js:190
 #: src/blocks/modal-trigger/edit.js:188
 #: src/blocks/modal/edit.js:158
 #: src/blocks/product-categories-grid/edit.js:110
 #: src/blocks/product-showcase-hero/edit.js:241
 #: src/blocks/progress-bar/edit.js:170
 #: src/blocks/query-filter/edit.js:174
-#: src/blocks/query-pagination/edit.js:109
-#: src/blocks/query/components/QuerySourcePanel.js:98
+#: src/blocks/query-pagination/edit.js:127
+#: src/blocks/query/components/QuerySourcePanel.js:99
 #: src/blocks/row/edit.js:279
 #: src/blocks/scroll-marquee/edit.js:108
 #: src/blocks/scroll-slide/edit.js:121
@@ -461,10 +481,12 @@ msgstr ""
 #: src/blocks/section-divider/components/SectionDividerControls.js:29
 #: src/blocks/section/edit.js:403
 #: src/blocks/slide/edit.js:189
+#: src/blocks/star-rating/components/SettingsPanel.js:60
 #: src/blocks/sticky-sections/edit.js:63
 #: src/blocks/tab/edit.js:95
 #: src/blocks/table-of-contents/edit.js:149
 #: src/blocks/tabs/edit.js:423
+#: src/blocks/text-path/components/TextPathControls.js:103
 #: src/blocks/timeline-item/edit.js:207
 #: src/blocks/timeline/edit.js:114
 msgid "Settings"
@@ -474,20 +496,20 @@ msgstr ""
 msgid "Abilities for reading and updating DesignSetGo plugin settings"
 msgstr ""
 
-#: includes/abilities/class-abstract-ability.php:143
+#: includes/abilities/class-abstract-ability.php:187
 #: includes/abilities/class-block-configurator.php:42
 #: includes/abilities/class-block-configurator.php:401
 #: includes/abilities/class-block-configurator.php:571
 #: includes/abilities/class-block-inserter.php:43
-#: includes/abilities/configurators/class-batch-update.php:174
-#: includes/abilities/configurators/class-delete-block.php:158
-#: includes/abilities/configurators/class-update-block.php:123
-#: includes/abilities/info/class-get-post-blocks.php:166
-#: includes/abilities/inserters/class-add-accordion-item.php:148
-#: includes/abilities/inserters/class-add-block.php:147
-#: includes/abilities/inserters/class-add-child-block.php:192
-#: includes/abilities/inserters/class-add-tab.php:148
-#: includes/abilities/inserters/class-add-timeline-item.php:159
+#: includes/abilities/configurators/class-batch-update.php:180
+#: includes/abilities/configurators/class-delete-block.php:162
+#: includes/abilities/configurators/class-update-block.php:129
+#: includes/abilities/info/class-get-post-blocks.php:168
+#: includes/abilities/inserters/class-add-accordion-item.php:151
+#: includes/abilities/inserters/class-add-block.php:150
+#: includes/abilities/inserters/class-add-child-block.php:195
+#: includes/abilities/inserters/class-add-tab.php:151
+#: includes/abilities/inserters/class-add-timeline-item.php:162
 #: includes/admin/class-draft-mode.php:137
 #: includes/blocks/query/class-query-template-controller.php:128
 #: includes/blocks/query/class-query-template-controller.php:211
@@ -496,12 +518,12 @@ msgstr ""
 msgid "Post not found."
 msgstr ""
 
-#: includes/abilities/class-abstract-ability.php:247
+#: includes/abilities/class-abstract-ability.php:291
 msgid "Sorry, you are not allowed to perform this action."
 msgstr ""
 
 #. translators: %s: Field name
-#: includes/abilities/class-abstract-ability.php:285
+#: includes/abilities/class-abstract-ability.php:329
 #, php-format
 msgid "Missing required field: %s"
 msgstr ""
@@ -512,22 +534,22 @@ msgid "Block type to configure"
 msgstr ""
 
 #: includes/abilities/class-abstract-configurator-ability.php:209
-#: includes/abilities/configurators/class-batch-update.php:157
-#: includes/abilities/configurators/class-configure-custom-css.php:128
-#: includes/abilities/configurators/class-configure-shape-divider.php:198
-#: includes/abilities/configurators/class-delete-block.php:147
-#: includes/abilities/configurators/class-update-block.php:117
-#: includes/abilities/info/class-get-post-blocks.php:158
-#: includes/abilities/inserters/class-add-accordion-item.php:125
-#: includes/abilities/inserters/class-add-block.php:141
-#: includes/abilities/inserters/class-add-child-block.php:186
-#: includes/abilities/inserters/class-add-tab.php:124
-#: includes/abilities/inserters/class-add-timeline-item.php:143
+#: includes/abilities/configurators/class-batch-update.php:163
+#: includes/abilities/configurators/class-configure-custom-css.php:134
+#: includes/abilities/configurators/class-configure-shape-divider.php:204
+#: includes/abilities/configurators/class-delete-block.php:151
+#: includes/abilities/configurators/class-update-block.php:123
+#: includes/abilities/info/class-get-post-blocks.php:160
+#: includes/abilities/inserters/class-add-accordion-item.php:128
+#: includes/abilities/inserters/class-add-block.php:144
+#: includes/abilities/inserters/class-add-child-block.php:189
+#: includes/abilities/inserters/class-add-tab.php:127
+#: includes/abilities/inserters/class-add-timeline-item.php:146
 msgid "Post ID is required."
 msgstr ""
 
 #: includes/abilities/class-abstract-configurator-ability.php:216
-#: includes/abilities/info/class-find-blocks.php:158
+#: includes/abilities/info/class-find-blocks.php:160
 msgid "Block name is required."
 msgstr ""
 
@@ -548,9 +570,9 @@ msgstr ""
 
 #: includes/abilities/class-block-configurator.php:314
 #: includes/abilities/class-block-inserter.php:2632
-#: includes/abilities/configurators/class-configure-shape-divider.php:103
-#: includes/abilities/inserters/class-add-block.php:71
-#: includes/abilities/inserters/class-add-child-block.php:73
+#: includes/abilities/configurators/class-configure-shape-divider.php:109
+#: includes/abilities/inserters/class-add-block.php:74
+#: includes/abilities/inserters/class-add-child-block.php:76
 msgid "Target post ID"
 msgstr ""
 
@@ -568,7 +590,7 @@ msgstr ""
 
 #: includes/abilities/class-block-configurator.php:359
 #: includes/abilities/class-block-inserter.php:2653
-#: includes/abilities/inserters/class-add-child-block.php:132
+#: includes/abilities/inserters/class-add-child-block.php:135
 msgid "Whether the operation was successful"
 msgstr ""
 
@@ -621,7 +643,7 @@ msgstr ""
 #: build/blocks/map/index.js:3
 #: src/blocks/map/deprecated.js:165
 #: src/blocks/map/deprecated.js:357
-#: src/blocks/map/edit.js:164
+#: src/blocks/map/edit.js:101
 msgid "Click to load map"
 msgstr ""
 
@@ -871,45 +893,45 @@ msgstr ""
 msgid "Applies attribute changes to multiple blocks at once. Supports updating by block name across entire post or multiple specific blocks."
 msgstr ""
 
-#: includes/abilities/configurators/class-batch-update.php:65
+#: includes/abilities/configurators/class-batch-update.php:71
 msgid "Post ID to update blocks in"
 msgstr ""
 
-#: includes/abilities/configurators/class-batch-update.php:69
+#: includes/abilities/configurators/class-batch-update.php:75
 msgid "Array of batch operations to perform"
 msgstr ""
 
-#: includes/abilities/configurators/class-batch-update.php:75
+#: includes/abilities/configurators/class-batch-update.php:81
 msgid "Block name to target"
 msgstr ""
 
-#: includes/abilities/configurators/class-batch-update.php:79
+#: includes/abilities/configurators/class-batch-update.php:85
 msgid "Attributes to set on matching blocks"
 msgstr ""
 
-#: includes/abilities/configurators/class-batch-update.php:83
+#: includes/abilities/configurators/class-batch-update.php:89
 msgid "Optional filter: only update blocks matching these attribute values"
 msgstr ""
 
-#: includes/abilities/configurators/class-batch-update.php:108
+#: includes/abilities/configurators/class-batch-update.php:114
 msgid "Whether all operations succeeded"
 msgstr ""
 
-#: includes/abilities/configurators/class-batch-update.php:112
-#: includes/abilities/configurators/class-delete-block.php:109
-#: includes/abilities/info/class-get-post-blocks.php:106
+#: includes/abilities/configurators/class-batch-update.php:118
+#: includes/abilities/configurators/class-delete-block.php:113
+#: includes/abilities/info/class-get-post-blocks.php:108
 msgid "The post ID"
 msgstr ""
 
-#: includes/abilities/configurators/class-batch-update.php:116
+#: includes/abilities/configurators/class-batch-update.php:122
 msgid "Total number of blocks updated"
 msgstr ""
 
-#: includes/abilities/configurators/class-batch-update.php:120
+#: includes/abilities/configurators/class-batch-update.php:126
 msgid "Results for each operation"
 msgstr ""
 
-#: includes/abilities/configurators/class-batch-update.php:165
+#: includes/abilities/configurators/class-batch-update.php:171
 msgid "At least one operation is required."
 msgstr ""
 
@@ -921,31 +943,31 @@ msgstr ""
 msgid "Applies custom CSS to individual blocks for advanced styling. Use the \"selector\" placeholder to target the specific block."
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-custom-css.php:70
+#: includes/abilities/configurators/class-configure-custom-css.php:76
 msgid "Block type to configure (any block type supported)"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-custom-css.php:74
+#: includes/abilities/configurators/class-configure-custom-css.php:80
 msgid "Custom CSS settings"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-custom-css.php:78
+#: includes/abilities/configurators/class-configure-custom-css.php:84
 msgid "Enable custom CSS"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-custom-css.php:83
+#: includes/abilities/configurators/class-configure-custom-css.php:89
 msgid "CSS for desktop (use \"selector\" as placeholder for block selector)"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-custom-css.php:87
+#: includes/abilities/configurators/class-configure-custom-css.php:93
 msgid "CSS for tablet breakpoint"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-custom-css.php:91
+#: includes/abilities/configurators/class-configure-custom-css.php:97
 msgid "CSS for mobile breakpoint"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-custom-css.php:135
+#: includes/abilities/configurators/class-configure-custom-css.php:141
 msgid "CSS settings are required."
 msgstr ""
 
@@ -957,77 +979,77 @@ msgstr ""
 msgid "Adds or updates shape dividers on a section block. Supports top, bottom, or both positions with 29 shape types, custom colors, height, width, flip, and layering options."
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:107
+#: includes/abilities/configurators/class-configure-shape-divider.php:113
 msgid "Document-order index of the section block (from get-post-blocks)"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:111
+#: includes/abilities/configurators/class-configure-shape-divider.php:117
 msgid "Specific block client ID (alternative to block_index)"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:115
+#: includes/abilities/configurators/class-configure-shape-divider.php:121
 msgid "Where to add the shape divider"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:121
+#: includes/abilities/configurators/class-configure-shape-divider.php:127
 msgid "Shape type. Available: wave, wave-double, wave-layered, wave-asymmetric, tilt, tilt-reverse, curve, curve-asymmetric, triangle, triangle-asymmetric, arrow, arrow-wide, peaks, peaks-soft, zigzag, book, clouds, drops, split, fan, steps, torn, slime, triangle-layered, triangle-layered-extra, curvy-triangle-layered, symmetric-waves-layered, side-triangle-layered, side-triangle-layered-extra"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:126
+#: includes/abilities/configurators/class-configure-shape-divider.php:132
 msgid "Shape fill color (hex, rgb, or CSS variable)"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:130
+#: includes/abilities/configurators/class-configure-shape-divider.php:136
 msgid "Background color behind the shape divider area"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:134
+#: includes/abilities/configurators/class-configure-shape-divider.php:140
 msgid "Shape height in pixels (0-300)"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:140
+#: includes/abilities/configurators/class-configure-shape-divider.php:146
 msgid "Shape width as percentage (50-200)"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:146
+#: includes/abilities/configurators/class-configure-shape-divider.php:152
 msgid "Flip shape horizontally"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:151
+#: includes/abilities/configurators/class-configure-shape-divider.php:157
 msgid "Flip shape vertically"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:156
+#: includes/abilities/configurators/class-configure-shape-divider.php:162
 msgid "Render shape in front of content (above inner blocks)"
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:205
+#: includes/abilities/configurators/class-configure-shape-divider.php:211
 msgid "Shape type is required."
 msgstr ""
 
 #. translators: %s: shape name
-#: includes/abilities/configurators/class-configure-shape-divider.php:215
+#: includes/abilities/configurators/class-configure-shape-divider.php:221
 #, php-format
 msgid "Invalid shape \"%s\". Use list-blocks with detail \"full\" to see all available shapes."
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:225
+#: includes/abilities/configurators/class-configure-shape-divider.php:231
 msgid "Invalid color value. Must be a hex color (#rgb or #rrggbb), rgb/rgba function, hsl/hsla function, or CSS variable (var(--...))."
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:231
+#: includes/abilities/configurators/class-configure-shape-divider.php:237
 msgid "Invalid backgroundColor value. Must be a hex color (#rgb or #rrggbb), rgb/rgba function, hsl/hsla function, or CSS variable (var(--...))."
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:239
+#: includes/abilities/configurators/class-configure-shape-divider.php:245
 msgid "Height must be between 0 and 300 pixels."
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:245
+#: includes/abilities/configurators/class-configure-shape-divider.php:251
 msgid "Width must be between 50 and 200 percent."
 msgstr ""
 
-#: includes/abilities/configurators/class-configure-shape-divider.php:253
+#: includes/abilities/configurators/class-configure-shape-divider.php:259
 msgid "Either block_index or block_client_id is required."
 msgstr ""
 
@@ -1039,43 +1061,43 @@ msgstr ""
 msgid "Removes blocks from a post by block name or client ID. Can delete first match, specific block, or all matching blocks."
 msgstr ""
 
-#: includes/abilities/configurators/class-delete-block.php:69
+#: includes/abilities/configurators/class-delete-block.php:73
 msgid "Post ID to remove blocks from"
 msgstr ""
 
-#: includes/abilities/configurators/class-delete-block.php:73
+#: includes/abilities/configurators/class-delete-block.php:77
 msgid "Block name to delete (e.g., \"designsetgo/accordion\")"
 msgstr ""
 
-#: includes/abilities/configurators/class-delete-block.php:77
+#: includes/abilities/configurators/class-delete-block.php:81
 msgid "Specific block client ID to delete (takes precedence over block_name)"
 msgstr ""
 
-#: includes/abilities/configurators/class-delete-block.php:81
+#: includes/abilities/configurators/class-delete-block.php:85
 msgid "Delete all matching blocks (only when using block_name)"
 msgstr ""
 
-#: includes/abilities/configurators/class-delete-block.php:86
+#: includes/abilities/configurators/class-delete-block.php:90
 msgid "Delete block at specific position (0-indexed, only when using block_name)"
 msgstr ""
 
-#: includes/abilities/configurators/class-delete-block.php:105
+#: includes/abilities/configurators/class-delete-block.php:109
 msgid "Whether the deletion succeeded"
 msgstr ""
 
-#: includes/abilities/configurators/class-delete-block.php:113
+#: includes/abilities/configurators/class-delete-block.php:117
 msgid "Number of blocks deleted"
 msgstr ""
 
-#: includes/abilities/configurators/class-delete-block.php:117
+#: includes/abilities/configurators/class-delete-block.php:121
 msgid "Block name that was deleted"
 msgstr ""
 
-#: includes/abilities/configurators/class-delete-block.php:152
+#: includes/abilities/configurators/class-delete-block.php:156
 msgid "Either block_name or block_client_id is required."
 msgstr ""
 
-#: includes/abilities/configurators/class-delete-block.php:193
+#: includes/abilities/configurators/class-delete-block.php:197
 msgid "No matching blocks found to delete."
 msgstr ""
 
@@ -1087,32 +1109,32 @@ msgstr ""
 msgid "Updates any block's attributes by document-order index, block name, or client ID. Use get-post-blocks to find the target block_index first. Supports all block attributes including style (padding, colors, typography), custom attributes, and WordPress supports-generated attributes."
 msgstr ""
 
-#: includes/abilities/configurators/class-update-block.php:71
+#: includes/abilities/configurators/class-update-block.php:77
 msgid "Block type to target (e.g., \"designsetgo/section\"). Required when block_index is not provided. When used with block_index, serves as a safety check to validate the block type matches."
 msgstr ""
 
-#: includes/abilities/configurators/class-update-block.php:75
+#: includes/abilities/configurators/class-update-block.php:81
 msgid "Key-value pairs of attributes to merge into the block. For style attributes use nested objects, e.g. { \"style\": { \"spacing\": { \"padding\": { \"top\": \"40px\" } } } }. Attribute keys are validated against the block registry when possible."
 msgstr ""
 
-#: includes/abilities/configurators/class-update-block.php:133
+#: includes/abilities/configurators/class-update-block.php:139
 msgid "Attributes object is required and must contain at least one key-value pair to update."
 msgstr ""
 
-#: includes/abilities/configurators/class-update-block.php:141
+#: includes/abilities/configurators/class-update-block.php:147
 msgid "At least one targeting parameter is required: block_index, block_name, or block_client_id."
 msgstr ""
 
-#: includes/abilities/configurators/class-update-block.php:166
+#: includes/abilities/configurators/class-update-block.php:172
 msgid "block_name is required when block_index is not provided."
 msgstr ""
 
-#: includes/abilities/configurators/class-update-block.php:225
+#: includes/abilities/configurators/class-update-block.php:231
 msgid "The \"style\" attribute must be an object."
 msgstr ""
 
 #. translators: 1: attribute key, 2: block name
-#: includes/abilities/configurators/class-update-block.php:239
+#: includes/abilities/configurators/class-update-block.php:245
 #, php-format
 msgid "Attribute \"%1$s\" is not registered for block \"%2$s\"."
 msgstr ""
@@ -1125,46 +1147,46 @@ msgstr ""
 msgid "Searches for blocks of a specific type across posts, returning locations and counts."
 msgstr ""
 
-#: includes/abilities/info/class-find-blocks.php:69
+#: includes/abilities/info/class-find-blocks.php:71
 msgid "Block name to search for (e.g., \"designsetgo/accordion\")"
 msgstr ""
 
-#: includes/abilities/info/class-find-blocks.php:73
+#: includes/abilities/info/class-find-blocks.php:75
 msgid "Post type to search in"
 msgstr ""
 
-#: includes/abilities/info/class-find-blocks.php:78
+#: includes/abilities/info/class-find-blocks.php:80
 msgid "Post status to filter by"
 msgstr ""
 
-#: includes/abilities/info/class-find-blocks.php:83
+#: includes/abilities/info/class-find-blocks.php:85
 msgid "Maximum number of posts to search"
 msgstr ""
 
-#: includes/abilities/info/class-find-blocks.php:105
+#: includes/abilities/info/class-find-blocks.php:107
 msgid "Whether the search succeeded"
 msgstr ""
 
-#: includes/abilities/info/class-find-blocks.php:109
+#: includes/abilities/info/class-find-blocks.php:111
 msgid "Block name that was searched"
 msgstr ""
 
-#: includes/abilities/info/class-find-blocks.php:113
+#: includes/abilities/info/class-find-blocks.php:115
 msgid "Total number of matching blocks found"
 msgstr ""
 
-#: includes/abilities/info/class-find-blocks.php:117
+#: includes/abilities/info/class-find-blocks.php:119
 msgid "Posts containing matching blocks"
 msgstr ""
 
 #. translators: %s: Post type name
-#: includes/abilities/info/class-find-blocks.php:168
+#: includes/abilities/info/class-find-blocks.php:170
 #, php-format
 msgid "Invalid post type: %s"
 msgstr ""
 
 #. translators: %s: Post status name
-#: includes/abilities/info/class-find-blocks.php:181
+#: includes/abilities/info/class-find-blocks.php:183
 #, php-format
 msgid "Invalid post status: %s"
 msgstr ""
@@ -1177,36 +1199,36 @@ msgstr ""
 msgid "Retrieves all blocks from a post with their attributes, enabling inspection of current content structure."
 msgstr ""
 
-#: includes/abilities/info/class-get-post-blocks.php:69
+#: includes/abilities/info/class-get-post-blocks.php:71
 msgid "Post ID to retrieve blocks from"
 msgstr ""
 
-#: includes/abilities/info/class-get-post-blocks.php:73
+#: includes/abilities/info/class-get-post-blocks.php:75
 msgid "Optional: Filter to only return blocks of this type"
 msgstr ""
 
-#: includes/abilities/info/class-get-post-blocks.php:77
+#: includes/abilities/info/class-get-post-blocks.php:79
 msgid "Include inner blocks in the response"
 msgstr ""
 
-#: includes/abilities/info/class-get-post-blocks.php:82
+#: includes/abilities/info/class-get-post-blocks.php:84
 msgid "Return a flat list instead of nested structure"
 msgstr ""
 
-#: includes/abilities/info/class-get-post-blocks.php:102
+#: includes/abilities/info/class-get-post-blocks.php:104
 msgid "Whether the operation succeeded"
 msgstr ""
 
-#: includes/abilities/info/class-get-post-blocks.php:110
+#: includes/abilities/info/class-get-post-blocks.php:112
 msgid "Array of blocks"
 msgstr ""
 
-#: includes/abilities/info/class-get-post-blocks.php:116
+#: includes/abilities/info/class-get-post-blocks.php:118
 msgid "Document-order index for stable targeting"
 msgstr ""
 
-#: includes/abilities/info/class-get-post-blocks.php:127
-#: includes/abilities/info/class-list-blocks.php:133
+#: includes/abilities/info/class-get-post-blocks.php:129
+#: includes/abilities/info/class-list-blocks.php:140
 msgid "Total number of blocks returned"
 msgstr ""
 
@@ -1218,86 +1240,92 @@ msgstr ""
 msgid "Returns a manifest of all registered DesignSetGo abilities with their names, descriptions, categories, and input schemas. Use this to discover what DesignSetGo can do."
 msgstr ""
 
-#: includes/abilities/info/class-list-abilities.php:71
-msgid "Filter by ability category"
+#: includes/abilities/info/class-list-abilities.php:73
+msgid "Filter by the category the ability is registered in. These are the same categories exposed at /wp-json/wp-abilities/v1/categories."
 msgstr ""
 
-#: includes/abilities/info/class-list-abilities.php:77
+#: includes/abilities/info/class-list-abilities.php:79
 msgid "Search abilities by name, description, or keyword. Matches against ability names, labels, descriptions, and keyword aliases (e.g., searching \"group\" finds section-related abilities)."
 msgstr ""
 
-#: includes/abilities/info/class-list-abilities.php:101
+#: includes/abilities/info/class-list-abilities.php:103
 msgid "Ability name (e.g., designsetgo/insert-section)"
 msgstr ""
 
-#: includes/abilities/info/class-list-abilities.php:105
-#: includes/abilities/info/class-list-extensions.php:193
+#: includes/abilities/info/class-list-abilities.php:107
+#: includes/abilities/info/class-list-extensions.php:210
 #: build/admin/query-filter-index-dashboard.js:1
 #: src/admin/query-filter-index-dashboard/Dashboard.js:392
 msgid "Human-readable label"
 msgstr ""
 
-#: includes/abilities/info/class-list-abilities.php:109
+#: includes/abilities/info/class-list-abilities.php:111
 msgid "What this ability does"
 msgstr ""
 
-#: includes/abilities/info/class-list-abilities.php:113
-msgid "Ability category: inserter, configurator, or info"
+#: includes/abilities/info/class-list-abilities.php:115
+msgid "The category the ability is registered in: info, blocks, or settings"
 msgstr ""
 
-#: includes/abilities/info/class-list-abilities.php:117
+#: includes/abilities/info/class-list-abilities.php:119
+msgid "Behavioural hints — readonly, destructive, idempotent, and instructions. Absent flags default to false."
+msgstr ""
+
+#: includes/abilities/info/class-list-abilities.php:123
 msgid "Full JSON Schema for the ability inputs"
 msgstr ""
 
-#: includes/abilities/info/class-list-abilities.php:124
+#: includes/abilities/info/class-list-abilities.php:130
 msgid "Total number of abilities returned"
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:42
+#: includes/abilities/info/class-list-blocks.php:43
 msgid "List DesignSetGo Blocks"
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:43
+#: includes/abilities/info/class-list-blocks.php:44
 msgid "Returns a comprehensive list of all available DesignSetGo blocks with their capabilities, attributes, and metadata."
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:68
-#: build/blocks/query/index.js:7
-#: src/blocks/query/variations.js:194
-msgid "Filter by category"
+#: includes/abilities/info/class-list-blocks.php:71
+msgid "Filter by the plugin's own block grouping (the same grouping used by the Blocks & Extensions admin screen). \"uncategorized\" returns blocks that are registered but not yet listed in the block registry."
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:74
+#: includes/abilities/info/class-list-blocks.php:77
 msgid "Level of attribute detail. \"summary\" returns type/default/enum only. \"full\" returns complete attribute definitions including minimum, maximum, nested properties, and items for arrays."
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:80
+#: includes/abilities/info/class-list-blocks.php:83
 msgid "Filter to specific block names (e.g., [\"designsetgo/section\", \"designsetgo/row\"]). When combined with detail \"full\", limits verbose output to only the requested blocks."
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:106
-#: includes/abilities/inserters/class-add-block.php:90
-#: includes/abilities/inserters/class-add-child-block.php:96
+#: includes/abilities/info/class-list-blocks.php:109
+#: includes/abilities/inserters/class-add-block.php:93
+#: includes/abilities/inserters/class-add-child-block.php:99
 msgid "Block name"
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:110
+#: includes/abilities/info/class-list-blocks.php:113
 msgid "Human-readable title"
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:114
+#: includes/abilities/info/class-list-blocks.php:117
 msgid "Block description"
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:118
-msgid "Block category"
+#: includes/abilities/info/class-list-blocks.php:121
+msgid "The block editor category the block registers into, verbatim from block.json (almost always \"designsetgo\")."
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:122
+#: includes/abilities/info/class-list-blocks.php:125
+msgid "The plugin's own grouping: containers, ui, interactive, widgets, forms, or uncategorized."
+msgstr ""
+
+#: includes/abilities/info/class-list-blocks.php:129
 msgid "Available block attributes"
 msgstr ""
 
-#: includes/abilities/info/class-list-blocks.php:126
+#: includes/abilities/info/class-list-blocks.php:133
 msgid "Block support features"
 msgstr ""
 
@@ -1309,51 +1337,51 @@ msgstr ""
 msgid "Returns the catalog of Dynamic Tag binding sources (post/site/archive/user fields, ACF, Meta Box, Pods, JetEngine). Each entry includes the source slug, label, group, return types, and arg schema. Use the slug as `metadata.bindings.<attribute>.source` when writing bindings via update-block."
 msgstr ""
 
-#: includes/abilities/info/class-list-dynamic-tag-sources.php:82
+#: includes/abilities/info/class-list-dynamic-tag-sources.php:84
 msgid "Filter to sources that can return the given type."
 msgstr ""
 
-#: includes/abilities/info/class-list-dynamic-tag-sources.php:87
-msgid "Filter to a single group."
+#: includes/abilities/info/class-list-dynamic-tag-sources.php:89
+msgid "Filter to a single group. The accepted values are the groups actually registered on this site, so conditional families (for example \"woocommerce\", which only exists when WooCommerce is active) appear here only when they are available."
 msgstr ""
 
-#: includes/abilities/info/class-list-extensions.php:135
+#: includes/abilities/info/class-list-extensions.php:150
 msgid "List Extensions"
 msgstr ""
 
-#: includes/abilities/info/class-list-extensions.php:136
+#: includes/abilities/info/class-list-extensions.php:151
 msgid "Returns all DesignSetGo block extensions with their attribute schemas and applicable blocks. Extensions add features like animation, parallax, and responsive visibility to existing blocks. Use update-block with the extension attribute names to apply them."
 msgstr ""
 
-#: includes/abilities/info/class-list-extensions.php:161
+#: includes/abilities/info/class-list-extensions.php:178
 msgid "Filter to a specific extension by name (e.g., \"block-animations\"). Omit to list all."
 msgstr ""
 
-#: includes/abilities/info/class-list-extensions.php:165
+#: includes/abilities/info/class-list-extensions.php:182
 msgid "Search extensions by name, description, or keyword. Matches against extension names, labels, descriptions, and keyword aliases (e.g., searching \"parallax\" or \"scroll\" finds the vertical-parallax extension)."
 msgstr ""
 
-#: includes/abilities/info/class-list-extensions.php:189
+#: includes/abilities/info/class-list-extensions.php:206
 msgid "Extension identifier"
 msgstr ""
 
-#: includes/abilities/info/class-list-extensions.php:197
+#: includes/abilities/info/class-list-extensions.php:214
 msgid "What the extension does and how to use it"
 msgstr ""
 
-#: includes/abilities/info/class-list-extensions.php:200
+#: includes/abilities/info/class-list-extensions.php:217
 msgid "Which blocks this extension applies to. \"all\" means all blocks (with possible exclusions)."
 msgstr ""
 
-#: includes/abilities/info/class-list-extensions.php:204
+#: includes/abilities/info/class-list-extensions.php:221
 msgid "Blocks excluded from this extension"
 msgstr ""
 
-#: includes/abilities/info/class-list-extensions.php:208
+#: includes/abilities/info/class-list-extensions.php:225
 msgid "Attribute schemas — use these names with update-block"
 msgstr ""
 
-#: includes/abilities/info/class-list-extensions.php:215
+#: includes/abilities/info/class-list-extensions.php:232
 msgid "Total extensions returned"
 msgstr ""
 
@@ -1365,39 +1393,39 @@ msgstr ""
 msgid "Adds an accordion item with title and content into an existing accordion container."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-accordion-item.php:68
+#: includes/abilities/inserters/class-add-accordion-item.php:71
 msgid "Post ID containing the accordion"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-accordion-item.php:72
+#: includes/abilities/inserters/class-add-accordion-item.php:75
 msgid "Client ID of the parent accordion (optional - uses first accordion if not specified)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-accordion-item.php:76
+#: includes/abilities/inserters/class-add-accordion-item.php:79
 msgid "Accordion item title/question"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-accordion-item.php:80
+#: includes/abilities/inserters/class-add-accordion-item.php:83
 msgid "Accordion item content/answer (HTML supported)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-accordion-item.php:84
+#: includes/abilities/inserters/class-add-accordion-item.php:87
 msgid "Whether the item should be initially open"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-accordion-item.php:89
+#: includes/abilities/inserters/class-add-accordion-item.php:92
 msgid "Position within the accordion (-1 = append, 0 = prepend)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-accordion-item.php:132
+#: includes/abilities/inserters/class-add-accordion-item.php:135
 msgid "Accordion item title is required."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-accordion-item.php:139
+#: includes/abilities/inserters/class-add-accordion-item.php:142
 msgid "Accordion item content is required."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-accordion-item.php:175
+#: includes/abilities/inserters/class-add-accordion-item.php:178
 msgid "No accordion block found in the post."
 msgstr ""
 
@@ -1409,41 +1437,41 @@ msgstr ""
 msgid "Adds any block to a post at the top level. Provide a block_name (e.g., \"designsetgo/section\", \"core/paragraph\"), optional attributes, and optional inner_blocks. Use list-blocks to discover available blocks and their attribute schemas."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-block.php:75
+#: includes/abilities/inserters/class-add-block.php:78
 msgid "Block type to add (e.g., \"designsetgo/section\", \"core/paragraph\")"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-block.php:79
-#: includes/abilities/inserters/class-add-child-block.php:85
+#: includes/abilities/inserters/class-add-block.php:82
+#: includes/abilities/inserters/class-add-child-block.php:88
 msgid "Attributes for the new block"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-block.php:84
-#: includes/abilities/inserters/class-add-child-block.php:90
+#: includes/abilities/inserters/class-add-block.php:87
+#: includes/abilities/inserters/class-add-child-block.php:93
 msgid "Inner blocks for the new block (each with name, attributes, and optional innerBlocks)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-block.php:94
-#: includes/abilities/inserters/class-add-child-block.php:100
+#: includes/abilities/inserters/class-add-block.php:97
+#: includes/abilities/inserters/class-add-child-block.php:103
 msgid "Block attributes"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-block.php:98
-#: includes/abilities/inserters/class-add-child-block.php:104
+#: includes/abilities/inserters/class-add-block.php:101
+#: includes/abilities/inserters/class-add-child-block.php:107
 msgid "Nested inner blocks"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-block.php:106
+#: includes/abilities/inserters/class-add-block.php:109
 msgid "Position in the post. -1 appends to end (default), 0 prepends, or specify an index."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-block.php:157
-#: includes/abilities/inserters/class-add-child-block.php:209
+#: includes/abilities/inserters/class-add-block.php:160
+#: includes/abilities/inserters/class-add-child-block.php:212
 msgid "block_name is required."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-block.php:166
-#: includes/abilities/inserters/class-add-child-block.php:218
+#: includes/abilities/inserters/class-add-block.php:169
+#: includes/abilities/inserters/class-add-child-block.php:221
 msgid "block_name must be in \"namespace/block-name\" format (lowercase alphanumeric and hyphens)."
 msgstr ""
 
@@ -1455,39 +1483,39 @@ msgstr ""
 msgid "Adds a block as a child of an existing block. Use get-post-blocks to find the parent block_index first, then specify the block_name and attributes to insert."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-child-block.php:77
+#: includes/abilities/inserters/class-add-child-block.php:80
 msgid "Document-order index of the parent block (from get-post-blocks)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-child-block.php:81
+#: includes/abilities/inserters/class-add-child-block.php:84
 msgid "Block type to insert (e.g., \"designsetgo/icon-button\", \"core/paragraph\")"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-child-block.php:112
+#: includes/abilities/inserters/class-add-child-block.php:115
 msgid "Position within the parent's inner blocks. -1 appends to end (default), 0 prepends, or specify an index."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-child-block.php:136
+#: includes/abilities/inserters/class-add-child-block.php:139
 msgid "Post ID where the block was inserted"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-child-block.php:140
+#: includes/abilities/inserters/class-add-child-block.php:143
 msgid "Index of the parent block"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-child-block.php:144
+#: includes/abilities/inserters/class-add-child-block.php:147
 msgid "Name of the block that was inserted"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-child-block.php:148
+#: includes/abilities/inserters/class-add-child-block.php:151
 msgid "Position within the parent where the block was inserted"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-child-block.php:152
+#: includes/abilities/inserters/class-add-child-block.php:155
 msgid "Additional information"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-child-block.php:202
+#: includes/abilities/inserters/class-add-child-block.php:205
 msgid "parent_block_index is required."
 msgstr ""
 
@@ -1499,41 +1527,41 @@ msgstr ""
 msgid "Adds a tab with title and content into an existing tabs container."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-tab.php:68
+#: includes/abilities/inserters/class-add-tab.php:71
 msgid "Post ID containing the tabs"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-tab.php:72
+#: includes/abilities/inserters/class-add-tab.php:75
 msgid "Client ID of the parent tabs (optional - uses first tabs if not specified)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-tab.php:76
+#: includes/abilities/inserters/class-add-tab.php:79
 #: build/blocks/tabs/index.js:3
 #: src/blocks/tabs/edit.js:783
 msgid "Tab title"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-tab.php:80
+#: includes/abilities/inserters/class-add-tab.php:83
 msgid "Tab content (HTML supported)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-tab.php:84
+#: includes/abilities/inserters/class-add-tab.php:87
 msgid "Optional: Complex inner blocks instead of simple content"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-tab.php:88
+#: includes/abilities/inserters/class-add-tab.php:91
 msgid "Position within the tabs (-1 = append, 0 = prepend)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-tab.php:131
+#: includes/abilities/inserters/class-add-tab.php:134
 msgid "Tab title is required."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-tab.php:139
+#: includes/abilities/inserters/class-add-tab.php:142
 msgid "Tab content or inner_blocks is required."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-tab.php:175
+#: includes/abilities/inserters/class-add-tab.php:178
 msgid "No tabs block found in the post."
 msgstr ""
 
@@ -1545,47 +1573,47 @@ msgstr ""
 msgid "Adds a timeline item with date, title, and content into an existing timeline container."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:68
+#: includes/abilities/inserters/class-add-timeline-item.php:71
 msgid "Post ID containing the timeline"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:72
+#: includes/abilities/inserters/class-add-timeline-item.php:75
 msgid "Client ID of the parent timeline (optional - uses first timeline if not specified)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:76
+#: includes/abilities/inserters/class-add-timeline-item.php:79
 msgid "Date or label for the timeline item (e.g., \"2024\", \"January 2024\", \"Phase 1\")"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:80
+#: includes/abilities/inserters/class-add-timeline-item.php:83
 msgid "Timeline item title/heading"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:84
+#: includes/abilities/inserters/class-add-timeline-item.php:87
 msgid "Timeline item description content (HTML supported)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:88
+#: includes/abilities/inserters/class-add-timeline-item.php:91
 msgid "Whether this item should be highlighted as active/current"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:93
+#: includes/abilities/inserters/class-add-timeline-item.php:96
 msgid "Optional link URL for this timeline item"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:97
+#: includes/abilities/inserters/class-add-timeline-item.php:100
 msgid "Link target (_self or _blank)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:103
+#: includes/abilities/inserters/class-add-timeline-item.php:106
 msgid "Position within the timeline (-1 = append, 0 = prepend)"
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:150
+#: includes/abilities/inserters/class-add-timeline-item.php:153
 msgid "Timeline item title is required."
 msgstr ""
 
-#: includes/abilities/inserters/class-add-timeline-item.php:189
+#: includes/abilities/inserters/class-add-timeline-item.php:192
 msgid "No timeline block found in the post."
 msgstr ""
 
@@ -1597,19 +1625,19 @@ msgstr ""
 msgid "Returns the site's Additional CSS for the active theme — the same value managed by the WordPress Customizer's Additional CSS panel. Returns an empty string when none has been saved."
 msgstr ""
 
-#: includes/abilities/settings/class-get-global-css.php:79
+#: includes/abilities/settings/class-get-global-css.php:80
 msgid "Whether the read succeeded."
 msgstr ""
 
-#: includes/abilities/settings/class-get-global-css.php:83
+#: includes/abilities/settings/class-get-global-css.php:84
 msgid "The current Additional CSS for the active theme."
 msgstr ""
 
-#: includes/abilities/settings/class-get-global-css.php:87
+#: includes/abilities/settings/class-get-global-css.php:88
 msgid "The stylesheet (theme directory) the CSS is scoped to."
 msgstr ""
 
-#: includes/abilities/settings/class-get-global-css.php:91
+#: includes/abilities/settings/class-get-global-css.php:92
 msgid "ID of the underlying custom_css post, or null if no CSS has been saved yet."
 msgstr ""
 
@@ -1633,20 +1661,20 @@ msgstr ""
 msgid "The complete CSS to save. Pass an empty string to clear."
 msgstr ""
 
-#: includes/abilities/settings/class-update-global-css.php:81
-#: includes/abilities/settings/class-update-settings.php:76
+#: includes/abilities/settings/class-update-global-css.php:83
+#: includes/abilities/settings/class-update-settings.php:78
 msgid "Whether the update was applied."
 msgstr ""
 
-#: includes/abilities/settings/class-update-global-css.php:85
+#: includes/abilities/settings/class-update-global-css.php:87
 msgid "The CSS value as stored after sanitization."
 msgstr ""
 
-#: includes/abilities/settings/class-update-global-css.php:89
+#: includes/abilities/settings/class-update-global-css.php:91
 msgid "The stylesheet (theme directory) the CSS was saved to."
 msgstr ""
 
-#: includes/abilities/settings/class-update-global-css.php:93
+#: includes/abilities/settings/class-update-global-css.php:95
 msgid "ID of the custom_css post that stores the value."
 msgstr ""
 
@@ -1658,7 +1686,7 @@ msgstr ""
 msgid "Applies a partial update to DesignSetGo plugin settings. Only the keys provided are changed; all other settings are preserved. Nested groups are merged field-by-field — sending { \"forms\": { \"retention_days\": 60 } } updates just that field."
 msgstr ""
 
-#: includes/abilities/settings/class-update-settings.php:80
+#: includes/abilities/settings/class-update-settings.php:82
 msgid "The full settings object after the update has been applied."
 msgstr ""
 
@@ -1713,6 +1741,7 @@ msgstr ""
 #: build/blocks/icon-list-item/index.js:1
 #: build/blocks/icon/index.js:1
 #: build/blocks/modal-trigger/index.js:1
+#: build/blocks/star-rating/index.js:2
 #: src/blocks/counter/components/inspector/IconSettingsPanel.js:44
 #: src/blocks/counter/components/inspector/IconSettingsPanel.js:50
 #: src/blocks/divider/edit.js:132
@@ -1722,6 +1751,7 @@ msgstr ""
 #: src/blocks/icon/edit.js:153
 #: src/blocks/modal-trigger/edit.js:270
 #: src/blocks/modal-trigger/edit.js:278
+#: src/blocks/star-rating/components/StylePanel.js:47
 msgid "Icon"
 msgstr ""
 
@@ -1866,7 +1896,9 @@ msgid "Individual image item"
 msgstr ""
 
 #: includes/admin/blocks-registry-i18n.php:72
+#: build/blocks/query-pagination/index.js:1
 #: build/blocks/scroll-slides/index.js:1
+#: src/blocks/query-pagination/components/CarouselNotice.js:22
 #: src/blocks/scroll-slides/components/ScrollSlidesPlaceholder.js:17
 msgid "Scroll Slides"
 msgstr ""
@@ -1902,7 +1934,9 @@ msgid "Front or back face of a flip card"
 msgstr ""
 
 #: includes/admin/blocks-registry-i18n.php:82
+#: build/blocks/query-pagination/index.js:1
 #: build/blocks/slider/index.js:1
+#: src/blocks/query-pagination/components/CarouselNotice.js:21
 #: src/blocks/slider/components/SliderPlaceholder.js:18
 msgid "Slider"
 msgstr ""
@@ -1915,7 +1949,7 @@ msgstr ""
 #: build/blocks/flip-card/index.js:1
 #: build/blocks/slider/index.js:4
 #: src/blocks/flip-card/edit.js:190
-#: src/blocks/slider/edit.js:811
+#: src/blocks/slider/edit.js:833
 msgid "Slide"
 msgstr ""
 
@@ -1979,136 +2013,144 @@ msgid "Animated progress indicators"
 msgstr ""
 
 #: includes/admin/blocks-registry-i18n.php:100
+msgid "Star Rating"
+msgstr ""
+
+#: includes/admin/blocks-registry-i18n.php:101
+msgid "Star rating from a fixed value or a dynamic source"
+msgstr ""
+
+#: includes/admin/blocks-registry-i18n.php:102
 #: build/blocks/countdown-timer/index.js:1
 #: src/blocks/countdown-timer/edit.js:268
 msgid "Countdown Timer"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:101
+#: includes/admin/blocks-registry-i18n.php:103
 msgid "Display a countdown timer to a specific date and time"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:102
+#: includes/admin/blocks-registry-i18n.php:104
 msgid "Map"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:103
+#: includes/admin/blocks-registry-i18n.php:105
 msgid "Interactive map using OpenStreetMap or Google Maps"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:104
+#: includes/admin/blocks-registry-i18n.php:106
 msgid "Breadcrumbs"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:105
+#: includes/admin/blocks-registry-i18n.php:107
 msgid "Navigation breadcrumbs with Schema.org markup"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:106
+#: includes/admin/blocks-registry-i18n.php:108
 #: build/blocks/table-of-contents/index.js:1
 #: src/blocks/table-of-contents/components/InspectorPanels.js:189
 msgid "Table of Contents"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:107
+#: includes/admin/blocks-registry-i18n.php:109
 msgid "Auto-generate table of contents from page headings"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:110
+#: includes/admin/blocks-registry-i18n.php:112
 #: build/blocks/form-builder/index.js:1
 #: src/blocks/form-builder/components/FormBuilderPlaceholder.js:19
 msgid "Form Builder"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:111
+#: includes/admin/blocks-registry-i18n.php:113
 msgid "Complete form with AJAX submission"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:112
+#: includes/admin/blocks-registry-i18n.php:114
 msgid "Text Field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:113
+#: includes/admin/blocks-registry-i18n.php:115
 msgid "Text input field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:114
+#: includes/admin/blocks-registry-i18n.php:116
 msgid "Email Field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:115
+#: includes/admin/blocks-registry-i18n.php:117
 msgid "Email input field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:116
+#: includes/admin/blocks-registry-i18n.php:118
 msgid "Textarea"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:117
+#: includes/admin/blocks-registry-i18n.php:119
 msgid "Multi-line text input"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:118
+#: includes/admin/blocks-registry-i18n.php:120
 msgid "Number Field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:119
+#: includes/admin/blocks-registry-i18n.php:121
 msgid "Number input field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:120
+#: includes/admin/blocks-registry-i18n.php:122
 msgid "Phone Field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:121
+#: includes/admin/blocks-registry-i18n.php:123
 msgid "Phone number input"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:122
+#: includes/admin/blocks-registry-i18n.php:124
 msgid "URL Field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:123
+#: includes/admin/blocks-registry-i18n.php:125
 msgid "URL input field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:124
+#: includes/admin/blocks-registry-i18n.php:126
 msgid "Date Field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:125
+#: includes/admin/blocks-registry-i18n.php:127
 msgid "Date picker input"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:126
+#: includes/admin/blocks-registry-i18n.php:128
 msgid "Time Field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:127
+#: includes/admin/blocks-registry-i18n.php:129
 msgid "Time picker input"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:128
+#: includes/admin/blocks-registry-i18n.php:130
 msgid "Select Field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:129
+#: includes/admin/blocks-registry-i18n.php:131
 msgid "Dropdown select"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:130
+#: includes/admin/blocks-registry-i18n.php:132
 msgid "Checkbox Field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:131
+#: includes/admin/blocks-registry-i18n.php:133
 msgid "Checkbox input"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:132
+#: includes/admin/blocks-registry-i18n.php:134
 msgid "Hidden Field"
 msgstr ""
 
-#: includes/admin/blocks-registry-i18n.php:133
+#: includes/admin/blocks-registry-i18n.php:135
 msgid "Hidden form field"
 msgstr ""
 
@@ -2685,17 +2727,49 @@ msgstr ""
 msgid "Block name patterns excluded from configuration (supports wildcards like \"plugin/*\")."
 msgstr ""
 
-#: includes/admin/class-settings-schema.php:173
+#: includes/admin/class-settings-schema.php:61
+msgid "Performance controls — asset loading strategy, lazy loading, and script/style deferral."
+msgstr ""
+
+#: includes/admin/class-settings-schema.php:73
+msgid "Form Builder behaviour — submission storage, retention_days, spam protection, and notification settings."
+msgstr ""
+
+#: includes/admin/class-settings-schema.php:87
+msgid "Animation defaults and the per-block animation registry. Note that animations.block_animations is replaced wholesale on update, unlike the other list fields."
+msgstr ""
+
+#: includes/admin/class-settings-schema.php:126
+msgid "Security controls — SVG upload handling, CSS sanitization, and related hardening switches."
+msgstr ""
+
+#: includes/admin/class-settings-schema.php:136
+msgid "Third-party integration credentials and endpoints. Values here include secrets, which is why reading settings requires manage_options."
+msgstr ""
+
+#: includes/admin/class-settings-schema.php:146
+msgid "Sticky header behaviour — which element sticks, the scroll offset that activates it, and shrink-on-scroll options."
+msgstr ""
+
+#: includes/admin/class-settings-schema.php:179
 msgid "Hex color (e.g. \"#ffffff\") or empty string."
 msgstr ""
 
-#: includes/admin/class-settings-schema.php:182
+#: includes/admin/class-settings-schema.php:188
 msgid "Hex color (e.g. \"#000000\") or empty string."
+msgstr ""
+
+#: includes/admin/class-settings-schema.php:194
+msgid "Draft Mode — lets an editor stage changes to a published page and publish them in one step."
+msgstr ""
+
+#: includes/admin/class-settings-schema.php:210
+msgid "llms.txt generation — whether the file is served, and which post types and fields it advertises to AI crawlers."
 msgstr ""
 
 #: includes/admin/class-settings.php:237
 #: build/ext-block-animations.js:1
-#: src/extensions/block-animations/components/AnimationPanel.js:102
+#: src/extensions/block-animations/components/AnimationPanel.js:106
 msgid "Animation"
 msgstr ""
 
@@ -2805,8 +2879,8 @@ msgstr ""
 
 #: includes/admin/class-settings.php:297
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:69
-#: src/extensions/text-reveal/components/TextRevealPanel.js:153
+#: src/extensions/text-reveal/components/TextRevealPanel.js:75
+#: src/extensions/text-reveal/components/TextRevealPanel.js:177
 msgid "Text Reveal"
 msgstr ""
 
@@ -3172,8 +3246,8 @@ msgstr ""
 #: build/blocks/query/index.js:7
 #: build/index.js:3
 #: src/blocks/query/components/MetaQueryBuilder.js:31
-#: src/blocks/query/components/QuerySourcePanel.js:18
-#: src/blocks/query/components/QuerySourcePanel.js:46
+#: src/blocks/query/components/QuerySourcePanel.js:19
+#: src/blocks/query/components/QuerySourcePanel.js:47
 #: src/extensions/dynamic-tags/bindable-attributes.js:73
 msgid "Date"
 msgstr ""
@@ -3258,25 +3332,33 @@ msgstr ""
 msgid "config.type must be \"taxonomy\" or \"meta\"."
 msgstr ""
 
-#: includes/dynamic-tags/class-dynamic-tags-bootstrap.php:103
+#: includes/blocks/text-path/class-text-path-controller.php:72
+msgid "You do not have permission to extract SVG paths."
+msgstr ""
+
+#: includes/blocks/text-path/class-text-path-controller.php:84
+msgid "The SVG does not contain a safe path."
+msgstr ""
+
+#: includes/dynamic-tags/class-dynamic-tags-bootstrap.php:106
 #: build/index.js:7
 #: src/extensions/style-binding/filters.js:24
 msgid "Post meta"
 msgstr ""
 
-#: includes/dynamic-tags/class-dynamic-tags-bootstrap.php:115
+#: includes/dynamic-tags/class-dynamic-tags-bootstrap.php:118
 msgid "ACF field"
 msgstr ""
 
-#: includes/dynamic-tags/class-dynamic-tags-bootstrap.php:128
+#: includes/dynamic-tags/class-dynamic-tags-bootstrap.php:131
 msgid "Meta Box field"
 msgstr ""
 
-#: includes/dynamic-tags/class-dynamic-tags-bootstrap.php:140
+#: includes/dynamic-tags/class-dynamic-tags-bootstrap.php:143
 msgid "Pods field"
 msgstr ""
 
-#: includes/dynamic-tags/class-dynamic-tags-bootstrap.php:152
+#: includes/dynamic-tags/class-dynamic-tags-bootstrap.php:155
 msgid "JetEngine field"
 msgstr ""
 
@@ -3367,8 +3449,8 @@ msgstr ""
 #: includes/dynamic-tags/class-dynamic-tags-sources-post.php:141
 #: build/blocks/query/index.js:7
 #: build/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:131
-#: src/blocks/query/components/QuerySourcePanel.js:137
+#: src/blocks/query/components/QuerySourcePanel.js:132
+#: src/blocks/query/components/QuerySourcePanel.js:138
 #: src/extensions/dynamic-tags/register-bindings-sources.js:77
 msgid "Post type"
 msgstr ""
@@ -3431,6 +3513,34 @@ msgstr ""
 msgid "Current user email"
 msgstr ""
 
+#: includes/dynamic-tags/class-dynamic-tags-sources-woo.php:52
+msgid "WooCommerce"
+msgstr ""
+
+#: includes/dynamic-tags/class-dynamic-tags-sources-woo.php:57
+msgid "Price (formatted)"
+msgstr ""
+
+#: includes/dynamic-tags/class-dynamic-tags-sources-woo.php:74
+msgid "Price (raw number)"
+msgstr ""
+
+#: includes/dynamic-tags/class-dynamic-tags-sources-woo.php:89
+msgid "Regular price (raw number)"
+msgstr ""
+
+#: includes/dynamic-tags/class-dynamic-tags-sources-woo.php:104
+msgid "Discount percent"
+msgstr ""
+
+#: includes/dynamic-tags/class-dynamic-tags-sources-woo.php:112
+msgid "Stock quantity"
+msgstr ""
+
+#: includes/dynamic-tags/class-dynamic-tags-sources-woo.php:131
+msgid "Average rating"
+msgstr ""
+
 #: includes/features/breadcrumbs-functions.php:43
 msgid "Home"
 msgstr ""
@@ -3445,6 +3555,22 @@ msgstr ""
 
 #: includes/features/class-overlay-header.php:94
 msgid "Skip top bar when using overlay header"
+msgstr ""
+
+#. translators: 1: rating value, 2: maximum rating.
+#: includes/features/star-rating-functions.php:160
+#: build/blocks/star-rating/index.js:3
+#: src/blocks/star-rating/components/StarRatingPreview.js:56
+#, php-format,js-format
+msgid "Rated %1$s out of %2$s"
+msgstr ""
+
+#. translators: 1: "Rated 4.5 out of 5", 2: number of ratings.
+#: includes/features/star-rating-functions.php:171
+#: build/blocks/star-rating/index.js:4
+#: src/blocks/star-rating/components/StarRatingPreview.js:67
+#, php-format,js-format
+msgid "%1$s, based on %2$s ratings"
 msgstr ""
 
 #: includes/integrations/query-monitor/class-query-qm-collector.php:71
@@ -3473,6 +3599,9 @@ msgid "Found posts"
 msgstr ""
 
 #: includes/integrations/query-monitor/class-query-qm-output.php:77
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:311
 msgid "Duration (ms)"
 msgstr ""
 
@@ -4355,6 +4484,10 @@ msgstr ""
 msgid "Trainer Profiles Grid"
 msgstr ""
 
+#: patterns/testimonials/reviews-star-rating-cards.php:21
+msgid "Reviews with Star Rating"
+msgstr ""
+
 #: patterns/testimonials/testimonials-cards-animated.php:13
 msgid "Testimonials Cards Animated"
 msgstr ""
@@ -4543,6 +4676,7 @@ msgstr ""
 #: build/blocks/card/index.js:1
 #: build/blocks/dynamic-image/index.js:4
 #: build/blocks/fifty-fifty/index.js:1
+#: build/blocks/heading-segment/index.js:1
 #: build/blocks/query/index.js:1
 #: build/blocks/query/index.js:7
 #: build/blocks/query/index.js:8
@@ -4555,6 +4689,7 @@ msgstr ""
 #: src/blocks/card/edit.js:482
 #: src/blocks/dynamic-image/edit.js:369
 #: src/blocks/fifty-fifty/edit.js:337
+#: src/blocks/heading-segment/components/AnimatedWordsControl.js:150
 #: src/blocks/query/components/DateQueryBuilder.js:183
 #: src/blocks/query/components/MetaQueryBuilder.js:100
 #: src/blocks/query/components/TaxQueryBuilder.js:124
@@ -4899,7 +5034,7 @@ msgstr ""
 #: build/admin-settings.js:1
 #: build/blocks/slider/index.js:4
 #: src/admin/components/settings-panels/StickyHeaderPanel.js:439
-#: src/blocks/slider/edit.js:1057
+#: src/blocks/slider/edit.js:1079
 msgid "Advanced Settings"
 msgstr ""
 
@@ -4942,7 +5077,7 @@ msgstr ""
 #: build/blocks/slider/index.js:4
 #: build/blocks/tabs/index.js:2
 #: src/admin/components/settings-panels/StickyHeaderPanel.js:543
-#: src/blocks/slider/edit.js:1061
+#: src/blocks/slider/edit.js:1083
 #: src/blocks/tabs/edit.js:587
 #: src/blocks/tabs/edit.js:595
 msgid "Mobile Breakpoint (px)"
@@ -4988,7 +5123,7 @@ msgstr ""
 #: build/admin-settings.js:1
 #: build/ext-block-animations.js:1
 #: src/admin/components/settings-panels/PerformancePanel.js:63
-#: src/extensions/block-animations/components/AnimationPanel.js:119
+#: src/extensions/block-animations/components/AnimationPanel.js:123
 msgid "Off"
 msgstr ""
 
@@ -5217,7 +5352,7 @@ msgstr ""
 #: build/ext-block-animations.js:1
 #: build/ext-block-animations.js:2
 #: src/admin/components/settings-panels/AnimationsPanel.js:190
-#: src/extensions/block-animations/components/AnimationPanel.js:97
+#: src/extensions/block-animations/components/AnimationPanel.js:101
 #: src/extensions/block-animations/components/AnimationToolbar.js:57
 msgid "Animations"
 msgstr ""
@@ -5277,7 +5412,7 @@ msgstr ""
 #: build/blocks/slider/index.js:4
 #: src/admin/components/settings-panels/AnimationsPanel.js:264
 #: src/blocks/blobs/edit.js:476
-#: src/blocks/slider/edit.js:848
+#: src/blocks/slider/edit.js:870
 msgid "Ease"
 msgstr ""
 
@@ -5286,7 +5421,7 @@ msgstr ""
 #: build/blocks/slider/index.js:4
 #: src/admin/components/settings-panels/AnimationsPanel.js:268
 #: src/blocks/blobs/edit.js:480
-#: src/blocks/slider/edit.js:854
+#: src/blocks/slider/edit.js:876
 msgid "Ease In"
 msgstr ""
 
@@ -5295,7 +5430,7 @@ msgstr ""
 #: build/blocks/slider/index.js:4
 #: src/admin/components/settings-panels/AnimationsPanel.js:272
 #: src/blocks/blobs/edit.js:484
-#: src/blocks/slider/edit.js:858
+#: src/blocks/slider/edit.js:880
 msgid "Ease Out"
 msgstr ""
 
@@ -5308,7 +5443,7 @@ msgstr ""
 #: src/blocks/blobs/edit.js:488
 #: src/blocks/counter-group/index.js:367
 #: src/blocks/counter/components/inspector/AnimationPanel.js:162
-#: src/blocks/slider/edit.js:850
+#: src/blocks/slider/edit.js:872
 msgid "Ease In Out"
 msgstr ""
 
@@ -5321,7 +5456,7 @@ msgstr ""
 #: src/blocks/blobs/edit.js:472
 #: src/blocks/counter-group/index.js:371
 #: src/blocks/counter/components/inspector/AnimationPanel.js:166
-#: src/blocks/slider/edit.js:862
+#: src/blocks/slider/edit.js:884
 msgid "Linear"
 msgstr ""
 
@@ -5345,6 +5480,8 @@ msgstr ""
 #: build/blocks/blobs/index.js:1
 #: build/blocks/dynamic-image/index.js:3
 #: build/blocks/form-text-field/index.js:1
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
 #: build/blocks/icon-button/index.js:1
 #: build/blocks/icon-button/index.js:2
 #: build/blocks/icon-list-item/index.js:1
@@ -5358,11 +5495,14 @@ msgstr ""
 #: build/ext-block-animations.js:2
 #: build/ext-sticky-header.js:1
 #: build/index.js:7
+#: build/index.js:13
 #: src/admin/components/settings-panels/AnimationsPanel.js:316
 #: src/blocks/accordion/edit.js:179
 #: src/blocks/blobs/edit.js:392
 #: src/blocks/dynamic-image/edit.js:66
 #: src/blocks/form-text-field/edit.js:324
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:218
+#: src/blocks/hotspot/components/HotspotInspector.js:191
 #: src/blocks/icon-button/components/inspector/ButtonSettingsPanel.js:28
 #: src/blocks/icon-button/components/inspector/ButtonSettingsPanel.js:153
 #: src/blocks/icon-list-item/components/inspector/LinkSettingsPanel.js:66
@@ -5370,13 +5510,14 @@ msgstr ""
 #: src/blocks/modal-trigger/edit.js:316
 #: src/blocks/modal/components/AnimationSettings.js:43
 #: src/blocks/modal/components/TriggerSettings.js:46
-#: src/blocks/query/components/QuerySourcePanel.js:15
+#: src/blocks/query/components/QuerySourcePanel.js:16
 #: src/blocks/section/utils/shape-dividers.js:225
 #: src/blocks/tab/edit.js:141
-#: src/extensions/block-animations/components/AnimationPanel.js:156
-#: src/extensions/block-animations/components/AnimationPanel.js:171
+#: src/extensions/block-animations/components/AnimationPanel.js:160
+#: src/extensions/block-animations/components/AnimationPanel.js:192
 #: src/extensions/block-animations/components/AnimationToolbar.js:76
 #: src/extensions/hover-effects/constants.js:19
+#: src/extensions/schema/constants.js:21
 #: src/extensions/sticky-header-controls/edit.js:75
 #: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:122
 #: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:227
@@ -5547,14 +5688,20 @@ msgid "Entrance"
 msgstr ""
 
 #: build/admin-settings.js:5
+#: build/blocks/hotspot/index.js:3
 #: src/admin/components/settings-panels/AnimationsPanel.js:653
+#: src/blocks/hotspot/components/HotspotInspector.js:94
+#: src/blocks/hotspot/components/HotspotInspector.js:100
 msgid "Trigger"
 msgstr ""
 
 #: build/admin-settings.js:5
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
 #: build/ext-block-animations.js:2
 #: src/admin/components/settings-panels/AnimationsPanel.js:668
-#: src/extensions/block-animations/components/AnimationPanel.js:204
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:298
+#: src/extensions/block-animations/components/AnimationPanel.js:238
 msgid "Duration"
 msgstr ""
 
@@ -5627,7 +5774,7 @@ msgstr ""
 #: build/admin-settings.js:5
 #: build/blocks/map/index.js:3
 #: src/admin/components/settings-panels/IntegrationsPanel.js:33
-#: src/blocks/map/edit.js:216
+#: src/blocks/map/edit.js:171
 msgid "Google Maps"
 msgstr ""
 
@@ -6075,8 +6222,8 @@ msgstr ""
 #: build/index.js:8
 #: src/admin/query-filter-index-dashboard/Dashboard.js:255
 #: src/admin/query-filter-index-dashboard/Dashboard.js:380
-#: src/blocks/query/components/QuerySourcePanel.js:114
-#: src/blocks/query/components/QuerySourcePanel.js:120
+#: src/blocks/query/components/QuerySourcePanel.js:115
+#: src/blocks/query/components/QuerySourcePanel.js:121
 #: src/extensions/style-binding/filters.js:132
 msgid "Source"
 msgstr ""
@@ -6099,7 +6246,7 @@ msgstr ""
 #: src/admin/query-filter-index-dashboard/Dashboard.js:298
 #: src/blocks/query-filter/edit.js:203
 #: src/blocks/query-filter/edit.js:209
-#: src/blocks/query/components/QuerySourcePanel.js:16
+#: src/blocks/query/components/QuerySourcePanel.js:17
 #: src/blocks/query/components/TaxQueryBuilder.js:81
 #: src/components/DynamicTagPicker/SourceArgsForm.js:26
 #: src/extensions/visibility/RuleRow.js:12
@@ -6205,8 +6352,10 @@ msgstr ""
 
 #: build/blocks/accordion/index.js:1
 #: build/blocks/tabs/index.js:1
+#: build/index.js:13
 #: src/blocks/accordion/templates.js:31
 #: src/blocks/tabs/templates.js:99
+#: src/extensions/schema/constants.js:26
 msgid "FAQ"
 msgstr ""
 
@@ -6402,10 +6551,11 @@ msgstr ""
 #: build/blocks/image-accordion-item/index.js:1
 #: build/blocks/modal/index.js:1
 #: build/blocks/product-showcase-hero/index.js:2
-#: build/blocks/query-pagination/index.js:1
+#: build/blocks/query-pagination/index.js:2
 #: build/blocks/slide/index.js:1
 #: build/blocks/tab/index.js:1
 #: build/blocks/tabs/index.js:2
+#: build/blocks/text-path/index.js:1
 #: build/index.js:7
 #: src/blocks/accordion/edit.js:205
 #: src/blocks/card/components/inspector/LayoutSettingsPanel.js:47
@@ -6419,10 +6569,11 @@ msgstr ""
 #: src/blocks/image-accordion-item/edit.js:209
 #: src/blocks/modal/components/ModalSettings.js:140
 #: src/blocks/product-showcase-hero/components/LayoutPanel.js:42
-#: src/blocks/query-pagination/edit.js:75
+#: src/blocks/query-pagination/edit.js:79
 #: src/blocks/slide/edit.js:474
 #: src/blocks/tab/edit.js:145
 #: src/blocks/tabs/edit.js:519
+#: src/blocks/text-path/components/TextPathControls.js:317
 #: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:41
 msgid "Left"
 msgstr ""
@@ -6437,10 +6588,11 @@ msgstr ""
 #: build/blocks/image-accordion-item/index.js:1
 #: build/blocks/modal/index.js:1
 #: build/blocks/product-showcase-hero/index.js:2
-#: build/blocks/query-pagination/index.js:1
+#: build/blocks/query-pagination/index.js:2
 #: build/blocks/slide/index.js:1
 #: build/blocks/tab/index.js:1
 #: build/blocks/tabs/index.js:2
+#: build/blocks/text-path/index.js:1
 #: build/index.js:7
 #: src/blocks/accordion/edit.js:209
 #: src/blocks/card/components/inspector/LayoutSettingsPanel.js:49
@@ -6454,10 +6606,11 @@ msgstr ""
 #: src/blocks/image-accordion-item/edit.js:217
 #: src/blocks/modal/components/ModalSettings.js:142
 #: src/blocks/product-showcase-hero/components/LayoutPanel.js:46
-#: src/blocks/query-pagination/edit.js:77
+#: src/blocks/query-pagination/edit.js:81
 #: src/blocks/slide/edit.js:482
 #: src/blocks/tab/edit.js:149
 #: src/blocks/tabs/edit.js:527
+#: src/blocks/text-path/components/TextPathControls.js:323
 #: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:42
 msgid "Right"
 msgstr ""
@@ -6509,12 +6662,15 @@ msgstr ""
 #: build/blocks/accordion/index.js:1
 #: build/blocks/modal/index.js:1
 #: build/blocks/query/index.js:6
+#: build/blocks/text-path/index.js:1
 #: build/fmt-text-style.js:1
 #: build/index.js:3
 #: src/blocks/accordion/edit.js:337
 #: src/blocks/accordion/edit.js:385
 #: src/blocks/modal/components/GallerySettings.js:132
 #: src/blocks/query/components/MetaQueryBuilder.js:29
+#: src/blocks/text-path/components/TextPathControls.js:109
+#: src/blocks/text-path/components/TextPathControls.js:115
 #: src/extensions/dynamic-tags/bindable-attributes.js:56
 #: src/formats/text-style/components/ColorSection.js:96
 msgid "Text"
@@ -6541,28 +6697,165 @@ msgid "Hover colors mirror open state by default. Set custom colors to override.
 msgstr ""
 
 #: build/blocks/advanced-heading/index.js:1
-#: src/blocks/advanced-heading/edit.js:32
-msgid "Bold"
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:193
+msgid "Choose one animated heading segment before configuring this headline."
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:197
+msgid "Select Animated words in one heading segment to configure this headline."
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:210
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:218
+msgid "Headline mode"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:222
+msgid "Rotating"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:226
+msgid "Highlighted"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: build/ext-hover-effects.js:1
+#: build/index.js:7
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:239
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:249
+#: src/extensions/hover-effects/edit.js:26
+#: src/extensions/text-reveal/components/TextRevealPanel.js:96
+msgid "Effect"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: build/blocks/text-path/index.js:1
+#: build/index.js:7
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:261
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:274
+#: src/blocks/text-path/components/TextPathControls.js:194
+#: src/blocks/text-path/components/TextPathControls.js:200
+#: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:98
+msgid "Direction"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:278
+msgid "Forward (first to last)"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:285
+msgid "Reverse (last to first)"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:322
+msgid "Delay"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: build/ext-block-animations.js:2
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:332
+#: src/extensions/block-animations/components/AnimationPanel.js:251
+msgid "Delay (ms)"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: build/blocks/slider/index.js:4
+#: build/ext-background-video.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:343
+#: src/blocks/slider/edit.js:1021
+#: src/extensions/background-video/edit.js:299
+msgid "Loop"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:353
+msgid "Loop animation"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:362
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:372
+msgid "Highlight shape"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:386
+msgid "Headline link"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: build/blocks/icon-list-item/index.js:1
+#: build/blocks/icon/index.js:3
+#: build/ext-clickable-group.js:1
+#: build/index.js:3
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:392
+#: src/blocks/icon-list-item/components/inspector/LinkSettingsPanel.js:39
+#: src/blocks/icon/components/inspector/LinkSettingsPanel.js:67
+#: src/blocks/icon/edit.js:313
+#: src/extensions/clickable-group/edit.js:61
+#: src/extensions/dynamic-tags/bindable-attributes.js:52
+msgid "URL"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: build/blocks/heading-segment/index.js:1
+#: build/blocks/icon-button/index.js:4
+#: build/blocks/icon-list-item/index.js:1
+#: build/blocks/icon/index.js:3
+#: build/blocks/text-path/index.js:1
+#: build/ext-clickable-group.js:1
+#: src/blocks/advanced-heading/components/AnimatedHeadlinePanel.js:400
+#: src/blocks/icon-button/edit.js:315
+#: src/blocks/icon-list-item/components/inspector/LinkSettingsPanel.js:51
+#: src/blocks/icon/edit.js:326
+#: src/blocks/icon/edit.js:337
+#: src/blocks/text-path/components/TextPathControls.js:235
+#: src/extensions/clickable-group/edit.js:90
+msgid "Open in new tab"
 msgstr ""
 
 #: build/blocks/advanced-heading/index.js:1
 #: src/blocks/advanced-heading/edit.js:36
+msgid "Bold"
+msgstr ""
+
+#: build/blocks/advanced-heading/index.js:1
+#: src/blocks/advanced-heading/edit.js:40
 msgid "Heading"
 msgstr ""
 
 #: build/blocks/advanced-heading/index.js:1
-#: src/blocks/advanced-heading/edit.js:83
+#: src/blocks/advanced-heading/edit.js:232
 msgid "Change heading level"
 msgstr ""
 
 #: build/blocks/advanced-heading/index.js:1
-#: src/blocks/advanced-heading/edit.js:104
-msgid "Heading Settings"
-msgstr ""
-
-#: build/blocks/advanced-heading/index.js:1
-#: src/blocks/advanced-heading/edit.js:108
-msgid "Heading Level"
+#: src/blocks/advanced-heading/edit.js:264
+#: src/blocks/advanced-heading/edit.js:270
+msgid "Heading level"
 msgstr ""
 
 #: build/blocks/blobs/index.js:1
@@ -6650,8 +6943,8 @@ msgstr ""
 #: build/blocks/section/index.js:2
 #: src/blocks/blobs/edit.js:319
 #: src/blocks/blobs/edit.js:325
-#: src/blocks/chart/edit.js:172
-#: src/blocks/chart/edit.js:180
+#: src/blocks/chart/edit.js:176
+#: src/blocks/chart/edit.js:184
 #: src/blocks/image-accordion/edit.js:205
 #: src/blocks/image-accordion/edit.js:211
 #: src/blocks/modal/components/ModalSettings.js:231
@@ -6687,7 +6980,11 @@ msgid "Float"
 msgstr ""
 
 #: build/blocks/blobs/index.js:1
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
 #: src/blocks/blobs/edit.js:400
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:207
+#: src/blocks/hotspot/components/HotspotInspector.js:180
 msgid "Pulse"
 msgstr ""
 
@@ -6873,11 +7170,17 @@ msgid "(no title)"
 msgstr ""
 
 #: build/blocks/breadcrumbs/index.js:1
+#: build/blocks/hotspot-item/index.js:1
 #: build/blocks/icon-button/index.js:4
 #: build/blocks/modal-trigger/index.js:1
+#: build/blocks/text-path/index.js:1
 #: src/blocks/breadcrumbs/edit.js:165
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:81
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:88
 #: src/blocks/icon-button/edit.js:248
 #: src/blocks/modal-trigger/edit.js:260
+#: src/blocks/text-path/components/TextPathControls.js:218
+#: src/blocks/text-path/components/TextPathControls.js:226
 msgid "Link"
 msgstr ""
 
@@ -6962,8 +7265,8 @@ msgstr ""
 #: src/blocks/card/components/inspector/LayoutSettingsPanel.js:53
 #: src/blocks/card/edit.js:185
 #: src/blocks/form-builder/edit.js:420
-#: src/blocks/slider/edit.js:627
-#: src/blocks/slider/edit.js:760
+#: src/blocks/slider/edit.js:649
+#: src/blocks/slider/edit.js:782
 #: src/blocks/tabs/edit.js:481
 msgid "Default"
 msgstr ""
@@ -6975,6 +7278,7 @@ msgstr ""
 #: build/blocks/icon-list/index.js:3
 #: build/blocks/icon/index.js:2
 #: build/blocks/modal-trigger/index.js:2
+#: build/blocks/star-rating/index.js:2
 #: build/blocks/tab/index.js:2
 #: src/blocks/card/components/inspector/LayoutSettingsPanel.js:54
 #: src/blocks/card/edit.js:186
@@ -6989,6 +7293,7 @@ msgstr ""
 #: src/blocks/icon/edit.js:200
 #: src/blocks/modal-trigger/edit.js:353
 #: src/blocks/modal-trigger/edit.js:366
+#: src/blocks/star-rating/components/StylePanel.js:79
 #: src/blocks/tab/edit.js:212
 #: src/blocks/tab/edit.js:225
 msgid "Outlined"
@@ -7001,6 +7306,7 @@ msgstr ""
 #: build/blocks/icon-list/index.js:3
 #: build/blocks/icon/index.js:2
 #: build/blocks/modal-trigger/index.js:2
+#: build/blocks/star-rating/index.js:2
 #: build/blocks/tab/index.js:2
 #: src/blocks/card/components/inspector/LayoutSettingsPanel.js:55
 #: src/blocks/card/edit.js:187
@@ -7015,6 +7321,7 @@ msgstr ""
 #: src/blocks/icon/edit.js:196
 #: src/blocks/modal-trigger/edit.js:354
 #: src/blocks/modal-trigger/edit.js:362
+#: src/blocks/star-rating/components/StylePanel.js:75
 #: src/blocks/tab/edit.js:213
 #: src/blocks/tab/edit.js:221
 msgid "Filled"
@@ -7034,7 +7341,7 @@ msgstr ""
 #: src/blocks/card/components/inspector/LayoutSettingsPanel.js:57
 #: src/blocks/card/edit.js:189
 #: src/blocks/query/templates.js:7
-#: src/blocks/slider/edit.js:639
+#: src/blocks/slider/edit.js:661
 #: src/blocks/tabs/edit.js:493
 #: src/extensions/svg-patterns/pattern-data.js:413
 msgid "Minimal"
@@ -7049,10 +7356,11 @@ msgstr ""
 #: build/blocks/image-accordion-item/index.js:1
 #: build/blocks/product-categories-grid/index.js:5
 #: build/blocks/product-showcase-hero/index.js:2
-#: build/blocks/query-pagination/index.js:1
+#: build/blocks/query-pagination/index.js:2
 #: build/blocks/slide/index.js:1
 #: build/blocks/slider/index.js:4
 #: build/blocks/tabs/index.js:2
+#: build/blocks/text-path/index.js:1
 #: src/blocks/card/components/inspector/LayoutSettingsPanel.js:48
 #: src/blocks/card/edit.js:194
 #: src/blocks/counter-group/index.js:271
@@ -7065,11 +7373,12 @@ msgstr ""
 #: src/blocks/image-accordion-item/edit.js:213
 #: src/blocks/product-categories-grid/edit.js:263
 #: src/blocks/product-showcase-hero/components/LayoutPanel.js:73
-#: src/blocks/query-pagination/edit.js:76
+#: src/blocks/query-pagination/edit.js:80
 #: src/blocks/slide/edit.js:445
 #: src/blocks/slide/edit.js:478
-#: src/blocks/slider/edit.js:689
+#: src/blocks/slider/edit.js:711
 #: src/blocks/tabs/edit.js:523
+#: src/blocks/text-path/components/TextPathControls.js:319
 msgid "Center"
 msgstr ""
 
@@ -7143,9 +7452,11 @@ msgstr ""
 #: build/blocks/card/index.js:1
 #: build/blocks/dynamic-image/index.js:4
 #: build/blocks/fifty-fifty/index.js:1
+#: build/blocks/hotspot/index.js:3
 #: src/blocks/card/edit.js:269
 #: src/blocks/dynamic-image/edit.js:352
 #: src/blocks/fifty-fifty/edit.js:450
+#: src/blocks/hotspot/components/HotspotInspector.js:73
 msgid "Select image"
 msgstr ""
 
@@ -7171,9 +7482,11 @@ msgstr ""
 
 #: build/blocks/card/index.js:1
 #: build/blocks/fifty-fifty/index.js:1
+#: build/blocks/hotspot/index.js:3
 #: src/blocks/card/components/inspector/ImageSettingsPanel.js:55
 #: src/blocks/card/edit.js:416
 #: src/blocks/fifty-fifty/edit.js:284
+#: src/blocks/hotspot/components/HotspotInspector.js:53
 msgid "Image"
 msgstr ""
 
@@ -7219,9 +7532,9 @@ msgstr ""
 #: src/blocks/card/components/inspector/ImageSettingsPanel.js:138
 #: src/blocks/card/edit.js:537
 #: src/blocks/card/edit.js:548
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:327
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:333
-#: src/blocks/slider/edit.js:545
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:351
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:357
+#: src/blocks/slider/edit.js:567
 msgid "Aspect Ratio"
 msgstr ""
 
@@ -7255,7 +7568,7 @@ msgstr ""
 #: src/blocks/card/components/inspector/ImageSettingsPanel.js:44
 #: src/blocks/card/edit.js:568
 #: src/blocks/modal/components/ModalSettings.js:250
-#: src/extensions/block-animations/components/AnimationPanel.js:115
+#: src/extensions/block-animations/components/AnimationPanel.js:119
 #: src/formats/text-style/components/SizeSection.js:122
 #: src/formats/text-style/components/SizeSection.js:127
 msgid "Custom"
@@ -7542,147 +7855,195 @@ msgid "Series"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:22
-msgid "Bar"
+#: src/blocks/chart/components/ValueFormatControls.js:37
+#: src/blocks/chart/components/ValueFormatControls.js:45
+msgid "Value prefix"
+msgstr ""
+
+#: build/blocks/chart/index.js:4
+#: src/blocks/chart/components/ValueFormatControls.js:48
+msgid "Goes in front of every value, e.g. $. Include a space if you want one."
+msgstr ""
+
+#: build/blocks/chart/index.js:4
+#: src/blocks/chart/components/ValueFormatControls.js:56
+#: src/blocks/chart/components/ValueFormatControls.js:64
+msgid "Value suffix"
+msgstr ""
+
+#: build/blocks/chart/index.js:4
+#: src/blocks/chart/components/ValueFormatControls.js:69
+msgid "Goes after every value in the data table. Donut slice labels always show a share of the total."
+msgstr ""
+
+#: build/blocks/chart/index.js:4
+#: src/blocks/chart/components/ValueFormatControls.js:73
+msgid "Goes after every value, e.g. %. Include a space if you want one."
+msgstr ""
+
+#: build/blocks/chart/index.js:4
+#: src/blocks/chart/components/ValueFormatControls.js:82
+#: src/blocks/chart/components/ValueFormatControls.js:89
+msgid "Group thousands"
+msgstr ""
+
+#: build/blocks/chart/index.js:4
+#: src/blocks/chart/components/ValueFormatControls.js:94
+msgid "Separates large numbers, e.g. 1,234,567."
 msgstr ""
 
 #: build/blocks/chart/index.js:4
 #: src/blocks/chart/edit.js:23
+msgid "Bar"
+msgstr ""
+
+#: build/blocks/chart/index.js:4
+#: build/blocks/text-path/index.js:1
+#: src/blocks/chart/edit.js:24
+#: src/utils/svg-paths.js:94
 msgid "Line"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:24
+#: src/blocks/chart/edit.js:25
 msgid "Donut"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:28
+#: src/blocks/chart/edit.js:29
 msgid "Enter data"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:29
+#: src/blocks/chart/edit.js:30
 msgid "Post meta field"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:60
-#: src/blocks/chart/edit.js:68
+#: src/blocks/chart/edit.js:64
+#: src/blocks/chart/edit.js:72
 msgid "Chart type"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:76
+#: src/blocks/chart/edit.js:80
 msgid "Slices are shares of a total, so rows of zero or less are left out."
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:86
-#: src/blocks/chart/edit.js:94
+#: src/blocks/chart/edit.js:90
+#: src/blocks/chart/edit.js:98
 msgid "Description"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:99
+#: src/blocks/chart/edit.js:103
 msgid "Read by screen readers as the data table caption."
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:107
-#: src/blocks/chart/edit.js:117
+#: src/blocks/chart/edit.js:111
+#: src/blocks/chart/edit.js:121
 msgid "Data source"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
 #: build/blocks/query/index.js:7
-#: src/blocks/chart/edit.js:128
-#: src/blocks/chart/edit.js:136
-#: src/blocks/query/components/QuerySourcePanel.js:253
+#: src/blocks/chart/edit.js:132
+#: src/blocks/chart/edit.js:140
+#: src/blocks/query/components/QuerySourcePanel.js:254
 msgid "Meta key"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:141
+#: src/blocks/chart/edit.js:145
 msgid "The field must hold a JSON array of {label, value} objects."
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:151
+#: src/blocks/chart/edit.js:155
 msgid "Data"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
 #: build/blocks/divider/index.js:1
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
 #: build/blocks/icon-button/index.js:2
 #: build/blocks/icon/index.js:1
 #: build/blocks/query-filter/index.js:1
-#: src/blocks/chart/edit.js:167
+#: build/blocks/star-rating/index.js:2
+#: build/blocks/text-path/index.js:1
+#: src/blocks/chart/edit.js:171
 #: src/blocks/divider/edit.js:78
 #: src/blocks/divider/edit.js:86
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:183
+#: src/blocks/hotspot/components/HotspotInspector.js:159
 #: src/blocks/icon-button/components/inspector/ButtonSettingsPanel.js:181
 #: src/blocks/icon-button/components/inspector/ButtonSettingsPanel.js:187
 #: src/blocks/icon/edit.js:165
 #: src/blocks/icon/edit.js:173
 #: src/blocks/query-filter/edit.js:315
 #: src/blocks/query-filter/edit.js:325
+#: src/blocks/star-rating/components/StylePanel.js:34
+#: src/blocks/text-path/components/TextPathControls.js:244
 msgid "Style"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:195
+#: src/blocks/chart/edit.js:199
 msgid "Legend"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:204
+#: src/blocks/chart/edit.js:208
 msgid "Show legend"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:209
+#: src/blocks/chart/edit.js:213
 msgid "Category names stay on the axis either way."
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:218
+#: src/blocks/chart/edit.js:222
 msgid "Values"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:225
+#: src/blocks/chart/edit.js:229
 msgid "Show values"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:232
+#: src/blocks/chart/edit.js:236
 msgid "Labels each slice with its share of the total."
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:236
+#: src/blocks/chart/edit.js:240
 msgid "Labels each bar or point with its value."
 msgstr ""
 
 #: build/blocks/chart/index.js:4
 #: build/blocks/icon-list/index.js:1
-#: src/blocks/chart/edit.js:246
+#: src/blocks/chart/edit.js:250
 #: src/blocks/icon-list/components/inspector/ListSettingsPanel.js:59
 msgid "Grid"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:253
+#: src/blocks/chart/edit.js:257
 msgid "Show grid"
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:258
+#: src/blocks/chart/edit.js:262
 msgid "Draws horizontal gridlines and axis labels."
 msgstr ""
 
 #: build/blocks/chart/index.js:4
-#: src/blocks/chart/edit.js:285
+#: src/blocks/chart/edit.js:297
 msgid "Add at least one data row to preview the chart."
 msgstr ""
 
@@ -7831,6 +8192,7 @@ msgid "Feature name"
 msgstr ""
 
 #: build/blocks/comparison-table/index.js:1
+#: build/blocks/hotspot/index.js:1
 #: build/blocks/product-categories-grid/index.js:4
 #: build/blocks/slider/index.js:1
 #: build/blocks/tabs/index.js:1
@@ -7841,6 +8203,7 @@ msgid "Move up"
 msgstr ""
 
 #: build/blocks/comparison-table/index.js:1
+#: build/blocks/hotspot/index.js:1
 #: build/blocks/product-categories-grid/index.js:4
 #: build/blocks/slider/index.js:1
 #: build/blocks/tabs/index.js:1
@@ -8054,9 +8417,11 @@ msgid "Sec"
 msgstr ""
 
 #: build/blocks/countdown-timer/index.js:1
+#: build/blocks/hotspot/index.js:3
 #: build/blocks/modal/index.js:1
 #: docs/templates/BLOCK-TEMPLATE-EDIT.js:67
 #: src/blocks/countdown-timer/edit.js:155
+#: src/blocks/hotspot/edit.js:161
 #: src/blocks/modal/edit.js:236
 msgid "Colors"
 msgstr ""
@@ -8187,7 +8552,7 @@ msgstr ""
 #: build/ext-block-animations.js:2
 #: src/blocks/counter-group/index.js:337
 #: src/blocks/counter/components/inspector/AnimationPanel.js:130
-#: src/extensions/block-animations/components/AnimationPanel.js:225
+#: src/extensions/block-animations/components/AnimationPanel.js:259
 msgid "Delay before animation starts"
 msgstr ""
 
@@ -8362,7 +8727,7 @@ msgstr ""
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
 #: src/blocks/counter/components/inspector/IconSettingsPanel.js:71
-#: src/blocks/query/components/QuerySourcePanel.js:29
+#: src/blocks/query/components/QuerySourcePanel.js:30
 msgid "Users"
 msgstr ""
 
@@ -8394,7 +8759,7 @@ msgstr ""
 #: src/blocks/modal/components/ModalSettings.js:145
 #: src/blocks/product-showcase-hero/components/LayoutPanel.js:69
 #: src/blocks/slide/edit.js:441
-#: src/blocks/slider/edit.js:685
+#: src/blocks/slider/edit.js:707
 #: src/blocks/tab/edit.js:153
 msgid "Top"
 msgstr ""
@@ -8915,7 +9280,7 @@ msgstr ""
 #: src/blocks/modal/components/ModalSettings.js:147
 #: src/blocks/product-showcase-hero/components/LayoutPanel.js:77
 #: src/blocks/slide/edit.js:449
-#: src/blocks/slider/edit.js:693
+#: src/blocks/slider/edit.js:715
 msgid "Bottom"
 msgstr ""
 
@@ -8926,7 +9291,7 @@ msgstr ""
 #: src/blocks/fifty-fifty/edit.js:273
 #: src/blocks/product-showcase-hero/components/LayoutPanel.js:90
 #: src/blocks/product-showcase-hero/components/LayoutPanel.js:96
-#: src/blocks/slider/edit.js:562
+#: src/blocks/slider/edit.js:584
 msgid "Min Height"
 msgstr ""
 
@@ -9091,15 +9456,23 @@ msgid "Flip Trigger"
 msgstr ""
 
 #: build/blocks/flip-card/index.js:1
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
 #: build/index.js:8
 #: src/blocks/flip-card/edit.js:141
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:124
+#: src/blocks/hotspot/components/HotspotInspector.js:108
 #: src/extensions/interactions/constants.js:13
 msgid "Hover"
 msgstr ""
 
 #: build/blocks/flip-card/index.js:1
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
 #: build/index.js:8
 #: src/blocks/flip-card/edit.js:145
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:120
+#: src/blocks/hotspot/components/HotspotInspector.js:104
 #: src/extensions/interactions/constants.js:12
 msgid "Click"
 msgstr ""
@@ -9126,18 +9499,22 @@ msgid "Flip (3D Rotation)"
 msgstr ""
 
 #: build/blocks/flip-card/index.js:1
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
 #: build/blocks/modal/index.js:1
 #: build/blocks/slider/index.js:4
 #: src/blocks/flip-card/edit.js:186
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:215
+#: src/blocks/hotspot/components/HotspotInspector.js:188
 #: src/blocks/modal/components/AnimationSettings.js:33
-#: src/blocks/slider/edit.js:814
+#: src/blocks/slider/edit.js:836
 msgid "Fade"
 msgstr ""
 
 #: build/blocks/flip-card/index.js:1
 #: build/blocks/slider/index.js:4
 #: src/blocks/flip-card/edit.js:194
-#: src/blocks/slider/edit.js:815
+#: src/blocks/slider/edit.js:837
 msgid "Zoom"
 msgstr ""
 
@@ -10753,14 +11130,302 @@ msgid "Sets a minimum width for each column. Columns never get narrower than thi
 msgstr ""
 
 #: build/blocks/heading-segment/index.js:1
-#: src/blocks/heading-segment/edit.js:41
+#: src/blocks/heading-segment/components/AnimatedWordsControl.js:104
+msgid "Animated word"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/heading-segment/components/AnimatedWordsControl.js:123
+msgid "Move word up"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: build/index.js:7
+#: src/blocks/heading-segment/components/AnimatedWordsControl.js:126
+#: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:39
+msgid "Up"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/heading-segment/components/AnimatedWordsControl.js:132
+msgid "Move word down"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: build/index.js:7
+#: src/blocks/heading-segment/components/AnimatedWordsControl.js:135
+#: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:40
+msgid "Down"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/heading-segment/components/AnimatedWordsControl.js:141
+msgid "Remove word"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/heading-segment/components/AnimatedWordsControl.js:159
+msgid "Add animated word"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/heading-segment/components/AnimatedWordsControl.js:170
+msgid "Add word"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/heading-segment/edit.js:142
+#: src/blocks/heading-segment/edit.js:160
+msgid "Segment role"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/heading-segment/edit.js:164
+msgid "Normal text"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/heading-segment/edit.js:168
+#: src/blocks/heading-segment/edit.js:193
+msgid "Animated words"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/heading-segment/edit.js:256
+msgid "Add animated words…"
+msgstr ""
+
+#: build/blocks/heading-segment/index.js:1
+#: src/blocks/heading-segment/edit.js:270
 msgid "Heading text…"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/deprecated.js:47
+#: src/blocks/hotspot-item/edit.js:61
+#: src/blocks/hotspot-item/save.js:33
+msgid "Hotspot"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:11
+msgid "Inherit from Hotspot"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:63
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:69
+msgid "Icon text"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:72
+msgid "Optional symbol shown instead of the label."
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:98
+msgid "Only https, http, mailto, and tel links are used. This link will be ignored."
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:109
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:115
+msgid "Trigger override"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:134
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:142
+#: src/blocks/hotspot/components/HotspotInspector.js:118
+#: src/blocks/hotspot/components/HotspotInspector.js:124
+msgid "Tooltip position"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:162
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:170
+#: src/blocks/hotspot/components/HotspotInspector.js:140
+#: src/blocks/hotspot/components/HotspotInspector.js:146
+msgid "Tooltip width"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:196
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:202
+#: src/blocks/hotspot/components/HotspotInspector.js:170
+#: src/blocks/hotspot/components/HotspotInspector.js:176
+msgid "Marker animation"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: build/blocks/hotspot/index.js:3
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:211
+#: src/blocks/hotspot/components/HotspotInspector.js:184
+#: src/blocks/star-rating/components/SettingsPanel.js:111
+msgid "Scale"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:228
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:234
+msgid "Sequence order"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:246
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:252
+msgid "Horizontal origin"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:264
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:270
+msgid "Vertical origin"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/components/HotspotItemInspector.js:283
+msgid "Advanced"
+msgstr ""
+
+#: build/blocks/hotspot-item/index.js:1
+#: src/blocks/hotspot-item/edit.js:106
+msgid "Describe this hotspot…"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:1
+#: build/blocks/slider/index.js:1
+#: build/blocks/tabs/index.js:1
+#: src/components/shared/DsgoChildToolbar/index.js:193
+msgid "Add item"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:1
+#: build/blocks/slider/index.js:1
+#: build/blocks/tabs/index.js:1
+#: src/components/shared/DsgoChildToolbar/index.js:195
+msgid "Duplicate item"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:1
+#: build/blocks/slider/index.js:1
+#: build/blocks/tabs/index.js:1
+#: src/components/shared/DsgoChildToolbar/index.js:196
+msgid "Remove item"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:1
+#: build/blocks/slider/index.js:1
+#: build/blocks/tabs/index.js:1
+#: src/components/shared/DsgoChildToolbar/index.js:201
+msgid "Move left"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:1
+#: build/blocks/slider/index.js:1
+#: build/blocks/tabs/index.js:1
+#: src/components/shared/DsgoChildToolbar/index.js:206
+msgid "Move right"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:1
+#: build/blocks/slider/index.js:1
+#: build/blocks/tabs/index.js:1
+#: src/components/shared/DsgoChildToolbar/index.js:209
+msgid "Child block actions"
+msgstr ""
+
+#. translators: 1: horizontal percentage, 2: vertical percentage.
+#: build/blocks/hotspot/index.js:2
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/components/HotspotCanvas.js:39
+#: src/blocks/hotspot/components/HotspotCanvas.js:110
+#, js-format
+msgid "Hotspot position: %1$d%% horizontal, %2$d%% vertical."
+msgstr ""
+
+#: build/blocks/hotspot/index.js:2
+#: src/blocks/hotspot/components/HotspotCanvas.js:129
+msgid "Hotspot image editor"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/components/HotspotCanvas.js:144
+msgid "Choose an image to place hotspots."
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/components/HotspotInspector.js:72
+msgid "Replace image"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/components/HotspotInspector.js:80
+#: src/blocks/hotspot/components/HotspotInspector.js:86
+msgid "Alternative text"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/components/HotspotInspector.js:201
+#: src/blocks/hotspot/components/HotspotInspector.js:207
+msgid "Sequence duration"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/edit.js:67
+msgid "Marker color"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/edit.js:71
+msgid "Marker background"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/edit.js:75
+msgid "Tooltip background"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/edit.js:79
+msgid "Tooltip text color"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/edit.js:132
+msgid "Show all hotspots"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/edit.js:133
+msgid "Show only selected hotspot"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/edit.js:145
+msgid "Add hotspot"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/edit.js:146
+msgid "Duplicate hotspot"
+msgstr ""
+
+#: build/blocks/hotspot/index.js:3
+#: src/blocks/hotspot/edit.js:147
+msgid "Remove hotspot"
 msgstr ""
 
 #: build/blocks/icon-button/index.js:1
 #: build/blocks/icon/index.js:1
 #: build/blocks/modal-trigger/index.js:1
 #: build/blocks/pill/index.js:1
+#: build/blocks/star-rating/index.js:1
 #: src/utils/justification.js:17
 msgid "Justify left"
 msgstr ""
@@ -10769,6 +11434,7 @@ msgstr ""
 #: build/blocks/icon/index.js:1
 #: build/blocks/modal-trigger/index.js:1
 #: build/blocks/pill/index.js:1
+#: build/blocks/star-rating/index.js:1
 #: src/utils/justification.js:22
 msgid "Justify center"
 msgstr ""
@@ -10777,6 +11443,7 @@ msgstr ""
 #: build/blocks/icon/index.js:1
 #: build/blocks/modal-trigger/index.js:1
 #: build/blocks/pill/index.js:1
+#: build/blocks/star-rating/index.js:1
 #: src/utils/justification.js:27
 msgid "Justify right"
 msgstr ""
@@ -10898,18 +11565,6 @@ msgid "Enter the ID of the modal to close"
 msgstr ""
 
 #: build/blocks/icon-button/index.js:4
-#: build/blocks/icon-list-item/index.js:1
-#: build/blocks/icon/index.js:3
-#: build/ext-clickable-group.js:1
-#: src/blocks/icon-button/edit.js:315
-#: src/blocks/icon-list-item/components/inspector/LinkSettingsPanel.js:51
-#: src/blocks/icon/edit.js:326
-#: src/blocks/icon/edit.js:337
-#: src/extensions/clickable-group/edit.js:90
-msgid "Open in new tab"
-msgstr ""
-
-#: build/blocks/icon-button/index.js:4
 #: src/blocks/icon-button/edit.js:325
 msgid "Hover Colors"
 msgstr ""
@@ -10946,18 +11601,6 @@ msgstr ""
 #: src/blocks/icon/components/inspector/LinkSettingsPanel.js:39
 #: src/extensions/clickable-group/edit.js:51
 msgid "Link Settings"
-msgstr ""
-
-#: build/blocks/icon-list-item/index.js:1
-#: build/blocks/icon/index.js:3
-#: build/ext-clickable-group.js:1
-#: build/index.js:3
-#: src/blocks/icon-list-item/components/inspector/LinkSettingsPanel.js:39
-#: src/blocks/icon/components/inspector/LinkSettingsPanel.js:67
-#: src/blocks/icon/edit.js:313
-#: src/extensions/clickable-group/edit.js:61
-#: src/extensions/dynamic-tags/bindable-attributes.js:52
-msgid "URL"
 msgstr ""
 
 #: build/blocks/icon-list-item/index.js:1
@@ -11006,12 +11649,12 @@ msgid "Choose how list items are arranged"
 msgstr ""
 
 #: build/blocks/icon-list/index.js:1
-#: build/blocks/query-pagination/index.js:1
+#: build/blocks/query-pagination/index.js:2
 #: build/blocks/tabs/index.js:2
 #: src/blocks/icon-list/components/inspector/ListSettingsPanel.js:73
 #: src/blocks/icon-list/components/inspector/ListSettingsPanel.js:79
-#: src/blocks/query-pagination/edit.js:225
-#: src/blocks/query-pagination/edit.js:231
+#: src/blocks/query-pagination/edit.js:244
+#: src/blocks/query-pagination/edit.js:250
 #: src/blocks/tabs/edit.js:507
 #: src/blocks/tabs/edit.js:515
 msgid "Alignment"
@@ -11099,9 +11742,11 @@ msgid "Icon Background Color"
 msgstr ""
 
 #: build/blocks/icon/index.js:3
+#: build/blocks/text-path/index.js:1
 #: src/blocks/icon/components/inspector/IconSettingsPanel.js:124
 #: src/blocks/icon/edit.js:273
 #: src/blocks/icon/edit.js:279
+#: src/blocks/text-path/components/TextPathControls.js:24
 msgid "Rotation"
 msgstr ""
 
@@ -11329,7 +11974,7 @@ msgstr ""
 #: build/blocks/slider/index.js:4
 #: src/blocks/image-accordion/edit.js:337
 #: src/blocks/image-accordion/edit.js:345
-#: src/blocks/slider/edit.js:827
+#: src/blocks/slider/edit.js:849
 msgid "Transition Duration"
 msgstr ""
 
@@ -11386,260 +12031,275 @@ msgid "Color"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:68
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:93
 msgid "Address not found. Please try a different search."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:76
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:101
 msgid "Failed to search address. Please try again."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:49
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:74
 msgid "Please enter an address to search."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:93
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:101
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:118
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:126
 msgid "Map Provider"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:105
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:130
 msgid "OpenStreetMap (No API key required)"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:112
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:137
 msgid "Google Maps (Requires API key)"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:122
-msgid "Privacy-friendly and free to use."
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:144
+msgid "Google Maps (No API key)"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:126
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:36
 msgid "Requires a Google Maps API key."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:141
-msgid "✓ Google Maps API key configured in"
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:40
+msgid "No API key needed. Google renders the map in an embedded frame, so the marker icon, marker color, and map style settings do not apply."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:161
-msgid "⚠ No API key configured."
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:46
+msgid "Privacy-friendly and free to use."
 msgstr ""
 
 #: build/blocks/map/index.js:1
 #: src/blocks/map/components/inspector/MapSettingsPanel.js:163
-msgid "Add a Google Maps API key in"
-msgstr ""
-
-#: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:171
-msgid "to use Google Maps."
-msgstr ""
-
-#: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:177
-msgid "Address"
+msgid "✓ Google Maps API key configured in"
 msgstr ""
 
 #: build/blocks/map/index.js:1
 #: src/blocks/map/components/inspector/MapSettingsPanel.js:183
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:211
+msgid "⚠ No API key configured."
+msgstr ""
+
+#: build/blocks/map/index.js:1
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:185
+msgid "Add a Google Maps API key in"
+msgstr ""
+
+#: build/blocks/map/index.js:1
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:193
+msgid "to use Google Maps."
+msgstr ""
+
+#: build/blocks/map/index.js:1
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:199
+msgid "Address"
+msgstr ""
+
+#: build/blocks/map/index.js:1
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:205
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:233
 msgid "Search Address"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:190
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:212
 msgid "Enter an address or location"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:194
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:216
 msgid "Search for a location to automatically set coordinates."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:210
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:232
 msgid "Searching…"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:226
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:232
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:248
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:254
 msgid "Latitude"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:245
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:267
 msgid "Manual coordinate entry (between -90 and 90)."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:255
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:261
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:277
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:283
 msgid "Longitude"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:274
-msgid "Manual coordinate entry (between -180 and 180)."
-msgstr ""
-
-#: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:284
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:290
-msgid "Zoom Level"
-msgstr ""
-
-#: build/blocks/map/index.js:1
 #: src/blocks/map/components/inspector/MapSettingsPanel.js:296
-msgid "1 = world view, 20 = street level."
+msgid "Manual coordinate entry (between -180 and 180)."
 msgstr ""
 
 #: build/blocks/map/index.js:1
 #: src/blocks/map/components/inspector/MapSettingsPanel.js:306
 #: src/blocks/map/components/inspector/MapSettingsPanel.js:312
+msgid "Zoom Level"
+msgstr ""
+
+#: build/blocks/map/index.js:1
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:318
+msgid "1 = world view, 20 = street level."
+msgstr ""
+
+#: build/blocks/map/index.js:1
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:329
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:335
 msgid "Marker Icon"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:317
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:340
 msgid "Enter an emoji or icon character."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:337
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:361
 msgid "16:9 (Widescreen)"
 msgstr ""
 
 #: build/blocks/map/index.js:1
 #: src/blocks/card/components/inspector/ImageSettingsPanel.js:41
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:341
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:365
 msgid "4:3 (Standard)"
 msgstr ""
 
 #: build/blocks/map/index.js:1
 #: src/blocks/card/components/inspector/ImageSettingsPanel.js:42
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:345
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:369
 msgid "1:1 (Square)"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:349
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:373
 msgid "Custom Height"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:358
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:382
 msgid "Set a custom height below."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:359
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:383
 msgid "Maintains aspect ratio across screen sizes."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:371
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:377
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:395
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:401
 msgid "Map Height"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:387
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:411
 msgid "Set a custom height for the map."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:399
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:407
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:423
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:431
 msgid "Map Style"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:411
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:435
 msgid "Standard"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:415
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:439
 msgid "Silver (Minimalist)"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:419
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:443
 msgid "Dark Mode"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:426
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:450
 msgid "Choose a visual style for Google Maps."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:437
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:443
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:461
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:467
 msgid "Enable Privacy Mode"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:450
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:474
 msgid "Map will not load until user clicks to consent."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:454
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:478
 msgid "Map will load automatically when page loads."
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:465
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:477
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:489
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:501
 msgid "Privacy Notice"
 msgstr ""
 
 #: build/blocks/map/index.js:1
-#: src/blocks/map/components/inspector/MapSettingsPanel.js:483
+#: src/blocks/map/components/inspector/MapSettingsPanel.js:507
 msgid "Message shown to users before loading the map."
 msgstr ""
 
 #: build/blocks/map/index.js:3
-#: src/blocks/map/edit.js:107
-#: src/blocks/map/edit.js:114
+#: src/blocks/map/edit.js:221
+#: src/blocks/map/edit.js:228
 msgid "Google Maps Marker Color"
 msgstr ""
 
 #: build/blocks/map/index.js:3
-#: src/blocks/map/edit.js:174
+#: src/blocks/map/edit.js:111
 msgid "Preview: Privacy mode is enabled"
 msgstr ""
 
 #: build/blocks/map/index.js:3
-#: src/blocks/map/edit.js:199
+#: src/blocks/map/edit.js:131
+msgid "Map preview"
+msgstr ""
+
+#: build/blocks/map/index.js:3
+#: src/blocks/map/edit.js:155
 msgid "Map Preview"
 msgstr ""
 
 #: build/blocks/map/index.js:3
-#: src/blocks/map/edit.js:215
+#: src/blocks/map/edit.js:170
 msgid "OpenStreetMap"
 msgstr ""
 
 #: build/blocks/map/index.js:3
-#: src/blocks/map/edit.js:220
+#: src/blocks/map/edit.js:172
 msgid "Zoom:"
 msgstr ""
 
 #: build/blocks/map/index.js:3
-#: src/blocks/map/edit.js:226
+#: src/blocks/map/edit.js:177
 msgid "Interactive map will display on the frontend"
 msgstr ""
 
@@ -11707,6 +12367,7 @@ msgstr ""
 
 #: build/blocks/modal/index.js:1
 #: src/blocks/modal/components/ModalSettings.js:113
+#: src/blocks/modal/index.js:41
 #: src/blocks/modal/variations.js:601
 msgid "Off-Canvas Panel"
 msgstr ""
@@ -12145,7 +12806,7 @@ msgstr ""
 #: build/blocks/modal/index.js:1
 #: build/blocks/slider/index.js:4
 #: src/blocks/modal/components/GallerySettings.js:163
-#: src/blocks/slider/edit.js:658
+#: src/blocks/slider/edit.js:680
 msgid "Sides"
 msgstr ""
 
@@ -13078,92 +13739,114 @@ msgid "Nothing found. Try another search."
 msgstr ""
 
 #: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/components/InfiniteScrollControls.js:36
+#: src/blocks/query-pagination/components/InfiniteScrollControls.js:43
 msgid "Auto-pause after"
 msgstr ""
 
 #: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/components/InfiniteScrollControls.js:43
+#: src/blocks/query-pagination/components/InfiniteScrollControls.js:50
 msgid "Auto-pause after (loads)"
 msgstr ""
 
 #: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/components/InfiniteScrollControls.js:44
+#: src/blocks/query-pagination/components/InfiniteScrollControls.js:54
 msgid "Number of automatic loads before showing the button."
 msgstr ""
 
 #: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/components/InfiniteScrollControls.js:60
+#: src/blocks/query-pagination/components/InfiniteScrollControls.js:72
 msgid "Sentinel offset"
 msgstr ""
 
 #: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/components/InfiniteScrollControls.js:67
+#: src/blocks/query-pagination/components/InfiniteScrollControls.js:81
 msgid "Sentinel offset (px)"
 msgstr ""
 
 #: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/components/InfiniteScrollControls.js:68
+#: src/blocks/query-pagination/components/InfiniteScrollControls.js:82
 msgid "How many pixels before the bottom to trigger auto-load."
 msgstr ""
 
 #: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/components/InfiniteScrollControls.js:86
+#: src/blocks/query-pagination/components/InfiniteScrollControls.js:102
 msgid "Button label"
 msgstr ""
 
 #: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/components/InfiniteScrollControls.js:95
+#: src/blocks/query-pagination/components/InfiniteScrollControls.js:111
 msgid "Button label (when paused)"
 msgstr ""
 
 #: build/blocks/query-pagination/index.js:1
+#: src/blocks/query-pagination/components/CarouselNotice.js:26
+msgid "carousel"
+msgstr ""
+
+#. translators: %s: name of the layout block presenting the query results.
+#: build/blocks/query-pagination/index.js:2
+#: src/blocks/query-pagination/components/CarouselNotice.js:33
+#, js-format
+msgid "This query presents its results in a %s, which has no scrolling list for infinite scroll to follow. The front end renders a Load more button instead."
+msgstr ""
+
+#: build/blocks/query-pagination/index.js:2
+#: src/blocks/query-pagination/components/CarouselNotice.js:50
+msgid "Switch to Load more"
+msgstr ""
+
+#: build/blocks/query-pagination/index.js:2
 #: src/blocks/query-pagination/variations.js:11
 msgid "Infinite Scroll"
 msgstr ""
 
-#: build/blocks/query-pagination/index.js:1
+#: build/blocks/query-pagination/index.js:2
 #: src/blocks/query-pagination/variations.js:12
 msgid "Loads the next page automatically when the user scrolls to the end."
 msgstr ""
 
-#: build/blocks/query-pagination/index.js:1
+#: build/blocks/query-pagination/index.js:2
 #: build/blocks/query/index.js:1
-#: src/blocks/query-pagination/edit.js:115
-#: src/blocks/query-pagination/edit.js:121
+#: src/blocks/query-pagination/edit.js:133
+#: src/blocks/query-pagination/edit.js:139
 #: src/blocks/query/components/DateQueryBuilder.js:131
 msgid "Mode"
 msgstr ""
 
-#: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/edit.js:126
+#: build/blocks/query-pagination/index.js:2
+#: src/blocks/query-pagination/edit.js:144
 msgid "Numbered"
 msgstr ""
 
-#: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/edit.js:141
-#: src/blocks/query-pagination/edit.js:148
+#: build/blocks/query-pagination/index.js:2
+#: src/blocks/query-pagination/edit.js:159
+#: src/blocks/query-pagination/edit.js:166
 msgid "Show prev/next arrows"
 msgstr ""
 
-#: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/edit.js:164
+#: build/blocks/query-pagination/index.js:2
+#: src/blocks/query-pagination/edit.js:182
 msgid "Load more label"
 msgstr ""
 
-#: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/edit.js:172
+#: build/blocks/query-pagination/index.js:2
+#: src/blocks/query-pagination/edit.js:190
 msgid "Load more button label"
 msgstr ""
 
-#: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/edit.js:188
+#: build/blocks/query-pagination/index.js:2
+#: src/blocks/query-pagination/edit.js:206
 msgid "Loading label"
 msgstr ""
 
-#: build/blocks/query-pagination/index.js:1
-#: src/blocks/query-pagination/edit.js:195
+#: build/blocks/query-pagination/index.js:2
+#: src/blocks/query-pagination/edit.js:213
 msgid "Loading state label"
+msgstr ""
+
+#: build/blocks/query-pagination/index.js:2
+#: src/blocks/query-pagination/edit.js:277
+msgid "Infinite scroll falls back to Load more inside a carousel."
 msgstr ""
 
 #. translators: %d: post ID
@@ -13203,125 +13886,131 @@ msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:17
+#: src/blocks/query/components/WooQueryControls.js:10
+msgid "On backorder"
+msgstr ""
+
+#: build/blocks/query-results/index.js:2
+#: build/blocks/query/index.js:7
+#: src/blocks/query/components/QuerySourcePanel.js:18
 msgid "Meta field"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:22
+#: src/blocks/query/components/QuerySourcePanel.js:23
 msgid "Year"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:23
+#: src/blocks/query/components/QuerySourcePanel.js:24
 msgid "Year + Month"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:24
+#: src/blocks/query/components/QuerySourcePanel.js:25
 msgid "Year + Month + Day"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:28
+#: src/blocks/query/components/QuerySourcePanel.js:29
 msgid "Posts"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
 #: build/blocks/query/index.js:8
-#: src/blocks/query/components/QuerySourcePanel.js:30
+#: src/blocks/query/components/QuerySourcePanel.js:31
 #: src/blocks/query/components/TaxQueryBuilder.js:158
 msgid "Terms"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:31
+#: src/blocks/query/components/QuerySourcePanel.js:32
 msgid "Manual picks"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:32
+#: src/blocks/query/components/QuerySourcePanel.js:33
 msgid "Current archive"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:35
+#: src/blocks/query/components/QuerySourcePanel.js:36
 msgid "Related items (field-driven)"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:40
+#: src/blocks/query/components/QuerySourcePanel.js:41
 msgid "Render no items"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:41
+#: src/blocks/query/components/QuerySourcePanel.js:42
 msgid "Fall back to all posts"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:42
+#: src/blocks/query/components/QuerySourcePanel.js:43
 msgid "Render the parent item"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
 #: build/index.js:3
-#: src/blocks/query/components/QuerySourcePanel.js:47
+#: src/blocks/query/components/QuerySourcePanel.js:48
 #: src/extensions/dynamic-tags/bindable-attributes.js:47
 msgid "Title"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:48
+#: src/blocks/query/components/QuerySourcePanel.js:49
 msgid "Menu order"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:49
+#: src/blocks/query/components/QuerySourcePanel.js:50
 msgid "Random"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:50
+#: src/blocks/query/components/QuerySourcePanel.js:51
 msgid "Comment count"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:51
+#: src/blocks/query/components/QuerySourcePanel.js:52
 msgid "Meta value (text)"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:54
+#: src/blocks/query/components/QuerySourcePanel.js:55
 msgid "Meta value (numeric)"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:59
+#: src/blocks/query/components/QuerySourcePanel.js:60
 msgid "Descending"
 msgstr ""
 
 #: build/blocks/query-results/index.js:2
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:60
+#: src/blocks/query/components/QuerySourcePanel.js:61
 msgid "Ascending"
 msgstr ""
 
@@ -13718,6 +14407,11 @@ msgid "Image tiles with overlay title. Category filter and load-more pagination.
 msgstr ""
 
 #: build/blocks/query/index.js:7
+#: src/blocks/query/variations.js:194
+msgid "Filter by category"
+msgstr ""
+
+#: build/blocks/query/index.js:7
 #: src/blocks/query/variations.js:226
 msgid "Related posts"
 msgstr ""
@@ -13813,53 +14507,81 @@ msgid "Import failed."
 msgstr ""
 
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:149
-#: src/blocks/query/components/QuerySourcePanel.js:157
+#: src/blocks/query/components/WooQueryControls.js:52
+#: src/blocks/query/components/WooQueryControls.js:58
+msgid "Respect catalog visibility"
+msgstr ""
+
+#: build/blocks/query/index.js:7
+#: src/blocks/query/components/WooQueryControls.js:59
+msgid "Hides products excluded from the catalog. Turn this off only if you intend to show hidden products."
+msgstr ""
+
+#: build/blocks/query/index.js:7
+#: src/blocks/query/components/WooQueryControls.js:72
+#: src/blocks/query/components/WooQueryControls.js:78
+msgid "Featured products only"
+msgstr ""
+
+#: build/blocks/query/index.js:7
+#: src/blocks/query/components/WooQueryControls.js:86
+#: src/blocks/query/components/WooQueryControls.js:92
+msgid "On sale only"
+msgstr ""
+
+#: build/blocks/query/index.js:7
+#: src/blocks/query/components/WooQueryControls.js:100
+msgid "Stock status"
+msgstr ""
+
+#: build/blocks/query/index.js:7
+#: src/blocks/query/components/QuerySourcePanel.js:150
+#: src/blocks/query/components/QuerySourcePanel.js:158
 msgid "Relationship field"
 msgstr ""
 
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:158
+#: src/blocks/query/components/QuerySourcePanel.js:159
 msgid "Meta key or ACF field on the parent item that holds the related post IDs."
 msgstr ""
 
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:172
-#: src/blocks/query/components/QuerySourcePanel.js:184
+#: src/blocks/query/components/QuerySourcePanel.js:173
+#: src/blocks/query/components/QuerySourcePanel.js:185
 msgid "When no related items"
 msgstr ""
 
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:195
-#: src/blocks/query/components/QuerySourcePanel.js:201
+#: src/blocks/query/components/QuerySourcePanel.js:196
+#: src/blocks/query/components/QuerySourcePanel.js:202
 msgid "Items per page"
 msgstr ""
 
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:212
-#: src/blocks/query/components/QuerySourcePanel.js:218
+#: src/blocks/query/components/QuerySourcePanel.js:213
+#: src/blocks/query/components/QuerySourcePanel.js:219
 msgid "Offset"
 msgstr ""
 
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:230
-#: src/blocks/query/components/QuerySourcePanel.js:236
+#: src/blocks/query/components/QuerySourcePanel.js:231
+#: src/blocks/query/components/QuerySourcePanel.js:237
 msgid "Order by"
 msgstr ""
 
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:247
+#: src/blocks/query/components/QuerySourcePanel.js:248
 msgid "Order by meta key"
 msgstr ""
 
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:267
-#: src/blocks/query/components/QuerySourcePanel.js:273
+#: src/blocks/query/components/QuerySourcePanel.js:268
+#: src/blocks/query/components/QuerySourcePanel.js:274
 msgid "Order direction"
 msgstr ""
 
 #: build/blocks/query/index.js:7
-#: src/blocks/query/components/QuerySourcePanel.js:283
+#: src/blocks/query/components/QuerySourcePanel.js:289
 msgid "Template I/O"
 msgstr ""
 
@@ -14052,7 +14774,7 @@ msgstr ""
 #: build/blocks/slider/index.js:4
 #: src/blocks/scroll-marquee/edit.js:143
 #: src/blocks/scroll-marquee/edit.js:149
-#: src/blocks/slider/edit.js:972
+#: src/blocks/slider/edit.js:994
 msgid "Scroll Speed"
 msgstr ""
 
@@ -14279,7 +15001,7 @@ msgstr ""
 #: build/blocks/scroll-slides/index.js:4
 #: build/blocks/slider/index.js:4
 #: src/blocks/scroll-slides/edit.js:269
-#: src/blocks/slider/edit.js:453
+#: src/blocks/slider/edit.js:475
 #, js-format
 msgid "%d extra slide(s) will be ignored at render. Only the first slide is used as the template."
 msgstr ""
@@ -14293,8 +15015,8 @@ msgstr ""
 #: src/blocks/scroll-slides/edit.js:318
 #: src/blocks/scroll-slides/edit.js:364
 #: src/blocks/scroll-slides/frontend/setup-dom.js:54
-#: src/blocks/slider/edit.js:194
-#: src/blocks/slider/edit.js:1290
+#: src/blocks/slider/edit.js:216
+#: src/blocks/slider/edit.js:1312
 #, js-format
 msgid "Slide %d"
 msgstr ""
@@ -14323,7 +15045,9 @@ msgstr ""
 
 #: build/blocks/section-divider/index.js:1
 #: build/blocks/section/index.js:2
+#: build/blocks/text-path/index.js:1
 #: src/blocks/section/utils/shape-dividers.js:226
+#: src/utils/svg-paths.js:91
 msgid "Wave"
 msgstr ""
 
@@ -14771,448 +15495,407 @@ msgstr ""
 msgid "Pick a starting layout for your slider."
 msgstr ""
 
-#: build/blocks/slider/index.js:1
-#: build/blocks/tabs/index.js:1
-#: src/components/shared/DsgoChildToolbar/index.js:193
-msgid "Add item"
-msgstr ""
-
-#: build/blocks/slider/index.js:1
-#: build/blocks/tabs/index.js:1
-#: src/components/shared/DsgoChildToolbar/index.js:195
-msgid "Duplicate item"
-msgstr ""
-
-#: build/blocks/slider/index.js:1
-#: build/blocks/tabs/index.js:1
-#: src/components/shared/DsgoChildToolbar/index.js:196
-msgid "Remove item"
-msgstr ""
-
-#: build/blocks/slider/index.js:1
-#: build/blocks/tabs/index.js:1
-#: src/components/shared/DsgoChildToolbar/index.js:201
-msgid "Move left"
-msgstr ""
-
-#: build/blocks/slider/index.js:1
-#: build/blocks/tabs/index.js:1
-#: src/components/shared/DsgoChildToolbar/index.js:206
-msgid "Move right"
-msgstr ""
-
-#: build/blocks/slider/index.js:1
-#: build/blocks/tabs/index.js:1
-#: src/components/shared/DsgoChildToolbar/index.js:209
-msgid "Child block actions"
-msgstr ""
-
 #: build/blocks/slider/index.js:2
-#: src/blocks/slider/edit.js:1342
+#: src/blocks/slider/edit.js:1364
 msgid "No posts match the parent query. Design the template slide above — it will render once per result at publish time."
 msgstr ""
 
 #: build/blocks/slider/index.js:2
-#: src/blocks/slider/edit.js:108
+#: src/blocks/slider/edit.js:130
 msgid "Arrow Icon Color"
 msgstr ""
 
 #: build/blocks/slider/index.js:2
-#: src/blocks/slider/edit.js:112
+#: src/blocks/slider/edit.js:134
 msgid "Arrow Background"
 msgstr ""
 
 #: build/blocks/slider/index.js:3
-#: src/blocks/slider/edit.js:309
+#: src/blocks/slider/edit.js:331
 msgid "Fade and Zoom transitions show one slide per view. Switch back to the Slide effect to display multiple slides at once."
 msgstr ""
 
 #: build/blocks/slider/index.js:3
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:425
-#: src/blocks/slider/edit.js:1251
+#: src/blocks/slider/edit.js:447
+#: src/blocks/slider/edit.js:1273
 msgid "Add slide"
 msgstr ""
 
 #: build/blocks/slider/index.js:3
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:426
-#: src/blocks/slider/edit.js:1203
-#: src/blocks/slider/edit.js:1211
+#: src/blocks/slider/edit.js:448
+#: src/blocks/slider/edit.js:1225
+#: src/blocks/slider/edit.js:1233
 msgid "Duplicate slide"
 msgstr ""
 
 #: build/blocks/slider/index.js:3
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:427
-#: src/blocks/slider/edit.js:1225
-#: src/blocks/slider/edit.js:1231
+#: src/blocks/slider/edit.js:449
+#: src/blocks/slider/edit.js:1247
+#: src/blocks/slider/edit.js:1253
 msgid "Remove slide"
 msgstr ""
 
 #: build/blocks/slider/index.js:3
-#: src/blocks/slider/edit.js:428
+#: src/blocks/slider/edit.js:450
 msgid "Move slide left"
 msgstr ""
 
 #: build/blocks/slider/index.js:3
-#: src/blocks/slider/edit.js:429
+#: src/blocks/slider/edit.js:451
 msgid "Move slide right"
 msgstr ""
 
 #: build/blocks/slider/index.js:3
-#: src/blocks/slider/edit.js:440
+#: src/blocks/slider/edit.js:462
 msgid "Dynamic mode"
 msgstr ""
 
 #: build/blocks/slider/index.js:3
-#: src/blocks/slider/edit.js:444
+#: src/blocks/slider/edit.js:466
 msgid "This slider is bound to a parent Dynamic Query. The first slide is the per-item template — extra slides are ignored at render. Slide management controls are disabled while bound."
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:464
+#: src/blocks/slider/edit.js:486
 msgid "Layout Settings"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:468
+#: src/blocks/slider/edit.js:490
 msgid "Slides Per View (Desktop)"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:478
+#: src/blocks/slider/edit.js:500
 msgid "Number of slides visible at once"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:489
+#: src/blocks/slider/edit.js:511
 msgid "Slides Per View (Tablet)"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:505
+#: src/blocks/slider/edit.js:527
 msgid "Slides Per View (Mobile)"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:527
+#: src/blocks/slider/edit.js:549
 msgid "Use Aspect Ratio"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:534
+#: src/blocks/slider/edit.js:556
 msgid "Slider uses aspect ratio"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:535
+#: src/blocks/slider/edit.js:557
 msgid "Slider uses minimum height — content can grow taller"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:580
+#: src/blocks/slider/edit.js:602
 msgid "Slider will be at least this tall"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:576
+#: src/blocks/slider/edit.js:598
 msgid "No height set — slider fits its content"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:591
+#: src/blocks/slider/edit.js:613
 msgid "Gap Between Slides"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:608
+#: src/blocks/slider/edit.js:630
 msgid "Navigation Settings"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:612
+#: src/blocks/slider/edit.js:634
 msgid "Show Arrows"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:623
+#: src/blocks/slider/edit.js:645
 msgid "Arrow Style"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
+#: build/blocks/text-path/index.js:1
 #: build/blocks/timeline/index.js:1
 #: src/blocks/icon/components/inspector/ShapeSettingsPanel.js:35
-#: src/blocks/slider/edit.js:631
+#: src/blocks/slider/edit.js:653
 #: src/blocks/timeline/edit.js:293
+#: src/utils/svg-paths.js:93
 msgid "Circle"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
 #: build/blocks/timeline/index.js:1
 #: src/blocks/icon/components/inspector/ShapeSettingsPanel.js:36
-#: src/blocks/slider/edit.js:635
+#: src/blocks/slider/edit.js:657
 #: src/blocks/timeline/edit.js:297
 msgid "Square"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:651
+#: src/blocks/slider/edit.js:673
 msgid "Arrow Position (Horizontal)"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:662
-#: src/blocks/slider/edit.js:784
+#: src/blocks/slider/edit.js:684
+#: src/blocks/slider/edit.js:806
 msgid "Inside"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:666
-#: src/blocks/slider/edit.js:788
+#: src/blocks/slider/edit.js:688
+#: src/blocks/slider/edit.js:810
 msgid "Outside"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:678
+#: src/blocks/slider/edit.js:700
 msgid "Arrow Position (Vertical)"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:711
+#: src/blocks/slider/edit.js:733
 msgid "Arrow Size"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:726
+#: src/blocks/slider/edit.js:748
 msgid "Arrow Padding"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:736
+#: src/blocks/slider/edit.js:758
 msgid "Inner spacing of the arrow button"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:747
+#: src/blocks/slider/edit.js:769
 msgid "Show Dots"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:756
+#: src/blocks/slider/edit.js:778
 msgid "Dot Style"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:764
+#: src/blocks/slider/edit.js:786
 msgid "Lines"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:768
+#: src/blocks/slider/edit.js:790
 msgid "Squares"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:780
+#: src/blocks/slider/edit.js:802
 msgid "Dot Position"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:803
+#: src/blocks/slider/edit.js:825
 msgid "Transition Settings"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:807
+#: src/blocks/slider/edit.js:829
 msgid "Transition Effect"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:818
+#: src/blocks/slider/edit.js:840
 msgid "Animation style between slides"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:845
+#: src/blocks/slider/edit.js:867
 msgid "Transition Easing"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:875
+#: src/blocks/slider/edit.js:897
 msgid "Auto-play Settings"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:879
+#: src/blocks/slider/edit.js:901
 msgid "Enable Auto-play"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:884
+#: src/blocks/slider/edit.js:906
 msgid "Slides advance automatically"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:888
+#: src/blocks/slider/edit.js:910
 msgid "Manual navigation only"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:896
+#: src/blocks/slider/edit.js:918
 msgid "Auto-play Interval (ms)"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:907
+#: src/blocks/slider/edit.js:929
 msgid "Time between slides"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:913
+#: src/blocks/slider/edit.js:935
 msgid "Pause on Hover"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:922
+#: src/blocks/slider/edit.js:944
 msgid "Pause on Interaction"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:930
+#: src/blocks/slider/edit.js:952
 msgid "Pause after user clicks, swipes, or drags"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:941
+#: src/blocks/slider/edit.js:963
 msgid "Behavior Settings"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:945
+#: src/blocks/slider/edit.js:967
 msgid "Scroll-Driven Horizontal"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:958
+#: src/blocks/slider/edit.js:980
 msgid "Vertical scrolling drives horizontal slide navigation. Autoplay and loop are disabled."
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:962
+#: src/blocks/slider/edit.js:984
 msgid "Enable to scroll through slides horizontally as the user scrolls down the page"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:980
+#: src/blocks/slider/edit.js:1002
 msgid "Controls how much scrolling is needed to traverse all slides. Higher = more scroll distance."
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:991
+#: src/blocks/slider/edit.js:1013
 msgid "Scroll-driven mode pins the slider in the viewport and uses vertical scroll to navigate horizontally through slides. Arrows, dots, autoplay, and loop are disabled."
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: build/ext-background-video.js:1
-#: src/blocks/slider/edit.js:999
-#: src/extensions/background-video/edit.js:299
-msgid "Loop"
-msgstr ""
-
-#: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1004
+#: src/blocks/slider/edit.js:1026
 msgid "Infinite loop navigation"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1005
+#: src/blocks/slider/edit.js:1027
 msgid "Stop at first/last slide"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1012
+#: src/blocks/slider/edit.js:1034
 msgid "Swipeable (Touch)"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1022
+#: src/blocks/slider/edit.js:1044
 msgid "Draggable (Mouse)"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1032
+#: src/blocks/slider/edit.js:1054
 msgid "Free Mode"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1035
+#: src/blocks/slider/edit.js:1057
 msgid "Smooth scrolling without snap points"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1043
+#: src/blocks/slider/edit.js:1065
 msgid "Centered Slides"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1048
+#: src/blocks/slider/edit.js:1070
 msgid "Active slide centered in view"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1068
+#: src/blocks/slider/edit.js:1090
 msgid "Below this width, uses mobile slides per view"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1077
+#: src/blocks/slider/edit.js:1099
 msgid "Tablet Breakpoint (px)"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1084
+#: src/blocks/slider/edit.js:1106
 msgid "Below this width, uses tablet slides per view"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1093
+#: src/blocks/slider/edit.js:1115
 msgid "ARIA Label"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1098
+#: src/blocks/slider/edit.js:1120
 msgid "Accessible label for screen readers"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1102
+#: src/blocks/slider/edit.js:1124
 msgid "Image slider"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1113
+#: src/blocks/slider/edit.js:1135
 msgid "Arrow Colors"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1124
-#: src/blocks/slider/edit.js:1127
+#: src/blocks/slider/edit.js:1146
+#: src/blocks/slider/edit.js:1149
 msgid "Dot Color"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1179
+#: src/blocks/slider/edit.js:1201
 msgid "Slides"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1262
+#: src/blocks/slider/edit.js:1284
 msgid "Previous slide"
 msgstr ""
 
 #: build/blocks/slider/index.js:4
-#: src/blocks/slider/edit.js:1270
+#: src/blocks/slider/edit.js:1292
 msgid "Next slide"
 msgstr ""
 
@@ -15425,6 +16108,153 @@ msgstr ""
 #: build/blocks/slider/index.js:5
 #: src/blocks/slider/index.js:755
 msgid "Design every part of your site from headers and footers to archive pages and single posts."
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/Inspector.js:45
+#: src/blocks/star-rating/components/SettingsPanel.js:77
+#: src/blocks/star-rating/components/SettingsPanel.js:83
+msgid "Rating"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:99
+msgid "Connected to a dynamic source. The value below is only a preview — the frontend uses the source."
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:119
+msgid "Out of"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:135
+#: src/blocks/star-rating/components/SettingsPanel.js:143
+msgid "Precision"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:146
+msgid "How far a partial star may be rounded when drawn. The number and any structured data stay exact."
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:155
+msgid "Whole"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:159
+msgid "Half"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:163
+msgid "Exact"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:169
+#: src/blocks/star-rating/components/SettingsPanel.js:181
+msgid "Show value"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:190
+msgid "Show scale"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:191
+msgid "Renders \"4.5/5\" instead of \"4.5\"."
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:206
+msgid "Rating count"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:223
+msgid "Show rating count"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:233
+msgid "Number of ratings"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:1
+#: src/blocks/star-rating/components/SettingsPanel.js:249
+msgid "Count format"
+msgstr ""
+
+#. translators: %s is a literal placeholder token the author types, not a value substituted here.
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/SettingsPanel.js:252
+#, js-format
+msgid "%s is replaced by the number of ratings."
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/StylePanel.js:59
+#: src/blocks/star-rating/components/StylePanel.js:67
+msgid "Icon style"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/StylePanel.js:85
+#: src/blocks/star-rating/components/StylePanel.js:93
+msgid "Icon size"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/StylePanel.js:111
+#: src/blocks/star-rating/components/StylePanel.js:117
+msgid "Icon gap"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/Inspector.js:49
+msgid "Track"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/Inspector.js:66
+msgid "Review Details"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/Inspector.js:67
+msgid "Aggregate Rating Details"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/Inspector.js:74
+msgid "Stars"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/Inspector.js:108
+#: src/blocks/star-rating/components/Inspector.js:120
+msgid "Item being rated"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/Inspector.js:121
+msgid "Defaults to the page title."
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/Inspector.js:136
+#: src/blocks/star-rating/components/Inspector.js:148
+msgid "Review author"
+msgstr ""
+
+#: build/blocks/star-rating/index.js:2
+#: src/blocks/star-rating/components/Inspector.js:149
+msgid "Required. A Review with no author is dropped, so nothing is emitted until this is filled in."
 msgstr ""
 
 #: build/blocks/sticky-sections/index.js:1
@@ -15935,6 +16765,176 @@ msgstr ""
 msgid "Allow tabs to be accessed via URL hash (e.g., #tab-name)"
 msgstr ""
 
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/CustomPathUpload.js:53
+msgid "Extracting path…"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/CustomPathUpload.js:54
+msgid "Choose SVG path"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/CustomPathUpload.js:21
+msgid "Choose an SVG smaller than 12 KB."
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/CustomPathUpload.js:37
+msgid "This SVG does not contain a safe path."
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/utils/svg-paths.js:92
+msgid "Arc"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/utils/svg-paths.js:95
+msgid "Oval"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/utils/svg-paths.js:96
+msgid "Spiral"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:16
+#: src/extensions/responsive-values/edit-panel.js:60
+msgid "Font size"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:32
+msgid "Start offset"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:40
+msgid "Word spacing"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:48
+msgid "Path padding"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:49
+msgid "Move text away from the path. Use a negative value for the opposite side."
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:123
+#: src/blocks/text-path/components/TextPathControls.js:131
+msgid "Path"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:136
+msgid "Custom SVG"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:157
+#: src/blocks/text-path/components/TextPathControls.js:163
+msgid "Arc size"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:164
+msgid "0 is flat; 100 is the full curve."
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:181
+#: src/blocks/text-path/components/TextPathControls.js:187
+msgid "Show path"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:204
+msgid "Left to right"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:208
+msgid "Right to left"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:289
+#: src/blocks/text-path/components/TextPathControls.js:295
+msgid "Path width"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:308
+#: src/blocks/text-path/components/TextPathControls.js:314
+msgid "Path alignment"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:337
+#: src/blocks/text-path/components/TextPathControls.js:345
+msgid "Guide opacity"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:360
+#: src/blocks/text-path/components/TextPathControls.js:368
+msgid "Guide line thickness"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:388
+#: src/blocks/text-path/components/TextPathControls.js:394
+msgid "Animate text"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:403
+msgid "Motion duration"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:411
+msgid "Motion duration (seconds)"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:429
+#: src/blocks/text-path/components/TextPathControls.js:439
+msgid "Motion direction"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:443
+msgid "Forward"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/components/TextPathControls.js:447
+msgid "Reverse"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/edit.js:72
+msgid "Guide line"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/edit.js:78
+msgid "Circle background"
+msgstr ""
+
+#: build/blocks/text-path/index.js:1
+#: src/blocks/text-path/edit.js:145
+msgid "Path colors"
+msgstr ""
+
 #: build/blocks/timeline-item/index.js:1
 #: src/blocks/timeline-item/edit.js:179
 msgid "Add timeline content…"
@@ -16218,91 +17218,126 @@ msgstr ""
 
 #: build/ext-block-animations.js:1
 #: build/index.js:7
-#: src/extensions/block-animations/components/AnimationPanel.js:111
+#: src/extensions/block-animations/components/AnimationPanel.js:115
 #: src/extensions/svg-patterns/components/SvgPatternsPanel.js:179
 msgid "Theme"
 msgstr ""
 
 #. translators: 1: animation name, 2: trigger, 3: duration in ms.
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:127
+#: src/extensions/block-animations/components/AnimationPanel.js:131
 #, js-format
 msgid "Inheriting theme animation: %1$s · %2$s · %3$dms"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:143
+#: src/extensions/block-animations/components/AnimationPanel.js:147
 msgid "No theme animation for this block type."
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:153
+#: src/extensions/block-animations/components/AnimationPanel.js:157
 msgid "Entrance Animation"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:162
+#: src/extensions/block-animations/components/AnimationPanel.js:174
 msgid "Animation when block appears"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:168
+#: src/extensions/block-animations/components/AnimationPanel.js:186
 msgid "Exit Animation (Optional)"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:184
+#: src/extensions/block-animations/components/AnimationPanel.js:208
 msgid "Animation when block disappears"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:193
+#: src/extensions/block-animations/components/AnimationPanel.js:218
 msgid "Animation Trigger"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:217
-msgid "Delay (ms)"
-msgstr ""
-
-#: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:234
+#: src/extensions/block-animations/components/AnimationPanel.js:268
 msgid "Easing"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:247
+#: src/extensions/block-animations/components/AnimationPanel.js:281
 msgid "Viewport Offset (px)"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:260
+#: src/extensions/block-animations/components/AnimationPanel.js:294
 msgid "Distance from viewport to trigger animation"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:270
+#: src/extensions/block-animations/components/AnimationPanel.js:304
 msgid "Exit animations require repeating behavior. \"Animate Once\" is disabled."
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:278
+#: src/extensions/block-animations/components/AnimationPanel.js:312
 msgid "Animate Once"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:286
+#: src/extensions/block-animations/components/AnimationPanel.js:320
 msgid "Disabled when exit animation is set"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:290
+#: src/extensions/block-animations/components/AnimationPanel.js:324
 msgid "Only animate the first time block enters viewport"
 msgstr ""
 
 #: build/ext-block-animations.js:2
-#: src/extensions/block-animations/components/AnimationPanel.js:302
+#: src/extensions/block-animations/components/AnimationPanel.js:340
+msgid "Scrub With Scroll"
+msgstr ""
+
+#: build/ext-block-animations.js:2
+#: src/extensions/block-animations/components/AnimationPanel.js:346
+msgid "The entrance animation follows scroll position instead of playing once. Requires a recent browser; older browsers show the block with no animation."
+msgstr ""
+
+#: build/ext-block-animations.js:2
+#: src/extensions/block-animations/components/AnimationPanel.js:356
+msgid "Stagger Children"
+msgstr ""
+
+#: build/ext-block-animations.js:2
+#: src/extensions/block-animations/components/AnimationPanel.js:361
+msgid "Animate this block’s direct children in sequence instead of the block itself."
+msgstr ""
+
+#: build/ext-block-animations.js:2
+#: src/extensions/block-animations/components/AnimationPanel.js:371
+msgid "Stagger Step (ms)"
+msgstr ""
+
+#: build/ext-block-animations.js:2
+#: src/extensions/block-animations/components/AnimationPanel.js:379
+msgid "Delay added between each child"
+msgstr ""
+
+#: build/ext-block-animations.js:2
+#: src/extensions/block-animations/components/AnimationPanel.js:390
 msgid "Please select at least one animation type."
+msgstr ""
+
+#: build/ext-block-animations.js:2
+#: src/extensions/block-animations/components/AnimationPanel.js:400
+msgid "Draw SVG Strokes"
+msgstr ""
+
+#: build/ext-block-animations.js:2
+#: src/extensions/block-animations/components/AnimationPanel.js:403
+msgid "Draw the outlines of any SVG inside this block when it enters the viewport. Only shapes with a stroke are visible while drawing."
 msgstr ""
 
 #: build/ext-block-animations.js:2
@@ -16547,11 +17582,6 @@ msgstr ""
 #: build/ext-hover-effects.js:1
 #: src/extensions/hover-effects/edit.js:22
 msgid "Hover Effect"
-msgstr ""
-
-#: build/ext-hover-effects.js:1
-#: src/extensions/hover-effects/edit.js:26
-msgid "Effect"
 msgstr ""
 
 #: build/ext-hover-effects.js:1
@@ -16869,72 +17899,87 @@ msgid "This block is always visible."
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:53
+#: src/extensions/text-reveal/components/TextRevealPanel.js:54
 msgid "Word"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:54
+#: src/extensions/text-reveal/components/TextRevealPanel.js:55
 msgid "Character"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:58
-msgid "Fast (100ms)"
-msgstr ""
-
-#: build/index.js:7
 #: src/extensions/text-reveal/components/TextRevealPanel.js:59
-msgid "Normal (150ms)"
+msgid "Color Sweep"
 msgstr ""
 
 #: build/index.js:7
 #: src/extensions/text-reveal/components/TextRevealPanel.js:60
+msgid "Fade & Rise"
+msgstr ""
+
+#: build/index.js:7
+#: src/extensions/text-reveal/components/TextRevealPanel.js:64
+msgid "Fast (100ms)"
+msgstr ""
+
+#: build/index.js:7
+#: src/extensions/text-reveal/components/TextRevealPanel.js:65
+msgid "Normal (150ms)"
+msgstr ""
+
+#: build/index.js:7
+#: src/extensions/text-reveal/components/TextRevealPanel.js:66
 msgid "Slow (250ms)"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:61
+#: src/extensions/text-reveal/components/TextRevealPanel.js:67
 msgid "Very Slow (400ms)"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:74
+#: src/extensions/text-reveal/components/TextRevealPanel.js:80
 msgid "Enable Text Reveal"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:79
-msgid "Reveal text color progressively as users scroll"
+#: src/extensions/text-reveal/components/TextRevealPanel.js:85
+msgid "Reveal text word by word as users scroll"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:90
+#: src/extensions/text-reveal/components/TextRevealPanel.js:104
+msgid "Recolour each unit, or fade and lift it into place"
+msgstr ""
+
+#: build/index.js:7
+#: src/extensions/text-reveal/components/TextRevealPanel.js:113
 msgid "Split Mode"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:98
+#: src/extensions/text-reveal/components/TextRevealPanel.js:121
 msgid "Reveal by word or character"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:107
+#: src/extensions/text-reveal/components/TextRevealPanel.js:130
 msgid "Transition Speed"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:118
+#: src/extensions/text-reveal/components/TextRevealPanel.js:141
 msgid "How fast each word/character transitions"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:127
+#: src/extensions/text-reveal/components/TextRevealPanel.js:150
 msgid "Custom Transition (ms)"
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/text-reveal/components/TextRevealPanel.js:156
+#: src/extensions/text-reveal/components/TextRevealPanel.js:180
 msgid "Reveal Color"
 msgstr ""
 
@@ -17244,16 +18289,6 @@ msgid "Creates a parallax effect. May not work on mobile devices."
 msgstr ""
 
 #: build/index.js:7
-#: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:39
-msgid "Up"
-msgstr ""
-
-#: build/index.js:7
-#: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:40
-msgid "Down"
-msgstr ""
-
-#: build/index.js:7
 #: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:47
 msgid "Clockwise"
 msgstr ""
@@ -17281,11 +18316,6 @@ msgstr ""
 #: build/index.js:7
 #: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:87
 msgid "Enable Scroll Parallax Effect"
-msgstr ""
-
-#: build/index.js:7
-#: src/extensions/vertical-scroll-parallax/components/ParallaxPanel.js:98
-msgid "Direction"
 msgstr ""
 
 #: build/index.js:7
@@ -17949,6 +18979,36 @@ msgstr ""
 msgid "Interactions"
 msgstr ""
 
+#: build/index.js:13
+#: src/extensions/schema/constants.js:27
+msgid "How-to"
+msgstr ""
+
+#: build/index.js:13
+#: src/extensions/schema/constants.js:33
+msgid "Aggregate rating"
+msgstr ""
+
+#: build/index.js:13
+#: src/extensions/schema/constants.js:35
+msgid "Review"
+msgstr ""
+
+#: build/index.js:13
+#: src/extensions/schema/index.js:66
+msgid "Structured Data"
+msgstr ""
+
+#: build/index.js:13
+#: src/extensions/schema/index.js:72
+msgid "Schema type"
+msgstr ""
+
+#: build/index.js:13
+#: src/extensions/schema/index.js:78
+msgid "Only choose a type when the content genuinely matches it. Mislabelled structured data can get a site penalised. If an SEO plugin already outputs this type for the page, leave this set to None."
+msgstr ""
+
 #: build/llms-txt.js:1
 #: src/llms-txt/index.js:52
 msgid "AI & LLMs"
@@ -18320,6 +19380,44 @@ msgstr ""
 msgid "Below WCAG AA"
 msgstr ""
 
+#: src/extensions/responsive-values/edit-panel.js:54
+msgid "Top padding"
+msgstr ""
+
+#: src/extensions/responsive-values/edit-panel.js:55
+msgid "Right padding"
+msgstr ""
+
+#: src/extensions/responsive-values/edit-panel.js:56
+msgid "Bottom padding"
+msgstr ""
+
+#: src/extensions/responsive-values/edit-panel.js:57
+msgid "Left padding"
+msgstr ""
+
+#: src/extensions/responsive-values/edit-panel.js:58
+msgid "Top margin"
+msgstr ""
+
+#: src/extensions/responsive-values/edit-panel.js:59
+msgid "Bottom margin"
+msgstr ""
+
+#: src/extensions/responsive-values/edit-panel.js:61
+msgid "Minimum height"
+msgstr ""
+
+#: src/extensions/responsive-values/edit-panel.js:62
+msgid "Maximum width"
+msgstr ""
+
+#. translators: 1: property label (e.g. "Top padding"), 2: device name (e.g. "mobile").
+#: src/extensions/responsive-values/edit-panel.js:126
+#, js-format
+msgid "%1$s (%2$s)"
+msgstr ""
+
 #: build/blocks/accordion-item/block.json
 #: src/blocks/accordion-item/block.json
 msgctxt "block title"
@@ -18607,11 +19705,13 @@ msgstr ""
 #: build/blocks/card/block.json
 #: build/blocks/dynamic-image/block.json
 #: build/blocks/fifty-fifty/block.json
+#: build/blocks/hotspot/block.json
 #: build/blocks/image-accordion-item/block.json
 #: build/blocks/image-accordion/block.json
 #: src/blocks/card/block.json
 #: src/blocks/dynamic-image/block.json
 #: src/blocks/fifty-fifty/block.json
+#: src/blocks/hotspot/block.json
 #: src/blocks/image-accordion-item/block.json
 #: src/blocks/image-accordion/block.json
 msgctxt "block keyword"
@@ -19396,8 +20496,10 @@ msgstr ""
 
 #: build/blocks/form-text-field/block.json
 #: build/blocks/form-textarea-field/block.json
+#: build/blocks/text-path/block.json
 #: src/blocks/form-text-field/block.json
 #: src/blocks/form-textarea-field/block.json
+#: src/blocks/text-path/block.json
 msgctxt "block keyword"
 msgid "text"
 msgstr ""
@@ -19576,6 +20678,48 @@ msgctxt "block keyword"
 msgid "font"
 msgstr ""
 
+#: build/blocks/hotspot-item/block.json
+#: src/blocks/hotspot-item/block.json
+msgctxt "block title"
+msgid "Hotspot Item"
+msgstr ""
+
+#: build/blocks/hotspot-item/block.json
+#: src/blocks/hotspot-item/block.json
+msgctxt "block description"
+msgid "A marker within a Hotspot image."
+msgstr ""
+
+#: build/blocks/hotspot/block.json
+#: src/blocks/hotspot/block.json
+msgctxt "block title"
+msgid "Hotspot"
+msgstr ""
+
+#: build/blocks/hotspot/block.json
+#: src/blocks/hotspot/block.json
+msgctxt "block description"
+msgid "Place interactive markers over an image."
+msgstr ""
+
+#: build/blocks/hotspot/block.json
+#: src/blocks/hotspot/block.json
+msgctxt "block keyword"
+msgid "tooltip"
+msgstr ""
+
+#: build/blocks/hotspot/block.json
+#: src/blocks/hotspot/block.json
+msgctxt "block keyword"
+msgid "marker"
+msgstr ""
+
+#: build/blocks/hotspot/block.json
+#: src/blocks/hotspot/block.json
+msgctxt "block keyword"
+msgid "hotspot"
+msgstr ""
+
 #: build/blocks/icon-button/block.json
 #: src/blocks/icon-button/block.json
 msgctxt "block title"
@@ -19675,7 +20819,9 @@ msgid "Display an inline SVG icon with customizable styling."
 msgstr ""
 
 #: build/blocks/icon/block.json
+#: build/blocks/text-path/block.json
 #: src/blocks/icon/block.json
+#: src/blocks/text-path/block.json
 msgctxt "block keyword"
 msgid "svg"
 msgstr ""
@@ -20414,6 +21560,48 @@ msgctxt "block keyword"
 msgid "slideshow"
 msgstr ""
 
+#: build/blocks/star-rating/block.json
+#: src/blocks/star-rating/block.json
+msgctxt "block title"
+msgid "Star Rating"
+msgstr ""
+
+#: build/blocks/star-rating/block.json
+#: src/blocks/star-rating/block.json
+msgctxt "block description"
+msgid "Show a rating as stars — from a fixed value or bound to post meta, ACF or a WooCommerce average rating."
+msgstr ""
+
+#: build/blocks/star-rating/block.json
+#: src/blocks/star-rating/block.json
+msgctxt "block keyword"
+msgid "rating"
+msgstr ""
+
+#: build/blocks/star-rating/block.json
+#: src/blocks/star-rating/block.json
+msgctxt "block keyword"
+msgid "stars"
+msgstr ""
+
+#: build/blocks/star-rating/block.json
+#: src/blocks/star-rating/block.json
+msgctxt "block keyword"
+msgid "review"
+msgstr ""
+
+#: build/blocks/star-rating/block.json
+#: src/blocks/star-rating/block.json
+msgctxt "block keyword"
+msgid "score"
+msgstr ""
+
+#: build/blocks/star-rating/block.json
+#: src/blocks/star-rating/block.json
+msgctxt "block keyword"
+msgid "testimonial"
+msgstr ""
+
 #: build/blocks/sticky-sections/block.json
 #: src/blocks/sticky-sections/block.json
 msgctxt "block title"
@@ -20532,6 +21720,30 @@ msgstr ""
 #: src/blocks/tabs/block.json
 msgctxt "block keyword"
 msgid "tabbed"
+msgstr ""
+
+#: build/blocks/text-path/block.json
+#: src/blocks/text-path/block.json
+msgctxt "block title"
+msgid "Text Path"
+msgstr ""
+
+#: build/blocks/text-path/block.json
+#: src/blocks/text-path/block.json
+msgctxt "block description"
+msgid "Flow text along an SVG path."
+msgstr ""
+
+#: build/blocks/text-path/block.json
+#: src/blocks/text-path/block.json
+msgctxt "block keyword"
+msgid "path"
+msgstr ""
+
+#: build/blocks/text-path/block.json
+#: src/blocks/text-path/block.json
+msgctxt "block keyword"
+msgid "curve"
 msgstr ""
 
 #: build/blocks/timeline-item/block.json
