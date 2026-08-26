@@ -31,5 +31,9 @@ return array(
 			'type'    => 'number',
 			'default' => 150,
 		),
+		'dsgoTextRevealEffect'     => array(
+			'type'    => 'string',
+			'default' => 'color',
+		),
 	),
 );
