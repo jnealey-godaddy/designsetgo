@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.0
+Stable tag: 2.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -87,6 +87,12 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.7.1 - 2026-08-26 =
+
+* **Fix:** The Chart block works again. On 2.7.0, inserting a Chart showed "Error loading block" instead of the chart — the block's preview is drawn on the server, and the request that draws it was being rejected. Charts already saved on a page were unaffected; only the editor preview failed.
+* **Fix:** Chart y-axis labels stay inside the chart. Longer labels — anything past about seven characters, which includes any formatted currency — were painted outside the block's own area, over whatever sat to the left of them. The space reserved for them is now measured from the labels themselves.
+* **New:** Chart — value prefix, suffix, and thousands grouping. Put a $ in front of every value or a % after it, and turn on grouping to read 1,234,567 instead of 1234567. These apply to the value labels, the y-axis, and the data table screen readers use, so the axis matches the bars. Donut slices keep showing their share of the total.
 
 = 2.7.0 - 2026-08-25 =
 
@@ -219,6 +225,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.7.1 =
+Fixes the Chart block, which could not be inserted on 2.7.0 — it showed "Error loading block" instead of a chart. Also keeps long y-axis labels inside the chart, and adds a value prefix/suffix and thousands grouping. Recommended for anyone on 2.7.0.
 
 = 2.7.0 =
 Four new blocks (Chart, Star Rating, Hotspot, Text Path), an Interactions extension for wiring any block to any other, Schema.org markup, animated headlines, an off-canvas panel mode for Modal, deeper animations, WooCommerce product bindings and product-aware queries, a keyless Google Maps option, and a large batch of Slider fixes. Tested up to WordPress 7.1. No content migration required.
