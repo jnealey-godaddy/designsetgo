@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.1
+Stable tag: 2.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -87,6 +87,13 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.7.2 - 2026-08-26 =
+
+* **Fix:** Advanced Heading — the typing effect no longer hides the last letter of each word. It also now types one character at a time, so short words no longer appear in twelve tiny slivers.
+* **Fix:** Advanced Heading — the typing, clip, and blinds effects no longer shave the tops and tails off letters. Descenders on g, j, p, q, y and accented capitals were being cut.
+* **Fix:** Text Path — turning on Motion now animates in the editor, not only on the published page. The frontend was always animating; the editor just never previewed it, which made the setting look broken.
+* **Fix:** Advanced Heading — segments no longer run together in the editor. Plain segments were missing the spacing the published page gets, so the editor showed them squished while the frontend looked correct.
 
 = 2.7.1 - 2026-08-26 =
 
@@ -225,6 +232,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.7.2 =
+Fixes four display problems: the Advanced Heading typing effect cutting off the last letter, the clip-based effects shaving the tops and tails off letters, Text Path motion not previewing in the editor, and heading segments running together in the editor. Includes everything in 2.7.1.
 
 = 2.7.1 =
 Fixes the Chart block, which could not be inserted on 2.7.0 — it showed "Error loading block" instead of a chart. Also keeps long y-axis labels inside the chart, and adds a value prefix/suffix and thousands grouping. Recommended for anyone on 2.7.0.
