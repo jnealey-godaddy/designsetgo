@@ -170,6 +170,86 @@ class Chart_Render_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Wide axis labels widen the gutter instead of escaping the chart box.
+	 *
+	 * The canvas is `overflow: visible`, so a label that does not fit the
+	 * gutter is not clipped -- it is painted outside the block's own border,
+	 * over whatever sits to the left of it.
+	 */
+	public function test_wide_axis_labels_widen_the_plot_gutter() {
+		$html = $this->render(
+			array(
+				'chartType'      => 'bar',
+				'data'           => array(
+					array(
+						'label' => 'Q1',
+						'value' => 1234567,
+					),
+					array(
+						'label' => 'Q2',
+						'value' => 2345678,
+					),
+				),
+				'valuePrefix'    => '$',
+				'groupThousands' => true,
+				'showGrid'       => true,
+			)
+		);
+
+		$this->assertSame(
+			1,
+			preg_match( '/class="dsgo-chart__plot" transform="translate\((\d+), /', $html, $m ),
+			'The plot group is missing its transform.'
+		);
+
+		$gutter = (int) $m[1];
+
+		// "$3,000,000" is the widest tick this data produces.
+		$this->assertGreaterThanOrEqual(
+			designsetgo_chart_text_width( '$3,000,000' ) + 8,
+			$gutter,
+			'The gutter is too narrow to hold the widest tick label.'
+		);
+	}
+
+	/**
+	 * A plain chart keeps the gutter it has always had.
+	 */
+	public function test_narrow_axis_labels_keep_the_original_gutter() {
+		$html = $this->render(
+			array(
+				'chartType' => 'bar',
+				'data'      => $this->sample(),
+				'showGrid'  => true,
+			)
+		);
+
+		$this->assertStringContainsString(
+			'class="dsgo-chart__plot" transform="translate(44, ',
+			$html
+		);
+	}
+
+	/**
+	 * A gridless chart still has no left gutter at all.
+	 */
+	public function test_a_gridless_chart_has_no_gutter() {
+		$html = $this->render(
+			array(
+				'chartType'   => 'bar',
+				'data'        => $this->sample(),
+				'valuePrefix' => '$',
+				'showGrid'    => false,
+			)
+		);
+
+		$this->assertStringContainsString(
+			'class="dsgo-chart__plot" transform="translate(0, ',
+			$html
+		);
+	}
+
+	/**
 	 * The block is registered, so the test suite is exercising real markup.
 	 */
 	public function test_the_block_is_registered() {

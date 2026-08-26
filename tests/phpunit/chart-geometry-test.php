@@ -97,6 +97,76 @@ class Chart_Geometry_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Text width grows with the string and treats commas as narrow.
+	 *
+	 * The estimate is calibrated against the browser: at font-size 14,
+	 * "$0" measures 16.2 user units and "$2,000,000" measures 71.9.
+	 */
+	public function test_text_width_estimates_the_measured_widths() {
+		$narrow = designsetgo_chart_text_width( '$0' );
+		$wide   = designsetgo_chart_text_width( '$2,000,000' );
+
+		// Within a reasonable margin of the measured values, and never under
+		// -- under-reserving is what puts labels outside the container.
+		$this->assertGreaterThanOrEqual( 16.2, $narrow );
+		$this->assertLessThan( 22.0, $narrow );
+
+		$this->assertGreaterThanOrEqual( 71.9, $wide );
+		$this->assertLessThan( 85.0, $wide );
+	}
+
+	/**
+	 * A comma takes less room than a digit.
+	 */
+	public function test_text_width_treats_separators_as_narrow() {
+		$this->assertLessThan(
+			designsetgo_chart_text_width( '11' ),
+			designsetgo_chart_text_width( ',,' )
+		);
+	}
+
+	/**
+	 * The gutter never drops below the previous fixed value.
+	 *
+	 * Short labels kept the old 44-unit gutter, so unchanged charts keep
+	 * their proportions.
+	 */
+	public function test_tick_gutter_keeps_the_historic_minimum() {
+		$this->assertSame( 44, designsetgo_chart_tick_gutter( array( '0', '5', '10' ) ) );
+	}
+
+	/**
+	 * A wide label widens the gutter enough to hold it.
+	 *
+	 * This is the regression: a fixed 44-unit gutter left "$2,000,000"
+	 * hanging 35 units outside the chart's own box.
+	 */
+	public function test_tick_gutter_grows_for_a_wide_label() {
+		$labels = array( '$0', '$1,000,000', '$2,000,000', '$3,000,000' );
+		$gutter = designsetgo_chart_tick_gutter( $labels );
+
+		$this->assertGreaterThan( 44, $gutter );
+
+		// The label is drawn 8 units left of the plot edge, so the gutter has
+		// to cover the widest label plus that gap.
+		$this->assertGreaterThanOrEqual(
+			designsetgo_chart_text_width( '$3,000,000' ) + 8,
+			$gutter
+		);
+	}
+
+	/**
+	 * An absurd affix cannot eat the whole plot.
+	 */
+	public function test_tick_gutter_is_capped() {
+		$gutter = designsetgo_chart_tick_gutter(
+			array( str_repeat( 'M', 200 ) )
+		);
+
+		$this->assertLessThanOrEqual( 240, $gutter );
+	}
+
+	/**
 	 * The midpoint of the input range maps to the midpoint of the output range.
 	 */
 	public function test_scale_maps_the_midpoint() {
