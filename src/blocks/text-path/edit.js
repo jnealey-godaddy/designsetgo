@@ -6,12 +6,13 @@ import {
 	useBlockProps,
 } from '@wordpress/block-editor';
 import { useSelect } from '@wordpress/data';
-import { useEffect } from '@wordpress/element';
+import { useEffect, useRef } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 import { useBlockColors, useUniqueBlockId } from '../../hooks';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import TextPathControls from './components/TextPathControls';
 import TextPathGraphic from './components/TextPathGraphic';
+import { initTextPathMotion, stopTextPathMotion } from './motion';
 import {
 	clamp,
 	findFirstTextPathClientId,
@@ -82,7 +83,9 @@ export default function TextPathEdit({ attributes, setAttributes, clientId }) {
 					: []),
 			],
 		});
+	const motionRef = useRef(null);
 	const blockProps = useBlockProps({
+		ref: motionRef,
 		className: `dsgo-text-path${
 			attributes.pathAlignment === 'center' ||
 			attributes.pathAlignment === 'right'
@@ -128,6 +131,36 @@ export default function TextPathEdit({ attributes, setAttributes, clientId }) {
 					: 'forward',
 		}),
 	});
+	// Preview the motion on the canvas. Without this the Motion toggle looks
+	// like it does nothing -- the frontend runs it from view.js, which the
+	// editor never loads. Restart on any change that alters the path or the
+	// timing, because the engine reads those once when it starts.
+	useEffect(() => {
+		const node = motionRef.current;
+
+		if (!node) {
+			return undefined;
+		}
+
+		stopTextPathMotion(node);
+
+		if (attributes.motion) {
+			initTextPathMotion(node);
+		}
+
+		return () => stopTextPathMotion(node);
+	}, [
+		attributes.motion,
+		attributes.motionDuration,
+		attributes.motionDirection,
+		attributes.pathType,
+		attributes.customPath,
+		attributes.arcSize,
+		attributes.startOffset,
+		attributes.text,
+		attributes.pathFontSize,
+	]);
+
 	const graphic = <TextPathGraphic attributes={attributes} />;
 
 	return (

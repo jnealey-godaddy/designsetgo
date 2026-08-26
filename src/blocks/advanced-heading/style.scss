@@ -46,6 +46,9 @@
 
 	.dsgo-advanced-heading__inner--rotating .dsgo-heading-segment__animated.is-active {
 		display: inline-block;
+		// Negative inset expands the clip rect past the border box, so the
+		// clip-path effects stop cutting ascenders and descenders.
+		--dsgo-headline-bleed: -0.3em;
 		animation-duration: var(--dsgo-animated-headline-duration, 2500ms);
 		animation-delay: var(--dsgo-animated-headline-delay, 0ms);
 		animation-iteration-count: infinite;
@@ -58,7 +61,12 @@
 
 	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='typing'] .dsgo-heading-segment__animated.is-active {
 		animation-name: dsgo-animated-headline-typing;
-		animation-timing-function: steps(12, end);
+		// jump-none paints both ends of the range. steps(n, end) reaches the
+		// final value only at exactly t=1, and an infinite animation restarts
+		// at that instant -- so the last 1/n of the word was never drawn.
+		// The step count is the word's character count, set by view.js, so a
+		// step reveals a character rather than a fraction of the width.
+		animation-timing-function: steps(var(--dsgo-typing-steps, 12), jump-none);
 	}
 
 	.dsgo-advanced-heading__inner--rotating[data-dsgo-animated-headline-effect='clip'] .dsgo-heading-segment__animated.is-active {
@@ -116,18 +124,21 @@
 	text-align: right;
 }
 
+// clip-path: inset() clips to the border box, which for an inline-block is
+// the line box -- shorter than the glyphs actually paint. Without a vertical
+// bleed the effects below shave descenders and accents off every word.
 @keyframes dsgo-animated-headline-typing {
 
-	from { clip-path: inset(0 100% 0 0); }
+	from { clip-path: inset(var(--dsgo-headline-bleed) 100% var(--dsgo-headline-bleed) 0); }
 
-	to { clip-path: inset(0 0 0 0); }
+	to { clip-path: inset(var(--dsgo-headline-bleed) 0 var(--dsgo-headline-bleed) 0); }
 }
 
 @keyframes dsgo-animated-headline-clip {
 
-	from { clip-path: inset(0 50% 0 50%); }
+	from { clip-path: inset(var(--dsgo-headline-bleed) 50% var(--dsgo-headline-bleed) 50%); }
 
-	to { clip-path: inset(0 0 0 0); }
+	to { clip-path: inset(var(--dsgo-headline-bleed) 0 var(--dsgo-headline-bleed) 0); }
 }
 
 @keyframes dsgo-animated-headline-flip {
@@ -146,9 +157,9 @@
 
 @keyframes dsgo-animated-headline-blinds {
 
-	from { clip-path: inset(0 0 100% 0); }
+	from { clip-path: inset(var(--dsgo-headline-bleed) 0 100% 0); }
 
-	to { clip-path: inset(0 0 0 0); }
+	to { clip-path: inset(var(--dsgo-headline-bleed) 0 var(--dsgo-headline-bleed) 0); }
 }
 
 @keyframes dsgo-animated-headline-drop-in {

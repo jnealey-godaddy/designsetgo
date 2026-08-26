@@ -210,7 +210,7 @@ export default function AdvancedHeadingEdit({
 			className: 'dsgo-advanced-heading__inner',
 			style: {
 				...(blockGap ? { '--dsgo-segment-gap': blockGap } : {}),
-				'--dsgo-animated-segment-gap': blockGap ? '0' : '.2em',
+				'--dsgo-editor-segment-gap': blockGap ? '0' : '.2em',
 			},
 		},
 		{

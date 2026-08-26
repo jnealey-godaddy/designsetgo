@@ -169,6 +169,13 @@ function renderCurrentWord(state) {
 
 	wordElement.classList.remove('is-active');
 	wordElement.replaceChildren(document.createTextNode(word));
+	// One typing step per character, so a step reveals a letter rather than a
+	// fixed fraction of the word's width. Set from the word being shown,
+	// because each word in the rotation is a different length.
+	wordElement.style.setProperty(
+		'--dsgo-typing-steps',
+		String(Math.max(1, [...word].length))
+	);
 	// Re-adding the class after a reflow restarts the selected CSS effect for
 	// every new word without adding a second animation implementation.
 	void wordElement.offsetWidth;

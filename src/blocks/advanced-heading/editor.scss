@@ -14,10 +14,18 @@
 		margin-inline-start: var(--dsgo-segment-gap, 0);
 	}
 
-	// Animated segments do not have editable trailing whitespace. Keep their
-	// editor canvas readable without changing the saved/frontend text flow.
+	// The serializer writes a newline between each segment block, and that
+	// whitespace collapses to a single space on the frontend. The editor
+	// renders the segments adjacent with no text node between them, so the
+	// space has to be added back here or the canvas shows them run together.
+	// A segment renders either __animated or __text, never both, so these
+	// two rules cannot double up on the same element.
 	.dsgo-heading-segment:not(:first-child) .dsgo-heading-segment__animated {
-		margin-inline-start: var(--dsgo-animated-segment-gap);
+		margin-inline-start: var(--dsgo-editor-segment-gap);
+	}
+
+	.dsgo-heading-segment:not(:first-child) .dsgo-heading-segment__text {
+		margin-inline-start: var(--dsgo-editor-segment-gap);
 	}
 }
 
