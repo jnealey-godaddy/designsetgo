@@ -483,6 +483,41 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
+			// Padding is skip-serialized on the root and re-applied to the
+			// button by save(). Icon Button resolves preset shorthand; Modal
+			// Trigger writes it through unchanged — both are pinned here.
+			'icon-button-padded'                             => array(
+				'name'        => 'designsetgo/icon-button',
+				'attributes'  => array(
+					'text'  => 'Go',
+					'url'   => '/go',
+					'style' => array(
+						'spacing' => array(
+							'padding' => array(
+								'top'    => 'var:preset|spacing|40',
+								'bottom' => 'var:preset|spacing|40',
+								'left'   => '24px',
+							),
+						),
+					),
+				),
+				'innerBlocks' => array(),
+			),
+			'modal-trigger-padded'                           => array(
+				'name'        => 'designsetgo/modal-trigger',
+				'attributes'  => array(
+					'text'  => 'Open',
+					'style' => array(
+						'spacing' => array(
+							'padding' => array(
+								'top'   => '12px',
+								'right' => '20px',
+							),
+						),
+					),
+				),
+				'innerBlocks' => array(),
+			),
 			'modal-trigger-coloured'                         => array(
 				'name'        => 'designsetgo/modal-trigger',
 				'attributes'  => array(

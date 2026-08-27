@@ -394,6 +394,8 @@ class Block_Inserter {
 			return $html;
 		}
 
+		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
+
 		$previous                            = \WP_Block_Supports::$block_to_render;
 		\WP_Block_Supports::$block_to_render = array(
 			'blockName' => $block_name,
@@ -418,7 +420,7 @@ class Block_Inserter {
 
 		$declarations = array();
 		if ( ! empty( $attributes['style'] ) && is_array( $attributes['style'] ) && function_exists( 'wp_style_engine_get_styles' ) ) {
-			$engine       = wp_style_engine_get_styles( $attributes['style'] );
+			$engine       = wp_style_engine_get_styles( self::strip_skipped_style_groups( $block_type, $attributes['style'] ) );
 			$declarations = $engine['declarations'] ?? array();
 		}
 
@@ -3134,7 +3136,12 @@ class Block_Inserter {
 				// the block root and re-applied to the button by save.js.
 				$routed      = self::get_routed_visual_attributes( $attributes );
 				$class_parts = array_merge( $class_parts, $routed['classes'] );
-				$style_parts = array_merge( $style_parts, $routed['styles'] );
+				$style_parts = array_merge(
+					$style_parts,
+					$routed['styles'],
+					// Padding is skip-serialized on the root and re-applied here.
+					self::routed_padding_styles( $attributes, true )
+				);
 
 				$button_style = implode( ';', $style_parts );
 
@@ -3404,6 +3411,9 @@ class Block_Inserter {
 				if ( $has_icon && '' !== $icon_gap ) {
 					$trigger_styles[] = 'gap:' . $icon_gap;
 				}
+				// Padding is skip-serialized on the root and re-applied here.
+				// Unlike Icon Button, save.js writes the value through unchanged.
+				$trigger_styles = array_merge( $trigger_styles, self::routed_padding_styles( $attributes, false ) );
 				$button_style_attr = empty( $trigger_styles )
 					? ''
 					: ' style="' . esc_attr( implode( ';', $trigger_styles ) ) . '"';
@@ -4646,6 +4656,105 @@ class Block_Inserter {
 		}
 
 		return in_array( $align, $valid, true ) ? 'align' . $align : '';
+	}
+
+	/**
+	 * Remove style groups the block tells WordPress not to serialize.
+	 *
+	 * A block can opt out of having a support written onto its root with
+	 * `__experimentalSkipSerialization`, and then re-apply it to an inner
+	 * element in save() — Icon Button and Modal Trigger both do this for
+	 * padding, putting it on the button.
+	 *
+	 * apply_block_supports() honours that for CLASSES, but the Style Engine
+	 * does not: it serializes whatever is in the style attribute. Passing the
+	 * raw style through therefore put padding on the root that save() puts on
+	 * the button, and the block failed validation. Spacing is filtered per
+	 * feature, since a block may skip padding while still serializing margin.
+	 *
+	 * @param \WP_Block_Type|null  $block_type The block type, when registered.
+	 * @param array<string, mixed> $style      The block's style attribute.
+	 * @return array<string, mixed> Style with skipped groups removed.
+	 */
+	private static function strip_skipped_style_groups( ?\WP_Block_Type $block_type, array $style ): array {
+		if ( null === $block_type || ! function_exists( 'wp_should_skip_block_supports_serialization' ) ) {
+			return $style;
+		}
+
+		// Style attribute key => the support key WordPress checks it under.
+		$groups = array(
+			'color'      => 'color',
+			'typography' => 'typography',
+			'border'     => '__experimentalBorder',
+			'shadow'     => 'shadow',
+			'dimensions' => 'dimensions',
+		);
+
+		foreach ( $groups as $style_key => $support_key ) {
+			if ( isset( $style[ $style_key ] ) && wp_should_skip_block_supports_serialization( $block_type, $support_key ) ) {
+				unset( $style[ $style_key ] );
+			}
+		}
+
+		if ( isset( $style['spacing'] ) && is_array( $style['spacing'] ) ) {
+			foreach ( array_keys( $style['spacing'] ) as $feature ) {
+				if ( wp_should_skip_block_supports_serialization( $block_type, 'spacing', (string) $feature ) ) {
+					unset( $style['spacing'][ $feature ] );
+				}
+			}
+
+			if ( empty( $style['spacing'] ) ) {
+				unset( $style['spacing'] );
+			}
+		}
+
+		return $style;
+	}
+
+	/**
+	 * Padding declarations for a block that skip-serializes padding and
+	 * re-applies it to an inner element.
+	 *
+	 * Icon Button and Modal Trigger both declare
+	 * `spacing.__experimentalSkipSerialization: ["padding"]`, so WordPress puts
+	 * no padding on the block root and each save() writes it onto the button
+	 * instead. get_routed_visual_attributes() cannot cover this: it works from
+	 * the Style Engine, and `spacing` also carries margin, which is NOT
+	 * skip-serialized and must stay on the root.
+	 *
+	 * The two blocks differ in one respect, so the caller says which it wants:
+	 * Icon Button runs each side through convertPaddingValue() (turning
+	 * `var:preset|spacing|40` into a CSS var), while Modal Trigger writes the
+	 * value through untouched.
+	 *
+	 * @param array<string, mixed> $attributes      Block attributes.
+	 * @param bool                 $convert_presets Whether to resolve preset shorthand.
+	 * @return array<int, string> CSS declarations, in save()'s order.
+	 */
+	private static function routed_padding_styles( array $attributes, bool $convert_presets ): array {
+		$padding = $attributes['style']['spacing']['padding'] ?? null;
+
+		if ( ! is_array( $padding ) ) {
+			return array();
+		}
+
+		$declarations = array();
+
+		foreach ( array( 'top', 'right', 'bottom', 'left' ) as $side ) {
+			$value = $padding[ $side ] ?? null;
+
+			// React drops a style property whose value is undefined or an empty
+			// string, and convertPaddingValue() returns undefined for a falsy
+			// value, so an unset side produces no declaration either way.
+			if ( ! is_string( $value ) || '' === $value ) {
+				continue;
+			}
+
+			$declarations[] = 'padding-' . $side . ':' .
+				( $convert_presets ? self::wp_shorthand_to_css_var( $value ) : $value );
+		}
+
+		return $declarations;
 	}
 
 	/**
