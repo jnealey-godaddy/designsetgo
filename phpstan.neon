@@ -73,6 +73,27 @@ parameters:
 			path: includes/block-support-routing.php
 			count: 2
 
+		# Same wordpress-stubs bug as the 'css' guards above, on the sibling key.
+		# wp_style_engine_get_styles() only sets 'declarations' when a style group
+		# actually produces declarations, then array_filter()s the result
+		# (wp-includes/style-engine.php):
+		#
+		#     if ( ! empty( $parsed_styles['declarations'] ) ) {
+		#         $styles_output['css']          = ...;
+		#         $styles_output['declarations'] = $parsed_styles['declarations'];
+		#     }
+		#     return array_filter( $styles_output );
+		#
+		# So the key is genuinely absent for any block whose style attribute
+		# yields nothing — which is the common case for the two call sites here.
+		# The stub types it as always-present, which makes PHPStan call the
+		# (necessary) ?? redundant. The guard stays; the stub is wrong. count pins
+		# this to those two sites so the rest of the file stays analysed.
+		-
+			identifier: nullCoalesce.offset
+			path: includes/abilities/class-block-inserter.php
+			count: 2
+
 		# Ignore missing array typehints (common in WordPress)
 		-
 			identifier: missingType.iterableValue

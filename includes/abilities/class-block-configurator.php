@@ -560,9 +560,10 @@ class Block_Configurator {
 	 * @param array<string, mixed>             $attributes         Block attributes.
 	 * @param array<int, array<string, mixed>> $inner_blocks       Inner blocks of the new block.
 	 * @param int                              $position           Position within parent's inner blocks (-1 = append).
+	 * @param string|null                      $parent_block_path  Tree path of the parent; takes precedence over the index.
 	 * @return array<string, mixed>|WP_Error Success data or error.
 	 */
-	public static function insert_inner_block( int $post_id, int $parent_block_index, string $block_name, array $attributes = array(), array $inner_blocks = array(), int $position = -1 ) {
+	public static function insert_inner_block( int $post_id, int $parent_block_index, string $block_name, array $attributes = array(), array $inner_blocks = array(), int $position = -1, ?string $parent_block_path = null ) {
 		// Validate post.
 		$post = get_post( $post_id );
 		if ( ! $post ) {
@@ -604,6 +605,32 @@ class Block_Configurator {
 		// Parse existing blocks.
 		$blocks = parse_blocks( $post->post_content );
 
+		// A tree path takes precedence over the flat index when both are given:
+		// it is the addressing that survives concurrent inserts.
+		if ( null !== $parent_block_path && '' !== $parent_block_path ) {
+			$resolved = self::resolve_block_path( $blocks, $parent_block_path );
+
+			if ( null === $resolved ) {
+				return new WP_Error(
+					'designsetgo_block_not_found',
+					sprintf(
+						/* translators: %s: block path */
+						__( 'No parent block found at path %s. Call designsetgo/get-post-blocks to read current paths.', 'designsetgo' ),
+						$parent_block_path
+					),
+					array( 'status' => 404 )
+				);
+			}
+
+			$parent_block_index = $resolved;
+		} else {
+			$parent_block_path = self::path_for_block_index( $blocks, $parent_block_index );
+		}
+
+		$child_ordinal = null === $parent_block_path
+			? null
+			: self::count_children_at_path( $blocks, $parent_block_path );
+
 		// Find and update the parent block.
 		$counter = 0;
 		$found   = false;
@@ -629,6 +656,25 @@ class Block_Configurator {
 			);
 		}
 
+		// Refuse to persist a tree whose children would render outside their
+		// parents. Comparing serialized strings cannot catch this - the broken
+		// shape round-trips cleanly - so the parsed tree is inspected directly.
+		$problems = Block_Inserter::validate_block_tree( $blocks );
+		if ( ! empty( $problems ) ) {
+			return new WP_Error(
+				'designsetgo_invalid_block_structure',
+				sprintf(
+					/* translators: %s: semicolon-separated list of structural problems */
+					__( 'Refusing to save: the resulting block structure would be invalid. %s', 'designsetgo' ),
+					implode( '; ', $problems )
+				),
+				array(
+					'status'   => 500,
+					'problems' => $problems,
+				)
+			);
+		}
+
 		// Serialize blocks back to content.
 		$content = serialize_blocks( $blocks );
 
@@ -649,14 +695,173 @@ class Block_Configurator {
 			return $result;
 		}
 
+		if ( null !== $child_ordinal && -1 !== $position && $position < $child_ordinal ) {
+			$child_ordinal = $position;
+		}
+
 		return array(
 			'success'            => true,
 			'post_id'            => $post->ID,
 			'parent_block_index' => $parent_block_index,
+			'parent_block_path'  => $parent_block_path,
+			// Returned so a caller can address the block it just created
+			// without re-reading the document and re-deriving indexes.
+			'block_path'         => null === $child_ordinal || null === $parent_block_path
+				? null
+				: $parent_block_path . '.' . $child_ordinal,
 			'block_name'         => $block_name,
 			'position'           => $position,
 			'note'               => __( 'Block inserted as child. Open the post in the WordPress editor to validate and save.', 'designsetgo' ),
 		);
+	}
+
+	/**
+	 * Map every block's tree path to its document-order index.
+	 *
+	 * A tree path ("2.1.0") names a block by its position within each ancestor,
+	 * counting only real blocks so it lines up with what get-post-blocks
+	 * reports. The flat document-order index shifts whenever anything is
+	 * inserted earlier in the document, which makes a sequence of writes
+	 * planned from one read land in the wrong places; a path only moves if a
+	 * sibling *of one of its own ancestors* is added before it.
+	 *
+	 * @param array<int, array<string, mixed>> $blocks  Parsed blocks.
+	 * @param string                           $prefix  Internal: parent path.
+	 * @param int                              $counter Internal: document-order counter.
+	 * @return array<string, int> Map of path => document-order index.
+	 */
+	public static function map_block_paths( array $blocks, string $prefix = '', int &$counter = 0 ): array {
+		$map     = array();
+		$ordinal = 0;
+
+		foreach ( $blocks as $block ) {
+			if ( empty( $block['blockName'] ) ) {
+				continue;
+			}
+
+			$path = '' === $prefix ? (string) $ordinal : $prefix . '.' . $ordinal;
+			++$ordinal;
+
+			$map[ $path ] = $counter;
+			++$counter;
+
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$map = array_merge( $map, self::map_block_paths( $block['innerBlocks'], $path, $counter ) );
+			}
+		}
+
+		return $map;
+	}
+
+	/**
+	 * Resolve a tree path to a document-order index.
+	 *
+	 * @param array<int, array<string, mixed>> $blocks Parsed blocks.
+	 * @param string                           $path   Tree path, e.g. "0.1".
+	 * @return int|null Document-order index, or null when the path does not exist.
+	 */
+	public static function resolve_block_path( array $blocks, string $path ): ?int {
+		$map = self::map_block_paths( $blocks );
+
+		return $map[ $path ] ?? null;
+	}
+
+	/**
+	 * Find the tree path of a document-order index.
+	 *
+	 * @param array<int, array<string, mixed>> $blocks Parsed blocks.
+	 * @param int                              $index  Document-order index.
+	 * @return string|null Tree path, or null when the index does not exist.
+	 */
+	public static function path_for_block_index( array $blocks, int $index ): ?string {
+		$path = array_search( $index, self::map_block_paths( $blocks ), true );
+
+		return false === $path ? null : (string) $path;
+	}
+
+	/**
+	 * Count a block's real children at a given tree path.
+	 *
+	 * @param array<int, array<string, mixed>> $blocks Parsed blocks.
+	 * @param string                           $path   Tree path.
+	 * @return int Number of inner blocks.
+	 */
+	public static function count_children_at_path( array $blocks, string $path ): int {
+		$current = $blocks;
+
+		foreach ( explode( '.', $path ) as $segment ) {
+			$ordinal = 0;
+			$matched = null;
+
+			foreach ( $current as $block ) {
+				if ( empty( $block['blockName'] ) ) {
+					continue;
+				}
+				if ( (string) $ordinal === $segment ) {
+					$matched = $block;
+					break;
+				}
+				++$ordinal;
+			}
+
+			if ( null === $matched ) {
+				return 0;
+			}
+
+			$current = $matched['innerBlocks'] ?? array();
+		}
+
+		return count(
+			array_filter(
+				$current,
+				static function ( $block ) {
+					return ! empty( $block['blockName'] );
+				}
+			)
+		);
+	}
+
+	/**
+	 * Split a childless block's single wrapper string into opening and closing.
+	 *
+	 * Returns the innerContent unchanged when the block already holds children
+	 * (its entries are split) or when no split point can be established.
+	 *
+	 * @param array<string, mixed> $block         Parsed parent block.
+	 * @param array<int, mixed>    $inner_content The block's innerContent.
+	 * @return array<int, mixed> innerContent with the wrapper split where possible.
+	 */
+	public static function split_childless_wrapper( array $block, array $inner_content ): array {
+		if ( 1 !== count( $inner_content ) || ! is_string( $inner_content[0] ) ) {
+			return $inner_content;
+		}
+
+		$html = $inner_content[0];
+		if ( '' === trim( $html ) ) {
+			return $inner_content;
+		}
+
+		// Preferred: regenerate the wrapper from the block's own name and
+		// attributes and confirm it reproduces the stored string exactly.
+		$block_name = (string) ( $block['blockName'] ?? '' );
+		if ( 0 === strpos( $block_name, 'designsetgo/' ) ) {
+			$wrapper = Block_Inserter::generate_designsetgo_wrapper_html( $block_name, $block['attrs'] ?? array() );
+
+			if ( ! empty( $wrapper ) && $wrapper['opening'] . $wrapper['closing'] === $html ) {
+				return array( $wrapper['opening'], $wrapper['closing'] );
+			}
+		}
+
+		// Fallback for markup this class did not generate: split at the first
+		// point where an opening tag is immediately followed by a closing tag.
+		// The lazy first group stops at the innermost empty container, which is
+		// where a child belongs; a greedy one would stop at the outermost and
+		// place the child as a sibling of the inner wrapper instead.
+		if ( preg_match( '/^(.*?>)(<\/[a-zA-Z][a-zA-Z0-9-]*>.*)$/s', $html, $matches ) ) {
+			return array( $matches[1], $matches[2] );
+		}
+
+		return $inner_content;
 	}
 
 	/**
@@ -681,6 +886,15 @@ class Block_Configurator {
 					// Found the parent block - insert the new block as a child.
 					$inner_blocks  = $block['innerBlocks'] ?? array();
 					$inner_content = $block['innerContent'] ?? array();
+
+					// A block that has never held a child stores its whole
+					// wrapper as ONE innerContent string, because serializing
+					// and reparsing merges the opening and closing HTML back
+					// together. Splitting it first is what makes the child land
+					// inside the wrapper; without this the placeholder goes in
+					// front of the entire string and the child is emitted
+					// before its parent's opening tag, leaving the parent empty.
+					$inner_content = self::split_childless_wrapper( $block, $inner_content );
 
 					if ( -1 === $position || $position >= count( $inner_blocks ) ) {
 						// Append to end.

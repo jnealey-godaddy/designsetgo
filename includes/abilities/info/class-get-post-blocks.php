@@ -115,7 +115,11 @@ class Get_Post_Blocks extends Abstract_Ability {
 						'properties' => array(
 							'blockIndex'  => array(
 								'type'        => 'integer',
-								'description' => __( 'Document-order index for stable targeting', 'designsetgo' ),
+								'description' => __( 'Document-order index. Shifts when blocks are inserted earlier in the document - prefer blockPath when planning several writes from one read.', 'designsetgo' ),
+							),
+							'blockPath'   => array(
+								'type'        => 'string',
+								'description' => __( 'Tree path, e.g. "2.1.0": the block\'s position within each ancestor. Pass as parent_block_path to designsetgo/add-child-block.', 'designsetgo' ),
 							),
 							'blockName'   => array( 'type' => 'string' ),
 							'attrs'       => array( 'type' => 'object' ),
@@ -272,15 +276,21 @@ class Get_Post_Blocks extends Abstract_Ability {
 	 * Assigns a document-order blockIndex to each block via depth-first traversal.
 	 *
 	 * @param array<int, array<string, mixed>> $blocks  Blocks to clean.
-	 * @param int                              $counter Document-order counter passed by reference.
+	 * @param int                              $counter     Document-order counter passed by reference.
+	 * @param string                           $path_prefix Parent tree path; empty at the top level.
 	 * @return array<int, array<string, mixed>> Cleaned blocks.
 	 */
-	private function clean_blocks_for_output( array $blocks, int &$counter = 0 ): array {
-		$result = array();
+	private function clean_blocks_for_output( array $blocks, int &$counter = 0, string $path_prefix = '' ): array {
+		$result  = array();
+		$ordinal = 0;
 
 		foreach ( $blocks as $block ) {
+			$path = '' === $path_prefix ? (string) $ordinal : $path_prefix . '.' . $ordinal;
+			++$ordinal;
+
 			$cleaned = array(
 				'blockIndex' => $counter,
+				'blockPath'  => $path,
 				'blockName'  => $block['blockName'],
 				'attrs'      => $block['attrs'] ?? array(),
 			);
@@ -295,7 +305,7 @@ class Get_Post_Blocks extends Abstract_Ability {
 
 			// Include cleaned inner blocks if present.
 			if ( ! empty( $block['innerBlocks'] ) ) {
-				$cleaned['innerBlocks'] = $this->clean_blocks_for_output( $block['innerBlocks'], $counter );
+				$cleaned['innerBlocks'] = $this->clean_blocks_for_output( $block['innerBlocks'], $counter, $path );
 			}
 
 			// Include depth if flattened.
