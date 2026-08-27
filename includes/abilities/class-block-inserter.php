@@ -423,7 +423,17 @@ class Block_Inserter {
 		}
 
 		$processor = new \WP_HTML_Tag_Processor( $html );
-		if ( ! $processor->next_tag() ) {
+
+		// Most blocks carry their support classes on the root. A few move them
+		// to an inner element in save() - Modal transfers them onto its content
+		// div - so putting them on the root there is markup save() never emits.
+		$target_class = self::SUPPORTS_ON_INNER_ELEMENT[ $block_name ] ?? null;
+
+		$found = null === $target_class
+			? $processor->next_tag()
+			: $processor->next_tag( array( 'class_name' => $target_class ) );
+
+		if ( ! $found ) {
 			return $html;
 		}
 
@@ -1321,6 +1331,9 @@ class Block_Inserter {
 					$outer_class_parts[] = 'alignwide';
 				}
 				$outer_class_parts[] = 'dsgo-stack';
+				if ( self::has_overlay( $attributes ) ) {
+					$outer_class_parts[] = 'dsgo-stack--has-overlay';
+				}
 				if ( ! $constrain_width ) {
 					$outer_class_parts[] = 'dsgo-no-width-constraint';
 				}
@@ -1337,7 +1350,10 @@ class Block_Inserter {
 				// only a colour legitimately has no padding, and save() emits
 				// none. apply_block_json_defaults() supplies the default `style`
 				// (which does include padding) when the caller omits it entirely.
-				$outer_styles = $support_result['styles'];
+				$outer_styles = array_merge(
+					self::container_hover_styles( $attributes ),
+					$support_result['styles']
+				);
 
 				// Inner div always has max-width/margin for content centering.
 				$max_width   = $content_width ? $content_width : 'var(--wp--style--global--content-size, 1140px)';
@@ -2209,6 +2225,9 @@ class Block_Inserter {
 					$outer_class_parts[] = 'alignwide';
 				}
 				$outer_class_parts[] = 'dsgo-flex';
+				if ( self::has_overlay( $attributes ) ) {
+					$outer_class_parts[] = 'dsgo-flex--has-overlay';
+				}
 				if ( $mobile_stack ) {
 					$outer_class_parts[] = 'dsgo-flex--mobile-stack';
 				}
@@ -2234,7 +2253,9 @@ class Block_Inserter {
 				}
 
 				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' . esc_attr( $default_padding ) . '"><div class="dsgo-flex__inner" style="' . esc_attr( implode( ';', $inner_styles ) ) . '">',
+					'opening' => '<div class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' .
+						esc_attr( implode( ';', array_merge( self::container_hover_styles( $attributes ), array( $default_padding ) ) ) ) .
+						'"><div class="dsgo-flex__inner" style="' . esc_attr( implode( ';', $inner_styles ) ) . '">',
 					'closing' => '</div></div>',
 				);
 
@@ -2255,6 +2276,9 @@ class Block_Inserter {
 					$outer_class_parts[] = 'alignwide';
 				}
 				$outer_class_parts[] = 'dsgo-grid';
+				if ( self::has_overlay( $attributes ) ) {
+					$outer_class_parts[] = 'dsgo-grid--has-overlay';
+				}
 				$outer_class_parts[] = 'dsgo-grid-cols-' . $desktop_cols;
 				$outer_class_parts[] = 'dsgo-grid-cols-tablet-' . $tablet_cols;
 				$outer_class_parts[] = 'dsgo-grid-cols-mobile-' . $mobile_cols;
@@ -2281,15 +2305,27 @@ class Block_Inserter {
 					$inner_styles[] = 'margin-right:auto';
 				}
 
+				// save.js honours tagName; hardcoding <div> lost an author's
+				// choice of <section>, <article> and so on.
+				$grid_tag = ( isset( $attributes['tagName'] ) && '' !== $attributes['tagName'] )
+					? preg_replace( '/[^a-z0-9]/i', '', (string) $attributes['tagName'] )
+					: 'div';
+				$grid_tag = '' !== $grid_tag ? $grid_tag : 'div';
+
 				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' . esc_attr( $default_padding ) . '"><div class="dsgo-grid__inner" style="' . esc_attr( implode( ';', $inner_styles ) ) . '">',
-					'closing' => '</div></div>',
+					'opening' => '<' . $grid_tag . ' class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' .
+						esc_attr( implode( ';', array_merge( self::container_hover_styles( $attributes ), array( $default_padding ) ) ) ) .
+						'"><div class="dsgo-grid__inner" style="' . esc_attr( implode( ';', $inner_styles ) ) . '">',
+					'closing' => '</div></' . $grid_tag . '>',
 				);
 
 			case 'designsetgo/counter-group':
-				$desktop_cols = isset( $attributes['desktopColumns'] ) ? self::numeric_attribute( $attributes['desktopColumns'] ) : 3;
-				$tablet_cols  = isset( $attributes['tabletColumns'] ) ? self::numeric_attribute( $attributes['tabletColumns'] ) : 2;
-				$mobile_cols  = isset( $attributes['mobileColumns'] ) ? self::numeric_attribute( $attributes['mobileColumns'] ) : 1;
+				// This block's own attribute names are columns/columnsTablet/
+				// columnsMobile. Reading the Grid block's names meant the author's
+				// column counts never reached the markup.
+				$desktop_cols = isset( $attributes['columns'] ) ? self::numeric_attribute( $attributes['columns'] ) : 3;
+				$tablet_cols  = isset( $attributes['columnsTablet'] ) ? self::numeric_attribute( $attributes['columnsTablet'] ) : 2;
+				$mobile_cols  = isset( $attributes['columnsMobile'] ) ? self::numeric_attribute( $attributes['columnsMobile'] ) : 1;
 				$gap          = isset( $attributes['gap'] ) ? intval( $attributes['gap'] ) : 32;
 				$duration     = isset( $attributes['animationDuration'] ) ? floatval( $attributes['animationDuration'] ) : 2;
 				$delay        = isset( $attributes['animationDelay'] ) ? floatval( $attributes['animationDelay'] ) : 0;
@@ -3294,6 +3330,11 @@ class Block_Inserter {
 				if ( ! $close_button_is_inside ) {
 					$inner_html .= $close_button_html;
 				}
+				// save.js: modalLabel?.trim() || __( 'Modal' ).
+				$modal_label = isset( $attributes['modalLabel'] ) && '' !== trim( (string) $attributes['modalLabel'] )
+					? trim( (string) $attributes['modalLabel'] )
+					: __( 'Modal', 'designsetgo' );
+
 				$inner_html .= '<div class="dsgo-modal__content" style="' . esc_attr( $content_style ) . '">';
 
 				$closing_html = '';
@@ -3307,7 +3348,7 @@ class Block_Inserter {
 				$id_attr = '' !== $modal_id ? ' id="' . esc_attr( $modal_id ) . '"' : '';
 
 				return array(
-					'opening' => '<div' . $id_attr . ' role="dialog" aria-modal="true" aria-label="Modal" aria-hidden="true"' . $data_attrs . ' class="' . esc_attr( $outer_class ) . '"' . $panel_style . '>' . $inner_html,
+					'opening' => '<div' . $id_attr . ' role="dialog" aria-modal="true" aria-label="' . esc_attr( $modal_label ) . '" aria-hidden="true"' . $data_attrs . ' class="' . esc_attr( $outer_class ) . '"' . $panel_style . '>' . $inner_html,
 					'closing' => $closing_html,
 				);
 
@@ -3350,12 +3391,22 @@ class Block_Inserter {
 					$class_parts[] = 'dsgo-modal-trigger--icon-end';
 				}
 
+				// Colour, typography, border and shadow are skip-serialized on the
+				// block root and re-applied to the trigger by save.js, exactly as
+				// Icon Button does. None of them were emitted here, so a trigger
+				// given any colour stored markup save() would not reproduce.
+				$trigger_routed = self::get_routed_visual_attributes( $attributes );
+				$class_parts    = array_merge( $class_parts, $trigger_routed['classes'] );
+
 				// save.js writes the gap inline whenever there is an icon and an
 				// iconGap (which defaults to 8px); layout lives in style.scss.
-				$button_style_attr = '';
+				$trigger_styles = $trigger_routed['styles'];
 				if ( $has_icon && '' !== $icon_gap ) {
-					$button_style_attr = ' style="' . esc_attr( 'gap:' . $icon_gap ) . '"';
+					$trigger_styles[] = 'gap:' . $icon_gap;
 				}
+				$button_style_attr = empty( $trigger_styles )
+					? ''
+					: ' style="' . esc_attr( implode( ';', $trigger_styles ) ) . '"';
 
 				// Icon span — size is only baked inline when the caller sets an
 				// explicit numeric iconSize, so the theme token owns it otherwise.
@@ -3526,17 +3577,15 @@ class Block_Inserter {
 				$vertical_alignment   = isset( $attributes['verticalAlignment'] ) ? $attributes['verticalAlignment'] : 'center';
 				$horizontal_alignment = isset( $attributes['horizontalAlignment'] ) ? $attributes['horizontalAlignment'] : 'center';
 
-				// These values come from parent block context (usesContext in block.json).
-				// Read from attributes if provided, otherwise use defaults matching parent defaults.
-				// enableOverlay is not an attribute of this block either: save()
+				// The overlay marker is unconditional: enableOverlay is not an
+				// attribute of this block (it comes from the parent through
+				// usesContext, and save() receives no context), so save.js
 				// hardcodes the enabled default for serialized markup.
-				$enable_overlay = true;
-
-				// Build classes.
-				$class_parts = array( 'wp-block-designsetgo-image-accordion-item', 'dsgo-image-accordion-item' );
-				if ( $enable_overlay ) {
-					$class_parts[] = 'dsgo-image-accordion-item--has-overlay';
-				}
+				$class_parts = array(
+					'wp-block-designsetgo-image-accordion-item',
+					'dsgo-image-accordion-item',
+					'dsgo-image-accordion-item--has-overlay',
+				);
 
 				// Build style with CSS custom properties (overlay first, then alignment - must match save.js order).
 				$style_parts = array();
@@ -4600,6 +4649,70 @@ class Block_Inserter {
 	}
 
 	/**
+	 * Whether a container block renders an overlay.
+	 *
+	 * Mirrors the shared JS helper: an explicit overlayColor, or an
+	 * `is-style-overlay-*` variation class supplying the colour from its own
+	 * stylesheet. Each container adds its own `--has-overlay` marker class when
+	 * this is true, and none of them emitted it.
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return bool Whether the overlay marker class applies.
+	 */
+	private static function has_overlay( array $attributes ): bool {
+		if ( ! empty( $attributes['overlayColor'] ) ) {
+			return true;
+		}
+
+		$class_name = isset( $attributes['className'] ) ? (string) $attributes['className'] : '';
+		foreach ( self::split_class_list( $class_name ) as $token ) {
+			if ( 0 === strpos( $token, 'is-style-overlay-' ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Hover and overlay custom properties the container blocks serialize.
+	 *
+	 * Section, Row and Grid all write the same five custom properties from the
+	 * same five attributes, each only when set. None of them were emitted here,
+	 * so any container given a hover or overlay colour stored markup save()
+	 * would not reproduce.
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return array<int, string> CSS declarations.
+	 */
+	private static function container_hover_styles( array $attributes ): array {
+		$declarations = array();
+
+		$hover_vars = array(
+			'hoverBackgroundColor'       => '--dsgo-hover-bg-color',
+			'hoverTextColor'             => '--dsgo-hover-text-color',
+			'hoverIconBackgroundColor'   => '--dsgo-parent-hover-icon-bg',
+			'hoverButtonBackgroundColor' => '--dsgo-parent-hover-button-bg',
+		);
+
+		foreach ( $hover_vars as $attribute_name => $custom_property ) {
+			$colour = isset( $attributes[ $attribute_name ] ) ? (string) $attributes[ $attribute_name ] : '';
+			if ( '' !== $colour ) {
+				$declarations[] = $custom_property . ':' . self::convert_color_value_to_css_var( $colour );
+			}
+		}
+
+		// The overlay writes its opacity alongside the colour, as one unit.
+		$overlay = isset( $attributes['overlayColor'] ) ? (string) $attributes['overlayColor'] : '';
+		if ( '' !== $overlay ) {
+			$declarations[] = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( $overlay );
+			$declarations[] = '--dsgo-overlay-opacity:0.8';
+		}
+
+		return $declarations;
+	}
+
+	/**
 	 * Clamp a hotspot coordinate to 0-100 the way save() does.
 	 *
 	 * @param mixed $value Coordinate value.
@@ -4835,6 +4948,18 @@ class Block_Inserter {
 	 * JavaScript save(), so inserting one would store markup that does not
 	 * match and the editor would flag it.
 	 */
+	/**
+	 * Blocks whose save() relocates block-support classes and styles from the
+	 * block root onto an inner element, keyed by that element's class.
+	 *
+	 * Modal's save() calls transferStylesToContent(), which moves everything
+	 * useBlockProps.save() produced onto the content div. Injecting on the root
+	 * for one of these emits classes save() never puts there.
+	 */
+	private const SUPPORTS_ON_INNER_ELEMENT = array(
+		'designsetgo/modal' => 'dsgo-modal__content',
+	);
+
 	private const SERIALIZABLE_CORE_BLOCKS = array(
 		'core/heading',
 		'core/paragraph',

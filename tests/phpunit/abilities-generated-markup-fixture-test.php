@@ -438,6 +438,60 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 			// Every Tabs colour custom property: the serializer emitted only the
 			// gap, so any Tabs block given colours stored markup save() would
 			// not reproduce.
+			// Hover and overlay custom properties on the container blocks: all
+			// three write the same five, and none were emitted.
+			'section-hover-and-overlay'                      => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'hoverBackgroundColor'       => '#111111',
+					'hoverTextColor'             => '#ffffff',
+					'hoverIconBackgroundColor'   => '#222222',
+					'hoverButtonBackgroundColor' => '#333333',
+					'overlayColor'               => 'var:preset|color|base',
+				),
+				'innerBlocks' => array(),
+			),
+			'grid-tagname-and-hover'                         => array(
+				'name'        => 'designsetgo/grid',
+				'attributes'  => array(
+					'tagName'              => 'section',
+					'hoverBackgroundColor' => '#111111',
+				),
+				'innerBlocks' => array(),
+			),
+			'row-hover'                                      => array(
+				'name'        => 'designsetgo/row',
+				'attributes'  => array( 'hoverTextColor' => '#ffffff' ),
+				'innerBlocks' => array(),
+			),
+			// counter-group reads columns/columnsTablet/columnsMobile - it was
+			// reading the Grid block's attribute names.
+			'counter-group-columns'                          => array(
+				'name'        => 'designsetgo/counter-group',
+				'attributes'  => array(
+					'columns'       => 4,
+					'columnsTablet' => 3,
+					'columnsMobile' => 2,
+				),
+				'innerBlocks' => array(),
+			),
+			'modal-labelled-and-coloured'                    => array(
+				'name'        => 'designsetgo/modal',
+				'attributes'  => array(
+					'modalLabel'      => 'Newsletter',
+					'backgroundColor' => 'base',
+				),
+				'innerBlocks' => array(),
+			),
+			'modal-trigger-coloured'                         => array(
+				'name'        => 'designsetgo/modal-trigger',
+				'attributes'  => array(
+					'text'            => 'Open',
+					'backgroundColor' => 'base',
+					'textColor'       => 'contrast',
+				),
+				'innerBlocks' => array(),
+			),
 			'tabs-colored'                                   => array(
 				'name'        => 'designsetgo/tabs',
 				'attributes'  => array(
@@ -593,6 +647,15 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 			}
 
 			if ( null !== Block_Inserter::get_serialization_gap( (string) $name ) ) {
+				continue;
+			}
+
+			// WooCommerce-gated blocks are skipped: Plugin::gate_woocommerce_blocks()
+			// only registers them when WooCommerce is active, so including them
+			// would make the fixture depend on which plugins the environment has
+			// and drift between a local run and CI. Both are server-rendered, so
+			// they serialize to a bare comment and add nothing here anyway.
+			if ( in_array( (string) $name, array( 'designsetgo/product-showcase-hero', 'designsetgo/product-categories-grid' ), true ) ) {
 				continue;
 			}
 
