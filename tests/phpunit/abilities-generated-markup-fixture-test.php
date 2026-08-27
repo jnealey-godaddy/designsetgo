@@ -45,6 +45,15 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function payloads(): array {
+		return array_merge( $this->default_payloads(), $this->authored_payloads() );
+	}
+
+	/**
+	 * Hand-written payloads covering interesting attribute combinations.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function authored_payloads(): array {
 		return array(
 			'section-pill-paragraph-fifty-fifty-icon-button' => array(
 				'name'        => 'designsetgo/section',
@@ -424,6 +433,42 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
+			// Pins the align class on a hybrid block: save() emits it from the
+			// block's declared align support, and the serializer omitted it.
+			// Every Tabs colour custom property: the serializer emitted only the
+			// gap, so any Tabs block given colours stored markup save() would
+			// not reproduce.
+			'tabs-colored'                                   => array(
+				'name'        => 'designsetgo/tabs',
+				'attributes'  => array(
+					'uniqueId'                  => 'tabs1',
+					'tabColor'                  => '#111111',
+					'tabBackgroundColor'        => '#eeeeee',
+					'tabContentBackgroundColor' => 'var:preset|color|base',
+					'activeTabColor'            => '#000000',
+					'activeTabBackgroundColor'  => '#ffffff',
+					'tabBorderColor'            => '#cccccc',
+					'tabHoverColor'             => '#222222',
+					'tabHoverBackgroundColor'   => '#dddddd',
+				),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'designsetgo/tab',
+						'attributes' => array(),
+					),
+				),
+			),
+			'query-alignwide'                                => array(
+				'name'        => 'designsetgo/query',
+				'attributes'  => array( 'align' => 'wide' ),
+				'innerBlocks' => array(
+					array(
+						'name'        => 'designsetgo/query-results',
+						'attributes'  => array(),
+						'innerBlocks' => array(),
+					),
+				),
+			),
 			'query-with-results-and-no-results'              => array(
 				'name'        => 'designsetgo/query',
 				'attributes'  => array(),
@@ -528,6 +573,42 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A defaults probe for every block the inserter can serialize.
+	 *
+	 * The hand-written payloads above cover interesting attribute combinations,
+	 * but the cheapest and most damaging failure is a block that is invalid with
+	 * NO attributes set — every insert of it is broken. Four blocks were in that
+	 * state (form-builder, progress-bar, scroll-marquee, heading-segment), each
+	 * emitting a declaration or attribute save() never writes. Generating these
+	 * from the registry means a new block is covered the day it lands.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function default_payloads(): array {
+		$payloads = array();
+
+		foreach ( \WP_Block_Type_Registry::get_instance()->get_all_registered() as $name => $block_type ) {
+			if ( 0 !== strpos( (string) $name, 'designsetgo/' ) ) {
+				continue;
+			}
+
+			if ( null !== Block_Inserter::get_serialization_gap( (string) $name ) ) {
+				continue;
+			}
+
+			$payloads[ 'defaults::' . $name ] = array(
+				'name'        => (string) $name,
+				'attributes'  => array(),
+				'innerBlocks' => array(),
+			);
+		}
+
+		ksort( $payloads );
+
+		return $payloads;
+	}
+
+	/**
 	 * Generate markup for every payload.
 	 *
 	 * @return array<string, string>
@@ -536,14 +617,42 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 		$generated = array();
 
 		foreach ( $this->payloads() as $label => $payload ) {
-			$generated[ $label ] = Block_Inserter::build_block_markup(
-				$payload['name'],
-				$payload['attributes'],
-				$payload['innerBlocks']
+			$generated[ $label ] = self::stabilise_ids(
+				Block_Inserter::build_block_markup(
+					$payload['name'],
+					$payload['attributes'],
+					$payload['innerBlocks']
+				)
 			);
 		}
 
 		return $generated;
+	}
+
+	/**
+	 * Replace generated UUIDs with stable placeholders.
+	 *
+	 * Several blocks seed a `uniqueId` on insert, so their markup differs on
+	 * every run and the fixture could never match. Each distinct UUID maps to a
+	 * distinct placeholder, so ids that must agree across the markup (a
+	 * trigger's aria-controls and its panel's id, say) still agree — which is
+	 * what the JS side validates.
+	 *
+	 * @param string $markup Generated markup.
+	 * @return string Markup with UUIDs replaced.
+	 */
+	private static function stabilise_ids( string $markup ): string {
+		preg_match_all( '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i', $markup, $matches );
+
+		foreach ( array_values( array_unique( $matches[0] ) ) as $index => $uuid ) {
+			$markup = str_replace(
+				$uuid,
+				sprintf( '00000000-0000-4000-8000-%012d', $index ),
+				$markup
+			);
+		}
+
+		return $markup;
 	}
 
 	/**

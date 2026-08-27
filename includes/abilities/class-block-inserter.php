@@ -422,13 +422,36 @@ class Block_Inserter {
 			$declarations = $engine['declarations'] ?? array();
 		}
 
-		if ( empty( $support_classes ) && empty( $declarations ) ) {
-			return $html;
-		}
-
 		$processor = new \WP_HTML_Tag_Processor( $html );
 		if ( ! $processor->next_tag() ) {
 			return $html;
+		}
+
+		// Drop declarations with no value, and the style attribute itself when
+		// nothing survives. React omits a style property whose value is
+		// undefined and emits no style attribute for an empty object, so
+		// `--dsgo-accordion-open-bg:;` or a bare `style=""` is markup save()
+		// never writes — and several serializers built their style strings by
+		// concatenation without checking. Doing it here fixes the whole class at
+		// once rather than per block.
+		$removed_style  = false;
+		$existing_style = $processor->get_attribute( 'style' );
+		if ( is_string( $existing_style ) ) {
+			$kept = array();
+			foreach ( explode( ';', $existing_style ) as $declaration ) {
+				$parts = explode( ':', $declaration, 2 );
+				if ( 2 !== count( $parts ) || '' === trim( $parts[1] ) ) {
+					continue;
+				}
+				$kept[] = trim( $declaration );
+			}
+
+			if ( empty( $kept ) ) {
+				$processor->remove_attribute( 'style' );
+				$removed_style = true;
+			} else {
+				$processor->set_attribute( 'style', implode( ';', $kept ) );
+			}
 		}
 
 		foreach ( $support_classes as $class_name ) {
@@ -463,7 +486,11 @@ class Block_Inserter {
 			}
 		}
 
-		return $processor->get_updated_html();
+		$updated = $processor->get_updated_html();
+
+		// WP_HTML_Tag_Processor leaves the removed attribute's separating space
+		// behind. Harmless HTML, but it is not what save() emits.
+		return $removed_style ? preg_replace( '/\s+>/', '>', $updated, 1 ) : $updated;
 	}
 
 	/**
@@ -1200,6 +1227,13 @@ class Block_Inserter {
 		// Skip dynamic blocks (those with render callbacks) - they'll be rendered server-side.
 		if ( 0 === strpos( $block_name, 'designsetgo/' ) && ! self::is_dynamic_block( $block_name ) ) {
 			$wrapper_html = self::generate_designsetgo_wrapper_html( $block_name, $attrs );
+			// A wrapper of two empty strings means save() returns null for these
+			// attributes: the block serializes as a self-closing comment with no
+			// markup, so nothing is added to innerContent.
+			if ( ! empty( $wrapper_html ) && '' === $wrapper_html['opening'] && '' === $wrapper_html['closing'] ) {
+				$wrapper_html = null;
+			}
+
 			if ( ! empty( $wrapper_html ) ) {
 				// Merge in the block-support classes and styles WordPress would
 				// serialize, so preset attributes such as backgroundColor reach
@@ -1258,6 +1292,22 @@ class Block_Inserter {
 
 		switch ( $block_name ) {
 			case 'designsetgo/section':
+				// Section's block.json gives `style` a default carrying the page
+				// padding, and its save() serializes spacing support, so that
+				// padding IS in the stored markup. WordPress drops the default
+				// when it registers `style` on the PHP side (it re-registers the
+				// support-backed attribute as a bare object), so it has to be
+				// read back from block.json. Only when the caller supplied no
+				// style at all: an attribute default is replaced wholesale, not
+				// deep-merged, so a caller-supplied partial style legitimately
+				// has no padding.
+				if ( ! isset( $attributes['style'] ) ) {
+					$declared_style = Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? null;
+					if ( is_array( $declared_style ) ) {
+						$attributes['style'] = self::convert_style_vars( $declared_style );
+					}
+				}
+
 				$constrain_width = isset( $attributes['constrainWidth'] ) ? $attributes['constrainWidth'] : true;
 				$content_width   = isset( $attributes['contentWidth'] ) ? $attributes['contentWidth'] : '';
 				$align           = isset( $attributes['align'] ) ? $attributes['align'] : 'full';
@@ -1846,6 +1896,17 @@ class Block_Inserter {
 					? $attributes['content']
 					: ( isset( $attributes['normalContent'] ) && is_string( $attributes['normalContent'] ) ? $attributes['normalContent'] : '' );
 
+				// save() returns null for a non-animated segment with no text,
+				// which WordPress serializes as a self-closing comment with no
+				// markup at all. Emitting empty spans instead made every
+				// text-less segment invalid.
+				if ( '' === trim( $segment_text ) ) {
+					return array(
+						'opening' => '',
+						'closing' => '',
+					);
+				}
+
 				return array(
 					'opening' => '<span class="wp-block-designsetgo-heading-segment dsgo-heading-segment">' .
 						'<span class="dsgo-heading-segment__text">' . wp_kses_post( $segment_text ),
@@ -1916,10 +1977,15 @@ class Block_Inserter {
 				// their save() still emits a wrapper div so WordPress persists
 				// the per-item template blocks inside it. Stored markup without
 				// that wrapper is invalid in the editor.
-				$query_slug = str_replace( 'designsetgo/', '', $block_name );
+				$query_slug    = str_replace( 'designsetgo/', '', $block_name );
+				$query_classes = 'wp-block-designsetgo-' . $query_slug;
+				$query_align   = self::align_class( $block_name, $attributes );
+				if ( '' !== $query_align ) {
+					$query_classes .= ' ' . $query_align;
+				}
 
 				return array(
-					'opening' => '<div class="' . esc_attr( 'wp-block-designsetgo-' . $query_slug ) . '">',
+					'opening' => '<div class="' . esc_attr( $query_classes ) . '">',
 					'closing' => '</div>',
 				);
 
@@ -2650,11 +2716,19 @@ class Block_Inserter {
 				}
 
 				// Container styles.
-				$container_style = 'width:100%;height:' . esc_attr( $height ) . ';background-color:' . esc_attr( $bar_bg_color ) . ';border-radius:' . esc_attr( $border_radius ) . ';overflow:hidden;position:relative';
+				// save.js writes `backgroundColor: barTrackColor || undefined`, and
+				// React omits an undefined style property entirely. Emitting
+				// `background-color:` with an empty value produced a declaration
+				// save() never writes, so an unstyled progress bar was invalid.
+				$container_style = 'width:100%;height:' . esc_attr( $height ) .
+					( '' !== $bar_bg_color ? ';background-color:' . esc_attr( $bar_bg_color ) : '' ) .
+					';border-radius:' . esc_attr( $border_radius ) . ';overflow:hidden;position:relative';
 
 				// Fill styles.
 				$fill_width = $animate_on_scroll ? '0%' : $bar_width . '%';
-				$fill_style = 'width:' . $fill_width . ';height:100%;background-color:' . esc_attr( $bar_color ) . ';transition:width ' . esc_attr( (string) $animation_dur ) . 's ease-out;border-radius:' . esc_attr( $border_radius );
+				$fill_style = 'width:' . $fill_width . ';height:100%' .
+					( '' !== $bar_color ? ';background-color:' . esc_attr( $bar_color ) : '' ) .
+					';transition:width ' . esc_attr( (string) $animation_dur ) . 's ease-out;border-radius:' . esc_attr( $border_radius );
 
 				$inner_html  = $label_html;
 				$inner_html .= '<div class="dsgo-progress-bar__container" style="' . esc_attr( $container_style ) . '">';
@@ -3408,15 +3482,33 @@ class Block_Inserter {
 				$class_parts[] = 'dsgo-image-accordion--' . esc_attr( $trigger_type );
 
 				// Build style with CSS custom properties.
-				$style_parts = array(
-					'--dsgo-image-accordion-height:' . esc_attr( $height ),
-					'--dsgo-image-accordion-gap:' . esc_attr( $gap ),
-					'--dsgo-image-accordion-expanded-ratio:' . esc_attr( (string) $expanded_ratio ),
-					'--dsgo-image-accordion-transition:' . esc_attr( $transition_duration ),
-					'--dsgo-image-accordion-overlay-color:' . esc_attr( $overlay_color ),
-					'--dsgo-image-accordion-overlay-opacity:' . esc_attr( (string) ( $overlay_opacity / 100 ) ),
-					'--dsgo-image-accordion-overlay-opacity-expanded:' . esc_attr( (string) ( $overlay_opacity_expanded / 100 ) ),
-				);
+				// height and gap have no block.json default either, so save()
+				// writes nothing for them and the stylesheet supplies the size.
+				$style_parts = array();
+				if ( isset( $attributes['height'] ) && '' !== $attributes['height'] ) {
+					$style_parts[] = '--dsgo-image-accordion-height:' . esc_attr( $attributes['height'] );
+				}
+				if ( isset( $attributes['gap'] ) && '' !== $attributes['gap'] ) {
+					$style_parts[] = '--dsgo-image-accordion-gap:' . esc_attr( $attributes['gap'] );
+				}
+				$style_parts[] = '--dsgo-image-accordion-expanded-ratio:' . esc_attr( (string) $expanded_ratio );
+				$style_parts[] = '--dsgo-image-accordion-transition:' . esc_attr( $transition_duration );
+
+				// overlayColor and the two opacities have NO block.json default,
+				// so save() sees them undefined and writes nothing; the
+				// stylesheet supplies the fallback. Inventing #000000 / 0.4 / 0.2
+				// here emitted declarations save() never writes, and the block
+				// was only "valid" because a deprecation claimed it — every
+				// insert silently migrated on open.
+				if ( isset( $attributes['overlayColor'] ) && '' !== $attributes['overlayColor'] ) {
+					$style_parts[] = '--dsgo-image-accordion-overlay-color:' . esc_attr( $attributes['overlayColor'] );
+				}
+				if ( isset( $attributes['overlayOpacity'] ) && is_numeric( $attributes['overlayOpacity'] ) ) {
+					$style_parts[] = '--dsgo-image-accordion-overlay-opacity:' . esc_attr( self::format_js_number( (float) $attributes['overlayOpacity'] / 100 ) );
+				}
+				if ( isset( $attributes['overlayOpacityExpanded'] ) && is_numeric( $attributes['overlayOpacityExpanded'] ) ) {
+					$style_parts[] = '--dsgo-image-accordion-overlay-opacity-expanded:' . esc_attr( self::format_js_number( (float) $attributes['overlayOpacityExpanded'] / 100 ) );
+				}
 				$style       = implode( ';', $style_parts );
 
 				// Data attributes.
@@ -3436,10 +3528,9 @@ class Block_Inserter {
 
 				// These values come from parent block context (usesContext in block.json).
 				// Read from attributes if provided, otherwise use defaults matching parent defaults.
-				$enable_overlay           = isset( $attributes['enableOverlay'] ) ? (bool) $attributes['enableOverlay'] : true;
-				$overlay_color            = isset( $attributes['overlayColor'] ) ? $attributes['overlayColor'] : '#000000';
-				$overlay_opacity          = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 40;
-				$overlay_opacity_expanded = isset( $attributes['overlayOpacityExpanded'] ) ? floatval( $attributes['overlayOpacityExpanded'] ) : 20;
+				// enableOverlay is not an attribute of this block either: save()
+				// hardcodes the enabled default for serialized markup.
+				$enable_overlay = true;
 
 				// Build classes.
 				$class_parts = array( 'wp-block-designsetgo-image-accordion-item', 'dsgo-image-accordion-item' );
@@ -3449,11 +3540,15 @@ class Block_Inserter {
 
 				// Build style with CSS custom properties (overlay first, then alignment - must match save.js order).
 				$style_parts = array();
-				if ( $enable_overlay ) {
-					$style_parts[] = '--dsgo-overlay-color:' . esc_attr( $overlay_color );
-					$style_parts[] = '--dsgo-overlay-opacity:' . esc_attr( (string) ( $overlay_opacity / 100 ) );
-					$style_parts[] = '--dsgo-overlay-opacity-expanded:' . esc_attr( (string) ( $overlay_opacity_expanded / 100 ) );
-				}
+				// No overlay custom properties here. The overlay colour and
+				// opacities are NOT attributes of this block - they come from the
+				// parent accordion through usesContext, and WordPress passes no
+				// context to save(), so save() serializes none of them and the
+				// values cascade from the parent's own custom properties at
+				// render time. Inventing #000000 / 0.4 / 0.2 wrote three
+				// declarations save() never emits, and the block was only
+				// "valid" because a deprecation claimed the markup - every
+				// inserted item silently migrated when the editor opened it.
 				$style_parts[] = '--dsgo-vertical-alignment:' . esc_attr( $vertical_alignment );
 				$style_parts[] = '--dsgo-horizontal-alignment:' . esc_attr( $horizontal_alignment );
 				$style         = implode( ';', $style_parts );
@@ -3704,18 +3799,21 @@ class Block_Inserter {
 				$rows          = isset( $attributes['rows'] ) ? $attributes['rows'] : array();
 				$scroll_speed  = isset( $attributes['scrollSpeed'] ) ? floatval( $attributes['scrollSpeed'] ) : 0.5;
 				$image_height  = isset( $attributes['imageHeight'] ) ? $attributes['imageHeight'] : '200px';
-				$image_width   = isset( $attributes['imageWidth'] ) ? $attributes['imageWidth'] : '300px';
-				$gap           = isset( $attributes['gap'] ) ? $attributes['gap'] : '20px';
-				$row_gap       = isset( $attributes['rowGap'] ) ? $attributes['rowGap'] : '20px';
-				$border_radius = isset( $attributes['borderRadius'] ) ? $attributes['borderRadius'] : '8px';
+				// block.json defaults imageWidth to 'auto', not '300px'.
+				$image_width = isset( $attributes['imageWidth'] ) ? $attributes['imageWidth'] : 'auto';
+				$gap         = isset( $attributes['gap'] ) ? $attributes['gap'] : '20px';
+				$row_gap     = isset( $attributes['rowGap'] ) ? $attributes['rowGap'] : '20px';
+				$object_fit  = isset( $attributes['objectFit'] ) ? $attributes['objectFit'] : 'cover';
 
-				// Build style.
+				// Build style. save.js writes object-fit here; the border-radius
+				// custom property this used to emit was removed from save.js, so
+				// every marquee serialized a declaration save() never writes.
 				$style_parts = array(
 					'--dsgo-marquee-gap:' . esc_attr( $gap ),
 					'--dsgo-marquee-row-gap:' . esc_attr( $row_gap ),
 					'--dsgo-marquee-image-height:' . esc_attr( $image_height ),
 					'--dsgo-marquee-image-width:' . esc_attr( $image_width ),
-					'--dsgo-marquee-border-radius:' . esc_attr( $border_radius ),
+					'--dsgo-marquee-object-fit:' . esc_attr( $object_fit ),
 				);
 				$style       = implode( ';', $style_parts );
 
@@ -3769,7 +3867,31 @@ class Block_Inserter {
 				}
 
 				// Build style.
-				$style = '--dsgo-tabs-gap:' . esc_attr( $gap );
+				// Mirrors save.js: the gap always, then each colour custom
+				// property only when its attribute is set. These eight were
+				// missing entirely, so any Tabs block given colours stored
+				// markup that did not match save().
+				$tab_style_parts = array( '--dsgo-tabs-gap:' . esc_attr( $gap ) );
+
+				$tab_color_vars = array(
+					'tabColor'                   => '--dsgo-tab-color',
+					'tabBackgroundColor'         => '--dsgo-tab-bg',
+					'tabContentBackgroundColor'  => '--dsgo-tab-content-bg',
+					'activeTabColor'             => '--dsgo-tab-color-active',
+					'activeTabBackgroundColor'   => '--dsgo-tab-bg-active',
+					'tabBorderColor'             => '--dsgo-tab-border-color',
+					'tabHoverColor'              => '--dsgo-tab-color-hover',
+					'tabHoverBackgroundColor'    => '--dsgo-tab-bg-hover',
+				);
+
+				foreach ( $tab_color_vars as $attribute_name => $custom_property ) {
+					$colour = isset( $attributes[ $attribute_name ] ) ? (string) $attributes[ $attribute_name ] : '';
+					if ( '' !== $colour ) {
+						$tab_style_parts[] = $custom_property . ':' . esc_attr( self::convert_color_value_to_css_var( $colour ) );
+					}
+				}
+
+				$style = implode( ';', $tab_style_parts );
 
 				// Data attributes.
 				$data_attrs  = ' data-active-tab="' . esc_attr( (string) $active_tab ) . '"';
@@ -3872,12 +3994,20 @@ class Block_Inserter {
 			$classes .= ' dsgo-form-builder--button-inline';
 		}
 
-		// Build CSS custom properties - must match save.js order.
-		$style_parts = array(
-			'--dsgo-form-field-spacing:' . esc_attr( $field_spacing ),
-			'--dsgo-form-input-height:' . esc_attr( $input_height ),
-			'--dsgo-form-input-padding:' . esc_attr( $input_padding ),
-		);
+		// Build CSS custom properties - must match save.js order. Each of these
+		// three is spread conditionally in save.js (`...(fieldSpacing && {...})`),
+		// so an unset value emits no declaration at all. Writing an empty value
+		// instead made every form with default sizing invalid.
+		$style_parts = array();
+		if ( '' !== (string) $field_spacing ) {
+			$style_parts[] = '--dsgo-form-field-spacing:' . esc_attr( $field_spacing );
+		}
+		if ( '' !== (string) $input_height ) {
+			$style_parts[] = '--dsgo-form-input-height:' . esc_attr( $input_height );
+		}
+		if ( '' !== (string) $input_padding ) {
+			$style_parts[] = '--dsgo-form-input-padding:' . esc_attr( $input_padding );
+		}
 		if ( $field_label_color ) {
 			$style_parts[] = '--dsgo-form-label-color:' . esc_attr( $field_label_color );
 		}
@@ -3899,13 +4029,13 @@ class Block_Inserter {
 			// submitButtonText is sourced from the submit button's text, not a
 			// wrapper attribute — save.js no longer emits data-submit-text, so
 			// emitting it here would fail block validation.
-			'data-enable-email="' . ( $enable_email ? 'true' : 'false' ) . '"',
-			'data-email-to="' . esc_attr( $email_to ) . '"',
-			'data-email-subject="' . esc_attr( $email_subject ) . '"',
-			'data-email-from-name="' . esc_attr( $email_from_name ) . '"',
-			'data-email-from-email="' . esc_attr( $email_from_email ) . '"',
-			'data-email-reply-to="' . esc_attr( $email_reply_to ) . '"',
-			'data-email-body="' . esc_attr( $email_body ) . '"',
+			//
+			// The email settings are deliberately absent too. save.js never
+			// emits them: they are notification config, they live in the block
+			// comment where the server reads them, and putting the recipient,
+			// reply-to and body template into public markup would publish the
+			// form's mail configuration to every visitor. Emitting them here
+			// both leaked that and failed validation on every form.
 		);
 		if ( $enable_turnstile ) {
 			$data_attrs[] = 'data-dsgo-turnstile="true"';
@@ -3920,18 +4050,27 @@ class Block_Inserter {
 		if ( $submit_button_background_color ) {
 			$button_style_parts[] = 'background-color:' . esc_attr( $submit_button_background_color );
 		}
-		$button_style_parts[] = 'min-height:' . esc_attr( $submit_button_height );
-		$button_style_parts[] = 'padding-top:' . esc_attr( $submit_button_padding_vertical );
-		$button_style_parts[] = 'padding-bottom:' . esc_attr( $submit_button_padding_vertical );
-		$button_style_parts[] = 'padding-left:' . esc_attr( $submit_button_padding_horizontal );
-		$button_style_parts[] = 'padding-right:' . esc_attr( $submit_button_padding_horizontal );
+		// Sizing is spread conditionally in save.js, so an unset value emits no
+		// declaration and the button inherits the theme's global button styles.
+		if ( '' !== (string) $submit_button_height ) {
+			$button_style_parts[] = 'min-height:' . esc_attr( $submit_button_height );
+		}
+		if ( '' !== (string) $submit_button_padding_vertical ) {
+			$button_style_parts[] = 'padding-top:' . esc_attr( $submit_button_padding_vertical );
+			$button_style_parts[] = 'padding-bottom:' . esc_attr( $submit_button_padding_vertical );
+		}
+		if ( '' !== (string) $submit_button_padding_horizontal ) {
+			$button_style_parts[] = 'padding-left:' . esc_attr( $submit_button_padding_horizontal );
+			$button_style_parts[] = 'padding-right:' . esc_attr( $submit_button_padding_horizontal );
+		}
 		if ( $submit_button_font_size ) {
 			$button_style_parts[] = 'font-size:' . esc_attr( $submit_button_font_size );
 		}
 		$button_style = implode( ';', $button_style_parts );
 
 		// Opening HTML: outer div + form + fields wrapper.
-		$opening  = '<div class="' . esc_attr( $classes ) . '" style="' . $style . '" ' . $data_str . '>';
+		$opening  = '<div class="' . esc_attr( $classes ) . '"' .
+			( '' !== $style ? ' style="' . $style . '"' : '' ) . ' ' . $data_str . '>';
 		$opening .= '<form class="dsgo-form" method="post" novalidate>';
 		$opening .= '<div class="dsgo-form__fields">';
 
@@ -3940,7 +4079,8 @@ class Block_Inserter {
 
 		// Inline button goes inside fields wrapper, before closing.
 		if ( 'inline' === $submit_button_position ) {
-			$closing .= '<button type="submit" class="dsgo-form__submit dsgo-form__submit--inline' . $submit_button_variation_class . ' wp-element-button" style="' . $button_style . '">' . esc_html( $submit_button_text ) . '</button>';
+			$closing .= '<button type="submit" class="dsgo-form__submit dsgo-form__submit--inline' . $submit_button_variation_class . ' wp-element-button"' .
+				( '' !== $button_style ? ' style="' . $button_style . '"' : '' ) . '>' . esc_html( $submit_button_text ) . '</button>';
 		}
 
 		// Close fields wrapper.
@@ -3962,7 +4102,8 @@ class Block_Inserter {
 		// Footer with button (below position).
 		if ( 'below' === $submit_button_position ) {
 			$closing .= '<div class="dsgo-form__footer">';
-			$closing .= '<button type="submit" class="dsgo-form__submit' . $submit_button_variation_class . ' wp-element-button" style="' . $button_style . '">' . esc_html( $submit_button_text ) . '</button>';
+			$closing .= '<button type="submit" class="dsgo-form__submit' . $submit_button_variation_class . ' wp-element-button"' .
+				( '' !== $button_style ? ' style="' . $button_style . '"' : '' ) . '>' . esc_html( $submit_button_text ) . '</button>';
 			$closing .= '</div>';
 		}
 
@@ -4212,13 +4353,36 @@ class Block_Inserter {
 			return $attributes;
 		}
 
+		// block.json is consulted as well as the registry, and wins on defaults.
+		// WordPress re-registers `style` (and the other support-backed
+		// attributes) on the PHP side as a bare `{"type":"object"}`, dropping
+		// the default block.json declares — while the JavaScript registration
+		// keeps it. Section declares its page padding that way, so reading only
+		// the registry meant save() emitted the padding and the serializer did
+		// not, and every inserted Section was quietly migrated by a deprecation
+		// when the editor opened it.
+		$declared = Block_Schema_Loader::get_block_json( $block_name )['attributes'] ?? array();
+
 		foreach ( $block_type->attributes as $attr_name => $attr_def ) {
 			if ( array_key_exists( $attr_name, $attributes ) ) {
 				continue;
 			}
+
+			// `style` is deliberately excluded. Whether its default reaches the
+			// markup depends on whether the block's save() serializes block
+			// supports at all: Section's padding default does, Modal's border
+			// default does not (its save builds the element itself). Applying it
+			// blanket-wise fixed one and broke the other, so the blocks whose
+			// save() does serialize it seed the default in their own case below.
+			if ( 'style' !== $attr_name && array_key_exists( 'default', $declared[ $attr_name ] ?? array() ) ) {
+				$attributes[ $attr_name ] = $declared[ $attr_name ]['default'];
+				continue;
+			}
+
 			if ( ! array_key_exists( 'default', $attr_def ) ) {
 				continue;
 			}
+
 			$attributes[ $attr_name ] = $attr_def['default'];
 		}
 
@@ -4400,6 +4564,39 @@ class Block_Inserter {
 		}
 
 		return $shapes[ $path_type ] ?? $shapes['wave'];
+	}
+
+	/**
+	 * The alignment class useBlockProps.save() would add, if any.
+	 *
+	 * Mirrors core's addAssignedAlign: the class is emitted only when the value
+	 * is one the block actually supports. Driving it off the registered supports
+	 * rather than a hardcoded wide/full pair matters for blocks that allow more
+	 * (card and accordion accept left/center/right too), where a hardcoded list
+	 * silently drops the class and the block fails validation.
+	 *
+	 * @param string               $block_name Block name.
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return string Alignment class, or an empty string.
+	 */
+	private static function align_class( string $block_name, array $attributes ): string {
+		$align = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
+		if ( '' === $align ) {
+			return '';
+		}
+
+		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
+		$support    = $block_type->supports['align'] ?? false;
+
+		if ( true === $support ) {
+			$valid = array( 'left', 'center', 'right', 'wide', 'full' );
+		} elseif ( is_array( $support ) ) {
+			$valid = $support;
+		} else {
+			return '';
+		}
+
+		return in_array( $align, $valid, true ) ? 'align' . $align : '';
 	}
 
 	/**
