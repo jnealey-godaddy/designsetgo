@@ -1909,6 +1909,39 @@ class Block_Inserter {
 					'closing' => '</div></div>',
 				);
 
+			case 'designsetgo/query':
+			case 'designsetgo/query-results':
+				// Mirrors src/blocks/query/save.js and query-results/save.js.
+				// Both are dynamic — render.php owns the frontend HTML — but
+				// their save() still emits a wrapper div so WordPress persists
+				// the per-item template blocks inside it. Stored markup without
+				// that wrapper is invalid in the editor.
+				$query_slug = str_replace( 'designsetgo/', '', $block_name );
+
+				return array(
+					'opening' => '<div class="' . esc_attr( 'wp-block-designsetgo-' . $query_slug ) . '">',
+					'closing' => '</div>',
+				);
+
+			case 'designsetgo/query-no-results':
+				// Mirrors src/blocks/query-no-results/save.js.
+				return array(
+					'opening' => '<div class="wp-block-designsetgo-query-no-results dsgo-query-no-results">',
+					'closing' => '</div>',
+				);
+
+			case 'designsetgo/scroll-slide':
+				// Mirrors src/blocks/scroll-slide/save.js. A hybrid block: it has
+				// a render.php AND a save.js, so the stored markup must carry the
+				// wrapper the frontend looks for.
+				$nav_heading = isset( $attributes['navHeading'] ) ? (string) $attributes['navHeading'] : '';
+
+				return array(
+					'opening' => '<div class="wp-block-designsetgo-scroll-slide dsgo-scroll-slide"' .
+						' data-dsgo-nav-heading="' . esc_attr( $nav_heading ) . '">',
+					'closing' => '</div>',
+				);
+
 			case 'designsetgo/scroll-slides':
 				// Mirrors src/blocks/scroll-slides/save.js.
 				$min_height       = ( isset( $attributes['minHeight'] ) && '' !== $attributes['minHeight'] ) ? (string) $attributes['minHeight'] : '100vh';
@@ -4613,6 +4646,16 @@ class Block_Inserter {
 	private const HYBRID_BLOCKS = array(
 		'designsetgo/slider',
 		'designsetgo/scroll-slides',
+		// The child too: its save.js emits the .dsgo-scroll-slide wrapper the
+		// frontend queries for. Treated as purely dynamic, its children were
+		// stored as bare block comments around their content, so the panel
+		// wrapper never existed and slide navigation never initialised.
+		'designsetgo/scroll-slide',
+		// Dynamic, but their save() emits a wrapper div that must persist so
+		// WordPress keeps the per-item template blocks inside it.
+		'designsetgo/query',
+		'designsetgo/query-results',
+		'designsetgo/query-no-results',
 	);
 
 	/**

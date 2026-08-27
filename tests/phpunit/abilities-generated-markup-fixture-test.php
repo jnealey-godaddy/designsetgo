@@ -382,13 +382,74 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
+			// Nested through real scroll-slide children, not a bare paragraph:
+			// the child is the block that was misclassified as purely dynamic,
+			// and a paragraph directly inside the parent cannot catch that.
 			'scroll-slides-defaults'                         => array(
 				'name'        => 'designsetgo/scroll-slides',
 				'attributes'  => array(),
 				'innerBlocks' => array(
 					array(
-						'name'       => 'core/paragraph',
-						'attributes' => array( 'content' => 'A panel.' ),
+						'name'        => 'designsetgo/scroll-slide',
+						'attributes'  => array( 'navHeading' => 'First' ),
+						'innerBlocks' => array(
+							array(
+								'name'       => 'core/paragraph',
+								'attributes' => array( 'content' => 'Panel one.' ),
+							),
+						),
+					),
+					array(
+						'name'        => 'designsetgo/scroll-slide',
+						'attributes'  => array( 'navHeading' => 'Second' ),
+						'innerBlocks' => array(
+							array(
+								'name'       => 'core/heading',
+								'attributes' => array(
+									'level'   => 3,
+									'content' => 'Panel two',
+								),
+							),
+						),
+					),
+					array(
+						'name'        => 'designsetgo/scroll-slide',
+						'attributes'  => array(),
+						'innerBlocks' => array(
+							array(
+								'name'       => 'core/paragraph',
+								'attributes' => array( 'content' => 'Panel three.' ),
+							),
+						),
+					),
+				),
+			),
+			'query-with-results-and-no-results'              => array(
+				'name'        => 'designsetgo/query',
+				'attributes'  => array(),
+				'innerBlocks' => array(
+					array(
+						'name'        => 'designsetgo/query-results',
+						'attributes'  => array(),
+						'innerBlocks' => array(
+							array(
+								'name'       => 'core/heading',
+								'attributes' => array(
+									'level'   => 3,
+									'content' => 'A result',
+								),
+							),
+						),
+					),
+					array(
+						'name'        => 'designsetgo/query-no-results',
+						'attributes'  => array(),
+						'innerBlocks' => array(
+							array(
+								'name'       => 'core/paragraph',
+								'attributes' => array( 'content' => 'Nothing found.' ),
+							),
+						),
 					),
 				),
 			),
@@ -526,6 +587,44 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				"Payload {$label} contains a block with no serializer."
 			);
 		}
+	}
+
+	/**
+	 * Every block whose save() emits markup has a PHP serializer.
+	 *
+	 * The inserter skips blocks it considers dynamic, on the grounds that a
+	 * server-rendered block has no save() output to reproduce. A hybrid block
+	 * breaks that assumption: it has a render.php AND a save.js, and its stored
+	 * markup still has to carry the wrapper save() emits, or the editor reports
+	 * the block as invalid and any frontend script looking for that wrapper
+	 * finds nothing. designsetgo/scroll-slide shipped that way.
+	 *
+	 * PHP cannot run save() to tell the two apart, so the list comes from
+	 * tests/unit/blocks-with-save-output.test.js, which asks the real block
+	 * registrations and writes the fixture this reads.
+	 */
+	public function test_every_block_with_save_output_has_a_serializer(): void {
+		$path = dirname( __DIR__ ) . '/unit/__fixtures__/blocks-with-save-output.json';
+
+		$this->assertFileExists(
+			$path,
+			'Regenerate with: DSGO_UPDATE_FIXTURES=1 npx wp-scripts test-unit-js tests/unit/blocks-with-save-output.test.js'
+		);
+
+		$names   = json_decode( file_get_contents( $path ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- Test fixture.
+		$missing = array();
+
+		foreach ( (array) $names as $name ) {
+			if ( null === Block_Inserter::generate_designsetgo_wrapper_html( (string) $name, array() ) ) {
+				$missing[] = (string) $name;
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$missing,
+			'These blocks emit markup from save() but have no PHP serializer: ' . implode( ', ', $missing )
+		);
 	}
 
 	/**
