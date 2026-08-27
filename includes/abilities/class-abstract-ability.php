@@ -67,6 +67,148 @@ abstract class Abstract_Ability {
 	abstract public function execute( array $input );
 
 	/**
+	 * Public entry point for an ability invocation.
+	 *
+	 * This, not execute(), is what gets registered as the ability's
+	 * execute_callback. It screens the input for parameters the ability does
+	 * not accept and answers with a diagnostic the caller can act on.
+	 *
+	 * Why not simply leave `additionalProperties: false` on the input schema
+	 * and let WP_Ability::validate_input() reject the call? Because the reply
+	 * never reaches the agent. The MCP bridge these abilities are invoked
+	 * through (mcp-adapter-initializer's invoke-ability tool) collapses every
+	 * WP_Error to the fixed string "Ability execution failed.", so a caller
+	 * that sends one misnamed parameter is told only that something went
+	 * wrong. In one observed session that cost the agent its whole nested
+	 * payload: it fell back to rebuilding the tree one call at a time and
+	 * corrupted the page in the process.
+	 *
+	 * A returned array is passed through the bridge intact, so input problems
+	 * are reported as data — `success: false` plus the offending parameter
+	 * names — rather than as a WP_Error. register() strips the schema's
+	 * `additionalProperties: false` for the same reason: core would otherwise
+	 * reject the call before this method ever runs. Rejection is just as
+	 * strict; only the wording survives the trip.
+	 *
+	 * @param array<string, mixed> $input Input parameters.
+	 * @return array<string, mixed>|WP_Error Result data, input diagnostic, or error.
+	 */
+	public function run( array $input ) {
+		$diagnostic = $this->check_unknown_input( $input );
+		if ( null !== $diagnostic ) {
+			return $diagnostic;
+		}
+
+		return $this->execute( $input );
+	}
+
+	/**
+	 * Screen input for parameters this ability does not declare.
+	 *
+	 * Only applies when the ability's own input schema opts into strictness
+	 * with `additionalProperties: false`; abilities that accept open-ended
+	 * input are left alone.
+	 *
+	 * @param array<string, mixed> $input Input parameters.
+	 * @return array<string, mixed>|null Diagnostic payload, or null when input is acceptable.
+	 */
+	protected function check_unknown_input( array $input ): ?array {
+		$config = $this->get_config();
+		$schema = $config['input_schema'] ?? array();
+
+		if ( ! isset( $schema['additionalProperties'] ) || false !== $schema['additionalProperties'] ) {
+			return null;
+		}
+
+		// An ability that takes no input at all declares `properties` as an
+		// empty stdClass so it encodes as `{}` rather than `[]` in JSON.
+		$properties = $schema['properties'] ?? array();
+		if ( $properties instanceof \stdClass ) {
+			$properties = get_object_vars( $properties );
+		}
+
+		if ( ! is_array( $properties ) ) {
+			return null;
+		}
+
+		$supported = array_keys( $properties );
+
+		$unknown = array_values( array_diff( array_keys( $input ), $supported ) );
+		if ( empty( $unknown ) ) {
+			return null;
+		}
+
+		$suggestions = array();
+		foreach ( $unknown as $name ) {
+			$closest = $this->closest_parameter( (string) $name, $supported );
+			if ( null !== $closest ) {
+				$suggestions[ $name ] = $closest;
+			}
+		}
+
+		$message = sprintf(
+			/* translators: 1: ability name, 2: comma-separated unknown parameters, 3: comma-separated supported parameters */
+			__( '%1$s does not accept the parameter(s): %2$s. Supported parameters are: %3$s. Nothing was changed.', 'designsetgo' ),
+			$this->get_name(),
+			implode( ', ', $unknown ),
+			implode( ', ', $supported )
+		);
+
+		foreach ( $suggestions as $name => $closest ) {
+			$message .= ' ' . sprintf(
+				/* translators: 1: the parameter the caller sent, 2: the closest supported parameter */
+				__( 'Did you mean "%2$s" instead of "%1$s"?', 'designsetgo' ),
+				$name,
+				$closest
+			);
+		}
+
+		return array(
+			'success'              => false,
+			'error_code'           => 'designsetgo_unknown_parameter',
+			'message'              => $message,
+			'unknown_parameters'   => $unknown,
+			'supported_parameters' => $supported,
+			'did_you_mean'         => $suggestions,
+		);
+	}
+
+	/**
+	 * Find the supported parameter closest to a caller-supplied name.
+	 *
+	 * Catches the near-misses agents actually make - casing slips such as
+	 * innerBlocks/inner_blocks, or a singular/plural mix-up - without
+	 * guessing wildly at unrelated names.
+	 *
+	 * @param string             $name      Parameter the caller sent.
+	 * @param array<int, string> $supported Supported parameter names.
+	 * @return string|null Closest supported name, or null when nothing is close.
+	 */
+	private function closest_parameter( string $name, array $supported ): ?string {
+		$normalise = static function ( string $value ): string {
+			return strtolower( str_replace( array( '_', '-' ), '', $value ) );
+		};
+
+		$needle = $normalise( $name );
+		$best   = null;
+		$score  = PHP_INT_MAX;
+
+		foreach ( $supported as $candidate ) {
+			$distance = levenshtein( $needle, $normalise( (string) $candidate ) );
+			if ( $distance < $score ) {
+				$score = $distance;
+				$best  = (string) $candidate;
+			}
+		}
+
+		// Anything further than a third of the name's length is a different
+		// word, not a typo.
+		$tolerance = max( 1, (int) floor( strlen( $needle ) / 3 ) );
+
+		return ( null !== $best && $score <= $tolerance ) ? $best : null;
+	}
+
+	/**
 	 * Normalise an ability config into the shape WP_Ability expects.
 	 *
 	 * WP_Ability::__construct emits a _doing_it_wrong notice for any unknown
@@ -146,8 +288,20 @@ abstract class Abstract_Ability {
 			return;
 		}
 
-		$config                     = self::normalize_config( $this->get_config() );
-		$config['execute_callback'] = array( $this, 'execute' );
+		$config = self::normalize_config( $this->get_config() );
+
+		// run() screens unknown parameters itself and reports them in a form
+		// that survives the MCP bridge. Core's own additionalProperties check
+		// would fire first and return a WP_Error the bridge flattens to
+		// "Ability execution failed.", so the flag is dropped from the
+		// registered schema. See run() for the full reasoning. The schema
+		// returned by get_config() keeps the flag, so it stays the record of
+		// which parameters an ability accepts.
+		if ( isset( $config['input_schema']['additionalProperties'] ) && false === $config['input_schema']['additionalProperties'] ) {
+			unset( $config['input_schema']['additionalProperties'] );
+		}
+
+		$config['execute_callback'] = array( $this, 'run' );
 
 		// wp_register_ability() is a WP 6.9+ function, but this plugin supports
 		// WP 6.7+. This method only runs on the wp_abilities_api_init hook, which

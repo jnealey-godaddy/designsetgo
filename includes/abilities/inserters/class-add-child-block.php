@@ -18,6 +18,7 @@ namespace DesignSetGo\Abilities\Inserters;
 
 use DesignSetGo\Abilities\Abstract_Ability;
 use DesignSetGo\Abilities\Block_Configurator;
+use DesignSetGo\Abilities\Block_Inserter;
 use WP_Error;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -77,7 +78,11 @@ class Add_Child_Block extends Abstract_Ability {
 				),
 				'parent_block_index' => array(
 					'type'        => 'integer',
-					'description' => __( 'Document-order index of the parent block (from get-post-blocks)', 'designsetgo' ),
+					'description' => __( 'Document-order index of the parent block (from get-post-blocks). Prefer parent_block_path: an index shifts whenever a block is added earlier in the document, so a series of inserts planned from one read can land in the wrong parents.', 'designsetgo' ),
+				),
+				'parent_block_path'  => array(
+					'type'        => 'string',
+					'description' => __( 'Tree path of the parent block, e.g. "2.1.0" (from get-post-blocks). Preferred over parent_block_index because it does not shift when unrelated blocks are inserted. Wins if both are given.', 'designsetgo' ),
 				),
 				'block_name'         => array(
 					'type'        => 'string',
@@ -88,27 +93,9 @@ class Add_Child_Block extends Abstract_Ability {
 					'description' => __( 'Attributes for the new block', 'designsetgo' ),
 					'default'     => array(),
 				),
-				'inner_blocks'       => array(
-					'type'        => 'array',
-					'description' => __( 'Inner blocks for the new block (each with name, attributes, and optional innerBlocks)', 'designsetgo' ),
-					'items'       => array(
-						'type'       => 'object',
-						'properties' => array(
-							'name'        => array(
-								'type'        => 'string',
-								'description' => __( 'Block name', 'designsetgo' ),
-							),
-							'attributes'  => array(
-								'type'        => 'object',
-								'description' => __( 'Block attributes', 'designsetgo' ),
-							),
-							'innerBlocks' => array(
-								'type'        => 'array',
-								'description' => __( 'Nested inner blocks', 'designsetgo' ),
-							),
-						),
-					),
-					'default'     => array(),
+				'inner_blocks'       => array_merge(
+					Block_Inserter::get_inner_blocks_schema(),
+					array( 'default' => array() )
 				),
 				'position'           => array(
 					'type'        => 'integer',
@@ -116,7 +103,10 @@ class Add_Child_Block extends Abstract_Ability {
 					'default'     => -1,
 				),
 			),
-			'required'             => array( 'post_id', 'parent_block_index', 'block_name' ),
+			// parent_block_index is not required: parent_block_path may be
+			// given instead. execute() checks that exactly one is present and
+			// says so in terms the caller can act on.
+			'required'             => array( 'post_id', 'block_name' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -177,6 +167,7 @@ class Add_Child_Block extends Abstract_Ability {
 	public function execute( array $input ) {
 		$post_id            = (int) ( $input['post_id'] ?? 0 );
 		$parent_block_index = isset( $input['parent_block_index'] ) ? (int) $input['parent_block_index'] : null;
+		$parent_block_path  = isset( $input['parent_block_path'] ) ? trim( (string) $input['parent_block_path'] ) : null;
 		$block_name         = $input['block_name'] ?? '';
 		$attributes         = $input['attributes'] ?? array();
 		$inner_blocks       = $input['inner_blocks'] ?? array();
@@ -199,10 +190,17 @@ class Add_Child_Block extends Abstract_Ability {
 			return $this->permission_error();
 		}
 
-		if ( null === $parent_block_index ) {
+		if ( null === $parent_block_index && ( null === $parent_block_path || '' === $parent_block_path ) ) {
 			return $this->error(
 				'designsetgo_invalid_input',
-				__( 'parent_block_index is required.', 'designsetgo' )
+				__( 'Identify the parent with parent_block_path (preferred) or parent_block_index. Both are reported by designsetgo/get-post-blocks.', 'designsetgo' )
+			);
+		}
+
+		if ( null !== $parent_block_path && '' !== $parent_block_path && ! preg_match( '/^\\d+(\\.\\d+)*$/', $parent_block_path ) ) {
+			return $this->error(
+				'designsetgo_invalid_input',
+				__( 'parent_block_path must be dot-separated positions, e.g. "0" or "2.1.0".', 'designsetgo' )
 			);
 		}
 
@@ -222,6 +220,15 @@ class Add_Child_Block extends Abstract_Ability {
 			);
 		}
 
+		// Screen the request BEFORE sanitizing: sanitization drops keys it does
+		// not recognise, so a misnamed field would be gone by the time anything
+		// looked for it. That is how a nested `block_name` used to remove every
+		// child in silence.
+		$placement = Block_Inserter::check_child_placement( $block_name, $inner_blocks, is_array( $attributes ) ? $attributes : array() );
+		if ( null !== $placement ) {
+			return $placement;
+		}
+
 		// Sanitize attributes.
 		if ( ! empty( $attributes ) ) {
 			$attributes = Block_Configurator::sanitize_attributes( $attributes );
@@ -235,11 +242,12 @@ class Add_Child_Block extends Abstract_Ability {
 		// Delegate to Block_Configurator's insert_inner_block method.
 		return Block_Configurator::insert_inner_block(
 			$post_id,
-			$parent_block_index,
+			(int) $parent_block_index,
 			$block_name,
 			$attributes,
 			$inner_blocks,
-			$position
+			$position,
+			$parent_block_path
 		);
 	}
 
@@ -258,29 +266,6 @@ class Add_Child_Block extends Abstract_Ability {
 	 * @return array<int, array<string, mixed>> Sanitized inner blocks.
 	 */
 	private function sanitize_inner_blocks( array $inner_blocks ): array {
-		$sanitized = array();
-
-		foreach ( $inner_blocks as $block ) {
-			$clean_block = array();
-
-			// Sanitize block name.
-			if ( isset( $block['name'] ) ) {
-				$clean_block['name'] = sanitize_text_field( $block['name'] );
-			}
-
-			// Sanitize attributes.
-			if ( isset( $block['attributes'] ) && is_array( $block['attributes'] ) ) {
-				$clean_block['attributes'] = Block_Configurator::sanitize_attributes( $block['attributes'] );
-			}
-
-			// Recursively sanitize nested inner blocks.
-			if ( isset( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
-				$clean_block['innerBlocks'] = $this->sanitize_inner_blocks( $block['innerBlocks'] );
-			}
-
-			$sanitized[] = $clean_block;
-		}
-
-		return $sanitized;
+		return Block_Inserter::sanitize_inner_block_definitions( $inner_blocks );
 	}
 }

@@ -214,6 +214,14 @@ class List_Extensions extends Abstract_Ability {
 								'description' => __( 'What the extension does and how to use it', 'designsetgo' ),
 							),
 							'blocks'      => array(
+								// Either the string "all" or a list of block
+								// names. The type was omitted rather than
+								// declared as both, which left core validating
+								// this node with no type at all and emitting
+								// three "Undefined array key type" warnings per
+								// response.
+								'type'        => array( 'string', 'array' ),
+								'items'       => array( 'type' => 'string' ),
 								'description' => __( 'Which blocks this extension applies to. "all" means all blocks (with possible exclusions).', 'designsetgo' ),
 							),
 							'exclude'     => array( // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- REST schema property describing an extension's block-exclusion list, not a get_posts() query.

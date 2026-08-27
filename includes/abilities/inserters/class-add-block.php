@@ -82,27 +82,9 @@ class Add_Block extends Abstract_Ability {
 					'description' => __( 'Attributes for the new block', 'designsetgo' ),
 					'default'     => array(),
 				),
-				'inner_blocks' => array(
-					'type'        => 'array',
-					'description' => __( 'Inner blocks for the new block (each with name, attributes, and optional innerBlocks)', 'designsetgo' ),
-					'items'       => array(
-						'type'       => 'object',
-						'properties' => array(
-							'name'        => array(
-								'type'        => 'string',
-								'description' => __( 'Block name', 'designsetgo' ),
-							),
-							'attributes'  => array(
-								'type'        => 'object',
-								'description' => __( 'Block attributes', 'designsetgo' ),
-							),
-							'innerBlocks' => array(
-								'type'        => 'array',
-								'description' => __( 'Nested inner blocks', 'designsetgo' ),
-							),
-						),
-					),
-					'default'     => array(),
+				'inner_blocks' => array_merge(
+					Block_Inserter::get_inner_blocks_schema(),
+					array( 'default' => array() )
 				),
 				'position'     => array(
 					'type'        => 'integer',
@@ -170,6 +152,15 @@ class Add_Block extends Abstract_Ability {
 			);
 		}
 
+		// Screen the request BEFORE sanitizing: sanitization drops keys it does
+		// not recognise, so a misnamed field would be gone by the time anything
+		// looked for it. That is how a nested `block_name` used to remove every
+		// child in silence.
+		$placement = Block_Inserter::check_child_placement( $block_name, $inner_blocks, is_array( $attributes ) ? $attributes : array() );
+		if ( null !== $placement ) {
+			return $placement;
+		}
+
 		// Sanitize attributes.
 		if ( ! empty( $attributes ) ) {
 			$attributes = Block_Configurator::sanitize_attributes( $attributes );
@@ -197,26 +188,6 @@ class Add_Block extends Abstract_Ability {
 	 * @return array<int, array<string, mixed>> Sanitized inner blocks.
 	 */
 	private function sanitize_inner_blocks( array $inner_blocks ): array {
-		$sanitized = array();
-
-		foreach ( $inner_blocks as $block ) {
-			$clean_block = array();
-
-			if ( isset( $block['name'] ) ) {
-				$clean_block['name'] = sanitize_text_field( $block['name'] );
-			}
-
-			if ( isset( $block['attributes'] ) && is_array( $block['attributes'] ) ) {
-				$clean_block['attributes'] = Block_Configurator::sanitize_attributes( $block['attributes'] );
-			}
-
-			if ( isset( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
-				$clean_block['innerBlocks'] = $this->sanitize_inner_blocks( $block['innerBlocks'] );
-			}
-
-			$sanitized[] = $clean_block;
-		}
-
-		return $sanitized;
+		return Block_Inserter::sanitize_inner_block_definitions( $inner_blocks );
 	}
 }

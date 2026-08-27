@@ -286,13 +286,44 @@ class Test_Block_Inserter extends WP_UnitTestCase {
 
 		$result = Block_Inserter::insert_block(
 			$this->page_id,
-			'core/group',
+			'designsetgo/section',
 			array(),
 			$inner_blocks,
 			-1
 		);
 
 		$this->assertTrue( $result['success'] );
+		$this->assertStringContainsString( 'Inner paragraph', get_post( $this->page_id )->post_content );
+	}
+
+	/**
+	 * Inner blocks are refused for a block whose wrapper cannot be generated.
+	 *
+	 * This previously "succeeded" with core/group and wrote a block comment
+	 * containing the children and no <div class="wp-block-group"> around them,
+	 * which the editor reports as invalid. Refusing is the correct outcome:
+	 * core save() output only exists in JavaScript, so there is nothing this
+	 * inserter can emit for it.
+	 */
+	public function test_insert_block_refuses_inner_blocks_for_core_containers() {
+		$before = get_post( $this->page_id )->post_content;
+
+		$result = Block_Inserter::insert_block(
+			$this->page_id,
+			'core/group',
+			array(),
+			array(
+				array(
+					'name'       => 'core/paragraph',
+					'attributes' => array( 'content' => 'Inner paragraph' ),
+				),
+			),
+			-1
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'designsetgo_unsupported_block', $result->get_error_code() );
+		$this->assertSame( $before, get_post( $this->page_id )->post_content, 'A refused insert must not write.' );
 	}
 
 	/**

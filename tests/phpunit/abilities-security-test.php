@@ -72,6 +72,28 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 		$this->assertSame( $expected_code, $result->get_error_code() );
 	}
 
+	/**
+	 * Assert that a result rejected the request, in either reporting shape.
+	 *
+	 * Input problems are reported as a diagnostic array rather than a WP_Error
+	 * so the reason survives the MCP bridge, which flattens every WP_Error to a
+	 * fixed string. The security property under test is that the request was
+	 * refused, not which of the two shapes carried the refusal.
+	 *
+	 * @param string $expected_code Expected error code.
+	 * @param mixed  $result        Result to check.
+	 */
+	private function assert_rejected( string $expected_code, $result ): void {
+		if ( is_wp_error( $result ) ) {
+			$this->assertSame( $expected_code, $result->get_error_code() );
+			return;
+		}
+
+		$this->assertIsArray( $result, 'Expected a rejection but got: ' . wp_json_encode( $result ) );
+		$this->assertFalse( $result['success'], 'Request was not refused.' );
+		$this->assertNotEmpty( $result['message'] );
+	}
+
 	// -------------------------------------------------------------------------
 	// Color Injection (Shape Divider)
 	// -------------------------------------------------------------------------
@@ -244,7 +266,8 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assert_error_code( 'designsetgo_invalid_input', $result );
+		$this->assert_rejected( 'designsetgo_invalid_input', $result );
+		$this->assertStringNotContainsString( 'fake/nonexistent-block', get_post( $post_id )->post_content );
 	}
 
 	// -------------------------------------------------------------------------
