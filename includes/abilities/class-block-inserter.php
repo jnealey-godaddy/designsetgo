@@ -1823,9 +1823,10 @@ class Block_Inserter {
 				$heading_tag   = 'h' . (int) $heading_level;
 				$text_align    = isset( $attributes['textAlign'] ) ? (string) $attributes['textAlign'] : '';
 
-				$class_parts = array( 'wp-block-designsetgo-advanced-heading' );
-				if ( isset( $attributes['align'] ) && in_array( $attributes['align'], array( 'wide', 'full' ), true ) ) {
-					$class_parts[] = 'align' . $attributes['align'];
+				$class_parts   = array( 'wp-block-designsetgo-advanced-heading' );
+				$heading_align = self::align_class( $block_name, $attributes );
+				if ( '' !== $heading_align ) {
+					$class_parts[] = $heading_align;
 				}
 				$class_parts[] = 'dsgo-advanced-heading';
 				if ( '' !== $text_align ) {
@@ -1862,8 +1863,9 @@ class Block_Inserter {
 				$has_max_width = is_string( $blob_max_width ) && '' !== trim( $blob_max_width );
 
 				$wrapper_classes = array( 'wp-block-designsetgo-blobs' );
-				if ( isset( $attributes['align'] ) && in_array( $attributes['align'], array( 'wide', 'full' ), true ) ) {
-					$wrapper_classes[] = 'align' . $attributes['align'];
+				$blobs_align     = self::align_class( $block_name, $attributes );
+				if ( '' !== $blobs_align ) {
+					$wrapper_classes[] = $blobs_align;
 				}
 				$wrapper_classes[] = 'dsgo-blobs-wrapper';
 				if ( $has_max_width ) {
@@ -2908,7 +2910,9 @@ class Block_Inserter {
 				$show_cta          = isset( $attributes['showCta'] ) ? $attributes['showCta'] : true;
 				$content_alignment = isset( $attributes['contentAlignment'] ) ? $attributes['contentAlignment'] : 'left';
 
-				$outer_class = 'wp-block-designsetgo-card dsgo-card dsgo-card--' . esc_attr( $layout_preset ) . ' dsgo-card--style-' . esc_attr( $visual_style );
+				$card_align  = self::align_class( $block_name, $attributes );
+				$outer_class = 'wp-block-designsetgo-card' . ( '' !== $card_align ? ' ' . $card_align : '' ) .
+					' dsgo-card dsgo-card--' . esc_attr( $layout_preset ) . ' dsgo-card--style-' . esc_attr( $visual_style );
 
 				// Build content HTML.
 				$content_class = 'dsgo-card__content ';
@@ -3628,8 +3632,19 @@ class Block_Inserter {
 				// the block would fail validation on first open.
 				$inner_style = 'align-items:' . esc_attr( $align_items );
 
+				// Built as a list, not by concatenating a possibly-empty align
+				// class between two others: trim() only strips the ends, so an
+				// unaligned block was left with a double space in its class
+				// attribute on every insert.
+				$accordion_classes = array( 'wp-block-designsetgo-scroll-accordion' );
+				$accordion_align   = self::align_class( $block_name, $attributes );
+				if ( '' !== $accordion_align ) {
+					$accordion_classes[] = $accordion_align;
+				}
+				$accordion_classes[] = 'dsgo-scroll-accordion';
+
 				return array(
-					'opening' => '<div class="wp-block-designsetgo-scroll-accordion dsgo-scroll-accordion"><div class="dsgo-scroll-accordion__items" style="' . esc_attr( $inner_style ) . '">',
+					'opening' => '<div class="' . esc_attr( implode( ' ', $accordion_classes ) ) . '"><div class="dsgo-scroll-accordion__items" style="' . esc_attr( $inner_style ) . '">',
 					'closing' => '</div></div>',
 				);
 
@@ -3637,7 +3652,11 @@ class Block_Inserter {
 				$overlay_color = isset( $attributes['overlayColor'] ) ? $attributes['overlayColor'] : '';
 
 				// Build classes.
-				$class_parts = array( 'wp-block-designsetgo-scroll-accordion-item', 'dsgo-scroll-accordion-item' );
+				$class_parts        = array( 'wp-block-designsetgo-scroll-accordion-item', 'dsgo-scroll-accordion-item' );
+				$accordion_item_align = self::align_class( $block_name, $attributes );
+				if ( '' !== $accordion_item_align ) {
+					$class_parts[] = $accordion_item_align;
+				}
 				if ( $overlay_color ) {
 					$class_parts[] = 'dsgo-scroll-accordion-item--has-overlay';
 				}
@@ -3984,8 +4003,16 @@ class Block_Inserter {
 					$icon_data     = ' data-icon="' . esc_attr( $safe_icon ) . '" data-icon-position="' . esc_attr( $safe_position ) . '"';
 				}
 
+				// Same list-building reason as scroll-accordion above.
+				$tab_classes = array( 'wp-block-designsetgo-tab' );
+				$tab_align   = self::align_class( $block_name, $attributes );
+				if ( '' !== $tab_align ) {
+					$tab_classes[] = $tab_align;
+				}
+				$tab_classes[] = 'dsgo-tab';
+
 				return array(
-					'opening' => '<div class="wp-block-designsetgo-tab dsgo-tab" role="tabpanel" aria-labelledby="tab-' . esc_attr( $unique_id ) . '" aria-label="' . esc_attr( $aria_label ) . '" id="' . esc_attr( $panel_id ) . '" hidden' . $icon_data . '><div class="dsgo-tab__content">',
+					'opening' => '<div class="' . esc_attr( implode( ' ', $tab_classes ) ) . '" role="tabpanel" aria-labelledby="tab-' . esc_attr( $unique_id ) . '" aria-label="' . esc_attr( $aria_label ) . '" id="' . esc_attr( $panel_id ) . '" hidden' . $icon_data . '><div class="dsgo-tab__content">',
 					'closing' => '</div></div>',
 				);
 

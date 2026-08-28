@@ -486,6 +486,28 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 			// Padding is skip-serialized on the root and re-applied to the
 			// button by save(). Icon Button resolves preset shorthand; Modal
 			// Trigger writes it through unchanged — both are pinned here.
+			// These blocks support left/center/right as well as wide/full, and
+			// emitted no alignment class at all.
+			'card-aligned-left'                              => array(
+				'name'        => 'designsetgo/card',
+				'attributes'  => array( 'align' => 'left' ),
+				'innerBlocks' => array(),
+			),
+			'advanced-heading-aligned-center'                => array(
+				'name'        => 'designsetgo/advanced-heading',
+				'attributes'  => array( 'align' => 'center' ),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'designsetgo/heading-segment',
+						'attributes' => array( 'content' => 'Centred' ),
+					),
+				),
+			),
+			'scroll-accordion-aligned-wide'                  => array(
+				'name'        => 'designsetgo/scroll-accordion',
+				'attributes'  => array( 'align' => 'wide' ),
+				'innerBlocks' => array(),
+			),
 			'icon-button-padded'                             => array(
 				'name'        => 'designsetgo/icon-button',
 				'attributes'  => array(
