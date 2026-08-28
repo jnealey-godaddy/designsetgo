@@ -135,6 +135,34 @@ describe('Abilities-generated markup validates against save()', () => {
 		expect(markup).toContain('dsgo-fifty-fifty__content-inner');
 	});
 
+	// A class attribute built by concatenating a possibly-empty class between
+	// two others leaves a DOUBLE space: trim() only strips the ends. WordPress
+	// compares class attributes as a set, so the validation below still passes
+	// and the malformed markup is persisted on every insert. Two blocks shipped
+	// that way.
+	//
+	// Only double spaces are checked. A single leading or trailing space is
+	// allowed, because a save() template can legitimately produce one - card's
+	// does, via `dsgo-card__content ${cond ? cls : ''}` - and the serializer's
+	// job is to match save(), not to be tidier than it.
+	it('emits no double-spaced class attributes', () => {
+		const offenders = [];
+
+		Object.entries(fixture).forEach(([label, markup]) => {
+			const pattern = /class="([^"]*)"/g;
+			let match = pattern.exec(markup);
+
+			while (match !== null) {
+				if (/\s\s/.test(match[1])) {
+					offenders.push(`${label}: "${match[1]}"`);
+				}
+				match = pattern.exec(markup);
+			}
+		});
+
+		expect(offenders).toEqual([]);
+	});
+
 	it('validates every payload', () => {
 		const failures = [];
 

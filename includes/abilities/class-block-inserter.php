@@ -3632,8 +3632,19 @@ class Block_Inserter {
 				// the block would fail validation on first open.
 				$inner_style = 'align-items:' . esc_attr( $align_items );
 
+				// Built as a list, not by concatenating a possibly-empty align
+				// class between two others: trim() only strips the ends, so an
+				// unaligned block was left with a double space in its class
+				// attribute on every insert.
+				$accordion_classes = array( 'wp-block-designsetgo-scroll-accordion' );
+				$accordion_align   = self::align_class( $block_name, $attributes );
+				if ( '' !== $accordion_align ) {
+					$accordion_classes[] = $accordion_align;
+				}
+				$accordion_classes[] = 'dsgo-scroll-accordion';
+
 				return array(
-					'opening' => '<div class="' . esc_attr( trim( 'wp-block-designsetgo-scroll-accordion ' . self::align_class( $block_name, $attributes ) . ' dsgo-scroll-accordion' ) ) . '"><div class="dsgo-scroll-accordion__items" style="' . esc_attr( $inner_style ) . '">',
+					'opening' => '<div class="' . esc_attr( implode( ' ', $accordion_classes ) ) . '"><div class="dsgo-scroll-accordion__items" style="' . esc_attr( $inner_style ) . '">',
 					'closing' => '</div></div>',
 				);
 
@@ -3992,8 +4003,16 @@ class Block_Inserter {
 					$icon_data     = ' data-icon="' . esc_attr( $safe_icon ) . '" data-icon-position="' . esc_attr( $safe_position ) . '"';
 				}
 
+				// Same list-building reason as scroll-accordion above.
+				$tab_classes = array( 'wp-block-designsetgo-tab' );
+				$tab_align   = self::align_class( $block_name, $attributes );
+				if ( '' !== $tab_align ) {
+					$tab_classes[] = $tab_align;
+				}
+				$tab_classes[] = 'dsgo-tab';
+
 				return array(
-					'opening' => '<div class="' . esc_attr( trim( 'wp-block-designsetgo-tab ' . self::align_class( $block_name, $attributes ) . ' dsgo-tab' ) ) . '" role="tabpanel" aria-labelledby="tab-' . esc_attr( $unique_id ) . '" aria-label="' . esc_attr( $aria_label ) . '" id="' . esc_attr( $panel_id ) . '" hidden' . $icon_data . '><div class="dsgo-tab__content">',
+					'opening' => '<div class="' . esc_attr( implode( ' ', $tab_classes ) ) . '" role="tabpanel" aria-labelledby="tab-' . esc_attr( $unique_id ) . '" aria-label="' . esc_attr( $aria_label ) . '" id="' . esc_attr( $panel_id ) . '" hidden' . $icon_data . '><div class="dsgo-tab__content">',
 					'closing' => '</div></div>',
 				);
 
