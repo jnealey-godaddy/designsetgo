@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.2
+Stable tag: 2.7.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -87,6 +87,16 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.7.3 - 2026-09-04 =
+
+* **Fix:** Blocks added by an AI assistant now come out valid. When a block was built through the plugin's Abilities API rather than typed into the editor, the markup it produced did not always match what the editor writes, so opening the page showed "Attempt Recovery" or silently rewrote content the author never touched. Every block is now checked against its own editor output, including at its plain defaults.
+* **Fix:** Section, Row and Grid keep their hover and overlay colours when built this way — the five custom properties behind them were dropped entirely.
+* **Fix:** Modal now uses the label you gave it for screen readers instead of always announcing "Modal".
+* **Fix:** Form Builder no longer writes email notification settings — recipient, subject, from and reply-to addresses — into the page's public markup.
+* **Fix:** Icon Button and Modal Trigger apply padding, colour, typography, border and shadow to the button itself rather than duplicating it on the wrapper.
+* **Fix:** Counter Group honours its own column counts, Grid honours its HTML element setting, and Tabs keeps its colour settings.
+* **Fix:** Alignment set on a block built this way is now carried into the markup, for blocks that align left/centre/right as well as those offering wide and full.
 
 = 2.7.2 - 2026-08-26 =
 
@@ -232,6 +242,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.7.3 =
+Fixes for blocks created through the plugin's Abilities API by an AI assistant, which could produce markup the editor flagged as invalid or silently rewrote. Also restores hover/overlay colours on Section, Row and Grid, uses the Modal's own screen-reader label, and stops Form Builder writing email notification settings into public markup.
 
 = 2.7.2 =
 Fixes four display problems: the Advanced Heading typing effect cutting off the last letter, the clip-based effects shaving the tops and tails off letters, Text Path motion not previewing in the editor, and heading segments running together in the editor. Includes everything in 2.7.1.
