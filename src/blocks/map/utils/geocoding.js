@@ -12,6 +12,8 @@
  */
 function normalizeAddress(address) {
 	return address
+		.replace(/u0022/g, '') // compat: " serialized as \" then stripped by wp_unslash → u0022
+		.replace(/u0026quot;/g, '') // compat: " encoded as &quot; then &→& by serializer, \→stripped by wp_unslash
 		.split(/[\r\n]+/)
 		.map((line) => line.trim())
 		.filter(Boolean)
