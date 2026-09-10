@@ -52,7 +52,7 @@ For sibling blocks that already exist and meet the "1–3 attribute difference +
 - IAPI store: `'designsetgo/query'`. Actions: `loadMore`, `setFilter`, `setFilterDebounced`, `toggleFilter`, `removeActiveFilter`, `resetAll`.
 - Filter hooks: `designsetgo_query_args` (all sources), `designsetgo/query/{queryId}/args` (scoped — fires after the global hook).
 - URL params: `q`, `sort`, `filter_<taxonomy>`. Extend via `designsetgo_query_url_params` filter.
-- Frontend data contract: `[data-dsgo-query-id]` on the wrapper; `[data-dsgo-blobs-for]` sibling holds attributes + innerBlocks JSON blobs for IAPI requests.
+- Frontend data contract: `[data-dsgo-query-id]` on the wrapper; `[data-dsgo-blobs-for]` carries a **signed refresh source** (`data-dsgo-refresh-source`, base64 of attributes + innerBlocks + source post, and an HMAC `data-dsgo-signature`). The public `/query/render` route renders only a definition whose signature verifies — never caller-supplied settings — so it works wherever the query sits (post content, template, template part, synced pattern, widget). A query inside a post's content is limited to people who can see that post. `DesignSetGo\Blocks\Query\RefreshSource` owns signing, verification and the `the_content` source tracking. Editor previews use `/query/render-preview` (`edit_posts`, post type must be viewable or editable by the user) and must never emit a signed source. Visitors get no REST nonce (a stale one on a cached page is rejected by core before the route runs).
 - See `.claude/docs/QUERY-BLOCK-GUIDE.md` for recipes + extension points.
 
 ### Query block family (Dynamic Query v2.2)
