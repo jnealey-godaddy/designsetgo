@@ -59,6 +59,9 @@ class Test_Uninstall extends WP_UnitTestCase {
 		}
 
 		$this->seed_plugin_data();
+		update_option( 'designsetgo_db_upgrade_failure', array( 'error' => 'x' ) );
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		update_user_meta( $admin_id, 'designsetgo_db_upgrade_notice_dismissed', 'abc' );
 
 		// Verify fixture data exists before uninstall.
 		$pre_count = (int) $wpdb->get_var(
@@ -95,6 +98,8 @@ class Test_Uninstall extends WP_UnitTestCase {
 		$this->assertFalse( get_option( 'designsetgo_global_styles' ), 'designsetgo_global_styles should be deleted' );
 		$this->assertFalse( get_option( 'designsetgo_settings' ), 'designsetgo_settings should be deleted' );
 		$this->assertFalse( get_option( 'designsetgo_llms_txt_physical' ), 'designsetgo_llms_txt_physical should be deleted' );
+		$this->assertFalse( get_option( 'designsetgo_db_upgrade_failure' ), 'designsetgo_db_upgrade_failure should be deleted' );
+		$this->assertSame( '', get_user_meta( $admin_id, 'designsetgo_db_upgrade_notice_dismissed', true ), 'Schema notice dismissals should be deleted' );
 
 		// Transients deleted from database.
 		// Note: We check the options table directly because the test suite's
