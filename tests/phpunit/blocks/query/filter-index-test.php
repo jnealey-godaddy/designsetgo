@@ -32,6 +32,56 @@ class DesignSetGo_Query_Filter_Index_Test extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Regression for #551: the composite keys must fit MySQL's 1000-byte
+	 * MyISAM key limit under utf8mb4 (4 bytes/char). Hosts whose default
+	 * storage engine is MyISAM rejected the CREATE TABLE with error 1071,
+	 * so the plugin never got its table and retried on every admin request.
+	 */
+	public function test_schema_fits_1000_byte_key_limit() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_filter_index';
+		$probe = $wpdb->prefix . 'dsgo_query_filter_index_myisam_probe';
+
+		$sql = \DesignSetGo\Blocks\Query\FilterIndex::schema_sql();
+		$sql = str_replace( "CREATE TABLE {$table} ", "CREATE TABLE {$probe} ", $sql );
+		$sql = preg_replace( '/\)\s*([^)]*);\s*$/', ') ENGINE=MyISAM $1;', $sql );
+		$this->assertStringContainsString( 'ENGINE=MyISAM', $sql, 'Test setup: engine clause was not injected.' );
+
+		$wpdb->query( "DROP TABLE IF EXISTS {$probe}" );
+		$wpdb->last_error = '';
+		$result = $wpdb->query( $sql );
+		$error  = $wpdb->last_error;
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $probe ) ) === $probe;
+		$wpdb->query( "DROP TABLE IF EXISTS {$probe}" );
+
+		$this->assertNotFalse( $result, "CREATE TABLE under MyISAM failed: {$error}" );
+		$this->assertSame( '', $error );
+		$this->assertTrue( $exists );
+	}
+
+	public function test_install_returns_false_when_table_cannot_be_created() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'dsgo_query_filter_index';
+		$wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+		\DesignSetGo\Blocks\Query\FilterIndex::reset_table_cache();
+
+		// The core test suite rewrites CREATE TABLE to CREATE TEMPORARY TABLE
+		// on the same filter before this callback runs.
+		$break = static function ( $query ) {
+			return preg_match( '/^CREATE (TEMPORARY )?TABLE/', $query ) ? 'CREATE TABLE ( this is not valid sql' : $query;
+		};
+		add_filter( 'query', $break );
+		$wpdb->suppress_errors( true );
+		$result = \DesignSetGo\Blocks\Query\FilterIndex::install();
+		$wpdb->suppress_errors( false );
+		remove_filter( 'query', $break );
+
+		$this->assertFalse( $result );
+		$this->assertFalse( get_option( 'dsgo_query_filter_index_schema' ), 'Schema version must not be recorded for a table that does not exist.' );
+		$this->assertStringContainsString( 'SQL syntax', \DesignSetGo\Blocks\Query\FilterIndex::last_install_error(), 'The database error must be captured for the admin notice.' );
+	}
+
 	public function test_install_creates_indexes() {
 		\DesignSetGo\Blocks\Query\FilterIndex::install();
 

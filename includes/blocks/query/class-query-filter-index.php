@@ -73,6 +73,13 @@ class FilterIndex {
 	private static $table_exists = null;
 
 	/**
+	 * Database error from the last install() that failed to create the table.
+	 *
+	 * @var string
+	 */
+	private static $last_install_error = '';
+
+	/**
 	 * Returns the fully-qualified table name.
 	 *
 	 * @return string
@@ -464,26 +471,32 @@ class FilterIndex {
 	}
 
 	/**
-	 * Creates or upgrades the filter index table via dbDelta.
+	 * Returns the CREATE TABLE statement for the filter index table.
 	 *
-	 * Safe to call multiple times — dbDelta is idempotent.
+	 * Public so tests can create the table under a different storage engine
+	 * (see filter-index-test.php) without going through dbDelta.
 	 *
-	 * @return void
+	 * @return string
 	 */
-	public static function install(): void {
+	public static function schema_sql(): string {
 		global $wpdb;
 
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-		$table          = self::table_name();
-		$charset        = $wpdb->get_charset_collate();
-		$stored_schema  = (string) get_option( self::OPTION_SCHEMA, '0' );
-		$needs_truncate = self::table_exists() && version_compare( $stored_schema, '2', '<' );
+		$table   = self::table_name();
+		$charset = $wpdb->get_charset_collate();
 
 		// Note: PRIMARY KEY requires two spaces before the column name — dbDelta quirk.
 		// post_type is VARCHAR(40) to match WP's wp_posts.post_type column width.
 		// Empty string for non-post object_types (users/terms in v2.4+).
-		$sql = "CREATE TABLE {$table} (
+		//
+		// The composite keys use 80-character prefixes on filter_key /
+		// filter_value. Under utf8mb4 (4 bytes per character) the unprefixed
+		// keys were 1520 and 1680 bytes, over MyISAM's 1000-byte limit, so
+		// hosts whose default storage engine is MyISAM rejected the whole
+		// CREATE TABLE with error 1071 (#551). Prefixed: 644 and 805 bytes.
+		// Lookups are equality / IN matches, which prefix indexes serve.
+		// dbDelta compares existing indexes ignoring prefixes, so tables
+		// that installed before this change are left as they are.
+		return "CREATE TABLE {$table} (
 	id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 	object_id BIGINT UNSIGNED NOT NULL,
 	object_type VARCHAR(20) NOT NULL,
@@ -492,12 +505,55 @@ class FilterIndex {
 	filter_value VARCHAR(190) NOT NULL,
 	indexed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY  (id),
-	KEY filter_key_value (filter_key, filter_value),
-	KEY filter_scope (post_type, filter_key, filter_value),
+	KEY filter_key_value (filter_key(80), filter_value(80)),
+	KEY filter_scope (post_type, filter_key(80), filter_value(80)),
 	KEY object_lookup (object_type, object_id)
 ) {$charset};";
+	}
 
-		dbDelta( $sql );
+	/**
+	 * Returns the database error from the last failed install(), or ''.
+	 *
+	 * @return string
+	 */
+	public static function last_install_error(): string {
+		return self::$last_install_error;
+	}
+
+	/**
+	 * Creates or upgrades the filter index table via dbDelta.
+	 *
+	 * Safe to call multiple times — dbDelta is idempotent.
+	 *
+	 * @return bool True when the table exists after the call.
+	 */
+	public static function install(): bool {
+		global $wpdb;
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+		$table          = self::table_name();
+		$stored_schema  = (string) get_option( self::OPTION_SCHEMA, '0' );
+		$needs_truncate = self::table_exists() && version_compare( $stored_schema, '2', '<' );
+
+		$wpdb->last_error = '';
+		dbDelta( self::schema_sql() );
+		// Snapshot now: the SHOW TABLES below flushes $wpdb->last_error.
+		$error = (string) $wpdb->last_error;
+
+		// Reset the per-request cache so subsequent calls see the new table.
+		self::$table_exists = null;
+
+		if ( ! self::table_exists() ) {
+			// dbDelta swallows CREATE TABLE errors (it only logs them via
+			// $wpdb), so a server that rejects the schema leaves no table
+			// behind. Don't record the schema version for a table that
+			// doesn't exist.
+			self::$last_install_error = $error;
+			return false;
+		}
+
+		self::$last_install_error = '';
 
 		// On a v1 → v2 upgrade, pre-existing rows have post_type='' (dbDelta's
 		// DEFAULT fills new columns). A per-CPT count query would miss them,
@@ -510,9 +566,8 @@ class FilterIndex {
 			self::bump_counts_cache();
 		}
 
-		// Reset the per-request cache so subsequent calls see the new table.
-		self::$table_exists = null;
-
 		update_option( self::OPTION_SCHEMA, self::SCHEMA_VERSION, false );
+
+		return true;
 	}
 }

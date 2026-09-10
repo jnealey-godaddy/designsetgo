@@ -413,3 +413,21 @@ WordPress.org zip but **not** out of the public GitHub repo, so that exclusion i
 
 Audit with `git grep`, never `grep -r` — BSD `grep -r` with a trailing `--exclude-dir` silently
 searched nothing here and reported a false all-clear.
+
+### Custom-table keys must fit MyISAM's 1000-byte limit (agent: issue-551-filter-index-2026-09-10)
+
+`dsgo_query_filter_index` shipped composite keys over full `VARCHAR(190)` utf8mb4 columns
+(1520 / 1680 bytes). InnoDB accepts that (3072-byte composite limit, 767 per column), so every
+dev and CI environment was green, but a host whose default engine is MyISAM rejects the whole
+`CREATE TABLE` with error 1071. Budget composite keys at 4 bytes per character and keep them
+under 1000 bytes. Use column prefixes (`filter_key(80)`) when the lookups are equality/`IN`.
+`FilterIndex::schema_sql()` exists so a test can create the table under `ENGINE=MyISAM`.
+
+dbDelta compares existing indexes *ignoring* prefix lengths, so changing a prefix never
+migrates an installed table. A real key change needs an explicit `ALTER`.
+
+`Core\SchemaUpgrader` owns the `designsetgo_db_version` gate. A failed install records
+`designsetgo_db_upgrade_failure` and backs off a day (immediately after a plugin update), so
+a rejected schema no longer re-runs dbDelta on every `admin_init`. In PHPUnit, break a
+CREATE with the `query` filter, and match `CREATE TEMPORARY TABLE` too, because the core test
+suite rewrites CREATE to TEMPORARY on that same filter first.
