@@ -95,6 +95,17 @@ import { createElement, RawHTML } from '@wordpress/element';
 // extension list imported here — check that block's real pattern usage first.
 // eslint-disable-next-line import/no-unresolved
 import '../src/extensions/block-animations';
+// The ability-generated markup fixture also covers the save-time extensions
+// the server inserter mirrors (expanding background, SVG patterns, text
+// reveal). Each entry point registers the extension attributes and the
+// `blocks.getSaveContent.extraProps` filter, both of which save() needs to
+// emit the same root attributes the server writes.
+// eslint-disable-next-line import/no-unresolved
+import '../src/extensions/expanding-background';
+// eslint-disable-next-line import/no-unresolved
+import '../src/extensions/svg-patterns';
+// eslint-disable-next-line import/no-unresolved
+import '../src/extensions/text-reveal';
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 

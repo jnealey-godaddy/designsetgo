@@ -418,11 +418,20 @@ class Block_Inserter {
 			)
 		);
 
+		// Editor extensions (hover effects, text reveal, expanding background)
+		// add their own classes/styles/data attributes onto the SAME root
+		// element via `blocks.getSaveContent.extraProps` - the identical
+		// mechanism useBlockProps.save() uses for the `has-*` support classes
+		// above, so they are merged in the same pass.
+		$extension_props = self::get_extension_save_props( $block_name, $attributes );
+		$support_classes = array_merge( $support_classes, $extension_props['classes'] );
+
 		$declarations = array();
 		if ( ! empty( $attributes['style'] ) && is_array( $attributes['style'] ) && function_exists( 'wp_style_engine_get_styles' ) ) {
 			$engine       = wp_style_engine_get_styles( self::strip_skipped_style_groups( $block_type, $attributes['style'] ) );
 			$declarations = $engine['declarations'] ?? array();
 		}
+		$declarations = array_merge( $declarations, $extension_props['styles'] );
 
 		$processor = new \WP_HTML_Tag_Processor( $html );
 
@@ -470,6 +479,10 @@ class Block_Inserter {
 			$processor->add_class( $class_name );
 		}
 
+		foreach ( $extension_props['data'] as $data_name => $data_value ) {
+			$processor->set_attribute( $data_name, $data_value );
+		}
+
 		if ( ! empty( $declarations ) ) {
 			$existing = (string) $processor->get_attribute( 'style' );
 			$present  = array();
@@ -503,6 +516,184 @@ class Block_Inserter {
 		// WP_HTML_Tag_Processor leaves the removed attribute's separating space
 		// behind. Harmless HTML, but it is not what save() emits.
 		return $removed_style ? preg_replace( '/\s+>/', '>', $updated, 1 ) : $updated;
+	}
+
+	/**
+	 * Editor-extension save-time classes, inline style declarations, and data
+	 * attributes for a block.
+	 *
+	 * Hover effects, text reveal, expanding background, and SVG patterns are
+	 * not block supports - each is an independent extension that hooks
+	 * `blocks.getSaveContent.extraProps` directly (see their `src/extensions/*`
+	 * source). That is the SAME filter useBlockProps.save() reads to merge in
+	 * the `has-*` support classes apply_block_support_attributes() already
+	 * reproduces, so every extension's additions land on the identical root
+	 * element in the identical pass - which is why this is called from, and
+	 * merged inside, that method rather than kept separate.
+	 *
+	 * Block animations, parallax, and the SVG pattern's actual generated
+	 * image are intentionally NOT reproduced here: those inject their output
+	 * at render time via a `render_block` filter, keyed off attributes or
+	 * (for SVG patterns) the very data attribute this method writes. Nothing
+	 * here should duplicate that.
+	 *
+	 * @param string               $block_name Block name.
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return array{classes: array<int, string>, styles: array<string, string>, data: array<string, string>} Additions to merge onto the root element.
+	 */
+	private static function get_extension_save_props( string $block_name, array $attributes ): array {
+		$classes = array();
+		$styles  = array();
+		$data    = array();
+
+		// Text reveal - src/extensions/text-reveal/editor.js
+		// (addTextRevealSaveProps). Applies only to core/paragraph and
+		// core/heading (includes/extension-configs/text-reveal.php), both of
+		// which this ability can insert.
+		if ( in_array( $block_name, array( 'core/paragraph', 'core/heading' ), true )
+			&& ! empty( $attributes['dsgoTextRevealEnabled'] )
+		) {
+			$classes[] = 'has-dsgo-text-reveal';
+
+			$data['data-dsgo-text-reveal-enabled']    = 'true';
+			$data['data-dsgo-text-reveal-color']      = self::convert_color_value_to_css_var( (string) ( $attributes['dsgoTextRevealColor'] ?? '' ) );
+			$data['data-dsgo-text-reveal-split-mode'] = ! empty( $attributes['dsgoTextRevealSplitMode'] ) ? (string) $attributes['dsgoTextRevealSplitMode'] : 'word';
+			$data['data-dsgo-text-reveal-transition'] = self::js_truthy_numeric( $attributes['dsgoTextRevealTransition'] ?? null, '150' );
+
+			// Only emitted when it differs from the default 'color': content
+			// saved before this attribute existed carries none in its stored
+			// HTML, and emitting it unconditionally would fail validation on
+			// every existing text-reveal block. The frontend already falls
+			// back to 'color' when the attribute is absent.
+			$effect = isset( $attributes['dsgoTextRevealEffect'] ) ? (string) $attributes['dsgoTextRevealEffect'] : '';
+			if ( '' !== $effect && 'color' !== $effect ) {
+				$data['data-dsgo-text-reveal-effect'] = $effect;
+			}
+		}
+
+		// Expanding background - src/extensions/expanding-background/editor.js
+		// (addExpandingBackgroundSaveProps). Applies to designsetgo/section and
+		// core/group (includes/extension-configs/expanding-background.php);
+		// only the former can be inserted by this ability today (core/group is
+		// a static block absent from SERIALIZABLE_CORE_BLOCKS, so
+		// get_serialization_gap() refuses to insert it at all).
+		if ( in_array( $block_name, array( 'core/group', 'designsetgo/section' ), true )
+			&& ! empty( $attributes['dsgoExpandingBgEnabled'] )
+		) {
+			$classes[] = 'has-dsgo-expanding-background';
+
+			$raw_color   = (string) ( $attributes['dsgoExpandingBgColor'] ?? '' );
+			$style_color = self::convert_color_value_to_css_var( $raw_color );
+
+			$styles['--dsgo-expanding-bg-color'] = '' !== $style_color ? $style_color : '#e8e8e8';
+
+			$data['data-dsgo-expanding-bg-enabled']          = 'true';
+			$data['data-dsgo-expanding-bg-color']            = $style_color;
+			$data['data-dsgo-expanding-bg-initial-size']     = self::js_truthy_numeric( $attributes['dsgoExpandingBgInitialSize'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-blur']             = self::js_truthy_numeric( $attributes['dsgoExpandingBgBlur'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-speed']            = self::js_truthy_numeric( $attributes['dsgoExpandingBgSpeed'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-trigger-offset']   = self::js_truthy_numeric( $attributes['dsgoExpandingBgTriggerOffset'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-completion-point'] = self::js_truthy_numeric( $attributes['dsgoExpandingBgCompletionPoint'] ?? null, '' );
+		}
+
+		// SVG patterns - src/extensions/svg-patterns/editor.js
+		// (addSvgPatternSaveProps). Applies to designsetgo/section and
+		// core/group (includes/extension-configs/svg-patterns.php); only the
+		// former is reachable today, same as expanding background. The SVG
+		// itself is generated at render time by SVG_Pattern_Renderer from
+		// these data attributes (render_block filter, gated on
+		// `data-dsgo-svg-pattern` already being present) - only the save-time
+		// marker class and data attributes belong here.
+		if ( in_array( $block_name, array( 'core/group', 'designsetgo/section' ), true )
+			&& ! empty( $attributes['dsgoSvgPatternEnabled'] )
+		) {
+			$pattern_type = isset( $attributes['dsgoSvgPatternType'] ) ? (string) $attributes['dsgoSvgPatternType'] : '';
+			$is_inherit   = 'inherit' === $pattern_type;
+
+			$known_patterns = function_exists( 'designsetgo_get_svg_pattern_data' ) ? \designsetgo_get_svg_pattern_data() : array();
+			$is_known       = is_array( $known_patterns ) && isset( $known_patterns[ $pattern_type ] );
+
+			if ( '' !== $pattern_type && ( $is_inherit || $is_known ) ) {
+				$classes[] = 'has-dsgo-svg-pattern';
+
+				if ( $is_inherit ) {
+					$data['data-dsgo-svg-pattern'] = 'inherit';
+				} else {
+					$safe_opacity = is_numeric( $attributes['dsgoSvgPatternOpacity'] ?? null ) ? (float) $attributes['dsgoSvgPatternOpacity'] : 0.4;
+					$safe_scale   = is_numeric( $attributes['dsgoSvgPatternScale'] ?? null ) ? (float) $attributes['dsgoSvgPatternScale'] : 1.0;
+
+					$data['data-dsgo-svg-pattern'] = $pattern_type;
+
+					// Omitted entirely when unset (the server-side renderer
+					// falls back to its own default color), mirroring React's
+					// omission of a prop whose value is `undefined` - as
+					// opposed to the expanding-background data attributes
+					// above, which fall back to an emitted empty string.
+					$pattern_color = self::convert_color_value_to_css_var( (string) ( $attributes['dsgoSvgPatternColor'] ?? '' ) );
+					if ( '' !== $pattern_color ) {
+						$data['data-dsgo-svg-pattern-color'] = $pattern_color;
+					}
+
+					$data['data-dsgo-svg-pattern-opacity'] = self::format_js_number( $safe_opacity );
+					$data['data-dsgo-svg-pattern-scale']   = self::format_js_number( $safe_scale );
+				}
+			}
+		}
+
+		// Hover effects - src/extensions/hover-effects/index.js
+		// (addHoverEffectSaveProps). Applies to ten core blocks
+		// (src/extensions/hover-effects/constants.js SUPPORTED_BLOCKS), none
+		// of which are designsetgo/* or in SERIALIZABLE_CORE_BLOCKS - this
+		// extension has no config file in includes/extension-configs/ at all,
+		// so its attribute is never even registered server-side. This
+		// ability cannot currently insert any block the extension reaches.
+		// Kept generic and keyed off the real block list so it activates the
+		// day inserter coverage for one of them lands, without needing to be
+		// revisited.
+		$hover_effect_blocks = array(
+			'core/group',
+			'core/cover',
+			'core/column',
+			'core/columns',
+			'core/image',
+			'core/button',
+			'core/buttons',
+			'core/media-text',
+			'core/post-template',
+			'core/query',
+		);
+		$hover_effect_values = array( 'lift', 'sink', 'grow', 'shrink', 'tilt', 'glow' );
+
+		if ( in_array( $block_name, $hover_effect_blocks, true ) ) {
+			$effect = isset( $attributes['dsgoHoverEffect'] ) ? (string) $attributes['dsgoHoverEffect'] : '';
+			if ( in_array( $effect, $hover_effect_values, true ) ) {
+				$classes[] = 'dsgo-hover-effect';
+				$classes[] = 'dsgo-hover-effect--' . $effect;
+			}
+		}
+
+		return array(
+			'classes' => $classes,
+			'styles'  => $styles,
+			'data'    => $data,
+		);
+	}
+
+	/**
+	 * Mirror JavaScript's `value || fallback` for a numeric attribute
+	 * rendered into a data-attribute string, where 0 is falsy exactly as it
+	 * is in JS (and so, unlike a plain empty/absent check, falls back too).
+	 *
+	 * @param mixed  $value    Attribute value.
+	 * @param string $fallback Fallback string used when $value is falsy.
+	 * @return string Rendered attribute value.
+	 */
+	private static function js_truthy_numeric( $value, string $fallback ): string {
+		if ( is_numeric( $value ) && 0.0 !== (float) $value ) {
+			return self::format_js_number( (float) $value );
+		}
+
+		return $fallback;
 	}
 
 	/**
@@ -1340,6 +1531,16 @@ class Block_Inserter {
 					$outer_class_parts[] = 'dsgo-no-width-constraint';
 				}
 
+				// Shape dividers — mirrors src/blocks/section/save.js plus
+				// ShapeDivider.js and utils/shape-dividers.js exactly. The
+				// shape itself is CSS mask-image, not inline SVG, so only
+				// marker classes and CSS custom properties are emitted.
+				$shape_top    = isset( $attributes['shapeDividerTop'] ) && is_string( $attributes['shapeDividerTop'] ) ? $attributes['shapeDividerTop'] : '';
+				$shape_bottom = isset( $attributes['shapeDividerBottom'] ) && is_string( $attributes['shapeDividerBottom'] ) ? $attributes['shapeDividerBottom'] : '';
+				if ( '' !== $shape_top || '' !== $shape_bottom ) {
+					$outer_class_parts[] = 'dsgo-stack--has-shape-divider';
+				}
+
 				// Process block support styles (colors, padding, etc.).
 				$style             = isset( $attributes['style'] ) ? $attributes['style'] : array();
 				$support_result    = self::get_block_support_styles( $style );
@@ -1357,13 +1558,47 @@ class Block_Inserter {
 					$support_result['styles']
 				);
 
-				// Match Section save(): only constrained sections carry an inner measure.
-				$max_width   = $content_width ? $content_width : 'var(--wp--style--global--content-size, 1140px)';
-				$inner_style = $constrain_width ? ' style="max-width:' . esc_attr( $max_width ) . ';margin-left:auto;margin-right:auto"' : '';
+				// Shape divider content-clearance: expose the divider's
+				// RENDERED height on the wrapper so the stylesheet fallback
+				// reserves inner padding that matches what the divider
+				// paints. Omitted when an explicit spacing override is set
+				// (its inline padding wins below) or when the height is
+				// unset (the divider then inherits the theme.json height
+				// token, and the stylesheet resolves clearance from that
+				// same token). Must match save.js exactly.
+				$shape_top_height    = self::normalize_shape_size( $attributes['shapeDividerTopHeight'] ?? null, 10, 500 );
+				$shape_bottom_height = self::normalize_shape_size( $attributes['shapeDividerBottomHeight'] ?? null, 10, 500 );
+				if ( '' !== $shape_top && empty( $attributes['shapeDividerTopSpacing'] ) && null !== $shape_top_height ) {
+					$outer_styles[] = '--dsgo-shape-clearance-top:' . self::format_js_number( $shape_top_height ) . 'px';
+				}
+				if ( '' !== $shape_bottom && empty( $attributes['shapeDividerBottomSpacing'] ) && null !== $shape_bottom_height ) {
+					$outer_styles[] = '--dsgo-shape-clearance-bottom:' . self::format_js_number( $shape_bottom_height ) . 'px';
+				}
+
+				// Match Section save(): only constrained sections carry an
+				// inner measure, but a shape-divider content-clearance
+				// spacing override is independent of the width constraint
+				// and carries its own padding declaration either way.
+				$max_width         = $content_width ? $content_width : 'var(--wp--style--global--content-size, 1140px)';
+				$inner_style_parts = array();
+				if ( $constrain_width ) {
+					$inner_style_parts[] = 'max-width:' . $max_width;
+					$inner_style_parts[] = 'margin-left:auto';
+					$inner_style_parts[] = 'margin-right:auto';
+				}
+				if ( '' !== $shape_top && ! empty( $attributes['shapeDividerTopSpacing'] ) && is_string( $attributes['shapeDividerTopSpacing'] ) ) {
+					$inner_style_parts[] = 'padding-top:' . self::wp_shorthand_to_css_var( $attributes['shapeDividerTopSpacing'] );
+				}
+				if ( '' !== $shape_bottom && ! empty( $attributes['shapeDividerBottomSpacing'] ) && is_string( $attributes['shapeDividerBottomSpacing'] ) ) {
+					$inner_style_parts[] = 'padding-bottom:' . self::wp_shorthand_to_css_var( $attributes['shapeDividerBottomSpacing'] );
+				}
+				$inner_style = empty( $inner_style_parts ) ? '' : ' style="' . esc_attr( implode( ';', $inner_style_parts ) ) . '"';
 
 				return array(
-					'opening' => '<' . esc_attr( $tag_name ) . ' class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' . esc_attr( implode( ';', $outer_styles ) ) . '"><div class="dsgo-stack__inner"' . $inner_style . '>',
-					'closing' => '</div></' . esc_attr( $tag_name ) . '>',
+					'opening' => '<' . esc_attr( $tag_name ) . ' class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' . esc_attr( implode( ';', $outer_styles ) ) . '">' .
+						self::render_shape_divider( $attributes, 'shapeDividerTop', 'top' ) .
+						'<div class="dsgo-stack__inner"' . $inner_style . '>',
+					'closing' => '</div>' . self::render_shape_divider( $attributes, 'shapeDividerBottom', 'bottom' ) . '</' . esc_attr( $tag_name ) . '>',
 				);
 
 			case 'designsetgo/hotspot':
@@ -1713,8 +1948,8 @@ class Block_Inserter {
 					: '';
 
 				if ( '' !== $item_safe_url ) {
-					$link_rel  = '_blank' === $item_link_targ ? ' rel="noopener noreferrer"' : '';
-					$open_link = '<a href="' . esc_url( $item_safe_url ) . '" target="' . esc_attr( $item_link_targ ) . '"' . $link_rel .
+					$link_rel   = '_blank' === $item_link_targ ? ' rel="noopener noreferrer"' : '';
+					$open_link  = '<a href="' . esc_url( $item_safe_url ) . '" target="' . esc_attr( $item_link_targ ) . '"' . $link_rel .
 						' class="dsgo-timeline-item__link">';
 					$close_link = '</a>';
 				} else {
@@ -1820,8 +2055,8 @@ class Block_Inserter {
 				if ( ! in_array( (int) $heading_level, array( 1, 2, 3, 4, 5, 6 ), true ) ) {
 					$heading_level = 2;
 				}
-				$heading_tag   = 'h' . (int) $heading_level;
-				$text_align    = isset( $attributes['textAlign'] ) ? (string) $attributes['textAlign'] : '';
+				$heading_tag = 'h' . (int) $heading_level;
+				$text_align  = isset( $attributes['textAlign'] ) ? (string) $attributes['textAlign'] : '';
 
 				$class_parts   = array( 'wp-block-designsetgo-advanced-heading' );
 				$heading_align = self::align_class( $block_name, $attributes );
@@ -2240,17 +2475,17 @@ class Block_Inserter {
 				}
 
 				// Attribute defaults replace the entire style object, never deep-merge.
-				$style = $attributes['style'] ?? ( Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? array() );
+				$style          = $attributes['style'] ?? ( Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? array() );
 				$support_styles = self::get_block_support_styles( $style )['styles'];
 
 				// Inner div styles with gap.
-				$inner_styles = array(
+				$inner_styles       = array(
 					'display:flex',
 					'justify-content:' . esc_attr( $justify_content ),
 					'flex-wrap:' . esc_attr( $flex_wrap ),
 				);
 				$vertical_alignment = $layout['verticalAlignment'] ?? '';
-				$align_map = array(
+				$align_map          = array(
 					'top'           => 'flex-start',
 					'center'        => 'center',
 					'bottom'        => 'flex-end',
@@ -2309,21 +2544,21 @@ class Block_Inserter {
 				}
 
 				// Attribute defaults replace the entire style object, never deep-merge.
-				$style = $attributes['style'] ?? ( Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? array() );
+				$style          = $attributes['style'] ?? ( Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? array() );
 				$support_styles = self::get_block_support_styles( $style )['styles'];
 
 				// Inner div styles.
-				$default_gap = 'var(--wp--preset--spacing--50)';
-				$block_gap = $style['spacing']['blockGap'] ?? null;
-				$row_gap = is_array( $block_gap ) ? ( $block_gap['top'] ?? '' ) : $block_gap;
-				$column_gap = is_array( $block_gap ) ? ( $block_gap['left'] ?? '' ) : $block_gap;
-				$custom_row_gap = $attributes['rowGap'] ?? '';
+				$default_gap       = 'var(--wp--preset--spacing--50)';
+				$block_gap         = $style['spacing']['blockGap'] ?? null;
+				$row_gap           = is_array( $block_gap ) ? ( $block_gap['top'] ?? '' ) : $block_gap;
+				$column_gap        = is_array( $block_gap ) ? ( $block_gap['left'] ?? '' ) : $block_gap;
+				$custom_row_gap    = $attributes['rowGap'] ?? '';
 				$custom_column_gap = $attributes['columnGap'] ?? '';
-				$row_gap = self::spacing_gap( $row_gap ) ?? ( '' !== $custom_row_gap ? $custom_row_gap : $default_gap );
-				$column_gap = self::spacing_gap( $column_gap ) ?? ( '' !== $custom_column_gap ? $custom_column_gap : $default_gap );
-				$columns_css = 'repeat(' . $desktop_cols . ', 1fr)';
+				$row_gap           = self::spacing_gap( $row_gap ) ?? ( '' !== $custom_row_gap ? $custom_row_gap : $default_gap );
+				$column_gap        = self::spacing_gap( $column_gap ) ?? ( '' !== $custom_column_gap ? $custom_column_gap : $default_gap );
+				$columns_css       = 'repeat(' . $desktop_cols . ', 1fr)';
 				if ( ! empty( $attributes['columnMinWidth'] ) ) {
-					$share = $desktop_cols > 1 ? '(100% - ' . ( $desktop_cols - 1 ) . ' * ' . $column_gap . ') / ' . $desktop_cols : '100%';
+					$share       = $desktop_cols > 1 ? '(100% - ' . ( $desktop_cols - 1 ) . ' * ' . $column_gap . ') / ' . $desktop_cols : '100%';
 					$columns_css = 'repeat(auto-fill, minmax(min(100%, max(' . $attributes['columnMinWidth'] . ', ' . $share . ')), 1fr))';
 				}
 				$inner_styles = array(
@@ -3453,7 +3688,7 @@ class Block_Inserter {
 				}
 				// Padding is skip-serialized on the root and re-applied here.
 				// Unlike Icon Button, save.js writes the value through unchanged.
-				$trigger_styles = array_merge( $trigger_styles, self::routed_padding_styles( $attributes, false ) );
+				$trigger_styles    = array_merge( $trigger_styles, self::routed_padding_styles( $attributes, false ) );
 				$button_style_attr = empty( $trigger_styles )
 					? ''
 					: ' style="' . esc_attr( implode( ';', $trigger_styles ) ) . '"';
@@ -3610,7 +3845,7 @@ class Block_Inserter {
 				if ( isset( $attributes['overlayOpacityExpanded'] ) && is_numeric( $attributes['overlayOpacityExpanded'] ) ) {
 					$style_parts[] = '--dsgo-image-accordion-overlay-opacity-expanded:' . esc_attr( self::format_js_number( (float) $attributes['overlayOpacityExpanded'] / 100 ) );
 				}
-				$style       = implode( ';', $style_parts );
+				$style = implode( ';', $style_parts );
 
 				// Data attributes.
 				$data_attrs  = ' data-trigger-type="' . esc_attr( $trigger_type ) . '"';
@@ -3688,7 +3923,7 @@ class Block_Inserter {
 				$overlay_color = isset( $attributes['overlayColor'] ) ? $attributes['overlayColor'] : '';
 
 				// Build classes.
-				$class_parts        = array( 'wp-block-designsetgo-scroll-accordion-item', 'dsgo-scroll-accordion-item' );
+				$class_parts          = array( 'wp-block-designsetgo-scroll-accordion-item', 'dsgo-scroll-accordion-item' );
 				$accordion_item_align = self::align_class( $block_name, $attributes );
 				if ( '' !== $accordion_item_align ) {
 					$class_parts[] = $accordion_item_align;
@@ -3910,9 +4145,9 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/scroll-marquee':
-				$rows          = isset( $attributes['rows'] ) ? $attributes['rows'] : array();
-				$scroll_speed  = isset( $attributes['scrollSpeed'] ) ? floatval( $attributes['scrollSpeed'] ) : 0.5;
-				$image_height  = isset( $attributes['imageHeight'] ) ? $attributes['imageHeight'] : '200px';
+				$rows         = isset( $attributes['rows'] ) ? $attributes['rows'] : array();
+				$scroll_speed = isset( $attributes['scrollSpeed'] ) ? floatval( $attributes['scrollSpeed'] ) : 0.5;
+				$image_height = isset( $attributes['imageHeight'] ) ? $attributes['imageHeight'] : '200px';
 				// block.json defaults imageWidth to 'auto', not '300px'.
 				$image_width = isset( $attributes['imageWidth'] ) ? $attributes['imageWidth'] : 'auto';
 				$gap         = isset( $attributes['gap'] ) ? $attributes['gap'] : '20px';
@@ -3988,14 +4223,14 @@ class Block_Inserter {
 				$tab_style_parts = array( '--dsgo-tabs-gap:' . esc_attr( $gap ) );
 
 				$tab_color_vars = array(
-					'tabColor'                   => '--dsgo-tab-color',
-					'tabBackgroundColor'         => '--dsgo-tab-bg',
-					'tabContentBackgroundColor'  => '--dsgo-tab-content-bg',
-					'activeTabColor'             => '--dsgo-tab-color-active',
-					'activeTabBackgroundColor'   => '--dsgo-tab-bg-active',
-					'tabBorderColor'             => '--dsgo-tab-border-color',
-					'tabHoverColor'              => '--dsgo-tab-color-hover',
-					'tabHoverBackgroundColor'    => '--dsgo-tab-bg-hover',
+					'tabColor'                  => '--dsgo-tab-color',
+					'tabBackgroundColor'        => '--dsgo-tab-bg',
+					'tabContentBackgroundColor' => '--dsgo-tab-content-bg',
+					'activeTabColor'            => '--dsgo-tab-color-active',
+					'activeTabBackgroundColor'  => '--dsgo-tab-bg-active',
+					'tabBorderColor'            => '--dsgo-tab-border-color',
+					'tabHoverColor'             => '--dsgo-tab-color-hover',
+					'tabHoverBackgroundColor'   => '--dsgo-tab-bg-hover',
 				);
 
 				foreach ( $tab_color_vars as $attribute_name => $custom_property ) {
@@ -4961,6 +5196,142 @@ class Block_Inserter {
 	}
 
 	/**
+	 * Clamp a shape divider size attribute, mirroring normalizeShapeSize() in
+	 * src/utils/shape-size.js: anything that is not an explicit, positive,
+	 * finite size collapses to null ("inherit the theme token"); an explicit
+	 * value is clamped into range.
+	 *
+	 * @param mixed $value Raw size attribute.
+	 * @param float $min   Lower clamp bound.
+	 * @param float $max   Upper clamp bound.
+	 * @return float|null Clamped size, or null when unset.
+	 */
+	private static function normalize_shape_size( $value, float $min, float $max ): ?float {
+		if ( ! self::is_explicit_shape_size( $value ) ) {
+			return null;
+		}
+
+		return max( $min, min( $max, (float) $value ) );
+	}
+
+	/**
+	 * Sanitize a color value the way
+	 * src/blocks/section/utils/sanitize-color.js does: CSS custom properties,
+	 * hex (3/4/6/8 digit), rgb()/rgba(), hsl()/hsla() (with required `%` on
+	 * saturation/lightness), or a bare alphabetic named color. Anything else
+	 * — including a malformed value that could break out of an attribute —
+	 * is rejected.
+	 *
+	 * @param string $color Candidate color value.
+	 * @return string Sanitized value, or '' when invalid or empty.
+	 */
+	private static function sanitize_shape_color( string $color ): string {
+		$trimmed = trim( $color );
+		if ( '' === $trimmed ) {
+			return '';
+		}
+
+		$patterns = array(
+			'/^var\(--[\w-]+(?:,\s*[^)]+)?\)$/i',
+			'/^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i',
+			'/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*[\d.]+)?\s*\)$/i',
+			'/^hsla?\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*(?:,\s*[\d.]+)?\s*\)$/i',
+			'/^[a-z]+$/i',
+		);
+
+		foreach ( $patterns as $pattern ) {
+			if ( preg_match( $pattern, $trimmed ) ) {
+				return $trimmed;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Resolve a shape divider's band color — the color shown beside the
+	 * shape, through the CSS mask knockout. Mirrors
+	 * shapeDividerTopBandColor / shapeDividerBottomBandColor in save.js
+	 * (convertColorToCSSVar) followed by ShapeDivider's own sanitizeColor().
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @param string               $prefix     Attribute prefix ('shapeDividerTop' or 'shapeDividerBottom').
+	 * @return string Sanitized CSS color, or '' when unset or invalid.
+	 */
+	private static function shape_divider_band_color( array $attributes, string $prefix ): string {
+		$background = $attributes[ $prefix . 'BackgroundColor' ] ?? '';
+		if ( ! is_string( $background ) || '' === $background ) {
+			return '';
+		}
+
+		return self::sanitize_shape_color( self::convert_color_value_to_css_var( $background ) );
+	}
+
+	/**
+	 * Render a Section block's top or bottom shape divider.
+	 *
+	 * Mirrors src/blocks/section/components/ShapeDivider.js exactly: the
+	 * shape itself is painted by CSS via `mask-image` (see
+	 * src/blocks/section/styles/_shape-divider.scss), so this emits only the
+	 * marker classes and CSS custom properties the stylesheet reads — no
+	 * inline `<svg>`, and no size custom property unless the author set an
+	 * explicit value.
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @param string               $prefix     Attribute prefix ('shapeDividerTop' or 'shapeDividerBottom').
+	 * @param string               $position   'top' or 'bottom'.
+	 * @return string Divider markup, or '' when no shape is selected.
+	 */
+	private static function render_shape_divider( array $attributes, string $prefix, string $position ): string {
+		$shape = isset( $attributes[ $prefix ] ) && is_string( $attributes[ $prefix ] ) ? $attributes[ $prefix ] : '';
+		if ( '' === $shape ) {
+			return '';
+		}
+
+		$safe_height = self::normalize_shape_size( $attributes[ $prefix . 'Height' ] ?? null, 10, 500 );
+		$safe_width  = self::normalize_shape_size( $attributes[ $prefix . 'Width' ] ?? null, 100, 300 );
+		$flip_x      = ! empty( $attributes[ $prefix . 'FlipX' ] );
+		$flip_y      = ! empty( $attributes[ $prefix . 'FlipY' ] );
+		$front       = ! empty( $attributes[ $prefix . 'Front' ] );
+		$band_color  = self::shape_divider_band_color( $attributes, $prefix );
+
+		// Bottom dividers flip vertically by default: the shapes are
+		// authored with their solid edge at the bottom of the viewBox (i.e.
+		// facing the section for a TOP divider), so a bottom divider must
+		// flip to face its section. flipY inverts the per-position default.
+		$flip_y_active = ( 'bottom' === $position ) ? ! $flip_y : $flip_y;
+
+		$class_parts = array( 'dsgo-shape-divider', 'dsgo-shape-divider--' . $position, 'is-shape-' . $shape );
+		if ( $flip_x ) {
+			$class_parts[] = 'is-flip-x';
+		}
+		if ( $flip_y_active ) {
+			$class_parts[] = 'is-flip-y';
+		}
+		if ( $front ) {
+			$class_parts[] = 'is-front';
+		}
+
+		$style_parts = array();
+		if ( null !== $safe_height ) {
+			$style_parts[] = '--dsgo-shape-height:' . self::format_js_number( $safe_height ) . 'px';
+		}
+		if ( null !== $safe_width ) {
+			$style_parts[] = '--dsgo-shape-width:' . self::format_js_number( $safe_width ) . '%';
+		}
+		if ( '' !== $band_color ) {
+			$style_parts[] = '--dsgo-shape-band:' . $band_color;
+		}
+
+		// Only attach the style attribute when there is something to set, so
+		// a default divider serializes as a bare <div> with no empty
+		// style="" — matching save()'s styleProps conditional exactly.
+		$style_attr = empty( $style_parts ) ? '' : ' style="' . esc_attr( implode( ';', $style_parts ) ) . '"';
+
+		return '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $style_attr . ' aria-hidden="true"></div>';
+	}
+
+	/**
 	 * Match convertPresetToCSSVar for container gaps, including string zero.
 	 *
 	 * @param mixed $value Gap or a WordPress top/left gap object.
@@ -4968,7 +5339,7 @@ class Block_Inserter {
 	 */
 	private static function spacing_gap( $value ): ?string {
 		if ( is_array( $value ) ) {
-			$top = $value['top'] ?? null;
+			$top   = $value['top'] ?? null;
 			$value = ( null !== $top && '' !== $top && false !== $top && 0 !== $top ) ? $top : ( $value['left'] ?? null );
 		}
 		if ( null === $value || '' === $value || false === $value || 0 === $value ) {
