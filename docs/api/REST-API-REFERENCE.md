@@ -553,7 +553,7 @@ Editor live preview: renders arbitrary attributes for the block being edited. Ta
 |------|------------|-------|
 | Required | `edit_posts` | `X-WP-Nonce` |
 
-A `posts` query is limited to post types the user can see (`is_post_type_viewable()`) or edit (`403` otherwise), and the output never carries a signed refresh source — signing editor-supplied settings would let a preview mint a definition the public route then trusts.
+A query for a post type the user can neither see (`is_post_type_viewable()`) nor edit gets a `403`, and manual and relationship queries — which span post types — are narrowed to the ones the user can. The output never carries a signed refresh source: signing editor-supplied settings would let a preview mint a definition the public route then trusts.
 
 ---
 
