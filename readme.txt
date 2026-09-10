@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.3
+Stable tag: 2.7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -87,6 +87,24 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.7.4 - 2026-09-10 =
+
+* **Fix:** Dynamic Query — filters, sort, search, Load more and infinite scroll now work for visitors who aren't logged in. On 2.7.3 the request behind them required a login, so for everyone else clicking did nothing.
+* **Fix:** Dynamic Query — Load more keeps the active filters, search and sort. It used to fetch the next page of the unfiltered results and add it under the filtered ones.
+* **Fix:** Dynamic Query — accordions, counters, flip cards, maps, modals and other interactive blocks inside results added by Load more or infinite scroll now start up. Only the first page's items used to work.
+* **Fix:** Dynamic Query — the request behind filters and Load more now only renders a query the site itself put on the page, instead of whatever query settings the browser sent. Grouping by a protected custom field (one whose name starts with an underscore) no longer prints that field's values as headings, and a query on a password-protected page stays locked until the password is entered.
+* **Fix:** Dynamic Query's editor preview now requires permission to edit posts. Any logged-in account, a subscriber or a store customer included, could use it to list content that isn't public.
+* **Fix:** Dynamic Query — a user directory no longer lets visitors search or sort people by email address, matching WordPress's own rules. People who can manage users still can.
+* **Fix:** Dynamic Query filter counts update straight away when a post loses the last category, tag or field value a filter counts. The cached count used to keep including it.
+* **Fix:** Form Builder enforces required fields on the server, so a submission that skips the browser's own check is refused instead of being stored with the field empty. Submissions for a form that doesn't exist on the site are refused, and fields that aren't part of the form are ignored rather than stored. Forms on private pages and in previews no longer accept submissions.
+* **Improved:** Form Builder — one visitor's IP address can now send at most 20 submissions a minute across all forms on the site, on top of each form's own limit. Adjust it with the `designsetgo_form_global_rate_limit_count` and `designsetgo_form_global_rate_limit_window` filters.
+* **Fix:** Tabs — a Tabs block placed inside another one keeps its own panels. The outer block counted the inner block's panels as its own and showed or hid them as you switched tabs.
+* **Fix:** Scroll Accordion — an accordion removed from the page, for example when filters replace a Dynamic Query's results, stops listening for scroll and resize. It kept measuring elements that were no longer there on every scroll.
+* **Fix:** Map — an address containing quotation marks no longer sends the map to New York. The quotes reached the geocoder as stray `u0022` text, so the lookup failed and the map fell back to its default location.
+* **Improved:** Pages that don't use Grid, Row, Icon or Pill no longer carry those blocks' CSS inline in the page head.
+* **Fix:** More blocks added by an AI assistant now come out valid. A Section that isn't width-constrained no longer gets an inner max-width, Row and Grid keep their own padding and gap (including zero) instead of reverting to the defaults, Row honours vertical alignment including space-between, Grid honours a minimum column width and matched row heights, and Card keeps its border colour.
+* **New:** AI and agent tooling — a `designsetgo/get-design-context` ability returns the theme's resolved settings, global styles and block style variations, so an assistant can build with the site's own palette, fonts and spacing instead of guessing. It is read-only.
 
 = 2.7.3 - 2026-09-04 =
 
@@ -242,6 +260,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.7.4 =
+Dynamic Query filters, sort and Load more now work for visitors who aren't logged in, and Load more keeps the active filters. Closes a hole that let any logged-in account list content that isn't public. Form Builder enforces required fields and a per-visitor submission limit on the server. Also fixes nested Tabs and more blocks added by an AI assistant.
 
 = 2.7.3 =
 Fixes for blocks created through the plugin's Abilities API by an AI assistant, which could produce markup the editor flagged as invalid or silently rewrote. Also restores hover/overlay colours on Section, Row and Grid, uses the Modal's own screen-reader label, and stops Form Builder writing email notification settings into public markup.
