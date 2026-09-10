@@ -136,6 +136,10 @@ function initFormBuilder() {
 							sitekey: turnstileSiteKey,
 							theme: 'auto',
 							size: 'normal',
+							// The container sits inside the <form>, so Turnstile's default
+							// hidden cf-turnstile-response input would be submitted as a
+							// form field. The callback below already carries the token.
+							'response-field': false,
 							// Mode (managed/non-interactive/invisible) is configured in Cloudflare dashboard
 							callback: (token) => {
 								turnstileToken = token;

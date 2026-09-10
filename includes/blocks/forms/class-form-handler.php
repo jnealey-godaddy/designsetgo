@@ -100,6 +100,11 @@ class Form_Handler {
 	private Form_Security $security;
 
 	/**
+	 * Transient holding definitions for forms that live outside wp_posts.
+	 */
+	const EXTERNAL_DEFINITIONS_CACHE = 'dsgo_form_external_definitions_v1';
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -121,6 +126,10 @@ class Form_Handler {
 
 		// Invalidate cached form block attributes when posts are saved.
 		add_action( 'save_post', array( $this, 'clear_form_attributes_cache' ) );
+
+		// Forms outside wp_posts (block widgets, theme-file templates, patterns).
+		add_action( 'update_option_widget_block', array( $this, 'clear_external_form_definitions' ) );
+		add_action( 'switch_theme', array( $this, 'clear_external_form_definitions' ) );
 	}
 
 	/**
@@ -353,12 +362,14 @@ class Form_Handler {
 			$field_name           = sanitize_text_field( $field['name'] );
 			$field_value          = $field['value'];
 			$submitted_field_type = isset( $field['type'] ) ? sanitize_text_field( $field['type'] ) : 'text';
+
+			// Only fields the saved form declares are validated, stored and
+			// emailed. Anything else is dropped rather than failing the whole
+			// submission: Cloudflare Turnstile injects cf-turnstile-response
+			// inside the form, other plugins add hidden inputs of their own, and
+			// none of that is the visitor's data.
 			if ( ! isset( $form_field_types[ $field_name ] ) && ! empty( $form_field_types ) ) {
-				return new WP_Error(
-					'unknown_field',
-					__( 'This form contains an invalid field.', 'designsetgo' ),
-					array( 'status' => 400 )
-				);
+				continue;
 			}
 
 			$field_type = isset( $form_field_types[ $field_name ] ) ? $form_field_types[ $field_name ] : $submitted_field_type;
@@ -650,6 +661,16 @@ class Form_Handler {
 					return new WP_Error(
 						'invalid_phone',
 						__( 'Invalid phone number.', 'designsetgo' )
+					);
+				}
+				break;
+
+			case 'country_code':
+				// Every entry in form-phone-field/country-codes.js is "+" and 1-4 digits.
+				if ( ! is_string( $value ) || ! preg_match( '/^\+\d{1,4}$/', $value ) ) {
+					return new WP_Error(
+						'invalid_country_code',
+						__( 'Invalid country code.', 'designsetgo' )
 					);
 				}
 				break;
@@ -1170,7 +1191,9 @@ class Form_Handler {
 	 * Parsing the post once keeps the validation schema, required flags, and
 	 * submission configuration in sync. Only published posts are eligible: a
 	 * private or draft form must not become a public submission endpoint just
-	 * because its predictable ID is known.
+	 * because its predictable ID is known. Forms that never live in wp_posts —
+	 * block widgets, templates still served from theme or plugin files, and
+	 * registered patterns — are resolved from those sources instead.
 	 *
 	 * @param string $form_id Form identifier to look up.
 	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[]}|null Form definition or null.
@@ -1180,7 +1203,7 @@ class Form_Handler {
 			return null;
 		}
 
-		$cache_key = 'dsgo_form_definition_v1_' . md5( $form_id );
+		$cache_key = 'dsgo_form_definition_v2_' . md5( $form_id );
 		$cached    = get_transient( $cache_key );
 
 		if ( false !== $cached && is_array( $cached ) ) {
@@ -1205,28 +1228,137 @@ class Form_Handler {
 			)
 		);
 
-		if ( empty( $posts ) ) {
-			return null;
-		}
-
-		foreach ( $posts as $post ) {
+		foreach ( (array) $posts as $post ) {
 			$blocks     = parse_blocks( $post->post_content );
 			$form_block = $this->find_form_block( $blocks, $form_id );
 			if ( null !== $form_block ) {
-				$inner_blocks = isset( $form_block['innerBlocks'] ) ? $form_block['innerBlocks'] : array();
-				$definition   = array(
-					'attributes'      => $this->apply_form_block_defaults( $form_block['attrs'] ),
-					'field_types'     => $this->extract_field_types_from_blocks( $inner_blocks ),
-					'constraints'     => $this->extract_field_value_constraints_from_blocks( $inner_blocks ),
-					'required_fields' => $this->extract_required_field_names_from_blocks( $inner_blocks ),
-				);
+				$definition = $this->build_form_definition( $form_block );
 
 				set_transient( $cache_key, $definition, HOUR_IN_SECONDS );
 				return $definition;
 			}
 		}
 
-		return null;
+		return $this->get_external_form_definition( $form_id );
+	}
+
+	/**
+	 * Build the server-owned definition for a parsed form block.
+	 *
+	 * @param array $form_block Parsed designsetgo/form-builder block.
+	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[]} Form definition.
+	 */
+	private function build_form_definition( array $form_block ) {
+		$inner_blocks = isset( $form_block['innerBlocks'] ) ? $form_block['innerBlocks'] : array();
+
+		return array(
+			'attributes'      => $this->apply_form_block_defaults( $form_block['attrs'] ),
+			'field_types'     => $this->extract_field_types_from_blocks( $inner_blocks ),
+			'constraints'     => $this->extract_field_value_constraints_from_blocks( $inner_blocks ),
+			'required_fields' => $this->extract_required_field_names_from_blocks( $inner_blocks ),
+		);
+	}
+
+	/**
+	 * Resolve a form that lives outside wp_posts.
+	 *
+	 * Block widgets, templates and template parts still served from theme or
+	 * plugin files, and registered patterns (which templates pull in with
+	 * wp:pattern) never appear in wp_posts. All of them are site-owner
+	 * content. The index is built once and cached, so an unknown form ID costs
+	 * a transient read here rather than a rescan of every template and pattern.
+	 *
+	 * @param string $form_id Form identifier to look up.
+	 * @return array|null Form definition, or null when no such form exists.
+	 */
+	private function get_external_form_definition( $form_id ) {
+		$definitions = get_transient( self::EXTERNAL_DEFINITIONS_CACHE );
+
+		if ( ! is_array( $definitions ) ) {
+			$definitions = array();
+			foreach ( $this->get_external_block_content() as $content ) {
+				if ( ! is_string( $content ) || false === strpos( $content, 'designsetgo/form-builder' ) ) {
+					continue;
+				}
+				foreach ( $this->find_form_blocks( parse_blocks( $content ) ) as $form_block ) {
+					$id = (string) $form_block['attrs']['formId'];
+					if ( ! isset( $definitions[ $id ] ) ) {
+						$definitions[ $id ] = $this->build_form_definition( $form_block );
+					}
+				}
+			}
+			set_transient( self::EXTERNAL_DEFINITIONS_CACHE, $definitions, HOUR_IN_SECONDS );
+		}
+
+		return isset( $definitions[ $form_id ] ) ? $definitions[ $form_id ] : null;
+	}
+
+	/**
+	 * Collect block content that isn't stored as a post.
+	 *
+	 * @return string[] Serialized block content.
+	 */
+	private function get_external_block_content() {
+		$contents = array();
+
+		foreach ( (array) get_option( 'widget_block', array() ) as $widget ) {
+			if ( is_array( $widget ) && isset( $widget['content'] ) ) {
+				$contents[] = $widget['content'];
+			}
+		}
+
+		if ( function_exists( 'get_block_templates' ) ) {
+			foreach ( array( 'wp_template', 'wp_template_part' ) as $template_type ) {
+				foreach ( get_block_templates( array(), $template_type ) as $template ) {
+					$contents[] = $template->content;
+				}
+			}
+		}
+
+		foreach ( \WP_Block_Patterns_Registry::get_instance()->get_all_registered() as $pattern ) {
+			if ( isset( $pattern['content'] ) ) {
+				$contents[] = $pattern['content'];
+			}
+		}
+
+		return $contents;
+	}
+
+	/**
+	 * Recursively collect every form block that carries a form ID.
+	 *
+	 * @param array $blocks Parsed blocks.
+	 * @return array[] Parsed designsetgo/form-builder blocks.
+	 */
+	private function find_form_blocks( $blocks ) {
+		$forms = array();
+
+		foreach ( $blocks as $block ) {
+			if (
+				'designsetgo/form-builder' === $block['blockName'] &&
+				isset( $block['attrs']['formId'] ) &&
+				is_string( $block['attrs']['formId'] ) &&
+				'' !== $block['attrs']['formId']
+			) {
+				$forms[] = $block;
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$forms = array_merge( $forms, $this->find_form_blocks( $block['innerBlocks'] ) );
+			}
+		}
+
+		return $forms;
+	}
+
+	/**
+	 * Drop the cached index of forms outside wp_posts.
+	 *
+	 * Hooked to widget and theme changes; template edits are covered by
+	 * clear_form_attributes_cache().
+	 */
+	public function clear_external_form_definitions() {
+		delete_transient( self::EXTERNAL_DEFINITIONS_CACHE );
 	}
 
 	/**
@@ -1397,6 +1529,15 @@ class Form_Handler {
 
 			if ( $field_name && $field_type ) {
 				$field_types[ $field_name ] = $field_type;
+
+				// form-phone-field renders a companion <select name="{name}_country_code">
+				// unless showCountryCode is turned off (block.json default: on).
+				if (
+					'designsetgo/form-phone-field' === $block_name &&
+					( ! isset( $block['attrs']['showCountryCode'] ) || ! empty( $block['attrs']['showCountryCode'] ) )
+				) {
+					$field_types[ $field_name . '_country_code' ] = 'country_code';
+				}
 			}
 
 			if ( ! empty( $block['innerBlocks'] ) ) {
@@ -1465,6 +1606,9 @@ class Form_Handler {
 	 */
 	public function clear_form_attributes_cache( $post_id ) {
 		$post = get_post( $post_id );
+		if ( $post && in_array( $post->post_type, array( 'wp_template', 'wp_template_part' ), true ) ) {
+			$this->clear_external_form_definitions();
+		}
 		if ( ! $post || false === strpos( $post->post_content, 'designsetgo/form-builder' ) ) {
 			return;
 		}
@@ -1484,7 +1628,7 @@ class Form_Handler {
 				'designsetgo/form-builder' === $block['blockName'] &&
 				isset( $block['attrs']['formId'] )
 			) {
-				delete_transient( 'dsgo_form_definition_v1_' . md5( $block['attrs']['formId'] ) );
+				delete_transient( 'dsgo_form_definition_v2_' . md5( $block['attrs']['formId'] ) );
 				delete_transient( 'dsgo_form_attrs_v2_' . md5( $block['attrs']['formId'] ) );
 				delete_transient( 'dsgo_form_field_types_' . md5( $block['attrs']['formId'] ) );
 				delete_transient( 'dsgo_form_field_constraints_' . md5( $block['attrs']['formId'] ) );

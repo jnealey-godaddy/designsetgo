@@ -659,24 +659,26 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		);
 
 		$this->assertNotWPError( $post_id );
-		delete_transient( 'dsgo_form_definition_v1_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_definition_v2_' . md5( $form_id ) );
 
 		$form_definition = $this->call_private_method( 'get_form_definition', array( $form_id ) );
 		$this->assertIsArray( $form_definition );
 		$field_types = $form_definition['field_types'];
 
+		// A default Phone field also renders a {name}_country_code select.
 		$this->assertEquals(
 			array(
-				'email'   => 'email',
-				'message' => 'textarea',
-				'phone'   => 'tel',
-				'consent' => 'checkbox',
+				'email'              => 'email',
+				'message'            => 'textarea',
+				'phone'              => 'tel',
+				'phone_country_code' => 'country_code',
+				'consent'            => 'checkbox',
 			),
 			$field_types
 		);
 
 		wp_delete_post( $post_id, true );
-		delete_transient( 'dsgo_form_definition_v1_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_definition_v2_' . md5( $form_id ) );
 	}
 
 	/**
@@ -775,7 +777,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		);
 
 		$this->assertNotWPError( $post_id );
-		delete_transient( 'dsgo_form_definition_v1_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_definition_v2_' . md5( $form_id ) );
 
 		$form_definition = $this->call_private_method( 'get_form_definition', array( $form_id ) );
 		$this->assertIsArray( $form_definition );
@@ -793,7 +795,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'name', $constraints );
 
 		wp_delete_post( $post_id, true );
-		delete_transient( 'dsgo_form_definition_v1_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_definition_v2_' . md5( $form_id ) );
 	}
 
 	/**
