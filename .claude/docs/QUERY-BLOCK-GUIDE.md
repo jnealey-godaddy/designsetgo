@@ -66,7 +66,7 @@ Siblings use `queryId` to stamp their output HTML with `data-dsgo-query-id` so t
 
 **When to set it manually:** if you need two queries on one page that should share a filter (unusual), set both blocks to the same `queryId`. Otherwise leave it auto-generated.
 
-**Frontend data contract:** the block's outer wrapper carries `data-dsgo-query-id="{queryId}"`. A hidden sibling `<div data-dsgo-blobs-for="{queryId}">` holds two `<script>` tags with the serialized `attributes` and `innerBlocks` JSON blobs; the IAPI load-more and filter actions read them to reconstruct REST request payloads without re-parsing the editor HTML.
+**Frontend data contract:** the block's outer wrapper carries `data-dsgo-query-id="{queryId}"`. A hidden `<div data-dsgo-blobs-for="{queryId}">` inside the region carries the query's **signed refresh source**: `data-dsgo-refresh-source` (base64 JSON of the attributes, serialized inner blocks, and the post whose content holds the query) and `data-dsgo-signature` (an HMAC keyed to the site's `AUTH_SALT`). The IAPI load-more and filter actions send the pair back verbatim; the REST route renders only a definition whose signature verifies. It's base64 in an attribute, not JSON in a `<script>`, because it passes through `the_content`, and filters there (`capital_P_dangit()`, for one) rewrite script text — which would break the signature.
 
 ---
 
@@ -287,8 +287,8 @@ The variation is selected via the `paginationKind` attribute (`numbered` vs `loa
 
 Renders a button. On click the Interactivity API `loadMore` action fires:
 
-1. Reads the blobs (attributes + innerBlocks JSON) from `[data-dsgo-blobs-for]`.
-2. `POST`s to `designsetgo/v1/query/render` with `page = currentPage + 1`.
+1. Reads the signed refresh source from `[data-dsgo-blobs-for]`.
+2. `POST`s it to `designsetgo/v1/query/render` with `page = currentPage + 1`.
 3. Parses the returned HTML and appends `.dsgo-query__item` nodes to the container.
 4. Moves focus to the first newly-appended item (or its first naturally-focusable child).
 5. Hides the button once `nextPage >= totalPages`.
@@ -322,9 +322,9 @@ store( 'designsetgo/query', {
 
 All filter actions call the internal `dsgoQueryRefresh()` generator which:
 
-1. Reads blobs from `[data-dsgo-blobs-for]`.
+1. Reads the signed refresh source from `[data-dsgo-blobs-for]`.
 2. Collects `filter_*`, `q`, `sort` params from the new URL.
-3. `POST`s to `designsetgo/v1/query/render` with `page: 1`.
+3. `POST`s to `designsetgo/v1/query/render` with `page: 1`. If there is no source to send, or the server refuses it (a cached page whose signature predates a salt change, say), it loads the filtered URL instead — first paint reads the same params from `$_GET`.
 4. Replaces the list `innerHTML` with the server response.
 5. Updates the browser URL via `history.replaceState`.
 
@@ -353,17 +353,20 @@ store( 'designsetgo/query', {
 POST /wp-json/designsetgo/v1/query/render
 ```
 
-**Authentication:** requires a logged-in user with the `read` capability + a valid `X-WP-Nonce` header (`wp_rest` action).
+**Authentication:** public. The request carries the signed refresh source the page's first paint embedded, and the route renders only a definition whose signature verifies — it never renders settings the caller supplies. A query placed in a post's content is further limited to people who can see that post (published and not password-protected, or `read_post`). Logged-in users send `X-WP-Nonce` so the route knows who they are; visitors send none, because a stale nonce on a cached page is rejected by core before the route runs.
 
 **Request body (JSON):**
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `queryId` | string | yes | The block's queryId attribute |
-| `attributes` | object | yes | Full block attributes object |
+| `source` | string | yes | `data-dsgo-refresh-source` from the region, verbatim |
+| `signature` | string | yes | `data-dsgo-signature` from the region, verbatim |
 | `page` | integer | no (default 1) | Page number to render |
-| `innerBlocks` | string | no | Serialized innerBlocks HTML |
 | `params` | object | no | URL params (`q`, `sort`, `filter_*`) |
+| `currentUrl` | string | no | Page URL, for chip/reset links |
+
+The editor preview uses `POST /wp-json/designsetgo/v1/query/render-preview` instead, which takes `attributes` + `innerBlocks` directly, requires `edit_posts` + nonce, only renders post types the user can see or edit, and never emits a signed source.
 
 **Response (JSON):**
 

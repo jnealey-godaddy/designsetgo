@@ -31,6 +31,10 @@ class Design_Context_Ability_Test extends WP_UnitTestCase {
 
 	/** The registered contract is read-only and rejects unexpected input. */
 	public function test_registered_ability_is_read_only_and_accepts_no_parameters(): void {
+		if ( ! function_exists( 'wp_get_ability' ) ) {
+			$this->markTestSkipped( 'Abilities API requires WordPress 6.9+.' );
+		}
+
 		$ability = wp_get_ability( 'designsetgo/get-design-context' );
 		$this->assertNotNull( $ability );
 		$this->assertTrue( $ability->get_meta_item( 'show_in_rest' ) );

@@ -36,7 +36,14 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 		if ( '' !== $search ) {
 			// Wildcard search like WP_User_Query default.
 			$args['search']         = '*' . $search . '*';
-			$args['search_columns'] = array( 'user_login', 'user_email', 'user_nicename', 'display_name' );
+			$args['search_columns'] = array( 'user_login', 'user_nicename', 'display_name' );
+			// Match core's users endpoint: email is searchable only by people who
+			// can list users. Anyone else — every visitor to a public directory
+			// with a search box — could otherwise test whether an address belongs
+			// to an account.
+			if ( current_user_can( 'list_users' ) ) {
+				$args['search_columns'][] = 'user_email';
+			}
 		}
 
 		/** This filter is documented in src/blocks/query/render-posts.php */
@@ -98,6 +105,11 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 			return 'user_registered';
 		}
 		if ( 'title' === $orderby ) {
+			return 'display_name';
+		}
+		// Match core's users endpoint: sorting by email needs list_users, or the
+		// order leaks addresses to anyone who can register and see where they land.
+		if ( in_array( $orderby, array( 'email', 'user_email' ), true ) && ! current_user_can( 'list_users' ) ) {
 			return 'display_name';
 		}
 		return in_array( $orderby, $allowed, true ) ? $orderby : 'user_registered';

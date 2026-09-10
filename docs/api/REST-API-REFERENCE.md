@@ -494,26 +494,28 @@ Server-side rendering, editor preview, and filter-index management for the `desi
 
 **Source**: `includes/blocks/class-query.php`, `includes/blocks/class-query-template-controller.php`
 
-All write endpoints require an `X-WP-Nonce` header with a valid `wp_rest` nonce. The `/query/render` and `/query/preview` routes are editor-facing (require `read` / `edit_posts`); all filter-index and template routes require `manage_options` or `edit_post` as noted per endpoint.
+All write endpoints require an `X-WP-Nonce` header with a valid `wp_rest` nonce, except the public `/query/render` refresh route, which is authorised by a signed source instead. The `/query/render-preview` and `/query/preview` routes are editor-facing (require `edit_posts`); all filter-index and template routes require `manage_options` or `edit_post` as noted per endpoint.
 
 ---
 
 ### POST `/query/render`
 
-Server-side render of a Dynamic Query block, used by the editor live-preview path for users and terms (posts use `useEntityRecords` on the client).
+Public refresh of a Dynamic Query block already on a page — Load more, infinite scroll, filters, sort and search call it from the front end.
 
 | Auth | Capability | Nonce |
 |------|------------|-------|
-| Required | `read` | `X-WP-Nonce` |
+| Signed source | — | Logged-in users only |
+
+The request carries the signed refresh source the page's first paint embedded in `[data-dsgo-blobs-for]`. The route renders only a definition whose HMAC signature verifies (`403` otherwise) and never renders settings the caller supplies. A query placed in a post's content is further limited to people who can see that post (`404` otherwise). Visitors send no `X-WP-Nonce`: core rejects a stale one with `rest_cookie_invalid_nonce` before the route runs, and cached pages outlive their nonce.
 
 **Body Parameters**
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `queryId` | `string` | Yes | Block's unique query identifier (e.g. `q-a3f2c1b4d9`). |
-| `attributes` | `object` | Yes | Full block attributes object (source, perPage, taxQuery, etc.). |
+| `source` | `string` | Yes | The region's `data-dsgo-refresh-source` value, verbatim. |
+| `signature` | `string` | Yes | The region's `data-dsgo-signature` value, verbatim. |
 | `page` | `integer` | No | Page number (default `1`). |
-| `innerBlocks` | `string` | No | Serialized block-comment markup of inner blocks (item template + siblings). |
 | `params` | `object` | No | Active filter/sort state: keys from `designsetgo_query_url_params` allowlist and any `filter_<taxonomy>` keys. |
 | `currentUrl` | `string` | No | Canonical page URL used to build chip/reset links in the no-JS fallback. |
 
@@ -531,15 +533,27 @@ Server-side render of a Dynamic Query block, used by the editor live-preview pat
 
 ```bash
 curl -X POST "https://example.com/wp-json/designsetgo/v1/query/render" \
-  -H "X-WP-Nonce: $(wp eval 'echo wp_create_nonce("wp_rest");')" \
   -H "Content-Type: application/json" \
   -d '{
     "queryId": "q-a3f2c1b4d9",
-    "attributes": { "source": "posts", "postType": "post", "perPage": 6 },
-    "page": 1,
+    "source": "<data-dsgo-refresh-source from the page>",
+    "signature": "<data-dsgo-signature from the page>",
+    "page": 2,
     "params": { "filter_category": "news" }
   }'
 ```
+
+---
+
+### POST `/query/render-preview`
+
+Editor live preview: renders arbitrary attributes for the block being edited. Takes the same `queryId`, `page`, `params` and `currentUrl` as `/query/render`, plus `attributes` (object, required) and `innerBlocks` (serialized inner blocks) in place of the signed source.
+
+| Auth | Capability | Nonce |
+|------|------------|-------|
+| Required | `edit_posts` | `X-WP-Nonce` |
+
+A query for a post type the user can neither see (`is_post_type_viewable()`) nor edit gets a `403`, and manual and relationship queries — which span post types — are narrowed to the ones the user can. The output never carries a signed refresh source: signing editor-supplied settings would let a preview mint a definition the public route then trusts.
 
 ---
 
@@ -805,7 +819,8 @@ See [MARKDOWN-CONTENT-NEGOTIATION.md](MARKDOWN-CONTENT-NEGOTIATION.md) for full 
 | GET | `/revisions/render/{revision_id}` | `edit_post` | `class-revision-rest-api.php` (**removed 2.1.0**) |
 | GET | `/revisions/diff/{from_id}/{to_id}` | `edit_post` | `class-revision-rest-api.php` (**removed 2.1.0**) |
 | POST | `/revisions/restore/{revision_id}` | `edit_post` | `class-revision-rest-api.php` (**removed 2.1.0**) |
-| POST | `/query/render` | `read` + nonce | `class-query.php` |
+| POST | `/query/render` | public, signed source | `class-query.php` |
+| POST | `/query/render-preview` | `edit_posts` + nonce | `class-query.php` |
 | GET | `/query/preview` | `edit_posts` + nonce | `class-query.php` |
 | POST | `/query/filter-register` | `manage_options` + nonce | `class-query.php` |
 | GET | `/query/filter-status` | `manage_options` | `class-query.php` |

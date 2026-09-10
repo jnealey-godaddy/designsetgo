@@ -25,6 +25,8 @@ import {
 	markHandledEvent,
 	isHandledEvent,
 	resetHandledEvents,
+	readRefreshSource,
+	buildRefreshRequest,
 } from '../../../../src/blocks/query/view-helpers.js';
 
 /**
@@ -496,5 +498,102 @@ describe('delegated-fallback de-duplication', () => {
 		expect(isHandledEvent(null)).toBe(false);
 		expect(isHandledEvent(undefined)).toBe(false);
 		expect(() => markHandledEvent(null)).not.toThrow();
+	});
+});
+
+describe('readRefreshSource', () => {
+	afterEach(resetBody);
+
+	it('returns the signed source a query region carries', () => {
+		mountHTML(
+			'<div hidden class="dsgo-query__blobs" data-dsgo-blobs-for="q1" data-dsgo-refresh-source="eyJ2IjoxfQ==" data-dsgo-signature="ab12"></div>'
+		);
+
+		expect(
+			readRefreshSource(
+				document.querySelector('[data-dsgo-blobs-for="q1"]')
+			)
+		).toEqual({ source: 'eyJ2IjoxfQ==', signature: 'ab12' });
+	});
+
+	it('returns null when there is no signed source to send', () => {
+		mountHTML(
+			'<div hidden class="dsgo-query__blobs" data-dsgo-blobs-for="q2"></div>'
+		);
+
+		expect(
+			readRefreshSource(
+				document.querySelector('[data-dsgo-blobs-for="q2"]')
+			)
+		).toBeNull();
+		expect(readRefreshSource(null)).toBeNull();
+	});
+});
+
+describe('buildRefreshRequest', () => {
+	const refreshSource = { source: 'eyJ2IjoxfQ==', signature: 'ab12' };
+	const request = {
+		page: 2,
+		params: { q: 'shoes' },
+		currentUrl: 'https://example.test/shop/?q=shoes',
+	};
+
+	afterEach(() => {
+		delete window.wpApiSettings;
+	});
+
+	it('sends the signed source instead of query settings', () => {
+		const { url, init } = buildRefreshRequest(
+			{ queryId: 'q1', restUrl: '/wp-json/designsetgo/v1/query/render' },
+			refreshSource,
+			request
+		);
+
+		expect(url).toBe('/wp-json/designsetgo/v1/query/render');
+		expect(init.method).toBe('POST');
+		expect(init.credentials).toBe('same-origin');
+		expect(JSON.parse(init.body)).toEqual({
+			queryId: 'q1',
+			source: 'eyJ2IjoxfQ==',
+			signature: 'ab12',
+			page: 2,
+			params: { q: 'shoes' },
+			currentUrl: 'https://example.test/shop/?q=shoes',
+		});
+	});
+
+	it('sends no X-WP-Nonce for visitors', () => {
+		// A stale nonce on a cached page is rejected outright by core, and the
+		// public route needs none.
+		const { init } = buildRefreshRequest(
+			{ queryId: 'q1', nonce: '' },
+			refreshSource,
+			request
+		);
+
+		expect(init.headers).toEqual({ 'Content-Type': 'application/json' });
+	});
+
+	it('ignores a page-wide wpApiSettings nonce', () => {
+		window.wpApiSettings = { root: '/wp-json/', nonce: 'stale' };
+
+		const { url, init } = buildRefreshRequest(
+			{ queryId: 'q1' },
+			refreshSource,
+			request
+		);
+
+		expect(init.headers).not.toHaveProperty('X-WP-Nonce');
+		expect(url).toBe('/wp-json/designsetgo/v1/query/render');
+	});
+
+	it('sends the X-WP-Nonce a logged-in page carries', () => {
+		const { init } = buildRefreshRequest(
+			{ queryId: 'q1', nonce: 'abc123' },
+			refreshSource,
+			request
+		);
+
+		expect(init.headers['X-WP-Nonce']).toBe('abc123');
 	});
 });

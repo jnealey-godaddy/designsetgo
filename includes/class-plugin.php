@@ -602,6 +602,7 @@ class Plugin {
 		// --- Blocks: Modal ---
 		require_once DESIGNSETGO_PATH . 'includes/blocks/modal/class-modal-hooks.php';
 		// --- Blocks: Query engine ---
+		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-refresh-source.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-template-controller.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/text-path/class-text-path-controller.php';

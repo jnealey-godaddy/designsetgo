@@ -2,9 +2,9 @@
 /**
  * Tests for the pagination block's upstream contracts:
  *  1. State registry is populated correctly after a post query.
- *  2. A trusted source-post marker is emitted by the container wrapper when
- *     a query ID and source post are present.
- *  3. The marker is omitted when the query ID is empty.
+ *  2. A signed refresh source is emitted by the container wrapper when a
+ *     query ID is present and the caller asks for one.
+ *  3. The source is omitted when the query ID is empty.
  *
  * @group query-block
  */
@@ -52,13 +52,12 @@ class DesignSetGo_Query_Pagination_Render_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * When a query ID and source post are present the container HTML should
-	 * include the source-post marker that load-more uses to ask the REST endpoint
-	 * for the saved query definition.
+	 * When a query ID is present the container HTML should include the signed
+	 * refresh source that load-more and filters send back to the REST endpoint.
 	 *
 	 * @since 2.1.0
 	 */
-	public function test_container_emits_source_post_marker_when_query_id_present() {
+	public function test_container_emits_signed_refresh_source_when_query_id_present() {
 		self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) );
 		$source_post_id = self::factory()->post->create( array( 'post_status' => 'publish' ) );
 		$this->load_helpers();
@@ -72,10 +71,10 @@ class DesignSetGo_Query_Pagination_Render_Test extends WP_UnitTestCase {
 				'perPage'  => 5,
 			),
 			array(
-				'query_id'   => 'blobs',
-				'page'       => 1,
-				'postId'     => $source_post_id,
-				'inner_html' => '<!-- wp:paragraph --><p>x</p><!-- /wp:paragraph -->',
+				'query_id'               => 'blobs',
+				'page'                   => 1,
+				'refresh_source_post_id' => $source_post_id,
+				'inner_html'             => '<!-- wp:paragraph --><p>x</p><!-- /wp:paragraph -->',
 			)
 		);
 
@@ -84,15 +83,15 @@ class DesignSetGo_Query_Pagination_Render_Test extends WP_UnitTestCase {
 			$result['html'],
 			'Result HTML must include the blob wrapper (data-dsgo-blobs-for) when query_id is set.'
 		);
-		$this->assertStringContainsString(
-			'data-dsgo-query-post-id="' . $source_post_id . '"',
+		$this->assertMatchesRegularExpression(
+			'#data-dsgo-refresh-source="[A-Za-z0-9+/=]+" data-dsgo-signature="[a-f0-9]{64}"#',
 			$result['html'],
-			'Result HTML must include the trusted source-post marker when query_id is set.'
+			'Result HTML must include the signed refresh source when query_id is set.'
 		);
 		$this->assertStringNotContainsString(
 			'data-dsgo-attrs',
 			$result['html'],
-			'Result HTML must not expose client-controlled query attributes.'
+			'Result HTML must not carry unsigned query attributes.'
 		);
 	}
 
@@ -120,9 +119,9 @@ class DesignSetGo_Query_Pagination_Render_Test extends WP_UnitTestCase {
 		);
 
 		$this->assertStringNotContainsString(
-			'data-dsgo-query-post-id',
+			'data-dsgo-refresh-source',
 			$result['html'],
-			'Container HTML must not include a source-post marker when query_id is empty.'
+			'Container HTML must not include a refresh source when query_id is empty.'
 		);
 	}
 }
