@@ -22,6 +22,7 @@ class Controller {
 	 * Registers action hooks on instantiation.
 	 */
 	public function __construct() {
+		RefreshSource::bootstrap();
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 	}
 
@@ -37,16 +38,20 @@ class Controller {
 				'callback'            => array( $this, 'handle_render' ),
 				'permission_callback' => array( $this, 'check_public_render_permission' ),
 				'args'                => array(
-					'postId'     => array(
-						'type'              => 'integer',
-						'sanitize_callback' => 'absint',
-					),
 					'queryId'    => array(
 						'type'              => 'string',
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_key',
 					),
-
+					// Signed query definition embedded at first paint. See RefreshSource.
+					'source'     => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'signature'  => array(
+						'type'     => 'string',
+						'required' => true,
+					),
 					'page'       => array(
 						'type'              => 'integer',
 						'default'           => 1,
@@ -71,18 +76,18 @@ class Controller {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_preview_render' ),
-				'permission_callback' => array( $this, 'check_permission' ),
+				'permission_callback' => array( $this, 'check_edit_posts_permission' ),
 				'args'                => array(
-					'queryId'    => array(
+					'queryId'     => array(
 						'type'              => 'string',
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_key',
 					),
-					'attributes' => array(
+					'attributes'  => array(
 						'type'     => 'object',
 						'required' => true,
 					),
-					'page'       => array(
+					'page'        => array(
 						'type'              => 'integer',
 						'default'           => 1,
 						'sanitize_callback' => 'absint',
@@ -91,11 +96,11 @@ class Controller {
 						'type'    => 'string',
 						'default' => '',
 					),
-					'params'     => array(
+					'params'      => array(
 						'type'    => 'object',
 						'default' => array(),
 					),
-					'currentUrl' => array(
+					'currentUrl'  => array(
 						'type'              => 'string',
 						'default'           => '',
 						'sanitize_callback' => 'esc_url_raw',
@@ -449,51 +454,27 @@ class Controller {
 	}
 
 	/**
-	 * Checks that the request is authenticated and carries a valid nonce.
+	 * Allow public rendering only of a query the site itself rendered.
 	 *
-	 * @param \WP_REST_Request $request The REST request.
-	 * @return true|\WP_Error
-	 */
-	public function check_permission( \WP_REST_Request $request ) {
-		if ( ! is_user_logged_in() ) {
-			return new \WP_Error(
-				'rest_forbidden',
-				__( 'You must be logged in.', 'designsetgo' ),
-				array( 'status' => 401 )
-			);
-		}
-
-		$nonce = $request->get_header( 'X-WP-Nonce' );
-		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-			return new \WP_Error(
-				'rest_forbidden',
-				__( 'Invalid nonce.', 'designsetgo' ),
-				array( 'status' => 401 )
-			);
-		}
-
-		if ( ! current_user_can( 'read' ) ) {
-			return new \WP_Error(
-				'rest_forbidden',
-				__( 'Insufficient permissions.', 'designsetgo' ),
-				array( 'status' => 403 )
-			);
-		}
-
-		return true;
-	}
-
-	/**
-	 * Allow public rendering only for a published page that contains the named query.
+	 * The signature proves the definition came from a first paint. A query
+	 * placed in a post's content is further limited to people who can see that
+	 * post; one in a template, pattern or widget was public wherever it rendered.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return true|\WP_Error
 	 */
 	public function check_public_render_permission( \WP_REST_Request $request ) {
-		$post_id = absint( $request->get_param( 'postId' ) );
-		$post    = get_post( $post_id );
+		$source = $this->verified_source( $request );
 
-		if ( ! $post || ! is_post_publicly_viewable( $post ) || post_password_required( $post ) ) {
+		if ( null === $source ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'This query could not be verified.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		if ( ! RefreshSource::can_view_source( $source['sourcePostId'] ) ) {
 			return new \WP_Error(
 				'rest_forbidden',
 				__( 'This query is not publicly available.', 'designsetgo' ),
@@ -505,51 +486,79 @@ class Controller {
 	}
 
 	/**
+	 * Decode the request's signed source, or null when it doesn't verify.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return array|null Verified definition.
+	 */
+	private function verified_source( \WP_REST_Request $request ) {
+		return RefreshSource::verify(
+			$request->get_param( 'source' ),
+			$request->get_param( 'signature' ),
+			(string) $request->get_param( 'queryId' )
+		);
+	}
+
+	/**
 	 * Handles the render REST request and returns HTML + pagination metadata.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function handle_render( \WP_REST_Request $request ) {
-		$query_id = (string) $request->get_param( 'queryId' );
-		$post     = get_post( absint( $request->get_param( 'postId' ) ) );
-		$block    = $post ? $this->find_saved_query_block( parse_blocks( $post->post_content ), $query_id ) : null;
+		$source = $this->verified_source( $request );
 
-		if ( null === $block ) {
+		if ( null === $source ) {
 			return new \WP_Error(
-				'query_not_found',
-				__( 'This query is not available on the requested page.', 'designsetgo' ),
-				array( 'status' => 404 )
+				'rest_forbidden',
+				__( 'This query could not be verified.', 'designsetgo' ),
+				array( 'status' => 403 )
 			);
 		}
 
-		$inner_html = '';
-		foreach ( (array) ( $block['innerBlocks'] ?? array() ) as $child ) {
-			$inner_html .= serialize_block( $child );
-		}
-
 		return $this->render_request(
-			(array) ( $block['attrs'] ?? array() ),
-			$query_id,
-			$inner_html,
+			$source['attributes'],
+			$source['queryId'],
+			$source['innerBlocks'],
 			$request,
-			(int) $post->ID
+			$source['sourcePostId']
 		);
 	}
 
 	/**
 	 * Render arbitrary attributes for the authenticated editor preview only.
 	 *
+	 * Output carries no refresh source: signing editor-supplied settings would
+	 * let a preview mint a definition the public route then trusts.
+	 *
 	 * @param \WP_REST_Request $request The REST request.
-	 * @return \WP_REST_Response
+	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function handle_preview_render( \WP_REST_Request $request ) {
+		$attributes = (array) $request->get_param( 'attributes' );
+		$source     = sanitize_key( (string) ( $attributes['source'] ?? 'posts' ) );
+
+		// Anyone who can edit posts can preview, so a posts query is limited to
+		// types they could already see or edit — never coupons, orders, etc.
+		// Every source except these falls through to the posts renderer, which
+		// reads postType; relationship and manual query post_type 'any'.
+		if ( ! in_array( $source, array( 'users', 'terms', 'relationship', 'manual' ), true ) ) {
+			$post_type = get_post_type_object( sanitize_key( (string) ( $attributes['postType'] ?? 'post' ) ) );
+			if ( ! $post_type || ( ! is_post_type_viewable( $post_type ) && ! current_user_can( $post_type->cap->edit_posts ) ) ) {
+				return new \WP_Error(
+					'rest_forbidden',
+					__( 'You cannot preview this content type.', 'designsetgo' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
 		return $this->render_request(
-			(array) $request->get_param( 'attributes' ),
+			$attributes,
 			(string) $request->get_param( 'queryId' ),
 			(string) $request->get_param( 'innerBlocks' ),
 			$request,
-			0
+			null
 		);
 	}
 
@@ -560,10 +569,12 @@ class Controller {
 	 * @param string           $query_id Query ID.
 	 * @param string           $inner_html Serialized child blocks.
 	 * @param \WP_REST_Request $request The REST request.
-	 * @param int              $post_id Source post ID, if public.
+	 * @param int|null         $source_post_id Post holding the query (0 outside
+	 *                                         post content), or null to emit
+	 *                                         no refresh source.
 	 * @return \WP_REST_Response
 	 */
-	private function render_request( array $attributes, $query_id, $inner_html, \WP_REST_Request $request, $post_id ) {
+	private function render_request( array $attributes, $query_id, $inner_html, \WP_REST_Request $request, $source_post_id ) {
 		$page        = max( 1, (int) $request->get_param( 'page' ) );
 		$params      = (array) $request->get_param( 'params' );
 		$current_url = (string) $request->get_param( 'currentUrl' );
@@ -603,50 +614,31 @@ class Controller {
 			}
 		}
 
+		$context = array(
+			'query_id'               => $query_id,
+			'page'                   => $page,
+			'inner_html'             => $inner_html,
+			'params'                 => $params,
+			'refresh_source_post_id' => $source_post_id,
+		);
+
 		try {
-			$result = self::render(
-				$attributes,
-				array(
-					'query_id'   => $query_id,
-					'page'       => $page,
-					'inner_html' => $inner_html,
-					'params'     => $params,
-					'postId'     => $post_id,
-				)
-			);
+			// A public refresh renders within its source post, so queries nested
+			// in the region are re-signed behind the same gate.
+			$result = null === $source_post_id
+				? self::render( $attributes, $context )
+				: RefreshSource::render_within(
+					$source_post_id,
+					static function () use ( $attributes, $context ) {
+						return self::render( $attributes, $context );
+					}
+				);
 		} finally {
 			$_GET                   = $original_get; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$_SERVER['REQUEST_URI'] = $original_uri;
 		}
 
 		return rest_ensure_response( $result );
-	}
-
-	/**
-	 * Find the saved query block recursively by its stable query ID.
-	 *
-	 * @param array  $blocks Parsed blocks.
-	 * @param string $query_id Requested ID.
-	 * @return array|null Matching query block.
-	 */
-	private function find_saved_query_block( array $blocks, $query_id ) {
-		foreach ( $blocks as $block ) {
-			if (
-				'designsetgo/query' === ( $block['blockName'] ?? '' ) &&
-				sanitize_key( (string) ( $block['attrs']['queryId'] ?? '' ) ) === $query_id
-			) {
-				return $block;
-			}
-
-			if ( ! empty( $block['innerBlocks'] ) ) {
-				$match = $this->find_saved_query_block( $block['innerBlocks'], $query_id );
-				if ( null !== $match ) {
-					return $match;
-				}
-			}
-		}
-
-		return null;
 	}
 
 	/**
