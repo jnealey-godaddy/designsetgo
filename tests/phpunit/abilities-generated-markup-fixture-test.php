@@ -54,7 +54,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function generation_layout_payloads(): array {
-		$zero = array(
+		$zero     = array(
 			'top'    => '0',
 			'right'  => '0',
 			'bottom' => '0',
@@ -81,12 +81,12 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				);
 				if ( 'grid' === $slug ) {
-					$attributes['columnMinWidth'] = '16rem';
+					$attributes['columnMinWidth']  = '16rem';
 					$attributes['matchRowHeights'] = true;
 				}
 				$payloads[ 'generation-' . $slug . '-' . $index ] = array(
-					'name' => 'designsetgo/' . $slug,
-					'attributes' => $attributes,
+					'name'        => 'designsetgo/' . $slug,
+					'attributes'  => $attributes,
 					'innerBlocks' => array(),
 				);
 			}
@@ -108,7 +108,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 			'attributes'  => array( 'layout' => array( 'verticalAlignment' => 'space-between' ) ),
 			'innerBlocks' => array(),
 		);
-		$payloads['generation-outlined-card'] = array(
+		$payloads['generation-outlined-card']     = array(
 			'name'        => 'designsetgo/card',
 			'attributes'  => array(
 				'title'       => 'Service',
@@ -154,7 +154,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 		);
 
 		foreach ( array( 'section', 'row', 'grid' ) as $slug ) {
-			$markup = Block_Inserter::build_block_markup(
+			$markup    = Block_Inserter::build_block_markup(
 				'designsetgo/' . $slug,
 				array(
 					'style' => array(
@@ -244,12 +244,12 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'hotspot-defaults'                               => array(
+			'hotspot-defaults'                            => array(
 				'name'        => 'designsetgo/hotspot',
 				'attributes'  => array(),
 				'innerBlocks' => array(),
 			),
-			'hotspot-configured'                             => array(
+			'hotspot-configured'                          => array(
 				'name'        => 'designsetgo/hotspot',
 				'attributes'  => array(
 					'imageUrl'               => 'https://example.com/map.jpg',
@@ -266,12 +266,12 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'text-path-defaults'                             => array(
+			'text-path-defaults'                          => array(
 				'name'        => 'designsetgo/text-path',
 				'attributes'  => array( 'uniqueId' => 'tp1' ),
 				'innerBlocks' => array(),
 			),
-			'text-path-circle-linked'                        => array(
+			'text-path-circle-linked'                     => array(
 				'name'        => 'designsetgo/text-path',
 				'attributes'  => array(
 					'uniqueId'              => 'tp2',
@@ -298,7 +298,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'text-path-arc'                                  => array(
+			'text-path-arc'                               => array(
 				'name'        => 'designsetgo/text-path',
 				'attributes'  => array(
 					'uniqueId' => 'tp3',
@@ -308,12 +308,12 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'comparison-table-defaults'                      => array(
+			'comparison-table-defaults'                   => array(
 				'name'        => 'designsetgo/comparison-table',
 				'attributes'  => array(),
 				'innerBlocks' => array(),
 			),
-			'comparison-table-configured'                    => array(
+			'comparison-table-configured'                 => array(
 				'name'        => 'designsetgo/comparison-table',
 				'attributes'  => array(
 					'alternatingRows'       => false,
@@ -369,7 +369,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'timeline-item-defaults'                         => array(
+			'timeline-item-defaults'                      => array(
 				'name'        => 'designsetgo/timeline-item',
 				'attributes'  => array(
 					'date'  => '2024',
@@ -382,7 +382,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'timeline-item-linked'                           => array(
+			'timeline-item-linked'                        => array(
 				'name'        => 'designsetgo/timeline-item',
 				'attributes'  => array(
 					'date'              => '2025',
@@ -399,7 +399,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'timeline-item-image-marker'                     => array(
+			'timeline-item-image-marker'                  => array(
 				'name'        => 'designsetgo/timeline-item',
 				'attributes'  => array(
 					'title'    => 'With a photo',
@@ -407,12 +407,12 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'hotspot-item-defaults'                          => array(
+			'hotspot-item-defaults'                       => array(
 				'name'        => 'designsetgo/hotspot-item',
 				'attributes'  => array( 'uniqueId' => 'abc123' ),
 				'innerBlocks' => array(),
 			),
-			'hotspot-item-linked'                            => array(
+			'hotspot-item-linked'                         => array(
 				'name'        => 'designsetgo/hotspot-item',
 				'attributes'  => array(
 					'uniqueId'        => 'def456',
@@ -431,7 +431,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'hotspot-item-click-trigger'                     => array(
+			'hotspot-item-click-trigger'                  => array(
 				'name'        => 'designsetgo/hotspot-item',
 				'attributes'  => array(
 					'uniqueId' => 'ghi789',
@@ -440,7 +440,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'advanced-heading'                               => array(
+			'advanced-heading'                            => array(
 				'name'        => 'designsetgo/advanced-heading',
 				'attributes'  => array(
 					'level'     => 3,
@@ -454,7 +454,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'blobs-defaults'                                 => array(
+			'blobs-defaults'                              => array(
 				'name'        => 'designsetgo/blobs',
 				'attributes'  => array(),
 				'innerBlocks' => array(
@@ -464,7 +464,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'blobs-configured'                               => array(
+			'blobs-configured'                            => array(
 				'name'        => 'designsetgo/blobs',
 				'attributes'  => array(
 					'blobShape'         => 'shape-4',
@@ -485,12 +485,12 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'heading-segment'                                => array(
+			'heading-segment'                             => array(
 				'name'        => 'designsetgo/heading-segment',
 				'attributes'  => array( 'content' => 'emphasis' ),
 				'innerBlocks' => array(),
 			),
-			'timeline-defaults'                              => array(
+			'timeline-defaults'                           => array(
 				'name'        => 'designsetgo/timeline',
 				'attributes'  => array(),
 				'innerBlocks' => array(
@@ -500,7 +500,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'timeline-configured'                            => array(
+			'timeline-configured'                         => array(
 				'name'        => 'designsetgo/timeline',
 				'attributes'  => array(
 					'orientation'     => 'horizontal',
@@ -523,7 +523,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 			// Nested through real scroll-slide children, not a bare paragraph:
 			// the child is the block that was misclassified as purely dynamic,
 			// and a paragraph directly inside the parent cannot catch that.
-			'scroll-slides-defaults'                         => array(
+			'scroll-slides-defaults'                      => array(
 				'name'        => 'designsetgo/scroll-slides',
 				'attributes'  => array(),
 				'innerBlocks' => array(
@@ -569,7 +569,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 			// not reproduce.
 			// Hover and overlay custom properties on the container blocks: all
 			// three write the same five, and none were emitted.
-			'section-hover-and-overlay'                      => array(
+			'section-hover-and-overlay'                   => array(
 				'name'        => 'designsetgo/section',
 				'attributes'  => array(
 					'hoverBackgroundColor'       => '#111111',
@@ -580,7 +580,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'grid-tagname-and-hover'                         => array(
+			'grid-tagname-and-hover'                      => array(
 				'name'        => 'designsetgo/grid',
 				'attributes'  => array(
 					'tagName'              => 'section',
@@ -588,14 +588,14 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'row-hover'                                      => array(
+			'row-hover'                                   => array(
 				'name'        => 'designsetgo/row',
 				'attributes'  => array( 'hoverTextColor' => '#ffffff' ),
 				'innerBlocks' => array(),
 			),
 			// counter-group reads columns/columnsTablet/columnsMobile - it was
 			// reading the Grid block's attribute names.
-			'counter-group-columns'                          => array(
+			'counter-group-columns'                       => array(
 				'name'        => 'designsetgo/counter-group',
 				'attributes'  => array(
 					'columns'       => 4,
@@ -604,7 +604,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'modal-labelled-and-coloured'                    => array(
+			'modal-labelled-and-coloured'                 => array(
 				'name'        => 'designsetgo/modal',
 				'attributes'  => array(
 					'modalLabel'      => 'Newsletter',
@@ -617,12 +617,12 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 			// Trigger writes it through unchanged — both are pinned here.
 			// These blocks support left/center/right as well as wide/full, and
 			// emitted no alignment class at all.
-			'card-aligned-left'                              => array(
+			'card-aligned-left'                           => array(
 				'name'        => 'designsetgo/card',
 				'attributes'  => array( 'align' => 'left' ),
 				'innerBlocks' => array(),
 			),
-			'advanced-heading-aligned-center'                => array(
+			'advanced-heading-aligned-center'             => array(
 				'name'        => 'designsetgo/advanced-heading',
 				'attributes'  => array( 'align' => 'center' ),
 				'innerBlocks' => array(
@@ -632,12 +632,12 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'scroll-accordion-aligned-wide'                  => array(
+			'scroll-accordion-aligned-wide'               => array(
 				'name'        => 'designsetgo/scroll-accordion',
 				'attributes'  => array( 'align' => 'wide' ),
 				'innerBlocks' => array(),
 			),
-			'icon-button-padded'                             => array(
+			'icon-button-padded'                          => array(
 				'name'        => 'designsetgo/icon-button',
 				'attributes'  => array(
 					'text'  => 'Go',
@@ -654,7 +654,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'modal-trigger-padded'                           => array(
+			'modal-trigger-padded'                        => array(
 				'name'        => 'designsetgo/modal-trigger',
 				'attributes'  => array(
 					'text'  => 'Open',
@@ -669,7 +669,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'modal-trigger-coloured'                         => array(
+			'modal-trigger-coloured'                      => array(
 				'name'        => 'designsetgo/modal-trigger',
 				'attributes'  => array(
 					'text'            => 'Open',
@@ -678,7 +678,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'tabs-colored'                                   => array(
+			'tabs-colored'                                => array(
 				'name'        => 'designsetgo/tabs',
 				'attributes'  => array(
 					'uniqueId'                  => 'tabs1',
@@ -698,7 +698,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'query-alignwide'                                => array(
+			'query-alignwide'                             => array(
 				'name'        => 'designsetgo/query',
 				'attributes'  => array( 'align' => 'wide' ),
 				'innerBlocks' => array(
@@ -709,7 +709,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'query-with-results-and-no-results'              => array(
+			'query-with-results-and-no-results'           => array(
 				'name'        => 'designsetgo/query',
 				'attributes'  => array(),
 				'innerBlocks' => array(
@@ -738,16 +738,16 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'scroll-slides-configured'                       => array(
+			'scroll-slides-configured'                    => array(
 				'name'        => 'designsetgo/scroll-slides',
 				'attributes'  => array(
-					'minHeight'       => '80vh',
-					'maxHeight'       => '1200px',
-					'constrainWidth'  => false,
-					'overlayColor'    => 'primary',
-					'overlayOpacity'  => 45,
-					'navColor'        => '#111111',
-					'navActiveColor'  => 'accent',
+					'minHeight'      => '80vh',
+					'maxHeight'      => '1200px',
+					'constrainWidth' => false,
+					'overlayColor'   => 'primary',
+					'overlayOpacity' => 45,
+					'navColor'       => '#111111',
+					'navActiveColor' => 'accent',
 				),
 				'innerBlocks' => array(
 					array(
@@ -756,7 +756,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'sticky-sections'                                => array(
+			'sticky-sections'                             => array(
 				'name'        => 'designsetgo/sticky-sections',
 				'attributes'  => array( 'stickyOffset' => '80px' ),
 				'innerBlocks' => array(
@@ -766,12 +766,12 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'section-divider-defaults'                       => array(
+			'section-divider-defaults'                    => array(
 				'name'        => 'designsetgo/section-divider',
 				'attributes'  => array(),
 				'innerBlocks' => array(),
 			),
-			'section-divider-configured'                     => array(
+			'section-divider-configured'                  => array(
 				'name'        => 'designsetgo/section-divider',
 				'attributes'  => array(
 					'shape'           => 'waves',
@@ -784,7 +784,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
-			'fifty-fifty-defaults'                           => array(
+			'fifty-fifty-defaults'                        => array(
 				'name'        => 'designsetgo/fifty-fifty',
 				'attributes'  => array(),
 				'innerBlocks' => array(
@@ -794,7 +794,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'section-gradient-and-text-color'                => array(
+			'section-gradient-and-text-color'             => array(
 				'name'        => 'designsetgo/section',
 				'attributes'  => array(
 					'textColor' => 'contrast',
@@ -808,6 +808,113 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 						'attributes' => array( 'content' => 'On a custom background.' ),
 					),
 				),
+			),
+			// Top wave + bottom tilt shape dividers, with height, flip, front,
+			// content-clearance spacing, and band colour all set on both, to
+			// pin src/blocks/section/components/ShapeDivider.js exactly.
+			'section-shape-dividers-top-wave-bottom-tilt' => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'shapeDividerTop'                   => 'wave',
+					'shapeDividerTopHeight'             => 140,
+					'shapeDividerTopFlipX'              => true,
+					'shapeDividerTopFront'              => true,
+					'shapeDividerTopSpacing'            => 'var:preset|spacing|40',
+					'shapeDividerTopBackgroundColor'    => 'var:preset|color|base',
+					'shapeDividerBottom'                => 'tilt',
+					'shapeDividerBottomHeight'          => 80,
+					'shapeDividerBottomWidth'           => 150,
+					'shapeDividerBottomFlipY'           => true,
+					'shapeDividerBottomBackgroundColor' => '#1a1a1a',
+				),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => array( 'content' => 'Between two shape dividers.' ),
+					),
+				),
+			),
+			// A shape divider with no explicit height/width/spacing so the
+			// "inherit the theme token" (null) path is covered too.
+			'section-shape-divider-inherit-size'          => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'shapeDividerTop' => 'inherit',
+				),
+				'innerBlocks' => array(),
+			),
+			'section-expanding-background'                => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'dsgoExpandingBgEnabled'         => true,
+					'dsgoExpandingBgColor'           => 'var:preset|color|primary',
+					'dsgoExpandingBgInitialSize'     => 80,
+					'dsgoExpandingBgBlur'            => 20,
+					'dsgoExpandingBgSpeed'           => 1.5,
+					'dsgoExpandingBgTriggerOffset'   => 10,
+					'dsgoExpandingBgCompletionPoint' => 90,
+				),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => array( 'content' => 'Expands as you scroll.' ),
+					),
+				),
+			),
+			// Enabled with no attribute overrides: pins the default colour
+			// fallback ('#e8e8e8') reaching both the inline style and the
+			// data attribute.
+			'section-expanding-background-defaults'       => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'dsgoExpandingBgEnabled' => true,
+				),
+				'innerBlocks' => array(),
+			),
+			'section-svg-pattern'                         => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'dsgoSvgPatternEnabled' => true,
+					'dsgoSvgPatternType'    => 'dot-grid',
+					'dsgoSvgPatternColor'   => '#9c92ac',
+					'dsgoSvgPatternOpacity' => 0.5,
+					'dsgoSvgPatternScale'   => 1.5,
+				),
+				'innerBlocks' => array(),
+			),
+			// Inherit sentinel: only the class and `data-dsgo-svg-pattern="inherit"`
+			// are saved - color/opacity/scale come from the theme at render time.
+			'section-svg-pattern-inherit'                 => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'dsgoSvgPatternEnabled' => true,
+					'dsgoSvgPatternType'    => 'inherit',
+				),
+				'innerBlocks' => array(),
+			),
+			'text-reveal-heading'                         => array(
+				'name'        => 'core/heading',
+				'attributes'  => array(
+					'level'                    => 2,
+					'content'                  => 'Scroll to reveal',
+					'dsgoTextRevealEnabled'    => true,
+					'dsgoTextRevealColor'      => 'var:preset|color|accent',
+					'dsgoTextRevealSplitMode'  => 'character',
+					'dsgoTextRevealTransition' => 90,
+					'dsgoTextRevealEffect'     => 'rise',
+				),
+				'innerBlocks' => array(),
+			),
+			// All defaults: pins the default color (#2563eb), split mode
+			// ('word'), transition (150), and the omission of
+			// data-dsgo-text-reveal-effect when it equals the default 'color'.
+			'text-reveal-paragraph-defaults'              => array(
+				'name'        => 'core/paragraph',
+				'attributes'  => array(
+					'content'               => 'Fades in as you scroll.',
+					'dsgoTextRevealEnabled' => true,
+				),
+				'innerBlocks' => array(),
 			),
 		);
 	}
