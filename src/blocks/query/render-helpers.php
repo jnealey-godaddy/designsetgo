@@ -637,6 +637,8 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 *                                                      block comment strings). The
 	 *                                                      helper splits them here.
 	 *                          - params     (array)        URL filter params.
+	 *                          - postId     (int)          Saved source post ID for
+	 *                                                      public REST refreshes.
 	 *                          - wrapper_attrs (string|null) Pre-computed
 	 *                                                      get_block_wrapper_attributes()
 	 *                                                      string (first-paint only;
@@ -651,6 +653,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 				'page'          => 1,
 				'inner_html'    => '',
 				'params'        => array(),
+				'postId'        => 0,
 				'wrapper_attrs' => null,
 			)
 		);
@@ -668,7 +671,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			(int) $context['page'],
 			$query_id,
 			'class="dsgo-query dsgo-query-region dsgo-query--source-' . sanitize_key( (string) ( $attributes['source'] ?? 'posts' ) ) . '"',
-			array()
+			array( 'postId' => absint( $context['postId'] ) )
 		);
 
 		// totalPages/totalItems come from the state registry populated during

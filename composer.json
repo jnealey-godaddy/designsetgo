@@ -30,7 +30,7 @@
       "phpunit"
     ],
     "analyse": [
-      "phpstan analyse"
+      "phpstan analyse --memory-limit=2G"
     ]
   },
   "config": {

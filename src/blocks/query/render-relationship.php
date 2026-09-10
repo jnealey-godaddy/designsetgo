@@ -22,6 +22,13 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 
+	/**
+	 * Render posts referenced by a relationship field on the current parent item.
+	 *
+	 * @param array $atts    Query attributes.
+	 * @param array $context Query render context.
+	 * @return array Rendered query result and pagination metadata.
+	 */
 	function designsetgo_query_render_relationship( array $atts, array $context ) {
 		$field = isset( $atts['relationshipField'] ) ? sanitize_text_field( (string) $atts['relationshipField'] ) : '';
 		if ( '' === $field ) {
@@ -85,6 +92,9 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 
 	/**
 	 * Normalize ACF/meta field values to a list of post IDs.
+	 *
+	 * @param mixed $value Raw relationship value.
+	 * @return int[] Referenced post IDs.
 	 */
 	function designsetgo_query_relationship_normalize_ids( $value ) {
 		if ( is_array( $value ) ) {
@@ -118,6 +128,10 @@ if ( ! function_exists( 'designsetgo_query_render_relationship' ) ) :
 
 	/**
 	 * Empty / all / parent fallback for no-result relationship queries.
+	 *
+	 * @param array $atts    Query attributes.
+	 * @param array $context Query render context.
+	 * @return array Rendered query result and pagination metadata.
 	 */
 	function designsetgo_query_relationship_fallback( array $atts, array $context ) {
 		$mode = isset( $atts['relationshipFallback'] ) ? (string) $atts['relationshipFallback'] : 'empty';

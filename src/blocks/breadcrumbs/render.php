@@ -22,7 +22,7 @@ if ( ! function_exists( 'designsetgo_render_breadcrumbs' ) ) {
 	 * @param array    $attributes Block attributes.
 	 * @param string   $content    Inner block content.
 	 * @param WP_Block $block      Block instance.
-	 * @return void
+	 * @return string|void Rendered breadcrumb markup or no output.
 	 */
 	function designsetgo_render_breadcrumbs( $attributes, $content, $block ) {
 		// Check if we should hide breadcrumbs on homepage.
@@ -84,7 +84,8 @@ if ( ! function_exists( 'designsetgo_render_breadcrumbs' ) ) {
 					<?php endif; ?>
 				<?php endforeach; ?>
 			</ol>
-		</nav><?php
+			</nav>
+			<?php
 	}
 }
 

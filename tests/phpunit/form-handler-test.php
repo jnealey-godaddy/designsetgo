@@ -645,9 +645,9 @@ class Test_Form_Handler extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_form_field_types reads server-side field definitions.
+	 * Test the form definition reads server-side field types.
 	 */
-	public function test_get_form_field_types_finds_known_fields() {
+	public function test_form_definition_finds_known_field_types() {
 		$form_id = 'fieldtypes1';
 		$post_id = wp_insert_post(
 			array(
@@ -659,9 +659,11 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		);
 
 		$this->assertNotWPError( $post_id );
-		delete_transient( 'dsgo_form_field_types_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_definition_v1_' . md5( $form_id ) );
 
-		$field_types = $this->call_private_method( 'get_form_field_types', array( $form_id ) );
+		$form_definition = $this->call_private_method( 'get_form_definition', array( $form_id ) );
+		$this->assertIsArray( $form_definition );
+		$field_types = $form_definition['field_types'];
 
 		$this->assertEquals(
 			array(
@@ -674,7 +676,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		);
 
 		wp_delete_post( $post_id, true );
-		delete_transient( 'dsgo_form_field_types_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_definition_v1_' . md5( $form_id ) );
 	}
 
 	/**
@@ -752,9 +754,9 @@ class Test_Form_Handler extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test get_form_field_value_constraints extracts allowed values per field.
+	 * Test the form definition extracts allowed values per field.
 	 */
-	public function test_get_form_field_value_constraints_extracts_allowed_values() {
+	public function test_form_definition_extracts_allowed_field_values() {
 		$form_id = 'constraints1';
 		$content = '<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '"} --><div class="wp-block-designsetgo-form-builder">'
 				. '<!-- wp:designsetgo/form-select-field {"fieldName":"pick","options":[{"label":"A","value":"a"},{"label":"B","value":"b"}]} /-->'
@@ -773,9 +775,11 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		);
 
 		$this->assertNotWPError( $post_id );
-		delete_transient( 'dsgo_form_field_constraints_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_definition_v1_' . md5( $form_id ) );
 
-		$constraints = $this->call_private_method( 'get_form_field_value_constraints', array( $form_id ) );
+		$form_definition = $this->call_private_method( 'get_form_definition', array( $form_id ) );
+		$this->assertIsArray( $form_definition );
+		$constraints = $form_definition['constraints'];
 
 		$this->assertEquals(
 			array(
@@ -789,7 +793,7 @@ class Test_Form_Handler extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'name', $constraints );
 
 		wp_delete_post( $post_id, true );
-		delete_transient( 'dsgo_form_field_constraints_' . md5( $form_id ) );
+		delete_transient( 'dsgo_form_definition_v1_' . md5( $form_id ) );
 	}
 
 	/**

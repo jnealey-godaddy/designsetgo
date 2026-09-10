@@ -508,7 +508,7 @@ class Controller {
 	 * Handles the render REST request and returns HTML + pagination metadata.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
-	 * @return \WP_REST_Response
+	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function handle_render( \WP_REST_Request $request ) {
 		$query_id = (string) $request->get_param( 'queryId' );

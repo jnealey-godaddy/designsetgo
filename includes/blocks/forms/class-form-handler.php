@@ -1258,39 +1258,6 @@ class Form_Handler {
 	}
 
 	/**
-	 * Recursively search parsed blocks for a form-builder block with matching formId.
-	 *
-	 * @param array  $blocks  Parsed blocks array.
-	 * @param string $form_id Form identifier to match.
-	 * @return array|null Block attributes if found, null otherwise.
-	 */
-	private function find_form_block_attributes( $blocks, $form_id ) {
-		foreach ( $blocks as $block ) {
-			if (
-				'designsetgo/form-builder' === $block['blockName'] &&
-				isset( $block['attrs']['formId'] ) &&
-				$block['attrs']['formId'] === $form_id
-			) {
-				// parse_blocks() returns only the attributes that were serialized into
-				// the block comment. The editor omits attributes that equal their
-				// declared default, so booleans like `enableEmail` (default true) and
-				// similar may be missing here. Merge in the block-type defaults so
-				// server-side consumers see the same attribute set the editor does.
-				return $this->apply_form_block_defaults( $block['attrs'] );
-			}
-
-			if ( ! empty( $block['innerBlocks'] ) ) {
-				$result = $this->find_form_block_attributes( $block['innerBlocks'], $form_id );
-				if ( null !== $result ) {
-					return $result;
-				}
-			}
-		}
-
-		return null;
-	}
-
-	/**
 	 * Merge registered block-type attribute defaults into a parsed attributes array.
 	 *
 	 * @param array $attrs Parsed block attributes from parse_blocks().
@@ -1356,69 +1323,6 @@ class Form_Handler {
 	}
 
 	/**
-	 * Look up server-defined field types for a form by form ID.
-	 *
-	 * Uses parsed block content so validation/sanitization does not rely on
-	 * client-supplied field types.
-	 *
-	 * @param string $form_id Form identifier to look up.
-	 * @return array<string, string> Field types keyed by field name.
-	 */
-	private function get_form_field_types( $form_id ) {
-		$form_definition = $this->get_form_definition( $form_id );
-
-		return null === $form_definition ? array() : $form_definition['field_types'];
-	}
-
-	/**
-	 * Look up server-defined allowed values for constrained fields by form ID.
-	 *
-	 * Parallels get_form_field_types() but returns, per field name, the list of
-	 * values the server will accept. Only select/checkbox/hidden fields are
-	 * constrained; all other field types are omitted (unconstrained). Used to
-	 * reject forged option values and hidden-field constants from the client.
-	 *
-	 * @param string $form_id Form identifier to look up.
-	 * @return array<string, string[]> Allowed values keyed by field name.
-	 */
-	private function get_form_field_value_constraints( $form_id ) {
-		$form_definition = $this->get_form_definition( $form_id );
-
-		return null === $form_definition ? array() : $form_definition['constraints'];
-	}
-
-	/**
-	 * Recursively search parsed blocks for a form-builder block and extract
-	 * allowed values for constrained fields.
-	 *
-	 * @param array  $blocks  Parsed blocks array.
-	 * @param string $form_id Form identifier to match.
-	 * @return array<string, string[]> Allowed values keyed by field name.
-	 */
-	private function find_form_field_constraints( $blocks, $form_id ) {
-		foreach ( $blocks as $block ) {
-			if (
-				'designsetgo/form-builder' === $block['blockName'] &&
-				isset( $block['attrs']['formId'] ) &&
-				$block['attrs']['formId'] === $form_id
-			) {
-				return $this->extract_field_value_constraints_from_blocks(
-					isset( $block['innerBlocks'] ) ? $block['innerBlocks'] : array()
-				);
-			}
-
-			if ( ! empty( $block['innerBlocks'] ) ) {
-				$result = $this->find_form_field_constraints( $block['innerBlocks'], $form_id );
-				if ( ! empty( $result ) ) {
-					return $result;
-				}
-			}
-		}
-
-		return array();
-	}
-
-	/**
 	 * Extract allowed values for constrained fields from a form's inner blocks.
 	 *
 	 * - select: the `value` of each entry in the `options` attribute.
@@ -1475,36 +1379,6 @@ class Form_Handler {
 		}
 
 		return $constraints;
-	}
-
-	/**
-	 * Recursively search parsed blocks for a form-builder block and extract field types.
-	 *
-	 * @param array  $blocks  Parsed blocks array.
-	 * @param string $form_id Form identifier to match.
-	 * @return array<string, string> Field types keyed by field name.
-	 */
-	private function find_form_field_types( $blocks, $form_id ) {
-		foreach ( $blocks as $block ) {
-			if (
-				'designsetgo/form-builder' === $block['blockName'] &&
-				isset( $block['attrs']['formId'] ) &&
-				$block['attrs']['formId'] === $form_id
-			) {
-				return $this->extract_field_types_from_blocks(
-					isset( $block['innerBlocks'] ) ? $block['innerBlocks'] : array()
-				);
-			}
-
-			if ( ! empty( $block['innerBlocks'] ) ) {
-				$result = $this->find_form_field_types( $block['innerBlocks'], $form_id );
-				if ( ! empty( $result ) ) {
-					return $result;
-				}
-			}
-		}
-
-		return array();
 	}
 
 	/**

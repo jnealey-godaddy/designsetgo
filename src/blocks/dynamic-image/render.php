@@ -27,7 +27,7 @@ if ( ! function_exists( 'designsetgo_render_dynamic_image' ) ) {
 	 * @param array    $attributes Block attributes.
 	 * @param string   $content    Inner block content.
 	 * @param WP_Block $block      Block instance.
-	 * @return void
+	 * @return string|void Rendered image markup or no output.
 	 */
 	function designsetgo_render_dynamic_image( $attributes, $content, $block ) {
 		$source       = isset( $attributes['source'] ) ? (string) $attributes['source'] : '';
