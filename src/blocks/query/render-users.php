@@ -10,6 +10,13 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 
+	/**
+	 * Render user records for a Dynamic Query.
+	 *
+	 * @param array $atts    Query attributes.
+	 * @param array $context Query render context.
+	 * @return array Rendered query result and pagination metadata.
+	 */
 	function designsetgo_query_render_users( array $atts, array $context ) {
 		$per_page = max( 1, (int) $atts['perPage'] );
 		$page     = max( 1, (int) $context['page'] );
@@ -81,6 +88,9 @@ if ( ! function_exists( 'designsetgo_query_render_users' ) ) :
 	 *
 	 * The block's `orderBy` attribute defaults to `date` (a post orderby), so
 	 * map that to a sensible user equivalent.
+	 *
+	 * @param string $orderby Requested orderby value.
+	 * @return string Safe WP_User_Query orderby value.
 	 */
 	function designsetgo_query_sanitize_user_orderby( $orderby ) {
 		$allowed = array( 'ID', 'id', 'user_registered', 'registered', 'display_name', 'name', 'login', 'user_login', 'nicename', 'user_nicename', 'email', 'user_email' );

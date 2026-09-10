@@ -217,6 +217,20 @@ describe('Scroll Accordion - Frontend', () => {
 	});
 
 	describe('Scroll events', () => {
+		test('does not retain a removed accordion in the scroll listener', () => {
+			const accordion = createAccordion(1);
+			const item = accordion.querySelector('.dsgo-scroll-accordion-item');
+			loadView();
+			jest.advanceTimersByTime(20);
+			item.getBoundingClientRect.mockClear();
+
+			accordion.remove();
+			window.dispatchEvent(new Event('scroll'));
+			jest.advanceTimersByTime(20);
+
+			expect(item.getBoundingClientRect).not.toHaveBeenCalled();
+		});
+
 		test('responds to scroll events with rAF throttle', () => {
 			createAccordion(3);
 			loadView();

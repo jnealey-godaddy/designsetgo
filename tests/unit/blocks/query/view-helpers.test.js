@@ -403,6 +403,21 @@ describe('re-init notifications', () => {
 		host.remove();
 	});
 
+	it('announces appended content to block runtimes', () => {
+		const container = document.createElement('div');
+		const listener = jest.fn();
+		document.addEventListener('dsgo-content-loaded', listener);
+
+		notifyItemsAppended(container, 'q1', 1);
+
+		expect(listener).toHaveBeenCalledWith(
+			expect.objectContaining({
+				detail: { source: 'query-append', container },
+			})
+		);
+		document.removeEventListener('dsgo-content-loaded', listener);
+	});
+
 	it('does not throw without a container', () => {
 		expect(() => notifyItemsAppended(null, 'q1', 1)).not.toThrow();
 	});

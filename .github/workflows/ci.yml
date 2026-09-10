@@ -120,10 +120,10 @@ jobs:
         run: npm ci
 
       - name: Run JavaScript linter
-        run: npm run lint:js --if-present || echo "⚠️ JS linting not configured"
+        run: npm run lint:js --if-present
 
       - name: Run CSS linter
-        run: npm run lint:css --if-present || echo "⚠️ CSS linting not configured"
+        run: npm run lint:css --if-present
 
       - name: Run JavaScript unit tests
         run: npm run test:unit -- --ci

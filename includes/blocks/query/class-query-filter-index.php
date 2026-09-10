@@ -151,6 +151,10 @@ class FilterIndex {
 			array( '%d', '%s' )
 		);
 
+		// Deletion alone changes filter counts when an object no longer matches
+		// any registered filter. Invalidate before each early return below.
+		self::bump_counts_cache();
+
 		$filters = FilterRegistry::all();
 		if ( empty( $filters ) ) {
 			return;

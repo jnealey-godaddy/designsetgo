@@ -494,12 +494,7 @@ class Assets {
 
 		// Critical blocks (most likely above-the-fold).
 		// These are small enough to inline without significantly bloating HTML.
-		$critical_blocks = array(
-			'grid',      // 7K - Common layout block.
-			'row',       // 4.6K - Common layout block.
-			'icon',      // 3.6K - Common decorative element.
-			'pill',      // 3.1K - Common UI element.
-		);
+		$critical_blocks = $this->get_present_critical_blocks();
 
 		$critical_css = '';
 
@@ -542,7 +537,7 @@ class Assets {
 		}
 
 		// Critical blocks whose CSS is inlined (must match inline_critical_css).
-		$critical_blocks = array( 'grid', 'row', 'icon', 'pill' );
+		$critical_blocks = $this->get_present_critical_blocks();
 
 		foreach ( $critical_blocks as $block ) {
 			// Dequeue the block's style-index.css that WordPress automatically enqueues.
@@ -550,6 +545,28 @@ class Assets {
 			wp_dequeue_style( "designsetgo-{$block}-style" );
 			wp_deregister_style( "designsetgo-{$block}-style" );
 		}
+	}
+
+	/**
+	 * Return critical block styles that are actually present in this request.
+	 *
+	 * @return string[] Block slugs.
+	 */
+	private function get_present_critical_blocks() {
+		$post = get_post();
+		if ( ! $post ) {
+			return array();
+		}
+
+		$critical_blocks = array( 'grid', 'row', 'icon', 'pill' );
+		return array_values(
+			array_filter(
+				$critical_blocks,
+				static function ( $block ) use ( $post ) {
+					return has_block( 'designsetgo/' . $block, $post );
+				}
+			)
+		);
 	}
 
 	/**

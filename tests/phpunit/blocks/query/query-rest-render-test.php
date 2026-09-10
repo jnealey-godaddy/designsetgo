@@ -8,10 +8,11 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		do_action( 'rest_api_init' );
 		$routes = rest_get_server()->get_routes();
 		$this->assertArrayHasKey( '/designsetgo/v1/query/render', $routes );
+		$this->assertArrayHasKey( '/designsetgo/v1/query/render-preview', $routes );
 	}
 
 	public function test_rejects_anonymous_requests() {
-		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render-preview' );
 		$request->set_param( 'queryId', 'abc' );
 		$request->set_param( 'attributes', array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 3 ) );
 		$request->set_param( 'page', 2 );
@@ -20,10 +21,62 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		$this->assertSame( 401, $response->get_status() );
 	}
 
+	public function test_public_request_uses_the_saved_query_definition() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_status'  => 'publish',
+				'post_content' => '<!-- wp:designsetgo/query {"queryId":"public-query","perPage":1} --><!-- wp:designsetgo/query-results /--><!-- /wp:designsetgo/query -->',
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request->set_param( 'postId', $post_id );
+		$request->set_param( 'queryId', 'public-query' );
+		$request->set_param( 'page', 1 );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertArrayHasKey( 'html', $response->get_data() );
+	}
+
+	public function test_public_request_cannot_render_a_private_source_for_a_subscriber() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_status'  => 'private',
+				'post_content' => '<!-- wp:designsetgo/query {"queryId":"private-query"} --><!-- wp:designsetgo/query-results /--><!-- /wp:designsetgo/query -->',
+			)
+		);
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request->set_param( 'postId', $post_id );
+		$request->set_param( 'queryId', 'private-query' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 404, $response->get_status() );
+	}
+
+	public function test_public_request_requires_the_source_post_password() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_status'    => 'publish',
+				'post_password'  => 'secret',
+				'post_content'   => '<!-- wp:designsetgo/query {"queryId":"protected-query"} --><!-- wp:designsetgo/query-results /--><!-- /wp:designsetgo/query -->',
+			)
+		);
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request->set_param( 'postId', $post_id );
+		$request->set_param( 'queryId', 'protected-query' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 404, $response->get_status() );
+	}
+
 	public function test_rejects_logged_in_user_without_nonce() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
-		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render-preview' );
 		$request->set_param( 'queryId', 'abc' );
 		$request->set_param( 'attributes', array( 'source' => 'posts', 'postType' => 'post', 'perPage' => 3 ) );
 		$request->set_param( 'page', 2 );
@@ -41,7 +94,7 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create( array( 'role' => '' ) );
 		wp_set_current_user( $user_id );
 
-		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render-preview' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'queryId', 'abc' );
 		$request->set_param( 'attributes', array( 'source' => 'posts' ) );
@@ -55,7 +108,7 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		$post_id = self::factory()->post->create( array( 'post_status' => 'publish' ) );
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
-		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render-preview' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'queryId', 'abc' );
 		$request->set_param( 'attributes', array(
@@ -80,7 +133,7 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		// the request at the schema layer with a 400 before the handler runs.
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
-		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render-preview' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'attributes', array( 'source' => 'posts', 'perPage' => 1 ) );
 		$request->set_param( 'page', 1 );
@@ -98,7 +151,7 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) );
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
-		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render-preview' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'queryId', 'neg-page' );
 		$request->set_param( 'attributes', array( 'source' => 'posts', 'perPage' => 5 ) );
@@ -113,7 +166,7 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) );
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
-		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render-preview' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'queryId', 'sanitize-test' );
 		$request->set_param( 'attributes', array( 'source' => 'posts', 'perPage' => 5 ) );
@@ -160,7 +213,7 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render' );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/query/render-preview' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_param( 'queryId', 'x' );
 		$request->set_param( 'attributes', $attributes );

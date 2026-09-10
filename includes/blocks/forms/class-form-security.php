@@ -122,6 +122,53 @@ class Form_Security {
 	}
 
 	/**
+	 * Apply a shared IP limit across every public form.
+	 *
+	 * Per-form counters can be bypassed by inventing IDs or rotating through a
+	 * site owner's forms. This coarse limit bounds total write attempts while
+	 * leaving individual forms free to use their own stricter controls.
+	 *
+	 * @return true|WP_Error True if allowed, WP_Error if rate limited.
+	 */
+	public function check_global_rate_limit() {
+		$ip_address      = $this->get_client_ip();
+		$key             = 'dsgo_form_submit_ip_' . md5( $ip_address );
+		$count           = get_transient( $key );
+		$max_submissions = (int) apply_filters( 'designsetgo_form_global_rate_limit_count', 20, $ip_address );
+
+		if ( false !== $count && $count >= $max_submissions ) {
+			do_action( 'designsetgo_form_global_rate_limit_exceeded', $ip_address, $count, $max_submissions );
+
+			return new WP_Error(
+				'global_rate_limit',
+				__( 'Too many submissions. Please try again later.', 'designsetgo' ),
+				array( 'status' => 429 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Increment the shared IP limit after a successful submission.
+	 *
+	 * @return void
+	 */
+	public function increment_global_rate_limit(): void {
+		$ip_address  = $this->get_client_ip();
+		$key         = 'dsgo_form_submit_ip_' . md5( $ip_address );
+		$count       = get_transient( $key );
+		$time_window = (int) apply_filters( 'designsetgo_form_global_rate_limit_window', 60, $ip_address );
+
+		if ( false === $count ) {
+			set_transient( $key, 1, $time_window );
+			return;
+		}
+
+		set_transient( $key, $count + 1, $time_window );
+	}
+
+	/**
 	 * Verify Cloudflare Turnstile token.
 	 *
 	 * @param string $token The Turnstile response token from the frontend.

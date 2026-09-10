@@ -160,7 +160,7 @@ export default function useQueryPreview({
 		setRestState((s) => ({ ...s, loading: true }));
 
 		apiFetch({
-			path: '/designsetgo/v1/query/render',
+			path: '/designsetgo/v1/query/render-preview',
 			method: 'POST',
 			data: {
 				queryId,

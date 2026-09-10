@@ -26,7 +26,7 @@ if ( ! function_exists( 'designsetgo_render_product_categories_grid' ) ) {
 	 * @param array    $attributes Block attributes.
 	 * @param string   $content    Inner block content.
 	 * @param WP_Block $block      Block instance.
-	 * @return void
+	 * @return string|void Rendered category grid markup or no output.
 	 */
 	function designsetgo_render_product_categories_grid( $attributes, $content, $block ) {
 		// Bail if WooCommerce is not active.
@@ -94,7 +94,6 @@ if ( ! function_exists( 'designsetgo_render_product_categories_grid' ) ) {
 					'orderby'    => 'include',
 				)
 			);
-
 		} else {
 
 			// All mode: exclude empty (optionally) and the actual "Uncategorized" category.

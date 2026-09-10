@@ -100,6 +100,7 @@ export function notifyItemsAppended(container, queryId, added) {
 			detail: { queryId, added },
 		})
 	);
+	notifyContentUpdated(container, 'query-append');
 }
 
 // ---------------------------------------------------------------------------

@@ -15,6 +15,10 @@ module.exports = {
 	// (babel-plugin-istanbul is incompatible with glob v10 override)
 	coverageProvider: 'v8',
 
+	// Keep discovery inside the checkout's source and test directories. This
+	// prevents nested Git worktrees from being treated as duplicate test suites.
+	roots: ['<rootDir>/src', '<rootDir>/tests'],
+
 	// Test match patterns
 	testMatch: [
 		'**/tests/unit/**/*.test.js',

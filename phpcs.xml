@@ -5,6 +5,7 @@
 	<!-- Files to check -->
 	<file>./designsetgo.php</file>
 	<file>./includes</file>
+	<file>./src</file>
 
 	<!-- Exclude patterns -->
 	<exclude-pattern>*/vendor/*</exclude-pattern>

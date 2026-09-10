@@ -59,5 +59,8 @@ echo designsetgo_query_render_container( // phpcs:ignore WordPress.Security.Esca
 	$designsetgo_page,
 	$designsetgo_query_id,
 	$designsetgo_wrapper_attrs,
-	(array) ( $block->context ?? array() )
+	array_merge(
+		(array) ( $block->context ?? array() ),
+		array( 'postId' => isset( $block->context['postId'] ) ? absint( $block->context['postId'] ) : get_the_ID() )
+	)
 );

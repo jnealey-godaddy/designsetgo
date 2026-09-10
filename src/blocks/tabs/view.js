@@ -11,7 +11,9 @@
 		constructor(element) {
 			this.element = element;
 			this.nav = element.querySelector('.dsgo-tabs__nav');
-			this.panels = element.querySelectorAll('.dsgo-tab');
+			this.panels = Array.from(
+				element.querySelectorAll('.dsgo-tab')
+			).filter((panel) => panel.closest('.dsgo-tabs') === element);
 			this.activeTab = this.clampTabIndex(
 				parseInt(element.dataset.activeTab, 10)
 			);

@@ -289,7 +289,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			'itemTagName'          => 'li',
 			'emitSchema'           => true,
 			'relationshipField'    => '',
-			'relationshipFallback' => 'empty', // empty | all | parent
+			'relationshipFallback' => 'empty', // empty, all, or parent.
 			'groupBy'              => null,
 		);
 		return wp_parse_args( $attributes, $defaults );
@@ -305,7 +305,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 * Posts with no matching term land in the '__none__' / Uncategorized bucket.
 	 *
 	 * @param int[] $post_ids   Ordered list of post IDs to partition.
-	 * @param array $group_spec { field: string, key: string }
+	 * @param array $group_spec { field: string, key: string }.
 	 * @return array[] Array of groups: each { label: string, value: string, ids: int[] }
 	 */
 	function designsetgo_query_partition_items( array $post_ids, array $group_spec ) {
@@ -320,6 +320,15 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		}
 		$field = (string) $group_spec['field'];
 		$key   = (string) $group_spec['key'];
+		if ( 'meta' === $field && is_protected_meta( $key, 'post' ) ) {
+			return array(
+				array(
+					'label' => __( 'Uncategorized', 'designsetgo' ),
+					'value' => '__none__',
+					'ids'   => array_map( 'absint', $post_ids ),
+				),
+			);
+		}
 
 		$groups = array();
 		foreach ( $post_ids as $pid ) {
@@ -628,6 +637,8 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 *                                                      block comment strings). The
 	 *                                                      helper splits them here.
 	 *                          - params     (array)        URL filter params.
+	 *                          - postId     (int)          Saved source post ID for
+	 *                                                      public REST refreshes.
 	 *                          - wrapper_attrs (string|null) Pre-computed
 	 *                                                      get_block_wrapper_attributes()
 	 *                                                      string (first-paint only;
@@ -642,6 +653,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 				'page'          => 1,
 				'inner_html'    => '',
 				'params'        => array(),
+				'postId'        => 0,
 				'wrapper_attrs' => null,
 			)
 		);
@@ -659,7 +671,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			(int) $context['page'],
 			$query_id,
 			'class="dsgo-query dsgo-query-region dsgo-query--source-' . sanitize_key( (string) ( $attributes['source'] ?? 'posts' ) ) . '"',
-			array()
+			array( 'postId' => absint( $context['postId'] ) )
 		);
 
 		// totalPages/totalItems come from the state registry populated during
@@ -829,7 +841,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 			// REST call still returns a usable region.
 			if ( ! $results_child ) {
 				$children_html_direct = (string) $result['html'];
-				$blobs                = designsetgo_query_render_blobs( $query_id, $attributes, $parsed_children );
+				$blobs                = designsetgo_query_render_blobs( $query_id, (int) ( $base_context['postId'] ?? 0 ) );
 				$status               = sprintf(
 					'<div role="status" aria-live="polite" aria-atomic="true" class="screen-reader-text dsgo-query__status" data-dsgo-query-status="%1$s" data-dsgo-total-items="%2$d"></div>',
 					esc_attr( $query_id ),
@@ -841,6 +853,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 						'source'  => $source,
 						'page'    => (int) $page,
 						'busy'    => false,
+						'postId'  => (int) ( $base_context['postId'] ?? 0 ),
 						'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
 						'nonce'   => wp_create_nonce( 'wp_rest' ),
 					),
@@ -925,6 +938,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 				'source'  => $source,
 				'page'    => (int) $page,
 				'busy'    => false,
+				'postId'  => (int) ( $base_context['postId'] ?? 0 ),
 				'restUrl' => esc_url_raw( rest_url( 'designsetgo/v1/query/render' ) ),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
 			),
@@ -940,9 +954,8 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 
 		$merged_wrapper = trim( (string) $wrapper_attrs . ' ' . $iapi_attrs );
 
-		// Blobs + status for IAPI refresh. Blobs carry the attrs + serialized
-		// innerBlocks so the REST refresh can rebuild the same region.
-		$blobs  = designsetgo_query_render_blobs( $query_id, $attributes, $parsed_children );
+		// The public refresh route resolves the saved source by post + query ID.
+		$blobs  = designsetgo_query_render_blobs( $query_id, (int) ( $base_context['postId'] ?? 0 ) );
 		$status = sprintf(
 			'<div role="status" aria-live="polite" aria-atomic="true" class="screen-reader-text dsgo-query__status" data-dsgo-query-status="%1$s" data-dsgo-total-items="%2$d"></div>',
 			esc_attr( $query_id ),
@@ -963,35 +976,19 @@ endif;
 if ( ! function_exists( 'designsetgo_query_render_blobs' ) ) :
 
 	/**
-	 * Build the hidden blobs div (attrs + serialized innerBlocks) embedded
-	 * alongside the query region. Referenced by view.js during filter/sort
-	 * refresh so the REST payload can be reconstructed without a round-trip.
+	 * Build the hidden public refresh source embedded alongside the query region.
 	 *
 	 * @param string $query_id       Sanitized queryId.
-	 * @param array  $attributes     Query block attributes (already defaulted).
-	 * @param array  $parsed_children parse_blocks() entries.
+	 * @param int    $post_id Source post ID.
 	 * @return string HTML for the blobs div, or empty string when queryId is empty.
 	 */
-	function designsetgo_query_render_blobs( $query_id, array $attributes, array $parsed_children ) {
-		if ( '' === $query_id ) {
+	function designsetgo_query_render_blobs( $query_id, $post_id ) {
+		if ( '' === $query_id || ! $post_id ) {
 			return '';
-		}
-		$flags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
-
-		$full_inner_html = '';
-		foreach ( $parsed_children as $child ) {
-			if ( ! empty( $child['blockName'] ) && function_exists( 'serialize_block' ) ) {
-				$full_inner_html .= serialize_block( $child );
-			}
 		}
 
 		return '<div hidden class="dsgo-query__blobs" data-dsgo-blobs-for="' . esc_attr( $query_id ) . '">'
-			. '<script type="application/json" data-dsgo-attrs>'
-			. wp_json_encode( $attributes, $flags )
-			. '</script>'
-			. '<script type="application/json" data-dsgo-inner>'
-			. wp_json_encode( $full_inner_html, $flags )
-			. '</script>'
+			. '<span data-dsgo-query-post-id="' . esc_attr( (string) absint( $post_id ) ) . '"></span>'
 			. '</div>';
 	}
 

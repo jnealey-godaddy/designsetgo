@@ -25,7 +25,7 @@ if ( ! function_exists( 'designsetgo_render_product_showcase_hero' ) ) {
 	 * @param array    $attributes Block attributes.
 	 * @param string   $content    Inner block content.
 	 * @param WP_Block $block      Block instance.
-	 * @return void
+	 * @return string|void Password form or rendered block output.
 	 */
 	function designsetgo_render_product_showcase_hero( $attributes, $content, $block ) {
 		// Bail if WooCommerce is not active.
@@ -73,7 +73,12 @@ if ( ! function_exists( 'designsetgo_render_product_showcase_hero' ) ) {
 		$show_add_to_cart      = ! isset( $attributes['showAddToCart'] ) || $attributes['showAddToCart'];
 		$show_variations       = ! isset( $attributes['showVariations'] ) || $attributes['showVariations'];
 		$min_height            = isset( $attributes['minHeight'] ) ? $attributes['minHeight'] : '500px';
-		$focal_point           = isset( $attributes['mediaFocalPoint'] ) ? $attributes['mediaFocalPoint'] : array( 'x' => 0.5, 'y' => 0.5 );
+		$focal_point           = isset( $attributes['mediaFocalPoint'] )
+			? $attributes['mediaFocalPoint']
+			: array(
+				'x' => 0.5,
+				'y' => 0.5,
+			);
 		$allowed_alignments    = array( 'top', 'center', 'bottom' );
 		$vertical_alignment    = isset( $attributes['contentVerticalAlignment'] ) && in_array( $attributes['contentVerticalAlignment'], $allowed_alignments, true )
 			? $attributes['contentVerticalAlignment']
@@ -131,10 +136,11 @@ if ( ! function_exists( 'designsetgo_render_product_showcase_hero' ) ) {
 
 		// Set up global product for WooCommerce template functions.
 		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-		global $post;
-		$original_post    = $post;
-		$original_product = isset( $GLOBALS['product'] ) ? $GLOBALS['product'] : null;
-		$post             = get_post( $product_id );
+			global $post;
+			$original_post    = $post;
+			$original_product = isset( $GLOBALS['product'] ) ? $GLOBALS['product'] : null;
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- WooCommerce template functions require the global post object; restored below.
+			$post             = get_post( $product_id );
 		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound -- WooCommerce template functions require this global to be named exactly $product; swapped for loop context and restored below.
 		$GLOBALS['product'] = $product;
 		setup_postdata( $post );

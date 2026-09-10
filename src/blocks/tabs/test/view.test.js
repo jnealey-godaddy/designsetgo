@@ -10,7 +10,7 @@
  */
 
 const TABS_HTML = `
-	<div class="wp-block-designsetgo-tabs" data-active-tab="0" data-deep-linking="true">
+	<div class="wp-block-designsetgo-tabs dsgo-tabs" data-active-tab="0" data-deep-linking="true">
 		<div class="dsgo-tabs__nav"></div>
 		<div class="dsgo-tab" id="panel-one" aria-label="One"></div>
 		<div class="dsgo-tab" id="panel-two" aria-label="Two"></div>
@@ -64,5 +64,23 @@ describe('tabs deep linking', () => {
 
 		const first = el.querySelector('#panel-one');
 		expect(first.classList.contains('is-active')).toBe(true);
+	});
+
+	it('keeps nested tab panels out of the outer navigation', () => {
+		const el = mount('');
+		el.classList.add('dsgo-tabs');
+		el.innerHTML =
+			'<div class="dsgo-tabs__nav"></div>' +
+			'<div class="dsgo-tab" id="panel-outer-one" aria-label="Outer one"><div class="dsgo-tabs"><div class="dsgo-tab" id="panel-inner-one" aria-label="Inner one"></div><div class="dsgo-tab" id="panel-inner-two" aria-label="Inner two"></div></div></div>' +
+			'<div class="dsgo-tab" id="panel-outer-two" aria-label="Outer two"></div>';
+
+		const tabs = new window.DSGTabs(el);
+
+		expect(
+			el.querySelectorAll(':scope > .dsgo-tabs__nav .dsgo-tabs__tab')
+		).toHaveLength(2);
+		tabs.setActiveTab(1);
+		expect(el.querySelector('#panel-outer-one').hidden).toBe(true);
+		expect(el.querySelector('#panel-outer-two').hidden).toBe(false);
 	});
 });

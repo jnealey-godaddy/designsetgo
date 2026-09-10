@@ -60,7 +60,7 @@ export default function useRenderedItems({
 
 		const timer = setTimeout(() => {
 			apiFetch({
-				path: '/designsetgo/v1/query/render',
+				path: '/designsetgo/v1/query/render-preview',
 				method: 'POST',
 				data: {
 					queryId,

@@ -181,7 +181,7 @@ if ( ! function_exists( 'designsetgo_render_slider' ) ) {
 				'role'                 => 'region',
 				// Literal fallback mirrors save.js (which does not translate it).
 				// If save.js ever translates the default, match that change here too.
-				'aria-label'           => $atts['ariaLabel'] !== '' ? $atts['ariaLabel'] : 'Image slider',
+					'aria-label'           => '' !== $atts['ariaLabel'] ? $atts['ariaLabel'] : 'Image slider',
 				'aria-roledescription' => 'slider',
 			)
 		);

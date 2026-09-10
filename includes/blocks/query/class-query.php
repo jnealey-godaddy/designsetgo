@@ -35,23 +35,54 @@ class Controller {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_render' ),
-				'permission_callback' => array( $this, 'check_permission' ),
+				'permission_callback' => array( $this, 'check_public_render_permission' ),
 				'args'                => array(
-					'queryId'     => array(
+					'postId'     => array(
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
+					),
+					'queryId'    => array(
 						'type'              => 'string',
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_key',
 					),
 
-					// NOTE: `attributes` and `params` are nested objects; WP only enforces the
-					// top-level type. The shared render helper (designsetgo_query_render) is
-					// responsible for per-field sanitization of every value before it reaches
-					// WP_Query args or HTML output. Do NOT assume these arrive sanitized.
-					'attributes'  => array(
+					'page'       => array(
+						'type'              => 'integer',
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+					),
+					'params'     => array(
+						'type'    => 'object',
+						'default' => array(),
+					),
+					'currentUrl' => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'esc_url_raw',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/query/render-preview',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_preview_render' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'queryId'    => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'attributes' => array(
 						'type'     => 'object',
 						'required' => true,
 					),
-					'page'        => array(
+					'page'       => array(
 						'type'              => 'integer',
 						'default'           => 1,
 						'sanitize_callback' => 'absint',
@@ -60,11 +91,11 @@ class Controller {
 						'type'    => 'string',
 						'default' => '',
 					),
-					'params'      => array(
+					'params'     => array(
 						'type'    => 'object',
 						'default' => array(),
 					),
-					'currentUrl'  => array(
+					'currentUrl' => array(
 						'type'              => 'string',
 						'default'           => '',
 						'sanitize_callback' => 'esc_url_raw',
@@ -453,16 +484,87 @@ class Controller {
 	}
 
 	/**
+	 * Allow public rendering only for a published page that contains the named query.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return true|\WP_Error
+	 */
+	public function check_public_render_permission( \WP_REST_Request $request ) {
+		$post_id = absint( $request->get_param( 'postId' ) );
+		$post    = get_post( $post_id );
+
+		if ( ! $post || ! is_post_publicly_viewable( $post ) || post_password_required( $post ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'This query is not publicly available.', 'designsetgo' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
 	 * Handles the render REST request and returns HTML + pagination metadata.
+	 *
+	 * @param \WP_REST_Request $request The REST request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_render( \WP_REST_Request $request ) {
+		$query_id = (string) $request->get_param( 'queryId' );
+		$post     = get_post( absint( $request->get_param( 'postId' ) ) );
+		$block    = $post ? $this->find_saved_query_block( parse_blocks( $post->post_content ), $query_id ) : null;
+
+		if ( null === $block ) {
+			return new \WP_Error(
+				'query_not_found',
+				__( 'This query is not available on the requested page.', 'designsetgo' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$inner_html = '';
+		foreach ( (array) ( $block['innerBlocks'] ?? array() ) as $child ) {
+			$inner_html .= serialize_block( $child );
+		}
+
+		return $this->render_request(
+			(array) ( $block['attrs'] ?? array() ),
+			$query_id,
+			$inner_html,
+			$request,
+			(int) $post->ID
+		);
+	}
+
+	/**
+	 * Render arbitrary attributes for the authenticated editor preview only.
 	 *
 	 * @param \WP_REST_Request $request The REST request.
 	 * @return \WP_REST_Response
 	 */
-	public function handle_render( \WP_REST_Request $request ) {
-		$query_id    = $request->get_param( 'queryId' );
-		$attributes  = (array) $request->get_param( 'attributes' );
+	public function handle_preview_render( \WP_REST_Request $request ) {
+		return $this->render_request(
+			(array) $request->get_param( 'attributes' ),
+			(string) $request->get_param( 'queryId' ),
+			(string) $request->get_param( 'innerBlocks' ),
+			$request,
+			0
+		);
+	}
+
+	/**
+	 * Render a query request after its source has been authorised.
+	 *
+	 * @param array            $attributes Saved or editor-preview attributes.
+	 * @param string           $query_id Query ID.
+	 * @param string           $inner_html Serialized child blocks.
+	 * @param \WP_REST_Request $request The REST request.
+	 * @param int              $post_id Source post ID, if public.
+	 * @return \WP_REST_Response
+	 */
+	private function render_request( array $attributes, $query_id, $inner_html, \WP_REST_Request $request, $post_id ) {
 		$page        = max( 1, (int) $request->get_param( 'page' ) );
-		$inner_html  = (string) $request->get_param( 'innerBlocks' );
 		$params      = (array) $request->get_param( 'params' );
 		$current_url = (string) $request->get_param( 'currentUrl' );
 
@@ -509,6 +611,7 @@ class Controller {
 					'page'       => $page,
 					'inner_html' => $inner_html,
 					'params'     => $params,
+					'postId'     => $post_id,
 				)
 			);
 		} finally {
@@ -517,6 +620,33 @@ class Controller {
 		}
 
 		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Find the saved query block recursively by its stable query ID.
+	 *
+	 * @param array  $blocks Parsed blocks.
+	 * @param string $query_id Requested ID.
+	 * @return array|null Matching query block.
+	 */
+	private function find_saved_query_block( array $blocks, $query_id ) {
+		foreach ( $blocks as $block ) {
+			if (
+				'designsetgo/query' === ( $block['blockName'] ?? '' ) &&
+				sanitize_key( (string) ( $block['attrs']['queryId'] ?? '' ) ) === $query_id
+			) {
+				return $block;
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$match = $this->find_saved_query_block( $block['innerBlocks'], $query_id );
+				if ( null !== $match ) {
+					return $match;
+				}
+			}
+		}
+
+		return null;
 	}
 
 	/**

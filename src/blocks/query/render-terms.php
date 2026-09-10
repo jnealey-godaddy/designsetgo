@@ -10,6 +10,13 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! function_exists( 'designsetgo_query_render_terms' ) ) :
 
+	/**
+	 * Render taxonomy terms for a Dynamic Query.
+	 *
+	 * @param array $atts    Query attributes.
+	 * @param array $context Query render context.
+	 * @return array Rendered query result and pagination metadata.
+	 */
 	function designsetgo_query_render_terms( array $atts, array $context ) {
 		$per_page = max( 1, (int) $atts['perPage'] );
 		$page     = max( 1, (int) $context['page'] );
@@ -107,6 +114,9 @@ if ( ! function_exists( 'designsetgo_query_render_terms' ) ) :
 
 	/**
 	 * Whitelist orderby values acceptable to get_terms().
+	 *
+	 * @param string $orderby Requested orderby value.
+	 * @return string Safe get_terms() orderby value.
 	 */
 	function designsetgo_query_sanitize_term_orderby( $orderby ) {
 		$allowed = array( 'name', 'slug', 'term_group', 'term_id', 'id', 'description', 'parent', 'count', 'include', 'slug__in', 'meta_value', 'meta_value_num', 'none' );

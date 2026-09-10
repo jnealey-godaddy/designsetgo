@@ -4,12 +4,23 @@
  * Based on scroll position within page
  */
 
-/* global requestAnimationFrame */
+/* global requestAnimationFrame, cancelAnimationFrame */
+
+const activeAccordions = new Map();
+
+function cleanupDisconnectedAccordions() {
+	activeAccordions.forEach((cleanup, accordion) => {
+		if (!accordion.isConnected) {
+			cleanup();
+		}
+	});
+}
 
 /**
  * Initialize all scroll accordions on the page
  */
 function initScrollAccordions() {
+	cleanupDisconnectedAccordions();
 	const accordions = document.querySelectorAll('.dsgo-scroll-accordion');
 
 	if (!accordions.length) {
@@ -55,6 +66,7 @@ function initScrollAccordions() {
 
 		// Track scroll position and apply scaling
 		let ticking = false;
+		let frameId = null;
 
 		function updateCards() {
 			// Performance: Use cached viewport dimensions
@@ -81,12 +93,17 @@ function initScrollAccordions() {
 			});
 
 			ticking = false;
+			frameId = null;
 		}
 
 		// Throttle scroll events with requestAnimationFrame
 		function requestTick() {
+			if (!accordion.isConnected) {
+				cleanup();
+				return;
+			}
 			if (!ticking) {
-				requestAnimationFrame(updateCards);
+				frameId = requestAnimationFrame(updateCards);
 				ticking = true;
 			}
 		}
@@ -105,6 +122,19 @@ function initScrollAccordions() {
 		// Listen for scroll and resize events
 		window.addEventListener('scroll', requestTick, { passive: true });
 		window.addEventListener('resize', handleResize, { passive: true });
+		const cleanup = () => {
+			window.removeEventListener('scroll', requestTick);
+			window.removeEventListener('resize', handleResize);
+			clearTimeout(resizeTimer);
+			if (
+				null !== frameId &&
+				typeof cancelAnimationFrame === 'function'
+			) {
+				cancelAnimationFrame(frameId);
+			}
+			activeAccordions.delete(accordion);
+		};
+		activeAccordions.set(accordion, cleanup);
 
 		// Initial check
 		updateCards();

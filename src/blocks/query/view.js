@@ -283,6 +283,14 @@ function dsgoGetRestConfig(ctx) {
 	};
 }
 
+function dsgoGetSourcePostId(ctx, blobsHost) {
+	const source = blobsHost?.querySelector('[data-dsgo-query-post-id]');
+	const postId = Number(
+		source?.getAttribute('data-dsgo-query-post-id') || ctx?.postId
+	);
+	return Number.isInteger(postId) && postId > 0 ? postId : 0;
+}
+
 async function dsgoLoadMorePlain(ctx, button) {
 	if (!ctx?.queryId || ctx.busy || !(button instanceof HTMLElement)) {
 		return;
@@ -314,15 +322,11 @@ async function dsgoLoadMorePlain(ctx, button) {
 		const blobsHost = document.querySelector(
 			`[data-dsgo-blobs-for="${ctx.queryId}"]`
 		);
-		const attrsEl = blobsHost?.querySelector('script[data-dsgo-attrs]');
-		const innerEl = blobsHost?.querySelector('script[data-dsgo-inner]');
-
-		if (!attrsEl || !innerEl) {
+		const postId = dsgoGetSourcePostId(ctx, blobsHost);
+		if (!postId) {
 			return;
 		}
 
-		const attributes = JSON.parse(attrsEl.textContent);
-		const innerBlocks = JSON.parse(innerEl.textContent);
 		const nextPage = (ctx.page || 1) + 1;
 		const { restUrl, restNonce } = dsgoGetRestConfig(ctx);
 		const res = await fetch(restUrl, {
@@ -333,10 +337,10 @@ async function dsgoLoadMorePlain(ctx, button) {
 				'X-WP-Nonce': restNonce,
 			},
 			body: JSON.stringify({
+				postId,
 				queryId: ctx.queryId,
-				attributes,
 				page: nextPage,
-				innerBlocks,
+				params: dsgoCollectParams(new URL(window.location.href)),
 				currentUrl: window.location.href,
 			}),
 		});
@@ -745,14 +749,11 @@ function* dsgoQueryRefresh(ctx, url) {
 	}
 
 	try {
-		const attrsEl = blobsHost.querySelector('script[data-dsgo-attrs]');
-		const innerEl = blobsHost.querySelector('script[data-dsgo-inner]');
-		if (!attrsEl || !innerEl) {
+		const postId = dsgoGetSourcePostId(ctx, blobsHost);
+		if (!postId) {
 			return;
 		}
 
-		const attributes = JSON.parse(attrsEl.textContent);
-		const innerBlocks = JSON.parse(innerEl.textContent);
 		const params = dsgoCollectParams(url);
 
 		const restUrl =
@@ -768,10 +769,9 @@ function* dsgoQueryRefresh(ctx, url) {
 				'X-WP-Nonce': restNonce,
 			},
 			body: JSON.stringify({
+				postId,
 				queryId,
-				attributes,
 				page: 1,
-				innerBlocks,
 				params,
 				currentUrl: url.toString(),
 			}),
@@ -880,14 +880,11 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 	}
 
 	try {
-		const attrsEl = blobsHost.querySelector('script[data-dsgo-attrs]');
-		const innerEl = blobsHost.querySelector('script[data-dsgo-inner]');
-		if (!attrsEl || !innerEl) {
+		const postId = dsgoGetSourcePostId(ctx, blobsHost);
+		if (!postId) {
 			return;
 		}
 
-		const attributes = JSON.parse(attrsEl.textContent);
-		const innerBlocks = JSON.parse(innerEl.textContent);
 		const params = dsgoCollectParams(url);
 
 		const restUrl =
@@ -903,10 +900,9 @@ async function dsgoQueryRefreshPlain(ctx, url) {
 				'X-WP-Nonce': restNonce,
 			},
 			body: JSON.stringify({
+				postId,
 				queryId,
-				attributes,
 				page: 1,
-				innerBlocks,
 				params,
 				currentUrl: url.toString(),
 			}),
