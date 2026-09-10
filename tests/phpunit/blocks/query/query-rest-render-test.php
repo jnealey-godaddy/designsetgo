@@ -485,4 +485,61 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 		// Rendered inside the private page, so it stays behind that page's gate.
 		$this->assertSame( $page->ID, json_decode( base64_decode( $inner['source'] ), true )['sourcePostId'] );
 	}
+
+	public function test_preview_relationship_fallback_cannot_reach_a_hidden_post_type() {
+		register_post_type( 'dsgo_hidden_type', array( 'public' => false, 'capability_type' => 'dsgo_hidden_type', 'map_meta_cap' => true ) );
+		self::factory()->post->create( array( 'post_type' => 'dsgo_hidden_type', 'post_title' => 'HIDDEN-VIA-FALLBACK' ) );
+
+		try {
+			// With no parent item, the 'all' fallback renders a posts query of postType.
+			wp_set_current_user( self::factory()->user->create( array( 'role' => 'contributor' ) ) );
+			$response = rest_get_server()->dispatch(
+				$this->preview_request(
+					array(
+						'source'               => 'relationship',
+						'relationshipField'    => 'related',
+						'relationshipFallback' => 'all',
+						'postType'             => 'dsgo_hidden_type',
+					)
+				)
+			);
+		} finally {
+			unregister_post_type( 'dsgo_hidden_type' );
+		}
+
+		$this->assertSame( 403, $response->get_status() );
+	}
+
+	public function test_preview_manual_ids_skip_posts_of_types_the_user_cannot_see() {
+		// Searchable but not viewable: post_type 'any' still includes it.
+		register_post_type(
+			'dsgo_hidden_listed',
+			array(
+				'public'              => false,
+				'exclude_from_search' => false,
+				'capability_type'     => 'dsgo_hidden_listed',
+				'map_meta_cap'        => true,
+			)
+		);
+		$hidden  = self::factory()->post->create( array( 'post_type' => 'dsgo_hidden_listed', 'post_title' => 'HIDDEN-BY-ID' ) );
+		$visible = self::factory()->post->create( array( 'post_title' => 'VISIBLE-BY-ID' ) );
+
+		try {
+			wp_set_current_user( self::factory()->user->create( array( 'role' => 'contributor' ) ) );
+			$response = rest_get_server()->dispatch(
+				$this->preview_request(
+					array(
+						'source'    => 'manual',
+						'manualIds' => array( $hidden, $visible ),
+					)
+				)
+			);
+		} finally {
+			unregister_post_type( 'dsgo_hidden_listed' );
+		}
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertStringNotContainsString( 'HIDDEN-BY-ID', $response->get_data()['html'] );
+		$this->assertStringContainsString( 'VISIBLE-BY-ID', $response->get_data()['html'] );
+	}
 }

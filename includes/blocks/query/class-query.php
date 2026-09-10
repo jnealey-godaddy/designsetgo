@@ -536,30 +536,90 @@ class Controller {
 	 */
 	public function handle_preview_render( \WP_REST_Request $request ) {
 		$attributes = (array) $request->get_param( 'attributes' );
+		$query_id   = (string) $request->get_param( 'queryId' );
 		$source     = sanitize_key( (string) ( $attributes['source'] ?? 'posts' ) );
 
-		// Anyone who can edit posts can preview, so a posts query is limited to
+		// Anyone who can edit posts can preview, so a query is limited to post
 		// types they could already see or edit — never coupons, orders, etc.
-		// Every source except these falls through to the posts renderer, which
-		// reads postType; relationship and manual query post_type 'any'.
-		if ( ! in_array( $source, array( 'users', 'terms', 'relationship', 'manual' ), true ) ) {
-			$post_type = get_post_type_object( sanitize_key( (string) ( $attributes['postType'] ?? 'post' ) ) );
-			if ( ! $post_type || ( ! is_post_type_viewable( $post_type ) && ! current_user_can( $post_type->cap->edit_posts ) ) ) {
-				return new \WP_Error(
-					'rest_forbidden',
-					__( 'You cannot preview this content type.', 'designsetgo' ),
-					array( 'status' => 403 )
-				);
-			}
+		// Every source but users and terms can reach the posts renderer:
+		// unknown sources and `current` fall through to it, and relationship's
+		// 'all' fallback becomes it, each reading postType.
+		if ( ! in_array( $source, array( 'users', 'terms' ), true ) && ! self::can_preview_post_type( (string) ( $attributes['postType'] ?? 'post' ) ) ) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__( 'You cannot preview this content type.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
 		}
 
-		return $this->render_request(
-			$attributes,
-			(string) $request->get_param( 'queryId' ),
-			(string) $request->get_param( 'innerBlocks' ),
-			$request,
-			null
+		// Manual IDs (and an empty manual list) query post_type 'any', which
+		// spans every searchable type. Narrow the final WP_Query args instead of
+		// each path to them, after the query-scoped filter too: its name comes
+		// from the caller's queryId.
+		$restrict = array( __CLASS__, 'restrict_preview_post_types' );
+		$hooks    = array( 'designsetgo_query_args', 'designsetgo/query/' . $query_id . '/args' );
+		foreach ( $hooks as $hook ) {
+			add_filter( $hook, $restrict, PHP_INT_MAX );
+		}
+
+		try {
+			return $this->render_request(
+				$attributes,
+				$query_id,
+				(string) $request->get_param( 'innerBlocks' ),
+				$request,
+				null
+			);
+		} finally {
+			foreach ( $hooks as $hook ) {
+				remove_filter( $hook, $restrict, PHP_INT_MAX );
+			}
+		}
+	}
+
+	/**
+	 * Narrow an editor preview's WP_Query to post types the user may preview.
+	 *
+	 * @param mixed $args Query args (WP_Query, or WP_User_Query / get_terms for
+	 *                    other sources, which carry no post_type).
+	 * @return mixed Args with post_type narrowed.
+	 */
+	public static function restrict_preview_post_types( $args ) {
+		if ( ! is_array( $args ) || ! isset( $args['post_type'] ) ) {
+			return $args;
+		}
+
+		$requested = 'any' === $args['post_type']
+			? get_post_types( array( 'exclude_from_search' => false ) )
+			: (array) $args['post_type'];
+		$allowed   = array_values(
+			array_filter(
+				$requested,
+				static function ( $post_type ) {
+					return self::can_preview_post_type( (string) $post_type );
+				}
+			)
 		);
+
+		if ( empty( $allowed ) ) {
+			$args['post__in'] = array( 0 );
+		} else {
+			$args['post_type'] = $allowed;
+		}
+
+		return $args;
+	}
+
+	/**
+	 * Whether the current user may preview posts of a type.
+	 *
+	 * @param string $post_type Post type name.
+	 * @return bool True for types the public can view or the user can edit.
+	 */
+	private static function can_preview_post_type( $post_type ) {
+		$object = get_post_type_object( sanitize_key( $post_type ) );
+
+		return $object && ( is_post_type_viewable( $object ) || current_user_can( $object->cap->edit_posts ) );
 	}
 
 	/**
