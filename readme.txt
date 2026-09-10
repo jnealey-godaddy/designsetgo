@@ -5,7 +5,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.4
+Stable tag: 2.7.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -87,6 +87,12 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 10. Mobile responsive preview in the editor
 
 == Changelog ==
+
+= 2.7.5 - 2026-09-10 =
+
+* **Fix:** On some hosts, DesignSetGo couldn't create the database table that powers Dynamic Query filters, and it tried again on every admin page. That slowed wp-admin down enough for WordPress updates to time out. The table now installs on those hosts, and if it ever can't, DesignSetGo waits a day before trying again instead of retrying on every page.
+* **New:** If DesignSetGo can't create that table, administrators now see a notice explaining why, with a **Retry now** link. You can dismiss it. It stays on DesignSetGo's own admin pages until the problem is fixed.
+* **Fix:** Shape dividers, SVG patterns, expanding backgrounds and text reveal effects now work on blocks added by an AI assistant. The editor used to flag those blocks as invalid.
 
 = 2.7.4 - 2026-09-10 =
 
@@ -260,6 +266,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.7.5 =
+Fixes WordPress updates timing out in wp-admin on hosts where DesignSetGo couldn't create its Dynamic Query database table. Also fixes shape dividers and background effects on blocks added by an AI assistant.
 
 = 2.7.4 =
 Dynamic Query filters, sort and Load more now work for visitors who aren't logged in, and Load more keeps the active filters. Closes a hole that let any logged-in account list content that isn't public. Form Builder enforces required fields and a per-visitor submission limit on the server. Also fixes nested Tabs and more blocks added by an AI assistant.
