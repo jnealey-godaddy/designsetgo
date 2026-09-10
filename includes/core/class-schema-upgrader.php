@@ -7,6 +7,7 @@
 
 namespace DesignSetGo\Core;
 
+use DesignSetGo\Admin\SchemaUpgradeNotice;
 use DesignSetGo\Blocks\Query\FilterIndex;
 
 defined( 'ABSPATH' ) || exit;
@@ -20,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
  * schema (MyISAM's 1000-byte key limit) logged the same error on every
  * wp-admin request and dragged out core updates. A failure is now recorded
  * with its database error and retried once a day, after a plugin update, or
- * when an administrator asks.
+ * when an administrator asks. SchemaUpgradeNotice tells administrators.
  */
 class SchemaUpgrader {
 
@@ -45,11 +46,6 @@ class SchemaUpgrader {
 	const RETRY_INTERVAL = DAY_IN_SECONDS;
 
 	/**
-	 * Action name for the admin-post request that clears the failure and retries.
-	 */
-	const RETRY_ACTION = 'designsetgo_retry_db_upgrade';
-
-	/**
 	 * Installs missing schema, unless a recent failure says not to bother yet.
 	 *
 	 * @return void
@@ -67,6 +63,8 @@ class SchemaUpgrader {
 		if ( FilterIndex::install() ) {
 			update_option( self::OPTION_VERSION, self::SCHEMA_VERSION, false );
 			delete_option( self::OPTION_FAILURE );
+			// Nothing left to dismiss; don't let a stale dismissal hide a future failure.
+			delete_metadata( 'user', 0, SchemaUpgradeNotice::DISMISS_META, '', true );
 			return;
 		}
 
@@ -136,60 +134,5 @@ class SchemaUpgrader {
 		self::clear_failure();
 		self::maybe_upgrade();
 		return null === self::get_failure();
-	}
-
-	/**
-	 * Handles the admin-post request behind the notice's "Retry now" link.
-	 *
-	 * @return void
-	 */
-	public static function handle_retry(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do that.', 'designsetgo' ), 403 );
-		}
-		check_admin_referer( self::RETRY_ACTION );
-
-		self::retry();
-
-		$referer = wp_get_referer();
-		wp_safe_redirect( $referer ? $referer : admin_url() );
-		exit;
-	}
-
-	/**
-	 * Tells administrators the table could not be created, and why.
-	 *
-	 * @return void
-	 */
-	public static function admin_notice(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-		$failure = self::get_failure();
-		if ( null === $failure ) {
-			return;
-		}
-
-		$retry_url = wp_nonce_url( admin_url( 'admin-post.php?action=' . self::RETRY_ACTION ), self::RETRY_ACTION );
-		?>
-		<div class="notice notice-error">
-			<p>
-				<strong><?php esc_html_e( 'DesignSetGo could not create its Dynamic Query filter index table.', 'designsetgo' ); ?></strong>
-				<?php esc_html_e( 'Query filters and filter counts stay unavailable until it exists. DesignSetGo will try again in a day and after each plugin update.', 'designsetgo' ); ?>
-				<a href="<?php echo esc_url( $retry_url ); ?>"><?php esc_html_e( 'Retry now', 'designsetgo' ); ?></a>
-			</p>
-			<?php if ( '' !== $failure['error'] ) : ?>
-				<p>
-					<?php
-					printf(
-						/* translators: %s: database error message */
-						esc_html__( 'Database error: %s', 'designsetgo' ),
-						'<code>' . esc_html( $failure['error'] ) . '</code>'
-					);
-					?>
-				</p>
-			<?php endif; ?>
-		</div>
-		<?php
 	}
 }

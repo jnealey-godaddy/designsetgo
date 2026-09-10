@@ -78,6 +78,7 @@ designsetgo_uninstall_step(
 		delete_option( 'designsetgo_llms_full_txt_physical' );
 		delete_option( 'designsetgo_llms_htaccess_backfilled' );
 		delete_option( 'designsetgo_db_upgrade_failure' );
+		delete_metadata( 'user', 0, 'designsetgo_db_upgrade_notice_dismissed', '', true );
 	}
 );
 

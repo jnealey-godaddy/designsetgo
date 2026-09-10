@@ -583,8 +583,9 @@ class Plugin {
 		$this->load_dependencies();
 		$this->init();
 		add_action( 'admin_init', array( $this, 'maybe_upgrade' ) );
-		add_action( 'admin_notices', array( Core\SchemaUpgrader::class, 'admin_notice' ) );
-		add_action( 'admin_post_' . Core\SchemaUpgrader::RETRY_ACTION, array( Core\SchemaUpgrader::class, 'handle_retry' ) );
+		add_action( 'admin_notices', array( Admin\SchemaUpgradeNotice::class, 'admin_notice' ) );
+		add_action( 'admin_post_' . Admin\SchemaUpgradeNotice::RETRY_ACTION, array( Admin\SchemaUpgradeNotice::class, 'handle_retry' ) );
+		add_action( 'wp_ajax_' . Admin\SchemaUpgradeNotice::DISMISS_ACTION, array( Admin\SchemaUpgradeNotice::class, 'handle_dismiss' ) );
 	}
 
 	/**
@@ -632,6 +633,7 @@ class Plugin {
 
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index.php';
 		require_once DESIGNSETGO_PATH . 'includes/core/class-schema-upgrader.php';
+		require_once DESIGNSETGO_PATH . 'includes/admin/class-schema-upgrade-notice.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index-hooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-index-rebuilder.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/query/class-query-filter-registry.php';
@@ -822,8 +824,8 @@ class Plugin {
 	 * Running in the constructor caused phpstan analysis failures because
 	 * FilterIndex::install() requires that file at analysis time.
 	 *
-	 * The gate, the failure backoff and the admin notice live in
-	 * Core\SchemaUpgrader; this stays as the public hook target.
+	 * The gate and the failure backoff live in Core\SchemaUpgrader, the
+	 * notice in Admin\SchemaUpgradeNotice; this stays as the hook target.
 	 */
 	public function maybe_upgrade(): void {
 		Core\SchemaUpgrader::maybe_upgrade();
