@@ -672,11 +672,50 @@ class Block_Inserter {
 			}
 		}
 
+		// Grid mobile order - src/extensions/grid-mobile-order/index.js
+		// (applyMobileOrderSaveProps). Registered for every block
+		// (includes/extension-configs/grid-mobile-order.php, blocks => 'all')
+		// minus the user-configured exclusions. save.js clamps the value to
+		// 0..10 and writes the custom property only when it differs from the
+		// default 1, so a section ordered first on phones (0) must carry it or
+		// the editor rejects the stored HTML.
+		if ( isset( $attributes['dsgoMobileOrder'] )
+			&& is_numeric( $attributes['dsgoMobileOrder'] )
+			&& ! self::is_block_excluded_from_extensions( $block_name )
+		) {
+			$mobile_order = max( 0.0, min( 10.0, (float) $attributes['dsgoMobileOrder'] ) );
+			if ( 1.0 !== $mobile_order ) {
+				$styles['--dsgo-mobile-order'] = self::format_js_number( $mobile_order );
+			}
+		}
+
 		return array(
 			'classes' => $classes,
 			'styles'  => $styles,
 			'data'    => $data,
 		);
+	}
+
+	/**
+	 * Mirror the editor's shouldExtendBlock(): a block type (or its whole
+	 * namespace via `namespace/*`) that the user excluded from extensions in
+	 * the plugin settings never receives extension save props.
+	 *
+	 * @param string $block_name Block name.
+	 * @return bool Whether extensions are switched off for this block type.
+	 */
+	private static function is_block_excluded_from_extensions( string $block_name ): bool {
+		$settings = get_option( 'designsetgo_settings', array() );
+		$excluded = isset( $settings['excluded_blocks'] ) ? (array) $settings['excluded_blocks'] : array();
+		if ( empty( $excluded ) ) {
+			return false;
+		}
+		if ( in_array( $block_name, $excluded, true ) ) {
+			return true;
+		}
+		$namespace = strtok( $block_name, '/' );
+
+		return in_array( $namespace . '/*', $excluded, true );
 	}
 
 	/**
@@ -4368,15 +4407,19 @@ class Block_Inserter {
 		if ( '' !== (string) $input_padding ) {
 			$style_parts[] = '--dsgo-form-input-padding:' . esc_attr( $input_padding );
 		}
+		// save.js passes each colour through convertColorToCSSVar(), so a preset
+		// shorthand such as `var:preset|color|contrast` or a bare slug reaches the
+		// stored HTML as `var(--wp--preset--color--contrast)`. Writing the raw
+		// attribute produced an invalid custom property and failed validation.
 		if ( $field_label_color ) {
-			$style_parts[] = '--dsgo-form-label-color:' . esc_attr( $field_label_color );
+			$style_parts[] = '--dsgo-form-label-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_label_color ) );
 		}
 		// Omit when empty — .dsgo-form-builder in style.scss supplies the #d1d5db default.
 		if ( $field_border_color ) {
-			$style_parts[] = '--dsgo-form-border-color:' . esc_attr( $field_border_color );
+			$style_parts[] = '--dsgo-form-border-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_border_color ) );
 		}
 		if ( $field_background_color ) {
-			$style_parts[] = '--dsgo-form-field-bg:' . esc_attr( $field_background_color );
+			$style_parts[] = '--dsgo-form-field-bg:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_background_color ) );
 		}
 		$style = implode( ';', $style_parts );
 
@@ -4405,10 +4448,10 @@ class Block_Inserter {
 		// Build button style - must match save.js order.
 		$button_style_parts = array();
 		if ( $submit_button_color ) {
-			$button_style_parts[] = 'color:' . esc_attr( $submit_button_color );
+			$button_style_parts[] = 'color:' . esc_attr( self::convert_color_value_to_css_var( (string) $submit_button_color ) );
 		}
 		if ( $submit_button_background_color ) {
-			$button_style_parts[] = 'background-color:' . esc_attr( $submit_button_background_color );
+			$button_style_parts[] = 'background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $submit_button_background_color ) );
 		}
 		// Sizing is spread conditionally in save.js, so an unset value emits no
 		// declaration and the button inherits the theme's global button styles.
