@@ -406,17 +406,31 @@ class Block_Inserter {
 
 		\WP_Block_Supports::$block_to_render = $previous;
 
-		// Only the support classes are taken. The wrapper generators already
-		// emit the block's own `wp-block-*` and alignment classes, and the
-		// support classes are exactly the `has-*` set.
+		// The wrapper generators already emit the block's own `wp-block-*` and
+		// alignment classes, so from the applied set only two kinds are taken:
+		// the `has-*` support classes, and the tokens of the block's own
+		// `className` attribute (custom-classname support). useBlockProps.save()
+		// spreads both onto the root, so stored markup without the custom class
+		// fails block validation the first time the editor re-saves it. Taking
+		// the className tokens by intersection keeps a block that disables the
+		// support faithful. Layout classes (`is-layout-*`, `wp-container-*`)
+		// are render-time only and stay out.
+		$applied_classes = self::split_class_list( (string) ( $applied['class'] ?? '' ) );
+		$custom_classes  = isset( $attributes['className'] ) && is_string( $attributes['className'] )
+			? self::split_class_list( $attributes['className'] )
+			: array();
 		$support_classes = array_values(
 			array_filter(
-				self::split_class_list( (string) ( $applied['class'] ?? '' ) ),
-				static function ( $class_name ) {
-					return 0 === strpos( $class_name, 'has-' );
+				$applied_classes,
+				static function ( $class_name ) use ( $custom_classes ) {
+					return 0 === strpos( $class_name, 'has-' ) || in_array( $class_name, $custom_classes, true );
 				}
 			)
 		);
+
+		// Anchor support is the same story: save() writes the `anchor`
+		// attribute as the root `id`, and apply_block_supports() reports it.
+		$anchor_id = isset( $applied['id'] ) && is_string( $applied['id'] ) ? $applied['id'] : '';
 
 		// Editor extensions (hover effects, text reveal, expanding background)
 		// add their own classes/styles/data attributes onto the SAME root
@@ -477,6 +491,10 @@ class Block_Inserter {
 
 		foreach ( $support_classes as $class_name ) {
 			$processor->add_class( $class_name );
+		}
+
+		if ( '' !== $anchor_id && null === $processor->get_attribute( 'id' ) ) {
+			$processor->set_attribute( 'id', $anchor_id );
 		}
 
 		foreach ( $extension_props['data'] as $data_name => $data_value ) {
@@ -919,6 +937,22 @@ class Block_Inserter {
 
 				if ( ! is_string( $value ) ) {
 					continue;
+				}
+				// A free-form CSS value is written straight into an inline style
+				// declaration, so anything that could end that declaration (or
+				// the attribute) is refused rather than escaped: escaping would
+				// store markup save() never produces. Same set as
+				// sanitizeColumnTemplate() in src/blocks/grid/grid-columns.js.
+				if ( 'designsetgo/grid' === $block_name && 'columnTemplate' === $attribute && preg_match( '/[;{}<>"\']|url\s*\(/i', $value ) ) {
+					$problems[] = array(
+						'path'   => $block_path,
+						'block'  => $block_name,
+						'reason' => sprintf(
+							/* translators: %s: attribute name */
+							__( '%s: must be a plain grid-template-columns value; it cannot contain ; { } < > quotes or url().', 'designsetgo' ),
+							$attribute
+						),
+					);
 				}
 				$reason = $unsupported[ $block_name ][ $attribute ][ $value ] ?? null;
 				if ( null !== $reason ) {
@@ -2598,8 +2632,13 @@ class Block_Inserter {
 				$custom_column_gap = $attributes['columnGap'] ?? '';
 				$row_gap           = self::spacing_gap( $row_gap ) ?? ( '' !== $custom_row_gap ? $custom_row_gap : $default_gap );
 				$column_gap        = self::spacing_gap( $column_gap ) ?? ( '' !== $custom_column_gap ? $custom_column_gap : $default_gap );
+				// Mirrors src/blocks/grid/grid-columns.js: a custom template wins,
+				// then a column min width, then the repeated column count.
+				$column_template   = isset( $attributes['columnTemplate'] ) && is_string( $attributes['columnTemplate'] ) ? trim( $attributes['columnTemplate'] ) : '';
 				$columns_css       = 'repeat(' . $desktop_cols . ', 1fr)';
-				if ( ! empty( $attributes['columnMinWidth'] ) ) {
+				if ( '' !== $column_template ) {
+					$columns_css = $column_template;
+				} elseif ( ! empty( $attributes['columnMinWidth'] ) ) {
 					$share       = $desktop_cols > 1 ? '(100% - ' . ( $desktop_cols - 1 ) . ' * ' . $column_gap . ') / ' . $desktop_cols : '100%';
 					$columns_css = 'repeat(auto-fill, minmax(min(100%, max(' . $attributes['columnMinWidth'] . ', ' . $share . ')), 1fr))';
 				}

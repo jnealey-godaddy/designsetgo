@@ -184,6 +184,50 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 	 */
 	private function authored_payloads(): array {
 		return array(
+			// Custom class names and anchors reach the root element, on
+			// containers and on core text blocks alike, exactly where
+			// useBlockProps.save() spreads them.
+			'section-with-custom-class-and-anchor' => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'className'       => 'sd-site-band ck-visit',
+					'anchor'          => 'visit',
+					'backgroundColor' => 'base',
+				),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/heading',
+						'attributes' => array(
+							'level'     => 2,
+							'content'   => 'Make it your next stop',
+							'className' => 'sd-site-display',
+							'anchor'    => 'next-stop',
+						),
+					),
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => array(
+							'content'   => 'Come by for coffee, a pastry and a table when you need one.',
+							'className' => 'sd-site-reading',
+						),
+					),
+					array(
+						'name'        => 'designsetgo/grid',
+						'attributes'  => array(
+							'className'      => 'ck-mosaic',
+							'anchor'         => 'gallery',
+							'desktopColumns' => 2,
+							'columnTemplate' => 'minmax(0, .7fr) minmax(0, 1.3fr)',
+						),
+						'innerBlocks' => array(
+							array(
+								'name'       => 'designsetgo/row',
+								'attributes' => array( 'className' => 'ck-item' ),
+							),
+						),
+					),
+				),
+			),
 			'section-pill-paragraph-fifty-fifty-icon-button' => array(
 				'name'        => 'designsetgo/section',
 				'attributes'  => array(
