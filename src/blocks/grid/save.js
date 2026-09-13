@@ -30,6 +30,7 @@ export default function GridSave({ attributes }) {
 		constrainWidth,
 		contentWidth,
 		columnMinWidth,
+		columnTemplate,
 		desktopColumns,
 		tabletColumns,
 		mobileColumns,
@@ -119,7 +120,8 @@ export default function GridSave({ attributes }) {
 		gridTemplateColumns: getGridTemplateColumns(
 			columnMinWidth,
 			desktopColumns,
-			resolvedColumnGap
+			resolvedColumnGap,
+			columnTemplate
 		),
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,
