@@ -240,7 +240,19 @@ class Block_Configurator {
 					// defense-in-depth, not dead code.
 					$sanitized[ $key ] = sanitize_textarea_field( $decoded );
 				} else {
-					$sanitized[ $key ] = sanitize_text_field( $decoded );
+					$clean = sanitize_text_field( $decoded );
+					// Inline text keeps a single leading/trailing space the pipeline above trimmed:
+					// adjoining inline blocks (heading segments) rely on it for the word gap, and
+					// without it "belong in the" + "picture" renders as "thepicture".
+					if ( self::is_inline_text_attribute( $key ) && '' !== $clean ) {
+						if ( 1 === preg_match( '/^\s/', $value ) ) {
+							$clean = ' ' . $clean;
+						}
+						if ( 1 === preg_match( '/\s$/', $value ) ) {
+							$clean .= ' ';
+						}
+					}
+					$sanitized[ $key ] = $clean;
 				}
 			} elseif ( is_array( $value ) ) {
 				$sanitized[ $key ] = self::sanitize_attributes( $value );
@@ -300,6 +312,16 @@ class Block_Configurator {
 		);
 
 		return in_array( $key, $multiline_attrs, true );
+	}
+
+	/**
+	 * Whether an attribute holds inline rich text whose edge whitespace is meaningful.
+	 *
+	 * @param string $key Attribute key.
+	 * @return bool
+	 */
+	private static function is_inline_text_attribute( string $key ): bool {
+		return 'content' === $key;
 	}
 
 	/**
