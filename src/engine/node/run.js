@@ -14,8 +14,9 @@
 'use strict';
 
 const { parseArgs } = require('./args');
+const { buildFixtureCases } = require('./fixture-cases');
 
-const COMMANDS = ['assemble', 'validate', 'lint'];
+const COMMANDS = ['assemble', 'validate', 'lint', 'fixture-cases'];
 
 /**
  * @param {(file: string) => string} readFile Reads `file` as JSON.
@@ -122,6 +123,20 @@ function runValidate(engine, files, markup, flags, { stdout, writeFile }) {
 }
 
 /**
+ * @param {Object}                                    blocksApi The `@wordpress/blocks` module `bootEngine()` registered into.
+ * @param {Object}                                    flags     Parsed CLI flags.
+ * @param {{ stdout: Function, writeFile: Function }} io        Injected sinks.
+ * @return {number} Exit code: always 0 — generation cannot itself be "invalid".
+ */
+function runFixtureCases(blocksApi, flags, { stdout, writeFile }) {
+	const cases = buildFixtureCases(blocksApi);
+	const output = JSON.stringify(cases, null, 2);
+
+	emit(stdout, writeFile, output, flags.out);
+	return 0;
+}
+
+/**
  * Runs one CLI invocation against injected dependencies.
  *
  * @param {string[]}                                                                argv            `process.argv.slice(2)`.
@@ -149,7 +164,9 @@ function run(argv, { bootEngine, readFile, writeFile, stdout, stderr }) {
 		return 2;
 	}
 
-	if (!args.file.length) {
+	// fixture-cases takes no file argument — it generates from the registry,
+	// not from anything on disk — so only assemble/validate require one.
+	if (args.command !== 'fixture-cases' && !args.file.length) {
 		const usage =
 			args.command === 'validate'
 				? 'engine validate <file...> [--json] [--out <file>]'
@@ -159,14 +176,16 @@ function run(argv, { bootEngine, readFile, writeFile, stdout, stderr }) {
 	}
 
 	let input;
-	try {
-		input =
-			args.command === 'assemble'
-				? readJsonFile(readFile, args.file[0])
-				: args.file.map((file) => readTextFile(readFile, file));
-	} catch (error) {
-		stderr(`${error.message}\n`);
-		return 2;
+	if (args.command !== 'fixture-cases') {
+		try {
+			input =
+				args.command === 'assemble'
+					? readJsonFile(readFile, args.file[0])
+					: args.file.map((file) => readTextFile(readFile, file));
+		} catch (error) {
+			stderr(`${error.message}\n`);
+			return 2;
+		}
 	}
 
 	let boot;
@@ -187,6 +206,12 @@ function run(argv, { bootEngine, readFile, writeFile, stdout, stderr }) {
 
 	if (args.command === 'assemble') {
 		return runAssemble(boot.engine, input, args.flags, {
+			stdout,
+			writeFile,
+		});
+	}
+	if (args.command === 'fixture-cases') {
+		return runFixtureCases(boot.blocksApi, args.flags, {
 			stdout,
 			writeFile,
 		});

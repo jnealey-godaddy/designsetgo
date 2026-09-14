@@ -214,6 +214,30 @@ test('validate --out: writes the same content that went to stdout', () => {
 	assert.equal(stdout, `${written}\n`);
 });
 
+test('fixture-cases: exits 0, needs no file argument, and prints designsetgo/* cases nested by block then attribute', () => {
+	const { status, stdout, stderr } = runCli(['fixture-cases']);
+
+	assert.equal(status, 0);
+	assert.equal(stderr, '');
+	const cases = JSON.parse(stdout);
+	const blockNames = Object.keys(cases);
+	assert.ok(blockNames.length > 20);
+	blockNames.forEach((name) => assert.match(name, /^designsetgo\//));
+	// parent-restricted children never get a bare top-level case.
+	assert.equal(cases['designsetgo/tab'], undefined);
+});
+
+test('fixture-cases --out: writes the same content that went to stdout', () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsgo-engine-'));
+	const outFile = path.join(dir, 'cases.json');
+
+	const { status, stdout } = runCli(['fixture-cases', '--out', outFile]);
+
+	assert.equal(status, 0);
+	const written = fs.readFileSync(outFile, 'utf8');
+	assert.equal(stdout, `${written}\n`);
+});
+
 test('lint: exits 2 with "lint is not available yet"', () => {
 	const { status, stdout, stderr } = runCli(['lint', VALID_TREE]);
 

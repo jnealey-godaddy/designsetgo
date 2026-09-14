@@ -33,10 +33,15 @@ import fs from 'fs';
 import path from 'path';
 
 import { registerForJest } from '../../src/engine/registry/sources-fs';
+import { withQuietConsole } from '../../src/engine/quiet';
 
 const FIXTURE = path.join(
 	__dirname,
 	'__fixtures__/ability-generated-markup.json'
+);
+const KNOWN_DRIFT_FIXTURE = path.join(
+	__dirname,
+	'__fixtures__/ability-generated-known-drift.json'
 );
 
 /**
@@ -130,16 +135,82 @@ describe('Abilities-generated markup validates against save()', () => {
 		expect(offenders).toEqual([]);
 	});
 
-	it('validates every payload', () => {
+	it('validates every non-generated payload', () => {
 		const failures = [];
 
-		Object.entries(fixture).forEach(([label, markup]) => {
-			const invalid = collectInvalid(parse(markup));
-			if (invalid.length) {
-				failures.push(`${label}:\n  ${invalid.join('\n  ')}`);
-			}
-		});
+		Object.entries(fixture)
+			.filter(([label]) => !label.startsWith('generated::'))
+			.forEach(([label, markup]) => {
+				const invalid = collectInvalid(parse(markup));
+				if (invalid.length) {
+					failures.push(`${label}:\n  ${invalid.join('\n  ')}`);
+				}
+			});
 
 		expect(failures).toEqual([]);
+	});
+
+	// `generated::<block>::<attribute>` payloads (tests/phpunit/abilities-generated-markup-fixture-test.php's
+	// generated_payloads(), sourced from the Node engine's `fixture-cases`
+	// command) probe every attribute of every designsetgo/* block through the
+	// Abilities API's frozen PHP writer — not just each block's defaults. Some
+	// of these are ALREADY invalid against save() (real, pre-existing drift
+	// between Block_Inserter and the block's own save()), tracked in
+	// ability-generated-known-drift.json so this suite still fails on any
+	// invalid key that is NOT already known, without also having to fix (or
+	// silently tolerate more of) the existing drift in this task.
+	describe('generated:: cases against the known-drift allowlist', () => {
+		let knownDrift;
+		let actualInvalidKeys;
+
+		beforeAll(() => {
+			expect(fs.existsSync(KNOWN_DRIFT_FIXTURE)).toBe(true);
+			knownDrift = JSON.parse(
+				fs.readFileSync(KNOWN_DRIFT_FIXTURE, 'utf8')
+			);
+
+			// A known-invalid generated payload legitimately logs a WordPress
+			// block-validation console.warn while parsing — that IS the known
+			// drift this describe block exists to track, not an unexpected
+			// side effect @wordpress/jest-console should fail the suite over.
+			actualInvalidKeys = withQuietConsole(() =>
+				Object.entries(fixture)
+					.filter(([label]) => label.startsWith('generated::'))
+					.filter(
+						([, markup]) => collectInvalid(parse(markup)).length > 0
+					)
+					.map(([label]) => label)
+			);
+		});
+
+		it('is a sorted JSON array of generated:: keys', () => {
+			expect(Array.isArray(knownDrift)).toBe(true);
+			knownDrift.forEach((key) => {
+				expect(key).toMatch(/^generated::/);
+			});
+			expect(knownDrift).toEqual([...knownDrift].sort());
+		});
+
+		it('has no invalid generated:: case outside the known-drift allowlist', () => {
+			const newDrift = actualInvalidKeys.filter(
+				(key) => !knownDrift.includes(key)
+			);
+			expect(newDrift).toEqual([]);
+		});
+
+		it('has no known-drift entry that is valid again (remove it from known drift)', () => {
+			const stillInvalid = new Set(actualInvalidKeys);
+			const noLongerDrifting = knownDrift.filter(
+				(key) => !stillInvalid.has(key)
+			);
+			expect(noLongerDrifting).toEqual([]);
+		});
+
+		it('has no known-drift entry missing from the fixture', () => {
+			const missing = knownDrift.filter(
+				(key) => !Object.prototype.hasOwnProperty.call(fixture, key)
+			);
+			expect(missing).toEqual([]);
+		});
 	});
 });

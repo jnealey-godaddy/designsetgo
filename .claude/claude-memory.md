@@ -490,3 +490,66 @@ re-register the block this call just tore down. Removed; only the scratch
 `PASSTHROUGH_BLOCK` is still unregistered in `finally`. No current test exercises
 `regeneratePatterns()` end-to-end (only the lower-level `regenerateBlockRegions()` is
 tested), so this was a latent bug, not an active failure.
+
+### Generated cases for the frozen PHP writer (agent: agent-block-engine-task8-2026-09-14)
+
+`nonDefaultValue()` moved to `src/engine/testing/non-default-value.js` (engine source may
+not import from `tests/`); `tests/unit/helpers/non-default-value.js` is now a one-line
+re-export, so both existing importers keep working unchanged.
+
+`src/engine/node/fixture-cases.js` exports a pure `buildFixtureCases(blocksApi)`: one probe
+case per probeable attribute (reusing round-trip.test.js's `isProbeable` — skips
+`role:'local'`, `__experimental*`, and non-html/text `source`) of every `designsetgo/*`
+block NOT restricted by `parent`/`ancestor` in its registered block type. `bootEngine()`
+(`boot.js`) now also returns `blocksApi` so the CLI can reach it. Wired into `run.js` as a
+fourth command, `fixture-cases --out <file>` — the only command that takes no file argument.
+41 eligible blocks, 1907 raw JS-side cases (`npm run engine -- fixture-cases --out ...`).
+
+PHP side (`tests/phpunit/abilities-generated-markup-fixture-test.php`): `generated_cases()`
+reads that JSON, `generated_payloads()` turns it into `generated::<block>::<attribute>`
+payloads merged into `payloads()`. Two skip reasons, both surfaced (never silent) via
+`generated_skip_reasons()`, printed to STDOUT only on `DSGO_UPDATE_FIXTURES=1` regeneration:
+whole-block `Block_Inserter::get_serialization_gap()` (none currently), and one real
+schema-drift case caught immediately — `designsetgo/flip-card`'s (and 7 sibling blocks')
+`dsgoParallaxRotateDirection` is `enum:['cw','ccw']` in the PHP-side extension config
+(`includes/extension-configs/vertical-parallax.php`) but plain `string` in the JS side
+(`src/extensions/vertical-scroll-parallax/attributes.js`), so the JS-registered schema's
+`nonDefaultValue()` probe (`'7px'`) fails PHP's own `find_invalid_attribute_values()` for a
+reason that has nothing to do with markup drift. Filtered in `generated_payloads()` before
+it can ever reach `test_fixture_payloads_use_valid_attribute_values()`. 8 cases skipped this
+way; 1899 of 1907 became real payloads.
+
+Jest (`tests/unit/ability-generated-markup.test.js`): split the old single "validates every
+payload" test into "validates every non-generated payload" (unchanged hard-fail behavior)
+and a `generated:: cases against the known-drift allowlist` describe block, comparing actual
+invalid `generated::` keys against `tests/unit/__fixtures__/ability-generated-known-drift.json`
+(sorted JSON array) — fails on a NEW invalid key, a listed key that's valid again, or a
+listed key missing from the fixture. Parsing a known-invalid payload legitimately triggers
+WordPress's block-validation `console.warn`; that beforeAll is wrapped in
+`withQuietConsole()` (`src/engine/quiet.js`) since @wordpress/jest-console would otherwise
+fail the suite over expected noise.
+
+**406 of 1899 generated cases (21%) are pre-existing known drift**, all recorded in the
+known-drift fixture. Overwhelmingly systemic, not 406 independent bugs: 10 shared-extension
+attributes (`dsgoAnimationEnabled`, `dsgoColumnSpan`, `dsgoCustomCSS`, `dsgoHideOnDesktop/
+Tablet/Mobile`, `dsgoMobileOrder`, `dsgoRevealOnHover`, `dsgoRowSpan`, `dsgoSvgDraw`) drift
+on ALL 31 static blocks that carry them (310 of 406) — `Block_Inserter` appears to never
+mirror these extensions' markup at all. Plus `dsgoMaxWidth` (27), `gradient` (12),
+`dsgoVideoUrl` (9), `dsgoParallaxEnabled` (7), and ~20 one-off per-block attributes (form
+builder submit-button hover colors, modal close-button styling, counter-group hoverColor,
+etc). None of this was introduced by Task 8 — it was always there, just never probed before
+because the hand-authored fixture only covered attribute combinations someone thought to
+write by hand. Fixing it is future work (a real long tail for whoever picks up the frozen
+PHP writer next), deliberately out of scope here per the brief.
+
+phpcs on the touched PHP file was ALREADY failing on a clean `git show HEAD:...` copy before
+this task touched it — 2 pre-existing `WordPressVIPMinimum.Performance.FetchingRemoteData.
+FileGetContentsUnknown` warnings (exit 1) on the two original `file_get_contents()` fixture
+reads, unrelated to Task 8. Verified via a throwaway baseline copy inside the same phpcs run
+rather than assuming. This task's new `file_get_contents()` call (`generated_cases()`) adds
+one more of the exact same pre-existing warning category, matching the file's own existing
+(unsuppressed) convention for local fixture reads; 0 new errors. The two new `fwrite()`
+diagnostic calls DO need suppressing — `WordPressVIPMinimum.Functions.RestrictedFunctions.
+file_ops_fwrite`, not `WordPress.WP.AlternativeFunctions.file_system_operations_fwrite` (the
+sibling `file_put_contents`/`mkdir` ignore comments a few lines up use the latter family, but
+`fwrite` only has a VIPMinimum restricted-function rule, no AlternativeFunctions one).

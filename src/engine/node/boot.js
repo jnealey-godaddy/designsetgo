@@ -23,8 +23,12 @@ const { createEngine } = require('../index');
  * (the CLI) must treat that as a boot failure, not attempt to run the
  * partially-booted engine.
  *
- * @return {{ engine: { assemble: Function, validate: Function }, failures: { file: string, message: string }[] }}
- *   The bound engine and any per-file registration failures.
+ * @return {{ engine: { assemble: Function, validate: Function }, failures: { file: string, message: string }[], blocksApi: Object }}
+ *   The bound engine, any per-file registration failures, and the
+ *   `@wordpress/blocks` module the engine and every block were registered
+ *   into — the `fixture-cases` command needs the raw module to enumerate
+ *   every registered block type, not just the `assemble`/`validate` surface
+ *   `engine` exposes.
  */
 function bootEngine() {
 	const failures = registerForNode();
@@ -33,7 +37,7 @@ function bootEngine() {
 	const blocksApi = require('@wordpress/blocks');
 	const engine = createEngine(blocksApi);
 
-	return { engine, failures };
+	return { engine, failures, blocksApi };
 }
 
 module.exports = { bootEngine };

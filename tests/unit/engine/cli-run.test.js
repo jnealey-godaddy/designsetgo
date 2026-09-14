@@ -118,4 +118,52 @@ describe('run() happy path', () => {
 		expect(sinks.stderrText()).toBe('');
 		expect(assemble).toHaveBeenCalledWith({ version: 1, blocks: [] });
 	});
+
+	it('fixture-cases: exits 0 and prints buildFixtureCases() output, without a file argument', () => {
+		const sinks = makeSinks();
+		const blocksApi = { getBlockTypes: jest.fn(() => []) };
+		const bootEngine = jest.fn(() => ({
+			engine: { assemble: jest.fn(), validate: jest.fn() },
+			failures: [],
+			blocksApi,
+		}));
+		const readFile = jest.fn();
+		const writeFile = jest.fn();
+
+		const code = run(['fixture-cases'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(0);
+		expect(readFile).not.toHaveBeenCalled();
+		expect(sinks.stderrText()).toBe('');
+		expect(sinks.stdoutText()).toBe('{}\n');
+	});
+
+	it('fixture-cases --out: writes the same content that went to stdout', () => {
+		const sinks = makeSinks();
+		const blocksApi = { getBlockTypes: jest.fn(() => []) };
+		const bootEngine = jest.fn(() => ({
+			engine: { assemble: jest.fn(), validate: jest.fn() },
+			failures: [],
+			blocksApi,
+		}));
+		const readFile = jest.fn();
+		const writeFile = jest.fn();
+
+		const code = run(['fixture-cases', '--out', 'cases.json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(0);
+		expect(writeFile).toHaveBeenCalledWith('cases.json', '{}');
+	});
 });
