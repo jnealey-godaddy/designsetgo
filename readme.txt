@@ -52,6 +52,8 @@ DesignSetGo only contacts outside services for the features below, and only when
 
 Two bundled patterns (Video Testimonial and Hero with Video Modal) include a sample YouTube video through WordPress's own embed block. Replace it with your own video, or visitors' browsers will load it from YouTube.
 
+The Slider block's Scroll Carousel variation starts with four sample images hosted by [Lorem Picsum](https://picsum.photos/). Replace them with your own images, or visitors' browsers will load them from picsum.photos. The Scrolling Gallery preview in the block inserter also shows sample images from Lorem Picsum.
+
 = Privacy =
 
 * DesignSetGo has no tracking or analytics, and sends nothing about your site to its developers.
