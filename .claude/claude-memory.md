@@ -431,3 +431,26 @@ migrates an installed table. A real key change needs an explicit `ALTER`.
 a rejected schema no longer re-runs dbDelta on every `admin_init`. In PHPUnit, break a
 CREATE with the `query` filter, and match `CREATE TEMPORARY TABLE` too, because the core test
 suite rewrites CREATE to TEMPORARY on that same filter first.
+
+### Engine round-trip suite (agent: agent-block-engine-task6-2026-09-14)
+
+`tests/unit/engine/round-trip.test.js` proves every `designsetgo/*` block's every
+probeable attribute survives `engine.assemble()` → markup → re-parse. It calls
+`registerForJest()` at **module scope**, not inside `beforeAll` — `describe.each`/
+`test.each` need real `getBlockType()` schemas while Jest is still *collecting* the
+file's tests, which happens before any `beforeAll` runs. Registration is idempotent,
+so this is safe.
+
+Only two attributes are lossy by design, both `align`, both on blocks that migrated to
+the `justification` pattern years ago: `designsetgo/icon` and `designsetgo/pill` each
+ship a `vAlign` deprecation whose `isEligible()` fires on *any* stored `align` value and
+`migrate()`s it to `justification`, dropping `align`. The attribute still exists in
+their current `block.json` schema only so old content keeps validating — setting it on
+a freshly assembled block is correctly lossy, not a bug. Listed in the test's
+`KNOWN_LOSSY` map. No other block among the 72 registered (3,020 attribute probes) hit
+this — every other `align`-supporting block round-trips it cleanly.
+
+`tests/unit/helpers/non-default-value.js` now holds `nonDefaultValue()`, extracted
+verbatim from `deprecations-isEligible.test.js` (which still imports it). Confirmed
+Jest's `testMatch` (`**/tests/unit/**/*.test.js`) does not collect non-`.test.js` files
+under `tests/unit/helpers/` as suites.
