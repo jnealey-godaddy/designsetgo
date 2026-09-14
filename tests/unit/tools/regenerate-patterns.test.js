@@ -1,17 +1,30 @@
 /**
  * regenerate-patterns — inner-block preservation
  *
- * Regression coverage for a real content-destroying bug: the tool registers ONLY
- * the block it is regenerating, so any OTHER block nested inside the target
- * (core/heading, core/paragraph, designsetgo/flip-card-face …) was an
- * unregistered type at parse time. WordPress's parser dropped those blocks
- * outright and serialize() wrote back an empty container — silently deleting
- * real authored content from 16 pattern files, with a diff that looked like a
- * clean CSS-constant removal.
+ * Regression coverage for a real content-destroying bug: the tool used to
+ * register ONLY the block it is regenerating, so any OTHER block nested
+ * inside the target (core/heading, core/paragraph, designsetgo/flip-card-face
+ * …) was an unregistered type at parse time. WordPress's parser dropped those
+ * blocks outright and serialize() wrote back an empty container — silently
+ * deleting real authored content from 16 pattern files, with a diff that
+ * looked like a clean CSS-constant removal.
  *
  * Two defences, both asserted here:
  *  1. a passthrough handler, so unknown inner blocks round-trip verbatim;
  *  2. assertNoContentLoss(), which throws if any block count changes.
+ *
+ * registerDesignSetGoBlock() now registers through the engine's full Jest
+ * registry (registerForJest()) rather than just the target block, so every
+ * real DesignSetGo and core block used below (flip-card-face, icon, heading,
+ * paragraph) is genuinely registered, not "unregistered and caught by the
+ * passthrough" — the passthrough mechanism they used to exercise no longer
+ * applies to them. To keep testing the ACTUAL failure mode the passthrough
+ * exists for (a block type the engine registry genuinely does not know
+ * about — e.g. a third-party plugin block embedded in a pattern), the
+ * fixture below also nests a synthetic, never-registered
+ * `acme/unregistered-widget` block. That one block is what proves the
+ * passthrough round-trips unknown content and what the "guard has teeth"
+ * test drops to prove assertNoContentLoss still fires.
  */
 
 import {
@@ -28,6 +41,12 @@ const FLIP_CARD = 'designsetgo/flip-card';
 // A flip card as it is really stored in patterns/: a container whose inner
 // blocks are OTHER block types (flip-card-face → icon + heading + paragraph).
 // The old markup also carried the `width:100%` constant the refactor removed.
+//
+// `acme/unregistered-widget` is a synthetic block type that is NEVER
+// registered anywhere in this file (unlike flip-card-face/icon/heading/
+// paragraph, which registerDesignSetGoBlock()'s full registry now registers
+// for real) — it stands in for a third-party plugin block embedded in a
+// pattern, the one case the passthrough handler still has to cover.
 const NESTED_FLIP_CARD = `<!-- wp:designsetgo/flip-card -->
 <div class="wp-block-designsetgo-flip-card dsgo-flip-card dsgo-flip-card--hover dsgo-flip-card--effect-flip dsgo-flip-card--horizontal" style="--dsgo-flip-duration:0.6s;width:100%" data-flip-trigger="hover" data-flip-effect="flip" data-flip-direction="horizontal"><div class="dsgo-flip-card__container"><!-- wp:designsetgo/flip-card-face {"side":"front"} -->
 <div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__front"><!-- wp:designsetgo/icon {"icon":"chart","iconSize":56} /-->
@@ -38,7 +57,9 @@ const NESTED_FLIP_CARD = `<!-- wp:designsetgo/flip-card -->
 
 <!-- wp:paragraph -->
 <p>Hover to learn more</p>
-<!-- /wp:paragraph --></div>
+<!-- /wp:paragraph -->
+
+<!-- wp:acme/unregistered-widget {"x":1} --><div class="acme">kept</div><!-- /wp:acme/unregistered-widget --></div>
 <!-- /wp:designsetgo/flip-card-face --></div></div>
 <!-- /wp:designsetgo/flip-card -->`;
 
@@ -91,6 +112,10 @@ describe('regenerateBlockRegions - nested blocks must survive', () => {
 		expect(content).toContain('wp:designsetgo/icon');
 		expect(content).toContain('wp:heading');
 		expect(content).toContain('wp:paragraph');
+		// A genuinely unregistered block type — never registered anywhere in
+		// this file, unlike the real DesignSetGo/core blocks above — must
+		// still round-trip through the passthrough handler.
+		expect(content).toContain('wp:acme/unregistered-widget');
 	});
 
 	test('nested authored copy survives verbatim', () => {
@@ -98,12 +123,20 @@ describe('regenerateBlockRegions - nested blocks must survive', () => {
 		// The exact content that was destroyed in the real incident.
 		expect(content).toContain('Real-time Analytics');
 		expect(content).toContain('Hover to learn more');
+		// The synthetic foreign block's own markup, verbatim.
+		expect(content).toContain('<div class="acme">kept</div>');
 	});
 
 	test('no block is added or removed', () => {
 		const content = regenerateFixture();
 		const count = (s) => (s.match(/<!--\s*wp:/g) || []).length;
 		expect(count(content)).toBe(count(NESTED_FLIP_CARD));
+		// Explicitly: the foreign block's own comment count is unchanged, not
+		// just the aggregate — it neither duplicates nor disappears.
+		const acmeCount = (s) =>
+			(s.match(/<!--\s*wp:acme\/unregistered-widget/g) || []).length;
+		expect(acmeCount(content)).toBe(acmeCount(NESTED_FLIP_CARD));
+		expect(acmeCount(NESTED_FLIP_CARD)).toBe(1);
 	});
 
 	test('the passthrough scaffold leaves no trace in the output', () => {
@@ -124,8 +157,13 @@ describe('regenerateBlockRegions - nested blocks must survive', () => {
 
 describe('assertNoContentLoss - the guard has teeth', () => {
 	test('throws (rather than silently writing) if inner blocks are dropped', () => {
-		// Simulate the failure mode directly: no passthrough handler, so the
-		// nested types are unregistered and the parser drops them.
+		// Simulate the failure mode directly: no passthrough handler, so an
+		// unregistered type has nowhere to go and the parser drops it.
+		// flip-card-face/icon/heading/paragraph are unaffected by this — the
+		// full registry (registerDesignSetGoBlock() -> registerForJest())
+		// registers those for real, regardless of the passthrough handler —
+		// so `acme/unregistered-widget`, which is never registered anywhere
+		// in this file, is the only block this setup can actually drop.
 		setUnregisteredHandlerToNothing();
 
 		expect(() =>

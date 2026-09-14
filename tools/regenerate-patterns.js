@@ -9,12 +9,13 @@
  * tries to validate it.
  *
  * DYNAMIC DesignSetGo blocks (render.php, no save.js — e.g. designsetgo/pill,
- * designsetgo/icon) have no save() to `require()`. Their correct serialized
- * form is a bare self-closing comment (`<!-- wp:{block} {...} /-->`) — the
- * real `save: () => null` a plain block registered with no `save` key would
- * get from `@wordpress/blocks` — so registerDesignSetGoBlock() below falls
- * back to that when a block's directory has no save.js, instead of throwing
- * on the missing `require()`.
+ * designsetgo/icon) have no save() at all. Their correct serialized form is
+ * a bare self-closing comment (`<!-- wp:{block} {...} /-->`) — the real
+ * `save: () => null` a plain block registered with no `save` key gets from
+ * `@wordpress/blocks`. registerDesignSetGoBlock() below registers every
+ * block through the engine's real registration path (each block's own
+ * index.js), so this falls out naturally: a dynamic block's index.js simply
+ * never calls `registerBlockType` with a `save` key.
  *
  * This module finds every `<!-- wp:{block} ... -->...<!-- /wp:{block} -->`
  * region for the given block name inside the patterns directory, parses it
@@ -43,17 +44,19 @@
  * Extension attributes: pattern content commonly carries attributes from
  * universal editor extensions (block-animations' `dsgoAnimationEnabled`/
  * `dsgoEntranceAnimation`, visibility's `dsgoVisibility`, etc.) that are NOT
- * part of the target block's own schema. Below, this module imports whichever
- * extensions actually appear on `designsetgo/icon-button` in this repo's
- * patterns (verified via `grep -ohE '"dsgo[A-Za-z]+"'` scoped to that block's
- * comments) BEFORE registering the target block — skipping this would make
- * `getBlockAttributes()` silently drop those extra keys during parse, so
+ * part of the target block's own schema. Skipping their registration would
+ * make `getBlockAttributes()` silently drop those extra keys during parse, so
  * `serialize()` would regenerate markup missing data the original author
- * actually had. Same "supports must be complete" failure mode Rule 2 of this
- * task guards against, just for extension attributes instead of block-support
- * attributes. Regenerating a DIFFERENT block later: re-check which extension
- * attributes that block's real pattern occurrences use and add the matching
- * `import '../src/extensions/...'` line(s) below.
+ * actually had — the same "supports must be complete" failure mode Rule 2 of
+ * this task guards against, just for extension attributes instead of
+ * block-support attributes. This used to require hand-maintaining an
+ * `import '../src/extensions/...'` list here, kept in sync with whichever
+ * extensions the target block's real pattern occurrences happened to use.
+ * That list is now obsolete: registerDesignSetGoBlock() registers through
+ * the engine's shared Jest registry (`registerForJest()`), which loads EVERY
+ * extension under `src/extensions/` before any block registers — mirroring
+ * the real editor's script-load order — so no per-block extension list needs
+ * maintaining here at all.
  *
  * Usage (from a disposable Jest test file, sync — no await needed):
  *   import { regeneratePatterns } from '../../tools/regenerate-patterns';
@@ -78,49 +81,25 @@ import {
 	serialize,
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
 import { createElement, RawHTML } from '@wordpress/element';
-// Wires up universal editor extensions' `blocks.registerBlockType` /
-// `blocks.getSaveContent.extraProps` filters as a side effect of import,
-// exactly like the real editor bundle (src/index.js loads these — and only
-// these, plus a global CSS import this script can't pull in under Jest —
-// before any block registers). Without this, extension attributes present in
-// real pattern content (e.g. `dsgoAnimationEnabled`) aren't part of the
-// registered schema, so getBlockAttributes() drops them during parse and the
-// regenerated markup silently loses them.
-//
-// NOTE: only block-animations is imported here because it's the only
-// extension whose attributes actually appear on `designsetgo/icon-button` in
-// this repo's patterns/ (verified via
-// `grep -ohE '"dsgo[A-Za-z]+"' patterns/**/*.php` scoped to icon-button block
-// comments). Regenerating a DIFFERENT block may need more of src/index.js's
-// extension list imported here — check that block's real pattern usage first.
-// eslint-disable-next-line import/no-unresolved
-import '../src/extensions/block-animations';
-// The ability-generated markup fixture also covers the save-time extensions
-// the server inserter mirrors (expanding background, SVG patterns, text
-// reveal). Each entry point registers the extension attributes and the
-// `blocks.getSaveContent.extraProps` filter, both of which save() needs to
-// emit the same root attributes the server writes.
-// eslint-disable-next-line import/no-unresolved
-import '../src/extensions/expanding-background';
-// eslint-disable-next-line import/no-unresolved
-import '../src/extensions/svg-patterns';
-// eslint-disable-next-line import/no-unresolved
-import '../src/extensions/text-reveal';
+import { registerForJest } from '../src/engine/registry/sources-fs';
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 
 /**
- * Passthrough handler for every block type that is NOT the regeneration target.
+ * Passthrough handler for any block type the engine registry does not cover.
  *
- * THIS IS LOAD-BEARING. Only the target block type gets registered below, so a
- * pattern that nests OTHER blocks inside the target — `core/heading` and
- * `core/paragraph` inside a `designsetgo/icon-list-item`, or
- * `designsetgo/flip-card-face` inside a `designsetgo/flip-card` — hits
- * unregistered block types when the region is parsed. Without a fallback,
- * WordPress's parser DROPS those blocks outright and serialize() writes back an
- * empty container: real headings, paragraphs and icons silently deleted from the
- * pattern file, with no error. (That is not hypothetical — it destroyed content
- * in 16 pattern files before this handler existed.)
+ * THIS IS LOAD-BEARING. registerDesignSetGoBlock() now registers every
+ * DesignSetGo block, every extension, and every core block (see its doc
+ * comment), so a pattern that nests `core/heading`/`core/paragraph` inside a
+ * `designsetgo/icon-list-item`, or `designsetgo/flip-card-face` inside a
+ * `designsetgo/flip-card`, resolves those normally. This handler remains the
+ * fallback for anything the engine registry genuinely does NOT know about —
+ * e.g. a third-party plugin's block embedded in a pattern. Without it,
+ * WordPress's parser DROPS unregistered blocks outright and serialize()
+ * writes back an empty container: real content silently deleted from the
+ * pattern file, with no error. (That is not hypothetical — it destroyed
+ * content in 16 pattern files before this handler existed, back when only
+ * the single target block was registered.)
  *
  * Registering a fallback makes the parser route unknown blocks through
  * createMissingBlockType(), which preserves their full delimited markup —
@@ -221,40 +200,26 @@ function assertNoContentLoss(before, after, filePath) {
 }
 
 /**
- * Registers a DesignSetGo block by slug, loading block.json/save.js/
- * deprecated.js from src/blocks/{slug}/.
+ * Registers every DesignSetGo block, extension, and core block through the
+ * engine's shared Jest registry (`registerForJest()` — see
+ * `src/engine/registry/sources-fs.js`), the same real `index.js` + extension
+ * load path `tests/unit/engine/round-trip.test.js` exercises. Registration
+ * is global and idempotent (an already-registered `designsetgo/section`
+ * short-circuits), so this is safe to call once per block name, per test, or
+ * not at all before `regeneratePatterns()` — the effect is identical either
+ * way.
  *
- * @param {string} blockName Full block name, e.g. "designsetgo/icon-button".
+ * `blockName` is no longer used to scope what gets registered — the engine
+ * registers everything, not just one block — but the parameter is kept so
+ * every existing call site (`registerDesignSetGoBlock('grid')`,
+ * `blocksWithDeprecations.forEach(registerDesignSetGoBlock)`, etc.) keeps
+ * working unchanged.
+ *
+ * @param {string} [blockName] Ignored. Retained for call-site compatibility.
  */
+// eslint-disable-next-line no-unused-vars
 export function registerDesignSetGoBlock(blockName) {
-	const slug = blockName.replace('designsetgo/', '');
-	const blockDir = path.join(REPO_ROOT, 'src/blocks', slug);
-
-	// eslint-disable-next-line global-require, import/no-dynamic-require
-	const metadata = require(path.join(blockDir, 'block.json'));
-
-	// Dynamic blocks (render.php) have no save.js — their correct serialized
-	// form is a self-closing comment, i.e. `save: () => null`. Static blocks
-	// require() their real save.js so the full markup is reproduced.
-	const saveJsPath = path.join(blockDir, 'save.js');
-	// eslint-disable-next-line global-require, import/no-dynamic-require
-	const save = fs.existsSync(saveJsPath)
-		? require(saveJsPath).default
-		: () => null;
-
-	let deprecated;
-	const deprecatedPath = path.join(blockDir, 'deprecated.js');
-	if (fs.existsSync(deprecatedPath)) {
-		// eslint-disable-next-line global-require, import/no-dynamic-require
-		deprecated = require(deprecatedPath).default;
-	}
-
-	setCategories([
-		{ slug: 'designsetgo', title: 'DesignSetGo' },
-		{ slug: 'design', title: 'Design' },
-	]);
-
-	registerBlockType(metadata.name, { ...metadata, save, deprecated });
+	registerForJest();
 }
 
 /**
@@ -391,9 +356,10 @@ export function regenerateBlockRegions(
  * @return {{filesChanged: string[], regionsChanged: number}} Summary.
  */
 export function regeneratePatterns({ blockName, dryRun = false }) {
-	// Must come first: any block nested inside the target that is not the
-	// target itself resolves through this handler and round-trips verbatim.
-	// Without it the parser silently deletes them. See registerPassthroughHandler.
+	// Must come first: any block nested inside the target that the engine
+	// registry does not cover resolves through this handler and round-trips
+	// verbatim. Without it the parser silently deletes them. See
+	// registerPassthroughHandler.
 	registerPassthroughHandler();
 	registerDesignSetGoBlock(blockName);
 
@@ -425,7 +391,17 @@ export function regeneratePatterns({ blockName, dryRun = false }) {
 
 		return { filesChanged, regionsChanged };
 	} finally {
-		unregisterBlockType(blockName);
+		// blockName itself is NOT unregistered here: registerDesignSetGoBlock()
+		// now registers it (and everything else) through the shared,
+		// process-wide engine registry, which is idempotent and guarded on
+		// `designsetgo/section` already being registered (see
+		// sources-fs.js). Unregistering just the target would desync that
+		// guard from reality — a later regeneratePatterns() call for a
+		// DIFFERENT block in the same process would see the guard block
+		// already satisfied, short-circuit, and never re-register the block
+		// this call just tore down. Only the scratch passthrough handler,
+		// which is local scaffolding rather than a real registration, gets
+		// torn down.
 		unregisterBlockType(PASSTHROUGH_BLOCK);
 	}
 }
