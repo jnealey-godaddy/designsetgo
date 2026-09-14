@@ -11,6 +11,9 @@
  */
 import { createEngine } from '../index';
 
+// "Agent build" sidebar — reads/writes window.designsetgoEngine below.
+import './panel';
+
 let engine = null;
 
 /**

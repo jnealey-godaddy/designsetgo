@@ -1,0 +1,46 @@
+// "Agent build" sidebar — editor-only styling, scoped to the panel.
+.dsgo-agent-build-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px;
+
+	&__actions {
+		display: flex;
+		gap: 8px;
+	}
+
+	&__report {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	&__report-group {
+
+		h3 {
+			margin: 0 0 4px;
+			font-size: 11px;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+
+		ul {
+			margin: 0;
+			padding-left: 18px;
+		}
+
+		li {
+			margin-bottom: 4px;
+			font-size: 12px;
+		}
+
+		code {
+			font-size: 11px;
+		}
+	}
+
+	&__report-empty {
+		font-style: italic;
+	}
+}
