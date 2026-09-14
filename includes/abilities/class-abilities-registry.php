@@ -91,6 +91,7 @@ class Abilities_Registry {
 			'class-block-inserter.php',
 			'class-block-configurator.php',
 			'class-block-schema-loader.php',
+			'class-block-guidance.php',
 			'class-css-sanitizer.php',
 		);
 

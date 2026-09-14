@@ -13,6 +13,7 @@
 namespace DesignSetGo\Abilities\Info;
 
 use DesignSetGo\Abilities\Abstract_Ability;
+use DesignSetGo\Abilities\Block_Guidance;
 use DesignSetGo\Admin\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -23,12 +24,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * List Blocks ability class.
  */
 class List_Blocks extends Abstract_Ability {
-
-	/**
-	 * Cap on an agent.json file's size, to guard against a pathological or
-	 * corrupted file (these are hand-written and tiny in practice).
-	 */
-	private const MAX_GUIDANCE_FILE_SIZE = 65536;
 
 	/**
 	 * Get ability name.
@@ -236,7 +231,7 @@ class List_Blocks extends Abstract_Ability {
 
 			if ( $full_detail ) {
 				$block_data['attributes'] = $this->format_attributes_full( $block_type->attributes ?? array() );
-				$block_data['guidance']   = self::get_guidance( $block_type->name );
+				$block_data['guidance']   = Block_Guidance::for_block( $block_type->name );
 			} else {
 				$block_data['attributes'] = $this->format_attributes( $block_type->attributes ?? array() );
 			}
@@ -304,93 +299,6 @@ class List_Blocks extends Abstract_Ability {
 		}
 
 		return $map;
-	}
-
-	/**
-	 * Hand-written agent guidance for a block (Task 13), or `null` when the
-	 * block has none yet.
-	 *
-	 * Reads `build/blocks/<dir>/agent.json` — never `src/`, which isn't
-	 * present in a production install — using the block name => directory
-	 * map built once per request by `get_block_dir_map()`.
-	 *
-	 * @param string $block_name Full block name (e.g. 'designsetgo/section').
-	 * @return array<string, mixed>|null Decoded agent.json content, or null.
-	 */
-	private static function get_guidance( string $block_name ): ?array {
-		$map = self::get_block_dir_map();
-
-		if ( ! isset( $map[ $block_name ] ) ) {
-			return null;
-		}
-
-		$path = DESIGNSETGO_PATH . 'build/blocks/' . $map[ $block_name ] . '/agent.json';
-
-		return self::read_json_file( $path );
-	}
-
-	/**
-	 * Build the block-name => build-directory-name lookup by scanning every
-	 * `build/blocks/*\/block.json` once per request (static cache).
-	 *
-	 * Keyed by the name declared inside block.json, not the directory name
-	 * — they don't always match (e.g. a `form-textarea-field` directory can
-	 * register `designsetgo/form-textarea`).
-	 *
-	 * @return array<string, string> Block name => directory name (basename only).
-	 */
-	private static function get_block_dir_map(): array {
-		static $map = null;
-
-		if ( null !== $map ) {
-			return $map;
-		}
-
-		$map        = array();
-		$blocks_dir = DESIGNSETGO_PATH . 'build/blocks/';
-
-		if ( ! file_exists( $blocks_dir ) ) {
-			return $map;
-		}
-
-		foreach ( (array) glob( $blocks_dir . '*', GLOB_ONLYDIR ) as $block_dir ) {
-			$metadata = self::read_json_file( $block_dir . '/block.json' );
-
-			if ( isset( $metadata['name'] ) && is_string( $metadata['name'] ) ) {
-				$map[ $metadata['name'] ] = basename( $block_dir );
-			}
-		}
-
-		return $map;
-	}
-
-	/**
-	 * Read and decode a small JSON file. Never throws: a missing file,
-	 * oversized file, unreadable file, or invalid JSON all resolve to null.
-	 *
-	 * @param string $path File path.
-	 * @return array<string, mixed>|null Decoded content, or null on any failure.
-	 */
-	private static function read_json_file( string $path ): ?array {
-		if ( ! file_exists( $path ) ) {
-			return null;
-		}
-
-		$file_size = filesize( $path );
-		if ( false === $file_size || $file_size > self::MAX_GUIDANCE_FILE_SIZE ) {
-			return null;
-		}
-
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Reading a local plugin build file (agent.json/block.json), not a remote or user-supplied path.
-		$contents = file_get_contents( $path );
-
-		if ( false === $contents ) {
-			return null;
-		}
-
-		$decoded = json_decode( $contents, true );
-
-		return is_array( $decoded ) ? $decoded : null;
 	}
 
 	/**
