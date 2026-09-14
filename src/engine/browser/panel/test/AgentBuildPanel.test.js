@@ -170,4 +170,55 @@ describe('AgentBuildPanel', () => {
 		);
 		expect(insertBlocks).toHaveBeenCalledWith(parsedBlocks);
 	});
+
+	test('editing the textarea after a valid Check disables Insert and clears the report', () => {
+		window.designsetgoEngine.assemble.mockReturnValue({
+			status: 'valid',
+			markup: '<!-- wp:test/static {"text":"Hi"} /-->',
+			invalid: [],
+			treeHash: 'abc',
+		});
+		window.designsetgoEngine.lint.mockReturnValue([
+			{
+				rule: 'no-custom-html',
+				severity: 'error',
+				path: 'blocks[0]',
+				message: 'custom html finding',
+			},
+		]);
+		window.wp.blocks.parse.mockReturnValue([
+			{ name: 'test/static', attributes: { text: 'Hi' } },
+		]);
+
+		render(<AgentBuildPanel />);
+
+		typeTree(VALID_TREE_TEXT);
+		fireEvent.click(screen.getByRole('button', { name: /check/i }));
+
+		// Sanity: the valid Check left Insert enabled and the report visible.
+		expect(
+			screen.getByRole('button', { name: /insert/i })
+		).not.toBeDisabled();
+		expect(screen.getByText(/custom html finding/i)).toBeInTheDocument();
+
+		// Edit the tree text WITHOUT re-checking — this must invalidate the
+		// stale "valid" result from tree A, not leave Insert armed for it.
+		typeTree(
+			JSON.stringify({
+				version: 1,
+				blocks: [{ name: 'test/static', attributes: { text: 'Bye' } }],
+			})
+		);
+
+		const insertButton = screen.getByRole('button', { name: /insert/i });
+		expect(insertButton).toBeDisabled();
+		expect(
+			screen.queryByText(/custom html finding/i)
+		).not.toBeInTheDocument();
+
+		fireEvent.click(insertButton);
+
+		expect(window.wp.blocks.parse).not.toHaveBeenCalled();
+		expect(insertBlocks).not.toHaveBeenCalled();
+	});
 });

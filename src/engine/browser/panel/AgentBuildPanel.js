@@ -28,14 +28,32 @@ export default function AgentBuildPanel() {
 	const { insertBlocks } = useDispatch('core/block-editor');
 
 	/**
-	 * Parses the textarea's JSON, then runs `assemble()`/`lint()` against
-	 * `window.designsetgoEngine` and stores the report.
+	 * Clears everything Check/Insert produced: the last parse error, the
+	 * assembled markup, the valid flag, and the report. Called both before
+	 * a fresh Check and on every textarea edit, so a stale "valid" result
+	 * from a previous tree can never linger against newly-typed text.
 	 */
-	function handleCheck() {
+	function resetCheckState() {
 		setParseError('');
 		setMarkup('');
 		setIsValid(false);
 		setReport(EMPTY_REPORT);
+	}
+
+	/**
+	 * @param {string} value New textarea contents.
+	 */
+	function handleTreeTextChange(value) {
+		setTreeText(value);
+		resetCheckState();
+	}
+
+	/**
+	 * Parses the textarea's JSON, then runs `assemble()`/`lint()` against
+	 * `window.designsetgoEngine` and stores the report.
+	 */
+	function handleCheck() {
+		resetCheckState();
 
 		let tree;
 		try {
@@ -65,6 +83,9 @@ export default function AgentBuildPanel() {
 	 * and inserts the result into the post.
 	 */
 	function handleInsert() {
+		if (!isValid) {
+			return;
+		}
 		const parsedBlocks = window.wp.blocks.parse(markup);
 		insertBlocks(parsedBlocks);
 	}
@@ -74,12 +95,15 @@ export default function AgentBuildPanel() {
 			<TextareaControl
 				__nextHasNoMarginBottom
 				label={__('Block tree (JSON)', 'designsetgo')}
-				help={__(
-					'{ "version": 1, "blocks": [ { "name": "core/paragraph", "attributes": {} } ] }',
-					'designsetgo'
-				)}
+				help={
+					/* translators: this is a literal JSON example the user pastes over — keep the keys, quoting, and structure exactly as shown; do not translate any part of it. */
+					__(
+						'{ "version": 1, "blocks": [ { "name": "core/paragraph", "attributes": {} } ] }',
+						'designsetgo'
+					)
+				}
 				value={treeText}
-				onChange={setTreeText}
+				onChange={handleTreeTextChange}
 				rows={14}
 			/>
 
