@@ -34,6 +34,7 @@ Release a new version to WordPress.org. Pushing a `v*` tag triggers `.github/wor
    - Say what people experienced before and what's different now, in plain words. Leave out class names, hook names, option names and file paths unless someone has to use them, such as a filter a developer can set.
    - Start each line with the labels earlier entries use: `* **Fix:**`, `* **New:**`, `* **Improved:**`.
    - `CHANGELOG.md` is the developer changelog. Don't copy its detail into `readme.txt`.
+   - Keep the `== Changelog ==` section under 5,000 words. WordPress.org truncates it past that, and only committers see the import warning. Check with `awk '/^== Changelog ==/{f=1;next} /^== /{f=0} f' readme.txt | wc -w`. If it's over, replace the oldest version entries with one-line highlights under `= Earlier releases =`. `tests/unit/readme-changelog-length.test.js` fails CI when the section is over.
    - The entries go public with the tag. Show them to the user before step 8 if they haven't seen them.
 
 5. **Run security audit**
@@ -58,7 +59,7 @@ Release a new version to WordPress.org. Pushing a `v*` tag triggers `.github/wor
    - Works with latest Gutenberg plugin?
    - Tested with common themes (esp. Twenty Twenty-Five)?
    - Security audit clean?
-   - Changelog written for customers (step 4)?
+   - Changelog written for customers and under 5,000 words (step 4)?
    - Screenshots current in `.wordpress-org/`?
    - readme.txt short description under 150 characters?
 
