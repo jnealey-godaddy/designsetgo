@@ -95,15 +95,23 @@ describe('registry', () => {
 		);
 
 		// src/extensions/max-width/index.js's own EXCLUDED_BLOCKS rules out
-		// designsetgo/section (and /row, /grid, /blobs), and core/group can't
-		// stand in for it here: core blocks register in step 3, before
-		// extensions register their `blocks.registerBlockType` filters in
-		// step 4 (see register-all.js), so a filter added afterwards never
-		// reaches an already-registered core block. designsetgo/card
-		// registers in step 5 (after extensions) and isn't excluded.
-		it('max-width (designsetgo/card carries dsgoMaxWidth)', () => {
-			const card = blocksApi.getBlockType('designsetgo/card');
-			expect(card.attributes).toHaveProperty('dsgoMaxWidth');
+		// designsetgo/section/row/grid/blobs, but not core/group — and
+		// extensions register (step 3) before core blocks do (step 4, see
+		// register-all.js), mirroring the real editor's enqueue order
+		// (plugin editor scripts run before edit-post's initializeEditor()
+		// calls registerCoreBlocks()), so this filter DOES reach core/group.
+		it('max-width (core/group carries dsgoMaxWidth)', () => {
+			const group = blocksApi.getBlockType('core/group');
+			expect(group.attributes).toHaveProperty('dsgoMaxWidth');
+		});
+
+		// src/extensions/svg-patterns/constants.js's SUPPORTED_BLOCKS names
+		// core/group explicitly (not just "all blocks"), so this is a direct
+		// confirmation that a CORE block picks up an extension attribute —
+		// the exact behavior the real editor's script load order relies on.
+		it('svg-patterns (core/group carries dsgoSvgPatternEnabled)', () => {
+			const group = blocksApi.getBlockType('core/group');
+			expect(group.attributes).toHaveProperty('dsgoSvgPatternEnabled');
 		});
 	});
 
