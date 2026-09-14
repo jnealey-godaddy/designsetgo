@@ -15,8 +15,13 @@
 
 const { parseArgs } = require('./args');
 const { buildFixtureCases } = require('./fixture-cases');
+const { checkTreeShape } = require('../tree');
+const { toInvalidEntry } = require('../assemble');
 
 const COMMANDS = ['assemble', 'validate', 'lint', 'fixture-cases'];
+
+/** Matches a non-negative integer `--max-warnings` value. */
+const MAX_WARNINGS_RE = /^\d+$/;
 
 /**
  * @param {(file: string) => string} readFile Reads `file` as JSON.
@@ -66,6 +71,40 @@ function formatValidateFile(file, result) {
 }
 
 /**
+ * @param {object[]} findings Lint findings, document order.
+ * @return {string} One `severity path rule: message` line per finding,
+ *   followed by an indented `  suggestion: ...` line for findings that have
+ *   one.
+ */
+function formatFindingsText(findings) {
+	return findings
+		.map((finding) => {
+			const line = `${finding.severity} ${finding.path} ${finding.rule}: ${finding.message}`;
+			return finding.suggestion === undefined
+				? line
+				: `${line}\n  suggestion: ${finding.suggestion}`;
+		})
+		.join('\n');
+}
+
+/**
+ * @param {object[]}         findings    Lint findings.
+ * @param {number|undefined} maxWarnings Parsed `--max-warnings` value, or
+ *                                       `undefined` when the flag wasn't given.
+ * @return {number} 1 when any finding is `error`-severity, or the warning
+ *   count exceeds `maxWarnings`; 0 otherwise.
+ */
+function findingsExitCode(findings, maxWarnings) {
+	const hasError = findings.some((finding) => finding.severity === 'error');
+	const warningCount = findings.filter(
+		(finding) => finding.severity === 'warning'
+	).length;
+	const overMax = maxWarnings !== undefined && warningCount > maxWarnings;
+
+	return hasError || overMax ? 1 : 0;
+}
+
+/**
  * @param {(content: string) => void}               stdout    Stdout writer.
  * @param {(file: string, content: string) => void} writeFile File writer.
  * @param {string}                                  content   Text to write to stdout (and `outFile`, if given).
@@ -79,18 +118,129 @@ function emit(stdout, writeFile, content, outFile) {
 }
 
 /**
- * @param {Object}                                    engine Bound engine from `bootEngine()`.
- * @param {*}                                         tree   Parsed candidate block tree.
- * @param {Object}                                    flags  Parsed CLI flags.
- * @param {{ stdout: Function, writeFile: Function }} io     Injected sinks.
- * @return {number} Exit code: 0 valid, 1 invalid.
+ * Runs `engine.lint()` on `tree` only when `--lint` was requested and the
+ * tree passes `checkTreeShape()` — an `assemble()` report on a shape-invalid
+ * tree already carries the shape problems in `invalid`, and lint rules
+ * assume a shape-valid tree (see `src/engine/lint/index.js`).
+ *
+ * @param {Object} engine Bound engine from `bootEngine()`.
+ * @param {*}      tree   Parsed candidate block tree.
+ * @param {Object} design Parsed `--context` payload (`{}` when unset).
+ * @param {Object} flags  Parsed CLI flags.
+ * @return {object[]} Lint findings, or `[]` when `--lint` wasn't given or
+ *   the tree is shape-invalid.
  */
-function runAssemble(engine, tree, flags, { stdout, writeFile }) {
+function lintForAssemble(engine, tree, design, flags) {
+	if (!flags.lint || checkTreeShape(tree).length) {
+		return [];
+	}
+	return engine.lint(tree, design);
+}
+
+/**
+ * @param {Object}                                                      engine      Bound engine from `bootEngine()`.
+ * @param {*}                                                           tree        Parsed candidate block tree.
+ * @param {Object}                                                      design      Parsed `--context` payload (`{}` when unset).
+ * @param {Object}                                                      flags       Parsed CLI flags.
+ * @param {number|undefined}                                            maxWarnings Parsed `--max-warnings` value.
+ * @param {{ stdout: Function, writeFile: Function, stderr: Function }} io          Injected sinks.
+ * @return {number} Exit code: 1 when the markup is invalid, `--lint` found
+ *   an error, or `--lint` warnings exceed `maxWarnings`; 0 otherwise.
+ */
+function runAssemble(
+	engine,
+	tree,
+	design,
+	flags,
+	maxWarnings,
+	{ stdout, writeFile, stderr }
+) {
 	const report = engine.assemble(tree);
-	const output = flags.json ? JSON.stringify(report, null, 2) : report.markup;
+	const findings = lintForAssemble(engine, tree, design, flags);
+
+	if (flags.json) {
+		const jsonReport = flags.lint ? { ...report, findings } : report;
+		emit(stdout, writeFile, JSON.stringify(jsonReport, null, 2), flags.out);
+	} else {
+		emit(stdout, writeFile, report.markup, flags.out);
+		if (flags.lint && findings.length) {
+			stderr(`${formatFindingsText(findings)}\n`);
+		}
+	}
+
+	const lintFailed =
+		flags.lint && findingsExitCode(findings, maxWarnings) === 1;
+	return report.status === 'valid' && !lintFailed ? 0 : 1;
+}
+
+/**
+ * Runs `lint` against a tree that has already failed `checkTreeShape()` —
+ * reports the shape problems in the same `{ path, block, reason, code }`
+ * entry shape (via `toInvalidEntry()`) and `{ status, invalid }` JSON/text
+ * conventions `assemble()`/`validate()` use for invalid input, and never
+ * runs lint rules on malformed input.
+ *
+ * @param {string}                                    file          Tree file path (text mode's header line).
+ * @param {Object}                                    tree          The malformed tree.
+ * @param {object[]}                                  shapeProblems Problems from `checkTreeShape(tree)`.
+ * @param {Object}                                    flags         Parsed CLI flags.
+ * @param {{ stdout: Function, writeFile: Function }} io            Injected sinks.
+ * @return {number} Always 1.
+ */
+function runLintShapeInvalid(
+	file,
+	tree,
+	shapeProblems,
+	flags,
+	{ stdout, writeFile }
+) {
+	const invalid = shapeProblems.map((problem) =>
+		toInvalidEntry(problem, tree)
+	);
+	const result = { status: 'invalid', invalid };
+	const output = flags.json
+		? JSON.stringify(result, null, 2)
+		: formatValidateFile(file, result);
 
 	emit(stdout, writeFile, output, flags.out);
-	return report.status === 'valid' ? 0 : 1;
+	return 1;
+}
+
+/**
+ * @param {Object}                                    engine      Bound engine from `bootEngine()`.
+ * @param {string}                                    file        Tree file path.
+ * @param {*}                                         tree        Parsed candidate block tree.
+ * @param {Object}                                    design      Parsed `--context` payload (`{}` when unset).
+ * @param {Object}                                    flags       Parsed CLI flags.
+ * @param {number|undefined}                          maxWarnings Parsed `--max-warnings` value.
+ * @param {{ stdout: Function, writeFile: Function }} io          Injected sinks.
+ * @return {number} Exit code: 1 when the tree is shape-invalid, has an
+ *   error-severity finding, or exceeds `maxWarnings`; 0 otherwise.
+ */
+function runLint(
+	engine,
+	file,
+	tree,
+	design,
+	flags,
+	maxWarnings,
+	{ stdout, writeFile }
+) {
+	const shapeProblems = checkTreeShape(tree);
+	if (shapeProblems.length) {
+		return runLintShapeInvalid(file, tree, shapeProblems, flags, {
+			stdout,
+			writeFile,
+		});
+	}
+
+	const findings = engine.lint(tree, design);
+	const output = flags.json
+		? JSON.stringify({ findings }, null, 2)
+		: formatFindingsText(findings);
+
+	emit(stdout, writeFile, output, flags.out);
+	return findingsExitCode(findings, maxWarnings);
 }
 
 /**
@@ -154,24 +304,32 @@ function run(argv, { bootEngine, readFile, writeFile, stdout, stderr }) {
 
 	if (!COMMANDS.includes(args.command)) {
 		stderr(
-			`Unknown command "${args.command || ''}". Usage: engine <assemble|validate|lint> <file> [options]\n`
+			`Unknown command "${args.command || ''}". Usage: engine <assemble|validate|lint|fixture-cases> <file> [options]\n`
 		);
 		return 2;
 	}
 
-	if (args.command === 'lint') {
-		stderr('lint is not available yet\n');
-		return 2;
+	let maxWarnings;
+	if (args.flags.maxWarnings !== undefined) {
+		if (!MAX_WARNINGS_RE.test(args.flags.maxWarnings)) {
+			stderr(
+				`Invalid --max-warnings "${args.flags.maxWarnings}": must be a non-negative integer.\n`
+			);
+			return 2;
+		}
+		maxWarnings = Number(args.flags.maxWarnings);
 	}
 
 	// fixture-cases takes no file argument — it generates from the registry,
-	// not from anything on disk — so only assemble/validate require one.
+	// not from anything on disk — so only assemble/validate/lint require one.
 	if (args.command !== 'fixture-cases' && !args.file.length) {
-		const usage =
-			args.command === 'validate'
-				? 'engine validate <file...> [--json] [--out <file>]'
-				: 'engine assemble <tree.json> [--json] [--out <file>]';
-		stderr(`Missing file argument. Usage: ${usage}\n`);
+		const usages = {
+			validate: 'engine validate <file...> [--json] [--out <file>]',
+			lint: 'engine lint <tree.json> [--context <file>] [--json] [--max-warnings <n>] [--out <file>]',
+			assemble:
+				'engine assemble <tree.json> [--json] [--lint] [--context <file>] [--out <file>]',
+		};
+		stderr(`Missing file argument. Usage: ${usages[args.command]}\n`);
 		return 2;
 	}
 
@@ -179,9 +337,24 @@ function run(argv, { bootEngine, readFile, writeFile, stdout, stderr }) {
 	if (args.command !== 'fixture-cases') {
 		try {
 			input =
-				args.command === 'assemble'
+				args.command === 'assemble' || args.command === 'lint'
 					? readJsonFile(readFile, args.file[0])
 					: args.file.map((file) => readTextFile(readFile, file));
+		} catch (error) {
+			stderr(`${error.message}\n`);
+			return 2;
+		}
+	}
+
+	// Design context only matters to `lint` rules — read it for `lint`, and
+	// for `assemble` when `--lint` will run them too.
+	let design = {};
+	const needsDesignContext =
+		args.command === 'lint' ||
+		(args.command === 'assemble' && args.flags.lint);
+	if (needsDesignContext && args.flags.context) {
+		try {
+			design = readJsonFile(readFile, args.flags.context);
 		} catch (error) {
 			stderr(`${error.message}\n`);
 			return 2;
@@ -205,10 +378,29 @@ function run(argv, { bootEngine, readFile, writeFile, stdout, stderr }) {
 	}
 
 	if (args.command === 'assemble') {
-		return runAssemble(boot.engine, input, args.flags, {
-			stdout,
-			writeFile,
-		});
+		return runAssemble(
+			boot.engine,
+			input,
+			design,
+			args.flags,
+			maxWarnings,
+			{
+				stdout,
+				writeFile,
+				stderr,
+			}
+		);
+	}
+	if (args.command === 'lint') {
+		return runLint(
+			boot.engine,
+			args.file[0],
+			input,
+			design,
+			args.flags,
+			maxWarnings,
+			{ stdout, writeFile }
+		);
 	}
 	if (args.command === 'fixture-cases') {
 		return runFixtureCases(boot.blocksApi, args.flags, {

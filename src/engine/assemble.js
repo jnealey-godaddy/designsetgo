@@ -39,11 +39,16 @@ function nodeAtPath(tree, path) {
 }
 
 /**
+ * Exported (not just internal to `assemble()`) so the CLI's `lint` command
+ * can report `checkTreeShape()` problems in the same `{ path, block, reason,
+ * code }` shape `assemble()`'s own invalid output uses, without duplicating
+ * this resolution logic — see `src/engine/node/run.js`.
+ *
  * @param {Object} problem Shape problem from `checkTreeShape()`.
  * @param {Object} tree    The tree the problem was found in.
  * @return {{ path: string, block: string, reason: string, code: string }} Invalid entry.
  */
-function toInvalidEntry(problem, tree) {
+export function toInvalidEntry(problem, tree) {
 	const node = nodeAtPath(tree, problem.path);
 	return {
 		path: problem.path,

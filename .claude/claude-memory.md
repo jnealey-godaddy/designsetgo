@@ -553,3 +553,45 @@ diagnostic calls DO need suppressing — `WordPressVIPMinimum.Functions.Restrict
 file_ops_fwrite`, not `WordPress.WP.AlternativeFunctions.file_system_operations_fwrite` (the
 sibling `file_put_contents`/`mkdir` ignore comments a few lines up use the latter family, but
 `fwrite` only has a VIPMinimum restricted-function rule, no AlternativeFunctions one).
+
+### Task 12: CLI lint integration (agent: agent-block-engine-task12-2026-09-14)
+
+`createEngine()` (`src/engine/index.js`) now also returns `lint: (tree, design) =>
+lint(tree, design)`, delegating to `src/engine/lint/index.js` — `blocksApi` is unused by
+lint but it lives on the same bound object so every surface (CLI, editor) reaches it the
+same way.
+
+`src/engine/assemble.js`'s previously-private `toInvalidEntry(problem, tree)` is now
+exported. The CLI's `lint` command needs to report `checkTreeShape()` problems in the exact
+same `{ path, block, reason, code }` shape `assemble()`'s own invalid output uses (per the
+task brief: "same text/JSON conventions as assemble's invalid output"), and duplicating the
+node-resolution logic would have been a drift risk.
+
+**Judgment call on what "assemble's invalid output conventions" means in text mode**:
+`assemble()` in text (non-`--json`) mode only ever prints `report.markup`, which is `''` on
+a shape-invalid tree — i.e. it doesn't actually have an established text-mode invalid
+convention to copy. Interpreted the brief's "text/JSON conventions" as *plural on purpose*:
+JSON shape from `assemble()` (`{status:'invalid', invalid:[...]}` with each entry `{path,
+block, reason, code}`), text shape from `validate()`'s sibling convention (`formatValidateFile()`,
+already used elsewhere in `run.js`) — reused directly, zero new formatting code. Flagged as a
+judgment call in the task report rather than assumed silently.
+
+`run.js` additions: `checkTreeShape` gates both `lint` and `assemble --lint` — rules never
+run on a shape-invalid tree (matches `lint/index.js`'s own doc comment assumption). Unknown
+blocks (shape-valid, registry-unregistered) do NOT block lint — only structural shape does.
+`--max-warnings` is validated (`/^\d+$/`, non-negative integer only) once, early, before any
+file I/O or boot — a bad value never triggers a bootEngine() call. `--context` is read only
+when it will actually be used (`lint`, or `assemble` with `--lint`), so a stray `--context`
+on plain `assemble`/`validate` is never parsed. `assemble --lint` text mode keeps stdout
+markup-only (agents pipe it) and routes findings to stderr in the same
+`severity path rule: message` / `  suggestion: ...` text format `lint` uses on stdout — and
+only writes to stderr at all when there's at least one finding, to keep `stderr === ''` the
+success signal it already was for plain `assemble`.
+
+Deferred-minor fold-in: the unknown-command usage string now lists all four commands
+(`assemble|validate|lint|fixture-cases`), not three.
+
+Replaced the old `lint: exits 2 with "lint is not available yet"` test in
+`tests/engine/cli.test.mjs` with real-bundle coverage instead of leaving both — that stub
+test's entire purpose was asserting the not-yet-implemented placeholder, which this task's
+job is to remove.

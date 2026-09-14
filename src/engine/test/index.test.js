@@ -52,4 +52,23 @@ describe('createEngine', () => {
 			invalid: [],
 		});
 	});
+
+	test('lint() runs the real rule set against a tree, with no design context required', () => {
+		const engine = createEngine(blocksApi);
+		const tree = {
+			version: TREE_VERSION,
+			blocks: [
+				{ name: 'core/html', attributes: { content: '<p>hi</p>' } },
+			],
+		};
+
+		const findings = engine.lint(tree);
+
+		expect(findings).toEqual([
+			expect.objectContaining({
+				rule: 'no-custom-html',
+				severity: 'error',
+			}),
+		]);
+	});
 });

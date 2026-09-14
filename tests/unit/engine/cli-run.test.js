@@ -167,3 +167,395 @@ describe('run() happy path', () => {
 		expect(writeFile).toHaveBeenCalledWith('cases.json', '{}');
 	});
 });
+
+describe('run() lint', () => {
+	/**
+	 * @param {Function} lint Fake `engine.lint()`.
+	 * @return {Function} A `bootEngine` fake wired to that `lint`.
+	 */
+	function bootEngineWithLint(lint) {
+		return jest.fn(() => ({
+			engine: { assemble: jest.fn(), validate: jest.fn(), lint },
+			failures: [],
+		}));
+	}
+
+	it('exits 1 and prints the finding when a rule reports an error', () => {
+		const sinks = makeSinks();
+		const lint = jest.fn(() => [
+			{
+				rule: 'no-custom-html',
+				severity: 'error',
+				path: 'blocks[0]',
+				message: 'core/html is not allowed.',
+				suggestion: 'Use a real block instead.',
+			},
+		]);
+		const bootEngine = bootEngineWithLint(lint);
+		const readFile = jest.fn(() => VALID_TREE_JSON);
+		const writeFile = jest.fn();
+
+		const code = run(['lint', 'tree.json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(1);
+		expect(sinks.stdoutText()).toBe(
+			'error blocks[0] no-custom-html: core/html is not allowed.\n  suggestion: Use a real block instead.\n'
+		);
+		expect(sinks.stderrText()).toBe('');
+	});
+
+	it('exits 0 and prints "{ findings: [] }" when a rule reports nothing', () => {
+		const sinks = makeSinks();
+		const lint = jest.fn(() => []);
+		const bootEngine = bootEngineWithLint(lint);
+		const readFile = jest.fn(() => VALID_TREE_JSON);
+		const writeFile = jest.fn();
+
+		const code = run(['lint', 'tree.json', '--json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(0);
+		expect(JSON.parse(sinks.stdoutText())).toEqual({ findings: [] });
+	});
+
+	it('warnings exceeding --max-warnings exit 1', () => {
+		const sinks = makeSinks();
+		const lint = jest.fn(() => [
+			{
+				rule: 'a',
+				severity: 'warning',
+				path: 'blocks[0]',
+				message: 'm1',
+			},
+			{
+				rule: 'b',
+				severity: 'warning',
+				path: 'blocks[1]',
+				message: 'm2',
+			},
+		]);
+		const bootEngine = bootEngineWithLint(lint);
+		const readFile = jest.fn(() => VALID_TREE_JSON);
+		const writeFile = jest.fn();
+
+		const code = run(['lint', 'tree.json', '--max-warnings', '1'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(1);
+	});
+
+	it('warnings at or under --max-warnings exit 0', () => {
+		const sinks = makeSinks();
+		const lint = jest.fn(() => [
+			{
+				rule: 'a',
+				severity: 'warning',
+				path: 'blocks[0]',
+				message: 'm1',
+			},
+			{
+				rule: 'b',
+				severity: 'warning',
+				path: 'blocks[1]',
+				message: 'm2',
+			},
+		]);
+		const bootEngine = bootEngineWithLint(lint);
+		const readFile = jest.fn(() => VALID_TREE_JSON);
+		const writeFile = jest.fn();
+
+		const code = run(['lint', 'tree.json', '--max-warnings', '2'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(0);
+	});
+
+	it('warnings alone exit 0 when --max-warnings is not given', () => {
+		const sinks = makeSinks();
+		const lint = jest.fn(() => [
+			{
+				rule: 'a',
+				severity: 'warning',
+				path: 'blocks[0]',
+				message: 'm1',
+			},
+		]);
+		const bootEngine = bootEngineWithLint(lint);
+		const readFile = jest.fn(() => VALID_TREE_JSON);
+		const writeFile = jest.fn();
+
+		const code = run(['lint', 'tree.json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(0);
+	});
+
+	it('a non-integer --max-warnings exits 2 without booting or reading files', () => {
+		const sinks = makeSinks();
+		const bootEngine = jest.fn();
+		const readFile = jest.fn();
+		const writeFile = jest.fn();
+
+		const code = run(['lint', 'tree.json', '--max-warnings', 'abc'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(2);
+		expect(sinks.stderrText()).toMatch(/--max-warnings/);
+		expect(bootEngine).not.toHaveBeenCalled();
+		expect(readFile).not.toHaveBeenCalled();
+	});
+
+	it('a negative --max-warnings exits 2', () => {
+		const sinks = makeSinks();
+		const bootEngine = jest.fn();
+		const readFile = jest.fn();
+		const writeFile = jest.fn();
+
+		const code = run(['lint', 'tree.json', '--max-warnings', '-1'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(2);
+		expect(bootEngine).not.toHaveBeenCalled();
+	});
+
+	it('an unreadable --context file exits 2 without booting', () => {
+		const sinks = makeSinks();
+		const bootEngine = jest.fn();
+		const readFile = jest.fn((file) => {
+			if (file === 'tree.json') {
+				return VALID_TREE_JSON;
+			}
+			throw new Error('ENOENT: no such file');
+		});
+		const writeFile = jest.fn();
+
+		const code = run(['lint', 'tree.json', '--context', 'ctx.json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(2);
+		expect(sinks.stderrText()).toMatch(/Cannot read file "ctx\.json"/);
+		expect(bootEngine).not.toHaveBeenCalled();
+	});
+
+	it('a malformed (non-JSON) --context file exits 2', () => {
+		const sinks = makeSinks();
+		const bootEngine = jest.fn();
+		const readFile = jest.fn((file) =>
+			file === 'tree.json' ? VALID_TREE_JSON : '{not valid json'
+		);
+		const writeFile = jest.fn();
+
+		const code = run(['lint', 'tree.json', '--context', 'ctx.json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(2);
+		expect(sinks.stderrText()).toMatch(/Cannot parse JSON in "ctx\.json"/);
+		expect(bootEngine).not.toHaveBeenCalled();
+	});
+
+	it('passes the parsed --context payload through to engine.lint()', () => {
+		const sinks = makeSinks();
+		const lint = jest.fn(() => []);
+		const bootEngine = bootEngineWithLint(lint);
+		const readFile = jest.fn((file) =>
+			file === 'tree.json'
+				? VALID_TREE_JSON
+				: JSON.stringify({ palette: ['red'] })
+		);
+		const writeFile = jest.fn();
+
+		run(['lint', 'tree.json', '--context', 'ctx.json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(lint).toHaveBeenCalledWith(
+			{ version: 1, blocks: [] },
+			{ palette: ['red'] }
+		);
+	});
+
+	it('a shape-invalid tree exits 1, reports the shape problem, and never calls engine.lint()', () => {
+		const sinks = makeSinks();
+		const lint = jest.fn();
+		const bootEngine = bootEngineWithLint(lint);
+		const readFile = jest.fn(() =>
+			JSON.stringify({ version: 1, blocks: [{ name: 123 }] })
+		);
+		const writeFile = jest.fn();
+
+		const code = run(['lint', 'tree.json', '--json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(1);
+		expect(lint).not.toHaveBeenCalled();
+		const report = JSON.parse(sinks.stdoutText());
+		expect(report.status).toBe('invalid');
+		expect(report.invalid).toHaveLength(1);
+		expect(report.invalid[0].path).toBe('blocks[0]');
+		expect(report.invalid[0].code).toBe(
+			'designsetgo_invalid_block_definition'
+		);
+	});
+});
+
+describe('run() assemble --lint', () => {
+	it('exits 1 when lint reports an error even though the markup is valid', () => {
+		const sinks = makeSinks();
+		const assemble = jest.fn(() => ({
+			status: 'valid',
+			markup: '<!-- wp:designsetgo/section --><!-- /wp:designsetgo/section -->',
+			invalid: [],
+			treeHash: 'deadbeef',
+		}));
+		const lint = jest.fn(() => [
+			{
+				rule: 'no-custom-html',
+				severity: 'error',
+				path: 'blocks[0]',
+				message: 'bad',
+			},
+		]);
+		const bootEngine = jest.fn(() => ({
+			engine: { assemble, validate: jest.fn(), lint },
+			failures: [],
+		}));
+		const readFile = jest.fn(() => VALID_TREE_JSON);
+		const writeFile = jest.fn();
+
+		const code = run(['assemble', 'tree.json', '--lint', '--json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(1);
+		const report = JSON.parse(sinks.stdoutText());
+		expect(report.status).toBe('valid');
+		expect(report.findings).toHaveLength(1);
+	});
+
+	it('text mode keeps stdout markup-only and writes findings to stderr', () => {
+		const sinks = makeSinks();
+		const markup =
+			'<!-- wp:designsetgo/section --><!-- /wp:designsetgo/section -->';
+		const assemble = jest.fn(() => ({
+			status: 'valid',
+			markup,
+			invalid: [],
+			treeHash: 'deadbeef',
+		}));
+		const lint = jest.fn(() => [
+			{
+				rule: 'no-custom-html',
+				severity: 'error',
+				path: 'blocks[0]',
+				message: 'bad',
+			},
+		]);
+		const bootEngine = jest.fn(() => ({
+			engine: { assemble, validate: jest.fn(), lint },
+			failures: [],
+		}));
+		const readFile = jest.fn(() => VALID_TREE_JSON);
+		const writeFile = jest.fn();
+
+		const code = run(['assemble', 'tree.json', '--lint'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(1);
+		expect(sinks.stdoutText()).toBe(`${markup}\n`);
+		expect(sinks.stderrText()).toBe(
+			'error blocks[0] no-custom-html: bad\n'
+		);
+	});
+
+	it('without --lint, assemble never calls engine.lint()', () => {
+		const sinks = makeSinks();
+		const assemble = jest.fn(() => ({
+			status: 'valid',
+			markup: '<!-- wp:designsetgo/section --><!-- /wp:designsetgo/section -->',
+			invalid: [],
+			treeHash: 'deadbeef',
+		}));
+		const lint = jest.fn();
+		const bootEngine = jest.fn(() => ({
+			engine: { assemble, validate: jest.fn(), lint },
+			failures: [],
+		}));
+		const readFile = jest.fn(() => VALID_TREE_JSON);
+		const writeFile = jest.fn();
+
+		const code = run(['assemble', 'tree.json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(0);
+		expect(lint).not.toHaveBeenCalled();
+	});
+});

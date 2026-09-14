@@ -26,6 +26,7 @@ const VALID_TREE = path.join(FIXTURES, 'valid-tree.json');
 const UNKNOWN_BLOCK = path.join(FIXTURES, 'unknown-block.json');
 const VALID_MARKUP = path.join(FIXTURES, 'valid-markup.html');
 const INVALID_MARKUP = path.join(FIXTURES, 'invalid-markup.html');
+const LINT_ERROR_TREE = path.join(FIXTURES, 'lint-error-tree.json');
 
 /**
  * @param {string[]} args CLI arguments (command + file + flags).
@@ -238,12 +239,117 @@ test('fixture-cases --out: writes the same content that went to stdout', () => {
 	assert.equal(stdout, `${written}\n`);
 });
 
-test('lint: exits 2 with "lint is not available yet"', () => {
-	const { status, stdout, stderr } = runCli(['lint', VALID_TREE]);
+test('lint: a tree tripping a real rule (core/html) exits 1 and reports the finding', () => {
+	const { status, stdout, stderr } = runCli(['lint', LINT_ERROR_TREE]);
+
+	assert.equal(status, 1);
+	assert.equal(stderr, '');
+	assert.match(
+		stdout,
+		/^error blocks\[0\]\.innerBlocks\[0\] no-custom-html: core\/html/
+	);
+	assert.match(stdout, /\n {2}suggestion: /);
+});
+
+test('lint --json: a tree tripping a real rule reports one error finding', () => {
+	const { status, stdout } = runCli(['lint', LINT_ERROR_TREE, '--json']);
+
+	assert.equal(status, 1);
+	const report = JSON.parse(stdout);
+	assert.equal(report.findings.length, 1);
+	assert.equal(report.findings[0].rule, 'no-custom-html');
+	assert.equal(report.findings[0].severity, 'error');
+	assert.equal(report.findings[0].path, 'blocks[0].innerBlocks[0]');
+});
+
+test('lint --json: a clean tree exits 0 with no error-severity findings', () => {
+	const { status, stdout, stderr } = runCli(['lint', VALID_TREE, '--json']);
+
+	assert.equal(status, 0);
+	assert.equal(stderr, '');
+	const report = JSON.parse(stdout);
+	assert.ok(Array.isArray(report.findings));
+	assert.ok(!report.findings.some((finding) => finding.severity === 'error'));
+});
+
+test('lint: a shape-invalid tree exits 1 and never runs rules', () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsgo-engine-'));
+	const badTree = path.join(dir, 'bad-tree.json');
+	fs.writeFileSync(
+		badTree,
+		JSON.stringify({ version: 1, blocks: [{ name: 'not-a-valid-name' }] })
+	);
+
+	const { status, stdout } = runCli(['lint', badTree, '--json']);
+
+	assert.equal(status, 1);
+	const report = JSON.parse(stdout);
+	assert.equal(report.status, 'invalid');
+	assert.equal(report.invalid.length, 1);
+	assert.equal(report.invalid[0].code, 'designsetgo_invalid_block_definition');
+});
+
+test('lint: an unknown command-line flag for --max-warnings exits 2', () => {
+	const { status, stdout, stderr } = runCli([
+		'lint',
+		VALID_TREE,
+		'--max-warnings',
+		'abc',
+	]);
 
 	assert.equal(status, 2);
 	assert.equal(stdout, '');
-	assert.equal(stderr.trim(), 'lint is not available yet');
+	assert.match(stderr, /--max-warnings/);
+});
+
+test('lint: an unreadable --context file exits 2', () => {
+	const { status, stdout, stderr } = runCli([
+		'lint',
+		VALID_TREE,
+		'--context',
+		path.join(FIXTURES, 'does-not-exist.json'),
+	]);
+
+	assert.equal(status, 2);
+	assert.equal(stdout, '');
+	assert.match(stderr, /Cannot read file/);
+});
+
+test('assemble --lint --json: report gains a findings array alongside status/markup', () => {
+	const { status, stdout, stderr } = runCli([
+		'assemble',
+		VALID_TREE,
+		'--lint',
+		'--json',
+	]);
+
+	assert.equal(stderr, '');
+	const report = JSON.parse(stdout);
+	assert.equal(report.status, 'valid');
+	assert.ok(Array.isArray(report.findings));
+	// Nothing in valid-tree.json should trip an error-severity rule.
+	assert.ok(!report.findings.some((finding) => finding.severity === 'error'));
+	assert.equal(status, 0);
+});
+
+test('assemble --lint: a tree with a real lint error exits 1 even though markup is valid, findings on stderr', () => {
+	const { status, stdout, stderr } = runCli([
+		'assemble',
+		LINT_ERROR_TREE,
+		'--lint',
+	]);
+
+	assert.equal(status, 1);
+	assert.match(stdout, /^<!-- wp:designsetgo\/section -->/);
+	assert.match(stderr, /error blocks\[0\]\.innerBlocks\[0\] no-custom-html:/);
+});
+
+test('assemble (no --lint): report has no findings key', () => {
+	const { status, stdout } = runCli(['assemble', VALID_TREE, '--json']);
+
+	assert.equal(status, 0);
+	const report = JSON.parse(stdout);
+	assert.equal(report.findings, undefined);
 });
 
 test('unknown command: exits 2 with a stderr message', () => {
