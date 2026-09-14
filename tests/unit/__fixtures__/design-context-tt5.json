@@ -1,0 +1,260 @@
+{
+  "settings": {
+    "color": {
+      "palette": {
+        "default": [
+          {
+            "name": "Black",
+            "slug": "black",
+            "color": "#000000"
+          },
+          {
+            "name": "Cyan bluish gray",
+            "slug": "cyan-bluish-gray",
+            "color": "#abb8c3"
+          },
+          {
+            "name": "White",
+            "slug": "white",
+            "color": "#ffffff"
+          },
+          {
+            "name": "Pale pink",
+            "slug": "pale-pink",
+            "color": "#f78da7"
+          },
+          {
+            "name": "Vivid red",
+            "slug": "vivid-red",
+            "color": "#cf2e2e"
+          },
+          {
+            "name": "Luminous vivid orange",
+            "slug": "luminous-vivid-orange",
+            "color": "#ff6900"
+          },
+          {
+            "name": "Luminous vivid amber",
+            "slug": "luminous-vivid-amber",
+            "color": "#fcb900"
+          },
+          {
+            "name": "Light green cyan",
+            "slug": "light-green-cyan",
+            "color": "#7bdcb5"
+          },
+          {
+            "name": "Vivid green cyan",
+            "slug": "vivid-green-cyan",
+            "color": "#00d084"
+          },
+          {
+            "name": "Pale cyan blue",
+            "slug": "pale-cyan-blue",
+            "color": "#8ed1fc"
+          },
+          {
+            "name": "Vivid cyan blue",
+            "slug": "vivid-cyan-blue",
+            "color": "#0693e3"
+          },
+          {
+            "name": "Vivid purple",
+            "slug": "vivid-purple",
+            "color": "#9b51e0"
+          }
+        ],
+        "theme": [
+          {
+            "color": "#FFFFFF",
+            "name": "Base",
+            "slug": "base"
+          },
+          {
+            "color": "#111111",
+            "name": "Contrast",
+            "slug": "contrast"
+          },
+          {
+            "color": "#FFEE58",
+            "name": "Accent 1",
+            "slug": "accent-1"
+          },
+          {
+            "color": "#F6CFF4",
+            "name": "Accent 2",
+            "slug": "accent-2"
+          },
+          {
+            "color": "#503AA8",
+            "name": "Accent 3",
+            "slug": "accent-3"
+          },
+          {
+            "color": "#686868",
+            "name": "Accent 4",
+            "slug": "accent-4"
+          },
+          {
+            "color": "#FBFAF3",
+            "name": "Accent 5",
+            "slug": "accent-5"
+          },
+          {
+            "color": "color-mix(in srgb, currentColor 20%, transparent)",
+            "name": "Accent 6",
+            "slug": "accent-6"
+          }
+        ]
+      }
+    },
+    "spacing": {
+      "spacingSizes": {
+        "default": [
+          {
+            "name": "2X-Small",
+            "slug": "20",
+            "size": "0.44rem"
+          },
+          {
+            "name": "X-Small",
+            "slug": "30",
+            "size": "0.67rem"
+          },
+          {
+            "name": "Small",
+            "slug": "40",
+            "size": "1rem"
+          },
+          {
+            "name": "Medium",
+            "slug": "50",
+            "size": "1.5rem"
+          },
+          {
+            "name": "Large",
+            "slug": "60",
+            "size": "2.25rem"
+          },
+          {
+            "name": "X-Large",
+            "slug": "70",
+            "size": "3.38rem"
+          },
+          {
+            "name": "2X-Large",
+            "slug": "80",
+            "size": "5.06rem"
+          }
+        ],
+        "theme": [
+          {
+            "name": "Tiny",
+            "size": "10px",
+            "slug": "20"
+          },
+          {
+            "name": "X-Small",
+            "size": "20px",
+            "slug": "30"
+          },
+          {
+            "name": "Small",
+            "size": "30px",
+            "slug": "40"
+          },
+          {
+            "name": "Regular",
+            "size": "clamp(30px, 5vw, 50px)",
+            "slug": "50"
+          },
+          {
+            "name": "Large",
+            "size": "clamp(30px, 7vw, 70px)",
+            "slug": "60"
+          },
+          {
+            "name": "X-Large",
+            "size": "clamp(50px, 7vw, 90px)",
+            "slug": "70"
+          },
+          {
+            "name": "XX-Large",
+            "size": "clamp(70px, 10vw, 140px)",
+            "slug": "80"
+          }
+        ]
+      }
+    },
+    "typography": {
+      "fontSizes": {
+        "default": [
+          {
+            "name": "Small",
+            "slug": "small",
+            "size": "13px"
+          },
+          {
+            "name": "Medium",
+            "slug": "medium",
+            "size": "20px"
+          },
+          {
+            "name": "Large",
+            "slug": "large",
+            "size": "36px"
+          },
+          {
+            "name": "Extra Large",
+            "slug": "x-large",
+            "size": "42px"
+          }
+        ],
+        "theme": [
+          {
+            "fluid": false,
+            "name": "Small",
+            "size": "0.875rem",
+            "slug": "small"
+          },
+          {
+            "fluid": {
+              "max": "1.125rem",
+              "min": "1rem"
+            },
+            "name": "Medium",
+            "size": "1rem",
+            "slug": "medium"
+          },
+          {
+            "fluid": {
+              "max": "1.375rem",
+              "min": "1.125rem"
+            },
+            "name": "Large",
+            "size": "1.38rem",
+            "slug": "large"
+          },
+          {
+            "fluid": {
+              "max": "2rem",
+              "min": "1.75rem"
+            },
+            "name": "Extra Large",
+            "size": "1.75rem",
+            "slug": "x-large"
+          },
+          {
+            "fluid": {
+              "max": "3rem",
+              "min": "2.15rem"
+            },
+            "name": "Extra Extra Large",
+            "size": "2.15rem",
+            "slug": "xx-large"
+          }
+        ]
+      }
+    }
+  }
+}

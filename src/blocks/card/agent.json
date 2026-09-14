@@ -1,0 +1,41 @@
+{
+	"whenToUse": "Use designsetgo/card for a self-contained content unit with an optional image, badge, title, subtitle, body copy, and a single CTA — pricing tiers, feature highlights, team member bios, or product summaries. Cards are commonly repeated inside a designsetgo/grid or designsetgo/row, but they also work standalone.",
+	"avoid": [
+		"Do not leave the CTA area's innerBlocks empty when showCta is true — designsetgo/card only accepts designsetgo/icon-button there, so include one, or set showCta to false if the card has no action.",
+		"Do not put anything other than designsetgo/icon-button in the card's innerBlocks — it's the only block the CTA area accepts.",
+		"Do not set title/subtitle/bodyText to empty strings while leaving the corresponding show* toggle (showTitle/showSubtitle/showBody) true — that renders an empty heading/paragraph element.",
+		"Do not forget imageAlt when showImage is true and imageUrl is set — the image needs accessible alt text just like core/image."
+	],
+	"examples": [
+		{
+			"title": "Pricing card with badge and CTA",
+			"tree": {
+				"version": 1,
+				"blocks": [
+					{
+						"name": "designsetgo/card",
+						"attributes": {
+							"layoutPreset": "standard",
+							"title": "Growth Plan",
+							"subtitle": "For growing teams",
+							"bodyText": "Unlimited pages, priority support, and every DesignSetGo block.",
+							"badgeText": "Popular",
+							"showBadge": true
+						},
+						"innerBlocks": [
+							{
+								"name": "designsetgo/icon-button",
+								"attributes": {
+									"text": "Choose Plan",
+									"icon": "check",
+									"iconPosition": "start",
+									"url": "#choose-growth-plan"
+								}
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}

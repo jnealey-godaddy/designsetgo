@@ -1,0 +1,65 @@
+{
+	"whenToUse": "Use designsetgo/section as the top-level block for every page section (hero, feature intro, CTA band, footer callout). It stacks its children vertically with consistent padding/gap, and it is the project's documented top-level building block — never wrap it, or nest several of it, inside a single outer container.",
+	"avoid": [
+		"Do not wrap multiple sections inside one outer designsetgo/section or core/group so the page has only one top-level block — each section belongs at the top level of the tree on its own.",
+		"Do not use section for a horizontal row of items (buttons, cards) — use designsetgo/row instead; section's default layout is a vertical flex stack.",
+		"Do not use section for a responsive multi-column grid — use designsetgo/grid instead.",
+		"Do not put more than one level-1 heading (core/heading with level 1) across the page — one section should carry the page's H1, and later sections should start at H2 or lower.",
+		"Do not skip heading levels inside a section's content (e.g. an H2 straight to an H4) — step down one level at a time."
+	],
+	"examples": [
+		{
+			"title": "Hero section with heading, copy, and CTA",
+			"tree": {
+				"version": 1,
+				"blocks": [
+					{
+						"name": "designsetgo/section",
+						"attributes": {
+							"tagName": "section",
+							"style": {
+								"spacing": {
+									"padding": {
+										"top": "var:preset|spacing|70",
+										"bottom": "var:preset|spacing|70",
+										"left": "var:preset|spacing|30",
+										"right": "var:preset|spacing|30"
+									}
+								}
+							}
+						},
+						"innerBlocks": [
+							{
+								"name": "core/heading",
+								"attributes": {
+									"level": 1,
+									"content": "Build pages faster with DesignSetGo"
+								}
+							},
+							{
+								"name": "core/paragraph",
+								"attributes": {
+									"content": "A component library for the WordPress block editor, with layout, content, and interactive blocks that follow your theme's design system."
+								}
+							},
+							{
+								"name": "designsetgo/row",
+								"innerBlocks": [
+									{
+										"name": "designsetgo/icon-button",
+										"attributes": {
+											"text": "Get Started",
+											"icon": "rocket",
+											"iconPosition": "end",
+											"url": "#get-started"
+										}
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}

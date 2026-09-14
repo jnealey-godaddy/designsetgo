@@ -1,0 +1,86 @@
+{
+	"whenToUse": "Use designsetgo/grid for a responsive multi-column layout — feature grids, team member grids, pricing tables, product listings. It replaces core/columns with independent desktop/tablet/mobile column counts.",
+	"avoid": [
+		"Do not set mobileColumns to 3 or more while desktopColumns is also 3 or more — that produces a grid that never adapts to small screens. Lower mobileColumns (typically to 1) so the grid stacks on mobile.",
+		"Do not use core/columns for a responsive card/feature grid — use designsetgo/grid, which has dedicated per-breakpoint column controls.",
+		"Do not leave the grid with no innerBlocks — an empty grid renders as dead space.",
+		"Do not put a designsetgo/card in the grid without at least one CTA block in its innerBlocks (designsetgo/card only accepts designsetgo/icon-button there) — an empty CTA area is a container with no content."
+	],
+	"examples": [
+		{
+			"title": "Three-column feature grid",
+			"tree": {
+				"version": 1,
+				"blocks": [
+					{
+						"name": "designsetgo/grid",
+						"attributes": {
+							"desktopColumns": 3,
+							"tabletColumns": 2,
+							"mobileColumns": 1
+						},
+						"innerBlocks": [
+							{
+								"name": "designsetgo/card",
+								"attributes": {
+									"title": "Layout blocks",
+									"bodyText": "Section, Row, and Grid cover every common page layout out of the box.",
+									"imageUrl": "https://example.com/images/feature-layout.jpg",
+									"imageAlt": "Wireframe of a responsive page layout"
+								},
+								"innerBlocks": [
+									{
+										"name": "designsetgo/icon-button",
+										"attributes": {
+											"text": "Learn More",
+											"icon": "lightbulb",
+											"url": "#layout-blocks"
+										}
+									}
+								]
+							},
+							{
+								"name": "designsetgo/card",
+								"attributes": {
+									"title": "Interactive blocks",
+									"bodyText": "Accordion, Tabs, and Modal add interactivity without custom JavaScript.",
+									"imageUrl": "https://example.com/images/feature-interactive.jpg",
+									"imageAlt": "Icons representing tabs and accordion panels"
+								},
+								"innerBlocks": [
+									{
+										"name": "designsetgo/icon-button",
+										"attributes": {
+											"text": "Learn More",
+											"icon": "lightning",
+											"url": "#interactive-blocks"
+										}
+									}
+								]
+							},
+							{
+								"name": "designsetgo/card",
+								"attributes": {
+									"title": "Design system tokens",
+									"bodyText": "Every block reads its colors, spacing, and type scale from theme.json.",
+									"imageUrl": "https://example.com/images/feature-tokens.jpg",
+									"imageAlt": "Swatches of a design system color palette"
+								},
+								"innerBlocks": [
+									{
+										"name": "designsetgo/icon-button",
+										"attributes": {
+											"text": "Learn More",
+											"icon": "settings",
+											"url": "#design-tokens"
+										}
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}

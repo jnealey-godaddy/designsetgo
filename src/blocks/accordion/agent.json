@@ -1,0 +1,59 @@
+{
+	"whenToUse": "Use designsetgo/accordion for FAQs and other collapsible content organization — a list of questions/topics where only the relevant panel needs to be visible at once. Every child must be a designsetgo/accordion-item; accordion-item is not a standalone block.",
+	"avoid": [
+		"Do not add a designsetgo/accordion-item outside a designsetgo/accordion — accordion-item declares designsetgo/accordion as its only valid parent.",
+		"Do not mark more than one accordion-item isOpen: true when allowMultipleOpen is false (the default) — only one panel can actually be open at a time, so the others' isOpen: true is misleading authoring.",
+		"Do not leave an accordion-item's innerBlocks empty — a panel with no content has nothing to reveal when expanded.",
+		"Do not use accordion for primary page navigation or a small (1-2 item) list where the content could just be shown directly — reach for it when there are several optional-to-read items."
+	],
+	"examples": [
+		{
+			"title": "FAQ accordion",
+			"tree": {
+				"version": 1,
+				"blocks": [
+					{
+						"name": "designsetgo/accordion",
+						"attributes": {
+							"allowMultipleOpen": false,
+							"iconStyle": "chevron",
+							"iconPosition": "right"
+						},
+						"innerBlocks": [
+							{
+								"name": "designsetgo/accordion-item",
+								"attributes": {
+									"title": "What is DesignSetGo?",
+									"isOpen": true
+								},
+								"innerBlocks": [
+									{
+										"name": "core/paragraph",
+										"attributes": {
+											"content": "DesignSetGo is a block library for the WordPress block editor, covering layout, content, and interactive blocks."
+										}
+									}
+								]
+							},
+							{
+								"name": "designsetgo/accordion-item",
+								"attributes": {
+									"title": "Does it work with any block theme?",
+									"isOpen": false
+								},
+								"innerBlocks": [
+									{
+										"name": "core/paragraph",
+										"attributes": {
+											"content": "Yes — every block reads colors, spacing, and typography from the active theme's theme.json."
+										}
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}
