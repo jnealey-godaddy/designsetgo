@@ -23,10 +23,10 @@ import {
 	// eslint-disable-next-line import/no-unresolved
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
 
-import { registerDesignSetGoBlock } from '../../tools/regenerate-patterns';
+import { registerForJest } from '../../src/engine/registry/sources-fs';
 
 beforeAll(() => {
-	['table-of-contents', 'card'].forEach(registerDesignSetGoBlock);
+	registerForJest();
 });
 
 describe('table-of-contents titleText (show-toggle)', () => {

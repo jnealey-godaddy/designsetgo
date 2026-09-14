@@ -43,7 +43,7 @@ import { parse as parseRaw } from '@wordpress/block-serialization-default-parser
 import fs from 'fs';
 import path from 'path';
 
-import { registerDesignSetGoBlock } from '../../tools/regenerate-patterns';
+import { registerForJest } from '../../src/engine/registry/sources-fs';
 import { nonDefaultValue } from './helpers/non-default-value';
 
 const BLOCKS_DIR = path.join(__dirname, '../../src/blocks');
@@ -94,7 +94,7 @@ function probesFor(name) {
 
 describe('deprecations must not reclaim current content', () => {
 	beforeAll(() => {
-		blocksWithDeprecations.forEach(registerDesignSetGoBlock);
+		registerForJest();
 	});
 
 	it('finds the blocks under test', () => {

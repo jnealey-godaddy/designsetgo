@@ -28,7 +28,7 @@ import {
 import fs from 'fs';
 import path from 'path';
 
-import { registerDesignSetGoBlock } from '../../tools/regenerate-patterns';
+import { registerForJest } from '../../src/engine/registry/sources-fs';
 
 const BLOCKS_DIR = path.join(__dirname, '../../src/blocks');
 const FIXTURE = path.join(
@@ -73,14 +73,11 @@ describe('blocks whose save() emits markup', () => {
 	let emitting;
 
 	beforeAll(() => {
-		slugs.forEach((slug) => {
-			try {
-				registerDesignSetGoBlock(`designsetgo/${slug}`);
-			} catch {
-				// Blocks that cannot register in this environment are simply
-				// not classified here.
-			}
-		});
+		// A block that fails to load is left unregistered (see registerAll()'s
+		// failures array in src/engine/registry/register-all.js) rather than
+		// throwing here; emitsSaveMarkup() below already treats an unregistered
+		// block as "not classified" via its own `!blockType` guard.
+		registerForJest();
 
 		emitting = slugs
 			.map((slug) => `designsetgo/${slug}`)

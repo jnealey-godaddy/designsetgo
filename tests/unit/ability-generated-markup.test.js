@@ -32,33 +32,12 @@ import {
 import fs from 'fs';
 import path from 'path';
 
-import { registerDesignSetGoBlock } from '../../tools/regenerate-patterns';
+import { registerForJest } from '../../src/engine/registry/sources-fs';
 
 const FIXTURE = path.join(
 	__dirname,
 	'__fixtures__/ability-generated-markup.json'
 );
-
-const BLOCKS_DIR = path.join(__dirname, '../../src/blocks');
-
-/**
- * Collect every block name appearing in a markup string, at any depth.
- *
- * @param {string} markup Serialized block markup.
- * @return {string[]} Unique block names.
- */
-function blockNamesIn(markup) {
-	const names = new Set();
-	const pattern = /<!--\s+wp:([a-z][a-z0-9-]*\/[a-z][a-z0-9-]*)/g;
-	let match = pattern.exec(markup);
-
-	while (match !== null) {
-		names.add(match[1]);
-		match = pattern.exec(markup);
-	}
-
-	return [...names];
-}
 
 /**
  * Walk a parsed block tree, collecting every block that failed validation.
@@ -103,21 +82,9 @@ describe('Abilities-generated markup validates against save()', () => {
 		expect(fs.existsSync(FIXTURE)).toBe(true);
 		fixture = JSON.parse(fs.readFileSync(FIXTURE, 'utf8'));
 
-		// Register every DesignSetGo block the fixture references. Core blocks
-		// register themselves through the block-editor import.
-		const needed = new Set();
-		Object.values(fixture).forEach((markup) =>
-			blockNamesIn(markup).forEach((name) => needed.add(name))
-		);
-
-		[...needed]
-			.filter((name) => name.startsWith('designsetgo/'))
-			.filter((name) =>
-				fs.existsSync(
-					path.join(BLOCKS_DIR, name.replace('designsetgo/', ''))
-				)
-			)
-			.forEach(registerDesignSetGoBlock);
+		// Register every DesignSetGo block, extension, and core block through
+		// the engine registry — whatever the fixture references is covered.
+		registerForJest();
 	});
 
 	it('has payloads to check', () => {
