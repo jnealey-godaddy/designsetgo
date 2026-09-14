@@ -595,3 +595,84 @@ Replaced the old `lint: exits 2 with "lint is not available yet"` test in
 `tests/engine/cli.test.mjs` with real-bundle coverage instead of leaving both — that stub
 test's entire purpose was asserting the not-yet-implemented placeholder, which this task's
 job is to remove.
+
+---
+
+## Session: Tasks 14+15 (window.designsetgoEngine + Agent build panel) — agent "task-14-15"
+
+**Task 14** (`src/engine/browser/index.js`): `window.designsetgoEngine = { version: 1,
+assemble, validate, lint }`, built lazily — `createEngine(window.wp.blocks)` only runs
+inside a `getEngine()` helper called from the bound methods, never at module-import time —
+so it's safe to import this before `window.wp.blocks` exists (verified with a dedicated
+test that sets `window.wp = undefined` before requiring the module). Guarded with
+`if (!window.designsetgoEngine)` so a second load (or a pre-existing global set by
+something else) is never clobbered. Wired in via `import './engine/browser';` near the top
+of `src/index.js`, alongside the other pre-block extension imports.
+
+**Task 15** (`src/engine/browser/panel/`): `AgentBuildPanel.js` (TextareaControl + Check/
+Insert buttons, state machine: parse JSON → `window.designsetgoEngine.assemble()` +
+`.lint(tree, {})` → report), `ReportList.js` (pure presentational, groups `assemble()`'s
+`invalid` + `lint()`'s findings by severity — Invalid/Errors/Warnings, three collapsible-
+looking sections, no sorting since `lint()` already returns document order), `index.js`
+(`registerPlugin` + `PluginSidebar`/`PluginSidebarMoreMenuItem` from `@wordpress/editor`,
+imported into `browser/index.js`). Insert calls `window.wp.blocks.parse(markup)` (NOT an
+`@wordpress/blocks` import — kept it a `window.wp` global read, matching Task 14's own
+style, so it's trivially mockable in Jest without touching the real heavy package) then
+`useDispatch('core/block-editor').insertBlocks(parsedBlocks)`.
+
+**Design context for lint**: used `{}` (empty), not `select('core/block-editor').getSettings()`
+— brief explicitly said this was not required and to say which was chosen. Documented in a
+comment at the top of `AgentBuildPanel.js`.
+
+**WP minimum is 6.7, not 6.4** — CLAUDE.md's "WP: 6.4+" footer is stale; `readme.txt` says
+`Requires at least: 6.7`. `PluginSidebar`/`PluginSidebarMoreMenuItem` have lived in
+`@wordpress/editor` (not `@wordpress/edit-post`) since the Gutenberg version that shipped
+with WP 6.6, so no `@wordpress/edit-post` fallback was needed — confirmed by grepping
+`node_modules/@wordpress/editor/src/components/plugin-sidebar*` for both exports before
+writing the import.
+
+**Jest gotcha discovered**: `@wordpress/components` cannot be imported for real once a test
+`jest.mock('@wordpress/data', …)`s down to a bare stub — `@wordpress/components` pulls in
+`@wordpress/rich-text`'s data store, which calls `combineReducers` from the real
+`@wordpress/data`, and throws `TypeError: (0, import_data.combineReducers) is not a
+function` at import time. Fix: mock `@wordpress/components` too, with minimal
+`TextareaControl`/`Button`/`Notice` stubs — same pattern already used by
+`tests/unit/draft-mode-controls.test.js` and `tests/unit/overlay-header-panel.test.js`. Grep
+those two files first next time before hand-rolling component mocks.
+
+**Jest gotcha #2**: `browser/index.js` importing `./panel` (which imports the real
+`@wordpress/editor`, globally stubbed to `{ store: 'core/editor' }` via
+`tests/unit/__mocks__/wordpressEditorMock.js`) does NOT break `browser/test/index.test.js`
+— `PluginSidebar`/`PluginSidebarMoreMenuItem` end up `undefined` inside the mock, but they're
+only referenced inside `registerPlugin`'s `render` callback, never invoked at import time, so
+the undefined-component references are inert in a unit test that never mounts the plugin UI.
+
+**Build size**: `build/index.js` was 192K after Task 14, 196K after Task 15 (panel +
+editor.scss) — both comfortably under the 250KB `maxEntrypointSize` budget in
+`webpack.config.js`. No entrypoint-size warning either time; only the five pre-existing
+unrelated block-asset warnings (slider/section/modal/icon-button/form-builder) printed.
+
+**Pre-commit e2e**: both commits hit the same pre-existing failure the ground rules warned
+about — `blocks-pcp-offloading.spec.js` "Hero Split pattern inserts with local placeholder
+images" (0 images found). Non-blocking, unrelated to this work.
+
+Two commits: `69380e26` (Task 14), `7d85d14d` (Task 15). Full report at
+`.superpowers/sdd/2026-09-14-agent-block-engine/task-14-15-report.md`.
+
+### Fix round 1 (review finding, commit `556350e6`)
+
+Reviewer caught: `onChange={setTreeText}` in `AgentBuildPanel.js` left `isValid`/`markup`/
+`report` untouched on every keystroke, so Check(valid on tree A) → edit textarea to tree B
+→ Insert stayed enabled and would insert A's blocks while the UI showed B's text and A's
+report. Fixed by extracting `resetCheckState()` (clears `parseError`/`markup`/`isValid`/
+`report`) and calling it from a new `handleTreeTextChange(value)` wired to the textarea's
+`onChange`, as well as from the top of `handleCheck()` (replacing its old inline reset).
+Also added a defense-in-depth `if (!isValid) return;` guard at the top of `handleInsert()`,
+and a `/* translators: … */` comment on the JSON example `help` text making explicit that
+it must never be translated (it's literal JSON syntax, not prose).
+
+New test: "editing the textarea after a valid Check disables Insert and clears the report"
+— Check a tree that assembles valid with a non-empty lint finding, confirms Insert enabled
+and the finding visible, then edits the textarea without re-checking and asserts Insert is
+disabled again, the stale finding is gone, and clicking the (disabled) Insert button calls
+neither `window.wp.blocks.parse` nor `insertBlocks`.
