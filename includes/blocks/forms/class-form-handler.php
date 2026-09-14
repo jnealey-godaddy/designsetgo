@@ -1316,13 +1316,24 @@ class Form_Handler {
 	 * Deliberately uncached: it parses a single post, and caching per page
 	 * would need its own invalidation for a lookup that is already cheap.
 	 *
+	 * The post ID is client-supplied, so it may only select a copy the requester
+	 * could have seen and submitted anyway: a publicly viewable post, unlocked
+	 * if it has a password. Every such copy is already a public endpoint, so
+	 * naming it grants nothing that visiting that page wouldn't.
+	 *
 	 * @param string $form_id Form identifier to look up.
 	 * @param int    $post_id Source post ID.
-	 * @return array|null Form definition, or null when that post is not published or lacks the form.
+	 * @return array|null Form definition, or null when that post isn't viewable to the requester or lacks the form.
 	 */
 	private function get_source_post_form_definition( $form_id, $post_id ) {
 		$post = get_post( $post_id );
-		if ( ! $post || 'publish' !== $post->post_status || false === strpos( $post->post_content, 'designsetgo/form-builder' ) ) {
+		if (
+			! $post ||
+			'publish' !== $post->post_status ||
+			! is_post_publicly_viewable( $post ) ||
+			post_password_required( $post ) ||
+			false === strpos( $post->post_content, 'designsetgo/form-builder' )
+		) {
 			return null;
 		}
 

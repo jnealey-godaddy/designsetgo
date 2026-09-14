@@ -191,6 +191,45 @@ class Test_Form_Duplicate_Form_Id extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A password-protected source page can't be chosen by someone without the password.
+	 *
+	 * The page ID only selects between copies the requester could have seen.
+	 * Naming a protected page must not reach its form ahead of a public copy.
+	 */
+	public function test_password_protected_source_page_is_ignored_without_the_password() {
+		$this->create_form_page( 'public@example.com' );
+		$protected = $this->create_form_page( 'protected@example.com' );
+		wp_update_post(
+			array(
+				'ID'            => $protected,
+				'post_password' => 'secret',
+			)
+		);
+
+		$this->assert_accepted( $this->submit( $protected ) );
+
+		$this->assertSame( 'public@example.com', $this->sent['to'] );
+	}
+
+	/**
+	 * A source post whose type isn't publicly viewable can't supply the form.
+	 */
+	public function test_source_post_of_a_non_viewable_type_is_ignored() {
+		register_post_type( 'dsgo_internal', array( 'public' => false ) );
+		$this->create_form_page( 'public@example.com' );
+		$internal = $this->create_form_page( 'internal@example.com' );
+		set_post_type( $internal, 'dsgo_internal' );
+
+		try {
+			$this->assert_accepted( $this->submit( $internal ) );
+		} finally {
+			unregister_post_type( 'dsgo_internal' );
+		}
+
+		$this->assertSame( 'public@example.com', $this->sent['to'] );
+	}
+
+	/**
 	 * A source page without the form falls back to the site-wide lookup.
 	 *
 	 * A form in a footer template part is submitted from a page whose own
