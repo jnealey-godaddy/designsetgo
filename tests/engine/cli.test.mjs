@@ -187,6 +187,33 @@ test('validate: missing file arguments exits 2', () => {
 	assert.match(stderr, /Missing file argument/);
 });
 
+test('validate: a nonexistent file exits 2 with a stderr message', () => {
+	const { status, stdout, stderr } = runCli([
+		'validate',
+		path.join(FIXTURES, 'does-not-exist.html'),
+	]);
+
+	assert.equal(status, 2);
+	assert.equal(stdout, '');
+	assert.match(stderr, /Cannot read file/);
+});
+
+test('validate --out: writes the same content that went to stdout', () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsgo-engine-'));
+	const outFile = path.join(dir, 'out.txt');
+
+	const { status, stdout } = runCli([
+		'validate',
+		VALID_MARKUP,
+		'--out',
+		outFile,
+	]);
+
+	assert.equal(status, 0);
+	const written = fs.readFileSync(outFile, 'utf8');
+	assert.equal(stdout, `${written}\n`);
+});
+
 test('lint: exits 2 with "lint is not available yet"', () => {
 	const { status, stdout, stderr } = runCli(['lint', VALID_TREE]);
 
