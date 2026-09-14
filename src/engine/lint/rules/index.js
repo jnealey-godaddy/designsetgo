@@ -7,5 +7,21 @@
 import noCustomHtml from './no-custom-html';
 import imageAlt from './image-alt';
 import headingOrder from './heading-order';
+import contrast from './contrast';
+import presetValues from './preset-values';
+import preferDsgoLayout from './prefer-dsgo-layout';
+import topLevelSections from './top-level-sections';
+import mobileLayout from './mobile-layout';
+import emptyContainer from './empty-container';
 
-export const rules = [noCustomHtml, imageAlt, headingOrder];
+export const rules = [
+	noCustomHtml,
+	imageAlt,
+	headingOrder,
+	contrast,
+	presetValues,
+	preferDsgoLayout,
+	topLevelSections,
+	mobileLayout,
+	emptyContainer,
+];
