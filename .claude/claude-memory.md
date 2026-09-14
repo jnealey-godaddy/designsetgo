@@ -454,3 +454,39 @@ this — every other `align`-supporting block round-trips it cleanly.
 verbatim from `deprecations-isEligible.test.js` (which still imports it). Confirmed
 Jest's `testMatch` (`**/tests/unit/**/*.test.js`) does not collect non-`.test.js` files
 under `tests/unit/helpers/` as suites.
+
+### Moving Jest registration onto the engine registry (agent: agent-block-engine-task7-2026-09-14)
+
+Task 7 replaced every test's manual `registerDesignSetGoBlock(...)` loop with a single
+`registerForJest()` call — 8 files (`deprecations-isEligible`, `ability-generated-markup`,
+`form-builder-compat-deprecation`, `label-dedup-deprecation`,
+`conditional-visibility-deprecation`, `grid-compat-deprecation`, `translation-resilience`,
+`blocks-with-save-output`), all committed (`7f092c72`), all green, zero coverage lost.
+Contrary to the brief's flagged risk, `deprecations-isEligible.test.js` did NOT start
+failing from extension-appended deprecations — 121/121 still pass.
+
+**`tools/regenerate-patterns.js`'s `registerDesignSetGoBlock()` is implemented as the
+brief's thin `registerForJest()` wrapper but is NOT committed** — it breaks
+`tests/unit/tools/regenerate-patterns.test.js`'s `assertNoContentLoss - the guard has
+teeth` test, which is left un-migrated per the task's explicit "any migrated test fails →
+stop, return BLOCKED" instruction. Root cause: that test's whole scenario depends on the
+OLD design where `regeneratePatterns()` registers ONLY the target block
+(`designsetgo/flip-card`), so nested `flip-card-face`/`icon`/`core/heading`/`core/paragraph`
+hit the unregistered-type passthrough — the test simulates "no passthrough" and asserts
+`assertNoContentLoss` throws because those blocks get dropped. Once `registerDesignSetGoBlock`
+= `registerForJest()`, ALL of those blocks are genuinely registered (not "unregistered"),
+so nothing is ever dropped and the guard never fires. `assertNoContentLoss` itself is
+unchanged and still correct; only the test's *simulation* of "unregistered" is now stale.
+Recommended fix (not applied — needs a decision): make that one test trigger the drop via a
+genuinely foreign block name instead of a DesignSetGo/core one. Full report:
+`.superpowers/sdd/2026-09-14-agent-block-engine/task-7-report.md`.
+
+Also fixed as a direct consequence (not literally in the brief's text, but load-bearing):
+`regeneratePatterns()`'s `finally` block used to `unregisterBlockType(blockName)` after
+every call. Under the new full-registry design that desyncs `register-all.js`'s
+`designsetgo/section`-already-registered short-circuit from reality — a later
+`regeneratePatterns()` call for a different block in the same process would silently never
+re-register the block this call just tore down. Removed; only the scratch
+`PASSTHROUGH_BLOCK` is still unregistered in `finally`. No current test exercises
+`regeneratePatterns()` end-to-end (only the lower-level `regenerateBlockRegions()` is
+tested), so this was a latent bug, not an active failure.
