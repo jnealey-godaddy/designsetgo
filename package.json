@@ -23,7 +23,7 @@
     "build": "wp-scripts build",
     "build:engine": "webpack --config webpack.engine.config.js",
     "engine": "node build/engine/node.cjs",
-    "test:engine": "npm run build:engine && node --test tests/engine/",
+    "test:engine": "npm run build:engine && node --test tests/engine/*.test.mjs",
     "build:dev": "cross-env NODE_ENV=development wp-scripts build",
     "build:clean": "npm run clean:cache && npm run build",
     "build:analyze": "cross-env ANALYZE=true wp-scripts build",
