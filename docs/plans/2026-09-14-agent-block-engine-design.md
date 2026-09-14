@@ -73,7 +73,7 @@ Separately, valid markup is not enough: agents pick the wrong blocks, ignore the
 
 One codebase, built twice. Each module stays under 300 lines.
 
-- **`registry/`** — registers every DesignSetGo block from `block.json` + `save` + `deprecated`, plus the save-affecting half of every extension (attribute registration and `blocks.getSaveContent.extraProps` filters). The list is a **build-time manifest** generated from `src/blocks/*` and each extension's save-affecting entry file, so a new block or extension is picked up without editing a list. Never imports `edit.js` or editor UI.
+- **`registry/`** — registers blocks the same way the editor does: bootstraps every `src/blocks/*/block.json` as a server-side definition (what PHP sends the editor), sets the `designsetgo` category, registers core blocks, then loads every `src/extensions/*/index.js` and `src/blocks/*/index.js` — the real registration files. The file lists come from the filesystem (`require.context` in the Node build, `fs` in Jest), so a new block or extension is picked up without editing a list.
 - **`assemble(tree)`** → `{ markup, blocks, report }`. Builds via `createBlock` → `serialize`, re-parses the output, and requires every block to validate. A block type that is not registered is reported, not thrown.
 - **`validate(markup)`** → `report`. Parse plus `validateBlock`, recursively, with the path of each invalid block.
 - **`lint(tree, designContext)`** → `findings`. See [Design quality](#design-quality).
@@ -89,17 +89,15 @@ Report shape, shared by every surface:
 }
 ```
 
-### Extension split
+### Registration spike (2026-09-14)
 
-The Node registry must load extensions without editor UI. Extensions that already separate the two (`attributes.js`, `save-props.js`, `filters.js`) are used as-is. These extensions currently register attributes or save props from a single `index.js` alongside editor code and must be split so the save-affecting part is its own file:
+An earlier draft planned to split the save-affecting half of 12 extensions out of their `index.js`. A spike showed that is unnecessary: in jsdom, every real `src/extensions/*/index.js` and `src/blocks/*/index.js` loads without error (editor-only filters such as `editor.BlockEdit` are inert without an editor), and after bootstrapping `block.json` definitions all **72** DesignSetGo blocks and **90** core blocks register, round-trip valid at defaults, and serialize a mixed core + DesignSetGo tree with every block valid. This held both under Jest and in a plain `node` process running the webpack Node build. Fourteen blocks (the form fields, blobs, scroll-accordion) pass only `metadata.name` to `registerBlockType` and depend on the `block.json` bootstrap; without it they are refused with "must have a title".
 
-`background-video`, `clickable-group`, `custom-css`, `grid-mobile-order`, `grid-span`, `hover-effects`, `max-width`, `responsive`, `reveal-control`, `schema`, `sticky-header-controls`, `text-alignment-inheritance`.
-
-`block-animations/editor.js`, `expanding-background/editor.js`, `svg-patterns/editor.js`, `text-reveal/editor.js`, and `vertical-scroll-parallax/editor.js` also match the save/attribute filter search and must be checked for save-affecting code that belongs in their `attributes.js`. The split must not change any saved markup; the existing deprecation and round-trip tests are the guard.
+Loading the real registration files is also more faithful than a separate manifest: anything a block's `index.js` adds beyond `block.json` is included automatically.
 
 ### Builds
 
-- **Node:** `build/engine/node.cjs` running on jsdom, with `@wordpress/*` resolved to one copy of each package so `useBlockProps.save()` and the registry share a `@wordpress/blocks` instance (the problem `tests/unit/deprecations-isEligible.test.js` currently works around). Core blocks come from the `@wordpress/block-library` release bundled with WordPress 6.7. Exposed as `npm run blocks -- <command>`; publishing to npm is out of scope. **Excluded from the plugin ZIP** via `.distignore`.
+- **Node:** `build/engine/node.cjs` (`webpack.engine.config.js`) running on jsdom. Only plugin source is bundled and transpiled; `node_modules` packages are required at runtime from their CommonJS builds, the same modules Jest runs. Plugin source's `@wordpress/blocks` import is pointed at the copy nested under `@wordpress/block-editor`, so `useBlockProps.save()` and the parser share an instance (the problem `tests/unit/deprecations-isEligible.test.js` works around). `@wordpress/editor` and `@wordpress/notices` are stubbed exactly as the Jest config stubs them. Core blocks come from `@wordpress/block-library@9.8.18`, the package's `wp-6.7` dist-tag (a dev dependency; adding it left all 160 Jest suites passing). Exposed as `npm run engine -- <command>`; publishing to npm is out of scope. **Excluded from the plugin ZIP** via `.distignore` and the `files` list in `package.json`.
 - **Browser:** `build/engine/browser.js`, a thin layer over the site's already-loaded `wp.blocks` registry. It ships in the plugin.
 
 ### What it replaces
@@ -111,7 +109,7 @@ The Node registry must load extensions without editor UI. Extensions that alread
 ### Local agent (Node)
 
 1. The agent writes `tree.json`.
-2. `npm run blocks -- assemble tree.json --lint --context design-context.json` writes markup to stdout, or `--json` for the full report. `design-context.json` is the output of the existing `designsetgo/get-design-context` ability.
+2. `npm run engine -- assemble tree.json --lint --context design-context.json` writes markup to stdout, or `--json` for the full report. `design-context.json` is the output of the existing `designsetgo/get-design-context` ability.
 3. Exit codes: `0` valid and no lint errors, `1` invalid markup or lint errors (or warnings beyond `--max-warnings`), `2` usage or I/O error.
 4. The agent pushes the markup with WP-CLI or REST. Nothing server-side changes.
 
@@ -245,7 +243,7 @@ Screenshot-based visual review stays in Site Designer.
 
 Each phase is independently shippable.
 
-1. **Engine in Node** — manifest registry, extension split, `assemble`, `validate`, CLI; move Jest helpers onto it; tests 1–3 and 8.
+1. **Engine in Node** — registry, `assemble`, `validate`, CLI; move Jest helpers onto it; tests 1–3 and 8.
 2. **Design quality** — lint rules, `agent.json` for the most-used blocks (section, row, grid, card, icon-button, accordion, tabs), `list-blocks` exposure; tests 4–5.
 3. **Browser** — browser build, editor assistant panel; test 6.
 4. **Remote** — `build-page`, `get-build-status`, finishing editor plugin, freeze notices on existing abilities; test 7.
@@ -256,7 +254,8 @@ Each phase is independently shippable.
 | Risk | Mitigation |
 |---|---|
 | A `save()` behaves differently on jsdom than in a browser | Test 6 fails on any byte difference |
-| A save-affecting filter imports editor-only code, so Node can't load it | The extension split; test 1 fails if a registered extension throws on load |
+| A future block or extension's `index.js` touches an editor-only API at load time, so Node can't load it | Test 1 fails if any registration file throws on load; the registry reports the file rather than silently skipping it |
+| Adding `@wordpress/block-library` bumps shared `@wordpress/*` packages and breaks Jest (see the package-skew history) | Verified at adoption: all 160 suites pass; the full suite runs on every task |
 | Core block markup from Node differs from a newer site's core | Pinned to 6.7 (D7); remote writes finish on the site's own registry |
 | Headless finish can't authenticate | Site Designer owns the session; without it, drafts wait for a person to open them |
 | Pending tree goes stale while a person edits | `_dsgo_pending_base` conflict check |
