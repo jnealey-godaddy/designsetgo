@@ -207,6 +207,36 @@ class Test_Form_Script_Localize extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The page being viewed is localized, so a submission names its source page.
+	 *
+	 * Form IDs repeat across pages (patterns ship fixed IDs); the handler uses
+	 * this to pick the copy of the form the visitor actually filled in.
+	 */
+	public function test_localizes_the_viewed_page_id() {
+		$page_id = $this->create_page_without_form();
+		$this->go_to_page( $page_id );
+
+		$this->handler->localize_form_script();
+
+		$this->assertStringContainsString(
+			'"postId":"' . $page_id . '"',
+			wp_scripts()->get_data( self::HANDLE, 'data' )
+		);
+	}
+
+	/**
+	 * Archives have no single source page to report.
+	 */
+	public function test_localizes_no_page_id_outside_singular_views() {
+		self::factory()->post->create();
+		$this->go_to( home_url( '/' ) );
+
+		$this->handler->localize_form_script();
+
+		$this->assertStringContainsString( '"postId":"0"', wp_scripts()->get_data( self::HANDLE, 'data' ) );
+	}
+
+	/**
 	 * Localizing must not enqueue anything by itself.
 	 *
 	 * This is what makes the unconditional localization free: data attached to

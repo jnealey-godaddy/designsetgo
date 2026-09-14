@@ -433,6 +433,8 @@ function initFormBuilder() {
 					fields,
 					honeypot: honeypot || '',
 					timestamp: timestamp || Date.now(),
+					// Form IDs can repeat across pages; this picks the copy on this page.
+					sourcePostId: parseInt(designsetgoForm.postId, 10) || 0,
 					// Include Turnstile token if available (graceful degradation: empty if failed)
 					turnstile_token: turnstileToken || '',
 				});
