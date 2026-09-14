@@ -286,7 +286,10 @@ test('lint: a shape-invalid tree exits 1 and never runs rules', () => {
 	const report = JSON.parse(stdout);
 	assert.equal(report.status, 'invalid');
 	assert.equal(report.invalid.length, 1);
-	assert.equal(report.invalid[0].code, 'designsetgo_invalid_block_definition');
+	assert.equal(
+		report.invalid[0].code,
+		'designsetgo_invalid_block_definition'
+	);
 });
 
 test('lint: an unknown command-line flag for --max-warnings exits 2', () => {
