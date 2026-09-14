@@ -31,8 +31,14 @@ package-lock.json
 # Build Tools
 # ===================
 webpack.config.js
+webpack.engine.config.js
 tsconfig.json
 lint-staged.config.js
+
+# ===================
+# Agent engine (Node only)
+# ===================
+/build/engine
 
 # ===================
 # Testing
