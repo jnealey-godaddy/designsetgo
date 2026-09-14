@@ -29,7 +29,7 @@ import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect, useMemo } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import classnames from 'classnames';
-import { useUniqueBlockId } from '../../hooks';
+import { useUniqueFormId } from './utils/unique-form-id';
 import {
 	encodeColorValue,
 	decodeColorValue,
@@ -145,12 +145,7 @@ export default function FormBuilderEdit({
 		? ` is-style-${submitButtonVariation}`
 		: '';
 
-	useUniqueBlockId({
-		clientId,
-		attributeName: 'formId',
-		value: formId,
-		setAttributes,
-	});
+	useUniqueFormId({ clientId, setAttributes });
 
 	// Track child count so we can show the template chooser on first insert,
 	// and build the reply-to dropdown options from the actual form fields.

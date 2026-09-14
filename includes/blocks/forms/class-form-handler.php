@@ -207,6 +207,12 @@ class Form_Handler {
 						'type'     => 'string',
 						'default'  => '',
 					),
+					'sourcePostId'    => array(
+						'required'          => false,
+						'type'              => 'integer',
+						'default'           => 0,
+						'sanitize_callback' => 'absint',
+					),
 					'turnstile_token' => array(
 						'type'              => 'string',
 						'default'           => '',
@@ -282,7 +288,7 @@ class Form_Handler {
 		// can consume resources. A form ID is an untrusted client value: accepting
 		// an unknown one would let callers bypass its field schema and per-form
 		// controls entirely.
-		$form_definition = $this->get_form_definition( $form_id );
+		$form_definition = $this->get_form_definition( $form_id, $this->get_source_post_id( $request ) );
 		if ( null === $form_definition ) {
 			return new WP_Error(
 				'unknown_form',
@@ -429,7 +435,7 @@ class Form_Handler {
 		}
 
 		// Send email notification if enabled (settings looked up server-side from block attributes).
-		$this->send_email_notification( $form_id, $sanitized_fields, $submission_id );
+		$this->send_email_notification( $form_id, $sanitized_fields, $submission_id, $block_attrs );
 
 		// Increment rate limit counter ONLY after successful submission.
 		if ( $form_settings['enable_rate_limiting'] ) {
@@ -499,6 +505,7 @@ class Form_Handler {
 		$request->set_param( 'fields', isset( $data['fields'] ) ? $data['fields'] : array() );
 		$request->set_param( 'honeypot', isset( $data['honeypot'] ) ? $data['honeypot'] : '' );
 		$request->set_param( 'timestamp', isset( $data['timestamp'] ) ? $data['timestamp'] : '' );
+		$request->set_param( 'sourcePostId', isset( $data['sourcePostId'] ) ? absint( $data['sourcePostId'] ) : 0 );
 		$request->set_param( 'turnstile_token', isset( $data['turnstile_token'] ) ? sanitize_text_field( $data['turnstile_token'] ) : '' );
 
 		$result = $this->handle_form_submission( $request );
@@ -797,6 +804,9 @@ class Form_Handler {
 				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
 				'adminPostUrl' => admin_url( 'admin-post.php' ),
 				'ajaxNonce'    => wp_create_nonce( 'designsetgo_form_submit' ),
+				// Sent back as sourcePostId so a form ID shared by several pages
+				// resolves to the copy on this one.
+				'postId'       => is_singular() ? get_queried_object_id() : 0,
 			)
 		);
 
@@ -867,14 +877,19 @@ class Form_Handler {
 	 * in post content), NOT from the client request. This prevents attackers from
 	 * manipulating email recipients, sender addresses, or body content.
 	 *
-	 * @param string $form_id Form ID.
-	 * @param array  $fields Sanitized form fields.
-	 * @param int    $submission_id Submission post ID.
+	 * @param string     $form_id       Form ID.
+	 * @param array      $fields        Sanitized form fields.
+	 * @param int        $submission_id Submission post ID.
+	 * @param array|null $block_attrs   Attributes of the form the submission was
+	 *                                  validated against. Passing them keeps the
+	 *                                  email on the same copy of a shared form ID.
 	 */
-	private function send_email_notification( $form_id, $fields, $submission_id ) {
+	private function send_email_notification( $form_id, $fields, $submission_id, $block_attrs = null ) {
 		// Look up email settings from the form block attributes (server-side only).
 		// This prevents client-side manipulation of email configuration.
-		$block_attrs = $this->get_form_block_attributes( $form_id );
+		if ( null === $block_attrs ) {
+			$block_attrs = $this->get_form_block_attributes( $form_id );
+		}
 
 		if ( ! $block_attrs || empty( $block_attrs['enableEmail'] ) ) {
 			if ( ! $block_attrs && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
@@ -1195,12 +1210,25 @@ class Form_Handler {
 	 * block widgets, templates still served from theme or plugin files, and
 	 * registered patterns — are resolved from those sources instead.
 	 *
-	 * @param string $form_id Form identifier to look up.
+	 * Form IDs are not unique in practice: DSGo patterns ship fixed IDs, and a
+	 * form copied between pages keeps its ID. When the submitting page is known
+	 * and holds the form, that copy wins over whichever one the site-wide lookup
+	 * would find first.
+	 *
+	 * @param string $form_id        Form identifier to look up.
+	 * @param int    $source_post_id Page the form was submitted from, or 0.
 	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[]}|null Form definition or null.
 	 */
-	private function get_form_definition( $form_id ) {
+	private function get_form_definition( $form_id, $source_post_id = 0 ) {
 		if ( ! is_string( $form_id ) || '' === $form_id ) {
 			return null;
+		}
+
+		if ( $source_post_id ) {
+			$source_definition = $this->get_source_post_form_definition( $form_id, $source_post_id );
+			if ( null !== $source_definition ) {
+				return $source_definition;
+			}
 		}
 
 		$cache_key = 'dsgo_form_definition_v2_' . md5( $form_id );
@@ -1257,6 +1285,61 @@ class Form_Handler {
 			'constraints'     => $this->extract_field_value_constraints_from_blocks( $inner_blocks ),
 			'required_fields' => $this->extract_required_field_names_from_blocks( $inner_blocks ),
 		);
+	}
+
+	/**
+	 * Identify the page a submission was sent from.
+	 *
+	 * The view script sends the page ID it was localized with. Requests without one —
+	 * the admin-post path, or a cached page running an older view.js — fall
+	 * back to the referer. Either value is client-supplied, which is safe here
+	 * because it only chooses between published copies of the form.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return int Post ID, or 0 when unknown.
+	 */
+	private function get_source_post_id( $request ) {
+		$source_post_id = absint( $request->get_param( 'sourcePostId' ) );
+		if ( $source_post_id ) {
+			return $source_post_id;
+		}
+
+		$referer = wp_get_referer();
+
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.url_to_postid_url_to_postid -- Not a VIP site; runs at most once per rate-limited submission, and only without sourcePostId.
+		return $referer ? url_to_postid( $referer ) : 0;
+	}
+
+	/**
+	 * Resolve a form from the page it was submitted from.
+	 *
+	 * Deliberately uncached: it parses a single post, and caching per page
+	 * would need its own invalidation for a lookup that is already cheap.
+	 *
+	 * The post ID is client-supplied, so it may only select a copy the requester
+	 * could have seen and submitted anyway: a publicly viewable post, unlocked
+	 * if it has a password. Every such copy is already a public endpoint, so
+	 * naming it grants nothing that visiting that page wouldn't.
+	 *
+	 * @param string $form_id Form identifier to look up.
+	 * @param int    $post_id Source post ID.
+	 * @return array|null Form definition, or null when that post isn't viewable to the requester or lacks the form.
+	 */
+	private function get_source_post_form_definition( $form_id, $post_id ) {
+		$post = get_post( $post_id );
+		if (
+			! $post ||
+			'publish' !== $post->post_status ||
+			! is_post_publicly_viewable( $post ) ||
+			post_password_required( $post ) ||
+			false === strpos( $post->post_content, 'designsetgo/form-builder' )
+		) {
+			return null;
+		}
+
+		$form_block = $this->find_form_block( parse_blocks( $post->post_content ), $form_id );
+
+		return null === $form_block ? null : $this->build_form_definition( $form_block );
 	}
 
 	/**
