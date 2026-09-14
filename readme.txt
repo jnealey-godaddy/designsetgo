@@ -199,66 +199,13 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 * **Fix:** Draft Mode — publishing a draft no longer deletes custom fields that were intentionally kept out of the draft copy, so integrations that store their own bookkeeping data keep it across publishes.
 * **Security:** Hardened Draft Mode's post-copy against maliciously deep data and closed a window where a stale, still-open settings form could overwrite a saved API key with its masking placeholder. These strengthen existing protections — no known exploit was involved.
 
-= 2.4.0 - 2026-07-12 =
-
-* **New:** Section Divider — a new block for dropping a full-width shape divider between any two blocks. Shape, height, and color default to your theme's Style Kit setting and can be overridden per instance.
-* **New:** The Icon block has a Fill / Outline style toggle and inherits a theme-defined default size, so icons match your design out of the box.
-* **New:** Icon Button now inherits the core Button block's style variations (Fill, Outline, and any your theme adds).
-* **New:** Scrolling Gallery now uses WordPress's native border controls (width, style, color, and radius) in place of the old single border-radius field.
-* **New:** SVG Patterns can inherit a "Theme default" preset set at the theme level, so a Style Kit can restyle every pattern across your site at once — each block can still opt out and set its own.
-* **New:** Row and Grid now support the same background-overlay and hover-state style options as Section, so a Style Kit's overlay and hover styling applies consistently across all three layout blocks.
-* **Improved:** Icon, Divider, Map, and all form field blocks now render dynamically, so they always reflect your current theme — change a design token once and every instance updates, with cleaner saved markup.
-* **Improved:** The Pill block now renders dynamically — saved pills no longer bake in a fixed size or alignment, so they stay portable across patterns and AI-assisted edits and always reflect your theme.
-* **Improved:** Form Builder fields inherit spacing and sizing from your theme, so forms match the rest of your site automatically.
-* **Improved:** Map markers can now take their color from your theme.
-* **Improved:** Section style options (like core's Style 1–5) now also apply to Card, Fifty/Fifty, Modal, Slide, Scroll Slide, Tab, Accordion Item, Scroll Accordion Item, Image Accordion Item, Timeline Item, Counter, and Flip Card Face — matching Section, Row, and Grid.
-* **Fix:** Icon List items now show their fill / outline and stroke on the frontend, matching the editor.
-* **Fix:** SVG Patterns and Form Builder no longer bake default colors into saved markup, so they inherit your theme's colors.
-* **Fix:** Content with quotes or backslashes saved through AI-assisted edits (Abilities API) is no longer altered.
-* **Fix:** Form submissions no longer drop backslashes — a message containing a file path like C:\Users\me or a code snippet was previously saved with the backslashes stripped. Submitted values are now stored exactly as entered.
-* **Fix:** Scrolling Gallery blocks saved by older versions or patterns (image rows stored in the markup rather than the block comment) keep migrating silently instead of showing "Attempt Recovery."
-* **Fix:** An Image Accordion's overlay color and opacity now correctly reach the frontend — previously they only showed in the editor. Turning "Enable Overlay" off now also removes the overlay on the frontend, not just in the editor.
-* **Improved:** An Image Accordion's overlay color and opacity now inherit from your theme's Style Kit (with per-block overrides) instead of being baked into each block, so a Style Kit can restyle every accordion's scrim at once. Note: existing accordions left at the old default overlay will follow a theme overlay token once one is set, so their scrim can change appearance when a Style Kit defines one — with no edit to the page.
-* **Fix:** Section-style customizations made in your Style Kit (like a custom border or corner radius) now preview live in the editor, matching what already appeared on the published page.
-* **Fix:** Sections using a Style Kit overlay variation now actually show the overlay.
-* **Fix:** Scroll Accordion no longer shows a stray colored bar down the left edge of items in the editor.
-* **Security:** Hardened form notification emails, dynamic CSS handling, and AI-assisted block insertion. Submitted form values are now escaped before they appear in notification emails, so a submission can no longer inject markup into your inbox; dynamic style values are checked more strictly; and a Tabs block with an unusual page anchor in the URL no longer stops working. These strengthen existing protections — no known exploit was involved.
-* **Fix:** Tab and Blobs blocks no longer quietly lose a setting when a page is opened in the editor. A Tab's icon stroke width and a Blob's height could be reset to their defaults simply by opening the post, because the block was being run through an out-of-date upgrade path that predated those settings. Both now survive.
-* **Fix:** Block styles now refresh properly when you update the plugin. Each block's stylesheet was being served from your browser's cache with the same address every release, so a visual fix to a block could keep showing the old styling until the cache happened to clear itself. If you saw an oversized icon inside an Icon Button after updating, a hard refresh cleared it — and it will not come back.
-* **Fix:** Pill, Icon, Icon Button, and Modal Trigger no longer escape your page's content column when positioned left, right, or center — they previously could align to the edge of the outer container instead of your theme's content width.
-* **Change:** Left, center, and right positioning for Pill, Icon, Icon Button, and Modal Trigger has moved from the toolbar's Align control to a new Justify control in the same toolbar. Align now offers only Wide and Full, matching how WordPress's own Buttons block works. Your existing positioning carries over automatically.
-* **Change:** Icon Button and Modal Trigger now stack instead of sitting side-by-side by default. Fixing the positioning bug above required making them block-level elements, so two placed one after another now each take their own line; use a Row block to place them side-by-side intentionally.
-* **Change:** Icon Button and Modal Trigger's "stretch full width" option is now a dedicated Full Width setting instead of reusing WordPress's Full Width alignment. Inside a Section — where nearly all usage lives — the rendered result is unchanged.
-* **Change:** Icon background and border colors now hug the icon itself instead of spanning the full content column.
-* **Note:** Existing Icon, Divider, Map, and form blocks migrate automatically — no action required. Existing Pill, Icon Button, and Modal Trigger content keeps rendering exactly as before and switches to the new positioning wrapper the next time the post is opened and re-saved in the editor.
-
-= 2.3.0 - 2026-07-01 =
-
-* **New:** Theme "section style" variations now also apply to DesignSetGo Section, Row, and Grid blocks (matching the core Group / Columns / Column blocks).
-* **New:** Sections can inherit a site-wide default shape divider set at the theme level, and each section can still override it.
-* **New:** The plugin dashboard now links to designsetgo.dev — a runtime for hosting the apps you build with AI on your WordPress site.
-* **Change:** Shape dividers now use CSS masks instead of an inline SVG — the shape inherits the section's background, default height/width are omitted from markup, and the drops/fan/steps/slime shapes were redesigned.
-* **Tweak:** Refreshed the admin dashboard logo and menu icon to the current DesignSetGo brand mark.
-* **Fix:** A theme-level default shape divider now resolves correctly instead of falling back to Wave.
-* **Fix:** Sections saved with drops, fan, steps, or slime dividers before this release keep migrating silently instead of showing "Attempt Recovery."
-
-= 2.2.0 - 2026-06-29 =
-
-* **New:** Grid & Icon List — a "Column Min Width" control so columns never get narrower than a set minimum (Grid uses `minmax(value, 1fr)` and keeps its responsive column counts; Icon List uses `auto-fit` to flow as many columns as fit).
-* **New:** Scrolling Gallery — a per-image "Image Fit" (object-fit) control, plus image height and width controls.
-* **Fix:** Grid and Icon List blocks from older AI-generated patterns (CSS-only responsive grid, no attribute) now migrate to Column Min Width automatically instead of showing "Attempt Recovery."
-* **Fix:** Added deprecations for older Accordion, Pill, Section, Slider, Form Builder, and Phone Field markup — legacy content auto-migrates silently.
-* **Fix:** Form Builder no longer renders an accidental black border around the whole form (WordPress core's `[style*="border-color"]` rule was matching the form's CSS custom property).
-* **Fix:** Max-width blocks (such as a constrained heading) now follow their text alignment instead of always centering.
-* **Fix:** Form Builder editor no longer triggers a `useSelect` re-render warning, reducing unnecessary inspector re-renders.
-* **Compat:** Lowered the minimum PHP requirement from 8.0 to 7.4.
-* **Security:** Hardened six medium-severity findings (S1–S6).
-* **Internal:** PCP compliance pass (`error_log()` → `wp_trigger_error()`, global prefixes, direct-DB and alternative-function warnings resolved), `includes/` concern-based reorganization (file moves only), and new happy-path E2E test sweeps.
-
-= Earlier releases (2.1.x and earlier) =
+= Earlier releases (2.4.0 and earlier) =
 
 For the full version history, see [CHANGELOG.md](https://github.com/jnealey-godaddy/designsetgo/blob/main/CHANGELOG.md) in the GitHub repository. Highlights:
 
+* **2.4.0** — Section Divider block, Fill / Outline icons, theme-driven defaults for icons, forms, maps and SVG patterns, a new Justify control for Pill, Icon, Icon Button and Modal Trigger, safer form notification emails, and many editor and frontend fixes.
+* **2.3.0** — Theme section styles for Section, Row and Grid, site-wide default shape dividers, and redesigned shape dividers.
+* **2.2.0** — Column Min Width for Grid and Icon List, Scrolling Gallery image fit and size controls, silent upgrades for older block markup, and PHP 7.4 support.
 * **2.1.x** — Dynamic Query block family, Dynamic Tags, Block Bindings, Meta Box/Pods/JetEngine sources, Conditional Visibility, per-URL Markdown, Hover Effects, editor UX refresh, and security hardening.
 * **2.0.x** — Comparison Table, Timeline, Advanced Heading, Shape Dividers, Draft Preview Mode, 150+ patterns, WooCommerce blocks, form improvements, and major bug fixes.
 * **1.4.x** — llms.txt for AI language models, Draft Mode, Visual Revision Comparison, PHP 8.0+.
