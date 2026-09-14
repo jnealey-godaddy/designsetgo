@@ -13,8 +13,9 @@ function tree(blocks) {
 }
 
 describe('lint', () => {
-	test('defaults to the rule list from rules/index.js (empty for now)', () => {
-		expect(defaultRules).toEqual([]);
+	test('defaults to the rule list from rules/index.js', () => {
+		expect(defaultRules.length).toBeGreaterThan(0);
+		// A plain paragraph trips none of the registered design-mistake rules.
 		expect(lint(tree([{ name: 'core/paragraph' }]))).toEqual([]);
 	});
 
