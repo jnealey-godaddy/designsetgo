@@ -1,6 +1,5 @@
 === DesignSetGo ===
 Contributors: justinnealey, ziontrooper
-Donate link: https://designsetgoblocks.com/donate
 Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
@@ -9,67 +8,87 @@ Stable tag: 2.7.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-58 native blocks + 18 universal extensions for the WordPress block editor. Forms, dynamic post lists, animations, layouts — no page builder needed.
+57 native blocks + 18 universal extensions for the WordPress block editor. Forms, dynamic post lists, animations, layouts — no page builder needed.
 
 == Description ==
 
 **The power of a page builder, the simplicity of native blocks.**
 
-DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to the block editor — without the bloat, lock-in, or learning curve. If you know WordPress blocks, you already know how to use it.
+DesignSetGo brings forms, sliders, dynamic queries, animations, and parallax to the block editor — without the bloat or learning curve. If you know WordPress blocks, you already know how to use it.
 
 [Documentation](https://designsetgoblocks.com/docs/) · [GitHub](https://github.com/jnealey-godaddy/designsetgo)
 
 = Why DesignSetGo =
 
-* **Native blocks, not a page builder.** Editor matches frontend. Static content stays put if you deactivate; dynamic blocks need the plugin to render. No proprietary markup, no lock-in.
-* **58 blocks replace 5+ plugins.** Forms, sliders, tabs, accordions, modals, maps, breadcrumbs, timelines, comparison tables, and the new Dynamic Query family.
+* **Native blocks, not a page builder.** You build with the block editor you already use, and what you see in the editor is what visitors see.
+* **57 blocks replace 5+ plugins.** Forms, sliders, tabs, accordions, modals, maps, breadcrumbs, timelines, comparison tables, charts, and the Dynamic Query family.
 * **18 extensions enhance ANY block** — including core and third-party blocks. Animations, parallax, sticky headers, responsive visibility, hover effects, conditional visibility.
-* **Complete form builder built in.** AJAX, spam protection (Cloudflare Turnstile included), email notifications, submission dashboard. No Contact Form 7 required.
-* **Performance first.** CSS bundle under 10 KB gzipped, no jQuery, per-block on-demand assets. PageSpeed scores stay high.
-* **WordPress-standard everything.** theme.json, FSE, Block Bindings, REST API, WP-CLI, Schema.org markup, WCAG 2.1 AA accessible.
+* **Complete form builder built in.** AJAX submissions, spam protection (honeypot, rate limiting, and optional Cloudflare Turnstile), email notifications, and a submissions dashboard. No Contact Form 7 required.
+* **Performance first.** Nothing loads on pages that don't use DesignSetGo. Where its blocks are used, a shared stylesheet under 10 KB gzipped loads, plus only the CSS and JavaScript of the blocks on that page. No jQuery.
+* **WordPress-standard everything.** theme.json, Site Editor, Block Bindings, REST API, WP-CLI, and Schema.org markup. Built with keyboard navigation, ARIA attributes, focus management, and colour contrast checks.
+* **Dynamic data.** Bind text and styles to post meta, ACF, Meta Box, Pods, JetEngine, and WooCommerce fields.
 
 = What's Inside =
 
 * **Layout** (4) — Grid, Row, Section with shape dividers, Section Divider
-* **Forms** (13) — full builder with 11 field types and admin dashboard
-* **Interactive** (15) — Tabs, Accordion, Modal, Modal Trigger, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counter, Progress, Comparison Table, Timeline
+* **Forms** (12) — Form Builder plus 11 field types, with a submissions dashboard
+* **Interactive** (15) — Tabs, Accordion, Modal, Modal Trigger, Flip Card, Slider, Scroll Slides, Sticky Sections, Scrolling Gallery, Scroll Accordion, Image Accordion, Counter Group, Progress Bar, Comparison Table, Timeline
 * **Dynamic Query** (6) — Query, Pagination, Filter, Results, Group Header, No Results
-* **Typography & Navigation** — Advanced Heading, Breadcrumbs (Schema.org), Table of Contents
-* **Visual** (12) — 160+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image, Hotspot, Star Rating, Text Path
+* **Typography & Navigation** (3) — Advanced Heading, Breadcrumbs (Schema.org), Table of Contents
+* **Visual** (12) — Icon (160+ icons), Icon Button, Icon List, Pill, Card, Divider, Countdown Timer, Blobs, Dynamic Image, Hotspot, Star Rating, Text Path
 * **Data** (1) — Chart (bar, line, donut — no charting library loaded)
-* **Media & Location** — Fifty Fifty split layout, Map (Google Maps + OpenStreetMap)
-* **WooCommerce** — Product Categories Grid, Product Showcase Hero, product bindings, product-aware Dynamic Query
+* **Media & Location** (2) — Fifty Fifty split layout, Map (OpenStreetMap or Google Maps)
+* **WooCommerce** (2) — Product Categories Grid, Product Showcase Hero, plus product bindings and product-aware Dynamic Query
 * **Extensions** (18) — Animations, Interactions, Schema.org Markup, Parallax, Text Reveal, Expanding Background, Sticky Header, Hover Effects, Clickable Groups, Background Video, Responsive Visibility, Conditional Visibility, Max Width, Custom CSS, Grid Span, Grid Mobile Order, SVG Patterns (25+), Reveal Control
-* **Plus** — Text Style inline format, llms.txt + per-URL Markdown for AI, form submissions dashboard, draft mode for published pages
+* **Plus** — Text Style inline format, llms.txt + per-URL Markdown for AI, draft mode for published pages
+
+= External services =
+
+DesignSetGo only contacts outside services for the features below, and only when those features are used.
+
+* **OpenStreetMap** — The Map block's default provider. When a visitor views a page with an OpenStreetMap map, their browser loads map tiles from tile.openstreetmap.org, which receives their IP address. If a map has an address but no saved coordinates, the visitor's browser also sends that address to nominatim.openstreetmap.org to locate it. Searching for an address in the Map block settings uses the same service. Turn on the block's Privacy Mode to load a map only after the visitor clicks. [Tile usage policy](https://operations.osmfoundation.org/policies/tiles/), [Nominatim usage policy](https://operations.osmfoundation.org/policies/nominatim/), [privacy policy](https://osmfoundation.org/wiki/Privacy_Policy).
+* **Google Maps** — Used only when you choose a Google provider on a Map block. The keyless option loads a map from maps.google.com with the map's address or coordinates. The API option loads the Maps JavaScript API from maps.googleapis.com with the API key you enter under DesignSetGo → Settings → Integrations. Either way the visitor's browser makes the request, and Privacy Mode applies. [Google Maps Platform terms](https://cloud.google.com/maps-platform/terms), [Google privacy policy](https://policies.google.com/privacy).
+* **Cloudflare Turnstile** — Used only when you add Turnstile keys under DesignSetGo → Settings → Integrations and turn Turnstile on for a form. The visitor's browser loads the challenge from challenges.cloudflare.com, and on submission your site sends the Turnstile token and the visitor's IP address to Cloudflare to verify it. [Cloudflare terms](https://www.cloudflare.com/website-terms/), [Cloudflare privacy policy](https://www.cloudflare.com/privacypolicy/).
+
+Two bundled patterns (Video Testimonial and Hero with Video Modal) include a sample YouTube video through WordPress's own embed block. Replace it with your own video, or visitors' browsers will load it from YouTube.
+
+The Slider block's Scroll Carousel variation starts with four sample images hosted by [Lorem Picsum](https://picsum.photos/). Replace them with your own images, or visitors' browsers will load them from picsum.photos. The Scrolling Gallery preview in the block inserter also shows sample images from Lorem Picsum.
+
+= Privacy =
+
+* DesignSetGo has no tracking or analytics, and sends nothing about your site to its developers.
+* Form submissions are stored on your own site, together with the submitter's IP address, browser user agent, and the page they submitted from. They are deleted after 30 days by default; change this under DesignSetGo → Settings → Features → Forms. Notifications are sent through WordPress's own email.
+* Submissions are included in WordPress's Export Personal Data and Erase Personal Data tools, matched by email address. DesignSetGo also suggests text for your privacy policy.
+* Browser storage is used only to make features work: a modal set to show once per session or once per user remembers that it was shown, a form keeps its confirmation message across the page reload after a non-AJAX submission, and Draft Mode sets a cookie for logged-in editors previewing a draft.
 
 == Installation ==
 
-1. **Plugins → Add New**, search **DesignSetGo**, click **Install**, then **Activate**.
+1. **Plugins → Add Plugin**, search **DesignSetGo**, click **Install**, then **Activate**.
 2. Edit any post or page, click **+**, and look for the **DesignSetGo** category.
 
-Manual install: upload the ZIP via **Plugins → Add New → Upload Plugin**.
+Manual install: upload the ZIP via **Plugins → Add Plugin → Upload Plugin**.
 
 == Frequently Asked Questions ==
 
 = Will it work with my theme? =
 
-Yes. DesignSetGo respects theme.json colors, spacing, and typography, and is tested with FSE themes including Twenty Twenty-Five.
+Yes. DesignSetGo respects theme.json colors, spacing, and typography, and is tested with block themes including Twenty Twenty-Five.
 
 = Will it slow my site down? =
 
-No. CSS is under 10 KB gzipped, there's no jQuery, and per-block assets load on-demand.
+DesignSetGo loads nothing on pages that don't use its blocks. On pages that do, it loads a shared stylesheet under 10 KB gzipped, plus the CSS and JavaScript of only the blocks on that page. There's no jQuery.
 
 = What happens if I deactivate it? =
 
-Your content stays intact. DesignSetGo uses WordPress standards, so layouts render as standard containers — no broken markup, no lock-in.
+Blocks saved as HTML — layouts, tabs, accordions, cards, and similar — stay in your posts, but lose DesignSetGo's styling, animations, and interactive behaviour. Blocks the plugin renders on the server, such as forms, Dynamic Query, sliders, maps, icons, pills, and charts, show nothing until you reactivate it. When you click Deactivate, DesignSetGo offers to convert Section, Row, Grid, and Icon Button blocks to core WordPress blocks first, and saves a revision of each post it changes.
 
 = Do I need to know code? =
 
-No. Everything is controlled through the block inspector. Custom CSS per block is supported if you want it.
+No. Everything is controlled through the block settings. Custom CSS per block is available if you want it.
 
-= Does it work with FSE and WooCommerce? =
+= Does it work with the Site Editor and WooCommerce? =
 
-Yes to both. All blocks work in the Site Editor, templates, and template parts. Use DesignSetGo blocks on any WooCommerce page; the Sticky Header extension is built for FSE header parts.
+Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template parts, and the Sticky Header extension is built for header template parts. With WooCommerce active you also get product blocks, product bindings, and Dynamic Query product controls that work with WooCommerce's own filter blocks.
 
 = Where do I get support? =
 
@@ -77,14 +96,13 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 == Screenshots ==
 
-1. Container block with responsive grid layout and video background support
-2. Tabs block with horizontal orientation, icons, and multiple style options
-3. Accordion block with collapsible panels and smooth animations
-4. Counter Group block with animated statistics and number formatting
-5. Icon block with 160+ icons, shape styles, and customization options
-6. Progress Bar block with animated fills and multiple display styles
-7. Block animation controls showing entrance effects and timing options
-10. Mobile responsive preview in the editor
+1. Scrolling Gallery block with rows of images moving across the page
+2. Scroll Slides block with a topic list that changes the content as you scroll
+3. Grid of feature cards with icons
+4. Slider block showing three slides at a time
+5. Timeline block laying out steps in order
+6. Quick animation controls in the block toolbar
+7. Slider with arrows and dots, and a multi-slide slider below it
 
 == Changelog ==
 
@@ -176,7 +194,7 @@ Yes to both. All blocks work in the Site Editor, templates, and template parts. 
 
 = 2.6.0 - 2026-07-29 =
 
-* **New:** Theme animation defaults — set an entrance animation once per block type (e.g. all Buttons fade in) under Settings → DesignSetGo → Animations, or in your theme's `theme.json`. Every block of that type inherits it automatically, and any individual block can override it (Custom) or opt out (Off). One rule can target several block types at once, including `namespace/*` wildcards.
+* **New:** Theme animation defaults — set an entrance animation once per block type (e.g. all Buttons fade in) under DesignSetGo → Settings → Features → Animations, or in your theme's `theme.json`. Every block of that type inherits it automatically, and any individual block can override it (Custom) or opt out (Off). One rule can target several block types at once, including `namespace/*` wildcards.
 * **Fix:** The per-page Overlay Header is transparent again and no longer pulls page content up by the footer's height. The header height was being measured from the wrong element on themes whose footer also contains a navigation block, which sliced the top off the hero; and the header stayed opaque on themes that paint it from a style variation or `theme.json` rather than a background class. Your first content section now also clears the header while its background still runs behind it.
 * **Fix:** Section shape dividers now honour your theme's divider height and width tokens. Previously a theme (or Style Kit) could set the default divider shape but not its size — the Section block's top/bottom dividers ignored both size tokens. Untouched dividers now inherit the theme's size (and reserve matching content clearance), while any size you set explicitly still wins. The Height/Width sliders gain a Reset that returns them to the theme default. Existing content is unchanged.
 
@@ -218,10 +236,10 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 Fixes WordPress updates timing out in wp-admin on hosts where DesignSetGo couldn't create its Dynamic Query database table. Also fixes shape dividers and background effects on blocks added by an AI assistant.
 
 = 2.7.4 =
-Dynamic Query filters, sort and Load more now work for visitors who aren't logged in, and Load more keeps the active filters. Closes a hole that let any logged-in account list content that isn't public. Form Builder enforces required fields and a per-visitor submission limit on the server. Also fixes nested Tabs and more blocks added by an AI assistant.
+Dynamic Query filters, sort and Load more now work for logged-out visitors, and Load more keeps the active filters. Closes a hole that let any logged-in account list non-public content. Form Builder now enforces required fields and a per-visitor submission limit on the server.
 
 = 2.7.3 =
-Fixes for blocks created through the plugin's Abilities API by an AI assistant, which could produce markup the editor flagged as invalid or silently rewrote. Also restores hover/overlay colours on Section, Row and Grid, uses the Modal's own screen-reader label, and stops Form Builder writing email notification settings into public markup.
+Fixes blocks created by an AI assistant through the Abilities API, which could come out invalid. Also restores hover and overlay colours on Section, Row and Grid, uses the Modal's own screen-reader label, and keeps Form Builder email settings out of public markup.
 
 = 2.7.2 =
 Fixes four display problems: the Advanced Heading typing effect cutting off the last letter, the clip-based effects shaving the tops and tails off letters, Text Path motion not previewing in the editor, and heading segments running together in the editor. Includes everything in 2.7.1.
@@ -230,7 +248,7 @@ Fixes four display problems: the Advanced Heading typing effect cutting off the 
 Fixes the Chart block, which could not be inserted on 2.7.0 — it showed "Error loading block" instead of a chart. Also keeps long y-axis labels inside the chart, and adds a value prefix/suffix and thousands grouping. Recommended for anyone on 2.7.0.
 
 = 2.7.0 =
-Four new blocks (Chart, Star Rating, Hotspot, Text Path), an Interactions extension for wiring any block to any other, Schema.org markup, animated headlines, an off-canvas panel mode for Modal, deeper animations, WooCommerce product bindings and product-aware queries, a keyless Google Maps option, and a large batch of Slider fixes. Tested up to WordPress 7.1. No content migration required.
+Four new blocks (Chart, Star Rating, Hotspot, Text Path), an Interactions extension, Schema.org markup, animated headlines, an off-canvas Modal mode, WooCommerce product bindings and queries, a keyless Google Maps option, and many Slider fixes. No content migration needed.
 
 = 2.4.0 =
 Pill, Icon, Icon Button, and Modal Trigger now stay inside the page content column when positioned. Adjacent Icon Buttons and Modal Triggers now stack instead of sitting side-by-side. Existing content renders as before until each post is re-saved. See the changelog.
@@ -291,14 +309,3 @@ Major update with new Map and Card blocks, completely redesigned admin dashboard
 
 = 1.0.0 =
 Initial release with 43 professional blocks + 11 universal extensions. Build stunning WordPress sites without page builders—native blocks with the power you need.
-
-== Privacy & Security ==
-
-DesignSetGo respects your privacy:
-* No tracking or analytics
-* No data collection
-* No external server connections
-* No cookies or localStorage for tracking
-* 100% GDPR compliant
-
-Form submissions are processed on your server and sent via your WordPress email system. No third-party services required.
