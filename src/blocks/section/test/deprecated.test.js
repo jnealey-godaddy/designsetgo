@@ -707,3 +707,36 @@ describe('section deprecations - unconstrained markup without the attribute (v10
 		expect(block.attributes.constrainWidth).toBe(true);
 	});
 });
+
+describe('section - content column position on stored content', () => {
+	// Sections stored before `contentPosition` existed, including ones using
+	// `justifyContent: left` to left-align blocks inside a centered column. The
+	// new attribute must not reinterpret either: the column stays centered and
+	// the block parses valid with no migration.
+	const STORED_LEFT_JUSTIFIED = `<!-- wp:designsetgo/section {"contentWidth":"500px","style":{"spacing":{"padding":{"top":"0","right":"0","bottom":"0","left":"0"}}},"layout":{"type":"flex","orientation":"vertical","justifyContent":"left"}} -->
+<div class="wp-block-designsetgo-section alignfull dsgo-stack" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-stack__inner" style="max-width:500px;margin-left:auto;margin-right:auto"></div></div>
+<!-- /wp:designsetgo/section -->`;
+
+	test('stays valid and keeps the column centered', () => {
+		const [block] = parse(STORED_LEFT_JUSTIFIED);
+
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.contentPosition).toBe('center');
+		expect(getBlockContent(block)).toContain(
+			'style="max-width:500px;margin-left:auto;margin-right:auto"'
+		);
+	});
+
+	test('a left content position round-trips', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				contentWidth: '500px',
+				contentPosition: 'left',
+			})
+		);
+		const [block] = parse(html);
+
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.contentPosition).toBe('left');
+	});
+});

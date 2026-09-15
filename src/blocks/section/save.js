@@ -19,6 +19,7 @@ import {
 import ShapeDivider, {
 	getRenderedShapeHeight,
 } from './components/ShapeDivider';
+import { getContentColumnMargins } from './utils/content-position';
 
 /**
  * Section Container Save Component
@@ -32,6 +33,7 @@ export default function SectionSave({ attributes }) {
 		tagName = 'div',
 		constrainWidth,
 		contentWidth,
+		contentPosition,
 		hoverBackgroundColor,
 		hoverTextColor,
 		hoverIconBackgroundColor,
@@ -149,8 +151,7 @@ export default function SectionSave({ attributes }) {
 	if (constrainWidth) {
 		innerStyle.maxWidth =
 			contentWidth || 'var(--wp--style--global--content-size, 1140px)';
-		innerStyle.marginLeft = 'auto';
-		innerStyle.marginRight = 'auto';
+		Object.assign(innerStyle, getContentColumnMargins(contentPosition));
 	}
 
 	// Inner content clearance for shape dividers. The value is a block-user

@@ -883,6 +883,13 @@ JS;
 			if ( ! empty( $attrs['contentWidth'] ) ) {
 				$layout['contentSize'] = $attrs['contentWidth'];
 			}
+
+			// Core's constrained layout positions its content column with
+			// justifyContent, which is what contentPosition means here.
+			$content_position = $attrs['contentPosition'] ?? 'center';
+			if ( in_array( $content_position, array( 'left', 'right' ), true ) ) {
+				$layout['justifyContent'] = $content_position;
+			}
 		} else {
 			$layout = array( 'type' => 'default' );
 		}

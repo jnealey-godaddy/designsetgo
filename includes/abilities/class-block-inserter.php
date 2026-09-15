@@ -1579,12 +1579,15 @@ class Block_Inserter {
 				// inner measure, but a shape-divider content-clearance
 				// spacing override is independent of the width constraint
 				// and carries its own padding declaration either way.
+				// contentPosition mirrors utils/content-position.js: 'center' (and
+				// anything unrecognised) keeps both margins auto.
 				$max_width         = $content_width ? $content_width : 'var(--wp--style--global--content-size, 1140px)';
+				$content_position  = isset( $attributes['contentPosition'] ) ? $attributes['contentPosition'] : 'center';
 				$inner_style_parts = array();
 				if ( $constrain_width ) {
 					$inner_style_parts[] = 'max-width:' . $max_width;
-					$inner_style_parts[] = 'margin-left:auto';
-					$inner_style_parts[] = 'margin-right:auto';
+					$inner_style_parts[] = 'margin-left:' . ( 'left' === $content_position ? '0' : 'auto' );
+					$inner_style_parts[] = 'margin-right:' . ( 'right' === $content_position ? '0' : 'auto' );
 				}
 				if ( '' !== $shape_top && ! empty( $attributes['shapeDividerTopSpacing'] ) && is_string( $attributes['shapeDividerTopSpacing'] ) ) {
 					$inner_style_parts[] = 'padding-top:' . self::wp_shorthand_to_css_var( $attributes['shapeDividerTopSpacing'] );

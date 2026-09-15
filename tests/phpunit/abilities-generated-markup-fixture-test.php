@@ -580,6 +580,24 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
+			// contentPosition moves the constrained column: margin-left:0
+			// for left, margin-right:0 for right.
+			'section-content-position-left'               => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'contentWidth'    => '500px',
+					'contentPosition' => 'left',
+				),
+				'innerBlocks' => array(),
+			),
+			'section-content-position-right'              => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'contentWidth'    => '500px',
+					'contentPosition' => 'right',
+				),
+				'innerBlocks' => array(),
+			),
 			'grid-tagname-and-hover'                      => array(
 				'name'        => 'designsetgo/grid',
 				'attributes'  => array(

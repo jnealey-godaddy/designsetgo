@@ -107,6 +107,15 @@
 			"type": "string",
 			"default": ""
 		},
+		"contentPosition": {
+			"type": "string",
+			"enum": [
+				"left",
+				"center",
+				"right"
+			],
+			"default": "center"
+		},
 		"style": {
 			"type": "object",
 			"default": {
@@ -217,6 +226,7 @@
 			"tagName": "HTML tag to use for the section container (div, section, article, header, footer, main, aside)",
 			"constrainWidth": "Whether to constrain the content to a maximum width",
 			"contentWidth": "Maximum width for the content area (CSS value like 1200px or 80%)",
+			"contentPosition": "Where the width-constrained content column sits inside the section: left, center (default) or right. Independent of layout justification, which aligns blocks within the column. No effect when constrainWidth is false.",
 			"style": "WordPress block style object containing spacing, colors, and typography settings",
 			"hoverBackgroundColor": "Background color when hovering over the section",
 			"hoverTextColor": "Text color when hovering over the section",
