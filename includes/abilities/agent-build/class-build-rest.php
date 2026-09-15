@@ -207,10 +207,22 @@ class Build_REST {
 			);
 		}
 
+		$tree = $pending['tree'];
+
+		// json_decode( $json, true ) cannot distinguish an empty JSON object
+		// from an empty JSON array - both become array() - so a tree
+		// round-tripped through Build_Store's wp_json_encode() would
+		// otherwise hand the browser "attributes": [] instead of the "{}"
+		// it originally submitted, and checkTreeShape() correctly rejects
+		// that. Reshape only for this response; nothing stored changes.
+		if ( isset( $tree['blocks'] ) && is_array( $tree['blocks'] ) ) {
+			$tree['blocks'] = Tree_Shape::to_response_shape( $tree['blocks'] );
+		}
+
 		return rest_ensure_response(
 			array(
 				'pending'       => true,
-				'tree'          => $pending['tree'],
+				'tree'          => $tree,
 				'mode'          => $pending['mode'],
 				'conflict'      => $this->store->is_conflict( $post_id ),
 				'postStatus'    => $post ? $post->post_status : '',

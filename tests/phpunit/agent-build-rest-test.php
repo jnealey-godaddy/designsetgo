@@ -190,6 +190,42 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * GET's raw JSON response keeps an empty node "attributes" as an object
+	 * ("{}"), not an array ("[]"). PHP's json_decode( $json, true ) can't
+	 * tell an empty JSON object from an empty JSON array - both become
+	 * array() - so this has to be checked against the actual encoded JSON
+	 * bytes, not an in-PHP array comparison (which would pass either way).
+	 * Regression test for the {} -> [] round-trip bug Task 21's e2e spec
+	 * found: an agent tree node with no attribute overrides parked fine via
+	 * build-page, but the browser's checkTreeShape() then rejected it as
+	 * "attributes must be a plain object when present" once GET handed it
+	 * back as [].
+	 */
+	public function test_get_response_json_keeps_empty_attributes_as_object(): void {
+		$this->store->store(
+			$this->post_id,
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'       => 'designsetgo/section',
+						'attributes' => array(),
+					),
+				),
+			),
+			'replace'
+		);
+
+		wp_set_current_user( $this->editor_id );
+		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $this->post_id ) );
+
+		$this->assertSame( 200, $response->get_status() );
+
+		$json = wp_json_encode( $response->get_data() );
+		$this->assertStringContainsString( '"attributes":{}', $json );
+	}
+
+	/**
 	 * GET after wp_update_post() reports conflict:true.
 	 */
 	public function test_get_reports_conflict_after_post_update(): void {

@@ -155,6 +155,121 @@ class Tree_Shape {
 	}
 
 	/**
+	 * Reshapes a well-formed block list for a JSON REST response: every
+	 * node's `attributes` becomes an object (`stdClass`) when empty, so
+	 * `wp_json_encode()` emits `{}` rather than `[]`. PHP's `json_decode(
+	 * $json, true )` cannot tell an empty JSON object from an empty JSON
+	 * array - both become `array()` - so a tree stored via
+	 * `Build_Store::store()` and later re-encoded for `Build_REST`'s GET
+	 * response would otherwise silently turn `"attributes": {}` into
+	 * `"attributes": []`, which the browser's `checkTreeShape()` (the same
+	 * "must be a plain object" rule `self::is_object()` mirrors here)
+	 * correctly rejects.
+	 *
+	 * Only `attributes` is reshaped this way - `innerBlocks` stays a plain
+	 * list, since an empty `[]` there is exactly what the contract expects.
+	 * A non-empty `attributes` array is left as-is (a non-empty associative
+	 * array always round-trips as a JSON object), except that individual
+	 * attribute values matching an empty array are also promoted to
+	 * `stdClass` when the block type's own registered schema says that
+	 * attribute's `type` is (only) `object` - e.g. `style: {}` on
+	 * `designsetgo/section`, which declares `"style": {"type": "object"}` in
+	 * its block.json.
+	 *
+	 * Called only from `Build_REST::get_item()` - the sole consumer of a
+	 * stored pending tree - so this never touches what's actually persisted
+	 * in `_dsgo_pending_tree` post meta.
+	 *
+	 * @param array<int, mixed> $blocks Well-shaped block list (already past `check()`).
+	 * @return array<int, mixed> The same list, with `attributes` reshaped for JSON encoding.
+	 */
+	public static function to_response_shape( array $blocks ): array {
+		$registry = \WP_Block_Type_Registry::get_instance();
+
+		foreach ( $blocks as $index => $node ) {
+			if ( is_array( $node ) ) {
+				$blocks[ $index ] = self::normalize_node_for_response( $node, $registry );
+			}
+		}
+
+		return $blocks;
+	}
+
+	/**
+	 * Reshapes one node's `attributes` (if present) and recurses into
+	 * `innerBlocks` (if present) via `to_response_shape()`.
+	 *
+	 * @param array                   $node     Well-shaped block node.
+	 * @param \WP_Block_Type_Registry $registry Registry to resolve the node's attribute schema from.
+	 * @return array The reshaped node.
+	 */
+	private static function normalize_node_for_response( array $node, \WP_Block_Type_Registry $registry ): array {
+		if ( array_key_exists( 'attributes', $node ) && is_array( $node['attributes'] ) ) {
+			$node['attributes'] = self::normalize_attributes_for_response(
+				$node['attributes'],
+				is_string( $node['name'] ?? null ) ? $node['name'] : '',
+				$registry
+			);
+		}
+
+		if ( array_key_exists( 'innerBlocks', $node ) && is_array( $node['innerBlocks'] ) ) {
+			$node['innerBlocks'] = self::to_response_shape( $node['innerBlocks'] );
+		}
+
+		return $node;
+	}
+
+	/**
+	 * Reshapes one node's `attributes` value: `stdClass` when the whole
+	 * object is empty, otherwise the same array with any empty-array
+	 * object-typed attribute value promoted to `stdClass` too.
+	 *
+	 * @param array                   $attributes Node's `attributes` array (possibly empty).
+	 * @param string                  $block_name Owning block's registered name.
+	 * @param \WP_Block_Type_Registry $registry   Registry to resolve the block type from.
+	 * @return array|\stdClass Reshaped attributes.
+	 */
+	private static function normalize_attributes_for_response( array $attributes, string $block_name, \WP_Block_Type_Registry $registry ) {
+		if ( empty( $attributes ) ) {
+			return new \stdClass();
+		}
+
+		$block_type = '' !== $block_name ? $registry->get_registered( $block_name ) : null;
+
+		if ( ! $block_type || empty( $block_type->attributes ) ) {
+			return $attributes;
+		}
+
+		foreach ( $attributes as $key => $value ) {
+			if ( is_array( $value ) && empty( $value ) && self::is_object_typed_attribute( $block_type, (string) $key ) ) {
+				$attributes[ $key ] = new \stdClass();
+			}
+		}
+
+		return $attributes;
+	}
+
+	/**
+	 * Whether `$block_type`'s registered schema declares `$attribute_name`
+	 * with a `type` that is (only) `object` - a bare `"type": "object"`, or
+	 * a `type` array whose every entry is `"object"`.
+	 *
+	 * @param \WP_Block_Type $block_type     Registered block type.
+	 * @param string         $attribute_name Attribute name.
+	 * @return bool True when the attribute's declared type is object-only.
+	 */
+	private static function is_object_typed_attribute( \WP_Block_Type $block_type, string $attribute_name ): bool {
+		$schema = $block_type->attributes[ $attribute_name ] ?? null;
+		if ( ! is_array( $schema ) || ! array_key_exists( 'type', $schema ) ) {
+			return false;
+		}
+
+		$types = is_array( $schema['type'] ) ? $schema['type'] : array( $schema['type'] );
+
+		return array() !== $types && array() === array_diff( $types, array( 'object' ) );
+	}
+
+	/**
 	 * Build a single problem entry. Public: shared by every validation stage
 	 * across Tree_Validator, Tree_Shape, and Tree_Attributes, so the
 	 * {code, path, message} shape has exactly one implementation.

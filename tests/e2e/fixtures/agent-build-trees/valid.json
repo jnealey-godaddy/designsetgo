@@ -3,7 +3,7 @@
 	"blocks": [
 		{
 			"name": "designsetgo/section",
-			"attributes": { "align": "full" },
+			"attributes": {},
 			"innerBlocks": [
 				{
 					"name": "core/paragraph",
