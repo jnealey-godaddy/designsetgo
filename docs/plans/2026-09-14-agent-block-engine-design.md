@@ -48,7 +48,7 @@ Separately, valid markup is not enough: agents pick the wrong blocks, ignore the
 ```
 
 - Same shape as WordPress block objects and `add-block`'s `inner_blocks` (`name`, `attributes`, `innerBlocks`). Core and DesignSetGo blocks mix freely.
-- `attributes` and `innerBlocks` are optional.
+- `attributes` and `innerBlocks` are optional. A node accepts **no other keys**: `inner_blocks`, `block_name`, `attrs` and the like are rejected with `designsetgo_invalid_block_definition` (in both `checkTreeShape()` and PHP's `Tree_Shape`), never silently ignored.
 - Any other `version` is rejected with `designsetgo_unsupported_tree_version`.
 - Locations are reported as paths: `blocks[0].innerBlocks[2]`.
 
@@ -74,7 +74,7 @@ Separately, valid markup is not enough: agents pick the wrong blocks, ignore the
 One codebase, built twice. Each module stays under 300 lines.
 
 - **`registry/`** — registers blocks the same way a real editor page does: bootstraps every `src/blocks/*/block.json` as a server-side definition (what PHP sends the editor), sets the `designsetgo` category, then loads every `src/extensions/*/index.js` **before** registering core blocks, then every `src/blocks/*/index.js` — the real registration files. (Implementation note: extensions load before core blocks, not after as an earlier draft of this doc had it — in a real editor page, plugin scripts enqueued via `enqueue_block_editor_assets` run before `edit-post`'s `initializeEditor()` calls `registerCoreBlocks()`, so extension filters such as animations apply to core blocks too. Registering core blocks first would silently drop those extension attributes from core blocks in agent trees.) The file lists come from the filesystem (`require.context` in the Node build, `fs` in Jest), so a new block or extension is picked up without editing a list.
-- **`assemble(tree)`** → `{ markup, blocks, report }`. Builds via `createBlock` → `serialize`, re-parses the output, and requires every block to validate. A block type that is not registered is reported, not thrown.
+- **`assemble(tree)`** → `{ markup, blocks, report }`. Builds via `createBlock` → `serialize`, re-parses the output, and requires every block to validate. A block type that is not registered is reported, not thrown. It also compares the parsed tree's structure (names and child counts) with the input and reports children a `save()` never rendered as `designsetgo_dropped_inner_blocks` at that node's path (e.g. `core/paragraph` given `innerBlocks`). A `save()` that throws is reported as `designsetgo_assemble_error` (`reason: "assemble failed: …"`, at the failing block's path when it can be located) — `assemble()` never throws. Top-level attributes whose value is an empty object (`style: {}`) are dropped before `createBlock`, so the block's default applies.
 - **`validate(markup)`** → `report`. Parse plus `validateBlock`, recursively, with the path of each invalid block.
 - **`lint(tree, designContext)`** → `findings`. See [Design quality](#design-quality).
 
@@ -129,16 +129,31 @@ PHP validates structure only, and returns every problem as data (not `WP_Error`,
 
 | Code | Cause |
 |---|---|
+| `designsetgo_invalid_tree` | The tree is not an object with a `blocks` array |
 | `designsetgo_unsupported_tree_version` | `version` is not `1` |
+| `designsetgo_invalid_block_definition` | A node is not an object, has a malformed `name`, non-object `attributes`, non-array `innerBlocks`, or any key other than `name`/`attributes`/`innerBlocks` |
+| `designsetgo_tree_too_large` | Serialized tree over 1 MB |
 | `designsetgo_unknown_block` | Name not in `WP_Block_Type_Registry` |
 | `designsetgo_invalid_attribute` | Fails the registered attribute schema (`rest_validate_value_from_schema`) |
-| `designsetgo_invalid_child_placement` | Rejected by `Block_Inserter::check_child_placement()` |
-| `designsetgo_tree_too_large` | Serialized tree over 1 MB |
+| `designsetgo_invalid_child_placement` | Violates the block types' own `block.json` metadata in `WP_Block_Type_Registry`: a block with `parent` that is not a direct child of one of those; a block with `ancestor` with none of those above it; or a child not listed in its parent's `allowedBlocks`. Nothing else — any block may be given children here (see `designsetgo_dropped_inner_blocks`), and no PHP wrapper mirror is consulted. |
+| `designsetgo_invalid_input` | `post_id`/`new` both or neither given, `mode` not `replace`/`append`, `new` not an object, or `new.post_type` not buildable |
+| `designsetgo_invalid_post` | `post_id` does not exist or is not a buildable post type (same rule as `new.post_type`) |
+| `designsetgo_post_create_failed` | Creating the `new` draft failed |
+
+Codes that only the engine (browser or Node) or the REST handshake produces:
+
+| Code | Where | Cause |
+|---|---|---|
+| `designsetgo_dropped_inner_blocks` | report `invalid` entry | Serialize → parse lost or changed submitted children (the block's `save()` cannot hold them) |
+| `designsetgo_assemble_error` | report `invalid` entry | A block's `save()` (or `createBlock`/`parse`) threw |
+| `designsetgo_build_mismatch` | REST `POST /agent-build/{id}`, HTTP 409 | The report's `buildId` does not match the pending build, or nothing is pending |
 
 On success it stores, in protected post meta registered with an `auth_callback`:
 
-- `_dsgo_pending_tree` — one JSON blob: `{ tree, mode, base }`, where `base` is the post's `post_modified_gmt` when stored. (Implementation note: `base` lives inside this same meta value rather than a separate `_dsgo_pending_base` key as an earlier draft of this doc specified — one read gives tree + mode + base atomically. See `Build_Store::META_PENDING_TREE`.)
-- `_dsgo_build_report` — `{ status: "pending" }`
+- `_dsgo_pending_tree` — one JSON blob: `{ tree, mode, base, submitter, buildId }`, where `base` is the post's `post_modified_gmt` when stored, `submitter` is the id of the user who called `build-page`, and `buildId` is a fresh `wp_generate_uuid4()`. (Implementation note: `base` lives inside this same meta value rather than a separate `_dsgo_pending_base` key as an earlier draft of this doc specified — one read gives everything atomically. See `Build_Store::META_PENDING_TREE`.) Both meta values are written `wp_slash()`ed, because `update_post_meta()` unslashes and would otherwise strip the escapes `wp_json_encode()` adds for quotes, newlines, backslashes and non-ASCII.
+- `_dsgo_build_report` — `{ status: "pending", buildId, treeHash }`
+
+**KSES and the submitter.** The tree is saved later by whoever opens the editor, who may hold `unfiltered_html` when the submitter does not. So when the submitter lacks `unfiltered_html`, `build-page` runs `wp_kses_post()` over every string inside every node's `attributes` (nested arrays included) before storing — mirroring the attribute filtering core applies when such a user saves content themselves (`Tree_Kses`). A submitter with `unfiltered_html` has the tree stored unchanged.
 
 `post_content` is not touched. A live page keeps serving its current content.
 
@@ -148,19 +163,21 @@ Response: `{ status: "pending", post_id, finish_url }`. `finish_url` is the post
 
 When the editor loads a post with `_dsgo_pending_tree`:
 
-1. If `post_modified_gmt` differs from the `base` stored inside `_dsgo_pending_tree`, stop: report `conflict`, leave content alone.
+The REST GET returns `{ pending, tree, mode, buildId, submitter, isSubmitter, conflict, postStatus, designContext }`; `isSubmitter` is whether the current user submitted the build. Every report POST must echo that `buildId` (a required arg): a POST whose `buildId` differs from the pending build's, or that arrives with nothing pending, is rejected with HTTP 409 `designsetgo_build_mismatch` and changes nothing. The JS `treeHash` is informational only; it is not expected to equal PHP's.
+
+1. If `post_modified_gmt` differs from the `base` stored inside `_dsgo_pending_tree`, stop: report `conflict`, leave content alone. `conflict` is terminal — the tree is cleared.
 2. Run `assemble` and `lint` with the site's design context.
-3. If any block is invalid: report `failed` with the invalid paths. Do not change content.
+3. If any block is invalid: report `failed` with the invalid paths. Do not change content. `failed` is terminal — the tree is cleared and the agent resubmits.
 4. If valid:
-   - **Draft or new post:** apply (`replace` or `append`), save through REST, clear `_dsgo_pending_tree`, report `finished` or `finished_with_findings`.
-   - **Published post:** apply to the editor **unsaved**, report `awaiting_review`, and show a "Review agent changes" notice with a **Discard** action. Saving clears the pending meta and reports `finished` or `finished_with_findings`; Discard clears it and reports `discarded`. Leaving without either keeps the tree pending, so it is applied again on the next editor load.
+   - **Auto-save** — only when `isSubmitter` is true **and** the post is not `publish`/`future`/`private`: apply (`replace` or `append`), save through REST, report `finished` or `finished_with_findings` (which clears `_dsgo_pending_tree`).
+   - **Review** — every other case: a published/scheduled/private post, or a build submitted by another user. Apply to the editor **unsaved**, report `awaiting_review`, and show a non-dismissible review notice with a **Discard** action ("Review agent changes before updating." for the submitter; for someone else's build, a notice that an agent submitted the changes on behalf of another user and they must be reviewed before saving). Saving reports `finished` or `finished_with_findings`; Discard restores the previous blocks, reports `discarded`, and cancels the pending save report, so a later save reports nothing. Both clear the pending meta. Leaving without either keeps the tree pending (`awaiting_review` is the only non-terminal report), so it is applied again on the next editor load.
 5. Set `data-dsgo-finish="done"` or `"failed"` on the document element so a headless browser knows when to stop waiting.
 
-The finish runs on any editor load of that post, with or without `dsgo-finish=1`; the parameter only causes the status attribute to be set promptly for automated sessions.
+The finish runs on any editor load of that post, with or without `dsgo-finish=1`; the parameter only causes the status attribute to be set promptly for automated sessions. It runs only in the top-level window of an editor with a real post — a positive integer post id and a post type not prefixed `wp_` — so it never runs inside the canvas iframe, the Site Editor, or the widgets editor, and shows no notices there. If block registration never settles, it reports `failed` only when a build is actually pending. The Agent build sidebar likewise registers only in the top window.
 
-Content is saved through the REST API, so `unfiltered_html` rules and KSES apply as they do for any editor save.
+An automatic save happens only in the submitter's own editor session, so it runs under the same capabilities that submitted the tree, and core's KSES applies to that save as usual. A build submitted by someone else is never saved automatically: its attribute strings were already KSES-filtered at `build-page` if the submitter lacked `unfiltered_html`, and the reviewer decides whether to save it.
 
-**`designsetgo/get-build-status`** — input `{ post_id }`, returns `_dsgo_build_report`: `pending | awaiting_review | finished | finished_with_findings | failed | conflict | discarded`, plus `invalid` and `findings`.
+**`designsetgo/get-build-status`** — input `{ post_id }`, returns `_dsgo_build_report`: `pending | awaiting_review | finished | finished_with_findings | failed | conflict | discarded`, plus `invalid`, `findings` and `buildId`. `finished`, `finished_with_findings`, `discarded`, `failed` and `conflict` are terminal (the pending tree is cleared, the report kept); `pending` and `awaiting_review` mean a tree is still pending.
 
 **Implementation note — GET response reshaping:** the REST GET on the pending-build route (consumed by the editor's finishing plugin, not by `get-build-status`) runs the stored tree through `Tree_Shape::to_response_shape()` before returning it. A block with no attributes is stored as PHP's empty array (`[]`, indistinguishable from an empty object once JSON-encoded), which the browser's strict tree-shape check rejects; `to_response_shape()` restores `{}` for any node's `attributes` value that is empty, so the contract the CLI/editor consume stays unambiguous. This was a product bug found and fixed during Task 21 (see the ledger).
 
@@ -237,7 +254,7 @@ Screenshot-based visual review stays in Site Designer.
 4. **Guidance examples** — every `agent.json` example assembles valid and lints clean.
 5. **Lint rules** — each rule's passing and failing fixtures.
 6. **Node and browser agree** — Playwright on wp-env assembles the same fixture trees in the editor; DesignSetGo blocks' markup must match the Node output byte for byte. Core blocks are excluded because the site may run a newer WordPress than 6.7.
-7. **Remote flow end to end** — `build-page` over REST, open `finish_url`, then assert each outcome: `finished`, `finished_with_findings`, `failed`, `conflict`, and for a published post `awaiting_review` (left unsaved with the review notice), then `discarded` after Discard. PHPUnit covers each `build-page` rejection code.
+7. **Remote flow end to end** — `build-page` over REST, open `finish_url`, then assert each outcome: `finished`, `finished_with_findings`, `failed`, `conflict`, and for a published post `awaiting_review` (left unsaved with the review notice), then `discarded` after Discard. Also: a paragraph with a link and non-ASCII text finishes with its content intact; a `core/list > core/list-item` tree is accepted and finished; a contributor's build opened by an administrator lands in `awaiting_review`, unsaved. PHPUnit covers each `build-page` rejection code, KSES filtering, the `buildId` 409 cases, and terminal statuses.
 8. **Frozen PHP writer** — a generated comparison in three steps: the Node engine writes attribute sets for each block from its schema to a fixture; PHPUnit (`abilities-generated-markup-fixture-test.php`) serializes each through `Block_Inserter`; `ability-generated-markup.test.js` asserts the engine finds every result valid.
 
 ## Phases
@@ -261,7 +278,7 @@ Each phase is independently shippable.
 | Headless finish can't authenticate | Site Designer owns the session; without it, drafts wait for a person to open them |
 | Pending tree goes stale while a person edits | `base` (inside `_dsgo_pending_tree`) conflict check |
 | `contrast` false positives on complex backgrounds | Rules skip values they can't resolve |
-| `designsetgo/section` with an explicit `style: {}` attribute assembles invalid (serialize vs. reparse differ) | Parked, out of scope for this plan (Task 21 ruling) — the engine reports `failed` rather than writing bad content; tracked as a follow-up in `src/blocks/section` |
+| An explicit empty-object attribute (`style: {}`) serializes markup that doesn't re-parse identically | `assemble()` drops top-level empty-object attributes before `createBlock`, so the block default applies |
 
 ## Out of scope
 
