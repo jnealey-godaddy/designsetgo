@@ -322,6 +322,59 @@ describe('section save - overlay class', () => {
 	});
 });
 
+describe('section save - content column position', () => {
+	const innerStyle = (html) => {
+		const match = html.match(
+			/class="dsgo-stack__inner"[^>]*style="([^"]*)"/
+		);
+		return match ? match[1] : '';
+	};
+
+	test('default centers the column with the historical markup, byte for byte', () => {
+		const html = serialize(
+			createBlock(metadata.name, { contentWidth: '500px' })
+		);
+		expect(innerStyle(html)).toBe(
+			'max-width:500px;margin-left:auto;margin-right:auto'
+		);
+		expect(html).not.toContain('contentPosition');
+	});
+
+	test('left pins the column to the left edge', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				contentWidth: '500px',
+				contentPosition: 'left',
+			})
+		);
+		expect(innerStyle(html)).toBe(
+			'max-width:500px;margin-left:0;margin-right:auto'
+		);
+	});
+
+	test('right pins the column to the right edge', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				contentWidth: '500px',
+				contentPosition: 'right',
+			})
+		);
+		expect(innerStyle(html)).toBe(
+			'max-width:500px;margin-left:auto;margin-right:0'
+		);
+	});
+
+	test('an unconstrained section emits no margins whatever the position', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				constrainWidth: false,
+				contentPosition: 'left',
+			})
+		);
+		expect(innerStyle(html)).toBe('');
+	});
+});
+
 describe('section save - hover variation activation classes', () => {
 	test('no hover activation classes by default', () => {
 		const html = serialize(createBlock(metadata.name, {}));

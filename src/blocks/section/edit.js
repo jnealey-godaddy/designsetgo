@@ -25,6 +25,10 @@ import {
 	__experimentalUnitControl as UnitControl,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUseCustomUnits as useCustomUnits,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControl as ToggleGroupControl,
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
 import { useSelect, useDispatch } from '@wordpress/data';
@@ -47,6 +51,7 @@ import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
 } from './utils/has-overlay-style';
+import { getContentColumnMargins } from './utils/content-position';
 
 /**
  * Section Container Edit Component
@@ -66,6 +71,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		textColor,
 		constrainWidth,
 		contentWidth,
+		contentPosition = 'center',
 		hoverBackgroundColor,
 		hoverTextColor,
 		hoverIconBackgroundColor,
@@ -340,8 +346,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 	const innerStyle = {};
 	if (constrainWidth) {
 		innerStyle.maxWidth = contentWidth || themeContentSize || '1140px';
-		innerStyle.marginLeft = 'auto';
-		innerStyle.marginRight = 'auto';
+		Object.assign(innerStyle, getContentColumnMargins(contentPosition));
 	}
 
 	// Inner content clearance for shape dividers. The value is a block-user
@@ -407,6 +412,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 						setAttributes({
 							constrainWidth: true,
 							contentWidth: '',
+							contentPosition: 'center',
 						})
 					}
 				>
@@ -417,6 +423,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 							setAttributes({
 								constrainWidth: true,
 								contentWidth: '',
+								contentPosition: 'center',
 							})
 						}
 						isShownByDefault
@@ -477,6 +484,44 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 										: ''
 								}
 							/>
+						</DsgoInspectorPanel.Item>
+					)}
+					{constrainWidth && (
+						<DsgoInspectorPanel.Item
+							label={__('Content Position', 'designsetgo')}
+							hasValue={() => contentPosition !== 'center'}
+							onDeselect={() =>
+								setAttributes({ contentPosition: 'center' })
+							}
+							isShownByDefault
+						>
+							<ToggleGroupControl
+								label={__('Content Position', 'designsetgo')}
+								value={contentPosition}
+								onChange={(value) =>
+									setAttributes({ contentPosition: value })
+								}
+								help={__(
+									'Where the content column sits inside the section. Use layout justification to align blocks within the column.',
+									'designsetgo'
+								)}
+								isBlock
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+							>
+								<ToggleGroupControlOption
+									value="left"
+									label={__('Left', 'designsetgo')}
+								/>
+								<ToggleGroupControlOption
+									value="center"
+									label={__('Center', 'designsetgo')}
+								/>
+								<ToggleGroupControlOption
+									value="right"
+									label={__('Right', 'designsetgo')}
+								/>
+							</ToggleGroupControl>
 						</DsgoInspectorPanel.Item>
 					)}
 				</DsgoInspectorPanel>
