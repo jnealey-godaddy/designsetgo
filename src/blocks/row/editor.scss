@@ -93,7 +93,10 @@
 	.dsgo-flex__inner > [data-block] &,
 	.dsgo-grid__inner > &,
 	.dsgo-grid__inner > [data-block] & {
-		width: 100% !important;
+
+		:where(&) {
+			width: 100%;
+		}
 
 		.dsgo-flex__inner {
 			max-width: none !important;

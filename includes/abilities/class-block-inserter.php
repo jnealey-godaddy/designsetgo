@@ -549,8 +549,8 @@ class Block_Inserter {
 	 * element in the identical pass - which is why this is called from, and
 	 * merged inside, that method rather than kept separate.
 	 *
-	 * Block animations, parallax, and the SVG pattern's actual generated
-	 * image are intentionally NOT reproduced here: those inject their output
+	 * Parallax and the SVG pattern's actual generated image are intentionally
+	 * NOT reproduced here: those inject their output
 	 * at render time via a `render_block` filter, keyed off attributes or
 	 * (for SVG patterns) the very data attribute this method writes. Nothing
 	 * here should duplicate that.
@@ -563,6 +563,25 @@ class Block_Inserter {
 		$classes = array();
 		$styles  = array();
 		$data    = array();
+
+		// Static blocks need the same animation props as the editor save filter.
+		// Dynamic blocks use this shared helper in their render path instead.
+		if ( function_exists( 'designsetgo_get_animation_parts' ) ) {
+			$animation = \designsetgo_get_animation_parts( $attributes );
+			$classes   = array_merge( $classes, $animation['classes'] );
+			$data      = array_merge( $data, $animation['attrs'] );
+		}
+
+		// Mirror the max-width extension's save props for supported text blocks.
+		if ( in_array( $block_name, array( 'core/heading', 'core/paragraph', 'designsetgo/advanced-heading' ), true )
+			&& ! empty( $attributes['dsgoMaxWidth'] ) && is_string( $attributes['dsgoMaxWidth'] )
+		) {
+			$classes[]             = 'dsgo-has-max-width';
+			$styles['max-width']   = $attributes['dsgoMaxWidth'];
+			$alignment            = $attributes['textAlign'] ?? $attributes['align'] ?? '';
+			$styles['margin-left'] = 'left' === $alignment ? '0' : 'auto';
+			$styles['margin-right'] = 'right' === $alignment ? '0' : 'auto';
+		}
 
 		// Text reveal - src/extensions/text-reveal/editor.js
 		// (addTextRevealSaveProps). Applies only to core/paragraph and
@@ -817,6 +836,10 @@ class Block_Inserter {
 
 		if ( ! empty( $routed ) && function_exists( 'wp_style_engine_get_styles' ) ) {
 			$engine = wp_style_engine_get_styles( $routed );
+			// JS border support retains an inline preset color as well as its flag class.
+			if ( ! empty( $routed['border']['color'] ) ) {
+				$engine['declarations']['border-color'] = self::convert_color_value_to_css_var( $routed['border']['color'] );
+			}
 			foreach ( $engine['declarations'] ?? array() as $property => $value ) {
 				$styles[] = $property . ':' . $value;
 			}
@@ -839,7 +862,8 @@ class Block_Inserter {
 	 * - DesignSetGo static blocks with a case in
 	 *   generate_designsetgo_wrapper_html(), where the wrapper is reproduced.
 	 *
-	 * No core block qualifies. Wrapper generation is gated on the
+	 * Only core/navigation qualifies: its save() is InnerBlocks.Content.
+	 * Other core wrapper generation is gated on the
 	 * `designsetgo/` prefix, so a core block given children today emits its
 	 * children with nothing around them: `core/heading` produced a block
 	 * comment holding a bare `<p>` and no `<h4>` at all, and `core/group`
@@ -855,6 +879,11 @@ class Block_Inserter {
 	 * @return bool Whether children can be nested inside this block.
 	 */
 	public static function supports_child_blocks( string $block_name ): bool {
+		// Navigation saves InnerBlocks.Content without a wrapper; core renders its nav element.
+		if ( 'core/navigation' === $block_name ) {
+			return true;
+		}
+
 		if ( 0 !== strpos( $block_name, 'designsetgo/' ) ) {
 			return false;
 		}
@@ -1493,6 +1522,10 @@ class Block_Inserter {
 				$inner_inner      = self::read_nested_inner_blocks( $inner );
 
 				if ( $inner_name ) {
+					// Match InnerBlocks.save(): sibling segments are separated by whitespace.
+					if ( 'designsetgo/advanced-heading' === $block_name && ! empty( $parsed_inners ) ) {
+						$innerContent[] = "\n\n";
+					}
 					$parsed_inners[] = self::convert_to_block_array( $inner_name, $inner_attributes, $inner_inner );
 					$innerContent[]  = null; // Placeholder for inner block.
 				}

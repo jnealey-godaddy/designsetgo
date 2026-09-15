@@ -91,3 +91,9 @@
 .dsgo-advanced-heading.has-text-align-right .dsgo-advanced-heading__inner {
 	text-align: right;
 }
+
+// A saved line break starts a new line; it must not acquire a synthetic word gap.
+.dsgo-advanced-heading .dsgo-heading-segment:has(.dsgo-heading-segment__text > br:last-child) + .dsgo-heading-segment .dsgo-heading-segment__text,
+.dsgo-advanced-heading .dsgo-heading-segment .dsgo-heading-segment__text:has(> br:first-child) {
+	margin-inline-start: 0;
+}

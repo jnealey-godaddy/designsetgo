@@ -8,6 +8,7 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
+import { getAlignItemsValue } from './alignment';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
@@ -206,12 +207,8 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 		delete blockProps.style.gap;
 	}
 
-	// Inner container props with flex layout and width constraints (must match save.js EXCEPT alignItems)
-	// CRITICAL: Apply display: flex here, not via WordPress layout support on outer div
-	// NOTE: alignItems is NOT set here — WordPress's layout system handles vertical alignment
-	// in the editor via the layout.verticalAlignment attribute and generated wp-container-* CSS.
-	// Setting it inline here would be overwritten by useInnerBlocksProps style merging.
-	// save.js sets alignItems inline because server-side rendering doesn't merge styles.
+	// Share the saved flex layout. Restore explicit alignment after WordPress merges
+	// its editor styles: vertical rows otherwise reinterpret justification as alignment.
 	const innerStyle = {
 		display: 'flex',
 		// Apply layout justifyContent to inner div where flex children are
@@ -246,6 +243,11 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 				: InnerBlocks.ButtonBlockAppender,
 		}
 	);
+
+	const alignItems = getAlignItemsValue(layout?.verticalAlignment);
+	if (alignItems) {
+		innerBlocksProps.style = { ...innerBlocksProps.style, alignItems };
+	}
 
 	return (
 		<>

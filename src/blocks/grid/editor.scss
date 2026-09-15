@@ -42,7 +42,10 @@
 	.dsgo-stack__inner > [data-block] &,
 	.dsgo-flex__inner > [data-block] &,
 	.dsgo-grid > [data-block] & {
-		width: 100% !important;
+
+		:where(&) {
+			width: 100%;
+		}
 	}
 
 	// Visual indicator in editor
@@ -103,12 +106,15 @@
 			width: 100%;
 		}
 
-		// CRITICAL: Container blocks need !important to override WordPress layout system
+		// Container widths are defaults; authored classes and inline controls can override them.
 		// WordPress's constrained layout can apply max-width to nested containers
 		> .dsgo-flex,
 		> .dsgo-stack,
 		> .dsgo-grid {
-			width: 100% !important;
+
+			:where(&) {
+				width: 100%;
+			}
 		}
 
 		// CRITICAL: Editor-specific - nested containers wrapped in [data-block]
@@ -116,7 +122,10 @@
 		> [data-block] > .dsgo-flex,
 		> [data-block] > .dsgo-stack,
 		> [data-block] > .dsgo-grid {
-			width: 100% !important;
+
+			:where(&) {
+				width: 100%;
+			}
 		}
 
 		// CRITICAL: Cards inside grid need constraints to prevent overlap
@@ -192,7 +201,10 @@
 	.dsgo-flex__inner > [data-block] &,
 	.dsgo-grid__inner > &,
 	.dsgo-grid__inner > [data-block] & {
-		width: 100% !important;
+
+		:where(&) {
+			width: 100%;
+		}
 
 		.dsgo-grid__inner {
 			max-width: none !important;
@@ -340,18 +352,11 @@ body:has(.dsgo-stack__inner .dsgo-grid.is-selected) {
 // With two-div structure: .dsgo-grid > .dsgo-grid__inner > items
 // ========================================
 
-// Remove all margin-block spacing from grid items
-// CRITICAL: !important needed to override WordPress's layout system
-// Target inner container's children since we now have two-div structure
+// Reset theme block spacing without overriding an authored item offset.
+// Inspector inline margins and shared design classes must remain editable.
 .dsgo-grid__inner > * {
-	margin-block-start: 0 !important;
-	margin-block-end: 0 !important;
-}
-
-// Also target data-block wrapped elements in editor
-.dsgo-grid__inner > [data-block] {
-	margin-block-start: 0 !important;
-	margin-block-end: 0 !important;
+	margin-block-start: 0;
+	margin-block-end: 0;
 }
 
 // ========================================

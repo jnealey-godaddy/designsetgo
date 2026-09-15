@@ -109,12 +109,15 @@
 			width: 100%;
 		}
 
-		// CRITICAL: Container blocks need !important to override WordPress layout system
+		// Container widths are defaults; authored classes and inline controls can override them.
 		// WordPress's constrained layout can apply max-width to nested containers
 		> .dsgo-flex,
 		> .dsgo-grid,
 		> .dsgo-stack {
-			width: 100% !important;
+
+			:where(&) {
+				width: 100%;
+			}
 		}
 	}
 
@@ -124,7 +127,10 @@
 	.dsgo-stack__inner > &,
 	.dsgo-flex__inner > &,
 	.dsgo-grid__inner > & {
-		width: 100% !important;
+
+		:where(&) {
+			width: 100%;
+		}
 
 		.dsgo-grid__inner {
 			max-width: none !important;
@@ -255,18 +261,11 @@
  * With two-div structure: .dsgo-grid > .dsgo-grid__inner > items
  */
 
-// Remove all margin-block spacing from grid items
-// CRITICAL: !important needed to override WordPress's layout system
-// Target inner container's children since we now have two-div structure
+// Reset theme block spacing without overriding an authored item offset.
+// Inspector inline margins and shared design classes must remain editable.
 .dsgo-grid__inner > * {
-	margin-block-start: 0 !important;
-	margin-block-end: 0 !important;
-}
-
-// Also target data-block wrapped elements in editor
-.dsgo-grid__inner > [data-block] {
-	margin-block-start: 0 !important;
-	margin-block-end: 0 !important;
+	margin-block-start: 0;
+	margin-block-end: 0;
 }
 
 // ===================================================================

@@ -54,6 +54,41 @@ class Test_Abilities extends WP_UnitTestCase {
 	/**
 	 * Test that Abilities_Registry class exists.
 	 */
+	public function test_icon_button_preserves_inline_preset_border_color() {
+		$result = Block_Inserter::insert_block(
+			$this->page_id,
+			'designsetgo/icon-button',
+			array(
+				'text' => 'Start a project',
+				'url' => '#project-inquiry',
+				'iconPosition' => 'none',
+				'style' => array( 'border' => array( 'color' => 'var:preset|color|proto-ink', 'style' => 'solid', 'width' => '1px' ) ),
+			)
+		);
+		$this->assertNotWPError( $result );
+		$content = get_post_field( 'post_content', $this->page_id );
+		$this->assertStringContainsString( 'border-color:var(--wp--preset--color--proto-ink)', $content );
+		$this->assertStringContainsString( 'has-border-color', $content );
+	}
+
+	public function test_generated_heading_preserves_breaks_spaces_and_width() {
+		$result = Block_Inserter::insert_block(
+			$this->page_id,
+			'designsetgo/advanced-heading',
+			array( 'dsgoMaxWidth' => '14ch', 'textAlign' => 'left' ),
+			array(
+				array( 'name' => 'designsetgo/heading-segment', 'attributes' => array( 'content' => 'Fresh<br>cuts.' ) ),
+				array( 'name' => 'designsetgo/heading-segment', 'attributes' => array( 'content' => 'Friendly' ) ),
+			)
+		);
+		$this->assertNotWPError( $result );
+		$html = get_post_field( 'post_content', $this->page_id );
+		$this->assertStringContainsString( 'Fresh<br>cuts.', $html );
+		$this->assertStringContainsString( 'dsgo-has-max-width', $html );
+		$this->assertStringContainsString( 'max-width:14ch', $html );
+		$this->assertMatchesRegularExpression( '/<\/span><\/span>.*?\n\n<!-- wp:designsetgo\/heading-segment/s', $html );
+	}
+
 	public function test_abilities_registry_class_exists() {
 		$this->assertTrue( class_exists( 'DesignSetGo\Abilities\Abilities_Registry' ) );
 	}
@@ -162,6 +197,24 @@ class Test_Abilities extends WP_UnitTestCase {
  * Tests for Block_Inserter helper class.
  */
 class Test_Block_Inserter extends WP_UnitTestCase {
+
+	/** Navigation legitimately stores only its inner links; static core containers do not. */
+	public function test_navigation_stores_native_children_without_a_wrapper() {
+		$this->assertTrue( Block_Inserter::supports_child_blocks( 'core/navigation' ) );
+		$this->assertFalse( Block_Inserter::supports_child_blocks( 'core/heading' ) );
+		$this->assertFalse( Block_Inserter::supports_child_blocks( 'core/group' ) );
+		$result = Block_Inserter::insert_block(
+			$this->page_id,
+			'core/navigation',
+			array( 'overlayMenu' => 'mobile' ),
+			array( array( 'name' => 'core/navigation-link', 'attributes' => array( 'label' => 'Services', 'url' => '/services/' ) ) )
+		);
+		$this->assertNotWPError( $result );
+		$blocks = parse_blocks( get_post_field( 'post_content', $this->page_id ) );
+		$navigation = array_values( array_filter( $blocks, fn( $block ) => 'core/navigation' === $block['blockName'] ) );
+		$this->assertCount( 1, $navigation );
+		$this->assertSame( 'core/navigation-link', $navigation[0]['innerBlocks'][0]['blockName'] );
+	}
 
 	/**
 	 * Test user ID.

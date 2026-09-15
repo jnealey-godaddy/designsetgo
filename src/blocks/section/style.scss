@@ -100,13 +100,12 @@
 		z-index: 2;
 	}
 
-	// CRITICAL: When Section is nested inside another container, force full width
+	// Nested Sections fill their parent unless the author sets a width
 	// WordPress applies constrained layout which can limit width
 	// This ensures nested Sections take full width of their parent container
-	.dsgo-stack__inner > &,
-	.dsgo-flex__inner > &,
-	.dsgo-grid__inner > & {
-		width: 100% !important;
+	:where(.dsgo-stack__inner, .dsgo-flex__inner, .dsgo-grid__inner) > & {
+		// Fill the parent by default; authored classes and inline controls can override it.
+		width: 100%;
 
 		// Only strip inner constraints when the nested section itself has no width constraint
 		// Sections with constrainWidth enabled need their max-width + margin:auto preserved

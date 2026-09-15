@@ -163,17 +163,14 @@ $inline-block-data-types: (
 		position: static; // Reset positioning
 	}
 
-	// CRITICAL: When Section is nested inside another container, force full width (EDITOR)
+	// Match the overridable nested Section width default from the frontend
 	// WordPress applies constrained layout which can limit width
 	// This ensures nested Sections take full width of their parent container
 	// In editor, blocks are wrapped in [data-block] elements
-	.dsgo-stack__inner > &,
-	.dsgo-stack__inner > [data-block] &,
-	.dsgo-flex__inner > &,
-	.dsgo-flex__inner > [data-block] &,
-	.dsgo-grid__inner > &,
-	.dsgo-grid__inner > [data-block] & {
-		width: 100% !important;
+	:where(.dsgo-stack__inner, .dsgo-flex__inner, .dsgo-grid__inner) > &,
+	:where(.dsgo-stack__inner > [data-block], .dsgo-flex__inner > [data-block], .dsgo-grid__inner > [data-block]) & {
+		// Match frontend defaults without outranking authored classes or inline controls.
+		width: 100%;
 
 		// Only strip inner constraints when the nested section itself has no width constraint
 		// Sections with constrainWidth enabled need their max-width + margin:auto preserved

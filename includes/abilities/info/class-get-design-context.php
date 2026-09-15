@@ -79,6 +79,7 @@ class Get_Design_Context extends Abstract_Ability {
 				'name'       => $theme->get( 'Name' ),
 			),
 			'settings'    => (object) wp_get_global_settings(),
+			'fontFaces'   => \WP_Font_Face_Resolver::get_fonts_from_theme_json(),
 			'styles'      => (object) wp_get_global_styles(),
 			'blockStyles' => (object) $styles,
 		);

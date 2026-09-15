@@ -217,6 +217,20 @@ class Block_Configurator {
 
 		foreach ( $attributes as $key => $value ) {
 			if ( is_string( $value ) ) {
+				// RichText content is HTML. Preserve safe inline markup and explicit
+				// breaks without decoding escaped text into executable markup.
+				if ( self::is_inline_text_attribute( $key ) ) {
+					$allowed           = array_fill_keys( array( 'br', 'em', 'strong', 'b', 'i', 's', 'sub', 'sup', 'code', 'mark' ), array() );
+					$allowed['span']   = array( 'class' => true );
+					$allowed['a']      = array(
+						'href'  => true,
+						'title' => true,
+						'rel'   => true,
+					);
+					$clean             = wp_kses( wp_check_invalid_utf8( $value ), $allowed );
+					$sanitized[ $key ] = preg_replace( '/^\s+|\s+$/u', ' ', $clean );
+					continue;
+				}
 				// Decode HTML entities BEFORE stripping tags to catch encoded attacks.
 				// e.g., &lt;script&gt; becomes <script> which can then be stripped.
 				// Decode twice to defend against double-encoding attacks.
@@ -241,17 +255,7 @@ class Block_Configurator {
 					$sanitized[ $key ] = sanitize_textarea_field( $decoded );
 				} else {
 					$clean = sanitize_text_field( $decoded );
-					// Inline text keeps a single leading/trailing space the pipeline above trimmed:
-					// adjoining inline blocks (heading segments) rely on it for the word gap, and
-					// without it "belong in the" + "picture" renders as "thepicture".
-					if ( self::is_inline_text_attribute( $key ) && '' !== $clean ) {
-						if ( 1 === preg_match( '/^\s/', $value ) ) {
-							$clean = ' ' . $clean;
-						}
-						if ( 1 === preg_match( '/\s$/', $value ) ) {
-							$clean .= ' ';
-						}
-					}
+
 					$sanitized[ $key ] = $clean;
 				}
 			} elseif ( is_array( $value ) ) {

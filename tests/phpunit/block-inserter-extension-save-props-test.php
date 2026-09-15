@@ -11,6 +11,25 @@ use DesignSetGo\Abilities\Block_Inserter;
 
 class Block_Inserter_Extension_Save_Props_Test extends WP_UnitTestCase {
 
+	public function test_static_section_serializes_native_animation_props_and_omits_defaults() {
+		$html = Block_Inserter::build_block_markup(
+			'designsetgo/section',
+			array( 'dsgoAnimationEnabled' => true, 'dsgoEntranceAnimation' => 'fadeInUp' ),
+			array()
+		);
+		$this->assertStringContainsString( 'has-dsgo-animation dsgo-animation-fadeInUp', $html );
+		$this->assertStringContainsString( 'data-dsgo-animation-enabled="true"', $html );
+		$this->assertStringContainsString( 'data-dsgo-entrance-animation="fadeInUp"', $html );
+		$this->assertStringNotContainsString( 'data-dsgo-animation-duration', $html );
+		$this->assertStringNotContainsString( 'data-dsgo-animation-delay', $html );
+	}
+
+	public function test_static_section_without_animation_remains_unmarked() {
+		$html = Block_Inserter::build_block_markup( 'designsetgo/section', array(), array() );
+		$this->assertStringNotContainsString( 'has-dsgo-animation', $html );
+		$this->assertStringNotContainsString( 'data-dsgo-animation-enabled', $html );
+	}
+
 	public function test_form_builder_colours_are_written_as_css_variables() {
 		$html = Block_Inserter::build_block_markup(
 			'designsetgo/form-builder',
@@ -30,7 +49,8 @@ class Block_Inserter_Extension_Save_Props_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( '--dsgo-form-field-bg:var(--wp--preset--color--base)', $html );
 		$this->assertStringContainsString( 'color:var(--wp--preset--color--primary-foreground)', $html );
 		$this->assertStringContainsString( 'background-color:#112233', $html );
-		$this->assertStringNotContainsString( 'var:preset|', $html );
+		// Preset shorthand belongs in block JSON; only rendered HTML needs CSS vars.
+		$this->assertStringNotContainsString( 'var:preset|', parse_blocks( $html )[0]['innerHTML'] );
 	}
 
 	public function test_mobile_order_is_written_only_when_it_differs_from_the_default() {
