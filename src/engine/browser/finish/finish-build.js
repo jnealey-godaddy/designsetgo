@@ -49,6 +49,8 @@ const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
  * @param {Function} deps.replaceBlocks   `(blocks: Array) => void`.
  * @param {Function} deps.lockAutosave    `(lockName: string) => void` — `core/editor` `lockPostAutosaving`.
  * @param {Function} deps.unlockAutosave  `(lockName: string) => void` — `core/editor` `unlockPostAutosaving`.
+ * @param {Function} deps.addFilter       `@wordpress/hooks` `addFilter`.
+ * @param {Function} deps.removeFilter    `@wordpress/hooks` `removeFilter`.
  * @param {Function} deps.savePost        `() => Promise<boolean>` resolves whether the save succeeded.
  * @param {Function} deps.isPublished     `() => boolean` — post status is `publish`/`future`/`private`.
  * @param {Function} deps.notify          `(status, message, options) => void` — `core/notices` `createNotice` shape.
@@ -68,6 +70,8 @@ export async function finishBuild(postId, deps) {
 		replaceBlocks,
 		lockAutosave,
 		unlockAutosave,
+		addFilter,
+		removeFilter,
 		savePost,
 		isPublished,
 		notify,
@@ -163,6 +167,8 @@ export async function finishBuild(postId, deps) {
 				replaceBlocks,
 				lockAutosave,
 				unlockAutosave,
+				addFilter,
+				removeFilter,
 				notify,
 				onNextSave,
 				currentBlocks,

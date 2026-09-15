@@ -18,6 +18,7 @@
  */
 import apiFetch from '@wordpress/api-fetch';
 import { select, dispatch, subscribe } from '@wordpress/data';
+import { addFilter, removeFilter } from '@wordpress/hooks';
 import { finishBuild, finishAfterRegistrationTimeout } from './finish-build';
 import { isTopWindow, isFinishableContext } from './context';
 import { waitForBlockRegistration, watchNextSave } from './apply';
@@ -61,6 +62,8 @@ function createDeps(postId) {
 			dispatch('core/editor').lockPostAutosaving(lockName),
 		unlockAutosave: (lockName) =>
 			dispatch('core/editor').unlockPostAutosaving(lockName),
+		addFilter,
+		removeFilter,
 		savePost: async () => {
 			await dispatch('core/editor').savePost();
 			return select('core/editor').didPostSaveRequestSucceed();

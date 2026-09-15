@@ -54,6 +54,8 @@ function createDeps(overrides = {}) {
 		replaceBlocks: jest.fn(),
 		lockAutosave: jest.fn(),
 		unlockAutosave: jest.fn(),
+		addFilter: jest.fn(),
+		removeFilter: jest.fn(),
 		savePost: jest.fn().mockResolvedValue(true),
 		isPublished: jest.fn().mockReturnValue(false),
 		notify: jest.fn(),

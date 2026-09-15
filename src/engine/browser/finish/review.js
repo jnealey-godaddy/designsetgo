@@ -33,11 +33,43 @@ export const FINISH_REPORT_ERROR_NOTICE_ID =
 export const AUTOSAVE_LOCK_NAME = 'designsetgo-agent-build';
 
 /**
+ * The lock alone does not stop Preview: with classic meta boxes on the page
+ * core passes `forceIsAutosaveable`, which skips the lock, and for a draft
+ * the preview save updates the post itself. `savePost()` runs this filter
+ * through `applyFiltersAsync()` before `saveEntityRecord()`, and a throw
+ * aborts the save and shows core's "Updating failed." notice with the
+ * message appended.
+ */
+export const PRE_SAVE_HOOK = 'editor.preSavePost';
+export const REVIEW_FILTER_NAMESPACE = 'designsetgo/agent-build-review';
+
+/**
+ * `editor.preSavePost` callback held during review.
+ *
+ * @param {Object} edits     Post edits about to be saved.
+ * @param {Object} [options] `savePost()` options.
+ * @return {Object} The edits, unchanged, for a manual save.
+ */
+function refuseAutomaticSaves(edits, options) {
+	if (options?.isPreview || options?.isAutosave) {
+		throw new Error(
+			__(
+				'Save or discard the agent build before previewing.',
+				'designsetgo'
+			)
+		);
+	}
+	return edits;
+}
+
+/**
  * @param {Object}   options
  * @param {Function} options.report         `(body) => Promise` — POSTs a report for this build.
  * @param {Function} options.replaceBlocks  `(blocks: Array) => void`.
  * @param {Function} options.lockAutosave   `(lockName: string) => void` — `core/editor` `lockPostAutosaving`.
  * @param {Function} options.unlockAutosave `(lockName: string) => void` — `core/editor` `unlockPostAutosaving`.
+ * @param {Function} options.addFilter      `@wordpress/hooks` `addFilter`.
+ * @param {Function} options.removeFilter   `@wordpress/hooks` `removeFilter`.
  * @param {Function} options.notify         `core/notices` `createNotice` shape.
  * @param {Function} options.onNextSave     `(callback) => unsubscribe` — one-shot callback for the next successful, non-autosave save.
  * @param {Array}    options.currentBlocks  Blocks in the editor before the build was applied (restored by Discard).
@@ -52,6 +84,8 @@ export async function applyForReview({
 	replaceBlocks,
 	lockAutosave,
 	unlockAutosave,
+	addFilter,
+	removeFilter,
 	notify,
 	onNextSave,
 	currentBlocks,
@@ -60,17 +94,24 @@ export async function applyForReview({
 	findings,
 	isSubmitter,
 }) {
-	// Lock first: the canvas turns dirty the moment the blocks go in.
+	// Hold automatic saves first: the canvas turns dirty the moment the
+	// blocks go in.
 	lockAutosave(AUTOSAVE_LOCK_NAME);
+	addFilter(PRE_SAVE_HOOK, REVIEW_FILTER_NAMESPACE, refuseAutomaticSaves);
+	const release = () => {
+		removeFilter(PRE_SAVE_HOOK, REVIEW_FILTER_NAMESPACE);
+		unlockAutosave(AUTOSAVE_LOCK_NAME);
+	};
 
 	// Until the Discard notice and the save watcher are both in place, a
 	// throw must not leave the build in a canvas autosave may write: put
-	// the original blocks back, then release the lock.
+	// the original blocks back, then release. `applied` is set first, since
+	// resetBlocks can update the store and then throw from a subscriber.
 	let applied = false;
 	let armed = false;
 	try {
-		replaceBlocks(nextBlocks);
 		applied = true;
+		replaceBlocks(nextBlocks);
 
 		// A failed report here must never suppress the review notice below —
 		// without it, a person has no Discard affordance for blocks that are
@@ -107,7 +148,7 @@ export async function applyForReview({
 						discarded = true;
 						unsubscribeNextSave();
 						replaceBlocks(currentBlocks);
-						unlockAutosave(AUTOSAVE_LOCK_NAME);
+						release();
 						// finishBuild() has already returned by the time this
 						// fires, so its try/catch can't cover it — never let a
 						// network hiccup here surface as an unhandled rejection.
@@ -134,8 +175,8 @@ export async function applyForReview({
 			if (discarded) {
 				return;
 			}
-			// A person saved the build on purpose; autosave may resume.
-			unlockAutosave(AUTOSAVE_LOCK_NAME);
+			// A person saved the build on purpose; automatic saves may resume.
+			release();
 			// Fires long after finishBuild() has returned, so its try/catch
 			// can't cover this either — see the Discard handler above.
 			try {
@@ -156,7 +197,7 @@ export async function applyForReview({
 			if (applied) {
 				replaceBlocks(currentBlocks);
 			}
-			unlockAutosave(AUTOSAVE_LOCK_NAME);
+			release();
 		}
 	}
 }

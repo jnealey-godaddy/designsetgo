@@ -41,8 +41,10 @@
 
 const { test, expect } = require('@playwright/test');
 const { getEditorCanvas } = require('./helpers/wordpress');
+const { cli } = require('./helpers/wp-cli');
 const {
 	buildPage,
+	getBuildStatus,
 	waitForBuildStatus,
 	waitForFinishState,
 	createPost,
@@ -133,6 +135,25 @@ async function asContributorBuild({ page, browser }, tree, callback) {
 		await contributorContext.close();
 		await deleteUser(page, contributor.id);
 	}
+}
+
+/** Test-only mu-plugin that adds a classic meta box to posts. */
+const META_BOX_MU_PLUGIN = 'dsgo-e2e-classic-meta-box.php';
+
+/**
+ * Copies the classic meta box mu-plugin into the wp-env site. The plugin
+ * checkout's folder name differs between machines and CI, so the source is
+ * found by glob inside the container.
+ */
+function installMetaBoxMuPlugin() {
+	cli(
+		`sh -c 'mkdir -p wp-content/mu-plugins && cp wp-content/plugins/*/tests/e2e/fixtures/mu-plugins/${META_BOX_MU_PLUGIN} wp-content/mu-plugins/'`
+	);
+}
+
+/** Removes the classic meta box mu-plugin from the wp-env site. */
+function removeMetaBoxMuPlugin() {
+	cli(`rm -f wp-content/mu-plugins/${META_BOX_MU_PLUGIN}`);
 }
 
 test.describe('Agent build — remote flow end to end', () => {
@@ -477,6 +498,60 @@ test.describe('Agent build — remote flow end to end', () => {
 			await waitForBuildStatus(page, postId, ['discarded']);
 			expect(await isAutosaveLocked(page)).toBe(false);
 		});
+	});
+
+	// With a classic meta box on the page, core's Preview passes
+	// forceIsAutosaveable, skipping the autosave lock, and for a draft its
+	// preview save updates the post itself. The review's editor.preSavePost
+	// filter must abort that save.
+	test('preview during review with a classic meta box saves nothing', async ({
+		page,
+		browser,
+	}) => {
+		installMetaBoxMuPlugin();
+		try {
+			await asContributorBuild({ page, browser }, validTree, async (body) => {
+				const postId = body.post_id;
+				await page.goto(body.finish_url);
+				await waitForEditorCanvas(page);
+
+				expect(await waitForFinishState(page)).toBe('done');
+				await waitForBuildStatus(page, postId, ['awaiting_review']);
+				expect(
+					await page.evaluate(() =>
+						window.wp.data.select('core/edit-post').hasMetaBoxes()
+					)
+				).toBe(true);
+
+				await page
+					.getByRole('button', { name: 'View', exact: true })
+					.click();
+				const [preview] = await Promise.all([
+					page.context().waitForEvent('page'),
+					page
+						.getByRole('menuitem', { name: 'Preview in new tab' })
+						.click(),
+				]);
+				await page.waitForFunction(
+					() => !window.wp.data.select('core/editor').isSavingPost()
+				);
+				await preview.close();
+
+				const saved = await getPostEditContext(page, 'post', postId);
+				expect(saved.content.raw).toBe('');
+				const { body: status } = await getBuildStatus(page, postId);
+				expect(status.report.status).toBe('awaiting_review');
+				expect(await isAutosaveLocked(page)).toBe(true);
+
+				await expect(
+					page.locator('.components-notice').filter({
+						hasText: 'Save or discard the agent build before previewing.',
+					})
+				).toBeVisible();
+			});
+		} finally {
+			removeMetaBoxMuPlugin();
+		}
 	});
 
 	// KSES rewrites `href="javascript:alert(1)"` to `href="alert(1)"` and
