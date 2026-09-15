@@ -42,6 +42,8 @@ const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
  * @param {Function} deps.parse           `wp.blocks.parse`.
  * @param {Function} deps.getEditorBlocks `() => Array` current editor blocks.
  * @param {Function} deps.replaceBlocks   `(blocks: Array) => void`.
+ * @param {Function} deps.lockAutosave    `(lockName: string) => void` — `core/editor` `lockPostAutosaving`.
+ * @param {Function} deps.unlockAutosave  `(lockName: string) => void` — `core/editor` `unlockPostAutosaving`.
  * @param {Function} deps.savePost        `() => Promise<boolean>` resolves whether the save succeeded.
  * @param {Function} deps.isPublished     `() => boolean` — post status is `publish`/`future`/`private`.
  * @param {Function} deps.notify          `(status, message, options) => void` — `core/notices` `createNotice` shape.
@@ -57,6 +59,8 @@ export async function finishBuild(postId, deps) {
 		parse,
 		getEditorBlocks,
 		replaceBlocks,
+		lockAutosave,
+		unlockAutosave,
 		savePost,
 		isPublished,
 		notify,
@@ -127,6 +131,8 @@ export async function finishBuild(postId, deps) {
 			await applyForReview({
 				report,
 				replaceBlocks,
+				lockAutosave,
+				unlockAutosave,
 				notify,
 				onNextSave,
 				currentBlocks,

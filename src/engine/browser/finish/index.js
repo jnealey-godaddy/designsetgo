@@ -49,6 +49,11 @@ function createDeps(postId) {
 		getEditorBlocks: () => select('core/block-editor').getBlocks(),
 		replaceBlocks: (blocks) =>
 			dispatch('core/block-editor').resetBlocks(blocks),
+		// Present since @wordpress/editor 12 (WP 5.9); this plugin needs 6.7.
+		lockAutosave: (lockName) =>
+			dispatch('core/editor').lockPostAutosaving(lockName),
+		unlockAutosave: (lockName) =>
+			dispatch('core/editor').unlockPostAutosaving(lockName),
 		savePost: async () => {
 			await dispatch('core/editor').savePost();
 			return select('core/editor').didPostSaveRequestSucceed();

@@ -47,6 +47,8 @@ function createDeps(overrides = {}) {
 		parse: jest.fn().mockReturnValue([{ name: 'core/paragraph' }]),
 		getEditorBlocks: jest.fn().mockReturnValue([]),
 		replaceBlocks: jest.fn(),
+		lockAutosave: jest.fn(),
+		unlockAutosave: jest.fn(),
 		savePost: jest.fn().mockResolvedValue(true),
 		isPublished: jest.fn().mockReturnValue(false),
 		notify: jest.fn(),

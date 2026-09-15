@@ -75,6 +75,16 @@ async function waitForEditorCanvas(page) {
 	});
 }
 
+/**
+ * @param {import('@playwright/test').Page} page Post editor page.
+ * @return {Promise<boolean>} Whether `core/editor` autosaving is locked.
+ */
+function isAutosaveLocked(page) {
+	return page.evaluate(() =>
+		window.wp.data.select('core/editor').isPostAutosavingLocked()
+	);
+}
+
 test.describe('Agent build — remote flow end to end', () => {
 	test('draft: a valid tree assembles, saves, and reloads without Attempt Recovery', async ({
 		page,
@@ -411,15 +421,22 @@ test.describe('Agent build — remote flow end to end', () => {
 			]);
 			expect(report.status).toBe('awaiting_review');
 
-			await expect(
-				page.locator('.components-notice').filter({
-					hasText: 'on behalf of another user',
-				})
-			).toBeVisible();
+			const reviewNotice = page.locator('.components-notice').filter({
+				hasText: 'on behalf of another user',
+			});
+			await expect(reviewNotice).toBeVisible();
+
+			// Core autosave on this draft would write the build into the
+			// post under the administrator's capabilities.
+			expect(await isAutosaveLocked(page)).toBe(true);
 
 			const saved = await getPostEditContext(page, 'post', postId);
 			expect(saved.content.raw).toBe('');
 			expect(saved.status).toBe('draft');
+
+			await reviewNotice.getByRole('button', { name: 'Discard' }).click();
+			await waitForBuildStatus(page, postId, ['discarded']);
+			expect(await isAutosaveLocked(page)).toBe(false);
 		} finally {
 			if (postId) {
 				await deletePost(page, 'post', postId);

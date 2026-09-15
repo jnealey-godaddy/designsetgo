@@ -25,21 +25,33 @@ export const FINISH_REPORT_ERROR_NOTICE_ID =
 	'designsetgo-agent-build-finish-report-error';
 
 /**
+ * `core/editor` autosave lock held while a build waits for review. Core
+ * autosave on a draft the opener authored writes the post itself
+ * (`wp_update_post()`), which would save the build without anyone clicking
+ * Save — and, for another user's build, under the opener's capabilities.
+ */
+export const AUTOSAVE_LOCK_NAME = 'designsetgo-agent-build';
+
+/**
  * @param {Object}   options
- * @param {Function} options.report        `(body) => Promise` — POSTs a report for this build.
- * @param {Function} options.replaceBlocks `(blocks: Array) => void`.
- * @param {Function} options.notify        `core/notices` `createNotice` shape.
- * @param {Function} options.onNextSave    `(callback) => unsubscribe` — one-shot callback for the next successful, non-autosave save.
- * @param {Array}    options.currentBlocks Blocks in the editor before the build was applied (restored by Discard).
- * @param {Array}    options.nextBlocks    Blocks to apply.
- * @param {string}   options.status        Final status to report once saved: `finished` or `finished_with_findings`.
- * @param {Array}    options.findings      Lint findings, already mapped to the REST shape.
- * @param {boolean}  options.isSubmitter   Whether the person in the editor submitted this build.
+ * @param {Function} options.report         `(body) => Promise` — POSTs a report for this build.
+ * @param {Function} options.replaceBlocks  `(blocks: Array) => void`.
+ * @param {Function} options.lockAutosave   `(lockName: string) => void` — `core/editor` `lockPostAutosaving`.
+ * @param {Function} options.unlockAutosave `(lockName: string) => void` — `core/editor` `unlockPostAutosaving`.
+ * @param {Function} options.notify         `core/notices` `createNotice` shape.
+ * @param {Function} options.onNextSave     `(callback) => unsubscribe` — one-shot callback for the next successful, non-autosave save.
+ * @param {Array}    options.currentBlocks  Blocks in the editor before the build was applied (restored by Discard).
+ * @param {Array}    options.nextBlocks     Blocks to apply.
+ * @param {string}   options.status         Final status to report once saved: `finished` or `finished_with_findings`.
+ * @param {Array}    options.findings       Lint findings, already mapped to the REST shape.
+ * @param {boolean}  options.isSubmitter    Whether the person in the editor submitted this build.
  * @return {Promise<void>}
  */
 export async function applyForReview({
 	report,
 	replaceBlocks,
+	lockAutosave,
+	unlockAutosave,
 	notify,
 	onNextSave,
 	currentBlocks,
@@ -48,6 +60,8 @@ export async function applyForReview({
 	findings,
 	isSubmitter,
 }) {
+	// Lock first: the canvas turns dirty the moment the blocks go in.
+	lockAutosave(AUTOSAVE_LOCK_NAME);
 	replaceBlocks(nextBlocks);
 
 	// A failed report here must never suppress the review notice below —
@@ -85,6 +99,7 @@ export async function applyForReview({
 					discarded = true;
 					unsubscribeNextSave();
 					replaceBlocks(currentBlocks);
+					unlockAutosave(AUTOSAVE_LOCK_NAME);
 					// finishBuild() has already returned by the time this
 					// fires, so its try/catch can't cover it — never let a
 					// network hiccup here surface as an unhandled rejection.
@@ -111,6 +126,8 @@ export async function applyForReview({
 		if (discarded) {
 			return;
 		}
+		// A person saved the build on purpose; autosave may resume.
+		unlockAutosave(AUTOSAVE_LOCK_NAME);
 		// Fires long after finishBuild() has returned, so its try/catch
 		// can't cover this either — see the Discard handler above.
 		try {
