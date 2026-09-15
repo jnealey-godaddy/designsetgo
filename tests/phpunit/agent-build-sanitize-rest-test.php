@@ -221,6 +221,19 @@ class Agent_Build_Sanitize_REST_Test extends WP_UnitTestCase {
 		$response = $this->sanitize( '<p>' . str_repeat( 'x', 1024 * 1024 ) . '</p>' );
 
 		$this->assertSame( 413, $response->get_status() );
+		$this->assertSame( 'designsetgo_markup_too_large', $response->as_error()->get_error_code() );
 		$this->assertSame( 0, $filtered );
+	}
+
+	/**
+	 * Markup under 1 MB is accepted even when JSON escaping pushes the
+	 * request body past 1 MB (every quote becomes two bytes), so the
+	 * browser's own 1 MB markup check and the route agree.
+	 */
+	public function test_markup_under_the_limit_is_accepted_when_its_json_body_is_larger(): void {
+		$markup   = '<p>' . str_repeat( '"', 700000 ) . '</p>';
+		$response = $this->sanitize( $markup );
+
+		$this->assertSame( 200, $response->get_status(), wp_json_encode( $response->as_error() ) );
 	}
 }

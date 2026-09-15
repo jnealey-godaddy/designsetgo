@@ -44,6 +44,7 @@ const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
  * @param {Function} deps.sanitizeMarkup  `({ buildId, markup }) => Promise<{ markup }>` — POSTs to the sanitize route.
  * @param {Object}   deps.engine          `{ assemble, lint }` bound to the site's block registry.
  * @param {Function} deps.parse           `wp.blocks.parse`.
+ * @param {Function} deps.validateBlock   `wp.blocks.validateBlock` — `(block) => [isValid, log]`.
  * @param {Function} deps.getEditorBlocks `() => Array` current editor blocks.
  * @param {Function} deps.replaceBlocks   `(blocks: Array) => void`.
  * @param {Function} deps.lockAutosave    `(lockName: string) => void` — `core/editor` `lockPostAutosaving`.
@@ -62,6 +63,7 @@ export async function finishBuild(postId, deps) {
 		sanitizeMarkup,
 		engine,
 		parse,
+		validateBlock,
 		getEditorBlocks,
 		replaceBlocks,
 		lockAutosave,
@@ -138,6 +140,7 @@ export async function finishBuild(postId, deps) {
 			const sanitized = await sanitizeAssembled({
 				sanitizeMarkup,
 				parse,
+				validateBlock,
 				buildId: pending.buildId,
 				markup: result.markup,
 				parsedBlocks: result.parsedBlocks,

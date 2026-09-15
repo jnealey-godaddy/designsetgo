@@ -52,6 +52,7 @@ function createDeps(postId) {
 			}),
 		engine: window.designsetgoEngine,
 		parse: (markup) => window.wp.blocks.parse(markup),
+		validateBlock: (block) => window.wp.blocks.validateBlock(block),
 		getEditorBlocks: () => select('core/block-editor').getBlocks(),
 		replaceBlocks: (blocks) =>
 			dispatch('core/block-editor').resetBlocks(blocks),

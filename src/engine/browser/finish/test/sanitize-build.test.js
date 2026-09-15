@@ -1,8 +1,8 @@
 /**
  * Markup sanitization for builds whose submitter lacked `unfiltered_html`:
  * the assembled markup goes through the server's KSES route before
- * anything is applied, and only an unchanged structure of valid blocks is
- * applied — the sanitized one.
+ * anything is applied, and it is applied only when the filter changed no
+ * block's structure, attributes, or validity against its current `save()`.
  */
 import { finishBuild, FINISH_NOTICE_ID } from '../finish-build';
 import { findSanitizedChanges } from '../sanitize';
@@ -22,10 +22,23 @@ function block(name, overrides = {}) {
 	return { name, isValid: true, innerBlocks: [], ...overrides };
 }
 
-const ASSEMBLED = [block('core/paragraph', { attributes: { from: 'raw' } })];
-const SANITIZED = [
-	block('core/paragraph', { attributes: { from: 'sanitized' } }),
+// Same attributes, distinguishable objects: the sanitized parse is the one
+// that must be applied.
+const ASSEMBLED = [
+	block('core/paragraph', {
+		attributes: { content: 'Hi' },
+		originalContent: 'assembled',
+	}),
 ];
+const SANITIZED = [
+	block('core/paragraph', {
+		attributes: { content: 'Hi' },
+		originalContent: 'sanitized',
+	}),
+];
+
+/** `wp.blocks.validateBlock`-shaped fake: every block valid. */
+const validAll = () => [true, []];
 
 /**
  * @param {Object} pendingOverrides Fields merged into the GET response.
@@ -58,6 +71,7 @@ function createDeps(pendingOverrides = {}, overrides = {}) {
 		parse: jest.fn((markup) =>
 			markup === SANITIZED_MARKUP ? SANITIZED : ASSEMBLED
 		),
+		validateBlock: jest.fn(validAll),
 		getEditorBlocks: jest.fn().mockReturnValue([block('core/heading')]),
 		replaceBlocks: jest.fn(),
 		lockAutosave: jest.fn(),
@@ -182,6 +196,101 @@ describe('finishBuild() markup sanitization', () => {
 		expectNothingApplied(deps);
 	});
 
+	test('an attribute the filter changed fails the build, naming the attribute, even though the block is valid', async () => {
+		const deps = createDeps(
+			{},
+			{
+				parse: jest.fn((markup) =>
+					markup === SANITIZED_MARKUP
+						? [
+								block('core/button', {
+									attributes: { text: 'Go', url: 'alert(1)' },
+								}),
+							]
+						: [
+								block('core/button', {
+									attributes: {
+										text: 'Go',
+										url: 'javascript:alert(1)',
+									},
+								}),
+							]
+				),
+			}
+		);
+
+		await finishBuild(1, deps);
+
+		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
+			status: 'failed',
+			invalid: [
+				{
+					path: 'blocks[0]',
+					block: 'core/button',
+					reason: expect.stringContaining('url'),
+					code: 'designsetgo_sanitized_content_changed',
+				},
+			],
+			findings: [],
+		});
+		expect(
+			deps.postReport.mock.calls[0][0].invalid[0].reason
+		).not.toContain('text');
+		expectNothingApplied(deps);
+	});
+
+	test('a block parse marked valid but that fails validateBlock() against the current save() fails the build', async () => {
+		const deps = createDeps(
+			{},
+			{
+				validateBlock: jest.fn((candidate) => [
+					candidate.originalContent !== 'sanitized',
+					[],
+				]),
+			}
+		);
+
+		await finishBuild(1, deps);
+
+		expect(deps.validateBlock).toHaveBeenCalledWith(SANITIZED[0]);
+		expect(deps.postReport).toHaveBeenCalledWith(
+			expect.objectContaining({
+				status: 'failed',
+				invalid: [
+					expect.objectContaining({
+						path: 'blocks[0]',
+						code: 'designsetgo_sanitized_content_changed',
+					}),
+				],
+			})
+		);
+		expectNothingApplied(deps);
+	});
+
+	test('markup over 1 MB fails the build without calling the route', async () => {
+		const deps = createDeps();
+		deps.engine.assemble.mockReturnValue({
+			status: 'valid',
+			// Multi-byte characters: 350,000 × 3 bytes is over 1 MB in UTF-8.
+			markup: `<p>${'€'.repeat(350000)}</p>`,
+			invalid: [],
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.sanitizeMarkup).not.toHaveBeenCalled();
+		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
+			status: 'failed',
+			invalid: [
+				{ path: '', block: '', reason: 'sanitize markup too large' },
+			],
+			findings: [],
+		});
+		expectNothingApplied(deps);
+	});
+
 	test('a sanitize request failure fails the build, applies nothing, and never throws', async () => {
 		const deps = createDeps(
 			{},
@@ -225,7 +334,45 @@ describe('findSanitizedChanges()', () => {
 		const before = [block('a', { innerBlocks: [block('b')] })];
 		const after = [block('a', { innerBlocks: [block('b')] })];
 
-		expect(findSanitizedChanges(before, after)).toEqual([]);
+		expect(findSanitizedChanges(before, after, validAll)).toEqual([]);
+	});
+
+	test('rich-text values compare by their HTML string', () => {
+		const richText = (html) => ({ toHTMLString: () => html });
+		const before = [
+			block('a', { attributes: { content: richText('x<br>y') } }),
+		];
+		const after = [
+			block('a', { attributes: { content: richText('x<br>y') } }),
+		];
+
+		expect(findSanitizedChanges(before, after, validAll)).toEqual([]);
+	});
+
+	test('reports nested attribute changes by top-level attribute name', () => {
+		const before = [
+			block('a', {
+				attributes: { style: { color: { text: 'red' } }, level: 2 },
+			}),
+		];
+		const after = [
+			block('a', {
+				attributes: { style: { color: { text: 'blue' } }, level: 2 },
+			}),
+		];
+
+		const [change] = findSanitizedChanges(before, after, validAll);
+		expect(change.reason).toContain('style');
+		expect(change.reason).not.toContain('level');
+	});
+
+	test('reports an attribute the filter removed', () => {
+		const before = [block('a', { attributes: { url: 'x', alt: 'y' } })];
+		const after = [block('a', { attributes: { alt: 'y' } })];
+
+		expect(
+			findSanitizedChanges(before, after, validAll)[0].reason
+		).toContain('url');
 	});
 
 	test('reports an invalid nested block at its path', () => {
@@ -236,7 +383,7 @@ describe('findSanitizedChanges()', () => {
 			}),
 		];
 
-		expect(findSanitizedChanges(before, after)).toEqual([
+		expect(findSanitizedChanges(before, after, validAll)).toEqual([
 			expect.objectContaining({
 				path: 'blocks[0].innerBlocks[1]',
 				block: 'c',
@@ -250,12 +397,14 @@ describe('findSanitizedChanges()', () => {
 		const after = [block('x'), block('b')];
 
 		expect(
-			findSanitizedChanges(before, after).map(({ path }) => path)
+			findSanitizedChanges(before, after, validAll).map(
+				({ path }) => path
+			)
 		).toEqual(['blocks[0]', 'blocks[1]']);
 	});
 
 	test('reports a changed top-level block count', () => {
-		expect(findSanitizedChanges([block('a')], [])).toEqual([
+		expect(findSanitizedChanges([block('a')], [], validAll)).toEqual([
 			expect.objectContaining({
 				path: 'blocks',
 				code: 'designsetgo_sanitized_content_changed',

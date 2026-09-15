@@ -1,0 +1,12 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "core/image",
+			"attributes": {
+				"url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+				"alt": "Agent build data image"
+			}
+		}
+	]
+}

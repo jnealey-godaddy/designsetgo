@@ -61,6 +61,7 @@ const escapedContentTree = require('./fixtures/agent-build-trees/escaped-content
 const coreListTree = require('./fixtures/agent-build-trees/core-list.json');
 const javascriptButtonTree = require('./fixtures/agent-build-trees/javascript-url-button.json');
 const javascriptIconButtonTree = require('./fixtures/agent-build-trees/javascript-url-icon-button.json');
+const dataUrlImageTree = require('./fixtures/agent-build-trees/data-url-image.json');
 
 const MARKER = 'Agent build remote e2e marker';
 const CANVAS_TIMEOUT = 30000;
@@ -478,41 +479,48 @@ test.describe('Agent build — remote flow end to end', () => {
 		});
 	});
 
-	// core/button's url is sourced from the rendered href. KSES rewrites
-	// `href="javascript:alert(1)"` to `href="alert(1)"`, the url re-parses
-	// from that, and the block stays valid with an unchanged structure: the
-	// build is applied with the protocol gone, not failed.
-	test('javascript: url in a contributor core/button is stripped before review', async ({
-		page,
-		browser,
-	}) => {
-		await asContributorBuild(
-			{ page, browser },
-			javascriptButtonTree,
-			async (body) => {
+	// KSES rewrites `href="javascript:alert(1)"` to `href="alert(1)"` and
+	// `src="data:…"` to `src="image/png;base64,…"`. Each block still
+	// validates, but the url attribute re-parses to a different value, and
+	// any attribute the filter changes fails the build rather than applying
+	// it half-stripped.
+	for (const { label, tree } of [
+		{ label: 'javascript: url in a core/button', tree: javascriptButtonTree },
+		{ label: 'data: src in a core/image', tree: dataUrlImageTree },
+	]) {
+		test(`${label} from a contributor fails as sanitized content changed`, async ({
+			page,
+			browser,
+		}) => {
+			await asContributorBuild({ page, browser }, tree, async (body) => {
 				const postId = body.post_id;
 				await page.goto(body.finish_url);
 				await waitForEditorCanvas(page);
 
-				expect(await waitForFinishState(page)).toBe('done');
+				expect(await waitForFinishState(page)).toBe('failed');
 				const report = await waitForBuildStatus(page, postId, [
-					'awaiting_review',
 					'failed',
+					'awaiting_review',
 				]);
-				expect(report.status).toBe('awaiting_review');
+				expect(report.status).toBe('failed');
+				expect(report.invalid).toEqual([
+					expect.objectContaining({
+						code: 'designsetgo_sanitized_content_changed',
+						reason: expect.stringContaining('url'),
+					}),
+				]);
 
 				const canvasMarkup = await page.evaluate(() =>
 					window.wp.data.select('core/editor').getEditedPostContent()
 				);
-				expect(canvasMarkup).toContain('Agent build javascript button');
-				expect(canvasMarkup).toContain('wp-block-button__link');
 				expect(canvasMarkup).not.toContain('javascript:');
+				expect(canvasMarkup).not.toContain('data:image');
 
 				const saved = await getPostEditContext(page, 'post', postId);
 				expect(saved.content.raw).toBe('');
-			}
-		);
-	});
+			});
+		});
+	}
 
 	// designsetgo/icon-button keeps url in the block comment, which KSES
 	// leaves as plain text, while the rendered href loses its protocol. The

@@ -42,6 +42,13 @@ class Build_Sanitize_REST {
 	const MAX_MARKUP_BYTES = 1048576;
 
 	/**
+	 * Cap on the whole JSON body: twice the markup cap plus room for the
+	 * build id, since JSON escaping at least doubles quotes and backslashes.
+	 * The markup itself is still held to MAX_MARKUP_BYTES.
+	 */
+	const MAX_BODY_BYTES = 2 * self::MAX_MARKUP_BYTES + 4096;
+
+	/**
 	 * Store instance backing this route.
 	 *
 	 * @var Build_Store
@@ -106,7 +113,8 @@ class Build_Sanitize_REST {
 	}
 
 	/**
-	 * Route-level validate_callback: rejects an oversized body or markup.
+	 * Route-level validate_callback: rejects oversized markup, or a body too
+	 * large to hold markup within the limit.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return true|WP_Error
@@ -115,11 +123,11 @@ class Build_Sanitize_REST {
 		$body   = $request->get_body();
 		$markup = $request->get_param( 'markup' );
 
-		$too_large = ( is_string( $body ) && strlen( $body ) > self::MAX_MARKUP_BYTES )
+		$too_large = ( is_string( $body ) && strlen( $body ) > self::MAX_BODY_BYTES )
 			|| ( is_string( $markup ) && strlen( $markup ) > self::MAX_MARKUP_BYTES );
 
 		if ( $too_large ) {
-			return new WP_Error( 'rest_invalid_param', __( 'The build markup is too large.', 'designsetgo' ), array( 'status' => 413 ) );
+			return new WP_Error( 'designsetgo_markup_too_large', __( 'The build markup is too large.', 'designsetgo' ), array( 'status' => 413 ) );
 		}
 
 		return true;
