@@ -1,0 +1,113 @@
+/**
+ * The "apply for review" outcome of finishing a pending agent build: the
+ * assembled blocks go into the canvas unsaved, the server hears
+ * `awaiting_review`, and a person gets a notice with a Discard action. A
+ * later successful save reports the build's final status.
+ *
+ * Used whenever an automatic save would be wrong: the post is live
+ * (published/future/private), or the build was submitted by someone other
+ * than the person who opened the editor — saving it here would save another
+ * user's content under this user's capabilities.
+ *
+ * Pure aside from the injected callbacks, like `./finish-build.js`.
+ */
+import { __ } from '@wordpress/i18n';
+
+/** Stable notice id: a reload never stacks duplicate finish notices. */
+export const FINISH_NOTICE_ID = 'designsetgo-agent-build-finish';
+
+/**
+ * Separate stable id for the "reporting itself failed" notice — never
+ * replaces the review/Discard notice above, since both must be visible at
+ * once.
+ */
+export const FINISH_REPORT_ERROR_NOTICE_ID =
+	'designsetgo-agent-build-finish-report-error';
+
+/**
+ * @param {Object}   options
+ * @param {Function} options.report        `(body) => Promise` — POSTs a report for this build.
+ * @param {Function} options.replaceBlocks `(blocks: Array) => void`.
+ * @param {Function} options.notify        `core/notices` `createNotice` shape.
+ * @param {Function} options.onNextSave    `(callback) => unsubscribe` — one-shot callback for the next successful, non-autosave save.
+ * @param {Array}    options.currentBlocks Blocks in the editor before the build was applied (restored by Discard).
+ * @param {Array}    options.nextBlocks    Blocks to apply.
+ * @param {string}   options.status        Final status to report once saved: `finished` or `finished_with_findings`.
+ * @param {Array}    options.findings      Lint findings, already mapped to the REST shape.
+ * @param {boolean}  options.isSubmitter   Whether the person in the editor submitted this build.
+ * @return {Promise<void>}
+ */
+export async function applyForReview({
+	report,
+	replaceBlocks,
+	notify,
+	onNextSave,
+	currentBlocks,
+	nextBlocks,
+	status,
+	findings,
+	isSubmitter,
+}) {
+	replaceBlocks(nextBlocks);
+
+	// A failed report here must never suppress the review notice below —
+	// without it, a person has no Discard affordance for blocks that are
+	// already sitting in their canvas. Report failure is surfaced as its
+	// own separate notice instead.
+	let reportedAwaitingReview = true;
+	try {
+		await report({ status: 'awaiting_review', findings });
+	} catch (error) {
+		reportedAwaitingReview = false;
+	}
+
+	const message = isSubmitter
+		? __('Review agent changes before updating.', 'designsetgo')
+		: __(
+				'An agent submitted these changes on behalf of another user. Review them before saving.',
+				'designsetgo'
+			);
+
+	notify('warning', message, {
+		id: FINISH_NOTICE_ID,
+		// This notice carries the only Discard; dismissing it would strand
+		// the applied blocks with no way back.
+		isDismissible: false,
+		actions: [
+			{
+				label: __('Discard', 'designsetgo'),
+				onClick: () => {
+					replaceBlocks(currentBlocks);
+					// finishBuild() has already returned by the time this
+					// fires, so its try/catch can't cover it — never let a
+					// network hiccup here surface as an unhandled rejection.
+					Promise.resolve(report({ status: 'discarded' })).catch(
+						() => {}
+					);
+				},
+			},
+		],
+	});
+
+	if (!reportedAwaitingReview) {
+		notify(
+			'error',
+			__(
+				'Could not report the applied build back to the server.',
+				'designsetgo'
+			),
+			{ id: FINISH_REPORT_ERROR_NOTICE_ID }
+		);
+	}
+
+	onNextSave(async () => {
+		// Fires long after finishBuild() has returned, so its try/catch
+		// can't cover this either — see the Discard handler above.
+		try {
+			await report({ status, findings });
+		} catch (error) {
+			// Nothing left to report to; the tree is already cleared or
+			// still marked awaiting_review server-side either way.
+		}
+	});
+}

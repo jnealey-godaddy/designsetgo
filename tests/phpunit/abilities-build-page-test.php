@@ -459,6 +459,107 @@ class Abilities_Build_Page_Test extends WP_UnitTestCase {
 	}
 
 	// -------------------------------------------------------------------
+	// build-page: submitter and KSES filtering
+	// -------------------------------------------------------------------
+
+	/**
+	 * A tree carrying markup a user without unfiltered_html may not save:
+	 * a script in core/html and an inline event handler in a paragraph, one
+	 * nested a level down to prove the filter recurses.
+	 *
+	 * @return array
+	 */
+	private function hostile_tree(): array {
+		return array(
+			'version' => 1,
+			'blocks'  => array(
+				array(
+					'name'       => 'core/html',
+					'attributes' => array( 'content' => '<p>Safe</p><script>alert(1)</script>' ),
+				),
+				array(
+					'name'        => 'designsetgo/section',
+					'attributes'  => array( 'className' => 'agent-section' ),
+					'innerBlocks' => array(
+						array(
+							'name'       => 'core/paragraph',
+							'attributes' => array( 'content' => 'Hi <img src="x.png" onerror="alert(2)">' ),
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * The build-page caller is recorded as the pending build's submitter.
+	 */
+	public function test_store_records_the_submitter(): void {
+		( new Build_Page() )->execute(
+			array(
+				'post_id' => $this->post_id,
+				'tree'    => $this->valid_tree(),
+			)
+		);
+
+		$this->assertSame( $this->editor_id, $this->store()->pending( $this->post_id )['submitter'] );
+	}
+
+	/**
+	 * A contributor (no unfiltered_html) has every attribute string run
+	 * through wp_kses_post() before it is stored - mirroring what core's
+	 * content_save_pre filtering would do to their own save.
+	 */
+	public function test_contributor_tree_is_stored_kses_filtered(): void {
+		$contributor_id = self::factory()->user->create( array( 'role' => 'contributor' ) );
+		wp_set_current_user( $contributor_id );
+
+		$result = ( new Build_Page() )->execute(
+			array(
+				'new'  => array(
+					'title'     => 'Contributor draft',
+					'post_type' => 'post',
+				),
+				'tree' => $this->hostile_tree(),
+			)
+		);
+
+		$this->assertTrue( $result['success'], wp_json_encode( $result ) );
+
+		$pending = $this->store()->pending( $result['post_id'] );
+		$html    = $pending['tree']['blocks'][0]['attributes']['content'];
+		$para    = $pending['tree']['blocks'][1]['innerBlocks'][0]['attributes']['content'];
+
+		$this->assertStringNotContainsString( '<script', $html );
+		$this->assertStringContainsString( '<p>Safe</p>', $html );
+		$this->assertStringNotContainsString( 'onerror', $para );
+		$this->assertStringContainsString( '<img', $para );
+		$this->assertSame( $contributor_id, $pending['submitter'] );
+	}
+
+	/**
+	 * An administrator (unfiltered_html) has the tree stored unchanged.
+	 */
+	public function test_administrator_tree_is_stored_unchanged(): void {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		if ( ! current_user_can( 'unfiltered_html' ) ) {
+			$this->markTestSkipped( 'Administrators lack unfiltered_html in this environment (multisite or DISALLOW_UNFILTERED_HTML).' );
+		}
+
+		$result = ( new Build_Page() )->execute(
+			array(
+				'post_id' => $this->post_id,
+				'tree'    => $this->hostile_tree(),
+			)
+		);
+
+		$this->assertTrue( $result['success'], wp_json_encode( $result ) );
+		$this->assertSame( $this->hostile_tree(), $this->store()->pending( $this->post_id )['tree'] );
+	}
+
+	// -------------------------------------------------------------------
 	// get-build-status
 	// -------------------------------------------------------------------
 

@@ -1,8 +1,13 @@
 /**
  * Orchestrates finishing a pending agent build in the block editor: fetch
  * the pending tree, assemble + lint it against the site's real registered
- * blocks, apply the result (saving drafts, leaving published posts for
- * review), and report the outcome back over REST.
+ * blocks, apply the result, and report the outcome back over REST.
+ *
+ * The build is saved automatically only when the person in the editor
+ * submitted it AND the post is not live. Every other case — a published
+ * post, or a build submitted by another user — is applied for review
+ * instead (see `./review.js`), so one user's content is never saved under
+ * another user's capabilities.
  *
  * Pure aside from the injected `deps` — every WordPress store access
  * (`@wordpress/data`, `@wordpress/editor`, `@wordpress/notices`) lives in
@@ -12,17 +17,13 @@
  */
 import { __ } from '@wordpress/i18n';
 import { assembleTree } from './apply';
+import {
+	applyForReview,
+	FINISH_NOTICE_ID,
+	FINISH_REPORT_ERROR_NOTICE_ID,
+} from './review';
 
-/** Stable notice id: a reload never stacks duplicate finish notices. */
-export const FINISH_NOTICE_ID = 'designsetgo-agent-build-finish';
-
-/**
- * Separate stable id for the "reporting itself failed" notice — never
- * replaces the review/Discard notice above, since both must be visible at
- * once (see the published branch below).
- */
-export const FINISH_REPORT_ERROR_NOTICE_ID =
-	'designsetgo-agent-build-finish-report-error';
+export { FINISH_NOTICE_ID, FINISH_REPORT_ERROR_NOTICE_ID };
 
 /** `invalid` entry `postReport()` gets when saving the applied draft fails. */
 const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
@@ -30,7 +31,7 @@ const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
 /**
  * @param {number}   postId               The post being finished.
  * @param {Object}   deps
- * @param {Function} deps.fetchPending    `() => Promise<Object>` — GET response: `{ pending, tree?, mode?, conflict?, designContext? }`.
+ * @param {Function} deps.fetchPending    `() => Promise<Object>` — GET response: `{ pending, tree?, mode?, conflict?, isSubmitter?, designContext? }`.
  * @param {Function} deps.postReport      `(body: Object) => Promise<void>` — POSTs a report for this post.
  * @param {Object}   deps.engine          `{ assemble, lint }` bound to the site's block registry.
  * @param {Function} deps.parse           `wp.blocks.parse`.
@@ -40,7 +41,7 @@ const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
  * @param {Function} deps.isPublished     `() => boolean` — post status is `publish`/`future`/`private`.
  * @param {Function} deps.notify          `(status, message, options) => void` — `core/notices` `createNotice` shape.
  * @param {Function} deps.markDocument    `(state: string) => void` — sets `document.documentElement.dataset.dsgoFinish`.
- * @param {Function} deps.onNextSave      `(callback: Function) => void` — registers a one-shot callback for the next successful, non-autosave save (published posts only).
+ * @param {Function} deps.onNextSave      `(callback: Function) => Function` — registers a one-shot callback for the next successful, non-autosave save; returns `unsubscribe`.
  * @return {Promise<void>}
  */
 export async function finishBuild(postId, deps) {
@@ -108,99 +109,50 @@ export async function finishBuild(postId, deps) {
 
 		const { blocks: nextBlocks, findings } = result;
 		const status = findings.length ? 'finished_with_findings' : 'finished';
+		// Strictly `true`: a missing flag must never be read as permission to
+		// save someone else's build.
+		const isSubmitter = pending.isSubmitter === true;
 
-		if (!isPublished()) {
-			replaceBlocks(nextBlocks);
-			const saved = await savePost();
-
-			if (saved) {
-				await postReport({ status, findings });
-				notify(
-					'success',
-					__('Agent build applied and saved.', 'designsetgo'),
-					{ id: FINISH_NOTICE_ID }
-				);
-				markDocument('done');
-			} else {
-				await postReport({
-					status: 'failed',
-					invalid: SAVE_FAILED_INVALID,
-				});
-				notify(
-					'error',
-					__(
-						'Agent build was applied but could not be saved.',
-						'designsetgo'
-					),
-					{ id: FINISH_NOTICE_ID }
-				);
-				markDocument('failed');
-			}
+		if (!isSubmitter || isPublished()) {
+			await applyForReview({
+				report: postReport,
+				replaceBlocks,
+				notify,
+				onNextSave,
+				currentBlocks,
+				nextBlocks,
+				status,
+				findings,
+				isSubmitter,
+			});
+			markDocument('done');
 			return;
 		}
 
-		// Published: apply for review only, never save automatically.
-		const original = currentBlocks;
 		replaceBlocks(nextBlocks);
+		const saved = await savePost();
 
-		// A failed report here must never suppress the review notice below —
-		// without it, a person has no Discard affordance for blocks that are
-		// already sitting in their canvas. Report failure is surfaced as its
-		// own separate notice instead.
-		let reportedAwaitingReview = true;
-		try {
-			await postReport({ status: 'awaiting_review', findings });
-		} catch (error) {
-			reportedAwaitingReview = false;
-		}
-
-		notify(
-			'warning',
-			__('Review agent changes before updating.', 'designsetgo'),
-			{
-				id: FINISH_NOTICE_ID,
-				isDismissible: true,
-				actions: [
-					{
-						label: __('Discard', 'designsetgo'),
-						onClick: () => {
-							replaceBlocks(original);
-							// finishBuild() has already returned by the time this
-							// fires, so its try/catch above can't cover it — never
-							// let a network hiccup here surface as an unhandled
-							// rejection.
-							Promise.resolve(
-								postReport({ status: 'discarded' })
-							).catch(() => {});
-						},
-					},
-				],
-			}
-		);
-
-		if (!reportedAwaitingReview) {
+		if (saved) {
+			await postReport({ status, findings });
 			notify(
-				'error',
-				__(
-					'Could not report the applied build back to the server.',
-					'designsetgo'
-				),
-				{ id: FINISH_REPORT_ERROR_NOTICE_ID }
+				'success',
+				__('Agent build applied and saved.', 'designsetgo'),
+				{ id: FINISH_NOTICE_ID }
 			);
+			markDocument('done');
+			return;
 		}
 
-		onNextSave(async () => {
-			// Fires long after finishBuild() has returned, so its try/catch
-			// above can't cover this either — see the Discard handler above.
-			try {
-				await postReport({ status, findings });
-			} catch (error) {
-				// Nothing left to report to; the tree is already cleared or
-				// still marked awaiting_review server-side either way.
-			}
-		});
-
-		markDocument('done');
+		await postReport({ status: 'failed', invalid: SAVE_FAILED_INVALID });
+		notify(
+			'error',
+			__(
+				'Agent build was applied but could not be saved.',
+				'designsetgo'
+			),
+			{ id: FINISH_NOTICE_ID }
+		);
+		markDocument('failed');
 	} catch (error) {
 		markDocument('failed');
 		notify(

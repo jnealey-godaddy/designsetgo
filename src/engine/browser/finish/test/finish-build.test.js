@@ -94,6 +94,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -162,6 +163,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'append',
 				designContext: DESIGN_CONTEXT,
@@ -185,6 +187,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -203,6 +206,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -232,6 +236,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -269,6 +274,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -298,6 +304,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -317,10 +324,11 @@ describe('finishBuild()', () => {
 		});
 		expect(deps.notify).toHaveBeenCalledWith(
 			'warning',
-			expect.any(String),
+			'Review agent changes before updating.',
 			expect.objectContaining({
 				id: FINISH_NOTICE_ID,
-				isDismissible: true,
+				// Carries the only Discard, so it must never be dismissible.
+				isDismissible: false,
 				actions: [
 					expect.objectContaining({ label: expect.any(String) }),
 				],
@@ -337,6 +345,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -380,6 +389,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -409,6 +419,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -441,6 +452,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -482,6 +494,7 @@ describe('finishBuild()', () => {
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
 				conflict: false,
+				isSubmitter: true,
 				tree: TREE,
 				mode: 'replace',
 				designContext: DESIGN_CONTEXT,
@@ -495,6 +508,85 @@ describe('finishBuild()', () => {
 		deps.postReport.mockRejectedValueOnce(new Error('network down'));
 
 		await expect(onSuccess()).resolves.toBeUndefined();
+	});
+
+	test("7. another user's build on a draft is applied for review, never saved", async () => {
+		const original = [{ name: 'core/heading' }];
+		const parsed = [{ name: 'core/paragraph' }];
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				conflict: false,
+				isSubmitter: false,
+				submitter: 42,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			getEditorBlocks: jest.fn().mockReturnValue(original),
+			parse: jest.fn().mockReturnValue(parsed),
+			isPublished: jest.fn().mockReturnValue(false),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.replaceBlocks).toHaveBeenCalledWith(parsed);
+		expect(deps.savePost).not.toHaveBeenCalled();
+		expect(deps.postReport).toHaveBeenCalledWith(
+			expect.objectContaining({ status: 'awaiting_review' })
+		);
+		expect(deps.notify).toHaveBeenCalledWith(
+			'warning',
+			expect.stringContaining('on behalf of another user'),
+			expect.objectContaining({
+				id: FINISH_NOTICE_ID,
+				isDismissible: false,
+				actions: [expect.objectContaining({ label: 'Discard' })],
+			})
+		);
+		expect(deps.onNextSave).toHaveBeenCalledTimes(1);
+		expect(deps.markDocument).toHaveBeenCalledWith('done');
+	});
+
+	test("7b. another user's build on a published post uses the other-user review wording", async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				conflict: false,
+				isSubmitter: false,
+				tree: TREE,
+				mode: 'replace',
+			}),
+			isPublished: jest.fn().mockReturnValue(true),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.savePost).not.toHaveBeenCalled();
+		expect(deps.notify).toHaveBeenCalledWith(
+			'warning',
+			expect.stringContaining('on behalf of another user'),
+			expect.objectContaining({ id: FINISH_NOTICE_ID })
+		);
+	});
+
+	test('7c. a response without isSubmitter is never auto-saved', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				conflict: false,
+				tree: TREE,
+				mode: 'replace',
+			}),
+			isPublished: jest.fn().mockReturnValue(false),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.savePost).not.toHaveBeenCalled();
+		expect(deps.postReport).toHaveBeenCalledWith(
+			expect.objectContaining({ status: 'awaiting_review' })
+		);
 	});
 
 	test('a REST GET failure marks failed and shows an error notice, never throwing', async () => {

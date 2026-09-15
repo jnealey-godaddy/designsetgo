@@ -178,7 +178,14 @@ class Build_Page extends Abstract_Ability {
 			$post_id = (int) $new_post_id;
 		}
 
-		Agent_Build_Ability_Helpers::get_store()->store( $post_id, $input['tree'], $mode );
+		// The tree is saved later by whoever opens the post in the editor,
+		// who may hold unfiltered_html even though the submitter does not.
+		$tree = $input['tree'];
+		if ( ! current_user_can( 'unfiltered_html' ) ) {
+			$tree = Tree_Kses::filter_tree( $tree );
+		}
+
+		Agent_Build_Ability_Helpers::get_store()->store( $post_id, $tree, $mode );
 
 		$edit_link  = get_edit_post_link( $post_id, 'raw' );
 		$finish_url = null !== $edit_link ? add_query_arg( 'dsgo-finish', '1', $edit_link ) : '';

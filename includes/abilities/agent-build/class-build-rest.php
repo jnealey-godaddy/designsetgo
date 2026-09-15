@@ -219,11 +219,16 @@ class Build_REST {
 			$tree['blocks'] = Tree_Shape::to_response_shape( $tree['blocks'] );
 		}
 
+		$submitter = (int) $pending['submitter'];
+
 		return rest_ensure_response(
 			array(
 				'pending'       => true,
 				'tree'          => $tree,
 				'mode'          => $pending['mode'],
+				'submitter'     => $submitter,
+				// Only the submitter's own editor load may auto-save the build.
+				'isSubmitter'   => $submitter > 0 && get_current_user_id() === $submitter,
 				'conflict'      => $this->store->is_conflict( $post_id ),
 				'postStatus'    => $post ? $post->post_status : '',
 				'designContext' => $this->design_context(),

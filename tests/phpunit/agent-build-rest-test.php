@@ -190,6 +190,26 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * GET names the build's submitter and whether the current user is them,
+	 * so the editor only auto-saves a build for the person who submitted it.
+	 */
+	public function test_get_reports_submitter_and_is_submitter(): void {
+		wp_set_current_user( $this->editor_id );
+		$this->store->store( $this->post_id, $this->tree(), 'replace' );
+
+		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $this->post_id ) );
+		$data     = $response->get_data();
+		$this->assertSame( $this->editor_id, $data['submitter'] );
+		$this->assertTrue( $data['isSubmitter'] );
+
+		wp_set_current_user( $this->other_editor_id );
+		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $this->post_id ) );
+		$data     = $response->get_data();
+		$this->assertSame( $this->editor_id, $data['submitter'] );
+		$this->assertFalse( $data['isSubmitter'] );
+	}
+
+	/**
 	 * GET's raw JSON response keeps an empty node "attributes" as an object
 	 * ("{}"), not an array ("[]"). PHP's json_decode( $json, true ) can't
 	 * tell an empty JSON object from an empty JSON array - both become

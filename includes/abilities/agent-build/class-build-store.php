@@ -34,8 +34,9 @@ class Build_Store {
 
 	/**
 	 * Meta key holding the pending tree as a JSON string:
-	 * `{ tree, mode, base }`, where `base` is the post's
-	 * `post_modified_gmt` at the moment the tree was stored.
+	 * `{ tree, mode, base, submitter }`, where `base` is the post's
+	 * `post_modified_gmt` at the moment the tree was stored and `submitter`
+	 * is the id of the user who stored it.
 	 *
 	 * @var string
 	 */
@@ -84,6 +85,9 @@ class Build_Store {
 	 * make the base captured here immediately stale and turn the very next
 	 * GET into a false conflict.
 	 *
+	 * The current user is recorded as the build's submitter: the editor only
+	 * auto-saves a build for the person who submitted it.
+	 *
 	 * @param int    $post_id Post the tree targets.
 	 * @param array  $tree    Well-formed block tree (already validated by the caller).
 	 * @param string $mode    Assembly mode, e.g. 'replace' or 'append'.
@@ -101,9 +105,10 @@ class Build_Store {
 			wp_slash(
 				wp_json_encode(
 					array(
-						'tree' => $tree,
-						'mode' => $mode,
-						'base' => is_string( $base ) ? $base : '',
+						'tree'      => $tree,
+						'mode'      => $mode,
+						'base'      => is_string( $base ) ? $base : '',
+						'submitter' => get_current_user_id(),
 					)
 				)
 			)
@@ -122,7 +127,7 @@ class Build_Store {
 	 * Read the post's pending build, if any.
 	 *
 	 * @param int $post_id Post to read.
-	 * @return array{tree: array, mode: string, base: string}|null Decoded pending build, or null when there is none.
+	 * @return array{tree: array, mode: string, base: string, submitter: int}|null Decoded pending build, or null when there is none.
 	 */
 	public function pending( int $post_id ): ?array {
 		$raw = get_post_meta( $post_id, self::META_PENDING_TREE, true );
@@ -136,6 +141,8 @@ class Build_Store {
 		if ( ! is_array( $decoded ) || ! isset( $decoded['tree'], $decoded['mode'], $decoded['base'] ) ) {
 			return null;
 		}
+
+		$decoded['submitter'] = isset( $decoded['submitter'] ) ? (int) $decoded['submitter'] : 0;
 
 		return $decoded;
 	}
