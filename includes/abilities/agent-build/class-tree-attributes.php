@@ -31,20 +31,34 @@ class Tree_Attributes {
 
 	/**
 	 * Validate provided attributes against the block type's own schema, and
-	 * reject a name unknown to both PHP and JS.
+	 * - only under a deliberately narrow, fail-open rule - reject a name
+	 * that looks like a typo of a known one.
 	 *
-	 * An attribute name PHP's own `WP_Block_Type->attributes` doesn't
-	 * declare is checked against the committed JS-registered-attribute
-	 * manifest (Attribute_Manifest) before being accepted: known to JS
-	 * (a block-support attribute like `anchor`, added only by client-side
-	 * block-support JS, or a DesignSetGo extension attribute) is still
-	 * allowed unchecked - only a name unknown to BOTH is
-	 * `designsetgo_unknown_attribute`, with a "did you mean" suggestion
-	 * (Attribute_Suggest) when a known name is a plausible typo away. This
-	 * is the PHP mirror of findUnknownAttributes() in
-	 * src/engine/attributes.js - the browser engine's check is
-	 * authoritative; this one exists to fail fast, before a headless browser
-	 * round trip.
+	 * PHP's up-front unknown-attribute check is NOT a full mirror of
+	 * findUnknownAttributes() in src/engine/attributes.js (the browser
+	 * engine's check, which stays authoritative and is the only one every
+	 * unknown name is guaranteed to hit). The committed JS-registered-
+	 * attribute manifest (Attribute_Manifest) only covers `designsetgo/*`
+	 * and `core/*` block types; for any other registered block (a
+	 * WooCommerce block, a third-party plugin's block), or for an attribute
+	 * a third-party JS filter added that the Node-generated manifest never
+	 * saw, PHP has no reliable way to tell "genuinely unknown" from "known
+	 * only to some JS this generator didn't run" - rejecting there would be
+	 * a false positive, stricter than the engine PHP is supposed to be
+	 * deferring to. So PHP rejects an attribute name up front only when
+	 * ALL of:
+	 *
+	 * (a) the block name is itself a key in the manifest (`Attribute_Manifest
+	 *     ::is_covered()`) - i.e. this generator actually looked at this
+	 *     block type, so an absence there means something;
+	 * (b) the name is unknown to both PHP's own schema AND the manifest; and
+	 * (c) `Attribute_Suggest::closest()` finds a known name close enough to
+	 *     plausibly be what was meant - i.e. it looks like a typo, not a
+	 *     legitimately novel attribute PHP simply doesn't know about.
+	 *
+	 * Everything else - an uncovered block entirely, or a name with no
+	 * plausible suggestion - passes PHP unchecked and is judged by the
+	 * engine at finish time, same as before this check existed.
 	 *
 	 * @param array  $blocks      Well-shaped, fully-registered block list.
 	 * @param string $parent_path Parent path, or '' for the root.
@@ -60,20 +74,27 @@ class Tree_Attributes {
 			$attributes = $node['attributes'] ?? array();
 
 			if ( $block_type ) {
+				// Rule (a): the manifest must actually cover this block name.
+				$is_covered      = Attribute_Manifest::is_covered( $node['name'] );
 				$known_php_names = array_keys( $block_type->attributes ?? array() );
 				$known_js_names  = Attribute_Manifest::names_for( $node['name'] );
+				// Computed once per node (not per attribute): every attribute on
+				// this node that needs a suggestion suggests from the same list.
+				$known_names = array_values( array_unique( array_merge( $known_php_names, $known_js_names ) ) );
 
 				foreach ( $attributes as $attribute_name => $value ) {
 					$schema = $block_type->attributes[ $attribute_name ] ?? null;
 
 					if ( ! is_array( $schema ) ) {
-						if ( ! in_array( $attribute_name, $known_js_names, true ) ) {
-							$problems[] = self::unknown_attribute_problem(
-								$path,
-								$node['name'],
-								(string) $attribute_name,
-								array_values( array_unique( array_merge( $known_php_names, $known_js_names ) ) )
-							);
+						// Rule (b): unknown to both - schema null already means
+						// unknown to PHP, so only the manifest needs checking.
+						$unknown_to_both = ! in_array( $attribute_name, $known_js_names, true );
+						if ( $is_covered && $unknown_to_both ) {
+							// Rule (c): only reject when a plausible typo target exists.
+							$suggestion = Attribute_Suggest::closest( (string) $attribute_name, $known_names );
+							if ( null !== $suggestion ) {
+								$problems[] = self::unknown_attribute_problem( $path, $node['name'], (string) $attribute_name, $suggestion );
+							}
 						}
 						continue;
 					}
@@ -110,30 +131,23 @@ class Tree_Attributes {
 	/**
 	 * Build a `designsetgo_unknown_attribute` problem, matching the reason
 	 * text `findUnknownAttributes()` in src/engine/attributes.js produces.
+	 * Only ever called once `check()` has already confirmed a suggestion
+	 * exists (rule (c) above) - a PHP-side rejection always names one.
 	 *
-	 * @param string             $path           Node path.
-	 * @param string             $block_name     Owning block's registered name.
-	 * @param string             $attribute_name Unknown attribute name.
-	 * @param array<int, string> $known_names    Every attribute name to suggest from (PHP + manifest, combined).
+	 * @param string $path           Node path.
+	 * @param string $block_name     Owning block's registered name.
+	 * @param string $attribute_name Unknown attribute name.
+	 * @param string $suggestion     The suggested known name.
 	 * @return array{code: string, path: string, message: string} Problem entry.
 	 */
-	private static function unknown_attribute_problem( string $path, string $block_name, string $attribute_name, array $known_names ): array {
-		$suggestion = Attribute_Suggest::closest( $attribute_name, $known_names );
-
-		$message = $suggestion
-			? sprintf(
-				/* translators: 1: attribute name, 2: block name, 3: suggested attribute name */
-				__( 'unknown attribute "%1$s" for %2$s — did you mean "%3$s"?', 'designsetgo' ),
-				$attribute_name,
-				$block_name,
-				$suggestion
-			)
-			: sprintf(
-				/* translators: 1: attribute name, 2: block name */
-				__( 'unknown attribute "%1$s" for %2$s', 'designsetgo' ),
-				$attribute_name,
-				$block_name
-			);
+	private static function unknown_attribute_problem( string $path, string $block_name, string $attribute_name, string $suggestion ): array {
+		$message = sprintf(
+			/* translators: 1: attribute name, 2: block name, 3: suggested attribute name */
+			__( 'unknown attribute "%1$s" for %2$s — did you mean "%3$s"?', 'designsetgo' ),
+			$attribute_name,
+			$block_name,
+			$suggestion
+		);
 
 		return Tree_Shape::problem( 'designsetgo_unknown_attribute', $path, $message );
 	}

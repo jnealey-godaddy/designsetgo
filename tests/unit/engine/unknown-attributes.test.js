@@ -77,4 +77,27 @@ describe('unknown attributes: accepted under full registration', () => {
 			}),
 		]);
 	});
+
+	it('rejects a misspelled attribute on a core/* block with a suggestion', () => {
+		// The browser engine's check has no PHP-side "fail open" carve-out —
+		// every unknown name is caught here, on any registered block,
+		// designsetgo/* or core/*, manifest-covered or not.
+		const result = engine.assemble({
+			version: TREE_VERSION,
+			blocks: [
+				{
+					name: 'core/paragraph',
+					attributes: { backgroundColour: '#fff' },
+				},
+			],
+		});
+
+		expect(result.status).toBe('invalid');
+		expect(result.invalid).toEqual([
+			expect.objectContaining({
+				code: 'designsetgo_unknown_attribute',
+				reason: 'unknown attribute "backgroundColour" for core/paragraph — did you mean "backgroundColor"?',
+			}),
+		]);
+	});
 });

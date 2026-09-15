@@ -2,10 +2,13 @@
  * Detects agent-submitted block attribute names a block type doesn't
  * register — a misspelled (`backgroundColour`) or invented name that
  * `createBlock()` would otherwise silently drop with no feedback. This is
- * the engine's authoritative check: PHP's `Tree_Attributes` deliberately
- * allows unknown names through (JS-only extensions add attributes PHP may
- * not know about), so this is the only place attribute names are validated
- * as a full set.
+ * the engine's authoritative check: every unknown name on every registered
+ * block is caught here, with no exceptions. PHP's `Tree_Attributes` runs a
+ * deliberately narrower, fail-open version of this same check up front (it
+ * only rejects a name that looks like a typo of one known to a committed
+ * manifest-covered block — see that class's docblock for the exact rule),
+ * so this remains the only place attribute names are validated as a full
+ * set.
  *
  * "Known" is every key `getBlockType(name).attributes` has after full
  * registration. WordPress folds every block-support attribute (`style`,

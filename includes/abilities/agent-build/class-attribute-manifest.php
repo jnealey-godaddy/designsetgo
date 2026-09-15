@@ -59,6 +59,23 @@ class Attribute_Manifest {
 	}
 
 	/**
+	 * Whether `$block_name` is a key in the committed manifest at all - the
+	 * fail-open gate `Tree_Attributes::check()` requires before it will ever
+	 * reject an attribute name. The manifest only covers `designsetgo/*` and
+	 * `core/*` (see the class docblock); any other registered block (a
+	 * WooCommerce block, a third-party plugin's block) is NOT covered, and
+	 * `names_for()` returning `[]` for it must never be read as "this block
+	 * has no JS-registered attributes" - it means "this generator never
+	 * looked", which is a very different thing.
+	 *
+	 * @param string $block_name Registered block name.
+	 * @return bool True when the manifest has an entry for this block name.
+	 */
+	public static function is_covered( string $block_name ): bool {
+		return array_key_exists( $block_name, self::load() );
+	}
+
+	/**
 	 * Loads and caches the manifest file's decoded contents.
 	 *
 	 * @return array<string, array<int, string>> Decoded manifest, or empty

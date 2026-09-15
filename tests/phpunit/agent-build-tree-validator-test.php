@@ -393,26 +393,97 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * An attribute name unknown to both PHP's own schema and the committed
-	 * JS-registered-attribute manifest is rejected. Before Task E2 this was
-	 * silently accepted (see the unknown-attribute-brief); a made-up name
-	 * like this one, never registered by any real block or extension, is
-	 * exactly the case that brief exists to catch.
+	 * PHP's up-front check is deliberately fail-open (see Tree_Attributes
+	 * ::check()'s docblock, rule (c)): an invented name with no known name
+	 * close enough to plausibly be a typo passes PHP unchecked, even on a
+	 * manifest-covered block, and is left to the browser engine at finish
+	 * time. Rejecting here would have no way to distinguish "genuinely
+	 * unknown" from "a legitimately novel attribute PHP just doesn't happen
+	 * to know about" - only a name that LOOKS like a typo is confident
+	 * enough to reject before the browser ever sees the tree.
 	 */
-	public function test_unknown_attribute_names_not_known_to_js_are_rejected() {
+	public function test_far_from_anything_invented_attribute_is_not_rejected_in_php() {
 		$problems = Tree_Validator::validate(
 			array(
 				'version' => 1,
 				'blocks'  => array(
 					array(
 						'name'       => 'core/paragraph',
-						'attributes' => array( 'someExtensionOnlyAttribute' => 'whatever' ),
+						'attributes' => array( 'zzqqxx' => 'whatever' ),
+					),
+				),
+			)
+		);
+		$this->assertSame( array(), $problems );
+	}
+
+	/**
+	 * The committed manifest only covers `designsetgo/*` and `core/*` (see
+	 * Attribute_Manifest). A registered block outside that universe - a
+	 * WooCommerce block, a third-party plugin's block - must never be
+	 * treated as "this generator looked and found nothing": PHP's own
+	 * schema check still applies, but no attribute name on that block is
+	 * ever rejected as unknown, since Attribute_Manifest::is_covered()
+	 * is false for it. Registers a throwaway `acme/test-block` with a
+	 * small PHP attribute schema (no `anchor`, no support attributes) to
+	 * prove this without depending on any real third-party plugin being
+	 * active.
+	 */
+	public function test_a_non_manifest_registered_block_never_rejects_an_unknown_attribute() {
+		register_block_type(
+			'acme/test-block',
+			array(
+				'attributes' => array(
+					'title' => array( 'type' => 'string' ),
+				),
+			)
+		);
+
+		try {
+			$problems = Tree_Validator::validate(
+				array(
+					'version' => 1,
+					'blocks'  => array(
+						array(
+							'name'       => 'acme/test-block',
+							'attributes' => array(
+								'anchor' => 'my-anchor',
+								'someInventedThirdPartyAttr' => 'whatever',
+							),
+						),
+					),
+				)
+			);
+		} finally {
+			unregister_block_type( 'acme/test-block' );
+		}
+
+		$this->assertSame( array(), $problems );
+	}
+
+	/**
+	 * `backgroundColor` is declared directly in core/paragraph's own PHP
+	 * schema (unlike `anchor`), so a misspelling is rejected purely from
+	 * PHP's own known names - the manifest isn't even needed for this one,
+	 * though core/paragraph is manifest-covered too.
+	 */
+	public function test_core_paragraph_misspelled_attribute_is_rejected_with_a_suggestion() {
+		$problems = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => array( 'backgroundColour' => '#fff' ),
 					),
 				),
 			)
 		);
 		$this->assertSame( array( 'designsetgo_unknown_attribute' ), $this->codes( $problems ) );
-		$this->assertStringContainsString( 'someExtensionOnlyAttribute', $problems[0]['message'] );
+		$this->assertSame(
+			'unknown attribute "backgroundColour" for core/paragraph — did you mean "backgroundColor"?',
+			$problems[0]['message']
+		);
 	}
 
 	/**
@@ -475,6 +546,31 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 		$this->assertSame( array( 'designsetgo_unknown_attribute' ), $this->codes( $problems ) );
 		$this->assertSame(
 			'unknown attribute "backgroundColour" for designsetgo/section — did you mean "backgroundColor"?',
+			$problems[0]['message']
+		);
+	}
+
+	/**
+	 * A misspelled DesignSetGo extension attribute - known only via the
+	 * manifest, never PHP's own schema - is still rejected with a
+	 * suggestion: rule (a) (designsetgo/section is manifest-covered) and
+	 * rule (c) (dsgoAnimationEnabled is a close match) both hold.
+	 */
+	public function test_misspelled_extension_attribute_is_rejected_with_a_suggestion() {
+		$problems = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'       => 'designsetgo/section',
+						'attributes' => array( 'dsgoAnimationEnabeld' => true ),
+					),
+				),
+			)
+		);
+		$this->assertSame( array( 'designsetgo_unknown_attribute' ), $this->codes( $problems ) );
+		$this->assertSame(
+			'unknown attribute "dsgoAnimationEnabeld" for designsetgo/section — did you mean "dsgoAnimationEnabled"?',
 			$problems[0]['message']
 		);
 	}
