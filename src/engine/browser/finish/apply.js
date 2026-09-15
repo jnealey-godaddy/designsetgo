@@ -2,12 +2,15 @@
  * Pure helpers `finishBuild()` (and `./index.js`'s real wiring) lean on:
  * turning an assembled tree into the blocks to apply, shaping engine
  * output into the exact REST report keys, waiting for the block registry
- * to settle, and watching for the next successful save. None of these
- * import `@wordpress/data` or any WordPress store — that access stays in
- * `./index.js`, which is what keeps this file (and `finish-build.js`, which
- * calls into it) unit-testable with plain fakes in Jest, where
- * `@wordpress/editor` and `@wordpress/notices` are stubbed.
+ * to settle, watching for the next successful save, and building the
+ * "View details" notice action + failure-reason text `finish-build.js` and
+ * `review.js` both need. None of these import `@wordpress/data` or any
+ * WordPress store — that access stays in `./index.js`, which is what keeps
+ * this file (and `finish-build.js`/`review.js`, which call into it)
+ * unit-testable with plain fakes in Jest, where `@wordpress/editor` and
+ * `@wordpress/notices` are stubbed.
  */
+import { __, _n, sprintf } from '@wordpress/i18n';
 
 const DEFAULT_INTERVAL_MS = 100;
 const DEFAULT_STABLE_CHECKS = 3;
@@ -210,4 +213,85 @@ export function mapFindings(list) {
 		}
 		return mapped;
 	});
+}
+
+/** Reasons longer than this are trimmed before they reach a notice. */
+const MAX_REASON_LENGTH = 140;
+
+/**
+ * Builds the reason text for a "could not be applied" notice: the first
+ * `invalid` entry's `reason`, trimmed to `MAX_REASON_LENGTH`, plus how many
+ * more entries there are when there's more than one — see U5's "Failure and
+ * conflict notices give no reason".
+ *
+ * @param {Array<{reason?: string}>} [invalid] Mapped `invalid` entries.
+ * @return {string} The reason text, or `''` when there is nothing to report.
+ */
+export function describeInvalid(invalid = []) {
+	if (!invalid.length) {
+		return '';
+	}
+
+	const [first, ...rest] = invalid;
+	const reason = (first.reason || '').trim();
+	const trimmed =
+		reason.length > MAX_REASON_LENGTH
+			? `${reason.slice(0, MAX_REASON_LENGTH).trimEnd()}…`
+			: reason;
+
+	if (!rest.length || !trimmed) {
+		return trimmed;
+	}
+
+	return sprintf(
+		/* translators: 1: first failure reason (already trimmed); 2: how many more failures there are. */
+		__('%1$s and %2$d more', 'designsetgo'),
+		trimmed,
+		rest.length
+	);
+}
+
+/**
+ * A "View details" notice action that opens the Agent build sidebar.
+ *
+ * @param {Function} openSidebar `() => void` — opens the Agent build sidebar.
+ * @return {{label: string, onClick: Function}} The action.
+ */
+export function viewDetailsAction(openSidebar) {
+	return { label: __('View details', 'designsetgo'), onClick: openSidebar };
+}
+
+/**
+ * @param {Array<{reason?: string}>} invalid Mapped `invalid` entries.
+ * @return {string} "The agent build could not be applied[: <reason>]."
+ */
+export function failedMessage(invalid) {
+	const reason = describeInvalid(invalid);
+	return reason
+		? sprintf(
+				/* translators: %s: why the agent build failed, trimmed to ~140 characters. */
+				__('The agent build could not be applied: %s', 'designsetgo'),
+				reason
+			)
+		: __('The agent build could not be applied.', 'designsetgo');
+}
+
+/**
+ * @param {Array} findings Lint findings, already mapped to the REST shape.
+ * @return {string} "Agent build applied and saved." or "...saved with N issues.".
+ */
+export function savedWithIssuesMessage(findings) {
+	if (!findings.length) {
+		return __('Agent build applied and saved.', 'designsetgo');
+	}
+	return sprintf(
+		/* translators: %d: number of lint issues the applied build has. */
+		_n(
+			'Agent build applied and saved with %d issue.',
+			'Agent build applied and saved with %d issues.',
+			findings.length,
+			'designsetgo'
+		),
+		findings.length
+	);
 }

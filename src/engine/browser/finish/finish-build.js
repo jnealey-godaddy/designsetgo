@@ -18,7 +18,13 @@
  * `./apply.js` for the pure helpers this leans on.
  */
 import { __ } from '@wordpress/i18n';
-import { assembleTree, composeBlocks } from './apply';
+import {
+	assembleTree,
+	composeBlocks,
+	failedMessage,
+	savedWithIssuesMessage,
+	viewDetailsAction,
+} from './apply';
 import { sanitizeAssembled } from './sanitize';
 import {
 	applyForReview,
@@ -54,6 +60,9 @@ const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
  * @param {Function} deps.savePost        `() => Promise<boolean>` resolves whether the save succeeded.
  * @param {Function} deps.isPublished     `() => boolean` — post status is `publish`/`future`/`private`.
  * @param {Function} deps.notify          `(status, message, options) => void` — `core/notices` `createNotice` shape.
+ * @param {Function} deps.removeNotice    `core/notices` `removeNotice` shape — `(id: string) => void`.
+ * @param {Function} deps.openSidebar     `() => void` — opens the Agent build sidebar for "View details".
+ * @param {Function} deps.setReport       `(report: Object|null) => void` — stores the report the panel reads.
  * @param {Function} deps.markDocument    `(state: string) => void` — sets `document.documentElement.dataset.dsgoFinish`.
  * @param {Function} deps.onNextSave      `(callback: Function) => Function` — registers a one-shot callback for the next successful, non-autosave save; returns `unsubscribe`.
  * @return {Promise<void>}
@@ -75,6 +84,9 @@ export async function finishBuild(postId, deps) {
 		savePost,
 		isPublished,
 		notify,
+		removeNotice,
+		openSidebar,
+		setReport,
 		markDocument,
 		onNextSave,
 	} = deps;
@@ -100,8 +112,12 @@ export async function finishBuild(postId, deps) {
 					'This page changed since the agent build was queued. Nothing was applied.',
 					'designsetgo'
 				),
-				{ id: FINISH_NOTICE_ID }
+				{
+					id: FINISH_NOTICE_ID,
+					actions: [viewDetailsAction(openSidebar)],
+				}
 			);
+			setReport({ status: 'conflict', invalid: [], findings: [] });
 			markDocument('failed');
 			return;
 		}
@@ -123,11 +139,11 @@ export async function finishBuild(postId, deps) {
 				invalid,
 				findings: result.findings,
 			});
-			notify(
-				'error',
-				__('The agent build could not be applied.', 'designsetgo'),
-				{ id: FINISH_NOTICE_ID }
-			);
+			notify('error', failedMessage(invalid), {
+				id: FINISH_NOTICE_ID,
+				actions: [viewDetailsAction(openSidebar)],
+			});
+			setReport({ status: 'failed', invalid, findings: result.findings });
 			markDocument('failed');
 		};
 
@@ -170,6 +186,9 @@ export async function finishBuild(postId, deps) {
 				addFilter,
 				removeFilter,
 				notify,
+				removeNotice,
+				openSidebar,
+				setReport,
 				onNextSave,
 				currentBlocks,
 				nextBlocks,
@@ -191,11 +210,13 @@ export async function finishBuild(postId, deps) {
 
 		if (saved) {
 			await report({ status, findings });
-			notify(
-				'success',
-				__('Agent build applied and saved.', 'designsetgo'),
-				{ id: FINISH_NOTICE_ID }
-			);
+			notify('success', savedWithIssuesMessage(findings), {
+				id: FINISH_NOTICE_ID,
+				...(findings.length
+					? { actions: [viewDetailsAction(openSidebar)] }
+					: {}),
+			});
+			setReport({ status, invalid: [], findings });
 			markDocument('done');
 			return;
 		}
@@ -210,8 +231,13 @@ export async function finishBuild(postId, deps) {
 				'The agent build could not be saved, so it was removed from the editor.',
 				'designsetgo'
 			),
-			{ id: FINISH_NOTICE_ID }
+			{ id: FINISH_NOTICE_ID, actions: [viewDetailsAction(openSidebar)] }
 		);
+		setReport({
+			status: 'failed',
+			invalid: SAVE_FAILED_INVALID,
+			findings: [],
+		});
 		markDocument('failed');
 	} catch (error) {
 		markDocument('failed');

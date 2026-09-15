@@ -59,6 +59,9 @@ function createDeps(overrides = {}) {
 		savePost: jest.fn().mockResolvedValue(true),
 		isPublished: jest.fn().mockReturnValue(false),
 		notify: jest.fn(),
+		removeNotice: jest.fn(),
+		openSidebar: jest.fn(),
+		setReport: jest.fn(),
 		markDocument: jest.fn(),
 		onNextSave: jest.fn(),
 		...overrides,
@@ -407,7 +410,10 @@ describe('finishBuild()', () => {
 				id: FINISH_NOTICE_ID,
 				// Carries the only Discard, so it must never be dismissible.
 				isDismissible: false,
+				// Discard first (existing Discard-locating helpers read
+				// actions[0]), then View details (U4).
 				actions: [
+					expect.objectContaining({ label: expect.any(String) }),
 					expect.objectContaining({ label: expect.any(String) }),
 				],
 			})
@@ -448,6 +454,7 @@ describe('finishBuild()', () => {
 			expect.objectContaining({
 				id: FINISH_NOTICE_ID,
 				actions: [
+					expect.objectContaining({ label: expect.any(String) }),
 					expect.objectContaining({ label: expect.any(String) }),
 				],
 			})
@@ -637,7 +644,10 @@ describe('finishBuild()', () => {
 			expect.objectContaining({
 				id: FINISH_NOTICE_ID,
 				isDismissible: false,
-				actions: [expect.objectContaining({ label: 'Discard' })],
+				actions: [
+					expect.objectContaining({ label: 'Discard' }),
+					expect.objectContaining({ label: expect.any(String) }),
+				],
 			})
 		);
 		expect(deps.onNextSave).toHaveBeenCalledTimes(1);
@@ -759,6 +769,208 @@ describe('finishBuild()', () => {
 		await flushMicrotasks();
 
 		expect(deps.postReport).not.toHaveBeenCalled();
+	});
+
+	// U4: the finish flow stores a report for the panel to read, for every
+	// status a reviewer might need details on.
+	describe('setReport() records a report for the Agent build sidebar (U4)', () => {
+		test('conflict', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.setReport).toHaveBeenCalledWith(
+				expect.objectContaining({ status: 'conflict' })
+			);
+		});
+
+		test('failed (invalid assemble)', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+			deps.engine.assemble.mockReturnValue({
+				status: 'invalid',
+				markup: '',
+				invalid: [{ path: '0', block: 'core/unknown', reason: 'Nope' }],
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.setReport).toHaveBeenCalledWith(
+				expect.objectContaining({
+					status: 'failed',
+					invalid: [
+						{ path: '0', block: 'core/unknown', reason: 'Nope' },
+					],
+				})
+			);
+		});
+
+		test('awaiting_review', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+				isPublished: jest.fn().mockReturnValue(true),
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.setReport).toHaveBeenCalledWith(
+				expect.objectContaining({ status: 'awaiting_review' })
+			);
+		});
+
+		test('finished_with_findings', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+			deps.engine.lint.mockReturnValue([
+				{
+					rule: 'no-custom-html',
+					severity: 'warning',
+					path: '0',
+					message: 'Avoid custom HTML',
+				},
+			]);
+
+			await finishBuild(1, deps);
+
+			expect(deps.setReport).toHaveBeenCalledWith(
+				expect.objectContaining({ status: 'finished_with_findings' })
+			);
+		});
+	});
+
+	// U5: failure and conflict notices must give a reason, not just "could
+	// not be applied.".
+	describe('failed/conflict notices name a reason (U5)', () => {
+		test('a failed notice includes the first invalid reason', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+			deps.engine.assemble.mockReturnValue({
+				status: 'invalid',
+				markup: '',
+				invalid: [
+					{
+						path: 'blocks[0]',
+						block: 'core/unknown',
+						reason: 'Block "core/unknown" is not registered.',
+					},
+				],
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.notify).toHaveBeenCalledWith(
+				'error',
+				expect.stringContaining(
+					'Block "core/unknown" is not registered.'
+				),
+				expect.objectContaining({
+					actions: [
+						expect.objectContaining({ label: expect.any(String) }),
+					],
+				})
+			);
+		});
+
+		test('a failed notice with several invalid entries says how many more', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+			deps.engine.assemble.mockReturnValue({
+				status: 'invalid',
+				markup: '',
+				invalid: [
+					{ path: 'blocks[0]', block: 'a', reason: 'First reason' },
+					{ path: 'blocks[1]', block: 'b', reason: 'Second reason' },
+				],
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.notify).toHaveBeenCalledWith(
+				'error',
+				expect.stringContaining('and 1 more'),
+				expect.anything()
+			);
+		});
+
+		test('the conflict notice gets a View details action', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.notify).toHaveBeenCalledWith(
+				'warning',
+				expect.stringContaining(
+					'This page changed since the agent build was queued.'
+				),
+				expect.objectContaining({
+					actions: [
+						expect.objectContaining({ label: expect.any(String) }),
+					],
+				})
+			);
+		});
 	});
 });
 

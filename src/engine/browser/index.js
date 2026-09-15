@@ -11,6 +11,10 @@
  */
 import { createEngine } from '../index';
 
+// The `designsetgo/agent-build` report store — registered here, before
+// ./panel and ./finish, so both can read/write it as soon as they load.
+import './report-store';
+
 // "Agent build" sidebar — reads/writes window.designsetgoEngine below.
 import './panel';
 
