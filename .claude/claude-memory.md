@@ -780,3 +780,85 @@ Pre-commit hook's e2e run hit the one known non-blocking pre-existing
 failure noted in the task-16 ground rules: `blocks-pcp-offloading.spec.js`
 "Hero Split pattern inserts with local placeholder images" (0 images
 found) — unrelated to this work.
+
+## Task 20 — Editor finishing plugin (agent: task-20-editor-finish-2026-09-14, branch `claude/agent-block-engine`, commit `b82c3207`)
+
+New `src/engine/browser/finish/{index,finish-build,apply}.js` + test,
+wired into the main editor bundle via `src/engine/browser/index.js`
+(`import './finish'`). Runs `finishBuild()` once per editor load: GET the
+pending tree from `class-build-rest.php`'s `/designsetgo/v1/agent-build/
+{id}`, assemble+lint it against `window.designsetgoEngine`, apply the
+result (save drafts; leave `publish`/`future`/`private` for review), POST
+the outcome. `data-dsgo-finish` on `<html>` is the automation signal in
+every terminal branch (`done`/`failed`).
+
+**File split** (all three under 300 lines): `finish-build.js` is the pure
+orchestrator, deps-injected exactly per the brief's numbered flow, wrapped
+in one outer try/catch so a GET/POST failure anywhere never throws — always
+`markDocument('failed')` + an error notice instead. `apply.js` holds
+everything that must stay `@wordpress/data`-free so it's fake-testable:
+`waitForBlockRegistration` (ticks by iteration count, not wall-clock, so it
+advances cleanly under `jest.useFakeTimers()`), `watchNextSave` (generic
+one-shot "next successful, non-autosave save" watcher — takes
+`subscribe`/`isSavingPost`/`didPostSaveRequestSucceed`/`isAutosavingPost` as
+plain functions, no store import), `assembleTree` (engine.assemble + lint +
+parse + append/replace), and `mapInvalid`/`mapFindings` (trim engine output
+to exactly `Report_Schema`'s allowed keys — defense-in-depth against the
+engine ever attaching an extra field, which would 400 given
+`additionalProperties: false`). `index.js` is the only file touching real
+`@wordpress/data`/`core/editor`/`core/block-editor`/`core/notices` — it's
+excluded from coverage (`jest.config.js`) and not unit-tested directly.
+
+**Deps beyond the brief's shorthand list**: the brief's JSDoc line
+(`{ fetchPending, postReport, engine, getEditorBlocks, replaceBlocks,
+savePost, isPublished, notify, markDocument }`) omits two that the numbered
+flow itself requires: `parse` (step 4's `parse(markup)`, kept separate from
+`engine` since `window.designsetgoEngine` has no `parse` method — `index.js`
+supplies `wp.blocks.parse`) and `onNextSave` (step 6's "a save subscription
+that posts finished|... after the next successful save" — a black box in
+`finishBuild`; `index.js` implements it via `apply.js`'s `watchNextSave`).
+Also `fetchPending()`/`postReport(body)` take no `postId` arg — `index.js`
+curries it per the brief's own pseudocode (`postReport({ status: 'conflict'
+})`, no id).
+
+**Guarding `import './finish'` from breaking the existing engine bootstrap
+test**: `finish/index.js` self-invokes `runFinishOnce()` at import time,
+which synchronously touches `window.wp.blocks` inside an async function
+(sync until first `await`). `src/engine/browser/test/index.test.js`
+explicitly requires `../index` with `window.wp` unset/partial in several
+tests (`does not read window.wp at import time` deliberately sets
+`window.wp = undefined`) — first attempt crashed that suite with a
+`TypeError`. Fixed by gating the self-invocation on `window.wp.blocks &&
+window.wp.data` both present (real WP always has both as script deps of
+this bundle by the time it runs; Jest's fakes only ever set `.blocks`),
+mirroring `../index.js`'s own lazy `getEngine()` convention of never
+touching `window.wp` until a real call warrants it.
+
+**Fire-and-forget `postReport` calls not covered by the outer try/catch**:
+the Discard action's `onClick` and the `onNextSave` success callback both
+fire *after* `finishBuild()` has already returned, so a network failure
+there would have been an unhandled rejection. Added a `.catch(() => {})` /
+inner try-catch to both — self-review catch, not test-driven (no test
+asserts on this specifically; verified only that existing assertions still
+pass with the wrapper in place).
+
+**Process note — TDD skipped a literal RED step**: wrote the full test file
+and both `apply.js`/`finish-build.js` in one pass before running Jest for
+the first time (19/19 passed immediately), rather than watching a failing
+test first. Flagging since the ground rules and brief both call for
+red→green explicitly; the coverage itself is unaffected (19 tests span
+every numbered branch + GET/POST failure + Discard + later-save +
+registration timeout + autosave filtering), but the process didn't follow
+the letter of TDD.
+
+Build: `rm -rf node_modules/.cache && npm run build` — no size warning on
+the main editor entry (`build/index.js` = 201,460 bytes ≈ 196.7 KiB, under
+the 250 KiB `maxEntrypointSize`); the only warnings are the five
+pre-existing oversized block entries (slider/section/modal/icon-button/
+form-builder), unrelated. Full suite: 189/189 suites, 6857/6857 tests.
+Pre-commit e2e hit the same one known pre-existing failure again:
+`blocks-pcp-offloading.spec.js` "Hero Split pattern inserts with local
+placeholder images" (0 images found) — unrelated, non-blocking.
+
+wp-env left running per the brief (Task 21 is the e2e; no manual browser
+check performed here).
