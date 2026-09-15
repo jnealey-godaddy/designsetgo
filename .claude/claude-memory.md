@@ -970,3 +970,65 @@ authorized fix (Build_REST/Tree_Shape only). Repro tree and full analysis
 are in `task-21-report.md`'s "Fix report" section for whoever picks this
 up; deliberately did NOT add an e2e fixture for it, since a test that
 fails for an unrelated reason would be confusing, not useful, coverage.
+
+---
+
+## Session unknown-attribute-2026-09-15 (agent: claude-sonnet-5, unknown-attribute-brief)
+
+Implemented E1 (browser-engine unknown-attribute detection) and E2 (PHP
+up-front check via a committed manifest). Full report:
+`.superpowers/sdd/2026-09-14-agent-block-engine/unknown-attribute-report.md`.
+
+**E1**: New `src/engine/attributes.js` — `findUnknownAttributes(blocksApi,
+tree)`, local Damerau-Levenshtein (`attributeDistance`/
+`closestAttributeName`, no dependency), wired into `assemble()` in the same
+stage as unknown blocks (both collected together, build gated on either).
+Verified empirically that full registration puts EVERY block-support
+attribute (`style`, `className`, `anchor`, `backgroundColor`, `lock`,
+`metadata`) into `getBlockType().attributes` — no allowlist needed, contrary
+to what the brief anticipated might be required. Checked every existing
+fixture tree (agent.json examples, tests/engine/fixtures,
+tests/e2e/fixtures/agent-trees, tests/e2e/fixtures/agent-build-trees) via
+the real CLI after wiring — none needed correcting; the round-trip test
+suite (3178 assertions) and the full JS suite (6941 tests) already passed
+unmodified.
+
+**E2 parity measurement** (the important finding): dumped
+`WP_Block_Type_Registry` attributes via `wp eval-file` on the `cli`
+container (NOT `tests-cli` — that container's plugin is inactive, so a
+naive probe there silently found 0 designsetgo blocks) and diffed against
+the JS registry for the same 179 `designsetgo/*` + `core/*` block types.
+Only 79/179 (44%) have full PHP/JS parity. `anchor` is the single biggest
+gap — WordPress's own PHP registry never adds `anchor` to
+`WP_Block_Type->attributes` (verified `did_action('init')` had already
+fired; not a timing artifact) — it's added only by client-side
+block-support JS. Every DesignSetGo extension attribute is a second gap
+(PHP has zero mirror of `blocks.registerBlockType` filters). This ruled out
+the "verified-parity allowlist" option in the brief; went with the manifest
+approach as instructed.
+
+**E2 implementation**: `src/engine/node/attribute-manifest.js` (new CLI
+command `attribute-manifest`, no file arg, same pattern as
+`fixture-cases.js`) generates `includes/abilities/agent-build/data/
+attribute-manifest.json` — `{blockName: [attrNames...]}` for every
+`designsetgo/*`/`core/*` block. PHP: `Attribute_Manifest` (loads+caches the
+JSON), `Attribute_Suggest` (PHP port of the same distance/suggestion logic,
+tested against the same cases as the JS test suite). `Tree_Attributes::
+check()` now rejects an attribute name unknown to BOTH PHP's own schema AND
+the manifest — previously any name PHP didn't know was silently accepted
+(that old behavior is exactly what the brief exists to fix). One existing
+PHPUnit test (`test_unknown_attribute_names_are_allowed`) encoded the old
+behavior directly and had to be rewritten to assert rejection — not a
+regression, the brief explicitly overturns that behavior. Freshness of the
+committed manifest is enforced two ways: `tests/unit/engine/
+attribute-manifest-freshness.test.js` (Jest, regenerates via
+`registerForJest()`) and `tests/engine/cli.test.mjs` (spawns the real
+built bundle) — both passed without needing to special-case any
+version-skew between the two block-library versions in play.
+
+Full PHPUnit (1603 tests) and full JS suite (6941 tests) green with no
+other regressions. Scratch parity-probe files
+(`__parity-probe.php`/`__parity-out.json`) were removed from the repo root
+after use; raw dumps + diff summary kept under
+`.superpowers/sdd/2026-09-14-agent-block-engine/parity-evidence/` for
+reference.
