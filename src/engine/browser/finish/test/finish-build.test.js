@@ -4,11 +4,27 @@
  * helpers it leans on from `../apply`: `waitForBlockRegistration` (fake
  * timers) and `watchNextSave` (fake `subscribe`/selectors).
  */
-import { finishBuild, FINISH_NOTICE_ID } from '../finish-build';
+import {
+	finishBuild,
+	FINISH_NOTICE_ID,
+	FINISH_REPORT_ERROR_NOTICE_ID,
+} from '../finish-build';
 import { waitForBlockRegistration, watchNextSave } from '../apply';
 
 const TREE = { version: 1, blocks: [{ name: 'core/paragraph' }] };
 const DESIGN_CONTEXT = { colors: [] };
+
+/**
+ * Flushes pending microtasks (a macrotask boundary via a real `setTimeout`
+ * clears any queued microtasks ahead of it), for asserting on a
+ * fire-and-forget `.catch()` chain that isn't itself awaited by the code
+ * under test — e.g. the Discard handler's `postReport()` call.
+ *
+ * @return {Promise<void>}
+ */
+function flushMicrotasks() {
+	return new Promise((resolve) => setTimeout(resolve, 0));
+}
 
 /**
  * @param {Object} overrides Per-test dep overrides.
@@ -314,6 +330,49 @@ describe('finishBuild()', () => {
 		expect(deps.markDocument).toHaveBeenCalledWith('done');
 	});
 
+	test('6c. a failed awaiting_review report still shows the review notice with Discard, plus a separate report-error notice, and still marks done', async () => {
+		const original = [{ name: 'core/heading' }];
+		const parsed = [{ name: 'core/paragraph' }];
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				conflict: false,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			getEditorBlocks: jest.fn().mockReturnValue(original),
+			parse: jest.fn().mockReturnValue(parsed),
+			isPublished: jest.fn().mockReturnValue(true),
+			postReport: jest
+				.fn()
+				.mockRejectedValueOnce(new Error('network down')),
+		});
+
+		await finishBuild(1, deps);
+
+		// The review notice with its Discard action must still appear even
+		// though reporting `awaiting_review` failed.
+		expect(deps.notify).toHaveBeenCalledWith(
+			'warning',
+			expect.any(String),
+			expect.objectContaining({
+				id: FINISH_NOTICE_ID,
+				actions: [
+					expect.objectContaining({ label: expect.any(String) }),
+				],
+			})
+		);
+		// ...plus a separate, non-blocking notice about the failed report.
+		expect(deps.notify).toHaveBeenCalledWith(
+			'error',
+			expect.any(String),
+			expect.objectContaining({ id: FINISH_REPORT_ERROR_NOTICE_ID })
+		);
+		expect(deps.onNextSave).toHaveBeenCalledTimes(1);
+		expect(deps.markDocument).toHaveBeenCalledWith('done');
+	});
+
 	test('6a. Discard restores the original blocks and posts discarded', async () => {
 		const original = [{ name: 'core/heading' }];
 		const parsed = [{ name: 'core/paragraph' }];
@@ -341,6 +400,40 @@ describe('finishBuild()', () => {
 		expect(deps.postReport).toHaveBeenLastCalledWith({
 			status: 'discarded',
 		});
+	});
+
+	test('6a-reject. Discard swallows a rejected postReport and still restores blocks', async () => {
+		const original = [{ name: 'core/heading' }];
+		const parsed = [{ name: 'core/paragraph' }];
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				conflict: false,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			getEditorBlocks: jest.fn().mockReturnValue(original),
+			parse: jest.fn().mockReturnValue(parsed),
+			isPublished: jest.fn().mockReturnValue(true),
+		});
+
+		await finishBuild(1, deps);
+
+		deps.postReport.mockRejectedValueOnce(new Error('network down'));
+		const [, , options] = deps.notify.mock.calls[0];
+		const discard = options.actions[0];
+
+		expect(() => discard.onClick()).not.toThrow();
+		expect(deps.replaceBlocks).toHaveBeenLastCalledWith(original);
+		expect(deps.postReport).toHaveBeenLastCalledWith({
+			status: 'discarded',
+		});
+
+		// The rejection above must be swallowed, not surfaced as an
+		// unhandled promise rejection — if it weren't, Jest would report it
+		// as a separate test failure once the flush below lets it settle.
+		await flushMicrotasks();
 	});
 
 	test('6b. a later successful save posts finished_with_findings once', async () => {
@@ -382,6 +475,26 @@ describe('finishBuild()', () => {
 				},
 			],
 		});
+	});
+
+	test('6b-reject. a later save postReport rejection is swallowed, not thrown', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				conflict: false,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			isPublished: jest.fn().mockReturnValue(true),
+		});
+
+		await finishBuild(1, deps);
+
+		const onSuccess = deps.onNextSave.mock.calls[0][0];
+		deps.postReport.mockRejectedValueOnce(new Error('network down'));
+
+		await expect(onSuccess()).resolves.toBeUndefined();
 	});
 
 	test('a REST GET failure marks failed and shows an error notice, never throwing', async () => {

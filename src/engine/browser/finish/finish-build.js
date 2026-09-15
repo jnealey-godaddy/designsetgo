@@ -16,6 +16,14 @@ import { assembleTree } from './apply';
 /** Stable notice id: a reload never stacks duplicate finish notices. */
 export const FINISH_NOTICE_ID = 'designsetgo-agent-build-finish';
 
+/**
+ * Separate stable id for the "reporting itself failed" notice — never
+ * replaces the review/Discard notice above, since both must be visible at
+ * once (see the published branch below).
+ */
+export const FINISH_REPORT_ERROR_NOTICE_ID =
+	'designsetgo-agent-build-finish-report-error';
+
 /** `invalid` entry `postReport()` gets when saving the applied draft fails. */
 const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
 
@@ -134,7 +142,17 @@ export async function finishBuild(postId, deps) {
 		// Published: apply for review only, never save automatically.
 		const original = currentBlocks;
 		replaceBlocks(nextBlocks);
-		await postReport({ status: 'awaiting_review', findings });
+
+		// A failed report here must never suppress the review notice below —
+		// without it, a person has no Discard affordance for blocks that are
+		// already sitting in their canvas. Report failure is surfaced as its
+		// own separate notice instead.
+		let reportedAwaitingReview = true;
+		try {
+			await postReport({ status: 'awaiting_review', findings });
+		} catch (error) {
+			reportedAwaitingReview = false;
+		}
 
 		notify(
 			'warning',
@@ -159,6 +177,17 @@ export async function finishBuild(postId, deps) {
 				],
 			}
 		);
+
+		if (!reportedAwaitingReview) {
+			notify(
+				'error',
+				__(
+					'Could not report the applied build back to the server.',
+					'designsetgo'
+				),
+				{ id: FINISH_REPORT_ERROR_NOTICE_ID }
+			);
+		}
 
 		onNextSave(async () => {
 			// Fires long after finishBuild() has returned, so its try/catch

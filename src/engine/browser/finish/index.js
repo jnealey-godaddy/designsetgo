@@ -84,6 +84,9 @@ function createDeps(postId) {
 async function reportRegistrationTimeout(postId) {
 	document.documentElement.dataset.dsgoFinish = 'failed';
 
+	// Without a resolved post id there is no `/agent-build/{id}` route to
+	// report against — skip the REST call entirely; the dataset attribute
+	// above plus the notice below are the only signals left in that case.
 	if (postId) {
 		try {
 			await apiFetch({
