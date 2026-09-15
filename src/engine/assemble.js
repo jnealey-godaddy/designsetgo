@@ -8,6 +8,7 @@
 import { checkTreeShape, walkTree } from './tree';
 import { withQuietConsole } from './quiet';
 import { findInvalidBlocks } from './validate';
+import { findUnknownAttributes } from './attributes';
 import { sha256Hex } from './hash';
 import {
 	findDroppedInnerBlocks,
@@ -148,11 +149,21 @@ export function assemble(blocksApi, tree) {
 		}
 	});
 
-	if (unknownBlockProblems.length) {
+	// Unknown blocks and unknown attributes are both "an agent typed
+	// something that isn't real" problems, so they're collected and reported
+	// together, before any block is built — same as unknown blocks alone
+	// used to behave. findUnknownAttributes() itself skips nodes whose block
+	// name isn't registered (nothing above reports those independently).
+	const unknownProblems = [
+		...unknownBlockProblems,
+		...findUnknownAttributes(blocksApi, tree),
+	];
+
+	if (unknownProblems.length) {
 		return {
 			status: 'invalid',
 			markup: '',
-			invalid: unknownBlockProblems,
+			invalid: unknownProblems,
 			treeHash,
 		};
 	}

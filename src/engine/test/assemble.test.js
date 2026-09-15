@@ -73,6 +73,57 @@ afterAll(() => {
 	unregisterBlockType('test/object-attribute');
 });
 
+describe('assemble: unknown attributes', () => {
+	test('a misspelled attribute blocks the build and reports a suggestion', () => {
+		const tree = {
+			version: TREE_VERSION,
+			blocks: [{ name: 'test/static', attributes: { txet: 'Hi' } }],
+		};
+
+		const result = assemble(blocksApi, tree);
+
+		expect(result.status).toBe('invalid');
+		expect(result.markup).toBe('');
+		expect(result.invalid).toEqual([
+			{
+				path: 'blocks[0]',
+				block: 'test/static',
+				reason: 'unknown attribute "txet" for test/static — did you mean "text"?',
+				code: 'designsetgo_unknown_attribute',
+			},
+		]);
+	});
+
+	test('an unknown attribute nested inside a valid parent is reported at its own path', () => {
+		const tree = {
+			version: TREE_VERSION,
+			blocks: [
+				{
+					name: 'test/wrap',
+					innerBlocks: [
+						{
+							name: 'test/static',
+							attributes: { text: 'Hi', bogusAttribute: 1 },
+						},
+					],
+				},
+			],
+		};
+
+		const result = assemble(blocksApi, tree);
+
+		expect(result.status).toBe('invalid');
+		expect(result.markup).toBe('');
+		expect(result.invalid).toEqual([
+			expect.objectContaining({
+				path: 'blocks[0].innerBlocks[0]',
+				block: 'test/static',
+				code: 'designsetgo_unknown_attribute',
+			}),
+		]);
+	});
+});
+
 describe('assemble', () => {
 	test('valid nested tree assembles to markup containing both block comments', () => {
 		const tree = {
