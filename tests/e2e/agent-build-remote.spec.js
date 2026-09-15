@@ -304,6 +304,73 @@ test.describe('Agent build — remote flow end to end', () => {
 			const afterDiscard = await getPostEditContext(page, 'page', postId);
 			expect(afterDiscard.content.raw).toBe(beforeDiscard.content.raw);
 			expect(afterDiscard.modified_gmt).toBe(original.modified_gmt);
+
+			// U1: the review notice (and its Discard) must not survive the end
+			// of the review — a second click on a stale Discard would 409.
+			await expect(reviewNotice).toHaveCount(0);
+			await expect(
+				page.locator('.components-snackbar').filter({
+					hasText: 'Agent changes discarded.',
+				})
+			).toBeVisible();
+		} finally {
+			await deletePost(page, 'page', postId);
+		}
+	});
+
+	test('published: awaiting_review then Save applies the build and clears the review notice', async ({
+		page,
+	}) => {
+		await page.goto('/wp-admin/');
+		const original = await createPost(page, {
+			postType: 'page',
+			status: 'publish',
+			title: 'DSGo E2E published build (saved)',
+			content:
+				'<!-- wp:paragraph --><p>Original published content marker</p><!-- /wp:paragraph -->',
+		});
+		const postId = original.id;
+
+		try {
+			const { body } = await buildPage(page, {
+				post_id: postId,
+				tree: validTree,
+				mode: 'replace',
+			});
+			expect(body.success).toBe(true);
+
+			await page.goto(body.finish_url);
+			await waitForEditorCanvas(page);
+			expect(await waitForFinishState(page)).toBe('done');
+			await waitForBuildStatus(page, postId, ['awaiting_review']);
+
+			const reviewNotice = page.locator('.components-notice').filter({
+				hasText: 'Review agent changes before updating.',
+			});
+			await expect(reviewNotice).toBeVisible();
+
+			// This project's shared `savePost()` helper waits on a saved-state
+			// class this WordPress version's header no longer renders for an
+			// already-published post — the "Save" button and the server-side
+			// build status below are the reliable signals instead.
+			await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+			const report = await waitForBuildStatus(page, postId, ['finished']);
+			expect(report.status).toBe('finished');
+
+			// U1: the review notice is gone, replaced by a "saved" notice —
+			// never left behind with a Discard that would now revert a save
+			// that already happened.
+			await expect(reviewNotice).toHaveCount(0);
+			await expect(
+				page.locator('.components-notice, .components-snackbar').filter({
+					hasText: 'Agent changes saved.',
+				})
+			).toBeVisible();
+
+			const saved = await getPostEditContext(page, 'page', postId);
+			expect(saved.content.raw).toContain('<!-- wp:designsetgo/section');
+			expect(saved.content.raw).toContain(MARKER);
 		} finally {
 			await deletePost(page, 'page', postId);
 		}
@@ -497,6 +564,16 @@ test.describe('Agent build — remote flow end to end', () => {
 			await reviewNotice.getByRole('button', { name: 'Discard' }).click();
 			await waitForBuildStatus(page, postId, ['discarded']);
 			expect(await isAutosaveLocked(page)).toBe(false);
+
+			// U1: no stale review notice / Discard left behind — a second
+			// click on it would 409 against a build the server already
+			// considers discarded.
+			await expect(reviewNotice).toHaveCount(0);
+			await expect(
+				page.locator('.components-snackbar').filter({
+					hasText: 'Agent changes discarded.',
+				})
+			).toBeVisible();
 		});
 	});
 
@@ -585,6 +662,16 @@ test.describe('Agent build — remote flow end to end', () => {
 					}),
 				]);
 
+				// U5: the failed notice must give a reason, not just "could not
+				// be applied." — the javascript: scenario's reason names `url`.
+				if (label.includes('javascript:')) {
+					await expect(
+						page.locator('.components-notice').filter({
+							hasText: 'The agent build could not be applied:',
+						})
+					).toContainText('url');
+				}
+
 				const canvasMarkup = await page.evaluate(() =>
 					window.wp.data.select('core/editor').getEditedPostContent()
 				);
@@ -635,5 +722,24 @@ test.describe('Agent build — remote flow end to end', () => {
 				expect(saved.content.raw).toBe('');
 			}
 		);
+	});
+
+	// U6: the Agent build sidebar (and its pinned header icon) must be
+	// entirely absent in the Site Editor, which also renders PluginArea for
+	// back-compat with plugins like this one.
+	test('the Agent build sidebar does not appear in the Site Editor', async ({
+		page,
+	}) => {
+		await page.goto('/wp-admin/site-editor.php');
+		await page.locator('iframe[name="editor-canvas"]').waitFor({
+			timeout: CANVAS_TIMEOUT,
+		});
+		await getEditorCanvas(page)
+			.locator('body')
+			.waitFor({ timeout: CANVAS_TIMEOUT });
+
+		await expect(
+			page.getByRole('button', { name: 'Agent build' })
+		).toHaveCount(0);
 	});
 });
