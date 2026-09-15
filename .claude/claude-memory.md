@@ -676,3 +676,62 @@ New test: "editing the textarea after a valid Check disables Insert and clears t
 and the finding visible, then edits the textarea without re-checking and asserts Insert is
 disabled again, the stale finding is gone, and clicking the (disabled) Insert button calls
 neither `window.wp.blocks.parse` nor `insertBlocks`.
+
+## Task 16 — Node/browser engine parity (agent: task-16-engine-parity-2026-09-14, branch `claude/agent-block-engine`, commit `45c78a38`)
+
+Proves the Node CLI (`build/engine/node.cjs assemble --json`) and the editor
+(`window.designsetgoEngine.assemble()`) serialize DesignSetGo blocks
+byte-identically. Result: **no parity differences found** across 5 trees
+(`tests/engine/fixtures/valid-tree.json`, `lint-error-tree.json`, plus 3 new
+richer trees in `tests/e2e/fixtures/agent-trees/` derived from
+`src/blocks/{grid,tabs,section,accordion,row,icon-button,card}/agent.json`
+examples: grid > card > icon-button, tabs > tab > core heading/paragraph,
+section > accordion > accordion-item > core/paragraph + row > icon-button).
+
+**Normalizer** (`tests/e2e/helpers/engine-parity.js`, `extractDesignSetGoRegions()`):
+hand-rolled block-comment scanner (not a reuse of
+`@wordpress/block-serialization-default-parser`) — that package only returns
+parsed attrs objects + joined innerHTML, not raw comment bytes, and
+re-serializing a kept block's `{...}` attrs via `JSON.stringify` risks
+key-order/spacing drift that would look like a false parity failure. The
+scanner brace-counts JSON attrs (skipping string literals, handling escapes)
+to find exact tag boundaries, then recursively collapses every
+non-`designsetgo/` subtree (any depth, core or otherwise) to a single
+`<!--core-->` placeholder while preserving `designsetgo/` blocks —
+including further nested `designsetgo/` blocks — byte-for-byte. 11 unit
+tests in `tests/unit/engine/parity-normalize.test.js` cover: core-in-core
+collapse (no double placeholder), DesignSetGo-in-DesignSetGo (kept +
+recursed), DesignSetGo-in-core-in-DesignSetGo (collapses with its core
+parent — the whole point is the scan never re-enters a non-DesignSetGo
+subtree), self-closing (void) blocks both top-level and nested, multiple
+top-level regions with non-DesignSetGo top-level content dropped, deeply
+nested attrs JSON (objects + arrays), a literal `{`/`}` inside a quoted
+attribute string not miscounted, and a malformed/unclosed comment throwing.
+Verified RED→GREEN by temporarily neutering the collapse branch (6 of 11
+tests failed as expected) before restoring.
+
+**Spec** (`tests/e2e/agent-engine-parity.spec.js`): Node side runs once in
+`beforeAll` via `execFileSync`; the editor side polls
+`wp.blocks.getBlockTypes().length` until unchanged across 3 checks 100ms
+apart (max 100 iterations) before asserting `designsetgo/section` and
+`window.designsetgoEngine` are present, then calls `assemble()` per tree.
+9/9 tests passed on `chromium` against this worktree's wp-env
+(`http://localhost:9451`) — 5 parity tests + 3 setup + 1 cleanup, ~60s
+total. `npm run build && npm run build:engine` (with
+`rm -rf node_modules/.cache` first) required before running; the CLI needs
+`build/engine/node.cjs` and the browser side needs `window.designsetgoEngine`
+from the main `build/index.js` bundle (`src/index.js` imports
+`./engine/browser`).
+
+**Note on JSON indentation**: the 3 new tree fixtures under
+`tests/e2e/fixtures/agent-trees/*.json` use tabs, matching the existing
+sibling fixtures they were modeled on (`tests/engine/fixtures/valid-tree.json`,
+`src/blocks/*/agent.json` — both already tabs) rather than CLAUDE.md's
+general "2 spaces for JSON" rule, which those pre-existing engine-tree
+fixtures already don't follow. Flagging in case a future pass wants to
+normalize the whole `agent.json`/tree-fixture family to 2-space instead.
+
+Pre-commit hook's e2e run hit the one known non-blocking pre-existing
+failure noted in the task-16 ground rules: `blocks-pcp-offloading.spec.js`
+"Hero Split pattern inserts with local placeholder images" (0 images
+found) — unrelated to this work.
