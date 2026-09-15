@@ -14,6 +14,10 @@ import { createEngine } from '../index';
 // "Agent build" sidebar — reads/writes window.designsetgoEngine below.
 import './panel';
 
+// Finishes a pending remote-agent build for the currently open post, if
+// any — see ./finish/index.js.
+import './finish';
+
 let engine = null;
 
 /**

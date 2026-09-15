@@ -1,0 +1,157 @@
+/**
+ * Runs `finishBuild()` once per editor load: waits for the block registry
+ * to settle, then reads the pending agent build for the current post over
+ * REST, assembles it against the site's real registered blocks, applies it
+ * (saving drafts, leaving published posts for review), and reports the
+ * outcome back. Runs unconditionally on every post-editor load — `?dsgo-
+ * finish=1` (see `finish_url` in `class-build-page.php`) is only a signal
+ * for headless automation polling `data-dsgo-finish`, not a gate on this
+ * running at all.
+ *
+ * All `@wordpress/data`/store access lives here rather than in
+ * `./finish-build.js` or `./apply.js` — `@wordpress/editor` and
+ * `@wordpress/notices` are stubbed in Jest (see `jest.config.js`), so
+ * keeping store access out of those files is what keeps them
+ * unit-testable with fakes. This file is excluded from coverage
+ * accordingly (see `jest.config.js`'s `collectCoverageFrom`).
+ */
+import apiFetch from '@wordpress/api-fetch';
+import { __ } from '@wordpress/i18n';
+import { select, dispatch, subscribe } from '@wordpress/data';
+import { finishBuild, FINISH_NOTICE_ID } from './finish-build';
+import { waitForBlockRegistration, watchNextSave } from './apply';
+
+/** Post statuses treated as "live" — never saved over automatically. */
+const PUBLISHED_STATUSES = ['publish', 'future', 'private'];
+
+/**
+ * @param {number} postId
+ * @return {string} The agent-build REST route for this post.
+ */
+function routeFor(postId) {
+	return `/designsetgo/v1/agent-build/${postId}`;
+}
+
+/**
+ * Builds the real `finishBuild()` deps, bound to a single post id.
+ *
+ * @param {number} postId
+ * @return {Object} See `finish-build.js`'s JSDoc for the shape.
+ */
+function createDeps(postId) {
+	return {
+		fetchPending: () => apiFetch({ path: routeFor(postId) }),
+		postReport: (body) =>
+			apiFetch({ path: routeFor(postId), method: 'POST', data: body }),
+		engine: window.designsetgoEngine,
+		parse: (markup) => window.wp.blocks.parse(markup),
+		getEditorBlocks: () => select('core/block-editor').getBlocks(),
+		replaceBlocks: (blocks) =>
+			dispatch('core/block-editor').resetBlocks(blocks),
+		savePost: async () => {
+			await dispatch('core/editor').savePost();
+			return select('core/editor').didPostSaveRequestSucceed();
+		},
+		isPublished: () =>
+			PUBLISHED_STATUSES.includes(
+				select('core/editor').getEditedPostAttribute('status')
+			),
+		notify: (status, message, options) =>
+			dispatch('core/notices').createNotice(status, message, options),
+		markDocument: (state) => {
+			document.documentElement.dataset.dsgoFinish = state;
+		},
+		onNextSave: (callback) =>
+			watchNextSave({
+				subscribe,
+				isSavingPost: () => select('core/editor').isSavingPost(),
+				didPostSaveRequestSucceed: () =>
+					select('core/editor').didPostSaveRequestSucceed(),
+				isAutosavingPost: () =>
+					select('core/editor').isAutosavingPost(),
+				onSuccess: callback,
+			}),
+	};
+}
+
+/**
+ * Marks the document `failed` and, when a post id was ever resolved,
+ * reports the registration-wait timeout back over REST.
+ *
+ * @param {number|null} postId
+ * @return {Promise<void>}
+ */
+async function reportRegistrationTimeout(postId) {
+	document.documentElement.dataset.dsgoFinish = 'failed';
+
+	if (postId) {
+		try {
+			await apiFetch({
+				path: routeFor(postId),
+				method: 'POST',
+				data: {
+					status: 'failed',
+					invalid: [
+						{
+							path: '',
+							block: '',
+							reason: 'block registration did not settle',
+						},
+					],
+				},
+			});
+		} catch (error) {
+			// The report itself failed too; `data-dsgo-finish="failed"` above
+			// is the only signal left for automation polling this document.
+		}
+	}
+
+	dispatch('core/notices').createNotice(
+		'error',
+		__('The block editor did not finish loading in time.', 'designsetgo'),
+		{ id: FINISH_NOTICE_ID }
+	);
+}
+
+let hasRun = false;
+
+/**
+ * Entry point: waits for the block registry to settle, then runs
+ * `finishBuild()` exactly once for the current post.
+ *
+ * @return {Promise<void>}
+ */
+export async function runFinishOnce() {
+	if (hasRun) {
+		return;
+	}
+	hasRun = true;
+
+	const { settled, postId } = await waitForBlockRegistration({
+		getBlockTypesLength: () => window.wp.blocks.getBlockTypes().length,
+		getPostId: () => select('core/editor').getCurrentPostId(),
+	});
+
+	if (!settled) {
+		await reportRegistrationTimeout(postId);
+		return;
+	}
+
+	await finishBuild(postId, createDeps(postId));
+}
+
+// Only self-run in a real block-editor context: `window.wp.blocks` and
+// `window.wp.data` are both script dependencies of this bundle in
+// production, so their absence means this module has been imported
+// somewhere that isn't an actual editor page (e.g. a unit test importing
+// `../index.js` for the engine's own bootstrap) — never read `window.wp`
+// synchronously beyond this guard, mirroring `../index.js`'s own lazy
+// `getEngine()` pattern.
+if (
+	typeof window !== 'undefined' &&
+	window.wp &&
+	window.wp.blocks &&
+	window.wp.data
+) {
+	runFinishOnce();
+}
