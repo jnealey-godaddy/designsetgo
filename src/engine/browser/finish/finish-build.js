@@ -25,6 +25,11 @@ import {
 
 export { FINISH_NOTICE_ID, FINISH_REPORT_ERROR_NOTICE_ID };
 
+/** `invalid` entry reported when block registration never settles. */
+const REGISTRATION_TIMEOUT_INVALID = [
+	{ path: '', block: '', reason: 'block registration did not settle' },
+];
+
 /** `invalid` entry reported when saving the applied draft fails. */
 const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
 
@@ -166,4 +171,50 @@ export async function finishBuild(postId, deps) {
 			{ id: FINISH_NOTICE_ID }
 		);
 	}
+}
+
+/**
+ * Handles a block registry that never settled. Only called once the editor
+ * context is known to be finishable (see `./context.js`), so a timeout in
+ * the Site Editor or widgets editor never reaches here. Reports `failed`
+ * only when a build is actually pending — naming that build — and stays
+ * silent otherwise.
+ *
+ * @param {Object}   deps              Same shape as `finishBuild()`'s deps; only these are used:
+ * @param {Function} deps.fetchPending
+ * @param {Function} deps.postReport
+ * @param {Function} deps.notify
+ * @param {Function} deps.markDocument
+ * @return {Promise<void>}
+ */
+export async function finishAfterRegistrationTimeout({
+	fetchPending,
+	postReport,
+	notify,
+	markDocument,
+}) {
+	try {
+		const pending = await fetchPending();
+
+		if (!pending || !pending.pending) {
+			markDocument('done');
+			return;
+		}
+
+		markDocument('failed');
+		await postReport({
+			status: 'failed',
+			buildId: pending.buildId,
+			invalid: REGISTRATION_TIMEOUT_INVALID,
+		});
+	} catch (error) {
+		// The dataset attribute is the only signal left for automation.
+		markDocument('failed');
+	}
+
+	notify(
+		'error',
+		__('The block editor did not finish loading in time.', 'designsetgo'),
+		{ id: FINISH_NOTICE_ID }
+	);
 }

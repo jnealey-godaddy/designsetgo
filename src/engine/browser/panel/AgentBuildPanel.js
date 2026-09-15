@@ -14,15 +14,15 @@ import { TextareaControl, Button, Notice } from '@wordpress/components';
 import { useDispatch } from '@wordpress/data';
 import ReportList from './ReportList';
 
-const EMPTY_REPORT = { invalid: [], findings: [] };
-
 /**
  * @return {JSX.Element} The panel content.
  */
 export default function AgentBuildPanel() {
 	const [treeText, setTreeText] = useState('');
 	const [parseError, setParseError] = useState('');
-	const [report, setReport] = useState(EMPTY_REPORT);
+	// `null` until a Check actually runs, so an untouched panel never claims
+	// "No issues found." about a tree nobody has checked.
+	const [report, setReport] = useState(null);
 	const [markup, setMarkup] = useState('');
 	const [isValid, setIsValid] = useState(false);
 	const { insertBlocks } = useDispatch('core/block-editor');
@@ -37,7 +37,7 @@ export default function AgentBuildPanel() {
 		setParseError('');
 		setMarkup('');
 		setIsValid(false);
-		setReport(EMPTY_REPORT);
+		setReport(null);
 	}
 
 	/**
@@ -126,7 +126,12 @@ export default function AgentBuildPanel() {
 				</Button>
 			</div>
 
-			<ReportList invalid={report.invalid} findings={report.findings} />
+			{report && (
+				<ReportList
+					invalid={report.invalid}
+					findings={report.findings}
+				/>
+			)}
 		</div>
 	);
 }

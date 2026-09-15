@@ -6,6 +6,7 @@
  */
 import {
 	finishBuild,
+	finishAfterRegistrationTimeout,
 	FINISH_NOTICE_ID,
 	FINISH_REPORT_ERROR_NOTICE_ID,
 } from '../finish-build';
@@ -660,6 +661,110 @@ describe('finishBuild()', () => {
 		await expect(finishBuild(1, deps)).resolves.toBeUndefined();
 
 		expect(deps.markDocument).toHaveBeenLastCalledWith('failed');
+	});
+
+	test('6d. after Discard, a later save reports nothing', async () => {
+		const listeners = [];
+		const subscribe = (listener) => {
+			listeners.push(listener);
+			return () => {
+				const index = listeners.indexOf(listener);
+				if (index !== -1) {
+					listeners.splice(index, 1);
+				}
+			};
+		};
+		let isSaving = false;
+		const fire = () => [...listeners].forEach((listener) => listener());
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+			}),
+			isPublished: jest.fn().mockReturnValue(true),
+			onNextSave: (callback) =>
+				watchNextSave({
+					subscribe,
+					isSavingPost: () => isSaving,
+					didPostSaveRequestSucceed: () => true,
+					isAutosavingPost: () => false,
+					onSuccess: callback,
+				}),
+		});
+
+		await finishBuild(1, deps);
+
+		const [, , options] = deps.notify.mock.calls[0];
+		options.actions[0].onClick();
+		await flushMicrotasks();
+		deps.postReport.mockClear();
+
+		isSaving = true;
+		fire();
+		isSaving = false;
+		fire();
+		await flushMicrotasks();
+
+		expect(deps.postReport).not.toHaveBeenCalled();
+	});
+});
+
+describe('finishAfterRegistrationTimeout()', () => {
+	test('with nothing pending, marks done silently', async () => {
+		const deps = createDeps();
+
+		await finishAfterRegistrationTimeout(deps);
+
+		expect(deps.markDocument).toHaveBeenCalledWith('done');
+		expect(deps.postReport).not.toHaveBeenCalled();
+		expect(deps.notify).not.toHaveBeenCalled();
+	});
+
+	test('with a build pending, reports failed for that build and shows an error', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				buildId: BUILD_ID,
+				tree: TREE,
+				mode: 'replace',
+			}),
+		});
+
+		await finishAfterRegistrationTimeout(deps);
+
+		expect(deps.postReport).toHaveBeenCalledWith({
+			status: 'failed',
+			buildId: BUILD_ID,
+			invalid: [
+				{
+					path: '',
+					block: '',
+					reason: 'block registration did not settle',
+				},
+			],
+		});
+		expect(deps.notify).toHaveBeenCalledWith(
+			'error',
+			expect.any(String),
+			expect.objectContaining({ id: FINISH_NOTICE_ID })
+		);
+		expect(deps.markDocument).toHaveBeenCalledWith('failed');
+	});
+
+	test('a REST failure marks failed and never throws', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockRejectedValue(new Error('down')),
+		});
+
+		await expect(
+			finishAfterRegistrationTimeout(deps)
+		).resolves.toBeUndefined();
+
+		expect(deps.markDocument).toHaveBeenCalledWith('failed');
 	});
 });
 

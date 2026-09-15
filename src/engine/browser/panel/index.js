@@ -13,23 +13,28 @@ import { registerPlugin } from '@wordpress/plugins';
 import { __ } from '@wordpress/i18n';
 import { PluginSidebar, PluginSidebarMoreMenuItem } from '@wordpress/editor';
 import AgentBuildPanel from './AgentBuildPanel';
+import { isTopWindow } from '../finish/context';
 import './editor.scss';
 
 const SIDEBAR_NAME = 'designsetgo-agent-build-sidebar';
 
-registerPlugin('designsetgo-agent-build', {
-	render: () => (
-		<>
-			<PluginSidebarMoreMenuItem target={SIDEBAR_NAME}>
-				{__('Agent build', 'designsetgo')}
-			</PluginSidebarMoreMenuItem>
-			<PluginSidebar
-				name={SIDEBAR_NAME}
-				title={__('Agent build', 'designsetgo')}
-			>
-				<AgentBuildPanel />
-			</PluginSidebar>
-		</>
-	),
-	icon: 'insert',
-});
+// Only in a top-level editor window — never again inside the canvas iframe,
+// which loads this bundle too.
+if (isTopWindow(window)) {
+	registerPlugin('designsetgo-agent-build', {
+		render: () => (
+			<>
+				<PluginSidebarMoreMenuItem target={SIDEBAR_NAME}>
+					{__('Agent build', 'designsetgo')}
+				</PluginSidebarMoreMenuItem>
+				<PluginSidebar
+					name={SIDEBAR_NAME}
+					title={__('Agent build', 'designsetgo')}
+				>
+					<AgentBuildPanel />
+				</PluginSidebar>
+			</>
+		),
+		icon: 'insert',
+	});
+}

@@ -3,10 +3,11 @@
  * to settle, then reads the pending agent build for the current post over
  * REST, assembles it against the site's real registered blocks, applies it
  * (saving drafts, leaving published posts for review), and reports the
- * outcome back. Runs unconditionally on every post-editor load — `?dsgo-
- * finish=1` (see `finish_url` in `class-build-page.php`) is only a signal
- * for headless automation polling `data-dsgo-finish`, not a gate on this
- * running at all.
+ * outcome back. Runs on every top-window post-editor load with a real post
+ * (see `./context.js` — never in the Site Editor, widgets editor, or canvas
+ * iframe) — `?dsgo-finish=1` (see `finish_url` in `class-build-page.php`)
+ * is only a signal for headless automation polling `data-dsgo-finish`, not
+ * a gate on this running at all.
  *
  * All `@wordpress/data`/store access lives here rather than in
  * `./finish-build.js` or `./apply.js` — `@wordpress/editor` and
@@ -16,9 +17,9 @@
  * accordingly (see `jest.config.js`'s `collectCoverageFrom`).
  */
 import apiFetch from '@wordpress/api-fetch';
-import { __ } from '@wordpress/i18n';
 import { select, dispatch, subscribe } from '@wordpress/data';
-import { finishBuild, FINISH_NOTICE_ID } from './finish-build';
+import { finishBuild, finishAfterRegistrationTimeout } from './finish-build';
+import { isTopWindow, isFinishableContext } from './context';
 import { waitForBlockRegistration, watchNextSave } from './apply';
 
 /** Post statuses treated as "live" — never saved over automatically. */
@@ -74,48 +75,6 @@ function createDeps(postId) {
 	};
 }
 
-/**
- * Marks the document `failed` and, when a post id was ever resolved,
- * reports the registration-wait timeout back over REST.
- *
- * @param {number|null} postId
- * @return {Promise<void>}
- */
-async function reportRegistrationTimeout(postId) {
-	document.documentElement.dataset.dsgoFinish = 'failed';
-
-	// Without a resolved post id there is no `/agent-build/{id}` route to
-	// report against — skip the REST call entirely; the dataset attribute
-	// above plus the notice below are the only signals left in that case.
-	if (postId) {
-		try {
-			await apiFetch({
-				path: routeFor(postId),
-				method: 'POST',
-				data: {
-					status: 'failed',
-					invalid: [
-						{
-							path: '',
-							block: '',
-							reason: 'block registration did not settle',
-						},
-					],
-				},
-			});
-		} catch (error) {
-			// The report itself failed too; `data-dsgo-finish="failed"` above
-			// is the only signal left for automation polling this document.
-		}
-	}
-
-	dispatch('core/notices').createNotice(
-		'error',
-		__('The block editor did not finish loading in time.', 'designsetgo'),
-		{ id: FINISH_NOTICE_ID }
-	);
-}
-
 let hasRun = false;
 
 /**
@@ -125,22 +84,38 @@ let hasRun = false;
  * @return {Promise<void>}
  */
 export async function runFinishOnce() {
-	if (hasRun) {
+	// The canvas iframe loads this bundle too; only the top window may act.
+	if (hasRun || !isTopWindow(window)) {
 		return;
 	}
 	hasRun = true;
 
 	const { settled, postId } = await waitForBlockRegistration({
 		getBlockTypesLength: () => window.wp.blocks.getBlockTypes().length,
-		getPostId: () => select('core/editor').getCurrentPostId(),
+		// Optional chaining: some editors (e.g. widgets) have no core/editor
+		// store at all.
+		getPostId: () => select('core/editor')?.getCurrentPostId?.(),
 	});
 
-	if (!settled) {
-		await reportRegistrationTimeout(postId);
+	// Site Editor (template id strings, wp_* types), widgets (no post):
+	// nothing to finish, and nothing to tell anyone about.
+	const finishable = isFinishableContext({
+		isTop: true,
+		postId,
+		postType: select('core/editor')?.getCurrentPostType?.(),
+	});
+	if (!finishable) {
 		return;
 	}
 
-	await finishBuild(postId, createDeps(postId));
+	const deps = createDeps(postId);
+
+	if (!settled) {
+		await finishAfterRegistrationTimeout(deps);
+		return;
+	}
+
+	await finishBuild(postId, deps);
 }
 
 // Only self-run in a real block-editor context: `window.wp.blocks` and

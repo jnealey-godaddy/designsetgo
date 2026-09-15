@@ -91,6 +91,38 @@ describe('AgentBuildPanel', () => {
 		});
 	}
 
+	test('says "No issues found." only once a clean Check has run', () => {
+		window.designsetgoEngine.assemble.mockReturnValue({
+			status: 'valid',
+			markup: '<!-- wp:test/static {"text":"Hi"} /-->',
+			invalid: [],
+			treeHash: 'abc',
+		});
+
+		render(<AgentBuildPanel />);
+
+		expect(screen.queryByText(/no issues found/i)).not.toBeInTheDocument();
+
+		typeTree(VALID_TREE_TEXT);
+		expect(screen.queryByText(/no issues found/i)).not.toBeInTheDocument();
+
+		fireEvent.click(screen.getByRole('button', { name: /check/i }));
+		expect(screen.getByText(/no issues found/i)).toBeInTheDocument();
+
+		// Editing again clears the result until the next Check.
+		typeTree('{}');
+		expect(screen.queryByText(/no issues found/i)).not.toBeInTheDocument();
+	});
+
+	test('does not say "No issues found." after invalid JSON', () => {
+		render(<AgentBuildPanel />);
+
+		typeTree('{ not valid json');
+		fireEvent.click(screen.getByRole('button', { name: /check/i }));
+
+		expect(screen.queryByText(/no issues found/i)).not.toBeInTheDocument();
+	});
+
 	test('shows an error notice for invalid JSON and keeps Insert disabled', () => {
 		render(<AgentBuildPanel />);
 

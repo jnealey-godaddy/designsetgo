@@ -68,6 +68,11 @@ export async function applyForReview({
 				'designsetgo'
 			);
 
+	// Set once the next-save watcher is registered below; Discard calls it
+	// so a save after discarding never reports the discarded build.
+	let unsubscribeNextSave = () => {};
+	let discarded = false;
+
 	notify('warning', message, {
 		id: FINISH_NOTICE_ID,
 		// This notice carries the only Discard; dismissing it would strand
@@ -77,6 +82,8 @@ export async function applyForReview({
 			{
 				label: __('Discard', 'designsetgo'),
 				onClick: () => {
+					discarded = true;
+					unsubscribeNextSave();
 					replaceBlocks(currentBlocks);
 					// finishBuild() has already returned by the time this
 					// fires, so its try/catch can't cover it — never let a
@@ -100,7 +107,10 @@ export async function applyForReview({
 		);
 	}
 
-	onNextSave(async () => {
+	const unsubscribe = onNextSave(async () => {
+		if (discarded) {
+			return;
+		}
 		// Fires long after finishBuild() has returned, so its try/catch
 		// can't cover this either — see the Discard handler above.
 		try {
@@ -110,4 +120,8 @@ export async function applyForReview({
 			// still marked awaiting_review server-side either way.
 		}
 	});
+
+	if (typeof unsubscribe === 'function') {
+		unsubscribeNextSave = unsubscribe;
+	}
 }
