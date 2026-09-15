@@ -261,7 +261,8 @@ test.describe('Group Block - Frontend Behavior', () => {
 		// Get frontend URL
 		const previewUrl = await getFrontendUrl(page);
 
-		// Visit on desktop (default viewport is 1280px)
+		// Set desktop dimensions explicitly, including in mobile projects.
+		await page.setViewportSize({ width: 1280, height: 720 });
 		await page.goto(previewUrl);
 		const desktopGroup = page.locator('.wp-block-group.dsgo-hide-mobile');
 		await expect(desktopGroup).toHaveCount(1);

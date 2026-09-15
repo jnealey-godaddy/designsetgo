@@ -222,22 +222,17 @@ class Extension_Attributes {
 	/**
 	 * Get user-configured excluded blocks from plugin settings.
 	 *
-	 * Cached after first call to avoid repeated option lookups.
+	 * Settings caches option lookups and invalidates its cache when updated.
+	 * Read through it so exclusions also reflect changes within the request.
 	 *
 	 * @return array List of excluded block names/patterns.
 	 */
 	private static function get_excluded_blocks() {
-		static $excluded = null;
-
-		if ( null === $excluded ) {
-			if ( class_exists( 'DesignSetGo\Admin\Settings' ) ) {
-				$settings = \DesignSetGo\Admin\Settings::get_settings();
-				$excluded = isset( $settings['excluded_blocks'] ) ? (array) $settings['excluded_blocks'] : array();
-			} else {
-				$excluded = array();
-			}
+		if ( ! class_exists( 'DesignSetGo\Admin\Settings' ) ) {
+			return array();
 		}
 
-		return $excluded;
+		$settings = \DesignSetGo\Admin\Settings::get_settings();
+		return isset( $settings['excluded_blocks'] ) ? (array) $settings['excluded_blocks'] : array();
 	}
 }

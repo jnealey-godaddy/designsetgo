@@ -381,8 +381,8 @@ npm run format
 # Run JavaScript unit tests
 npm run test:unit
 
-# Run PHP unit tests
-npm run test:php
+# Run PHP unit tests in wp-env (start wp-env first)
+npm run wp-env -- run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit
 
 # Run E2E tests
 npm run test:e2e
