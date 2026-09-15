@@ -338,6 +338,34 @@ class Abilities_Build_Page_Test extends WP_UnitTestCase {
 		$this->assertSame( 'new.post_type', $result['problems'][0]['path'] );
 	}
 
+	/**
+	 * "new.post_type" must reject core's internal wp_-prefixed site-structure
+	 * types (navigation, templates, template parts, global styles) even for
+	 * an administrator. wp_navigation is show_in_rest AND supports 'editor'
+	 * - so the post_type_supports('editor') check alone would let it
+	 * through - the wp_ prefix rejection is what actually stops it, which
+	 * is why it's asserted directly here rather than only through the
+	 * generic "unregistered post type" test above.
+	 */
+	public function test_new_post_type_wp_navigation_is_rejected_even_for_administrator(): void {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$before = $this->total_post_count();
+
+		$result = ( new Build_Page() )->execute(
+			array(
+				'new'  => array( 'post_type' => 'wp_navigation' ),
+				'tree' => $this->valid_tree(),
+			)
+		);
+
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'designsetgo_invalid_input', $result['problems'][0]['code'] );
+		$this->assertSame( 'new.post_type', $result['problems'][0]['path'] );
+		$this->assertSame( $before, $this->total_post_count() );
+	}
+
 	// -------------------------------------------------------------------
 	// build-page: success paths
 	// -------------------------------------------------------------------
@@ -514,5 +542,121 @@ class Abilities_Build_Page_Test extends WP_UnitTestCase {
 		$final_status = ( new Get_Build_Status() )->execute( array( 'post_id' => $this->post_id ) );
 		$this->assertFalse( $final_status['pending'] );
 		$this->assertSame( 'finished', $final_status['report']->status );
+	}
+
+	// -------------------------------------------------------------------
+	// End-to-end: through the real WP_Ability wrapper, not a direct
+	// execute() call. WP_Ability::execute() runs core schema validation
+	// (rest_validate_value_from_schema() against input_schema) BEFORE our
+	// execute_callback ever runs - a stage the tests above never exercise.
+	// A schema that rejects a malformed value pre-execute answers as a
+	// bridge-flattened WP_Error, not the { success: false, problems }
+	// data shape the rest of this suite pins - so these specifically must
+	// go through wp_get_ability(...)->execute(), the same call path the
+	// MCP bridge uses.
+	// -------------------------------------------------------------------
+
+	/**
+	 * Resolve designsetgo/build-page through the real Abilities API,
+	 * skipping if the API isn't available in this environment.
+	 *
+	 * @return WP_Ability
+	 */
+	private function build_page_ability() {
+		if ( ! function_exists( 'wp_get_ability' ) ) {
+			$this->markTestSkipped( 'Abilities API not available.' );
+		}
+
+		$ability = wp_get_ability( 'designsetgo/build-page' );
+		$this->assertNotNull( $ability, 'designsetgo/build-page must be registered.' );
+
+		return $ability;
+	}
+
+	/**
+	 * A missing "tree" key must clear WP_Ability::execute()'s schema
+	 * validation - Build_Page_Schema declares no top-level "required" -
+	 * and come back as data from Build_Page::execute() itself.
+	 */
+	public function test_wp_ability_execute_missing_tree_is_data_not_wp_error(): void {
+		$result = $this->build_page_ability()->execute( array( 'post_id' => $this->post_id ) );
+
+		$this->assertIsArray( $result, 'Expected a data diagnostic, got: ' . wp_json_encode( $result ) );
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'designsetgo_invalid_tree', $result['problems'][0]['code'] );
+	}
+
+	/**
+	 * Tree: null must also clear schema validation - this is exactly why
+	 * Build_Page_Schema declares "tree" with a multi-type schema instead
+	 * of a bare "object".
+	 */
+	public function test_wp_ability_execute_null_tree_is_data_not_wp_error(): void {
+		$result = $this->build_page_ability()->execute(
+			array(
+				'post_id' => $this->post_id,
+				'tree'    => null,
+			)
+		);
+
+		$this->assertIsArray( $result, 'Expected a data diagnostic, got: ' . wp_json_encode( $result ) );
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'designsetgo_invalid_tree', $result['problems'][0]['code'] );
+	}
+
+	/**
+	 * Tree: "a string" must also clear schema validation.
+	 */
+	public function test_wp_ability_execute_string_tree_is_data_not_wp_error(): void {
+		$result = $this->build_page_ability()->execute(
+			array(
+				'post_id' => $this->post_id,
+				'tree'    => 'not a tree',
+			)
+		);
+
+		$this->assertIsArray( $result, 'Expected a data diagnostic, got: ' . wp_json_encode( $result ) );
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'designsetgo_invalid_tree', $result['problems'][0]['code'] );
+	}
+
+	/**
+	 * Post_id and new together must also come back as data through the
+	 * real wrapper - both properties are individually well-typed, so this
+	 * was never at risk from schema validation, but it's pinned here
+	 * alongside the tree cases so the whole "bad input never becomes a
+	 * WP_Error" guarantee is verified against the real invocation path in
+	 * one place.
+	 */
+	public function test_wp_ability_execute_post_id_and_new_together_is_data_not_wp_error(): void {
+		$result = $this->build_page_ability()->execute(
+			array(
+				'post_id' => $this->post_id,
+				'new'     => array( 'title' => 'Should not be created' ),
+				'tree'    => $this->valid_tree(),
+			)
+		);
+
+		$this->assertIsArray( $result, 'Expected a data diagnostic, got: ' . wp_json_encode( $result ) );
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'designsetgo_invalid_input', $result['problems'][0]['code'] );
+	}
+
+	/**
+	 * The success path also still works end-to-end through the real
+	 * wrapper - permission_callback, input_schema, execute_callback,
+	 * output_schema all run for real here.
+	 */
+	public function test_wp_ability_execute_valid_input_succeeds(): void {
+		$result = $this->build_page_ability()->execute(
+			array(
+				'post_id' => $this->post_id,
+				'tree'    => $this->valid_tree(),
+			)
+		);
+
+		$this->assertIsArray( $result, 'Expected success data, got: ' . wp_json_encode( $result ) );
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'pending', $result['status'] );
 	}
 }

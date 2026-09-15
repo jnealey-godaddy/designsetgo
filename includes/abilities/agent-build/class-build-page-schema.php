@@ -57,7 +57,18 @@ class Build_Page_Schema {
 					),
 				),
 				'tree'    => array(
-					'type'        => 'object',
+					// Deliberately a multi-type schema, not just "object": WP core's
+					// own WP_Ability::execute() -> validate_input() runs schema
+					// validation BEFORE Build_Page::execute() ever sees the input, so
+					// a single declared type of "object" would reject a malformed
+					// tree (null, a string, ...) at the schema layer as a
+					// bridge-flattened WP_Error - defeating the whole point of
+					// reporting bad trees as { success: false, problems: [...] }
+					// data. Every builtin JSON Schema type is listed so ANY shape of
+					// "tree" clears schema validation and reaches
+					// Tree_Validator::validate() in execute(), which is the one
+					// place that actually judges it and always answers with data.
+					'type'        => array( 'object', 'array', 'string', 'boolean', 'integer', 'number', 'null' ),
 					'description' => __( 'REQUIRED. Block tree: { version: 1, blocks: [...] }. Each entry is { name, attributes?, innerBlocks? } — the same shape as a WordPress block object. 1 MB max when JSON-encoded.', 'designsetgo' ),
 					'properties'  => array(
 						'version' => array(

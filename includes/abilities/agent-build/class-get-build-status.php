@@ -125,21 +125,21 @@ class Get_Build_Status extends Abstract_Ability {
 	 */
 	public function execute( array $input ) {
 		if ( empty( $input['post_id'] ) ) {
-			return $this->problem_response( 'designsetgo_missing_post_id', 'post_id', __( 'post_id is required.', 'designsetgo' ) );
+			return Agent_Build_Ability_Helpers::problem_response( 'designsetgo_missing_post_id', 'post_id', __( 'post_id is required.', 'designsetgo' ) );
 		}
 
 		$post_id = (int) $input['post_id'];
 		$post    = get_post( $post_id );
 
 		if ( ! $post ) {
-			return $this->problem_response( 'designsetgo_invalid_post', 'post_id', __( 'Post not found.', 'designsetgo' ) );
+			return Agent_Build_Ability_Helpers::problem_response( 'designsetgo_invalid_post', 'post_id', __( 'Post not found.', 'designsetgo' ) );
 		}
 
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return $this->permission_error();
 		}
 
-		$store = $this->get_store();
+		$store = Agent_Build_Ability_Helpers::get_store();
 
 		return $this->success(
 			array(
@@ -148,49 +148,5 @@ class Get_Build_Status extends Abstract_Ability {
 				'report'  => (object) $store->report( $post_id ),
 			)
 		);
-	}
-
-	/**
-	 * Build a `{ success: false, problems: [ { code, path, message } ] }`
-	 * diagnostic, matching the shape designsetgo/build-page reports input
-	 * problems in.
-	 *
-	 * @param string $code    Problem code.
-	 * @param string $path    Path to the offending input, e.g. "post_id".
-	 * @param string $message Human-readable message.
-	 * @return array{success: false, problems: array<int, array{code: string, path: string, message: string}>}
-	 */
-	private function problem_response( string $code, string $path, string $message ): array {
-		return array(
-			'success'  => false,
-			'problems' => array(
-				array(
-					'code'    => $code,
-					'path'    => $path,
-					'message' => $message,
-				),
-			),
-		);
-	}
-
-	/**
-	 * Get the shared Build_Store instance the plugin bootstrap created,
-	 * rather than constructing a second one - Build_Store's constructor
-	 * registers post-meta hooks, so a second instance would double-register
-	 * them.
-	 *
-	 * @return Build_Store
-	 */
-	private function get_store(): Build_Store {
-		$plugin = \DesignSetGo\Plugin::instance();
-
-		if ( $plugin->agent_build_store instanceof Build_Store ) {
-			return $plugin->agent_build_store;
-		}
-
-		// Defensive fallback: Plugin::instance() always constructs this in
-		// load_dependencies()/init(), but guard in case bootstrap order ever
-		// changes so this ability never fatals.
-		return new Build_Store();
 	}
 }
