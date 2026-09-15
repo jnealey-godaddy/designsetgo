@@ -862,3 +862,70 @@ placeholder images" (0 images found) — unrelated, non-blocking.
 
 wp-env left running per the brief (Task 21 is the e2e; no manual browser
 check performed here).
+
+---
+
+## Task 21 (session task-21-remote-flow): Remote flow end to end
+
+Abilities REST route confirmed by reading WP 6.9 core directly in the
+container (`wp-includes/rest-api/endpoints/class-wp-rest-abilities-v1-run-
+controller.php`), not from the repo's own docs — `docs/api/ABILITIES-
+API.md` and `docs/api/ABILITIES-API-GUIDE.md` disagree with each other on
+the path shape. The real shape is `POST|GET|DELETE /?rest_route=/wp-
+abilities/v1/abilities/{name}/run` (`rest_base = 'abilities'`), method
+fixed by the ability's own `annotations` (`readonly` → GET,
+`destructive && idempotent` → DELETE, else POST) — `build-page` is POST,
+`get-build-status` is GET with `input[post_id]=...`. Verified live with
+curl (an admin application password) before writing any Playwright code.
+This dev site (9451, this worktree) has pretty permalinks off, confirmed
+via `wp option get permalink_structure` — every REST call in
+`tests/e2e/helpers/agent-build.js` uses `?rest_route=`, never `/wp-json/`.
+
+**Product bug found, NOT patched (task said route it to the controller
+instead)**: an agent tree node with `"attributes": {}` (empty object)
+round-trips through `Build_Store::store()`'s `wp_json_encode()` as a JSON
+*array* `[]`, not an object — PHP can't distinguish an empty assoc array
+from an empty list array, and `json_encode(array())` always emits `[]`.
+The browser's `checkTreeShape()` (`src/engine/tree.js`) correctly rejects
+that as "`attributes` must be a plain object when present" →
+`designsetgo_invalid_block_definition`. Reproduced 3 ways: curl POST to
+`build-page` with `{"attributes": {}}` succeeds (PHP has no format check
+on this), then opening `finish_url` and polling `get-build-status`
+returns `status: "failed"` with that exact reason. This will bite the
+*first* agent that submits any block using only defaults — a very common
+tree shape. Worked around only in this task's own fixture (`tests/e2e/
+fixtures/agent-build-trees/valid.json` gives `designsetgo/section` an
+explicit `{"align": "full"}` — `"full"` is already its block.json default,
+so this changes nothing about output, it only makes the PHP array non-
+empty). Did not touch `Build_Store`/`Tree_Shape`/`checkTreeShape` — see
+`task-21-report.md` for the suggested fix direction (recursively cast
+object-typed tree fields to `(object)` before `wp_json_encode()`; a
+blanket `JSON_FORCE_OBJECT` is wrong, it'd also wreck the `blocks`/
+`innerBlocks` arrays).
+
+**`failed` branch is real coverage, not the brief's suggested skip**: the
+brief guessed at "a block registered only in PHP" as the way to force a
+PHP-valid/browser-invalid tree — that doesn't exist, since
+`Tree_Validator::check_unknown_blocks()` reads the exact same
+`WP_Block_Type_Registry` the browser's `wp.blocks.getBlockType()` does.
+The real gap is `designsetgo/icon-button`'s `text` attribute
+(`source:'html'`, plain `type:'string'`, no format constraint in
+block.json) — unbalanced HTML in it (`<strong>Unbalanced <em>tags`) passes
+every PHP check, but the browser's `wp.blocks.parse()` re-extracts the
+attribute through a real DOM parser that auto-closes the dangling tags, so
+the re-`save()`d markup no longer matches what was stored and
+`isValid: false`. Confirmed with the built Node CLI
+(`node build/engine/node.cjs assemble <file> --json` → `status: "invalid"`)
+*and* a live curl to `build-page` (PHP accepts it) before trusting it as a
+real e2e scenario.
+
+Files: `tests/e2e/agent-build-remote.spec.js`,
+`tests/e2e/helpers/agent-build.js`,
+`tests/e2e/fixtures/agent-build-trees/{valid,lint-warning,failed-invalid-
+markup}.json`. 5/5 scenarios green on chromium, run twice back-to-back to
+confirm re-runnability (each test creates + REST-deletes its own post(s)).
+`npx wp-scripts lint-js tests/e2e` clean (spec files are excluded by the
+repo's own `.eslintignore`, same as every other e2e spec; the new helper
+file lints clean after one `--fix` pass). Cleaned up the throwaway admin
+application password and debug posts created while investigating the REST
+route shape before committing.
