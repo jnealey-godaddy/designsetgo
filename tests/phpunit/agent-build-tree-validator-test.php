@@ -393,12 +393,13 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Unknown attribute names are allowed.
+	 * An attribute name unknown to both PHP's own schema and the committed
+	 * JS-registered-attribute manifest is rejected. Before Task E2 this was
+	 * silently accepted (see the unknown-attribute-brief); a made-up name
+	 * like this one, never registered by any real block or extension, is
+	 * exactly the case that brief exists to catch.
 	 */
-	public function test_unknown_attribute_names_are_allowed() {
-		// Extensions add attributes only JS knows about (dsgoVisibility,
-		// dsgoStyleBinding, ...). An attribute the block type does not
-		// declare must be silently accepted, not rejected.
+	public function test_unknown_attribute_names_not_known_to_js_are_rejected() {
 		$problems = Tree_Validator::validate(
 			array(
 				'version' => 1,
@@ -410,7 +411,72 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 				),
 			)
 		);
+		$this->assertSame( array( 'designsetgo_unknown_attribute' ), $this->codes( $problems ) );
+		$this->assertStringContainsString( 'someExtensionOnlyAttribute', $problems[0]['message'] );
+	}
+
+	/**
+	 * A real DesignSetGo extension attribute - known to JS via the
+	 * committed manifest, never declared in core/paragraph's own PHP
+	 * schema - is still accepted unchecked.
+	 */
+	public function test_js_only_extension_attribute_is_allowed() {
+		$problems = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => array( 'dsgoAnimationEnabled' => true ),
+					),
+				),
+			)
+		);
 		$this->assertSame( array(), $problems );
+	}
+
+	/**
+	 * `anchor` is a block-support attribute WordPress's PHP registry never
+	 * adds to `WP_Block_Type->attributes` (only client-side block-support JS
+	 * does) - the manifest is what keeps this from being misreported as
+	 * unknown.
+	 */
+	public function test_manifest_covered_support_attribute_is_allowed() {
+		$problems = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => array( 'anchor' => 'my-anchor' ),
+					),
+				),
+			)
+		);
+		$this->assertSame( array(), $problems );
+	}
+
+	/**
+	 * A misspelled attribute name close to a real one is rejected with a
+	 * "did you mean" suggestion in the message.
+	 */
+	public function test_misspelled_attribute_is_rejected_with_a_suggestion() {
+		$problems = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'       => 'designsetgo/section',
+						'attributes' => array( 'backgroundColour' => '#fff' ),
+					),
+				),
+			)
+		);
+		$this->assertSame( array( 'designsetgo_unknown_attribute' ), $this->codes( $problems ) );
+		$this->assertSame(
+			'unknown attribute "backgroundColour" for designsetgo/section — did you mean "backgroundColor"?',
+			$problems[0]['message']
+		);
 	}
 
 	/**

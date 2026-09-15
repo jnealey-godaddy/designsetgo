@@ -19,6 +19,7 @@
 
 const { parseArgs } = require('./args');
 const { buildFixtureCases } = require('./fixture-cases');
+const { buildAttributeManifest } = require('./attribute-manifest');
 const {
 	readJsonFile,
 	readTextFile,
@@ -32,7 +33,16 @@ const {
 	runLint,
 } = require('./lint-command');
 
-const COMMANDS = ['assemble', 'validate', 'lint', 'fixture-cases'];
+const COMMANDS = [
+	'assemble',
+	'validate',
+	'lint',
+	'fixture-cases',
+	'attribute-manifest',
+];
+
+/** Commands that generate from the registry and take no file argument. */
+const NO_FILE_COMMANDS = ['fixture-cases', 'attribute-manifest'];
 
 /** Matches a non-negative integer `--max-warnings` value. */
 const MAX_WARNINGS_RE = /^\d+$/;
@@ -121,6 +131,20 @@ function runFixtureCases(blocksApi, flags, { stdout, writeFile }) {
 }
 
 /**
+ * @param {Object}                                    blocksApi The `@wordpress/blocks` module `bootEngine()` registered into.
+ * @param {Object}                                    flags     Parsed CLI flags.
+ * @param {{ stdout: Function, writeFile: Function }} io        Injected sinks.
+ * @return {number} Exit code: always 0 — generation cannot itself be "invalid".
+ */
+function runAttributeManifest(blocksApi, flags, { stdout, writeFile }) {
+	const manifest = buildAttributeManifest(blocksApi);
+	const output = JSON.stringify(manifest, null, 2);
+
+	emit(stdout, writeFile, output, flags.out);
+	return 0;
+}
+
+/**
  * Runs one CLI invocation against injected dependencies.
  *
  * @param {string[]}                                                                argv            `process.argv.slice(2)`.
@@ -138,7 +162,7 @@ function run(argv, { bootEngine, readFile, writeFile, stdout, stderr }) {
 
 	if (!COMMANDS.includes(args.command)) {
 		stderr(
-			`Unknown command "${args.command || ''}". Usage: engine <assemble|validate|lint|fixture-cases> <file> [options]\n`
+			`Unknown command "${args.command || ''}". Usage: engine <assemble|validate|lint|fixture-cases|attribute-manifest> <file> [options]\n`
 		);
 		return 2;
 	}
@@ -154,9 +178,10 @@ function run(argv, { bootEngine, readFile, writeFile, stdout, stderr }) {
 		maxWarnings = Number(args.flags.maxWarnings);
 	}
 
-	// fixture-cases takes no file argument — it generates from the registry,
-	// not from anything on disk — so only assemble/validate/lint require one.
-	if (args.command !== 'fixture-cases' && !args.file.length) {
+	// fixture-cases and attribute-manifest take no file argument — they
+	// generate from the registry, not from anything on disk — so only
+	// assemble/validate/lint require one.
+	if (!NO_FILE_COMMANDS.includes(args.command) && !args.file.length) {
 		const usages = {
 			validate: 'engine validate <file...> [--json] [--out <file>]',
 			lint: 'engine lint <tree.json> [--context <file>] [--json] [--max-warnings <n>] [--out <file>]',
@@ -168,7 +193,7 @@ function run(argv, { bootEngine, readFile, writeFile, stdout, stderr }) {
 	}
 
 	let input;
-	if (args.command !== 'fixture-cases') {
+	if (!NO_FILE_COMMANDS.includes(args.command)) {
 		try {
 			input =
 				args.command === 'assemble' || args.command === 'lint'
@@ -238,6 +263,12 @@ function run(argv, { bootEngine, readFile, writeFile, stdout, stderr }) {
 	}
 	if (args.command === 'fixture-cases') {
 		return runFixtureCases(boot.blocksApi, args.flags, {
+			stdout,
+			writeFile,
+		});
+	}
+	if (args.command === 'attribute-manifest') {
+		return runAttributeManifest(boot.blocksApi, args.flags, {
 			stdout,
 			writeFile,
 		});

@@ -30,9 +30,21 @@ class Tree_Attributes {
 	const JSON_SCHEMA_TYPES = array( 'array', 'object', 'string', 'number', 'integer', 'boolean', 'null' );
 
 	/**
-	 * Validate provided attributes against the block type's own schema.
-	 * Attributes the block type does not declare are allowed unchecked -
-	 * extensions add attributes only JS knows about.
+	 * Validate provided attributes against the block type's own schema, and
+	 * reject a name unknown to both PHP and JS.
+	 *
+	 * An attribute name PHP's own `WP_Block_Type->attributes` doesn't
+	 * declare is checked against the committed JS-registered-attribute
+	 * manifest (Attribute_Manifest) before being accepted: known to JS
+	 * (a block-support attribute like `anchor`, added only by client-side
+	 * block-support JS, or a DesignSetGo extension attribute) is still
+	 * allowed unchecked - only a name unknown to BOTH is
+	 * `designsetgo_unknown_attribute`, with a "did you mean" suggestion
+	 * (Attribute_Suggest) when a known name is a plausible typo away. This
+	 * is the PHP mirror of findUnknownAttributes() in
+	 * src/engine/attributes.js - the browser engine's check is
+	 * authoritative; this one exists to fail fast, before a headless browser
+	 * round trip.
 	 *
 	 * @param array  $blocks      Well-shaped, fully-registered block list.
 	 * @param string $parent_path Parent path, or '' for the root.
@@ -47,10 +59,22 @@ class Tree_Attributes {
 			$block_type = $registry->get_registered( $node['name'] );
 			$attributes = $node['attributes'] ?? array();
 
-			if ( $block_type && ! empty( $block_type->attributes ) ) {
+			if ( $block_type ) {
+				$known_php_names = array_keys( $block_type->attributes ?? array() );
+				$known_js_names  = Attribute_Manifest::names_for( $node['name'] );
+
 				foreach ( $attributes as $attribute_name => $value ) {
 					$schema = $block_type->attributes[ $attribute_name ] ?? null;
+
 					if ( ! is_array( $schema ) ) {
+						if ( ! in_array( $attribute_name, $known_js_names, true ) ) {
+							$problems[] = self::unknown_attribute_problem(
+								$path,
+								$node['name'],
+								(string) $attribute_name,
+								array_values( array_unique( array_merge( $known_php_names, $known_js_names ) ) )
+							);
+						}
 						continue;
 					}
 
@@ -81,6 +105,37 @@ class Tree_Attributes {
 		}
 
 		return $problems;
+	}
+
+	/**
+	 * Build a `designsetgo_unknown_attribute` problem, matching the reason
+	 * text `findUnknownAttributes()` in src/engine/attributes.js produces.
+	 *
+	 * @param string             $path           Node path.
+	 * @param string             $block_name     Owning block's registered name.
+	 * @param string             $attribute_name Unknown attribute name.
+	 * @param array<int, string> $known_names    Every attribute name to suggest from (PHP + manifest, combined).
+	 * @return array{code: string, path: string, message: string} Problem entry.
+	 */
+	private static function unknown_attribute_problem( string $path, string $block_name, string $attribute_name, array $known_names ): array {
+		$suggestion = Attribute_Suggest::closest( $attribute_name, $known_names );
+
+		$message = $suggestion
+			? sprintf(
+				/* translators: 1: attribute name, 2: block name, 3: suggested attribute name */
+				__( 'unknown attribute "%1$s" for %2$s — did you mean "%3$s"?', 'designsetgo' ),
+				$attribute_name,
+				$block_name,
+				$suggestion
+			)
+			: sprintf(
+				/* translators: 1: attribute name, 2: block name */
+				__( 'unknown attribute "%1$s" for %2$s', 'designsetgo' ),
+				$attribute_name,
+				$block_name
+			);
+
+		return Tree_Shape::problem( 'designsetgo_unknown_attribute', $path, $message );
 	}
 
 	/**

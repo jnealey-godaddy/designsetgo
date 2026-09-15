@@ -166,6 +166,67 @@ describe('run() happy path', () => {
 		expect(code).toBe(0);
 		expect(writeFile).toHaveBeenCalledWith('cases.json', '{}');
 	});
+
+	it('attribute-manifest: exits 0 and prints buildAttributeManifest() output, without a file argument', () => {
+		const sinks = makeSinks();
+		const blocksApi = {
+			getBlockTypes: jest.fn(() => [
+				{ name: 'designsetgo/section' },
+				{ name: 'core/other' },
+			]),
+			getBlockType: jest.fn((name) =>
+				name === 'designsetgo/section'
+					? { attributes: { anchor: {}, dsgoAnimationEnabled: {} } }
+					: { attributes: {} }
+			),
+		};
+		const bootEngine = jest.fn(() => ({
+			engine: { assemble: jest.fn(), validate: jest.fn() },
+			failures: [],
+			blocksApi,
+		}));
+		const readFile = jest.fn();
+		const writeFile = jest.fn();
+
+		const code = run(['attribute-manifest'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(0);
+		expect(readFile).not.toHaveBeenCalled();
+		expect(sinks.stderrText()).toBe('');
+		expect(JSON.parse(sinks.stdoutText())).toEqual({
+			'core/other': [],
+			'designsetgo/section': ['anchor', 'dsgoAnimationEnabled'],
+		});
+	});
+
+	it('attribute-manifest --out: writes the same content that went to stdout', () => {
+		const sinks = makeSinks();
+		const blocksApi = { getBlockTypes: jest.fn(() => []) };
+		const bootEngine = jest.fn(() => ({
+			engine: { assemble: jest.fn(), validate: jest.fn() },
+			failures: [],
+			blocksApi,
+		}));
+		const readFile = jest.fn();
+		const writeFile = jest.fn();
+
+		const code = run(['attribute-manifest', '--out', 'manifest.json'], {
+			bootEngine,
+			readFile,
+			writeFile,
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(0);
+		expect(writeFile).toHaveBeenCalledWith('manifest.json', '{}');
+	});
 });
 
 describe('run() lint', () => {

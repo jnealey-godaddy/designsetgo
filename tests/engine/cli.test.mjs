@@ -239,6 +239,47 @@ test('fixture-cases --out: writes the same content that went to stdout', () => {
 	assert.equal(stdout, `${written}\n`);
 });
 
+test('attribute-manifest: exits 0, needs no file argument, and prints designsetgo/* and core/* names sorted', () => {
+	const { status, stdout, stderr } = runCli(['attribute-manifest']);
+
+	assert.equal(status, 0);
+	assert.equal(stderr, '');
+	const manifest = JSON.parse(stdout);
+	const blockNames = Object.keys(manifest);
+	assert.ok(blockNames.length > 100);
+	blockNames.forEach((name) => assert.match(name, /^(designsetgo|core)\//));
+	assert.deepEqual(blockNames, [...blockNames].sort());
+	assert.ok(manifest['designsetgo/section'].includes('anchor'));
+});
+
+test('attribute-manifest --out: writes the same content that went to stdout', () => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dsgo-engine-'));
+	const outFile = path.join(dir, 'manifest.json');
+
+	const { status, stdout } = runCli(['attribute-manifest', '--out', outFile]);
+
+	assert.equal(status, 0);
+	const written = fs.readFileSync(outFile, 'utf8');
+	assert.equal(stdout, `${written}\n`);
+});
+
+test('attribute-manifest matches the committed includes/abilities/agent-build/data/attribute-manifest.json', () => {
+	const { status, stdout } = runCli(['attribute-manifest']);
+	assert.equal(status, 0);
+
+	const committedPath = path.join(
+		REPO_ROOT,
+		'includes/abilities/agent-build/data/attribute-manifest.json'
+	);
+	const committed = fs.readFileSync(committedPath, 'utf8');
+
+	assert.equal(
+		`${stdout}`,
+		`${committed}\n`,
+		'Run `npm run build:engine && npm run engine -- attribute-manifest --out includes/abilities/agent-build/data/attribute-manifest.json` to refresh it.'
+	);
+});
+
 test('lint: a tree tripping a real rule (core/html) exits 1 and reports the finding', () => {
 	const { status, stdout, stderr } = runCli(['lint', LINT_ERROR_TREE]);
 
