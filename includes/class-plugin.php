@@ -739,13 +739,14 @@ class Plugin {
 		// Load Abilities Registry.
 		require_once DESIGNSETGO_PATH . 'includes/abilities/class-abilities-registry.php';
 
-		// Load the agent-build pending-tree store and REST route directly.
-		// Both must work on WP 6.7+ regardless of whether the Abilities API
-		// is present, so they cannot rely solely on Abilities_Registry's
-		// directory scan (which only instantiates Abstract_Ability
-		// subclasses - the scan also require_once's these two files, but
-		// that is harmless since neither class extends it).
+		// Load the agent-build pending-tree store, report schema, and REST
+		// route directly. All three must work on WP 6.7+ regardless of
+		// whether the Abilities API is present, so they cannot rely solely
+		// on Abilities_Registry's directory scan (which only instantiates
+		// Abstract_Ability subclasses - the scan also require_once's these
+		// files, but that is harmless since none of these classes extend it).
 		require_once DESIGNSETGO_PATH . 'includes/abilities/agent-build/class-build-store.php';
+		require_once DESIGNSETGO_PATH . 'includes/abilities/agent-build/class-report-schema.php';
 		require_once DESIGNSETGO_PATH . 'includes/abilities/agent-build/class-build-rest.php';
 	}
 

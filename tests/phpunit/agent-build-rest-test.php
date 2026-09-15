@@ -115,24 +115,30 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * GET is forbidden for an editor who is not the post's author and lacks
-	 * edit_others_posts (contributor-on-others'-post shape, modeled here
-	 * with an editor for simplicity since both roles gate on edit_post).
+	 * GET is forbidden for a contributor who does not own the post and
+	 * lacks edit_others_posts.
 	 */
 	public function test_get_forbidden_for_unrelated_contributor(): void {
 		$contributor_id = self::factory()->user->create( array( 'role' => 'contributor' ) );
-		$others_post_id = self::factory()->post->create(
-			array(
-				'post_status' => 'publish',
-				'post_author' => $this->editor_id,
-			)
-		);
 
 		wp_set_current_user( $contributor_id );
 
-		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $others_post_id ) );
+		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $this->post_id ) );
 
 		$this->assertSame( 403, $response->get_status() );
+	}
+
+	/**
+	 * By contrast, an editor who does not own the post is still allowed -
+	 * editors have edit_others_posts by default, so this is a positive
+	 * case, not a forbidden one.
+	 */
+	public function test_get_allowed_for_unrelated_editor(): void {
+		wp_set_current_user( $this->other_editor_id );
+
+		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $this->post_id ) );
+
+		$this->assertSame( 200, $response->get_status() );
 	}
 
 	/**
@@ -253,8 +259,9 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 			'invalid',
 			array(
 				array(
-					'path'    => 'blocks[0]',
-					'message' => 'could not place block',
+					'path'   => 'blocks[0]',
+					'block'  => 'core/unknown-block',
+					'reason' => 'could not place block',
 				),
 			)
 		);
@@ -266,11 +273,14 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 
 		$report = $this->store->report( $this->post_id );
 		$this->assertSame( 'failed', $report['status'] );
-		$this->assertSame( 'could not place block', $report['invalid'][0]['message'] );
+		$this->assertSame( 'could not place block', $report['invalid'][0]['reason'] );
 	}
 
 	/**
-	 * A report body over 1 MB is rejected with a 413-style rest_invalid_param error.
+	 * A schema-valid report with a huge findings[].message is still
+	 * rejected with 413 - the route-level body-size check runs before
+	 * sanitize_params() (and therefore before Report_Schema's sanitizer
+	 * ever iterates the oversized entry).
 	 */
 	public function test_post_rejects_oversized_body(): void {
 		wp_set_current_user( $this->editor_id );
@@ -282,7 +292,12 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 				array(
 					'status'   => 'failed',
 					'findings' => array(
-						array( 'message' => str_repeat( 'x', 2 * 1024 * 1024 ) ),
+						array(
+							'rule'     => 'no-custom-html',
+							'severity' => 'error',
+							'path'     => 'blocks[0]',
+							'message'  => str_repeat( 'x', 2 * 1024 * 1024 ),
+						),
 					),
 				)
 			)
@@ -292,6 +307,152 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 413, $response->get_status() );
 		$this->assertSame( 'rest_invalid_param', $response->as_error()->get_error_code() );
+	}
+
+	/**
+	 * An `invalid` entry missing a required field (`block`/`reason`) is
+	 * rejected with 400 before it ever reaches the store.
+	 */
+	public function test_post_rejects_invalid_entry_missing_required_field(): void {
+		wp_set_current_user( $this->editor_id );
+
+		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request->set_param( 'status', 'failed' );
+		$request->set_param(
+			'invalid',
+			array(
+				array(
+					'path' => 'blocks[0]',
+					// 'block' and 'reason' are required and deliberately omitted.
+				),
+			)
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertSame( 'rest_invalid_param', $response->as_error()->get_error_code() );
+	}
+
+	/**
+	 * A `findings` entry with a severity outside the error|warning enum is
+	 * rejected with 400.
+	 */
+	public function test_post_rejects_finding_with_unknown_severity(): void {
+		wp_set_current_user( $this->editor_id );
+
+		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request->set_param( 'status', 'failed' );
+		$request->set_param(
+			'findings',
+			array(
+				array(
+					'rule'     => 'no-custom-html',
+					'severity' => 'fatal',
+					'path'     => 'blocks[0]',
+					'message'  => 'bad',
+				),
+			)
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 400, $response->get_status() );
+	}
+
+	/**
+	 * An entry carrying an unrecognized key is rejected outright (400),
+	 * not silently stripped - `additionalProperties: false` on the item
+	 * schema is enforced by rest_validate_value_from_schema() during
+	 * has_valid_params(), before sanitize_params() (and Report_Schema's
+	 * sanitizer, which is what would otherwise drop unknown keys) ever
+	 * runs. WordPress's behavior here is reject-the-request, not
+	 * strip-and-continue.
+	 */
+	public function test_post_rejects_invalid_entry_with_unknown_key(): void {
+		wp_set_current_user( $this->editor_id );
+
+		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request->set_param( 'status', 'failed' );
+		$request->set_param(
+			'invalid',
+			array(
+				array(
+					'path'       => 'blocks[0]',
+					'block'      => 'core/unknown-block',
+					'reason'     => 'could not place block',
+					'unexpected' => 'nope',
+				),
+			)
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertSame( 'rest_invalid_param', $response->as_error()->get_error_code() );
+	}
+
+	/**
+	 * A fully valid report - both invalid and findings entries, including
+	 * their optional fields - round-trips through sanitization intact.
+	 */
+	public function test_post_valid_full_report_round_trips(): void {
+		$this->store->store( $this->post_id, $this->tree(), 'replace' );
+
+		wp_set_current_user( $this->editor_id );
+		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request->set_param( 'status', 'finished_with_findings' );
+		$request->set_param(
+			'invalid',
+			array(
+				array(
+					'path'   => 'blocks[0]',
+					'block'  => 'core/unknown-block',
+					'reason' => 'could not place block',
+					'code'   => 'designsetgo_unknown_block',
+				),
+			)
+		);
+		$request->set_param(
+			'findings',
+			array(
+				array(
+					'rule'       => 'no-custom-html',
+					'severity'   => 'warning',
+					'path'       => 'blocks[1]',
+					'message'    => 'core/html renders arbitrary markup.',
+					'suggestion' => 'Use designsetgo/icon instead.',
+				),
+			)
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+
+		$report = $this->store->report( $this->post_id );
+		$this->assertSame(
+			array(
+				'path'   => 'blocks[0]',
+				'block'  => 'core/unknown-block',
+				'reason' => 'could not place block',
+				'code'   => 'designsetgo_unknown_block',
+			),
+			$report['invalid'][0]
+		);
+		$this->assertSame(
+			array(
+				'rule'       => 'no-custom-html',
+				'severity'   => 'warning',
+				'path'       => 'blocks[1]',
+				'message'    => 'core/html renders arbitrary markup.',
+				'suggestion' => 'Use designsetgo/icon instead.',
+			),
+			$report['findings'][0]
+		);
+
+		// finished_with_findings is terminal - clears the pending tree.
+		$this->assertNull( $this->store->pending( $this->post_id ) );
 	}
 
 	/**

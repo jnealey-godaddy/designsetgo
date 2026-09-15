@@ -84,6 +84,11 @@ class Build_REST {
 					'methods'             => 'POST',
 					'callback'            => array( $this, 'post_item' ),
 					'permission_callback' => array( $this, 'check_permission' ),
+					// Route-level validate_callback: runs inside has_valid_params(),
+					// before sanitize_params() ever calls a per-arg sanitize_callback
+					// (Report_Schema's included), so an oversized body is rejected
+					// before any sanitization work runs against it.
+					'validate_callback'   => array( $this, 'check_report_body_size' ),
 					'args'                => $this->report_args(),
 				),
 			)
@@ -91,7 +96,8 @@ class Build_REST {
 	}
 
 	/**
-	 * REST arg schema for the POST body.
+	 * REST arg schema for the POST body. `invalid`/`findings` item shapes
+	 * are pinned by Report_Schema to match the engine/CLI contract exactly.
 	 *
 	 * @return array<string, mixed>
 	 */
@@ -113,54 +119,47 @@ class Build_REST {
 				'required'          => false,
 				'type'              => 'array',
 				'default'           => array(),
-				'sanitize_callback' => array( $this, 'sanitize_report_list' ),
-				'description'       => __( 'Blocks the browser could not place or serialize.', 'designsetgo' ),
+				'items'             => Report_Schema::invalid_item_schema(),
+				// Explicit validate_callback: WP only auto-validates schema
+				// (enum/items/required/additionalProperties) via the default
+				// rest_parse_request_arg() sanitize_callback, but declaring
+				// our own sanitize_callback below replaces that default, so
+				// schema validation has to be requested back explicitly.
+				'validate_callback' => 'rest_validate_request_arg',
+				'sanitize_callback' => array( Report_Schema::class, 'sanitize_invalid_list' ),
+				'description'       => __( 'Blocks the browser could not place or serialize: {path, block, reason, code?}.', 'designsetgo' ),
 			),
 			'findings' => array(
 				'required'          => false,
 				'type'              => 'array',
 				'default'           => array(),
-				'sanitize_callback' => array( $this, 'sanitize_report_list' ),
-				'description'       => __( 'Non-fatal issues surfaced while assembling the build.', 'designsetgo' ),
+				'items'             => Report_Schema::findings_item_schema(),
+				'validate_callback' => 'rest_validate_request_arg',
+				'sanitize_callback' => array( Report_Schema::class, 'sanitize_findings_list' ),
+				'description'       => __( 'Non-fatal issues surfaced while assembling the build: {rule, severity, path, message, suggestion?}.', 'designsetgo' ),
 			),
 		);
 	}
 
 	/**
-	 * Sanitize `invalid`/`findings`: an array of objects with string
-	 * fields, cleaned recursively.
+	 * Route-level validate_callback for POST: rejects an oversized report
+	 * body. A per-arg validate_callback would have its status code
+	 * discarded (WP_REST_Request::has_valid_params() always wraps per-arg
+	 * failures into a generic 400), so this is registered at the route
+	 * level instead, where the returned WP_Error - including its 413 - is
+	 * returned to the client unmodified.
 	 *
-	 * @param mixed $value Raw value from the request.
-	 * @return array<int, mixed> Sanitized list.
+	 * @param WP_REST_Request $request Request object.
+	 * @return true|WP_Error
 	 */
-	public function sanitize_report_list( $value ): array {
-		if ( ! is_array( $value ) ) {
-			return array();
+	public function check_report_body_size( WP_REST_Request $request ) {
+		$body = $request->get_body();
+
+		if ( is_string( $body ) && strlen( $body ) > self::MAX_REPORT_BYTES ) {
+			return new WP_Error( 'rest_invalid_param', __( 'The report body is too large.', 'designsetgo' ), array( 'status' => 413 ) );
 		}
 
-		return array_values( array_map( array( $this, 'sanitize_report_value' ), $value ) );
-	}
-
-	/**
-	 * Recursively sanitize one scalar/array value from a report entry.
-	 *
-	 * @param mixed $value Value to sanitize.
-	 * @return mixed Sanitized value.
-	 */
-	private function sanitize_report_value( $value ) {
-		if ( is_string( $value ) ) {
-			return sanitize_text_field( $value );
-		}
-
-		if ( is_array( $value ) ) {
-			return array_map( array( $this, 'sanitize_report_value' ), $value );
-		}
-
-		if ( is_int( $value ) || is_float( $value ) || is_bool( $value ) || null === $value ) {
-			return $value;
-		}
-
-		return null; // Objects/resources have no place in a JSON report.
+		return true;
 	}
 
 	/**
@@ -227,12 +226,6 @@ class Build_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function post_item( WP_REST_Request $request ) {
-		$body = $request->get_body();
-
-		if ( is_string( $body ) && strlen( $body ) > self::MAX_REPORT_BYTES ) {
-			return new WP_Error( 'rest_invalid_param', __( 'The report body is too large.', 'designsetgo' ), array( 'status' => 413 ) );
-		}
-
 		$post_id  = (int) $request['id'];
 		$status   = (string) $request->get_param( 'status' );
 		$invalid  = (array) $request->get_param( 'invalid' );
