@@ -929,3 +929,48 @@ repo's own `.eslintignore`, same as every other e2e spec; the new helper
 file lints clean after one `--fix` pass). Cleaned up the throwaway admin
 application password and debug posts created while investigating the REST
 route shape before committing.
+
+**Follow-up (same session): controller authorized fixing the {} → []
+bug.** Fixed at the REST boundary only, per the ruling — new
+`Tree_Shape::to_response_shape()` (`includes/abilities/agent-build/
+class-tree-shape.php`) reshapes a stored tree's `attributes` to `stdClass`
+(empty node attributes, or an individual attribute value the block's own
+registered schema says is object-only-typed, e.g. `designsetgo/section`'s
+`style`) right before `Build_REST::get_item()` responds — nothing in
+`_dsgo_pending_tree` post meta or `Build_Store` itself changes. 7 new
+PHPUnit tests (`tests/phpunit/agent-build-tree-shape-response-test.php` +
+one in `agent-build-rest-test.php` that asserts on actual JSON bytes,
+`assertStringContainsString('"attributes":{}', ...)`, since decoded-array
+comparison can't tell `{}` from `[]` — that's the whole bug). 82/82
+`--group agent-build` PHPUnit green, phpcs clean after one phpcbf pass
+(docblock param-spacing only). Removed the `align:"full"` fixture
+workaround from `tests/e2e/fixtures/agent-build-trees/valid.json` — draft
+scenario now genuinely sends `"attributes": {}`. Verified with a live curl
+round-trip (POST build-page, GET `/designsetgo/v1/agent-build/{id}`) before
+touching the fixture, then again with the full Playwright spec (5/5 green,
+run twice).
+
+**Second product bug found (NOT fixed — out of scope, needs real
+debugging)**: tried the ruling's own suggested extra case — a
+`designsetgo/section` node with `"style": {}` (object-typed attribute
+explicitly left empty, both nested under an outer empty-attributes
+section and in isolation as a single top-level block, to rule out
+nesting) — and both trip a genuinely different bug, unrelated to the
+`{}`/`[]` fix (confirmed: plain `attributes: {}` alone works fine
+end-to-end). `assemble()` reports `failed` with a WP block-validator
+"Expected attributes / instead saw" mismatch: the block's `save()` output
+has `padding-top/bottom: var(--wp--preset--spacing--70)` on one pass, and
+NO style attribute at all on another pass, for the exact same `style: {}`
+attribute value read straight from the block comment both times (no
+`source` key on `style` in section's block.json, so it's comment-JSON
+only — should be 100% deterministic). Looks like a live
+theme-settings-resolution timing race inside `designsetgo/section`'s own
+padding-fallback logic (something reads a spacing-preset scale from
+`core/block-editor` settings that may not have finished resolving on the
+very first render right after registration settles), landing on a
+different preset by index between calls milliseconds apart. Did not
+investigate `src/blocks/section/` further — out of scope for this task's
+authorized fix (Build_REST/Tree_Shape only). Repro tree and full analysis
+are in `task-21-report.md`'s "Fix report" section for whoever picks this
+up; deliberately did NOT add an e2e fixture for it, since a test that
+fails for an unrelated reason would be confusing, not useful, coverage.
