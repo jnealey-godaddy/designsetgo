@@ -1,0 +1,74 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/section",
+			"attributes": {
+				"tagName": "section"
+			},
+			"innerBlocks": [
+				{
+					"name": "core/heading",
+					"attributes": {
+						"level": 2,
+						"content": "Frequently asked questions"
+					}
+				},
+				{
+					"name": "designsetgo/accordion",
+					"attributes": {
+						"allowMultipleOpen": false,
+						"iconStyle": "chevron",
+						"iconPosition": "right"
+					},
+					"innerBlocks": [
+						{
+							"name": "designsetgo/accordion-item",
+							"attributes": {
+								"title": "What is DesignSetGo?",
+								"isOpen": true
+							},
+							"innerBlocks": [
+								{
+									"name": "core/paragraph",
+									"attributes": {
+										"content": "DesignSetGo is a block library for the WordPress block editor, covering layout, content, and interactive blocks."
+									}
+								}
+							]
+						},
+						{
+							"name": "designsetgo/accordion-item",
+							"attributes": {
+								"title": "Does it work with any block theme?",
+								"isOpen": false
+							},
+							"innerBlocks": [
+								{
+									"name": "core/paragraph",
+									"attributes": {
+										"content": "Yes — every block reads colors, spacing, and typography from the active theme's theme.json."
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "designsetgo/row",
+					"innerBlocks": [
+						{
+							"name": "designsetgo/icon-button",
+							"attributes": {
+								"text": "Get Started",
+								"icon": "rocket",
+								"iconPosition": "end",
+								"url": "#get-started"
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}
