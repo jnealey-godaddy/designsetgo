@@ -11,7 +11,8 @@
  *
  * Pure aside from the injected callbacks, like `./finish-build.js`.
  */
-import { __ } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
+import { viewDetailsAction } from './apply';
 
 /** Stable notice id: a reload never stacks duplicate finish notices. */
 export const FINISH_NOTICE_ID = 'designsetgo-agent-build-finish';
@@ -71,6 +72,9 @@ function refuseAutomaticSaves(edits, options) {
  * @param {Function} options.addFilter      `@wordpress/hooks` `addFilter`.
  * @param {Function} options.removeFilter   `@wordpress/hooks` `removeFilter`.
  * @param {Function} options.notify         `core/notices` `createNotice` shape.
+ * @param {Function} options.removeNotice   `core/notices` `removeNotice` shape — `(id: string) => void`.
+ * @param {Function} options.openSidebar    `() => void` — opens the Agent build sidebar for "View details".
+ * @param {Function} options.setReport      `(report: Object|null) => void` — stores the report the panel reads.
  * @param {Function} options.onNextSave     `(callback) => unsubscribe` — one-shot callback for the next successful, non-autosave save.
  * @param {Array}    options.currentBlocks  Blocks in the editor before the build was applied (restored by Discard).
  * @param {Array}    options.nextBlocks     Blocks to apply.
@@ -87,6 +91,9 @@ export async function applyForReview({
 	addFilter,
 	removeFilter,
 	notify,
+	removeNotice,
+	openSidebar,
+	setReport,
 	onNextSave,
 	currentBlocks,
 	nextBlocks,
@@ -124,16 +131,39 @@ export async function applyForReview({
 			reportedAwaitingReview = false;
 		}
 
-		const message = isSubmitter
+		const baseMessage = isSubmitter
 			? __('Review agent changes before updating.', 'designsetgo')
 			: __(
 					'An agent submitted these changes on behalf of another user. Review them before saving.',
 					'designsetgo'
 				);
+		const message = findings.length
+			? sprintf(
+					/* translators: 1: the review notice's base message; 2: how many lint issues the build has, e.g. "It has 3 lint issues." */
+					__('%1$s %2$s', 'designsetgo'),
+					baseMessage,
+					sprintf(
+						/* translators: %d: number of lint issues the build has. */
+						_n(
+							'It has %d lint issue.',
+							'It has %d lint issues.',
+							findings.length,
+							'designsetgo'
+						),
+						findings.length
+					)
+				)
+			: baseMessage;
+
+		setReport({ status: 'awaiting_review', invalid: [], findings });
 
 		// Set once the next-save watcher is registered below; Discard calls it
 		// so a save after discarding never reports the discarded build.
 		let unsubscribeNextSave = () => {};
+		// Guards against a second Discard click (e.g. a stale reference to the
+		// notice's button firing again before the UI re-renders it away):
+		// without it, a repeat click restores blocks that are already back and
+		// POSTs a second `discarded` report the server rejects with 409 — U1.
 		let discarded = false;
 
 		notify('warning', message, {
@@ -145,10 +175,20 @@ export async function applyForReview({
 				{
 					label: __('Discard', 'designsetgo'),
 					onClick: () => {
+						if (discarded) {
+							return;
+						}
 						discarded = true;
 						unsubscribeNextSave();
 						replaceBlocks(currentBlocks);
 						release();
+						removeNotice(FINISH_NOTICE_ID);
+						notify(
+							'success',
+							__('Agent changes discarded.', 'designsetgo'),
+							{ type: 'snackbar' }
+						);
+						setReport(null);
 						// finishBuild() has already returned by the time this
 						// fires, so its try/catch can't cover it — never let a
 						// network hiccup here surface as an unhandled rejection.
@@ -157,6 +197,7 @@ export async function applyForReview({
 						);
 					},
 				},
+				viewDetailsAction(openSidebar),
 			],
 		});
 
@@ -177,6 +218,14 @@ export async function applyForReview({
 			}
 			// A person saved the build on purpose; automatic saves may resume.
 			release();
+			removeNotice(FINISH_NOTICE_ID);
+			notify('success', savedMessage(findings), {
+				id: FINISH_NOTICE_ID,
+				...(findings.length
+					? { actions: [viewDetailsAction(openSidebar)] }
+					: {}),
+			});
+			setReport({ status, invalid: [], findings });
 			// Fires long after finishBuild() has returned, so its try/catch
 			// can't cover this either — see the Discard handler above.
 			try {
@@ -198,6 +247,30 @@ export async function applyForReview({
 				replaceBlocks(currentBlocks);
 			}
 			release();
+			// The review notice may already be showing (Discard/onNextSave
+			// never got registered to offer a way back to it) — see U1's
+			// "review failure/restore path".
+			removeNotice(FINISH_NOTICE_ID);
 		}
 	}
+}
+
+/**
+ * @param {Array} findings Lint findings, already mapped to the REST shape.
+ * @return {string} "Agent changes saved." or "...saved with N issues.".
+ */
+function savedMessage(findings) {
+	if (!findings.length) {
+		return __('Agent changes saved.', 'designsetgo');
+	}
+	return sprintf(
+		/* translators: %d: number of lint issues the saved build has. */
+		_n(
+			'Agent changes saved with %d issue.',
+			'Agent changes saved with %d issues.',
+			findings.length,
+			'designsetgo'
+		),
+		findings.length
+	);
 }

@@ -16,6 +16,7 @@ import {
 	AUTOSAVE_LOCK_NAME,
 	PRE_SAVE_HOOK,
 	REVIEW_FILTER_NAMESPACE,
+	FINISH_NOTICE_ID,
 } from '../review';
 
 const TREE = { version: 1, blocks: [{ name: 'core/paragraph' }] };
@@ -73,6 +74,9 @@ function createDeps(overrides = {}) {
 		savePost: jest.fn().mockResolvedValue(true),
 		isPublished: jest.fn().mockReturnValue(false),
 		notify: jest.fn(),
+		removeNotice: jest.fn(),
+		openSidebar: jest.fn(),
+		setReport: jest.fn(),
 		markDocument: jest.fn(),
 		onNextSave: jest.fn(),
 		lockAutosave: jest.fn((name) => calls.push(`lock:${name}`)),
@@ -287,5 +291,72 @@ describe('automatic saves are held off during agent build review', () => {
 		expect(deps.savePost).toHaveBeenCalled();
 		expect(deps.lockAutosave).not.toHaveBeenCalled();
 		expect(deps.addFilter).not.toHaveBeenCalled();
+	});
+
+	// U1: the review notice must not survive the end of the review.
+	describe('the review notice is removed once the review ends (U1)', () => {
+		test('Discard removes the review notice and shows a "discarded" success notice', async () => {
+			const deps = createDeps();
+
+			await finishBuild(1, deps);
+			discardAction(deps)();
+
+			expect(deps.removeNotice).toHaveBeenCalledWith(FINISH_NOTICE_ID);
+			expect(deps.notify).toHaveBeenCalledWith(
+				'success',
+				expect.stringContaining('discarded'),
+				expect.anything()
+			);
+		});
+
+		test('Discard is idempotent: a second invocation restores nothing and reports nothing again', async () => {
+			const deps = createDeps();
+
+			await finishBuild(1, deps);
+			const onClick = discardAction(deps);
+			onClick();
+			await flushMicrotasks();
+			deps.replaceBlocks.mockClear();
+			deps.postReport.mockClear();
+			deps.removeNotice.mockClear();
+
+			onClick();
+			await flushMicrotasks();
+
+			expect(deps.replaceBlocks).not.toHaveBeenCalled();
+			expect(deps.postReport).not.toHaveBeenCalled();
+			expect(deps.removeNotice).not.toHaveBeenCalled();
+		});
+
+		test('a successful manual save removes the review notice and shows a "saved" success notice', async () => {
+			const editor = createFakeEditorStore();
+			const deps = createDeps({ onNextSave: editor.watch });
+
+			await finishBuild(1, deps);
+			editor.save();
+			await flushMicrotasks();
+
+			expect(deps.removeNotice).toHaveBeenCalledWith(FINISH_NOTICE_ID);
+			expect(deps.notify).toHaveBeenCalledWith(
+				'success',
+				expect.stringContaining('saved'),
+				expect.objectContaining({ id: FINISH_NOTICE_ID })
+			);
+		});
+
+		test('the review failure/restore path (armed never set) also removes the review notice', async () => {
+			const deps = createDeps({
+				// onNextSave throws synchronously, after the review notice has
+				// already been shown — armed never gets set to true, so the
+				// finally block's restore path runs.
+				onNextSave: jest.fn(() => {
+					throw new Error('onNextSave failed');
+				}),
+			});
+
+			await expect(finishBuild(1, deps)).resolves.toBeUndefined();
+
+			expect(deps.removeNotice).toHaveBeenCalledWith(FINISH_NOTICE_ID);
+		});
 	});
 });
