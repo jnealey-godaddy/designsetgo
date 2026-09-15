@@ -305,6 +305,36 @@ done
 msgfmt -c -v -o /dev/null languages/designsetgo-es_ES.po
 ```
 
+## Installed language packs and bundled fallbacks
+
+WordPress language packs in `wp-content/languages/plugins/` take precedence over
+the catalogs shipped inside DesignSetGo. An older pack can be missing strings
+that are already translated in the current plugin ZIP.
+
+DesignSetGo loads the selected PHP pack first and appends its bundled catalog for
+the same locale. Existing pack translations keep priority; missing entries use
+the bundle, then the English source if neither catalog supplies a translation.
+The same policy applies to loaded JavaScript JSON catalogs, including entries
+that contain only empty translations. This does not modify language-pack files
+or change the site's or user's locale. Explicit block placeholder text, including
+English text or an empty string, remains authored content and is preserved.
+
+To validate a release, leave an older language pack installed, set the site
+language to French (`fr_FR`), and run on that WordPress installation:
+
+```bash
+wp eval 'echo __("-- Select an option --", "designsetgo"), PHP_EOL;'
+```
+
+Expect `-- Sélectionnez une option --`. Verify the existing contact page on the
+frontend, then check the editor with a French user locale. Keep a custom
+translation in the installed pack to verify that its value retains priority.
+The automated `translation-fallback` PHPUnit group covers incomplete `.mo`,
+`.l10n.php`, and editor JSON packs, locale switching, and existing pack values.
+
+Continue submitting reviewed translations to WordPress.org so downloadable packs
+also gain the updated strings. Bundling alone does not update those packs.
+
 ## Resources
 
 ### Documentation
