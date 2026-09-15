@@ -134,6 +134,18 @@ class Build_Page extends Abstract_Ability {
 			if ( ! current_user_can( 'edit_post', $post_id ) ) {
 				return $this->permission_error();
 			}
+
+			if ( ! $this->is_buildable_post_type( get_post_type_object( $post->post_type ) ) ) {
+				return Agent_Build_Ability_Helpers::problem_response(
+					'designsetgo_invalid_post',
+					'post_id',
+					sprintf(
+						/* translators: %s: post type slug */
+						__( 'Posts of type "%s" cannot be built into. The post must be a REST-visible post type with an editor (not a site-structure type like a template, template part, navigation, or global styles).', 'designsetgo' ),
+						$post->post_type
+					)
+				);
+			}
 		} else {
 			$new            = $input['new'];
 			$post_type_slug = ! empty( $new['post_type'] ) ? sanitize_key( (string) $new['post_type'] ) : 'page';
@@ -160,19 +172,26 @@ class Build_Page extends Abstract_Ability {
 		// Only now write anything: create the draft (if "new") and store the
 		// pending build.
 		if ( ! $has_post_id ) {
+			// wp_insert_post() unslashes its input; slash it first.
 			$title       = ! empty( $new['title'] ) ? sanitize_text_field( (string) $new['title'] ) : '';
 			$new_post_id = wp_insert_post(
-				array(
-					'post_type'    => $post_type_slug,
-					'post_status'  => 'draft',
-					'post_title'   => $title,
-					'post_content' => '',
+				wp_slash(
+					array(
+						'post_type'    => $post_type_slug,
+						'post_status'  => 'draft',
+						'post_title'   => $title,
+						'post_content' => '',
+					)
 				),
 				true
 			);
 
-			if ( is_wp_error( $new_post_id ) ) {
-				return $new_post_id;
+			if ( is_wp_error( $new_post_id ) || ! $new_post_id ) {
+				return Agent_Build_Ability_Helpers::problem_response(
+					'designsetgo_post_create_failed',
+					'new',
+					is_wp_error( $new_post_id ) ? $new_post_id->get_error_message() : __( 'The new post could not be created.', 'designsetgo' )
+				);
 			}
 
 			$post_id = (int) $new_post_id;

@@ -480,6 +480,73 @@ class Abilities_Build_Page_Test extends WP_UnitTestCase {
 		$this->assertSame( 'page', get_post( $result['post_id'] )->post_type );
 	}
 
+	/**
+	 * An existing post_id must be a buildable post type too - the same rule
+	 * "new.post_type" already enforces - even for an administrator.
+	 */
+	public function test_existing_post_of_a_site_structure_type_is_rejected(): void {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$navigation_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'wp_navigation',
+				'post_status' => 'publish',
+			)
+		);
+
+		$result = ( new Build_Page() )->execute(
+			array(
+				'post_id' => $navigation_id,
+				'tree'    => $this->valid_tree(),
+			)
+		);
+
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'designsetgo_invalid_post', $result['problems'][0]['code'] );
+		$this->assertSame( 'post_id', $result['problems'][0]['path'] );
+		$this->assertNull( $this->store()->pending( $navigation_id ) );
+	}
+
+	/**
+	 * The new post's title survives wp_insert_post()'s unslashing intact.
+	 */
+	public function test_new_post_title_keeps_backslashes(): void {
+		$result = ( new Build_Page() )->execute(
+			array(
+				'new'  => array( 'title' => 'Before \\ after' ),
+				'tree' => $this->valid_tree(),
+			)
+		);
+
+		$this->assertTrue( $result['success'] );
+		$this->assertSame( 'Before \\ after', get_post( $result['post_id'] )->post_title );
+	}
+
+	/**
+	 * A failed insert is a data problem, not a bridge-flattened WP_Error,
+	 * and stores nothing.
+	 */
+	public function test_new_post_insert_failure_is_a_data_problem(): void {
+		add_filter( 'wp_insert_post_empty_content', '__return_true' );
+		$before = $this->total_post_count();
+
+		$result = ( new Build_Page() )->execute(
+			array(
+				'new'  => array( 'title' => 'Never created' ),
+				'tree' => $this->valid_tree(),
+			)
+		);
+
+		remove_filter( 'wp_insert_post_empty_content', '__return_true' );
+
+		$this->assertIsArray( $result );
+		$this->assertFalse( $result['success'] );
+		$this->assertSame( 'designsetgo_post_create_failed', $result['problems'][0]['code'] );
+		$this->assertSame( 'new', $result['problems'][0]['path'] );
+		$this->assertSame( $before, $this->total_post_count() );
+	}
+
 	// -------------------------------------------------------------------
 	// build-page: submitter and KSES filtering
 	// -------------------------------------------------------------------
