@@ -93,6 +93,60 @@ class Agent_Build_Store_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Text an agent realistically submits: non-ASCII, double quotes, a real
+	 * link, a newline, and a backslash. Every one of those is escaped by
+	 * wp_json_encode(), and update_post_meta() unslashes its value, so an
+	 * unslashed write corrupts or drops the stored JSON.
+	 *
+	 * @return string
+	 */
+	private function tricky_text(): string {
+		return "Café \"quoted\" <a href=\"https://x\">link</a>\nsecond line \\ backslash";
+	}
+
+	/**
+	 * A pending tree with escaped characters round-trips byte-for-byte.
+	 */
+	public function test_store_round_trips_tree_with_quotes_unicode_newline_and_backslash(): void {
+		$tree = array(
+			'version' => 1,
+			'blocks'  => array(
+				array(
+					'name'       => 'core/paragraph',
+					'attributes' => array( 'content' => $this->tricky_text() ),
+				),
+			),
+		);
+
+		$this->store->store( $this->post_id, $tree, 'replace' );
+
+		$pending = $this->store->pending( $this->post_id );
+		$this->assertIsArray( $pending, 'The pending tree must still decode after a meta round trip.' );
+		$this->assertSame( $this->tricky_text(), $pending['tree']['blocks'][0]['attributes']['content'] );
+	}
+
+	/**
+	 * A report with escaped characters round-trips byte-for-byte.
+	 */
+	public function test_write_report_round_trips_quotes_unicode_newline_and_backslash(): void {
+		$report = array(
+			'status'   => 'finished_with_findings',
+			'findings' => array(
+				array(
+					'rule'     => 'no-custom-html',
+					'severity' => 'warning',
+					'path'     => 'blocks[0]',
+					'message'  => $this->tricky_text(),
+				),
+			),
+		);
+
+		$this->store->write_report( $this->post_id, $report );
+
+		$this->assertSame( $report, $this->store->report( $this->post_id ) );
+	}
+
+	/**
 	 * Storing a build never changes post_modified_gmt - only
 	 * update_post_meta(), never wp_update_post() - so an immediate GET does
 	 * not report a false conflict.

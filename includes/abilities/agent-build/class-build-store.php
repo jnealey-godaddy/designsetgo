@@ -92,14 +92,19 @@ class Build_Store {
 	public function store( int $post_id, array $tree, string $mode ): void {
 		$base = get_post_field( 'post_modified_gmt', $post_id );
 
+		// update_post_meta() unslashes its value, which would strip the
+		// backslashes wp_json_encode() escapes quotes, newlines, and
+		// non-ASCII with - leaving invalid or silently corrupted JSON.
 		update_post_meta(
 			$post_id,
 			self::META_PENDING_TREE,
-			wp_json_encode(
-				array(
-					'tree' => $tree,
-					'mode' => $mode,
-					'base' => is_string( $base ) ? $base : '',
+			wp_slash(
+				wp_json_encode(
+					array(
+						'tree' => $tree,
+						'mode' => $mode,
+						'base' => is_string( $base ) ? $base : '',
+					)
 				)
 			)
 		);
@@ -161,7 +166,8 @@ class Build_Store {
 	 * @return void
 	 */
 	public function write_report( int $post_id, array $report ): void {
-		update_post_meta( $post_id, self::META_BUILD_REPORT, wp_json_encode( $report ) );
+		// Slashed for the same reason as store(): update_post_meta() unslashes.
+		update_post_meta( $post_id, self::META_BUILD_REPORT, wp_slash( wp_json_encode( $report ) ) );
 	}
 
 	/**
