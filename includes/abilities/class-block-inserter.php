@@ -1004,33 +1004,6 @@ class Block_Inserter {
 	}
 
 	/**
-	 * Find child-placement problems across a full agent-submitted block tree.
-	 *
-	 * Used by Tree_Validator (Task 17) to screen a whole tree before the
-	 * browser engine assembles it via real save() calls. Deliberately does
-	 * NOT run find_serialization_gaps(): that check exists because THIS
-	 * class's own hand-written generate_designsetgo_wrapper_html() cannot
-	 * mirror every block's save() output, but the agent-build engine never
-	 * calls that method - it serializes with the real save() in a browser, so
-	 * a gap here is not a gap there.
-	 *
-	 * Also does not run find_invalid_attribute_values(): its enum check is
-	 * fully subsumed by Tree_Validator's own rest_validate_value_from_schema()
-	 * pass (enum membership is part of the JSON Schema WordPress validates
-	 * attributes against), and its other rules - a fixed list of attribute
-	 * values THIS class's wrapper generator cannot reproduce, e.g.
-	 * designsetgo/text-path's custom pathType - describe the same kind of
-	 * serializer coverage gap as find_serialization_gaps() and are equally
-	 * irrelevant once a real browser is doing the serializing.
-	 *
-	 * @param array<int, mixed> $tree Top-level block definitions (name/attributes/innerBlocks).
-	 * @return array<int, array{path: string, block: string, reason: string}> Offending entries.
-	 */
-	public static function find_tree_placement_problems( array $tree ): array {
-		return self::find_invalid_child_placements( $tree );
-	}
-
-	/**
 	 * Screen a requested insertion for children placed in blocks that cannot
 	 * hold them.
 	 *

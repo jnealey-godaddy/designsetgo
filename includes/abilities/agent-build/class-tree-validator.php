@@ -9,8 +9,10 @@
  * src/engine/tree.js's checkTreeShape().
  *
  * Orchestrates stage order and precedence only; shape checks live in
- * Tree_Shape and attribute-schema checks in Tree_Attributes (split out to
- * keep each file under the plan's line-count cap).
+ * Tree_Shape, attribute-schema checks in Tree_Attributes, and child
+ * placement (judged only by block.json parent/ancestor/allowedBlocks
+ * metadata) in Tree_Placement - split out to keep each file under the
+ * plan's line-count cap.
  *
  * Stage order: version/shape (Tree_Shape) -> size -> unknown block, each
  * gating the next - a problem at any of these three stops validation and
@@ -33,8 +35,6 @@
  */
 
 namespace DesignSetGo\Abilities\Agent_Build;
-
-use DesignSetGo\Abilities\Block_Inserter;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -79,7 +79,7 @@ class Tree_Validator {
 
 		return array_merge(
 			Tree_Attributes::check( $tree['blocks'] ),
-			self::check_placement( $tree['blocks'] )
+			Tree_Placement::check( $tree['blocks'] )
 		);
 	}
 
@@ -133,29 +133,6 @@ class Tree_Validator {
 			if ( ! empty( $node['innerBlocks'] ) ) {
 				$problems = array_merge( $problems, self::check_unknown_blocks( $node['innerBlocks'], $path ) );
 			}
-		}
-
-		return $problems;
-	}
-
-	/**
-	 * Reuse Block_Inserter's own child-placement rule, converting its
-	 * dot-joined paths (e.g. "1.0") to this contract's format (e.g.
-	 * "blocks[1].innerBlocks[0]").
-	 *
-	 * @param array $blocks Well-shaped, fully-registered block list.
-	 * @return array<int, array{code: string, path: string, message: string}> Problems.
-	 */
-	private static function check_placement( array $blocks ): array {
-		$problems = array();
-
-		foreach ( Block_Inserter::find_tree_placement_problems( $blocks ) as $entry ) {
-			$path = '';
-			foreach ( explode( '.', $entry['path'] ) as $segment ) {
-				$path = Tree_Shape::child_path( $path, (int) $segment );
-			}
-
-			$problems[] = Tree_Shape::problem( 'designsetgo_invalid_child_placement', $path, $entry['reason'] );
 		}
 
 		return $problems;

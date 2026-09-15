@@ -243,17 +243,14 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 	 * Unknown block stops before attribute and placement checks.
 	 */
 	public function test_unknown_block_stops_before_attribute_and_placement_checks() {
-		// core/paragraph given innerBlocks would also trip the placement
-		// check, and the sibling unknown block would trip attribute lookups -
-		// only the unknown-block problem should surface.
+		// designsetgo/accordion-item outside its declared parent would also
+		// trip the placement check, and the sibling unknown block would trip
+		// attribute lookups - only the unknown-block problem should surface.
 		$problems = Tree_Validator::validate(
 			array(
 				'version' => 1,
 				'blocks'  => array(
-					array(
-						'name'        => 'core/paragraph',
-						'innerBlocks' => array( array( 'name' => 'core/heading' ) ),
-					),
+					array( 'name' => 'designsetgo/accordion-item' ),
 					array( 'name' => 'does-not/exist' ),
 				),
 			)
@@ -270,14 +267,19 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 				'version' => 1,
 				'blocks'  => array(
 					array(
-						'name'       => 'designsetgo/accordion-item',
-						'attributes' => array( 'isOpen' => 'yes' ),
+						'name'        => 'designsetgo/accordion',
+						'innerBlocks' => array(
+							array(
+								'name'       => 'designsetgo/accordion-item',
+								'attributes' => array( 'isOpen' => 'yes' ),
+							),
+						),
 					),
 				),
 			)
 		);
 		$this->assertSame( array( 'designsetgo_invalid_attribute' ), $this->codes( $problems ) );
-		$this->assertSame( 'blocks[0]', $problems[0]['path'] );
+		$this->assertSame( 'blocks[0].innerBlocks[0]', $problems[0]['path'] );
 		$this->assertStringContainsString( 'isOpen', $problems[0]['message'] );
 	}
 
@@ -329,8 +331,13 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 				'version' => 1,
 				'blocks'  => array(
 					array(
-						'name'       => 'designsetgo/accordion-item',
-						'attributes' => array( 'title' => 'A valid title' ),
+						'name'        => 'designsetgo/accordion',
+						'innerBlocks' => array(
+							array(
+								'name'       => 'designsetgo/accordion-item',
+								'attributes' => array( 'title' => 'A valid title' ),
+							),
+						),
 					),
 				),
 			)
@@ -373,18 +380,12 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 				'version' => 1,
 				'blocks'  => array(
 					array(
-						'name'       => 'designsetgo/accordion-item',
-						'attributes' => array( 'isOpen' => 'yes' ),
+						'name'       => 'designsetgo/accordion',
+						'attributes' => array( 'iconStyle' => 'square' ),
 					),
 					array(
-						'name'        => 'core/paragraph',
-						'attributes'  => array( 'content' => 'Hi' ),
-						'innerBlocks' => array(
-							array(
-								'name'       => 'core/heading',
-								'attributes' => array( 'content' => 'Sub' ),
-							),
-						),
+						'name'       => 'designsetgo/accordion-item',
+						'attributes' => array( 'title' => 'Outside its accordion' ),
 					),
 				),
 			)
@@ -395,29 +396,25 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 			$this->codes( $problems )
 		);
 		$this->assertSame( 'blocks[0]', $problems[0]['path'] );
-		$this->assertStringContainsString( 'isOpen', $problems[0]['message'] );
+		$this->assertStringContainsString( 'iconStyle', $problems[0]['message'] );
 		$this->assertSame( 'blocks[1]', $problems[1]['path'] );
 	}
 
 	/**
-	 * Reports invalid child placement.
+	 * A block whose block.json declares `parent` is rejected anywhere but
+	 * directly inside one of those parents.
 	 */
 	public function test_reports_invalid_child_placement() {
-		// core/paragraph is not designsetgo/-prefixed, so this inserter's
-		// wrapper generation never covers it: giving it innerBlocks is
-		// structurally invalid, the same rule the Block_Inserter ability
-		// itself enforces.
 		$problems = Tree_Validator::validate(
 			array(
 				'version' => 1,
 				'blocks'  => array(
 					array(
-						'name'        => 'core/paragraph',
-						'attributes'  => array( 'content' => 'Hi' ),
+						'name'        => 'designsetgo/section',
 						'innerBlocks' => array(
 							array(
-								'name'       => 'core/heading',
-								'attributes' => array( 'content' => 'Sub' ),
+								'name'       => 'designsetgo/accordion-item',
+								'attributes' => array( 'title' => 'Question' ),
 							),
 						),
 					),
@@ -425,7 +422,8 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 			)
 		);
 		$this->assertSame( array( 'designsetgo_invalid_child_placement' ), $this->codes( $problems ) );
-		$this->assertSame( 'blocks[0]', $problems[0]['path'] );
+		$this->assertSame( 'blocks[0].innerBlocks[0]', $problems[0]['path'] );
+		$this->assertStringContainsString( 'designsetgo/accordion', $problems[0]['message'] );
 	}
 
 	/**
@@ -440,10 +438,7 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 					array(
 						'name'        => 'designsetgo/section',
 						'innerBlocks' => array(
-							array(
-								'name'        => 'core/paragraph',
-								'innerBlocks' => array( array( 'name' => 'core/heading' ) ),
-							),
+							array( 'name' => 'core/list-item' ),
 						),
 					),
 				),
@@ -451,6 +446,105 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 		);
 		$this->assertSame( array( 'designsetgo_invalid_child_placement' ), $this->codes( $problems ) );
 		$this->assertSame( 'blocks[1].innerBlocks[0]', $problems[0]['path'] );
+	}
+
+	/**
+	 * A block whose block.json declares `ancestor` is rejected unless one of
+	 * those blocks is somewhere above it, and accepted when one is - even
+	 * with another block in between.
+	 */
+	public function test_ancestor_placement_uses_block_metadata() {
+		$outside = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array( array( 'name' => 'core/comments-title' ) ),
+			)
+		);
+		$this->assertSame( array( 'designsetgo_invalid_child_placement' ), $this->codes( $outside ) );
+		$this->assertSame( 'blocks[0]', $outside[0]['path'] );
+
+		$inside = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'        => 'core/comments',
+						'innerBlocks' => array(
+							array(
+								'name'        => 'core/group',
+								'innerBlocks' => array( array( 'name' => 'core/comments-title' ) ),
+							),
+						),
+					),
+				),
+			)
+		);
+		$this->assertSame( array(), $inside );
+	}
+
+	/**
+	 * A parent whose block.json declares `allowedBlocks` only accepts those
+	 * children.
+	 */
+	public function test_allowed_blocks_placement_uses_block_metadata() {
+		$problems = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'        => 'core/list',
+						'innerBlocks' => array(
+							array( 'name' => 'core/list-item' ),
+							array( 'name' => 'core/paragraph' ),
+						),
+					),
+				),
+			)
+		);
+		$this->assertSame( array( 'designsetgo_invalid_child_placement' ), $this->codes( $problems ) );
+		$this->assertSame( 'blocks[0].innerBlocks[1]', $problems[0]['path'] );
+	}
+
+	/**
+	 * Core containers the engine assembles validly are accepted: none of
+	 * them has a PHP wrapper mirror, and none needs one.
+	 */
+	public function test_core_containers_are_accepted() {
+		$problems = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'        => 'core/list',
+						'innerBlocks' => array(
+							array(
+								'name'       => 'core/list-item',
+								'attributes' => array( 'content' => 'One' ),
+							),
+						),
+					),
+					array(
+						'name'        => 'core/buttons',
+						'innerBlocks' => array(
+							array(
+								'name'       => 'core/button',
+								'attributes' => array( 'text' => 'Go' ),
+							),
+						),
+					),
+					array(
+						'name'        => 'core/group',
+						'innerBlocks' => array(
+							array(
+								'name'       => 'core/paragraph',
+								'attributes' => array( 'content' => 'Inside a group' ),
+							),
+						),
+					),
+				),
+			)
+		);
+		$this->assertSame( array(), $problems );
 	}
 
 	/**
