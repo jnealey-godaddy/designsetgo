@@ -13,6 +13,7 @@ import { waitForBlockRegistration, watchNextSave } from '../apply';
 
 const TREE = { version: 1, blocks: [{ name: 'core/paragraph' }] };
 const DESIGN_CONTEXT = { colors: [] };
+const BUILD_ID = 'build-1';
 
 /**
  * Flushes pending microtasks (a macrotask boundary via a real `setTimeout`
@@ -71,6 +72,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: true,
 				tree: TREE,
 				mode: 'replace',
@@ -79,7 +81,10 @@ describe('finishBuild()', () => {
 
 		await finishBuild(1, deps);
 
-		expect(deps.postReport).toHaveBeenCalledWith({ status: 'conflict' });
+		expect(deps.postReport).toHaveBeenCalledWith({
+			status: 'conflict',
+			buildId: BUILD_ID,
+		});
 		expect(deps.notify).toHaveBeenCalledWith(
 			'warning',
 			expect.any(String),
@@ -93,6 +98,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -128,6 +134,7 @@ describe('finishBuild()', () => {
 
 		expect(deps.engine.lint).toHaveBeenCalledWith(TREE, DESIGN_CONTEXT);
 		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
 			status: 'failed',
 			invalid: [
 				{
@@ -162,6 +169,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -186,6 +194,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -205,6 +214,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -220,6 +230,7 @@ describe('finishBuild()', () => {
 		expect(deps.replaceBlocks).toHaveBeenCalled();
 		expect(deps.savePost).toHaveBeenCalled();
 		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
 			status: 'finished',
 			findings: [],
 		});
@@ -235,6 +246,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -256,6 +268,7 @@ describe('finishBuild()', () => {
 		await finishBuild(1, deps);
 
 		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
 			status: 'finished_with_findings',
 			findings: [
 				{
@@ -273,6 +286,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -286,6 +300,7 @@ describe('finishBuild()', () => {
 		await finishBuild(1, deps);
 
 		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
 			status: 'failed',
 			invalid: [{ path: '', block: '', reason: 'save failed' }],
 		});
@@ -303,6 +318,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -319,6 +335,7 @@ describe('finishBuild()', () => {
 		expect(deps.replaceBlocks).toHaveBeenCalledWith(parsed);
 		expect(deps.savePost).not.toHaveBeenCalled();
 		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
 			status: 'awaiting_review',
 			findings: [],
 		});
@@ -344,6 +361,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -388,6 +406,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -408,6 +427,7 @@ describe('finishBuild()', () => {
 
 		expect(deps.replaceBlocks).toHaveBeenLastCalledWith(original);
 		expect(deps.postReport).toHaveBeenLastCalledWith({
+			buildId: BUILD_ID,
 			status: 'discarded',
 		});
 	});
@@ -418,6 +438,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -438,6 +459,7 @@ describe('finishBuild()', () => {
 		expect(() => discard.onClick()).not.toThrow();
 		expect(deps.replaceBlocks).toHaveBeenLastCalledWith(original);
 		expect(deps.postReport).toHaveBeenLastCalledWith({
+			buildId: BUILD_ID,
 			status: 'discarded',
 		});
 
@@ -451,6 +473,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -477,6 +500,7 @@ describe('finishBuild()', () => {
 
 		expect(deps.postReport).toHaveBeenCalledTimes(1);
 		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
 			status: 'finished_with_findings',
 			findings: [
 				{
@@ -493,6 +517,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
 				tree: TREE,
@@ -516,6 +541,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: false,
 				submitter: 42,
@@ -533,7 +559,10 @@ describe('finishBuild()', () => {
 		expect(deps.replaceBlocks).toHaveBeenCalledWith(parsed);
 		expect(deps.savePost).not.toHaveBeenCalled();
 		expect(deps.postReport).toHaveBeenCalledWith(
-			expect.objectContaining({ status: 'awaiting_review' })
+			expect.objectContaining({
+				status: 'awaiting_review',
+				buildId: BUILD_ID,
+			})
 		);
 		expect(deps.notify).toHaveBeenCalledWith(
 			'warning',
@@ -552,6 +581,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: false,
 				tree: TREE,
@@ -574,6 +604,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				buildId: BUILD_ID,
 				conflict: false,
 				tree: TREE,
 				mode: 'replace',
@@ -585,7 +616,10 @@ describe('finishBuild()', () => {
 
 		expect(deps.savePost).not.toHaveBeenCalled();
 		expect(deps.postReport).toHaveBeenCalledWith(
-			expect.objectContaining({ status: 'awaiting_review' })
+			expect.objectContaining({
+				status: 'awaiting_review',
+				buildId: BUILD_ID,
+			})
 		);
 	});
 
@@ -617,6 +651,7 @@ describe('finishBuild()', () => {
 		// instead, which always reports.
 		deps.fetchPending.mockResolvedValue({
 			pending: true,
+			buildId: BUILD_ID,
 			conflict: true,
 			tree: TREE,
 			mode: 'replace',

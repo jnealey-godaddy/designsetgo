@@ -35,6 +35,58 @@ class Report_Schema {
 	const MAX_LONG_FIELD_LEN = 1000;
 
 	/**
+	 * REST arg schema for Build_REST's POST body. `invalid`/`findings` item
+	 * shapes are pinned below to match the engine/CLI contract exactly.
+	 *
+	 * @param array<int, string> $statuses Statuses a report may declare.
+	 * @return array<string, mixed>
+	 */
+	public static function report_args( array $statuses ): array {
+		return array(
+			'id'       => array(
+				'required'          => true,
+				'type'              => 'integer',
+				'sanitize_callback' => 'absint',
+				'description'       => __( 'The post ID the report is for.', 'designsetgo' ),
+			),
+			'buildId'  => array(
+				'required'    => true,
+				'type'        => 'string',
+				'description' => __( 'The buildId from the GET response for the build this report describes.', 'designsetgo' ),
+			),
+			'status'   => array(
+				'required'    => true,
+				'type'        => 'string',
+				'enum'        => $statuses,
+				'description' => __( 'Outcome of assembling and saving the pending build.', 'designsetgo' ),
+			),
+			'invalid'  => array(
+				'required'          => false,
+				'type'              => 'array',
+				'default'           => array(),
+				'items'             => self::invalid_item_schema(),
+				// Explicit validate_callback: WP only auto-validates schema
+				// (enum/items/required/additionalProperties) via the default
+				// rest_parse_request_arg() sanitize_callback, but declaring
+				// our own sanitize_callback below replaces that default, so
+				// schema validation has to be requested back explicitly.
+				'validate_callback' => 'rest_validate_request_arg',
+				'sanitize_callback' => array( self::class, 'sanitize_invalid_list' ),
+				'description'       => __( 'Blocks the browser could not place or serialize: {path, block, reason, code?}.', 'designsetgo' ),
+			),
+			'findings' => array(
+				'required'          => false,
+				'type'              => 'array',
+				'default'           => array(),
+				'items'             => self::findings_item_schema(),
+				'validate_callback' => 'rest_validate_request_arg',
+				'sanitize_callback' => array( self::class, 'sanitize_findings_list' ),
+				'description'       => __( 'Non-fatal issues surfaced while assembling the build: {rule, severity, path, message, suggestion?}.', 'designsetgo' ),
+			),
+		);
+	}
+
+	/**
 	 * REST `items` schema for one `invalid` entry: `{path, block, reason, code?}`.
 	 *
 	 * `additionalProperties: false` makes an entry with an unrecognized key

@@ -147,6 +147,27 @@ class Agent_Build_Store_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Every stored build gets a fresh id, so a report can be tied to the
+	 * exact build it describes.
+	 */
+	public function test_store_generates_a_fresh_build_id_each_time(): void {
+		$tree = array(
+			'version' => 1,
+			'blocks'  => array(),
+		);
+
+		$this->store->store( $this->post_id, $tree, 'replace' );
+		$first = $this->store->pending( $this->post_id )['buildId'];
+
+		$this->store->store( $this->post_id, $tree, 'replace' );
+		$second = $this->store->pending( $this->post_id )['buildId'];
+
+		$this->assertTrue( wp_is_uuid( $first ) );
+		$this->assertTrue( wp_is_uuid( $second ) );
+		$this->assertNotSame( $first, $second );
+	}
+
+	/**
 	 * Storing a build never changes post_modified_gmt - only
 	 * update_post_meta(), never wp_update_post() - so an immediate GET does
 	 * not report a false conflict.

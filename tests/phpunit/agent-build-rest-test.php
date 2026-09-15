@@ -104,6 +104,21 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A POST report request carrying the pending build's id (or a
+	 * placeholder when nothing is pending, for tests that never reach the
+	 * callback).
+	 *
+	 * @return WP_REST_Request
+	 */
+	private function report_request(): WP_REST_Request {
+		$pending = $this->store->pending( $this->post_id );
+		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request->set_param( 'buildId', null !== $pending ? $pending['buildId'] : 'no-build-pending' );
+
+		return $request;
+	}
+
+	/**
 	 * GET requires edit_post; a subscriber is forbidden.
 	 */
 	public function test_get_forbidden_for_subscriber(): void {
@@ -273,7 +288,7 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	public function test_post_rejects_unknown_status(): void {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request = $this->report_request();
 		$request->set_param( 'status', 'not_a_real_status' );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -288,7 +303,7 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 		$this->store->store( $this->post_id, $this->tree(), 'replace' );
 
 		wp_set_current_user( $this->editor_id );
-		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request = $this->report_request();
 		$request->set_param( 'status', 'finished' );
 
 		$response = rest_get_server()->dispatch( $request );
@@ -302,14 +317,117 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * POST failed keeps the pending tree in place (a remote agent may want
-	 * to retry against the same tree).
+	 * GET hands the browser the pending build's id, which every report must
+	 * echo back.
 	 */
-	public function test_post_failed_keeps_pending(): void {
+	public function test_get_returns_build_id(): void {
+		$this->store->store( $this->post_id, $this->tree(), 'replace' );
+
+		wp_set_current_user( $this->editor_id );
+		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $this->post_id ) );
+
+		$this->assertTrue( wp_is_uuid( $response->get_data()['buildId'] ) );
+		$this->assertSame( $this->store->pending( $this->post_id )['buildId'], $response->get_data()['buildId'] );
+	}
+
+	/**
+	 * A report without a buildId is rejected before it is recorded.
+	 */
+	public function test_post_requires_build_id(): void {
 		$this->store->store( $this->post_id, $this->tree(), 'replace' );
 
 		wp_set_current_user( $this->editor_id );
 		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request->set_param( 'status', 'finished' );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertNotNull( $this->store->pending( $this->post_id ) );
+		$this->assertSame( 'pending', $this->store->report( $this->post_id )['status'] );
+	}
+
+	/**
+	 * A stale tab reporting on an earlier build gets 409, and neither the
+	 * newer pending build nor its report is touched.
+	 */
+	public function test_post_with_a_different_build_id_is_a_409_mismatch(): void {
+		$this->store->store( $this->post_id, $this->tree(), 'replace' );
+		$stale_id = $this->store->pending( $this->post_id )['buildId'];
+		$this->store->store( $this->post_id, $this->tree(), 'append' );
+
+		wp_set_current_user( $this->editor_id );
+		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request->set_param( 'status', 'finished' );
+		$request->set_param( 'buildId', $stale_id );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 409, $response->get_status() );
+		$this->assertSame( 'designsetgo_build_mismatch', $response->as_error()->get_error_code() );
+		$this->assertSame( 'append', $this->store->pending( $this->post_id )['mode'] );
+		$this->assertSame( 'pending', $this->store->report( $this->post_id )['status'] );
+	}
+
+	/**
+	 * A report with nothing pending is a 409 mismatch too, never recorded.
+	 */
+	public function test_post_with_nothing_pending_is_a_409_mismatch(): void {
+		wp_set_current_user( $this->editor_id );
+		$request = $this->report_request();
+		$request->set_param( 'status', 'failed' );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 409, $response->get_status() );
+		$this->assertSame( 'designsetgo_build_mismatch', $response->as_error()->get_error_code() );
+		$this->assertSame( array(), $this->store->report( $this->post_id ) );
+	}
+
+	/**
+	 * POST conflict is terminal: it clears the pending tree but keeps the
+	 * report.
+	 */
+	public function test_post_conflict_clears_pending(): void {
+		$this->store->store( $this->post_id, $this->tree(), 'replace' );
+
+		wp_set_current_user( $this->editor_id );
+		$request = $this->report_request();
+		$request->set_param( 'status', 'conflict' );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertNull( $this->store->pending( $this->post_id ) );
+		$this->assertSame( 'conflict', $this->store->report( $this->post_id )['status'] );
+	}
+
+	/**
+	 * POST awaiting_review is not terminal: the tree stays pending until
+	 * the review is saved or discarded.
+	 */
+	public function test_post_awaiting_review_keeps_pending(): void {
+		$this->store->store( $this->post_id, $this->tree(), 'replace' );
+
+		wp_set_current_user( $this->editor_id );
+		$request = $this->report_request();
+		$request->set_param( 'status', 'awaiting_review' );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertNotNull( $this->store->pending( $this->post_id ) );
+	}
+
+	/**
+	 * POST failed is terminal: it clears the pending tree and keeps the
+	 * report, so the agent reads the failure and resubmits.
+	 */
+	public function test_post_failed_clears_pending(): void {
+		$this->store->store( $this->post_id, $this->tree(), 'replace' );
+
+		wp_set_current_user( $this->editor_id );
+		$request = $this->report_request();
 		$request->set_param( 'status', 'failed' );
 		$request->set_param(
 			'invalid',
@@ -325,7 +443,7 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertNotNull( $this->store->pending( $this->post_id ) );
+		$this->assertNull( $this->store->pending( $this->post_id ) );
 
 		$report = $this->store->report( $this->post_id );
 		$this->assertSame( 'failed', $report['status'] );
@@ -341,7 +459,7 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	public function test_post_rejects_oversized_body(): void {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request = $this->report_request();
 		$request->set_header( 'Content-Type', 'application/json' );
 		$request->set_body(
 			wp_json_encode(
@@ -372,7 +490,7 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	public function test_post_rejects_invalid_entry_missing_required_field(): void {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request = $this->report_request();
 		$request->set_param( 'status', 'failed' );
 		$request->set_param(
 			'invalid',
@@ -397,7 +515,7 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	public function test_post_rejects_finding_with_unknown_severity(): void {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request = $this->report_request();
 		$request->set_param( 'status', 'failed' );
 		$request->set_param(
 			'findings',
@@ -428,7 +546,7 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	public function test_post_rejects_invalid_entry_with_unknown_key(): void {
 		wp_set_current_user( $this->editor_id );
 
-		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request = $this->report_request();
 		$request->set_param( 'status', 'failed' );
 		$request->set_param(
 			'invalid',
@@ -456,7 +574,7 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 		$this->store->store( $this->post_id, $this->tree(), 'replace' );
 
 		wp_set_current_user( $this->editor_id );
-		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request = $this->report_request();
 		$request->set_param( 'status', 'finished_with_findings' );
 		$request->set_param(
 			'invalid',
@@ -517,7 +635,7 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	public function test_post_forbidden_for_subscriber(): void {
 		wp_set_current_user( $this->subscriber_id );
 
-		$request = new WP_REST_Request( 'POST', $this->route_base . $this->post_id );
+		$request = $this->report_request();
 		$request->set_param( 'status', 'finished' );
 
 		$response = rest_get_server()->dispatch( $request );

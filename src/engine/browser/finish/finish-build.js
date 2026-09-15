@@ -25,14 +25,14 @@ import {
 
 export { FINISH_NOTICE_ID, FINISH_REPORT_ERROR_NOTICE_ID };
 
-/** `invalid` entry `postReport()` gets when saving the applied draft fails. */
+/** `invalid` entry reported when saving the applied draft fails. */
 const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
 
 /**
  * @param {number}   postId               The post being finished.
  * @param {Object}   deps
- * @param {Function} deps.fetchPending    `() => Promise<Object>` — GET response: `{ pending, tree?, mode?, conflict?, isSubmitter?, designContext? }`.
- * @param {Function} deps.postReport      `(body: Object) => Promise<void>` — POSTs a report for this post.
+ * @param {Function} deps.fetchPending    `() => Promise<Object>` — GET response: `{ pending, buildId?, tree?, mode?, conflict?, isSubmitter?, designContext? }`.
+ * @param {Function} deps.postReport      `(body: Object) => Promise<void>` — POSTs a report for this post; every body gets the pending `buildId`.
  * @param {Object}   deps.engine          `{ assemble, lint }` bound to the site's block registry.
  * @param {Function} deps.parse           `wp.blocks.parse`.
  * @param {Function} deps.getEditorBlocks `() => Array` current editor blocks.
@@ -67,8 +67,13 @@ export async function finishBuild(postId, deps) {
 			return;
 		}
 
+		// Every report names the build it describes; the server rejects a
+		// report whose buildId no longer matches what is pending (409).
+		const report = (body) =>
+			postReport({ ...body, buildId: pending.buildId });
+
 		if (pending.conflict) {
-			await postReport({ status: 'conflict' });
+			await report({ status: 'conflict' });
 			notify(
 				'warning',
 				__(
@@ -93,7 +98,7 @@ export async function finishBuild(postId, deps) {
 		});
 
 		if (!result.ok) {
-			await postReport({
+			await report({
 				status: 'failed',
 				invalid: result.invalid,
 				findings: result.findings,
@@ -115,7 +120,7 @@ export async function finishBuild(postId, deps) {
 
 		if (!isSubmitter || isPublished()) {
 			await applyForReview({
-				report: postReport,
+				report,
 				replaceBlocks,
 				notify,
 				onNextSave,
@@ -133,7 +138,7 @@ export async function finishBuild(postId, deps) {
 		const saved = await savePost();
 
 		if (saved) {
-			await postReport({ status, findings });
+			await report({ status, findings });
 			notify(
 				'success',
 				__('Agent build applied and saved.', 'designsetgo'),
@@ -143,7 +148,7 @@ export async function finishBuild(postId, deps) {
 			return;
 		}
 
-		await postReport({ status: 'failed', invalid: SAVE_FAILED_INVALID });
+		await report({ status: 'failed', invalid: SAVE_FAILED_INVALID });
 		notify(
 			'error',
 			__(

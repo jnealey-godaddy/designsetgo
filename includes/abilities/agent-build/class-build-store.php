@@ -34,9 +34,10 @@ class Build_Store {
 
 	/**
 	 * Meta key holding the pending tree as a JSON string:
-	 * `{ tree, mode, base, submitter }`, where `base` is the post's
-	 * `post_modified_gmt` at the moment the tree was stored and `submitter`
-	 * is the id of the user who stored it.
+	 * `{ tree, mode, base, submitter, buildId }`, where `base` is the post's
+	 * `post_modified_gmt` at the moment the tree was stored, `submitter` is
+	 * the id of the user who stored it, and `buildId` is a fresh UUID every
+	 * report about this build must echo back.
 	 *
 	 * @var string
 	 */
@@ -94,7 +95,8 @@ class Build_Store {
 	 * @return void
 	 */
 	public function store( int $post_id, array $tree, string $mode ): void {
-		$base = get_post_field( 'post_modified_gmt', $post_id );
+		$base     = get_post_field( 'post_modified_gmt', $post_id );
+		$build_id = wp_generate_uuid4();
 
 		// update_post_meta() unslashes its value, which would strip the
 		// backslashes wp_json_encode() escapes quotes, newlines, and
@@ -109,6 +111,7 @@ class Build_Store {
 						'mode'      => $mode,
 						'base'      => is_string( $base ) ? $base : '',
 						'submitter' => get_current_user_id(),
+						'buildId'   => $build_id,
 					)
 				)
 			)
@@ -118,6 +121,7 @@ class Build_Store {
 			$post_id,
 			array(
 				'status'   => 'pending',
+				'buildId'  => $build_id,
 				'treeHash' => $this->hash_tree( $tree ),
 			)
 		);
@@ -127,7 +131,7 @@ class Build_Store {
 	 * Read the post's pending build, if any.
 	 *
 	 * @param int $post_id Post to read.
-	 * @return array{tree: array, mode: string, base: string, submitter: int}|null Decoded pending build, or null when there is none.
+	 * @return array{tree: array, mode: string, base: string, submitter: int, buildId: string}|null Decoded pending build, or null when there is none.
 	 */
 	public function pending( int $post_id ): ?array {
 		$raw = get_post_meta( $post_id, self::META_PENDING_TREE, true );
@@ -143,6 +147,7 @@ class Build_Store {
 		}
 
 		$decoded['submitter'] = isset( $decoded['submitter'] ) ? (int) $decoded['submitter'] : 0;
+		$decoded['buildId']   = isset( $decoded['buildId'] ) && is_string( $decoded['buildId'] ) ? $decoded['buildId'] : '';
 
 		return $decoded;
 	}

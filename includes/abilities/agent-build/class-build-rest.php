@@ -34,8 +34,12 @@ class Build_REST {
 	/** Reject a report body larger than 1 MB. */
 	const MAX_REPORT_BYTES = 1048576;
 
-	/** Terminal statuses that clear the pending tree once reported. */
-	const TERMINAL_STATUSES = array( 'finished', 'finished_with_findings', 'discarded' );
+	/**
+	 * Terminal statuses that clear the pending tree once reported. Only
+	 * awaiting_review keeps it: that build is still sitting unsaved in an
+	 * editor, waiting for a person to save or discard it.
+	 */
+	const TERMINAL_STATUSES = array( 'finished', 'finished_with_findings', 'discarded', 'failed', 'conflict' );
 
 	/** Non-pending statuses a report may declare. */
 	const REPORT_STATUSES = array( 'awaiting_review', 'finished', 'finished_with_findings', 'failed', 'conflict', 'discarded' );
@@ -89,55 +93,9 @@ class Build_REST {
 					// (Report_Schema's included), so an oversized body is rejected
 					// before any sanitization work runs against it.
 					'validate_callback'   => array( $this, 'check_report_body_size' ),
-					'args'                => $this->report_args(),
+					'args'                => Report_Schema::report_args( self::REPORT_STATUSES ),
 				),
 			)
-		);
-	}
-
-	/**
-	 * REST arg schema for the POST body. `invalid`/`findings` item shapes
-	 * are pinned by Report_Schema to match the engine/CLI contract exactly.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function report_args(): array {
-		return array(
-			'id'       => array(
-				'required'          => true,
-				'type'              => 'integer',
-				'sanitize_callback' => 'absint',
-				'description'       => __( 'The post ID the report is for.', 'designsetgo' ),
-			),
-			'status'   => array(
-				'required'    => true,
-				'type'        => 'string',
-				'enum'        => self::REPORT_STATUSES,
-				'description' => __( 'Outcome of assembling and saving the pending build.', 'designsetgo' ),
-			),
-			'invalid'  => array(
-				'required'          => false,
-				'type'              => 'array',
-				'default'           => array(),
-				'items'             => Report_Schema::invalid_item_schema(),
-				// Explicit validate_callback: WP only auto-validates schema
-				// (enum/items/required/additionalProperties) via the default
-				// rest_parse_request_arg() sanitize_callback, but declaring
-				// our own sanitize_callback below replaces that default, so
-				// schema validation has to be requested back explicitly.
-				'validate_callback' => 'rest_validate_request_arg',
-				'sanitize_callback' => array( Report_Schema::class, 'sanitize_invalid_list' ),
-				'description'       => __( 'Blocks the browser could not place or serialize: {path, block, reason, code?}.', 'designsetgo' ),
-			),
-			'findings' => array(
-				'required'          => false,
-				'type'              => 'array',
-				'default'           => array(),
-				'items'             => Report_Schema::findings_item_schema(),
-				'validate_callback' => 'rest_validate_request_arg',
-				'sanitize_callback' => array( Report_Schema::class, 'sanitize_findings_list' ),
-				'description'       => __( 'Non-fatal issues surfaced while assembling the build: {rule, severity, path, message, suggestion?}.', 'designsetgo' ),
-			),
 		);
 	}
 
@@ -226,6 +184,7 @@ class Build_REST {
 				'pending'       => true,
 				'tree'          => $tree,
 				'mode'          => $pending['mode'],
+				'buildId'       => $pending['buildId'],
 				'submitter'     => $submitter,
 				// Only the submitter's own editor load may auto-save the build.
 				'isSubmitter'   => $submitter > 0 && get_current_user_id() === $submitter,
@@ -248,6 +207,20 @@ class Build_REST {
 		$invalid  = (array) $request->get_param( 'invalid' );
 		$findings = (array) $request->get_param( 'findings' );
 
+		$build_id = (string) $request->get_param( 'buildId' );
+		$pending  = $this->store->pending( $post_id );
+
+		// A report is only ever about the build currently pending. A stale
+		// tab, or a report sent after the tree was cleared, must never
+		// overwrite the outcome of a different build.
+		if ( null === $pending || '' === $pending['buildId'] || ! hash_equals( $pending['buildId'], $build_id ) ) {
+			return new WP_Error(
+				'designsetgo_build_mismatch',
+				__( 'This report does not match the build currently pending for this post.', 'designsetgo' ),
+				array( 'status' => 409 )
+			);
+		}
+
 		$existing_report = $this->store->report( $post_id );
 		$tree_hash       = $existing_report['treeHash'] ?? null;
 
@@ -255,6 +228,7 @@ class Build_REST {
 			$post_id,
 			array(
 				'status'    => $status,
+				'buildId'   => $build_id,
 				'invalid'   => $invalid,
 				'findings'  => $findings,
 				'treeHash'  => $tree_hash,
