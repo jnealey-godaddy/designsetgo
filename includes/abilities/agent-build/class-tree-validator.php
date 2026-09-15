@@ -12,6 +12,16 @@
  * Tree_Shape and attribute-schema checks in Tree_Attributes (split out to
  * keep each file under the plan's line-count cap).
  *
+ * Stage order: version/shape (Tree_Shape) -> size -> unknown block, each
+ * gating the next - a problem at any of these three stops validation and
+ * returns immediately, since a later stage cannot meaningfully run against
+ * a tree that failed an earlier one (unknown block types, for instance,
+ * have no schema to check attributes or placement against). Once all three
+ * pass, attribute schema (Tree_Attributes) and child placement are
+ * independent of each other and run together, their problems collected
+ * into one list - this saves a remote agent a round trip it does not need,
+ * since neither check's outcome depends on the other's.
+ *
  * A plain static helper, not an Abstract_Ability. It lives in this directory
  * so Task 18/19's abilities can reach it, but Abilities_Registry only
  * instantiates classes here that are actual Abstract_Ability subclasses, so
@@ -41,8 +51,12 @@ class Tree_Validator {
 	/**
 	 * Validate an agent-submitted block tree. Never throws.
 	 *
-	 * Stages run in order, each only once every earlier one found nothing:
-	 * version/shape, size, unknown block, then attribute schema + placement.
+	 * Exact stage order: version/shape -> size -> unknown block -> {
+	 * attribute schema + child placement, collected together }. The first
+	 * three each gate the next (a problem stops validation right there);
+	 * the last two are independent of each other once the tree is known-shaped
+	 * and every block type is registered, so both always run and their
+	 * problems are merged into one list rather than one gating the other.
 	 *
 	 * @param mixed $tree Candidate tree, typically json_decode( $json, true ).
 	 * @return array<int, array{code: string, path: string, message: string}> Problems; empty when well formed.
@@ -84,7 +98,7 @@ class Tree_Validator {
 		}
 
 		return array(
-			self::problem(
+			Tree_Shape::problem(
 				'designsetgo_tree_too_large',
 				'blocks',
 				sprintf(
@@ -113,7 +127,7 @@ class Tree_Validator {
 
 			if ( ! $registry->is_registered( $node['name'] ) ) {
 				/* translators: %s: block name */
-				$problems[] = self::problem( 'designsetgo_unknown_block', $path, sprintf( __( '%s is not a registered block type.', 'designsetgo' ), $node['name'] ) );
+				$problems[] = Tree_Shape::problem( 'designsetgo_unknown_block', $path, sprintf( __( '%s is not a registered block type.', 'designsetgo' ), $node['name'] ) );
 			}
 
 			if ( ! empty( $node['innerBlocks'] ) ) {
@@ -141,25 +155,9 @@ class Tree_Validator {
 				$path = Tree_Shape::child_path( $path, (int) $segment );
 			}
 
-			$problems[] = self::problem( 'designsetgo_invalid_child_placement', $path, $entry['reason'] );
+			$problems[] = Tree_Shape::problem( 'designsetgo_invalid_child_placement', $path, $entry['reason'] );
 		}
 
 		return $problems;
-	}
-
-	/**
-	 * Build a single problem entry.
-	 *
-	 * @param string $code    Problem code.
-	 * @param string $path    Path to the offending value.
-	 * @param string $message Human-readable message.
-	 * @return array{code: string, path: string, message: string} Problem entry.
-	 */
-	private static function problem( string $code, string $path, string $message ): array {
-		return array(
-			'code'    => $code,
-			'path'    => $path,
-			'message' => $message,
-		);
 	}
 }

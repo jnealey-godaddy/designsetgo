@@ -61,7 +61,7 @@ class Tree_Attributes {
 
 					$result = rest_validate_value_from_schema( $value, $clean_schema, $attribute_name );
 					if ( is_wp_error( $result ) ) {
-						$problems[] = self::problem(
+						$problems[] = Tree_Shape::problem(
 							'designsetgo_invalid_attribute',
 							$path,
 							sprintf(
@@ -116,21 +116,5 @@ class Tree_Attributes {
 		}
 
 		return $clean;
-	}
-
-	/**
-	 * Build a single problem entry.
-	 *
-	 * @param string $code    Problem code.
-	 * @param string $path    Path to the offending value.
-	 * @param string $message Human-readable message.
-	 * @return array{code: string, path: string, message: string} Problem entry.
-	 */
-	private static function problem( string $code, string $path, string $message ): array {
-		return array(
-			'code'    => $code,
-			'path'    => $path,
-			'message' => $message,
-		);
 	}
 }

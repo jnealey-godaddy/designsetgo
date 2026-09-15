@@ -155,14 +155,16 @@ class Tree_Shape {
 	}
 
 	/**
-	 * Build a single problem entry.
+	 * Build a single problem entry. Public: shared by every validation stage
+	 * across Tree_Validator, Tree_Shape, and Tree_Attributes, so the
+	 * {code, path, message} shape has exactly one implementation.
 	 *
 	 * @param string $code    Problem code.
 	 * @param string $path    Path to the offending value.
 	 * @param string $message Human-readable message.
 	 * @return array{code: string, path: string, message: string} Problem entry.
 	 */
-	private static function problem( string $code, string $path, string $message ): array {
+	public static function problem( string $code, string $path, string $message ): array {
 		return array(
 			'code'    => $code,
 			'path'    => $path,

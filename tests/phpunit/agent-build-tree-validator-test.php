@@ -360,6 +360,46 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Attribute and placement problems are collected together, not gated.
+	 */
+	public function test_attribute_and_placement_problems_are_collected_together() {
+		// Once shape, size, and unknown-block all pass, attribute-schema and
+		// child-placement problems are independent of each other and both
+		// run - this tree trips one of each, on two different top-level
+		// blocks, and both must come back from a single call rather than
+		// one hiding the other (no round trip needed to see both).
+		$problems = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'       => 'designsetgo/accordion-item',
+						'attributes' => array( 'isOpen' => 'yes' ),
+					),
+					array(
+						'name'        => 'core/paragraph',
+						'attributes'  => array( 'content' => 'Hi' ),
+						'innerBlocks' => array(
+							array(
+								'name'       => 'core/heading',
+								'attributes' => array( 'content' => 'Sub' ),
+							),
+						),
+					),
+				),
+			)
+		);
+
+		$this->assertSame(
+			array( 'designsetgo_invalid_attribute', 'designsetgo_invalid_child_placement' ),
+			$this->codes( $problems )
+		);
+		$this->assertSame( 'blocks[0]', $problems[0]['path'] );
+		$this->assertStringContainsString( 'isOpen', $problems[0]['message'] );
+		$this->assertSame( 'blocks[1]', $problems[1]['path'] );
+	}
+
+	/**
 	 * Reports invalid child placement.
 	 */
 	public function test_reports_invalid_child_placement() {
