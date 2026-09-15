@@ -219,6 +219,10 @@ export async function sanitizeAssembled({
 		const response = await sanitizeMarkup({ buildId, markup });
 		sanitized = response && response.markup;
 	} catch (error) {
+		// apiFetch rejects with the REST error body.
+		if (error && error.code === 'designsetgo_markup_too_large') {
+			return failure('sanitize markup too large');
+		}
 		sanitized = undefined;
 	}
 

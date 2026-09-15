@@ -293,6 +293,31 @@ describe('finishBuild() markup sanitization', () => {
 		expectNothingApplied(deps);
 	});
 
+	test("the route's 413 designsetgo_markup_too_large is reported as sanitize markup too large", async () => {
+		const deps = createDeps(
+			{},
+			{
+				sanitizeMarkup: jest.fn().mockRejectedValue({
+					code: 'designsetgo_markup_too_large',
+					message: 'The build markup is too large.',
+					data: { status: 413 },
+				}),
+			}
+		);
+
+		await finishBuild(1, deps);
+
+		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
+			status: 'failed',
+			invalid: [
+				{ path: '', block: '', reason: 'sanitize markup too large' },
+			],
+			findings: [],
+		});
+		expectNothingApplied(deps);
+	});
+
 	test('a sanitize request failure fails the build, applies nothing, and never throws', async () => {
 		const deps = createDeps(
 			{},

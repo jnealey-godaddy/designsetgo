@@ -226,6 +226,20 @@ class Agent_Build_Sanitize_REST_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Markup under 1 MB made of control characters, each JSON-escaped to a
+	 * six-byte \u00XX sequence, is still accepted: its request body is far
+	 * over 2 MB but within the allowance for worst-case escaping.
+	 */
+	public function test_markup_of_escaped_control_characters_under_the_limit_is_accepted(): void {
+		$markup = '<p>' . str_repeat( "\x01", 500000 ) . '</p>';
+		$this->assertGreaterThan( 2 * 1024 * 1024 + 4096, strlen( (string) wp_json_encode( array( 'markup' => $markup ) ) ) );
+
+		$response = $this->sanitize( $markup );
+
+		$this->assertSame( 200, $response->get_status(), wp_json_encode( $response->as_error() ) );
+	}
+
+	/**
 	 * Markup under 1 MB is accepted even when JSON escaping pushes the
 	 * request body past 1 MB (every quote becomes two bytes), so the
 	 * browser's own 1 MB markup check and the route agree.

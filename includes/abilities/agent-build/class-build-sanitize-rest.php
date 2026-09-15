@@ -42,11 +42,12 @@ class Build_Sanitize_REST {
 	const MAX_MARKUP_BYTES = 1048576;
 
 	/**
-	 * Cap on the whole JSON body: twice the markup cap plus room for the
-	 * build id, since JSON escaping at least doubles quotes and backslashes.
-	 * The markup itself is still held to MAX_MARKUP_BYTES.
+	 * Cap on the whole JSON body: six times the markup cap plus room for the
+	 * build id. JSON escapes a control character as a six-byte `\u00XX`, so
+	 * this is the worst case for markup the browser accepted at 1 MB. The
+	 * decoded markup itself is still held to MAX_MARKUP_BYTES.
 	 */
-	const MAX_BODY_BYTES = 2 * self::MAX_MARKUP_BYTES + 4096;
+	const MAX_BODY_BYTES = 6 * self::MAX_MARKUP_BYTES + 4096;
 
 	/**
 	 * Store instance backing this route.
