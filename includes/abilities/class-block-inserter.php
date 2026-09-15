@@ -5093,6 +5093,10 @@ class Block_Inserter {
 	 * @return array<string, mixed> Style with skipped groups removed.
 	 */
 	private static function strip_skipped_style_groups( ?\WP_Block_Type $block_type, array $style ): array {
+		// Core adds background-image support at render time, not in useBlockProps.save().
+		// Keep the attributes in block JSON, but do not bake render-only CSS into saved HTML.
+		unset( $style['background'] );
+
 		if ( null === $block_type || ! function_exists( 'wp_should_skip_block_supports_serialization' ) ) {
 			return $style;
 		}
