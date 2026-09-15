@@ -884,6 +884,11 @@ class Block_Inserter {
 			return true;
 		}
 
+		// List, list item and quote wrap their children in markup this inserter reproduces.
+		if ( in_array( $block_name, self::CORE_WRAPPER_BLOCKS, true ) ) {
+			return true;
+		}
+
 		if ( 0 !== strpos( $block_name, 'designsetgo/' ) ) {
 			return false;
 		}
@@ -1497,7 +1502,7 @@ class Block_Inserter {
 		if ( isset( $attrs['style'] ) && is_array( $attrs['style'] ) ) {
 			$attrs['style'] = self::convert_style_vars( $attrs['style'] );
 		}
-		if ( isset( $attrs['content'] ) && 0 === strpos( $block_name, 'core/' ) ) {
+		if ( isset( $attrs['content'] ) && 0 === strpos( $block_name, 'core/' ) && ! in_array( $block_name, self::CORE_WRAPPER_BLOCKS, true ) ) {
 			$content = $attrs['content'];
 			unset( $attrs['content'] );
 
@@ -1565,6 +1570,18 @@ class Block_Inserter {
 				$innerContent[] = $wrapper_html['closing'];
 				$innerHTML      = $wrapper_html['opening'] . $wrapper_html['closing'];
 			}
+		}
+
+		// Core wrapper blocks (list, list item, quote) mirror their save() the same
+		// way: opening and closing markup as separate innerContent entries around
+		// the child placeholders, with block-support classes merged onto the root.
+		if ( in_array( $block_name, self::CORE_WRAPPER_BLOCKS, true ) ) {
+			$wrapper_html = self::generate_core_wrapper_html( $block_name, $attrs );
+			unset( $attrs['content'], $attrs['citation'] );
+			$wrapper_html['opening'] = self::apply_block_support_attributes( $wrapper_html['opening'], $block_name, $attrs );
+			array_unshift( $innerContent, $wrapper_html['opening'] );
+			$innerContent[] = $wrapper_html['closing'];
+			$innerHTML      = $wrapper_html['opening'] . $wrapper_html['closing'];
 		}
 
 		// Form-field blocks (and the map) are dynamic/server-rendered, so they
@@ -4595,6 +4612,48 @@ class Block_Inserter {
 	}
 
 	/**
+	 * Generate the wrapper markup of a core block whose save() surrounds InnerBlocks.Content.
+	 *
+	 * Mirrors block-library save.js: the list tag carries the default block class,
+	 * a list item has no class support and holds its rich text before any nested
+	 * list, and a quote closes with its citation after the children.
+	 *
+	 * @param string               $block_name Block name.
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return array{opening: string, closing: string} Opening and closing markup.
+	 */
+	private static function generate_core_wrapper_html( string $block_name, array $attributes ): array {
+		switch ( $block_name ) {
+			case 'core/list':
+				$tag = ! empty( $attributes['ordered'] ) ? 'ol' : 'ul';
+				return array(
+					'opening' => '<' . $tag . ' class="wp-block-list">',
+					'closing' => '</' . $tag . '>',
+				);
+
+			case 'core/list-item':
+				$content = isset( $attributes['content'] ) && is_string( $attributes['content'] ) ? $attributes['content'] : '';
+				return array(
+					'opening' => '<li>' . wp_kses_post( $content ),
+					'closing' => '</li>',
+				);
+
+			case 'core/quote':
+				$citation = isset( $attributes['citation'] ) && is_string( $attributes['citation'] ) ? $attributes['citation'] : '';
+				return array(
+					'opening' => '<blockquote class="wp-block-quote">',
+					'closing' => ( '' !== $citation ? '<cite>' . wp_kses_post( $citation ) . '</cite>' : '' ) . '</blockquote>',
+				);
+
+			default:
+				return array(
+					'opening' => '',
+					'closing' => '',
+				);
+		}
+	}
+
+	/**
 	 * Generate HTML for core WordPress blocks.
 	 *
 	 * @param string               $block_name Block name.
@@ -5651,6 +5710,21 @@ class Block_Inserter {
 	private const SERIALIZABLE_CORE_BLOCKS = array(
 		'core/heading',
 		'core/paragraph',
+		'core/list',
+		'core/list-item',
+		'core/quote',
+	);
+
+	/**
+	 * Core blocks whose save() is a wrapper around InnerBlocks.Content, reproduced by
+	 * generate_core_wrapper_html(). A list item also carries its own rich text before
+	 * any nested list, so its content is part of the opening markup rather than a
+	 * standalone innerHTML string.
+	 */
+	private const CORE_WRAPPER_BLOCKS = array(
+		'core/list',
+		'core/list-item',
+		'core/quote',
 	);
 
 	private const HYBRID_BLOCKS = array(
