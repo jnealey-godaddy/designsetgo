@@ -44,6 +44,12 @@ function createDeps(postId) {
 		fetchPending: () => apiFetch({ path: routeFor(postId) }),
 		postReport: (body) =>
 			apiFetch({ path: routeFor(postId), method: 'POST', data: body }),
+		sanitizeMarkup: (body) =>
+			apiFetch({
+				path: `${routeFor(postId)}/sanitize`,
+				method: 'POST',
+				data: body,
+			}),
 		engine: window.designsetgoEngine,
 		parse: (markup) => window.wp.blocks.parse(markup),
 		getEditorBlocks: () => select('core/block-editor').getBlocks(),

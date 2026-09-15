@@ -115,7 +115,7 @@ export function watchNextSave({
  * @param {Object}   [options.designContext] Design context for `lint()`.
  * @param {string}   options.mode            `'append'` or `'replace'`.
  * @param {Array}    options.currentBlocks   Blocks currently in the editor (used for append mode).
- * @return {{ok: true, blocks: Array, findings: Array}|{ok: false, invalid: Array, findings: Array}} Blocks to apply, or why assembly failed.
+ * @return {{ok: true, blocks: Array, markup: string, parsedBlocks: Array, findings: Array}|{ok: false, invalid: Array, findings: Array}} Blocks to apply (plus the assembled markup and the blocks parsed from it alone), or why assembly failed.
  */
 export function assembleTree({
 	engine,
@@ -133,10 +133,25 @@ export function assembleTree({
 	}
 
 	const parsedBlocks = parse(assembled.markup);
-	const blocks =
-		mode === 'append' ? [...currentBlocks, ...parsedBlocks] : parsedBlocks;
+	const blocks = composeBlocks(mode, currentBlocks, parsedBlocks);
 
-	return { ok: true, blocks, findings };
+	return {
+		ok: true,
+		blocks,
+		markup: assembled.markup,
+		parsedBlocks,
+		findings,
+	};
+}
+
+/**
+ * @param {string} mode          `'append'` or `'replace'`.
+ * @param {Array}  currentBlocks Blocks currently in the editor.
+ * @param {Array}  buildBlocks   Blocks the build contributes.
+ * @return {Array} The editor's blocks once the build is applied.
+ */
+export function composeBlocks(mode, currentBlocks, buildBlocks) {
+	return mode === 'append' ? [...currentBlocks, ...buildBlocks] : buildBlocks;
 }
 
 /**

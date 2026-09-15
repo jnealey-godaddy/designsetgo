@@ -34,10 +34,11 @@ class Build_Store {
 
 	/**
 	 * Meta key holding the pending tree as a JSON string:
-	 * `{ tree, mode, base, submitter, buildId }`, where `base` is the post's
-	 * `post_modified_gmt` at the moment the tree was stored, `submitter` is
-	 * the id of the user who stored it, and `buildId` is a fresh UUID every
-	 * report about this build must echo back.
+	 * `{ tree, mode, base, submitter, submitterUnfiltered, buildId }`, where
+	 * `base` is the post's `post_modified_gmt` at the moment the tree was
+	 * stored, `submitter` is the id of the user who stored it,
+	 * `submitterUnfiltered` is whether that user held `unfiltered_html`, and
+	 * `buildId` is a fresh UUID every report about this build must echo back.
 	 *
 	 * @var string
 	 */
@@ -87,7 +88,8 @@ class Build_Store {
 	 * GET into a false conflict.
 	 *
 	 * The current user is recorded as the build's submitter: the editor only
-	 * auto-saves a build for the person who submitted it.
+	 * auto-saves a build for the person who submitted it, and sends the
+	 * assembled markup through KSES first unless they held unfiltered_html.
 	 *
 	 * @param int    $post_id Post the tree targets.
 	 * @param array  $tree    Well-formed block tree (already validated by the caller).
@@ -107,11 +109,12 @@ class Build_Store {
 			wp_slash(
 				wp_json_encode(
 					array(
-						'tree'      => $tree,
-						'mode'      => $mode,
-						'base'      => is_string( $base ) ? $base : '',
-						'submitter' => get_current_user_id(),
-						'buildId'   => $build_id,
+						'tree'                => $tree,
+						'mode'                => $mode,
+						'base'                => is_string( $base ) ? $base : '',
+						'submitter'           => get_current_user_id(),
+						'submitterUnfiltered' => current_user_can( 'unfiltered_html' ),
+						'buildId'             => $build_id,
 					)
 				)
 			)
@@ -131,7 +134,7 @@ class Build_Store {
 	 * Read the post's pending build, if any.
 	 *
 	 * @param int $post_id Post to read.
-	 * @return array{tree: array, mode: string, base: string, submitter: int, buildId: string}|null Decoded pending build, or null when there is none.
+	 * @return array{tree: array, mode: string, base: string, submitter: int, submitterUnfiltered: bool, buildId: string}|null Decoded pending build, or null when there is none.
 	 */
 	public function pending( int $post_id ): ?array {
 		$raw = get_post_meta( $post_id, self::META_PENDING_TREE, true );
@@ -148,8 +151,25 @@ class Build_Store {
 
 		$decoded['submitter'] = isset( $decoded['submitter'] ) ? (int) $decoded['submitter'] : 0;
 		$decoded['buildId']   = isset( $decoded['buildId'] ) && is_string( $decoded['buildId'] ) ? $decoded['buildId'] : '';
+		// Strictly true: a build stored without the flag is treated as filtered.
+		$decoded['submitterUnfiltered'] = isset( $decoded['submitterUnfiltered'] ) && true === $decoded['submitterUnfiltered'];
 
 		return $decoded;
+	}
+
+	/**
+	 * Whether a build id names the build currently pending for a post. A
+	 * stale tab, or a request sent after the tree was cleared, must never act
+	 * on a different build.
+	 *
+	 * @param int    $post_id  Post to check.
+	 * @param string $build_id Build id the caller claims.
+	 * @return bool
+	 */
+	public function is_pending_build( int $post_id, string $build_id ): bool {
+		$pending = $this->pending( $post_id );
+
+		return null !== $pending && '' !== $pending['buildId'] && hash_equals( $pending['buildId'], $build_id );
 	}
 
 	/**

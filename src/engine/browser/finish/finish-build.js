@@ -7,7 +7,9 @@
  * submitted it AND the post is not live. Every other case — a published
  * post, or a build submitted by another user — is applied for review
  * instead (see `./review.js`), so one user's content is never saved under
- * another user's capabilities.
+ * another user's capabilities. Unless the submitter held `unfiltered_html`,
+ * the assembled markup is KSES-filtered server-side before either branch
+ * applies it (see `./sanitize.js`).
  *
  * Pure aside from the injected `deps` — every WordPress store access
  * (`@wordpress/data`, `@wordpress/editor`, `@wordpress/notices`) lives in
@@ -16,7 +18,8 @@
  * `./apply.js` for the pure helpers this leans on.
  */
 import { __ } from '@wordpress/i18n';
-import { assembleTree } from './apply';
+import { assembleTree, composeBlocks } from './apply';
+import { sanitizeAssembled } from './sanitize';
 import {
 	applyForReview,
 	FINISH_NOTICE_ID,
@@ -36,8 +39,9 @@ const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
 /**
  * @param {number}   postId               The post being finished.
  * @param {Object}   deps
- * @param {Function} deps.fetchPending    `() => Promise<Object>` — GET response: `{ pending, buildId?, tree?, mode?, conflict?, isSubmitter?, designContext? }`.
+ * @param {Function} deps.fetchPending    `() => Promise<Object>` — GET response: `{ pending, buildId?, tree?, mode?, conflict?, isSubmitter?, submitterUnfiltered?, designContext? }`.
  * @param {Function} deps.postReport      `(body: Object) => Promise<void>` — POSTs a report for this post; every body gets the pending `buildId`.
+ * @param {Function} deps.sanitizeMarkup  `({ buildId, markup }) => Promise<{ markup }>` — POSTs to the sanitize route.
  * @param {Object}   deps.engine          `{ assemble, lint }` bound to the site's block registry.
  * @param {Function} deps.parse           `wp.blocks.parse`.
  * @param {Function} deps.getEditorBlocks `() => Array` current editor blocks.
@@ -55,6 +59,7 @@ export async function finishBuild(postId, deps) {
 	const {
 		fetchPending,
 		postReport,
+		sanitizeMarkup,
 		engine,
 		parse,
 		getEditorBlocks,
@@ -106,10 +111,10 @@ export async function finishBuild(postId, deps) {
 			currentBlocks,
 		});
 
-		if (!result.ok) {
+		const fail = async (invalid) => {
 			await report({
 				status: 'failed',
-				invalid: result.invalid,
+				invalid,
 				findings: result.findings,
 			});
 			notify(
@@ -118,10 +123,32 @@ export async function finishBuild(postId, deps) {
 				{ id: FINISH_NOTICE_ID }
 			);
 			markDocument('failed');
+		};
+
+		if (!result.ok) {
+			await fail(result.invalid);
 			return;
 		}
 
-		const { blocks: nextBlocks, findings } = result;
+		const { findings } = result;
+		let nextBlocks = result.blocks;
+
+		// Strictly `true`: a missing flag must never skip the filter.
+		if (pending.submitterUnfiltered !== true) {
+			const sanitized = await sanitizeAssembled({
+				sanitizeMarkup,
+				parse,
+				buildId: pending.buildId,
+				markup: result.markup,
+				parsedBlocks: result.parsedBlocks,
+			});
+			if (!sanitized.ok) {
+				await fail(sanitized.invalid);
+				return;
+			}
+			nextBlocks = composeBlocks(mode, currentBlocks, sanitized.blocks);
+		}
+
 		const status = findings.length ? 'finished_with_findings' : 'finished';
 		// Strictly `true`: a missing flag must never be read as permission to
 		// save someone else's build.

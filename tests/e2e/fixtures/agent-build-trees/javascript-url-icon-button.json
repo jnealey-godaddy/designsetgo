@@ -1,0 +1,12 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/icon-button",
+			"attributes": {
+				"text": "Agent build javascript icon button",
+				"url": "javascript:alert(1)"
+			}
+		}
+	]
+}

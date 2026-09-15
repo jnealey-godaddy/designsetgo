@@ -225,6 +225,57 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * GET says whether the submitter held unfiltered_html when the build was
+	 * stored: the editor sends a build's markup through the sanitize route
+	 * unless this is true.
+	 */
+	public function test_get_reports_whether_the_submitter_had_unfiltered_html(): void {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+		if ( ! current_user_can( 'unfiltered_html' ) ) {
+			$this->markTestSkipped( 'Administrators lack unfiltered_html in this environment (multisite or DISALLOW_UNFILTERED_HTML).' );
+		}
+		$this->store->store( $this->post_id, $this->tree(), 'replace' );
+
+		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $this->post_id ) );
+		$this->assertTrue( $response->get_data()['submitterUnfiltered'] );
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'contributor' ) ) );
+		$this->store->store( $this->post_id, $this->tree(), 'replace' );
+
+		wp_set_current_user( $admin_id );
+		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $this->post_id ) );
+		$this->assertFalse( $response->get_data()['submitterUnfiltered'] );
+	}
+
+	/**
+	 * A pending build stored before submitterUnfiltered existed reads as
+	 * false, so its markup is still sanitized.
+	 */
+	public function test_get_treats_a_missing_submitter_unfiltered_flag_as_false(): void {
+		update_post_meta(
+			$this->post_id,
+			Build_Store::META_PENDING_TREE,
+			wp_slash(
+				wp_json_encode(
+					array(
+						'tree'      => $this->tree(),
+						'mode'      => 'replace',
+						'base'      => get_post_field( 'post_modified_gmt', $this->post_id ),
+						'submitter' => $this->editor_id,
+						'buildId'   => 'legacy-build',
+					)
+				)
+			)
+		);
+		wp_set_current_user( $this->editor_id );
+
+		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $this->post_id ) );
+
+		$this->assertFalse( $response->get_data()['submitterUnfiltered'] );
+	}
+
+	/**
 	 * GET's raw JSON response keeps an empty node "attributes" as an object
 	 * ("{}"), not an array ("[]"). PHP's json_decode( $json, true ) can't
 	 * tell an empty JSON object from an empty JSON array - both become

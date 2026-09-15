@@ -16,6 +16,10 @@ const TREE = { version: 1, blocks: [{ name: 'core/paragraph' }] };
 const DESIGN_CONTEXT = { colors: [] };
 const BUILD_ID = 'build-1';
 
+// Every pending fixture below carries `submitterUnfiltered: true`: these
+// scenarios cover the branches after assembly, and the sanitize route that
+// runs for any other value has its own suite (`sanitize-build.test.js`).
+
 /**
  * Flushes pending microtasks (a macrotask boundary via a real `setTimeout`
  * clears any queued microtasks ahead of it), for asserting on a
@@ -75,6 +79,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: true,
 				tree: TREE,
@@ -101,6 +106,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -172,6 +178,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -197,6 +204,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -217,6 +225,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -249,6 +258,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -289,6 +299,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -321,6 +332,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -364,6 +376,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -409,6 +422,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -441,6 +455,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -476,6 +491,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -520,6 +536,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -544,6 +561,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: false,
@@ -584,6 +602,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: false,
@@ -607,6 +626,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				tree: TREE,
@@ -654,6 +674,7 @@ describe('finishBuild()', () => {
 		// instead, which always reports.
 		deps.fetchPending.mockResolvedValue({
 			pending: true,
+			submitterUnfiltered: true,
 			buildId: BUILD_ID,
 			conflict: true,
 			tree: TREE,
@@ -681,6 +702,7 @@ describe('finishBuild()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				conflict: false,
 				isSubmitter: true,
@@ -730,6 +752,7 @@ describe('finishAfterRegistrationTimeout()', () => {
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
+				submitterUnfiltered: true,
 				buildId: BUILD_ID,
 				tree: TREE,
 				mode: 'replace',

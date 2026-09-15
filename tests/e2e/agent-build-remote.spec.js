@@ -59,6 +59,8 @@ const lintWarningTree = require('./fixtures/agent-build-trees/lint-warning.json'
 const failedTree = require('./fixtures/agent-build-trees/failed-invalid-markup.json');
 const escapedContentTree = require('./fixtures/agent-build-trees/escaped-content.json');
 const coreListTree = require('./fixtures/agent-build-trees/core-list.json');
+const javascriptButtonTree = require('./fixtures/agent-build-trees/javascript-url-button.json');
+const javascriptIconButtonTree = require('./fixtures/agent-build-trees/javascript-url-icon-button.json');
 
 const MARKER = 'Agent build remote e2e marker';
 const CANVAS_TIMEOUT = 30000;
@@ -83,6 +85,53 @@ function isAutosaveLocked(page) {
 	return page.evaluate(() =>
 		window.wp.data.select('core/editor').isPostAutosavingLocked()
 	);
+}
+
+/**
+ * Creates a contributor, submits `tree` as them into a new post, runs
+ * `callback` with the build-page response (the admin `page` is still logged
+ * in as an administrator), and cleans up the post and the user.
+ *
+ * @param {Object}                             fixtures
+ * @param {import('@playwright/test').Page}    fixtures.page    Administrator page.
+ * @param {import('@playwright/test').Browser} fixtures.browser Browser for the contributor context.
+ * @param {Object}                             tree             Tree to submit.
+ * @param {Function}                           callback         `(body) => Promise<void>`.
+ */
+async function asContributorBuild({ page, browser }, tree, callback) {
+	await page.goto('/wp-admin/');
+	const username = `dsgo-e2e-contributor-${Date.now()}`;
+	const password = `Contributor-${Date.now()}-pass!`;
+	const contributor = await createUser(page, {
+		username,
+		password,
+		role: 'contributor',
+	});
+	const contributorContext = await browser.newContext({
+		storageState: { cookies: [], origins: [] },
+	});
+	let postId;
+
+	try {
+		const contributorPage = await contributorContext.newPage();
+		await logIn(contributorPage, username, password);
+
+		const { body } = await buildPage(contributorPage, {
+			new: { title: 'DSGo E2E contributor build', post_type: 'post' },
+			tree,
+			mode: 'replace',
+		});
+		expect(body.success).toBe(true);
+		postId = body.post_id;
+
+		await callback(body);
+	} finally {
+		if (postId) {
+			await deletePost(page, 'post', postId);
+		}
+		await contributorContext.close();
+		await deleteUser(page, contributor.id);
+	}
 }
 
 test.describe('Agent build — remote flow end to end', () => {
@@ -387,30 +436,15 @@ test.describe('Agent build — remote flow end to end', () => {
 		page,
 		browser,
 	}) => {
-		await page.goto('/wp-admin/');
-		const username = `dsgo-e2e-contributor-${Date.now()}`;
-		const password = `Contributor-${Date.now()}-pass!`;
-		const contributor = await createUser(page, {
-			username,
-			password,
-			role: 'contributor',
-		});
-		const contributorContext = await browser.newContext({
-			storageState: { cookies: [], origins: [] },
-		});
-		let postId;
-
-		try {
-			const contributorPage = await contributorContext.newPage();
-			await logIn(contributorPage, username, password);
-
-			const { body } = await buildPage(contributorPage, {
-				new: { title: 'DSGo E2E contributor build', post_type: 'post' },
-				tree: validTree,
-				mode: 'replace',
+		await asContributorBuild({ page, browser }, validTree, async (body) => {
+			const postId = body.post_id;
+			const sanitizeRequests = [];
+			page.on('request', (request) => {
+				const url = decodeURIComponent(request.url());
+				if (/\/agent-build\/\d+\/sanitize/.test(url)) {
+					sanitizeRequests.push(url);
+				}
 			});
-			expect(body.success).toBe(true);
-			postId = body.post_id;
 
 			await page.goto(body.finish_url);
 			await waitForEditorCanvas(page);
@@ -420,6 +454,10 @@ test.describe('Agent build — remote flow end to end', () => {
 				'awaiting_review',
 			]);
 			expect(report.status).toBe('awaiting_review');
+			// Safe content from a contributor passes the markup filter.
+			expect(sanitizeRequests).toEqual([
+				expect.stringContaining(`/agent-build/${postId}/sanitize`),
+			]);
 
 			const reviewNotice = page.locator('.components-notice').filter({
 				hasText: 'on behalf of another user',
@@ -437,12 +475,82 @@ test.describe('Agent build — remote flow end to end', () => {
 			await reviewNotice.getByRole('button', { name: 'Discard' }).click();
 			await waitForBuildStatus(page, postId, ['discarded']);
 			expect(await isAutosaveLocked(page)).toBe(false);
-		} finally {
-			if (postId) {
-				await deletePost(page, 'post', postId);
+		});
+	});
+
+	// core/button's url is sourced from the rendered href. KSES rewrites
+	// `href="javascript:alert(1)"` to `href="alert(1)"`, the url re-parses
+	// from that, and the block stays valid with an unchanged structure: the
+	// build is applied with the protocol gone, not failed.
+	test('javascript: url in a contributor core/button is stripped before review', async ({
+		page,
+		browser,
+	}) => {
+		await asContributorBuild(
+			{ page, browser },
+			javascriptButtonTree,
+			async (body) => {
+				const postId = body.post_id;
+				await page.goto(body.finish_url);
+				await waitForEditorCanvas(page);
+
+				expect(await waitForFinishState(page)).toBe('done');
+				const report = await waitForBuildStatus(page, postId, [
+					'awaiting_review',
+					'failed',
+				]);
+				expect(report.status).toBe('awaiting_review');
+
+				const canvasMarkup = await page.evaluate(() =>
+					window.wp.data.select('core/editor').getEditedPostContent()
+				);
+				expect(canvasMarkup).toContain('Agent build javascript button');
+				expect(canvasMarkup).toContain('wp-block-button__link');
+				expect(canvasMarkup).not.toContain('javascript:');
+
+				const saved = await getPostEditContext(page, 'post', postId);
+				expect(saved.content.raw).toBe('');
 			}
-			await contributorContext.close();
-			await deleteUser(page, contributor.id);
-		}
+		);
+	});
+
+	// designsetgo/icon-button keeps url in the block comment, which KSES
+	// leaves as plain text, while the rendered href loses its protocol. The
+	// re-parsed block no longer matches its markup, so the build fails.
+	test('javascript: url in a contributor icon-button fails as sanitized content changed', async ({
+		page,
+		browser,
+	}) => {
+		await asContributorBuild(
+			{ page, browser },
+			javascriptIconButtonTree,
+			async (body) => {
+				const postId = body.post_id;
+				await page.goto(body.finish_url);
+				await waitForEditorCanvas(page);
+
+				expect(await waitForFinishState(page)).toBe('failed');
+				const report = await waitForBuildStatus(page, postId, [
+					'failed',
+					'awaiting_review',
+				]);
+				expect(report.status).toBe('failed');
+				expect(report.invalid).toEqual([
+					expect.objectContaining({
+						path: 'blocks[0]',
+						block: 'designsetgo/icon-button',
+						code: 'designsetgo_sanitized_content_changed',
+					}),
+				]);
+
+				const canvasMarkup = await page.evaluate(() =>
+					window.wp.data.select('core/editor').getEditedPostContent()
+				);
+				expect(canvasMarkup).not.toContain('javascript:');
+
+				const saved = await getPostEditContext(page, 'post', postId);
+				expect(saved.content.raw).toBe('');
+			}
+		);
 	});
 });

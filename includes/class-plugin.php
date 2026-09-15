@@ -439,6 +439,13 @@ class Plugin {
 	public $agent_build_rest;
 
 	/**
+	 * Agent-build markup sanitize REST route.
+	 *
+	 * @var Abilities\Agent_Build\Build_Sanitize_REST
+	 */
+	public $agent_build_sanitize_rest;
+
+	/**
 	 * Section Styles instance.
 	 *
 	 * @var Section_Styles
@@ -748,6 +755,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/abilities/agent-build/class-build-store.php';
 		require_once DESIGNSETGO_PATH . 'includes/abilities/agent-build/class-report-schema.php';
 		require_once DESIGNSETGO_PATH . 'includes/abilities/agent-build/class-build-rest.php';
+		require_once DESIGNSETGO_PATH . 'includes/abilities/agent-build/class-build-sanitize-rest.php';
 	}
 
 	/**
@@ -812,8 +820,9 @@ class Plugin {
 		// Works on WP 6.7+ regardless of the Abilities API - see the
 		// require_once comment in load_dependencies().
 		if ( class_exists( 'DesignSetGo\Abilities\Agent_Build\Build_Store' ) ) {
-			$this->agent_build_store = new Abilities\Agent_Build\Build_Store();
-			$this->agent_build_rest  = new Abilities\Agent_Build\Build_REST( $this->agent_build_store );
+			$this->agent_build_store         = new Abilities\Agent_Build\Build_Store();
+			$this->agent_build_rest          = new Abilities\Agent_Build\Build_REST( $this->agent_build_store );
+			$this->agent_build_sanitize_rest = new Abilities\Agent_Build\Build_Sanitize_REST( $this->agent_build_store, $this->agent_build_rest );
 		}
 
 		// Initialize Abilities Registry (AI-native API).

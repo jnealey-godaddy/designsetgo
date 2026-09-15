@@ -181,16 +181,18 @@ class Build_REST {
 
 		return rest_ensure_response(
 			array(
-				'pending'       => true,
-				'tree'          => $tree,
-				'mode'          => $pending['mode'],
-				'buildId'       => $pending['buildId'],
-				'submitter'     => $submitter,
+				'pending'             => true,
+				'tree'                => $tree,
+				'mode'                => $pending['mode'],
+				'buildId'             => $pending['buildId'],
+				'submitter'           => $submitter,
 				// Only the submitter's own editor load may auto-save the build.
-				'isSubmitter'   => $submitter > 0 && get_current_user_id() === $submitter,
-				'conflict'      => $this->store->is_conflict( $post_id ),
-				'postStatus'    => $post ? $post->post_status : '',
-				'designContext' => $this->design_context(),
+				'isSubmitter'         => $submitter > 0 && get_current_user_id() === $submitter,
+				// Unless true, the editor sanitizes the assembled markup first.
+				'submitterUnfiltered' => $pending['submitterUnfiltered'],
+				'conflict'            => $this->store->is_conflict( $post_id ),
+				'postStatus'          => $post ? $post->post_status : '',
+				'designContext'       => $this->design_context(),
 			)
 		);
 	}
@@ -208,17 +210,11 @@ class Build_REST {
 		$findings = (array) $request->get_param( 'findings' );
 
 		$build_id = (string) $request->get_param( 'buildId' );
-		$pending  = $this->store->pending( $post_id );
 
-		// A report is only ever about the build currently pending. A stale
-		// tab, or a report sent after the tree was cleared, must never
-		// overwrite the outcome of a different build.
-		if ( null === $pending || '' === $pending['buildId'] || ! hash_equals( $pending['buildId'], $build_id ) ) {
-			return new WP_Error(
-				'designsetgo_build_mismatch',
-				__( 'This report does not match the build currently pending for this post.', 'designsetgo' ),
-				array( 'status' => 409 )
-			);
+		// A report is only ever about the build currently pending; it must
+		// never overwrite the outcome of a different build.
+		if ( ! $this->store->is_pending_build( $post_id, $build_id ) ) {
+			return self::build_mismatch_error();
 		}
 
 		$existing_report = $this->store->report( $post_id );
@@ -245,6 +241,20 @@ class Build_REST {
 				'success' => true,
 				'status'  => $status,
 			)
+		);
+	}
+
+	/**
+	 * The 409 returned when a request names a build that is not the one
+	 * pending for the post (or nothing is pending).
+	 *
+	 * @return WP_Error
+	 */
+	public static function build_mismatch_error(): WP_Error {
+		return new WP_Error(
+			'designsetgo_build_mismatch',
+			__( 'This request does not match the build currently pending for this post.', 'designsetgo' ),
+			array( 'status' => 409 )
 		);
 	}
 
