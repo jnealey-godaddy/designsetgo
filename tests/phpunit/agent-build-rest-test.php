@@ -249,10 +249,11 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A pending build stored before submitterUnfiltered existed reads as
-	 * false, so its markup is still sanitized.
+	 * A blob written without Build_Store's signature - e.g. one stored before
+	 * signing existed, or written by anything else - is not a pending build,
+	 * so its missing submitterUnfiltered flag can never skip sanitizing.
 	 */
-	public function test_get_treats_a_missing_submitter_unfiltered_flag_as_false(): void {
+	public function test_get_ignores_an_unsigned_pending_blob(): void {
 		update_post_meta(
 			$this->post_id,
 			Build_Store::META_PENDING_TREE,
@@ -272,7 +273,8 @@ class Agent_Build_REST_Test extends WP_UnitTestCase {
 
 		$response = rest_get_server()->dispatch( new WP_REST_Request( 'GET', $this->route_base . $this->post_id ) );
 
-		$this->assertFalse( $response->get_data()['submitterUnfiltered'] );
+		$this->assertFalse( $response->get_data()['pending'] );
+		$this->assertArrayNotHasKey( 'submitterUnfiltered', $response->get_data() );
 	}
 
 	/**

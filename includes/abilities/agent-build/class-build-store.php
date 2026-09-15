@@ -39,6 +39,8 @@ class Build_Store {
 	 * stored, `submitter` is the id of the user who stored it,
 	 * `submitterUnfiltered` is whether that user held `unfiltered_html`, and
 	 * `buildId` is a fresh UUID every report about this build must echo back.
+	 * `signature` is an HMAC over those fields (see sign()); pending() ignores
+	 * a blob whose signature is missing or does not verify.
 	 *
 	 * @var string
 	 */
@@ -60,8 +62,13 @@ class Build_Store {
 
 	/**
 	 * Register both meta keys as protected (leading underscore, not
-	 * `show_in_rest`) post meta, readable/writable only by users who can
-	 * edit the post they are attached to.
+	 * `show_in_rest`) post meta that grants nobody a meta capability.
+	 *
+	 * The auth callback backs add/edit/delete_post_meta, which is all
+	 * XML-RPC custom fields and the classic Custom Fields box check. The
+	 * pending blob decides who may auto-save a build and whether its markup
+	 * is filtered, so only this class, through update_post_meta() (which
+	 * checks no capability), may write either key.
 	 *
 	 * @return void
 	 */
@@ -70,9 +77,7 @@ class Build_Store {
 			'single'        => true,
 			'type'          => 'string',
 			'show_in_rest'  => false,
-			'auth_callback' => static function ( $allowed, $meta_key, $post_id ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- required by register_post_meta()'s auth_callback signature.
-				return current_user_can( 'edit_post', $post_id );
-			},
+			'auth_callback' => '__return_false',
 		);
 
 		register_post_meta( '', self::META_PENDING_TREE, $args );
@@ -100,25 +105,28 @@ class Build_Store {
 		$base     = get_post_field( 'post_modified_gmt', $post_id );
 		$build_id = wp_generate_uuid4();
 
+		// Normalized through one JSON round trip first, so the signature is
+		// computed over exactly the values pending() will decode.
+		$blob = json_decode(
+			(string) wp_json_encode(
+				array(
+					'tree'                => $tree,
+					'mode'                => $mode,
+					'base'                => is_string( $base ) ? $base : '',
+					'submitter'           => get_current_user_id(),
+					'submitterUnfiltered' => current_user_can( 'unfiltered_html' ),
+					'buildId'             => $build_id,
+				)
+			),
+			true
+		);
+
+		$blob['signature'] = self::sign( $blob );
+
 		// update_post_meta() unslashes its value, which would strip the
 		// backslashes wp_json_encode() escapes quotes, newlines, and
 		// non-ASCII with - leaving invalid or silently corrupted JSON.
-		update_post_meta(
-			$post_id,
-			self::META_PENDING_TREE,
-			wp_slash(
-				wp_json_encode(
-					array(
-						'tree'                => $tree,
-						'mode'                => $mode,
-						'base'                => is_string( $base ) ? $base : '',
-						'submitter'           => get_current_user_id(),
-						'submitterUnfiltered' => current_user_can( 'unfiltered_html' ),
-						'buildId'             => $build_id,
-					)
-				)
-			)
-		);
+		update_post_meta( $post_id, self::META_PENDING_TREE, wp_slash( wp_json_encode( $blob ) ) );
 
 		$this->write_report(
 			$post_id,
@@ -131,7 +139,8 @@ class Build_Store {
 	}
 
 	/**
-	 * Read the post's pending build, if any.
+	 * Read the post's pending build, if any. A blob this class did not sign,
+	 * or one changed since, is not a pending build.
 	 *
 	 * @param int $post_id Post to read.
 	 * @return array{tree: array, mode: string, base: string, submitter: int, submitterUnfiltered: bool, buildId: string}|null Decoded pending build, or null when there is none.
@@ -149,12 +158,33 @@ class Build_Store {
 			return null;
 		}
 
+		if ( ! isset( $decoded['signature'] ) || ! is_string( $decoded['signature'] ) || ! hash_equals( self::sign( $decoded ), $decoded['signature'] ) ) {
+			return null;
+		}
+		unset( $decoded['signature'] );
+
 		$decoded['submitter'] = isset( $decoded['submitter'] ) ? (int) $decoded['submitter'] : 0;
 		$decoded['buildId']   = isset( $decoded['buildId'] ) && is_string( $decoded['buildId'] ) ? $decoded['buildId'] : '';
 		// Strictly true: a build stored without the flag is treated as filtered.
 		$decoded['submitterUnfiltered'] = isset( $decoded['submitterUnfiltered'] ) && true === $decoded['submitterUnfiltered'];
 
 		return $decoded;
+	}
+
+	/**
+	 * HMAC over the canonical JSON of every field a decision reads, keyed with
+	 * the site's auth salt.
+	 *
+	 * @param array<string, mixed> $blob Decoded pending blob.
+	 * @return string Hex HMAC-SHA256.
+	 */
+	private static function sign( array $blob ): string {
+		$fields = array();
+		foreach ( array( 'submitter', 'submitterUnfiltered', 'buildId', 'base', 'mode', 'tree' ) as $key ) {
+			$fields[ $key ] = $blob[ $key ] ?? null;
+		}
+
+		return hash_hmac( 'sha256', (string) wp_json_encode( $fields ), wp_salt( 'auth' ) );
 	}
 
 	/**
