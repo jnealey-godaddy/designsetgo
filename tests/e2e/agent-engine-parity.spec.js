@@ -48,6 +48,13 @@ const TREES = [
 		name: 'section-accordion-row (section > heading, accordion > accordion-item, row > icon-button)',
 		file: path.join(__dirname, 'fixtures/agent-trees/section-accordion-row.json'),
 	},
+	{
+		name: 'core-group-nested-dsgo (section > core/group > paragraph, icon-button)',
+		file: path.join(
+			__dirname,
+			'fixtures/agent-trees/core-group-nested-dsgo.json'
+		),
+	},
 ];
 
 /**
@@ -137,6 +144,10 @@ test.describe('Agent engine — Node vs. browser parity', () => {
 			);
 			const browserRegions = extractDesignSetGoRegions(browserReport.markup);
 
+			// Guard against a vacuous pass: a tree with no DesignSetGo regions
+			// at all would make the toEqual([]) below trivially true.
+			expect(nodeRegions.length).toBeGreaterThan(0);
+			expect(browserRegions.length).toBe(nodeRegions.length);
 			expect(browserRegions).toEqual(nodeRegions);
 		});
 	}

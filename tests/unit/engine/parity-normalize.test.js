@@ -65,10 +65,13 @@ describe('extractDesignSetGoRegions', () => {
 		expect(region).not.toContain('A1');
 	});
 
-	it('collapses a DesignSetGo block nested inside a core block along with the core block (core-in-DesignSetGo-in-core)', () => {
+	it("preserves a DesignSetGo block nested inside a core block, collapsing only the core block's own markup (core-in-DesignSetGo-in-core)", () => {
 		// Outer DesignSetGo > core/group > inner DesignSetGo > core/paragraph.
-		// Once the scan hits the core/group, everything inside it — including
-		// the DesignSetGo block nested one level deeper — collapses together.
+		// The core/group's own comment + HTML collapses, but the DesignSetGo
+		// block nested one level deeper is real DesignSetGo structure and must
+		// still surface in the comparison — the walk does not stop at the
+		// first collapsed ancestor. Its own core child ("Deep") still
+		// collapses, since that one has no further DesignSetGo descendant.
 		const markup =
 			'<!-- wp:designsetgo/section -->' +
 			'<!-- wp:core/group -->' +
@@ -79,11 +82,31 @@ describe('extractDesignSetGoRegions', () => {
 			'<!-- /wp:designsetgo/section -->';
 
 		const [region] = extractDesignSetGoRegions(markup);
-		const placeholderCount = region.split(CORE_PLACEHOLDER).length - 1;
 
-		expect(placeholderCount).toBe(1);
-		expect(region).not.toContain('designsetgo/icon-button');
+		expect(region).toContain(
+			'<!-- wp:designsetgo/icon-button -->' +
+				CORE_PLACEHOLDER +
+				'<!-- /wp:designsetgo/icon-button -->'
+		);
 		expect(region).not.toContain('Deep');
+		// One placeholder for core/group's own markup, one for the collapsed
+		// core/paragraph nested inside the preserved icon-button.
+		const placeholderCount = region.split(CORE_PLACEHOLDER).length - 1;
+		expect(placeholderCount).toBe(2);
+	});
+
+	it('produces unequal output when a byte differs inside a DesignSetGo block nested in core', () => {
+		const build = (text) =>
+			'<!-- wp:designsetgo/section -->' +
+			'<!-- wp:core/group -->' +
+			`<!-- wp:designsetgo/pill {"content":"${text}"} /-->` +
+			'<!-- /wp:core/group -->' +
+			'<!-- /wp:designsetgo/section -->';
+
+		const [regionA] = extractDesignSetGoRegions(build('Alpha'));
+		const [regionB] = extractDesignSetGoRegions(build('Alphb'));
+
+		expect(regionA).not.toEqual(regionB);
 	});
 
 	it('returns a top-level self-closing (void) DesignSetGo block unchanged', () => {

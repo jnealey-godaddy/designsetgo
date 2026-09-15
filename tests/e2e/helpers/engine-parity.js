@@ -8,11 +8,24 @@
  * `extractDesignSetGoRegions()` finds every OUTERMOST
  * `<!-- wp:designsetgo/… --> … <!-- /wp:designsetgo/… -->` (or self-closing
  * `<!-- wp:designsetgo/… /-->`) region in a markup string, and inside each
- * one replaces every non-DesignSetGo block — its comment pair and
- * everything nested inside it, however deep — with a single `<!--core-->`
+ * one replaces every non-DesignSetGo block's OWN markup — its comment pair
+ * and any literal HTML directly inside it — with a single `<!--core-->`
  * placeholder. DesignSetGo blocks nested inside a kept region are preserved
  * and recursed into, so a DesignSetGo block inside a DesignSetGo block still
  * gets its own non-DesignSetGo children collapsed.
+ *
+ * Collapsing a non-DesignSetGo block does NOT stop the walk: a
+ * `designsetgo/…` block nested inside a core block (e.g.
+ * `designsetgo/section > core/group > designsetgo/icon-button`) is real
+ * DesignSetGo structure and must still be compared, or a parity bug in that
+ * position would go undetected. The deterministic representation is:
+ * `CORE_PLACEHOLDER` for the collapsed block's own markup, immediately
+ * followed by each child's normalized rendering in document order (a
+ * DesignSetGo child renders in full; a non-DesignSetGo child recurses under
+ * this same rule). A non-DesignSetGo subtree with no DesignSetGo descendant
+ * anywhere inside it still collapses to a single bare `CORE_PLACEHOLDER`
+ * token — no trailing children output — so this is backward-compatible with
+ * the common case and never double-collapses nested core-in-core.
  *
  * This is a hand-rolled scanner rather than a reuse of
  * `@wordpress/block-serialization-default-parser` because that package only
@@ -196,9 +209,25 @@ function isDesignSetGo(name) {
 }
 
 /**
- * Renders one parsed node back to a string, collapsing any non-DesignSetGo
- * subtree (however deep) to `CORE_PLACEHOLDER` and otherwise reproducing the
- * original bytes untouched.
+ * @param {Object} node Parsed node from `parseLevel()`.
+ * @return {boolean} True when `node` is a `designsetgo/…` block, or has one
+ *   anywhere among its descendants.
+ */
+function containsDesignSetGo(node) {
+	if (isDesignSetGo(node.name)) {
+		return true;
+	}
+	return node.children.some((child) => containsDesignSetGo(child));
+}
+
+/**
+ * Renders one parsed node back to a string. A `designsetgo/…` node
+ * reproduces its own comment bytes untouched and recurses into its
+ * children. A non-DesignSetGo node collapses its own markup to
+ * `CORE_PLACEHOLDER`; if it has no DesignSetGo descendant anywhere inside,
+ * that placeholder is the whole result, but if it does, each child's
+ * normalized rendering is appended after the placeholder in document order
+ * — see the module doc comment for why this doesn't stop the walk.
  *
  * @param {Object} node   Parsed node from `parseLevel()`.
  * @param {string} markup Original markup the node's offsets index into.
@@ -206,7 +235,13 @@ function isDesignSetGo(name) {
  */
 function renderNode(node, markup) {
 	if (!isDesignSetGo(node.name)) {
-		return CORE_PLACEHOLDER;
+		if (!containsDesignSetGo(node)) {
+			return CORE_PLACEHOLDER;
+		}
+		return (
+			CORE_PLACEHOLDER +
+			node.children.map((child) => renderNode(child, markup)).join('')
+		);
 	}
 	if (node.isVoid) {
 		return markup.slice(node.start, node.end);
