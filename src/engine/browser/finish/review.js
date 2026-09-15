@@ -62,83 +62,101 @@ export async function applyForReview({
 }) {
 	// Lock first: the canvas turns dirty the moment the blocks go in.
 	lockAutosave(AUTOSAVE_LOCK_NAME);
-	replaceBlocks(nextBlocks);
 
-	// A failed report here must never suppress the review notice below —
-	// without it, a person has no Discard affordance for blocks that are
-	// already sitting in their canvas. Report failure is surfaced as its
-	// own separate notice instead.
-	let reportedAwaitingReview = true;
+	// Until the Discard notice and the save watcher are both in place, a
+	// throw must not leave the build in a canvas autosave may write: put
+	// the original blocks back, then release the lock.
+	let applied = false;
+	let armed = false;
 	try {
-		await report({ status: 'awaiting_review', findings });
-	} catch (error) {
-		reportedAwaitingReview = false;
-	}
+		replaceBlocks(nextBlocks);
+		applied = true;
 
-	const message = isSubmitter
-		? __('Review agent changes before updating.', 'designsetgo')
-		: __(
-				'An agent submitted these changes on behalf of another user. Review them before saving.',
-				'designsetgo'
-			);
-
-	// Set once the next-save watcher is registered below; Discard calls it
-	// so a save after discarding never reports the discarded build.
-	let unsubscribeNextSave = () => {};
-	let discarded = false;
-
-	notify('warning', message, {
-		id: FINISH_NOTICE_ID,
-		// This notice carries the only Discard; dismissing it would strand
-		// the applied blocks with no way back.
-		isDismissible: false,
-		actions: [
-			{
-				label: __('Discard', 'designsetgo'),
-				onClick: () => {
-					discarded = true;
-					unsubscribeNextSave();
-					replaceBlocks(currentBlocks);
-					unlockAutosave(AUTOSAVE_LOCK_NAME);
-					// finishBuild() has already returned by the time this
-					// fires, so its try/catch can't cover it — never let a
-					// network hiccup here surface as an unhandled rejection.
-					Promise.resolve(report({ status: 'discarded' })).catch(
-						() => {}
-					);
-				},
-			},
-		],
-	});
-
-	if (!reportedAwaitingReview) {
-		notify(
-			'error',
-			__(
-				'Could not report the applied build back to the server.',
-				'designsetgo'
-			),
-			{ id: FINISH_REPORT_ERROR_NOTICE_ID }
-		);
-	}
-
-	const unsubscribe = onNextSave(async () => {
-		if (discarded) {
-			return;
-		}
-		// A person saved the build on purpose; autosave may resume.
-		unlockAutosave(AUTOSAVE_LOCK_NAME);
-		// Fires long after finishBuild() has returned, so its try/catch
-		// can't cover this either — see the Discard handler above.
+		// A failed report here must never suppress the review notice below —
+		// without it, a person has no Discard affordance for blocks that are
+		// already sitting in their canvas. Report failure is surfaced as its
+		// own separate notice instead.
+		let reportedAwaitingReview = true;
 		try {
-			await report({ status, findings });
+			await report({ status: 'awaiting_review', findings });
 		} catch (error) {
-			// Nothing left to report to; the tree is already cleared or
-			// still marked awaiting_review server-side either way.
+			reportedAwaitingReview = false;
 		}
-	});
 
-	if (typeof unsubscribe === 'function') {
-		unsubscribeNextSave = unsubscribe;
+		const message = isSubmitter
+			? __('Review agent changes before updating.', 'designsetgo')
+			: __(
+					'An agent submitted these changes on behalf of another user. Review them before saving.',
+					'designsetgo'
+				);
+
+		// Set once the next-save watcher is registered below; Discard calls it
+		// so a save after discarding never reports the discarded build.
+		let unsubscribeNextSave = () => {};
+		let discarded = false;
+
+		notify('warning', message, {
+			id: FINISH_NOTICE_ID,
+			// This notice carries the only Discard; dismissing it would strand
+			// the applied blocks with no way back.
+			isDismissible: false,
+			actions: [
+				{
+					label: __('Discard', 'designsetgo'),
+					onClick: () => {
+						discarded = true;
+						unsubscribeNextSave();
+						replaceBlocks(currentBlocks);
+						unlockAutosave(AUTOSAVE_LOCK_NAME);
+						// finishBuild() has already returned by the time this
+						// fires, so its try/catch can't cover it — never let a
+						// network hiccup here surface as an unhandled rejection.
+						Promise.resolve(report({ status: 'discarded' })).catch(
+							() => {}
+						);
+					},
+				},
+			],
+		});
+
+		if (!reportedAwaitingReview) {
+			notify(
+				'error',
+				__(
+					'Could not report the applied build back to the server.',
+					'designsetgo'
+				),
+				{ id: FINISH_REPORT_ERROR_NOTICE_ID }
+			);
+		}
+
+		const unsubscribe = onNextSave(async () => {
+			if (discarded) {
+				return;
+			}
+			// A person saved the build on purpose; autosave may resume.
+			unlockAutosave(AUTOSAVE_LOCK_NAME);
+			// Fires long after finishBuild() has returned, so its try/catch
+			// can't cover this either — see the Discard handler above.
+			try {
+				await report({ status, findings });
+			} catch (error) {
+				// Nothing left to report to; the tree is already cleared or
+				// still marked awaiting_review server-side either way.
+			}
+		});
+
+		if (typeof unsubscribe === 'function') {
+			unsubscribeNextSave = unsubscribe;
+		}
+
+		armed = true;
+	} finally {
+		if (!armed) {
+			if (applied) {
+				replaceBlocks(currentBlocks);
+			}
+			unlockAutosave(AUTOSAVE_LOCK_NAME);
+		}
 	}
 }

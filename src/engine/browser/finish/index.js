@@ -81,6 +81,8 @@ function createDeps(postId) {
 					select('core/editor').didPostSaveRequestSucceed(),
 				isAutosavingPost: () =>
 					select('core/editor').isAutosavingPost(),
+				isPreviewingPost: () =>
+					select('core/editor').isPreviewingPost(),
 				onSuccess: callback,
 			}),
 	};

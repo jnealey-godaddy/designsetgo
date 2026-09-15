@@ -10,7 +10,8 @@ import {
 	FINISH_NOTICE_ID,
 	FINISH_REPORT_ERROR_NOTICE_ID,
 } from '../finish-build';
-import { waitForBlockRegistration, watchNextSave } from '../apply';
+import { waitForBlockRegistration } from '../apply';
+import { createFakeEditorStore } from './helpers/fake-editor-store';
 
 const TREE = { version: 1, blocks: [{ name: 'core/paragraph' }] };
 const DESIGN_CONTEXT = { colors: [] };
@@ -687,18 +688,7 @@ describe('finishBuild()', () => {
 	});
 
 	test('6d. after Discard, a later save reports nothing', async () => {
-		const listeners = [];
-		const subscribe = (listener) => {
-			listeners.push(listener);
-			return () => {
-				const index = listeners.indexOf(listener);
-				if (index !== -1) {
-					listeners.splice(index, 1);
-				}
-			};
-		};
-		let isSaving = false;
-		const fire = () => [...listeners].forEach((listener) => listener());
+		const editor = createFakeEditorStore();
 		const deps = createDeps({
 			fetchPending: jest.fn().mockResolvedValue({
 				pending: true,
@@ -710,14 +700,7 @@ describe('finishBuild()', () => {
 				mode: 'replace',
 			}),
 			isPublished: jest.fn().mockReturnValue(true),
-			onNextSave: (callback) =>
-				watchNextSave({
-					subscribe,
-					isSavingPost: () => isSaving,
-					didPostSaveRequestSucceed: () => true,
-					isAutosavingPost: () => false,
-					onSuccess: callback,
-				}),
+			onNextSave: editor.watch,
 		});
 
 		await finishBuild(1, deps);
@@ -727,10 +710,7 @@ describe('finishBuild()', () => {
 		await flushMicrotasks();
 		deps.postReport.mockClear();
 
-		isSaving = true;
-		fire();
-		isSaving = false;
-		fire();
+		editor.save();
 		await flushMicrotasks();
 
 		expect(deps.postReport).not.toHaveBeenCalled();
@@ -865,98 +845,59 @@ describe('waitForBlockRegistration()', () => {
 });
 
 describe('watchNextSave()', () => {
-	/**
-	 * @return {{fire: Function, listeners: Function[]}} A fake `subscribe`
-	 *   that records listeners and lets the test fire them manually.
-	 */
-	function createFakeStore() {
-		const listeners = [];
-		const subscribe = (listener) => {
-			listeners.push(listener);
-			return () => {
-				const index = listeners.indexOf(listener);
-				if (index !== -1) {
-					listeners.splice(index, 1);
-				}
-			};
-		};
-		return {
-			subscribe,
-			fire: () => listeners.forEach((listener) => listener()),
-		};
-	}
-
-	test('fires onSuccess once when a save transitions from saving to a successful, non-autosave finish', () => {
-		const { subscribe, fire } = createFakeStore();
-		let isSaving = false;
-		let succeeded = false;
-		let isAutosave = false;
+	test('fires onSuccess once for a successful manual save', () => {
+		const editor = createFakeEditorStore();
 		const onSuccess = jest.fn();
+		editor.watch(onSuccess);
 
-		watchNextSave({
-			subscribe,
-			isSavingPost: () => isSaving,
-			didPostSaveRequestSucceed: () => succeeded,
-			isAutosavingPost: () => isAutosave,
-			onSuccess,
-		});
-
-		isSaving = true;
-		fire();
-		isSaving = false;
-		succeeded = true;
-		isAutosave = false;
-		fire();
-
+		editor.save();
 		expect(onSuccess).toHaveBeenCalledTimes(1);
 
-		// A second save/finish cycle must not fire again (one-shot).
-		isSaving = true;
-		fire();
-		isSaving = false;
-		fire();
-
+		// One-shot: a second save does not fire again.
+		editor.save();
 		expect(onSuccess).toHaveBeenCalledTimes(1);
 	});
 
-	test('does not fire for an autosave', () => {
-		const { subscribe, fire } = createFakeStore();
-		let isSaving = false;
+	test('does not fire for an autosave, even though core reports isAutosavingPost() false once saving ends', () => {
+		const editor = createFakeEditorStore();
 		const onSuccess = jest.fn();
+		editor.watch(onSuccess);
 
-		watchNextSave({
-			subscribe,
-			isSavingPost: () => isSaving,
-			didPostSaveRequestSucceed: () => true,
-			isAutosavingPost: () => true,
-			onSuccess,
-		});
-
-		isSaving = true;
-		fire();
-		isSaving = false;
-		fire();
+		editor.save({ isAutosave: true });
 
 		expect(onSuccess).not.toHaveBeenCalled();
 	});
 
-	test('does not fire when the save request failed', () => {
-		const { subscribe, fire } = createFakeStore();
-		let isSaving = false;
+	test('does not fire for a preview save', () => {
+		const editor = createFakeEditorStore();
 		const onSuccess = jest.fn();
+		editor.watch(onSuccess);
 
-		watchNextSave({
-			subscribe,
-			isSavingPost: () => isSaving,
-			didPostSaveRequestSucceed: () => false,
-			isAutosavingPost: () => false,
-			onSuccess,
-		});
+		editor.save({ isPreview: true });
+		editor.save({ isAutosave: true, isPreview: true });
 
-		isSaving = true;
-		fire();
-		isSaving = false;
-		fire();
+		expect(onSuccess).not.toHaveBeenCalled();
+	});
+
+	test('after an autosave and a preview, only the real manual save fires', () => {
+		const editor = createFakeEditorStore();
+		const onSuccess = jest.fn();
+		editor.watch(onSuccess);
+
+		editor.save({ isAutosave: true });
+		editor.save({ isPreview: true });
+		expect(onSuccess).not.toHaveBeenCalled();
+
+		editor.save({});
+		expect(onSuccess).toHaveBeenCalledTimes(1);
+	});
+
+	test('does not fire when the save request failed', () => {
+		const editor = createFakeEditorStore();
+		const onSuccess = jest.fn();
+		editor.watch(onSuccess);
+
+		editor.save({}, false);
 
 		expect(onSuccess).not.toHaveBeenCalled();
 	});

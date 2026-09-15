@@ -61,15 +61,20 @@ export async function waitForBlockRegistration({
 
 /**
  * Registers a one-shot `onSuccess` for the next save that transitions from
- * saving to a finished, successful, non-autosave state, then unsubscribes.
- * Generic over `subscribe`/the `core/editor` selectors it needs, so it
- * takes no `@wordpress/data` dependency itself.
+ * saving to a finished, successful save that was neither an autosave nor a
+ * preview, then unsubscribes. Generic over `subscribe`/the `core/editor`
+ * selectors it needs, so it takes no `@wordpress/data` dependency itself.
+ *
+ * Core's `isAutosavingPost()`/`isPreviewingPost()` are only true while
+ * `isSavingPost()` is, so they read false at the very moment a save ends.
+ * They are sampled while the save is in flight instead, once per save.
  *
  * @param {Object}   options
  * @param {Function} options.subscribe                 `(listener: Function) => (unsubscribe: Function)`.
  * @param {Function} options.isSavingPost              `() => boolean`.
  * @param {Function} options.didPostSaveRequestSucceed `() => boolean`.
  * @param {Function} options.isAutosavingPost          `() => boolean`.
+ * @param {Function} options.isPreviewingPost          `() => boolean`.
  * @param {Function} options.onSuccess                 Called once, after unsubscribing.
  * @return {Function} `unsubscribe`.
  */
@@ -78,26 +83,36 @@ export function watchNextSave({
 	isSavingPost,
 	didPostSaveRequestSucceed,
 	isAutosavingPost,
+	isPreviewingPost,
 	onSuccess,
 }) {
+	const isAutomatic = () => isAutosavingPost() || isPreviewingPost();
 	let wasSaving = isSavingPost();
+	let wasAutomatic = wasSaving && isAutomatic();
 
 	const unsubscribe = subscribe(() => {
 		const isSaving = isSavingPost();
 
-		if (wasSaving && !isSaving) {
-			const succeeded = didPostSaveRequestSucceed();
-			const isAutosave = isAutosavingPost();
-			wasSaving = isSaving;
-
-			if (succeeded && !isAutosave) {
-				unsubscribe();
-				onSuccess();
-			}
+		if (isSaving) {
+			// A new save starts fresh; an in-flight one stays automatic once
+			// it has been seen as automatic.
+			wasAutomatic = (wasSaving && wasAutomatic) || isAutomatic();
+			wasSaving = true;
 			return;
 		}
 
-		wasSaving = isSaving;
+		if (!wasSaving) {
+			return;
+		}
+
+		const skip = wasAutomatic;
+		wasSaving = false;
+		wasAutomatic = false;
+
+		if (!skip && didPostSaveRequestSucceed()) {
+			unsubscribe();
+			onSuccess();
+		}
 	});
 
 	return unsubscribe;

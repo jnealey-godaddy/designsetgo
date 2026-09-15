@@ -6,7 +6,7 @@
  * it was applied, with nobody clicking Save.
  */
 import { finishBuild } from '../finish-build';
-import { watchNextSave } from '../apply';
+import { createFakeEditorStore } from './helpers/fake-editor-store';
 import { AUTOSAVE_LOCK_NAME } from '../review';
 
 const TREE = { version: 1, blocks: [{ name: 'core/paragraph' }] };
@@ -17,38 +17,6 @@ const BUILD_ID = 'build-1';
  */
 function flushMicrotasks() {
 	return new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-/**
- * A fake `@wordpress/data` store: records listeners, fires them on demand,
- * and exposes mutable save-state flags for `watchNextSave`.
- *
- * @return {Object} `{ state, fire, onNextSave }`.
- */
-function createFakeEditor() {
-	const listeners = [];
-	const state = { isSaving: false, succeeded: true, isAutosave: false };
-	const subscribe = (listener) => {
-		listeners.push(listener);
-		return () => {
-			const index = listeners.indexOf(listener);
-			if (index !== -1) {
-				listeners.splice(index, 1);
-			}
-		};
-	};
-	return {
-		state,
-		fire: () => [...listeners].forEach((listener) => listener()),
-		onNextSave: (callback) =>
-			watchNextSave({
-				subscribe,
-				isSavingPost: () => state.isSaving,
-				didPostSaveRequestSucceed: () => state.succeeded,
-				isAutosavingPost: () => state.isAutosave,
-				onSuccess: callback,
-			}),
-	};
 }
 
 /**
@@ -159,15 +127,11 @@ describe('autosave lock during agent build review', () => {
 	});
 
 	test('a successful manual save unlocks autosave', async () => {
-		const editor = createFakeEditor();
-		const deps = createDeps({ onNextSave: editor.onNextSave });
+		const editor = createFakeEditorStore();
+		const deps = createDeps({ onNextSave: editor.watch });
 
 		await finishBuild(1, deps);
-
-		editor.state.isSaving = true;
-		editor.fire();
-		editor.state.isSaving = false;
-		editor.fire();
+		editor.save();
 		await flushMicrotasks();
 
 		expect(deps.unlockAutosave).toHaveBeenCalledTimes(1);
@@ -176,36 +140,68 @@ describe('autosave lock during agent build review', () => {
 		);
 	});
 
-	test('an autosave never unlocks autosave', async () => {
-		const editor = createFakeEditor();
-		const deps = createDeps({ onNextSave: editor.onNextSave });
+	test('an autosave or a preview save never unlocks autosave', async () => {
+		const editor = createFakeEditorStore();
+		const deps = createDeps({ onNextSave: editor.watch });
 
 		await finishBuild(1, deps);
+		editor.save({ isAutosave: true });
+		editor.save({ isPreview: true });
+		await flushMicrotasks();
 
-		editor.state.isAutosave = true;
-		editor.state.isSaving = true;
-		editor.fire();
-		editor.state.isSaving = false;
-		editor.fire();
+		expect(deps.unlockAutosave).not.toHaveBeenCalled();
+		expect(deps.postReport).not.toHaveBeenCalledWith(
+			expect.objectContaining({ status: 'finished' })
+		);
+	});
+
+	test('a failed manual save keeps autosave locked', async () => {
+		const editor = createFakeEditorStore();
+		const deps = createDeps({ onNextSave: editor.watch });
+
+		await finishBuild(1, deps);
+		editor.save({}, false);
 		await flushMicrotasks();
 
 		expect(deps.unlockAutosave).not.toHaveBeenCalled();
 	});
 
-	test('a failed manual save keeps autosave locked', async () => {
-		const editor = createFakeEditor();
-		const deps = createDeps({ onNextSave: editor.onNextSave });
+	test('a throw while applying the build releases the lock', async () => {
+		const deps = createDeps({
+			replaceBlocks: jest.fn(() => {
+				throw new Error('reset failed');
+			}),
+		});
 
-		await finishBuild(1, deps);
+		await expect(finishBuild(1, deps)).resolves.toBeUndefined();
 
-		editor.state.succeeded = false;
-		editor.state.isSaving = true;
-		editor.fire();
-		editor.state.isSaving = false;
-		editor.fire();
-		await flushMicrotasks();
+		expect(deps.lockAutosave).toHaveBeenCalled();
+		expect(deps.unlockAutosave).toHaveBeenCalledWith(
+			'designsetgo-agent-build'
+		);
+		expect(deps.markDocument).toHaveBeenCalledWith('failed');
+	});
 
-		expect(deps.unlockAutosave).not.toHaveBeenCalled();
+	test('a throw after the build is in the canvas restores the original blocks, then releases the lock', async () => {
+		const deps = createDeps({
+			notify: jest.fn((status) => {
+				if (status === 'warning') {
+					throw new Error('notices unavailable');
+				}
+			}),
+		});
+
+		await expect(finishBuild(1, deps)).resolves.toBeUndefined();
+
+		expect(deps.calls).toEqual([
+			'lock:designsetgo-agent-build',
+			'replaceBlocks',
+			'replaceBlocks',
+			'unlock:designsetgo-agent-build',
+		]);
+		expect(deps.replaceBlocks).toHaveBeenLastCalledWith([
+			{ name: 'core/heading' },
+		]);
 	});
 
 	test('the submitter auto-save branch never locks autosave', async () => {
