@@ -18,6 +18,13 @@ export const TREE_VERSION = 1;
 const BLOCK_NAME_RE = /^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/;
 
 /**
+ * The only keys a block definition may carry. Anything else — `inner_blocks`,
+ * `block_name`, `attrs` — is rejected rather than silently ignored, since an
+ * ignored `inner_blocks` would drop every child without a word.
+ */
+const NODE_KEYS = ['name', 'attributes', 'innerBlocks'];
+
+/**
  * Whether `value` is a plain object — not `null`, and not an array.
  *
  * @param {unknown} value Candidate value.
@@ -80,6 +87,16 @@ function checkBlocksShape(blocks, parentPath, problems) {
 				message: '`attributes` must be a plain object when present.',
 			});
 		}
+
+		Object.keys(node)
+			.filter((key) => !NODE_KEYS.includes(key))
+			.forEach((key) => {
+				problems.push({
+					code: 'designsetgo_invalid_block_definition',
+					path,
+					message: `Unknown key \`${key}\`; a block definition accepts only \`name\`, \`attributes\`, and \`innerBlocks\`.`,
+				});
+			});
 
 		const hasInnerBlocks = Object.prototype.hasOwnProperty.call(
 			node,

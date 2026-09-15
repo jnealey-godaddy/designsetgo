@@ -12,7 +12,7 @@
  */
 // eslint-disable-next-line import/no-unresolved
 import * as blocksApi from '@wordpress/block-editor/node_modules/@wordpress/blocks';
-import { validate } from '../validate';
+import { validate, formatValidationIssue } from '../validate';
 
 const {
 	createBlock,
@@ -91,6 +91,8 @@ describe('validate', () => {
 		expect(result.invalid[0].block).toBe('test/static');
 		expect(typeof result.invalid[0].reason).toBe('string');
 		expect(result.invalid[0].reason.length).toBeGreaterThan(0);
+		// printf-style placeholders are filled in, never left raw.
+		expect(result.invalid[0].reason).not.toMatch(/%[sod]/);
 	});
 
 	test('an unregistered block comment is reported as core/missing', () => {
@@ -109,5 +111,30 @@ describe('validate', () => {
 				reason: 'block type is not registered',
 			},
 		]);
+	});
+});
+
+describe('formatValidationIssue', () => {
+	test('substitutes %s, %o and %d placeholders with the remaining args', () => {
+		expect(
+			formatValidationIssue({
+				args: [
+					'Expected %s but saw %o (%d attempts).',
+					'p',
+					{ a: 1 },
+					3,
+				],
+			})
+		).toBe('Expected p but saw {"a":1} (3 attempts).');
+	});
+
+	test('appends args left over after every placeholder is filled', () => {
+		expect(
+			formatValidationIssue({ args: ['Mismatch: %s', 'a', 'b'] })
+		).toBe('Mismatch: a b');
+	});
+
+	test('tolerates an issue with no args', () => {
+		expect(formatValidationIssue({})).toBe('');
 	});
 });

@@ -166,6 +166,45 @@ describe('checkTreeShape', () => {
 		}
 	});
 
+	// Mirrored case-for-case in tests/phpunit/agent-build-tree-validator-test.php
+	// (test_reports_invalid_block_definition_for_unknown_node_keys): same
+	// codes, paths, and order.
+	test('reports designsetgo_invalid_block_definition for each unknown node key', () => {
+		const problems = checkTreeShape({
+			version: 1,
+			blocks: [
+				{
+					name: 'core/group',
+					inner_blocks: [{ name: 'core/paragraph' }],
+				},
+				{
+					name: 'core/group',
+					innerBlocks: [
+						{
+							block_name: 'core/paragraph',
+							name: 'core/paragraph',
+							attrs: { content: 'Hi' },
+						},
+					],
+				},
+			],
+		});
+
+		expect(codesOf(problems)).toEqual([
+			'designsetgo_invalid_block_definition',
+			'designsetgo_invalid_block_definition',
+			'designsetgo_invalid_block_definition',
+		]);
+		expect(problems.map((p) => p.path)).toEqual([
+			'blocks[0]',
+			'blocks[1].innerBlocks[0]',
+			'blocks[1].innerBlocks[0]',
+		]);
+		expect(problems[0].message).toContain('inner_blocks');
+		expect(problems[1].message).toContain('block_name');
+		expect(problems[2].message).toContain('attrs');
+	});
+
 	test('paths use blocks[1].innerBlocks[0] format for nested problems', () => {
 		const problems = checkTreeShape({
 			version: 1,

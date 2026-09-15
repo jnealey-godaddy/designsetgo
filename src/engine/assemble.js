@@ -7,8 +7,13 @@
  */
 import { checkTreeShape, walkTree } from './tree';
 import { withQuietConsole } from './quiet';
-import { validate } from './validate';
+import { findInvalidBlocks } from './validate';
 import { sha256Hex } from './hash';
+import {
+	findDroppedInnerBlocks,
+	locateThrowingBlock,
+	assembleErrorEntry,
+} from './structure';
 
 /**
  * Resolves the node a shape-check `path` points at, so a shape problem can
@@ -70,7 +75,35 @@ function buildBlock(blocksApi, node) {
 		? node.innerBlocks.map((child) => buildBlock(blocksApi, child))
 		: [];
 
-	return blocksApi.createBlock(node.name, node.attributes ?? {}, children);
+	return blocksApi.createBlock(
+		node.name,
+		withoutEmptyObjects(node.attributes ?? {}),
+		children
+	);
+}
+
+/**
+ * Drops attributes whose value is an empty plain object (`style: {}`), so
+ * the block's own default applies instead. Agents send these routinely, and
+ * a PHP round trip can't tell `{}` from "unset"; handed to `createBlock()`
+ * as-is, an explicit `{}` can serialize markup that doesn't re-parse
+ * identically. Top-level attributes only.
+ *
+ * @param {Object} attributes Node attributes.
+ * @return {Object} A copy without empty-object values.
+ */
+function withoutEmptyObjects(attributes) {
+	return Object.fromEntries(
+		Object.entries(attributes).filter(
+			([, value]) =>
+				!(
+					value !== null &&
+					typeof value === 'object' &&
+					!Array.isArray(value) &&
+					Object.keys(value).length === 0
+				)
+		)
+	);
 }
 
 /**
@@ -82,8 +115,11 @@ function buildBlock(blocksApi, node) {
  *   invalid: object[],
  *   treeHash: string,
  * }} Assembly result. `markup` is `''` whenever `status` is `'invalid'` from
- *    a shape or unknown-block problem (assembly never ran); it can still be
- *    non-empty and invalid when the built markup itself fails validation.
+ *    a shape or unknown-block problem (assembly never ran) or an assemble
+ *    error (`designsetgo_assemble_error`: a `save()` threw); it can still be
+ *    non-empty and invalid when the built markup itself fails validation or
+ *    drops submitted children (`designsetgo_dropped_inner_blocks`). Never
+ *    throws.
  */
 export function assemble(blocksApi, tree) {
 	const treeHash = sha256Hex(JSON.stringify(tree));
@@ -121,12 +157,55 @@ export function assemble(blocksApi, tree) {
 		};
 	}
 
-	const markup = withQuietConsole(() => {
-		const blocks = tree.blocks.map((node) => buildBlock(blocksApi, node));
-		return blocksApi.serialize(blocks);
-	});
+	// A block's save() (or createBlock/parse) can throw. Never let that
+	// escape: every surface — CLI, finish plugin, panel — expects a report.
+	let blocks = [];
+	let markup;
+	let parsedBlocks;
+	try {
+		withQuietConsole(() => {
+			blocks = tree.blocks.map((node) => buildBlock(blocksApi, node));
+			markup = blocksApi.serialize(blocks);
+			parsedBlocks = blocksApi.parse(markup);
+		});
+	} catch (error) {
+		const location = withQuietConsole(() => {
+			try {
+				// serialize() swallows a throwing save(); getSaveContent()
+				// never does, so it pinpoints the block.
+				return locateThrowingBlock(
+					(block) =>
+						blocksApi.getSaveContent
+							? blocksApi.getSaveContent(
+									block.name,
+									block.attributes,
+									block.innerBlocks
+								)
+							: blocksApi.serialize(block),
+					blocks
+				);
+			} catch (locateError) {
+				return null;
+			}
+		});
 
-	const { status, invalid } = validate(blocksApi, markup);
+		return {
+			status: 'invalid',
+			markup: '',
+			invalid: [assembleErrorEntry(error, location)],
+			treeHash,
+		};
+	}
 
-	return { status, markup, invalid, treeHash };
+	const invalid = [
+		...findInvalidBlocks(parsedBlocks),
+		...findDroppedInnerBlocks(tree.blocks, parsedBlocks),
+	];
+
+	return {
+		status: invalid.length ? 'invalid' : 'valid',
+		markup,
+		invalid,
+		treeHash,
+	};
 }

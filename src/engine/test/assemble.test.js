@@ -40,14 +40,37 @@ const wrapBlockSettings = {
 	},
 };
 
+const throwingBlockSettings = {
+	title: 'Test Throws',
+	category: 'text',
+	save() {
+		throw new Error('boom');
+	},
+};
+
+const objectAttributeBlockSettings = {
+	title: 'Test Object Attribute',
+	category: 'text',
+	attributes: {
+		settings: { type: 'object', default: { size: 'm' } },
+	},
+	save({ attributes }) {
+		return <p data-size={attributes.settings.size}>Sized</p>;
+	},
+};
+
 beforeAll(() => {
 	registerBlockType('test/static', staticBlockSettings);
 	registerBlockType('test/wrap', wrapBlockSettings);
+	registerBlockType('test/throws', throwingBlockSettings);
+	registerBlockType('test/object-attribute', objectAttributeBlockSettings);
 });
 
 afterAll(() => {
 	unregisterBlockType('test/static');
 	unregisterBlockType('test/wrap');
+	unregisterBlockType('test/throws');
+	unregisterBlockType('test/object-attribute');
 });
 
 describe('assemble', () => {
@@ -156,6 +179,100 @@ describe('assemble', () => {
 		expect(result.invalid).toEqual([
 			expect.objectContaining({ path: 'blocks', block: '' }),
 		]);
+	});
+
+	test('children a save() never renders are reported as dropped, not silently lost', () => {
+		const tree = {
+			version: TREE_VERSION,
+			blocks: [
+				{
+					name: 'test/wrap',
+					innerBlocks: [
+						{
+							name: 'test/static',
+							attributes: { text: 'Leaf' },
+							innerBlocks: [
+								{
+									name: 'test/static',
+									attributes: { text: 'Lost' },
+								},
+							],
+						},
+					],
+				},
+			],
+		};
+
+		const result = assemble(blocksApi, tree);
+
+		expect(result.status).toBe('invalid');
+		expect(result.invalid).toEqual([
+			expect.objectContaining({
+				path: 'blocks[0].innerBlocks[0]',
+				block: 'test/static',
+				code: 'designsetgo_dropped_inner_blocks',
+			}),
+		]);
+	});
+
+	test('a save() that throws is reported as invalid at the failing block, never thrown', () => {
+		const tree = {
+			version: TREE_VERSION,
+			blocks: [
+				{ name: 'test/static', attributes: { text: 'Fine' } },
+				{
+					name: 'test/wrap',
+					innerBlocks: [{ name: 'test/throws' }],
+				},
+			],
+		};
+
+		let result;
+		expect(() => {
+			result = assemble(blocksApi, tree);
+		}).not.toThrow();
+
+		expect(result.status).toBe('invalid');
+		expect(result.markup).toBe('');
+		expect(result.invalid).toEqual([
+			{
+				path: 'blocks[1].innerBlocks[0]',
+				block: 'test/throws',
+				reason: 'assemble failed: boom',
+				code: 'designsetgo_assemble_error',
+			},
+		]);
+		expect(result.treeHash).toHaveLength(64);
+	});
+
+	test('a top-level save() that throws is reported invalid, never thrown', () => {
+		let result;
+		expect(() => {
+			result = assemble(blocksApi, {
+				version: TREE_VERSION,
+				blocks: [{ name: 'test/throws' }],
+			});
+		}).not.toThrow();
+
+		expect(result.status).toBe('invalid');
+		expect(result.invalid).toEqual([
+			expect.objectContaining({
+				path: 'blocks[0]',
+				block: 'test/throws',
+			}),
+		]);
+	});
+
+	test('an empty object attribute is dropped so the block default applies', () => {
+		const result = assemble(blocksApi, {
+			version: TREE_VERSION,
+			blocks: [
+				{ name: 'test/object-attribute', attributes: { settings: {} } },
+			],
+		});
+
+		expect(result.status).toBe('valid');
+		expect(result.markup).toContain('data-size="m"');
 	});
 
 	test('identical trees yield identical treeHash', () => {

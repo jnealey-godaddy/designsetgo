@@ -531,6 +531,41 @@ describe('run() assemble --lint', () => {
 		);
 	});
 
+	it('text mode: an invalid report (e.g. a throwing save) exits 1 and lists invalid entries on stderr', () => {
+		const sinks = makeSinks();
+		const assemble = jest.fn(() => ({
+			status: 'invalid',
+			markup: '',
+			invalid: [
+				{
+					path: 'blocks[0]',
+					block: 'designsetgo/section',
+					reason: 'assemble failed: boom',
+					code: 'designsetgo_assemble_error',
+				},
+			],
+			treeHash: 'deadbeef',
+		}));
+		const bootEngine = jest.fn(() => ({
+			engine: { assemble, validate: jest.fn(), lint: jest.fn() },
+			failures: [],
+		}));
+
+		const code = run(['assemble', 'tree.json'], {
+			bootEngine,
+			readFile: jest.fn(() => VALID_TREE_JSON),
+			writeFile: jest.fn(),
+			stdout: sinks.stdout,
+			stderr: sinks.stderr,
+		});
+
+		expect(code).toBe(1);
+		expect(sinks.stdoutText()).toBe('\n');
+		expect(sinks.stderrText()).toBe(
+			'invalid blocks[0] designsetgo/section: assemble failed: boom\n'
+		);
+	});
+
 	it('without --lint, assemble never calls engine.lint()', () => {
 		const sinks = makeSinks();
 		const assemble = jest.fn(() => ({

@@ -63,6 +63,10 @@ function runAssemble(
 		emit(stdout, writeFile, JSON.stringify(jsonReport, null, 2), flags.out);
 	} else {
 		emit(stdout, writeFile, report.markup, flags.out);
+		// Markup alone says nothing about why it's empty; list the reasons.
+		report.invalid.forEach((entry) => {
+			stderr(`invalid ${entry.path} ${entry.block}: ${entry.reason}\n`);
+		});
 		if (flags.lint && findings.length) {
 			stderr(`${formatFindingsText(findings)}\n`);
 		}

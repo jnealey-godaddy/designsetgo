@@ -13,8 +13,6 @@
 
 namespace DesignSetGo\Abilities\Agent_Build;
 
-use DesignSetGo\Abilities\Block_Inserter;
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -75,7 +73,7 @@ class Build_Page_Schema {
 							'type'        => 'integer',
 							'description' => __( 'Tree contract version. Must be 1.', 'designsetgo' ),
 						),
-						'blocks'  => Block_Inserter::get_inner_blocks_schema(),
+						'blocks'  => self::blocks_schema(),
 					),
 				),
 				'mode'    => array(
@@ -86,6 +84,51 @@ class Build_Page_Schema {
 				),
 			),
 			'additionalProperties' => false,
+		);
+	}
+
+	/**
+	 * Schema for a list of tree nodes: `{ name, attributes, innerBlocks }`,
+	 * described recursively to a bounded depth. Deliberately its own schema,
+	 * not Block_Inserter's: the tree contract accepts no aliases, and any
+	 * block may hold children here - Tree_Validator judges placement from
+	 * block.json metadata, and the browser engine reports any child a
+	 * block's save() drops.
+	 *
+	 * Every nested array declares `items`, or core emits an "Undefined array
+	 * key type" warning per entry. Nothing is `required`: core validates
+	 * input before execute() runs and the MCP bridge flattens that failure
+	 * to "Ability execution failed.", so missing names are reported as data
+	 * by Tree_Shape instead.
+	 *
+	 * @param int $depth Levels to describe explicitly.
+	 * @return array<string, mixed>
+	 */
+	private static function blocks_schema( int $depth = 4 ): array {
+		$inner_blocks = $depth > 1
+			? self::blocks_schema( $depth - 1 )
+			: array(
+				'type'  => 'array',
+				'items' => array( 'type' => 'object' ),
+			);
+
+		return array(
+			'type'        => 'array',
+			'description' => __( 'Blocks, in order. Each entry is { name, attributes?, innerBlocks? } and accepts no other keys.', 'designsetgo' ),
+			'items'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'name'        => array(
+						'type'        => 'string',
+						'description' => __( 'REQUIRED. Registered block name, e.g. "core/paragraph" or "designsetgo/section".', 'designsetgo' ),
+					),
+					'attributes'  => array(
+						'type'        => 'object',
+						'description' => __( 'Block attributes, as the block\'s own schema defines them. Text-bearing core blocks carry their text here (core/paragraph and core/heading use "content").', 'designsetgo' ),
+					),
+					'innerBlocks' => $inner_blocks,
+				),
+			),
 		);
 	}
 

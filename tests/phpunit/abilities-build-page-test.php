@@ -11,6 +11,7 @@
 
 use DesignSetGo\Abilities\Abilities_Registry;
 use DesignSetGo\Abilities\Agent_Build\Build_Page;
+use DesignSetGo\Abilities\Agent_Build\Build_Page_Schema;
 use DesignSetGo\Abilities\Agent_Build\Build_Store;
 use DesignSetGo\Abilities\Agent_Build\Get_Build_Status;
 
@@ -139,6 +140,27 @@ class Abilities_Build_Page_Test extends WP_UnitTestCase {
 			),
 			$config['annotations']
 		);
+	}
+
+	/**
+	 * The tree schema describes exactly the contract - name, attributes,
+	 * innerBlocks, recursively - with no Block_Inserter aliases and no
+	 * claim that core containers cannot hold children.
+	 */
+	public function test_build_page_tree_schema_has_no_aliases(): void {
+		$blocks = Build_Page_Schema::input()['properties']['tree']['properties']['blocks'];
+		$json   = wp_json_encode( $blocks );
+
+		$this->assertSame( 'array', $blocks['type'] );
+		$this->assertSame( array( 'name', 'attributes', 'innerBlocks' ), array_keys( $blocks['items']['properties'] ) );
+
+		$nested = $blocks['items']['properties']['innerBlocks'];
+		$this->assertSame( 'array', $nested['type'] );
+		$this->assertSame( array( 'name', 'attributes', 'innerBlocks' ), array_keys( $nested['items']['properties'] ) );
+
+		$this->assertStringNotContainsString( 'inner_blocks', $json );
+		$this->assertStringNotContainsString( 'block_name', $json );
+		$this->assertStringNotContainsString( 'cannot hold', $json );
 	}
 
 	/**

@@ -139,6 +139,53 @@ class Agent_Build_Tree_Validator_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Every key other than name/attributes/innerBlocks is its own
+	 * designsetgo_invalid_block_definition problem - no silent aliases.
+	 * Mirrors src/engine/test/tree.test.js ("reports
+	 * designsetgo_invalid_block_definition for each unknown node key")
+	 * case-for-case: same codes, paths, and order.
+	 */
+	public function test_reports_invalid_block_definition_for_unknown_node_keys() {
+		$problems = Tree_Validator::validate(
+			array(
+				'version' => 1,
+				'blocks'  => array(
+					array(
+						'name'         => 'core/group',
+						'inner_blocks' => array( array( 'name' => 'core/paragraph' ) ),
+					),
+					array(
+						'name'        => 'core/group',
+						'innerBlocks' => array(
+							array(
+								'block_name' => 'core/paragraph',
+								'name'       => 'core/paragraph',
+								'attrs'      => array( 'content' => 'Hi' ),
+							),
+						),
+					),
+				),
+			)
+		);
+
+		$this->assertSame(
+			array(
+				'designsetgo_invalid_block_definition',
+				'designsetgo_invalid_block_definition',
+				'designsetgo_invalid_block_definition',
+			),
+			$this->codes( $problems )
+		);
+		$this->assertSame(
+			array( 'blocks[0]', 'blocks[1].innerBlocks[0]', 'blocks[1].innerBlocks[0]' ),
+			array_column( $problems, 'path' )
+		);
+		$this->assertStringContainsString( 'inner_blocks', $problems[0]['message'] );
+		$this->assertStringContainsString( 'block_name', $problems[1]['message'] );
+		$this->assertStringContainsString( 'attrs', $problems[2]['message'] );
+	}
+
+	/**
 	 * Paths use nested inner blocks format.
 	 */
 	public function test_paths_use_nested_inner_blocks_format() {

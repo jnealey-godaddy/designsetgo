@@ -29,6 +29,9 @@ class Tree_Shape {
 	/** Matches BLOCK_NAME_RE in src/engine/tree.js. */
 	const BLOCK_NAME_PATTERN = '/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/';
 
+	/** Matches NODE_KEYS in src/engine/tree.js: no aliases, nothing else. */
+	const NODE_KEYS = array( 'name', 'attributes', 'innerBlocks' );
+
 	/**
 	 * Mirrors checkTreeShape(): an invalid root reports only
 	 * designsetgo_invalid_tree and skips the version check.
@@ -113,6 +116,20 @@ class Tree_Shape {
 				$problems[] = self::problem( 'designsetgo_invalid_block_definition', $path, __( '"attributes" must be a plain object when present.', 'designsetgo' ) );
 			}
 
+			foreach ( array_keys( $node ) as $key ) {
+				if ( ! in_array( $key, self::NODE_KEYS, true ) ) {
+					$problems[] = self::problem(
+						'designsetgo_invalid_block_definition',
+						$path,
+						sprintf(
+							/* translators: %s: the unrecognized key */
+							__( 'Unknown key "%s"; a block definition accepts only "name", "attributes", and "innerBlocks".', 'designsetgo' ),
+							(string) $key
+						)
+					);
+				}
+			}
+
 			$has_inner_blocks = array_key_exists( 'innerBlocks', $node );
 			if ( $has_inner_blocks && ! self::is_list_like( $node['innerBlocks'] ) ) {
 				$problems[] = self::problem( 'designsetgo_invalid_block_definition', $path, __( '"innerBlocks" must be an array when present.', 'designsetgo' ) );
@@ -156,29 +173,15 @@ class Tree_Shape {
 
 	/**
 	 * Reshapes a well-formed block list for a JSON REST response: every
-	 * node's `attributes` becomes an object (`stdClass`) when empty, so
-	 * `wp_json_encode()` emits `{}` rather than `[]`. PHP's `json_decode(
-	 * $json, true )` cannot tell an empty JSON object from an empty JSON
-	 * array - both become `array()` - so a tree stored via
-	 * `Build_Store::store()` and later re-encoded for `Build_REST`'s GET
-	 * response would otherwise silently turn `"attributes": {}` into
-	 * `"attributes": []`, which the browser's `checkTreeShape()` (the same
-	 * "must be a plain object" rule `self::is_object()` mirrors here)
-	 * correctly rejects.
+	 * node's `attributes` becomes `stdClass` when empty, so `wp_json_encode()`
+	 * emits `{}` rather than `[]` - `json_decode( $json, true )` cannot tell
+	 * the two apart, and the browser's `checkTreeShape()` rejects `[]`.
+	 * An individual attribute value that is an empty array is promoted the
+	 * same way when the block type's schema types it as (only) `object`,
+	 * e.g. `style: {}` on `designsetgo/section`. `innerBlocks` stays a list.
 	 *
-	 * Only `attributes` is reshaped this way - `innerBlocks` stays a plain
-	 * list, since an empty `[]` there is exactly what the contract expects.
-	 * A non-empty `attributes` array is left as-is (a non-empty associative
-	 * array always round-trips as a JSON object), except that individual
-	 * attribute values matching an empty array are also promoted to
-	 * `stdClass` when the block type's own registered schema says that
-	 * attribute's `type` is (only) `object` - e.g. `style: {}` on
-	 * `designsetgo/section`, which declares `"style": {"type": "object"}` in
-	 * its block.json.
-	 *
-	 * Called only from `Build_REST::get_item()` - the sole consumer of a
-	 * stored pending tree - so this never touches what's actually persisted
-	 * in `_dsgo_pending_tree` post meta.
+	 * Called only from `Build_REST::get_item()`; never changes what is
+	 * persisted in `_dsgo_pending_tree`.
 	 *
 	 * @param array<int, mixed> $blocks Well-shaped block list (already past `check()`).
 	 * @return array<int, mixed> The same list, with `attributes` reshaped for JSON encoding.
