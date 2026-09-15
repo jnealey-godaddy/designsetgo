@@ -1032,3 +1032,62 @@ other regressions. Scratch parity-probe files
 after use; raw dumps + diff summary kept under
 `.superpowers/sdd/2026-09-14-agent-block-engine/parity-evidence/` for
 reference.
+
+---
+
+## Session ux-fixes-2026-09-15 (agent: claude-sonnet-5, ux-fixes-brief)
+
+Implemented all six UX fixes (U1-U6) from
+`.superpowers/sdd/2026-09-14-agent-block-engine/ux-fixes-brief.md`. Full
+report: `.superpowers/sdd/2026-09-14-agent-block-engine/ux-fixes-report.md`.
+5 commits `fbb2d5c0`..`759e952a`.
+
+**Key finding (confirm-before-use, saved real debugging time later)**:
+WordPress 6.9 core does NOT register a standalone `wp-interface` script —
+`wp-includes/js/dist/interface.js` doesn't exist and no `wp-interface`
+handle appears in `script-loader-packages.php`; `@wordpress/editor`'s
+`PluginSidebar` (`node_modules/@wordpress/editor` 14.39.0) bundles
+`core/interface`'s store registration inside `wp-editor` itself. So
+`import { store as interfaceStore } from '@wordpress/interface'` would add
+an unmet `wp-interface` dependency that never loads on a real site — used
+`dispatch('core/interface')` (a plain string via `@wordpress/data`, already
+this codebase's pattern for `core/editor`/`core/notices`) instead. Verified
+empirically: `build/index.asset.php` lists no `wp-interface` after the
+build. `PluginSidebar`'s complementary-area identifier is
+`${pluginContext.name}/${name}` with `scope` hardcoded `'core'` (not the
+brief's guessed string) — confirmed by reading
+`node_modules/@wordpress/interface/src/components/complementary-area/index.js`.
+
+**New shared infra**: `src/engine/browser/constants.js` (plugin/sidebar/
+store identifiers, `COMPLEMENTARY_AREA_STORE`) and
+`src/engine/browser/report-store.js` (`designsetgo/agent-build` data store,
+`setReport`/`getReport`) — registered once in `browser/index.js` before
+`./panel`/`./finish` import. `finish/index.js`'s `createDeps()` binds
+`setReport`/`openSidebar`/`removeNotice` the same way it already binds
+`fetchPending`/`postReport` to `postId`.
+
+**U6 mechanism**: the Site Editor renders `PluginArea` too (back-compat),
+so `registerPlugin()` alone can't gate this — moved the finishable-context
+check (`isFinishableContext()`, reused verbatim from `finish/context.js`)
+into the registered `render` function itself via `useSelect(core/editor)`,
+returning `null` when not finishable. Reactive, so it still appears once
+`getCurrentPostId()`/`getCurrentPostType()` resolve in a real post editor.
+
+**Test-file churn note**: adding a second notice action (`Discard` then
+`View details`) broke 3 literal single-element `actions: [...]` assertions
+in `finish-build.test.js` (tests 6, 6c, 7) — updated deliberately to
+2-element arrays, Discard kept at index 0 so `review-autosave.test.js`'s
+`discardAction()` helper (reads `actions[0]`) needed no change. Every
+`createDeps()` fake-deps helper across 4 test files needed
+`removeNotice`/`openSidebar`/`setReport` jest.fn()s added or a missing dep
+threw and made unrelated assertions fail with misleading errors (e.g. a
+'warning' notify() call arriving as 'error' from the outer catch).
+
+**Not done / deliberately out of scope**: did not add `setReport`/View
+details to `finishAfterRegistrationTimeout()` (registration-never-settled
+path) — its message is already fully descriptive and the sidebar may not
+even be registered reliably in that state. Did not manually browser-verify
+U2's CSS wrap via chrome-devtools MCP — the shared chrome-profile lock was
+held by another session (see `reference_chrome_smoke_test_env.md`); relied
+instead on the Jest class-presence test + stylelint + a Playwright a11y
+snapshot that already showed the report UI rendering correctly.
