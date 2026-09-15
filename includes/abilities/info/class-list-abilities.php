@@ -54,7 +54,7 @@ class List_Abilities extends Abstract_Ability {
 				'readonly'     => true,
 				'destructive'  => false,
 				'idempotent'   => true,
-				'instructions' => 'Call this first to discover all available DesignSetGo abilities. Use the category filter to narrow by registered category: info (read-only discovery), blocks (insert/configure/delete blocks in post content), or settings (plugin settings and global CSS). Each entry carries its annotations, so you can tell readonly from destructive without a second lookup.',
+				'instructions' => 'Call this first to discover all available DesignSetGo abilities. Use the category filter to narrow by registered category: info (read-only discovery), blocks (insert/configure/delete blocks in post content), or settings (plugin settings and global CSS). Each entry carries its annotations, so you can tell readonly from destructive without a second lookup. To build or rebuild a page section, prefer designsetgo/build-page: it submits a whole block tree and finishes it through the editor\'s own block code, so the result always opens clean. The single-block inserters (add-block, add-child-block, add-accordion-item, add-tab, add-timeline-item) remain for small, targeted edits to existing content.',
 			),
 		);
 	}

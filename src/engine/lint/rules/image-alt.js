@@ -14,8 +14,9 @@
  *    on the value differing from the default.
  *
  * Either block is exempt when `className` contains the `is-decorative`
- * token — no block.json in this repo defines a dedicated decorative
- * attribute, so `className` is the documented escape hatch.
+ * token — no image block.json in this repo defines a dedicated decorative
+ * attribute (icon/block.json's `isDecorative` is for the Icon block, not
+ * an image), so `className` is the documented escape hatch here.
  *
  * Plain ES module — no Node-only or WordPress imports.
  */

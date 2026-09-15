@@ -1,6 +1,6 @@
 # Agent Block Engine — Design
 
-**Status:** Draft for review
+**Status:** Implemented (Phases 1–4)
 **Date:** 2026-09-14
 **Branch:** `claude/agent-block-engine`
 
@@ -73,7 +73,7 @@ Separately, valid markup is not enough: agents pick the wrong blocks, ignore the
 
 One codebase, built twice. Each module stays under 300 lines.
 
-- **`registry/`** — registers blocks the same way the editor does: bootstraps every `src/blocks/*/block.json` as a server-side definition (what PHP sends the editor), sets the `designsetgo` category, registers core blocks, then loads every `src/extensions/*/index.js` and `src/blocks/*/index.js` — the real registration files. The file lists come from the filesystem (`require.context` in the Node build, `fs` in Jest), so a new block or extension is picked up without editing a list.
+- **`registry/`** — registers blocks the same way a real editor page does: bootstraps every `src/blocks/*/block.json` as a server-side definition (what PHP sends the editor), sets the `designsetgo` category, then loads every `src/extensions/*/index.js` **before** registering core blocks, then every `src/blocks/*/index.js` — the real registration files. (Implementation note: extensions load before core blocks, not after as an earlier draft of this doc had it — in a real editor page, plugin scripts enqueued via `enqueue_block_editor_assets` run before `edit-post`'s `initializeEditor()` calls `registerCoreBlocks()`, so extension filters such as animations apply to core blocks too. Registering core blocks first would silently drop those extension attributes from core blocks in agent trees.) The file lists come from the filesystem (`require.context` in the Node build, `fs` in Jest), so a new block or extension is picked up without editing a list.
 - **`assemble(tree)`** → `{ markup, blocks, report }`. Builds via `createBlock` → `serialize`, re-parses the output, and requires every block to validate. A block type that is not registered is reported, not thrown.
 - **`validate(markup)`** → `report`. Parse plus `validateBlock`, recursively, with the path of each invalid block.
 - **`lint(tree, designContext)`** → `findings`. See [Design quality](#design-quality).
@@ -113,7 +113,7 @@ Loading the real registration files is also more faithful than a separate manife
 3. Exit codes: `0` valid and no lint errors, `1` invalid markup or lint errors (or warnings beyond `--max-warnings`), `2` usage or I/O error.
 4. The agent pushes the markup with WP-CLI or REST. Nothing server-side changes.
 
-Also: `validate <markup-files…>` and `lint tree.json`.
+Also: `validate <markup-files…>` and `lint tree.json [--context <file>] [--json] [--max-warnings <n>] [--out <file>]` — the same flags `assemble --lint` accepts, run standalone against a tree with no markup produced. `fixture-cases` (no file argument) generates attribute-probe cases straight from the registry for the frozen-PHP-writer comparison (Test 8) rather than taking one.
 
 ### Editor assistant (browser)
 
@@ -123,7 +123,7 @@ Also: `validate <markup-files…>` and `lint tree.json`.
 
 **`designsetgo/build-page`** (requires `edit_post` on the target, or `edit_posts` plus the post type's create capability for a new post)
 
-Input: `{ post_id?: int, new?: { title, post_type }, tree, mode: "replace" | "append" }` — exactly one of `post_id` or `new`.
+Input: `{ post_id?: int, new?: { title, post_type }, tree, mode: "replace" | "append" }` — exactly one of `post_id` or `new`. `new.post_type` is restricted to a registered, REST-visible (`show_in_rest`) post type that supports `editor` and is not `wp_`-prefixed (rules out site-structure types such as templates, template parts, navigation, and global styles) — see `Build_Page::is_buildable_post_type()`.
 
 PHP validates structure only, and returns every problem as data (not `WP_Error`, which the MCP bridge flattens to "Ability execution failed."), each with a `path`:
 
@@ -137,8 +137,7 @@ PHP validates structure only, and returns every problem as data (not `WP_Error`,
 
 On success it stores, in protected post meta registered with an `auth_callback`:
 
-- `_dsgo_pending_tree` — the tree and `mode`
-- `_dsgo_pending_base` — the post's `post_modified_gmt` when stored
+- `_dsgo_pending_tree` — one JSON blob: `{ tree, mode, base }`, where `base` is the post's `post_modified_gmt` when stored. (Implementation note: `base` lives inside this same meta value rather than a separate `_dsgo_pending_base` key as an earlier draft of this doc specified — one read gives tree + mode + base atomically. See `Build_Store::META_PENDING_TREE`.)
 - `_dsgo_build_report` — `{ status: "pending" }`
 
 `post_content` is not touched. A live page keeps serving its current content.
@@ -149,7 +148,7 @@ Response: `{ status: "pending", post_id, finish_url }`. `finish_url` is the post
 
 When the editor loads a post with `_dsgo_pending_tree`:
 
-1. If `post_modified_gmt` differs from `_dsgo_pending_base`, stop: report `conflict`, leave content alone.
+1. If `post_modified_gmt` differs from the `base` stored inside `_dsgo_pending_tree`, stop: report `conflict`, leave content alone.
 2. Run `assemble` and `lint` with the site's design context.
 3. If any block is invalid: report `failed` with the invalid paths. Do not change content.
 4. If valid:
@@ -162,6 +161,8 @@ The finish runs on any editor load of that post, with or without `dsgo-finish=1`
 Content is saved through the REST API, so `unfiltered_html` rules and KSES apply as they do for any editor save.
 
 **`designsetgo/get-build-status`** — input `{ post_id }`, returns `_dsgo_build_report`: `pending | awaiting_review | finished | finished_with_findings | failed | conflict | discarded`, plus `invalid` and `findings`.
+
+**Implementation note — GET response reshaping:** the REST GET on the pending-build route (consumed by the editor's finishing plugin, not by `get-build-status`) runs the stored tree through `Tree_Shape::to_response_shape()` before returning it. A block with no attributes is stored as PHP's empty array (`[]`, indistinguishable from an empty object once JSON-encoded), which the browser's strict tree-shape check rejects; `to_response_shape()` restores `{}` for any node's `attributes` value that is empty, so the contract the CLI/editor consume stays unambiguous. This was a product bug found and fixed during Task 21 (see the ledger).
 
 **Authentication dependency:** a headless finish needs a logged-in session with `edit_post`. Site Designer supplies that session. DesignSetGo adds no new authentication path.
 
@@ -258,8 +259,9 @@ Each phase is independently shippable.
 | Adding `@wordpress/block-library` bumps shared `@wordpress/*` packages and breaks Jest (see the package-skew history) | Verified at adoption: all 160 suites pass; the full suite runs on every task |
 | Core block markup from Node differs from a newer site's core | Pinned to 6.7 (D7); remote writes finish on the site's own registry |
 | Headless finish can't authenticate | Site Designer owns the session; without it, drafts wait for a person to open them |
-| Pending tree goes stale while a person edits | `_dsgo_pending_base` conflict check |
+| Pending tree goes stale while a person edits | `base` (inside `_dsgo_pending_tree`) conflict check |
 | `contrast` false positives on complex backgrounds | Rules skip values they can't resolve |
+| `designsetgo/section` with an explicit `style: {}` attribute assembles invalid (serialize vs. reparse differ) | Parked, out of scope for this plan (Task 21 ruling) — the engine reports `failed` rather than writing bad content; tracked as a follow-up in `src/blocks/section` |
 
 ## Out of scope
 

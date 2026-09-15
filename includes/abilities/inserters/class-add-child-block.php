@@ -47,7 +47,7 @@ class Add_Child_Block extends Abstract_Ability {
 	public function get_config(): array {
 		return array(
 			'label'               => __( 'Add Child Block', 'designsetgo' ),
-			'description'         => __( 'Adds a block as a child of an existing block. Use get-post-blocks to find the parent block_index first, then specify the block_name and attributes to insert.', 'designsetgo' ),
+			'description'         => __( 'Adds a block as a child of an existing block. Use get-post-blocks to find the parent block_index first, then specify the block_name and attributes to insert. For building or rebuilding page sections, prefer designsetgo/build-page, which serializes with the editor\'s own block code.', 'designsetgo' ),
 			'category'            => 'blocks',
 			'input_schema'        => $this->get_input_schema(),
 			'output_schema'       => $this->get_output_schema(),

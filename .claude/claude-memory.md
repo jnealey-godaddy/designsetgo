@@ -510,20 +510,16 @@ Task 7 replaced every test's manual `registerDesignSetGoBlock(...)` loop with a 
 Contrary to the brief's flagged risk, `deprecations-isEligible.test.js` did NOT start
 failing from extension-appended deprecations — 121/121 still pass.
 
-**`tools/regenerate-patterns.js`'s `registerDesignSetGoBlock()` is implemented as the
-brief's thin `registerForJest()` wrapper but is NOT committed** — it breaks
+**Update (commit `2043f5a0`, still Task 7):** `tools/regenerate-patterns.js`'s
+`registerDesignSetGoBlock()` was landed as the brief's thin `registerForJest()` wrapper.
+The blocking test was fixed rather than left un-migrated: per the ledger's Task 7 ruling,
 `tests/unit/tools/regenerate-patterns.test.js`'s `assertNoContentLoss - the guard has
-teeth` test, which is left un-migrated per the task's explicit "any migrated test fails →
-stop, return BLOCKED" instruction. Root cause: that test's whole scenario depends on the
-OLD design where `regeneratePatterns()` registers ONLY the target block
-(`designsetgo/flip-card`), so nested `flip-card-face`/`icon`/`core/heading`/`core/paragraph`
-hit the unregistered-type passthrough — the test simulates "no passthrough" and asserts
-`assertNoContentLoss` throws because those blocks get dropped. Once `registerDesignSetGoBlock`
-= `registerForJest()`, ALL of those blocks are genuinely registered (not "unregistered"),
-so nothing is ever dropped and the guard never fires. `assertNoContentLoss` itself is
-unchanged and still correct; only the test's *simulation* of "unregistered" is now stale.
-Recommended fix (not applied — needs a decision): make that one test trigger the drop via a
-genuinely foreign block name instead of a DesignSetGo/core one. Full report:
+teeth` test now triggers the drop via a genuinely foreign block, `acme/unregistered-widget`
+(never registered anywhere), instead of a DesignSetGo/core block that the full registry
+now legitimately registers. `assertNoContentLoss` itself is unchanged; only the test's
+fixture and simulated "unregistered" block changed. `regeneratePatterns()`'s `finally`
+block also stopped calling `unregisterBlockType(blockName)` after each run — see that
+commit's message for why. Full report:
 `.superpowers/sdd/2026-09-14-agent-block-engine/task-7-report.md`.
 
 Also fixed as a direct consequence (not literally in the brief's text, but load-bearing):

@@ -41,7 +41,7 @@ class Add_Timeline_Item extends Abstract_Ability {
 	public function get_config(): array {
 		return array(
 			'label'               => __( 'Add Timeline Item', 'designsetgo' ),
-			'description'         => __( 'Adds a timeline item with date, title, and content into an existing timeline container.', 'designsetgo' ),
+			'description'         => __( 'Adds a timeline item with date, title, and content into an existing timeline container. For building or rebuilding page sections, prefer designsetgo/build-page, which serializes with the editor\'s own block code.', 'designsetgo' ),
 			'category'            => 'blocks',
 			'input_schema'        => $this->get_input_schema(),
 			'output_schema'       => Block_Inserter::get_default_output_schema(),
