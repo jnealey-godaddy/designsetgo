@@ -39,8 +39,8 @@ class Build_Store {
 	 * stored, `submitter` is the id of the user who stored it,
 	 * `submitterUnfiltered` is whether that user held `unfiltered_html`, and
 	 * `buildId` is a fresh UUID every report about this build must echo back.
-	 * `signature` is an HMAC over those fields (see sign()); pending() ignores
-	 * a blob whose signature is missing or does not verify.
+	 * `signature` is an HMAC over those fields and the post id (see sign());
+	 * pending() ignores a blob whose signature is missing or does not verify.
 	 *
 	 * @var string
 	 */
@@ -121,7 +121,7 @@ class Build_Store {
 			true
 		);
 
-		$blob['signature'] = self::sign( $blob );
+		$blob['signature'] = self::sign( $blob, $post_id );
 
 		// update_post_meta() unslashes its value, which would strip the
 		// backslashes wp_json_encode() escapes quotes, newlines, and
@@ -158,7 +158,7 @@ class Build_Store {
 			return null;
 		}
 
-		if ( ! isset( $decoded['signature'] ) || ! is_string( $decoded['signature'] ) || ! hash_equals( self::sign( $decoded ), $decoded['signature'] ) ) {
+		if ( ! isset( $decoded['signature'] ) || ! is_string( $decoded['signature'] ) || ! hash_equals( self::sign( $decoded, $post_id ), $decoded['signature'] ) ) {
 			return null;
 		}
 		unset( $decoded['signature'] );
@@ -172,14 +172,16 @@ class Build_Store {
 	}
 
 	/**
-	 * HMAC over the canonical JSON of every field a decision reads, keyed with
-	 * the site's auth salt.
+	 * HMAC over the canonical JSON of every field a decision reads, plus the
+	 * post the blob belongs to, keyed with the site's auth salt. Binding the
+	 * post id means a valid blob copied onto another post never verifies.
 	 *
-	 * @param array<string, mixed> $blob Decoded pending blob.
+	 * @param array<string, mixed> $blob    Decoded pending blob.
+	 * @param int                  $post_id Post the blob is stored on.
 	 * @return string Hex HMAC-SHA256.
 	 */
-	private static function sign( array $blob ): string {
-		$fields = array();
+	private static function sign( array $blob, int $post_id ): string {
+		$fields = array( 'postId' => $post_id );
 		foreach ( array( 'submitter', 'submitterUnfiltered', 'buildId', 'base', 'mode', 'tree' ) as $key ) {
 			$fields[ $key ] = $blob[ $key ] ?? null;
 		}

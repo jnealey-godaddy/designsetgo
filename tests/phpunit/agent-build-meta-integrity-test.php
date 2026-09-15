@@ -189,6 +189,33 @@ class Agent_Build_Meta_Integrity_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A validly signed blob copied onto another post is not pending there:
+	 * the signature is bound to the post it was stored for.
+	 */
+	public function test_signed_blob_copied_to_another_post_is_not_pending(): void {
+		$this->store->store( $this->post_id, $this->tree(), 'replace' );
+		$other_post_id = self::factory()->post->create(
+			array(
+				'post_status' => 'draft',
+				'post_author' => $this->contributor_id,
+			)
+		);
+
+		update_post_meta(
+			$other_post_id,
+			Build_Store::META_PENDING_TREE,
+			wp_slash( get_post_meta( $this->post_id, Build_Store::META_PENDING_TREE, true ) )
+		);
+
+		$this->assertSame(
+			get_post_meta( $this->post_id, Build_Store::META_PENDING_TREE, true ),
+			get_post_meta( $other_post_id, Build_Store::META_PENDING_TREE, true )
+		);
+		$this->assertNull( $this->store->pending( $other_post_id ) );
+		$this->assertNotNull( $this->store->pending( $this->post_id ) );
+	}
+
+	/**
 	 * An untouched signed blob still round-trips, including text that JSON
 	 * escapes.
 	 */
