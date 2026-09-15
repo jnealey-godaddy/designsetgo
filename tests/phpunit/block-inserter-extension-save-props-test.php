@@ -67,6 +67,31 @@ class Block_Inserter_Extension_Save_Props_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( '--dsgo-mobile-order', $absent );
 	}
 
+	/**
+	 * Grid spans above one reach the markup, as blocks.getSaveContent.extraProps writes them.
+	 */
+	public function test_grid_spans_are_written_like_the_save_filter() {
+		$spans   = array(
+			'dsgoColumnSpan' => 2,
+			'dsgoRowSpan'    => 3,
+		);
+		$section = Block_Inserter::build_block_markup( 'designsetgo/section', $spans, array() );
+		$this->assertStringContainsString( 'grid-column:span 2', $section );
+		$this->assertStringContainsString( 'grid-row:span 3', $section );
+
+		$image = Block_Inserter::build_block_markup(
+			'core/image',
+			array(
+				'url'         => 'https://example.test/a.jpg',
+				'dsgoRowSpan' => 2,
+			)
+		);
+		$this->assertStringContainsString( '<figure style="grid-row:span 2" class="wp-block-image">', $image );
+
+		$single = Block_Inserter::build_block_markup( 'designsetgo/section', array( 'dsgoColumnSpan' => 1 ), array() );
+		$this->assertStringNotContainsString( 'grid-column', $single );
+	}
+
 	public function test_mobile_order_respects_the_excluded_block_setting() {
 		update_option( 'designsetgo_settings', array( 'excluded_blocks' => array( 'designsetgo/*' ) ) );
 		try {

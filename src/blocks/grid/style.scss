@@ -261,9 +261,13 @@
  * With two-div structure: .dsgo-grid > .dsgo-grid__inner > items
  */
 
-// Reset theme block spacing without overriding an authored item offset.
-// Inspector inline margins and shared design classes must remain editable.
-.dsgo-grid__inner > * {
+// Grid items are spaced by row-gap/column-gap, never by margins. When Block
+// spacing is set, WordPress layout support prints
+// `.wp-container-* > * + * { margin-block-start: <gap> }` for this inner
+// wrapper, which offsets every item after the first. The doubled class
+// (0,2,0) outranks that rule without !important, so inline Inspector margins
+// and later two-class design rules still apply.
+.dsgo-grid__inner.dsgo-grid__inner > * {
 	margin-block-start: 0;
 	margin-block-end: 0;
 }

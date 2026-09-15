@@ -352,9 +352,9 @@ body:has(.dsgo-stack__inner .dsgo-grid.is-selected) {
 // With two-div structure: .dsgo-grid > .dsgo-grid__inner > items
 // ========================================
 
-// Reset theme block spacing without overriding an authored item offset.
-// Inspector inline margins and shared design classes must remain editable.
-.dsgo-grid__inner > * {
+// Same reset as style.scss: the doubled class outranks the layout-support
+// `.wp-container-* > * + *` margin that Block spacing would otherwise add.
+.dsgo-grid__inner.dsgo-grid__inner > * {
 	margin-block-start: 0;
 	margin-block-end: 0;
 }

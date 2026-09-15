@@ -576,10 +576,10 @@ class Block_Inserter {
 		if ( in_array( $block_name, array( 'core/heading', 'core/paragraph', 'designsetgo/advanced-heading' ), true )
 			&& ! empty( $attributes['dsgoMaxWidth'] ) && is_string( $attributes['dsgoMaxWidth'] )
 		) {
-			$classes[]             = 'dsgo-has-max-width';
-			$styles['max-width']   = $attributes['dsgoMaxWidth'];
-			$alignment            = $attributes['textAlign'] ?? $attributes['align'] ?? '';
-			$styles['margin-left'] = 'left' === $alignment ? '0' : 'auto';
+			$classes[]              = 'dsgo-has-max-width';
+			$styles['max-width']    = $attributes['dsgoMaxWidth'];
+			$alignment              = $attributes['textAlign'] ?? $attributes['align'] ?? '';
+			$styles['margin-left']  = 'left' === $alignment ? '0' : 'auto';
 			$styles['margin-right'] = 'right' === $alignment ? '0' : 'auto';
 		}
 
@@ -723,6 +723,23 @@ class Block_Inserter {
 			$mobile_order = max( 0.0, min( 10.0, (float) $attributes['dsgoMobileOrder'] ) );
 			if ( 1.0 !== $mobile_order ) {
 				$styles['--dsgo-mobile-order'] = self::format_js_number( $mobile_order );
+			}
+		}
+
+		// Grid span - src/extensions/grid-span/index.js (applyGridSpanStyles).
+		// Registered for every block (includes/extension-configs/grid-span.php);
+		// save() writes grid-column / grid-row for a span above 1 whatever the
+		// parent, so a spanning grid item stored without them renders one track
+		// wide and fails validation on open.
+		if ( ! self::is_block_excluded_from_extensions( $block_name ) ) {
+			$spans = array(
+				'dsgoColumnSpan' => 'grid-column',
+				'dsgoRowSpan'    => 'grid-row',
+			);
+			foreach ( $spans as $span_attribute => $span_property ) {
+				if ( isset( $attributes[ $span_attribute ] ) && is_numeric( $attributes[ $span_attribute ] ) && (float) $attributes[ $span_attribute ] > 1 ) {
+					$styles[ $span_property ] = 'span ' . self::format_js_number( (float) $attributes[ $span_attribute ] );
+				}
 			}
 		}
 
@@ -1502,7 +1519,17 @@ class Block_Inserter {
 		if ( isset( $attrs['style'] ) && is_array( $attrs['style'] ) ) {
 			$attrs['style'] = self::convert_style_vars( $attrs['style'] );
 		}
-		if ( isset( $attrs['content'] ) && 0 === strpos( $block_name, 'core/' ) && ! in_array( $block_name, self::CORE_WRAPPER_BLOCKS, true ) ) {
+		if ( 'core/image' === $block_name ) {
+			$image_html = self::generate_core_image_html( $attrs );
+			// Sourced attributes are read back from the markup, so save() keeps them out of the comment.
+			// They also leave before block supports run: a render never passes them, and the rich-text
+			// caption type is not one rest_validate_value_from_schema() accepts.
+			foreach ( self::CORE_IMAGE_SOURCED_ATTRIBUTES as $sourced ) {
+				unset( $attrs[ $sourced ] );
+			}
+			$innerHTML      = self::apply_block_support_attributes( $image_html, $block_name, $attrs );
+			$innerContent[] = $innerHTML;
+		} elseif ( isset( $attrs['content'] ) && 0 === strpos( $block_name, 'core/' ) && ! in_array( $block_name, self::CORE_WRAPPER_BLOCKS, true ) ) {
 			$content = $attrs['content'];
 			unset( $attrs['content'] );
 
@@ -2684,8 +2711,8 @@ class Block_Inserter {
 				$column_gap        = self::spacing_gap( $column_gap ) ?? ( '' !== $custom_column_gap ? $custom_column_gap : $default_gap );
 				// Mirrors src/blocks/grid/grid-columns.js: a custom template wins,
 				// then a column min width, then the repeated column count.
-				$column_template   = isset( $attributes['columnTemplate'] ) && is_string( $attributes['columnTemplate'] ) ? trim( $attributes['columnTemplate'] ) : '';
-				$columns_css       = 'repeat(' . $desktop_cols . ', 1fr)';
+				$column_template = isset( $attributes['columnTemplate'] ) && is_string( $attributes['columnTemplate'] ) ? trim( $attributes['columnTemplate'] ) : '';
+				$columns_css     = 'repeat(' . $desktop_cols . ', 1fr)';
 				if ( '' !== $column_template ) {
 					$columns_css = $column_template;
 				} elseif ( ! empty( $attributes['columnMinWidth'] ) ) {
@@ -4706,6 +4733,140 @@ class Block_Inserter {
 	}
 
 	/**
+	 * Generate the markup core/image save() produces.
+	 *
+	 * Mirrors block-library image/save.js (WordPress 7.1): the figure carries the
+	 * alignment, size, resize and custom-border classes, while border and shadow
+	 * styles skip the root and land on the img with aspect ratio, scale, focal
+	 * point and dimensions. The caption follows the image or its link. Block
+	 * supports that do serialize on the root (margin, className, anchor) are
+	 * merged afterwards by apply_block_support_attributes().
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return string Figure markup.
+	 */
+	private static function generate_core_image_html( array $attributes ): string {
+		$text   = static function ( string $key ) use ( $attributes ): string {
+			return isset( $attributes[ $key ] ) && is_scalar( $attributes[ $key ] ) ? (string) $attributes[ $key ] : '';
+		};
+		$style  = isset( $attributes['style'] ) && is_array( $attributes['style'] ) ? $attributes['style'] : array();
+		$border = isset( $style['border'] ) && is_array( $style['border'] ) ? $style['border'] : array();
+
+		$image_styles = array();
+		if ( function_exists( 'wp_style_engine_get_styles' ) ) {
+			$skipped      = array_filter(
+				array(
+					'border' => $border,
+					'shadow' => $style['shadow'] ?? null,
+				)
+			);
+			$engine       = $skipped ? wp_style_engine_get_styles( $skipped ) : array();
+			$image_styles = $engine['declarations'] ?? array();
+		}
+		// The PHP style engine turns a preset border color into classes, but the
+		// editor's getInlineStyles() writes it inline as a CSS variable.
+		$sides = array(
+			''        => $border,
+			'-top'    => $border['top'] ?? null,
+			'-right'  => $border['right'] ?? null,
+			'-bottom' => $border['bottom'] ?? null,
+			'-left'   => $border['left'] ?? null,
+		);
+		foreach ( $sides as $side => $values ) {
+			if ( is_array( $values ) && isset( $values['color'] ) && is_string( $values['color'] ) && '' !== $values['color'] ) {
+				$image_styles[ 'border' . $side . '-color' ] = 0 === strpos( $values['color'], 'var:preset|' )
+					? self::wp_shorthand_to_css_var( $values['color'] )
+					: $values['color'];
+			}
+		}
+		$has_border_styles = (bool) array_filter(
+			array_keys( $image_styles ),
+			static function ( $property ) {
+				return 0 === strpos( $property, 'border' );
+			}
+		);
+
+		$border_classes = array();
+		$border_color   = $text( 'borderColor' );
+		if ( '' !== $border_color || ! empty( $border['color'] ) ) {
+			$border_classes[] = 'has-border-color';
+		}
+		if ( '' !== $border_color ) {
+			$border_classes[] = 'has-' . sanitize_html_class( _wp_to_kebab_case( $border_color ) ) . '-border-color';
+		}
+
+		$scale = $text( 'scale' );
+		if ( '' !== $text( 'aspectRatio' ) ) {
+			$image_styles['aspect-ratio'] = $text( 'aspectRatio' );
+		}
+		if ( '' !== $scale ) {
+			$image_styles['object-fit'] = $scale;
+		}
+		$focal = isset( $attributes['focalPoint'] ) && is_array( $attributes['focalPoint'] ) ? $attributes['focalPoint'] : null;
+		if ( $focal && '' !== $scale ) {
+			$image_styles['object-position'] = round( (float) ( $focal['x'] ?? 0.5 ) * 100 ) . '% ' . round( (float) ( $focal['y'] ?? 0.5 ) * 100 ) . '%';
+		}
+		$dimension = static function ( $value ): string {
+			return is_numeric( $value ) && ! is_string( $value ) ? $value . 'px' : (string) $value;
+		};
+		$width     = $attributes['width'] ?? null;
+		$height    = $attributes['height'] ?? null;
+		if ( null !== $width || null !== $height ) {
+			if ( null !== $width && '' !== $width ) {
+				$image_styles['width'] = $dimension( $width );
+			}
+			$image_styles['height'] = ( null === $height || 'auto' === $height ) ? 'auto' : $dimension( $height );
+		}
+
+		$align          = $text( 'align' );
+		$figure_classes = array( 'wp-block-image' );
+		if ( 'none' === $align ) {
+			$figure_classes[] = 'alignnone';
+		} elseif ( in_array( $align, array( 'left', 'center', 'right', 'wide', 'full' ), true ) ) {
+			$figure_classes[] = 'align' . $align;
+		}
+		if ( '' !== $text( 'sizeSlug' ) ) {
+			$figure_classes[] = 'size-' . sanitize_html_class( $text( 'sizeSlug' ) );
+		}
+		if ( ! empty( $width ) || ! empty( $height ) ) {
+			$figure_classes[] = 'is-resized';
+		}
+		if ( $border_classes || $has_border_styles ) {
+			$figure_classes[] = 'has-custom-border';
+		}
+
+		$image_classes = $border_classes;
+		if ( ! empty( $attributes['id'] ) && is_numeric( $attributes['id'] ) ) {
+			$image_classes[] = 'wp-image-' . (int) $attributes['id'];
+		}
+		$style_string = '';
+		foreach ( $image_styles as $property => $value ) {
+			$style_string .= $property . ':' . $value . ';';
+		}
+
+		$image = '<img src="' . esc_url( $text( 'url' ) ) . '" alt="' . esc_attr( $text( 'alt' ) ) . '"'
+			. ( $image_classes ? ' class="' . esc_attr( implode( ' ', $image_classes ) ) . '"' : '' )
+			. ( '' !== $style_string ? ' style="' . esc_attr( rtrim( $style_string, ';' ) ) . '"' : '' )
+			. ( '' !== $text( 'title' ) ? ' title="' . esc_attr( $text( 'title' ) ) . '"' : '' )
+			. ( ! empty( $attributes['isDecorative'] ) ? ' role="none"' : '' )
+			. '/>';
+
+		if ( '' !== $text( 'href' ) ) {
+			$image = '<a'
+				. ( '' !== $text( 'linkClass' ) ? ' class="' . esc_attr( $text( 'linkClass' ) ) . '"' : '' )
+				. ' href="' . esc_url( $text( 'href' ) ) . '"'
+				. ( '' !== $text( 'linkTarget' ) ? ' target="' . esc_attr( $text( 'linkTarget' ) ) . '"' : '' )
+				. ( '' !== $text( 'rel' ) ? ' rel="' . esc_attr( $text( 'rel' ) ) . '"' : '' )
+				. '>' . $image . '</a>';
+		}
+		$caption = '' !== trim( $text( 'caption' ) )
+			? '<figcaption class="wp-element-caption">' . wp_kses_post( $text( 'caption' ) ) . '</figcaption>'
+			: '';
+
+		return '<figure class="' . esc_attr( implode( ' ', $figure_classes ) ) . '">' . $image . $caption . '</figure>';
+	}
+
+	/**
 	 * Coerce attribute types to match block.json schema.
 	 *
 	 * Ensures numeric attributes are stored as numbers (not strings) so that
@@ -5722,6 +5883,7 @@ class Block_Inserter {
 	private const SERIALIZABLE_CORE_BLOCKS = array(
 		'core/heading',
 		'core/paragraph',
+		'core/image',
 		'core/list',
 		'core/list-item',
 		'core/quote',
@@ -5733,6 +5895,12 @@ class Block_Inserter {
 	 * any nested list, so its content is part of the opening markup rather than a
 	 * standalone innerHTML string.
 	 */
+	/**
+	 * Attributes whose block.json source is core/image markup (img, figure > a,
+	 * figcaption). The serializer omits sourced attributes from the block comment.
+	 */
+	private const CORE_IMAGE_SOURCED_ATTRIBUTES = array( 'url', 'alt', 'caption', 'title', 'href', 'rel', 'linkClass', 'linkTarget' );
+
 	private const CORE_WRAPPER_BLOCKS = array(
 		'core/list',
 		'core/list-item',
