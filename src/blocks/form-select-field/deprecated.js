@@ -156,7 +156,12 @@ const vStatic = {
 	},
 
 	migrate(attributes) {
-		return attributes;
+		// No empty-value option in static markup means the author omitted the
+		// placeholder. Preserve that opt-out instead of enabling the new default.
+		return {
+			...attributes,
+			placeholder: attributes.placeholder ?? '',
+		};
 	},
 };
 

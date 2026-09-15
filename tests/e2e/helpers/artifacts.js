@@ -240,6 +240,24 @@ async function publishAndResolveUrl(page) {
 }
 
 /**
+ * Open a published frontend and attach its error listener before it loads.
+ *
+ * @param {import('@playwright/test').Page} editorPage  Editor page.
+ * @param {string}                          url         Published URL.
+ * @param {Function}                        onPageError Frontend error listener.
+ * @return {Promise<Object>} Frontend page and navigation response.
+ */
+async function openFrontendPage(editorPage, url, onPageError) {
+	// Keep editor REST requests alive while the frontend is inspected.
+	const page = await editorPage.context().newPage();
+	if (onPageError) {
+		page.on('pageerror', onPageError);
+	}
+	const response = await page.goto(url);
+	return { page, response };
+}
+
+/**
  * Register per-test cleanup of the pages published via publishAndResolveUrl.
  *
  * Without this, every test leaves its published page on the site; across a
@@ -287,6 +305,7 @@ function installPublishedPageCleanup(test, { flushEvery = 5 } = {}) {
 }
 
 module.exports = {
+	openFrontendPage,
 	SCREENSHOT_DIR,
 	RECORD_VIDEO,
 	defineArtifact,

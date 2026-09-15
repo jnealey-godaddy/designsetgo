@@ -22,11 +22,13 @@ export default function CardSave({ attributes }) {
 		layoutPreset,
 		imageUrl,
 		imageAlt,
+		imageFallbackAlt,
 		imageAspectRatio,
 		imageCustomAspectRatio,
 		imageObjectFit,
 		imageFocalPoint,
 		badgeText,
+		badgeAriaLabel,
 		badgeStyle,
 		badgeFloatingPosition,
 		badgeInlinePosition,
@@ -136,7 +138,7 @@ export default function CardSave({ attributes }) {
 				className={badgeClass}
 				style={badgeStyles}
 				role="status"
-				aria-label={__('Badge', 'designsetgo')}
+				aria-label={badgeAriaLabel ?? __('Badge', 'designsetgo')}
 			>
 				{badgeText}
 			</span>
@@ -166,7 +168,9 @@ export default function CardSave({ attributes }) {
 		}
 
 		// Provide fallback alt text for accessibility
-		const altText = imageAlt || __('Card image', 'designsetgo');
+		// Preserve the saved decorative label when the editor locale changes.
+		const altText =
+			imageAlt || (imageFallbackAlt ?? __('Card image', 'designsetgo'));
 		const imageProps = {
 			src: imageUrl,
 			alt: altText,

@@ -50,7 +50,7 @@ if ( ! $wp_tests_dir || ! file_exists( $wp_tests_dir . '/includes/functions.php'
 	echo "To run PHPUnit tests, you have two options:\n\n";
 	echo "Option 1 (Recommended) - Use wp-env:\n";
 	echo "  1. Start wp-env: npm run wp-env:start\n";
-	echo "  2. Run tests in wp-env: npm run wp-env run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit\n\n";
+	echo "  2. Run tests in wp-env: npm run wp-env -- run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit\n\n";
 	echo "Option 2 - Install WordPress test suite manually:\n";
 	echo "  bash bin/install-wp-tests.sh wordpress_test root '' localhost latest\n\n";
 	exit( 1 );

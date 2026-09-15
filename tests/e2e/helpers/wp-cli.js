@@ -8,6 +8,8 @@
  */
 
 const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Distil wp-env's stderr down to the substantive failure text.
@@ -118,7 +120,60 @@ function deletePostIds(ids) {
 	cli(`wp post delete ${list.join(' ')} --force`);
 }
 
+/**
+ * Keep the suite's English editor selectors independent of a developer's locale.
+ * Save the previous value before changing it, including whether the meta existed.
+ * A leftover file from an interrupted run retains the original value for teardown.
+ */
+function useEnglishEditorLocale() {
+	const statePath = editorLocaleStatePath();
+	if (!fs.existsSync(statePath)) {
+		const username = process.env.WP_ADMIN_USER || 'admin';
+		const userId = Number(
+			cli(`wp user get ${shellArg(username)} --field=ID`).trim()
+		);
+		if (!Number.isInteger(userId) || userId <= 0) {
+			throw new Error('Cannot resolve the E2E administrator user ID');
+		}
+		const php = `echo wp_json_encode(array('userId' => ${userId}, 'exists' => metadata_exists('user', ${userId}, 'locale'), 'locale' => get_user_meta(${userId}, 'locale', true)));`;
+		const state = JSON.parse(cli(`wp eval ${shellArg(php)}`).trim());
+		fs.mkdirSync(path.dirname(statePath), { recursive: true });
+		fs.writeFileSync(statePath, JSON.stringify(state));
+	}
+	const { userId } = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+	cli(`wp user meta update ${Number(userId)} locale en_US`);
+}
+
+/** Restore the administrator's language after the suite, even if tests fail. */
+function restoreEditorLocale() {
+	const statePath = editorLocaleStatePath();
+	if (!fs.existsSync(statePath)) {
+		return;
+	}
+	const { userId, exists, locale } = JSON.parse(
+		fs.readFileSync(statePath, 'utf8')
+	);
+	cli(
+		exists
+			? `wp user meta update ${Number(userId)} locale ${shellArg(locale)}`
+			: `wp user meta delete ${Number(userId)} locale`
+	);
+	fs.unlinkSync(statePath);
+}
+
+/**
+ * @return {string} Locale backup alongside this run's authentication state.
+ */
+function editorLocaleStatePath() {
+	const storageStatePath =
+		process.env.STORAGE_STATE_PATH ||
+		path.join(process.cwd(), 'artifacts/storage-states/admin.json');
+	return `${storageStatePath}.locale.json`;
+}
+
 module.exports = {
+	useEnglishEditorLocale,
+	restoreEditorLocale,
 	cli,
 	shellArg,
 	deleteAllPagesAndPosts,

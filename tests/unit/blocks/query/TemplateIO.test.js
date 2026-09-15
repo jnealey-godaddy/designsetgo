@@ -74,7 +74,6 @@ beforeAll(() => {
 
 	global.URL.createObjectURL = jest.fn(() => 'blob:mock');
 	global.URL.revokeObjectURL = jest.fn();
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	HTMLAnchorElement.prototype.click = jest.fn();
 });
 
