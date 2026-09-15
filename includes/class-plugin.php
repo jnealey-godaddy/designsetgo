@@ -425,6 +425,20 @@ class Plugin {
 	public $abilities_registry;
 
 	/**
+	 * Agent-build pending-tree store.
+	 *
+	 * @var Abilities\Agent_Build\Build_Store
+	 */
+	public $agent_build_store;
+
+	/**
+	 * Agent-build REST route.
+	 *
+	 * @var Abilities\Agent_Build\Build_REST
+	 */
+	public $agent_build_rest;
+
+	/**
 	 * Section Styles instance.
 	 *
 	 * @var Section_Styles
@@ -724,6 +738,15 @@ class Plugin {
 
 		// Load Abilities Registry.
 		require_once DESIGNSETGO_PATH . 'includes/abilities/class-abilities-registry.php';
+
+		// Load the agent-build pending-tree store and REST route directly.
+		// Both must work on WP 6.7+ regardless of whether the Abilities API
+		// is present, so they cannot rely solely on Abilities_Registry's
+		// directory scan (which only instantiates Abstract_Ability
+		// subclasses - the scan also require_once's these two files, but
+		// that is harmless since neither class extends it).
+		require_once DESIGNSETGO_PATH . 'includes/abilities/agent-build/class-build-store.php';
+		require_once DESIGNSETGO_PATH . 'includes/abilities/agent-build/class-build-rest.php';
 	}
 
 	/**
@@ -783,6 +806,14 @@ class Plugin {
 
 		// Initialize draft mode (works on both admin and REST API).
 		$this->draft_mode = new Admin\Draft_Mode();
+
+		// Initialize the agent-build pending-tree store and its REST route.
+		// Works on WP 6.7+ regardless of the Abilities API - see the
+		// require_once comment in load_dependencies().
+		if ( class_exists( 'DesignSetGo\Abilities\Agent_Build\Build_Store' ) ) {
+			$this->agent_build_store = new Abilities\Agent_Build\Build_Store();
+			$this->agent_build_rest  = new Abilities\Agent_Build\Build_REST( $this->agent_build_store );
+		}
 
 		// Initialize Abilities Registry (AI-native API).
 		if ( class_exists( 'DesignSetGo\Abilities\Abilities_Registry' ) ) {

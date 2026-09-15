@@ -1,0 +1,210 @@
+<?php
+/**
+ * Post-meta store for agent-submitted block trees awaiting assembly.
+ *
+ * A remote agent submits a block tree through the designsetgo/build-page
+ * ability (Task 19); PHP cannot run a block's save(), so the tree is parked
+ * here as a PENDING build rather than written into post_content. An editor
+ * plugin (Task 20) later reads the pending tree over REST, assembles it with
+ * the real save() in the browser, and posts a report back describing the
+ * outcome. This class owns the two post meta keys that make up that
+ * handshake and never touches post_content or post_modified_gmt itself.
+ *
+ * @package DesignSetGo
+ * @subpackage Abilities
+ * @since 2.6.0
+ */
+
+namespace DesignSetGo\Abilities\Agent_Build;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Build_Store class.
+ *
+ * A plain post-meta wrapper, not an Abstract_Ability. It lives in this
+ * directory so Task 19's build-page ability can reach it, but
+ * Abilities_Registry only instantiates classes here that are actual
+ * Abstract_Ability subclasses, so it is never registered as an ability
+ * itself.
+ */
+class Build_Store {
+
+	/**
+	 * Meta key holding the pending tree as a JSON string:
+	 * `{ tree, mode, base }`, where `base` is the post's
+	 * `post_modified_gmt` at the moment the tree was stored.
+	 *
+	 * @var string
+	 */
+	const META_PENDING_TREE = '_dsgo_pending_tree';
+
+	/**
+	 * Meta key holding the latest build report as a JSON string.
+	 *
+	 * @var string
+	 */
+	const META_BUILD_REPORT = '_dsgo_build_report';
+
+	/**
+	 * Constructor. Registers the meta keys on `init`.
+	 */
+	public function __construct() {
+		add_action( 'init', array( $this, 'register_meta' ) );
+	}
+
+	/**
+	 * Register both meta keys as protected (leading underscore, not
+	 * `show_in_rest`) post meta, readable/writable only by users who can
+	 * edit the post they are attached to.
+	 *
+	 * @return void
+	 */
+	public function register_meta(): void {
+		$args = array(
+			'single'        => true,
+			'type'          => 'string',
+			'show_in_rest'  => false,
+			'auth_callback' => static function ( $allowed, $meta_key, $post_id ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- required by register_post_meta()'s auth_callback signature.
+				return current_user_can( 'edit_post', $post_id );
+			},
+		);
+
+		register_post_meta( '', self::META_PENDING_TREE, $args );
+		register_post_meta( '', self::META_BUILD_REPORT, $args );
+	}
+
+	/**
+	 * Store a submitted tree as the post's pending build.
+	 *
+	 * Uses update_post_meta() only - never wp_update_post() - so storing a
+	 * pending build does not itself change post_modified_gmt. That would
+	 * make the base captured here immediately stale and turn the very next
+	 * GET into a false conflict.
+	 *
+	 * @param int    $post_id Post the tree targets.
+	 * @param array  $tree    Well-formed block tree (already validated by the caller).
+	 * @param string $mode    Assembly mode, e.g. 'replace' or 'append'.
+	 * @return void
+	 */
+	public function store( int $post_id, array $tree, string $mode ): void {
+		$base = get_post_field( 'post_modified_gmt', $post_id );
+
+		update_post_meta(
+			$post_id,
+			self::META_PENDING_TREE,
+			wp_json_encode(
+				array(
+					'tree' => $tree,
+					'mode' => $mode,
+					'base' => is_string( $base ) ? $base : '',
+				)
+			)
+		);
+
+		$this->write_report(
+			$post_id,
+			array(
+				'status'   => 'pending',
+				'treeHash' => $this->hash_tree( $tree ),
+			)
+		);
+	}
+
+	/**
+	 * Read the post's pending build, if any.
+	 *
+	 * @param int $post_id Post to read.
+	 * @return array{tree: array, mode: string, base: string}|null Decoded pending build, or null when there is none.
+	 */
+	public function pending( int $post_id ): ?array {
+		$raw = get_post_meta( $post_id, self::META_PENDING_TREE, true );
+
+		if ( ! is_string( $raw ) || '' === $raw ) {
+			return null;
+		}
+
+		$decoded = json_decode( $raw, true );
+
+		if ( ! is_array( $decoded ) || ! isset( $decoded['tree'], $decoded['mode'], $decoded['base'] ) ) {
+			return null;
+		}
+
+		return $decoded;
+	}
+
+	/**
+	 * Read the post's latest build report.
+	 *
+	 * @param int $post_id Post to read.
+	 * @return array<string, mixed> Decoded report, or an empty array when there is none.
+	 */
+	public function report( int $post_id ): array {
+		$raw = get_post_meta( $post_id, self::META_BUILD_REPORT, true );
+
+		if ( ! is_string( $raw ) || '' === $raw ) {
+			return array();
+		}
+
+		$decoded = json_decode( $raw, true );
+
+		return is_array( $decoded ) ? $decoded : array();
+	}
+
+	/**
+	 * Overwrite the post's build report.
+	 *
+	 * @param int   $post_id Post to write.
+	 * @param array $report  Report payload.
+	 * @return void
+	 */
+	public function write_report( int $post_id, array $report ): void {
+		update_post_meta( $post_id, self::META_BUILD_REPORT, wp_json_encode( $report ) );
+	}
+
+	/**
+	 * Clear the post's pending tree. Leaves the build report alone - a
+	 * terminal report is still meaningful after the tree it describes is
+	 * gone.
+	 *
+	 * @param int $post_id Post to clear.
+	 * @return void
+	 */
+	public function clear( int $post_id ): void {
+		delete_post_meta( $post_id, self::META_PENDING_TREE );
+	}
+
+	/**
+	 * Whether the post has changed since its pending build's base was
+	 * captured.
+	 *
+	 * @param int $post_id Post to check.
+	 * @return bool True when the post's current post_modified_gmt no longer matches the stored base.
+	 */
+	public function is_conflict( int $post_id ): bool {
+		$pending = $this->pending( $post_id );
+
+		if ( null === $pending ) {
+			return false;
+		}
+
+		$current = get_post_field( 'post_modified_gmt', $post_id );
+
+		return ( is_string( $current ) ? $current : '' ) !== $pending['base'];
+	}
+
+	/**
+	 * Fingerprint a tree so a later report can be tied back to the tree it
+	 * was assembled from.
+	 *
+	 * @param array $tree Block tree.
+	 * @return string Hex-encoded SHA-256 hash, or '' if the tree could not be encoded.
+	 */
+	private function hash_tree( array $tree ): string {
+		$json = wp_json_encode( $tree );
+
+		return is_string( $json ) ? hash( 'sha256', $json ) : '';
+	}
+}
