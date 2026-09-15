@@ -4,11 +4,16 @@
  *
  * A pending tree is assembled and saved later, in the editor, by whoever
  * opens the post - possibly a user with far more privilege than the one who
- * submitted it. So a submitter without `unfiltered_html` has every string
- * inside every node's `attributes` run through wp_kses_post() before the
- * tree is stored, mirroring the filtering core applies to block attributes
- * when such a user saves content themselves (filter_block_kses_value(), run
- * from content_save_pre).
+ * submitted it. So a submitter without `unfiltered_html` has every node's
+ * `attributes` run through core's own block attribute filter,
+ * filter_block_kses_value(), with the node as block context - exactly what
+ * core applies to a block comment's attributes when such a user saves
+ * content themselves (wp_kses() -> pre_kses -> filter_block_kses()). That
+ * covers attribute keys and the template part tagName check, not just
+ * string values.
+ *
+ * This only filters attribute values. The markup those values render into
+ * is filtered separately, in the editor, through Build_Sanitize_REST.
  *
  * @package DesignSetGo
  * @subpackage Abilities
@@ -56,7 +61,7 @@ class Tree_Kses {
 			}
 
 			if ( isset( $node['attributes'] ) && is_array( $node['attributes'] ) ) {
-				$node['attributes'] = self::filter_value( $node['attributes'] );
+				$node['attributes'] = self::filter_attributes( $node['attributes'], isset( $node['name'] ) && is_string( $node['name'] ) ? $node['name'] : '' );
 			}
 
 			if ( isset( $node['innerBlocks'] ) && is_array( $node['innerBlocks'] ) ) {
@@ -70,23 +75,21 @@ class Tree_Kses {
 	}
 
 	/**
-	 * KSES-filter a string, or every string nested inside an array.
+	 * Filter one node's attributes as core filters a parsed block's attrs.
 	 * Non-string scalars (numbers, booleans, null) pass through unchanged.
 	 *
-	 * @param mixed $value Attribute value.
-	 * @return mixed Filtered value.
+	 * @param array  $attributes Node attributes.
+	 * @param string $block_name Node block name, for core's block context.
+	 * @return array Filtered attributes.
 	 */
-	private static function filter_value( $value ) {
-		if ( is_string( $value ) ) {
-			return wp_kses_post( $value );
-		}
-
-		if ( is_array( $value ) ) {
-			foreach ( $value as $key => $item ) {
-				$value[ $key ] = self::filter_value( $item );
-			}
-		}
-
-		return $value;
+	private static function filter_attributes( array $attributes, string $block_name ): array {
+		// The block context argument arrived in WP 6.5.5; this plugin
+		// requires 6.7, and PHP ignores the extra argument on older cores.
+		return filter_block_kses_value(
+			$attributes,
+			'post',
+			wp_allowed_protocols(),
+			array( 'blockName' => $block_name )
+		);
 	}
 }

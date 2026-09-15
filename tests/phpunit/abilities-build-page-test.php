@@ -595,9 +595,10 @@ class Abilities_Build_Page_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A contributor (no unfiltered_html) has every attribute string run
-	 * through wp_kses_post() before it is stored - mirroring what core's
-	 * content_save_pre filtering would do to their own save.
+	 * A contributor (no unfiltered_html) has every attribute value run
+	 * through core's filter_block_kses_value() before it is stored -
+	 * mirroring what core's content_save_pre filtering would do to their own
+	 * save.
 	 */
 	public function test_contributor_tree_is_stored_kses_filtered(): void {
 		$contributor_id = self::factory()->user->create( array( 'role' => 'contributor' ) );
@@ -624,6 +625,48 @@ class Abilities_Build_Page_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'onerror', $para );
 		$this->assertStringContainsString( '<img', $para );
 		$this->assertSame( $contributor_id, $pending['submitter'] );
+	}
+
+	/**
+	 * A contributor's plain-text CSS attribute is filtered exactly as core
+	 * filters the same block comment attribute when that contributor saves
+	 * post_content themselves (wp_kses() -> pre_kses -> filter_block_kses()),
+	 * and a script inside it is still stripped.
+	 */
+	public function test_contributor_css_attribute_matches_core_block_attribute_filtering(): void {
+		$contributor_id = self::factory()->user->create( array( 'role' => 'contributor' ) );
+		wp_set_current_user( $contributor_id );
+		$css = '.a > .b { color: red; }<script>alert(1)</script>';
+
+		$result = ( new Build_Page() )->execute(
+			array(
+				'new'  => array(
+					'title'     => 'Contributor CSS draft',
+					'post_type' => 'post',
+				),
+				'tree' => array(
+					'version' => 1,
+					'blocks'  => array(
+						array(
+							'name'       => 'designsetgo/section',
+							'attributes' => array( 'dsgoCustomCSS' => $css ),
+						),
+					),
+				),
+			)
+		);
+
+		$this->assertTrue( $result['success'], wp_json_encode( $result ) );
+		$stored = $this->store()->pending( $result['post_id'] )['tree']['blocks'][0]['attributes']['dsgoCustomCSS'];
+
+		$core_saved = parse_blocks(
+			wp_kses( '<!-- wp:designsetgo/section ' . wp_json_encode( array( 'dsgoCustomCSS' => $css ) ) . ' /-->', 'post' )
+		)[0]['attrs']['dsgoCustomCSS'];
+
+		$this->assertSame( $core_saved, $stored );
+		$this->assertStringStartsWith( '.a ', $stored );
+		$this->assertStringContainsString( 'color: red;', $stored );
+		$this->assertStringNotContainsString( '<script', $stored );
 	}
 
 	/**
