@@ -40,7 +40,30 @@
 		}
 	}
 
+	// Report paths like `blocks[1].innerBlocks[0].innerBlocks[0]` have no
+	// natural break points — without this they run off the sidebar's right
+	// edge instead of wrapping (U2).
+	&__report-path {
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
 	&__report-empty {
 		font-style: italic;
+	}
+
+	&__stored-report {
+		border-bottom: 1px solid currentcolor;
+		padding-bottom: 12px;
+
+		h2 {
+			margin: 0 0 4px;
+			font-size: 13px;
+		}
+	}
+
+	&__stored-report-status {
+		margin: 0 0 8px;
+		font-weight: 600;
 	}
 }

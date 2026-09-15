@@ -1,18 +1,21 @@
 /**
  * "Agent build" panel content: paste a JSON block tree, Check it (assemble
  * + lint against `window.designsetgoEngine`, set up by `../index.js`), then
- * Insert it once valid.
+ * Insert it once valid. Also shows, above the paste area, the finish flow's
+ * last agent build report for this post (see `./BuildReportSection.js`).
  *
  * Lint runs with an empty `{}` design context — the palette/spacing/font
  * checks degrade to "no known presets", which still catches raw hex colors
  * etc. Wiring a real design context (e.g. from `getEditorSettings().colors`)
  * is possible but not required for this panel; see the Task 15 brief.
  */
-import { __, sprintf } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import { useState } from '@wordpress/element';
 import { TextareaControl, Button, Notice } from '@wordpress/components';
-import { useDispatch } from '@wordpress/data';
+import { useDispatch, useSelect } from '@wordpress/data';
 import ReportList from './ReportList';
+import BuildReportSection from './BuildReportSection';
+import { AGENT_BUILD_REPORT_STORE } from '../constants';
 
 /**
  * @return {JSX.Element} The panel content.
@@ -25,18 +28,29 @@ export default function AgentBuildPanel() {
 	const [report, setReport] = useState(null);
 	const [markup, setMarkup] = useState('');
 	const [isValid, setIsValid] = useState(false);
+	// Disables Insert once it has run, until the tree text changes and a
+	// fresh Check passes again (U3) — otherwise a second click inserts the
+	// same blocks a second time.
+	const [inserted, setInserted] = useState(false);
 	const { insertBlocks } = useDispatch('core/block-editor');
+	const { createNotice } = useDispatch('core/notices');
+	const storedReport = useSelect(
+		(select) => select(AGENT_BUILD_REPORT_STORE).getReport(),
+		[]
+	);
 
 	/**
 	 * Clears everything Check/Insert produced: the last parse error, the
-	 * assembled markup, the valid flag, and the report. Called both before
-	 * a fresh Check and on every textarea edit, so a stale "valid" result
-	 * from a previous tree can never linger against newly-typed text.
+	 * assembled markup, the valid flag, the Insert-disabled flag, and the
+	 * report. Called both before a fresh Check and on every textarea edit,
+	 * so a stale "valid"/"inserted" result from a previous tree can never
+	 * linger against newly-typed text.
 	 */
 	function resetCheckState() {
 		setParseError('');
 		setMarkup('');
 		setIsValid(false);
+		setInserted(false);
 		setReport(null);
 	}
 
@@ -80,18 +94,36 @@ export default function AgentBuildPanel() {
 
 	/**
 	 * Parses the last-assembled markup with the site's own block registry
-	 * and inserts the result into the post.
+	 * and inserts the result into the post. A no-op once already inserted
+	 * for this Check — see `inserted` above.
 	 */
 	function handleInsert() {
-		if (!isValid) {
+		if (!isValid || inserted) {
 			return;
 		}
 		const parsedBlocks = window.wp.blocks.parse(markup);
 		insertBlocks(parsedBlocks);
+		setInserted(true);
+		createNotice(
+			'success',
+			sprintf(
+				/* translators: %d: number of blocks inserted. */
+				_n(
+					'Inserted %d block.',
+					'Inserted %d blocks.',
+					parsedBlocks.length,
+					'designsetgo'
+				),
+				parsedBlocks.length
+			),
+			{ type: 'snackbar' }
+		);
 	}
 
 	return (
 		<div className="dsgo-agent-build-panel">
+			<BuildReportSection report={storedReport} />
+
 			<TextareaControl
 				__nextHasNoMarginBottom
 				label={__('Block tree (JSON)', 'designsetgo')}
@@ -120,7 +152,7 @@ export default function AgentBuildPanel() {
 				<Button
 					variant="primary"
 					onClick={handleInsert}
-					disabled={!isValid}
+					disabled={!isValid || inserted}
 				>
 					{__('Insert', 'designsetgo')}
 				</Button>

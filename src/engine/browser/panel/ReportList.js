@@ -33,7 +33,9 @@ export default function ReportList({ invalid = [], findings = [] }) {
 				items={invalid}
 				renderItem={(entry, index) => (
 					<li key={index}>
-						<code>{entry.path}</code>
+						<code className="dsgo-agent-build-panel__report-path">
+							{entry.path}
+						</code>
 						{entry.block ? ` [${entry.block}]` : ''}: {entry.reason}
 					</li>
 				)}
@@ -62,7 +64,10 @@ export default function ReportList({ invalid = [], findings = [] }) {
 function renderFinding(finding, index) {
 	return (
 		<li key={index}>
-			<code>{finding.path}</code> [{finding.rule}]: {finding.message}
+			<code className="dsgo-agent-build-panel__report-path">
+				{finding.path}
+			</code>{' '}
+			[{finding.rule}]: {finding.message}
 			{finding.suggestion ? ` — ${finding.suggestion}` : ''}
 		</li>
 	);

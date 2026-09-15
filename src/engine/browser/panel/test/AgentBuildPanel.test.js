@@ -14,6 +14,7 @@ import '@testing-library/jest-dom';
 
 jest.mock('@wordpress/data', () => ({
 	useDispatch: jest.fn(),
+	useSelect: jest.fn(),
 }));
 
 // The real @wordpress/components pulls in @wordpress/rich-text's data store,
@@ -56,7 +57,7 @@ jest.mock('@wordpress/components', () => ({
 	),
 }));
 
-import { useDispatch } from '@wordpress/data';
+import { useDispatch, useSelect } from '@wordpress/data';
 import AgentBuildPanel from '../AgentBuildPanel';
 
 const VALID_TREE_TEXT = JSON.stringify({
@@ -66,10 +67,17 @@ const VALID_TREE_TEXT = JSON.stringify({
 
 describe('AgentBuildPanel', () => {
 	let insertBlocks;
+	let createNotice;
 
 	beforeEach(() => {
 		insertBlocks = jest.fn();
-		useDispatch.mockReturnValue({ insertBlocks });
+		createNotice = jest.fn();
+		useDispatch.mockImplementation((store) =>
+			store === 'core/notices' ? { createNotice } : { insertBlocks }
+		);
+		useSelect.mockImplementation((mapSelect) =>
+			mapSelect(() => ({ getReport: () => null }))
+		);
 
 		window.designsetgoEngine = {
 			version: 1,
@@ -252,5 +260,171 @@ describe('AgentBuildPanel', () => {
 
 		expect(window.wp.blocks.parse).not.toHaveBeenCalled();
 		expect(insertBlocks).not.toHaveBeenCalled();
+	});
+
+	// U2: long report paths must wrap instead of overflowing the sidebar.
+	test('report paths carry the wrapping class', () => {
+		window.designsetgoEngine.assemble.mockReturnValue({
+			status: 'invalid',
+			markup: '',
+			invalid: [
+				{
+					path: 'blocks[1].innerBlocks[0].innerBlocks[0]',
+					block: 'test/unknown',
+					reason: 'Block "test/unknown" is not registered.',
+				},
+			],
+		});
+
+		const { container } = render(<AgentBuildPanel />);
+
+		typeTree(
+			JSON.stringify({ version: 1, blocks: [{ name: 'test/unknown' }] })
+		);
+		fireEvent.click(screen.getByRole('button', { name: /check/i }));
+
+		const path = container.querySelector(
+			'.dsgo-agent-build-panel__report-path'
+		);
+		expect(path).toBeInTheDocument();
+		expect(path).toHaveTextContent(
+			'blocks[1].innerBlocks[0].innerBlocks[0]'
+		);
+	});
+
+	// U3: Insert must not be clickable twice for the same Check.
+	describe('Insert disables itself once clicked (U3)', () => {
+		beforeEach(() => {
+			window.designsetgoEngine.assemble.mockReturnValue({
+				status: 'valid',
+				markup: '<!-- wp:test/static {"text":"Hi"} /-->',
+				invalid: [],
+				treeHash: 'abc',
+			});
+			window.wp.blocks.parse.mockReturnValue([
+				{ name: 'test/static', attributes: { text: 'Hi' } },
+			]);
+		});
+
+		test('Insert disables itself, inserts once, and shows a success notice', () => {
+			render(<AgentBuildPanel />);
+			typeTree(VALID_TREE_TEXT);
+			fireEvent.click(screen.getByRole('button', { name: /check/i }));
+
+			const insertButton = screen.getByRole('button', {
+				name: /insert/i,
+			});
+			fireEvent.click(insertButton);
+
+			expect(insertButton).toBeDisabled();
+			expect(insertBlocks).toHaveBeenCalledTimes(1);
+			expect(createNotice).toHaveBeenCalledWith(
+				'success',
+				expect.stringContaining('1'),
+				expect.objectContaining({ type: 'snackbar' })
+			);
+
+			// Clicking again does nothing further.
+			fireEvent.click(insertButton);
+			expect(insertBlocks).toHaveBeenCalledTimes(1);
+		});
+
+		test('editing the text and Check re-enables Insert', () => {
+			render(<AgentBuildPanel />);
+			typeTree(VALID_TREE_TEXT);
+			fireEvent.click(screen.getByRole('button', { name: /check/i }));
+			fireEvent.click(screen.getByRole('button', { name: /insert/i }));
+
+			expect(
+				screen.getByRole('button', { name: /insert/i })
+			).toBeDisabled();
+
+			typeTree(
+				JSON.stringify({
+					version: 1,
+					blocks: [
+						{ name: 'test/static', attributes: { text: 'Bye' } },
+					],
+				})
+			);
+			fireEvent.click(screen.getByRole('button', { name: /check/i }));
+
+			expect(
+				screen.getByRole('button', { name: /insert/i })
+			).not.toBeDisabled();
+		});
+	});
+
+	// U4: the finish flow's stored report shows above the paste area.
+	describe('the stored agent build report (U4)', () => {
+		test('renders nothing when there is no stored report', () => {
+			useSelect.mockImplementation((mapSelect) =>
+				mapSelect(() => ({ getReport: () => null }))
+			);
+
+			render(<AgentBuildPanel />);
+
+			expect(
+				screen.queryByText(/pending agent build/i)
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByText(/last agent build/i)
+			).not.toBeInTheDocument();
+		});
+
+		test('shows "Pending agent build" and its findings for an awaiting_review report', () => {
+			useSelect.mockImplementation((mapSelect) =>
+				mapSelect(() => ({
+					getReport: () => ({
+						postId: 4,
+						status: 'awaiting_review',
+						invalid: [],
+						findings: [
+							{
+								rule: 'mobile-layout',
+								severity: 'warning',
+								path: 'blocks[0]',
+								message: 'stored finding message',
+							},
+						],
+					}),
+				}))
+			);
+
+			render(<AgentBuildPanel />);
+
+			expect(
+				screen.getByText(/pending agent build/i)
+			).toBeInTheDocument();
+			expect(
+				screen.getByText(/stored finding message/i)
+			).toBeInTheDocument();
+		});
+
+		test('shows "Last agent build" for a terminal status like failed', () => {
+			useSelect.mockImplementation((mapSelect) =>
+				mapSelect(() => ({
+					getReport: () => ({
+						postId: 4,
+						status: 'failed',
+						invalid: [
+							{
+								path: 'blocks[0]',
+								block: 'core/unknown',
+								reason: 'stored failure reason',
+							},
+						],
+						findings: [],
+					}),
+				}))
+			);
+
+			render(<AgentBuildPanel />);
+
+			expect(screen.getByText(/last agent build/i)).toBeInTheDocument();
+			expect(
+				screen.getByText(/stored failure reason/i)
+			).toBeInTheDocument();
+		});
 	});
 });
