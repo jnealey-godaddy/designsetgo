@@ -37,6 +37,19 @@
 // section's own background, so there is no seam to cover there.
 $dsgo-shape-bleed: 1px;
 
+// Inner-edge seam guard. Chrome rasterises the mask onto a pixel-snapped rect,
+// but the band paint still covers the partial device-pixel row at the
+// ::before's section-facing edge. In that row the full-cover mask layer is
+// present and the shape layer is not, so exclude lets band colour through: a
+// light hairline across the section at the divider's inner edge that appears
+// and disappears with zoom. Moving the shape layer doesn't help, because the
+// row sits outside the snapped mask. So we stop painting the band that close
+// to the section-facing edge. Every exclude-mask shape is solid along the
+// bottom of its viewBox there, so nothing visible is lost. 2px (the bleed plus
+// 1px of the divider) stays at least one device pixel down to 50% zoom.
+$dsgo-shape-seam-guard: 2 * $dsgo-shape-bleed;
+$dsgo-shape-band-color: var(--dsgo-shape-band, var(--wp--preset--color--base, #fff));
+
 // `--dsgo-shape-{height,width}-resolved` come from the shared size cascade
 // (@used above): inline attribute var → theme.json token → plugin default.
 :where(.dsgo-shape-divider) {
@@ -61,11 +74,17 @@ $dsgo-shape-bleed: 1px;
 // scaleX/scaleY mirror the mask (the uniform band layer is flip-invariant).
 // The ::before is extended $dsgo-shape-bleed past the top/bottom edges (see
 // note above) to eliminate the sub-pixel hairline gap at the outer edge.
+// The band is a top-anchored gradient that stops $dsgo-shape-seam-guard short
+// of the section-facing (local bottom) edge, which removes the inner-edge
+// seam. is-flip-y mirrors the whole pseudo-element, so this holds either way.
 :where(.dsgo-shape-divider)::before {
 	content: "";
 	position: absolute;
 	inset: -#{$dsgo-shape-bleed} 0;
-	background-color: var(--dsgo-shape-band, var(--wp--preset--color--base, #fff));
+	background-image: linear-gradient($dsgo-shape-band-color, $dsgo-shape-band-color);
+	background-position: center top;
+	background-size: 100% calc(100% - #{$dsgo-shape-seam-guard});
+	background-repeat: no-repeat;
 
 	-webkit-mask-image: linear-gradient(#000, #000), var(--dsgo-shape-mask);
 	-webkit-mask-position: center, center;
@@ -115,7 +134,10 @@ $dsgo-shape-bleed: 1px;
 // XOR/exclude mask (which would invert those layers into muddy translucency)
 // with a single-layer mask. The band colour is painted over the section at the
 // mask's graduated alpha — the drawn layers read as tonal band colour and the
-// undrawn areas show the section's own background through them.
+// undrawn areas show the section's own background through them. They have no
+// exclude layer, and therefore no inner-edge seam, and several are drawn solid
+// right up to the section-facing edge, so they paint the full box without the
+// seam guard.
 :where(
 	.dsgo-shape-divider.is-shape-fan,
 	.dsgo-shape-divider.is-shape-triangle-layered,
@@ -125,6 +147,7 @@ $dsgo-shape-bleed: 1px;
 	.dsgo-shape-divider.is-shape-side-triangle-layered,
 	.dsgo-shape-divider.is-shape-side-triangle-layered-extra
 )::before {
+	background-size: 100% 100%;
 	-webkit-mask-image: var(--dsgo-shape-mask);
 	-webkit-mask-composite: source-over;
 	mask-image: var(--dsgo-shape-mask);
