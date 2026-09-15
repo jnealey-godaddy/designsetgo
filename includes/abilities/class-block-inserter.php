@@ -3549,6 +3549,18 @@ class Block_Inserter {
 					self::routed_padding_styles( $attributes, true )
 				);
 
+				// Hover colours - save.js writes them as custom properties on the
+				// button after padding. Without them an AI-inserted button with a
+				// hover colour fails block validation on first open.
+				foreach ( array(
+					'hoverBackgroundColor' => '--dsgo-button-hover-bg',
+					'hoverTextColor'       => '--dsgo-button-hover-color',
+				) as $hover_attribute => $hover_property ) {
+					if ( ! empty( $attributes[ $hover_attribute ] ) && is_string( $attributes[ $hover_attribute ] ) ) {
+						$style_parts[] = $hover_property . ':' . self::convert_color_value_to_css_var( $attributes[ $hover_attribute ] );
+					}
+				}
+
 				$button_style = implode( ';', $style_parts );
 
 				// Icon HTML. Must match save.js: the icon span's layout
