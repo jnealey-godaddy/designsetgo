@@ -18,26 +18,29 @@
  * `./apply.js` for the pure helpers this leans on.
  */
 import { __ } from '@wordpress/i18n';
+import { assembleTree, composeBlocks } from './apply';
 import {
-	assembleTree,
-	composeBlocks,
 	failedMessage,
-	savedWithIssuesMessage,
+	withIssuesCount,
 	viewDetailsAction,
-} from './apply';
+	UNEXPECTED_FAILURE_REASON,
+} from './notices';
 import { sanitizeAssembled } from './sanitize';
 import {
 	applyForReview,
 	FINISH_NOTICE_ID,
 	FINISH_REPORT_ERROR_NOTICE_ID,
 } from './review';
+// Re-exported for existing consumers (./index.js) — the registration-
+// timeout fallback moved to its own file to keep this one under the
+// project's 300-line cap.
+import { finishAfterRegistrationTimeout } from './finish-timeout';
 
-export { FINISH_NOTICE_ID, FINISH_REPORT_ERROR_NOTICE_ID };
-
-/** `invalid` entry reported when block registration never settles. */
-const REGISTRATION_TIMEOUT_INVALID = [
-	{ path: '', block: '', reason: 'block registration did not settle' },
-];
+export {
+	FINISH_NOTICE_ID,
+	FINISH_REPORT_ERROR_NOTICE_ID,
+	finishAfterRegistrationTimeout,
+};
 
 /** `invalid` entry reported when saving the applied draft fails. */
 const SAVE_FAILED_INVALID = [{ path: '', block: '', reason: 'save failed' }];
@@ -210,7 +213,11 @@ export async function finishBuild(postId, deps) {
 
 		if (saved) {
 			await report({ status, findings });
-			notify('success', savedWithIssuesMessage(findings), {
+			const savedMessage = withIssuesCount(
+				__('Agent build applied and saved.', 'designsetgo'),
+				findings
+			);
+			notify('success', savedMessage, {
 				id: FINISH_NOTICE_ID,
 				...(findings.length
 					? { actions: [viewDetailsAction(openSidebar)] }
@@ -241,56 +248,16 @@ export async function finishBuild(postId, deps) {
 		markDocument('failed');
 	} catch (error) {
 		markDocument('failed');
-		notify(
-			'error',
-			__('Could not check for a pending agent build.', 'designsetgo'),
-			{ id: FINISH_NOTICE_ID }
-		);
-	}
-}
-
-/**
- * Handles a block registry that never settled. Only called once the editor
- * context is known to be finishable (see `./context.js`), so a timeout in
- * the Site Editor or widgets editor never reaches here. Reports `failed`
- * only when a build is actually pending — naming that build — and stays
- * silent otherwise.
- *
- * @param {Object}   deps              Same shape as `finishBuild()`'s deps; only these are used:
- * @param {Function} deps.fetchPending
- * @param {Function} deps.postReport
- * @param {Function} deps.notify
- * @param {Function} deps.markDocument
- * @return {Promise<void>}
- */
-export async function finishAfterRegistrationTimeout({
-	fetchPending,
-	postReport,
-	notify,
-	markDocument,
-}) {
-	try {
-		const pending = await fetchPending();
-
-		if (!pending || !pending.pending) {
-			markDocument('done');
-			return;
-		}
-
-		markDocument('failed');
-		await postReport({
+		notify('error', UNEXPECTED_FAILURE_REASON, { id: FINISH_NOTICE_ID });
+		// Whatever the report store said up to this point (e.g. review.js's
+		// own finally already corrected it, or nothing was ever set) must not
+		// be left claiming something that didn't happen.
+		setReport({
 			status: 'failed',
-			buildId: pending.buildId,
-			invalid: REGISTRATION_TIMEOUT_INVALID,
+			invalid: [
+				{ path: '', block: '', reason: UNEXPECTED_FAILURE_REASON },
+			],
+			findings: [],
 		});
-	} catch (error) {
-		// The dataset attribute is the only signal left for automation.
-		markDocument('failed');
 	}
-
-	notify(
-		'error',
-		__('The block editor did not finish loading in time.', 'designsetgo'),
-		{ id: FINISH_NOTICE_ID }
-	);
 }

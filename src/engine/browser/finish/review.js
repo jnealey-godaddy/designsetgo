@@ -12,7 +12,11 @@
  * Pure aside from the injected callbacks, like `./finish-build.js`.
  */
 import { __, _n, sprintf } from '@wordpress/i18n';
-import { viewDetailsAction } from './apply';
+import {
+	viewDetailsAction,
+	withIssuesCount,
+	UNEXPECTED_FAILURE_REASON,
+} from './notices';
 
 /** Stable notice id: a reload never stacks duplicate finish notices. */
 export const FINISH_NOTICE_ID = 'designsetgo-agent-build-finish';
@@ -219,7 +223,11 @@ export async function applyForReview({
 			// A person saved the build on purpose; automatic saves may resume.
 			release();
 			removeNotice(FINISH_NOTICE_ID);
-			notify('success', savedMessage(findings), {
+			const savedText = withIssuesCount(
+				__('Agent changes saved.', 'designsetgo'),
+				findings
+			);
+			notify('success', savedText, {
 				id: FINISH_NOTICE_ID,
 				...(findings.length
 					? { actions: [viewDetailsAction(openSidebar)] }
@@ -251,26 +259,19 @@ export async function applyForReview({
 			// never got registered to offer a way back to it) — see U1's
 			// "review failure/restore path".
 			removeNotice(FINISH_NOTICE_ID);
+			// The store may still say `awaiting_review` from the `setReport()`
+			// call above, which is now a lie: the build was just restored out
+			// of the canvas, not left there for review. Bring it in line with
+			// the same reason `finishBuild()`'s outer catch will show — this
+			// is always reached by a rethrow, since nothing in this block
+			// returns normally once `!armed`.
+			setReport({
+				status: 'failed',
+				invalid: [
+					{ path: '', block: '', reason: UNEXPECTED_FAILURE_REASON },
+				],
+				findings: [],
+			});
 		}
 	}
-}
-
-/**
- * @param {Array} findings Lint findings, already mapped to the REST shape.
- * @return {string} "Agent changes saved." or "...saved with N issues.".
- */
-function savedMessage(findings) {
-	if (!findings.length) {
-		return __('Agent changes saved.', 'designsetgo');
-	}
-	return sprintf(
-		/* translators: %d: number of lint issues the saved build has. */
-		_n(
-			'Agent changes saved with %d issue.',
-			'Agent changes saved with %d issues.',
-			findings.length,
-			'designsetgo'
-		),
-		findings.length
-	);
 }

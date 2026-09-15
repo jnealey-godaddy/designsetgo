@@ -17,6 +17,7 @@ import {
 	PRE_SAVE_HOOK,
 	REVIEW_FILTER_NAMESPACE,
 	FINISH_NOTICE_ID,
+	applyForReview,
 } from '../review';
 
 const TREE = { version: 1, blocks: [{ name: 'core/paragraph' }] };
@@ -344,7 +345,7 @@ describe('automatic saves are held off during agent build review', () => {
 			);
 		});
 
-		test('the review failure/restore path (armed never set) also removes the review notice', async () => {
+		test('the review failure/restore path (armed never set) also removes the review notice and corrects the stored report', async () => {
 			const deps = createDeps({
 				// onNextSave throws synchronously, after the review notice has
 				// already been shown — armed never gets set to true, so the
@@ -357,6 +358,59 @@ describe('automatic saves are held off during agent build review', () => {
 			await expect(finishBuild(1, deps)).resolves.toBeUndefined();
 
 			expect(deps.removeNotice).toHaveBeenCalledWith(FINISH_NOTICE_ID);
+			// U1 review fix round 1: the store's `setReport({ status:
+			// 'awaiting_review', ... })` call (made before the notice was
+			// shown) must not be left standing — the sidebar would otherwise
+			// keep showing "Pending agent build — Awaiting review" with old
+			// findings while an error notice says the build couldn't be
+			// checked. The LAST setReport call is what the store ends up
+			// holding, and it must not claim awaiting_review.
+			const lastReport =
+				deps.setReport.mock.calls[
+					deps.setReport.mock.calls.length - 1
+				][0];
+			expect(lastReport?.status).not.toBe('awaiting_review');
+			expect(lastReport?.status).toBe('failed');
+		});
+
+		// Isolates applyForReview()'s own restore-path fix from
+		// finishBuild()'s outer catch (which also corrects the report once
+		// applyForReview() rethrows) — this is the specific fix the review
+		// asked for, not just an end-to-end symptom fix.
+		test("applyForReview() itself corrects the report before rethrowing, not just finishBuild()'s outer catch", async () => {
+			const setReport = jest.fn();
+			const removeNotice = jest.fn();
+
+			await expect(
+				applyForReview({
+					report: jest.fn().mockResolvedValue(undefined),
+					replaceBlocks: jest.fn(),
+					lockAutosave: jest.fn(),
+					unlockAutosave: jest.fn(),
+					addFilter: jest.fn(),
+					removeFilter: jest.fn(),
+					notify: jest.fn(),
+					removeNotice,
+					openSidebar: jest.fn(),
+					setReport,
+					onNextSave: jest.fn(() => {
+						throw new Error('onNextSave failed');
+					}),
+					currentBlocks: [{ name: 'core/heading' }],
+					nextBlocks: [{ name: 'core/paragraph' }],
+					status: 'finished',
+					findings: [],
+					isSubmitter: true,
+				})
+			).rejects.toThrow('onNextSave failed');
+
+			expect(removeNotice).toHaveBeenCalledWith(FINISH_NOTICE_ID);
+			// The awaiting_review setReport() call happens earlier in the same
+			// function, before the notice is shown — this asserts the LAST
+			// call (what the store actually ends up holding) is corrected.
+			expect(setReport).toHaveBeenLastCalledWith(
+				expect.objectContaining({ status: 'failed' })
+			);
 		});
 	});
 });

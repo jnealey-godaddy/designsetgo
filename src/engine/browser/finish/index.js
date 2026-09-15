@@ -19,15 +19,12 @@
 import apiFetch from '@wordpress/api-fetch';
 import { select, dispatch, subscribe } from '@wordpress/data';
 import { addFilter, removeFilter } from '@wordpress/hooks';
-import { finishBuild, finishAfterRegistrationTimeout } from './finish-build';
+import { finishBuild } from './finish-build';
+import { finishAfterRegistrationTimeout } from './finish-timeout';
 import { isTopWindow, isFinishableContext } from './context';
 import { waitForBlockRegistration, watchNextSave } from './apply';
-import {
-	AGENT_BUILD_REPORT_STORE,
-	AGENT_BUILD_SIDEBAR_IDENTIFIER,
-	COMPLEMENTARY_AREA_SCOPE,
-	COMPLEMENTARY_AREA_STORE,
-} from '../constants';
+import { makeOpenSidebar } from './notices';
+import { AGENT_BUILD_REPORT_STORE } from '../constants';
 
 /** Post statuses treated as "live" — never saved over automatically. */
 const PUBLISHED_STATUSES = ['publish', 'future', 'private'];
@@ -81,11 +78,7 @@ function createDeps(postId) {
 		notify: (status, message, options) =>
 			dispatch('core/notices').createNotice(status, message, options),
 		removeNotice: (id) => dispatch('core/notices').removeNotice(id),
-		openSidebar: () =>
-			dispatch(COMPLEMENTARY_AREA_STORE).enableComplementaryArea(
-				COMPLEMENTARY_AREA_SCOPE,
-				AGENT_BUILD_SIDEBAR_IDENTIFIER
-			),
+		openSidebar: makeOpenSidebar(dispatch),
 		setReport: (report) =>
 			dispatch(AGENT_BUILD_REPORT_STORE).setReport(
 				report ? { postId, ...report } : null
