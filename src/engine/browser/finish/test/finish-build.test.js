@@ -327,6 +327,49 @@ describe('finishBuild()', () => {
 		expect(deps.markDocument).toHaveBeenCalledWith('failed');
 	});
 
+	test.each([
+		['resolves false', () => jest.fn().mockResolvedValue(false)],
+		[
+			'throws',
+			() => jest.fn().mockRejectedValue(new Error('network down')),
+		],
+	])(
+		'5c. a submitter save that %s restores the original blocks and reports failed',
+		async (label, makeSavePost) => {
+			const original = [{ name: 'core/heading' }];
+			const parsed = [{ name: 'core/paragraph' }];
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+				getEditorBlocks: jest.fn().mockReturnValue(original),
+				parse: jest.fn().mockReturnValue(parsed),
+				savePost: makeSavePost(),
+			});
+
+			await expect(finishBuild(1, deps)).resolves.toBeUndefined();
+
+			// Left dirty in the canvas, the unsaved build would be autosaved
+			// after its report already said `failed`.
+			expect(deps.replaceBlocks.mock.calls).toEqual([
+				[parsed],
+				[original],
+			]);
+			expect(deps.postReport).toHaveBeenCalledWith({
+				buildId: BUILD_ID,
+				status: 'failed',
+				invalid: [{ path: '', block: '', reason: 'save failed' }],
+			});
+			expect(deps.markDocument).toHaveBeenCalledWith('failed');
+		}
+	);
+
 	test('6. a published post is applied for review without saving, and marks done', async () => {
 		const original = [{ name: 'core/heading' }];
 		const parsed = [{ name: 'core/paragraph' }];

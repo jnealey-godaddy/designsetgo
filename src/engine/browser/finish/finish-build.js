@@ -176,7 +176,12 @@ export async function finishBuild(postId, deps) {
 		}
 
 		replaceBlocks(nextBlocks);
-		const saved = await savePost();
+		let saved = false;
+		try {
+			saved = await savePost();
+		} catch (error) {
+			saved = false;
+		}
 
 		if (saved) {
 			await report({ status, findings });
@@ -189,11 +194,14 @@ export async function finishBuild(postId, deps) {
 			return;
 		}
 
+		// Never leave an unsaved, already-reported-failed build in a dirty
+		// canvas for core autosave to write.
+		replaceBlocks(currentBlocks);
 		await report({ status: 'failed', invalid: SAVE_FAILED_INVALID });
 		notify(
 			'error',
 			__(
-				'Agent build was applied but could not be saved.',
+				'The agent build could not be saved, so it was removed from the editor.',
 				'designsetgo'
 			),
 			{ id: FINISH_NOTICE_ID }
