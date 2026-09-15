@@ -36,6 +36,11 @@ npm run test:e2e
 npm run test:php
 ```
 
+E2E setup temporarily sets the test administrator’s editor language to English
+(`en_US`) because the suite uses English controls. Teardown restores the previous
+user locale. The site language is unchanged; map migration also has an explicit
+German-editor regression check. This setup requires access to the wp-env CLI.
+
 ---
 
 ## Interactive Development

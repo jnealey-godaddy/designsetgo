@@ -157,6 +157,34 @@ Using WP-CLI:
 msgmerge --update languages/designsetgo-es_ES.po languages/designsetgo.pot
 ```
 
+Alternatively, merge all bundled catalogs with WP-CLI:
+
+```bash
+wp i18n update-po languages/designsetgo.pot languages
+```
+
+Review translations for new or changed strings, preserving format placeholders
+such as `%s`. Remove the `fuzzy` flag only after reviewing a translation.
+
+### Step 3: Compile PHP and JavaScript Translations
+
+```bash
+wp i18n make-mo languages languages
+wp i18n make-json languages languages --no-purge
+wp i18n make-json languages languages --no-purge \
+  '--use-map={"src/blocks/form-select-field/edit.js":"build/blocks/form-select-field/index.js","build/blocks/form-select-field/index.js":"build/blocks/form-select-field/index.js"}'
+```
+
+The first JSON pass retains catalogs for source files. The mapped pass also
+includes the select editor's default placeholder in the catalog for its built
+script, even when the build predates the new translation call. `--no-purge`
+preserves JavaScript entries in the PO files for subsequent updates and MO builds.
+Rebuild the plugin before release so its scripts match the current source.
+
+Commit the regenerated POT, PO, MO, and JSON files together. Verify the compiled
+catalogs contain the expected translations, then test in WordPress with the site
+language and editor user's language set separately.
+
 ## Translation Quality Guidelines
 
 ### 1. Context Matters

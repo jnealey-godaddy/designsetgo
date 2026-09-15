@@ -82,8 +82,7 @@
 			}
 		},
 		"placeholder": {
-			"type": "string",
-			"default": "-- Select an option --"
+			"type": "string"
 		},
 		"fieldWidth": {
 			"type": "string",

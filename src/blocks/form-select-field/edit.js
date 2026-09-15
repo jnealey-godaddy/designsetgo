@@ -33,7 +33,6 @@ const DEFAULT_OPTIONS = [
 	{ label: 'Option 2', value: 'option-2' },
 	{ label: 'Option 3', value: 'option-3' },
 ];
-const DEFAULT_PLACEHOLDER = '-- Select an option --';
 
 // Deep-equality check against DEFAULT_OPTIONS. Options is an array of
 // {label, value} pairs; matches the block.json default exactly when the
@@ -63,6 +62,12 @@ export default function FormSelectFieldEdit({
 		placeholder,
 		fieldWidth,
 	} = attributes;
+
+	// Keep the translated default out of saved content; an empty string opts out.
+	const effectivePlaceholder =
+		placeholder === undefined
+			? __('-- Select an option --', 'designsetgo')
+			: placeholder;
 
 	// Generate field name from clientId if empty
 	useEffect(() => {
@@ -145,7 +150,7 @@ export default function FormSelectFieldEdit({
 							required: false,
 							defaultValue: '',
 							options: DEFAULT_OPTIONS,
-							placeholder: DEFAULT_PLACEHOLDER,
+							placeholder: undefined,
 							fieldWidth: '100',
 						})
 					}
@@ -272,15 +277,15 @@ export default function FormSelectFieldEdit({
 
 					<DsgoInspectorPanel.Item
 						label={__('Placeholder', 'designsetgo')}
-						hasValue={() => placeholder !== DEFAULT_PLACEHOLDER}
+						hasValue={() => placeholder !== undefined}
 						onDeselect={() =>
-							setAttributes({ placeholder: DEFAULT_PLACEHOLDER })
+							setAttributes({ placeholder: undefined })
 						}
 						isShownByDefault
 					>
 						<TextControl
 							label={__('Placeholder', 'designsetgo')}
-							value={placeholder}
+							value={effectivePlaceholder}
 							onChange={(value) =>
 								setAttributes({ placeholder: value })
 							}
@@ -379,7 +384,9 @@ export default function FormSelectFieldEdit({
 					aria-describedby={helpText ? `${fieldId}-help` : undefined}
 					disabled
 				>
-					{placeholder && <option value="">{placeholder}</option>}
+					{effectivePlaceholder && (
+						<option value="">{effectivePlaceholder}</option>
+					)}
 					{options.map((option, index) => (
 						<option key={index} value={option.value}>
 							{option.label}

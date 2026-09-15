@@ -88,10 +88,10 @@ Total Tests: 9
 npm run wp-env:start
 
 # Run all PHPUnit tests
-npm run wp-env run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit
+npm run wp-env -- run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit
 
 # Run only draft mode tests
-npm run wp-env run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit --filter Draft_Mode
+npm run wp-env -- run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit --filter Draft_Mode
 ```
 
 #### Using Local WordPress Test Suite
@@ -157,7 +157,7 @@ These tests are designed to run in CI/CD pipelines:
   run: npm test -- --coverage
 
 - name: Run PHP Tests
-  run: npm run wp-env run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit
+  run: npm run wp-env -- run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit
 ```
 
 ## Test Maintenance
