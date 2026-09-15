@@ -1,5 +1,20 @@
 # Claude Memory - DesignSetGo
 
+## Task 17 — Tree validation in PHP (agent: task-17-tree-validator-2026-09-14, branch `claude/agent-block-engine`, commit `18f7a827`)
+
+`Tree_Validator` (`includes/abilities/agent-build/class-tree-validator.php`, namespace `DesignSetGo\Abilities\Agent_Build`) mirrors `src/engine/tree.js`'s structural contract in PHP for Task 19's `designsetgo/build-page` ability, then adds PHP-only checks: size (1 MB), unknown block, attribute schema, placement. Stages gate strictly — a stage only runs once every earlier one returned zero problems.
+
+**`find_invalid_attribute_values()` (Block_Inserter) is deliberately NOT reused.** Its enum check is fully subsumed by `rest_validate_value_from_schema()` (enum is a JSON Schema keyword). Its other rules — a hardcoded per-block "unsupported value" list — describe gaps in `generate_designsetgo_wrapper_html()`'s OWN hand-written serializer (e.g. `designsetgo/text-path`'s custom `pathType`), the same category of problem as `find_serialization_gaps()`, which the brief explicitly said to skip because Task 19 serializes with a real browser `save()`, not this class's mirror. Only `find_invalid_child_placements()` is reused, via a new `Block_Inserter::find_tree_placement_problems( $tree )` wrapper — see that method's docblock for the full reasoning, since a future task revisiting this exact question should read it there rather than re-derive it.
+
+**`rest_validate_value_from_schema()` chokes on WP core's own `"type": "rich-text"`** (used on `content` attributes, e.g. `core/paragraph`/`core/heading`) — triggers `_doing_it_wrong` ("type" keyword must be a JSON-Schema builtin) and fails the PHPUnit strict-notices gate. Fixed with a `has_validatable_type()` guard: skip validation (treat as unchecked, like an attribute the block type doesn't declare) when `type` includes anything outside `array|object|string|number|integer|boolean|null`. Binding descriptor keys (`source`, `selector`, `attribute`, `query`, `role`, `__experimental*`) are also stripped before validating — a `source:'html'` schema is a binding descriptor, not a value constraint.
+
+**PHP object-vs-array ambiguity**: JSON's `{}` and `[]` both decode to PHP `array()` with `json_decode(..., true)` — indistinguishable. Treated as satisfying EITHER shape check (object-like AND list-like) rather than picking one, matching the brief's explicit instruction and avoiding false positives on genuinely-empty `attributes`/`innerBlocks`.
+
+**300-line file-size guideline not met**: the class landed at 386 lines even after aggressively trimming docblocks and merging near-duplicate helpers (`is_object`/`is_list_like` now share `is_sequential_and_nonempty()`). Six full-blown validation stages (version/shape, size, unknown-block, attribute-schema, placement) each need a WordPress-Docs-compliant docblock (enforced by `phpcs.xml`'s `WordPress-Docs` ruleset — verified there's no `FileLength`/`Metrics` sniff actually enforcing 300 lines, and `class-block-inserter.php` itself is 5758 lines), so treated this as a soft target rather than blocking. Flagged in the task report rather than sacrificing doc coverage or splitting Task 17's single named deliverable file into two.
+
+**wp-env CLI gotchas for this worktree**: `npx wp-env run <container> <cmd>` cannot take a multi-token quoted string as one arg (e.g. `"wp eval '...'"`) — pass each token as its own arg. `wp eval` itself is blocked by the sandbox's worktree-isolation guard regardless. To inspect a registered block's actual attribute schema, read the block's `block.json` off disk instead (`find / -path "*wp-includes/blocks/<name>/block.json"` for core, `src/blocks/<name>/block.json` for DSGo). Running `phpunit` with bare file-path args fails ("Class ... could not be found") under this repo's `phpunit.xml.dist` test-suite config — use `--filter <ClassName|ClassName|...>` against the whole suite instead.
+
+
 ## 2.7.4 release blockers — fixed on `claude/2-7-4-release-blockers` (agent: release-2.7.4-prep-2026-09-10, session f49439d6)
 
 #545 (audit remediation) shipped four regressions none of its tests covered; each was reproduced live on wp-env before fixing.
