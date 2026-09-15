@@ -115,6 +115,8 @@ class Abilities_Smoke_Test extends WP_UnitTestCase {
 			'designsetgo/configure-shape-divider',
 			'designsetgo/add-block',
 			'designsetgo/add-child-block',
+			'designsetgo/build-page',
+			'designsetgo/get-build-status',
 		);
 
 		foreach ( $expected as $name ) {
@@ -258,8 +260,8 @@ class Abilities_Smoke_Test extends WP_UnitTestCase {
 
 		if ( $full['total'] > 0 ) {
 			// Full detail may include fields like minimum, maximum, items, properties.
-			$full_block  = $full['blocks'][0];
-			$full_json   = wp_json_encode( $full_block['attributes'] );
+			$full_block   = $full['blocks'][0];
+			$full_json    = wp_json_encode( $full_block['attributes'] );
 			$summary_json = wp_json_encode( $summary['blocks'][0]['attributes'] );
 
 			// Full detail should be at least as long (likely longer) than summary.

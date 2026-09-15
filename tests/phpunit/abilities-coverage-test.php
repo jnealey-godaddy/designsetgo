@@ -358,6 +358,17 @@ class Test_Validate_Input extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'abilities', $result );
 	}
+
+	/**
+	 * Test the agent-build abilities (Task 19) are registered. Full
+	 * coverage of their behavior lives in abilities-build-page-test.php.
+	 */
+	public function test_agent_build_abilities_are_registered() {
+		$registry = Abilities_Registry::get_instance();
+
+		$this->assertTrue( $registry->has_ability( 'designsetgo/build-page' ) );
+		$this->assertTrue( $registry->has_ability( 'designsetgo/get-build-status' ) );
+	}
 }
 
 /**
