@@ -34,7 +34,18 @@ const WP_V2_BASE = '/?rest_route=/wp/v2';
  * @return {Promise<string>} The nonce.
  */
 async function getNonce(page) {
-	const nonce = await page.evaluate(() => window.wpApiSettings?.nonce || '');
+	let nonce = await page.evaluate(() => window.wpApiSettings?.nonce || '');
+	if (!nonce) {
+		// Not every screen localizes wpApiSettings for every role (a
+		// contributor's dashboard doesn't); core's rest-nonce AJAX action
+		// hands any logged-in user the same nonce.
+		const response = await page.request.get(
+			'/wp-admin/admin-ajax.php?action=rest-nonce',
+			{ failOnStatusCode: false }
+		);
+		const text = response.ok() ? (await response.text()).trim() : '';
+		nonce = /^[a-f0-9]+$/i.test(text) ? text : '';
+	}
 	if (!nonce) {
 		throw new Error(
 			'Could not read a REST nonce from wpApiSettings — is the page on a wp-admin screen?'
@@ -245,8 +256,82 @@ async function deletePost(page, postType, id) {
 	});
 }
 
+/**
+ * Creates a user via `wp/v2/users` (POST) as the current admin.
+ *
+ * @param {import('@playwright/test').Page} page             wp-admin page (for the nonce).
+ * @param {Object}                          options
+ * @param {string}                          options.username Login name.
+ * @param {string}                          options.password Password.
+ * @param {string}                          options.role     Role slug, e.g. `'contributor'`.
+ * @return {Promise<Object>} The created user's REST representation.
+ */
+async function createUser(page, { username, password, role }) {
+	const nonce = await getNonce(page);
+	const response = await page.request.post(`${WP_V2_BASE}/users`, {
+		headers: { 'X-WP-Nonce': nonce, 'Content-Type': 'application/json' },
+		data: {
+			username,
+			password,
+			email: `${username}@example.com`,
+			roles: [role],
+		},
+		failOnStatusCode: false,
+	});
+	if (!response.ok()) {
+		throw new Error(
+			`createUser(${username}) failed: ${response.status()} ${await response.text()}`
+		);
+	}
+	return response.json();
+}
+
+/**
+ * Permanently deletes a user via `wp/v2/users/{id}`, reassigning their
+ * content to the current admin.
+ *
+ * @param {import('@playwright/test').Page} page wp-admin page (for the nonce).
+ * @param {number}                          id   User id.
+ * @return {Promise<void>}
+ */
+async function deleteUser(page, id) {
+	const nonce = await getNonce(page);
+	const me = await page.request.get(`${WP_V2_BASE}/users/me`, {
+		headers: { 'X-WP-Nonce': nonce },
+		failOnStatusCode: false,
+	});
+	const { id: adminId } = await me.json();
+	await page.request.delete(`${WP_V2_BASE}/users/${id}`, {
+		headers: { 'X-WP-Nonce': nonce },
+		params: { force: 'true', reassign: String(adminId) },
+		failOnStatusCode: false,
+	});
+}
+
+/**
+ * Logs a fresh browser context in through `wp-login.php` and leaves its page
+ * on a wp-admin screen, ready for `getNonce()`.
+ *
+ * @param {import('@playwright/test').Page} page     Page in a context with no stored auth.
+ * @param {string}                          username Login name.
+ * @param {string}                          password Password.
+ * @return {Promise<void>}
+ */
+async function logIn(page, username, password) {
+	await page.goto('/wp-login.php');
+	await page.fill('#user_login', username);
+	await page.fill('#user_pass', password);
+	await Promise.all([
+		page.waitForURL(/\/wp-admin\//),
+		page.click('#wp-submit'),
+	]);
+}
+
 module.exports = {
 	getNonce,
+	createUser,
+	deleteUser,
+	logIn,
 	buildPage,
 	getBuildStatus,
 	waitForBuildStatus,

@@ -49,11 +49,16 @@ const {
 	patchPost,
 	getPostEditContext,
 	deletePost,
+	createUser,
+	deleteUser,
+	logIn,
 } = require('./helpers/agent-build');
 
 const validTree = require('./fixtures/agent-build-trees/valid.json');
 const lintWarningTree = require('./fixtures/agent-build-trees/lint-warning.json');
 const failedTree = require('./fixtures/agent-build-trees/failed-invalid-markup.json');
+const escapedContentTree = require('./fixtures/agent-build-trees/escaped-content.json');
+const coreListTree = require('./fixtures/agent-build-trees/core-list.json');
 
 const MARKER = 'Agent build remote e2e marker';
 const CANVAS_TIMEOUT = 30000;
@@ -302,6 +307,125 @@ test.describe('Agent build — remote flow end to end', () => {
 			expect(saved.content.raw).toContain('<!-- wp:designsetgo/grid');
 		} finally {
 			await deletePost(page, 'page', postId);
+		}
+	});
+	// Quotes, a real link, and non-ASCII are all escaped by wp_json_encode();
+	// post meta used to unslash those escapes away, so this build vanished.
+	// The section's explicit `style: {}` used to assemble invalid, too.
+	test('escaped content: a link, non-ASCII text, and style: {} finish intact', async ({
+		page,
+	}) => {
+		await page.goto('/wp-admin/');
+		const { body } = await buildPage(page, {
+			new: { title: 'DSGo E2E escaped content build', post_type: 'page' },
+			tree: escapedContentTree,
+			mode: 'replace',
+		});
+		expect(body.success).toBe(true);
+		const postId = body.post_id;
+
+		try {
+			await page.goto(body.finish_url);
+			await waitForEditorCanvas(page);
+
+			expect(await waitForFinishState(page)).toBe('done');
+			const report = await waitForBuildStatus(page, postId, ['finished']);
+			expect(report.status).toBe('finished');
+
+			const saved = await getPostEditContext(page, 'page', postId);
+			expect(saved.content.raw).toContain(
+				'<a href="https://example.com">our café</a>'
+			);
+			expect(saved.content.raw).toContain('naïve “quotes”');
+		} finally {
+			await deletePost(page, 'page', postId);
+		}
+	});
+
+	test('core containers: a core/list > core/list-item tree is accepted and finished', async ({
+		page,
+	}) => {
+		await page.goto('/wp-admin/');
+		const { body } = await buildPage(page, {
+			new: { title: 'DSGo E2E core list build', post_type: 'page' },
+			tree: coreListTree,
+			mode: 'replace',
+		});
+		expect(body.success).toBe(true);
+		const postId = body.post_id;
+
+		try {
+			await page.goto(body.finish_url);
+			await waitForEditorCanvas(page);
+
+			expect(await waitForFinishState(page)).toBe('done');
+			const report = await waitForBuildStatus(page, postId, ['finished']);
+			expect(report.status).toBe('finished');
+
+			const saved = await getPostEditContext(page, 'page', postId);
+			expect(saved.content.raw).toContain('<!-- wp:list-item -->');
+			expect(saved.content.raw).toContain('Core list marker two');
+		} finally {
+			await deletePost(page, 'page', postId);
+		}
+	});
+
+	// A build is only saved automatically for the person who submitted it:
+	// an administrator opening a contributor's build must review it, never
+	// save it under their own unfiltered_html.
+	test('another user: a contributor build opened by an administrator waits for review, unsaved', async ({
+		page,
+		browser,
+	}) => {
+		await page.goto('/wp-admin/');
+		const username = `dsgo-e2e-contributor-${Date.now()}`;
+		const password = `Contributor-${Date.now()}-pass!`;
+		const contributor = await createUser(page, {
+			username,
+			password,
+			role: 'contributor',
+		});
+		const contributorContext = await browser.newContext({
+			storageState: { cookies: [], origins: [] },
+		});
+		let postId;
+
+		try {
+			const contributorPage = await contributorContext.newPage();
+			await logIn(contributorPage, username, password);
+
+			const { body } = await buildPage(contributorPage, {
+				new: { title: 'DSGo E2E contributor build', post_type: 'post' },
+				tree: validTree,
+				mode: 'replace',
+			});
+			expect(body.success).toBe(true);
+			postId = body.post_id;
+
+			await page.goto(body.finish_url);
+			await waitForEditorCanvas(page);
+
+			expect(await waitForFinishState(page)).toBe('done');
+			const report = await waitForBuildStatus(page, postId, [
+				'awaiting_review',
+			]);
+			expect(report.status).toBe('awaiting_review');
+
+			await expect(
+				page.locator('.components-notice').filter({
+					hasText: 'on behalf of another user',
+				})
+			).toBeVisible();
+
+			const saved = await getPostEditContext(page, 'post', postId);
+			expect(saved.content.raw).toBe('');
+			expect(saved.status).toBe('draft');
+		} finally {
+			if (postId) {
+				await deletePost(page, 'post', postId);
+			}
+			await contributorContext.close();
+			await deleteUser(page, contributor.id);
 		}
 	});
 });

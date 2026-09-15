@@ -1,0 +1,17 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/section",
+			"attributes": { "style": {} },
+			"innerBlocks": [
+				{
+					"name": "core/paragraph",
+					"attributes": {
+						"content": "Escaped marker: visit <a href=\"https://example.com\">our café</a> — naïve “quotes”"
+					}
+				}
+			]
+		}
+	]
+}
