@@ -314,11 +314,10 @@ async function blockHasClass(page, blockType, className, index = 0) {
  *         (so callers can wait for it to render in the canvas).
  */
 async function insertPatternBySlug(page, slug) {
-	const result = await page.evaluate(async (patternSlug) => {
-		// `core`.getBlockPatterns is resolver-backed (it fetches from the REST
-		// block-patterns endpoint), so the first synchronous call returns [].
-		// Await the resolver so the full registry is present before we look up
-		// the slug; fall back to the editor settings list for older WP.
+	// Keep the async lookup separate from rendering blocks. Chromium can collect
+	// the awaited evaluation Promise during insertion's allocations; Playwright
+	// then reports "Execution context was destroyed" even though insertion ran.
+	const content = await page.evaluate(async (patternSlug) => {
 		let patterns = [];
 		if (wp.data.resolveSelect('core').getBlockPatterns) {
 			patterns = await wp.data.resolveSelect('core').getBlockPatterns();
@@ -328,28 +327,29 @@ async function insertPatternBySlug(page, slug) {
 				wp.data.select('core/block-editor').getSettings()
 					.__experimentalBlockPatterns || [];
 		}
-		const pattern = patterns.find((p) => p.name === patternSlug);
-		if (!pattern) {
-			return { found: false, hadToken: false, blockCount: 0 };
-		}
+		return (
+			patterns.find((pattern) => pattern.name === patternSlug)?.content ??
+			null
+		);
+	}, slug);
 
-		const hadToken = pattern.content.includes('{{dsgo:placeholder-');
-		const blocks = wp.blocks.parse(pattern.content);
+	if (content === null) {
+		throw new Error(`Pattern "${slug}" is not registered`);
+	}
+
+	// This evaluation must stay synchronous: parse and insert exactly once,
+	// returning only plain data without an awaited Promise around the mutation.
+	return page.evaluate((markup) => {
+		const hadToken = markup.includes('{{dsgo:placeholder-');
+		const blocks = wp.blocks.parse(markup);
 		wp.data.dispatch('core/block-editor').insertBlocks(blocks);
-
 		return {
 			found: true,
 			hadToken,
 			blockCount: blocks.length,
 			clientId: blocks[0] ? blocks[0].clientId : null,
 		};
-	}, slug);
-
-	if (!result.found) {
-		throw new Error(`Pattern "${slug}" is not registered`);
-	}
-
-	return result;
+	}, content);
 }
 
 /**

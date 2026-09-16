@@ -592,6 +592,8 @@ class Plugin {
 	 * Load required files.
 	 */
 	private function load_dependencies() {
+		require_once DESIGNSETGO_PATH . 'includes/core/class-translations.php';
+		new Core\Translations();
 		require_once DESIGNSETGO_PATH . 'includes/features/class-block-visibility.php';
 		BlockVisibility::register();
 		// --- Core ---

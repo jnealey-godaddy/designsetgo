@@ -352,7 +352,9 @@ test.describe('Pill block — dynamic render', () => {
 
 		// The pill renders its text; the wrapper carries neither baked class.
 		await expect(
-			page.locator('.wp-block-designsetgo-pill .dsgo-pill__content').first()
+			page
+				.locator('.wp-block-designsetgo-pill .dsgo-pill__content')
+				.first()
 		).toHaveText('New Feature', { timeout: 10000 });
 		expect(
 			await page
@@ -493,25 +495,42 @@ test.describe('Map block — dynamic render', () => {
 		await saveScreenshot(page, artifact, 'frontend');
 	});
 
-	test('authentic contact-pattern map markup (marker colour + border) migrates silently', async ({
-		page,
-	}) => {
-		await createNewPost(page, 'page');
-		await setPostTitle(page, 'Map Pattern Migration');
-		await insertRawMarkup(page, LEGACY_MAP_PATTERN);
-
-		expect(await getInvalidBlockNames(page)).not.toContain(
-			'designsetgo/map'
-		);
-
-		// Belt and braces: the raw parse pipeline agrees.
-		const { invalid, names } = await parseValidity(
+	for (const editorLocale of ['en_US', 'de_DE']) {
+		test(`authentic contact-pattern map markup (marker colour + border) migrates silently (${editorLocale})`, async ({
 			page,
-			LEGACY_MAP_PATTERN
-		);
-		expect(names).toContain('designsetgo/map');
-		expect(invalid).toEqual([]);
-	});
+		}) => {
+			await createNewPost(page, 'page');
+			// Explicitly exercise a changed editor locale even though suite setup
+			// uses English. Historical English labels must still migrate silently.
+			if (editorLocale === 'de_DE') {
+				await page.evaluate(() => {
+					wp.i18n.setLocaleData(
+						{
+							'': { lang: 'de_DE' },
+							'Map showing %s': ['Karte von %s'],
+							'Interactive map': ['Interaktive Karte'],
+						},
+						'designsetgo'
+					);
+				});
+			}
+
+			await setPostTitle(page, 'Map Pattern Migration');
+			await insertRawMarkup(page, LEGACY_MAP_PATTERN);
+
+			expect(await getInvalidBlockNames(page)).not.toContain(
+				'designsetgo/map'
+			);
+
+			// Belt and braces: the raw parse pipeline agrees.
+			const { invalid, names } = await parseValidity(
+				page,
+				LEGACY_MAP_PATTERN
+			);
+			expect(names).toContain('designsetgo/map');
+			expect(invalid).toEqual([]);
+		});
+	}
 });
 
 // ---------------------------------------------------------------------------

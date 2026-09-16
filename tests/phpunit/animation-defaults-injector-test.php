@@ -199,20 +199,8 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 	 * A block excluded via the user-configured excluded_blocks setting is
 	 * left untouched, even under a matching wildcard default.
 	 *
-	 * Note: Extension_Attributes::get_excluded_blocks() memoizes the
-	 * excluded_blocks list in a function-local `static`, populated the
-	 * first time any 'blocks' => 'all' extension (e.g. block-animations)
-	 * is matched against a registered block — which happens during WP's
-	 * block-registration bootstrap, before any test method runs in this
-	 * process. There is no reflection API to reset a function-local
-	 * static from outside (ReflectionFunction::getStaticVariables()
-	 * returns a read-only snapshot, confirmed by a standalone check), so
-	 * if the process-wide cache was already primed with a state that
-	 * doesn't include our just-configured excluded block, this specific
-	 * Settings-integration path cannot be exercised end-to-end within a
-	 * shared PHPUnit process. Rather than hack around that (e.g. reaching
-	 * into production code to add test-only cache invalidation), detect
-	 * the situation and skip with an explanation instead of failing.
+	 * Updating exclusions after block-registration bootstrap must take effect
+	 * in the same request, including when a previously excluded block is allowed.
 	 */
 	public function test_skips_user_excluded_block() {
 		Settings::update_settings(
@@ -238,13 +226,18 @@ class Animation_Defaults_Injector_Test extends WP_UnitTestCase {
 			)
 		);
 
-		if ( $out !== $html ) {
-			$this->markTestSkipped(
-				'Extension_Attributes::get_excluded_blocks() already cached excluded_blocks (function-local static, populated during WP block-registration bootstrap) before this test\'s Settings::update_settings() call, and no reflection setter exists to reset it. See method docblock.'
-			);
-		}
-
 		$this->assertSame( $html, $out );
+
+		Settings::update_settings( array( 'excluded_blocks' => array( 'core/button' ) ) );
+		$out = $this->injector->inject(
+			$html,
+			array(
+				'blockName' => 'core/quote',
+				'attrs'     => array(),
+			)
+		);
+		$this->assertStringContainsString( 'has-dsgo-animation', $out );
+		$this->assertStringContainsString( 'dsgo-animation-fadeIn', $out );
 	}
 
 	/**

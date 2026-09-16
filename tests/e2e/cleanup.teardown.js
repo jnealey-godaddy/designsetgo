@@ -10,9 +10,14 @@
 const { test } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
-const { deleteAllPagesAndPosts } = require('./helpers/wp-cli');
+const {
+	deleteAllPagesAndPosts,
+	restoreEditorLocale,
+} = require('./helpers/wp-cli');
 
 test('cleanup test data', async ({}) => {
+	// Restore before other cleanup so failed tests do not change the user's locale.
+	restoreEditorLocale();
 	// Delete every page/post the suite published. Tests also clean up their own
 	// pages per-test (see installPublishedPageCleanup), but this is the safety
 	// net: if a test crashed before its afterEach ran, its page is removed here

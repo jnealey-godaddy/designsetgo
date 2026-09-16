@@ -95,6 +95,12 @@
 			"type": "string",
 			"default": ""
 		},
+		"imageFallbackAlt": {
+			"type": "string",
+			"source": "attribute",
+			"selector": ".dsgo-card__image[aria-hidden=\"true\"]",
+			"attribute": "alt"
+		},
 		"imageAspectRatio": {
 			"type": "string",
 			"default": "16-9",
@@ -132,6 +138,12 @@
 			"source": "text",
 			"selector": ".dsgo-card__badge",
 			"default": ""
+		},
+		"badgeAriaLabel": {
+			"type": "string",
+			"source": "attribute",
+			"selector": ".dsgo-card__badge",
+			"attribute": "aria-label"
 		},
 		"badgeStyle": {
 			"type": "string",

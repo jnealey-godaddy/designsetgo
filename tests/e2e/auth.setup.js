@@ -9,6 +9,7 @@ const { test, expect } = require('@playwright/test');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const { useEnglishEditorLocale } = require('./helpers/wp-cli');
 
 // WordPress admin credentials (from wp-env defaults)
 const ADMIN_USER = process.env.WP_ADMIN_USER || 'admin';
@@ -55,6 +56,9 @@ async function waitForServer(url, { maxAttempts = 30, intervalMs = 2000 } = {}) 
 test('authenticate as admin', async ({ page, context }) => {
 	// Wait for WordPress to be fully ready before attempting login
 	await waitForServer(WP_BASE_URL);
+
+	// English selectors must not inherit a prior locale smoke test's language.
+	useEnglishEditorLocale();
 
 	// Navigate to WordPress login page
 	await page.goto('/wp-login.php');

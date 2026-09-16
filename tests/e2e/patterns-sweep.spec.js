@@ -35,6 +35,7 @@ const {
 	slowScrollEditor,
 	setPostTitle,
 	publishAndResolveUrl,
+	openFrontendPage,
 } = require('./helpers/artifacts');
 
 // Record a video per test when DSGO_RECORD_VIDEO=1 (screenshots only by default).
@@ -70,7 +71,9 @@ test.describe('Patterns — editor and frontend happy-path sweep', () => {
 
 			// Surface any JS errors thrown while the pattern renders.
 			const pageErrors = [];
-			page.on('pageerror', (err) => pageErrors.push(err.message));
+			page.on('pageerror', (err) =>
+				pageErrors.push(`Editor: ${err.message}`)
+			);
 
 			// --- Insert in the editor ---------------------------------------
 			await createNewPost(page, 'page');
@@ -106,15 +109,19 @@ test.describe('Patterns — editor and frontend happy-path sweep', () => {
 
 			// --- Publish and review the frontend ----------------------------
 			const frontendUrl = await publishAndResolveUrl(page);
-			const response = await page.goto(frontendUrl);
+			const { page: frontendPage, response } = await openFrontendPage(
+				page,
+				frontendUrl,
+				(err) => pageErrors.push(`Frontend: ${err.message}`)
+			);
 			expect(response?.ok()).toBeTruthy();
-			await page.waitForLoadState('domcontentloaded');
+			await frontendPage.waitForLoadState('domcontentloaded');
 
-			const pageContent = await page.content();
+			const pageContent = await frontendPage.content();
 
-			await page.waitForLoadState('networkidle').catch(() => {});
-			await slowScrollToBottom(page);
-			await saveScreenshot(page, artifact, 'frontend');
+			await frontendPage.waitForLoadState('networkidle').catch(() => {});
+			await slowScrollToBottom(frontendPage);
+			await saveScreenshot(frontendPage, artifact, 'frontend');
 
 			// --- Assertions (after all artifacts captured) ------------------
 			// No raw placeholder token should leak into editor or frontend.
@@ -122,7 +129,9 @@ test.describe('Patterns — editor and frontend happy-path sweep', () => {
 			expect(pageContent).not.toContain(TOKEN_PREFIX);
 
 			// No PHP fatal on the rendered page.
-			expect(pageContent).not.toContain('There has been a critical error');
+			expect(pageContent).not.toContain(
+				'There has been a critical error'
+			);
 
 			// Validity: every inserted block must match its save() output. A
 			// stale block renders "Attempt Recovery" in the editor — the core
