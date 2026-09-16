@@ -978,6 +978,76 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
+			// A native background image alongside custom text color, overlay
+			// and padding. Confirms the saved root holds no
+			// background-image/-size/-position/-repeat declaration (Core
+			// renders those at display time only) while every other support
+			// and DesignSetGo declaration/class still reaches the markup.
+			'section-background-image-with-overlay'       => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'overlayColor' => 'rgba(0,0,0,0.475)',
+					'className'    => 'ck-hero',
+					'style'        => array(
+						'background' => array(
+							'backgroundImage'    => array(
+								'url'    => 'https://example.com/hero.jpg',
+								'source' => 'file',
+							),
+							'backgroundSize'     => 'cover',
+							'backgroundPosition' => 'center center',
+							'backgroundRepeat'   => 'no-repeat',
+						),
+						'color'      => array( 'text' => '#ffffff' ),
+						'spacing'    => array( 'padding' => array( 'top' => '40px' ) ),
+					),
+				),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/heading',
+						'attributes' => array(
+							'level'   => 2,
+							'content' => 'Welcome',
+						),
+					),
+				),
+			),
+			// The full animation combination (entrance + exit + non-default
+			// trigger/duration/delay/easing/offset/once + stagger), plus
+			// SVG-draw stacked on top — mirrors addAnimationSaveProps() in
+			// src/extensions/block-animations/editor.js exactly.
+			'section-full-animation-and-svg-draw'          => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'dsgoSvgDraw'           => true,
+					'dsgoAnimationEnabled'  => true,
+					'dsgoEntranceAnimation' => 'fadeInUp',
+					'dsgoExitAnimation'     => 'fadeOutDown',
+					'dsgoAnimationTrigger'  => 'load',
+					'dsgoAnimationDuration' => 900,
+					'dsgoAnimationDelay'    => 200,
+					'dsgoAnimationEasing'   => 'ease-in',
+					'dsgoAnimationOffset'   => 50,
+					'dsgoAnimationOnce'     => false,
+					'dsgoStaggerEnabled'    => true,
+					'dsgoStaggerStep'       => 120,
+				),
+				'innerBlocks' => array(),
+			),
+			// Scroll-linked ("scrubbing") entrance: exit and stagger both drop,
+			// per the mutual-exclusivity rule in addAnimationSaveProps().
+			'section-scroll-linked-animation'              => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'dsgoAnimationEnabled'  => true,
+					'dsgoEntranceAnimation' => 'fadeInUp',
+					'dsgoAnimationTrigger'  => 'scroll',
+					'dsgoScrollLinked'      => true,
+					'dsgoExitAnimation'     => 'fadeOutDown',
+					'dsgoStaggerEnabled'    => true,
+				),
+				'innerBlocks' => array(),
+			),
 		);
 	}
 
