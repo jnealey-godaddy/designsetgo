@@ -405,7 +405,7 @@ class Block_Inserter {
 	 * Static blocks keep their markup in a JavaScript `save()` that PHP cannot
 	 * run, so the only ones that can be inserted are those with a hand-written
 	 * mirror in generate_designsetgo_wrapper_html() (or generate_core_block_html()
-	 * for the two core text blocks). Without a mirror the block serializes to a
+	 * for the core blocks in SERIALIZABLE_CORE_BLOCKS). Without a mirror the block serializes to a
 	 * bare self-closing comment: that is how `designsetgo/fifty-fifty` was
 	 * written as `<!-- wp:designsetgo/fifty-fifty {...} /-->` with none of the
 	 * media and content wrappers its save() emits, invalidating the whole
@@ -794,14 +794,20 @@ class Block_Inserter {
 
 		// Hover effects - src/extensions/hover-effects/index.js
 		// (addHoverEffectSaveProps). Applies to ten core blocks
-		// (src/extensions/hover-effects/constants.js SUPPORTED_BLOCKS), none
-		// of which are designsetgo/* or in SERIALIZABLE_CORE_BLOCKS - this
-		// extension has no config file in includes/extension-configs/ at all,
-		// so its attribute is never even registered server-side. This
-		// ability cannot currently insert any block the extension reaches.
+		// (src/extensions/hover-effects/constants.js SUPPORTED_BLOCKS), one of
+		// which - core/image - IS now in SERIALIZABLE_CORE_BLOCKS, so this
+		// branch is no longer unreachable by block name alone.
+		//
+		// What still keeps it dormant is narrower: this extension has no config
+		// file in includes/extension-configs/ at all, so dsgoHoverEffect is
+		// never registered server-side and no caller can get a value past the
+		// ability's input schema. If that config ever lands, this branch goes
+		// live for core/image and its output needs a fixture payload proving it
+		// matches addHoverEffectSaveProps.
+		//
 		// Kept generic and keyed off the real block list so it activates the
-		// day inserter coverage for one of them lands, without needing to be
-		// revisited.
+		// day inserter coverage for the rest of them lands, without needing to
+		// be revisited.
 		$hover_effect_blocks = array(
 			'core/group',
 			'core/cover',

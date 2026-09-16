@@ -21,11 +21,18 @@
  * two meet through a fixture. tests/phpunit/abilities-generated-markup-fixture-test.php
  * regenerates it and fails when the PHP output drifts; this file parses it with
  * the real block registrations and asserts the editor finds every block valid.
+ *
+ * "The real block registrations" means the DesignSetGo ones. Core blocks cannot
+ * be registered here — see the note in beforeAll — and an unregistered block is
+ * dropped by parse() rather than reported invalid, so core payloads pass this
+ * file without being checked. The 'pins which block names go unvalidated' test
+ * fixes the size of that hole so it cannot widen unnoticed.
  */
 // Import from the copy nested under @wordpress/block-editor — the SAME instance
 // its useBlockProps.save() talks to. See deprecations-isEligible.test.js for
 // why the top-level @wordpress/blocks copy cannot be used here.
 import {
+	getBlockType,
 	parse,
 	// eslint-disable-next-line import/no-unresolved
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
@@ -44,16 +51,22 @@ const BLOCKS_DIR = path.join(__dirname, '../../src/blocks');
 /**
  * Collect every block name appearing in a markup string, at any depth.
  *
+ * A core block serializes WITHOUT its namespace — `<!-- wp:heading -->`, never
+ * `<!-- wp:core/heading -->` — so the namespace is restored here. Requiring the
+ * slash instead silently skipped every core block in the fixture, which is a
+ * large part of why they went unnoticed as unregistered: nothing could even
+ * name them to ask.
+ *
  * @param {string} markup Serialized block markup.
  * @return {string[]} Unique block names.
  */
 function blockNamesIn(markup) {
 	const names = new Set();
-	const pattern = /<!--\s+wp:([a-z][a-z0-9-]*\/[a-z][a-z0-9-]*)/g;
+	const pattern = /<!--\s+wp:([a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)?)/g;
 	let match = pattern.exec(markup);
 
 	while (match !== null) {
-		names.add(match[1]);
+		names.add(match[1].includes('/') ? match[1] : `core/${match[1]}`);
 		match = pattern.exec(markup);
 	}
 
@@ -103,8 +116,18 @@ describe('Abilities-generated markup validates against save()', () => {
 		expect(fs.existsSync(FIXTURE)).toBe(true);
 		fixture = JSON.parse(fs.readFileSync(FIXTURE, 'utf8'));
 
-		// Register every DesignSetGo block the fixture references. Core blocks
-		// register themselves through the block-editor import.
+		// Register every DesignSetGo block the fixture references.
+		//
+		// Core blocks are NOT registered, and cannot be from here. Registering
+		// them needs @wordpress/block-library, which resolves @wordpress/blocks
+		// to its own nested copy — a third registry, distinct from both the
+		// top-level copy and the block-editor one this file imports. A block
+		// registered there is invisible to the parse() below.
+		//
+		// The consequence is load-bearing: parse() DROPS an unregistered block
+		// rather than returning it as invalid, so a core payload contributes no
+		// blocks and cannot fail. `unvalidatedNames` below pins that gap so it
+		// stays visible and cannot quietly grow.
 		const needed = new Set();
 		Object.values(fixture).forEach((markup) =>
 			blockNamesIn(markup).forEach((name) => needed.add(name))
@@ -161,6 +184,49 @@ describe('Abilities-generated markup validates against save()', () => {
 		});
 
 		expect(offenders).toEqual([]);
+	});
+
+	// Exactly which block names this suite cannot speak for.
+	//
+	// parse() drops a block whose type is not registered, so a payload made
+	// only of unregistered blocks parses to [] and sails through the validation
+	// below having proved nothing. That is the state every core block is in.
+	//
+	// Pinning the list keeps the gap honest in two directions. A DesignSetGo
+	// block that stops registering — a bad block.json, a renamed directory —
+	// currently turns into silent green; here it fails and names itself. And a
+	// seventh core block added to the inserter shows up as a new entry, forcing
+	// whoever adds it to see that the JS suite will not check it.
+	//
+	// The core blocks' save() parity is pinned instead by
+	// tests/phpunit/block-inserter-core-image-test.php and
+	// block-inserter-core-list-quote-test.php, which assert against markup
+	// transcribed by hand from wp.blocks.serialize(). That is a weaker guard:
+	// it compares against one WordPress release, frozen at the moment it was
+	// written, so it cannot notice core changing its save() in an upgrade.
+	it('pins which block names go unvalidated', () => {
+		const referenced = new Set();
+		Object.values(fixture).forEach((markup) =>
+			blockNamesIn(markup).forEach((name) => referenced.add(name))
+		);
+
+		const unvalidated = [...referenced]
+			.filter((name) => !getBlockType(name))
+			.sort();
+
+		expect(unvalidated).toEqual([
+			'core/heading',
+			'core/image',
+			'core/list',
+			'core/list-item',
+			'core/paragraph',
+			'core/quote',
+		]);
+
+		// And the consequence, stated outright: a payload built only from
+		// unregistered blocks parses to nothing, so 'validates every payload'
+		// walks an empty list and cannot fail for it.
+		expect(parse(fixture['core-list-ordered'])).toEqual([]);
 	});
 
 	it('validates every payload', () => {
