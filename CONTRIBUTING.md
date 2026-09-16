@@ -753,7 +753,7 @@ Look for issues labeled `good-first-issue`:
 
 ### Feature Requests
 
-Check [ROADMAP.md](docs/planning/ROADMAP.md) for planned features.
+Search [existing issues](https://github.com/jnealey-godaddy/designsetgo/issues) before opening a new feature request.
 
 ### Bugs
 

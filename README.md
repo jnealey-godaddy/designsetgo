@@ -396,7 +396,6 @@ Complete documentation for users and developers.
 - **[Block Controls Organization](docs/guides/BLOCK-CONTROLS-ORGANIZATION.md)**
 - **[Color Controls Pattern](docs/patterns/COLOR-CONTROLS-PATTERN.md)**
 - **[Width & Layout Patterns](docs/patterns/WIDTH-LAYOUT-PATTERNS.md)**
-- **[Extension vs Custom Blocks](docs/planning/EXTENSION-VS-CUSTOM-BLOCKS.md)**
 - **[Abilities API](docs/api/ABILITIES-API.md)** - AI integration
 
 **AI-Assisted Development:**

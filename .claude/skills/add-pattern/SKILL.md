@@ -4,7 +4,7 @@ description: Use when creating a new block pattern (hero, pricing table, FAQ, ho
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(ls *), Bash(npx wp-env *)
 ---
 
-Create a new block pattern for the DesignSetGo pattern library. This is a static markup pattern (a PHP file returning a WordPress block-comment string), not a new block — for a new block or block variation, use `/add-block` or `/add-variation` instead.
+Create a new block pattern for the DesignSetGo pattern library. This is a static markup pattern (a PHP file returning a WordPress block-comment string), not a new block — for a new block or block variation, use `/add-block` instead (it also covers variations).
 
 ## Before You Start
 
@@ -13,7 +13,7 @@ Read the two reference files in this skill's `references/` directory:
 - **`references/markup-conventions.md`** — how DSGo pattern markup is written: the block-comment syntax, preset-vs-inline attribute formats, the color/spacing/font-size preset tables, the required `metadata` object on the root block, and the PHP-string escaping rules (content is a single-quoted PHP string).
 - **`references/block-catalog.md`** — every `designsetgo/*` block usable in a pattern, with its key attributes, `supports`, and (for layout containers) exact HTML structure. Check here before hand-writing markup for a block you haven't used in a pattern before — getting the HTML structure wrong produces a pattern that looks fine in the inserter preview but is invalid once inserted.
 
-For generic WordPress pattern guidance not specific to this plugin (accessibility in patterns, i18n of pattern strings, general block-markup mechanics, pattern categories vs. collections), see the upstream `wp-patterns` skill. This skill only covers what's specific to DesignSetGo's pattern library.
+For generic WordPress pattern guidance not specific to this plugin (accessibility in patterns, i18n of pattern strings, general block-markup mechanics, pattern categories vs. collections), see the `wp-patterns` skill from [WordPress/agent-skills](https://github.com/WordPress/agent-skills). This skill only covers what's specific to DesignSetGo's pattern library.
 
 ## File Location & Shape
 

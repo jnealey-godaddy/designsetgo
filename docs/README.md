@@ -2,7 +2,7 @@
 
 Complete reference documentation for developing blocks in the DesignSetGo WordPress plugin.
 
-> **Note on this index:** Several top-level folders under `docs/` (`blocks/`, `extensions/`, `api/`, `patterns/`, `planning/`, `plans/`, `audits/`, `reviews/`) are maintained separately and change frequently. This index links to those **folders**, not individual files inside them — open the folder for the current file list rather than trusting a hardcoded list here.
+> **Note on this index:** Several top-level folders under `docs/` (`blocks/`, `extensions/`, `api/`, `patterns/`, `plans/`, `audits/`, `reviews/`) are maintained separately and change frequently. This index links to those **folders**, not individual files inside them — open the folder for the current file list rather than trusting a hardcoded list here.
 
 ## 🚀 Quick Start
 
@@ -67,7 +67,6 @@ Complete reference documentation for developing blocks in the DesignSetGo WordPr
 - **[blocks/](./blocks/)** — Per-block user-facing documentation
 - **[extensions/](./extensions/)** — Per-extension documentation
 - **[patterns/](./patterns/)** — Design/architecture pattern write-ups
-- **[planning/](./planning/)** — Roadmaps and strategy docs
 - **[plans/](./plans/)** — Dated implementation plans
 - **[audits/](./audits/)** — Block and codebase audits
 - **[reviews/](./reviews/)** — Dated review notes
@@ -299,9 +298,8 @@ Several deeper technical guides live in `../.claude/docs/` rather than `docs/gui
 
 ### Advanced
 
-1. Review the extension architecture in [`planning/`](./planning/)
-2. Study advanced patterns in [`patterns/`](./patterns/)
-3. Contribute patterns back to [../.claude/CLAUDE.md](../.claude/CLAUDE.md)
+1. Study advanced patterns in [`patterns/`](./patterns/)
+2. Contribute patterns back to [../.claude/CLAUDE.md](../.claude/CLAUDE.md)
 
 ## 📝 Contributing to Documentation
 

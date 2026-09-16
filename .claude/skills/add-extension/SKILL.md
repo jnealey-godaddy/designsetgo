@@ -97,4 +97,4 @@ import './extensions/group-enhancements';
 
 ## Reference
 
-See `/review-extension` command to audit your extension after creation.
+Run `/review-pr` before opening a PR.

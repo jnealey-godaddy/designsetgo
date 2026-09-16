@@ -106,9 +106,10 @@ DesignSetGo includes custom slash commands that accelerate common tasks.
 - Creates block directory structure
 - Generates `block.json` with proper metadata
 - Creates `edit.js` with modern patterns
+- Checks whether a variation of an existing block would do instead
 - Creates `save.js` with matching structure
 - Adds `style.scss` and `editor.scss`
-- Registers block in main index
+- No manual registration: blocks are auto-loaded from `build/blocks/*/block.json`
 - Follows all WordPress best practices
 
 **Example:**
@@ -118,20 +119,6 @@ AI: What would you like to call the new block?
 You: Timeline
 AI: [Creates complete Timeline block structure]
 ```
-
-#### `/add-variation`
-**Purpose:** Create a block variation with preset configurations
-
-**Usage:**
-```
-/add-variation
-```
-
-**What it does:**
-- Creates variation with preset attributes
-- Adds to variations array
-- Includes proper metadata
-- Follows variation best practices
 
 #### `/add-extension`
 **Purpose:** Create a block extension to enhance core WordPress blocks
@@ -147,6 +134,14 @@ AI: [Creates complete Timeline block structure]
 - Creates inspector panel
 - Adds styles
 - Ensures proper block targeting
+
+#### `/add-pattern`
+**Purpose:** Add a static block pattern under `patterns/{category}/`
+
+#### `/review-pr`
+**Purpose:** Review the current branch or a PR against DesignSetGo standards before requesting review
+
+Only these four skills live in the repo. For general WordPress knowledge (block development, Interactivity API, REST API, Abilities API, PHPStan), install the official [WordPress agent skills](https://github.com/WordPress/agent-skills) — see [`.claude/skills/README.md`](../../.claude/skills/README.md).
 
 ### Code Quality
 
