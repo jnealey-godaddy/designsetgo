@@ -73,10 +73,12 @@ add_action( 'wp_abilities_api_init', function( $registry ) {
 | `category` | Yes | Category slug (must be registered first) |
 | `output_schema` | Yes | JSON Schema for returned output |
 | `execute_callback` | Yes | Function that executes the ability |
-| `permission_callback` | Yes | Returns `true` or `WP_Error` for access control |
+| `permission_callback` | Yes | Returns `true` or `WP_Error` for access control. WP core throws `InvalidArgumentException` if this is missing — there is no implicit default |
 | `input_schema` | No | JSON Schema for expected input (enables validation) |
-| `meta` | No | Metadata object (contains `show_in_rest`, `annotations`, and custom data) |
-| `meta.show_in_rest` | No | Set `true` to expose via REST API (default: `false`) |
+| `meta` | No | Metadata object (contains `show_in_rest`, `mcp`, `annotations`, and custom data) |
+| `meta.show_in_rest` | No | Set `true` to expose via the `wp-abilities/v1` REST namespace (default: `false`) |
+| `meta.mcp.public` | No | Set `true` to expose the ability as a tool via the bundled WordPress MCP adapter (default: `false`). Independent from `show_in_rest` |
+| `meta.mcp.type` | No | One of `'tool'`, `'resource'`, `'prompt'` (default `'tool'`). Values outside this enum silently coerce to `'tool'` |
 | `meta.annotations` | No | Behavioral metadata (see below) |
 | `ability_class` | No | Custom `WP_Ability` subclass |
 
@@ -92,6 +94,17 @@ Annotations are nested inside the `meta` parameter. They describe ability behavi
 | `instructions` | `string` | Custom usage guidance for AI agents | — |
 
 When neither `readonly` nor `destructive` is set, the REST endpoint defaults to `POST`.
+
+The three boolean annotations are *hints* for tooling and documentation — core does not enforce them at runtime, so a missing or `null` value is silently legal. That permissiveness is exactly why every registration should populate them explicitly: MCP / Command Palette / agent surfaces and review tooling reason about ability safety from these values *without* invoking the callback. A `readonly: null` ability is treated as "behavior unknown," which is a worse signal than either `true` or `false`. Treat the absence of an annotation as a bug, not a default.
+
+## `show_in_rest` vs `mcp.public` — they target different surfaces
+
+These two meta keys answer different questions and do not imply each other:
+
+- `show_in_rest` controls visibility on the WordPress core REST namespace `wp-abilities/v1` (the abilities REST API). Clients that talk to that namespace see the ability iff this is `true`.
+- `mcp.public` is read by the bundled WordPress MCP adapter package. The adapter's default MCP server only surfaces abilities whose `meta.mcp.public` is strictly `true`. Without it, the ability is registered but invisible to MCP clients connecting through that adapter.
+
+A plugin can set both, either, or neither. If you want the ability discoverable to agents through MCP, set `mcp.public => true`. If you also want it on the abilities REST namespace (for tooling that talks to `wp-abilities/v1` directly), set `show_in_rest => true`. The two surfaces are independent.
 
 ## Execution
 
