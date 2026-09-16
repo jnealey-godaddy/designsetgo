@@ -20,14 +20,14 @@ The WordPress Abilities API is a new core initiative that creates a structured w
 
 ## Available Abilities
 
-DesignSetGo registers **20 abilities** in 3 registered categories. The
+DesignSetGo registers **21 abilities** in 3 registered categories. The
 category an ability is registered in — `info`, `blocks`, or `settings` — is
 what `/wp-json/wp-abilities/v1/categories` reports and what the `category`
 filter on `list-abilities` accepts.
 
 | Registered category | Count | Contents |
 |---|---|---|
-| `info` | 6 | `list-abilities`, `list-blocks`, `list-extensions`, `list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks` |
+| `info` | 7 | `list-abilities`, `list-blocks`, `list-extensions`, `list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks`, `get-design-context` |
 | `blocks` | 10 | `add-block`, `add-child-block`, `add-accordion-item`, `add-tab`, `add-timeline-item`, `update-block`, `batch-update`, `configure-custom-css`, `configure-shape-divider`, `delete-block` |
 | `settings` | 4 | `get-settings`, `update-settings`, `get-global-css`, `update-global-css` |
 
@@ -35,7 +35,7 @@ The groupings used as headings below (Info / Inserters / Configurators /
 Settings) are editorial. Insertion and configuration abilities all register
 in the single `blocks` category.
 
-### 1. Info Abilities (6)
+### 1. Info Abilities (7)
 
 #### `designsetgo/list-abilities`
 
@@ -218,6 +218,30 @@ Returns all DesignSetGo block extensions with their attribute schemas, applicabl
 **REST API Example:** (readonly — uses GET)
 ```bash
 curl -X GET "http://yoursite.com/wp-json/wp-abilities/v1/designsetgo/list-extensions/run?detail=full" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+---
+
+#### `designsetgo/get-design-context`
+
+Reads the resolved WordPress theme design system: theme name/stylesheet, global settings (`wp_get_global_settings()`), global styles (`wp_get_global_styles()`), and registered block style variations for DesignSetGo blocks plus `core/heading`/`core/paragraph`. Includes theme defaults and any user style-kit overrides. Read-only — never modifies the theme.
+
+**Input:** none (empty object).
+
+**Output:**
+```json
+{
+  "theme": { "stylesheet": "twentytwentyfive", "name": "Twenty Twenty-Five" },
+  "settings": { ... },
+  "styles": { ... },
+  "blockStyles": { "designsetgo/pill": [ { "name": "outline", "label": "Outline" } ] }
+}
+```
+
+**REST API Example:** (readonly — uses GET)
+```bash
+curl -X GET "http://yoursite.com/wp-json/wp-abilities/v1/designsetgo/get-design-context/run" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -500,12 +524,14 @@ Adds an item to an existing timeline container.
 | `list-dynamic-tag-sources` | List Dynamic Tag binding sources, filterable by `returns` and `group` | readonly |
 | `get-post-blocks` | Retrieve blocks from a post with blockIndex values | readonly |
 | `find-blocks` | Search for blocks across posts by type | readonly |
+| `get-design-context` | Read resolved theme design settings, global styles, and block style variations | readonly |
 
 All info abilities are annotated `readonly: true, destructive: false,
 idempotent: true`. `list-abilities`, `list-blocks`, and `list-extensions`
 gate on the `read` capability, so any logged-in user can call them;
-`list-dynamic-tag-sources`, `get-post-blocks`, and `find-blocks` require
-`edit_posts`, and the latter two additionally check `edit_post` per post.
+`list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks`, and
+`get-design-context` require `edit_posts`, and `get-post-blocks` /
+`find-blocks` additionally check `edit_post` per post.
 
 #### Inserter Abilities
 
@@ -745,7 +771,7 @@ Each ability has specific permission requirements:
 | Ability | Required capability | anon | subscriber | editor | admin |
 |---|---|---|---|---|---|
 | `list-abilities`, `list-blocks`, `list-extensions` | `read` | deny | **allow** | allow | allow |
-| `list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks` | `edit_posts` | deny | deny | allow | allow |
+| `list-dynamic-tag-sources`, `get-post-blocks`, `find-blocks`, `get-design-context` | `edit_posts` | deny | deny | allow | allow |
 | All inserter and configurator abilities | `edit_posts` | deny | deny | allow | allow |
 | `get-settings`, `update-settings` | `manage_options` | deny | deny | deny | allow |
 | `get-global-css`, `update-global-css` | `edit_css` | deny | deny | allow¹ | allow |
@@ -1096,8 +1122,8 @@ All endpoints live under `/wp-json/wp-abilities/v1`. Authentication is required 
 
 ## Support
 
-- **Documentation:** [https://github.com/yourrepo/designsetgo/docs](docs/)
-- **Issues:** [https://github.com/yourrepo/designsetgo/issues](issues)
+- **Documentation:** [docs/](../README.md)
+- **Issues:** [GitHub Issues](https://github.com/jnealey-godaddy/designsetgo/issues)
 - **WordPress Abilities API Handbook:** [https://developer.wordpress.org/apis/abilities-api/](https://developer.wordpress.org/apis/abilities-api/)
 
 ---

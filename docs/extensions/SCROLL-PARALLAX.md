@@ -86,7 +86,6 @@ Mobile is disabled by default for better performance on resource-constrained dev
 - Section
 - Row
 - Grid
-- Reveal
 - Flip Card (and Front/Back)
 - Icon
 - Icon Button

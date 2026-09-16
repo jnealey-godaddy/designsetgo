@@ -59,8 +59,8 @@ npm run wp-env:start
 
 **WordPress will be available at:**
 
-- Frontend: <http://localhost:8888>
-- Admin: <http://localhost:8888/wp-admin>
+- Frontend: <http://localhost:9451>
+- Admin: <http://localhost:9451/wp-admin>
 - Credentials: `admin` / `password`
 
 ### 3. Run Tests
@@ -381,7 +381,7 @@ Tests run automatically via GitHub Actions on pushes and pull requests to `main`
 3. **PHP Lint & Analysis** - Runs PHPCS and PHPStan
 4. **Security Audit** - `npm audit` and license checks
 5. **E2E Tests** - Playwright browser tests against a wp-env instance
-6. **WordPress Compatibility Matrix** - Tests across PHP 8.0-8.3 and WP 6.7-latest
+6. **WordPress Compatibility Matrix** - Tests across PHP 7.4-8.3 and WP 6.7/6.8/6.9/latest (full matrix on `main`/`release/*` pushes; latest-only on PRs for fast feedback)
 
 ---
 
@@ -470,6 +470,6 @@ bash bin/install-wp-tests.sh wordpress_test root '' localhost latest
 
 ---
 
-**Last Updated**: 2026-02-13
-**Plugin Version**: 2.6.3
+**Last Updated**: 2026-09-16
+**Plugin Version**: 2.7.5
 **WordPress Compatibility**: 6.7+

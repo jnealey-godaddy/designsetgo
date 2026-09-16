@@ -1,5 +1,7 @@
 # CSS Loading Performance Strategy
 
+**Status**: Implemented (Hybrid Approach / Option 3 below). See `includes/core/class-assets.php` — `optimize_css_loading()` (defer non-critical CSS), `inline_critical_css()` and `dequeue_inlined_css()` (inline + dequeue critical CSS), both gated by `get_present_critical_blocks()`.
+
 ## Overview
 
 Optimize CSS loading to reduce render-blocking resources by ~160ms based on PageSpeed Insights analysis.
@@ -21,15 +23,15 @@ WordPress loads all block CSS files synchronously via `block.json`, resulting in
 ## Block Categorization
 
 ### Critical Blocks (Inline CSS - Above-the-Fold)
-**Total: ~40 KiB**
 
-1. **Section** (12K) - Main container, almost always above-fold
-2. **Grid** (7K) - Common layout block
-3. **Row** (4.6K) - Common layout block
-4. **Card** (7.2K) - Very common, often above-fold
-5. **Icon** (3.6K) - Common decorative element
-6. **Icon Button** (8.3K) - Common interactive element
-7. **Pill** (3.1K) - Common UI element
+The blocks actually inlined + dequeued by `get_present_critical_blocks()` in `includes/core/class-assets.php`:
+
+1. **Grid** - Common layout block
+2. **Row** - Common layout block
+3. **Icon** - Common decorative element
+4. **Pill** - Common UI element
+
+Only whichever of these are present on the current request (via `has_block()`) are inlined — the set is per-request, not a fixed bundle. Section, Card, and Icon Button are **not** in the critical set; their CSS loads via the normal `block.json`-enqueued stylesheet (neither inlined nor deferred).
 
 **Rationale**: These blocks are most likely to be above-the-fold and are frequently used. Inlining their CSS eliminates render-blocking for critical content.
 
@@ -104,7 +106,7 @@ Extract and inline critical CSS in `<head>`:
 
 ```php
 public function inline_critical_css() {
-    $critical_blocks = array( 'section', 'grid', 'row', 'card', 'icon', 'icon-button', 'pill' );
+    $critical_blocks = array( 'grid', 'row', 'icon', 'pill' );
 
     $critical_css = '';
     foreach ( $critical_blocks as $block ) {

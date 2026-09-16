@@ -2,13 +2,7 @@
 
 ## Supported Versions
 
-We release patches for security vulnerabilities for the following versions:
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 2.0.x   | :white_check_mark: |
-| 1.5.x   | :white_check_mark: |
-| < 1.5   | :x:                |
+DesignSetGo follows the WordPress.org plugin convention of supporting only the latest released version. We release security patches for the current 2.x line (currently 2.7.x); older versions should update to the latest release to receive fixes.
 
 ## Reporting a Vulnerability
 
@@ -285,5 +279,5 @@ For security-related questions or concerns:
 
 ---
 
-**Last Updated:** 2026-02-13
-**Version:** 2.0.23
+**Last Updated:** 2026-09-16
+**Version:** 2.7.5

@@ -107,9 +107,9 @@ Before creating a PR, ensure:
 
 Before you begin, ensure you have:
 
-- **Node.js** 18+ ([Download](https://nodejs.org/))
+- **Node.js** 20+ ([Download](https://nodejs.org/)) - see `.nvmrc`
 - **npm** 8+ (comes with Node.js)
-- **PHP** 8.0+ (for local linting with `npm run lint:php`)
+- **PHP** 7.4+ (for local linting with `npm run lint:php`)
 - **Composer** (for PHP dependencies) ([Download](https://getcomposer.org/))
 - **Git** ([Download](https://git-scm.com/))
 - **Docker Desktop** (for wp-env) ([Download](https://www.docker.com/products/docker-desktop/))
@@ -156,8 +156,8 @@ npx wp-env start
 ```
 
 **Access your local WordPress:**
-- Frontend: http://localhost:8888
-- Admin: http://localhost:8888/wp-admin
+- Frontend: http://localhost:9451
+- Admin: http://localhost:9451/wp-admin
 - Username: `admin`
 - Password: `password`
 
@@ -175,7 +175,7 @@ npm start
 
 #### 5. Verify Installation
 
-1. Go to http://localhost:8888/wp-admin
+1. Go to http://localhost:9451/wp-admin
 2. Log in with `admin` / `password`
 3. Navigate to **Plugins** - DesignSetGo should be active
 4. Create a new post/page
@@ -194,8 +194,8 @@ npm start
 
 **Port already in use:**
 ```bash
-# Error: "Port 8888 is already in use"
-# Solution: Stop the conflicting service or change wp-env ports in package.json
+# Error: "Port 9451 is already in use"
+# Solution: Stop the conflicting service or change the "port" value in .wp-env.json
 ```
 
 **Build errors:**
@@ -348,7 +348,7 @@ export default function Edit({ attributes, setAttributes }) {
 
 ```bash
 # The build should auto-reload (if npm start is running)
-# Go to http://localhost:8888/wp-admin
+# Go to http://localhost:9451/wp-admin
 # Test in the editor
 # Preview on the frontend
 ```
@@ -590,7 +590,7 @@ npm run lint:css
 npm run test:unit
 
 # 4. Manual testing
-# - Test in editor (http://localhost:8888/wp-admin)
+# - Test in editor (http://localhost:9451/wp-admin)
 # - Test on frontend
 # - Check browser console for errors
 # - Test responsive (375px, 768px, 1200px)
@@ -791,4 +791,4 @@ Thank you for contributing to DesignSetGo! Every contribution, no matter how sma
 
 ---
 
-**License**: GPL-2.0-or-later | **Version**: 2.6.3 | **WordPress**: 6.7+ | **PHP**: 7.4+
+**License**: GPL-2.0-or-later | **Version**: 2.7.5 | **WordPress**: 6.7+ | **PHP**: 7.4+

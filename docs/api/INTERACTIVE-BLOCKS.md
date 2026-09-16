@@ -76,7 +76,7 @@ Create engaging slideshows with various transition effects, navigation controls,
 
 ### Key Features
 
-- **Multiple effects** - Slide, fade, cube, flip, and more
+- **Multiple effects** - Slide, fade, or zoom transitions
 - **Responsive slides** - Different slide counts per device
 - **Navigation controls** - Arrows and dot indicators with custom styling
 - **Auto-play** - Automatic rotation with pause on hover
@@ -144,7 +144,6 @@ Create an engaging image accordion where panels expand to reveal full images on 
 - **Responsive** - Adapts to mobile with stacking
 - **Text overlays** - Add titles and descriptions
 - **Custom ratios** - Control expanded/collapsed width
-- **Vertical or horizontal** - Multiple layout options
 
 ### Best For
 
@@ -217,34 +216,6 @@ Create cards that flip to reveal content on the back. Perfect for team members, 
 
 ---
 
-## Reveal
-
-**Content that reveals on scroll or hover**
-
-Add engaging reveal animations that trigger when elements come into view or on hover.
-
-### Key Features
-
-- **Multiple animations** - Fade, slide, zoom, and more
-- **Scroll or hover** - Choose trigger method
-- **Stagger support** - Animate children in sequence
-- **Custom delays** - Control timing
-- **Performance optimized** - Uses Intersection Observer
-
-### Best For
-
-- Feature highlights
-- Gallery items
-- List animations
-- Content sections
-- Landing pages
-
-### Demo
-
-[Placeholder for Reveal demo]
-
----
-
 ## Countdown Timer
 
 **Live countdown to a specific date and time**
@@ -274,28 +245,23 @@ Display a countdown to important dates with customizable styling and time units.
 
 ---
 
-## Scroll Marquee
+## Scroll Marquee (Scrolling Gallery)
 
-**Infinite scrolling content strip**
+**Image rows that scroll horizontally as the page scrolls**
 
-Create continuously scrolling content, perfect for logos, testimonials, or announcements.
+Display rows of images that scroll in alternating directions tied to page scroll position (not autoplay). Best with optimized (WebP) images, 20 or fewer per row.
 
 ### Key Features
 
-- **Infinite loop** - Seamless continuous scroll
-- **Custom speed** - Control scroll rate
-- **Pause on hover** - Interactive control
-- **Direction control** - Left or right scrolling
-- **Duplicate content** - Automatic seamless looping
-- **Any content** - Use images, text, or any blocks
+- **Scroll-driven** - Rows move as the visitor scrolls the page, not on a timer
+- **Alternating direction** - Each row can scroll left or right
+- **Image rows** - Built for image galleries, not arbitrary blocks
 
 ### Best For
 
 - Logo strips
-- Partner logos
-- Testimonial feeds
-- News tickers
-- Featured products
+- Photo galleries
+- Portfolio showcases
 
 ### Demo
 

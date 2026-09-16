@@ -22,25 +22,25 @@
 
 ### ✅ Issue #1: Missing `dsgo-no-width-constraint` Class
 **Status:** RESOLVED
-**Fix:** Added class application in [section/save.js:31-37](../src/blocks/section/save.js), [row/save.js](../src/blocks/row/save.js), [grid/save.js](../src/blocks/grid/save.js)
+**Fix:** Added class application in [section/save.js:31-37](../../src/blocks/section/save.js), [row/save.js](../../src/blocks/row/save.js), [grid/save.js](../../src/blocks/grid/save.js)
 **Commit:** 2765159 (2025-11-11)
 
 ### ✅ Issue #3: Grid Block Hard-coded Gaps
 **Status:** RESOLVED
-**Fix:** Added blockGap priority in [grid/edit.js:137](../src/blocks/grid/edit.js) and [grid/save.js:67](../src/blocks/grid/save.js)
+**Fix:** Added blockGap priority in [grid/edit.js:137](../../src/blocks/grid/edit.js) and [grid/save.js:67](../../src/blocks/grid/save.js)
 **Priority:** `blockGap → rowGap/columnGap → preset fallback`
 
 ### ✅ Issue #4: Extension Duplicates Native Attributes
 **Status:** RESOLVED
-**Fix:** Excluded container blocks from [max-width extension](../src/extensions/max-width/index.js:37-39)
+**Fix:** Excluded container blocks from [max-width extension](../../src/extensions/max-width/index.js:37-39)
 **Impact:** No duplicate controls, extension preserved for future blocks
 
 ### ✅ Issue #5: Editor/Frontend Parity
 **Status:** RESOLVED
 **Fix:** Standardized contentSize usage across all edit.js files:
-- [section/edit.js:180](../src/blocks/section/edit.js)
-- [row/edit.js:228](../src/blocks/row/edit.js)
-- [grid/edit.js:151](../src/blocks/grid/edit.js)
+- [section/edit.js:180](../../src/blocks/section/edit.js)
+- [row/edit.js:228](../../src/blocks/row/edit.js)
+- [grid/edit.js:151](../../src/blocks/grid/edit.js)
 **Pattern:** `contentWidth || themeContentSize || '1140px'`
 
 ### ✅ Issue #6: Accordion/Tabs Width Controls
@@ -50,7 +50,7 @@
 **User Control:** Nest in Section/Row/Grid for layout constraints
 
 ### New: Centralized Width Strategy
-**Added:** Comprehensive child block width rules in [utilities.scss:112-234](../src/styles/_utilities.scss)
+**Added:** Comprehensive child block width rules in [utilities.scss:112-234](../../src/styles/_utilities.scss)
 **Features:**
 - Full-width default for most blocks
 - Inline sizing for Icon, Pill, Icon Button
@@ -86,9 +86,9 @@
 - **Separation**: Background effects can be full-width while content is constrained
 
 **Implementation:**
-- [Section](../src/blocks/section/save.js) (lines 68-70)
-- [Row](../src/blocks/row/save.js) (lines 117-120)
-- [Grid](../src/blocks/grid/save.js) (lines 79-81)
+- [Section](../../src/blocks/section/save.js) (lines 68-70)
+- [Row](../../src/blocks/row/save.js) (lines 117-120)
+- [Grid](../../src/blocks/grid/save.js) (lines 79-81)
 
 ---
 
@@ -125,9 +125,9 @@
 | Grid | `false` | Full-width layouts more common |
 
 **Implementation:**
-- [Section block.json](../src/blocks/section/block.json) (lines 82-89)
-- [Row block.json](../src/blocks/row/block.json) (lines 85-92)
-- [Grid block.json](../src/blocks/grid/block.json) (lines 138-145)
+- [Section block.json](../../src/blocks/section/block.json) (lines 82-89)
+- [Row block.json](../../src/blocks/row/block.json) (lines 85-92)
+- [Grid block.json](../../src/blocks/grid/block.json) (lines 138-145)
 
 ---
 
@@ -179,8 +179,8 @@ if (constrainWidth) {
 - **Frontend**: Uses CSS variable with fallback (e.g., "var(--wp--style--global--content-size, 1140px)")
 
 **Implementation:**
-- [Section edit.js](../src/blocks/section/edit.js) (line 86, 169-176)
-- [Section save.js](../src/blocks/section/save.js) (lines 54-59)
+- [Section edit.js](../../src/blocks/section/edit.js) (line 86, 169-176)
+- [Section save.js](../../src/blocks/section/save.js) (lines 54-59)
 
 ---
 
@@ -207,7 +207,7 @@ if (constrainWidth) {
 ```
 
 **Implementation:**
-- [Grid style.scss](../src/blocks/grid/style.scss) (lines 36-48)
+- [Grid style.scss](../../src/blocks/grid/style.scss) (lines 36-48)
 
 ---
 
@@ -240,9 +240,9 @@ When containers nest, the inner container should:
 3. Let its parent handle the width constraint
 
 **Implementation:**
-- [Section style.scss](../src/blocks/section/style.scss) (lines 25-35)
-- [Row style.scss](../src/blocks/row/style.scss) (lines 29-39)
-- [Grid style.scss](../src/blocks/grid/style.scss) (lines 86-96)
+- [Section style.scss](../../src/blocks/section/style.scss) (lines 25-35)
+- [Row style.scss](../../src/blocks/row/style.scss) (lines 29-39)
+- [Grid style.scss](../../src/blocks/grid/style.scss) (lines 86-96)
 
 ---
 
@@ -282,7 +282,7 @@ When containers nest, the inner container should:
       "type": "flex",
       "orientation": "horizontal",
       "justifyContent": "left",
-      "flexWrap": "wrap"
+      "flexWrap": "nowrap"
     }
   }
 }
@@ -310,9 +310,9 @@ When containers nest, the inner container should:
 **⚠️ But Grid manually implements grid in save.js**
 
 **Implementation:**
-- [Section block.json](../src/blocks/section/block.json) (lines 16-26)
-- [Row block.json](../src/blocks/row/block.json) (lines 16-28)
-- [Grid block.json](../src/blocks/grid/block.json) (lines 16-25)
+- [Section block.json](../../src/blocks/section/block.json) (lines 16-26)
+- [Row block.json](../../src/blocks/row/block.json) (lines 16-28)
+- [Grid block.json](../../src/blocks/grid/block.json) (lines 16-25)
 
 ---
 
@@ -324,9 +324,9 @@ When containers nest, the inner container should:
 
 **History:**
 - **Deprecated version**: Applied `dsgo-no-width-constraint` when `constrainWidth: false`
-  - [section/deprecated.js](../src/blocks/section/deprecated.js) (lines 52-57)
+  - [section/deprecated.js](../../src/blocks/section/deprecated.js) (lines 52-57)
 - **Current version**: Only uses base class `dsgo-stack`
-  - [section/save.js](../src/blocks/section/save.js) (line 30)
+  - [section/save.js](../../src/blocks/section/save.js) (line 30)
 
 **CSS Still Expects It:**
 
@@ -343,7 +343,7 @@ When containers nest, the inner container should:
 
 **Impact:** When `constrainWidth: false`, children still get WordPress's default max-width constraint instead of being truly full-width.
 
-**Location:** [section/style.scss](../src/blocks/section/style.scss) (lines 148-156)
+**Location:** [section/style.scss](../../src/blocks/section/style.scss) (lines 148-156)
 
 **Fix Required:**
 ```javascript
@@ -376,7 +376,7 @@ if (blockProps.style?.gap) {
 const innerStyle = {
     display: 'flex',                              // Manual
     justifyContent: layout?.justifyContent || 'left',  // Manual
-    flexWrap: layout?.flexWrap || 'wrap',         // Manual
+    flexWrap: layout?.flexWrap || 'nowrap',       // Manual
     ...(gapValue && { gap: gapValue }),           // Manual conversion
 };
 ```
@@ -388,7 +388,7 @@ const innerStyle = {
 4. More maintenance overhead
 5. May break when WordPress updates its layout system
 
-**Location:** [row/save.js](../src/blocks/row/save.js) (lines 79-99)
+**Location:** [row/save.js](../../src/blocks/row/save.js) (lines 79-99)
 
 **Should Be:**
 Let WordPress handle flex via layout classes (like Section does).
@@ -417,9 +417,9 @@ rowGap: rowGap || blockGap,
 columnGap: columnGap || blockGap,
 ```
 
-**Location:** [grid/save.js](../src/blocks/grid/save.js) (lines 55-61)
+**Location:** [grid/save.js](../../src/blocks/grid/save.js) (lines 55-61)
 
-**✅ RESOLUTION (2025-11-11):** Fixed in both [grid/edit.js:137](../src/blocks/grid/edit.js) and [grid/save.js:67](../src/blocks/grid/save.js). Now uses priority: `blockGap → rowGap → columnGap → preset fallback`.
+**✅ RESOLUTION (2025-11-11):** Fixed in both [grid/edit.js:137](../../src/blocks/grid/edit.js) and [grid/save.js:67](../../src/blocks/grid/save.js). Now uses priority: `blockGap → rowGap → columnGap → preset fallback`.
 
 ---
 
@@ -459,11 +459,11 @@ if (isContainerBlock) {
 1. Native panel from block's own code (Section Settings, Row Settings, Grid Settings)
 2. Extension-created "Width" panel
 
-**Location:** [extensions/max-width/index.js](../src/extensions/max-width/index.js) (lines 54-203)
+**Location:** [extensions/max-width/index.js](../../src/extensions/max-width/index.js) (lines 54-203)
 
 **Fix Required:** Remove extension entirely or refactor to only add controls to blocks that DON'T have them (e.g., Accordion, Tabs).
 
-**✅ RESOLUTION (2025-11-11):** Container blocks excluded from extension via `EXCLUDED_BLOCKS` array. Extension preserved for future non-container blocks. See [max-width/index.js:37-39](../src/extensions/max-width/index.js).
+**✅ RESOLUTION (2025-11-11):** Container blocks excluded from extension via `EXCLUDED_BLOCKS` array. Extension preserved for future non-container blocks. See [max-width/index.js:37-39](../../src/extensions/max-width/index.js).
 
 ---
 
@@ -491,9 +491,9 @@ innerStyle.maxWidth = contentWidth || 'var(--wp--style--global--content-size, 11
 **Fix Required:** Use consistent approach or ensure CSS variable is always available.
 
 **✅ RESOLUTION (2025-11-11):** Standardized all edit.js files to use `contentWidth || themeContentSize || '1140px'`. Consistent fallback ensures editor/frontend parity. Changed files:
-- [section/edit.js:180](../src/blocks/section/edit.js)
-- [row/edit.js:228](../src/blocks/row/edit.js)
-- [grid/edit.js:151](../src/blocks/grid/edit.js)
+- [section/edit.js:180](../../src/blocks/section/edit.js)
+- [row/edit.js:228](../../src/blocks/row/edit.js)
+- [grid/edit.js:151](../../src/blocks/grid/edit.js)
 
 ---
 
@@ -514,16 +514,16 @@ innerStyle.maxWidth = contentWidth || 'var(--wp--style--global--content-size, 11
 - But users might want to constrain tab panels or accordion content
 
 **Files:**
-- [accordion/edit.js](../src/blocks/accordion/edit.js)
-- [accordion/style.scss](../src/blocks/accordion/style.scss) (line 18: `width: 100%;`)
-- [tabs/edit.js](../src/blocks/tabs/edit.js)
-- [tabs/style.scss](../src/blocks/tabs/style.scss) (line 21: `width: 100%;`)
+- [accordion/edit.js](../../src/blocks/accordion/edit.js)
+- [accordion/style.scss](../../src/blocks/accordion/style.scss) (line 18: `width: 100%;`)
+- [tabs/edit.js](../../src/blocks/tabs/edit.js)
+- [tabs/style.scss](../../src/blocks/tabs/style.scss) (line 21: `width: 100%;`)
 
 **✅ DECISION (2025-11-11):** This is intentional, not a bug. Accordion and Tabs blocks will ALWAYS be full-width of their parent container. Rationale:
 - Interactive UI elements work best at full width
 - Simpler UX (fewer controls)
 - Users can nest in Section/Row/Grid for layout control
-- Enforced via CSS in [utilities.scss:211-215](../src/styles/_utilities.scss)
+- Enforced via CSS in [utilities.scss:211-215](../../src/styles/_utilities.scss)
 
 ---
 
@@ -551,7 +551,7 @@ innerStyle.maxWidth = contentWidth || 'var(--wp--style--global--content-size, 11
 
 **Better Approach:** Work with WordPress's system instead of against it.
 
-**Location:** [section/style.scss](../src/blocks/section/style.scss) (lines 148-156)
+**Location:** [section/style.scss](../../src/blocks/section/style.scss) (lines 148-156)
 
 ---
 
@@ -797,7 +797,7 @@ const blocksNeedingWidth = [
 const innerStyle = {
     display: 'flex',
     justifyContent: layout?.justifyContent || 'left',
-    flexWrap: layout?.flexWrap || 'wrap',
+    flexWrap: layout?.flexWrap || 'nowrap',
     gap: gapValue,
 };
 ```
@@ -1057,9 +1057,8 @@ Row (alignfull, constrainWidth: false)
 ## Resources
 
 **Related Documentation:**
-- [BLOCK-SUPPORTS-AUDIT.md](BLOCK-SUPPORTS-AUDIT.md) - Comprehensive audit of block supports usage
-- [BLOCK-CONTROLS-ORGANIZATION.md](BLOCK-CONTROLS-ORGANIZATION.md) - Inspector controls organization
-- [CLAUDE.md](../.claude/CLAUDE.md) - Main development guide
+- [BLOCK-CONTROLS-ORGANIZATION.md](../guides/BLOCK-CONTROLS-ORGANIZATION.md) - Inspector controls organization
+- [CLAUDE.md](../../.claude/CLAUDE.md) - Main development guide
 
 **WordPress Resources:**
 - [Block Supports API](https://developer.wordpress.org/block-editor/reference-guides/block-api/block-supports/)
@@ -1078,4 +1077,4 @@ Row (alignfull, constrainWidth: false)
 
 ---
 
-**Questions?** See [CLAUDE.md](../.claude/CLAUDE.md) or [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
+**Questions?** See [CLAUDE.md](../../.claude/CLAUDE.md) or [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](../guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)

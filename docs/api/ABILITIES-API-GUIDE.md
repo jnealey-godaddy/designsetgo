@@ -60,7 +60,7 @@ DesignSetGo provides a focused set of abilities across 3 categories:
 #### list-abilities
 Returns a manifest of all registered abilities with names, descriptions, categories, and input schemas. **Call this first** to discover what's available.
 
-**Endpoint**: `GET /wp-abilities/v1/abilities/designsetgo/list-abilities/run`
+**Endpoint**: `GET /wp-abilities/v1/designsetgo/list-abilities/run`
 
 **Input**:
 ```json
@@ -85,7 +85,7 @@ Returns a manifest of all registered abilities with names, descriptions, categor
 #### list-blocks
 Lists all available DesignSetGo blocks with their metadata.
 
-**Endpoint**: `GET /wp-abilities/v1/abilities/designsetgo/list-blocks/run`
+**Endpoint**: `GET /wp-abilities/v1/designsetgo/list-blocks/run`
 
 **Input**:
 ```json
@@ -101,7 +101,7 @@ Lists all available DesignSetGo blocks with their metadata.
 #### get-post-blocks
 Retrieves all blocks from a post with document-order `blockIndex` values. Essential for targeting blocks with configurators and operations.
 
-**Endpoint**: `GET /wp-abilities/v1/abilities/designsetgo/get-post-blocks/run`
+**Endpoint**: `GET /wp-abilities/v1/designsetgo/get-post-blocks/run`
 
 **Input**:
 ```json
@@ -122,7 +122,7 @@ Only `post_id` is required. Use `block_name` to filter, `include_inner` to inclu
 #### find-blocks
 Searches for blocks across multiple posts. Useful for finding all posts that use a specific block type.
 
-**Endpoint**: `GET /wp-abilities/v1/abilities/designsetgo/find-blocks/run`
+**Endpoint**: `GET /wp-abilities/v1/designsetgo/find-blocks/run`
 
 **Input**:
 ```json
@@ -141,7 +141,7 @@ Only `block_name` is required. Returns posts containing the specified block with
 #### list-extensions
 Returns all DesignSetGo block extensions with their attribute schemas, applicable blocks, and descriptions. Extensions add features like animation, parallax, responsive visibility to existing blocks. Use `update-block` with the extension attribute names to apply them.
 
-**Endpoint**: `GET /wp-abilities/v1/abilities/designsetgo/list-extensions/run`
+**Endpoint**: `GET /wp-abilities/v1/designsetgo/list-extensions/run`
 
 **Input**:
 ```json
@@ -368,7 +368,7 @@ Use WordPress Application Passwords for REST API authentication:
 
 ```bash
 curl -X POST -u "username:app_password" \
-  "http://yoursite.com/?rest_route=/wp-abilities/v1/abilities/ABILITY_NAME/run" \
+  "http://yoursite.com/?rest_route=/wp-abilities/v1/ABILITY_NAME/run" \
   -H "Content-Type: application/json" \
   -d '{"input": {...}}'
 ```
@@ -414,7 +414,7 @@ POST_ID=123
 USER="admin"
 PASS="your_app_password"
 URL="http://yoursite.com"
-API="$URL/?rest_route=/wp-abilities/v1/abilities/designsetgo"
+API="$URL/?rest_route=/wp-abilities/v1/designsetgo"
 
 # 0. Discover available abilities
 curl -X GET -u "$USER:$PASS" \
@@ -500,7 +500,7 @@ For the full official WordPress Abilities API documentation, see:
 
 ## Support
 
-- **GitHub Issues**: https://github.com/yourusername/designsetgo/issues
+- **GitHub Issues**: https://github.com/jnealey-godaddy/designsetgo/issues
 - **Documentation**: https://designsetgo.com/docs
 - **WordPress Abilities API Handbook**: https://developer.wordpress.org/apis/abilities-api/
 

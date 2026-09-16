@@ -33,7 +33,7 @@ Create flexible horizontal layouts with wrapping using CSS Flexbox. Perfect for 
 
 ## Settings
 
-### Row Settings Panel
+### Settings
 - **Constrain Inner Width**: OFF (default) - Full width
   - ON: Centers content with max-width (1140px)
 - **Max Content Width**: Custom width when constrained (960px, 1200px, etc.)

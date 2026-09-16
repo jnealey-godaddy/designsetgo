@@ -25,8 +25,8 @@ Before you begin, install these tools:
 
 **Installation:**
 - Download from https://nodejs.org/
-- Choose LTS version (18.x or higher)
-- Verify: `node --version` (should show v18.x.x or higher)
+- Choose the LTS version — CI (`.github/workflows/ci.yml`) runs on Node 20.x, so match that locally
+- Verify: `node --version` (should show v20.x or higher)
 
 #### 2. npm (Package Manager)
 
@@ -134,7 +134,7 @@ Docker (Container)
     ↓
 WordPress + PHP + MySQL
     ↓
-http://localhost:8888
+http://localhost:9451
 ```
 
 **Tools:**
@@ -218,7 +218,7 @@ npx wp-env start
 # You'll see output like:
 # ✔ Building WordPress...
 # ✔ Starting WordPress...
-# WordPress development site started at http://localhost:8888
+# WordPress development site started at http://localhost:9451
 # WordPress test site started at http://localhost:8889
 # MySQL is listening on port 52000
 ```
@@ -230,8 +230,8 @@ npx wp-env start
 4. Creates admin user (admin/password)
 
 **Access points:**
-- **Frontend:** http://localhost:8888
-- **Admin:** http://localhost:8888/wp-admin
+- **Frontend:** http://localhost:9451
+- **Admin:** http://localhost:9451/wp-admin
 - **Credentials:** `admin` / `password`
 
 ### Step 6: Start Development Build
@@ -258,7 +258,7 @@ npm start
 
 ### Step 7: Verify Everything Works
 
-1. **Go to WordPress admin:** http://localhost:8888/wp-admin
+1. **Go to WordPress admin:** http://localhost:9451/wp-admin
 2. **Log in:** Username: `admin`, Password: `password`
 3. **Create a test page:**
    - Click "Pages" → "Add New"
@@ -328,7 +328,7 @@ Open `src/blocks/icon/block.json` in your editor:
 The build should automatically reload (watch the `npm start` terminal).
 
 **Test it:**
-1. Go to http://localhost:8888/wp-admin
+1. Go to http://localhost:9451/wp-admin
 2. Refresh the page
 3. Insert a new Icon block
 4. The default icon should now be larger!
@@ -420,7 +420,7 @@ This enables auto-formatting on save.
 ### Browser DevTools
 
 **Testing in the editor:**
-1. Open http://localhost:8888/wp-admin in Chrome/Firefox
+1. Open http://localhost:9451/wp-admin in Chrome/Firefox
 2. Open DevTools (F12)
 3. Check **Console** tab for JavaScript errors
 4. Use **Elements** tab to inspect block markup
@@ -449,7 +449,7 @@ npm start         # Terminal 2
 git checkout -b feature/my-feature
 
 # 4. Make changes to src/
-# 5. Test in browser (http://localhost:8888)
+# 5. Test in browser (http://localhost:9451)
 # 6. Commit and push
 
 # 7. End of day - Stop services
@@ -508,7 +508,7 @@ npx wp-env start
 # You should see Docker icon in system tray/menu bar
 ```
 
-**Error: "Port 8888 is already in use"**
+**Error: "Port 9451 is already in use"**
 ```bash
 # Option 1: Stop the conflicting service
 # Option 2: Change wp-env port in .wp-env.json
@@ -572,7 +572,7 @@ git rebase --continue
 
 ### More Help
 
-See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for additional issues.
+See [troubleshooting/TROUBLESHOOTING.md](troubleshooting/TROUBLESHOOTING.md) for additional issues.
 
 ## Next Steps
 
@@ -580,7 +580,7 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for additional issues.
 
 1. **[ARCHITECTURE.md](ARCHITECTURE.md)** - Understand project structure
 2. **[../.claude/CLAUDE.md](../.claude/CLAUDE.md)** - Development patterns
-3. **[BEST-PRACTICES-SUMMARY.md](BEST-PRACTICES-SUMMARY.md)** - Quick reference
+3. **[BEST-PRACTICES-SUMMARY.md](guides/BEST-PRACTICES-SUMMARY.md)** - Quick reference
 
 ### Learn Block Development
 
@@ -628,7 +628,7 @@ git push origin branch-name
 # Testing
 npm run lint:js        # Check code quality
 npm run test:unit      # Run tests
-http://localhost:8888/wp-admin  # Manual testing
+http://localhost:9451/wp-admin  # Manual testing
 
 # Cleanup
 npx wp-env stop        # Stop WordPress
@@ -650,7 +650,7 @@ includes/blocks/
 
 ### Getting Help
 
-1. Check [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+1. Check [troubleshooting/TROUBLESHOOTING.md](troubleshooting/TROUBLESHOOTING.md)
 2. Search [existing issues](https://github.com/jnealey-godaddy/designsetgo/issues)
 3. Ask in [Discussions](https://github.com/jnealey-godaddy/designsetgo/discussions)
 4. Open a [new issue](https://github.com/jnealey-godaddy/designsetgo/issues/new)
@@ -665,4 +665,4 @@ You're now ready to contribute. Don't hesitate to ask questions - we're here to 
 
 ---
 
-**License**: GPL-2.0-or-later | **Version**: 1.4.1 | **WordPress**: 6.7+
+**License**: GPL-2.0-or-later | **WordPress**: 6.7+ (tested to 6.9 via `.wp-env.json`)

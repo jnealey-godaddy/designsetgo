@@ -90,7 +90,7 @@ msgstr "Translated text"
 
 ```po
 # Inspector control label
-#: src/blocks/flex/edit.js:45
+#: src/blocks/row/edit.js:45
 msgid "Direction"
 msgstr "Dirección"
 ```
@@ -198,7 +198,7 @@ language and editor user's language set separately.
 Review where the string appears in the code:
 
 ```po
-#: src/blocks/flex/edit.js:45
+#: src/blocks/row/edit.js:45
 #: src/blocks/grid/edit.js:32
 msgid "Justify"
 ```

@@ -161,9 +161,10 @@ designsetgo/
 │   │   │   └── panel.js
 │   │   └── responsive/       # Responsive visibility
 │   │
-│   ├── styles/               # Global styles
-│   │   ├── style.scss        # Frontend global styles
-│   │   ├── editor.scss       # Editor global styles
+│   ├── style.scss            # Frontend global styles (the REAL entry — webpack's `style-index`)
+│   ├── styles/                # Global editor styles + SCSS partials
+│   │   ├── editor.scss       # Editor global styles (imported by src/index.js)
+│   │   ├── style.scss        # ⚠️ NOT the frontend entry — dead code, nothing imports it. Add frontend styles to top-level src/style.scss instead.
 │   │   ├── admin.scss        # Admin interface styles
 │   │   ├── variables/        # SCSS variables
 │   │   │   ├── _colors.scss
@@ -291,6 +292,8 @@ registerBlockType(metadata.name, {
 #### 3. edit.js - Editor Component
 
 **Purpose:** React component that renders in the block editor.
+
+> **Note:** The snippet below shows the minimal `useBlockProps()` / `InspectorControls` shape only. It predates the Theme 3 Inspector IA — current blocks wrap every custom control in `<DsgoInspectorPanel>` / `<DsgoInspectorPanel.Item>` (Settings → Style → Advanced), not a bare `PanelBody`. See "Editor UX Foundations" below and `src/components/shared/DsgoInspectorPanel/`.
 
 ```javascript
 import { __ } from '@wordpress/i18n';
@@ -849,7 +852,7 @@ curl -X GET "http://site.com/wp-json/wp-abilities/v1/designsetgo/list-blocks/run
   -u "user:pass"
 ```
 
-See [ABILITIES-API.md](ABILITIES-API.md) for complete documentation.
+See [ABILITIES-API.md](api/ABILITIES-API.md) for complete documentation.
 
 ## Key Architectural Decisions
 
@@ -977,7 +980,7 @@ New blocks import from these canonical paths instead of copying code. The `src/h
 ### Adding a New Block
 
 1. Create directory: `src/blocks/my-block/`
-2. Copy template from `docs/BLOCK-TEMPLATE-EDIT.js`
+2. Copy template from `docs/templates/BLOCK-TEMPLATE-EDIT.js`
 3. Create `block.json` with metadata
 4. Implement `edit.js` and `save.js`
 5. Add styles in `style.scss`
@@ -995,10 +998,11 @@ New blocks import from these canonical paths instead of copying code. The `src/h
 
 ### Adding Global Styles
 
-1. Add to `src/styles/style.scss` for frontend
+1. Add to `src/style.scss` (top-level) for frontend — this is webpack's real `style-index` entry. **Not** `src/styles/style.scss`, which nothing imports.
 2. Add to `src/styles/editor.scss` for editor
 3. Use SCSS variables from `src/styles/variables/`
 4. Scope to plugin blocks when possible
+5. Verify: `grep -i "class-name" build/style-index.css`
 
 ## Performance Considerations
 
@@ -1034,9 +1038,9 @@ Each block is compiled separately:
 - [GETTING-STARTED.md](GETTING-STARTED.md) - Setup guide
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution workflow
 - [../.claude/CLAUDE.md](../.claude/CLAUDE.md) - Development patterns
-- [TESTING.md](TESTING.md) - Testing guide
+- [testing/TESTING.md](testing/TESTING.md) - Testing guide
 - [Block Editor Handbook](https://developer.wordpress.org/block-editor/) - Official docs
 
 ---
 
-**Last Updated:** 2025-11-15 | **Version:** 1.4.1 | **WordPress:** 6.7+
+**WordPress:** 6.7+ (tested to 6.9 via `.wp-env.json`)

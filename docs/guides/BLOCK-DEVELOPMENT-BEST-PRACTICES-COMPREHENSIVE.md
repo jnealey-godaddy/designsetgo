@@ -4,7 +4,9 @@
 **Date:** October 24, 2025
 **Status:** Reference Documentation
 **For:** DesignSetGo Blocks (Custom Block Library)
-**Based on:** Official WordPress documentation, community best practices, and lessons learned from Container block refactoring
+**Based on:** Official WordPress documentation, community best practices, and lessons learned from block refactoring
+
+> **Superseded implementation pattern:** this guide's `PanelBody` inspector-control examples predate the Theme 3 Inspector IA. Current blocks wrap every custom control in `<DsgoInspectorPanel>` / `<DsgoInspectorPanel.Item>` (Settings → Style → Advanced) instead — see `../../.claude/CLAUDE.md` ("Inspector IA (Theme 3)"). The architectural guidance elsewhere in this doc (useInnerBlocksProps, attribute design, a11y, performance) remains current.
 
 ---
 

@@ -35,7 +35,7 @@ The **Pill Block** displays text with a rounded background that wraps tightly ar
 - **Spacing**: Padding controls inner spacing (default has built-in padding)
 - **Margin**: Top and bottom margin only (inline element)
 - **Border**: Width, style, color, radius via Block Supports
-- **Alignment**: Left, Center, Right
+- **Justification**: Left, Center, Right — positions the pill within its container
 
 ### Default Styling
 - Rounded corners (pill shape)

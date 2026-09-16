@@ -74,8 +74,8 @@ When reviewing code:
 
 ## Additional Context
 
-This plugin provides 42 custom Gutenberg blocks including:
-- Layout containers (Flex, Grid, Stack)
+This plugin provides 57 custom Gutenberg blocks including:
+- Layout containers (Row, Section, Grid)
 - Interactive blocks (Tabs, Accordion, Slider, etc.)
 - Form builder system
 - Visual elements (Icons, Counters, Progress bars)

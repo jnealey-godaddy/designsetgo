@@ -336,7 +336,7 @@ Design notes live in `docs/plans/2026-08-24-star-rating-block.md`; the load-bear
   `blocks-registry-i18n.php`, `tests/unit/blocks/inspector-ia.test.js` (list +
   `COMPOSITE_INSPECTOR_BLOCKS` when the panels live in `components/`),
   `tests/unit/extensions/schema-attribute.test.js` (hard-codes the schema allowlist),
-  `wiki-content/Blocks-Reference.md`, `.claude/skills/add-pattern/references/block-catalog.md`.
+  `docs/blocks/` (synced to the GitHub wiki), `.claude/skills/add-pattern/references/block-catalog.md`.
 - **Any block importing `getIcon` or `IconPicker` MUST be added to `$icon_blocks` in
   `Loader::add_shared_dependencies()`** — including a new one. Star Rating shipped without
   it and the QA pass caught the failure mode: the editor bundle defers startup on the

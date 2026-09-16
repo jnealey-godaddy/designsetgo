@@ -19,8 +19,8 @@ npm run build
 
 **WordPress will be available at:**
 
-- Frontend: <http://localhost:8888>
-- Admin: <http://localhost:8888/wp-admin>
+- Frontend: <http://localhost:9451>
+- Admin: <http://localhost:9451/wp-admin>
 - Credentials: `admin` / `password`
 
 ## 3. Run Tests

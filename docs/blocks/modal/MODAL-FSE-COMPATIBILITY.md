@@ -490,8 +490,6 @@ register_block_pattern_category(
 
 - [Modal Auto-Triggers](MODAL-AUTO-TRIGGERS.md)
 - [Modal Gallery Navigation](MODAL-GALLERY-NAVIGATION.md)
-- [Modal Next Phase Plan](MODAL-NEXT-PHASE.md)
-- [Block Supports Audit](BLOCK-SUPPORTS-AUDIT.md)
 
 ---
 

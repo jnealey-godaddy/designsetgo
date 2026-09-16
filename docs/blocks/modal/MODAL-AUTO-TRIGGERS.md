@@ -232,14 +232,14 @@ Pre-configured modal patterns for common use cases.
 
 All settings are organized in the Inspector Controls (right sidebar):
 
-### **Behavior Panel**
+### **Behavior**
 - Close on Backdrop Click
 - Close on ESC Key
 - Disable Body Scroll
 - **Allow Hash Trigger** ⭐ NEW
 - **Update URL on Open** ⭐ NEW
 
-### **Auto Trigger Panel** ⭐ NEW
+### **Auto Trigger** ⭐ NEW
 - Trigger Type (None, Page Load, Exit Intent, Scroll, Time)
 - Frequency (Every visit, Session, Once)
 - Cookie Duration (if Once selected)
@@ -402,7 +402,7 @@ sessionStorage.removeItem('dsgo_modal_123_shown');
 
 ## Related Documentation
 
-- [Modal Block Overview](MODAL-NEXT-PHASE.md)
+- [Modal Block Overview](MODAL.md)
 - [WordPress Block Development](https://developer.wordpress.org/block-editor/)
 - [ARIA Dialog Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/)
 

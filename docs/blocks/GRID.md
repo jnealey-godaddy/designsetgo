@@ -33,7 +33,7 @@ The **Grid Block** is the backbone of responsive layout design. While the standa
 
 A column picker sits in the block toolbar whenever the Grid block is selected. Clicking the grid icon opens a dropdown listing every column count from 1 to 12. Choosing a value updates the desktop column count immediately and clamps the tablet and mobile counts so they never exceed the new desktop value. This replaces the need to open the inspector for the most common edit.
 
-### Grid Settings Panel
+### Settings
 
 **Desktop Columns**
 - Range: 1-12 columns
@@ -63,13 +63,13 @@ A column picker sits in the block toolbar whenever the Grid block is selected. C
 - **Spacing note**: The spacing *inside* each card still follows that card's own **Block Spacing** — keep it consistent across the cards so the rows line up. The grid's **Row/Column Gap** controls the space *between* cards.
 - **Layout note**: While Align Rows is on, a card's content is placed on the shared grid rows, which **replaces the card's own layout**. A Section/Row card's own **Justify Content / vertical alignment** and its own **Constrain Inner Width** setting no longer apply (the Grid block's own Constrain Inner Width is unaffected), and a **Group** card's own **Row/Grid layout** is overridden — its content is laid out as single-column rows (so don't use Align Rows on Group cards that rely on their own multi-column layout). Align Rows also owns each card's grid placement (each card occupies a single column and spans the shared rows), so a per-card **Row Span** or **Column Span** (the Grid Span controls) is overridden while it's on, and the Grid's own **Align Items** (Start/Center/End) is forced to stretch so cards fill their rows. Turn Align Rows off to restore the card's own layout.
 
-### Gap Settings Panel
+### Gap Settings
 
 **Custom Row/Column Gaps**
 - **Block Gap** (Default): Uses WordPress spacing presets.
 - **Custom**: Set independent Row and Column gaps (e.g., `20px` row, `40px` column).
 
-### Width Settings Panel
+### Width Settings
 
 **Constrain Inner Width**
 - Centers content with a maximum width constraint (e.g., `1140px`).

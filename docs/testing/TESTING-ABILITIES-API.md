@@ -1,6 +1,6 @@
 # Testing the WordPress Abilities API Integration
 
-This guide walks through testing all 5 DesignSetGo abilities in your local development environment.
+This guide walks through the manual-testing workflow (auth, discovery, error handling) for the WordPress Abilities API integration, using a handful of DesignSetGo abilities as worked examples. DesignSetGo currently registers around 20 abilities across `info`, `blocks`, and `settings` categories (auto-discovered from `includes/abilities/` — see `docs/ARCHITECTURE.md`); the specific abilities exercised below (`list-blocks`, `add-block`, `list-extensions`, `update-block`) still exist, but this is not an exhaustive list.
 
 ---
 
@@ -707,7 +707,7 @@ Once all tests pass:
 - **WordPress Logs:** `npx wp-env logs`
 - **PHP Errors:** `npx wp-env run cli wp config get WP_DEBUG`
 - **REST API Docs:** http://localhost:8888/wp-json/wp-abilities/v1
-- **DesignSetGo Issues:** https://github.com/yourrepo/designsetgo/issues
+- **DesignSetGo Issues:** https://github.com/jnealey-godaddy/designsetgo/issues
 
 ---
 

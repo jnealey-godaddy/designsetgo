@@ -20,7 +20,7 @@ The **Icon Block** gives you access to a library of crisp, scalable vector icons
 
 ## ⚙️ Settings & Configuration
 
-### Icon Panel
+### Icon Settings
 - **Library**: 129+ built-in icons.
 - **Style**: Filled (solid) or Outlined (stroke).
 - **Stroke Width**: Adjustable for outlined icons.

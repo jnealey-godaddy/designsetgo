@@ -5,6 +5,8 @@
 
 This guide shows how to add WCAG 2.1 AA color contrast validation to blocks using the included contrast checking utilities.
 
+> **Note:** The inspector examples below use a bare `PanelBody`. Current blocks wrap custom controls in `<DsgoInspectorPanel>` / `<DsgoInspectorPanel.Item>` instead (Settings → Style → Advanced) — see `../../.claude/CLAUDE.md` ("Inspector IA (Theme 3)"). The contrast-checking utilities and functions below are current.
+
 ## Available Utilities
 
 ### Contrast Checker (`src/utils/contrast-checker.js`)

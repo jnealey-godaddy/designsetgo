@@ -4,6 +4,8 @@
 **WordPress Version**: 6.2+
 **DesignSetGo Version**: 1.0.0
 
+> **Superseded implementation pattern:** this guide's decision tree (Settings vs. Style) is still current, but its `PanelBody` / `PanelColorSettings` code samples predate the Theme 3 Inspector IA. Wrap custom controls in `<DsgoInspectorPanel>` / `<DsgoInspectorPanel.Item>` and use `ColorGradientSettingsDropdown` for color — see `../../.claude/CLAUDE.md` ("Inspector IA (Theme 3)").
+
 ## Overview
 
 WordPress 6.2 introduced a major reorganization of block controls with separate **Settings** and **Styles** tabs. This guide covers best practices for organizing custom block controls to create an intuitive editing experience.

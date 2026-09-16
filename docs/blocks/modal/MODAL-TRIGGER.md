@@ -28,6 +28,7 @@ The **Modal Trigger Block** creates customizable buttons that open Modal blocks.
 ### Trigger Settings
 - **Target Modal**: Select which modal this button opens (dropdown auto-populates).
 - **Button Style**: Fill (solid background), Outline (border only), or Link (text only).
+- **Justification**: Left, Center, or Right — positions the button within its container.
 - **Width**: Auto (fits content) or Full Width (stretches to container).
 
 ### Icon Settings

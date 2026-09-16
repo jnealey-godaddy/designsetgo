@@ -1,5 +1,9 @@
 # DesignSetGo - Troubleshooting Guide
 
+Common issues and their solutions for DesignSetGo WordPress plugin development. This is the canonical troubleshooting doc for the project (see also [HANDLING-LINT-ERRORS.md](./HANDLING-LINT-ERRORS.md) for pre-commit lint specifically).
+
+---
+
 ## Blocks Not Appearing in Editor
 
 If you don't see DesignSetGo blocks in the block inserter, follow these steps:
@@ -7,14 +11,12 @@ If you don't see DesignSetGo blocks in the block inserter, follow these steps:
 ### 1. Verify Plugin is Activated
 
 ```bash
-# Access your WordPress container
 npx wp-env run cli wp plugin list
-
 # You should see:
 # designsetgo | active
 ```
 
-If not active, activate it:
+If not active:
 
 ```bash
 npx wp-env run cli wp plugin activate designsetgo
@@ -23,118 +25,81 @@ npx wp-env run cli wp plugin activate designsetgo
 ### 2. Check for PHP Errors
 
 ```bash
-# Check WordPress debug log
-npx wp-env run cli wp eval 'echo ABSPATH;'
 npx wp-env logs wordpress | grep -i error
 ```
 
-### 3. Verify Plugin Structure
-
-The plugin directory should be at:
-```
-/var/www/html/wp-content/plugins/designsetgo/
-```
-
-Check with:
-```bash
-npx wp-env run cli ls -la /var/www/html/wp-content/plugins/designsetgo/
-```
-
-### 4. Verify Build Files Exist
+### 3. Verify Build Files Exist
 
 ```bash
-# Check that block files were built
-ls -la build/blocks/container/
-
-# You should see:
-# - block.json
-# - index.js
-# - index.css
-# - style-index.css
+# Check that a block's build output exists (any block, e.g. accordion)
+ls -la build/blocks/accordion/
+# You should see: block.json, index.js, index.css, style-index.css
 ```
 
-### 5. Check Block Registration
+### 4. Check Block Registration
 
 ```bash
-# List all registered blocks
 npx wp-env run cli wp block list | grep designsetgo
-
-# You should see:
-# designsetgo/container
+# You should see entries like: designsetgo/accordion, designsetgo/section, ...
 ```
 
-### 6. Clear WordPress Cache
+### 5. Clear WordPress / Restart the Environment
 
 ```bash
-# Restart WordPress environment
 npx wp-env stop
 npx wp-env start
 ```
 
-### 7. Check Browser Console
+### 6. Check Browser Console
 
-1. Open WordPress editor
-2. Open browser DevTools (F12)
-3. Go to Console tab
-4. Look for any JavaScript errors related to "designsetgo"
+Open the editor, open DevTools (F12) → Console, and look for JavaScript errors mentioning `designsetgo`.
 
-### 8. Verify the Plugin is in the Right Location
+### 7. Confirm You're Running wp-env From the Project Root
 
-If you're using `wp-env`, the current directory is automatically mapped as a plugin. Make sure you're running wp-env from the project root:
+`wp-env` maps the current directory as a plugin, so it must be started from the repo root:
 
 ```bash
-# Should be in /path/to/designsetgo/
-pwd
-
-# Start wp-env from here
+pwd            # should be the designsetgo repo root
 npx wp-env start
 ```
 
-### 9. Manual Plugin Check
+### 8. Manual Check in wp-admin
 
-Visit WordPress admin:
-1. Go to http://localhost:8888/wp-admin
-2. Navigate to Plugins
-3. Look for "DesignSetGo"
-4. Click "Activate" if not already active
+1. Go to `http://localhost:9451/wp-admin` (the port is set in `.wp-env.json`; `npx wp-env start` prints the actual URL).
+2. Navigate to Plugins → look for "DesignSetGo" → Activate if needed.
+3. Posts → Add New → click **+** → search for any DesignSetGo block (e.g. "Accordion") → it should appear under the DesignSetGo category.
 
-### 10. Create a Test Post
+## Common Runtime Issues
 
-1. Go to Posts → Add New
-2. Click the (+) button to add a block
-3. Search for "Container"
-4. You should see "Container" with the DesignSetGo category
+### "The plugin does not have a valid header"
 
-## Common Issues
+Make sure `designsetgo.php` is in the root of the plugin directory with proper plugin headers.
 
-### Issue: "The plugin does not have a valid header"
+### "Parse error" / "Fatal error"
 
-**Solution:** Make sure `designsetgo.php` is in the root of the plugin directory with proper headers.
+Check the PHP version — this repo's `.wp-env.json` pins `phpVersion` (currently 8.3):
 
-### Issue: "Parse error" or "Fatal error"
-
-**Solution:** Check PHP version:
 ```bash
 npx wp-env run cli php -v
-# Should be PHP 8.0 or higher
 ```
 
-### Issue: "Block validation error"
+### "Block validation error" / "Attempt Recovery"
 
-**Solution:** This happens when block attributes change. Clear the block and try again, or check browser console for details.
+Usually means block attributes or markup changed without a deprecation. See the **Deprecations** section in `.claude/CLAUDE.md` — a deprecation's `save()` must reproduce the stored HTML byte-for-byte; `isEligible` does not rescue an invalid block.
 
-### Issue: Styles not loading
+### Styles not loading
 
-**Solution:** Rebuild the plugin:
 ```bash
 npm run build
 npx wp-env stop
 npx wp-env start
 ```
 
-## Debugging Mode
+Then verify the CSS actually compiled: `grep -i "class-name" build/style-index.css`.
 
-Enable WordPress debugging by adding to `.wp-env.override.json`:
+### Enable verbose WordPress debugging
+
+Add to `.wp-env.override.json`:
 
 ```json
 {
@@ -147,62 +112,217 @@ Enable WordPress debugging by adding to `.wp-env.override.json`:
 }
 ```
 
-Then restart:
+Then `npx wp-env stop && npx wp-env start`.
+
+---
+
+## Build Issues
+
+### npm run build hangs indefinitely
+
+**Symptoms:** `npm run build` starts but never completes, webpack appears stuck, high CPU.
+
+**Root cause:** Corrupted webpack cache in `node_modules/.cache`, or a stale build directory.
+
 ```bash
-npx wp-env stop
-npx wp-env start
+# Quick fix
+npm run build:clean
+
+# Manual
+npm run clean:cache
+npm run build
+
+# Nuclear option
+npm run clean:all
+npm install
+npm run build
 ```
 
-## Check Plugin Health
+`npm run clean:all` runs `clean:cache` + `clean:cache:wp-env` + `clean:build` (see `package.json`).
 
-Run this command to verify everything:
+### Build is unusually slow
 
 ```bash
-# Check if plugin files exist
-ls -la designsetgo.php includes/ src/ build/
+# Increase Node memory if you have RAM to spare
+NODE_OPTIONS="--max-old-space-size=8192" npm run build
 
-# Check PHP syntax
-find includes -name "*.php" -exec php -l {} \;
-
-# Check if blocks are registered
-npx wp-env run cli wp block list | grep designsetgo
-
-# Check plugin status
-npx wp-env run cli wp plugin list --status=active
+# Find bloat
+npm run build:analyze
 ```
 
-## Still Having Issues?
+### PHPStan hanging or using too much memory
 
-1. **Check GitHub Issues:** https://github.com/yourusername/designsetgo/issues
-2. **Create a New Issue:** Include:
-   - WordPress version
-   - PHP version
-   - Browser and version
-   - Console errors (if any)
-   - Steps to reproduce
+```bash
+vendor/bin/phpstan analyse --level=3
+php -d memory_limit=4G vendor/bin/phpstan analyse
+# Or add problem paths to phpstan.neon's excludePaths
+```
+
+Note: `npm run lint:php` / `composer run-script lint` is PHPCS only — PHPStan is a **separate** script, `composer run-script analyse` (see `.claude/skills/wp-phpstan`). CI runs both; don't assume `lint:php` passing means static analysis passed too.
+
+### Jest tests hang or fail
+
+```bash
+npm run test:unit -- --no-cache
+npm run test:unit -- path/to/test.test.js
+npx jest --clearCache
+```
+
+---
+
+## WordPress Environment (wp-env) Issues
+
+### wp-env won't start
+
+```bash
+npm run wp-env:clean
+npm run wp-env:start
+
+# Check Docker
+docker ps
+docker system prune
+
+# Check the configured port (see .wp-env.json → "port"; this repo pins 9451)
+lsof -i :9451
+```
+
+### Plugin not showing in WordPress admin
+
+```bash
+npm run build
+npm run wp-env:stop
+npm run wp-env:start
+
+npx wp-env run cli wp plugin activate designsetgo --debug
+npx wp-env logs
+```
+
+---
+
+## Dependency Issues
+
+### npm install fails
+
+```bash
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install
+
+# If peer dependency conflicts:
+npm install --legacy-peer-deps
+```
+
+### composer install fails
+
+```bash
+composer clear-cache
+composer self-update
+composer install -vvv
+```
+
+---
+
+## Git / Pre-commit Issues
+
+### Pre-commit hook fails
+
+Pre-commit hooks show warnings but are non-blocking by design.
+
+```bash
+# Fix linting issues rather than skipping hooks
+npm run lint:js -- --fix
+npm run lint:css -- --fix
+composer run-script lint:fix
+
+# Skip only as a last resort (not recommended)
+git commit --no-verify -m "message"
+```
+
+See [HANDLING-LINT-ERRORS.md](./HANDLING-LINT-ERRORS.md) for the "unused import" false-positive case specifically.
+
+---
+
+## Performance Issues
+
+### Editor is slow in the browser
+
+```bash
+npm run build:analyze          # bundle visualization
+ls -lh build/ | sort -k5 -h     # find large assets
+npx lighthouse http://localhost:9451 --view
+```
+
+---
+
+## CI/CD Issues
+
+### CI builds fail but local works
+
+1. **PHP version matrix** — CI tests multiple PHP versions; `.wp-env.json` here pins PHP 8.3 locally. Test another version with Docker if needed.
+2. **Stale local cache** — CI always builds clean:
+   ```bash
+   npm run clean:all
+   npm install
+   npm run build
+   ```
+3. **WordPress version** — `.wp-env.json` pins `"core": "WordPress/WordPress#6.9"`; edit that value locally to reproduce an older-WP CI failure, then `npm run wp-env:clean && npm run wp-env:start`.
+
+### PHPStan fails in CI but passes locally
+
+Usually a PHP version mismatch — check `php --version` locally against CI's matrix, or run PHPStan inside a matching PHP Docker image.
+
+---
+
+## Quick Diagnostic Commands
+
+```bash
+# Versions
+node --version
+npm --version
+php --version
+composer --version
+
+# Disk usage (large caches can fill disk)
+du -sh node_modules/.cache
+du -sh .wp-env 2>/dev/null
+
+# Hanging processes
+ps aux | grep -i "webpack\|wp-scripts\|phpstan"
+pkill -9 -f "webpack|wp-scripts|phpstan"
+
+# General state
+git status
+git log --oneline -5
+```
 
 ## Quick Reset
 
 If all else fails, do a complete reset:
 
 ```bash
-# Stop environment
 npx wp-env stop
-
-# Clean everything
 npx wp-env clean all
-
-# Rebuild
+npm run clean:all
+npm install
+composer install
 npm run build
-
-# Start fresh
 npx wp-env start
-
-# Activate plugin
 npx wp-env run cli wp plugin activate designsetgo
-
-# Verify
 npx wp-env run cli wp block list | grep designsetgo
 ```
 
-This should show your DesignSetGo blocks!
+## Getting Help
+
+1. **Search Issues:** https://github.com/jnealey-godaddy/designsetgo/issues
+2. **Check Logs:** `npm run build` output, `npx wp-env logs`, browser DevTools console
+3. **Open a New Issue** with: WordPress version, PHP version, browser + version, console errors, and steps to reproduce.
+
+---
+
+## Prevention Checklist
+
+**Daily:** pull latest changes, run `npm run build` to verify setup.
+
+**Weekly:** `npm run clean:cache`, check `npm outdated` / `composer outdated`.
+
+**Before a PR:** `npm run build:clean`; fresh `wp-env` (`npx wp-env clean all && npx wp-env start`); `npm run lint:js && npm run lint:css && npm run lint:php` (PHPCS) **and** `composer run-script analyse` (PHPStan — separate from `lint:php`, see above).

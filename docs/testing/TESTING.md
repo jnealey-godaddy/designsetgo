@@ -58,8 +58,8 @@ npm run wp-env:start
 This starts a local WordPress instance using wp-env (Docker).
 
 **WordPress will be available at:**
-- Frontend: http://localhost:8888
-- Admin: http://localhost:8888/wp-admin
+- Frontend: http://localhost:9451
+- Admin: http://localhost:9451/wp-admin
 - Credentials: `admin` / `password`
 
 ## Running Tests
@@ -141,8 +141,8 @@ tests/
 
 ### Configuration
 
-- **[playwright.config.js](../playwright.config.js)**: Main Playwright configuration
-- **[.claude/mcp.json](../.claude/mcp.json)**: MCP server configuration for Claude integration
+- **[playwright.config.js](../../playwright.config.js)**: Main Playwright configuration
+- **[.claude/mcp.json](../../.claude/mcp.json)**: MCP server configuration for Claude integration
 
 ## Writing Tests
 
@@ -288,7 +288,7 @@ MCP (Model Context Protocol) allows Claude Code to interact with Playwright for 
 
 ### Configuration
 
-The MCP server is configured in [.claude/mcp.json](../.claude/mcp.json):
+The MCP server is configured in [.claude/mcp.json](../../.claude/mcp.json):
 
 ```json
 {
@@ -298,7 +298,7 @@ The MCP server is configured in [.claude/mcp.json](../.claude/mcp.json):
       "args": ["-y", "@executeautomation/playwright-mcp-server"],
       "env": {
         "PLAYWRIGHT_CONFIG": "playwright.config.js",
-        "PLAYWRIGHT_BASE_URL": "http://localhost:8888"
+        "PLAYWRIGHT_BASE_URL": "http://localhost:9451"
       }
     }
   }
@@ -341,7 +341,7 @@ npm run wp-env:start
 **Problem**: Tests fail at login step.
 
 **Solution**:
-1. Check WordPress is running: http://localhost:8888
+1. Check WordPress is running: http://localhost:9451
 2. Verify credentials in `tests/e2e/auth.setup.js`
 3. Delete old storage state: `rm -rf artifacts/storage-states`
 4. Re-run setup: `npx playwright test --project=setup`
@@ -357,7 +357,7 @@ npm run test:install
 
 ### Port Conflicts
 
-**Problem**: Port 8888 already in use.
+**Problem**: Port 9451 already in use.
 
 **Solution**:
 ```bash
@@ -365,7 +365,7 @@ npm run test:install
 npm run wp-env:stop
 
 # Option 2: Use different port
-export WP_BASE_URL=http://localhost:8889
+export WP_BASE_URL=http://localhost:9452
 npm run wp-env:start
 npm run test:e2e
 ```
@@ -487,7 +487,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
       - run: npm ci
       - run: npm run test:install
       - run: npm run test:e2e

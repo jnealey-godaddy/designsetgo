@@ -2,49 +2,28 @@
 
 Comprehensive testing suite for the DesignSetGo WordPress plugin.
 
+For setup and run commands, see [TESTING-QUICKSTART.md](../TESTING-QUICKSTART.md) (fast reference) or [TESTING.md](../TESTING.md) (comprehensive guide). This file documents the layout of this directory.
+
 ## Test Types
 
 - **E2E** (Playwright): End-to-end browser tests
 - **Unit** (Jest): JavaScript unit tests
 - **PHP** (PHPUnit): PHP unit tests
-
-## Quick Start
-
-### 1. Install Dependencies
-
-```bash
-npm install
-npm run test:install
-```
-
-### 2. Start WordPress
-
-```bash
-npm run wp-env:start
-```
-
-### 3. Run Tests
-
-```bash
-# Run all tests
-npm run test:e2e
-
-# Run with UI (recommended for development)
-npm run test:e2e:ui
-```
+- **Integration**: block-level integration tests
 
 ## Test Structure
 
 ```
 tests/
 ├── e2e/
-│   ├── auth.setup.js              # Login and authentication
-│   ├── cleanup.teardown.js        # Post-test cleanup
-│   ├── group-enhancements.spec.js # Group block enhancement tests
-│   └── helpers/
-│       └── wordpress.js           # Helper functions
-├── unit/                          # Jest unit tests
-└── phpunit/                       # PHP unit tests
+│   ├── *.setup.js                 # Login/authentication setup projects
+│   ├── *.teardown.js              # Post-test cleanup
+│   ├── *.spec.js                  # E2E specs (one per block/feature)
+│   └── helpers/                   # Shared helper functions
+├── unit/                          # Jest unit tests (blocks/, components/, extensions/, hooks/, utils/, tools/)
+├── integration/                   # Jest integration tests (blocks/)
+├── js/                            # JS test fixtures/utilities shared across suites
+└── phpunit/                       # PHP unit tests (admin/, blocks/, extensions/, helpers/)
 ```
 
 ## Available Commands
@@ -106,9 +85,9 @@ Configuration is in [.claude/mcp.json](../.claude/mcp.json).
 
 ## Documentation
 
-- **Quick Start**: This README
+- **Quick Start**: [TESTING-QUICKSTART.md](../TESTING-QUICKSTART.md)
 - **Comprehensive Guide**: [TESTING.md](../TESTING.md)
-- **E2E Details**: [docs/TESTING.md](../docs/TESTING.md)
+- **E2E Details**: [docs/testing/TESTING.md](../docs/testing/TESTING.md)
 
 ## Troubleshooting
 
@@ -128,7 +107,7 @@ npm run test:install
 
 ### Tests Failing
 
-1. Ensure WordPress is running: http://localhost:8888
+1. Ensure WordPress is running: http://localhost:9451
 2. Check credentials: `admin` / `password`
 3. Clear artifacts: `rm -rf artifacts`
 4. Re-run setup: `npx playwright test --project=setup`
@@ -136,5 +115,5 @@ npm run test:install
 ## Resources
 
 - [Playwright Documentation](https://playwright.dev)
-- [DesignSetGo Testing Guide](../docs/TESTING.md)
+- [DesignSetGo Testing Guide](../docs/testing/TESTING.md)
 - [WordPress E2E Testing](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-e2e-test-utils/)

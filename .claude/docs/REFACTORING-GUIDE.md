@@ -1,5 +1,7 @@
 # Code Refactoring Guide
 
+> **Note:** The extracted inspector-panel examples below show `PanelBody`, which was the pattern at the time this guide was written. Current blocks wrap extracted panels in `<DsgoInspectorPanel>` / `<DsgoInspectorPanel.Item>` (Settings → Style → Advanced) instead of a bare `PanelBody` — see `../CLAUDE.md` ("Inspector IA (Theme 3)"). The file-size and extraction guidance below is otherwise current.
+
 ## File Size Limits
 
 **Hard Rule**: No single file should exceed **300 lines** (excluding pure data/constants).

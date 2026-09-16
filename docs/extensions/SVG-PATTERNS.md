@@ -26,7 +26,7 @@ Select a supported block, then open the **SVG Pattern** panel in the block sideb
 
 ## Pattern library
 
-31 patterns across six categories:
+30 patterns across six categories:
 
 | Category | Patterns (examples) |
 |---|---|
@@ -37,7 +37,7 @@ Select a supported block, then open the **SVG Pattern** panel in the block sideb
 | **Depth** | Multi-layer shadow patterns |
 | **Technical** | Technical/blueprint-style patterns |
 
-Pattern data is defined in `src/extensions/svg-patterns/pattern-data.js` (JS) and exposed to PHP via `includes/svg-pattern-data.php` through the `designsetgo_get_svg_pattern_data()` function.
+Pattern data is defined in `src/extensions/svg-patterns/pattern-data.js` (JS) and exposed to PHP via `includes/data/svg-pattern-data.php` through the `designsetgo_get_svg_pattern_data()` function.
 
 ## Frontend behavior
 

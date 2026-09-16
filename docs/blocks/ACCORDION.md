@@ -26,7 +26,7 @@ Commonly used for FAQs, product features, and complex data presentation, the Acc
 
 ## ⚙️ Settings & Configuration
 
-### Accordion Settings Panel
+### Settings
 
 **Allow Multiple Open**
 - **Default**: Off (only one panel open at a time)
@@ -35,7 +35,7 @@ Commonly used for FAQs, product features, and complex data presentation, the Acc
 
 **Tip**: Use the "Open by Default" toggle on individual accordion items to control which panels are open when the page loads.
 
-### Icon Settings Panel
+### Icon Settings
 
 **Icon Style**
 Choose from 4 visual styles:
@@ -48,7 +48,7 @@ Choose from 4 visual styles:
 - **Left**: Icon appears before the title.
 - **Right**: Icon appears after the title.
 
-### Style Settings Panel
+### Style Settings
 
 **Border Between Items**
 - **Enabled** (Default): Items have dividing borders with no gap.

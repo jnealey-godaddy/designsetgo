@@ -41,7 +41,7 @@ The **Fifty Fifty** block creates a full-width 50/50 split layout with edge-to-e
 
 All controls live in a single **Settings** panel with per-control reset and a global "Reset all" button.
 
-### Settings Panel
+### Settings
 
 - **Media Position** — Select: Left (default) or Right. Also togglable from the block toolbar via the "Flip Layout" button.
 - **Content Vertical Alignment** — Select: Top, Center (default), Bottom. Controls how inner content is positioned within the content column.

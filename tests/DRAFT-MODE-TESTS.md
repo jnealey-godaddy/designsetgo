@@ -77,6 +77,15 @@ Tests the `DraftModeControls` React component:
 
 Total Tests: 9
 
+#### 6. `draft-mode-settings-panel.test.js` - Admin Settings Panel Component
+
+Tests the admin Settings screen's `DraftModePanel` component (`src/admin/components/settings-panels/DraftModePanel` — a different component from the post-editor sidebar panel in #4):
+
+- ✅ Rendering, default values, and toggle controls
+- ✅ User interactions (enabling/disabling, toggling page-list actions and column)
+- ✅ Accessibility (help text, heading hierarchy)
+- ✅ Edge cases (null/undefined settings)
+
 ## Running Tests
 
 ### PHP Tests
@@ -111,16 +120,16 @@ vendor/bin/phpunit --filter Draft_Mode
 
 ```bash
 # Run all Jest tests
-npm test
+npm run test:unit
 
 # Run only draft mode tests
-npm test -- draft-mode
+npm run test:unit -- draft-mode
 
 # Run with coverage
-npm test -- --coverage draft-mode
+npm run test:unit -- --coverage draft-mode
 
 # Watch mode during development
-npm test -- --watch draft-mode
+npm run test:unit -- --watch draft-mode
 ```
 
 ## Test Data
@@ -154,7 +163,7 @@ These tests are designed to run in CI/CD pipelines:
   uses: actions/setup-node@v3
 
 - name: Run JavaScript Tests
-  run: npm test -- --coverage
+  run: npm run test:unit -- --coverage
 
 - name: Run PHP Tests
   run: npm run wp-env -- run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit

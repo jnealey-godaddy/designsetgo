@@ -1,15 +1,17 @@
 # Dynamic Query Block — Developer Guide
 
-The `designsetgo/query` block is a server-rendered, filterable post/user/term loop block. It replaces hand-rolled PHP loops with a fully native Gutenberg experience: choose a data source, drop in inner blocks to define the per-item template, then publish. The block family ships four registered blocks and six ready-made variations.
+The `designsetgo/query` block is a server-rendered, filterable post/user/term loop block. It replaces hand-rolled PHP loops with a fully native Gutenberg experience: choose a data source, drop in inner blocks to define the per-item template, then publish. The block family ships six registered blocks (see below) and six ready-made `query-filter` variations.
 
 **Block family**
 
 | Block name | Role |
 |---|---|
 | `designsetgo/query` | Container — owns the query, renders the list |
-| `designsetgo/query-pagination` | Numbered links or load-more button |
+| `designsetgo/query-results` | Default item host — grid/list renderer for the per-item template |
+| `designsetgo/query-pagination` | Numbered links, load-more, or infinite-scroll |
 | `designsetgo/query-filter` | Filter controls (6 variations) |
 | `designsetgo/query-no-results` | Fallback shown when a query returns zero items |
+| `designsetgo/query-group-header` | Renders once per group when the container's `groupBy` attribute is set |
 
 ---
 

@@ -2,9 +2,12 @@
 
 Complete reference documentation for developing blocks in the DesignSetGo WordPress plugin.
 
+> **Note on this index:** Several top-level folders under `docs/` (`blocks/`, `extensions/`, `api/`, `patterns/`, `planning/`, `plans/`, `audits/`, `reviews/`) are maintained separately and change frequently. This index links to those **folders**, not individual files inside them — open the folder for the current file list rather than trusting a hardcoded list here.
+
 ## 🚀 Quick Start
 
 ### For New Contributors
+
 **Never contributed before?** Start with these guides in order:
 
 1. **[GETTING-STARTED.md](./GETTING-STARTED.md)** ⭐ **Start here!**
@@ -25,19 +28,22 @@ Complete reference documentation for developing blocks in the DesignSetGo WordPr
    - Pull request process
 
 ### For Experienced WordPress Developers
+
 1. Read [BEST-PRACTICES-SUMMARY.md](./guides/BEST-PRACTICES-SUMMARY.md) for quick patterns
 2. Review [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](./guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md) for deep understanding
-3. Check [WordPress Block Editor Best Practices](./guides/WORDPRESS-BLOCK-EDITOR-BEST-PRACTICES.md) when creating new blocks
+3. Check [BLOCK-CONTROLS-ORGANIZATION.md](./guides/BLOCK-CONTROLS-ORGANIZATION.md) for inspector-panel conventions when creating new blocks
+
+> Both of the guides above predate the Theme 3 Inspector IA rollout and still show raw `PanelBody` / `PanelColorSettings` examples. The concepts (Settings vs. Style categorization, decision trees) are still valid; for the current implementation pattern use `<DsgoInspectorPanel>` (see `../.claude/CLAUDE.md`) instead of a bare `PanelBody`.
 
 ### For AI-Assisted Development
-**This plugin was built 100% with AI assistance!**
+
+**This plugin was built with heavy AI assistance.**
 
 1. **[AI-ASSISTED-DEVELOPMENT.md](./guides/AI-ASSISTED-DEVELOPMENT.md)** ⭐ **Complete AI development guide!**
-   - How this plugin was built with Claude Code
-   - Available slash commands (/add-block, /lint, /test, etc.)
+   - How this plugin is built with Claude Code
+   - Available slash commands and skills
    - Best practices for AI-assisted development
    - Common workflows and examples
-   - Tips, tricks, and limitations
 
 2. **[../.claude/CLAUDE.md](../.claude/CLAUDE.md)** - Development patterns and context
    - Critical patterns AI follows
@@ -49,229 +55,97 @@ Complete reference documentation for developing blocks in the DesignSetGo WordPr
 
 ## 📁 Folder Organization
 
-The documentation is organized into the following categories:
-
 ### Core Documentation (Root Level)
+
 - **[README.md](./README.md)** - This file, your navigation hub
 - **[GETTING-STARTED.md](./GETTING-STARTED.md)** - Complete setup and onboarding guide
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Deep dive into project architecture
 
-### Categorized Documentation
+### Maintained elsewhere — see the folder, not this index
 
-#### [api/](./api/)
-API references and technical documentation:
-- [ABILITIES-API-GUIDE.md](./api/ABILITIES-API-GUIDE.md) - WordPress Abilities API integration guide
-- [ABILITIES-API.md](./api/ABILITIES-API.md) - Core Abilities API reference
-- [BLOCK-BINDINGS.md](./api/BLOCK-BINDINGS.md) - Block Bindings API reference
-- [DRAFT-MODE-API.md](./api/DRAFT-MODE-API.md) - Draft Mode API reference
-- [INTERACTIVE-BLOCKS.md](./api/INTERACTIVE-BLOCKS.md) - Interactive block patterns
-- [REST-API-REFERENCE.md](./api/REST-API-REFERENCE.md) - REST API reference
+- **[api/](./api/)** — API references (Abilities API, Block Bindings, REST API, WP-CLI, etc.)
+- **[blocks/](./blocks/)** — Per-block user-facing documentation
+- **[extensions/](./extensions/)** — Per-extension documentation
+- **[patterns/](./patterns/)** — Design/architecture pattern write-ups
+- **[planning/](./planning/)** — Roadmaps and strategy docs
+- **[plans/](./plans/)** — Dated implementation plans
+- **[audits/](./audits/)** — Block and codebase audits
+- **[reviews/](./reviews/)** — Dated review notes
 
-#### [audits/](./audits/)
-Block audits and analysis documents:
-- [CARD-BLOCK-AUDIT.md](./audits/CARD-BLOCK-AUDIT.md) - Card block audit and improvements
-- [scroll-accordion-stacking-notes.md](./audits/scroll-accordion-stacking-notes.md) - Scroll accordion analysis
+### [guides/](./guides/)
 
-#### [blocks/](./blocks/)
-User-facing documentation for blocks:
-
-**Container Blocks (3):**
-- [GRID.md](./blocks/GRID.md) - Responsive CSS Grid layouts
-- [ROW.md](./blocks/ROW.md) - Horizontal flexbox containers
-- [SECTION.md](./blocks/SECTION.md) - Vertical stacking sections
-
-**Interactive Blocks (15):**
-- [ACCORDION.md](./blocks/ACCORDION.md) - Collapsible content panels
-- [TABS.md](./blocks/TABS.md) - Tabbed interface with deep linking
-- [SLIDER.md](./blocks/SLIDER.md) - Image/content carousel
-- [FLIP-CARD.md](./blocks/FLIP-CARD.md) - Two-sided flip cards
-- [REVEAL.md](./blocks/REVEAL.md) - Hover-triggered content reveal
-- [IMAGE-ACCORDION.md](./blocks/IMAGE-ACCORDION.md) - Expandable image panels
-- [SCROLL-ACCORDION.md](./blocks/SCROLL-ACCORDION.md) - Scroll-triggered sticky cards
-- [SCROLL-GALLERY.md](./blocks/SCROLL-GALLERY.md) - Scroll-based marquee gallery
-- [SCROLL-SLIDES.md](./blocks/SCROLL-SLIDES.md) - Scroll-pinned slideshow
-- [STICKY-SECTIONS.md](./blocks/STICKY-SECTIONS.md) - Card-stacking scroll effect
-- [COMPARISON-TABLE.md](./blocks/COMPARISON-TABLE.md) - Feature comparison tables
-- [TIMELINE.md](./blocks/TIMELINE.md) - Chronological event timelines
-- [COUNTER-GROUP.md](./blocks/COUNTER-GROUP.md) - Animated statistics
-- [PROGRESS-BAR.md](./blocks/PROGRESS-BAR.md) - Animated progress indicators
-- [SCROLL-MARQUEE.md](./blocks/SCROLL-MARQUEE.md) - Horizontal scrolling marquee
-
-**Dynamic Query (6):**
-- [QUERY.md](./blocks/QUERY.md) - Dynamic Query container block
-- [QUERY-PAGINATION.md](./blocks/QUERY-PAGINATION.md) - Numbered/load-more/infinite-scroll pagination
-- [QUERY-FILTER.md](./blocks/QUERY-FILTER.md) - Faceted filter variations
-- [QUERY-RESULTS.md](./blocks/QUERY-RESULTS.md) - Query results renderer
-- [QUERY-GROUP-HEADER.md](./blocks/QUERY-GROUP-HEADER.md) - Group-by header block
-- [QUERY-NO-RESULTS.md](./blocks/QUERY-NO-RESULTS.md) - Zero-result state block
-
-**Typography & Navigation:**
-- [ADVANCED-HEADING.md](./blocks/ADVANCED-HEADING.md) - Multi-segment headings with independent typography
-- [BREADCRUMBS.md](./blocks/BREADCRUMBS.md) - Navigation breadcrumbs with Schema.org
-- [TABLE-OF-CONTENTS.md](./blocks/TABLE-OF-CONTENTS.md) - Auto-generated TOC from headings
-
-**Icon Blocks (3):**
-- [ICON.md](./blocks/ICON.md) - SVG icon display
-- [ICON-BUTTON.md](./blocks/ICON-BUTTON.md) - Buttons with icons
-- [ICON-LIST.md](./blocks/ICON-LIST.md) - Lists with custom icons
-
-**Visual Blocks (9):**
-- [CARD.md](./blocks/CARD.md) - Content cards with layouts
-- [PILL.md](./blocks/PILL.md) - Inline badges and tags
-- [DIVIDER.md](./blocks/DIVIDER.md) - Content separators
-- [COUNTDOWN-TIMER.md](./blocks/COUNTDOWN-TIMER.md) - Live countdowns
-- [BLOBS.md](./blocks/BLOBS.md) - Organic animated shapes
-- [DYNAMIC-IMAGE.md](./blocks/DYNAMIC-IMAGE.md) - Dynamic image with binding support
-
-**Media & Location:**
-- [FIFTY-FIFTY.md](./blocks/FIFTY-FIFTY.md) - 50/50 split layout with edge-to-edge media
-- [MAP.md](./blocks/MAP.md) - Interactive maps (OSM/Google)
-
-**Modals:**
-- [MODAL.md](./blocks/MODAL.md) - Modal dialogs and popups
-- [MODAL-TRIGGER.md](./blocks/MODAL-TRIGGER.md) - Modal trigger buttons
-
-**WooCommerce:**
-- [PRODUCT-CATEGORIES-GRID.md](./blocks/PRODUCT-CATEGORIES-GRID.md) - WooCommerce product categories grid
-- [PRODUCT-SHOWCASE-HERO.md](./blocks/PRODUCT-SHOWCASE-HERO.md) - WooCommerce product showcase hero
-
-**Forms (1):**
-- [FORM-BUILDER.md](./blocks/FORM-BUILDER.md) - Complete form system (11 field types)
-
-#### [extensions/](./extensions/)
-Documentation for all 16 block extensions that enhance any WordPress block:
-
-**Animation & Effects:**
-- [BLOCK-ANIMATIONS.md](./extensions/BLOCK-ANIMATIONS.md) - Entrance/exit animations
-- [ANIMATION.md](./extensions/ANIMATION.md) - Animation framework (advanced)
-- [REVEAL-CONTROL.md](./extensions/REVEAL-CONTROL.md) - Hover reveal effects
-- [HOVER-EFFECTS.md](./extensions/HOVER-EFFECTS.md) - Animated hover interactions
-
-**Scroll Effects:**
-- [SCROLL-PARALLAX.md](./extensions/SCROLL-PARALLAX.md) - Vertical/horizontal parallax
-- [TEXT-REVEAL.md](./extensions/TEXT-REVEAL.md) - Scroll-triggered text reveal
-- [EXPANDING-BACKGROUND.md](./extensions/EXPANDING-BACKGROUND.md) - Scroll-driven expanding backgrounds
-
-**Layout & Positioning:**
-- [STICKY-HEADER.md](./extensions/STICKY-HEADER.md) - Sticky header behavior
-- [MAX-WIDTH.md](./extensions/MAX-WIDTH.md) - Content width constraints
-- [GRID-SPAN.md](./extensions/GRID-SPAN.md) - Grid column spanning
-- [GRID-MOBILE-ORDER.md](./extensions/GRID-MOBILE-ORDER.md) - Mobile grid item reordering
-
-**Interaction:**
-- [CLICKABLE-GROUP.md](./extensions/CLICKABLE-GROUP.md) - Clickable containers
-- [BACKGROUND-VIDEO.md](./extensions/BACKGROUND-VIDEO.md) - Video backgrounds
-
-**Responsive & Styling:**
-- [RESPONSIVE-VISIBILITY.md](./extensions/RESPONSIVE-VISIBILITY.md) - Device-based visibility
-- [CONDITIONAL-VISIBILITY.md](./extensions/CONDITIONAL-VISIBILITY.md) - Conditional block visibility (meta, taxonomy, auth, index)
-- [CUSTOM-CSS.md](./extensions/CUSTOM-CSS.md) - Custom CSS per block
-- [STYLE-BINDING.md](./extensions/STYLE-BINDING.md) - CSS property bindings to dynamic data
-- [SVG-PATTERNS.md](./extensions/SVG-PATTERNS.md) - 31 SVG background patterns
-- [TEXT-ALIGNMENT-INHERITANCE.md](./extensions/TEXT-ALIGNMENT-INHERITANCE.md) - Alignment inheritance
-- [DYNAMIC-TAGS.md](./extensions/DYNAMIC-TAGS.md) - Bind block text/links/images to live data
-- [DRAFT-MODE.md](./extensions/DRAFT-MODE.md) - Draft content visibility control
-
-#### [compliance/](./compliance/)
-Accessibility and compliance documentation:
-- [ACCESSIBILITY-COLOR-CONTRAST-GUIDE.md](./compliance/ACCESSIBILITY-COLOR-CONTRAST-GUIDE.md) - Color contrast standards
-- [GDPR-COMPLIANCE.md](./compliance/GDPR-COMPLIANCE.md) - GDPR compliance guide
-
-#### [guides/](./guides/)
 Development guides and best practices:
+
 - [AI-ASSISTED-DEVELOPMENT.md](./guides/AI-ASSISTED-DEVELOPMENT.md) - AI-assisted development guide
 - [BEST-PRACTICES-SUMMARY.md](./guides/BEST-PRACTICES-SUMMARY.md) - Quick reference guide
 - [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](./guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md) - Comprehensive guide
-- [BLOCK-CONTROLS-ORGANIZATION.md](./guides/BLOCK-CONTROLS-ORGANIZATION.md) - Inspector controls patterns
-- [CONTROL-REORGANIZATION.md](./guides/CONTROL-REORGANIZATION.md) - Control reorganization strategies
-- [DESIGN-SYSTEM.md](./guides/DESIGN-SYSTEM.md) - Design system and tokens
+- [BLOCK-CONTROLS-ORGANIZATION.md](./guides/BLOCK-CONTROLS-ORGANIZATION.md) - Inspector controls decision tree (Settings vs. Style)
+- [BLOCK-EXCLUSION-GUIDE.md](./guides/BLOCK-EXCLUSION-GUIDE.md) - Excluding third-party blocks from DSGo extensions
+- [DEPLOYING-TO-WORDPRESS-ORG.md](./guides/DEPLOYING-TO-WORDPRESS-ORG.md) - Release process to WordPress.org
+- [DESIGN-SYSTEM.md](./guides/DESIGN-SYSTEM.md) - Design system and theme.json tokens
 
-#### [patterns/](./patterns/)
-Design patterns and architectural strategies:
-- [COLOR-CONTROLS-PATTERN.md](./patterns/COLOR-CONTROLS-PATTERN.md) - Color control patterns
-- [CUSTOM-CSS-FILTERS.md](./patterns/CUSTOM-CSS-FILTERS.md) - CSS filter patterns
-- [PERFORMANCE-CSS-STRATEGY.md](./patterns/PERFORMANCE-CSS-STRATEGY.md) - CSS performance optimization
-- [WIDTH-CSS-STRATEGY-IMPLEMENTATION.md](./patterns/WIDTH-CSS-STRATEGY-IMPLEMENTATION.md) - Width strategy implementation
-- [WIDTH-LAYOUT-PATTERNS.md](./patterns/WIDTH-LAYOUT-PATTERNS.md) - Layout width patterns
+### [compliance/](./compliance/)
 
-#### [planning/](./planning/)
-Roadmaps, strategy, and future planning:
-- [BLOCK-EXTENSION-STRATEGY.md](./planning/BLOCK-EXTENSION-STRATEGY.md) - Extension strategy
-- [BLOCKS-FUTURE-IDEAS.md](./planning/BLOCKS-FUTURE-IDEAS.md) - Future block ideas
-- [BLOCKS-ROADMAP.md](./planning/BLOCKS-ROADMAP.md) - Blocks roadmap
-- [EXTENSION-VS-CUSTOM-BLOCKS.md](./planning/EXTENSION-VS-CUSTOM-BLOCKS.md) - Strategic decisions
-- [JTBD.md](./planning/JTBD.md) - Jobs to be Done framework
-- [ROADMAP.md](./planning/ROADMAP.md) - Overall project roadmap
+Accessibility and compliance documentation:
 
-#### [templates/](./templates/)
+- [ACCESSIBILITY-COLOR-CONTRAST-GUIDE.md](./compliance/ACCESSIBILITY-COLOR-CONTRAST-GUIDE.md) - Color contrast standards
+- [GDPR-COMPLIANCE.md](./compliance/GDPR-COMPLIANCE.md) - GDPR compliance guide
+
+### [formats/](./formats/)
+
+RichText format documentation:
+
+- [TEXT-STYLE.md](./formats/TEXT-STYLE.md) - Inline text style format (color, highlight, size)
+
+### [templates/](./templates/)
+
 Code templates and boilerplate:
+
 - [BLOCK-TEMPLATE-EDIT.js](./templates/BLOCK-TEMPLATE-EDIT.js) - Block edit.js template
 
-#### [testing/](./testing/)
-Testing documentation and strategies:
-- [TESTING-ABILITIES-API.md](./testing/TESTING-ABILITIES-API.md) - Abilities API testing
-- [TESTING.md](./testing/TESTING.md) - General testing guide
+### [testing/](./testing/)
 
-#### [troubleshooting/](./troubleshooting/)
+Testing documentation and strategies:
+
+- [TESTING.md](./testing/TESTING.md) - E2E (Playwright) testing guide
+- [TESTING-ABILITIES-API.md](./testing/TESTING-ABILITIES-API.md) - Abilities API manual testing walkthrough
+- [E2E-LIFECYCLE.md](./testing/E2E-LIFECYCLE.md) - Playwright/browser lifecycle regression notes
+- [FORM-SELECT-I18N.md](./testing/FORM-SELECT-I18N.md) - Form select i18n regression coverage
+
+### [troubleshooting/](./troubleshooting/)
+
 Debugging and problem-solving guides:
-- [HANDLING-LINT-ERRORS.md](./troubleshooting/HANDLING-LINT-ERRORS.md) - Lint error solutions
-- [TROUBLESHOOTING.md](./troubleshooting/TROUBLESHOOTING.md) - General troubleshooting
+
+- [TROUBLESHOOTING.md](./troubleshooting/TROUBLESHOOTING.md) - Canonical troubleshooting guide (build, wp-env, dependencies, CI)
+- [HANDLING-LINT-ERRORS.md](./troubleshooting/HANDLING-LINT-ERRORS.md) - Handling ESLint "unused import" false positives
 
 ## 📚 Documentation Structure
 
 ### Getting Started (New Contributors)
 
 #### [GETTING-STARTED.md](./GETTING-STARTED.md)
-Complete step-by-step guide for new contributors:
-- **Software prerequisites**: Node.js, Git, Docker Desktop
-- **Understanding the stack**: What technologies we use and why
-- **Step-by-step setup**: From fork to first contribution
-- **Your first change**: Hands-on example walking through a real code change
-- **Development tools**: npm scripts, VS Code integration, browser DevTools
-- **Common workflows**: Daily development, updating fork, fixing issues
-- **Troubleshooting**: Solutions to common setup problems
-- **Next steps**: Learning resources and finding issues to work on
+
+Complete step-by-step guide for new contributors: prerequisites, stack overview, step-by-step setup, your first change, development tools, common workflows, and troubleshooting pointers.
 
 **When to use**: First time setting up the project or helping someone else get started.
 
 #### [ARCHITECTURE.md](./ARCHITECTURE.md)
-Deep dive into project architecture and code organization:
-- **High-level overview**: Technology stack and core components
-- **Complete directory structure**: Every folder explained with purpose
-- **Block architecture**: Anatomy of a block, file-by-file breakdown
-- **Build system**: Webpack, asset compilation, dependency management
-- **Data flow**: How data moves from editor to database to frontend
-- **Extension system**: How extensions modify existing blocks
-- **PHP backend**: Server-side architecture and registration
-- **Testing infrastructure**: E2E and unit test setup
-- **AI integration**: WordPress Abilities API architecture
+
+Deep dive into project architecture and code organization: directory structure, block anatomy, build system, data flow, extension system, PHP backend, testing infrastructure, AI integration (Abilities API), and the Theme 1–6 editor UX foundations.
 
 **When to use**: Understanding how the codebase works, onboarding to the project, or making architectural decisions.
 
 #### [../CONTRIBUTING.md](../CONTRIBUTING.md)
-Complete contribution guide and workflow:
-- **Development setup**: Prerequisites and step-by-step installation
-- **Project architecture**: Quick overview with links to detailed docs
-- **Development workflow**: Creating branches, making changes, testing
-- **Code standards**: WordPress patterns, project-specific rules
-- **Testing requirements**: What to test before submitting
-- **Submitting changes**: Pull request process and checklist
-- **Getting help**: Where to ask questions and report issues
+
+Complete contribution guide and workflow: setup, architecture overview, development workflow, code standards, testing requirements, and the PR process.
 
 **When to use**: Ready to contribute code or submitting a pull request.
 
 #### [AI-ASSISTED-DEVELOPMENT.md](./guides/AI-ASSISTED-DEVELOPMENT.md)
-Complete guide to AI-assisted development (how this plugin was built):
-- **Why AI-assisted development**: Benefits and use cases
-- **Getting started with Claude Code**: Installation and setup
-- **Available slash commands**: /add-block, /lint, /test, /deploy, and more
-- **Best practices**: Effective prompts, iteration, validation
-- **Common workflows**: Creating blocks, debugging, refactoring with AI
-- **Using other AI tools**: ChatGPT, GitHub Copilot, Abilities API
-- **Tips and tricks**: Context management, learning patterns
-- **Limitations and validation**: When AI makes mistakes, validation checklist
 
-**When to use**: Using AI tools (Claude Code, ChatGPT, Copilot) to contribute, or curious about how this entire plugin was built with AI.
+Guide to AI-assisted development with Claude Code: available skills/commands, best practices, and common workflows.
+
+**When to use**: Using AI tools to contribute, or curious how this plugin is built with AI assistance.
 
 ---
 
@@ -279,13 +153,13 @@ Complete guide to AI-assisted development (how this plugin was built):
 
 ### Critical Patterns (Read First!)
 
-#### Color Controls - MOST IMPORTANT ⚠️
-**Location**: [../.claude/CLAUDE.md](../.claude/CLAUDE.md#color-controls---critical-pattern)
+#### Color Controls — MOST IMPORTANT ⚠️
 
-**Rule**: ALWAYS use `ColorGradientSettingsDropdown`, NEVER use `PanelColorSettings`
+**Location**: [../.claude/CLAUDE.md](../.claude/CLAUDE.md#code-standards)
+
+**Rule**: ALWAYS use `ColorGradientSettingsDropdown` in `<InspectorControls group="color">`, NEVER `PanelColorSettings`.
 
 ```javascript
-// CORRECT - Modern WordPress pattern
 import {
   __experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
   __experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
@@ -316,123 +190,117 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 ```
 
 **Why This Matters**:
-- All 13 existing blocks use this pattern (migrated 2025-11-08)
-- PanelColorSettings is deprecated and will be removed
-- Places controls in Styles tab (better UX, WordPress standard)
+
+- `PanelColorSettings` is a deprecated WordPress pattern.
+- `ColorGradientSettingsDropdown` places controls in the Styles tab (WordPress standard, better UX).
+- There are zero `PanelColorSettings` instances left in `src/` — keep it that way.
+
+#### Non-color inspector controls: `<DsgoInspectorPanel>`, not bare `PanelBody`
+
+Every custom control outside of color must be wrapped in `<DsgoInspectorPanel>` / `<DsgoInspectorPanel.Item>` following the Settings → Style → Advanced three-panel convention — see `../.claude/CLAUDE.md` ("Inspector IA (Theme 3)") and `src/components/shared/DsgoInspectorPanel/`. Reaching for `PanelBody` directly is the older pattern several of the guides below still illustrate.
 
 ### Reference Documents
 
 #### [BEST-PRACTICES-SUMMARY.md](./guides/BEST-PRACTICES-SUMMARY.md)
+
 - **Use for**: Quick reference during development
 - **Contains**: Critical rules, decision trees, copy-paste patterns
-- **Read time**: 5-10 minutes
 
 #### [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](./guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
+
 - **Use for**: Deep understanding of patterns and rationale
-- **Contains**: 15 major topics with real-world examples
-- **Read time**: 30-45 minutes
+- **Contains**: Major topics with real-world examples (some code samples predate Theme 3 — see the note above)
 
 #### [BLOCK-TEMPLATE-EDIT.js](./templates/BLOCK-TEMPLATE-EDIT.js)
+
 - **Use for**: Starting point for new blocks
-- **Contains**: Fully commented template with all critical patterns
 - **Copy this file** when creating new blocks
 
 ### Specialized Guides
 
-#### [WORDPRESS-BLOCK-EDITOR-BEST-PRACTICES.md](./guides/WORDPRESS-BLOCK-EDITOR-BEST-PRACTICES.md)
-WordPress block editor and FSE compatibility:
-- Block.json configuration
-- Supports properties
-- Testing checklist
-- Pattern creation
-
 #### [BLOCK-CONTROLS-ORGANIZATION.md](./guides/BLOCK-CONTROLS-ORGANIZATION.md)
-Inspector controls organization:
-- Settings tab vs Styles tab
-- Block Supports usage
-- Panel structure
+
+Inspector controls organization: Settings tab vs. Styles tab decision tree, Block Supports usage.
+
+#### `.claude/docs/` guides
+
+Several deeper technical guides live in `../.claude/docs/` rather than `docs/guides/` because they're written as working references for AI-assisted development and are linked directly from `../.claude/CLAUDE.md`:
+
+- [`REFACTORING-GUIDE.md`](../.claude/docs/REFACTORING-GUIDE.md) - File-size limits and the standard block refactor pattern
+- [`FSE-COMPATIBILITY-GUIDE.md`](../.claude/docs/FSE-COMPATIBILITY-GUIDE.md) - Full Site Editing / theme.json support checklist
+- [`EDITOR-STYLING-GUIDE.md`](../.claude/docs/EDITOR-STYLING-GUIDE.md) - Declarative styling (`useInnerBlocksProps`, `:where()` specificity) — canonical version of the editor/frontend-parity lessons
+- [`KSES-ALLOWLIST-GUIDE.md`](../.claude/docs/KSES-ALLOWLIST-GUIDE.md) - Why and how DSGo extends `wp_kses_post()`
+- [`QUERY-BLOCK-GUIDE.md`](../.claude/docs/QUERY-BLOCK-GUIDE.md) - Dynamic Query block family developer guide
 
 ## 🎯 Common Tasks
 
 ### Creating a New Block
+
 1. Copy [BLOCK-TEMPLATE-EDIT.js](./templates/BLOCK-TEMPLATE-EDIT.js) to `src/blocks/{block-name}/edit.js`
-2. Update block.json with proper supports (see [WordPress Block Editor Best Practices](./guides/WORDPRESS-BLOCK-EDITOR-BEST-PRACTICES.md))
-3. Implement save.js matching edit.js structure
-4. Add color controls using ColorGradientSettingsDropdown pattern
+2. Update `block.json` with proper `supports` (native supports before custom controls)
+3. Implement `save.js` matching `edit.js` structure
+4. Add color controls using the `ColorGradientSettingsDropdown` pattern above, and wrap any other custom controls in `<DsgoInspectorPanel>`
 5. Test in editor and frontend
 
-### Adding Color Controls to Existing Block
-1. Add imports:
-   ```javascript
-   import {
-     __experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
-     __experimentalUseMultipleOriginColorsAndGradients as useMultipleOriginColorsAndGradients,
-   } from '@wordpress/block-editor';
-   ```
-2. Add `clientId` to function signature
-3. Add `useMultipleOriginColorsAndGradients()` hook
-4. Replace PanelColorSettings with ColorGradientSettingsDropdown in Styles tab
+### Adding Color Controls to an Existing Block
 
-See [BLOCK-TEMPLATE-EDIT.js](./templates/BLOCK-TEMPLATE-EDIT.js) for complete example.
+1. Import `ColorGradientSettingsDropdown` and `useMultipleOriginColorsAndGradients` as shown above
+2. Add `clientId` to the function signature
+3. Call `useMultipleOriginColorsAndGradients()`
+4. Place the dropdown inside `<InspectorControls group="color">`
 
 ### Refactoring Large Files
+
 1. Check file line count: `wc -l src/blocks/{block-name}/edit.js`
-2. If >300 lines, extract components and utilities
+2. If >300 lines, extract components and utilities (see [`../.claude/docs/REFACTORING-GUIDE.md`](../.claude/docs/REFACTORING-GUIDE.md))
 3. Extract components into `components/` directory
 4. Extract utilities into `utils/` directory
-5. Keep index.js focused on registration only
-
-## 📊 Project Statistics
-
-### Block Count
-- **Total blocks**: 53 (across 8+ categories)
-- **Layout blocks**: 3 (Row, Section, Grid)
-- **Form blocks**: 13 (Form Builder + 11 field types)
-- **Interactive blocks**: 15 (Tabs, Accordion, Modal, Modal Trigger, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counter Group, Progress Bar, Comparison Table, Timeline)
-- **Dynamic Query blocks**: 6 (Query, Pagination, Filter, Results, Group Header, No Results)
-- **Typography & Navigation**: 3 (Advanced Heading, Breadcrumbs, Table of Contents)
-- **Visual blocks**: 9 (160+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image)
-- **Media & Location**: 2 (Fifty Fifty, Map)
-- **WooCommerce blocks**: 2 (Product Categories Grid, Product Showcase Hero)
-- **Extensions**: 16
-
-### Code Quality
-- **Color controls**: 100% modern (all blocks using ColorGradientSettingsDropdown)
-- **Zero PanelColorSettings instances** remaining in codebase
-- **File size target**: < 300 lines per file
+5. Keep `index.js` focused on registration only
 
 ## 🔍 Finding Information
 
 ### "How do I add color controls?"
-→ [../.claude/CLAUDE.md](../.claude/CLAUDE.md#color-controls---critical-pattern) or [BLOCK-TEMPLATE-EDIT.js](./templates/BLOCK-TEMPLATE-EDIT.js)
+
+→ [../.claude/CLAUDE.md](../.claude/CLAUDE.md) or [BLOCK-TEMPLATE-EDIT.js](./templates/BLOCK-TEMPLATE-EDIT.js)
 
 ### "What's the proper block structure?"
+
 → [BEST-PRACTICES-SUMMARY.md](./guides/BEST-PRACTICES-SUMMARY.md) or [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](./guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
 
 ### "How do I make my block FSE-compatible?"
-→ [WordPress Block Editor Best Practices](./guides/WORDPRESS-BLOCK-EDITOR-BEST-PRACTICES.md)
+
+→ [`../.claude/docs/FSE-COMPATIBILITY-GUIDE.md`](../.claude/docs/FSE-COMPATIBILITY-GUIDE.md)
 
 ### "My file is too large, how do I refactor?"
-→ [Best Practices Summary](./guides/BEST-PRACTICES-SUMMARY.md) (see file size and extraction patterns)
+
+→ [`../.claude/docs/REFACTORING-GUIDE.md`](../.claude/docs/REFACTORING-GUIDE.md)
 
 ### "Should I use Block Supports or custom controls?"
+
 → [BLOCK-CONTROLS-ORGANIZATION.md](./guides/BLOCK-CONTROLS-ORGANIZATION.md)
+
+### "Something's broken (build, wp-env, CI, dependencies)"
+
+→ [troubleshooting/TROUBLESHOOTING.md](./troubleshooting/TROUBLESHOOTING.md)
 
 ## 🎓 Learning Path
 
 ### Beginner
+
 1. Read [BEST-PRACTICES-SUMMARY.md](./guides/BEST-PRACTICES-SUMMARY.md) - Critical rules
 2. Copy [BLOCK-TEMPLATE-EDIT.js](./templates/BLOCK-TEMPLATE-EDIT.js) - Build first block
-3. Read [WordPress Block Editor Best Practices](./guides/WORDPRESS-BLOCK-EDITOR-BEST-PRACTICES.md) - Make it compatible
+3. Read [`../.claude/docs/FSE-COMPATIBILITY-GUIDE.md`](../.claude/docs/FSE-COMPATIBILITY-GUIDE.md) - Make it compatible
 
 ### Intermediate
+
 1. Read [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](./guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md) - Deep understanding
 2. Review [BLOCK-CONTROLS-ORGANIZATION.md](./guides/BLOCK-CONTROLS-ORGANIZATION.md) - Better UX patterns
 3. Study [Design System](./guides/DESIGN-SYSTEM.md) - Proper styling
 
 ### Advanced
-1. Review [Block Extension Strategy](./planning/BLOCK-EXTENSION-STRATEGY.md) - Extension architecture
-2. Study [Color Controls Pattern](./patterns/COLOR-CONTROLS-PATTERN.md) - Advanced patterns
+
+1. Review the extension architecture in [`planning/`](./planning/)
+2. Study advanced patterns in [`patterns/`](./patterns/)
 3. Contribute patterns back to [../.claude/CLAUDE.md](../.claude/CLAUDE.md)
 
 ## 📝 Contributing to Documentation
@@ -442,10 +310,9 @@ When you discover new patterns or best practices:
 1. **Critical patterns** → Add to [../.claude/CLAUDE.md](../.claude/CLAUDE.md)
 2. **Quick reference** → Add to [BEST-PRACTICES-SUMMARY.md](./guides/BEST-PRACTICES-SUMMARY.md)
 3. **Deep explanations** → Add to [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](./guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
-4. **Specialized topics** → Create new guide or update existing specialized guide in appropriate folder
+4. **Specialized topics** → Create or update a specialized guide in the appropriate folder
+5. Before adding a new doc, check whether an existing one already covers the topic — keep one canonical doc per topic rather than a second file with the same title.
 
 ---
 
-**Last Updated**: 2026-04-26
-**Plugin Version**: 2.1.0
-**WordPress Compatibility**: 6.7+
+**WordPress Compatibility**: 6.7+ (tested to 6.9 via `.wp-env.json`)

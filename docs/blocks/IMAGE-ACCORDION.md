@@ -109,7 +109,7 @@ The Image Accordion block creates an interactive expandable image gallery where 
 
 ## Settings & Configuration
 
-### Layout Panel
+### Layout
 
 **Height**
 - Default: 500px
@@ -148,7 +148,7 @@ The Image Accordion block creates an interactive expandable image gallery where 
 
 ---
 
-### Expansion Behavior Panel
+### Expansion Behavior
 
 **Expanded Ratio**
 - Default: 3
@@ -194,7 +194,7 @@ The Image Accordion block creates an interactive expandable image gallery where 
 
 ---
 
-### Interaction Panel
+### Interaction
 
 **Trigger Type**
 - Options: Hover (Desktop) | Click/Tap

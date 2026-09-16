@@ -264,7 +264,7 @@ Returns draft mode status for a post.
 
 Public form submission endpoint.
 
-**Source**: `includes/blocks/class-form-handler.php`
+**Source**: `includes/blocks/forms/class-form-handler.php`
 
 ### POST `/form/submit`
 
@@ -492,7 +492,7 @@ The Visual Revision Comparison endpoints (`GET /revisions/{post_id}`, `GET /revi
 
 Server-side rendering, editor preview, and filter-index management for the `designsetgo/query` block family.
 
-**Source**: `includes/blocks/class-query.php`, `includes/blocks/class-query-template-controller.php`
+**Source**: `includes/blocks/query/class-query.php`, `includes/blocks/query/class-query-template-controller.php`
 
 All write endpoints require an `X-WP-Nonce` header with a valid `wp_rest` nonce, except the public `/query/render` refresh route, which is authorised by a signed source instead. The `/query/render-preview` and `/query/preview` routes are editor-facing (require `edit_posts`); all filter-index and template routes require `manage_options` or `edit_post` as noted per endpoint.
 
@@ -792,6 +792,113 @@ Imports a query template blob. Attributes are filtered against the current `bloc
 
 ---
 
+## Dynamic Tags
+
+Editor-side endpoints powering the Dynamic Tag Picker (source catalog, field discovery, live preview).
+
+**Source**: `includes/dynamic-tags/class-dynamic-tags-rest.php`
+
+All three routes require `edit_posts` — they expose data the editor can already see. `/preview` additionally honours the same password / viewable / protected-meta gates as the Block Bindings sources.
+
+### GET `/dynamic-tags/sources`
+
+Returns the catalog of registered binding sources with metadata.
+
+| Auth | Capability |
+|------|------------|
+| Required | `edit_posts` |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `returns` | `string` | No | Comma-separated return types to filter by (`text`\|`image`\|`url`\|`number`\|`date`). |
+| `postType` | `string` | No | Post type context for field discovery. |
+
+**Response** — `200 OK`
+
+```json
+{ "groups": [ "..." ], "sources": [ { "slug": "designsetgo/post-meta", "label": "Post Meta", "group": "post", "returns": ["text"], "args": {}, "supportsFieldDiscovery": true } ] }
+```
+
+### GET `/dynamic-tags/fields`
+
+Discovers available fields for a given source (e.g. ACF fields, meta keys).
+
+| Auth | Capability |
+|------|------------|
+| Required | `edit_posts` |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `source` | `string` | Yes | Source slug to discover fields for. |
+| `postType` | `string` | No | Post type context. Default `post`. |
+| `returns` | `string` | No | Return type filter. |
+
+**Response** — `200 OK` — Protected meta keys (prefixed `_`) are stripped from the result.
+
+```json
+{ "fields": [ { "key": "event_date", "label": "Event Date" } ] }
+```
+
+### GET `/dynamic-tags/preview`
+
+Resolves a binding source against a post context for live editor preview.
+
+| Auth | Capability |
+|------|------------|
+| Required | `edit_posts` |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `source` | `string` | Yes | Source slug. |
+| `args` | `object` | No | Source-specific arguments (e.g. `key`). |
+| `postId` | `integer` | No | Post to resolve against. |
+| `size` | `string` | No | Image size, when the source returns an image. Default `medium`. |
+
+**Response** — `200 OK` (or `{ "status": "error", "error": "unknown_source" }` for an unregistered slug).
+
+---
+
+## Text Path SVG Extraction
+
+Extracts a normalised, safe SVG `<path>` from user-supplied SVG markup for the Text Path block.
+
+**Source**: `includes/blocks/text-path/class-text-path-controller.php`
+
+### POST `/text-path/extract`
+
+| Auth | Capability |
+|------|------------|
+| Required | `upload_files` |
+
+**Body Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `svg` | `string` | Yes | Raw SVG markup (max 12,288 characters). |
+
+The SVG is parsed with `DOMDocument` (no external entities, no DTD), rejected if it contains `<script>`/`<foreignObject>` elements, and only a path matching a conservative command/argument allowlist is returned.
+
+**Response** — `200 OK`
+
+```json
+{ "viewBox": "0 0 100 100", "d": "M10 10 L90 90" }
+```
+
+**Error Responses**
+
+| Code | Status | Cause |
+|------|--------|-------|
+| `dsgo_text_path_invalid_svg` | 400 | SVG missing, oversized, or contains no safe path. |
+| `dsgo_text_path_forbidden` | 403 | Current user lacks `upload_files`. |
+
+---
+
 ## Markdown Content Negotiation
 
 Any published page or post URL returns Markdown when the request sends `Accept: text/markdown` (or outranks `text/html` via q-values). This feature is implemented at the `template_redirect` layer, not as a REST route.
@@ -830,6 +937,10 @@ See [MARKDOWN-CONTENT-NEGOTIATION.md](MARKDOWN-CONTENT-NEGOTIATION.md) for full 
 | GET | `/query/template` | `edit_post` on target | `class-query-template-controller.php` |
 | POST | `/query/template` | `edit_posts` | `class-query-template-controller.php` |
 | POST | `/form/submit` | Public | `class-form-handler.php` |
+| GET | `/dynamic-tags/sources` | `edit_posts` | `class-dynamic-tags-rest.php` |
+| GET | `/dynamic-tags/fields` | `edit_posts` | `class-dynamic-tags-rest.php` |
+| GET | `/dynamic-tags/preview` | `edit_posts` | `class-dynamic-tags-rest.php` |
+| POST | `/text-path/extract` | `upload_files` | `class-text-path-controller.php` |
 | POST | `/gdpr/export` | `manage_options` | `class-gdpr-compliance.php` |
 | DELETE | `/gdpr/delete` | `manage_options` | `class-gdpr-compliance.php` |
 | GET | `/llms-txt/post-types` | `manage_options` | `class-rest-controller.php` |

@@ -43,8 +43,8 @@ Closes #
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have updated documentation as needed
 - [ ] My changes generate no new warnings or errors
-- [ ] I have tested on WordPress 6.4+
-- [ ] I have followed the patterns in [CLAUDE.md](.claude/CLAUDE.md)
+- [ ] I have tested on WordPress 6.7+
+- [ ] I have followed the patterns in [CLAUDE.md](../.claude/CLAUDE.md)
 - [ ] All files are under 300 lines (if applicable)
 - [ ] I have added JSDoc comments to new functions
 - [ ] Accessibility: WCAG 2.1 AA compliant

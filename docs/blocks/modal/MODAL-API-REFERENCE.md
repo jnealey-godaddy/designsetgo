@@ -642,11 +642,10 @@ declare global {
 - [Modal Auto-Triggers](MODAL-AUTO-TRIGGERS.md)
 - [Modal Gallery Navigation](MODAL-GALLERY-NAVIGATION.md)
 - [Modal FSE Compatibility](MODAL-FSE-COMPATIBILITY.md)
-- [Modal Next Phase Plan](MODAL-NEXT-PHASE.md)
 
 ---
 
-**Need Help?** [Open an issue](https://github.com/your-repo/designsetgo/issues) or check the [examples directory](../examples/).
+**Need Help?** [Open an issue](https://github.com/jnealey-godaddy/designsetgo/issues).
 
 **Last Updated**: November 2024
 **Version**: 1.3.0
