@@ -20,10 +20,11 @@ grep -r "'[A-Z][a-z]" src/ --include="*.js" | grep -v "__(" | grep -v "//"
 grep -r "__(" src/ includes/ | grep -v "'designsetgo'"
 ```
 
-**Generate POT file:**
+**Generate POT file** (the host has no local `wp` CLI — this runs inside wp-env, matching the `i18n:make-pot` package.json script):
 
 ```bash
-npx wp i18n make-pot . languages/designsetgo.pot
+npm run i18n:make-pot
+# = wp-env run cli wp i18n make-pot /var/www/html/wp-content/plugins/designsetgo /var/www/html/wp-content/plugins/designsetgo/languages/designsetgo.pot --domain=designsetgo
 ```
 
 **Update PO files:**
@@ -40,6 +41,15 @@ msgmerge --update languages/designsetgo-es_ES.po languages/designsetgo.pot
 msgfmt languages/designsetgo-nl_NL.po -o languages/designsetgo-nl_NL.mo
 msgfmt languages/designsetgo-es_ES.po -o languages/designsetgo-es_ES.mo
 ```
+
+**Regenerate the per-file JS JSON catalogs** (`languages/designsetgo-{locale}-{md5}.json`, the `i18n:make-json` script):
+
+```bash
+npm run build          # REQUIRED FIRST — see warning below
+npm run i18n:make-json
+```
+
+**Critical — build before make-json:** each JSON catalog's filename hash is `md5()` of the JS file path WordPress loads translations for. Core hashes the `build/` path at runtime, but `wp i18n make-json` hashes whatever `src="..."` it finds in the current `script-handles.json`/source map. Running `make-json` against a stale or missing `build/` produces catalogs keyed to the wrong hash, so the translation silently never loads for that file (no error — the string just renders in English). Always `npm run build` immediately before regenerating JSON catalogs, and verify with `grep -i "your-string" languages/designsetgo-<locale>-*.json`.
 
 ## Full Workflow
 
@@ -133,11 +143,7 @@ _x('Post', 'verb', 'designsetgo')
 
 ## Before Committing
 
-Always check for untranslated strings:
-
-```bash
-npm run lint:i18n  # If you have this script
-```
+Always check for untranslated strings using the Quick Commands greps above — there is no dedicated `lint:i18n` script in `package.json`.
 
 ## Reference
 

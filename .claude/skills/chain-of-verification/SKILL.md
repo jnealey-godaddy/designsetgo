@@ -101,5 +101,5 @@ The key insight: LLMs are good at verification when questions are asked independ
 
 ## Integration with Other Skills
 
-- **verification-before-completion**: CoVe verifies factual accuracy of claims; that skill verifies task completion with command output evidence
-- **systematic-debugging**: Use CoVe when forming hypotheses about root causes based on recalled knowledge rather than traced evidence
+- **superpowers:verification-before-completion**: CoVe verifies factual accuracy of claims; that skill verifies task completion with command output evidence
+- **superpowers:systematic-debugging**: Use CoVe when forming hypotheses about root causes based on recalled knowledge rather than traced evidence

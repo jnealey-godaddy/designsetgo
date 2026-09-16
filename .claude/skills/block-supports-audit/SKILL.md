@@ -76,10 +76,6 @@ Creates `BLOCK-SUPPORTS-OPPORTUNITIES.md` with:
 - Priority recommendations
 - Total potential code reduction
 
-## Reference
-
-See [docs/BLOCK-SUPPORTS-AUDIT.md](../../docs/BLOCK-SUPPORTS-AUDIT.md) for complete methodology and results.
-
 ## When to Run
 
 - After creating new blocks

@@ -47,6 +47,7 @@ Release a new version to WordPress.org. Pushing a `v*` tag triggers `.github/wor
    - PHP runs inside wp-env, because the host has no PHP:
      - `npx wp-env run tests-cli --env-cwd=wp-content/plugins/designsetgo php vendor/bin/phpunit`
      - `npx wp-env run cli --env-cwd=wp-content/plugins/designsetgo php vendor/bin/phpcs --standard=phpcs.xml --warning-severity=0`
+     - `composer run-script lint` (`phpcs`) is separate from `composer run-script analyse` (PHPStan) — CI runs both, and `npm run lint:php` only covers the former. Run the phpstan pass too: `npx wp-env run cli --env-cwd=wp-content/plugins/designsetgo php vendor/bin/phpstan analyse --memory-limit=2G`.
    - `lint:js` also lints untracked files in the working tree. If it fails, check whether the file is tracked with `git ls-files <path>`. Errors in untracked local files don't reach the release, and CI lints a clean checkout.
    - Fix anything failing in tracked files.
    - Full E2E tests (`npm run test:e2e`) need a running WordPress site and are run separately. The pre-commit hook runs a few E2E tests against the wp-env dev site and doesn't block the commit. That site can be serving a different checkout or worktree, so check which one before trusting a failure there.

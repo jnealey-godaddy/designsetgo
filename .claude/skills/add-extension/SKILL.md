@@ -89,7 +89,7 @@ import './extensions/group-enhancements';
 
 ## Patterns to Follow
 
-**From [CLAUDE.md](../../.claude/CLAUDE.md):**
+**From [CLAUDE.md](../../claude.md):**
 - Work WITH WordPress attributes, don't replace them
 - Show controls conditionally based on WordPress state
 - Don't duplicate WordPress toolbar functionality

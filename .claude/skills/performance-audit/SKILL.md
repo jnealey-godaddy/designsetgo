@@ -72,14 +72,14 @@ grep -r "import.*from" src/ | grep -E "react|lodash|wp-" | sort | uniq -c | sort
 - [ ] Asset handles unique and prefixed
 
 **Check Files:**
-- `includes/class-assets.php` - Main asset loader
+- `includes/core/class-assets.php` - Main asset loader
 - `includes/blocks/class-loader.php` - Block registration
 - All `block.json` files - Asset declarations
 
 **Current Implementation Analysis:**
 ```php
 // Check current loading strategy
-grep -A 10 "wp_enqueue" includes/class-assets.php
+grep -A 10 "wp_enqueue" includes/core/class-assets.php
 
 // Check block asset registration
 find src/blocks -name "block.json" -exec grep -H "script\|style" {} \;

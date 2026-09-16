@@ -56,6 +56,8 @@ This is a **COMPREHENSIVE PLUGIN AUDIT** covering all aspects of plugin developm
 - [ ] Declarative styling (no `useEffect` for styles)
 - [ ] Editor matches frontend (prevents validation errors)
 - [ ] Proper attribute typing and defaults
+- [ ] Custom inspector controls use `<DsgoInspectorPanel>` (Settings/Style, in that order), never bare `PanelBody`
+- [ ] Horizontal positioning uses the justification pattern, never `supports.align` for left/center/right
 
 **Check these files:**
 - All `src/blocks/*/block.json` files
@@ -64,9 +66,9 @@ This is a **COMPREHENSIVE PLUGIN AUDIT** covering all aspects of plugin developm
 - All `src/blocks/*/save.js` files
 
 **Reference Documents:**
-- `docs/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md`
-- `docs/BEST-PRACTICES-SUMMARY.md`
-- `docs/EDITOR-STYLING-GUIDE.md`
+- `docs/guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md`
+- `docs/guides/BEST-PRACTICES-SUMMARY.md`
+- `.claude/docs/EDITOR-STYLING-GUIDE.md`
 
 ### 3. **Full Site Editing (FSE) Compatibility** (High Priority)
 
@@ -90,7 +92,7 @@ This is a **COMPREHENSIVE PLUGIN AUDIT** covering all aspects of plugin developm
 - [ ] Verify blocks appear in pattern library
 - [ ] Check block inserter categories
 
-**Reference:** `docs/FSE-COMPATIBILITY-GUIDE.md`
+**Reference:** `.claude/docs/FSE-COMPATIBILITY-GUIDE.md`
 
 ### 4. **Accessibility (WCAG 2.1 AA Compliance)** (Critical)
 
@@ -368,7 +370,8 @@ grep -r "view\.js\|frontend\.js" src/
 ```bash
 npm run lint:js
 npm run lint:css
-npm run lint:php
+npm run lint:php   # phpcs only
+composer analyse   # PHPStan — separate script, also run in CI
 ```
 
 ### 13. **WordPress.org Plugin Directory Compliance** (If Publishing)
@@ -674,16 +677,16 @@ find src/ includes/ -name "*.js" -o -name "*.php" | xargs wc -l | sort -rn | hea
 # Bundle sizes
 ls -lh build/ | grep -E "\.js$|\.css$"
 
-# Test coverage
-npm run test:coverage
+# Tests (there is no test:coverage or test:a11y script — these don't exist)
+npm run test:unit
+npm run test:php
+npm run test:e2e
 
 # Linting
 npm run lint:js
 npm run lint:css
-npm run lint:php
-
-# Accessibility check
-npm run test:a11y
+npm run lint:php   # phpcs only
+composer analyse   # PHPStan
 ```
 
 ## Important Reminders

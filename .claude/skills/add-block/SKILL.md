@@ -61,11 +61,17 @@ If a new block differs from an existing one only by 1–3 attributes and shares 
 - Place in `<InspectorControls group="color">`
 - Require `clientId` parameter in edit function
 
+**Inspector layout (Theme 3 IA):**
+- Custom controls go in `<DsgoInspectorPanel>` (a `ToolsPanel` wrapper), never bare `PanelBody`
+- Exactly two panels, in order: `panelName="settings"` (title `Settings`) then `panelName="style"` (title `Style`) — no block-name prefix
+- Pass `panelId={clientId}`; wrap each control in `<DsgoInspectorPanel.Item label hasValue onDeselect isShownByDefault>` with `isShownByDefault` always `true`
+- Color / HTML element / anchor / class stay in `<InspectorControls group="color">` / `group="advanced">` — don't duplicate them inside Settings or Style
+
+**Horizontal positioning:** never use `supports.align: ["left","center","right"]` to position a block — that's for `wide`/`full` bleed only. Use the justification pattern instead: block root gets `.dsgo-justify`/`.dsgo-justify--{left|center|right}` from a `justification` attribute (see `getJustificationClass()` in `src/utils/justification.js` and `<DsgoJustificationToolbar>`), with the visible element shrink-wrapped inside it.
+
 ## After Creation
 
-Block will be auto-detected by webpack - no need to modify `src/index.js`.
-
-If dynamic rendering is used, add PHP registration in `includes/class-plugin.php`.
+The block is auto-detected from `build/blocks/*/block.json` by `includes/blocks/class-loader.php` — no manual PHP registration needed, including for dynamic rendering: a `render.php` file in the block's own directory is picked up automatically. No changes to `src/index.js` or any PHP file are required for a standard block.
 
 ## Build and Test
 
@@ -77,4 +83,4 @@ Test in both editor and frontend.
 
 ## Reference
 
-See [BEST-PRACTICES-SUMMARY.md](../../docs/BEST-PRACTICES-SUMMARY.md) for complete patterns.
+See [BEST-PRACTICES-SUMMARY.md](../../../docs/guides/BEST-PRACTICES-SUMMARY.md) for complete patterns.

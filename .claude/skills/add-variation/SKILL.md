@@ -6,20 +6,29 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(npm run *)
 ---
 
 
-Create a new block variation for a WordPress core block.
+Create a new block variation, for either a WordPress core block or an existing DesignSetGo block.
+
+## Pre-flight: is a variation the right call?
+
+Per `.claude/claude.md`'s "Variations vs. new blocks": if the idea would differ from an existing block only by 1–3 attributes **and share the same `save()` output structure**, a variation is correct. If markup, inner-block structure, or block-level behaviour actually differs, scaffold a new block instead (`/add-block`) — variations cannot carry differing markup.
 
 ## Ask the User For
 
-- **Which core block?** (e.g., "core/group", "core/columns", "core/cover")
+- **Which block?** (e.g., "core/group", "core/columns", "core/cover", or an existing `designsetgo/*` block)
 - **Variation name and description**
 - **Default layout and attributes**
-- **Icon** (from WordPress Dashicons)
+- **Icon** (from WordPress Dashicons, or a Dashicon slug for a DSGo block)
 
 ## What Gets Created
 
-1. Directory: `src/variations/[block-name]-variations/` (if doesn't exist)
-2. Create or update `index.js` with new variation
-3. Import in `src/index.js` (if new file)
+For an existing **DesignSetGo** block, DesignSetGo's own convention is a `variations.js` file colocated with the block, not a separate directory. Two registration styles both exist in the codebase — either is fine, pick whichever the target block's `index.js` already uses:
+
+1. `src/blocks/[block-name]/variations.js` — exports the variations array (create if it doesn't exist yet)
+2. `src/blocks/[block-name]/index.js` — either:
+   - imports it (`import variations from './variations';`) and passes `variations` into the settings object given to `registerBlockType(metadata.name, { ...metadata, variations, ... })` — see `src/blocks/modal/index.js` + `src/blocks/modal/variations.js`; or
+   - imports it and loops `variations.forEach((variation) => registerBlockVariation(metadata.name, variation))` after `registerBlockType()` — see `src/blocks/query-filter/index.js` + `src/blocks/query-filter/variations.js`, or `src/blocks/query-pagination/`, `src/blocks/slider/index.js` (inline, no separate file)
+
+For a genuine **WordPress core block** (`core/group`, `core/columns`, etc.), call `registerBlockVariation('core/group', {...})` directly — there is currently no example of this in the codebase (every `registerBlockVariation` call here targets the DSGo block's own `metadata.name`), so treat the pattern below as standard WordPress usage, not a verified in-repo example, and place the call in the extension file that already targets that core block (see `/add-extension`).
 
 ## Variation Pattern
 

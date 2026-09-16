@@ -34,7 +34,7 @@ Analyze all PHP and JavaScript files for security vulnerabilities:
 **Check these critical files:**
 - `includes/admin/class-global-styles.php` - REST API endpoints
 - `includes/patterns/class-loader.php` - File inclusion
-- `includes/class-assets.php` - Asset loading
+- `includes/core/class-assets.php` - Asset loading
 - `src/extensions/*/frontend.js` - Frontend JavaScript
 - Any file with `$_GET`, `$_POST`, `$_REQUEST`, `get_json_params()`
 
@@ -154,7 +154,7 @@ Positive feedback on good practices to maintain
    - Provide specific fix
 
 4. **Performance Review**
-   - Check asset loading strategy in `includes/class-assets.php`
+   - Check asset loading strategy in `includes/core/class-assets.php`
    - Review build output sizes
    - Identify optimization opportunities
 
@@ -169,6 +169,7 @@ Positive feedback on good practices to maintain
 - [ ] Run `npm audit` for JavaScript vulnerabilities
 - [ ] Run `npm run check-licenses` for GPL compatibility
 - [ ] Check for outdated packages
+- [ ] Run `composer analyse` (PHPStan) — a separate script from `npm run lint:php` (which only runs phpcs); CI runs both
 
 ### Build Configuration
 - [ ] Verify webpack config is optimized

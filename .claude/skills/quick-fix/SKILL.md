@@ -64,20 +64,21 @@ npm run build
 ### Frontend Styles Missing
 
 ```bash
-# 1. Check if styles are imported in style.scss
-grep "@import" src/styles/style.scss
+# 1. Check if styles are imported in the REAL frontend entry (src/style.scss,
+#    not src/styles/style.scss — that file is dead code, nothing imports it)
+grep "@import" src/style.scss
 
 # 2. Verify build output
 cat build/style-index.css | grep "your-class-name"
 
-# 3. If missing, add import to src/styles/style.scss
-# @import '../blocks/your-block/style';
+# 3. If missing, add import to src/style.scss
+# @import 'blocks/your-block/style';
 
 # 4. Rebuild
 npm run build
 ```
 
-**CRITICAL:** Both `style.scss` and `editor.scss` must import block styles.
+**CRITICAL:** Both `src/style.scss` (frontend) and `src/styles/editor.scss` (editor) must import block styles. `src/styles/style.scss` looks like the frontend entry but is dead code.
 
 
 ## Fix 3: Block Validation Error
@@ -228,19 +229,18 @@ return <div {...blockProps}><div {...innerBlocksProps} /></div>;
 
 **Symptom:** Theme colors missing from color picker
 
-**Fix: Migrate to ColorGradientSettingsDropdown**
+**Fix: Use `ColorGradientSettingsDropdown` (never `PanelColorSettings`)**
 
-See `/color-controls-migrate` command for complete migration guide.
+The plugin-wide migration off `PanelColorSettings` is finished (no remaining usages), so this should never happen in existing code — treat any hit below as a regression to fix directly, following the pattern in `.claude/claude.md`.
 
 **Quick check:**
 
 ```bash
 # Are you using deprecated PanelColorSettings?
 grep -r "PanelColorSettings" src/blocks/your-block/
-
-# If yes, run:
-# /color-controls-migrate
 ```
+
+Consider `useBlockColors()` (`src/hooks/useBlockColors.js`) to wrap the `ColorGradientSettingsDropdown` boilerplate instead of hand-rolling it.
 
 
 ## Fix 7: Translation Missing
@@ -250,8 +250,8 @@ grep -r "PanelColorSettings" src/blocks/your-block/
 **Quick fixes:**
 
 ```bash
-# 1. Regenerate POT file
-npx wp i18n make-pot . languages/designsetgo.pot
+# 1. Regenerate POT file (runs inside wp-env — the host has no local wp CLI)
+npm run i18n:make-pot
 
 # 2. Update PO files
 msgmerge --update languages/designsetgo-nl_NL.po languages/designsetgo.pot
@@ -259,7 +259,12 @@ msgmerge --update languages/designsetgo-nl_NL.po languages/designsetgo.pot
 # 3. Compile MO files
 msgfmt languages/designsetgo-nl_NL.po -o languages/designsetgo-nl_NL.mo
 
-# 4. Clear WordPress cache
+# 4. If a JS string, rebuild THEN regenerate the JSON catalogs (order matters
+#    — see /i18n-update for why):
+npm run build
+npm run i18n:make-json
+
+# 5. Clear WordPress cache
 # In wp-admin: Go to Settings → General → Site Language → Save Changes
 ```
 
@@ -344,8 +349,8 @@ npm run build
 npm run lint:js
 npm run lint:css
 
-# Check tests
-npm test
+# Check tests (there is no plain "test" script — use test:unit / test:php / test:e2e)
+npm run test:unit
 
 # Check wp-env
 npx wp-env start
@@ -357,7 +362,6 @@ npx wp-env start
 For more detailed fixes:
 
 - `/refactor` - Refactor anti-patterns
-- `/color-controls-migrate` - Fix color controls
 - `/i18n-update` - Fix translations
 - `/check-compat` - Check WordPress compatibility
-- `/build` - Build troubleshooting
+- `npm run build` - Build troubleshooting (no dedicated skill; see Fix 1 above)

@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: 
+description: Use when cleaning up an existing DesignSetGo block or extension - removing anti-patterns (useEffect styling, plain InnerBlocks, hardcoded values, dead code) and bringing it in line with .claude/claude.md conventions
 context: fork
 agent: Explore
 allowed-tools: Read, Glob, Grep, Bash(git *), Bash(npm run *)
@@ -22,6 +22,8 @@ allowed-tools: Read, Glob, Grep, Bash(git *), Bash(npm run *)
 - [ ] No block example
 - [ ] Unescaped PHP output
 - [ ] Non-internationalized strings
+- [ ] Bare `PanelBody` for custom inspector controls (use `<DsgoInspectorPanel>` — see Theme 3 IA in `.claude/claude.md`)
+- [ ] `supports.align: ["left","center","right"]` used for horizontal positioning (use the justification pattern instead — see "Horizontal positioning" in `.claude/claude.md`)
 
 **Code Smells:**
 - [ ] Versioned files (file-v2.js, file-old.scss)
@@ -33,8 +35,8 @@ allowed-tools: Read, Glob, Grep, Bash(git *), Bash(npm run *)
 
 **Check Documentation:**
 - Read `.claude/CLAUDE.md` for project-specific patterns
-- Reference `docs/BEST-PRACTICES-SUMMARY.md` for quick patterns
-- Reference `docs/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md` for deep dives
+- Reference `docs/guides/BEST-PRACTICES-SUMMARY.md` for quick patterns
+- Reference `docs/guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md` for deep dives
 
 ### 2. Plan Refactor
 
@@ -71,10 +73,10 @@ allowed-tools: Read, Glob, Grep, Bash(git *), Bash(npm run *)
 3. Ensure they work WITH WordPress, not against it
 
 **Update Related Files:**
-- Import new styles in `src/styles/style.scss` (frontend)
+- Import new styles in `src/style.scss` (frontend — NOT `src/styles/style.scss`, which is dead code nothing imports)
 - Import new styles in `src/styles/editor.scss` (editor)
 - Update PHP includes if needed
-- Update frontend.js (remove layout code if moving to declarative styles)
+- Update frontend.js/view.js (remove layout code if moving to declarative styles)
 
 ### 4. Verify Build
 
@@ -203,7 +205,7 @@ return <div {...innerBlocksProps} />;
 - Broken on frontend
 
 **Fix:**
-1. Import styles in `src/styles/style.scss`
+1. Import styles in `src/style.scss` (not `src/styles/style.scss` — dead code)
 2. Rebuild: `npx wp-scripts build`
 3. Verify: `grep "your-class" build/style-index.css`
 
@@ -330,34 +332,33 @@ return <div {...innerBlocksProps} />;
 
 ## Migration Checklist (For Breaking Changes)
 
-If refactoring changes save format or attributes:
+If refactoring changes save format or attributes, see the full "Deprecations" section of `.claude/claude.md` before writing the entry — it documents three traps that have bitten this codebase before:
+
+1. **Every entry must redeclare `apiVersion`** (stripped otherwise, so `useBlockProps.save()` produces different markup and the entry silently never validates).
+2. **The third `migrate`/`isEligible` argument is `{ blockNode, block }`** — there is no `innerHTML` key; use `blockNode.innerHTML` or `block.originalContent`.
+3. **`isEligible` cannot rescue an invalid block** and must never be keyed on an attribute's absence (WordPress omits default-valued attributes from the block comment, so that's just as true of new content).
 
 ```javascript
-// block.json
-{
-  "deprecated": [
-    {
-      "attributes": { /* old attributes */ },
-      "supports": { /* old supports */ },
-      "migrate": function(attributes) {
-        return {
-          // Map old to new
-          newAttribute: attributes.oldAttribute
-        };
-      },
-      "save": function(props) {
-        // Old save function
-      }
-    }
-  ]
-}
+// deprecated.js (imported as `deprecated` and passed into registerBlockType)
+const v1 = {
+	apiVersion: 3, // REQUIRED — omit only if this version really predates apiVersion
+	attributes: { /* the FULL attribute schema this version had */ },
+	supports: { /* the FULL support set this version had, incl. __experimental* typography keys */ },
+	save( { attributes } ) { /* reproduce the old output byte-for-byte */ },
+	migrate( attributes ) {
+		return { ...attributes, newAttribute: 'default' };
+	},
+	// isEligible ONLY for a migration on an otherwise-VALID block; key it on
+	// markup, never on an attribute being undefined.
+};
+export default [ v1 ];
 ```
 
 **Test:**
 1. Create block with old version
 2. Update plugin
-3. Edit block (should auto-migrate)
-4. No "invalid content" error
+3. Edit block (should auto-migrate, or reproduce the old markup with no "Attempt Recovery")
+4. Round-trip `createBlock → serialize → parse` and confirm no attribute is lost (see `tests/unit/deprecations-isEligible.test.js` for the pattern this repo pins)
 
 
 ## After Refactoring Checklist
@@ -504,10 +505,10 @@ Provide a comprehensive summary:
 ## Reference Documentation
 
 **Quick Reference:**
-- `docs/BEST-PRACTICES-SUMMARY.md` - Copy-paste ready patterns
+- `docs/guides/BEST-PRACTICES-SUMMARY.md` - Copy-paste ready patterns
 
 **Comprehensive Guide:**
-- `docs/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md` - Deep dives
+- `docs/guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md` - Deep dives
 
 **Project Learnings:**
 - `.claude/CLAUDE.md` - DesignSetGo-specific patterns
