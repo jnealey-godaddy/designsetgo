@@ -25,6 +25,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Block_Inserter {
 
 	/**
+	 * A top-level block name: "namespace/block-name", lowercase alphanumeric and hyphens.
+	 */
+	public const BLOCK_NAME_PATTERN = '/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/';
+
+	/**
 	 * Insert a block into a post at the specified position.
 	 *
 	 * @param int                              $post_id Post ID.
@@ -68,25 +73,127 @@ class Block_Inserter {
 			);
 		}
 
-		// Build block markup.
-		$block_markup = self::build_block_markup( $block_name, $attributes, $inner_blocks );
+		$new_block = parse_blocks( self::build_block_markup( $block_name, $attributes, $inner_blocks ) )[0];
+		$updated   = self::write_blocks( $post, array( $new_block ), $position );
+		if ( is_wp_error( $updated ) ) {
+			return $updated;
+		}
 
-		// Parse existing blocks.
+		return array(
+			'success'  => true,
+			'post_id'  => $post->ID,
+			'block_id' => wp_unique_id( 'block-' ),
+			'position' => $position,
+			'note'     => 'Blocks inserted successfully. Open the post in the WordPress editor to validate and save the blocks.',
+		);
+	}
+
+	/**
+	 * Insert several top-level blocks into a post with one content write.
+	 *
+	 * All-or-nothing: every definition is checked for serializer coverage and
+	 * the resulting tree is validated before the post is saved, so a failure in
+	 * any block leaves the post untouched. Definitions must already be screened
+	 * and sanitized (see prepare_block_definition()).
+	 *
+	 * @param int                              $post_id     Post ID.
+	 * @param array<int, array<string, mixed>> $definitions Blocks as block_name, attributes and inner_blocks, in order.
+	 * @param int                              $position    Position of the first block (-1 appends, 0 prepends, or an index).
+	 * @return array<string, mixed>|WP_Error Success data or error.
+	 */
+	public static function insert_blocks( int $post_id, array $definitions, int $position = -1 ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return new WP_Error(
+				'designsetgo_invalid_post',
+				__( 'Post not found.', 'designsetgo' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new WP_Error(
+				'designsetgo_permission_denied',
+				__( 'You do not have permission to edit this post.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$new_blocks = array();
+		foreach ( array_values( $definitions ) as $index => $definition ) {
+			$coverage = self::check_serialization_coverage( $definition['block_name'], $definition['inner_blocks'] );
+			if ( null !== $coverage ) {
+				return new WP_Error(
+					'designsetgo_unsupported_block',
+					sprintf( 'blocks[%d]: %s', $index, $coverage['message'] ),
+					array(
+						'status'      => 400,
+						'block_index' => $index,
+						'problems'    => $coverage['invalid_paths'],
+					)
+				);
+			}
+			$new_blocks[] = parse_blocks(
+				self::build_block_markup( $definition['block_name'], $definition['attributes'], $definition['inner_blocks'] )
+			)[0];
+		}
+
+		$updated = self::write_blocks( $post, $new_blocks, $position );
+		if ( is_wp_error( $updated ) ) {
+			return $updated;
+		}
+
+		return array(
+			'success'  => true,
+			'post_id'  => $post->ID,
+			'inserted' => count( $new_blocks ),
+			'position' => $position,
+		);
+	}
+
+	/**
+	 * Screen and sanitize one top-level block definition before it is written.
+	 *
+	 * Placement is checked BEFORE sanitizing: sanitization drops keys it does
+	 * not recognise, so a misnamed field would be gone by the time anything
+	 * looked for it. That is how a nested `block_name` used to remove every
+	 * child in silence.
+	 *
+	 * @param string               $block_name   Validated block name.
+	 * @param array<string, mixed> $attributes   Requested attributes.
+	 * @param array<int, mixed>    $inner_blocks Requested inner blocks.
+	 * @return array<string, mixed> The sanitized definition, or a diagnostic payload with `success` false.
+	 */
+	public static function prepare_block_definition( string $block_name, array $attributes, array $inner_blocks ): array {
+		$placement = self::check_child_placement( $block_name, $inner_blocks, $attributes );
+		if ( null !== $placement ) {
+			return $placement;
+		}
+
+		return array(
+			'block_name'   => $block_name,
+			'attributes'   => empty( $attributes ) ? $attributes : Block_Configurator::sanitize_attributes( $attributes ),
+			'inner_blocks' => empty( $inner_blocks ) ? $inner_blocks : self::sanitize_inner_block_definitions( $inner_blocks ),
+		);
+	}
+
+	/**
+	 * Place parsed blocks into a post's top level and save it.
+	 *
+	 * @param WP_Post                          $post       Target post.
+	 * @param array<int, array<string, mixed>> $new_blocks Parsed blocks, in order.
+	 * @param int                              $position   -1 appends, 0 prepends, or an index.
+	 * @return true|WP_Error
+	 */
+	private static function write_blocks( WP_Post $post, array $new_blocks, int $position ) {
 		$blocks = parse_blocks( $post->post_content );
 
-		// Parse new block.
-		$new_block = parse_blocks( $block_markup )[0];
-
-		// Insert at position.
 		if ( -1 === $position ) {
-			// Append to end.
-			$blocks[] = $new_block;
+			array_push( $blocks, ...$new_blocks );
 		} elseif ( 0 === $position ) {
-			// Prepend to beginning.
-			array_unshift( $blocks, $new_block );
+			array_unshift( $blocks, ...$new_blocks );
 		} else {
-			// Insert at specific index.
-			array_splice( $blocks, $position, 0, array( $new_block ) );
+			array_splice( $blocks, $position, 0, $new_blocks );
 		}
 
 		// Structural check before anything is written. A tree whose children
@@ -128,13 +235,7 @@ class Block_Inserter {
 			return $updated;
 		}
 
-		return array(
-			'success'  => true,
-			'post_id'  => $post->ID,
-			'block_id' => wp_unique_id( 'block-' ),
-			'position' => $position,
-			'note'     => 'Blocks inserted successfully. Open the post in the WordPress editor to validate and save the blocks.',
-		);
+		return true;
 	}
 
 	/**

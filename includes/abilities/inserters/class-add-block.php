@@ -14,7 +14,6 @@
 namespace DesignSetGo\Abilities\Inserters;
 
 use DesignSetGo\Abilities\Abstract_Ability;
-use DesignSetGo\Abilities\Block_Configurator;
 use DesignSetGo\Abilities\Block_Inserter;
 use WP_Error;
 
@@ -145,49 +144,29 @@ class Add_Block extends Abstract_Ability {
 
 		// Validate block name format.
 		$block_name = sanitize_text_field( $block_name );
-		if ( ! preg_match( '/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/', $block_name ) ) {
+		if ( ! preg_match( Block_Inserter::BLOCK_NAME_PATTERN, $block_name ) ) {
 			return $this->error(
 				'designsetgo_invalid_input',
 				__( 'block_name must be in "namespace/block-name" format (lowercase alphanumeric and hyphens).', 'designsetgo' )
 			);
 		}
 
-		// Screen the request BEFORE sanitizing: sanitization drops keys it does
-		// not recognise, so a misnamed field would be gone by the time anything
-		// looked for it. That is how a nested `block_name` used to remove every
-		// child in silence.
-		$placement = Block_Inserter::check_child_placement( $block_name, $inner_blocks, is_array( $attributes ) ? $attributes : array() );
-		if ( null !== $placement ) {
-			return $placement;
-		}
-
-		// Sanitize attributes.
-		if ( ! empty( $attributes ) ) {
-			$attributes = Block_Configurator::sanitize_attributes( $attributes );
-		}
-
-		// Sanitize inner blocks.
-		if ( ! empty( $inner_blocks ) ) {
-			$inner_blocks = $this->sanitize_inner_blocks( $inner_blocks );
+		$definition = Block_Inserter::prepare_block_definition(
+			$block_name,
+			is_array( $attributes ) ? $attributes : array(),
+			is_array( $inner_blocks ) ? $inner_blocks : array()
+		);
+		if ( isset( $definition['success'] ) ) {
+			return $definition;
 		}
 
 		// Insert the block at the top level.
 		return Block_Inserter::insert_block(
 			$post_id,
 			$block_name,
-			$attributes,
-			$inner_blocks,
+			$definition['attributes'],
+			$definition['inner_blocks'],
 			$position
 		);
-	}
-
-	/**
-	 * Recursively sanitize inner blocks and their attributes.
-	 *
-	 * @param array<int, array<string, mixed>> $inner_blocks Inner blocks to sanitize.
-	 * @return array<int, array<string, mixed>> Sanitized inner blocks.
-	 */
-	private function sanitize_inner_blocks( array $inner_blocks ): array {
-		return Block_Inserter::sanitize_inner_block_definitions( $inner_blocks );
 	}
 }
