@@ -299,43 +299,26 @@ class Global_Styles {
 	/**
 	 * Get Tabs block global styles (non-spacing).
 	 *
-	 * Returns typography, color, and element defaults. Spacing (margin) is
-	 * added conditionally in extend_theme_json() only when the theme doesn't
-	 * define its own spacingSizes.
+	 * Returns typography defaults. Colour is left to the block's own stylesheet so tabs follow the
+	 * section they sit in. Spacing (margin) is added conditionally in extend_theme_json() only when
+	 * the theme doesn't define its own spacingSizes.
 	 *
 	 * @return array Tabs block styles.
 	 */
 	private function get_tabs_block_styles() {
+		// Typography only, deliberately. Pinning the text colour to the contrast preset meant tabs
+		// ignored the section they sat in and stayed dark on a dark band, and the accent-2 states
+		// took whatever that preset happened to be — a pale pink on some themes. The block's own
+		// stylesheet now derives every tab colour from the surrounding text colour, which is
+		// readable wherever the block is placed, and the inspector still overrides it.
+		//
+		// The element styles this used to carry never reached the tab buttons either: the nav
+		// renders plain <button class="dsgo-tabs__tab"> elements, so `elements.button` only hit real
+		// buttons placed inside a panel, stripping their fill.
 		return array(
 			'typography' => array(
 				'fontSize'   => 'var(--wp--preset--font-size--medium)',
 				'fontWeight' => '500',
-			),
-			'color'      => array(
-				'text' => 'var(--wp--preset--color--contrast)',
-			),
-			'elements'   => array(
-				'button' => array(
-					'color'   => array(
-						'text'       => 'var(--wp--preset--color--contrast)',
-						'background' => 'transparent',
-					),
-					':hover'  => array(
-						'color' => array(
-							'text' => 'var(--wp--preset--color--accent-2)',
-						),
-					),
-					':active' => array(
-						'color'  => array(
-							'text'       => 'var(--wp--preset--color--accent-2)',
-							'background' => 'var(--wp--preset--color--base)',
-						),
-						'border' => array(
-							'color' => 'var(--wp--preset--color--accent-2)',
-							'width' => '2px',
-						),
-					),
-				),
 			),
 		);
 	}
@@ -343,17 +326,17 @@ class Global_Styles {
 	/**
 	 * Get Tab block global styles (non-spacing).
 	 *
-	 * Returns color defaults. Spacing (padding, blockGap) is added
-	 * conditionally in extend_theme_json() only when the theme doesn't
-	 * define its own spacingSizes.
+	 * Returns the transparent panel background. Spacing (padding, blockGap) is added conditionally
+	 * in extend_theme_json() only when the theme doesn't define its own spacingSizes.
 	 *
 	 * @return array Tab block styles.
 	 */
 	private function get_tab_block_styles() {
+		// A panel keeps its transparent background so it shows the section behind it, and inherits
+		// that section's text colour rather than the contrast preset.
 		return array(
 			'color' => array(
 				'background' => 'transparent',
-				'text'       => 'var(--wp--preset--color--contrast)',
 			),
 		);
 	}

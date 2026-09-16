@@ -31,13 +31,20 @@
 	// CSS custom properties for easy customization
 	--dsgo-tabs-gap: 8px;
 	--dsgo-tab-padding: var(--wp--preset--spacing--30, 1rem);
+	// Colours follow the surrounding content. Naming theme presets (contrast, accent-2) meant the
+	// tabs took whatever those happened to be — on Twenty Twenty-Four accent-2 is a pale pink, which
+	// was unreadable on a coloured section — and neither preset knows what the tabs sit on.
+	// currentColor is the colour the surrounding content already reads against, so the default is
+	// legible on any surface; the active tab reads by full strength, weight and its indicator.
 	--dsgo-tab-bg: transparent;
-	--dsgo-tab-color: var(--wp--preset--color--contrast, #000);
-	--dsgo-tab-bg-active: var(--wp--preset--color--accent-2, #2563eb);
-	--dsgo-tab-color-active: var(--wp--preset--color--accent-2, #2563eb);
-	--dsgo-tab-color-hover: var(--dsgo-tab-color-active);
+	// Where color-mix() is unsupported the property is invalid at computed-value time, so the tab
+	// simply inherits the surrounding colour, which is still readable.
+	--dsgo-tab-color: color-mix(in srgb, currentcolor 70%, transparent);
+	--dsgo-tab-bg-active: transparent;
+	--dsgo-tab-color-active: currentcolor;
+	--dsgo-tab-color-hover: currentcolor;
 	--dsgo-tab-bg-hover: transparent;
-	--dsgo-tab-border-color: var(--wp--preset--color--accent-2, #2563eb);
+	--dsgo-tab-border-color: currentcolor;
 	--dsgo-tab-border-radius: var(--wp--custom--designsetgo--border-radius--small, 0.25rem);
 	--dsgo-tab-content-bg: transparent;
 
@@ -58,8 +65,9 @@
 			width: auto;
 			height: auto;
 			padding: 0.5rem 1rem;
-			background: var(--wp--preset--color--accent-2, #2563eb);
-			color: var(--wp--preset--color--base, #fff);
+			background: transparent;
+			color: currentcolor;
+			box-shadow: inset 0 0 0 2px currentcolor;
 			text-decoration: none;
 			border-radius: 4px;
 			font-weight: 600;
@@ -101,7 +109,7 @@
 	 * Shows a divider line below the tab navigation when enabled
 	 */
 	&.dsgo-tabs--show-nav-border .dsgo-tabs__nav {
-		border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+		border-bottom: 1px solid color-mix(in srgb, currentcolor 18%, transparent);
 		padding-bottom: 0.5rem;
 	}
 
@@ -125,7 +133,7 @@
 		white-space: nowrap;
 
 		&:hover:not(.is-active) {
-			color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb)));
+			color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
 			background: var(--dsgo-tab-bg-hover, transparent);
 		}
 
@@ -142,7 +150,7 @@
 
 		&.is-active {
 			background: var(--dsgo-tab-bg-active, transparent);
-			color: var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb));
+			color: var(--dsgo-tab-color-active, currentColor);
 			font-weight: 600;
 		}
 
@@ -286,12 +294,12 @@
 
 			&:hover:not(.is-active) {
 				background: var(--dsgo-tab-bg-hover, transparent);
-				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb)));
+				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
 			}
 
 			&.is-active {
 				background: transparent;
-				color: var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb));
+				color: var(--dsgo-tab-color-active, currentColor);
 			}
 		}
 	}
@@ -300,35 +308,34 @@
 	 * Tab Style: Pills
 	 */
 	&.dsgo-tabs--pills {
-		// Override color variable for pills - white text on colored background
-		--dsgo-tab-color-active: #fff;
-		// Hover text follows the active *background* color (the accent), not
-		// the active *text* color (white) — white hover text would be
-		// invisible on the light hover background. A user-set hover color
-		// (inline --dsgo-tab-color-hover) still wins over this default.
-		--dsgo-tab-color-hover: var(
-			--dsgo-tab-bg-active,
-			var(--wp--preset--color--accent-2, #2563eb)
-		);
+		// A pill needs a fill, and a fixed accent fill with white text was readable on neither a
+		// light nor a dark section. Tinting the surrounding colour keeps the label at full strength
+		// and readable on both. A colour set in the inspector still wins: it lands inline on this
+		// same element.
+		--dsgo-tab-bg: color-mix(in srgb, currentcolor 8%, transparent);
+		--dsgo-tab-bg-hover: color-mix(in srgb, currentcolor 12%, transparent);
+		--dsgo-tab-bg-active: color-mix(in srgb, currentcolor 16%, transparent);
+		--dsgo-tab-color-active: currentcolor;
+		--dsgo-tab-color-hover: currentcolor;
 
 		.dsgo-tabs__nav {
 			border-bottom: none;
 		}
 
 		.dsgo-tabs__tab {
-			background: var(--dsgo-tab-bg, rgba(0, 0, 0, 0.05));
+			background: var(--dsgo-tab-bg, color-mix(in srgb, currentColor 8%, transparent));
 			border-radius: var(--dsgo-tab-border-radius);
 			border-bottom: none;
 			margin-bottom: 0;
 
 			&:hover:not(.is-active) {
-				background: var(--dsgo-tab-bg-hover, var(--dsgo-tab-bg, rgba(0, 0, 0, 0.1)));
-				color: var(--dsgo-tab-color-hover, var(--wp--preset--color--accent-2, #2563eb));
+				background: var(--dsgo-tab-bg-hover, var(--dsgo-tab-bg, color-mix(in srgb, currentColor 12%, transparent)));
+				color: var(--dsgo-tab-color-hover, currentColor);
 			}
 
 			&.is-active {
-				background: var(--dsgo-tab-bg-active, var(--wp--preset--color--accent-2, #2563eb));
-				color: var(--dsgo-tab-color-active, #fff);
+				background: var(--dsgo-tab-bg-active, color-mix(in srgb, currentColor 16%, transparent));
+				color: var(--dsgo-tab-color-active, currentColor);
 			}
 		}
 	}
@@ -339,7 +346,7 @@
 	&.dsgo-tabs--underline {
 
 		.dsgo-tabs__nav {
-			border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+			border-bottom: 1px solid color-mix(in srgb, currentcolor 18%, transparent);
 		}
 
 		.dsgo-tabs__tab {
@@ -350,12 +357,12 @@
 
 			&:hover:not(.is-active) {
 				background: var(--dsgo-tab-bg-hover, transparent);
-				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb)));
+				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
 			}
 
 			&.is-active {
-				border-bottom-color: var(--dsgo-tab-border-color, var(--wp--preset--color--accent-2, #2563eb));
-				color: var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb));
+				border-bottom-color: var(--dsgo-tab-border-color, currentColor);
+				color: var(--dsgo-tab-color-active, currentColor);
 				background: transparent; // Keep transparent even when active
 			}
 		}
@@ -371,13 +378,13 @@
 			margin-right: 0;
 
 			&:hover:not(.is-active) {
-				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb)));
+				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
 				background: var(--dsgo-tab-bg-hover, transparent);
 			}
 
 			&.is-active {
-				border-bottom-color: var(--dsgo-tab-border-color, var(--wp--preset--color--accent-2, #2563eb));
-				color: var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb));
+				border-bottom-color: var(--dsgo-tab-border-color, currentColor);
+				color: var(--dsgo-tab-color-active, currentColor);
 			}
 		}
 	}
@@ -386,8 +393,8 @@
 	 * Tab Style: Minimal
 	 */
 	&.dsgo-tabs--minimal {
-		// Override defaults for minimal style - use light gray background with blue text
-		--dsgo-tab-bg-active: rgba(0, 0, 0, 0.03);
+		// A faint tint of the surrounding colour, so the active tab is marked on a dark section too.
+		--dsgo-tab-bg-active: color-mix(in srgb, currentcolor 5%, transparent);
 
 		.dsgo-tabs__nav {
 			border-bottom: none;
@@ -399,18 +406,20 @@
 			margin-bottom: 0;
 
 			&:hover:not(.is-active) {
-				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb)));
+				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
 				background: var(--dsgo-tab-bg-hover, transparent);
 			}
 
 			&.is-active {
 				background: var(--dsgo-tab-bg-active);
-				color: var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb));
+				color: var(--dsgo-tab-color-active, currentColor);
 			}
 		}
 
-		// When user customizes background to a color (via inline styles), use white text for contrast
-		&[style*="--dsgo-tab-bg-active"] .dsgo-tabs__tab.is-active {
+		// A background chosen in the inspector needs a label that reads against it, and the base
+		// colour is the best guess CSS can make. It is only a guess, so an explicitly chosen active
+		// colour keeps precedence rather than being overwritten with white.
+		&[style*="--dsgo-tab-bg-active"]:not([style*="--dsgo-tab-color-active"]) .dsgo-tabs__tab.is-active {
 			color: var(--wp--preset--color--base, #fff);
 		}
 	}
@@ -426,7 +435,7 @@
 
 		.dsgo-tab {
 			display: block !important; // Force all tabs visible in accordion mode
-			border: 1px solid rgba(0, 0, 0, 0.1);
+			border: 1px solid color-mix(in srgb, currentcolor 18%, transparent);
 			border-radius: var(--dsgo-tab-border-radius);
 			margin-bottom: 0.5rem;
 			padding: 0; // Remove any padding from tab panel itself
@@ -441,7 +450,7 @@
 				padding: var(--dsgo-tab-padding);
 				background: rgba(0, 0, 0, 0.02);
 				border: none;
-				border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+				border-bottom: 1px solid color-mix(in srgb, currentcolor 18%, transparent);
 				font-family: inherit;
 				font-size: inherit;
 				font-weight: 600;
@@ -582,7 +591,7 @@
 
 		.dsgo-tabs__nav {
 			border-right: none;
-			border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+			border-bottom: 2px solid color-mix(in srgb, currentcolor 18%, transparent);
 			padding-right: 0;
 			margin-bottom: var(--wp--preset--spacing--40, 1.5rem);
 			min-width: 0;
