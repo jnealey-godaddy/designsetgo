@@ -1,0 +1,15 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/section",
+			"attributes": {},
+			"innerBlocks": [
+				{
+					"name": "core/paragraph",
+					"attributes": { "content": "Agent build remote e2e marker" }
+				}
+			]
+		}
+	]
+}

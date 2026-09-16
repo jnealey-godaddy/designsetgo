@@ -66,6 +66,22 @@ class Get_Design_Context extends Abstract_Ability {
 	 * @return array<string, mixed> Effective design data.
 	 */
 	public function execute( array $input ): array { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- Required ability interface.
+		return self::build();
+	}
+
+	/**
+	 * Build the effective WordPress design system.
+	 *
+	 * Extracted from execute() so callers that cannot rely on the Abilities
+	 * API being present (e.g. the agent-build REST route, which must work on
+	 * WordPress 6.7+) can reuse the same logic without going through
+	 * wp_get_ability()/run(). Loading this class only requires
+	 * Abstract_Ability, which has no hard WP_Ability dependency at load
+	 * time, so calling this statically is safe on every supported WP version.
+	 *
+	 * @return array<string, mixed> Effective design data.
+	 */
+	public static function build(): array {
 		$theme  = wp_get_theme();
 		$styles = array();
 		foreach ( \WP_Block_Styles_Registry::get_instance()->get_all_registered() as $name => $variations ) {

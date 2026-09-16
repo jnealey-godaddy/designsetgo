@@ -1,0 +1,29 @@
+{
+	"whenToUse": "Use designsetgo/icon-button for a call-to-action link or button with an optional icon — primary/secondary CTAs, card actions, hero buttons. It renders as a real link (or button) with hover animation options, and it's DesignSetGo's icon-aware equivalent of core/button.",
+	"avoid": [
+		"Do not set attributes.align to \"left\" or \"right\" — the block only supports \"wide\"/\"full\" bleed alignment. Use the justification attribute (\"left\"/\"center\"/\"right\") to position the button within its container instead.",
+		"Do not leave url empty for a button meant to link somewhere — an icon-button with no url renders but goes nowhere.",
+		"Do not pass raw <svg> markup as the icon attribute — icon is a slug (e.g. \"rocket\", \"lightbulb\") looked up in DesignSetGo's icon set, not inline markup.",
+		"Do not omit text — the visible label is sourced from the text attribute; a button with no text is unusable for sighted and screen-reader users alike."
+	],
+	"examples": [
+		{
+			"title": "Centered CTA button",
+			"tree": {
+				"version": 1,
+				"blocks": [
+					{
+						"name": "designsetgo/icon-button",
+						"attributes": {
+							"text": "Get Started",
+							"icon": "rocket",
+							"iconPosition": "end",
+							"url": "#get-started",
+							"justification": "center"
+						}
+					}
+				]
+			}
+		}
+	]
+}

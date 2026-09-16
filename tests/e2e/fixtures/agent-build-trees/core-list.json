@@ -1,0 +1,18 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "core/list",
+			"innerBlocks": [
+				{
+					"name": "core/list-item",
+					"attributes": { "content": "Core list marker one" }
+				},
+				{
+					"name": "core/list-item",
+					"attributes": { "content": "Core list marker two" }
+				}
+			]
+		}
+	]
+}

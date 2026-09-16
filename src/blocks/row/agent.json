@@ -1,0 +1,45 @@
+{
+	"whenToUse": "Use designsetgo/row for a horizontal group of items that should wrap or stack responsively — CTA button groups, badge rows, a hero's action buttons, or a horizontal strip of small cards. It's DesignSetGo's replacement for core/group with a flex layout.",
+	"avoid": [
+		"Do not add 3 or more items to a row without either enabling mobileStack or allowing the layout to wrap — a nowrap row with 3+ children will overflow on small screens.",
+		"Do not use raw pixel/rem gaps in style.spacing.blockGap — use a theme spacing preset (e.g. \"var:preset|spacing|30\") so the gap follows the design system.",
+		"Do not reach for core/group with a flex layout instead — use designsetgo/row, which is the project's dedicated horizontal layout block.",
+		"Do not leave a row with no innerBlocks — an empty row renders as dead space."
+	],
+	"examples": [
+		{
+			"title": "CTA button group",
+			"tree": {
+				"version": 1,
+				"blocks": [
+					{
+						"name": "designsetgo/row",
+						"attributes": {
+							"mobileStack": true
+						},
+						"innerBlocks": [
+							{
+								"name": "designsetgo/icon-button",
+								"attributes": {
+									"text": "Get Started",
+									"icon": "rocket",
+									"iconPosition": "end",
+									"url": "#get-started"
+								}
+							},
+							{
+								"name": "designsetgo/icon-button",
+								"attributes": {
+									"text": "Learn More",
+									"icon": "lightbulb",
+									"iconPosition": "start",
+									"url": "#learn-more"
+								}
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}

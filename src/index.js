@@ -18,6 +18,9 @@
 import './styles/editor.scss';
 // Note: Frontend styles are in src/style.scss (auto-compiled to build/style-index.css)
 
+// Agent block engine - exposes window.designsetgoEngine for in-editor assembly/lint
+import './engine/browser';
+
 // ===== EXTENSIONS (Must load BEFORE blocks) =====
 // Block animations - adds entrance/exit animations to all blocks
 import './extensions/block-animations';

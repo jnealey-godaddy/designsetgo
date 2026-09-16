@@ -1,0 +1,45 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://designsetgo.com/schema/agent-guidance.json",
+	"title": "DesignSetGo per-block agent guidance",
+	"description": "Shape of a src/blocks/{block}/agent.json file. Hand-written guidance an agent reads before building a page with a block, surfaced by the designsetgo/list-blocks ability's `guidance` field when `detail` is \"full\". Documentation only — tests/unit/engine/guidance.test.js enforces this shape with a small hand-rolled validator (no schema-validation dependency).",
+	"type": "object",
+	"additionalProperties": false,
+	"required": ["whenToUse", "avoid", "examples"],
+	"properties": {
+		"whenToUse": {
+			"type": "string",
+			"minLength": 1,
+			"description": "One or two sentences: what real-world content this block is for, and when to reach for it over a similar block."
+		},
+		"avoid": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "string",
+				"minLength": 1
+			},
+			"description": "Concrete mistakes to avoid with this block — anti-patterns the engine's lint rules catch, plus block-specific gotchas (required child blocks, attributes that only make sense together, etc.)."
+		},
+		"examples": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"type": "object",
+				"additionalProperties": false,
+				"required": ["title", "tree"],
+				"properties": {
+					"title": {
+						"type": "string",
+						"minLength": 1,
+						"description": "Short label for the example, e.g. \"Hero section with CTA\"."
+					},
+					"tree": {
+						"type": "object",
+						"description": "An agent block tree in the engine's contract: { version: 1, blocks: [{ name, attributes, innerBlocks }] }. Must assemble to valid markup (engine.assemble(tree).status === 'valid') and lint clean (zero errors, zero warnings) against the Twenty Twenty-Five design context fixture — CI proves both."
+					}
+				}
+			}
+		}
+	}
+}

@@ -115,6 +115,8 @@ class Abilities_Smoke_Test extends WP_UnitTestCase {
 			'designsetgo/configure-shape-divider',
 			'designsetgo/add-block',
 			'designsetgo/add-child-block',
+			'designsetgo/build-page',
+			'designsetgo/get-build-status',
 		);
 
 		foreach ( $expected as $name ) {

@@ -1,0 +1,15 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/grid",
+			"attributes": { "desktopColumns": 3, "mobileColumns": 3 },
+			"innerBlocks": [
+				{
+					"name": "core/paragraph",
+					"attributes": { "content": "Grid item" }
+				}
+			]
+		}
+	]
+}

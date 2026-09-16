@@ -1,0 +1,40 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/section",
+			"attributes": {
+				"tagName": "section"
+			},
+			"innerBlocks": [
+				{
+					"name": "core/heading",
+					"attributes": {
+						"level": 2,
+						"content": "A DesignSetGo block nested inside core/group"
+					}
+				},
+				{
+					"name": "core/group",
+					"innerBlocks": [
+						{
+							"name": "core/paragraph",
+							"attributes": {
+								"content": "This paragraph sits beside a DesignSetGo block inside a core/group."
+							}
+						},
+						{
+							"name": "designsetgo/icon-button",
+							"attributes": {
+								"text": "Get Started",
+								"icon": "rocket",
+								"iconPosition": "end",
+								"url": "#get-started"
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

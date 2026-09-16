@@ -1,0 +1,22 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/section",
+			"attributes": {},
+			"innerBlocks": [
+				{
+					"name": "core/heading",
+					"attributes": { "content": "Hello", "level": 2 }
+				}
+			]
+		},
+		{
+			"name": "designsetgo/row",
+			"attributes": {},
+			"innerBlocks": [
+				{ "name": "designsetgo/icon-button", "attributes": {} }
+			]
+		}
+	]
+}

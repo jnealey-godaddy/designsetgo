@@ -1,0 +1,12 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/icon-button",
+			"attributes": {
+				"text": "<strong>Unbalanced <em>tags",
+				"url": "https://example.com"
+			}
+		}
+	]
+}

@@ -1,0 +1,59 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/tabs",
+			"attributes": {
+				"orientation": "horizontal",
+				"alignment": "left",
+				"mobileMode": "accordion"
+			},
+			"innerBlocks": [
+				{
+					"name": "designsetgo/tab",
+					"attributes": {
+						"title": "Overview",
+						"icon": ""
+					},
+					"innerBlocks": [
+						{
+							"name": "core/heading",
+							"attributes": {
+								"level": 3,
+								"content": "What you get"
+							}
+						},
+						{
+							"name": "core/paragraph",
+							"attributes": {
+								"content": "Every DesignSetGo layout, content, and interactive block, styled from your theme's design tokens."
+							}
+						}
+					]
+				},
+				{
+					"name": "designsetgo/tab",
+					"attributes": {
+						"title": "Pricing",
+						"icon": ""
+					},
+					"innerBlocks": [
+						{
+							"name": "core/heading",
+							"attributes": {
+								"level": 3,
+								"content": "Simple pricing"
+							}
+						},
+						{
+							"name": "core/paragraph",
+							"attributes": {
+								"content": "One plan, unlimited sites, no add-ons required."
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

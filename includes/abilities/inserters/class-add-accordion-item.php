@@ -41,7 +41,7 @@ class Add_Accordion_Item extends Abstract_Ability {
 	public function get_config(): array {
 		return array(
 			'label'               => __( 'Add Accordion Item', 'designsetgo' ),
-			'description'         => __( 'Adds an accordion item with title and content into an existing accordion container.', 'designsetgo' ),
+			'description'         => __( 'Adds an accordion item with title and content into an existing accordion container. For building or rebuilding page sections, prefer designsetgo/build-page, which serializes with the editor\'s own block code.', 'designsetgo' ),
 			'category'            => 'blocks',
 			'input_schema'        => $this->get_input_schema(),
 			'output_schema'       => Block_Inserter::get_default_output_schema(),

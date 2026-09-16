@@ -20,7 +20,7 @@ import {
 	// eslint-disable-next-line import/no-unresolved
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
 
-import { registerDesignSetGoBlock } from '../../tools/regenerate-patterns';
+import { registerForJest } from '../../src/engine/registry/sources-fs';
 
 // [ block, attribute, English value, translated value ]
 const CASES = [
@@ -52,12 +52,8 @@ const CASES = [
 	// All four are tracked for one consolidated deprecation-based follow-up.
 ];
 
-const BLOCKS = [...new Set(CASES.map(([name]) => name))];
-
 beforeAll(() => {
-	BLOCKS.forEach((name) =>
-		registerDesignSetGoBlock(name.replace('designsetgo/', ''))
-	);
+	registerForJest();
 });
 
 describe('translation resilience (HTML-only text edit)', () => {

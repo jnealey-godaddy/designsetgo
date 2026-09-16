@@ -13,7 +13,14 @@
  *
  *   DSGO_UPDATE_FIXTURES=1 vendor/bin/phpunit --filter Abilities_Generated_Markup_Fixture
  *
- * then run the JS suite to confirm the new markup is still valid.
+ * then run the JS suite to confirm the new markup is still valid. If any
+ * `generated::` case (see `generated_payloads()` below) turns invalid, add it
+ * to tests/unit/__fixtures__/ability-generated-known-drift.json — that suite
+ * fails on a `generated::` key that is invalid and NOT already listed there,
+ * or listed there and no longer invalid. Regenerate
+ * tests/unit/__fixtures__/ability-generated-cases.json first, with
+ * `npm run engine -- fixture-cases --out tests/unit/__fixtures__/ability-generated-cases.json`,
+ * whenever a block's registered attributes change.
  *
  * @package DesignSetGo
  * @subpackage Tests
@@ -45,7 +52,118 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function payloads(): array {
-		return array_merge( $this->default_payloads(), $this->authored_payloads(), $this->generation_layout_payloads() );
+		return array_merge( $this->default_payloads(), $this->authored_payloads(), $this->generation_layout_payloads(), $this->generated_payloads() );
+	}
+
+	/**
+	 * Cases written by the Node engine's `fixture-cases` command
+	 * (`npm run engine -- fixture-cases --out tests/unit/__fixtures__/ability-generated-cases.json`,
+	 * see `src/engine/node/fixture-cases.js`), one per probeable attribute of
+	 * every `designsetgo/*` block that isn't restricted to a parent/ancestor.
+	 * Decoded once per test run.
+	 *
+	 * @return array<string, array<string, array<string, mixed>>> Cases nested
+	 *   by block name then attribute name, as `fixture-cases.js` writes them.
+	 */
+	private function generated_cases(): array {
+		$path = dirname( __DIR__ ) . '/unit/__fixtures__/ability-generated-cases.json';
+
+		if ( ! file_exists( $path ) ) {
+			return array();
+		}
+
+		$decoded = json_decode( file_get_contents( $path ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- Test fixture.
+
+		return is_array( $decoded ) ? $decoded : array();
+	}
+
+	/**
+	 * Turns `generated_cases()` into payloads keyed `generated::<block>::<attribute>`.
+	 *
+	 * Two reasons a generated case is excluded here, never silently —
+	 * `test_fixture_matches_generated_markup()` prints every one
+	 * (`generated_skip_reasons()`) when regenerating:
+	 *
+	 * - The whole block: one the Node engine included (i.e. not
+	 *   parent/ancestor-restricted) can still be one `Block_Inserter` itself
+	 *   cannot serialize for another reason (`get_serialization_gap()` — e.g.
+	 *   no PHP save() mirror yet).
+	 * - One case: `nonDefaultValue()` picks a probe from the JS-registered
+	 *   schema, which is not always the schema PHP validates against —
+	 *   `designsetgo/flip-card`'s `dsgoParallaxRotateDirection` is `enum` on
+	 *   the PHP side (`includes/extension-configs/vertical-parallax.php`) but
+	 *   plain `string` on the JS side (`attributes.js`), so the JS probe can
+	 *   land outside PHP's own allowed values
+	 *   (`Block_Inserter::find_invalid_attribute_values()`). Generating a
+	 *   payload PHP itself considers invalid would fail
+	 *   `test_fixture_payloads_use_valid_attribute_values()` for a reason
+	 *   that has nothing to do with markup drift, so it is filtered here
+	 *   instead of reaching that test.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function generated_payloads(): array {
+		$payloads = array();
+
+		foreach ( $this->generated_cases() as $block_name => $attribute_cases ) {
+			if ( null !== Block_Inserter::get_serialization_gap( (string) $block_name ) ) {
+				continue;
+			}
+
+			foreach ( (array) $attribute_cases as $attribute_name => $case ) {
+				$candidate = array(
+					'name'        => $case['block_name'],
+					'attributes'  => $case['attributes'],
+					'innerBlocks' => $case['inner_blocks'],
+				);
+
+				if ( ! empty( Block_Inserter::find_invalid_attribute_values( array( $candidate ) ) ) ) {
+					continue;
+				}
+
+				$payloads[ 'generated::' . $block_name . '::' . $attribute_name ] = $candidate;
+			}
+		}
+
+		ksort( $payloads );
+
+		return $payloads;
+	}
+
+	/**
+	 * Every generated case skipped by `generated_payloads()`, keyed
+	 * `<block>` (a whole-block serialization gap) or `<block>::<attribute>`
+	 * (one case whose value PHP's own schema rejects), valued with the
+	 * reason. Surfaced (never silent) by
+	 * `test_fixture_matches_generated_markup()` on regeneration.
+	 *
+	 * @return array<string, string>
+	 */
+	private function generated_skip_reasons(): array {
+		$skipped = array();
+
+		foreach ( $this->generated_cases() as $block_name => $attribute_cases ) {
+			$gap = Block_Inserter::get_serialization_gap( (string) $block_name );
+			if ( null !== $gap ) {
+				$skipped[ (string) $block_name ] = $gap;
+				continue;
+			}
+
+			foreach ( (array) $attribute_cases as $attribute_name => $case ) {
+				$candidate = array(
+					'name'        => $case['block_name'],
+					'attributes'  => $case['attributes'],
+					'innerBlocks' => $case['inner_blocks'],
+				);
+
+				$problems = Block_Inserter::find_invalid_attribute_values( array( $candidate ) );
+				if ( ! empty( $problems ) ) {
+					$skipped[ $block_name . '::' . $attribute_name ] = implode( '; ', array_column( $problems, 'reason' ) );
+				}
+			}
+		}
+
+		return $skipped;
 	}
 
 	/**
@@ -1045,6 +1163,15 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				$path,
 				wp_json_encode( $generated, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . "\n"
 			);
+
+			$skipped = $this->generated_skip_reasons();
+			if ( $skipped ) {
+				fwrite( STDOUT, "\nSkipped generated blocks (Block_Inserter cannot serialize):\n" ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite -- Test fixture regeneration diagnostics, opt-in via env var.
+				foreach ( $skipped as $skipped_block_name => $reason ) {
+					fwrite( STDOUT, "  {$skipped_block_name}: {$reason}\n" ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite -- Test fixture regeneration diagnostics, opt-in via env var.
+				}
+			}
+
 			$this->addToAssertionCount( 1 );
 			return;
 		}

@@ -16,10 +16,10 @@ import {
 	// eslint-disable-next-line import/no-unresolved
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
 
-import { registerDesignSetGoBlock } from '../../tools/regenerate-patterns';
+import { registerForJest } from '../../src/engine/registry/sources-fs';
 
 beforeAll(() => {
-	registerDesignSetGoBlock('form-builder');
+	registerForJest();
 });
 
 // Exactly the markup captured from a generator-built page:

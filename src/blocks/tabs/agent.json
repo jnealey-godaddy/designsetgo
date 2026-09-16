@@ -1,0 +1,73 @@
+{
+	"whenToUse": "Use designsetgo/tabs for tabbed content where each panel is worth seeing on its own but all belong to the same topic — product specs, pricing tiers, documentation sections. It supports vertical orientation and a mobile mode (accordion, dropdown, or plain tabs) so it stays usable on small screens. Every child must be a designsetgo/tab; tab is not a standalone block.",
+	"avoid": [
+		"Do not add a designsetgo/tab outside a designsetgo/tabs — tab declares designsetgo/tabs as its only valid parent.",
+		"Do not leave a tab's innerBlocks empty — a tab panel with no content has nothing to show when selected.",
+		"Do not use tabs for only one or two short pieces of content that could just be shown directly on the page — tabs add interaction cost that only pays off with several substantial panels.",
+		"Do not forget mobileMode on a long or many-tab set — the default (\"accordion\") is usually right, but confirm it matches the content instead of leaving it unconsidered."
+	],
+	"examples": [
+		{
+			"title": "Two-tab product overview",
+			"tree": {
+				"version": 1,
+				"blocks": [
+					{
+						"name": "designsetgo/tabs",
+						"attributes": {
+							"orientation": "horizontal",
+							"alignment": "left",
+							"mobileMode": "accordion"
+						},
+						"innerBlocks": [
+							{
+								"name": "designsetgo/tab",
+								"attributes": {
+									"title": "Overview",
+									"icon": ""
+								},
+								"innerBlocks": [
+									{
+										"name": "core/heading",
+										"attributes": {
+											"level": 3,
+											"content": "What you get"
+										}
+									},
+									{
+										"name": "core/paragraph",
+										"attributes": {
+											"content": "Every DesignSetGo layout, content, and interactive block, styled from your theme's design tokens."
+										}
+									}
+								]
+							},
+							{
+								"name": "designsetgo/tab",
+								"attributes": {
+									"title": "Pricing",
+									"icon": ""
+								},
+								"innerBlocks": [
+									{
+										"name": "core/heading",
+										"attributes": {
+											"level": 3,
+											"content": "Simple pricing"
+										}
+									},
+									{
+										"name": "core/paragraph",
+										"attributes": {
+											"content": "One plan, unlimited sites, no add-ons required."
+										}
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}

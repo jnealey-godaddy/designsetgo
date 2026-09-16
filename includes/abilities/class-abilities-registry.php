@@ -91,6 +91,7 @@ class Abilities_Registry {
 			'class-block-inserter.php',
 			'class-block-configurator.php',
 			'class-block-schema-loader.php',
+			'class-block-guidance.php',
 			'class-css-sanitizer.php',
 		);
 
@@ -110,6 +111,13 @@ class Abilities_Registry {
 		$this->load_abilities_from_directory( $base_path . '/configurators' );
 		$this->load_abilities_from_directory( $base_path . '/generators' );
 		$this->load_abilities_from_directory( $base_path . '/settings' );
+
+		// agent-build holds both abilities (build-page, get-build-status -
+		// Task 19) and helper classes (Tree_Validator - Task 17). Helpers are
+		// required here like everything else in the directory; they are never
+		// instantiated as abilities because initialize_abilities() below only
+		// instantiates classes that are actual Abstract_Ability subclasses.
+		$this->load_abilities_from_directory( $base_path . '/agent-build' );
 	}
 
 	/**
@@ -151,6 +159,7 @@ class Abilities_Registry {
 			'configurators' => 'DesignSetGo\\Abilities\\Configurators\\',
 			'generators'    => 'DesignSetGo\\Abilities\\Generators\\',
 			'settings'      => 'DesignSetGo\\Abilities\\Settings\\',
+			'agent-build'   => 'DesignSetGo\\Abilities\\Agent_Build\\',
 		);
 
 		foreach ( $directories as $dir => $namespace ) {

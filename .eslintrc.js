@@ -26,6 +26,14 @@ module.exports = {
 	},
 	overrides: [
 		{
+			// `globalThis` (ES2020) is how the Node engine CLI installs jsdom
+			// globals conditionally — see src/engine/node/dom.js.
+			files: ['src/engine/node/**/*.js'],
+			env: {
+				es2020: true,
+			},
+		},
+		{
 			files: ['tests/**/*.js', '**/*.test.js', '**/*.spec.js'],
 			env: {
 				jest: true,

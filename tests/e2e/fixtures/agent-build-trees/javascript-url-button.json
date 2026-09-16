@@ -1,0 +1,18 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "core/buttons",
+			"attributes": {},
+			"innerBlocks": [
+				{
+					"name": "core/button",
+					"attributes": {
+						"text": "Agent build javascript button",
+						"url": "javascript:alert(1)"
+					}
+				}
+			]
+		}
+	]
+}

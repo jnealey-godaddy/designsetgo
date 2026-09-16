@@ -1,0 +1,53 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/grid",
+			"attributes": {
+				"desktopColumns": 3,
+				"tabletColumns": 2,
+				"mobileColumns": 1
+			},
+			"innerBlocks": [
+				{
+					"name": "designsetgo/card",
+					"attributes": {
+						"title": "Layout blocks",
+						"bodyText": "Section, Row, and Grid cover every common page layout out of the box.",
+						"imageUrl": "https://example.com/images/feature-layout.jpg",
+						"imageAlt": "Wireframe of a responsive page layout"
+					},
+					"innerBlocks": [
+						{
+							"name": "designsetgo/icon-button",
+							"attributes": {
+								"text": "Learn More",
+								"icon": "lightbulb",
+								"url": "#layout-blocks"
+							}
+						}
+					]
+				},
+				{
+					"name": "designsetgo/card",
+					"attributes": {
+						"title": "Interactive blocks",
+						"bodyText": "Accordion, Tabs, and Modal add interactivity without custom JavaScript.",
+						"imageUrl": "https://example.com/images/feature-interactive.jpg",
+						"imageAlt": "Icons representing tabs and accordion panels"
+					},
+					"innerBlocks": [
+						{
+							"name": "designsetgo/icon-button",
+							"attributes": {
+								"text": "Learn More",
+								"icon": "lightning",
+								"url": "#interactive-blocks"
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

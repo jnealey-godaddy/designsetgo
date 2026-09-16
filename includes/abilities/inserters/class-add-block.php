@@ -44,7 +44,7 @@ class Add_Block extends Abstract_Ability {
 	public function get_config(): array {
 		return array(
 			'label'               => __( 'Add Block', 'designsetgo' ),
-			'description'         => __( 'Adds any block to a post at the top level. Provide a block_name (e.g., "designsetgo/section", "core/paragraph"), optional attributes, and optional inner_blocks. Use list-blocks to discover available blocks and their attribute schemas.', 'designsetgo' ),
+			'description'         => __( 'Adds any block to a post at the top level. Provide a block_name (e.g., "designsetgo/section", "core/paragraph"), optional attributes, and optional inner_blocks. Use list-blocks to discover available blocks and their attribute schemas. For building or rebuilding page sections, prefer designsetgo/build-page, which serializes with the editor\'s own block code.', 'designsetgo' ),
 			'category'            => 'blocks',
 			'input_schema'        => $this->get_input_schema(),
 			'output_schema'       => Block_Inserter::get_default_output_schema(),

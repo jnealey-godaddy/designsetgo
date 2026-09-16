@@ -13,6 +13,7 @@
 namespace DesignSetGo\Abilities\Info;
 
 use DesignSetGo\Abilities\Abstract_Ability;
+use DesignSetGo\Abilities\Block_Guidance;
 use DesignSetGo\Admin\Settings;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -132,6 +133,10 @@ class List_Blocks extends Abstract_Ability {
 								'type'        => 'object',
 								'description' => __( 'Block support features', 'designsetgo' ),
 							),
+							'guidance'    => array(
+								'type'        => array( 'object', 'null' ),
+								'description' => __( 'Hand-written agent guidance for this block (when to use it, mistakes to avoid, example trees) — present only when detail is "full". Null when the block has no guidance yet.', 'designsetgo' ),
+							),
 						),
 					),
 				),
@@ -226,6 +231,7 @@ class List_Blocks extends Abstract_Ability {
 
 			if ( $full_detail ) {
 				$block_data['attributes'] = $this->format_attributes_full( $block_type->attributes ?? array() );
+				$block_data['guidance']   = Block_Guidance::for_block( $block_type->name );
 			} else {
 				$block_data['attributes'] = $this->format_attributes( $block_type->attributes ?? array() );
 			}

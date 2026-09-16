@@ -1,0 +1,15 @@
+{
+	"version": 1,
+	"blocks": [
+		{
+			"name": "designsetgo/section",
+			"attributes": {},
+			"innerBlocks": [
+				{
+					"name": "core/html",
+					"attributes": { "content": "<div>raw html</div>" }
+				}
+			]
+		}
+	]
+}

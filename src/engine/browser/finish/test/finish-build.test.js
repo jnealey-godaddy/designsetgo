@@ -1,0 +1,1104 @@
+/**
+ * Covers every numbered branch of `finishBuild()` (see the Task 20 brief)
+ * with hand-rolled fakes for its injected deps, plus the two real-editor
+ * helpers it leans on from `../apply`: `waitForBlockRegistration` (fake
+ * timers) and `watchNextSave` (fake `subscribe`/selectors).
+ */
+import {
+	finishBuild,
+	FINISH_NOTICE_ID,
+	FINISH_REPORT_ERROR_NOTICE_ID,
+} from '../finish-build';
+import { waitForBlockRegistration } from '../apply';
+import { createFakeEditorStore } from './helpers/fake-editor-store';
+
+const TREE = { version: 1, blocks: [{ name: 'core/paragraph' }] };
+const DESIGN_CONTEXT = { colors: [] };
+const BUILD_ID = 'build-1';
+
+// Every pending fixture below carries `submitterUnfiltered: true`: these
+// scenarios cover the branches after assembly, and the sanitize route that
+// runs for any other value has its own suite (`sanitize-build.test.js`).
+
+/**
+ * Flushes pending microtasks (a macrotask boundary via a real `setTimeout`
+ * clears any queued microtasks ahead of it), for asserting on a
+ * fire-and-forget `.catch()` chain that isn't itself awaited by the code
+ * under test — e.g. the Discard handler's `postReport()` call.
+ *
+ * @return {Promise<void>}
+ */
+function flushMicrotasks() {
+	return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/**
+ * @param {Object} overrides Per-test dep overrides.
+ * @return {Object} A full `finishBuild()` deps object with jest.fn() fakes.
+ */
+function createDeps(overrides = {}) {
+	return {
+		fetchPending: jest.fn().mockResolvedValue({ pending: false }),
+		postReport: jest.fn().mockResolvedValue(undefined),
+		engine: {
+			assemble: jest.fn().mockReturnValue({
+				status: 'valid',
+				markup: '<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->',
+				invalid: [],
+			}),
+			lint: jest.fn().mockReturnValue([]),
+		},
+		parse: jest.fn().mockReturnValue([{ name: 'core/paragraph' }]),
+		getEditorBlocks: jest.fn().mockReturnValue([]),
+		replaceBlocks: jest.fn(),
+		lockAutosave: jest.fn(),
+		unlockAutosave: jest.fn(),
+		addFilter: jest.fn(),
+		removeFilter: jest.fn(),
+		savePost: jest.fn().mockResolvedValue(true),
+		isPublished: jest.fn().mockReturnValue(false),
+		notify: jest.fn(),
+		removeNotice: jest.fn(),
+		openSidebar: jest.fn(),
+		setReport: jest.fn(),
+		markDocument: jest.fn(),
+		onNextSave: jest.fn(),
+		...overrides,
+	};
+}
+
+describe('finishBuild()', () => {
+	test('1. not pending marks the document done and does nothing else', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({ pending: false }),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.markDocument).toHaveBeenCalledWith('done');
+		expect(deps.postReport).not.toHaveBeenCalled();
+		expect(deps.replaceBlocks).not.toHaveBeenCalled();
+	});
+
+	test('2. a conflict reports conflict, warns, and marks failed', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: true,
+				tree: TREE,
+				mode: 'replace',
+			}),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.postReport).toHaveBeenCalledWith({
+			status: 'conflict',
+			buildId: BUILD_ID,
+		});
+		expect(deps.notify).toHaveBeenCalledWith(
+			'warning',
+			expect.any(String),
+			expect.objectContaining({ id: FINISH_NOTICE_ID })
+		);
+		expect(deps.markDocument).toHaveBeenCalledWith('failed');
+		expect(deps.replaceBlocks).not.toHaveBeenCalled();
+	});
+
+	test('3. an invalid assemble reports failed with invalid + findings, only allowed keys', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+		});
+		deps.engine.assemble.mockReturnValue({
+			status: 'invalid',
+			markup: '',
+			invalid: [
+				{
+					path: '0',
+					block: 'core/unknown',
+					reason: 'Unknown block type',
+					code: 'unknown-block',
+					internalDebug: 'drop me',
+				},
+			],
+		});
+		deps.engine.lint.mockReturnValue([
+			{
+				rule: 'no-custom-html',
+				severity: 'warning',
+				path: '1',
+				message: 'Avoid custom HTML',
+				suggestion: 'Use a real block',
+				internalDebug: 'drop me too',
+			},
+		]);
+
+		await finishBuild(1, deps);
+
+		expect(deps.engine.lint).toHaveBeenCalledWith(TREE, DESIGN_CONTEXT);
+		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
+			status: 'failed',
+			invalid: [
+				{
+					path: '0',
+					block: 'core/unknown',
+					reason: 'Unknown block type',
+					code: 'unknown-block',
+				},
+			],
+			findings: [
+				{
+					rule: 'no-custom-html',
+					severity: 'warning',
+					path: '1',
+					message: 'Avoid custom HTML',
+					suggestion: 'Use a real block',
+				},
+			],
+		});
+		expect(deps.notify).toHaveBeenCalledWith(
+			'error',
+			expect.any(String),
+			expect.objectContaining({ id: FINISH_NOTICE_ID })
+		);
+		expect(deps.markDocument).toHaveBeenCalledWith('failed');
+		expect(deps.replaceBlocks).not.toHaveBeenCalled();
+	});
+
+	test('4. append mode prepends the current blocks to the parsed blocks', async () => {
+		const existing = [{ name: 'core/heading' }];
+		const parsed = [{ name: 'core/paragraph' }];
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'append',
+				designContext: DESIGN_CONTEXT,
+			}),
+			getEditorBlocks: jest.fn().mockReturnValue(existing),
+			parse: jest.fn().mockReturnValue(parsed),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.replaceBlocks).toHaveBeenCalledWith([
+			...existing,
+			...parsed,
+		]);
+	});
+
+	test('4b. replace mode uses only the parsed blocks', async () => {
+		const existing = [{ name: 'core/heading' }];
+		const parsed = [{ name: 'core/paragraph' }];
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			getEditorBlocks: jest.fn().mockReturnValue(existing),
+			parse: jest.fn().mockReturnValue(parsed),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.replaceBlocks).toHaveBeenCalledWith(parsed);
+	});
+
+	test('5. draft save success with no findings reports finished', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			isPublished: jest.fn().mockReturnValue(false),
+			savePost: jest.fn().mockResolvedValue(true),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.replaceBlocks).toHaveBeenCalled();
+		expect(deps.savePost).toHaveBeenCalled();
+		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
+			status: 'finished',
+			findings: [],
+		});
+		expect(deps.notify).toHaveBeenCalledWith(
+			'success',
+			expect.any(String),
+			expect.objectContaining({ id: FINISH_NOTICE_ID })
+		);
+		expect(deps.markDocument).toHaveBeenCalledWith('done');
+	});
+
+	test('5. draft save success with findings reports finished_with_findings', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			isPublished: jest.fn().mockReturnValue(false),
+			savePost: jest.fn().mockResolvedValue(true),
+		});
+		deps.engine.lint.mockReturnValue([
+			{
+				rule: 'no-custom-html',
+				severity: 'warning',
+				path: '0',
+				message: 'Avoid custom HTML',
+			},
+		]);
+
+		await finishBuild(1, deps);
+
+		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
+			status: 'finished_with_findings',
+			findings: [
+				{
+					rule: 'no-custom-html',
+					severity: 'warning',
+					path: '0',
+					message: 'Avoid custom HTML',
+				},
+			],
+		});
+		expect(deps.markDocument).toHaveBeenCalledWith('done');
+	});
+
+	test('5b. draft save failure reports failed with a save-failed invalid entry', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			isPublished: jest.fn().mockReturnValue(false),
+			savePost: jest.fn().mockResolvedValue(false),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
+			status: 'failed',
+			invalid: [{ path: '', block: '', reason: 'save failed' }],
+		});
+		expect(deps.notify).toHaveBeenCalledWith(
+			'error',
+			expect.any(String),
+			expect.objectContaining({ id: FINISH_NOTICE_ID })
+		);
+		expect(deps.markDocument).toHaveBeenCalledWith('failed');
+	});
+
+	test.each([
+		['resolves false', () => jest.fn().mockResolvedValue(false)],
+		[
+			'throws',
+			() => jest.fn().mockRejectedValue(new Error('network down')),
+		],
+	])(
+		'5c. a submitter save that %s restores the original blocks and reports failed',
+		async (label, makeSavePost) => {
+			const original = [{ name: 'core/heading' }];
+			const parsed = [{ name: 'core/paragraph' }];
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+				getEditorBlocks: jest.fn().mockReturnValue(original),
+				parse: jest.fn().mockReturnValue(parsed),
+				savePost: makeSavePost(),
+			});
+
+			await expect(finishBuild(1, deps)).resolves.toBeUndefined();
+
+			// Left dirty in the canvas, the unsaved build would be autosaved
+			// after its report already said `failed`.
+			expect(deps.replaceBlocks.mock.calls).toEqual([
+				[parsed],
+				[original],
+			]);
+			expect(deps.postReport).toHaveBeenCalledWith({
+				buildId: BUILD_ID,
+				status: 'failed',
+				invalid: [{ path: '', block: '', reason: 'save failed' }],
+			});
+			expect(deps.markDocument).toHaveBeenCalledWith('failed');
+		}
+	);
+
+	test('6. a published post is applied for review without saving, and marks done', async () => {
+		const original = [{ name: 'core/heading' }];
+		const parsed = [{ name: 'core/paragraph' }];
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			getEditorBlocks: jest.fn().mockReturnValue(original),
+			parse: jest.fn().mockReturnValue(parsed),
+			isPublished: jest.fn().mockReturnValue(true),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.replaceBlocks).toHaveBeenCalledWith(parsed);
+		expect(deps.savePost).not.toHaveBeenCalled();
+		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
+			status: 'awaiting_review',
+			findings: [],
+		});
+		expect(deps.notify).toHaveBeenCalledWith(
+			'warning',
+			'Review agent changes before updating.',
+			expect.objectContaining({
+				id: FINISH_NOTICE_ID,
+				// Carries the only Discard, so it must never be dismissible.
+				isDismissible: false,
+				// Discard first (existing Discard-locating helpers read
+				// actions[0]), then View details (U4).
+				actions: [
+					expect.objectContaining({ label: expect.any(String) }),
+					expect.objectContaining({ label: expect.any(String) }),
+				],
+			})
+		);
+		expect(deps.onNextSave).toHaveBeenCalledTimes(1);
+		expect(deps.markDocument).toHaveBeenCalledWith('done');
+	});
+
+	test('6c. a failed awaiting_review report still shows the review notice with Discard, plus a separate report-error notice, and still marks done', async () => {
+		const original = [{ name: 'core/heading' }];
+		const parsed = [{ name: 'core/paragraph' }];
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			getEditorBlocks: jest.fn().mockReturnValue(original),
+			parse: jest.fn().mockReturnValue(parsed),
+			isPublished: jest.fn().mockReturnValue(true),
+			postReport: jest
+				.fn()
+				.mockRejectedValueOnce(new Error('network down')),
+		});
+
+		await finishBuild(1, deps);
+
+		// The review notice with its Discard action must still appear even
+		// though reporting `awaiting_review` failed.
+		expect(deps.notify).toHaveBeenCalledWith(
+			'warning',
+			expect.any(String),
+			expect.objectContaining({
+				id: FINISH_NOTICE_ID,
+				actions: [
+					expect.objectContaining({ label: expect.any(String) }),
+					expect.objectContaining({ label: expect.any(String) }),
+				],
+			})
+		);
+		// ...plus a separate, non-blocking notice about the failed report.
+		expect(deps.notify).toHaveBeenCalledWith(
+			'error',
+			expect.any(String),
+			expect.objectContaining({ id: FINISH_REPORT_ERROR_NOTICE_ID })
+		);
+		expect(deps.onNextSave).toHaveBeenCalledTimes(1);
+		expect(deps.markDocument).toHaveBeenCalledWith('done');
+	});
+
+	test('6a. Discard restores the original blocks and posts discarded', async () => {
+		const original = [{ name: 'core/heading' }];
+		const parsed = [{ name: 'core/paragraph' }];
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			getEditorBlocks: jest.fn().mockReturnValue(original),
+			parse: jest.fn().mockReturnValue(parsed),
+			isPublished: jest.fn().mockReturnValue(true),
+		});
+
+		await finishBuild(1, deps);
+
+		const [, , options] = deps.notify.mock.calls[0];
+		const discard = options.actions[0];
+
+		discard.onClick();
+
+		expect(deps.replaceBlocks).toHaveBeenLastCalledWith(original);
+		expect(deps.postReport).toHaveBeenLastCalledWith({
+			buildId: BUILD_ID,
+			status: 'discarded',
+		});
+	});
+
+	test('6a-reject. Discard swallows a rejected postReport and still restores blocks', async () => {
+		const original = [{ name: 'core/heading' }];
+		const parsed = [{ name: 'core/paragraph' }];
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			getEditorBlocks: jest.fn().mockReturnValue(original),
+			parse: jest.fn().mockReturnValue(parsed),
+			isPublished: jest.fn().mockReturnValue(true),
+		});
+
+		await finishBuild(1, deps);
+
+		deps.postReport.mockRejectedValueOnce(new Error('network down'));
+		const [, , options] = deps.notify.mock.calls[0];
+		const discard = options.actions[0];
+
+		expect(() => discard.onClick()).not.toThrow();
+		expect(deps.replaceBlocks).toHaveBeenLastCalledWith(original);
+		expect(deps.postReport).toHaveBeenLastCalledWith({
+			buildId: BUILD_ID,
+			status: 'discarded',
+		});
+
+		// The rejection above must be swallowed, not surfaced as an
+		// unhandled promise rejection — if it weren't, Jest would report it
+		// as a separate test failure once the flush below lets it settle.
+		await flushMicrotasks();
+	});
+
+	test('6b. a later successful save posts finished_with_findings once', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			isPublished: jest.fn().mockReturnValue(true),
+		});
+		deps.engine.lint.mockReturnValue([
+			{
+				rule: 'no-custom-html',
+				severity: 'warning',
+				path: '0',
+				message: 'Avoid custom HTML',
+			},
+		]);
+
+		await finishBuild(1, deps);
+
+		const onSuccess = deps.onNextSave.mock.calls[0][0];
+		deps.postReport.mockClear();
+
+		await onSuccess();
+
+		expect(deps.postReport).toHaveBeenCalledTimes(1);
+		expect(deps.postReport).toHaveBeenCalledWith({
+			buildId: BUILD_ID,
+			status: 'finished_with_findings',
+			findings: [
+				{
+					rule: 'no-custom-html',
+					severity: 'warning',
+					path: '0',
+					message: 'Avoid custom HTML',
+				},
+			],
+		});
+	});
+
+	test('6b-reject. a later save postReport rejection is swallowed, not thrown', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			isPublished: jest.fn().mockReturnValue(true),
+		});
+
+		await finishBuild(1, deps);
+
+		const onSuccess = deps.onNextSave.mock.calls[0][0];
+		deps.postReport.mockRejectedValueOnce(new Error('network down'));
+
+		await expect(onSuccess()).resolves.toBeUndefined();
+	});
+
+	test("7. another user's build on a draft is applied for review, never saved", async () => {
+		const original = [{ name: 'core/heading' }];
+		const parsed = [{ name: 'core/paragraph' }];
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: false,
+				submitter: 42,
+				tree: TREE,
+				mode: 'replace',
+				designContext: DESIGN_CONTEXT,
+			}),
+			getEditorBlocks: jest.fn().mockReturnValue(original),
+			parse: jest.fn().mockReturnValue(parsed),
+			isPublished: jest.fn().mockReturnValue(false),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.replaceBlocks).toHaveBeenCalledWith(parsed);
+		expect(deps.savePost).not.toHaveBeenCalled();
+		expect(deps.postReport).toHaveBeenCalledWith(
+			expect.objectContaining({
+				status: 'awaiting_review',
+				buildId: BUILD_ID,
+			})
+		);
+		expect(deps.notify).toHaveBeenCalledWith(
+			'warning',
+			expect.stringContaining('on behalf of another user'),
+			expect.objectContaining({
+				id: FINISH_NOTICE_ID,
+				isDismissible: false,
+				actions: [
+					expect.objectContaining({ label: 'Discard' }),
+					expect.objectContaining({ label: expect.any(String) }),
+				],
+			})
+		);
+		expect(deps.onNextSave).toHaveBeenCalledTimes(1);
+		expect(deps.markDocument).toHaveBeenCalledWith('done');
+	});
+
+	test("7b. another user's build on a published post uses the other-user review wording", async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: false,
+				tree: TREE,
+				mode: 'replace',
+			}),
+			isPublished: jest.fn().mockReturnValue(true),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.savePost).not.toHaveBeenCalled();
+		expect(deps.notify).toHaveBeenCalledWith(
+			'warning',
+			expect.stringContaining('on behalf of another user'),
+			expect.objectContaining({ id: FINISH_NOTICE_ID })
+		);
+	});
+
+	test('7c. a response without isSubmitter is never auto-saved', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				tree: TREE,
+				mode: 'replace',
+			}),
+			isPublished: jest.fn().mockReturnValue(false),
+		});
+
+		await finishBuild(1, deps);
+
+		expect(deps.savePost).not.toHaveBeenCalled();
+		expect(deps.postReport).toHaveBeenCalledWith(
+			expect.objectContaining({
+				status: 'awaiting_review',
+				buildId: BUILD_ID,
+			})
+		);
+	});
+
+	test('a REST GET failure marks failed and shows an error notice, never throwing', async () => {
+		const deps = createDeps({
+			fetchPending: jest
+				.fn()
+				.mockRejectedValue(new Error('network down')),
+		});
+
+		await expect(finishBuild(1, deps)).resolves.toBeUndefined();
+
+		expect(deps.markDocument).toHaveBeenCalledWith('failed');
+		expect(deps.notify).toHaveBeenCalledWith(
+			'error',
+			expect.any(String),
+			expect.objectContaining({ id: FINISH_NOTICE_ID })
+		);
+		expect(deps.replaceBlocks).not.toHaveBeenCalled();
+	});
+
+	test('a REST POST failure is caught and never thrown', async () => {
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({ pending: false }),
+			postReport: jest.fn().mockRejectedValue(new Error('network down')),
+		});
+		// Force a branch that posts a report even though fetchPending says
+		// "not pending" would normally skip it — use the conflict branch
+		// instead, which always reports.
+		deps.fetchPending.mockResolvedValue({
+			pending: true,
+			submitterUnfiltered: true,
+			buildId: BUILD_ID,
+			conflict: true,
+			tree: TREE,
+			mode: 'replace',
+		});
+
+		await expect(finishBuild(1, deps)).resolves.toBeUndefined();
+
+		expect(deps.markDocument).toHaveBeenLastCalledWith('failed');
+	});
+
+	test('6d. after Discard, a later save reports nothing', async () => {
+		const editor = createFakeEditorStore();
+		const deps = createDeps({
+			fetchPending: jest.fn().mockResolvedValue({
+				pending: true,
+				submitterUnfiltered: true,
+				buildId: BUILD_ID,
+				conflict: false,
+				isSubmitter: true,
+				tree: TREE,
+				mode: 'replace',
+			}),
+			isPublished: jest.fn().mockReturnValue(true),
+			onNextSave: editor.watch,
+		});
+
+		await finishBuild(1, deps);
+
+		const [, , options] = deps.notify.mock.calls[0];
+		options.actions[0].onClick();
+		await flushMicrotasks();
+		deps.postReport.mockClear();
+
+		editor.save();
+		await flushMicrotasks();
+
+		expect(deps.postReport).not.toHaveBeenCalled();
+	});
+
+	// U4: the finish flow stores a report for the panel to read, for every
+	// status a reviewer might need details on.
+	describe('setReport() records a report for the Agent build sidebar (U4)', () => {
+		test('conflict', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.setReport).toHaveBeenCalledWith(
+				expect.objectContaining({ status: 'conflict' })
+			);
+		});
+
+		test('failed (invalid assemble)', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+			deps.engine.assemble.mockReturnValue({
+				status: 'invalid',
+				markup: '',
+				invalid: [{ path: '0', block: 'core/unknown', reason: 'Nope' }],
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.setReport).toHaveBeenCalledWith(
+				expect.objectContaining({
+					status: 'failed',
+					invalid: [
+						{ path: '0', block: 'core/unknown', reason: 'Nope' },
+					],
+				})
+			);
+		});
+
+		test('awaiting_review', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+				isPublished: jest.fn().mockReturnValue(true),
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.setReport).toHaveBeenCalledWith(
+				expect.objectContaining({ status: 'awaiting_review' })
+			);
+		});
+
+		test('finished_with_findings', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+			deps.engine.lint.mockReturnValue([
+				{
+					rule: 'no-custom-html',
+					severity: 'warning',
+					path: '0',
+					message: 'Avoid custom HTML',
+				},
+			]);
+
+			await finishBuild(1, deps);
+
+			expect(deps.setReport).toHaveBeenCalledWith(
+				expect.objectContaining({ status: 'finished_with_findings' })
+			);
+		});
+	});
+
+	// U5: failure and conflict notices must give a reason, not just "could
+	// not be applied.".
+	describe('failed/conflict notices name a reason (U5)', () => {
+		test('a failed notice includes the first invalid reason', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+			deps.engine.assemble.mockReturnValue({
+				status: 'invalid',
+				markup: '',
+				invalid: [
+					{
+						path: 'blocks[0]',
+						block: 'core/unknown',
+						reason: 'Block "core/unknown" is not registered.',
+					},
+				],
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.notify).toHaveBeenCalledWith(
+				'error',
+				expect.stringContaining(
+					'Block "core/unknown" is not registered.'
+				),
+				expect.objectContaining({
+					actions: [
+						expect.objectContaining({ label: expect.any(String) }),
+					],
+				})
+			);
+		});
+
+		test('a failed notice with several invalid entries says how many more', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: false,
+					isSubmitter: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+			deps.engine.assemble.mockReturnValue({
+				status: 'invalid',
+				markup: '',
+				invalid: [
+					{ path: 'blocks[0]', block: 'a', reason: 'First reason' },
+					{ path: 'blocks[1]', block: 'b', reason: 'Second reason' },
+				],
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.notify).toHaveBeenCalledWith(
+				'error',
+				expect.stringContaining('and 1 more'),
+				expect.anything()
+			);
+		});
+
+		test('the conflict notice gets a View details action', async () => {
+			const deps = createDeps({
+				fetchPending: jest.fn().mockResolvedValue({
+					pending: true,
+					submitterUnfiltered: true,
+					buildId: BUILD_ID,
+					conflict: true,
+					tree: TREE,
+					mode: 'replace',
+				}),
+			});
+
+			await finishBuild(1, deps);
+
+			expect(deps.notify).toHaveBeenCalledWith(
+				'warning',
+				expect.stringContaining(
+					'This page changed since the agent build was queued.'
+				),
+				expect.objectContaining({
+					actions: [
+						expect.objectContaining({ label: expect.any(String) }),
+					],
+				})
+			);
+		});
+	});
+});
+
+describe('waitForBlockRegistration()', () => {
+	beforeEach(() => {
+		jest.useFakeTimers();
+	});
+
+	afterEach(() => {
+		jest.useRealTimers();
+	});
+
+	test('resolves settled once the block count is stable across 3 checks and a post id exists', async () => {
+		const lengths = [10, 12, 12, 12, 12];
+		const getBlockTypesLength = jest.fn(() => lengths.shift() ?? 12);
+		const getPostId = jest.fn().mockReturnValue(7);
+
+		const promise = waitForBlockRegistration({
+			getBlockTypesLength,
+			getPostId,
+			intervalMs: 100,
+			stableChecks: 3,
+			timeoutMs: 10000,
+		});
+
+		// 4 ticks needed: 12 (1st read after 10), 12,12,12 -> 3 consecutive
+		// stable reads from the polling loop.
+		await jest.advanceTimersByTimeAsync(100 * 4);
+
+		await expect(promise).resolves.toEqual({ settled: true, postId: 7 });
+	});
+
+	test('times out and reports not settled when the count never stabilizes', async () => {
+		let n = 0;
+		const getBlockTypesLength = jest.fn(() => {
+			n += 1;
+			return n; // always changing
+		});
+		const getPostId = jest.fn().mockReturnValue(7);
+
+		const promise = waitForBlockRegistration({
+			getBlockTypesLength,
+			getPostId,
+			intervalMs: 100,
+			stableChecks: 3,
+			timeoutMs: 500,
+		});
+
+		await jest.advanceTimersByTimeAsync(600);
+
+		await expect(promise).resolves.toEqual({ settled: false, postId: 7 });
+	});
+
+	test('times out when the count stabilizes but no post id is ever available', async () => {
+		const getBlockTypesLength = jest.fn().mockReturnValue(12);
+		const getPostId = jest.fn().mockReturnValue(null);
+
+		const promise = waitForBlockRegistration({
+			getBlockTypesLength,
+			getPostId,
+			intervalMs: 100,
+			stableChecks: 3,
+			timeoutMs: 300,
+		});
+
+		await jest.advanceTimersByTimeAsync(300);
+
+		await expect(promise).resolves.toEqual({
+			settled: false,
+			postId: null,
+		});
+	});
+});
+
+describe('watchNextSave()', () => {
+	test('fires onSuccess once for a successful manual save', () => {
+		const editor = createFakeEditorStore();
+		const onSuccess = jest.fn();
+		editor.watch(onSuccess);
+
+		editor.save();
+		expect(onSuccess).toHaveBeenCalledTimes(1);
+
+		// One-shot: a second save does not fire again.
+		editor.save();
+		expect(onSuccess).toHaveBeenCalledTimes(1);
+	});
+
+	test('does not fire for an autosave, even though core reports isAutosavingPost() false once saving ends', () => {
+		const editor = createFakeEditorStore();
+		const onSuccess = jest.fn();
+		editor.watch(onSuccess);
+
+		editor.save({ isAutosave: true });
+
+		expect(onSuccess).not.toHaveBeenCalled();
+	});
+
+	test('does not fire for a preview save', () => {
+		const editor = createFakeEditorStore();
+		const onSuccess = jest.fn();
+		editor.watch(onSuccess);
+
+		editor.save({ isPreview: true });
+		editor.save({ isAutosave: true, isPreview: true });
+
+		expect(onSuccess).not.toHaveBeenCalled();
+	});
+
+	test('after an autosave and a preview, only the real manual save fires', () => {
+		const editor = createFakeEditorStore();
+		const onSuccess = jest.fn();
+		editor.watch(onSuccess);
+
+		editor.save({ isAutosave: true });
+		editor.save({ isPreview: true });
+		expect(onSuccess).not.toHaveBeenCalled();
+
+		editor.save({});
+		expect(onSuccess).toHaveBeenCalledTimes(1);
+	});
+
+	test('does not fire when the save request failed', () => {
+		const editor = createFakeEditorStore();
+		const onSuccess = jest.fn();
+		editor.watch(onSuccess);
+
+		editor.save({}, false);
+
+		expect(onSuccess).not.toHaveBeenCalled();
+	});
+});

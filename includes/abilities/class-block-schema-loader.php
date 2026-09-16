@@ -497,10 +497,16 @@ class Block_Schema_Loader {
 	/**
 	 * Read and parse a JSON file.
 	 *
+	 * Shared beyond this class: any helper that needs to read a small local
+	 * JSON file under the plugin directory (e.g. `Block_Guidance` reading
+	 * `agent.json`) should call this instead of re-implementing file-size
+	 * and JSON-depth guards. Never throws: a missing/oversized/unreadable
+	 * file or invalid JSON all resolve to null.
+	 *
 	 * @param string $path File path.
 	 * @return array<string, mixed>|null Parsed data or null on failure.
 	 */
-	private static function read_json_file( string $path ): ?array {
+	public static function read_json_file( string $path ): ?array {
 		if ( ! file_exists( $path ) ) {
 			return null;
 		}

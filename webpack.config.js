@@ -290,6 +290,25 @@ module.exports = [
 						},
 						noErrorOnMissing: false,
 					},
+					// Per-block agent guidance (Task 13): only a handful of
+					// blocks have an agent.json, so a missing match is fine.
+					{
+						from: 'src/blocks/*/agent.json',
+						to: ({ absoluteFilename }) => {
+							const normalized = absoluteFilename.replace(
+								/\\/g,
+								'/'
+							);
+							const match = normalized.match(
+								/blocks\/([^/]+)\/agent\.json$/
+							);
+
+							return match
+								? `blocks/${match[1]}/agent.json`
+								: 'blocks/[name][ext]';
+						},
+						noErrorOnMissing: true,
+					},
 					{
 						from: 'src/blocks/*/styles/*.json',
 						to: ({ absoluteFilename }) => {
