@@ -80,7 +80,7 @@ describe.each(['en_US', 'de_DE', 'fr_FR'])(
 				const content = (value) => {
 					const element = document.createElement('template');
 					element.innerHTML = value
-						.replace(/^<!--.*?-->\s*/, '')
+						.replace(/^<!--[\s\S]*?-->\s*/, '')
 						.replace(/\s*<!-- \/wp:designsetgo\/card -->$/, '')
 						.replace(/>\s+</g, '><');
 					return element.innerHTML;
