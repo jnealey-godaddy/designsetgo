@@ -430,7 +430,7 @@ class Block_Inserter {
 
 		// Anchor support is the same story: save() writes the `anchor`
 		// attribute as the root `id`, and apply_block_supports() reports it.
-		$anchor_id = isset( $applied['id'] ) && is_string( $applied['id'] ) ? $applied['id'] : '';
+		$anchor_id = (string) ( $applied['id'] ?? '' );
 
 		// Editor extensions (hover effects, text reveal, expanding background)
 		// add their own classes/styles/data attributes onto the SAME root

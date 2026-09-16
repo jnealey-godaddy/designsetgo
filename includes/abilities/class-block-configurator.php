@@ -319,13 +319,20 @@ class Block_Configurator {
 	}
 
 	/**
-	 * Whether an attribute holds inline rich text whose edge whitespace is meaningful.
+	 * Whether an attribute holds inline rich text.
+	 *
+	 * These keep safe inline markup and their edge whitespace instead of going
+	 * through the strip-tags branch. Every attribute that Block_Inserter later
+	 * emits with wp_kses_post() belongs here: sanitize_attributes() runs first
+	 * on every real ability entry point, so an omission strips the formatting
+	 * before markup is generated and leaves the kses call downstream as dead
+	 * code. `caption` is core/image's, `citation` is core/quote's.
 	 *
 	 * @param string $key Attribute key.
 	 * @return bool
 	 */
 	private static function is_inline_text_attribute( string $key ): bool {
-		return 'content' === $key;
+		return in_array( $key, array( 'content', 'caption', 'citation' ), true );
 	}
 
 	/**
