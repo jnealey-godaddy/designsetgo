@@ -428,9 +428,23 @@ class Block_Inserter {
 			)
 		);
 
-		// Anchor support is the same story: save() writes the `anchor`
-		// attribute as the root `id`, and apply_block_supports() reports it.
-		$anchor_id = (string) ( $applied['id'] ?? '' );
+		// Anchor support is the same story: save() writes the `anchor` attribute
+		// as the root `id`. It cannot be read off apply_block_supports() though:
+		// core only grew a PHP anchor block support in WP 7.0
+		// (wp-includes/block-supports/anchor.php), so across the 6.7-6.9 range
+		// this plugin also supports it reports no `id` at all and the attribute
+		// is the only source. Read it directly, gated on the same block support
+		// core's own implementation checks so a block that does not support
+		// anchors stays faithful to its save() output.
+		$anchor_id = '';
+		if ( null !== $block_type
+			&& isset( $attributes['anchor'] )
+			&& is_string( $attributes['anchor'] )
+			&& '' !== $attributes['anchor']
+			&& block_has_support( $block_type, array( 'anchor' ) )
+		) {
+			$anchor_id = $attributes['anchor'];
+		}
 
 		// Editor extensions (hover effects, text reveal, expanding background)
 		// add their own classes/styles/data attributes onto the SAME root
