@@ -170,7 +170,13 @@ such as `%s`. Remove the `fuzzy` flag only after reviewing a translation.
 
 ```bash
 wp i18n make-mo languages languages
-wp i18n make-json languages languages --no-purge
+wp i18n make-json languages languages --no-purge \
+  '--use-map={
+    "src/blocks/form-select-field/edit.js":"build/blocks/form-select-field/index.js",
+    "build/blocks/form-select-field/index.js":"build/blocks/form-select-field/index.js",
+    "build/blocks/map/index.js":"build/blocks/map/index.js",
+    "build/blocks/breadcrumbs/index.js":"build/blocks/breadcrumbs/index.js"
+  }'
 wp i18n make-json languages languages --no-purge \
   '--use-map={"src/blocks/form-select-field/edit.js":"build/blocks/form-select-field/index.js","build/blocks/form-select-field/index.js":"build/blocks/form-select-field/index.js"}'
 ```
