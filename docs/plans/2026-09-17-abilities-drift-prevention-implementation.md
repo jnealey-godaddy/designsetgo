@@ -1,0 +1,350 @@
+# Abilities Drift Prevention Implementation Plan
+
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** Make it impossible to merge a change that drifts the abilities layer's PHP
+restatements away from the block definitions they mirror.
+
+**Architecture:** Three hand-maintained restatements get a CI guard that diffs them against
+their machine-readable source of truth. The `save()` mirror is proved by probing every
+registry attribute and round-tripping it through the existing PHP → fixture → JS loop; the
+rich-text allow-lists get a fidelity assertion (validity cannot see this class of bug); the
+shape enum becomes generated. Only then is the 6,286-line mirror split into per-block
+serializers, with byte-identical fixtures as the proof the move changed nothing.
+
+**Tech Stack:** PHP 7.4+, PHPUnit via wp-env, Jest/jsdom, `@wordpress/blocks`,
+`WP_Block_Type_Registry`, GitHub Actions.
+
+**Spec:** [2026-09-17-abilities-drift-prevention.md](2026-09-17-abilities-drift-prevention.md)
+
+---
+
+## Environment notes (read first)
+
+The PHP toolchain is not on the default PATH in this worktree. Every PHP command needs:
+
+```bash
+export PATH="/opt/homebrew/bin:/usr/local/bin:/Applications/Docker.app/Contents/Resources/bin:$PATH"
+```
+
+Composer is not installed globally; it lives at `/tmp/composer` and is invoked as
+`php /tmp/composer`. `vendor/` is already installed in this worktree.
+
+Run PHPUnit through this worktree's own wp-env instance:
+
+```bash
+npx wp-env run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit
+```
+
+Regenerate fixtures with `DSGO_UPDATE_FIXTURES=1` prefixed to the phpunit command
+(Task 5 adds `npm run fixtures:update` as a wrapper).
+
+---
+
+## Unit 1 — Attribute coverage matrix
+
+### Task 1: Probe table and its two-way key diff
+
+**Files:**
+- Create: `tests/fixtures/attribute-probes.json`
+- Create: `tests/phpunit/abilities-attribute-probe-table-test.php`
+
+**Step 1: Write the failing test.** It enumerates every `designsetgo/*` attribute in
+`WP_Block_Type_Registry` (this covers extension attributes too — they are injected via
+`register_block_type_args`), asks the probe generator for a value, and requires that
+every attribute is either auto-derivable or present in the table.
+
+```php
+public function test_every_registry_attribute_is_probeable_or_declared() {
+    $table   = json_decode( file_get_contents( $this->table_path() ), true );
+    $missing = array();
+
+    foreach ( $this->registry_attributes() as $block => $attrs ) {
+        foreach ( $attrs as $attr => $definition ) {
+            if ( null !== Attribute_Probe_Generator::derive( $definition ) ) {
+                continue;
+            }
+            if ( isset( $table[ $block ][ $attr ] ) ) {
+                continue;
+            }
+            $missing[] = $block . '::' . $attr;
+        }
+    }
+
+    $this->assertSame( array(), $missing, 'Undeclared attributes: no probe and no skip.' );
+}
+```
+
+**Step 2: The reverse diff, in the same file.** A table entry naming an attribute the
+registry no longer has must fail. This is what stops the declaration rotting.
+
+```php
+public function test_no_stale_probe_table_entries() { /* symmetric assertion */ }
+```
+
+**Step 3: Run both.** Expected: FATAL, `Attribute_Probe_Generator` not found. That is the
+correct first failure.
+
+```bash
+npx wp-env run tests-cli --env-cwd=wp-content/plugins/designsetgo \
+  vendor/bin/phpunit --filter Abilities_Attribute_Probe_Table
+```
+
+**Step 4: Commit the red test.** Do not implement yet.
+
+---
+
+### Task 2: Probe value derivation
+
+**Files:**
+- Create: `tests/phpunit/support/class-attribute-probe-generator.php`
+- Test: `tests/phpunit/abilities-attribute-probe-generator-test.php`
+
+Test-support code, not shipped code — it lives under `tests/`, so it is excluded from the
+plugin build and from Plugin Check.
+
+**Step 1: Write unit tests for `derive()`** covering each row of the spec's table: a boolean
+flips its default; an enum yields every member; a number respects declared
+`minimum`/`maximum`; a string matching `/color/i` yields `#ff0000` *and* a preset probe; an
+`object` yields `null` (meaning "must be declared").
+
+**Step 2: Run.** Expected: FAIL, class not found.
+
+**Step 3: Implement `derive( array $definition ): ?array`** returning a list of probe values
+or `null`. Name heuristics run only for `type: string` with no `enum`:
+
+| Pattern | Value |
+|---|---|
+| `/color/i` | `#ff0000`, then `var:preset\|color\|contrast` |
+| `/url\|href\|src/i` | `https://example.com/probe` |
+| `/width\|height\|size\|gap\|radius\|spacing/i` | `2rem` |
+| `/text\|label\|title\|content\|message\|caption/i` | `Probe` |
+| anything else | `null` |
+
+**Step 4: Run.** Expected: PASS.
+
+**Step 5: Commit.**
+
+---
+
+### Task 3: Generate the matrix fixture
+
+**Files:**
+- Create: `tests/phpunit/abilities-attribute-matrix-fixture-test.php`
+- Create: `tests/unit/__fixtures__/ability-attribute-matrix.json` (generated)
+
+Model this file on `abilities-generated-markup-fixture-test.php` — reuse its
+`stabilise_ids()` approach verbatim (blocks seed UUIDs on insert, so without it the fixture
+can never match twice) and its `DSGO_UPDATE_FIXTURES=1` regeneration contract.
+
+**Step 1:** Build payloads: start from block defaults, flip exactly one attribute to one
+probe value, label as `<block>::<attribute>::<index>`. Skip blocks where
+`Block_Inserter::get_serialization_gap()` is non-null, and skip the two WooCommerce-gated
+blocks, exactly as `default_payloads()` does — otherwise the fixture depends on which
+plugins the environment has.
+
+**Step 2: D0.4 — a rejected probe must fail, not skip.** Before serializing, run the payload
+through `Block_Inserter::find_invalid_attribute_values()`. If it is refused, collect it and
+fail the test naming the attribute. Do **not** drop it silently.
+
+**Step 3:** Run with `DSGO_UPDATE_FIXTURES=1` to write the fixture. Inspect the entry count
+(expect roughly 1,000) and spot-check three entries by hand.
+
+**Step 4: Commit** the test and the generated fixture together.
+
+---
+
+### Task 4: Validate the matrix against real `save()`
+
+**Files:**
+- Create: `tests/unit/ability-attribute-matrix.test.js`
+
+**Step 1:** Copy the structure of `tests/unit/ability-generated-markup.test.js`. Import
+`parse` from `@wordpress/block-editor/node_modules/@wordpress/blocks` — **not** the
+top-level `@wordpress/blocks` copy. That is not a style preference: it must be the same
+instance `useBlockProps.save()` talks to, and the existing tests document why.
+
+**Step 2:** Register every referenced block via `registerDesignSetGoBlock` from
+`tools/regenerate-patterns`, then assert `collectInvalid(parse(markup))` is empty for every
+payload, reporting `label` + attribute in the failure message.
+
+**Step 3: Run.** `npx jest tests/unit/ability-attribute-matrix.test.js`
+
+Expected: **failures.** This is the point of the exercise — each failure is real drift the
+old per-block coverage could not see. Record the list before fixing anything.
+
+**Step 4: Commit** the test plus the recorded failure list in the commit message.
+
+---
+
+### Task 5: Triage the matrix failures
+
+For each failure, decide between exactly three outcomes and write the reason down:
+
+1. **Real mirror drift** — fix `Block_Inserter`, regenerate, re-run.
+2. **Attribute has no `save()` effect** — add a `skip` with a reason to
+   `attribute-probes.json`.
+3. **Bad probe value** — add an explicit `probe` to the table.
+
+Outcome 3 is the tempting wrong answer for a real bug. Before choosing it, confirm the
+attribute genuinely requires a structured value; a plain-looking value that fails is usually
+outcome 1.
+
+**Also in this task:** add `"fixtures:update"` to `package.json` scripts.
+
+Commit in small batches grouped by block, not one giant commit.
+
+---
+
+## Unit 2 — Rich-text fidelity
+
+### Task 6: Policy table and key diff
+
+**Files:**
+- Modify: `includes/abilities/class-block-configurator.php`
+- Create: `tests/phpunit/abilities-rich-text-policy-test.php`
+
+**Step 1:** Add `RICH_TEXT_ATTRIBUTES`, block → attribute → `'inline'|'label'|'plain'`. Seed
+it with **today's actual behaviour**, not the desired behaviour: icon-button/modal-trigger
+`text` → `label`, heading-segment `content` → `inline`, everything else → `plain`.
+
+**Step 2:** Write the two-way key diff against every registry attribute carrying
+`source: "html"` or `source: "text"`. Run it; it should pass, because the table was seeded
+from reality.
+
+**Step 3: Commit.**
+
+---
+
+### Task 7: The fidelity assertion
+
+**Files:**
+- Create: `tests/phpunit/abilities-rich-text-fidelity-test.php`
+
+**Why this test and not `isValid`:** for a `source: "html"` attribute the value lives in the
+markup, not the block comment. If PHP strips `<em>` before writing, the parser reads the
+attribute back stripped, `save()` of the stripped value reproduces it exactly, and the block
+is **valid**. Validity is structurally blind here. Assert fidelity instead.
+
+**Step 1:** For every attribute in `RICH_TEXT_ATTRIBUTES`, insert a block with
+`Care <em>begins</em> <a href="https://example.com">here</a>`, re-parse the stored post
+content with `parse_blocks()`, and assert per policy:
+
+- `inline` — `<em>` and `<a href>` both survive
+- `label` — `<em>` survives, `<a>` does not
+- `plain` — no tags survive
+
+**Step 2: Run.** Expected: PASS for all thirteen, because the table was seeded from actual
+behaviour. The test documents the status quo before changing it.
+
+**Step 3: Commit.**
+
+---
+
+### Task 8: Reclassify the eight wrong attributes
+
+**Files:**
+- Modify: `includes/abilities/class-block-configurator.php`
+- Modify: `includes/abilities/class-block-inserter.php`
+
+Now flip the policy to what it *should* be and watch the test go red, one attribute at a
+time. Per the spec's table: card `title`/`subtitle`/`bodyText`, timeline-item `date`/`title`
+move to `inline`; accordion-item `title` moves only if the inserter stops writing it with
+`esc_html`.
+
+**Order per attribute — do not batch:**
+
+1. Change the policy entry. Run the fidelity test. Expect FAIL.
+2. Change the inserter's emission for that attribute (`wp_kses_post` with the matching
+   allow-list rather than `esc_html`/`sanitize_text_field`).
+3. Run the fidelity test. Expect PASS.
+4. Run the Unit 1 matrix and the existing generated-markup suite. **Both must stay green** —
+   a policy change that alters stored markup is a `save()` parity change too.
+5. Regenerate fixtures if markup legitimately changed, inspect the diff, commit.
+
+`badgeText`, `label`, `completionMessage`, `submitButtonText` and `titleText` are
+`source: "text"`, not `"html"`. Check each block's `save()` before moving it: if `save()`
+renders it as plain text, `plain` is correct and it should stay.
+
+---
+
+## Unit 3 — Shape divider enum
+
+### Task 9: Generate the list
+
+**Files:**
+- Create: `tools/generate-shape-divider-enum.js`
+- Create: `includes/abilities/generated/shape-dividers.php`
+- Modify: `package.json`, `.github/workflows/ci.yml`
+
+**Step 1:** Script reads `src/blocks/section/utils/shape-dividers.js`, extracts the 29
+`value:` entries, writes a PHP file returning the array with a generated-file header.
+
+**Step 2:** Add `npm run generate:shape-enum`; wire a CI freshness step that regenerates and
+runs `git diff --exit-code`.
+
+**Step 3: Commit.**
+
+### Task 10: Point the ability at it
+
+**Files:**
+- Modify: `includes/abilities/configurators/class-configure-shape-divider.php`
+- Create: `tests/phpunit/abilities-shape-enum-test.php`
+
+`VALID_SHAPES` becomes a read of the generated file. Test asserts the PHP list equals the JS
+list (parse the JS in the test) so the two can never diverge even if the generator breaks.
+
+Run the full PHP suite. Commit.
+
+---
+
+## Unit 4 — Split `class-block-inserter.php`
+
+**Do not start this unit until Units 1–3 are green.** The matrix is what makes this move
+safe; without it the fixture proves only 144 behaviours were preserved.
+
+### Task 11: Extract `Serializer_Support`
+
+**Files:**
+- Create: `includes/abilities/serializers/class-serializer-support.php`
+- Modify: `includes/abilities/class-block-inserter.php`
+
+Move the ~40 shared private helpers (`convert_color_value_to_css_var()`, `has_overlay()`,
+`render_shape_divider()`, `numeric_attribute()`, `spacing_gap()`, …) to public statics.
+Leave `Block_Inserter` delegating to them so nothing else changes yet.
+
+**Acceptance: regenerate both fixtures; the diff must be empty.** Commit.
+
+### Task 12: Registry plus the first three serializers
+
+**Files:**
+- Create: `includes/abilities/serializers/class-serializer-registry.php`
+- Create: `includes/abilities/serializers/class-{section,row,grid}-serializer.php`
+- Modify: `includes/abilities/class-block-inserter.php`
+
+Registry maps block name → class; `generate_designsetgo_wrapper_html()` consults it first
+and falls through to the remaining `switch` for anything not yet migrated. That fall-through
+is what lets this ship in pieces.
+
+**Acceptance: empty fixture diff.** Commit.
+
+### Task 13: Migrate the remaining ~52 blocks
+
+Work in batches of five, empty fixture diff after each batch, commit per batch. When the
+`switch` is empty, delete it and the fall-through.
+
+### Task 14: Close the loop
+
+**Files:**
+- Create: `tests/phpunit/abilities-serializer-registry-test.php`
+
+Assert every registered non-dynamic `designsetgo/*` block has a registry entry or a
+documented gap, and that no registry entry names a block that does not exist — the same
+two-way diff as Tasks 1 and 6, now for serializers.
+
+Confirm `Block_Inserter` is under ~2,400 lines. Run `composer analyse` (PHPStan) as well as
+`vendor/bin/phpcs` — CI runs `analyse` as a separate script and the CLAUDE.md pre-commit
+list omits it.
+
+Final acceptance: full PHP suite, full JS suite, both fixtures byte-identical to their
+pre-split state.
