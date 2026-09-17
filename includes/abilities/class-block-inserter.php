@@ -3111,16 +3111,33 @@ class Block_Inserter {
 				$desktop_cols = isset( $attributes['columns'] ) ? self::numeric_attribute( $attributes['columns'] ) : 3;
 				$tablet_cols  = isset( $attributes['columnsTablet'] ) ? self::numeric_attribute( $attributes['columnsTablet'] ) : 2;
 				$mobile_cols  = isset( $attributes['columnsMobile'] ) ? self::numeric_attribute( $attributes['columnsMobile'] ) : 1;
-				$gap          = isset( $attributes['gap'] ) ? intval( $attributes['gap'] ) : 32;
+				// `gap` is a STRING attribute defaulting to '32px', and save.js
+				// writes it through untouched. intval() + 'px' happened to
+				// reproduce the default exactly, which is why the defaults
+				// fixture passed, but turned '2rem' into '2px'.
+				$gap          = isset( $attributes['gap'] ) && is_string( $attributes['gap'] ) && '' !== $attributes['gap']
+					? $attributes['gap']
+					: '32px';
 				$duration     = isset( $attributes['animationDuration'] ) ? floatval( $attributes['animationDuration'] ) : 2;
 				$delay        = isset( $attributes['animationDelay'] ) ? floatval( $attributes['animationDelay'] ) : 0;
 				$easing       = isset( $attributes['animationEasing'] ) ? $attributes['animationEasing'] : 'easeOutQuad';
 				$use_grouping = isset( $attributes['useGrouping'] ) ? $attributes['useGrouping'] : true;
 				$separator    = isset( $attributes['separator'] ) ? $attributes['separator'] : ',';
 				$decimal      = isset( $attributes['decimal'] ) ? $attributes['decimal'] : '.';
-				$align        = isset( $attributes['alignment'] ) ? $attributes['alignment'] : 'center';
+				// save.js reads `alignContent`. This read `alignment`, which no
+				// version of the block has ever declared, so the fallback fired
+				// every time and every group serialized as --align-center.
+				$align        = isset( $attributes['alignContent'] ) && is_string( $attributes['alignContent'] ) && '' !== $attributes['alignContent']
+					? $attributes['alignContent']
+					: 'center';
 
-				$outer_style = 'align-self:stretch;--dsgo-counter-columns-desktop:' . (string) $desktop_cols . ';--dsgo-counter-columns-tablet:' . (string) $tablet_cols . ';--dsgo-counter-columns-mobile:' . (string) $mobile_cols . ';--dsgo-counter-gap:' . (string) $gap . 'px';
+				$outer_style = 'align-self:stretch;--dsgo-counter-columns-desktop:' . (string) $desktop_cols . ';--dsgo-counter-columns-tablet:' . (string) $tablet_cols . ';--dsgo-counter-columns-mobile:' . (string) $mobile_cols . ';--dsgo-counter-gap:' . $gap;
+
+				// Child Counter blocks inherit this through CSS. save.js DOES
+				// convert here, unlike the Counter block's own hoverColor.
+				if ( ! empty( $attributes['hoverColor'] ) && is_string( $attributes['hoverColor'] ) ) {
+					$outer_style .= ';--dsgo-counter-hover-color:' . self::convert_color_value_to_css_var( $attributes['hoverColor'] );
+				}
 
 				$data_attrs  = ' data-animation-duration="' . esc_attr( (string) $duration ) . '"';
 				$data_attrs .= ' data-animation-delay="' . esc_attr( (string) $delay ) . '"';
@@ -4334,6 +4351,21 @@ class Block_Inserter {
 				$data_attrs .= ' data-scroll-smooth="' . ( $scroll_smooth ? 'true' : 'false' ) . '"';
 				$data_attrs .= ' data-scroll-offset="' . esc_attr( (string) $scroll_offset ) . '"';
 
+				// Custom properties, set only when the author chose a value -
+				// save.js guards each one on truthiness, so a zero sticky offset
+				// is omitted rather than written as 0px.
+				$toc_styles = array();
+				if ( ! empty( $attributes['linkColor'] ) && is_string( $attributes['linkColor'] ) ) {
+					$toc_styles[] = '--dsgo-toc-link-color:' . self::convert_color_value_to_css_var( $attributes['linkColor'] );
+				}
+				if ( ! empty( $attributes['activeLinkColor'] ) && is_string( $attributes['activeLinkColor'] ) ) {
+					$toc_styles[] = '--dsgo-toc-active-link-color:' . self::convert_color_value_to_css_var( $attributes['activeLinkColor'] );
+				}
+				if ( ! empty( $attributes['stickyOffset'] ) && is_numeric( $attributes['stickyOffset'] ) ) {
+					$toc_styles[] = '--dsgo-toc-sticky-offset:' . self::format_js_number( (float) $attributes['stickyOffset'] ) . 'px';
+				}
+				$toc_style_attr = empty( $toc_styles ) ? '' : ' style="' . esc_attr( implode( ';', $toc_styles ) ) . '"';
+
 				// List tag.
 				$list_tag = 'ordered' === $list_style ? 'ol' : 'ul';
 
@@ -4349,7 +4381,7 @@ class Block_Inserter {
 				$inner_html     .= '</div>';
 
 				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $data_attrs . '>' . $inner_html,
+					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $toc_style_attr . $data_attrs . '>' . $inner_html,
 					'closing' => '</div>',
 				);
 
