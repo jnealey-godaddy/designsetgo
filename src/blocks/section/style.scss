@@ -29,13 +29,20 @@
 	// Hover background overlay - works with both gradients and solid colors
 	// Using ::after pseudo-element allows smooth opacity transition
 	// z-index: 0 (below overlay ::before and content).
-	// The layer is always present but transparent until --dsgo-hover-bg-color is
-	// set, so fading it in on hover is a no-op when there is no hover color. This
-	// (rather than an inline-`[style*=…]` gate) lets the color come from EITHER
-	// the block's inline attribute OR a section style variation's stylesheet
-	// (`.is-style-*{ --dsgo-hover-bg-color: … }`). Additive overlay — no base
-	// value is clobbered — so no class-based activation is needed.
-	&::after {
+	// Gated on the `--dsgo-hover-bg-color` inline var actually being present —
+	// this is the ONLY source DSG emits it from today (see save.js/edit.js;
+	// there is no `is-style-hover-bg-*` variation family, unlike hover text/
+	// icon/button). An always-on `::after` here would otherwise claim the
+	// `opacity` property outright: a theme/style-kit's OWN decorative overlay
+	// painted on `.wp-block-designsetgo-section.has-background::after` usually
+	// sets `background` but not `opacity`, so with no gate this rule's
+	// `opacity: 0` is the only declaration for that property and wins by
+	// default — making the kit's overlay invisible until :hover regardless of
+	// selector specificity. Mirrors the `[style*=…]` gate already used by the
+	// Row and Grid blocks for the same variable (see their style.scss); those
+	// blocks paint the color directly instead of through a pseudo-element, so
+	// they never had this always-on-layer problem.
+	&[style*="--dsgo-hover-bg-color"]::after {
 		content: '';
 		position: absolute;
 		top: 0;
@@ -436,10 +443,11 @@
 		}
 	}
 
-	// Fade in the hover background overlay (::after pseudo-element). Safe when no
-	// hover color is set — the layer is transparent, so this is a visual no-op.
-	// Works with an inline attribute or a style variation.
-	&:hover::after {
+	// Fade in the hover background overlay (::after pseudo-element). Gated the
+	// same as the base rule above so this never claims `opacity` on hover for a
+	// plain `.has-background` section with no hover color configured — that
+	// would fight a theme/style-kit's own ::after opacity on hover too.
+	&[style*="--dsgo-hover-bg-color"]:hover::after {
 		opacity: 1;
 	}
 

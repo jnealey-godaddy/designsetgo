@@ -59,10 +59,11 @@ $inline-block-data-types: (
 
 	// Hover background overlay - works with both gradients and solid colors
 	// Using ::after pseudo-element allows smooth opacity transition.
-	// Always present but transparent until --dsgo-hover-bg-color is set, so the
-	// color may come from an inline attribute OR a section style variation's
-	// stylesheet. Mirrors src/blocks/section/style.scss.
-	&::after {
+	// Gated on the `--dsgo-hover-bg-color` inline var actually being present —
+	// an always-on rule here would claim the `opacity` property outright and
+	// hide a theme/style-kit's own decorative ::after overlay on a plain
+	// `.has-background` section until :hover. Mirrors src/blocks/section/style.scss.
+	&[style*="--dsgo-hover-bg-color"]::after {
 		content: '';
 		position: absolute;
 		top: 0;
@@ -292,9 +293,9 @@ $inline-block-data-types: (
 	}
 
 	// Hover background and text colors using CSS custom properties (must match style.scss)
-	// Fade in the hover background overlay (::after). Safe when unset — the layer
-	// is transparent. Works with an inline attribute or a variation.
-	&:hover::after {
+	// Fade in the hover background overlay (::after), gated the same as the base
+	// rule above. Must match style.scss.
+	&[style*="--dsgo-hover-bg-color"]:hover::after {
 		opacity: 1;
 	}
 
