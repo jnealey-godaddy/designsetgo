@@ -251,6 +251,16 @@
 		width: 100%; // Full width on mobile for easier tapping
 	}
 
+	// Stack multi-column fields. Every field wrapper carries its authored
+	// width as an inline `flex-basis` / `max-width` (from
+	// designsetgo_form_field_width_style() and utils/field-width.js), so
+	// only `!important` can release it on small screens. The inline-button
+	// last-field rule above already resolves to a full-width basis here.
+	.dsgo-form-builder .dsgo-form-field[style*="flex-basis"] {
+		flex-basis: 100% !important;
+		max-width: 100% !important;
+	}
+
 	.dsgo-form-builder--align-left,
 	.dsgo-form-builder--align-center,
 	.dsgo-form-builder--align-right {
