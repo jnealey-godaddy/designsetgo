@@ -12,6 +12,7 @@ import {
 	convertColorToCSSVar,
 	convertPresetToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import { getOverlayOpacity } from '../../utils/overlay-opacity';
 import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
@@ -115,7 +116,7 @@ export default function SectionSave({ attributes }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': '0.8',
+				'--dsgo-overlay-opacity': getOverlayOpacity(overlayColor),
 			}),
 			// Default content clearance: expose the divider's RENDERED height on
 			// the wrapper so the stylesheet fallback (see _shape-divider.scss)

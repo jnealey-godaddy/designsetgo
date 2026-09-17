@@ -26,8 +26,8 @@ setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 registerBlockType(metadata.name, { ...metadata, save, deprecated });
 
 describe('row deprecations - style-kit overlay variation migration', () => {
-	// deprecated.js exports newest-first: [v5, v4, v3, v2, v1].
-	const [v5Deprecation] = deprecated;
+	// deprecated.js exports newest-first: [v6, v5, v4, v3, v2, v1].
+	const [, v5Deprecation] = deprecated;
 
 	const canonicalOverlayMarkup = serialize(
 		createBlock(metadata.name, { className: 'is-style-overlay-dark' })
@@ -96,7 +96,7 @@ describe('row deprecations - style-kit overlay variation migration', () => {
 });
 
 describe('row deprecations - style-kit hover variation migration', () => {
-	const [v5Deprecation] = deprecated;
+	const [, v5Deprecation] = deprecated;
 
 	const canonicalHoverMarkup = serialize(
 		createBlock(metadata.name, { className: 'is-style-hover-text-light' })

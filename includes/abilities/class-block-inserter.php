@@ -4220,7 +4220,7 @@ class Block_Inserter {
 				// Build style.
 				$style = '';
 				if ( $overlay_color ) {
-					$style = '--dsgo-overlay-color:' . esc_attr( $overlay_color ) . ';--dsgo-overlay-opacity:0.8';
+					$style = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( (string) $overlay_color ) . ';--dsgo-overlay-opacity:' . self::overlay_opacity_for_color( (string) $overlay_color );
 				}
 
 				$style_attr = $style ? ' style="' . esc_attr( $style ) . '"' : '';
@@ -5582,10 +5582,70 @@ class Block_Inserter {
 		$overlay = isset( $attributes['overlayColor'] ) ? (string) $attributes['overlayColor'] : '';
 		if ( '' !== $overlay ) {
 			$declarations[] = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( $overlay );
-			$declarations[] = '--dsgo-overlay-opacity:0.8';
+			$declarations[] = '--dsgo-overlay-opacity:' . self::overlay_opacity_for_color( $overlay );
 		}
 
 		return $declarations;
+	}
+
+	/**
+	 * Resolve `--dsgo-overlay-opacity` for a container overlay colour.
+	 *
+	 * PHP twin of getOverlayOpacity() in src/utils/overlay-opacity.js, used by
+	 * the Section, Row, Grid and Scroll Accordion Item save() functions. A colour
+	 * carrying its own alpha below 1 (`#RGBA`, `#RRGGBBAA`, `rgba(…)`, `hsla(…)`,
+	 * `rgb(… / a)` and the other functional notations) is emitted at opacity 1
+	 * so its alpha alone sets the translucency; everything else, including
+	 * preset slugs and CSS variables, uses the 0.65 default. Must return the
+	 * same string as the JS helper for every input.
+	 *
+	 * @param string $color Overlay colour attribute.
+	 * @return string '1' or '0.65'.
+	 */
+	public static function overlay_opacity_for_color( string $color ): string {
+		$alpha = self::declared_color_alpha( $color );
+
+		return ( null !== $alpha && $alpha < 1 ) ? '1' : '0.65';
+	}
+
+	/**
+	 * Read the alpha channel a colour value declares, when it declares one.
+	 *
+	 * @param string $color Colour value.
+	 * @return float|null Alpha, or null when the value declares none.
+	 */
+	private static function declared_color_alpha( string $color ): ?float {
+		$value = strtolower( trim( $color ) );
+
+		if ( preg_match( '/^#([0-9a-f]{4}|[0-9a-f]{8})$/D', $value, $hex ) ) {
+			return 4 === strlen( $hex[1] )
+				? hexdec( $hex[1][3] ) / 15
+				: hexdec( substr( $hex[1], 6 ) ) / 255;
+		}
+
+		if ( ! preg_match( '/^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\((.*)\)$/D', $value, $fn ) ) {
+			return null;
+		}
+
+		$args = $fn[1];
+		if ( false !== strpos( $args, '/' ) ) {
+			$alpha = substr( $args, strrpos( $args, '/' ) + 1 );
+		} else {
+			$parts = explode( ',', $args );
+			if ( 4 !== count( $parts ) ) {
+				return null;
+			}
+			$alpha = $parts[3];
+		}
+
+		$alpha      = trim( $alpha );
+		$is_percent = '%' === substr( $alpha, -1 );
+		$number     = $is_percent ? substr( $alpha, 0, -1 ) : $alpha;
+		if ( '' === $alpha || ! is_numeric( $number ) ) {
+			return null;
+		}
+
+		return $is_percent ? (float) $number / 100 : (float) $number;
 	}
 
 	/**

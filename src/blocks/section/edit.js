@@ -46,6 +46,7 @@ import {
 	convertColorToCSSVar,
 	convertPresetToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import { getOverlayOpacity } from '../../utils/overlay-opacity';
 import { useBlockColors } from '../../hooks';
 import {
 	hasOverlayStyleClass,
@@ -320,7 +321,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': '0.8',
+				'--dsgo-overlay-opacity': getOverlayOpacity(overlayColor),
 			}),
 			// Default content clearance matched to the divider's rendered height
 			// (must match save.js EXACTLY). See save.js for the full rationale.

@@ -5,7 +5,12 @@
  * @package
  */
 
-import { overlayOpacityFraction } from '../overlay-opacity';
+import {
+	DEFAULT_OVERLAY_OPACITY,
+	getOverlayOpacity,
+	overlayOpacityFraction,
+} from '../overlay-opacity';
+import fixture from '../../../tests/fixtures/overlay-opacity-cases.json';
 
 describe('overlayOpacityFraction', () => {
 	it('maps the 80 default to 0.8 (backward compatible)', () => {
@@ -32,5 +37,35 @@ describe('overlayOpacityFraction', () => {
 		expect(overlayOpacityFraction(undefined)).toBe(0.8);
 		expect(overlayOpacityFraction(NaN)).toBe(0.8);
 		expect(overlayOpacityFraction(Infinity)).toBe(0.8);
+	});
+});
+
+describe('getOverlayOpacity', () => {
+	it('defaults to 0.65', () => {
+		expect(DEFAULT_OVERLAY_OPACITY).toBe('0.65');
+	});
+
+	it.each([
+		['var:preset|color|contrast', '0.65'],
+		['#121212', '0.65'],
+		['#1212127D', '1'],
+		['#1217', '1'],
+		['rgba(0,0,0,.4)', '1'],
+		['rgb(0 0 0 / 40%)', '1'],
+		['rgba(0,0,0,1)', '0.65'],
+	])('%s -> %s', (color, expected) => {
+		expect(getOverlayOpacity(color)).toBe(expected);
+	});
+
+	it.each(fixture.cases)(
+		'matches the shared PHP/JS expectation for "$color"',
+		({ color, opacity }) => {
+			expect(getOverlayOpacity(color)).toBe(opacity);
+		}
+	);
+
+	it('falls back to the default for non-string values', () => {
+		expect(getOverlayOpacity(undefined)).toBe('0.65');
+		expect(getOverlayOpacity(null)).toBe('0.65');
 	});
 });

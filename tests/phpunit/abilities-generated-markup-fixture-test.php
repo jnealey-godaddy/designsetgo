@@ -655,6 +655,43 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				'attributes'  => array( 'hoverTextColor' => '#ffffff' ),
 				'innerBlocks' => array(),
 			),
+			// Overlay opacity follows the colour: 0.65 for presets and opaque
+			// colours, 1 when the colour carries its own alpha.
+			'section-overlay-alpha-hex'                   => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array( 'overlayColor' => '#1212127D' ),
+				'innerBlocks' => array(),
+			),
+			'row-overlay-preset'                          => array(
+				'name'        => 'designsetgo/row',
+				'attributes'  => array( 'overlayColor' => 'var:preset|color|contrast' ),
+				'innerBlocks' => array(),
+			),
+			'row-overlay-alpha-hex'                       => array(
+				'name'        => 'designsetgo/row',
+				'attributes'  => array( 'overlayColor' => '#1217' ),
+				'innerBlocks' => array(),
+			),
+			'grid-overlay-preset'                         => array(
+				'name'        => 'designsetgo/grid',
+				'attributes'  => array( 'overlayColor' => 'var:preset|color|contrast' ),
+				'innerBlocks' => array(),
+			),
+			'grid-overlay-rgba'                           => array(
+				'name'        => 'designsetgo/grid',
+				'attributes'  => array( 'overlayColor' => 'rgb(0 0 0 / 40%)' ),
+				'innerBlocks' => array(),
+			),
+			'scroll-accordion-item-overlay-preset'        => array(
+				'name'        => 'designsetgo/scroll-accordion-item',
+				'attributes'  => array( 'overlayColor' => 'var:preset|color|contrast' ),
+				'innerBlocks' => array(),
+			),
+			'scroll-accordion-item-overlay-alpha'         => array(
+				'name'        => 'designsetgo/scroll-accordion-item',
+				'attributes'  => array( 'overlayColor' => 'rgba(0,0,0,.4)' ),
+				'innerBlocks' => array(),
+			),
 			// counter-group reads columns/columnsTablet/columnsMobile - it was
 			// reading the Grid block's attribute names.
 			'counter-group-columns'                       => array(

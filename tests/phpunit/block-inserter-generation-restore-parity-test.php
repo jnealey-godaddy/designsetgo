@@ -272,7 +272,7 @@ class Block_Inserter_Generation_Restore_Parity_Test extends WP_UnitTestCase {
 		$this->assertSame(
 			array(
 				'--dsgo-overlay-color'   => 'rgba(0,0,0,0.475)',
-				'--dsgo-overlay-opacity' => '0.8',
+				'--dsgo-overlay-opacity' => '1',
 				'color'                  => '#ffffff',
 				'padding-top'            => '40px',
 			),
