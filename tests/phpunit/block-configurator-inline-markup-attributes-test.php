@@ -192,6 +192,82 @@ class Block_Configurator_Inline_Markup_Attributes_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( '<strong>now</strong>', $sanitized['text'] );
 	}
 
+	/**
+	 * @dataProvider rich_text_button_provider
+	 */
+	public function test_button_label_strips_interactive_and_non_editor_formats( string $block_name ) {
+		$sanitized = Block_Configurator::sanitize_attributes(
+			array( 'text' => 'Book <a href="/y" class="sd-link">now</a> <span class="x">for</span> <mark>two</mark> <code>c</code> <b>b</b> <i>i</i><br>next' ),
+			$block_name
+		);
+
+		$this->assertSame( 'Book now for two c <b>b</b> <i>i</i><br>next', $sanitized['text'] );
+	}
+
+	/**
+	 * @dataProvider rich_text_button_provider
+	 */
+	public function test_button_label_formats_drop_attributes_and_trim( string $block_name ) {
+		$sanitized = Block_Configurator::sanitize_attributes(
+			array( 'text' => '  <strong class="x" data-a="1">Book</strong> <em id="y">now</em>  ' ),
+			$block_name
+		);
+
+		$this->assertSame( '<strong>Book</strong> <em>now</em>', $sanitized['text'] );
+	}
+
+	/**
+	 * @dataProvider rich_text_button_provider
+	 */
+	public function test_linked_icon_button_label_with_nested_link_stays_a_single_anchor( string $block_name ) {
+		$definition = Block_Inserter::prepare_block_definition(
+			$block_name,
+			array(
+				'text' => 'Book <a href="/y">now</a>',
+				'url'  => '/book/',
+			),
+			array()
+		);
+
+		$markup = Block_Inserter::build_block_markup( $block_name, $definition['attributes'] );
+
+		$this->assertStringNotContainsString( 'href="/y"', $markup );
+		$this->assertStringContainsString( '__text">Book now</span>', $markup );
+	}
+
+	/**
+	 * @return array<string, array{0: string}>
+	 */
+	public function interactivity_directive_provider(): array {
+		return array(
+			'bind href on link'  => array( '<a href="/x" data-wp-interactive="a" data-wp-context=\'{"u":"javascript:alert(1)"}\' data-wp-bind--href="context.u">x</a>' ),
+			'on click on link'   => array( '<a href="/x" data-wp-on--click="actions.go">x</a>' ),
+			'bind style on span' => array( '<span data-wp-bind--style="state.s" DATA-WP-ON--CLICK="actions.go">x</span>' ),
+		);
+	}
+
+	/**
+	 * @dataProvider interactivity_directive_provider
+	 */
+	public function test_interactivity_directives_are_stripped( string $value ) {
+		$clean = $this->sanitize_content( $value );
+
+		$this->assertStringNotContainsStringIgnoringCase( 'data-wp-', $clean );
+	}
+
+	public function test_other_data_attributes_survive_directive_stripping() {
+		$clean = $this->sanitize_content( '<a href="/x" data-track="menu" data-wp="button" data-wp-on--click="actions.go" data-wpx="1">x</a>' );
+
+		// The tag processor leaves the removed attribute's separating space behind,
+		// so compare attributes rather than bytes.
+		$processor = new WP_HTML_Tag_Processor( $clean );
+		$this->assertTrue( $processor->next_tag( array( 'tag_name' => 'a' ) ) );
+		$this->assertSame( array( 'data-track', 'data-wp', 'data-wpx' ), $processor->get_attribute_names_with_prefix( 'data-' ) );
+		$this->assertSame( 'menu', $processor->get_attribute( 'data-track' ) );
+		$this->assertSame( 'button', $processor->get_attribute( 'data-wp' ) );
+		$this->assertSame( '/x', $processor->get_attribute( 'href' ) );
+	}
+
 	public function test_text_stays_plain_without_a_rich_text_block_context() {
 		$without_block = Block_Configurator::sanitize_attributes( array( 'text' => 'Curved <em>words</em>' ) );
 		$plain_block   = Block_Configurator::sanitize_attributes( array( 'text' => 'Curved <em>words</em>' ), 'designsetgo/text-path' );

@@ -240,7 +240,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 						'name'       => 'core/paragraph',
 						'attributes' => Block_Configurator::sanitize_attributes(
 							array(
-								'content' => 'Browse the <a class="sd-text-link" id="menu-link" href="/menu/" target="_blank" aria-label="Full menu" data-track="menu">full <em class="sd-em">menu</em></a> <span class="sd-accent" aria-hidden="true">*</span>',
+								'content' => 'Browse the <a class="sd-text-link" id="menu-link" href="/menu/" target="_blank" aria-label="Full menu" data-track="menu" data-wp-on--click="actions.go">full <em class="sd-em">menu</em></a> <span class="sd-accent" aria-hidden="true">*</span>',
 							),
 							'core/paragraph'
 						),
@@ -249,7 +249,7 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 						'name'       => 'designsetgo/icon-button',
 						'attributes' => Block_Configurator::sanitize_attributes(
 							array(
-								'text' => 'Book <strong>now</strong>',
+								'text' => 'Book <strong>now</strong><br>today <a href="/nested/">here</a>',
 								'url'  => '/book/',
 							),
 							'designsetgo/icon-button'
