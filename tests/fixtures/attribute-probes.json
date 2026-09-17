@@ -275,6 +275,9 @@
     },
     "borderColor": {
       "probe": "contrast"
+    },
+    "fontSize": {
+      "probe": "large"
     }
   },
   "byBlock": {
@@ -763,6 +766,14 @@
     "designsetgo/timeline-item": {
       "date": {
         "probe": "March 2026"
+      }
+    },
+    "designsetgo/counter-group": {
+      "alignContent": {
+        "probe": [
+          "left",
+          "right"
+        ]
       }
     }
   }

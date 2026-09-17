@@ -491,6 +491,10 @@ class Block_Inserter {
 	 * @return string Markup with support classes and styles merged into the first tag.
 	 */
 	private static function apply_block_support_attributes( string $html, string $block_name, array $attributes ): string {
+		// Runs first, and on the whole fragment, because several serializers put
+		// colours on an inner node rather than the root - see the helper.
+		$html = self::convert_preset_shorthand_in_styles( $html );
+
 		if ( ! class_exists( '\WP_Block_Supports' ) || ! class_exists( '\WP_HTML_Tag_Processor' ) ) {
 			return $html;
 		}
@@ -621,7 +625,8 @@ class Block_Inserter {
 				if ( 2 !== count( $parts ) || '' === trim( $parts[1] ) ) {
 					continue;
 				}
-				$kept[] = trim( $declaration );
+
+				$kept[] = trim( $parts[0] ) . ':' . self::wp_shorthand_to_css_var( trim( $parts[1] ) );
 			}
 
 			if ( empty( $kept ) ) {
@@ -998,6 +1003,62 @@ class Block_Inserter {
 		$namespace = strtok( $block_name, '/' );
 
 		return in_array( $namespace . '/*', $excluded, true );
+	}
+
+	/**
+	 * Convert WordPress preset shorthand to CSS in every style attribute.
+	 *
+	 * `var:preset|color|contrast` is the editor's storage form, not CSS - a
+	 * browser cannot parse it - and every save() runs its values through
+	 * convertColorToCSSVar() before writing them. Serializers that built a
+	 * style string by concatenation skipped that step and wrote the shorthand
+	 * straight into the markup. That failed block validation AND produced a
+	 * declaration the browser dropped, so the colour silently did not apply on
+	 * the front end either.
+	 *
+	 * This runs over the whole generated fragment rather than the root element,
+	 * because several blocks put colours on an inner node: countdown-timer's
+	 * unit boxes and progress-bar's track and fill all carry their own style
+	 * attribute, and a root-only pass left those untouched.
+	 *
+	 * Doing it centrally is safe in a way the rest of colour handling is not:
+	 * the shorthand is invalid in every CSS property, so converting it is
+	 * unconditionally correct. What cannot move here is the bare-slug case
+	 * (`accent-3`), because whether a bare word is a colour slug or an ordinary
+	 * keyword depends on which attribute it came from - that stays with
+	 * convert_color_value_to_css_var() in the individual serializers.
+	 *
+	 * @param string $html Generated markup.
+	 * @return string Markup with preset shorthand converted.
+	 */
+	private static function convert_preset_shorthand_in_styles( string $html ): string {
+		if ( false === strpos( $html, 'var:preset|' ) || ! class_exists( '\WP_HTML_Tag_Processor' ) ) {
+			return $html;
+		}
+
+		$processor = new \WP_HTML_Tag_Processor( $html );
+
+		while ( $processor->next_tag() ) {
+			$style = $processor->get_attribute( 'style' );
+
+			if ( ! is_string( $style ) || false === strpos( $style, 'var:preset|' ) ) {
+				continue;
+			}
+
+			$converted = array();
+			foreach ( explode( ';', $style ) as $declaration ) {
+				$parts = explode( ':', $declaration, 2 );
+				if ( 2 !== count( $parts ) ) {
+					$converted[] = trim( $declaration );
+					continue;
+				}
+				$converted[] = trim( $parts[0] ) . ':' . self::wp_shorthand_to_css_var( trim( $parts[1] ) );
+			}
+
+			$processor->set_attribute( 'style', implode( ';', $converted ) );
+		}
+
+		return $processor->get_updated_html();
 	}
 
 	/**
@@ -3190,8 +3251,16 @@ class Block_Inserter {
 				$item_gap       = isset( $attributes['itemGap'] ) ? $attributes['itemGap'] : '0.5rem';
 				$open_bg        = isset( $attributes['openBackgroundColor'] ) ? $attributes['openBackgroundColor'] : '';
 				$open_text      = isset( $attributes['openTextColor'] ) ? $attributes['openTextColor'] : '';
-				$hover_bg       = isset( $attributes['hoverBackgroundColor'] ) ? $attributes['hoverBackgroundColor'] : $open_bg;
-				$hover_text     = isset( $attributes['hoverTextColor'] ) ? $attributes['hoverTextColor'] : $open_text;
+				// save.js uses `hoverBackgroundColor || openBackgroundColor`, so an
+				// EMPTY hover colour falls back to the open colour. isset() is
+				// the wrong test: apply_block_json_defaults() has already filled
+				// the attribute with its '' default by this point, so isset() is
+				// always true and the fallback never fired. Setting only
+				// openBackgroundColor left the mirror writing an empty hover
+				// declaration, which the style cleaner then dropped, while
+				// save() wrote the inherited colour.
+				$hover_bg       = ! empty( $attributes['hoverBackgroundColor'] ) ? $attributes['hoverBackgroundColor'] : $open_bg;
+				$hover_text     = ! empty( $attributes['hoverTextColor'] ) ? $attributes['hoverTextColor'] : $open_text;
 				$border_color   = isset( $attributes['borderBetweenColor'] ) ? $attributes['borderBetweenColor'] : '';
 
 				// Build modifier classes (must match save.js).
@@ -3213,14 +3282,14 @@ class Block_Inserter {
 
 				// Build CSS custom properties style (must match save.js).
 				$style_parts = array(
-					'--dsgo-accordion-open-bg:' . esc_attr( $open_bg ),
-					'--dsgo-accordion-open-text:' . esc_attr( $open_text ),
-					'--dsgo-accordion-hover-bg:' . esc_attr( $hover_bg ),
-					'--dsgo-accordion-hover-text:' . esc_attr( $hover_text ),
+					'--dsgo-accordion-open-bg:' . esc_attr( self::convert_color_value_to_css_var( (string) $open_bg ) ),
+					'--dsgo-accordion-open-text:' . esc_attr( self::convert_color_value_to_css_var( (string) $open_text ) ),
+					'--dsgo-accordion-hover-bg:' . esc_attr( self::convert_color_value_to_css_var( (string) $hover_bg ) ),
+					'--dsgo-accordion-hover-text:' . esc_attr( self::convert_color_value_to_css_var( (string) $hover_text ) ),
 					'--dsgo-accordion-gap:' . esc_attr( $item_gap ),
 				);
 				if ( $border_color ) {
-					$style_parts[] = '--dsgo-accordion-border-color:' . esc_attr( $border_color );
+					$style_parts[] = '--dsgo-accordion-border-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $border_color ) );
 				}
 				$custom_style = implode( ';', $style_parts );
 
