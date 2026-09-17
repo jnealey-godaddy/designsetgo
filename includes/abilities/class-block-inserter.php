@@ -687,15 +687,94 @@ class Block_Inserter {
 			$data      = array_merge( $data, $animation['attrs'] );
 		}
 
-		// Mirror the max-width extension's save props for supported text blocks.
-		if ( in_array( $block_name, array( 'core/heading', 'core/paragraph', 'designsetgo/advanced-heading' ), true )
+		// Mirror the max-width extension - src/extensions/max-width/index.js
+		// (applyMaxWidthStyles). This used to be scoped to three text blocks,
+		// but the extension's config is `'blocks' => 'all'` minus an exclusion
+		// list, so the attribute exists on nearly every block and save() writes
+		// the class wherever it is set. Scoping the mirror more narrowly than
+		// the extension meant an agent could set dsgoMaxWidth on any other
+		// block and get stored markup save() disagreed with.
+		if ( ! self::is_block_excluded_from_extensions( $block_name )
+			&& ! in_array( $block_name, self::MAX_WIDTH_EXCLUDED_BLOCKS, true )
 			&& ! empty( $attributes['dsgoMaxWidth'] ) && is_string( $attributes['dsgoMaxWidth'] )
 		) {
-			$classes[]              = 'dsgo-has-max-width';
-			$styles['max-width']    = $attributes['dsgoMaxWidth'];
-			$alignment              = $attributes['textAlign'] ?? $attributes['align'] ?? '';
-			$styles['margin-left']  = 'left' === $alignment ? '0' : 'auto';
-			$styles['margin-right'] = 'right' === $alignment ? '0' : 'auto';
+			$classes[]           = 'dsgo-has-max-width';
+			$styles['max-width'] = $attributes['dsgoMaxWidth'];
+
+			// The JS checks textAlign OR align; reading one with a fallback to
+			// the other is not the same test. textAlign 'center' with align
+			// 'left' takes the left branch there and the centred branch here.
+			$text_align = isset( $attributes['textAlign'] ) ? (string) $attributes['textAlign'] : '';
+			$align      = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
+
+			if ( 'left' === $text_align || 'left' === $align ) {
+				$styles['margin-left']  = '0';
+				$styles['margin-right'] = 'auto';
+			} elseif ( 'right' === $text_align || 'right' === $align ) {
+				$styles['margin-left']  = 'auto';
+				$styles['margin-right'] = '0';
+			} else {
+				$styles['margin-left']  = 'auto';
+				$styles['margin-right'] = 'auto';
+			}
+		}
+
+		// Mirror the responsive visibility extension -
+		// src/extensions/responsive/index.js (applyResponsiveVisibilityClasses).
+		// Order matches the JS push order; WordPress compares class attributes
+		// as a set, so this is for readability rather than correctness.
+		if ( ! self::is_block_excluded_from_extensions( $block_name ) ) {
+			if ( ! empty( $attributes['dsgoHideOnDesktop'] ) ) {
+				$classes[] = 'dsgo-hide-desktop';
+			}
+			if ( ! empty( $attributes['dsgoHideOnTablet'] ) ) {
+				$classes[] = 'dsgo-hide-tablet';
+			}
+			if ( ! empty( $attributes['dsgoHideOnMobile'] ) ) {
+				$classes[] = 'dsgo-hide-mobile';
+			}
+		}
+
+		// Mirror the reveal-control extension -
+		// src/extensions/reveal-control/index.js (addRevealClasses). Note it
+		// applies no shouldExtendBlock() gate, so neither does this.
+		if ( in_array( $block_name, self::REVEAL_CONTAINER_BLOCKS, true ) && ! empty( $attributes['enableRevealOnHover'] ) ) {
+			$classes[]                       = 'dsgo-has-reveal';
+			$reveal_animation                = isset( $attributes['revealAnimationType'] ) ? (string) $attributes['revealAnimationType'] : '';
+			$data['data-reveal-animation']   = '' !== $reveal_animation ? $reveal_animation : 'fade';
+		} elseif ( ! empty( $attributes['dsgoRevealOnHover'] ) ) {
+			$classes[] = 'dsgo-reveal-item';
+		}
+
+		// Mirror the background-video extension -
+		// src/extensions/background-video/index.js
+		// (addBackgroundVideoSaveProps). Gated by attribute registration alone:
+		// the extension config allowlists the container blocks, so the
+		// attribute only exists where it applies, and the JS applies no
+		// further block check.
+		if ( ! empty( $attributes['dsgoVideoUrl'] ) && is_string( $attributes['dsgoVideoUrl'] ) ) {
+			$classes[]                           = 'dsgo-has-video-background';
+			$data['data-video-url']              = $attributes['dsgoVideoUrl'];
+			$data['data-video-poster']           = isset( $attributes['dsgoVideoPoster'] ) ? (string) $attributes['dsgoVideoPoster'] : '';
+			$data['data-video-muted']            = empty( $attributes['dsgoVideoMuted'] ) ? 'false' : 'true';
+			$data['data-video-loop']             = empty( $attributes['dsgoVideoLoop'] ) ? 'false' : 'true';
+			$data['data-video-autoplay']         = empty( $attributes['dsgoVideoAutoplay'] ) ? 'false' : 'true';
+			$data['data-video-mobile-hide']      = empty( $attributes['dsgoVideoMobileHide'] ) ? 'false' : 'true';
+			$data['data-video-overlay-color']    = self::convert_color_value_to_css_var(
+				isset( $attributes['dsgoVideoOverlayColor'] ) ? (string) $attributes['dsgoVideoOverlayColor'] : ''
+			);
+		}
+
+		// Mirror the custom-CSS extension - src/extensions/custom-css/index.js
+		// (applyCustomCSSClass). The class carries a hash of the CSS and the
+		// block name. It looks like something PHP could not reproduce, but the
+		// JS hash is the ordinary 32-bit string hash, not a random id, so it
+		// is fully deterministic - see js_hash_code().
+		if ( ! self::is_block_excluded_from_extensions( $block_name )
+			&& ! in_array( $block_name, self::CUSTOM_CSS_EXCLUDED_BLOCKS, true )
+			&& ! empty( $attributes['dsgoCustomCSS'] ) && is_string( $attributes['dsgoCustomCSS'] )
+		) {
+			$classes[] = 'dsgo-custom-css-' . self::js_hash_code( $attributes['dsgoCustomCSS'] . $block_name );
 		}
 
 		// Text reveal - src/extensions/text-reveal/editor.js
@@ -891,6 +970,50 @@ class Block_Inserter {
 		$namespace = strtok( $block_name, '/' );
 
 		return in_array( $namespace . '/*', $excluded, true );
+	}
+
+	/**
+	 * Reproduce JavaScript's 32-bit string hash.
+	 *
+	 * Mirrors hashCode() in src/extensions/custom-css/index.js:
+	 *
+	 *   hash = ( hash << 5 ) - hash + charCodeAt( i );
+	 *   hash = hash & hash;                  // truncate to 32-bit signed
+	 *   return Math.abs( hash ).toString( 36 );
+	 *
+	 * Two details matter. PHP integers are 64-bit, so the wrap to 32-bit signed
+	 * has to be done by hand or the values diverge after a few characters. And
+	 * charCodeAt() returns UTF-16 code units, not bytes or code points, so the
+	 * string is converted to UTF-16LE and read two bytes at a time - otherwise
+	 * any non-ASCII character in the CSS produces a different class here than
+	 * in the editor.
+	 *
+	 * @param string $value String to hash.
+	 * @return string Base-36 hash, matching the JavaScript output.
+	 */
+	private static function js_hash_code( string $value ): string {
+		$hash  = 0;
+		$utf16 = function_exists( 'mb_convert_encoding' )
+			? (string) mb_convert_encoding( $value, 'UTF-16LE', 'UTF-8' )
+			: $value;
+		$length = strlen( $utf16 );
+		$step   = function_exists( 'mb_convert_encoding' ) ? 2 : 1;
+
+		for ( $i = 0; $i + $step - 1 < $length; $i += $step ) {
+			$char = 2 === $step
+				? ( ord( $utf16[ $i ] ) | ( ord( $utf16[ $i + 1 ] ) << 8 ) )
+				: ord( $utf16[ $i ] );
+
+			$hash = ( $hash << 5 ) - $hash + $char;
+
+			// Truncate to 32 bits, then reinterpret as signed.
+			$hash = $hash & 0xFFFFFFFF;
+			if ( $hash & 0x80000000 ) {
+				$hash -= 0x100000000;
+			}
+		}
+
+		return base_convert( (string) abs( $hash ), 10, 36 );
 	}
 
 	/**
@@ -6080,6 +6203,43 @@ class Block_Inserter {
 	 * useBlockProps.save() produced onto the content div. Injecting on the root
 	 * for one of these emits classes save() never puts there.
 	 */
+	/**
+	 * Blocks the max-width extension refuses, mirroring its EXCLUDED_BLOCKS.
+	 *
+	 * @see src/extensions/max-width/index.js
+	 * @var array<int, string>
+	 */
+	private const MAX_WIDTH_EXCLUDED_BLOCKS = array(
+		'core/spacer',
+		'core/separator',
+		'core/page-list',
+		'core/navigation',
+		'designsetgo/section',
+		'designsetgo/row',
+		'designsetgo/grid',
+		'designsetgo/blobs',
+	);
+
+	/**
+	 * Containers that own a reveal group, mirroring CONTAINER_BLOCKS.
+	 *
+	 * @see src/extensions/reveal-control/index.js
+	 * @var array<int, string>
+	 */
+	private const REVEAL_CONTAINER_BLOCKS = array(
+		'designsetgo/section',
+		'designsetgo/row',
+		'designsetgo/grid',
+	);
+
+	/**
+	 * Blocks the custom-CSS extension refuses, mirroring its EXCLUDED_BLOCKS.
+	 *
+	 * @see src/extensions/custom-css/index.js
+	 * @var array<int, string>
+	 */
+	private const CUSTOM_CSS_EXCLUDED_BLOCKS = array( 'core/html', 'core/code' );
+
 	private const SUPPORTS_ON_INNER_ELEMENT = array(
 		'designsetgo/modal' => 'dsgo-modal__content',
 	);
