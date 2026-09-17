@@ -4156,8 +4156,38 @@ class Block_Inserter {
 				// Close button HTML.
 				$close_button_html = '';
 				if ( $show_close_button ) {
+					// save.js writes colour and background-color after the size,
+					// and omits either when its converted value is empty (React
+					// drops an `undefined` style property). Both were missing
+					// here, so an author's close-button colours never reached
+					// stored markup.
 					$close_button_style = 'width:' . $close_button_size . 'px;height:' . $close_button_size . 'px';
-					$close_button_html  = '<button class="dsgo-modal__close dsgo-modal__close--' . esc_attr( $close_button_position ) . '" style="' . esc_attr( $close_button_style ) . '" type="button" aria-label="Close modal">';
+
+					$close_icon_color = isset( $attributes['closeButtonIconColor'] )
+						? self::convert_color_value_to_css_var( (string) $attributes['closeButtonIconColor'] )
+						: '';
+					if ( '' !== $close_icon_color ) {
+						$close_button_style .= ';color:' . $close_icon_color;
+					}
+
+					$close_bg_color = isset( $attributes['closeButtonBgColor'] )
+						? self::convert_color_value_to_css_var( (string) $attributes['closeButtonBgColor'] )
+						: '';
+					if ( '' !== $close_bg_color ) {
+						$close_button_style .= ';background-color:' . $close_bg_color;
+					}
+
+					// save.js falls back to the translated default only when the
+					// label is blank after trimming; this was hardcoded, so a
+					// custom label was silently discarded.
+					$close_button_label = isset( $attributes['closeButtonLabel'] ) && is_string( $attributes['closeButtonLabel'] )
+						? trim( $attributes['closeButtonLabel'] )
+						: '';
+					if ( '' === $close_button_label ) {
+						$close_button_label = __( 'Close modal', 'designsetgo' );
+					}
+
+					$close_button_html  = '<button class="dsgo-modal__close dsgo-modal__close--' . esc_attr( $close_button_position ) . '" style="' . esc_attr( $close_button_style ) . '" type="button" aria-label="' . esc_attr( $close_button_label ) . '">';
 					$close_button_html .= '<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
 					$close_button_html .= '<path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>';
 					$close_button_html .= '</svg></button>';
