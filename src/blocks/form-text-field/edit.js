@@ -17,6 +17,7 @@ import { DsgoInspectorPanel } from '../../components/shared';
 import { useEffect } from '@wordpress/element';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { getFormFieldWidthStyle } from '../form-builder/utils/field-width';
 
 const FIELD_WIDTH_OPTIONS = [
 	{ label: __('Full Width (100%)', 'designsetgo'), value: '100' },
@@ -74,14 +75,7 @@ export default function FormTextFieldEdit({
 		style: {
 			...fieldStyles,
 			// Use flex-basis with calc to account for gap between fields
-			flexBasis:
-				fieldWidth === '100'
-					? '100%'
-					: `calc(${fieldWidth}% - var(--dsgo-form-field-spacing, 1.5rem) / 2)`,
-			maxWidth:
-				fieldWidth === '100'
-					? '100%'
-					: `calc(${fieldWidth}% - var(--dsgo-form-field-spacing, 1.5rem) / 2)`,
+			...getFormFieldWidthStyle(fieldWidth),
 		},
 	});
 

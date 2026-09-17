@@ -25,8 +25,16 @@ if ( ! function_exists( 'designsetgo_form_field_width_style' ) ) {
 	/**
 	 * Build the flex-basis / max-width inline style for a field wrapper.
 	 *
-	 * Mirrors the pre-dynamic save() output so field layout is unchanged. The
-	 * calc() keeps a half-gap between side-by-side fields.
+	 * The fields container is a wrapping flex row with
+	 * `gap: var(--dsgo-form-field-spacing)`. For N equal columns of P% each,
+	 * the row holds N-1 gaps, so every field must give up gap * (N-1)/N, which
+	 * is gap * (100 - P) / 100. The old "half a gap" only fit two columns: three
+	 * 33% fields overflowed and the third wrapped. 33 and 66 map to exact
+	 * thirds so three (or 66 + 33) fields fill the row.
+	 *
+	 * Keep in sync with getFormFieldWidth() in
+	 * src/blocks/form-builder/utils/field-width.js (editor preview); both are
+	 * checked against tests/fixtures/form-field-width-cases.json.
 	 *
 	 * @param string|int $field_width Width percentage (e.g. '100', '50').
 	 * @return string CSS declarations (no trailing semicolon).
@@ -42,7 +50,17 @@ if ( ! function_exists( 'designsetgo_form_field_width_style' ) ) {
 			return 'flex-basis:100%;max-width:100%';
 		}
 
-		$calc = 'calc(' . $field_width . '% - var(--dsgo-form-field-spacing, 1.5rem) / 2)';
+		$percent_map = array(
+			'33' => '33.3333',
+			'66' => '66.6667',
+		);
+		$percent     = isset( $percent_map[ $field_width ] ) ? $percent_map[ $field_width ] : $field_width;
+
+		// Share of one gap each field gives up, rounded to 4 decimals with
+		// trailing zeros trimmed (50 -> 0.5, 33.3333 -> 0.6667).
+		$gap_factor = rtrim( rtrim( number_format( ( 100 - (float) $percent ) / 100, 4, '.', '' ), '0' ), '.' );
+
+		$calc = 'calc(' . $percent . '% - var(--dsgo-form-field-spacing, 1.5rem) * ' . $gap_factor . ')';
 		return 'flex-basis:' . $calc . ';max-width:' . $calc;
 	}
 }
