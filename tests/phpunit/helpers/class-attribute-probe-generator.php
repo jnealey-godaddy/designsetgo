@@ -90,7 +90,21 @@ class Attribute_Probe_Generator {
 	 *                                underivable - which is a test failure.
 	 */
 	public static function resolve( string $block, string $name, array $definition, array $table ) {
-		foreach ( array( $table['byBlock'][ $block ][ $name ] ?? null, $table['byName'][ $name ] ?? null ) as $entry ) {
+		// Order matters. byBlock is a deliberate statement about THIS attribute
+		// on THIS block, so it wins outright. A declared enum comes next: it is
+		// the block's own statement of its valid values, and a byName entry -
+		// which is only a naming convention - must never quietly narrow or
+		// contradict it. Three attributes drifted exactly that way: a byName
+		// probe for `layout` and `separator` shadowed the enums breadcrumbs,
+		// countdown-timer and timeline declare, and the inserter refused the
+		// resulting values.
+		$candidates = array( $table['byBlock'][ $block ][ $name ] ?? null );
+
+		if ( empty( $definition['enum'] ) || ! is_array( $definition['enum'] ) ) {
+			$candidates[] = $table['byName'][ $name ] ?? null;
+		}
+
+		foreach ( $candidates as $entry ) {
 			if ( ! is_array( $entry ) ) {
 				continue;
 			}
@@ -113,7 +127,7 @@ class Attribute_Probe_Generator {
 					array_filter(
 						$values,
 						static function ( $value ) use ( $definition ) {
-							return $value !== ( $definition['default'] ?? null );
+							return ( $definition['default'] ?? null ) !== $value;
 						}
 					)
 				);
@@ -184,7 +198,7 @@ class Attribute_Probe_Generator {
 	/**
 	 * Reduce a declared type to a single scalar type name.
 	 *
-	 * block.json allows a list of types. The first recognised scalar wins;
+	 * A block.json type may be a list. The first recognised scalar wins;
 	 * a list containing only object/array yields no scalar and falls through
 	 * to the declaration requirement.
 	 *

@@ -30,10 +30,25 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:/Applications/Docker.app/Contents/
 Composer is not installed globally; it lives at `/tmp/composer` and is invoked as
 `php /tmp/composer`. `vendor/` is already installed in this worktree.
 
-Run PHPUnit through this worktree's own wp-env instance:
+Run PHPUnit through this worktree's own wp-env instance. Two worktree-specific gotchas:
+
+- wp-env mounts the plugin under the WORKTREE's directory name, not `designsetgo`.
+- Ports 9451/9461/9471/9481 are taken by other worktrees' instances, so this one pins
+  9491/9492 in `.wp-env.override.json` (gitignored).
+- Blocks register from `build/`, so `npm run build` must have run or the registry is empty
+  and every registry-driven test passes vacuously.
 
 ```bash
-npx wp-env run tests-cli --env-cwd=wp-content/plugins/designsetgo vendor/bin/phpunit
+npx wp-env run tests-cli \
+  --env-cwd=wp-content/plugins/claude+abilities-drift-prevention vendor/bin/phpunit
+```
+
+`wp-env run` has no `--env` flag, so fixture regeneration goes through docker directly:
+
+```bash
+docker exec -e DSGO_UPDATE_FIXTURES=1 \
+  -w /var/www/html/wp-content/plugins/claude+abilities-drift-prevention \
+  <tests-cli container> vendor/bin/phpunit --filter Abilities_Attribute_Matrix_Fixture
 ```
 
 Regenerate fixtures with `DSGO_UPDATE_FIXTURES=1` prefixed to the phpunit command
@@ -97,7 +112,7 @@ npx wp-env run tests-cli --env-cwd=wp-content/plugins/designsetgo \
 ### Task 2: Probe value derivation
 
 **Files:**
-- Create: `tests/phpunit/support/class-attribute-probe-generator.php`
+- Create: `tests/phpunit/helpers/class-attribute-probe-generator.php`
 - Test: `tests/phpunit/abilities-attribute-probe-generator-test.php`
 
 Test-support code, not shipped code — it lives under `tests/`, so it is excluded from the
@@ -179,12 +194,49 @@ old per-block coverage could not see. Record the list before fixing anything.
 
 ### Task 5: Triage the matrix failures
 
-For each failure, decide between exactly three outcomes and write the reason down:
+**Baseline recorded 2026-09-17 at 4,069 payloads: 375 failures across 46 blocks.**
+
+Two harness corrections were needed before this list meant anything, both already applied:
+
+1. `tools/regenerate-patterns` imports ONLY `block-animations` (deliberately, with a comment
+   saying so). Without the other 16 save-affecting extensions imported, `save()` in the JS
+   test could not emit their props while the PHP mirror did — 138 payloads failed for a
+   harness reason. `ability-attribute-matrix.test.js` now imports all 17.
+2. `textColor` / `backgroundColor` / `borderColor` are core's preset-SLUG attributes. The
+   `var:preset|color|contrast` shorthand belongs in `style.color.*`; feeding it to a slug
+   attribute made `save()` emit `has-var-preset-color-contrast-color`, and the mismatch was
+   the probe's fault. 102 payloads. The shorthand probe stays on DesignSetGo's own colour
+   attributes, which do accept it.
+
+**Group A — extension save props the PHP mirror does not reproduce at all (287 failures).**
+Verified real: each of these extension configs is `'blocks' => 'all'`, so the attribute is
+registered on ~every block and the JS filter writes a class or style into `save()`, while
+`Block_Inserter::get_extension_save_props()` has no equivalent branch. An agent that sets
+any of them today produces stored markup the editor rejects.
+
+| Attribute | Failures | JS emits | PHP |
+|---|---|---|---|
+| `dsgoHideOnDesktop` / `OnTablet` / `OnMobile` | 138 | `dsgo-hide-*` classes | nothing |
+| `dsgoCustomCSS` | 46 | `dsgo-custom-css-<hash>` class | nothing |
+| `dsgoRevealOnHover` | 46 | `dsgo-reveal-item` class | nothing |
+| `dsgoMaxWidth` | 41 | class + max-width on all blocks | only `core/heading`, `core/paragraph`, `designsetgo/advanced-heading` |
+| `dsgoVideoUrl` | 16 | background-video props | nothing |
+
+`dsgoCustomCSS` needs care: the class carries a hash generated in JS
+(`dsgo-custom-css-qil16x`). If PHP cannot reproduce that hash deterministically, the honest
+outcome is a refusal in `find_invalid_attribute_values()` — the same call
+`animatedHeadline` already makes — not an approximation.
+
+**Group B — per-block mirror gaps (~88 failures).** A long tail of one- and two-payload
+failures: `align` enum members (24), `hoverColor`, `openBackgroundColor`, `barStyle`,
+`iconPosition`, `linkColor`, `closeButton*`, `submitButtonHover*` and others. Work these
+per block, smallest first.
+
+For each failure, choose between exactly three outcomes and write the reason down:
 
 1. **Real mirror drift** — fix `Block_Inserter`, regenerate, re-run.
-2. **Attribute has no `save()` effect** — add a `skip` with a reason to
-   `attribute-probes.json`.
-3. **Bad probe value** — add an explicit `probe` to the table.
+2. **Attribute has no `save()` effect** — add a `skip` with a reason.
+3. **Bad probe value** — add an explicit `probe`.
 
 Outcome 3 is the tempting wrong answer for a real bug. Before choosing it, confirm the
 attribute genuinely requires a structured value; a plain-looking value that fails is usually
@@ -192,7 +244,7 @@ outcome 1.
 
 **Also in this task:** add `"fixtures:update"` to `package.json` scripts.
 
-Commit in small batches grouped by block, not one giant commit.
+Commit in small batches grouped by block or extension, not one giant commit.
 
 ---
 

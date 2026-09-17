@@ -165,23 +165,122 @@
         "y": 0.75
       }
     },
-    "mediaFocalPoint": {
+    "className": {
+      "probe": "probe-class"
+    },
+    "lock": {
       "probe": {
-        "x": 0.25,
-        "y": 0.75
+        "move": true,
+        "remove": true
       }
+    },
+    "metadata": {
+      "probe": {
+        "name": "Probe"
+      }
+    },
+    "fontFamily": {
+      "probe": "body"
+    },
+    "gradient": {
+      "probe": "vivid-cyan-blue-to-vivid-purple"
+    },
+    "layout": {
+      "probe": {
+        "type": "flex"
+      }
+    },
+    "dsgoAnimationTrigger": {
+      "probe": [
+        "load",
+        "hover",
+        "click"
+      ]
+    },
+    "dsgoEntranceAnimation": {
+      "probe": [
+        "fadeInUp",
+        "bounceIn",
+        "flipInX"
+      ]
+    },
+    "dsgoExitAnimation": {
+      "probe": [
+        "fadeOut",
+        "bounceOut"
+      ]
+    },
+    "dsgoCustomCSS": {
+      "probe": "color: red;"
+    },
+    "dsgoInteractions": {
+      "probe": [
+        {
+          "trigger": "click",
+          "action": "toggle",
+          "target": ".probe"
+        }
+      ]
+    },
+    "dsgoLinkRel": {
+      "probe": "noopener"
+    },
+    "dsgoParallaxDirection": {
+      "probe": "down"
+    },
+    "dsgoParallaxRelativeTo": {
+      "probe": "document"
+    },
+    "dsgoSchema": {
+      "probe": [
+        "faq",
+        "howto",
+        "review"
+      ]
+    },
+    "dsgoSvgPatternType": {
+      "probe": "architect"
+    },
+    "dsgoVideoPoster": {
+      "probe": "https://example.com/probe.jpg"
+    },
+    "dsgoStyleBinding": {
+      "probe": {
+        "--dsgo-probe": {
+          "source": "designsetgo/post-meta",
+          "key": "probe_meta"
+        }
+      }
+    },
+    "dsgoVisibility": {
+      "probe": {
+        "operator": "AND",
+        "rules": [
+          {
+            "type": "auth",
+            "op": "is",
+            "value": "logged-in"
+          }
+        ]
+      }
+    },
+    "revealAnimationType": {
+      "probe": "collapse"
+    },
+    "textColor": {
+      "probe": "contrast"
+    },
+    "backgroundColor": {
+      "probe": "contrast"
+    },
+    "borderColor": {
+      "probe": "contrast"
     }
   },
   "byBlock": {
     "designsetgo/advanced-heading": {
       "animatedHeadline": {
-        "probe": {
-          "enabled": true,
-          "words": [
-            "Probe one",
-            "Probe two"
-          ]
-        }
+        "skip": "find_invalid_attribute_values() refuses this attribute outright: the animated headline serializes rotation timings and an inline highlight shape that save() builds from a shape library, and the inserter will not approximate it."
       }
     },
     "designsetgo/chart": {
@@ -289,10 +388,13 @@
     },
     "designsetgo/heading-segment": {
       "animatedWords": {
-        "skip": "animated role is refused by get_serialization_gap(); never serialized"
+        "skip": "only reachable with headlineRole 'animated', which find_invalid_attribute_values() refuses, so these lists never reach stored markup by any route the inserter allows."
       },
       "preservedAnimatedWords": {
-        "skip": "animated role is refused by get_serialization_gap(); never serialized"
+        "skip": "only reachable with headlineRole 'animated', which find_invalid_attribute_values() refuses, so these lists never reach stored markup by any route the inserter allows."
+      },
+      "headlineRole": {
+        "skip": "the enum has two members and find_invalid_attribute_values() refuses 'animated', so 'normal' - the default - is the only serializable value and there is nothing to flip to."
       }
     },
     "designsetgo/icon-button": {
@@ -407,22 +509,6 @@
           "top-right",
           "outside-top-right"
         ]
-      }
-    },
-    "designsetgo/product-categories-grid": {
-      "selectedCategories": {
-        "probe": [
-          1,
-          2
-        ]
-      },
-      "excludeCategories": {
-        "probe": [
-          3
-        ]
-      },
-      "imageAspectRatio": {
-        "probe": "16/9"
       }
     },
     "designsetgo/progress-bar": {
