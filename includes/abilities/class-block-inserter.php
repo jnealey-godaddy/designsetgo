@@ -5615,7 +5615,16 @@ class Block_Inserter {
 	 * @return float|null Alpha, or null when the value declares none.
 	 */
 	private static function declared_color_alpha( string $color ): ?float {
-		$value = strtolower( trim( $color ) );
+		// Same whitespace set and alpha grammar as getDeclaredAlpha() in
+		// src/utils/overlay-opacity.js: space, tab, LF, CR, form feed, vertical
+		// tab and NBSP; a plain decimal alpha, optionally a percentage.
+		$whitespace = '/^[ \t\n\r\f\x{0B}\x{A0}]+|[ \t\n\r\f\x{0B}\x{A0}]+$/u';
+
+		$trimmed = preg_replace( $whitespace, '', $color );
+		if ( null === $trimmed ) {
+			return null;
+		}
+		$value = strtolower( $trimmed );
 
 		if ( preg_match( '/^#([0-9a-f]{4}|[0-9a-f]{8})$/D', $value, $hex ) ) {
 			return 4 === strlen( $hex[1] )
@@ -5638,14 +5647,12 @@ class Block_Inserter {
 			$alpha = $parts[3];
 		}
 
-		$alpha      = trim( $alpha );
-		$is_percent = '%' === substr( $alpha, -1 );
-		$number     = $is_percent ? substr( $alpha, 0, -1 ) : $alpha;
-		if ( '' === $alpha || ! is_numeric( $number ) ) {
+		$alpha = preg_replace( $whitespace, '', $alpha );
+		if ( null === $alpha || ! preg_match( '/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))(%?)$/D', $alpha, $match ) ) {
 			return null;
 		}
 
-		return $is_percent ? (float) $number / 100 : (float) $number;
+		return '%' === $match[2] ? (float) $match[1] / 100 : (float) $match[1];
 	}
 
 	/**

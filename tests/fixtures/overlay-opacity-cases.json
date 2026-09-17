@@ -84,6 +84,62 @@
 		{
 			"color": "",
 			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,0x0)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,0b0)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,4e-1)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgb(0 0 0 / 1e-1)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,none)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,.5.5)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,5.)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,+.5)",
+			"opacity": "1"
+		},
+		{
+			"color": "rgb(0 0 0 / 40.5%)",
+			"opacity": "1"
+		},
+		{
+			"color": "\u00a0#1212127D\u00a0",
+			"opacity": "1"
+		},
+		{
+			"color": " \t\n#1212127D\u000b\f\r",
+			"opacity": "1"
+		},
+		{
+			"color": "rgba(0,0,0,\u00a0.4\u00a0)",
+			"opacity": "1"
+		},
+		{
+			"color": "\u2003#1212127D",
+			"opacity": "0.65"
 		}
 	],
 	"_comment_sectionSaveMarkup": "Section save() output for an overlayColor, captured from the JS save(). The Jest test asserts save() still produces it byte-for-byte; the PHPUnit test asserts Block_Inserter produces the same class set and style declarations (the order-insensitive comparison block validation applies).",

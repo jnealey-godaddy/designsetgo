@@ -192,3 +192,27 @@ describe('section overlay opacity - inserter parity fixture', () => {
 		}
 	);
 });
+
+describe('scroll accordion item - legacy inserter raw preset colour', () => {
+	const overlayColor = 'var:preset|color|contrast';
+	const stored =
+		'<!-- wp:designsetgo/scroll-accordion-item {"overlayColor":"var:preset|color|contrast"} -->\n<div class="wp-block-designsetgo-scroll-accordion-item dsgo-scroll-accordion-item dsgo-scroll-accordion-item--has-overlay" style="--dsgo-overlay-color:var:preset|color|contrast;--dsgo-overlay-opacity:0.8"></div>\n<!-- /wp:designsetgo/scroll-accordion-item -->';
+
+	test('the old inserter markup validates and re-saves converted', () => {
+		const [block] = parse(stored);
+		expect(console).toHaveInformed();
+
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.overlayColor).toBe(overlayColor);
+		expect(getBlockContent(block)).toBe(
+			getSaveContent(
+				{ ...itemMetadata, save: itemSave },
+				createBlock(itemMetadata.name, { overlayColor }).attributes,
+				[]
+			)
+		);
+		expect(getBlockContent(block)).toContain(
+			'--dsgo-overlay-color:var(--wp--preset--color--contrast);--dsgo-overlay-opacity:0.65'
+		);
+	});
+});

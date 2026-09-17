@@ -27,6 +27,29 @@ export function overlayOpacityFraction(percent) {
 export const DEFAULT_OVERLAY_OPACITY = '0.65';
 
 /**
+ * Whitespace trimmed from a colour and its alpha component: space, tab, LF,
+ * CR, form feed, vertical tab and NBSP. Spelled out (rather than JS trim() or
+ * PHP trim()) so Block_Inserter::declared_color_alpha() trims the same set.
+ */
+const COLOR_WHITESPACE = /^[ \t\n\r\f\x0B\u00A0]+|[ \t\n\r\f\x0B\u00A0]+$/g;
+
+/**
+ * Alpha component: a plain decimal number, optionally a percentage. Hex,
+ * binary, exponent and keyword forms are rejected on both the JS and PHP side.
+ */
+const ALPHA_PATTERN = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))(%?)$/;
+
+/**
+ * Trim COLOR_WHITESPACE from both ends.
+ *
+ * @param {string} value Value to trim.
+ * @return {string} Trimmed value.
+ */
+function trimColorWhitespace(value) {
+	return value.replace(COLOR_WHITESPACE, '');
+}
+
+/**
  * Read the alpha channel a colour value declares, when it declares one.
  *
  * Recognises `#RGBA` / `#RRGGBBAA` hex and the functional notations with an
@@ -38,7 +61,7 @@ export const DEFAULT_OVERLAY_OPACITY = '0.65';
  * @return {number|null} Alpha in [0, 1], or null when none is declared.
  */
 function getDeclaredAlpha(color) {
-	const value = color.trim().toLowerCase();
+	const value = trimColorWhitespace(color).toLowerCase();
 
 	const hex = value.match(/^#([0-9a-f]{4}|[0-9a-f]{8})$/);
 	if (hex) {
@@ -67,14 +90,13 @@ function getDeclaredAlpha(color) {
 		alpha = parts[3];
 	}
 
-	alpha = alpha.trim();
-	const isPercent = alpha.endsWith('%');
-	const number = Number(isPercent ? alpha.slice(0, -1) : alpha);
-	if (alpha === '' || !Number.isFinite(number)) {
+	const match = trimColorWhitespace(alpha).match(ALPHA_PATTERN);
+	if (!match) {
 		return null;
 	}
 
-	return isPercent ? number / 100 : number;
+	const number = parseFloat(match[1]);
+	return match[2] ? number / 100 : number;
 }
 
 /**

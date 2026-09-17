@@ -46,4 +46,38 @@ const v1 = {
 	},
 };
 
-export default [v1];
+// Legacy inserter output: the Abilities inserter wrote `overlayColor` into
+// `--dsgo-overlay-color` unconverted (a preset stayed `var:preset|color|x`,
+// which never painted) with a fixed `--dsgo-overlay-opacity:0.8`. save() always
+// converted the colour, so those items never validated. This save() reproduces
+// the inserter's markup exactly; attributes pass through, and the current
+// save() then writes the converted colour and the colour-aware opacity.
+const legacyInserterRawColor = {
+	apiVersion: 3,
+	supports: metadata.supports,
+	attributes: { ...metadata.attributes },
+	save({ attributes }) {
+		const { overlayColor } = attributes;
+
+		const blockProps = useBlockProps.save({
+			className: classnames('dsgo-scroll-accordion-item', {
+				'dsgo-scroll-accordion-item--has-overlay': !!overlayColor,
+			}),
+			style: overlayColor
+				? {
+						'--dsgo-overlay-color': overlayColor,
+						'--dsgo-overlay-opacity': '0.8',
+					}
+				: undefined,
+		});
+
+		const innerBlocksProps = useInnerBlocksProps.save(blockProps);
+
+		return <div {...innerBlocksProps} />;
+	},
+	migrate(attributes) {
+		return attributes;
+	},
+};
+
+export default [v1, legacyInserterRawColor];
