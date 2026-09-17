@@ -349,6 +349,9 @@
           "left",
           "right"
         ]
+      },
+      "showIcon": {
+        "skip": "find_invalid_attribute_values() refuses showIcon: save() inlines an SVG from a JavaScript icon library with no PHP equivalent, so the inserter declines rather than approximate it."
       }
     },
     "designsetgo/dynamic-image": {

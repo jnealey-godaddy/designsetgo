@@ -491,10 +491,6 @@ class Block_Inserter {
 	 * @return string Markup with support classes and styles merged into the first tag.
 	 */
 	private static function apply_block_support_attributes( string $html, string $block_name, array $attributes ): string {
-		// Runs first, and on the whole fragment, because several serializers put
-		// colours on an inner node rather than the root - see the helper.
-		$html = self::convert_preset_shorthand_in_styles( $html );
-
 		if ( ! class_exists( '\WP_Block_Supports' ) || ! class_exists( '\WP_HTML_Tag_Processor' ) ) {
 			return $html;
 		}
@@ -671,7 +667,7 @@ class Block_Inserter {
 					continue;
 				}
 
-				$kept[] = trim( $parts[0] ) . ':' . self::wp_shorthand_to_css_var( trim( $parts[1] ) );
+				$kept[] = trim( $declaration );
 			}
 
 			if ( empty( $kept ) ) {
@@ -833,6 +829,28 @@ class Block_Inserter {
 			$data['data-video-overlay-color']    = self::convert_color_value_to_css_var(
 				isset( $attributes['dsgoVideoOverlayColor'] ) ? (string) $attributes['dsgoVideoOverlayColor'] : ''
 			);
+		}
+
+		// Mirror the clickable-group extension -
+		// src/extensions/clickable-group/index.js (addLinkSaveProps). Scoped to
+		// the same four container blocks the JS lists, and gated on a non-blank
+		// URL the same way.
+		if ( in_array( $block_name, self::CLICKABLE_GROUP_BLOCKS, true )
+			&& isset( $attributes['dsgoLinkUrl'] )
+			&& is_string( $attributes['dsgoLinkUrl'] )
+			&& '' !== trim( $attributes['dsgoLinkUrl'] )
+		) {
+			$classes[]                 = 'dsgo-clickable';
+			$data['data-link-url']     = $attributes['dsgoLinkUrl'];
+
+			// The JS writes the literal '_blank' for ANY truthy target, not the
+			// attribute's own value.
+			if ( ! empty( $attributes['dsgoLinkTarget'] ) ) {
+				$data['data-link-target'] = '_blank';
+			}
+			if ( ! empty( $attributes['dsgoLinkRel'] ) ) {
+				$data['data-link-rel'] = (string) $attributes['dsgoLinkRel'];
+			}
 		}
 
 		// Mirror the custom-CSS extension - src/extensions/custom-css/index.js
@@ -1040,62 +1058,6 @@ class Block_Inserter {
 		$namespace = strtok( $block_name, '/' );
 
 		return in_array( $namespace . '/*', $excluded, true );
-	}
-
-	/**
-	 * Convert WordPress preset shorthand to CSS in every style attribute.
-	 *
-	 * `var:preset|color|contrast` is the editor's storage form, not CSS - a
-	 * browser cannot parse it - and every save() runs its values through
-	 * convertColorToCSSVar() before writing them. Serializers that built a
-	 * style string by concatenation skipped that step and wrote the shorthand
-	 * straight into the markup. That failed block validation AND produced a
-	 * declaration the browser dropped, so the colour silently did not apply on
-	 * the front end either.
-	 *
-	 * This runs over the whole generated fragment rather than the root element,
-	 * because several blocks put colours on an inner node: countdown-timer's
-	 * unit boxes and progress-bar's track and fill all carry their own style
-	 * attribute, and a root-only pass left those untouched.
-	 *
-	 * Doing it centrally is safe in a way the rest of colour handling is not:
-	 * the shorthand is invalid in every CSS property, so converting it is
-	 * unconditionally correct. What cannot move here is the bare-slug case
-	 * (`accent-3`), because whether a bare word is a colour slug or an ordinary
-	 * keyword depends on which attribute it came from - that stays with
-	 * convert_color_value_to_css_var() in the individual serializers.
-	 *
-	 * @param string $html Generated markup.
-	 * @return string Markup with preset shorthand converted.
-	 */
-	private static function convert_preset_shorthand_in_styles( string $html ): string {
-		if ( false === strpos( $html, 'var:preset|' ) || ! class_exists( '\WP_HTML_Tag_Processor' ) ) {
-			return $html;
-		}
-
-		$processor = new \WP_HTML_Tag_Processor( $html );
-
-		while ( $processor->next_tag() ) {
-			$style = $processor->get_attribute( 'style' );
-
-			if ( ! is_string( $style ) || false === strpos( $style, 'var:preset|' ) ) {
-				continue;
-			}
-
-			$converted = array();
-			foreach ( explode( ';', $style ) as $declaration ) {
-				$parts = explode( ':', $declaration, 2 );
-				if ( 2 !== count( $parts ) ) {
-					$converted[] = trim( $declaration );
-					continue;
-				}
-				$converted[] = trim( $parts[0] ) . ':' . self::wp_shorthand_to_css_var( trim( $parts[1] ) );
-			}
-
-			$processor->set_attribute( 'style', implode( ';', $converted ) );
-		}
-
-		return $processor->get_updated_html();
 	}
 
 	/**
@@ -1312,6 +1274,9 @@ class Block_Inserter {
 		$unsupported_when_set = array(
 			'designsetgo/advanced-heading' => array(
 				'animatedHeadline' => __( 'the animated headline variant is not supported by this inserter; it serializes rotation timings and an inline highlight shape. Insert the heading in the editor, or omit animatedHeadline.', 'designsetgo' ),
+			),
+			'designsetgo/counter'          => array(
+				'showIcon' => __( 'a counter icon is not supported by this inserter; save() inlines the icon\'s SVG from a JavaScript library that has no PHP equivalent, and an approximation would be invalid content. Add the counter in the editor, or leave showIcon off.', 'designsetgo' ),
 			),
 		);
 
@@ -2987,6 +2952,12 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/row':
+				// save.js renders `<TagName>` from `tagName || 'div'`. The mirror
+				// hardcoded div, so a row saved as a <section> failed validation
+				// on its tag name alone.
+				$row_tag         = isset( $attributes['tagName'] ) && is_string( $attributes['tagName'] ) && '' !== $attributes['tagName']
+					? $attributes['tagName']
+					: 'div';
 				$constrain_width = isset( $attributes['constrainWidth'] ) ? $attributes['constrainWidth'] : false;
 				$content_width   = isset( $attributes['contentWidth'] ) ? $attributes['contentWidth'] : '';
 				$mobile_stack    = isset( $attributes['mobileStack'] ) ? $attributes['mobileStack'] : false;
@@ -3046,10 +3017,10 @@ class Block_Inserter {
 				}
 
 				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' .
+					'opening' => '<' . $row_tag . ' class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' .
 						esc_attr( implode( ';', array_merge( self::container_hover_styles( $attributes ), $support_styles ) ) ) .
 						'"><div class="dsgo-flex__inner" style="' . esc_attr( implode( ';', $inner_styles ) ) . '">',
-					'closing' => '</div></div>',
+					'closing' => '</div></' . $row_tag . '>',
 				);
 
 			case 'designsetgo/grid':
@@ -3190,7 +3161,24 @@ class Block_Inserter {
 				$data_attrs .= ' data-separator="' . esc_attr( $separator ) . '"';
 				$data_attrs .= ' data-decimal="' . esc_attr( $decimal ) . '"';
 
-				$inner_html  = '<div class="dsgo-counter__content icon-top">';
+				// save.js writes `icon-${iconPosition}`; this was hardcoded to
+				// icon-top, so every non-default position failed validation.
+				$icon_position = isset( $attributes['iconPosition'] ) ? (string) $attributes['iconPosition'] : 'top';
+
+				// save.js applies hoverColor RAW - it does not call
+				// convertColorToCSSVar() the way most blocks do - so the mirror
+				// must not convert it either. Writing `var(--wp--preset--...)`
+				// here would be more correct CSS and still wrong: the mirror's
+				// job is to reproduce save(), not to improve on it. That save()
+				// stores an unparseable value for a preset colour is a real bug
+				// in the block, but fixing it changes stored markup and so needs
+				// a deprecation.
+				$counter_style = 'text-align:center';
+				if ( ! empty( $attributes['hoverColor'] ) && is_string( $attributes['hoverColor'] ) ) {
+					$counter_style .= ';--dsgo-counter-hover-color:' . $attributes['hoverColor'];
+				}
+
+				$inner_html  = '<div class="dsgo-counter__content icon-' . esc_attr( $icon_position ) . '">';
 				$inner_html .= '<div class="dsgo-counter__number">';
 				$inner_html .= '<span class="dsgo-counter__value">' . esc_html( (string) $start_value ) . '</span>';
 				$inner_html .= '</div></div>';
@@ -3199,7 +3187,7 @@ class Block_Inserter {
 				}
 
 				return array(
-					'opening' => '<div class="wp-block-designsetgo-counter dsgo-counter" id="' . esc_attr( $unique_id ) . '" style="text-align:center"' . $data_attrs . '>' . $inner_html,
+					'opening' => '<div class="wp-block-designsetgo-counter dsgo-counter" id="' . esc_attr( $unique_id ) . '" style="' . esc_attr( $counter_style ) . '"' . $data_attrs . '>' . $inner_html,
 					'closing' => '</div>',
 				);
 
@@ -3466,7 +3454,7 @@ class Block_Inserter {
 				$border_style = isset( $unit_border['style'] ) ? $unit_border['style'] : 'solid';
 
 				$unit_style_parts = array(
-					'background-color:' . ( $unit_bg_color ? esc_attr( $unit_bg_color ) : 'transparent' ),
+					'background-color:' . ( $unit_bg_color ? esc_attr( self::convert_color_value_to_css_var( (string) $unit_bg_color ) ) : 'transparent' ),
 					'border-color:' . esc_attr( $border_color ),
 					'border-width:' . esc_attr( $border_width ),
 					'border-style:' . esc_attr( $border_style ),
@@ -3475,8 +3463,8 @@ class Block_Inserter {
 				);
 				$unit_style       = implode( ';', $unit_style_parts );
 
-				$number_style = 'color:' . ( $number_color ? esc_attr( $number_color ) : 'var(--wp--preset--color--accent-2, currentColor)' );
-				$label_style  = 'color:' . ( $label_color ? esc_attr( $label_color ) : 'currentColor' );
+				$number_style = 'color:' . ( $number_color ? esc_attr( self::convert_color_value_to_css_var( (string) $number_color ) ) : 'var(--wp--preset--color--accent-2, currentColor)' );
+				$label_style  = 'color:' . ( $label_color ? esc_attr( self::convert_color_value_to_css_var( (string) $label_color ) ) : 'currentColor' );
 
 				// Build units HTML.
 				$units = array();
@@ -3579,13 +3567,13 @@ class Block_Inserter {
 				// `background-color:` with an empty value produced a declaration
 				// save() never writes, so an unstyled progress bar was invalid.
 				$container_style = 'width:100%;height:' . esc_attr( $height ) .
-					( '' !== $bar_bg_color ? ';background-color:' . esc_attr( $bar_bg_color ) : '' ) .
+					( '' !== $bar_bg_color ? ';background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $bar_bg_color ) ) : '' ) .
 					';border-radius:' . esc_attr( $border_radius ) . ';overflow:hidden;position:relative';
 
 				// Fill styles.
 				$fill_width = $animate_on_scroll ? '0%' : $bar_width . '%';
 				$fill_style = 'width:' . $fill_width . ';height:100%' .
-					( '' !== $bar_color ? ';background-color:' . esc_attr( $bar_color ) : '' ) .
+					( '' !== $bar_color ? ';background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $bar_color ) ) : '' ) .
 					';transition:width ' . esc_attr( (string) $animation_dur ) . 's ease-out;border-radius:' . esc_attr( $border_radius );
 
 				$inner_html  = $label_html;
@@ -4401,7 +4389,7 @@ class Block_Inserter {
 				// was only "valid" because a deprecation claimed it — every
 				// insert silently migrated on open.
 				if ( isset( $attributes['overlayColor'] ) && '' !== $attributes['overlayColor'] ) {
-					$style_parts[] = '--dsgo-image-accordion-overlay-color:' . esc_attr( $attributes['overlayColor'] );
+					$style_parts[] = '--dsgo-image-accordion-overlay-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $attributes['overlayColor'] ) );
 				}
 				if ( isset( $attributes['overlayOpacity'] ) && is_numeric( $attributes['overlayOpacity'] ) ) {
 					$style_parts[] = '--dsgo-image-accordion-overlay-opacity:' . esc_attr( self::format_js_number( (float) $attributes['overlayOpacity'] / 100 ) );
@@ -4686,7 +4674,7 @@ class Block_Inserter {
 					$style_parts[] = 'background-repeat:' . esc_attr( $background_repeat );
 				}
 				if ( $overlay_color ) {
-					$style_parts[] = '--dsgo-slide-overlay-color:' . esc_attr( $overlay_color );
+					$style_parts[] = '--dsgo-slide-overlay-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $overlay_color ) );
 					$style_parts[] = '--dsgo-slide-overlay-opacity:' . esc_attr( (string) ( $overlay_opacity / 100 ) );
 				}
 				$style_parts[] = '--dsgo-slide-content-vertical-align:' . esc_attr( $content_v_align );
@@ -6373,6 +6361,19 @@ class Block_Inserter {
 	 * @var array<int, string>
 	 */
 	private const CUSTOM_CSS_EXCLUDED_BLOCKS = array( 'core/html', 'core/code' );
+
+	/**
+	 * Blocks the clickable-group extension applies to, mirroring SUPPORTED_BLOCKS.
+	 *
+	 * @see src/extensions/clickable-group/index.js
+	 * @var array<int, string>
+	 */
+	private const CLICKABLE_GROUP_BLOCKS = array(
+		'core/group',
+		'designsetgo/section',
+		'designsetgo/row',
+		'designsetgo/grid',
+	);
 
 	private const SUPPORTS_ON_INNER_ELEMENT = array(
 		'designsetgo/modal' => 'dsgo-modal__content',
