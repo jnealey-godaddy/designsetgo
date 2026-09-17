@@ -542,21 +542,42 @@ class Block_Inserter {
 		// `supports.align: false` - so rather than add a second tag pass for a
 		// case that does not exist, alignment is simply not taken for those
 		// blocks. If one ever does both, this is where it breaks.
-		$takes_alignment = ! isset( self::SUPPORTS_ON_INNER_ELEMENT[ $block_name ] );
+		$takes_alignment = true;
 
-		$support_classes = array_values(
+		// Two destinations, because WordPress has two mechanisms.
+		//
+		// `blocks.getSaveContent.extraProps` props are merged onto the
+		// OUTERMOST element by getSaveElement(), whatever the block's save()
+		// does internally. Custom class names, the anchor id and every DSGo
+		// extension class arrive that way - core registers custom-classname and
+		// anchor on that same filter.
+		//
+		// `useBlockProps.save()` props go wherever the block chooses to spread
+		// them. Most blocks put them on their root, but Modal spreads them onto
+		// its inner content div, which is what SUPPORTS_ON_INNER_ELEMENT
+		// records.
+		//
+		// Lumping the two together sent Modal's custom class, its extension
+		// classes and its alignment to the content div while save() wrote them
+		// on the root - eight of its sixteen matrix failures.
+		$root_classes = array_values(
 			array_filter(
 				$applied_classes,
 				static function ( $class_name ) use ( $custom_classes, $takes_alignment ) {
-					if ( 0 === strpos( $class_name, 'has-' ) ) {
-						return true;
-					}
-
 					if ( $takes_alignment && 0 === strpos( $class_name, 'align' ) ) {
 						return true;
 					}
 
 					return in_array( $class_name, $custom_classes, true );
+				}
+			)
+		);
+
+		$support_classes = array_values(
+			array_filter(
+				$applied_classes,
+				static function ( $class_name ) {
+					return 0 === strpos( $class_name, 'has-' );
 				}
 			)
 		);
@@ -585,7 +606,7 @@ class Block_Inserter {
 		// mechanism useBlockProps.save() uses for the `has-*` support classes
 		// above, so they are merged in the same pass.
 		$extension_props = self::get_extension_save_props( $block_name, $attributes );
-		$support_classes = array_merge( $support_classes, $extension_props['classes'] );
+		$root_classes    = array_merge( $root_classes, $extension_props['classes'] );
 
 		$declarations = array();
 		if ( ! empty( $attributes['style'] ) && is_array( $attributes['style'] ) && function_exists( 'wp_style_engine_get_styles' ) ) {
@@ -594,11 +615,35 @@ class Block_Inserter {
 		}
 		$declarations = array_merge( $declarations, $extension_props['styles'] );
 
+		// Pass one: everything getSaveElement() puts on the outermost element.
+		// Skipped entirely when there is nothing to add, so the common case
+		// costs no extra parse.
+		if ( ! empty( $root_classes ) || '' !== $anchor_id || ! empty( $extension_props['data'] ) ) {
+			$root_processor = new \WP_HTML_Tag_Processor( $html );
+
+			if ( $root_processor->next_tag() ) {
+				foreach ( $root_classes as $class_name ) {
+					$root_processor->add_class( $class_name );
+				}
+
+				if ( '' !== $anchor_id && null === $root_processor->get_attribute( 'id' ) ) {
+					$root_processor->set_attribute( 'id', $anchor_id );
+				}
+
+				foreach ( $extension_props['data'] as $data_name => $data_value ) {
+					$root_processor->set_attribute( $data_name, $data_value );
+				}
+
+				$html = $root_processor->get_updated_html();
+			}
+		}
+
 		$processor = new \WP_HTML_Tag_Processor( $html );
 
-		// Most blocks carry their support classes on the root. A few move them
-		// to an inner element in save() - Modal transfers them onto its content
-		// div - so putting them on the root there is markup save() never emits.
+		// Pass two: the useBlockProps.save() props. Most blocks carry these on
+		// the root too. A few move them to an inner element in save() - Modal
+		// transfers them onto its content div - so putting them on the root
+		// there is markup save() never emits.
 		$target_class = self::SUPPORTS_ON_INNER_ELEMENT[ $block_name ] ?? null;
 
 		$found = null === $target_class
@@ -639,14 +684,6 @@ class Block_Inserter {
 
 		foreach ( $support_classes as $class_name ) {
 			$processor->add_class( $class_name );
-		}
-
-		if ( '' !== $anchor_id && null === $processor->get_attribute( 'id' ) ) {
-			$processor->set_attribute( 'id', $anchor_id );
-		}
-
-		foreach ( $extension_props['data'] as $data_name => $data_value ) {
-			$processor->set_attribute( $data_name, $data_value );
 		}
 
 		if ( ! empty( $declarations ) ) {
