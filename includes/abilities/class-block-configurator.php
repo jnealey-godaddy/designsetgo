@@ -24,6 +24,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Block_Configurator {
 
 	/**
+	 * Block-specific attributes that hold inline rich text.
+	 *
+	 * Only attributes whose save() renders them with RichText.Content (block.json
+	 * `source: html`) and that Block_Inserter emits with wp_kses_post() belong
+	 * here. Anything else would stage markup that save() escapes differently and
+	 * the editor would flag the block as invalid.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	private const BLOCK_INLINE_TEXT_ATTRIBUTES = array(
+		'designsetgo/icon-button'   => array( 'text' ),
+		'designsetgo/modal-trigger' => array( 'text' ),
+	);
+
+	/**
 	 * Update block attributes by block name or client ID.
 	 *
 	 * @param int                  $post_id Post ID.
@@ -210,25 +225,20 @@ class Block_Configurator {
 	 * Sanitize configuration attributes.
 	 *
 	 * @param array<string, mixed> $attributes Attributes to sanitize.
+	 * @param string               $block_name Optional. Block the attributes belong to. Enables
+	 *                                         block-specific rich-text keys (see
+	 *                                         BLOCK_INLINE_TEXT_ATTRIBUTES); omit when unknown.
 	 * @return array<string, mixed> Sanitized attributes.
 	 */
-	public static function sanitize_attributes( array $attributes ): array {
+	public static function sanitize_attributes( array $attributes, string $block_name = '' ): array {
 		$sanitized = array();
 
 		foreach ( $attributes as $key => $value ) {
 			if ( is_string( $value ) ) {
 				// RichText content is HTML. Preserve safe inline markup and explicit
 				// breaks without decoding escaped text into executable markup.
-				if ( self::is_inline_text_attribute( $key ) ) {
-					$allowed           = array_fill_keys( array( 'br', 'em', 'strong', 'b', 'i', 's', 'sub', 'sup', 'code', 'mark' ), array() );
-					$allowed['span']   = array( 'class' => true );
-					$allowed['a']      = array(
-						'href'  => true,
-						'title' => true,
-						'rel'   => true,
-					);
-					$clean             = wp_kses( wp_check_invalid_utf8( $value ), $allowed );
-					$sanitized[ $key ] = preg_replace( '/^\s+|\s+$/u', ' ', $clean );
+				if ( self::is_inline_text_attribute( (string) $key, $block_name ) ) {
+					$sanitized[ $key ] = self::sanitize_inline_text( $value );
 					continue;
 				}
 				// Decode HTML entities BEFORE stripping tags to catch encoded attacks.
@@ -259,6 +269,8 @@ class Block_Configurator {
 					$sanitized[ $key ] = $clean;
 				}
 			} elseif ( is_array( $value ) ) {
+				// Nested values are not top-level block attributes, so the
+				// block-specific rich-text keys do not apply to them.
 				$sanitized[ $key ] = self::sanitize_attributes( $value );
 			} elseif ( is_bool( $value ) || is_int( $value ) || is_float( $value ) || is_null( $value ) ) {
 				$sanitized[ $key ] = $value;
@@ -266,6 +278,83 @@ class Block_Configurator {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Sanitize an inline rich-text value.
+	 *
+	 * The allow-list mirrors what RichText formats emit and what Block_Inserter's
+	 * downstream wp_kses_post() keeps, so staged markup is not altered a second
+	 * time: links keep class, id, target, aria-* and data-* hooks that page CSS
+	 * and scripts target. `style` and event handlers are never allowed, and
+	 * wp_kses() filters href through wp_allowed_protocols(), which excludes
+	 * `javascript:` and `data:`.
+	 *
+	 * @param string $value Raw rich-text HTML.
+	 * @return string Sanitized HTML.
+	 */
+	private static function sanitize_inline_text( string $value ): string {
+		$hooks = array(
+			'class'  => true,
+			'id'     => true,
+			'data-*' => true,
+		);
+
+		$allowed = array_fill_keys( array( 'br', 'b', 'i', 's', 'sub', 'sup' ), array() );
+		foreach ( array( 'em', 'strong', 'mark', 'code' ) as $tag ) {
+			$allowed[ $tag ] = array( 'class' => true );
+		}
+		$allowed['span'] = $hooks + array( 'aria-hidden' => true );
+		$allowed['a']    = $hooks + array(
+			'href'             => true,
+			'title'            => true,
+			'rel'              => true,
+			'target'           => true,
+			'aria-label'       => true,
+			'aria-current'     => true,
+			'aria-describedby' => true,
+		);
+
+		$clean = wp_kses( wp_check_invalid_utf8( $value ), $allowed );
+		$clean = self::add_noopener_to_blank_links( $clean );
+
+		return (string) preg_replace( '/^\s+|\s+$/u', ' ', $clean );
+	}
+
+	/**
+	 * Add `noopener` to links that open a new browsing context.
+	 *
+	 * Matches the editor's link format, which adds rel="noopener" when "Open in
+	 * new tab" is chosen. Core's server-side equivalent, wp_targeted_link_rel(),
+	 * is deprecated since 6.7, so it is not called here. Existing rel values are
+	 * kept; noopener is appended only when missing.
+	 *
+	 * @param string $html Sanitized inline HTML.
+	 * @return string HTML with noopener on target="_blank" links.
+	 */
+	private static function add_noopener_to_blank_links( string $html ): string {
+		if ( false === stripos( $html, 'target' ) ) {
+			return $html;
+		}
+
+		$processor = new \WP_HTML_Tag_Processor( $html );
+		while ( $processor->next_tag( array( 'tag_name' => 'a' ) ) ) {
+			$target = $processor->get_attribute( 'target' );
+			if ( ! is_string( $target ) || '_blank' !== strtolower( $target ) ) {
+				continue;
+			}
+
+			$rel    = $processor->get_attribute( 'rel' );
+			$tokens = is_string( $rel ) ? (array) preg_split( '/\s+/', trim( $rel ), -1, PREG_SPLIT_NO_EMPTY ) : array();
+			if ( in_array( 'noopener', array_map( 'strtolower', $tokens ), true ) ) {
+				continue;
+			}
+
+			$tokens[] = 'noopener';
+			$processor->set_attribute( 'rel', implode( ' ', $tokens ) );
+		}
+
+		return $processor->get_updated_html();
 	}
 
 	/**
@@ -328,11 +417,22 @@ class Block_Configurator {
 	 * before markup is generated and leaves the kses call downstream as dead
 	 * code. `caption` is core/image's, `citation` is core/quote's.
 	 *
-	 * @param string $key Attribute key.
+	 * Keys that are rich text on some blocks and plain text on others (such as
+	 * `text`) are listed per block in BLOCK_INLINE_TEXT_ATTRIBUTES and only
+	 * apply when the caller passes the block name.
+	 *
+	 * @param string $key        Attribute key.
+	 * @param string $block_name Optional. Block the attribute belongs to.
 	 * @return bool
 	 */
-	private static function is_inline_text_attribute( string $key ): bool {
-		return in_array( $key, array( 'content', 'caption', 'citation' ), true );
+	private static function is_inline_text_attribute( string $key, string $block_name = '' ): bool {
+		if ( in_array( $key, array( 'content', 'caption', 'citation' ), true ) ) {
+			return true;
+		}
+
+		return '' !== $block_name
+			&& isset( self::BLOCK_INLINE_TEXT_ATTRIBUTES[ $block_name ] )
+			&& in_array( $key, self::BLOCK_INLINE_TEXT_ATTRIBUTES[ $block_name ], true );
 	}
 
 	/**

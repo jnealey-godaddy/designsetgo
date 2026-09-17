@@ -172,7 +172,7 @@ class Block_Inserter {
 
 		return array(
 			'block_name'   => $block_name,
-			'attributes'   => empty( $attributes ) ? $attributes : Block_Configurator::sanitize_attributes( $attributes ),
+			'attributes'   => empty( $attributes ) ? $attributes : Block_Configurator::sanitize_attributes( $attributes, $block_name ),
 			'inner_blocks' => empty( $inner_blocks ) ? $inner_blocks : self::sanitize_inner_block_definitions( $inner_blocks ),
 		);
 	}
@@ -384,7 +384,7 @@ class Block_Inserter {
 			}
 
 			if ( isset( $block['attributes'] ) && is_array( $block['attributes'] ) ) {
-				$clean_block['attributes'] = Block_Configurator::sanitize_attributes( $block['attributes'] );
+				$clean_block['attributes'] = Block_Configurator::sanitize_attributes( $block['attributes'], $name );
 			}
 
 			$nested = self::read_nested_inner_blocks( $block );

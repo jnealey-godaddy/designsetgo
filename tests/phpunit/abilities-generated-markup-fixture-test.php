@@ -19,6 +19,7 @@
  * @subpackage Tests
  */
 
+use DesignSetGo\Abilities\Block_Configurator;
 use DesignSetGo\Abilities\Block_Inserter;
 
 /**
@@ -224,6 +225,41 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 								'name'       => 'designsetgo/row',
 								'attributes' => array( 'className' => 'ck-item' ),
 							),
+						),
+					),
+				),
+			),
+			// Inline links keep their class/aria/data hooks and button labels
+			// keep inline formatting through the same sanitizer the insert
+			// abilities run, and the result still matches save().
+			'sanitized-inline-link-and-rich-button-labels' => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => Block_Configurator::sanitize_attributes(
+							array(
+								'content' => 'Browse the <a class="sd-text-link" id="menu-link" href="/menu/" target="_blank" aria-label="Full menu" data-track="menu">full <em class="sd-em">menu</em></a> <span class="sd-accent" aria-hidden="true">*</span>',
+							),
+							'core/paragraph'
+						),
+					),
+					array(
+						'name'       => 'designsetgo/icon-button',
+						'attributes' => Block_Configurator::sanitize_attributes(
+							array(
+								'text' => 'Book <strong>now</strong>',
+								'url'  => '/book/',
+							),
+							'designsetgo/icon-button'
+						),
+					),
+					array(
+						'name'       => 'designsetgo/modal-trigger',
+						'attributes' => Block_Configurator::sanitize_attributes(
+							array( 'text' => 'See <em>details</em>' ),
+							'designsetgo/modal-trigger'
 						),
 					),
 				),
