@@ -9,6 +9,7 @@ The **Grid Span Extension** allows blocks inside a Grid container to span multip
 
 **Key Features:**
 - Span 1 to 12 columns (or parent grid max)
+- Also supports Row Span (`grid-row: span N`) for spanning multiple rows
 - Only appears when block is inside Grid
 - Responsive (adjusts to parent grid's column settings)
 - Visual preview in editor
@@ -27,8 +28,10 @@ The **Grid Span Extension** allows blocks inside a Grid container to span multip
 
 ### Grid Settings Panel
 - **Column Span**: Number of columns block spans (1 to parent grid max)
+- **Row Span**: Number of rows block spans (`grid-row: span N`)
 - Slider range adjusts based on parent grid's column count
-- Default: 1 (single column)
+- Default: 1 (single column/row) for both controls
+- If the parent Grid's **Align Rows** option is on, it overrides both Column Span and Row Span (each item fills one column in the shared row layout instead) — turn Align Rows off to use these controls
 
 ### Responsive Behavior
 - **Desktop**: Uses full column span value

@@ -69,7 +69,7 @@ The Icon List block creates organized lists of items with icons, perfect for dis
 
 Parent-level controls that apply to all list items:
 
-### List Settings Panel
+### List Settings
 
 **Layout**
 Choose how list items are arranged:
@@ -185,7 +185,7 @@ Space between list items:
 
 Centralized color controls for all list item icons:
 
-### Icon Colors Panel (Color Settings Group)
+### Icon Colors (Color Settings Group)
 
 **Icon Color**
 - Controls the icon fill/stroke color

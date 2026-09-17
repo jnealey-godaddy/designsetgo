@@ -478,7 +478,7 @@ Periodically review and clean up old submissions:
 
 For questions about GDPR compliance:
 
-- **Documentation:** See [SECURITY.md](../SECURITY.md) for security-related information
+- **Documentation:** See [SECURITY.md](../../SECURITY.md) for security-related information
 - **Privacy Tools:** Use WordPress's built-in privacy features (Tools menu)
 - **Data Requests:** Follow the procedures outlined in this guide
 

@@ -21,7 +21,7 @@ Unlike manual breadcrumb implementations or heavyweight SEO plugins, this block 
 
 ## Settings & Configuration
 
-### Display Settings Panel
+### Display Settings
 
 **Show Home Link** (`showHome`) - Default: `true`
 - Prepends a "Home" link at the start of the breadcrumb trail

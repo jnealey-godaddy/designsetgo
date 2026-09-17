@@ -106,9 +106,10 @@ DesignSetGo includes custom slash commands that accelerate common tasks.
 - Creates block directory structure
 - Generates `block.json` with proper metadata
 - Creates `edit.js` with modern patterns
+- Checks whether a variation of an existing block would do instead
 - Creates `save.js` with matching structure
 - Adds `style.scss` and `editor.scss`
-- Registers block in main index
+- No manual registration: blocks are auto-loaded from `build/blocks/*/block.json`
 - Follows all WordPress best practices
 
 **Example:**
@@ -118,20 +119,6 @@ AI: What would you like to call the new block?
 You: Timeline
 AI: [Creates complete Timeline block structure]
 ```
-
-#### `/add-variation`
-**Purpose:** Create a block variation with preset configurations
-
-**Usage:**
-```
-/add-variation
-```
-
-**What it does:**
-- Creates variation with preset attributes
-- Adds to variations array
-- Includes proper metadata
-- Follows variation best practices
 
 #### `/add-extension`
 **Purpose:** Create a block extension to enhance core WordPress blocks
@@ -148,24 +135,25 @@ AI: [Creates complete Timeline block structure]
 - Adds styles
 - Ensures proper block targeting
 
+#### `/add-pattern`
+**Purpose:** Add a static block pattern under `patterns/{category}/`
+
+#### `/review-pr`
+**Purpose:** Review the current branch or a PR against DesignSetGo standards before requesting review
+
+Only these four skills live in the repo. For general WordPress knowledge (block development, Interactivity API, REST API, Abilities API, PHPStan), install the official [WordPress agent skills](https://github.com/WordPress/agent-skills) — see [`.claude/skills/README.md`](../../.claude/skills/README.md).
+
 ### Code Quality
 
-#### `/lint`
-**Purpose:** Lint and auto-fix JavaScript, CSS, and PHP files
+Linting has no dedicated skill — run the npm scripts directly:
 
-**Usage:**
+```bash
+npm run lint:js    # JavaScript
+npm run lint:css   # CSS/SCSS
+npm run lint:php   # PHP (phpcs only)
+composer analyse   # PHPStan — separate from lint:php, also run in CI
+npm run format     # Auto-format
 ```
-/lint
-```
-
-**What it does:**
-- Runs `npm run lint:js` for JavaScript
-- Runs `npm run lint:css` for CSS/SCSS
-- Runs `npm run lint:php` for PHP
-- Reports errors but does NOT auto-fix (intentional)
-- Suggests fixes
-
-**Note:** Linters report errors only. Run `npm run format` to auto-format.
 
 #### `/quick-fix`
 **Purpose:** Quick fixes for common issues
@@ -183,49 +171,17 @@ AI: [Creates complete Timeline block structure]
 
 ### Development Workflow
 
-#### `/build`
-**Purpose:** Build plugin and watch for changes
+Build and test also have no dedicated skill — run the npm scripts directly:
 
-**Usage:**
+```bash
+npm run build       # Production build
+npm start           # Development, watch mode
+npm run test:unit   # Jest unit tests
+npm run test:e2e    # Playwright E2E tests
+npm run test:php    # PHPUnit
 ```
-/build
-```
-
-**What it does:**
-- Runs `npm run build` for production
-- Or `npm start` for development with watch mode
-- Reports build status
-- Identifies errors
-
-#### `/test`
-**Purpose:** Run all plugin tests
-
-**Usage:**
-```
-/test
-```
-
-**What it does:**
-- Runs Jest unit tests
-- Runs Playwright E2E tests
-- Reports test results
-- Identifies failing tests
 
 ### Plugin Management
-
-#### `/plugin-info`
-**Purpose:** Display DesignSetGo plugin architecture and structure
-
-**Usage:**
-```
-/plugin-info
-```
-
-**What it does:**
-- Shows plugin overview
-- Lists all blocks
-- Displays architecture
-- Shows available commands
 
 #### `/deploy`
 **Purpose:** Prepare plugin for WordPress.org deployment
@@ -387,10 +343,10 @@ components and utilities."
 
 ```
 ❌ "Check the code for errors"
-✅ "Run /lint to check for linting errors"
+✅ "Run npm run lint:js to check for linting errors"
 
 ❌ "Make sure the build works"
-✅ "Run /build to verify the production build"
+✅ "Run npm run build to verify the production build"
 ```
 
 **Why:** More accurate, faster results.
@@ -414,7 +370,7 @@ components and utilities."
 - Quote text (InnerBlocks)
 - Star rating (1-5)
 - Layout options (card, minimal, full)
-Follow the block template in docs/BLOCK-TEMPLATE-EDIT.js"
+Follow the block template in docs/templates/BLOCK-TEMPLATE-EDIT.js"
 ```
 
 **3. AI generates structure:**
@@ -437,7 +393,9 @@ npm start
 
 **6. Lint and fix:**
 ```
-/lint
+npm run lint:js
+npm run lint:css
+npm run lint:php
 # Fix any reported issues
 npm run format
 ```
@@ -486,7 +444,7 @@ npm start
 ```
 "The edit.js file for the Form Builder block is 450 lines.
 This exceeds our 300-line limit. Can you refactor it following
-docs/REFACTORING-GUIDE.md?"
+.claude/docs/REFACTORING-GUIDE.md?"
 ```
 
 **2. AI suggests structure:**
@@ -540,7 +498,7 @@ Format for the GitHub Wiki"
 - Props and attributes
 - Extension points
 - Testing approach
-Format for docs/BLOCKS/ folder"
+Format for docs/blocks/ folder"
 ```
 
 ## Using Other AI Tools
@@ -608,7 +566,7 @@ curl -X POST http://site.com/wp-json/wp-abilities/v1/abilities/designsetgo/add-b
   }'
 ```
 
-See [ABILITIES-API.md](ABILITIES-API.md) for complete documentation.
+See [ABILITIES-API.md](../api/ABILITIES-API.md) for complete documentation.
 
 ## Tips and Tricks
 
@@ -710,7 +668,7 @@ After AI generates code, always:
 
 - [ ] **Read and understand** the code
 - [ ] **Check against** `.claude/CLAUDE.md` patterns
-- [ ] **Run linters** (`/lint` or `npm run lint:js`)
+- [ ] **Run linters** (`npm run lint:js`, `npm run lint:css`, `npm run lint:php`, `composer analyse`)
 - [ ] **Test in editor** - Insert block, use all controls
 - [ ] **Test on frontend** - View saved page
 - [ ] **Check console** - No JavaScript errors
@@ -870,7 +828,7 @@ Start with container blocks (Flex, Grid, Stack)"
 
 **Questions about AI-assisted development?**
 
-- **Read**: [.claude/CLAUDE.md](.claude/CLAUDE.md) - All development patterns
+- **Read**: [.claude/CLAUDE.md](../../.claude/CLAUDE.md) - All development patterns
 - **Ask**: [GitHub Discussions](https://github.com/jnealey-godaddy/designsetgo/discussions)
 - **Report**: AI-generated bugs to [Issues](https://github.com/jnealey-godaddy/designsetgo/issues)
 

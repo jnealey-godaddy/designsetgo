@@ -192,7 +192,7 @@ Choose from 4 visual styles for tab navigation:
 
 ## Settings & Configuration
 
-### Tab Settings Panel
+### Settings
 
 **Orientation**
 - **Horizontal**: Tabs across top (default)
@@ -221,7 +221,7 @@ Choose from 4 visual styles for tab navigation:
 
 ---
 
-### Mobile Settings Panel
+### Mobile Settings
 
 Configure how tabs behave on smaller screens:
 
@@ -257,7 +257,7 @@ Choose how tabs transform on mobile:
 
 ---
 
-### Advanced Panel
+### Advanced Settings
 
 **Enable Deep Linking**
 - Toggle on/off
@@ -588,7 +588,6 @@ Each Tab block (panel) can be styled independently:
 - Typography settings
 - Alignment (wide, full)
 
-See [Tab Block Documentation](TAB.md) for details.
 
 ---
 
@@ -774,13 +773,12 @@ A: Check that you're setting colors in the right place:
 ## Additional Resources
 
 **Related Blocks:**
-- [Tab Block](TAB.md) - Individual tab panel documentation
 - [Accordion Block](ACCORDION.md) - Alternative collapsible content
 
 **General Documentation:**
-- [Block Development Best Practices](../BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
-- [FSE Compatibility Guide](../FSE-COMPATIBILITY-GUIDE.md)
-- [Accessibility Guide](../ACCESSIBILITY-COLOR-CONTRAST-GUIDE.md)
+- [Block Development Best Practices](../guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
+- [FSE Compatibility Guide](../../.claude/docs/FSE-COMPATIBILITY-GUIDE.md)
+- [Accessibility Guide](../compliance/ACCESSIBILITY-COLOR-CONTRAST-GUIDE.md)
 
 ---
 

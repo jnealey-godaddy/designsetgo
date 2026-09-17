@@ -38,11 +38,13 @@ For each changed file in the PR:
 Review against `.claude/CLAUDE.md` standards:
 
 #### **Code Standards**
-- [ ] Indentation: 4 spaces (JS/SCSS/PHP), 2 spaces (JSON) - NO TABS
+- [ ] Indentation: tabs (JS/SCSS/PHP), 2 spaces (JSON/YAML)
 - [ ] Prefix: `dsgo-` (CSS), `dsgoAttributeName` (JS), `designsetgo_` (PHP)
 - [ ] File size under 300 lines (excluding data/constants)
 - [ ] Block props: Using `useBlockProps()` and `useInnerBlocksProps()`
 - [ ] Color controls: Using `ColorGradientSettingsDropdown` in `<InspectorControls group="color">` with `clientId` prop
+- [ ] Custom inspector controls: Using `<DsgoInspectorPanel>` (Settings/Style panels), never bare `PanelBody`
+- [ ] Horizontal positioning uses the justification pattern (`dsgo-justify`/`justification` attribute), never `supports.align: ["left","center","right"]`
 - [ ] Future-proof components: `__next40pxDefaultSize` and `__nextHasNoMarginBottom` on form components
 - [ ] Block supports: Using `supports` in block.json before custom controls
 
@@ -117,7 +119,7 @@ Review against `.claude/CLAUDE.md` standards:
 Verify the PR author has tested:
 
 - [ ] Built successfully: `npm run build`
-- [ ] Linting passed: `npm run lint:js`, `npm run lint:css`, `npm run lint:php`
+- [ ] Linting passed: `npm run lint:js`, `npm run lint:css`, `npm run lint:php` (phpcs), `composer analyse` (PHPStan — separate script, also run in CI)
 - [ ] Editor functionality tested
 - [ ] Frontend rendering tested
 - [ ] Responsive design tested (mobile, tablet, desktop)
@@ -283,9 +285,9 @@ grep -i "class-name" build/style-index.css
 [Link to relevant internal docs]
 
 - [CLAUDE.md](/.claude/CLAUDE.md) - Plugin standards
-- [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](/docs/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
-- [WIDTH-LAYOUT-PATTERNS.md](/docs/WIDTH-LAYOUT-PATTERNS.md) (if layout changes)
-- [FSE-COMPATIBILITY-GUIDE.md](/docs/FSE-COMPATIBILITY-GUIDE.md) (if block changes)
+- [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](/docs/guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
+- [WIDTH-LAYOUT-PATTERNS.md](/docs/patterns/WIDTH-LAYOUT-PATTERNS.md) (if layout changes)
+- [FSE-COMPATIBILITY-GUIDE.md](/.claude/docs/FSE-COMPATIBILITY-GUIDE.md) (if block changes)
 
 
 ## 🎯 Next Steps

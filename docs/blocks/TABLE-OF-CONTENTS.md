@@ -21,7 +21,7 @@ Unlike manual anchor links or heavy plugins, this block updates dynamically in t
 
 ## ⚙️ Settings & Configuration
 
-### Heading Levels Panel
+### Heading Levels
 
 Select which heading levels to include in your table of contents:
 
@@ -39,7 +39,7 @@ Select which heading levels to include in your table of contents:
 
 **Tip**: Start with just H2 and H3. Add deeper levels only if your content requires detailed hierarchy.
 
-### Display Settings Panel
+### Display Settings
 
 **Display Mode**
 - **Hierarchical (Nested)**: Shows headings in a tree structure reflecting their hierarchy
@@ -55,7 +55,7 @@ Select which heading levels to include in your table of contents:
   - Useful for step-by-step guides
   - Nested lists use letters (a, b, c...)
 
-### Title Settings Panel
+### Title Settings
 
 **Show Title** (Default: On)
 - Toggle the "Table of Contents" heading
@@ -65,7 +65,7 @@ Select which heading levels to include in your table of contents:
 - Customize the heading text
 - Examples: "Contents", "On this page", "Jump to..."
 
-### Scroll Settings Panel
+### Scroll Settings
 
 **Smooth Scroll** (Default: On)
 - Enables smooth animated scrolling when clicking links

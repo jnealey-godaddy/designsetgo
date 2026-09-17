@@ -1,6 +1,6 @@
 ---
 name: add-block
-description: Create a new Gutenberg block with scaffolding
+description: Use when adding a new DesignSetGo block or a variation of an existing one — decides block vs. variation, then scaffolds following the plugin's conventions
 argument-hint: [block-name]
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(npm run *)
 ---
@@ -8,16 +8,15 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(npm run *)
 
 Create a new Gutenberg block following WordPress best practices.
 
-## Pre-flight: Variation check
+## Pre-flight: block or variation?
 
-Before scaffolding a new block, run this check:
+Search `src/blocks/*` for anything conceptually similar. If the idea differs from an existing block only by 1–3 attributes **and shares the same `save()` output**, register a variation instead — no new block, no deprecation debt (see "Variations vs. new blocks" in `.claude/claude.md`):
 
-1. Search existing blocks (`src/blocks/*`) for anything conceptually similar.
-2. Ask: would the new block differ from an existing one only by 1–3 attributes **and share the same `save()` output structure**?
-3. If yes → register a **variation** via `registerBlockVariation`, not a new block. Variations have no migration cost and no deprecation debt.
-4. If the save markup or inner-block structure actually differs → a new block is justified. Proceed.
+- Put the variations in `src/blocks/{block}/variations.js`.
+- Register them the way that block's `index.js` already does: pass `variations` into `registerBlockType()` (see `modal/`), or loop `registerBlockVariation( metadata.name, variation )` after registration (see `query-filter/`).
+- Use WordPress presets in variation attributes (`var(--wp--preset--spacing--50)`), never hardcoded values.
 
-See the "Variations vs. new blocks" section in `.claude/claude.md` for rationale and the consolidation pattern for sibling blocks.
+Only when markup, inner-block structure, or behaviour actually differs, scaffold a new block below.
 
 ## Ask the User For
 
@@ -40,9 +39,7 @@ See the "Variations vs. new blocks" section in `.claude/claude.md` for rationale
 
 ## Before Scaffolding — Check Shared Primitives
 
-Before generating any block code, check `src/hooks/` and `src/components/shared/` for primitives that already cover the patterns you're about to write. The plugin maintains shared building blocks specifically to keep new blocks consistent with the rest of the codebase. See the **Shared Primitives First** and **Variation vs New Block** sections of `.claude/claude.md` for the full list and the variation-vs-block decision rule.
-
-If a new block differs from an existing one only by 1–3 attributes and shares the same `save()` output, register a variation in the existing block's `block.json` instead of creating a new block.
+Check `src/hooks/` and `src/components/shared/` first. See **Shared Primitives First** in `.claude/claude.md` for the list.
 
 ## Critical Patterns to Follow
 
@@ -61,11 +58,17 @@ If a new block differs from an existing one only by 1–3 attributes and shares 
 - Place in `<InspectorControls group="color">`
 - Require `clientId` parameter in edit function
 
+**Inspector layout (Theme 3 IA):**
+- Custom controls go in `<DsgoInspectorPanel>` (a `ToolsPanel` wrapper), never bare `PanelBody`
+- Exactly two panels, in order: `panelName="settings"` (title `Settings`) then `panelName="style"` (title `Style`) — no block-name prefix
+- Pass `panelId={clientId}`; wrap each control in `<DsgoInspectorPanel.Item label hasValue onDeselect isShownByDefault>` with `isShownByDefault` always `true`
+- Color / HTML element / anchor / class stay in `<InspectorControls group="color">` / `group="advanced">` — don't duplicate them inside Settings or Style
+
+**Horizontal positioning:** never use `supports.align: ["left","center","right"]` to position a block — that's for `wide`/`full` bleed only. Use the justification pattern instead: block root gets `.dsgo-justify`/`.dsgo-justify--{left|center|right}` from a `justification` attribute (see `getJustificationClass()` in `src/utils/justification.js` and `<DsgoJustificationToolbar>`), with the visible element shrink-wrapped inside it.
+
 ## After Creation
 
-Block will be auto-detected by webpack - no need to modify `src/index.js`.
-
-If dynamic rendering is used, add PHP registration in `includes/class-plugin.php`.
+The block is auto-detected from `build/blocks/*/block.json` by `includes/blocks/class-loader.php` — no manual PHP registration needed, including for dynamic rendering: a `render.php` file in the block's own directory is picked up automatically. No changes to `src/index.js` or any PHP file are required for a standard block.
 
 ## Build and Test
 
@@ -77,4 +80,4 @@ Test in both editor and frontend.
 
 ## Reference
 
-See [BEST-PRACTICES-SUMMARY.md](../../docs/BEST-PRACTICES-SUMMARY.md) for complete patterns.
+See [BEST-PRACTICES-SUMMARY.md](../../../docs/guides/BEST-PRACTICES-SUMMARY.md) for complete patterns.

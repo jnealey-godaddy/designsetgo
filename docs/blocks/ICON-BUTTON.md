@@ -36,7 +36,8 @@ The **Icon Button Block** is an enhanced version of the standard button. It comb
 - **Gap**: Space between icon and text.
 
 ### Styling & Animation
-- **Width**: Auto, Full, 50%, 25%.
+- **Justification**: Left, Center, or Right — positions the button within its container.
+- **Width**: Auto or Full width.
 - **Hover Animation**:
     - **None**: Color change only.
     - **Slide Icon**: Icon moves on hover.

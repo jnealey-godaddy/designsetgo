@@ -14,7 +14,7 @@ Commands are registered in `includes/` when WP-CLI is the active SAPI and requir
 
 ## Query: Filter Index
 
-**Source**: `includes/blocks/class-query-filter-index-cli.php`
+**Source**: `includes/blocks/query/class-query-filter-index-cli.php`
 **Since**: 2.1.0
 
 Manages the persistent filter-index table (`{prefix}dsgo_query_filter_index`) used by the Dynamic Query block to compute per-option post counts for Query Filter blocks.

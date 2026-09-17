@@ -49,7 +49,7 @@ The block editor shows a live preview of the grid using data fetched from the WC
 
 All controls live in a single **Settings** panel with per-control reset and a global "Reset all" button.
 
-### Settings Panel
+### Settings
 
 - **Category Source** — ButtonGroup: All Categories or Manual. Switching to Manual reveals the category picker; switching to All reveals the "Show Empty Categories" toggle.
 - **Show Empty Categories** — Toggle (All mode only, default off). When on, categories with zero products are included.

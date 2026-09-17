@@ -26,11 +26,11 @@ The **Countdown Timer Block** displays a live countdown to a specific date and t
 
 ## ⚙️ Settings & Configuration
 
-### Date & Time Panel
+### Date & Time
 - **Target Date & Time**: Pick your deadline using date/time picker
 - **Timezone**: Select timezone for accurate countdown (uses WordPress site timezone by default)
 
-### Display Panel
+### Display
 Toggle which units to show:
 - **Show Days**: Display days remaining (recommended for long countdowns)
 - **Show Hours**: Display hours (0-23 or total hours)
@@ -42,20 +42,20 @@ Toggle which units to show:
 - **Inline**: Units in horizontal row (compact)
 - **Compact**: Minimal spacing (space-saving)
 
-### Styling Panel
+### Styling
 - **Number Color**: Color for countdown numbers
 - **Label Color**: Color for unit labels (Days, Hours, etc.)
 - **Unit Background**: Background color for each unit box
 - **Unit Gap**: Spacing between units
 - **Unit Padding**: Inner padding for each unit box
 
-### Unit Border Panel
+### Unit Border
 - **Border Color**: Custom border color for unit boxes
 - **Border Style**: Solid, dashed, dotted, double
 - **Border Width**: Border thickness (px)
 - **Border Radius**: Rounded corners (px)
 
-### Completion Panel
+### Completion
 **Action on completion:**
 - **Show Message**: Display custom message when countdown ends
 - **Hide Timer**: Hide entire block when countdown ends

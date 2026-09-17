@@ -45,7 +45,7 @@ The editor preview calls the REST endpoint `/designsetgo/v1/dynamic-tags/preview
 
 ---
 
-## Inspector Controls (Settings Panel)
+## Inspector Controls (Settings)
 
 All controls live in a single **Settings** `DsgoInspectorPanel` with per-control reset-to-default. The panel itself has a "Reset all" button.
 

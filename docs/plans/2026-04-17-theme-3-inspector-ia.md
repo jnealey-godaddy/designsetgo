@@ -6,7 +6,7 @@
 
 **Source:** [`docs/plans/2026-04-16-blocks-editor-ux-design.md`](./2026-04-16-blocks-editor-ux-design.md) Theme 3.
 
-**Depends on:** [Theme 6](./2026-04-17-theme-6-shared-authoring-primitives.md) (`<DsgoInspectorPanel>`). This plan assumes Theme 6 is merged before any family-migration PR lands.
+**Depends on:** Theme 6 (`<DsgoInspectorPanel>`, shipped — see the "Shared Primitives First" section in `.claude/CLAUDE.md`). This plan assumes Theme 6 is merged before any family-migration PR lands.
 
 **Tech Stack:** WordPress block editor (`@wordpress/components` `__experimentalToolsPanel` / `__experimentalToolsPanelItem`, `@wordpress/block-editor` `InspectorControls`), Jest 29 via `@wordpress/scripts`, React Testing Library through `tests/unit/setup.js`.
 

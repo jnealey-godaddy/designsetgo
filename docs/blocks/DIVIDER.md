@@ -24,7 +24,7 @@ The **Divider Block** adds visual separators with multiple style options includi
 
 ## ⚙️ Settings & Configuration
 
-### Divider Settings Panel
+### Settings
 
 **Style Options:**
 - **Solid**: Classic single line (default)

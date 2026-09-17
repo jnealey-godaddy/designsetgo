@@ -2,6 +2,8 @@
 
 **Quick access summary of [BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md](./BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)**
 
+> **Superseded pattern below:** the non-color `PanelBody` examples in this doc predate the Theme 3 Inspector IA. Current blocks wrap every custom control in `<DsgoInspectorPanel>` / `<DsgoInspectorPanel.Item>` instead of a bare `PanelBody` — see `../../.claude/CLAUDE.md` ("Inspector IA (Theme 3)"). The `PanelColorSettings` → `ColorGradientSettingsDropdown` guidance below is still current.
+
 ---
 
 ## Critical Rules (MUST Follow)
@@ -678,7 +680,7 @@ __('Hello', 'designsetgo')
 
 **Our Documentation:**
 - [Complete Best Practices Guide](./BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
-- [Container Block Refactoring Lessons](./WORDPRESS-BLOCK-EDITOR-BEST-PRACTICES.md)
+- [Declarative Styling / useInnerBlocksProps Lessons](../../.claude/docs/EDITOR-STYLING-GUIDE.md)
 
 ---
 

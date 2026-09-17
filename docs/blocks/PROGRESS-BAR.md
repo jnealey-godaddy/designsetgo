@@ -43,13 +43,13 @@ The **Progress Bar** block displays progress or statistics with an animated bar 
 
 ## ⚙️ Settings & Configuration
 
-### Progress Settings Panel
+### Settings
 
 - **Percentage**: 0-100% (default: 75%)
   - Sets the progress/completion level
   - Bar fills to this percentage
 
-### Appearance Panel
+### Appearance
 
 - **Bar Height**: Height of the progress bar
   - Units: px, em, rem
@@ -66,7 +66,7 @@ The **Progress Bar** block displays progress or statistics with an animated bar 
   - **Striped**: Diagonal stripe pattern
   - **Animated**: Moving diagonal stripes
 
-### Label Settings Panel
+### Label Settings
 
 - **Show Label**: Toggle label text on/off
 - **Label Text**: Custom text (e.g., "Project Progress")
@@ -78,7 +78,7 @@ The **Progress Bar** block displays progress or statistics with an animated bar 
 
 **Display format**: When both enabled, shows "Label Text - 75%"
 
-### Animation Panel
+### Animation
 
 - **Animate on Scroll**: Toggle scroll-triggered animation
   - When enabled: Bar animates when it enters viewport
@@ -182,7 +182,6 @@ Progress Bar: 85% completion
 ## 🔗 Related Blocks
 
 - [Counter Group](./COUNTER-GROUP.md) - For animated statistics
-- [Counter](./COUNTER.md) - Individual counter items
 
 ---
 

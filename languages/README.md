@@ -90,7 +90,7 @@ msgstr "Translated text"
 
 ```po
 # Inspector control label
-#: src/blocks/flex/edit.js:45
+#: src/blocks/row/edit.js:45
 msgid "Direction"
 msgstr "Dirección"
 ```
@@ -168,6 +168,8 @@ such as `%s`. Remove the `fuzzy` flag only after reviewing a translation.
 
 ### Step 3: Compile PHP and JavaScript Translations
 
+> **Run `npm run build` first.** Each JSON catalog's filename is keyed on `md5()` of the script path WordPress loads (`build/...`). Running `make-json` against a stale or missing `build/` writes catalogs under the wrong hash, and those strings silently stay in English. Verify with `grep -i "your string" languages/designsetgo-<locale>-*.json`.
+
 ```bash
 wp i18n make-mo languages languages
 wp i18n make-json languages languages --no-purge \
@@ -198,7 +200,7 @@ language and editor user's language set separately.
 Review where the string appears in the code:
 
 ```po
-#: src/blocks/flex/edit.js:45
+#: src/blocks/row/edit.js:45
 #: src/blocks/grid/edit.js:32
 msgid "Justify"
 ```

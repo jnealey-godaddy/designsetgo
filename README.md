@@ -1,6 +1,6 @@
 # DesignSetGo
 
-Professional Gutenberg block library with 53 blocks and 16 powerful extensions - complete Form Builder, Dynamic Query family, container system, interactive elements, maps, modals, breadcrumbs, scroll effects, animations, and WooCommerce blocks. Built with WordPress standards for guaranteed editor/frontend parity.
+Professional Gutenberg block library with 57 blocks and 18 powerful extensions - complete Form Builder, Dynamic Query family, container system, interactive elements, maps, modals, breadcrumbs, scroll effects, animations, and WooCommerce blocks. Built with WordPress standards for guaranteed editor/frontend parity.
 
 ## 🤖 **First AI-Native WordPress Block Library**
 
@@ -16,7 +16,7 @@ DesignSetGo is the **first WordPress block plugin** to integrate with the WordPr
 - ✅ Project foundation and architecture complete
 - ✅ Build system configured (webpack + @wordpress/scripts)
 - ✅ PHP plugin architecture implemented
-- ✅ 53 custom blocks across 8+ categories with FSE integration
+- ✅ 57 custom blocks across 8+ categories with FSE integration
 - ✅ Complete Form Builder system (13 blocks: builder + 11 field types)
 - ✅ Container system (Row, Section, Grid)
 - ✅ Interactive blocks (Tabs, Accordion, Flip Card, Reveal, Scroll Slides, Sticky Sections, Scroll Marquee, Slider, Counters, Progress)
@@ -24,7 +24,7 @@ DesignSetGo is the **first WordPress block plugin** to integrate with the WordPr
 - ✅ Content blocks (Icon, Icon Button, Icon List, Card, Pill, Divider, Countdown, Blobs, Dynamic Image)
 - ✅ WooCommerce blocks (Product Categories Grid, Product Showcase Hero)
 - ✅ Location block (Map with OpenStreetMap & Google Maps support)
-- ✅ 16 Block Extensions - Animations, Sticky Header, Clickable Groups, Background Video, Responsive, Hover Effects, Conditional Visibility, Dynamic Tags, Style Binding, SVG Patterns, Scroll Effects (Parallax, Text Reveal, Expanding Background), and more
+- ✅ 18 Block Extensions - Animations, Sticky Header, Clickable Groups, Background Video, Responsive, Hover Effects, Conditional Visibility, Dynamic Tags, Style Binding, SVG Patterns, Scroll Effects (Parallax, Text Reveal, Expanding Background), and more
 - ✅ Global styles system (theme.json integration)
 - ✅ Block patterns library
 - ✅ Comprehensive testing setup (E2E + Unit + PHP)
@@ -43,7 +43,7 @@ See [CLAUDE.md](.claude/CLAUDE.md) for development learnings and best practices.
 | Category | Features |
 |----------|----------|
 | **🤖 AI Integration** | **WordPress Abilities API** — First plugin with AI-native programmatic access. **Per-URL Markdown** — any published URL returns Markdown when a client sends `Accept: text/markdown`, passes the acceptmarkdown.com contract. |
-| **Blocks** | **53 blocks** across 8+ categories: **Layout (3)** - Row, Section, Grid; **Forms (13)** - Complete form system with AJAX, spam protection, 11 field types; **Interactive (15)** - Tabs, Accordion, Flip Card, Slider, Scroll Slides, Sticky Sections, Scroll Marquee, Scroll Accordion, Image Accordion, Counters, Progress, Comparison Table, Timeline, Modal, Modal Trigger; **Dynamic Query (6)** - Query, Pagination, Filter, Results, Group Header, No Results; **Typography & Navigation (3)** - Advanced Heading, Breadcrumbs (Schema.org), Table of Contents; **Visual (9)** - 160+ Icons, Icon Button, Icon List, Pills, Cards, Dividers, Countdown, Blobs, Dynamic Image; **Media & Location (2)** - Fifty Fifty split layout, Map (OSM + Google Maps); **WooCommerce (2)** - Product Categories Grid, Product Showcase Hero |
+| **Blocks** | **57 blocks** across 9 categories: **Layout (4)** - Grid, Row, Section, Section Divider; **Forms (12)** - Form Builder plus 11 field types, with a submissions dashboard; **Interactive (15)** - Tabs, Accordion, Modal, Modal Trigger, Flip Card, Slider, Scroll Slides, Sticky Sections, Scrolling Gallery, Scroll Accordion, Image Accordion, Counter Group, Progress Bar, Comparison Table, Timeline; **Dynamic Query (6)** - Query, Pagination, Filter, Results, Group Header, No Results; **Typography & Navigation (3)** - Advanced Heading, Breadcrumbs (Schema.org), Table of Contents; **Visual (12)** - 160+ Icons, Icon Button, Icon List, Pill, Card, Divider, Countdown Timer, Blobs, Dynamic Image, Hotspot, Star Rating, Text Path; **Data (1)** - Chart (bar, line, donut); **Media & Location (2)** - Fifty Fifty split layout, Map (OSM + Google Maps); **WooCommerce (2)** - Product Categories Grid, Product Showcase Hero |
 | **Extensions** | **16 Extensions** - Block Animations (24 effects), Sticky Header, Clickable Groups, Background Video, Responsive Visibility, Hover Effects, Conditional Visibility, Dynamic Tags, Style Binding, SVG Patterns (25+), Max Width, Custom CSS, Grid Span, Grid Mobile Order, Reveal Control, Text Alignment Inheritance |
 | **Patterns** | Pre-designed layouts (Hero, CTA, Features, FAQ) |
 | **FSE Ready** | Full Site Editing compatible, theme.json integration, dual categorization |
@@ -58,7 +58,7 @@ See [CLAUDE.md](.claude/CLAUDE.md) for development learnings and best practices.
 ### Requirements
 
 - **Node.js**: 18+ (for development)
-- **PHP**: 8.0+
+- **PHP**: 7.4+
 - **WordPress**: 6.7+
 - **npm**: 8+ (or pnpm/yarn)
 
@@ -74,7 +74,7 @@ npm install
 
 # 3. Start WordPress environment
 npx wp-env start
-# This starts a local WordPress at http://localhost:8888
+# This starts a local WordPress at http://localhost:9451 (see .wp-env.json "port")
 # Login: admin / password
 
 # 4. Start development (in a new terminal)
@@ -82,7 +82,7 @@ npm start
 # This watches files and rebuilds automatically
 ```
 
-**That's it!** The plugin is now active in your local WordPress. Visit [http://localhost:8888/wp-admin](http://localhost:8888/wp-admin) and start creating with DesignSetGo blocks.
+**That's it!** The plugin is now active in your local WordPress. Visit [http://localhost:9451/wp-admin](http://localhost:9451/wp-admin) and start creating with DesignSetGo blocks.
 
 ### WordPress Environment
 
@@ -97,9 +97,8 @@ npx wp-env stop
 npx wp-env clean all
 
 # Access:
-# - Frontend: http://localhost:8888
-# - Admin: http://localhost:8888/wp-admin (admin/password)
-# - Database: http://localhost:8889 (phpMyAdmin - root/password)
+# - Frontend: http://localhost:9451
+# - Admin: http://localhost:9451/wp-admin (admin/password)
 ```
 
 ### Development Workflow
@@ -133,7 +132,7 @@ npm run plugin-zip
 
 ## Current Features
 
-### 53 Custom Blocks
+### 57 Custom Blocks
 
 📚 **[View Complete Blocks Reference →](https://github.com/jnealey-godaddy/designsetgo/wiki/Blocks-Reference)**
 
@@ -201,7 +200,7 @@ npm run plugin-zip
 - Success/error message customization
 - Form validation and error handling
 
-### 16 Block Extensions
+### 18 Block Extensions
 
 Extensions work with **any WordPress block** (core, third-party, or DesignSetGo):
 
@@ -389,15 +388,14 @@ Complete documentation for users and developers.
 **Development Guides:**
 - **[Best Practices Summary](docs/guides/BEST-PRACTICES-SUMMARY.md)** - Quick reference patterns
 - **[Block Development (Comprehensive)](docs/guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)** - Deep dive
-- **[WordPress Block Editor Best Practices](docs/guides/WORDPRESS-BLOCK-EDITOR-BEST-PRACTICES.md)**
-- **[FSE Compatibility Guide](docs/guides/WORDPRESS-BLOCK-EDITOR-BEST-PRACTICES.md)** - Full Site Editing integration
+- **[Editor Styling Guide](.claude/docs/EDITOR-STYLING-GUIDE.md)** - Editor vs. frontend styling
+- **[FSE Compatibility Guide](.claude/docs/FSE-COMPATIBILITY-GUIDE.md)** - Full Site Editing integration
 - **[Testing Guide](TESTING.md)** - E2E and unit testing
 
 **Specialized Topics:**
 - **[Block Controls Organization](docs/guides/BLOCK-CONTROLS-ORGANIZATION.md)**
 - **[Color Controls Pattern](docs/patterns/COLOR-CONTROLS-PATTERN.md)**
 - **[Width & Layout Patterns](docs/patterns/WIDTH-LAYOUT-PATTERNS.md)**
-- **[Extension vs Custom Blocks](docs/planning/EXTENSION-VS-CUSTOM-BLOCKS.md)**
 - **[Abilities API](docs/api/ABILITIES-API.md)** - AI integration
 
 **AI-Assisted Development:**
@@ -425,8 +423,8 @@ Reference .claude/CLAUDE.md as you develop
 ## Roadmap
 
 ### ✅ Completed (Phase 1)
-- 53 custom blocks across 8+ categories (Layout, Forms, Interactive, Dynamic Query, Typography & Navigation, Visual, Media & Location, WooCommerce)
-- 16 block extensions (Animations, Sticky Header, Clickable Groups, Background Video, Responsive Visibility, Hover Effects, Conditional Visibility, Dynamic Tags, Style Binding, SVG Patterns, Scroll Effects, and more)
+- 57 custom blocks across 8+ categories (Layout, Forms, Interactive, Dynamic Query, Typography & Navigation, Visual, Media & Location, WooCommerce)
+- 18 block extensions (Animations, Sticky Header, Clickable Groups, Background Video, Responsive Visibility, Hover Effects, Conditional Visibility, Dynamic Tags, Style Binding, SVG Patterns, Scroll Effects, and more)
 - Global styles integration with theme.json
 - Animation system (24+ entrance/exit animations)
 - Map block with OpenStreetMap & Google Maps support
@@ -521,8 +519,8 @@ This project is 100% free and open source (GPL v2+). Contributions welcome!
 - **Setup help**: [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)
 - **Code structure**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **Development patterns**: [.claude/CLAUDE.md](.claude/CLAUDE.md)
-- **Testing guide**: [docs/TESTING.md](docs/TESTING.md)
-- **Common issues**: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+- **Testing guide**: [docs/testing/TESTING.md](docs/testing/TESTING.md)
+- **Common issues**: [docs/troubleshooting/TROUBLESHOOTING.md](docs/troubleshooting/TROUBLESHOOTING.md)
 
 ### Quick Start for Developers
 
@@ -539,7 +537,7 @@ npx wp-env start  # Terminal 1
 npm start         # Terminal 2
 
 # 3. Access WordPress
-# http://localhost:8888/wp-admin (admin/password)
+# http://localhost:9451/wp-admin (admin/password)
 
 # 4. Make changes, test, and submit PR!
 ```
@@ -550,7 +548,7 @@ npm start         # Terminal 2
 
 **This plugin was built 100% with AI assistance (Claude Code).** We've documented everything:
 
-- **[AI-Assisted Development Guide](docs/AI-ASSISTED-DEVELOPMENT.md)** ⭐ **Complete guide!**
+- **[AI-Assisted Development Guide](docs/guides/AI-ASSISTED-DEVELOPMENT.md)** ⭐ **Complete guide!**
   - How this entire plugin was built with AI
   - Available slash commands (/add-block, /lint, /test, /deploy, etc.)
   - Best practices and workflows
@@ -606,7 +604,7 @@ GPL-2.0-or-later - 100% Free Forever
 
 Blocks are organized in the WordPress block inserter:
 
-**DesignSetGo Collection** - All 53 blocks grouped together
+**DesignSetGo Collection** - All 57 blocks grouped together
 - **Layout**: Row, Section, Grid
 - **Forms**: Form Builder + 11 field types (Text, Email, Phone, URL, Date, Time, Number, Checkbox, Select, Textarea, Hidden)
 - **Interactive**: Accordion, Tabs, Slider, Flip Card, Reveal, Scroll Accordion, Image Accordion, Counter Group, Progress Bar, Scroll Marquee, Scroll Slides, Sticky Sections, Comparison Table, Timeline, Modal, Modal Trigger
@@ -621,7 +619,7 @@ Blocks are organized in the WordPress block inserter:
 - **Text**: Icon List, Card
 - **Widgets**: Forms, Counters, Progress Bars, Map, Countdown Timer
 
-**16 Block Extensions** - Available for ANY block (core, third-party, or DesignSetGo)
+**18 Block Extensions** - Available for ANY block (core, third-party, or DesignSetGo)
 - **Block Animations** - 24+ entrance/exit effects with scroll triggers
 - **Hover Effects** - Animated hover interactions (works on any block)
 - **Sticky Header** - Sticky navigation on scroll
@@ -647,7 +645,7 @@ Blocks are organized in the WordPress block inserter:
 - Look for the "DesignSetGo" category in the pattern inserter
 - Hero sections, CTAs, Features, FAQ layouts
 
-📚 **[Complete Blocks Reference](https://github.com/jnealey-godaddy/designsetgo/wiki/Blocks-Reference)** - Detailed documentation for all 53 blocks
+📚 **[Complete Blocks Reference](https://github.com/jnealey-godaddy/designsetgo/wiki/Blocks-Reference)** - Detailed documentation for all 57 blocks
 
 ## 🤖 AI Integration (WordPress Abilities API)
 
@@ -738,4 +736,4 @@ Built with ❤️ for the WordPress community by developers who believe in:
 
 ---
 
-**License**: GPL-2.0-or-later | **Version**: 2.2.0 | **Requires WordPress**: 6.7+ | **Requires PHP**: 7.4+
+**License**: GPL-2.0-or-later | **Version**: 2.7.5 | **Requires WordPress**: 6.7+ | **Requires PHP**: 7.4+

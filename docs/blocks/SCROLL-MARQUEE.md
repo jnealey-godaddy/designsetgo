@@ -30,10 +30,12 @@ Authors manage images directly on the canvas in the block editor — clicking "A
 | `rows`         | array  | One row, direction `left`, no images | Array of row objects. Each row has `images` (array of `{id, url, alt}`) and `direction` (`"left"` or `"right"`). |
 | `scrollSpeed`  | number | `0.5`     | Multiplier applied to `window.scrollY`. Higher values move rows faster. Range: 0.1–2. |
 | `imageHeight`  | string | `"200px"` | CSS height of every image in the gallery. |
-| `imageWidth`   | string | `"300px"` | CSS width of every image in the gallery. |
+| `imageWidth`   | string | `"auto"`  | CSS width of every image in the gallery. |
+| `objectFit`    | string | `"cover"` | `object-fit` applied to every image: `cover`, `contain`, `fill`, or `scale-down`. |
 | `gap`          | string | `"20px"`  | Gap between images within a row. |
 | `rowGap`       | string | `"20px"`  | Gap between rows. |
-| `borderRadius` | string | `"8px"`   | Border radius applied to every image. |
+
+Border radius is not a custom attribute — it's the native Border support (`style.border.radius`), applied to every image via the block's `selectors.border`.
 
 ---
 
@@ -41,16 +43,18 @@ Authors manage images directly on the canvas in the block editor — clicking "A
 
 All controls live in a single **Settings** panel with per-control reset and a global "Reset all" button.
 
-### Settings Panel
+### Settings
 
 - **Scroll Speed** — RangeControl (0.1–2, step 0.1, default 0.5). Controls how many pixels rows translate per pixel of page scroll. Higher values create a more dramatic parallax.
 - **Image Height** — UnitControl. Default `200px`. Sets the fixed height for all images.
-- **Image Width** — UnitControl. Default `300px`. Sets the fixed width for all images.
-- **Border Radius** — UnitControl. Default `8px`. Rounds the corners of every image.
+- **Image Width** — UnitControl. Default `auto`. Sets the fixed width for all images.
+- **Object Fit** — Select control (`cover`, `contain`, `fill`, `scale-down`). Default `cover`. Controls how each image fills its box.
 - **Gap Between Images** — UnitControl. Default `20px`. Horizontal space between images within a row.
 - **Gap Between Rows** — UnitControl. Default `20px`. Vertical space between rows.
 
 A performance notice in the panel displays the total image count (images × 6 duplicates). A warning appears when total source images exceed 20.
+
+Border radius for the images is set via the native **Style → Border** support, not a control in this panel.
 
 ### On-Canvas Controls
 
@@ -89,7 +93,7 @@ Row management and image selection happen directly on the block canvas rather th
   "scrollSpeed": 0.5,
   "imageHeight": "220px",
   "imageWidth": "330px",
-  "borderRadius": "12px"
+  "objectFit": "cover"
 }
 ```
 

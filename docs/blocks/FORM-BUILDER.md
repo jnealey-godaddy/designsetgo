@@ -6,10 +6,10 @@
 
 ## Overview
 
-The **Form Builder Block** lets you create custom forms with 12 field types, AJAX submission, email notifications, and built-in spam protection. Perfect for contact forms, surveys, registrations, and lead generation.
+The **Form Builder Block** lets you create custom forms with 11 field types, AJAX submission, email notifications, and built-in spam protection. Perfect for contact forms, surveys, registrations, and lead generation.
 
 **Key Features:**
-- 12 field types (text, email, phone, number, select, checkbox, textarea, date, time, URL, file, hidden)
+- 11 field types (text, email, phone, number, select, checkbox, textarea, date, time, URL, hidden)
 - AJAX or standard form submission
 - Email notifications with customizable templates
 - Honeypot and rate limiting spam protection
@@ -28,7 +28,7 @@ The **Form Builder Block** lets you create custom forms with 12 field types, AJA
 
 ### Adding More Fields
 1. Click the `+` button inside the Form Builder.
-2. Select from 12 field types.
+2. Select from 11 field types.
 3. Configure each field's settings (label, placeholder, validation, etc.).
 
 ## Available Field Types
@@ -51,6 +51,8 @@ The **Form Builder Block** lets you create custom forms with 12 field types, AJA
 
 **Special fields:**
 - **Hidden Field**: Pass hidden data (UTM params, page IDs)
+
+**Not yet available:**
 - **File Upload**: Coming soon
 
 ## Form Settings

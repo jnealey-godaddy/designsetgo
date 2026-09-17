@@ -26,7 +26,7 @@ The **Blobs Block** creates organic, fluid blob shapes with smooth animations. C
 
 ## ⚙️ Settings & Configuration
 
-### Blob Shape Panel
+### Blob Shape
 
 **Shape Options:**
 - **Shape 1-6**: Six pre-designed organic blob shapes
@@ -35,7 +35,7 @@ The **Blobs Block** creates organic, fluid blob shapes with smooth animations. C
 - Default: 300px
 - Suggested: 200px-600px for most uses
 
-### Animation Panel
+### Animation
 
 **Animation Type:**
 - **Morph 1**: Smooth shape-shifting between variations
@@ -58,7 +58,7 @@ The **Blobs Block** creates organic, fluid blob shapes with smooth animations. C
 - **Background Size**: Cover, contain, etc.
 - **Background Position**: Adjust image focal point
 
-### Overlay Panel
+### Overlay
 - **Enable Overlay**: Toggle overlay layer
 - **Overlay Color**: Color over background/image
 - **Overlay Opacity**: 0-100% transparency

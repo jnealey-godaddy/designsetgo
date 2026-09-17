@@ -45,33 +45,23 @@ gh api repos/:owner/:repo/branches/main/protection \
 
 **GitHub Actions workflows** (`.github/workflows/`):
 
-1. **CI Workflow** (`ci.yml`):
-   - ✅ Builds plugin on Node 20.x and PHP 8.0/8.1/8.2
-   - ✅ Runs JavaScript linter
-   - ✅ Runs CSS linter
-   - ✅ Checks PHP syntax
-   - ✅ Validates bundle sizes
-   - ✅ Uploads build artifacts
+1. **Build + Lint & Unit Tests** (`ci.yml`):
+   - ✅ Builds the plugin on Node 20.x, verifies build output and bundle sizes
+   - ✅ Runs the JavaScript linter, CSS linter, and Jest unit tests
 
-2. **Security Audit** (`ci.yml`):
-   - ✅ Runs `npm audit` to check for vulnerable dependencies
-   - ✅ Fails on critical vulnerabilities
-   - ✅ Warns on moderate vulnerabilities
+2. **PHP Lint & Analysis** (`ci.yml`):
+   - ✅ PHP syntax check, PHPCS, and PHPStan
+   - ✅ Runs against PHP 7.4-8.3 on pushes to `main`/`release/*`; latest PHP only on feature-branch PRs for fast feedback
 
-3. **File Size Check** (`ci.yml`):
-   - ✅ Flags files over 300 lines for refactoring
-   - ✅ Helps maintain code quality
+3. **Security Audit + Dependency Review** (`ci.yml`):
+   - ✅ Runs `npm audit --audit-level=critical`
+   - ✅ `dependency-review-action` fails on critical-severity dependency additions (PRs only)
 
-4. **Accessibility Check** (`ci.yml`):
-   - ✅ Verifies ARIA labels present
-   - ✅ Checks for semantic HTML usage
-   - ✅ Ensures accessibility considerations
+4. **WordPress Compatibility Matrix** (`ci.yml`):
+   - ✅ Runs PHPUnit inside `wp-env` across a PHP × WordPress matrix (full matrix on `main`/`release/*` pushes; latest-only on PRs)
+   - ✅ Smoke-tests the plugin activate → deactivate → re-activate lifecycle
 
-5. **Internationalization Check** (`ci.yml`):
-   - ✅ Counts translated strings
-   - ✅ Flags potential untranslated user-facing text
-
-6. **Auto-labeling** (`label-pr.yml`):
+5. **Auto-labeling** (`label-pr.yml`):
    - ✅ Labels PRs by affected files (blocks, PHP, JS, styles)
    - ✅ Labels PRs by size (xs, s, m, l, xl)
    - ✅ Makes triage easier
@@ -94,7 +84,7 @@ gh api repos/:owner/:repo/branches/main/protection \
 
 ### 5. Security Policy
 
-**File:** `.github/SECURITY.md`
+**File:** `SECURITY.md` (root — this is the file GitHub resolves for the repo's Security tab; do not duplicate it under `.github/`)
 
 - Private vulnerability reporting process
 - Supported versions
@@ -108,7 +98,7 @@ gh api repos/:owner/:repo/branches/main/protection \
 
 ### 6. Contributing Guidelines
 
-**File:** `.github/CONTRIBUTING.md`
+**File:** `CONTRIBUTING.md` (root — this is the file GitHub links from "Contributing" prompts; do not duplicate it under `.github/`)
 
 Comprehensive guide covering:
 - How to report bugs/suggest features
@@ -245,9 +235,6 @@ gh api repos/jnealey-godaddy/designsetgo/branches/main/protection \
 - [ ] Enable Private vulnerability reporting
 - [ ] Go to Settings → Actions → General
 - [ ] Set "Fork pull request workflows from outside collaborators" to "Require approval for first-time contributors"
-
-**Update SECURITY.md:**
-- [ ] Replace `[Your email address]` with your actual email
 
 **Test the workflow:**
 - [ ] Create a test branch: `git checkout -b test/github-workflow`

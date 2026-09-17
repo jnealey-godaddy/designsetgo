@@ -7,6 +7,8 @@
 
 This document defines the standardized approach for implementing color controls across all DesignSetGo blocks, using WordPress's modern `ColorGradientSettingsDropdown` component.
 
+**Shared hook available**: `useBlockColors({ attributes, setAttributes, entries })` (`src/hooks/useBlockColors.js`) wraps steps 4–6 below (color extraction, `settings` array construction, encode/decode of preset vs. custom values) and is the preferred entry point for new blocks. It is currently used by Section, Card, Text Path, Hotspot, Slider, Section Divider, and Star Rating. The manual pattern documented here (used by Icon Button and other existing blocks) remains valid — prefer the hook for anything new.
+
 ## Why This Pattern?
 
 ### Problems with Old Approach (PanelColorSettings)
@@ -505,8 +507,7 @@ When converting a block from PanelColorSettings to ColorGradientSettingsDropdown
 
 ## Reference Blocks
 
-Blocks that have been migrated to this pattern:
-- ✅ Icon Button ([src/blocks/icon-button](../src/blocks/icon-button))
+Blocks using the manual `ColorGradientSettingsDropdown` pattern documented above include Icon Button, Row, Grid, Tabs, Accordion, Image Accordion, Counter, Modal, Timeline, Breadcrumbs, and others (`grep -rl "ColorGradientSettingsDropdown" src/blocks --include="edit.js"`). Blocks using the newer `useBlockColors` hook instead: Section, Card, Text Path, Hotspot, Slider, Section Divider, and Star Rating — see the hook note above.
 
 ## Related Documentation
 

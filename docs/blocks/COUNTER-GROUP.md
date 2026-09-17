@@ -41,7 +41,7 @@ The **Counter Group** block displays animated statistics that count up when they
 
 ## ⚙️ Settings & Configuration
 
-### Layout Settings Panel
+### Layout Settings
 
 - **Columns (Desktop/Tablet/Mobile)**: Responsive column control
   - Desktop: 1-6 columns (default: 3) - applies >1024px
@@ -50,7 +50,7 @@ The **Counter Group** block displays animated statistics that count up when they
 - **Gap**: Spacing between counters (default: 32px)
 - **Content Alignment**: Left, Center, or Right alignment
 
-### Animation Settings Panel
+### Animation Settings
 
 - **Duration**: 0.5-5 seconds (default: 2s) - how long counting takes
 - **Delay**: 0-2 seconds (default: 0s) - pause before animation starts
@@ -62,7 +62,7 @@ The **Counter Group** block displays animated statistics that count up when they
 
 **How it works**: Counters animate when 50% visible, plays once per page load.
 
-### Number Formatting Panel
+### Number Formatting
 
 - **Use Thousands Separator**: Toggle on/off (default: on)
   - Format: 1,000,000 vs 1000000
@@ -141,7 +141,6 @@ Show event success and scale.
 
 ## 🔗 Related Blocks
 
-- [Counter](./COUNTER.md) - Individual counter item documentation
 - [Progress Bar](./PROGRESS-BAR.md) - Alternative for single progress metrics
 
 ---

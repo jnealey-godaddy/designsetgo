@@ -34,7 +34,7 @@ Create vertical stacking containers for organizing content areas. Perfect for pa
 
 ## Settings
 
-### Section Settings Panel
+### Settings
 - **Constrain Inner Width**: ON (default) - Centers content with max-width
   - ON: Full-width background, centered content (1140px)
   - OFF: Content spans full container width

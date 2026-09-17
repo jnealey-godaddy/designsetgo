@@ -44,7 +44,7 @@ All other per-segment styles (font family, weight, size, color, etc.) are stored
 
 ## Inspector Controls
 
-### Advanced Heading — Settings Panel
+### Settings
 
 - **Heading Level** — Button group (H1–H6). Selecting a level updates both the rendered HTML tag and the Block Controls toolbar dropdown.
 

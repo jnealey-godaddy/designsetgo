@@ -28,11 +28,18 @@ Before adding a pattern to a block, check `src/hooks/` and `src/components/share
 
 - `useUniqueBlockId({ clientId, attributeName, value, setAttributes, prefix?, length? })` — seeds a stable id attribute from clientId.
 - `useBlockColors({ attributes, setAttributes, entries })` — wraps `ColorGradientSettingsDropdown` boilerplate.
-- `useTablistKeyboard({ count, activeIndex, onChange, orientation? })` — ARIA tablist keyboard nav.
+- `useTablistKeyboard({ itemCount, onIndexChange, orientation?, focusItem? })` — WAI-ARIA tablist keyboard nav (arrows/Home/End, wrapping) for parents of tab-like children: tabs, slider, scroll-slides, accordion, image-accordion.
+- `useIconDefaults()` — resolves theme-level icon size/style defaults from `settings.custom.designsetgo.*`.
 - `cssVars(attributes, map)` — pure attribute → CSS-var inline-style mapper (in `src/utils/`).
 - `<DsgoInspectorPanel>` — `ToolsPanel` wrapper enforcing the 3-panel inspector convention (Settings / Style / Advanced).
 - `<DsgoBlockPlaceholder>` — first-insert wizard for compound blocks.
-- `<DsgoChildToolbar>` — Add/Duplicate/Move/Remove for child blocks of compound parents.
+- `<DsgoChildToolbar>` — Add/Duplicate/Move/Remove for child blocks of compound parents, rendered in `<BlockControls>`.
+- `<DsgoJustificationToolbar>` + `getJustificationClass()` — see "Horizontal positioning" below.
+
+**Editor interaction conventions:**
+
+- *Toolbar-led* (default): Add/Remove/Reorder live in `<BlockControls>` via `<DsgoChildToolbar>`.
+- *Canvas-led*: an inline `+` may stay on the canvas for tab/slide-like blocks where child position is visually meaningful — but hide it unless `.is-selected`, `.has-child-selected`, `:hover`, or `:focus-within` on the block wrapper. Destructive and reorder actions still belong in the toolbar.
 
 ### Variations vs. new blocks
 
@@ -53,7 +60,7 @@ For sibling blocks that already exist and meet the "1–3 attribute difference +
 - Filter hooks: `designsetgo_query_args` (all sources), `designsetgo/query/{queryId}/args` (scoped — fires after the global hook).
 - URL params: `q`, `sort`, `filter_<taxonomy>`. Extend via `designsetgo_query_url_params` filter.
 - Frontend data contract: `[data-dsgo-query-id]` on the wrapper; `[data-dsgo-blobs-for]` carries a **signed refresh source** (`data-dsgo-refresh-source`, base64 of attributes + innerBlocks + source post, and an HMAC `data-dsgo-signature`). The public `/query/render` route renders only a definition whose signature verifies — never caller-supplied settings — so it works wherever the query sits (post content, template, template part, synced pattern, widget). A query inside a post's content is limited to people who can see that post. `DesignSetGo\Blocks\Query\RefreshSource` owns signing, verification and the `the_content` source tracking. Editor previews use `/query/render-preview` (`edit_posts`, post type must be viewable or editable by the user) and must never emit a signed source. Visitors get no REST nonce (a stale one on a cached page is rejected by core before the route runs).
-- See `.claude/docs/QUERY-BLOCK-GUIDE.md` for recipes + extension points.
+- See [QUERY-BLOCK-GUIDE.md](docs/QUERY-BLOCK-GUIDE.md) for recipes + extension points.
 
 ### Query block family (Dynamic Query v2.2)
 
@@ -221,7 +228,8 @@ Verify: `grep -i "class-name" build/style-index.css`
 npm run build
 npm run lint:js
 npm run lint:css
-npm run lint:php
+npm run lint:php   # phpcs only
+composer analyse   # PHPStan — separate from lint:php, and CI runs it
 # Test editor + frontend + responsive
 # Check browser console for errors
 ```
@@ -259,32 +267,6 @@ Instead follow the `core/buttons` model:
 
 Shared primitives: `getJustificationClass()` (`src/utils/justification.js`) and `<DsgoJustificationToolbar>` (`src/components/shared/DsgoJustificationToolbar`).
 
-## Shared Authoring Primitives (Theme 5/6)
-
-Canonical homes: `src/hooks/` for hooks, `src/components/shared/` for
-editor-only React components. Before adding a pattern to a block, check
-these directories; the second time you write the same pattern, extract it.
-
-- **`useTablistKeyboard`** (`src/hooks/useTablistKeyboard.js`) — WAI-ARIA
-  tablist keyboard nav (ArrowLeft/Right/Up/Down/Home/End, with wrapping)
-  for parent blocks that manage tab-like children. Pass `{ itemCount,
-  orientation, onIndexChange, focusItem }`. Use in tabs, slider,
-  scroll-slides, accordion, image-accordion.
-- **`<DsgoChildToolbar>`** (`src/components/shared/DsgoChildToolbar/`) —
-  Add/Duplicate/Move/Remove controls for a parent block's children,
-  rendered inside `<BlockControls>`. Preferred over bespoke inline
-  canvas buttons; keeps authoring a11y consistent across compound blocks.
-
-**Editor interaction conventions (Theme 5):**
-
-- *Toolbar-led*: Add/Remove/Reorder live in `<BlockControls>` via
-  `<DsgoChildToolbar>`. Default for most compound blocks.
-- *Canvas-led*: Inline `+` may stay on the canvas for tab/slide-like
-  blocks where child position is visually meaningful — but hide it
-  unless `.is-selected`, `.has-child-selected`, `:hover`, or
-  `:focus-within` on the block wrapper. Destructive and reorder
-  actions still belong in the toolbar.
-
 ## Container Width Pattern
 
 **Two-div structure** (outer: full-width/backgrounds, inner: constrained):
@@ -308,10 +290,12 @@ these directories; the second time you write the same pattern, extract it.
 
 ## Documentation
 
-- [REFACTORING-GUIDE.md](.claude/docs/REFACTORING-GUIDE.md)
-- [FSE-COMPATIBILITY-GUIDE.md](.claude/docs/FSE-COMPATIBILITY-GUIDE.md)
-- [EDITOR-STYLING-GUIDE.md](.claude/docs/EDITOR-STYLING-GUIDE.md)
-- [KSES-ALLOWLIST-GUIDE.md](.claude/docs/KSES-ALLOWLIST-GUIDE.md)
+- [REFACTORING-GUIDE.md](docs/REFACTORING-GUIDE.md)
+- [FSE-COMPATIBILITY-GUIDE.md](docs/FSE-COMPATIBILITY-GUIDE.md)
+- [EDITOR-STYLING-GUIDE.md](docs/EDITOR-STYLING-GUIDE.md)
+- [KSES-ALLOWLIST-GUIDE.md](docs/KSES-ALLOWLIST-GUIDE.md)
+- [QUERY-BLOCK-GUIDE.md](docs/QUERY-BLOCK-GUIDE.md)
+- [Project docs index](../docs/README.md)
 - [Block Editor Handbook](https://developer.wordpress.org/block-editor/)
 
 ## Version Control
@@ -331,4 +315,4 @@ Branch prefixes should start with `claude/`
 As you work on an issue, add notes to memory, .claude/claude-memory.md, create an agent ID or session ID so as to not confuse other agents.
 ---
 
-**Updated**: 2026-03-04 | **Version**: 1.2.0 | **WP**: 6.4+
+**Updated**: 2026-09-16 | **Plugin**: 2.7.5 | **Requires**: WP 6.7+, PHP 7.4+

@@ -31,7 +31,7 @@ The **Sticky Header Extension** makes header template parts stick to the top of 
 - **Enable Sticky Header**: Makes header stick to top when scrolling
 - **Shadow Size**: None, Small, Medium, Large (depth when scrolled)
 - **Shrink on Scroll**: Reduces header height by percentage when scrolled
-- **Shrink Amount**: 5% to 50% size reduction (default: 15%)
+- **Shrink Amount**: 5% to 50% size reduction (default: 50%)
 - **Hide on Scroll Down**: Auto-hide when scrolling down, reveal when scrolling up
 - **Background on Scroll**: Apply global background color when scrolled (set in DesignSetGo Settings)
 

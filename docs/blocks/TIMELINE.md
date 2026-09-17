@@ -28,7 +28,7 @@ Commonly used for company histories, project roadmaps, event chronologies, and m
 
 ## Settings & Configuration
 
-### Layout Settings Panel
+### Layout Settings
 
 **Orientation**
 - **`vertical`** (Default): Items stack top-to-bottom along a vertical line.
@@ -43,7 +43,7 @@ Commonly used for company histories, project roadmaps, event chronologies, and m
 - **Default**: `2rem`
 - Accepts `px`, `rem`, and `em` units.
 
-### Line Settings Panel
+### Line Settings
 
 **Line Thickness**
 - Width of the connector line in pixels.
@@ -55,7 +55,7 @@ Commonly used for company histories, project roadmaps, event chronologies, and m
 - **`dashed`**: Evenly spaced dashes.
 - **`dotted`**: Series of dots.
 
-### Marker Settings Panel
+### Marker Settings
 
 **Marker Shape**
 - **`circle`** (Default): Round marker at each item.
@@ -67,7 +67,7 @@ Commonly used for company histories, project roadmaps, event chronologies, and m
 - **Default**: `16`
 - **Range**: 8 -- 48
 
-### Animation Settings Panel
+### Animation Settings
 
 **Animate on Scroll**
 - **Default**: On

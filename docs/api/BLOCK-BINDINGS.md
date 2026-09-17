@@ -12,7 +12,7 @@ See also:
 
 ## Native Block Bindings Support
 
-**Source**: `includes/class-block-bindings-support.php`
+**Source**: `includes/bindings/class-block-bindings-support.php`
 
 DesignSetGo blocks participate in the WordPress 6.9 `block_bindings_supported_attributes` filter so their attributes can be driven by any Block Bindings source (DesignSetGo's own sources, WP core's `core/post-meta`, or any custom source) via the editor's Connections panel.
 
@@ -51,7 +51,7 @@ add_filter(
 
 Five binding sources ship with the plugin. Each accepts a `scope` arg to target the correct post in nested-loop contexts (see [Nested Loop Context](#nested-loop-context) below).
 
-**Source**: `includes/blocks/class-query-bindings.php`, `includes/blocks/class-query-bindings-metabox.php`, `includes/blocks/class-query-bindings-pods.php`, `includes/blocks/class-query-bindings-jetengine.php`, `includes/blocks/class-query-bindings-helpers.php`
+**Source**: `includes/bindings/class-query-bindings.php`, `includes/bindings/class-query-bindings-metabox.php`, `includes/bindings/class-query-bindings-pods.php`, `includes/bindings/class-query-bindings-jetengine.php`, `includes/bindings/class-query-bindings-helpers.php`
 
 ### `designsetgo/post-meta`
 
@@ -143,7 +143,7 @@ Array or object values that cannot be reduced to a scalar (e.g., an ACF relation
 
 ## Public PHP Helpers
 
-**Source**: `includes/blocks/class-query-bindings-helpers.php`
+**Source**: `includes/bindings/class-query-bindings-helpers.php`
 
 ### `designsetgo_register_bindings_source()`
 
@@ -251,4 +251,4 @@ The `dsgoStyleBinding` block attribute maps CSS property names (including CSS cu
 
 Full documentation: [`../extensions/STYLE-BINDING.md`](../extensions/STYLE-BINDING.md) · [`../extensions/DYNAMIC-TAGS.md`](../extensions/DYNAMIC-TAGS.md)
 
-**Source**: `includes/class-style-binding.php`
+**Source**: `includes/features/class-style-binding.php`

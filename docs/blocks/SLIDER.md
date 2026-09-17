@@ -820,12 +820,11 @@ A: Select the Slider block and in the toolbar, choose "Full Width" alignment. Or
 ## Additional Resources
 
 **General Documentation:**
-- [Block Development Best Practices](../BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
-- [Accessibility Guide](../ACCESSIBILITY-COLOR-CONTRAST-GUIDE.md)
-- [FSE Compatibility Guide](../FSE-COMPATIBILITY-GUIDE.md)
+- [Block Development Best Practices](../guides/BLOCK-DEVELOPMENT-BEST-PRACTICES-COMPREHENSIVE.md)
+- [Accessibility Guide](../compliance/ACCESSIBILITY-COLOR-CONTRAST-GUIDE.md)
+- [FSE Compatibility Guide](../../.claude/docs/FSE-COMPATIBILITY-GUIDE.md)
 
 **Related Blocks:**
-- [Slide Block](SLIDE.md) - Individual slide configuration
 
 ---
 

@@ -71,7 +71,7 @@
   - changed-files:
     - any-glob-to-any-file:
       - 'includes/security/**/*'
-      - '.github/SECURITY.md'
+      - 'SECURITY.md'
 
 # CI/CD
 'ci/cd':

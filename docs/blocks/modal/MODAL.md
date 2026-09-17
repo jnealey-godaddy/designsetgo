@@ -27,7 +27,7 @@ The **Modal Block** allows you to create accessible, highly customizable modal d
 
 ## ⚙️ Settings & Configuration
 
-### Modal Settings Panel
+### Settings
 - **Modal ID**: Unique identifier (Required).
 - **Allow Hash Trigger**: Enable opening via URL hash (e.g., `site.com/#modal-id`).
 - **Update URL on Open**: Updates browser URL when opened.
@@ -81,7 +81,7 @@ Auto-trigger on page load. Disable "Close on Backdrop" to force interaction.
 
 ## 👨‍💻 Developer Notes
 
-For advanced usage, including JavaScript events and PHP filters, please refer to the [Modal API Reference](../MODAL-API-REFERENCE.md).
+For advanced usage, including JavaScript events and PHP filters, please refer to the [Modal API Reference](MODAL-API-REFERENCE.md).
 
 ### Quick JS Example
 ```javascript

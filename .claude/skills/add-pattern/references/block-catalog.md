@@ -213,6 +213,46 @@ Key attributes:
 Supports: color
 ```
 
+### designsetgo/section-divider
+
+Standalone shape divider (wave, curve, etc.) dropped between two sibling blocks — not a child attribute of `designsetgo/section`. Shape/height/width/color inherit from the theme by default.
+
+```text
+Key attributes:
+  shape (string), height (string), width (string)
+  flipX (boolean), flipY (boolean)
+  fillColor (string), backgroundColor (string)
+```
+
+### designsetgo/dynamic-image
+
+Image whose source resolves at render time (post featured image, site logo, user avatar, or a custom field via ACF/Meta Box/Pods/JetEngine) rather than a fixed `mediaId`. Useful in patterns meant to be reused across posts.
+
+```text
+Key attributes:
+  source (string), sourceArgs (object)
+  size (string), aspectRatio (string), objectFit (string)
+  focalPoint (object)
+  fallbackId/fallbackUrl/fallbackAlt — shown when the dynamic source resolves to nothing
+  href, linkTarget, rel
+
+Supports: align, spacing, border
+```
+
+### designsetgo/text-path
+
+Flows text along an SVG path (arc, wave, circle, or a custom path).
+
+```text
+Key attributes:
+  text (string), pathType (string), arcSize (number), customPath (string)
+  startOffset (number), pathAlignment (string), rotation (number)
+  motion (boolean), motionDuration (string), motionDirection (string)
+  url, target, rel — optional link on the whole path
+
+Supports: color, spacing, typography
+```
+
 ### designsetgo/blobs
 
 Animated organic blob shapes. Good for hero backgrounds.
@@ -402,7 +442,67 @@ Key attributes:
   gap (string), borderRadius (string)
 ```
 
+### designsetgo/hotspot
+
+Interactive markers placed over an image; each marker opens a tooltip.
+
+```text
+Key attributes:
+  imageId/imageUrl/imageAlt (image the markers sit on)
+  trigger ("hover"|"click")
+  tooltipPosition (string), tooltipWidth (string)
+  animation (string), sequenceDuration (number)
+  markerColor/markerBackgroundColor, tooltipBackgroundColor/tooltipTextColor
+
+Children: designsetgo/hotspot-item
+  Key attributes: x, y (percent position), originX/originY, label, icon, url,
+    tooltip (string), tooltipPosition, trigger, animation, sequenceOrder
+```
+
+### designsetgo/scroll-slides
+
+Full-screen scroll-pinned slideshow with crossfading content and nav dots.
+
+```text
+Key attributes:
+  minHeight/maxHeight (string)
+  constrainWidth (boolean), contentWidth (string)
+  overlayColor (string), overlayOpacity (number)
+  navColor/navActiveColor (string)
+
+Children: designsetgo/scroll-slide
+  Key attributes: navHeading (string — label shown in the nav dots)
+  InnerBlocks: Yes
+```
+
+### designsetgo/sticky-sections
+
+Sections that stick and stack as the user scrolls, for a card-stacking reveal effect. Children are ordinary blocks (typically `designsetgo/section`), not a dedicated child block type.
+
+```text
+Key attributes:
+  stickyOffset (string)
+
+Supports: align, spacing, layout
+```
+
 ## Data/Stats Blocks
+
+### designsetgo/chart
+
+Bar, line, or donut chart. Renders as static SVG/HTML server-side — no chart JavaScript library ships to the frontend.
+
+```text
+Key attributes:
+  chartType ("bar"|"line"|"donut")
+  data (array), dataSource (string), metaKey (string — when data is bound dynamically)
+  height (string)
+  showValues/showLegend/showGrid (boolean)
+  valuePrefix/valueSuffix (string), groupThousands (boolean)
+  palette (string), label (string)
+
+Supports: spacing, typography, color
+```
 
 ### designsetgo/counter-group
 
@@ -502,6 +602,40 @@ Key attributes:
   dsgoZoom (number), dsgoAddress (string)
   dsgoHeight (string)
 ```
+
+## WooCommerce Blocks
+
+Require WooCommerce active — only use these in patterns explicitly meant for a Woo storefront (e.g. under a `dsgo-` shop category), not general-purpose patterns.
+
+### designsetgo/product-categories-grid
+
+Visual grid of WooCommerce product categories (image, name, product count).
+
+```text
+Key attributes:
+  categorySource (string), selectedCategories/excludeCategories (array)
+  columns (number)
+  showProductCount (boolean), showEmpty (boolean)
+  imageAspectRatio (string), overlayPosition (string)
+
+Supports: align, color, spacing, typography, shadow, border
+```
+
+### designsetgo/product-showcase-hero
+
+Full-width hero for a single WooCommerce product (image, price, rating, add-to-cart).
+
+```text
+Key attributes:
+  productSource (string), productId (number)
+  layout (string), imageSize (string)
+  showPrice/showRating/showStockStatus/showSaleBadge/showShortDescription/showAddToCart/showVariations (boolean)
+  minHeight (string), mediaFocalPoint (object), contentVerticalAlignment (string)
+
+Supports: align, color, spacing, typography, shadow, border
+```
+
+Prefer WooCommerce's own blocks (`woocommerce/product-price`, `product-button`, etc.) inside a `designsetgo/query` loop for anything not covered by these two — see the "WooCommerce surface" section of `.claude/claude.md`. DSGo does not ship cart, add-to-cart, or product-filter blocks; use WooCommerce's own for those.
 
 ## Form Blocks
 
