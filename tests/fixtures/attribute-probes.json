@@ -1,0 +1,683 @@
+{
+  "$comment": [
+    "Declared probe values for the attribute coverage matrix.",
+    "",
+    "The matrix flips one attribute at a time away from its default and asserts the",
+    "PHP serializer still reproduces the block's real save(). Most values are derived",
+    "from the attribute's declared type by Attribute_Probe_Generator. This file covers",
+    "the ones that cannot be guessed: objects, arrays, and strings whose valid values",
+    "are a convention rather than a declared enum.",
+    "",
+    "Two sections, most specific first:",
+    "  byBlock  '<block name>' -> '<attribute>' -> entry. Always wins.",
+    "  byName   '<attribute>' -> entry. Applies to every block declaring that name.",
+    "",
+    "An entry is either { \"probe\": <value|[values]> } or { \"skip\": \"<reason>\" }.",
+    "A skip must say WHY; 'no save() effect' with no explanation is not a reason.",
+    "",
+    "byName is for genuinely universal conventions only. An attribute whose valid",
+    "values differ per block MUST be declared byBlock, never byName - iconPosition is",
+    "'right'/'left' on accordion, 'start'/'end' on icon-button and 'top' on counter,",
+    "so a single shared probe would be wrong for two of the three.",
+    "",
+    "Both sections are key-diffed against the live block registry in BOTH directions",
+    "by abilities-attribute-probe-table-test.php: an attribute with no probe fails,",
+    "and an entry naming an attribute that no longer exists fails too. That is what",
+    "stops this file rotting into a list of things that used to be true."
+  ],
+  "byName": {
+    "fieldName": {
+      "probe": "probe_field"
+    },
+    "defaultValue": {
+      "probe": "Probe"
+    },
+    "linkTarget": {
+      "probe": "_blank"
+    },
+    "rel": {
+      "probe": "noopener"
+    },
+    "linkRel": {
+      "probe": "noopener"
+    },
+    "imageAlt": {
+      "probe": "Probe alt"
+    },
+    "fallbackAlt": {
+      "probe": "Probe alt"
+    },
+    "mediaAlt": {
+      "probe": "Probe alt"
+    },
+    "altOverride": {
+      "probe": "Probe alt"
+    },
+    "aspectRatio": {
+      "probe": "4/3"
+    },
+    "imageCustomAspectRatio": {
+      "probe": "4/3"
+    },
+    "objectFit": {
+      "probe": "contain"
+    },
+    "alignItems": {
+      "probe": "center"
+    },
+    "emailTo": {
+      "probe": "probe@example.com"
+    },
+    "emailFromEmail": {
+      "probe": "probe@example.com"
+    },
+    "emailReplyTo": {
+      "probe": "probe@example.com"
+    },
+    "emailSubject": {
+      "probe": "Probe subject"
+    },
+    "emailFromName": {
+      "probe": "Probe sender"
+    },
+    "emailBody": {
+      "probe": "Probe body"
+    },
+    "minDate": {
+      "probe": "2026-01-01"
+    },
+    "maxDate": {
+      "probe": "2026-12-31"
+    },
+    "minTime": {
+      "probe": "09:00"
+    },
+    "maxTime": {
+      "probe": "17:00"
+    },
+    "targetDateTime": {
+      "probe": "2030-01-01T00:00:00"
+    },
+    "timezone": {
+      "probe": "UTC"
+    },
+    "metaKey": {
+      "probe": "probe_meta"
+    },
+    "validationPattern": {
+      "probe": "[A-Za-z]+"
+    },
+    "countryCode": {
+      "probe": "US"
+    },
+    "tooltip": {
+      "probe": "Probe"
+    },
+    "separator": {
+      "probe": ","
+    },
+    "decimal": {
+      "probe": "."
+    },
+    "prefix": {
+      "probe": "$"
+    },
+    "suffix": {
+      "probe": "%"
+    },
+    "valuePrefix": {
+      "probe": "$"
+    },
+    "valueSuffix": {
+      "probe": "%"
+    },
+    "align": {
+      "probe": [
+        "wide",
+        "full"
+      ]
+    },
+    "style": {
+      "probe": {
+        "spacing": {
+          "padding": {
+            "top": "2rem",
+            "bottom": "2rem"
+          }
+        }
+      }
+    },
+    "icon": {
+      "probe": "heart"
+    },
+    "iconName": {
+      "probe": "heart"
+    },
+    "focalPoint": {
+      "probe": {
+        "x": 0.25,
+        "y": 0.75
+      }
+    },
+    "imageFocalPoint": {
+      "probe": {
+        "x": 0.25,
+        "y": 0.75
+      }
+    },
+    "mediaFocalPoint": {
+      "probe": {
+        "x": 0.25,
+        "y": 0.75
+      }
+    }
+  },
+  "byBlock": {
+    "designsetgo/advanced-heading": {
+      "animatedHeadline": {
+        "probe": {
+          "enabled": true,
+          "words": [
+            "Probe one",
+            "Probe two"
+          ]
+        }
+      }
+    },
+    "designsetgo/chart": {
+      "chartType": {
+        "probe": "donut"
+      },
+      "dataSource": {
+        "probe": "meta"
+      },
+      "data": {
+        "probe": [
+          {
+            "label": "Probe",
+            "value": 42
+          }
+        ]
+      },
+      "palette": {
+        "probe": [
+          "#ff0000",
+          "#00ff00"
+        ]
+      }
+    },
+    "designsetgo/comparison-table": {
+      "columns": {
+        "probe": [
+          {
+            "name": "Probe",
+            "link": "",
+            "linkText": "Go",
+            "featured": true
+          }
+        ]
+      },
+      "rows": {
+        "probe": [
+          {
+            "label": "Probe",
+            "tooltip": "",
+            "cells": [
+              {
+                "type": "check",
+                "value": ""
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "designsetgo/countdown-timer": {
+      "unitBorder": {
+        "probe": {
+          "color": "#ff0000",
+          "style": "dashed",
+          "width": "3px"
+        }
+      }
+    },
+    "designsetgo/counter": {
+      "iconPosition": {
+        "probe": [
+          "left",
+          "right"
+        ]
+      }
+    },
+    "designsetgo/dynamic-image": {
+      "source": {
+        "probe": "featured"
+      },
+      "sourceArgs": {
+        "probe": {
+          "key": "probe_meta"
+        }
+      }
+    },
+    "designsetgo/form-checkbox-field": {
+      "value": {
+        "probe": "probe-value"
+      }
+    },
+    "designsetgo/form-hidden-field": {
+      "value": {
+        "probe": "probe-value"
+      }
+    },
+    "designsetgo/form-select-field": {
+      "options": {
+        "probe": [
+          {
+            "label": "Probe",
+            "value": "probe"
+          }
+        ]
+      }
+    },
+    "designsetgo/grid": {
+      "tagName": {
+        "probe": "section"
+      },
+      "columnTemplate": {
+        "probe": "minmax(0, .7fr) minmax(0, 1.3fr)"
+      }
+    },
+    "designsetgo/heading-segment": {
+      "animatedWords": {
+        "skip": "animated role is refused by get_serialization_gap(); never serialized"
+      },
+      "preservedAnimatedWords": {
+        "skip": "animated role is refused by get_serialization_gap(); never serialized"
+      }
+    },
+    "designsetgo/icon-button": {
+      "iconPosition": {
+        "probe": "end"
+      },
+      "hoverAnimation": {
+        "probe": "explicit-none"
+      }
+    },
+    "designsetgo/icon-list": {
+      "layout": {
+        "probe": [
+          "horizontal",
+          "grid"
+        ]
+      },
+      "iconPosition": {
+        "probe": "right"
+      },
+      "alignment": {
+        "probe": [
+          "center",
+          "right"
+        ]
+      }
+    },
+    "designsetgo/image-accordion-item": {
+      "verticalAlignment": {
+        "probe": [
+          "flex-start",
+          "flex-end"
+        ]
+      },
+      "horizontalAlignment": {
+        "probe": [
+          "flex-start",
+          "flex-end"
+        ]
+      }
+    },
+    "designsetgo/map": {
+      "dsgoAddress": {
+        "probe": "1 Probe Street, Springfield"
+      },
+      "dsgoMarkerIcon": {
+        "probe": "📌"
+      },
+      "dsgoPrivacyNotice": {
+        "probe": "Probe privacy notice"
+      },
+      "dsgoMapStyle": {
+        "probe": "satellite"
+      }
+    },
+    "designsetgo/modal-trigger": {
+      "buttonStyle": {
+        "probe": [
+          "outline",
+          "text"
+        ]
+      },
+      "iconPosition": {
+        "probe": [
+          "start",
+          "end"
+        ]
+      }
+    },
+    "designsetgo/modal": {
+      "autoTriggerType": {
+        "probe": [
+          "pageLoad",
+          "exitIntent",
+          "scroll",
+          "time"
+        ]
+      },
+      "autoTriggerFrequency": {
+        "probe": [
+          "always",
+          "session"
+        ]
+      },
+      "exitIntentSensitivity": {
+        "probe": [
+          "low",
+          "high"
+        ]
+      },
+      "scrollDirection": {
+        "probe": "up"
+      },
+      "navigationStyle": {
+        "probe": [
+          "text",
+          "chevrons"
+        ]
+      },
+      "navigationPosition": {
+        "probe": "bottom"
+      },
+      "animationType": {
+        "probe": [
+          "slide-up",
+          "zoom",
+          "slide-down"
+        ]
+      },
+      "closeButtonPosition": {
+        "probe": [
+          "top-right",
+          "outside-top-right"
+        ]
+      }
+    },
+    "designsetgo/product-categories-grid": {
+      "selectedCategories": {
+        "probe": [
+          1,
+          2
+        ]
+      },
+      "excludeCategories": {
+        "probe": [
+          3
+        ]
+      },
+      "imageAspectRatio": {
+        "probe": "16/9"
+      }
+    },
+    "designsetgo/progress-bar": {
+      "barStyle": {
+        "probe": [
+          "striped",
+          "striped-animated"
+        ]
+      }
+    },
+    "designsetgo/query-filter": {
+      "taxonomy": {
+        "probe": "post_tag"
+      },
+      "paramName": {
+        "probe": "filter_post_tag"
+      },
+      "sortOptions": {
+        "probe": [
+          {
+            "value": "title.ASC",
+            "label": "A-Z"
+          }
+        ]
+      }
+    },
+    "designsetgo/query-group-header": {
+      "tagName": {
+        "probe": "div"
+      }
+    },
+    "designsetgo/query-results": {
+      "tagName": {
+        "probe": "div"
+      },
+      "itemTagName": {
+        "probe": "div"
+      },
+      "groupBy": {
+        "probe": {
+          "field": "taxonomy",
+          "key": "category"
+        }
+      },
+      "layoutVariant": {
+        "probe": "grid"
+      }
+    },
+    "designsetgo/query": {
+      "postType": {
+        "probe": "page"
+      },
+      "orderBy": {
+        "probe": [
+          "title",
+          "menu_order",
+          "rand"
+        ]
+      },
+      "orderByMetaKey": {
+        "probe": "probe_meta"
+      },
+      "search": {
+        "probe": "probe"
+      },
+      "bindSearchTo": {
+        "probe": "probe-query"
+      },
+      "relationshipField": {
+        "probe": "probe_relationship"
+      },
+      "author": {
+        "probe": [
+          1
+        ]
+      },
+      "manualIds": {
+        "probe": [
+          1,
+          2
+        ]
+      },
+      "wooStockStatus": {
+        "probe": [
+          "instock"
+        ]
+      },
+      "taxQuery": {
+        "probe": {
+          "relation": "AND",
+          "clauses": [
+            {
+              "taxonomy": "category",
+              "terms": [
+                "probe"
+              ],
+              "operator": "IN",
+              "include_children": true
+            }
+          ]
+        }
+      },
+      "metaQuery": {
+        "probe": {
+          "relation": "AND",
+          "clauses": [
+            {
+              "key": "probe_meta",
+              "compare": "=",
+              "value": "probe"
+            }
+          ]
+        }
+      },
+      "dateQuery": {
+        "probe": {
+          "relation": "AND",
+          "clauses": [
+            {
+              "column": "post_date",
+              "mode": "after",
+              "after": "-30 days",
+              "inclusive": true
+            }
+          ]
+        }
+      }
+    },
+    "designsetgo/row": {
+      "tagName": {
+        "probe": "section"
+      }
+    },
+    "designsetgo/scroll-marquee": {
+      "rows": {
+        "probe": [
+          {
+            "images": [],
+            "direction": "right"
+          }
+        ]
+      }
+    },
+    "designsetgo/section-divider": {
+      "shape": {
+        "probe": "wave"
+      }
+    },
+    "designsetgo/section": {
+      "tagName": {
+        "probe": [
+          "section",
+          "article"
+        ]
+      },
+      "shapeDividerTop": {
+        "probe": "wave"
+      },
+      "shapeDividerBottom": {
+        "probe": "tilt"
+      }
+    },
+    "designsetgo/slide": {
+      "backgroundImage": {
+        "probe": {
+          "url": "https://example.com/probe.jpg",
+          "id": 0,
+          "alt": "Probe alt"
+        }
+      },
+      "backgroundPosition": {
+        "probe": "top left"
+      },
+      "backgroundRepeat": {
+        "probe": "repeat"
+      }
+    },
+    "designsetgo/slider": {
+      "arrowStyle": {
+        "probe": "minimal"
+      },
+      "arrowPosition": {
+        "probe": "bottom"
+      },
+      "arrowVerticalPosition": {
+        "probe": "top"
+      },
+      "dotStyle": {
+        "probe": "minimal"
+      },
+      "dotPosition": {
+        "probe": [
+          "top",
+          "inside"
+        ]
+      },
+      "effect": {
+        "probe": "fade"
+      },
+      "styleVariation": {
+        "probe": [
+          "card",
+          "classic",
+          "minimal",
+          "fullbleed"
+        ]
+      }
+    },
+    "designsetgo/star-rating": {
+      "countTemplate": {
+        "probe": "[%s reviews]"
+      },
+      "schemaItemName": {
+        "probe": "Probe item"
+      },
+      "schemaAuthor": {
+        "probe": "Probe author"
+      }
+    },
+    "designsetgo/tab": {
+      "anchor": {
+        "probe": "probe-anchor"
+      }
+    },
+    "designsetgo/text-path": {
+      "pathType": {
+        "probe": [
+          "arc",
+          "circle",
+          "wave"
+        ]
+      },
+      "customPath": {
+        "probe": "M 0 50 Q 150 0 300 50"
+      },
+      "pathAlignment": {
+        "probe": [
+          "left",
+          "right"
+        ]
+      },
+      "motionDirection": {
+        "probe": "reverse"
+      },
+      "direction": {
+        "probe": [
+          "rtl",
+          "reverse"
+        ]
+      }
+    },
+    "designsetgo/timeline-item": {
+      "date": {
+        "probe": "March 2026"
+      }
+    }
+  }
+}
