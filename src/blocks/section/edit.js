@@ -53,6 +53,11 @@ import {
 	hoverVariationClasses,
 } from './utils/has-overlay-style';
 import { getContentColumnMargins } from './utils/content-position';
+import {
+	BOX_WIDTH_CLASS,
+	getBoxWidthStyle,
+	hasBoxWidth,
+} from './utils/box-width';
 
 /**
  * Section Container Edit Component
@@ -73,6 +78,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		constrainWidth,
 		contentWidth,
 		contentPosition = 'center',
+		boxWidth,
 		hoverBackgroundColor,
 		hoverTextColor,
 		hoverIconBackgroundColor,
@@ -290,12 +296,14 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		hasOverlay && 'dsgo-stack--has-overlay',
 		(shapeDividerTop || shapeDividerBottom) &&
 			'dsgo-stack--has-shape-divider',
+		hasBoxWidth(attributes) && BOX_WIDTH_CLASS,
 		...hoverVariationClasses(className),
 	]
 		.filter(Boolean)
 		.join(' ');
 
-	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
+	// Block wrapper props - outer div stays full width unless `boxWidth` caps it
+	// (must match save.js EXACTLY)
 	// WordPress handles flex layout through layout support and CSS classes
 	// We only add custom CSS variables for hover effects and overlay
 	const TagName = tagName || 'div';
@@ -339,6 +347,9 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 						shapeDividerBottomHeight
 					)}px`,
 				}),
+			// Outer box width (must match save.js EXACTLY). Emits nothing when
+			// `boxWidth` is unset. See utils/box-width.js.
+			...getBoxWidthStyle(attributes),
 		},
 	});
 
@@ -414,9 +425,40 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 							constrainWidth: true,
 							contentWidth: '',
 							contentPosition: 'center',
+							boxWidth: '',
 						})
 					}
 				>
+					<DsgoInspectorPanel.Item
+						label={__('Max Section Width', 'designsetgo')}
+						// Falsy rather than `!== ''`: a block migrated through a
+						// deprecation arrives with boxWidth UNDEFINED, because
+						// migrate() returns the old schema's attributes and
+						// WordPress does not re-apply current block.json
+						// defaults afterwards. `!== ''` would report those
+						// blocks as having a value and show a reset affordance
+						// for a control that is empty.
+						hasValue={() => !!boxWidth}
+						onDeselect={() => setAttributes({ boxWidth: '' })}
+						isShownByDefault
+					>
+						<UnitControl
+							label={__('Max Section Width', 'designsetgo')}
+							value={boxWidth || ''}
+							onChange={(value) =>
+								setAttributes({ boxWidth: value ?? '' })
+							}
+							placeholder={__('Full width', 'designsetgo')}
+							units={units}
+							__unstableInputWidth="80px"
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+							help={__(
+								'Narrows the whole section — its background, border, shadow and shape dividers move in with it. Inside another section it follows that section\u2019s alignment; elsewhere it centers. Leave empty to fill the available width. To narrow only the text and blocks inside, use Max Content Width instead.',
+								'designsetgo'
+							)}
+						/>
+					</DsgoInspectorPanel.Item>
 					<DsgoInspectorPanel.Item
 						label={__('Constrain Inner Width', 'designsetgo')}
 						hasValue={() => constrainWidth !== true}

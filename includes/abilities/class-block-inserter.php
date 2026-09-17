@@ -1778,6 +1778,7 @@ class Block_Inserter {
 
 				$constrain_width = isset( $attributes['constrainWidth'] ) ? $attributes['constrainWidth'] : true;
 				$content_width   = isset( $attributes['contentWidth'] ) ? $attributes['contentWidth'] : '';
+				$box_width       = isset( $attributes['boxWidth'] ) && is_string( $attributes['boxWidth'] ) ? $attributes['boxWidth'] : '';
 				$align           = isset( $attributes['align'] ) ? $attributes['align'] : 'full';
 				$tag_name        = isset( $attributes['tagName'] ) && $attributes['tagName'] ? $attributes['tagName'] : 'div';
 
@@ -1804,6 +1805,9 @@ class Block_Inserter {
 				$shape_bottom = isset( $attributes['shapeDividerBottom'] ) && is_string( $attributes['shapeDividerBottom'] ) ? $attributes['shapeDividerBottom'] : '';
 				if ( '' !== $shape_top || '' !== $shape_bottom ) {
 					$outer_class_parts[] = 'dsgo-stack--has-shape-divider';
+				}
+				if ( '' !== $box_width ) {
+					$outer_class_parts[] = 'dsgo-stack--has-box-width';
 				}
 
 				// Process block support styles (colors, padding, etc.).
@@ -1838,6 +1842,18 @@ class Block_Inserter {
 				}
 				if ( '' !== $shape_bottom && empty( $attributes['shapeDividerBottomSpacing'] ) && null !== $shape_bottom_height ) {
 					$outer_styles[] = '--dsgo-shape-clearance-bottom:' . self::format_js_number( $shape_bottom_height ) . 'px';
+				}
+
+				// Outer box width — mirrors src/blocks/section/utils/box-width.js
+				// (getBoxWidthStyle) exactly, including its declaration order.
+				// `width:100%` makes the box REACH the cap inside a flex parent;
+				// the cap itself is `max-width`. No margins: horizontal
+				// placement is a stylesheet concern (styles/_box-width.scss) so
+				// that a flex parent's own alignment can govern. Emits nothing
+				// when boxWidth is unset.
+				if ( '' !== $box_width ) {
+					$outer_styles[] = 'width:100%';
+					$outer_styles[] = 'max-width:' . $box_width;
 				}
 
 				// Match Section save(): only constrained sections carry an

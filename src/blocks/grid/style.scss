@@ -146,7 +146,7 @@
 	&.alignfull.dsgo-no-width-constraint > .dsgo-grid__inner[class*="wp-container-"] {
 		// Target all direct children that aren't explicitly aligned
 		// Exclude blocks with explicit max-width set via our extension
-		> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width) {
+		> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width):not(.dsgo-stack--has-box-width) {
 			max-width: none !important;
 			margin-left: 0 !important;
 			margin-right: 0 !important;

@@ -1,0 +1,73 @@
+/**
+ * Section outer box width — horizontal placement
+ *
+ * `boxWidth` caps the section's OWN box (see utils/box-width.js). The cap and
+ * `width: 100%` are inline, because they have to beat `[data-block] { width:
+ * auto }` in the editor and core's constrained-layout measure everywhere else.
+ * The horizontal PLACEMENT lives here instead, for two reasons an inline
+ * `margin: auto` gets wrong:
+ *
+ * 1. In a FLEX parent, auto margins are resolved BEFORE `align-items` /
+ *    `justify-content`. An inline `margin: auto` therefore silently overrides
+ *    the alignment the author set on the PARENT — a Section justified left
+ *    would still centre a capped child. The parent's alignment is the right
+ *    answer there, so the box carries no margin at all and gets out of the way.
+ * 2. An inline declaration cannot be overridden by a stylesheet, so there
+ *    would be no way to express (1) at all.
+ *
+ * This partial is @used by BOTH style.scss and editor.scss so the canvas and
+ * the front end place the box identically. Mirrors the shape-divider partial.
+ */
+
+// Default: centre the box.
+
+// This is the case where there is nothing to inherit — the post content root,
+// a core/group with a flow or constrained layout, a column, a grid cell. The
+// class is repeated for specificity (0,3,0): a theme with
+// `useRootPaddingAwareAlignments` gives `.alignfull` negative root-padding
+// margins via `.has-global-padding > .alignfull` at (0,2,0), which would
+// otherwise hang the capped box out into the left gutter.
+
+// An author-set margin still wins: WordPress's spacing support serializes
+// `style.spacing.margin` inline, and an inline declaration beats any
+// stylesheet rule that is not `!important`. Setting Margin → Left to 0 is how
+// an author anchors the box left in a non-flex parent.
+.dsgo-stack--has-box-width.dsgo-stack--has-box-width.dsgo-stack {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+// Inside a flex parent, hand placement back to the parent.
+
+// `align-items` (Section's vertical flex, on `.dsgo-stack__inner`) or
+// `justify-content` (Row's horizontal one) is what the author actually set, so
+// the box must carry no margin for it to take effect — flex resolves auto
+// margins first. Keying on core's own `.is-layout-flex` covers Section, Row
+// and a core/group with a flex layout in one selector, and lands at (0,4,0):
+// above the centring rule regardless of source order.
+
+// NOTE: written WITHOUT `:where()` on purpose. cssnano rewrites
+// `:where(.is-layout-flex) > .a, :where(.is-layout-flex) > .b` by dropping the
+// prefix from the first selector, which silently turns this into an
+// everywhere-rule that cancels the centring above. Sass emits it correctly;
+// the damage only appears in the minified build, so `npm run build` plus a
+// grep of build/blocks/section/style-index.css is the only way to see it.
+
+// The `[data-block] >` variant covers the editor, where a block that is not
+// apiVersion 3 is wrapped rather than being the wrapper itself.
+.is-layout-flex > .dsgo-stack--has-box-width.dsgo-stack--has-box-width.dsgo-stack,
+.is-layout-flex > [data-block] > .dsgo-stack--has-box-width.dsgo-stack--has-box-width.dsgo-stack {
+	margin-left: 0;
+	margin-right: 0;
+
+	// `align-self: auto` hands the box back to the parent's `align-items`.
+	// Section blanket-stretches every child
+	// (`.dsgo-stack__inner.is-layout-flex > * { align-self: stretch }`, (0,3,0))
+	// so that paragraphs and headings keep their full measure under a centred
+	// justification. A capped box is the one child that must NOT stretch — it
+	// has a width of its own, and stretching pins it to the start of the cross
+	// axis, which is what made a parent justified centre or right still render
+	// its capped child hard left. This selector is (0,4,0), so it wins without
+	// `!important` and without weakening the blanket rule for anything else.
+	align-self: auto;
+}
