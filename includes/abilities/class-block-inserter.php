@@ -507,24 +507,52 @@ class Block_Inserter {
 
 		\WP_Block_Supports::$block_to_render = $previous;
 
-		// The wrapper generators already emit the block's own `wp-block-*` and
-		// alignment classes, so from the applied set only two kinds are taken:
-		// the `has-*` support classes, and the tokens of the block's own
+		// From the applied set three kinds are taken: the `has-*` support
+		// classes, the `align*` class, and the tokens of the block's own
 		// `className` attribute (custom-classname support). useBlockProps.save()
-		// spreads both onto the root, so stored markup without the custom class
-		// fails block validation the first time the editor re-saves it. Taking
-		// the className tokens by intersection keeps a block that disables the
+		// spreads all three onto the root, so stored markup without them fails
+		// block validation the first time the editor re-saves it. Taking the
+		// className tokens by intersection keeps a block that disables the
 		// support faithful. Layout classes (`is-layout-*`, `wp-container-*`)
 		// are render-time only and stay out.
+		//
+		// Alignment used to be excluded here on the grounds that "the wrapper
+		// generators already emit it". Twelve of them did not: accordion,
+		// countdown-timer, counter-group, form-builder, icon-button, icon-list,
+		// image-accordion, modal-trigger, progress-bar, slider,
+		// table-of-contents and tabs all declare `supports.align` and never
+		// called align_class(), so save() wrote `alignwide` and the mirror
+		// wrote nothing. Reading it from apply_block_supports() fixes the whole
+		// class at once instead of patching twelve cases and waiting for the
+		// thirteenth. WP_HTML_Tag_Processor::add_class() is idempotent, so the
+		// blocks that DO emit it themselves are unaffected.
 		$applied_classes = self::split_class_list( (string) ( $applied['class'] ?? '' ) );
 		$custom_classes  = isset( $attributes['className'] ) && is_string( $attributes['className'] )
 			? self::split_class_list( $attributes['className'] )
 			: array();
+
+		// Support classes land on an inner element for a few blocks (see
+		// SUPPORTS_ON_INNER_ELEMENT), but save() always puts alignment on the
+		// ROOT. No block currently both routes supports inward and supports
+		// alignment - designsetgo/modal, the only one, declares
+		// `supports.align: false` - so rather than add a second tag pass for a
+		// case that does not exist, alignment is simply not taken for those
+		// blocks. If one ever does both, this is where it breaks.
+		$takes_alignment = ! isset( self::SUPPORTS_ON_INNER_ELEMENT[ $block_name ] );
+
 		$support_classes = array_values(
 			array_filter(
 				$applied_classes,
-				static function ( $class_name ) use ( $custom_classes ) {
-					return 0 === strpos( $class_name, 'has-' ) || in_array( $class_name, $custom_classes, true );
+				static function ( $class_name ) use ( $custom_classes, $takes_alignment ) {
+					if ( 0 === strpos( $class_name, 'has-' ) ) {
+						return true;
+					}
+
+					if ( $takes_alignment && 0 === strpos( $class_name, 'align' ) ) {
+						return true;
+					}
+
+					return in_array( $class_name, $custom_classes, true );
 				}
 			)
 		);
