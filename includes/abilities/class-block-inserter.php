@@ -526,11 +526,6 @@ class Block_Inserter {
 			? Serializer_Support::split_class_list( $attributes['className'] )
 			: array();
 
-		// Alignment always goes to the ROOT, which is where the first pass
-		// below writes it. That is correct even for a block whose supports land
-		// on an inner element: save() puts alignment on the outermost node
-		// regardless. designsetgo/modal, the only such block today, declares
-		// `supports.align: false` and so never has an alignment class at all.
 		// Two destinations, because WordPress has two mechanisms.
 		//
 		// `blocks.getSaveContent.extraProps` props are merged onto the
@@ -551,14 +546,29 @@ class Block_Inserter {
 			array_filter(
 				$applied_classes,
 				static function ( $class_name ) use ( $custom_classes ) {
-					if ( 0 === strpos( $class_name, 'align' ) ) {
-						return true;
-					}
-
 					return in_array( $class_name, $custom_classes, true );
 				}
 			)
 		);
+
+		// Alignment is derived from the block's OWN declared support, not read
+		// out of apply_block_supports().
+		//
+		// Twelve blocks declare `supports.align` and never emitted the class,
+		// and reading it from apply_block_supports() fixed that - but it also
+		// tied the stored markup to whatever core decides to emit, which is not
+		// the same thing as what save() emits and is not stable across
+		// WordPress versions. It put `aligncenter` on a core/paragraph, whose
+		// save() writes only `has-text-align-center`, and CI (which runs
+		// WordPress trunk) disagreed with a fixture generated on 6.9.
+		//
+		// align_class() reads `supports.align` from block.json and returns the
+		// class only when the requested value is one the block actually allows.
+		// Same fix for the twelve blocks, no dependency on core's behaviour.
+		$align_class = Serializer_Support::align_class( $block_name, $attributes );
+		if ( '' !== $align_class ) {
+			$root_classes[] = $align_class;
+		}
 
 		$support_classes = array_values(
 			array_filter(
