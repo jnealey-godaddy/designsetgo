@@ -27,41 +27,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Configure_Shape_Divider extends Abstract_Ability {
 
 	/**
-	 * All 29 valid shape divider names from shape-dividers.js.
+	 * Valid shape divider names.
 	 *
-	 * @var array<string>
+	 * Read from a generated file rather than typed out here. This used to be a
+	 * hand-kept copy of the shapes in src/blocks/section/utils/shape-dividers.js;
+	 * the two agreed, and nothing made them keep agreeing. Adding a shape to the
+	 * library would have left this ability rejecting it as out-of-enum - valid
+	 * input refused before the callback ever runs, which is the single most
+	 * common way an abilities schema drifts from the thing it describes.
+	 *
+	 * Regenerate with `npm run generate:shape-enum`; CI fails on a stale file.
+	 *
+	 * @return array<int, string> Shape names.
 	 */
-	const VALID_SHAPES = array(
-		'wave',
-		'wave-double',
-		'wave-layered',
-		'wave-asymmetric',
-		'tilt',
-		'tilt-reverse',
-		'curve',
-		'curve-asymmetric',
-		'triangle',
-		'triangle-asymmetric',
-		'arrow',
-		'arrow-wide',
-		'peaks',
-		'peaks-soft',
-		'zigzag',
-		'book',
-		'clouds',
-		'drops',
-		'split',
-		'fan',
-		'steps',
-		'torn',
-		'slime',
-		'triangle-layered',
-		'triangle-layered-extra',
-		'curvy-triangle-layered',
-		'symmetric-waves-layered',
-		'side-triangle-layered',
-		'side-triangle-layered-extra',
-	);
+	public static function valid_shapes(): array {
+		static $shapes = null;
+
+		if ( null === $shapes ) {
+			$generated = __DIR__ . '/../generated/shape-dividers.php';
+			$shapes    = file_exists( $generated ) ? (array) require $generated : array();
+		}
+
+		return $shapes;
+	}
 
 	/**
 	 * Get ability name.
@@ -125,7 +113,7 @@ class Configure_Shape_Divider extends Abstract_Ability {
 				'shape'           => array(
 					'type'        => 'string',
 					'description' => __( 'Shape type. Available: wave, wave-double, wave-layered, wave-asymmetric, tilt, tilt-reverse, curve, curve-asymmetric, triangle, triangle-asymmetric, arrow, arrow-wide, peaks, peaks-soft, zigzag, book, clouds, drops, split, fan, steps, torn, slime, triangle-layered, triangle-layered-extra, curvy-triangle-layered, symmetric-waves-layered, side-triangle-layered, side-triangle-layered-extra', 'designsetgo' ),
-					'enum'        => self::VALID_SHAPES,
+					'enum'        => self::valid_shapes(),
 				),
 				'color'           => array(
 					'type'        => 'string',
@@ -213,7 +201,7 @@ class Configure_Shape_Divider extends Abstract_Ability {
 		}
 
 		// Validate shape is one of the known values.
-		if ( ! in_array( $shape, self::VALID_SHAPES, true ) ) {
+		if ( ! in_array( $shape, self::valid_shapes(), true ) ) {
 			return $this->error(
 				'designsetgo_validation_failed',
 				sprintf(
@@ -397,7 +385,7 @@ class Configure_Shape_Divider extends Abstract_Ability {
 		}
 
 		foreach ( $positions as $pos ) {
-			// Shape name is already validated against VALID_SHAPES enum.
+			// Shape name is already validated against the valid_shapes() enum.
 			$attributes[ 'shapeDivider' . $pos ] = $shape;
 
 			if ( null !== $color ) {

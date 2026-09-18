@@ -12,6 +12,8 @@
 
 namespace DesignSetGo\Abilities;
 
+use DesignSetGo\Abilities\Serializers\Serializer_Registry;
+use DesignSetGo\Abilities\Serializers\Serializer_Support;
 use WP_Error;
 use WP_Post;
 
@@ -434,7 +436,12 @@ class Block_Inserter {
 		}
 
 		if ( 0 === strpos( $block_name, 'designsetgo/' ) ) {
-			if ( null !== self::generate_designsetgo_wrapper_html( $block_name, array() ) ) {
+			// Ask the registry rather than running a serializer and checking for
+			// null. Same answer, but it is a lookup instead of markup
+			// generation, and - the point of the registry - the set of
+			// serializable blocks is now something a test can enumerate rather
+			// than discover one block at a time.
+			if ( Serializer_Registry::has( $block_name ) ) {
 				return null;
 			}
 
@@ -455,18 +462,6 @@ class Block_Inserter {
 			$block_name,
 			implode( ', ', self::SERIALIZABLE_CORE_BLOCKS )
 		);
-	}
-
-	/**
-	 * Split a class attribute into individual class names.
-	 *
-	 * @param string $class_attribute Space-separated class attribute value.
-	 * @return array<int, string> Class names.
-	 */
-	private static function split_class_list( string $class_attribute ): array {
-		$parts = preg_split( '/\s+/', $class_attribute, -1, PREG_SPLIT_NO_EMPTY );
-
-		return is_array( $parts ) ? $parts : array();
 	}
 
 	/**
@@ -507,24 +502,79 @@ class Block_Inserter {
 
 		\WP_Block_Supports::$block_to_render = $previous;
 
-		// The wrapper generators already emit the block's own `wp-block-*` and
-		// alignment classes, so from the applied set only two kinds are taken:
-		// the `has-*` support classes, and the tokens of the block's own
+		// From the applied set three kinds are taken: the `has-*` support
+		// classes, the `align*` class, and the tokens of the block's own
 		// `className` attribute (custom-classname support). useBlockProps.save()
-		// spreads both onto the root, so stored markup without the custom class
-		// fails block validation the first time the editor re-saves it. Taking
-		// the className tokens by intersection keeps a block that disables the
+		// spreads all three onto the root, so stored markup without them fails
+		// block validation the first time the editor re-saves it. Taking the
+		// className tokens by intersection keeps a block that disables the
 		// support faithful. Layout classes (`is-layout-*`, `wp-container-*`)
 		// are render-time only and stay out.
-		$applied_classes = self::split_class_list( (string) ( $applied['class'] ?? '' ) );
+		//
+		// Alignment used to be excluded here on the grounds that "the wrapper
+		// generators already emit it". Twelve of them did not: accordion,
+		// countdown-timer, counter-group, form-builder, icon-button, icon-list,
+		// image-accordion, modal-trigger, progress-bar, slider,
+		// table-of-contents and tabs all declare `supports.align` and never
+		// called align_class(), so save() wrote `alignwide` and the mirror
+		// wrote nothing. Reading it from apply_block_supports() fixes the whole
+		// class at once instead of patching twelve cases and waiting for the
+		// thirteenth. WP_HTML_Tag_Processor::add_class() is idempotent, so the
+		// blocks that DO emit it themselves are unaffected.
+		$applied_classes = Serializer_Support::split_class_list( (string) ( $applied['class'] ?? '' ) );
 		$custom_classes  = isset( $attributes['className'] ) && is_string( $attributes['className'] )
-			? self::split_class_list( $attributes['className'] )
+			? Serializer_Support::split_class_list( $attributes['className'] )
 			: array();
-		$support_classes = array_values(
+
+		// Two destinations, because WordPress has two mechanisms.
+		//
+		// `blocks.getSaveContent.extraProps` props are merged onto the
+		// OUTERMOST element by getSaveElement(), whatever the block's save()
+		// does internally. Custom class names, the anchor id and every DSGo
+		// extension class arrive that way - core registers custom-classname and
+		// anchor on that same filter.
+		//
+		// `useBlockProps.save()` props go wherever the block chooses to spread
+		// them. Most blocks put them on their root, but Modal spreads them onto
+		// its inner content div, which is what SUPPORTS_ON_INNER_ELEMENT
+		// records.
+		//
+		// Lumping the two together sent Modal's custom class, its extension
+		// classes and its alignment to the content div while save() wrote them
+		// on the root - eight of its sixteen matrix failures.
+		$root_classes = array_values(
 			array_filter(
 				$applied_classes,
 				static function ( $class_name ) use ( $custom_classes ) {
-					return 0 === strpos( $class_name, 'has-' ) || in_array( $class_name, $custom_classes, true );
+					return in_array( $class_name, $custom_classes, true );
+				}
+			)
+		);
+
+		// Alignment is derived from the block's OWN declared support, not read
+		// out of apply_block_supports().
+		//
+		// Twelve blocks declare `supports.align` and never emitted the class,
+		// and reading it from apply_block_supports() fixed that - but it also
+		// tied the stored markup to whatever core decides to emit, which is not
+		// the same thing as what save() emits and is not stable across
+		// WordPress versions. It put `aligncenter` on a core/paragraph, whose
+		// save() writes only `has-text-align-center`, and CI (which runs
+		// WordPress trunk) disagreed with a fixture generated on 6.9.
+		//
+		// align_class() reads `supports.align` from block.json and returns the
+		// class only when the requested value is one the block actually allows.
+		// Same fix for the twelve blocks, no dependency on core's behaviour.
+		$align_class = Serializer_Support::align_class( $block_name, $attributes );
+		if ( '' !== $align_class ) {
+			$root_classes[] = $align_class;
+		}
+
+		$support_classes = array_values(
+			array_filter(
+				$applied_classes,
+				static function ( $class_name ) {
+					return 0 === strpos( $class_name, 'has-' );
 				}
 			)
 		);
@@ -553,7 +603,28 @@ class Block_Inserter {
 		// mechanism useBlockProps.save() uses for the `has-*` support classes
 		// above, so they are merged in the same pass.
 		$extension_props = self::get_extension_save_props( $block_name, $attributes );
-		$support_classes = array_merge( $support_classes, $extension_props['classes'] );
+
+		// Extension classes follow the same rule the block itself applies. Modal
+		// transfers every `has-*` class onto its content div and keeps the rest
+		// on the wrapper (utils/style-transfer.js), so `has-dsgo-animation` goes
+		// to the content while `dsgo-hide-mobile` and a custom class stay on the
+		// root. For every other block the two elements are the same node and the
+		// split makes no difference.
+		if ( isset( self::SUPPORTS_ON_INNER_ELEMENT[ $block_name ] ) ) {
+			foreach ( $extension_props['classes'] as $extension_class ) {
+				if ( 0 === strpos( $extension_class, 'has-' ) ) {
+					$support_classes[] = $extension_class;
+					continue;
+				}
+
+				$root_classes[] = $extension_class;
+			}
+		} else {
+			// Same element either way, so splitting would only reorder the
+			// class list - harmless for validation, which compares classes as
+			// a set, but it churns the committed fixtures for no reason.
+			$root_classes = array_merge( $root_classes, $extension_props['classes'] );
+		}
 
 		$declarations = array();
 		if ( ! empty( $attributes['style'] ) && is_array( $attributes['style'] ) && function_exists( 'wp_style_engine_get_styles' ) ) {
@@ -562,12 +633,58 @@ class Block_Inserter {
 		}
 		$declarations = array_merge( $declarations, $extension_props['styles'] );
 
-		$processor = new \WP_HTML_Tag_Processor( $html );
-
-		// Most blocks carry their support classes on the root. A few move them
-		// to an inner element in save() - Modal transfers them onto its content
-		// div - so putting them on the root there is markup save() never emits.
+		// Where the useBlockProps.save() props belong. Most blocks carry them on
+		// the root; a few move them to an inner element in save() - Modal
+		// transfers them onto its content div - so putting them on the root
+		// there is markup save() never emits.
 		$target_class = self::SUPPORTS_ON_INNER_ELEMENT[ $block_name ] ?? null;
+
+		// A SECOND pass is used only when the two destinations are different
+		// elements, i.e. only for Modal.
+		//
+		// It would be simpler to always run two passes, and that is what this
+		// did at first - but WP_HTML_Tag_Processor appends new attributes in
+		// the order it is asked for them, so splitting the work moved `id`
+		// after `style` on every block, and the two passes did not even agree
+		// across WordPress versions: 6.9 and trunk ordered them differently.
+		// Validation is unaffected (the block validator compares attributes as
+		// a map) but the fixtures assert bytes, and CI runs trunk while the
+		// fixtures are generated against the pinned 6.9. Keeping the single
+		// pass for every block but Modal keeps the output identical to what it
+		// has always been.
+		if ( null !== $target_class
+			&& ( ! empty( $root_classes ) || '' !== $anchor_id || ! empty( $extension_props['data'] ) )
+		) {
+			$root_processor = new \WP_HTML_Tag_Processor( $html );
+
+			if ( $root_processor->next_tag() ) {
+				foreach ( $root_classes as $class_name ) {
+					$root_processor->add_class( $class_name );
+				}
+
+				if ( '' !== $anchor_id && null === $root_processor->get_attribute( 'id' ) ) {
+					$root_processor->set_attribute( 'id', $anchor_id );
+				}
+
+				foreach ( $extension_props['data'] as $data_name => $data_value ) {
+					$root_processor->set_attribute( $data_name, $data_value );
+				}
+
+				$html = $root_processor->get_updated_html();
+			}
+
+			// Consumed by the root pass; the target pass must not repeat them.
+			$root_classes           = array();
+			$anchor_id              = '';
+			$extension_props['data'] = array();
+		} else {
+			// Same element, so the root-bound props join the support classes and
+			// are written in the original single-pass order.
+			$support_classes = array_merge( $root_classes, $support_classes );
+			$root_classes    = array();
+		}
+
+		$processor = new \WP_HTML_Tag_Processor( $html );
 
 		$found = null === $target_class
 			? $processor->next_tag()
@@ -593,6 +710,7 @@ class Block_Inserter {
 				if ( 2 !== count( $parts ) || '' === trim( $parts[1] ) ) {
 					continue;
 				}
+
 				$kept[] = trim( $declaration );
 			}
 
@@ -687,15 +805,116 @@ class Block_Inserter {
 			$data      = array_merge( $data, $animation['attrs'] );
 		}
 
-		// Mirror the max-width extension's save props for supported text blocks.
-		if ( in_array( $block_name, array( 'core/heading', 'core/paragraph', 'designsetgo/advanced-heading' ), true )
+		// Mirror the max-width extension - src/extensions/max-width/index.js
+		// (applyMaxWidthStyles). This used to be scoped to three text blocks,
+		// but the extension's config is `'blocks' => 'all'` minus an exclusion
+		// list, so the attribute exists on nearly every block and save() writes
+		// the class wherever it is set. Scoping the mirror more narrowly than
+		// the extension meant an agent could set dsgoMaxWidth on any other
+		// block and get stored markup save() disagreed with.
+		if ( ! self::is_block_excluded_from_extensions( $block_name )
+			&& ! in_array( $block_name, self::MAX_WIDTH_EXCLUDED_BLOCKS, true )
 			&& ! empty( $attributes['dsgoMaxWidth'] ) && is_string( $attributes['dsgoMaxWidth'] )
 		) {
-			$classes[]              = 'dsgo-has-max-width';
-			$styles['max-width']    = $attributes['dsgoMaxWidth'];
-			$alignment              = $attributes['textAlign'] ?? $attributes['align'] ?? '';
-			$styles['margin-left']  = 'left' === $alignment ? '0' : 'auto';
-			$styles['margin-right'] = 'right' === $alignment ? '0' : 'auto';
+			$classes[]           = 'dsgo-has-max-width';
+			$styles['max-width'] = $attributes['dsgoMaxWidth'];
+
+			// The JS checks textAlign OR align; reading one with a fallback to
+			// the other is not the same test. textAlign 'center' with align
+			// 'left' takes the left branch there and the centred branch here.
+			$text_align = isset( $attributes['textAlign'] ) ? (string) $attributes['textAlign'] : '';
+			$align      = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
+
+			if ( 'left' === $text_align || 'left' === $align ) {
+				$styles['margin-left']  = '0';
+				$styles['margin-right'] = 'auto';
+			} elseif ( 'right' === $text_align || 'right' === $align ) {
+				$styles['margin-left']  = 'auto';
+				$styles['margin-right'] = '0';
+			} else {
+				$styles['margin-left']  = 'auto';
+				$styles['margin-right'] = 'auto';
+			}
+		}
+
+		// Mirror the responsive visibility extension -
+		// src/extensions/responsive/index.js (applyResponsiveVisibilityClasses).
+		// Order matches the JS push order; WordPress compares class attributes
+		// as a set, so this is for readability rather than correctness.
+		if ( ! self::is_block_excluded_from_extensions( $block_name ) ) {
+			if ( ! empty( $attributes['dsgoHideOnDesktop'] ) ) {
+				$classes[] = 'dsgo-hide-desktop';
+			}
+			if ( ! empty( $attributes['dsgoHideOnTablet'] ) ) {
+				$classes[] = 'dsgo-hide-tablet';
+			}
+			if ( ! empty( $attributes['dsgoHideOnMobile'] ) ) {
+				$classes[] = 'dsgo-hide-mobile';
+			}
+		}
+
+		// Mirror the reveal-control extension -
+		// src/extensions/reveal-control/index.js (addRevealClasses). Note it
+		// applies no shouldExtendBlock() gate, so neither does this.
+		if ( in_array( $block_name, self::REVEAL_CONTAINER_BLOCKS, true ) && ! empty( $attributes['enableRevealOnHover'] ) ) {
+			$classes[]                       = 'dsgo-has-reveal';
+			$reveal_animation                = isset( $attributes['revealAnimationType'] ) ? (string) $attributes['revealAnimationType'] : '';
+			$data['data-reveal-animation']   = '' !== $reveal_animation ? $reveal_animation : 'fade';
+		} elseif ( ! empty( $attributes['dsgoRevealOnHover'] ) ) {
+			$classes[] = 'dsgo-reveal-item';
+		}
+
+		// Mirror the background-video extension -
+		// src/extensions/background-video/index.js
+		// (addBackgroundVideoSaveProps). Gated by attribute registration alone:
+		// the extension config allowlists the container blocks, so the
+		// attribute only exists where it applies, and the JS applies no
+		// further block check.
+		if ( ! empty( $attributes['dsgoVideoUrl'] ) && is_string( $attributes['dsgoVideoUrl'] ) ) {
+			$classes[]                           = 'dsgo-has-video-background';
+			$data['data-video-url']              = $attributes['dsgoVideoUrl'];
+			$data['data-video-poster']           = isset( $attributes['dsgoVideoPoster'] ) ? (string) $attributes['dsgoVideoPoster'] : '';
+			$data['data-video-muted']            = empty( $attributes['dsgoVideoMuted'] ) ? 'false' : 'true';
+			$data['data-video-loop']             = empty( $attributes['dsgoVideoLoop'] ) ? 'false' : 'true';
+			$data['data-video-autoplay']         = empty( $attributes['dsgoVideoAutoplay'] ) ? 'false' : 'true';
+			$data['data-video-mobile-hide']      = empty( $attributes['dsgoVideoMobileHide'] ) ? 'false' : 'true';
+			$data['data-video-overlay-color']    = Serializer_Support::convert_color_value_to_css_var(
+				isset( $attributes['dsgoVideoOverlayColor'] ) ? (string) $attributes['dsgoVideoOverlayColor'] : ''
+			);
+		}
+
+		// Mirror the clickable-group extension -
+		// src/extensions/clickable-group/index.js (addLinkSaveProps). Scoped to
+		// the same four container blocks the JS lists, and gated on a non-blank
+		// URL the same way.
+		if ( in_array( $block_name, self::CLICKABLE_GROUP_BLOCKS, true )
+			&& isset( $attributes['dsgoLinkUrl'] )
+			&& is_string( $attributes['dsgoLinkUrl'] )
+			&& '' !== trim( $attributes['dsgoLinkUrl'] )
+		) {
+			$classes[]                 = 'dsgo-clickable';
+			$data['data-link-url']     = $attributes['dsgoLinkUrl'];
+
+			// The JS writes the literal '_blank' for ANY truthy target, not the
+			// attribute's own value.
+			if ( ! empty( $attributes['dsgoLinkTarget'] ) ) {
+				$data['data-link-target'] = '_blank';
+			}
+			if ( ! empty( $attributes['dsgoLinkRel'] ) ) {
+				$data['data-link-rel'] = (string) $attributes['dsgoLinkRel'];
+			}
+		}
+
+		// Mirror the custom-CSS extension - src/extensions/custom-css/index.js
+		// (applyCustomCSSClass). The class carries a hash of the CSS and the
+		// block name. It looks like something PHP could not reproduce, but the
+		// JS hash is the ordinary 32-bit string hash, not a random id, so it
+		// is fully deterministic - see js_hash_code().
+		if ( ! self::is_block_excluded_from_extensions( $block_name )
+			&& ! in_array( $block_name, self::CUSTOM_CSS_EXCLUDED_BLOCKS, true )
+			&& ! empty( $attributes['dsgoCustomCSS'] ) && is_string( $attributes['dsgoCustomCSS'] )
+		) {
+			$classes[] = 'dsgo-custom-css-' . Serializer_Support::js_hash_code( $attributes['dsgoCustomCSS'] . $block_name );
 		}
 
 		// Text reveal - src/extensions/text-reveal/editor.js
@@ -708,9 +927,9 @@ class Block_Inserter {
 			$classes[] = 'has-dsgo-text-reveal';
 
 			$data['data-dsgo-text-reveal-enabled']    = 'true';
-			$data['data-dsgo-text-reveal-color']      = self::convert_color_value_to_css_var( (string) ( $attributes['dsgoTextRevealColor'] ?? '' ) );
+			$data['data-dsgo-text-reveal-color']      = Serializer_Support::convert_color_value_to_css_var( (string) ( $attributes['dsgoTextRevealColor'] ?? '' ) );
 			$data['data-dsgo-text-reveal-split-mode'] = ! empty( $attributes['dsgoTextRevealSplitMode'] ) ? (string) $attributes['dsgoTextRevealSplitMode'] : 'word';
-			$data['data-dsgo-text-reveal-transition'] = self::js_truthy_numeric( $attributes['dsgoTextRevealTransition'] ?? null, '150' );
+			$data['data-dsgo-text-reveal-transition'] = Serializer_Support::js_truthy_numeric( $attributes['dsgoTextRevealTransition'] ?? null, '150' );
 
 			// Only emitted when it differs from the default 'color': content
 			// saved before this attribute existed carries none in its stored
@@ -735,17 +954,17 @@ class Block_Inserter {
 			$classes[] = 'has-dsgo-expanding-background';
 
 			$raw_color   = (string) ( $attributes['dsgoExpandingBgColor'] ?? '' );
-			$style_color = self::convert_color_value_to_css_var( $raw_color );
+			$style_color = Serializer_Support::convert_color_value_to_css_var( $raw_color );
 
 			$styles['--dsgo-expanding-bg-color'] = '' !== $style_color ? $style_color : '#e8e8e8';
 
 			$data['data-dsgo-expanding-bg-enabled']          = 'true';
 			$data['data-dsgo-expanding-bg-color']            = $style_color;
-			$data['data-dsgo-expanding-bg-initial-size']     = self::js_truthy_numeric( $attributes['dsgoExpandingBgInitialSize'] ?? null, '' );
-			$data['data-dsgo-expanding-bg-blur']             = self::js_truthy_numeric( $attributes['dsgoExpandingBgBlur'] ?? null, '' );
-			$data['data-dsgo-expanding-bg-speed']            = self::js_truthy_numeric( $attributes['dsgoExpandingBgSpeed'] ?? null, '' );
-			$data['data-dsgo-expanding-bg-trigger-offset']   = self::js_truthy_numeric( $attributes['dsgoExpandingBgTriggerOffset'] ?? null, '' );
-			$data['data-dsgo-expanding-bg-completion-point'] = self::js_truthy_numeric( $attributes['dsgoExpandingBgCompletionPoint'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-initial-size']     = Serializer_Support::js_truthy_numeric( $attributes['dsgoExpandingBgInitialSize'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-blur']             = Serializer_Support::js_truthy_numeric( $attributes['dsgoExpandingBgBlur'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-speed']            = Serializer_Support::js_truthy_numeric( $attributes['dsgoExpandingBgSpeed'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-trigger-offset']   = Serializer_Support::js_truthy_numeric( $attributes['dsgoExpandingBgTriggerOffset'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-completion-point'] = Serializer_Support::js_truthy_numeric( $attributes['dsgoExpandingBgCompletionPoint'] ?? null, '' );
 		}
 
 		// SVG patterns - src/extensions/svg-patterns/editor.js
@@ -781,13 +1000,13 @@ class Block_Inserter {
 					// omission of a prop whose value is `undefined` - as
 					// opposed to the expanding-background data attributes
 					// above, which fall back to an emitted empty string.
-					$pattern_color = self::convert_color_value_to_css_var( (string) ( $attributes['dsgoSvgPatternColor'] ?? '' ) );
+					$pattern_color = Serializer_Support::convert_color_value_to_css_var( (string) ( $attributes['dsgoSvgPatternColor'] ?? '' ) );
 					if ( '' !== $pattern_color ) {
 						$data['data-dsgo-svg-pattern-color'] = $pattern_color;
 					}
 
-					$data['data-dsgo-svg-pattern-opacity'] = self::format_js_number( $safe_opacity );
-					$data['data-dsgo-svg-pattern-scale']   = self::format_js_number( $safe_scale );
+					$data['data-dsgo-svg-pattern-opacity'] = Serializer_Support::format_js_number( $safe_opacity );
+					$data['data-dsgo-svg-pattern-scale']   = Serializer_Support::format_js_number( $safe_scale );
 				}
 			}
 		}
@@ -843,7 +1062,7 @@ class Block_Inserter {
 		) {
 			$mobile_order = max( 0.0, min( 10.0, (float) $attributes['dsgoMobileOrder'] ) );
 			if ( 1.0 !== $mobile_order ) {
-				$styles['--dsgo-mobile-order'] = self::format_js_number( $mobile_order );
+				$styles['--dsgo-mobile-order'] = Serializer_Support::format_js_number( $mobile_order );
 			}
 		}
 
@@ -859,7 +1078,7 @@ class Block_Inserter {
 			);
 			foreach ( $spans as $span_attribute => $span_property ) {
 				if ( isset( $attributes[ $span_attribute ] ) && is_numeric( $attributes[ $span_attribute ] ) && (float) $attributes[ $span_attribute ] > 1 ) {
-					$styles[ $span_property ] = 'span ' . self::format_js_number( (float) $attributes[ $span_attribute ] );
+					$styles[ $span_property ] = 'span ' . Serializer_Support::format_js_number( (float) $attributes[ $span_attribute ] );
 				}
 			}
 		}
@@ -891,102 +1110,6 @@ class Block_Inserter {
 		$namespace = strtok( $block_name, '/' );
 
 		return in_array( $namespace . '/*', $excluded, true );
-	}
-
-	/**
-	 * Mirror JavaScript's `value || fallback` for a numeric attribute
-	 * rendered into a data-attribute string, where 0 is falsy exactly as it
-	 * is in JS (and so, unlike a plain empty/absent check, falls back too).
-	 *
-	 * @param mixed  $value    Attribute value.
-	 * @param string $fallback Fallback string used when $value is falsy.
-	 * @return string Rendered attribute value.
-	 */
-	private static function js_truthy_numeric( $value, string $fallback ): string {
-		if ( is_numeric( $value ) && 0.0 !== (float) $value ) {
-			return self::format_js_number( (float) $value );
-		}
-
-		return $fallback;
-	}
-
-	/**
-	 * Visual support classes and styles for a block that routes them inward.
-	 *
-	 * Some blocks skip-serialize their visual supports on the block root and
-	 * re-apply them to an inner element - Icon Button's root is a positioning
-	 * wrapper, so its colours belong on the <a> inside. For those,
-	 * apply_block_support_attributes() correctly returns nothing (WordPress is
-	 * told to skip), and the values have to be resolved here instead. Without
-	 * this the attributes were stored in the block comment and no matching
-	 * class ever reached the markup.
-	 *
-	 * Mirrors the getColorClassesAndStyles / getTypographyClassesAndStyles /
-	 * getBorderClassesAndStyles helpers the save() functions use.
-	 *
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @return array{classes: array<int, string>, styles: array<int, string>} Classes and declarations.
-	 */
-	private static function get_routed_visual_attributes( array $attributes ): array {
-		$classes = array();
-		$styles  = array();
-
-		// Preset attributes become `has-*` classes; the second entry is the
-		// companion flag class WordPress adds alongside.
-		$preset_classes = array(
-			'textColor'       => array( 'has-%s-color', 'has-text-color' ),
-			'backgroundColor' => array( 'has-%s-background-color', 'has-background' ),
-			'gradient'        => array( 'has-%s-gradient-background', 'has-background' ),
-			'fontSize'        => array( 'has-%s-font-size', null ),
-			'fontFamily'      => array( 'has-%s-font-family', null ),
-			'borderColor'     => array( 'has-%s-border-color', 'has-border-color' ),
-		);
-
-		foreach ( $preset_classes as $attribute => $definition ) {
-			$value = $attributes[ $attribute ] ?? '';
-			if ( ! is_string( $value ) || '' === $value ) {
-				continue;
-			}
-
-			$classes[] = sprintf( $definition[0], $value );
-			if ( null !== $definition[1] ) {
-				$classes[] = $definition[1];
-			}
-		}
-
-		$style = ( isset( $attributes['style'] ) && is_array( $attributes['style'] ) ) ? $attributes['style'] : array();
-
-		// Custom values get the flag class without a preset class.
-		if ( ! empty( $style['color']['text'] ) ) {
-			$classes[] = 'has-text-color';
-		}
-		if ( ! empty( $style['color']['background'] ) || ! empty( $style['color']['gradient'] ) ) {
-			$classes[] = 'has-background';
-		}
-		if ( ! empty( $style['border']['color'] ) ) {
-			$classes[] = 'has-border-color';
-		}
-
-		$routed = array_intersect_key(
-			$style,
-			array_flip( array( 'color', 'typography', 'border', 'shadow' ) )
-		);
-
-		if ( ! empty( $routed ) && function_exists( 'wp_style_engine_get_styles' ) ) {
-			$engine = wp_style_engine_get_styles( $routed );
-			// JS border support retains an inline preset color as well as its flag class.
-			if ( ! empty( $routed['border']['color'] ) ) {
-				$engine['declarations']['border-color'] = self::convert_color_value_to_css_var( $routed['border']['color'] );
-			}
-			foreach ( $engine['declarations'] ?? array() as $property => $value ) {
-				$styles[] = $property . ':' . $value;
-			}
-		}
-
-		return array(
-			'classes' => array_values( array_unique( $classes ) ),
-			'styles'  => $styles,
-		);
 	}
 
 	/**
@@ -1035,7 +1158,7 @@ class Block_Inserter {
 			return true;
 		}
 
-		return null !== self::generate_designsetgo_wrapper_html( $block_name, array() );
+		return Serializer_Registry::has( $block_name );
 	}
 
 	/**
@@ -1063,6 +1186,9 @@ class Block_Inserter {
 		$unsupported_when_set = array(
 			'designsetgo/advanced-heading' => array(
 				'animatedHeadline' => __( 'the animated headline variant is not supported by this inserter; it serializes rotation timings and an inline highlight shape. Insert the heading in the editor, or omit animatedHeadline.', 'designsetgo' ),
+			),
+			'designsetgo/counter'          => array(
+				'showIcon' => __( 'a counter icon is not supported by this inserter; save() inlines the icon\'s SVG from a JavaScript library that has no PHP equivalent, and an approximation would be invalid content. Add the counter in the editor, or leave showIcon off.', 'designsetgo' ),
 			),
 		);
 
@@ -1638,7 +1764,7 @@ class Block_Inserter {
 
 		// Convert CSS var() syntax to WordPress shorthand in style attribute.
 		if ( isset( $attrs['style'] ) && is_array( $attrs['style'] ) ) {
-			$attrs['style'] = self::convert_style_vars( $attrs['style'] );
+			$attrs['style'] = Serializer_Support::convert_style_vars( $attrs['style'] );
 		}
 		if ( 'core/image' === $block_name ) {
 			$image_html = self::generate_core_image_html( $attrs );
@@ -1754,3037 +1880,16 @@ class Block_Inserter {
 	/**
 	 * Generate wrapper HTML for DesignSetGo blocks.
 	 *
-	 * Creates opening and closing HTML that approximates the block's save output.
+	 * Creates opening and closing HTML mirroring the block's save() output. The
+	 * per-block implementations live in includes/abilities/serializers/, one
+	 * file per block, and Serializer_Registry maps names to them.
 	 *
 	 * @param string               $block_name Block name.
 	 * @param array<string, mixed> $attributes Block attributes.
 	 * @return array<string, string>|null Array with 'opening' and 'closing' keys, or null if not supported.
 	 */
 	public static function generate_designsetgo_wrapper_html( string $block_name, array $attributes ): ?array {
-		$block_slug  = str_replace( 'designsetgo/', '', $block_name );
-		$block_class = 'wp-block-designsetgo-' . $block_slug . ' dsgo-' . $block_slug;
-
-		switch ( $block_name ) {
-			case 'designsetgo/section':
-				// Section's block.json gives `style` a default carrying the page
-				// padding, and its save() serializes spacing support, so that
-				// padding IS in the stored markup. WordPress drops the default
-				// when it registers `style` on the PHP side (it re-registers the
-				// support-backed attribute as a bare object), so it has to be
-				// read back from block.json. Only when the caller supplied no
-				// style at all: an attribute default is replaced wholesale, not
-				// deep-merged, so a caller-supplied partial style legitimately
-				// has no padding.
-				if ( ! isset( $attributes['style'] ) ) {
-					$declared_style = Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? null;
-					if ( is_array( $declared_style ) ) {
-						$attributes['style'] = self::convert_style_vars( $declared_style );
-					}
-				}
-
-				$constrain_width = isset( $attributes['constrainWidth'] ) ? $attributes['constrainWidth'] : true;
-				$content_width   = isset( $attributes['contentWidth'] ) ? $attributes['contentWidth'] : '';
-				$box_width       = isset( $attributes['boxWidth'] ) && is_string( $attributes['boxWidth'] ) ? $attributes['boxWidth'] : '';
-				$align           = isset( $attributes['align'] ) ? $attributes['align'] : 'full';
-				$tag_name        = isset( $attributes['tagName'] ) && $attributes['tagName'] ? $attributes['tagName'] : 'div';
-
-				// Build outer classes (order: wp-block-*, alignX, dsgo-*).
-				$outer_class_parts = array( 'wp-block-designsetgo-section' );
-				if ( 'full' === $align ) {
-					$outer_class_parts[] = 'alignfull';
-				} elseif ( 'wide' === $align ) {
-					$outer_class_parts[] = 'alignwide';
-				}
-				$outer_class_parts[] = 'dsgo-stack';
-				if ( self::has_overlay( $attributes ) ) {
-					$outer_class_parts[] = 'dsgo-stack--has-overlay';
-				}
-				if ( ! $constrain_width ) {
-					$outer_class_parts[] = 'dsgo-no-width-constraint';
-				}
-
-				// Shape dividers — mirrors src/blocks/section/save.js plus
-				// ShapeDivider.js and utils/shape-dividers.js exactly. The
-				// shape itself is CSS mask-image, not inline SVG, so only
-				// marker classes and CSS custom properties are emitted.
-				$shape_top    = isset( $attributes['shapeDividerTop'] ) && is_string( $attributes['shapeDividerTop'] ) ? $attributes['shapeDividerTop'] : '';
-				$shape_bottom = isset( $attributes['shapeDividerBottom'] ) && is_string( $attributes['shapeDividerBottom'] ) ? $attributes['shapeDividerBottom'] : '';
-				if ( '' !== $shape_top || '' !== $shape_bottom ) {
-					$outer_class_parts[] = 'dsgo-stack--has-shape-divider';
-				}
-				if ( '' !== $box_width ) {
-					$outer_class_parts[] = 'dsgo-stack--has-box-width';
-				}
-
-				// Process block support styles (colors, padding, etc.).
-				$style             = isset( $attributes['style'] ) ? $attributes['style'] : array();
-				$support_result    = self::get_block_support_styles( $style );
-				$outer_class_parts = array_merge( $outer_class_parts, $support_result['classes'] );
-
-				// Only what the style attribute actually carries. Padding used to
-				// be fabricated here whenever `style.spacing.padding` was empty,
-				// but a block.json attribute default is REPLACED wholesale when a
-				// caller supplies the attribute, not deep-merged: a section given
-				// only a colour legitimately has no padding, and save() emits
-				// none. apply_block_json_defaults() supplies the default `style`
-				// (which does include padding) when the caller omits it entirely.
-				$outer_styles = array_merge(
-					self::container_hover_styles( $attributes ),
-					$support_result['styles']
-				);
-
-				// Shape divider content-clearance: expose the divider's
-				// RENDERED height on the wrapper so the stylesheet fallback
-				// reserves inner padding that matches what the divider
-				// paints. Omitted when an explicit spacing override is set
-				// (its inline padding wins below) or when the height is
-				// unset (the divider then inherits the theme.json height
-				// token, and the stylesheet resolves clearance from that
-				// same token). Must match save.js exactly.
-				$shape_top_height    = self::normalize_shape_size( $attributes['shapeDividerTopHeight'] ?? null, 10, 500 );
-				$shape_bottom_height = self::normalize_shape_size( $attributes['shapeDividerBottomHeight'] ?? null, 10, 500 );
-				if ( '' !== $shape_top && empty( $attributes['shapeDividerTopSpacing'] ) && null !== $shape_top_height ) {
-					$outer_styles[] = '--dsgo-shape-clearance-top:' . self::format_js_number( $shape_top_height ) . 'px';
-				}
-				if ( '' !== $shape_bottom && empty( $attributes['shapeDividerBottomSpacing'] ) && null !== $shape_bottom_height ) {
-					$outer_styles[] = '--dsgo-shape-clearance-bottom:' . self::format_js_number( $shape_bottom_height ) . 'px';
-				}
-
-				// Outer box width — mirrors src/blocks/section/utils/box-width.js
-				// (getBoxWidthStyle) exactly, including its declaration order.
-				// `width:100%` makes the box REACH the cap inside a flex parent;
-				// the cap itself is `max-width`. No margins: horizontal
-				// placement is a stylesheet concern (styles/_box-width.scss) so
-				// that a flex parent's own alignment can govern. Emits nothing
-				// when boxWidth is unset.
-				if ( '' !== $box_width ) {
-					$outer_styles[] = 'width:100%';
-					$outer_styles[] = 'max-width:' . $box_width;
-				}
-
-				// Match Section save(): only constrained sections carry an
-				// inner measure, but a shape-divider content-clearance
-				// spacing override is independent of the width constraint
-				// and carries its own padding declaration either way.
-				// contentPosition mirrors utils/content-position.js: 'center' (and
-				// anything unrecognised) keeps both margins auto.
-				$max_width         = $content_width ? $content_width : 'var(--wp--style--global--content-size, 1140px)';
-				$content_position  = isset( $attributes['contentPosition'] ) ? $attributes['contentPosition'] : 'center';
-				$inner_style_parts = array();
-				if ( $constrain_width ) {
-					$inner_style_parts[] = 'max-width:' . $max_width;
-					$inner_style_parts[] = 'margin-left:' . ( 'left' === $content_position ? '0' : 'auto' );
-					$inner_style_parts[] = 'margin-right:' . ( 'right' === $content_position ? '0' : 'auto' );
-				}
-				if ( '' !== $shape_top && ! empty( $attributes['shapeDividerTopSpacing'] ) && is_string( $attributes['shapeDividerTopSpacing'] ) ) {
-					$inner_style_parts[] = 'padding-top:' . self::wp_shorthand_to_css_var( $attributes['shapeDividerTopSpacing'] );
-				}
-				if ( '' !== $shape_bottom && ! empty( $attributes['shapeDividerBottomSpacing'] ) && is_string( $attributes['shapeDividerBottomSpacing'] ) ) {
-					$inner_style_parts[] = 'padding-bottom:' . self::wp_shorthand_to_css_var( $attributes['shapeDividerBottomSpacing'] );
-				}
-				$inner_style = empty( $inner_style_parts ) ? '' : ' style="' . esc_attr( implode( ';', $inner_style_parts ) ) . '"';
-
-				return array(
-					'opening' => '<' . esc_attr( $tag_name ) . ' class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' . esc_attr( implode( ';', $outer_styles ) ) . '">' .
-						self::render_shape_divider( $attributes, 'shapeDividerTop', 'top' ) .
-						'<div class="dsgo-stack__inner"' . $inner_style . '>',
-					'closing' => '</div>' . self::render_shape_divider( $attributes, 'shapeDividerBottom', 'bottom' ) . '</' . esc_attr( $tag_name ) . '>',
-				);
-
-			case 'designsetgo/hotspot':
-				// Mirrors src/blocks/hotspot/save.js.
-				$hotspot_image_url = isset( $attributes['imageUrl'] ) ? (string) $attributes['imageUrl'] : '';
-				$hotspot_image_alt = isset( $attributes['imageAlt'] ) ? (string) $attributes['imageAlt'] : '';
-				$hotspot_trigger   = isset( $attributes['trigger'] ) ? (string) $attributes['trigger'] : 'click';
-				$tooltip_position  = isset( $attributes['tooltipPosition'] ) ? (string) $attributes['tooltipPosition'] : 'top';
-				$tooltip_width     = self::numeric_attribute( $attributes['tooltipWidth'] ?? 240, 240 );
-				$hotspot_animation = isset( $attributes['animation'] ) ? (string) $attributes['animation'] : 'pulse';
-				$sequence_duration = self::numeric_attribute( $attributes['sequenceDuration'] ?? 0, 0 );
-
-				$hotspot_styles = array(
-					'--dsgo-hotspot-tooltip-width:' . $tooltip_width . 'px',
-					'--dsgo-hotspot-sequence-duration:' . $sequence_duration . 'ms',
-				);
-
-				// Each colour is emitted only when it passes the same allowlist
-				// getSafeHotspotColor() applies, so an unrecognised value drops
-				// out of both paths identically.
-				$hotspot_color_vars = array(
-					'markerColor'            => '--dsgo-hotspot-marker-color',
-					'markerBackgroundColor'  => '--dsgo-hotspot-marker-background',
-					'tooltipBackgroundColor' => '--dsgo-hotspot-tooltip-background',
-					'tooltipTextColor'       => '--dsgo-hotspot-tooltip-color',
-				);
-				foreach ( $hotspot_color_vars as $attribute_name => $custom_property ) {
-					$safe = self::safe_hotspot_color( $attributes[ $attribute_name ] ?? '' );
-					if ( '' !== $safe ) {
-						$hotspot_styles[] = $custom_property . ':' . self::convert_color_value_to_css_var( $safe );
-					}
-				}
-
-				$class_parts = array( 'wp-block-designsetgo-hotspot' );
-				if ( isset( $attributes['align'] ) && in_array( $attributes['align'], array( 'wide', 'full' ), true ) ) {
-					$class_parts[] = 'align' . $attributes['align'];
-				}
-				$class_parts[] = 'dsgo-hotspot';
-				$class_parts[] = 'dsgo-hotspot--position-' . $tooltip_position;
-				$class_parts[] = 'dsgo-hotspot--animation-' . $hotspot_animation;
-
-				$hotspot_image_html = '' !== $hotspot_image_url
-					? '<img class="dsgo-hotspot__image" src="' . esc_url( $hotspot_image_url ) . '" alt="' . esc_attr( $hotspot_image_alt ) . '"/>'
-					: '<div class="dsgo-hotspot__image dsgo-hotspot__image--empty"></div>';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( implode( ';', $hotspot_styles ) ) . '"' .
-						' data-dsgo-hotspot="true"' .
-						' data-dsgo-hotspot-trigger="' . esc_attr( $hotspot_trigger ) . '"' .
-						' data-dsgo-hotspot-position="' . esc_attr( $tooltip_position ) . '"' .
-						' data-dsgo-hotspot-animation="' . esc_attr( $hotspot_animation ) . '">' .
-						'<div class="dsgo-hotspot__image-wrap">' . $hotspot_image_html .
-						'<div class="dsgo-hotspot__items">',
-					'closing' => '</div></div></div>',
-				);
-
-			case 'designsetgo/text-path':
-				// Mirrors src/blocks/text-path/save.js and its TextPathGraphic
-				// component. `pathType: "custom"` is refused by
-				// find_invalid_attribute_values() rather than mirrored: it runs
-				// caller-supplied path data through a tokenizer whose rules are
-				// the security boundary, and a second implementation of that is
-				// a liability, not a feature.
-				$tp_type       = isset( $attributes['pathType'] ) ? (string) $attributes['pathType'] : 'wave';
-				$tp_text       = isset( $attributes['text'] ) ? (string) $attributes['text'] : '';
-				$tp_unique_id  = isset( $attributes['uniqueId'] ) && '' !== $attributes['uniqueId'] ? (string) $attributes['uniqueId'] : 'path';
-				$tp_path_id    = 'dsgo-text-path-' . $tp_unique_id;
-				$tp_alignment  = isset( $attributes['pathAlignment'] ) ? (string) $attributes['pathAlignment'] : 'left';
-				$tp_show_path  = ! empty( $attributes['showPath'] );
-				$tp_direction  = isset( $attributes['direction'] ) ? (string) $attributes['direction'] : 'ltr';
-				$tp_motion     = ! empty( $attributes['motion'] );
-				$tp_motion_dir = isset( $attributes['motionDirection'] ) ? (string) $attributes['motionDirection'] : 'forward';
-
-				$tp_rotation     = self::clamp_number( $attributes['rotation'] ?? 0, -360, 360, 0 );
-				$tp_opacity      = self::clamp_number( $attributes['guideOpacity'] ?? 0.35, 0, 1, 0.35 );
-				$tp_stroke       = self::clamp_number( $attributes['guideStrokeWidth'] ?? 2, 0, 24, 2 );
-				$tp_width        = self::clamp_number( $attributes['pathWidth'] ?? 100, 25, 100, 100 );
-				$tp_start_offset = self::clamp_number( $attributes['startOffset'] ?? 0, -100, 100, 0 );
-				$tp_font_size    = self::clamp_number( $attributes['pathFontSize'] ?? 54, 1, 400, 54 );
-				$tp_word_spacing = self::clamp_number( $attributes['wordSpacing'] ?? 0, -40, 100, 0 );
-				$tp_padding      = self::clamp_number( $attributes['pathPadding'] ?? 0, -200, 200, 0 );
-
-				$tp_guide_color  = self::safe_text_path_color( $attributes['guideColor'] ?? '' );
-				$tp_circle_color = self::safe_text_path_color( $attributes['circleBackgroundColor'] ?? '' );
-				$tp_url          = self::safe_text_path_url( $attributes['url'] ?? '' );
-
-				$tp_styles = array(
-					'--dsgo-text-path-rotation:' . $tp_rotation . 'deg',
-					'--dsgo-text-path-guide-opacity:' . self::format_js_number( (float) $tp_opacity ),
-					'--dsgo-text-path-guide-stroke-width:' . self::format_js_number( (float) $tp_stroke ),
-					'--dsgo-text-path-width:' . $tp_width . '%',
-				);
-				if ( '' !== $tp_guide_color ) {
-					$tp_styles[] = '--dsgo-text-path-guide-color:' . self::convert_color_value_to_css_var( $tp_guide_color );
-				}
-				if ( '' !== $tp_circle_color ) {
-					$tp_styles[] = '--dsgo-text-path-circle-background:' . self::convert_color_value_to_css_var( $tp_circle_color );
-				}
-
-				$class_parts = array( 'wp-block-designsetgo-text-path' );
-				if ( isset( $attributes['align'] ) && in_array( $attributes['align'], array( 'wide', 'full' ), true ) ) {
-					$class_parts[] = 'align' . $attributes['align'];
-				}
-				$class_parts[] = 'dsgo-text-path';
-				if ( 'center' === $tp_alignment || 'right' === $tp_alignment ) {
-					$class_parts[] = 'dsgo-text-path--align-' . $tp_alignment;
-				}
-
-				$tp_motion_attrs = '';
-				if ( $tp_motion ) {
-					$tp_duration      = is_numeric( $attributes['motionDuration'] ?? null ) ? (float) $attributes['motionDuration'] : 12;
-					$tp_duration      = 0.0 === $tp_duration ? 12 : $tp_duration;
-					$tp_duration      = max( 2, min( 120, $tp_duration ) );
-					$tp_motion_attrs  = ' data-dsgo-text-path-motion="true"';
-					$tp_motion_attrs .= ' data-dsgo-text-path-motion-duration="' . esc_attr( self::format_js_number( (float) $tp_duration ) ) . '"';
-					$tp_motion_attrs .= ' data-dsgo-text-path-motion-direction="' . ( 'reverse' === $tp_motion_dir ? 'reverse' : 'forward' ) . '"';
-				}
-
-				$tp_path = self::get_text_path_data( $tp_type, $attributes['arcSize'] ?? 100 );
-
-				$tp_svg  = '<svg viewBox="' . esc_attr( $tp_path['viewBox'] ) . '" role="img"';
-				$tp_svg .= '' !== $tp_text ? ' aria-label="' . esc_attr( $tp_text ) . '"' : '';
-				$tp_svg .= '>';
-
-				if ( 'circle' === $tp_type && '' !== $tp_circle_color ) {
-					$tp_svg .= '<circle class="dsgo-text-path__circle-background" cx="500" cy="500" r="500" aria-hidden="true"></circle>';
-				}
-
-				$tp_svg .= '<defs><path id="' . esc_attr( $tp_path_id ) . '" d="' . esc_attr( $tp_path['d'] ) . '"></path></defs>';
-
-				if ( $tp_show_path ) {
-					$tp_svg .= '<path class="dsgo-text-path__guide" d="' . esc_attr( $tp_path['d'] ) . '"></path>';
-				}
-
-				$tp_offset = $tp_start_offset . '%';
-
-				$tp_svg .= '<text direction="' . ( 'rtl' === $tp_direction ? 'rtl' : 'ltr' ) . '"' .
-					' style="' . esc_attr( 'font-size:' . $tp_font_size . 'px;word-spacing:' . $tp_word_spacing . 'px' ) . '">' .
-					'<textPath href="#' . esc_attr( $tp_path_id ) . '" startOffset="' . esc_attr( $tp_offset ) . '"' .
-					' data-dsgo-text-path-offset="' . esc_attr( (string) $tp_start_offset ) . '">';
-
-				$tp_svg .= ( 0 === (int) $tp_padding && is_int( $tp_padding + 0 ) && 0.0 === (float) $tp_padding )
-					? esc_html( $tp_text )
-					: '<tspan dy="' . esc_attr( (string) $tp_padding ) . '">' . esc_html( $tp_text ) . '</tspan>';
-
-				$tp_svg .= '</textPath></text></svg>';
-
-				if ( '' !== $tp_url ) {
-					$tp_target = ! empty( $attributes['target'] ) ? ' target="_blank"' : '';
-					$tp_svg    = '<a href="' . esc_url( $tp_url ) . '"' . $tp_target . ' rel="noopener noreferrer">' . $tp_svg . '</a>';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( implode( ';', $tp_styles ) ) . '"' .
-						$tp_motion_attrs . '>' . $tp_svg,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/comparison-table':
-				// Mirrors src/blocks/comparison-table/save.js. The block holds no
-				// inner blocks: the whole table is built from the columns and
-				// rows attributes.
-				$table_columns   = ( isset( $attributes['columns'] ) && is_array( $attributes['columns'] ) ) ? $attributes['columns'] : array();
-				$table_rows      = ( isset( $attributes['rows'] ) && is_array( $attributes['rows'] ) ) ? $attributes['rows'] : array();
-				$alternating     = ! empty( $attributes['alternatingRows'] );
-				$responsive_mode = isset( $attributes['responsiveMode'] ) ? (string) $attributes['responsiveMode'] : 'scroll';
-				$show_ctas       = ! empty( $attributes['showCtaButtons'] );
-				$cta_style       = isset( $attributes['ctaStyle'] ) ? (string) $attributes['ctaStyle'] : 'filled';
-
-				$class_parts = array( 'wp-block-designsetgo-comparison-table' );
-				if ( isset( $attributes['align'] ) && in_array( $attributes['align'], array( 'wide', 'full' ), true ) ) {
-					$class_parts[] = 'align' . $attributes['align'];
-				}
-				$class_parts[] = 'dsgo-comparison-table';
-				if ( $alternating ) {
-					$class_parts[] = 'dsgo-comparison-table--alternating';
-				}
-				if ( 'stack' === $responsive_mode ) {
-					$class_parts[] = 'dsgo-comparison-table--responsive-stack';
-				}
-				if ( 'scroll' === $responsive_mode ) {
-					$class_parts[] = 'dsgo-comparison-table--responsive-scroll';
-				}
-
-				$table_styles     = array();
-				$table_color_vars = array(
-					'featuredColumnColor'   => '--dsgo-comparison-featured-color',
-					'headerBackgroundColor' => '--dsgo-comparison-header-bg',
-					'headerTextColor'       => '--dsgo-comparison-header-text',
-				);
-				foreach ( $table_color_vars as $attribute_name => $custom_property ) {
-					$colour = isset( $attributes[ $attribute_name ] ) ? (string) $attributes[ $attribute_name ] : '';
-					if ( '' !== $colour ) {
-						$table_styles[] = $custom_property . ':' . self::convert_color_value_to_css_var( $colour );
-					}
-				}
-
-				// Header row.
-				$header_cells = '<th class="dsgo-comparison-table__header-cell dsgo-comparison-table__header-cell--label"></th>';
-				foreach ( $table_columns as $column ) {
-					$col_featured  = ! empty( $column['featured'] );
-					$col_name      = isset( $column['name'] ) ? (string) $column['name'] : '';
-					$col_link      = isset( $column['link'] ) ? (string) $column['link'] : '';
-					$col_link_text = isset( $column['linkText'] ) ? (string) $column['linkText'] : '';
-
-					$header_cells .= '<th class="' . esc_attr(
-						'dsgo-comparison-table__header-cell' . ( $col_featured ? ' dsgo-comparison-table__header-cell--featured' : '' )
-					) . '">';
-
-					if ( $col_featured ) {
-						$header_cells .= '<span class="dsgo-comparison-table__featured-badge">' . esc_html__( 'Popular', 'designsetgo' ) . '</span>';
-					}
-
-					$header_cells .= '<span class="dsgo-comparison-table__column-name">' . wp_kses_post( $col_name ) . '</span>';
-
-					if ( $show_ctas && '' !== $col_link ) {
-						$header_cells .= '<a href="' . esc_url( $col_link ) . '" class="' .
-							esc_attr( 'dsgo-comparison-table__cta dsgo-comparison-table__cta--' . $cta_style ) .
-							'" rel="noopener noreferrer">' .
-							esc_html( '' !== $col_link_text ? $col_link_text : __( 'Get Started', 'designsetgo' ) ) .
-							'</a>';
-					} elseif ( $show_ctas && '' !== $col_link_text ) {
-						$header_cells .= '<span class="' .
-							esc_attr( 'dsgo-comparison-table__cta dsgo-comparison-table__cta--' . $cta_style ) . '">' .
-							esc_html( $col_link_text ) . '</span>';
-					}
-
-					$header_cells .= '</th>';
-				}
-
-				// Body rows.
-				$body_rows = '';
-				foreach ( $table_rows as $row ) {
-					$row_label   = isset( $row['label'] ) ? (string) $row['label'] : '';
-					$row_tooltip = isset( $row['tooltip'] ) ? (string) $row['tooltip'] : '';
-					$row_cells   = ( isset( $row['cells'] ) && is_array( $row['cells'] ) ) ? $row['cells'] : array();
-
-					$body_rows .= '<tr class="dsgo-comparison-table__row">' .
-						'<td class="dsgo-comparison-table__cell dsgo-comparison-table__cell--label">' .
-						'<div class="dsgo-comparison-table__label-wrapper">' .
-						'<span class="dsgo-comparison-table__row-label">' . wp_kses_post( $row_label ) . '</span>';
-
-					if ( '' !== $row_tooltip ) {
-						$body_rows .= '<span class="dsgo-comparison-table__tooltip-trigger" data-tooltip="' . esc_attr( $row_tooltip ) .
-							'" aria-label="' . esc_attr( $row_tooltip ) . '" role="button" tabindex="0">?</span>';
-					}
-
-					$body_rows .= '</div></td>';
-
-					foreach ( $row_cells as $cell_index => $cell ) {
-						$cell_type     = isset( $cell['type'] ) ? (string) $cell['type'] : 'text';
-						$cell_value    = isset( $cell['value'] ) ? (string) $cell['value'] : '';
-						$cell_column   = $table_columns[ $cell_index ] ?? array();
-						$cell_featured = ! empty( $cell_column['featured'] );
-						$cell_label    = isset( $cell_column['name'] ) ? (string) $cell_column['name'] : '';
-
-						$body_rows .= '<td class="' . esc_attr(
-							'dsgo-comparison-table__cell' . ( $cell_featured ? ' dsgo-comparison-table__cell--featured' : '' )
-						) . '" data-label="' . esc_attr( $cell_label ) . '">' .
-							'<div class="dsgo-comparison-table__cell-content">';
-
-						if ( 'check' === $cell_type ) {
-							$body_rows .= '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none"' .
-								' stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"' .
-								' class="dsgo-comparison-table__icon dsgo-comparison-table__icon--check" aria-label="Yes" role="img">' .
-								'<polyline points="20 6 9 17 4 12"></polyline></svg>';
-						} elseif ( 'cross' === $cell_type ) {
-							$body_rows .= '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none"' .
-								' stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"' .
-								' class="dsgo-comparison-table__icon dsgo-comparison-table__icon--cross" aria-label="No" role="img">' .
-								'<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-						} elseif ( 'text' === $cell_type ) {
-							$body_rows .= '<span class="dsgo-comparison-table__cell-text">' . wp_kses_post( $cell_value ) . '</span>';
-						}
-
-						$body_rows .= '</div></td>';
-					}
-
-					$body_rows .= '</tr>';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' .
-						( empty( $table_styles ) ? '' : ' style="' . esc_attr( implode( ';', $table_styles ) ) . '"' ) . '>' .
-						'<div class="dsgo-comparison-table__wrapper">' .
-						'<table class="dsgo-comparison-table__table">' .
-						'<thead class="dsgo-comparison-table__header"><tr>' . $header_cells . '</tr></thead>' .
-						'<tbody class="dsgo-comparison-table__body">' . $body_rows . '</tbody>' .
-						'</table></div>',
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/timeline-item':
-				// Mirrors src/blocks/timeline-item/save.js.
-				//
-				// That save() reads marker styling from parent context, but
-				// WordPress passes NO context to getSaveElement(), so the stored
-				// markup always uses the fallbacks: a circle marker at 16px in
-				// the primary preset colour. Reading the parent's attributes here
-				// would produce markup save() never writes.
-				$item_date       = isset( $attributes['date'] ) ? (string) $attributes['date'] : '';
-				$item_title      = isset( $attributes['title'] ) ? (string) $attributes['title'] : '';
-				$item_image_url  = isset( $attributes['imageUrl'] ) ? (string) $attributes['imageUrl'] : '';
-				$item_is_active  = ! empty( $attributes['isActive'] );
-				$item_link_url   = isset( $attributes['linkUrl'] ) ? (string) $attributes['linkUrl'] : '';
-				$item_link_targ  = isset( $attributes['linkTarget'] ) ? (string) $attributes['linkTarget'] : '_self';
-				$item_marker_col = isset( $attributes['customMarkerColor'] ) ? (string) $attributes['customMarkerColor'] : '';
-
-				$item_safe_url = self::safe_hotspot_url( $item_link_url );
-
-				$effective_marker = '' !== $item_marker_col
-					? $item_marker_col
-					: 'var(--wp--preset--color--primary, #2563eb)';
-
-				$class_parts = array( 'wp-block-designsetgo-timeline-item', 'dsgo-timeline-item' );
-				if ( $item_is_active ) {
-					$class_parts[] = 'dsgo-timeline-item--active';
-				}
-				if ( '' !== $item_image_url ) {
-					$class_parts[] = 'dsgo-timeline-item--has-image';
-				}
-				if ( '' !== $item_safe_url ) {
-					$class_parts[] = 'dsgo-timeline-item--has-link';
-				}
-
-				$item_style = '' !== $item_marker_col
-					? ' style="' . esc_attr( '--dsgo-timeline-item-marker-color:' . self::convert_color_value_to_css_var( $item_marker_col ) ) . '"'
-					: '';
-
-				// Marker: an image when set, otherwise the default circle SVG.
-				if ( '' !== $item_image_url ) {
-					$marker_inner = '<img src="' . esc_url( $item_image_url ) . '" alt="" class="dsgo-timeline-item__marker-image"' .
-						' style="' . esc_attr( 'width:16px;height:16px;border-radius:50%;object-fit:cover' ) . '"/>';
-				} else {
-					$marker_inner = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' .
-						'<circle cx="12" cy="12" r="10" fill="' . esc_attr( $effective_marker ) . '"' .
-						' stroke="' . esc_attr( $effective_marker ) . '" stroke-width="2"></circle></svg>';
-				}
-
-				$marker_html = '<div class="dsgo-timeline-item__marker" aria-hidden="true">' . $marker_inner . '</div>';
-
-				$date_html  = '' !== $item_date
-					? '<span class="dsgo-timeline-item__date">' . wp_kses_post( $item_date ) . '</span>'
-					: '';
-				$title_html = '' !== $item_title
-					? '<h3 class="dsgo-timeline-item__title">' . wp_kses_post( $item_title ) . '</h3>'
-					: '';
-
-				if ( '' !== $item_safe_url ) {
-					$link_rel   = '_blank' === $item_link_targ ? ' rel="noopener noreferrer"' : '';
-					$open_link  = '<a href="' . esc_url( $item_safe_url ) . '" target="' . esc_attr( $item_link_targ ) . '"' . $link_rel .
-						' class="dsgo-timeline-item__link">';
-					$close_link = '</a>';
-				} else {
-					$open_link  = '';
-					$close_link = '';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $item_style . '>' .
-						$marker_html . $open_link .
-						'<div class="dsgo-timeline-item__wrapper">' . $date_html . $title_html .
-						'<div class="dsgo-timeline-item__content">',
-					'closing' => '</div></div>' . $close_link . '</div>',
-				);
-
-			case 'designsetgo/hotspot-item':
-				// Mirrors src/blocks/hotspot-item/save.js.
-				$item_unique_id = isset( $attributes['uniqueId'] ) && '' !== $attributes['uniqueId']
-					? (string) $attributes['uniqueId']
-					: 'item';
-				$marker_id      = 'dsgo-hotspot-marker-' . $item_unique_id;
-				$tooltip_id     = 'dsgo-hotspot-tooltip-' . $item_unique_id;
-
-				$item_x        = self::clamp_hotspot_coordinate( $attributes['x'] ?? 50 );
-				$item_y        = self::clamp_hotspot_coordinate( $attributes['y'] ?? 50 );
-				$origin_x      = isset( $attributes['originX'] ) ? (string) $attributes['originX'] : 'center';
-				$origin_y      = isset( $attributes['originY'] ) ? (string) $attributes['originY'] : 'center';
-				$item_label    = isset( $attributes['label'] ) ? (string) $attributes['label'] : '+';
-				$item_icon     = isset( $attributes['icon'] ) ? (string) $attributes['icon'] : '';
-				$item_tooltip  = isset( $attributes['tooltip'] ) ? (string) $attributes['tooltip'] : 'Add a description';
-				$item_position = isset( $attributes['tooltipPosition'] ) ? (string) $attributes['tooltipPosition'] : 'inherit';
-				$item_trigger  = isset( $attributes['trigger'] ) ? (string) $attributes['trigger'] : 'inherit';
-				$item_anim     = isset( $attributes['animation'] ) ? (string) $attributes['animation'] : 'inherit';
-				$item_order    = self::numeric_attribute( $attributes['sequenceOrder'] ?? 0, 0 );
-				$safe_url      = self::safe_hotspot_url( $attributes['url'] ?? '' );
-
-				$item_styles = array(
-					'--dsgo-hotspot-x:' . $item_x . '%',
-					'--dsgo-hotspot-y:' . $item_y . '%',
-				);
-				// save.js writes the width only for a real number, so an unset
-				// width must not appear at all.
-				if ( isset( $attributes['tooltipWidth'] ) && is_numeric( $attributes['tooltipWidth'] ) ) {
-					$item_styles[] = '--dsgo-hotspot-tooltip-width:' . self::numeric_attribute( $attributes['tooltipWidth'] ) . 'px';
-				}
-				$item_styles[] = '--dsgo-hotspot-sequence-order:' . $item_order;
-				$item_styles[] = '--dsgo-hotspot-origin-x:' . $origin_x;
-				$item_styles[] = '--dsgo-hotspot-origin-y:' . $origin_y;
-
-				$class_parts = array(
-					'wp-block-designsetgo-hotspot-item',
-					'dsgo-hotspot-item',
-					'dsgo-hotspot-item--position-' . $item_position,
-					'dsgo-hotspot-item--animation-' . $item_anim,
-					'dsgo-hotspot-item--origin-x-' . $origin_x,
-					'dsgo-hotspot-item--origin-y-' . $origin_y,
-				);
-
-				$is_linked = '' !== $safe_url;
-
-				// Attribute order here matches save.js so the emitted markup is
-				// byte-comparable; the validator is order-insensitive, but the
-				// conditions are not interchangeable.
-				$marker_attrs = ' class="dsgo-hotspot-item__marker" id="' . esc_attr( $marker_id ) . '"';
-				if ( ! $is_linked && 'click' === $item_trigger ) {
-					$marker_attrs .= ' aria-expanded="false" aria-controls="' . esc_attr( $tooltip_id ) . '"';
-				}
-				if ( $is_linked || 'hover' === $item_trigger ) {
-					$marker_attrs .= ' aria-describedby="' . esc_attr( $tooltip_id ) . '"';
-				}
-				// save.js labels the marker only when its visible content is not
-				// meaningful text.
-				if ( '' !== $item_icon || '' === $item_label || '+' === $item_label ) {
-					$marker_attrs .= ' aria-label="' . esc_attr__( 'Hotspot', 'designsetgo' ) . '"';
-				}
-				$marker_attrs .= ' data-dsgo-hotspot-marker="true"';
-
-				$marker_content = '' !== $item_icon ? $item_icon : ( '' !== $item_label ? $item_label : '+' );
-
-				$marker_html = $is_linked
-					? '<a' . $marker_attrs . ' href="' . esc_url( $safe_url ) . '">' . esc_html( $marker_content ) . '</a>'
-					: '<button' . $marker_attrs . ' type="button">' . esc_html( $marker_content ) . '</button>';
-
-				$item_data_trigger = ( 'inherit' === $item_trigger )
-					? ''
-					: ' data-dsgo-hotspot-trigger="' . esc_attr( $item_trigger ) . '"';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( implode( ';', $item_styles ) ) . '"' .
-						' data-dsgo-hotspot-item="true"' . $item_data_trigger . '>' .
-						$marker_html .
-						'<div class="dsgo-hotspot-item__tooltip" id="' . esc_attr( $tooltip_id ) . '" role="tooltip"' .
-						' data-dsgo-hotspot-tooltip="true" hidden aria-hidden="true">' .
-						'<span>' . wp_kses_post( $item_tooltip ) . '</span></div>',
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/advanced-heading':
-				// Mirrors src/blocks/advanced-heading/save.js. The animated
-				// headline variant is refused by find_invalid_attribute_values()
-				// rather than approximated here.
-				$heading_level = self::numeric_attribute( $attributes['level'] ?? 2, 2 );
-				if ( ! in_array( (int) $heading_level, array( 1, 2, 3, 4, 5, 6 ), true ) ) {
-					$heading_level = 2;
-				}
-				$heading_tag = 'h' . (int) $heading_level;
-				$text_align  = isset( $attributes['textAlign'] ) ? (string) $attributes['textAlign'] : '';
-
-				$class_parts   = array( 'wp-block-designsetgo-advanced-heading' );
-				$heading_align = self::align_class( $block_name, $attributes );
-				if ( '' !== $heading_align ) {
-					$class_parts[] = $heading_align;
-				}
-				$class_parts[] = 'dsgo-advanced-heading';
-				if ( '' !== $text_align ) {
-					$class_parts[] = 'has-text-align-' . $text_align;
-				}
-
-				$block_gap   = $attributes['style']['spacing']['blockGap'] ?? '';
-				$inner_style = ( is_string( $block_gap ) && '' !== $block_gap )
-					? ' style="' . esc_attr( '--dsgo-segment-gap:' . self::wp_shorthand_to_css_var( $block_gap ) ) . '"'
-					: '';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '">' .
-						'<' . $heading_tag . ' class="dsgo-advanced-heading__inner"' . $inner_style . '>',
-					'closing' => '</' . $heading_tag . '></div>',
-				);
-
-			case 'designsetgo/blobs':
-				// Mirrors src/blocks/blobs/save.js.
-				$blob_shape     = isset( $attributes['blobShape'] ) ? (string) $attributes['blobShape'] : 'shape-1';
-				$blob_animation = isset( $attributes['blobAnimation'] ) ? (string) $attributes['blobAnimation'] : 'none';
-				$blob_duration  = isset( $attributes['animationDuration'] ) ? (string) $attributes['animationDuration'] : '8s';
-				$blob_easing    = isset( $attributes['animationEasing'] ) ? (string) $attributes['animationEasing'] : 'ease-in-out';
-				$blob_size      = isset( $attributes['size'] ) ? (string) $attributes['size'] : '300px';
-				$blob_height    = isset( $attributes['height'] ) ? (string) $attributes['height'] : '';
-				$blob_max_width = isset( $attributes['maxWidth'] ) ? $attributes['maxWidth'] : null;
-				$enable_overlay = ! empty( $attributes['enableOverlay'] );
-				$overlay_color  = isset( $attributes['overlayColor'] ) ? (string) $attributes['overlayColor'] : '';
-				$overlay_pct    = isset( $attributes['overlayOpacity'] ) && is_numeric( $attributes['overlayOpacity'] )
-					? (float) $attributes['overlayOpacity']
-					: 80;
-
-				// hasExplicitString(): a non-empty trimmed string.
-				$has_max_width = is_string( $blob_max_width ) && '' !== trim( $blob_max_width );
-
-				$wrapper_classes = array( 'wp-block-designsetgo-blobs' );
-				$blobs_align     = self::align_class( $block_name, $attributes );
-				if ( '' !== $blobs_align ) {
-					$wrapper_classes[] = $blobs_align;
-				}
-				$wrapper_classes[] = 'dsgo-blobs-wrapper';
-				if ( $has_max_width ) {
-					$wrapper_classes[] = 'dsgo-has-max-width';
-				}
-
-				$blob_classes = array( 'dsgo-blobs' );
-				if ( '' !== $blob_shape ) {
-					$blob_classes[] = 'dsgo-blobs--' . $blob_shape;
-				}
-				if ( '' !== $blob_animation && 'none' !== $blob_animation ) {
-					$blob_classes[] = 'dsgo-blobs--' . $blob_animation;
-				}
-
-				// save.js writes size, duration and easing unconditionally;
-				// height only when set.
-				$blob_styles = array( '--dsgo-blob-size:' . $blob_size );
-				if ( '' !== $blob_height ) {
-					$blob_styles[] = '--dsgo-blob-height:' . $blob_height;
-				}
-				$blob_styles[] = '--dsgo-blob-animation-duration:' . $blob_duration;
-				$blob_styles[] = '--dsgo-blob-animation-easing:' . $blob_easing;
-
-				$overlay_html = '';
-				if ( $enable_overlay ) {
-					$overlay_html = '<div class="dsgo-blobs__overlay" style="' . esc_attr(
-						'background-color:' . self::convert_color_value_to_css_var( $overlay_color ) .
-						';opacity:' . self::format_js_number( $overlay_pct / 100 )
-					) . '"></div>';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $wrapper_classes ) ) . '"' .
-						( $has_max_width ? ' style="' . esc_attr( '--dsgo-blob-max-width:' . $blob_max_width ) . '"' : '' ) . '>' .
-						'<div class="' . esc_attr( implode( ' ', $blob_classes ) ) . '" style="' . esc_attr( implode( ';', $blob_styles ) ) . '"' .
-						' data-blob-animation="' . esc_attr( $blob_animation ) . '">' .
-						$overlay_html .
-						'<div class="dsgo-blobs__shape"><div class="dsgo-blobs__content">',
-					'closing' => '</div></div></div></div>',
-				);
-
-			case 'designsetgo/heading-segment':
-				// Mirrors src/blocks/heading-segment/save.js. Only the "normal"
-				// role is generated: the animated role serializes a JSON word
-				// list and an inline highlight SVG, which get_serialization_gap()
-				// refuses rather than approximate.
-				$segment_text = isset( $attributes['content'] ) && is_string( $attributes['content'] ) && '' !== trim( $attributes['content'] )
-					? $attributes['content']
-					: ( isset( $attributes['normalContent'] ) && is_string( $attributes['normalContent'] ) ? $attributes['normalContent'] : '' );
-
-				// save() returns null for a non-animated segment with no text,
-				// which WordPress serializes as a self-closing comment with no
-				// markup at all. Emitting empty spans instead made every
-				// text-less segment invalid.
-				if ( '' === trim( $segment_text ) ) {
-					return array(
-						'opening' => '',
-						'closing' => '',
-					);
-				}
-
-				return array(
-					'opening' => '<span class="wp-block-designsetgo-heading-segment dsgo-heading-segment">' .
-						'<span class="dsgo-heading-segment__text">' . wp_kses_post( $segment_text ),
-					'closing' => '</span></span>',
-				);
-
-			case 'designsetgo/timeline':
-				// Mirrors src/blocks/timeline/save.js.
-				$line_color         = isset( $attributes['lineColor'] ) ? (string) $attributes['lineColor'] : '';
-				$line_thickness     = self::numeric_attribute( $attributes['lineThickness'] ?? 2, 2 );
-				$connector_style    = isset( $attributes['connectorStyle'] ) ? (string) $attributes['connectorStyle'] : 'solid';
-				$marker_style       = isset( $attributes['markerStyle'] ) ? (string) $attributes['markerStyle'] : 'circle';
-				$marker_size        = self::numeric_attribute( $attributes['markerSize'] ?? 16, 16 );
-				$marker_color       = isset( $attributes['markerColor'] ) ? (string) $attributes['markerColor'] : '';
-				$marker_border      = isset( $attributes['markerBorderColor'] ) ? (string) $attributes['markerBorderColor'] : '';
-				$item_spacing       = isset( $attributes['itemSpacing'] ) ? (string) $attributes['itemSpacing'] : '2rem';
-				$animate_on_scroll  = ! empty( $attributes['animateOnScroll'] );
-				$animation_duration = self::numeric_attribute( $attributes['animationDuration'] ?? 600, 600 );
-				$stagger_delay      = self::numeric_attribute( $attributes['staggerDelay'] ?? 100, 100 );
-				$orientation        = isset( $attributes['orientation'] ) ? (string) $attributes['orientation'] : 'vertical';
-				$timeline_layout    = isset( $attributes['layout'] ) ? $attributes['layout'] : 'alternating';
-
-				// save.js writes every custom property unconditionally, falling
-				// back to the same literals used here.
-				$timeline_styles = array(
-					'--dsgo-timeline-line-color:' . ( '' !== $line_color ? $line_color : 'var(--wp--preset--color--contrast, #e5e7eb)' ),
-					'--dsgo-timeline-line-thickness:' . $line_thickness . 'px',
-					'--dsgo-timeline-connector-style:' . $connector_style,
-					'--dsgo-timeline-marker-size:' . $marker_size . 'px',
-					'--dsgo-timeline-marker-color:' . ( '' !== $marker_color ? $marker_color : 'var(--wp--preset--color--primary, #2563eb)' ),
-					'--dsgo-timeline-marker-border-color:' . ( '' !== $marker_border ? $marker_border : ( '' !== $marker_color ? $marker_color : 'var(--wp--preset--color--primary, #2563eb)' ) ),
-					'--dsgo-timeline-item-spacing:' . $item_spacing,
-					'--dsgo-timeline-animation-duration:' . $animation_duration . 'ms',
-				);
-
-				$class_parts = array( 'wp-block-designsetgo-timeline' );
-				if ( isset( $attributes['align'] ) && in_array( $attributes['align'], array( 'wide', 'full' ), true ) ) {
-					$class_parts[] = 'align' . $attributes['align'];
-				}
-				$class_parts[] = 'dsgo-timeline';
-				if ( '' !== $orientation ) {
-					$class_parts[] = 'dsgo-timeline--' . $orientation;
-				}
-				if ( is_string( $timeline_layout ) && '' !== $timeline_layout ) {
-					$class_parts[] = 'dsgo-timeline--layout-' . $timeline_layout;
-				}
-				if ( '' !== $marker_style ) {
-					$class_parts[] = 'dsgo-timeline--marker-' . $marker_style;
-				}
-				if ( $animate_on_scroll ) {
-					$class_parts[] = 'dsgo-timeline--animate';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( implode( ';', $timeline_styles ) ) . '"' .
-						' data-animate="' . ( $animate_on_scroll ? 'true' : 'false' ) . '"' .
-						' data-animation-duration="' . esc_attr( (string) $animation_duration ) . '"' .
-						' data-stagger-delay="' . esc_attr( (string) $stagger_delay ) . '">' .
-						'<div class="dsgo-timeline__line" aria-hidden="true"></div>' .
-						'<div class="dsgo-timeline__items">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/query':
-			case 'designsetgo/query-results':
-				// Mirrors src/blocks/query/save.js and query-results/save.js.
-				// Both are dynamic — render.php owns the frontend HTML — but
-				// their save() still emits a wrapper div so WordPress persists
-				// the per-item template blocks inside it. Stored markup without
-				// that wrapper is invalid in the editor.
-				$query_slug    = str_replace( 'designsetgo/', '', $block_name );
-				$query_classes = 'wp-block-designsetgo-' . $query_slug;
-				$query_align   = self::align_class( $block_name, $attributes );
-				if ( '' !== $query_align ) {
-					$query_classes .= ' ' . $query_align;
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( $query_classes ) . '">',
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/query-no-results':
-				// Mirrors src/blocks/query-no-results/save.js.
-				return array(
-					'opening' => '<div class="wp-block-designsetgo-query-no-results dsgo-query-no-results">',
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/scroll-slide':
-				// Mirrors src/blocks/scroll-slide/save.js. A hybrid block: it has
-				// a render.php AND a save.js, so the stored markup must carry the
-				// wrapper the frontend looks for.
-				$nav_heading = isset( $attributes['navHeading'] ) ? (string) $attributes['navHeading'] : '';
-
-				return array(
-					'opening' => '<div class="wp-block-designsetgo-scroll-slide dsgo-scroll-slide"' .
-						' data-dsgo-nav-heading="' . esc_attr( $nav_heading ) . '">',
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/scroll-slides':
-				// Mirrors src/blocks/scroll-slides/save.js.
-				$min_height       = ( isset( $attributes['minHeight'] ) && '' !== $attributes['minHeight'] ) ? (string) $attributes['minHeight'] : '100vh';
-				$max_height       = isset( $attributes['maxHeight'] ) ? (string) $attributes['maxHeight'] : '';
-				$constrain_width  = ! isset( $attributes['constrainWidth'] ) || $attributes['constrainWidth'];
-				$content_width    = isset( $attributes['contentWidth'] ) ? (string) $attributes['contentWidth'] : '';
-				$overlay_color    = isset( $attributes['overlayColor'] ) ? (string) $attributes['overlayColor'] : '';
-				$nav_color        = isset( $attributes['navColor'] ) ? (string) $attributes['navColor'] : '';
-				$nav_active_color = isset( $attributes['navActiveColor'] ) ? (string) $attributes['navActiveColor'] : '';
-
-				$class_parts = array( 'wp-block-designsetgo-scroll-slides' );
-				if ( isset( $attributes['align'] ) && in_array( $attributes['align'], array( 'wide', 'full' ), true ) ) {
-					$class_parts[] = 'align' . $attributes['align'];
-				}
-				$class_parts[] = 'dsgo-scroll-slides';
-				if ( '' !== $overlay_color ) {
-					$class_parts[] = 'dsgo-scroll-slides--has-overlay';
-				}
-				if ( ! $constrain_width ) {
-					$class_parts[] = 'dsgo-scroll-slides--no-width-constraint';
-				}
-				if ( '' !== $nav_color || '' !== $nav_active_color ) {
-					$class_parts[] = 'dsgo-scroll-slides--has-nav-color';
-				}
-
-				$slides_styles = array();
-				if ( '' !== $overlay_color ) {
-					$slides_styles[] = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( $overlay_color );
-					// Mirrors overlayOpacityFraction(): clamp to 0-100, default
-					// 80, then divide. PHP would print 0.8 as "0.8" like JS does.
-					$opacity         = isset( $attributes['overlayOpacity'] ) && is_numeric( $attributes['overlayOpacity'] )
-						? min( 100, max( 0, (float) $attributes['overlayOpacity'] ) )
-						: 80;
-					$slides_styles[] = '--dsgo-overlay-opacity:' . self::format_js_number( $opacity / 100 );
-				}
-				if ( '' !== $nav_color ) {
-					$slides_styles[] = '--dsgo-nav-color:' . self::convert_color_value_to_css_var( $nav_color );
-				}
-				if ( '' !== $nav_active_color ) {
-					$slides_styles[] = '--dsgo-nav-active-color:' . self::convert_color_value_to_css_var( $nav_active_color );
-				}
-
-				$inner_styles = array();
-				if ( $constrain_width ) {
-					$inner_styles[] = 'max-width:' . ( '' !== $content_width ? $content_width : 'var(--wp--style--global--content-size, 1140px)' );
-					$inner_styles[] = 'margin-left:auto';
-					$inner_styles[] = 'margin-right:auto';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' .
-						' data-dsgo-min-height="' . esc_attr( $min_height ) . '"' .
-						( '' !== $max_height ? ' data-dsgo-max-height="' . esc_attr( $max_height ) . '"' : '' ) .
-						( empty( $slides_styles ) ? '' : ' style="' . esc_attr( implode( ';', $slides_styles ) ) . '"' ) . '>' .
-						'<div class="dsgo-scroll-slides__inner"' .
-						( empty( $inner_styles ) ? '' : ' style="' . esc_attr( implode( ';', $inner_styles ) ) . '"' ) . '>' .
-						'<div class="dsgo-scroll-slides__panels">',
-					'closing' => '</div></div></div>',
-				);
-
-			case 'designsetgo/sticky-sections':
-				// Mirrors src/blocks/sticky-sections/save.js.
-				$sticky_offset = ( isset( $attributes['stickyOffset'] ) && '' !== $attributes['stickyOffset'] )
-					? (string) $attributes['stickyOffset']
-					: '0px';
-
-				$class_parts = array( 'wp-block-designsetgo-sticky-sections' );
-				if ( isset( $attributes['align'] ) && in_array( $attributes['align'], array( 'wide', 'full' ), true ) ) {
-					$class_parts[] = 'align' . $attributes['align'];
-				}
-				$class_parts[] = 'dsgo-sticky-sections';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' .
-						esc_attr( '--dsgo-sticky-offset:' . $sticky_offset ) . '">',
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/section-divider':
-				// Mirrors src/blocks/section-divider/save.js plus its utils/.
-				$class_parts = array( 'wp-block-designsetgo-section-divider' );
-				if ( isset( $attributes['align'] ) && in_array( $attributes['align'], array( 'wide', 'full' ), true ) ) {
-					$class_parts[] = 'align' . $attributes['align'];
-				}
-
-				// Wrapper style: background only, and only when set.
-				$wrapper_styles = array();
-				if ( ! empty( $attributes['backgroundColor'] ) && is_string( $attributes['backgroundColor'] ) ) {
-					$wrapper_styles[] = '--dsgo-section-divider-bg:' .
-						self::convert_color_value_to_css_var( $attributes['backgroundColor'] );
-				}
-
-				// Shape style: each custom property is emitted only when the
-				// attribute differs from the CSS-inherited default, so a default
-				// divider carries no inline style at all.
-				$shape_styles = array();
-				if ( ! empty( $attributes['fillColor'] ) && is_string( $attributes['fillColor'] ) ) {
-					$shape_styles[] = '--dsgo-section-divider-fill:' .
-						self::convert_color_value_to_css_var( $attributes['fillColor'] );
-				}
-				if ( self::is_explicit_shape_size( $attributes['height'] ?? null ) ) {
-					$shape_styles[] = '--dsgo-shape-height:' . $attributes['height'] . 'px';
-				}
-				if ( self::is_explicit_shape_size( $attributes['width'] ?? null ) ) {
-					$shape_styles[] = '--dsgo-shape-width:' . $attributes['width'] . '%';
-				}
-				if ( ! empty( $attributes['flipX'] ) ) {
-					$shape_styles[] = '--dsgo-shape-flip-x:-1';
-				}
-				if ( ! empty( $attributes['flipY'] ) ) {
-					$shape_styles[] = '--dsgo-shape-flip-y:-1';
-				}
-
-				$shape       = isset( $attributes['shape'] ) ? (string) $attributes['shape'] : 'inherit';
-				$shape_class = 'inherit' === $shape ? 'is-shape-inherit' : 'is-shape-' . $shape;
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' .
-						( empty( $wrapper_styles ) ? '' : ' style="' . esc_attr( implode( ';', $wrapper_styles ) ) . '"' ) . '>' .
-						'<div class="' . esc_attr( 'dsgo-section-divider__shape dsgo-shape-divider ' . $shape_class ) . '"' .
-						( empty( $shape_styles ) ? '' : ' style="' . esc_attr( implode( ';', $shape_styles ) ) . '"' ) .
-						' aria-hidden="true"></div>',
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/fifty-fifty':
-				// Mirrors src/blocks/fifty-fifty/save.js.
-				$media_position = ( isset( $attributes['mediaPosition'] ) && 'right' === $attributes['mediaPosition'] ) ? 'right' : 'left';
-				$media_url      = isset( $attributes['mediaUrl'] ) ? (string) $attributes['mediaUrl'] : '';
-				$media_alt      = isset( $attributes['mediaAlt'] ) ? (string) $attributes['mediaAlt'] : '';
-				$focal_point    = ( isset( $attributes['focalPoint'] ) && is_array( $attributes['focalPoint'] ) ) ? $attributes['focalPoint'] : null;
-				$min_height     = isset( $attributes['minHeight'] ) ? (string) $attributes['minHeight'] : '';
-				$vertical_align = isset( $attributes['verticalAlignment'] ) ? (string) $attributes['verticalAlignment'] : '';
-				$content_pad    = isset( $attributes['contentPadding'] ) ? $attributes['contentPadding'] : '';
-
-				$class_parts = array( 'wp-block-designsetgo-fifty-fifty' );
-				if ( isset( $attributes['align'] ) && 'full' === $attributes['align'] ) {
-					$class_parts[] = 'alignfull';
-				}
-				$class_parts[] = 'dsgo-fifty-fifty';
-				$class_parts[] = 'dsgo-fifty-fifty--media-' . $media_position;
-
-				$fifty_styles = array();
-
-				// save.js only writes minHeight when it matches this pattern.
-				if ( '' !== $min_height && preg_match( '/^[\d.]+(px|vh|vw|em|rem|%)$/', $min_height ) ) {
-					$fifty_styles[] = '--dsgo-fifty-fifty-min-height:' . $min_height;
-				}
-
-				$align_items_map = array(
-					'top'    => 'flex-start',
-					'center' => 'center',
-					'bottom' => 'flex-end',
-				);
-				// Always written: save.js falls back to 'center'.
-				$fifty_styles[] = '--dsgo-fifty-fifty-content-justify:' . ( $align_items_map[ $vertical_align ] ?? 'center' );
-
-				$content_pad_css = is_string( $content_pad ) ? self::wp_shorthand_to_css_var( $content_pad ) : '';
-				if ( '' !== $content_pad_css ) {
-					$fifty_styles[] = '--dsgo-fifty-fifty-content-padding:' . $content_pad_css;
-				}
-
-				// The media <img> is emitted only for an http(s) URL, matching
-				// isValidImageUrl() in save.js.
-				$media_html = '';
-				if ( '' !== $media_url && preg_match( '#^https?://#', $media_url ) ) {
-					$object_position = '';
-					if ( $focal_point && isset( $focal_point['x'], $focal_point['y'] ) ) {
-						$object_position = ' style="object-position:' .
-							esc_attr( ( (float) $focal_point['x'] * 100 ) . '% ' . ( (float) $focal_point['y'] * 100 ) . '%' ) . '"';
-					}
-
-					$media_html = '<img src="' . esc_url( $media_url ) . '" alt="' . esc_attr( $media_alt ) . '"' .
-						$object_position . ' loading="lazy"' .
-						( '' === $media_alt ? ' aria-hidden="true"' : '' ) . '/>';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( implode( ';', $fifty_styles ) ) . '">' .
-						'<div class="dsgo-fifty-fifty__media">' . $media_html . '</div>' .
-						'<div class="dsgo-fifty-fifty__content"><div class="dsgo-fifty-fifty__content-inner">',
-					'closing' => '</div></div></div>',
-				);
-
-			case 'designsetgo/row':
-				$constrain_width = isset( $attributes['constrainWidth'] ) ? $attributes['constrainWidth'] : false;
-				$content_width   = isset( $attributes['contentWidth'] ) ? $attributes['contentWidth'] : '';
-				$mobile_stack    = isset( $attributes['mobileStack'] ) ? $attributes['mobileStack'] : false;
-				$align           = isset( $attributes['align'] ) ? $attributes['align'] : 'full';
-				$layout          = isset( $attributes['layout'] ) ? $attributes['layout'] : array();
-				$justify_content = isset( $layout['justifyContent'] ) ? $layout['justifyContent'] : 'left';
-				$flex_wrap       = isset( $layout['flexWrap'] ) ? $layout['flexWrap'] : 'nowrap';
-
-				// Build outer classes (order: wp-block-*, alignX, dsgo-*).
-				$outer_class_parts = array( 'wp-block-designsetgo-row' );
-				if ( 'full' === $align ) {
-					$outer_class_parts[] = 'alignfull';
-				} elseif ( 'wide' === $align ) {
-					$outer_class_parts[] = 'alignwide';
-				}
-				$outer_class_parts[] = 'dsgo-flex';
-				if ( self::has_overlay( $attributes ) ) {
-					$outer_class_parts[] = 'dsgo-flex--has-overlay';
-				}
-				if ( $mobile_stack ) {
-					$outer_class_parts[] = 'dsgo-flex--mobile-stack';
-				}
-				if ( ! $constrain_width ) {
-					$outer_class_parts[] = 'dsgo-no-width-constraint';
-				}
-
-				// Attribute defaults replace the entire style object, never deep-merge.
-				$style          = $attributes['style'] ?? ( Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? array() );
-				$support_styles = self::get_block_support_styles( $style )['styles'];
-
-				// Inner div styles with gap.
-				$inner_styles       = array(
-					'display:flex',
-					'justify-content:' . esc_attr( $justify_content ),
-					'flex-wrap:' . esc_attr( $flex_wrap ),
-				);
-				$vertical_alignment = $layout['verticalAlignment'] ?? '';
-				$align_map          = array(
-					'top'           => 'flex-start',
-					'center'        => 'center',
-					'bottom'        => 'flex-end',
-					'stretch'       => 'stretch',
-					'space-between' => 'space-between',
-				);
-				if ( isset( $align_map[ $vertical_alignment ] ) ) {
-					$inner_styles[] = 'align-items:' . $align_map[ $vertical_alignment ];
-				}
-				$gap = self::spacing_gap( $style['spacing']['blockGap'] ?? null );
-				if ( is_string( $gap ) && '' !== $gap ) {
-					$inner_styles[] = 'gap:' . $gap;
-				}
-				if ( $constrain_width ) {
-					$max_width      = $content_width ? $content_width : 'var(--wp--style--global--content-size, 1140px)';
-					$inner_styles[] = 'max-width:' . esc_attr( $max_width );
-					$inner_styles[] = 'margin-left:auto';
-					$inner_styles[] = 'margin-right:auto';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' .
-						esc_attr( implode( ';', array_merge( self::container_hover_styles( $attributes ), $support_styles ) ) ) .
-						'"><div class="dsgo-flex__inner" style="' . esc_attr( implode( ';', $inner_styles ) ) . '">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/grid':
-				$desktop_cols    = isset( $attributes['desktopColumns'] ) ? self::numeric_attribute( $attributes['desktopColumns'] ) : 3;
-				$tablet_cols     = isset( $attributes['tabletColumns'] ) ? self::numeric_attribute( $attributes['tabletColumns'] ) : 2;
-				$mobile_cols     = isset( $attributes['mobileColumns'] ) ? self::numeric_attribute( $attributes['mobileColumns'] ) : 1;
-				$align_items     = isset( $attributes['alignItems'] ) ? $attributes['alignItems'] : 'stretch';
-				$constrain_width = isset( $attributes['constrainWidth'] ) ? $attributes['constrainWidth'] : false;
-				$content_width   = isset( $attributes['contentWidth'] ) ? $attributes['contentWidth'] : '';
-				$align           = isset( $attributes['align'] ) ? $attributes['align'] : 'full';
-
-				// Build outer classes (order: wp-block-*, alignX, dsgo-*).
-				$outer_class_parts = array( 'wp-block-designsetgo-grid' );
-				if ( 'full' === $align ) {
-					$outer_class_parts[] = 'alignfull';
-				} elseif ( 'wide' === $align ) {
-					$outer_class_parts[] = 'alignwide';
-				}
-				$outer_class_parts[] = 'dsgo-grid';
-				if ( self::has_overlay( $attributes ) ) {
-					$outer_class_parts[] = 'dsgo-grid--has-overlay';
-				}
-				$outer_class_parts[] = 'dsgo-grid-cols-' . $desktop_cols;
-				$outer_class_parts[] = 'dsgo-grid-cols-tablet-' . $tablet_cols;
-				$outer_class_parts[] = 'dsgo-grid-cols-mobile-' . $mobile_cols;
-				if ( ! empty( $attributes['matchRowHeights'] ) ) {
-					$outer_class_parts[] = 'dsgo-grid--match-rows';
-				}
-				if ( ! $constrain_width ) {
-					$outer_class_parts[] = 'dsgo-no-width-constraint';
-				}
-
-				// Attribute defaults replace the entire style object, never deep-merge.
-				$style          = $attributes['style'] ?? ( Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? array() );
-				$support_styles = self::get_block_support_styles( $style )['styles'];
-
-				// Inner div styles.
-				$default_gap       = 'var(--wp--preset--spacing--50)';
-				$block_gap         = $style['spacing']['blockGap'] ?? null;
-				$row_gap           = is_array( $block_gap ) ? ( $block_gap['top'] ?? '' ) : $block_gap;
-				$column_gap        = is_array( $block_gap ) ? ( $block_gap['left'] ?? '' ) : $block_gap;
-				$custom_row_gap    = $attributes['rowGap'] ?? '';
-				$custom_column_gap = $attributes['columnGap'] ?? '';
-				$row_gap           = self::spacing_gap( $row_gap ) ?? ( '' !== $custom_row_gap ? $custom_row_gap : $default_gap );
-				$column_gap        = self::spacing_gap( $column_gap ) ?? ( '' !== $custom_column_gap ? $custom_column_gap : $default_gap );
-				// Mirrors src/blocks/grid/grid-columns.js: a custom template wins,
-				// then a column min width, then the repeated column count.
-				$column_template = isset( $attributes['columnTemplate'] ) && is_string( $attributes['columnTemplate'] ) ? trim( $attributes['columnTemplate'] ) : '';
-				$columns_css     = 'repeat(' . $desktop_cols . ', 1fr)';
-				if ( '' !== $column_template ) {
-					$columns_css = $column_template;
-				} elseif ( ! empty( $attributes['columnMinWidth'] ) ) {
-					$share       = $desktop_cols > 1 ? '(100% - ' . ( $desktop_cols - 1 ) . ' * ' . $column_gap . ') / ' . $desktop_cols : '100%';
-					$columns_css = 'repeat(auto-fill, minmax(min(100%, max(' . $attributes['columnMinWidth'] . ', ' . $share . ')), 1fr))';
-				}
-				$inner_styles = array(
-					'display:grid',
-					'grid-template-columns:' . $columns_css,
-					'align-items:' . esc_attr( $align_items ),
-					'row-gap:' . $row_gap,
-					'column-gap:' . $column_gap,
-				);
-				if ( $constrain_width ) {
-					$max_width      = $content_width ? $content_width : 'var(--wp--style--global--content-size, 1140px)';
-					$inner_styles[] = 'max-width:' . esc_attr( $max_width );
-					$inner_styles[] = 'margin-left:auto';
-					$inner_styles[] = 'margin-right:auto';
-				}
-
-				// save.js honours tagName; hardcoding <div> lost an author's
-				// choice of <section>, <article> and so on.
-				$grid_tag = ( isset( $attributes['tagName'] ) && '' !== $attributes['tagName'] )
-					? preg_replace( '/[^a-z0-9]/i', '', (string) $attributes['tagName'] )
-					: 'div';
-				$grid_tag = '' !== $grid_tag ? $grid_tag : 'div';
-
-				return array(
-					'opening' => '<' . $grid_tag . ' class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' .
-						esc_attr( implode( ';', array_merge( self::container_hover_styles( $attributes ), $support_styles ) ) ) .
-						'"><div class="dsgo-grid__inner" style="' . esc_attr( implode( ';', $inner_styles ) ) . '">',
-					'closing' => '</div></' . $grid_tag . '>',
-				);
-
-			case 'designsetgo/counter-group':
-				// This block's own attribute names are columns/columnsTablet/
-				// columnsMobile. Reading the Grid block's names meant the author's
-				// column counts never reached the markup.
-				$desktop_cols = isset( $attributes['columns'] ) ? self::numeric_attribute( $attributes['columns'] ) : 3;
-				$tablet_cols  = isset( $attributes['columnsTablet'] ) ? self::numeric_attribute( $attributes['columnsTablet'] ) : 2;
-				$mobile_cols  = isset( $attributes['columnsMobile'] ) ? self::numeric_attribute( $attributes['columnsMobile'] ) : 1;
-				$gap          = isset( $attributes['gap'] ) ? intval( $attributes['gap'] ) : 32;
-				$duration     = isset( $attributes['animationDuration'] ) ? floatval( $attributes['animationDuration'] ) : 2;
-				$delay        = isset( $attributes['animationDelay'] ) ? floatval( $attributes['animationDelay'] ) : 0;
-				$easing       = isset( $attributes['animationEasing'] ) ? $attributes['animationEasing'] : 'easeOutQuad';
-				$use_grouping = isset( $attributes['useGrouping'] ) ? $attributes['useGrouping'] : true;
-				$separator    = isset( $attributes['separator'] ) ? $attributes['separator'] : ',';
-				$decimal      = isset( $attributes['decimal'] ) ? $attributes['decimal'] : '.';
-				$align        = isset( $attributes['alignment'] ) ? $attributes['alignment'] : 'center';
-
-				$outer_style = 'align-self:stretch;--dsgo-counter-columns-desktop:' . (string) $desktop_cols . ';--dsgo-counter-columns-tablet:' . (string) $tablet_cols . ';--dsgo-counter-columns-mobile:' . (string) $mobile_cols . ';--dsgo-counter-gap:' . (string) $gap . 'px';
-
-				$data_attrs  = ' data-animation-duration="' . esc_attr( (string) $duration ) . '"';
-				$data_attrs .= ' data-animation-delay="' . esc_attr( (string) $delay ) . '"';
-				$data_attrs .= ' data-animation-easing="' . esc_attr( $easing ) . '"';
-				$data_attrs .= ' data-use-grouping="' . ( $use_grouping ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-separator="' . esc_attr( $separator ) . '"';
-				$data_attrs .= ' data-decimal="' . esc_attr( $decimal ) . '"';
-
-				return array(
-					'opening' => '<div class="wp-block-designsetgo-counter-group dsgo-counter-group" style="' . esc_attr( $outer_style ) . '"' . $data_attrs . '><div class="dsgo-counter-group__inner dsgo-counter-group__inner--align-' . esc_attr( $align ) . '">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/counter':
-				$unique_id    = isset( $attributes['uniqueId'] ) ? $attributes['uniqueId'] : wp_unique_id( 'counter-' );
-				$start_value  = isset( $attributes['startValue'] ) ? floatval( $attributes['startValue'] ) : 0;
-				$end_value    = isset( $attributes['endValue'] ) ? floatval( $attributes['endValue'] ) : 100;
-				$decimals     = isset( $attributes['decimals'] ) ? self::numeric_attribute( $attributes['decimals'] ) : 0;
-				$prefix       = isset( $attributes['prefix'] ) ? $attributes['prefix'] : '';
-				$suffix       = isset( $attributes['suffix'] ) ? $attributes['suffix'] : '';
-				$label        = isset( $attributes['label'] ) ? $attributes['label'] : '';
-				$duration     = isset( $attributes['duration'] ) ? floatval( $attributes['duration'] ) : 2;
-				$delay        = isset( $attributes['delay'] ) ? floatval( $attributes['delay'] ) : 0;
-				$easing       = isset( $attributes['easing'] ) ? $attributes['easing'] : 'easeOutQuad';
-				$use_grouping = isset( $attributes['useGrouping'] ) ? $attributes['useGrouping'] : true;
-				$separator    = isset( $attributes['separator'] ) ? $attributes['separator'] : ',';
-				$decimal      = isset( $attributes['decimal'] ) ? $attributes['decimal'] : '.';
-
-				$data_attrs  = ' data-start-value="' . esc_attr( (string) $start_value ) . '"';
-				$data_attrs .= ' data-end-value="' . esc_attr( (string) $end_value ) . '"';
-				$data_attrs .= ' data-decimals="' . esc_attr( (string) $decimals ) . '"';
-				$data_attrs .= ' data-prefix="' . esc_attr( $prefix ) . '"';
-				$data_attrs .= ' data-suffix="' . esc_attr( $suffix ) . '"';
-				$data_attrs .= ' data-duration="' . esc_attr( (string) $duration ) . '"';
-				$data_attrs .= ' data-delay="' . esc_attr( (string) $delay ) . '"';
-				$data_attrs .= ' data-easing="' . esc_attr( $easing ) . '"';
-				$data_attrs .= ' data-use-grouping="' . ( $use_grouping ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-separator="' . esc_attr( $separator ) . '"';
-				$data_attrs .= ' data-decimal="' . esc_attr( $decimal ) . '"';
-
-				$inner_html  = '<div class="dsgo-counter__content icon-top">';
-				$inner_html .= '<div class="dsgo-counter__number">';
-				$inner_html .= '<span class="dsgo-counter__value">' . esc_html( (string) $start_value ) . '</span>';
-				$inner_html .= '</div></div>';
-				if ( $label ) {
-					$inner_html .= '<div class="dsgo-counter__label">' . esc_html( $label ) . '</div>';
-				}
-
-				return array(
-					'opening' => '<div class="wp-block-designsetgo-counter dsgo-counter" id="' . esc_attr( $unique_id ) . '" style="text-align:center"' . $data_attrs . '>' . $inner_html,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/flip-card':
-				$flip_trigger   = isset( $attributes['flipTrigger'] ) ? $attributes['flipTrigger'] : 'hover';
-				$flip_effect    = isset( $attributes['flipEffect'] ) ? $attributes['flipEffect'] : 'flip';
-				$flip_direction = isset( $attributes['flipDirection'] ) ? $attributes['flipDirection'] : 'horizontal';
-				$flip_duration  = isset( $attributes['flipDuration'] ) ? $attributes['flipDuration'] : '0.6s';
-
-				$outer_class = 'wp-block-designsetgo-flip-card dsgo-flip-card dsgo-flip-card--' . esc_attr( $flip_trigger ) . ' dsgo-flip-card--effect-' . esc_attr( $flip_effect ) . ' dsgo-flip-card--' . esc_attr( $flip_direction );
-				// `width:100%` is no longer serialized — style.scss owns it (see
-				// save.js). Emitting it here would produce markup save() never
-				// generates, so the block would fail validation on first open.
-				$outer_style = '--dsgo-flip-duration:' . esc_attr( $flip_duration );
-				$data_attrs  = ' data-flip-trigger="' . esc_attr( $flip_trigger ) . '" data-flip-effect="' . esc_attr( $flip_effect ) . '" data-flip-direction="' . esc_attr( $flip_direction ) . '"';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( $outer_class ) . '" style="' . esc_attr( $outer_style ) . '"' . $data_attrs . '><div class="dsgo-flip-card__container">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/flip-card-face':
-				$side = isset( $attributes['side'] ) && 'back' === $attributes['side'] ? 'back' : 'front';
-				return array(
-					'opening' => '<div class="wp-block-designsetgo-flip-card-face dsgo-flip-card__face dsgo-flip-card__' . esc_attr( $side ) . '">',
-					'closing' => '</div>',
-				);
-
-			// Legacy — consolidated into designsetgo/flip-card-face in 2.0.51.
-			// Kept so the inserter ability can still emit existing content
-			// until it is transformed to the new block.
-			case 'designsetgo/flip-card-front':
-				return array(
-					'opening' => '<div class="wp-block-designsetgo-flip-card-front dsgo-flip-card__face dsgo-flip-card__front">',
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/flip-card-back':
-				return array(
-					'opening' => '<div class="wp-block-designsetgo-flip-card-back dsgo-flip-card__face dsgo-flip-card__back">',
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/icon':
-				// Dead branch: Icon is a dynamic block (render.php), so
-				// is_dynamic_block() keeps this switch from ever being
-				// reached for it (see convert_to_block_array() above) — the
-				// block always serializes to a bare comment and is rendered
-				// server-side. Kept in sync with the current markup anyway
-				// (rather than deleted) in case that gate is ever revisited;
-				// same treatment as the Pill case below.
-				$icon_name    = isset( $attributes['icon'] ) ? $attributes['icon'] : ( isset( $attributes['iconName'] ) ? $attributes['iconName'] : 'star' );
-				$icon_style   = isset( $attributes['iconStyle'] ) ? $attributes['iconStyle'] : 'filled';
-				$stroke_width = isset( $attributes['strokeWidth'] ) ? $attributes['strokeWidth'] : '1.5';
-				$icon_size    = isset( $attributes['iconSize'] ) ? self::numeric_attribute( $attributes['iconSize'] ) : ( isset( $attributes['size'] ) ? intval( $attributes['size'] ) : 48 );
-				$aria_label   = isset( $attributes['ariaLabel'] ) ? $attributes['ariaLabel'] : ucwords( str_replace( '-', ' ', $icon_name ) );
-
-				// `align` was removed when `justification` replaced it.
-				$justification = isset( $attributes['justification'] )
-					? $attributes['justification']
-					: ( isset( $attributes['align'] ) ? $attributes['align'] : 'center' );
-				if ( ! in_array( $justification, array( 'left', 'center', 'right' ), true ) ) {
-					$justification = 'center';
-				}
-
-				$wrapper_style = 'width:' . $icon_size . 'px;height:' . $icon_size . 'px;display:inline-flex;align-items:center;justify-content:center;border-radius:inherit';
-
-				$inner_html  = '<div class="dsgo-icon__wrapper dsgo-lazy-icon" style="' . esc_attr( $wrapper_style ) . '"';
-				$inner_html .= ' data-icon-name="' . esc_attr( $icon_name ) . '"';
-				$inner_html .= ' data-icon-style="' . esc_attr( $icon_style ) . '"';
-				$inner_html .= ' data-icon-stroke-width="' . esc_attr( $stroke_width ) . '"';
-				$inner_html .= ' role="img" aria-label="' . esc_attr( $aria_label ) . '"></div>';
-
-				$wrapper_class = 'wp-block-designsetgo-icon dsgo-icon dsgo-justify dsgo-justify--' . $justification;
-
-				return array(
-					'opening' => '<div class="' . esc_attr( $wrapper_class ) . '">' . $inner_html,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/accordion':
-				$allow_multiple = isset( $attributes['allowMultipleOpen'] ) ? $attributes['allowMultipleOpen'] : false;
-				$icon_style     = isset( $attributes['iconStyle'] ) ? $attributes['iconStyle'] : 'chevron';
-				$icon_position  = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'right';
-				$border_between = isset( $attributes['borderBetween'] ) ? $attributes['borderBetween'] : true;
-				$item_gap       = isset( $attributes['itemGap'] ) ? $attributes['itemGap'] : '0.5rem';
-				$open_bg        = isset( $attributes['openBackgroundColor'] ) ? $attributes['openBackgroundColor'] : '';
-				$open_text      = isset( $attributes['openTextColor'] ) ? $attributes['openTextColor'] : '';
-				$hover_bg       = isset( $attributes['hoverBackgroundColor'] ) ? $attributes['hoverBackgroundColor'] : $open_bg;
-				$hover_text     = isset( $attributes['hoverTextColor'] ) ? $attributes['hoverTextColor'] : $open_text;
-				$border_color   = isset( $attributes['borderBetweenColor'] ) ? $attributes['borderBetweenColor'] : '';
-
-				// Build modifier classes (must match save.js).
-				$accordion_classes = array( 'dsgo-accordion' );
-				if ( $allow_multiple ) {
-					$accordion_classes[] = 'dsgo-accordion--multiple';
-				}
-				if ( 'left' === $icon_position ) {
-					$accordion_classes[] = 'dsgo-accordion--icon-left';
-				} elseif ( 'right' === $icon_position ) {
-					$accordion_classes[] = 'dsgo-accordion--icon-right';
-				}
-				if ( 'none' === $icon_style ) {
-					$accordion_classes[] = 'dsgo-accordion--no-icon';
-				}
-				if ( $border_between ) {
-					$accordion_classes[] = 'dsgo-accordion--border-between';
-				}
-
-				// Build CSS custom properties style (must match save.js).
-				$style_parts = array(
-					'--dsgo-accordion-open-bg:' . esc_attr( $open_bg ),
-					'--dsgo-accordion-open-text:' . esc_attr( $open_text ),
-					'--dsgo-accordion-hover-bg:' . esc_attr( $hover_bg ),
-					'--dsgo-accordion-hover-text:' . esc_attr( $hover_text ),
-					'--dsgo-accordion-gap:' . esc_attr( $item_gap ),
-				);
-				if ( $border_color ) {
-					$style_parts[] = '--dsgo-accordion-border-color:' . esc_attr( $border_color );
-				}
-				$custom_style = implode( ';', $style_parts );
-
-				$full_class = 'wp-block-designsetgo-accordion ' . implode( ' ', $accordion_classes );
-
-				return array(
-					'opening' => '<div class="' . esc_attr( $full_class ) . '" style="' . esc_attr( $custom_style ) . '" data-allow-multiple="' . ( $allow_multiple ? 'true' : 'false' ) . '" data-icon-style="' . esc_attr( $icon_style ) . '"><div class="dsgo-accordion__items">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/accordion-item':
-				$title     = isset( $attributes['title'] ) ? $attributes['title'] : '';
-				$is_open   = isset( $attributes['isOpen'] ) ? $attributes['isOpen'] : false;
-				$unique_id = isset( $attributes['uniqueId'] ) ? $attributes['uniqueId'] : wp_unique_id( 'accordion-item-' );
-
-				// Get icon style/position from context or defaults.
-				$icon_style    = isset( $attributes['iconStyle'] ) ? $attributes['iconStyle'] : 'chevron';
-				$icon_position = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'right';
-
-				// Build item classes.
-				$item_classes   = array( 'dsgo-accordion-item' );
-				$item_classes[] = $is_open ? 'dsgo-accordion-item--open' : 'dsgo-accordion-item--closed';
-
-				// Build trigger classes.
-				$trigger_classes = array( 'dsgo-accordion-item__trigger' );
-				if ( 'left' === $icon_position ) {
-					$trigger_classes[] = 'dsgo-accordion-item__trigger--icon-left';
-				} elseif ( 'right' === $icon_position ) {
-					$trigger_classes[] = 'dsgo-accordion-item__trigger--icon-right';
-				}
-
-				// Generate icon SVG based on style.
-				$icon_svg = '';
-				if ( 'none' !== $icon_style ) {
-					switch ( $icon_style ) {
-						case 'plus-minus':
-							if ( $is_open ) {
-								$icon_svg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 8h8v1H4z"></path></svg>';
-							} else {
-								$icon_svg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4v8M4 8h8" stroke="currentColor" stroke-width="1" fill="none"></path></svg>';
-							}
-							break;
-						case 'caret':
-							$icon_svg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6 7l2 2 2-2z"></path></svg>';
-							break;
-						case 'chevron':
-						default:
-							$icon_svg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 6.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 6H4.604a.25.25 0 00-.177.427z"></path></svg>';
-							break;
-					}
-				}
-
-				$header_id = esc_attr( $unique_id ) . '-header';
-				$panel_id  = esc_attr( $unique_id ) . '-panel';
-
-				// Build icon HTML.
-				$icon_html = '';
-				if ( $icon_svg ) {
-					$icon_html = '<span class="dsgo-accordion-item__icon" aria-hidden="true">' . $icon_svg . '</span>';
-				}
-
-				// Build the full accordion item HTML structure.
-				$opening  = '<div class="wp-block-designsetgo-accordion-item ' . esc_attr( implode( ' ', $item_classes ) ) . '" data-initially-open="' . ( $is_open ? 'true' : 'false' ) . '">';
-				$opening .= '<div class="dsgo-accordion-item__header">';
-				$opening .= '<button type="button" class="' . esc_attr( implode( ' ', $trigger_classes ) ) . '" aria-expanded="' . ( $is_open ? 'true' : 'false' ) . '" aria-controls="' . $panel_id . '" id="' . $header_id . '">';
-				if ( 'left' === $icon_position ) {
-					$opening .= $icon_html;
-				}
-				$opening .= '<span class="dsgo-accordion-item__title">' . esc_html( $title ) . '</span>';
-				if ( 'right' === $icon_position ) {
-					$opening .= $icon_html;
-				}
-				$opening .= '</button>';
-				$opening .= '</div>';
-				$opening .= '<div class="dsgo-accordion-item__panel" role="region" aria-labelledby="' . $header_id . '" id="' . $panel_id . '"' . ( $is_open ? '' : ' hidden' ) . '>';
-				$opening .= '<div class="dsgo-accordion-item__content">';
-
-				$closing = '</div></div></div>';
-
-				return array(
-					'opening' => $opening,
-					'closing' => $closing,
-				);
-
-			case 'designsetgo/divider':
-				$divider_style = isset( $attributes['dividerStyle'] ) ? $attributes['dividerStyle'] : 'solid';
-				$width         = isset( $attributes['width'] ) ? $attributes['width'] : 100;
-				$thickness     = isset( $attributes['thickness'] ) ? $attributes['thickness'] : 2;
-				$icon_name     = isset( $attributes['iconName'] ) ? $attributes['iconName'] : '';
-
-				$divider_class = 'wp-block-designsetgo-divider dsgo-divider dsgo-divider--' . esc_attr( $divider_style );
-
-				$container_style = 'width:' . intval( $width ) . '%';
-				$line_style      = 'height:' . intval( $thickness ) . 'px';
-
-				if ( 'icon' === $divider_style ) {
-					// Icon style with three elements.
-					$inner_html  = '<div class="dsgo-divider__container" style="' . esc_attr( $container_style ) . '">';
-					$inner_html .= '<div class="dsgo-divider__icon-wrapper">';
-					$inner_html .= '<span class="dsgo-divider__line dsgo-divider__line--left" style="' . esc_attr( $line_style ) . '"></span>';
-					$inner_html .= '<span class="dsgo-divider__icon dsgo-lazy-icon" data-icon-name="' . esc_attr( $icon_name ) . '"></span>';
-					$inner_html .= '<span class="dsgo-divider__line dsgo-divider__line--right" style="' . esc_attr( $line_style ) . '"></span>';
-					$inner_html .= '</div></div>';
-				} else {
-					// Standard divider.
-					$inner_html  = '<div class="dsgo-divider__container" style="' . esc_attr( $container_style ) . '">';
-					$inner_html .= '<div class="dsgo-divider__line" style="' . esc_attr( $line_style ) . '"></div>';
-					$inner_html .= '</div>';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( $divider_class ) . '">' . $inner_html,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/countdown-timer':
-				$target_datetime    = isset( $attributes['targetDateTime'] ) ? $attributes['targetDateTime'] : '';
-				$timezone           = isset( $attributes['timezone'] ) ? $attributes['timezone'] : '';
-				$show_days          = isset( $attributes['showDays'] ) ? $attributes['showDays'] : true;
-				$show_hours         = isset( $attributes['showHours'] ) ? $attributes['showHours'] : true;
-				$show_minutes       = isset( $attributes['showMinutes'] ) ? $attributes['showMinutes'] : true;
-				$show_seconds       = isset( $attributes['showSeconds'] ) ? $attributes['showSeconds'] : true;
-				$layout             = isset( $attributes['layout'] ) ? $attributes['layout'] : 'boxed';
-				$completion_action  = isset( $attributes['completionAction'] ) ? $attributes['completionAction'] : 'message';
-				$completion_message = isset( $attributes['completionMessage'] ) ? $attributes['completionMessage'] : 'The countdown has ended!';
-				$number_color       = isset( $attributes['numberColor'] ) ? $attributes['numberColor'] : '';
-				$label_color        = isset( $attributes['labelColor'] ) ? $attributes['labelColor'] : '';
-				$unit_bg_color      = isset( $attributes['unitBackgroundColor'] ) ? $attributes['unitBackgroundColor'] : '';
-				$unit_border        = isset( $attributes['unitBorder'] ) ? $attributes['unitBorder'] : array();
-				$unit_border_radius = isset( $attributes['unitBorderRadius'] ) ? self::numeric_attribute( $attributes['unitBorderRadius'] ) : 12;
-				$unit_gap           = isset( $attributes['unitGap'] ) ? $attributes['unitGap'] : '1rem';
-				$unit_padding       = isset( $attributes['unitPadding'] ) ? $attributes['unitPadding'] : '1.5rem';
-
-				// Build unit style.
-				$border_color = isset( $unit_border['color'] ) && $unit_border['color'] ? $unit_border['color'] : 'var(--wp--preset--color--accent-2, currentColor)';
-				$border_width = isset( $unit_border['width'] ) ? $unit_border['width'] : '2px';
-				$border_style = isset( $unit_border['style'] ) ? $unit_border['style'] : 'solid';
-
-				$unit_style_parts = array(
-					'background-color:' . ( $unit_bg_color ? esc_attr( $unit_bg_color ) : 'transparent' ),
-					'border-color:' . esc_attr( $border_color ),
-					'border-width:' . esc_attr( $border_width ),
-					'border-style:' . esc_attr( $border_style ),
-					'border-radius:' . $unit_border_radius . 'px',
-					'padding:' . esc_attr( $unit_padding ),
-				);
-				$unit_style       = implode( ';', $unit_style_parts );
-
-				$number_style = 'color:' . ( $number_color ? esc_attr( $number_color ) : 'var(--wp--preset--color--accent-2, currentColor)' );
-				$label_style  = 'color:' . ( $label_color ? esc_attr( $label_color ) : 'currentColor' );
-
-				// Build units HTML.
-				$units = array();
-				if ( $show_days ) {
-					$units[] = array(
-						'type'  => 'days',
-						'label' => 'Days',
-					);
-				}
-				if ( $show_hours ) {
-					$units[] = array(
-						'type'  => 'hours',
-						'label' => 'Hours',
-					);
-				}
-				if ( $show_minutes ) {
-					$units[] = array(
-						'type'  => 'minutes',
-						'label' => 'Min',
-					);
-				}
-				if ( $show_seconds ) {
-					$units[] = array(
-						'type'  => 'seconds',
-						'label' => 'Sec',
-					);
-				}
-
-				$units_html = '';
-				foreach ( $units as $unit ) {
-					$units_html .= '<div class="dsgo-countdown-timer__unit" data-unit-type="' . esc_attr( $unit['type'] ) . '" style="' . esc_attr( $unit_style ) . '">';
-					$units_html .= '<div class="dsgo-countdown-timer__number" style="' . esc_attr( $number_style ) . '">00</div>';
-					$units_html .= '<div class="dsgo-countdown-timer__label" style="' . esc_attr( $label_style ) . '">' . esc_html( $unit['label'] ) . '</div>';
-					$units_html .= '</div>';
-				}
-
-				// Build data attributes.
-				$data_attrs  = ' data-target-datetime="' . esc_attr( $target_datetime ) . '"';
-				$data_attrs .= ' data-timezone="' . esc_attr( $timezone ) . '"';
-				$data_attrs .= ' data-show-days="' . ( $show_days ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-show-hours="' . ( $show_hours ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-show-minutes="' . ( $show_minutes ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-show-seconds="' . ( $show_seconds ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-completion-action="' . esc_attr( $completion_action ) . '"';
-				// completionMessage is sourced from the message div's text (below),
-				// not a wrapper attribute — save.js no longer emits
-				// data-completion-message, so emitting it here would produce markup
-				// save() never generates and fail validation.
-
-				$container_style = 'gap:' . esc_attr( $unit_gap );
-				$outer_class     = 'wp-block-designsetgo-countdown-timer dsgo-countdown-timer dsgo-countdown-timer--' . esc_attr( $layout );
-
-				$inner_html = '<div class="dsgo-countdown-timer__units">' . $units_html . '</div>';
-				// No inline display:none — style.scss hides this by default (view.js
-				// reveals it by setting an inline display:block, which wins either
-				// way). save.js stopped serializing it, so emitting it here would
-				// produce markup save() never generates and fail validation.
-				$inner_html .= '<div class="dsgo-countdown-timer__completion-message">' . esc_html( $completion_message ) . '</div>';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( $outer_class ) . '" style="' . esc_attr( $container_style ) . '"' . $data_attrs . '>' . $inner_html,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/progress-bar':
-				$percentage        = isset( $attributes['percentage'] ) ? self::numeric_attribute( $attributes['percentage'] ) : 75;
-				$bar_color         = isset( $attributes['barColor'] ) ? $attributes['barColor'] : '#2563eb';
-				$bar_bg_color      = isset( $attributes['barBackgroundColor'] ) ? $attributes['barBackgroundColor'] : '#e5e7eb';
-				$height            = isset( $attributes['height'] ) ? $attributes['height'] : '20px';
-				$border_radius     = isset( $attributes['borderRadius'] ) ? $attributes['borderRadius'] : '4px';
-				$show_percentage   = isset( $attributes['showPercentage'] ) ? $attributes['showPercentage'] : true;
-				$label_position    = isset( $attributes['labelPosition'] ) ? $attributes['labelPosition'] : 'top';
-				$animate_on_scroll = isset( $attributes['animateOnScroll'] ) ? $attributes['animateOnScroll'] : true;
-				$animation_dur     = isset( $attributes['animationDuration'] ) ? floatval( $attributes['animationDuration'] ) : 1.5;
-
-				// Clamp percentage.
-				$bar_width = min( max( $percentage, 0 ), 100 );
-
-				// Build classes.
-				$class_parts = array( 'wp-block-designsetgo-progress-bar', 'dsgo-progress-bar' );
-				if ( $animate_on_scroll ) {
-					$class_parts[] = 'dsgo-progress-bar--animate';
-				}
-
-				// Data attributes for animation.
-				$data_attrs = '';
-				if ( $animate_on_scroll ) {
-					$data_attrs = ' data-percentage="' . esc_attr( (string) $bar_width ) . '" data-duration="' . esc_attr( (string) $animation_dur ) . '"';
-				}
-
-				// Label.
-				$label_html = '';
-				if ( $show_percentage && 'top' === $label_position ) {
-					$label_html = '<div class="dsgo-progress-bar__label dsgo-progress-bar__label--top">' . esc_html( $bar_width . '%' ) . '</div>';
-				}
-
-				// Container styles.
-				// save.js writes `backgroundColor: barTrackColor || undefined`, and
-				// React omits an undefined style property entirely. Emitting
-				// `background-color:` with an empty value produced a declaration
-				// save() never writes, so an unstyled progress bar was invalid.
-				$container_style = 'width:100%;height:' . esc_attr( $height ) .
-					( '' !== $bar_bg_color ? ';background-color:' . esc_attr( $bar_bg_color ) : '' ) .
-					';border-radius:' . esc_attr( $border_radius ) . ';overflow:hidden;position:relative';
-
-				// Fill styles.
-				$fill_width = $animate_on_scroll ? '0%' : $bar_width . '%';
-				$fill_style = 'width:' . $fill_width . ';height:100%' .
-					( '' !== $bar_color ? ';background-color:' . esc_attr( $bar_color ) : '' ) .
-					';transition:width ' . esc_attr( (string) $animation_dur ) . 's ease-out;border-radius:' . esc_attr( $border_radius );
-
-				$inner_html  = $label_html;
-				$inner_html .= '<div class="dsgo-progress-bar__container" style="' . esc_attr( $container_style ) . '">';
-				$inner_html .= '<div class="dsgo-progress-bar__fill" style="' . esc_attr( $fill_style ) . '"></div>';
-				$inner_html .= '</div>';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $data_attrs . '>' . $inner_html,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/pill':
-				// Dead branch: Pill is a dynamic block (render.php), so
-				// is_dynamic_block() keeps this switch from ever being
-				// reached for it (see convert_to_block_array() above) — the
-				// block always serializes to a bare comment and is rendered
-				// server-side. Kept in sync with the current markup anyway
-				// (rather than deleted) in case that gate is ever revisited;
-				// `align` was removed when `justification` replaced it, and
-				// the pre-dynamic `wp-block-designsetgo-pill align{value}
-				// dsgo-pill has-small-font-size` shape below is stale.
-				$content       = isset( $attributes['content'] ) ? $attributes['content'] : '';
-				$justification = isset( $attributes['justification'] )
-					? $attributes['justification']
-					: ( isset( $attributes['align'] ) ? $attributes['align'] : 'center' );
-				if ( ! in_array( $justification, array( 'left', 'center', 'right' ), true ) ) {
-					$justification = 'center';
-				}
-
-				$class_parts = array( 'wp-block-designsetgo-pill', 'dsgo-pill', 'dsgo-justify', 'dsgo-justify--' . $justification );
-
-				$inner_html = '<span class="dsgo-pill__content">' . wp_kses_post( $content ) . '</span>';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '">' . $inner_html,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/map':
-				$provider    = isset( $attributes['dsgoProvider'] ) ? $attributes['dsgoProvider'] : 'openstreetmap';
-				$latitude    = isset( $attributes['dsgoLatitude'] ) ? floatval( $attributes['dsgoLatitude'] ) : 40.7128;
-				$longitude   = isset( $attributes['dsgoLongitude'] ) ? floatval( $attributes['dsgoLongitude'] ) : -74.006;
-				$zoom        = isset( $attributes['dsgoZoom'] ) ? self::numeric_attribute( $attributes['dsgoZoom'] ) : 13;
-				$address     = isset( $attributes['dsgoAddress'] ) ? $attributes['dsgoAddress'] : '';
-				$marker_icon = isset( $attributes['dsgoMarkerIcon'] ) ? $attributes['dsgoMarkerIcon'] : '📍';
-				// Treat an unset OR explicitly-cleared ('') marker color as the
-				// block default, mirroring render.php — the editor now stores ''
-				// on clear, and the resolver short-circuits empty strings before
-				// consulting its own fallback.
-				$marker_color = ( isset( $attributes['dsgoMarkerColor'] ) && '' !== $attributes['dsgoMarkerColor'] )
-					? $attributes['dsgoMarkerColor']
-					: '#e74c3c';
-				// Resolve theme palette presets (var:preset|color|{slug}) to a
-				// concrete color; the marker is drawn by view.js, which cannot
-				// inherit the page's CSS custom properties. Fall back to the block
-				// default when the preset's slug is missing from the palette.
-				$marker_color       = designsetgo_resolve_preset_color( $marker_color, '#e74c3c' );
-				$height             = isset( $attributes['dsgoHeight'] ) ? $attributes['dsgoHeight'] : '400px';
-				$aspect_ratio       = isset( $attributes['dsgoAspectRatio'] ) ? $attributes['dsgoAspectRatio'] : 'custom';
-				$privacy_mode       = isset( $attributes['dsgoPrivacyMode'] ) ? $attributes['dsgoPrivacyMode'] : false;
-				$has_privacy_notice = array_key_exists( 'dsgoPrivacyNotice', $attributes );
-				$privacy_notice     = $attributes['dsgoPrivacyNotice'] ?? __( 'This map will load content from external services. Click to load and view the map.', 'designsetgo' );
-				$map_style          = isset( $attributes['dsgoMapStyle'] ) ? $attributes['dsgoMapStyle'] : 'standard';
-
-				// Clamp coordinates.
-				$safe_lat  = max( -90, min( 90, $latitude ) );
-				$safe_lng  = max( -180, min( 180, $longitude ) );
-				$safe_zoom = max( 1, min( 20, $zoom ) );
-
-				// Build classes.
-				$class_parts = array( 'wp-block-designsetgo-map', 'dsgo-map' );
-				if ( $privacy_mode ) {
-					$class_parts[] = 'dsgo-map--privacy-mode';
-				}
-				if ( 'custom' !== $aspect_ratio ) {
-					$class_parts[] = 'dsgo-map--aspect-' . str_replace( ':', '-', $aspect_ratio );
-				}
-
-				// Style.
-				$style = '';
-				if ( 'custom' === $aspect_ratio ) {
-					$style = 'height:' . esc_attr( $height );
-				}
-
-				// Data attributes.
-				$data_attrs  = ' data-dsgo-provider="' . esc_attr( $provider ) . '"';
-				$data_attrs .= ' data-dsgo-lat="' . esc_attr( (string) $safe_lat ) . '"';
-				$data_attrs .= ' data-dsgo-lng="' . esc_attr( (string) $safe_lng ) . '"';
-				$data_attrs .= ' data-dsgo-zoom="' . esc_attr( (string) $safe_zoom ) . '"';
-				$data_attrs .= ' data-dsgo-address="' . esc_attr( $address ) . '"';
-				$data_attrs .= ' data-dsgo-marker-icon="' . esc_attr( $marker_icon ) . '"';
-				$data_attrs .= ' data-dsgo-marker-color="' . esc_attr( $marker_color ) . '"';
-				$data_attrs .= ' data-dsgo-privacy-mode="' . ( $privacy_mode ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-dsgo-map-style="' . esc_attr( $map_style ) . '"';
-
-				// Inner HTML.
-				$aria_label = $address
-					? sprintf(
-						/* translators: %s: The address being shown on the map */
-						__( 'Map showing %s', 'designsetgo' ),
-						$address
-					)
-					: __( 'Interactive map', 'designsetgo' );
-
-				if ( $privacy_mode ) {
-					$privacy_text = ( $has_privacy_notice && '' === $privacy_notice )
-						? __( 'Click to load map', 'designsetgo' )
-						: $privacy_notice;
-
-					$inner_html  = '<div class="dsgo-map__privacy-overlay"><div class="dsgo-map__privacy-content">';
-					$inner_html .= '<svg class="dsgo-map__privacy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
-					$inner_html .= '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>';
-					$inner_html .= '<circle cx="12" cy="10" r="3"></circle>';
-					$inner_html .= '</svg>';
-					$inner_html .= '<p class="dsgo-map__privacy-text">' . esc_html( $privacy_text ) . '</p>';
-					$inner_html .= '<button class="dsgo-map__load-button" type="button" aria-label="' . esc_attr__( 'Load map. This will connect to external map services.', 'designsetgo' ) . '">';
-					$inner_html .= esc_html__( 'Load Map', 'designsetgo' );
-					$inner_html .= '</button></div></div>';
-				} else {
-					$inner_html = '<div class="dsgo-map__container" role="region" aria-label="' . esc_attr( $aria_label ) . '"></div>';
-				}
-
-				$style_attr = $style ? ' style="' . esc_attr( $style ) . '"' : '';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $style_attr . $data_attrs . '>' . $inner_html,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/card':
-				$layout_preset     = isset( $attributes['layoutPreset'] ) ? $attributes['layoutPreset'] : 'standard';
-				$visual_style      = isset( $attributes['visualStyle'] ) ? $attributes['visualStyle'] : 'default';
-				$title             = isset( $attributes['title'] ) ? $attributes['title'] : '';
-				$subtitle          = isset( $attributes['subtitle'] ) ? $attributes['subtitle'] : '';
-				$body_text         = isset( $attributes['bodyText'] ) ? $attributes['bodyText'] : '';
-				$show_title        = isset( $attributes['showTitle'] ) ? $attributes['showTitle'] : true;
-				$show_subtitle     = isset( $attributes['showSubtitle'] ) ? $attributes['showSubtitle'] : true;
-				$show_body         = isset( $attributes['showBody'] ) ? $attributes['showBody'] : true;
-				$show_cta          = isset( $attributes['showCta'] ) ? $attributes['showCta'] : true;
-				$content_alignment = isset( $attributes['contentAlignment'] ) ? $attributes['contentAlignment'] : 'left';
-
-				$card_align  = self::align_class( $block_name, $attributes );
-				$outer_class = 'wp-block-designsetgo-card' . ( '' !== $card_align ? ' ' . $card_align : '' ) .
-					' dsgo-card dsgo-card--' . esc_attr( $layout_preset ) . ' dsgo-card--style-' . esc_attr( $visual_style );
-
-				$card_border = '';
-				if ( ! empty( $attributes['borderColor'] ) && 'minimal' !== $visual_style ) {
-					$card_border = ' style="border-color:' . esc_attr( $attributes['borderColor'] ) . ';border-width:' . ( 'outlined' === $visual_style ? '2px' : '1px' ) . ';border-style:solid"';
-				}
-
-				// Build content HTML.
-				$content_class = 'dsgo-card__content ';
-				if ( 'background' === $layout_preset ) {
-					$content_class .= 'dsgo-card__content--' . esc_attr( $content_alignment );
-				}
-
-				// title/subtitle/bodyText are DOM-sourced, so the element must stay
-				// in the markup whenever the text is non-empty (matching save.js) —
-				// a hidden field carries the `--hidden` modifier instead of being
-				// omitted, otherwise the sourced text would be silently lost.
-				$content_html = '';
-				if ( $title ) {
-					$title_class   = 'dsgo-card__title' . ( $show_title ? '' : ' dsgo-card__title--hidden' );
-					$content_html .= '<h3 class="' . esc_attr( $title_class ) . '">' . wp_kses_post( $title ) . '</h3>';
-				}
-				if ( $subtitle ) {
-					$subtitle_class = 'dsgo-card__subtitle' . ( $show_subtitle ? '' : ' dsgo-card__subtitle--hidden' );
-					$content_html  .= '<p class="' . esc_attr( $subtitle_class ) . '">' . wp_kses_post( $subtitle ) . '</p>';
-				}
-				if ( $body_text ) {
-					$body_class    = 'dsgo-card__body' . ( $show_body ? '' : ' dsgo-card__body--hidden' );
-					$content_html .= '<p class="' . esc_attr( $body_class ) . '">' . wp_kses_post( $body_text ) . '</p>';
-				}
-
-				// CTA area for inner blocks.
-				$cta_opening = '';
-				$cta_closing = '';
-				if ( $show_cta ) {
-					$cta_opening = '<div class="dsgo-card__cta">';
-					$cta_closing = '</div>';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( $outer_class ) . '"' . $card_border . '><div class="dsgo-card__inner"><div class="' . esc_attr( $content_class ) . '">' . $content_html . $cta_opening,
-					'closing' => $cta_closing . '</div></div></div>',
-				);
-
-			case 'designsetgo/icon-list':
-				$layout    = isset( $attributes['layout'] ) ? $attributes['layout'] : 'vertical';
-				$gap       = isset( $attributes['gap'] ) ? $attributes['gap'] : '24px';
-				$columns   = isset( $attributes['columns'] ) ? self::numeric_attribute( $attributes['columns'] ) : 2;
-				$alignment = isset( $attributes['alignment'] ) ? $attributes['alignment'] : 'left';
-
-				// Calculate alignment values.
-				$align_items     = '';
-				$justify_content = '';
-				$flex_direction  = '';
-
-				if ( 'vertical' === $layout ) {
-					$flex_direction = 'column';
-					if ( 'center' === $alignment ) {
-						$align_items = 'center';
-					} elseif ( 'right' === $alignment ) {
-						$align_items = 'flex-end';
-					} else {
-						$align_items = 'flex-start';
-					}
-				} elseif ( 'horizontal' === $layout ) {
-					$flex_direction = 'row';
-					if ( 'center' === $alignment ) {
-						$justify_content = 'center';
-					} elseif ( 'right' === $alignment ) {
-						$justify_content = 'flex-end';
-					} else {
-						$justify_content = 'flex-start';
-					}
-				}
-
-				// Build container styles.
-				$container_style_parts = array();
-				if ( 'grid' === $layout ) {
-					$container_style_parts[] = 'display:grid';
-					$container_style_parts[] = 'grid-template-columns:repeat(' . $columns . ', 1fr)';
-				} else {
-					$container_style_parts[] = 'display:flex';
-					$container_style_parts[] = 'flex-direction:' . $flex_direction;
-				}
-				$container_style_parts[] = 'gap:' . esc_attr( $gap );
-				if ( $align_items ) {
-					$container_style_parts[] = 'align-items:' . $align_items;
-				}
-				if ( $justify_content ) {
-					$container_style_parts[] = 'justify-content:' . $justify_content;
-				}
-				$container_style_parts[] = 'width:100%';
-				$container_style         = implode( ';', $container_style_parts );
-
-				$outer_class = 'wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--' . esc_attr( $layout );
-
-				return array(
-					'opening' => '<div class="' . esc_attr( $outer_class ) . '" style="width:100%"><div class="dsgo-icon-list__items" style="' . esc_attr( $container_style ) . '">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/icon-list-item':
-				$icon     = isset( $attributes['icon'] ) ? $attributes['icon'] : 'star';
-				$link_url = isset( $attributes['linkUrl'] ) ? $attributes['linkUrl'] : '';
-				// Same as icon-button below: block.json defaults linkTarget to
-				// `_self`, so save() always emits target alongside href. Defaulting
-				// to '' here suppressed it and linked items failed validation.
-				$link_target = isset( $attributes['linkTarget'] ) && '' !== $attributes['linkTarget']
-					? $attributes['linkTarget']
-					: '_self';
-				$link_rel    = isset( $attributes['linkRel'] ) ? $attributes['linkRel'] : '';
-
-				// Everything below must reproduce save.js's output for an
-				// EMPTY block context, because that is the only output that
-				// exists in stored markup: WordPress does not pass block context
-				// to save(), so the parent Icon List's iconSize / iconPosition /
-				// colours resolve to their defaults there and the item inherits
-				// them from CSS at render time instead.
-				//
-				// Concretely that means: icon-left, no inline icon size (the
-				// `--inherit-size` class hands sizing to the theme token), no
-				// item gap, and the icon box's layout coming from style.scss.
-				// Reading iconSize / iconPosition off $attributes here — as this
-				// branch used to — produced markup save() never generates, so an
-				// AI-inserted item failed validation the first time it was opened.
-				// row / flex-start / left are save.js's empty-context values, not
-				// choices made here — hence the literals rather than variables.
-				$item_style = 'display:flex;flex-direction:row;align-items:flex-start';
-
-				// Content gap: written inline only for an explicit author value,
-				// mirroring save.js (the attribute has no default).
-				$content_style = 'text-align:left;display:flex;flex-direction:column';
-				if ( isset( $attributes['contentGap'] ) && is_numeric( $attributes['contentGap'] ) ) {
-					$content_style .= ';gap:' . self::numeric_attribute( $attributes['contentGap'] ) . 'px';
-				}
-
-				$outer_class = 'wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left';
-
-				// No inline style on the icon box: layout lives in style.scss and
-				// size resolves from --dsgo-icon-list-size via the inherit-size class.
-				$icon_html = '<div class="dsgo-icon-list-item__icon dsgo-lazy-icon dsgo-icon-list-item__icon--inherit-size" data-icon-name="' . esc_attr( $icon ) . '"></div>';
-
-				// Build element (div or link).
-				$tag         = $link_url ? 'a' : 'div';
-				$extra_attrs = '';
-				if ( $link_url ) {
-					$extra_attrs .= ' href="' . esc_url( $link_url ) . '"';
-					if ( $link_target ) {
-						$extra_attrs .= ' target="' . esc_attr( $link_target ) . '"';
-					}
-					if ( $link_rel ) {
-						$extra_attrs .= ' rel="' . esc_attr( $link_rel ) . '"';
-					}
-				}
-
-				return array(
-					'opening' => '<' . $tag . ' class="' . esc_attr( $outer_class ) . '" style="' . esc_attr( $item_style ) . '"' . $extra_attrs . '>' . $icon_html . '<div class="dsgo-icon-list-item__content" style="' . esc_attr( $content_style ) . '">',
-					'closing' => '</div></' . $tag . '>',
-				);
-
-			case 'designsetgo/icon-button':
-				$text = isset( $attributes['text'] ) ? $attributes['text'] : '';
-				$url  = isset( $attributes['url'] ) ? $attributes['url'] : '';
-				// `_self`, not '', is block.json's default for linkTarget — so a
-				// parsed block always has one and save() always emits
-				// target="_self" alongside href. Defaulting to '' here suppressed
-				// the attribute and every AI-inserted LINKED icon button failed
-				// validation on first open.
-				$link_target    = isset( $attributes['linkTarget'] ) && '' !== $attributes['linkTarget']
-					? $attributes['linkTarget']
-					: '_self';
-				$rel            = isset( $attributes['rel'] ) ? $attributes['rel'] : '';
-				$icon           = isset( $attributes['icon'] ) ? $attributes['icon'] : 'lightbulb';
-				$icon_position  = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'start';
-				$icon_size      = isset( $attributes['iconSize'] ) ? self::numeric_attribute( $attributes['iconSize'] ) : 20;
-				$icon_gap       = isset( $attributes['iconGap'] ) ? $attributes['iconGap'] : '';
-				$hover_anim     = isset( $attributes['hoverAnimation'] ) ? $attributes['hoverAnimation'] : 'none';
-				$modal_close_id = isset( $attributes['modalCloseId'] ) ? $attributes['modalCloseId'] : '';
-
-				// save.js omits data-icon-style / data-icon-stroke-width unless
-				// the author sets them, so mirror that here. Both are validated
-				// against block.json rather than passed through: callers of this
-				// Ability are AI agents, so an out-of-enum iconStyle would emit a
-				// data-icon-style the frontend injector doesn't understand, and a
-				// non-scalar strokeWidth would stringify to "Array" (and warn).
-				$icon_style_attr = '';
-				if ( isset( $attributes['iconStyle'] ) && in_array( $attributes['iconStyle'], array( 'filled', 'outlined' ), true ) ) {
-					$icon_style_attr = $attributes['iconStyle'];
-				}
-				$stroke_width = ( isset( $attributes['strokeWidth'] ) && is_numeric( $attributes['strokeWidth'] ) )
-					? (float) $attributes['strokeWidth']
-					: 1.5;
-
-				// Read the current `justification`/`fullWidth` attributes; fall
-				// back to the legacy `align` for callers that still pass it.
-				$justification = isset( $attributes['justification'] )
-					? $attributes['justification']
-					: ( isset( $attributes['align'] ) ? $attributes['align'] : 'left' );
-				if ( ! in_array( $justification, array( 'left', 'center', 'right' ), true ) ) {
-					$justification = 'left';
-				}
-				$full_width = ! empty( $attributes['fullWidth'] ) || ( isset( $attributes['align'] ) && 'full' === $attributes['align'] );
-
-				$has_icon = 'none' !== $icon_position && $icon;
-
-				// Build the button's own classes (matches the current save.js
-				// marker-class scheme: gap is themed via `--has-icon`, not baked
-				// inline, unless the author sets an explicit iconGap).
-				$class_parts = array( 'dsgo-icon-button', 'wp-block-button', 'wp-block-button__link', 'wp-element-button' );
-				if ( $has_icon ) {
-					$class_parts[] = 'dsgo-icon-button--has-icon';
-				}
-				if ( $full_width ) {
-					$class_parts[] = 'dsgo-icon-button--full-width';
-				}
-				if ( 'end' === $icon_position ) {
-					$class_parts[] = 'dsgo-icon-button--icon-end';
-				}
-				if ( $hover_anim && 'none' !== $hover_anim ) {
-					$class_parts[] = 'dsgo-icon-button--' . $hover_anim;
-				}
-
-				// Layout (display/width/flex-direction) lives in style.scss now,
-				// not inline — only an explicit author gap is written inline.
-				$style_parts = array();
-				if ( $has_icon && '' !== $icon_gap ) {
-					$style_parts[] = 'gap:' . esc_attr( $icon_gap );
-				}
-
-				// Colour, typography, border and shadow are skip-serialized on
-				// the block root and re-applied to the button by save.js.
-				$routed      = self::get_routed_visual_attributes( $attributes );
-				$class_parts = array_merge( $class_parts, $routed['classes'] );
-				$style_parts = array_merge(
-					$style_parts,
-					$routed['styles'],
-					// Padding is skip-serialized on the root and re-applied here.
-					self::routed_padding_styles( $attributes, true )
-				);
-
-				// Hover colours - save.js writes them as custom properties on the
-				// button after padding. Without them an AI-inserted button with a
-				// hover colour fails block validation on first open.
-				foreach ( array(
-					'hoverBackgroundColor' => '--dsgo-button-hover-bg',
-					'hoverTextColor'       => '--dsgo-button-hover-color',
-				) as $hover_attribute => $hover_property ) {
-					if ( ! empty( $attributes[ $hover_attribute ] ) && is_string( $attributes[ $hover_attribute ] ) ) {
-						$style_parts[] = $hover_property . ':' . self::convert_color_value_to_css_var( $attributes[ $hover_attribute ] );
-					}
-				}
-
-				$button_style = implode( ';', $style_parts );
-
-				// Icon HTML. Must match save.js: the icon span's layout
-				// (display/align-items/justify-content/flex-shrink) lives in
-				// style.scss, and width/height + data-icon-size are written ONLY
-				// when the caller sets an explicit numeric iconSize — otherwise
-				// the theme size token owns it. Emitting them unconditionally
-				// (as this did) produced markup save() would never generate, so
-				// the block validator flagged AI-inserted buttons as invalid.
-				$icon_html = '';
-				if ( $has_icon ) {
-					$has_explicit_size = isset( $attributes['iconSize'] ) && is_numeric( $attributes['iconSize'] );
-					$icon_attrs        = '';
-					if ( $has_explicit_size ) {
-						$icon_attrs .= ' style="' . esc_attr( 'width:' . $icon_size . 'px;height:' . $icon_size . 'px' ) . '"';
-					}
-					$icon_attrs .= ' data-icon-name="' . esc_attr( $icon ) . '"';
-					if ( $has_explicit_size ) {
-						$icon_attrs .= ' data-icon-size="' . esc_attr( (string) $icon_size ) . '"';
-					}
-					if ( $icon_style_attr ) {
-						$icon_attrs .= ' data-icon-style="' . esc_attr( $icon_style_attr ) . '"';
-					}
-					if ( 'outlined' === $icon_style_attr ) {
-						$icon_attrs .= ' data-icon-stroke-width="' . esc_attr( (string) $stroke_width ) . '"';
-					}
-					$icon_html = '<span class="dsgo-icon-button__icon dsgo-lazy-icon"' . $icon_attrs . '></span>';
-				}
-
-				// Text HTML.
-				$text_html = '<span class="dsgo-icon-button__text">' . wp_kses_post( $text ) . '</span>';
-
-				// Build element (button or link).
-				$tag = $url ? 'a' : 'button';
-
-				// Additional attributes.
-				$extra_attrs = '';
-				if ( $url ) {
-					$extra_attrs .= ' href="' . esc_url( $url ) . '"';
-					if ( $link_target ) {
-						$extra_attrs .= ' target="' . esc_attr( $link_target ) . '"';
-					}
-					$rel_value = '_blank' === $link_target ? ( $rel ? $rel : 'noopener noreferrer' ) : $rel;
-					if ( $rel_value ) {
-						$extra_attrs .= ' rel="' . esc_attr( $rel_value ) . '"';
-					}
-				} else {
-					$extra_attrs .= ' type="button"';
-				}
-				if ( $modal_close_id ) {
-					$extra_attrs .= ' data-dsgo-modal-close="' . esc_attr( $modal_close_id ) . '"';
-				}
-
-				$inner_html = $icon_html . $text_html;
-
-				// The block root is a block-level justification wrapper — core's
-				// constrained layout caps IT at the content column — with the
-				// button shrink-wrapped inside it (see save.js). Matches
-				// `getJustificationClass()` (src/utils/justification.js).
-				$wrapper_class     = 'wp-block-designsetgo-icon-button dsgo-justify dsgo-justify--' . $justification;
-				$button_style_attr = '' !== $button_style ? ' style="' . esc_attr( $button_style ) . '"' : '';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( $wrapper_class ) . '"><' . $tag . ' class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $button_style_attr . $extra_attrs . '>' . $inner_html,
-					'closing' => '</' . $tag . '></div>',
-				);
-
-			case 'designsetgo/modal':
-				$modal_id                = isset( $attributes['modalId'] ) ? $attributes['modalId'] : 'dsgo-modal-' . wp_generate_uuid4();
-				$animation_type          = isset( $attributes['animationType'] ) ? $attributes['animationType'] : 'fade';
-				$animation_duration      = isset( $attributes['animationDuration'] ) ? self::numeric_attribute( $attributes['animationDuration'] ) : 300;
-				$close_on_backdrop       = isset( $attributes['closeOnBackdrop'] ) ? $attributes['closeOnBackdrop'] : true;
-				$close_on_esc            = isset( $attributes['closeOnEsc'] ) ? $attributes['closeOnEsc'] : true;
-				$disable_body_scroll     = isset( $attributes['disableBodyScroll'] ) ? $attributes['disableBodyScroll'] : true;
-				$allow_hash_trigger      = isset( $attributes['allowHashTrigger'] ) ? $attributes['allowHashTrigger'] : true;
-				$update_url_on_open      = isset( $attributes['updateUrlOnOpen'] ) ? $attributes['updateUrlOnOpen'] : false;
-				$auto_trigger_type       = isset( $attributes['autoTriggerType'] ) ? $attributes['autoTriggerType'] : 'none';
-				$auto_trigger_delay      = isset( $attributes['autoTriggerDelay'] ) ? self::numeric_attribute( $attributes['autoTriggerDelay'] ) : 0;
-				$auto_trigger_frequency  = isset( $attributes['autoTriggerFrequency'] ) ? $attributes['autoTriggerFrequency'] : 'always';
-				$cookie_duration         = isset( $attributes['cookieDuration'] ) ? self::numeric_attribute( $attributes['cookieDuration'] ) : 7;
-				$exit_intent_sensitivity = isset( $attributes['exitIntentSensitivity'] ) ? $attributes['exitIntentSensitivity'] : 'medium';
-				$exit_intent_min_time    = isset( $attributes['exitIntentMinTime'] ) ? self::numeric_attribute( $attributes['exitIntentMinTime'] ) : 5;
-				$exit_intent_exclude_mob = isset( $attributes['exitIntentExcludeMobile'] ) ? $attributes['exitIntentExcludeMobile'] : true;
-				$scroll_depth            = isset( $attributes['scrollDepth'] ) ? self::numeric_attribute( $attributes['scrollDepth'] ) : 50;
-				$scroll_direction        = isset( $attributes['scrollDirection'] ) ? $attributes['scrollDirection'] : 'down';
-				$time_on_page            = isset( $attributes['timeOnPage'] ) ? self::numeric_attribute( $attributes['timeOnPage'] ) : 30;
-				$gallery_group_id        = isset( $attributes['galleryGroupId'] ) ? $attributes['galleryGroupId'] : '';
-				$gallery_index           = isset( $attributes['galleryIndex'] ) ? self::numeric_attribute( $attributes['galleryIndex'] ) : 0;
-				$show_gallery_nav        = isset( $attributes['showGalleryNavigation'] ) ? $attributes['showGalleryNavigation'] : true;
-				$nav_style               = isset( $attributes['navigationStyle'] ) ? $attributes['navigationStyle'] : 'arrows';
-				$nav_position            = isset( $attributes['navigationPosition'] ) ? $attributes['navigationPosition'] : 'sides';
-				$width                   = isset( $attributes['width'] ) ? $attributes['width'] : '600px';
-				$max_width               = isset( $attributes['maxWidth'] ) ? $attributes['maxWidth'] : '90vw';
-				$display_mode            = isset( $attributes['displayMode'] ) ? $attributes['displayMode'] : 'dialog';
-				$panel_edge              = isset( $attributes['panelEdge'] ) ? $attributes['panelEdge'] : 'right';
-				// Mirror save.js: clamp to a known edge, or the emitted class
-				// matches no CSS rule and the panel floats mid-viewport.
-				if ( ! in_array( $panel_edge, array( 'left', 'right', 'top', 'bottom' ), true ) ) {
-					$panel_edge = 'right';
-				}
-				$panel_size = isset( $attributes['panelSize'] ) ? (string) $attributes['panelSize'] : '24rem';
-				// Mirror save.js: allow-list a single plain CSS length. This is
-				// interpolated into `--dsgo-panel-size:<value>`, and esc_attr()
-				// stops an attribute break-out but not a `;` that appends
-				// further declarations to the modal root.
-				if ( ! preg_match( '/^(0|\d+(\.\d+)?(px|rem|em|%|vw|vh|vmin|vmax|ch|ex|pt|pc|cm|mm|in))$/', $panel_size ) ) {
-					$panel_size = '24rem';
-				}
-				$is_panel              = 'panel' === $display_mode;
-				$overlay_color         = isset( $attributes['overlayColor'] ) ? trim( (string) $attributes['overlayColor'] ) : '';
-				$overlay_opacity       = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 80;
-				$overlay_blur          = isset( $attributes['overlayBlur'] ) ? self::numeric_attribute( $attributes['overlayBlur'] ) : 0;
-				$show_close_button     = isset( $attributes['showCloseButton'] ) ? $attributes['showCloseButton'] : true;
-				$close_button_position = isset( $attributes['closeButtonPosition'] ) ? $attributes['closeButtonPosition'] : 'inside-top-right';
-				$close_button_size     = isset( $attributes['closeButtonSize'] ) ? self::numeric_attribute( $attributes['closeButtonSize'] ) : 24;
-
-				// Build data attributes.
-				$data_attrs  = ' data-dsgo-modal="true"';
-				$data_attrs .= ' data-modal-id="' . esc_attr( $modal_id ) . '"';
-				$data_attrs .= ' data-animation-type="' . esc_attr( $animation_type ) . '"';
-				$data_attrs .= ' data-animation-duration="' . esc_attr( (string) $animation_duration ) . '"';
-				$data_attrs .= ' data-close-on-backdrop="' . ( $close_on_backdrop ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-close-on-esc="' . ( $close_on_esc ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-disable-body-scroll="' . ( $disable_body_scroll ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-allow-hash-trigger="' . ( $allow_hash_trigger ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-update-url-on-open="' . ( $update_url_on_open ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-auto-trigger-type="' . esc_attr( $auto_trigger_type ) . '"';
-				$data_attrs .= ' data-auto-trigger-delay="' . esc_attr( (string) $auto_trigger_delay ) . '"';
-				$data_attrs .= ' data-auto-trigger-frequency="' . esc_attr( $auto_trigger_frequency ) . '"';
-				$data_attrs .= ' data-cookie-duration="' . esc_attr( (string) $cookie_duration ) . '"';
-				$data_attrs .= ' data-exit-intent-sensitivity="' . esc_attr( (string) $exit_intent_sensitivity ) . '"';
-				$data_attrs .= ' data-exit-intent-min-time="' . esc_attr( (string) $exit_intent_min_time ) . '"';
-				$data_attrs .= ' data-exit-intent-exclude-mobile="' . ( $exit_intent_exclude_mob ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-scroll-depth="' . esc_attr( (string) $scroll_depth ) . '"';
-				$data_attrs .= ' data-scroll-direction="' . esc_attr( $scroll_direction ) . '"';
-				$data_attrs .= ' data-time-on-page="' . esc_attr( (string) $time_on_page ) . '"';
-				$data_attrs .= ' data-gallery-group-id="' . esc_attr( $gallery_group_id ) . '"';
-				$data_attrs .= ' data-gallery-index="' . esc_attr( (string) $gallery_index ) . '"';
-				$data_attrs .= ' data-show-gallery-navigation="' . ( $show_gallery_nav ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-navigation-style="' . esc_attr( $nav_style ) . '"';
-				$data_attrs .= ' data-navigation-position="' . esc_attr( $nav_position ) . '"';
-
-				// Overlay styles. save.js writes background-color ONLY when the
-				// author set overlayColor explicitly (hasExplicitString) — left
-				// unset, the stylesheet default owns the scrim
-				// (--wp--custom--designsetgo--modal--overlay-color → #000) — so
-				// mirror that here, and the property order (background-color,
-				// opacity, backdrop-filter), or the block fails validation on
-				// first edit.
-				$overlay_style = '';
-				if ( '' !== $overlay_color ) {
-					$overlay_style .= 'background-color:' . esc_attr( self::convert_color_value_to_css_var( $overlay_color ) ) . ';';
-				}
-				$overlay_style .= 'opacity:' . ( $overlay_opacity / 100 );
-				if ( $overlay_blur > 0 ) {
-					$overlay_style .= ';backdrop-filter:blur(' . $overlay_blur . 'px)';
-				}
-
-				// Content styles. In panel mode save.js passes no dimensions to
-				// transferStylesToContent(), because the panel is sized by
-				// panelSize on the dialog — so no width/max-width is written.
-				$content_style = 'border-style:none;border-width:0px';
-				if ( ! $is_panel ) {
-					$content_style .= ';width:' . esc_attr( $width ) . ';max-width:' . esc_attr( $max_width );
-				}
-
-				// Close button HTML.
-				$close_button_html = '';
-				if ( $show_close_button ) {
-					$close_button_style = 'width:' . $close_button_size . 'px;height:' . $close_button_size . 'px';
-					$close_button_html  = '<button class="dsgo-modal__close dsgo-modal__close--' . esc_attr( $close_button_position ) . '" style="' . esc_attr( $close_button_style ) . '" type="button" aria-label="Close modal">';
-					$close_button_html .= '<svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">';
-					$close_button_html .= '<path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>';
-					$close_button_html .= '</svg></button>';
-				}
-
-				$close_button_is_inside = strpos( $close_button_position, 'inside-' ) === 0;
-
-				// Off-canvas panel mode. save() appends these to the root class
-				// list and writes --dsgo-panel-size as a style AFTER the class
-				// attribute; mirror both exactly or the block fails validation
-				// on first edit.
-				$outer_class = 'wp-block-designsetgo-modal dsgo-modal';
-				$panel_style = '';
-				if ( $is_panel ) {
-					$outer_class .= ' dsgo-modal--panel dsgo-modal--panel-' . $panel_edge;
-					$panel_style  = ' style="' . esc_attr( '--dsgo-panel-size:' . $panel_size ) . '"';
-				}
-
-				$inner_html  = '<div class="dsgo-modal__backdrop" style="' . esc_attr( $overlay_style ) . '" aria-hidden="true"></div>';
-				$inner_html .= '<div class="dsgo-modal__dialog">';
-				if ( ! $close_button_is_inside ) {
-					$inner_html .= $close_button_html;
-				}
-				// save.js: modalLabel?.trim() || __( 'Modal' ).
-				$modal_label = isset( $attributes['modalLabel'] ) && '' !== trim( (string) $attributes['modalLabel'] )
-					? trim( (string) $attributes['modalLabel'] )
-					: __( 'Modal', 'designsetgo' );
-
-				$inner_html .= '<div class="dsgo-modal__content" style="' . esc_attr( $content_style ) . '">';
-
-				$closing_html = '';
-				if ( $close_button_is_inside ) {
-					$closing_html .= $close_button_html;
-				}
-				$closing_html .= '</div></div></div>';
-
-				// save.js omits the id attribute while modalId is blank
-				// (React would render id=""), so mirror that here too.
-				$id_attr = '' !== $modal_id ? ' id="' . esc_attr( $modal_id ) . '"' : '';
-
-				return array(
-					'opening' => '<div' . $id_attr . ' role="dialog" aria-modal="true" aria-label="' . esc_attr( $modal_label ) . '" aria-hidden="true"' . $data_attrs . ' class="' . esc_attr( $outer_class ) . '"' . $panel_style . '>' . $inner_html,
-					'closing' => $closing_html,
-				);
-
-			case 'designsetgo/modal-trigger':
-				$target_modal_id = isset( $attributes['targetModalId'] ) ? $attributes['targetModalId'] : '';
-				$text            = isset( $attributes['text'] ) ? $attributes['text'] : 'Open Modal';
-				$button_style    = isset( $attributes['buttonStyle'] ) ? $attributes['buttonStyle'] : 'fill';
-				$icon            = isset( $attributes['icon'] ) ? $attributes['icon'] : '';
-				$icon_position   = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'none';
-				$icon_gap        = isset( $attributes['iconGap'] ) ? $attributes['iconGap'] : '8px';
-				$icon_style      = isset( $attributes['iconStyle'] ) ? $attributes['iconStyle'] : '';
-				$stroke_width    = isset( $attributes['strokeWidth'] ) ? $attributes['strokeWidth'] : 1.5;
-
-				// Read the current `justification`/`fullWidth` attributes; fall
-				// back to the legacy `align` for callers that still pass it
-				// (mirrors the icon-button case above).
-				$justification = isset( $attributes['justification'] )
-					? $attributes['justification']
-					: ( isset( $attributes['align'] ) ? $attributes['align'] : 'left' );
-				if ( ! in_array( $justification, array( 'left', 'center', 'right' ), true ) ) {
-					$justification = 'left';
-				}
-				$full_width = ! empty( $attributes['fullWidth'] ) || ( isset( $attributes['align'] ) && 'full' === $attributes['align'] );
-
-				$has_icon = 'none' !== $icon_position && $icon;
-
-				// Button classes — must match save.js's clsx() list exactly, or
-				// the block validator flags AI-inserted triggers as invalid.
-				$class_parts = array(
-					'dsgo-modal-trigger',
-					'dsgo-modal-trigger--' . $button_style,
-					'wp-block-button',
-					'wp-block-button__link',
-					'wp-element-button',
-				);
-				if ( $full_width ) {
-					$class_parts[] = 'dsgo-modal-trigger--full-width';
-				}
-				if ( 'end' === $icon_position ) {
-					$class_parts[] = 'dsgo-modal-trigger--icon-end';
-				}
-
-				// Colour, typography, border and shadow are skip-serialized on the
-				// block root and re-applied to the trigger by save.js, exactly as
-				// Icon Button does. None of them were emitted here, so a trigger
-				// given any colour stored markup save() would not reproduce.
-				$trigger_routed = self::get_routed_visual_attributes( $attributes );
-				$class_parts    = array_merge( $class_parts, $trigger_routed['classes'] );
-
-				// save.js writes the gap inline whenever there is an icon and an
-				// iconGap (which defaults to 8px); layout lives in style.scss.
-				$trigger_styles = $trigger_routed['styles'];
-				if ( $has_icon && '' !== $icon_gap ) {
-					$trigger_styles[] = 'gap:' . $icon_gap;
-				}
-				// Padding is skip-serialized on the root and re-applied here.
-				// Unlike Icon Button, save.js writes the value through unchanged.
-				$trigger_styles    = array_merge( $trigger_styles, self::routed_padding_styles( $attributes, false ) );
-				$button_style_attr = empty( $trigger_styles )
-					? ''
-					: ' style="' . esc_attr( implode( ';', $trigger_styles ) ) . '"';
-
-				// Icon span — size is only baked inline when the caller sets an
-				// explicit numeric iconSize, so the theme token owns it otherwise.
-				$icon_html = '';
-				if ( $has_icon ) {
-					$icon_attrs = '';
-					if ( isset( $attributes['iconSize'] ) && is_numeric( $attributes['iconSize'] ) ) {
-						$size        = self::numeric_attribute( $attributes['iconSize'] );
-						$icon_attrs .= ' style="' . esc_attr( 'width:' . $size . 'px;height:' . $size . 'px' ) . '"';
-					}
-					$icon_attrs .= ' data-icon-name="' . esc_attr( $icon ) . '"';
-					if ( $icon_style ) {
-						$icon_attrs .= ' data-icon-style="' . esc_attr( $icon_style ) . '"';
-					}
-					if ( 'outlined' === $icon_style ) {
-						$icon_attrs .= ' data-icon-stroke-width="' . esc_attr( (string) $stroke_width ) . '"';
-					}
-					$icon_html = '<span class="dsgo-modal-trigger__icon dsgo-lazy-icon"' . $icon_attrs . '></span>';
-				}
-
-				$inner_html  = '<button class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $button_style_attr;
-				$inner_html .= ' type="button" data-dsgo-modal-trigger="' . esc_attr( $target_modal_id ) . '">';
-				$inner_html .= $icon_html;
-				$inner_html .= '<span class="dsgo-modal-trigger__text">' . wp_kses_post( $text ) . '</span>';
-				$inner_html .= '</button>';
-
-				// The block root is a block-level justification wrapper — core's
-				// constrained layout caps IT at the content column — with the
-				// button shrink-wrapped inside it (see save.js). Matches
-				// `getJustificationClass()` (src/utils/justification.js).
-				$wrapper_class = 'wp-block-designsetgo-modal-trigger dsgo-justify dsgo-justify--' . $justification;
-
-				return array(
-					'opening' => '<div class="' . esc_attr( $wrapper_class ) . '">' . $inner_html,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/table-of-contents':
-				$unique_id     = isset( $attributes['uniqueId'] ) ? $attributes['uniqueId'] : substr( wp_generate_uuid4(), 0, 8 );
-				$include_h2    = isset( $attributes['includeH2'] ) ? $attributes['includeH2'] : true;
-				$include_h3    = isset( $attributes['includeH3'] ) ? $attributes['includeH3'] : true;
-				$include_h4    = isset( $attributes['includeH4'] ) ? $attributes['includeH4'] : false;
-				$include_h5    = isset( $attributes['includeH5'] ) ? $attributes['includeH5'] : false;
-				$include_h6    = isset( $attributes['includeH6'] ) ? $attributes['includeH6'] : false;
-				$display_mode  = isset( $attributes['displayMode'] ) ? $attributes['displayMode'] : 'hierarchical';
-				$list_style    = isset( $attributes['listStyle'] ) ? $attributes['listStyle'] : 'unordered';
-				$show_title    = isset( $attributes['showTitle'] ) ? $attributes['showTitle'] : true;
-				$title_text    = isset( $attributes['titleText'] ) ? $attributes['titleText'] : 'Table of Contents';
-				$scroll_smooth = isset( $attributes['scrollSmooth'] ) ? $attributes['scrollSmooth'] : true;
-				$scroll_offset = isset( $attributes['scrollOffset'] ) ? self::numeric_attribute( $attributes['scrollOffset'] ) : 0;
-
-				// Build heading levels.
-				$heading_levels = array();
-				if ( $include_h2 ) {
-					$heading_levels[] = 'h2';
-				}
-				if ( $include_h3 ) {
-					$heading_levels[] = 'h3';
-				}
-				if ( $include_h4 ) {
-					$heading_levels[] = 'h4';
-				}
-				if ( $include_h5 ) {
-					$heading_levels[] = 'h5';
-				}
-				if ( $include_h6 ) {
-					$heading_levels[] = 'h6';
-				}
-
-				// Build classes.
-				$class_parts = array( 'wp-block-designsetgo-table-of-contents', 'dsgo-table-of-contents' );
-				if ( 'hierarchical' === $display_mode ) {
-					$class_parts[] = 'dsgo-table-of-contents--hierarchical';
-				} else {
-					$class_parts[] = 'dsgo-table-of-contents--flat';
-				}
-				if ( 'ordered' === $list_style ) {
-					$class_parts[] = 'dsgo-table-of-contents--ordered';
-				}
-				if ( $scroll_smooth ) {
-					$class_parts[] = 'dsgo-table-of-contents--smooth';
-				}
-
-				// Data attributes.
-				$data_attrs  = ' data-unique-id="' . esc_attr( $unique_id ) . '"';
-				$data_attrs .= ' data-heading-levels="' . esc_attr( implode( ',', $heading_levels ) ) . '"';
-				$data_attrs .= ' data-display-mode="' . esc_attr( $display_mode ) . '"';
-				$data_attrs .= ' data-scroll-smooth="' . ( $scroll_smooth ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-scroll-offset="' . esc_attr( (string) $scroll_offset ) . '"';
-
-				// List tag.
-				$list_tag = 'ordered' === $list_style ? 'ol' : 'ul';
-
-				// Inner HTML.
-				$inner_html = '<div class="dsgo-table-of-contents__content">';
-				// titleText is DOM-sourced, so the title element is always rendered
-				// (matching save.js) and hidden via the `--hidden` modifier when the
-				// toggle is off, rather than being omitted — otherwise a hidden
-				// title's text would be silently lost on reload.
-				$toc_title_class = 'dsgo-table-of-contents__title' . ( $show_title ? '' : ' dsgo-table-of-contents__title--hidden' );
-				$inner_html     .= '<div class="' . esc_attr( $toc_title_class ) . '">' . esc_html( $title_text ) . '</div>';
-				$inner_html     .= '<' . $list_tag . ' class="dsgo-table-of-contents__list"></' . $list_tag . '>';
-				$inner_html     .= '</div>';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $data_attrs . '>' . $inner_html,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/image-accordion':
-				$height                   = isset( $attributes['height'] ) ? $attributes['height'] : '500px';
-				$gap                      = isset( $attributes['gap'] ) ? $attributes['gap'] : '4px';
-				$expanded_ratio           = isset( $attributes['expandedRatio'] ) ? floatval( $attributes['expandedRatio'] ) : 3;
-				$transition_duration      = isset( $attributes['transitionDuration'] ) ? $attributes['transitionDuration'] : '0.5s';
-				$enable_overlay           = isset( $attributes['enableOverlay'] ) ? $attributes['enableOverlay'] : true;
-				$overlay_color            = isset( $attributes['overlayColor'] ) ? $attributes['overlayColor'] : '#000000';
-				$overlay_opacity          = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 40;
-				$overlay_opacity_expanded = isset( $attributes['overlayOpacityExpanded'] ) ? floatval( $attributes['overlayOpacityExpanded'] ) : 20;
-				$trigger_type             = isset( $attributes['triggerType'] ) ? $attributes['triggerType'] : 'hover';
-				$default_expanded         = isset( $attributes['defaultExpanded'] ) ? self::numeric_attribute( $attributes['defaultExpanded'] ) : 0;
-
-				// Build classes.
-				$class_parts   = array( 'wp-block-designsetgo-image-accordion', 'dsgo-image-accordion' );
-				$class_parts[] = 'dsgo-image-accordion--' . esc_attr( $trigger_type );
-
-				// Build style with CSS custom properties.
-				// height and gap have no block.json default either, so save()
-				// writes nothing for them and the stylesheet supplies the size.
-				$style_parts = array();
-				if ( isset( $attributes['height'] ) && '' !== $attributes['height'] ) {
-					$style_parts[] = '--dsgo-image-accordion-height:' . esc_attr( $attributes['height'] );
-				}
-				if ( isset( $attributes['gap'] ) && '' !== $attributes['gap'] ) {
-					$style_parts[] = '--dsgo-image-accordion-gap:' . esc_attr( $attributes['gap'] );
-				}
-				$style_parts[] = '--dsgo-image-accordion-expanded-ratio:' . esc_attr( (string) $expanded_ratio );
-				$style_parts[] = '--dsgo-image-accordion-transition:' . esc_attr( $transition_duration );
-
-				// overlayColor and the two opacities have NO block.json default,
-				// so save() sees them undefined and writes nothing; the
-				// stylesheet supplies the fallback. Inventing #000000 / 0.4 / 0.2
-				// here emitted declarations save() never writes, and the block
-				// was only "valid" because a deprecation claimed it — every
-				// insert silently migrated on open.
-				if ( isset( $attributes['overlayColor'] ) && '' !== $attributes['overlayColor'] ) {
-					$style_parts[] = '--dsgo-image-accordion-overlay-color:' . esc_attr( $attributes['overlayColor'] );
-				}
-				if ( isset( $attributes['overlayOpacity'] ) && is_numeric( $attributes['overlayOpacity'] ) ) {
-					$style_parts[] = '--dsgo-image-accordion-overlay-opacity:' . esc_attr( self::format_js_number( (float) $attributes['overlayOpacity'] / 100 ) );
-				}
-				if ( isset( $attributes['overlayOpacityExpanded'] ) && is_numeric( $attributes['overlayOpacityExpanded'] ) ) {
-					$style_parts[] = '--dsgo-image-accordion-overlay-opacity-expanded:' . esc_attr( self::format_js_number( (float) $attributes['overlayOpacityExpanded'] / 100 ) );
-				}
-				$style = implode( ';', $style_parts );
-
-				// Data attributes.
-				$data_attrs  = ' data-trigger-type="' . esc_attr( $trigger_type ) . '"';
-				$data_attrs .= ' data-default-expanded="' . esc_attr( (string) $default_expanded ) . '"';
-				$data_attrs .= ' data-enable-overlay="' . ( $enable_overlay ? 'true' : 'false' ) . '"';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( $style ) . '"' . $data_attrs . '><div class="dsgo-image-accordion__items">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/image-accordion-item':
-				$unique_id            = isset( $attributes['uniqueId'] ) ? $attributes['uniqueId'] : 'image-accordion-item-' . substr( str_replace( '-', '', wp_generate_uuid4() ), 0, 9 );
-				$vertical_alignment   = isset( $attributes['verticalAlignment'] ) ? $attributes['verticalAlignment'] : 'center';
-				$horizontal_alignment = isset( $attributes['horizontalAlignment'] ) ? $attributes['horizontalAlignment'] : 'center';
-
-				// The overlay marker is unconditional: enableOverlay is not an
-				// attribute of this block (it comes from the parent through
-				// usesContext, and save() receives no context), so save.js
-				// hardcodes the enabled default for serialized markup.
-				$class_parts = array(
-					'wp-block-designsetgo-image-accordion-item',
-					'dsgo-image-accordion-item',
-					'dsgo-image-accordion-item--has-overlay',
-				);
-
-				// Build style with CSS custom properties (overlay first, then alignment - must match save.js order).
-				$style_parts = array();
-				// No overlay custom properties here. The overlay colour and
-				// opacities are NOT attributes of this block - they come from the
-				// parent accordion through usesContext, and WordPress passes no
-				// context to save(), so save() serializes none of them and the
-				// values cascade from the parent's own custom properties at
-				// render time. Inventing #000000 / 0.4 / 0.2 wrote three
-				// declarations save() never emits, and the block was only
-				// "valid" because a deprecation claimed the markup - every
-				// inserted item silently migrated when the editor opened it.
-				$style_parts[] = '--dsgo-vertical-alignment:' . esc_attr( $vertical_alignment );
-				$style_parts[] = '--dsgo-horizontal-alignment:' . esc_attr( $horizontal_alignment );
-				$style         = implode( ';', $style_parts );
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( $style ) . '" data-unique-id="' . esc_attr( $unique_id ) . '" role="button" tabindex="0"><div class="dsgo-image-accordion-item__content">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/scroll-accordion':
-				$align_items = isset( $attributes['alignItems'] ) ? $attributes['alignItems'] : 'flex-start';
-
-				// Must match save.js: the constant layout (`width`/`align-self`
-				// on the root, `display`/`flex-direction` on the items wrapper)
-				// lives in style.scss and is no longer serialized. Only the
-				// author-controlled alignItems is written inline. Emitting the
-				// constants here would produce markup save() never generates, so
-				// the block would fail validation on first open.
-				$inner_style = 'align-items:' . esc_attr( $align_items );
-
-				// Built as a list, not by concatenating a possibly-empty align
-				// class between two others: trim() only strips the ends, so an
-				// unaligned block was left with a double space in its class
-				// attribute on every insert.
-				$accordion_classes = array( 'wp-block-designsetgo-scroll-accordion' );
-				$accordion_align   = self::align_class( $block_name, $attributes );
-				if ( '' !== $accordion_align ) {
-					$accordion_classes[] = $accordion_align;
-				}
-				$accordion_classes[] = 'dsgo-scroll-accordion';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $accordion_classes ) ) . '"><div class="dsgo-scroll-accordion__items" style="' . esc_attr( $inner_style ) . '">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/scroll-accordion-item':
-				$overlay_color = isset( $attributes['overlayColor'] ) ? $attributes['overlayColor'] : '';
-
-				// Build classes.
-				$class_parts          = array( 'wp-block-designsetgo-scroll-accordion-item', 'dsgo-scroll-accordion-item' );
-				$accordion_item_align = self::align_class( $block_name, $attributes );
-				if ( '' !== $accordion_item_align ) {
-					$class_parts[] = $accordion_item_align;
-				}
-				if ( $overlay_color ) {
-					$class_parts[] = 'dsgo-scroll-accordion-item--has-overlay';
-				}
-
-				// Build style.
-				$style = '';
-				if ( $overlay_color ) {
-					$style = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( (string) $overlay_color ) . ';--dsgo-overlay-opacity:' . self::overlay_opacity_for_color( (string) $overlay_color );
-				}
-
-				$style_attr = $style ? ' style="' . esc_attr( $style ) . '"' : '';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $style_attr . '>',
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/slider':
-				// The inline isset() fallbacks below are normally unreachable
-				// because apply_block_json_defaults() fills these from the
-				// registry before we get here. They only fire when the block
-				// isn't registered (e.g., build folder missing), so keep them
-				// synced with src/blocks/slider/block.json — not with any
-				// past convention like height=500px / arrowSize=48px.
-				$slides_per_view        = isset( $attributes['slidesPerView'] ) ? self::numeric_attribute( $attributes['slidesPerView'] ) : 1;
-				$slides_per_view_tablet = isset( $attributes['slidesPerViewTablet'] ) ? self::numeric_attribute( $attributes['slidesPerViewTablet'] ) : 1;
-				$slides_per_view_mobile = isset( $attributes['slidesPerViewMobile'] ) ? self::numeric_attribute( $attributes['slidesPerViewMobile'] ) : 1;
-				$height                 = isset( $attributes['height'] ) ? $attributes['height'] : '';
-				$aspect_ratio           = isset( $attributes['aspectRatio'] ) ? $attributes['aspectRatio'] : '16/9';
-				$use_aspect_ratio       = isset( $attributes['useAspectRatio'] ) ? $attributes['useAspectRatio'] : false;
-				$gap                    = isset( $attributes['gap'] ) ? $attributes['gap'] : '20px';
-				$show_arrows            = isset( $attributes['showArrows'] ) ? $attributes['showArrows'] : true;
-				$show_dots              = isset( $attributes['showDots'] ) ? $attributes['showDots'] : true;
-				$arrow_style            = isset( $attributes['arrowStyle'] ) ? $attributes['arrowStyle'] : 'default';
-				$arrow_position         = isset( $attributes['arrowPosition'] ) ? $attributes['arrowPosition'] : 'sides';
-				$arrow_vertical_pos     = isset( $attributes['arrowVerticalPosition'] ) ? $attributes['arrowVerticalPosition'] : 'center';
-				$arrow_color            = isset( $attributes['arrowColor'] ) ? $attributes['arrowColor'] : '';
-				$arrow_bg_color         = isset( $attributes['arrowBackgroundColor'] ) ? $attributes['arrowBackgroundColor'] : '';
-				$arrow_size             = isset( $attributes['arrowSize'] ) ? $attributes['arrowSize'] : '24px';
-				$arrow_padding          = isset( $attributes['arrowPadding'] ) ? $attributes['arrowPadding'] : '';
-				$dot_style              = isset( $attributes['dotStyle'] ) ? $attributes['dotStyle'] : 'default';
-				$dot_position           = isset( $attributes['dotPosition'] ) ? $attributes['dotPosition'] : 'inside';
-				$dot_color              = isset( $attributes['dotColor'] ) ? $attributes['dotColor'] : '';
-				$effect                 = isset( $attributes['effect'] ) ? $attributes['effect'] : 'slide';
-				$transition_duration    = isset( $attributes['transitionDuration'] ) ? $attributes['transitionDuration'] : '0.5s';
-				$transition_easing      = isset( $attributes['transitionEasing'] ) ? $attributes['transitionEasing'] : 'ease-in-out';
-				$autoplay               = isset( $attributes['autoplay'] ) ? $attributes['autoplay'] : false;
-				$autoplay_interval      = isset( $attributes['autoplayInterval'] ) ? self::numeric_attribute( $attributes['autoplayInterval'] ) : 3000;
-				$pause_on_hover         = isset( $attributes['pauseOnHover'] ) ? $attributes['pauseOnHover'] : true;
-				$pause_on_interaction   = isset( $attributes['pauseOnInteraction'] ) ? $attributes['pauseOnInteraction'] : true;
-				$loop                   = isset( $attributes['loop'] ) ? $attributes['loop'] : true;
-				$draggable              = isset( $attributes['draggable'] ) ? $attributes['draggable'] : true;
-				$swipeable              = isset( $attributes['swipeable'] ) ? $attributes['swipeable'] : true;
-				$free_mode              = isset( $attributes['freeMode'] ) ? $attributes['freeMode'] : false;
-				$centered_slides        = isset( $attributes['centeredSlides'] ) ? $attributes['centeredSlides'] : false;
-				$mobile_breakpoint      = isset( $attributes['mobileBreakpoint'] ) ? self::numeric_attribute( $attributes['mobileBreakpoint'] ) : 768;
-				$tablet_breakpoint      = isset( $attributes['tabletBreakpoint'] ) ? self::numeric_attribute( $attributes['tabletBreakpoint'] ) : 1024;
-				$active_slide           = isset( $attributes['activeSlide'] ) ? self::numeric_attribute( $attributes['activeSlide'] ) : 0;
-				$style_variation        = isset( $attributes['styleVariation'] ) ? $attributes['styleVariation'] : 'classic';
-				$aria_label             = isset( $attributes['ariaLabel'] ) ? $attributes['ariaLabel'] : '';
-				$scroll_driven          = isset( $attributes['scrollDriven'] ) ? $attributes['scrollDriven'] : false;
-				$scroll_driven_speed    = isset( $attributes['scrollDrivenSpeed'] ) ? floatval( $attributes['scrollDrivenSpeed'] ) : 1;
-
-				// Single slide effects.
-				$single_slide_effects    = array( 'fade', 'zoom' );
-				$requires_single         = in_array( $effect, $single_slide_effects, true );
-				$effective_slides        = $requires_single ? 1 : $slides_per_view;
-				$effective_slides_tablet = $requires_single ? 1 : $slides_per_view_tablet;
-				$effective_slides_mobile = $requires_single ? 1 : $slides_per_view_mobile;
-
-				// Build classes.
-				$class_parts = array( 'wp-block-designsetgo-slider', 'dsgo-slider' );
-				if ( $style_variation ) {
-					$class_parts[] = 'dsgo-slider--' . esc_attr( $style_variation );
-				}
-				if ( $effect ) {
-					$class_parts[] = 'dsgo-slider--effect-' . esc_attr( $effect );
-				}
-				if ( $show_arrows ) {
-					$class_parts[] = 'dsgo-slider--has-arrows';
-				}
-				if ( $show_dots ) {
-					$class_parts[] = 'dsgo-slider--has-dots';
-				}
-				if ( $centered_slides ) {
-					$class_parts[] = 'dsgo-slider--centered';
-				}
-				if ( $free_mode ) {
-					$class_parts[] = 'dsgo-slider--free-mode';
-				}
-				if ( $scroll_driven ) {
-					$class_parts[] = 'dsgo-slider--scroll-driven';
-				}
-
-				// Build style. Mirror save.js: height is only included when
-				// truthy (block.json default is ""), and arrow size follows the
-				// same rule. Emitting them unconditionally here breaks
-				// round-tripping against save().
-				$style_parts = array();
-				if ( $height ) {
-					$style_parts[] = '--dsgo-slider-height:' . esc_attr( $height );
-				}
-				$style_parts[] = '--dsgo-slider-aspect-ratio:' . esc_attr( $aspect_ratio );
-				$style_parts[] = '--dsgo-slider-gap:' . esc_attr( $gap );
-				$style_parts[] = '--dsgo-slider-transition:' . esc_attr( $transition_duration );
-				$style_parts[] = '--dsgo-slider-slides-per-view:' . esc_attr( (string) $effective_slides );
-				$style_parts[] = '--dsgo-slider-slides-per-view-tablet:' . esc_attr( (string) $effective_slides_tablet );
-				$style_parts[] = '--dsgo-slider-slides-per-view-mobile:' . esc_attr( (string) $effective_slides_mobile );
-				if ( $arrow_color ) {
-					$style_parts[] = '--dsgo-slider-arrow-color:' . esc_attr( self::convert_color_value_to_css_var( $arrow_color ) );
-				}
-				if ( $arrow_bg_color ) {
-					$style_parts[] = '--dsgo-slider-arrow-bg-color:' . esc_attr( self::convert_color_value_to_css_var( $arrow_bg_color ) );
-				}
-				if ( $arrow_size ) {
-					$style_parts[] = '--dsgo-slider-arrow-size:' . esc_attr( $arrow_size );
-				}
-				if ( $arrow_padding ) {
-					$style_parts[] = '--dsgo-slider-arrow-padding:' . esc_attr( $arrow_padding );
-				}
-				if ( $dot_color ) {
-					$style_parts[] = '--dsgo-slider-dot-color:' . esc_attr( self::convert_color_value_to_css_var( $dot_color ) );
-				}
-				$style = implode( ';', $style_parts );
-
-				// Build data attributes.
-				$data_attrs  = ' data-slides-per-view="' . esc_attr( (string) $effective_slides ) . '"';
-				$data_attrs .= ' data-slides-per-view-tablet="' . esc_attr( (string) $effective_slides_tablet ) . '"';
-				$data_attrs .= ' data-slides-per-view-mobile="' . esc_attr( (string) $effective_slides_mobile ) . '"';
-				$data_attrs .= ' data-use-aspect-ratio="' . ( $use_aspect_ratio ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-show-arrows="' . ( $show_arrows ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-show-dots="' . ( $show_dots ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-arrow-style="' . esc_attr( $arrow_style ) . '"';
-				$data_attrs .= ' data-arrow-position="' . esc_attr( $arrow_position ) . '"';
-				$data_attrs .= ' data-arrow-vertical-position="' . esc_attr( $arrow_vertical_pos ) . '"';
-				$data_attrs .= ' data-dot-style="' . esc_attr( $dot_style ) . '"';
-				$data_attrs .= ' data-dot-position="' . esc_attr( $dot_position ) . '"';
-				$data_attrs .= ' data-effect="' . esc_attr( $effect ) . '"';
-				$data_attrs .= ' data-transition-duration="' . esc_attr( $transition_duration ) . '"';
-				$data_attrs .= ' data-transition-easing="' . esc_attr( $transition_easing ) . '"';
-				$data_attrs .= ' data-autoplay="' . ( $autoplay ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-autoplay-interval="' . esc_attr( (string) $autoplay_interval ) . '"';
-				$data_attrs .= ' data-pause-on-hover="' . ( $pause_on_hover ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-pause-on-interaction="' . ( $pause_on_interaction ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-loop="' . ( $loop ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-draggable="' . ( $draggable ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-swipeable="' . ( $swipeable ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-free-mode="' . ( $free_mode ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-centered-slides="' . ( $centered_slides ? 'true' : 'false' ) . '"';
-				$data_attrs .= ' data-mobile-breakpoint="' . esc_attr( (string) $mobile_breakpoint ) . '"';
-				$data_attrs .= ' data-tablet-breakpoint="' . esc_attr( (string) $tablet_breakpoint ) . '"';
-				$data_attrs .= ' data-active-slide="' . esc_attr( (string) $active_slide ) . '"';
-				if ( $scroll_driven ) {
-					$data_attrs .= ' data-scroll-driven="true"';
-					$data_attrs .= ' data-scroll-driven-speed="' . esc_attr( (string) $scroll_driven_speed ) . '"';
-				}
-
-				$aria = $aria_label ? $aria_label : 'Image slider';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( $style ) . '"' . $data_attrs . ' role="region" aria-label="' . esc_attr( $aria ) . '" aria-roledescription="slider"><div class="dsgo-slider__viewport"><div class="dsgo-slider__track">',
-					'closing' => '</div></div></div>',
-				);
-
-			case 'designsetgo/slide':
-				$background_image    = isset( $attributes['backgroundImage'] ) ? $attributes['backgroundImage'] : array();
-				$background_size     = isset( $attributes['backgroundSize'] ) ? $attributes['backgroundSize'] : 'cover';
-				$background_position = isset( $attributes['backgroundPosition'] ) ? $attributes['backgroundPosition'] : 'center center';
-				$background_repeat   = isset( $attributes['backgroundRepeat'] ) ? $attributes['backgroundRepeat'] : 'no-repeat';
-				$overlay_color       = isset( $attributes['overlayColor'] ) ? $attributes['overlayColor'] : '';
-				$overlay_opacity     = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 80;
-				$content_v_align     = isset( $attributes['contentVerticalAlign'] ) ? $attributes['contentVerticalAlign'] : 'center';
-				$content_h_align     = isset( $attributes['contentHorizontalAlign'] ) ? $attributes['contentHorizontalAlign'] : 'center';
-				$min_height          = isset( $attributes['minHeight'] ) ? $attributes['minHeight'] : '';
-				$bg_url              = isset( $background_image['url'] ) ? $background_image['url'] : '';
-
-				// Build classes.
-				$class_parts = array( 'wp-block-designsetgo-slide', 'dsgo-slide' );
-				if ( $bg_url ) {
-					$class_parts[] = 'dsgo-slide--has-background';
-				}
-				if ( $overlay_color ) {
-					$class_parts[] = 'dsgo-slide--has-overlay';
-				}
-
-				// Build style.
-				$style_parts = array();
-				if ( $bg_url ) {
-					$style_parts[] = 'background-image:url(' . esc_url( $bg_url ) . ')';
-					$style_parts[] = 'background-size:' . esc_attr( $background_size );
-					$style_parts[] = 'background-position:' . esc_attr( $background_position );
-					$style_parts[] = 'background-repeat:' . esc_attr( $background_repeat );
-				}
-				if ( $overlay_color ) {
-					$style_parts[] = '--dsgo-slide-overlay-color:' . esc_attr( $overlay_color );
-					$style_parts[] = '--dsgo-slide-overlay-opacity:' . esc_attr( (string) ( $overlay_opacity / 100 ) );
-				}
-				$style_parts[] = '--dsgo-slide-content-vertical-align:' . esc_attr( $content_v_align );
-				$style_parts[] = '--dsgo-slide-content-horizontal-align:' . esc_attr( $content_h_align );
-				if ( $min_height ) {
-					$style_parts[] = 'min-height:' . esc_attr( $min_height );
-				}
-				$style = implode( ';', $style_parts );
-
-				// Overlay HTML.
-				$overlay_html = '';
-				if ( $overlay_color ) {
-					$overlay_style = 'background-color:' . esc_attr( $overlay_color ) . ';opacity:' . esc_attr( (string) ( $overlay_opacity / 100 ) );
-					$overlay_html  = '<div class="dsgo-slide__overlay" style="' . esc_attr( $overlay_style ) . '"></div>';
-				}
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( $style ) . '" role="group" aria-roledescription="slide">' . $overlay_html . '<div class="dsgo-slide__content">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/scroll-marquee':
-				$rows         = isset( $attributes['rows'] ) ? $attributes['rows'] : array();
-				$scroll_speed = isset( $attributes['scrollSpeed'] ) ? floatval( $attributes['scrollSpeed'] ) : 0.5;
-				$image_height = isset( $attributes['imageHeight'] ) ? $attributes['imageHeight'] : '200px';
-				// block.json defaults imageWidth to 'auto', not '300px'.
-				$image_width = isset( $attributes['imageWidth'] ) ? $attributes['imageWidth'] : 'auto';
-				$gap         = isset( $attributes['gap'] ) ? $attributes['gap'] : '20px';
-				$row_gap     = isset( $attributes['rowGap'] ) ? $attributes['rowGap'] : '20px';
-				$object_fit  = isset( $attributes['objectFit'] ) ? $attributes['objectFit'] : 'cover';
-
-				// Build style. save.js writes object-fit here; the border-radius
-				// custom property this used to emit was removed from save.js, so
-				// every marquee serialized a declaration save() never writes.
-				$style_parts = array(
-					'--dsgo-marquee-gap:' . esc_attr( $gap ),
-					'--dsgo-marquee-row-gap:' . esc_attr( $row_gap ),
-					'--dsgo-marquee-image-height:' . esc_attr( $image_height ),
-					'--dsgo-marquee-image-width:' . esc_attr( $image_width ),
-					'--dsgo-marquee-object-fit:' . esc_attr( $object_fit ),
-				);
-				$style       = implode( ';', $style_parts );
-
-				// Build rows HTML.
-				$rows_html = '';
-				foreach ( $rows as $row ) {
-					$direction = isset( $row['direction'] ) ? $row['direction'] : 'left';
-					$images    = isset( $row['images'] ) ? $row['images'] : array();
-
-					$rows_html .= '<div class="dsgo-scroll-marquee__row" data-direction="' . esc_attr( $direction ) . '">';
-					$rows_html .= '<div class="dsgo-scroll-marquee__track">';
-
-					// Render images 6 times for seamless infinite scroll.
-					for ( $i = 0; $i < 6; $i++ ) {
-						$rows_html .= '<div class="dsgo-scroll-marquee__track-segment">';
-						foreach ( $images as $image ) {
-							$img_url    = isset( $image['url'] ) ? $image['url'] : '';
-							$img_alt    = isset( $image['alt'] ) ? $image['alt'] : '';
-							$rows_html .= '<img src="' . esc_url( $img_url ) . '" alt="' . esc_attr( $img_alt ) . '" class="dsgo-scroll-marquee__image" loading="lazy"/>';
-						}
-						$rows_html .= '</div>';
-					}
-
-					$rows_html .= '</div></div>';
-				}
-
-				return array(
-					'opening' => '<div class="wp-block-designsetgo-scroll-marquee dsgo-scroll-marquee" data-scroll-speed="' . esc_attr( (string) $scroll_speed ) . '" style="' . esc_attr( $style ) . '">' . $rows_html,
-					'closing' => '</div>',
-				);
-
-			case 'designsetgo/tabs':
-				$unique_id         = isset( $attributes['uniqueId'] ) ? $attributes['uniqueId'] : substr( str_replace( '-', '', wp_generate_uuid4() ), 0, 9 );
-				$orientation       = isset( $attributes['orientation'] ) ? $attributes['orientation'] : 'horizontal';
-				$active_tab        = isset( $attributes['activeTab'] ) ? self::numeric_attribute( $attributes['activeTab'] ) : 0;
-				$alignment         = isset( $attributes['alignment'] ) ? $attributes['alignment'] : 'left';
-				$mobile_breakpoint = isset( $attributes['mobileBreakpoint'] ) ? self::numeric_attribute( $attributes['mobileBreakpoint'] ) : 768;
-				$mobile_mode       = isset( $attributes['mobileMode'] ) ? $attributes['mobileMode'] : 'accordion';
-				$enable_deep_link  = isset( $attributes['enableDeepLinking'] ) ? $attributes['enableDeepLinking'] : false;
-				$gap               = isset( $attributes['gap'] ) ? $attributes['gap'] : '8px';
-				$tab_style         = isset( $attributes['tabStyle'] ) ? $attributes['tabStyle'] : 'default';
-				$show_nav_border   = isset( $attributes['showNavBorder'] ) ? $attributes['showNavBorder'] : false;
-
-				// Build classes.
-				$class_parts   = array( 'wp-block-designsetgo-tabs', 'dsgo-tabs', 'dsgo-tabs-' . esc_attr( $unique_id ) );
-				$class_parts[] = 'dsgo-tabs--' . esc_attr( $orientation );
-				$class_parts[] = 'dsgo-tabs--' . esc_attr( $tab_style );
-				$class_parts[] = 'dsgo-tabs--align-' . esc_attr( $alignment );
-				if ( $show_nav_border ) {
-					$class_parts[] = 'dsgo-tabs--show-nav-border';
-				}
-
-				// Build style.
-				// Mirrors save.js: the gap always, then each colour custom
-				// property only when its attribute is set. These eight were
-				// missing entirely, so any Tabs block given colours stored
-				// markup that did not match save().
-				$tab_style_parts = array( '--dsgo-tabs-gap:' . esc_attr( $gap ) );
-
-				$tab_color_vars = array(
-					'tabColor'                  => '--dsgo-tab-color',
-					'tabBackgroundColor'        => '--dsgo-tab-bg',
-					'tabContentBackgroundColor' => '--dsgo-tab-content-bg',
-					'activeTabColor'            => '--dsgo-tab-color-active',
-					'activeTabBackgroundColor'  => '--dsgo-tab-bg-active',
-					'tabBorderColor'            => '--dsgo-tab-border-color',
-					'tabHoverColor'             => '--dsgo-tab-color-hover',
-					'tabHoverBackgroundColor'   => '--dsgo-tab-bg-hover',
-				);
-
-				foreach ( $tab_color_vars as $attribute_name => $custom_property ) {
-					$colour = isset( $attributes[ $attribute_name ] ) ? (string) $attributes[ $attribute_name ] : '';
-					if ( '' !== $colour ) {
-						$tab_style_parts[] = $custom_property . ':' . esc_attr( self::convert_color_value_to_css_var( $colour ) );
-					}
-				}
-
-				$style = implode( ';', $tab_style_parts );
-
-				// Data attributes.
-				$data_attrs  = ' data-active-tab="' . esc_attr( (string) $active_tab ) . '"';
-				$data_attrs .= ' data-mobile-breakpoint="' . esc_attr( (string) $mobile_breakpoint ) . '"';
-				$data_attrs .= ' data-mobile-mode="' . esc_attr( $mobile_mode ) . '"';
-				$data_attrs .= ' data-deep-linking="' . ( $enable_deep_link ? 'true' : 'false' ) . '"';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '" style="' . esc_attr( $style ) . '"' . $data_attrs . '><div class="dsgo-tabs__nav" role="tablist"></div><div class="dsgo-tabs__panels">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/tab':
-				$unique_id     = isset( $attributes['uniqueId'] ) ? $attributes['uniqueId'] : substr( str_replace( '-', '', wp_generate_uuid4() ), 0, 9 );
-				$title         = isset( $attributes['title'] ) ? $attributes['title'] : 'Tab';
-				$anchor        = isset( $attributes['anchor'] ) ? $attributes['anchor'] : '';
-				$icon          = isset( $attributes['icon'] ) ? $attributes['icon'] : '';
-				$icon_position = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'none';
-
-				// Build panel ID.
-				$panel_id = 'panel-' . ( $anchor ? esc_attr( $anchor ) : esc_attr( $unique_id ) );
-
-				// Build aria-label.
-				$aria_label = $title ? $title : 'Tab ' . $unique_id;
-
-				// Data attributes for icon.
-				$icon_data = '';
-				if ( $icon && $icon_position && 'none' !== $icon_position ) {
-					$safe_icon     = strtolower( preg_replace( '/[^a-z0-9\-]/i', '', $icon ) );
-					$safe_position = in_array( $icon_position, array( 'left', 'right' ), true ) ? $icon_position : 'left';
-					$icon_data     = ' data-icon="' . esc_attr( $safe_icon ) . '" data-icon-position="' . esc_attr( $safe_position ) . '"';
-				}
-
-				// Same list-building reason as scroll-accordion above.
-				$tab_classes = array( 'wp-block-designsetgo-tab' );
-				$tab_align   = self::align_class( $block_name, $attributes );
-				if ( '' !== $tab_align ) {
-					$tab_classes[] = $tab_align;
-				}
-				$tab_classes[] = 'dsgo-tab';
-
-				return array(
-					'opening' => '<div class="' . esc_attr( implode( ' ', $tab_classes ) ) . '" role="tabpanel" aria-labelledby="tab-' . esc_attr( $unique_id ) . '" aria-label="' . esc_attr( $aria_label ) . '" id="' . esc_attr( $panel_id ) . '" hidden' . $icon_data . '><div class="dsgo-tab__content">',
-					'closing' => '</div></div>',
-				);
-
-			case 'designsetgo/form-builder':
-				return self::generate_form_builder_html( $block_class, $attributes );
-
-			default:
-				return null;
-		}
-	}
-
-	/**
-	 * Generate wrapper HTML for form-builder block.
-	 *
-	 * @param string               $block_class Base block class.
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @return array<string, string> Array with 'opening' and 'closing' keys.
-	 */
-	private static function generate_form_builder_html( string $block_class, array $attributes ): array {
-		// Get attributes with defaults from block.json.
-		$form_id                          = $attributes['formId'] ?? '';
-		$submit_button_text               = $attributes['submitButtonText'] ?? 'Submit';
-		$submit_button_alignment          = $attributes['submitButtonAlignment'] ?? 'left';
-		$submit_button_position           = $attributes['submitButtonPosition'] ?? 'below';
-		$submit_button_variation          = $attributes['submitButtonVariation'] ?? 'default';
-		$ajax_submit                      = $attributes['ajaxSubmit'] ?? true;
-		$success_message                  = $attributes['successMessage'] ?? 'Thank you! Your form has been submitted successfully.';
-		$error_message                    = $attributes['errorMessage'] ?? 'There was an error submitting the form. Please try again.';
-		$field_spacing                    = $attributes['fieldSpacing'] ?? '1.5rem';
-		$input_height                     = $attributes['inputHeight'] ?? '44px';
-		$input_padding                    = $attributes['inputPadding'] ?? '0.75rem';
-		$field_label_color                = $attributes['fieldLabelColor'] ?? '';
-		$field_border_color               = $attributes['fieldBorderColor'] ?? '';
-		$field_background_color           = $attributes['fieldBackgroundColor'] ?? '';
-		$submit_button_color              = $attributes['submitButtonColor'] ?? '';
-		$submit_button_background_color   = $attributes['submitButtonBackgroundColor'] ?? '';
-		$submit_button_padding_vertical   = $attributes['submitButtonPaddingVertical'] ?? '0.75rem';
-		$submit_button_padding_horizontal = $attributes['submitButtonPaddingHorizontal'] ?? '2rem';
-		$submit_button_font_size          = $attributes['submitButtonFontSize'] ?? '';
-		$submit_button_height             = $attributes['submitButtonHeight'] ?? '44px';
-		$enable_honeypot                  = $attributes['enableHoneypot'] ?? true;
-		$enable_turnstile                 = $attributes['enableTurnstile'] ?? false;
-		$enable_email                     = $attributes['enableEmail'] ?? false;
-		$email_to                         = $attributes['emailTo'] ?? '';
-		$email_subject                    = $attributes['emailSubject'] ?? 'New Form Submission';
-		$email_from_name                  = $attributes['emailFromName'] ?? '';
-		$email_from_email                 = $attributes['emailFromEmail'] ?? '';
-		$email_reply_to                   = $attributes['emailReplyTo'] ?? '';
-		$email_body                       = $attributes['emailBody'] ?? '';
-
-		// Submit-button style variation class - must match save.js. Validated
-		// against the block.json enum so an AI-supplied value can't inject markup.
-		// The `is-style-` namespace (not `dsgo-form__submit--*`) keeps it clear of
-		// the layout/state/animation modifiers that share the BEM namespace.
-		$submit_button_variation_class = in_array( $submit_button_variation, array( 'secondary', 'outline' ), true )
-			? ' is-style-' . $submit_button_variation
-			: '';
-
-		// Build classes - must match save.js.
-		$classes = $block_class;
-		if ( $submit_button_alignment && 'below' === $submit_button_position ) {
-			$classes .= ' dsgo-form-builder--align-' . $submit_button_alignment;
-		}
-		if ( 'inline' === $submit_button_position ) {
-			$classes .= ' dsgo-form-builder--button-inline';
-		}
-
-		// Build CSS custom properties - must match save.js order. Each of these
-		// three is spread conditionally in save.js (`...(fieldSpacing && {...})`),
-		// so an unset value emits no declaration at all. Writing an empty value
-		// instead made every form with default sizing invalid.
-		$style_parts = array();
-		if ( '' !== (string) $field_spacing ) {
-			$style_parts[] = '--dsgo-form-field-spacing:' . esc_attr( $field_spacing );
-		}
-		if ( '' !== (string) $input_height ) {
-			$style_parts[] = '--dsgo-form-input-height:' . esc_attr( $input_height );
-		}
-		if ( '' !== (string) $input_padding ) {
-			$style_parts[] = '--dsgo-form-input-padding:' . esc_attr( $input_padding );
-		}
-		// save.js passes each colour through convertColorToCSSVar(), so a preset
-		// shorthand such as `var:preset|color|contrast` or a bare slug reaches the
-		// stored HTML as `var(--wp--preset--color--contrast)`. Writing the raw
-		// attribute produced an invalid custom property and failed validation.
-		if ( $field_label_color ) {
-			$style_parts[] = '--dsgo-form-label-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_label_color ) );
-		}
-		// Omit when empty — .dsgo-form-builder in style.scss supplies the #d1d5db default.
-		if ( $field_border_color ) {
-			$style_parts[] = '--dsgo-form-border-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_border_color ) );
-		}
-		if ( $field_background_color ) {
-			$style_parts[] = '--dsgo-form-field-bg:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_background_color ) );
-		}
-		$style = implode( ';', $style_parts );
-
-		// Build data attributes.
-		$data_attrs = array(
-			'data-form-id="' . esc_attr( $form_id ) . '"',
-			'data-ajax-submit="' . ( $ajax_submit ? 'true' : 'false' ) . '"',
-			'data-success-message="' . esc_attr( $success_message ) . '"',
-			'data-error-message="' . esc_attr( $error_message ) . '"',
-			// submitButtonText is sourced from the submit button's text, not a
-			// wrapper attribute — save.js no longer emits data-submit-text, so
-			// emitting it here would fail block validation.
-			//
-			// The email settings are deliberately absent too. save.js never
-			// emits them: they are notification config, they live in the block
-			// comment where the server reads them, and putting the recipient,
-			// reply-to and body template into public markup would publish the
-			// form's mail configuration to every visitor. Emitting them here
-			// both leaked that and failed validation on every form.
-		);
-		if ( $enable_turnstile ) {
-			$data_attrs[] = 'data-dsgo-turnstile="true"';
-		}
-		$data_str = implode( ' ', $data_attrs );
-
-		// Build button style - must match save.js order.
-		$button_style_parts = array();
-		if ( $submit_button_color ) {
-			$button_style_parts[] = 'color:' . esc_attr( self::convert_color_value_to_css_var( (string) $submit_button_color ) );
-		}
-		if ( $submit_button_background_color ) {
-			$button_style_parts[] = 'background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $submit_button_background_color ) );
-		}
-		// Sizing is spread conditionally in save.js, so an unset value emits no
-		// declaration and the button inherits the theme's global button styles.
-		if ( '' !== (string) $submit_button_height ) {
-			$button_style_parts[] = 'min-height:' . esc_attr( $submit_button_height );
-		}
-		if ( '' !== (string) $submit_button_padding_vertical ) {
-			$button_style_parts[] = 'padding-top:' . esc_attr( $submit_button_padding_vertical );
-			$button_style_parts[] = 'padding-bottom:' . esc_attr( $submit_button_padding_vertical );
-		}
-		if ( '' !== (string) $submit_button_padding_horizontal ) {
-			$button_style_parts[] = 'padding-left:' . esc_attr( $submit_button_padding_horizontal );
-			$button_style_parts[] = 'padding-right:' . esc_attr( $submit_button_padding_horizontal );
-		}
-		if ( $submit_button_font_size ) {
-			$button_style_parts[] = 'font-size:' . esc_attr( $submit_button_font_size );
-		}
-		$button_style = implode( ';', $button_style_parts );
-
-		// Opening HTML: outer div + form + fields wrapper.
-		$opening  = '<div class="' . esc_attr( $classes ) . '"' .
-			( '' !== $style ? ' style="' . $style . '"' : '' ) . ' ' . $data_str . '>';
-		$opening .= '<form class="dsgo-form" method="post" novalidate>';
-		$opening .= '<div class="dsgo-form__fields">';
-
-		// Closing HTML: depends on button position.
-		$closing = '';
-
-		// Inline button goes inside fields wrapper, before closing.
-		if ( 'inline' === $submit_button_position ) {
-			$closing .= '<button type="submit" class="dsgo-form__submit dsgo-form__submit--inline' . $submit_button_variation_class . ' wp-element-button"' .
-				( '' !== $button_style ? ' style="' . $button_style . '"' : '' ) . '>' . esc_html( $submit_button_text ) . '</button>';
-		}
-
-		// Close fields wrapper.
-		$closing .= '</div>';
-
-		// Honeypot field.
-		if ( $enable_honeypot ) {
-			$closing .= '<input type="text" name="dsg_website" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"/>';
-		}
-
-		// Hidden form ID.
-		$closing .= '<input type="hidden" name="dsg_form_id" value="' . esc_attr( $form_id ) . '"/>';
-
-		// Turnstile widget container.
-		if ( $enable_turnstile ) {
-			$closing .= '<div class="dsgo-turnstile-widget" data-dsgo-turnstile-container="true"></div>';
-		}
-
-		// Footer with button (below position).
-		if ( 'below' === $submit_button_position ) {
-			$closing .= '<div class="dsgo-form__footer">';
-			$closing .= '<button type="submit" class="dsgo-form__submit' . $submit_button_variation_class . ' wp-element-button"' .
-				( '' !== $button_style ? ' style="' . $button_style . '"' : '' ) . '>' . esc_html( $submit_button_text ) . '</button>';
-			$closing .= '</div>';
-		}
-
-		// Message container.
-		$closing .= '<div class="dsgo-form__message" role="status" aria-live="polite" aria-atomic="true" style="display:none"></div>';
-
-		// Close form and outer div.
-		$closing .= '</form></div>';
-
-		return array(
-			'opening' => $opening,
-			'closing' => $closing,
-		);
+		return Serializer_Registry::wrapper( $block_name, $attributes );
 	}
 
 	/**
@@ -4912,7 +2017,7 @@ class Block_Inserter {
 		foreach ( $sides as $side => $values ) {
 			if ( is_array( $values ) && isset( $values['color'] ) && is_string( $values['color'] ) && '' !== $values['color'] ) {
 				$image_styles[ 'border' . $side . '-color' ] = 0 === strpos( $values['color'], 'var:preset|' )
-					? self::wp_shorthand_to_css_var( $values['color'] )
+					? Serializer_Support::wp_shorthand_to_css_var( $values['color'] )
 					: $values['color'];
 			}
 		}
@@ -5056,35 +2161,6 @@ class Block_Inserter {
 		}
 
 		return $attributes;
-	}
-
-	/**
-	 * Render a numeric attribute the way the editor would serialize it.
-	 *
-	 * Truncation via intval() here was silently dropping every fractional
-	 * value: a slider
-	 * stored slidesPerView 1.2 in its block comment while the generated HTML
-	 * said 1, so the block failed validation the moment it was opened. Integers
-	 * still render as integers, so nothing that was already correct changes.
-	 *
-	 * @param mixed     $value   Attribute value.
-	 * @param int|float $default Fallback when the value is not numeric.
-	 * @return int|float Numeric value.
-	 */
-	private static function numeric_attribute( $value, $default = 0 ) {
-		if ( ! is_numeric( $value ) ) {
-			return $default;
-		}
-
-		$number = +$value;
-
-		// A float that lands exactly on an integer renders without a decimal
-		// point, which is what JSON.stringify() does in the editor too.
-		if ( is_float( $number ) && (float) (int) $number === $number ) {
-			return (int) $number;
-		}
-
-		return $number;
 	}
 
 	/**
@@ -5279,171 +2355,6 @@ class Block_Inserter {
 	}
 
 	/**
-	 * Convert CSS var() syntax to WordPress shorthand for block comment serialization.
-	 *
-	 * WordPress stores preset values as `var:preset|spacing|60` in block comments,
-	 * which gets converted to `var(--wp--preset--spacing--60)` at render time.
-	 *
-	 * @param string $value CSS value that may contain var(--wp--preset--*) syntax.
-	 * @return string Converted value using WordPress shorthand, or original value.
-	 */
-	private static function css_var_to_wp_shorthand( string $value ): string {
-		if ( preg_match( '/^var\(--wp--preset--([a-zA-Z]+)--(.+)\)$/', $value, $matches ) ) {
-			return 'var:preset|' . $matches[1] . '|' . $matches[2];
-		}
-		return $value;
-	}
-
-	/**
-	 * Render a float the way JavaScript's String() would.
-	 *
-	 * @param float $value Value to format.
-	 * @return string Formatted number.
-	 */
-	private static function format_js_number( float $value ): string {
-		// JSON/JS print 0.8 as "0.8" and 1 as "1"; PHP's default float cast
-		// would give "0.8" but also "1" for 1.0, which matches. Trailing zeros
-		// are trimmed so 0.50 does not serialize differently from save().
-		$formatted = rtrim( rtrim( sprintf( '%.10F', $value ), '0' ), '.' );
-
-		return '' === $formatted ? '0' : $formatted;
-	}
-
-	/**
-	 * Clamp a value into a range, falling back when it is not a finite number.
-	 *
-	 * Mirrors the clamp() helpers in the Text Path save path.
-	 *
-	 * @param mixed     $value    Value to clamp.
-	 * @param int|float $minimum  Lower bound.
-	 * @param int|float $maximum  Upper bound.
-	 * @param int|float $fallback Value used when $value is not numeric.
-	 * @return int|float Clamped value.
-	 */
-	private static function clamp_number( $value, $minimum, $maximum, $fallback ) {
-		if ( ! is_numeric( $value ) ) {
-			return $fallback;
-		}
-
-		return self::numeric_attribute( max( $minimum, min( $maximum, (float) $value ) ) );
-	}
-
-	/**
-	 * Filter a Text Path colour through the same allowlist save() applies.
-	 *
-	 * @param mixed $color Colour value.
-	 * @return string The colour, or an empty string when it is not allowed.
-	 */
-	private static function safe_text_path_color( $color ): string {
-		return self::safe_hotspot_color( $color );
-	}
-
-	/**
-	 * Filter a Text Path URL through the same allowlist save() applies.
-	 *
-	 * Mirrors getSafeTextPathUrl(): http, https, mailto, tel, and root-relative
-	 * or fragment URLs.
-	 *
-	 * @param mixed $url URL value.
-	 * @return string The URL, or an empty string when it is not allowed.
-	 */
-	private static function safe_text_path_url( $url ): string {
-		if ( ! is_string( $url ) ) {
-			return '';
-		}
-
-		$trimmed = trim( $url );
-
-		return preg_match( '#^(?:https?:|mailto:|tel:|/|\#)#i', $trimmed ) ? $trimmed : '';
-	}
-
-	/**
-	 * Resolve Text Path shape data.
-	 *
-	 * Mirrors getTextPathData() in src/utils/svg-paths.js for the built-in
-	 * shapes. `custom` is not resolved here - it is refused before serialization.
-	 *
-	 * @param string $path_type Shape slug.
-	 * @param mixed  $arc_size  Arc size, used only by the arc shape.
-	 * @return array{viewBox: string, d: string} Shape data.
-	 */
-	private static function get_text_path_data( string $path_type, $arc_size ): array {
-		$shapes = array(
-			'wave'   => array(
-				'viewBox' => '0 0 1000 200',
-				'd'       => 'M 0 100 C 250 0 750 200 1000 100',
-			),
-			'arc'    => array(
-				'viewBox' => '0 0 1000 200',
-				'd'       => 'M 0 200 Q 500 0 1000 200',
-			),
-			'circle' => array(
-				'viewBox' => '0 0 1000 1000',
-				'd'       => 'M 500 0 A 500 500 0 1 1 499.9 0',
-			),
-			'line'   => array(
-				'viewBox' => '0 0 1000 200',
-				'd'       => 'M 0 100 L 1000 100',
-			),
-			'oval'   => array(
-				'viewBox' => '0 0 1000 500',
-				'd'       => 'M 500 0 A 500 250 0 1 1 499.9 0',
-			),
-			'spiral' => array(
-				'viewBox' => '0 0 1000 1000',
-				'd'       => 'M 500 500 C 500 250 850 250 850 500 C 850 850 150 850 150 500 C 150 50 950 50 950 500',
-			),
-		);
-
-		if ( 'arc' === $path_type ) {
-			// getTextPathArcSize(): blank means 100, otherwise clamp and round.
-			$size = ( null === $arc_size || '' === $arc_size || ! is_numeric( $arc_size ) )
-				? 100
-				: (int) round( max( 0, min( 100, (float) $arc_size ) ) );
-
-			return array(
-				'viewBox' => $shapes['arc']['viewBox'],
-				'd'       => 'M 0 200 Q 500 ' . ( 200 - $size * 2 ) . ' 1000 200',
-			);
-		}
-
-		return $shapes[ $path_type ] ?? $shapes['wave'];
-	}
-
-	/**
-	 * The alignment class useBlockProps.save() would add, if any.
-	 *
-	 * Mirrors core's addAssignedAlign: the class is emitted only when the value
-	 * is one the block actually supports. Driving it off the registered supports
-	 * rather than a hardcoded wide/full pair matters for blocks that allow more
-	 * (card and accordion accept left/center/right too), where a hardcoded list
-	 * silently drops the class and the block fails validation.
-	 *
-	 * @param string               $block_name Block name.
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @return string Alignment class, or an empty string.
-	 */
-	private static function align_class( string $block_name, array $attributes ): string {
-		$align = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
-		if ( '' === $align ) {
-			return '';
-		}
-
-		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
-		$support    = $block_type->supports['align'] ?? false;
-
-		if ( true === $support ) {
-			$valid = array( 'left', 'center', 'right', 'wide', 'full' );
-		} elseif ( is_array( $support ) ) {
-			$valid = $support;
-		} else {
-			return '';
-		}
-
-		return in_array( $align, $valid, true ) ? 'align' . $align : '';
-	}
-
-	/**
 	 * Remove style groups the block tells WordPress not to serialize.
 	 *
 	 * A block can opt out of having a support written onto its root with
@@ -5501,560 +2412,6 @@ class Block_Inserter {
 	}
 
 	/**
-	 * Padding declarations for a block that skip-serializes padding and
-	 * re-applies it to an inner element.
-	 *
-	 * Icon Button and Modal Trigger both declare
-	 * `spacing.__experimentalSkipSerialization: ["padding"]`, so WordPress puts
-	 * no padding on the block root and each save() writes it onto the button
-	 * instead. get_routed_visual_attributes() cannot cover this: it works from
-	 * the Style Engine, and `spacing` also carries margin, which is NOT
-	 * skip-serialized and must stay on the root.
-	 *
-	 * The two blocks differ in one respect, so the caller says which it wants:
-	 * Icon Button runs each side through convertPaddingValue() (turning
-	 * `var:preset|spacing|40` into a CSS var), while Modal Trigger writes the
-	 * value through untouched.
-	 *
-	 * @param array<string, mixed> $attributes      Block attributes.
-	 * @param bool                 $convert_presets Whether to resolve preset shorthand.
-	 * @return array<int, string> CSS declarations, in save()'s order.
-	 */
-	private static function routed_padding_styles( array $attributes, bool $convert_presets ): array {
-		$padding = $attributes['style']['spacing']['padding'] ?? null;
-
-		if ( ! is_array( $padding ) ) {
-			return array();
-		}
-
-		$declarations = array();
-
-		foreach ( array( 'top', 'right', 'bottom', 'left' ) as $side ) {
-			$value = $padding[ $side ] ?? null;
-
-			// React drops a style property whose value is undefined or an empty
-			// string, and convertPaddingValue() returns undefined for a falsy
-			// value, so an unset side produces no declaration either way.
-			if ( ! is_string( $value ) || '' === $value ) {
-				continue;
-			}
-
-			$declarations[] = 'padding-' . $side . ':' .
-				( $convert_presets ? self::wp_shorthand_to_css_var( $value ) : $value );
-		}
-
-		return $declarations;
-	}
-
-	/**
-	 * Whether a container block renders an overlay.
-	 *
-	 * Mirrors the shared JS helper: an explicit overlayColor, or an
-	 * `is-style-overlay-*` variation class supplying the colour from its own
-	 * stylesheet. Each container adds its own `--has-overlay` marker class when
-	 * this is true, and none of them emitted it.
-	 *
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @return bool Whether the overlay marker class applies.
-	 */
-	private static function has_overlay( array $attributes ): bool {
-		if ( ! empty( $attributes['overlayColor'] ) ) {
-			return true;
-		}
-
-		$class_name = isset( $attributes['className'] ) ? (string) $attributes['className'] : '';
-		foreach ( self::split_class_list( $class_name ) as $token ) {
-			if ( 0 === strpos( $token, 'is-style-overlay-' ) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Hover and overlay custom properties the container blocks serialize.
-	 *
-	 * Section, Row and Grid all write the same five custom properties from the
-	 * same five attributes, each only when set. None of them were emitted here,
-	 * so any container given a hover or overlay colour stored markup save()
-	 * would not reproduce.
-	 *
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @return array<int, string> CSS declarations.
-	 */
-	private static function container_hover_styles( array $attributes ): array {
-		$declarations = array();
-
-		$hover_vars = array(
-			'hoverBackgroundColor'       => '--dsgo-hover-bg-color',
-			'hoverTextColor'             => '--dsgo-hover-text-color',
-			'hoverIconBackgroundColor'   => '--dsgo-parent-hover-icon-bg',
-			'hoverButtonBackgroundColor' => '--dsgo-parent-hover-button-bg',
-		);
-
-		foreach ( $hover_vars as $attribute_name => $custom_property ) {
-			$colour = isset( $attributes[ $attribute_name ] ) ? (string) $attributes[ $attribute_name ] : '';
-			if ( '' !== $colour ) {
-				$declarations[] = $custom_property . ':' . self::convert_color_value_to_css_var( $colour );
-			}
-		}
-
-		// The overlay writes its opacity alongside the colour, as one unit.
-		$overlay = isset( $attributes['overlayColor'] ) ? (string) $attributes['overlayColor'] : '';
-		if ( '' !== $overlay ) {
-			$declarations[] = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( $overlay );
-			$declarations[] = '--dsgo-overlay-opacity:' . self::overlay_opacity_for_color( $overlay );
-		}
-
-		return $declarations;
-	}
-
-	/**
-	 * Resolve `--dsgo-overlay-opacity` for a container overlay colour.
-	 *
-	 * PHP twin of getOverlayOpacity() in src/utils/overlay-opacity.js, used by
-	 * the Section, Row, Grid and Scroll Accordion Item save() functions. A colour
-	 * carrying its own alpha below 1 (`#RGBA`, `#RRGGBBAA`, `rgba(…)`, `hsla(…)`,
-	 * `rgb(… / a)` and the other functional notations) is emitted at opacity 1
-	 * so its alpha alone sets the translucency; everything else, including
-	 * preset slugs and CSS variables, uses the 0.65 default. Must return the
-	 * same string as the JS helper for every input.
-	 *
-	 * @param string $color Overlay colour attribute.
-	 * @return string '1' or '0.65'.
-	 */
-	public static function overlay_opacity_for_color( string $color ): string {
-		$alpha = self::declared_color_alpha( $color );
-
-		return ( null !== $alpha && $alpha < 1 ) ? '1' : '0.65';
-	}
-
-	/**
-	 * Read the alpha channel a colour value declares, when it declares one.
-	 *
-	 * @param string $color Colour value.
-	 * @return float|null Alpha, or null when the value declares none.
-	 */
-	private static function declared_color_alpha( string $color ): ?float {
-		// Same whitespace set and alpha grammar as getDeclaredAlpha() in
-		// src/utils/overlay-opacity.js: space, tab, LF, CR, form feed, vertical
-		// tab and NBSP; a plain decimal alpha, optionally a percentage.
-		$whitespace = '/^[ \t\n\r\f\x{0B}\x{A0}]+|[ \t\n\r\f\x{0B}\x{A0}]+$/u';
-
-		$trimmed = preg_replace( $whitespace, '', $color );
-		if ( null === $trimmed ) {
-			return null;
-		}
-		$value = strtolower( $trimmed );
-
-		if ( preg_match( '/^#([0-9a-f]{4}|[0-9a-f]{8})$/D', $value, $hex ) ) {
-			return 4 === strlen( $hex[1] )
-				? hexdec( $hex[1][3] ) / 15
-				: hexdec( substr( $hex[1], 6 ) ) / 255;
-		}
-
-		if ( ! preg_match( '/^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\((.*)\)$/D', $value, $fn ) ) {
-			return null;
-		}
-
-		$args = $fn[1];
-		if ( false !== strpos( $args, '/' ) ) {
-			$alpha = substr( $args, strrpos( $args, '/' ) + 1 );
-		} else {
-			$parts = explode( ',', $args );
-			if ( 4 !== count( $parts ) ) {
-				return null;
-			}
-			$alpha = $parts[3];
-		}
-
-		$alpha = preg_replace( $whitespace, '', $alpha );
-		if ( null === $alpha || ! preg_match( '/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))(%?)$/D', $alpha, $match ) ) {
-			return null;
-		}
-
-		return '%' === $match[2] ? (float) $match[1] / 100 : (float) $match[1];
-	}
-
-	/**
-	 * Clamp a hotspot coordinate to 0-100 the way save() does.
-	 *
-	 * @param mixed $value Coordinate value.
-	 * @return int|float Clamped coordinate.
-	 */
-	private static function clamp_hotspot_coordinate( $value ) {
-		$number = is_numeric( $value ) ? (float) $value : 50;
-
-		return self::numeric_attribute( max( 0, min( 100, $number ) ) );
-	}
-
-	/**
-	 * Filter a hotspot URL through the same allowlist save() applies.
-	 *
-	 * Mirrors getSafeHotspotUrl(): only http, https, mailto and tel survive, so
-	 * a rejected URL turns the marker into a <button> in both paths.
-	 *
-	 * @param mixed $url URL value.
-	 * @return string The URL, or an empty string when it is not allowed.
-	 */
-	private static function safe_hotspot_url( $url ): string {
-		if ( ! is_string( $url ) || '' === trim( $url ) ) {
-			return '';
-		}
-
-		$trimmed = trim( $url );
-		$scheme  = wp_parse_url( $trimmed, PHP_URL_SCHEME );
-
-		if ( null === $scheme || '' === $scheme ) {
-			// Relative URLs resolve against the page, matching the JS helper's
-			// use of a base URL.
-			return $trimmed;
-		}
-
-		return in_array( strtolower( $scheme ), array( 'http', 'https', 'mailto', 'tel' ), true ) ? $trimmed : '';
-	}
-
-	/**
-	 * Filter a hotspot colour through the same allowlist save() applies.
-	 *
-	 * Mirrors getSafeHotspotColor() in src/blocks/hotspot-item/utils.js: a value
-	 * outside the allowlist is dropped by save(), so emitting it here would
-	 * produce a custom property save() never writes.
-	 *
-	 * @param mixed $color Colour value.
-	 * @return string The colour, or an empty string when it is not allowed.
-	 */
-	private static function safe_hotspot_color( $color ): string {
-		if ( ! is_string( $color ) ) {
-			return '';
-		}
-
-		$value = trim( $color );
-
-		$is_preset     = (bool) preg_match( '/^var:preset\|color\|[a-z0-9-]+$/i', $value );
-		$is_hex        = (bool) preg_match( '/^#[0-9a-f]{3,8}$/i', $value );
-		$is_functional = (bool) preg_match( '#^(?:rgb|hsl)a?\([0-9.%\s,/+-]+\)$#i', $value );
-
-		return ( $is_preset || $is_hex || $is_functional ) ? $value : '';
-	}
-
-	/**
-	 * Whether a shape size was explicitly authored.
-	 *
-	 * Mirrors isExplicitShapeSize() in src/utils/shape-size.js: null, zero and
-	 * negatives all mean "inherit the theme token", and serializing them would
-	 * write a custom property save() never emits.
-	 *
-	 * @param mixed $value Attribute value.
-	 * @return bool Whether the value is an explicit size.
-	 */
-	private static function is_explicit_shape_size( $value ): bool {
-		return is_numeric( $value ) && is_finite( (float) $value ) && (float) $value > 0;
-	}
-
-	/**
-	 * Clamp a shape divider size attribute, mirroring normalizeShapeSize() in
-	 * src/utils/shape-size.js: anything that is not an explicit, positive,
-	 * finite size collapses to null ("inherit the theme token"); an explicit
-	 * value is clamped into range.
-	 *
-	 * @param mixed $value Raw size attribute.
-	 * @param float $min   Lower clamp bound.
-	 * @param float $max   Upper clamp bound.
-	 * @return float|null Clamped size, or null when unset.
-	 */
-	private static function normalize_shape_size( $value, float $min, float $max ): ?float {
-		if ( ! self::is_explicit_shape_size( $value ) ) {
-			return null;
-		}
-
-		return max( $min, min( $max, (float) $value ) );
-	}
-
-	/**
-	 * Sanitize a color value the way
-	 * src/blocks/section/utils/sanitize-color.js does: CSS custom properties,
-	 * hex (3/4/6/8 digit), rgb()/rgba(), hsl()/hsla() (with required `%` on
-	 * saturation/lightness), or a bare alphabetic named color. Anything else
-	 * — including a malformed value that could break out of an attribute —
-	 * is rejected.
-	 *
-	 * @param string $color Candidate color value.
-	 * @return string Sanitized value, or '' when invalid or empty.
-	 */
-	private static function sanitize_shape_color( string $color ): string {
-		$trimmed = trim( $color );
-		if ( '' === $trimmed ) {
-			return '';
-		}
-
-		$patterns = array(
-			'/^var\(--[\w-]+(?:,\s*[^)]+)?\)$/i',
-			'/^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i',
-			'/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*[\d.]+)?\s*\)$/i',
-			'/^hsla?\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*(?:,\s*[\d.]+)?\s*\)$/i',
-			'/^[a-z]+$/i',
-		);
-
-		foreach ( $patterns as $pattern ) {
-			if ( preg_match( $pattern, $trimmed ) ) {
-				return $trimmed;
-			}
-		}
-
-		return '';
-	}
-
-	/**
-	 * Resolve a shape divider's band color — the color shown beside the
-	 * shape, through the CSS mask knockout. Mirrors
-	 * shapeDividerTopBandColor / shapeDividerBottomBandColor in save.js
-	 * (convertColorToCSSVar) followed by ShapeDivider's own sanitizeColor().
-	 *
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @param string               $prefix     Attribute prefix ('shapeDividerTop' or 'shapeDividerBottom').
-	 * @return string Sanitized CSS color, or '' when unset or invalid.
-	 */
-	private static function shape_divider_band_color( array $attributes, string $prefix ): string {
-		$background = $attributes[ $prefix . 'BackgroundColor' ] ?? '';
-		if ( ! is_string( $background ) || '' === $background ) {
-			return '';
-		}
-
-		return self::sanitize_shape_color( self::convert_color_value_to_css_var( $background ) );
-	}
-
-	/**
-	 * Render a Section block's top or bottom shape divider.
-	 *
-	 * Mirrors src/blocks/section/components/ShapeDivider.js exactly: the
-	 * shape itself is painted by CSS via `mask-image` (see
-	 * src/blocks/section/styles/_shape-divider.scss), so this emits only the
-	 * marker classes and CSS custom properties the stylesheet reads — no
-	 * inline `<svg>`, and no size custom property unless the author set an
-	 * explicit value.
-	 *
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @param string               $prefix     Attribute prefix ('shapeDividerTop' or 'shapeDividerBottom').
-	 * @param string               $position   'top' or 'bottom'.
-	 * @return string Divider markup, or '' when no shape is selected.
-	 */
-	private static function render_shape_divider( array $attributes, string $prefix, string $position ): string {
-		$shape = isset( $attributes[ $prefix ] ) && is_string( $attributes[ $prefix ] ) ? $attributes[ $prefix ] : '';
-		if ( '' === $shape ) {
-			return '';
-		}
-
-		$safe_height = self::normalize_shape_size( $attributes[ $prefix . 'Height' ] ?? null, 10, 500 );
-		$safe_width  = self::normalize_shape_size( $attributes[ $prefix . 'Width' ] ?? null, 100, 300 );
-		$flip_x      = ! empty( $attributes[ $prefix . 'FlipX' ] );
-		$flip_y      = ! empty( $attributes[ $prefix . 'FlipY' ] );
-		$front       = ! empty( $attributes[ $prefix . 'Front' ] );
-		$band_color  = self::shape_divider_band_color( $attributes, $prefix );
-
-		// Bottom dividers flip vertically by default: the shapes are
-		// authored with their solid edge at the bottom of the viewBox (i.e.
-		// facing the section for a TOP divider), so a bottom divider must
-		// flip to face its section. flipY inverts the per-position default.
-		$flip_y_active = ( 'bottom' === $position ) ? ! $flip_y : $flip_y;
-
-		$class_parts = array( 'dsgo-shape-divider', 'dsgo-shape-divider--' . $position, 'is-shape-' . $shape );
-		if ( $flip_x ) {
-			$class_parts[] = 'is-flip-x';
-		}
-		if ( $flip_y_active ) {
-			$class_parts[] = 'is-flip-y';
-		}
-		if ( $front ) {
-			$class_parts[] = 'is-front';
-		}
-
-		$style_parts = array();
-		if ( null !== $safe_height ) {
-			$style_parts[] = '--dsgo-shape-height:' . self::format_js_number( $safe_height ) . 'px';
-		}
-		if ( null !== $safe_width ) {
-			$style_parts[] = '--dsgo-shape-width:' . self::format_js_number( $safe_width ) . '%';
-		}
-		if ( '' !== $band_color ) {
-			$style_parts[] = '--dsgo-shape-band:' . $band_color;
-		}
-
-		// Only attach the style attribute when there is something to set, so
-		// a default divider serializes as a bare <div> with no empty
-		// style="" — matching save()'s styleProps conditional exactly.
-		$style_attr = empty( $style_parts ) ? '' : ' style="' . esc_attr( implode( ';', $style_parts ) ) . '"';
-
-		return '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $style_attr . ' aria-hidden="true"></div>';
-	}
-
-	/**
-	 * Match convertPresetToCSSVar for container gaps, including string zero.
-	 *
-	 * @param mixed $value Gap or a WordPress top/left gap object.
-	 * @return string|null CSS gap, or null when JavaScript would return undefined.
-	 */
-	private static function spacing_gap( $value ): ?string {
-		if ( is_array( $value ) ) {
-			$top   = $value['top'] ?? null;
-			$value = ( null !== $top && '' !== $top && false !== $top && 0 !== $top ) ? $top : ( $value['left'] ?? null );
-		}
-		if ( null === $value || '' === $value || false === $value || 0 === $value ) {
-			return null;
-		}
-		return self::wp_shorthand_to_css_var( (string) $value );
-	}
-
-	/**
-	 * Convert WordPress preset shorthand to a CSS custom property reference.
-	 *
-	 * @param string $value Value to convert.
-	 * @return string Converted value.
-	 */
-	private static function wp_shorthand_to_css_var( string $value ): string {
-		if ( preg_match( '/^var:preset\|([a-zA-Z]+)\|(.+)$/', $value, $matches ) ) {
-			return 'var(--wp--preset--' . $matches[1] . '--' . $matches[2] . ')';
-		}
-		return $value;
-	}
-
-	/**
-	 * Convert a color value to CSS var() syntax, mirroring the JS save helper.
-	 *
-	 * Supports WordPress preset shorthand (`var:preset|color|slug`), already-
-	 * valid CSS values, and bare preset slugs such as `accent-3`.
-	 *
-	 * @param string $value Color value.
-	 * @return string Converted CSS value.
-	 */
-	private static function convert_color_value_to_css_var( string $value ): string {
-		if ( '' === $value ) {
-			return '';
-		}
-
-		if ( 0 === strpos( $value, 'var(--' ) ) {
-			return $value;
-		}
-
-		if ( 0 === strpos( $value, 'var:preset|' ) ) {
-			return self::wp_shorthand_to_css_var( $value );
-		}
-
-		if ( preg_match( '/^(#|rgb|hsl|hwb|lab|lch|oklch|oklab|color\(|var\(|url\(|\d)/i', $value ) ) {
-			return $value;
-		}
-
-		$css_keywords = array(
-			'transparent',
-			'inherit',
-			'initial',
-			'unset',
-			'revert',
-			'revert-layer',
-			'currentcolor',
-			'none',
-			'auto',
-			'normal',
-		);
-
-		if ( in_array( strtolower( $value ), $css_keywords, true ) ) {
-			return $value;
-		}
-
-		return 'var(--wp--preset--color--' . $value . ')';
-	}
-
-	/**
-	 * Recursively convert CSS var() syntax to WordPress shorthand in style arrays.
-	 *
-	 * @param array<string, mixed> $style_array Style attribute array.
-	 * @return array<string, mixed> Converted style array.
-	 */
-	private static function convert_style_vars( array $style_array ): array {
-		foreach ( $style_array as $key => $value ) {
-			if ( is_array( $value ) ) {
-				$style_array[ $key ] = self::convert_style_vars( $value );
-			} elseif ( is_string( $value ) ) {
-				$style_array[ $key ] = self::css_var_to_wp_shorthand( $value );
-			}
-		}
-		return $style_array;
-	}
-
-	/**
-	 * Extract block support classes and inline styles from the style attribute.
-	 *
-	 * Processes color, spacing, and other block supports into CSS classes and
-	 * inline style strings, mirroring what useBlockProps.save() does in JS.
-	 *
-	 * @param array<string, mixed> $style Style attribute from block.
-	 * @return array{classes: string[], styles: string[]} Classes and style declarations.
-	 */
-	private static function get_block_support_styles( array $style ): array {
-		$classes = array();
-		$styles  = array();
-
-		// Color support.
-		if ( ! empty( $style['color']['background'] ) ) {
-			$classes[] = 'has-background';
-			$styles[]  = 'background-color:' . esc_attr( $style['color']['background'] );
-		}
-		if ( ! empty( $style['color']['text'] ) ) {
-			$classes[] = 'has-text-color';
-			$styles[]  = 'color:' . esc_attr( $style['color']['text'] );
-		}
-		if ( ! empty( $style['color']['gradient'] ) ) {
-			$classes[] = 'has-background';
-			$styles[]  = 'background:' . esc_attr( $style['color']['gradient'] );
-		}
-
-		// Style Engine can express preset border colors as classes; save() keeps
-		// a style.border.color value inline, so preserve that declaration.
-		if ( ! empty( $style['border']['color'] ) ) {
-			$styles[] = 'border-color:' . esc_attr( self::convert_color_value_to_css_var( $style['border']['color'] ) );
-		}
-
-		// Spacing support - padding.
-		if ( ! empty( $style['spacing']['padding'] ) ) {
-			$padding = $style['spacing']['padding'];
-			if ( ! empty( $padding['top'] ) ) {
-				$styles[] = 'padding-top:' . esc_attr( self::wp_shorthand_to_css_var( $padding['top'] ) );
-			}
-			if ( ! empty( $padding['right'] ) ) {
-				$styles[] = 'padding-right:' . esc_attr( self::wp_shorthand_to_css_var( $padding['right'] ) );
-			}
-			if ( ! empty( $padding['bottom'] ) ) {
-				$styles[] = 'padding-bottom:' . esc_attr( self::wp_shorthand_to_css_var( $padding['bottom'] ) );
-			}
-			if ( ! empty( $padding['left'] ) ) {
-				$styles[] = 'padding-left:' . esc_attr( self::wp_shorthand_to_css_var( $padding['left'] ) );
-			}
-		}
-
-		// Spacing support - margin.
-		if ( ! empty( $style['spacing']['margin'] ) ) {
-			$margin = $style['spacing']['margin'];
-			if ( ! empty( $margin['top'] ) ) {
-				$styles[] = 'margin-top:' . esc_attr( self::wp_shorthand_to_css_var( $margin['top'] ) );
-			}
-			if ( ! empty( $margin['bottom'] ) ) {
-				$styles[] = 'margin-bottom:' . esc_attr( self::wp_shorthand_to_css_var( $margin['bottom'] ) );
-			}
-		}
-
-		// Dimensions support.
-		if ( ! empty( $style['dimensions']['minHeight'] ) ) {
-			$styles[] = 'min-height:' . esc_attr( self::wp_shorthand_to_css_var( $style['dimensions']['minHeight'] ) );
-		}
-
-		return array(
-			'classes' => $classes,
-			'styles'  => $styles,
-		);
-	}
-
-	/**
 	 * Blocks that carry BOTH a save.js (static HTML saved to post content)
 	 * AND a render.php (dynamic transform at display time). For insertion
 	 * purposes these should be treated as authored-mode blocks — their
@@ -6080,6 +2437,56 @@ class Block_Inserter {
 	 * useBlockProps.save() produced onto the content div. Injecting on the root
 	 * for one of these emits classes save() never puts there.
 	 */
+	/**
+	 * Blocks the max-width extension refuses, mirroring its EXCLUDED_BLOCKS.
+	 *
+	 * @see src/extensions/max-width/index.js
+	 * @var array<int, string>
+	 */
+	private const MAX_WIDTH_EXCLUDED_BLOCKS = array(
+		'core/spacer',
+		'core/separator',
+		'core/page-list',
+		'core/navigation',
+		'designsetgo/section',
+		'designsetgo/row',
+		'designsetgo/grid',
+		'designsetgo/blobs',
+	);
+
+	/**
+	 * Containers that own a reveal group, mirroring CONTAINER_BLOCKS.
+	 *
+	 * @see src/extensions/reveal-control/index.js
+	 * @var array<int, string>
+	 */
+	private const REVEAL_CONTAINER_BLOCKS = array(
+		'designsetgo/section',
+		'designsetgo/row',
+		'designsetgo/grid',
+	);
+
+	/**
+	 * Blocks the custom-CSS extension refuses, mirroring its EXCLUDED_BLOCKS.
+	 *
+	 * @see src/extensions/custom-css/index.js
+	 * @var array<int, string>
+	 */
+	private const CUSTOM_CSS_EXCLUDED_BLOCKS = array( 'core/html', 'core/code' );
+
+	/**
+	 * Blocks the clickable-group extension applies to, mirroring SUPPORTED_BLOCKS.
+	 *
+	 * @see src/extensions/clickable-group/index.js
+	 * @var array<int, string>
+	 */
+	private const CLICKABLE_GROUP_BLOCKS = array(
+		'core/group',
+		'designsetgo/section',
+		'designsetgo/row',
+		'designsetgo/grid',
+	);
+
 	private const SUPPORTS_ON_INNER_ELEMENT = array(
 		'designsetgo/modal' => 'dsgo-modal__content',
 	);
@@ -6094,17 +2501,21 @@ class Block_Inserter {
 	);
 
 	/**
+	 * Attributes whose block.json source is core/image markup (img, figure > a,
+	 * figcaption). The serializer omits sourced attributes from the block comment.
+	 *
+	 * @var array<int, string>
+	 */
+	private const CORE_IMAGE_SOURCED_ATTRIBUTES = array( 'url', 'alt', 'caption', 'title', 'href', 'rel', 'linkClass', 'linkTarget' );
+
+	/**
 	 * Core blocks whose save() is a wrapper around InnerBlocks.Content, reproduced by
 	 * generate_core_wrapper_html(). A list item also carries its own rich text before
 	 * any nested list, so its content is part of the opening markup rather than a
 	 * standalone innerHTML string.
+	 *
+	 * @var array<int, string>
 	 */
-	/**
-	 * Attributes whose block.json source is core/image markup (img, figure > a,
-	 * figcaption). The serializer omits sourced attributes from the block comment.
-	 */
-	private const CORE_IMAGE_SOURCED_ATTRIBUTES = array( 'url', 'alt', 'caption', 'title', 'href', 'rel', 'linkClass', 'linkTarget' );
-
 	private const CORE_WRAPPER_BLOCKS = array(
 		'core/list',
 		'core/list-item',
@@ -6154,25 +2565,36 @@ class Block_Inserter {
 	}
 
 	/**
+	 * Opacity for a container overlay colour.
+	 *
+	 * Delegates to Serializer_Support. Kept on Block_Inserter because it is
+	 * named as the PHP twin of src/utils/overlay-opacity.js from that file, from
+	 * tests/fixtures/overlay-opacity-cases.json and from its PHPUnit test - a
+	 * cross-runtime contract that should not move just because the
+	 * implementation did.
+	 *
+	 * @param string $color Colour value.
+	 * @return string Opacity as a string, or '' when the colour declares none.
+	 */
+	public static function overlay_opacity_for_color( string $color ): string {
+		return Serializer_Support::overlay_opacity_for_color( $color );
+	}
+
+	/**
 	 * Sanitize block attributes recursively.
 	 *
 	 * @param array<string, mixed> $attributes Attributes to sanitize.
+	 * @param string               $block_name Block the attributes belong to; enables the rich-text policy.
 	 * @return array<string, mixed> Sanitized attributes.
 	 */
-	public static function sanitize_attributes( array $attributes ): array {
-		$sanitized = array();
-
-		foreach ( $attributes as $key => $value ) {
-			if ( is_string( $value ) ) {
-				$sanitized[ $key ] = sanitize_text_field( $value );
-			} elseif ( is_array( $value ) ) {
-				$sanitized[ $key ] = self::sanitize_attributes( $value );
-			} elseif ( is_bool( $value ) || is_int( $value ) || is_float( $value ) || is_null( $value ) ) {
-				$sanitized[ $key ] = $value;
-			}
-		}
-
-		return $sanitized;
+	public static function sanitize_attributes( array $attributes, string $block_name = '' ): array {
+		// Delegation, not a rule of its own. This was a second implementation
+		// that ran sanitize_text_field() over every string and took no block
+		// name, so it could not consult the rich-text policy and quietly
+		// flattened inline markup that the main path preserves. Two
+		// implementations of one rule is how the drift this class exists to
+		// mirror starts, so there is now only one.
+		return Block_Configurator::sanitize_attributes( $attributes, $block_name );
 	}
 
 	/**
@@ -6290,9 +2712,17 @@ class Block_Inserter {
 		$blocks = array();
 
 		foreach ( $definitions as $def ) {
+			$inner_block_name = (string) ( $def['name'] ?? 'core/paragraph' );
+
 			$block = array(
-				'blockName'    => $def['name'] ?? 'core/paragraph',
-				'attrs'        => self::sanitize_attributes( $def['attributes'] ?? array() ),
+				'blockName'    => $inner_block_name,
+				// Sanitized WITH the block name, so the rich-text policy applies
+				// here exactly as it does at the top level. This used to call a
+				// second sanitizer on this class that took no block name and ran
+				// sanitize_text_field() over every string, so inserting a card
+				// at the top level kept `Care <em>begins</em>` while inserting
+				// the same card inside a tab flattened it to `Care begins`.
+				'attrs'        => Block_Configurator::sanitize_attributes( (array) ( $def['attributes'] ?? array() ), $inner_block_name ),
 				'innerBlocks'  => array(),
 				'innerHTML'    => '',
 				'innerContent' => array(),

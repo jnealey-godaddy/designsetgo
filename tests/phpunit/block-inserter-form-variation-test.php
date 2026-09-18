@@ -11,7 +11,7 @@
  * @package DesignSetGo
  */
 
-use DesignSetGo\Abilities\Block_Inserter;
+use DesignSetGo\Abilities\Serializers\Form_Builder_Serializer;
 
 /**
  * Tests that AI-inserted form submit buttons mirror submitButtonVariation.
@@ -29,7 +29,10 @@ class Block_Inserter_Form_Variation_Test extends WP_UnitTestCase {
 	 * @return string Generated closing HTML (contains the submit button).
 	 */
 	private function submit_html( array $attributes ) {
-		$method = new ReflectionMethod( Block_Inserter::class, 'generate_form_builder_html' );
+		// generate_form_builder_html() moved with the rest of the form-builder
+		// case when Block_Inserter's switch was split into per-block
+		// serializers. Still private, still reached by reflection.
+		$method = new ReflectionMethod( Form_Builder_Serializer::class, 'generate_form_builder_html' );
 		$method->setAccessible( true );
 
 		$result = $method->invoke( null, 'wp-block-designsetgo-form-builder dsgo-form-builder', $attributes );

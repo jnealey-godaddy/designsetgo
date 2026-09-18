@@ -106,3 +106,4 @@ if ( class_exists( 'WC_Install' ) ) {
 // Shared test helpers. Loaded after the WordPress bootstrap because they guard on
 // ABSPATH, which is only defined once WordPress itself has loaded.
 require_once __DIR__ . '/helpers/class-woo-product-factory.php';
+require_once __DIR__ . '/helpers/class-attribute-probe-generator.php';
