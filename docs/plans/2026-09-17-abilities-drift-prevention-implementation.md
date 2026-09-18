@@ -347,53 +347,42 @@ Run the full PHP suite. Commit.
 
 ---
 
-## Unit 4 — Split `class-block-inserter.php`
+## Unit 4 — Split `class-block-inserter.php` — DONE
 
-**Do not start this unit until Units 1–3 are green.** The matrix is what makes this move
-safe; without it the fixture proves only 144 behaviours were preserved.
+**6,902 → 2,688 lines.** The largest remaining serializer is modal at 263.
 
-### Task 11: Extract `Serializer_Support`
+Done in two moves rather than the planned four tasks, because dependency analysis showed
+both sets were cleanly separable:
 
-**Files:**
-- Create: `includes/abilities/serializers/class-serializer-support.php`
-- Modify: `includes/abilities/class-block-inserter.php`
+**Serializer_Support** — 29 pure helpers (JavaScript-compatible number formatting, colour
+conversion, the shape-divider renderer, overlay and hover maths, alignment and padding
+routing). The set called nothing that stayed behind and used no shared constants, so it
+moved as one piece. `Block_Inserter` keeps a delegator for `overlay_opacity_for_color()`:
+that name is a cross-runtime contract, cited from `src/utils/overlay-opacity.js`, from
+`tests/fixtures/overlay-opacity-cases.json` and from its own test.
 
-Move the ~40 shared private helpers (`convert_color_value_to_css_var()`, `has_overlay()`,
-`render_shape_divider()`, `numeric_attribute()`, `spacing_gap()`, …) to public statics.
-Leave `Block_Inserter` delegating to them so nothing else changes yet.
+**50 serializers + Serializer_Registry** — the 3,111-line switch. Across all fifty cases
+the bodies called exactly **two** Block_Inserter methods, used no class constants and had
+no case-level `break`, which is why this could be done in one pass instead of batches of
+five. `get_routed_visual_attributes()` joined Serializer_Support;
+`generate_form_builder_html()` moved into the form-builder serializer, its only caller.
 
-**Acceptance: regenerate both fixtures; the diff must be empty.** Commit.
+The registry's real value is that it is **enumerable**. `get_serialization_gap()` used to
+answer "can this block be inserted?" by running the switch and checking for null, so the
+set of serializable blocks could only be discovered one block at a time.
+`Abilities_Serializer_Registry_Test` now asserts things about the set as a whole.
 
-### Task 12: Registry plus the first three serializers
+### Acceptance — met
 
-**Files:**
-- Create: `includes/abilities/serializers/class-serializer-registry.php`
-- Create: `includes/abilities/serializers/class-{section,row,grid}-serializer.php`
-- Modify: `includes/abilities/class-block-inserter.php`
+Both fixtures regenerate **byte-identical**, pinning 4,068 attribute-matrix payloads plus
+the 144 curated ones through a 3,111-line move. This is the reason the matrix was built
+first: against the old 144-entry fixture the same move would have demonstrated a fraction
+as much.
 
-Registry maps block name → class; `generate_designsetgo_wrapper_html()` consults it first
-and falls through to the remaining `switch` for anything not yet migrated. That fall-through
-is what lets this ship in pieces.
+PHPUnit 1,638 tests / 6,533 assertions · Jest 163 suites / 3,571 tests · `composer lint`
+clean · PHPStan clean.
 
-**Acceptance: empty fixture diff.** Commit.
-
-### Task 13: Migrate the remaining ~52 blocks
-
-Work in batches of five, empty fixture diff after each batch, commit per batch. When the
-`switch` is empty, delete it and the fall-through.
-
-### Task 14: Close the loop
-
-**Files:**
-- Create: `tests/phpunit/abilities-serializer-registry-test.php`
-
-Assert every registered non-dynamic `designsetgo/*` block has a registry entry or a
-documented gap, and that no registry entry names a block that does not exist — the same
-two-way diff as Tasks 1 and 6, now for serializers.
-
-Confirm `Block_Inserter` is under ~2,400 lines. Run `composer analyse` (PHPStan) as well as
-`vendor/bin/phpcs` — CI runs `analyse` as a separate script and the CLAUDE.md pre-commit
-list omits it.
-
-Final acceptance: full PHP suite, full JS suite, both fixtures byte-identical to their
-pre-split state.
+Two things the split surfaced that were invisible before, both now fixed: a redundant `??`
+on a guaranteed array offset (PHPStan only sees it once the code is in a file it analyses
+under the new shape), and `block-inserter-form-variation-test` reflecting into
+`generate_form_builder_html()` — still private, now on `FormBuilder_Serializer`.
