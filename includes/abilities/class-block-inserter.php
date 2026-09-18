@@ -2630,10 +2630,18 @@ class Block_Inserter {
 
 				$overlay_html = '';
 				if ( $enable_overlay ) {
-					$overlay_html = '<div class="dsgo-blobs__overlay" style="' . esc_attr(
-						'background-color:' . self::convert_color_value_to_css_var( $overlay_color ) .
-						';opacity:' . self::format_js_number( $overlay_pct / 100 )
-					) . '"></div>';
+					// React drops a style property whose value is empty, so an
+					// overlay with no colour set writes opacity alone. Building
+					// the string unconditionally emitted `background-color:;`,
+					// which is not a declaration save() ever produces.
+					$blob_overlay_styles = array();
+					$blob_overlay_color  = self::convert_color_value_to_css_var( $overlay_color );
+					if ( '' !== $blob_overlay_color ) {
+						$blob_overlay_styles[] = 'background-color:' . $blob_overlay_color;
+					}
+					$blob_overlay_styles[] = 'opacity:' . self::format_js_number( $overlay_pct / 100 );
+
+					$overlay_html = '<div class="dsgo-blobs__overlay" style="' . esc_attr( implode( ';', $blob_overlay_styles ) ) . '"></div>';
 				}
 
 				return array(
@@ -3572,10 +3580,22 @@ class Block_Inserter {
 					$data_attrs = ' data-percentage="' . esc_attr( (string) $bar_width ) . '" data-duration="' . esc_attr( (string) $animation_dur ) . '"';
 				}
 
-				// Label.
+				// Label. save.js joins the label text and the percentage with
+				// ' - ', including either only when its own toggle is on. The
+				// mirror printed the percentage alone, so a labelled bar lost
+				// its label.
+				$label_parts = array();
+				if ( ! empty( $attributes['showLabel'] ) && ! empty( $attributes['labelText'] ) && is_string( $attributes['labelText'] ) ) {
+					$label_parts[] = $attributes['labelText'];
+				}
+				if ( $show_percentage ) {
+					$label_parts[] = $bar_width . '%';
+				}
+				$label_display = implode( ' - ', $label_parts );
+
 				$label_html = '';
 				if ( $show_percentage && 'top' === $label_position ) {
-					$label_html = '<div class="dsgo-progress-bar__label dsgo-progress-bar__label--top">' . esc_html( $bar_width . '%' ) . '</div>';
+					$label_html = '<div class="dsgo-progress-bar__label dsgo-progress-bar__label--top">' . esc_html( $label_display ) . '</div>';
 				}
 
 				// Container styles.
@@ -3593,9 +3613,24 @@ class Block_Inserter {
 					( '' !== $bar_color ? ';background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $bar_color ) ) : '' ) .
 					';transition:width ' . esc_attr( (string) $animation_dur ) . 's ease-out;border-radius:' . esc_attr( $border_radius );
 
+				// Striped fill. save.js appends these two declarations after
+				// border-radius for both striped variants; the mirror wrote
+				// neither, so a striped bar rendered flat and failed validation.
+				$bar_style_value = isset( $attributes['barStyle'] ) ? (string) $attributes['barStyle'] : 'solid';
+				if ( 'striped' === $bar_style_value || 'striped-animated' === $bar_style_value ) {
+					$fill_style .= ';background-image:linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);background-size:1rem 1rem';
+				}
+
+				// The animated modifier comes from EITHER the striped-animated
+				// variant or the standalone stripedAnimation toggle.
+				$fill_classes = 'dsgo-progress-bar__fill';
+				if ( 'striped-animated' === $bar_style_value || ! empty( $attributes['stripedAnimation'] ) ) {
+					$fill_classes .= ' dsgo-progress-bar__fill--animated';
+				}
+
 				$inner_html  = $label_html;
 				$inner_html .= '<div class="dsgo-progress-bar__container" style="' . esc_attr( $container_style ) . '">';
-				$inner_html .= '<div class="dsgo-progress-bar__fill" style="' . esc_attr( $fill_style ) . '"></div>';
+				$inner_html .= '<div class="' . esc_attr( $fill_classes ) . '" style="' . esc_attr( $fill_style ) . '"></div>';
 				$inner_html .= '</div>';
 
 				return array(
@@ -3936,7 +3971,11 @@ class Block_Inserter {
 				if ( ! in_array( $justification, array( 'left', 'center', 'right' ), true ) ) {
 					$justification = 'left';
 				}
-				$full_width = ! empty( $attributes['fullWidth'] ) || ( isset( $attributes['align'] ) && 'full' === $attributes['align'] );
+				// save.js reads `fullWidth` alone. Treating align 'full' as implying
+				// it is left over from before `justification` replaced `align`
+				// here: an aligned button picked up a --full-width class save()
+				// never writes.
+				$full_width = ! empty( $attributes['fullWidth'] );
 
 				$has_icon = 'none' !== $icon_position && $icon;
 
@@ -3953,7 +3992,13 @@ class Block_Inserter {
 				if ( 'end' === $icon_position ) {
 					$class_parts[] = 'dsgo-icon-button--icon-end';
 				}
-				if ( $hover_anim && 'none' !== $hover_anim ) {
+				// save.js has three branches, not one: 'explicit-none' becomes
+				// --no-hover, plain 'none' emits nothing, and anything else is
+				// interpolated. Interpolating all of them wrote
+				// --explicit-none, a class no stylesheet defines.
+				if ( 'explicit-none' === $hover_anim ) {
+					$class_parts[] = 'dsgo-icon-button--no-hover';
+				} elseif ( $hover_anim && 'none' !== $hover_anim ) {
 					$class_parts[] = 'dsgo-icon-button--' . $hover_anim;
 				}
 
@@ -4252,7 +4297,11 @@ class Block_Inserter {
 				if ( ! in_array( $justification, array( 'left', 'center', 'right' ), true ) ) {
 					$justification = 'left';
 				}
-				$full_width = ! empty( $attributes['fullWidth'] ) || ( isset( $attributes['align'] ) && 'full' === $attributes['align'] );
+				// save.js reads `fullWidth` alone. Treating align 'full' as implying
+				// it is left over from before `justification` replaced `align`
+				// here: an aligned button picked up a --full-width class save()
+				// never writes.
+				$full_width = ! empty( $attributes['fullWidth'] );
 
 				$has_icon = 'none' !== $icon_position && $icon;
 
@@ -4749,7 +4798,7 @@ class Block_Inserter {
 				// Overlay HTML.
 				$overlay_html = '';
 				if ( $overlay_color ) {
-					$overlay_style = 'background-color:' . esc_attr( $overlay_color ) . ';opacity:' . esc_attr( (string) ( $overlay_opacity / 100 ) );
+					$overlay_style = 'background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $overlay_color ) ) . ';opacity:' . esc_attr( (string) ( $overlay_opacity / 100 ) );
 					$overlay_html  = '<div class="dsgo-slide__overlay" style="' . esc_attr( $overlay_style ) . '"></div>';
 				}
 
@@ -5040,6 +5089,15 @@ class Block_Inserter {
 		}
 		if ( $submit_button_font_size ) {
 			$button_style_parts[] = 'font-size:' . esc_attr( $submit_button_font_size );
+		}
+		// Hover colours are CSS custom properties the stylesheet reads on
+		// :hover. save.js writes them last, after font-size; the mirror wrote
+		// neither, so an author's hover colours never reached stored markup.
+		if ( ! empty( $attributes['submitButtonHoverBackgroundColor'] ) && is_string( $attributes['submitButtonHoverBackgroundColor'] ) ) {
+			$button_style_parts[] = '--dsgo-button-hover-bg:' . esc_attr( self::convert_color_value_to_css_var( $attributes['submitButtonHoverBackgroundColor'] ) );
+		}
+		if ( ! empty( $attributes['submitButtonHoverColor'] ) && is_string( $attributes['submitButtonHoverColor'] ) ) {
+			$button_style_parts[] = '--dsgo-button-hover-color:' . esc_attr( self::convert_color_value_to_css_var( $attributes['submitButtonHoverColor'] ) );
 		}
 		$button_style = implode( ';', $button_style_parts );
 
