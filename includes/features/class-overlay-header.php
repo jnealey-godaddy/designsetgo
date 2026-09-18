@@ -219,6 +219,214 @@ class Overlay_Header {
 	}
 
 	/**
+	 * Served value of the hero's own authored top padding.
+	 *
+	 * The clearance rule in _sticky-header.scss composes
+	 * `var(--dsgo-overlay-hero-base-pad, 0px) + clearance` and carries
+	 * `!important`, which it has to: WordPress serializes block spacing as an
+	 * INLINE style, so a normal rule would lose to any hero that sets its own
+	 * top padding. The consequence is that an UNSET base term does not fall
+	 * back to the author's padding — it REPLACES it with `0px`. Until this
+	 * method existed that dropped the hero's authored padding at first paint on
+	 * every cold load and snapped it back when sticky-header.js ran.
+	 *
+	 * It is the dominant term, not a rounding error. Measured on a product site
+	 * whose About page hero carries `spacing|sd-large`: the clearance settles at
+	 * 208.2px and a cold load painted it at 100px — a 108.2px jump, of which
+	 * 71.0px was this dropped padding and only 37.2px was error in the served
+	 * height estimate.
+	 *
+	 * Unlike the height, this needs no estimate and no measurement: it is
+	 * authored content and the server is already holding it.
+	 *
+	 * WHICH element, though, is the whole difficulty, and the guard in
+	 * template_renders_post_content_first() is the load-bearing part of this
+	 * method. The clearance lands on `header.nextElementSibling.firstElementChild`
+	 * (see applyOverlayHeroPadding() in sticky-header.js), and whether that is
+	 * the first block of POST CONTENT depends on the template, not the post:
+	 *
+	 *   template-part, post-content, template-part   → it is. Read post content.
+	 *   template-part, group( post-title, … ), …     → it is NOT: the hero is
+	 *                                                  the theme's own wrapper
+	 *                                                  group, whose padding has
+	 *                                                  nothing to do with the
+	 *                                                  post.
+	 *
+	 * Both shapes ship in Twenty Twenty-Five alone — a customized `page`
+	 * template is the first, stock `single` and `index` are the second — so this
+	 * cannot be assumed either way and must be checked. Reading post content
+	 * under the second shape is worse than serving nothing: it reserves a value
+	 * belonging to a block two levels deeper, and a measured page moved from a
+	 * +55px cold jump to a −65px one.
+	 *
+	 * So: serve only under the first shape, and emit nothing under anything
+	 * else, which leaves the stylesheet's `0px` fallback and the behaviour that
+	 * preceded this method. It can make a cold load better and never worse.
+	 *
+	 * Only the block's own serialized `style.spacing.padding.top` counts, which
+	 * is exactly what sticky-header.js reads back out of `hero.style.paddingTop`.
+	 * Padding from a stylesheet or theme.json has no inline string on either
+	 * side, so both halves miss it identically and neither can drift.
+	 *
+	 * Emitted on `:root` for the same reason as the height: sticky-header.js
+	 * sets the measured value on the hero ELEMENT, and any declaration nearer
+	 * the hero than `:root` would permanently shadow it.
+	 *
+	 * @return string CSS string, or empty string if not applicable.
+	 */
+	public function get_overlay_hero_base_pad_css(): string {
+		if ( ! $this->is_overlay_request() ) {
+			return '';
+		}
+
+		if ( ! $this->template_renders_post_content_first() ) {
+			return '';
+		}
+
+		$post = get_post( get_the_ID() );
+		if ( ! $post instanceof \WP_Post || ! has_blocks( $post->post_content ) ) {
+			return '';
+		}
+
+		$raw = $this->get_first_block_padding_top( $post->post_content );
+		if ( '' === $raw ) {
+			return '';
+		}
+
+		// Resolved through the style engine rather than by hand, so
+		// `var:preset|spacing|50` becomes the same `var(--wp--preset--spacing--50)`
+		// the block itself serializes inline. Matching the block's own output is
+		// the point: sticky-header.js copies that inline string verbatim into
+		// this property once it runs, so any difference here would surface as a
+		// jump at exactly the moment the script takes over.
+		$styles = wp_style_engine_get_styles(
+			array(
+				'spacing' => array(
+					'padding' => array( 'top' => $raw ),
+				),
+			)
+		);
+
+		$value = isset( $styles['declarations']['padding-top'] )
+			? (string) $styles['declarations']['padding-top']
+			: '';
+
+		if ( ! $this->is_safe_css_length( $value ) ) {
+			return '';
+		}
+
+		return sprintf(
+			':root { --dsgo-overlay-hero-base-pad: %s; }',
+			$value
+		);
+	}
+
+	/**
+	 * Whether the resolved template puts post content directly after the header.
+	 *
+	 * This is the check that decides whether the first block of post content is
+	 * the element the clearance actually lands on. See
+	 * get_overlay_hero_base_pad_css() for why guessing instead of checking makes
+	 * a cold load worse rather than better.
+	 *
+	 * `$_wp_current_template_content` is set by locate_block_template() on the
+	 * `template_include` filter, which runs before the template is included and
+	 * therefore before `wp_head` — where both callers of this run. It is empty
+	 * on a non-block theme and on REST requests, and an empty result correctly
+	 * declines to serve.
+	 *
+	 * Deliberately shallow: it reads TOP-LEVEL template blocks only and accepts
+	 * exactly one shape. Anything less familiar — a wrapper, an extra part, a
+	 * pattern in between — returns false and the feature no-ops.
+	 *
+	 * @return bool
+	 */
+	private function template_renders_post_content_first(): bool {
+		global $_wp_current_template_content;
+
+		if ( empty( $_wp_current_template_content ) || ! is_string( $_wp_current_template_content ) ) {
+			return false;
+		}
+
+		$seen_header = false;
+
+		foreach ( parse_blocks( $_wp_current_template_content ) as $block ) {
+			if ( empty( $block['blockName'] ) ) {
+				continue;
+			}
+
+			if ( ! $seen_header ) {
+				// The header has to be the first thing in the template for the
+				// CSS selectors to match it at all; anything else and this is
+				// not a shape worth reasoning about.
+				if ( 'core/template-part' !== $block['blockName'] ) {
+					return false;
+				}
+
+				$seen_header = true;
+				continue;
+			}
+
+			return 'core/post-content' === $block['blockName'];
+		}
+
+		return false;
+	}
+
+	/**
+	 * Top padding serialized on the first top-level block, if any.
+	 *
+	 * `parse_blocks()` yields a nameless block for the whitespace between
+	 * top-level blocks, so those are skipped rather than mistaken for the hero.
+	 *
+	 * @param string $content Raw post content.
+	 * @return string Unresolved attribute value, or '' when there is none.
+	 */
+	private function get_first_block_padding_top( string $content ): string {
+		foreach ( parse_blocks( $content ) as $block ) {
+			if ( empty( $block['blockName'] ) ) {
+				continue;
+			}
+
+			$top = $block['attrs']['style']['spacing']['padding']['top'] ?? '';
+
+			return is_string( $top ) ? $top : '';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Whether a resolved value is safe to interpolate into a stylesheet.
+	 *
+	 * Block attributes are author input: a contributor-authored block or an
+	 * imported pattern can carry any string in `style.spacing.padding.top`, and
+	 * this value goes straight into a rule. An allowlist of the two shapes the
+	 * spacing control actually produces — a bare length, or a spacing preset
+	 * var — is the whole contract.
+	 *
+	 * Rejecting rather than sanitizing is deliberate. A rejected value emits
+	 * nothing, the stylesheet's `0px` fallback applies, and the measured value
+	 * still lands when the script runs; a half-sanitized one could reserve the
+	 * wrong space for good. Functional values (`clamp()`, `calc()`) are refused
+	 * on the same grounds — supporting them means parsing them.
+	 *
+	 * @param string $value Resolved CSS value.
+	 * @return bool
+	 */
+	private function is_safe_css_length( string $value ): bool {
+		if ( '' === $value ) {
+			return false;
+		}
+
+		if ( 1 === preg_match( '/^(0|-?\d+(\.\d+)?(px|rem|em|vh|vw|%))$/', $value ) ) {
+			return true;
+		}
+
+		return 1 === preg_match( '/^var\(--wp--preset--spacing--[a-zA-Z0-9_-]+\)$/', $value );
+	}
+
+	/**
 	 * Generate CSS for overlay header text color.
 	 *
 	 * @return string CSS string, or empty string if not applicable.
@@ -282,9 +490,21 @@ class Overlay_Header {
 		// `base + height`, and leaving `base` at 0 until the main script runs left
 		// the authored hero padding unreserved and the content still shifting by
 		// it. `h`/`b` match the shape cacheOverlayClearance() writes.
-		$script = <<<'JS'
-try{var m=JSON.parse(localStorage.getItem("dsgoOverlayHeaderHeight")||"{}"),w=innerWidth,v=m[w<600?"s":w<1024?"m":"l"],d=document.documentElement;if(v&&v.h){d.style.setProperty("--dsgo-overlay-header-height",v.h);if(v.b)d.style.setProperty("--dsgo-overlay-hero-base-pad",v.b);}}catch(e){}
+		//
+		// `b` is applied only when get_overlay_hero_base_pad_css() served
+		// nothing, and the two must not both fire. This cache is keyed by
+		// viewport bucket rather than by page, so `b` is whatever the LAST
+		// overlay page's hero used — on a site whose pages differ (0px on the
+		// home hero, spacing|sd-large on the About one) that is simply the wrong
+		// number for the page being rendered. It is still a better start than
+		// zero where nothing was served, but where the server knows the actual
+		// value it must not be allowed to win, and it otherwise would: this
+		// script writes inline on <html>, which outranks a :root rule.
+		$template = <<<'JS'
+try{var m=JSON.parse(localStorage.getItem("dsgoOverlayHeaderHeight")||"{}"),w=innerWidth,v=m[w<600?"s":w<1024?"m":"l"],d=document.documentElement,s=%d;if(v&&v.h){d.style.setProperty("--dsgo-overlay-header-height",v.h);if(v.b&&!s)d.style.setProperty("--dsgo-overlay-hero-base-pad",v.b);}}catch(e){}
 JS;
+
+		$script = sprintf( $template, '' === $this->get_overlay_hero_base_pad_css() ? 0 : 1 );
 
 		wp_print_inline_script_tag( $script, array( 'id' => 'designsetgo-overlay-header-height' ) );
 	}
@@ -299,7 +519,9 @@ JS;
 		// the colour would have silently disabled the first-paint clearance on
 		// every overlay page that left the colour at its default.
 		$css = trim(
-			$this->get_overlay_header_height_css() . "\n" . $this->get_overlay_text_color_css()
+			$this->get_overlay_header_height_css()
+			. "\n" . $this->get_overlay_hero_base_pad_css()
+			. "\n" . $this->get_overlay_text_color_css()
 		);
 
 		if ( empty( $css ) ) {
