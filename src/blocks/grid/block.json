@@ -152,6 +152,9 @@
 			"type": "string",
 			"default": ""
 		},
+		"overlayOpacity": {
+			"type": "integer"
+		},
 		"constrainWidth": {
 			"type": "boolean",
 			"default": false

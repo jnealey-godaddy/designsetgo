@@ -8,6 +8,7 @@ import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import metadata from './block.json';
+import { withLegacyOverlayOpacity } from '../../utils/overlay-opacity';
 
 // Version 1: Fixed 0.8 overlay opacity. The current save() resolves
 // `--dsgo-overlay-opacity` from the overlay colour (0.65 for opaque colours and
@@ -80,4 +81,4 @@ const legacyInserterRawColor = {
 	},
 };
 
-export default [v1, legacyInserterRawColor];
+export default withLegacyOverlayOpacity([v1, legacyInserterRawColor]);

@@ -47,7 +47,7 @@ class Scroll_Accordion_Item_Serializer {
 		// Build style.
 		$style = '';
 		if ( $overlay_color ) {
-			$style = '--dsgo-overlay-color:' . Serializer_Support::convert_color_value_to_css_var( (string) $overlay_color ) . ';--dsgo-overlay-opacity:' . Serializer_Support::overlay_opacity_for_color( (string) $overlay_color );
+			$style = '--dsgo-overlay-color:' . Serializer_Support::convert_color_value_to_css_var( (string) $overlay_color ) . ';--dsgo-overlay-opacity:' . Serializer_Support::overlay_opacity( $attributes );
 		}
 
 		$style_attr = $style ? ' style="' . esc_attr( $style ) . '"' : '';

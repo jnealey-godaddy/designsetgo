@@ -142,6 +142,9 @@
 		"overlayColor": {
 			"type": "string",
 			"default": ""
+		},
+		"overlayOpacity": {
+			"type": "integer"
 		}
 	},
 	"schemaMetadata": {
@@ -156,7 +159,8 @@
 			"hoverTextColor": "Text color when hovering over the row",
 			"hoverIconBackgroundColor": "Icon background color on hover (passed to child blocks via context)",
 			"hoverButtonBackgroundColor": "Button background color on hover (passed to child blocks via context)",
-			"overlayColor": "Semi-transparent overlay color for background images"
+			"overlayColor": "Semi-transparent overlay color for background images",
+			"overlayOpacity": "Overlay strength as a whole-number percentage (0-100). Unset (the default) lets the overlay colour decide: 65% for an opaque colour or preset, 100% for a colour that carries its own transparency. Overlays saved before 2.8.0 are migrated to 80 so they keep their original strength."
 		}
 	},
 	"providesContext": {

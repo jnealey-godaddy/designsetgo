@@ -329,7 +329,10 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': getOverlayOpacity(overlayColor),
+				'--dsgo-overlay-opacity': getOverlayOpacity(
+					overlayColor,
+					attributes.overlayOpacity
+				),
 			}),
 			// Default content clearance matched to the divider's rendered height
 			// (must match save.js EXACTLY). See save.js for the full rationale.

@@ -191,7 +191,10 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': getOverlayOpacity(overlayColor),
+				'--dsgo-overlay-opacity': getOverlayOpacity(
+					overlayColor,
+					attributes.overlayOpacity
+				),
 			}),
 		},
 	});

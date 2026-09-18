@@ -25,6 +25,7 @@ import ShapeDivider, {
 // what counts as an explicit size, or a pinned clearance can desync from the
 // divider it is meant to clear — see isUntouchedLegacyShapeSize below.
 import { isExplicitShapeSize } from '../../utils/shape-size';
+import { withLegacyOverlayOpacity } from '../../utils/overlay-opacity';
 
 // The height/width every shape-divider deprecation schema defaults to. A legacy
 // block carrying this value never had it written to the block comment (
@@ -2394,4 +2395,10 @@ const v1 = {
 };
 
 // Export deprecations in reverse chronological order (newest first)
-export default [v11, v11Unconstrained, v10, v9, v8, v7, v6, v5, v4, v3, v2, v1];
+// v10 reuses the current save(), so the content it claims already carries the
+// colour-aware opacity and must not be pinned to the legacy strength.
+export default [
+	...withLegacyOverlayOpacity([v11, v11Unconstrained]),
+	v10,
+	...withLegacyOverlayOpacity([v9, v8, v7, v6, v5, v4, v3, v2, v1]),
+];

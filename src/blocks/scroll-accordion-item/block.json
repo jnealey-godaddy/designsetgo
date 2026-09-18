@@ -21,6 +21,9 @@
 		"overlayColor": {
 			"type": "string",
 			"default": ""
+		},
+		"overlayOpacity": {
+			"type": "integer"
 		}
 	},
 	"supports": {

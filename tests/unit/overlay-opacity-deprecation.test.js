@@ -2,10 +2,11 @@
  * Overlay opacity deprecations for Section, Row, Grid and Scroll Accordion Item.
  *
  * Every one of these blocks used to write a fixed `--dsgo-overlay-opacity:0.8`
- * beside `--dsgo-overlay-color`. save() now writes 0.65 for opaque colours and
- * presets, and 1 for colours that carry their own alpha. Content stored with
- * the old value must stay valid, migrate without an "Attempt Recovery" prompt,
- * and re-serialize with the new value.
+ * beside `--dsgo-overlay-color`. For NEW blocks save() now writes 0.65 for
+ * opaque colours and presets, and 1 for colours that carry their own alpha.
+ * Content stored with the old value must stay valid, migrate without an
+ * "Attempt Recovery" prompt, and keep its 0.8 strength: migration pins
+ * `overlayOpacity: 80`, so editing an existing page never lightens its overlay.
  */
 
 // Registered on the nested @wordpress/blocks copy block-editor uses; see
@@ -111,7 +112,7 @@ describe.each(BLOCKS.map((entry) => [entry[0].name, ...entry]))(
 		);
 
 		test.each(['var:preset|color|contrast', '#1212127D'])(
-			'stored 0.8 markup with %s validates, migrates and re-saves with the new opacity',
+			'stored 0.8 markup with %s validates, migrates and keeps its 0.8 strength',
 			(overlayColor) => {
 				const stored = currentHTML({ overlayColor }).replace(
 					/--dsgo-overlay-opacity:[\d.]+/,
@@ -123,11 +124,32 @@ describe.each(BLOCKS.map((entry) => [entry[0].name, ...entry]))(
 				expect(block.name).toBe(name);
 				expect(block.isValid).toBe(true);
 				expect(block.attributes.overlayColor).toBe(overlayColor);
-				expect(getBlockContent(block)).toBe(
-					currentHTML({ overlayColor })
-				);
+				expect(block.attributes.overlayOpacity).toBe(80);
+				expect(getBlockContent(block)).toBe(stored);
 			}
 		);
+
+		test('an explicit overlayOpacity is written as a fraction and round-trips', () => {
+			const markup = serialize(
+				createBlock(name, {
+					overlayColor: 'var:preset|color|contrast',
+					overlayOpacity: 80,
+				})
+			);
+			expect(markup).toContain('"overlayOpacity":80');
+			expect(markup).toContain('--dsgo-overlay-opacity:0.8');
+
+			const [block] = parse(markup);
+			expect(block.isValid).toBe(true);
+			expect(serialize(block)).toBe(markup);
+		});
+
+		test('a new block leaves overlayOpacity unset', () => {
+			expect(
+				createBlock(name, { overlayColor: '#121212' }).attributes
+					.overlayOpacity
+			).toBeUndefined();
+		});
 
 		test('current markup round-trips without a deprecation', () => {
 			const markup = serialize(
@@ -163,7 +185,35 @@ describe('section overlay opacity - unconstrained 0.8 content', () => {
 
 		expect(block.isValid).toBe(true);
 		expect(block.attributes.constrainWidth).toBe(false);
-		expect(getBlockContent(block)).toContain('--dsgo-overlay-opacity:1');
+		expect(block.attributes.overlayOpacity).toBe(80);
+		expect(getBlockContent(block)).toContain('--dsgo-overlay-opacity:0.8');
+	});
+
+	test('v10 content, saved with the colour-aware opacity, is not pinned to 0.8', () => {
+		// v10 reuses the current save(): an unconstrained section whose comment
+		// lacks constrainWidth, written with today's opacity. It must keep that
+		// opacity rather than being stamped with the legacy strength.
+		const attrs = {
+			overlayColor: 'var:preset|color|contrast',
+			className: 'dsgo-no-width-constraint',
+		};
+		const stored = getSaveContent(
+			{ ...sectionMetadata, save: sectionSave },
+			createBlock(sectionMetadata.name, {
+				...attrs,
+				constrainWidth: false,
+			}).attributes,
+			[]
+		);
+		expect(stored).toContain('--dsgo-overlay-opacity:0.65');
+
+		const [block] = parse(wrap(sectionMetadata.name, attrs, stored));
+		expect(console).toHaveInformed();
+
+		expect(block.isValid).toBe(true);
+		expect(block.attributes.constrainWidth).toBe(false);
+		expect(block.attributes.overlayOpacity).toBeUndefined();
+		expect(getBlockContent(block)).toContain('--dsgo-overlay-opacity:0.65');
 	});
 
 	test('the Abilities fixture markup stored before the change stays valid', () => {
@@ -173,7 +223,8 @@ describe('section overlay opacity - unconstrained 0.8 content', () => {
 		expect(console).toHaveInformed();
 
 		expect(block.isValid).toBe(true);
-		expect(getBlockContent(block)).toContain('--dsgo-overlay-opacity:0.65');
+		expect(block.attributes.overlayOpacity).toBe(80);
+		expect(getBlockContent(block)).toContain('--dsgo-overlay-opacity:0.8');
 	});
 });
 
@@ -198,21 +249,25 @@ describe('scroll accordion item - legacy inserter raw preset colour', () => {
 	const stored =
 		'<!-- wp:designsetgo/scroll-accordion-item {"overlayColor":"var:preset|color|contrast"} -->\n<div class="wp-block-designsetgo-scroll-accordion-item dsgo-scroll-accordion-item dsgo-scroll-accordion-item--has-overlay" style="--dsgo-overlay-color:var:preset|color|contrast;--dsgo-overlay-opacity:0.8"></div>\n<!-- /wp:designsetgo/scroll-accordion-item -->';
 
-	test('the old inserter markup validates and re-saves converted', () => {
+	test('the old inserter markup validates and re-saves converted, keeping 0.8', () => {
 		const [block] = parse(stored);
 		expect(console).toHaveInformed();
 
 		expect(block.isValid).toBe(true);
 		expect(block.attributes.overlayColor).toBe(overlayColor);
+		expect(block.attributes.overlayOpacity).toBe(80);
 		expect(getBlockContent(block)).toBe(
 			getSaveContent(
 				{ ...itemMetadata, save: itemSave },
-				createBlock(itemMetadata.name, { overlayColor }).attributes,
+				createBlock(itemMetadata.name, {
+					overlayColor,
+					overlayOpacity: 80,
+				}).attributes,
 				[]
 			)
 		);
 		expect(getBlockContent(block)).toContain(
-			'--dsgo-overlay-color:var(--wp--preset--color--contrast);--dsgo-overlay-opacity:0.65'
+			'--dsgo-overlay-color:var(--wp--preset--color--contrast);--dsgo-overlay-opacity:0.8'
 		);
 	});
 });

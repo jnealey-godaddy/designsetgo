@@ -126,7 +126,7 @@
 			"opacity": "1"
 		},
 		{
-			"color": "\u00a0#1212127D\u00a0",
+			"color": " #1212127D ",
 			"opacity": "1"
 		},
 		{
@@ -134,11 +134,74 @@
 			"opacity": "1"
 		},
 		{
-			"color": "rgba(0,0,0,\u00a0.4\u00a0)",
+			"color": "rgba(0,0,0, .4 )",
 			"opacity": "1"
 		},
 		{
-			"color": "\u2003#1212127D",
+			"color": " #1212127D",
+			"opacity": "0.65"
+		}
+	],
+	"_comment_percentCases": "An explicit integer overlayOpacity percentage (0-100) wins over the colour-aware default. Consumed by getOverlayOpacity(color, percent) and Serializer_Support::overlay_opacity(). A null percent means the attribute is absent; a float or a numeric STRING is ignored on both sides.",
+	"percentCases": [
+		{
+			"color": "var:preset|color|contrast",
+			"percent": 80,
+			"opacity": "0.8"
+		},
+		{
+			"color": "#1212127D",
+			"percent": 80,
+			"opacity": "0.8"
+		},
+		{
+			"color": "#121212",
+			"percent": 65,
+			"opacity": "0.65"
+		},
+		{
+			"color": "#121212",
+			"percent": 0,
+			"opacity": "0"
+		},
+		{
+			"color": "#121212",
+			"percent": 100,
+			"opacity": "1"
+		},
+		{
+			"color": "#121212",
+			"percent": 150,
+			"opacity": "1"
+		},
+		{
+			"color": "#121212",
+			"percent": -5,
+			"opacity": "0"
+		},
+		{
+			"color": "#121212",
+			"percent": 33,
+			"opacity": "0.33"
+		},
+		{
+			"color": "#121212",
+			"percent": 33.3,
+			"opacity": "0.65"
+		},
+		{
+			"color": "#121212",
+			"percent": null,
+			"opacity": "0.65"
+		},
+		{
+			"color": "#1212127D",
+			"percent": null,
+			"opacity": "1"
+		},
+		{
+			"color": "#121212",
+			"percent": "80",
 			"opacity": "0.65"
 		}
 	],

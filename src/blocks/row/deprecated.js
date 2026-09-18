@@ -15,6 +15,7 @@ import {
 } from '../../utils/style-variation-classes';
 import metadata from './block.json';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
+import { withLegacyOverlayOpacity } from '../../utils/overlay-opacity';
 
 /**
  * Convert WordPress vertical alignment value to CSS align-items value.
@@ -965,4 +966,4 @@ const v1 = {
 	},
 };
 
-export default [v6, v5, v4, v3, v2, v1];
+export default withLegacyOverlayOpacity([v6, v5, v4, v3, v2, v1]);

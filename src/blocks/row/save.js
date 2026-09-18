@@ -84,7 +84,10 @@ export default function RowSave({ attributes }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': getOverlayOpacity(overlayColor),
+				'--dsgo-overlay-opacity': getOverlayOpacity(
+					overlayColor,
+					attributes.overlayOpacity
+				),
 			}),
 		},
 	});
