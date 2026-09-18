@@ -125,6 +125,19 @@ jobs:
       - name: Run CSS linter
         run: npm run lint:css --if-present
 
+      - name: Check the generated shape-divider list is current
+        # The list is generated from src/blocks/section/utils/shape-dividers.js
+        # and committed, so the abilities enum cannot drift from the shapes the
+        # editor actually offers. Committed rather than read from build/ at
+        # runtime: a missing artifact would leave the enum empty, and an empty
+        # enum accepts nothing — silently.
+        run: |
+          npm run generate:shape-enum
+          if ! git diff --exit-code includes/abilities/generated/shape-dividers.php; then
+            echo "::error::shape-dividers.php is stale. Run: npm run generate:shape-enum"
+            exit 1
+          fi
+
       - name: Run JavaScript unit tests
         run: npm run test:unit -- --ci
 

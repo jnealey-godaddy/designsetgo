@@ -17,6 +17,7 @@
     "license.*"
   ],
   "scripts": {
+		"generate:shape-enum": "node tools/generate-shape-divider-enum.js",
     "start": "wp-scripts start",
     "start:fast": "cross-env DISABLE_ESLINT_PLUGIN=true wp-scripts start",
     "build": "wp-scripts build",
