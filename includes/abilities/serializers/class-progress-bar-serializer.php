@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * ProgressBar_Serializer.
+ * Progress_Bar_Serializer.
  */
-class ProgressBar_Serializer {
+class Progress_Bar_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

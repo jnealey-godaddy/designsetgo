@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * ScrollMarquee_Serializer.
+ * Scroll_Marquee_Serializer.
  */
-class ScrollMarquee_Serializer {
+class Scroll_Marquee_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

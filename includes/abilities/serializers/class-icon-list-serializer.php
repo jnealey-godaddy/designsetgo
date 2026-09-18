@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * IconList_Serializer.
+ * Icon_List_Serializer.
  */
-class IconList_Serializer {
+class Icon_List_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

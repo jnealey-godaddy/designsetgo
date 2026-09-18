@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * ComparisonTable_Serializer.
+ * Comparison_Table_Serializer.
  */
-class ComparisonTable_Serializer {
+class Comparison_Table_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

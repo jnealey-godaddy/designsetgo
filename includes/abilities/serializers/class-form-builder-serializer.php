@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * FormBuilder_Serializer.
+ * Form_Builder_Serializer.
  */
-class FormBuilder_Serializer {
+class Form_Builder_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

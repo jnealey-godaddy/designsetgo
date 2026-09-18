@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * HotspotItem_Serializer.
+ * Hotspot_Item_Serializer.
  */
-class HotspotItem_Serializer {
+class Hotspot_Item_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

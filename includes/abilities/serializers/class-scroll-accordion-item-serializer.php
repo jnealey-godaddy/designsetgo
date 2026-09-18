@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * ScrollAccordionItem_Serializer.
+ * Scroll_Accordion_Item_Serializer.
  */
-class ScrollAccordionItem_Serializer {
+class Scroll_Accordion_Item_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

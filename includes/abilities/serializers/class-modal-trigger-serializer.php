@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * ModalTrigger_Serializer.
+ * Modal_Trigger_Serializer.
  */
-class ModalTrigger_Serializer {
+class Modal_Trigger_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

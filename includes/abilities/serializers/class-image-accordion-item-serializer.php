@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * ImageAccordionItem_Serializer.
+ * Image_Accordion_Item_Serializer.
  */
-class ImageAccordionItem_Serializer {
+class Image_Accordion_Item_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * SectionDivider_Serializer.
+ * Section_Divider_Serializer.
  */
-class SectionDivider_Serializer {
+class Section_Divider_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

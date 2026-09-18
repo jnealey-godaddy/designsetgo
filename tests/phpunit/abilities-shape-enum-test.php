@@ -15,6 +15,13 @@
  * committed file left stale, still fails here rather than passing by agreeing
  * with itself.
  *
+ * It also reads a DIFFERENT part of that source than the generator does. The
+ * generator takes the keys of the SHAPE_DIVIDERS object - the SVG definitions -
+ * while this test takes the `value:` entries of the picker's option list.
+ * Sharing one parsing assumption would mean a formatting change could fool both
+ * identically; reading the two halves independently also catches a shape that
+ * gains a definition without an option, or an option without a definition.
+ *
  * @package DesignSetGo
  * @subpackage Tests
  */
@@ -37,13 +44,11 @@ class Abilities_Shape_Enum_Test extends WP_UnitTestCase {
 		$this->assertFileExists( $path, 'The shape library moved; update this test and the generator.' );
 
 		$source = (string) file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- Reading a source file in a test.
-		$start  = strpos( $source, 'export const SHAPE_DIVIDERS' );
 
-		$this->assertNotFalse( $start, 'SHAPE_DIVIDERS not found in the shape library.' );
+		// The picker's option list, NOT the SVG definitions the generator reads.
+		preg_match_all( "/value:\s*'([a-z][a-z0-9-]*)'/", $source, $matches );
 
-		preg_match_all( "/^\t'?([a-z][a-z0-9-]*)'?:\s/m", substr( $source, (int) $start ), $matches );
-
-		return $matches[1];
+		return array_values( array_unique( $matches[1] ) );
 	}
 
 	/**

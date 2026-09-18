@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * AdvancedHeading_Serializer.
+ * Advanced_Heading_Serializer.
  */
-class AdvancedHeading_Serializer {
+class Advanced_Heading_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

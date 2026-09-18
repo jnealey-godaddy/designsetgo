@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * TimelineItem_Serializer.
+ * Timeline_Item_Serializer.
  */
-class TimelineItem_Serializer {
+class Timeline_Item_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

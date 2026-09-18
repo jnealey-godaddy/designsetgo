@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * QueryNoResults_Serializer.
+ * Query_No_Results_Serializer.
  */
-class QueryNoResults_Serializer {
+class Query_No_Results_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

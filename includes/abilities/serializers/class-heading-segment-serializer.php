@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * HeadingSegment_Serializer.
+ * Heading_Segment_Serializer.
  */
-class HeadingSegment_Serializer {
+class Heading_Segment_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

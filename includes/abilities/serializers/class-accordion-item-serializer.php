@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * AccordionItem_Serializer.
+ * Accordion_Item_Serializer.
  */
-class AccordionItem_Serializer {
+class Accordion_Item_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

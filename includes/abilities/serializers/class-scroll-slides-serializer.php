@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * ScrollSlides_Serializer.
+ * Scroll_Slides_Serializer.
  */
-class ScrollSlides_Serializer {
+class Scroll_Slides_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

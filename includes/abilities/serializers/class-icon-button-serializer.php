@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * IconButton_Serializer.
+ * Icon_Button_Serializer.
  */
-class IconButton_Serializer {
+class Icon_Button_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

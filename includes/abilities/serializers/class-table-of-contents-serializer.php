@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * TableOfContents_Serializer.
+ * Table_Of_Contents_Serializer.
  */
-class TableOfContents_Serializer {
+class Table_Of_Contents_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

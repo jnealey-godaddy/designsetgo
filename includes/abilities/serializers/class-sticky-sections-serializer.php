@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * StickySections_Serializer.
+ * Sticky_Sections_Serializer.
  */
-class StickySections_Serializer {
+class Sticky_Sections_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

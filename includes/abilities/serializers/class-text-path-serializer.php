@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * TextPath_Serializer.
+ * Text_Path_Serializer.
  */
-class TextPath_Serializer {
+class Text_Path_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

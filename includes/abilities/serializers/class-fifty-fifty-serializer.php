@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * FiftyFifty_Serializer.
+ * Fifty_Fifty_Serializer.
  */
-class FiftyFifty_Serializer {
+class Fifty_Fifty_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

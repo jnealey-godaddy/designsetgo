@@ -2501,17 +2501,21 @@ class Block_Inserter {
 	);
 
 	/**
+	 * Attributes whose block.json source is core/image markup (img, figure > a,
+	 * figcaption). The serializer omits sourced attributes from the block comment.
+	 *
+	 * @var array<int, string>
+	 */
+	private const CORE_IMAGE_SOURCED_ATTRIBUTES = array( 'url', 'alt', 'caption', 'title', 'href', 'rel', 'linkClass', 'linkTarget' );
+
+	/**
 	 * Core blocks whose save() is a wrapper around InnerBlocks.Content, reproduced by
 	 * generate_core_wrapper_html(). A list item also carries its own rich text before
 	 * any nested list, so its content is part of the opening markup rather than a
 	 * standalone innerHTML string.
+	 *
+	 * @var array<int, string>
 	 */
-	/**
-	 * Attributes whose block.json source is core/image markup (img, figure > a,
-	 * figcaption). The serializer omits sourced attributes from the block comment.
-	 */
-	private const CORE_IMAGE_SOURCED_ATTRIBUTES = array( 'url', 'alt', 'caption', 'title', 'href', 'rel', 'linkClass', 'linkTarget' );
-
 	private const CORE_WRAPPER_BLOCKS = array(
 		'core/list',
 		'core/list-item',
@@ -2580,22 +2584,17 @@ class Block_Inserter {
 	 * Sanitize block attributes recursively.
 	 *
 	 * @param array<string, mixed> $attributes Attributes to sanitize.
+	 * @param string               $block_name Block the attributes belong to; enables the rich-text policy.
 	 * @return array<string, mixed> Sanitized attributes.
 	 */
-	public static function sanitize_attributes( array $attributes ): array {
-		$sanitized = array();
-
-		foreach ( $attributes as $key => $value ) {
-			if ( is_string( $value ) ) {
-				$sanitized[ $key ] = sanitize_text_field( $value );
-			} elseif ( is_array( $value ) ) {
-				$sanitized[ $key ] = self::sanitize_attributes( $value );
-			} elseif ( is_bool( $value ) || is_int( $value ) || is_float( $value ) || is_null( $value ) ) {
-				$sanitized[ $key ] = $value;
-			}
-		}
-
-		return $sanitized;
+	public static function sanitize_attributes( array $attributes, string $block_name = '' ): array {
+		// Delegation, not a rule of its own. This was a second implementation
+		// that ran sanitize_text_field() over every string and took no block
+		// name, so it could not consult the rich-text policy and quietly
+		// flattened inline markup that the main path preserves. Two
+		// implementations of one rule is how the drift this class exists to
+		// mirror starts, so there is now only one.
+		return Block_Configurator::sanitize_attributes( $attributes, $block_name );
 	}
 
 	/**
@@ -2713,9 +2712,17 @@ class Block_Inserter {
 		$blocks = array();
 
 		foreach ( $definitions as $def ) {
+			$inner_block_name = (string) ( $def['name'] ?? 'core/paragraph' );
+
 			$block = array(
-				'blockName'    => $def['name'] ?? 'core/paragraph',
-				'attrs'        => self::sanitize_attributes( $def['attributes'] ?? array() ),
+				'blockName'    => $inner_block_name,
+				// Sanitized WITH the block name, so the rich-text policy applies
+				// here exactly as it does at the top level. This used to call a
+				// second sanitizer on this class that took no block name and ran
+				// sanitize_text_field() over every string, so inserting a card
+				// at the top level kept `Care <em>begins</em>` while inserting
+				// the same card inside a tab flattened it to `Care begins`.
+				'attrs'        => Block_Configurator::sanitize_attributes( (array) ( $def['attributes'] ?? array() ), $inner_block_name ),
 				'innerBlocks'  => array(),
 				'innerHTML'    => '',
 				'innerContent' => array(),

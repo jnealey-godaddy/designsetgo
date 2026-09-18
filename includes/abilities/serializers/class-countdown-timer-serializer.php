@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * CountdownTimer_Serializer.
+ * Countdown_Timer_Serializer.
  */
-class CountdownTimer_Serializer {
+class Countdown_Timer_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

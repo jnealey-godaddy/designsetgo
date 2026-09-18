@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * FlipCardFront_Serializer.
+ * Flip_Card_Front_Serializer.
  */
-class FlipCardFront_Serializer {
+class Flip_Card_Front_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.

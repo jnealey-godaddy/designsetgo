@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * CounterGroup_Serializer.
+ * Counter_Group_Serializer.
  */
-class CounterGroup_Serializer {
+class Counter_Group_Serializer {
 
 	/**
 	 * Build the block's opening and closing markup.
