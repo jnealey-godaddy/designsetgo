@@ -26,6 +26,8 @@ __( 'Container Blocks', 'designsetgo' );
 __( 'UI Elements', 'designsetgo' );
 __( 'Interactive Blocks', 'designsetgo' );
 __( 'Dynamic Blocks', 'designsetgo' );
+__( 'Dynamic Content Blocks', 'designsetgo' );
+__( 'WooCommerce Blocks', 'designsetgo' );
 __( 'Form Blocks', 'designsetgo' );
 
 // Container Blocks.
@@ -35,6 +37,10 @@ __( 'Row', 'designsetgo' );
 __( 'Flexible horizontal or vertical layouts with wrapping', 'designsetgo' );
 __( 'Section', 'designsetgo' );
 __( 'Vertical stacking container for sections and content areas', 'designsetgo' );
+__( 'Fifty Fifty', 'designsetgo' );
+__( 'Full-width 50/50 split with edge-to-edge media', 'designsetgo' );
+__( 'Sticky Sections', 'designsetgo' );
+__( 'Sections that stick and stack as you scroll', 'designsetgo' );
 
 // UI Elements.
 __( 'Icon', 'designsetgo' );
@@ -73,6 +79,20 @@ __( 'Scroll Slides', 'designsetgo' );
 __( 'Scroll-pinned fullscreen slideshow with crossfading transitions', 'designsetgo' );
 __( 'Scroll Slide', 'designsetgo' );
 __( 'Individual slide within Scroll Slides', 'designsetgo' );
+__( 'Advanced Heading', 'designsetgo' );
+__( 'Headings that mix fonts, weights, and colors', 'designsetgo' );
+__( 'Heading Segment', 'designsetgo' );
+__( 'Individual styled segment of an Advanced Heading', 'designsetgo' );
+__( 'Comparison Table', 'designsetgo' );
+__( 'Feature comparison for products, services, or plans', 'designsetgo' );
+__( 'Section Divider', 'designsetgo' );
+__( 'Standalone shape divider between two blocks', 'designsetgo' );
+__( 'Text Path', 'designsetgo' );
+__( 'Text flowed along an SVG path', 'designsetgo' );
+__( 'Timeline', 'designsetgo' );
+__( 'Chronological events with scroll-reveal animation', 'designsetgo' );
+__( 'Timeline Item', 'designsetgo' );
+__( 'Individual milestone within a timeline', 'designsetgo' );
 
 // Interactive Blocks.
 __( 'Flip Card', 'designsetgo' );
@@ -89,6 +109,14 @@ __( 'Modal', 'designsetgo' );
 __( 'Accessible modal dialogs with customizable triggers', 'designsetgo' );
 __( 'Modal Trigger', 'designsetgo' );
 __( 'Button or link that opens a modal dialog', 'designsetgo' );
+__( 'Hotspot', 'designsetgo' );
+__( 'Interactive markers placed over an image', 'designsetgo' );
+__( 'Hotspot Item', 'designsetgo' );
+__( 'Individual marker within a Hotspot image', 'designsetgo' );
+__( 'Flip Card Front', 'designsetgo' );
+__( 'Legacy front face, kept for existing content', 'designsetgo' );
+__( 'Flip Card Back', 'designsetgo' );
+__( 'Legacy back face, kept for existing content', 'designsetgo' );
 
 // Dynamic Blocks.
 __( 'Counter Group', 'designsetgo' );
@@ -107,6 +135,30 @@ __( 'Breadcrumbs', 'designsetgo' );
 __( 'Navigation breadcrumbs with Schema.org markup', 'designsetgo' );
 __( 'Table of Contents', 'designsetgo' );
 __( 'Auto-generate table of contents from page headings', 'designsetgo' );
+__( 'Chart', 'designsetgo' );
+__( 'Bar, line, or donut chart rendered without JavaScript', 'designsetgo' );
+
+// Dynamic Content Blocks.
+__( 'Dynamic Query', 'designsetgo' );
+__( 'Query posts, users, or terms and design the results', 'designsetgo' );
+__( 'Query Results', 'designsetgo' );
+__( 'Repeating item template inside a Dynamic Query', 'designsetgo' );
+__( 'Query Filter', 'designsetgo' );
+__( 'Filter, search, sort, or reset a Dynamic Query', 'designsetgo' );
+__( 'Query Pagination', 'designsetgo' );
+__( 'Numbered, load-more, or infinite-scroll pagination', 'designsetgo' );
+__( 'No Results', 'designsetgo' );
+__( 'Content shown when a Dynamic Query returns nothing', 'designsetgo' );
+__( 'Query Group Header', 'designsetgo' );
+__( 'Heading rendered once per group in a Dynamic Query', 'designsetgo' );
+__( 'Dynamic Image', 'designsetgo' );
+__( 'Image whose source resolves from post, site, or field data', 'designsetgo' );
+
+// WooCommerce Blocks.
+__( 'Product Categories Grid', 'designsetgo' );
+__( 'WooCommerce product categories in a visual grid', 'designsetgo' );
+__( 'Product Showcase Hero', 'designsetgo' );
+__( 'Full-width hero for a single WooCommerce product', 'designsetgo' );
 
 // Form Blocks.
 __( 'Form Builder', 'designsetgo' );

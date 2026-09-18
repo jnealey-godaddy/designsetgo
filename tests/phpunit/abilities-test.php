@@ -816,6 +816,10 @@ class Test_Abilities_Execution extends WP_UnitTestCase {
 
 	/**
 	 * Every block reports its editor category verbatim, and a group.
+	 *
+	 * The valid groups are read back from blocks-registry.json rather than
+	 * restated here: a hand-kept copy of a live registry is the drift the
+	 * grouping already suffered once.
 	 */
 	public function test_list_blocks_reports_verbatim_category_and_group() {
 		$registry = Abilities_Registry::get_instance();
@@ -823,7 +827,10 @@ class Test_Abilities_Execution extends WP_UnitTestCase {
 
 		$result = $ability->execute( array() );
 
-		$valid_groups = array( 'containers', 'ui', 'interactive', 'widgets', 'forms', 'uncategorized' );
+		$valid_groups = array_merge(
+			array_keys( \DesignSetGo\Admin\Settings::get_available_blocks() ),
+			array( 'uncategorized' )
+		);
 
 		foreach ( $result['blocks'] as $block ) {
 			$this->assertArrayHasKey( 'group', $block );

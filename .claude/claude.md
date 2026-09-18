@@ -219,8 +219,19 @@ export default [ v1 ];
 
 ### Style Imports (MANDATORY)
 
-Add to `src/style.scss` (frontend — the real webpack `style-index` entry, see `webpack.config.js`) AND `src/styles/editor.scss` (editor). `src/styles/style.scss` looks like the frontend entry but is dead code — nothing imports it; don't add to it.
+Global styles (extensions, shared primitives) go in `src/style.scss` (frontend — the real webpack `style-index` entry, see `webpack.config.js`) AND `src/styles/editor.scss` (editor). `src/styles/style.scss` looks like the frontend entry but is dead code — nothing imports it; don't add to it.
 Verify: `grep -i "class-name" build/style-index.css`
+
+**Per-block styles ship via `block.json`, and the two fields are not interchangeable:**
+
+```json
+"editorStyle": "file:./index.css",
+"style": "file:./style-index.css"
+```
+
+`index.js` imports both `editor.scss` and `style.scss`, so webpack's `blocks/{slug}/index` entry emits a **combined** `index.css`. A separate entry emits `blocks/{slug}/style-index.css` from `style.scss` alone. `editorStyle` wants the combined bundle; `style` must be `style-index.css`. Pointing `style` at `index.css` ships every editor-only rule to the front end — dead weight at best, and at worst it wins the cascade. That is what broke Timeline's scroll reveal (#568): `timeline-item/editor.scss`'s `opacity: 1 !important` reached the front end and defeated the hidden starting state. It also put a dashed debug border on Image Accordion and a grey 2px border on every Scrolling Gallery image.
+
+So: anything scoped to `.is-selected`, `.block-editor-*`, `.editor-styles-wrapper`, a placeholder, or an authoring affordance belongs in `editor.scss` and **nowhere else**. `tests/unit/block-schema-validation.test.js` pins the `block.json` half of this.
 
 ### Pre-Commit
 
