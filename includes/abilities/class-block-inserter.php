@@ -12,6 +12,7 @@
 
 namespace DesignSetGo\Abilities;
 
+use DesignSetGo\Abilities\Serializers\Serializer_Support;
 use WP_Error;
 use WP_Post;
 
@@ -458,18 +459,6 @@ class Block_Inserter {
 	}
 
 	/**
-	 * Split a class attribute into individual class names.
-	 *
-	 * @param string $class_attribute Space-separated class attribute value.
-	 * @return array<int, string> Class names.
-	 */
-	private static function split_class_list( string $class_attribute ): array {
-		$parts = preg_split( '/\s+/', $class_attribute, -1, PREG_SPLIT_NO_EMPTY );
-
-		return is_array( $parts ) ? $parts : array();
-	}
-
-	/**
 	 * Merge WordPress block-support classes and styles into generated markup.
 	 *
 	 * The wrapper generators only ever handled the `style` attribute object, so
@@ -526,9 +515,9 @@ class Block_Inserter {
 		// class at once instead of patching twelve cases and waiting for the
 		// thirteenth. WP_HTML_Tag_Processor::add_class() is idempotent, so the
 		// blocks that DO emit it themselves are unaffected.
-		$applied_classes = self::split_class_list( (string) ( $applied['class'] ?? '' ) );
+		$applied_classes = Serializer_Support::split_class_list( (string) ( $applied['class'] ?? '' ) );
 		$custom_classes  = isset( $attributes['className'] ) && is_string( $attributes['className'] )
-			? self::split_class_list( $attributes['className'] )
+			? Serializer_Support::split_class_list( $attributes['className'] )
 			: array();
 
 		// Alignment always goes to the ROOT, which is where the first pass
@@ -843,7 +832,7 @@ class Block_Inserter {
 			$data['data-video-loop']             = empty( $attributes['dsgoVideoLoop'] ) ? 'false' : 'true';
 			$data['data-video-autoplay']         = empty( $attributes['dsgoVideoAutoplay'] ) ? 'false' : 'true';
 			$data['data-video-mobile-hide']      = empty( $attributes['dsgoVideoMobileHide'] ) ? 'false' : 'true';
-			$data['data-video-overlay-color']    = self::convert_color_value_to_css_var(
+			$data['data-video-overlay-color']    = Serializer_Support::convert_color_value_to_css_var(
 				isset( $attributes['dsgoVideoOverlayColor'] ) ? (string) $attributes['dsgoVideoOverlayColor'] : ''
 			);
 		}
@@ -879,7 +868,7 @@ class Block_Inserter {
 			&& ! in_array( $block_name, self::CUSTOM_CSS_EXCLUDED_BLOCKS, true )
 			&& ! empty( $attributes['dsgoCustomCSS'] ) && is_string( $attributes['dsgoCustomCSS'] )
 		) {
-			$classes[] = 'dsgo-custom-css-' . self::js_hash_code( $attributes['dsgoCustomCSS'] . $block_name );
+			$classes[] = 'dsgo-custom-css-' . Serializer_Support::js_hash_code( $attributes['dsgoCustomCSS'] . $block_name );
 		}
 
 		// Text reveal - src/extensions/text-reveal/editor.js
@@ -892,9 +881,9 @@ class Block_Inserter {
 			$classes[] = 'has-dsgo-text-reveal';
 
 			$data['data-dsgo-text-reveal-enabled']    = 'true';
-			$data['data-dsgo-text-reveal-color']      = self::convert_color_value_to_css_var( (string) ( $attributes['dsgoTextRevealColor'] ?? '' ) );
+			$data['data-dsgo-text-reveal-color']      = Serializer_Support::convert_color_value_to_css_var( (string) ( $attributes['dsgoTextRevealColor'] ?? '' ) );
 			$data['data-dsgo-text-reveal-split-mode'] = ! empty( $attributes['dsgoTextRevealSplitMode'] ) ? (string) $attributes['dsgoTextRevealSplitMode'] : 'word';
-			$data['data-dsgo-text-reveal-transition'] = self::js_truthy_numeric( $attributes['dsgoTextRevealTransition'] ?? null, '150' );
+			$data['data-dsgo-text-reveal-transition'] = Serializer_Support::js_truthy_numeric( $attributes['dsgoTextRevealTransition'] ?? null, '150' );
 
 			// Only emitted when it differs from the default 'color': content
 			// saved before this attribute existed carries none in its stored
@@ -919,17 +908,17 @@ class Block_Inserter {
 			$classes[] = 'has-dsgo-expanding-background';
 
 			$raw_color   = (string) ( $attributes['dsgoExpandingBgColor'] ?? '' );
-			$style_color = self::convert_color_value_to_css_var( $raw_color );
+			$style_color = Serializer_Support::convert_color_value_to_css_var( $raw_color );
 
 			$styles['--dsgo-expanding-bg-color'] = '' !== $style_color ? $style_color : '#e8e8e8';
 
 			$data['data-dsgo-expanding-bg-enabled']          = 'true';
 			$data['data-dsgo-expanding-bg-color']            = $style_color;
-			$data['data-dsgo-expanding-bg-initial-size']     = self::js_truthy_numeric( $attributes['dsgoExpandingBgInitialSize'] ?? null, '' );
-			$data['data-dsgo-expanding-bg-blur']             = self::js_truthy_numeric( $attributes['dsgoExpandingBgBlur'] ?? null, '' );
-			$data['data-dsgo-expanding-bg-speed']            = self::js_truthy_numeric( $attributes['dsgoExpandingBgSpeed'] ?? null, '' );
-			$data['data-dsgo-expanding-bg-trigger-offset']   = self::js_truthy_numeric( $attributes['dsgoExpandingBgTriggerOffset'] ?? null, '' );
-			$data['data-dsgo-expanding-bg-completion-point'] = self::js_truthy_numeric( $attributes['dsgoExpandingBgCompletionPoint'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-initial-size']     = Serializer_Support::js_truthy_numeric( $attributes['dsgoExpandingBgInitialSize'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-blur']             = Serializer_Support::js_truthy_numeric( $attributes['dsgoExpandingBgBlur'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-speed']            = Serializer_Support::js_truthy_numeric( $attributes['dsgoExpandingBgSpeed'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-trigger-offset']   = Serializer_Support::js_truthy_numeric( $attributes['dsgoExpandingBgTriggerOffset'] ?? null, '' );
+			$data['data-dsgo-expanding-bg-completion-point'] = Serializer_Support::js_truthy_numeric( $attributes['dsgoExpandingBgCompletionPoint'] ?? null, '' );
 		}
 
 		// SVG patterns - src/extensions/svg-patterns/editor.js
@@ -965,13 +954,13 @@ class Block_Inserter {
 					// omission of a prop whose value is `undefined` - as
 					// opposed to the expanding-background data attributes
 					// above, which fall back to an emitted empty string.
-					$pattern_color = self::convert_color_value_to_css_var( (string) ( $attributes['dsgoSvgPatternColor'] ?? '' ) );
+					$pattern_color = Serializer_Support::convert_color_value_to_css_var( (string) ( $attributes['dsgoSvgPatternColor'] ?? '' ) );
 					if ( '' !== $pattern_color ) {
 						$data['data-dsgo-svg-pattern-color'] = $pattern_color;
 					}
 
-					$data['data-dsgo-svg-pattern-opacity'] = self::format_js_number( $safe_opacity );
-					$data['data-dsgo-svg-pattern-scale']   = self::format_js_number( $safe_scale );
+					$data['data-dsgo-svg-pattern-opacity'] = Serializer_Support::format_js_number( $safe_opacity );
+					$data['data-dsgo-svg-pattern-scale']   = Serializer_Support::format_js_number( $safe_scale );
 				}
 			}
 		}
@@ -1027,7 +1016,7 @@ class Block_Inserter {
 		) {
 			$mobile_order = max( 0.0, min( 10.0, (float) $attributes['dsgoMobileOrder'] ) );
 			if ( 1.0 !== $mobile_order ) {
-				$styles['--dsgo-mobile-order'] = self::format_js_number( $mobile_order );
+				$styles['--dsgo-mobile-order'] = Serializer_Support::format_js_number( $mobile_order );
 			}
 		}
 
@@ -1043,7 +1032,7 @@ class Block_Inserter {
 			);
 			foreach ( $spans as $span_attribute => $span_property ) {
 				if ( isset( $attributes[ $span_attribute ] ) && is_numeric( $attributes[ $span_attribute ] ) && (float) $attributes[ $span_attribute ] > 1 ) {
-					$styles[ $span_property ] = 'span ' . self::format_js_number( (float) $attributes[ $span_attribute ] );
+					$styles[ $span_property ] = 'span ' . Serializer_Support::format_js_number( (float) $attributes[ $span_attribute ] );
 				}
 			}
 		}
@@ -1075,67 +1064,6 @@ class Block_Inserter {
 		$namespace = strtok( $block_name, '/' );
 
 		return in_array( $namespace . '/*', $excluded, true );
-	}
-
-	/**
-	 * Reproduce JavaScript's 32-bit string hash.
-	 *
-	 * Mirrors hashCode() in src/extensions/custom-css/index.js:
-	 *
-	 *   hash = ( hash << 5 ) - hash + charCodeAt( i );
-	 *   hash = hash & hash;                  // truncate to 32-bit signed
-	 *   return Math.abs( hash ).toString( 36 );
-	 *
-	 * Two details matter. PHP integers are 64-bit, so the wrap to 32-bit signed
-	 * has to be done by hand or the values diverge after a few characters. And
-	 * charCodeAt() returns UTF-16 code units, not bytes or code points, so the
-	 * string is converted to UTF-16LE and read two bytes at a time - otherwise
-	 * any non-ASCII character in the CSS produces a different class here than
-	 * in the editor.
-	 *
-	 * @param string $value String to hash.
-	 * @return string Base-36 hash, matching the JavaScript output.
-	 */
-	private static function js_hash_code( string $value ): string {
-		$hash  = 0;
-		$utf16 = function_exists( 'mb_convert_encoding' )
-			? (string) mb_convert_encoding( $value, 'UTF-16LE', 'UTF-8' )
-			: $value;
-		$length = strlen( $utf16 );
-		$step   = function_exists( 'mb_convert_encoding' ) ? 2 : 1;
-
-		for ( $i = 0; $i + $step - 1 < $length; $i += $step ) {
-			$char = 2 === $step
-				? ( ord( $utf16[ $i ] ) | ( ord( $utf16[ $i + 1 ] ) << 8 ) )
-				: ord( $utf16[ $i ] );
-
-			$hash = ( $hash << 5 ) - $hash + $char;
-
-			// Truncate to 32 bits, then reinterpret as signed.
-			$hash = $hash & 0xFFFFFFFF;
-			if ( $hash & 0x80000000 ) {
-				$hash -= 0x100000000;
-			}
-		}
-
-		return base_convert( (string) abs( $hash ), 10, 36 );
-	}
-
-	/**
-	 * Mirror JavaScript's `value || fallback` for a numeric attribute
-	 * rendered into a data-attribute string, where 0 is falsy exactly as it
-	 * is in JS (and so, unlike a plain empty/absent check, falls back too).
-	 *
-	 * @param mixed  $value    Attribute value.
-	 * @param string $fallback Fallback string used when $value is falsy.
-	 * @return string Rendered attribute value.
-	 */
-	private static function js_truthy_numeric( $value, string $fallback ): string {
-		if ( is_numeric( $value ) && 0.0 !== (float) $value ) {
-			return self::format_js_number( (float) $value );
-		}
-
-		return $fallback;
 	}
 
 	/**
@@ -1204,7 +1132,7 @@ class Block_Inserter {
 			$engine = wp_style_engine_get_styles( $routed );
 			// JS border support retains an inline preset color as well as its flag class.
 			if ( ! empty( $routed['border']['color'] ) ) {
-				$engine['declarations']['border-color'] = self::convert_color_value_to_css_var( $routed['border']['color'] );
+				$engine['declarations']['border-color'] = Serializer_Support::convert_color_value_to_css_var( $routed['border']['color'] );
 			}
 			foreach ( $engine['declarations'] ?? array() as $property => $value ) {
 				$styles[] = $property . ':' . $value;
@@ -1869,7 +1797,7 @@ class Block_Inserter {
 
 		// Convert CSS var() syntax to WordPress shorthand in style attribute.
 		if ( isset( $attrs['style'] ) && is_array( $attrs['style'] ) ) {
-			$attrs['style'] = self::convert_style_vars( $attrs['style'] );
+			$attrs['style'] = Serializer_Support::convert_style_vars( $attrs['style'] );
 		}
 		if ( 'core/image' === $block_name ) {
 			$image_html = self::generate_core_image_html( $attrs );
@@ -2009,7 +1937,7 @@ class Block_Inserter {
 				if ( ! isset( $attributes['style'] ) ) {
 					$declared_style = Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? null;
 					if ( is_array( $declared_style ) ) {
-						$attributes['style'] = self::convert_style_vars( $declared_style );
+						$attributes['style'] = Serializer_Support::convert_style_vars( $declared_style );
 					}
 				}
 
@@ -2027,7 +1955,7 @@ class Block_Inserter {
 					$outer_class_parts[] = 'alignwide';
 				}
 				$outer_class_parts[] = 'dsgo-stack';
-				if ( self::has_overlay( $attributes ) ) {
+				if ( Serializer_Support::has_overlay( $attributes ) ) {
 					$outer_class_parts[] = 'dsgo-stack--has-overlay';
 				}
 				if ( ! $constrain_width ) {
@@ -2049,7 +1977,7 @@ class Block_Inserter {
 
 				// Process block support styles (colors, padding, etc.).
 				$style             = isset( $attributes['style'] ) ? $attributes['style'] : array();
-				$support_result    = self::get_block_support_styles( $style );
+				$support_result    = Serializer_Support::get_block_support_styles( $style );
 				$outer_class_parts = array_merge( $outer_class_parts, $support_result['classes'] );
 
 				// Only what the style attribute actually carries. Padding used to
@@ -2060,7 +1988,7 @@ class Block_Inserter {
 				// none. apply_block_json_defaults() supplies the default `style`
 				// (which does include padding) when the caller omits it entirely.
 				$outer_styles = array_merge(
-					self::container_hover_styles( $attributes ),
+					Serializer_Support::container_hover_styles( $attributes ),
 					$support_result['styles']
 				);
 
@@ -2072,13 +2000,13 @@ class Block_Inserter {
 				// unset (the divider then inherits the theme.json height
 				// token, and the stylesheet resolves clearance from that
 				// same token). Must match save.js exactly.
-				$shape_top_height    = self::normalize_shape_size( $attributes['shapeDividerTopHeight'] ?? null, 10, 500 );
-				$shape_bottom_height = self::normalize_shape_size( $attributes['shapeDividerBottomHeight'] ?? null, 10, 500 );
+				$shape_top_height    = Serializer_Support::normalize_shape_size( $attributes['shapeDividerTopHeight'] ?? null, 10, 500 );
+				$shape_bottom_height = Serializer_Support::normalize_shape_size( $attributes['shapeDividerBottomHeight'] ?? null, 10, 500 );
 				if ( '' !== $shape_top && empty( $attributes['shapeDividerTopSpacing'] ) && null !== $shape_top_height ) {
-					$outer_styles[] = '--dsgo-shape-clearance-top:' . self::format_js_number( $shape_top_height ) . 'px';
+					$outer_styles[] = '--dsgo-shape-clearance-top:' . Serializer_Support::format_js_number( $shape_top_height ) . 'px';
 				}
 				if ( '' !== $shape_bottom && empty( $attributes['shapeDividerBottomSpacing'] ) && null !== $shape_bottom_height ) {
-					$outer_styles[] = '--dsgo-shape-clearance-bottom:' . self::format_js_number( $shape_bottom_height ) . 'px';
+					$outer_styles[] = '--dsgo-shape-clearance-bottom:' . Serializer_Support::format_js_number( $shape_bottom_height ) . 'px';
 				}
 
 				// Outer box width — mirrors src/blocks/section/utils/box-width.js
@@ -2108,18 +2036,18 @@ class Block_Inserter {
 					$inner_style_parts[] = 'margin-right:' . ( 'right' === $content_position ? '0' : 'auto' );
 				}
 				if ( '' !== $shape_top && ! empty( $attributes['shapeDividerTopSpacing'] ) && is_string( $attributes['shapeDividerTopSpacing'] ) ) {
-					$inner_style_parts[] = 'padding-top:' . self::wp_shorthand_to_css_var( $attributes['shapeDividerTopSpacing'] );
+					$inner_style_parts[] = 'padding-top:' . Serializer_Support::wp_shorthand_to_css_var( $attributes['shapeDividerTopSpacing'] );
 				}
 				if ( '' !== $shape_bottom && ! empty( $attributes['shapeDividerBottomSpacing'] ) && is_string( $attributes['shapeDividerBottomSpacing'] ) ) {
-					$inner_style_parts[] = 'padding-bottom:' . self::wp_shorthand_to_css_var( $attributes['shapeDividerBottomSpacing'] );
+					$inner_style_parts[] = 'padding-bottom:' . Serializer_Support::wp_shorthand_to_css_var( $attributes['shapeDividerBottomSpacing'] );
 				}
 				$inner_style = empty( $inner_style_parts ) ? '' : ' style="' . esc_attr( implode( ';', $inner_style_parts ) ) . '"';
 
 				return array(
 					'opening' => '<' . esc_attr( $tag_name ) . ' class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' . esc_attr( implode( ';', $outer_styles ) ) . '">' .
-						self::render_shape_divider( $attributes, 'shapeDividerTop', 'top' ) .
+						Serializer_Support::render_shape_divider( $attributes, 'shapeDividerTop', 'top' ) .
 						'<div class="dsgo-stack__inner"' . $inner_style . '>',
-					'closing' => '</div>' . self::render_shape_divider( $attributes, 'shapeDividerBottom', 'bottom' ) . '</' . esc_attr( $tag_name ) . '>',
+					'closing' => '</div>' . Serializer_Support::render_shape_divider( $attributes, 'shapeDividerBottom', 'bottom' ) . '</' . esc_attr( $tag_name ) . '>',
 				);
 
 			case 'designsetgo/hotspot':
@@ -2128,9 +2056,9 @@ class Block_Inserter {
 				$hotspot_image_alt = isset( $attributes['imageAlt'] ) ? (string) $attributes['imageAlt'] : '';
 				$hotspot_trigger   = isset( $attributes['trigger'] ) ? (string) $attributes['trigger'] : 'click';
 				$tooltip_position  = isset( $attributes['tooltipPosition'] ) ? (string) $attributes['tooltipPosition'] : 'top';
-				$tooltip_width     = self::numeric_attribute( $attributes['tooltipWidth'] ?? 240, 240 );
+				$tooltip_width     = Serializer_Support::numeric_attribute( $attributes['tooltipWidth'] ?? 240, 240 );
 				$hotspot_animation = isset( $attributes['animation'] ) ? (string) $attributes['animation'] : 'pulse';
-				$sequence_duration = self::numeric_attribute( $attributes['sequenceDuration'] ?? 0, 0 );
+				$sequence_duration = Serializer_Support::numeric_attribute( $attributes['sequenceDuration'] ?? 0, 0 );
 
 				$hotspot_styles = array(
 					'--dsgo-hotspot-tooltip-width:' . $tooltip_width . 'px',
@@ -2147,9 +2075,9 @@ class Block_Inserter {
 					'tooltipTextColor'       => '--dsgo-hotspot-tooltip-color',
 				);
 				foreach ( $hotspot_color_vars as $attribute_name => $custom_property ) {
-					$safe = self::safe_hotspot_color( $attributes[ $attribute_name ] ?? '' );
+					$safe = Serializer_Support::safe_hotspot_color( $attributes[ $attribute_name ] ?? '' );
 					if ( '' !== $safe ) {
-						$hotspot_styles[] = $custom_property . ':' . self::convert_color_value_to_css_var( $safe );
+						$hotspot_styles[] = $custom_property . ':' . Serializer_Support::convert_color_value_to_css_var( $safe );
 					}
 				}
 
@@ -2193,30 +2121,30 @@ class Block_Inserter {
 				$tp_motion     = ! empty( $attributes['motion'] );
 				$tp_motion_dir = isset( $attributes['motionDirection'] ) ? (string) $attributes['motionDirection'] : 'forward';
 
-				$tp_rotation     = self::clamp_number( $attributes['rotation'] ?? 0, -360, 360, 0 );
-				$tp_opacity      = self::clamp_number( $attributes['guideOpacity'] ?? 0.35, 0, 1, 0.35 );
-				$tp_stroke       = self::clamp_number( $attributes['guideStrokeWidth'] ?? 2, 0, 24, 2 );
-				$tp_width        = self::clamp_number( $attributes['pathWidth'] ?? 100, 25, 100, 100 );
-				$tp_start_offset = self::clamp_number( $attributes['startOffset'] ?? 0, -100, 100, 0 );
-				$tp_font_size    = self::clamp_number( $attributes['pathFontSize'] ?? 54, 1, 400, 54 );
-				$tp_word_spacing = self::clamp_number( $attributes['wordSpacing'] ?? 0, -40, 100, 0 );
-				$tp_padding      = self::clamp_number( $attributes['pathPadding'] ?? 0, -200, 200, 0 );
+				$tp_rotation     = Serializer_Support::clamp_number( $attributes['rotation'] ?? 0, -360, 360, 0 );
+				$tp_opacity      = Serializer_Support::clamp_number( $attributes['guideOpacity'] ?? 0.35, 0, 1, 0.35 );
+				$tp_stroke       = Serializer_Support::clamp_number( $attributes['guideStrokeWidth'] ?? 2, 0, 24, 2 );
+				$tp_width        = Serializer_Support::clamp_number( $attributes['pathWidth'] ?? 100, 25, 100, 100 );
+				$tp_start_offset = Serializer_Support::clamp_number( $attributes['startOffset'] ?? 0, -100, 100, 0 );
+				$tp_font_size    = Serializer_Support::clamp_number( $attributes['pathFontSize'] ?? 54, 1, 400, 54 );
+				$tp_word_spacing = Serializer_Support::clamp_number( $attributes['wordSpacing'] ?? 0, -40, 100, 0 );
+				$tp_padding      = Serializer_Support::clamp_number( $attributes['pathPadding'] ?? 0, -200, 200, 0 );
 
-				$tp_guide_color  = self::safe_text_path_color( $attributes['guideColor'] ?? '' );
-				$tp_circle_color = self::safe_text_path_color( $attributes['circleBackgroundColor'] ?? '' );
-				$tp_url          = self::safe_text_path_url( $attributes['url'] ?? '' );
+				$tp_guide_color  = Serializer_Support::safe_text_path_color( $attributes['guideColor'] ?? '' );
+				$tp_circle_color = Serializer_Support::safe_text_path_color( $attributes['circleBackgroundColor'] ?? '' );
+				$tp_url          = Serializer_Support::safe_text_path_url( $attributes['url'] ?? '' );
 
 				$tp_styles = array(
 					'--dsgo-text-path-rotation:' . $tp_rotation . 'deg',
-					'--dsgo-text-path-guide-opacity:' . self::format_js_number( (float) $tp_opacity ),
-					'--dsgo-text-path-guide-stroke-width:' . self::format_js_number( (float) $tp_stroke ),
+					'--dsgo-text-path-guide-opacity:' . Serializer_Support::format_js_number( (float) $tp_opacity ),
+					'--dsgo-text-path-guide-stroke-width:' . Serializer_Support::format_js_number( (float) $tp_stroke ),
 					'--dsgo-text-path-width:' . $tp_width . '%',
 				);
 				if ( '' !== $tp_guide_color ) {
-					$tp_styles[] = '--dsgo-text-path-guide-color:' . self::convert_color_value_to_css_var( $tp_guide_color );
+					$tp_styles[] = '--dsgo-text-path-guide-color:' . Serializer_Support::convert_color_value_to_css_var( $tp_guide_color );
 				}
 				if ( '' !== $tp_circle_color ) {
-					$tp_styles[] = '--dsgo-text-path-circle-background:' . self::convert_color_value_to_css_var( $tp_circle_color );
+					$tp_styles[] = '--dsgo-text-path-circle-background:' . Serializer_Support::convert_color_value_to_css_var( $tp_circle_color );
 				}
 
 				$class_parts = array( 'wp-block-designsetgo-text-path' );
@@ -2234,11 +2162,11 @@ class Block_Inserter {
 					$tp_duration      = 0.0 === $tp_duration ? 12 : $tp_duration;
 					$tp_duration      = max( 2, min( 120, $tp_duration ) );
 					$tp_motion_attrs  = ' data-dsgo-text-path-motion="true"';
-					$tp_motion_attrs .= ' data-dsgo-text-path-motion-duration="' . esc_attr( self::format_js_number( (float) $tp_duration ) ) . '"';
+					$tp_motion_attrs .= ' data-dsgo-text-path-motion-duration="' . esc_attr( Serializer_Support::format_js_number( (float) $tp_duration ) ) . '"';
 					$tp_motion_attrs .= ' data-dsgo-text-path-motion-direction="' . ( 'reverse' === $tp_motion_dir ? 'reverse' : 'forward' ) . '"';
 				}
 
-				$tp_path = self::get_text_path_data( $tp_type, $attributes['arcSize'] ?? 100 );
+				$tp_path = Serializer_Support::get_text_path_data( $tp_type, $attributes['arcSize'] ?? 100 );
 
 				$tp_svg  = '<svg viewBox="' . esc_attr( $tp_path['viewBox'] ) . '" role="img"';
 				$tp_svg .= '' !== $tp_text ? ' aria-label="' . esc_attr( $tp_text ) . '"' : '';
@@ -2313,7 +2241,7 @@ class Block_Inserter {
 				foreach ( $table_color_vars as $attribute_name => $custom_property ) {
 					$colour = isset( $attributes[ $attribute_name ] ) ? (string) $attributes[ $attribute_name ] : '';
 					if ( '' !== $colour ) {
-						$table_styles[] = $custom_property . ':' . self::convert_color_value_to_css_var( $colour );
+						$table_styles[] = $custom_property . ':' . Serializer_Support::convert_color_value_to_css_var( $colour );
 					}
 				}
 
@@ -2428,7 +2356,7 @@ class Block_Inserter {
 				$item_link_targ  = isset( $attributes['linkTarget'] ) ? (string) $attributes['linkTarget'] : '_self';
 				$item_marker_col = isset( $attributes['customMarkerColor'] ) ? (string) $attributes['customMarkerColor'] : '';
 
-				$item_safe_url = self::safe_hotspot_url( $item_link_url );
+				$item_safe_url = Serializer_Support::safe_hotspot_url( $item_link_url );
 
 				$effective_marker = '' !== $item_marker_col
 					? $item_marker_col
@@ -2446,7 +2374,7 @@ class Block_Inserter {
 				}
 
 				$item_style = '' !== $item_marker_col
-					? ' style="' . esc_attr( '--dsgo-timeline-item-marker-color:' . self::convert_color_value_to_css_var( $item_marker_col ) ) . '"'
+					? ' style="' . esc_attr( '--dsgo-timeline-item-marker-color:' . Serializer_Support::convert_color_value_to_css_var( $item_marker_col ) ) . '"'
 					: '';
 
 				// Marker: an image when set, otherwise the default circle SVG.
@@ -2494,8 +2422,8 @@ class Block_Inserter {
 				$marker_id      = 'dsgo-hotspot-marker-' . $item_unique_id;
 				$tooltip_id     = 'dsgo-hotspot-tooltip-' . $item_unique_id;
 
-				$item_x        = self::clamp_hotspot_coordinate( $attributes['x'] ?? 50 );
-				$item_y        = self::clamp_hotspot_coordinate( $attributes['y'] ?? 50 );
+				$item_x        = Serializer_Support::clamp_hotspot_coordinate( $attributes['x'] ?? 50 );
+				$item_y        = Serializer_Support::clamp_hotspot_coordinate( $attributes['y'] ?? 50 );
 				$origin_x      = isset( $attributes['originX'] ) ? (string) $attributes['originX'] : 'center';
 				$origin_y      = isset( $attributes['originY'] ) ? (string) $attributes['originY'] : 'center';
 				$item_label    = isset( $attributes['label'] ) ? (string) $attributes['label'] : '+';
@@ -2504,8 +2432,8 @@ class Block_Inserter {
 				$item_position = isset( $attributes['tooltipPosition'] ) ? (string) $attributes['tooltipPosition'] : 'inherit';
 				$item_trigger  = isset( $attributes['trigger'] ) ? (string) $attributes['trigger'] : 'inherit';
 				$item_anim     = isset( $attributes['animation'] ) ? (string) $attributes['animation'] : 'inherit';
-				$item_order    = self::numeric_attribute( $attributes['sequenceOrder'] ?? 0, 0 );
-				$safe_url      = self::safe_hotspot_url( $attributes['url'] ?? '' );
+				$item_order    = Serializer_Support::numeric_attribute( $attributes['sequenceOrder'] ?? 0, 0 );
+				$safe_url      = Serializer_Support::safe_hotspot_url( $attributes['url'] ?? '' );
 
 				$item_styles = array(
 					'--dsgo-hotspot-x:' . $item_x . '%',
@@ -2514,7 +2442,7 @@ class Block_Inserter {
 				// save.js writes the width only for a real number, so an unset
 				// width must not appear at all.
 				if ( isset( $attributes['tooltipWidth'] ) && is_numeric( $attributes['tooltipWidth'] ) ) {
-					$item_styles[] = '--dsgo-hotspot-tooltip-width:' . self::numeric_attribute( $attributes['tooltipWidth'] ) . 'px';
+					$item_styles[] = '--dsgo-hotspot-tooltip-width:' . Serializer_Support::numeric_attribute( $attributes['tooltipWidth'] ) . 'px';
 				}
 				$item_styles[] = '--dsgo-hotspot-sequence-order:' . $item_order;
 				$item_styles[] = '--dsgo-hotspot-origin-x:' . $origin_x;
@@ -2572,7 +2500,7 @@ class Block_Inserter {
 				// Mirrors src/blocks/advanced-heading/save.js. The animated
 				// headline variant is refused by find_invalid_attribute_values()
 				// rather than approximated here.
-				$heading_level = self::numeric_attribute( $attributes['level'] ?? 2, 2 );
+				$heading_level = Serializer_Support::numeric_attribute( $attributes['level'] ?? 2, 2 );
 				if ( ! in_array( (int) $heading_level, array( 1, 2, 3, 4, 5, 6 ), true ) ) {
 					$heading_level = 2;
 				}
@@ -2580,7 +2508,7 @@ class Block_Inserter {
 				$text_align  = isset( $attributes['textAlign'] ) ? (string) $attributes['textAlign'] : '';
 
 				$class_parts   = array( 'wp-block-designsetgo-advanced-heading' );
-				$heading_align = self::align_class( $block_name, $attributes );
+				$heading_align = Serializer_Support::align_class( $block_name, $attributes );
 				if ( '' !== $heading_align ) {
 					$class_parts[] = $heading_align;
 				}
@@ -2591,7 +2519,7 @@ class Block_Inserter {
 
 				$block_gap   = $attributes['style']['spacing']['blockGap'] ?? '';
 				$inner_style = ( is_string( $block_gap ) && '' !== $block_gap )
-					? ' style="' . esc_attr( '--dsgo-segment-gap:' . self::wp_shorthand_to_css_var( $block_gap ) ) . '"'
+					? ' style="' . esc_attr( '--dsgo-segment-gap:' . Serializer_Support::wp_shorthand_to_css_var( $block_gap ) ) . '"'
 					: '';
 
 				return array(
@@ -2619,7 +2547,7 @@ class Block_Inserter {
 				$has_max_width = is_string( $blob_max_width ) && '' !== trim( $blob_max_width );
 
 				$wrapper_classes = array( 'wp-block-designsetgo-blobs' );
-				$blobs_align     = self::align_class( $block_name, $attributes );
+				$blobs_align     = Serializer_Support::align_class( $block_name, $attributes );
 				if ( '' !== $blobs_align ) {
 					$wrapper_classes[] = $blobs_align;
 				}
@@ -2652,11 +2580,11 @@ class Block_Inserter {
 					// the string unconditionally emitted `background-color:;`,
 					// which is not a declaration save() ever produces.
 					$blob_overlay_styles = array();
-					$blob_overlay_color  = self::convert_color_value_to_css_var( $overlay_color );
+					$blob_overlay_color  = Serializer_Support::convert_color_value_to_css_var( $overlay_color );
 					if ( '' !== $blob_overlay_color ) {
 						$blob_overlay_styles[] = 'background-color:' . $blob_overlay_color;
 					}
-					$blob_overlay_styles[] = 'opacity:' . self::format_js_number( $overlay_pct / 100 );
+					$blob_overlay_styles[] = 'opacity:' . Serializer_Support::format_js_number( $overlay_pct / 100 );
 
 					$overlay_html = '<div class="dsgo-blobs__overlay" style="' . esc_attr( implode( ';', $blob_overlay_styles ) ) . '"></div>';
 				}
@@ -2700,16 +2628,16 @@ class Block_Inserter {
 			case 'designsetgo/timeline':
 				// Mirrors src/blocks/timeline/save.js.
 				$line_color         = isset( $attributes['lineColor'] ) ? (string) $attributes['lineColor'] : '';
-				$line_thickness     = self::numeric_attribute( $attributes['lineThickness'] ?? 2, 2 );
+				$line_thickness     = Serializer_Support::numeric_attribute( $attributes['lineThickness'] ?? 2, 2 );
 				$connector_style    = isset( $attributes['connectorStyle'] ) ? (string) $attributes['connectorStyle'] : 'solid';
 				$marker_style       = isset( $attributes['markerStyle'] ) ? (string) $attributes['markerStyle'] : 'circle';
-				$marker_size        = self::numeric_attribute( $attributes['markerSize'] ?? 16, 16 );
+				$marker_size        = Serializer_Support::numeric_attribute( $attributes['markerSize'] ?? 16, 16 );
 				$marker_color       = isset( $attributes['markerColor'] ) ? (string) $attributes['markerColor'] : '';
 				$marker_border      = isset( $attributes['markerBorderColor'] ) ? (string) $attributes['markerBorderColor'] : '';
 				$item_spacing       = isset( $attributes['itemSpacing'] ) ? (string) $attributes['itemSpacing'] : '2rem';
 				$animate_on_scroll  = ! empty( $attributes['animateOnScroll'] );
-				$animation_duration = self::numeric_attribute( $attributes['animationDuration'] ?? 600, 600 );
-				$stagger_delay      = self::numeric_attribute( $attributes['staggerDelay'] ?? 100, 100 );
+				$animation_duration = Serializer_Support::numeric_attribute( $attributes['animationDuration'] ?? 600, 600 );
+				$stagger_delay      = Serializer_Support::numeric_attribute( $attributes['staggerDelay'] ?? 100, 100 );
 				$orientation        = isset( $attributes['orientation'] ) ? (string) $attributes['orientation'] : 'vertical';
 				$timeline_layout    = isset( $attributes['layout'] ) ? $attributes['layout'] : 'alternating';
 
@@ -2763,7 +2691,7 @@ class Block_Inserter {
 				// that wrapper is invalid in the editor.
 				$query_slug    = str_replace( 'designsetgo/', '', $block_name );
 				$query_classes = 'wp-block-designsetgo-' . $query_slug;
-				$query_align   = self::align_class( $block_name, $attributes );
+				$query_align   = Serializer_Support::align_class( $block_name, $attributes );
 				if ( '' !== $query_align ) {
 					$query_classes .= ' ' . $query_align;
 				}
@@ -2819,19 +2747,19 @@ class Block_Inserter {
 
 				$slides_styles = array();
 				if ( '' !== $overlay_color ) {
-					$slides_styles[] = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( $overlay_color );
+					$slides_styles[] = '--dsgo-overlay-color:' . Serializer_Support::convert_color_value_to_css_var( $overlay_color );
 					// Mirrors overlayOpacityFraction(): clamp to 0-100, default
 					// 80, then divide. PHP would print 0.8 as "0.8" like JS does.
 					$opacity         = isset( $attributes['overlayOpacity'] ) && is_numeric( $attributes['overlayOpacity'] )
 						? min( 100, max( 0, (float) $attributes['overlayOpacity'] ) )
 						: 80;
-					$slides_styles[] = '--dsgo-overlay-opacity:' . self::format_js_number( $opacity / 100 );
+					$slides_styles[] = '--dsgo-overlay-opacity:' . Serializer_Support::format_js_number( $opacity / 100 );
 				}
 				if ( '' !== $nav_color ) {
-					$slides_styles[] = '--dsgo-nav-color:' . self::convert_color_value_to_css_var( $nav_color );
+					$slides_styles[] = '--dsgo-nav-color:' . Serializer_Support::convert_color_value_to_css_var( $nav_color );
 				}
 				if ( '' !== $nav_active_color ) {
-					$slides_styles[] = '--dsgo-nav-active-color:' . self::convert_color_value_to_css_var( $nav_active_color );
+					$slides_styles[] = '--dsgo-nav-active-color:' . Serializer_Support::convert_color_value_to_css_var( $nav_active_color );
 				}
 
 				$inner_styles = array();
@@ -2881,7 +2809,7 @@ class Block_Inserter {
 				$wrapper_styles = array();
 				if ( ! empty( $attributes['backgroundColor'] ) && is_string( $attributes['backgroundColor'] ) ) {
 					$wrapper_styles[] = '--dsgo-section-divider-bg:' .
-						self::convert_color_value_to_css_var( $attributes['backgroundColor'] );
+						Serializer_Support::convert_color_value_to_css_var( $attributes['backgroundColor'] );
 				}
 
 				// Shape style: each custom property is emitted only when the
@@ -2890,12 +2818,12 @@ class Block_Inserter {
 				$shape_styles = array();
 				if ( ! empty( $attributes['fillColor'] ) && is_string( $attributes['fillColor'] ) ) {
 					$shape_styles[] = '--dsgo-section-divider-fill:' .
-						self::convert_color_value_to_css_var( $attributes['fillColor'] );
+						Serializer_Support::convert_color_value_to_css_var( $attributes['fillColor'] );
 				}
-				if ( self::is_explicit_shape_size( $attributes['height'] ?? null ) ) {
+				if ( Serializer_Support::is_explicit_shape_size( $attributes['height'] ?? null ) ) {
 					$shape_styles[] = '--dsgo-shape-height:' . $attributes['height'] . 'px';
 				}
-				if ( self::is_explicit_shape_size( $attributes['width'] ?? null ) ) {
+				if ( Serializer_Support::is_explicit_shape_size( $attributes['width'] ?? null ) ) {
 					$shape_styles[] = '--dsgo-shape-width:' . $attributes['width'] . '%';
 				}
 				if ( ! empty( $attributes['flipX'] ) ) {
@@ -2949,7 +2877,7 @@ class Block_Inserter {
 				// Always written: save.js falls back to 'center'.
 				$fifty_styles[] = '--dsgo-fifty-fifty-content-justify:' . ( $align_items_map[ $vertical_align ] ?? 'center' );
 
-				$content_pad_css = is_string( $content_pad ) ? self::wp_shorthand_to_css_var( $content_pad ) : '';
+				$content_pad_css = is_string( $content_pad ) ? Serializer_Support::wp_shorthand_to_css_var( $content_pad ) : '';
 				if ( '' !== $content_pad_css ) {
 					$fifty_styles[] = '--dsgo-fifty-fifty-content-padding:' . $content_pad_css;
 				}
@@ -2999,7 +2927,7 @@ class Block_Inserter {
 					$outer_class_parts[] = 'alignwide';
 				}
 				$outer_class_parts[] = 'dsgo-flex';
-				if ( self::has_overlay( $attributes ) ) {
+				if ( Serializer_Support::has_overlay( $attributes ) ) {
 					$outer_class_parts[] = 'dsgo-flex--has-overlay';
 				}
 				if ( $mobile_stack ) {
@@ -3011,7 +2939,7 @@ class Block_Inserter {
 
 				// Attribute defaults replace the entire style object, never deep-merge.
 				$style          = $attributes['style'] ?? ( Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? array() );
-				$support_styles = self::get_block_support_styles( $style )['styles'];
+				$support_styles = Serializer_Support::get_block_support_styles( $style )['styles'];
 
 				// Inner div styles with gap.
 				$inner_styles       = array(
@@ -3030,7 +2958,7 @@ class Block_Inserter {
 				if ( isset( $align_map[ $vertical_alignment ] ) ) {
 					$inner_styles[] = 'align-items:' . $align_map[ $vertical_alignment ];
 				}
-				$gap = self::spacing_gap( $style['spacing']['blockGap'] ?? null );
+				$gap = Serializer_Support::spacing_gap( $style['spacing']['blockGap'] ?? null );
 				if ( is_string( $gap ) && '' !== $gap ) {
 					$inner_styles[] = 'gap:' . $gap;
 				}
@@ -3043,15 +2971,15 @@ class Block_Inserter {
 
 				return array(
 					'opening' => '<' . $row_tag . ' class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' .
-						esc_attr( implode( ';', array_merge( self::container_hover_styles( $attributes ), $support_styles ) ) ) .
+						esc_attr( implode( ';', array_merge( Serializer_Support::container_hover_styles( $attributes ), $support_styles ) ) ) .
 						'"><div class="dsgo-flex__inner" style="' . esc_attr( implode( ';', $inner_styles ) ) . '">',
 					'closing' => '</div></' . $row_tag . '>',
 				);
 
 			case 'designsetgo/grid':
-				$desktop_cols    = isset( $attributes['desktopColumns'] ) ? self::numeric_attribute( $attributes['desktopColumns'] ) : 3;
-				$tablet_cols     = isset( $attributes['tabletColumns'] ) ? self::numeric_attribute( $attributes['tabletColumns'] ) : 2;
-				$mobile_cols     = isset( $attributes['mobileColumns'] ) ? self::numeric_attribute( $attributes['mobileColumns'] ) : 1;
+				$desktop_cols    = isset( $attributes['desktopColumns'] ) ? Serializer_Support::numeric_attribute( $attributes['desktopColumns'] ) : 3;
+				$tablet_cols     = isset( $attributes['tabletColumns'] ) ? Serializer_Support::numeric_attribute( $attributes['tabletColumns'] ) : 2;
+				$mobile_cols     = isset( $attributes['mobileColumns'] ) ? Serializer_Support::numeric_attribute( $attributes['mobileColumns'] ) : 1;
 				$align_items     = isset( $attributes['alignItems'] ) ? $attributes['alignItems'] : 'stretch';
 				$constrain_width = isset( $attributes['constrainWidth'] ) ? $attributes['constrainWidth'] : false;
 				$content_width   = isset( $attributes['contentWidth'] ) ? $attributes['contentWidth'] : '';
@@ -3065,7 +2993,7 @@ class Block_Inserter {
 					$outer_class_parts[] = 'alignwide';
 				}
 				$outer_class_parts[] = 'dsgo-grid';
-				if ( self::has_overlay( $attributes ) ) {
+				if ( Serializer_Support::has_overlay( $attributes ) ) {
 					$outer_class_parts[] = 'dsgo-grid--has-overlay';
 				}
 				$outer_class_parts[] = 'dsgo-grid-cols-' . $desktop_cols;
@@ -3080,7 +3008,7 @@ class Block_Inserter {
 
 				// Attribute defaults replace the entire style object, never deep-merge.
 				$style          = $attributes['style'] ?? ( Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? array() );
-				$support_styles = self::get_block_support_styles( $style )['styles'];
+				$support_styles = Serializer_Support::get_block_support_styles( $style )['styles'];
 
 				// Inner div styles.
 				$default_gap       = 'var(--wp--preset--spacing--50)';
@@ -3089,8 +3017,8 @@ class Block_Inserter {
 				$column_gap        = is_array( $block_gap ) ? ( $block_gap['left'] ?? '' ) : $block_gap;
 				$custom_row_gap    = $attributes['rowGap'] ?? '';
 				$custom_column_gap = $attributes['columnGap'] ?? '';
-				$row_gap           = self::spacing_gap( $row_gap ) ?? ( '' !== $custom_row_gap ? $custom_row_gap : $default_gap );
-				$column_gap        = self::spacing_gap( $column_gap ) ?? ( '' !== $custom_column_gap ? $custom_column_gap : $default_gap );
+				$row_gap           = Serializer_Support::spacing_gap( $row_gap ) ?? ( '' !== $custom_row_gap ? $custom_row_gap : $default_gap );
+				$column_gap        = Serializer_Support::spacing_gap( $column_gap ) ?? ( '' !== $custom_column_gap ? $custom_column_gap : $default_gap );
 				// Mirrors src/blocks/grid/grid-columns.js: a custom template wins,
 				// then a column min width, then the repeated column count.
 				$column_template = isset( $attributes['columnTemplate'] ) && is_string( $attributes['columnTemplate'] ) ? trim( $attributes['columnTemplate'] ) : '';
@@ -3124,7 +3052,7 @@ class Block_Inserter {
 
 				return array(
 					'opening' => '<' . $grid_tag . ' class="' . esc_attr( implode( ' ', $outer_class_parts ) ) . '" style="' .
-						esc_attr( implode( ';', array_merge( self::container_hover_styles( $attributes ), $support_styles ) ) ) .
+						esc_attr( implode( ';', array_merge( Serializer_Support::container_hover_styles( $attributes ), $support_styles ) ) ) .
 						'"><div class="dsgo-grid__inner" style="' . esc_attr( implode( ';', $inner_styles ) ) . '">',
 					'closing' => '</div></' . $grid_tag . '>',
 				);
@@ -3133,9 +3061,9 @@ class Block_Inserter {
 				// This block's own attribute names are columns/columnsTablet/
 				// columnsMobile. Reading the Grid block's names meant the author's
 				// column counts never reached the markup.
-				$desktop_cols = isset( $attributes['columns'] ) ? self::numeric_attribute( $attributes['columns'] ) : 3;
-				$tablet_cols  = isset( $attributes['columnsTablet'] ) ? self::numeric_attribute( $attributes['columnsTablet'] ) : 2;
-				$mobile_cols  = isset( $attributes['columnsMobile'] ) ? self::numeric_attribute( $attributes['columnsMobile'] ) : 1;
+				$desktop_cols = isset( $attributes['columns'] ) ? Serializer_Support::numeric_attribute( $attributes['columns'] ) : 3;
+				$tablet_cols  = isset( $attributes['columnsTablet'] ) ? Serializer_Support::numeric_attribute( $attributes['columnsTablet'] ) : 2;
+				$mobile_cols  = isset( $attributes['columnsMobile'] ) ? Serializer_Support::numeric_attribute( $attributes['columnsMobile'] ) : 1;
 				// `gap` is a STRING attribute defaulting to '32px', and save.js
 				// writes it through untouched. intval() + 'px' happened to
 				// reproduce the default exactly, which is why the defaults
@@ -3161,7 +3089,7 @@ class Block_Inserter {
 				// Child Counter blocks inherit this through CSS. save.js DOES
 				// convert here, unlike the Counter block's own hoverColor.
 				if ( ! empty( $attributes['hoverColor'] ) && is_string( $attributes['hoverColor'] ) ) {
-					$outer_style .= ';--dsgo-counter-hover-color:' . self::convert_color_value_to_css_var( $attributes['hoverColor'] );
+					$outer_style .= ';--dsgo-counter-hover-color:' . Serializer_Support::convert_color_value_to_css_var( $attributes['hoverColor'] );
 				}
 
 				$data_attrs  = ' data-animation-duration="' . esc_attr( (string) $duration ) . '"';
@@ -3180,7 +3108,7 @@ class Block_Inserter {
 				$unique_id    = isset( $attributes['uniqueId'] ) ? $attributes['uniqueId'] : wp_unique_id( 'counter-' );
 				$start_value  = isset( $attributes['startValue'] ) ? floatval( $attributes['startValue'] ) : 0;
 				$end_value    = isset( $attributes['endValue'] ) ? floatval( $attributes['endValue'] ) : 100;
-				$decimals     = isset( $attributes['decimals'] ) ? self::numeric_attribute( $attributes['decimals'] ) : 0;
+				$decimals     = isset( $attributes['decimals'] ) ? Serializer_Support::numeric_attribute( $attributes['decimals'] ) : 0;
 				$prefix       = isset( $attributes['prefix'] ) ? $attributes['prefix'] : '';
 				$suffix       = isset( $attributes['suffix'] ) ? $attributes['suffix'] : '';
 				$label        = isset( $attributes['label'] ) ? $attributes['label'] : '';
@@ -3284,7 +3212,7 @@ class Block_Inserter {
 				$icon_name    = isset( $attributes['icon'] ) ? $attributes['icon'] : ( isset( $attributes['iconName'] ) ? $attributes['iconName'] : 'star' );
 				$icon_style   = isset( $attributes['iconStyle'] ) ? $attributes['iconStyle'] : 'filled';
 				$stroke_width = isset( $attributes['strokeWidth'] ) ? $attributes['strokeWidth'] : '1.5';
-				$icon_size    = isset( $attributes['iconSize'] ) ? self::numeric_attribute( $attributes['iconSize'] ) : ( isset( $attributes['size'] ) ? intval( $attributes['size'] ) : 48 );
+				$icon_size    = isset( $attributes['iconSize'] ) ? Serializer_Support::numeric_attribute( $attributes['iconSize'] ) : ( isset( $attributes['size'] ) ? intval( $attributes['size'] ) : 48 );
 				$aria_label   = isset( $attributes['ariaLabel'] ) ? $attributes['ariaLabel'] : ucwords( str_replace( '-', ' ', $icon_name ) );
 
 				// `align` was removed when `justification` replaced it.
@@ -3349,14 +3277,14 @@ class Block_Inserter {
 
 				// Build CSS custom properties style (must match save.js).
 				$style_parts = array(
-					'--dsgo-accordion-open-bg:' . esc_attr( self::convert_color_value_to_css_var( (string) $open_bg ) ),
-					'--dsgo-accordion-open-text:' . esc_attr( self::convert_color_value_to_css_var( (string) $open_text ) ),
-					'--dsgo-accordion-hover-bg:' . esc_attr( self::convert_color_value_to_css_var( (string) $hover_bg ) ),
-					'--dsgo-accordion-hover-text:' . esc_attr( self::convert_color_value_to_css_var( (string) $hover_text ) ),
+					'--dsgo-accordion-open-bg:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $open_bg ) ),
+					'--dsgo-accordion-open-text:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $open_text ) ),
+					'--dsgo-accordion-hover-bg:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $hover_bg ) ),
+					'--dsgo-accordion-hover-text:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $hover_text ) ),
 					'--dsgo-accordion-gap:' . esc_attr( $item_gap ),
 				);
 				if ( $border_color ) {
-					$style_parts[] = '--dsgo-accordion-border-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $border_color ) );
+					$style_parts[] = '--dsgo-accordion-border-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $border_color ) );
 				}
 				$custom_style = implode( ';', $style_parts );
 
@@ -3491,7 +3419,7 @@ class Block_Inserter {
 				$label_color        = isset( $attributes['labelColor'] ) ? $attributes['labelColor'] : '';
 				$unit_bg_color      = isset( $attributes['unitBackgroundColor'] ) ? $attributes['unitBackgroundColor'] : '';
 				$unit_border        = isset( $attributes['unitBorder'] ) ? $attributes['unitBorder'] : array();
-				$unit_border_radius = isset( $attributes['unitBorderRadius'] ) ? self::numeric_attribute( $attributes['unitBorderRadius'] ) : 12;
+				$unit_border_radius = isset( $attributes['unitBorderRadius'] ) ? Serializer_Support::numeric_attribute( $attributes['unitBorderRadius'] ) : 12;
 				$unit_gap           = isset( $attributes['unitGap'] ) ? $attributes['unitGap'] : '1rem';
 				$unit_padding       = isset( $attributes['unitPadding'] ) ? $attributes['unitPadding'] : '1.5rem';
 
@@ -3501,7 +3429,7 @@ class Block_Inserter {
 				$border_style = isset( $unit_border['style'] ) ? $unit_border['style'] : 'solid';
 
 				$unit_style_parts = array(
-					'background-color:' . ( $unit_bg_color ? esc_attr( self::convert_color_value_to_css_var( (string) $unit_bg_color ) ) : 'transparent' ),
+					'background-color:' . ( $unit_bg_color ? esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $unit_bg_color ) ) : 'transparent' ),
 					'border-color:' . esc_attr( $border_color ),
 					'border-width:' . esc_attr( $border_width ),
 					'border-style:' . esc_attr( $border_style ),
@@ -3510,8 +3438,8 @@ class Block_Inserter {
 				);
 				$unit_style       = implode( ';', $unit_style_parts );
 
-				$number_style = 'color:' . ( $number_color ? esc_attr( self::convert_color_value_to_css_var( (string) $number_color ) ) : 'var(--wp--preset--color--accent-2, currentColor)' );
-				$label_style  = 'color:' . ( $label_color ? esc_attr( self::convert_color_value_to_css_var( (string) $label_color ) ) : 'currentColor' );
+				$number_style = 'color:' . ( $number_color ? esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $number_color ) ) : 'var(--wp--preset--color--accent-2, currentColor)' );
+				$label_style  = 'color:' . ( $label_color ? esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $label_color ) ) : 'currentColor' );
 
 				// Build units HTML.
 				$units = array();
@@ -3577,7 +3505,7 @@ class Block_Inserter {
 				);
 
 			case 'designsetgo/progress-bar':
-				$percentage        = isset( $attributes['percentage'] ) ? self::numeric_attribute( $attributes['percentage'] ) : 75;
+				$percentage        = isset( $attributes['percentage'] ) ? Serializer_Support::numeric_attribute( $attributes['percentage'] ) : 75;
 				$bar_color         = isset( $attributes['barColor'] ) ? $attributes['barColor'] : '#2563eb';
 				$bar_bg_color      = isset( $attributes['barBackgroundColor'] ) ? $attributes['barBackgroundColor'] : '#e5e7eb';
 				$height            = isset( $attributes['height'] ) ? $attributes['height'] : '20px';
@@ -3626,13 +3554,13 @@ class Block_Inserter {
 				// `background-color:` with an empty value produced a declaration
 				// save() never writes, so an unstyled progress bar was invalid.
 				$container_style = 'width:100%;height:' . esc_attr( $height ) .
-					( '' !== $bar_bg_color ? ';background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $bar_bg_color ) ) : '' ) .
+					( '' !== $bar_bg_color ? ';background-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $bar_bg_color ) ) : '' ) .
 					';border-radius:' . esc_attr( $border_radius ) . ';overflow:hidden;position:relative';
 
 				// Fill styles.
 				$fill_width = $animate_on_scroll ? '0%' : $bar_width . '%';
 				$fill_style = 'width:' . $fill_width . ';height:100%' .
-					( '' !== $bar_color ? ';background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $bar_color ) ) : '' ) .
+					( '' !== $bar_color ? ';background-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $bar_color ) ) : '' ) .
 					';transition:width ' . esc_attr( (string) $animation_dur ) . 's ease-out;border-radius:' . esc_attr( $border_radius );
 
 				// Striped fill. save.js appends these two declarations after
@@ -3691,7 +3619,7 @@ class Block_Inserter {
 				$provider    = isset( $attributes['dsgoProvider'] ) ? $attributes['dsgoProvider'] : 'openstreetmap';
 				$latitude    = isset( $attributes['dsgoLatitude'] ) ? floatval( $attributes['dsgoLatitude'] ) : 40.7128;
 				$longitude   = isset( $attributes['dsgoLongitude'] ) ? floatval( $attributes['dsgoLongitude'] ) : -74.006;
-				$zoom        = isset( $attributes['dsgoZoom'] ) ? self::numeric_attribute( $attributes['dsgoZoom'] ) : 13;
+				$zoom        = isset( $attributes['dsgoZoom'] ) ? Serializer_Support::numeric_attribute( $attributes['dsgoZoom'] ) : 13;
 				$address     = isset( $attributes['dsgoAddress'] ) ? $attributes['dsgoAddress'] : '';
 				$marker_icon = isset( $attributes['dsgoMarkerIcon'] ) ? $attributes['dsgoMarkerIcon'] : '📍';
 				// Treat an unset OR explicitly-cleared ('') marker color as the
@@ -3790,7 +3718,7 @@ class Block_Inserter {
 				$show_cta          = isset( $attributes['showCta'] ) ? $attributes['showCta'] : true;
 				$content_alignment = isset( $attributes['contentAlignment'] ) ? $attributes['contentAlignment'] : 'left';
 
-				$card_align  = self::align_class( $block_name, $attributes );
+				$card_align  = Serializer_Support::align_class( $block_name, $attributes );
 				$outer_class = 'wp-block-designsetgo-card' . ( '' !== $card_align ? ' ' . $card_align : '' ) .
 					' dsgo-card dsgo-card--' . esc_attr( $layout_preset ) . ' dsgo-card--style-' . esc_attr( $visual_style );
 
@@ -3859,7 +3787,7 @@ class Block_Inserter {
 							? (float) $attributes['overlayOpacity']
 							: 0.0;
 						$card_overlay_style = 'background-color:' . $card_overlay_color .
-							';opacity:' . self::format_js_number( $card_overlay_pct / 100 );
+							';opacity:' . Serializer_Support::format_js_number( $card_overlay_pct / 100 );
 
 						$card_background_html = '<div class="dsgo-card__background" style="' .
 							esc_attr( 'background-image:url(' . $card_image_url . ')' ) . '">' .
@@ -3891,8 +3819,8 @@ class Block_Inserter {
 						// 0..1 but written as a percentage.
 						if ( 'cover' === $card_object_fit && isset( $attributes['imageFocalPoint']['x'], $attributes['imageFocalPoint']['y'] ) ) {
 							$card_image_styles[] = 'object-position:' .
-								self::format_js_number( (float) $attributes['imageFocalPoint']['x'] * 100 ) . '% ' .
-								self::format_js_number( (float) $attributes['imageFocalPoint']['y'] * 100 ) . '%';
+								Serializer_Support::format_js_number( (float) $attributes['imageFocalPoint']['x'] * 100 ) . '% ' .
+								Serializer_Support::format_js_number( (float) $attributes['imageFocalPoint']['y'] * 100 ) . '%';
 						}
 
 						// A decorative image (no alt) is hidden from screen
@@ -3916,7 +3844,7 @@ class Block_Inserter {
 			case 'designsetgo/icon-list':
 				$layout    = isset( $attributes['layout'] ) ? $attributes['layout'] : 'vertical';
 				$gap       = isset( $attributes['gap'] ) ? $attributes['gap'] : '24px';
-				$columns   = isset( $attributes['columns'] ) ? self::numeric_attribute( $attributes['columns'] ) : 2;
+				$columns   = isset( $attributes['columns'] ) ? Serializer_Support::numeric_attribute( $attributes['columns'] ) : 2;
 				$alignment = isset( $attributes['alignment'] ) ? $attributes['alignment'] : 'left';
 
 				// Calculate alignment values.
@@ -3987,7 +3915,7 @@ class Block_Inserter {
 					$list_icon_attrs = ' data-dsgo-icon-style="' . esc_attr( $list_icon_style ) . '"';
 
 					if ( 'outlined' === $list_icon_style && ! empty( $attributes['strokeWidth'] ) && is_numeric( $attributes['strokeWidth'] ) ) {
-						$list_icon_attrs .= ' data-dsgo-icon-stroke-width="' . esc_attr( self::format_js_number( (float) $attributes['strokeWidth'] ) ) . '"';
+						$list_icon_attrs .= ' data-dsgo-icon-stroke-width="' . esc_attr( Serializer_Support::format_js_number( (float) $attributes['strokeWidth'] ) ) . '"';
 					}
 				}
 
@@ -4028,7 +3956,7 @@ class Block_Inserter {
 				// mirroring save.js (the attribute has no default).
 				$content_style = 'text-align:left;display:flex;flex-direction:column';
 				if ( isset( $attributes['contentGap'] ) && is_numeric( $attributes['contentGap'] ) ) {
-					$content_style .= ';gap:' . self::numeric_attribute( $attributes['contentGap'] ) . 'px';
+					$content_style .= ';gap:' . Serializer_Support::numeric_attribute( $attributes['contentGap'] ) . 'px';
 				}
 
 				$outer_class = 'wp-block-designsetgo-icon-list-item dsgo-icon-list-item dsgo-icon-list-item--icon-left';
@@ -4069,7 +3997,7 @@ class Block_Inserter {
 				$rel            = isset( $attributes['rel'] ) ? $attributes['rel'] : '';
 				$icon           = isset( $attributes['icon'] ) ? $attributes['icon'] : 'lightbulb';
 				$icon_position  = isset( $attributes['iconPosition'] ) ? $attributes['iconPosition'] : 'start';
-				$icon_size      = isset( $attributes['iconSize'] ) ? self::numeric_attribute( $attributes['iconSize'] ) : 20;
+				$icon_size      = isset( $attributes['iconSize'] ) ? Serializer_Support::numeric_attribute( $attributes['iconSize'] ) : 20;
 				$icon_gap       = isset( $attributes['iconGap'] ) ? $attributes['iconGap'] : '';
 				$hover_anim     = isset( $attributes['hoverAnimation'] ) ? $attributes['hoverAnimation'] : 'none';
 				$modal_close_id = isset( $attributes['modalCloseId'] ) ? $attributes['modalCloseId'] : '';
@@ -4142,7 +4070,7 @@ class Block_Inserter {
 					$style_parts,
 					$routed['styles'],
 					// Padding is skip-serialized on the root and re-applied here.
-					self::routed_padding_styles( $attributes, true )
+					Serializer_Support::routed_padding_styles( $attributes, true )
 				);
 
 				// Hover colours - save.js writes them as custom properties on the
@@ -4153,7 +4081,7 @@ class Block_Inserter {
 					'hoverTextColor'       => '--dsgo-button-hover-color',
 				) as $hover_attribute => $hover_property ) {
 					if ( ! empty( $attributes[ $hover_attribute ] ) && is_string( $attributes[ $hover_attribute ] ) ) {
-						$style_parts[] = $hover_property . ':' . self::convert_color_value_to_css_var( $attributes[ $hover_attribute ] );
+						$style_parts[] = $hover_property . ':' . Serializer_Support::convert_color_value_to_css_var( $attributes[ $hover_attribute ] );
 					}
 				}
 
@@ -4227,24 +4155,24 @@ class Block_Inserter {
 			case 'designsetgo/modal':
 				$modal_id                = isset( $attributes['modalId'] ) ? $attributes['modalId'] : 'dsgo-modal-' . wp_generate_uuid4();
 				$animation_type          = isset( $attributes['animationType'] ) ? $attributes['animationType'] : 'fade';
-				$animation_duration      = isset( $attributes['animationDuration'] ) ? self::numeric_attribute( $attributes['animationDuration'] ) : 300;
+				$animation_duration      = isset( $attributes['animationDuration'] ) ? Serializer_Support::numeric_attribute( $attributes['animationDuration'] ) : 300;
 				$close_on_backdrop       = isset( $attributes['closeOnBackdrop'] ) ? $attributes['closeOnBackdrop'] : true;
 				$close_on_esc            = isset( $attributes['closeOnEsc'] ) ? $attributes['closeOnEsc'] : true;
 				$disable_body_scroll     = isset( $attributes['disableBodyScroll'] ) ? $attributes['disableBodyScroll'] : true;
 				$allow_hash_trigger      = isset( $attributes['allowHashTrigger'] ) ? $attributes['allowHashTrigger'] : true;
 				$update_url_on_open      = isset( $attributes['updateUrlOnOpen'] ) ? $attributes['updateUrlOnOpen'] : false;
 				$auto_trigger_type       = isset( $attributes['autoTriggerType'] ) ? $attributes['autoTriggerType'] : 'none';
-				$auto_trigger_delay      = isset( $attributes['autoTriggerDelay'] ) ? self::numeric_attribute( $attributes['autoTriggerDelay'] ) : 0;
+				$auto_trigger_delay      = isset( $attributes['autoTriggerDelay'] ) ? Serializer_Support::numeric_attribute( $attributes['autoTriggerDelay'] ) : 0;
 				$auto_trigger_frequency  = isset( $attributes['autoTriggerFrequency'] ) ? $attributes['autoTriggerFrequency'] : 'always';
-				$cookie_duration         = isset( $attributes['cookieDuration'] ) ? self::numeric_attribute( $attributes['cookieDuration'] ) : 7;
+				$cookie_duration         = isset( $attributes['cookieDuration'] ) ? Serializer_Support::numeric_attribute( $attributes['cookieDuration'] ) : 7;
 				$exit_intent_sensitivity = isset( $attributes['exitIntentSensitivity'] ) ? $attributes['exitIntentSensitivity'] : 'medium';
-				$exit_intent_min_time    = isset( $attributes['exitIntentMinTime'] ) ? self::numeric_attribute( $attributes['exitIntentMinTime'] ) : 5;
+				$exit_intent_min_time    = isset( $attributes['exitIntentMinTime'] ) ? Serializer_Support::numeric_attribute( $attributes['exitIntentMinTime'] ) : 5;
 				$exit_intent_exclude_mob = isset( $attributes['exitIntentExcludeMobile'] ) ? $attributes['exitIntentExcludeMobile'] : true;
-				$scroll_depth            = isset( $attributes['scrollDepth'] ) ? self::numeric_attribute( $attributes['scrollDepth'] ) : 50;
+				$scroll_depth            = isset( $attributes['scrollDepth'] ) ? Serializer_Support::numeric_attribute( $attributes['scrollDepth'] ) : 50;
 				$scroll_direction        = isset( $attributes['scrollDirection'] ) ? $attributes['scrollDirection'] : 'down';
-				$time_on_page            = isset( $attributes['timeOnPage'] ) ? self::numeric_attribute( $attributes['timeOnPage'] ) : 30;
+				$time_on_page            = isset( $attributes['timeOnPage'] ) ? Serializer_Support::numeric_attribute( $attributes['timeOnPage'] ) : 30;
 				$gallery_group_id        = isset( $attributes['galleryGroupId'] ) ? $attributes['galleryGroupId'] : '';
-				$gallery_index           = isset( $attributes['galleryIndex'] ) ? self::numeric_attribute( $attributes['galleryIndex'] ) : 0;
+				$gallery_index           = isset( $attributes['galleryIndex'] ) ? Serializer_Support::numeric_attribute( $attributes['galleryIndex'] ) : 0;
 				$show_gallery_nav        = isset( $attributes['showGalleryNavigation'] ) ? $attributes['showGalleryNavigation'] : true;
 				$nav_style               = isset( $attributes['navigationStyle'] ) ? $attributes['navigationStyle'] : 'arrows';
 				$nav_position            = isset( $attributes['navigationPosition'] ) ? $attributes['navigationPosition'] : 'sides';
@@ -4268,10 +4196,10 @@ class Block_Inserter {
 				$is_panel              = 'panel' === $display_mode;
 				$overlay_color         = isset( $attributes['overlayColor'] ) ? trim( (string) $attributes['overlayColor'] ) : '';
 				$overlay_opacity       = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 80;
-				$overlay_blur          = isset( $attributes['overlayBlur'] ) ? self::numeric_attribute( $attributes['overlayBlur'] ) : 0;
+				$overlay_blur          = isset( $attributes['overlayBlur'] ) ? Serializer_Support::numeric_attribute( $attributes['overlayBlur'] ) : 0;
 				$show_close_button     = isset( $attributes['showCloseButton'] ) ? $attributes['showCloseButton'] : true;
 				$close_button_position = isset( $attributes['closeButtonPosition'] ) ? $attributes['closeButtonPosition'] : 'inside-top-right';
-				$close_button_size     = isset( $attributes['closeButtonSize'] ) ? self::numeric_attribute( $attributes['closeButtonSize'] ) : 24;
+				$close_button_size     = isset( $attributes['closeButtonSize'] ) ? Serializer_Support::numeric_attribute( $attributes['closeButtonSize'] ) : 24;
 
 				// Build data attributes.
 				$data_attrs  = ' data-dsgo-modal="true"';
@@ -4308,7 +4236,7 @@ class Block_Inserter {
 				// first edit.
 				$overlay_style = '';
 				if ( '' !== $overlay_color ) {
-					$overlay_style .= 'background-color:' . esc_attr( self::convert_color_value_to_css_var( $overlay_color ) ) . ';';
+					$overlay_style .= 'background-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( $overlay_color ) ) . ';';
 				}
 				$overlay_style .= 'opacity:' . ( $overlay_opacity / 100 );
 				if ( $overlay_blur > 0 ) {
@@ -4382,14 +4310,14 @@ class Block_Inserter {
 					$close_button_style = 'width:' . $close_button_size . 'px;height:' . $close_button_size . 'px';
 
 					$close_icon_color = isset( $attributes['closeButtonIconColor'] )
-						? self::convert_color_value_to_css_var( (string) $attributes['closeButtonIconColor'] )
+						? Serializer_Support::convert_color_value_to_css_var( (string) $attributes['closeButtonIconColor'] )
 						: '';
 					if ( '' !== $close_icon_color ) {
 						$close_button_style .= ';color:' . $close_icon_color;
 					}
 
 					$close_bg_color = isset( $attributes['closeButtonBgColor'] )
-						? self::convert_color_value_to_css_var( (string) $attributes['closeButtonBgColor'] )
+						? Serializer_Support::convert_color_value_to_css_var( (string) $attributes['closeButtonBgColor'] )
 						: '';
 					if ( '' !== $close_bg_color ) {
 						$close_button_style .= ';background-color:' . $close_bg_color;
@@ -4509,7 +4437,7 @@ class Block_Inserter {
 				}
 				// Padding is skip-serialized on the root and re-applied here.
 				// Unlike Icon Button, save.js writes the value through unchanged.
-				$trigger_styles    = array_merge( $trigger_styles, self::routed_padding_styles( $attributes, false ) );
+				$trigger_styles    = array_merge( $trigger_styles, Serializer_Support::routed_padding_styles( $attributes, false ) );
 				$button_style_attr = empty( $trigger_styles )
 					? ''
 					: ' style="' . esc_attr( implode( ';', $trigger_styles ) ) . '"';
@@ -4520,7 +4448,7 @@ class Block_Inserter {
 				if ( $has_icon ) {
 					$icon_attrs = '';
 					if ( isset( $attributes['iconSize'] ) && is_numeric( $attributes['iconSize'] ) ) {
-						$size        = self::numeric_attribute( $attributes['iconSize'] );
+						$size        = Serializer_Support::numeric_attribute( $attributes['iconSize'] );
 						$icon_attrs .= ' style="' . esc_attr( 'width:' . $size . 'px;height:' . $size . 'px' ) . '"';
 					}
 					$icon_attrs .= ' data-icon-name="' . esc_attr( $icon ) . '"';
@@ -4562,7 +4490,7 @@ class Block_Inserter {
 				$show_title    = isset( $attributes['showTitle'] ) ? $attributes['showTitle'] : true;
 				$title_text    = isset( $attributes['titleText'] ) ? $attributes['titleText'] : 'Table of Contents';
 				$scroll_smooth = isset( $attributes['scrollSmooth'] ) ? $attributes['scrollSmooth'] : true;
-				$scroll_offset = isset( $attributes['scrollOffset'] ) ? self::numeric_attribute( $attributes['scrollOffset'] ) : 0;
+				$scroll_offset = isset( $attributes['scrollOffset'] ) ? Serializer_Support::numeric_attribute( $attributes['scrollOffset'] ) : 0;
 
 				// Build heading levels.
 				$heading_levels = array();
@@ -4608,13 +4536,13 @@ class Block_Inserter {
 				// is omitted rather than written as 0px.
 				$toc_styles = array();
 				if ( ! empty( $attributes['linkColor'] ) && is_string( $attributes['linkColor'] ) ) {
-					$toc_styles[] = '--dsgo-toc-link-color:' . self::convert_color_value_to_css_var( $attributes['linkColor'] );
+					$toc_styles[] = '--dsgo-toc-link-color:' . Serializer_Support::convert_color_value_to_css_var( $attributes['linkColor'] );
 				}
 				if ( ! empty( $attributes['activeLinkColor'] ) && is_string( $attributes['activeLinkColor'] ) ) {
-					$toc_styles[] = '--dsgo-toc-active-link-color:' . self::convert_color_value_to_css_var( $attributes['activeLinkColor'] );
+					$toc_styles[] = '--dsgo-toc-active-link-color:' . Serializer_Support::convert_color_value_to_css_var( $attributes['activeLinkColor'] );
 				}
 				if ( ! empty( $attributes['stickyOffset'] ) && is_numeric( $attributes['stickyOffset'] ) ) {
-					$toc_styles[] = '--dsgo-toc-sticky-offset:' . self::format_js_number( (float) $attributes['stickyOffset'] ) . 'px';
+					$toc_styles[] = '--dsgo-toc-sticky-offset:' . Serializer_Support::format_js_number( (float) $attributes['stickyOffset'] ) . 'px';
 				}
 				$toc_style_attr = empty( $toc_styles ) ? '' : ' style="' . esc_attr( implode( ';', $toc_styles ) ) . '"';
 
@@ -4647,7 +4575,7 @@ class Block_Inserter {
 				$overlay_opacity          = isset( $attributes['overlayOpacity'] ) ? floatval( $attributes['overlayOpacity'] ) : 40;
 				$overlay_opacity_expanded = isset( $attributes['overlayOpacityExpanded'] ) ? floatval( $attributes['overlayOpacityExpanded'] ) : 20;
 				$trigger_type             = isset( $attributes['triggerType'] ) ? $attributes['triggerType'] : 'hover';
-				$default_expanded         = isset( $attributes['defaultExpanded'] ) ? self::numeric_attribute( $attributes['defaultExpanded'] ) : 0;
+				$default_expanded         = isset( $attributes['defaultExpanded'] ) ? Serializer_Support::numeric_attribute( $attributes['defaultExpanded'] ) : 0;
 
 				// Build classes.
 				$class_parts   = array( 'wp-block-designsetgo-image-accordion', 'dsgo-image-accordion' );
@@ -4673,13 +4601,13 @@ class Block_Inserter {
 				// was only "valid" because a deprecation claimed it — every
 				// insert silently migrated on open.
 				if ( isset( $attributes['overlayColor'] ) && '' !== $attributes['overlayColor'] ) {
-					$style_parts[] = '--dsgo-image-accordion-overlay-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $attributes['overlayColor'] ) );
+					$style_parts[] = '--dsgo-image-accordion-overlay-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $attributes['overlayColor'] ) );
 				}
 				if ( isset( $attributes['overlayOpacity'] ) && is_numeric( $attributes['overlayOpacity'] ) ) {
-					$style_parts[] = '--dsgo-image-accordion-overlay-opacity:' . esc_attr( self::format_js_number( (float) $attributes['overlayOpacity'] / 100 ) );
+					$style_parts[] = '--dsgo-image-accordion-overlay-opacity:' . esc_attr( Serializer_Support::format_js_number( (float) $attributes['overlayOpacity'] / 100 ) );
 				}
 				if ( isset( $attributes['overlayOpacityExpanded'] ) && is_numeric( $attributes['overlayOpacityExpanded'] ) ) {
-					$style_parts[] = '--dsgo-image-accordion-overlay-opacity-expanded:' . esc_attr( self::format_js_number( (float) $attributes['overlayOpacityExpanded'] / 100 ) );
+					$style_parts[] = '--dsgo-image-accordion-overlay-opacity-expanded:' . esc_attr( Serializer_Support::format_js_number( (float) $attributes['overlayOpacityExpanded'] / 100 ) );
 				}
 				$style = implode( ';', $style_parts );
 
@@ -4744,7 +4672,7 @@ class Block_Inserter {
 				// unaligned block was left with a double space in its class
 				// attribute on every insert.
 				$accordion_classes = array( 'wp-block-designsetgo-scroll-accordion' );
-				$accordion_align   = self::align_class( $block_name, $attributes );
+				$accordion_align   = Serializer_Support::align_class( $block_name, $attributes );
 				if ( '' !== $accordion_align ) {
 					$accordion_classes[] = $accordion_align;
 				}
@@ -4760,7 +4688,7 @@ class Block_Inserter {
 
 				// Build classes.
 				$class_parts          = array( 'wp-block-designsetgo-scroll-accordion-item', 'dsgo-scroll-accordion-item' );
-				$accordion_item_align = self::align_class( $block_name, $attributes );
+				$accordion_item_align = Serializer_Support::align_class( $block_name, $attributes );
 				if ( '' !== $accordion_item_align ) {
 					$class_parts[] = $accordion_item_align;
 				}
@@ -4771,7 +4699,7 @@ class Block_Inserter {
 				// Build style.
 				$style = '';
 				if ( $overlay_color ) {
-					$style = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( (string) $overlay_color ) . ';--dsgo-overlay-opacity:' . self::overlay_opacity_for_color( (string) $overlay_color );
+					$style = '--dsgo-overlay-color:' . Serializer_Support::convert_color_value_to_css_var( (string) $overlay_color ) . ';--dsgo-overlay-opacity:' . Serializer_Support::overlay_opacity_for_color( (string) $overlay_color );
 				}
 
 				$style_attr = $style ? ' style="' . esc_attr( $style ) . '"' : '';
@@ -4788,9 +4716,9 @@ class Block_Inserter {
 				// isn't registered (e.g., build folder missing), so keep them
 				// synced with src/blocks/slider/block.json — not with any
 				// past convention like height=500px / arrowSize=48px.
-				$slides_per_view        = isset( $attributes['slidesPerView'] ) ? self::numeric_attribute( $attributes['slidesPerView'] ) : 1;
-				$slides_per_view_tablet = isset( $attributes['slidesPerViewTablet'] ) ? self::numeric_attribute( $attributes['slidesPerViewTablet'] ) : 1;
-				$slides_per_view_mobile = isset( $attributes['slidesPerViewMobile'] ) ? self::numeric_attribute( $attributes['slidesPerViewMobile'] ) : 1;
+				$slides_per_view        = isset( $attributes['slidesPerView'] ) ? Serializer_Support::numeric_attribute( $attributes['slidesPerView'] ) : 1;
+				$slides_per_view_tablet = isset( $attributes['slidesPerViewTablet'] ) ? Serializer_Support::numeric_attribute( $attributes['slidesPerViewTablet'] ) : 1;
+				$slides_per_view_mobile = isset( $attributes['slidesPerViewMobile'] ) ? Serializer_Support::numeric_attribute( $attributes['slidesPerViewMobile'] ) : 1;
 				$height                 = isset( $attributes['height'] ) ? $attributes['height'] : '';
 				$aspect_ratio           = isset( $attributes['aspectRatio'] ) ? $attributes['aspectRatio'] : '16/9';
 				$use_aspect_ratio       = isset( $attributes['useAspectRatio'] ) ? $attributes['useAspectRatio'] : false;
@@ -4811,7 +4739,7 @@ class Block_Inserter {
 				$transition_duration    = isset( $attributes['transitionDuration'] ) ? $attributes['transitionDuration'] : '0.5s';
 				$transition_easing      = isset( $attributes['transitionEasing'] ) ? $attributes['transitionEasing'] : 'ease-in-out';
 				$autoplay               = isset( $attributes['autoplay'] ) ? $attributes['autoplay'] : false;
-				$autoplay_interval      = isset( $attributes['autoplayInterval'] ) ? self::numeric_attribute( $attributes['autoplayInterval'] ) : 3000;
+				$autoplay_interval      = isset( $attributes['autoplayInterval'] ) ? Serializer_Support::numeric_attribute( $attributes['autoplayInterval'] ) : 3000;
 				$pause_on_hover         = isset( $attributes['pauseOnHover'] ) ? $attributes['pauseOnHover'] : true;
 				$pause_on_interaction   = isset( $attributes['pauseOnInteraction'] ) ? $attributes['pauseOnInteraction'] : true;
 				$loop                   = isset( $attributes['loop'] ) ? $attributes['loop'] : true;
@@ -4819,9 +4747,9 @@ class Block_Inserter {
 				$swipeable              = isset( $attributes['swipeable'] ) ? $attributes['swipeable'] : true;
 				$free_mode              = isset( $attributes['freeMode'] ) ? $attributes['freeMode'] : false;
 				$centered_slides        = isset( $attributes['centeredSlides'] ) ? $attributes['centeredSlides'] : false;
-				$mobile_breakpoint      = isset( $attributes['mobileBreakpoint'] ) ? self::numeric_attribute( $attributes['mobileBreakpoint'] ) : 768;
-				$tablet_breakpoint      = isset( $attributes['tabletBreakpoint'] ) ? self::numeric_attribute( $attributes['tabletBreakpoint'] ) : 1024;
-				$active_slide           = isset( $attributes['activeSlide'] ) ? self::numeric_attribute( $attributes['activeSlide'] ) : 0;
+				$mobile_breakpoint      = isset( $attributes['mobileBreakpoint'] ) ? Serializer_Support::numeric_attribute( $attributes['mobileBreakpoint'] ) : 768;
+				$tablet_breakpoint      = isset( $attributes['tabletBreakpoint'] ) ? Serializer_Support::numeric_attribute( $attributes['tabletBreakpoint'] ) : 1024;
+				$active_slide           = isset( $attributes['activeSlide'] ) ? Serializer_Support::numeric_attribute( $attributes['activeSlide'] ) : 0;
 				$style_variation        = isset( $attributes['styleVariation'] ) ? $attributes['styleVariation'] : 'classic';
 				$aria_label             = isset( $attributes['ariaLabel'] ) ? $attributes['ariaLabel'] : '';
 				$scroll_driven          = isset( $attributes['scrollDriven'] ) ? $attributes['scrollDriven'] : false;
@@ -4873,10 +4801,10 @@ class Block_Inserter {
 				$style_parts[] = '--dsgo-slider-slides-per-view-tablet:' . esc_attr( (string) $effective_slides_tablet );
 				$style_parts[] = '--dsgo-slider-slides-per-view-mobile:' . esc_attr( (string) $effective_slides_mobile );
 				if ( $arrow_color ) {
-					$style_parts[] = '--dsgo-slider-arrow-color:' . esc_attr( self::convert_color_value_to_css_var( $arrow_color ) );
+					$style_parts[] = '--dsgo-slider-arrow-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( $arrow_color ) );
 				}
 				if ( $arrow_bg_color ) {
-					$style_parts[] = '--dsgo-slider-arrow-bg-color:' . esc_attr( self::convert_color_value_to_css_var( $arrow_bg_color ) );
+					$style_parts[] = '--dsgo-slider-arrow-bg-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( $arrow_bg_color ) );
 				}
 				if ( $arrow_size ) {
 					$style_parts[] = '--dsgo-slider-arrow-size:' . esc_attr( $arrow_size );
@@ -4885,7 +4813,7 @@ class Block_Inserter {
 					$style_parts[] = '--dsgo-slider-arrow-padding:' . esc_attr( $arrow_padding );
 				}
 				if ( $dot_color ) {
-					$style_parts[] = '--dsgo-slider-dot-color:' . esc_attr( self::convert_color_value_to_css_var( $dot_color ) );
+					$style_parts[] = '--dsgo-slider-dot-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( $dot_color ) );
 				}
 				$style = implode( ';', $style_parts );
 
@@ -4958,7 +4886,7 @@ class Block_Inserter {
 					$style_parts[] = 'background-repeat:' . esc_attr( $background_repeat );
 				}
 				if ( $overlay_color ) {
-					$style_parts[] = '--dsgo-slide-overlay-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $overlay_color ) );
+					$style_parts[] = '--dsgo-slide-overlay-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $overlay_color ) );
 					$style_parts[] = '--dsgo-slide-overlay-opacity:' . esc_attr( (string) ( $overlay_opacity / 100 ) );
 				}
 				$style_parts[] = '--dsgo-slide-content-vertical-align:' . esc_attr( $content_v_align );
@@ -4971,7 +4899,7 @@ class Block_Inserter {
 				// Overlay HTML.
 				$overlay_html = '';
 				if ( $overlay_color ) {
-					$overlay_style = 'background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $overlay_color ) ) . ';opacity:' . esc_attr( (string) ( $overlay_opacity / 100 ) );
+					$overlay_style = 'background-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $overlay_color ) ) . ';opacity:' . esc_attr( (string) ( $overlay_opacity / 100 ) );
 					$overlay_html  = '<div class="dsgo-slide__overlay" style="' . esc_attr( $overlay_style ) . '"></div>';
 				}
 
@@ -5033,9 +4961,9 @@ class Block_Inserter {
 			case 'designsetgo/tabs':
 				$unique_id         = isset( $attributes['uniqueId'] ) ? $attributes['uniqueId'] : substr( str_replace( '-', '', wp_generate_uuid4() ), 0, 9 );
 				$orientation       = isset( $attributes['orientation'] ) ? $attributes['orientation'] : 'horizontal';
-				$active_tab        = isset( $attributes['activeTab'] ) ? self::numeric_attribute( $attributes['activeTab'] ) : 0;
+				$active_tab        = isset( $attributes['activeTab'] ) ? Serializer_Support::numeric_attribute( $attributes['activeTab'] ) : 0;
 				$alignment         = isset( $attributes['alignment'] ) ? $attributes['alignment'] : 'left';
-				$mobile_breakpoint = isset( $attributes['mobileBreakpoint'] ) ? self::numeric_attribute( $attributes['mobileBreakpoint'] ) : 768;
+				$mobile_breakpoint = isset( $attributes['mobileBreakpoint'] ) ? Serializer_Support::numeric_attribute( $attributes['mobileBreakpoint'] ) : 768;
 				$mobile_mode       = isset( $attributes['mobileMode'] ) ? $attributes['mobileMode'] : 'accordion';
 				$enable_deep_link  = isset( $attributes['enableDeepLinking'] ) ? $attributes['enableDeepLinking'] : false;
 				$gap               = isset( $attributes['gap'] ) ? $attributes['gap'] : '8px';
@@ -5072,7 +5000,7 @@ class Block_Inserter {
 				foreach ( $tab_color_vars as $attribute_name => $custom_property ) {
 					$colour = isset( $attributes[ $attribute_name ] ) ? (string) $attributes[ $attribute_name ] : '';
 					if ( '' !== $colour ) {
-						$tab_style_parts[] = $custom_property . ':' . esc_attr( self::convert_color_value_to_css_var( $colour ) );
+						$tab_style_parts[] = $custom_property . ':' . esc_attr( Serializer_Support::convert_color_value_to_css_var( $colour ) );
 					}
 				}
 
@@ -5112,7 +5040,7 @@ class Block_Inserter {
 
 				// Same list-building reason as scroll-accordion above.
 				$tab_classes = array( 'wp-block-designsetgo-tab' );
-				$tab_align   = self::align_class( $block_name, $attributes );
+				$tab_align   = Serializer_Support::align_class( $block_name, $attributes );
 				if ( '' !== $tab_align ) {
 					$tab_classes[] = $tab_align;
 				}
@@ -5218,14 +5146,14 @@ class Block_Inserter {
 		// stored HTML as `var(--wp--preset--color--contrast)`. Writing the raw
 		// attribute produced an invalid custom property and failed validation.
 		if ( $field_label_color ) {
-			$style_parts[] = '--dsgo-form-label-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_label_color ) );
+			$style_parts[] = '--dsgo-form-label-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $field_label_color ) );
 		}
 		// Omit when empty — .dsgo-form-builder in style.scss supplies the #d1d5db default.
 		if ( $field_border_color ) {
-			$style_parts[] = '--dsgo-form-border-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_border_color ) );
+			$style_parts[] = '--dsgo-form-border-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $field_border_color ) );
 		}
 		if ( $field_background_color ) {
-			$style_parts[] = '--dsgo-form-field-bg:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_background_color ) );
+			$style_parts[] = '--dsgo-form-field-bg:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $field_background_color ) );
 		}
 		// save.js runs this through validateCSSLength() (src/utils/css-generator.js),
 		// which returns undefined - and so omits the property - for anything that
@@ -5270,10 +5198,10 @@ class Block_Inserter {
 		// Build button style - must match save.js order.
 		$button_style_parts = array();
 		if ( $submit_button_color ) {
-			$button_style_parts[] = 'color:' . esc_attr( self::convert_color_value_to_css_var( (string) $submit_button_color ) );
+			$button_style_parts[] = 'color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $submit_button_color ) );
 		}
 		if ( $submit_button_background_color ) {
-			$button_style_parts[] = 'background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $submit_button_background_color ) );
+			$button_style_parts[] = 'background-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $submit_button_background_color ) );
 		}
 		// Sizing is spread conditionally in save.js, so an unset value emits no
 		// declaration and the button inherits the theme's global button styles.
@@ -5295,10 +5223,10 @@ class Block_Inserter {
 		// :hover. save.js writes them last, after font-size; the mirror wrote
 		// neither, so an author's hover colours never reached stored markup.
 		if ( ! empty( $attributes['submitButtonHoverBackgroundColor'] ) && is_string( $attributes['submitButtonHoverBackgroundColor'] ) ) {
-			$button_style_parts[] = '--dsgo-button-hover-bg:' . esc_attr( self::convert_color_value_to_css_var( $attributes['submitButtonHoverBackgroundColor'] ) );
+			$button_style_parts[] = '--dsgo-button-hover-bg:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( $attributes['submitButtonHoverBackgroundColor'] ) );
 		}
 		if ( ! empty( $attributes['submitButtonHoverColor'] ) && is_string( $attributes['submitButtonHoverColor'] ) ) {
-			$button_style_parts[] = '--dsgo-button-hover-color:' . esc_attr( self::convert_color_value_to_css_var( $attributes['submitButtonHoverColor'] ) );
+			$button_style_parts[] = '--dsgo-button-hover-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( $attributes['submitButtonHoverColor'] ) );
 		}
 		$button_style = implode( ';', $button_style_parts );
 
@@ -5478,7 +5406,7 @@ class Block_Inserter {
 		foreach ( $sides as $side => $values ) {
 			if ( is_array( $values ) && isset( $values['color'] ) && is_string( $values['color'] ) && '' !== $values['color'] ) {
 				$image_styles[ 'border' . $side . '-color' ] = 0 === strpos( $values['color'], 'var:preset|' )
-					? self::wp_shorthand_to_css_var( $values['color'] )
+					? Serializer_Support::wp_shorthand_to_css_var( $values['color'] )
 					: $values['color'];
 			}
 		}
@@ -5622,35 +5550,6 @@ class Block_Inserter {
 		}
 
 		return $attributes;
-	}
-
-	/**
-	 * Render a numeric attribute the way the editor would serialize it.
-	 *
-	 * Truncation via intval() here was silently dropping every fractional
-	 * value: a slider
-	 * stored slidesPerView 1.2 in its block comment while the generated HTML
-	 * said 1, so the block failed validation the moment it was opened. Integers
-	 * still render as integers, so nothing that was already correct changes.
-	 *
-	 * @param mixed     $value   Attribute value.
-	 * @param int|float $default Fallback when the value is not numeric.
-	 * @return int|float Numeric value.
-	 */
-	private static function numeric_attribute( $value, $default = 0 ) {
-		if ( ! is_numeric( $value ) ) {
-			return $default;
-		}
-
-		$number = +$value;
-
-		// A float that lands exactly on an integer renders without a decimal
-		// point, which is what JSON.stringify() does in the editor too.
-		if ( is_float( $number ) && (float) (int) $number === $number ) {
-			return (int) $number;
-		}
-
-		return $number;
 	}
 
 	/**
@@ -5845,171 +5744,6 @@ class Block_Inserter {
 	}
 
 	/**
-	 * Convert CSS var() syntax to WordPress shorthand for block comment serialization.
-	 *
-	 * WordPress stores preset values as `var:preset|spacing|60` in block comments,
-	 * which gets converted to `var(--wp--preset--spacing--60)` at render time.
-	 *
-	 * @param string $value CSS value that may contain var(--wp--preset--*) syntax.
-	 * @return string Converted value using WordPress shorthand, or original value.
-	 */
-	private static function css_var_to_wp_shorthand( string $value ): string {
-		if ( preg_match( '/^var\(--wp--preset--([a-zA-Z]+)--(.+)\)$/', $value, $matches ) ) {
-			return 'var:preset|' . $matches[1] . '|' . $matches[2];
-		}
-		return $value;
-	}
-
-	/**
-	 * Render a float the way JavaScript's String() would.
-	 *
-	 * @param float $value Value to format.
-	 * @return string Formatted number.
-	 */
-	private static function format_js_number( float $value ): string {
-		// JSON/JS print 0.8 as "0.8" and 1 as "1"; PHP's default float cast
-		// would give "0.8" but also "1" for 1.0, which matches. Trailing zeros
-		// are trimmed so 0.50 does not serialize differently from save().
-		$formatted = rtrim( rtrim( sprintf( '%.10F', $value ), '0' ), '.' );
-
-		return '' === $formatted ? '0' : $formatted;
-	}
-
-	/**
-	 * Clamp a value into a range, falling back when it is not a finite number.
-	 *
-	 * Mirrors the clamp() helpers in the Text Path save path.
-	 *
-	 * @param mixed     $value    Value to clamp.
-	 * @param int|float $minimum  Lower bound.
-	 * @param int|float $maximum  Upper bound.
-	 * @param int|float $fallback Value used when $value is not numeric.
-	 * @return int|float Clamped value.
-	 */
-	private static function clamp_number( $value, $minimum, $maximum, $fallback ) {
-		if ( ! is_numeric( $value ) ) {
-			return $fallback;
-		}
-
-		return self::numeric_attribute( max( $minimum, min( $maximum, (float) $value ) ) );
-	}
-
-	/**
-	 * Filter a Text Path colour through the same allowlist save() applies.
-	 *
-	 * @param mixed $color Colour value.
-	 * @return string The colour, or an empty string when it is not allowed.
-	 */
-	private static function safe_text_path_color( $color ): string {
-		return self::safe_hotspot_color( $color );
-	}
-
-	/**
-	 * Filter a Text Path URL through the same allowlist save() applies.
-	 *
-	 * Mirrors getSafeTextPathUrl(): http, https, mailto, tel, and root-relative
-	 * or fragment URLs.
-	 *
-	 * @param mixed $url URL value.
-	 * @return string The URL, or an empty string when it is not allowed.
-	 */
-	private static function safe_text_path_url( $url ): string {
-		if ( ! is_string( $url ) ) {
-			return '';
-		}
-
-		$trimmed = trim( $url );
-
-		return preg_match( '#^(?:https?:|mailto:|tel:|/|\#)#i', $trimmed ) ? $trimmed : '';
-	}
-
-	/**
-	 * Resolve Text Path shape data.
-	 *
-	 * Mirrors getTextPathData() in src/utils/svg-paths.js for the built-in
-	 * shapes. `custom` is not resolved here - it is refused before serialization.
-	 *
-	 * @param string $path_type Shape slug.
-	 * @param mixed  $arc_size  Arc size, used only by the arc shape.
-	 * @return array{viewBox: string, d: string} Shape data.
-	 */
-	private static function get_text_path_data( string $path_type, $arc_size ): array {
-		$shapes = array(
-			'wave'   => array(
-				'viewBox' => '0 0 1000 200',
-				'd'       => 'M 0 100 C 250 0 750 200 1000 100',
-			),
-			'arc'    => array(
-				'viewBox' => '0 0 1000 200',
-				'd'       => 'M 0 200 Q 500 0 1000 200',
-			),
-			'circle' => array(
-				'viewBox' => '0 0 1000 1000',
-				'd'       => 'M 500 0 A 500 500 0 1 1 499.9 0',
-			),
-			'line'   => array(
-				'viewBox' => '0 0 1000 200',
-				'd'       => 'M 0 100 L 1000 100',
-			),
-			'oval'   => array(
-				'viewBox' => '0 0 1000 500',
-				'd'       => 'M 500 0 A 500 250 0 1 1 499.9 0',
-			),
-			'spiral' => array(
-				'viewBox' => '0 0 1000 1000',
-				'd'       => 'M 500 500 C 500 250 850 250 850 500 C 850 850 150 850 150 500 C 150 50 950 50 950 500',
-			),
-		);
-
-		if ( 'arc' === $path_type ) {
-			// getTextPathArcSize(): blank means 100, otherwise clamp and round.
-			$size = ( null === $arc_size || '' === $arc_size || ! is_numeric( $arc_size ) )
-				? 100
-				: (int) round( max( 0, min( 100, (float) $arc_size ) ) );
-
-			return array(
-				'viewBox' => $shapes['arc']['viewBox'],
-				'd'       => 'M 0 200 Q 500 ' . ( 200 - $size * 2 ) . ' 1000 200',
-			);
-		}
-
-		return $shapes[ $path_type ] ?? $shapes['wave'];
-	}
-
-	/**
-	 * The alignment class useBlockProps.save() would add, if any.
-	 *
-	 * Mirrors core's addAssignedAlign: the class is emitted only when the value
-	 * is one the block actually supports. Driving it off the registered supports
-	 * rather than a hardcoded wide/full pair matters for blocks that allow more
-	 * (card and accordion accept left/center/right too), where a hardcoded list
-	 * silently drops the class and the block fails validation.
-	 *
-	 * @param string               $block_name Block name.
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @return string Alignment class, or an empty string.
-	 */
-	private static function align_class( string $block_name, array $attributes ): string {
-		$align = isset( $attributes['align'] ) ? (string) $attributes['align'] : '';
-		if ( '' === $align ) {
-			return '';
-		}
-
-		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
-		$support    = $block_type->supports['align'] ?? false;
-
-		if ( true === $support ) {
-			$valid = array( 'left', 'center', 'right', 'wide', 'full' );
-		} elseif ( is_array( $support ) ) {
-			$valid = $support;
-		} else {
-			return '';
-		}
-
-		return in_array( $align, $valid, true ) ? 'align' . $align : '';
-	}
-
-	/**
 	 * Remove style groups the block tells WordPress not to serialize.
 	 *
 	 * A block can opt out of having a support written onto its root with
@@ -6064,560 +5798,6 @@ class Block_Inserter {
 		}
 
 		return $style;
-	}
-
-	/**
-	 * Padding declarations for a block that skip-serializes padding and
-	 * re-applies it to an inner element.
-	 *
-	 * Icon Button and Modal Trigger both declare
-	 * `spacing.__experimentalSkipSerialization: ["padding"]`, so WordPress puts
-	 * no padding on the block root and each save() writes it onto the button
-	 * instead. get_routed_visual_attributes() cannot cover this: it works from
-	 * the Style Engine, and `spacing` also carries margin, which is NOT
-	 * skip-serialized and must stay on the root.
-	 *
-	 * The two blocks differ in one respect, so the caller says which it wants:
-	 * Icon Button runs each side through convertPaddingValue() (turning
-	 * `var:preset|spacing|40` into a CSS var), while Modal Trigger writes the
-	 * value through untouched.
-	 *
-	 * @param array<string, mixed> $attributes      Block attributes.
-	 * @param bool                 $convert_presets Whether to resolve preset shorthand.
-	 * @return array<int, string> CSS declarations, in save()'s order.
-	 */
-	private static function routed_padding_styles( array $attributes, bool $convert_presets ): array {
-		$padding = $attributes['style']['spacing']['padding'] ?? null;
-
-		if ( ! is_array( $padding ) ) {
-			return array();
-		}
-
-		$declarations = array();
-
-		foreach ( array( 'top', 'right', 'bottom', 'left' ) as $side ) {
-			$value = $padding[ $side ] ?? null;
-
-			// React drops a style property whose value is undefined or an empty
-			// string, and convertPaddingValue() returns undefined for a falsy
-			// value, so an unset side produces no declaration either way.
-			if ( ! is_string( $value ) || '' === $value ) {
-				continue;
-			}
-
-			$declarations[] = 'padding-' . $side . ':' .
-				( $convert_presets ? self::wp_shorthand_to_css_var( $value ) : $value );
-		}
-
-		return $declarations;
-	}
-
-	/**
-	 * Whether a container block renders an overlay.
-	 *
-	 * Mirrors the shared JS helper: an explicit overlayColor, or an
-	 * `is-style-overlay-*` variation class supplying the colour from its own
-	 * stylesheet. Each container adds its own `--has-overlay` marker class when
-	 * this is true, and none of them emitted it.
-	 *
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @return bool Whether the overlay marker class applies.
-	 */
-	private static function has_overlay( array $attributes ): bool {
-		if ( ! empty( $attributes['overlayColor'] ) ) {
-			return true;
-		}
-
-		$class_name = isset( $attributes['className'] ) ? (string) $attributes['className'] : '';
-		foreach ( self::split_class_list( $class_name ) as $token ) {
-			if ( 0 === strpos( $token, 'is-style-overlay-' ) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Hover and overlay custom properties the container blocks serialize.
-	 *
-	 * Section, Row and Grid all write the same five custom properties from the
-	 * same five attributes, each only when set. None of them were emitted here,
-	 * so any container given a hover or overlay colour stored markup save()
-	 * would not reproduce.
-	 *
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @return array<int, string> CSS declarations.
-	 */
-	private static function container_hover_styles( array $attributes ): array {
-		$declarations = array();
-
-		$hover_vars = array(
-			'hoverBackgroundColor'       => '--dsgo-hover-bg-color',
-			'hoverTextColor'             => '--dsgo-hover-text-color',
-			'hoverIconBackgroundColor'   => '--dsgo-parent-hover-icon-bg',
-			'hoverButtonBackgroundColor' => '--dsgo-parent-hover-button-bg',
-		);
-
-		foreach ( $hover_vars as $attribute_name => $custom_property ) {
-			$colour = isset( $attributes[ $attribute_name ] ) ? (string) $attributes[ $attribute_name ] : '';
-			if ( '' !== $colour ) {
-				$declarations[] = $custom_property . ':' . self::convert_color_value_to_css_var( $colour );
-			}
-		}
-
-		// The overlay writes its opacity alongside the colour, as one unit.
-		$overlay = isset( $attributes['overlayColor'] ) ? (string) $attributes['overlayColor'] : '';
-		if ( '' !== $overlay ) {
-			$declarations[] = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( $overlay );
-			$declarations[] = '--dsgo-overlay-opacity:' . self::overlay_opacity_for_color( $overlay );
-		}
-
-		return $declarations;
-	}
-
-	/**
-	 * Resolve `--dsgo-overlay-opacity` for a container overlay colour.
-	 *
-	 * PHP twin of getOverlayOpacity() in src/utils/overlay-opacity.js, used by
-	 * the Section, Row, Grid and Scroll Accordion Item save() functions. A colour
-	 * carrying its own alpha below 1 (`#RGBA`, `#RRGGBBAA`, `rgba(…)`, `hsla(…)`,
-	 * `rgb(… / a)` and the other functional notations) is emitted at opacity 1
-	 * so its alpha alone sets the translucency; everything else, including
-	 * preset slugs and CSS variables, uses the 0.65 default. Must return the
-	 * same string as the JS helper for every input.
-	 *
-	 * @param string $color Overlay colour attribute.
-	 * @return string '1' or '0.65'.
-	 */
-	public static function overlay_opacity_for_color( string $color ): string {
-		$alpha = self::declared_color_alpha( $color );
-
-		return ( null !== $alpha && $alpha < 1 ) ? '1' : '0.65';
-	}
-
-	/**
-	 * Read the alpha channel a colour value declares, when it declares one.
-	 *
-	 * @param string $color Colour value.
-	 * @return float|null Alpha, or null when the value declares none.
-	 */
-	private static function declared_color_alpha( string $color ): ?float {
-		// Same whitespace set and alpha grammar as getDeclaredAlpha() in
-		// src/utils/overlay-opacity.js: space, tab, LF, CR, form feed, vertical
-		// tab and NBSP; a plain decimal alpha, optionally a percentage.
-		$whitespace = '/^[ \t\n\r\f\x{0B}\x{A0}]+|[ \t\n\r\f\x{0B}\x{A0}]+$/u';
-
-		$trimmed = preg_replace( $whitespace, '', $color );
-		if ( null === $trimmed ) {
-			return null;
-		}
-		$value = strtolower( $trimmed );
-
-		if ( preg_match( '/^#([0-9a-f]{4}|[0-9a-f]{8})$/D', $value, $hex ) ) {
-			return 4 === strlen( $hex[1] )
-				? hexdec( $hex[1][3] ) / 15
-				: hexdec( substr( $hex[1], 6 ) ) / 255;
-		}
-
-		if ( ! preg_match( '/^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\((.*)\)$/D', $value, $fn ) ) {
-			return null;
-		}
-
-		$args = $fn[1];
-		if ( false !== strpos( $args, '/' ) ) {
-			$alpha = substr( $args, strrpos( $args, '/' ) + 1 );
-		} else {
-			$parts = explode( ',', $args );
-			if ( 4 !== count( $parts ) ) {
-				return null;
-			}
-			$alpha = $parts[3];
-		}
-
-		$alpha = preg_replace( $whitespace, '', $alpha );
-		if ( null === $alpha || ! preg_match( '/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))(%?)$/D', $alpha, $match ) ) {
-			return null;
-		}
-
-		return '%' === $match[2] ? (float) $match[1] / 100 : (float) $match[1];
-	}
-
-	/**
-	 * Clamp a hotspot coordinate to 0-100 the way save() does.
-	 *
-	 * @param mixed $value Coordinate value.
-	 * @return int|float Clamped coordinate.
-	 */
-	private static function clamp_hotspot_coordinate( $value ) {
-		$number = is_numeric( $value ) ? (float) $value : 50;
-
-		return self::numeric_attribute( max( 0, min( 100, $number ) ) );
-	}
-
-	/**
-	 * Filter a hotspot URL through the same allowlist save() applies.
-	 *
-	 * Mirrors getSafeHotspotUrl(): only http, https, mailto and tel survive, so
-	 * a rejected URL turns the marker into a <button> in both paths.
-	 *
-	 * @param mixed $url URL value.
-	 * @return string The URL, or an empty string when it is not allowed.
-	 */
-	private static function safe_hotspot_url( $url ): string {
-		if ( ! is_string( $url ) || '' === trim( $url ) ) {
-			return '';
-		}
-
-		$trimmed = trim( $url );
-		$scheme  = wp_parse_url( $trimmed, PHP_URL_SCHEME );
-
-		if ( null === $scheme || '' === $scheme ) {
-			// Relative URLs resolve against the page, matching the JS helper's
-			// use of a base URL.
-			return $trimmed;
-		}
-
-		return in_array( strtolower( $scheme ), array( 'http', 'https', 'mailto', 'tel' ), true ) ? $trimmed : '';
-	}
-
-	/**
-	 * Filter a hotspot colour through the same allowlist save() applies.
-	 *
-	 * Mirrors getSafeHotspotColor() in src/blocks/hotspot-item/utils.js: a value
-	 * outside the allowlist is dropped by save(), so emitting it here would
-	 * produce a custom property save() never writes.
-	 *
-	 * @param mixed $color Colour value.
-	 * @return string The colour, or an empty string when it is not allowed.
-	 */
-	private static function safe_hotspot_color( $color ): string {
-		if ( ! is_string( $color ) ) {
-			return '';
-		}
-
-		$value = trim( $color );
-
-		$is_preset     = (bool) preg_match( '/^var:preset\|color\|[a-z0-9-]+$/i', $value );
-		$is_hex        = (bool) preg_match( '/^#[0-9a-f]{3,8}$/i', $value );
-		$is_functional = (bool) preg_match( '#^(?:rgb|hsl)a?\([0-9.%\s,/+-]+\)$#i', $value );
-
-		return ( $is_preset || $is_hex || $is_functional ) ? $value : '';
-	}
-
-	/**
-	 * Whether a shape size was explicitly authored.
-	 *
-	 * Mirrors isExplicitShapeSize() in src/utils/shape-size.js: null, zero and
-	 * negatives all mean "inherit the theme token", and serializing them would
-	 * write a custom property save() never emits.
-	 *
-	 * @param mixed $value Attribute value.
-	 * @return bool Whether the value is an explicit size.
-	 */
-	private static function is_explicit_shape_size( $value ): bool {
-		return is_numeric( $value ) && is_finite( (float) $value ) && (float) $value > 0;
-	}
-
-	/**
-	 * Clamp a shape divider size attribute, mirroring normalizeShapeSize() in
-	 * src/utils/shape-size.js: anything that is not an explicit, positive,
-	 * finite size collapses to null ("inherit the theme token"); an explicit
-	 * value is clamped into range.
-	 *
-	 * @param mixed $value Raw size attribute.
-	 * @param float $min   Lower clamp bound.
-	 * @param float $max   Upper clamp bound.
-	 * @return float|null Clamped size, or null when unset.
-	 */
-	private static function normalize_shape_size( $value, float $min, float $max ): ?float {
-		if ( ! self::is_explicit_shape_size( $value ) ) {
-			return null;
-		}
-
-		return max( $min, min( $max, (float) $value ) );
-	}
-
-	/**
-	 * Sanitize a color value the way
-	 * src/blocks/section/utils/sanitize-color.js does: CSS custom properties,
-	 * hex (3/4/6/8 digit), rgb()/rgba(), hsl()/hsla() (with required `%` on
-	 * saturation/lightness), or a bare alphabetic named color. Anything else
-	 * — including a malformed value that could break out of an attribute —
-	 * is rejected.
-	 *
-	 * @param string $color Candidate color value.
-	 * @return string Sanitized value, or '' when invalid or empty.
-	 */
-	private static function sanitize_shape_color( string $color ): string {
-		$trimmed = trim( $color );
-		if ( '' === $trimmed ) {
-			return '';
-		}
-
-		$patterns = array(
-			'/^var\(--[\w-]+(?:,\s*[^)]+)?\)$/i',
-			'/^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i',
-			'/^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*(?:,\s*[\d.]+)?\s*\)$/i',
-			'/^hsla?\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*(?:,\s*[\d.]+)?\s*\)$/i',
-			'/^[a-z]+$/i',
-		);
-
-		foreach ( $patterns as $pattern ) {
-			if ( preg_match( $pattern, $trimmed ) ) {
-				return $trimmed;
-			}
-		}
-
-		return '';
-	}
-
-	/**
-	 * Resolve a shape divider's band color — the color shown beside the
-	 * shape, through the CSS mask knockout. Mirrors
-	 * shapeDividerTopBandColor / shapeDividerBottomBandColor in save.js
-	 * (convertColorToCSSVar) followed by ShapeDivider's own sanitizeColor().
-	 *
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @param string               $prefix     Attribute prefix ('shapeDividerTop' or 'shapeDividerBottom').
-	 * @return string Sanitized CSS color, or '' when unset or invalid.
-	 */
-	private static function shape_divider_band_color( array $attributes, string $prefix ): string {
-		$background = $attributes[ $prefix . 'BackgroundColor' ] ?? '';
-		if ( ! is_string( $background ) || '' === $background ) {
-			return '';
-		}
-
-		return self::sanitize_shape_color( self::convert_color_value_to_css_var( $background ) );
-	}
-
-	/**
-	 * Render a Section block's top or bottom shape divider.
-	 *
-	 * Mirrors src/blocks/section/components/ShapeDivider.js exactly: the
-	 * shape itself is painted by CSS via `mask-image` (see
-	 * src/blocks/section/styles/_shape-divider.scss), so this emits only the
-	 * marker classes and CSS custom properties the stylesheet reads — no
-	 * inline `<svg>`, and no size custom property unless the author set an
-	 * explicit value.
-	 *
-	 * @param array<string, mixed> $attributes Block attributes.
-	 * @param string               $prefix     Attribute prefix ('shapeDividerTop' or 'shapeDividerBottom').
-	 * @param string               $position   'top' or 'bottom'.
-	 * @return string Divider markup, or '' when no shape is selected.
-	 */
-	private static function render_shape_divider( array $attributes, string $prefix, string $position ): string {
-		$shape = isset( $attributes[ $prefix ] ) && is_string( $attributes[ $prefix ] ) ? $attributes[ $prefix ] : '';
-		if ( '' === $shape ) {
-			return '';
-		}
-
-		$safe_height = self::normalize_shape_size( $attributes[ $prefix . 'Height' ] ?? null, 10, 500 );
-		$safe_width  = self::normalize_shape_size( $attributes[ $prefix . 'Width' ] ?? null, 100, 300 );
-		$flip_x      = ! empty( $attributes[ $prefix . 'FlipX' ] );
-		$flip_y      = ! empty( $attributes[ $prefix . 'FlipY' ] );
-		$front       = ! empty( $attributes[ $prefix . 'Front' ] );
-		$band_color  = self::shape_divider_band_color( $attributes, $prefix );
-
-		// Bottom dividers flip vertically by default: the shapes are
-		// authored with their solid edge at the bottom of the viewBox (i.e.
-		// facing the section for a TOP divider), so a bottom divider must
-		// flip to face its section. flipY inverts the per-position default.
-		$flip_y_active = ( 'bottom' === $position ) ? ! $flip_y : $flip_y;
-
-		$class_parts = array( 'dsgo-shape-divider', 'dsgo-shape-divider--' . $position, 'is-shape-' . $shape );
-		if ( $flip_x ) {
-			$class_parts[] = 'is-flip-x';
-		}
-		if ( $flip_y_active ) {
-			$class_parts[] = 'is-flip-y';
-		}
-		if ( $front ) {
-			$class_parts[] = 'is-front';
-		}
-
-		$style_parts = array();
-		if ( null !== $safe_height ) {
-			$style_parts[] = '--dsgo-shape-height:' . self::format_js_number( $safe_height ) . 'px';
-		}
-		if ( null !== $safe_width ) {
-			$style_parts[] = '--dsgo-shape-width:' . self::format_js_number( $safe_width ) . '%';
-		}
-		if ( '' !== $band_color ) {
-			$style_parts[] = '--dsgo-shape-band:' . $band_color;
-		}
-
-		// Only attach the style attribute when there is something to set, so
-		// a default divider serializes as a bare <div> with no empty
-		// style="" — matching save()'s styleProps conditional exactly.
-		$style_attr = empty( $style_parts ) ? '' : ' style="' . esc_attr( implode( ';', $style_parts ) ) . '"';
-
-		return '<div class="' . esc_attr( implode( ' ', $class_parts ) ) . '"' . $style_attr . ' aria-hidden="true"></div>';
-	}
-
-	/**
-	 * Match convertPresetToCSSVar for container gaps, including string zero.
-	 *
-	 * @param mixed $value Gap or a WordPress top/left gap object.
-	 * @return string|null CSS gap, or null when JavaScript would return undefined.
-	 */
-	private static function spacing_gap( $value ): ?string {
-		if ( is_array( $value ) ) {
-			$top   = $value['top'] ?? null;
-			$value = ( null !== $top && '' !== $top && false !== $top && 0 !== $top ) ? $top : ( $value['left'] ?? null );
-		}
-		if ( null === $value || '' === $value || false === $value || 0 === $value ) {
-			return null;
-		}
-		return self::wp_shorthand_to_css_var( (string) $value );
-	}
-
-	/**
-	 * Convert WordPress preset shorthand to a CSS custom property reference.
-	 *
-	 * @param string $value Value to convert.
-	 * @return string Converted value.
-	 */
-	private static function wp_shorthand_to_css_var( string $value ): string {
-		if ( preg_match( '/^var:preset\|([a-zA-Z]+)\|(.+)$/', $value, $matches ) ) {
-			return 'var(--wp--preset--' . $matches[1] . '--' . $matches[2] . ')';
-		}
-		return $value;
-	}
-
-	/**
-	 * Convert a color value to CSS var() syntax, mirroring the JS save helper.
-	 *
-	 * Supports WordPress preset shorthand (`var:preset|color|slug`), already-
-	 * valid CSS values, and bare preset slugs such as `accent-3`.
-	 *
-	 * @param string $value Color value.
-	 * @return string Converted CSS value.
-	 */
-	private static function convert_color_value_to_css_var( string $value ): string {
-		if ( '' === $value ) {
-			return '';
-		}
-
-		if ( 0 === strpos( $value, 'var(--' ) ) {
-			return $value;
-		}
-
-		if ( 0 === strpos( $value, 'var:preset|' ) ) {
-			return self::wp_shorthand_to_css_var( $value );
-		}
-
-		if ( preg_match( '/^(#|rgb|hsl|hwb|lab|lch|oklch|oklab|color\(|var\(|url\(|\d)/i', $value ) ) {
-			return $value;
-		}
-
-		$css_keywords = array(
-			'transparent',
-			'inherit',
-			'initial',
-			'unset',
-			'revert',
-			'revert-layer',
-			'currentcolor',
-			'none',
-			'auto',
-			'normal',
-		);
-
-		if ( in_array( strtolower( $value ), $css_keywords, true ) ) {
-			return $value;
-		}
-
-		return 'var(--wp--preset--color--' . $value . ')';
-	}
-
-	/**
-	 * Recursively convert CSS var() syntax to WordPress shorthand in style arrays.
-	 *
-	 * @param array<string, mixed> $style_array Style attribute array.
-	 * @return array<string, mixed> Converted style array.
-	 */
-	private static function convert_style_vars( array $style_array ): array {
-		foreach ( $style_array as $key => $value ) {
-			if ( is_array( $value ) ) {
-				$style_array[ $key ] = self::convert_style_vars( $value );
-			} elseif ( is_string( $value ) ) {
-				$style_array[ $key ] = self::css_var_to_wp_shorthand( $value );
-			}
-		}
-		return $style_array;
-	}
-
-	/**
-	 * Extract block support classes and inline styles from the style attribute.
-	 *
-	 * Processes color, spacing, and other block supports into CSS classes and
-	 * inline style strings, mirroring what useBlockProps.save() does in JS.
-	 *
-	 * @param array<string, mixed> $style Style attribute from block.
-	 * @return array{classes: string[], styles: string[]} Classes and style declarations.
-	 */
-	private static function get_block_support_styles( array $style ): array {
-		$classes = array();
-		$styles  = array();
-
-		// Color support.
-		if ( ! empty( $style['color']['background'] ) ) {
-			$classes[] = 'has-background';
-			$styles[]  = 'background-color:' . esc_attr( $style['color']['background'] );
-		}
-		if ( ! empty( $style['color']['text'] ) ) {
-			$classes[] = 'has-text-color';
-			$styles[]  = 'color:' . esc_attr( $style['color']['text'] );
-		}
-		if ( ! empty( $style['color']['gradient'] ) ) {
-			$classes[] = 'has-background';
-			$styles[]  = 'background:' . esc_attr( $style['color']['gradient'] );
-		}
-
-		// Style Engine can express preset border colors as classes; save() keeps
-		// a style.border.color value inline, so preserve that declaration.
-		if ( ! empty( $style['border']['color'] ) ) {
-			$styles[] = 'border-color:' . esc_attr( self::convert_color_value_to_css_var( $style['border']['color'] ) );
-		}
-
-		// Spacing support - padding.
-		if ( ! empty( $style['spacing']['padding'] ) ) {
-			$padding = $style['spacing']['padding'];
-			if ( ! empty( $padding['top'] ) ) {
-				$styles[] = 'padding-top:' . esc_attr( self::wp_shorthand_to_css_var( $padding['top'] ) );
-			}
-			if ( ! empty( $padding['right'] ) ) {
-				$styles[] = 'padding-right:' . esc_attr( self::wp_shorthand_to_css_var( $padding['right'] ) );
-			}
-			if ( ! empty( $padding['bottom'] ) ) {
-				$styles[] = 'padding-bottom:' . esc_attr( self::wp_shorthand_to_css_var( $padding['bottom'] ) );
-			}
-			if ( ! empty( $padding['left'] ) ) {
-				$styles[] = 'padding-left:' . esc_attr( self::wp_shorthand_to_css_var( $padding['left'] ) );
-			}
-		}
-
-		// Spacing support - margin.
-		if ( ! empty( $style['spacing']['margin'] ) ) {
-			$margin = $style['spacing']['margin'];
-			if ( ! empty( $margin['top'] ) ) {
-				$styles[] = 'margin-top:' . esc_attr( self::wp_shorthand_to_css_var( $margin['top'] ) );
-			}
-			if ( ! empty( $margin['bottom'] ) ) {
-				$styles[] = 'margin-bottom:' . esc_attr( self::wp_shorthand_to_css_var( $margin['bottom'] ) );
-			}
-		}
-
-		// Dimensions support.
-		if ( ! empty( $style['dimensions']['minHeight'] ) ) {
-			$styles[] = 'min-height:' . esc_attr( self::wp_shorthand_to_css_var( $style['dimensions']['minHeight'] ) );
-		}
-
-		return array(
-			'classes' => $classes,
-			'styles'  => $styles,
-		);
 	}
 
 	/**
@@ -6767,6 +5947,22 @@ class Block_Inserter {
 
 		// Check if block has a render callback.
 		return null !== $block_type->render_callback;
+	}
+
+	/**
+	 * Opacity for a container overlay colour.
+	 *
+	 * Delegates to Serializer_Support. Kept on Block_Inserter because it is
+	 * named as the PHP twin of src/utils/overlay-opacity.js from that file, from
+	 * tests/fixtures/overlay-opacity-cases.json and from its PHPUnit test - a
+	 * cross-runtime contract that should not move just because the
+	 * implementation did.
+	 *
+	 * @param string $color Colour value.
+	 * @return string Opacity as a string, or '' when the colour declares none.
+	 */
+	public static function overlay_opacity_for_color( string $color ): string {
+		return Serializer_Support::overlay_opacity_for_color( $color );
 	}
 
 	/**

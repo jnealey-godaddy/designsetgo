@@ -88,6 +88,8 @@ class Abilities_Registry {
 
 		// Load helper classes (must be before abstract-configurator-ability which depends on Block_Schema_Loader).
 		$helpers = array(
+			// Serializer_Support first: Block_Inserter calls into it.
+			'serializers/class-serializer-support.php',
 			'class-block-inserter.php',
 			'class-block-configurator.php',
 			'class-block-schema-loader.php',
