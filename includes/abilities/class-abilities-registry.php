@@ -87,9 +87,15 @@ class Abilities_Registry {
 		require_once $base_path . '/class-abstract-ability.php'; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory
 
 		// Load helper classes (must be before abstract-configurator-ability which depends on Block_Schema_Loader).
+		// Per-block serializers and their shared helpers. Loaded before
+		// Block_Inserter, which delegates to Serializer_Registry.
+		$serializer_files = glob( $base_path . '/serializers/*.php' );
+
+		foreach ( is_array( $serializer_files ) ? $serializer_files : array() as $serializer ) {
+			require_once $serializer; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- path resolved from plugin directory
+		}
+
 		$helpers = array(
-			// Serializer_Support first: Block_Inserter calls into it.
-			'serializers/class-serializer-support.php',
 			'class-block-inserter.php',
 			'class-block-configurator.php',
 			'class-block-schema-loader.php',

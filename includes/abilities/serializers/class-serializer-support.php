@@ -846,4 +846,83 @@ class Serializer_Support {
 			'styles'  => $styles,
 		);
 	}
+
+	/**
+	 * Visual support classes and styles for a block that routes them inward.
+	 *
+	 * Some blocks skip-serialize their visual supports on the block root and
+	 * re-apply them to an inner element - Icon Button's root is a positioning
+	 * wrapper, so its colours belong on the <a> inside. For those,
+	 * apply_block_support_attributes() correctly returns nothing (WordPress is
+	 * told to skip), and the values have to be resolved here instead. Without
+	 * this the attributes were stored in the block comment and no matching
+	 * class ever reached the markup.
+	 *
+	 * Mirrors the getColorClassesAndStyles / getTypographyClassesAndStyles /
+	 * getBorderClassesAndStyles helpers the save() functions use.
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return array{classes: array<int, string>, styles: array<int, string>} Classes and declarations.
+	 */
+	public static function get_routed_visual_attributes( array $attributes ): array {
+		$classes = array();
+		$styles  = array();
+
+		// Preset attributes become `has-*` classes; the second entry is the
+		// companion flag class WordPress adds alongside.
+		$preset_classes = array(
+			'textColor'       => array( 'has-%s-color', 'has-text-color' ),
+			'backgroundColor' => array( 'has-%s-background-color', 'has-background' ),
+			'gradient'        => array( 'has-%s-gradient-background', 'has-background' ),
+			'fontSize'        => array( 'has-%s-font-size', null ),
+			'fontFamily'      => array( 'has-%s-font-family', null ),
+			'borderColor'     => array( 'has-%s-border-color', 'has-border-color' ),
+		);
+
+		foreach ( $preset_classes as $attribute => $definition ) {
+			$value = $attributes[ $attribute ] ?? '';
+			if ( ! is_string( $value ) || '' === $value ) {
+				continue;
+			}
+
+			$classes[] = sprintf( $definition[0], $value );
+			if ( null !== $definition[1] ) {
+				$classes[] = $definition[1];
+			}
+		}
+
+		$style = ( isset( $attributes['style'] ) && is_array( $attributes['style'] ) ) ? $attributes['style'] : array();
+
+		// Custom values get the flag class without a preset class.
+		if ( ! empty( $style['color']['text'] ) ) {
+			$classes[] = 'has-text-color';
+		}
+		if ( ! empty( $style['color']['background'] ) || ! empty( $style['color']['gradient'] ) ) {
+			$classes[] = 'has-background';
+		}
+		if ( ! empty( $style['border']['color'] ) ) {
+			$classes[] = 'has-border-color';
+		}
+
+		$routed = array_intersect_key(
+			$style,
+			array_flip( array( 'color', 'typography', 'border', 'shadow' ) )
+		);
+
+		if ( ! empty( $routed ) && function_exists( 'wp_style_engine_get_styles' ) ) {
+			$engine = wp_style_engine_get_styles( $routed );
+			// JS border support retains an inline preset color as well as its flag class.
+			if ( ! empty( $routed['border']['color'] ) ) {
+				$engine['declarations']['border-color'] = self::convert_color_value_to_css_var( $routed['border']['color'] );
+			}
+			foreach ( $engine['declarations'] as $property => $value ) {
+				$styles[] = $property . ':' . $value;
+			}
+		}
+
+		return array(
+			'classes' => array_values( array_unique( $classes ) ),
+			'styles'  => $styles,
+		);
+	}
 }
