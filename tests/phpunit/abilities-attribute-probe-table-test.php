@@ -118,28 +118,46 @@ class Abilities_Attribute_Probe_Table_Test extends WP_UnitTestCase {
 	 * value; they are simply not required to be declared. Everything the plugin
 	 * owns - which is everything a change here can break - still is.
 	 *
-	 * @return array<string, bool> Attribute name => true.
+	 * Ownership is per BLOCK, not per attribute name. `anchor` is the case that
+	 * proves why: designsetgo/tab declares it in its own block.json, while every
+	 * other block gets it from core's anchor support - which only exists in PHP
+	 * from WordPress 7.0, so trunk registers it and the pinned 6.9 does not.
+	 * Treating the NAME as owned made every block on trunk demand a probe for an
+	 * attribute the plugin never declared there.
+	 *
+	 * @return array{blocks: array<string, array<string, bool>>, extensions: array<string, bool>}
 	 */
-	private function plugin_owned_attribute_names(): array {
-		$names = array();
+	private function plugin_owned_attributes(): array {
+		$by_block   = array();
+		$extensions = array();
 
 		foreach ( glob( dirname( __DIR__, 2 ) . '/src/blocks/*/block.json' ) ?: array() as $path ) {
 			$json = json_decode( (string) file_get_contents( $path ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- Reading a source file in a test.
+			$name = (string) ( $json['name'] ?? '' );
 
-			foreach ( array_keys( (array) ( $json['attributes'] ?? array() ) ) as $name ) {
-				$names[ (string) $name ] = true;
+			if ( '' === $name ) {
+				continue;
+			}
+
+			foreach ( array_keys( (array) ( $json['attributes'] ?? array() ) ) as $attribute ) {
+				$by_block[ $name ][ (string) $attribute ] = true;
 			}
 		}
 
+		// Extension attributes are injected uniformly by Extension_Attributes
+		// rather than declared per block, so they are owned wherever they appear.
 		foreach ( glob( dirname( __DIR__, 2 ) . '/includes/extension-configs/*.php' ) ?: array() as $path ) {
 			$config = require $path;
 
-			foreach ( array_keys( (array) ( $config['attributes'] ?? array() ) ) as $name ) {
-				$names[ (string) $name ] = true;
+			foreach ( array_keys( (array) ( $config['attributes'] ?? array() ) ) as $attribute ) {
+				$extensions[ (string) $attribute ] = true;
 			}
 		}
 
-		return $names;
+		return array(
+			'blocks'     => $by_block,
+			'extensions' => $extensions,
+		);
 	}
 
 	/**
@@ -147,12 +165,15 @@ class Abilities_Attribute_Probe_Table_Test extends WP_UnitTestCase {
 	 */
 	public function test_every_covered_attribute_is_probeable_or_declared() {
 		$table   = $this->table();
-		$owned   = $this->plugin_owned_attribute_names();
+		$owned   = $this->plugin_owned_attributes();
 		$missing = array();
 
 		foreach ( $this->covered_attributes() as $block => $attributes ) {
 			foreach ( $attributes as $attribute => $definition ) {
-				if ( ! isset( $owned[ (string) $attribute ] ) ) {
+				$is_owned = isset( $owned['blocks'][ $block ][ (string) $attribute ] )
+					|| isset( $owned['extensions'][ (string) $attribute ] );
+
+				if ( ! $is_owned ) {
 					continue;
 				}
 
