@@ -19,6 +19,18 @@
 				"title": "Section",
 				"description": "Vertical stacking container for sections and content areas",
 				"performance": "low"
+			},
+			{
+				"name": "designsetgo/fifty-fifty",
+				"title": "Fifty Fifty",
+				"description": "Full-width 50/50 split with edge-to-edge media",
+				"performance": "low"
+			},
+			{
+				"name": "designsetgo/sticky-sections",
+				"title": "Sticky Sections",
+				"description": "Sections that stick and stack as you scroll",
+				"performance": "high"
 			}
 		]
 	},
@@ -132,6 +144,48 @@
 				"title": "Scroll Slide",
 				"description": "Individual slide within Scroll Slides",
 				"performance": "high"
+			},
+			{
+				"name": "designsetgo/advanced-heading",
+				"title": "Advanced Heading",
+				"description": "Headings that mix fonts, weights, and colors",
+				"performance": "low"
+			},
+			{
+				"name": "designsetgo/heading-segment",
+				"title": "Heading Segment",
+				"description": "Individual styled segment of an Advanced Heading",
+				"performance": "low"
+			},
+			{
+				"name": "designsetgo/comparison-table",
+				"title": "Comparison Table",
+				"description": "Feature comparison for products, services, or plans",
+				"performance": "low"
+			},
+			{
+				"name": "designsetgo/section-divider",
+				"title": "Section Divider",
+				"description": "Standalone shape divider between two blocks",
+				"performance": "low"
+			},
+			{
+				"name": "designsetgo/text-path",
+				"title": "Text Path",
+				"description": "Text flowed along an SVG path",
+				"performance": "low"
+			},
+			{
+				"name": "designsetgo/timeline",
+				"title": "Timeline",
+				"description": "Chronological events with scroll-reveal animation",
+				"performance": "medium"
+			},
+			{
+				"name": "designsetgo/timeline-item",
+				"title": "Timeline Item",
+				"description": "Individual milestone within a timeline",
+				"performance": "medium"
 			}
 		]
 	},
@@ -179,6 +233,30 @@
 				"title": "Modal Trigger",
 				"description": "Button or link that opens a modal dialog",
 				"performance": "low"
+			},
+			{
+				"name": "designsetgo/hotspot",
+				"title": "Hotspot",
+				"description": "Interactive markers placed over an image",
+				"performance": "medium"
+			},
+			{
+				"name": "designsetgo/hotspot-item",
+				"title": "Hotspot Item",
+				"description": "Individual marker within a Hotspot image",
+				"performance": "low"
+			},
+			{
+				"name": "designsetgo/flip-card-front",
+				"title": "Flip Card Front",
+				"description": "Legacy front face, kept for existing content",
+				"performance": "high"
+			},
+			{
+				"name": "designsetgo/flip-card-back",
+				"title": "Flip Card Back",
+				"description": "Legacy back face, kept for existing content",
+				"performance": "high"
 			}
 		]
 	},
@@ -231,6 +309,76 @@
 				"name": "designsetgo/table-of-contents",
 				"title": "Table of Contents",
 				"description": "Auto-generate table of contents from page headings",
+				"performance": "medium"
+			},
+			{
+				"name": "designsetgo/chart",
+				"title": "Chart",
+				"description": "Bar, line, or donut chart rendered without JavaScript",
+				"performance": "low"
+			}
+		]
+	},
+	"dynamic": {
+		"label": "Dynamic Content Blocks",
+		"blocks": [
+			{
+				"name": "designsetgo/query",
+				"title": "Dynamic Query",
+				"description": "Query posts, users, or terms and design the results",
+				"performance": "high"
+			},
+			{
+				"name": "designsetgo/query-results",
+				"title": "Query Results",
+				"description": "Repeating item template inside a Dynamic Query",
+				"performance": "medium"
+			},
+			{
+				"name": "designsetgo/query-filter",
+				"title": "Query Filter",
+				"description": "Filter, search, sort, or reset a Dynamic Query",
+				"performance": "medium"
+			},
+			{
+				"name": "designsetgo/query-pagination",
+				"title": "Query Pagination",
+				"description": "Numbered, load-more, or infinite-scroll pagination",
+				"performance": "medium"
+			},
+			{
+				"name": "designsetgo/query-no-results",
+				"title": "No Results",
+				"description": "Content shown when a Dynamic Query returns nothing",
+				"performance": "low"
+			},
+			{
+				"name": "designsetgo/query-group-header",
+				"title": "Query Group Header",
+				"description": "Heading rendered once per group in a Dynamic Query",
+				"performance": "low"
+			},
+			{
+				"name": "designsetgo/dynamic-image",
+				"title": "Dynamic Image",
+				"description": "Image whose source resolves from post, site, or field data",
+				"performance": "low"
+			}
+		]
+	},
+	"commerce": {
+		"label": "WooCommerce Blocks",
+		"blocks": [
+			{
+				"name": "designsetgo/product-categories-grid",
+				"title": "Product Categories Grid",
+				"description": "WooCommerce product categories in a visual grid",
+				"performance": "medium"
+			},
+			{
+				"name": "designsetgo/product-showcase-hero",
+				"title": "Product Showcase Hero",
+				"description": "Full-width hero for a single WooCommerce product",
 				"performance": "medium"
 			}
 		]

@@ -20,6 +20,16 @@
 	// Without this, divider can collapse to 0 width inside flex containers
 	width: 100%;
 
+	// These three were authored in editor.scss as a selection affordance, but
+	// they reached the front end too for as long as block.json pointed `style`
+	// at the combined editor bundle, so every shipped divider has reserved
+	// 20px and centred its line inside it. Declared here deliberately: the
+	// bundle fix (#568) must not silently tighten existing layouts by 19px.
+	// Changing the divider's resting height is a separate design decision.
+	display: flex;
+	align-items: center;
+	min-height: 20px;
+
 	// Container centers the divider (default)
 	&__container {
 		display: flex;

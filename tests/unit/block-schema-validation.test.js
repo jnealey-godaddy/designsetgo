@@ -366,4 +366,39 @@ describe('Block Schema Validation', () => {
 			}
 		);
 	});
+
+	/**
+	 * `src/blocks/{slug}/index.js` imports BOTH `editor.scss` and `style.scss`,
+	 * so webpack's `blocks/{slug}/index` entry emits a combined `index.css`.
+	 * Webpack also emits `blocks/{slug}/style-index.css` from a dedicated entry
+	 * holding `style.scss` alone (see `styleEntries` in webpack.config.js).
+	 *
+	 * `editorStyle` therefore wants `index.css` — the editor needs both halves —
+	 * but `style` must point at `style-index.css`. Pointing `style` at
+	 * `index.css` ships every editor-only rule to the front end, where it is at
+	 * best dead weight and at worst wins the cascade against the real rule.
+	 *
+	 * Not hypothetical: `timeline-item/editor.scss` carries
+	 * `opacity: 1 !important; transform: none !important` so items stay visible
+	 * while authoring. Leaked to the front end it permanently defeated the
+	 * Timeline's `opacity: 0` scroll-reveal starting state (#568).
+	 */
+	describe('Frontend Stylesheet Wiring', () => {
+		const withBothStylesheets = blocks.filter(
+			(b) =>
+				fs.existsSync(path.join(blocksDir, b.dir, 'style.scss')) &&
+				fs.existsSync(path.join(blocksDir, b.dir, 'editor.scss'))
+		);
+
+		it('finds blocks with both an editor and a frontend stylesheet', () => {
+			expect(withBothStylesheets.length).toBeGreaterThan(0);
+		});
+
+		it.each(withBothStylesheets.map((b) => [b.dir, b.config]))(
+			'%s points "style" at style-index.css, not the editor bundle',
+			(dir, config) => {
+				expect(config.style).toBe('file:./style-index.css');
+			}
+		);
+	});
 });
