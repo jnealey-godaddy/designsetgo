@@ -375,14 +375,92 @@ body:not(.block-editor-page).dsgo-page-overlay-header.dsgo-page-overlay-skip-top
 }
 
 /**
- * Overlay Content Pull-Up
- * Uses a negative margin equal to the header height (set by JS as a CSS
- * custom property) so the content slides up underneath the overlay header
- * regardless of what spacing the template applies between header and content.
+ * Overlay Content Pull-Up — REMOVED, deliberately.
+ *
+ * This used to be:
+ *
+ *   .wp-site-blocks > header.wp-block-template-part + * {
+ *       margin-top: calc(-1 * var(--dsgo-overlay-header-height, 0px)) !important;
+ *   }
+ *
+ * The rule pulled the content block up by the header height "so the content
+ * slides up underneath the overlay header". That reasoning only holds for a
+ * header that is IN FLOW and therefore occupies that height. The overlay
+ * header is `position: fixed` (see "Overlay Header" above, and it has been
+ * since the feature shipped in 14d6a693), so it occupies NO flow space: the
+ * content block already starts at the top of the page and its background
+ * already runs behind the header. There was nothing to reclaim.
+ *
+ * What the rule actually did was push the content block a full header height
+ * ABOVE the viewport, cropping the top of the hero's background, and occlude
+ * its content behind the fixed header. `applyOverlayHeroPadding()` in
+ * sticky-header.js was then added to push the content back down by the same
+ * height — so the two terms cancelled EXACTLY and the clearance was inert:
+ *
+ *     content top = (T0 - H) + base + (H + gap) = T0 + base + gap
+ *
+ * H drops out. Measured on a live overlay site, sweeping the custom property
+ * across 0 / 50 / 116.54 / 300px moved the hero box to 32 / -18 / -84.5 /
+ * -268px while the content stayed at 52.6px every single time, 95.9px behind
+ * a header whose bottom edge was at 148.5px. Stock DesignSetGo is worse than
+ * that site: with no author override the clearance falls back to plain
+ * `var(--dsgo-overlay-header-height)`, so content lands at exactly T0 + base
+ * — zero clearance on every overlay page.
+ *
+ * With the pull-up gone the geometry is what the overlay actually wants:
+ * the content block stays at T0 so its background runs behind the fixed
+ * header, and the hero clearance alone (base + H + gap) puts the content
+ * below it. Do not reintroduce a negative margin here without first making
+ * the header in-flow — the two are only correct together.
+ */
+
+/**
+ * Overlay Content Flush-To-Top
+ *
+ * The one thing the old pull-up got right: a block theme puts its top-level
+ * block gap between the header and the content, so the content starts some
+ * way down the page. Under an overlay header that gap is a strip of bare page
+ * background showing above the hero, with the fixed header floating over it.
+ *
+ * Zeroing that margin is the whole of what was needed — NOT a negative margin
+ * of the header height. Measured on Twenty Twenty-Five the gap is 57.4px
+ * against an 82.4px header, so the two are unrelated quantities that only
+ * looked interchangeable because both are "space above the content".
+ *
+ * Being a constant, this also lands at FIRST PAINT, where the old rule could
+ * not: it depends on no measurement.
  */
 body:not(.block-editor-page).dsgo-page-overlay-header .wp-site-blocks > header.wp-block-template-part + *,
 body:not(.block-editor-page).dsgo-page-overlay-header .wp-site-blocks > .wp-block-template-part:not(footer):first-of-type + * {
-	margin-top: calc(-1 * var(--dsgo-overlay-header-height, 0px)) !important;
+	margin-top: 0 !important;
+}
+
+/**
+ * Overlay Hero Clearance
+ *
+ * Pushes the first content block's CONTENT below the fixed header while its
+ * background stays at the top of the page, running behind the header — the
+ * whole point of an overlay header.
+ *
+ * This lives in CSS rather than in a JS-written inline style so that it
+ * applies at FIRST PAINT. `--dsgo-overlay-header-height` gets a served
+ * estimate from `Overlay_Header::enqueue_overlay_styles()` before any script
+ * runs, and sticky-header.js replaces it with the measured value once it has
+ * one, so the page reserves roughly the right space immediately and then
+ * settles exactly instead of jumping a full header height.
+ *
+ * `!important` is required, not decorative: WordPress serializes block
+ * spacing as an INLINE style, so a normal rule here would lose to any hero
+ * that sets its own top padding. The author's value is not discarded —
+ * sticky-header.js copies it into `--dsgo-overlay-hero-base-pad` and it is
+ * added back below, which is also why that term must come first.
+ *
+ * Authors opt out by setting `--dsgo-overlay-hero-clearance: 0px` on the
+ * block; that hook predates this rule and still works.
+ */
+body:not(.block-editor-page).dsgo-page-overlay-header .wp-site-blocks > header.wp-block-template-part + * > :first-child,
+body:not(.block-editor-page).dsgo-page-overlay-header .wp-site-blocks > .wp-block-template-part:not(footer):first-of-type + * > :first-child {
+	padding-top: calc(var(--dsgo-overlay-hero-base-pad, 0px) + var(--dsgo-overlay-hero-clearance, var(--dsgo-overlay-header-height, 0px))) !important;
 }
 
 /**

@@ -450,4 +450,143 @@ class Test_Overlay_Header extends WP_UnitTestCase {
 		$this->assertNotEmpty( $inline, 'Inline CSS should be attached to fallback handle' );
 		$this->assertStringContainsString( '--dsgo-overlay-header-text-color', implode( '', (array) $inline ) );
 	}
+
+	/**
+	 * A served height estimate is emitted on overlay pages.
+	 *
+	 * Without it the hero clearance resolves to 0px until sticky-header.js runs
+	 * and the hero content snaps down a full header height at first paint.
+	 */
+	public function test_height_estimate_emitted_on_overlay_page() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$css = $this->overlay_header->get_overlay_header_height_css();
+
+		$this->assertStringContainsString( '--dsgo-overlay-header-height', $css );
+	}
+
+	/**
+	 * The estimate must sit on :root, never on body.
+	 *
+	 * Custom properties inherit from the nearest ancestor that declares them,
+	 * and sticky-header.js sets the MEASURED value on document.documentElement.
+	 * A body declaration would sit closer to the hero and permanently shadow
+	 * it, pinning every site to the estimate and silently undoing the
+	 * measurement this whole mechanism exists to defer to.
+	 */
+	public function test_height_estimate_targets_root_not_body() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$css = $this->overlay_header->get_overlay_header_height_css();
+
+		$this->assertStringContainsString( ':root', $css );
+		$this->assertStringNotContainsString( 'body', $css );
+	}
+
+	/**
+	 * Nothing is emitted when the page has no overlay header.
+	 */
+	public function test_height_estimate_absent_without_overlay() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$this->assertSame( '', $this->overlay_header->get_overlay_header_height_css() );
+	}
+
+	/**
+	 * The estimate is filterable, since only the site knows its own header.
+	 */
+	public function test_height_estimate_is_filterable() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$filter = static function () {
+			return '180px';
+		};
+		add_filter( 'designsetgo_overlay_header_height_estimate', $filter );
+		$css = $this->overlay_header->get_overlay_header_height_css();
+		remove_filter( 'designsetgo_overlay_header_height_estimate', $filter );
+
+		$this->assertStringContainsString( '180px', $css );
+	}
+
+	/**
+	 * A filter returning something that is not a bare CSS length is rejected.
+	 *
+	 * The value is interpolated straight into a stylesheet, so a filter
+	 * returning markup, a url() or an unbalanced calc() must not reach the
+	 * page. Falling back to the default keeps the clearance working rather
+	 * than emitting broken CSS.
+	 */
+	public function test_height_estimate_rejects_non_length_values() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		foreach ( array( '100px;}body{display:none', 'url(x)', 'calc(1px', '<script>', 100 ) as $bad ) {
+			$filter = static function () use ( $bad ) {
+				return $bad;
+			};
+			add_filter( 'designsetgo_overlay_header_height_estimate', $filter );
+			$css = $this->overlay_header->get_overlay_header_height_css();
+			remove_filter( 'designsetgo_overlay_header_height_estimate', $filter );
+
+			$this->assertStringContainsString( '100px', $css, 'Should fall back to the default' );
+			$this->assertStringNotContainsString( '}', substr( $css, 0, strrpos( $css, '}' ) ) );
+			$this->assertStringNotContainsString( '<', $css );
+		}
+	}
+
+	/**
+	 * The cached-height reader is printed on overlay pages and not elsewhere.
+	 */
+	public function test_cached_height_script_printed_only_on_overlay_pages() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		$this->go_to( get_permalink( $post_id ) );
+
+		ob_start();
+		$this->overlay_header->print_cached_height_script();
+		$this->assertSame( '', trim( (string) ob_get_clean() ) );
+
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		ob_start();
+		$this->overlay_header->print_cached_height_script();
+		$out = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'dsgoOverlayHeaderHeight', $out );
+		$this->assertStringContainsString( '--dsgo-overlay-header-height', $out );
+	}
+
+	/**
+	 * The reader must agree with sticky-header.js on key AND bucket thresholds.
+	 *
+	 * They are two halves of one contract living in different languages: the JS
+	 * writes the cache, the PHP reads it before first paint. If either drifts,
+	 * the read silently misses and every load quietly falls back to the served
+	 * estimate — no error, just the shift coming back.
+	 */
+	public function test_cached_height_script_matches_js_contract() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		ob_start();
+		$this->overlay_header->print_cached_height_script();
+		$out = (string) ob_get_clean();
+
+		$js = file_get_contents( dirname( __DIR__, 2 ) . '/src/utils/sticky-header.js' );
+
+		$this->assertStringContainsString( "'dsgoOverlayHeaderHeight'", $js, 'JS cache key drifted from PHP' );
+		$this->assertStringContainsString( 'w < 600', $js, 'JS small-bucket threshold drifted from PHP' );
+		$this->assertStringContainsString( 'w < 1024', $js, 'JS medium-bucket threshold drifted from PHP' );
+		$this->assertStringContainsString( 'w<600', $out );
+		$this->assertStringContainsString( 'w<1024', $out );
+	}
 }

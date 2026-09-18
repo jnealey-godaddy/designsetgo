@@ -35,12 +35,24 @@ class Overlay_Header {
 	const SKIP_TOP_BAR_META_KEY = 'dsgo_overlay_skip_top_bar';
 
 	/**
+	 * Fallback estimate for the overlay header height, used only until
+	 * sticky-header.js measures the real one. See
+	 * get_overlay_header_height_css() for why an estimate is the right shape
+	 * here and how to override it.
+	 *
+	 * @var string
+	 */
+	private const DEFAULT_HEADER_HEIGHT_ESTIMATE = '100px';
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_post_meta' ) );
 		add_filter( 'body_class', array( $this, 'add_body_class' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_overlay_styles' ), 20 );
+		// Priority 1: this has to run before first paint to be worth anything.
+		add_action( 'wp_head', array( $this, 'print_cached_height_script' ), 1 );
 	}
 
 	/**
@@ -132,23 +144,91 @@ class Overlay_Header {
 	}
 
 	/**
+	 * Whether the current request renders an overlay header.
+	 *
+	 * @return bool True when this singular view has the overlay meta set.
+	 */
+	private function is_overlay_request(): bool {
+		if ( ! is_singular() ) {
+			return false;
+		}
+
+		$post_id = get_the_ID();
+		if ( ! $post_id ) {
+			return false;
+		}
+
+		return (bool) get_post_meta( $post_id, self::META_KEY, true );
+	}
+
+	/**
+	 * Served estimate of the overlay header's height.
+	 *
+	 * The overlay header is `position: fixed`, so it reserves no space of its
+	 * own and the first content block has to carry that clearance as padding
+	 * (see "Overlay Hero Clearance" in _sticky-header.scss). Only the browser
+	 * can measure the real height — it depends on the logo, the nav, the fonts
+	 * and the viewport — so sticky-header.js measures it and overwrites this
+	 * value. Without a served starting point, though, the clearance resolves to
+	 * `0px` until that script runs, and the hero's content snaps down by a full
+	 * header height at first paint.
+	 *
+	 * This is therefore a deliberate approximation whose only job is to make
+	 * the first-paint correction small instead of total. Sites whose header is
+	 * materially taller or shorter than the default can tune it with the
+	 * `designsetgo_overlay_header_height_estimate` filter; the measured value
+	 * still wins as soon as JS runs, so the final layout is unaffected either
+	 * way.
+	 *
+	 * Emitted on `:root`, NOT on `body`. Custom properties inherit from the
+	 * nearest ancestor that declares them, and sticky-header.js sets the
+	 * measured value on `document.documentElement` — a `body` declaration would
+	 * sit closer to the hero and permanently shadow it, pinning every site to
+	 * the estimate.
+	 *
+	 * @return string CSS string, or empty string if not applicable.
+	 */
+	public function get_overlay_header_height_css(): string {
+		if ( ! $this->is_overlay_request() ) {
+			return '';
+		}
+
+		/**
+		 * Filters the served estimate for the overlay header height.
+		 *
+		 * @param string $estimate A CSS length, e.g. '100px'.
+		 * @param int    $post_id  Post being rendered.
+		 */
+		$estimate = apply_filters(
+			'designsetgo_overlay_header_height_estimate',
+			self::DEFAULT_HEADER_HEIGHT_ESTIMATE,
+			(int) get_the_ID()
+		);
+
+		// The value is interpolated into a stylesheet, so accept only a bare CSS
+		// length. Anything else (a filter returning a calc(), a var(), or markup)
+		// falls back to the default rather than reaching the page.
+		if ( ! is_string( $estimate ) || ! preg_match( '/^\d+(\.\d+)?(px|rem|em|vh|vw)$/', $estimate ) ) {
+			$estimate = self::DEFAULT_HEADER_HEIGHT_ESTIMATE;
+		}
+
+		return sprintf(
+			':root { --dsgo-overlay-header-height: %s; }',
+			$estimate
+		);
+	}
+
+	/**
 	 * Generate CSS for overlay header text color.
 	 *
 	 * @return string CSS string, or empty string if not applicable.
 	 */
 	public function get_overlay_text_color_css(): string {
-		if ( ! is_singular() ) {
+		if ( ! $this->is_overlay_request() ) {
 			return '';
 		}
 
 		$post_id = get_the_ID();
-		if ( ! $post_id ) {
-			return '';
-		}
-
-		if ( ! get_post_meta( $post_id, self::META_KEY, true ) ) {
-			return '';
-		}
 
 		$text_color_slug = get_post_meta( $post_id, self::TEXT_COLOR_META_KEY, true );
 		if ( empty( $text_color_slug ) ) {
@@ -165,10 +245,63 @@ class Overlay_Header {
 	}
 
 	/**
+	 * Apply the visitor's cached header height before first paint.
+	 *
+	 * `get_overlay_header_height_css()` can only serve an estimate, because the
+	 * real height depends on the rendered logo, nav, fonts and viewport. This
+	 * closes that gap from the other side: sticky-header.js caches the measured
+	 * height per viewport bucket in localStorage, and this reads it back on the
+	 * next load — so the first page a visitor sees uses the estimate, and every
+	 * page after that (including a reload of the same one) reserves the exact
+	 * height and does not shift at all.
+	 *
+	 * localStorage rather than a cookie or a stored option, specifically so the
+	 * HTML stays byte-identical for every visitor. A cookie would vary the
+	 * response and defeat full-page caching on managed hosts, which is a far
+	 * worse trade than a few pixels of first-paint correction.
+	 *
+	 * Printed via wp_print_inline_script_tag() so the `wp_inline_script_attributes`
+	 * filter can add a CSP nonce on sites that enforce one.
+	 *
+	 * The script only reads a string and sets a custom property — it forces no
+	 * layout, so it is cheap despite being parser-blocking. Everything is
+	 * wrapped in try/catch: storage ACCESS THROWS (rather than returning null)
+	 * in Safari private mode and under a blocked-cookie policy, and an
+	 * uncaught error in <head> would take the rest of the page's inline
+	 * scripts with it.
+	 */
+	public function print_cached_height_script(): void {
+		if ( ! $this->is_overlay_request() ) {
+			return;
+		}
+
+		// Bucket scheme and key are a shared contract with
+		// OVERLAY_HEIGHT_CACHE_KEY / overlayHeightBucket() in
+		// src/utils/sticky-header.js. Keep the thresholds in sync.
+		// Both terms are applied, not just the height: the clearance rule composes
+		// `base + height`, and leaving `base` at 0 until the main script runs left
+		// the authored hero padding unreserved and the content still shifting by
+		// it. `h`/`b` match the shape cacheOverlayClearance() writes.
+		$script = <<<'JS'
+try{var m=JSON.parse(localStorage.getItem("dsgoOverlayHeaderHeight")||"{}"),w=innerWidth,v=m[w<600?"s":w<1024?"m":"l"],d=document.documentElement;if(v&&v.h){d.style.setProperty("--dsgo-overlay-header-height",v.h);if(v.b)d.style.setProperty("--dsgo-overlay-hero-base-pad",v.b);}}catch(e){}
+JS;
+
+		wp_print_inline_script_tag( $script, array( 'id' => 'designsetgo-overlay-header-height' ) );
+	}
+
+	/**
 	 * Enqueue inline styles for overlay header text color.
 	 */
 	public function enqueue_overlay_styles(): void {
-		$css = $this->get_overlay_text_color_css();
+		// The height reservation is independent of the text colour — a page can
+		// set one and not the other — so both are collected and the bail only
+		// happens when there is genuinely nothing to emit. Gating the height on
+		// the colour would have silently disabled the first-paint clearance on
+		// every overlay page that left the colour at its default.
+		$css = trim(
+			$this->get_overlay_header_height_css() . "\n" . $this->get_overlay_text_color_css()
+		);
+
 		if ( empty( $css ) ) {
 			return;
 		}
