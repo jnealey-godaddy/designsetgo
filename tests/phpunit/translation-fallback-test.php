@@ -35,6 +35,11 @@ class Translation_Fallback_Test extends WP_UnitTestCase {
 	 * @var Closure
 	 */
 	private $path_filter;
+	/** Script pack path fixture.
+	 *
+	 * @var Closure
+	 */
+	private $script_file_filter;
 	/** Original locale switcher.
 	 *
 	 * @var WP_Locale_Switcher
@@ -63,6 +68,16 @@ class Translation_Fallback_Test extends WP_UnitTestCase {
 			return 'designsetgo' === $domain && 'fr_FR' === $locale ? $this->directory . '/' : $path;
 		};
 		add_filter( 'lang_dir_for_domain', $this->path_filter, 10, 3 );
+		// Before WordPress 6.9, load_script_textdomain() skipped the registry
+		// (and so lang_dir_for_domain) and read only WP_LANG_DIR/plugins. Map
+		// that standard pack location onto the fixture directory as well.
+		$this->script_file_filter = function ( $file, $handle, $domain ) {
+			if ( 'designsetgo' !== $domain || ! is_string( $file ) || dirname( $file ) !== WP_LANG_DIR . '/plugins' ) {
+				return $file;
+			}
+			return $this->directory . '/' . basename( $file );
+		};
+		add_filter( 'load_script_translation_file', $this->script_file_filter, 10, 3 );
 		unload_textdomain( 'designsetgo', true );
 		WP_Translation_Controller::get_instance()->unload_textdomain( 'designsetgo' );
 	}
@@ -78,6 +93,7 @@ class Translation_Fallback_Test extends WP_UnitTestCase {
 		$GLOBALS['wp_locale_switcher'] = $this->switcher;
 		$this->switcher->init();
 		remove_filter( 'lang_dir_for_domain', $this->path_filter );
+		remove_filter( 'load_script_translation_file', $this->script_file_filter );
 		unload_textdomain( 'designsetgo', true );
 		unload_textdomain( 'dsgo-unrelated-test', true );
 		WP_Translation_Controller::get_instance()->unload_textdomain( 'designsetgo' );
