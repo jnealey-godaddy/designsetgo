@@ -282,6 +282,9 @@
     },
     "fontSize": {
       "probe": "large"
+    },
+    "imageFallbackAlt": {
+      "probe": "Probe alt"
     }
   },
   "byBlock": {
