@@ -95,31 +95,85 @@ describe('overlay header measurement', () => {
 		expect(readHeightVar()).not.toBe(`${FOOTER_HEIGHT}px`);
 	});
 
-	it('adds the header clearance to the hero without discarding authored padding', () => {
+	it('publishes the authored padding for the stylesheet to compose', () => {
 		const { hero } = buildSite({
 			heroInlinePadding: 'var(--wp--preset--spacing--60)',
 		});
 
 		loadStickyHeader();
 
-		// The authored value survives as a CSS string, so a fluid preset stays
-		// fluid, and the clearance term stays live via the custom property.
-		expect(hero.style.paddingTop).toBe(
-			'calc(var(--wp--preset--spacing--60) + var(--dsgo-overlay-hero-clearance, var(--dsgo-overlay-header-height, 0px)))'
-		);
+		// The clearance itself now lives in _sticky-header.scss so that it can
+		// apply at FIRST PAINT — a JS-written inline padding could not, which is
+		// what made the hero snap down a full header height. This script's job is
+		// only to hand over the authored term, which the rule adds to the
+		// clearance. It stays a CSS string so a fluid preset stays fluid.
+		expect(
+			hero.style.getPropertyValue('--dsgo-overlay-hero-base-pad')
+		).toBe('var(--wp--preset--spacing--60)');
 	});
 
 	it('does not compound the clearance when init runs more than once', () => {
 		const { hero } = buildSite({ heroInlinePadding: '40px' });
 
 		loadStickyHeader();
-		const afterFirst = hero.style.paddingTop;
+		const afterFirst = hero.style.getPropertyValue(
+			'--dsgo-overlay-hero-base-pad'
+		);
 
 		// A soft navigation re-runs initAll via this event.
 		document.dispatchEvent(new Event('dsgo-content-loaded'));
 
-		expect(hero.style.paddingTop).toBe(afterFirst);
+		expect(
+			hero.style.getPropertyValue('--dsgo-overlay-hero-base-pad')
+		).toBe(afterFirst);
 		expect(hero.dataset.dsgoOverlayBasePaddingTop).toBe('40px');
+	});
+
+	it('caches both clearance terms so a warm load reserves the exact space', () => {
+		// Caching the height alone still left the authored padding unreserved at
+		// first paint, so the content kept shifting by it. Both terms together are
+		// what let the head script land on the final geometry before first paint.
+		const { hero } = buildSite({ heroInlinePadding: '40px' });
+
+		loadStickyHeader();
+
+		const cached = JSON.parse(
+			window.localStorage.getItem('dsgoOverlayHeaderHeight')
+		);
+		const bucket = Object.keys(cached)[0];
+
+		expect(cached[bucket].h).toBe(`${HEADER_HEIGHT}px`);
+		expect(cached[bucket].b).toBe('40px');
+		expect(hero.dataset.dsgoOverlayBasePaddingTop).toBe('40px');
+	});
+
+	it('survives localStorage throwing, as it does in Safari private mode', () => {
+		// Storage ACCESS throws there rather than returning null, and this runs
+		// inside the header setup — an uncaught error would abandon the rest of it.
+		const { hero } = buildSite({ heroInlinePadding: '40px' });
+
+		// jsdom's localStorage is an own-property Storage instance, so spyOn
+		// against its prototype finds nothing — replace the accessor instead.
+		const real = window.localStorage;
+		Object.defineProperty(window, 'localStorage', {
+			configurable: true,
+			get() {
+				throw new Error('SecurityError: storage is disabled');
+			},
+		});
+
+		try {
+			expect(() => loadStickyHeader()).not.toThrow();
+			expect(
+				hero.style.getPropertyValue('--dsgo-overlay-hero-base-pad')
+			).toBe('40px');
+		} finally {
+			Object.defineProperty(window, 'localStorage', {
+				configurable: true,
+				value: real,
+				writable: true,
+			});
+		}
 	});
 
 	it('leaves the height variable alone when the page has no overlay header', () => {

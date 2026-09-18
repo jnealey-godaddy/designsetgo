@@ -18,6 +18,20 @@ import './sticky-header.scss';
 (function () {
 	'use strict';
 
+	/**
+	 * localStorage key holding the measured overlay header height per viewport
+	 * bucket, e.g. `{"l":"117px","m":"135px"}`.
+	 *
+	 * Shared contract: the inline head script printed by
+	 * `DesignSetGo\Features\Overlay_Header::print_cached_height_script()` reads
+	 * this same key and bucket scheme before first paint. Change one and you
+	 * must change the other, or the cache silently stops being read and every
+	 * load falls back to the served estimate.
+	 *
+	 * @type {string}
+	 */
+	const OVERLAY_HEIGHT_CACHE_KEY = 'dsgoOverlayHeaderHeight';
+
 	// Get settings from localized script data
 	const settings = window.dsgStickyHeaderSettings || {
 		enable: true,
@@ -122,6 +136,83 @@ import './sticky-header.scss';
 	}
 
 	/**
+	 * Viewport bucket for the cached header height.
+	 *
+	 * The header is not one height: on a live overlay site it measured 116.54px
+	 * at 1440 wide, 135.48px at 820 and 132.17px at 500, because the nav wraps
+	 * at different points. That is non-monotonic, so a single cached number
+	 * cannot be interpolated — it has to be stored per band. Three coarse bands
+	 * are enough to make the cached value right for the width the visitor is
+	 * actually at, and coarse keys mean an incidental window resize does not
+	 * churn the cache.
+	 *
+	 * @return {string} Bucket key.
+	 */
+	function overlayHeightBucket() {
+		const w = window.innerWidth;
+		if (w < 600) {
+			return 's';
+		}
+		return w < 1024 ? 'm' : 'l';
+	}
+
+	/**
+	 * Remember what the clearance resolved to, for subsequent page loads.
+	 *
+	 * The served estimate in Overlay_Header only has to be close; this is what
+	 * makes the SECOND load exact. It is deliberately localStorage and not a
+	 * cookie or a server-side option: those would vary the HTML per visitor and
+	 * defeat full-page caching on managed hosts, whereas this leaves the markup
+	 * byte-identical and applies the value client-side.
+	 *
+	 * BOTH terms of the clearance are cached, not just the header height. The
+	 * stylesheet composes `base + height`, and `base` is only ever set by this
+	 * script — so caching the height alone still left the authored padding
+	 * unreserved at first paint and the content still shifted by it (57.4px on
+	 * Twenty Twenty-Five). Storing the pair is what actually makes a warm load
+	 * settle without moving.
+	 *
+	 * `base` is cached per viewport bucket like the height, which means a page
+	 * whose hero is padded differently from the last one starts from the wrong
+	 * base for one frame. That is still strictly better than starting from zero,
+	 * and the measured values overwrite it a moment later either way.
+	 *
+	 * Wrapped because storage throws, not returns, in Safari private mode and
+	 * under a restrictive cookie policy — an uncaught error here would abort
+	 * the rest of the header setup.
+	 *
+	 * @param {string} height Measured header height, as a CSS length.
+	 * @param {string} base   Authored hero padding, as a CSS length.
+	 */
+	function cacheOverlayClearance(height, base) {
+		if (!height) {
+			return;
+		}
+
+		try {
+			const raw = window.localStorage.getItem(OVERLAY_HEIGHT_CACHE_KEY);
+			const map = raw ? JSON.parse(raw) : {};
+			const bucket = overlayHeightBucket();
+			const next = { h: height, b: base || '0px' };
+			const prev = map[bucket];
+
+			if (prev && prev.h === next.h && prev.b === next.b) {
+				return;
+			}
+
+			map[bucket] = next;
+			window.localStorage.setItem(
+				OVERLAY_HEIGHT_CACHE_KEY,
+				JSON.stringify(map)
+			);
+		} catch (e) {
+			// Storage unavailable or quota exceeded — the served estimate still
+			// applies and the measured values are still set on the elements, so
+			// the only thing lost is the head start on the next load.
+		}
+	}
+
+	/**
 	 * Pad the first content section so it clears the overlay header.
 	 *
 	 * The overlay pull-up in `_sticky-header.scss` slides the content block up
@@ -167,16 +258,41 @@ import './sticky-header.scss';
 			return;
 		}
 
-		// Cache the authored padding before overwriting it — otherwise a second
-		// run would nest our calc() inside itself and compound the clearance.
+		// Cache the authored padding before the clearance rule takes over —
+		// otherwise a second run would read our own composed value back and
+		// compound the clearance.
+		//
+		// `getComputedStyle` is deliberately NOT used as the fallback any more.
+		// The clearance now ships as a CSS rule (see "Overlay Hero Clearance" in
+		// _sticky-header.scss) which is already winning on `!important` by the
+		// time this runs, so the computed padding is the composed value, not the
+		// author's. Reading it would fold the clearance into the base term and
+		// double it on every re-run — and this function re-runs on resize, on
+		// load, and after every soft reload. Only the inline string is safe,
+		// because that is what the block itself serialized.
 		if (typeof hero.dataset.dsgoOverlayBasePaddingTop !== 'string') {
 			hero.dataset.dsgoOverlayBasePaddingTop =
-				hero.style.paddingTop ||
-				window.getComputedStyle(hero).paddingTop ||
-				'0px';
+				hero.style.paddingTop || '0px';
 		}
 
-		hero.style.paddingTop = `calc(${hero.dataset.dsgoOverlayBasePaddingTop} + var(--dsgo-overlay-hero-clearance, var(--dsgo-overlay-header-height, 0px)))`;
+		// Hand the authored value to the stylesheet instead of writing the whole
+		// padding inline. An inline padding would be overridden by the rule's
+		// `!important` anyway, and keeping one owner for the property is what
+		// stops the two halves drifting apart the way the pull-up and the
+		// clearance did.
+		hero.style.setProperty(
+			'--dsgo-overlay-hero-base-pad',
+			hero.dataset.dsgoOverlayBasePaddingTop
+		);
+
+		// Cached here rather than alongside the measurement because this is the
+		// one place BOTH terms of the clearance are known.
+		cacheOverlayClearance(
+			document.documentElement.style.getPropertyValue(
+				'--dsgo-overlay-header-height'
+			),
+			hero.dataset.dsgoOverlayBasePaddingTop
+		);
 	}
 
 	/**

@@ -450,4 +450,420 @@ class Test_Overlay_Header extends WP_UnitTestCase {
 		$this->assertNotEmpty( $inline, 'Inline CSS should be attached to fallback handle' );
 		$this->assertStringContainsString( '--dsgo-overlay-header-text-color', implode( '', (array) $inline ) );
 	}
+
+	/**
+	 * A served height estimate is emitted on overlay pages.
+	 *
+	 * Without it the hero clearance resolves to 0px until sticky-header.js runs
+	 * and the hero content snaps down a full header height at first paint.
+	 */
+	public function test_height_estimate_emitted_on_overlay_page() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$css = $this->overlay_header->get_overlay_header_height_css();
+
+		$this->assertStringContainsString( '--dsgo-overlay-header-height', $css );
+	}
+
+	/**
+	 * The estimate must sit on :root, never on body.
+	 *
+	 * Custom properties inherit from the nearest ancestor that declares them,
+	 * and sticky-header.js sets the MEASURED value on document.documentElement.
+	 * A body declaration would sit closer to the hero and permanently shadow
+	 * it, pinning every site to the estimate and silently undoing the
+	 * measurement this whole mechanism exists to defer to.
+	 */
+	public function test_height_estimate_targets_root_not_body() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$css = $this->overlay_header->get_overlay_header_height_css();
+
+		$this->assertStringContainsString( ':root', $css );
+		$this->assertStringNotContainsString( 'body', $css );
+	}
+
+	/**
+	 * Nothing is emitted when the page has no overlay header.
+	 */
+	public function test_height_estimate_absent_without_overlay() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$this->assertSame( '', $this->overlay_header->get_overlay_header_height_css() );
+	}
+
+	/**
+	 * The estimate is filterable, since only the site knows its own header.
+	 */
+	public function test_height_estimate_is_filterable() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$filter = static function () {
+			return '180px';
+		};
+		add_filter( 'designsetgo_overlay_header_height_estimate', $filter );
+		$css = $this->overlay_header->get_overlay_header_height_css();
+		remove_filter( 'designsetgo_overlay_header_height_estimate', $filter );
+
+		$this->assertStringContainsString( '180px', $css );
+	}
+
+	/**
+	 * A filter returning something that is not a bare CSS length is rejected.
+	 *
+	 * The value is interpolated straight into a stylesheet, so a filter
+	 * returning markup, a url() or an unbalanced calc() must not reach the
+	 * page. Falling back to the default keeps the clearance working rather
+	 * than emitting broken CSS.
+	 */
+	public function test_height_estimate_rejects_non_length_values() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		foreach ( array( '100px;}body{display:none', 'url(x)', 'calc(1px', '<script>', 100 ) as $bad ) {
+			$filter = static function () use ( $bad ) {
+				return $bad;
+			};
+			add_filter( 'designsetgo_overlay_header_height_estimate', $filter );
+			$css = $this->overlay_header->get_overlay_header_height_css();
+			remove_filter( 'designsetgo_overlay_header_height_estimate', $filter );
+
+			$this->assertStringContainsString( '100px', $css, 'Should fall back to the default' );
+			$this->assertStringNotContainsString( '}', substr( $css, 0, strrpos( $css, '}' ) ) );
+			$this->assertStringNotContainsString( '<', $css );
+		}
+	}
+
+	/**
+	 * Put the request on a template whose top-level shape we control.
+	 *
+	 * The guard in get_overlay_hero_base_pad_css() reads
+	 * `$_wp_current_template_content`, which locate_block_template() normally
+	 * sets on `template_include`. go_to() does not run the block-template
+	 * resolver, so the tests set it directly — the production value is the same
+	 * raw template markup this assigns.
+	 *
+	 * @param string $content Template markup.
+	 */
+	private function set_template_content( string $content ): void {
+		$GLOBALS['_wp_current_template_content'] = $content;
+	}
+
+	/**
+	 * A template shaped `template-part, post-content, template-part`.
+	 *
+	 * Under this shape `header.nextElementSibling.firstElementChild` — where the
+	 * clearance lands — really is the first block of post content. Twenty
+	 * Twenty-Five's customized `page` template is this shape.
+	 */
+	private function set_post_content_first_template(): void {
+		$this->set_template_content(
+			'<!-- wp:template-part {"slug":"header","tagName":"header"} /-->'
+			. '<!-- wp:post-content {"tagName":"main"} /-->'
+			. '<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->'
+		);
+	}
+
+	/**
+	 * A template that wraps post content in a group, as stock templates do.
+	 *
+	 * Here the clearance lands on the theme's own wrapper group, whose padding
+	 * has nothing to do with the post. Twenty Twenty-Five's stock `single` and
+	 * `index` are this shape.
+	 */
+	private function set_wrapped_template(): void {
+		$this->set_template_content(
+			'<!-- wp:template-part {"slug":"header","tagName":"header"} /-->'
+			. '<!-- wp:group {"tagName":"main","style":{"spacing":{"padding":{"top":"var:preset|spacing|60"}}}} --><main class="wp-block-group">'
+			. '<!-- wp:post-title /--><!-- wp:post-content /-->'
+			. '</main><!-- /wp:group -->'
+			. '<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->'
+		);
+	}
+
+	/**
+	 * Create an overlay page whose first block carries a top padding.
+	 *
+	 * @param string $top Padding value as the block would serialize it.
+	 * @return int Post ID.
+	 */
+	private function create_overlay_page_with_hero_padding( string $top ): int {
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'    => 'page',
+				'post_content' => '<!-- wp:group ' . wp_json_encode(
+					array( 'style' => array( 'spacing' => array( 'padding' => array( 'top' => $top ) ) ) )
+				) . ' --><div class="wp-block-group"></div><!-- /wp:group -->',
+			)
+		);
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		return $post_id;
+	}
+
+	/**
+	 * The authored hero padding is served before first paint, like the height.
+	 *
+	 * The clearance rule composes `base + height` and wins on `!important`, so
+	 * an unset base does not fall back to the author's padding — it REPLACES it
+	 * with 0px until something sets the property. Measured on a product site,
+	 * that dropped padding was 71.0px of a 108.2px cold-load jump.
+	 */
+	public function test_hero_base_pad_served_from_first_block() {
+		$this->set_post_content_first_template();
+		$this->create_overlay_page_with_hero_padding( '32px' );
+
+		$css = $this->overlay_header->get_overlay_hero_base_pad_css();
+
+		$this->assertStringContainsString( '--dsgo-overlay-hero-base-pad', $css );
+		$this->assertStringContainsString( '32px', $css );
+	}
+
+	/**
+	 * Nothing is served when the template wraps post content in a group.
+	 *
+	 * This is the case that makes guessing worse than abstaining. The clearance
+	 * lands on the theme's wrapper, so the post's own first block is two levels
+	 * too deep; serving it moved a measured page from a +55px cold jump to a
+	 * -65px one.
+	 */
+	public function test_hero_base_pad_not_served_when_template_wraps_post_content() {
+		$this->set_wrapped_template();
+		$this->create_overlay_page_with_hero_padding( '120px' );
+
+		$this->assertSame( '', $this->overlay_header->get_overlay_hero_base_pad_css() );
+	}
+
+	/**
+	 * With no resolved template there is nothing to reason about, so abstain.
+	 */
+	public function test_hero_base_pad_not_served_without_a_resolved_template() {
+		$this->set_template_content( '' );
+		$this->create_overlay_page_with_hero_padding( '32px' );
+
+		$this->assertSame( '', $this->overlay_header->get_overlay_hero_base_pad_css() );
+	}
+
+	/**
+	 * Spacing presets resolve the way the block itself serializes them.
+	 *
+	 * A block storing `var:preset|spacing|50` renders inline as
+	 * `var(--wp--preset--spacing--50)`, and sticky-header.js copies that inline
+	 * string verbatim into the base term. Emitting the raw `var:preset|...`
+	 * form would be invalid CSS and resolve to nothing.
+	 */
+	public function test_hero_base_pad_resolves_spacing_presets() {
+		$this->set_post_content_first_template();
+		$this->create_overlay_page_with_hero_padding( 'var:preset|spacing|50' );
+
+		$css = $this->overlay_header->get_overlay_hero_base_pad_css();
+
+		$this->assertStringContainsString( 'var(--wp--preset--spacing--50)', $css );
+		$this->assertStringNotContainsString( 'var:preset', $css );
+	}
+
+	/**
+	 * The base pad sits on :root, for the same reason the height does.
+	 *
+	 * Sticky-header.js sets the measured value on the hero ELEMENT, so a
+	 * declaration closer to the hero than :root would shadow the measurement
+	 * this value exists only to precede.
+	 */
+	public function test_hero_base_pad_targets_root_not_body() {
+		$this->set_post_content_first_template();
+		$this->create_overlay_page_with_hero_padding( '32px' );
+
+		$css = $this->overlay_header->get_overlay_hero_base_pad_css();
+
+		$this->assertStringContainsString( ':root', $css );
+		$this->assertStringNotContainsString( 'body', $css );
+	}
+
+	/**
+	 * Only the FIRST top-level block is read.
+	 */
+	public function test_hero_base_pad_reads_first_block_only() {
+		$this->set_post_content_first_template();
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'    => 'page',
+				'post_content' => '<!-- wp:group --><div class="wp-block-group"></div><!-- /wp:group -->'
+					. '<!-- wp:group {"style":{"spacing":{"padding":{"top":"120px"}}}} --><div class="wp-block-group"></div><!-- /wp:group -->',
+			)
+		);
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$this->assertSame( '', $this->overlay_header->get_overlay_hero_base_pad_css() );
+	}
+
+	/**
+	 * Nothing is emitted when the hero has no authored top padding.
+	 */
+	public function test_hero_base_pad_absent_when_first_block_has_no_padding() {
+		$this->set_post_content_first_template();
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'    => 'page',
+				'post_content' => '<!-- wp:group --><div class="wp-block-group"></div><!-- /wp:group -->',
+			)
+		);
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$this->assertSame( '', $this->overlay_header->get_overlay_hero_base_pad_css() );
+	}
+
+	/**
+	 * Nothing is emitted on a page without an overlay header.
+	 */
+	public function test_hero_base_pad_absent_without_overlay() {
+		$this->set_post_content_first_template();
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'    => 'page',
+				'post_content' => '<!-- wp:group {"style":{"spacing":{"padding":{"top":"32px"}}}} --><div class="wp-block-group"></div><!-- /wp:group -->',
+			)
+		);
+		$this->go_to( get_permalink( $post_id ) );
+
+		$this->assertSame( '', $this->overlay_header->get_overlay_hero_base_pad_css() );
+	}
+
+	/**
+	 * Block attributes are author input, and this value lands in a stylesheet.
+	 */
+	public function test_hero_base_pad_rejects_unsafe_values() {
+		$bad_values = array(
+			'32px;}body{display:none',
+			'url(https://example.com/x)',
+			'expression(alert(1))',
+			'calc(1px',
+			'</style><script>alert(1)</script>',
+		);
+
+		foreach ( $bad_values as $bad ) {
+			$this->set_post_content_first_template();
+			$this->create_overlay_page_with_hero_padding( $bad );
+
+			$this->assertSame(
+				'',
+				$this->overlay_header->get_overlay_hero_base_pad_css(),
+				sprintf( 'Unsafe value %s should be rejected outright', $bad )
+			);
+		}
+	}
+
+	/**
+	 * The base pad reaches the page through the same enqueue as the height.
+	 */
+	public function test_hero_base_pad_included_in_enqueued_styles() {
+		$this->set_post_content_first_template();
+		$this->create_overlay_page_with_hero_padding( '32px' );
+
+		wp_register_style( 'designsetgo-sticky-header', false, array(), '1.0' );
+		wp_enqueue_style( 'designsetgo-sticky-header' );
+
+		$this->overlay_header->enqueue_overlay_styles();
+
+		$inline = wp_styles()->get_data( 'designsetgo-sticky-header', 'after' );
+
+		$this->assertStringContainsString( '--dsgo-overlay-hero-base-pad', implode( '', (array) $inline ) );
+	}
+
+	/**
+	 * A served base pad suppresses the cached one, which would outrank it.
+	 *
+	 * The cache is keyed by viewport bucket, not by page, so `b` is the LAST
+	 * overlay page's hero padding. The head script writes it inline on <html>,
+	 * which beats the served :root rule — so without this gate a correct
+	 * per-page value would lose to a stale cross-page one.
+	 */
+	public function test_cached_base_pad_is_suppressed_when_one_is_served() {
+		$this->set_post_content_first_template();
+		$this->create_overlay_page_with_hero_padding( '32px' );
+
+		ob_start();
+		$this->overlay_header->print_cached_height_script();
+		$out = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 's=1', $out );
+		$this->assertStringContainsString( 'v.b&&!s', $out );
+	}
+
+	/**
+	 * With nothing served, the cached base pad still applies.
+	 *
+	 * On a template this cannot reason about, a bucket-keyed cached value is
+	 * still a better start than zero — it is only wrong when the visitor's last
+	 * overlay page had a differently padded hero, and it is overwritten by the
+	 * measurement either way.
+	 */
+	public function test_cached_base_pad_still_applies_when_nothing_is_served() {
+		$this->set_wrapped_template();
+		$this->create_overlay_page_with_hero_padding( '120px' );
+
+		ob_start();
+		$this->overlay_header->print_cached_height_script();
+		$out = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 's=0', $out );
+	}
+
+	/**
+	 * The cached-height reader is printed on overlay pages and not elsewhere.
+	 */
+	public function test_cached_height_script_printed_only_on_overlay_pages() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		$this->go_to( get_permalink( $post_id ) );
+
+		ob_start();
+		$this->overlay_header->print_cached_height_script();
+		$this->assertSame( '', trim( (string) ob_get_clean() ) );
+
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		ob_start();
+		$this->overlay_header->print_cached_height_script();
+		$out = (string) ob_get_clean();
+
+		$this->assertStringContainsString( 'dsgoOverlayHeaderHeight', $out );
+		$this->assertStringContainsString( '--dsgo-overlay-header-height', $out );
+	}
+
+	/**
+	 * The reader must agree with sticky-header.js on key AND bucket thresholds.
+	 *
+	 * They are two halves of one contract living in different languages: the JS
+	 * writes the cache, the PHP reads it before first paint. If either drifts,
+	 * the read silently misses and every load quietly falls back to the served
+	 * estimate — no error, just the shift coming back.
+	 */
+	public function test_cached_height_script_matches_js_contract() {
+		$post_id = $this->factory->post->create( array( 'post_type' => 'page' ) );
+		update_post_meta( $post_id, Overlay_Header::META_KEY, true );
+		$this->go_to( get_permalink( $post_id ) );
+
+		ob_start();
+		$this->overlay_header->print_cached_height_script();
+		$out = (string) ob_get_clean();
+
+		$js = file_get_contents( dirname( __DIR__, 2 ) . '/src/utils/sticky-header.js' );
+
+		$this->assertStringContainsString( "'dsgoOverlayHeaderHeight'", $js, 'JS cache key drifted from PHP' );
+		$this->assertStringContainsString( 'w < 600', $js, 'JS small-bucket threshold drifted from PHP' );
+		$this->assertStringContainsString( 'w < 1024', $js, 'JS medium-bucket threshold drifted from PHP' );
+		$this->assertStringContainsString( 'w<600', $out );
+		$this->assertStringContainsString( 'w<1024', $out );
+	}
 }
