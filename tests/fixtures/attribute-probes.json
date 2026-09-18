@@ -12,7 +12,11 @@
     "  byBlock  '<block name>' -> '<attribute>' -> entry. Always wins.",
     "  byName   '<attribute>' -> entry. Applies to every block declaring that name.",
     "",
-    "An entry is either { \"probe\": <value|[values]> } or { \"skip\": \"<reason>\" }.",
+    "An entry is { \"probe\": <one value> }, { \"probes\": [ <alternatives> ] }, or",
+    "{ \"skip\": \"<reason>\" }. `probe` is ONE value whatever its type, so an array",
+    "attribute uses `probe` with an array; `probes` is a list of ALTERNATIVE values,",
+    "each producing its own payload. Do not use `probes` for an array-valued",
+    "attribute - that sets the attribute to each element in turn.",
     "A skip must say WHY; 'no save() effect' with no explanation is not a reason.",
     "",
     "byName is for genuinely universal conventions only. An attribute whose valid",
@@ -132,7 +136,7 @@
       "probe": "%"
     },
     "align": {
-      "probe": [
+      "probes": [
         "wide",
         "full"
       ]
@@ -191,21 +195,21 @@
       }
     },
     "dsgoAnimationTrigger": {
-      "probe": [
+      "probes": [
         "load",
         "hover",
         "click"
       ]
     },
     "dsgoEntranceAnimation": {
-      "probe": [
+      "probes": [
         "fadeInUp",
         "bounceIn",
         "flipInX"
       ]
     },
     "dsgoExitAnimation": {
-      "probe": [
+      "probes": [
         "fadeOut",
         "bounceOut"
       ]
@@ -232,7 +236,7 @@
       "probe": "document"
     },
     "dsgoSchema": {
-      "probe": [
+      "probes": [
         "faq",
         "howto",
         "review"
@@ -302,7 +306,7 @@
         ]
       },
       "palette": {
-        "probe": [
+        "probes": [
           "#ff0000",
           "#00ff00"
         ]
@@ -345,7 +349,7 @@
     },
     "designsetgo/counter": {
       "iconPosition": {
-        "probe": [
+        "probes": [
           "left",
           "right"
         ]
@@ -413,7 +417,7 @@
     },
     "designsetgo/icon-list": {
       "layout": {
-        "probe": [
+        "probes": [
           "horizontal",
           "grid"
         ]
@@ -422,7 +426,7 @@
         "probe": "right"
       },
       "alignment": {
-        "probe": [
+        "probes": [
           "center",
           "right"
         ]
@@ -430,13 +434,13 @@
     },
     "designsetgo/image-accordion-item": {
       "verticalAlignment": {
-        "probe": [
+        "probes": [
           "flex-start",
           "flex-end"
         ]
       },
       "horizontalAlignment": {
-        "probe": [
+        "probes": [
           "flex-start",
           "flex-end"
         ]
@@ -458,13 +462,13 @@
     },
     "designsetgo/modal-trigger": {
       "buttonStyle": {
-        "probe": [
+        "probes": [
           "outline",
           "text"
         ]
       },
       "iconPosition": {
-        "probe": [
+        "probes": [
           "start",
           "end"
         ]
@@ -472,7 +476,7 @@
     },
     "designsetgo/modal": {
       "autoTriggerType": {
-        "probe": [
+        "probes": [
           "pageLoad",
           "exitIntent",
           "scroll",
@@ -480,13 +484,13 @@
         ]
       },
       "autoTriggerFrequency": {
-        "probe": [
+        "probes": [
           "always",
           "session"
         ]
       },
       "exitIntentSensitivity": {
-        "probe": [
+        "probes": [
           "low",
           "high"
         ]
@@ -495,7 +499,7 @@
         "probe": "up"
       },
       "navigationStyle": {
-        "probe": [
+        "probes": [
           "text",
           "chevrons"
         ]
@@ -504,14 +508,14 @@
         "probe": "bottom"
       },
       "animationType": {
-        "probe": [
+        "probes": [
           "slide-up",
           "zoom",
           "slide-down"
         ]
       },
       "closeButtonPosition": {
-        "probe": [
+        "probes": [
           "top-right",
           "outside-top-right"
         ]
@@ -519,7 +523,7 @@
     },
     "designsetgo/progress-bar": {
       "barStyle": {
-        "probe": [
+        "probes": [
           "striped",
           "striped-animated"
         ]
@@ -568,7 +572,7 @@
         "probe": "page"
       },
       "orderBy": {
-        "probe": [
+        "probes": [
           "title",
           "menu_order",
           "rand"
@@ -587,18 +591,18 @@
         "probe": "probe_relationship"
       },
       "author": {
-        "probe": [
+        "probes": [
           1
         ]
       },
       "manualIds": {
-        "probe": [
+        "probes": [
           1,
           2
         ]
       },
       "wooStockStatus": {
-        "probe": [
+        "probes": [
           "instock"
         ]
       },
@@ -665,7 +669,7 @@
     },
     "designsetgo/section": {
       "tagName": {
-        "probe": [
+        "probes": [
           "section",
           "article"
         ]
@@ -706,7 +710,7 @@
         "probe": "minimal"
       },
       "dotPosition": {
-        "probe": [
+        "probes": [
           "top",
           "inside"
         ]
@@ -715,7 +719,7 @@
         "probe": "fade"
       },
       "styleVariation": {
-        "probe": [
+        "probes": [
           "card",
           "classic",
           "minimal",
@@ -741,7 +745,7 @@
     },
     "designsetgo/text-path": {
       "pathType": {
-        "probe": [
+        "probes": [
           "arc",
           "circle",
           "wave"
@@ -751,7 +755,7 @@
         "probe": "M 0 50 Q 150 0 300 50"
       },
       "pathAlignment": {
-        "probe": [
+        "probes": [
           "left",
           "right"
         ]
@@ -760,7 +764,7 @@
         "probe": "reverse"
       },
       "direction": {
-        "probe": [
+        "probes": [
           "rtl",
           "reverse"
         ]
@@ -773,7 +777,7 @@
     },
     "designsetgo/counter-group": {
       "alignContent": {
-        "probe": [
+        "probes": [
           "left",
           "right"
         ]

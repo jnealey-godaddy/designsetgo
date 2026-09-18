@@ -115,40 +115,38 @@ class Attribute_Probe_Generator {
 				return array();
 			}
 
-			if ( array_key_exists( 'probe', $entry ) ) {
-				$values = is_array( $entry['probe'] ) && ! self::is_structured( $entry['probe'] )
-					? array_values( $entry['probe'] )
-					: array( $entry['probe'] );
-
-				// A declared probe equal to the attribute's default would not
-				// flip anything: the payload would prove nothing while
-				// reporting green.
-				return array_values(
-					array_filter(
-						$values,
-						static function ( $value ) use ( $definition ) {
-							return ( $definition['default'] ?? null ) !== $value;
-						}
-					)
-				);
+			// `probes` (plural) is a LIST of alternative values to try; `probe`
+			// (singular) is ONE value, whatever its type.
+			//
+			// This used to be one key whose meaning was guessed from the value's
+			// shape: a JSON list meant several probes, an object meant one. That
+			// guess is unresolvable for an ARRAY-valued attribute, and it guessed
+			// wrong - `"probe": [ { ... } ]` for comparison-table's `columns` was
+			// unwrapped into a single object, so the payload set `columns` to an
+			// object where the block expects an array. Every array attribute was
+			// probed with the wrong shape, and those payloads passed for the
+			// wrong reason.
+			if ( array_key_exists( 'probes', $entry ) && is_array( $entry['probes'] ) ) {
+				$values = array_values( $entry['probes'] );
+			} elseif ( array_key_exists( 'probe', $entry ) ) {
+				$values = array( $entry['probe'] );
+			} else {
+				continue;
 			}
+
+			// A declared probe equal to the attribute's default would not flip
+			// anything: the payload would prove nothing while reporting green.
+			return array_values(
+				array_filter(
+					$values,
+					static function ( $value ) use ( $definition ) {
+						return ( $definition['default'] ?? null ) !== $value;
+					}
+				)
+			);
 		}
 
 		return self::derive( $name, $definition );
-	}
-
-	/**
-	 * Whether a declared probe is one structured value rather than a list.
-	 *
-	 * An object probe (a focal point, a style object) is itself an array once
-	 * decoded, so a bare array_values() would scatter it into several nonsense
-	 * probes. A JSON list is a list of probes; a JSON object is one probe.
-	 *
-	 * @param array<mixed> $probe Declared probe.
-	 * @return bool True when the probe is a single structured value.
-	 */
-	private static function is_structured( array $probe ): bool {
-		return array_keys( $probe ) !== range( 0, count( $probe ) - 1 );
 	}
 
 	/**

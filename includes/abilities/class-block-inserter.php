@@ -5035,6 +5035,18 @@ class Block_Inserter {
 	 * @return array<string, string> Array with 'opening' and 'closing' keys.
 	 */
 	private static function generate_form_builder_html( string $block_class, array $attributes ): array {
+		// save.js returns null when the author never picked a template, so the
+		// form has no fields and WordPress serializes a self-closing comment
+		// with no markup at all. Emitting the wrapper, an empty fields
+		// container and a lonely submit button instead made every field-less
+		// form invalid. Same treatment as a text-less heading segment.
+		if ( isset( $attributes['hasFields'] ) && ! $attributes['hasFields'] ) {
+			return array(
+				'opening' => '',
+				'closing' => '',
+			);
+		}
+
 		// Get attributes with defaults from block.json.
 		$form_id                          = $attributes['formId'] ?? '';
 		$submit_button_text               = $attributes['submitButtonText'] ?? 'Submit';
@@ -5111,6 +5123,16 @@ class Block_Inserter {
 		if ( $field_background_color ) {
 			$style_parts[] = '--dsgo-form-field-bg:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_background_color ) );
 		}
+		// save.js runs this through validateCSSLength() (src/utils/css-generator.js),
+		// which returns undefined - and so omits the property - for anything that
+		// is not a bare number with a CSS length unit. The mirror wrote nothing at
+		// all, so a configured corner radius never reached stored markup.
+		$field_border_radius = isset( $attributes['fieldBorderRadius'] ) && is_string( $attributes['fieldBorderRadius'] )
+			? trim( $attributes['fieldBorderRadius'] )
+			: '';
+		if ( '' !== $field_border_radius && preg_match( '/^\d+(\.\d+)?(px|em|rem|%|vh|vw|vmin|vmax|ch|ex)$/', $field_border_radius ) ) {
+			$style_parts[] = '--dsgo-form-border-radius:' . esc_attr( $field_border_radius );
+		}
 		$style = implode( ';', $style_parts );
 
 		// Build data attributes.
@@ -5132,6 +5154,12 @@ class Block_Inserter {
 		);
 		if ( $enable_turnstile ) {
 			$data_attrs[] = 'data-dsgo-turnstile="true"';
+		}
+		// save.js adds this only when a redirect is configured. Unlike the email
+		// settings above, the redirect target is a public navigation URL the
+		// frontend script reads from the markup, so it belongs here.
+		if ( ! empty( $attributes['redirectUrl'] ) && is_string( $attributes['redirectUrl'] ) ) {
+			$data_attrs[] = 'data-redirect-url="' . esc_url( $attributes['redirectUrl'] ) . '"';
 		}
 		$data_str = implode( ' ', $data_attrs );
 
