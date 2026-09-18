@@ -125,7 +125,10 @@ export default function SectionSave({ attributes }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': getOverlayOpacity(overlayColor),
+				'--dsgo-overlay-opacity': getOverlayOpacity(
+					overlayColor,
+					attributes.overlayOpacity
+				),
 			}),
 			// Default content clearance: expose the divider's RENDERED height on
 			// the wrapper so the stylesheet fallback (see _shape-divider.scss)

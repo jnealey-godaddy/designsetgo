@@ -42,7 +42,10 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	const overlayStyles = overlayColor
 		? {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': getOverlayOpacity(overlayColor),
+				'--dsgo-overlay-opacity': getOverlayOpacity(
+					overlayColor,
+					attributes.overlayOpacity
+				),
 			}
 		: {};
 

@@ -153,6 +153,9 @@
 			"type": "string",
 			"default": ""
 		},
+		"overlayOpacity": {
+			"type": "integer"
+		},
 		"shapeDividerTop": {
 			"type": "string",
 			"default": ""
@@ -238,6 +241,7 @@
 			"hoverIconBackgroundColor": "Icon background color on hover (passed to child blocks via context)",
 			"hoverButtonBackgroundColor": "Button background color on hover (passed to child blocks via context)",
 			"overlayColor": "Semi-transparent overlay color for background images",
+			"overlayOpacity": "Overlay strength as a whole-number percentage (0-100). Unset (the default) lets the overlay colour decide: 65% for an opaque colour or preset, 100% for a colour that carries its own transparency. Overlays saved before 2.8.0 are migrated to 80 so they keep their original strength.",
 			"shapeDividerTop": "Shape divider style for the top edge. Accepted values: \"\" (off), \"inherit\" (theme default), or a shape slug (wave, tilt, curve, etc.)",
 			"shapeDividerTopColor": "Editor-preview-only / legacy. Since the see-through refactor the top shape region is transparent and reveals the section's own background, so this no longer affects rendered output; only the inspector preview swatch reads it, and it is retained for migrated content.",
 			"shapeDividerTopHeight": "Height of the top shape divider in pixels (10-500). Null inherits the theme.json token settings.custom.designsetgo.shapeDivider.height, falling back to 100px.",

@@ -16,6 +16,7 @@ import {
 import metadata from './block.json';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 import { getGridTemplateColumns } from './grid-columns';
+import { withLegacyOverlayOpacity } from '../../utils/overlay-opacity';
 
 // Captures the column min width from a `minmax(<width>, 1fr)` grid track.
 const MIN_WIDTH_RE = /minmax\(\s*(\d+(?:\.\d+)?[a-z%]+)\s*,\s*1fr\s*\)/i;
@@ -968,11 +969,11 @@ export {
 	styleVariationClasses,
 };
 
-export default [
+export default withLegacyOverlayOpacity([
 	fixedOverlayOpacity,
 	fixedColumnMinWidthTracks,
 	legacyResponsiveTabletClass,
 	legacyMinWidth,
 	styleVariationClasses,
 	v1,
-];
+]);

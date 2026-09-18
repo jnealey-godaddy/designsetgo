@@ -397,10 +397,32 @@ class Serializer_Support {
 		$overlay = isset( $attributes['overlayColor'] ) ? (string) $attributes['overlayColor'] : '';
 		if ( '' !== $overlay ) {
 			$declarations[] = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( $overlay );
-			$declarations[] = '--dsgo-overlay-opacity:' . self::overlay_opacity_for_color( $overlay );
+			$declarations[] = '--dsgo-overlay-opacity:' . self::overlay_opacity( $attributes );
 		}
 
 		return $declarations;
+	}
+
+	/**
+	 * Resolve `--dsgo-overlay-opacity` for a container block's attributes.
+	 *
+	 * PHP twin of getOverlayOpacity( overlayColor, overlayOpacity ) in
+	 * src/utils/overlay-opacity.js. An explicit integer `overlayOpacity`
+	 * percentage wins - clamped to 0-100, as overlayOpacityFraction() does -
+	 * and anything else (a float, a numeric string) falls back to the
+	 * colour-aware default, exactly as the JS Number.isInteger() check does.
+	 * Integers only because n/100 prints identically in PHP and JS for them.
+	 *
+	 * @param array $attributes Block attributes.
+	 * @return string CSS opacity value.
+	 */
+	public static function overlay_opacity( array $attributes ): string {
+		$percent = $attributes['overlayOpacity'] ?? null;
+		if ( is_int( $percent ) ) {
+			return self::format_js_number( max( 0.0, min( 100.0, (float) $percent ) ) / 100 );
+		}
+
+		return self::overlay_opacity_for_color( isset( $attributes['overlayColor'] ) ? (string) $attributes['overlayColor'] : '' );
 	}
 
 	/**

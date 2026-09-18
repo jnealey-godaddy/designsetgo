@@ -81,7 +81,7 @@
 			right: 0;
 			bottom: 0;
 			background-color: var(--dsgo-overlay-color);
-			opacity: var(--dsgo-overlay-opacity, 0.65);
+			opacity: var(--dsgo-overlay-opacity, 0.8);
 			pointer-events: none; /* Allow clicks to pass through to content */
 			z-index: 1; /* Above background image but below content */
 			border-radius: inherit; /* Match parent border radius */

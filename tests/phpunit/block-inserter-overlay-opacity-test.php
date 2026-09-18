@@ -13,6 +13,7 @@
  */
 
 use DesignSetGo\Abilities\Block_Inserter;
+use DesignSetGo\Abilities\Serializers\Serializer_Support;
 
 /**
  * Overlay opacity tests for the Abilities block-insertion path.
@@ -129,6 +130,54 @@ class Block_Inserter_Overlay_Opacity_Test extends WP_UnitTestCase {
 			$alpha = $this->root_shape( Block_Inserter::build_block_markup( $block, array( 'overlayColor' => '#1212127D' ) ) );
 			$this->assertSame( '#1212127D', $alpha['styles']['--dsgo-overlay-color'], $block );
 			$this->assertSame( '1', $alpha['styles']['--dsgo-overlay-opacity'], $block );
+		}
+	}
+
+	/**
+	 * Explicit-percentage cases from the shared PHP/JS fixture.
+	 *
+	 * @return array<string, array{0: string, 1: mixed, 2: string}>
+	 */
+	public function percent_cases(): array {
+		$cases = array();
+		foreach ( self::fixture()['percentCases'] as $case ) {
+			$label           = $case['color'] . ' @ ' . wp_json_encode( $case['percent'] );
+			$cases[ $label ] = array( $case['color'], $case['percent'], $case['opacity'] );
+		}
+		return $cases;
+	}
+
+	/**
+	 * An explicit overlayOpacity wins over the colour, exactly as in JS.
+	 *
+	 * @dataProvider percent_cases
+	 * @param string $color    Overlay colour.
+	 * @param mixed  $percent  overlayOpacity value, or null when absent.
+	 * @param string $expected Expected opacity.
+	 */
+	public function test_explicit_percent_matches_shared_expectation( string $color, $percent, string $expected ): void {
+		$attributes = array( 'overlayColor' => $color );
+		if ( null !== $percent ) {
+			$attributes['overlayOpacity'] = $percent;
+		}
+		$this->assertSame( $expected, Serializer_Support::overlay_opacity( $attributes ) );
+	}
+
+	/**
+	 * Every container writes an explicit overlayOpacity instead of the default.
+	 */
+	public function test_every_container_writes_an_explicit_opacity(): void {
+		foreach ( array( 'designsetgo/section', 'designsetgo/row', 'designsetgo/grid', 'designsetgo/scroll-accordion-item' ) as $block ) {
+			$shape = $this->root_shape(
+				Block_Inserter::build_block_markup(
+					$block,
+					array(
+						'overlayColor'   => 'var:preset|color|contrast',
+						'overlayOpacity' => 80,
+					)
+				)
+			);
+			$this->assertSame( '0.8', $shape['styles']['--dsgo-overlay-opacity'], $block );
 		}
 	}
 }
