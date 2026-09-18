@@ -103,14 +103,59 @@ class Abilities_Attribute_Probe_Table_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Every attribute must resolve to a probe, a skip, or a derived value.
+	 * Attribute names this plugin declares, from block.json and the extension
+	 * configs.
+	 *
+	 * WordPress injects attributes of its own onto every block - `style`,
+	 * `className`, `lock`, `metadata`, `align`, the colour and typography
+	 * presets - and WHICH ones it injects changes between WordPress versions.
+	 * CI runs WordPress trunk while the fixtures are generated against the
+	 * version .wp-env.json pins, so demanding a declaration for core's
+	 * attributes would fail the build whenever core changed, for a reason that
+	 * has nothing to do with this plugin.
+	 *
+	 * Core's attributes are still PROBED wherever the heuristics can derive a
+	 * value; they are simply not required to be declared. Everything the plugin
+	 * owns - which is everything a change here can break - still is.
+	 *
+	 * @return array<string, bool> Attribute name => true.
+	 */
+	private function plugin_owned_attribute_names(): array {
+		$names = array();
+
+		foreach ( glob( dirname( __DIR__, 2 ) . '/src/blocks/*/block.json' ) ?: array() as $path ) {
+			$json = json_decode( (string) file_get_contents( $path ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- Reading a source file in a test.
+
+			foreach ( array_keys( (array) ( $json['attributes'] ?? array() ) ) as $name ) {
+				$names[ (string) $name ] = true;
+			}
+		}
+
+		foreach ( glob( dirname( __DIR__, 2 ) . '/includes/extension-configs/*.php' ) ?: array() as $path ) {
+			$config = require $path;
+
+			foreach ( array_keys( (array) ( $config['attributes'] ?? array() ) ) as $name ) {
+				$names[ (string) $name ] = true;
+			}
+		}
+
+		return $names;
+	}
+
+	/**
+	 * Every attribute the plugin declares must resolve to a probe or a skip.
 	 */
 	public function test_every_covered_attribute_is_probeable_or_declared() {
 		$table   = $this->table();
+		$owned   = $this->plugin_owned_attribute_names();
 		$missing = array();
 
 		foreach ( $this->covered_attributes() as $block => $attributes ) {
 			foreach ( $attributes as $attribute => $definition ) {
+				if ( ! isset( $owned[ (string) $attribute ] ) ) {
+					continue;
+				}
+
 				if ( ! is_array( $definition ) ) {
 					$definition = array();
 				}

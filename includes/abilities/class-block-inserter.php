@@ -633,10 +633,28 @@ class Block_Inserter {
 		}
 		$declarations = array_merge( $declarations, $extension_props['styles'] );
 
-		// Pass one: everything getSaveElement() puts on the outermost element.
-		// Skipped entirely when there is nothing to add, so the common case
-		// costs no extra parse.
-		if ( ! empty( $root_classes ) || '' !== $anchor_id || ! empty( $extension_props['data'] ) ) {
+		// Where the useBlockProps.save() props belong. Most blocks carry them on
+		// the root; a few move them to an inner element in save() - Modal
+		// transfers them onto its content div - so putting them on the root
+		// there is markup save() never emits.
+		$target_class = self::SUPPORTS_ON_INNER_ELEMENT[ $block_name ] ?? null;
+
+		// A SECOND pass is used only when the two destinations are different
+		// elements, i.e. only for Modal.
+		//
+		// It would be simpler to always run two passes, and that is what this
+		// did at first - but WP_HTML_Tag_Processor appends new attributes in
+		// the order it is asked for them, so splitting the work moved `id`
+		// after `style` on every block, and the two passes did not even agree
+		// across WordPress versions: 6.9 and trunk ordered them differently.
+		// Validation is unaffected (the block validator compares attributes as
+		// a map) but the fixtures assert bytes, and CI runs trunk while the
+		// fixtures are generated against the pinned 6.9. Keeping the single
+		// pass for every block but Modal keeps the output identical to what it
+		// has always been.
+		if ( null !== $target_class
+			&& ( ! empty( $root_classes ) || '' !== $anchor_id || ! empty( $extension_props['data'] ) )
+		) {
 			$root_processor = new \WP_HTML_Tag_Processor( $html );
 
 			if ( $root_processor->next_tag() ) {
@@ -654,15 +672,19 @@ class Block_Inserter {
 
 				$html = $root_processor->get_updated_html();
 			}
+
+			// Consumed by the root pass; the target pass must not repeat them.
+			$root_classes           = array();
+			$anchor_id              = '';
+			$extension_props['data'] = array();
+		} else {
+			// Same element, so the root-bound props join the support classes and
+			// are written in the original single-pass order.
+			$support_classes = array_merge( $root_classes, $support_classes );
+			$root_classes    = array();
 		}
 
 		$processor = new \WP_HTML_Tag_Processor( $html );
-
-		// Pass two: the useBlockProps.save() props. Most blocks carry these on
-		// the root too. A few move them to an inner element in save() - Modal
-		// transfers them onto its content div - so putting them on the root
-		// there is markup save() never emits.
-		$target_class = self::SUPPORTS_ON_INNER_ELEMENT[ $block_name ] ?? null;
 
 		$found = null === $target_class
 			? $processor->next_tag()
@@ -702,6 +724,14 @@ class Block_Inserter {
 
 		foreach ( $support_classes as $class_name ) {
 			$processor->add_class( $class_name );
+		}
+
+		if ( '' !== $anchor_id && null === $processor->get_attribute( 'id' ) ) {
+			$processor->set_attribute( 'id', $anchor_id );
+		}
+
+		foreach ( $extension_props['data'] as $data_name => $data_value ) {
+			$processor->set_attribute( $data_name, $data_value );
 		}
 
 		if ( ! empty( $declarations ) ) {
