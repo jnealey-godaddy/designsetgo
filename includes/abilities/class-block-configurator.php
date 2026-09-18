@@ -42,6 +42,81 @@ class Block_Configurator {
 	);
 
 	/**
+	 * How each rich-text attribute is sanitized, per block.
+	 *
+	 * The source of truth for WHICH attributes belong here is block.json: an
+	 * attribute with `source: "html"` or `source: "text"` is read back out of
+	 * the markup rather than the block comment, so save() renders it and the
+	 * inserter has to emit it the same way. Abilities_Rich_Text_Policy_Test
+	 * diffs these keys against the live registry in both directions, so a new
+	 * sourced attribute fails until it is classified, and an entry for a
+	 * deleted one fails too.
+	 *
+	 * Three policies:
+	 *
+	 * - 'inline' - the full inline allow-list: links, spans, em/strong/mark/code.
+	 * - 'label'  - the narrow allow-list for text inside an <a> or <button>:
+	 *              strong, em, b, i, br, no attributes. A nested <a> would break
+	 *              parity with save(), which renders the label inside one.
+	 * - 'plain'  - sanitize_text_field(). Correct for `source: "text"`, where
+	 *              RichText stores TEXT and save() escapes it on the way out.
+	 *
+	 * Getting this wrong is invisible to block validation. For a `source: html`
+	 * attribute the value lives in the MARKUP, so stripping the tags here means
+	 * the parser reads the attribute back stripped, save() reproduces exactly
+	 * that, and the block is perfectly valid - with the author's formatting
+	 * silently gone. `Care <em>begins</em>` shipped as `Care begins` that way.
+	 * Only Abilities_Rich_Text_Fidelity_Test can see it.
+	 *
+	 * @var array<string, array<string, string>>
+	 */
+	private const RICH_TEXT_ATTRIBUTES = array(
+		'designsetgo/accordion-item'    => array( 'title' => 'inline' ),
+		'designsetgo/card'              => array(
+			// badgeText is `source: text`, so it is plain by definition.
+			'badgeText' => 'plain',
+			'title'     => 'inline',
+			'subtitle'  => 'inline',
+			'bodyText'  => 'inline',
+		),
+		'designsetgo/countdown-timer'   => array( 'completionMessage' => 'plain' ),
+		'designsetgo/counter'           => array( 'label' => 'plain' ),
+		'designsetgo/form-builder'      => array( 'submitButtonText' => 'plain' ),
+		'designsetgo/heading-segment'   => array( 'content' => 'inline' ),
+		'designsetgo/icon-button'       => array( 'text' => 'label' ),
+		'designsetgo/modal-trigger'     => array( 'text' => 'label' ),
+		'designsetgo/table-of-contents' => array( 'titleText' => 'plain' ),
+		'designsetgo/timeline-item'     => array(
+			'date'  => 'inline',
+			'title' => 'inline',
+		),
+	);
+
+	/**
+	 * The sanitization policy for one attribute, or '' when it has none.
+	 *
+	 * @param string $key        Attribute key.
+	 * @param string $block_name Block the attribute belongs to; empty when unknown.
+	 * @return string One of 'inline', 'label', 'plain', or '' when unlisted.
+	 */
+	public static function rich_text_policy( string $key, string $block_name ): string {
+		if ( '' === $block_name ) {
+			return '';
+		}
+
+		return (string) ( self::RICH_TEXT_ATTRIBUTES[ $block_name ][ $key ] ?? '' );
+	}
+
+	/**
+	 * Every block with a declared rich-text policy.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	public static function rich_text_policies(): array {
+		return self::RICH_TEXT_ATTRIBUTES;
+	}
+
+	/**
 	 * Update block attributes by block name or client ID.
 	 *
 	 * @param int                  $post_id Post ID.
@@ -240,11 +315,24 @@ class Block_Configurator {
 			if ( is_string( $value ) ) {
 				// RichText content is HTML. Preserve safe inline markup and explicit
 				// breaks without decoding escaped text into executable markup.
-				if ( self::is_button_label_attribute( (string) $key, $block_name ) ) {
+				// A declared per-block policy wins over the generic key list,
+				// because the same key is rich on one block and plain on
+				// another.
+				$policy = self::rich_text_policy( (string) $key, $block_name );
+
+				if ( 'label' === $policy || self::is_button_label_attribute( (string) $key, $block_name ) ) {
 					$sanitized[ $key ] = self::sanitize_button_label( $value );
 					continue;
 				}
-				if ( self::is_inline_text_attribute( (string) $key ) ) {
+				if ( 'inline' === $policy ) {
+					$sanitized[ $key ] = self::sanitize_inline_text( $value );
+					continue;
+				}
+				// `content`, `caption` and `citation` stay generic: they are
+				// core's own rich-text keys (paragraph, image, quote) and reach
+				// this code for blocks outside the DesignSetGo namespace, which
+				// the per-block table deliberately does not cover.
+				if ( '' === $policy && self::is_inline_text_attribute( (string) $key ) ) {
 					$sanitized[ $key ] = self::sanitize_inline_text( $value );
 					continue;
 				}

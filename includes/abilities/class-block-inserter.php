@@ -3425,7 +3425,12 @@ class Block_Inserter {
 				if ( 'left' === $icon_position ) {
 					$opening .= $icon_html;
 				}
-				$opening .= '<span class="dsgo-accordion-item__title">' . esc_html( $title ) . '</span>';
+				// title is source: html and save() renders it with RichText.Content,
+				// so escaping here would show the author's markup as literal text.
+				// It was only harmless while Block_Configurator stripped the tags
+				// first; now that accordion-item::title takes the inline policy,
+				// the emitter has to match.
+				$opening .= '<span class="dsgo-accordion-item__title">' . wp_kses_post( $title ) . '</span>';
 				if ( 'right' === $icon_position ) {
 					$opening .= $icon_html;
 				}
