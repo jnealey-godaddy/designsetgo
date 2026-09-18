@@ -46,7 +46,13 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function payloads(): array {
-		return array_merge( $this->default_payloads(), $this->authored_payloads(), $this->generation_layout_payloads() );
+		return array_merge(
+			$this->default_payloads(),
+			$this->core_default_payloads(),
+			$this->authored_payloads(),
+			$this->core_block_payloads(),
+			$this->generation_layout_payloads()
+		);
 	}
 
 	/**
@@ -1125,7 +1131,266 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * A defaults probe for every block the inserter can serialize.
+	 * The core block names the inserter claims it can serialize.
+	 *
+	 * Read from the constant rather than restated here, so the list cannot be
+	 * duplicated and then fall out of step with the one the serializer uses.
+	 *
+	 * @return string[] Core block names.
+	 */
+	private static function serializable_core_blocks(): array {
+		$constant = ( new \ReflectionClass( Block_Inserter::class ) )->getConstant( 'SERIALIZABLE_CORE_BLOCKS' );
+
+		return is_array( $constant ) ? array_map( 'strval', $constant ) : array();
+	}
+
+	/**
+	 * Every core block the inserter can serialize, with no attributes set.
+	 *
+	 * The DesignSetGo half of this fixture gets its completeness from the block
+	 * registry: default_payloads() walks every registered designsetgo/* block,
+	 * so a new block is covered the day it lands. Core had no equivalent. Its
+	 * names live in a hand-maintained constant, and of the six only
+	 * core/heading and core/paragraph ever reached the fixture — and only as
+	 * inner blocks of DesignSetGo payloads. core/image, core/list,
+	 * core/list-item and core/quote were serialized by the inserter and checked
+	 * by nothing that parses them with the real block registrations.
+	 *
+	 * Deriving these from the constant restores the same property for core: a
+	 * seventh name changes the generated set, so the fixture assertion fails
+	 * until it is regenerated and the JS suite has confirmed the new markup
+	 * validates against core's save().
+	 *
+	 * Core is also the half that moves without warning. A DesignSetGo save()
+	 * changes in this repository, where the fixture diff is part of the review;
+	 * core's changes on a WordPress upgrade, with nothing here touched.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function core_default_payloads(): array {
+		$payloads = array();
+
+		foreach ( self::serializable_core_blocks() as $name ) {
+			$payloads[ 'defaults::' . $name ] = array(
+				'name'        => $name,
+				'attributes'  => array(),
+				'innerBlocks' => array(),
+			);
+		}
+
+		ksort( $payloads );
+
+		return $payloads;
+	}
+
+	/**
+	 * Core blocks carrying the attributes the inserter actually writes.
+	 *
+	 * A defaults probe only proves the empty case. These exercise the branches
+	 * generate_core_image_html(), generate_core_wrapper_html() and
+	 * generate_core_block_html() reach: the figure's alignment, size, resize
+	 * and custom-border classes and the styles that skip the root and land on
+	 * the img; a list's tag switching on `ordered`; a list item holding its own
+	 * rich text before a nested list; a quote closing with its citation after
+	 * the inner blocks.
+	 *
+	 * The combinations mirror block-inserter-core-image-test.php and
+	 * block-inserter-core-list-quote-test.php, which assert against markup
+	 * copied by hand from wp.blocks.serialize(). Those pin the output against a
+	 * transcript of one WordPress release; running the same attributes through
+	 * here pins them against the save() of whichever release the suite runs on.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function core_block_payloads(): array {
+		return array(
+			// Every branch that moves a declaration off the figure and onto the
+			// img: aspect ratio, object-fit, the focal point's object-position,
+			// and border radius/width/style plus a preset border colour written
+			// inline as a CSS variable rather than as the class the PHP style
+			// engine would emit.
+			'core-image-cover-focal-preset-border' => array(
+				'name'        => 'core/image',
+				'attributes'  => array(
+					'className'   => 'ritual-frame',
+					'url'         => 'https://example.test/a.jpg',
+					'alt'         => 'Shampoo & care',
+					'id'          => 42,
+					'caption'     => 'Care <em>begins</em>',
+					'aspectRatio' => '4 / 5',
+					'scale'       => 'cover',
+					'focalPoint'  => array(
+						'x' => 0.5,
+						'y' => 0.44,
+					),
+					'style'       => array(
+						'spacing' => array( 'margin' => array( 'top' => '0' ) ),
+						'border'  => array(
+							'radius' => '20px',
+							'width'  => '8px',
+							'style'  => 'solid',
+							'color'  => 'var:preset|color|rose',
+						),
+					),
+				),
+				'innerBlocks' => array(),
+			),
+			// A linked image with an empty alt. The caption follows the link
+			// rather than the img, and `align` here is a real float, not the
+			// has-text-align-* class the same attribute name produces on a
+			// paragraph.
+			'core-image-linked-aligned'            => array(
+				'name'        => 'core/image',
+				'attributes'  => array(
+					'url'        => 'https://example.test/b.jpg',
+					'alt'        => '',
+					'href'       => '/about/',
+					'linkTarget' => '_blank',
+					'rel'        => 'noreferrer noopener',
+					'anchor'     => 'pic',
+					'align'      => 'right',
+				),
+				'innerBlocks' => array(),
+			),
+			// width/height add `is-resized` to the figure and dimensions to the
+			// img; a bare width leaves height `auto`, which save() writes
+			// explicitly rather than omitting.
+			'core-image-resized-with-size-slug'    => array(
+				'name'        => 'core/image',
+				'attributes'  => array(
+					'url'      => 'https://example.test/c.jpg',
+					'alt'      => 'A resized photograph',
+					'id'       => 7,
+					'sizeSlug' => 'large',
+					'width'    => '320px',
+				),
+				'innerBlocks' => array(),
+			),
+			// Block supports on the list root, and a nested list inside a list
+			// item that also carries its own text. The item's content is part
+			// of the opening markup, so a naive wrapper would put the nested
+			// list before the text instead of after it.
+			'core-list-nested-with-supports'       => array(
+				'name'        => 'core/list',
+				'attributes'  => array(
+					'className' => 'checklist',
+					'anchor'    => 'perks',
+					'fontSize'  => 'small',
+					'style'     => array( 'spacing' => array( 'padding' => array( 'left' => '0' ) ) ),
+				),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/list-item',
+						'attributes' => array( 'content' => 'One <strong>bold</strong>' ),
+					),
+					array(
+						'name'        => 'core/list-item',
+						'attributes'  => array( 'content' => 'Two' ),
+						'innerBlocks' => array(
+							array(
+								'name'        => 'core/list',
+								'attributes'  => array(),
+								'innerBlocks' => array(
+									array(
+										'name'       => 'core/list-item',
+										'attributes' => array( 'content' => 'Nested item' ),
+									),
+								),
+							),
+						),
+					),
+				),
+			),
+			// `ordered` switches the tag to <ol>. It is the one list attribute
+			// the wrapper reads, so a list that serialized as <ul> with
+			// ordered:true in the comment would be invalid on every insert.
+			'core-list-ordered'                    => array(
+				'name'        => 'core/list',
+				'attributes'  => array( 'ordered' => true ),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/list-item',
+						'attributes' => array( 'content' => 'Third' ),
+					),
+				),
+			),
+			// The citation closes the blockquote AFTER the inner blocks, so it
+			// belongs to the wrapper's closing markup, not its opening.
+			'core-quote-with-citation'             => array(
+				'name'        => 'core/quote',
+				'attributes'  => array(
+					'className' => 'pull',
+					'citation'  => 'A customer',
+					'textColor' => 'contrast',
+				),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => array( 'content' => 'Great work.' ),
+					),
+				),
+			),
+			// Without a citation the <cite> must be absent entirely rather than
+			// present and empty.
+			'core-quote-without-citation'          => array(
+				'name'        => 'core/quote',
+				'attributes'  => array(),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => array( 'content' => 'Plain.' ),
+					),
+				),
+			),
+			// The serializable core blocks nested in each other, which is how an
+			// agent builds a pull quote. Nothing else in the fixture puts a list
+			// inside a quote.
+			'core-quote-holding-list'              => array(
+				'name'        => 'core/quote',
+				'attributes'  => array( 'citation' => 'The <em>handbook</em>' ),
+				'innerBlocks' => array(
+					array(
+						'name'        => 'core/list',
+						'attributes'  => array(),
+						'innerBlocks' => array(
+							array(
+								'name'       => 'core/list-item',
+								'attributes' => array( 'content' => 'First rule' ),
+							),
+						),
+					),
+				),
+			),
+			// textAlign on a heading and align on a paragraph both become
+			// has-text-align-*, from two different attribute names.
+			'core-heading-aligned-with-supports'   => array(
+				'name'        => 'core/heading',
+				'attributes'  => array(
+					'level'     => 3,
+					'content'   => 'Aligned &amp; styled',
+					'textAlign' => 'center',
+					'className' => 'section-lede',
+					'anchor'    => 'lede',
+					'textColor' => 'contrast',
+				),
+				'innerBlocks' => array(),
+			),
+			'core-paragraph-aligned-with-colors'   => array(
+				'name'        => 'core/paragraph',
+				'attributes'  => array(
+					'content'         => 'Centred, on a background.',
+					'align'           => 'center',
+					'backgroundColor' => 'base',
+					'textColor'       => 'contrast',
+					'fontSize'        => 'small',
+				),
+				'innerBlocks' => array(),
+			),
+		);
+	}
+
+	/**
+	 * A defaults probe for every DesignSetGo block the inserter can serialize.
 	 *
 	 * The hand-written payloads above cover interesting attribute combinations,
 	 * but the cheapest and most damaging failure is a block that is invalid with
@@ -1133,6 +1398,9 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 	 * state (form-builder, progress-bar, scroll-marquee, heading-segment), each
 	 * emitting a declaration or attribute save() never writes. Generating these
 	 * from the registry means a new block is covered the day it lands.
+	 *
+	 * core_default_payloads() does the same for the core blocks, which the
+	 * registry cannot supply because the inserter serializes only a named few.
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
@@ -1295,6 +1563,56 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 			$missing,
 			'These blocks emit markup from save() but have no PHP serializer: ' . implode( ', ', $missing )
 		);
+	}
+
+	/**
+	 * Every core block the inserter will serialize appears in the fixture.
+	 *
+	 * The DesignSetGo side is covered by
+	 * test_every_block_with_save_output_has_a_serializer(): the JS suite asks
+	 * the real registrations which blocks emit save() markup, and this file
+	 * asserts each one has a PHP mirror. Core cannot be enumerated that way —
+	 * the inserter serializes a named few out of a registry of hundreds — so
+	 * the same guarantee has to come from the constant.
+	 *
+	 * Without this, adding a seventh name to SERIALIZABLE_CORE_BLOCKS is enough
+	 * to ship an unchecked serializer, which is exactly how core/image,
+	 * core/list, core/list-item and core/quote arrived.
+	 */
+	public function test_every_serializable_core_block_has_a_payload(): void {
+		$payloads = $this->payloads();
+		$covered  = array();
+
+		foreach ( $payloads as $payload ) {
+			$covered = array_merge( $covered, self::block_names_in( $payload ) );
+		}
+
+		$covered = array_unique( $covered );
+		$missing = array_values( array_diff( self::serializable_core_blocks(), $covered ) );
+
+		$this->assertSame(
+			array(),
+			$missing,
+			'These core blocks can be inserted but no fixture payload exercises them: ' . implode( ', ', $missing )
+		);
+	}
+
+	/**
+	 * Collect the block names a payload uses, at any depth.
+	 *
+	 * @param array<string, mixed> $payload A payload or inner-block definition.
+	 * @return string[] Block names.
+	 */
+	private static function block_names_in( array $payload ): array {
+		$names = isset( $payload['name'] ) ? array( (string) $payload['name'] ) : array();
+
+		foreach ( (array) ( $payload['innerBlocks'] ?? array() ) as $child ) {
+			if ( is_array( $child ) ) {
+				$names = array_merge( $names, self::block_names_in( $child ) );
+			}
+		}
+
+		return $names;
 	}
 
 	/**
