@@ -1,0 +1,150 @@
+{
+	"_comment": "Shared expectations for the container overlay opacity. Consumed by tests/phpunit/block-inserter-overlay-opacity-test.php (Block_Inserter::overlay_opacity_for_color) and src/utils/test/overlay-opacity.test.js (getOverlayOpacity) so save() and the Abilities inserter emit the same --dsgo-overlay-opacity.",
+	"cases": [
+		{
+			"color": "var:preset|color|contrast",
+			"opacity": "0.65"
+		},
+		{
+			"color": "var(--wp--preset--color--base)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "primary",
+			"opacity": "0.65"
+		},
+		{
+			"color": "#121212",
+			"opacity": "0.65"
+		},
+		{
+			"color": "#123",
+			"opacity": "0.65"
+		},
+		{
+			"color": "#1212127D",
+			"opacity": "1"
+		},
+		{
+			"color": "#1212127d",
+			"opacity": "1"
+		},
+		{
+			"color": "#121212FF",
+			"opacity": "0.65"
+		},
+		{
+			"color": "#1217",
+			"opacity": "1"
+		},
+		{
+			"color": "#121F",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,.4)",
+			"opacity": "1"
+		},
+		{
+			"color": "rgba(0, 0, 0, 0.475)",
+			"opacity": "1"
+		},
+		{
+			"color": "rgba(0,0,0,1)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgb(0,0,0)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgb(0 0 0 / 40%)",
+			"opacity": "1"
+		},
+		{
+			"color": "rgb(0 0 0 / 100%)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "hsla(210, 50%, 20%, 0.5)",
+			"opacity": "1"
+		},
+		{
+			"color": "HSL(210 50% 20% / .5)",
+			"opacity": "1"
+		},
+		{
+			"color": "oklch(0.3 0.1 250 / 0.6)",
+			"opacity": "1"
+		},
+		{
+			"color": "transparent",
+			"opacity": "0.65"
+		},
+		{
+			"color": "",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,0x0)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,0b0)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,4e-1)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgb(0 0 0 / 1e-1)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,none)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,.5.5)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,5.)",
+			"opacity": "0.65"
+		},
+		{
+			"color": "rgba(0,0,0,+.5)",
+			"opacity": "1"
+		},
+		{
+			"color": "rgb(0 0 0 / 40.5%)",
+			"opacity": "1"
+		},
+		{
+			"color": "\u00a0#1212127D\u00a0",
+			"opacity": "1"
+		},
+		{
+			"color": " \t\n#1212127D\u000b\f\r",
+			"opacity": "1"
+		},
+		{
+			"color": "rgba(0,0,0,\u00a0.4\u00a0)",
+			"opacity": "1"
+		},
+		{
+			"color": "\u2003#1212127D",
+			"opacity": "0.65"
+		}
+	],
+	"_comment_sectionSaveMarkup": "Section save() output for an overlayColor, captured from the JS save(). The Jest test asserts save() still produces it byte-for-byte; the PHPUnit test asserts Block_Inserter produces the same class set and style declarations (the order-insensitive comparison block validation applies).",
+	"sectionSaveMarkup": {
+		"var:preset|color|contrast": "<div class=\"wp-block-designsetgo-section alignfull dsgo-stack dsgo-stack--has-overlay\" style=\"padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--30);--dsgo-overlay-color:var(--wp--preset--color--contrast);--dsgo-overlay-opacity:0.65\"><div class=\"dsgo-stack__inner\" style=\"max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto\"></div></div>",
+		"#1212127D": "<div class=\"wp-block-designsetgo-section alignfull dsgo-stack dsgo-stack--has-overlay\" style=\"padding-top:var(--wp--preset--spacing--50);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--50);padding-left:var(--wp--preset--spacing--30);--dsgo-overlay-color:#1212127D;--dsgo-overlay-opacity:1\"><div class=\"dsgo-stack__inner\" style=\"max-width:var(--wp--style--global--content-size, 1140px);margin-left:auto;margin-right:auto\"></div></div>"
+	}
+}

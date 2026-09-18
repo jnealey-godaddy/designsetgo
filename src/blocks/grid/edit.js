@@ -24,6 +24,7 @@ import {
 import {
 	RangeControl,
 	SelectControl,
+	TextControl,
 	ToggleControl,
 	ToolbarGroup,
 	ToolbarDropdownMenu,
@@ -40,6 +41,7 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import { getOverlayOpacity } from '../../utils/overlay-opacity';
 import {
 	encodeColorValue,
 	decodeColorValue,
@@ -49,7 +51,7 @@ import {
 	hoverVariationClasses,
 } from '../../utils/style-variation-classes';
 import { useGridRowMatch } from './utils/use-grid-row-match';
-import { getGridTemplateColumns } from './grid-columns';
+import { getGridTemplateColumns, sanitizeColumnTemplate } from './grid-columns';
 import { useRenderedColumns } from './utils/use-rendered-columns';
 
 /**
@@ -69,6 +71,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 		constrainWidth,
 		contentWidth,
 		columnMinWidth,
+		columnTemplate,
 		desktopColumns,
 		tabletColumns,
 		mobileColumns,
@@ -156,7 +159,8 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 	const gridTemplateColumns = getGridTemplateColumns(
 		columnMinWidth,
 		desktopColumns,
-		resolvedColumnGap
+		resolvedColumnGap,
+		columnTemplate
 	);
 
 	// "Align Rows": derive whether the subgrid is active and the per-card row
@@ -218,7 +222,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': '0.8',
+				'--dsgo-overlay-opacity': getOverlayOpacity(overlayColor),
 			}),
 		},
 	});
@@ -470,6 +474,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							constrainWidth: false,
 							contentWidth: '',
 							columnMinWidth: '',
+							columnTemplate: '',
 						});
 					}}
 				>
@@ -820,6 +825,31 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 							__nextHasNoMarginBottom
 							help={__(
 								'Sets a minimum width for each column. Columns never get narrower than this — if they would, one wraps to the next row instead of overflowing the container. Columns still drop to the tablet/mobile counts on smaller screens.',
+								'designsetgo'
+							)}
+						/>
+					</DsgoInspectorPanel.Item>
+
+					<DsgoInspectorPanel.Item
+						label={__('Column Template', 'designsetgo')}
+						hasValue={() => columnTemplate !== ''}
+						onDeselect={() => setAttributes({ columnTemplate: '' })}
+						isShownByDefault={false}
+					>
+						<TextControl
+							label={__('Column Template', 'designsetgo')}
+							value={columnTemplate}
+							onChange={(value) =>
+								setAttributes({
+									columnTemplate:
+										sanitizeColumnTemplate(value),
+								})
+							}
+							placeholder="minmax(0, .7fr) minmax(0, 1.3fr)"
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+							help={__(
+								'A custom grid-template-columns value for desktop, for uneven columns. Overrides the column count and min width above; tablet and mobile keep their column counts.',
 								'designsetgo'
 							)}
 						/>

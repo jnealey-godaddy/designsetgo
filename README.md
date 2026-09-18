@@ -656,7 +656,7 @@ DesignSetGo is the **first WordPress block plugin** to fully integrate with the 
 | Category | Examples |
 |----------|----------|
 | **Info** | `list-abilities`, `list-blocks`, `list-extensions`, `get-post-blocks`, `find-blocks` |
-| **Inserters** | `add-block` (generic top-level), `add-child-block` (nested), `add-accordion-item`, `add-tab`, `add-timeline-item` |
+| **Inserters** | `add-block` (generic top-level), `add-blocks` (batch top-level), `add-child-block` (nested), `add-accordion-item`, `add-tab`, `add-timeline-item` |
 | **Configurators** | `update-block` (generic), `configure-shape-divider`, `configure-custom-css`, `batch-update`, `delete-block` |
 
 #### Info Abilities
@@ -668,6 +668,7 @@ DesignSetGo is the **first WordPress block plugin** to fully integrate with the 
 
 #### Inserter Abilities
 - `add-block` - Insert any block at the top level of a post
+- `add-blocks` - Insert several top-level blocks in order with one save; refuses the whole batch if any entry is invalid
 - `add-child-block` - Insert any block as a child of an existing block
 - `add-accordion-item` - Add an item to an existing accordion
 - `add-tab` - Add a tab to an existing tabs block

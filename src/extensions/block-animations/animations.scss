@@ -57,6 +57,14 @@ $dsgo-exit-keyframes: (
 	"bounceOut": "dsgBounceOut",
 );
 
+// A visual-review capture shows every animated block at rest, like reduced motion.
+.dsgo-visual-review .has-dsgo-animation,
+.dsgo-visual-review .has-dsgo-animation > * {
+	opacity: 1 !important;
+	transform: none !important;
+	animation: none !important;
+}
+
 // Base animation class - only hide on frontend, not in editor
 body:not(.block-editor-page):not(.wp-admin) {
 

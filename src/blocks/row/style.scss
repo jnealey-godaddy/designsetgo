@@ -31,7 +31,7 @@
 			position: absolute;
 			inset: 0;
 			background-color: var(--dsgo-overlay-color);
-			opacity: var(--dsgo-overlay-opacity, 0.8);
+			opacity: var(--dsgo-overlay-opacity, 0.65);
 			pointer-events: none;
 			z-index: 1;
 		}
@@ -66,7 +66,10 @@
 	.dsgo-stack__inner > &,
 	.dsgo-flex__inner > &,
 	.dsgo-grid__inner > & {
-		width: 100% !important;
+
+		:where(&) {
+			width: 100%;
+		}
 
 		.dsgo-flex__inner {
 			max-width: none !important;
@@ -123,7 +126,7 @@
 	&.alignfull.dsgo-no-width-constraint > .dsgo-flex__inner[class*="wp-container-"] {
 		// Target all direct children that aren't explicitly aligned
 		// Exclude blocks with explicit max-width set via our extension
-		> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width) {
+		> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width):not(.dsgo-stack--has-box-width) {
 			max-width: none !important;
 			margin-left: 0 !important;
 			margin-right: 0 !important;

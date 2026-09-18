@@ -20,6 +20,16 @@ function initBlockAnimations() {
 		return;
 	}
 
+	// A visual-review capture (Site Designer appends sd-visual-review to the
+	// URL) screenshots the whole page without scrolling it, so the scroll
+	// observer would leave everything below the fold at opacity 0. Show every
+	// animated block in its resting state instead; the stylesheet honors the
+	// class the same way it honors reduced motion.
+	if (isVisualReviewCapture()) {
+		document.documentElement.classList.add('dsgo-visual-review');
+		return;
+	}
+
 	const animatedElements = document.querySelectorAll(
 		'[data-dsgo-animation-enabled="true"]'
 	);
@@ -85,6 +95,21 @@ function initBlockAnimations() {
 				animateOnScroll(element);
 		}
 	});
+}
+
+/**
+ * Whether the page is being captured for a visual review rather than visited.
+ *
+ * @return {boolean} True when the URL carries the sd-visual-review parameter.
+ */
+export function isVisualReviewCapture() {
+	try {
+		return new URLSearchParams(window.location.search).has(
+			'sd-visual-review'
+		);
+	} catch (error) {
+		return false;
+	}
 }
 
 document.addEventListener('DOMContentLoaded', initBlockAnimations);

@@ -25,6 +25,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Block_Inserter {
 
 	/**
+	 * A top-level block name: "namespace/block-name", lowercase alphanumeric and hyphens.
+	 */
+	public const BLOCK_NAME_PATTERN = '/^[a-z][a-z0-9-]*\/[a-z][a-z0-9-]*$/';
+
+	/**
 	 * Insert a block into a post at the specified position.
 	 *
 	 * @param int                              $post_id Post ID.
@@ -68,25 +73,127 @@ class Block_Inserter {
 			);
 		}
 
-		// Build block markup.
-		$block_markup = self::build_block_markup( $block_name, $attributes, $inner_blocks );
+		$new_block = parse_blocks( self::build_block_markup( $block_name, $attributes, $inner_blocks ) )[0];
+		$updated   = self::write_blocks( $post, array( $new_block ), $position );
+		if ( is_wp_error( $updated ) ) {
+			return $updated;
+		}
 
-		// Parse existing blocks.
+		return array(
+			'success'  => true,
+			'post_id'  => $post->ID,
+			'block_id' => wp_unique_id( 'block-' ),
+			'position' => $position,
+			'note'     => 'Blocks inserted successfully. Open the post in the WordPress editor to validate and save the blocks.',
+		);
+	}
+
+	/**
+	 * Insert several top-level blocks into a post with one content write.
+	 *
+	 * All-or-nothing: every definition is checked for serializer coverage and
+	 * the resulting tree is validated before the post is saved, so a failure in
+	 * any block leaves the post untouched. Definitions must already be screened
+	 * and sanitized (see prepare_block_definition()).
+	 *
+	 * @param int                              $post_id     Post ID.
+	 * @param array<int, array<string, mixed>> $definitions Blocks as block_name, attributes and inner_blocks, in order.
+	 * @param int                              $position    Position of the first block (-1 appends, 0 prepends, or an index).
+	 * @return array<string, mixed>|WP_Error Success data or error.
+	 */
+	public static function insert_blocks( int $post_id, array $definitions, int $position = -1 ) {
+		$post = get_post( $post_id );
+		if ( ! $post ) {
+			return new WP_Error(
+				'designsetgo_invalid_post',
+				__( 'Post not found.', 'designsetgo' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new WP_Error(
+				'designsetgo_permission_denied',
+				__( 'You do not have permission to edit this post.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		$new_blocks = array();
+		foreach ( array_values( $definitions ) as $index => $definition ) {
+			$coverage = self::check_serialization_coverage( $definition['block_name'], $definition['inner_blocks'] );
+			if ( null !== $coverage ) {
+				return new WP_Error(
+					'designsetgo_unsupported_block',
+					sprintf( 'blocks[%d]: %s', $index, $coverage['message'] ),
+					array(
+						'status'      => 400,
+						'block_index' => $index,
+						'problems'    => $coverage['invalid_paths'],
+					)
+				);
+			}
+			$new_blocks[] = parse_blocks(
+				self::build_block_markup( $definition['block_name'], $definition['attributes'], $definition['inner_blocks'] )
+			)[0];
+		}
+
+		$updated = self::write_blocks( $post, $new_blocks, $position );
+		if ( is_wp_error( $updated ) ) {
+			return $updated;
+		}
+
+		return array(
+			'success'  => true,
+			'post_id'  => $post->ID,
+			'inserted' => count( $new_blocks ),
+			'position' => $position,
+		);
+	}
+
+	/**
+	 * Screen and sanitize one top-level block definition before it is written.
+	 *
+	 * Placement is checked BEFORE sanitizing: sanitization drops keys it does
+	 * not recognise, so a misnamed field would be gone by the time anything
+	 * looked for it. That is how a nested `block_name` used to remove every
+	 * child in silence.
+	 *
+	 * @param string               $block_name   Validated block name.
+	 * @param array<string, mixed> $attributes   Requested attributes.
+	 * @param array<int, mixed>    $inner_blocks Requested inner blocks.
+	 * @return array<string, mixed> The sanitized definition, or a diagnostic payload with `success` false.
+	 */
+	public static function prepare_block_definition( string $block_name, array $attributes, array $inner_blocks ): array {
+		$placement = self::check_child_placement( $block_name, $inner_blocks, $attributes );
+		if ( null !== $placement ) {
+			return $placement;
+		}
+
+		return array(
+			'block_name'   => $block_name,
+			'attributes'   => empty( $attributes ) ? $attributes : Block_Configurator::sanitize_attributes( $attributes, $block_name ),
+			'inner_blocks' => empty( $inner_blocks ) ? $inner_blocks : self::sanitize_inner_block_definitions( $inner_blocks ),
+		);
+	}
+
+	/**
+	 * Place parsed blocks into a post's top level and save it.
+	 *
+	 * @param WP_Post                          $post       Target post.
+	 * @param array<int, array<string, mixed>> $new_blocks Parsed blocks, in order.
+	 * @param int                              $position   -1 appends, 0 prepends, or an index.
+	 * @return true|WP_Error
+	 */
+	private static function write_blocks( WP_Post $post, array $new_blocks, int $position ) {
 		$blocks = parse_blocks( $post->post_content );
 
-		// Parse new block.
-		$new_block = parse_blocks( $block_markup )[0];
-
-		// Insert at position.
 		if ( -1 === $position ) {
-			// Append to end.
-			$blocks[] = $new_block;
+			array_push( $blocks, ...$new_blocks );
 		} elseif ( 0 === $position ) {
-			// Prepend to beginning.
-			array_unshift( $blocks, $new_block );
+			array_unshift( $blocks, ...$new_blocks );
 		} else {
-			// Insert at specific index.
-			array_splice( $blocks, $position, 0, array( $new_block ) );
+			array_splice( $blocks, $position, 0, $new_blocks );
 		}
 
 		// Structural check before anything is written. A tree whose children
@@ -128,13 +235,7 @@ class Block_Inserter {
 			return $updated;
 		}
 
-		return array(
-			'success'  => true,
-			'post_id'  => $post->ID,
-			'block_id' => wp_unique_id( 'block-' ),
-			'position' => $position,
-			'note'     => 'Blocks inserted successfully. Open the post in the WordPress editor to validate and save the blocks.',
-		);
+		return true;
 	}
 
 	/**
@@ -283,7 +384,7 @@ class Block_Inserter {
 			}
 
 			if ( isset( $block['attributes'] ) && is_array( $block['attributes'] ) ) {
-				$clean_block['attributes'] = Block_Configurator::sanitize_attributes( $block['attributes'] );
+				$clean_block['attributes'] = Block_Configurator::sanitize_attributes( $block['attributes'], $name );
 			}
 
 			$nested = self::read_nested_inner_blocks( $block );
@@ -406,17 +507,45 @@ class Block_Inserter {
 
 		\WP_Block_Supports::$block_to_render = $previous;
 
-		// Only the support classes are taken. The wrapper generators already
-		// emit the block's own `wp-block-*` and alignment classes, and the
-		// support classes are exactly the `has-*` set.
+		// The wrapper generators already emit the block's own `wp-block-*` and
+		// alignment classes, so from the applied set only two kinds are taken:
+		// the `has-*` support classes, and the tokens of the block's own
+		// `className` attribute (custom-classname support). useBlockProps.save()
+		// spreads both onto the root, so stored markup without the custom class
+		// fails block validation the first time the editor re-saves it. Taking
+		// the className tokens by intersection keeps a block that disables the
+		// support faithful. Layout classes (`is-layout-*`, `wp-container-*`)
+		// are render-time only and stay out.
+		$applied_classes = self::split_class_list( (string) ( $applied['class'] ?? '' ) );
+		$custom_classes  = isset( $attributes['className'] ) && is_string( $attributes['className'] )
+			? self::split_class_list( $attributes['className'] )
+			: array();
 		$support_classes = array_values(
 			array_filter(
-				self::split_class_list( (string) ( $applied['class'] ?? '' ) ),
-				static function ( $class_name ) {
-					return 0 === strpos( $class_name, 'has-' );
+				$applied_classes,
+				static function ( $class_name ) use ( $custom_classes ) {
+					return 0 === strpos( $class_name, 'has-' ) || in_array( $class_name, $custom_classes, true );
 				}
 			)
 		);
+
+		// Anchor support is the same story: save() writes the `anchor` attribute
+		// as the root `id`. It cannot be read off apply_block_supports() though:
+		// core only grew a PHP anchor block support in WP 7.0
+		// (wp-includes/block-supports/anchor.php), so across the 6.7-6.9 range
+		// this plugin also supports it reports no `id` at all and the attribute
+		// is the only source. Read it directly, gated on the same block support
+		// core's own implementation checks so a block that does not support
+		// anchors stays faithful to its save() output.
+		$anchor_id = '';
+		if ( null !== $block_type
+			&& isset( $attributes['anchor'] )
+			&& is_string( $attributes['anchor'] )
+			&& '' !== $attributes['anchor']
+			&& block_has_support( $block_type, array( 'anchor' ) )
+		) {
+			$anchor_id = $attributes['anchor'];
+		}
 
 		// Editor extensions (hover effects, text reveal, expanding background)
 		// add their own classes/styles/data attributes onto the SAME root
@@ -479,6 +608,10 @@ class Block_Inserter {
 			$processor->add_class( $class_name );
 		}
 
+		if ( '' !== $anchor_id && null === $processor->get_attribute( 'id' ) ) {
+			$processor->set_attribute( 'id', $anchor_id );
+		}
+
 		foreach ( $extension_props['data'] as $data_name => $data_value ) {
 			$processor->set_attribute( $data_name, $data_value );
 		}
@@ -531,8 +664,8 @@ class Block_Inserter {
 	 * element in the identical pass - which is why this is called from, and
 	 * merged inside, that method rather than kept separate.
 	 *
-	 * Block animations, parallax, and the SVG pattern's actual generated
-	 * image are intentionally NOT reproduced here: those inject their output
+	 * Parallax and the SVG pattern's actual generated image are intentionally
+	 * NOT reproduced here: those inject their output
 	 * at render time via a `render_block` filter, keyed off attributes or
 	 * (for SVG patterns) the very data attribute this method writes. Nothing
 	 * here should duplicate that.
@@ -545,6 +678,25 @@ class Block_Inserter {
 		$classes = array();
 		$styles  = array();
 		$data    = array();
+
+		// Static blocks need the same animation props as the editor save filter.
+		// Dynamic blocks use this shared helper in their render path instead.
+		if ( function_exists( 'designsetgo_get_animation_parts' ) ) {
+			$animation = \designsetgo_get_animation_parts( $attributes );
+			$classes   = array_merge( $classes, $animation['classes'] );
+			$data      = array_merge( $data, $animation['attrs'] );
+		}
+
+		// Mirror the max-width extension's save props for supported text blocks.
+		if ( in_array( $block_name, array( 'core/heading', 'core/paragraph', 'designsetgo/advanced-heading' ), true )
+			&& ! empty( $attributes['dsgoMaxWidth'] ) && is_string( $attributes['dsgoMaxWidth'] )
+		) {
+			$classes[]              = 'dsgo-has-max-width';
+			$styles['max-width']    = $attributes['dsgoMaxWidth'];
+			$alignment              = $attributes['textAlign'] ?? $attributes['align'] ?? '';
+			$styles['margin-left']  = 'left' === $alignment ? '0' : 'auto';
+			$styles['margin-right'] = 'right' === $alignment ? '0' : 'auto';
+		}
 
 		// Text reveal - src/extensions/text-reveal/editor.js
 		// (addTextRevealSaveProps). Applies only to core/paragraph and
@@ -672,11 +824,67 @@ class Block_Inserter {
 			}
 		}
 
+		// Grid mobile order - src/extensions/grid-mobile-order/index.js
+		// (applyMobileOrderSaveProps). Registered for every block
+		// (includes/extension-configs/grid-mobile-order.php, blocks => 'all')
+		// minus the user-configured exclusions. save.js clamps the value to
+		// 0..10 and writes the custom property only when it differs from the
+		// default 1, so a section ordered first on phones (0) must carry it or
+		// the editor rejects the stored HTML.
+		if ( isset( $attributes['dsgoMobileOrder'] )
+			&& is_numeric( $attributes['dsgoMobileOrder'] )
+			&& ! self::is_block_excluded_from_extensions( $block_name )
+		) {
+			$mobile_order = max( 0.0, min( 10.0, (float) $attributes['dsgoMobileOrder'] ) );
+			if ( 1.0 !== $mobile_order ) {
+				$styles['--dsgo-mobile-order'] = self::format_js_number( $mobile_order );
+			}
+		}
+
+		// Grid span - src/extensions/grid-span/index.js (applyGridSpanStyles).
+		// Registered for every block (includes/extension-configs/grid-span.php);
+		// save() writes grid-column / grid-row for a span above 1 whatever the
+		// parent, so a spanning grid item stored without them renders one track
+		// wide and fails validation on open.
+		if ( ! self::is_block_excluded_from_extensions( $block_name ) ) {
+			$spans = array(
+				'dsgoColumnSpan' => 'grid-column',
+				'dsgoRowSpan'    => 'grid-row',
+			);
+			foreach ( $spans as $span_attribute => $span_property ) {
+				if ( isset( $attributes[ $span_attribute ] ) && is_numeric( $attributes[ $span_attribute ] ) && (float) $attributes[ $span_attribute ] > 1 ) {
+					$styles[ $span_property ] = 'span ' . self::format_js_number( (float) $attributes[ $span_attribute ] );
+				}
+			}
+		}
+
 		return array(
 			'classes' => $classes,
 			'styles'  => $styles,
 			'data'    => $data,
 		);
+	}
+
+	/**
+	 * Mirror the editor's shouldExtendBlock(): a block type (or its whole
+	 * namespace via `namespace/*`) that the user excluded from extensions in
+	 * the plugin settings never receives extension save props.
+	 *
+	 * @param string $block_name Block name.
+	 * @return bool Whether extensions are switched off for this block type.
+	 */
+	private static function is_block_excluded_from_extensions( string $block_name ): bool {
+		$settings = get_option( 'designsetgo_settings', array() );
+		$excluded = isset( $settings['excluded_blocks'] ) ? (array) $settings['excluded_blocks'] : array();
+		if ( empty( $excluded ) ) {
+			return false;
+		}
+		if ( in_array( $block_name, $excluded, true ) ) {
+			return true;
+		}
+		$namespace = strtok( $block_name, '/' );
+
+		return in_array( $namespace . '/*', $excluded, true );
 	}
 
 	/**
@@ -760,6 +968,10 @@ class Block_Inserter {
 
 		if ( ! empty( $routed ) && function_exists( 'wp_style_engine_get_styles' ) ) {
 			$engine = wp_style_engine_get_styles( $routed );
+			// JS border support retains an inline preset color as well as its flag class.
+			if ( ! empty( $routed['border']['color'] ) ) {
+				$engine['declarations']['border-color'] = self::convert_color_value_to_css_var( $routed['border']['color'] );
+			}
 			foreach ( $engine['declarations'] ?? array() as $property => $value ) {
 				$styles[] = $property . ':' . $value;
 			}
@@ -782,7 +994,8 @@ class Block_Inserter {
 	 * - DesignSetGo static blocks with a case in
 	 *   generate_designsetgo_wrapper_html(), where the wrapper is reproduced.
 	 *
-	 * No core block qualifies. Wrapper generation is gated on the
+	 * Only core/navigation qualifies: its save() is InnerBlocks.Content.
+	 * Other core wrapper generation is gated on the
 	 * `designsetgo/` prefix, so a core block given children today emits its
 	 * children with nothing around them: `core/heading` produced a block
 	 * comment holding a bare `<p>` and no `<h4>` at all, and `core/group`
@@ -798,6 +1011,16 @@ class Block_Inserter {
 	 * @return bool Whether children can be nested inside this block.
 	 */
 	public static function supports_child_blocks( string $block_name ): bool {
+		// Navigation saves InnerBlocks.Content without a wrapper; core renders its nav element.
+		if ( 'core/navigation' === $block_name ) {
+			return true;
+		}
+
+		// List, list item and quote wrap their children in markup this inserter reproduces.
+		if ( in_array( $block_name, self::CORE_WRAPPER_BLOCKS, true ) ) {
+			return true;
+		}
+
 		if ( 0 !== strpos( $block_name, 'designsetgo/' ) ) {
 			return false;
 		}
@@ -880,6 +1103,22 @@ class Block_Inserter {
 
 				if ( ! is_string( $value ) ) {
 					continue;
+				}
+				// A free-form CSS value is written straight into an inline style
+				// declaration, so anything that could end that declaration (or
+				// the attribute) is refused rather than escaped: escaping would
+				// store markup save() never produces. Same set as
+				// sanitizeColumnTemplate() in src/blocks/grid/grid-columns.js.
+				if ( 'designsetgo/grid' === $block_name && 'columnTemplate' === $attribute && preg_match( '/[;{}<>"\']|url\s*\(/i', $value ) ) {
+					$problems[] = array(
+						'path'   => $block_path,
+						'block'  => $block_name,
+						'reason' => sprintf(
+							/* translators: %s: attribute name */
+							__( '%s: must be a plain grid-template-columns value; it cannot contain ; { } < > quotes or url().', 'designsetgo' ),
+							$attribute
+						),
+					);
 				}
 				$reason = $unsupported[ $block_name ][ $attribute ][ $value ] ?? null;
 				if ( null !== $reason ) {
@@ -1395,7 +1634,17 @@ class Block_Inserter {
 		if ( isset( $attrs['style'] ) && is_array( $attrs['style'] ) ) {
 			$attrs['style'] = self::convert_style_vars( $attrs['style'] );
 		}
-		if ( isset( $attrs['content'] ) && 0 === strpos( $block_name, 'core/' ) ) {
+		if ( 'core/image' === $block_name ) {
+			$image_html = self::generate_core_image_html( $attrs );
+			// Sourced attributes are read back from the markup, so save() keeps them out of the comment.
+			// They also leave before block supports run: a render never passes them, and the rich-text
+			// caption type is not one rest_validate_value_from_schema() accepts.
+			foreach ( self::CORE_IMAGE_SOURCED_ATTRIBUTES as $sourced ) {
+				unset( $attrs[ $sourced ] );
+			}
+			$innerHTML      = self::apply_block_support_attributes( $image_html, $block_name, $attrs );
+			$innerContent[] = $innerHTML;
+		} elseif ( isset( $attrs['content'] ) && 0 === strpos( $block_name, 'core/' ) && ! in_array( $block_name, self::CORE_WRAPPER_BLOCKS, true ) ) {
 			$content = $attrs['content'];
 			unset( $attrs['content'] );
 
@@ -1420,6 +1669,10 @@ class Block_Inserter {
 				$inner_inner      = self::read_nested_inner_blocks( $inner );
 
 				if ( $inner_name ) {
+					// Match InnerBlocks.save(): sibling segments are separated by whitespace.
+					if ( 'designsetgo/advanced-heading' === $block_name && ! empty( $parsed_inners ) ) {
+						$innerContent[] = "\n\n";
+					}
 					$parsed_inners[] = self::convert_to_block_array( $inner_name, $inner_attributes, $inner_inner );
 					$innerContent[]  = null; // Placeholder for inner block.
 				}
@@ -1459,6 +1712,18 @@ class Block_Inserter {
 				$innerContent[] = $wrapper_html['closing'];
 				$innerHTML      = $wrapper_html['opening'] . $wrapper_html['closing'];
 			}
+		}
+
+		// Core wrapper blocks (list, list item, quote) mirror their save() the same
+		// way: opening and closing markup as separate innerContent entries around
+		// the child placeholders, with block-support classes merged onto the root.
+		if ( in_array( $block_name, self::CORE_WRAPPER_BLOCKS, true ) ) {
+			$wrapper_html = self::generate_core_wrapper_html( $block_name, $attrs );
+			unset( $attrs['content'], $attrs['citation'] );
+			$wrapper_html['opening'] = self::apply_block_support_attributes( $wrapper_html['opening'], $block_name, $attrs );
+			array_unshift( $innerContent, $wrapper_html['opening'] );
+			$innerContent[] = $wrapper_html['closing'];
+			$innerHTML      = $wrapper_html['opening'] . $wrapper_html['closing'];
 		}
 
 		// Form-field blocks (and the map) are dynamic/server-rendered, so they
@@ -1513,6 +1778,7 @@ class Block_Inserter {
 
 				$constrain_width = isset( $attributes['constrainWidth'] ) ? $attributes['constrainWidth'] : true;
 				$content_width   = isset( $attributes['contentWidth'] ) ? $attributes['contentWidth'] : '';
+				$box_width       = isset( $attributes['boxWidth'] ) && is_string( $attributes['boxWidth'] ) ? $attributes['boxWidth'] : '';
 				$align           = isset( $attributes['align'] ) ? $attributes['align'] : 'full';
 				$tag_name        = isset( $attributes['tagName'] ) && $attributes['tagName'] ? $attributes['tagName'] : 'div';
 
@@ -1539,6 +1805,9 @@ class Block_Inserter {
 				$shape_bottom = isset( $attributes['shapeDividerBottom'] ) && is_string( $attributes['shapeDividerBottom'] ) ? $attributes['shapeDividerBottom'] : '';
 				if ( '' !== $shape_top || '' !== $shape_bottom ) {
 					$outer_class_parts[] = 'dsgo-stack--has-shape-divider';
+				}
+				if ( '' !== $box_width ) {
+					$outer_class_parts[] = 'dsgo-stack--has-box-width';
 				}
 
 				// Process block support styles (colors, padding, etc.).
@@ -1573,6 +1842,18 @@ class Block_Inserter {
 				}
 				if ( '' !== $shape_bottom && empty( $attributes['shapeDividerBottomSpacing'] ) && null !== $shape_bottom_height ) {
 					$outer_styles[] = '--dsgo-shape-clearance-bottom:' . self::format_js_number( $shape_bottom_height ) . 'px';
+				}
+
+				// Outer box width — mirrors src/blocks/section/utils/box-width.js
+				// (getBoxWidthStyle) exactly, including its declaration order.
+				// `width:100%` makes the box REACH the cap inside a flex parent;
+				// the cap itself is `max-width`. No margins: horizontal
+				// placement is a stylesheet concern (styles/_box-width.scss) so
+				// that a flex parent's own alignment can govern. Emits nothing
+				// when boxWidth is unset.
+				if ( '' !== $box_width ) {
+					$outer_styles[] = 'width:100%';
+					$outer_styles[] = 'max-width:' . $box_width;
 				}
 
 				// Match Section save(): only constrained sections carry an
@@ -2559,8 +2840,13 @@ class Block_Inserter {
 				$custom_column_gap = $attributes['columnGap'] ?? '';
 				$row_gap           = self::spacing_gap( $row_gap ) ?? ( '' !== $custom_row_gap ? $custom_row_gap : $default_gap );
 				$column_gap        = self::spacing_gap( $column_gap ) ?? ( '' !== $custom_column_gap ? $custom_column_gap : $default_gap );
-				$columns_css       = 'repeat(' . $desktop_cols . ', 1fr)';
-				if ( ! empty( $attributes['columnMinWidth'] ) ) {
+				// Mirrors src/blocks/grid/grid-columns.js: a custom template wins,
+				// then a column min width, then the repeated column count.
+				$column_template = isset( $attributes['columnTemplate'] ) && is_string( $attributes['columnTemplate'] ) ? trim( $attributes['columnTemplate'] ) : '';
+				$columns_css     = 'repeat(' . $desktop_cols . ', 1fr)';
+				if ( '' !== $column_template ) {
+					$columns_css = $column_template;
+				} elseif ( ! empty( $attributes['columnMinWidth'] ) ) {
 					$share       = $desktop_cols > 1 ? '(100% - ' . ( $desktop_cols - 1 ) . ' * ' . $column_gap . ') / ' . $desktop_cols : '100%';
 					$columns_css = 'repeat(auto-fill, minmax(min(100%, max(' . $attributes['columnMinWidth'] . ', ' . $share . ')), 1fr))';
 				}
@@ -3421,6 +3707,18 @@ class Block_Inserter {
 					self::routed_padding_styles( $attributes, true )
 				);
 
+				// Hover colours - save.js writes them as custom properties on the
+				// button after padding. Without them an AI-inserted button with a
+				// hover colour fails block validation on first open.
+				foreach ( array(
+					'hoverBackgroundColor' => '--dsgo-button-hover-bg',
+					'hoverTextColor'       => '--dsgo-button-hover-color',
+				) as $hover_attribute => $hover_property ) {
+					if ( ! empty( $attributes[ $hover_attribute ] ) && is_string( $attributes[ $hover_attribute ] ) ) {
+						$style_parts[] = $hover_property . ':' . self::convert_color_value_to_css_var( $attributes[ $hover_attribute ] );
+					}
+				}
+
 				$button_style = implode( ';', $style_parts );
 
 				// Icon HTML. Must match save.js: the icon span's layout
@@ -3938,7 +4236,7 @@ class Block_Inserter {
 				// Build style.
 				$style = '';
 				if ( $overlay_color ) {
-					$style = '--dsgo-overlay-color:' . esc_attr( $overlay_color ) . ';--dsgo-overlay-opacity:0.8';
+					$style = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( (string) $overlay_color ) . ';--dsgo-overlay-opacity:' . self::overlay_opacity_for_color( (string) $overlay_color );
 				}
 
 				$style_attr = $style ? ' style="' . esc_attr( $style ) . '"' : '';
@@ -4368,15 +4666,19 @@ class Block_Inserter {
 		if ( '' !== (string) $input_padding ) {
 			$style_parts[] = '--dsgo-form-input-padding:' . esc_attr( $input_padding );
 		}
+		// save.js passes each colour through convertColorToCSSVar(), so a preset
+		// shorthand such as `var:preset|color|contrast` or a bare slug reaches the
+		// stored HTML as `var(--wp--preset--color--contrast)`. Writing the raw
+		// attribute produced an invalid custom property and failed validation.
 		if ( $field_label_color ) {
-			$style_parts[] = '--dsgo-form-label-color:' . esc_attr( $field_label_color );
+			$style_parts[] = '--dsgo-form-label-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_label_color ) );
 		}
 		// Omit when empty — .dsgo-form-builder in style.scss supplies the #d1d5db default.
 		if ( $field_border_color ) {
-			$style_parts[] = '--dsgo-form-border-color:' . esc_attr( $field_border_color );
+			$style_parts[] = '--dsgo-form-border-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_border_color ) );
 		}
 		if ( $field_background_color ) {
-			$style_parts[] = '--dsgo-form-field-bg:' . esc_attr( $field_background_color );
+			$style_parts[] = '--dsgo-form-field-bg:' . esc_attr( self::convert_color_value_to_css_var( (string) $field_background_color ) );
 		}
 		$style = implode( ';', $style_parts );
 
@@ -4405,10 +4707,10 @@ class Block_Inserter {
 		// Build button style - must match save.js order.
 		$button_style_parts = array();
 		if ( $submit_button_color ) {
-			$button_style_parts[] = 'color:' . esc_attr( $submit_button_color );
+			$button_style_parts[] = 'color:' . esc_attr( self::convert_color_value_to_css_var( (string) $submit_button_color ) );
 		}
 		if ( $submit_button_background_color ) {
-			$button_style_parts[] = 'background-color:' . esc_attr( $submit_button_background_color );
+			$button_style_parts[] = 'background-color:' . esc_attr( self::convert_color_value_to_css_var( (string) $submit_button_background_color ) );
 		}
 		// Sizing is spread conditionally in save.js, so an unset value emits no
 		// declaration and the button inherits the theme's global button styles.
@@ -4480,6 +4782,48 @@ class Block_Inserter {
 	}
 
 	/**
+	 * Generate the wrapper markup of a core block whose save() surrounds InnerBlocks.Content.
+	 *
+	 * Mirrors block-library save.js: the list tag carries the default block class,
+	 * a list item has no class support and holds its rich text before any nested
+	 * list, and a quote closes with its citation after the children.
+	 *
+	 * @param string               $block_name Block name.
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return array{opening: string, closing: string} Opening and closing markup.
+	 */
+	private static function generate_core_wrapper_html( string $block_name, array $attributes ): array {
+		switch ( $block_name ) {
+			case 'core/list':
+				$tag = ! empty( $attributes['ordered'] ) ? 'ol' : 'ul';
+				return array(
+					'opening' => '<' . $tag . ' class="wp-block-list">',
+					'closing' => '</' . $tag . '>',
+				);
+
+			case 'core/list-item':
+				$content = isset( $attributes['content'] ) && is_string( $attributes['content'] ) ? $attributes['content'] : '';
+				return array(
+					'opening' => '<li>' . wp_kses_post( $content ),
+					'closing' => '</li>',
+				);
+
+			case 'core/quote':
+				$citation = isset( $attributes['citation'] ) && is_string( $attributes['citation'] ) ? $attributes['citation'] : '';
+				return array(
+					'opening' => '<blockquote class="wp-block-quote">',
+					'closing' => ( '' !== $citation ? '<cite>' . wp_kses_post( $citation ) . '</cite>' : '' ) . '</blockquote>',
+				);
+
+			default:
+				return array(
+					'opening' => '',
+					'closing' => '',
+				);
+		}
+	}
+
+	/**
 	 * Generate HTML for core WordPress blocks.
 	 *
 	 * @param string               $block_name Block name.
@@ -4517,6 +4861,140 @@ class Block_Inserter {
 			default:
 				return wp_kses_post( $content );
 		}
+	}
+
+	/**
+	 * Generate the markup core/image save() produces.
+	 *
+	 * Mirrors block-library image/save.js (WordPress 7.1): the figure carries the
+	 * alignment, size, resize and custom-border classes, while border and shadow
+	 * styles skip the root and land on the img with aspect ratio, scale, focal
+	 * point and dimensions. The caption follows the image or its link. Block
+	 * supports that do serialize on the root (margin, className, anchor) are
+	 * merged afterwards by apply_block_support_attributes().
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return string Figure markup.
+	 */
+	private static function generate_core_image_html( array $attributes ): string {
+		$text   = static function ( string $key ) use ( $attributes ): string {
+			return isset( $attributes[ $key ] ) && is_scalar( $attributes[ $key ] ) ? (string) $attributes[ $key ] : '';
+		};
+		$style  = isset( $attributes['style'] ) && is_array( $attributes['style'] ) ? $attributes['style'] : array();
+		$border = isset( $style['border'] ) && is_array( $style['border'] ) ? $style['border'] : array();
+
+		$image_styles = array();
+		if ( function_exists( 'wp_style_engine_get_styles' ) ) {
+			$skipped      = array_filter(
+				array(
+					'border' => $border,
+					'shadow' => $style['shadow'] ?? null,
+				)
+			);
+			$engine       = $skipped ? wp_style_engine_get_styles( $skipped ) : array();
+			$image_styles = $engine['declarations'] ?? array();
+		}
+		// The PHP style engine turns a preset border color into classes, but the
+		// editor's getInlineStyles() writes it inline as a CSS variable.
+		$sides = array(
+			''        => $border,
+			'-top'    => $border['top'] ?? null,
+			'-right'  => $border['right'] ?? null,
+			'-bottom' => $border['bottom'] ?? null,
+			'-left'   => $border['left'] ?? null,
+		);
+		foreach ( $sides as $side => $values ) {
+			if ( is_array( $values ) && isset( $values['color'] ) && is_string( $values['color'] ) && '' !== $values['color'] ) {
+				$image_styles[ 'border' . $side . '-color' ] = 0 === strpos( $values['color'], 'var:preset|' )
+					? self::wp_shorthand_to_css_var( $values['color'] )
+					: $values['color'];
+			}
+		}
+		$has_border_styles = (bool) array_filter(
+			array_keys( $image_styles ),
+			static function ( $property ) {
+				return 0 === strpos( $property, 'border' );
+			}
+		);
+
+		$border_classes = array();
+		$border_color   = $text( 'borderColor' );
+		if ( '' !== $border_color || ! empty( $border['color'] ) ) {
+			$border_classes[] = 'has-border-color';
+		}
+		if ( '' !== $border_color ) {
+			$border_classes[] = 'has-' . sanitize_html_class( _wp_to_kebab_case( $border_color ) ) . '-border-color';
+		}
+
+		$scale = $text( 'scale' );
+		if ( '' !== $text( 'aspectRatio' ) ) {
+			$image_styles['aspect-ratio'] = $text( 'aspectRatio' );
+		}
+		if ( '' !== $scale ) {
+			$image_styles['object-fit'] = $scale;
+		}
+		$focal = isset( $attributes['focalPoint'] ) && is_array( $attributes['focalPoint'] ) ? $attributes['focalPoint'] : null;
+		if ( $focal && '' !== $scale ) {
+			$image_styles['object-position'] = round( (float) ( $focal['x'] ?? 0.5 ) * 100 ) . '% ' . round( (float) ( $focal['y'] ?? 0.5 ) * 100 ) . '%';
+		}
+		$dimension = static function ( $value ): string {
+			return is_numeric( $value ) && ! is_string( $value ) ? $value . 'px' : (string) $value;
+		};
+		$width     = $attributes['width'] ?? null;
+		$height    = $attributes['height'] ?? null;
+		if ( null !== $width || null !== $height ) {
+			if ( null !== $width && '' !== $width ) {
+				$image_styles['width'] = $dimension( $width );
+			}
+			$image_styles['height'] = ( null === $height || 'auto' === $height ) ? 'auto' : $dimension( $height );
+		}
+
+		$align          = $text( 'align' );
+		$figure_classes = array( 'wp-block-image' );
+		if ( 'none' === $align ) {
+			$figure_classes[] = 'alignnone';
+		} elseif ( in_array( $align, array( 'left', 'center', 'right', 'wide', 'full' ), true ) ) {
+			$figure_classes[] = 'align' . $align;
+		}
+		if ( '' !== $text( 'sizeSlug' ) ) {
+			$figure_classes[] = 'size-' . sanitize_html_class( $text( 'sizeSlug' ) );
+		}
+		if ( ! empty( $width ) || ! empty( $height ) ) {
+			$figure_classes[] = 'is-resized';
+		}
+		if ( $border_classes || $has_border_styles ) {
+			$figure_classes[] = 'has-custom-border';
+		}
+
+		$image_classes = $border_classes;
+		if ( ! empty( $attributes['id'] ) && is_numeric( $attributes['id'] ) ) {
+			$image_classes[] = 'wp-image-' . (int) $attributes['id'];
+		}
+		$style_string = '';
+		foreach ( $image_styles as $property => $value ) {
+			$style_string .= $property . ':' . $value . ';';
+		}
+
+		$image = '<img src="' . esc_url( $text( 'url' ) ) . '" alt="' . esc_attr( $text( 'alt' ) ) . '"'
+			. ( $image_classes ? ' class="' . esc_attr( implode( ' ', $image_classes ) ) . '"' : '' )
+			. ( '' !== $style_string ? ' style="' . esc_attr( rtrim( $style_string, ';' ) ) . '"' : '' )
+			. ( '' !== $text( 'title' ) ? ' title="' . esc_attr( $text( 'title' ) ) . '"' : '' )
+			. ( ! empty( $attributes['isDecorative'] ) ? ' role="none"' : '' )
+			. '/>';
+
+		if ( '' !== $text( 'href' ) ) {
+			$image = '<a'
+				. ( '' !== $text( 'linkClass' ) ? ' class="' . esc_attr( $text( 'linkClass' ) ) . '"' : '' )
+				. ' href="' . esc_url( $text( 'href' ) ) . '"'
+				. ( '' !== $text( 'linkTarget' ) ? ' target="' . esc_attr( $text( 'linkTarget' ) ) . '"' : '' )
+				. ( '' !== $text( 'rel' ) ? ' rel="' . esc_attr( $text( 'rel' ) ) . '"' : '' )
+				. '>' . $image . '</a>';
+		}
+		$caption = '' !== trim( $text( 'caption' ) )
+			? '<figcaption class="wp-element-caption">' . wp_kses_post( $text( 'caption' ) ) . '</figcaption>'
+			: '';
+
+		return '<figure class="' . esc_attr( implode( ' ', $figure_classes ) ) . '">' . $image . $caption . '</figure>';
 	}
 
 	/**
@@ -4978,6 +5456,10 @@ class Block_Inserter {
 	 * @return array<string, mixed> Style with skipped groups removed.
 	 */
 	private static function strip_skipped_style_groups( ?\WP_Block_Type $block_type, array $style ): array {
+		// Core adds background-image support at render time, not in useBlockProps.save().
+		// Keep the attributes in block JSON, but do not bake render-only CSS into saved HTML.
+		unset( $style['background'] );
+
 		if ( null === $block_type || ! function_exists( 'wp_should_skip_block_supports_serialization' ) ) {
 			return $style;
 		}
@@ -5116,10 +5598,77 @@ class Block_Inserter {
 		$overlay = isset( $attributes['overlayColor'] ) ? (string) $attributes['overlayColor'] : '';
 		if ( '' !== $overlay ) {
 			$declarations[] = '--dsgo-overlay-color:' . self::convert_color_value_to_css_var( $overlay );
-			$declarations[] = '--dsgo-overlay-opacity:0.8';
+			$declarations[] = '--dsgo-overlay-opacity:' . self::overlay_opacity_for_color( $overlay );
 		}
 
 		return $declarations;
+	}
+
+	/**
+	 * Resolve `--dsgo-overlay-opacity` for a container overlay colour.
+	 *
+	 * PHP twin of getOverlayOpacity() in src/utils/overlay-opacity.js, used by
+	 * the Section, Row, Grid and Scroll Accordion Item save() functions. A colour
+	 * carrying its own alpha below 1 (`#RGBA`, `#RRGGBBAA`, `rgba(…)`, `hsla(…)`,
+	 * `rgb(… / a)` and the other functional notations) is emitted at opacity 1
+	 * so its alpha alone sets the translucency; everything else, including
+	 * preset slugs and CSS variables, uses the 0.65 default. Must return the
+	 * same string as the JS helper for every input.
+	 *
+	 * @param string $color Overlay colour attribute.
+	 * @return string '1' or '0.65'.
+	 */
+	public static function overlay_opacity_for_color( string $color ): string {
+		$alpha = self::declared_color_alpha( $color );
+
+		return ( null !== $alpha && $alpha < 1 ) ? '1' : '0.65';
+	}
+
+	/**
+	 * Read the alpha channel a colour value declares, when it declares one.
+	 *
+	 * @param string $color Colour value.
+	 * @return float|null Alpha, or null when the value declares none.
+	 */
+	private static function declared_color_alpha( string $color ): ?float {
+		// Same whitespace set and alpha grammar as getDeclaredAlpha() in
+		// src/utils/overlay-opacity.js: space, tab, LF, CR, form feed, vertical
+		// tab and NBSP; a plain decimal alpha, optionally a percentage.
+		$whitespace = '/^[ \t\n\r\f\x{0B}\x{A0}]+|[ \t\n\r\f\x{0B}\x{A0}]+$/u';
+
+		$trimmed = preg_replace( $whitespace, '', $color );
+		if ( null === $trimmed ) {
+			return null;
+		}
+		$value = strtolower( $trimmed );
+
+		if ( preg_match( '/^#([0-9a-f]{4}|[0-9a-f]{8})$/D', $value, $hex ) ) {
+			return 4 === strlen( $hex[1] )
+				? hexdec( $hex[1][3] ) / 15
+				: hexdec( substr( $hex[1], 6 ) ) / 255;
+		}
+
+		if ( ! preg_match( '/^(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\((.*)\)$/D', $value, $fn ) ) {
+			return null;
+		}
+
+		$args = $fn[1];
+		if ( false !== strpos( $args, '/' ) ) {
+			$alpha = substr( $args, strrpos( $args, '/' ) + 1 );
+		} else {
+			$parts = explode( ',', $args );
+			if ( 4 !== count( $parts ) ) {
+				return null;
+			}
+			$alpha = $parts[3];
+		}
+
+		$alpha = preg_replace( $whitespace, '', $alpha );
+		if ( null === $alpha || ! preg_match( '/^([+-]?(?:\d+(?:\.\d*)?|\.\d+))(%?)$/D', $alpha, $match ) ) {
+			return null;
+		}
+
+		return '%' === $match[2] ? (float) $match[1] / 100 : (float) $match[1];
 	}
 
 	/**
@@ -5532,6 +6081,28 @@ class Block_Inserter {
 	private const SERIALIZABLE_CORE_BLOCKS = array(
 		'core/heading',
 		'core/paragraph',
+		'core/image',
+		'core/list',
+		'core/list-item',
+		'core/quote',
+	);
+
+	/**
+	 * Core blocks whose save() is a wrapper around InnerBlocks.Content, reproduced by
+	 * generate_core_wrapper_html(). A list item also carries its own rich text before
+	 * any nested list, so its content is part of the opening markup rather than a
+	 * standalone innerHTML string.
+	 */
+	/**
+	 * Attributes whose block.json source is core/image markup (img, figure > a,
+	 * figcaption). The serializer omits sourced attributes from the block comment.
+	 */
+	private const CORE_IMAGE_SOURCED_ATTRIBUTES = array( 'url', 'alt', 'caption', 'title', 'href', 'rel', 'linkClass', 'linkTarget' );
+
+	private const CORE_WRAPPER_BLOCKS = array(
+		'core/list',
+		'core/list-item',
+		'core/quote',
 	);
 
 	private const HYBRID_BLOCKS = array(

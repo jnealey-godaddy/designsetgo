@@ -7,6 +7,7 @@
  */
 
 @use './styles/shape-divider';
+@use './styles/box-width';
 
 .dsgo-stack {
 	// CRITICAL: Ensure width includes padding to prevent overflow
@@ -29,13 +30,20 @@
 	// Hover background overlay - works with both gradients and solid colors
 	// Using ::after pseudo-element allows smooth opacity transition
 	// z-index: 0 (below overlay ::before and content).
-	// The layer is always present but transparent until --dsgo-hover-bg-color is
-	// set, so fading it in on hover is a no-op when there is no hover color. This
-	// (rather than an inline-`[style*=…]` gate) lets the color come from EITHER
-	// the block's inline attribute OR a section style variation's stylesheet
-	// (`.is-style-*{ --dsgo-hover-bg-color: … }`). Additive overlay — no base
-	// value is clobbered — so no class-based activation is needed.
-	&::after {
+	// Gated on the `--dsgo-hover-bg-color` inline var actually being present —
+	// this is the ONLY source DSG emits it from today (see save.js/edit.js;
+	// there is no `is-style-hover-bg-*` variation family, unlike hover text/
+	// icon/button). An always-on `::after` here would otherwise claim the
+	// `opacity` property outright: a theme/style-kit's OWN decorative overlay
+	// painted on `.wp-block-designsetgo-section.has-background::after` usually
+	// sets `background` but not `opacity`, so with no gate this rule's
+	// `opacity: 0` is the only declaration for that property and wins by
+	// default — making the kit's overlay invisible until :hover regardless of
+	// selector specificity. Mirrors the `[style*=…]` gate already used by the
+	// Row and Grid blocks for the same variable (see their style.scss); those
+	// blocks paint the color directly instead of through a pseudo-element, so
+	// they never had this always-on-layer problem.
+	&[style*="--dsgo-hover-bg-color"]::after {
 		content: '';
 		position: absolute;
 		top: 0;
@@ -73,7 +81,7 @@
 			right: 0;
 			bottom: 0;
 			background-color: var(--dsgo-overlay-color);
-			opacity: var(--dsgo-overlay-opacity, 0.8);
+			opacity: var(--dsgo-overlay-opacity, 0.65);
 			pointer-events: none; /* Allow clicks to pass through to content */
 			z-index: 1; /* Above background image but below content */
 			border-radius: inherit; /* Match parent border radius */
@@ -100,13 +108,12 @@
 		z-index: 2;
 	}
 
-	// CRITICAL: When Section is nested inside another container, force full width
+	// Nested Sections fill their parent unless the author sets a width
 	// WordPress applies constrained layout which can limit width
 	// This ensures nested Sections take full width of their parent container
-	.dsgo-stack__inner > &,
-	.dsgo-flex__inner > &,
-	.dsgo-grid__inner > & {
-		width: 100% !important;
+	:where(.dsgo-stack__inner, .dsgo-flex__inner, .dsgo-grid__inner) > & {
+		// Fill the parent by default; authored classes and inline controls can override it.
+		width: 100%;
 
 		// Only strip inner constraints when the nested section itself has no width constraint
 		// Sections with constrainWidth enabled need their max-width + margin:auto preserved
@@ -214,8 +221,13 @@
 			align-self: flex-start !important;
 		}
 
-		> .alignwide,
-		> .alignfull {
+		// A capped box (`.dsgo-stack--has-box-width`) is excluded: it cannot
+		// stretch by definition, and `align-self: stretch` would pin it to the
+		// start of the cross axis, silently defeating the justification the
+		// author set on THIS parent. Its own `width: 100%` is inline, so
+		// nothing is lost by opting it out of both declarations here.
+		> .alignwide:not(.dsgo-stack--has-box-width),
+		> .alignfull:not(.dsgo-stack--has-box-width) {
 			align-self: stretch !important;
 			width: 100% !important;
 		}
@@ -285,7 +297,7 @@
 			.wp-block-designsetgo-accordion,
 			.dsgo-scroll-marquee,
 			.wp-block-designsetgo-scroll-marquee
-		):not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide) {
+		):not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide):not(.dsgo-stack--has-box-width) {
 			width: 100% !important;
 			max-width: none !important;
 			margin-left: 0 !important;
@@ -437,10 +449,11 @@
 		}
 	}
 
-	// Fade in the hover background overlay (::after pseudo-element). Safe when no
-	// hover color is set — the layer is transparent, so this is a visual no-op.
-	// Works with an inline attribute or a style variation.
-	&:hover::after {
+	// Fade in the hover background overlay (::after pseudo-element). Gated the
+	// same as the base rule above so this never claims `opacity` on hover for a
+	// plain `.has-background` section with no hover color configured — that
+	// would fight a theme/style-kit's own ::after opacity on hover too.
+	&[style*="--dsgo-hover-bg-color"]:hover::after {
 		opacity: 1;
 	}
 
@@ -493,8 +506,11 @@
 .dsgo-stack.alignfull.dsgo-no-width-constraint > .dsgo-stack__inner[class*="wp-container-"] {
 
 	// Target all direct children that aren't explicitly aligned
-	// Exclude blocks with explicit max-width set via our extension
-	> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width) {
+	// Exclude blocks with explicit max-width set via our extension, and nested
+	// sections that set their OWN box width (`.dsgo-stack--has-box-width`) —
+	// their inline cap/centering is the author's explicit intent and an
+	// `!important` declaration here would silently defeat it.
+	> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width):not(.dsgo-stack--has-box-width) {
 		max-width: none !important;
 		margin-left: 0 !important;
 		margin-right: 0 !important;

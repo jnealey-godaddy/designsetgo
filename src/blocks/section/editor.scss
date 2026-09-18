@@ -7,6 +7,7 @@
  */
 
 @use './styles/shape-divider';
+@use './styles/box-width';
 
 // SCSS Variables for inline/shrink-wrap blocks
 // These blocks should align based on parent container settings rather than stretch to full width
@@ -59,10 +60,11 @@ $inline-block-data-types: (
 
 	// Hover background overlay - works with both gradients and solid colors
 	// Using ::after pseudo-element allows smooth opacity transition.
-	// Always present but transparent until --dsgo-hover-bg-color is set, so the
-	// color may come from an inline attribute OR a section style variation's
-	// stylesheet. Mirrors src/blocks/section/style.scss.
-	&::after {
+	// Gated on the `--dsgo-hover-bg-color` inline var actually being present —
+	// an always-on rule here would claim the `opacity` property outright and
+	// hide a theme/style-kit's own decorative ::after overlay on a plain
+	// `.has-background` section until :hover. Mirrors src/blocks/section/style.scss.
+	&[style*="--dsgo-hover-bg-color"]::after {
 		content: '';
 		position: absolute;
 		top: 0;
@@ -98,7 +100,7 @@ $inline-block-data-types: (
 			right: 0;
 			bottom: 0;
 			background-color: var(--dsgo-overlay-color) !important;
-			opacity: var(--dsgo-overlay-opacity, 0.8) !important;
+			opacity: var(--dsgo-overlay-opacity, 0.65) !important;
 			pointer-events: none;
 			z-index: 1;
 			border-radius: inherit;
@@ -163,17 +165,14 @@ $inline-block-data-types: (
 		position: static; // Reset positioning
 	}
 
-	// CRITICAL: When Section is nested inside another container, force full width (EDITOR)
+	// Match the overridable nested Section width default from the frontend
 	// WordPress applies constrained layout which can limit width
 	// This ensures nested Sections take full width of their parent container
 	// In editor, blocks are wrapped in [data-block] elements
-	.dsgo-stack__inner > &,
-	.dsgo-stack__inner > [data-block] &,
-	.dsgo-flex__inner > &,
-	.dsgo-flex__inner > [data-block] &,
-	.dsgo-grid__inner > &,
-	.dsgo-grid__inner > [data-block] & {
-		width: 100% !important;
+	:where(.dsgo-stack__inner, .dsgo-flex__inner, .dsgo-grid__inner) > &,
+	:where(.dsgo-stack__inner > [data-block], .dsgo-flex__inner > [data-block], .dsgo-grid__inner > [data-block]) & {
+		// Match frontend defaults without outranking authored classes or inline controls.
+		width: 100%;
 
 		// Only strip inner constraints when the nested section itself has no width constraint
 		// Sections with constrainWidth enabled need their max-width + margin:auto preserved
@@ -247,7 +246,7 @@ $inline-block-data-types: (
 					.wp-block-designsetgo-accordion,
 					.dsgo-scroll-marquee,
 					.wp-block-designsetgo-scroll-marquee
-				):not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide) {
+				):not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide):not(.dsgo-stack--has-box-width) {
 				width: 100% !important;
 				max-width: none !important;
 				margin-left: 0 !important;
@@ -295,9 +294,9 @@ $inline-block-data-types: (
 	}
 
 	// Hover background and text colors using CSS custom properties (must match style.scss)
-	// Fade in the hover background overlay (::after). Safe when unset — the layer
-	// is transparent. Works with an inline attribute or a variation.
-	&:hover::after {
+	// Fade in the hover background overlay (::after), gated the same as the base
+	// rule above. Must match style.scss.
+	&[style*="--dsgo-hover-bg-color"]:hover::after {
 		opacity: 1;
 	}
 
@@ -544,8 +543,13 @@ $inline-block-data-types: (
 			align-self: flex-start !important;
 		}
 
-		> .alignwide,
-		> .alignfull {
+		// A capped box (`.dsgo-stack--has-box-width`) is excluded: it cannot
+		// stretch by definition, and `align-self: stretch` would pin it to the
+		// start of the cross axis, silently defeating the justification the
+		// author set on THIS parent. Its own `width: 100%` is inline, so
+		// nothing is lost by opting it out of both declarations here.
+		> .alignwide:not(.dsgo-stack--has-box-width),
+		> .alignfull:not(.dsgo-stack--has-box-width) {
 			align-self: stretch !important;
 			width: 100% !important;
 		}
@@ -563,7 +567,8 @@ $inline-block-data-types: (
 
 	// Target all direct children that aren't explicitly aligned
 	// In editor, children are wrapped in [data-block] elements
-	> [data-block]:not(.alignleft):not(.alignright) {
+	// Nested sections with their own box width opt out (must match style.scss).
+	> [data-block]:not(.alignleft):not(.alignright):not(.dsgo-stack--has-box-width) {
 		max-width: none !important;
 		margin-left: 0 !important;
 		margin-right: 0 !important;

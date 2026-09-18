@@ -11,6 +11,7 @@ import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import { getOverlayOpacity } from '../../utils/overlay-opacity';
 import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
@@ -30,6 +31,7 @@ export default function GridSave({ attributes }) {
 		constrainWidth,
 		contentWidth,
 		columnMinWidth,
+		columnTemplate,
 		desktopColumns,
 		tabletColumns,
 		mobileColumns,
@@ -92,7 +94,7 @@ export default function GridSave({ attributes }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': '0.8',
+				'--dsgo-overlay-opacity': getOverlayOpacity(overlayColor),
 			}),
 		},
 	});
@@ -119,7 +121,8 @@ export default function GridSave({ attributes }) {
 		gridTemplateColumns: getGridTemplateColumns(
 			columnMinWidth,
 			desktopColumns,
-			resolvedColumnGap
+			resolvedColumnGap,
+			columnTemplate
 		),
 		alignItems: alignItems || 'stretch',
 		rowGap: blockGapRow || rowGap || defaultGap,

@@ -28,16 +28,29 @@
  * is narrower than a single column's min width: the track collapses to the
  * container width rather than overflowing it.
  *
+ * A custom `columnTemplate` (a free-form `grid-template-columns` value such as
+ * `minmax(0, .7fr) minmax(0, 1.3fr)`) wins over both: it is the only way to
+ * express an asymmetric desktop layout. Tablet and mobile keep the column
+ * counts, because the responsive stylesheet overrides the inline value below
+ * those breakpoints.
+ *
  * @param {string} columnMinWidth Author's per-column min width ('' when unset).
  * @param {number} desktopColumns Desktop column count.
  * @param {string} columnGap      Resolved column gap (CSS length or var()).
+ * @param {string} columnTemplate Author's desktop track list ('' when unset).
  * @return {string} A `grid-template-columns` value.
  */
 export function getGridTemplateColumns(
 	columnMinWidth,
 	desktopColumns,
-	columnGap
+	columnGap,
+	columnTemplate = ''
 ) {
+	const template = (columnTemplate || '').trim();
+	if (template) {
+		return template;
+	}
+
 	const columns = desktopColumns || 3;
 
 	if (!columnMinWidth) {
@@ -57,4 +70,16 @@ export function getGridTemplateColumns(
 			: '100%';
 
 	return `repeat(auto-fill, minmax(min(100%, max(${columnMinWidth}, ${share})), 1fr))`;
+}
+
+/**
+ * Strip what a column template may never contain: anything that could end
+ * the inline declaration or the style attribute, and `url()`. The PHP
+ * inserter refuses the same set in Block_Inserter::find_invalid_attribute_values().
+ *
+ * @param {string} value Raw inspector input.
+ * @return {string} The value with unsafe characters removed.
+ */
+export function sanitizeColumnTemplate(value) {
+	return (value || '').replace(/[;{}<>"']/g, '').replace(/url\s*\(/gi, '');
 }

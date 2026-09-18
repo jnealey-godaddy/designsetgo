@@ -25,6 +25,7 @@
 import {
 	createBlock,
 	serialize,
+	parse,
 	registerBlockType,
 	setCategories,
 	// eslint-disable-next-line import/no-unresolved
@@ -419,5 +420,182 @@ describe('section save - hover variation activation classes', () => {
 			createBlock(metadata.name, { hoverTextColor: 'contrast' })
 		);
 		expect(html).not.toContain('dsgo-stack--has-hover-text');
+	});
+});
+
+describe('section save - outer box width', () => {
+	// `boxWidth` caps the OUTER wrapper; `contentWidth` caps
+	// `.dsgo-stack__inner`. Assertions therefore have to be scoped per element
+	// — a whole-HTML substring match cannot tell the two max-widths apart.
+	const outerStyle = (html) => {
+		const match = html.match(
+			/<div class="[^"]*dsgo-stack[^"]*"[^>]*style="([^"]*)"/
+		);
+		return match ? match[1] : '';
+	};
+	const innerStyle = (html) => {
+		const match = html.match(
+			/class="dsgo-stack__inner"[^>]*style="([^"]*)"/
+		);
+		return match ? match[1] : '';
+	};
+
+	test('boxWidth defaults to an empty string', () => {
+		expect(metadata.attributes.boxWidth).toEqual({
+			type: 'string',
+			default: '',
+		});
+	});
+
+	test('an unset boxWidth changes NOTHING about the saved markup', () => {
+		// The whole point of the default: existing content must keep parsing
+		// against the current save() with no deprecation and no "Attempt
+		// Recovery". Compare the serialized output of a block that has never
+		// heard of boxWidth with one that explicitly carries the default.
+		const bare = serialize(createBlock(metadata.name, {}));
+		const explicitDefault = serialize(
+			createBlock(metadata.name, { boxWidth: '' })
+		);
+
+		expect(explicitDefault).toBe(bare);
+		expect(bare).not.toContain('dsgo-stack--has-box-width');
+		expect(outerStyle(bare)).not.toContain('max-width');
+		expect(outerStyle(bare)).not.toContain('width:100%');
+	});
+
+	test('the unset case is byte-identical with every other feature engaged', () => {
+		// Guards the ordering of the spread in save(): a boxWidth-shaped hole in
+		// the style object must not shift any neighbouring declaration.
+		const attrs = {
+			overlayColor: 'contrast',
+			hoverBackgroundColor: 'base',
+			hoverTextColor: 'contrast',
+			shapeDividerTop: 'wave',
+			shapeDividerTopHeight: 120,
+			shapeDividerBottom: 'tilt',
+			contentWidth: '720px',
+			className: 'is-style-overlay-dark',
+		};
+
+		expect(serialize(createBlock(metadata.name, attrs))).toBe(
+			serialize(createBlock(metadata.name, { ...attrs, boxWidth: '' }))
+		);
+	});
+
+	test('a set boxWidth caps the OUTER element', () => {
+		const html = serialize(
+			createBlock(metadata.name, { boxWidth: '430px' })
+		);
+
+		expect(html).toContain('dsgo-stack--has-box-width');
+		expect(outerStyle(html)).toContain('max-width:430px');
+		// width:100% is what makes the box reach the cap inside a flex parent
+		// instead of shrink-wrapping to its content.
+		expect(outerStyle(html)).toContain('width:100%');
+	});
+
+	test('a capped box carries NO inline margin, so a flex parent can place it', () => {
+		// Placement lives in styles/_box-width.scss, not here. Flex resolves
+		// auto margins BEFORE align-items / justify-content, so an inline
+		// `margin: auto` would silently override the alignment the author set
+		// on the PARENT section — a parent justified left would still centre
+		// its capped child. The marker class is what the stylesheet keys on.
+		const style = outerStyle(
+			serialize(createBlock(metadata.name, { boxWidth: '430px' }))
+		);
+		expect(style).not.toContain('margin-left');
+		expect(style).not.toContain('margin-right');
+	});
+
+	test('boxWidth does NOT touch the content width', () => {
+		const html = serialize(
+			createBlock(metadata.name, { boxWidth: '430px' })
+		);
+		// constrainWidth defaults to true, so the inner measure is still the
+		// theme content size — unchanged by the outer cap.
+		expect(innerStyle(html)).toContain(
+			'max-width:var(--wp--style--global--content-size, 1140px)'
+		);
+		expect(innerStyle(html)).not.toContain('430px');
+	});
+
+	test('boxWidth and contentWidth are independently settable', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				boxWidth: '430px',
+				contentWidth: '320px',
+			})
+		);
+		expect(outerStyle(html)).toContain('max-width:430px');
+		expect(innerStyle(html)).toContain('max-width:320px');
+	});
+
+	test('boxWidth applies with constrainWidth off (inner stays unconstrained)', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				boxWidth: '430px',
+				constrainWidth: false,
+			})
+		);
+		expect(outerStyle(html)).toContain('max-width:430px');
+		expect(html).toContain('dsgo-no-width-constraint');
+		expect(innerStyle(html)).not.toContain('max-width');
+	});
+
+	test('boxWidth accepts any CSS length, not just px', () => {
+		expect(
+			outerStyle(
+				serialize(createBlock(metadata.name, { boxWidth: '60%' }))
+			)
+		).toContain('max-width:60%');
+		expect(
+			outerStyle(
+				serialize(createBlock(metadata.name, { boxWidth: '30rem' }))
+			)
+		).toContain('max-width:30rem');
+	});
+
+	test('an author-set margin survives, and nothing inline competes with it', () => {
+		// WordPress's spacing support serializes style.spacing.margin into the
+		// SAME inline style attribute, and save()'s own style prop is spread
+		// LAST — so any margin save() emitted would clobber the author's.
+		// Emitting none means the author's value is the only inline
+		// declaration, and it beats the stylesheet default placement.
+		const style = outerStyle(
+			serialize(
+				createBlock(metadata.name, {
+					boxWidth: '430px',
+					style: { spacing: { margin: { left: '40px' } } },
+				})
+			)
+		);
+		expect(style).toContain('margin-left:40px');
+		expect(style).not.toContain('margin-left:auto');
+		expect(style).not.toContain('margin-right');
+	});
+
+	test('boxWidth survives a serialize → parse round trip', () => {
+		const html = serialize(
+			createBlock(metadata.name, { boxWidth: '430px' })
+		);
+		const [parsed] = parse(html);
+		expect(parsed.isValid).toBe(true);
+		expect(parsed.attributes.boxWidth).toBe('430px');
+	});
+
+	test('a capped box still carries its shape dividers and overlay', () => {
+		// Requirement: the cap moves the painted affordances in with it. The
+		// dividers size off the wrapper (position: absolute, width in %), so
+		// simply staying inside the capped wrapper is what makes that true.
+		const html = serialize(
+			createBlock(metadata.name, {
+				boxWidth: '430px',
+				overlayColor: 'contrast',
+				shapeDividerTop: 'wave',
+			})
+		);
+		expect(html).toContain('dsgo-stack--has-box-width');
+		expect(html).toContain('dsgo-stack--has-overlay');
+		expect(html).toContain('dsgo-shape-divider--top');
 	});
 });

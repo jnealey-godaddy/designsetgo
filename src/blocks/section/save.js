@@ -12,10 +12,16 @@ import {
 	convertColorToCSSVar,
 	convertPresetToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
+import { getOverlayOpacity } from '../../utils/overlay-opacity';
 import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
 } from './utils/has-overlay-style';
+import {
+	BOX_WIDTH_CLASS,
+	getBoxWidthStyle,
+	hasBoxWidth,
+} from './utils/box-width';
 import ShapeDivider, {
 	getRenderedShapeHeight,
 } from './components/ShapeDivider';
@@ -86,12 +92,16 @@ export default function SectionSave({ attributes }) {
 		hasOverlay && 'dsgo-stack--has-overlay',
 		(shapeDividerTop || shapeDividerBottom) &&
 			'dsgo-stack--has-shape-divider',
+		hasBoxWidth(attributes) && BOX_WIDTH_CLASS,
 		...hoverVariationClasses(attributes.className),
 	]
 		.filter(Boolean)
 		.join(' ');
 
-	// Block wrapper props - outer div stays full width
+	// Block wrapper props. The outer element stays full width UNLESS `boxWidth`
+	// is set, in which case getBoxWidthStyle() caps and centers the section's
+	// own box (background, border, shadow, overlay and shape dividers included).
+	// See utils/box-width.js. Must match edit.js EXACTLY.
 	const TagName = tagName || 'div';
 	const blockProps = useBlockProps.save({
 		className,
@@ -115,7 +125,7 @@ export default function SectionSave({ attributes }) {
 			}),
 			...(overlayColor && {
 				'--dsgo-overlay-color': convertColorToCSSVar(overlayColor),
-				'--dsgo-overlay-opacity': '0.8',
+				'--dsgo-overlay-opacity': getOverlayOpacity(overlayColor),
 			}),
 			// Default content clearance: expose the divider's RENDERED height on
 			// the wrapper so the stylesheet fallback (see _shape-divider.scss)
@@ -142,6 +152,9 @@ export default function SectionSave({ attributes }) {
 						shapeDividerBottomHeight
 					)}px`,
 				}),
+			// Outer box width. Emits nothing when `boxWidth` is unset, so
+			// existing content serializes byte-identically.
+			...getBoxWidthStyle(attributes),
 		},
 	});
 

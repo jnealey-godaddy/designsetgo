@@ -39,7 +39,7 @@
 
 	// Optional Nav Border
 	&.dsgo-tabs--show-nav-border .dsgo-tabs__nav {
-		border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+		border-bottom: 1px solid color-mix(in srgb, currentcolor 18%, transparent);
 		padding-bottom: 0.5rem;
 	}
 
@@ -77,14 +77,14 @@
 
 		// Subtle hover effect
 		&:hover:not(.is-active) {
-			color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb)));
+			color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
 			background: var(--dsgo-tab-bg-hover, transparent);
 		}
 
 		// Active state - apply custom colors
 		&.is-active {
 			background: var(--dsgo-tab-bg-active, transparent);
-			color: var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb));
+			color: var(--dsgo-tab-color-active, currentColor);
 			font-weight: 600;
 		}
 
@@ -216,7 +216,7 @@
 			margin-bottom: -2px;
 
 			&.is-active {
-				border-bottom-color: var(--wp--preset--color--accent-2, #2563eb);
+				border-bottom-color: currentcolor;
 			}
 		}
 	}
@@ -231,13 +231,13 @@
 			margin-right: 0;
 
 			&:hover:not(.is-active) {
-				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb)));
+				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
 				background: var(--dsgo-tab-bg-hover, transparent);
 			}
 
 			&.is-active {
-				border-bottom-color: var(--dsgo-tab-border-color, var(--wp--preset--color--accent-2, #2563eb));
-				color: var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb));
+				border-bottom-color: var(--dsgo-tab-border-color, currentColor);
+				color: var(--dsgo-tab-color-active, currentColor);
 			}
 		}
 	}
@@ -252,12 +252,12 @@
 
 			&:hover:not(.is-active) {
 				background: var(--dsgo-tab-bg-hover, transparent);
-				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb)));
+				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
 			}
 
 			&.is-active {
 				background: transparent;
-				color: var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb));
+				color: var(--dsgo-tab-color-active, currentColor);
 			}
 		}
 	}
@@ -266,8 +266,13 @@
 	 * Tab Style: Pills
 	 */
 	&.dsgo-tabs--pills {
-		// Override color variable for pills - white text on colored background
-		--dsgo-tab-color-active: #fff;
+		// Mirrors style.scss: a pill is a tint of the surrounding colour, so its label stays at full
+		// strength and readable on a light or a dark section.
+		--dsgo-tab-bg: color-mix(in srgb, currentcolor 8%, transparent);
+		--dsgo-tab-bg-hover: color-mix(in srgb, currentcolor 12%, transparent);
+		--dsgo-tab-bg-active: color-mix(in srgb, currentcolor 16%, transparent);
+		--dsgo-tab-color-active: currentcolor;
+		--dsgo-tab-color-hover: currentcolor;
 
 		.dsgo-tabs__nav {
 			border-bottom: none;
@@ -277,16 +282,16 @@
 			border-radius: 6px;
 			border-bottom: none;
 			margin-bottom: 0;
-			background: var(--dsgo-tab-bg, rgba(0, 0, 0, 0.05));
+			background: var(--dsgo-tab-bg, color-mix(in srgb, currentColor 8%, transparent));
 
 			&:hover:not(.is-active) {
-				background: var(--dsgo-tab-bg-hover, var(--dsgo-tab-bg, rgba(0, 0, 0, 0.1)));
-				color: var(--dsgo-tab-color-hover, var(--wp--preset--color--accent-2, #2563eb));
+				background: var(--dsgo-tab-bg-hover, var(--dsgo-tab-bg, color-mix(in srgb, currentColor 12%, transparent)));
+				color: var(--dsgo-tab-color-hover, currentColor);
 			}
 
 			&.is-active {
-				background: var(--dsgo-tab-bg-active, var(--wp--preset--color--accent-2, #2563eb));
-				color: var(--dsgo-tab-color-active, #fff);
+				background: var(--dsgo-tab-bg-active, color-mix(in srgb, currentColor 16%, transparent));
+				color: var(--dsgo-tab-color-active, currentColor);
 			}
 		}
 	}
@@ -297,7 +302,7 @@
 	&.dsgo-tabs--underline {
 
 		.dsgo-tabs__nav {
-			border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+			border-bottom: 1px solid color-mix(in srgb, currentcolor 18%, transparent);
 		}
 
 		.dsgo-tabs__tab {
@@ -308,12 +313,12 @@
 
 			&:hover:not(.is-active) {
 				background: var(--dsgo-tab-bg-hover, transparent);
-				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb)));
+				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
 			}
 
 			&.is-active {
-				border-bottom-color: var(--dsgo-tab-border-color, var(--wp--preset--color--accent-2, #2563eb));
-				color: var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb));
+				border-bottom-color: var(--dsgo-tab-border-color, currentColor);
+				color: var(--dsgo-tab-color-active, currentColor);
 				background: transparent; // Keep transparent even when active
 			}
 		}
@@ -334,13 +339,13 @@
 			margin-bottom: 0;
 
 			&:hover:not(.is-active) {
-				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb)));
+				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
 				background: var(--dsgo-tab-bg-hover, transparent);
 			}
 
 			&.is-active {
 				background: var(--dsgo-tab-bg-active, rgba(0, 0, 0, 0.03));
-				color: var(--dsgo-tab-color-active, var(--wp--preset--color--accent-2, #2563eb));
+				color: var(--dsgo-tab-color-active, currentColor);
 			}
 		}
 	}

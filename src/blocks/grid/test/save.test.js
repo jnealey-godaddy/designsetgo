@@ -122,3 +122,30 @@ describe('grid save - align rows (match row heights)', () => {
 		expect(html).not.toContain('--dsgo-row-count');
 	});
 });
+
+describe('grid save - custom column template', () => {
+	test('columnTemplate replaces the repeated column count on the inner element', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				desktopColumns: 2,
+				columnTemplate: 'minmax(0, .7fr) minmax(0, 1.3fr)',
+			})
+		);
+		expect(html).toContain(
+			'grid-template-columns:minmax(0, .7fr) minmax(0, 1.3fr)'
+		);
+		expect(html).not.toContain('repeat(2, 1fr)');
+		expect(html).toContain('dsgo-grid-cols-2');
+	});
+
+	test('a blank columnTemplate changes nothing', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				desktopColumns: 3,
+				columnTemplate: '',
+			})
+		);
+		expect(html).toContain('grid-template-columns:repeat(3, 1fr)');
+		expect(html).not.toContain('columnTemplate');
+	});
+});

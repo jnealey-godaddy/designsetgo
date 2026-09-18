@@ -72,8 +72,8 @@ const OLD_SVG_MARKUP = `<!-- wp:designsetgo/section {"shapeDividerTop":"wave","s
 // background color (no explicit shapeDividerBottomColor set), matching
 // V4ShapeDivider's inheritance behavior used by deprecations v4/v5/v6.
 // Built from v4's own save() so the fixture is byte-exact.
-// deprecated.js exports deprecations newest-first: [v10, v9, v8, v7, v6, v5, v4, v3, v2, v1].
-const [, , , , , , v4Deprecation] = deprecated;
+// deprecated.js exports deprecations newest-first: [v11, v11Unconstrained, v10, v9, v8, v7, v6, v5, v4, v3, v2, v1].
+const [, , , , , , , , v4Deprecation] = deprecated;
 const OLD_SVG_MARKUP_BOTTOM_INHERITED = buildOldMarkup(
 	{
 		shapeDividerBottom: 'tilt',
@@ -124,7 +124,7 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 	// wave/tilt, which were NOT redesigned, so they can't catch this.
 	test('deprecations reproduce frozen legacy geometry for redesigned shapes (drops)', () => {
 		// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
-		const [, , , , , , v4Dep, v3Dep] = deprecated;
+		const [, , , , , , , , v4Dep, v3Dep] = deprecated;
 
 		[v3Dep, v4Dep].forEach((deprecation) => {
 			const markup = buildOldMarkup(
@@ -141,7 +141,7 @@ describe('section deprecations - shape divider SVG to class-based migration', ()
 
 describe('section deprecations - style-kit overlay variation migration (v7)', () => {
 	// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
-	const [, , , v7Deprecation] = deprecated;
+	const [, , , , , v7Deprecation] = deprecated;
 
 	// Reproduce content saved BEFORE this change by taking what the block
 	// ACTUALLY serializes today (carrying block.json defaults such as the
@@ -265,7 +265,7 @@ describe('section deprecations - style-kit overlay variation migration (v7)', ()
 
 describe('section deprecations - style-kit hover variation migration (v8)', () => {
 	// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
-	const [, , v8Deprecation] = deprecated;
+	const [, , , , v8Deprecation] = deprecated;
 
 	// Reproduce content saved BEFORE hover-variation classes existed by taking
 	// the block's REAL current serialization and stripping the hover-text
@@ -422,7 +422,7 @@ describe('section deprecations - style-kit hover variation migration (v8)', () =
 
 describe('section deprecations - height-derived px clearance migration (v9)', () => {
 	// deprecated.js exports newest-first: [v9, v8, v7, v6, v5, v4, v3, v2, v1].
-	const [, v9Deprecation] = deprecated;
+	const [, , , v9Deprecation] = deprecated;
 
 	// v9's own save() reproduces the pre-change output: the inner container's
 	// shape-divider clearance is derived from the divider height and emitted as

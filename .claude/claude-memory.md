@@ -431,3 +431,71 @@ migrates an installed table. A real key change needs an explicit `ALTER`.
 a rejected schema no longer re-runs dbDelta on every `admin_init`. In PHPUnit, break a
 CREATE with the `query` filter, and match `CREATE TEMPORARY TABLE` too, because the core test
 suite rewrites CREATE to TEMPORARY on that same filter first.
+
+### Section `boxWidth`: capping the OUTER box, not the content (agent: section-box-width-2026-09-17)
+
+`contentWidth` caps `.dsgo-stack__inner`; the new `boxWidth` caps the block wrapper, so
+background, border, shadow, overlay `::before` and the absolutely-positioned shape dividers
+all narrow with it. The two are independent and both are settable at once.
+
+**save() emits only `width: 100%` + `max-width`. Placement is entirely CSS**
+(`section/styles/_box-width.scss`, `@use`d by style.scss AND editor.scss). Getting that split
+wrong is the whole story of this feature:
+
+1. **Never emit `margin: auto` inline for a box inside a flex parent.** Flex resolves auto
+   margins BEFORE `align-items`/`justify-content`, so an inline auto margin silently overrides
+   the justification the author set on the PARENT — a Section justified left still centred its
+   capped child. And inline can't be overridden, so there's no way to walk it back.
+2. **Section blanket-stretches every child**: `.dsgo-stack__inner.is-layout-flex > * {
+   align-self: stretch }` (0,3,0), so paragraphs keep their measure under a centred
+   justification. A capped box is the one child that must NOT stretch — stretch pins it to the
+   start of the cross axis. `align-self: auto` at (0,4,0) hands it back to `align-items`.
+   Also had to exclude it from `> .alignwide, > .alignfull { align-self: stretch !important }`,
+   because Section's `align` defaults to `"full"`, so EVERY nested section hits that rule.
+3. **`!important` nested-container overrides beat inline styles.** section/row/grid style.scss
+   and `styles/_utilities.scss` force `max-width: none !important` on unaligned child
+   containers. Fixed with the escape-hatch idiom already in those selectors
+   (`:not(.dsgo-has-max-width)` was there) — `.dsgo-stack--has-box-width` joins it.
+4. Non-flex parents (post content root, core/group flow) have nothing to inherit, so the box
+   centres at (0,3,0) — enough to beat the `.has-global-padding > .alignfull` negative
+   root-padding margins (0,2,0) a `useRootPaddingAwareAlignments` theme applies.
+
+**cssnano mangles `:where()` at the head of a selector list.**
+`:where(.x) > .a, :where(.x) > .b { }` compiles (sass output is correct) but minifies with the
+`:where(.x) >` prefix DROPPED FROM THE FIRST SELECTOR — turning a scoped rule into an
+everywhere-rule. Invisible in dev; only `npm run build` + a grep of
+`build/blocks/section/style-index.css` catches it. Avoid leading `:where()` in a selector list.
+
+**Section's own style.scss/editor.scss do NOT feed `build/style-index.css`** — they compile to
+`build/blocks/section/{style-index,index}.css` via block.json's `style`/`editorStyle`. Grep the
+per-block file, not the global bundle, when verifying section CSS landed.
+
+**No deprecation needed** — the attribute defaults to `''` and emits nothing. Verified rather
+than assumed: a throwaway test registered HEAD's `save.js` + `block.json` as a SECOND block
+type and compared `serialize()` byte-for-byte across 17 attribute combinations. Reuse that
+trick for any "is this really inert?" question; far stronger than comparing new code to itself.
+
+**Unrelated pre-existing bug found while testing:** a Section whose `style` attribute has no
+`spacing.padding` (reachable only programmatically — the UI always merges) gets padding
+injected on load, so its save() no longer matches stored markup and it parses INVALID. Repro:
+`createBlock('designsetgo/section', { style: { spacing: { margin: { left: '0' } } } })`, save,
+reload. Nothing to do with boxWidth; a capped section with a normal style round-trips valid.
+
+`includes/abilities/class-block-inserter.php` mirrors Section's save() in PHP and had to be
+updated in lockstep.
+
+**Deprecations: none needed, but migrated blocks get `undefined`, not the default.**
+`applyBlockDeprecatedVersions` returns exactly what `migrate()` produced — WordPress does NOT
+re-apply current block.json defaults afterwards. So a block that runs any deprecation arrives
+with a NEW attribute `undefined` rather than `''`. Harmless for markup (falsy either way) but
+a `hasValue={() => attr !== ''}` in a ToolsPanel.Item then reports those blocks as "set" and
+shows a reset affordance for an empty control. Use `!!attr`. Section's existing `contentWidth`
+item has this latent bug too. Do NOT add the new attribute to old deprecation schemas — those
+must declare what that version actually had.
+
+**Transforms silently drop unregistered attributes.** Section's transforms spread
+`...attributes` wholesale, so `boxWidth` vanished into Row and Grid (neither has an equivalent,
+and both are in the max-width extension's EXCLUDED_BLOCKS). core/group is NOT excluded, so
+`boxWidth` → `dsgoMaxWidth` is the faithful mapping there. `src/blocks/section/test/
+transforms.test.js` pins all three, registering minimal stand-in block types — the attribute
+SCHEMA is the whole test, since dropping is what an undeclared attribute does.

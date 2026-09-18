@@ -231,7 +231,7 @@ class Add_Child_Block extends Abstract_Ability {
 
 		// Sanitize attributes.
 		if ( ! empty( $attributes ) ) {
-			$attributes = Block_Configurator::sanitize_attributes( $attributes );
+			$attributes = Block_Configurator::sanitize_attributes( $attributes, $block_name );
 		}
 
 		// Recursively sanitize inner blocks attributes.

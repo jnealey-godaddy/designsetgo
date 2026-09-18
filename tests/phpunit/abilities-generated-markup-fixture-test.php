@@ -19,6 +19,7 @@
  * @subpackage Tests
  */
 
+use DesignSetGo\Abilities\Block_Configurator;
 use DesignSetGo\Abilities\Block_Inserter;
 
 /**
@@ -184,6 +185,85 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 	 */
 	private function authored_payloads(): array {
 		return array(
+			// Custom class names and anchors reach the root element, on
+			// containers and on core text blocks alike, exactly where
+			// useBlockProps.save() spreads them.
+			'section-with-custom-class-and-anchor' => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'className'       => 'sd-site-band ck-visit',
+					'anchor'          => 'visit',
+					'backgroundColor' => 'base',
+				),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/heading',
+						'attributes' => array(
+							'level'     => 2,
+							'content'   => 'Make it your next stop',
+							'className' => 'sd-site-display',
+							'anchor'    => 'next-stop',
+						),
+					),
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => array(
+							'content'   => 'Come by for coffee, a pastry and a table when you need one.',
+							'className' => 'sd-site-reading',
+						),
+					),
+					array(
+						'name'        => 'designsetgo/grid',
+						'attributes'  => array(
+							'className'      => 'ck-mosaic',
+							'anchor'         => 'gallery',
+							'desktopColumns' => 2,
+							'columnTemplate' => 'minmax(0, .7fr) minmax(0, 1.3fr)',
+						),
+						'innerBlocks' => array(
+							array(
+								'name'       => 'designsetgo/row',
+								'attributes' => array( 'className' => 'ck-item' ),
+							),
+						),
+					),
+				),
+			),
+			// Inline links keep their class/aria/data hooks and button labels
+			// keep inline formatting through the same sanitizer the insert
+			// abilities run, and the result still matches save().
+			'sanitized-inline-link-and-rich-button-labels' => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/paragraph',
+						'attributes' => Block_Configurator::sanitize_attributes(
+							array(
+								'content' => 'Browse the <a class="sd-text-link" id="menu-link" href="/menu/" target="_blank" aria-label="Full menu" data-track="menu" data-wp-on--click="actions.go">full <em class="sd-em">menu</em></a> <span class="sd-accent" aria-hidden="true">*</span>',
+							),
+							'core/paragraph'
+						),
+					),
+					array(
+						'name'       => 'designsetgo/icon-button',
+						'attributes' => Block_Configurator::sanitize_attributes(
+							array(
+								'text' => 'Book <strong>now</strong><br>today <a href="/nested/">here</a>',
+								'url'  => '/book/',
+							),
+							'designsetgo/icon-button'
+						),
+					),
+					array(
+						'name'       => 'designsetgo/modal-trigger',
+						'attributes' => Block_Configurator::sanitize_attributes(
+							array( 'text' => 'See <em>details</em>' ),
+							'designsetgo/modal-trigger'
+						),
+					),
+				),
+			),
 			'section-pill-paragraph-fifty-fifty-icon-button' => array(
 				'name'        => 'designsetgo/section',
 				'attributes'  => array(
@@ -611,6 +691,43 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				'attributes'  => array( 'hoverTextColor' => '#ffffff' ),
 				'innerBlocks' => array(),
 			),
+			// Overlay opacity follows the colour: 0.65 for presets and opaque
+			// colours, 1 when the colour carries its own alpha.
+			'section-overlay-alpha-hex'                   => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array( 'overlayColor' => '#1212127D' ),
+				'innerBlocks' => array(),
+			),
+			'row-overlay-preset'                          => array(
+				'name'        => 'designsetgo/row',
+				'attributes'  => array( 'overlayColor' => 'var:preset|color|contrast' ),
+				'innerBlocks' => array(),
+			),
+			'row-overlay-alpha-hex'                       => array(
+				'name'        => 'designsetgo/row',
+				'attributes'  => array( 'overlayColor' => '#1217' ),
+				'innerBlocks' => array(),
+			),
+			'grid-overlay-preset'                         => array(
+				'name'        => 'designsetgo/grid',
+				'attributes'  => array( 'overlayColor' => 'var:preset|color|contrast' ),
+				'innerBlocks' => array(),
+			),
+			'grid-overlay-rgba'                           => array(
+				'name'        => 'designsetgo/grid',
+				'attributes'  => array( 'overlayColor' => 'rgb(0 0 0 / 40%)' ),
+				'innerBlocks' => array(),
+			),
+			'scroll-accordion-item-overlay-preset'        => array(
+				'name'        => 'designsetgo/scroll-accordion-item',
+				'attributes'  => array( 'overlayColor' => 'var:preset|color|contrast' ),
+				'innerBlocks' => array(),
+			),
+			'scroll-accordion-item-overlay-alpha'         => array(
+				'name'        => 'designsetgo/scroll-accordion-item',
+				'attributes'  => array( 'overlayColor' => 'rgba(0,0,0,.4)' ),
+				'innerBlocks' => array(),
+			),
 			// counter-group reads columns/columnsTablet/columnsMobile - it was
 			// reading the Grid block's attribute names.
 			'counter-group-columns'                       => array(
@@ -931,6 +1048,76 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				'attributes'  => array(
 					'content'               => 'Fades in as you scroll.',
 					'dsgoTextRevealEnabled' => true,
+				),
+				'innerBlocks' => array(),
+			),
+			// A native background image alongside custom text color, overlay
+			// and padding. Confirms the saved root holds no
+			// background-image/-size/-position/-repeat declaration (Core
+			// renders those at display time only) while every other support
+			// and DesignSetGo declaration/class still reaches the markup.
+			'section-background-image-with-overlay'       => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'overlayColor' => 'rgba(0,0,0,0.475)',
+					'className'    => 'ck-hero',
+					'style'        => array(
+						'background' => array(
+							'backgroundImage'    => array(
+								'url'    => 'https://example.com/hero.jpg',
+								'source' => 'file',
+							),
+							'backgroundSize'     => 'cover',
+							'backgroundPosition' => 'center center',
+							'backgroundRepeat'   => 'no-repeat',
+						),
+						'color'      => array( 'text' => '#ffffff' ),
+						'spacing'    => array( 'padding' => array( 'top' => '40px' ) ),
+					),
+				),
+				'innerBlocks' => array(
+					array(
+						'name'       => 'core/heading',
+						'attributes' => array(
+							'level'   => 2,
+							'content' => 'Welcome',
+						),
+					),
+				),
+			),
+			// The full animation combination (entrance + exit + non-default
+			// trigger/duration/delay/easing/offset/once + stagger), plus
+			// SVG-draw stacked on top — mirrors addAnimationSaveProps() in
+			// src/extensions/block-animations/editor.js exactly.
+			'section-full-animation-and-svg-draw'          => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'dsgoSvgDraw'           => true,
+					'dsgoAnimationEnabled'  => true,
+					'dsgoEntranceAnimation' => 'fadeInUp',
+					'dsgoExitAnimation'     => 'fadeOutDown',
+					'dsgoAnimationTrigger'  => 'load',
+					'dsgoAnimationDuration' => 900,
+					'dsgoAnimationDelay'    => 200,
+					'dsgoAnimationEasing'   => 'ease-in',
+					'dsgoAnimationOffset'   => 50,
+					'dsgoAnimationOnce'     => false,
+					'dsgoStaggerEnabled'    => true,
+					'dsgoStaggerStep'       => 120,
+				),
+				'innerBlocks' => array(),
+			),
+			// Scroll-linked ("scrubbing") entrance: exit and stagger both drop,
+			// per the mutual-exclusivity rule in addAnimationSaveProps().
+			'section-scroll-linked-animation'              => array(
+				'name'        => 'designsetgo/section',
+				'attributes'  => array(
+					'dsgoAnimationEnabled'  => true,
+					'dsgoEntranceAnimation' => 'fadeInUp',
+					'dsgoAnimationTrigger'  => 'scroll',
+					'dsgoScrollLinked'      => true,
+					'dsgoExitAnimation'     => 'fadeOutDown',
+					'dsgoStaggerEnabled'    => true,
 				),
 				'innerBlocks' => array(),
 			),

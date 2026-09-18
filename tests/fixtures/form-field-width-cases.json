@@ -1,0 +1,40 @@
+{
+	"_comment": "Shared expectations for the form field width style. Consumed by tests/phpunit/form-field-width-style-test.php (designsetgo_form_field_width_style) and src/blocks/form-builder/utils/test/field-width.test.js (getFormFieldWidth) so PHP render and editor preview stay identical.",
+	"cases": [
+		{
+			"width": "100",
+			"value": "100%",
+			"style": "flex-basis:100%;max-width:100%"
+		},
+		{
+			"width": "75",
+			"value": "calc(75% - var(--dsgo-form-field-spacing, 1.5rem) * 0.25)",
+			"style": "flex-basis:calc(75% - var(--dsgo-form-field-spacing, 1.5rem) * 0.25);max-width:calc(75% - var(--dsgo-form-field-spacing, 1.5rem) * 0.25)"
+		},
+		{
+			"width": "66",
+			"value": "calc(66.6667% - var(--dsgo-form-field-spacing, 1.5rem) * 0.3333)",
+			"style": "flex-basis:calc(66.6667% - var(--dsgo-form-field-spacing, 1.5rem) * 0.3333);max-width:calc(66.6667% - var(--dsgo-form-field-spacing, 1.5rem) * 0.3333)"
+		},
+		{
+			"width": "50",
+			"value": "calc(50% - var(--dsgo-form-field-spacing, 1.5rem) * 0.5)",
+			"style": "flex-basis:calc(50% - var(--dsgo-form-field-spacing, 1.5rem) * 0.5);max-width:calc(50% - var(--dsgo-form-field-spacing, 1.5rem) * 0.5)"
+		},
+		{
+			"width": "33",
+			"value": "calc(33.3333% - var(--dsgo-form-field-spacing, 1.5rem) * 0.6667)",
+			"style": "flex-basis:calc(33.3333% - var(--dsgo-form-field-spacing, 1.5rem) * 0.6667);max-width:calc(33.3333% - var(--dsgo-form-field-spacing, 1.5rem) * 0.6667)"
+		},
+		{
+			"width": "25",
+			"value": "calc(25% - var(--dsgo-form-field-spacing, 1.5rem) * 0.75)",
+			"style": "flex-basis:calc(25% - var(--dsgo-form-field-spacing, 1.5rem) * 0.75);max-width:calc(25% - var(--dsgo-form-field-spacing, 1.5rem) * 0.75)"
+		},
+		{
+			"width": "",
+			"value": "100%",
+			"style": "flex-basis:100%;max-width:100%"
+		}
+	]
+}

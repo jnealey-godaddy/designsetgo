@@ -979,8 +979,47 @@ class Abilities_Security_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that inline text content keeps a single leading/trailing space: adjoining
+	 * heading segments rely on it for the word gap between them.
+	 */
+	public function test_content_edge_whitespace_preserved(): void {
+		$result = \DesignSetGo\Abilities\Block_Configurator::sanitize_attributes(
+			array(
+				'content' => 'Your people belong in the ',
+				'label'   => 'Book now ',
+			)
+		);
+
+		$this->assertSame( 'Your people belong in the ', $result['content'] );
+		$this->assertSame( 'Book now', $result['label'] );
+	}
+
+	/**
+	 * Test that content edge whitespace never revives stripped markup and stays a single space.
+	 */
+	public function test_content_edge_whitespace_is_a_single_space(): void {
+		$result = \DesignSetGo\Abilities\Block_Configurator::sanitize_attributes(
+			array( 'content' => "  <b>picture</b>\n\n" )
+		);
+
+		$this->assertSame( ' <b>picture</b> ', $result['content'] );
+	}
+
+	/**
 	 * Test that null attribute values are preserved through sanitization.
 	 */
+	public function test_rich_text_preserves_breaks_without_allowing_active_markup(): void {
+		$result = \DesignSetGo\Abilities\Block_Configurator::sanitize_attributes(
+			array( 'content' => 'Fresh<br><em>cuts</em> <a href="javascript:alert(1)" onclick="alert(1)">Book</a><img src=x onerror=alert(1)>' )
+		);
+		$this->assertStringContainsString( 'Fresh<br><em>cuts</em>', $result['content'] );
+		$this->assertStringNotContainsString( 'javascript:', $result['content'] );
+		$this->assertStringNotContainsString( 'onclick', $result['content'] );
+		$this->assertStringNotContainsString( '<img', $result['content'] );
+		$escaped = \DesignSetGo\Abilities\Block_Configurator::sanitize_attributes( array( 'content' => '&lt;script&gt;literal&lt;/script&gt;' ) );
+		$this->assertSame( '&lt;script&gt;literal&lt;/script&gt;', $escaped['content'] );
+	}
+
 	public function test_null_attribute_preserved(): void {
 		$result = \DesignSetGo\Abilities\Block_Configurator::sanitize_attributes(
 			array( 'optional' => null )

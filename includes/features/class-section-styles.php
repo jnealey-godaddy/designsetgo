@@ -107,6 +107,7 @@ class Section_Styles {
 			return;
 		}
 
+		$this->register_surface_variations();
 		$variations = $this->get_container_variations();
 
 		if ( empty( $variations ) ) {
@@ -131,6 +132,34 @@ class Section_Styles {
 					)
 				);
 			}
+		}
+	}
+
+	/** Register reusable surfaces; generated Global Styles can customize their tokens. */
+	private function register_surface_variations() {
+		$surfaces = array(
+			'dsgo-surface-light'  => array( __( 'Light surface', 'designsetgo' ), 'base', 'contrast' ),
+			'dsgo-surface-dark'   => array( __( 'Dark surface', 'designsetgo' ), 'contrast', 'base' ),
+			'dsgo-surface-accent' => array( __( 'Accent surface', 'designsetgo' ), 'accent-1', 'contrast' ),
+		);
+		$registry = \WP_Block_Styles_Registry::get_instance();
+		foreach ( $surfaces as $slug => $surface ) {
+			if ( $registry->is_registered( 'core/group', $slug ) ) {
+				continue;
+			}
+			register_block_style(
+				'core/group',
+				array(
+					'name'       => $slug,
+					'label'      => $surface[0],
+					'style_data' => array(
+						'color' => array(
+							'background' => 'var:preset|color|' . $surface[1],
+							'text'       => 'var:preset|color|' . $surface[2],
+						),
+					),
+				)
+			);
 		}
 	}
 

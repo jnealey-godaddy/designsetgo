@@ -116,6 +116,10 @@
 			],
 			"default": "center"
 		},
+		"boxWidth": {
+			"type": "string",
+			"default": ""
+		},
 		"style": {
 			"type": "object",
 			"default": {
@@ -227,6 +231,7 @@
 			"constrainWidth": "Whether to constrain the content to a maximum width",
 			"contentWidth": "Maximum width for the content area (CSS value like 1200px or 80%)",
 			"contentPosition": "Where the width-constrained content column sits inside the section: left, center (default) or right. Independent of layout justification, which aligns blocks within the column. No effect when constrainWidth is false.",
+			"boxWidth": "Maximum width of the section's own box (CSS value like 430px or 60%). Caps the OUTER element, so background, border, shadow, overlay and shape dividers all narrow with it \u2014 whereas contentPosition and contentWidth only affect the content column inside it. Placement comes from CSS, not markup: inside a flex parent (another Section, a Row) the parent's own justification places it; elsewhere it centers, and style.spacing.margin overrides that. Empty (the default) leaves the box unconstrained.",
 			"style": "WordPress block style object containing spacing, colors, and typography settings",
 			"hoverBackgroundColor": "Background color when hovering over the section",
 			"hoverTextColor": "Text color when hovering over the section",

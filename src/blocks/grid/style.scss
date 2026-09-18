@@ -40,7 +40,7 @@
 			position: absolute;
 			inset: 0;
 			background-color: var(--dsgo-overlay-color);
-			opacity: var(--dsgo-overlay-opacity, 0.8);
+			opacity: var(--dsgo-overlay-opacity, 0.65);
 			pointer-events: none;
 			z-index: 1;
 		}
@@ -109,12 +109,15 @@
 			width: 100%;
 		}
 
-		// CRITICAL: Container blocks need !important to override WordPress layout system
+		// Container widths are defaults; authored classes and inline controls can override them.
 		// WordPress's constrained layout can apply max-width to nested containers
 		> .dsgo-flex,
 		> .dsgo-grid,
 		> .dsgo-stack {
-			width: 100% !important;
+
+			:where(&) {
+				width: 100%;
+			}
 		}
 	}
 
@@ -124,7 +127,10 @@
 	.dsgo-stack__inner > &,
 	.dsgo-flex__inner > &,
 	.dsgo-grid__inner > & {
-		width: 100% !important;
+
+		:where(&) {
+			width: 100%;
+		}
 
 		.dsgo-grid__inner {
 			max-width: none !important;
@@ -140,7 +146,7 @@
 	&.alignfull.dsgo-no-width-constraint > .dsgo-grid__inner[class*="wp-container-"] {
 		// Target all direct children that aren't explicitly aligned
 		// Exclude blocks with explicit max-width set via our extension
-		> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width) {
+		> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width):not(.dsgo-stack--has-box-width) {
 			max-width: none !important;
 			margin-left: 0 !important;
 			margin-right: 0 !important;
@@ -255,18 +261,15 @@
  * With two-div structure: .dsgo-grid > .dsgo-grid__inner > items
  */
 
-// Remove all margin-block spacing from grid items
-// CRITICAL: !important needed to override WordPress's layout system
-// Target inner container's children since we now have two-div structure
-.dsgo-grid__inner > * {
-	margin-block-start: 0 !important;
-	margin-block-end: 0 !important;
-}
-
-// Also target data-block wrapped elements in editor
-.dsgo-grid__inner > [data-block] {
-	margin-block-start: 0 !important;
-	margin-block-end: 0 !important;
+// Grid items are spaced by row-gap/column-gap, never by margins. When Block
+// spacing is set, WordPress layout support prints
+// `.wp-container-* > * + * { margin-block-start: <gap> }` for this inner
+// wrapper, which offsets every item after the first. The doubled class
+// (0,2,0) outranks that rule without !important, so inline Inspector margins
+// and later two-class design rules still apply.
+.dsgo-grid__inner.dsgo-grid__inner > * {
+	margin-block-start: 0;
+	margin-block-end: 0;
 }
 
 // ===================================================================

@@ -17,6 +17,7 @@ class Design_Context_Ability_Test extends WP_UnitTestCase {
 		$this->assertSame( wp_get_global_styles(), (array) $result['styles'] );
 		$this->assertSame( wp_get_theme()->get_stylesheet(), $result['theme']['stylesheet'] );
 		$this->assertIsObject( $result['blockStyles'] );
+		$this->assertSame( WP_Font_Face_Resolver::get_fonts_from_theme_json(), $result['fontFaces'] );
 	}
 
 	/** Reading design context requires content-editing permission. */
