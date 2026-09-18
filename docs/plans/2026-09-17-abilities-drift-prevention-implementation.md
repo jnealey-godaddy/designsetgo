@@ -192,59 +192,56 @@ old per-block coverage could not see. Record the list before fixing anything.
 
 ---
 
-### Task 5: Triage the matrix failures
+### Task 5: Triage the matrix failures — DONE
 
-**Baseline recorded 2026-09-17 at 4,069 payloads: 375 failures across 46 blocks.**
+**Baseline 375 failures across 46 blocks; now 0, at 4,068 payloads.**
 
-Two harness corrections were needed before this list meant anything, both already applied:
+Two harness faults had to be fixed before the list meant anything:
 
-1. `tools/regenerate-patterns` imports ONLY `block-animations` (deliberately, with a comment
-   saying so). Without the other 16 save-affecting extensions imported, `save()` in the JS
-   test could not emit their props while the PHP mirror did — 138 payloads failed for a
-   harness reason. `ability-attribute-matrix.test.js` now imports all 17.
-2. `textColor` / `backgroundColor` / `borderColor` are core's preset-SLUG attributes. The
-   `var:preset|color|contrast` shorthand belongs in `style.color.*`; feeding it to a slug
-   attribute made `save()` emit `has-var-preset-color-contrast-color`, and the mismatch was
-   the probe's fault. 102 payloads. The shorthand probe stays on DesignSetGo's own colour
-   attributes, which do accept it.
+1. `tools/regenerate-patterns` imports ONLY `block-animations`, deliberately and with a
+   comment saying so. Without the other 16 save-affecting extensions, `save()` in the JS
+   test could not emit their props while the PHP mirror did — 138 phantom failures.
+   `ability-attribute-matrix.test.js` now imports all 17.
+2. `textColor` / `backgroundColor` / `borderColor` / `fontSize` are core's preset-SLUG
+   attributes; the `var:preset|…` shorthand belongs in `style.color.*`. 102 phantom
+   failures from a bad probe.
 
-**Group A — extension save props the PHP mirror does not reproduce at all (287 failures).**
-Verified real: each of these extension configs is `'blocks' => 'all'`, so the attribute is
-registered on ~every block and the JS filter writes a class or style into `save()`, while
-`Block_Inserter::get_extension_save_props()` has no equivalent branch. An agent that sets
-any of them today produces stored markup the editor rejects.
+A third fault was in the probe table's own format: one key, `probe`, meant either a single
+value or a list of alternatives depending on the value's *shape*, which is unresolvable for
+an array-valued attribute. It guessed wrong for every one of them — comparison-table's
+`columns` was set to an object where the block expects an array. Now `probe` is one value
+and `probes` is a list.
 
-| Attribute | Failures | JS emits | PHP |
-|---|---|---|---|
-| `dsgoHideOnDesktop` / `OnTablet` / `OnMobile` | 138 | `dsgo-hide-*` classes | nothing |
-| `dsgoCustomCSS` | 46 | `dsgo-custom-css-<hash>` class | nothing |
-| `dsgoRevealOnHover` | 46 | `dsgo-reveal-item` class | nothing |
-| `dsgoMaxWidth` | 41 | class + max-width on all blocks | only `core/heading`, `core/paragraph`, `designsetgo/advanced-heading` |
-| `dsgoVideoUrl` | 16 | background-video props | nothing |
+**What the matrix actually found.** Every item below was live drift in shipped code:
 
-`dsgoCustomCSS` needs care: the class carries a hash generated in JS
-(`dsgo-custom-css-qil16x`). If PHP cannot reproduce that hash deterministically, the honest
-outcome is a refusal in `find_invalid_attribute_values()` — the same call
-`animatedHeadline` already makes — not an approximation.
+| Area | Fault |
+|---|---|
+| 5 universal extensions | `get_extension_save_props()` reproduced none of responsive hide, custom CSS, reveal-on-hover, background video, clickable-group; max-width only on 3 of ~70 blocks |
+| Alignment | 12 blocks declare `supports.align` and never called `align_class()` |
+| extraProps vs block props | Modal's custom class, extension classes and alignment went to its content div instead of the root |
+| Preset shorthand | Several serializers wrote `var:preset\|…` into markup — not just invalid blocks, but **unparseable CSS**, so those colours never rendered |
+| counter-group `gap` | `intval() . 'px'` reproduced the `"32px"` default exactly and turned `2rem` into `2px` |
+| counter-group `alignContent` | Read an `alignment` attribute the block has never declared |
+| table-of-contents | Wrote no style attribute at all |
+| icon-button / modal-trigger | `align: full` wrongly implied `fullWidth`; `hoverAnimation` interpolated instead of mapped |
+| progress-bar | No striped background, no `--animated` modifier, label text dropped |
+| form-builder | No border radius, no redirect URL, no submit hover colours; `hasFields: false` emitted markup where `save()` returns null |
+| modal | Close-button colours and label lost; content height never written; border hardcoded |
+| card | No image element at all |
+| icon-list | Missing `data-dsgo-icon-style`, so markup matched an **older deprecation** and migrated silently on open |
 
-**Group B — per-block mirror gaps (~88 failures).** A long tail of one- and two-payload
-failures: `align` enum members (24), `hoverColor`, `openBackgroundColor`, `barStyle`,
-`iconPosition`, `linkColor`, `closeButton*`, `submitButtonHover*` and others. Work these
-per block, smallest first.
+That last one is the subtlest: the block was *valid*, so no validity check would ever have
+caught it. It surfaced only because the matrix suite fails on an unexpected `console.info`,
+which is what WordPress logs when a deprecation migrates a block.
 
-For each failure, choose between exactly three outcomes and write the reason down:
+**Two faults are recorded but deliberately not fixed here**, because both change stored
+markup and need deprecations:
 
-1. **Real mirror drift** — fix `Block_Inserter`, regenerate, re-run.
-2. **Attribute has no `save()` effect** — add a `skip` with a reason.
-3. **Bad probe value** — add an explicit `probe`.
-
-Outcome 3 is the tempting wrong answer for a real bug. Before choosing it, confirm the
-attribute genuinely requires a structured value; a plain-looking value that fails is usually
-outcome 1.
-
-**Also in this task:** add `"fixtures:update"` to `package.json` scripts.
-
-Commit in small batches grouped by block or extension, not one giant commit.
+- `counter`'s `save()` writes a preset shorthand into a CSS custom property, so that colour
+  never applies on the front end. The mirror reproduces it faithfully, bug included.
+- `counter`'s `showIcon` and `advanced-heading`'s `animatedHeadline` inline SVG from a
+  JavaScript icon library with no PHP equivalent. Both are refused at insert time rather
+  than approximated.
 
 ---
 

@@ -531,15 +531,11 @@ class Block_Inserter {
 			? self::split_class_list( $attributes['className'] )
 			: array();
 
-		// Support classes land on an inner element for a few blocks (see
-		// SUPPORTS_ON_INNER_ELEMENT), but save() always puts alignment on the
-		// ROOT. No block currently both routes supports inward and supports
-		// alignment - designsetgo/modal, the only one, declares
-		// `supports.align: false` - so rather than add a second tag pass for a
-		// case that does not exist, alignment is simply not taken for those
-		// blocks. If one ever does both, this is where it breaks.
-		$takes_alignment = true;
-
+		// Alignment always goes to the ROOT, which is where the first pass
+		// below writes it. That is correct even for a block whose supports land
+		// on an inner element: save() puts alignment on the outermost node
+		// regardless. designsetgo/modal, the only such block today, declares
+		// `supports.align: false` and so never has an alignment class at all.
 		// Two destinations, because WordPress has two mechanisms.
 		//
 		// `blocks.getSaveContent.extraProps` props are merged onto the
@@ -559,8 +555,8 @@ class Block_Inserter {
 		$root_classes = array_values(
 			array_filter(
 				$applied_classes,
-				static function ( $class_name ) use ( $custom_classes, $takes_alignment ) {
-					if ( $takes_alignment && 0 === strpos( $class_name, 'align' ) ) {
+				static function ( $class_name ) use ( $custom_classes ) {
+					if ( 0 === strpos( $class_name, 'align' ) ) {
 						return true;
 					}
 
@@ -3830,8 +3826,85 @@ class Block_Inserter {
 					$cta_closing = '</div>';
 				}
 
+				// Image. save.js renders nothing unless the image is shown, the
+				// layout is not 'minimal', and the URL passes isValidImageUrl()
+				// (src/utils/is-valid-image-url.js) - which allows http(s) only,
+				// so a javascript: or data: URL produces no element at all
+				// rather than an escaped one. The mirror emitted no image in any
+				// case, so every card with a picture failed validation.
+				$card_image_url  = isset( $attributes['imageUrl'] ) && is_string( $attributes['imageUrl'] ) ? $attributes['imageUrl'] : '';
+				$card_image_html = '';
+				$card_background_html = '';
+
+				if ( ! empty( $attributes['showImage'] )
+					&& 'minimal' !== $layout_preset
+					&& '' !== $card_image_url
+					&& preg_match( '#^https?://#', $card_image_url )
+				) {
+					if ( 'background' === $layout_preset ) {
+						// The background variant sits OUTSIDE .dsgo-card__inner
+						// and carries the overlay instead of an <img>.
+						// save.js always writes an overlay here, falling back to
+						// the theme contrast colour when none is chosen, with
+						// opacity stored 0..100 and written 0..1.
+						$card_overlay_color = isset( $attributes['overlayColor'] ) && '' !== $attributes['overlayColor']
+							? (string) $attributes['overlayColor']
+							: 'var(--wp--preset--color--contrast, #000)';
+						$card_overlay_pct   = isset( $attributes['overlayOpacity'] ) && is_numeric( $attributes['overlayOpacity'] )
+							? (float) $attributes['overlayOpacity']
+							: 0.0;
+						$card_overlay_style = 'background-color:' . $card_overlay_color .
+							';opacity:' . self::format_js_number( $card_overlay_pct / 100 );
+
+						$card_background_html = '<div class="dsgo-card__background" style="' .
+							esc_attr( 'background-image:url(' . $card_image_url . ')' ) . '">' .
+							'<div class="dsgo-card__overlay" style="' . esc_attr( $card_overlay_style ) . '"></div>' .
+							'</div>';
+					} else {
+						$card_image_styles = array();
+
+						// 'original' writes no aspect-ratio; the named ratios use
+						// a spaced `16 / 9` form, which React renders verbatim.
+						$card_ratio = isset( $attributes['imageAspectRatio'] ) ? (string) $attributes['imageAspectRatio'] : 'original';
+						$named_ratios = array(
+							'16-9' => '16 / 9',
+							'4-3'  => '4 / 3',
+							'1-1'  => '1 / 1',
+						);
+						if ( 'custom' === $card_ratio && ! empty( $attributes['imageCustomAspectRatio'] ) ) {
+							$card_image_styles[] = 'aspect-ratio:' . (string) $attributes['imageCustomAspectRatio'];
+						} elseif ( isset( $named_ratios[ $card_ratio ] ) ) {
+							$card_image_styles[] = 'aspect-ratio:' . $named_ratios[ $card_ratio ];
+						}
+
+						$card_object_fit = isset( $attributes['imageObjectFit'] ) ? (string) $attributes['imageObjectFit'] : '';
+						if ( '' !== $card_object_fit ) {
+							$card_image_styles[] = 'object-fit:' . $card_object_fit;
+						}
+
+						// Focal point only applies to a cover fit, and is stored
+						// 0..1 but written as a percentage.
+						if ( 'cover' === $card_object_fit && isset( $attributes['imageFocalPoint']['x'], $attributes['imageFocalPoint']['y'] ) ) {
+							$card_image_styles[] = 'object-position:' .
+								self::format_js_number( (float) $attributes['imageFocalPoint']['x'] * 100 ) . '% ' .
+								self::format_js_number( (float) $attributes['imageFocalPoint']['y'] * 100 ) . '%';
+						}
+
+						// A decorative image (no alt) is hidden from screen
+						// readers and takes a translated fallback alt.
+						$card_image_alt = isset( $attributes['imageAlt'] ) && is_string( $attributes['imageAlt'] ) ? $attributes['imageAlt'] : '';
+						$card_aria      = '' === $card_image_alt ? ' aria-hidden="true"' : '';
+						$card_alt_text  = '' === $card_image_alt ? __( 'Card image', 'designsetgo' ) : $card_image_alt;
+
+						$card_image_html = '<div class="dsgo-card__image-wrapper"><img src="' . esc_url( $card_image_url ) .
+							'" alt="' . esc_attr( $card_alt_text ) . '" class="dsgo-card__image"' .
+							( empty( $card_image_styles ) ? '' : ' style="' . esc_attr( implode( ';', $card_image_styles ) ) . '"' ) .
+							' loading="lazy"' . $card_aria . '/></div>';
+					}
+				}
+
 				return array(
-					'opening' => '<div class="' . esc_attr( $outer_class ) . '"' . $card_border . '><div class="dsgo-card__inner"><div class="' . esc_attr( $content_class ) . '">' . $content_html . $cta_opening,
+					'opening' => '<div class="' . esc_attr( $outer_class ) . '"' . $card_border . '>' . $card_background_html . '<div class="dsgo-card__inner">' . $card_image_html . '<div class="' . esc_attr( $content_class ) . '">' . $content_html . $cta_opening,
 					'closing' => $cta_closing . '</div></div></div>',
 				);
 
@@ -3887,8 +3960,34 @@ class Block_Inserter {
 
 				$outer_class = 'wp-block-designsetgo-icon-list dsgo-icon-list dsgo-icon-list--' . esc_attr( $layout );
 
+				// getSaveElement() passes no block context to a static save(), so
+				// a child icon-list-item cannot read the parent's iconStyle - the
+				// PARENT publishes it here for the frontend injector. Emitted only
+				// when iconStyle is explicitly set, which is what keeps pre-existing
+				// content byte-identical and deprecation-free.
+				//
+				// Note the dsgo- prefix: the parent writes data-dsgo-icon-style,
+				// while an icon-list-ITEM writes data-icon-style. They are
+				// different attributes on different elements.
+				//
+				// Omitting it did not make the block invalid, which is why this
+				// survived: the markup still matched an OLDER deprecation, so the
+				// editor migrated it silently on open and dirtied the post. Only
+				// the matrix's console.info check caught it.
+				$list_icon_attrs = '';
+				$list_icon_style = isset( $attributes['iconStyle'] ) && in_array( $attributes['iconStyle'], array( 'filled', 'outlined' ), true )
+					? (string) $attributes['iconStyle']
+					: '';
+				if ( '' !== $list_icon_style ) {
+					$list_icon_attrs = ' data-dsgo-icon-style="' . esc_attr( $list_icon_style ) . '"';
+
+					if ( 'outlined' === $list_icon_style && ! empty( $attributes['strokeWidth'] ) && is_numeric( $attributes['strokeWidth'] ) ) {
+						$list_icon_attrs .= ' data-dsgo-icon-stroke-width="' . esc_attr( self::format_js_number( (float) $attributes['strokeWidth'] ) ) . '"';
+					}
+				}
+
 				return array(
-					'opening' => '<div class="' . esc_attr( $outer_class ) . '" style="width:100%"><div class="dsgo-icon-list__items" style="' . esc_attr( $container_style ) . '">',
+					'opening' => '<div class="' . esc_attr( $outer_class ) . '" style="width:100%"' . $list_icon_attrs . '><div class="dsgo-icon-list__items" style="' . esc_attr( $container_style ) . '">',
 					'closing' => '</div></div>',
 				);
 
