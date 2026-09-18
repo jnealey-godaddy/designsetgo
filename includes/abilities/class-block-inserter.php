@@ -602,7 +602,28 @@ class Block_Inserter {
 		// mechanism useBlockProps.save() uses for the `has-*` support classes
 		// above, so they are merged in the same pass.
 		$extension_props = self::get_extension_save_props( $block_name, $attributes );
-		$root_classes    = array_merge( $root_classes, $extension_props['classes'] );
+
+		// Extension classes follow the same rule the block itself applies. Modal
+		// transfers every `has-*` class onto its content div and keeps the rest
+		// on the wrapper (utils/style-transfer.js), so `has-dsgo-animation` goes
+		// to the content while `dsgo-hide-mobile` and a custom class stay on the
+		// root. For every other block the two elements are the same node and the
+		// split makes no difference.
+		if ( isset( self::SUPPORTS_ON_INNER_ELEMENT[ $block_name ] ) ) {
+			foreach ( $extension_props['classes'] as $extension_class ) {
+				if ( 0 === strpos( $extension_class, 'has-' ) ) {
+					$support_classes[] = $extension_class;
+					continue;
+				}
+
+				$root_classes[] = $extension_class;
+			}
+		} else {
+			// Same element either way, so splitting would only reorder the
+			// class list - harmless for validation, which compares classes as
+			// a set, but it churns the committed fixtures for no reason.
+			$root_classes = array_merge( $root_classes, $extension_props['classes'] );
+		}
 
 		$declarations = array();
 		if ( ! empty( $attributes['style'] ) && is_array( $attributes['style'] ) && function_exists( 'wp_style_engine_get_styles' ) ) {
@@ -4193,10 +4214,58 @@ class Block_Inserter {
 				// Content styles. In panel mode save.js passes no dimensions to
 				// transferStylesToContent(), because the panel is sized by
 				// panelSize on the dialog — so no width/max-width is written.
-				$content_style = 'border-style:none;border-width:0px';
-				if ( ! $is_panel ) {
-					$content_style .= ';width:' . esc_attr( $width ) . ';max-width:' . esc_attr( $max_width );
+				//
+				// Border comes from the `style` ATTRIBUTE, not from a literal.
+				// modal's block.json defaults `style` to a none/0px border, so
+				// hardcoding it reproduced the default and then survived a caller
+				// replacing `style` with something else entirely - writing a
+				// border save() no longer emits.
+				//
+				// It cannot come from the style engine either: modal declares no
+				// `border` support, so apply_block_support_attributes() correctly
+				// serializes nothing for it, while JavaScript's
+				// useBlockProps.save() writes style.border through regardless of
+				// the support. Padding does come from the engine (spacing.padding
+				// IS supported), which is why only border is handled here.
+				$content_style_parts = array();
+
+				// WordPress re-registers the support-backed `style` attribute as a
+				// bare object on the PHP side and drops block.json's default, so
+				// the border has to be read back from block.json when the caller
+				// supplied no style of their own. The Section case does the same
+				// for its page padding. Only when the caller supplied NOTHING: an
+				// attribute default is replaced wholesale, not deep-merged, so a
+				// caller-supplied style legitimately has no border.
+				$modal_style = $attributes['style'] ?? null;
+				if ( ! is_array( $modal_style ) ) {
+					$declared_modal_style = Block_Schema_Loader::get_block_json( $block_name )['attributes']['style']['default'] ?? null;
+					$modal_style          = is_array( $declared_modal_style ) ? $declared_modal_style : array();
 				}
+
+				$modal_border = isset( $modal_style['border'] ) && is_array( $modal_style['border'] )
+					? $modal_style['border']
+					: array();
+				if ( isset( $modal_border['style'] ) && is_string( $modal_border['style'] ) ) {
+					$content_style_parts[] = 'border-style:' . esc_attr( $modal_border['style'] );
+				}
+				if ( isset( $modal_border['width'] ) && is_string( $modal_border['width'] ) ) {
+					$content_style_parts[] = 'border-width:' . esc_attr( $modal_border['width'] );
+				}
+				if ( ! $is_panel ) {
+					$content_style_parts[] = 'width:' . esc_attr( $width );
+					$content_style_parts[] = 'max-width:' . esc_attr( $max_width );
+
+					// transferStylesToContent() drops BOTH height and max-height
+					// when height is 'auto', so an auto-height modal writes
+					// neither.
+					$modal_height     = isset( $attributes['height'] ) ? (string) $attributes['height'] : 'auto';
+					$modal_max_height = isset( $attributes['maxHeight'] ) ? (string) $attributes['maxHeight'] : '90vh';
+					if ( 'auto' !== $modal_height ) {
+						$content_style_parts[] = 'height:' . esc_attr( $modal_height );
+						$content_style_parts[] = 'max-height:' . esc_attr( $modal_max_height );
+					}
+				}
+				$content_style = implode( ';', $content_style_parts );
 
 				// Close button HTML.
 				$close_button_html = '';
