@@ -4,7 +4,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.5
+Stable tag: 2.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,22 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 7. Slider with arrows and dots, and a multi-slide slider below it
 
 == Changelog ==
+
+= 2.8.0 - 2026-09-18 =
+
+* **Fix:** Timeline items fade in as you scroll on the published page again. They were appearing all at once, already visible, because a stylesheet meant only for the editor was also being sent to visitors. The same problem put a dashed outline around Image Accordion and a grey border on Scrolling Gallery images. 33 blocks were sending their editor styling to visitors; none are now.
+* **Fix:** A page with an overlay header no longer hides the top of the hero behind the header while the page loads. The hero's top spacing is now right from the first moment it appears, instead of being corrected a split second later.
+* **Fix:** Form Builder - when two published pages hold forms that share an ID, a submission is now matched to the form that was actually filled in. Forms end up sharing an ID when you insert the same pattern twice or duplicate a form block. Before this fix the notification email could go to the other form's recipient, or a submission could be refused for a required field that wasn't on the form the visitor saw.
+* **Fix:** Form Builder - fields laid out in three or four columns fit on one row, and stack properly on phones instead of overflowing.
+* **New:** Section - **Content Position** puts the width-constrained content column on the left, center or right of the section, instead of always centering it.
+* **New:** Section - **Box Width** caps the width of the section's own box, so a section used as a card or panel narrows its background, border, shadow and shape dividers along with it. Until now only the text inside could be narrowed.
+* **New:** Grid - a **Column Template** setting gives uneven columns on desktop, such as a narrow sidebar beside a wide main column. Tablet and mobile keep their own column counts.
+* **Fix:** Section - the faint horizontal line that could show across a shape divider's inner edge at certain browser zoom levels is gone.
+* **Fix:** Tabs - tab labels take their color from the text around them instead of a theme preset, so they stay readable on a dark or colored background.
+* **Improved:** New overlays on Section, Row, Grid and Scroll Accordion items start lighter, and an overlay color that already includes transparency now sets its own strength instead of having more applied on top. Overlays already on your pages keep their current strength, even after you edit them.
+* **Fix:** The contact form's "Select an option" placeholder and other bundled text now appear translated on non-English sites. An older installed language pack could hide newer translations included with DesignSetGo.
+* **Fix:** More blocks added by an AI assistant come out valid the first time you open them, so you no longer see "Attempt Recovery". This covers images, lists, quotes, headings, captions, icon buttons, modals, cards, counters, form colors and grid ordering.
+* **New:** AI and agent tooling - a `designsetgo/add-blocks` ability adds several top-level blocks in one step.
 
 = 2.7.5 - 2026-09-10 =
 
@@ -231,6 +247,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.8.0 =
+Fixes Timeline scroll animations and other blocks that were receiving editor-only styling on the published page, and fixes overlay headers covering the top of the hero as a page loads. Form notification emails now reach the right recipient when two forms share an ID. Adds Section Content Position and Box Width, and uneven Grid columns.
 
 = 2.7.5 =
 Fixes WordPress updates timing out in wp-admin on hosts where DesignSetGo couldn't create its Dynamic Query database table. Also fixes shape dividers and background effects on blocks added by an AI assistant.
