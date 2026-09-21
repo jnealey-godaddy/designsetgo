@@ -4,7 +4,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.8.0
+Stable tag: 2.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,11 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 7. Slider with arrows and dots, and a multi-slide slider below it
 
 == Changelog ==
+
+= 2.8.1 - 2026-09-21 =
+
+* **Fix:** On a page with an overlay header, the header sits over the top of the hero again, instead of leaving a band of empty space above it. 2.8.0 started adding space above the first section on these pages, which pushed the hero image down and left a strip of plain page background showing under the header.
+* **Fix:** A hero's own top spacing now shows from the first moment the page appears. 2.8.0 described this fix, but it wasn't taking effect.
 
 = 2.8.0 - 2026-09-18 =
 
@@ -247,6 +252,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.8.1 =
+Fixes overlay headers on 2.8.0 leaving a band of empty space above the hero instead of sitting over it.
 
 = 2.8.0 =
 Fixes Timeline scroll animations and other blocks that were receiving editor-only styling on the published page, and fixes overlay headers covering the top of the hero as a page loads. Form notification emails now reach the right recipient when two forms share an ID. Adds Section Content Position and Box Width, and uneven Grid columns.
