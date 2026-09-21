@@ -315,6 +315,18 @@ class Overlay_Header {
 			return '';
 		}
 
+		// A bare `0` is a NUMBER, not a length, and this value is substituted
+		// into a calc() that adds a length to it. `calc(0 + 100px)` mixes types
+		// and is invalid, which makes the whole `padding-top` declaration
+		// invalid at computed-value time — so it resets to the initial value
+		// instead of falling back to the author's padding. The style engine
+		// returns exactly that bare `0` for a hero with `padding-top: 0`, which
+		// is the common case, so the clearance rule was being voided outright
+		// until sticky-header.js wrote `0px` onto the element.
+		if ( '0' === $value ) {
+			$value = '0px';
+		}
+
 		return sprintf(
 			':root { --dsgo-overlay-hero-base-pad: %s; }',
 			$value

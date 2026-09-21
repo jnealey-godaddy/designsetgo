@@ -63,7 +63,7 @@ describe('overlay header clearance', () => {
 		);
 	});
 
-	it('composes the clearance as authored padding + header height', () => {
+	it('composes the clearance as authored padding + an opt-in clearance', () => {
 		// The authored term must come FIRST and be its own custom property. The
 		// rule carries `!important` (it has to, because WordPress serializes
 		// block spacing inline), so if the author's padding were not folded in
@@ -74,8 +74,34 @@ describe('overlay header clearance', () => {
 
 		expect(clearance).toBeDefined();
 		expect(clearance).toContain('var(--dsgo-overlay-hero-base-pad, 0px)');
-		expect(clearance).toContain('--dsgo-overlay-header-height');
+		expect(clearance).toContain('var(--dsgo-overlay-hero-clearance, 0px)');
 		expect(clearance).toContain('!important');
+	});
+
+	it('does not default the clearance to the measured header height', () => {
+		// This is the 2.8.0 regression, and it is a one-token difference from
+		// the correct rule, so it gets its own assertion.
+		//
+		// The rule lands on `header + * > :first-child`. In the shape Site
+		// Designer and the Airo patterns emit, that child is a TRANSPARENT
+		// layout wrapper and the hero is painted by a `.wp-block-cover` two
+		// levels further in. Defaulting the clearance to the header height
+		// therefore pushed the whole hero down instead of sliding content under
+		// a transparent header, leaving a band of bare page background with the
+		// fixed header floating over it. Measured on two live 2.8.0 sites, the
+		// cover sat at exactly the header height (92.4px and 79.5px), not 0.
+		//
+		// Opting in is a custom property on the element that actually paints,
+		// which is what Site Designer's own `sd-design-overlay-clearance` class
+		// does — and because that opt-in reads `--dsgo-overlay-header-height`
+		// itself, it keeps the served estimate and the first-paint behaviour.
+		const clearance = rules()
+			.split('}')
+			.find((rule) => rule.includes('--dsgo-overlay-hero-base-pad'));
+
+		expect(clearance).not.toMatch(
+			/--dsgo-overlay-hero-clearance\s*,\s*var\(\s*--dsgo-overlay-header-height/
+		);
 	});
 
 	it('applies the clearance INSIDE the pulled element, not on it', () => {

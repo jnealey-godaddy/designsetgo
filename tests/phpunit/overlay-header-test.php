@@ -629,6 +629,37 @@ class Test_Overlay_Header extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A hero authored with `padding-top: 0` is served as `0px`, never `0`.
+	 *
+	 * This is the shape Site Designer and the Airo patterns emit: a transparent
+	 * `designsetgo/section` with `padding: 0` wrapping the block that actually
+	 * paints. The style engine resolves that to a bare `0`, which is a NUMBER,
+	 * not a length — and the value is substituted into a calc() that adds a
+	 * length to it.
+	 *
+	 * `calc(0 + 100px)` mixes types and is invalid, so the whole `padding-top`
+	 * declaration becomes invalid at computed-value time and resets to the
+	 * initial value rather than falling back to the author's padding. Verified
+	 * in a browser against the live stylesheet: a base pad of `0` computes to
+	 * `0px`, while `0px` computes to the full `92.4px`. The effect is that the
+	 * served value silently voided the clearance rule outright until
+	 * sticky-header.js wrote `0px` onto the element — which is exactly the
+	 * cold-load jump serving it was meant to prevent.
+	 */
+	public function test_hero_base_pad_zero_is_served_with_a_unit() {
+		$this->set_post_content_first_template();
+		$this->create_overlay_page_with_hero_padding( '0' );
+
+		$css = $this->overlay_header->get_overlay_hero_base_pad_css();
+
+		$this->assertStringContainsString( '--dsgo-overlay-hero-base-pad: 0px;', $css );
+		$this->assertDoesNotMatchRegularExpression(
+			'/--dsgo-overlay-hero-base-pad:\s*0\s*;/',
+			$css
+		);
+	}
+
+	/**
 	 * Nothing is served when the template wraps post content in a group.
 	 *
 	 * This is the case that makes guessing worse than abstaining. The clearance
