@@ -141,7 +141,7 @@ AI: [Creates complete Timeline block structure]
 #### `/review-pr`
 **Purpose:** Review the current branch or a PR against DesignSetGo standards before requesting review
 
-Only these four skills live in the repo. For general WordPress knowledge (block development, Interactivity API, REST API, Abilities API, PHPStan), install the official [WordPress agent skills](https://github.com/WordPress/agent-skills) — see [`.claude/skills/README.md`](../../.claude/skills/README.md).
+These four block-development skills, plus the code-quality, release and audit skills below, live in the repo. For general WordPress knowledge (block development, Interactivity API, REST API, Abilities API, PHPStan), install the official [WordPress agent skills](https://github.com/WordPress/agent-skills) — see [`.claude/skills/README.md`](../../.claude/skills/README.md).
 
 ### Code Quality
 
@@ -192,11 +192,14 @@ npm run test:php    # PHPUnit
 ```
 
 **What it does:**
-- Creates production build
-- Generates ZIP file
-- Validates plugin structure
-- Checks readme.txt
-- Ensures WordPress.org compliance
+- Checks that CI is green on `main` and runs the full test, lint and static-analysis suites
+- Bumps the version in `package.json`, `package-lock.json`, `designsetgo.php` and `readme.txt`
+- Writes the customer-facing `readme.txt` changelog and upgrade notice
+- Runs a security audit scoped to what is shipping
+- Commits, tags `vX.X.X` and pushes
+
+**Note:** pushing the tag triggers `.github/workflows/deploy.yml`, which publishes to
+WordPress.org SVN. That is the point of no return — the release is public within minutes.
 
 ### Auditing & Reviews
 
@@ -220,16 +223,6 @@ npm run test:php    # PHPUnit
 - SQL injection prevention
 - XSS vulnerabilities
 
-#### `/performance-audit`
-**Purpose:** Deep performance and optimization audit
-
-**What it checks:**
-- Bundle sizes
-- Code splitting opportunities
-- Unnecessary re-renders
-- Database query optimization
-- Asset loading efficiency
-
 #### `/block-supports-audit`
 **Purpose:** Audit blocks for WordPress Block Supports optimization
 
@@ -239,9 +232,6 @@ npm run test:php    # PHPUnit
 - Migration recommendations
 
 ### Utilities
-
-#### `/check-compat`
-**Purpose:** Check compatibility with WordPress and Gutenberg versions
 
 #### `/i18n-update`
 **Purpose:** Update translation files and check for untranslated strings
