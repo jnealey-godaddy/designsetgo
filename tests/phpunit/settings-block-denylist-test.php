@@ -80,22 +80,64 @@ class Settings_Block_Denylist_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The migration is written back, so a block added after it stays enabled.
+	 * Reading converts in memory only. get_settings() runs on anonymous
+	 * front-end requests and behind the readonly get-settings ability.
 	 */
-	public function test_migration_is_persisted(): void {
+	public function test_reading_does_not_write(): void {
+		$legacy = array( 'enabled_blocks' => $this->catalog_without( 'designsetgo/section' ) );
+		$this->store( $legacy );
+
+		Settings::get_settings();
+
+		$this->assertSame( $legacy, get_option( Settings::OPTION_NAME ) );
+	}
+
+	/**
+	 * An administrator's wp-admin request writes the conversion back, so a
+	 * block added after it stays enabled.
+	 */
+	public function test_admin_migration_is_persisted(): void {
 		$this->store(
 			array(
 				'enabled_blocks' => $this->catalog_without( 'designsetgo/section' ),
 				'forms'          => array( 'retention_days' => 90 ),
 			)
 		);
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 
-		Settings::get_settings();
+		Settings::migrate_legacy_settings();
 		$stored = get_option( Settings::OPTION_NAME );
 
 		$this->assertArrayNotHasKey( 'enabled_blocks', $stored );
 		$this->assertSame( array( 'designsetgo/section' ), $stored['disabled_blocks'] );
 		$this->assertSame( 90, $stored['forms']['retention_days'], 'Other stored settings survive the migration.' );
+	}
+
+	/**
+	 * The migration hook runs on admin_init, which also fires for
+	 * admin-ajax.php; only users who may change settings trigger the write.
+	 */
+	public function test_migration_needs_manage_options(): void {
+		$legacy = array( 'enabled_blocks' => $this->catalog_without( 'designsetgo/section' ) );
+		$this->store( $legacy );
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+
+		Settings::migrate_legacy_settings();
+
+		$this->assertSame( $legacy, get_option( Settings::OPTION_NAME ) );
+	}
+
+	/**
+	 * Saving any setting persists the conversion too.
+	 */
+	public function test_saving_persists_conversion(): void {
+		$this->store( array( 'enabled_blocks' => $this->catalog_without( 'designsetgo/section' ) ) );
+
+		Settings::update_settings( array( 'forms' => array( 'retention_days' => 60 ) ) );
+		$stored = get_option( Settings::OPTION_NAME );
+
+		$this->assertArrayNotHasKey( 'enabled_blocks', $stored );
+		$this->assertSame( array( 'designsetgo/section' ), $stored['disabled_blocks'] );
 	}
 
 	/**

@@ -58,6 +58,7 @@ class Settings {
 	 */
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+		add_action( 'admin_init', array( __CLASS__, 'migrate_legacy_settings' ) );
 	}
 
 	/**
@@ -342,18 +343,20 @@ class Settings {
 	}
 
 	/**
-	 * Read the stored settings, migrating a legacy block allowlist first.
+	 * Read the stored settings, with a legacy block allowlist converted.
 	 *
 	 * Older releases switched blocks off by saving an `enabled_blocks`
 	 * allowlist. Once a site had saved one, every block added in a later
 	 * release was missing from it and never registered, so the editor reported
-	 * content that used it as unsupported. The list is converted once, here,
-	 * into the `disabled_blocks` denylist: each catalog block the allowlist
-	 * left out is disabled, which keeps exactly the blocks that were off
-	 * before, and anything added from now on is on.
+	 * content that used it as unsupported. It is replaced by the
+	 * `disabled_blocks` denylist: each catalog block the allowlist left out is
+	 * disabled, which keeps exactly the blocks that were off before, and
+	 * anything added from now on is on.
 	 *
-	 * The conversion is persisted. Recomputing it on every read would disable
-	 * each new release's blocks all over again.
+	 * This is a read, so the conversion happens in memory only; it runs on
+	 * anonymous front-end requests and behind the readonly get-settings
+	 * ability. migrate_legacy_settings() persists it on an administrator's
+	 * next wp-admin request, and update_settings() on the next save.
 	 *
 	 * @return array Stored settings (partial; not merged with defaults).
 	 */
@@ -363,24 +366,56 @@ class Settings {
 			return array();
 		}
 
+		return self::convert_legacy_allowlist( $saved );
+	}
+
+	/**
+	 * Persist the conversion of a legacy block allowlist.
+	 *
+	 * Runs on `admin_init` for administrators, so the one write happens in a
+	 * request that is allowed to change settings. Until then each request
+	 * derives the same denylist in memory (see get_saved_settings()).
+	 *
+	 * It has to be persisted, and soon: the conversion inverts the allowlist
+	 * against the current catalog, so a later release that adds a block would
+	 * otherwise derive it as disabled.
+	 */
+	public static function migrate_legacy_settings(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$stored = get_option( self::OPTION_NAME, array() );
+		if ( ! is_array( $stored ) || ! array_key_exists( 'enabled_blocks', $stored ) ) {
+			return;
+		}
+
+		// Without the catalog the allowlist can't be inverted; keep it for a
+		// request that can read the catalog rather than dropping it.
+		if ( empty( self::get_catalog_block_names() ) ) {
+			return;
+		}
+
+		update_option( self::OPTION_NAME, self::convert_legacy_allowlist( $stored ) );
+		self::invalidate_cache();
+	}
+
+	/**
+	 * Replace a legacy `enabled_blocks` allowlist with `disabled_blocks`.
+	 *
+	 * @param array $saved Stored settings.
+	 * @return array Settings without `enabled_blocks`.
+	 */
+	private static function convert_legacy_allowlist( array $saved ): array {
 		if ( ! array_key_exists( 'enabled_blocks', $saved ) ) {
 			return $saved;
 		}
 
 		$catalog = self::get_catalog_block_names();
-		if ( empty( $catalog ) ) {
-			// Without the catalog there is nothing to invert against. Leave the
-			// stored allowlist for a request that can read it.
-			unset( $saved['enabled_blocks'] );
-			return $saved;
-		}
-
-		if ( ! isset( $saved['disabled_blocks'] ) ) {
+		if ( ! empty( $catalog ) && ! isset( $saved['disabled_blocks'] ) ) {
 			$saved['disabled_blocks'] = self::blocks_missing_from( (array) $saved['enabled_blocks'], $catalog );
 		}
 		unset( $saved['enabled_blocks'] );
-
-		update_option( self::OPTION_NAME, $saved );
 
 		return $saved;
 	}
