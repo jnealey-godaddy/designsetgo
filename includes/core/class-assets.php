@@ -130,8 +130,8 @@ class Assets {
 		$settings = \DesignSetGo\Admin\Settings::get_settings();
 		$anim     = \DesignSetGo\Animation_Defaults::get_effective();
 
-		$excluded_blocks    = isset( $settings['excluded_blocks'] ) ? (array) $settings['excluded_blocks'] : array();
-		$enabled_extensions = isset( $settings['enabled_extensions'] ) ? (array) $settings['enabled_extensions'] : array();
+		$excluded_blocks     = isset( $settings['excluded_blocks'] ) ? (array) $settings['excluded_blocks'] : array();
+		$disabled_extensions = isset( $settings['disabled_extensions'] ) ? (array) $settings['disabled_extensions'] : array();
 
 		wp_localize_script(
 			'designsetgo-extensions',
@@ -141,9 +141,8 @@ class Assets {
 				'defaultIconButtonHover'   => isset( $settings['animations']['default_icon_button_hover'] )
 					? sanitize_key( $settings['animations']['default_icon_button_hover'] )
 					: 'fill-diagonal',
-				// Empty list = all extensions enabled (matches the
-				// PHP convention in Block_Manager::should_load_extension).
-				'enabledExtensions'        => array_values( array_map( 'sanitize_key', $enabled_extensions ) ),
+				// Extensions the site switched off (Block_Manager::should_load_extension).
+				'disabledExtensions'       => array_values( array_map( 'sanitize_key', $disabled_extensions ) ),
 				'blockAnimations'          => self::block_animations_for_editor( $anim['map'] ),
 				'blockAnimationsEnabled'   => (bool) $anim['enabled'],
 				// The block-animations extension's own exclude list, so

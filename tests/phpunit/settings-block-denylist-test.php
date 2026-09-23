@@ -214,12 +214,12 @@ class Settings_Block_Denylist_Test extends WP_UnitTestCase {
 	/**
 	 * The other top-level lists get the same wholesale replacement.
 	 */
-	public function test_enabled_extensions_list_is_replaced(): void {
-		$this->store( array( 'enabled_extensions' => array( 'block-animations', 'draft-mode', 'dynamic-tags' ) ) );
+	public function test_disabled_extensions_list_is_replaced(): void {
+		$this->store( array( 'disabled_extensions' => array( 'block-animations', 'draft-mode', 'dynamic-tags' ) ) );
 
-		Settings::update_settings( array( 'enabled_extensions' => array( 'dynamic-tags' ) ) );
+		Settings::update_settings( array( 'disabled_extensions' => array( 'dynamic-tags' ) ) );
 
-		$this->assertSame( array( 'dynamic-tags' ), Settings::get_settings()['enabled_extensions'] );
+		$this->assertSame( array( 'dynamic-tags' ), Settings::get_settings()['disabled_extensions'] );
 	}
 
 	/**

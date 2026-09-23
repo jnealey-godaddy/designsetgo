@@ -59,7 +59,7 @@ class Update_Settings extends Abstract_Ability {
 				'readonly'     => false,
 				'destructive'  => false,
 				'idempotent'   => true,
-				'instructions' => 'Call get-settings first to see current values. Submit only the keys you want to change — omitted keys remain untouched. Every list field (disabled_blocks, enabled_extensions, excluded_blocks, llms_txt.post_types, animations.block_animations) is replaced wholesale with the array you submit, so to add or remove one entry, fetch the current list and resubmit it in full. disabled_blocks lists the blocks that are switched off; an empty array enables every block. An empty enabled_extensions means "all enabled".',
+				'instructions' => 'Call get-settings first to see current values. Submit only the keys you want to change — omitted keys remain untouched. Every list field (disabled_blocks, disabled_extensions, excluded_blocks, llms_txt.post_types, animations.block_animations) is replaced wholesale with the array you submit, so to add or remove one entry, fetch the current list and resubmit it in full. disabled_blocks and disabled_extensions list what is switched off; an empty array enables everything.',
 			),
 		);
 	}

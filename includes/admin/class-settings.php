@@ -54,6 +54,41 @@ class Settings {
 	const LEGACY_REDACTED_PLACEHOLDER = "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}";
 
 	/**
+	 * Legacy allowlist settings, each mapped to the denylist that replaced it.
+	 *
+	 * See get_saved_settings() for why the allowlists were retired.
+	 */
+	const LEGACY_ALLOWLISTS = array(
+		'enabled_blocks'     => 'disabled_blocks',
+		'enabled_extensions' => 'disabled_extensions',
+	);
+
+	/**
+	 * Names of the extensions get_available_extensions() describes.
+	 *
+	 * Kept untranslated so settings migration can run before `init`. A test
+	 * pins it to get_available_extensions().
+	 */
+	const EXTENSION_NAMES = array(
+		'animation',
+		'background-video',
+		'block-animations',
+		'clickable-group',
+		'custom-css',
+		'grid-span',
+		'max-width',
+		'responsive',
+		'reveal-control',
+		'sticky-header-controls',
+		'text-alignment-inheritance',
+		'expanding-background',
+		'text-reveal',
+		'vertical-scroll-parallax',
+		'draft-mode',
+		'dynamic-tags',
+	);
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -107,20 +142,20 @@ class Settings {
 		return array(
 			// Blocks the site owner switched off. A denylist, so a block added in
 			// a later release registers without anyone having to opt it in.
-			'disabled_blocks'    => array(),
-			'enabled_extensions' => array(), // Empty = all enabled.
-			'excluded_blocks'    => $excluded_blocks_default,
-			'performance'        => array(
+			'disabled_blocks'     => array(),
+			'disabled_extensions' => array(), // Same reasoning as disabled_blocks.
+			'excluded_blocks'     => $excluded_blocks_default,
+			'performance'         => array(
 				'conditional_loading' => true,
 				'cache_duration'      => 3600, // 1 hour.
 			),
-			'forms'              => array(
+			'forms'               => array(
 				'enable_honeypot'      => true,
 				'enable_rate_limiting' => true,
 				'enable_email_logging' => false,
 				'retention_days'       => 30,
 			),
-			'animations'         => array(
+			'animations'          => array(
 				'enable_animations'              => true,
 				'default_duration'               => 600,
 				'default_easing'                 => 'ease-in-out',
@@ -129,17 +164,17 @@ class Settings {
 				'block_animations_enabled'       => false,
 				'block_animations'               => array(),
 			),
-			'security'           => array(
+			'security'            => array(
 				'log_ip_addresses' => true,
 				'log_user_agents'  => true,
 				'log_referrers'    => false,
 			),
-			'integrations'       => array(
+			'integrations'        => array(
 				'google_maps_api_key'  => '',
 				'turnstile_site_key'   => '',
 				'turnstile_secret_key' => '',
 			),
-			'sticky_header'      => array(
+			'sticky_header'       => array(
 				'enable'                    => true,
 				'custom_selector'           => '',
 				'z_index'                   => 100,
@@ -157,7 +192,7 @@ class Settings {
 				'background_scroll_opacity' => 100,
 				'text_scroll_color'         => '',
 			),
-			'draft_mode'         => array(
+			'draft_mode'          => array(
 				'enable'                 => true,
 				'show_page_list_actions' => true,
 				'show_page_list_column'  => true,
@@ -165,7 +200,7 @@ class Settings {
 				'auto_save_enabled'      => true,
 				'auto_save_interval'     => 60,
 			),
-			'llms_txt'           => array(
+			'llms_txt'            => array(
 				'enable'            => false,
 				'post_types'        => array( 'page', 'post' ),
 				'description'       => '',
@@ -343,15 +378,15 @@ class Settings {
 	}
 
 	/**
-	 * Read the stored settings, with a legacy block allowlist converted.
+	 * Read the stored settings, with legacy allowlists converted.
 	 *
-	 * Older releases switched blocks off by saving an `enabled_blocks`
-	 * allowlist. Once a site had saved one, every block added in a later
-	 * release was missing from it and never registered, so the editor reported
-	 * content that used it as unsupported. It is replaced by the
-	 * `disabled_blocks` denylist: each catalog block the allowlist left out is
-	 * disabled, which keeps exactly the blocks that were off before, and
-	 * anything added from now on is on.
+	 * Older releases switched blocks and extensions off by saving an
+	 * `enabled_blocks` / `enabled_extensions` allowlist. Once a site had saved
+	 * one, everything added in a later release was missing from it and stayed
+	 * off; for blocks, the editor then reported content using them as
+	 * unsupported. Each is replaced by its denylist (LEGACY_ALLOWLISTS): every
+	 * catalog entry the allowlist left out is disabled, which keeps exactly
+	 * what was off before, and anything added from now on is on.
 	 *
 	 * This is a read, so the conversion happens in memory only; it runs on
 	 * anonymous front-end requests and behind the readonly get-settings
@@ -366,19 +401,19 @@ class Settings {
 			return array();
 		}
 
-		return self::convert_legacy_allowlist( $saved );
+		return self::convert_legacy_allowlists( $saved );
 	}
 
 	/**
-	 * Persist the conversion of a legacy block allowlist.
+	 * Persist the conversion of legacy allowlists.
 	 *
 	 * Runs on `admin_init` for administrators, so the one write happens in a
 	 * request that is allowed to change settings. Until then each request
-	 * derives the same denylist in memory (see get_saved_settings()).
+	 * derives the same denylists in memory (see get_saved_settings()).
 	 *
-	 * It has to be persisted, and soon: the conversion inverts the allowlist
-	 * against the current catalog, so a later release that adds a block would
-	 * otherwise derive it as disabled.
+	 * It has to be persisted, and soon: the conversion inverts each allowlist
+	 * against the current catalog, so a later release that adds a block or
+	 * extension would otherwise derive it as disabled.
 	 */
 	public static function migrate_legacy_settings(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -386,50 +421,69 @@ class Settings {
 		}
 
 		$stored = get_option( self::OPTION_NAME, array() );
-		if ( ! is_array( $stored ) || ! array_key_exists( 'enabled_blocks', $stored ) ) {
+		if ( ! is_array( $stored ) ) {
 			return;
 		}
 
-		// Without the catalog the allowlist can't be inverted; keep it for a
-		// request that can read the catalog rather than dropping it.
-		if ( empty( self::get_catalog_block_names() ) ) {
-			return;
+		$converted = self::convert_legacy_allowlists( $stored, true );
+		if ( $converted !== $stored ) {
+			update_option( self::OPTION_NAME, $converted );
+			self::invalidate_cache();
 		}
-
-		update_option( self::OPTION_NAME, self::convert_legacy_allowlist( $stored ) );
-		self::invalidate_cache();
 	}
 
 	/**
-	 * Replace a legacy `enabled_blocks` allowlist with `disabled_blocks`.
+	 * Replace each legacy allowlist with its denylist.
 	 *
-	 * @param array $saved Stored settings.
-	 * @return array Settings without `enabled_blocks`.
+	 * @param array $saved       Stored settings.
+	 * @param bool  $for_storage Keep an allowlist that can't be inverted (its
+	 *                           catalog is unreadable) so a later request can
+	 *                           convert it, instead of dropping it.
+	 * @return array Converted settings.
 	 */
-	private static function convert_legacy_allowlist( array $saved ): array {
-		if ( ! array_key_exists( 'enabled_blocks', $saved ) ) {
-			return $saved;
-		}
+	private static function convert_legacy_allowlists( array $saved, bool $for_storage = false ): array {
+		foreach ( self::LEGACY_ALLOWLISTS as $allowlist => $denylist ) {
+			if ( ! array_key_exists( $allowlist, $saved ) ) {
+				continue;
+			}
 
-		$catalog = self::get_catalog_block_names();
-		if ( ! empty( $catalog ) && ! isset( $saved['disabled_blocks'] ) ) {
-			$saved['disabled_blocks'] = self::blocks_missing_from( (array) $saved['enabled_blocks'], $catalog );
+			$catalog = self::get_catalog_names( $denylist );
+			if ( empty( $catalog ) ) {
+				if ( ! $for_storage ) {
+					unset( $saved[ $allowlist ] );
+				}
+				continue;
+			}
+
+			if ( ! isset( $saved[ $denylist ] ) ) {
+				$saved[ $denylist ] = self::missing_from( (array) $saved[ $allowlist ], $catalog );
+			}
+			unset( $saved[ $allowlist ] );
 		}
-		unset( $saved['enabled_blocks'] );
 
 		return $saved;
 	}
 
 	/**
-	 * Catalog blocks absent from an allowlist.
+	 * Every name a denylist can hold.
+	 *
+	 * @param string $denylist A value of LEGACY_ALLOWLISTS.
+	 * @return string[]
+	 */
+	private static function get_catalog_names( string $denylist ): array {
+		return 'disabled_blocks' === $denylist ? self::get_catalog_block_names() : self::EXTENSION_NAMES;
+	}
+
+	/**
+	 * Catalog entries absent from an allowlist.
 	 *
 	 * An empty allowlist meant "all enabled", so it disables nothing.
 	 *
-	 * @param array    $enabled Legacy `enabled_blocks` allowlist.
-	 * @param string[] $catalog Block names from blocks-registry.json.
-	 * @return string[] Block names to disable.
+	 * @param array    $enabled Legacy allowlist.
+	 * @param string[] $catalog Every name the list could hold.
+	 * @return string[] Names to disable.
 	 */
-	private static function blocks_missing_from( array $enabled, array $catalog ): array {
+	private static function missing_from( array $enabled, array $catalog ): array {
 		if ( empty( $enabled ) ) {
 			return array();
 		}
@@ -510,51 +564,55 @@ class Settings {
 				'args'                => array(
 					// Sanitization for all args is handled centrally in sanitize_settings()
 					// to avoid double-sanitization. Type/description kept for schema docs.
-					'disabled_blocks'    => array(
+					'disabled_blocks'     => array(
 						'type'        => 'array',
 						'description' => __( 'Block names that are switched off. Every other block is enabled.', 'designsetgo' ),
 					),
-					'enabled_blocks'     => array(
+					'enabled_blocks'      => array(
 						'type'        => 'array',
 						'description' => __( 'Deprecated: use disabled_blocks. An allowlist; each catalog block it omits is disabled.', 'designsetgo' ),
 					),
-					'enabled_extensions' => array(
+					'disabled_extensions' => array(
 						'type'        => 'array',
-						'description' => __( 'List of enabled extension names. Empty array means all enabled.', 'designsetgo' ),
+						'description' => __( 'Extension names that are switched off. Every other extension is enabled.', 'designsetgo' ),
 					),
-					'excluded_blocks'    => array(
+					'enabled_extensions'  => array(
+						'type'        => 'array',
+						'description' => __( 'Deprecated: use disabled_extensions. An allowlist; each extension it omits is disabled.', 'designsetgo' ),
+					),
+					'excluded_blocks'     => array(
 						'type'        => 'array',
 						'description' => __( 'Block name patterns excluded from abilities API.', 'designsetgo' ),
 					),
-					'performance'        => array(
+					'performance'         => array(
 						'type'        => 'object',
 						'description' => __( 'Performance settings (conditional_loading, cache_duration).', 'designsetgo' ),
 					),
-					'forms'              => array(
+					'forms'               => array(
 						'type'        => 'object',
 						'description' => __( 'Form settings (enable_honeypot, enable_rate_limiting, enable_email_logging, retention_days).', 'designsetgo' ),
 					),
-					'animations'         => array(
+					'animations'          => array(
 						'type'        => 'object',
 						'description' => __( 'Animation settings (enable_animations, default_duration, default_easing, respect_prefers_reduced_motion).', 'designsetgo' ),
 					),
-					'security'           => array(
+					'security'            => array(
 						'type'        => 'object',
 						'description' => __( 'Security logging settings (log_ip_addresses, log_user_agents, log_referrers).', 'designsetgo' ),
 					),
-					'integrations'       => array(
+					'integrations'        => array(
 						'type'        => 'object',
 						'description' => __( 'Third-party integration keys (google_maps_api_key, turnstile_site_key, turnstile_secret_key).', 'designsetgo' ),
 					),
-					'sticky_header'      => array(
+					'sticky_header'       => array(
 						'type'        => 'object',
 						'description' => __( 'Sticky header configuration.', 'designsetgo' ),
 					),
-					'draft_mode'         => array(
+					'draft_mode'          => array(
 						'type'        => 'object',
 						'description' => __( 'Draft mode settings (enable, show_page_list_actions, etc.).', 'designsetgo' ),
 					),
-					'llms_txt'           => array(
+					'llms_txt'            => array(
 						'type'        => 'object',
 						'description' => __( 'llms.txt settings (enable, post_types).', 'designsetgo' ),
 					),
@@ -737,20 +795,20 @@ class Settings {
 	 * List fields (`disabled_blocks`, `llms_txt.post_types`, …) are replaced
 	 * wholesale by whatever is submitted, so an empty array clears one.
 	 *
-	 * A legacy `enabled_blocks` allowlist is still accepted from older
-	 * clients and converted to `disabled_blocks`; see get_saved_settings().
+	 * Legacy `enabled_blocks` / `enabled_extensions` allowlists are still
+	 * accepted from older clients and converted to their denylists; see
+	 * get_saved_settings().
 	 *
 	 * @param array $input Raw settings to apply (partial, nested).
 	 * @return array Current settings after the update.
 	 */
 	public static function update_settings( array $input ): array {
-		if ( isset( $input['enabled_blocks'] ) && ! isset( $input['disabled_blocks'] ) ) {
-			$input['disabled_blocks'] = self::blocks_missing_from(
-				(array) $input['enabled_blocks'],
-				self::get_catalog_block_names()
-			);
+		foreach ( self::LEGACY_ALLOWLISTS as $allowlist => $denylist ) {
+			if ( isset( $input[ $allowlist ] ) && ! isset( $input[ $denylist ] ) ) {
+				$input[ $denylist ] = self::missing_from( (array) $input[ $allowlist ], self::get_catalog_names( $denylist ) );
+			}
+			unset( $input[ $allowlist ] );
 		}
-		unset( $input['enabled_blocks'] );
 
 		$sanitized = self::sanitize_settings( $input );
 
@@ -871,20 +929,20 @@ class Settings {
 	 */
 	private static function get_sanitization_schema(): array {
 		return array(
-			'disabled_blocks'    => 'text_list',
-			'enabled_extensions' => 'text_list',
-			'excluded_blocks'    => 'text_list',
-			'performance'        => array(
+			'disabled_blocks'     => 'text_list',
+			'disabled_extensions' => 'text_list',
+			'excluded_blocks'     => 'text_list',
+			'performance'         => array(
 				'conditional_loading' => 'bool',
 				'cache_duration'      => 'absint',
 			),
-			'forms'              => array(
+			'forms'               => array(
 				'enable_honeypot'      => 'bool',
 				'enable_rate_limiting' => 'bool',
 				'enable_email_logging' => 'bool',
 				'retention_days'       => 'absint',
 			),
-			'animations'         => array(
+			'animations'          => array(
 				'enable_animations'              => 'bool',
 				'default_duration'               => 'absint',
 				'default_easing'                 => 'text',
@@ -893,17 +951,17 @@ class Settings {
 				'block_animations_enabled'       => 'bool',
 				'block_animations'               => 'block_animations',
 			),
-			'security'           => array(
+			'security'            => array(
 				'log_ip_addresses' => 'bool',
 				'log_user_agents'  => 'bool',
 				'log_referrers'    => 'bool',
 			),
-			'integrations'       => array(
+			'integrations'        => array(
 				'google_maps_api_key'  => 'text',
 				'turnstile_site_key'   => 'text',
 				'turnstile_secret_key' => 'text',
 			),
-			'sticky_header'      => array(
+			'sticky_header'       => array(
 				'enable'                    => 'bool',
 				'custom_selector'           => 'css_selector',
 				'z_index'                   => 'absint',
@@ -921,7 +979,7 @@ class Settings {
 				'background_scroll_opacity' => 'absint',
 				'text_scroll_color'         => 'hex_color',
 			),
-			'draft_mode'         => array(
+			'draft_mode'          => array(
 				'enable'                 => 'bool',
 				'show_page_list_actions' => 'bool',
 				'show_page_list_column'  => 'bool',
@@ -929,7 +987,7 @@ class Settings {
 				'auto_save_enabled'      => 'bool',
 				'auto_save_interval'     => 'absint',
 			),
-			'llms_txt'           => array(
+			'llms_txt'            => array(
 				'enable'            => 'bool',
 				'post_types'        => 'key_list',
 				'description'       => 'textarea',
@@ -1191,7 +1249,7 @@ class Settings {
 				continue;
 			}
 
-			// Top-level list fields (disabled_blocks, enabled_extensions, excluded_blocks).
+			// Top-level list fields (disabled_blocks, disabled_extensions, excluded_blocks).
 			if ( is_string( $field_schema ) ) {
 				$sanitized[ $key ] = self::sanitize_value(
 					$settings[ $key ],

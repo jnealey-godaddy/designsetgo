@@ -7,17 +7,13 @@
  * shows the resolved value live (rather than the source label as a
  * placeholder).
  *
- * Honours the admin Block Manager's enabledExtensions allowlist —
- * if `dynamic-tags` is explicitly excluded by the site, none of the
- * editor UI or live-preview bindings register.
+ * Honours the admin Block Manager's disabledExtensions list — if the
+ * site switched `dynamic-tags` off, none of the editor UI or
+ * live-preview bindings register.
  */
 const enabled =
-	typeof window !== 'undefined' &&
-	window.dsgoSettings?.enabledExtensions !== undefined
-		? // Empty list = all extensions enabled (mirrors the PHP default).
-			!window.dsgoSettings.enabledExtensions.length ||
-			window.dsgoSettings.enabledExtensions.includes('dynamic-tags')
-		: true;
+	typeof window === 'undefined' ||
+	!window.dsgoSettings?.disabledExtensions?.includes('dynamic-tags');
 
 if (enabled) {
 	require('./filters.js');

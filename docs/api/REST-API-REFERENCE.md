@@ -25,8 +25,8 @@ Returns all current settings merged with defaults.
 
 ```json
 {
-  "enabled_blocks": [],
-  "enabled_extensions": [],
+  "disabled_blocks": [],
+  "disabled_extensions": [],
   "excluded_blocks": [],
   "performance": { "conditional_loading": true, "cache_duration": 3600 },
   "forms": { "enable_honeypot": true, "enable_rate_limiting": true, "enable_email_logging": false, "retention_days": 30 },
@@ -51,8 +51,10 @@ Updates plugin settings. Partial updates are supported — only supplied keys ar
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `enabled_blocks` | `array<string>` | Block names to enable. Empty = all enabled. |
-| `enabled_extensions` | `array<string>` | Extension names to enable. Empty = all enabled. |
+| `disabled_blocks` | `array<string>` | Block names to switch off. Every other block, including ones added in later releases, is enabled. Replaced wholesale; `[]` enables all. |
+| `disabled_extensions` | `array<string>` | Extension names to switch off. Same rules as `disabled_blocks`. |
+| `enabled_blocks` | `array<string>` | Deprecated; use `disabled_blocks`. An allowlist, converted on save: each catalog block it omits is disabled. Ignored when `disabled_blocks` is also sent. |
+| `enabled_extensions` | `array<string>` | Deprecated; use `disabled_extensions`. Converted the same way. |
 | `excluded_blocks` | `array<string>` | Block name patterns excluded from abilities API. |
 | `performance` | `object` | `{ conditional_loading: bool, cache_duration: int }` |
 | `forms` | `object` | `{ enable_honeypot: bool, enable_rate_limiting: bool, enable_email_logging: bool, retention_days: int }` |

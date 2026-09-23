@@ -127,11 +127,7 @@ const BlocksExtensions = () => {
 		if (!settings) {
 			return false;
 		}
-		// Empty array means all extensions are enabled
-		if (settings.enabled_extensions.length === 0) {
-			return true;
-		}
-		return settings.enabled_extensions.includes(extensionName);
+		return !settings.disabled_extensions.includes(extensionName);
 	};
 
 	/**
@@ -156,27 +152,14 @@ const BlocksExtensions = () => {
 	 * @param {string} extensionName - The extension name to toggle.
 	 */
 	const toggleExtension = (extensionName) => {
-		const currentEnabled =
-			settings.enabled_extensions.length === 0
-				? extensions.map((ext) => ext.name)
-				: [...settings.enabled_extensions];
+		const disabled = settings.disabled_extensions;
 
-		if (currentEnabled.includes(extensionName)) {
-			// Remove from enabled list
-			const newEnabled = currentEnabled.filter(
-				(name) => name !== extensionName
-			);
-			setSettings({
-				...settings,
-				enabled_extensions: newEnabled,
-			});
-		} else {
-			// Add to enabled list
-			setSettings({
-				...settings,
-				enabled_extensions: [...currentEnabled, extensionName],
-			});
-		}
+		setSettings({
+			...settings,
+			disabled_extensions: disabled.includes(extensionName)
+				? disabled.filter((name) => name !== extensionName)
+				: [...disabled, extensionName],
+		});
 	};
 
 	/**

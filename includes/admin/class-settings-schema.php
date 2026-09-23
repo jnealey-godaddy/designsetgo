@@ -41,27 +41,32 @@ class Settings_Schema {
 			'type'                 => 'object',
 			'additionalProperties' => false,
 			'properties'           => array(
-				'disabled_blocks'    => array(
+				'disabled_blocks'     => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Block names that are switched off, e.g. "designsetgo/section". Every other block is enabled, including blocks added in later releases. Replaced wholesale: send the full list, or an empty array to enable everything.', 'designsetgo' ),
 				),
-				'enabled_blocks'     => array(
+				'enabled_blocks'      => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Deprecated, input only: use disabled_blocks. An allowlist; each catalog block it omits is disabled. Ignored when disabled_blocks is also sent.', 'designsetgo' ),
 				),
-				'enabled_extensions' => array(
+				'disabled_extensions' => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
-					'description' => __( 'Enabled extension names. Empty array means all extensions are enabled.', 'designsetgo' ),
+					'description' => __( 'Extension names that are switched off, e.g. "dynamic-tags". Every other extension is enabled, including extensions added in later releases. Replaced wholesale: send the full list, or an empty array to enable everything.', 'designsetgo' ),
 				),
-				'excluded_blocks'    => array(
+				'enabled_extensions'  => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Deprecated, input only: use disabled_extensions. An allowlist; each extension it omits is disabled. Ignored when disabled_extensions is also sent.', 'designsetgo' ),
+				),
+				'excluded_blocks'     => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Block name patterns excluded from configuration (supports wildcards like "plugin/*").', 'designsetgo' ),
 				),
-				'performance'        => array(
+				'performance'         => array(
 					'type'                 => 'object',
 					'description'          => __( 'Performance controls — asset loading strategy, lazy loading, and script/style deferral.', 'designsetgo' ),
 					'additionalProperties' => false,
@@ -73,7 +78,7 @@ class Settings_Schema {
 						),
 					),
 				),
-				'forms'              => array(
+				'forms'               => array(
 					'type'                 => 'object',
 					'description'          => __( 'Form Builder behaviour — submission storage, retention_days, spam protection, and notification settings.', 'designsetgo' ),
 					'additionalProperties' => false,
@@ -87,7 +92,7 @@ class Settings_Schema {
 						),
 					),
 				),
-				'animations'         => array(
+				'animations'          => array(
 					'type'                 => 'object',
 					'description'          => __( 'Animation defaults and the per-block animation registry. Note that animations.block_animations is replaced wholesale on update, unlike the other list fields.', 'designsetgo' ),
 					'additionalProperties' => false,
@@ -126,7 +131,7 @@ class Settings_Schema {
 						),
 					),
 				),
-				'security'           => array(
+				'security'            => array(
 					'type'                 => 'object',
 					'description'          => __( 'Security controls — SVG upload handling, CSS sanitization, and related hardening switches.', 'designsetgo' ),
 					'additionalProperties' => false,
@@ -136,7 +141,7 @@ class Settings_Schema {
 						'log_referrers'    => array( 'type' => 'boolean' ),
 					),
 				),
-				'integrations'       => array(
+				'integrations'        => array(
 					'type'                 => 'object',
 					'description'          => __( 'Third-party integration credentials and endpoints. Values here include secrets, which is why reading settings requires manage_options.', 'designsetgo' ),
 					'additionalProperties' => false,
@@ -146,7 +151,7 @@ class Settings_Schema {
 						'turnstile_secret_key' => array( 'type' => 'string' ),
 					),
 				),
-				'sticky_header'      => array(
+				'sticky_header'       => array(
 					'type'                 => 'object',
 					'description'          => __( 'Sticky header behaviour — which element sticks, the scroll offset that activates it, and shrink-on-scroll options.', 'designsetgo' ),
 					'additionalProperties' => false,
@@ -194,7 +199,7 @@ class Settings_Schema {
 						),
 					),
 				),
-				'draft_mode'         => array(
+				'draft_mode'          => array(
 					'type'                 => 'object',
 					'description'          => __( 'Draft Mode — lets an editor stage changes to a published page and publish them in one step.', 'designsetgo' ),
 					'additionalProperties' => false,
@@ -210,7 +215,7 @@ class Settings_Schema {
 						),
 					),
 				),
-				'llms_txt'           => array(
+				'llms_txt'            => array(
 					'type'                 => 'object',
 					'description'          => __( 'llms.txt generation — whether the file is served, and which post types and fields it advertises to AI crawlers.', 'designsetgo' ),
 					'additionalProperties' => false,
