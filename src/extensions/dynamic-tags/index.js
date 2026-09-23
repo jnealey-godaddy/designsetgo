@@ -7,15 +7,14 @@
  * shows the resolved value live (rather than the source label as a
  * placeholder).
  *
- * Honours the admin Block Manager's disabledExtensions list — if the
- * site switched `dynamic-tags` off, none of the editor UI or
- * live-preview bindings register.
+ * Honours the Blocks & Extensions toggle — if the site switched
+ * `dynamic-tags` off, none of the editor UI or live-preview bindings
+ * register. Server-side bindings still resolve, so saved content keeps
+ * rendering.
  */
-const enabled =
-	typeof window === 'undefined' ||
-	!window.dsgoSettings?.disabledExtensions?.includes('dynamic-tags');
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
-if (enabled) {
+if (isExtensionEnabled('dynamic-tags')) {
 	require('./filters.js');
 	require('./register-bindings-sources.js');
 }

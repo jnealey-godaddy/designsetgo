@@ -17,6 +17,7 @@ import { InspectorControls } from '@wordpress/block-editor';
 import { PanelBody, RangeControl, Notice } from '@wordpress/components';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { useSelect } from '@wordpress/data';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 // Upper bound for row span. Rows are implicit in CSS Grid so any value works;
 // we cap at the same max as columns for UI parity and to discourage extreme values.
@@ -149,12 +150,16 @@ const withGridSpanControls = createHigherOrderComponent((BlockEdit) => {
 	};
 }, 'withGridSpanControls');
 
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/add-grid-span-controls',
-	withGridSpanControls,
-	20
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+if (isExtensionEnabled('grid-span')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/add-grid-span-controls',
+		withGridSpanControls,
+		20
+	);
+}
 
 /**
  * Apply column and row span styles in editor via wrapperProps

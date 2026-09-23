@@ -11,6 +11,7 @@
 
 import { registerPlugin } from '@wordpress/plugins';
 import { lazy, Suspense } from '@wordpress/element';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 import './editor.scss';
 
@@ -22,21 +23,26 @@ const DraftModeControls = lazy(
 	() => import(/* webpackChunkName: "ext-draft-mode" */ './DraftModeControls')
 );
 
-// Register the draft mode panel plugin (sidebar + auto-detection + controls).
-registerPlugin('dsgo-draft-mode', {
-	render: () => (
-		<Suspense fallback={null}>
-			<DraftModePanel />
-		</Suspense>
-	),
-	icon: 'edit-page',
-});
+// Switched off on the Blocks & Extensions screen, Draft Mode registers no
+// editor UI; Draft_Mode::is_enabled() turns off its REST routes and admin
+// actions to match.
+if (isExtensionEnabled('draft-mode')) {
+	// Register the draft mode panel plugin (sidebar + auto-detection + controls).
+	registerPlugin('dsgo-draft-mode', {
+		render: () => (
+			<Suspense fallback={null}>
+				<DraftModePanel />
+			</Suspense>
+		),
+		icon: 'edit-page',
+	});
 
-// Register the draft mode controls plugin (post status info area controls).
-registerPlugin('dsgo-draft-mode-controls', {
-	render: () => (
-		<Suspense fallback={null}>
-			<DraftModeControls />
-		</Suspense>
-	),
-});
+	// Register the draft mode controls plugin (post status info area controls).
+	registerPlugin('dsgo-draft-mode-controls', {
+		render: () => (
+			<Suspense fallback={null}>
+				<DraftModeControls />
+			</Suspense>
+		),
+	});
+}

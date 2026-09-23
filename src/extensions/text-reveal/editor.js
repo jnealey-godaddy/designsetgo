@@ -12,6 +12,7 @@ import { createHigherOrderComponent } from '@wordpress/compose';
 import TextRevealPanel from './components/TextRevealPanel';
 import { DEFAULT_TEXT_REVEAL_SETTINGS, SUPPORTED_BLOCKS } from './constants';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 /**
  * Add text reveal controls to block edit component
@@ -119,12 +120,16 @@ function addTextRevealSaveProps(extraProps, blockType, attributes) {
 }
 
 // Register filters
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/text-reveal/with-controls',
-	withTextRevealControls,
-	100 // After core styling
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+if (isExtensionEnabled('text-reveal')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/text-reveal/with-controls',
+		withTextRevealControls,
+		100 // After core styling
+	);
+}
 
 addFilter(
 	'editor.BlockListBlock',

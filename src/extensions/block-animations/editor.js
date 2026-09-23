@@ -12,6 +12,7 @@ import { createHigherOrderComponent } from '@wordpress/compose';
 import { InspectorControls } from '@wordpress/block-editor';
 import { lazy, Suspense } from '@wordpress/element';
 import { DEFAULT_ANIMATION_SETTINGS } from './constants';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 // Lazy-load animation UI components to reduce initial bundle size
 const AnimationPanel = lazy(
@@ -224,12 +225,18 @@ function addAnimationSaveProps(extraProps, blockType, attributes) {
 }
 
 // Register filters
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/block-animations/with-controls',
-	withAnimationControls,
-	100 // After core styling - animations are effects applied to styled blocks
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+// Hidden when either animation toggle is off; "Animation" has no
+// controls of its own.
+if (isExtensionEnabled('animation', 'block-animations')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/block-animations/with-controls',
+		withAnimationControls,
+		100 // After core styling - animations are effects applied to styled blocks
+	);
+}
 
 addFilter(
 	'editor.BlockListBlock',

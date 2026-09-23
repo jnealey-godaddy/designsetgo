@@ -13,6 +13,7 @@ import { addFilter } from '@wordpress/hooks';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { useEffect, useRef } from '@wordpress/element';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 /**
  * Track which blocks have already had alignment initialized
@@ -102,8 +103,12 @@ const withAlignmentInheritance = createHigherOrderComponent((BlockEdit) => {
 	};
 }, 'withAlignmentInheritance');
 
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/with-alignment-inheritance',
-	withAlignmentInheritance
-);
+// Switched off, new blocks simply don't inherit their parent's alignment;
+// alignment already saved on blocks is untouched.
+if (isExtensionEnabled('text-alignment-inheritance')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/with-alignment-inheritance',
+		withAlignmentInheritance
+	);
+}

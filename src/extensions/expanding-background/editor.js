@@ -10,6 +10,7 @@ import { Fragment } from '@wordpress/element';
 import ExpandingBackgroundPanel from './components/ExpandingBackgroundPanel';
 import { SUPPORTED_BLOCKS } from './constants';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 /**
  * Add expanding background controls to the block editor
@@ -35,11 +36,15 @@ const withExpandingBackgroundControls = createHigherOrderComponent(
 	'withExpandingBackgroundControls'
 );
 
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/expanding-background-controls',
-	withExpandingBackgroundControls
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+if (isExtensionEnabled('expanding-background')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/expanding-background-controls',
+		withExpandingBackgroundControls
+	);
+}
 
 /**
  * Add expanding background classes and styles to block wrapper in editor

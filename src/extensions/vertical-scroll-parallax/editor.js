@@ -14,6 +14,7 @@ import { Fragment } from '@wordpress/element';
 
 import ParallaxPanel from './components/ParallaxPanel';
 import { ALLOWED_BLOCKS, DEFAULT_PARALLAX_SETTINGS } from './constants';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 /**
  * Add parallax controls to block inspector
@@ -41,12 +42,16 @@ const withParallaxControls = createHigherOrderComponent((BlockEdit) => {
 	};
 }, 'withParallaxControls');
 
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/vertical-scroll-parallax/controls',
-	withParallaxControls,
-	20
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+if (isExtensionEnabled('vertical-scroll-parallax')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/vertical-scroll-parallax/controls',
+		withParallaxControls,
+		20
+	);
+}
 
 /**
  * Add parallax data attributes to saved block content
