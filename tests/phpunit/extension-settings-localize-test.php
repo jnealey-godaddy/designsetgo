@@ -123,18 +123,18 @@ class Test_Extension_Settings_Localize extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The enabled-extensions allowlist must reach the iframe too.
+	 * The disabled-extensions list must reach the iframe too.
 	 *
 	 * The same localization bug also disabled per-extension gating (e.g.
-	 * dynamic-tags, which reads window.dsgoSettings.enabledExtensions inside
+	 * dynamic-tags, which reads window.dsgoSettings.disabledExtensions inside
 	 * the iframe). Cover it so a regression in either field is caught.
 	 */
-	public function test_enabled_extensions_localized_onto_extensions_script() {
+	public function test_disabled_extensions_localized_onto_extensions_script() {
 		set_current_screen( 'edit-post' );
 
 		update_option(
 			Settings::OPTION_NAME,
-			array( 'enabled_extensions' => array( 'dynamic-tags' ) )
+			array( 'disabled_extensions' => array( 'dynamic-tags' ) )
 		);
 		Settings::invalidate_cache();
 
@@ -148,11 +148,11 @@ class Test_Extension_Settings_Localize extends WP_UnitTestCase {
 		);
 		$settings = $this->decode_localized_settings( $data );
 
-		$this->assertArrayHasKey( 'enabledExtensions', $settings );
+		$this->assertArrayHasKey( 'disabledExtensions', $settings );
 		$this->assertContains(
 			'dynamic-tags',
-			$settings['enabledExtensions'],
-			'The configured enabled extension must be present in the iframe payload.'
+			$settings['disabledExtensions'],
+			'The configured disabled extension must be present in the iframe payload.'
 		);
 	}
 }

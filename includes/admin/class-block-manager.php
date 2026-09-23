@@ -47,16 +47,10 @@ class Block_Manager {
 	 * @return bool Whether the extension should be loaded.
 	 */
 	public function should_load_extension( $should_load, $extension_name ) {
-		$settings           = Settings::get_settings();
-		$enabled_extensions = $settings['enabled_extensions'];
+		$settings = Settings::get_settings();
 
-		// If enabled_extensions is empty, all extensions are enabled by default.
-		if ( empty( $enabled_extensions ) ) {
-			return true;
-		}
-
-		// Check if this specific extension is in the enabled list.
-		return in_array( $extension_name, $enabled_extensions, true );
+		// A denylist, so extensions added in later releases load by default.
+		return ! in_array( $extension_name, (array) $settings['disabled_extensions'], true );
 	}
 
 	/**

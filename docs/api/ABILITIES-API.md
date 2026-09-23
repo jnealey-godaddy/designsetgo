@@ -588,9 +588,12 @@ Notes:
 - `get-settings` returns integration secrets, which is why it requires
   `manage_options` rather than a read capability.
 - `update-settings` merges field-by-field; omitted keys are untouched. List
-  fields (`enabled_blocks`, `enabled_extensions`, `excluded_blocks`) merge
-  positionally, so resubmit the full array to replace one.
-  `animations.block_animations` is the exception — always replaced wholesale.
+  fields (`disabled_blocks`, `disabled_extensions`, `excluded_blocks`,
+  `llms_txt.post_types`, `animations.block_animations`) are replaced
+  wholesale, so to add or remove one entry, resubmit the full array. An empty
+  `disabled_blocks` / `disabled_extensions` enables everything. The legacy
+  `enabled_blocks` / `enabled_extensions` allowlists are still accepted as
+  input and converted.
 - `update-global-css` **replaces** the entire Additional CSS value. Call
   `get-global-css` first and concatenate if you mean to append.
 - `edit_css` maps to `unfiltered_html`, so editors hold it on single-site

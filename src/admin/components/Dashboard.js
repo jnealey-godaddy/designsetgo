@@ -50,11 +50,9 @@ const Dashboard = () => {
 				const enrichedExtensions = Array.isArray(extensionsData)
 					? extensionsData.map((ext) => ({
 							...ext,
-							enabled:
-								settingsData.enabled_extensions.length === 0 ||
-								settingsData.enabled_extensions.includes(
-									ext.name
-								),
+							enabled: !settingsData.disabled_extensions.includes(
+								ext.name
+							),
 						}))
 					: [];
 
