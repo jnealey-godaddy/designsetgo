@@ -104,7 +104,9 @@ class Settings {
 		}
 
 		return array(
-			'enabled_blocks'     => array(), // Empty = all enabled.
+			// Blocks the site owner switched off. A denylist, so a block added in
+			// a later release registers without anyone having to opt it in.
+			'disabled_blocks'    => array(),
 			'enabled_extensions' => array(), // Empty = all enabled.
 			'excluded_blocks'    => $excluded_blocks_default,
 			'performance'        => array(
@@ -332,11 +334,107 @@ class Settings {
 			return self::$cached_settings;
 		}
 
-		$saved_settings        = get_option( self::OPTION_NAME, array() );
+		$saved_settings        = self::get_saved_settings();
 		$defaults              = self::get_defaults();
 		self::$cached_settings = wp_parse_args( $saved_settings, $defaults );
 
 		return self::$cached_settings;
+	}
+
+	/**
+	 * Read the stored settings, migrating a legacy block allowlist first.
+	 *
+	 * Older releases switched blocks off by saving an `enabled_blocks`
+	 * allowlist. Once a site had saved one, every block added in a later
+	 * release was missing from it and never registered, so the editor reported
+	 * content that used it as unsupported. The list is converted once, here,
+	 * into the `disabled_blocks` denylist: each catalog block the allowlist
+	 * left out is disabled, which keeps exactly the blocks that were off
+	 * before, and anything added from now on is on.
+	 *
+	 * The conversion is persisted. Recomputing it on every read would disable
+	 * each new release's blocks all over again.
+	 *
+	 * @return array Stored settings (partial; not merged with defaults).
+	 */
+	private static function get_saved_settings(): array {
+		$saved = get_option( self::OPTION_NAME, array() );
+		if ( ! is_array( $saved ) ) {
+			return array();
+		}
+
+		if ( ! array_key_exists( 'enabled_blocks', $saved ) ) {
+			return $saved;
+		}
+
+		$catalog = self::get_catalog_block_names();
+		if ( empty( $catalog ) ) {
+			// Without the catalog there is nothing to invert against. Leave the
+			// stored allowlist for a request that can read it.
+			unset( $saved['enabled_blocks'] );
+			return $saved;
+		}
+
+		if ( ! isset( $saved['disabled_blocks'] ) ) {
+			$saved['disabled_blocks'] = self::blocks_missing_from( (array) $saved['enabled_blocks'], $catalog );
+		}
+		unset( $saved['enabled_blocks'] );
+
+		update_option( self::OPTION_NAME, $saved );
+
+		return $saved;
+	}
+
+	/**
+	 * Catalog blocks absent from an allowlist.
+	 *
+	 * An empty allowlist meant "all enabled", so it disables nothing.
+	 *
+	 * @param array    $enabled Legacy `enabled_blocks` allowlist.
+	 * @param string[] $catalog Block names from blocks-registry.json.
+	 * @return string[] Block names to disable.
+	 */
+	private static function blocks_missing_from( array $enabled, array $catalog ): array {
+		if ( empty( $enabled ) ) {
+			return array();
+		}
+
+		$enabled = array_map( 'sanitize_text_field', array_filter( $enabled, 'is_string' ) );
+
+		return array_values( array_diff( $catalog, $enabled ) );
+	}
+
+	/**
+	 * Block names listed in blocks-registry.json.
+	 *
+	 * Reads the file directly rather than through get_available_blocks(),
+	 * which translates labels: this runs from get_settings(), which can be
+	 * called before `init`, when translating would load the text domain too
+	 * early.
+	 *
+	 * @return string[] Block names, e.g. 'designsetgo/section'.
+	 */
+	public static function get_catalog_block_names(): array {
+		$json_path = __DIR__ . '/blocks-registry.json';
+		if ( ! is_readable( $json_path ) ) {
+			return array();
+		}
+
+		$raw_data = wp_json_file_decode( $json_path, array( 'associative' => true ) );
+		if ( ! is_array( $raw_data ) ) {
+			return array();
+		}
+
+		$names = array();
+		foreach ( $raw_data as $category ) {
+			foreach ( $category['blocks'] ?? array() as $block ) {
+				if ( isset( $block['name'] ) && is_string( $block['name'] ) ) {
+					$names[] = $block['name'];
+				}
+			}
+		}
+
+		return $names;
 	}
 
 	/**
@@ -377,9 +475,13 @@ class Settings {
 				'args'                => array(
 					// Sanitization for all args is handled centrally in sanitize_settings()
 					// to avoid double-sanitization. Type/description kept for schema docs.
+					'disabled_blocks'    => array(
+						'type'        => 'array',
+						'description' => __( 'Block names that are switched off. Every other block is enabled.', 'designsetgo' ),
+					),
 					'enabled_blocks'     => array(
 						'type'        => 'array',
-						'description' => __( 'List of enabled block names. Empty array means all enabled.', 'designsetgo' ),
+						'description' => __( 'Deprecated: use disabled_blocks. An allowlist; each catalog block it omits is disabled.', 'designsetgo' ),
 					),
 					'enabled_extensions' => array(
 						'type'        => 'array',
@@ -597,19 +699,44 @@ class Settings {
 	 * before invoking it. The REST endpoint and update-settings ability
 	 * both gate on manage_options before calling through.
 	 *
+	 * List fields (`disabled_blocks`, `llms_txt.post_types`, …) are replaced
+	 * wholesale by whatever is submitted, so an empty array clears one.
+	 *
+	 * A legacy `enabled_blocks` allowlist is still accepted from older
+	 * clients and converted to `disabled_blocks`; see get_saved_settings().
+	 *
 	 * @param array $input Raw settings to apply (partial, nested).
 	 * @return array Current settings after the update.
 	 */
 	public static function update_settings( array $input ): array {
+		if ( isset( $input['enabled_blocks'] ) && ! isset( $input['disabled_blocks'] ) ) {
+			$input['disabled_blocks'] = self::blocks_missing_from(
+				(array) $input['enabled_blocks'],
+				self::get_catalog_block_names()
+			);
+		}
+		unset( $input['enabled_blocks'] );
+
 		$sanitized = self::sanitize_settings( $input );
 
-		$existing = get_option( self::OPTION_NAME, array() );
+		$existing = self::get_saved_settings();
 		$merged   = array_replace_recursive( $existing, $sanitized );
 
-		// List fields must be replaced wholesale — array_replace_recursive
-		// merges lists by numeric index, which would strand stale entries.
-		if ( isset( $sanitized['animations']['block_animations'] ) ) {
-			$merged['animations']['block_animations'] = $sanitized['animations']['block_animations'];
+		// array_replace_recursive() merges lists by numeric index: a shorter
+		// list keeps the old tail and an empty one changes nothing. Put the
+		// submitted lists back as sent.
+		foreach ( self::get_sanitization_schema() as $key => $field_schema ) {
+			if ( is_string( $field_schema ) ) {
+				if ( self::is_list_sanitizer( $field_schema ) && isset( $sanitized[ $key ] ) ) {
+					$merged[ $key ] = $sanitized[ $key ];
+				}
+				continue;
+			}
+			foreach ( $field_schema as $field_key => $sanitizer ) {
+				if ( self::is_list_sanitizer( $sanitizer ) && isset( $sanitized[ $key ][ $field_key ] ) ) {
+					$merged[ $key ][ $field_key ] = $sanitized[ $key ][ $field_key ];
+				}
+			}
 		}
 
 		update_option( self::OPTION_NAME, $merged );
@@ -653,8 +780,10 @@ class Settings {
 			$total_blocks += count( $category['blocks'] );
 		}
 
-		// Count enabled blocks.
-		$enabled_blocks = empty( $settings['enabled_blocks'] ) ? $total_blocks : count( $settings['enabled_blocks'] );
+		// Count enabled blocks. Only catalog names count, so a stale entry for a
+		// block that no longer exists can't push the total down.
+		$disabled_count = count( array_intersect( self::get_catalog_block_names(), (array) $settings['disabled_blocks'] ) );
+		$enabled_blocks = $total_blocks - $disabled_count;
 
 		// Count form submissions (with caching).
 		$form_submissions = get_transient( 'dsgo_form_submissions_count' );
@@ -707,7 +836,7 @@ class Settings {
 	 */
 	private static function get_sanitization_schema(): array {
 		return array(
-			'enabled_blocks'     => 'text_list',
+			'disabled_blocks'    => 'text_list',
 			'enabled_extensions' => 'text_list',
 			'excluded_blocks'    => 'text_list',
 			'performance'        => array(
@@ -775,6 +904,17 @@ class Settings {
 	}
 
 	/**
+	 * Whether a sanitizer type produces a list, which update_settings()
+	 * must replace wholesale rather than merge by index.
+	 *
+	 * @param string $sanitizer Sanitizer type from get_sanitization_schema().
+	 * @return bool
+	 */
+	private static function is_list_sanitizer( string $sanitizer ): bool {
+		return in_array( $sanitizer, array( 'text_list', 'key_list', 'block_animations' ), true );
+	}
+
+	/**
 	 * Sanitize a single value according to its sanitizer type.
 	 *
 	 * @param mixed  $value     The value to sanitize.
@@ -800,9 +940,9 @@ class Settings {
 			case 'key':
 				return sanitize_key( $value );
 			case 'text_list':
-				return is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : $fallback;
+				return is_array( $value ) ? array_values( array_map( 'sanitize_text_field', $value ) ) : $fallback;
 			case 'key_list':
-				return is_array( $value ) ? array_map( 'sanitize_key', $value ) : $fallback;
+				return is_array( $value ) ? array_values( array_map( 'sanitize_key', $value ) ) : $fallback;
 			case 'block_animations':
 				return self::sanitize_block_animations_list( is_array( $value ) ? $value : array() );
 			default:
@@ -1016,7 +1156,7 @@ class Settings {
 				continue;
 			}
 
-			// Top-level list fields (enabled_blocks, enabled_extensions, excluded_blocks).
+			// Top-level list fields (disabled_blocks, enabled_extensions, excluded_blocks).
 			if ( is_string( $field_schema ) ) {
 				$sanitized[ $key ] = self::sanitize_value(
 					$settings[ $key ],

@@ -41,10 +41,15 @@ class Settings_Schema {
 			'type'                 => 'object',
 			'additionalProperties' => false,
 			'properties'           => array(
+				'disabled_blocks'    => array(
+					'type'        => 'array',
+					'items'       => array( 'type' => 'string' ),
+					'description' => __( 'Block names that are switched off, e.g. "designsetgo/section". Every other block is enabled, including blocks added in later releases. Replaced wholesale: send the full list, or an empty array to enable everything.', 'designsetgo' ),
+				),
 				'enabled_blocks'     => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
-					'description' => __( 'Enabled block names. Empty array means all blocks are enabled.', 'designsetgo' ),
+					'description' => __( 'Deprecated, input only: use disabled_blocks. An allowlist; each catalog block it omits is disabled. Ignored when disabled_blocks is also sent.', 'designsetgo' ),
 				),
 				'enabled_extensions' => array(
 					'type'        => 'array',
