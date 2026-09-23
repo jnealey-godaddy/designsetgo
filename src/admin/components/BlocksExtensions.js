@@ -114,11 +114,7 @@ const BlocksExtensions = () => {
 		if (!settings) {
 			return false;
 		}
-		// Empty array means all blocks are enabled
-		if (settings.enabled_blocks.length === 0) {
-			return true;
-		}
-		return settings.enabled_blocks.includes(blockName);
+		return !settings.disabled_blocks.includes(blockName);
 	};
 
 	/**
@@ -144,27 +140,14 @@ const BlocksExtensions = () => {
 	 * @param {string} blockName - The block name to toggle.
 	 */
 	const toggleBlock = (blockName) => {
-		const currentEnabled =
-			settings.enabled_blocks.length === 0
-				? getAllBlockNames()
-				: [...settings.enabled_blocks];
+		const disabled = settings.disabled_blocks;
 
-		if (currentEnabled.includes(blockName)) {
-			// Remove from enabled list
-			const newEnabled = currentEnabled.filter(
-				(name) => name !== blockName
-			);
-			setSettings({
-				...settings,
-				enabled_blocks: newEnabled,
-			});
-		} else {
-			// Add to enabled list
-			setSettings({
-				...settings,
-				enabled_blocks: [...currentEnabled, blockName],
-			});
-		}
+		setSettings({
+			...settings,
+			disabled_blocks: disabled.includes(blockName)
+				? disabled.filter((name) => name !== blockName)
+				: [...disabled, blockName],
+		});
 	};
 
 	/**
@@ -197,35 +180,18 @@ const BlocksExtensions = () => {
 	};
 
 	/**
-	 * Get all block names
-	 */
-	const getAllBlockNames = () => {
-		const allNames = [];
-		Object.values(blocks).forEach((category) => {
-			category.blocks.forEach((block) => {
-				allNames.push(block.name);
-			});
-		});
-		return allNames;
-	};
-
-	/**
 	 * Enable all blocks in a category
 	 *
 	 * @param {string} categoryKey - The category key.
 	 */
 	const enableAllInCategory = (categoryKey) => {
-		const currentEnabled =
-			settings.enabled_blocks.length === 0
-				? getAllBlockNames()
-				: [...settings.enabled_blocks];
-
 		const categoryBlocks = blocks[categoryKey].blocks.map((b) => b.name);
-		const newEnabled = [...new Set([...currentEnabled, ...categoryBlocks])];
 
 		setSettings({
 			...settings,
-			enabled_blocks: newEnabled,
+			disabled_blocks: settings.disabled_blocks.filter(
+				(name) => !categoryBlocks.includes(name)
+			),
 		});
 	};
 
@@ -235,19 +201,13 @@ const BlocksExtensions = () => {
 	 * @param {string} categoryKey - The category key.
 	 */
 	const disableAllInCategory = (categoryKey) => {
-		const currentEnabled =
-			settings.enabled_blocks.length === 0
-				? getAllBlockNames()
-				: [...settings.enabled_blocks];
-
 		const categoryBlocks = blocks[categoryKey].blocks.map((b) => b.name);
-		const newEnabled = currentEnabled.filter(
-			(name) => !categoryBlocks.includes(name)
-		);
 
 		setSettings({
 			...settings,
-			enabled_blocks: newEnabled,
+			disabled_blocks: [
+				...new Set([...settings.disabled_blocks, ...categoryBlocks]),
+			],
 		});
 	};
 
