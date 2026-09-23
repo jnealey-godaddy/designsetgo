@@ -361,7 +361,7 @@ npx wp-env start
 
 For more detailed fixes:
 
-- `/refactor` - Refactor anti-patterns
 - `/i18n-update` - Fix translations
-- `/check-compat` - Check WordPress compatibility
+- `/plugin-review` - Full plugin audit when a fix here is not enough
+- `/simplify` - Clean up the code a fix touched (built-in; replaces the old refactor skill)
 - `npm run build` - Build troubleshooting (no dedicated skill; see Fix 1 above)
