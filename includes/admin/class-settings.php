@@ -64,31 +64,6 @@ class Settings {
 	);
 
 	/**
-	 * Names of the extensions get_available_extensions() describes.
-	 *
-	 * Kept untranslated so settings migration can run before `init`. A test
-	 * pins it to get_available_extensions().
-	 */
-	const EXTENSION_NAMES = array(
-		'animation',
-		'background-video',
-		'block-animations',
-		'clickable-group',
-		'custom-css',
-		'grid-span',
-		'max-width',
-		'responsive',
-		'reveal-control',
-		'sticky-header-controls',
-		'text-alignment-inheritance',
-		'expanding-background',
-		'text-reveal',
-		'vertical-scroll-parallax',
-		'draft-mode',
-		'dynamic-tags',
-	);
-
-	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -380,13 +355,13 @@ class Settings {
 	/**
 	 * Read the stored settings, with legacy allowlists converted.
 	 *
-	 * Older releases switched blocks and extensions off by saving an
+	 * 2.8.1 and earlier switched blocks and extensions off by saving an
 	 * `enabled_blocks` / `enabled_extensions` allowlist. Once a site had saved
 	 * one, everything added in a later release was missing from it and stayed
 	 * off; for blocks, the editor then reported content using them as
 	 * unsupported. Each is replaced by its denylist (LEGACY_ALLOWLISTS): every
-	 * catalog entry the allowlist left out is disabled, which keeps exactly
-	 * what was off before, and anything added from now on is on.
+	 * name in the 2.8.1 catalog the allowlist left out is disabled, which keeps
+	 * exactly what was off before, and anything added since is on.
 	 *
 	 * This is a read, so the conversion happens in memory only; it runs on
 	 * anonymous front-end requests and behind the readonly get-settings
@@ -409,11 +384,9 @@ class Settings {
 	 *
 	 * Runs on `admin_init` for administrators, so the one write happens in a
 	 * request that is allowed to change settings. Until then each request
-	 * derives the same denylists in memory (see get_saved_settings()).
-	 *
-	 * It has to be persisted, and soon: the conversion inverts each allowlist
-	 * against the current catalog, so a later release that adds a block or
-	 * extension would otherwise derive it as disabled.
+	 * derives the same denylists in memory (see get_saved_settings()); the
+	 * result doesn't depend on when this runs, because the conversion uses the
+	 * catalog frozen at 2.8.1 (legacy-allowlist-catalog.php).
 	 */
 	public static function migrate_legacy_settings(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -425,7 +398,7 @@ class Settings {
 			return;
 		}
 
-		$converted = self::convert_legacy_allowlists( $stored, true );
+		$converted = self::convert_legacy_allowlists( $stored );
 		if ( $converted !== $stored ) {
 			update_option( self::OPTION_NAME, $converted );
 			self::invalidate_cache();
@@ -435,28 +408,17 @@ class Settings {
 	/**
 	 * Replace each legacy allowlist with its denylist.
 	 *
-	 * @param array $saved       Stored settings.
-	 * @param bool  $for_storage Keep an allowlist that can't be inverted (its
-	 *                           catalog is unreadable) so a later request can
-	 *                           convert it, instead of dropping it.
+	 * @param array $saved Stored settings.
 	 * @return array Converted settings.
 	 */
-	private static function convert_legacy_allowlists( array $saved, bool $for_storage = false ): array {
+	private static function convert_legacy_allowlists( array $saved ): array {
 		foreach ( self::LEGACY_ALLOWLISTS as $allowlist => $denylist ) {
 			if ( ! array_key_exists( $allowlist, $saved ) ) {
 				continue;
 			}
 
-			$catalog = self::get_catalog_names( $denylist );
-			if ( empty( $catalog ) ) {
-				if ( ! $for_storage ) {
-					unset( $saved[ $allowlist ] );
-				}
-				continue;
-			}
-
 			if ( ! isset( $saved[ $denylist ] ) ) {
-				$saved[ $denylist ] = self::missing_from( (array) $saved[ $allowlist ], $catalog );
+				$saved[ $denylist ] = self::missing_from( (array) $saved[ $allowlist ], self::get_legacy_catalog( $denylist ) );
 			}
 			unset( $saved[ $allowlist ] );
 		}
@@ -465,13 +427,18 @@ class Settings {
 	}
 
 	/**
-	 * Every name a denylist can hold.
+	 * Names a legacy allowlist could have held: the catalog as of 2.8.1.
 	 *
 	 * @param string $denylist A value of LEGACY_ALLOWLISTS.
 	 * @return string[]
 	 */
-	private static function get_catalog_names( string $denylist ): array {
-		return 'disabled_blocks' === $denylist ? self::get_catalog_block_names() : self::EXTENSION_NAMES;
+	public static function get_legacy_catalog( string $denylist ): array {
+		static $catalog = null;
+		if ( null === $catalog ) {
+			$catalog = require __DIR__ . '/legacy-allowlist-catalog.php';
+		}
+
+		return $catalog[ $denylist ] ?? array();
 	}
 
 	/**
@@ -493,38 +460,6 @@ class Settings {
 		return array_values( array_diff( $catalog, $enabled ) );
 	}
 
-	/**
-	 * Block names listed in blocks-registry.json.
-	 *
-	 * Reads the file directly rather than through get_available_blocks(),
-	 * which translates labels: this runs from get_settings(), which can be
-	 * called before `init`, when translating would load the text domain too
-	 * early.
-	 *
-	 * @return string[] Block names, e.g. 'designsetgo/section'.
-	 */
-	public static function get_catalog_block_names(): array {
-		$json_path = __DIR__ . '/blocks-registry.json';
-		if ( ! is_readable( $json_path ) ) {
-			return array();
-		}
-
-		$raw_data = wp_json_file_decode( $json_path, array( 'associative' => true ) );
-		if ( ! is_array( $raw_data ) ) {
-			return array();
-		}
-
-		$names = array();
-		foreach ( $raw_data as $category ) {
-			foreach ( $category['blocks'] ?? array() as $block ) {
-				if ( isset( $block['name'] ) && is_string( $block['name'] ) ) {
-					$names[] = $block['name'];
-				}
-			}
-		}
-
-		return $names;
-	}
 
 	/**
 	 * Invalidate the settings cache.
@@ -805,7 +740,7 @@ class Settings {
 	public static function update_settings( array $input ): array {
 		foreach ( self::LEGACY_ALLOWLISTS as $allowlist => $denylist ) {
 			if ( isset( $input[ $allowlist ] ) && ! isset( $input[ $denylist ] ) ) {
-				$input[ $denylist ] = self::missing_from( (array) $input[ $allowlist ], self::get_catalog_names( $denylist ) );
+				$input[ $denylist ] = self::missing_from( (array) $input[ $allowlist ], self::get_legacy_catalog( $denylist ) );
 			}
 			unset( $input[ $allowlist ] );
 		}
@@ -864,18 +799,20 @@ class Settings {
 	public function get_stats_endpoint() {
 		global $wpdb;
 
-		$settings     = self::get_settings();
-		$all_blocks   = self::get_available_blocks();
-		$total_blocks = 0;
+		$settings      = self::get_settings();
+		$all_blocks    = self::get_available_blocks();
+		$total_blocks  = 0;
+		$catalog_names = array();
 
 		// Count total blocks.
 		foreach ( $all_blocks as $category ) {
 			$total_blocks += count( $category['blocks'] );
+			$catalog_names = array_merge( $catalog_names, wp_list_pluck( $category['blocks'], 'name' ) );
 		}
 
 		// Count enabled blocks. Only catalog names count, so a stale entry for a
 		// block that no longer exists can't push the total down.
-		$disabled_count = count( array_intersect( self::get_catalog_block_names(), (array) $settings['disabled_blocks'] ) );
+		$disabled_count = count( array_intersect( $catalog_names, (array) $settings['disabled_blocks'] ) );
 		$enabled_blocks = $total_blocks - $disabled_count;
 
 		// Count form submissions (with caching).

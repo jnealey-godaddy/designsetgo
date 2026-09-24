@@ -51,20 +51,41 @@ class Settings_Block_Denylist_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Every catalog block except the ones given.
+	 * Every block a legacy allowlist could have held, except the ones given.
 	 *
 	 * @param string ...$names Block names to leave out.
 	 * @return string[]
 	 */
 	private function catalog_without( string ...$names ): array {
-		return array_values( array_diff( Settings::get_catalog_block_names(), $names ) );
+		return array_values( array_diff( Settings::get_legacy_catalog( 'disabled_blocks' ), $names ) );
 	}
 
 	/**
-	 * The catalog is readable; every other test depends on it.
+	 * The frozen 2.8.1 catalog only names blocks that still exist, so the
+	 * conversion can't disable something by a stale name.
 	 */
-	public function test_catalog_lists_section(): void {
-		$this->assertContains( 'designsetgo/section', Settings::get_catalog_block_names() );
+	public function test_legacy_catalog_is_a_subset_of_the_live_catalog(): void {
+		$live = array();
+		foreach ( Settings::get_available_blocks() as $category ) {
+			$live = array_merge( $live, wp_list_pluck( $category['blocks'], 'name' ) );
+		}
+
+		$this->assertContains( 'designsetgo/section', Settings::get_legacy_catalog( 'disabled_blocks' ) );
+		$this->assertSame( array(), array_values( array_diff( Settings::get_legacy_catalog( 'disabled_blocks' ), $live ) ) );
+	}
+
+	/**
+	 * A block added after 2.8.1 is never in a legacy allowlist, and must not be
+	 * disabled by converting one. The conversion uses the frozen catalog, so
+	 * it gives the same answer whenever it runs.
+	 */
+	public function test_conversion_never_disables_blocks_outside_the_legacy_catalog(): void {
+		$this->store( array( 'enabled_blocks' => array( 'designsetgo/row' ) ) );
+
+		$disabled = Settings::get_settings()['disabled_blocks'];
+
+		$this->assertNotContains( 'designsetgo/row', $disabled );
+		$this->assertSame( array(), array_values( array_diff( $disabled, Settings::get_legacy_catalog( 'disabled_blocks' ) ) ) );
 	}
 
 	/**

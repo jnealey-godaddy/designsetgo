@@ -131,6 +131,34 @@ class Test_Draft_Mode_Extension_Toggle extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A draft copy made before the switch still reports itself as one, so the
+	 * editor's publish intercept keeps merging it instead of publishing it as
+	 * a second page.
+	 */
+	public function test_existing_draft_still_reported_when_disabled(): void {
+		$draft_id = $this->draft_mode->create_draft( $this->page_id );
+		$this->disable_extension();
+
+		$data = $this->dispatch( 'GET', '/designsetgo/v1/draft-mode/status/' . $draft_id )->get_data();
+
+		$this->assertTrue( $data['is_draft'] );
+		$this->assertSame( $this->page_id, $data['original_id'] );
+	}
+
+	/**
+	 * An existing draft copy can still be merged into its original.
+	 */
+	public function test_existing_draft_still_merges_when_disabled(): void {
+		$draft_id = $this->draft_mode->create_draft( $this->page_id, array( 'title' => 'Staged title' ) );
+		$this->disable_extension();
+
+		$response = $this->dispatch( 'POST', '/designsetgo/v1/draft-mode/' . $draft_id . '/publish', array( 'id' => $draft_id ) );
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( 'Staged title', get_post( $this->page_id )->post_title );
+	}
+
+	/**
 	 * Drafts can't be created while it is off.
 	 */
 	public function test_create_endpoint_refuses_when_disabled(): void {

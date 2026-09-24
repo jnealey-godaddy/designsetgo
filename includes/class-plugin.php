@@ -913,7 +913,7 @@ class Plugin {
 			);
 		}
 
-		// The `dsgoSettings` payload (excluded blocks, extension allowlist) is
+		// The `dsgoSettings` payload (excluded blocks, disabled extensions) is
 		// intentionally NOT localized here. It rides `enqueue_block_assets`
 		// instead so it reaches the iframed editor canvas — see
 		// Assets::localize_extension_settings() for the full rationale.

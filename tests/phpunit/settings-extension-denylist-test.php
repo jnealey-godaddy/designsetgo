@@ -3,7 +3,7 @@
  * Tests for the disabled_extensions denylist.
  *
  * Covers:
- * - EXTENSION_NAMES staying in step with get_available_extensions()
+ * - the frozen 2.8.1 extension catalog naming only extensions that exist
  * - converting a legacy enabled_extensions allowlist without changing which
  *   extensions are on, and persisting it from an admin request
  * - both legacy allowlists migrating together
@@ -64,17 +64,22 @@ class Settings_Extension_Denylist_Test extends WP_UnitTestCase {
 	 * @return string[]
 	 */
 	private function extensions_without( string ...$names ): array {
-		return array_values( array_diff( Settings::EXTENSION_NAMES, $names ) );
+		return array_values( array_diff( Settings::get_legacy_catalog( 'disabled_extensions' ), $names ) );
 	}
 
 	/**
-	 * The untranslated name list must match the extensions the admin shows,
-	 * or the migration would disable a new extension or miss an old one.
+	 * The frozen 2.8.1 extension catalog only names extensions that still
+	 * exist, so the conversion can't disable something by a stale name.
 	 */
-	public function test_extension_names_match_available_extensions(): void {
+	public function test_legacy_catalog_is_a_subset_of_available_extensions(): void {
 		$this->assertSame(
-			wp_list_pluck( Settings::get_available_extensions(), 'name' ),
-			Settings::EXTENSION_NAMES
+			array(),
+			array_values(
+				array_diff(
+					Settings::get_legacy_catalog( 'disabled_extensions' ),
+					wp_list_pluck( Settings::get_available_extensions(), 'name' )
+				)
+			)
 		);
 	}
 
@@ -121,7 +126,7 @@ class Settings_Extension_Denylist_Test extends WP_UnitTestCase {
 	 * Block and extension allowlists stored together both migrate.
 	 */
 	public function test_both_allowlists_migrate_together(): void {
-		$blocks = array_values( array_diff( Settings::get_catalog_block_names(), array( 'designsetgo/section' ) ) );
+		$blocks = array_values( array_diff( Settings::get_legacy_catalog( 'disabled_blocks' ), array( 'designsetgo/section' ) ) );
 		$this->store(
 			array(
 				'enabled_blocks'     => $blocks,

@@ -164,3 +164,39 @@ describe.each(EXTENSIONS)(
 		);
 	}
 );
+
+describe('draft-mode', () => {
+	/**
+	 * Load the Draft Mode editor plugins with the given disabled list.
+	 *
+	 * @param {string[]} disabledExtensions Value for dsgoSettings.disabledExtensions.
+	 * @return {Object} The module's @wordpress/plugins instance.
+	 */
+	function loadDraftMode(disabledExtensions) {
+		window.dsgoSettings = { disabledExtensions };
+		let plugins;
+		jest.isolateModules(() => {
+			plugins = require('@wordpress/plugins');
+			require('../../../src/extensions/draft-mode/index');
+		});
+		return plugins;
+	}
+
+	afterEach(() => {
+		delete window.dsgoSettings;
+	});
+
+	it('registers the panel and the controls when enabled', () => {
+		const plugins = loadDraftMode([]);
+		expect(plugins.getPlugin('dsgo-draft-mode')).toBeDefined();
+		expect(plugins.getPlugin('dsgo-draft-mode-controls')).toBeDefined();
+	});
+
+	// The controls carry the publish intercept that merges an existing draft
+	// copy into its original; without it Publish makes the copy a second page.
+	it('keeps the controls but drops the panel when disabled', () => {
+		const plugins = loadDraftMode(['draft-mode']);
+		expect(plugins.getPlugin('dsgo-draft-mode')).toBeUndefined();
+		expect(plugins.getPlugin('dsgo-draft-mode-controls')).toBeDefined();
+	});
+});

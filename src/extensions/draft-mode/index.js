@@ -23,9 +23,8 @@ const DraftModeControls = lazy(
 	() => import(/* webpackChunkName: "ext-draft-mode" */ './DraftModeControls')
 );
 
-// Switched off on the Blocks & Extensions screen, Draft Mode registers no
-// editor UI; Draft_Mode::is_enabled() turns off its REST routes and admin
-// actions to match.
+// Switched off on the Blocks & Extensions screen, Draft Mode shows no sidebar
+// panel; Draft_Mode::is_enabled() stops new drafts being created to match.
 if (isExtensionEnabled('draft-mode')) {
 	// Register the draft mode panel plugin (sidebar + auto-detection + controls).
 	registerPlugin('dsgo-draft-mode', {
@@ -36,13 +35,16 @@ if (isExtensionEnabled('draft-mode')) {
 		),
 		icon: 'edit-page',
 	});
-
-	// Register the draft mode controls plugin (post status info area controls).
-	registerPlugin('dsgo-draft-mode-controls', {
-		render: () => (
-			<Suspense fallback={null}>
-				<DraftModeControls />
-			</Suspense>
-		),
-	});
 }
+
+// Register the draft mode controls plugin (post status info area controls).
+// Always registered: with Draft Mode off it renders nothing, but its publish
+// intercept still merges a draft copy that already exists into its original.
+// Without it, Publish on that copy would make it a second live page.
+registerPlugin('dsgo-draft-mode-controls', {
+	render: () => (
+		<Suspense fallback={null}>
+			<DraftModeControls />
+		</Suspense>
+	),
+});

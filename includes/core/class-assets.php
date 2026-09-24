@@ -114,7 +114,7 @@ class Assets {
 	/**
 	 * Localize DesignSetGo settings for the block extension bundle.
 	 *
-	 * Exposes the user's excluded-blocks list and extension allowlist to the
+	 * Exposes the user's excluded-blocks list and disabled-extensions list to the
 	 * editor iframe as `window.dsgoSettings`, consumed by shouldExtendBlock()
 	 * and the per-extension gating (e.g. dynamic-tags).
 	 *
@@ -124,7 +124,7 @@ class Assets {
 	 * canvas via _wp_get_iframed_editor_assets(), where the extensions actually
 	 * execute. Localizing on `enqueue_block_editor_assets` would attach to the
 	 * outer editor frame only and never reach the iframe, silently disabling
-	 * both the exclusion list and the extension allowlist.
+	 * both the exclusion list and the disabled-extensions list.
 	 */
 	private function localize_extension_settings() {
 		$settings = \DesignSetGo\Admin\Settings::get_settings();
