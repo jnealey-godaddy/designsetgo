@@ -4,7 +4,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.8.1
+Stable tag: 2.8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,12 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 7. Slider with arrows and dots, and a multi-slide slider below it
 
 == Changelog ==
+
+= 2.8.2 - 2026-09-23 =
+
+* **Fix:** DesignSetGo blocks no longer show as unsupported in the editor after an update. If you had ever switched a block off under DesignSetGo → Blocks & Extensions, blocks added in later versions arrived switched off too, and pages already using one showed "Your site doesn't include support for this block". New blocks and extensions now arrive switched on. Anything that was already off stays off, so if a page still reports a DesignSetGo block as unsupported, turn it back on under DesignSetGo → Blocks & Extensions. Your content is safe either way.
+* **Fix:** Switching an extension off under DesignSetGo → Blocks & Extensions now takes effect. Before, only Dynamic Tags respected its switch. A switched-off extension's controls no longer appear in the editor, and switching off Draft Mode turns it off entirely. Content already using an extension keeps working exactly as it was saved. If you switched extensions off in the past, their controls will now disappear from the editor.
+* **Fix:** Switching off a block or extension, or removing a post type from llms.txt, sometimes didn't stick after saving. These settings now save exactly as you set them.
 
 = 2.8.1 - 2026-09-21 =
 
@@ -252,6 +258,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 * **1.0–1.2** — Initial public release: 43 blocks + 11 extensions, Map and Card blocks, REST API hardening, 9 translations.
 
 == Upgrade Notice ==
+
+= 2.8.2 =
+Fixes DesignSetGo blocks showing as unsupported in the editor after an update, and makes the extension switches on the Blocks & Extensions screen take effect.
 
 = 2.8.1 =
 Fixes overlay headers on 2.8.0 leaving a band of empty space above the hero instead of sitting over it.
