@@ -13,6 +13,7 @@ import { createHigherOrderComponent } from '@wordpress/compose';
 import { lazy, Suspense } from '@wordpress/element';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 /**
  * Container blocks that support background video
@@ -104,12 +105,16 @@ const withBackgroundVideoControls = createHigherOrderComponent((BlockEdit) => {
 	};
 }, 'withBackgroundVideoControls');
 
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/background-video-controls',
-	withBackgroundVideoControls,
-	5
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+if (isExtensionEnabled('background-video')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/background-video-controls',
+		withBackgroundVideoControls,
+		5
+	);
+}
 
 /**
  * Add background video wrapper in editor (lazy-loaded)

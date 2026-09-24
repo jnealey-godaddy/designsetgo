@@ -13,6 +13,7 @@ import { addFilter } from '@wordpress/hooks';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { lazy, Suspense } from '@wordpress/element';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 // Lazy-load editor panel
 const ResponsiveVisibilityPanel = lazy(
@@ -69,12 +70,16 @@ const withResponsiveVisibilityControl = createHigherOrderComponent(
 	'withResponsiveVisibilityControl'
 );
 
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/add-responsive-visibility-control',
-	withResponsiveVisibilityControl,
-	20
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+if (isExtensionEnabled('responsive')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/add-responsive-visibility-control',
+		withResponsiveVisibilityControl,
+		20
+	);
+}
 
 /**
  * Add visual styling in editor when block is hidden on any device

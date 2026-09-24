@@ -525,7 +525,7 @@ const BlocksExtensions = () => {
 								<CardBody>
 									<p className="description">
 										{__(
-											'Extensions add functionality to all blocks. Disabling extensions will reduce editor complexity.',
+											'Extensions add functionality to all blocks. Disabling an extension removes its controls from the editor; content already using it keeps working as saved.',
 											'designsetgo'
 										)}
 									</p>

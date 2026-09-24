@@ -16,6 +16,7 @@ import { shouldExtendBlock } from '../../utils/should-extend-block';
 
 // Import editor styles only (frontend styles imported in src/style.scss)
 import './editor.scss';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 // Note: frontend.js is imported in src/frontend.js for frontend-only loading
 
@@ -86,11 +87,15 @@ const withLinkControls = createHigherOrderComponent((BlockEdit) => {
 	};
 }, 'withLinkControls');
 
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/clickable-group-controls',
-	withLinkControls
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+if (isExtensionEnabled('clickable-group')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/clickable-group-controls',
+		withLinkControls
+	);
+}
 
 /**
  * Add clickable class to container blocks in editor

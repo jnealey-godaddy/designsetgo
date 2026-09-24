@@ -118,7 +118,11 @@ class Draft_Mode {
 	 */
 	public function is_enabled() {
 		$settings = $this->get_settings();
-		return ! empty( $settings['enable'] );
+
+		// The Blocks & Extensions toggle (Block_Manager::should_load_extension)
+		// switches Draft Mode off as well as its own setting.
+		return ! empty( $settings['enable'] )
+			&& (bool) apply_filters( 'designsetgo_load_extension', true, 'draft-mode' );
 	}
 
 	/**

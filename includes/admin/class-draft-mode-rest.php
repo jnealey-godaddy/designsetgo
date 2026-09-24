@@ -654,11 +654,9 @@ class Draft_Mode_REST {
 			);
 		}
 
-		$settings = $this->draft_mode->get_settings();
-
 		$base_response = array(
 			'settings' => array(
-				'enabled' => $settings['enable'],
+				'enabled' => $this->draft_mode->is_enabled(),
 			),
 		);
 
@@ -734,7 +732,7 @@ class Draft_Mode_REST {
 					'has_draft'   => false,
 					'draft_id'    => null,
 					'original_id' => null,
-					'can_create'  => $settings['enable'] && 'page' === $post->post_type && 'publish' === $post->post_status,
+					'can_create'  => $this->draft_mode->is_enabled() && 'page' === $post->post_type && 'publish' === $post->post_status,
 				)
 			)
 		);

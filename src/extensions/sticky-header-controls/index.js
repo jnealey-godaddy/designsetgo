@@ -12,6 +12,7 @@ import { addFilter } from '@wordpress/hooks';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { lazy, Suspense } from '@wordpress/element';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 // Lazy-load editor panel
 const StickyHeaderPanel = lazy(
@@ -85,11 +86,15 @@ const withStickyHeaderControls = createHigherOrderComponent((BlockEdit) => {
 	};
 }, 'withStickyHeaderControls');
 
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/sticky-header-controls',
-	withStickyHeaderControls
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+if (isExtensionEnabled('sticky-header-controls')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/sticky-header-controls',
+		withStickyHeaderControls
+	);
+}
 
 /**
  * Apply sticky header classes to template parts on save

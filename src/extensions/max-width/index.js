@@ -15,6 +15,7 @@ import { addFilter } from '@wordpress/hooks';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { lazy, Suspense } from '@wordpress/element';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 /**
  * List of blocks to exclude from max-width control
@@ -97,12 +98,16 @@ const withMaxWidthControl = createHigherOrderComponent((BlockEdit) => {
 	};
 }, 'withMaxWidthControl');
 
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/add-max-width-control',
-	withMaxWidthControl,
-	10
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+if (isExtensionEnabled('max-width')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/add-max-width-control',
+		withMaxWidthControl,
+		10
+	);
+}
 
 /**
  * Apply max-width styles in editor (lazy-loaded)

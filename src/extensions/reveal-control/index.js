@@ -11,6 +11,7 @@ import { InspectorControls } from '@wordpress/block-editor';
 import { PanelBody, ToggleControl } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 import { shouldExtendBlock } from '../../utils/should-extend-block';
+import { isExtensionEnabled } from '../../utils/is-extension-enabled';
 
 const CONTAINER_BLOCKS = [
 	'designsetgo/section', // Section block (vertical stack)
@@ -187,11 +188,15 @@ const withRevealControl = createHigherOrderComponent((BlockEdit) => {
 	};
 }, 'withRevealControl');
 
-addFilter(
-	'editor.BlockEdit',
-	'designsetgo/reveal-control-edit',
-	withRevealControl
-);
+// Controls only: attributes and saved markup stay registered so existing
+// content still validates when the extension is switched off.
+if (isExtensionEnabled('reveal-control')) {
+	addFilter(
+		'editor.BlockEdit',
+		'designsetgo/reveal-control-edit',
+		withRevealControl
+	);
+}
 
 /**
  * Add reveal classes and data attributes to blocks
