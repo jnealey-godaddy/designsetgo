@@ -285,4 +285,71 @@ describe('sticky header across a soft reload', () => {
 		const footer = document.querySelector('.wp-site-blocks > footer');
 		expect(footer.classList.contains('dsgo-scrolled')).toBe(false);
 	});
+
+	const menuBackground = (el) =>
+		el.style.getPropertyValue('--dsgo-overlay-menu-bg');
+
+	it('sets an opaque menu color without changing the header opacity', () => {
+		window.dsgStickyHeaderSettings.backgroundOnScroll = true;
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#336699';
+		window.dsgStickyHeaderSettings.backgroundScrollOpacity = 60;
+		const header = buildSite();
+
+		loadStickyHeader();
+
+		expect(menuBackground(header)).toBe('rgb(51, 102, 153)');
+		expect(
+			header.style.getPropertyValue('--dsgo-sticky-scroll-bg-color')
+		).toBe('rgba(51, 102, 153, 0.6)');
+	});
+
+	it('replaces stale menu colors with the theme when scroll settings are off', () => {
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#336699';
+		const header = buildSite();
+		header.style.setProperty('--dsgo-overlay-menu-bg', '#abcdef');
+		header.style.setProperty('--dsgo-overlay-menu-fg', '#abcdef');
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: (name) =>
+				name === '--dsgo-overlay-menu-surface'
+					? 'rgba(25, 51, 65, .4)'
+					: '',
+		});
+
+		loadStickyHeader();
+
+		expect(menuBackground(header)).toBe('rgb(25, 51, 65)');
+		expect(header.style.getPropertyValue('--dsgo-overlay-menu-fg')).toBe(
+			'#fff'
+		);
+		expect(
+			header.style.getPropertyValue('--dsgo-sticky-scroll-bg-color')
+		).toBe('');
+	});
+
+	it('does not add menu colors to a non-overlay header', () => {
+		const header = buildSite();
+		document.body.className = '';
+		loadStickyHeader();
+		expect(menuBackground(header)).toBe('');
+	});
+
+	it('opens via the FSE override even when the global setting is disabled', () => {
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#112233';
+		const header = buildSite();
+		header.classList.add('dsgo-sticky-bg-on-scroll');
+
+		loadStickyHeader();
+
+		expect(menuBackground(header)).toBe('rgb(17, 34, 51)');
+	});
+
+	it('re-applies from current settings on the rebuilt header after a soft reload', () => {
+		window.dsgStickyHeaderSettings.backgroundOnScroll = true;
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#336699';
+		buildSite();
+		loadStickyHeader();
+
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#998877';
+		expect(menuBackground(softReloadFullBody())).toBe('rgb(153, 136, 119)');
+	});
 });
