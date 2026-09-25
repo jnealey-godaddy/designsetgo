@@ -46,7 +46,7 @@ gh api repos/:owner/:repo/branches/main/protection \
 **GitHub Actions workflows** (`.github/workflows/`):
 
 1. **Build + Lint & Unit Tests** (`ci.yml`):
-   - ✅ Builds the plugin on Node 20.x, verifies build output and bundle sizes
+   - ✅ Builds the plugin on Node 24.x, verifies build output and bundle sizes
    - ✅ Runs the JavaScript linter, CSS linter, and Jest unit tests
 
 2. **PHP Lint & Analysis** (`ci.yml`):

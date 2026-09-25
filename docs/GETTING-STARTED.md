@@ -25,8 +25,8 @@ Before you begin, install these tools:
 
 **Installation:**
 - Download from https://nodejs.org/
-- Choose the LTS version — CI (`.github/workflows/ci.yml`) runs on Node 20.x, so match that locally
-- Verify: `node --version` (should show v20.x or higher)
+- Choose the LTS version — CI (`.github/workflows/ci.yml`) runs on Node 24.x, so match that locally
+- Verify: `node --version` (should show v24.x)
 
 #### 2. npm (Package Manager)
 
