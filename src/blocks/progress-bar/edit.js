@@ -338,6 +338,10 @@ export default function ProgressBarEdit({
 							onChange={(value) =>
 								setAttributes({ showPercentage: value })
 							}
+							help={__(
+								'Shows the Percentage value above. If you bind the fill width to dynamic data (Style Bindings, Advanced panel), this label will not update to match — turn it off for bound bars.',
+								'designsetgo'
+							)}
 							__nextHasNoMarginBottom
 						/>
 					</DsgoInspectorPanel.Item>

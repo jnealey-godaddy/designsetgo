@@ -84,8 +84,16 @@ class Progress_Bar_Serializer {
 			( '' !== $bar_bg_color ? ';background-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $bar_bg_color ) ) : '' ) .
 			';border-radius:' . esc_attr( $border_radius ) . ';overflow:hidden;position:relative';
 
-		// Fill styles.
-		$fill_width = $animate_on_scroll ? '0%' : $bar_width . '%';
+		// Fill styles. When not animating, the width is a CSS custom-property
+		// formula (not a literal percentage) so a `dsgoStyleBinding` on
+		// `--dsgo-progress` can drive it from the frontend render_block
+		// filter — see save.js and progress-bar/deprecated.js's v2 entry.
+		// With no binding, `--dsgo-progress`/`--dsgo-progress-max` fall back
+		// to the literals baked into the expression, resolving to exactly
+		// `$bar_width%`, matching save.js's STATIC_WIDTH_FORMULA byte-for-byte.
+		$fill_width = $animate_on_scroll
+			? '0%'
+			: 'clamp(0%, calc(100% * var(--dsgo-progress, ' . $bar_width . ') / var(--dsgo-progress-max, 100)), 100%)';
 		$fill_style = 'width:' . $fill_width . ';height:100%' .
 			( '' !== $bar_color ? ';background-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $bar_color ) ) : '' ) .
 			';transition:width ' . esc_attr( (string) $animation_dur ) . 's ease-out;border-radius:' . esc_attr( $border_radius );

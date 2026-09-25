@@ -42,9 +42,21 @@ export default function ProgressBarSave({ attributes }) {
 	const barFillColor = convertColorToCSSVar(barColor);
 	const barTrackColor = convertColorToCSSVar(barBackgroundColor);
 
+	// The fill's width is a CSS custom-property formula, not a literal
+	// percentage, so a `dsgoStyleBinding` on `--dsgo-progress` (e.g. bound to
+	// `designsetgo/woo-stock-quantity`) can drive it from the frontend
+	// render_block filter — custom properties set on the block's root element
+	// inherit down to the fill. `--dsgo-progress` and `--dsgo-progress-max`
+	// are raw numbers, not percentages: the formula divides one by the other
+	// and multiplies by 100% itself. Neither var is set here, so with no
+	// binding both fall back to the literals baked into this expression
+	// (`barWidth` / `100`), which resolves to exactly `${barWidth}%` — the
+	// same width this block has always rendered when unbound.
+	const STATIC_WIDTH_FORMULA = `clamp(0%, calc(100% * var(--dsgo-progress, ${barWidth}) / var(--dsgo-progress-max, 100)), 100%)`;
+
 	// Build bar fill styles (same as edit.js)
 	const barFillStyles = {
-		width: animateOnScroll ? '0%' : `${barWidth}%`, // Start at 0 if animating
+		width: animateOnScroll ? '0%' : STATIC_WIDTH_FORMULA, // Start at 0 if animating
 		height: '100%',
 		backgroundColor: barFillColor || undefined,
 		transition: `width ${animationDuration}s ease-out`,
@@ -68,7 +80,17 @@ export default function ProgressBarSave({ attributes }) {
 		position: 'relative',
 	};
 
-	// Build label display text (same as edit.js)
+	// Build label display text (same as edit.js).
+	//
+	// NOTE: this text is baked into the saved HTML at edit time from the
+	// `percentage` attribute. A `dsgoStyleBinding` on `--dsgo-progress` is
+	// resolved later, by a PHP render_block filter running against the
+	// already-saved markup — there is no hook for it to also rewrite this
+	// label. A bound progress bar's fill width tracks the binding, but its
+	// percentage label (when shown) always reflects the static `percentage`
+	// attribute instead. Authors binding a value should turn showPercentage
+	// off (see the block's Settings panel) rather than ship a label that
+	// silently disagrees with the fill.
 	const displayText = (() => {
 		const parts = [];
 		if (showLabel && labelText) {

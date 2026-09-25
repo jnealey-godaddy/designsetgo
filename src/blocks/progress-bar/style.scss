@@ -50,6 +50,16 @@
 		justify-content: flex-end;
 		padding: 0 0.5rem;
 
+		// The fill's width is a `clamp(0%, calc(...), 100%)` formula (see
+		// save.js) so it can be driven by a `--dsgo-progress` style binding,
+		// not a literal `width: N%`. A container query — measuring the
+		// fill's own rendered size — replaces the old inline-style substring
+		// match for "hide the inside label when the bar is too narrow to fit
+		// it", since that match can no longer see the resolved width and
+		// would never fire for a bound value anyway.
+		container-type: inline-size;
+		container-name: dsgo-progress-fill;
+
 		// Default fill color when the author has not chosen one (see note on
 		// the container above).
 		&:where(:not([style*="background-color"])) {
@@ -89,18 +99,15 @@
 			padding-right: 0.5rem;
 		}
 	}
+}
 
-	// Hide inside label if bar is too narrow
-	&__fill[style*="width: 0%"],
-	&__fill[style*="width: 1%"],
-	&__fill[style*="width: 2%"],
-	&__fill[style*="width: 3%"],
-	&__fill[style*="width: 4%"],
-	&__fill[style*="width: 5%"] {
+// Hide the inside label once the fill is too narrow to fit it, measured by
+// the fill's own rendered width so it works for both a static percentage and
+// a bound custom property.
+@container dsgo-progress-fill (max-width: 32px) {
 
-		.dsgo-progress-bar__label--inside {
-			display: none;
-		}
+	.dsgo-progress-bar__label--inside {
+		display: none;
 	}
 }
 

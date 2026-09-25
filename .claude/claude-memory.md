@@ -1,5 +1,83 @@
 # Claude Memory - DesignSetGo
 
+## Progress Bar stock-binding recipe — `progress-bar` + `--dsgo-progress` (agent: progress-bar-binding-2026-09-25, branch `claude/progress-bar-binding`, worktree `.claude/worktrees/agent-aff5214646ca969b8`)
+
+Made CLAUDE.md's documented "stock bar" recipe (`progress-bar` + `--dsgo-progress` bound to
+`woo-stock-quantity`) actually work. Three independent gaps, all fixed:
+
+1. **save.js's fill `width` was a literal `${barWidth}%`** — a `dsgoStyleBinding` on
+   `--dsgo-progress` had nowhere to attach, since custom properties only affect declarations
+   that reference them. Fixed by making the width a CSS formula:
+   `clamp(0%, calc(100% * var(--dsgo-progress, ${barWidth}) / var(--dsgo-progress-max, 100)), 100%)`.
+   Bound values are **raw numbers** (stock qty, discount %, rating), not percentages — the
+   formula scales against an optional `--dsgo-progress-max` (default `100`, no new block
+   attribute needed — just a second style binding or a theme CSS rule). With no binding, both
+   vars fall back to their literals and the result is bit-for-bit the same *visual* width as
+   before (not the same markup string — that's why this needed a deprecation).
+2. **Deprecation**: added `v2` to `progress-bar/deprecated.js` (apiVersion:3, no isEligible —
+   pure markup change) reproducing the old literal-`%` save(). Left `v1` untouched (its missing
+   `apiVersion: 3` is a known pre-existing bug owned by the concurrent `claude/a11y-sweep`
+   session per the task's ownership note — do not fix it here, it'll conflict).
+3. **PHP mirror** (`includes/abilities/serializers/class-progress-bar-serializer.php`) updated
+   to emit the identical `clamp()/calc()` string for the non-animating branch. The animating
+   branch (`width:0%`) is untouched, so the ONLY payload in
+   `tests/unit/__fixtures__/ability-generated-markup.json` (`defaults::` — animateOnScroll:true
+   by default) needed no edit. `tests/unit/__fixtures__/ability-attribute-matrix.json` DID need
+   one hand-edit: `designsetgo/progress-bar::animateOnScroll::0` (the one matrix entry that
+   flips animateOnScroll to false) — updated its `width:75%` to the new formula string. Find
+   these by grepping the fixtures for `dsgo-progress-bar__fill` before assuming "no fixture
+   touches this."
+4. **animateOnScroll**: view.js used to hardcode `fill.style.width = `${targetPercentage}%``
+   from `data-percentage` on intersection. Replaced with `resolveTargetPercent()`, which reads
+   `getComputedStyle(fill).getPropertyValue('--dsgo-progress'/'--dsgo-progress-max')` (custom
+   properties inherit from the PHP-bound ancestor) and falls back to `data-percentage`/100 when
+   neither is set — same formula as the CSS, just evaluated in JS since the animation needs a
+   concrete target width to transition to.
+5. **CSS regression caught while doing this**: the old "hide inside label when bar < 6%" rule
+   was `&__fill[style*="width: 0%"]` … `[style*="width: 5%"]` — an inline-style substring match.
+   Once width became a calc() expression that selector can never match again (bound or not).
+   Replaced with a `@container` query (`container-type: inline-size` on the fill,
+   `@container dsgo-progress-fill (max-width: 32px)`) — measures the actual rendered box
+   instead of guessing from the literal attribute string, so it works for both static and bound
+   bars. Frontend-only (`style.scss`); editor.scss already handles the inside-label case
+   differently (always visible) and needed no change.
+6. **Style-binding editor UI** (`src/extensions/style-binding/filters.js`) hardcoded 5 sources
+   (post-meta/acf/metabox/pods/jetengine — the KEYED_SOURCES). Replaced with
+   `useDynamicTagSources({ returns: ['text','number','date'] })` (existing hook,
+   `src/components/DynamicTagPicker/useDynamicTagSources.js`, hits
+   `/designsetgo/v1/dynamic-tags/sources`) so every registered `designsetgo/`-prefixed scalar
+   source shows up, including `woo-stock-quantity` etc. Extracted pure logic to
+   `src/extensions/style-binding/source-options.js` (`isKeyedSource`, `buildSourceOptions`,
+   `buildSourceMetaMap`) for unit testing without mounting the inspector. **Gotcha**: the new
+   `useDynamicTagSources()` call MUST come before the `BLOCKED.has(props.name)` early return in
+   the HOC — putting a hook after a conditional return is a real rules-of-hooks violation ESLint
+   catches (`react-hooks/rules-of-hooks`), not just style. `isKeyedSource` prefers the live
+   `args.key.required` schema over a hardcoded slug list, so a future keyed source doesn't need
+   a matching edit here — falls back to a static Set only while the REST catalog is loading.
+7. **Known limitation, documented, not fixed**: the percentage label (`showPercentage`) is
+   baked into saved HTML at edit time from the static `percentage` attribute; there is no hook
+   for the PHP `render_block` filter that resolves the binding to also rewrite that text. Said
+   so in save.js's displayText comment, edit.js's ToggleControl help text, and CLAUDE.md's
+   recipe line — did NOT fake a live-updating label.
+8. **PHPUnit**: added `tests/phpunit/blocks/query/progress-bar-stock-binding-test.php`.
+   Deliberately calls `StyleBinding::apply_style_bindings()` directly against a hand-set
+   `$GLOBALS['designsetgo_parent_stack']` (shape: `array('postId' => $id, 'postType' =>
+   'product')`, matching exactly what `designsetgo_query_render_item()` pushes) rather than
+   routing through a real `designsetgo/query` render or `WP_Block::render()`.
+   `tests/phpunit/blocks/query/sibling-once-test.php`'s own comment says DSGo blocks (at least
+   query-pagination) aren't reliably registered in the unit-test bootstrap in a way render()
+   can be trusted to exercise the render_block filter for — couldn't verify WP_Block internals
+   without running PHPUnit (which this task explicitly forbids, shared Docker DB), so chose the
+   already-proven-safe pattern from `DesignSetGo_Woo_Bindings_Test::test_stock_quantity_drives_a_style_binding()`
+   instead of gambling on an untested assumption. If a future session confirms DSGo blocks ARE
+   registered in bootstrap, this test could be strengthened to go through
+   `designsetgo_query_render_item()` end-to-end.
+9. **Machine load note**: this session ran during extremely heavy concurrent load (~10+ other
+   Claude sessions' `wp-scripts build`/`phpstan`/`jest` all running at once on the same host).
+   A single `npm run build` took ~27 minutes. `php vendor/bin/phpstan analyse` timed out twice
+   at the default 600s `parallel.processTimeout` before succeeding on a third attempt once other
+   builds finished. If you hit the same timeout, it is very likely contention, not a real
+   regression — check `ps aux | grep webpack` before assuming your change broke something.
 ## Block audit 2026-09-24, robustness section — `claude/robustness-audit` (agent: robustness-audit-2026-09-25, session 7c3b92ba)
 
 - **Locale-freeze pattern for `__()` in static save()**: add a *sourced* attribute that reads the rendered fallback back from the markup (`source: attribute|text|query`), and render `authored || frozen || __()`. No markup change, so no deprecation. Card had it first (`badgeAriaLabel`, `imageFallbackAlt`); now Modal (`savedModalLabel`, `savedCloseButtonLabel`), Hotspot Item (`markerAriaLabel`) and Comparison Table (`featuredBadgeText`, `savedCtaTexts`). When the fallback sits behind an author-editable field, the edit side must clear the frozen value on change, or clearing a custom label brings the old custom label back instead of the default.
