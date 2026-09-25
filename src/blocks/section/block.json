@@ -29,6 +29,7 @@
 			"allowInheriting": false,
 			"allowEditing": true,
 			"allowSizingOnChildren": true,
+			"allowOrientation": false,
 			"default": {
 				"type": "flex",
 				"orientation": "vertical",

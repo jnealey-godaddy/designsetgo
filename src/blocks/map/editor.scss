@@ -23,6 +23,23 @@
 			justify-content: center;
 		}
 
+		// "Find a location" state for a map with no coordinates yet.
+		&__placeholder {
+			height: 100%;
+			min-height: inherit;
+		}
+
+		&__placeholder-form {
+			display: flex;
+			gap: 8px;
+			width: 100%;
+			max-width: 480px;
+
+			> .components-base-control {
+				flex: 1;
+			}
+		}
+
 		// Live embed preview. Pointer events are off so clicking the map
 		// selects the block instead of being swallowed by Google's iframe —
 		// the front end keeps the map fully interactive.

@@ -30,6 +30,7 @@
 			"allowEditing": true,
 			"allowSizingOnChildren": true,
 			"allowVerticalAlignment": true,
+			"allowOrientation": false,
 			"default": {
 				"type": "flex",
 				"orientation": "horizontal",

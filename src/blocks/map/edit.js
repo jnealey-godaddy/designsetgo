@@ -22,6 +22,7 @@ import {
 } from '../../utils/encode-color-value';
 // Inspector Panel
 import MapSettingsPanel from './components/inspector/MapSettingsPanel';
+import MapPlaceholder, { hasNoLocation } from './components/MapPlaceholder';
 import { buildEmbedUrl } from './utils/embed-url';
 
 /**
@@ -257,9 +258,13 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 			)}
 
 			<div {...blockProps}>
-				<div className="dsgo-map__editor-preview">
-					{renderPreview()}
-				</div>
+				{hasNoLocation(attributes) ? (
+					<MapPlaceholder setAttributes={setAttributes} />
+				) : (
+					<div className="dsgo-map__editor-preview">
+						{renderPreview()}
+					</div>
+				)}
 			</div>
 		</>
 	);

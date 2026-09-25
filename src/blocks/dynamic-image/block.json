@@ -78,6 +78,12 @@
 			"default": ""
 		}
 	},
+	"example": {
+		"attributes": {
+			"fallbackUrl": "https://s.w.org/images/core/5.3/MtBlanc1.jpg",
+			"fallbackAlt": "Mont Blanc"
+		}
+	},
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./editor.css",
 	"style": "file:./style-index.css",

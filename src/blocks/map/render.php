@@ -98,6 +98,13 @@ if ( ! function_exists( 'designsetgo_render_map' ) ) {
 		// slug is missing from the active palette.
 		$marker_color = designsetgo_resolve_preset_color( $marker_color, '#e74c3c' );
 
+		// No location yet (a freshly inserted map starts at 0,0 with no
+		// address, see index.js): render nothing rather than a map of the
+		// ocean off West Africa. Mirrors hasNoLocation() in MapPlaceholder.js.
+		if ( 0.0 === $latitude && 0.0 === $longitude && '' === trim( $address ) ) {
+			return;
+		}
+
 		// Clamp coordinates / zoom to valid ranges (mirrors save.js).
 		$safe_lat  = max( -90, min( 90, $latitude ) );
 		$safe_lng  = max( -180, min( 180, $longitude ) );

@@ -11,6 +11,7 @@ import { registerBlockType } from '@wordpress/blocks';
 import edit from './edit';
 import save from './save';
 import metadata from './block.json';
+import transforms from './transforms';
 import { ICON_COLOR } from '../shared/constants';
 
 import './editor.scss';
@@ -78,6 +79,7 @@ registerBlockType(metadata.name, {
 		),
 		foreground: ICON_COLOR,
 	},
+	transforms,
 	edit,
 	save,
 });

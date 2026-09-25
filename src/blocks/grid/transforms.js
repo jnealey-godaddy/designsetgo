@@ -1,12 +1,45 @@
 /**
  * DSG Grid Block - Transforms
  *
- * Allows transforming to/from DSG Section, DSG Row, and legacy Container blocks.
+ * Allows transforming to/from DSG Section, DSG Row, core Columns, and legacy
+ * Container blocks.
  *
  * @since 1.0.0
  */
 
 import { createBlock } from '@wordpress/blocks';
+
+// Column styling that has to survive the trip into a grid cell.
+const COLUMN_STYLE_KEYS = [
+	'style',
+	'backgroundColor',
+	'textColor',
+	'gradient',
+	'className',
+];
+
+/**
+ * Turns a core/column into one grid cell. A plain column holding a single
+ * block becomes that block; anything else is wrapped in a Group so the
+ * column's blocks stay together and keep its colors and spacing.
+ *
+ * @param {Object} column core/column block.
+ * @return {Object} Block to place in the grid.
+ */
+const columnToCell = (column) => {
+	const kept = Object.fromEntries(
+		COLUMN_STYLE_KEYS.filter((key) => column.attributes[key]).map((key) => [
+			key,
+			column.attributes[key],
+		])
+	);
+
+	if (column.innerBlocks.length === 1 && !Object.keys(kept).length) {
+		return column.innerBlocks[0];
+	}
+
+	return createBlock('core/group', kept, column.innerBlocks);
+};
 
 const transforms = {
 	from: [
@@ -76,6 +109,25 @@ const transforms = {
 						// Note: gap is handled by WordPress blockGap (in style.spacing.blockGap)
 					},
 					innerBlocks
+				);
+			},
+		},
+		{
+			type: 'block',
+			blocks: ['core/columns'],
+			transform: ({ align, anchor }, innerBlocks) => {
+				const count = Math.min(Math.max(innerBlocks.length, 1), 12);
+				return createBlock(
+					'designsetgo/grid',
+					{
+						// Undefined keeps Grid's own full-width default.
+						...(align && { align }),
+						...(anchor && { anchor }),
+						desktopColumns: count,
+						tabletColumns: Math.min(count, 2),
+						mobileColumns: 1,
+					},
+					innerBlocks.map(columnToCell)
 				);
 			},
 		},
@@ -173,6 +225,23 @@ const transforms = {
 					innerBlocks
 				);
 			},
+		},
+		{
+			type: 'block',
+			blocks: ['core/columns'],
+			// Every cell becomes a column in one row, so the responsive
+			// column counts are dropped; core Columns stack on mobile.
+			transform: ({ align, anchor }, innerBlocks) =>
+				createBlock(
+					'core/columns',
+					{
+						...(align && { align }),
+						...(anchor && { anchor }),
+					},
+					innerBlocks.map((cell) =>
+						createBlock('core/column', {}, [cell])
+					)
+				),
 		},
 	],
 };

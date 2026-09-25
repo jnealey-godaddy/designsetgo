@@ -9,6 +9,7 @@
 		"designsetgo/flip-card"
 	],
 	"description": "A face of the flip card. Use the Side attribute to mark it as front or back.",
+	"icon": "index-card",
 	"keywords": [
 		"flip",
 		"card",
@@ -80,6 +81,26 @@
 				"back"
 			]
 		}
+	},
+	"example": {
+		"attributes": {
+			"side": "front"
+		},
+		"innerBlocks": [
+			{
+				"name": "core/heading",
+				"attributes": {
+					"level": 3,
+					"content": "Front of the card"
+				}
+			},
+			{
+				"name": "core/paragraph",
+				"attributes": {
+					"content": "Flip the card to see the other side."
+				}
+			}
+		]
 	},
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",

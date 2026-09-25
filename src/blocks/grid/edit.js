@@ -837,7 +837,7 @@ export default function GridEdit({ attributes, setAttributes, clientId }) {
 						label={__('Column Template', 'designsetgo')}
 						hasValue={() => columnTemplate !== ''}
 						onDeselect={() => setAttributes({ columnTemplate: '' })}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<TextControl
 							label={__('Column Template', 'designsetgo')}
