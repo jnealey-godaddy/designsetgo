@@ -22,12 +22,36 @@
 		--wp--custom--designsetgo--form--input-padding,
 		0.75rem
 	);
+
+	// Color defaults are theme-agnostic: the neutral border is a wash of the
+	// field's own text color (currentcolor resolves where the property is
+	// used, i.e. on each input), so it follows light and dark themes alike.
+	// Status colors keep their red / green hue but are mixed 30% toward the
+	// text color, so they darken on light themes and lighten on dark ones and
+	// clear 4.5:1 either way. All of them are theme.json / Style Kit tokens:
+	//   settings.custom.designsetgo.form.{borderColor, borderRadius,
+	//   focusColor, errorColor, successColor}
 	--dsgo-form-label-color: inherit;
-	--dsgo-form-border-color: #d1d5db;
-	--dsgo-form-border-radius: 0.375rem;
-	--dsgo-form-focus-color: var(--wp--preset--color--primary, #2563eb);
-	--dsgo-form-error-color: #dc2626;
-	--dsgo-form-success-color: #16a34a;
+	--dsgo-form-border-color: var(
+		--wp--custom--designsetgo--form--border-color,
+		color-mix(in srgb, currentcolor 20%, transparent)
+	);
+	--dsgo-form-border-radius: var(
+		--wp--custom--designsetgo--form--border-radius,
+		0.375rem
+	);
+	--dsgo-form-focus-color: var(
+		--wp--custom--designsetgo--form--focus-color,
+		var(--wp--preset--color--primary, #2563eb)
+	);
+	--dsgo-form-error-color: var(
+		--wp--custom--designsetgo--form--error-color,
+		color-mix(in srgb, #dc2626 70%, currentcolor)
+	);
+	--dsgo-form-success-color: var(
+		--wp--custom--designsetgo--form--success-color,
+		color-mix(in srgb, #16a34a 70%, currentcolor)
+	);
 	// Button colors intentionally not set here - uses theme defaults unless overridden
 
 	// The wrapper itself must never render a border. WordPress core ships
@@ -153,13 +177,21 @@
 
 		&--success {
 			color: var(--dsgo-form-success-color);
-			background-color: rgb(220 252 231); // light green
+			background-color: color-mix(
+				in srgb,
+				var(--dsgo-form-success-color) 10%,
+				var(--wp--preset--color--base, #fff)
+			);
 			border: 1px solid var(--dsgo-form-success-color);
 		}
 
 		&--error {
 			color: var(--dsgo-form-error-color);
-			background-color: rgb(254 226 226); // light red
+			background-color: color-mix(
+				in srgb,
+				var(--dsgo-form-error-color) 10%,
+				var(--wp--preset--color--base, #fff)
+			);
 			border: 1px solid var(--dsgo-form-error-color);
 		}
 	}

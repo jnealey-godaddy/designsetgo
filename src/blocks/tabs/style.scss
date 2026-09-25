@@ -12,8 +12,8 @@
 	// Override WordPress alignment negative margins
 	&.alignfull,
 	&.alignwide {
-		margin-left: 0 !important;
-		margin-right: 0 !important;
+		margin-inline-start: 0 !important;
+		margin-inline-end: 0 !important;
 	}
 }
 
@@ -25,8 +25,8 @@
 	min-width: 0; // Allow shrinking in flex containers
 	box-sizing: border-box; // Include padding/border in width calculation
 	overflow: hidden; // Prevent child elements from overflowing
-	margin-left: 0 !important; // Prevent WordPress negative margins
-	margin-right: 0 !important; // Prevent WordPress negative margins
+	margin-inline-start: 0 !important; // Prevent WordPress negative margins
+	margin-inline-end: 0 !important; // Prevent WordPress negative margins
 
 	// CSS custom properties for easy customization
 	--dsgo-tabs-gap: 8px;
@@ -54,7 +54,7 @@
 	 */
 	.dsgo-tabs__skip-link {
 		position: absolute;
-		left: -9999px;
+		inset-inline-start: -9999px;
 		top: auto;
 		width: 1px;
 		height: 1px;
@@ -71,7 +71,7 @@
 			text-decoration: none;
 			border-radius: 4px;
 			font-weight: 600;
-			margin-right: auto;
+			margin-inline-end: auto;
 			order: -1; // Ensure it appears first in flexbox
 		}
 	}
@@ -274,7 +274,7 @@
 		.dsgo-tabs__nav {
 			flex-direction: column;
 			margin-bottom: 0;
-			padding-right: var(--wp--preset--spacing--40, 1.5rem);
+			padding-inline-end: var(--wp--preset--spacing--40, 1.5rem);
 			min-width: 200px;
 			overflow: visible; // Remove horizontal scrollbar for vertical tabs
 		}
@@ -375,7 +375,7 @@
 
 		.dsgo-tabs__tab {
 			border-bottom: 2px solid transparent;
-			margin-right: 0;
+			margin-inline-end: 0;
 
 			&:hover:not(.is-active) {
 				color: var(--dsgo-tab-color-hover, var(--dsgo-tab-color-active, currentColor));
@@ -455,7 +455,7 @@
 				font-size: inherit;
 				font-weight: 600;
 				cursor: pointer;
-				text-align: left;
+				text-align: start;
 
 				&::after {
 					content: '\25BC'; // Down arrow
@@ -590,9 +590,9 @@
 		flex-direction: column;
 
 		.dsgo-tabs__nav {
-			border-right: none;
+			border-inline-end: none;
 			border-bottom: 2px solid color-mix(in srgb, currentcolor 18%, transparent);
-			padding-right: 0;
+			padding-inline-end: 0;
 			margin-bottom: var(--wp--preset--spacing--40, 1.5rem);
 			min-width: 0;
 		}

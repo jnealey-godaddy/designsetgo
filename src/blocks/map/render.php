@@ -42,7 +42,7 @@ if ( ! function_exists( 'designsetgo_map_privacy_overlay' ) ) {
 		$html  = '<div class="dsgo-map__privacy-overlay"><div class="dsgo-map__privacy-content">';
 		$html .= '<svg class="dsgo-map__privacy-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>';
 		$html .= '<p class="dsgo-map__privacy-text">' . esc_html( $text ) . '</p>';
-		$html .= '<button class="dsgo-map__load-button" type="button" aria-label="' . esc_attr__( 'Load map. This will connect to external map services.', 'designsetgo' ) . '">' . esc_html__( 'Load Map', 'designsetgo' ) . '</button>';
+		$html .= '<button class="dsgo-map__load-button wp-element-button" type="button" aria-label="' . esc_attr__( 'Load map. This will connect to external map services.', 'designsetgo' ) . '">' . esc_html__( 'Load Map', 'designsetgo' ) . '</button>';
 		$html .= '</div></div>';
 
 		return $html;
