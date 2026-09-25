@@ -2,6 +2,7 @@
  * Tabs Block - Frontend Styles
  */
 
+@use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
 
 // Ensure WordPress block wrapper doesn't cause overflow
@@ -69,7 +70,7 @@
 			color: currentcolor;
 			box-shadow: inset 0 0 0 2px currentcolor;
 			text-decoration: none;
-			border-radius: 4px;
+			border-radius: $dsgo-radius-small;
 			font-weight: 600;
 			margin-inline-end: auto;
 			order: -1; // Ensure it appears first in flexbox
@@ -88,7 +89,7 @@
 
 		// Hide scrollbar in most browsers but keep functionality
 		scrollbar-width: thin;
-		scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+		scrollbar-color: color-mix(in srgb, currentcolor 20%, transparent) transparent;
 
 		&::-webkit-scrollbar {
 			height: 4px;
@@ -99,8 +100,8 @@
 		}
 
 		&::-webkit-scrollbar-thumb {
-			background: rgba(0, 0, 0, 0.2);
-			border-radius: 2px;
+			background: color-mix(in srgb, currentcolor 20%, transparent);
+			border-radius: $dsgo-radius-small;
 		}
 	}
 
@@ -128,7 +129,7 @@
 		font-size: inherit;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition: all $dsgo-duration-fast $dsgo-easing;
 		position: relative;
 		white-space: nowrap;
 
@@ -448,7 +449,7 @@
 				align-items: center;
 				justify-content: space-between;
 				padding: var(--dsgo-tab-padding);
-				background: rgba(0, 0, 0, 0.02);
+				background: color-mix(in srgb, currentcolor 2%, transparent);
 				border: none;
 				border-bottom: 1px solid color-mix(in srgb, currentcolor 18%, transparent);
 				font-family: inherit;
@@ -460,7 +461,7 @@
 				&::after {
 					content: '\25BC'; // Down arrow
 					font-size: 0.75em;
-					transition: transform 0.2s ease;
+					transition: transform $dsgo-duration-fast $dsgo-easing;
 				}
 
 				&[aria-expanded='true']::after {
@@ -468,7 +469,7 @@
 				}
 
 				&:hover {
-					background: rgba(0, 0, 0, 0.05);
+					background: color-mix(in srgb, currentcolor 5%, transparent);
 				}
 			}
 
@@ -503,7 +504,7 @@
 			font-family: inherit;
 			font-size: inherit;
 			font-weight: 500;
-			border: 1px solid rgba(0, 0, 0, 0.2);
+			border: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
 			border-radius: var(--dsgo-tab-border-radius);
 			background: var(--dsgo-tab-bg);
 			color: var(--dsgo-tab-color);
@@ -560,7 +561,7 @@
 /**
  * Responsive: Mobile
  */
-@media (max-width: 767px) {
+@include below($breakpoint-mobile) {
 
 	.dsgo-tabs {
 		// Default to accordion on mobile
@@ -575,12 +576,12 @@
 				}
 
 				&::-webkit-scrollbar-track {
-					background: rgba(0, 0, 0, 0.05);
+					background: color-mix(in srgb, currentcolor 5%, transparent);
 				}
 
 				&::-webkit-scrollbar-thumb {
-					background: rgba(0, 0, 0, 0.2);
-					border-radius: 3px;
+					background: color-mix(in srgb, currentcolor 20%, transparent);
+					border-radius: $dsgo-radius-small;
 				}
 			}
 		}

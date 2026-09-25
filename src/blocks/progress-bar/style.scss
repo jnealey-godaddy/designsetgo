@@ -83,10 +83,10 @@
 		}
 
 		&--inside {
-			color: #fff;
+			color: var(--wp--preset--color--base, #fff);
 			font-weight: 600;
 			white-space: nowrap;
-			padding-right: 0.5rem;
+			padding-inline-end: 0.5rem;
 		}
 	}
 

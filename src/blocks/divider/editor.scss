@@ -47,15 +47,15 @@
 
 	// Left alignment
 	&.alignleft &__container {
-		margin-left: 0;
-		margin-right: auto;
+		margin-inline-start: 0;
+		margin-inline-end: auto;
 		justify-content: flex-start;
 	}
 
 	// Right alignment
 	&.alignright &__container {
-		margin-left: auto;
-		margin-right: 0;
+		margin-inline-start: auto;
+		margin-inline-end: 0;
 		justify-content: flex-end;
 	}
 
