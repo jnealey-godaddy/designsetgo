@@ -4,19 +4,22 @@
  *
  * Verified bug: designsetgo_query_extract_params_from_request() used to read
  * $_GET globally with no queryId namespacing, so every designsetgo/query on a
- * page consumed the same filter_ / q / sort params — a checkbox filter on one
- * Query ('All posts') also silently filtered an unrelated Query on the same
- * page ('Related posts') that had no control for it at all.
+ * page consumed the same filter_ / q / sort params — an INTERACTION on one
+ * Query's own filter control (e.g. checking a "News" checkbox on "All
+ * posts") also silently filtered an unrelated Query on the same page
+ * ('Related posts') that had no such control at all.
  *
  * Fix (see render-helpers.php, render-posts.php, query-filter/render.php):
  *  - A query-scoped key (`{key}__{queryId}`) always wins over a same-named
  *    bare key, and a key scoped for a DIFFERENT query is never read.
- *  - A bare/legacy key is honored only when the query declares it (its own
- *    filter blocks' paramName, or its bindSearchTo attribute) — see
- *    designsetgo_query_collect_declared_params().
- *  - WooCommerce's own filter-block params bypass this gate entirely — Woo
- *    can't emit a queryId, so they must keep driving every product query on
- *    the page unscoped, exactly as before.
+ *  - A bare/legacy key is honored by EVERY query, exactly as before this
+ *    task — that's the pre-existing, intentional contract a menu link or
+ *    widget to `?filter_category=news` relies on, and an earlier version of
+ *    this fix that gated bare keys by filter-block declaration broke it
+ *    (see PR #592's CI failures in DesignSetGo_Query_Filter_Server_Test).
+ *    Query-filter blocks now render their own `name` attribute already
+ *    scoped, so an INTERACTION never produces a bare key in the first
+ *    place — that's what actually stops the cross-query leak.
  *
  * @group query
  */
@@ -105,129 +108,56 @@ class DesignSetGo_Query_Param_Scoping_Test extends WP_UnitTestCase {
 	}
 
 
-	public function test_collect_declared_params_reads_filter_block_param_names() {
-		$blocks = parse_blocks(
-			'<!-- wp:designsetgo/query-filter {"filterKind":"checkbox","taxonomy":"category","paramName":"filter_category"} /-->' .
-			'<!-- wp:designsetgo/query-filter {"filterKind":"search","paramName":"q"} /-->'
-		);
-
-		$declared = designsetgo_query_collect_declared_params( $blocks );
-
-		$this->assertContains( 'filter_category', $declared );
-		$this->assertContains( 'q', $declared );
-	}
-
-	public function test_collect_declared_params_defaults_to_filter_category_when_paramname_omitted() {
-		// A checkbox/select filter whose paramName equals the block.json
-		// default is omitted from the stored comment entirely.
-		$blocks = parse_blocks( '<!-- wp:designsetgo/query-filter {"filterKind":"checkbox"} /-->' );
-
-		$declared = designsetgo_query_collect_declared_params( $blocks );
-
-		$this->assertContains( 'filter_category', $declared );
-	}
-
-	public function test_collect_declared_params_includes_bind_search_to() {
-		$declared = designsetgo_query_collect_declared_params( array(), 'custom_search_param' );
-
-		$this->assertContains( 'custom_search_param', $declared );
-	}
-
-	public function test_collect_declared_params_ignores_active_and_reset_kinds() {
-		$blocks = parse_blocks(
-			'<!-- wp:designsetgo/query-filter {"filterKind":"active","paramName":""} /-->' .
-			'<!-- wp:designsetgo/query-filter {"filterKind":"reset","paramName":""} /-->'
-		);
-
-		$this->assertSame( array(), designsetgo_query_collect_declared_params( $blocks ) );
-	}
-
-	public function test_collect_declared_params_stops_at_a_nested_query_boundary() {
-		$blocks = parse_blocks(
-			'<!-- wp:designsetgo/query {"queryId":"nested"} -->' .
-			'<!-- wp:designsetgo/query-filter {"filterKind":"checkbox","paramName":"filter_inner"} /-->' .
-			'<!-- /wp:designsetgo/query -->'
-		);
-
-		$this->assertSame( array(), designsetgo_query_collect_declared_params( $blocks ) );
-	}
-
-	public function test_collect_declared_params_walks_through_a_layout_wrapper() {
-		// Filters are often wrapped in a Row/Group for visual arrangement —
-		// declaration must still be found beneath it.
-		$blocks = parse_blocks(
-			'<!-- wp:designsetgo/row -->' .
-			'<!-- wp:designsetgo/query-filter {"filterKind":"checkbox","paramName":"filter_category"} /-->' .
-			'<!-- /wp:designsetgo/row -->'
-		);
-
-		$this->assertContains( 'filter_category', designsetgo_query_collect_declared_params( $blocks ) );
-	}
-
-
-	public function test_build_posts_args_ignores_undeclared_bare_filter() {
+	public function test_build_posts_args_applies_a_bare_filter_to_any_query() {
+		// No filter block, no bindSearchTo — just a bare URL param. This is
+		// the pre-existing, intentional contract: a menu link or widget to
+		// `?filter_category=news` works regardless of whether the landing
+		// page's Query block happens to carry a matching filter control.
 		$atts = designsetgo_query_defaults( array( 'postType' => 'post' ) );
 
 		$args = designsetgo_query_build_posts_args(
 			$atts,
 			array(
-				'page'            => 1,
-				'params'          => array( 'filter_category' => 'news' ),
-				'declared_params' => array(), // This query owns no filters at all.
-			)
-		);
-
-		$this->assertArrayNotHasKey( 'tax_query', $args, 'A bystander query with no filter control must ignore a bare filter_* param.' );
-	}
-
-	public function test_build_posts_args_applies_a_declared_bare_filter() {
-		$atts = designsetgo_query_defaults( array( 'postType' => 'post' ) );
-
-		$args = designsetgo_query_build_posts_args(
-			$atts,
-			array(
-				'page'            => 1,
-				'params'          => array( 'filter_category' => 'news' ),
-				'declared_params' => array( 'filter_category' ),
+				'page'   => 1,
+				'params' => array( 'filter_category' => 'news' ),
 			)
 		);
 
 		$this->assertArrayHasKey( 'tax_query', $args );
 	}
 
-	public function test_build_posts_args_ignores_undeclared_bare_search() {
+	public function test_build_posts_args_applies_a_bare_search_to_any_query() {
 		$atts = designsetgo_query_defaults( array( 'postType' => 'post' ) );
 
 		$args = designsetgo_query_build_posts_args(
 			$atts,
 			array(
-				'page'            => 1,
-				'params'          => array( 'q' => 'hello' ),
-				'declared_params' => array(),
+				'page'   => 1,
+				'params' => array( 'q' => 'hello' ),
 			)
 		);
 
-		$this->assertArrayNotHasKey( 's', $args );
+		$this->assertSame( 'hello', $args['s'] );
 	}
 
-	public function test_build_posts_args_ignores_undeclared_bare_sort() {
+	public function test_build_posts_args_applies_a_bare_sort_to_any_query() {
 		$atts = designsetgo_query_defaults(
 			array(
 				'postType' => 'post',
 				'orderBy'  => 'date',
-			) 
+			)
 		);
 
 		$args = designsetgo_query_build_posts_args(
 			$atts,
 			array(
-				'page'            => 1,
-				'params'          => array( 'sort' => 'title.ASC' ),
-				'declared_params' => array(),
+				'page'   => 1,
+				'params' => array( 'sort' => 'title.ASC' ),
 			)
 		);
 
-		$this->assertSame( 'date', $args['orderby'], 'An undeclared ?sort= must not override this query\'s own orderBy.' );
+		$this->assertSame( 'title', $args['orderby'] );
+		$this->assertSame( 'ASC', $args['order'] );
 	}
 
 
@@ -298,27 +228,48 @@ class DesignSetGo_Query_Param_Scoping_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_bystander_query_is_unaffected_by_another_querys_bare_filter() {
+	/**
+	 * The actual cross-query leak this task fixes: an INTERACTION on one
+	 * Query's own filter control (which now writes a SCOPED key, per
+	 * query-filter/render.php) must never reach an unrelated Query — even
+	 * one with no filter control of its own.
+	 */
+	public function test_bystander_query_is_unaffected_by_a_scoped_param_from_another_querys_filter() {
 		$this->create_categorized_posts();
 
-		// A page with two Query blocks: "All posts" (has a category filter)
-		// and "Related posts" (no filter control at all) — the exact scenario
-		// from the bug report. A bare, unscoped ?filter_category= is present
-		// (e.g. a legacy no-JS submission or hand-typed URL).
-		$_GET = array( 'filter_category' => 'news' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// A page with two Query blocks: "All posts" (has a category filter,
+		// and its filter control was just used — a scoped key) and "Related
+		// posts" (no filter control at all).
+		$_GET = array( 'filter_category__allposts' => 'news' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		$html = do_blocks(
+		do_blocks(
 			$this->query_with_checkbox_filter( 'allposts' )
 			. $this->query_with_no_filters( 'related' )
 		);
 
-		$this->assertIsString( $html );
-
 		$all_posts_state = designsetgo_query_get_last_state( 'allposts' );
 		$related_state   = designsetgo_query_get_last_state( 'related' );
 
-		$this->assertSame( 2, $all_posts_state['totalItems'], '"All posts" declares filter_category, so the bare param must narrow it to the 2 News posts.' );
-		$this->assertSame( 4, $related_state['totalItems'], '"Related posts" declares no filter at all, so the bare param must NOT narrow it — all 4 posts.' );
+		$this->assertSame( 2, $all_posts_state['totalItems'], '"All posts" owns the scoped key, so it narrows to the 2 News posts.' );
+		$this->assertSame( 4, $related_state['totalItems'], '"Related posts" is scoped to a different query (allposts), so it must be unaffected — all 4 posts.' );
+	}
+
+	/**
+	 * The backward-compat contract this task must NOT break: a bare, legacy
+	 * `?filter_category=` (a menu link, a widget, a hand-typed URL — nothing
+	 * scoped to any queryId) has always applied to every Query on the page,
+	 * whether or not that Query has a matching filter control. Gating this
+	 * by filter-block declaration was tried and reverted (see PR #592).
+	 */
+	public function test_bare_legacy_param_still_applies_to_a_query_with_no_filter_block() {
+		$this->create_categorized_posts();
+
+		$_GET = array( 'filter_category' => 'news' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		do_blocks( $this->query_with_no_filters( 'related' ) );
+
+		$state = designsetgo_query_get_last_state( 'related' );
+		$this->assertSame( 2, $state['totalItems'], 'A bare/legacy param must keep narrowing every Query, including one with no filter control of its own.' );
 	}
 
 	public function test_legacy_single_query_bare_param_still_works() {

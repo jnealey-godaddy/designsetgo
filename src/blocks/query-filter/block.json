@@ -31,8 +31,7 @@
     "designsetgo/queryId",
     "designsetgo/querySource",
     "designsetgo/queryPostType",
-    "designsetgo/queryTaxQuery",
-    "designsetgo/queryDeclaredParams"
+    "designsetgo/queryTaxQuery"
   ],
   "attributes": {
     "filterKind": { "type": "string", "default": "checkbox", "enum": ["checkbox", "select", "search", "sort", "active", "reset"] },

@@ -578,18 +578,16 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	 * selection can no longer leak into another's WP_Query args.
 	 *
 	 * A bare, unscoped key (`filter_category=news` with no `__{queryId}`
-	 * suffix) is still resolved here for backward compatibility — existing
-	 * bookmarks/shared links, and WooCommerce's own filter blocks, which
-	 * cannot emit a queryId at all. This function does NOT gate the bare
-	 * value against "does this query even own that key" — that gate lives
-	 * downstream, in designsetgo_query_build_posts_args() ($declared_params,
-	 * from designsetgo_query_collect_declared_params()), because a `filter_*`
-	 * key is only safe to reject once its owner is known to be a real DSGo
-	 * taxonomy and not a WooCommerce product attribute (`pa_*` stripped to
-	 * `filter_<attr>` in the URL) — WooCommerce params must always reach
-	 * every product query on the page, unscoped, by design (see
-	 * render-woo.php). `min_price` / `max_price` / `rating_filter` are never
-	 * scoped at all, for the same reason.
+	 * suffix) is resolved here for EVERY query — deliberately ungated. This
+	 * is the pre-2.6 contract: a site owner links to `?filter_category=news`
+	 * from a menu or a widget with no idea which (if any) Query block on the
+	 * landing page has a matching filter control, and every such Query has
+	 * always applied it. Gating the bare key by "does this query declare a
+	 * matching filter block" broke that (see the regression on PR #592) —
+	 * WooCommerce's own filter blocks rely on the identical ungated
+	 * contract, since they can't emit a queryId at all and so always speak
+	 * bare. Only a query-SCOPED key narrows to a single query; the bare
+	 * fallback intentionally still reaches all of them, unchanged.
 	 *
 	 * @param string $query_id Sanitized queryId this extraction is for. Empty
 	 *                         string disables scoped-key resolution entirely
@@ -652,73 +650,6 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		}
 
 		return $params;
-	}
-
-	/**
-	 * Collect the URL param names a Query block's OWN filter setup declares —
-	 * i.e. the keys it is safe to apply to unscoped/bare input.
-	 *
-	 * Two sources of declaration:
-	 *  - Every `designsetgo/query-filter` descendant's `paramName` attribute
-	 *    (search/sort default to 'q'/'sort'; checkbox/select default to
-	 *    `filter_<taxonomy>`). The 'active' and 'reset' filterKinds declare
-	 *    nothing themselves — they act on whatever the query already owns.
-	 *  - The Query block's own `bindSearchTo` attribute, an explicit
-	 *    author-level declaration independent of any filter block.
-	 *
-	 * Recursion stops at two boundaries so a query never inherits another
-	 * query's declarations: a nested `designsetgo/query` block (it resolves
-	 * its own params independently) and an item-host block's innerBlocks
-	 * (the per-item template — filters never live there).
-	 *
-	 * @param array  $blocks         parse_blocks() entries — a Query block's
-	 *                               own (possibly nested-in-layout) children.
-	 * @param string $bind_search_to The Query block's `bindSearchTo` attribute.
-	 * @return string[] Declared bare param names (e.g. ['q', 'filter_category']).
-	 */
-	function designsetgo_query_collect_declared_params( array $blocks, $bind_search_to = '' ) {
-		$keys = array();
-
-		if ( is_string( $bind_search_to ) && '' !== $bind_search_to ) {
-			$keys[ sanitize_key( $bind_search_to ) ] = true;
-		}
-
-		$host_block_names = designsetgo_query_item_host_block_names();
-
-		$walk = static function ( array $blocks ) use ( &$walk, &$keys, $host_block_names ) {
-			foreach ( $blocks as $block ) {
-				$name = (string) ( $block['blockName'] ?? '' );
-				if ( '' === $name || 'designsetgo/query' === $name ) {
-					// Nested query resolves its own declared params — never
-					// descend into it from here.
-					continue;
-				}
-
-				if ( 'designsetgo/query-filter' === $name ) {
-					$attrs = is_array( $block['attrs'] ?? null ) ? $block['attrs'] : array();
-					$param = isset( $attrs['paramName'] ) ? sanitize_key( (string) $attrs['paramName'] ) : 'filter_category';
-					if ( '' !== $param ) {
-						$keys[ $param ] = true;
-					}
-				}
-
-				// Item-host innerBlocks are the per-item template, not sibling
-				// filters — don't walk into them (but still walk past the
-				// host itself in case a layout wrapper holds both a host and
-				// filters as siblings under a common ancestor).
-				if ( in_array( $name, $host_block_names, true ) ) {
-					continue;
-				}
-
-				if ( ! empty( $block['innerBlocks'] ) ) {
-					$walk( (array) $block['innerBlocks'] );
-				}
-			}
-		};
-
-		$walk( $blocks );
-
-		return array_keys( $keys );
 	}
 
 	/**
@@ -936,18 +867,6 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 			}
 		}
 
-		// Declared param names for THIS query — its own filter blocks'
-		// paramName attributes plus its bindSearchTo attribute. Computed from
-		// $parsed_children (the query's full children, before the
-		// query-results split above) so it sees filters regardless of
-		// whether they sit beside or inside a layout wrapper. Used both to
-		// gate unscoped/bare params in render-posts.php and to scope the
-		// filter siblings' own chip/reset rendering below.
-		$declared_params = designsetgo_query_collect_declared_params(
-			$parsed_children,
-			(string) ( $attributes['bindSearchTo'] ?? '' )
-		);
-
 		if ( '' !== $query_id ) {
 			// Record the resolved host so sibling blocks rendered later in the
 			// tree can adapt to the presentation — designsetgo/query-pagination
@@ -967,7 +886,6 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 				'inner_html'      => $template_html,
 				'full_inner_html' => $template_html,
 				'params'          => designsetgo_query_extract_params_from_request( $query_id ),
-				'declared_params' => $declared_params,
 				'wrapper_attrs'   => null,
 			);
 
@@ -1044,11 +962,6 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 				'designsetgo/queryTaxQuery' => isset( $attributes['taxQuery'] ) && is_array( $attributes['taxQuery'] )
 					? $attributes['taxQuery']
 					: array(),
-				// Param names this query's own filter blocks (+ bindSearchTo)
-				// declare — query-filter's active/reset variations use it to
-				// scope which $_GET keys are "theirs" to display/strip,
-				// instead of reading every filter_*/q/sort key on the page.
-				'designsetgo/queryDeclaredParams' => $declared_params,
 			)
 		);
 
