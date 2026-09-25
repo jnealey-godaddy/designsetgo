@@ -49,9 +49,11 @@ if ( ! function_exists( 'designsetgo_safe_css_value' ) ) :
 	 *
 	 * The sanitizer strips characters that could close the current declaration
 	 * (`;`, `{`, `}`), escape sequences (`\`), control/newline characters, and
-	 * rejects CSS expression/javascript: patterns entirely. Legitimate CSS
-	 * values — `var(...)`, `calc(...)`, colors, lengths, aspect ratios — pass
-	 * through unchanged.
+	 * rejects values that load a resource or run script — `url(`, `image-set(`
+	 * (which takes bare strings as URLs), `expression(`, `javascript:` —
+	 * entirely. None of this helper's callers take an image, so a URL here can
+	 * only be a tracking beacon. Legitimate CSS values — `var(...)`,
+	 * `calc(...)`, colors, lengths, aspect ratios — pass through unchanged.
 	 *
 	 * @param mixed $value Raw attribute value.
 	 * @return string Safe-to-concatenate CSS value (empty string if rejected).
@@ -64,13 +66,15 @@ if ( ! function_exists( 'designsetgo_safe_css_value' ) ) :
 		if ( '' === $value ) {
 			return '';
 		}
-		$lower = strtolower( $value );
-		if ( false !== strpos( $lower, 'expression(' ) || false !== strpos( $lower, 'javascript:' ) ) {
-			return '';
-		}
 		// Strip chars that could break out of a `--prop: VALUE` declaration
 		// context: semicolon / braces / backslash (escape) / control + newline.
-		return preg_replace( '/[;{}\\\\\r\n\x00-\x1F]/', '', $value );
+		// Strip first, then check: `u\rl(` only reads as `url(` once the
+		// backslash is gone.
+		$value = preg_replace( '/[;{}\\\\\r\n\x00-\x1F]/', '', $value );
+		if ( preg_match( '/url\(|image-set\(|expression\(|javascript:/i', $value ) ) {
+			return '';
+		}
+		return $value;
 	}
 
 endif;
@@ -494,7 +498,7 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 		// Ensure BlockVisibility is available when this file is required directly
 		// (e.g. in integration tests) before the plugin bootstrap has run.
 		if ( ! class_exists( '\\DesignSetGo\\BlockVisibility' ) ) {
-			require_once DESIGNSETGO_PATH . 'includes/class-block-visibility.php';
+			require_once DESIGNSETGO_PATH . 'includes/features/class-block-visibility.php';
 		}
 
 		$skip_wrap = ( 'none' === $item_tag );

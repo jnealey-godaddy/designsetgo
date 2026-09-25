@@ -9,7 +9,7 @@
 
 import { __ } from '@wordpress/i18n';
 import { InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, TextareaControl } from '@wordpress/components';
+import { Notice, PanelBody, TextareaControl } from '@wordpress/components';
 import { useEffect } from '@wordpress/element';
 
 /**
@@ -53,6 +53,10 @@ function replaceSelector(css, className) {
 export function CustomCSSPanel(props) {
 	const { attributes, setAttributes } = props;
 	const { dsgoCustomCSS } = attributes;
+	// Mirrors the server's edit_css gate (Custom_CSS_Kses), which strips this
+	// attribute on save for anyone without it. Absent means an older payload:
+	// fall back to editable rather than locking out the people who can.
+	const canEdit = window.dsgoSettings?.canEditCustomCSS !== false;
 
 	return (
 		<InspectorControls>
@@ -60,12 +64,21 @@ export function CustomCSSPanel(props) {
 				title={__('Custom CSS', 'designsetgo')}
 				initialOpen={false}
 			>
+				{!canEdit && (
+					<Notice status="warning" isDismissible={false}>
+						{__(
+							'Your role cannot add custom CSS. Any CSS on this block is removed when you save. Ask an administrator to make CSS changes.',
+							'designsetgo'
+						)}
+					</Notice>
+				)}
 				<TextareaControl
 					label={__('CSS Code', 'designsetgo')}
 					value={dsgoCustomCSS || ''}
 					onChange={(value) =>
 						setAttributes({ dsgoCustomCSS: value || '' })
 					}
+					readOnly={!canEdit}
 					placeholder={`selector {\n  background: linear-gradient(45deg, #f00, #00f);\n  padding: 2rem;\n}\n\nselector h3 {\n  color: white;\n  font-size: 2rem;\n}`}
 					rows={15}
 					help={__(

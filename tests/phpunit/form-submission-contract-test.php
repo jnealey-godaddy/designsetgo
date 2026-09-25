@@ -353,4 +353,55 @@ class Test_Form_Submission_Contract extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'unknown_form', $result->get_error_code() );
 	}
+
+	/**
+	 * The site-wide lookup (no source page) must not find a form on a
+	 * password-protected page: it is cached for every requester, so it cannot
+	 * honour anyone's password cookie. The source-page path, which does, still
+	 * serves a visitor who unlocked the page.
+	 */
+	public function test_form_on_a_password_protected_page_is_refused_without_the_password() {
+		$form_id = 'contract-password-form';
+		$post_id = self::factory()->post->create(
+			array(
+				'post_status'   => 'publish',
+				'post_password' => 'secret',
+				'post_content'  => $this->form_markup( $form_id, '<!-- wp:designsetgo/form-text-field {"fieldName":"your_name"} /-->' ),
+			)
+		);
+
+		$fields = array( array( 'name' => 'your_name', 'value' => 'Pat', 'type' => 'text' ) );
+
+		$result = $this->submit( $form_id, $fields );
+		$this->assertWPError( $result );
+		$this->assertSame( 'unknown_form', $result->get_error_code() );
+
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
+		$request->set_param( 'formId', $form_id );
+		$request->set_param( 'fields', $fields );
+		$request->set_param( 'sourcePostId', $post_id );
+		$request->set_param( 'honeypot', '' );
+		$request->set_param( 'timestamp', '' );
+		$result = $this->handler->handle_form_submission( $request );
+		$this->assertWPError( $result, 'Naming the page must not bypass its password either.' );
+		$this->assertSame( 'unknown_form', $result->get_error_code() );
+	}
+
+	/**
+	 * A form kept in a synced pattern is only reachable through the site-wide
+	 * lookup, and wp_block is not a viewable post type — it must stay eligible.
+	 */
+	public function test_form_in_a_synced_pattern_accepts_submissions() {
+		$form_id = 'contract-synced-pattern-form';
+		self::factory()->post->create(
+			array(
+				'post_type'    => 'wp_block',
+				'post_status'  => 'publish',
+				'post_content' => $this->form_markup( $form_id, '<!-- wp:designsetgo/form-text-field {"fieldName":"your_name"} /-->' ),
+			)
+		);
+
+		$stored = $this->assert_stored( $this->submit( $form_id, array( array( 'name' => 'your_name', 'value' => 'Pat', 'type' => 'text' ) ) ) );
+		$this->assertArrayHasKey( 'your_name', $stored );
+	}
 }

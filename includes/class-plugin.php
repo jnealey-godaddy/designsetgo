@@ -596,12 +596,15 @@ class Plugin {
 		new Core\Translations();
 		require_once DESIGNSETGO_PATH . 'includes/features/class-block-visibility.php';
 		BlockVisibility::register();
+		require_once DESIGNSETGO_PATH . 'includes/features/class-custom-css-kses.php';
+		Custom_CSS_Kses::register();
 		// --- Core ---
 		require_once DESIGNSETGO_PATH . 'includes/core/class-assets.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-loader.php';
 		// --- Blocks: Forms ---
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/field-render-helpers.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-security.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-field-rules.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
 		// --- Blocks: Modal ---
