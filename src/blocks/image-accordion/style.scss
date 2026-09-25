@@ -55,7 +55,7 @@
 	}
 
 	// Responsive: Stack vertically on mobile
-	@include below($breakpoint-mobile) {
+	@media (max-width: #{$breakpoint-mobile}) {
 		flex-direction: column;
 		height: auto;
 		min-height: 600px;

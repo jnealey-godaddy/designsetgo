@@ -337,7 +337,7 @@ body.dsgo-modal-open {
 }
 
 // Responsive Adjustments
-@include below($breakpoint-mobile) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-modal {
 
@@ -497,7 +497,7 @@ body.dsgo-modal-open {
 }
 
 // Responsive adjustments for gallery navigation
-@include below($breakpoint-mobile) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-modal__gallery-prev,
 	.dsgo-modal__gallery-next {

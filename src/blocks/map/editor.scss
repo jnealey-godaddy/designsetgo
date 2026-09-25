@@ -170,7 +170,7 @@
 	}
 
 	// Responsive preview in editor
-	@include below($breakpoint-mobile) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		.dsgo-map {
 
