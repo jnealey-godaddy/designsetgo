@@ -120,7 +120,7 @@
 }
 
 // Responsive adjustments
-@include below($breakpoint-mobile) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-form-field {
 

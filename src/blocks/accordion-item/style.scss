@@ -196,7 +196,7 @@
 }
 
 // Mobile optimizations
-@include below($breakpoint-mobile) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-accordion-item {
 

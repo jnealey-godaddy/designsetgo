@@ -69,7 +69,7 @@
 			max-width: none !important;
 
 			// Mirror the frontend's mobile stacking.
-			@include below($breakpoint-mobile) {
+			@media (max-width: #{$breakpoint-mobile}) {
 				flex-basis: 100% !important;
 			}
 		}

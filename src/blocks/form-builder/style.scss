@@ -44,7 +44,7 @@
 	// bucket maps to medium (8px), a <=2px drift.
 	--dsgo-form-border-radius: var(
 		--wp--custom--designsetgo--form--border-radius,
-		$dsgo-radius-medium
+		#{$dsgo-radius-medium}
 	);
 	--dsgo-form-focus-color: var(
 		--wp--custom--designsetgo--form--focus-color,
@@ -246,7 +246,7 @@
 		max-width: none !important;
 
 		// Mobile: force full width so the button wraps to a new line
-		@include below($breakpoint-mobile) {
+		@media (max-width: #{$breakpoint-mobile}) {
 			flex-basis: 100% !important;
 		}
 	}
@@ -260,7 +260,7 @@
 		// 0.5rem "label gap compensation" lifted the button out of alignment.
 
 		// Mobile: stack below the field with spacing
-		@include below($breakpoint-mobile) {
+		@media (max-width: #{$breakpoint-mobile}) {
 			margin-top: 0.5rem;
 		}
 	}
@@ -283,7 +283,7 @@
 }
 
 // Responsive adjustments
-@include below($breakpoint-mobile) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-form__submit {
 		width: 100%; // Full width on mobile for easier tapping

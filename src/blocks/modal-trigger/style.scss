@@ -274,7 +274,7 @@
 
 // Responsive Adjustments
 // Wrapped in :where() so Global Styles can override mobile defaults too
-@include below($breakpoint-mobile) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	// 15px is a deliberate mobile-only micro-adjustment off the 16px base
 	// (medium preset), not an independent design size, so it stays literal
