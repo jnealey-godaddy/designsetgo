@@ -1,3 +1,5 @@
+@use '../../styles/variables' as *;
+
 .wp-block-designsetgo-hotspot-item {
 	--dsgo-hotspot-translate-x: -50%;
 	--dsgo-hotspot-translate-y: -50%;
@@ -50,7 +52,7 @@
 		padding: .75rem 1rem;
 		color: var(--dsgo-hotspot-tooltip-color);
 		background: var(--dsgo-hotspot-tooltip-background);
-		border-radius: .25rem;
+		border-radius: $dsgo-radius-small;
 		font-size: .875rem;
 		line-height: 1.4;
 		opacity: 0;

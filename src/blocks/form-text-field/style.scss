@@ -6,6 +6,9 @@
  * @since 1.0.0
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-form-field {
 	// Inherit CSS custom properties from form container. Fields can only be
 	// inserted inside Form Builder (block.json "parent"), whose stylesheet
@@ -13,7 +16,7 @@
 	// palette lives there and not here.
 	--dsgo-field-label-color: var(--dsgo-form-label-color, inherit);
 	--dsgo-field-border-color: var(--dsgo-form-border-color, currentcolor);
-	--dsgo-field-border-radius: var(--dsgo-form-border-radius, 0.375rem);
+	--dsgo-field-border-radius: var(--dsgo-form-border-radius, $dsgo-radius-medium);
 	--dsgo-field-focus-color: var(--dsgo-form-focus-color, currentcolor);
 	--dsgo-field-error-color: var(--dsgo-form-error-color, currentcolor);
 
@@ -26,7 +29,7 @@
 	// Label
 	&__label {
 		display: block;
-		font-size: 0.875rem;
+		font-size: var(--wp--preset--font-size--small, 0.875rem);
 		font-weight: 500;
 		line-height: 1.5;
 		color: var(--dsgo-field-label-color);
@@ -36,7 +39,7 @@
 	// Required indicator
 	&__required {
 		color: var(--dsgo-field-error-color);
-		margin-left: 0.25rem;
+		margin-inline-start: 0.25rem;
 		font-weight: 600;
 	}
 
@@ -96,7 +99,7 @@
 
 	// Help text
 	&__help {
-		font-size: 0.875rem;
+		font-size: var(--wp--preset--font-size--small, 0.875rem);
 		line-height: 1.5;
 		color: color-mix(in srgb, currentcolor 75%, transparent);
 		margin: 0;
@@ -104,7 +107,7 @@
 
 	// Error message
 	&__error {
-		font-size: 0.875rem;
+		font-size: var(--wp--preset--font-size--small, 0.875rem);
 		line-height: 1.5;
 		color: var(--dsgo-field-error-color);
 		margin: 0;
@@ -117,14 +120,14 @@
 }
 
 // Responsive adjustments
-@media (max-width: 768px) {
+@include below($breakpoint-mobile) {
 
 	.dsgo-form-field {
 
 		&__input,
 		&__textarea,
 		&__select {
-			font-size: 16px; // Prevent zoom on iOS
+			font-size: 16px; // Prevent zoom on iOS - intentional, do not tokenize
 		}
 	}
 }

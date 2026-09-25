@@ -78,6 +78,9 @@ export default function FormBuilderEdit({
 		fieldBorderColor,
 		fieldBackgroundColor,
 		fieldBorderRadius,
+		fieldFocusColor,
+		fieldErrorColor,
+		fieldSuccessColor,
 		submitButtonColor,
 		submitButtonBackgroundColor,
 		submitButtonPaddingVertical,
@@ -202,6 +205,9 @@ export default function FormBuilderEdit({
 		'--dsgo-form-border-color': convertColorToCSSVar(fieldBorderColor),
 		'--dsgo-form-field-bg': convertColorToCSSVar(fieldBackgroundColor),
 		'--dsgo-form-border-radius': validateCSSLength(fieldBorderRadius),
+		'--dsgo-form-focus-color': convertColorToCSSVar(fieldFocusColor),
+		'--dsgo-form-error-color': convertColorToCSSVar(fieldErrorColor),
+		'--dsgo-form-success-color': convertColorToCSSVar(fieldSuccessColor),
 		// Button colors now applied as inline styles on button element
 	};
 
@@ -1257,6 +1263,57 @@ export default function FormBuilderEdit({
 							onColorChange: (color) =>
 								setAttributes({
 									fieldBackgroundColor:
+										encodeColorValue(
+											color,
+											colorGradientSettings
+										) || '',
+								}),
+							enableAlpha: true,
+							clearable: true,
+						},
+						{
+							label: __('Focus Color', 'designsetgo'),
+							colorValue: decodeColorValue(
+								fieldFocusColor,
+								colorGradientSettings
+							),
+							onColorChange: (color) =>
+								setAttributes({
+									fieldFocusColor:
+										encodeColorValue(
+											color,
+											colorGradientSettings
+										) || '',
+								}),
+							enableAlpha: true,
+							clearable: true,
+						},
+						{
+							label: __('Error Color', 'designsetgo'),
+							colorValue: decodeColorValue(
+								fieldErrorColor,
+								colorGradientSettings
+							),
+							onColorChange: (color) =>
+								setAttributes({
+									fieldErrorColor:
+										encodeColorValue(
+											color,
+											colorGradientSettings
+										) || '',
+								}),
+							enableAlpha: true,
+							clearable: true,
+						},
+						{
+							label: __('Success Color', 'designsetgo'),
+							colorValue: decodeColorValue(
+								fieldSuccessColor,
+								colorGradientSettings
+							),
+							onColorChange: (color) =>
+								setAttributes({
+									fieldSuccessColor:
 										encodeColorValue(
 											color,
 											colorGradientSettings
