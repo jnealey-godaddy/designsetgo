@@ -8,7 +8,7 @@
  * @package
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	RangeControl,
 	SelectControl,
@@ -23,6 +23,7 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 		closeButtonPosition,
 		closeButtonSize,
 		closeButtonLabel,
+		savedCloseButtonLabel,
 	} = attributes;
 
 	return (
@@ -110,19 +111,36 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 				<DsgoInspectorPanel.Item
 					label={__('Close Button Label', 'designsetgo')}
 					hasValue={() => closeButtonLabel.trim() !== ''}
-					onDeselect={() => setAttributes({ closeButtonLabel: '' })}
+					onDeselect={() =>
+						setAttributes({
+							closeButtonLabel: '',
+							savedCloseButtonLabel: undefined,
+						})
+					}
 					isShownByDefault
 				>
 					<TextControl
 						label={__('Close Button Label', 'designsetgo')}
 						value={closeButtonLabel}
+						// See ModalSettings: an edit drops the frozen label.
 						onChange={(value) =>
-							setAttributes({ closeButtonLabel: value })
+							setAttributes({
+								closeButtonLabel: value,
+								savedCloseButtonLabel: undefined,
+							})
 						}
-						placeholder={__('Close modal', 'designsetgo')}
-						help={__(
-							'Accessible label for the close button (aria-label). Defaults to "Close modal" when left blank.',
-							'designsetgo'
+						placeholder={
+							savedCloseButtonLabel ||
+							__('Close modal', 'designsetgo')
+						}
+						help={sprintf(
+							/* translators: %s: the label used when this field is left blank. */
+							__(
+								'Accessible label for the close button (aria-label). Defaults to "%s" when left blank.',
+								'designsetgo'
+							),
+							savedCloseButtonLabel ||
+								__('Close modal', 'designsetgo')
 						)}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom

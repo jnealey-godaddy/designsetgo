@@ -79,6 +79,9 @@ class Block_Configurator {
 			'subtitle'  => 'inline',
 			'bodyText'  => 'inline',
 		),
+		// featuredBadgeText is `source: text`: the "Popular" fallback read back
+		// from the stored badge (see comparison-table/save.js).
+		'designsetgo/comparison-table'  => array( 'featuredBadgeText' => 'plain' ),
 		'designsetgo/countdown-timer'   => array( 'completionMessage' => 'plain' ),
 		'designsetgo/counter'           => array( 'label' => 'plain' ),
 		'designsetgo/form-builder'      => array( 'submitButtonText' => 'plain' ),

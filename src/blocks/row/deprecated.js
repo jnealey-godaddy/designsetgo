@@ -273,6 +273,7 @@ const v6 = {
 // attribute values; the current save() then re-renders with the classes
 // derived from the variation.
 const v5 = {
+	apiVersion: 3,
 	supports: metadata.supports,
 	attributes: { ...metadata.attributes },
 	isEligible(attributes, innerBlocks, extra) {
@@ -395,6 +396,7 @@ const v5 = {
 // re-serialize the block with the correct "nowrap" inline style, fixing the
 // stacking behavior.
 const v4 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: {
@@ -556,6 +558,7 @@ const v4 = {
 // Version 3: Before align-items (vertical alignment) was added to inner div
 // This version has width constraints but no alignItems CSS property
 const v3 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: {
@@ -702,6 +705,7 @@ const v3 = {
 // This version had dsgo-has-max-width class from max-width extension
 // but didn't output width constraints on inner div when constrainWidth was true
 const v2 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: {
@@ -838,6 +842,7 @@ const v2 = {
 
 // Version 1: Before align attribute - used className for alignment
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		// Old blocks don't have align attribute, only className

@@ -378,6 +378,7 @@ const v1 = {
  * here doesn't change which attributes survive.
  */
 const vAlign = {
+	apiVersion: 3,
 	attributes: {
 		content: { type: 'string', default: '' },
 	},

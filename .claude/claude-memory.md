@@ -1,5 +1,12 @@
 # Claude Memory - DesignSetGo
 
+## Block audit 2026-09-24, robustness section — `claude/robustness-audit` (agent: robustness-audit-2026-09-25, session 7c3b92ba)
+
+- **Locale-freeze pattern for `__()` in static save()**: add a *sourced* attribute that reads the rendered fallback back from the markup (`source: attribute|text|query`), and render `authored || frozen || __()`. No markup change, so no deprecation. Card had it first (`badgeAriaLabel`, `imageFallbackAlt`); now Modal (`savedModalLabel`, `savedCloseButtonLabel`), Hotspot Item (`markerAriaLabel`) and Comparison Table (`featuredBadgeText`, `savedCtaTexts`). When the fallback sits behind an author-editable field, the edit side must clear the frozen value on change, or clearing a custom label brings the old custom label back instead of the default.
+- `deprecations-isEligible.test.js`'s round-trip test tolerates exactly one change: a sourced attribute going from unset to a value on reparse. That's the freeze.
+- `tests/unit/deprecations-migrate.test.js` renders every deprecation entry's own save() and parses it under the current registration: 86 of 113 entries really migrate, the rest are already current. It also pins `apiVersion` on every entry and the typography support-key allowlist. Proven to fail on a planted missing apiVersion, a style-dropping migrate() and an unprefixed `fontFamily`. It clears console info/warn/error at the end on purpose (WP logs every migration), and jsdom has no `structuredClone`.
+- Adding `apiVersion: 3` to 34 deprecation files was output-neutral: 452 renders were identical with and without it. Every block has been apiVersion 3 since the first commit.
+
 ## 2.7.4 release blockers — fixed on `claude/2-7-4-release-blockers` (agent: release-2.7.4-prep-2026-09-10, session f49439d6)
 
 #545 (audit remediation) shipped four regressions none of its tests covered; each was reproduced live on wp-env before fixing.

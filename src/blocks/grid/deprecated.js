@@ -269,6 +269,7 @@ const sharedSupports = {
 // the variation (and, for overlay, the new overlayColor attribute default
 // of '').
 const styleVariationClasses = {
+	apiVersion: 3,
 	supports: metadata.supports,
 	attributes: { ...metadata.attributes },
 	isEligible(attributes, innerBlocks, extra) {
@@ -523,6 +524,7 @@ const fixedColumnMinWidthTracks = {
 
 // Version 1: Before align attribute - used className for alignment
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		// Old blocks don't have align attribute, only className
@@ -667,6 +669,7 @@ const v1 = {
  * after which the current save() reproduces the (now consistent) markup.
  */
 const legacyResponsiveTabletClass = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		...metadata.attributes,
@@ -815,6 +818,7 @@ const legacyResponsiveTabletClass = {
  * which the current save() reproduces the markup from the attribute as normal.
  */
 const legacyMinWidth = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		...metadata.attributes,

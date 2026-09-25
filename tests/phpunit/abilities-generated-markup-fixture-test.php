@@ -493,6 +493,63 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 				),
 				'innerBlocks' => array(),
 			),
+			// Fallback labels read back from stored markup (a post saved in
+			// another editor language): the serializer must render them, as
+			// save() does, positional CTA texts included.
+			'comparison-table-frozen-labels'              => array(
+				'name'        => 'designsetgo/comparison-table',
+				'attributes'  => array(
+					'featuredBadgeText' => 'Beliebt',
+					'savedCtaTexts'     => array(
+						array( 'text' => 'Loslegen' ),
+						array( 'text' => 'Upgrade' ),
+						array( 'text' => 'Jetzt starten' ),
+					),
+					'columns'           => array(
+						array(
+							'name'     => 'Basis',
+							'link'     => 'https://example.com/basis',
+							'linkText' => '',
+							'featured' => true,
+						),
+						array(
+							'name'     => 'Team',
+							'link'     => 'https://example.com/team',
+							'linkText' => 'Upgrade',
+							'featured' => false,
+						),
+						array(
+							'name'     => 'Frei',
+							'link'     => '',
+							'linkText' => '',
+							'featured' => false,
+						),
+						array(
+							'name'     => 'Firma',
+							'link'     => 'https://example.com/firma',
+							'linkText' => '',
+							'featured' => false,
+						),
+					),
+				),
+				'innerBlocks' => array(),
+			),
+			'hotspot-item-frozen-label'                   => array(
+				'name'        => 'designsetgo/hotspot-item',
+				'attributes'  => array(
+					'uniqueId'        => 'jkl012',
+					'markerAriaLabel' => 'Markierung',
+				),
+				'innerBlocks' => array(),
+			),
+			'modal-frozen-labels'                         => array(
+				'name'        => 'designsetgo/modal',
+				'attributes'  => array(
+					'savedModalLabel'       => 'Dialogfenster',
+					'savedCloseButtonLabel' => 'Dialog schließen',
+				),
+				'innerBlocks' => array(),
+			),
 			'hotspot-item-defaults'                       => array(
 				'name'        => 'designsetgo/hotspot-item',
 				'attributes'  => array( 'uniqueId' => 'abc123' ),

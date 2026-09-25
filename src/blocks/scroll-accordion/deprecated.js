@@ -27,6 +27,7 @@ import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
  * isEligible and picks the deprecation whose save() reproduces the stored HTML.
  */
 const v1 = {
+	apiVersion: 3,
 	// Must mirror block.json exactly. A deprecation's `supports` that omits a
 	// group makes WordPress strip those attributes (backgroundColor, textColor,
 	// gradient, fontSize, style, …) BEFORE migrate() runs — silently.

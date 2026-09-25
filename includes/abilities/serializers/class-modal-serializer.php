@@ -210,6 +210,10 @@ class Modal_Serializer {
 			$close_button_label = isset( $attributes['closeButtonLabel'] ) && is_string( $attributes['closeButtonLabel'] )
 				? trim( $attributes['closeButtonLabel'] )
 				: '';
+			// Then the label read back from the stored markup, as save.js does.
+			if ( '' === $close_button_label && isset( $attributes['savedCloseButtonLabel'] ) && is_string( $attributes['savedCloseButtonLabel'] ) ) {
+				$close_button_label = $attributes['savedCloseButtonLabel'];
+			}
 			if ( '' === $close_button_label ) {
 				$close_button_label = __( 'Close modal', 'designsetgo' );
 			}
@@ -238,10 +242,16 @@ class Modal_Serializer {
 		if ( ! $close_button_is_inside ) {
 			$inner_html .= $close_button_html;
 		}
-		// save.js: modalLabel?.trim() || __( 'Modal' ).
+		// save.js: modalLabel?.trim() || savedModalLabel || __( 'Modal' ).
 		$modal_label = isset( $attributes['modalLabel'] ) && '' !== trim( (string) $attributes['modalLabel'] )
 			? trim( (string) $attributes['modalLabel'] )
-			: __( 'Modal', 'designsetgo' );
+			: '';
+		if ( '' === $modal_label && isset( $attributes['savedModalLabel'] ) && is_string( $attributes['savedModalLabel'] ) ) {
+			$modal_label = $attributes['savedModalLabel'];
+		}
+		if ( '' === $modal_label ) {
+			$modal_label = __( 'Modal', 'designsetgo' );
+		}
 
 		$inner_html .= '<div class="dsgo-modal__content" style="' . esc_attr( $content_style ) . '">';
 

@@ -17,6 +17,7 @@ export default function HotspotItemSave({ attributes }) {
 		originY,
 		label,
 		icon,
+		markerAriaLabel,
 		url,
 		tooltip,
 		tooltipPosition,
@@ -28,9 +29,11 @@ export default function HotspotItemSave({ attributes }) {
 	const markerId = `dsgo-hotspot-marker-${uniqueId || 'item'}`;
 	const tooltipId = `dsgo-hotspot-tooltip-${uniqueId || 'item'}`;
 	const safeUrl = getSafeHotspotUrl(url);
+	// The fallback is read back from the stored markup, so opening the post
+	// in another editor language keeps the block valid.
 	const markerAccessibleLabel =
 		icon || !label || label === '+'
-			? __('Hotspot', 'designsetgo')
+			? markerAriaLabel || __('Hotspot', 'designsetgo')
 			: undefined;
 	const isLinkedMarker = !!safeUrl;
 	const markerProps = {

@@ -286,6 +286,15 @@ class Loader {
 			);
 		}
 
+		// Countdown Timer's unit labels are translated by its view script.
+		if ( wp_script_is( 'designsetgo-countdown-timer-view-script', 'registered' ) ) {
+			wp_set_script_translations(
+				'designsetgo-countdown-timer-view-script',
+				'designsetgo',
+				DESIGNSETGO_PATH . 'languages'
+			);
+		}
+
 		// Scroll Slides block has translatable frontend strings.
 		if ( wp_script_is( 'designsetgo-scroll-slides-view-script', 'registered' ) ) {
 			wp_set_script_translations(

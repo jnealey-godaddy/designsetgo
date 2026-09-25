@@ -280,6 +280,7 @@ const v10Supports = {
  * stays valid and must NOT be matched here — hence the icon-span-specific test.
  */
 const v10 = {
+	apiVersion: 3,
 	attributes: v10Attributes,
 	supports: v10Supports,
 	isEligible(attributes, innerBlocks, extra) {
@@ -430,6 +431,7 @@ const v10 = {
 };
 
 const v9 = {
+	apiVersion: 3,
 	supports: v9Supports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
@@ -608,6 +610,7 @@ const v9 = {
  * verbatim so only the gap markup drives the migration.
  */
 const v8 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
@@ -800,6 +803,7 @@ const v8 = {
  * keep their stored value as an override.
  */
 const v7 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
@@ -979,6 +983,7 @@ const v7 = {
  * - Width attribute "100%" migrated to align: "full"
  */
 const v6 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		text: {
@@ -1189,6 +1194,7 @@ const v6 = {
  * - Width values 50% and 25% migrated to auto
  */
 const v5 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		text: {
@@ -1402,6 +1408,7 @@ const v5 = {
  * - Visual styles moved to outer wrapper (border-radius fix)
  */
 const v4 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		text: {
@@ -1625,6 +1632,7 @@ const v4 = {
  * - Block wrapper is now block-level by default to respect WordPress content width
  */
 const v3 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		text: {
@@ -1827,6 +1835,7 @@ const v3 = {
  * - Editor still uses getIcon() from shared library
  */
 const v2 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		text: {
@@ -2026,6 +2035,7 @@ const v2 = {
  * - Padding is now applied to button wrapper instead of outer div
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		text: {

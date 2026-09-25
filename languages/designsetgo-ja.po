@@ -3447,38 +3447,28 @@ msgid "This message will replace the countdown timer when it reaches zero."
 msgstr "このメッセージは、カウントダウンがゼロに達したときにタイマーを置き換えます。"
 
 #: build/blocks/countdown-timer/index.js:1
-#: src/blocks/countdown-timer/utils/format-time.js:21
-#: src/blocks/countdown-timer/utils/format-time.js:67
+#: build/blocks/countdown-timer/view.js:1
+#: src/blocks/countdown-timer/utils/format-time.js:51
 msgid "Day"
-msgstr "日"
+msgid_plural "Days"
+msgstr[0] "日"
 
 #: build/blocks/countdown-timer/index.js:1
-#: src/blocks/countdown-timer/utils/format-time.js:22
-#: src/blocks/countdown-timer/utils/format-time.js:67
-msgid "Days"
-msgstr "日"
-
-#: build/blocks/countdown-timer/index.js:1
-#: src/blocks/countdown-timer/utils/format-time.js:32
-#: src/blocks/countdown-timer/utils/format-time.js:70
+#: build/blocks/countdown-timer/view.js:1
+#: src/blocks/countdown-timer/utils/format-time.js:53
 msgid "Hour"
-msgstr "時間"
+msgid_plural "Hours"
+msgstr[0] "時間"
 
 #: build/blocks/countdown-timer/index.js:1
-#: src/blocks/countdown-timer/utils/format-time.js:33
-#: src/blocks/countdown-timer/utils/format-time.js:71
-msgid "Hours"
-msgstr "時間"
-
-#: build/blocks/countdown-timer/index.js:1
-#: src/blocks/countdown-timer/utils/format-time.js:41
-#: src/blocks/countdown-timer/utils/format-time.js:72
+#: build/blocks/countdown-timer/view.js:1
+#: src/blocks/countdown-timer/utils/format-time.js:55
 msgid "Min"
 msgstr "分"
 
 #: build/blocks/countdown-timer/index.js:1
-#: src/blocks/countdown-timer/utils/format-time.js:49
-#: src/blocks/countdown-timer/utils/format-time.js:73
+#: build/blocks/countdown-timer/view.js:1
+#: src/blocks/countdown-timer/utils/format-time.js:57
 msgid "Sec"
 msgstr "秒"
 
@@ -16005,9 +15995,10 @@ msgstr ""
 msgid "Accessible Label"
 msgstr ""
 
+#. translators: %s: the label used when this field is left blank.
 #: build/blocks/modal/index.js:1
 #: src/blocks/modal/components/ModalSettings.js:50
-msgid "Describes the modal for screen readers (aria-label). Defaults to \"Modal\" when left blank."
+msgid "Describes the modal for screen readers (aria-label). Defaults to \"%s\" when left blank."
 msgstr ""
 
 #: build/blocks/modal/index.js:1
@@ -16026,9 +16017,10 @@ msgstr ""
 msgid "Close Button Label"
 msgstr ""
 
+#. translators: %s: the label used when this field is left blank.
 #: build/blocks/modal/index.js:1
 #: src/blocks/modal/components/CloseButtonSettings.js:123
-msgid "Accessible label for the close button (aria-label). Defaults to \"Close modal\" when left blank."
+msgid "Accessible label for the close button (aria-label). Defaults to \"%s\" when left blank."
 msgstr ""
 
 #: build/blocks/modal/index.js:1

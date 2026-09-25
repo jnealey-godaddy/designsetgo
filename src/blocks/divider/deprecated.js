@@ -51,6 +51,7 @@ const sharedSupports = {
  * avoiding the "Attempt Recovery" warning.
  */
 const vLazy = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
@@ -125,6 +126,7 @@ const vLazy = {
  * - Frontend icons injected via PHP to avoid bundling 51KB library
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		dividerStyle: {

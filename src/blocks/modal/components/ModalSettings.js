@@ -8,7 +8,7 @@
  * @package
  */
 /* eslint-disable no-nested-ternary */
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	SelectControl,
 	TextControl,
@@ -21,6 +21,7 @@ export default function ModalSettings({ attributes, setAttributes }) {
 	const {
 		modalId,
 		modalLabel,
+		savedModalLabel,
 		width,
 		maxWidth,
 		height,
@@ -39,17 +40,34 @@ export default function ModalSettings({ attributes, setAttributes }) {
 			<DsgoInspectorPanel.Item
 				label={__('Accessible Label', 'designsetgo')}
 				hasValue={() => modalLabel.trim() !== ''}
-				onDeselect={() => setAttributes({ modalLabel: '' })}
+				onDeselect={() =>
+					setAttributes({
+						modalLabel: '',
+						savedModalLabel: undefined,
+					})
+				}
 				isShownByDefault
 			>
 				<TextControl
 					label={__('Accessible Label', 'designsetgo')}
 					value={modalLabel}
-					onChange={(value) => setAttributes({ modalLabel: value })}
-					placeholder={__('Modal', 'designsetgo')}
-					help={__(
-						'Describes the modal for screen readers (aria-label). Defaults to "Modal" when left blank.',
-						'designsetgo'
+					// Any edit drops the label frozen from the stored markup,
+					// so clearing the field falls back to the default, not
+					// to a custom label that was saved earlier.
+					onChange={(value) =>
+						setAttributes({
+							modalLabel: value,
+							savedModalLabel: undefined,
+						})
+					}
+					placeholder={savedModalLabel || __('Modal', 'designsetgo')}
+					help={sprintf(
+						/* translators: %s: the label used when this field is left blank. */
+						__(
+							'Describes the modal for screen readers (aria-label). Defaults to "%s" when left blank.',
+							'designsetgo'
+						),
+						savedModalLabel || __('Modal', 'designsetgo')
 					)}
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom

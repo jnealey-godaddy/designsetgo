@@ -45,6 +45,7 @@ const sharedAttributes = {
  * The last static markup, immediately before the block became server-rendered.
  */
 const vStatic = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
@@ -162,6 +163,7 @@ const vStatic = {
  * input fields. Kept for provenance; vStatic already covers this content.
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 

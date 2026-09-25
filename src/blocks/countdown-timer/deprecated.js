@@ -41,7 +41,7 @@ const sharedSupports = {
 	typography: {
 		fontSize: true,
 		lineHeight: true,
-		fontWeight: true,
+		__experimentalFontWeight: true,
 		textAlign: true,
 		__experimentalDefaultControls: {
 			fontSize: true,
@@ -126,6 +126,7 @@ const v3Supports = {
  * — there is no `innerHTML` key on that third argument.
  */
 const v3 = {
+	apiVersion: 3,
 	supports: v3Supports,
 	attributes: {
 		targetDateTime: { type: 'string', default: '' },
@@ -284,6 +285,7 @@ const v3 = {
 };
 
 const v2 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		targetDateTime: {
@@ -537,6 +539,7 @@ const v2 = {
  * - Removed unitBorderRadius attribute (now uses __experimentalBorder support)
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		targetDateTime: {

@@ -1,7 +1,7 @@
 /**
  * WordPress dependencies
  */
-import { __ } from '@wordpress/i18n';
+import { __, _n } from '@wordpress/i18n';
 
 /**
  * Format countdown time for display
@@ -12,43 +12,23 @@ import { __ } from '@wordpress/i18n';
  */
 export function formatCountdownDisplay(timeData, visibilitySettings) {
 	const units = [];
+	const add = (type, value) =>
+		units.push({ value, label: getUnitLabel(type, value), type });
 
 	if (visibilitySettings.showDays) {
-		units.push({
-			value: timeData.days,
-			label:
-				timeData.days === 1
-					? __('Day', 'designsetgo')
-					: __('Days', 'designsetgo'),
-			type: 'days',
-		});
+		add('days', timeData.days);
 	}
 
 	if (visibilitySettings.showHours) {
-		units.push({
-			value: timeData.hours,
-			label:
-				timeData.hours === 1
-					? __('Hour', 'designsetgo')
-					: __('Hours', 'designsetgo'),
-			type: 'hours',
-		});
+		add('hours', timeData.hours);
 	}
 
 	if (visibilitySettings.showMinutes) {
-		units.push({
-			value: timeData.minutes,
-			label: __('Min', 'designsetgo'),
-			type: 'minutes',
-		});
+		add('minutes', timeData.minutes);
 	}
 
 	if (visibilitySettings.showSeconds) {
-		units.push({
-			value: timeData.seconds,
-			label: __('Sec', 'designsetgo'),
-			type: 'seconds',
-		});
+		add('seconds', timeData.seconds);
 	}
 
 	return units;
@@ -57,21 +37,25 @@ export function formatCountdownDisplay(timeData, visibilitySettings) {
 /**
  * Get unit label (singular or plural)
  *
+ * Days and hours go through _n() so each language applies its own plural
+ * rule: French treats 0 as singular, Russian has three forms. Minutes and
+ * seconds are abbreviations with no plural.
+ *
  * @param {string} unitType - Type of unit (days, hours, minutes, seconds)
  * @param {number} value    - Value of the unit
  * @return {string} Label for the unit
  */
 export function getUnitLabel(unitType, value) {
-	const labels = {
-		days:
-			value === 1 ? __('Day', 'designsetgo') : __('Days', 'designsetgo'),
-		hours:
-			value === 1
-				? __('Hour', 'designsetgo')
-				: __('Hours', 'designsetgo'),
-		minutes: __('Min', 'designsetgo'),
-		seconds: __('Sec', 'designsetgo'),
-	};
+	switch (unitType) {
+		case 'days':
+			return _n('Day', 'Days', value, 'designsetgo');
+		case 'hours':
+			return _n('Hour', 'Hours', value, 'designsetgo');
+		case 'minutes':
+			return __('Min', 'designsetgo');
+		case 'seconds':
+			return __('Sec', 'designsetgo');
+	}
 
-	return labels[unitType] || '';
+	return '';
 }

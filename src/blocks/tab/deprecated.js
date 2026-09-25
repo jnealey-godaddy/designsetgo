@@ -21,8 +21,8 @@ const sharedSupports = {
 	typography: {
 		fontSize: true,
 		lineHeight: true,
-		fontFamily: true,
-		fontWeight: true,
+		__experimentalFontFamily: true,
+		__experimentalFontWeight: true,
 	},
 };
 
@@ -32,6 +32,7 @@ const sharedSupports = {
  * - Blocks with icons always output data-icon-position="left"
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 
 	// No isEligible: this is a MARKUP-change deprecation, and WordPress only

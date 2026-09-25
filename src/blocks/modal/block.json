@@ -98,6 +98,12 @@
 			"type": "string",
 			"default": ""
 		},
+		"savedModalLabel": {
+			"type": "string",
+			"source": "attribute",
+			"selector": ".dsgo-modal",
+			"attribute": "aria-label"
+		},
 		"allowHashTrigger": {
 			"type": "boolean",
 			"default": true
@@ -246,6 +252,12 @@
 		"closeButtonLabel": {
 			"type": "string",
 			"default": ""
+		},
+		"savedCloseButtonLabel": {
+			"type": "string",
+			"source": "attribute",
+			"selector": ".dsgo-modal__close",
+			"attribute": "aria-label"
 		},
 		"closeButtonIconColor": {
 			"type": "string",

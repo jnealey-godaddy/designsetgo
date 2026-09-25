@@ -79,6 +79,7 @@ const currentSupports = {
 };
 
 const v4 = {
+	apiVersion: 3,
 	attributes: {
 		rows: {
 			type: 'array',
@@ -193,6 +194,7 @@ const v4 = {
 };
 
 const v3 = {
+	apiVersion: 3,
 	attributes: {
 		rows: {
 			type: 'array',
@@ -308,6 +310,7 @@ const v3 = {
 };
 
 const v2 = {
+	apiVersion: 3,
 	attributes: {
 		rows: {
 			type: 'array',
@@ -536,6 +539,7 @@ function migrateHtmlSourced(attributes) {
 }
 
 const v1ObjectFit = {
+	apiVersion: 3,
 	attributes: {
 		rows: htmlSourcedRows,
 		scrollSpeed: {
@@ -648,6 +652,7 @@ const v1ObjectFit = {
 };
 
 const v1 = {
+	apiVersion: 3,
 	attributes: {
 		rows: htmlSourcedRows,
 		scrollSpeed: {

@@ -43,6 +43,7 @@ const sharedAttributes = {
  * The last static markup, immediately before the block became server-rendered.
  */
 const vStatic = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 

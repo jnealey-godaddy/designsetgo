@@ -118,6 +118,7 @@ const sharedSupports = {
  * only invalid old markup migrates.
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 
 	attributes: {
@@ -261,6 +262,7 @@ const v1 = {
  * (see commit "drop force-migrating isEligible from image-accordion").
  */
 const v2 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 
 	attributes: {

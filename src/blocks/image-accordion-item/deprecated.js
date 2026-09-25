@@ -22,6 +22,7 @@ import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
 const v1 = {
+	apiVersion: 3,
 	attributes: metadata.attributes,
 	supports: metadata.supports,
 	usesContext: metadata.usesContext,

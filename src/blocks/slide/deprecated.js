@@ -19,10 +19,10 @@ const sharedSupports = {
 	typography: {
 		fontSize: true,
 		lineHeight: true,
-		fontFamily: true,
-		fontWeight: true,
-		textTransform: true,
-		letterSpacing: true,
+		__experimentalFontFamily: true,
+		__experimentalFontWeight: true,
+		__experimentalTextTransform: true,
+		__experimentalLetterSpacing: true,
 	},
 };
 
@@ -35,6 +35,7 @@ const sharedSupports = {
  * - Changed default overlayOpacity from 40 to 80
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		backgroundImage: {

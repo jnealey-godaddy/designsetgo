@@ -363,7 +363,7 @@ describe('Countdown Timer - Frontend', () => {
 			expect(observer.observe).toHaveBeenCalled();
 		});
 
-		test('does not initialize until element is in viewport', () => {
+		test('shows values at once but only ticks once in the viewport', () => {
 			const target = futureDate({ days: 5 });
 			const timer = createTimerFixture({
 				targetDatetime: target,
@@ -371,14 +371,17 @@ describe('Countdown Timer - Frontend', () => {
 
 			const observer = loadView();
 
-			// Before intersection: numbers should remain at the initial "00"
-			expect(getUnitNumber(timer, 'days')).toBe('00');
+			// Before intersection: the saved "00" and untranslated labels are
+			// already replaced, so a timer below the fold never shows them...
+			expect(getUnitNumber(timer, 'days')).toBe('05');
+			// ...but nothing ticks until the timer is near the viewport.
+			expect(jest.getTimerCount()).toBe(0);
 
 			// Simulate entering viewport
 			simulateIntersection(observer, timer);
 
-			// After intersection: numbers should be updated
 			expect(getUnitNumber(timer, 'days')).toBe('05');
+			expect(jest.getTimerCount()).toBeGreaterThan(0);
 		});
 	});
 });

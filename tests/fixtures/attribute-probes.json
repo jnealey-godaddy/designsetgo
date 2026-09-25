@@ -342,6 +342,13 @@
             ]
           }
         ]
+      },
+      "savedCtaTexts": {
+        "probe": [
+          {
+            "text": "Probe CTA"
+          }
+        ]
       }
     },
     "designsetgo/countdown-timer": {

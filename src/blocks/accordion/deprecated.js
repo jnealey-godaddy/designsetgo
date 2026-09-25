@@ -7,6 +7,7 @@ import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 // colors were unset; current save() omits them. Markup-only change → passthrough
 // migrate. isEligible matches the legacy empty-declaration signature.
 const v1 = {
+	apiVersion: 3,
 	attributes: {
 		allowMultipleOpen: {
 			type: 'boolean',

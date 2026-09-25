@@ -3,7 +3,9 @@
 	--dsgo-hotspot-translate-y: -50%;
 
 	position: absolute;
-	width: 2.5rem;
+	// Sized by the marker, so a text label stays centred on its point.
+	width: max-content;
+	min-width: 2.5rem;
 	height: 2.5rem;
 	left: var(--dsgo-hotspot-x);
 	top: var(--dsgo-hotspot-y);
@@ -32,13 +34,19 @@
 	:where(.dsgo-hotspot-item__marker) {
 		display: inline-grid;
 		place-items: center;
-		width: 2.5rem;
+		// A circle for "+", an icon or a short number; a pill that fits the
+		// text for a longer label instead of overflowing the circle.
+		min-width: 2.5rem;
 		height: 2.5rem;
-		padding: 0;
+		padding: 0 .5rem;
 		color: var(--dsgo-hotspot-marker-color);
 		background: var(--dsgo-hotspot-marker-background);
 		border: 0;
-		border-radius: 50%;
+		border-radius: 1.25rem;
+		font-family: inherit;
+		font-size: .875rem;
+		line-height: 1;
+		white-space: nowrap;
 		text-decoration: none;
 		cursor: pointer;
 	}

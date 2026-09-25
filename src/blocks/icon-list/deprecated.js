@@ -27,6 +27,7 @@ const MIN_WIDTH_RE = /minmax\(\s*min\(\s*100%\s*,\s*([0-9.]+[a-z%]+)/i;
  * save() reproduces the markup from the attribute as normal.
  */
 const v1 = {
+	apiVersion: 3,
 	supports: metadata.supports,
 	attributes: {
 		...metadata.attributes,

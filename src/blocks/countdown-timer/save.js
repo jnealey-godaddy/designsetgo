@@ -71,7 +71,12 @@ export default function save({ attributes }) {
 		'data-completion-action': completionAction,
 	});
 
-	// Build initial display (will be updated by frontend JS)
+	// Build initial display (will be updated by frontend JS).
+	//
+	// The labels stay untranslated literals on purpose: __() here would bake
+	// the author's editor language into the post, and the block would turn
+	// invalid when opened in another language. view.js swaps in translated
+	// labels (utils/format-time.js) as soon as it runs.
 	const units = [];
 
 	if (showDays) {
