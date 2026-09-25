@@ -5,9 +5,9 @@
  * Includes data attributes for tooltip behavior handled by view.js.
  */
 
-import { __ } from '@wordpress/i18n';
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { getCtaFallback, getFeaturedBadgeText } from './utils/fallback-labels';
 
 /**
  * Save component for the Comparison Table block
@@ -32,12 +32,7 @@ export default function ComparisonTableSave({ attributes }) {
 	} = attributes;
 
 	// Fallback labels are read back from the stored markup, so opening the
-	// post in another editor language keeps the block valid. Stored CTA links
-	// appear in column order, one per column that has a link.
-	const ctaFallback = (colIndex) =>
-		savedCtaTexts?.[
-			columns.slice(0, colIndex).filter((col) => col.link).length
-		]?.text || __('Get Started', 'designsetgo');
+	// post in another editor language keeps the block valid.
 
 	const blockProps = useBlockProps.save({
 		className: [
@@ -91,8 +86,9 @@ export default function ComparisonTableSave({ attributes }) {
 								>
 									{col.featured && (
 										<span className="dsgo-comparison-table__featured-badge">
-											{featuredBadgeText ||
-												__('Popular', 'designsetgo')}
+											{getFeaturedBadgeText(
+												featuredBadgeText
+											)}
 										</span>
 									)}
 
@@ -109,7 +105,11 @@ export default function ComparisonTableSave({ attributes }) {
 											rel="noopener noreferrer"
 										>
 											{col.linkText ||
-												ctaFallback(colIndex)}
+												getCtaFallback(
+													columns,
+													savedCtaTexts,
+													colIndex
+												)}
 										</a>
 									)}
 

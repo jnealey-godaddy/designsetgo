@@ -89,7 +89,11 @@ class Hotspot_Item_Serializer {
 		// save.js labels the marker only when its visible content is not
 		// meaningful text.
 		if ( '' !== $item_icon || '' === $item_label || '+' === $item_label ) {
-			$marker_attrs .= ' aria-label="' . esc_attr__( 'Hotspot', 'designsetgo' ) . '"';
+			// save.js: markerAriaLabel (read back from the stored markup) || __().
+			$marker_label  = isset( $attributes['markerAriaLabel'] ) && is_string( $attributes['markerAriaLabel'] ) && '' !== $attributes['markerAriaLabel']
+				? $attributes['markerAriaLabel']
+				: __( 'Hotspot', 'designsetgo' );
+			$marker_attrs .= ' aria-label="' . esc_attr( $marker_label ) . '"';
 		}
 		$marker_attrs .= ' data-dsgo-hotspot-marker="true"';
 

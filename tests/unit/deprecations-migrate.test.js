@@ -81,6 +81,27 @@ const STYLE_PROBE = {
 };
 
 /**
+ * Whether a console message is WordPress's own parse log.
+ *
+ * The block validator prefixes everything with "Block validation: ", and a
+ * migration logs "Block successfully updated for". The one validator message
+ * that reports save() throwing is excluded, so that failure still surfaces.
+ *
+ * @param {*} message First console argument.
+ * @return {boolean} Whether the message may be cleared.
+ */
+function isWordPressBlockLog(message) {
+	const text = String(message);
+	if (text.includes('an error occurred while generating block content')) {
+		return false;
+	}
+	return (
+		text.startsWith('Block validation: ') ||
+		text.startsWith('Block successfully updated for')
+	);
+}
+
+/**
  * Mirrors @wordpress/blocks' serializeAttributes() escaping, so a probe value
  * can never close the block comment early.
  *
@@ -225,11 +246,21 @@ describe('deprecation entries', () => {
 			// WordPress logs every migration (console.info) and every failed
 			// validation (console.warn / console.error). Validity is asserted
 			// above instead, so drop those logs before @wordpress/jest-console
-			// treats them as unexpected.
-			['info', 'warn', 'error'].forEach((method) =>
+			// treats them as unexpected, but only those: anything else, such
+			// as a React warning or an error thrown inside save(), fails the
+			// test instead of being cleared with them.
+			['info', 'warn', 'error'].forEach((method) => {
 				// eslint-disable-next-line no-console
-				console[method].mockClear?.()
-			);
+				const mock = console[method];
+				(mock.mock?.calls ?? []).forEach(([message]) => {
+					if (!isWordPressBlockLog(message)) {
+						failures.push(
+							`unexpected console.${method}: ${String(message).slice(0, 200)}`
+						);
+					}
+				});
+				mock.mockClear?.();
+			});
 			expect(failures).toEqual([]);
 		});
 	});

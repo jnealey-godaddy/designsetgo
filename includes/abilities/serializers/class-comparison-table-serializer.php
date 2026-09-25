@@ -70,6 +70,18 @@ class Comparison_Table_Serializer {
 			}
 		}
 
+		// save.js reads both fallback labels back from the stored markup
+		// (featuredBadgeText, savedCtaTexts), so a post opened in another
+		// editor language keeps them; mirror that, defaulting to __().
+		$badge_text      = isset( $attributes['featuredBadgeText'] ) && is_string( $attributes['featuredBadgeText'] ) && '' !== $attributes['featuredBadgeText']
+			? $attributes['featuredBadgeText']
+			: __( 'Popular', 'designsetgo' );
+		$saved_cta_texts = isset( $attributes['savedCtaTexts'] ) && is_array( $attributes['savedCtaTexts'] )
+			? array_values( $attributes['savedCtaTexts'] )
+			: array();
+		// savedCtaTexts is positional: one entry per column with a link.
+		$cta_position = 0;
+
 		// Header row.
 		$header_cells = '<th class="dsgo-comparison-table__header-cell dsgo-comparison-table__header-cell--label"></th>';
 		foreach ( $table_columns as $column ) {
@@ -83,16 +95,26 @@ class Comparison_Table_Serializer {
 			) . '">';
 
 			if ( $col_featured ) {
-				$header_cells .= '<span class="dsgo-comparison-table__featured-badge">' . esc_html__( 'Popular', 'designsetgo' ) . '</span>';
+				$header_cells .= '<span class="dsgo-comparison-table__featured-badge">' . esc_html( $badge_text ) . '</span>';
 			}
 
 			$header_cells .= '<span class="dsgo-comparison-table__column-name">' . wp_kses_post( $col_name ) . '</span>';
 
+			$saved_cta_text = '';
+			if ( '' !== $col_link ) {
+				$saved_entry = isset( $saved_cta_texts[ $cta_position ] ) ? $saved_cta_texts[ $cta_position ] : null;
+				if ( is_array( $saved_entry ) && isset( $saved_entry['text'] ) && is_string( $saved_entry['text'] ) ) {
+					$saved_cta_text = $saved_entry['text'];
+				}
+				++$cta_position;
+			}
+
 			if ( $show_ctas && '' !== $col_link ) {
+				$cta_fallback  = '' !== $saved_cta_text ? $saved_cta_text : __( 'Get Started', 'designsetgo' );
 				$header_cells .= '<a href="' . esc_url( $col_link ) . '" class="' .
 					esc_attr( 'dsgo-comparison-table__cta dsgo-comparison-table__cta--' . $cta_style ) .
 					'" rel="noopener noreferrer">' .
-					esc_html( '' !== $col_link_text ? $col_link_text : __( 'Get Started', 'designsetgo' ) ) .
+					esc_html( '' !== $col_link_text ? $col_link_text : $cta_fallback ) .
 					'</a>';
 			} elseif ( $show_ctas && '' !== $col_link_text ) {
 				$header_cells .= '<span class="' .

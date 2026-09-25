@@ -8,7 +8,7 @@
  * @package
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	RangeControl,
 	SelectControl,
@@ -133,9 +133,14 @@ export default function CloseButtonSettings({ attributes, setAttributes }) {
 							savedCloseButtonLabel ||
 							__('Close modal', 'designsetgo')
 						}
-						help={__(
-							'Accessible label for the close button (aria-label). Defaults to "Close modal" when left blank.',
-							'designsetgo'
+						help={sprintf(
+							/* translators: %s: the label used when this field is left blank. */
+							__(
+								'Accessible label for the close button (aria-label). Defaults to "%s" when left blank.',
+								'designsetgo'
+							),
+							savedCloseButtonLabel ||
+								__('Close modal', 'designsetgo')
 						)}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom

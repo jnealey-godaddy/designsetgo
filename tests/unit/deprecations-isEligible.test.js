@@ -125,6 +125,22 @@ function probesFor(name) {
 	return probes;
 }
 
+/**
+ * Markup-sourced attributes that hold a translated fallback label read back
+ * from the stored HTML, so the block stays valid when the post is opened in
+ * another editor language. They are unset on a fresh block and take the
+ * rendered default on the first reparse, which is the one change the
+ * round-trip test accepts. List each one by name: a blanket allowance for
+ * every sourced attribute would also hide a real content attribute that
+ * started coming back with a value it was never given.
+ */
+const FROZEN_FALLBACKS = {
+	'designsetgo/card': ['badgeAriaLabel', 'imageFallbackAlt'],
+	'designsetgo/comparison-table': ['featuredBadgeText', 'savedCtaTexts'],
+	'designsetgo/hotspot-item': ['markerAriaLabel'],
+	'designsetgo/modal': ['savedModalLabel', 'savedCloseButtonLabel'],
+};
+
 describe('deprecations must not reclaim current content', () => {
 	beforeAll(() => {
 		blocksWithDeprecations.forEach(registerDesignSetGoBlock);
@@ -171,19 +187,18 @@ describe('deprecations must not reclaim current content', () => {
 
 		it('round-trips its attributes without migration', () => {
 			const lost = [];
-			const schema = getBlockType(name).attributes ?? {};
+			const frozen = FROZEN_FALLBACKS[name] ?? [];
 
 			probesFor(name).forEach(({ label, attrs }) => {
 				const block = createBlock(name, attrs);
 				const [reparsed] = parse(serialize(block));
-				// A markup-sourced attribute left unset is read back from the
-				// saved HTML on the next parse. That is how a translated
-				// fallback label is frozen (e.g. modal `savedModalLabel`), so
-				// unset → value is expected; any other change is a loss.
+				// A frozen fallback label left unset is read back from the
+				// saved HTML on the next parse (see FROZEN_FALLBACKS), so
+				// unset → value is expected for those; any other change is
+				// a loss.
 				const expected = { ...block.attributes };
-				Object.keys(schema).forEach((attr) => {
+				frozen.forEach((attr) => {
 					if (
-						schema[attr].source &&
 						expected[attr] === undefined &&
 						reparsed.attributes[attr] !== undefined
 					) {

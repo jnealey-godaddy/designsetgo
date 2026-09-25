@@ -8,7 +8,7 @@
  * @package
  */
 /* eslint-disable no-nested-ternary */
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	SelectControl,
 	TextControl,
@@ -61,9 +61,13 @@ export default function ModalSettings({ attributes, setAttributes }) {
 						})
 					}
 					placeholder={savedModalLabel || __('Modal', 'designsetgo')}
-					help={__(
-						'Describes the modal for screen readers (aria-label). Defaults to "Modal" when left blank.',
-						'designsetgo'
+					help={sprintf(
+						/* translators: %s: the label used when this field is left blank. */
+						__(
+							'Describes the modal for screen readers (aria-label). Defaults to "%s" when left blank.',
+							'designsetgo'
+						),
+						savedModalLabel || __('Modal', 'designsetgo')
 					)}
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
