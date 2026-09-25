@@ -72,6 +72,7 @@
     "@wordpress/env": "^11.16.0",
     "@wordpress/eslint-plugin": "^24.5.0",
     "@wordpress/scripts": "^35.0.0",
+    "@wordpress/stylelint-config": "^23.42.0",
     "babel-jest": "^30.2.0",
     "cross-env": "^10.1.0",
     "eslint": "^8.57.1",

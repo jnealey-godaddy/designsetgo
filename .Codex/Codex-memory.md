@@ -6,3 +6,4 @@
 - `@wordpress/env` 10.35.0 brings in `extract-zip` 1.7.0. `@wordpress/scripts` 31.6.0 brings in two copies of 2.0.1 through Puppeteer and Lighthouse.
 - Updating to `@wordpress/env` 11.16.0 and `@wordpress/scripts` 35.0.0 removes every `extract-zip` entry from the npm lockfile. The Lighthouse toolchain now requires Node 22.19 or newer, so CI and deployment use Node 24.
 - `@wordpress/scripts` 35 uses ESLint 10 and ignores this repo's `.eslintrc.js`. Keep ESLint 8 and the WordPress ESLint plugin 24 as explicit lint dependencies until the project migrates its rules to flat config.
+- Keep `@wordpress/stylelint-config` 23 as a direct dependency for `.stylelintrc.json`. A local parent checkout can otherwise mask its absence, while clean CI fails to resolve it. Version 23 supports the repository's Stylelint 16 peer tree.
