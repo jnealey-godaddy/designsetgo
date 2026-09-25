@@ -227,7 +227,7 @@
 // ===================
 // HORIZONTAL TIMELINE LAYOUT (desktop only)
 // ===================
-@include from($breakpoint-mobile) {
+@media (min-width: #{$breakpoint-mobile + 1px}) {
 
 	.dsgo-timeline--horizontal {
 
@@ -257,7 +257,7 @@
 // ===================
 // MOBILE RESPONSIVE
 // ===================
-@include below($breakpoint-mobile) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	// All timeline items (vertical alternating, vertical-right, and horizontal)
 	// use vertical-right style on mobile

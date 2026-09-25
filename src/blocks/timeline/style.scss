@@ -129,7 +129,7 @@
 	// ===================
 	&.dsgo-timeline--horizontal {
 		// Only apply horizontal styles on larger screens
-		@include from($breakpoint-mobile) {
+		@media (min-width: #{$breakpoint-mobile + 1px}) {
 			overflow-x: auto;
 			padding-bottom: var(--wp--preset--spacing--40, 1rem);
 
@@ -159,7 +159,7 @@
 		}
 
 		// Mobile: use vertical layout styles instead
-		@include below($breakpoint-mobile) {
+		@media (max-width: #{$breakpoint-mobile}) {
 			// Inherit vertical-right layout behavior
 			--dsgo-timeline-edge-inset: calc(var(--dsgo-timeline-marker-size) / 2 + 0.25rem);
 
@@ -302,7 +302,7 @@
 // ===================
 // RESPONSIVE STYLES
 // ===================
-@include below($breakpoint-mobile) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-timeline {
 		// Simplify alternating to single-side on mobile

@@ -262,7 +262,7 @@
 	// ========================================
 	// RESPONSIVE ADJUSTMENTS
 	// ========================================
-	@include below($breakpoint-mobile) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		&--icon {
 
