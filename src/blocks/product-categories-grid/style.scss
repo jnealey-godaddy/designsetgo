@@ -47,7 +47,9 @@
 		border-radius: inherit;
 		aspect-ratio: var(--dsgo-pcg-aspect-ratio, 3 / 4);
 		text-decoration: none;
-		color: var(--wp--preset--color--base, #fff);
+		// White on purpose: the title sits on a photo under a dark scrim, so a
+		// themed color could make it unreadable.
+		color: #fff;
 
 		// Subtle background visible when no image is set.
 		background-color: rgba(0, 0, 0, 0.12);
