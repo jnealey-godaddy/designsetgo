@@ -162,9 +162,17 @@ function CellContent({ cell, rowIndex, colIndex, onCellChange }) {
  */
 export default function ComparisonTableEdit({
 	attributes,
-	setAttributes,
+	setAttributes: setBlockAttributes,
 	clientId,
 }) {
+	// Any column edit drops the CTA labels frozen from the stored markup (see
+	// save.js): they are matched to columns by position, which the edit may
+	// have just changed.
+	const setAttributes = (next) =>
+		setBlockAttributes(
+			'columns' in next ? { ...next, savedCtaTexts: undefined } : next
+		);
+
 	const {
 		columns,
 		rows,

@@ -2,6 +2,8 @@
  * Frontend JavaScript for Countdown Timer block
  */
 
+import { getUnitLabel } from './utils/format-time';
+
 /**
  * Calculate time remaining until target date
  *
@@ -57,23 +59,6 @@ function calculateTimeRemaining(targetDateTime) {
  */
 function formatTimeUnit(value) {
 	return value < 10 ? `0${value}` : `${value}`;
-}
-
-/**
- * Get unit label (singular/plural)
- *
- * @param {string} unitType - Type of unit
- * @param {number} value    - Current value
- * @return {string} Label text
- */
-function getUnitLabel(unitType, value) {
-	const labels = {
-		days: value === 1 ? 'Day' : 'Days',
-		hours: value === 1 ? 'Hour' : 'Hours',
-		minutes: 'Min',
-		seconds: 'Sec',
-	};
-	return labels[unitType] || '';
 }
 
 /**

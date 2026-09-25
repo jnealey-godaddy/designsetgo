@@ -27,7 +27,17 @@ export default function ComparisonTableSave({ attributes }) {
 		headerTextColor,
 		showCtaButtons,
 		ctaStyle,
+		featuredBadgeText,
+		savedCtaTexts,
 	} = attributes;
+
+	// Fallback labels are read back from the stored markup, so opening the
+	// post in another editor language keeps the block valid. Stored CTA links
+	// appear in column order, one per column that has a link.
+	const ctaFallback = (colIndex) =>
+		savedCtaTexts?.[
+			columns.slice(0, colIndex).filter((col) => col.link).length
+		]?.text || __('Get Started', 'designsetgo');
 
 	const blockProps = useBlockProps.save({
 		className: [
@@ -81,7 +91,8 @@ export default function ComparisonTableSave({ attributes }) {
 								>
 									{col.featured && (
 										<span className="dsgo-comparison-table__featured-badge">
-											{__('Popular', 'designsetgo')}
+											{featuredBadgeText ||
+												__('Popular', 'designsetgo')}
 										</span>
 									)}
 
@@ -98,10 +109,7 @@ export default function ComparisonTableSave({ attributes }) {
 											rel="noopener noreferrer"
 										>
 											{col.linkText ||
-												__(
-													'Get Started',
-													'designsetgo'
-												)}
+												ctaFallback(colIndex)}
 										</a>
 									)}
 

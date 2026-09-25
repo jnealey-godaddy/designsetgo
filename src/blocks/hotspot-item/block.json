@@ -17,6 +17,7 @@
     "originY": { "type": "string", "default": "center", "enum": ["top", "center", "bottom"] },
     "label": { "type": "string", "default": "+" },
     "icon": { "type": "string", "default": "" },
+    "markerAriaLabel": { "type": "string", "source": "attribute", "selector": ".dsgo-hotspot-item__marker", "attribute": "aria-label" },
     "url": { "type": "string", "default": "" },
     "tooltip": { "type": "string", "default": "Add a description" },
     "tooltipPosition": { "type": "string", "default": "inherit", "enum": ["inherit", "top", "right", "bottom", "left"] },

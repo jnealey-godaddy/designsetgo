@@ -80,6 +80,22 @@
 				}
 			]
 		},
+		"featuredBadgeText": {
+			"type": "string",
+			"source": "text",
+			"selector": ".dsgo-comparison-table__featured-badge"
+		},
+		"savedCtaTexts": {
+			"type": "array",
+			"source": "query",
+			"selector": "a.dsgo-comparison-table__cta",
+			"query": {
+				"text": {
+					"type": "string",
+					"source": "text"
+				}
+			}
+		},
 		"rows": {
 			"type": "array",
 			"default": [

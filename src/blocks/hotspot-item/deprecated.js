@@ -19,9 +19,9 @@ const v1 = {
 		const needsAccessibleLabel =
 			attributes.icon || !attributes.label || attributes.label === '+';
 
-		return (
-			needsAccessibleLabel && !innerHTML.includes('aria-label="Hotspot"')
-		);
+		// Match any label, not the English one: a marker saved in another
+		// editor language carries a translated aria-label and is current.
+		return needsAccessibleLabel && !innerHTML.includes(' aria-label="');
 	},
 	save({ attributes }) {
 		const {

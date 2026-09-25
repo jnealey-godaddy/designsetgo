@@ -171,12 +171,27 @@ describe('deprecations must not reclaim current content', () => {
 
 		it('round-trips its attributes without migration', () => {
 			const lost = [];
+			const schema = getBlockType(name).attributes ?? {};
 
 			probesFor(name).forEach(({ label, attrs }) => {
 				const block = createBlock(name, attrs);
 				const [reparsed] = parse(serialize(block));
+				// A markup-sourced attribute left unset is read back from the
+				// saved HTML on the next parse. That is how a translated
+				// fallback label is frozen (e.g. modal `savedModalLabel`), so
+				// unset → value is expected; any other change is a loss.
+				const expected = { ...block.attributes };
+				Object.keys(schema).forEach((attr) => {
+					if (
+						schema[attr].source &&
+						expected[attr] === undefined &&
+						reparsed.attributes[attr] !== undefined
+					) {
+						expected[attr] = reparsed.attributes[attr];
+					}
+				});
 				try {
-					expect(reparsed.attributes).toEqual(block.attributes);
+					expect(reparsed.attributes).toEqual(expected);
 				} catch {
 					lost.push(label);
 				}
