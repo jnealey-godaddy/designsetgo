@@ -58,6 +58,7 @@ export default function IconButtonSave({ attributes }) {
 		hoverTextColor,
 		style,
 		modalCloseId,
+		ariaLabel,
 	} = attributes;
 
 	// The wrapper is the block root: a plain block-level box that core's
@@ -158,6 +159,9 @@ export default function IconButtonSave({ attributes }) {
 				})}
 				{...(!url && { type: 'button' })}
 				{...(modalCloseId && { 'data-dsgo-modal-close': modalCloseId })}
+				// Accessible name for icon-only buttons. Omitted when unset so
+				// existing buttons stay byte-identical (no migration needed).
+				{...(ariaLabel && { 'aria-label': ariaLabel })}
 			>
 				{hasIcon && (
 					<span

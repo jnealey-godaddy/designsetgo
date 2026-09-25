@@ -10,6 +10,11 @@
  * save() no longer emits; this deprecation reproduces the old markup and
  * migrates them silently (attribute schema is unchanged).
  *
+ * v2: Save before the track carried `role="progressbar"` and its
+ * `aria-value*` / `aria-label` attributes. Markup-only change, so no
+ * isEligible: the stored HTML no longer matches the current save(), and this
+ * frozen copy reproduces it.
+ *
  * @package
  */
 
@@ -18,7 +23,112 @@ import metadata from './block.json';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
 
+const v2 = {
+	apiVersion: 3,
+	attributes: metadata.attributes,
+	supports: metadata.supports,
+	save({ attributes }) {
+		const {
+			percentage,
+			barColor,
+			barBackgroundColor,
+			height,
+			borderRadius,
+			showLabel,
+			labelText,
+			showPercentage,
+			labelPosition,
+			barStyle,
+			animateOnScroll,
+			animationDuration,
+			stripedAnimation,
+		} = attributes;
+
+		const barWidth = Math.min(Math.max(percentage, 0), 100);
+
+		const barFillColor = convertColorToCSSVar(barColor);
+		const barTrackColor = convertColorToCSSVar(barBackgroundColor);
+
+		const barFillStyles = {
+			width: animateOnScroll ? '0%' : `${barWidth}%`,
+			height: '100%',
+			backgroundColor: barFillColor || undefined,
+			transition: `width ${animationDuration}s ease-out`,
+			borderRadius,
+		};
+
+		if (barStyle === 'striped' || barStyle === 'striped-animated') {
+			barFillStyles.backgroundImage =
+				'linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent)';
+			barFillStyles.backgroundSize = '1rem 1rem';
+		}
+
+		const barContainerStyles = {
+			width: '100%',
+			height,
+			backgroundColor: barTrackColor || undefined,
+			borderRadius,
+			overflow: 'hidden',
+			position: 'relative',
+		};
+
+		const displayText = (() => {
+			const parts = [];
+			if (showLabel && labelText) {
+				parts.push(labelText);
+			}
+			if (showPercentage) {
+				parts.push(`${barWidth}%`);
+			}
+			return parts.join(' - ');
+		})();
+
+		const blockProps = useBlockProps.save({
+			className: `dsgo-progress-bar ${animateOnScroll ? 'dsgo-progress-bar--animate' : ''}`,
+			'data-percentage': animateOnScroll ? barWidth : undefined,
+			'data-duration': animateOnScroll ? animationDuration : undefined,
+		});
+
+		return (
+			<div {...blockProps}>
+				{displayText && labelPosition === 'top' && (
+					<div className="dsgo-progress-bar__label dsgo-progress-bar__label--top">
+						{displayText}
+					</div>
+				)}
+
+				<div
+					className="dsgo-progress-bar__container"
+					style={barContainerStyles}
+				>
+					<div
+						className={`dsgo-progress-bar__fill ${
+							barStyle === 'striped-animated' || stripedAnimation
+								? 'dsgo-progress-bar__fill--animated'
+								: ''
+						}`}
+						style={barFillStyles}
+					>
+						{displayText && labelPosition === 'inside' && (
+							<div className="dsgo-progress-bar__label dsgo-progress-bar__label--inside">
+								{displayText}
+							</div>
+						)}
+					</div>
+				</div>
+
+				{displayText && labelPosition === 'bottom' && (
+					<div className="dsgo-progress-bar__label dsgo-progress-bar__label--bottom">
+						{displayText}
+					</div>
+				)}
+			</div>
+		);
+	},
+};
+
 const v1 = {
+	apiVersion: 3,
 	attributes: metadata.attributes,
 	supports: metadata.supports,
 	isEligible(attributes, innerBlocks, extra) {
@@ -135,4 +245,4 @@ const v1 = {
 	},
 };
 
-export default [v1];
+export default [v2, v1];

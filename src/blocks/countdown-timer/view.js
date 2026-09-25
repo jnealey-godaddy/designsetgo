@@ -106,11 +106,35 @@ function updateCountdownDisplay(timer, timeData) {
 }
 
 /**
- * Handle countdown completion
+ * Expose the timer to assistive tech. `timer` carries an implicit
+ * aria-live="off", so the per-second ticks are never announced; the
+ * completion message is a polite status region, set up while still hidden
+ * so its later reveal can be announced.
  *
  * @param {Element} timer - Timer element
  */
-function handleCompletion(timer) {
+function setupTimerSemantics(timer) {
+	const unitsContainer = timer.querySelector('.dsgo-countdown-timer__units');
+	if (unitsContainer) {
+		unitsContainer.setAttribute('role', 'timer');
+	}
+
+	const messageContainer = timer.querySelector(
+		'.dsgo-countdown-timer__completion-message'
+	);
+	if (messageContainer && timer.dataset.completionAction === 'message') {
+		messageContainer.setAttribute('role', 'status');
+	}
+}
+
+/**
+ * Handle countdown completion
+ *
+ * @param {Element} timer            - Timer element
+ * @param {boolean} [announce=false] - Whether the visitor watched it finish,
+ *                                   so the message should be announced.
+ */
+function handleCompletion(timer, announce = false) {
 	const completionAction = timer.dataset.completionAction;
 
 	if (completionAction === 'hide') {
@@ -133,6 +157,16 @@ function handleCompletion(timer) {
 			// The message text is already server-rendered inside this element
 			// (sourced into the `completionMessage` attribute); just reveal it.
 			messageContainer.style.display = 'block';
+
+			// A live region announces changes, not content that merely
+			// becomes visible, so re-insert the text once it is shown.
+			if (announce) {
+				const message = messageContainer.textContent;
+				messageContainer.textContent = '';
+				window.requestAnimationFrame(() => {
+					messageContainer.textContent = message;
+				});
+			}
 		}
 	}
 }
@@ -148,6 +182,8 @@ function initCountdownTimer(timer) {
 	if (!targetDateTime) {
 		return;
 	}
+
+	setupTimerSemantics(timer);
 
 	// Check for reduced motion preference
 	const prefersReducedMotion = window.matchMedia(
@@ -171,7 +207,7 @@ function initCountdownTimer(timer) {
 
 			if (timeData.isComplete) {
 				clearInterval(interval);
-				handleCompletion(timer);
+				handleCompletion(timer, true);
 			}
 		},
 		prefersReducedMotion ? 5000 : 1000

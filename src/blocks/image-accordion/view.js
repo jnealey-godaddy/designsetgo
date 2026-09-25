@@ -11,6 +11,8 @@
  * @since 1.0.0
  */
 
+import { __, sprintf } from '@wordpress/i18n';
+
 /* global navigator */
 
 function initImageAccordions() {
@@ -77,7 +79,11 @@ function initImageAccordions() {
 		// Add ARIA attributes to all items
 		items.forEach((item, index) => {
 			item.setAttribute('role', 'button');
-			item.setAttribute('aria-label', `Image panel ${index + 1}`);
+			item.setAttribute(
+				'aria-label',
+				/* translators: %d: panel number */
+				sprintf(__('Image panel %d', 'designsetgo'), index + 1)
+			);
 			item.setAttribute('aria-expanded', 'false');
 
 			// Make focusable if not already

@@ -79,6 +79,7 @@ const currentSupports = {
 };
 
 const v4 = {
+	apiVersion: 3,
 	attributes: {
 		rows: {
 			type: 'array',
@@ -192,7 +193,22 @@ const v4 = {
 	},
 };
 
+// v5: Save before the five repeat segments carried `aria-hidden="true"`.
+// Identical to v4's save; only the attribute defaults differ (v4 predates the
+// `auto` imageWidth default), so it reuses v4's frozen save() with the
+// schema the block had when this shape shipped. Markup-only change, so no
+// isEligible.
+const v5 = {
+	...v4,
+	apiVersion: 3,
+	attributes: {
+		...v4.attributes,
+		imageWidth: { type: 'string', default: 'auto' },
+	},
+};
+
 const v3 = {
+	apiVersion: 3,
 	attributes: {
 		rows: {
 			type: 'array',
@@ -308,6 +324,7 @@ const v3 = {
 };
 
 const v2 = {
+	apiVersion: 3,
 	attributes: {
 		rows: {
 			type: 'array',
@@ -536,6 +553,7 @@ function migrateHtmlSourced(attributes) {
 }
 
 const v1ObjectFit = {
+	apiVersion: 3,
 	attributes: {
 		rows: htmlSourcedRows,
 		scrollSpeed: {
@@ -648,6 +666,7 @@ const v1ObjectFit = {
 };
 
 const v1 = {
+	apiVersion: 3,
 	attributes: {
 		rows: htmlSourcedRows,
 		scrollSpeed: {
@@ -741,4 +760,4 @@ const v1 = {
 	},
 };
 
-export default [v4, v3, v2, v1ObjectFit, v1];
+export default [v5, v4, v3, v2, v1ObjectFit, v1];

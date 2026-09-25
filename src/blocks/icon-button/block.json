@@ -98,6 +98,13 @@
 			"selector": ".dsgo-icon-button__text",
 			"default": ""
 		},
+		"ariaLabel": {
+			"type": "string",
+			"source": "attribute",
+			"selector": ".dsgo-icon-button",
+			"attribute": "aria-label",
+			"default": ""
+		},
 		"url": {
 			"type": "string",
 			"default": ""

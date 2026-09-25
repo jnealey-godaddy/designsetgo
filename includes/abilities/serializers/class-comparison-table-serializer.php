@@ -70,15 +70,16 @@ class Comparison_Table_Serializer {
 			}
 		}
 
-		// Header row.
-		$header_cells = '<th class="dsgo-comparison-table__header-cell dsgo-comparison-table__header-cell--label"></th>';
+		// Header row. The corner is a <td> and each column header carries
+		// scope="col", matching save.js.
+		$header_cells = '<td class="dsgo-comparison-table__header-cell dsgo-comparison-table__header-cell--label"></td>';
 		foreach ( $table_columns as $column ) {
 			$col_featured  = ! empty( $column['featured'] );
 			$col_name      = isset( $column['name'] ) ? (string) $column['name'] : '';
 			$col_link      = isset( $column['link'] ) ? (string) $column['link'] : '';
 			$col_link_text = isset( $column['linkText'] ) ? (string) $column['linkText'] : '';
 
-			$header_cells .= '<th class="' . esc_attr(
+			$header_cells .= '<th scope="col" class="' . esc_attr(
 				'dsgo-comparison-table__header-cell' . ( $col_featured ? ' dsgo-comparison-table__header-cell--featured' : '' )
 			) . '">';
 
@@ -111,7 +112,7 @@ class Comparison_Table_Serializer {
 			$row_cells   = ( isset( $row['cells'] ) && is_array( $row['cells'] ) ) ? $row['cells'] : array();
 
 			$body_rows .= '<tr class="dsgo-comparison-table__row">' .
-				'<td class="dsgo-comparison-table__cell dsgo-comparison-table__cell--label">' .
+				'<th scope="row" class="dsgo-comparison-table__cell dsgo-comparison-table__cell--label">' .
 				'<div class="dsgo-comparison-table__label-wrapper">' .
 				'<span class="dsgo-comparison-table__row-label">' . wp_kses_post( $row_label ) . '</span>';
 
@@ -120,7 +121,7 @@ class Comparison_Table_Serializer {
 					'" aria-label="' . esc_attr( $row_tooltip ) . '" role="button" tabindex="0">?</span>';
 			}
 
-			$body_rows .= '</div></td>';
+			$body_rows .= '</div></th>';
 
 			foreach ( $row_cells as $cell_index => $cell ) {
 				$cell_type     = isset( $cell['type'] ) ? (string) $cell['type'] : 'text';

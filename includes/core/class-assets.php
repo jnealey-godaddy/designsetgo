@@ -57,6 +57,32 @@ class Assets {
 		add_filter( 'style_loader_tag', array( $this, 'optimize_css_loading' ), 10, 4 );
 		add_action( 'wp_head', array( $this, 'inline_critical_css' ), 1 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'dequeue_inlined_css' ), 20 );
+
+		add_action( 'wp_head', array( $this, 'print_noscript_fallbacks' ) );
+	}
+
+	/**
+	 * Print no-JavaScript fallbacks for blocks whose markup JS completes.
+	 *
+	 * Tabs save every panel `hidden` with an empty tablist that view.js fills,
+	 * and Table of Contents saves an empty list for view.js to populate, so
+	 * without JavaScript Tabs showed nothing and TOC showed a bare title. This
+	 * reveals every panel (labelled with its tab title) and hides the empty
+	 * nav and TOC. Inside <noscript> it is inert for everyone else, so it is
+	 * printed unconditionally: block detection can't see template content,
+	 * and fixing this in save() would mean new deprecations for both blocks.
+	 */
+	public function print_noscript_fallbacks() {
+		if ( is_admin() ) {
+			return;
+		}
+
+		// !important: themes commonly force [hidden] to display:none !important.
+		echo '<noscript><style id="designsetgo-noscript">'
+			. '.dsgo-tabs__nav,.dsgo-table-of-contents{display:none!important}'
+			. '.dsgo-tabs .dsgo-tab[hidden]{display:block!important}'
+			. '.dsgo-tabs .dsgo-tab[aria-label]::before{content:attr(aria-label);display:block;font-weight:600;margin-bottom:.5em}'
+			. '</style></noscript>' . "\n";
 	}
 
 	/**
@@ -315,6 +341,18 @@ class Assets {
 			$frontend_asset['dependencies'],
 			$frontend_asset['version'],
 			true
+		);
+
+		// Screen-reader strings for the extension bundle. It loads on every
+		// page with a DSGo block, so it takes these few strings from PHP
+		// rather than pulling wp-i18n onto the front end.
+		wp_localize_script(
+			'designsetgo-frontend',
+			'dsgoFrontendL10n',
+			array(
+				'pauseVideo' => __( 'Pause background video', 'designsetgo' ),
+				'playVideo'  => __( 'Play background video', 'designsetgo' ),
+			)
 		);
 
 		// Interaction layers runtime. Registered always, enqueued only when a

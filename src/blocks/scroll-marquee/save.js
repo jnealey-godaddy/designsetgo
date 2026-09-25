@@ -33,11 +33,18 @@ export default function ScrollMarqueeSave({ attributes }) {
 					data-direction={row.direction}
 				>
 					<div className="dsgo-scroll-marquee__track">
-						{/* Render images 6 times for seamless infinite scroll */}
+						{/*
+						 * Render images 6 times for seamless infinite scroll.
+						 * Only the first copy is exposed to assistive tech, so
+						 * each image's alt text is read once, not six times.
+						 */}
 						{[...Array(6)].map((_, repeatIndex) => (
 							<div
 								key={repeatIndex}
 								className="dsgo-scroll-marquee__track-segment"
+								aria-hidden={
+									repeatIndex > 0 ? 'true' : undefined
+								}
 							>
 								{row.images.map((image, imageIndex) => (
 									<img

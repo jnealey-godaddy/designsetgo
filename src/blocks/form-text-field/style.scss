@@ -72,6 +72,12 @@
 			border-color: var(--dsgo-field-focus-color);
 		}
 
+		// A border colour change alone is too faint an indicator.
+		&:focus-visible {
+			outline: 2px solid var(--dsgo-field-focus-color);
+			outline-offset: 1px;
+		}
+
 		&:disabled {
 			cursor: not-allowed;
 			// Keep the field background color even when disabled (for editor preview)
