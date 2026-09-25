@@ -4,9 +4,12 @@
  * Horizontal accordion with hover/click expansion and smooth flexbox transitions
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-image-accordion {
 	// CSS Custom Properties (set from block attributes)
-	--transition-duration: var(--dsgo-image-accordion-transition, 0.5s);
+	--transition-duration: var(--dsgo-image-accordion-transition, $dsgo-duration-slow);
 	--expanded-ratio: var(--dsgo-image-accordion-expanded-ratio, 3);
 
 	// Gap and height default here (not inline from save()) so Style Kits and
@@ -29,7 +32,7 @@
 	flex-direction: row;
 	gap: var(--accordion-gap);
 	overflow: hidden;
-	border-radius: 8px;
+	border-radius: $dsgo-radius-medium;
 	position: relative;
 	width: 100%;
 	height: var(--accordion-height);
@@ -52,7 +55,7 @@
 	}
 
 	// Responsive: Stack vertically on mobile
-	@media (max-width: 768px) {
+	@include below($breakpoint-mobile) {
 		flex-direction: column;
 		height: auto;
 		min-height: 600px;
