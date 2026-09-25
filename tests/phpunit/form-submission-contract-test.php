@@ -404,4 +404,138 @@ class Test_Form_Submission_Contract extends WP_UnitTestCase {
 		$stored = $this->assert_stored( $this->submit( $form_id, array( array( 'name' => 'your_name', 'value' => 'Pat', 'type' => 'text' ) ) ) );
 		$this->assertArrayHasKey( 'your_name', $stored );
 	}
+
+	/**
+	 * A form kept in a post type that is not publicly viewable but renders into
+	 * public pages (theme builder elements, popups) is only reachable through
+	 * the site-wide lookup, so it must stay eligible there.
+	 */
+	public function test_form_in_a_non_viewable_post_type_accepts_submissions() {
+		register_post_type( 'dsgo_test_element', array( 'public' => false ) );
+		$form_id = 'contract-element-form';
+		self::factory()->post->create(
+			array(
+				'post_type'    => 'dsgo_test_element',
+				'post_status'  => 'publish',
+				'post_content' => $this->form_markup( $form_id, '<!-- wp:designsetgo/form-text-field {"fieldName":"your_name"} /-->' ),
+			)
+		);
+
+		try {
+			$stored = $this->assert_stored( $this->submit( $form_id, array( array( 'name' => 'your_name', 'value' => 'Pat', 'type' => 'text' ) ) ) );
+		} finally {
+			unregister_post_type( 'dsgo_test_element' );
+		}
+		$this->assertArrayHasKey( 'your_name', $stored );
+	}
+
+	/**
+	 * Sites can narrow the site-wide lookup with a filter.
+	 */
+	public function test_lookup_filter_can_refuse_a_host_post() {
+		$form_id = 'contract-filtered-form';
+		self::factory()->post->create(
+			array(
+				'post_status'  => 'publish',
+				'post_content' => $this->form_markup( $form_id, '<!-- wp:designsetgo/form-text-field {"fieldName":"your_name"} /-->' ),
+			)
+		);
+
+		add_filter( 'designsetgo_form_lookup_allows_post', '__return_false' );
+		try {
+			$result = $this->submit( $form_id, array( array( 'name' => 'your_name', 'value' => 'Pat', 'type' => 'text' ) ) );
+		} finally {
+			remove_filter( 'designsetgo_form_lookup_allows_post', '__return_false' );
+		}
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'unknown_form', $result->get_error_code() );
+	}
+
+	/**
+	 * The no-JS (admin-post) path must check the value the visitor typed, as
+	 * the REST path does. Sanitizing first grew `<` into `&lt;`, so a value at
+	 * exactly maxlength that the browser accepted was refused, and it stripped
+	 * a textarea's line breaks before they could be stored.
+	 */
+	public function test_no_js_submission_checks_the_submitted_value_not_a_sanitized_copy() {
+		$form_id = 'contract-no-js-form';
+		self::factory()->post->create(
+			array(
+				'post_status'  => 'publish',
+				'post_content' => $this->form_markup(
+					$form_id,
+					'<!-- wp:designsetgo/form-text-field {"fieldName":"note","maxLength":10} /-->'
+					. '<!-- wp:designsetgo/form-textarea-field {"fieldName":"msg","maxLength":20} /-->'
+				),
+			)
+		);
+
+		$location = $this->post_without_js(
+			array(
+				'dsg_form_id'     => $form_id,
+				'dsg_field_types' => wp_json_encode(
+					array(
+						'note' => 'text',
+						'msg'  => 'textarea',
+					)
+				),
+				'note'            => '1 < 2 abcd',
+				'msg'             => "line one\nline two",
+			)
+		);
+
+		$this->assertStringContainsString( 'dsgo_form_status=success', $location );
+
+		$submissions = get_posts(
+			array(
+				'post_type'   => 'dsgo_form_submission',
+				'post_status' => 'any',
+				'meta_key'    => '_dsg_form_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_query_meta_key
+				'meta_value'  => $form_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_query_meta_value
+			)
+		);
+		$this->assertCount( 1, $submissions );
+		$stored = (array) get_post_meta( $submissions[0]->ID, '_dsg_form_fields', true );
+		$this->assertSame( "line one\nline two", $stored['msg']['value'] );
+	}
+
+	/**
+	 * Run the admin-post handler and return where it redirects.
+	 *
+	 * The handler ends in wp_safe_redirect() + exit, so the redirect filter
+	 * throws to hand control back before the exit.
+	 *
+	 * @param array $post Unslashed POST fields besides the nonce.
+	 * @return string Redirect location.
+	 */
+	private function post_without_js( array $post ) {
+		$saved_post    = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$saved_referer = isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+
+		$_POST                   = wp_slash( array_merge( array( '_wpnonce' => wp_create_nonce( 'designsetgo_form_submit' ) ), $post ) );
+		$_SERVER['HTTP_REFERER'] = home_url( '/contact/' );
+
+		$throw = static function ( $location ) {
+			throw new \RuntimeException( $location ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Test-only control flow; never output.
+		};
+		add_filter( 'wp_redirect', $throw );
+
+		$location = '';
+		try {
+			$this->handler->handle_post_submission();
+		} catch ( \RuntimeException $redirect ) {
+			$location = $redirect->getMessage();
+		} finally {
+			remove_filter( 'wp_redirect', $throw );
+			$_POST = $saved_post;
+			if ( null === $saved_referer ) {
+				unset( $_SERVER['HTTP_REFERER'] );
+			} else {
+				$_SERVER['HTTP_REFERER'] = $saved_referer;
+			}
+		}
+
+		return $location;
+	}
 }

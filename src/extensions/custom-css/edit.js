@@ -54,9 +54,12 @@ export function CustomCSSPanel(props) {
 	const { attributes, setAttributes } = props;
 	const { dsgoCustomCSS } = attributes;
 	// Mirrors the server's edit_css gate (Custom_CSS_Kses), which strips this
-	// attribute on save for anyone without it. Absent means an older payload:
-	// fall back to editable rather than locking out the people who can.
-	const canEdit = window.dsgoSettings?.canEditCustomCSS !== false;
+	// attribute on save for anyone without it. wp_localize_script() sends the
+	// flag as "1" or "", never a boolean, so test truthiness. Absent means an
+	// older payload: fall back to editable rather than locking out the people
+	// who can.
+	const canEditFlag = window.dsgoSettings?.canEditCustomCSS;
+	const canEdit = undefined === canEditFlag || !!canEditFlag;
 
 	return (
 		<InspectorControls>

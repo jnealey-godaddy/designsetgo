@@ -135,6 +135,55 @@ class Test_Form_Field_Rules extends WP_UnitTestCase {
 		$this->assert_accepts( 'anything at all', $rules );
 	}
 
+	/**
+	 * A pattern that compiles but fails at match time must not wave the value
+	 * through: the browser rejects this value, and a value built to exhaust
+	 * PCRE's backtrack limit would otherwise skip the check entirely.
+	 */
+	public function test_runtime_regex_failure_is_a_mismatch() {
+		$rules = $this->rules_for(
+			'form-text-field',
+			array(
+				'validation'        => 'custom',
+				'validationPattern' => '([A-Za-z]+\s?)+',
+			)
+		);
+
+		$this->assert_accepts( 'hello world', $rules );
+		$this->assert_rejects( str_repeat( 'a', 40 ) . '!', $rules );
+	}
+
+	/**
+	 * A value PCRE cannot read as UTF-8 fails the pattern rather than skipping it.
+	 */
+	public function test_malformed_utf8_is_a_mismatch() {
+		$rules = $this->rules_for(
+			'form-text-field',
+			array(
+				'validation'        => 'custom',
+				'validationPattern' => '[0-9]+',
+			)
+		);
+
+		$this->assert_rejects( "12\xFF", $rules );
+	}
+
+	/**
+	 * A JavaScript `$` never matches before a trailing newline; PCRE's does
+	 * unless the pattern carries the D modifier.
+	 */
+	public function test_pattern_end_anchor_does_not_match_before_a_trailing_newline() {
+		$rules = $this->rules_for(
+			'form-text-field',
+			array(
+				'validation'        => 'custom',
+				'validationPattern' => '[0-9]+',
+			)
+		);
+
+		$this->assert_rejects( "123\n", $rules );
+	}
+
 	public function test_number_min_max_and_integer_step() {
 		$rules = $this->rules_for( 'form-number-field', array( 'min' => 1, 'max' => 10 ) );
 

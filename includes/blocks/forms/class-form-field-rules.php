@@ -210,20 +210,31 @@ class Form_Field_Rules {
 	 * rejects a few patterns PCRE accepts (an unescaped `-` or `(` inside a
 	 * character class), and such a pattern is enforced here but not there.
 	 *
+	 * Only a pattern that fails to compile is ignored. A match that fails at
+	 * run time (backtrack or JIT limit, malformed UTF-8) is a mismatch:
+	 * otherwise a value built to exhaust backtracking would skip the check.
+	 *
 	 * @param string $value   Submitted value.
 	 * @param string $pattern HTML pattern attribute.
 	 * @return bool
 	 */
 	private static function matches_pattern( $value, $pattern ) {
 		// \x01 as delimiter: it cannot appear in an authored pattern, so the
-		// pattern needs no escaping to be embedded.
-		$regex = "\x01^(?:" . $pattern . ")$\x01u";
+		// pattern needs no escaping to be embedded. D stops `$` matching
+		// before a trailing newline, as a JavaScript `$` never does.
+		$regex = "\x01^(?:" . $pattern . ")$\x01uD";
 		// An uncompilable author pattern is expected input: swallow the
 		// compile warning and read the false return instead.
-		set_error_handler( '__return_true' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Scoped to one preg_match().
-		$result = preg_match( $regex, $value );
+		set_error_handler( '__return_true' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Scoped to these preg_match() calls.
+		// Matching the empty string only compiles the pattern; its result is
+		// false solely when compilation fails.
+		$compiles = false !== preg_match( $regex, '' );
+		$result   = $compiles ? preg_match( $regex, $value ) : false;
 		restore_error_handler();
-		return false === $result || 1 === $result;
+		if ( ! $compiles ) {
+			return true;
+		}
+		return 1 === $result;
 	}
 
 	/**

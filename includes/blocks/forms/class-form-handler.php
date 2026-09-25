@@ -579,9 +579,17 @@ class Form_Handler {
 
 			$field_type = isset( $field_types[ $key ] ) ? sanitize_text_field( $field_types[ $key ] ) : 'text';
 
+			// String values go through unsanitized, as they do on the REST
+			// path: handle_form_submission() checks each against the field's
+			// constraints and then sanitizes it by field type. Sanitizing here
+			// first changed what was checked (`<` grew into `&lt;`, whitespace
+			// collapsed), rejecting values the browser had accepted, and
+			// stripped a textarea's line breaks before sanitize_textarea_field()
+			// could keep them. An array (`name[]`) becomes an empty string, as
+			// sanitize_text_field() always made it.
 			$fields[] = array(
 				'name'  => $key,
-				'value' => sanitize_text_field( wp_unslash( $value ) ),
+				'value' => is_string( $value ) ? wp_unslash( $value ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Validated and sanitized by type in handle_form_submission().
 				'type'  => $field_type,
 			);
 		}
@@ -1273,7 +1281,7 @@ class Form_Handler {
 		);
 
 		foreach ( (array) $posts as $post ) {
-			if ( ! $this->is_public_form_host( (int) $post->ID ) ) {
+			if ( ! $this->is_eligible_form_host( (int) $post->ID ) ) {
 				continue;
 			}
 			$blocks     = parse_blocks( $post->post_content );
@@ -1293,27 +1301,40 @@ class Form_Handler {
 	 * Whether a published post may serve its form to the site-wide lookup.
 	 *
 	 * This lookup ignores who is asking and its result is cached for everyone,
-	 * so it can only accept posts anyone could submit from: publicly viewable
-	 * and not password-protected. A form on a password-protected page is still
-	 * reachable through get_source_post_form_definition(), which checks the
-	 * visitor's own password cookie.
+	 * so it cannot honour a visitor's password cookie: a password-protected
+	 * post is never eligible. A form there is still reachable through
+	 * get_source_post_form_definition(), which checks that cookie.
 	 *
-	 * Synced patterns, templates and template parts are not viewable post
-	 * types but are site-owner content rendered into public pages, so they
-	 * stay eligible — a form inside a synced pattern is only ever found here.
+	 * Viewability is not required. The query already limits candidates to
+	 * published posts, and this lookup is the only way to reach a form kept in
+	 * a post type that is not publicly viewable but renders into public pages:
+	 * synced patterns, templates and template parts, and theme builder or popup
+	 * post types (GeneratePress and Kadence Elements, Blocksy Content Blocks,
+	 * Spectra popups). Sites that want it narrower can use the filter.
 	 *
 	 * @param int $post_id Post ID.
 	 * @return bool
 	 */
-	private function is_public_form_host( $post_id ) {
+	private function is_eligible_form_host( $post_id ) {
 		$post = get_post( $post_id );
 		if ( ! $post || '' !== $post->post_password ) {
 			return false;
 		}
-		if ( in_array( $post->post_type, array( 'wp_block', 'wp_template', 'wp_template_part' ), true ) ) {
-			return true;
-		}
-		return is_post_publicly_viewable( $post );
+
+		/**
+		 * Filters whether a published post may serve its form to submissions
+		 * that name no source page.
+		 *
+		 * Password-protected posts never reach this filter. The result is cached
+		 * with the form definition for an hour, so return the same answer for
+		 * every visitor.
+		 *
+		 * @since 2.8.3
+		 *
+		 * @param bool     $allowed Whether the post is eligible. Default true.
+		 * @param \WP_Post $post    Candidate post.
+		 */
+		return (bool) apply_filters( 'designsetgo_form_lookup_allows_post', true, $post );
 	}
 
 	/**
