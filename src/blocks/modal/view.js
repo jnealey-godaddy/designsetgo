@@ -10,6 +10,8 @@
 /* global MutationObserver, sessionStorage, localStorage, navigator, history, requestAnimationFrame */
 /* eslint-disable @wordpress/no-global-active-element, no-lonely-if, jsdoc/require-param-type, jsdoc/no-undefined-types */
 
+import { __ } from '@wordpress/i18n';
+
 (function () {
 	'use strict';
 
@@ -1103,7 +1105,10 @@
 			const prevButton = document.createElement('button');
 			prevButton.className = 'dsgo-modal__gallery-prev';
 			prevButton.setAttribute('type', 'button');
-			prevButton.setAttribute('aria-label', 'Previous');
+			prevButton.setAttribute(
+				'aria-label',
+				__('Previous', 'designsetgo')
+			);
 			prevButton.appendChild(this.getNavigationIcon('prev'));
 			prevButton.addEventListener('click', (e) => {
 				e.preventDefault();
@@ -1114,7 +1119,7 @@
 			const nextButton = document.createElement('button');
 			nextButton.className = 'dsgo-modal__gallery-next';
 			nextButton.setAttribute('type', 'button');
-			nextButton.setAttribute('aria-label', 'Next');
+			nextButton.setAttribute('aria-label', __('Next', 'designsetgo'));
 			nextButton.appendChild(this.getNavigationIcon('next'));
 			nextButton.addEventListener('click', (e) => {
 				e.preventDefault();

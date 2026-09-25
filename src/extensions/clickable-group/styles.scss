@@ -19,4 +19,23 @@
 	&:active {
 		transform: translateY(0);
 	}
+
+	// Keyboard/screen-reader link injected by frontend.js. Visually hidden;
+	// the group itself draws the focus ring below.
+	> .dsgo-clickable__link {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	&:has(> .dsgo-clickable__link:focus-visible) {
+		outline: 2px solid currentcolor;
+		outline-offset: 2px;
+	}
 }

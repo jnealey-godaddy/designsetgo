@@ -69,11 +69,11 @@ if ( ! function_exists( 'designsetgo_render_breadcrumbs' ) ) {
 				<?php foreach ( $trail as $index => $item ) : ?>
 					<li class="<?php echo esc_attr( 'dsgo-breadcrumbs__item' . ( ! empty( $item['is_current'] ) ? ' dsgo-breadcrumbs__item--current' : '' ) ); ?>">
 						<?php if ( empty( $item['is_current'] ) || ! empty( $attributes['linkCurrent'] ) ) : ?>
-							<a href="<?php echo esc_url( $item['url'] ); ?>" class="dsgo-breadcrumbs__link">
+							<a href="<?php echo esc_url( $item['url'] ); ?>" class="dsgo-breadcrumbs__link"<?php echo ! empty( $item['is_current'] ) ? ' aria-current="page"' : ''; ?>>
 								<?php echo esc_html( $item['title'] ); ?>
 							</a>
 						<?php else : ?>
-							<span class="dsgo-breadcrumbs__text">
+							<span class="dsgo-breadcrumbs__text" aria-current="page">
 								<?php echo esc_html( $item['title'] ); ?>
 							</span>
 						<?php endif; ?>

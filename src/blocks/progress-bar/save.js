@@ -96,10 +96,20 @@ export default function ProgressBarSave({ attributes }) {
 				</div>
 			)}
 
-			{/* Progress Bar */}
+			{/*
+			 * Progress Bar. The value is exposed to assistive tech here, not
+			 * via the fill width, which starts at 0% when animating. With no
+			 * labelText the name is left to view.js, so the fallback string is
+			 * translated at runtime instead of baked into post content.
+			 */}
 			<div
 				className="dsgo-progress-bar__container"
 				style={barContainerStyles}
+				role="progressbar"
+				aria-valuenow={barWidth}
+				aria-valuemin="0"
+				aria-valuemax="100"
+				aria-label={labelText || undefined}
 			>
 				<div
 					className={`dsgo-progress-bar__fill ${

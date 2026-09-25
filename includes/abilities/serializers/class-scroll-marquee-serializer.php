@@ -62,9 +62,12 @@ class Scroll_Marquee_Serializer {
 			$rows_html .= '<div class="dsgo-scroll-marquee__row" data-direction="' . esc_attr( $direction ) . '">';
 			$rows_html .= '<div class="dsgo-scroll-marquee__track">';
 
-			// Render images 6 times for seamless infinite scroll.
+			// Render images 6 times for seamless infinite scroll. As in
+			// save.js, only the first copy is exposed to assistive tech.
 			for ( $i = 0; $i < 6; $i++ ) {
-				$rows_html .= '<div class="dsgo-scroll-marquee__track-segment">';
+				$rows_html .= $i > 0
+					? '<div class="dsgo-scroll-marquee__track-segment" aria-hidden="true">'
+					: '<div class="dsgo-scroll-marquee__track-segment">';
 				foreach ( $images as $image ) {
 					$img_url    = isset( $image['url'] ) ? $image['url'] : '';
 					$img_alt    = isset( $image['alt'] ) ? $image['alt'] : '';

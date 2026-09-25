@@ -185,6 +185,10 @@ class Icon_Button_Serializer {
 		if ( $modal_close_id ) {
 			$extra_attrs .= ' data-dsgo-modal-close="' . esc_attr( $modal_close_id ) . '"';
 		}
+		// save.js emits aria-label only when the author sets one.
+		if ( ! empty( $attributes['ariaLabel'] ) && is_string( $attributes['ariaLabel'] ) ) {
+			$extra_attrs .= ' aria-label="' . esc_attr( $attributes['ariaLabel'] ) . '"';
+		}
 
 		$inner_html = $icon_html . $text_html;
 

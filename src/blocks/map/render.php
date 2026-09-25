@@ -131,15 +131,22 @@ if ( ! function_exists( 'designsetgo_render_map' ) ) {
 			'data-dsgo-privacy-mode' => $privacy_mode ? 'true' : 'false',
 			'data-dsgo-map-style'    => $map_style,
 		);
-		$data_attr_html  = '';
-		foreach ( $data_attributes as $key => $value ) {
-			$data_attr_html .= ' ' . $key . '="' . esc_attr( $value ) . '"';
-		}
 
 		$aria_label = '' !== $address
 			/* translators: %s: The address being shown on the map */
 			? sprintf( __( 'Map showing %s', 'designsetgo' ), $address )
 			: __( 'Interactive map', 'designsetgo' );
+
+		// In privacy mode view.js builds the map container itself, after
+		// consent, so it needs the localized label handed over.
+		if ( $privacy_mode ) {
+			$data_attributes['data-dsgo-map-label'] = $aria_label;
+		}
+
+		$data_attr_html = '';
+		foreach ( $data_attributes as $key => $value ) {
+			$data_attr_html .= ' ' . $key . '="' . esc_attr( $value ) . '"';
+		}
 
 		// The keyless Google provider is a plain iframe built server-side: no
 		// Maps JS API, no Leaflet, and no geocoding round-trip, so outside of

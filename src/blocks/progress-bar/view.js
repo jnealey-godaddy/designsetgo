@@ -6,10 +6,23 @@
  * @since 1.0.0
  */
 
+import { __ } from '@wordpress/i18n';
+
 /**
  * Initialize progress bars with scroll animations
  */
 function initProgressBars() {
+	// A progressbar needs an accessible name. save() writes the author's
+	// labelText; without one, name it here so the fallback is translated at
+	// runtime rather than baked into post content.
+	document
+		.querySelectorAll(
+			'.dsgo-progress-bar__container[role="progressbar"]:not([aria-label])'
+		)
+		.forEach((track) => {
+			track.setAttribute('aria-label', __('Progress', 'designsetgo'));
+		});
+
 	const progressBars = document.querySelectorAll(
 		'.dsgo-progress-bar--animate'
 	);

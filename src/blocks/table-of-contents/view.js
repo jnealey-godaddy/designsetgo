@@ -391,6 +391,7 @@ class DSGTableOfContents {
 			.querySelectorAll('.dsgo-table-of-contents__link')
 			.forEach((link) => {
 				link.classList.remove('dsgo-table-of-contents__link--active');
+				link.removeAttribute('aria-current');
 				const li = link.closest('li');
 				if (li) {
 					li.classList.remove('dsgo-table-of-contents__item--active');
@@ -400,6 +401,8 @@ class DSGTableOfContents {
 		// Add active class to current link
 		if (activeLink) {
 			activeLink.classList.add('dsgo-table-of-contents__link--active');
+			// Expose the highlight to assistive tech, not just visually.
+			activeLink.setAttribute('aria-current', 'location');
 			const li = activeLink.closest('li');
 			if (li) {
 				li.classList.add('dsgo-table-of-contents__item--active');

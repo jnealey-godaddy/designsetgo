@@ -105,8 +105,15 @@ class Progress_Bar_Serializer {
 			$fill_classes .= ' dsgo-progress-bar__fill--animated';
 		}
 
+		// save.js exposes the value on the track; aria-label only when the
+		// author set labelText (view.js names the rest at runtime).
+		$aria_attrs = ' role="progressbar" aria-valuenow="' . esc_attr( (string) $bar_width ) . '" aria-valuemin="0" aria-valuemax="100"';
+		if ( ! empty( $attributes['labelText'] ) && is_string( $attributes['labelText'] ) ) {
+			$aria_attrs .= ' aria-label="' . esc_attr( $attributes['labelText'] ) . '"';
+		}
+
 		$inner_html  = $label_html;
-		$inner_html .= '<div class="dsgo-progress-bar__container" style="' . esc_attr( $container_style ) . '">';
+		$inner_html .= '<div class="dsgo-progress-bar__container" style="' . esc_attr( $container_style ) . '"' . $aria_attrs . '>';
 		$inner_html .= '<div class="' . esc_attr( $fill_classes ) . '" style="' . esc_attr( $fill_style ) . '"></div>';
 		$inner_html .= '</div>';
 
