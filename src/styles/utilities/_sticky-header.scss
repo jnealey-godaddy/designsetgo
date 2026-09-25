@@ -329,25 +329,34 @@ body:not(.block-editor-page).dsgo-page-overlay-header header.wp-block-template-p
 	transition: background-color var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out,
 		box-shadow var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out;
 
-	// Match the scroll surface; JS resolves opacity and missing text colors.
+	// Use the normal menu surface, independently of the header's scroll colors.
 	--dsgo-overlay-menu-surface: #fff;
 
 	@supports #{$dsgo-color-mix-support} {
 		--dsgo-overlay-menu-surface: var(--wp--preset--color--base-2, #fff);
 	}
 
-	// Override core mobile transparency and kit colors, not authored CTAs.
 	.wp-block-navigation :is(.wp-block-navigation__submenu-container, .wp-block-navigation__responsive-container.is-menu-open) {
-		background: var(--dsgo-overlay-menu-bg, #fff) !important;
-		color: var(--dsgo-overlay-menu-fg, #000) !important;
 
+		// Use automatic colors only when neither submenu/overlay color is authored.
+		&:not(.has-background):not(.has-text-color) {
+			background: var(--dsgo-overlay-menu-bg, #fff) !important;
+			color: var(--dsgo-overlay-menu-fg, #000) !important;
+		}
+
+		// Carry the menu color through wrappers that theme CSS may color directly.
+		.wp-block-navigation__responsive-close,
+		.wp-block-navigation__responsive-dialog,
+		.wp-block-navigation__responsive-container-content,
+		.wp-block-navigation__container,
+		.wp-block-navigation-item,
 		.wp-block-navigation-item__content,
 		.wp-block-navigation-item__label,
 		.wp-block-navigation__submenu-icon,
 		.wp-block-navigation__submenu-icon *,
 		.wp-block-navigation__responsive-container-close,
 		.wp-block-navigation__responsive-container-close * {
-			color: var(--dsgo-overlay-menu-fg, #000) !important;
+			color: inherit !important;
 		}
 
 		:is(.wp-block-navigation__submenu-icon, .wp-block-navigation__responsive-container-close) svg {

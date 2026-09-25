@@ -14,7 +14,7 @@
 
 // Import SCSS so webpack extracts build/utils/sticky-header.css
 import './sticky-header.scss';
-import { getLuminance, parseColor } from './contrast-checker';
+import { applyOverlayMenuColors } from './overlay-menu-colors';
 
 (function () {
 	'use strict';
@@ -516,69 +516,8 @@ import { getLuminance, parseColor } from './contrast-checker';
 		}
 
 		if (document.body.classList.contains('dsgo-page-overlay-header')) {
-			applyOverlayMenuColors(header, needsBgVars);
+			applyOverlayMenuColors(header);
 		}
-	}
-
-	/**
-	 * Resolve menu colors without changing the header's scroll state or styles.
-	 *
-	 * @param {HTMLElement} header      Header element.
-	 * @param {boolean}     needsBgVars Whether scroll colors are enabled.
-	 */
-	function applyOverlayMenuColors(header, needsBgVars) {
-		const styles = window.getComputedStyle(header);
-		const customBackground = needsBgVars && settings.backgroundScrollColor;
-		const base2 = styles
-			.getPropertyValue('--wp--preset--color--base-2')
-			.trim();
-		const background =
-			customBackground ||
-			styles.getPropertyValue('--dsgo-overlay-menu-surface').trim() ||
-			'#fff';
-		let rgb = parseColor(background);
-		if (!rgb) {
-			// Let the browser normalize hsl(), modern colors and nested variables.
-			const probe = document.createElement('span');
-			probe.style.cssText = `position:absolute;visibility:hidden;color:${background}`;
-			header.appendChild(probe);
-			const color = window.getComputedStyle(probe).color;
-			rgb = parseColor(color);
-			if (!rgb) {
-				const context = document
-					.createElement('canvas')
-					.getContext('2d');
-				if (context) {
-					context.fillStyle = color.replace(
-						/\s*\/\s*[\d.]+\s*\)$/,
-						' / 1)'
-					);
-					context.fillRect(0, 0, 1, 1);
-					const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
-					rgb = { r, g, b };
-				}
-			}
-			probe.remove();
-		}
-		rgb = rgb || { r: 255, g: 255, b: 255 };
-		const foreground =
-			(needsBgVars && settings.textScrollColor) ||
-			// Only pair contrast-2 with the theme's base-2 surface, not custom colors.
-			(!customBackground &&
-				background === base2 &&
-				styles
-					.getPropertyValue('--wp--preset--color--contrast-2')
-					.trim()) ||
-			(!customBackground &&
-				styles
-					.getPropertyValue('--wp--preset--color--contrast')
-					.trim()) ||
-			(getLuminance(rgb) > 0.179 ? '#000' : '#fff');
-		header.style.setProperty(
-			'--dsgo-overlay-menu-bg',
-			`rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`
-		);
-		header.style.setProperty('--dsgo-overlay-menu-fg', foreground);
 	}
 
 	/**
