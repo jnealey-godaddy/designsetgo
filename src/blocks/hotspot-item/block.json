@@ -6,6 +6,7 @@
   "title": "Hotspot Item",
   "category": "designsetgo",
   "description": "A marker within a Hotspot image.",
+  "keywords": ["hotspot", "marker", "pin", "tooltip", "point"],
   "textdomain": "designsetgo",
   "icon": "location-alt",
   "parent": ["designsetgo/hotspot"],

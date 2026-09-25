@@ -30,9 +30,8 @@ import {
 	__experimentalUseCustomUnits as useCustomUnits,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
-import { useSelect, useDispatch } from '@wordpress/data';
+import { useSelect } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
-import { createBlock } from '@wordpress/blocks';
 import {
 	convertPresetToCSSVar,
 	convertColorToCSSVar,
@@ -109,53 +108,13 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 		availableUnits: ['px', 'em', 'rem', 'vh', 'vw', '%'],
 	});
 
-	const { replaceBlock } = useDispatch(blockEditorStore);
-
 	// Get inner blocks to determine if container is empty
-	const { hasInnerBlocks, innerBlocks } = useSelect(
-		(select) => {
-			const { getBlock } = select(blockEditorStore);
-			const block = getBlock(clientId);
-			return {
-				hasInnerBlocks: block?.innerBlocks?.length > 0,
-				innerBlocks: block?.innerBlocks || [],
-			};
-		},
+	const hasInnerBlocks = useSelect(
+		(select) =>
+			select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length >
+			0,
 		[clientId]
 	);
-
-	// CRITICAL: Auto-convert to Section block when orientation changes to vertical
-	// Row is meant for horizontal layouts
-	// If user wants vertical layout, they should use Section block
-	useEffect(() => {
-		if (layout?.orientation === 'vertical') {
-			// Create a new Section block with the same attributes and inner blocks
-			const sectionBlock = createBlock(
-				'designsetgo/section',
-				{
-					hoverBackgroundColor,
-					hoverTextColor,
-					hoverIconBackgroundColor,
-					hoverButtonBackgroundColor,
-					overlayColor,
-				},
-				innerBlocks
-			);
-
-			// Replace this Row block with the Section block
-			replaceBlock(clientId, sectionBlock);
-		}
-	}, [
-		layout?.orientation,
-		clientId,
-		replaceBlock,
-		hoverBackgroundColor,
-		hoverTextColor,
-		hoverIconBackgroundColor,
-		hoverButtonBackgroundColor,
-		overlayColor,
-		innerBlocks,
-	]);
 
 	// Block wrapper props - outer div stays full width (must match save.js EXACTLY)
 	const hasOverlay = !!overlayColor || hasOverlayStyleClass(className);

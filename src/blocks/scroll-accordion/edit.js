@@ -17,6 +17,7 @@ import { useSelect } from '@wordpress/data';
  */
 import './editor.scss';
 import ScrollAccordionPlaceholder from './components/ScrollAccordionPlaceholder';
+import DsgoChildToolbar from '../../components/shared/DsgoChildToolbar';
 
 /**
  * Edit component for the Scroll Accordion block.
@@ -31,12 +32,21 @@ import ScrollAccordionPlaceholder from './components/ScrollAccordionPlaceholder'
 export default function Edit({ attributes, setAttributes, clientId }) {
 	const { alignItems } = attributes;
 
-	const hasInnerBlocks = useSelect(
-		(select) =>
-			select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length >
-			0,
+	const { hasInnerBlocks, lastItemAttributes } = useSelect(
+		(select) => {
+			const items =
+				select(blockEditorStore).getBlock(clientId)?.innerBlocks || [];
+			return {
+				hasInnerBlocks: items.length > 0,
+				lastItemAttributes: items[items.length - 1]?.attributes,
+			};
+		},
 		[clientId]
 	);
+
+	// New cards inherit the last card's look (the starter layouts style each
+	// card individually) but not its identity: anchor and List View name.
+	const { anchor, metadata, ...newItemAttributes } = lastItemAttributes || {};
 
 	// Calculate inner styles declaratively
 	const innerStyles = {
@@ -105,6 +115,14 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 						}
 					/>
 				</ToolbarGroup>
+				{/* No activeIndex: only Add is shown. Duplicate, move and
+				    remove act on a selected card through core's own toolbar. */}
+				<DsgoChildToolbar
+					parentClientId={clientId}
+					childBlockName="designsetgo/scroll-accordion-item"
+					childAttributes={newItemAttributes}
+					addLabel={__('Add item', 'designsetgo')}
+				/>
 			</BlockControls>
 
 			<div {...blockProps}>

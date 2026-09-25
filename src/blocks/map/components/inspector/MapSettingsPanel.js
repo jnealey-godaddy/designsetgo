@@ -18,9 +18,8 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
-import { useState, useCallback } from '@wordpress/element';
 import { DsgoInspectorPanel } from '../../../../components/shared';
-import { geocodeAddress } from '../../utils/geocoding';
+import useAddressSearch from '../../utils/use-address-search';
 
 const DEFAULT_PRIVACY_NOTICE =
 	'This map will load content from external services. Click to load and view the map.';
@@ -65,45 +64,9 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 	// would be dead UI — hide them rather than let them silently do nothing.
 	const isEmbedProvider = dsgoProvider === 'googlemaps-embed';
 
-	const [isSearching, setIsSearching] = useState(false);
-	const [searchError, setSearchError] = useState('');
-
-	const handleAddressSearch = useCallback(async () => {
-		if (!dsgoAddress || dsgoAddress.trim() === '') {
-			setSearchError(
-				__('Please enter an address to search.', 'designsetgo')
-			);
-			return;
-		}
-
-		setIsSearching(true);
-		setSearchError('');
-
-		try {
-			const result = await geocodeAddress(dsgoAddress);
-
-			if (result) {
-				setAttributes({
-					dsgoLatitude: result.lat,
-					dsgoLongitude: result.lng,
-					dsgoAddress: result.display_name,
-				});
-			} else {
-				setSearchError(
-					__(
-						'Address not found. Please try a different search.',
-						'designsetgo'
-					)
-				);
-			}
-		} catch (error) {
-			setSearchError(
-				__('Failed to search address. Please try again.', 'designsetgo')
-			);
-		} finally {
-			setIsSearching(false);
-		}
-	}, [dsgoAddress, setAttributes]);
+	const { search, isSearching, searchError, setSearchError } =
+		useAddressSearch(setAttributes);
+	const handleAddressSearch = () => search(dsgoAddress);
 
 	const handleAddressKeyPress = (event) => {
 		if (event.key === 'Enter') {

@@ -114,6 +114,11 @@
 			}
 		}
 	},
+	"example": {
+		"attributes": {
+			"content": "Heading segment"
+		}
+	},
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css"

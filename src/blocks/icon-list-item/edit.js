@@ -15,9 +15,8 @@ import {
 } from '@wordpress/block-editor';
 import { getIcon } from '../icon/utils/svg-icons';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
-import { IconPickerPanel } from './components/inspector/IconPickerPanel';
-import { LinkSettingsPanel } from './components/inspector/LinkSettingsPanel';
-import { SpacingPanel } from './components/inspector/SpacingPanel';
+import { SettingsPanel } from './components/inspector/SettingsPanel';
+import { StylePanel } from './components/inspector/StylePanel';
 import { hasExplicitNumber } from '../../utils/has-explicit-value';
 import { useIconDefaults } from '../../hooks';
 
@@ -28,12 +27,14 @@ import { useIconDefaults } from '../../hooks';
  * @param {Object}   props.attributes    - Block attributes
  * @param {Function} props.setAttributes - Function to update attributes
  * @param {Object}   props.context       - Block context from parent
+ * @param {string}   props.clientId      - Block client ID
  * @return {JSX.Element} Icon List Item edit component
  */
 export default function IconListItemEdit({
 	attributes,
 	setAttributes,
 	context,
+	clientId,
 }) {
 	const { icon, linkUrl, contentGap } = attributes;
 
@@ -152,16 +153,15 @@ export default function IconListItemEdit({
 	return (
 		<>
 			<InspectorControls>
-				<IconPickerPanel icon={icon} setAttributes={setAttributes} />
-				<SpacingPanel
-					contentGap={contentGap}
+				<SettingsPanel
+					attributes={attributes}
 					setAttributes={setAttributes}
+					clientId={clientId}
 				/>
-				<LinkSettingsPanel
-					linkUrl={linkUrl}
-					linkTarget={attributes.linkTarget}
-					linkRel={attributes.linkRel}
+				<StylePanel
+					attributes={attributes}
 					setAttributes={setAttributes}
+					clientId={clientId}
 				/>
 			</InspectorControls>
 

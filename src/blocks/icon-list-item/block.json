@@ -57,6 +57,19 @@
 			"default": ""
 		}
 	},
+	"example": {
+		"attributes": {
+			"icon": "check"
+		},
+		"innerBlocks": [
+			{
+				"name": "core/paragraph",
+				"attributes": {
+					"content": "A list item with its own icon"
+				}
+			}
+		]
+	},
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css"

@@ -9,7 +9,7 @@
 Create vertical stacking containers for organizing content areas. Perfect for page layouts, hero sections, and content sections. Maintains centered, constrained layouts with full-width backgrounds.
 
 **Key Features:**
-- Vertical flex layout (auto-converts to Row when horizontal)
+- Vertical flex layout (use Transform → Row for a horizontal layout)
 - Width constraint system (enabled by default, typically 1140px)
 - Overlay color support for image backgrounds
 - Hover effects with context propagation to child blocks
@@ -52,7 +52,7 @@ When a Section block is placed inside another Section block, DesignSetGo automat
 ---
 
 ### Layout Panel (WordPress Native)
-**Orientation**: Vertical (changing to Horizontal auto-converts to Row block)
+**Orientation**: Always vertical. For a horizontal layout, transform the block to Row (block toolbar → Transform), which keeps its settings and inner blocks.
 
 **Justification** (vertical distribution):
 - Top: Items at top, space below
