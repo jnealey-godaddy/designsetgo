@@ -29,7 +29,12 @@
 			content: "";
 			position: absolute;
 			inset: 0;
-			background: linear-gradient(90deg, #f2f2f2, #e8e8e8, #f2f2f2);
+			background: linear-gradient(
+				90deg,
+				var(--wp--preset--color--contrast-2, #f2f2f2),
+				var(--wp--preset--color--contrast-3, #e8e8e8),
+				var(--wp--preset--color--contrast-2, #f2f2f2)
+			);
 			background-size: 200% 100%;
 			animation: dsgo-query-skeleton-pulse 1.5s ease-in-out infinite;
 			border-radius: inherit;

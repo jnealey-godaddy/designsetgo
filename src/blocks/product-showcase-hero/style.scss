@@ -8,6 +8,9 @@
  * @since 2.1.0
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-product-showcase-hero {
 	box-sizing: border-box;
 
@@ -40,11 +43,12 @@
 		top: var(--wp--preset--spacing--30, 1rem);
 		left: var(--wp--preset--spacing--30, 1rem);
 		background: var(--wp--preset--color--vivid-red, #cf2e2e);
+		// White on purpose, for contrast against the fixed red badge.
 		color: #fff;
 		padding: 4px 12px;
 		font-size: 0.875rem;
 		font-weight: 600;
-		border-radius: 3px;
+		border-radius: $dsgo-radius-small;
 		line-height: 1.4;
 		z-index: 1;
 	}
@@ -81,6 +85,8 @@
 		);
 	}
 
+	// Physical (not margin-inline-*): tracks the physical `100vw`-derived
+	// padding on &__content above — see Fifty Fifty's identical technique.
 	&--media-left &__content-inner {
 		margin-right: auto;
 		margin-left: 0;
@@ -102,6 +108,7 @@
 			padding-right: var(--wp--preset--spacing--50, 2rem);
 		}
 
+		// Physical for the same reason as the media-left case above.
 		.dsgo-product-showcase-hero__content-inner {
 			margin-left: auto;
 			margin-right: 0;
@@ -128,7 +135,7 @@
 
 		del {
 			opacity: 0.6;
-			margin-right: 0.5em;
+			margin-inline-end: 0.5em;
 		}
 
 		ins {
@@ -187,12 +194,12 @@
 	// ==============================================
 	// MOBILE RESPONSIVE
 	// ==============================================
-	@media (max-width: 767px) {
+	@include below($breakpoint-mobile) {
 		grid-template-columns: 1fr;
 	}
 
 	// Override media position order on mobile.
-	@media (max-width: 767px) {
+	@include below($breakpoint-mobile) {
 
 		.dsgo-product-showcase-hero__media {
 			order: 1;
@@ -207,8 +214,7 @@
 
 		.dsgo-product-showcase-hero__content-inner {
 			max-width: none;
-			margin-left: auto;
-			margin-right: auto;
+			margin-inline: auto;
 		}
 	}
 }

@@ -3,6 +3,8 @@
  * Sticky stacking card effect - incremental top positioning
  */
 
+@use '../../styles/variables' as *;
+
 .dsgo-scroll-accordion-item {
 	position: sticky;
 	width: 100%;
@@ -99,7 +101,10 @@
 	}
 
 	/**
-	 * Alignment support
+	 * Alignment support. Only aligncenter converts to a logical shorthand
+	 * (centering is direction-agnostic) — alignleft/alignright stay physical
+	 * because WordPress's own align classes are not direction-aware (core
+	 * never flips .alignleft/.alignright for RTL).
 	 */
 	&.alignleft {
 		margin-right: auto;
@@ -107,8 +112,7 @@
 	}
 
 	&.aligncenter {
-		margin-left: auto;
-		margin-right: auto;
+		margin-inline: auto;
 	}
 
 	&.alignright {

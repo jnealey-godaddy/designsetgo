@@ -8,6 +8,9 @@
  * @since 2.1.0
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-product-categories-grid {
 	display: grid;
 	gap: var(--wp--style--block-gap, 1.5rem);
@@ -44,6 +47,8 @@
 		border-radius: inherit;
 		aspect-ratio: var(--dsgo-pcg-aspect-ratio, 3 / 4);
 		text-decoration: none;
+		// White on purpose: the title sits on a photo under a dark scrim, so a
+		// themed color could make it unreadable.
 		color: #fff;
 
 		// Subtle background visible when no image is set.
@@ -77,7 +82,7 @@
 		height: 100%;
 		object-fit: cover;
 		display: block;
-		transition: transform 0.3s ease;
+		transition: transform $dsgo-duration-normal $dsgo-easing;
 	}
 
 	// ==============================================
@@ -141,7 +146,7 @@
 	// ==============================================
 	// TABLET — collapse 3-5 columns to 2
 	// ==============================================
-	@media (max-width: 781px) {
+	@include below($breakpoint-wp-medium) {
 
 		:where(&--cols-3),
 		:where(&--cols-4),
@@ -157,7 +162,8 @@
 	}
 
 	// ==============================================
-	// MOBILE — single column, featured resets
+	// MOBILE — single column, featured resets. 480px is block-specific (not
+	// in the shared scale) — kept literal.
 	// ==============================================
 	@media (max-width: 480px) {
 

@@ -2,6 +2,9 @@
 
 // Editor styles for designsetgo/query-results.
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .wp-block-designsetgo-query-results {
 
 	// Editor preview: show the actual template card in column 1 and faint
@@ -47,14 +50,18 @@
 
 		.dsgo-query-results__ghost-image {
 			aspect-ratio: 4 / 3;
-			background: linear-gradient(135deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.12) 100%);
-			border-radius: 4px;
+			background: linear-gradient(
+				135deg,
+				var(--wp--preset--color--contrast-2, rgba(0, 0, 0, 0.06)) 0%,
+				var(--wp--preset--color--contrast-3, rgba(0, 0, 0, 0.12)) 100%
+			);
+			border-radius: $dsgo-radius-small;
 		}
 
 		.dsgo-query-results__ghost-line {
 			height: 0.75rem;
-			background: rgba(0, 0, 0, 0.08);
-			border-radius: 3px;
+			background: var(--wp--preset--color--contrast-2, rgba(0, 0, 0, 0.08));
+			border-radius: $dsgo-radius-small;
 
 			&--title {
 				height: 1.25rem;
@@ -68,6 +75,7 @@
 		}
 	}
 
+	// 900px mirrors style.scss's block-specific "tablet columns" breakpoint.
 	@media (max-width: 900px) {
 
 		.dsgo-query-results__editor-grid,
@@ -84,7 +92,7 @@
 		}
 	}
 
-	@media (max-width: 600px) {
+	@media (max-width: #{$breakpoint-small}) {
 
 		.dsgo-query-results__editor-grid,
 		.dsgo-query__editor-preview-list {

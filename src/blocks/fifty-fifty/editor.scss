@@ -9,14 +9,16 @@
  * @since 1.5.0
  */
 
+@use '../../styles/variables' as *;
+
 .dsgo-fifty-fifty {
 	// Placeholder: hover/focus styling for accessibility in the editor
 	&__media-placeholder {
-		transition: background-color 0.15s ease;
+		transition: background-color $dsgo-duration-fast $dsgo-easing;
 
 		&:hover,
 		&:focus {
-			background-color: #e0e0e0;
+			background-color: var(--wp--preset--color--contrast-2, #e0e0e0);
 			outline: 2px solid var(--wp-admin-theme-color, #007cba);
 			outline-offset: -2px;
 		}

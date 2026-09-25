@@ -4,6 +4,9 @@
 // on the dsgo- prefix only (see get_block_wrapper_attributes call in
 // render.php). Keeping selectors rooted on the BEM class means layout still
 // applies after a filter/pagination REST refresh re-serialises the wrapper.
+
+@use '../../styles/variables' as *;
+
 .dsgo-query-pagination {
 
 	// Horizontal alignment modifier. Numbered pagination centres/right-aligns
@@ -19,7 +22,7 @@
 	}
 
 	&.is-align-right {
-		text-align: right;
+		text-align: end; // Logical: this is the block's own alignment attribute, not a WP align class
 
 		.dsgo-query-pagination__list {
 			justify-content: flex-end;
@@ -78,7 +81,7 @@
 	// control visually matches the rest of the plugin's buttons and inherits
 	// theme.json Global Styles via wp-element-button.
 	:where(.dsgo-query-pagination__loadmore) {
-		border-radius: 9999px;
+		border-radius: $dsgo-radius-full;
 	}
 
 	.dsgo-query-pagination__loadmore {
@@ -91,25 +94,29 @@
 		font-family: inherit;
 		font-size: 1em;
 		line-height: 1.2;
-		text-decoration: none !important;
 		cursor: pointer;
 		transition: all 0.2s ease;
 		overflow: hidden;
 
+		// text-decoration: none !important — one declaration for every state
+		// instead of four repeats (mirrors Icon Button's identical pattern).
+		// !important beats a theme's `a:hover/:focus { text-decoration:
+		// underline }`, regardless of which state is active.
+		&,
+		&:hover,
+		&:active,
+		&:focus,
+		&:focus-within {
+			text-decoration: none !important;
+		}
+
 		&:hover {
 			opacity: 0.9;
 			transform: translateY(-1px);
-			text-decoration: none !important;
 		}
 
 		&:active {
 			transform: translateY(0);
-			text-decoration: none !important;
-		}
-
-		&:focus,
-		&:focus-within {
-			text-decoration: none !important;
 		}
 
 		&:disabled,

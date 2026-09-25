@@ -6,6 +6,9 @@
  * @package DesignSetGo
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-flex {
 	// CRITICAL: Ensure width includes padding/border to prevent overflow
 	box-sizing: border-box;
@@ -17,7 +20,7 @@
 	overflow: visible;
 
 	// Smooth transition for hover background color
-	transition: background-color 0.3s ease;
+	transition: background-color $dsgo-duration-normal $dsgo-easing;
 
 	/**
 	 * Background overlay
@@ -110,7 +113,7 @@
 	// outer-only rule no longer produced stacking.
 	&--mobile-stack {
 
-		@media (max-width: 767px) {
+		@include below($breakpoint-mobile) {
 			flex-direction: column !important;
 
 			> .dsgo-flex__inner {

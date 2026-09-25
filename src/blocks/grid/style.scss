@@ -6,6 +6,9 @@
  * @package DesignSetGo
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-grid {
 	// The block wrapper must stay a normal block: in the two-div pattern the
 	// wrapper handles full-width/background/padding and `.dsgo-grid__inner` is
@@ -26,7 +29,7 @@
 	position: relative;
 
 	// Smooth transition for hover background color
-	transition: background-color 0.3s ease;
+	transition: background-color $dsgo-duration-normal $dsgo-easing;
 
 	/**
 	 * Background overlay
@@ -73,15 +76,13 @@
 	// MUST be duplicated from editor.scss for editor/frontend parity
 	&.alignfull {
 		max-width: none;
-		margin-left: 0;
-		margin-right: 0;
+		margin-inline: 0;
 	}
 
 	&.alignwide {
 		max-width: var(--wp--custom--layout--wide-size, 1200px);
 		width: 100%;
-		margin-left: auto;
-		margin-right: auto;
+		margin-inline: auto;
 	}
 
 	// Inner container handles all grid styling
@@ -134,8 +135,7 @@
 
 		.dsgo-grid__inner {
 			max-width: none !important;
-			margin-left: 0 !important;
-			margin-right: 0 !important;
+			margin-inline: 0 !important;
 		}
 	}
 
@@ -148,8 +148,7 @@
 		// Exclude blocks with explicit max-width set via our extension
 		> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width):not(.dsgo-stack--has-box-width) {
 			max-width: none !important;
-			margin-left: 0 !important;
-			margin-right: 0 !important;
+			margin-inline: 0 !important;
 		}
 	}
 
@@ -159,7 +158,7 @@
 	// CRITICAL: Target .dsgo-grid__inner since that's where grid-template-columns is applied
 
 	// Tablet breakpoint (≤ 1024px)
-	@media (max-width: 1024px) {
+	@media (max-width: #{$breakpoint-tablet}) {
 
 		@for $i from 1 through 12 {
 			&.dsgo-grid-cols-tablet-#{$i} .dsgo-grid__inner {
@@ -169,7 +168,7 @@
 	}
 
 	// Mobile breakpoint (≤ 767px)
-	@media (max-width: 767px) {
+	@include below($breakpoint-mobile) {
 
 		@for $i from 1 through 12 {
 			&.dsgo-grid-cols-mobile-#{$i} .dsgo-grid__inner {
@@ -230,7 +229,7 @@
 // CRITICAL: Force grid items and nested layouts to stack properly on mobile
 // Must be outside .dsgo-grid scope for proper specificity
 // With two-div structure: target .dsgo-grid__inner children
-@media (max-width: 767px) {
+@include below($breakpoint-mobile) {
 	// Force all grid items with column spans to span 1 on mobile
 	// High specificity to override inline styles
 	.dsgo-grid__inner > [style*="grid-column"],
