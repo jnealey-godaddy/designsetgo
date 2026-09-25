@@ -63,6 +63,8 @@ export default class DSGMap {
 			privacyMode: dataset.dsgoPrivacyMode === 'true',
 			apiKey: dataset.dsgoApiKey || '',
 			mapStyle: dataset.dsgoMapStyle || 'standard',
+			// Localized region label (privacy mode only; see render.php).
+			label: dataset.dsgoMapLabel || '',
 		};
 	}
 

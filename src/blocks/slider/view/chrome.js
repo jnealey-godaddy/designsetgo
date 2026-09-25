@@ -7,6 +7,7 @@
  * the pattern safe if a label ever interpolates author content.
  */
 
+import { __, sprintf } from '@wordpress/i18n';
 import { createArrowIcon } from '../arrow-icon';
 
 /**
@@ -48,8 +49,8 @@ export function buildArrows(slider, { onPrev, onNext }) {
 		return button;
 	};
 
-	const prev = makeArrow('prev', 'Previous slide', onPrev);
-	const next = makeArrow('next', 'Next slide', onNext);
+	const prev = makeArrow('prev', __('Previous slide', 'designsetgo'), onPrev);
+	const next = makeArrow('next', __('Next slide', 'designsetgo'), onNext);
 
 	slider.appendChild(container);
 	return { container, prev, next };
@@ -85,14 +86,18 @@ export function buildDots(
 	const container = document.createElement('div');
 	container.className = 'dsgo-slider__dots';
 	container.setAttribute('role', 'group');
-	container.setAttribute('aria-label', 'Slide navigation');
+	container.setAttribute('aria-label', __('Slide navigation', 'designsetgo'));
 
 	const dots = [];
 	for (let i = 0; i < count; i++) {
 		const dot = document.createElement('button');
 		dot.type = 'button';
 		dot.className = 'dsgo-slider__dot';
-		dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+		dot.setAttribute(
+			'aria-label',
+			/* translators: %d: slide number */
+			sprintf(__('Go to slide %d', 'designsetgo'), i + 1)
+		);
 		if (i === activeIndex) {
 			dot.setAttribute('aria-current', 'true');
 			dot.classList.add('dsgo-slider__dot--active');

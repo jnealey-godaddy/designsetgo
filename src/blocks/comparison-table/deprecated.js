@@ -1,22 +1,28 @@
 /**
- * Comparison Table Block - Save Component
+ * Comparison Table Block - Deprecations
  *
- * Generates the static frontend HTML for the comparison table.
- * Includes data attributes for tooltip behavior handled by view.js.
+ * v1: Save before the table had header semantics. The top-left corner was an
+ * empty `<th>`, column headers had no `scope`, and each row's feature label
+ * was a `<td>` rather than `<th scope="row">`. Markup-only change (attribute
+ * schema unchanged), so no isEligible: stored HTML no longer matches the
+ * current save(), and this frozen copy reproduces it.
+ *
+ * @package
  */
 
+import { __ } from '@wordpress/i18n';
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
-import { getCtaFallback, getFeaturedBadgeText } from './utils/fallback-labels';
+import metadata from './block.json';
 
 /**
- * Save component for the Comparison Table block
+ * v1 save: frozen copy of the pre-header-semantics markup.
  *
  * @param {Object} props            - Component props
  * @param {Object} props.attributes - Block attributes
  * @return {JSX.Element} Comparison Table save markup
  */
-export default function ComparisonTableSave({ attributes }) {
+function saveV1({ attributes }) {
 	const {
 		columns,
 		rows,
@@ -27,12 +33,7 @@ export default function ComparisonTableSave({ attributes }) {
 		headerTextColor,
 		showCtaButtons,
 		ctaStyle,
-		featuredBadgeText,
-		savedCtaTexts,
 	} = attributes;
-
-	// Fallback labels are read back from the stored markup, so opening the
-	// post in another editor language keeps the block valid.
 
 	const blockProps = useBlockProps.save({
 		className: [
@@ -69,18 +70,13 @@ export default function ComparisonTableSave({ attributes }) {
 					{/* Header Row */}
 					<thead className="dsgo-comparison-table__header">
 						<tr>
-							{/*
-							 * Feature label column corner. A <td>, not an empty
-							 * <th>: it labels nothing, and an empty header is
-							 * announced as a blank column heading.
-							 */}
-							<td className="dsgo-comparison-table__header-cell dsgo-comparison-table__header-cell--label"></td>
+							{/* Feature label column header */}
+							<th className="dsgo-comparison-table__header-cell dsgo-comparison-table__header-cell--label"></th>
 
 							{/* Column headers */}
 							{columns.map((col, colIndex) => (
 								<th
 									key={colIndex}
-									scope="col"
 									className={[
 										'dsgo-comparison-table__header-cell',
 										col.featured &&
@@ -91,9 +87,7 @@ export default function ComparisonTableSave({ attributes }) {
 								>
 									{col.featured && (
 										<span className="dsgo-comparison-table__featured-badge">
-											{getFeaturedBadgeText(
-												featuredBadgeText
-											)}
+											{__('Popular', 'designsetgo')}
 										</span>
 									)}
 
@@ -110,10 +104,9 @@ export default function ComparisonTableSave({ attributes }) {
 											rel="noopener noreferrer"
 										>
 											{col.linkText ||
-												getCtaFallback(
-													columns,
-													savedCtaTexts,
-													colIndex
+												__(
+													'Get Started',
+													'designsetgo'
 												)}
 										</a>
 									)}
@@ -139,11 +132,8 @@ export default function ComparisonTableSave({ attributes }) {
 								key={rowIndex}
 								className="dsgo-comparison-table__row"
 							>
-								{/* Feature label: the row header for its cells */}
-								<th
-									scope="row"
-									className="dsgo-comparison-table__cell dsgo-comparison-table__cell--label"
-								>
+								{/* Feature label */}
+								<td className="dsgo-comparison-table__cell dsgo-comparison-table__cell--label">
 									<div className="dsgo-comparison-table__label-wrapper">
 										<RichText.Content
 											tagName="span"
@@ -162,7 +152,7 @@ export default function ComparisonTableSave({ attributes }) {
 											</span>
 										)}
 									</div>
-								</th>
+								</td>
 
 								{/* Cells */}
 								{row.cells.map((cell, colIndex) => (
@@ -247,3 +237,12 @@ export default function ComparisonTableSave({ attributes }) {
 		</div>
 	);
 }
+
+const v1 = {
+	apiVersion: 3,
+	attributes: metadata.attributes,
+	supports: metadata.supports,
+	save: saveV1,
+};
+
+export default [v1];

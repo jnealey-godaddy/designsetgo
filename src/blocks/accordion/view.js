@@ -4,6 +4,8 @@
  * Following WordPress best practices - NO layout manipulation
  */
 
+import { __ } from '@wordpress/i18n';
+
 document.addEventListener('DOMContentLoaded', function () {
 	initAccordions();
 });
@@ -35,7 +37,7 @@ function initAccordions() {
 		const skipLink = document.createElement('a');
 		skipLink.href = '#end-of-accordion';
 		skipLink.className = 'dsgo-accordion__skip-link';
-		skipLink.textContent = 'Skip accordion';
+		skipLink.textContent = __('Skip accordion', 'designsetgo');
 		skipLink.addEventListener('click', (e) => {
 			e.preventDefault();
 			// Focus on the element after the accordion

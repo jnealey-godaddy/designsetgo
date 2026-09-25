@@ -168,6 +168,13 @@
 		outline: none;
 	}
 
+	// Inset: items sit edge to edge, and the accordion clips its overflow.
+	&:focus-visible {
+		outline: 3px solid #fff;
+		outline-offset: -3px;
+		box-shadow: inset 0 0 0 5px rgba(0, 0, 0, 0.6);
+	}
+
 	// Note: Hover interactions are handled by JavaScript (view.js)
 	// which adds/removes is-expanded and is-collapsed classes
 }

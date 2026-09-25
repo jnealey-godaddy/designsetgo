@@ -49,7 +49,8 @@ const register = (saveFn, deprecations) =>
  * @return {string} Legacy block markup.
  */
 function legacyMarkup() {
-	register(deprecated[0].save);
+	// v1 is the oldest entry, so it sits last in the newest-first array.
+	register(deprecated[deprecated.length - 1].save);
 	const block = createBlock(metadata.name);
 	const markup = serialize(block);
 	unregisterBlockType(metadata.name);

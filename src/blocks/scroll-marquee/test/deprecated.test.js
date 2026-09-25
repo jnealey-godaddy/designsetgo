@@ -29,8 +29,8 @@ setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
 registerBlockType(metadata.name, { ...metadata, save, deprecated });
 
-// deprecated.js exports newest-first: [v4, v3, v2, v1ObjectFit, v1].
-const [v4Deprecation, , v2Deprecation, , v1Deprecation] = deprecated;
+// deprecated.js exports newest-first: [v5, v4, v3, v2, v1ObjectFit, v1].
+const [, v4Deprecation, , v2Deprecation, , v1Deprecation] = deprecated;
 
 // Minimal valid rows payload (createBlock needs at least one image so the
 // migrated markup is non-trivial and matches real content).
@@ -59,12 +59,15 @@ describe('scroll-marquee save() - auto image width', () => {
 describe('scroll-marquee deprecations - v4 auto-width migration', () => {
 	// Derive byte-exact OLD default-width markup from the current canonical
 	// output: the pre-`auto` save baked the 300px default inline where the
-	// current save now writes `auto` (the sole difference).
+	// current save now writes `auto`, and it predates the aria-hidden repeat
+	// segments (v5), so both differences are reversed.
 	const canonical = serialize(createBlock(metadata.name, { rows: ROWS }));
-	const OLD_MARKUP = canonical.replace(
-		'--dsgo-marquee-image-width:auto',
-		'--dsgo-marquee-image-width:300px'
-	);
+	const OLD_MARKUP = canonical
+		.replace(
+			'--dsgo-marquee-image-width:auto',
+			'--dsgo-marquee-image-width:300px'
+		)
+		.replaceAll(' aria-hidden="true"', '');
 
 	test('derived old markup differs from canonical as expected', () => {
 		expect(OLD_MARKUP).toContain('--dsgo-marquee-image-width:300px');
@@ -90,7 +93,9 @@ describe('scroll-marquee deprecations - v4 auto-width migration', () => {
 	test('migrated HTML body is byte-identical to the stored old markup', () => {
 		// The migrated block re-serializes with `"imageWidth":"300px"` pinned in
 		// the block comment (it is no longer the default), but the saved HTML
-		// body — what renders on the page — is byte-for-byte preserved.
+		// body — what renders on the page — is byte-for-byte what the current
+		// save() writes for an explicit 300px (the width is preserved; the only
+		// addition is v5's aria-hidden on the repeat segments).
 		const OLD_BODY = getBlockContent(
 			createBlock(metadata.name, { rows: ROWS, imageWidth: '300px' })
 		);

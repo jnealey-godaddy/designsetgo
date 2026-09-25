@@ -4,6 +4,19 @@
  * Handles tab switching, keyboard navigation, deep linking, and mobile responsive behavior
  */
 
+import { __, sprintf } from '@wordpress/i18n';
+
+/**
+ * Fallback tab title when a panel has no title of its own.
+ *
+ * @param {number} index Zero-based tab index.
+ * @return {string} Localized "Tab N".
+ */
+function fallbackTabTitle(index) {
+	/* translators: %d: tab number */
+	return sprintf(__('Tab %d', 'designsetgo'), index + 1);
+}
+
 (function () {
 	'use strict';
 
@@ -154,7 +167,7 @@
 			const skipLink = document.createElement('a');
 			skipLink.href = `#${activePanel.id}`;
 			skipLink.className = 'dsgo-tabs__skip-link';
-			skipLink.textContent = 'Skip to tab content';
+			skipLink.textContent = __('Skip to tab content', 'designsetgo');
 			skipLink.addEventListener('click', (e) => {
 				e.preventDefault();
 				const panel = this.panels[this.clampTabIndex(this.activeTab)];
@@ -170,7 +183,7 @@
 				const title =
 					panel.getAttribute('aria-label') ||
 					this.getTabTitle(panel) ||
-					`Tab ${index + 1}`;
+					fallbackTabTitle(index);
 				const icon = panel.dataset.icon;
 				const iconPosition = panel.dataset.iconPosition || 'left';
 				const iconStyle = panel.dataset.iconStyle;
@@ -453,7 +466,7 @@
 					const title =
 						panel.getAttribute('aria-label') ||
 						this.getTabTitle(panel) ||
-						`Tab ${index + 1}`;
+						fallbackTabTitle(index);
 					header.textContent = title;
 
 					header.addEventListener('click', () => {
@@ -481,7 +494,10 @@
 				// Create dropdown select element
 				dropdown = document.createElement('select');
 				dropdown.className = 'dsgo-tabs__dropdown';
-				dropdown.setAttribute('aria-label', 'Select tab');
+				dropdown.setAttribute(
+					'aria-label',
+					__('Select tab', 'designsetgo')
+				);
 
 				// Add options from panels
 				this.panels.forEach((panel, index) => {
@@ -490,7 +506,7 @@
 					option.textContent =
 						panel.getAttribute('aria-label') ||
 						this.getTabTitle(panel) ||
-						`Tab ${index + 1}`;
+						fallbackTabTitle(index);
 					option.selected = index === this.activeTab;
 					dropdown.appendChild(option);
 				});

@@ -103,17 +103,30 @@
 	// Click trigger
 	&--click {
 		cursor: pointer;
+	}
+
+	// Keyboard toggle injected by view.js. It overlays the card to draw the
+	// focus ring, but ignores the pointer so clicks reach the faces' links.
+	> .dsgo-flip-card__toggle {
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+		width: 100%;
+		height: 100%;
+		padding: 0;
+		margin: 0;
+		border: 0;
+		border-radius: inherit;
+		background: transparent;
+		pointer-events: none;
 
 		&:focus {
 			outline: none;
 		}
-	}
 
-	// Hover trigger
-	&--hover {
-
-		&:focus {
-			outline: none;
+		&:focus-visible {
+			outline: 2px solid currentcolor;
+			outline-offset: 2px;
 		}
 	}
 

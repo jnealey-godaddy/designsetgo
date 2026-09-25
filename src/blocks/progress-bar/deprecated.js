@@ -10,6 +10,11 @@
  * save() no longer emits; this deprecation reproduces the old markup and
  * migrates them silently (attribute schema is unchanged).
  *
+ * v2: Save before the track carried `role="progressbar"` and its
+ * `aria-value*` / `aria-label` attributes. Markup-only change, so no
+ * isEligible: the stored HTML no longer matches the current save(), and this
+ * frozen copy reproduces it.
+ *
  * @package
  */
 
@@ -17,6 +22,7 @@ import { useBlockProps } from '@wordpress/block-editor';
 import metadata from './block.json';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
+
 
 const v1 = {
 	apiVersion: 3,

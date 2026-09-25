@@ -41,8 +41,40 @@
 	}
 
 	// Ensure content is above video
-	> *:not(.dsgo-video-background) {
+	> *:not(.dsgo-video-background):not(.dsgo-video-background__toggle) {
 		position: relative;
 		z-index: 2;
+	}
+
+	// Play/pause control injected by frontend.js (WCAG 2.2.2).
+	> .dsgo-video-background__toggle {
+		position: absolute;
+		right: 0.75rem;
+		bottom: 0.75rem;
+		z-index: 3;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		padding: 0;
+		border: 0;
+		border-radius: 50%;
+		background: rgba(0, 0, 0, 0.6);
+		color: #fff;
+		cursor: pointer;
+		opacity: 0.75;
+		transition: opacity 0.2s ease;
+
+		&:hover,
+		&:focus-visible {
+			opacity: 1;
+		}
+
+		&:focus-visible {
+			outline: 2px solid #fff;
+			outline-offset: 2px;
+			box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.6);
+		}
 	}
 }
