@@ -279,7 +279,7 @@ function designsetgo_get_icon_aliases() {
 		return $aliases;
 	}
 
-	$file = __DIR__ . '/data/icon-aliases.json';
+	$file = __DIR__ . '/icon-aliases.json';
 
 	if ( ! file_exists( $file ) ) {
 		$aliases = array();

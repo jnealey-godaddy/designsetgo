@@ -1,0 +1,55 @@
+{
+  "block-animations": {
+    "needles": [ "has-dsgo-animation", "data-dsgo-animation-enabled", "data-dsgo-svg-draw" ],
+    "scripts": [ "src/extensions/block-animations/frontend.js", "src/extensions/block-animations/svg-draw.js" ],
+    "style": "src/extensions/block-animations/animations.scss"
+  },
+  "background-video": {
+    "needles": [ "dsgo-has-video-background" ],
+    "scripts": [ "src/extensions/background-video/frontend.js" ],
+    "style": "src/extensions/background-video/style.scss"
+  },
+  "clickable-group": {
+    "needles": [ "dsgo-clickable" ],
+    "scripts": [ "src/extensions/clickable-group/frontend.js" ],
+    "style": "src/extensions/clickable-group/styles.scss"
+  },
+  "text-reveal": {
+    "needles": [ "has-dsgo-text-reveal", "data-dsgo-text-reveal-enabled" ],
+    "scripts": [ "src/extensions/text-reveal/frontend.js" ],
+    "style": "src/extensions/text-reveal/style.scss"
+  },
+  "expanding-background": {
+    "needles": [ "has-dsgo-expanding-background", "data-dsgo-expanding-bg-enabled" ],
+    "scripts": [ "src/extensions/expanding-background/frontend.js" ],
+    "style": "src/extensions/expanding-background/style.scss"
+  },
+  "vertical-scroll-parallax": {
+    "needles": [ "data-dsgo-parallax-enabled" ],
+    "scripts": [ "src/extensions/vertical-scroll-parallax/frontend.js" ]
+  },
+  "hover-effects": {
+    "needles": [ "dsgo-hover-effect" ],
+    "style": "src/extensions/hover-effects/styles.scss"
+  },
+  "reveal-control": {
+    "needles": [ "dsgo-has-reveal" ],
+    "style": "src/extensions/reveal-control/styles.scss"
+  },
+  "svg-patterns": {
+    "needles": [ "has-dsgo-svg-pattern" ],
+    "style": "src/extensions/svg-patterns/style.scss"
+  },
+  "grid-span": {
+    "needles": [ "dsgo-grid__inner" ],
+    "style": "src/extensions/grid-span/style.scss"
+  },
+  "grid-mobile-order": {
+    "needles": [ "dsgo-grid__inner" ],
+    "style": "src/extensions/grid-mobile-order/style.scss"
+  },
+  "interactions": {
+    "needles": [ "data-dsgo-interactions" ],
+    "style": "src/extensions/interactions/style.scss"
+  }
+}

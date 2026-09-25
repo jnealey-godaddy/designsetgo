@@ -154,24 +154,50 @@ function initCountdownTimer(timer) {
 		return;
 	}
 
-	// Update every second
-	const interval = setInterval(
-		() => {
-			timeData = getTimeData(timer);
-			updateCountdownDisplay(timer, timeData);
+	let interval = null;
 
-			if (timeData.isComplete) {
-				clearInterval(interval);
-				handleCompletion(timer, true);
-			}
-		},
-		prefersReducedMotion ? 5000 : 1000
-	); // Slower updates for reduced motion
-
-	// Clean up on page unload
-	window.addEventListener('beforeunload', () => {
+	const stop = () => {
 		clearInterval(interval);
-	});
+		interval = null;
+	};
+
+	const tick = () => {
+		timeData = getTimeData(timer);
+		updateCountdownDisplay(timer, timeData);
+
+		if (timeData.isComplete) {
+			stop();
+			document.removeEventListener('visibilitychange', onVisibility);
+			handleCompletion(timer, true);
+		}
+	};
+
+	// Update every second (slower for reduced motion).
+	const start = () => {
+		if (interval) {
+			return;
+		}
+		interval = setInterval(tick, prefersReducedMotion ? 5000 : 1000);
+	};
+
+	// A hidden tab can't see the timer, so stop ticking. The remaining time is
+	// recomputed from the clock on return, so nothing drifts while paused.
+	function onVisibility() {
+		if (document.hidden) {
+			stop();
+			return;
+		}
+		tick();
+		if (!timeData.isComplete) {
+			start();
+		}
+	}
+
+	document.addEventListener('visibilitychange', onVisibility);
+
+	if (!document.hidden) {
+		start();
+	}
 }
 
 /**

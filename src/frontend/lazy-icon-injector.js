@@ -4,8 +4,9 @@
  * Finds all icons with data-icon-name attributes and injects
  * the appropriate SVG markup from the global icon library.
  *
- * Icons are provided by PHP via wp_localize_script to avoid
- * bundling the 51KB icon library into every block's JS bundle.
+ * PHP prints only the icons the page rendered as `window.dsgoIcons`
+ * (name → SVG, '' for unknown names). Icons that arrive later — Query
+ * "load more", soft navigation — are fetched from the icons REST route.
  *
  * @since 1.2.0
  */
@@ -13,15 +14,82 @@
 /* global DOMParser, MutationObserver, Node, requestAnimationFrame, cancelAnimationFrame */
 
 /**
+ * Names already asked of the REST route, so each is fetched at most once.
+ *
+ * @type {Set<string>}
+ */
+const requestedIcons = new Set();
+
+/**
+ * Normalize an icon name the same way PHP's designsetgo_sanitize_icon_slug()
+ * does, so lookups match the keys the server sends.
+ *
+ * @param {string} name Raw data-icon-name value.
+ * @return {string} Normalized icon name.
+ */
+function normalizeIconName(name) {
+	return typeof name === 'string'
+		? name
+				.trim()
+				.toLowerCase()
+				.replace(/[^a-z0-9-]/g, '')
+		: '';
+}
+
+/**
+ * Fetch icons the page did not render on first paint, then inject them.
+ *
+ * @param {string[]} names Normalized icon names missing from the library.
+ */
+function fetchMissingIcons(names) {
+	const rest = window.dsgoIconsRest;
+	const toFetch = names.filter((name) => !requestedIcons.has(name));
+
+	if (!rest || !rest.url || toFetch.length === 0) {
+		return;
+	}
+
+	toFetch.forEach((name) => requestedIcons.add(name));
+
+	const url = new URL(rest.url, window.location.href);
+	url.searchParams.set('names', toFetch.sort().join(','));
+	url.searchParams.set('ver', rest.version || '');
+
+	fetch(url.toString(), { credentials: 'omit' })
+		.then((response) => (response.ok ? response.json() : {}))
+		.then((icons) => {
+			if (!icons || typeof icons !== 'object') {
+				return;
+			}
+			// Record every requested name, found or not, so an unknown
+			// name is not fetched again on the next mutation.
+			toFetch.forEach((name) => {
+				window.dsgoIcons[name] =
+					typeof icons[name] === 'string' ? icons[name] : '';
+			});
+			initIconInjection();
+		})
+		.catch(() => {
+			// Offline or blocked: those icons stay empty, as they would
+			// have before on-demand loading existed.
+		});
+}
+
+/**
  * Initialize icon injection on page load or for specific container.
  *
  * @param {HTMLElement} container - Optional container to search within
  */
 function initIconInjection(container = document) {
-	// Check if icon library is available (provided by PHP)
-	if (typeof window.dsgoIcons === 'undefined') {
-		return;
+	if (
+		typeof window.dsgoIcons !== 'object' ||
+		window.dsgoIcons === null ||
+		Array.isArray(window.dsgoIcons)
+	) {
+		window.dsgoIcons = {};
 	}
+
+	const missingIcons = new Set();
 
 	// Find all icon placeholders
 	const iconPlaceholders = container.querySelectorAll(
@@ -39,11 +107,7 @@ function initIconInjection(container = document) {
 			return;
 		}
 
-		const rawIconName = placeholder.dataset.iconName;
-		const normalizedIconName =
-			typeof rawIconName === 'string'
-				? rawIconName.trim().toLowerCase()
-				: '';
+		const iconName = normalizeIconName(placeholder.dataset.iconName);
 
 		// When a block leaves the style unset it inherits the theme default
 		// (settings.custom.designsetgo.icon.defaultStyle), localized as
@@ -69,16 +133,17 @@ function initIconInjection(container = document) {
 			inheritedFrom?.dataset.dsgoIconStrokeWidth ||
 			'1.5';
 
-		// Resolve alias to canonical name if needed
-		const iconName =
-			normalizedIconName &&
-			!window.dsgoIcons[normalizedIconName] &&
-			typeof window.dsgoIconAliases !== 'undefined' &&
-			window.dsgoIconAliases[normalizedIconName]
-				? window.dsgoIconAliases[normalizedIconName]
-				: normalizedIconName;
+		// Aliases are resolved server-side, so the name is the key as written.
+		if (!iconName) {
+			return;
+		}
 
-		if (!iconName || !window.dsgoIcons[iconName]) {
+		if (!Object.prototype.hasOwnProperty.call(window.dsgoIcons, iconName)) {
+			missingIcons.add(iconName);
+			return;
+		}
+
+		if (!window.dsgoIcons[iconName]) {
 			return;
 		}
 
@@ -128,6 +193,10 @@ function initIconInjection(container = document) {
 			console.error(`Failed to inject icon "${iconName}":`, error);
 		}
 	});
+
+	if (missingIcons.size > 0) {
+		fetchMissingIcons(Array.from(missingIcons));
+	}
 }
 
 // Expose globally for dynamic content

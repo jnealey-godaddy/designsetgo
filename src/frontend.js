@@ -1,7 +1,7 @@
 /**
  * Frontend JavaScript Entry Point
  *
- * This file bundles extension frontend scripts for the DesignSetGo plugin.
+ * Page-wide frontend runtime shared by every DesignSetGo page.
  * It will be compiled to build/frontend.js by @wordpress/scripts.
  *
  * Block-specific frontend scripts are loaded per-block via viewScript in
@@ -26,24 +26,12 @@ window.addEventListener('pageshow', (event) => {
 // ===== UTILITIES =====
 import './utils/focus-outline.js';
 
+// Loads the block and extension assets that content swapped in by a soft
+// navigation (Airo refresh, Query "load more") needs.
+import './utils/soft-nav-assets.js';
+
 // ===== EXTENSIONS FRONTEND =====
-// Block animations - scroll-triggered, hover, click animations
-import './extensions/block-animations/frontend.js';
-
-// Block animations - SVG stroke drawing (needs runtime path measurement)
-import './extensions/block-animations/svg-draw.js';
-
-// Clickable group - makes containers clickable with link functionality
-import './extensions/clickable-group/frontend.js';
-
-// Background video - video background initialization
-import './extensions/background-video/frontend.js';
-
-// Text reveal - scroll-triggered text color animation
-import './extensions/text-reveal/frontend.js';
-
-// Expanding background - scroll-driven expanding background effect
-import './extensions/expanding-background/frontend.js';
-
-// Vertical scroll parallax - scroll-based vertical movement
-import './extensions/vertical-scroll-parallax/frontend.js';
+// Each extension's frontend script is its own bundle (build/extensions/<name>/
+// frontend.js), enqueued only when its markup is on the page. The manifest is
+// includes/data/frontend-extensions.json. Those bundles depend on this one for
+// the bfcache → dsgo-content-loaded dispatch above.

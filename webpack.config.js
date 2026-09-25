@@ -69,6 +69,27 @@ const styleEntries = globSync('src/blocks/*/style.scss').reduce(
 	{}
 );
 
+// Per-feature frontend bundles for extensions. The same manifest tells PHP
+// (Assets::maybe_enqueue_frontend_on_render) which markup needle enqueues
+// which bundle, so a page only downloads the extensions it actually uses.
+// Emits build/extensions/<name>/frontend.js and build/extensions/<name>/style.css.
+const frontendExtensionEntries = Object.entries(
+	require('./includes/data/frontend-extensions.json')
+).reduce((entries, [name, feature]) => {
+	if (feature.scripts) {
+		entries[`extensions/${name}/frontend`] = feature.scripts.map((file) =>
+			path.resolve(process.cwd(), file)
+		);
+	}
+	if (feature.style) {
+		entries[`extensions/${name}/style`] = path.resolve(
+			process.cwd(),
+			feature.style
+		);
+	}
+	return entries;
+}, {});
+
 // Build config for script-module view.js (IAPI blocks). Outputs native ES
 // modules that import `@wordpress/interactivity` via the browser's native
 // module resolver (resolved by WP's importmap). This is a separate webpack
@@ -257,6 +278,8 @@ module.exports = [
 				'query-filter-index-dashboard',
 				'index.js'
 			),
+			// Per-feature extension frontend bundles (includes/data/frontend-extensions.json)
+			...frontendExtensionEntries,
 			// Block-specific entries (auto-detected from src/blocks/*/index.js)
 			...blockEntries,
 			// Block-specific view scripts (auto-detected from src/blocks/*/view.js)
