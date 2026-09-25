@@ -6,6 +6,12 @@
  * @since 1.0.0
  */
 
+import {
+	LABEL_CLIPPED_CLASS,
+	MEASURED_CLASS,
+	insideLabelFits,
+} from './utils/label-fit';
+
 /**
  * Resolve the target fill width (0–100) for a progress bar.
  *
@@ -15,8 +21,9 @@
  * `getComputedStyle` — custom properties inherit, so reading it off the fill
  * element itself picks up the ancestor's bound value. When neither var is
  * set anywhere in the cascade, fall back to the block's static `percentage`
- * attribute (carried in `data-percentage`) against a default max of 100 —
- * matching the CSS formula save.js writes for the non-animated case.
+ * attribute (carried in `data-percentage`), unscaled by any
+ * `--dsgo-progress-max`, matching the CSS formula save.js writes for the
+ * non-animated case.
  *
  * `--dsgo-progress-max` is floored at 1 (never 0 or negative) — it can itself
  * be bound and resolve to 0, and dividing by it would otherwise produce
@@ -32,12 +39,14 @@ export function resolveTargetPercent(fill, fallbackPercentage) {
 	// eslint-disable-next-line no-undef
 	const computed = getComputedStyle(fill);
 	const rawValue = computed.getPropertyValue('--dsgo-progress').trim();
-	const rawMax = computed.getPropertyValue('--dsgo-progress-max').trim();
 
-	const value =
-		rawValue !== '' && !Number.isNaN(parseFloat(rawValue))
-			? parseFloat(rawValue)
-			: fallbackPercentage;
+	// No bound value: the static percentage is already a percentage, so it
+	// is not scaled by `--dsgo-progress-max` (see save.js's fallback).
+	if (rawValue === '' || Number.isNaN(parseFloat(rawValue))) {
+		return Math.min(Math.max(fallbackPercentage, 0), 100);
+	}
+	const value = parseFloat(rawValue);
+	const rawMax = computed.getPropertyValue('--dsgo-progress-max').trim();
 	const parsedMax =
 		rawMax !== '' && !Number.isNaN(parseFloat(rawMax))
 			? parseFloat(rawMax)
@@ -111,13 +120,55 @@ function initProgressBars() {
 	});
 }
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-	document.addEventListener('DOMContentLoaded', initProgressBars);
-} else {
+/**
+ * Hide inside labels that do not fit their fill (see utils/label-fit.js).
+ *
+ * Runs for every bar, animated or not. A ResizeObserver on each fill keeps it
+ * current as an animated fill grows, the layout changes width, or a web font
+ * finishes loading and changes the label's width.
+ */
+function fitInsideLabels() {
+	document.querySelectorAll('.dsgo-progress-bar').forEach((bar) => {
+		const fill = bar.querySelector('.dsgo-progress-bar__fill');
+		const label = fill?.querySelector('.dsgo-progress-bar__label--inside');
+		if (!label) {
+			return;
+		}
+
+		const update = () =>
+			label.classList.toggle(
+				LABEL_CLIPPED_CLASS,
+				!insideLabelFits(fill, label)
+			);
+		update();
+		bar.classList.add(MEASURED_CLASS);
+
+		if (
+			typeof ResizeObserver !== 'undefined' &&
+			!bar.hasAttribute('data-dsgo-label-observed')
+		) {
+			bar.setAttribute('data-dsgo-label-observed', 'true');
+			// eslint-disable-next-line no-undef
+			new ResizeObserver(update).observe(fill);
+		}
+	});
+}
+
+function init() {
+	fitInsideLabels();
 	initProgressBars();
 }
 
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', init);
+} else {
+	init();
+}
+
+// A web font can change the label's width without resizing the fill.
+document.fonts?.ready?.then(fitInsideLabels);
+
 // Re-initialize after dynamic content loads (e.g., AJAX, soft navigation)
-document.addEventListener('wp-blocks-post-content-loaded', initProgressBars);
-document.addEventListener('dsgo-content-loaded', initProgressBars);
+document.addEventListener('wp-blocks-post-content-loaded', init);
+document.addEventListener('dsgo-content-loaded', init);

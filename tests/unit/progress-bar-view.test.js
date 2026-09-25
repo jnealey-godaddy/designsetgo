@@ -46,6 +46,15 @@ describe('progress-bar view.js - resolveTargetPercent', () => {
 		expect(resolveTargetPercent(el, 42)).toBe(42);
 	});
 
+	// Unmanaged stock returns null, so the binding adds no --dsgo-progress;
+	// a --dsgo-progress-max set by a theme rule or second binding must not
+	// scale the static percentage (a 10% bar against a max of 50 is 10%, not
+	// 20%).
+	it('does not scale an unbound static percentage by a set --dsgo-progress-max', () => {
+		mockComputedCustomProps({ '--dsgo-progress-max': '50' });
+		expect(resolveTargetPercent(el, 10)).toBe(10);
+	});
+
 	it('uses the bound --dsgo-progress value against the default max of 100', () => {
 		mockComputedCustomProps({ '--dsgo-progress': '30' });
 		expect(resolveTargetPercent(el, 75)).toBe(30);

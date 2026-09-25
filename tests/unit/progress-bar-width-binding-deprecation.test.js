@@ -104,7 +104,7 @@ describe('Progress Bar - width-formula (style binding) deprecation', () => {
 		);
 
 		expect(markup).toContain(
-			'clamp(0%, calc(100% * var(--dsgo-progress, 42) / max(1, var(--dsgo-progress-max, 100))), 100%)'
+			'clamp(0%, calc(100% * var(--dsgo-progress, calc(42 / 100 * max(1, var(--dsgo-progress-max, 100)))) / max(1, var(--dsgo-progress-max, 100))), 100%)'
 		);
 		expect(markup).not.toContain('width:42%;');
 	});

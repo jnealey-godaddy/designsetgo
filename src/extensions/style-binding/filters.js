@@ -19,6 +19,8 @@ import {
 	buildSourceOptions,
 	buildSourceMetaMap,
 	isKeyedSource,
+	withSavedSource,
+	argsForSource,
 } from './source-options';
 
 const BLOCKED = new Set([
@@ -145,11 +147,19 @@ const withStyleBindingInspector = createHigherOrderComponent((BlockEdit) => {
 								<SelectControl
 									label={__('Source', 'designsetgo')}
 									value={config.source}
-									options={sourceOptions}
+									options={withSavedSource(
+										sourceOptions,
+										config.source
+									)}
 									onChange={(val) =>
 										updateEntry(prop, prop, {
 											...config,
 											source: val,
+											args: argsForSource(
+												config,
+												sourceMetaBySlug[val],
+												val
+											),
 										})
 									}
 									__nextHasNoMarginBottom

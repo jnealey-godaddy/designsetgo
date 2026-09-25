@@ -6,6 +6,8 @@ import {
 	filterScalarSources,
 	buildSourceOptions,
 	buildSourceMetaMap,
+	withSavedSource,
+	argsForSource,
 } from '../../../../src/extensions/style-binding/source-options';
 
 describe('style-binding source-options', () => {
@@ -148,5 +150,70 @@ describe('style-binding source-options', () => {
 	it('SCALAR_RETURN_TYPES excludes html and image', () => {
 		expect(SCALAR_RETURN_TYPES).not.toContain('html');
 		expect(SCALAR_RETURN_TYPES).not.toContain('image');
+	});
+	describe('withSavedSource', () => {
+		const options = [
+			{
+				label: 'Stock quantity',
+				value: 'designsetgo/woo-stock-quantity',
+			},
+		];
+
+		it('leaves the options alone when the saved source is listed', () => {
+			expect(
+				withSavedSource(options, 'designsetgo/woo-stock-quantity')
+			).toBe(options);
+		});
+
+		it('adds a saved source the catalog does not list, marked unavailable', () => {
+			expect(withSavedSource(options, 'designsetgo/acf')).toEqual([
+				...options,
+				{
+					label: 'designsetgo/acf (unavailable)',
+					value: 'designsetgo/acf',
+				},
+			]);
+		});
+	});
+
+	describe('argsForSource', () => {
+		const keyed = {
+			slug: 'designsetgo/post-meta',
+			args: { key: { required: true } },
+		};
+		const keyless = { slug: 'designsetgo/woo-stock-quantity', args: {} };
+
+		it('drops a key when switching to a source that reads none', () => {
+			expect(
+				argsForSource(
+					{
+						source: 'designsetgo/post-meta',
+						args: { key: '_stock' },
+					},
+					keyless,
+					keyless.slug
+				)
+			).toEqual({});
+		});
+
+		it('keeps the key between keyed sources', () => {
+			expect(
+				argsForSource(
+					{ source: 'designsetgo/acf', args: { key: 'stock' } },
+					keyed,
+					keyed.slug
+				)
+			).toEqual({ key: 'stock' });
+		});
+
+		it('starts a keyed source with an empty key', () => {
+			expect(
+				argsForSource(
+					{ source: keyless.slug, args: {} },
+					keyed,
+					keyed.slug
+				)
+			).toEqual({ key: '' });
+		});
 	});
 });

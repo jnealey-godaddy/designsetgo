@@ -33,6 +33,8 @@ import {
 	decodeColorValue,
 } from '../../utils/encode-color-value';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import useInsideLabelFit from './hooks/useInsideLabelFit';
+import { LABEL_CLIPPED_CLASS, MEASURED_CLASS } from './utils/label-fit';
 
 /**
  * Edit component for Progress Bar block
@@ -114,9 +116,16 @@ export default function ProgressBarEdit({
 		return parts.join(' - ') || __('Progress Bar', 'designsetgo');
 	})();
 
+	const hasInsideLabel =
+		(showLabel || showPercentage) && labelPosition === 'inside';
+	const [fillRef, labelClipped] = useInsideLabelFit(
+		hasInsideLabel,
+		displayText
+	);
+
 	// Get block props
 	const blockProps = useBlockProps({
-		className: 'dsgo-progress-bar',
+		className: `dsgo-progress-bar ${MEASURED_CLASS}`,
 	});
 
 	return (
@@ -473,14 +482,20 @@ export default function ProgressBarEdit({
 								: ''
 						}`}
 						style={barFillStyles}
+						ref={fillRef}
 					>
 						{/* Label Inside */}
-						{(showLabel || showPercentage) &&
-							labelPosition === 'inside' && (
-								<div className="dsgo-progress-bar__label dsgo-progress-bar__label--inside">
-									{displayText}
-								</div>
-							)}
+						{hasInsideLabel && (
+							<div
+								className={`dsgo-progress-bar__label dsgo-progress-bar__label--inside${
+									labelClipped
+										? ` ${LABEL_CLIPPED_CLASS}`
+										: ''
+								}`}
+							>
+								{displayText}
+							</div>
+						)}
 					</div>
 				</div>
 

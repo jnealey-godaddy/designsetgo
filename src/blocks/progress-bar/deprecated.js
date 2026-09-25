@@ -141,13 +141,12 @@ const v1 = {
  *
  * Previously the fill always emitted a literal `width: N%` (or `width: 0%`
  * when animateOnScroll, animated in by view.js). The current save() instead
- * writes `width: clamp(0%, calc(100% * var(--dsgo-progress, N) /
- * max(1, var(--dsgo-progress-max, 100))), 100%)` so a `dsgoStyleBinding` on
- * `--dsgo-progress` can drive the fill from the frontend (e.g. a stock bar
- * bound to `designsetgo/woo-stock-quantity`). The `max(1, ...)` floors the
- * denominator so a bound `--dsgo-progress-max` resolving to 0 can't divide by
- * zero. Attribute schema is unchanged — only the emitted markup differs — so
- * this is a pure save() reproduction with no isEligible/migrate.
+ * writes a `clamp(0%, calc(...), 100%)` formula over `--dsgo-progress` and
+ * `--dsgo-progress-max` (see STATIC_WIDTH_FORMULA in save.js) so a
+ * `dsgoStyleBinding` on `--dsgo-progress` can drive the fill from the
+ * frontend (e.g. a stock bar bound to `designsetgo/woo-stock-quantity`).
+ * Attribute schema is unchanged — only the emitted markup differs — so this
+ * is a pure save() reproduction with no isEligible/migrate.
  */
 const v2 = {
 	apiVersion: 3,

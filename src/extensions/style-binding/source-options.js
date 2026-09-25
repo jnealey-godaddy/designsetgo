@@ -8,7 +8,7 @@
  * source need a key?" check.
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
 /**
  * Return types a CSS custom property can hold. `image` and `html` sources
@@ -144,4 +144,50 @@ export function buildSourceMetaMap(sources) {
 	const list = scalar.length > 0 ? scalar : FALLBACK_SOURCES;
 
 	return Object.fromEntries(list.map((source) => [source.slug, source]));
+}
+
+/**
+ * Adds the saved source to the options when the catalog does not list it.
+ *
+ * A saved binding can name a source that is not registered right now: ACF,
+ * Meta Box, Pods, JetEngine or WooCommerce is inactive, or a third-party
+ * source was removed. A controlled select whose value matches no option
+ * shows the first option instead, which misreports what is saved and blocks
+ * picking that option. Listing it as unavailable keeps the display truthful.
+ *
+ * @param {{label: string, value: string}[]} options Select options.
+ * @param {string}                           slug    Saved source slug.
+ * @return {{label: string, value: string}[]} Options including the saved one.
+ */
+export function withSavedSource(options, slug) {
+	if (!slug || options.some((option) => option.value === slug)) {
+		return options;
+	}
+	return [
+		...options,
+		{
+			/* translators: %s: source identifier, e.g. designsetgo/acf. */
+			label: sprintf(__('%s (unavailable)', 'designsetgo'), slug),
+			value: slug,
+		},
+	];
+}
+
+/**
+ * The binding args to keep when the source changes.
+ *
+ * A key only belongs to a source that reads one. Keeping it on a keyless
+ * source hides it (the field is not shown) while StyleBinding::resolve()
+ * still rejects a protected key such as `_stock`, so the binding would
+ * silently never resolve with no field left to clear it.
+ *
+ * @param {Object} config     Current binding config ({ source, args }).
+ * @param {Object} nextSource Metadata for the new source, if known.
+ * @param {string} nextSlug   New source slug.
+ * @return {Object} Args for the new source.
+ */
+export function argsForSource(config, nextSource, nextSlug) {
+	return isKeyedSource(nextSource, nextSlug)
+		? { key: config?.args?.key ?? '' }
+		: {};
 }

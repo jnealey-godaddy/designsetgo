@@ -51,7 +51,7 @@ class DesignSetGo_Progress_Bar_Stock_Binding_Test extends WP_UnitTestCase {
 	 * A progress-bar's parsed block array, with a dsgoStyleBinding on
 	 * `--dsgo-progress` bound to `designsetgo/woo-stock-quantity` and inner
 	 * markup shaped like save.js's actual output (src/blocks/progress-bar/save.js):
-	 * a `clamp(0%, calc(100% * var(--dsgo-progress, 75) / max(1, var(--dsgo-progress-max, 100))), 100%)`
+	 * a `clamp(0%, calc(100% * var(--dsgo-progress, calc(75 / 100 * max(1, var(--dsgo-progress-max, 100)))) / max(1, var(--dsgo-progress-max, 100))), 100%)`
 	 * fill width, ready for the binding to add a custom property alongside it.
 	 *
 	 * @return array Block array shaped like render_block's $block argument.
@@ -81,7 +81,7 @@ class DesignSetGo_Progress_Bar_Stock_Binding_Test extends WP_UnitTestCase {
 	private function progress_bar_html() {
 		return '<div class="wp-block-designsetgo-progress-bar dsgo-progress-bar">'
 			. '<div class="dsgo-progress-bar__container" style="width:100%;height:20px;border-radius:4px;overflow:hidden;position:relative">'
-			. '<div class="dsgo-progress-bar__fill" style="width:clamp(0%, calc(100% * var(--dsgo-progress, 75) / max(1, var(--dsgo-progress-max, 100))), 100%);height:100%;transition:width 1.5s ease-out;border-radius:4px"></div>'
+			. '<div class="dsgo-progress-bar__fill" style="width:clamp(0%, calc(100% * var(--dsgo-progress, calc(75 / 100 * max(1, var(--dsgo-progress-max, 100)))) / max(1, var(--dsgo-progress-max, 100))), 100%);height:100%;transition:width 1.5s ease-out;border-radius:4px"></div>'
 			. '</div></div>';
 	}
 
@@ -117,7 +117,7 @@ class DesignSetGo_Progress_Bar_Stock_Binding_Test extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( '--dsgo-progress:12', $html );
 		$this->assertStringContainsString(
-			'width:clamp(0%, calc(100% * var(--dsgo-progress, 75) / max(1, var(--dsgo-progress-max, 100))), 100%)',
+			'width:clamp(0%, calc(100% * var(--dsgo-progress, calc(75 / 100 * max(1, var(--dsgo-progress-max, 100)))) / max(1, var(--dsgo-progress-max, 100))), 100%)',
 			$html
 		);
 	}

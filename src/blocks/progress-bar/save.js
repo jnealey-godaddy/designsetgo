@@ -48,10 +48,15 @@ export default function ProgressBarSave({ attributes }) {
 	// render_block filter — custom properties set on the block's root element
 	// inherit down to the fill. `--dsgo-progress` and `--dsgo-progress-max`
 	// are raw numbers, not percentages: the formula divides one by the other
-	// and multiplies by 100% itself. Neither var is set here, so with no
-	// binding both fall back to the literals baked into this expression
-	// (`barWidth` / `100`), which resolves to exactly `${barWidth}%` — the
-	// same width this block has always rendered when unbound.
+	// and multiplies by 100% itself.
+	//
+	// With no bound value (unmanaged stock returns null, so the binding adds
+	// nothing), the fallback must still resolve to exactly `${barWidth}%`
+	// even when `--dsgo-progress-max` IS set (a theme rule or a second
+	// binding). A bare `var(--dsgo-progress, ${barWidth})` would be divided
+	// by that max, so a 10% bar with a max of 50 would claim 20%. The
+	// fallback is therefore `barWidth / 100 * max`, which the division
+	// cancels back to `barWidth%` whatever the max is.
 	//
 	// The denominator is wrapped in `max(1, ...)` because `--dsgo-progress-max`
 	// can itself be bound (e.g. to a "low stock threshold" field) and resolve
@@ -60,7 +65,8 @@ export default function ProgressBarSave({ attributes }) {
 	// term — which drops the fill's width entirely rather than clamping it.
 	// Flooring the denominator at 1 keeps the declaration always valid; view.js's
 	// resolveTargetPercent() mirrors this floor for the animateOnScroll path.
-	const STATIC_WIDTH_FORMULA = `clamp(0%, calc(100% * var(--dsgo-progress, ${barWidth}) / max(1, var(--dsgo-progress-max, 100))), 100%)`;
+	const PROGRESS_MAX = 'max(1, var(--dsgo-progress-max, 100))';
+	const STATIC_WIDTH_FORMULA = `clamp(0%, calc(100% * var(--dsgo-progress, calc(${barWidth} / 100 * ${PROGRESS_MAX})) / ${PROGRESS_MAX}), 100%)`;
 
 	// Build bar fill styles (same as edit.js)
 	const barFillStyles = {
