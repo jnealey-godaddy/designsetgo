@@ -569,7 +569,10 @@ import { getLuminance, parseColor } from './contrast-checker';
 				styles
 					.getPropertyValue('--wp--preset--color--contrast-2')
 					.trim()) ||
-			styles.getPropertyValue('--wp--preset--color--contrast').trim() ||
+			(!customBackground &&
+				styles
+					.getPropertyValue('--wp--preset--color--contrast')
+					.trim()) ||
 			(getLuminance(rgb) > 0.179 ? '#000' : '#fff');
 		header.style.setProperty(
 			'--dsgo-overlay-menu-bg',

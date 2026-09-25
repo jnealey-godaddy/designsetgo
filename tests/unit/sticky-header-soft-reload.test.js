@@ -335,8 +335,24 @@ describe('sticky header across a soft reload', () => {
 			'#000',
 		],
 		[
-			'preserves the foreground fallback for a custom background',
+			'uses white on a dark custom background instead of the theme foreground',
+			{ backgroundOnScroll: true, backgroundScrollColor: '#1a1a2e' },
+			{},
+			'#fff',
+		],
+		[
+			'uses black on a light custom background instead of the theme foreground',
 			{ backgroundOnScroll: true, backgroundScrollColor: '#eee6e1' },
+			{ '--wp--preset--color--contrast': '#fff' },
+			'#000',
+		],
+		[
+			'preserves explicit text on a custom background even with low contrast',
+			{
+				backgroundOnScroll: true,
+				backgroundScrollColor: '#1a1a2e',
+				textScrollColor: '#000',
+			},
 			{},
 			'#000',
 		],
@@ -422,19 +438,40 @@ describe('sticky header across a soft reload', () => {
 		window.dsgStickyHeaderSettings.backgroundScrollColor = '#112233';
 		const header = buildSite();
 		header.classList.add('dsgo-sticky-bg-on-scroll');
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: (name) =>
+				name === '--wp--preset--color--contrast' ? '#000' : '',
+		});
 
 		loadStickyHeader();
 
 		expect(menuBackground(header)).toBe('rgb(17, 34, 51)');
+		expect(header.style.getPropertyValue('--dsgo-overlay-menu-fg')).toBe(
+			'#fff'
+		);
+		expect(
+			header.style.getPropertyValue('--dsgo-sticky-scroll-text-color')
+		).toBe('');
 	});
 
 	it('re-applies from current settings on the rebuilt header after a soft reload', () => {
 		window.dsgStickyHeaderSettings.backgroundOnScroll = true;
-		window.dsgStickyHeaderSettings.backgroundScrollColor = '#336699';
-		buildSite();
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#1a1a2e';
+		const header = buildSite();
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: (name) =>
+				name === '--wp--preset--color--contrast' ? '#000' : '',
+		});
 		loadStickyHeader();
+		expect(header.style.getPropertyValue('--dsgo-overlay-menu-fg')).toBe(
+			'#fff'
+		);
 
-		window.dsgStickyHeaderSettings.backgroundScrollColor = '#998877';
-		expect(menuBackground(softReloadFullBody())).toBe('rgb(153, 136, 119)');
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#eee6e1';
+		const rebuiltHeader = softReloadFullBody();
+		expect(menuBackground(rebuiltHeader)).toBe('rgb(238, 230, 225)');
+		expect(
+			rebuiltHeader.style.getPropertyValue('--dsgo-overlay-menu-fg')
+		).toBe('#000');
 	});
 });
