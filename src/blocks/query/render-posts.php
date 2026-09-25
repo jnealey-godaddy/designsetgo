@@ -487,8 +487,24 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		// Also handles ?q= directly (overrides static search attr when present).
 		$params = isset( $context['params'] ) ? (array) $context['params'] : array();
 
-		// Direct ?q= support: override search when bindSearchTo is not set or empty.
-		if ( isset( $params['q'] ) && '' === (string) $atts['bindSearchTo'] ) {
+		// Query param scoping (v2.6): $declared_params is the set of param
+		// names THIS query's own filter blocks (or its bindSearchTo attr)
+		// declare. Gates only the params that can be genuinely ambiguous
+		// between "a DSGo taxonomy filter meant for a DIFFERENT query on the
+		// page" and "this query's own" — a bare/unscoped `q`, `sort`, or
+		// filter_<REAL taxonomy> key. WooCommerce's own filter_<attr> params
+		// are deliberately NOT gated here (see the taxonomy_exists() guard
+		// below and designsetgo_query_apply_woo_args() further down) — Woo's
+		// filter blocks can't declare a queryId, so they must keep driving
+		// every product query on the page, exactly as before.
+		$declared_params = isset( $context['declared_params'] ) ? (array) $context['declared_params'] : array();
+
+		// Direct ?q= support: override search when bindSearchTo is not set or
+		// empty, AND this query actually declares 'q' (a search-kind filter
+		// bound to it, or nothing at all — see below). Without the gate, a
+		// query with no search box of its own would still be narrowed by
+		// another query's ?q=, exactly the cross-query leak this task fixes.
+		if ( isset( $params['q'] ) && '' === (string) $atts['bindSearchTo'] && in_array( 'q', $declared_params, true ) ) {
 			$q_val = is_array( $params['q'] ) ? implode( ' ', $params['q'] ) : (string) $params['q'];
 			$q_val = sanitize_text_field( $q_val );
 			if ( '' !== $q_val ) {
@@ -503,6 +519,14 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			}
 			$taxonomy = substr( $key, strlen( 'filter_' ) );
 			if ( '' === $taxonomy || ! taxonomy_exists( $taxonomy ) ) {
+				continue;
+			}
+			// A real taxonomy match (unlike a WooCommerce `pa_*` attribute,
+			// which never matches taxonomy_exists() on its bare, pa_-stripped
+			// URL slug — see render-woo.php) is unambiguously a DSGo
+			// taxonomy filter, so it's safe — and necessary — to require
+			// this query to have declared it.
+			if ( ! in_array( $key, $declared_params, true ) ) {
 				continue;
 			}
 			$terms = is_array( $value ) ? $value : array( $value );
@@ -542,8 +566,10 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 			$args = designsetgo_query_apply_woo_args( $args, $atts, $params );
 		}
 
-		// URL-param sort override (?sort=orderby.DIR).
-		if ( isset( $params['sort'] ) && is_string( $params['sort'] ) && '' !== $params['sort'] ) {
+		// URL-param sort override (?sort=orderby.DIR) — gated the same way as
+		// ?q= above, so a query with no sort control of its own ignores
+		// another query's ?sort=.
+		if ( isset( $params['sort'] ) && is_string( $params['sort'] ) && '' !== $params['sort'] && in_array( 'sort', $declared_params, true ) ) {
 			$parts           = explode( '.', $params['sort'], 2 );
 			$sort_by         = sanitize_key( $parts[0] );
 			$sort_dir        = isset( $parts[1] ) && 'ASC' === strtoupper( $parts[1] ) ? 'ASC' : 'DESC';
