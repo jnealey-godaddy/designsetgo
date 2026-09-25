@@ -101,7 +101,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 								__('Click to load map', 'designsetgo')}
 						</p>
 						<button
-							className="dsgo-map__load-button"
+							className="dsgo-map__load-button wp-element-button"
 							type="button"
 							onClick={(e) => e.preventDefault()}
 						>

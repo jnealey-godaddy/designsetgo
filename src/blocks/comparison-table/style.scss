@@ -9,6 +9,14 @@
 	box-sizing: border-box;
 	max-width: 100%;
 	color: var(--wp--preset--color--contrast, inherit);
+	// Text on the featured column's solid header, and the fill of its CTA.
+	// A theme.json / Style Kit token, else white. Not the base preset: the
+	// featured fill is the primary/author color, not the page background, so
+	// a dark theme's base would drop below 4.5:1 on the #2563eb fallback.
+	--dsgo-comparison-featured-text: var(
+		--wp--custom--designsetgo--comparison-table--featured-text,
+		#fff
+	);
 
 	*,
 	*::before,
@@ -53,7 +61,7 @@
 		position: relative;
 
 		&--label {
-			text-align: left;
+			text-align: start;
 			width: 30%;
 			min-width: 140px;
 		}
@@ -63,7 +71,7 @@
 				--dsgo-comparison-featured-color,
 				var(--wp--preset--color--primary, #2563eb)
 			);
-			color: #fff;
+			color: var(--dsgo-comparison-featured-text);
 		}
 	}
 
@@ -101,9 +109,18 @@
 			box-shadow 0.2s ease;
 		line-height: 1.4;
 
+		// Filled = the header colors inverted. `currentcolor` can't express
+		// the fill: on this element it is the label color set just below, so
+		// fill and label were always identical and the text vanished.
 		&--filled {
-			background-color: currentcolor;
-			color: var(--dsgo-comparison-header-bg, #fff);
+			background-color: var(
+				--dsgo-comparison-header-text,
+				var(--wp--preset--color--contrast, #111)
+			);
+			color: var(
+				--dsgo-comparison-header-bg,
+				var(--wp--preset--color--base, #fff)
+			);
 
 			// Use a pseudo-element for text color to avoid inheriting currentcolor
 			&,
@@ -128,7 +145,7 @@
 	&__header-cell--featured &__cta {
 
 		&--filled {
-			background-color: #fff;
+			background-color: var(--dsgo-comparison-featured-text);
 			color: var(
 				--dsgo-comparison-featured-color,
 				var(--wp--preset--color--primary, #2563eb)
@@ -136,8 +153,8 @@
 		}
 
 		&--outlined {
-			border-color: #fff;
-			color: #fff;
+			border-color: var(--dsgo-comparison-featured-text);
+			color: var(--dsgo-comparison-featured-text);
 		}
 	}
 
@@ -176,7 +193,7 @@
 		vertical-align: middle;
 
 		&--label {
-			text-align: left;
+			text-align: start;
 			font-weight: 500;
 		}
 
@@ -221,10 +238,13 @@
 	&__icon {
 		flex-shrink: 0;
 
+		// Check and cross differ by shape, so color is decoration, not meaning.
+		// Core's vivid-green-cyan (#00d084) was only 2:1 against white; the
+		// default now follows the theme's primary color, then the text color.
 		&--check {
 			color: var(
-				--wp--preset--color--vivid-green-cyan,
-				#00d084
+				--wp--custom--designsetgo--comparison-table--check-color,
+				var(--wp--preset--color--primary, currentcolor)
 			);
 		}
 
@@ -249,9 +269,9 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 18px;
-		height: 18px;
-		font-size: 11px;
+		width: 1.125em;
+		height: 1.125em;
+		font-size: 0.6875em;
 		font-weight: 700;
 		line-height: 1;
 		border-radius: 50%;
@@ -360,11 +380,11 @@
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
-				text-align: right;
+				text-align: end;
 				padding: 0.5rem 0.75rem;
 
 				&--label {
-					text-align: left;
+					text-align: start;
 					font-weight: 700;
 					font-size: 1.05em;
 					padding-bottom: 0.25rem;
@@ -375,8 +395,8 @@
 				&:not(.dsgo-comparison-table__cell--label)::before {
 					content: attr(data-label);
 					font-weight: 500;
-					text-align: left;
-					margin-right: 1rem;
+					text-align: start;
+					margin-inline-end: 1rem;
 					opacity: 0.7;
 					flex-shrink: 0;
 				}

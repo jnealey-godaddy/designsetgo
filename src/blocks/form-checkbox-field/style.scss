@@ -21,17 +21,17 @@
 		width: 1.25rem;
 		height: 1.25rem;
 		margin-top: 0.125rem;
-		border: 1px solid var(--dsgo-field-border-color, #d1d5db);
+		border: 1px solid var(--dsgo-field-border-color, var(--dsgo-form-border-color));
 		border-radius: 0.25rem;
 		cursor: pointer;
 		transition: all 0.2s ease;
 
 		&:hover:not(:disabled) {
-			border-color: var(--dsgo-field-focus-color, #2563eb);
+			border-color: var(--dsgo-field-focus-color, var(--dsgo-form-focus-color));
 		}
 
 		&:focus {
-			outline: 2px solid var(--dsgo-field-focus-color, #2563eb);
+			outline: 2px solid var(--dsgo-field-focus-color, var(--dsgo-form-focus-color));
 			outline-offset: 2px;
 		}
 
@@ -41,8 +41,8 @@
 		}
 
 		&:checked {
-			background-color: var(--dsgo-field-focus-color, #2563eb);
-			border-color: var(--dsgo-field-focus-color, #2563eb);
+			background-color: var(--dsgo-field-focus-color, var(--dsgo-form-focus-color));
+			border-color: var(--dsgo-field-focus-color, var(--dsgo-form-focus-color));
 		}
 	}
 
@@ -57,14 +57,14 @@
 	}
 
 	.dsgo-form-field__required {
-		color: var(--dsgo-field-error-color, #dc2626);
+		color: var(--dsgo-field-error-color, var(--dsgo-form-error-color));
 		font-weight: 600;
 	}
 
 	.dsgo-form-field__help {
 		font-size: 0.875rem;
 		line-height: 1.5;
-		color: #6b7280;
+		color: color-mix(in srgb, currentcolor 75%, transparent);
 		margin: 0;
 		padding-left: 2rem;
 	}

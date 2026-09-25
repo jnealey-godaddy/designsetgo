@@ -61,7 +61,18 @@
 	// Modal Content
 	&__content {
 		position: relative;
-		background: #fff;
+		// Default dialog surface. A background set on the block (block supports,
+		// moved onto this element by transferStylesToContent) wins; otherwise the
+		// theme owns it:
+		//   1. --wp--custom--designsetgo--modal--background — theme.json /
+		//      Style Kit token.
+		//   2. The theme's base (page background) preset, so text that inherits
+		//      the theme's foreground color stays readable on dark themes.
+		//   3. #fff — the historical baked-in default.
+		background: var(
+			--wp--custom--designsetgo--modal--background,
+			var(--wp--preset--color--base, #fff)
+		);
 		border-radius: 8px;
 		overflow: auto; // Allows scrolling in both directions
 		max-height: 90vh;

@@ -1,9 +1,27 @@
 .wp-block-designsetgo-hotspot {
 	--dsgo-hotspot-tooltip-width: 240px;
-	--dsgo-hotspot-marker-color: #fff;
-	--dsgo-hotspot-marker-background: #111;
-	--dsgo-hotspot-tooltip-background: #111;
-	--dsgo-hotspot-tooltip-color: #fff;
+	// Default marker and tooltip colors. Colors the author picks in the block
+	// sidebar are written inline by save() and win. Otherwise each resolves
+	// through a theme.json / Style Kit token
+	// (settings.custom.designsetgo.hotspot.*), then the theme's contrast /
+	// base presets (dark on light, inverted on dark themes), then the old
+	// literals.
+	--dsgo-hotspot-marker-color: var(
+		--wp--custom--designsetgo--hotspot--marker-color,
+		var(--wp--preset--color--base, #fff)
+	);
+	--dsgo-hotspot-marker-background: var(
+		--wp--custom--designsetgo--hotspot--marker-background,
+		var(--wp--preset--color--contrast, #111)
+	);
+	--dsgo-hotspot-tooltip-background: var(
+		--wp--custom--designsetgo--hotspot--tooltip-background,
+		var(--wp--preset--color--contrast, #111)
+	);
+	--dsgo-hotspot-tooltip-color: var(
+		--wp--custom--designsetgo--hotspot--tooltip-color,
+		var(--wp--preset--color--base, #fff)
+	);
 
 	:where(.dsgo-hotspot__image-wrap) {
 		position: relative;
@@ -18,7 +36,7 @@
 
 	:where(.dsgo-hotspot__image--empty) {
 		min-height: 16rem;
-		background: #f0f0f0;
+		background: color-mix(in srgb, currentcolor 8%, transparent);
 	}
 
 	:where(.dsgo-hotspot__items) {

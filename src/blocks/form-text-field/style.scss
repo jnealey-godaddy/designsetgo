@@ -7,12 +7,15 @@
  */
 
 .dsgo-form-field {
-	// Inherit CSS custom properties from form container
+	// Inherit CSS custom properties from form container. Fields can only be
+	// inserted inside Form Builder (block.json "parent"), whose stylesheet
+	// defines every --dsgo-form-* token and its theme fallbacks, so the
+	// palette lives there and not here.
 	--dsgo-field-label-color: var(--dsgo-form-label-color, inherit);
-	--dsgo-field-border-color: var(--dsgo-form-border-color, #d1d5db);
+	--dsgo-field-border-color: var(--dsgo-form-border-color, currentcolor);
 	--dsgo-field-border-radius: var(--dsgo-form-border-radius, 0.375rem);
-	--dsgo-field-focus-color: var(--dsgo-form-focus-color, #2563eb);
-	--dsgo-field-error-color: var(--dsgo-form-error-color, #dc2626);
+	--dsgo-field-focus-color: var(--dsgo-form-focus-color, currentcolor);
+	--dsgo-field-error-color: var(--dsgo-form-error-color, currentcolor);
 
 	display: flex;
 	flex-direction: column;
@@ -56,7 +59,7 @@
 		min-height: var(--dsgo-form-input-height, 44px); // Touch-friendly
 
 		&::placeholder {
-			color: #9ca3af;
+			color: color-mix(in srgb, currentcolor 60%, transparent);
 			opacity: 1;
 		}
 
@@ -95,7 +98,7 @@
 	&__help {
 		font-size: 0.875rem;
 		line-height: 1.5;
-		color: #6b7280;
+		color: color-mix(in srgb, currentcolor 75%, transparent);
 		margin: 0;
 	}
 
