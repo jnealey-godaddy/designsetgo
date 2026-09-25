@@ -10,6 +10,11 @@
  */
 
 import {
+	date as wpFormatDate,
+	getSettings as getWpDateSettings,
+	setSettings as setWpDateSettings,
+} from '@wordpress/date';
+import {
 	hasExplicitOffset,
 	wallClockToUtc,
 	resolveTargetTimestamp,
@@ -255,5 +260,101 @@ describe('Countdown Timer - getEditorSiteTimezone', () => {
 	test('falls back to UTC when wp.date settings are unavailable', () => {
 		window.wp = undefined;
 		expect(getEditorSiteTimezone()).toBe('UTC');
+	});
+});
+
+/**
+ * PR #591 review finding: the "set a default targetDateTime 7 days out on
+ * first insert" effect in edit.js used to call `.toISOString()`, which
+ * stamps a trailing `Z`. `hasExplicitOffset()` then treats that as an
+ * already-resolved instant, so a freshly inserted block whose author only
+ * changes the Timezone dropdown still ignored it — the original bug,
+ * reachable through the default value. edit.js now generates the default
+ * with `@wordpress/date`'s `date( 'Y-m-d\\TH:i:s', ... )` (the exact call
+ * exercised below) instead, which both matches the DateTimePicker's own
+ * TIMEZONELESS_FORMAT and formats in the site timezone when no explicit
+ * timezone is passed — the same call shape used here.
+ */
+describe('Countdown Timer - default targetDateTime generation (edit.js)', () => {
+	// `date()` reads/writes @wordpress/date's own module-level settings
+	// (independent of the `window.wp.date` mocks above), so snapshot and
+	// restore them around each test rather than leaking timezone state
+	// across tests.
+	const ORIGINAL_WP_DATE_SETTINGS = getWpDateSettings();
+
+	afterEach(() => {
+		setWpDateSettings(ORIGINAL_WP_DATE_SETTINGS);
+	});
+
+	test('generates a timezoneless wall-clock string, not an explicit-offset ISO string', () => {
+		const generated = wpFormatDate('Y-m-d\\TH:i:s', new Date());
+
+		expect(hasExplicitOffset(generated)).toBe(false);
+		expect(generated).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+	});
+
+	test('the generated default round-trips to the same instant in the configured site timezone', () => {
+		setWpDateSettings({
+			...ORIGINAL_WP_DATE_SETTINGS,
+			timezone: {
+				offset: -5,
+				offsetFormatted: '-5',
+				string: 'America/New_York',
+				abbr: 'EST',
+			},
+		});
+
+		const targetInstantMs = new Date('2026-06-15T18:30:00Z').getTime();
+		const generated = wpFormatDate(
+			'Y-m-d\\TH:i:s',
+			new Date(targetInstantMs)
+		);
+
+		expect(hasExplicitOffset(generated)).toBe(false);
+
+		// Resolved with no explicit block timezone ('') falling back to the
+		// site timezone — exactly the "WordPress Default" path.
+		const resolvedMs = resolveTargetTimestamp(
+			generated,
+			'',
+			'America/New_York'
+		);
+
+		// `date()` truncates to whole seconds, so allow sub-second drift.
+		expect(Math.abs(resolvedMs - targetInstantMs)).toBeLessThan(1000);
+	});
+
+	test('the same generated default resolves to a different instant under a different selected timezone', () => {
+		setWpDateSettings({
+			...ORIGINAL_WP_DATE_SETTINGS,
+			timezone: {
+				offset: -5,
+				offsetFormatted: '-5',
+				string: 'America/New_York',
+				abbr: 'EST',
+			},
+		});
+
+		const targetInstantMs = new Date('2026-06-15T18:30:00Z').getTime();
+		const generated = wpFormatDate(
+			'Y-m-d\\TH:i:s',
+			new Date(targetInstantMs)
+		);
+
+		const resolvedAsNewYork = resolveTargetTimestamp(
+			generated,
+			'America/New_York',
+			''
+		);
+		const resolvedAsTokyo = resolveTargetTimestamp(
+			generated,
+			'Asia/Tokyo',
+			''
+		);
+
+		// Proves the default isn't silently pinned to one instant — the
+		// author's Timezone dropdown selection actually changes what it
+		// resolves to, which is the bug this fix addresses.
+		expect(resolvedAsNewYork).not.toBe(resolvedAsTokyo);
 	});
 });
