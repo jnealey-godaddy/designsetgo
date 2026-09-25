@@ -499,3 +499,55 @@ and both are in the max-width extension's EXCLUDED_BLOCKS). core/group is NOT ex
 `boxWidth` → `dsgoMaxWidth` is the faithful mapping there. `src/blocks/section/test/
 transforms.test.js` pins all three, registering minimal stand-in block types — the attribute
 SCHEMA is the whole test, since dropping is what an undeclared attribute does.
+
+## Content-block design token pass (agent: design-content-blocks-2026-09-25, branch `claude/design-content-blocks`, PR #597)
+
+Applied #584's shared breakpoint/radius/duration SCSS tokens, `color-mix()` neutrals, RTL
+logical properties, `:where()` specificity, and new container queries to 18 CSS-only files:
+comparison-table, card, tabs, tab, timeline, timeline-item, counter, counter-group,
+advanced-heading, heading-segment, chart, table-of-contents, icon-list, icon-list-item,
+progress-bar (style.scss only), star-rating, breadcrumbs, pill, text-path, divider.
+
+**Concurrent-session collision, resolved via rebase (not redone):** PR #587
+(`claude/frontend-design-tokens`, based on a commit BEFORE #584) landed on `main` mid-task and
+overlapped comparison-table/tabs/timeline-item. Its base predates #584's `_variables.scss` /
+`_mixins.scss`, so a literal `git rebase origin/claude/frontend-design-tokens` (as first
+instructed) would have replayed unrelated main history onto an older tree — used `git merge`
+instead (safe, same conflict set), then once #587 actually merged to main, redid it as a real
+`git rebase origin/main` (single WIP commit, so cheap) to get a linear history. Conflict
+resolution rule: colors/RTL-property fixes #587 already made → take theirs; radius/duration
+tokens, breakpoint mixins, container queries, remaining colors → keep mine. Concretely: #587's
+`--dsgo-comparison-featured-text` token, check-icon color chain, and em-based tooltip sizing
+won; my `dsgo-comparison-table-stacked` mixin (dedupes the stacked-mode rules across the
+viewport media query AND the new container query) and all radius/duration/color-mix/container
+work stayed.
+
+**Author-intent exceptions — do NOT convert to logical, even though they're physical
+left/right:** card's `--content--left/--right` (background layout) and badge position
+modifiers, counter's icon `--left`/`--right` margins, counter-group's `--align-left/--right`
+text-align, advanced-heading's `has-text-align-left/right`. These read as a named side the
+author picked (like a `horizontal-left`/`horizontal-right` layout preset), not text flow —
+flipping them under RTL would silently relocate content the author positioned on purpose. I
+initially converted all of these to `start`/`end` on the first pass (matching the pattern used
+for genuinely-flow-driven cases like timeline-item's alternating layout or tabs' skip-link);
+reverted per the frontend-design-tokens PR author's explicit call. If touching these blocks
+again, leave them physical unless markup/attributes make the "side" meaning unambiguous.
+
+**Chart's SVG font-size (14px/90px lines) is a deliberate token-substitution exception**:
+those are user-space units inside a 600-unit viewBox, not screen pixels — a
+`--wp--preset--font-size` var would resolve in the wrong coordinate space. Documented inline;
+don't "fix" it to a preset var later without re-deriving the viewBox math.
+
+**Breakpoint mixin normalization is exact, not approximate, for most of these blocks**:
+`below($breakpoint-mobile)` compiles to `max-width:767px` and `from($breakpoint-mobile)` to
+`min-width:768px`, so replacing literal `768`/`767`/`769` pairs with the mixins only shifts the
+boundary by ≤1px (often 0px, e.g. counter-group's `1023`/`767` were already exact). Verified via
+compiled-CSS diff, not assumed — cssnano's minifier makes every block's stylesheet a single
+line, so `diff -u` only proves "changed/unchanged", not what changed; had to compare the
+uncompressed selector/property text directly to confirm intent.
+
+**Progress-bar note for future editors**: only touched `label--inside` color +
+`padding-right→padding-inline-end`. The `&__fill[style*="width: N%"]` selectors and the track's
+literal `#e5e7eb` (both already commented in source as deliberate) were left alone — a sibling
+agent was concurrently changing fill-width to read a CSS var, and touching those selectors
+would have collided.
