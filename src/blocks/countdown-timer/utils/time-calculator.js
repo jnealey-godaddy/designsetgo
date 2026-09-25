@@ -1,14 +1,32 @@
 /**
- * Calculate the time remaining until a target date/time
+ * Internal dependencies
+ */
+import { resolveTargetTimestamp } from './timezone';
+
+/**
+ * Calculate the time remaining until a target date/time.
  *
- * @param {string} targetDateTime - ISO 8601 datetime string
- * @param {string} timezone       - IANA timezone string (reserved for future use)
+ * `targetDateTime` is normally a timezoneless wall-clock string (no UTC
+ * offset). It's interpreted as local time in `timezone` — or, when
+ * `timezone` is empty, in `siteTimezone` (the WordPress site timezone,
+ * which the timezone picker's "WordPress Default" option promises). A
+ * `targetDateTime` that already carries an explicit offset is respected
+ * as-is. See `./timezone.js` for the conversion itself.
+ *
+ * @param {string} targetDateTime - Datetime string (timezoneless wall-clock,
+ *                                or ISO 8601 with an explicit offset).
+ * @param {string} timezone       - IANA timezone name, or '' to use
+ *                                `siteTimezone`.
+ * @param {string} siteTimezone   - Resolved WordPress site timezone (IANA
+ *                                name or fixed offset like "+05:30"), used
+ *                                only when `timezone` is empty.
  * @return {Object} Object containing days, hours, minutes, seconds, and isComplete flag
  */
-export function calculateTimeRemaining(targetDateTime, timezone = '') {
-	// Note: timezone parameter reserved for future timezone-aware calculations
-	// eslint-disable-next-line no-unused-vars
-	const _ = timezone;
+export function calculateTimeRemaining(
+	targetDateTime,
+	timezone = '',
+	siteTimezone = ''
+) {
 	if (!targetDateTime) {
 		return {
 			days: 0,
@@ -20,14 +38,25 @@ export function calculateTimeRemaining(targetDateTime, timezone = '') {
 	}
 
 	try {
-		// Parse the target datetime
-		const targetDate = new Date(targetDateTime);
+		// Resolve to the absolute instant every visitor should agree on.
+		const targetMs = resolveTargetTimestamp(
+			targetDateTime,
+			timezone,
+			siteTimezone
+		);
 
-		// Get current time
-		const now = new Date();
+		if (!Number.isFinite(targetMs)) {
+			return {
+				days: 0,
+				hours: 0,
+				minutes: 0,
+				seconds: 0,
+				isComplete: true,
+			};
+		}
 
 		// Calculate the difference in milliseconds
-		const difference = targetDate.getTime() - now.getTime();
+		const difference = targetMs - Date.now();
 
 		// Check if countdown is complete
 		if (difference <= 0) {
@@ -100,4 +129,44 @@ export function getTimezoneOffset(timezone) {
 	} catch (error) {
 		return '';
 	}
+}
+
+/**
+ * Resolve the WordPress site timezone as seen by the editor, in the same
+ * shape the frontend gets from PHP's `wp_timezone()->getName()`: either an
+ * IANA name (e.g. "America/New_York") or a fixed offset ("+05:30" /
+ * "-05:00") for sites configured with a manual UTC offset instead of a
+ * named zone.
+ *
+ * `wp.date`'s settings are only available in the editor (enqueued via the
+ * `wp-date` script). The frontend has no equivalent, which is why view.js
+ * instead reads a `data-site-timezone` attribute stamped on at render time
+ * (see `includes/features/class-countdown-timer-timezone.php`) — this
+ * function exists only to keep the editor's live preview in agreement with
+ * that server-resolved value.
+ *
+ * @return {string} Resolved site timezone, defaulting to 'UTC'.
+ */
+export function getEditorSiteTimezone() {
+	const timezoneSettings = window?.wp?.date?.getSettings?.()?.timezone;
+
+	if (!timezoneSettings) {
+		return 'UTC';
+	}
+
+	if (timezoneSettings.string) {
+		return timezoneSettings.string;
+	}
+
+	const offsetHours = Number(timezoneSettings.offset);
+	if (!Number.isFinite(offsetHours)) {
+		return 'UTC';
+	}
+
+	const sign = offsetHours < 0 ? '-' : '+';
+	const absHours = Math.abs(offsetHours);
+	const hh = Math.floor(absHours);
+	const mm = Math.round((absHours - hh) * 60);
+
+	return `${sign}${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }

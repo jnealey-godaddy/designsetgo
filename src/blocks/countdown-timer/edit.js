@@ -28,6 +28,7 @@ import CompletionPanel from './components/inspector/CompletionPanel';
 import {
 	calculateTimeRemaining,
 	formatTimeUnit,
+	getEditorSiteTimezone,
 } from './utils/time-calculator';
 import { formatCountdownDisplay } from './utils/format-time';
 import {
@@ -76,9 +77,14 @@ export default function Edit(props) {
 	const accent2Color = themeColors.find((color) => color.slug === 'accent-2');
 	const defaultAccentColor = accent2Color?.color || '';
 
+	// Resolved WordPress site timezone, used to interpret `targetDateTime`
+	// when the author left the timezone picker on "WordPress Default"
+	// (timezone === ''). Doesn't change during an editing session.
+	const siteTimezone = getEditorSiteTimezone();
+
 	// State for live countdown preview in editor
 	const [currentTime, setCurrentTime] = useState(
-		calculateTimeRemaining(targetDateTime, timezone)
+		calculateTimeRemaining(targetDateTime, timezone, siteTimezone)
 	);
 
 	// Set default date to 7 days from now on first load
@@ -98,11 +104,13 @@ export default function Edit(props) {
 		}
 
 		const interval = setInterval(() => {
-			setCurrentTime(calculateTimeRemaining(targetDateTime, timezone));
+			setCurrentTime(
+				calculateTimeRemaining(targetDateTime, timezone, siteTimezone)
+			);
 		}, 1000);
 
 		return () => clearInterval(interval);
-	}, [targetDateTime, timezone]);
+	}, [targetDateTime, timezone, siteTimezone]);
 
 	// Build unit styles - use accent-2 if available, otherwise currentColor
 	const unitStyle = {

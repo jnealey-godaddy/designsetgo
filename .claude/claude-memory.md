@@ -499,3 +499,49 @@ and both are in the max-width extension's EXCLUDED_BLOCKS). core/group is NOT ex
 `boxWidth` → `dsgoMaxWidth` is the faithful mapping there. `src/blocks/section/test/
 transforms.test.js` pins all three, registering minimal stand-in block types — the attribute
 SCHEMA is the whole test, since dropping is what an undeclared attribute does.
+
+---
+### [agent: claude/countdown-timezone, 2026-09-25] Countdown Timer timezone fix
+
+`targetDateTime` on `designsetgo/countdown-timer` is NOT an ISO instant — it's whatever
+`@wordpress/components`' `DateTimePicker` emits, which is `TIMEZONELESS_FORMAT` =
+`Y-m-d\TH:i:s` (see `node_modules/@wordpress/components/src/date-time/constants.ts` and
+`.../time/index.tsx`). No offset, no 'Z'. Old code fed that straight into `new Date(...)`,
+which JS parses as **browser-local** time — every visitor's countdown hit zero at their own
+local wall-clock moment, not a shared instant. `timezone` attribute (IANA name from a fixed
+SelectControl list, or `''` = "WordPress Default") was accepted by `calculateTimeRemaining`
+but silently discarded (`// reserved for future use`).
+
+Fix: new pure module `src/blocks/countdown-timer/utils/timezone.js` —
+`resolveTargetTimestamp(targetDateTime, timezone, siteTimezone)`. If `targetDateTime` already
+carries an explicit offset/Z (regex on the tail after `T\d{2}:\d{2}:\d{2}`), respects it as-is.
+Otherwise treats it as wall-clock in `timezone || siteTimezone || 'UTC'` and converts via the
+standard Intl.DateTimeFormat fixed-point trick (format a UTC guess in the target zone, diff the
+read-back wall-clock against the guess, iterate twice — handles DST both directions). Fixed
+offsets like `+05:30`/`-05:00` (what `wp_timezone()->getName()` returns for manual-offset sites)
+are special-cased before hitting Intl. Invalid/unrecognized zone → falls back to treating the
+wall clock AS UTC (deterministic across visitors, not browser-local).
+
+`siteTimezone` (the "WordPress Default" value) has no frontend source of truth — PHP owns
+`timezone_string`/`gmt_offset`. Delivered via a NEW `render_block_designsetgo/countdown-timer`
+filter (`includes/features/class-countdown-timer-timezone.php`, registered in
+`includes/class-plugin.php` next to `scroll_marquee_styles`) that stamps
+`data-site-timezone="<?php echo wp_timezone()->getName(); ?>"` onto the wrapper via
+`WP_HTML_Tag_Processor`. This only touches rendered `render_block` output, never `save()` /
+the stored comment — **no deprecation needed**, confirmed `data-target-datetime`/`data-timezone`
+markup shape is untouched. Editor side gets an equivalent via `getEditorSiteTimezone()` reading
+`window.wp.date.getSettings().timezone` (`.string` if set, else format `.offset` hours into the
+same `+HH:MM` shape PHP uses) — added to `time-calculator.js`, used by `edit.js` and
+`DateTimePanel.js`'s help text.
+
+`view.js` used to have its OWN duplicate `calculateTimeRemaining`/`formatTimeUnit` (not
+imported from `utils/time-calculator.js`) — deduped to import the shared one so editor preview
+and frontend agree. Left `getUnitLabel`/`updateCountdownDisplay`/`handleCompletion`/observer
+code untouched — other concurrent sessions (a11y: role=timer + live region; perf: visibilitychange
+pause) are editing those same functions in this file, scope was kept to target-time computation
+only per instructions.
+
+Behavior change for EXISTING content: any countdown that already had a non-default `timezone`
+selected now actually honors it (previously silently ignored) — this is the fix, not a
+regression. Content left on "WordPress Default" now resolves consistently to the site's real
+configured timezone instead of each visitor's browser zone.

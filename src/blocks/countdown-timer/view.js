@@ -3,61 +3,12 @@
  */
 
 /**
- * Calculate time remaining until target date
- *
- * @param {string} targetDateTime - ISO 8601 datetime string
- * @return {Object} Object with days, hours, minutes, seconds, isComplete
+ * Internal dependencies
  */
-function calculateTimeRemaining(targetDateTime) {
-	if (!targetDateTime) {
-		return {
-			days: 0,
-			hours: 0,
-			minutes: 0,
-			seconds: 0,
-			isComplete: true,
-		};
-	}
-
-	const targetDate = new Date(targetDateTime);
-	const now = new Date();
-	const difference = targetDate.getTime() - now.getTime();
-
-	if (difference <= 0) {
-		return {
-			days: 0,
-			hours: 0,
-			minutes: 0,
-			seconds: 0,
-			isComplete: true,
-		};
-	}
-
-	const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-	const hours = Math.floor(
-		(difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-	);
-	const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-	const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-	return {
-		days,
-		hours,
-		minutes,
-		seconds,
-		isComplete: false,
-	};
-}
-
-/**
- * Format time unit with leading zero
- *
- * @param {number} value - Time unit value
- * @return {string} Formatted value
- */
-function formatTimeUnit(value) {
-	return value < 10 ? `0${value}` : `${value}`;
-}
+import {
+	calculateTimeRemaining,
+	formatTimeUnit,
+} from './utils/time-calculator';
 
 /**
  * Get unit label (singular/plural)
@@ -149,13 +100,26 @@ function initCountdownTimer(timer) {
 		return;
 	}
 
+	// `timezone` is the block's own timezone attribute (empty means "use
+	// the WordPress site timezone"). `siteTimezone` is stamped onto the
+	// markup at render time — see
+	// includes/features/class-countdown-timer-timezone.php — because PHP is
+	// the only place `timezone_string` / `gmt_offset` live; the frontend has
+	// no other way to know the site's configured timezone.
+	const timezone = timer.dataset.timezone || '';
+	const siteTimezone = timer.dataset.siteTimezone || '';
+
 	// Check for reduced motion preference
 	const prefersReducedMotion = window.matchMedia(
 		'(prefers-reduced-motion: reduce)'
 	).matches;
 
 	// Initial update
-	let timeData = calculateTimeRemaining(targetDateTime);
+	let timeData = calculateTimeRemaining(
+		targetDateTime,
+		timezone,
+		siteTimezone
+	);
 	updateCountdownDisplay(timer, timeData);
 
 	if (timeData.isComplete) {
@@ -166,7 +130,11 @@ function initCountdownTimer(timer) {
 	// Update every second
 	const interval = setInterval(
 		() => {
-			timeData = calculateTimeRemaining(targetDateTime);
+			timeData = calculateTimeRemaining(
+				targetDateTime,
+				timezone,
+				siteTimezone
+			);
 			updateCountdownDisplay(timer, timeData);
 
 			if (timeData.isComplete) {

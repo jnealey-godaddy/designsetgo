@@ -376,6 +376,13 @@ class Plugin {
 	public $scroll_marquee_styles;
 
 	/**
+	 * Countdown Timer Timezone instance.
+	 *
+	 * @var Countdown_Timer_Timezone
+	 */
+	public $countdown_timer_timezone;
+
+	/**
 	 * Admin Menu instance.
 	 *
 	 * @var Admin\Admin_Menu
@@ -682,6 +689,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/features/class-icon-injector.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-button-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-scroll-marquee-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-countdown-timer-timezone.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-extension-attributes.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-style-binding.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-interactions.php';
@@ -774,6 +782,8 @@ class Plugin {
 		$this->button_global_styles->init();
 		$this->scroll_marquee_styles = new Scroll_Marquee_Styles();
 		$this->scroll_marquee_styles->init();
+		$this->countdown_timer_timezone = new Countdown_Timer_Timezone();
+		$this->countdown_timer_timezone->init();
 		$this->llms_txt = new LLMS_Txt\Controller();
 
 		// Initialize admin-only features.
