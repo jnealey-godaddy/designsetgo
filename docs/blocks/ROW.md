@@ -12,7 +12,7 @@ Create flexible horizontal layouts with wrapping using CSS Flexbox. Perfect for 
 - WordPress native layout controls (justification, alignment, wrapping)
 - Width constraint system for centered layouts
 - Overlay color for image backgrounds
-- Auto-converts to Section when vertical orientation selected
+- Transforms to Section (block toolbar → Transform) when you need a vertical layout
 
 ---
 
@@ -52,7 +52,7 @@ Mobile (ON):  [Item 1]
 ---
 
 ### Layout Panel (WordPress Native)
-**Orientation**: Horizontal (changing to Vertical auto-converts to Section block)
+**Orientation**: Always horizontal. For a vertical layout, transform the block to Section (block toolbar → Transform), which keeps its settings and inner blocks. Use Mobile Stack to stack columns on small screens.
 
 **Justification** (horizontal alignment):
 - Left: Items left, space right

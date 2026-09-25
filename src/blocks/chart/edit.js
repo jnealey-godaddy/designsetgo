@@ -7,6 +7,7 @@
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
+	Placeholder,
 	SelectControl,
 	RangeControl,
 	ToggleControl,
@@ -293,12 +294,14 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 					block="designsetgo/chart"
 					attributes={stripWrapperAttributes(attributes)}
 					EmptyResponsePlaceholder={() => (
-						<p>
-							{__(
-								'Add at least one data row to preview the chart.',
+						<Placeholder
+							icon="chart-bar"
+							label={__('Chart', 'designsetgo')}
+							instructions={__(
+								'Add at least one data row in the block settings to preview the chart.',
 								'designsetgo'
 							)}
-						</p>
+						/>
 					)}
 				/>
 			</div>
