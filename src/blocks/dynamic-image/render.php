@@ -44,6 +44,18 @@ if ( ! function_exists( 'designsetgo_render_dynamic_image' ) ) {
 		$link_target  = isset( $attributes['linkTarget'] ) ? (string) $attributes['linkTarget'] : '';
 		$rel          = isset( $attributes['rel'] ) ? (string) $attributes['rel'] : '';
 
+		// Both land in inline style, and a stored attribute is not limited to
+		// the inspector's options (the REST API and the Code editor accept any
+		// string), so a `;` would otherwise start a new declaration. Accept an
+		// aspect ratio (`16/9`, `1.5`, `auto`, `auto 4/3`) and the object-fit
+		// keywords only.
+		if ( ! preg_match( '#^(?:auto|(?:auto\s+)?\d+(?:\.\d+)?(?:\s*/\s*\d+(?:\.\d+)?)?)$#', $aspect_ratio ) ) {
+			$aspect_ratio = '';
+		}
+		if ( ! in_array( $object_fit, array( 'cover', 'contain', 'fill', 'none', 'scale-down' ), true ) ) {
+			$object_fit = 'cover';
+		}
+
 		$post_id = 0;
 		if ( isset( $block->context['postId'] ) ) {
 			$post_id = (int) $block->context['postId'];

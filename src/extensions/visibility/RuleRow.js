@@ -46,6 +46,10 @@ function MetaControls({ rule, onChange }) {
 		<>
 			<TextControl
 				label={__('Meta Key', 'designsetgo')}
+				help={__(
+					'Protected keys (starting with an underscore) are never read, so a rule on one never matches.',
+					'designsetgo'
+				)}
 				value={rule.key ?? ''}
 				onChange={(key) => onChange({ ...rule, key })}
 				__next40pxDefaultSize
@@ -128,6 +132,10 @@ function IndexControls({ rule, onChange }) {
 			/>
 			<TextControl
 				label={__('Index Value', 'designsetgo')}
+				help={__(
+					'Counts from 0. Only meaningful inside a Dynamic Query; elsewhere the index is -1.',
+					'designsetgo'
+				)}
 				value={String(rule.value ?? '')}
 				onChange={(value) => onChange({ ...rule, value })}
 				__next40pxDefaultSize

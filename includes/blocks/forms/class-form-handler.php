@@ -101,8 +101,19 @@ class Form_Handler {
 
 	/**
 	 * Transient holding definitions for forms that live outside wp_posts.
+	 *
+	 * Bump the version whenever the definition shape changes, so a cached
+	 * definition missing a newer key never skips that key's checks.
 	 */
-	const EXTERNAL_DEFINITIONS_CACHE = 'dsgo_form_external_definitions_v1';
+	const EXTERNAL_DEFINITIONS_CACHE = 'dsgo_form_external_definitions_v2';
+
+	/**
+	 * Transient prefix for a single form definition resolved from wp_posts.
+	 *
+	 * Version 3 adds `rules`, and drops definitions v2 cached from
+	 * password-protected posts. Bump alongside EXTERNAL_DEFINITIONS_CACHE.
+	 */
+	const DEFINITION_CACHE_PREFIX = 'dsgo_form_definition_v3_';
 
 	/**
 	 * Constructor.
@@ -386,8 +397,13 @@ class Form_Handler {
 				? $field_constraints[ $field_name ]
 				: null;
 
-			// Type-specific validation.
+			// Type-specific validation, then the constraints the field renders
+			// (minlength, pattern, min/max, step), which only the browser
+			// enforced before.
 			$validation_result = $this->validate_field( $field_value, $field_type, $allowed_values );
+			if ( true === $validation_result && isset( $form_definition['rules'][ $field_name ] ) ) {
+				$validation_result = Form_Field_Rules::check( $field_value, $form_definition['rules'][ $field_name ] );
+			}
 			if ( is_wp_error( $validation_result ) ) {
 				// Security monitoring hook for validation failures.
 				do_action( 'designsetgo_form_validation_failed', $form_id, $field_name, $field_type, $validation_result->get_error_code(), $this->security->get_client_ip() );
@@ -563,9 +579,17 @@ class Form_Handler {
 
 			$field_type = isset( $field_types[ $key ] ) ? sanitize_text_field( $field_types[ $key ] ) : 'text';
 
+			// String values go through unsanitized, as they do on the REST
+			// path: handle_form_submission() checks each against the field's
+			// constraints and then sanitizes it by field type. Sanitizing here
+			// first changed what was checked (`<` grew into `&lt;`, whitespace
+			// collapsed), rejecting values the browser had accepted, and
+			// stripped a textarea's line breaks before sanitize_textarea_field()
+			// could keep them. An array (`name[]`) becomes an empty string, as
+			// sanitize_text_field() always made it.
 			$fields[] = array(
 				'name'  => $key,
-				'value' => sanitize_text_field( wp_unslash( $value ) ),
+				'value' => is_string( $value ) ? wp_unslash( $value ) : '', // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Validated and sanitized by type in handle_form_submission().
 				'type'  => $field_type,
 			);
 		}
@@ -1217,7 +1241,7 @@ class Form_Handler {
 	 *
 	 * @param string $form_id        Form identifier to look up.
 	 * @param int    $source_post_id Page the form was submitted from, or 0.
-	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[]}|null Form definition or null.
+	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[], rules: array}|null Form definition or null.
 	 */
 	private function get_form_definition( $form_id, $source_post_id = 0 ) {
 		if ( ! is_string( $form_id ) || '' === $form_id ) {
@@ -1231,7 +1255,7 @@ class Form_Handler {
 			}
 		}
 
-		$cache_key = 'dsgo_form_definition_v2_' . md5( $form_id );
+		$cache_key = self::DEFINITION_CACHE_PREFIX . md5( $form_id );
 		$cached    = get_transient( $cache_key );
 
 		if ( false !== $cached && is_array( $cached ) ) {
@@ -1257,6 +1281,9 @@ class Form_Handler {
 		);
 
 		foreach ( (array) $posts as $post ) {
+			if ( ! $this->is_eligible_form_host( (int) $post->ID ) ) {
+				continue;
+			}
 			$blocks     = parse_blocks( $post->post_content );
 			$form_block = $this->find_form_block( $blocks, $form_id );
 			if ( null !== $form_block ) {
@@ -1271,10 +1298,50 @@ class Form_Handler {
 	}
 
 	/**
+	 * Whether a published post may serve its form to the site-wide lookup.
+	 *
+	 * This lookup ignores who is asking and its result is cached for everyone,
+	 * so it cannot honour a visitor's password cookie: a password-protected
+	 * post is never eligible. A form there is still reachable through
+	 * get_source_post_form_definition(), which checks that cookie.
+	 *
+	 * Viewability is not required. The query already limits candidates to
+	 * published posts, and this lookup is the only way to reach a form kept in
+	 * a post type that is not publicly viewable but renders into public pages:
+	 * synced patterns, templates and template parts, and theme builder or popup
+	 * post types (GeneratePress and Kadence Elements, Blocksy Content Blocks,
+	 * Spectra popups). Sites that want it narrower can use the filter.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	private function is_eligible_form_host( $post_id ) {
+		$post = get_post( $post_id );
+		if ( ! $post || '' !== $post->post_password ) {
+			return false;
+		}
+
+		/**
+		 * Filters whether a published post may serve its form to submissions
+		 * that name no source page.
+		 *
+		 * Password-protected posts never reach this filter. The result is cached
+		 * with the form definition for an hour, so return the same answer for
+		 * every visitor.
+		 *
+		 * @since 2.8.3
+		 *
+		 * @param bool     $allowed Whether the post is eligible. Default true.
+		 * @param \WP_Post $post    Candidate post.
+		 */
+		return (bool) apply_filters( 'designsetgo_form_lookup_allows_post', true, $post );
+	}
+
+	/**
 	 * Build the server-owned definition for a parsed form block.
 	 *
 	 * @param array $form_block Parsed designsetgo/form-builder block.
-	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[]} Form definition.
+	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[], rules: array} Form definition.
 	 */
 	private function build_form_definition( array $form_block ) {
 		$inner_blocks = isset( $form_block['innerBlocks'] ) ? $form_block['innerBlocks'] : array();
@@ -1284,6 +1351,7 @@ class Form_Handler {
 			'field_types'     => $this->extract_field_types_from_blocks( $inner_blocks ),
 			'constraints'     => $this->extract_field_value_constraints_from_blocks( $inner_blocks ),
 			'required_fields' => $this->extract_required_field_names_from_blocks( $inner_blocks ),
+			'rules'           => Form_Field_Rules::extract( $inner_blocks ),
 		);
 	}
 
@@ -1711,7 +1779,7 @@ class Form_Handler {
 				'designsetgo/form-builder' === $block['blockName'] &&
 				isset( $block['attrs']['formId'] )
 			) {
-				delete_transient( 'dsgo_form_definition_v2_' . md5( $block['attrs']['formId'] ) );
+				delete_transient( self::DEFINITION_CACHE_PREFIX . md5( $block['attrs']['formId'] ) );
 				delete_transient( 'dsgo_form_attrs_v2_' . md5( $block['attrs']['formId'] ) );
 				delete_transient( 'dsgo_form_field_types_' . md5( $block['attrs']['formId'] ) );
 				delete_transient( 'dsgo_form_field_constraints_' . md5( $block['attrs']['formId'] ) );

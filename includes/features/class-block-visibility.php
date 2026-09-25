@@ -2,9 +2,8 @@
 /**
  * Shared rule evaluator for the dsgoVisibility attribute.
  *
- * Pure static methods — no WordPress hooks, no state. Consumers
- * (render helpers, REST endpoints) pass a rules array and a
- * per-item context; the evaluator returns bool.
+ * The matches() evaluator is pure — no state. Consumers (render helpers, REST endpoints)
+ * pass a rules array and a per-item context; the evaluator returns bool.
  *
  * @package DesignSetGo
  * @since   2.3.0
@@ -15,10 +14,11 @@ namespace DesignSetGo;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Evaluates `dsgoVisibility` rules against per-item context during query renders.
+ * Evaluates `dsgoVisibility` rules against per-item or per-page context.
  *
  * Pure static helpers plus a single `render_block` filter registered via
- * `register()` that gates nested inner blocks inside a query item template.
+ * `register()` that gates every block carrying rules: against the current
+ * Query item inside a loop, and against the current post everywhere else.
  */
 class BlockVisibility {
 
@@ -26,9 +26,6 @@ class BlockVisibility {
 	 * Register the render_block filter once at plugin bootstrap.
 	 *
 	 * Idempotent — safe to call multiple times; only hooks once.
-	 * This gates nested block rendering (inside core/group, core/columns, etc.)
-	 * by reading the top of $GLOBALS['designsetgo_parent_stack'] set by
-	 * designsetgo_query_render_item().
 	 */
 	public static function register() {
 		static $registered = false;
@@ -36,35 +33,89 @@ class BlockVisibility {
 			return;
 		}
 		$registered = true;
-		add_filter( 'render_block', array( __CLASS__, 'filter_render_block' ), 10, 2 );
+		add_filter( 'render_block', array( __CLASS__, 'filter_render_block' ), 10, 3 );
 	}
 
 	/**
-	 * Filter callback: suppress nested blocks whose dsgoVisibility rules do not
-	 * match the current item context.
+	 * Filter callback: suppress blocks whose dsgoVisibility rules do not match.
 	 *
-	 * Only active when $GLOBALS['designsetgo_parent_stack'] is non-empty, meaning
-	 * we are inside a designsetgo_query_render_item() call. Top-level template
+	 * Inside a designsetgo_query_render_item() call the rules run against the
+	 * item on top of $GLOBALS['designsetgo_parent_stack']. Top-level template
 	 * blocks are already gated in the render_item loop (optimisation: they skip
-	 * WP_Block instantiation entirely); this filter catches blocks at deeper
-	 * nesting levels that are rendered recursively by WP_Block::render().
+	 * WP_Block instantiation entirely); this filter catches deeper nesting.
 	 *
-	 * @param string $block_content Rendered block HTML.
-	 * @param array  $parsed_block  Parsed block array (blockName + attrs).
+	 * Everywhere else — an ordinary page, a template, a core Query loop — the
+	 * rules run against the post being rendered. The Visibility panel is offered
+	 * on every block, so a "logged-in users only" rule has to hold on every
+	 * block too: skipping it outside a DSGo loop showed the block to everyone.
+	 *
+	 * @param string         $block_content Rendered block HTML.
+	 * @param array          $parsed_block  Parsed block array (blockName + attrs).
+	 * @param \WP_Block|null $instance      Block instance, when WordPress passes one.
 	 * @return string Empty string when rules do not match; original content otherwise.
 	 */
-	public static function filter_render_block( $block_content, $parsed_block ) {
-		if ( empty( $GLOBALS['designsetgo_parent_stack'] ) ) {
-			return $block_content;
-		}
+	public static function filter_render_block( $block_content, $parsed_block, $instance = null ) {
 		$visibility = $parsed_block['attrs']['dsgoVisibility'] ?? null;
-		if ( null === $visibility ) {
+		if ( empty( $visibility ) ) {
 			return $block_content;
 		}
-		$ctx = end( $GLOBALS['designsetgo_parent_stack'] );
-		return self::matches( $visibility, is_array( $ctx ) ? $ctx : array() )
-			? $block_content
-			: '';
+		if ( ! empty( $GLOBALS['designsetgo_parent_stack'] ) ) {
+			$ctx = end( $GLOBALS['designsetgo_parent_stack'] );
+			$ctx = is_array( $ctx ) ? $ctx : array();
+		} elseif ( self::is_editor_preview() ) {
+			// The editor shows every block regardless of its rules; a server
+			// preview must not blank a "logged-out visitors only" block for the
+			// logged-in author looking at it.
+			return $block_content;
+		} else {
+			$ctx = self::page_context( $instance );
+		}
+		return self::matches( $visibility, $ctx ) ? $block_content : '';
+	}
+
+	/**
+	 * Whether this request is the editor's ServerSideRender preview.
+	 *
+	 * Core's block-renderer route already requires edit_posts, but the
+	 * exemption re-checks it rather than trusting another plugin never to
+	 * loosen that route: skipping the rules for a visitor would show them
+	 * every gated block inside a rendered synced pattern.
+	 *
+	 * @return bool
+	 */
+	private static function is_editor_preview() {
+		if ( ! function_exists( 'wp_is_serving_rest_request' ) || ! wp_is_serving_rest_request() ) {
+			return false;
+		}
+		$route = isset( $GLOBALS['wp']->query_vars['rest_route'] ) ? (string) $GLOBALS['wp']->query_vars['rest_route'] : '';
+		return 0 === strpos( $route, '/wp/v2/block-renderer/' ) && current_user_can( 'edit_posts' );
+	}
+
+	/**
+	 * Build rule context for a block rendered outside a Dynamic Query item.
+	 *
+	 * Prefers the block's own `postId` context (a core Query loop supplies it),
+	 * then the global post. There is no item index here, so `index` rules see
+	 * -1 exactly as they would for an item with no index.
+	 *
+	 * @param \WP_Block|null $instance Block instance.
+	 * @return array Context with postId and postType when a post is in scope.
+	 */
+	private static function page_context( $instance ) {
+		$post_id = 0;
+		if ( $instance instanceof \WP_Block && isset( $instance->context['postId'] ) ) {
+			$post_id = (int) $instance->context['postId'];
+		}
+		if ( ! $post_id ) {
+			$post_id = (int) get_the_ID();
+		}
+		if ( ! $post_id ) {
+			return array();
+		}
+		return array(
+			'postId'   => $post_id,
+			'postType' => get_post_type( $post_id ),
+		);
 	}
 
 	/**
@@ -130,6 +181,13 @@ class BlockVisibility {
 	/**
 	 * Evaluate a post-meta rule.
 	 *
+	 * Protected keys (leading underscore, or declared protected via the
+	 * `is_protected_meta` filter) never match, whatever the operator. Whether a
+	 * block shows is visible on the front end, so a rule like `contains "a"`
+	 * against another author's `_api_key` would otherwise read that secret out
+	 * one character at a time. Bindings, style bindings and `groupBy` refuse
+	 * protected keys the same way.
+	 *
 	 * @param array $rule    Rule definition: key, op, value.
 	 * @param array $context Per-item context: postId.
 	 * @return bool
@@ -137,7 +195,7 @@ class BlockVisibility {
 	private static function evaluate_meta( array $rule, array $context ) {
 		$post_id = isset( $context['postId'] ) ? (int) $context['postId'] : 0;
 		$key     = isset( $rule['key'] ) ? sanitize_text_field( (string) $rule['key'] ) : '';
-		if ( ! $post_id || '' === $key ) {
+		if ( ! $post_id || '' === $key || is_protected_meta( $key, 'post' ) ) {
 			return false;
 		}
 		$actual = get_post_meta( $post_id, $key, true );

@@ -143,6 +143,9 @@ class Assets {
 					: 'fill-diagonal',
 				// Extensions the site switched off (Block_Manager::should_load_extension).
 				'disabledExtensions'       => array_values( array_map( 'sanitize_key', $disabled_extensions ) ),
+				// Custom CSS is stripped on save without edit_css (Custom_CSS_Kses),
+				// so the panel goes read-only instead of accepting CSS it will drop.
+				'canEditCustomCSS'         => current_user_can( 'edit_css' ),
 				'blockAnimations'          => self::block_animations_for_editor( $anim['map'] ),
 				'blockAnimationsEnabled'   => (bool) $anim['enabled'],
 				// The block-animations extension's own exclude list, so
