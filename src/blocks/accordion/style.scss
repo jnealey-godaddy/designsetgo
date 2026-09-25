@@ -21,7 +21,7 @@
 	// divider still adapts when no `contrast` preset is defined, instead of a
 	// fixed rgba(0,0,0) that would sit wrong against a dark theme.
 	--dsgo-accordion-border-color: var(--wp--preset--color--contrast, color-mix(in srgb, currentColor 10%, transparent));
-	--dsgo-accordion-border-radius: $dsgo-radius-medium;
+	--dsgo-accordion-border-radius: #{$dsgo-radius-medium};
 	--dsgo-accordion-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
 	// Reset any default styles

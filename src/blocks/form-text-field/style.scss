@@ -16,7 +16,7 @@
 	// palette lives there and not here.
 	--dsgo-field-label-color: var(--dsgo-form-label-color, inherit);
 	--dsgo-field-border-color: var(--dsgo-form-border-color, currentcolor);
-	--dsgo-field-border-radius: var(--dsgo-form-border-radius, $dsgo-radius-medium);
+	--dsgo-field-border-radius: var(--dsgo-form-border-radius, #{$dsgo-radius-medium});
 	--dsgo-field-focus-color: var(--dsgo-form-focus-color, currentcolor);
 	--dsgo-field-error-color: var(--dsgo-form-error-color, currentcolor);
 
