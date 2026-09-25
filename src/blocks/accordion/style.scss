@@ -3,6 +3,14 @@
  * Professional, polished accordion with consistent DesignSetGo styling
  */
 
+// Default to the medium preset rather than inheriting the body size, which
+// some themes (e.g. Twenty Twenty-Five) set to `large`. Zero specificity so
+// the block's own font-size control and theme.json block styles still win.
+// An undefined preset makes the declaration invalid, so it falls back to inherit.
+:where(.dsgo-accordion) {
+	font-size: var(--wp--preset--font-size--medium);
+}
+
 .dsgo-accordion {
 	// CSS Custom Properties for easy theming
 	--dsgo-accordion-gap: var(--wp--preset--spacing--20, 0.5rem);
