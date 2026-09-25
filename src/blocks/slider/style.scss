@@ -422,14 +422,14 @@
 }
 
 // Responsive Breakpoints
-@include below($breakpoint-tablet) {
+@media (max-width: #{$breakpoint-tablet}) {
 
 	.dsgo-slider__track > .dsgo-slide {
 		flex: 0 0 calc((100% - (var(--dsgo-slider-gap) * (var(--dsgo-slider-slides-per-view-tablet) - 1))) / var(--dsgo-slider-slides-per-view-tablet));
 	}
 }
 
-@include below($breakpoint-mobile) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-slider__track > .dsgo-slide {
 		flex: 0 0 calc((100% - (var(--dsgo-slider-gap) * (var(--dsgo-slider-slides-per-view-mobile) - 1))) / var(--dsgo-slider-slides-per-view-mobile));
@@ -548,7 +548,7 @@
 	}
 }
 
-@include below($breakpoint-wp-medium) {
+@media (max-width: #{$breakpoint-wp-medium}) {
 
 	.dsgo-slider--scroll-driven .dsgo-slider__scroll-progress {
 		width: 80px;

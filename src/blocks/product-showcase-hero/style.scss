@@ -43,7 +43,8 @@
 		top: var(--wp--preset--spacing--30, 1rem);
 		left: var(--wp--preset--spacing--30, 1rem);
 		background: var(--wp--preset--color--vivid-red, #cf2e2e);
-		color: var(--wp--preset--color--base, #fff);
+		// White on purpose, for contrast against the fixed red badge.
+		color: #fff;
 		padding: 4px 12px;
 		font-size: 0.875rem;
 		font-weight: 600;

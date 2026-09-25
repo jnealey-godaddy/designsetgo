@@ -158,7 +158,7 @@
 	// CRITICAL: Target .dsgo-grid__inner since that's where grid-template-columns is applied
 
 	// Tablet breakpoint (≤ 1024px)
-	@include below($breakpoint-tablet) {
+	@media (max-width: #{$breakpoint-tablet}) {
 
 		@for $i from 1 through 12 {
 			&.dsgo-grid-cols-tablet-#{$i} .dsgo-grid__inner {
