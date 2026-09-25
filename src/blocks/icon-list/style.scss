@@ -34,7 +34,7 @@
 		}
 
 		// Stack vertically on tablet
-		@include below($breakpoint-tablet) {
+		@media (max-width: #{$breakpoint-tablet}) {
 
 			.dsgo-icon-list__items {
 				flex-direction: column !important;
@@ -50,7 +50,7 @@
 		}
 
 		// Stack to single column on mobile
-		@include below($breakpoint-small) {
+		@media (max-width: #{$breakpoint-small}) {
 
 			.dsgo-icon-list__items {
 				grid-template-columns: 1fr !important;

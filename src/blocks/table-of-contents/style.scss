@@ -151,7 +151,7 @@
     }
 
     // Mobile: Collapsible TOC
-    @include below($breakpoint-wp-medium) {
+    @media (max-width: #{$breakpoint-wp-medium}) {
 
         &__content {
             max-height: 400px;
@@ -191,7 +191,7 @@
     }
 
     // Tablet and up
-    @include from($breakpoint-wp-medium) {
+    @media (min-width: #{$breakpoint-wp-medium + 1px}) {
         // Larger screens can show more content
         &__content {
             max-height: none;

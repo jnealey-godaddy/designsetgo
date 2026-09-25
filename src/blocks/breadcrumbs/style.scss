@@ -129,7 +129,7 @@
 /**
  * Responsive adjustments
  */
-@include below($breakpoint-small) {
+@media (max-width: #{$breakpoint-small}) {
 
     .dsgo-breadcrumbs {
 

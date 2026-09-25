@@ -254,7 +254,7 @@
 	}
 
 	// Stack on mobile (viewport fallback)
-	@include below($breakpoint-mobile) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		.dsgo-card__inner {
 			flex-direction: column;
@@ -302,7 +302,7 @@
 	}
 
 	// Stack on mobile (viewport fallback)
-	@include below($breakpoint-mobile) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		.dsgo-card__inner {
 			flex-direction: column;
@@ -373,7 +373,7 @@
 	}
 
 	// Reduce min-height on mobile
-	@include below($breakpoint-mobile) {
+	@media (max-width: #{$breakpoint-mobile}) {
 		min-height: 300px;
 
 		.dsgo-card__inner {
@@ -396,7 +396,7 @@
 		align-items: center;
 	}
 
-	@include below($breakpoint-mobile) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		.dsgo-card__inner {
 			padding: 1.5rem;
