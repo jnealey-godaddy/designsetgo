@@ -12,12 +12,11 @@
 	}
 
 	&.dsgo-text-path--align-center :where(svg) {
-		margin-right: auto;
-		margin-left: auto;
+		margin-inline: auto;
 	}
 
 	&.dsgo-text-path--align-right :where(svg) {
-		margin-left: auto;
+		margin-inline-start: auto;
 	}
 
 	:where(text) {

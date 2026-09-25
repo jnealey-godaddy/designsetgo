@@ -4,6 +4,9 @@
  * Responsive grid layout using CSS custom properties
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-counter-group {
 	box-sizing: border-box;
 	max-width: 100%; // Prevent overflow in containers and on small screens
@@ -55,16 +58,16 @@
 		}
 	}
 
-	// Tablet breakpoint (768px - 1023px)
-	@media (max-width: 1023px) {
+	// Tablet breakpoint
+	@include below($breakpoint-tablet) {
 
 		&__inner {
 			grid-template-columns: repeat(var(--dsgo-counter-columns-tablet, 2), 1fr);
 		}
 	}
 
-	// Mobile breakpoint (<768px)
-	@media (max-width: 767px) {
+	// Mobile breakpoint
+	@include below($breakpoint-mobile) {
 
 		&__inner {
 			grid-template-columns: repeat(var(--dsgo-counter-columns-mobile, 1), 1fr);

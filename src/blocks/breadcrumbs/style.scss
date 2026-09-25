@@ -5,6 +5,9 @@
  * Uses low-specificity selectors with :where() for easy overriding.
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-breadcrumbs {
     // Block container
     display: block;
@@ -15,7 +18,7 @@
     // Prefix text
     &__prefix {
         display: inline-block;
-        margin-right: 0.5em;
+        margin-inline-end: 0.5em;
         opacity: 0.8;
     }
 
@@ -29,7 +32,7 @@
     }
 
     &.is-content-justification-right {
-        text-align: right;
+        text-align: end;
 
         .dsgo-breadcrumbs__list {
             justify-content: flex-end;
@@ -71,7 +74,7 @@
     &__link {
         color: inherit;
         text-decoration: none;
-        transition: color 0.2s ease, text-decoration 0.2s ease;
+        transition: color $dsgo-duration-fast $dsgo-easing, text-decoration $dsgo-duration-fast $dsgo-easing;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -111,7 +114,7 @@
     &__home-icon {
         display: inline-flex;
         align-items: center;
-        margin-right: 0.25em;
+        margin-inline-end: 0.25em;
         flex-shrink: 0;
     }
 
@@ -126,7 +129,7 @@
 /**
  * Responsive adjustments
  */
-@media (max-width: 600px) {
+@include below($breakpoint-small) {
 
     .dsgo-breadcrumbs {
 
@@ -135,7 +138,7 @@
         }
 
         &__prefix {
-            margin-right: 0.35em;
+            margin-inline-end: 0.35em;
         }
     }
 }

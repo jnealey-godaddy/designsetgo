@@ -2,6 +2,8 @@
  * Chart Block - Frontend styles
  */
 
+@use '../../styles/variables' as *;
+
 .wp-block-designsetgo-chart {
 	margin: 0;
 
@@ -44,8 +46,14 @@
 	.dsgo-chart__value,
 	.dsgo-chart__category {
 		fill: currentcolor;
-		// The 600-unit viewBox is usually painted narrower than that, so user
-		// units shrink; 14 keeps axis text readable in a mobile column.
+		// SVG user-space units on the 600-unit viewBox, NOT real screen
+		// pixels — the viewBox scales them along with everything else in the
+		// chart, so a `--wp--preset--font-size` (a real px/rem value) would
+		// be interpreted in the wrong coordinate space and render at an
+		// arbitrary, unrelated on-screen size. The 600-unit viewBox is
+		// usually painted narrower than that, so user units shrink; 14 keeps
+		// axis text readable in a mobile column. Intentionally excluded from
+		// the design-token pass for this reason.
 		font-size: 14px;
 	}
 
@@ -73,7 +81,7 @@
 	.dsgo-chart__swatch {
 		width: 0.75em;
 		height: 0.75em;
-		border-radius: 2px;
+		border-radius: $dsgo-radius-small;
 		flex-shrink: 0;
 	}
 
@@ -86,6 +94,8 @@
 
 		// The donut is displayed far smaller than its 600-unit viewBox, so its
 		// labels need a larger user-unit size to stay legible once scaled.
+		// Same SVG-user-space caveat as .dsgo-chart__tick/__value/__category
+		// above — literal by design, not a token candidate.
 		.dsgo-chart__value {
 			font-size: 20px;
 		}

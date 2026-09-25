@@ -4,6 +4,9 @@
  * @since 1.0.0
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-icon-list {
 	list-style: none;
 	margin: 0;
@@ -30,8 +33,8 @@
 			flex-wrap: wrap;
 		}
 
-		// Stack vertically on tablet (≤ 1024px)
-		@media (max-width: 1024px) {
+		// Stack vertically on tablet
+		@include below($breakpoint-tablet) {
 
 			.dsgo-icon-list__items {
 				flex-direction: column !important;
@@ -46,8 +49,8 @@
 			// display: grid and grid-template-columns applied via inline styles
 		}
 
-		// Stack to single column on mobile (≤ 600px)
-		@media (max-width: 600px) {
+		// Stack to single column on mobile
+		@include below($breakpoint-small) {
 
 			.dsgo-icon-list__items {
 				grid-template-columns: 1fr !important;

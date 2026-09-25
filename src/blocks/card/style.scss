@@ -3,11 +3,19 @@
  * Supports 6 layout presets: standard, horizontal-left, horizontal-right, background, minimal, featured
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-card {
 	position: relative;
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+	// Lets the `@container` rules below react to the card's own rendered
+	// width — the horizontal layouts stack even on a wide viewport when the
+	// card itself sits in a narrow column (a three-up grid cell, a sidebar).
+	container-type: inline-size;
+	container-name: dsgo-card;
 
 	// CRITICAL: Ensure borders and padding are included in the total width
 	// Prevents cards from overflowing grid cells when borders are applied
@@ -245,8 +253,22 @@
 		padding: 1.5rem;
 	}
 
-	// Stack on mobile
-	@media (max-width: 768px) {
+	// Stack on mobile (viewport fallback)
+	@include below($breakpoint-mobile) {
+
+		.dsgo-card__inner {
+			flex-direction: column;
+		}
+
+		.dsgo-card__image-wrapper {
+			flex: 1;
+			max-width: 100%;
+		}
+	}
+
+	// Stack when the card itself is narrow (e.g. a grid cell), independent
+	// of viewport width.
+	@container dsgo-card (max-width: 480px) {
 
 		.dsgo-card__inner {
 			flex-direction: column;
@@ -279,8 +301,22 @@
 		padding: 1.5rem;
 	}
 
-	// Stack on mobile
-	@media (max-width: 768px) {
+	// Stack on mobile (viewport fallback)
+	@include below($breakpoint-mobile) {
+
+		.dsgo-card__inner {
+			flex-direction: column;
+		}
+
+		.dsgo-card__image-wrapper {
+			flex: 1;
+			max-width: 100%;
+		}
+	}
+
+	// Stack when the card itself is narrow (e.g. a grid cell), independent
+	// of viewport width.
+	@container dsgo-card (max-width: 480px) {
 
 		.dsgo-card__inner {
 			flex-direction: column;
@@ -337,7 +373,7 @@
 	}
 
 	// Reduce min-height on mobile
-	@media (max-width: 768px) {
+	@include below($breakpoint-mobile) {
 		min-height: 300px;
 
 		.dsgo-card__inner {
@@ -360,7 +396,7 @@
 		align-items: center;
 	}
 
-	@media (max-width: 768px) {
+	@include below($breakpoint-mobile) {
 
 		.dsgo-card__inner {
 			padding: 1.5rem;
@@ -397,6 +433,8 @@
 // ========================================
 // Responsive adjustments
 // ========================================
+// 480px is block-specific (a small-phone type-scale step, not one of the
+// shared breakpoints), so it stays a literal.
 @media (max-width: 480px) {
 
 	.dsgo-card__title {

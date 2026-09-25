@@ -2,6 +2,9 @@
  * Table of Contents Block - Frontend Styles
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-table-of-contents {
     // CSS custom properties for user-controlled values
     --dsgo-toc-link-color: currentcolor;
@@ -59,7 +62,7 @@
 
     &__list {
         list-style: none;
-        padding-left: 0;
+        padding-inline-start: 0;
         margin: 0;
         line-height: 1.6;
         display: flex;
@@ -73,7 +76,7 @@
         // Nested sublists
         &.dsgo-table-of-contents__sublist {
             margin-top: 0.5rem;
-            padding-left: var(--dsgo-toc-indent);
+            padding-inline-start: var(--dsgo-toc-indent);
         }
     }
 
@@ -92,7 +95,7 @@
     &__link {
         color: var(--dsgo-toc-link-color);
         text-decoration: none;
-        transition: color 0.2s ease, text-decoration 0.2s ease;
+        transition: color $dsgo-duration-fast $dsgo-easing, text-decoration $dsgo-duration-fast $dsgo-easing;
         display: inline;
         word-break: break-word;
         overflow-wrap: break-word;
@@ -123,7 +126,7 @@
 
         .dsgo-table-of-contents__list {
             list-style: decimal;
-            padding-left: 1.5rem;
+            padding-inline-start: 1.5rem;
 
             &.dsgo-table-of-contents__sublist {
                 list-style: lower-alpha;
@@ -135,7 +138,7 @@
     &--flat {
 
         .dsgo-table-of-contents__sublist {
-            padding-left: 0;
+            padding-inline-start: 0;
         }
     }
 
@@ -143,12 +146,12 @@
     &--hierarchical {
 
         .dsgo-table-of-contents__sublist {
-            padding-left: var(--dsgo-toc-indent);
+            padding-inline-start: var(--dsgo-toc-indent);
         }
     }
 
     // Mobile: Collapsible TOC
-    @media (max-width: 782px) {
+    @include below($breakpoint-wp-medium) {
 
         &__content {
             max-height: 400px;
@@ -164,16 +167,16 @@
             }
 
             &::-webkit-scrollbar-track {
-                background: rgba(0, 0, 0, 0.05);
-                border-radius: 3px;
+                background: color-mix(in srgb, currentcolor 5%, transparent);
+                border-radius: $dsgo-radius-small;
             }
 
             &::-webkit-scrollbar-thumb {
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 3px;
+                background: color-mix(in srgb, currentcolor 20%, transparent);
+                border-radius: $dsgo-radius-small;
 
                 &:hover {
-                    background: rgba(0, 0, 0, 0.3);
+                    background: color-mix(in srgb, currentcolor 30%, transparent);
                 }
             }
         }
@@ -188,7 +191,7 @@
     }
 
     // Tablet and up
-    @media (min-width: 783px) {
+    @include from($breakpoint-wp-medium) {
         // Larger screens can show more content
         &__content {
             max-height: none;
@@ -203,15 +206,15 @@
 // Accessibility: Skip link for screen readers
 .dsgo-table-of-contents__skip-link {
     position: absolute;
-    left: -9999px;
+    inset-inline-start: -9999px;
     top: 0;
 
     &:focus {
-        left: 0;
+        inset-inline-start: 0;
         z-index: 999;
         padding: 0.5rem 1rem;
-        background: #fff;
-        border: 2px solid #000;
+        background: var(--wp--preset--color--base, #fff);
+        border: 2px solid var(--wp--preset--color--contrast, #000);
     }
 }
 
