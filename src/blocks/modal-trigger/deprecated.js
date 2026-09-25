@@ -118,6 +118,7 @@ const sharedSupports = {
  * (now-superseded) current block.json carried immediately before this change.
  */
 const v4 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
@@ -273,6 +274,7 @@ const v4 = {
  * override.
  */
 const v3 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
@@ -420,6 +422,7 @@ const v3 = {
  * - Does not use __experimentalSkipSerialization flags
  */
 const v2 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		targetModalId: {
@@ -550,6 +553,7 @@ const v2 = {
  * - Frontend icons injected via PHP to avoid bundling 51KB library
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		targetModalId: {

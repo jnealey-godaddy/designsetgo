@@ -904,6 +904,7 @@ const v9 = {
 // the serialised class differs, not the attribute values; the current save()
 // then re-derives the hover classes from the variation.
 const v8 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: { type: 'string', default: 'full' },
@@ -1118,6 +1119,7 @@ const v8 = {
 // class differs, not the attribute values; the current save() then re-renders
 // the block with the overlay class derived from the variation.
 const v7 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: { type: 'string', default: 'full' },
@@ -1343,6 +1345,7 @@ const v7 = {
 // them automatically. This is the same extension-injected attribute pattern
 // documented on the accordion and pill v1 deprecations in this repo.
 const v6 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: { type: 'string', default: 'full' },
@@ -1614,6 +1617,7 @@ const v6 = {
 // for near-miss markup. Verified in src/blocks/section/test/deprecated.test.js
 // — do not delete that test; it is the regression guard for this migration.
 const v5 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: { type: 'string', default: 'full' },
@@ -1799,6 +1803,7 @@ const v5 = {
 
 // Version 4: Shape dividers with background color inheritance but no text color for shape background
 const v4 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: { type: 'string', default: 'full' },
@@ -1976,6 +1981,7 @@ const v4 = {
 
 // Version 3: Shape dividers with currentColor fallback (before background color inheritance)
 const v3 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: { type: 'string', default: 'full' },
@@ -2139,6 +2145,7 @@ const v3 = {
 
 // Version 2: Before shape dividers - current save without shape dividers
 const v2 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: {
@@ -2271,6 +2278,7 @@ const v2 = {
 // v1 blocks have no align attribute value — WordPress only emits alignment
 // classes when the attribute is present and set.
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		// Old blocks don't have align attribute, only className

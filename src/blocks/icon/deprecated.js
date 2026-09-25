@@ -93,6 +93,7 @@ function sanitizeUrl(url) {
  * to the pre-justification set.
  */
 const vAlign = {
+	apiVersion: 3,
 	attributes: {
 		icon: { type: 'string', default: 'star' },
 		iconStyle: { type: 'string', enum: ['filled', 'outlined'] },
@@ -136,6 +137,7 @@ const vAlign = {
  * block with their attributes preserved.
  */
 const vLazy = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
@@ -273,6 +275,7 @@ const vLazy = {
  * explicit size/style keep their stored value as an override.
  */
 const v2 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
@@ -411,6 +414,7 @@ const v2 = {
  * - Editor still uses getIcon() from shared library
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);

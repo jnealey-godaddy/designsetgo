@@ -100,6 +100,7 @@ function migrateLegacyText(attributes) {
  * Migration is a passthrough — only the render path changed.
  */
 const vStatic = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		...legacyTextAttributes,
@@ -238,6 +239,7 @@ const vStatic = {
  * Deprecated when markers were removed from the block
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		...legacyTextAttributes,

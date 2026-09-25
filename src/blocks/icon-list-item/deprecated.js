@@ -78,6 +78,7 @@ const sharedSupports = {
  * could otherwise false-match.
  */
 const v4 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		icon: { type: 'string', default: 'star' },
@@ -224,6 +225,7 @@ const v4 = {
 };
 
 const v3 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
@@ -415,6 +417,7 @@ const v3 = {
  * pick up the new inherited-token behavior going forward.
  */
 const v2 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	isEligible(attributes, innerBlocks, extra) {
 		const innerHTML = getDeprecatedBlockHTML(extra);
@@ -550,6 +553,7 @@ const v2 = {
  * - Frontend icons injected via PHP to avoid bundling 51KB library
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		icon: {

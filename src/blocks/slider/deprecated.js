@@ -14,6 +14,7 @@ const SINGLE_SLIDE_EFFECTS = ['fade', 'zoom'];
  * passthrough (v1 will then migrate 'bottom' → 'inside' if needed).
  */
 const v2 = {
+	apiVersion: 3,
 	attributes: {
 		slidesPerView: { type: 'number', default: 1 },
 		slidesPerViewTablet: { type: 'number', default: 1 },
@@ -238,6 +239,7 @@ const v2 = {
  * Migrates old "bottom" and "top" values to "inside".
  */
 const v1 = {
+	apiVersion: 3,
 	attributes: {
 		slidesPerView: { type: 'number', default: 1 },
 		slidesPerViewTablet: { type: 'number', default: 1 },
@@ -285,10 +287,10 @@ const v1 = {
 		typography: {
 			fontSize: true,
 			lineHeight: true,
-			fontFamily: true,
-			fontWeight: true,
-			textTransform: true,
-			letterSpacing: true,
+			__experimentalFontFamily: true,
+			__experimentalFontWeight: true,
+			__experimentalTextTransform: true,
+			__experimentalLetterSpacing: true,
 		},
 		__experimentalBorder: {
 			color: true,

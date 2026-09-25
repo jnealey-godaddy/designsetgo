@@ -24,6 +24,7 @@ import { getDeprecatedBlockHTML } from '../../utils/deprecated-block-html';
  * and picks the deprecation whose save() reproduces the stored HTML.
  */
 const v1 = {
+	apiVersion: 3,
 	// Must mirror block.json exactly — a deprecation whose `supports` omits a
 	// group makes WordPress strip those attributes before migrate() runs.
 	attributes: {

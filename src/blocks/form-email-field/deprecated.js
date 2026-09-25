@@ -40,6 +40,7 @@ const sharedAttributes = {
  * The last static markup, immediately before the block became server-rendered.
  */
 const vStatic = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
@@ -133,6 +134,7 @@ const vStatic = {
  * required input fields. This deprecation matches that older format.
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		fieldName: {

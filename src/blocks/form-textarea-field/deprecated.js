@@ -45,6 +45,7 @@ const sharedAttributes = {
  * The last static markup, immediately before the block became server-rendered.
  */
 const vStatic = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: sharedAttributes,
 
@@ -142,6 +143,7 @@ const vStatic = {
  * required textarea fields. This deprecation matches that older format.
  */
 const v2 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		fieldName: {
@@ -271,6 +273,7 @@ const v2 = {
  * Deprecated when block was renamed to 'designsetgo/form-textarea-field' for consistency.
  */
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		fieldName: {

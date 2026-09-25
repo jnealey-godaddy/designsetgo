@@ -51,9 +51,9 @@ const sharedSupports = {
 	typography: {
 		fontSize: true,
 		lineHeight: true,
-		writingMode: true,
-		fontFamily: true,
-		fontWeight: true,
+		__experimentalWritingMode: true,
+		__experimentalFontFamily: true,
+		__experimentalFontWeight: true,
 		__experimentalDefaultControls: {
 			fontSize: true,
 		},
@@ -85,6 +85,7 @@ const sharedSupports = {
  * validate directly against the current save().
  */
 const v3 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		align: {
@@ -242,6 +243,7 @@ const v3 = {
 
 // Version 1: Original structure without wrapper
 const v1 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		blobShape: {
@@ -341,6 +343,7 @@ const v1 = {
 
 // Version 2: With wrapper but without align attribute
 const v2 = {
+	apiVersion: 3,
 	supports: sharedSupports,
 	attributes: {
 		blobShape: {
