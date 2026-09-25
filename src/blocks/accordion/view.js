@@ -29,7 +29,7 @@ function initAccordions() {
 
 		const allowMultiple =
 			accordion.getAttribute('data-allow-multiple') === 'true';
-		const items = accordion.querySelectorAll('.dsgo-accordion-item');
+		const items = getOwnItems(accordion);
 
 		// Add skip link for keyboard accessibility
 		const skipLink = document.createElement('a');
@@ -51,9 +51,13 @@ function initAccordions() {
 		});
 		accordion.insertBefore(skipLink, accordion.firstChild);
 
+		// In single-open mode only the first "Open by default" item may start
+		// open, however many the saved markup marks.
+		let openedInitially = false;
+
 		items.forEach((item) => {
-			const trigger = item.querySelector('.dsgo-accordion-item__trigger');
-			const panel = item.querySelector('.dsgo-accordion-item__panel');
+			const trigger = getTrigger(item);
+			const panel = getPanel(item);
 
 			if (!trigger || !panel) {
 				return;
@@ -61,8 +65,10 @@ function initAccordions() {
 
 			// Set initial state based on data attribute
 			const initiallyOpen =
-				item.getAttribute('data-initially-open') === 'true';
+				item.getAttribute('data-initially-open') === 'true' &&
+				(allowMultiple || !openedInitially);
 			if (initiallyOpen) {
+				openedInitially = true;
 				openPanel(item, panel, false); // No animation on initial load
 			} else {
 				closePanel(item, panel, false); // No animation on initial load
@@ -101,9 +107,7 @@ function initAccordions() {
 					e.preventDefault();
 					const prevItem = getPreviousItem(item, items);
 					if (prevItem) {
-						prevItem
-							.querySelector('.dsgo-accordion-item__trigger')
-							?.focus();
+						getTrigger(prevItem)?.focus();
 					}
 				}
 
@@ -112,31 +116,105 @@ function initAccordions() {
 					e.preventDefault();
 					const nextItem = getNextItem(item, items);
 					if (nextItem) {
-						nextItem
-							.querySelector('.dsgo-accordion-item__trigger')
-							?.focus();
+						getTrigger(nextItem)?.focus();
 					}
 				}
 
 				// Home - focus first item
 				if (e.key === 'Home') {
 					e.preventDefault();
-					items[0]
-						?.querySelector('.dsgo-accordion-item__trigger')
-						?.focus();
+					getTrigger(items[0])?.focus();
 				}
 
 				// End - focus last item
 				if (e.key === 'End') {
 					e.preventDefault();
-					items[items.length - 1]
-						?.querySelector('.dsgo-accordion-item__trigger')
-						?.focus();
+					getTrigger(items[items.length - 1])?.focus();
 				}
 			});
 		});
 	});
+
+	openFromHash(false);
 }
+
+/**
+ * Items that belong to this accordion, not to one nested inside it.
+ *
+ * @param {HTMLElement} accordion Accordion element.
+ * @return {HTMLElement[]} Accordion items.
+ */
+function getOwnItems(accordion) {
+	return Array.from(
+		accordion.querySelectorAll('.dsgo-accordion-item')
+	).filter((item) => item.closest('.dsgo-accordion') === accordion);
+}
+
+// An item's own trigger and panel come before any nested accordion's in
+// document order, so querySelector() always finds the item's own.
+function getTrigger(item) {
+	return item.querySelector('.dsgo-accordion-item__trigger');
+}
+
+function getPanel(item) {
+	return item.querySelector('.dsgo-accordion-item__panel');
+}
+
+/**
+ * Open the item a URL hash points at.
+ *
+ * The hash may name an item's anchor, its trigger or panel, or anything
+ * inside its panel — a heading a Table of Contents links to, say. Every
+ * accordion item around the target opens, so nested accordions work too.
+ *
+ * @param {boolean} animate Whether to animate and scroll the target into view.
+ */
+function openFromHash(animate) {
+	let target = null;
+	try {
+		const id = decodeURIComponent(window.location.hash.slice(1));
+		target = id ? document.getElementById(id) : null;
+	} catch (error) {
+		return;
+	}
+
+	let item = target?.closest('.dsgo-accordion-item');
+	const toOpen = [];
+	while (item) {
+		toOpen.unshift(item);
+		item = item.parentElement?.closest('.dsgo-accordion-item');
+	}
+
+	let opened = false;
+	toOpen.forEach((accordionItem) => {
+		const accordion = accordionItem.closest('.dsgo-accordion');
+		const panel = getPanel(accordionItem);
+		if (
+			!accordion?.hasAttribute('data-dsgo-initialized') ||
+			!panel ||
+			accordionItem.classList.contains('dsgo-accordion-item--open')
+		) {
+			return;
+		}
+
+		if (accordion.getAttribute('data-allow-multiple') !== 'true') {
+			closeAllPanels(accordion, animate);
+		}
+		openPanel(accordionItem, panel, animate);
+		opened = true;
+	});
+
+	// The browser's own jump found nothing to scroll to: the target was
+	// inside a hidden panel.
+	if (opened) {
+		target.scrollIntoView({
+			behavior: animate && !prefersReducedMotion ? 'smooth' : 'auto',
+			block: 'start',
+		});
+	}
+}
+
+window.addEventListener('hashchange', () => openFromHash(true));
 
 function openPanel(item, panel, animate = true, scrollIntoView = false) {
 	// Update classes
@@ -144,7 +222,7 @@ function openPanel(item, panel, animate = true, scrollIntoView = false) {
 	item.classList.add('dsgo-accordion-item--open');
 
 	// Update ARIA
-	const trigger = item.querySelector('.dsgo-accordion-item__trigger');
+	const trigger = getTrigger(item);
 	if (trigger) {
 		trigger.setAttribute('aria-expanded', 'true');
 	}
@@ -191,7 +269,7 @@ function closePanel(item, panel, animate = true) {
 	item.classList.add('dsgo-accordion-item--closed');
 
 	// Update ARIA
-	const trigger = item.querySelector('.dsgo-accordion-item__trigger');
+	const trigger = getTrigger(item);
 	if (trigger) {
 		trigger.setAttribute('aria-expanded', 'false');
 	}
@@ -219,13 +297,11 @@ function closePanel(item, panel, animate = true) {
 	});
 }
 
-function closeAllPanels(accordion) {
-	const items = accordion.querySelectorAll('.dsgo-accordion-item');
-
-	items.forEach((item) => {
-		const panel = item.querySelector('.dsgo-accordion-item__panel');
+function closeAllPanels(accordion, animate = true) {
+	getOwnItems(accordion).forEach((item) => {
+		const panel = getPanel(item);
 		if (panel && item.classList.contains('dsgo-accordion-item--open')) {
-			closePanel(item, panel, true);
+			closePanel(item, panel, animate);
 		}
 	});
 }

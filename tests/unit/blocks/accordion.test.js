@@ -124,7 +124,10 @@ describe('Accordion - Frontend', () => {
 		});
 
 		test('opens initially-open items on load', () => {
-			const accordion = createAccordion({ initiallyOpen: [0, 2] });
+			const accordion = createAccordion({
+				allowMultiple: true,
+				initiallyOpen: [0, 2],
+			});
 			loadView();
 
 			const items = accordion.querySelectorAll('.dsgo-accordion-item');
@@ -149,6 +152,52 @@ describe('Accordion - Frontend', () => {
 			expect(
 				items[2].querySelector('.dsgo-accordion-item__panel').hidden
 			).toBe(false);
+		});
+
+		test('single mode: only the first initially-open item opens', () => {
+			const accordion = createAccordion({ initiallyOpen: [1, 2] });
+			loadView();
+
+			const items = accordion.querySelectorAll('.dsgo-accordion-item');
+
+			expect(
+				items[1].classList.contains('dsgo-accordion-item--open')
+			).toBe(true);
+			expect(
+				items[2].classList.contains('dsgo-accordion-item--closed')
+			).toBe(true);
+			expect(
+				items[2].querySelector('.dsgo-accordion-item__panel').hidden
+			).toBe(true);
+		});
+
+		test('a nested accordion keeps its own items', () => {
+			const outer = createAccordion({ itemCount: 2, initiallyOpen: [0] });
+			const inner = createAccordion({ itemCount: 2, initiallyOpen: [0] });
+			outer
+				.querySelector('.dsgo-accordion-item__content')
+				.appendChild(inner);
+			loadView();
+
+			const innerFirst = inner.querySelector('.dsgo-accordion-item');
+			expect(
+				innerFirst.classList.contains('dsgo-accordion-item--open')
+			).toBe(true);
+
+			// Opening the outer second item must not close the inner item.
+			// (Not `:scope >` — JSDOM matches descendants with it.)
+			const outerItems = Array.from(outer.children).filter((el) =>
+				el.classList.contains('dsgo-accordion-item')
+			);
+			outerItems[1]
+				.querySelector('.dsgo-accordion-item__trigger')
+				.click();
+			expect(
+				outerItems[1].classList.contains('dsgo-accordion-item--open')
+			).toBe(true);
+			expect(
+				innerFirst.classList.contains('dsgo-accordion-item--open')
+			).toBe(true);
 		});
 
 		test('does not double-initialize the same container', () => {
@@ -325,6 +374,75 @@ describe('Accordion - Frontend', () => {
 			expect(panel.hidden).toBe(true);
 
 			jest.useRealTimers();
+		});
+	});
+
+	describe('URL hash deep links', () => {
+		afterEach(() => {
+			window.history.replaceState(null, '', window.location.pathname);
+		});
+
+		test('opens the item whose anchor is in the hash', () => {
+			const accordion = createAccordion({ initiallyOpen: [0] });
+			const items = accordion.querySelectorAll('.dsgo-accordion-item');
+			items[2].id = 'pricing-faq';
+			window.history.replaceState(null, '', '#pricing-faq');
+			Element.prototype.scrollIntoView.mockClear();
+			loadView();
+
+			expect(
+				items[2].classList.contains('dsgo-accordion-item--open')
+			).toBe(true);
+			expect(
+				items[0].classList.contains('dsgo-accordion-item--open')
+			).toBe(false);
+			expect(items[2].scrollIntoView).toHaveBeenCalled();
+		});
+
+		test('opens the item holding an element the hash targets', () => {
+			const accordion = createAccordion();
+			const items = accordion.querySelectorAll('.dsgo-accordion-item');
+			const heading = document.createElement('h3');
+			heading.id = 'refunds';
+			items[1]
+				.querySelector('.dsgo-accordion-item__content')
+				.appendChild(heading);
+			window.history.replaceState(null, '', '#refunds');
+			loadView();
+
+			expect(
+				items[1].querySelector('.dsgo-accordion-item__panel').hidden
+			).toBe(false);
+		});
+
+		test('opens the item when the hash changes after load', () => {
+			const accordion = createAccordion();
+			const items = accordion.querySelectorAll('.dsgo-accordion-item');
+			items[1].id = 'shipping';
+			loadView();
+
+			expect(
+				items[1].classList.contains('dsgo-accordion-item--open')
+			).toBe(false);
+
+			window.history.replaceState(null, '', '#shipping');
+			window.dispatchEvent(new Event('hashchange'));
+
+			expect(
+				items[1].classList.contains('dsgo-accordion-item--open')
+			).toBe(true);
+		});
+
+		test('ignores a hash that matches nothing', () => {
+			const accordion = createAccordion({ initiallyOpen: [0] });
+			window.history.replaceState(null, '', '#nope');
+			loadView();
+
+			expect(
+				accordion
+					.querySelector('.dsgo-accordion-item')
+					.classList.contains('dsgo-accordion-item--open')
+			).toBe(true);
 		});
 	});
 
