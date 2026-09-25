@@ -252,6 +252,32 @@ describe('gestures', () => {
 		expect(track.style.transform).toBe(`translateX(-${SLIDE_WIDTH}px)`);
 	});
 
+	test('document mouse listeners exist only during a drag', () => {
+		const slider = createSlider({
+			slideCount: 4,
+			dataAttributes: { draggable: 'true' },
+		});
+		const added = jest.spyOn(document, 'addEventListener');
+		const removed = jest.spyOn(document, 'removeEventListener');
+		requireAndInit();
+
+		const moveListeners = (spy) =>
+			spy.mock.calls.filter(([type]) => type === 'mousemove').length;
+		expect(moveListeners(added)).toBe(0);
+
+		const track = trackOf(slider);
+		track.dispatchEvent(
+			new MouseEvent('mousedown', { clientX: 500, bubbles: true })
+		);
+		expect(moveListeners(added)).toBe(1);
+
+		document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+		expect(moveListeners(removed)).toBe(1);
+
+		added.mockRestore();
+		removed.mockRestore();
+	});
+
 	test('a mostly-vertical swipe does not change slide', () => {
 		const slider = createSlider({
 			slideCount: 4,

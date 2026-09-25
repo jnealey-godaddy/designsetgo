@@ -320,6 +320,20 @@ class Plugin {
 	public $assets;
 
 	/**
+	 * Per-feature extension frontend bundles.
+	 *
+	 * @var Extension_Bundles
+	 */
+	public $extension_bundles;
+
+	/**
+	 * Soft-navigation asset manifest.
+	 *
+	 * @var Frontend_Asset_Manifest
+	 */
+	public $frontend_asset_manifest;
+
+	/**
 	 * Blocks Loader instance.
 	 *
 	 * @var Blocks\Loader
@@ -374,6 +388,13 @@ class Plugin {
 	 * @var Scroll_Marquee_Styles
 	 */
 	public $scroll_marquee_styles;
+
+	/**
+	 * Render-time image attributes for static blocks (Hotspot, Card).
+	 *
+	 * @var Static_Block_Images
+	 */
+	public $static_block_images;
 
 	/**
 	 * Admin Menu instance.
@@ -598,6 +619,8 @@ class Plugin {
 		BlockVisibility::register();
 		// --- Core ---
 		require_once DESIGNSETGO_PATH . 'includes/core/class-assets.php';
+		require_once DESIGNSETGO_PATH . 'includes/core/class-extension-bundles.php';
+		require_once DESIGNSETGO_PATH . 'includes/core/class-frontend-asset-manifest.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/class-loader.php';
 		// --- Blocks: Forms ---
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/field-render-helpers.php';
@@ -682,6 +705,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/features/class-icon-injector.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-button-global-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-scroll-marquee-styles.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-static-block-images.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-extension-attributes.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-style-binding.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-interactions.php';
@@ -774,6 +798,14 @@ class Plugin {
 		$this->button_global_styles->init();
 		$this->scroll_marquee_styles = new Scroll_Marquee_Styles();
 		$this->scroll_marquee_styles->init();
+		$this->static_block_images = new Static_Block_Images();
+		$this->static_block_images->init();
+
+		// Per-feature extension bundles, and the manifest that loads blocks'
+		// and extensions' assets after a soft navigation.
+		$this->extension_bundles       = new Extension_Bundles();
+		$this->frontend_asset_manifest = new Frontend_Asset_Manifest();
+
 		$this->llms_txt = new LLMS_Txt\Controller();
 
 		// Initialize admin-only features.

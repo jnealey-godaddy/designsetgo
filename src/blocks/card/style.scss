@@ -69,6 +69,19 @@
 	z-index: 0;
 }
 
+// Front end only: render time swaps the inline background-image for a lazy
+// <img> (includes/features/class-static-block-images.php). Two classes so a
+// theme's `.entry-content img { height: auto }` can't collapse it.
+.dsgo-card__background > .dsgo-card__background-image {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	max-width: none;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+}
+
 .dsgo-card__overlay {
 	position: absolute;
 	top: 0;

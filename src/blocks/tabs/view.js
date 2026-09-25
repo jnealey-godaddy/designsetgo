@@ -110,10 +110,14 @@
 
 			// Debounced resize handler for better performance
 			let resizeTimeout;
-			window.addEventListener('resize', () => {
-				clearTimeout(resizeTimeout);
-				resizeTimeout = setTimeout(() => this.handleResize(), 150);
-			});
+			window.addEventListener(
+				'resize',
+				() => {
+					clearTimeout(resizeTimeout);
+					resizeTimeout = setTimeout(() => this.handleResize(), 150);
+				},
+				{ passive: true }
+			);
 
 			// Determine initial tab: prioritize deep linking, then default to first tab
 			let initialTab = this.activeTab;

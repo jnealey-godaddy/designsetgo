@@ -22,22 +22,15 @@
 @use './styles/justification' as justification;
 
 // Block extensions (frontend)
-// These are loaded globally because they apply to multiple blocks via filters
-@use './extensions/block-animations/animations' as block-animations;
+// Only max-width stays global: its class goes on any block, so it has no
+// cheaper marker than the style itself.
+// Every other extension's CSS is its own bundle (build/extensions/<name>/
+// style.css), enqueued only when its markup is on the page — see
+// includes/data/frontend-extensions.json.
 @use './extensions/max-width/style' as max-width;
-@use './extensions/background-video/style' as background-video;
-@use './extensions/grid-span/style' as grid-span;
-@use './extensions/grid-mobile-order/style' as grid-mobile-order;
-@use './extensions/reveal-control/styles' as reveal-control;
-@use './extensions/clickable-group/styles' as clickable-group;
-@use './extensions/hover-effects/styles' as hover-effects;
-@use './extensions/text-reveal/style' as text-reveal;
-@use './extensions/expanding-background/style' as expanding-background;
-@use './extensions/svg-patterns/style' as svg-patterns;
-@use './extensions/interactions/style' as interactions;
 
-// Shared components
-@use './components/shared/DsgoBlockPlaceholder/style' as dsgo-block-placeholder;
+// DsgoBlockPlaceholder is editor-only (never in saved markup); it ships via
+// src/styles/editor.scss.
 
 // Rich text formats (frontend)
 @use './formats/text-style/style' as text-style;

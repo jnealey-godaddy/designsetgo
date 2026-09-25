@@ -495,12 +495,15 @@ class Assets {
 		// These are small enough to inline without significantly bloating HTML.
 		$critical_blocks = $this->get_present_critical_blocks();
 
-		$critical_css = '';
+		$critical_css     = '';
+		$critical_handles = array();
 
 		foreach ( $critical_blocks as $block ) {
 			$css_file = DESIGNSETGO_PATH . "build/blocks/{$block}/style-index.css";
 
 			if ( file_exists( $css_file ) && is_readable( $css_file ) ) {
+				$critical_handles[] = "designsetgo-{$block}-style";
+
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Reading own plugin build asset; path validated with file_exists/is_readable above.
 				$css = file_get_contents( $css_file );
 
@@ -515,8 +518,10 @@ class Assets {
 
 		if ( ! empty( $critical_css ) ) {
 			// Output raw CSS (safe - comes from our build files, not user input).
+			// data-dsgo-handles tells the soft-navigation asset loader these
+			// block stylesheets are already on the page.
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo '<style id="designsetgo-critical-css">' . $critical_css . '</style>' . "\n";
+			echo '<style id="designsetgo-critical-css" data-dsgo-handles="' . esc_attr( implode( ' ', $critical_handles ) ) . '">' . $critical_css . '</style>' . "\n";
 		}
 	}
 

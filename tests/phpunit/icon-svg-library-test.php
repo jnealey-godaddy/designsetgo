@@ -37,6 +37,17 @@ class DesignSetGo_Icon_Svg_Library_Test extends WP_UnitTestCase {
 		$this->assertIsArray( designsetgo_get_icon_aliases() );
 	}
 
+	/**
+	 * The alias map is read from includes/data/icon-aliases.json. A wrong path
+	 * silently returned an empty array, which the assertion above can't see.
+	 */
+	public function test_get_icon_aliases_loads_the_shared_json_map() {
+		$aliases = designsetgo_get_icon_aliases();
+
+		$this->assertSame( 'lightning', $aliases['zap'] ?? null );
+		$this->assertSame( designsetgo_get_icon_svg( 'lightning' ), designsetgo_get_icon_svg( 'zap' ) );
+	}
+
 	public function test_sanitize_icon_slug_strips_unsafe_characters() {
 		$this->assertSame( 'arrow-down', designsetgo_sanitize_icon_slug( 'Arrow-Down' ) );
 		$this->assertSame( 'foobar', designsetgo_sanitize_icon_slug( 'foo Bar!' ) );
