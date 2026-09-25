@@ -4,6 +4,7 @@
 import { __ } from '@wordpress/i18n';
 import { DateTimePicker, SelectControl, Notice } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../../components/shared';
+import { getEditorSiteTimezone } from '../../utils/time-calculator';
 
 /**
  * Common timezone options - WordPress standard timezones
@@ -87,9 +88,11 @@ const TIMEZONE_OPTIONS = [
 export default function DateTimePanel({ attributes, setAttributes }) {
 	const { targetDateTime, timezone } = attributes;
 
-	// Get WordPress timezone setting
-	const wpTimezone =
-		window?.wp?.date?.getSettings?.()?.timezone?.string || 'UTC';
+	// Resolved WordPress site timezone (IANA name, or a fixed "+05:30"-style
+	// offset for sites without a named zone configured) — the zone that's
+	// actually used to interpret targetDateTime when this control is left
+	// on "WordPress Default".
+	const wpTimezone = getEditorSiteTimezone();
 
 	return (
 		<>
