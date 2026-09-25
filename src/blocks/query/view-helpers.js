@@ -327,6 +327,16 @@ export function buildRefreshRequest(ctx, refreshSource, request) {
  * `designsetgo_query_url_params` filter (the REST endpoint is the source of
  * truth for the allowed list).
  *
+ * Query param scoping: a query-filter form now renders its `name` attribute
+ * already scoped to its own query (`filter_category__{queryId}`,
+ * `q__{queryId}`, `sort__{queryId}` — see query-filter/render.php), so the
+ * literal key this collects from the URL may carry that suffix. `filter_*`
+ * keys pass the prefix check unchanged either way; `q`/`sort` need the
+ * explicit `q__`/`sort__` allowance below since they'd otherwise only match
+ * the bare, unscoped form. The scoped-or-bare key is forwarded to the REST
+ * payload verbatim — designsetgo_query_extract_params_from_request() on the
+ * server resolves it the same way it resolves first paint's $_GET.
+ *
  * Handles both ?key[]=v and ?key=v styles: multi-value keys (either expressed
  * with trailing brackets or repeated bare keys) are coerced to arrays.
  *
@@ -339,11 +349,13 @@ export function collectParams(url) {
 		const isArrayKey = k.endsWith('[]');
 		const baseKey = isArrayKey ? k.slice(0, -2) : k;
 
-		if (
-			!baseKey.startsWith('filter_') &&
-			baseKey !== 'q' &&
-			baseKey !== 'sort'
-		) {
+		const isRecognized =
+			baseKey.startsWith('filter_') ||
+			baseKey === 'q' ||
+			baseKey === 'sort' ||
+			baseKey.startsWith('q__') ||
+			baseKey.startsWith('sort__');
+		if (!isRecognized) {
 			continue;
 		}
 

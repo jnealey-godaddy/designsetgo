@@ -80,6 +80,63 @@ describe('collectParams', () => {
 		);
 		expect(collectParams(url)).toEqual({ filter_category: 'news' });
 	});
+
+	// Query param scoping: query-filter/render.php now renders `name`
+	// attributes already scoped to their own query
+	// (`filter_category__{queryId}`, `q__{queryId}`, `sort__{queryId}`), so a
+	// live page's URL carries the scoped key once a filter is used. This must
+	// reach the REST payload unchanged — the server resolves it the same way
+	// it resolves first paint's $_GET (see
+	// designsetgo_query_extract_params_from_request()).
+	describe('query-scoped keys', () => {
+		it('collects a scoped filter_* key under its full (scoped) name', () => {
+			const url = new URL(
+				'https://example.com/?filter_category__qa1b2c3d=news'
+			);
+			expect(collectParams(url)).toEqual({
+				filter_category__qa1b2c3d: 'news',
+			});
+		});
+
+		it('collects scoped q and sort keys', () => {
+			const url = new URL(
+				'https://example.com/?q__qa1b2c3d=hello&sort__qa1b2c3d=date.ASC'
+			);
+			expect(collectParams(url)).toEqual({
+				q__qa1b2c3d: 'hello',
+				sort__qa1b2c3d: 'date.ASC',
+			});
+		});
+
+		it('keeps two queries’ same-named scoped filters independent', () => {
+			const url = new URL(
+				'https://example.com/?filter_category__qaaa=news&filter_category__qbbb=sports'
+			);
+			expect(collectParams(url)).toEqual({
+				filter_category__qaaa: 'news',
+				filter_category__qbbb: 'sports',
+			});
+		});
+
+		it('coerces a scoped ?key[]=v array the same as a bare one', () => {
+			const url = new URL(
+				'https://example.com/?filter_tag__qa1b2c3d[]=a&filter_tag__qa1b2c3d[]=b'
+			);
+			expect(collectParams(url)).toEqual({
+				filter_tag__qa1b2c3d: ['a', 'b'],
+			});
+		});
+
+		it('still collects the bare key alongside a scoped one for a different query', () => {
+			const url = new URL(
+				'https://example.com/?filter_category=legacy&filter_category__qbbb=sports'
+			);
+			expect(collectParams(url)).toEqual({
+				filter_category: 'legacy',
+				filter_category__qbbb: 'sports',
+			});
+		});
+	});
 });
 
 describe('applyToggleFilter', () => {

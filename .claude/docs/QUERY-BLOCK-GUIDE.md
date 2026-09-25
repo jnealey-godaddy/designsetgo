@@ -66,7 +66,7 @@ designsetgo/query-no-results  →  usesContext: ["designsetgo/queryId"]
 
 Siblings use `queryId` to stamp their output HTML with `data-dsgo-query-id` so the Interactivity API store knows which container to refresh.
 
-**When to set it manually:** if you need two queries on one page that should share a filter (unusual), set both blocks to the same `queryId`. Otherwise leave it auto-generated.
+**When to set it manually:** if you need two queries on one page that should share a filter (unusual), set both blocks to the same `queryId`. Otherwise leave it auto-generated. This is also why filter/sort/search URL params are scoped by `queryId` — see "Params are scoped per Query" below.
 
 **Frontend data contract:** the block's outer wrapper carries `data-dsgo-query-id="{queryId}"`. A hidden `<div data-dsgo-blobs-for="{queryId}">` inside the region carries the query's **signed refresh source**: `data-dsgo-refresh-source` (base64 JSON of the attributes, serialized inner blocks, and the post whose content holds the query) and `data-dsgo-signature` (an HMAC keyed to the site's `AUTH_SALT`). The IAPI load-more and filter actions send the pair back verbatim; the REST route renders only a definition whose signature verifies. It's base64 in an attribute, not JSON in a `<script>`, because it passes through `the_content`, and filters there (`capital_P_dangit()`, for one) rewrite script text — which would break the signature.
 
@@ -262,6 +262,19 @@ Woo's filter blocks navigate by URL rather than targeting a `queryId`, which is 
 
 Only the whitelisted params above are extracted from `$_GET` by `designsetgo_query_extract_params_from_request()`. Extend the whitelist via the `designsetgo_query_url_params` filter if you need custom params.
 
+### Params are scoped per Query
+
+`designsetgo/query-filter` renders its `name` attribute (and, for the checkbox/select variations, the reads that drive its "currently selected" state) already scoped to its own `queryId` — `filter_category__{queryId}`, `q__{queryId}`, `sort__{queryId}`. That's why two `designsetgo/query` blocks on one page can each carry their own category filter without an INTERACTION on one bleeding into the other: checking a term in "All posts"'s filter no longer silently narrows "Related posts" too, and two independent category filters no longer collide even when they happen to share a `paramName`.
+
+The rules, applied inside `designsetgo_query_extract_params_from_request( $query_id )`:
+
+1. A query-scoped key (`{key}__{queryId}`) always wins over a same-named bare key, for that query.
+2. A key scoped for a **different** query is never read at all.
+3. A bare, unscoped key (`?filter_category=news` — a bookmark, a menu link, a widget, or a hand-typed URL) is honored by **every** Query on the page, exactly as it always has been. This is intentional, not a gap: site owners routinely link to a filtered listing from outside the page itself, with no idea (or no way to know) which Query block, if any, carries a matching filter control. An earlier version of this scoping work gated the bare key by "does this Query declare a matching filter block" and broke that contract — see `DesignSetGo_Query_Filter_Server_Test` and PR #592's revert. Scoping (rule 1–2), not declaration-gating, is what stops one Query's filter *interaction* from leaking into another's; a bare URL still reaches everyone.
+4. WooCommerce's own filter-block params (`min_price`, `max_price`, `rating_filter`, `filter_stock_status`, `filter_<attr>`, `query_type_<attr>`) are **never** scoped — Woo's blocks can't emit a `queryId`, so they keep driving every product Query on the page exactly as before. This falls naturally out of rule 3.
+
+Practical effect: two Query blocks each with their own `filter_category` checkbox filter are independent once a reader actually uses either control (both write scoped keys) — but a bare `?filter_category=` still reaches both, same as before this task. There is currently no built-in way to make one filter control drive two Query blocks at once; each Query's own *interactions* are scoped to its own `queryId`, while legacy/external links stay page-wide.
+
 ### query-filter variations
 
 | Variation | `filterKind` | Default `paramName` | HTML output |
@@ -365,7 +378,7 @@ POST /wp-json/designsetgo/v1/query/render
 | `source` | string | yes | `data-dsgo-refresh-source` from the region, verbatim |
 | `signature` | string | yes | `data-dsgo-signature` from the region, verbatim |
 | `page` | integer | no (default 1) | Page number to render |
-| `params` | object | no | URL params (`q`, `sort`, `filter_*`) |
+| `params` | object | no | URL params (`q`, `sort`, `filter_*`), keys as collected from the URL — may be bare or query-scoped (`filter_category__{queryId}`); see "Params are scoped per Query" above |
 | `currentUrl` | string | no | Page URL, for chip/reset links |
 
 The editor preview uses `POST /wp-json/designsetgo/v1/query/render-preview` instead, which takes `attributes` + `innerBlocks` directly, requires `edit_posts` + nonce, only renders post types the user can see or edit, and never emits a signed source.

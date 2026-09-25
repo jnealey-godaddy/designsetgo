@@ -652,9 +652,22 @@ class Controller {
 		// to the superglobal, never echoed or used in HTML.
 		$original_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- restore-only, see comment above.
 		$allowed_keys = apply_filters( 'designsetgo_query_url_params', array( 'q', 'sort' ) );
+		// Query param scoping: the client may send a query-scoped key
+		// (`q__{queryId}`, `sort__{queryId}`) alongside, or instead of, the
+		// bare one — see collectParams() in view-helpers.js and
+		// designsetgo_query_extract_params_from_request() in
+		// render-helpers.php, which is what ultimately reads this overlay
+		// back out of $_GET. `filter_*` scoped keys (`filter_x__{queryId}`)
+		// already pass the prefix check below unchanged.
+		$scoped_allowed_keys = array();
+		if ( '' !== (string) $query_id ) {
+			foreach ( $allowed_keys as $allowed_key ) {
+				$scoped_allowed_keys[] = $allowed_key . '__' . sanitize_key( (string) $query_id );
+			}
+		}
 		foreach ( $params as $key => $value ) {
 			$key = (string) $key;
-			if ( in_array( $key, $allowed_keys, true ) || 0 === strpos( $key, 'filter_' ) ) {
+			if ( in_array( $key, $allowed_keys, true ) || in_array( $key, $scoped_allowed_keys, true ) || 0 === strpos( $key, 'filter_' ) ) {
 				// REST-supplied values are sanitized downstream before use in
 				// WP_Query / SQL / HTML, but nested block renders may pass
 				// through filter hooks or third-party code that reads $_GET

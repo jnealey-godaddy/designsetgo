@@ -485,6 +485,19 @@ if ( ! function_exists( 'designsetgo_query_render_posts' ) ) :
 		// URL-param-driven filters (Task 14).
 		// filter_<taxonomy>=slug[,slug] or filter_<taxonomy>[]=slug style.
 		// Also handles ?q= directly (overrides static search attr when present).
+		//
+		// Query param scoping (v2.6): $context['params'] already resolved a
+		// query-scoped key (`{key}__{queryId}`) in preference to a same-named
+		// bare one, and never surfaces a key scoped for a DIFFERENT query —
+		// see designsetgo_query_extract_params_from_request(). A bare/legacy
+		// key below is intentionally NOT gated by whether this query has a
+		// matching filter block: that was tried and reverted (PR #592) — a
+		// site owner routinely links to `?filter_category=news` from a menu
+		// or widget with no filter control anywhere on the landing page, and
+		// every Query on that page has always honored it. Scoping (not
+		// declaration) is what stops one query's filter INTERACTION from
+		// leaking into another's; a bare URL still reaches everyone, exactly
+		// as before this task.
 		$params = isset( $context['params'] ) ? (array) $context['params'] : array();
 
 		// Direct ?q= support: override search when bindSearchTo is not set or empty.
