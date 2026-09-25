@@ -13,20 +13,21 @@ import {
 } from '@wordpress/components';
 import { createHigherOrderComponent } from '@wordpress/compose';
 import { Fragment } from '@wordpress/element';
+import { useDynamicTagSources } from '../../components/DynamicTagPicker/useDynamicTagSources';
+import {
+	SCALAR_RETURN_TYPES,
+	buildSourceOptions,
+	buildSourceMetaMap,
+	isKeyedSource,
+	withSavedSource,
+	argsForSource,
+} from './source-options';
 
 const BLOCKED = new Set([
 	'core/freeform',
 	'core/missing',
 	'core/template-part',
 ]);
-
-const SOURCE_OPTIONS = [
-	{ label: __('Post meta', 'designsetgo'), value: 'designsetgo/post-meta' },
-	{ label: __('ACF', 'designsetgo'), value: 'designsetgo/acf' },
-	{ label: __('Meta Box', 'designsetgo'), value: 'designsetgo/metabox' },
-	{ label: __('Pods', 'designsetgo'), value: 'designsetgo/pods' },
-	{ label: __('JetEngine', 'designsetgo'), value: 'designsetgo/jetengine' },
-];
 
 addFilter(
 	'blocks.registerBlockType',
@@ -48,12 +49,27 @@ addFilter(
 
 const withStyleBindingInspector = createHigherOrderComponent((BlockEdit) => {
 	return function WithStyleBindingInspector(props) {
+		// Every registered `designsetgo/` Dynamic Tags source that can
+		// produce a scalar — not just the five keyed custom-field sources —
+		// so e.g. `designsetgo/woo-stock-quantity` is selectable here too.
+		// Falls back to the pre-2.9 static five while the catalog loads.
+		//
+		// Called unconditionally, before the BLOCKED early return below —
+		// React Hooks must run in the same order on every render, and this
+		// component is re-mounted per block type, not per BLOCKED-ness.
+		const { sources: dynamicTagSources } = useDynamicTagSources({
+			returns: SCALAR_RETURN_TYPES,
+		});
+
 		if (BLOCKED.has(props.name)) {
 			return <BlockEdit {...props} />;
 		}
 		const { attributes, setAttributes } = props;
 		const binding = attributes.dsgoStyleBinding ?? {};
 		const entries = Object.entries(binding);
+
+		const sourceOptions = buildSourceOptions(dynamicTagSources);
+		const sourceMetaBySlug = buildSourceMetaMap(dynamicTagSources);
 
 		const updateEntry = (oldProp, newProp, config) => {
 			const next = { ...binding };
@@ -131,29 +147,42 @@ const withStyleBindingInspector = createHigherOrderComponent((BlockEdit) => {
 								<SelectControl
 									label={__('Source', 'designsetgo')}
 									value={config.source}
-									options={SOURCE_OPTIONS}
+									options={withSavedSource(
+										sourceOptions,
+										config.source
+									)}
 									onChange={(val) =>
 										updateEntry(prop, prop, {
 											...config,
 											source: val,
+											args: argsForSource(
+												config,
+												sourceMetaBySlug[val],
+												val
+											),
 										})
 									}
 									__nextHasNoMarginBottom
 								/>
-								<TextControl
-									label={__(
-										'Field key / name',
-										'designsetgo'
-									)}
-									value={config.args?.key ?? ''}
-									onChange={(val) =>
-										updateEntry(prop, prop, {
-											...config,
-											args: { key: val },
-										})
-									}
-									__nextHasNoMarginBottom
-								/>
+								{isKeyedSource(
+									sourceMetaBySlug[config.source],
+									config.source
+								) && (
+									<TextControl
+										label={__(
+											'Field key / name',
+											'designsetgo'
+										)}
+										value={config.args?.key ?? ''}
+										onChange={(val) =>
+											updateEntry(prop, prop, {
+												...config,
+												args: { key: val },
+											})
+										}
+										__nextHasNoMarginBottom
+									/>
+								)}
 							</VStack>
 						))}
 						<Button

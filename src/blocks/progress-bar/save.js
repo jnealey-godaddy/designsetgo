@@ -42,9 +42,35 @@ export default function ProgressBarSave({ attributes }) {
 	const barFillColor = convertColorToCSSVar(barColor);
 	const barTrackColor = convertColorToCSSVar(barBackgroundColor);
 
+	// The fill's width is a CSS custom-property formula, not a literal
+	// percentage, so a `dsgoStyleBinding` on `--dsgo-progress` (e.g. bound to
+	// `designsetgo/woo-stock-quantity`) can drive it from the frontend
+	// render_block filter — custom properties set on the block's root element
+	// inherit down to the fill. `--dsgo-progress` and `--dsgo-progress-max`
+	// are raw numbers, not percentages: the formula divides one by the other
+	// and multiplies by 100% itself.
+	//
+	// With no bound value (unmanaged stock returns null, so the binding adds
+	// nothing), the fallback must still resolve to exactly `${barWidth}%`
+	// even when `--dsgo-progress-max` IS set (a theme rule or a second
+	// binding). A bare `var(--dsgo-progress, ${barWidth})` would be divided
+	// by that max, so a 10% bar with a max of 50 would claim 20%. The
+	// fallback is therefore `barWidth / 100 * max`, which the division
+	// cancels back to `barWidth%` whatever the max is.
+	//
+	// The denominator is wrapped in `max(1, ...)` because `--dsgo-progress-max`
+	// can itself be bound (e.g. to a "low stock threshold" field) and resolve
+	// to `0` or a negative number. calc() dividing by zero makes the WHOLE
+	// `width` declaration invalid at computed-value time — not just that one
+	// term — which drops the fill's width entirely rather than clamping it.
+	// Flooring the denominator at 1 keeps the declaration always valid; view.js's
+	// resolveTargetPercent() mirrors this floor for the animateOnScroll path.
+	const PROGRESS_MAX = 'max(1, var(--dsgo-progress-max, 100))';
+	const STATIC_WIDTH_FORMULA = `clamp(0%, calc(100% * var(--dsgo-progress, calc(${barWidth} / 100 * ${PROGRESS_MAX})) / ${PROGRESS_MAX}), 100%)`;
+
 	// Build bar fill styles (same as edit.js)
 	const barFillStyles = {
-		width: animateOnScroll ? '0%' : `${barWidth}%`, // Start at 0 if animating
+		width: animateOnScroll ? '0%' : STATIC_WIDTH_FORMULA, // Start at 0 if animating
 		height: '100%',
 		backgroundColor: barFillColor || undefined,
 		transition: `width ${animationDuration}s ease-out`,
@@ -68,7 +94,17 @@ export default function ProgressBarSave({ attributes }) {
 		position: 'relative',
 	};
 
-	// Build label display text (same as edit.js)
+	// Build label display text (same as edit.js).
+	//
+	// NOTE: this text is baked into the saved HTML at edit time from the
+	// `percentage` attribute. A `dsgoStyleBinding` on `--dsgo-progress` is
+	// resolved later, by a PHP render_block filter running against the
+	// already-saved markup — there is no hook for it to also rewrite this
+	// label. A bound progress bar's fill width tracks the binding, but its
+	// percentage label (when shown) always reflects the static `percentage`
+	// attribute instead. Authors binding a value should turn showPercentage
+	// off (see the block's Settings panel) rather than ship a label that
+	// silently disagrees with the fill.
 	const displayText = (() => {
 		const parts = [];
 		if (showLabel && labelText) {

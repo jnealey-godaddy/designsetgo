@@ -1,5 +1,20 @@
 # Claude Memory - DesignSetGo
 
+## Progress Bar stock-binding recipe — `progress-bar` + `--dsgo-progress` (branch `claude/progress-bar-binding`, PR #590)
+
+The CLAUDE.md recipe (a stock bar = `progress-bar` + `--dsgo-progress` bound to `woo-stock-quantity`) now works. What to know before touching it:
+
+- **Width formula** (save.js `STATIC_WIDTH_FORMULA`, mirrored byte-for-byte in `class-progress-bar-serializer.php`):
+  `clamp(0%, calc(100% * var(--dsgo-progress, calc(N / 100 * MAX)) / MAX), 100%)` with `MAX = max(1, var(--dsgo-progress-max, 100))`.
+  Bound values are **raw numbers** (stock count, rating), scaled against `--dsgo-progress-max`. The `max(1, …)` floor stops a bound max of 0 from dividing by zero, which would invalidate the whole `width` declaration.
+- **The unbound fallback must cancel the max.** Unmanaged stock returns null, so the binding adds nothing and the static `percentage` applies. A bare `var(--dsgo-progress, N)` gets divided by a set max, and a 10% bar against a max of 50 shows 20%. `view.js` `resolveTargetPercent()` applies the same rule on the animated path. Verified KSES (`safecss_filter_attr`, `wp_kses_post`) keeps the nested formula for roles without `unfiltered_html`.
+- **Deprecation:** `deprecated.js` v2 reproduces the old literal-`%` save (markup change only, no `isEligible`). Animated bars save `width:0%` either way, so only static bars hit it.
+- **Fixtures:** only `ability-attribute-matrix.json`'s `designsetgo/progress-bar::animateOnScroll::0` entry carries the formula. Grep fixtures for `dsgo-progress-bar__fill` when it changes.
+- **Inside labels:** CSS cannot compare a label's width with its fill's. `utils/label-fit.js` measures the text (a Range, so the result does not depend on the hidden state) and adds `dsgo-progress-bar__label--clipped`, which is visually hidden but still read by screen readers. `view.js` runs it for every bar with a ResizeObserver per fill, and `edit.js` via `hooks/useInsideLabelFit.js`, using the iframe window's ResizeObserver. A `@container (max-width: 3em)` rule is only a no-JS fallback, scoped to bars without `dsgo-progress-bar--label-measured`.
+- **Style Bindings picker** (`src/extensions/style-binding/`): sources come from `useDynamicTagSources`, which must be called before the HOC's early return (rules of hooks). `argsForSource()` drops a key when switching to a keyless source; a hidden protected key like `_stock` otherwise makes the binding silently never resolve. `withSavedSource()` lists a saved-but-unregistered source as "(unavailable)", because a controlled select would otherwise show the first option.
+- **Known limitation:** the `showPercentage` label is baked into the saved HTML and cannot follow a bound value. Turn it off on bound bars.
+- **Already on main, not fixed here:** the fill's `padding: 0 .5rem` adds to its width, so bars read about 16px wider than their percentage.
+
 ## Block audit 2026-09-24, robustness section — `claude/robustness-audit` (agent: robustness-audit-2026-09-25, session 7c3b92ba)
 
 - **Locale-freeze pattern for `__()` in static save()**: add a *sourced* attribute that reads the rendered fallback back from the markup (`source: attribute|text|query`), and render `authored || frozen || __()`. No markup change, so no deprecation. Card had it first (`badgeAriaLabel`, `imageFallbackAlt`); now Modal (`savedModalLabel`, `savedCloseButtonLabel`), Hotspot Item (`markerAriaLabel`) and Comparison Table (`featuredBadgeText`, `savedCtaTexts`). When the fallback sits behind an author-editable field, the edit side must clear the frozen value on change, or clearing a custom label brings the old custom label back instead of the default.

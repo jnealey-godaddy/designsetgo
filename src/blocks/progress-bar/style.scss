@@ -50,6 +50,12 @@
 		justify-content: flex-end;
 		padding: 0 0.5rem;
 
+		// A query container for the no-JS fallback at the end of this file.
+		// The fill always has an explicit width, so containment does not
+		// change its size.
+		container-type: inline-size;
+		container-name: dsgo-progress-fill;
+
 		// Default fill color when the author has not chosen one (see note on
 		// the container above).
 		&:where(:not([style*="background-color"])) {
@@ -89,18 +95,34 @@
 			padding-right: 0.5rem;
 		}
 	}
+}
 
-	// Hide inside label if bar is too narrow
-	&__fill[style*="width: 0%"],
-	&__fill[style*="width: 1%"],
-	&__fill[style*="width: 2%"],
-	&__fill[style*="width: 3%"],
-	&__fill[style*="width: 4%"],
-	&__fill[style*="width: 5%"] {
+// An inside label that does not fit its fill is hidden visually but kept for
+// screen readers, since it is the bar's only text value. view.js and edit.js
+// measure the label against the fill (utils/label-fit.js) and add --clipped.
+@mixin dsgo-progress-label-visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
 
-		.dsgo-progress-bar__label--inside {
-			display: none;
-		}
+.dsgo-progress-bar__label--inside.dsgo-progress-bar__label--clipped {
+
+	@include dsgo-progress-label-visually-hidden;
+}
+
+// Fallback before (or without) the script: a fill too narrow for even a short
+// "NN%" label. Measured bars skip it, so it never hides a label that fits.
+@container dsgo-progress-fill (max-width: 3em) {
+
+	.dsgo-progress-bar:not(.dsgo-progress-bar--label-measured) .dsgo-progress-bar__label--inside {
+
+		@include dsgo-progress-label-visually-hidden;
 	}
 }
 
