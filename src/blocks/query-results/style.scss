@@ -42,7 +42,7 @@
 	}
 }
 
-@include below($breakpoint-small) {
+@media (max-width: #{$breakpoint-small}) {
 
 	.dsgo-query-results[data-dsgo-query-results-role="container"] {
 		grid-template-columns: repeat(var(--dsgo-query-columns-mobile, 1), minmax(0, 1fr));

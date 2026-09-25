@@ -274,7 +274,7 @@
 }
 
 // Responsive: Adjust size on mobile
-@include below($breakpoint-mobile) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-blobs {
 

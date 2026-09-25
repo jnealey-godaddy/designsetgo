@@ -92,7 +92,7 @@
 		}
 	}
 
-	@include below($breakpoint-small) {
+	@media (max-width: #{$breakpoint-small}) {
 
 		.dsgo-query-results__editor-grid,
 		.dsgo-query__editor-preview-list {

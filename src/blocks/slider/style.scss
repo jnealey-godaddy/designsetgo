@@ -389,7 +389,8 @@
 
 .dsgo-slider--card {
 	padding: 20px;
-	border-radius: $dsgo-radius-large;
+	// 12px sits between the medium and large tokens; kept as-is.
+	border-radius: 12px;
 
 	.dsgo-slider__viewport {
 		border-radius: $dsgo-radius-medium;
