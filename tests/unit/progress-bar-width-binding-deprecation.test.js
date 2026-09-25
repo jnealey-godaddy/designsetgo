@@ -104,9 +104,27 @@ describe('Progress Bar - width-formula (style binding) deprecation', () => {
 		);
 
 		expect(markup).toContain(
-			'clamp(0%, calc(100% * var(--dsgo-progress, 42) / var(--dsgo-progress-max, 100)), 100%)'
+			'clamp(0%, calc(100% * var(--dsgo-progress, 42) / max(1, var(--dsgo-progress-max, 100))), 100%)'
 		);
 		expect(markup).not.toContain('width:42%;');
+	});
+
+	it("floors the denominator so a --dsgo-progress-max binding resolving to 0 can't divide by zero", () => {
+		register(save, deprecated);
+
+		// animateOnScroll: false — the calc() formula only appears in the
+		// non-animated branch; the animated branch is always a literal `0%`
+		// regardless of this attribute (see the next test).
+		const markup = serialize(
+			createBlock(metadata.name, { animateOnScroll: false })
+		);
+
+		// max(1, ...) guards the denominator: if --dsgo-progress-max resolves
+		// to 0 (or a negative number) at the CSS layer, calc() dividing by
+		// zero would invalidate the WHOLE width declaration rather than just
+		// that term, dropping the fill's width entirely.
+		expect(markup).toContain('max(1, var(--dsgo-progress-max, 100))');
+		expect(markup).not.toMatch(/\/\s*var\(--dsgo-progress-max/);
 	});
 
 	it('animateOnScroll still starts the fill at a literal 0% (unaffected by the binding formula)', () => {

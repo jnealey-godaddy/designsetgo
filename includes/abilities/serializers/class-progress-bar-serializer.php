@@ -91,9 +91,13 @@ class Progress_Bar_Serializer {
 		// With no binding, `--dsgo-progress`/`--dsgo-progress-max` fall back
 		// to the literals baked into the expression, resolving to exactly
 		// `$bar_width%`, matching save.js's STATIC_WIDTH_FORMULA byte-for-byte.
+		// The denominator is floored at 1 via max() — `--dsgo-progress-max`
+		// can itself be bound and resolve to 0 or negative, and calc()
+		// dividing by zero invalidates the whole width declaration rather
+		// than just that term.
 		$fill_width = $animate_on_scroll
 			? '0%'
-			: 'clamp(0%, calc(100% * var(--dsgo-progress, ' . $bar_width . ') / var(--dsgo-progress-max, 100)), 100%)';
+			: 'clamp(0%, calc(100% * var(--dsgo-progress, ' . $bar_width . ') / max(1, var(--dsgo-progress-max, 100))), 100%)';
 		$fill_style = 'width:' . $fill_width . ';height:100%' .
 			( '' !== $bar_color ? ';background-color:' . esc_attr( Serializer_Support::convert_color_value_to_css_var( (string) $bar_color ) ) : '' ) .
 			';transition:width ' . esc_attr( (string) $animation_dur ) . 's ease-out;border-radius:' . esc_attr( $border_radius );

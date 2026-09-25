@@ -18,11 +18,17 @@
  * attribute (carried in `data-percentage`) against a default max of 100 —
  * matching the CSS formula save.js writes for the non-animated case.
  *
+ * `--dsgo-progress-max` is floored at 1 (never 0 or negative) — it can itself
+ * be bound and resolve to 0, and dividing by it would otherwise produce
+ * `Infinity`/`NaN`. This mirrors the `max(1, var(--dsgo-progress-max, 100))`
+ * guard in save.js's STATIC_WIDTH_FORMULA and the PHP save mirror
+ * (Progress_Bar_Serializer), so the animated and static paths always agree.
+ *
  * @param {Element} fill               The `.dsgo-progress-bar__fill` element.
  * @param {number}  fallbackPercentage The static `percentage` attribute value.
  * @return {number} Target width, clamped 0–100.
  */
-function resolveTargetPercent(fill, fallbackPercentage) {
+export function resolveTargetPercent(fill, fallbackPercentage) {
 	// eslint-disable-next-line no-undef
 	const computed = getComputedStyle(fill);
 	const rawValue = computed.getPropertyValue('--dsgo-progress').trim();
@@ -32,14 +38,11 @@ function resolveTargetPercent(fill, fallbackPercentage) {
 		rawValue !== '' && !Number.isNaN(parseFloat(rawValue))
 			? parseFloat(rawValue)
 			: fallbackPercentage;
-	const max =
+	const parsedMax =
 		rawMax !== '' && !Number.isNaN(parseFloat(rawMax))
 			? parseFloat(rawMax)
 			: 100;
-
-	if (!max) {
-		return 0;
-	}
+	const max = Math.max(1, parsedMax);
 
 	return Math.min(Math.max((value / max) * 100, 0), 100);
 }

@@ -52,7 +52,15 @@ export default function ProgressBarSave({ attributes }) {
 	// binding both fall back to the literals baked into this expression
 	// (`barWidth` / `100`), which resolves to exactly `${barWidth}%` — the
 	// same width this block has always rendered when unbound.
-	const STATIC_WIDTH_FORMULA = `clamp(0%, calc(100% * var(--dsgo-progress, ${barWidth}) / var(--dsgo-progress-max, 100)), 100%)`;
+	//
+	// The denominator is wrapped in `max(1, ...)` because `--dsgo-progress-max`
+	// can itself be bound (e.g. to a "low stock threshold" field) and resolve
+	// to `0` or a negative number. calc() dividing by zero makes the WHOLE
+	// `width` declaration invalid at computed-value time — not just that one
+	// term — which drops the fill's width entirely rather than clamping it.
+	// Flooring the denominator at 1 keeps the declaration always valid; view.js's
+	// resolveTargetPercent() mirrors this floor for the animateOnScroll path.
+	const STATIC_WIDTH_FORMULA = `clamp(0%, calc(100% * var(--dsgo-progress, ${barWidth}) / max(1, var(--dsgo-progress-max, 100))), 100%)`;
 
 	// Build bar fill styles (same as edit.js)
 	const barFillStyles = {
