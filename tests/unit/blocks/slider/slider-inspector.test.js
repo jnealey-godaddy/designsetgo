@@ -11,10 +11,14 @@
  *    that toggle.
  */
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // ─── WordPress module mocks ────────────────────────────────────────────────
+
+// hasValue() of every rendered ToolsPanelItem, by label. ToolsPanel offers a
+// per-item "Reset" in its ⋮ menu exactly when hasValue() is true.
+const mockItemHasValue = new Map();
 
 jest.mock('@wordpress/i18n', () => ({
 	__: (text) => text,
@@ -110,8 +114,15 @@ jest.mock('@wordpress/components', () => {
 	// ToolsPanelItem: isShownByDefault=false items are hidden (like the real
 	// WP component). Every DsgoInspectorPanel.Item in the Slider inspector
 	// passes isShownByDefault, so this only matters if that ever regresses.
-	const ToolsPanelItem = ({ children, isShownByDefault }) =>
-		isShownByDefault !== false ? <>{children}</> : null;
+	const ToolsPanelItem = ({
+		children,
+		isShownByDefault,
+		label,
+		hasValue,
+	}) => {
+		mockItemHasValue.set(label, hasValue);
+		return isShownByDefault !== false ? <>{children}</> : null;
+	};
 
 	const ToolsPanel = ({ children, label }) => (
 		<fieldset aria-label={label}>{children}</fieldset>
@@ -434,6 +445,67 @@ describe('SliderInspector', () => {
 			select.dispatchEvent(new Event('change', { bubbles: true }));
 
 			expect(onEffectChange).toHaveBeenCalledWith('fade');
+		});
+	});
+	describe('reset menu', () => {
+		beforeEach(() => mockItemHasValue.clear());
+
+		it('offers no reset for the toggles scroll-driven mode locks', () => {
+			renderInspector({
+				scrollDriven: true,
+				loop: false,
+				swipeable: false,
+				draggable: false,
+			});
+			['Loop', 'Swipeable (Touch)', 'Draggable (Mouse)'].forEach(
+				(label) => expect(mockItemHasValue.get(label)()).toBe(false)
+			);
+		});
+
+		it('offers the reset again once scroll-driven mode is off', () => {
+			renderInspector({
+				scrollDriven: false,
+				loop: false,
+				swipeable: false,
+				draggable: false,
+			});
+			['Loop', 'Swipeable (Touch)', 'Draggable (Mouse)'].forEach(
+				(label) => expect(mockItemHasValue.get(label)()).toBe(true)
+			);
+		});
+
+		it('labels menu entries with the control labels, which are translated', () => {
+			renderInspector({ autoplay: true });
+			[
+				'Mobile Breakpoint (px)',
+				'Tablet Breakpoint (px)',
+				'Auto-play Interval (ms)',
+			].forEach((label) =>
+				expect(mockItemHasValue.has(label)).toBe(true)
+			);
+			[
+				'Mobile Breakpoint',
+				'Tablet Breakpoint',
+				'Auto-play Interval',
+			].forEach((label) =>
+				expect(mockItemHasValue.has(label)).toBe(false)
+			);
+		});
+	});
+
+	describe('Dynamic Query notices', () => {
+		it('renders them first inside the Settings panel', () => {
+			renderInspector({}, { notices: <p>Bound to a query</p> });
+			const settings = screen.getByRole('group', { name: 'Settings' });
+			const notice = within(settings).getByText('Bound to a query');
+			expect(settings.firstElementChild).toContainElement(notice);
+		});
+
+		it('renders no notice wrapper outside query mode', () => {
+			const { container } = renderInspector();
+			expect(
+				container.querySelector('.dsgo-slider-inspector__notices')
+			).toBeNull();
 		});
 	});
 });

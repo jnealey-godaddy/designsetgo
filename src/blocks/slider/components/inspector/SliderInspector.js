@@ -35,6 +35,9 @@ import StylePanel from './StylePanel';
  * @param {string}   props.singleSlideNotice         Notice text shown
  *                                                   when locked to a
  *                                                   single slide.
+ * @param {Element}  [props.notices]                 Notices shown at the
+ *                                                   top of Settings
+ *                                                   (Dynamic Query mode).
  * @return {JSX.Element} Inspector controls.
  */
 export default function SliderInspector({
@@ -44,6 +47,7 @@ export default function SliderInspector({
 	onEffectChange,
 	requiresSingleSlideEffect,
 	singleSlideNotice,
+	notices,
 }) {
 	const { showArrows, showDots, dotColor } = attributes;
 
@@ -76,6 +80,7 @@ export default function SliderInspector({
 				onEffectChange={onEffectChange}
 				requiresSingleSlideEffect={requiresSingleSlideEffect}
 				singleSlideNotice={singleSlideNotice}
+				notices={notices}
 			/>
 
 			<StylePanel

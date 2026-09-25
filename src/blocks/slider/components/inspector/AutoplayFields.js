@@ -42,7 +42,7 @@ export default function AutoplayFields({ attributes, setAttributes }) {
 			{autoplay && (
 				<>
 					<DsgoInspectorPanel.Item
-						label={__('Auto-play Interval', 'designsetgo')}
+						label={__('Auto-play Interval (ms)', 'designsetgo')}
 						hasValue={() => autoplayInterval !== 3000}
 						onDeselect={() =>
 							setAttributes({ autoplayInterval: 3000 })

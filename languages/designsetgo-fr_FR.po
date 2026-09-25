@@ -502,6 +502,7 @@ msgstr "Blocs & Extensions"
 #: src/blocks/text-path/components/TextPathControls.js:103
 #: src/blocks/timeline-item/edit.js:207
 #: src/blocks/timeline/edit.js:114
+#: build/blocks/slider/index.js:1
 msgid "Settings"
 msgstr "Réglages"
 
@@ -3923,6 +3924,7 @@ msgstr "Lissage :"
 #: src/blocks/query-filter/edit.js:325
 #: src/blocks/star-rating/components/StylePanel.js:34
 #: src/blocks/text-path/components/TextPathControls.js:244
+#: build/blocks/slider/index.js:1
 msgid "Style"
 msgstr "Style"
 

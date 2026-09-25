@@ -55,8 +55,8 @@ The Slider block creates modern, performant sliders with multiple transition eff
    - Duplicate existing slides to maintain consistent styling
 
 4. **Configure Slider Settings**
-   - With the Slider block selected (not individual slides), open the Settings sidebar
-   - Adjust layout, navigation, transitions, and behavior options
+   - With the Slider block selected (not individual slides), open the block sidebar
+   - Use the **Settings** panel for layout, navigation, transitions, and behavior, and the **Style** panel for size, arrows, and dots
    - Changes apply immediately in the editor preview
 
 5. **Test Your Slider**
@@ -68,7 +68,16 @@ The Slider block creates modern, performant sliders with multiple transition eff
 
 ## Settings & Configuration
 
-### Layout Settings
+Select the Slider block itself (not a slide) and open the block sidebar. The gear tab holds two panels:
+
+- **Settings** — how the slider behaves: slides per view and breakpoints, navigation on/off, transitions, auto-play, interaction behavior, and the accessible label.
+- **Style** — how it looks: height and gap, and the appearance of arrows and dots.
+
+Arrow and dot colors are in the **Styles** tab (half-circle icon) under **Color**. Each control in Settings and Style can be reset from the panel's ⋮ menu, and **Reset all** restores every control in that panel.
+
+### Settings panel
+
+#### Slides per view
 
 **Slides Per View (Desktop)**
 - Range: 1-6 slides
@@ -92,42 +101,19 @@ The Slider block creates modern, performant sliders with multiple transition eff
 
 **Important Note:** When using Fade or Zoom effects, slides per view is automatically set to 1 (these effects only work with single slides).
 
----
+**Mobile Breakpoint**
+- Default: 768px
+- Range: 320px - 900px
+- Below this screen width, uses mobile slides per view setting
+- Standard mobile breakpoint is 768px (iPad portrait and smaller)
 
-**Use Aspect Ratio**
-- Toggle: On/Off
-- Default: Off (uses fixed height)
-- When enabled, slider height is determined by aspect ratio instead of fixed pixel height
-- Better for responsive designs that need to maintain proportions
+**Tablet Breakpoint**
+- Default: 1024px
+- Range: 768px - 1280px
+- Below this width (and above mobile breakpoint), uses tablet slides per view
+- Standard tablet breakpoint is 1024px (iPad landscape and smaller)
 
-**Aspect Ratio** (when enabled)
-- Options: 16:9, 4:3, 21:9, 1:1, 3:2
-- Default: 16:9
-- Common ratios:
-  - **16:9** - Widescreen (videos, hero sections)
-  - **4:3** - Classic (presentations, standard content)
-  - **21:9** - Ultra-wide (cinematic hero sections)
-  - **1:1** - Square (Instagram-style, product images)
-  - **3:2** - Photography (DSLR standard)
-
-**Height** (when aspect ratio disabled)
-- Default: 500px
-- Accepts: px, vh, rem units
-- Fixed pixel height for the slider
-- Use `vh` (viewport height) for full-screen sections
-  - Example: `100vh` = full screen height
-  - Example: `50vh` = half screen height
-
-**Gap Between Slides**
-- Default: 20px
-- Accepts: px, rem units
-- Space between slides when multiple slides are visible
-- Set to 0 for seamless edge-to-edge slides
-- Increase for card-style layouts
-
----
-
-### Navigation Settings
+#### Navigation
 
 **Show Arrows**
 - Toggle: On/Off
@@ -135,65 +121,15 @@ The Slider block creates modern, performant sliders with multiple transition eff
 - Displays previous/next navigation arrows
 - Essential for desktop users without touch screens
 
-**Arrow Style** (when arrows enabled)
-- **Default** - Simple chevron arrows
-- **Circle** - Arrows inside circular backgrounds
-- **Square** - Arrows inside square backgrounds
-- **Minimal** - Text-only arrows (‹ and ›)
-
-**Arrow Position (Horizontal)**
-- **Sides** - Positioned at left and right edges of slider
-- **Inside** - Positioned inside the slider content area
-- **Outside** - Positioned outside the slider viewport (requires extra margin)
-
-**Arrow Position (Vertical)**
-- **Top** - Arrows positioned at top of slider
-- **Center** - Arrows vertically centered (most common)
-- **Bottom** - Arrows positioned at bottom of slider
-
-**Arrow Size**
-- Default: 48px
-- Adjusts the size of arrow buttons
-- Larger sizes are easier to click/tap on mobile
-- Smaller sizes are more subtle for minimal designs
-
-**Arrow Padding**
-- Default: Auto
-- Inner spacing inside arrow buttons
-- Increase to make arrow hit area larger
-- Useful for touch-friendly designs
-
-**Arrow Colors** (in Styles tab > Color section)
-- **Arrow Icon Color** - Color of the arrow symbol
-- **Arrow Background** - Background color of arrow button
-- Supports WordPress color palette
-- Use contrast for better visibility
-
----
-
 **Show Dots**
 - Toggle: On/Off
 - Default: On
 - Displays pagination dots below (or above) the slider
 - One dot per slide for direct navigation
 
-**Dot Style** (when dots enabled)
-- **Default** - Circular dots
-- **Lines** - Horizontal line indicators
-- **Squares** - Square indicators
+Arrow and dot appearance is in the **Style** panel, and their colors are in the Styles tab.
 
-**Dot Position**
-- **Bottom** - Dots below the slider (most common)
-- **Top** - Dots above the slider
-
-**Dot Color** (in Styles tab > Color section)
-- Color of the pagination dots
-- Active dot uses higher opacity
-- Inactive dots use lower opacity
-
----
-
-### Transition Settings
+#### Transition
 
 **Transition Effect**
 - **Slide** - Slides move horizontally (supports multiple slides per view)
@@ -220,9 +156,7 @@ The Slider block creates modern, performant sliders with multiple transition eff
 - **Ease Out** - Fast start, slow end
 - **Linear** - Constant speed (mechanical feel)
 
----
-
-### Auto-play Settings
+#### Auto-play
 
 **Enable Auto-play**
 - Toggle: On/Off
@@ -252,9 +186,7 @@ The Slider block creates modern, performant sliders with multiple transition eff
 - Prevents annoying users who manually navigate
 - Recommended to keep enabled
 
----
-
-### Behavior Settings
+#### Behavior
 
 **Loop**
 - Toggle: On/Off
@@ -290,15 +222,13 @@ The Slider block creates modern, performant sliders with multiple transition eff
 - Useful for highlighting the current slide
 - Works well with 3+ slides per view
 
----
-
-### Scroll-Driven Horizontal (Scroll Carousel)
+#### Scroll-Driven Horizontal (Scroll Carousel)
 
 The Slider block includes a **Scroll Carousel** variation that converts the slider into a scroll-driven horizontal experience. As the user scrolls down the page, slides advance horizontally — no arrows, dots, or manual interaction needed.
 
 **Insert the Scroll Carousel:**
 - In the block editor, click `+` and search for "Scroll Carousel"
-- Or insert a standard Slider and enable "Scroll-Driven Horizontal" in Behavior Settings
+- Or insert a standard Slider and enable "Scroll-Driven Horizontal" in the Settings panel
 
 **How It Works:**
 1. The slider wraps itself in a "pin spacer" element
@@ -346,27 +276,106 @@ The Slider block includes a **Scroll Carousel** variation that converts the slid
 - Product feature tours
 - Any content that benefits from a "scroll to explore" interaction
 
----
-
-### Advanced Settings
-
-**Mobile Breakpoint**
-- Default: 768px
-- Range: 320px - 900px
-- Below this screen width, uses mobile slides per view setting
-- Standard mobile breakpoint is 768px (iPad portrait and smaller)
-
-**Tablet Breakpoint**
-- Default: 1024px
-- Range: 768px - 1280px
-- Below this width (and above mobile breakpoint), uses tablet slides per view
-- Standard tablet breakpoint is 1024px (iPad landscape and smaller)
+#### Accessibility
 
 **ARIA Label**
 - Default: "Image slider"
 - Accessible label for screen readers
 - Customize to describe your slider's content
 - Examples: "Product showcase", "Team member carousel", "Testimonial slider"
+
+### Style panel
+
+#### Size
+
+**Use Aspect Ratio**
+- Toggle: On/Off
+- Default: Off (uses fixed height)
+- When enabled, slider height is determined by aspect ratio instead of fixed pixel height
+- Better for responsive designs that need to maintain proportions
+
+**Aspect Ratio** (when enabled)
+- Options: 16:9, 4:3, 21:9, 1:1, 3:2
+- Default: 16:9
+- Common ratios:
+  - **16:9** - Widescreen (videos, hero sections)
+  - **4:3** - Classic (presentations, standard content)
+  - **21:9** - Ultra-wide (cinematic hero sections)
+  - **1:1** - Square (Instagram-style, product images)
+  - **3:2** - Photography (DSLR standard)
+
+**Height** (when aspect ratio disabled)
+- Default: 500px
+- Accepts: px, vh, rem units
+- Fixed pixel height for the slider
+- Use `vh` (viewport height) for full-screen sections
+  - Example: `100vh` = full screen height
+  - Example: `50vh` = half screen height
+
+**Gap Between Slides**
+- Default: 20px
+- Accepts: px, rem units
+- Space between slides when multiple slides are visible
+- Set to 0 for seamless edge-to-edge slides
+- Increase for card-style layouts
+
+#### Arrows
+
+**Arrow Style** (when arrows enabled)
+- **Default** - Simple chevron arrows
+- **Circle** - Arrows inside circular backgrounds
+- **Square** - Arrows inside square backgrounds
+- **Minimal** - Text-only arrows (‹ and ›)
+
+**Arrow Position (Horizontal)**
+- **Sides** - Positioned at left and right edges of slider
+- **Inside** - Positioned inside the slider content area
+- **Outside** - Positioned outside the slider viewport (requires extra margin)
+
+**Arrow Position (Vertical)**
+- **Top** - Arrows positioned at top of slider
+- **Center** - Arrows vertically centered (most common)
+- **Bottom** - Arrows positioned at bottom of slider
+
+**Arrow Size**
+- Default: 48px
+- Adjusts the size of arrow buttons
+- Larger sizes are easier to click/tap on mobile
+- Smaller sizes are more subtle for minimal designs
+
+**Arrow Padding**
+- Default: Auto
+- Inner spacing inside arrow buttons
+- Increase to make arrow hit area larger
+- Useful for touch-friendly designs
+
+These appear while **Show Arrows** is on.
+
+#### Dots
+
+**Dot Style** (when dots enabled)
+- **Default** - Circular dots
+- **Lines** - Horizontal line indicators
+- **Squares** - Square indicators
+
+**Dot Position**
+- **Bottom** - Dots below the slider (most common)
+- **Top** - Dots above the slider
+
+These appear while **Show Dots** is on.
+
+### Colors (Styles tab)
+
+**Arrow Colors** (in Styles tab > Color section)
+- **Arrow Icon Color** - Color of the arrow symbol
+- **Arrow Background** - Background color of arrow button
+- Supports WordPress color palette
+- Use contrast for better visibility
+
+**Dot Color** (in Styles tab > Color section)
+- Color of the pagination dots
+- Active dot uses higher opacity
+- Inactive dots use lower opacity
 
 ---
 
@@ -687,7 +696,7 @@ The Slider block is built with accessibility as a priority:
 ### Navigation Not Working
 
 **Check:**
-1. **Arrows/Dots enabled** - Verify in Slider Settings
+1. **Arrows/Dots enabled** - Check Show Arrows / Show Dots in the Settings panel
 2. **Multiple slides** - Need at least 2 slides for navigation
 3. **JavaScript errors** - Check browser console
 4. **Theme conflicts** - Some themes override styles
@@ -780,7 +789,7 @@ A: Not recommended. It creates poor UX and can cause conflicts. Use multiple sep
 A: Fade and zoom effects only work with single slides. These effects fade/zoom the entire slide, so multiple slides per view isn't possible. Switch to slide effect for multi-slide view.
 
 **Q: How do I make slides the same height?**
-A: Set a fixed height in Layout Settings (e.g., 500px) or use aspect ratio mode. This ensures all slides have consistent height.
+A: Set a height in the Style panel (e.g., 500px) or use aspect ratio mode. This ensures all slides have consistent height.
 
 **Q: Can I customize arrow/dot appearance?**
 A: Yes! Use the Color settings to change colors. For advanced customization, use the Custom CSS Extension or Additional CSS in Customizer.
@@ -798,7 +807,7 @@ A: You can hide arrows/dots with custom CSS for mobile devices. The slider will 
 A: It's a scroll-driven mode where vertical page scrolling drives horizontal slide navigation. The slider pins to the viewport and slides advance as you scroll. Insert it directly from the block inserter by searching "Scroll Carousel".
 
 **Q: Can I adjust how fast the Scroll Carousel moves?**
-A: Yes. Use the "Scroll Speed" range control (0.5-3) in Behavior Settings. Higher values require more scrolling to traverse all slides.
+A: Yes. Use the "Scroll Speed" range control (0.5-3) in the Settings panel. Higher values require more scrolling to traverse all slides.
 
 **Q: Why does the Scroll Carousel add extra page height?**
 A: The scroll-driven mode creates a pin spacer whose height determines the scroll distance. This extra height is what maps to horizontal movement. Adjust scroll speed to control how much height is added.

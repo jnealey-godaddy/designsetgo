@@ -7,6 +7,11 @@
  * mode, so the write happens here rather than being modeled as three
  * separate resets. Composed inside the Settings DsgoInspectorPanel in
  * SettingsPanel.js.
+ *
+ * Loop, Swipeable and Draggable are locked while scroll-driven mode is on,
+ * so their hasValue() is false then too. Otherwise the ⋮ menu would offer
+ * "Reset Loop" on a disabled toggle, and resetting it would switch loop back
+ * on underneath a notice saying loop is disabled.
  */
 
 import { __ } from '@wordpress/i18n';
@@ -103,7 +108,7 @@ export default function BehaviorFields({ attributes, setAttributes }) {
 
 			<DsgoInspectorPanel.Item
 				label={__('Loop', 'designsetgo')}
-				hasValue={() => loop !== true}
+				hasValue={() => !scrollDriven && loop !== true}
 				onDeselect={() => setAttributes({ loop: true })}
 				isShownByDefault
 			>
@@ -123,7 +128,7 @@ export default function BehaviorFields({ attributes, setAttributes }) {
 
 			<DsgoInspectorPanel.Item
 				label={__('Swipeable (Touch)', 'designsetgo')}
-				hasValue={() => swipeable !== true}
+				hasValue={() => !scrollDriven && swipeable !== true}
 				onDeselect={() => setAttributes({ swipeable: true })}
 				isShownByDefault
 			>
@@ -138,7 +143,7 @@ export default function BehaviorFields({ attributes, setAttributes }) {
 
 			<DsgoInspectorPanel.Item
 				label={__('Draggable (Mouse)', 'designsetgo')}
-				hasValue={() => draggable !== true}
+				hasValue={() => !scrollDriven && draggable !== true}
 				onDeselect={() => setAttributes({ draggable: true })}
 				isShownByDefault
 			>

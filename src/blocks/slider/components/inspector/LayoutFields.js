@@ -111,7 +111,7 @@ export default function LayoutFields({
 			</DsgoInspectorPanel.Item>
 
 			<DsgoInspectorPanel.Item
-				label={__('Mobile Breakpoint', 'designsetgo')}
+				label={__('Mobile Breakpoint (px)', 'designsetgo')}
 				hasValue={() => mobileBreakpoint !== 768}
 				onDeselect={() => setAttributes({ mobileBreakpoint: 768 })}
 				isShownByDefault
@@ -134,7 +134,7 @@ export default function LayoutFields({
 			</DsgoInspectorPanel.Item>
 
 			<DsgoInspectorPanel.Item
-				label={__('Tablet Breakpoint', 'designsetgo')}
+				label={__('Tablet Breakpoint (px)', 'designsetgo')}
 				hasValue={() => tabletBreakpoint !== 1024}
 				onDeselect={() => setAttributes({ tabletBreakpoint: 1024 })}
 				isShownByDefault

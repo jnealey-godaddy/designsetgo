@@ -15,6 +15,13 @@ import TransitionFields from './TransitionFields';
 import AutoplayFields from './AutoplayFields';
 import BehaviorFields from './BehaviorFields';
 
+const NOTICES_STYLE = {
+	gridColumn: '1 / -1',
+	display: 'flex',
+	flexDirection: 'column',
+	gap: '8px',
+};
+
 /**
  * @param {Object}   props                           Component props.
  * @param {Object}   props.attributes                Block attributes.
@@ -30,6 +37,9 @@ import BehaviorFields from './BehaviorFields';
  * @param {string}   props.singleSlideNotice         Notice text shown
  *                                                   when locked to a
  *                                                   single slide.
+ * @param {Element}  [props.notices]                 Notices shown at the
+ *                                                   top of Settings
+ *                                                   (Dynamic Query mode).
  * @return {JSX.Element} Settings panel.
  */
 export default function SettingsPanel({
@@ -39,6 +49,7 @@ export default function SettingsPanel({
 	onEffectChange,
 	requiresSingleSlideEffect,
 	singleSlideNotice,
+	notices,
 }) {
 	return (
 		<InspectorControls>
@@ -73,6 +84,18 @@ export default function SettingsPanel({
 					})
 				}
 			>
+				{notices && (
+					// A plain child of the ToolsPanel grid, spanning both
+					// columns so the notices get the panel's padding and
+					// always sit above the first control.
+					<div
+						className="dsgo-slider-inspector__notices"
+						style={NOTICES_STYLE}
+					>
+						{notices}
+					</div>
+				)}
+
 				<LayoutFields
 					attributes={attributes}
 					setAttributes={setAttributes}

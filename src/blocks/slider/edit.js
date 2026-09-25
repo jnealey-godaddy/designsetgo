@@ -4,7 +4,6 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 	BlockControls,
-	InspectorControls,
 	BlockContextProvider,
 } from '@wordpress/block-editor';
 import { Notice, Button, Tooltip } from '@wordpress/components';
@@ -413,29 +412,6 @@ export default function SliderEdit({
 				/>
 			</BlockControls>
 
-			{inQueryMode && (
-				<InspectorControls>
-					<Notice status="info" isDismissible={false}>
-						{__(
-							'This slider is bound to a parent Dynamic Query. The first slide is the per-item template — extra slides are ignored at render. Slide management controls are disabled while bound.',
-							'designsetgo'
-						)}
-					</Notice>
-					{slideCount > 1 && (
-						<Notice status="warning" isDismissible={false}>
-							{sprintf(
-								/* translators: %d: number of slides that will not render */
-								__(
-									'%d extra slide(s) will be ignored at render. Only the first slide is used as the template.',
-									'designsetgo'
-								),
-								slideCount - 1
-							)}
-						</Notice>
-					)}
-				</InspectorControls>
-			)}
-
 			<SliderInspector
 				attributes={attributes}
 				setAttributes={setAttributes}
@@ -443,6 +419,30 @@ export default function SliderEdit({
 				onEffectChange={handleEffectChange}
 				requiresSingleSlideEffect={requiresSingleSlideEffect}
 				singleSlideNotice={singleSlideNotice}
+				notices={
+					inQueryMode && (
+						<>
+							<Notice status="info" isDismissible={false}>
+								{__(
+									'This slider is bound to a parent Dynamic Query. The first slide is the per-item template — extra slides are ignored at render. Slide management controls are disabled while bound.',
+									'designsetgo'
+								)}
+							</Notice>
+							{slideCount > 1 && (
+								<Notice status="warning" isDismissible={false}>
+									{sprintf(
+										/* translators: %d: number of slides that will not render */
+										__(
+											'%d extra slide(s) will be ignored at render. Only the first slide is used as the template.',
+											'designsetgo'
+										),
+										slideCount - 1
+									)}
+								</Notice>
+							)}
+						</>
+					)
+				}
 			/>
 
 			<div
