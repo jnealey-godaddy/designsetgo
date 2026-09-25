@@ -326,6 +326,91 @@ describe('sticky header across a soft reload', () => {
 		).toBe('');
 	});
 
+	it.each([
+		['pairs base-2 with contrast-2', {}, {}, '#fff'],
+		[
+			'falls back to contrast when contrast-2 is missing',
+			{},
+			{ '--wp--preset--color--contrast-2': '' },
+			'#000',
+		],
+		[
+			'preserves the foreground fallback for a custom background',
+			{ backgroundOnScroll: true, backgroundScrollColor: '#eee6e1' },
+			{},
+			'#000',
+		],
+		[
+			'honors an enabled explicit text color',
+			{ backgroundOnScroll: true, textScrollColor: '#abcdef' },
+			{},
+			'#abcdef',
+		],
+		[
+			'ignores disabled custom colors when pairing the theme surface',
+			{ backgroundScrollColor: '#eee6e1', textScrollColor: '#abcdef' },
+			{},
+			'#fff',
+		],
+		[
+			'does not use contrast-2 for the legacy white surface',
+			{},
+			{ '--dsgo-overlay-menu-surface': '#fff' },
+			'#000',
+		],
+		[
+			'does not use contrast-2 without a base-2 token',
+			{},
+			{ '--wp--preset--color--base-2': '' },
+			'#000',
+		],
+		[
+			'calculates a readable foreground when both contrast tokens are missing',
+			{},
+			{
+				'--wp--preset--color--contrast-2': '',
+				'--wp--preset--color--contrast': '',
+			},
+			'#fff',
+		],
+	])('%s', (name, settings, overrides, expected) => {
+		Object.assign(window.dsgStickyHeaderSettings, settings);
+		const header = buildSite();
+		const palette = {
+			'--dsgo-overlay-menu-surface': '#193341',
+			'--wp--preset--color--base-2': '#193341',
+			'--wp--preset--color--contrast': '#000',
+			'--wp--preset--color--contrast-2': '#fff',
+			...overrides,
+		};
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: (property) => palette[property] || '',
+		});
+
+		loadStickyHeader();
+
+		expect(header.style.getPropertyValue('--dsgo-overlay-menu-fg')).toBe(
+			expected
+		);
+	});
+
+	it('preserves custom menu colors enabled by the FSE override', () => {
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#eee6e1';
+		window.dsgStickyHeaderSettings.textScrollColor = '#abcdef';
+		const header = buildSite();
+		header.classList.add('dsgo-sticky-bg-on-scroll');
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: () => '#193341',
+		});
+
+		loadStickyHeader();
+
+		expect(menuBackground(header)).toBe('rgb(238, 230, 225)');
+		expect(header.style.getPropertyValue('--dsgo-overlay-menu-fg')).toBe(
+			'#abcdef'
+		);
+	});
+
 	it('does not add menu colors to a non-overlay header', () => {
 		const header = buildSite();
 		document.body.className = '';

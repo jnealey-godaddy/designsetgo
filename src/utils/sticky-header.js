@@ -528,8 +528,12 @@ import { getLuminance, parseColor } from './contrast-checker';
 	 */
 	function applyOverlayMenuColors(header, needsBgVars) {
 		const styles = window.getComputedStyle(header);
+		const customBackground = needsBgVars && settings.backgroundScrollColor;
+		const base2 = styles
+			.getPropertyValue('--wp--preset--color--base-2')
+			.trim();
 		const background =
-			(needsBgVars && settings.backgroundScrollColor) ||
+			customBackground ||
 			styles.getPropertyValue('--dsgo-overlay-menu-surface').trim() ||
 			'#fff';
 		let rgb = parseColor(background);
@@ -559,6 +563,12 @@ import { getLuminance, parseColor } from './contrast-checker';
 		rgb = rgb || { r: 255, g: 255, b: 255 };
 		const foreground =
 			(needsBgVars && settings.textScrollColor) ||
+			// Only pair contrast-2 with the theme's base-2 surface, not custom colors.
+			(!customBackground &&
+				background === base2 &&
+				styles
+					.getPropertyValue('--wp--preset--color--contrast-2')
+					.trim()) ||
 			styles.getPropertyValue('--wp--preset--color--contrast').trim() ||
 			(getLuminance(rgb) > 0.179 ? '#000' : '#fff');
 		header.style.setProperty(
