@@ -5,9 +5,30 @@
  */
 
 // Breakpoints
+// Query "below" a breakpoint with `max-width: $bp - 1px` and "at or above" it
+// with `min-width: $bp` (the `below` / `from` mixins do this), so no viewport
+// width ever matches both sides.
+$breakpoint-small: 600px; // WordPress core's small breakpoint.
 $breakpoint-mobile: 768px;
+$breakpoint-wp-medium: 782px; // WordPress core: columns stack, admin bar resizes.
 $breakpoint-tablet: 1024px;
 $breakpoint-desktop: 1280px;
+
+// Design tokens
+// Each resolves a `settings.custom.designsetgo.*` value from theme.json or a
+// Style Kit, falling back to the plugin default. Use these instead of literal
+// radii and durations so a theme can retune every block at once. The radius
+// names match the existing `.dsgo-rounded-*` utilities.
+$dsgo-radius-none: var(--wp--custom--designsetgo--border-radius--none, 0);
+$dsgo-radius-small: var(--wp--custom--designsetgo--border-radius--small, 0.25rem);
+$dsgo-radius-medium: var(--wp--custom--designsetgo--border-radius--medium, 0.5rem);
+$dsgo-radius-large: var(--wp--custom--designsetgo--border-radius--large, 1rem);
+$dsgo-radius-full: var(--wp--custom--designsetgo--border-radius--full, 9999px);
+
+$dsgo-duration-fast: var(--wp--custom--designsetgo--duration--fast, 150ms);
+$dsgo-duration-normal: var(--wp--custom--designsetgo--duration--normal, 300ms);
+$dsgo-duration-slow: var(--wp--custom--designsetgo--duration--slow, 500ms);
+$dsgo-easing: var(--wp--custom--designsetgo--easing, ease);
 
 // Z-index layers
 $z-index-base: 1;

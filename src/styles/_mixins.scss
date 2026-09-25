@@ -7,6 +7,23 @@
 @use 'variables' as *;
 
 // Media Queries
+
+// Viewports narrower than $breakpoint. Pairs with `from` without overlap.
+@mixin below($breakpoint) {
+
+	@media (max-width: #{$breakpoint - 1px}) {
+		@content;
+	}
+}
+
+// Viewports at least $breakpoint wide.
+@mixin from($breakpoint) {
+
+	@media (min-width: #{$breakpoint}) {
+		@content;
+	}
+}
+
 @mixin mobile {
 
 	@media (max-width: #{$breakpoint-mobile - 1px}) {
