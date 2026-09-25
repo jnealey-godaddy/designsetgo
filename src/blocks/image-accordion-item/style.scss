@@ -4,6 +4,8 @@
  * Implements expandable panels with background images and overlays
  */
 
+@use '../../styles/variables' as *;
+
 .dsgo-image-accordion-item {
 	// Position and layout
 	position: relative;
@@ -12,7 +14,7 @@
 	cursor: pointer;
 
 	// Smooth transition on flex property
-	transition: flex var(--transition-duration, 0.5s) cubic-bezier(0.4, 0, 0.2, 1);
+	transition: flex var(--transition-duration, $dsgo-duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
 
 	// Background image must always cover the item regardless of what the Styles
 	// panel sets inline — allowing `auto`/`contain` breaks the accordion layout.
@@ -57,7 +59,7 @@
 			)
 		);
 		opacity: var(--dsgo-resolved-overlay-opacity);
-		transition: opacity 0.3s ease;
+		transition: opacity $dsgo-duration-normal ease;
 		pointer-events: none;
 		z-index: 1;
 	}
@@ -83,21 +85,23 @@
 		position: relative;
 		z-index: 2;
 		// Default padding: L (top/bottom), M (left/right)
-		padding-top: var(--wp--preset--spacing--large, 2rem);
-		padding-bottom: var(--wp--preset--spacing--large, 2rem);
-		padding-left: var(--wp--preset--spacing--medium, 1.5rem);
-		padding-right: var(--wp--preset--spacing--medium, 1.5rem);
+		padding-block: var(--wp--preset--spacing--large, 2rem);
+		padding-inline: var(--wp--preset--spacing--medium, 1.5rem);
 		height: 100%;
 		display: flex;
 		flex-direction: column;
 		// Use alignment from attributes
 		justify-content: var(--dsgo-vertical-alignment, center);
 		align-items: var(--dsgo-horizontal-alignment, center);
+		// Fixed white, not themed: this text sits over an author photo plus a
+		// dark scrim (the overlay above), so a theme's text-color preset could
+		// easily go dark-on-dark here. Same reasoning as the focus-ring mixin's
+		// slider-arrow note.
 		color: #fff;
 
 		// Smooth content opacity transition
 		opacity: 0.9;
-		transition: opacity 0.3s ease;
+		transition: opacity $dsgo-duration-normal ease;
 
 		// Make all text white for readability over images
 		h1, h2, h3, h4, h5, h6,

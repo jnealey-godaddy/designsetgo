@@ -3,6 +3,9 @@
  * Professional, polished accordion with consistent DesignSetGo styling
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 // Default to the medium preset rather than inheriting the body size, which
 // some themes (e.g. Twenty Twenty-Five) set to `large`. Zero specificity so
 // the block's own font-size control and theme.json block styles still win.
@@ -14,8 +17,11 @@
 .dsgo-accordion {
 	// CSS Custom Properties for easy theming
 	--dsgo-accordion-gap: var(--wp--preset--spacing--20, 0.5rem);
-	--dsgo-accordion-border-color: var(--wp--preset--color--contrast, rgba(0, 0, 0, 0.1));
-	--dsgo-accordion-border-radius: 8px;
+	// currentColor-relative fallback (not the theme preset itself) so the
+	// divider still adapts when no `contrast` preset is defined, instead of a
+	// fixed rgba(0,0,0) that would sit wrong against a dark theme.
+	--dsgo-accordion-border-color: var(--wp--preset--color--contrast, color-mix(in srgb, currentColor 10%, transparent));
+	--dsgo-accordion-border-radius: #{$dsgo-radius-medium};
 	--dsgo-accordion-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
 	// Reset any default styles
@@ -51,7 +57,7 @@
 			background: var(--wp--preset--color--accent-2, #2563eb);
 			color: var(--wp--preset--color--base, #fff);
 			text-decoration: none;
-			border-radius: 4px;
+			border-radius: $dsgo-radius-small;
 			font-weight: 600;
 			display: inline-block;
 		}
@@ -77,15 +83,15 @@
 
 		// First item rounded top
 		.dsgo-accordion-item:first-child {
-			border-top-left-radius: var(--dsgo-accordion-border-radius);
-			border-top-right-radius: var(--dsgo-accordion-border-radius);
+			border-start-start-radius: var(--dsgo-accordion-border-radius);
+			border-start-end-radius: var(--dsgo-accordion-border-radius);
 			overflow: hidden;
 		}
 
 		// Last item rounded bottom
 		.dsgo-accordion-item:last-child {
-			border-bottom-left-radius: var(--dsgo-accordion-border-radius);
-			border-bottom-right-radius: var(--dsgo-accordion-border-radius);
+			border-end-start-radius: var(--dsgo-accordion-border-radius);
+			border-end-end-radius: var(--dsgo-accordion-border-radius);
 			overflow: hidden;
 		}
 	}
@@ -117,8 +123,9 @@
 		width: 100%;
 	}
 
-	// Card style variant (optional enhancement)
-	&.is-style-card {
+	// Card style variant (optional enhancement). Wrapped in :where() so a
+	// theme.json style targeting this block can still win on source order.
+	:where(&.is-style-card) {
 		border: 1px solid var(--dsgo-accordion-border-color);
 		box-shadow: var(--dsgo-accordion-shadow);
 		border-radius: var(--dsgo-accordion-border-radius);
@@ -131,7 +138,7 @@
 		--dsgo-accordion-border-color: transparent;
 		--dsgo-accordion-shadow: none;
 
-		.dsgo-accordion-item {
+		:where(.dsgo-accordion-item) {
 			background-color: transparent;
 		}
 	}

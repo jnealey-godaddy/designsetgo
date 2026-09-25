@@ -3,6 +3,8 @@
  * CRITICAL: Must be duplicated from style.scss for editor/frontend parity
  */
 
+@use '../../styles/variables' as *;
+
 // Fix DateTimePicker horizontal alignment and overflow issues
 .components-datetime {
 
@@ -257,7 +259,7 @@
 		padding: 2rem;
 		text-align: center;
 		border: 2px dashed #ccc;
-		border-radius: 8px;
+		border-radius: $dsgo-radius-medium;
 		background: #f9f9f9;
 	}
 }

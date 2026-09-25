@@ -3,6 +3,9 @@
  * CRITICAL: Must be duplicated from editor.scss for editor/frontend parity
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-countdown-timer {
 	display: flex;
 	// Default to center, but allow text-align to override
@@ -160,7 +163,7 @@
 	}
 
 	// Responsive adjustments
-	@media (max-width: 768px) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		&--boxed {
 
@@ -186,6 +189,7 @@
 		}
 	}
 
+	// 480px is a small-phone tier with no dedicated token; kept literal.
 	@media (max-width: 480px) {
 
 		&--boxed {

@@ -25,9 +25,9 @@
 			// Add visual indicator in editor
 			.dsgo-accordion-item__content {
 				// Subtle border in editor to show content area
-				border-left: 2px solid var(--wp--preset--color--primary, rgba(37, 99, 235, 0.2));
-				margin-left: var(--wp--preset--spacing--40, 1.5rem);
-				padding-left: var(--wp--preset--spacing--30, 1rem);
+				border-inline-start: 2px solid var(--wp--preset--color--primary, rgba(37, 99, 235, 0.2));
+				margin-inline-start: var(--wp--preset--spacing--40, 1.5rem);
+				padding-inline-start: var(--wp--preset--spacing--30, 1rem);
 			}
 		}
 

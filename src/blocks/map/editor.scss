@@ -4,6 +4,9 @@
  * Styles specific to the WordPress block editor (not shown on frontend).
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .editor-styles-wrapper {
 
 	.dsgo-map {
@@ -76,7 +79,7 @@
 			code {
 				background: rgba(255, 255, 255, 0.8);
 				padding: 0.25rem 0.5rem;
-				border-radius: 3px;
+				border-radius: $dsgo-radius-small; // was 3px; small token is 4px, <=2px drift.
 				font-family: Monaco, 'Courier New', monospace;
 				font-size: 0.9rem;
 				color: #667eea;
@@ -92,7 +95,7 @@
 			margin-top: 0.5rem;
 			padding: 0.5rem 0.75rem;
 			background: rgba(255, 255, 255, 0.9);
-			border-radius: 4px;
+			border-radius: $dsgo-radius-small;
 			font-size: 0.9rem;
 			color: #34495e;
 		}
@@ -150,7 +153,7 @@
 	}
 
 	// Responsive preview in editor
-	@media (max-width: 768px) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		.dsgo-map {
 
