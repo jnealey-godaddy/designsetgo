@@ -3,6 +3,9 @@
  * Two-column layout matching the frontend visual structure
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-scroll-slides {
 	position: relative;
 	box-sizing: border-box;
@@ -234,7 +237,7 @@
 /**
  * Mobile editor — stack nav above panels
  */
-@media (max-width: 781px) {
+@include below($breakpoint-wp-medium) {
 
 	.dsgo-scroll-slides__inner {
 		grid-template-columns: 1fr;

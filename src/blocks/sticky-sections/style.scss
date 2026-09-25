@@ -9,6 +9,9 @@
  * 4. As the user scrolls, sections slide up and stack on top of each other
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-sticky-sections {
 	position: relative;
 
@@ -34,7 +37,7 @@
 }
 
 // Mobile: disable sticky, stack normally
-@media (max-width: 781px) {
+@include below($breakpoint-wp-medium) {
 
 	.dsgo-sticky-sections > .dsgo-stack {
 		position: static !important;

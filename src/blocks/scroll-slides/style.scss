@@ -3,6 +3,9 @@
  * Scroll-pinned fullscreen slideshow with crossfading transitions
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-scroll-slides {
 	position: relative;
 	width: 100%;
@@ -113,7 +116,7 @@
 	&:focus-visible {
 		outline: 2px solid currentcolor;
 		outline-offset: 4px;
-		border-radius: 2px;
+		border-radius: $dsgo-radius-small;
 	}
 
 	// When custom nav colors are set, use explicit colors instead of opacity
@@ -190,7 +193,7 @@
  * Mobile fallback — handles the case where JS loaded at desktop width
  * (is-pinned set) and user resizes to mobile. Unpins, stacks, shows all.
  */
-@media (max-width: 781px) {
+@include below($breakpoint-wp-medium) {
 
 	.dsgo-scroll-slides-spacer {
 		height: auto !important;

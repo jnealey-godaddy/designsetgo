@@ -10,6 +10,8 @@
  * `.dsgo-icon__wrapper` in render.php.
  */
 
+@use '../../styles/variables' as *;
+
 .dsgo-icon {
 	line-height: 1; // Prevent inherited line-height from creating extra vertical space
 
@@ -84,7 +86,7 @@
 		}
 
 		&.shape-rounded {
-			border-radius: 8px;
+			border-radius: $dsgo-radius-medium;
 		}
 		/* stylelint-enable selector-class-pattern */
 	}
@@ -141,5 +143,5 @@
 .dsgo-grid--has-hover-icon:hover .dsgo-grid__inner > .dsgo-icon .dsgo-icon__wrapper,
 .dsgo-stack--has-hover-icon:hover .dsgo-stack__inner > .dsgo-icon .dsgo-icon__wrapper {
 	background-color: var(--dsgo-parent-hover-icon-bg) !important;
-	transition: background-color 0.3s ease;
+	transition: background-color $dsgo-duration-normal $dsgo-easing;
 }

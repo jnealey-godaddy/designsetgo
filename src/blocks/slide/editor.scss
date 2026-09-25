@@ -3,6 +3,7 @@
  * CRITICAL: Imports base styles from style.scss for editor/frontend parity
  */
 
+@use '../../styles/variables' as *;
 @use './style' as *;
 
 // Editor-specific adjustments
@@ -19,7 +20,7 @@
 		color: #fff;
 		font-size: 11px;
 		font-weight: 600;
-		border-radius: 4px;
+		border-radius: $dsgo-radius-small;
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
 		pointer-events: none;

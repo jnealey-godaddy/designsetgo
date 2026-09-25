@@ -6,6 +6,9 @@
  * @package DesignSetGo
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-flex {
 	// CRITICAL: Ensure width includes padding/border to prevent overflow
 	box-sizing: border-box;
@@ -143,7 +146,7 @@
 	// the outer flip is kept for legacy class-contract compatibility.
 	&--mobile-stack {
 
-		@media (max-width: 767px) {
+		@include below($breakpoint-mobile) {
 			flex-direction: column !important;
 
 			> .dsgo-flex__inner {

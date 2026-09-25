@@ -3,6 +3,9 @@
  * CRITICAL: Must be duplicated to editor.scss for editor/frontend parity
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-slide {
 	position: relative;
 	display: flex;
@@ -12,7 +15,7 @@
 	box-sizing: border-box; // Ensure padding doesn't increase slide width
 
 	// Use CSS custom properties from inline styles
-	--dsgo-slide-overlay-color: #000;
+	--dsgo-slide-overlay-color: var(--wp--preset--color--contrast, #000);
 	--dsgo-slide-overlay-opacity: 0.4;
 	--dsgo-slide-content-vertical-align: center;
 	--dsgo-slide-content-horizontal-align: center;
@@ -113,7 +116,7 @@
 }
 
 // Responsive adjustments
-@media (max-width: 768px) {
+@include below($breakpoint-mobile) {
 
 	.dsgo-slide {
 
