@@ -9,8 +9,15 @@
  * DesignSetGo attributes that are safe to bind.
  *
  * Scope today:
- *  - `designsetgo/heading-segment.content` — attribute is sourced from HTML,
- *    so core's HTML API rewrites the rendered markup automatically.
+ *  - HTML-sourced text on static blocks: `heading-segment.content`,
+ *    `accordion-item.title`, `modal-trigger.text` and `icon-button.text`.
+ *    Core applies a bound value to the markup by matching the attribute's
+ *    selector as a tag name, and these selectors are class names, so
+ *    apply_class_selector_bindings() finishes the job. Only elements that
+ *    save() always renders qualify: a block's stored markup holds no value
+ *    for a bound attribute, so an element that renders only when its text is
+ *    non-empty (Card title, Timeline Item title, Counter label) would never
+ *    exist to be filled.
  *  - `designsetgo/breadcrumbs` + `designsetgo/query-pagination` — dynamic
  *    (server-rendered) blocks where bound values flow into `render_callback`
  *    via `$block->attributes` without any further plumbing.
@@ -46,13 +53,24 @@ class Block_Bindings_Support {
 	 */
 	private const DEFAULT_SUPPORTED_ATTRIBUTES = array(
 		'designsetgo/heading-segment'  => array( 'content' ),
+		'designsetgo/accordion-item'   => array( 'title' ),
+		'designsetgo/modal-trigger'    => array( 'text' ),
+		'designsetgo/icon-button'      => array( 'text' ),
 		'designsetgo/breadcrumbs'      => array( 'homeText', 'prefixText' ),
 		'designsetgo/query-pagination' => array( 'labelLoadMore', 'labelLoading', 'buttonLabelWhenPaused' ),
 		'designsetgo/star-rating'      => array( 'rating', 'ratingCount' ),
 	);
 
 	/**
-	 * Register the filter hook.
+	 * Bound values waiting for their block's render_block pass, keyed by
+	 * spl_object_id() of the WP_Block, then by attribute name.
+	 *
+	 * @var array<int, array<string, array{0: string, 1: string}>>
+	 */
+	private $pending = array();
+
+	/**
+	 * Register the filter hooks.
 	 */
 	public function register() {
 		add_filter(
@@ -61,6 +79,81 @@ class Block_Bindings_Support {
 			10,
 			2
 		);
+
+		// Last, so the captured value is the one core merges into the block.
+		add_filter( 'block_bindings_source_value', array( $this, 'capture_bound_value' ), PHP_INT_MAX, 5 );
+
+		// Early, so later render_block filters see the bound markup.
+		add_filter( 'render_block', array( $this, 'apply_class_selector_bindings' ), 5, 3 );
+	}
+
+	/**
+	 * Remember a bound value that core will not be able to place in the markup.
+	 *
+	 * @param mixed     $value          Value the source resolved.
+	 * @param string    $source_name    Bindings source name.
+	 * @param array     $source_args    Source arguments.
+	 * @param \WP_Block $block_instance Block being rendered.
+	 * @param string    $attribute_name Bound attribute.
+	 * @return mixed The value, unchanged.
+	 */
+	public function capture_bound_value( $value, $source_name, $source_args, $block_instance, $attribute_name ) {
+		if ( ! is_scalar( $value ) || ! $block_instance instanceof \WP_Block ) {
+			return $value;
+		}
+
+		$attribute = isset( $block_instance->block_type->attributes[ $attribute_name ] )
+			? $block_instance->block_type->attributes[ $attribute_name ]
+			: array();
+		$selector  = isset( $attribute['selector'] ) ? $attribute['selector'] : '';
+		$source    = isset( $attribute['source'] ) ? $attribute['source'] : '';
+
+		if (
+			0 !== strpos( $block_instance->name, 'designsetgo/' ) ||
+			! in_array( $source, array( 'html', 'rich-text', 'text' ), true ) ||
+			! preg_match( '/^\.([A-Za-z0-9_-]+)$/', $selector, $class )
+		) {
+			return $value;
+		}
+
+		$this->pending[ spl_object_id( $block_instance ) ][ $attribute_name ] = array(
+			$class[1],
+			'text' === $source ? esc_html( (string) $value ) : wp_kses_post( (string) $value ),
+		);
+
+		return $value;
+	}
+
+	/**
+	 * Write captured bound values into the elements their selectors name.
+	 *
+	 * @param string    $block_content Rendered block markup.
+	 * @param array     $parsed_block  Parsed block.
+	 * @param \WP_Block $instance      Block instance.
+	 * @return string Markup with bound values applied.
+	 */
+	public function apply_class_selector_bindings( $block_content, $parsed_block, $instance = null ) {
+		if ( ! $instance instanceof \WP_Block ) {
+			return $block_content;
+		}
+
+		$id = spl_object_id( $instance );
+		if ( empty( $this->pending[ $id ] ) ) {
+			return $block_content;
+		}
+
+		$values = $this->pending[ $id ];
+		unset( $this->pending[ $id ] );
+
+		if ( ! is_string( $block_content ) || '' === $block_content ) {
+			return $block_content;
+		}
+
+		foreach ( $values as $value ) {
+			$block_content = Bindings_HTML_Processor::replace_inner_html_by_class( $block_content, $value[0], $value[1] );
+		}
+
+		return $block_content;
 	}
 
 	/**

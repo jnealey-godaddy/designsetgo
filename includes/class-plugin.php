@@ -686,6 +686,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/features/class-style-binding.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-interactions.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-schema-output.php';
+		require_once DESIGNSETGO_PATH . 'includes/bindings/class-bindings-html-processor.php';
 		require_once DESIGNSETGO_PATH . 'includes/bindings/class-block-bindings-support.php';
 		require_once DESIGNSETGO_PATH . 'includes/data/svg-pattern-data.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-svg-pattern-renderer.php';

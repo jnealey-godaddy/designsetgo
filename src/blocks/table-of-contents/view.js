@@ -88,10 +88,9 @@ class DSGTableOfContents {
 			// Setup link click handlers
 			this.setupLinkHandlers();
 
-			// Setup scroll spy
-			if (this.scrollSmooth) {
-				this.setupScrollSpy(headings);
-			}
+			// Scroll spy highlights the current section whether or not link
+			// clicks animate — the two settings are independent.
+			this.setupScrollSpy(headings);
 
 			// Handle URL hash on page load
 			this.handleInitialHash();

@@ -62,7 +62,7 @@ use WP_REST_Response;
  *    @param int    $submission_id   Submission post ID
  *    @param string $form_id         Form identifier
  *    @param bool   $email_sent      Whether email was sent successfully
- *    @param string $email_to        Recipient email address
+ *    @param string $email_to        Recipient email address(es), comma-separated
  *    @param string $email_subject   Email subject line
  *
  * 6. designsetgo_form_turnstile_failed
@@ -588,17 +588,59 @@ class Form_Handler {
 				$referer
 			);
 		} else {
-			$redirect = add_query_arg(
-				array(
-					'dsgo_form_status' => 'success',
-					'dsgo_form_id'     => $form_id,
-				),
-				$referer
-			);
+			$redirect = $this->get_success_redirect_url( $form_id, $request );
+
+			if ( '' === $redirect ) {
+				$redirect = add_query_arg(
+					array(
+						'dsgo_form_status' => 'success',
+						'dsgo_form_id'     => $form_id,
+					),
+					$referer
+				);
+			}
 		}
 
 		wp_safe_redirect( $redirect );
 		exit;
+	}
+
+	/**
+	 * The form's own "Redirect URL", for a submission that did not go through AJAX.
+	 *
+	 * The AJAX path follows this URL in view.js; a plain POST — AJAX Submit
+	 * off, or the automatic fallback when a host blocks both REST and
+	 * admin-ajax — must land in the same place. The URL comes from the
+	 * published form's attributes, never from the request, and matches
+	 * view.js's rule: http(s) only, any host.
+	 *
+	 * @param string          $form_id Form ID.
+	 * @param WP_REST_Request $request Submission request, for the source post.
+	 * @return string Redirect URL, or '' when the form has none.
+	 */
+	private function get_success_redirect_url( $form_id, $request ) {
+		$definition = $this->get_form_definition( $form_id, $this->get_source_post_id( $request ) );
+		$url        = isset( $definition['attributes']['redirectUrl'] ) ? $definition['attributes']['redirectUrl'] : '';
+		$url        = is_string( $url ) ? esc_url_raw( trim( $url ), array( 'http', 'https' ) ) : '';
+
+		if ( '' === $url ) {
+			return '';
+		}
+
+		// wp_safe_redirect() only follows hosts on this list, so admit the one
+		// the author configured.
+		$host = wp_parse_url( $url, PHP_URL_HOST );
+		if ( $host ) {
+			add_filter(
+				'allowed_redirect_hosts',
+				static function ( $hosts ) use ( $host ) {
+					$hosts[] = $host;
+					return $hosts;
+				}
+			);
+		}
+
+		return $url;
 	}
 
 	/**
@@ -919,11 +961,18 @@ class Form_Handler {
 		$email_reply_to  = str_replace( $newline_chars, '', $email_reply_to );
 
 		// Validate and set defaults (single sanitization pass).
-		if ( empty( $email_to ) || ! is_email( $email_to ) ) {
-			$email_to = get_option( 'admin_email' );
-		} else {
-			$email_to = sanitize_email( $email_to );
-		}
+		// Several recipients may be listed, separated by commas or semicolons.
+		// Invalid entries are dropped rather than sinking the whole list; only
+		// a list with no valid address at all falls back to the admin email.
+		// Kept as a comma-separated string, which wp_mail() accepts and which
+		// the designsetgo_form_email_sent hook and stored meta already carry.
+		$recipients = array_filter(
+			array_map( 'trim', preg_split( '/[,;]/', $email_to ) ),
+			'is_email'
+		);
+		$email_to   = empty( $recipients )
+			? get_option( 'admin_email' )
+			: implode( ', ', array_unique( array_map( 'sanitize_email', $recipients ) ) );
 
 		if ( empty( $email_subject ) ) {
 			$email_subject = __( 'New Form Submission', 'designsetgo' );

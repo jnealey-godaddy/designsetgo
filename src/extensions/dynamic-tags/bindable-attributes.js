@@ -73,6 +73,78 @@ export const BINDABLE_ATTRIBUTES = {
 			label: __('Date', 'designsetgo'),
 		},
 	],
+	// DesignSetGo blocks — keep in step with DEFAULT_SUPPORTED_ATTRIBUTES in
+	// includes/bindings/class-block-bindings-support.php, which opts them in
+	// server-side and places bound values in the markup.
+	'designsetgo/heading-segment': [
+		{
+			attribute: 'content',
+			returns: ['text'],
+			label: __('Content', 'designsetgo'),
+		},
+	],
+	'designsetgo/accordion-item': [
+		{
+			attribute: 'title',
+			returns: ['text'],
+			label: __('Title', 'designsetgo'),
+		},
+	],
+	'designsetgo/modal-trigger': [
+		{
+			attribute: 'text',
+			returns: ['text'],
+			label: __('Text', 'designsetgo'),
+		},
+	],
+	'designsetgo/icon-button': [
+		{
+			attribute: 'text',
+			returns: ['text'],
+			label: __('Text', 'designsetgo'),
+		},
+	],
+	'designsetgo/breadcrumbs': [
+		{
+			attribute: 'homeText',
+			returns: ['text'],
+			label: __('Home text', 'designsetgo'),
+		},
+		{
+			attribute: 'prefixText',
+			returns: ['text'],
+			label: __('Prefix text', 'designsetgo'),
+		},
+	],
+	'designsetgo/query-pagination': [
+		{
+			attribute: 'labelLoadMore',
+			returns: ['text'],
+			label: __('Load more label', 'designsetgo'),
+		},
+		{
+			attribute: 'labelLoading',
+			returns: ['text'],
+			label: __('Loading label', 'designsetgo'),
+		},
+		{
+			attribute: 'buttonLabelWhenPaused',
+			returns: ['text'],
+			label: __('Paused button label', 'designsetgo'),
+		},
+	],
+	'designsetgo/star-rating': [
+		{
+			attribute: 'rating',
+			returns: ['number'],
+			label: __('Rating', 'designsetgo'),
+		},
+		{
+			attribute: 'ratingCount',
+			returns: ['number'],
+			label: __('Rating count', 'designsetgo'),
+		},
+	],
 };
 
 export function getBindableAttributes(blockName) {

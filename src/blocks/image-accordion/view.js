@@ -65,14 +65,51 @@ function initImageAccordions() {
 			});
 		}
 
-		// Initialize: Set default expanded item
-		if (defaultExpandedIndex > 0 && defaultExpandedIndex <= items.length) {
-			// Expand specified item (1-based index from user, convert to 0-based)
-			expandItem(items[defaultExpandedIndex - 1]);
-		} else {
-			// No default expansion
-			resetItems();
+		/**
+		 * The item the URL hash points at: an item's anchor, or anything
+		 * inside an item.
+		 *
+		 * @return {HTMLElement|null} Matching item.
+		 */
+		function getHashItem() {
+			let target = null;
+			try {
+				const id = decodeURIComponent(window.location.hash.slice(1));
+				target = id ? document.getElementById(id) : null;
+			} catch (error) {
+				return null;
+			}
+			const item = target?.closest('.dsgo-image-accordion-item');
+			return item && Array.from(items).includes(item) ? item : null;
 		}
+
+		// The item the accordion rests on when nothing is hovered: the one a
+		// deep link names, else the author's default (1-based), else none.
+		let restingItem =
+			getHashItem() ||
+			(defaultExpandedIndex > 0 && defaultExpandedIndex <= items.length
+				? items[defaultExpandedIndex - 1]
+				: null);
+
+		function showRestingItem() {
+			if (restingItem) {
+				expandItem(restingItem);
+			} else {
+				resetItems();
+			}
+		}
+
+		// Initialize: Set default expanded item
+		showRestingItem();
+
+		window.addEventListener('hashchange', function () {
+			const hashItem = getHashItem();
+			if (hashItem) {
+				restingItem = hashItem;
+				showRestingItem();
+				hashItem.scrollIntoView({ block: 'nearest' });
+			}
+		});
 
 		// Add ARIA attributes to all items
 		items.forEach((item, index) => {
@@ -109,15 +146,7 @@ function initImageAccordions() {
 			// Reset on accordion mouse leave (optional - creates nice reset effect)
 			accordion.addEventListener('mouseleave', function () {
 				if (!isTouchDevice) {
-					// Reset to default expanded or none
-					if (
-						defaultExpandedIndex > 0 &&
-						defaultExpandedIndex <= items.length
-					) {
-						expandItem(items[defaultExpandedIndex - 1]);
-					} else {
-						resetItems();
-					}
+					showRestingItem();
 				}
 			});
 		}

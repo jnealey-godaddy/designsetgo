@@ -52,9 +52,8 @@ if ( ! function_exists( 'designsetgo_render_breadcrumbs' ) ) {
 		// Build wrapper attributes.
 		$wrapper_attributes = get_block_wrapper_attributes(
 			array(
-				'class'                 => implode( ' ', $classes ),
-				'aria-label'            => __( 'Breadcrumb', 'designsetgo' ),
-				'data-dsgo-breadcrumbs' => wp_json_encode( $trail ),
+				'class'      => implode( ' ', $classes ),
+				'aria-label' => __( 'Breadcrumb', 'designsetgo' ),
 			)
 		);
 
@@ -86,6 +85,44 @@ if ( ! function_exists( 'designsetgo_render_breadcrumbs' ) ) {
 			</ol>
 			</nav>
 			<?php
+			designsetgo_render_breadcrumbs_schema( $trail, $block );
+	}
+}
+
+if ( ! function_exists( 'designsetgo_render_breadcrumbs_schema' ) ) {
+	/**
+	 * Print the BreadcrumbList JSON-LD for the page being viewed.
+	 *
+	 * Rendered server-side so crawlers that don't run JavaScript still see it.
+	 * Only a trail for the queried post describes this page — a breadcrumbs
+	 * block inside a Query loop describes its item, not the page — and only
+	 * the first one prints, so a header and a footer copy don't both emit it.
+	 *
+	 * @param array    $trail Breadcrumb items.
+	 * @param WP_Block $block Block instance.
+	 */
+	function designsetgo_render_breadcrumbs_schema( array $trail, $block ) {
+		$post_id = isset( $block->context['postId'] ) ? (int) $block->context['postId'] : 0;
+
+		if ( did_action( 'designsetgo_breadcrumbs_schema_printed' ) || ! is_singular() || get_queried_object_id() !== $post_id ) {
+			return;
+		}
+
+		$schema = designsetgo_get_breadcrumb_schema( $trail );
+		$json   = $schema ? wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) : false;
+
+		if ( false === $json ) {
+			return;
+		}
+
+		/**
+		 * Fires once the breadcrumb JSON-LD has been printed for this request.
+		 */
+		do_action( 'designsetgo_breadcrumbs_schema_printed' );
+
+		// Same guard as SchemaOutput::render(): a `</script>` inside a title
+		// would otherwise close the element early.
+		echo '<script type="application/ld+json">' . str_replace( '</', '<\/', $json ) . '</script>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() output with script-closing sequences neutralised.
 	}
 }
 
