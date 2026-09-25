@@ -263,7 +263,9 @@
 	// use vertical-right style on mobile
 	.dsgo-timeline-item {
 		flex-direction: row !important;
-		text-align: start !important;
+		// Physical on purpose: the marker and its padding below stay pinned
+		// to the left in this forced mobile layout, so the text must too.
+		text-align: left !important;
 		width: 100% !important;
 		margin-left: 0 !important;
 

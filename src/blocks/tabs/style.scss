@@ -9,10 +9,6 @@
 .wp-block-designsetgo-tabs {
 	max-width: 100%;
 	box-sizing: border-box;
-	// Lets the `@container` rule on the nav (below) react to the tabs
-	// block's own rendered width, independent of the viewport.
-	container-type: inline-size;
-	container-name: dsgo-tabs;
 
 	// Override WordPress alignment negative margins
 	&.alignfull,
@@ -245,19 +241,6 @@
 			flex-direction: row;
 			flex-wrap: wrap;
 			overflow: visible; // Wrapping handles overflow; auto causes unwanted vertical scrollbar
-		}
-
-		// When the block itself sits in a narrow column (a sidebar, a
-		// multi-column section) wrapping the nav onto several rows reads
-		// worse than scrolling it — switch to the same horizontal-scroll
-		// treatment the mobile default (accordion) mode uses.
-		@container dsgo-tabs (max-width: 480px) {
-
-			.dsgo-tabs__nav {
-				flex-wrap: nowrap;
-				overflow-x: auto;
-				scrollbar-width: thin;
-			}
 		}
 
 		// Alignment options
