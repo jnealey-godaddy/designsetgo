@@ -5,10 +5,111 @@
  * Uses BEM naming convention with .dsgo-comparison-table prefix.
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+// Shared narrow-layout rules for the "stack on small width" mode. Included
+// both under a viewport media query (for the plain viewport case) and under
+// a container query (so the same table stacks correctly when it's embedded
+// in a narrow column of an otherwise-wide viewport, e.g. a sidebar or a
+// multi-column section) — see the `&--responsive-stack` block below.
+@mixin dsgo-comparison-table-stacked {
+
+	.dsgo-comparison-table__table,
+	.dsgo-comparison-table__header,
+	.dsgo-comparison-table__body,
+	.dsgo-comparison-table__header tr,
+	.dsgo-comparison-table__body tr,
+	.dsgo-comparison-table__header-cell,
+	.dsgo-comparison-table__cell {
+		display: block;
+		width: 100%;
+	}
+
+	.dsgo-comparison-table__header {
+
+		tr {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.5rem;
+			padding-bottom: 1rem;
+			margin-bottom: 0.5rem;
+			border-bottom: 2px solid currentcolor;
+			opacity: 0.9;
+		}
+	}
+
+	.dsgo-comparison-table__header-cell {
+		flex: 1;
+		min-width: 0;
+		padding: 0.75rem;
+
+		&--label {
+			flex: 0 0 100%;
+			text-align: center;
+			font-weight: 700;
+			padding-bottom: 0;
+		}
+	}
+
+	.dsgo-comparison-table__row {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0;
+		padding: 0.75rem 0;
+		border-bottom: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
+	}
+
+	.dsgo-comparison-table__cell {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		text-align: end;
+		padding: 0.5rem 0.75rem;
+
+		&--label {
+			text-align: start;
+			font-weight: 700;
+			font-size: 1.05em;
+			padding-bottom: 0.25rem;
+			border-bottom: none;
+		}
+
+		// Show column label
+		&:not(.dsgo-comparison-table__cell--label)::before {
+			content: attr(data-label);
+			font-weight: 500;
+			text-align: start;
+			margin-inline-end: 1rem;
+			opacity: 0.7;
+			flex-shrink: 0;
+		}
+	}
+
+	.dsgo-comparison-table__cell-content {
+		justify-content: flex-end;
+	}
+
+	// Featured column highlight in stacked mode
+	.dsgo-comparison-table__cell--featured {
+
+		&::before {
+			display: none;
+		}
+
+		background-color: color-mix(in srgb, currentcolor 4%, transparent);
+		border-radius: $dsgo-radius-small;
+	}
+}
+
 .dsgo-comparison-table {
 	box-sizing: border-box;
 	max-width: 100%;
 	color: var(--wp--preset--color--contrast, inherit);
+	// Enables the `@container` rules below (e.g. the stacked mode) to react
+	// to the block's own rendered width rather than only the viewport.
+	container-type: inline-size;
+	container-name: dsgo-comparison-table;
 	// Text on the featured column's solid header, and the fill of its CTA.
 	// A theme.json / Style Kit token, else white. Not the base preset: the
 	// featured fill is the primary/author color, not the page background, so
@@ -89,8 +190,8 @@
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		padding: 0.2em 0.6em;
-		border-radius: 100px;
-		background-color: rgba(255, 255, 255, 0.2);
+		border-radius: $dsgo-radius-full;
+		background-color: color-mix(in srgb, var(--wp--preset--color--base, #fff) 20%, transparent);
 		margin-bottom: 0.5rem;
 	}
 
@@ -102,11 +203,11 @@
 		padding: 0.5em 1.25em;
 		font-size: 0.85em;
 		font-weight: 600;
-		border-radius: 6px;
+		border-radius: $dsgo-radius-medium;
 		text-decoration: none;
 		cursor: pointer;
-		transition: background-color 0.2s ease, color 0.2s ease,
-			box-shadow 0.2s ease;
+		transition: background-color $dsgo-duration-fast $dsgo-easing, color $dsgo-duration-fast $dsgo-easing,
+			box-shadow $dsgo-duration-fast $dsgo-easing;
 		line-height: 1.4;
 
 		// Filled = the header colors inverted. `currentcolor` can't express
@@ -163,25 +264,25 @@
 	&__body {
 
 		tr {
-			border-bottom: 1px solid rgba(128, 128, 128, 0.2);
-			transition: background-color 0.15s ease;
+			border-bottom: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
+			transition: background-color $dsgo-duration-fast $dsgo-easing;
 
 			&:last-child {
 				border-bottom: none;
 			}
 
 			&:hover {
-				background-color: rgba(128, 128, 128, 0.05);
+				background-color: color-mix(in srgb, currentcolor 5%, transparent);
 			}
 		}
 	}
 
 	// Alternating row colors
 	&--alternating &__body tr:nth-child(even) {
-		background-color: rgba(128, 128, 128, 0.04);
+		background-color: color-mix(in srgb, currentcolor 4%, transparent);
 
 		&:hover {
-			background-color: rgba(128, 128, 128, 0.08);
+			background-color: color-mix(in srgb, currentcolor 8%, transparent);
 		}
 	}
 
@@ -249,7 +350,7 @@
 		}
 
 		&--cross {
-			color: rgba(128, 128, 128, 0.6);
+			color: color-mix(in srgb, currentcolor 60%, transparent);
 		}
 	}
 
@@ -275,20 +376,23 @@
 		font-weight: 700;
 		line-height: 1;
 		border-radius: 50%;
-		background-color: rgba(128, 128, 128, 0.15);
+		background-color: color-mix(in srgb, currentcolor 15%, transparent);
 		color: inherit;
 		opacity: 0.6;
 		cursor: help;
 		flex-shrink: 0;
 		position: relative;
-		transition: opacity 0.2s ease;
+		transition: opacity $dsgo-duration-fast $dsgo-easing;
 
 		&:hover {
 			opacity: 1;
 		}
 	}
 
-	// Frontend tooltip popup (positioned by view.js)
+	// Frontend tooltip popup (positioned by view.js). Deliberately a fixed
+	// dark bubble with light text — like a native browser tooltip — rather
+	// than themed, so it stays legible regardless of the light/dark theme
+	// variation or surrounding section color underneath it.
 	&__tooltip {
 		position: absolute;
 		z-index: 100;
@@ -299,11 +403,11 @@
 		line-height: 1.4;
 		color: #fff;
 		background-color: rgba(0, 0, 0, 0.85);
-		border-radius: 6px;
+		border-radius: $dsgo-radius-medium;
 		pointer-events: none;
 		opacity: 0;
 		transform: translateY(4px);
-		transition: opacity 0.15s ease, transform 0.15s ease;
+		transition: opacity $dsgo-duration-fast $dsgo-easing, transform $dsgo-duration-fast $dsgo-easing;
 		white-space: normal;
 
 		&.is-visible {
@@ -329,99 +433,25 @@
 
 	&--responsive-stack {
 
-		@media (max-width: 767px) {
+		// Viewport fallback — matches the plugin's other 768px breakpoints.
+		@include below($breakpoint-mobile) {
 
-			.dsgo-comparison-table__table,
-			.dsgo-comparison-table__header,
-			.dsgo-comparison-table__body,
-			.dsgo-comparison-table__header tr,
-			.dsgo-comparison-table__body tr,
-			.dsgo-comparison-table__header-cell,
-			.dsgo-comparison-table__cell {
-				display: block;
-				width: 100%;
-			}
+			@include dsgo-comparison-table-stacked;
+		}
 
-			.dsgo-comparison-table__header {
+		// Container fallback — stacks when the block itself sits in a narrow
+		// column (e.g. a sidebar or multi-column section) even on a wide
+		// viewport. 500px is block-specific: narrower than that, the table's
+		// minimum readable column widths no longer fit side by side.
+		@container dsgo-comparison-table (max-width: 500px) {
 
-				tr {
-					display: flex;
-					flex-wrap: wrap;
-					gap: 0.5rem;
-					padding-bottom: 1rem;
-					margin-bottom: 0.5rem;
-					border-bottom: 2px solid currentcolor;
-					opacity: 0.9;
-				}
-			}
-
-			.dsgo-comparison-table__header-cell {
-				flex: 1;
-				min-width: 0;
-				padding: 0.75rem;
-
-				&--label {
-					flex: 0 0 100%;
-					text-align: center;
-					font-weight: 700;
-					padding-bottom: 0;
-				}
-			}
-
-			.dsgo-comparison-table__row {
-				display: grid;
-				grid-template-columns: 1fr;
-				gap: 0;
-				padding: 0.75rem 0;
-				border-bottom: 1px solid rgba(128, 128, 128, 0.2);
-			}
-
-			.dsgo-comparison-table__cell {
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				text-align: end;
-				padding: 0.5rem 0.75rem;
-
-				&--label {
-					text-align: start;
-					font-weight: 700;
-					font-size: 1.05em;
-					padding-bottom: 0.25rem;
-					border-bottom: none;
-				}
-
-				// Show column label on mobile
-				&:not(.dsgo-comparison-table__cell--label)::before {
-					content: attr(data-label);
-					font-weight: 500;
-					text-align: start;
-					margin-inline-end: 1rem;
-					opacity: 0.7;
-					flex-shrink: 0;
-				}
-			}
-
-			.dsgo-comparison-table__cell-content {
-				justify-content: flex-end;
-			}
-
-			// Featured column highlight in stacked mode
-			.dsgo-comparison-table__cell--featured {
-
-				&::before {
-					display: none;
-				}
-
-				background-color: rgba(128, 128, 128, 0.04);
-				border-radius: 4px;
-			}
+			@include dsgo-comparison-table-stacked;
 		}
 	}
 
 	// --- General Mobile Adjustments ---
 
-	@media (max-width: 767px) {
+	@include below($breakpoint-mobile) {
 
 		&__column-name {
 			font-size: 1.1em;

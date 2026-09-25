@@ -4,6 +4,9 @@
  * Individual counter item with icon, number, and label
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-counter {
 	display: flex;
 	flex-direction: column;
@@ -71,7 +74,7 @@
 		// This prevents inheriting from grandparent containers (like Container blocks)
 		color: currentcolor;
 		margin: 0;
-		transition: color 0.3s ease;
+		transition: color $dsgo-duration-normal $dsgo-easing;
 
 		.dsgo-counter__value {
 			font-variant-numeric: tabular-nums;
@@ -87,7 +90,7 @@
 		margin-top: 0.5rem;
 		margin-bottom: 0;
 		line-height: 1.5;
-		transition: color 0.3s ease, opacity 0.3s ease;
+		transition: color $dsgo-duration-normal $dsgo-easing, opacity $dsgo-duration-normal $dsgo-easing;
 	}
 
 	// Hover state
@@ -118,7 +121,7 @@
 	}
 
 	// Responsive: Smaller number on mobile
-	@media (max-width: 767px) {
+	@include below($breakpoint-mobile) {
 		padding: 1rem;
 
 		&__number {

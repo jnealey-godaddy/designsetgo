@@ -3,6 +3,9 @@
  * Individual timeline milestone/event styling
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-timeline-item {
 	box-sizing: border-box;
 	position: relative;
@@ -57,7 +60,7 @@
 		min-width: 0;
 		text-decoration: none;
 		color: inherit;
-		transition: transform 0.2s ease;
+		transition: transform $dsgo-duration-fast $dsgo-easing;
 
 		&:hover {
 			transform: translateX(4px);
@@ -125,7 +128,7 @@
 		.dsgo-timeline-item__wrapper {
 			background-color: var(--wp--preset--color--base-2, rgba(0, 0, 0, 0.02));
 			padding: var(--wp--preset--spacing--30, 1rem);
-			border-radius: 8px;
+			border-radius: $dsgo-radius-medium;
 			border-inline-start: 3px solid var(--dsgo-timeline-marker-color, var(--wp--preset--color--primary, #2563eb));
 		}
 	}
@@ -137,7 +140,7 @@
 		cursor: pointer;
 
 		.dsgo-timeline-item__wrapper {
-			transition: background-color 0.2s ease;
+			transition: background-color $dsgo-duration-fast $dsgo-easing;
 		}
 
 		&:hover .dsgo-timeline-item__wrapper {
@@ -174,7 +177,7 @@
 	&.dsgo-timeline--layout-alternating {
 
 		.dsgo-timeline-item {
-			text-align: right;
+			text-align: end;
 
 			.dsgo-timeline-item__marker {
 				position: absolute;
@@ -192,7 +195,7 @@
 
 			// Even items on the opposite side
 			&:nth-child(even) {
-				text-align: left;
+				text-align: start;
 
 				> .dsgo-timeline-item__wrapper,
 				> .dsgo-timeline-item__link {
@@ -224,7 +227,7 @@
 // ===================
 // HORIZONTAL TIMELINE LAYOUT (desktop only)
 // ===================
-@media (min-width: 769px) {
+@include from($breakpoint-mobile) {
 
 	.dsgo-timeline--horizontal {
 
@@ -254,13 +257,13 @@
 // ===================
 // MOBILE RESPONSIVE
 // ===================
-@media (max-width: 768px) {
+@include below($breakpoint-mobile) {
 
 	// All timeline items (vertical alternating, vertical-right, and horizontal)
 	// use vertical-right style on mobile
 	.dsgo-timeline-item {
 		flex-direction: row !important;
-		text-align: left !important;
+		text-align: start !important;
 		width: 100% !important;
 		margin-left: 0 !important;
 
