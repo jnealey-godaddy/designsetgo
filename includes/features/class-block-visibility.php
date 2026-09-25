@@ -76,6 +76,11 @@ class BlockVisibility {
 	/**
 	 * Whether this request is the editor's ServerSideRender preview.
 	 *
+	 * Core's block-renderer route already requires edit_posts, but the
+	 * exemption re-checks it rather than trusting another plugin never to
+	 * loosen that route: skipping the rules for a visitor would show them
+	 * every gated block inside a rendered synced pattern.
+	 *
 	 * @return bool
 	 */
 	private static function is_editor_preview() {
@@ -83,7 +88,7 @@ class BlockVisibility {
 			return false;
 		}
 		$route = isset( $GLOBALS['wp']->query_vars['rest_route'] ) ? (string) $GLOBALS['wp']->query_vars['rest_route'] : '';
-		return 0 === strpos( $route, '/wp/v2/block-renderer/' );
+		return 0 === strpos( $route, '/wp/v2/block-renderer/' ) && current_user_can( 'edit_posts' );
 	}
 
 	/**
