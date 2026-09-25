@@ -181,6 +181,18 @@ function initAllCountdownTimers() {
 		}
 		timer.setAttribute('data-dsgo-initialized', 'true');
 
+		// Show the current values and translated labels straight away:
+		// save() stores untranslated literals, and a timer below the fold
+		// would otherwise show them until it scrolls into view. Only the
+		// ticking waits for the observer.
+		const targetDateTime = timer.dataset.targetDatetime;
+		updateCountdownDisplay(
+			timer,
+			targetDateTime
+				? calculateTimeRemaining(targetDateTime)
+				: { days: 0, hours: 0, minutes: 0, seconds: 0 }
+		);
+
 		// Use Intersection Observer for lazy initialization
 		// eslint-disable-next-line no-undef
 		const observer = new IntersectionObserver(
