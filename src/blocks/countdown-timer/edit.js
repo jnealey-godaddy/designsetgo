@@ -13,6 +13,7 @@ import {
 } from '@wordpress/block-editor';
 import { Placeholder } from '@wordpress/components';
 import { useState, useEffect } from '@wordpress/element';
+import { date as formatDate } from '@wordpress/date';
 
 /**
  * Internal dependencies
@@ -28,6 +29,7 @@ import CompletionPanel from './components/inspector/CompletionPanel';
 import {
 	calculateTimeRemaining,
 	formatTimeUnit,
+	getEditorSiteTimezone,
 } from './utils/time-calculator';
 import { formatCountdownDisplay } from './utils/format-time';
 import {
@@ -76,9 +78,14 @@ export default function Edit(props) {
 	const accent2Color = themeColors.find((color) => color.slug === 'accent-2');
 	const defaultAccentColor = accent2Color?.color || '';
 
+	// Resolved WordPress site timezone, used to interpret `targetDateTime`
+	// when the author left the timezone picker on "WordPress Default"
+	// (timezone === ''). Doesn't change during an editing session.
+	const siteTimezone = getEditorSiteTimezone();
+
 	// State for live countdown preview in editor
 	const [currentTime, setCurrentTime] = useState(
-		calculateTimeRemaining(targetDateTime, timezone)
+		calculateTimeRemaining(targetDateTime, timezone, siteTimezone)
 	);
 
 	// Set default date to 7 days from now on first load
@@ -86,7 +93,17 @@ export default function Edit(props) {
 		if (!targetDateTime) {
 			const sevenDaysFromNow = new Date();
 			sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-			setAttributes({ targetDateTime: sevenDaysFromNow.toISOString() });
+			// Timezoneless wall-clock shape — matches the DateTimePicker's
+			// own TIMEZONELESS_FORMAT ('Y-m-d\TH:i:s') and is formatted in
+			// the site timezone (formatDate's default when no timezone arg
+			// is passed). NOT `.toISOString()`: that stamps a trailing `Z`,
+			// which hasExplicitOffset() then treats as an already-resolved
+			// instant — so a freshly inserted block would ignore the
+			// Timezone dropdown entirely, reproducing the original bug via
+			// the default value. See PR #591 review.
+			setAttributes({
+				targetDateTime: formatDate('Y-m-d\\TH:i:s', sevenDaysFromNow),
+			});
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []); // Empty dependency array = run only once on mount
@@ -98,11 +115,13 @@ export default function Edit(props) {
 		}
 
 		const interval = setInterval(() => {
-			setCurrentTime(calculateTimeRemaining(targetDateTime, timezone));
+			setCurrentTime(
+				calculateTimeRemaining(targetDateTime, timezone, siteTimezone)
+			);
 		}, 1000);
 
 		return () => clearInterval(interval);
-	}, [targetDateTime, timezone]);
+	}, [targetDateTime, timezone, siteTimezone]);
 
 	// Build unit styles - use accent-2 if available, otherwise currentColor
 	const unitStyle = {
