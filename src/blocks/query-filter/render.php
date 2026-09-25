@@ -115,22 +115,27 @@ if ( ! function_exists( 'designsetgo_query_filter_owned_get_params' ) ) :
 	 * specific query, keyed by their bare (unscoped) name.
 	 *
 	 * Mirrors designsetgo_query_extract_params_from_request() in
-	 * render-helpers.php (scoped-key-wins, bare-key gated by declaration) but
+	 * render-helpers.php (scoped-key-wins, bare key reaches every query) but
 	 * scoped to this block's own concerns (no `query_type_*` / WooCommerce
 	 * keys — those never reach a DSGo query-filter block) and returning raw,
 	 * not-yet-sanitized values so each caller can sanitize the way it always
 	 * has (sanitize_text_field for display, sanitize_title for term slugs…).
+	 *
+	 * A bare key is intentionally ungated: it's already honored for every
+	 * query by the server-side WP_Query args (see render-posts.php), so
+	 * showing it as "active" and letting Reset strip it here keeps the chip
+	 * strip truthful about what's actually filtering the results. Only a key
+	 * scoped for a DIFFERENT query is excluded — it never touches this one.
 	 *
 	 * Used for both the active-filter-count queries (FilterIndex) and the
 	 * active/reset chip strips, so a filter's cross-option counts and its
 	 * "currently active" chips always agree on which query's selections
 	 * they're describing.
 	 *
-	 * @param string $query_id        Sanitized queryId.
-	 * @param array  $declared_params Bare param names this query declares.
+	 * @param string $query_id Sanitized queryId.
 	 * @return array<string, mixed> Bare key => raw (unslashed-pending) value.
 	 */
-	function designsetgo_query_filter_owned_get_params( $query_id, array $declared_params ) {
+	function designsetgo_query_filter_owned_get_params( $query_id ) {
 		$query_id = sanitize_key( (string) $query_id );
 		$suffix   = '' !== $query_id ? '__' . $query_id : '';
 		$owned    = array();
@@ -153,9 +158,7 @@ if ( ! function_exists( 'designsetgo_query_filter_owned_get_params' ) ) :
 				continue;
 			}
 
-			if ( $is_scoped_for_this_query ) {
-				$owned[ $key ] = $raw_value;
-			} elseif ( ! isset( $owned[ $key ] ) && in_array( $key, $declared_params, true ) ) {
+			if ( $is_scoped_for_this_query || ! isset( $owned[ $key ] ) ) {
 				$owned[ $key ] = $raw_value;
 			}
 		}
@@ -480,20 +483,20 @@ if ( ! function_exists( 'designsetgo_query_filter_render_active' ) ) :
 	 * Each chip links to the current URL with that specific filter value
 	 * removed, providing an accessible no-JS fallback.
 	 *
-	 * Query param scoping (v2.6): only shows chips for params that belong to
-	 * THIS query — a `{key}__{queryId}`-scoped key, or a bare/legacy key this
-	 * query's own filter blocks declare (see
-	 * designsetgo_query_collect_declared_params()). A bare key scoped to a
-	 * DIFFERENT query (or simply not declared by this one) never appears
-	 * here, so two queries' active-filter strips no longer show — or let you
-	 * remove — each other's selections.
+	 * Query param scoping (v2.6): shows chips for params that belong to THIS
+	 * query — a `{key}__{queryId}`-scoped key, or ANY bare/legacy key (a bare
+	 * key is honored by every query server-side, same as before this task —
+	 * see render-posts.php — so it's shown/removable here too, or the chip
+	 * strip would lie about what's actually filtering the results). A key
+	 * scoped for a DIFFERENT query is the only thing excluded, so two
+	 * queries' active-filter strips no longer show — or let you remove —
+	 * each other's own SCOPED selections.
 	 *
-	 * @param string $wrapper         Pre-computed wrapper attributes string.
-	 * @param string $label           Optional visible label.
-	 * @param string $query_id        Sanitized queryId this filter belongs to.
-	 * @param array  $declared_params Bare param names this query declares.
+	 * @param string $wrapper  Pre-computed wrapper attributes string.
+	 * @param string $label    Optional visible label.
+	 * @param string $query_id Sanitized queryId this filter belongs to.
 	 */
-	function designsetgo_query_filter_render_active( $wrapper, $label, $query_id = '', array $declared_params = array() ) {
+	function designsetgo_query_filter_render_active( $wrapper, $label, $query_id = '' ) {
 		$suffix        = '' !== $query_id ? '__' . $query_id : '';
 		$active_params = array();
 		foreach ( (array) $_GET as $k => $v ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -503,15 +506,10 @@ if ( ! function_exists( 'designsetgo_query_filter_render_active' ) ) :
 			}
 
 			$display_key = $raw_key;
-			$belongs     = false;
 			if ( '' !== $suffix && strlen( $suffix ) < strlen( $raw_key ) && substr( $raw_key, -strlen( $suffix ) ) === $suffix ) {
 				$display_key = substr( $raw_key, 0, -strlen( $suffix ) );
-				$belongs     = true;
-			} elseif ( false === strpos( $raw_key, '__' ) && in_array( $raw_key, $declared_params, true ) ) {
-				$belongs = true;
-			}
-			if ( ! $belongs ) {
-				continue;
+			} elseif ( false !== strpos( $raw_key, '__' ) ) {
+				continue; // Scoped for a different query — never ours.
 			}
 
 			if ( 0 === strpos( $display_key, 'filter_' ) || 'q' === $display_key || 'sort' === $display_key ) {
@@ -613,18 +611,19 @@ if ( ! function_exists( 'designsetgo_query_filter_render_reset' ) ) :
 	 * The href strips filter_*, q, sort, and paged from the URL so the
 	 * no-JS fallback works: clicking the link navigates to a clean URL.
 	 *
-	 * Query param scoping (v2.6): only strips params that belong to THIS
-	 * query (scoped-for-this-query keys, or bare/legacy keys it declares) —
-	 * see designsetgo_query_filter_render_active() above for the identical
-	 * ownership rule. `paged`/`page` are always stripped regardless, since
-	 * WordPress's own pagination query vars aren't query-scoped at all.
+	 * Query param scoping (v2.6): strips params that belong to THIS query —
+	 * a scoped-for-this-query key, or ANY bare/legacy key (honored by every
+	 * query server-side, same as before this task, so Reset must clear it
+	 * here too or it would silently keep filtering after a "reset"). Only a
+	 * key scoped for a DIFFERENT query is left untouched. `paged`/`page` are
+	 * always stripped regardless, since WordPress's own pagination query
+	 * vars aren't query-scoped at all.
 	 *
-	 * @param string $wrapper         Pre-computed wrapper attributes string.
-	 * @param string $label           Optional button text (default "Reset filters").
-	 * @param string $query_id        Sanitized queryId this filter belongs to.
-	 * @param array  $declared_params Bare param names this query declares.
+	 * @param string $wrapper  Pre-computed wrapper attributes string.
+	 * @param string $label    Optional button text (default "Reset filters").
+	 * @param string $query_id Sanitized queryId this filter belongs to.
 	 */
-	function designsetgo_query_filter_render_reset( $wrapper, $label, $query_id = '', array $declared_params = array() ) {
+	function designsetgo_query_filter_render_reset( $wrapper, $label, $query_id = '' ) {
 		$current_url = add_query_arg( array() );
 		$qs          = wp_parse_url( $current_url, PHP_URL_QUERY );
 		parse_str( (string) $qs, $parsed );
@@ -639,15 +638,10 @@ if ( ! function_exists( 'designsetgo_query_filter_render_reset' ) ) :
 			}
 
 			$display_key = $k;
-			$belongs     = false;
 			if ( '' !== $suffix && strlen( $suffix ) < strlen( $k ) && substr( $k, -strlen( $suffix ) ) === $suffix ) {
 				$display_key = substr( $k, 0, -strlen( $suffix ) );
-				$belongs     = true;
-			} elseif ( false === strpos( $k, '__' ) && in_array( $k, $declared_params, true ) ) {
-				$belongs = true;
-			}
-			if ( ! $belongs ) {
-				continue;
+			} elseif ( false !== strpos( $k, '__' ) ) {
+				continue; // Scoped for a different query — leave it alone.
 			}
 
 			if ( 0 === strpos( $display_key, 'filter_' ) || 'q' === $display_key || 'sort' === $display_key ) {
@@ -691,15 +685,6 @@ $designsetgo_query_id = isset( $block->context['designsetgo/queryId'] )
 if ( '' === $designsetgo_query_id ) {
 	return;
 }
-
-// Param names the parent query's own filter siblings (+ bindSearchTo)
-// declare — see designsetgo_query_collect_declared_params() in
-// render-helpers.php. Gates which bare/legacy $_GET keys this filter block
-// may read, display, or strip, so an undeclared or another-query-scoped key
-// never leaks into this one's rendered state.
-$designsetgo_declared_params = isset( $block->context['designsetgo/queryDeclaredParams'] )
-	? array_map( 'sanitize_key', (array) $block->context['designsetgo/queryDeclaredParams'] )
-	: array();
 
 $designsetgo_filter_kind        = isset( $attributes['filterKind'] ) ? sanitize_key( (string) $attributes['filterKind'] ) : 'checkbox';
 $designsetgo_filter_param       = isset( $attributes['paramName'] ) ? sanitize_key( (string) $attributes['paramName'] ) : '';
@@ -750,9 +735,10 @@ $designsetgo_show_counts = ! isset( $attributes['showCounts'] ) || (bool) $attri
 // filter state. On the REST-refresh path, $_GET has been overlaid by the
 // REST controller with the incoming params, so this is always up-to-date.
 // Scoped to THIS query (see designsetgo_query_filter_owned_get_params()) so
-// a sibling query's same-named filter_* selection never skews these counts.
+// a sibling query's same-named SCOPED filter_* selection never skews these
+// counts; a bare/legacy key still counts, since it filters this query too.
 $designsetgo_active_filters = array();
-foreach ( designsetgo_query_filter_owned_get_params( $designsetgo_query_id, $designsetgo_declared_params ) as $designsetgo_k => $designsetgo_v ) {
+foreach ( designsetgo_query_filter_owned_get_params( $designsetgo_query_id ) as $designsetgo_k => $designsetgo_v ) {
 	if ( 0 === strpos( $designsetgo_k, 'filter_' ) ) {
 		if ( is_array( $designsetgo_v ) ) {
 			$designsetgo_active_filters[ $designsetgo_k ] = array_map( 'sanitize_text_field', wp_unslash( $designsetgo_v ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -861,10 +847,10 @@ switch ( $designsetgo_filter_kind ) {
 		designsetgo_query_filter_render_select( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type, $designsetgo_term_include, $designsetgo_term_exclude, $designsetgo_query_id );
 		break;
 	case 'active':
-		designsetgo_query_filter_render_active( $designsetgo_filter_wrapper, $designsetgo_filter_label, $designsetgo_query_id, $designsetgo_declared_params );
+		designsetgo_query_filter_render_active( $designsetgo_filter_wrapper, $designsetgo_filter_label, $designsetgo_query_id );
 		break;
 	case 'reset':
-		designsetgo_query_filter_render_reset( $designsetgo_filter_wrapper, $designsetgo_filter_label, $designsetgo_query_id, $designsetgo_declared_params );
+		designsetgo_query_filter_render_reset( $designsetgo_filter_wrapper, $designsetgo_filter_label, $designsetgo_query_id );
 		break;
 	case 'checkbox':
 	default:
