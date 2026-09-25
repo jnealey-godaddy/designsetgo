@@ -2,8 +2,8 @@
 /**
  * Frontend asset manifest for soft navigations.
  *
- * A soft navigation (Airo's frontend refresh, a Query "load more") swaps page
- * content without running the new content's `<script>` tags, so a block or
+ * A soft navigation (Airo's frontend refresh) swaps page content without
+ * running the new content's `<script>` tags, so a block or
  * extension that the first page didn't use arrives with no script and, in
  * some cases, no stylesheet. This prints `window.dsgoAssets`: for every
  * DesignSetGo block and extension bundle that is NOT already on the page, what
@@ -12,10 +12,13 @@
  * translations). src/utils/soft-nav-assets.js reads it after each
  * `dsgo-content-loaded` and loads whatever the new content needs.
  *
- * It is printed only where a swap can happen: for logged-in users (Airo's
- * refresh runs in an editing session) and on pages with a Query block.
- * Other soft-navigation integrations can opt in through the
- * `designsetgo_frontend_asset_manifest` filter.
+ * Printed only for users who can edit posts: Airo's refresh runs in an
+ * editing session, and the manifest carries localized script data (Form
+ * Builder's nonces) that must not be broadcast to visitors on pages that
+ * never render those blocks. Other soft-navigation integrations can opt in
+ * through the `designsetgo_frontend_asset_manifest` filter. Query "load
+ * more" doesn't need it: Extension_Bundles enqueues the assets of the blocks
+ * in a Query's item template when the Query renders.
  *
  * Script modules (the Query block's Interactivity API view) are not covered:
  * a page's import map can't change after load.
@@ -37,32 +40,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Frontend_Asset_Manifest {
 
 	/**
-	 * Whether a Query block rendered this request.
-	 *
-	 * @var bool
-	 */
-	private $query_rendered = false;
-
-	/**
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_filter( 'render_block_designsetgo/query', array( $this, 'note_query' ) );
 		// Before _wp_footer_scripts (priority 10) prints designsetgo-frontend,
 		// and after every block has rendered and enqueued its assets.
 		add_action( 'wp_print_footer_scripts', array( $this, 'print_manifest' ), 1 );
-	}
-
-	/**
-	 * Record that a Query block rendered.
-	 *
-	 * @param string $block_content Rendered block HTML.
-	 * @return string Unchanged HTML.
-	 */
-	public function note_query( $block_content ) {
-		$this->query_rendered = true;
-
-		return $block_content;
 	}
 
 	/**
@@ -76,9 +59,9 @@ class Frontend_Asset_Manifest {
 		/**
 		 * Whether to print the soft-navigation asset manifest on this page.
 		 *
-		 * @param bool $emit Default: logged-in users, and pages with a Query block.
+		 * @param bool $emit Default: users who can edit posts.
 		 */
-		if ( ! apply_filters( 'designsetgo_frontend_asset_manifest', is_user_logged_in() || $this->query_rendered ) ) {
+		if ( ! apply_filters( 'designsetgo_frontend_asset_manifest', current_user_can( 'edit_posts' ) ) ) {
 			return;
 		}
 
@@ -294,7 +277,14 @@ class Frontend_Asset_Manifest {
 			$src = add_query_arg( 'ver', $ver, $src );
 		}
 
+		// Core's own filters, so a CDN or asset-optimization plugin rewrites
+		// these URLs exactly as it does the printed tags.
+		if ( 'style_loader_src' === $filter ) {
+			/** This filter is documented in wp-includes/class-wp-styles.php */
+			return (string) apply_filters( 'style_loader_src', $src, $asset->handle ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core filter.
+		}
+
 		/** This filter is documented in wp-includes/class-wp-scripts.php */
-		return (string) apply_filters( $filter, $src, $asset->handle );
+		return (string) apply_filters( 'script_loader_src', $src, $asset->handle ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- core filter.
 	}
 }
