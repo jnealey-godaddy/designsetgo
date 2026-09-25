@@ -98,8 +98,13 @@ export default function IconButtonEdit({
 	} = attributes;
 
 	// An empty RichText value (or one that is only markup) leaves the button
-	// with no accessible name unless ariaLabel is set.
-	const isIconOnly = !(text || '').replace(/<[^>]*>/g, '').trim();
+	// with no accessible name unless ariaLabel is set. DOMParser reads the
+	// text safely (no script execution, handles malformed tags), matching
+	// slider/edit.js.
+	const isIconOnly = !(
+		new window.DOMParser().parseFromString(text || '', 'text/html').body
+			.textContent || ''
+	).trim();
 
 	// Theme-level icon defaults inherited when size/style are left unset.
 	const iconDefaults = useIconDefaults({
