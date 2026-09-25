@@ -87,6 +87,19 @@ class DesignSetGo_Extension_Bundles_Test extends WP_UnitTestCase {
 		$this->assertTrue( wp_script_is( 'designsetgo-ext-clickable-group', 'enqueued' ) );
 	}
 
+	public function test_query_template_block_assets_are_enqueued() {
+		wp_register_script( 'designsetgo-tabs-view-script', 'https://example.com/tabs.js', array(), '1', true );
+		wp_register_style( 'designsetgo-tabs-style', 'https://example.com/tabs.css', array(), '1' );
+		$block = parse_blocks( '<!-- wp:designsetgo/query --><!-- wp:group --><div class="wp-block-group"><!-- wp:designsetgo/tabs /--></div><!-- /wp:group --><!-- /wp:designsetgo/query -->' )[0];
+
+		// First paint rendered no items, so Tabs never rendered.
+		$this->bundles->enqueue_query_template_blocks( '<div class="wp-block-designsetgo-query"></div>', $block );
+
+		$this->assertTrue( wp_script_is( 'designsetgo-tabs-view-script', 'enqueued' ) );
+		$this->assertTrue( wp_style_is( 'designsetgo-tabs-style', 'enqueued' ) );
+		$this->assertFalse( wp_script_is( 'designsetgo-form-builder-view-script', 'enqueued' ), 'Only blocks in the template.' );
+	}
+
 	public function test_runs_after_render_time_needle_injectors() {
 		$this->assertSame( 11, has_filter( 'render_block', array( $this->bundles, 'maybe_enqueue' ) ) );
 	}

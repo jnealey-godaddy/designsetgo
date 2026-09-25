@@ -47,6 +47,7 @@ class Extension_Bundles {
 		// After the render-time injectors that write needles into markup:
 		// animation defaults (priority 9) and the parallax fallback (10).
 		add_filter( 'render_block', array( $this, 'maybe_enqueue' ), 11, 2 );
+		add_filter( 'render_block_designsetgo/query', array( $this, 'enqueue_query_template_blocks' ), 10, 2 );
 	}
 
 	/**
@@ -159,6 +160,62 @@ class Extension_Bundles {
 		}
 
 		return $block_content;
+	}
+
+	/**
+	 * Enqueue the scripts and styles of every block in a Query's item template.
+	 *
+	 * WordPress enqueues a block's assets when the block renders. A Query
+	 * whose first paint has no items (a filter matched nothing) renders none
+	 * of its item blocks, so results that arrive later over REST would have no
+	 * view script or stylesheet. Only blocks the template actually contains are
+	 * enqueued, so their localized data (a form's nonce) reaches only pages
+	 * that can show them.
+	 *
+	 * @param string $block_content The block content.
+	 * @param array  $block         The full Query block.
+	 * @return string The unmodified block content.
+	 */
+	public function enqueue_query_template_blocks( $block_content, $block ) {
+		if ( is_admin() || empty( $block['innerBlocks'] ) ) {
+			return $block_content;
+		}
+
+		$registry = \WP_Block_Type_Registry::get_instance();
+		foreach ( self::block_names( $block['innerBlocks'] ) as $name ) {
+			$block_type = $registry->get_registered( $name );
+			if ( ! $block_type ) {
+				continue;
+			}
+			foreach ( (array) $block_type->view_script_handles as $handle ) {
+				wp_enqueue_script( $handle );
+			}
+			foreach ( (array) $block_type->style_handles as $handle ) {
+				wp_enqueue_style( $handle );
+			}
+		}
+
+		return $block_content;
+	}
+
+	/**
+	 * Every block name in a tree of parsed blocks.
+	 *
+	 * @param array $blocks Parsed blocks.
+	 * @return string[] Unique block names.
+	 */
+	private static function block_names( array $blocks ) {
+		$names = array();
+		foreach ( $blocks as $inner ) {
+			if ( ! empty( $inner['blockName'] ) ) {
+				$names[ $inner['blockName'] ] = true;
+			}
+			if ( ! empty( $inner['innerBlocks'] ) ) {
+				$names += array_fill_keys( self::block_names( $inner['innerBlocks'] ), true );
+			}
+		}
+
+		return array_keys( $names );
 	}
 
 	/**

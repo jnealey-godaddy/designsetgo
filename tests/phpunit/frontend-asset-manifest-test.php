@@ -125,29 +125,50 @@ class DesignSetGo_Frontend_Asset_Manifest_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $query['scripts'] ?? array(), 'A script module cannot be added after load.' );
 	}
 
-	public function test_printed_only_for_logged_in_users_or_query_pages() {
+	/**
+	 * Print the manifest as a given user and return the runtime's inline data.
+	 *
+	 * @param int $user_id User to print as (0 = visitor).
+	 * @return string Inline "before" data on designsetgo-frontend.
+	 */
+	private function print_as( $user_id ) {
 		wp_register_script( 'designsetgo-frontend', 'https://example.com/frontend.js', array(), '1', true );
 		wp_enqueue_script( 'designsetgo-frontend' );
-		$manifest = new \DesignSetGo\Frontend_Asset_Manifest();
-		$inline   = static function () {
-			return (string) wp_scripts()->get_inline_script_data( 'designsetgo-frontend', 'before' );
-		};
-
-		$manifest->print_manifest();
-		$this->assertStringNotContainsString( 'dsgoAssets', $inline(), 'Anonymous visitor, no Query.' );
-
-		$manifest->note_query( '' );
-		$manifest->print_manifest();
-		$this->assertStringContainsString( 'window.dsgoAssets = {', $inline() );
-	}
-
-	public function test_printed_for_logged_in_users() {
-		wp_register_script( 'designsetgo-frontend', 'https://example.com/frontend.js', array(), '1', true );
-		wp_enqueue_script( 'designsetgo-frontend' );
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+		wp_set_current_user( $user_id );
 
 		( new \DesignSetGo\Frontend_Asset_Manifest() )->print_manifest();
 
-		$this->assertStringContainsString( 'window.dsgoAssets = {', (string) wp_scripts()->get_inline_script_data( 'designsetgo-frontend', 'before' ) );
+		return (string) wp_scripts()->get_inline_script_data( 'designsetgo-frontend', 'before' );
+	}
+
+	/**
+	 * The manifest carries localized script data (Form Builder's nonces), so
+	 * visitors must never get it, even on a Query page.
+	 */
+	public function test_not_printed_for_visitors() {
+		apply_filters( 'render_block_designsetgo/query', '<div></div>', array( 'innerBlocks' => array() ) );
+
+		$this->assertStringNotContainsString( 'dsgoAssets', $this->print_as( 0 ) );
+	}
+
+	public function test_not_printed_for_users_who_cannot_edit() {
+		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+		$this->assertStringNotContainsString( 'dsgoAssets', $this->print_as( $subscriber ) );
+	}
+
+	public function test_printed_for_editors() {
+		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
+
+		$this->assertStringContainsString( 'window.dsgoAssets = {', $this->print_as( $editor ) );
+	}
+
+	public function test_integrations_can_opt_in_through_the_filter() {
+		add_filter( 'designsetgo_frontend_asset_manifest', '__return_true' );
+		try {
+			$this->assertStringContainsString( 'window.dsgoAssets = {', $this->print_as( 0 ) );
+		} finally {
+			remove_filter( 'designsetgo_frontend_asset_manifest', '__return_true' );
+		}
 	}
 }
