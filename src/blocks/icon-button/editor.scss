@@ -5,6 +5,7 @@
  */
 
 // Import frontend styles
+@use '../../styles/variables' as *;
 @use './style.scss' as *;
 
 .dsgo-icon-button {
@@ -68,7 +69,7 @@
 .dsgo-grid--has-hover-button:hover .dsgo-grid__inner > .dsgo-icon-button .dsgo-icon-button__wrapper,
 .dsgo-stack--has-hover-button:hover .dsgo-stack__inner > .dsgo-icon-button .dsgo-icon-button__wrapper {
 	background-color: var(--dsgo-parent-hover-button-bg) !important;
-	transition: background-color 0.3s ease;
+	transition: background-color $dsgo-duration-normal $dsgo-easing;
 }
 
 // CRITICAL: Prevent button from stretching vertically in stretch contexts (editor-only)

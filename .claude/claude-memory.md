@@ -484,6 +484,50 @@ reload. Nothing to do with boxWidth; a capped section with a normal style round-
 `includes/abilities/class-block-inserter.php` mirrors Section's save() in PHP and had to be
 updated in lockstep.
 
+## Design polish sweep — layout/interactive/query blocks (agent: design-layout-blocks-2026-09-25, branch `claude/design-layout-blocks`, based on main post-#584 shared tokens)
+
+CSS-only pass over section, section-divider, row, grid, fifty-fifty, icon-button, icon, blobs,
+slider, slide, scroll-slides, scroll-slide, scroll-accordion(-item), scroll-marquee,
+sticky-sections, product-categories-grid, product-showcase-hero, dynamic-image, and the query
+family stylesheets. No save()/markup/attribute changes.
+
+**Sass `@use ... as *` does NOT transitively re-export.** `src/styles/_mixins.scss` does
+`@use 'variables' as *;` privately — a consumer that only does
+`@use '../../styles/mixins' as *;` gets the mixins (`below`, `from`, …) but NOT
+`$breakpoint-*`/`$dsgo-radius-*`/`$dsgo-duration-*`/`$dsgo-easing`, since `variables` was never
+`@forward`ed. Every file needing both must `@use` variables AND mixins directly. Same trap for
+a block's `editor.scss` that does `@use './style.scss' as *;` for parity — that only exposes
+style.scss's own top-level members (there are none; it's just a consumer too), so editor.scss
+needs its own direct `@use '../../styles/variables' as *;` if it references `$dsgo-*`. Caught
+this by grepping every changed file for `$dsgo-` / `@include below(` against its own `@use`
+lines before building — cheaper than a full build cycle to catch a missing-variable Sass error.
+
+**WordPress's `.alignleft`/`.alignright` are NOT direction-aware — core never flips them for
+RTL.** So a block's OWN legacy align-class CSS (Icon Button's pre-justification-wrapper v9
+markup, Blobs, Scroll Accordion Item) should NOT convert single-sided `margin-right: auto` /
+`margin-left: auto` to `margin-inline-start/end: auto` — that WOULD flip in RTL while every
+other WP block's `.alignleft` stays physically put, a new inconsistency, not a fix. Only the
+BOTH-sides-auto (centering) case is safe to convert to `margin-inline: auto`, since centering is
+direction-symmetric regardless.
+
+**Fifty Fifty / Product Showcase Hero's media-left/media-right margin-auto stays physical too**,
+for an unrelated reason: it has to track the sibling `padding-left`/`padding-right` pair on
+`&__content`, which is itself physical because it's derived from `100vw` (no direction concept).
+Flipping only the margin half would desync the content box from its own padding in RTL.
+
+**Controls that float over author photography keep hard-coded white/black, on purpose** —
+already the reasoning behind `focus-ring()` in `_mixins.scss`. Slider arrows/dots/scroll-progress,
+Product Showcase Hero's sale badge text, and Query Results' image-tile title-over-scrim text all
+guarantee contrast against unpredictable images; routing them through a theme preset would let a
+themed color replace white and break that guarantee. Left these literal on purpose, not an
+oversight — don't "fix" them in a later pass without re-reading this.
+
+**`section/styles/_box-width.scss` deliberately left untouched.** Its margin-left/margin-right
+(both plain-zero and both-auto-centering forms) look convertible to `margin-inline`, but the file
+is one giant load-bearing comment about flex auto-margin resolution order and a cssnano
+`:where()`-at-selector-list-head minifier bug (see the boxWidth memory entry above this one) —
+not worth the risk for a purely cosmetic property rename. Listed under "Deferred" in the PR.
+
 **Deprecations: none needed, but migrated blocks get `undefined`, not the default.**
 `applyBlockDeprecatedVersions` returns exactly what `migrate()` produced — WordPress does NOT
 re-apply current block.json defaults afterwards. So a block that runs any deprecation arrives

@@ -6,6 +6,7 @@
  * @package DesignSetGo
  */
 
+@use '../../styles/variables' as *;
 @use './styles/shape-divider';
 @use './styles/box-width';
 
@@ -73,7 +74,7 @@ $inline-block-data-types: (
 		bottom: 0;
 		background: var(--dsgo-hover-bg-color, transparent);
 		opacity: 0;
-		transition: opacity 0.3s ease;
+		transition: opacity $dsgo-duration-normal $dsgo-easing;
 		pointer-events: none;
 		z-index: 0;
 		border-radius: inherit;

@@ -6,6 +6,9 @@
  * @since 1.0.0
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 // Outer wrapper - takes full width and receives WordPress classes/styles
 .dsgo-blobs-wrapper {
 	display: block;
@@ -19,10 +22,15 @@
 		background-color: transparent !important;
 	}
 
-	// Alignment classes on wrapper should apply to inner blob
+	// Alignment classes on wrapper should apply to inner blob. Only
+	// aligncenter converts to a logical shorthand (centering is
+	// direction-agnostic) — alignleft/alignright stay physical because
+	// WordPress's own align classes are not direction-aware (core never
+	// flips .alignleft/.alignright for RTL), so a logical property here
+	// would make this block mirror in RTL while every other WP block's
+	// .alignleft stays put.
 	&.aligncenter > .dsgo-blobs {
-		margin-left: auto;
-		margin-right: auto;
+		margin-inline: auto;
 	}
 
 	&.alignleft > .dsgo-blobs {
@@ -42,8 +50,7 @@
 	//   3. 100% — literal fallback (no constraint).
 	&.dsgo-has-max-width {
 		max-width: var(--dsgo-blob-max-width, var(--wp--custom--designsetgo--blobs--max-width, 100%));
-		margin-left: auto;
-		margin-right: auto;
+		margin-inline: auto;
 
 		// Anchor the constrained box to the block's alignment instead of always
 		// centering, preserving the behavior of the generic max-width extension
@@ -51,6 +58,8 @@
 		// wrapper (alignleft/alignright) and core's text-align classes
 		// (has-text-align-*), so either control anchors the box. The extra class
 		// raises specificity above the centering rule, so no !important needed.
+		// Physical, not logical — anchors to WordPress's own (non-direction-aware)
+		// align/text-align classes; see the comment on the align rules above.
 		&.alignleft,
 		&.has-text-align-left {
 			margin-left: 0;
@@ -265,7 +274,7 @@
 }
 
 // Responsive: Adjust size on mobile
-@media (max-width: 768px) {
+@include below($breakpoint-mobile) {
 
 	.dsgo-blobs {
 
