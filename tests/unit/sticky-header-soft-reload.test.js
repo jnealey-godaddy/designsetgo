@@ -126,6 +126,7 @@ describe('sticky header across a soft reload', () => {
 			mobileEnabled: true,
 			mobileBreakpoint: 768,
 			scrollThreshold: 50,
+			backgroundScrollOpacity: 100,
 		};
 	});
 
@@ -284,5 +285,218 @@ describe('sticky header across a soft reload', () => {
 		// logo — the stylesheet excludes footers from every sticky rule.
 		const footer = document.querySelector('.wp-site-blocks > footer');
 		expect(footer.classList.contains('dsgo-scrolled')).toBe(false);
+	});
+
+	const menuBackground = (el) =>
+		el.style.getPropertyValue('--dsgo-overlay-menu-bg');
+
+	it('sets an opaque menu color without changing the header opacity', () => {
+		window.dsgStickyHeaderSettings.backgroundOnScroll = true;
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#336699';
+		window.dsgStickyHeaderSettings.backgroundScrollOpacity = 60;
+		const header = buildSite();
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: (name) =>
+				name === '--dsgo-overlay-menu-surface'
+					? 'rgba(25, 51, 65, .4)'
+					: '',
+		});
+
+		loadStickyHeader();
+
+		expect(menuBackground(header)).toBe('rgb(25, 51, 65)');
+		expect(
+			header.style.getPropertyValue('--dsgo-sticky-scroll-bg-color')
+		).toBe('rgba(51, 102, 153, 0.6)');
+	});
+
+	it('replaces stale menu colors with the theme when scroll settings are off', () => {
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#336699';
+		const header = buildSite();
+		header.style.setProperty('--dsgo-overlay-menu-bg', '#abcdef');
+		header.style.setProperty('--dsgo-overlay-menu-fg', '#abcdef');
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: (name) =>
+				name === '--dsgo-overlay-menu-surface'
+					? 'rgba(25, 51, 65, .4)'
+					: '',
+		});
+
+		loadStickyHeader();
+
+		expect(menuBackground(header)).toBe('rgb(25, 51, 65)');
+		expect(header.style.getPropertyValue('--dsgo-overlay-menu-fg')).toBe(
+			'#fff'
+		);
+		expect(
+			header.style.getPropertyValue('--dsgo-sticky-scroll-bg-color')
+		).toBe('');
+	});
+
+	it.each([
+		[
+			'keeps a light menu when the header scroll background is dark',
+			{ backgroundOnScroll: true, backgroundScrollColor: '#1a1a2e' },
+			{
+				'--dsgo-overlay-menu-surface': '#eee6e1',
+				'--wp--preset--color--base-2': '#eee6e1',
+				'--wp--preset--color--contrast-2': '#000',
+			},
+			'#000',
+		],
+		[
+			'keeps a dark menu when the header scroll background is light',
+			{ backgroundOnScroll: true, backgroundScrollColor: '#eee6e1' },
+			{},
+			'#fff',
+		],
+		[
+			'does not copy explicit header text onto the menu',
+			{
+				backgroundOnScroll: true,
+				backgroundScrollColor: '#1a1a2e',
+				textScrollColor: '#000',
+			},
+			{},
+			'#fff',
+		],
+		[
+			'keeps the menu pair when only header text is configured',
+			{ backgroundOnScroll: true, textScrollColor: '#abcdef' },
+			{},
+			'#fff',
+		],
+		[
+			'ignores disabled custom colors when pairing the theme surface',
+			{ backgroundScrollColor: '#eee6e1', textScrollColor: '#abcdef' },
+			{},
+			'#fff',
+		],
+	])('%s', (name, settings, overrides, expected) => {
+		Object.assign(window.dsgStickyHeaderSettings, settings);
+		const header = buildSite();
+		const palette = {
+			'--dsgo-overlay-menu-surface': '#193341',
+			'--wp--preset--color--base-2': '#193341',
+			'--wp--preset--color--contrast': '#000',
+			'--wp--preset--color--contrast-2': '#fff',
+			...overrides,
+		};
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: (property) => palette[property] || '',
+		});
+
+		loadStickyHeader();
+
+		const expectedBackground = {
+			'#193341': 'rgb(25, 51, 65)',
+			'#eee6e1': 'rgb(238, 230, 225)',
+			'#fff': 'rgb(255, 255, 255)',
+		}[palette['--dsgo-overlay-menu-surface']];
+		for (const position of [0, 400, 0]) {
+			scrollTo(position);
+			expect(menuBackground(header)).toBe(expectedBackground);
+			expect(
+				header.style.getPropertyValue('--dsgo-overlay-menu-fg')
+			).toBe(expected);
+		}
+		expect(
+			header.style.getPropertyValue('--dsgo-sticky-scroll-text-color')
+		).toBe(
+			settings.backgroundOnScroll ? settings.textScrollColor || '' : ''
+		);
+	});
+
+	it('keeps FSE-enabled header colors separate from menu colors', () => {
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#eee6e1';
+		window.dsgStickyHeaderSettings.textScrollColor = '#abcdef';
+		const header = buildSite();
+		header.classList.add('dsgo-sticky-bg-on-scroll');
+		const palette = {
+			'--dsgo-overlay-menu-surface': '#193341',
+			'--wp--preset--color--base-2': '#193341',
+			'--wp--preset--color--contrast-2': '#fff',
+		};
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: (name) => palette[name] || '',
+		});
+
+		loadStickyHeader();
+
+		expect(menuBackground(header)).toBe('rgb(25, 51, 65)');
+		expect(header.style.getPropertyValue('--dsgo-overlay-menu-fg')).toBe(
+			'#fff'
+		);
+		expect(
+			header.style.getPropertyValue('--dsgo-sticky-scroll-bg-color')
+		).toBe('rgba(238, 230, 225, 1)');
+		expect(
+			header.style.getPropertyValue('--dsgo-sticky-scroll-text-color')
+		).toBe('#abcdef');
+	});
+
+	it('does not add menu colors to a non-overlay header', () => {
+		const header = buildSite();
+		document.body.className = '';
+		loadStickyHeader();
+		expect(menuBackground(header)).toBe('');
+	});
+
+	it('keeps the white menu fallback with an FSE header background', () => {
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#112233';
+		const header = buildSite();
+		header.classList.add('dsgo-sticky-bg-on-scroll');
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: (name) =>
+				name === '--wp--preset--color--contrast' ? '#000' : '',
+		});
+
+		loadStickyHeader();
+
+		expect(menuBackground(header)).toBe('rgb(255, 255, 255)');
+		expect(header.style.getPropertyValue('--dsgo-overlay-menu-fg')).toBe(
+			'#000'
+		);
+		expect(
+			header.style.getPropertyValue('--dsgo-sticky-scroll-bg-color')
+		).toBe('rgba(17, 34, 51, 1)');
+		expect(
+			header.style.getPropertyValue('--dsgo-sticky-scroll-text-color')
+		).toBe('');
+	});
+
+	it('re-applies the current menu palette on the rebuilt header after a soft reload', () => {
+		window.dsgStickyHeaderSettings.backgroundOnScroll = true;
+		window.dsgStickyHeaderSettings.backgroundScrollColor = '#112233';
+		const header = buildSite();
+		const palette = {
+			'--dsgo-overlay-menu-surface': '#193341',
+			'--wp--preset--color--base-2': '#193341',
+			'--wp--preset--color--contrast-2': '#fff',
+		};
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			getPropertyValue: (name) => palette[name] || '',
+		});
+		loadStickyHeader();
+		expect(menuBackground(header)).toBe('rgb(25, 51, 65)');
+		expect(header.style.getPropertyValue('--dsgo-overlay-menu-fg')).toBe(
+			'#fff'
+		);
+
+		Object.assign(palette, {
+			'--dsgo-overlay-menu-surface': '#eee6e1',
+			'--wp--preset--color--base-2': '#eee6e1',
+			'--wp--preset--color--contrast-2': '#000',
+		});
+		const rebuiltHeader = softReloadFullBody();
+		expect(menuBackground(rebuiltHeader)).toBe('rgb(238, 230, 225)');
+		expect(
+			rebuiltHeader.style.getPropertyValue('--dsgo-overlay-menu-fg')
+		).toBe('#000');
+		expect(
+			rebuiltHeader.style.getPropertyValue(
+				'--dsgo-sticky-scroll-bg-color'
+			)
+		).toBe(header.style.getPropertyValue('--dsgo-sticky-scroll-bg-color'));
 	});
 });
