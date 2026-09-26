@@ -113,11 +113,8 @@ if ( ! function_exists( 'designsetgo_render_dynamic_image' ) ) {
 		);
 
 		$img_attrs = array(
-			'src'      => esc_url( $descriptor['url'] ),
-			'alt'      => esc_attr( $alt ),
-			'loading'  => 'lazy',
-			'decoding' => 'async',
-			'style'    => esc_attr( implode( ';', $img_style ) ),
+			'src' => $descriptor['url'],
+			'alt' => $alt,
 		);
 		if ( ! empty( $descriptor['width'] ) ) {
 			$img_attrs['width'] = (int) $descriptor['width'];
@@ -126,8 +123,37 @@ if ( ! function_exists( 'designsetgo_render_dynamic_image' ) ) {
 			$img_attrs['height'] = (int) $descriptor['height'];
 		}
 
+		// Let the browser pick a candidate that fits instead of always
+		// downloading the chosen size (the default is `full`).
+		$attachment_id = (int) $descriptor['id'];
+		if ( $attachment_id ) {
+			$srcset = wp_get_attachment_image_srcset( $attachment_id, $size );
+			$sizes  = wp_get_attachment_image_sizes( $attachment_id, $size );
+			if ( $srcset && $sizes ) {
+				$img_attrs['srcset'] = $srcset;
+				$img_attrs['sizes']  = $sizes;
+			}
+		}
+
+		// Core decides lazy vs. eager + fetchpriority, so a Dynamic Image used
+		// as the hero is not lazy-loaded (which would delay LCP).
+		$img_attrs = array_merge(
+			$img_attrs,
+			wp_get_loading_optimization_attributes( 'img', $img_attrs, 'wp_get_attachment_image' )
+		);
+		// Core only reasons about images with known dimensions; an external
+		// fallback URL has none, so keep the previous lazy default for it.
+		if ( empty( $img_attrs['width'] ) && empty( $img_attrs['loading'] ) && empty( $img_attrs['fetchpriority'] ) ) {
+			$img_attrs['loading'] = 'lazy';
+		}
+		if ( empty( $img_attrs['decoding'] ) ) {
+			$img_attrs['decoding'] = 'async';
+		}
+		$img_attrs['style'] = implode( ';', $img_style );
+
 		$img_html = '<img';
 		foreach ( $img_attrs as $key => $val ) {
+			$val       = 'src' === $key ? esc_url( (string) $val ) : esc_attr( (string) $val );
 			$img_html .= ' ' . $key . '="' . $val . '"';
 		}
 		$img_html .= ' />';

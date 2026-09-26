@@ -35,10 +35,14 @@
 			// Debounced resize handler
 			let resizeTimeout;
 			this.handleResize = this.handleResize.bind(this);
-			window.addEventListener('resize', () => {
-				clearTimeout(resizeTimeout);
-				resizeTimeout = setTimeout(() => this.handleResize(), 150);
-			});
+			window.addEventListener(
+				'resize',
+				() => {
+					clearTimeout(resizeTimeout);
+					resizeTimeout = setTimeout(() => this.handleResize(), 150);
+				},
+				{ passive: true }
+			);
 		}
 
 		getResponsiveColumns() {

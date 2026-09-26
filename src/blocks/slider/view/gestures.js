@@ -100,6 +100,10 @@ export function initDrag(
 		delta = 0;
 		suppressClick = false;
 		track.style.cursor = 'grabbing';
+		// Bound only for the life of a drag, so an idle slider costs the page
+		// nothing on every mouse movement.
+		document.addEventListener('mousemove', onMouseMove);
+		document.addEventListener('mouseup', onMouseUp);
 	};
 
 	const onMouseMove = (event) => {
@@ -115,6 +119,8 @@ export function initDrag(
 			return;
 		}
 		isDragging = false;
+		document.removeEventListener('mousemove', onMouseMove);
+		document.removeEventListener('mouseup', onMouseUp);
 		track.style.cursor = 'grab';
 		// The browser still fires a click on the common ancestor of mousedown
 		// and mouseup after a drag. Inside a slide that ancestor is usually
@@ -153,8 +159,6 @@ export function initDrag(
 	track.addEventListener('mousedown', onMouseDown);
 	track.addEventListener('dragstart', onDragStart);
 	track.addEventListener('click', onClickCapture, true);
-	document.addEventListener('mousemove', onMouseMove);
-	document.addEventListener('mouseup', onMouseUp);
 	track.style.cursor = 'grab';
 
 	return () => {
