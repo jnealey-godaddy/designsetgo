@@ -92,21 +92,24 @@ export default function AccordionItemEdit({
 		[siblingsString]
 	);
 
-	// Handle accordion item click
-	const handleToggle = (e) => {
-		e.preventDefault();
-		e.stopPropagation();
-
-		// Toggle current item
-		const newIsOpen = !isOpen;
+	// Open or close this item. In single-open mode, opening it closes its
+	// siblings — whether from the header or the "Open by Default" toggle, so
+	// the saved markup never marks two items open.
+	const setOpen = (newIsOpen) => {
 		setAttributes({ isOpen: newIsOpen });
 
-		// If opening and single mode, close all siblings
 		if (newIsOpen && !allowMultipleOpen) {
 			siblingClientIds.forEach((siblingId) => {
 				updateBlockAttributes(siblingId, { isOpen: false });
 			});
 		}
+	};
+
+	// Handle accordion item click
+	const handleToggle = (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setOpen(!isOpen);
 	};
 
 	// Generate unique ID for accessibility
@@ -200,9 +203,7 @@ export default function AccordionItemEdit({
 										)
 							}
 							checked={isOpen}
-							onChange={(value) =>
-								setAttributes({ isOpen: value })
-							}
+							onChange={setOpen}
 							__nextHasNoMarginBottom
 						/>
 					</DsgoInspectorPanel.Item>

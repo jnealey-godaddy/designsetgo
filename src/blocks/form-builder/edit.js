@@ -804,10 +804,9 @@ export default function FormBuilderEdit({
 							type="url"
 							placeholder="https://example.com/thank-you"
 							help={__(
-								'Redirect to this URL after successful submission. Leave empty to show the success message instead. Requires AJAX Submit to be enabled.',
+								'Redirect to this URL after successful submission. Leave empty to show the success message instead.',
 								'designsetgo'
 							)}
-							disabled={!ajaxSubmit}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>
@@ -1021,10 +1020,9 @@ export default function FormBuilderEdit({
 								onChange={(value) =>
 									setAttributes({ emailTo: value })
 								}
-								type="email"
 								placeholder="admin@example.com"
 								help={__(
-									'Leave empty to use the site admin email address',
+									'Separate several addresses with commas. Leave empty to use the site admin email address.',
 									'designsetgo'
 								)}
 								__next40pxDefaultSize
