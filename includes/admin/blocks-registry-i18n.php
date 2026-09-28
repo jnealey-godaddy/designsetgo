@@ -34,7 +34,7 @@ __( 'Form Blocks', 'designsetgo' );
 __( 'Grid Container', 'designsetgo' );
 __( 'CSS Grid-based responsive layouts', 'designsetgo' );
 __( 'Row', 'designsetgo' );
-__( 'Flexible horizontal or vertical layouts with wrapping', 'designsetgo' );
+__( 'Flexible horizontal layouts with wrapping', 'designsetgo' );
 __( 'Section', 'designsetgo' );
 __( 'Vertical stacking container for sections and content areas', 'designsetgo' );
 __( 'Fifty Fifty', 'designsetgo' );

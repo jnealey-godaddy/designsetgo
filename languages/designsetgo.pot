@@ -1826,7 +1826,7 @@ msgid "Row"
 msgstr ""
 
 #: includes/admin/blocks-registry-i18n.php:35
-msgid "Flexible horizontal or vertical layouts with wrapping"
+msgid "Flexible horizontal layouts with wrapping"
 msgstr ""
 
 #: includes/admin/blocks-registry-i18n.php:36
@@ -20426,7 +20426,7 @@ msgstr ""
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
 msgctxt "block description"
-msgid "A single item in an icon list with icon, title, and description."
+msgid "A single item in an icon list, with an icon beside its content."
 msgstr ""
 
 #: build/blocks/icon-list-item/block.json
@@ -20966,7 +20966,7 @@ msgstr ""
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
 msgctxt "block description"
-msgid "Flexible horizontal or vertical layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
+msgid "Flexible horizontal layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
 msgstr ""
 
 #: build/blocks/row/block.json

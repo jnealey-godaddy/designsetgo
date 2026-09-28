@@ -5,7 +5,7 @@
 	"version": "1.0.0",
 	"title": "Row",
 	"category": "designsetgo",
-	"description": "Flexible horizontal or vertical layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts.",
+	"description": "Flexible horizontal layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts.",
 	"keywords": [
 		"row",
 		"flex",

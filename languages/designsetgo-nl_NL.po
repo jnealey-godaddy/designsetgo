@@ -9830,8 +9830,8 @@ msgstr "Iconenlijstitem"
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
 msgctxt "block description"
-msgid "A single item in an icon list with icon, title, and description."
-msgstr "Een enkel item in een icoonlijst met icoon, titel en beschrijving."
+msgid "A single item in an icon list, with an icon beside its content."
+msgstr "Een enkel item in een icoonlijst, met een icoon naast de inhoud."
 
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
@@ -9957,13 +9957,13 @@ msgstr "portfolio"
 #, fuzzy
 msgctxt "block title"
 msgid "Map"
-msgstr "Tussenruimte"
+msgstr "Kaart"
 
 #: build/blocks/map/block.json
 #: src/blocks/map/block.json
 msgctxt "block description"
 msgid "Display an interactive map using OpenStreetMap or Google Maps."
-msgstr ""
+msgstr "Toon een interactieve kaart met OpenStreetMap of Google Maps."
 
 #: build/blocks/map/block.json
 #: src/blocks/map/block.json
@@ -10166,8 +10166,8 @@ msgstr "Rijen"
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
 msgctxt "block description"
-msgid "Flexible horizontal or vertical layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
-msgstr "Flexibele horizontale of verticale layouts met wrapping. Perfect voor knopgroepen, hero secties en responsieve card layouts."
+msgid "Flexible horizontal layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
+msgstr "Flexibele horizontale layouts met wrapping. Perfect voor knopgroepen, hero secties en responsieve card layouts."
 
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
@@ -10515,8 +10515,8 @@ msgid "Heading text…"
 msgstr ""
 
 #: includes/admin/blocks-registry-i18n.php:35
-msgid "Flexible horizontal or vertical layouts with wrapping"
-msgstr ""
+msgid "Flexible horizontal layouts with wrapping"
+msgstr "Flexibele horizontale layouts met wrapping"
 
 #: includes/admin/blocks-registry-i18n.php:37
 msgid "Vertical stacking container for sections and content areas"
