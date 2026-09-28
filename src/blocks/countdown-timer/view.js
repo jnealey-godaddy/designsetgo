@@ -5,61 +5,12 @@
 import { getUnitLabel } from './utils/format-time';
 
 /**
- * Calculate time remaining until target date
- *
- * @param {string} targetDateTime - ISO 8601 datetime string
- * @return {Object} Object with days, hours, minutes, seconds, isComplete
+ * Internal dependencies
  */
-function calculateTimeRemaining(targetDateTime) {
-	if (!targetDateTime) {
-		return {
-			days: 0,
-			hours: 0,
-			minutes: 0,
-			seconds: 0,
-			isComplete: true,
-		};
-	}
-
-	const targetDate = new Date(targetDateTime);
-	const now = new Date();
-	const difference = targetDate.getTime() - now.getTime();
-
-	if (difference <= 0) {
-		return {
-			days: 0,
-			hours: 0,
-			minutes: 0,
-			seconds: 0,
-			isComplete: true,
-		};
-	}
-
-	const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-	const hours = Math.floor(
-		(difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-	);
-	const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-	const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-	return {
-		days,
-		hours,
-		minutes,
-		seconds,
-		isComplete: false,
-	};
-}
-
-/**
- * Format time unit with leading zero
- *
- * @param {number} value - Time unit value
- * @return {string} Formatted value
- */
-function formatTimeUnit(value) {
-	return value < 10 ? `0${value}` : `${value}`;
-}
+import {
+	calculateTimeRemaining,
+	formatTimeUnit,
+} from './utils/time-calculator';
 
 /**
  * Update countdown display
@@ -123,14 +74,33 @@ function handleCompletion(timer) {
 }
 
 /**
+ * Time left for a timer, read the same way everywhere it is shown.
+ *
+ * `timezone` is the block's own timezone attribute (empty means "use the
+ * WordPress site timezone"). `siteTimezone` is stamped onto the markup at
+ * render time (includes/features/class-countdown-timer-timezone.php),
+ * because PHP is the only place `timezone_string` / `gmt_offset` live. It is
+ * passed through as-is: when the attribute is missing (cached or raw HTML)
+ * the resolver keeps the old browser-local reading instead of assuming UTC.
+ *
+ * @param {Element} timer - Timer element.
+ * @return {Object} calculateTimeRemaining() result.
+ */
+function getTimeData(timer) {
+	return calculateTimeRemaining(
+		timer.dataset.targetDatetime,
+		timer.dataset.timezone || '',
+		timer.dataset.siteTimezone ?? null
+	);
+}
+
+/**
  * Initialize a countdown timer
  *
  * @param {Element} timer - Timer element
  */
 function initCountdownTimer(timer) {
-	const targetDateTime = timer.dataset.targetDatetime;
-
-	if (!targetDateTime) {
+	if (!timer.dataset.targetDatetime) {
 		return;
 	}
 
@@ -140,7 +110,7 @@ function initCountdownTimer(timer) {
 	).matches;
 
 	// Initial update
-	let timeData = calculateTimeRemaining(targetDateTime);
+	let timeData = getTimeData(timer);
 	updateCountdownDisplay(timer, timeData);
 
 	if (timeData.isComplete) {
@@ -151,7 +121,7 @@ function initCountdownTimer(timer) {
 	// Update every second
 	const interval = setInterval(
 		() => {
-			timeData = calculateTimeRemaining(targetDateTime);
+			timeData = getTimeData(timer);
 			updateCountdownDisplay(timer, timeData);
 
 			if (timeData.isComplete) {
@@ -185,11 +155,10 @@ function initAllCountdownTimers() {
 		// save() stores untranslated literals, and a timer below the fold
 		// would otherwise show them until it scrolls into view. Only the
 		// ticking waits for the observer.
-		const targetDateTime = timer.dataset.targetDatetime;
 		updateCountdownDisplay(
 			timer,
-			targetDateTime
-				? calculateTimeRemaining(targetDateTime)
+			timer.dataset.targetDatetime
+				? getTimeData(timer)
 				: { days: 0, hours: 0, minutes: 0, seconds: 0 }
 		);
 

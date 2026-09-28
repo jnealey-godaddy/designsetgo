@@ -261,3 +261,10 @@
 		background: #f9f9f9;
 	}
 }
+
+// Inspector: the DateTimePicker's timezone badge always names the site zone.
+// When the block sets its own timezone the badge is wrong, so hide it; the
+// panel names the zone in use instead (DateTimePanel.js).
+.dsgo-countdown-datetime--block-zone .components-datetime__timezone {
+	display: none;
+}
