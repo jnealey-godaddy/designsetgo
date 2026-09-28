@@ -477,6 +477,56 @@ describe('Image Accordion - Frontend', () => {
 		});
 	});
 
+	describe('URL hash deep links', () => {
+		beforeAll(() => {
+			// Not implemented in JSDOM.
+			// eslint-disable-next-line no-undef
+			Element.prototype.scrollIntoView = jest.fn();
+		});
+
+		afterEach(() => {
+			window.history.replaceState(null, '', window.location.pathname);
+		});
+
+		test('expands the item whose anchor is in the hash', () => {
+			const accordion = createImageAccordion({ defaultExpanded: 1 });
+			const items = accordion.querySelectorAll(
+				'.dsgo-image-accordion-item'
+			);
+			items[2].id = 'autumn';
+			window.history.replaceState(null, '', '#autumn');
+			loadView();
+
+			expect(items[2].classList.contains('is-expanded')).toBe(true);
+			expect(items[0].classList.contains('is-collapsed')).toBe(true);
+		});
+
+		test('a hovered deep link rests on the linked item on mouseleave', () => {
+			const accordion = createImageAccordion({
+				triggerType: 'hover',
+				defaultExpanded: 1,
+			});
+			const items = accordion.querySelectorAll(
+				'.dsgo-image-accordion-item'
+			);
+			items[1].id = 'summer';
+			loadView();
+
+			window.history.replaceState(null, '', '#summer');
+			window.dispatchEvent(new Event('hashchange'));
+			expect(items[1].classList.contains('is-expanded')).toBe(true);
+
+			items[2].dispatchEvent(
+				new MouseEvent('mouseenter', { bubbles: true })
+			);
+			accordion.dispatchEvent(
+				new MouseEvent('mouseleave', { bubbles: true })
+			);
+
+			expect(items[1].classList.contains('is-expanded')).toBe(true);
+		});
+	});
+
 	describe('Hover mode', () => {
 		test('mouseenter expands item, mouseleave resets', () => {
 			setTouchDevice(false);

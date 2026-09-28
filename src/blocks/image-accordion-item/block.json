@@ -57,6 +57,7 @@
 		]
 	},
 	"supports": {
+		"anchor": true,
 		"html": false,
 		"reusable": false,
 		"spacing": {
