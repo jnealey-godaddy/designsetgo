@@ -3,6 +3,9 @@
  * CRITICAL: Must be duplicated to editor.scss for editor/frontend parity
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-slide {
 	position: relative;
 	display: flex;
@@ -12,6 +15,8 @@
 	box-sizing: border-box; // Ensure padding doesn't increase slide width
 
 	// Use CSS custom properties from inline styles
+	// Black, not the theme's `contrast`: dark schemes make that near-white,
+	// which would wash out the white text an overlay is there to support.
 	--dsgo-slide-overlay-color: #000;
 	--dsgo-slide-overlay-opacity: 0.4;
 	--dsgo-slide-content-vertical-align: center;
@@ -113,7 +118,7 @@
 }
 
 // Responsive adjustments
-@media (max-width: 768px) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-slide {
 

@@ -13,6 +13,9 @@
  * @since 1.5.0
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-fifty-fifty {
 	box-sizing: border-box;
 
@@ -76,7 +79,12 @@
 		);
 	}
 
-	// Inner wrapper hugs the inner edge (left) for media-left
+	// Inner wrapper hugs the inner edge (left) for media-left. Stays physical
+	// (not margin-inline-*): it must track the `padding-left`/`padding-right`
+	// pair above, on `&__content`, which is itself physical because it's
+	// derived from `100vw` (a viewport-physical unit with no direction
+	// concept) — flipping only the margin half here would desync the content
+	// box from its own padding in RTL.
 	&--media-left &__content-inner {
 		margin-right: auto;
 		margin-left: 0;
@@ -101,7 +109,8 @@
 			padding-right: var(--wp--preset--spacing--50, 2rem);
 		}
 
-		// Inner wrapper hugs the inner edge (right) for media-right
+		// Inner wrapper hugs the inner edge (right) for media-right. Stays
+		// physical for the same reason as the media-left case above.
 		.dsgo-fifty-fifty__content-inner {
 			margin-left: auto;
 			margin-right: 0;
@@ -119,8 +128,15 @@
 		width: 100%;
 		height: 100%;
 		min-height: 300px;
+		// A tint of the text colour, not a theme preset: themes use
+		// contrast-2/-3 as dark text greys, and currentcolor works on dark
+		// schemes too. `color` is set below, so the background's currentcolor
+		// is that 72% tone (about a 4% tint overall, near the old #f0f0f0).
+		// The fixed greys are for browsers without color-mix().
 		background-color: #f0f0f0;
+		background-color: color-mix(in srgb, currentcolor 6%, transparent);
 		color: #757575;
+		color: color-mix(in srgb, currentcolor 72%, transparent);
 		cursor: pointer;
 		gap: 8px;
 		font-size: 14px;
@@ -133,21 +149,21 @@
 
 		&:hover {
 			background-color: #e0e0e0;
+			background-color: color-mix(in srgb, currentcolor 12%, transparent);
 		}
 	}
 
 	// ==============================================
 	// MOBILE RESPONSIVE
 	// ==============================================
-	@media (max-width: 767px) {
+	@include below($breakpoint-mobile) {
 		// Stack vertically
 		grid-template-columns: 1fr;
 
 		// Remove content-width constraint on mobile - full width
 		.dsgo-fifty-fifty__content-inner {
 			max-width: none;
-			margin-left: auto;
-			margin-right: auto;
+			margin-inline: auto;
 		}
 	}
 
@@ -155,7 +171,7 @@
 	// order and padding without !important
 	&.dsgo-fifty-fifty {
 
-		@media (max-width: 767px) {
+		@include below($breakpoint-mobile) {
 			// Media always comes first on mobile regardless of mediaPosition
 			.dsgo-fifty-fifty__media {
 				order: 1;

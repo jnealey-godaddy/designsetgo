@@ -4,12 +4,14 @@
  * @since 1.0.0
  */
 
+@use '../../styles/variables' as *;
+
 // Low-specificity default: allows theme.json Global Styles (.wp-element-button) to override
 // when user sets button element styles in Appearance > Editor > Styles > Elements > Buttons.
 // :where() has specificity (0,0,0), so WordPress's :root :where(.wp-element-button) at (0,1,0) wins.
 // Per-instance inline styles (block border controls) always win over both.
 :where(.dsgo-icon-button) {
-	border-radius: 9999px; // Default pill shape, overridable by Global Styles
+	border-radius: $dsgo-radius-full; // Default pill shape, overridable by Global Styles
 }
 
 .dsgo-icon-button {
@@ -18,7 +20,6 @@
 	justify-content: center;
 	width: auto;
 	overflow: hidden; // Clip contents to border-radius (from any source)
-	text-decoration: none !important;
 
 	// Core prints `.wp-block-button__link { display: inline-block }` in an inline
 	// <style> that lands after this stylesheet. At equal specificity (0,1,0) it
@@ -28,6 +29,22 @@
 	// load order.
 	&.wp-block-button__link {
 		display: inline-flex;
+	}
+
+	// text-decoration: none !important — one declaration for every interactive
+	// state instead of six repeats. !important is required because it must beat
+	// a theme's `a:hover/:focus { text-decoration: underline }` (a common
+	// accessibility convention), and it must win regardless of which state
+	// (hover/active/focus) or structural era (current `.dsgo-icon-button`, or
+	// the legacy v4 `&__wrapper` focusable element) is in play.
+	&,
+	&:hover,
+	&:active,
+	&:focus,
+	&:focus-within,
+	&__wrapper:focus,
+	&__wrapper:active {
+		text-decoration: none !important;
 	}
 
 	&--icon-end {
@@ -73,10 +90,15 @@
 		float: none !important;
 		display: flex !important;
 		width: fit-content !important;
-		margin-left: auto;
-		margin-right: auto;
+		margin-inline: auto; // Centering is direction-agnostic — safe as a logical shorthand.
 	}
 
+	// alignleft/alignright stay physical (margin-left/margin-right, not
+	// margin-inline-start/end): WordPress's own align classes are not
+	// direction-aware — core never flips .alignleft/.alignright for RTL — so a
+	// logical property here would make this stale legacy markup mirror in RTL
+	// while every other WP block's .alignleft stays put, which is a visible
+	// inconsistency, not a fix.
 	&.alignleft:not(.alignfull):not([class*="dsgo-hide-"]) {
 		float: none !important;
 		display: flex !important;
@@ -100,17 +122,10 @@
 	&:hover {
 		opacity: 0.9;
 		transform: translateY(-1px);
-		text-decoration: none !important;
 	}
 
 	&:active {
 		transform: translateY(0);
-		text-decoration: none !important;
-	}
-
-	&:focus,
-	&:focus-within {
-		text-decoration: none !important;
 	}
 
 	// Single element structure
@@ -119,13 +134,8 @@
 	// Legacy v4 structure: inner wrapper is the focusable element
 	&__wrapper {
 
-		&:focus {
-			text-decoration: none !important;
-		}
-
 		&:active {
 			transform: translateY(0);
-			text-decoration: none !important;
 		}
 	}
 
@@ -244,7 +254,7 @@
 .dsgo-grid--has-hover-button:hover .dsgo-grid__inner > .wp-block-designsetgo-icon-button .dsgo-icon-button,
 .dsgo-stack--has-hover-button:hover .dsgo-stack__inner > .wp-block-designsetgo-icon-button .dsgo-icon-button {
 	background-color: var(--dsgo-parent-hover-button-bg) !important;
-	transition: background-color 0.3s ease;
+	transition: background-color $dsgo-duration-normal $dsgo-easing;
 }
 
 // ============================================================================
@@ -260,7 +270,7 @@
 .dsgo-icon-button:not([class*="dsgo-icon-button--"]):hover .dsgo-icon-button__wrapper[style*="--dsgo-button-hover-bg"] {
 	background-color: var(--dsgo-button-hover-bg) !important;
 	opacity: 1;
-	transition: background-color 0.3s ease;
+	transition: background-color $dsgo-duration-normal $dsgo-easing;
 }
 
 // Zoom In - preserve transform transition
@@ -268,7 +278,7 @@
 .dsgo-icon-button.dsgo-icon-button--zoom-in:hover .dsgo-icon-button__wrapper[style*="--dsgo-button-hover-bg"] {
 	background-color: var(--dsgo-button-hover-bg) !important;
 	opacity: 1;
-	transition: transform 0.3s ease, background-color 0.3s ease;
+	transition: transform $dsgo-duration-normal $dsgo-easing, background-color $dsgo-duration-normal $dsgo-easing;
 }
 
 // Lift - preserve transform and box-shadow transitions
@@ -276,7 +286,7 @@
 .dsgo-icon-button.dsgo-icon-button--lift:hover .dsgo-icon-button__wrapper[style*="--dsgo-button-hover-bg"] {
 	background-color: var(--dsgo-button-hover-bg) !important;
 	opacity: 1;
-	transition: transform 0.5s ease, box-shadow 0.5s ease, background-color 0.3s ease;
+	transition: transform $dsgo-duration-slow $dsgo-easing, box-shadow $dsgo-duration-slow $dsgo-easing, background-color $dsgo-duration-normal $dsgo-easing;
 }
 
 // Shrink - preserve transform transition
@@ -284,7 +294,7 @@
 .dsgo-icon-button.dsgo-icon-button--shrink:hover .dsgo-icon-button__wrapper[style*="--dsgo-button-hover-bg"] {
 	background-color: var(--dsgo-button-hover-bg) !important;
 	opacity: 1;
-	transition: transform 0.4s ease, background-color 0.3s ease;
+	transition: transform 0.4s ease, background-color $dsgo-duration-normal $dsgo-easing;
 }
 
 // Border Pulse - preserve border-width transition
@@ -292,7 +302,7 @@
 .dsgo-icon-button.dsgo-icon-button--border-pulse:hover .dsgo-icon-button__wrapper[style*="--dsgo-button-hover-bg"] {
 	background-color: var(--dsgo-button-hover-bg) !important;
 	opacity: 1;
-	transition: border-width 0.3s ease, background-color 0.3s ease;
+	transition: border-width $dsgo-duration-normal $dsgo-easing, background-color $dsgo-duration-normal $dsgo-easing;
 }
 
 // Border Glow - preserve box-shadow transition
@@ -300,7 +310,7 @@
 .dsgo-icon-button.dsgo-icon-button--border-glow:hover .dsgo-icon-button__wrapper[style*="--dsgo-button-hover-bg"] {
 	background-color: var(--dsgo-button-hover-bg) !important;
 	opacity: 1;
-	transition: all 0.3s ease, background-color 0.3s ease;
+	transition: all $dsgo-duration-normal $dsgo-easing, background-color $dsgo-duration-normal $dsgo-easing;
 }
 
 // Fill Diagonal - background doesn't need to change since pseudo-element covers it
@@ -342,7 +352,7 @@
 .dsgo-icon-button[style*="--dsgo-button-hover-color"]:hover,
 .dsgo-icon-button:hover .dsgo-icon-button__wrapper[style*="--dsgo-button-hover-color"] {
 	color: var(--dsgo-button-hover-color) !important;
-	transition: color 0.3s ease; // Add smooth transition
+	transition: color $dsgo-duration-normal $dsgo-easing; // Add smooth transition
 }
 
 // ============================================================================
@@ -369,7 +379,7 @@
 		width: 150%; // Wider to cover button when skewed
 		height: 100%;
 		background-color: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
-		transition: left 0.5s ease; // Smooth slide across
+		transition: left $dsgo-duration-slow $dsgo-easing; // Smooth slide across
 		z-index: 0;
 		transform: skewX(-20deg);
 		transform-origin: top left;
@@ -390,7 +400,7 @@
 // Zoom In - Scale up on hover (applies to entire block including borders)
 .dsgo-icon-button.dsgo-icon-button--zoom-in {
 	transform: scale(1); // Explicit initial state for smooth first hover
-	transition: transform 0.3s ease;
+	transition: transform $dsgo-duration-normal $dsgo-easing;
 
 	&:hover {
 		transform: scale(1.05);
@@ -416,7 +426,7 @@
 		width: 100%;
 		height: 100%;
 		background-color: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
-		transition: right 0.3s ease;
+		transition: right $dsgo-duration-normal $dsgo-easing;
 		z-index: 0;
 	}
 
@@ -449,7 +459,7 @@
 		width: 100%;
 		height: 100%;
 		background-color: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
-		transition: left 0.3s ease;
+		transition: left $dsgo-duration-normal $dsgo-easing;
 		z-index: 0;
 	}
 
@@ -482,7 +492,7 @@
 		width: 100%;
 		height: 100%;
 		background-color: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
-		transition: top 0.3s ease;
+		transition: top $dsgo-duration-normal $dsgo-easing;
 		z-index: 0;
 	}
 
@@ -515,7 +525,7 @@
 		width: 100%;
 		height: 100%;
 		background-color: var(--dsgo-button-hover-bg, rgba(0, 0, 0, 0.15));
-		transition: bottom 0.3s ease;
+		transition: bottom $dsgo-duration-normal $dsgo-easing;
 		z-index: 0;
 	}
 
@@ -533,7 +543,7 @@
 // Border Pulse - Animated border effect using box-shadow
 // Creates a pulsing glow effect around the button using the current text color
 .dsgo-icon-button.dsgo-icon-button--border-pulse {
-	transition: box-shadow 0.3s ease;
+	transition: box-shadow $dsgo-duration-normal $dsgo-easing;
 
 	&:hover {
 		animation: dsgo-border-pulse 1s ease infinite;
@@ -557,7 +567,7 @@
 // Border Glow - Glowing border effect (applies to outer wrapper)
 .dsgo-icon-button.dsgo-icon-button--border-glow {
 	position: relative;
-	transition: all 0.3s ease;
+	transition: all $dsgo-duration-normal $dsgo-easing;
 
 	&:hover {
 		opacity: 1;
@@ -569,7 +579,7 @@
 // Lift - Elevate with shadow (applies to entire block including borders)
 .dsgo-icon-button.dsgo-icon-button--lift {
 	transform: translateY(0); // Explicit initial state for smooth first hover
-	transition: transform 0.5s ease, box-shadow 0.5s ease; // Slower, smoother transition
+	transition: transform $dsgo-duration-slow $dsgo-easing, box-shadow $dsgo-duration-slow $dsgo-easing; // Slower, smoother transition
 
 	&:hover {
 		transform: translateY(-8px);

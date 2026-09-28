@@ -8,6 +8,9 @@
  * @package DesignSetGo
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-grid {
 	// CRITICAL: Ensure padding is included in the total width to prevent overflow
 	// Must match style.scss for editor/frontend parity
@@ -228,7 +231,7 @@
 	// ========================================
 
 	// Tablet breakpoint (≤ 1024px)
-	@media (max-width: 1024px) {
+	@media (max-width: #{$breakpoint-tablet}) {
 
 		@for $i from 1 through 12 {
 			&.dsgo-grid-cols-tablet-#{$i} .dsgo-grid__inner {
@@ -238,7 +241,7 @@
 	}
 
 	// Mobile breakpoint (≤ 767px)
-	@media (max-width: 767px) {
+	@include below($breakpoint-mobile) {
 
 		@for $i from 1 through 12 {
 			&.dsgo-grid-cols-mobile-#{$i} .dsgo-grid__inner {
@@ -301,7 +304,7 @@
 // Must be outside .dsgo-grid scope for proper specificity
 // MUST be duplicated from style.scss for editor/frontend parity
 // With two-div structure: target .dsgo-grid__inner children
-@media (max-width: 767px) {
+@include below($breakpoint-mobile) {
 	// Force all grid items with column spans to span 1 on mobile
 	// High specificity to override inline styles with data-block selectors
 	.dsgo-grid__inner > [style*="grid-column"],

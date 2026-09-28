@@ -29,7 +29,20 @@
 			content: "";
 			position: absolute;
 			inset: 0;
+			// The text colour mixed into the page background: opaque, so the
+			// stale results stay covered while they reload, and right on
+			// light and dark themes. Not contrast-2/-3, which themes use as
+			// dark text greys (that turned the shimmer into a dark bar).
+			// `base` is the background slug core themes use; white otherwise.
+			// Fixed greys first for browsers without color-mix().
 			background: linear-gradient(90deg, #f2f2f2, #e8e8e8, #f2f2f2);
+			background:
+				linear-gradient(
+					90deg,
+					color-mix(in srgb, currentcolor 5%, var(--wp--preset--color--base, #fff)),
+					color-mix(in srgb, currentcolor 9%, var(--wp--preset--color--base, #fff)),
+					color-mix(in srgb, currentcolor 5%, var(--wp--preset--color--base, #fff))
+				);
 			background-size: 200% 100%;
 			animation: dsgo-query-skeleton-pulse 1.5s ease-in-out infinite;
 			border-radius: inherit;

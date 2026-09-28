@@ -6,6 +6,7 @@
  * @package DesignSetGo
  */
 
+@use '../../styles/variables' as *;
 @use './styles/shape-divider';
 @use './styles/box-width';
 
@@ -52,7 +53,7 @@
 		bottom: 0;
 		background: var(--dsgo-hover-bg-color, transparent);
 		opacity: 0;
-		transition: opacity 0.3s ease;
+		transition: opacity $dsgo-duration-normal $dsgo-easing;
 		pointer-events: none;
 		z-index: 0;
 		border-radius: inherit;
@@ -270,8 +271,12 @@
 			max-width: none !important; // Remove WordPress's 1200px contentSize constraint
 		}
 
-		// CRITICAL: Block-level elements take full width by default
-		// Text blocks, groups, and most WordPress blocks
+		// CRITICAL: Block-level elements take full width by default, overriding
+		// WordPress's generated `wp-container-*` max-width constraint. The four
+		// selectors below cover the same override across four DOM shapes a nested
+		// block can take (a plain block; the pre-6.0 group inner container; the
+		// is-layout-constrained group variant; the modern 6.0+ group with no inner
+		// container) and share one declaration block instead of repeating it.
 		// NOTE: .wp-block-buttons is a layout container (not inline) — it needs full width
 		// so its internal justify-content can position child buttons correctly
 		> :where(
@@ -297,40 +302,26 @@
 			.wp-block-designsetgo-accordion,
 			.dsgo-scroll-marquee,
 			.wp-block-designsetgo-scroll-marquee
-		):not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide):not(.dsgo-stack--has-box-width) {
-			width: 100% !important;
-			max-width: none !important;
-			margin-left: 0 !important;
-			margin-right: 0 !important;
-		}
-
+		):not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide):not(.dsgo-stack--has-box-width),
 		// Old group structure (pre-6.0) with __inner-container
 		> :where(.wp-block-group, .wp-block-designsetgo-stack, .dsgo-stack)
 			:not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide)
-			> .wp-block-group__inner-container {
-			width: 100% !important;
-			max-width: none !important;
-			margin-left: 0 !important;
-			margin-right: 0 !important;
-		}
-
+			> .wp-block-group__inner-container,
+		// is-layout-constrained group variant, pre-6.0 shape
 		> :where(.wp-block-group, .dsgo-stack, .wp-block-designsetgo-stack)
 			:is(.is-layout-constrained, .wp-block-group-is-layout-constrained)
-			> .wp-block-group__inner-container {
-			width: 100% !important;
-			max-width: none !important;
-			margin-left: 0 !important;
-			margin-right: 0 !important;
-		}
-
+			> .wp-block-group__inner-container,
 		// Modern group structure (6.0+) without __inner-container
-		// Ensure nested groups take full width regardless of their layout type
 		> .wp-block-group:not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide) {
 			width: 100% !important;
 			max-width: none !important;
 			margin-left: 0 !important;
 			margin-right: 0 !important;
-			// Ensure the block takes full width regardless of content
+		}
+
+		// Modern groups also need min-width forced — a plain group can otherwise
+		// shrink to its content's intrinsic width inside the flex column.
+		> .wp-block-group:not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide) {
 			min-width: 100% !important;
 		}
 
