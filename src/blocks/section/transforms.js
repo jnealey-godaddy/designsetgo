@@ -7,6 +7,7 @@
  */
 
 import { createBlock } from '@wordpress/blocks';
+import { transformLayout } from '../../utils/transform-layout';
 
 const transforms = {
 	from: [
@@ -19,6 +20,8 @@ const transforms = {
 					{
 						// Transfer all attributes from legacy Stack block
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, 'vertical'),
 					},
 					innerBlocks
 				);
@@ -31,8 +34,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/section',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, 'vertical'),
 						// Remove mobileStack (Flex/Row-specific)
 						mobileStack: undefined,
 					},
@@ -47,8 +52,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/section',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, 'vertical'),
 						// Remove Grid-specific attributes
 						desktopColumns: undefined,
 						tabletColumns: undefined,
@@ -71,8 +78,13 @@ const transforms = {
 				return createBlock(
 					'designsetgo/row',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(
+							attributes.layout,
+							'horizontal'
+						),
 						// mobileStack defaults to false
 						mobileStack: false,
 						// Row has no outer box width of its own, and is in the
@@ -93,8 +105,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/grid',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, null),
 						// See the Row transform: Grid has no outer box width
 						// and is excluded from the max-width extension too.
 						boxWidth: undefined,

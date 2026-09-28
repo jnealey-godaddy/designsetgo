@@ -15,6 +15,9 @@ import {
 	Notice,
 } from '@wordpress/components';
 import { useState } from '@wordpress/element';
+// An SVG, not a Dashicons name: the Dashicons font isn't loaded inside the
+// iframed editor canvas, so a name renders as an empty square.
+import { mapMarker } from '@wordpress/icons';
 import useAddressSearch from '../utils/use-address-search';
 
 /**
@@ -54,7 +57,7 @@ export default function MapPlaceholder({ setAttributes }) {
 
 	return (
 		<Placeholder
-			icon="location-alt"
+			icon={mapMarker}
 			label={__('Map', 'designsetgo')}
 			instructions={__(
 				'Search for an address, or enter latitude and longitude in the block settings.',

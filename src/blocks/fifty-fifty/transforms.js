@@ -6,19 +6,26 @@
  */
 
 import { createBlock } from '@wordpress/blocks';
+import { pickColors } from '../../utils/pick-attributes';
+
+// Fifty Fifty supports colour and margin; it has no border or padding.
+const FIFTY_FIFTY_STYLE = { margin: true };
 
 const transforms = {
 	from: [
 		{
 			type: 'block',
 			blocks: ['core/media-text'],
-			// Fifty Fifty only shows images.
-			isMatch: ({ mediaType, mediaUrl }) =>
-				!mediaUrl || mediaType === 'image',
+			// Fifty Fifty only shows images, and has no image link: a linked
+			// Media & Text would lose its link, so it isn't offered.
+			isMatch: ({ mediaType, mediaUrl, href }) =>
+				(!mediaUrl || mediaType === 'image') && !href,
 			transform: (attributes, innerBlocks) =>
 				createBlock(
 					'designsetgo/fifty-fifty',
 					{
+						// Fifty Fifty is always full width (its only alignment).
+						...pickColors(attributes, FIFTY_FIFTY_STYLE),
 						mediaPosition:
 							attributes.mediaPosition === 'right'
 								? 'right'
@@ -46,6 +53,7 @@ const transforms = {
 				createBlock(
 					'core/media-text',
 					{
+						...pickColors(attributes, FIFTY_FIFTY_STYLE),
 						align: attributes.align,
 						mediaPosition: attributes.mediaPosition,
 						...(attributes.mediaUrl && {

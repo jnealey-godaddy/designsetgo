@@ -46,7 +46,7 @@ import {
 	convertPresetToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
 import { getOverlayOpacity } from '../../utils/overlay-opacity';
-import { useBlockColors } from '../../hooks';
+import { useBlockColors, useFixedOrientation } from '../../hooks';
 import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
@@ -83,6 +83,7 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		hoverIconBackgroundColor,
 		hoverButtonBackgroundColor,
 		overlayColor,
+		layout,
 		// Shape divider attributes
 		shapeDividerTop,
 		shapeDividerTopBackgroundColor,
@@ -184,6 +185,9 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 	const units = useCustomUnits({
 		availableUnits: ['px', 'em', 'rem', 'vh', 'vw', '%'],
 	});
+
+	// A Section is always vertical; the orientation toggle is hidden.
+	useFixedOrientation(layout, 'vertical', setAttributes);
 
 	// Get inner blocks to determine if container is empty
 	const hasInnerBlocks = useSelect(

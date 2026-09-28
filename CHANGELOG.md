@@ -13,10 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Improved
 
+- **New Maps start with a location search.** A Map added from the inserter opens on an address search instead of showing New York. Existing maps are unchanged, and a map published without a location shows nothing rather than an empty patch of ocean.
+- **More block transforms.** Details blocks turn into an Accordion (and back), Columns into a Grid (and back), and an image Media & Text into a Fifty Fifty (and back), keeping their content, colours and borders. Details that open one at a time make an accordion that does too.
+- **Scroll Accordion has an "Add item" button** in its toolbar. New cards take the last card's colours.
+- **Section and Row no longer switch into each other on their own.** Changing a Section's orientation used to replace it with a Row and lose most of its settings, and a Row did the same. Use Transform in the block toolbar instead; it keeps every setting, and the result always has the right orientation.
+- **Clearer editor panels** for Icon List Item, Dynamic Image and Grid, and a proper empty state for Chart.
 - **Updated translations in all nine bundled locales.** Added the default select-field placeholder and six Map and Breadcrumbs interface, privacy, and accessibility strings in German, Spanish, French, Italian, Japanese, Dutch, Brazilian Portuguese, Russian, and Simplified Chinese. Refreshed the translation template and locale catalogs, compiled the PHP catalogs, and regenerated JavaScript translation files.
 
 ### Fixed
 
+- **The Map block's name was translated as "Spacing" in every bundled language** (for example "Abstand" in German and "Espacement" in French). It now reads "Karte", "Carte", and so on, and its description is translated too.
 - **Two Dynamic Query blocks on one page no longer filter each other.** Ticking a category, searching, or sorting in one Dynamic Query used to filter every other Dynamic Query on the page too, including ones with no filters of their own. Each one's filters, active-filter chips, Reset button, and page numbers now apply only to it. Links from menus and bookmarks (`?filter_category=news`, `?q=…`) still filter every Dynamic Query on the page, and adding or removing a filter keeps the linked one instead of replacing it. Filters also work without JavaScript on these pages, and no longer drop the page or the other Dynamic Query's filters. A page with a single Dynamic Query keeps its plain URLs (`?q=shoes`). To make one set of filters drive every Dynamic Query on a page, as before, add `add_filter( 'designsetgo_query_scope_params', '__return_false' );`.
 - **Countdown Timer ends at the same moment for every visitor, and its Timezone setting now works.** The target date was read in each visitor's own browser timezone, so a sale set to end at 6pm ended at a different real-world time in every country, and the block's Timezone setting had no effect. The countdown now uses the block's Timezone, or the WordPress site timezone (Settings → General → Timezone) when it is left on "WordPress Default".
 

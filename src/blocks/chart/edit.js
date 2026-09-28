@@ -6,6 +6,8 @@
 
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
+// An SVG, not a Dashicons name: the font isn't loaded in the editor iframe.
+import { chartBar } from '@wordpress/icons';
 import {
 	Placeholder,
 	SelectControl,
@@ -295,7 +297,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 					attributes={stripWrapperAttributes(attributes)}
 					EmptyResponsePlaceholder={() => (
 						<Placeholder
-							icon="chart-bar"
+							icon={chartBar}
 							label={__('Chart', 'designsetgo')}
 							instructions={__(
 								'Add at least one data row in the block settings to preview the chart.',

@@ -44,11 +44,14 @@ registerBlockType(metadata.name, {
 	// that relies on the 40.7128 / -74.006 defaults would move too. Explicit
 	// 0s serialize, so only blocks inserted from here on carry them, while
 	// createBlock() calls (patterns, transforms) keep the defaults.
+	//
+	// No title or description: the inserter shows a default variation's own
+	// text in place of the block's, and `metadata` here is the untranslated
+	// block.json. Left out, the inserter falls back to the block type's
+	// server-translated title and description.
 	variations: [
 		{
 			name: 'map',
-			title: metadata.title,
-			description: metadata.description,
 			isDefault: true,
 			scope: ['inserter'],
 			attributes: { dsgoLatitude: 0, dsgoLongitude: 0 },

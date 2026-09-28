@@ -8,6 +8,8 @@
  */
 
 import { createBlock } from '@wordpress/blocks';
+import { transformLayout } from '../../utils/transform-layout';
+import { pickColors } from '../../utils/pick-attributes';
 
 // Column styling that has to survive the trip into a grid cell.
 const COLUMN_STYLE_KEYS = [
@@ -41,6 +43,32 @@ const columnToCell = (column) => {
 	return createBlock('core/group', kept, column.innerBlocks);
 };
 
+// Grid and Columns both support colour, border, padding and margin.
+const GRID_STYLE = { border: true, padding: true, margin: true };
+
+/**
+ * A core/columns block's colours and spacing, in Grid's shape.
+ *
+ * Columns stores its gap per axis (`{ top, left }`); Grid takes one value,
+ * so the column gap is kept.
+ *
+ * @param {Object} attributes core/columns attributes.
+ * @return {Object} Attributes to spread into the Grid.
+ */
+const columnsStyleToGrid = (attributes) => {
+	const picked = pickColors(attributes, GRID_STYLE);
+	const gap = attributes.style?.spacing?.blockGap;
+	const blockGap =
+		gap && typeof gap === 'object' ? (gap.left ?? gap.top) : gap;
+	if (blockGap) {
+		picked.style = {
+			...picked.style,
+			spacing: { ...picked.style?.spacing, blockGap },
+		};
+	}
+	return picked;
+};
+
 const transforms = {
 	from: [
 		{
@@ -50,8 +78,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/grid',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, null),
 						// Set Grid-specific defaults
 						rowGap: '',
 						columnGap: '',
@@ -71,8 +101,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/grid',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, null),
 						// Remove Row-specific attributes
 						mobileStack: undefined,
 						// Set Grid-specific defaults
@@ -115,11 +147,15 @@ const transforms = {
 		{
 			type: 'block',
 			blocks: ['core/columns'],
-			transform: ({ align, anchor }, innerBlocks) => {
+			transform: (attributes, innerBlocks) => {
+				const { align, anchor } = attributes;
 				const count = Math.min(Math.max(innerBlocks.length, 1), 12);
 				return createBlock(
 					'designsetgo/grid',
 					{
+						// The Columns' own colours, border and spacing. Grid has
+						// a default style; only replace it when Columns had one.
+						...columnsStyleToGrid(attributes),
 						// Undefined keeps Grid's own full-width default.
 						...(align && { align }),
 						...(anchor && { anchor }),
@@ -140,8 +176,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/section',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, 'vertical'),
 						// Remove Grid-specific attributes
 						desktopColumns: undefined,
 						tabletColumns: undefined,
@@ -162,8 +200,13 @@ const transforms = {
 				return createBlock(
 					'designsetgo/row',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(
+							attributes.layout,
+							'horizontal'
+						),
 						// Remove Grid-specific attributes
 						desktopColumns: undefined,
 						tabletColumns: undefined,
@@ -231,12 +274,13 @@ const transforms = {
 			blocks: ['core/columns'],
 			// Every cell becomes a column in one row, so the responsive
 			// column counts are dropped; core Columns stack on mobile.
-			transform: ({ align, anchor }, innerBlocks) =>
+			transform: (attributes, innerBlocks) =>
 				createBlock(
 					'core/columns',
 					{
-						...(align && { align }),
-						...(anchor && { anchor }),
+						...pickColors(attributes, GRID_STYLE),
+						...(attributes.align && { align: attributes.align }),
+						...(attributes.anchor && { anchor: attributes.anchor }),
 					},
 					innerBlocks.map((cell) =>
 						createBlock('core/column', {}, [cell])

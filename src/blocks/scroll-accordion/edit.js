@@ -19,6 +19,18 @@ import './editor.scss';
 import ScrollAccordionPlaceholder from './components/ScrollAccordionPlaceholder';
 import DsgoChildToolbar from '../../components/shared/DsgoChildToolbar';
 
+// Attributes a new card copies from the last one.
+const NEW_ITEM_STYLE_KEYS = [
+	'style',
+	'backgroundColor',
+	'textColor',
+	'gradient',
+	'borderColor',
+	'className',
+	'overlayColor',
+	'overlayOpacity',
+];
+
 /**
  * Edit component for the Scroll Accordion block.
  * Container for sticky stacking accordion items.
@@ -45,8 +57,14 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 	);
 
 	// New cards inherit the last card's look (the starter layouts style each
-	// card individually) but not its identity: anchor and List View name.
-	const { anchor, metadata, ...newItemAttributes } = lastItemAttributes || {};
+	// card individually), and only its look: an allowlist, so its anchor,
+	// List View name, custom CSS, visibility rules, style bindings,
+	// interactions and animations stay on the card they were set for.
+	const newItemAttributes = Object.fromEntries(
+		NEW_ITEM_STYLE_KEYS.filter(
+			(key) => lastItemAttributes?.[key] !== undefined
+		).map((key) => [key, lastItemAttributes[key]])
+	);
 
 	// Calculate inner styles declaratively
 	const innerStyles = {

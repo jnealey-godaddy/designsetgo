@@ -1,7 +1,7 @@
 /**
  * Row Block - Edit Component
  *
- * Flexible horizontal or vertical layouts with wrapping.
+ * Flexible horizontal layouts with wrapping.
  * Leverages WordPress's native flex layout system.
  *
  * @since 1.0.0
@@ -30,6 +30,7 @@ import {
 	__experimentalUseCustomUnits as useCustomUnits,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import { useFixedOrientation } from '../../hooks';
 import { useSelect } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
 import {
@@ -107,6 +108,9 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 	const units = useCustomUnits({
 		availableUnits: ['px', 'em', 'rem', 'vh', 'vw', '%'],
 	});
+
+	// A Row is always horizontal; the orientation toggle is hidden.
+	useFixedOrientation(layout, 'horizontal', setAttributes);
 
 	// Get inner blocks to determine if container is empty
 	const hasInnerBlocks = useSelect(

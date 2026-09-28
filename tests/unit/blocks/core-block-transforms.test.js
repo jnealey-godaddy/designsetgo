@@ -37,20 +37,34 @@ registerBlockType(accordionMetadata.name, {
 	transforms: accordionTransforms,
 	save,
 });
+// Colour and border attributes come from block supports, which this bare
+// registry does not load; declare the ones the transforms carry.
+const colorAttributes = {
+	backgroundColor: { type: 'string' },
+	textColor: { type: 'string' },
+	style: { type: 'object' },
+};
+
 registerBlockType(accordionItemMetadata.name, {
 	...accordionItemMetadata,
+	attributes: { ...accordionItemMetadata.attributes, ...colorAttributes },
 	save,
 });
 registerBlockType(gridMetadata.name, {
 	...gridMetadata,
 	// `supports.anchor` becomes an attribute through a block-editor filter
 	// that this bare registry does not load.
-	attributes: { ...gridMetadata.attributes, anchor: { type: 'string' } },
+	attributes: {
+		...gridMetadata.attributes,
+		...colorAttributes,
+		anchor: { type: 'string' },
+	},
 	transforms: gridTransforms,
 	save,
 });
 registerBlockType(fiftyMetadata.name, {
 	...fiftyMetadata,
+	attributes: { ...fiftyMetadata.attributes, ...colorAttributes },
 	transforms: fiftyTransforms,
 	save,
 });
@@ -62,10 +76,14 @@ stub('core/paragraph', { content: { type: 'string' } }, 'text');
 stub('core/details', {
 	summary: { type: 'string' },
 	showContent: { type: 'boolean', default: false },
+	// WordPress 6.9+: Details sharing a name open one at a time.
+	name: { type: 'string' },
+	...colorAttributes,
 });
 stub('core/columns', {
 	align: { type: 'string' },
 	anchor: { type: 'string' },
+	...colorAttributes,
 });
 stub('core/column', {
 	style: { type: 'object' },
@@ -94,6 +112,8 @@ stub(
 		focalPoint: { type: 'object' },
 		imageFill: { type: 'boolean' },
 		verticalAlignment: { type: 'string' },
+		href: { type: 'string' },
+		...colorAttributes,
 	},
 	'media'
 );
@@ -152,6 +172,91 @@ describe('Accordion ↔ core/details', () => {
 		});
 		expect(details[0].innerBlocks[0].attributes.content).toBe('Alpha');
 	});
+
+	test('each Details keeps its colours on its accordion item', () => {
+		const [accordion] = switchToBlockType(
+			[
+				createBlock('core/details', {
+					summary: 'Q',
+					backgroundColor: 'accent-1',
+					style: {
+						color: { text: '#111111' },
+						border: { radius: '8px' },
+						spacing: { margin: { top: '4px' } },
+					},
+				}),
+				createBlock('core/details', { summary: 'R' }),
+			],
+			'designsetgo/accordion'
+		);
+
+		expect(accordion.innerBlocks[0].attributes).toMatchObject({
+			backgroundColor: 'accent-1',
+			// Items have no margin support, so margin is not carried.
+			style: { color: { text: '#111111' }, border: { radius: '8px' } },
+		});
+		expect(
+			accordion.innerBlocks[0].attributes.style.spacing
+		).toBeUndefined();
+	});
+
+	test('Details that open one at a time make an accordion that does too', () => {
+		const [accordion] = switchToBlockType(
+			[
+				createBlock('core/details', { summary: 'A', name: 'faq' }),
+				createBlock('core/details', { summary: 'B', name: 'faq' }),
+			],
+			'designsetgo/accordion'
+		);
+
+		expect(accordion.attributes.allowMultipleOpen).toBe(false);
+	});
+
+	test('a one-open-at-a-time accordion becomes Details sharing a name', () => {
+		const accordion = createBlock(
+			'designsetgo/accordion',
+			{ allowMultipleOpen: false },
+			[
+				createBlock('designsetgo/accordion-item', {
+					title: 'A',
+					uniqueId: 'abc123',
+				}),
+				createBlock('designsetgo/accordion-item', { title: 'B' }),
+			]
+		);
+
+		const details = switchToBlockType(accordion, 'core/details');
+
+		expect(details.map((d) => d.attributes.name)).toEqual([
+			'accordion-abc123',
+			'accordion-abc123',
+		]);
+	});
+
+	test('an accordion that allows several open gives Details no name', () => {
+		const accordion = createBlock(
+			'designsetgo/accordion',
+			{ allowMultipleOpen: true },
+			[
+				createBlock('designsetgo/accordion-item', { title: 'A' }),
+				createBlock('designsetgo/accordion-item', { title: 'B' }),
+			]
+		);
+
+		const details = switchToBlockType(accordion, 'core/details');
+
+		expect(details.map((d) => d.attributes.name)).toEqual([
+			undefined,
+			undefined,
+		]);
+	});
+
+	test('an empty accordion is not offered the transform', () => {
+		// Zero Details blocks would delete it.
+		const accordion = createBlock('designsetgo/accordion', {}, []);
+
+		expect(switchToBlockType(accordion, 'core/details')).toBe(null);
+	});
 });
 
 describe('Grid ↔ core/columns', () => {
@@ -199,6 +304,31 @@ describe('Grid ↔ core/columns', () => {
 
 		expect(grid.attributes.desktopColumns).toBe(12);
 		expect(grid.innerBlocks).toHaveLength(14);
+	});
+
+	test('the Columns block keeps its colours, and its gap in Grid shape', () => {
+		const columns = createBlock(
+			'core/columns',
+			{
+				backgroundColor: 'accent-2',
+				style: {
+					spacing: {
+						padding: { top: '20px' },
+						blockGap: { top: '1em', left: '2em' },
+					},
+				},
+			},
+			[createBlock('core/column', {}, [paragraph('A')])]
+		);
+
+		const [grid] = switchToBlockType(columns, 'designsetgo/grid');
+
+		expect(grid.attributes.backgroundColor).toBe('accent-2');
+		expect(grid.attributes.style.spacing).toEqual({
+			padding: { top: '20px' },
+			// Grid takes one gap value; the column gap is kept.
+			blockGap: '2em',
+		});
 	});
 
 	test('each grid cell becomes its own column', () => {
@@ -256,6 +386,40 @@ describe('Fifty Fifty ↔ core/media-text', () => {
 		expect(switchToBlockType(mediaText, 'designsetgo/fifty-fifty')).toBe(
 			null
 		);
+	});
+
+	test('a linked Media & Text is not offered the transform', () => {
+		// Fifty Fifty has no image link, so the link would be lost.
+		const mediaText = createBlock('core/media-text', {
+			mediaUrl: 'https://example.com/a.jpg',
+			mediaType: 'image',
+			href: 'https://example.com',
+		});
+
+		expect(switchToBlockType(mediaText, 'designsetgo/fifty-fifty')).toBe(
+			null
+		);
+	});
+
+	test('colours carry over in both directions', () => {
+		const mediaText = createBlock('core/media-text', {
+			mediaUrl: 'https://example.com/a.jpg',
+			mediaType: 'image',
+			backgroundColor: 'accent-4',
+			style: { color: { text: '#ffffff' } },
+		});
+
+		const [fifty] = switchToBlockType(mediaText, 'designsetgo/fifty-fifty');
+		const [back] = switchToBlockType(fifty, 'core/media-text');
+
+		expect(fifty.attributes).toMatchObject({
+			backgroundColor: 'accent-4',
+			style: { color: { text: '#ffffff' } },
+		});
+		expect(back.attributes).toMatchObject({
+			backgroundColor: 'accent-4',
+			style: { color: { text: '#ffffff' } },
+		});
 	});
 
 	test('Fifty Fifty goes back to an image-filled Media & Text', () => {
