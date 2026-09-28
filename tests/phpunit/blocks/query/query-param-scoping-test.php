@@ -108,6 +108,44 @@ class DesignSetGo_Query_Param_Scoping_Test extends WP_UnitTestCase {
 	}
 
 
+	public function test_a_taxonomy_with_a_double_underscore_is_a_bare_filter() {
+		$_GET = array( 'filter_my__tax' => 'x' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		$this->assertSame( 'x', designsetgo_query_extract_params_from_request( 'qa1a1a1a1' )['filter_my__tax'] ?? null );
+	}
+
+	public function test_an_empty_scoped_key_clears_a_bare_value_for_that_query_only() {
+		$_GET = array( // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'filter_category'            => array( 'news' ),
+			'filter_category__qa1a1a1a1' => array( '' ),
+		);
+
+		$this->assertArrayNotHasKey( 'filter_category', designsetgo_query_extract_params_from_request( 'qa1a1a1a1' ) );
+		$this->assertSame( array( 'news' ), designsetgo_query_extract_params_from_request( 'qb2b2b2b2' )['filter_category'] );
+	}
+
+	public function test_split_param_key_recognises_only_query_ids() {
+		$this->assertSame( array( 'filter_category', 'qb2b2b2b2' ), designsetgo_query_split_param_key( 'filter_category__qb2b2b2b2' ) );
+		$this->assertSame( array( 'q', 'q-0123456789' ), designsetgo_query_split_param_key( 'q__q-0123456789' ), 'Template-import ids.' );
+		$this->assertSame( array( 'q', 'related' ), designsetgo_query_split_param_key( 'q__related', 'related' ), 'The caller’s own custom id.' );
+		$this->assertSame( array( 'filter_my__tax', '' ), designsetgo_query_split_param_key( 'filter_my__tax' ) );
+	}
+
+	public function test_page_is_multi_reads_the_current_posts_queries() {
+		unset( $GLOBALS['designsetgo_query_rendered_ids'] );
+		$one = self::factory()->post->create_and_get( array( 'post_content' => $this->query_with_no_filters( 'qa1a1a1a1' ) ) );
+		$two = self::factory()->post->create_and_get( array( 'post_content' => $this->query_with_no_filters( 'qa1a1a1a1' ) . $this->query_with_no_filters( 'qb2b2b2b2' ) ) );
+
+		$GLOBALS['post'] = $one;
+		$this->assertFalse( designsetgo_query_page_is_multi() );
+		$GLOBALS['post'] = $two;
+		$this->assertTrue( designsetgo_query_page_is_multi() );
+		add_filter( 'designsetgo_query_scope_params', '__return_false' );
+		$this->assertFalse( designsetgo_query_page_is_multi(), 'The opt-out turns scoping off.' );
+		remove_filter( 'designsetgo_query_scope_params', '__return_false' );
+		unset( $GLOBALS['post'] );
+	}
+
 	public function test_build_posts_args_applies_a_bare_filter_to_any_query() {
 		// No filter block, no bindSearchTo — just a bare URL param. This is
 		// the pre-existing, intentional contract: a menu link or widget to

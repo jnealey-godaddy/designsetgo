@@ -320,6 +320,17 @@ module.exports = [
 						to: 'blocks/query/render-helpers.php',
 						noErrorOnMissing: true,
 					},
+					// No noErrorOnMissing: render-helpers.php and the filter
+					// render require these unconditionally, so a missing copy
+					// must fail the build.
+					{
+						from: 'src/blocks/query/param-scoping.php',
+						to: 'blocks/query/param-scoping.php',
+					},
+					{
+						from: 'src/blocks/query/filter-links.php',
+						to: 'blocks/query/filter-links.php',
+					},
 					{
 						from: 'src/blocks/query/render-posts.php',
 						to: 'blocks/query/render-posts.php',

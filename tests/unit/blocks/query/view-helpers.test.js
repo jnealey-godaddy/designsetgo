@@ -2,7 +2,7 @@
  * Unit tests for src/blocks/query/view-helpers.js.
  *
  * Covers the framework-agnostic pieces of the Interactivity API view module:
- * URL collection, filter action URL transforms, observer bookkeeping, and the
+ * URL collection, observer bookkeeping, and the
  * accessibility helpers (feed position stamping + result-count announcements).
  */
 
@@ -15,9 +15,6 @@ import {
 	stampFeedPositions,
 	announceResultCount,
 	collectParams,
-	applyToggleFilter,
-	applySetFilter,
-	applyResetFilters,
 	itemContainerSelector,
 	extractRenderedItems,
 	notifyContentUpdated,
@@ -46,6 +43,13 @@ function resetBody() {
 }
 
 describe('collectParams', () => {
+	it('reads indexed list keys as lists', () => {
+		const url = new URL(
+			'https://example.com/?filter_tag[0]=a&filter_tag[1]=b'
+		);
+		expect(collectParams(url)).toEqual({ filter_tag: ['a', 'b'] });
+	});
+
 	it('extracts filter_* params into an object', () => {
 		const url = new URL('https://example.com/archive?filter_category=news');
 		expect(collectParams(url)).toEqual({ filter_category: 'news' });
@@ -136,96 +140,6 @@ describe('collectParams', () => {
 				filter_category__qbbb: 'sports',
 			});
 		});
-	});
-});
-
-describe('applyToggleFilter', () => {
-	it('adds a value when checked=true and not present', () => {
-		const url = new URL('https://example.com/');
-		const next = applyToggleFilter(url, 'filter_tag', 'news', true);
-		expect(next.searchParams.getAll('filter_tag[]')).toEqual(['news']);
-	});
-
-	it('appends to existing array values without duplicates', () => {
-		const url = new URL('https://example.com/?filter_tag[]=news');
-		const next = applyToggleFilter(url, 'filter_tag', 'events', true);
-		expect(next.searchParams.getAll('filter_tag[]')).toEqual([
-			'news',
-			'events',
-		]);
-	});
-
-	it('dedupes when toggling the same value back on', () => {
-		const url = new URL('https://example.com/?filter_tag[]=news');
-		const next = applyToggleFilter(url, 'filter_tag', 'news', true);
-		expect(next.searchParams.getAll('filter_tag[]')).toEqual(['news']);
-	});
-
-	it('removes the value when checked=false', () => {
-		const url = new URL(
-			'https://example.com/?filter_tag[]=news&filter_tag[]=events'
-		);
-		const next = applyToggleFilter(url, 'filter_tag', 'news', false);
-		expect(next.searchParams.getAll('filter_tag[]')).toEqual(['events']);
-	});
-
-	it('strips paged and page params', () => {
-		const url = new URL(
-			'https://example.com/?paged=3&page=5&filter_tag[]=news'
-		);
-		const next = applyToggleFilter(url, 'filter_tag', 'events', true);
-		expect(next.searchParams.has('paged')).toBe(false);
-		expect(next.searchParams.has('page')).toBe(false);
-	});
-
-	it('does not mutate the input URL', () => {
-		const url = new URL('https://example.com/?filter_tag[]=news');
-		const original = url.toString();
-		applyToggleFilter(url, 'filter_tag', 'events', true);
-		expect(url.toString()).toBe(original);
-	});
-});
-
-describe('applySetFilter', () => {
-	it('sets the param to the given value', () => {
-		const url = new URL('https://example.com/');
-		const next = applySetFilter(url, 'q', 'hello');
-		expect(next.searchParams.get('q')).toBe('hello');
-	});
-
-	it('removes the param when value is an empty string', () => {
-		const url = new URL('https://example.com/?q=hello');
-		const next = applySetFilter(url, 'q', '');
-		expect(next.searchParams.has('q')).toBe(false);
-	});
-
-	it('strips paged and page params', () => {
-		const url = new URL('https://example.com/?q=x&paged=3&page=9');
-		const next = applySetFilter(url, 'q', 'hello');
-		expect(next.searchParams.has('paged')).toBe(false);
-		expect(next.searchParams.has('page')).toBe(false);
-	});
-
-	it('overwrites an existing value (not append)', () => {
-		const url = new URL('https://example.com/?sort=date.ASC');
-		const next = applySetFilter(url, 'sort', 'title.ASC');
-		expect(next.searchParams.getAll('sort')).toEqual(['title.ASC']);
-	});
-});
-
-describe('applyResetFilters', () => {
-	it('strips all filter_*, q, sort, paged, page', () => {
-		const url = new URL(
-			'https://example.com/?filter_category=news&filter_tag[]=a&q=x&sort=date&paged=2&page=5&utm=keep'
-		);
-		const next = applyResetFilters(url);
-		expect(next.searchParams.has('filter_category')).toBe(false);
-		expect(next.searchParams.has('filter_tag[]')).toBe(false);
-		expect(next.searchParams.has('q')).toBe(false);
-		expect(next.searchParams.has('sort')).toBe(false);
-		expect(next.searchParams.has('paged')).toBe(false);
-		expect(next.searchParams.has('page')).toBe(false);
-		expect(next.searchParams.get('utm')).toBe('keep');
 	});
 });
 
@@ -616,7 +530,17 @@ describe('buildRefreshRequest', () => {
 			page: 2,
 			params: { q: 'shoes' },
 			currentUrl: 'https://example.test/shop/?q=shoes',
+			multiQuery: false,
 		});
+	});
+
+	it('tells the server when the page holds other Queries', () => {
+		const { init } = buildRefreshRequest({ queryId: 'q1' }, refreshSource, {
+			...request,
+			multiQuery: true,
+		});
+
+		expect(JSON.parse(init.body).multiQuery).toBe(true);
 	});
 
 	it('sends no X-WP-Nonce for visitors', () => {

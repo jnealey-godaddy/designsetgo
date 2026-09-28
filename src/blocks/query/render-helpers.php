@@ -35,6 +35,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once __DIR__ . '/param-scoping.php';
+
 if ( ! function_exists( 'designsetgo_safe_css_value' ) ) :
 
 	/**
@@ -566,36 +568,19 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	}
 
 	/**
-	 * Whitelisted URL params that influence query/filter output. Limited to
-	 * `q`, `sort`, plus any `filter_<taxonomy>` key (Task 14). Extensible via
-	 * the `designsetgo_query_url_params` filter.
+	 * Whitelisted URL params that influence query/filter output: `q`, `sort`,
+	 * any `filter_<taxonomy>` / `query_type_<attr>` key, and WooCommerce's
+	 * filter-block params. Extensible via the `designsetgo_query_url_params`
+	 * filter.
 	 *
-	 * Query-scoped params (v2.6 — Task: query param scoping). A page can
-	 * carry more than one `designsetgo/query`, and two independent filter
-	 * blocks can legitimately share a param name (`filter_category` on
-	 * "Related posts" AND "All posts"). Every URL-writing surface (the
-	 * query-filter forms in render.php, view.js) now writes the *query-
-	 * scoped* form of a key — `{key}__{queryId}` — alongside, or instead of,
-	 * the bare key. This function always prefers a caller's own scoped key
-	 * when present; a key scoped to a DIFFERENT query is never read here at
-	 * all (skipped outright — see the `elseif` below), so one query's filter
-	 * selection can no longer leak into another's WP_Query args.
-	 *
-	 * A bare, unscoped key (`filter_category=news` with no `__{queryId}`
-	 * suffix) is resolved here for EVERY query — deliberately ungated. This
-	 * is the pre-2.6 contract: a site owner links to `?filter_category=news`
-	 * from a menu or a widget with no idea which (if any) Query block on the
-	 * landing page has a matching filter control, and every such Query has
-	 * always applied it. Gating the bare key by "does this query declare a
-	 * matching filter block" broke that (see the regression on PR #592) —
-	 * WooCommerce's own filter blocks rely on the identical ungated
-	 * contract, since they can't emit a queryId at all and so always speak
-	 * bare. Only a query-SCOPED key narrows to a single query; the bare
-	 * fallback intentionally still reaches all of them, unchanged.
+	 * Keys are resolved per Query by designsetgo_query_owned_request_params()
+	 * (param-scoping.php): `{key}__{queryId}` wins over a bare `{key}`, a key
+	 * scoped for another Query is never read, and a bare key still reaches
+	 * every Query (menu links, bookmarks, WooCommerce's filter blocks, which
+	 * can't know a queryId).
 	 *
 	 * @param string $query_id Sanitized queryId this extraction is for. Empty
-	 *                         string disables scoped-key resolution entirely
-	 *                         (falls back to the pre-2.6 unscoped behavior).
+	 *                         reads bare keys only.
 	 * @return array
 	 */
 	function designsetgo_query_extract_params_from_request( $query_id = '' ) {
@@ -613,44 +598,19 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			return $params;
 		}
 
-		$query_id = sanitize_key( (string) $query_id );
-		$suffix   = '' !== $query_id ? '__' . $query_id : '';
-
-		foreach ( (array) $_GET as $raw_key => $raw_value ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$key = sanitize_key( (string) $raw_key );
-			if ( '' === $key ) {
-				continue;
-			}
-
-			$is_scoped_for_this_query = false;
-			if ( '' !== $suffix && strlen( $suffix ) < strlen( $key ) && substr( $key, -strlen( $suffix ) ) === $suffix ) {
-				// Scoped for THIS query — strip the suffix and resolve its
-				// bare identity below.
-				$key                      = substr( $key, 0, -strlen( $suffix ) );
-				$is_scoped_for_this_query = true;
-			} elseif ( false !== strpos( $key, '__' ) ) {
-				// Contains a `__` but doesn't end in THIS query's own suffix —
-				// either scoped for a different query, or (rarely) a key that
-				// legitimately contains a double underscore. Either way, this
-				// extraction must never guess at ownership, so skip it. When
-				// $query_id is '' this branch still fires for any `__`-bearing
-				// key, which is intentionally conservative for un-scoped calls.
-				continue;
-			}
-
+		foreach ( designsetgo_query_owned_request_params( sanitize_key( (string) $query_id ) ) as $key => $entry ) {
+			$key = (string) $key;
 			if ( ! in_array( $key, $allowed, true )
 				&& 0 !== strpos( $key, 'filter_' )
 				&& 0 !== strpos( $key, 'query_type_' ) ) {
 				continue;
 			}
-
-			if ( $is_scoped_for_this_query ) {
-				// A scoped value always wins over a same-named bare value,
-				// regardless of which one $_GET happens to iterate first.
-				$params[ $key ] = designsetgo_query_sanitize_param_value( $raw_value );
-			} elseif ( ! isset( $params[ $key ] ) ) {
-				$params[ $key ] = designsetgo_query_sanitize_param_value( $raw_value );
+			$value = designsetgo_query_sanitize_param_value( $entry['value'] );
+			// An empty scoped value means "this Query clears the bare one".
+			if ( '' === $value || array() === array_filter( (array) $value, 'strlen' ) ) {
+				continue;
 			}
+			$params[ $key ] = is_array( $value ) ? array_values( array_filter( $value, 'strlen' ) ) : $value;
 		}
 
 		return $params;
