@@ -7,6 +7,7 @@
   "category": "designsetgo",
   "ancestor": ["designsetgo/query"],
   "description": "Content shown when the Dynamic Query returns no items.",
+  "keywords": ["empty", "no results", "not found", "query", "loop"],
   "textdomain": "designsetgo",
   "icon": "no",
   "supports": {

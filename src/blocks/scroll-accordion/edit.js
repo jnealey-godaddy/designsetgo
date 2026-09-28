@@ -17,6 +17,19 @@ import { useSelect } from '@wordpress/data';
  */
 import './editor.scss';
 import ScrollAccordionPlaceholder from './components/ScrollAccordionPlaceholder';
+import DsgoChildToolbar from '../../components/shared/DsgoChildToolbar';
+
+// Attributes a new card copies from the last one.
+const NEW_ITEM_STYLE_KEYS = [
+	'style',
+	'backgroundColor',
+	'textColor',
+	'gradient',
+	'borderColor',
+	'className',
+	'overlayColor',
+	'overlayOpacity',
+];
 
 /**
  * Edit component for the Scroll Accordion block.
@@ -31,11 +44,26 @@ import ScrollAccordionPlaceholder from './components/ScrollAccordionPlaceholder'
 export default function Edit({ attributes, setAttributes, clientId }) {
 	const { alignItems } = attributes;
 
-	const hasInnerBlocks = useSelect(
-		(select) =>
-			select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length >
-			0,
+	const { hasInnerBlocks, lastItemAttributes } = useSelect(
+		(select) => {
+			const items =
+				select(blockEditorStore).getBlock(clientId)?.innerBlocks || [];
+			return {
+				hasInnerBlocks: items.length > 0,
+				lastItemAttributes: items[items.length - 1]?.attributes,
+			};
+		},
 		[clientId]
+	);
+
+	// New cards inherit the last card's look (the starter layouts style each
+	// card individually), and only its look: an allowlist, so its anchor,
+	// List View name, custom CSS, visibility rules, style bindings,
+	// interactions and animations stay on the card they were set for.
+	const newItemAttributes = Object.fromEntries(
+		NEW_ITEM_STYLE_KEYS.filter(
+			(key) => lastItemAttributes?.[key] !== undefined
+		).map((key) => [key, lastItemAttributes[key]])
 	);
 
 	// Calculate inner styles declaratively
@@ -105,6 +133,14 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 						}
 					/>
 				</ToolbarGroup>
+				{/* No activeIndex: only Add is shown. Duplicate, move and
+				    remove act on a selected card through core's own toolbar. */}
+				<DsgoChildToolbar
+					parentClientId={clientId}
+					childBlockName="designsetgo/scroll-accordion-item"
+					childAttributes={newItemAttributes}
+					addLabel={__('Add item', 'designsetgo')}
+				/>
 			</BlockControls>
 
 			<div {...blockProps}>

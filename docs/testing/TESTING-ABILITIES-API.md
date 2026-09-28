@@ -187,7 +187,7 @@ curl -s -X POST \
   {
     "name": "designsetgo/flex",
     "title": "Flex Container",
-    "description": "Flexible horizontal or vertical layout container...",
+    "description": "Flexible horizontal layouts with wrapping...",
     "group": "containers",
     "attributes": {
       "direction": { "type": "string", "enum": ["row", "column"] },

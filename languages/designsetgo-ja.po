@@ -9828,8 +9828,8 @@ msgstr "アイコンリスト項目"
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
 msgctxt "block description"
-msgid "A single item in an icon list with icon, title, and description."
-msgstr "アイコン、タイトル、説明を持つアイコンリスト内の単一項目です。"
+msgid "A single item in an icon list, with an icon beside its content."
+msgstr "アイコンリスト内の単一項目。コンテンツの横にアイコンを表示します。"
 
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
@@ -9955,13 +9955,13 @@ msgstr "ポートフォリオ"
 #, fuzzy
 msgctxt "block title"
 msgid "Map"
-msgstr "ギャップ"
+msgstr "マップ"
 
 #: build/blocks/map/block.json
 #: src/blocks/map/block.json
 msgctxt "block description"
 msgid "Display an interactive map using OpenStreetMap or Google Maps."
-msgstr ""
+msgstr "OpenStreetMap または Google マップでインタラクティブな地図を表示します。"
 
 #: build/blocks/map/block.json
 #: src/blocks/map/block.json
@@ -10164,8 +10164,8 @@ msgstr "行"
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
 msgctxt "block description"
-msgid "Flexible horizontal or vertical layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
-msgstr "折り返し可能な柔軟な水平または垂直レイアウト。ボタングループ、ヒーローセクション、レスポンシブカードレイアウトに最適です。"
+msgid "Flexible horizontal layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
+msgstr "折り返し可能な柔軟な水平レイアウト。ボタングループ、ヒーローセクション、レスポンシブカードレイアウトに最適です。"
 
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
@@ -10513,8 +10513,8 @@ msgid "Heading text…"
 msgstr ""
 
 #: includes/admin/blocks-registry-i18n.php:35
-msgid "Flexible horizontal or vertical layouts with wrapping"
-msgstr ""
+msgid "Flexible horizontal layouts with wrapping"
+msgstr "折り返し可能な柔軟な水平レイアウト"
 
 #: includes/admin/blocks-registry-i18n.php:37
 msgid "Vertical stacking container for sections and content areas"

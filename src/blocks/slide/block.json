@@ -86,6 +86,26 @@
 			"__experimentalLetterSpacing": true
 		}
 	},
+	"example": {
+		"attributes": {
+			"backgroundImage": {
+				"url": "https://s.w.org/images/core/5.3/MtBlanc1.jpg",
+				"id": 0,
+				"alt": ""
+			},
+			"minHeight": "300px"
+		},
+		"innerBlocks": [
+			{
+				"name": "core/heading",
+				"attributes": {
+					"level": 2,
+					"content": "Slide heading",
+					"style": { "color": { "text": "#ffffff" } }
+				}
+			}
+		]
+	},
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css"

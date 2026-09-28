@@ -9830,8 +9830,8 @@ msgstr "Symbol-Listen-Element"
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
 msgctxt "block description"
-msgid "A single item in an icon list with icon, title, and description."
-msgstr "Ein einzelnes Element in einer Symbol-Liste mit Symbol, Titel und Beschreibung."
+msgid "A single item in an icon list, with an icon beside its content."
+msgstr "Ein einzelnes Element in einer Symbol-Liste, mit einem Symbol neben seinem Inhalt."
 
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
@@ -9957,13 +9957,13 @@ msgstr "portfolio"
 #, fuzzy
 msgctxt "block title"
 msgid "Map"
-msgstr "Abstand"
+msgstr "Karte"
 
 #: build/blocks/map/block.json
 #: src/blocks/map/block.json
 msgctxt "block description"
 msgid "Display an interactive map using OpenStreetMap or Google Maps."
-msgstr ""
+msgstr "Zeigt eine interaktive Karte mit OpenStreetMap oder Google Maps an."
 
 #: build/blocks/map/block.json
 #: src/blocks/map/block.json
@@ -10166,8 +10166,8 @@ msgstr "Zeilen"
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
 msgctxt "block description"
-msgid "Flexible horizontal or vertical layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
-msgstr "Flexible horizontal or vertical layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
+msgid "Flexible horizontal layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
+msgstr "Flexible horizontale Layouts mit Umbruch. Perfekt für Button-Gruppen, Hero-Bereiche und responsive Karten-Layouts."
 
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
@@ -10515,8 +10515,8 @@ msgid "Heading text…"
 msgstr ""
 
 #: includes/admin/blocks-registry-i18n.php:35
-msgid "Flexible horizontal or vertical layouts with wrapping"
-msgstr ""
+msgid "Flexible horizontal layouts with wrapping"
+msgstr "Flexible horizontale Layouts mit Umbruch"
 
 #: includes/admin/blocks-registry-i18n.php:37
 msgid "Vertical stacking container for sections and content areas"

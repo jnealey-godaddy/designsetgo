@@ -18,9 +18,10 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
-import { useState, useCallback } from '@wordpress/element';
+import { useState, useEffect } from '@wordpress/element';
 import { DsgoInspectorPanel } from '../../../../components/shared';
-import { geocodeAddress } from '../../utils/geocoding';
+import useAddressSearch from '../../utils/use-address-search';
+import { hasNoLocation } from '../MapPlaceholder';
 
 const DEFAULT_PRIVACY_NOTICE =
 	'This map will load content from external services. Click to load and view the map.';
@@ -65,45 +66,23 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 	// would be dead UI — hide them rather than let them silently do nothing.
 	const isEmbedProvider = dsgoProvider === 'googlemaps-embed';
 
-	const [isSearching, setIsSearching] = useState(false);
-	const [searchError, setSearchError] = useState('');
+	const { search, isSearching, searchError, setSearchError } =
+		useAddressSearch(setAttributes);
 
-	const handleAddressSearch = useCallback(async () => {
-		if (!dsgoAddress || dsgoAddress.trim() === '') {
-			setSearchError(
-				__('Please enter an address to search.', 'designsetgo')
-			);
-			return;
+	// While the map has no location yet, typing here stays local until a
+	// search succeeds, as it does in the placeholder: an address on its own
+	// counts as a location (view.js geocodes it), so writing dsgoAddress on
+	// every keystroke would swap the placeholder out for "Lon" mid-word.
+	const isUnlocated = hasNoLocation(attributes);
+	const [addressDraft, setAddressDraft] = useState(null);
+	const addressValue = addressDraft ?? dsgoAddress;
+	useEffect(() => {
+		if (!isUnlocated) {
+			setAddressDraft(null);
 		}
+	}, [isUnlocated]);
 
-		setIsSearching(true);
-		setSearchError('');
-
-		try {
-			const result = await geocodeAddress(dsgoAddress);
-
-			if (result) {
-				setAttributes({
-					dsgoLatitude: result.lat,
-					dsgoLongitude: result.lng,
-					dsgoAddress: result.display_name,
-				});
-			} else {
-				setSearchError(
-					__(
-						'Address not found. Please try a different search.',
-						'designsetgo'
-					)
-				);
-			}
-		} catch (error) {
-			setSearchError(
-				__('Failed to search address. Please try again.', 'designsetgo')
-			);
-		} finally {
-			setIsSearching(false);
-		}
-	}, [dsgoAddress, setAttributes]);
+	const handleAddressSearch = () => search(addressValue);
 
 	const handleAddressKeyPress = (event) => {
 		if (event.key === 'Enter') {
@@ -203,9 +182,13 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 			>
 				<TextControl
 					label={__('Search Address', 'designsetgo')}
-					value={dsgoAddress}
+					value={addressValue}
 					onChange={(value) => {
-						setAttributes({ dsgoAddress: value });
+						if (isUnlocated) {
+							setAddressDraft(value);
+						} else {
+							setAttributes({ dsgoAddress: value });
+						}
 						setSearchError('');
 					}}
 					onKeyPress={handleAddressKeyPress}
@@ -225,7 +208,7 @@ export default function MapSettingsPanel({ attributes, setAttributes }) {
 					variant="secondary"
 					onClick={handleAddressSearch}
 					isBusy={isSearching}
-					disabled={!dsgoAddress || isSearching}
+					disabled={!addressValue || isSearching}
 					style={{ marginTop: '8px' }}
 				>
 					{isSearching

@@ -31,9 +31,8 @@ import {
 	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
-import { useSelect, useDispatch } from '@wordpress/data';
+import { useSelect } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
-import { createBlock } from '@wordpress/blocks';
 import ShapeDividerControls from './components/ShapeDividerControls';
 import ShapeDivider, {
 	getRenderedShapeHeight,
@@ -47,7 +46,7 @@ import {
 	convertPresetToCSSVar,
 } from '../../utils/convert-preset-to-css-var';
 import { getOverlayOpacity } from '../../utils/overlay-opacity';
-import { useBlockColors } from '../../hooks';
+import { useBlockColors, useFixedOrientation } from '../../hooks';
 import {
 	hasOverlayStyleClass,
 	hoverVariationClasses,
@@ -187,18 +186,14 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		availableUnits: ['px', 'em', 'rem', 'vh', 'vw', '%'],
 	});
 
-	const { replaceBlock } = useDispatch(blockEditorStore);
+	// A Section is always vertical; the orientation toggle is hidden.
+	useFixedOrientation(layout, 'vertical', setAttributes);
 
 	// Get inner blocks to determine if container is empty
-	const { hasInnerBlocks, innerBlocks } = useSelect(
-		(select) => {
-			const { getBlock } = select(blockEditorStore);
-			const block = getBlock(clientId);
-			return {
-				hasInnerBlocks: block?.innerBlocks?.length > 0,
-				innerBlocks: block?.innerBlocks || [],
-			};
-		},
+	const hasInnerBlocks = useSelect(
+		(select) =>
+			select(blockEditorStore).getBlock(clientId)?.innerBlocks?.length >
+			0,
 		[clientId]
 	);
 
@@ -213,37 +208,6 @@ export default function SectionEdit({ attributes, setAttributes, clientId }) {
 		},
 		[clientId]
 	);
-
-	// CRITICAL: Auto-convert to Row block when orientation changes to horizontal
-	// Section is meant for vertical stacking only
-	// If user wants horizontal layout, they should use Row block
-	useEffect(() => {
-		if (layout?.orientation === 'horizontal') {
-			// Create a new Row block with the same attributes and inner blocks
-			const rowBlock = createBlock(
-				'designsetgo/row',
-				{
-					hoverBackgroundColor,
-					hoverTextColor,
-					hoverIconBackgroundColor,
-					hoverButtonBackgroundColor,
-				},
-				innerBlocks
-			);
-
-			// Replace this Section block with the Row block
-			replaceBlock(clientId, rowBlock);
-		}
-	}, [
-		layout?.orientation,
-		clientId,
-		replaceBlock,
-		hoverBackgroundColor,
-		hoverTextColor,
-		hoverIconBackgroundColor,
-		hoverButtonBackgroundColor,
-		innerBlocks,
-	]);
 
 	// Auto-clear default padding for nested sections.
 	// Intentionally uses [] deps (mount-only) — isNested is excluded because

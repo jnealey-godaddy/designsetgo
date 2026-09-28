@@ -9830,8 +9830,8 @@ msgstr "Élément de liste d'icônes"
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
 msgctxt "block description"
-msgid "A single item in an icon list with icon, title, and description."
-msgstr "Un élément unique dans une liste d'icônes avec icône, titre et description."
+msgid "A single item in an icon list, with an icon beside its content."
+msgstr "Un élément unique dans une liste d'icônes, avec une icône à côté de son contenu."
 
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
@@ -9957,13 +9957,13 @@ msgstr "portfolio"
 #, fuzzy
 msgctxt "block title"
 msgid "Map"
-msgstr "Espacement"
+msgstr "Carte"
 
 #: build/blocks/map/block.json
 #: src/blocks/map/block.json
 msgctxt "block description"
 msgid "Display an interactive map using OpenStreetMap or Google Maps."
-msgstr ""
+msgstr "Affiche une carte interactive avec OpenStreetMap ou Google Maps."
 
 #: build/blocks/map/block.json
 #: src/blocks/map/block.json
@@ -10166,8 +10166,8 @@ msgstr "Lignes"
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
 msgctxt "block description"
-msgid "Flexible horizontal or vertical layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
-msgstr "Mises en page horizontales ou verticales flexibles avec retour à la ligne. Parfait pour les groupes de boutons, sections héro et mises en page de cartes responsive."
+msgid "Flexible horizontal layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
+msgstr "Mises en page horizontales flexibles avec retour à la ligne. Parfait pour les groupes de boutons, sections héro et mises en page de cartes responsive."
 
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
@@ -10515,8 +10515,8 @@ msgid "Heading text…"
 msgstr ""
 
 #: includes/admin/blocks-registry-i18n.php:35
-msgid "Flexible horizontal or vertical layouts with wrapping"
-msgstr ""
+msgid "Flexible horizontal layouts with wrapping"
+msgstr "Mises en page horizontales flexibles avec retour à la ligne"
 
 #: includes/admin/blocks-registry-i18n.php:37
 msgid "Vertical stacking container for sections and content areas"

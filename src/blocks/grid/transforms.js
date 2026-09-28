@@ -1,12 +1,73 @@
 /**
  * DSG Grid Block - Transforms
  *
- * Allows transforming to/from DSG Section, DSG Row, and legacy Container blocks.
+ * Allows transforming to/from DSG Section, DSG Row, core Columns, and legacy
+ * Container blocks.
  *
  * @since 1.0.0
  */
 
 import { createBlock } from '@wordpress/blocks';
+import { transformLayout } from '../../utils/transform-layout';
+import { pickColors } from '../../utils/pick-attributes';
+
+// Column styling that has to survive the trip into a grid cell.
+const COLUMN_STYLE_KEYS = [
+	'style',
+	'backgroundColor',
+	'textColor',
+	'gradient',
+	'className',
+];
+
+/**
+ * Turns a core/column into one grid cell. A plain column holding a single
+ * block becomes that block; anything else is wrapped in a Group so the
+ * column's blocks stay together and keep its colors and spacing.
+ *
+ * @param {Object} column core/column block.
+ * @return {Object} Block to place in the grid.
+ */
+const columnToCell = (column) => {
+	const kept = Object.fromEntries(
+		COLUMN_STYLE_KEYS.filter((key) => column.attributes[key]).map((key) => [
+			key,
+			column.attributes[key],
+		])
+	);
+
+	if (column.innerBlocks.length === 1 && !Object.keys(kept).length) {
+		return column.innerBlocks[0];
+	}
+
+	return createBlock('core/group', kept, column.innerBlocks);
+};
+
+// Grid and Columns both support colour, border, padding and margin.
+const GRID_STYLE = { border: true, padding: true, margin: true };
+
+/**
+ * A core/columns block's colours and spacing, in Grid's shape.
+ *
+ * Columns stores its gap per axis (`{ top, left }`); Grid takes one value,
+ * so the column gap is kept.
+ *
+ * @param {Object} attributes core/columns attributes.
+ * @return {Object} Attributes to spread into the Grid.
+ */
+const columnsStyleToGrid = (attributes) => {
+	const picked = pickColors(attributes, GRID_STYLE);
+	const gap = attributes.style?.spacing?.blockGap;
+	const blockGap =
+		gap && typeof gap === 'object' ? (gap.left ?? gap.top) : gap;
+	if (blockGap) {
+		picked.style = {
+			...picked.style,
+			spacing: { ...picked.style?.spacing, blockGap },
+		};
+	}
+	return picked;
+};
 
 const transforms = {
 	from: [
@@ -17,8 +78,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/grid',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, null),
 						// Set Grid-specific defaults
 						rowGap: '',
 						columnGap: '',
@@ -38,8 +101,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/grid',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, null),
 						// Remove Row-specific attributes
 						mobileStack: undefined,
 						// Set Grid-specific defaults
@@ -79,6 +144,29 @@ const transforms = {
 				);
 			},
 		},
+		{
+			type: 'block',
+			blocks: ['core/columns'],
+			transform: (attributes, innerBlocks) => {
+				const { align, anchor } = attributes;
+				const count = Math.min(Math.max(innerBlocks.length, 1), 12);
+				return createBlock(
+					'designsetgo/grid',
+					{
+						// The Columns' own colours, border and spacing. Grid has
+						// a default style; only replace it when Columns had one.
+						...columnsStyleToGrid(attributes),
+						// Undefined keeps Grid's own full-width default.
+						...(align && { align }),
+						...(anchor && { anchor }),
+						desktopColumns: count,
+						tabletColumns: Math.min(count, 2),
+						mobileColumns: 1,
+					},
+					innerBlocks.map(columnToCell)
+				);
+			},
+		},
 	],
 	to: [
 		{
@@ -88,8 +176,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/section',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, 'vertical'),
 						// Remove Grid-specific attributes
 						desktopColumns: undefined,
 						tabletColumns: undefined,
@@ -110,8 +200,13 @@ const transforms = {
 				return createBlock(
 					'designsetgo/row',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(
+							attributes.layout,
+							'horizontal'
+						),
 						// Remove Grid-specific attributes
 						desktopColumns: undefined,
 						tabletColumns: undefined,
@@ -173,6 +268,24 @@ const transforms = {
 					innerBlocks
 				);
 			},
+		},
+		{
+			type: 'block',
+			blocks: ['core/columns'],
+			// Every cell becomes a column in one row, so the responsive
+			// column counts are dropped; core Columns stack on mobile.
+			transform: (attributes, innerBlocks) =>
+				createBlock(
+					'core/columns',
+					{
+						...pickColors(attributes, GRID_STYLE),
+						...(attributes.align && { align: attributes.align }),
+						...(attributes.anchor && { anchor: attributes.anchor }),
+					},
+					innerBlocks.map((cell) =>
+						createBlock('core/column', {}, [cell])
+					)
+				),
 		},
 	],
 };

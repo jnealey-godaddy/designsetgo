@@ -1,7 +1,7 @@
 /**
  * Row Block Registration
  *
- * Flexible horizontal or vertical layouts with wrapping.
+ * Flexible horizontal layouts with wrapping.
  *
  * @since 1.0.0
  */

@@ -137,26 +137,44 @@
 			{
 				"name": "designsetgo/icon-list-item",
 				"attributes": {
-					"icon": "check",
-					"title": "Feature One",
-					"description": "Description of the first feature"
-				}
+					"icon": "check"
+				},
+				"innerBlocks": [
+					{
+						"name": "core/paragraph",
+						"attributes": {
+							"content": "<strong>Feature One</strong> — description of the first feature"
+						}
+					}
+				]
 			},
 			{
 				"name": "designsetgo/icon-list-item",
 				"attributes": {
-					"icon": "star",
-					"title": "Feature Two",
-					"description": "Description of the second feature"
-				}
+					"icon": "star"
+				},
+				"innerBlocks": [
+					{
+						"name": "core/paragraph",
+						"attributes": {
+							"content": "<strong>Feature Two</strong> — description of the second feature"
+						}
+					}
+				]
 			},
 			{
 				"name": "designsetgo/icon-list-item",
 				"attributes": {
-					"icon": "rocket",
-					"title": "Feature Three",
-					"description": "Description of the third feature"
-				}
+					"icon": "rocket"
+				},
+				"innerBlocks": [
+					{
+						"name": "core/paragraph",
+						"attributes": {
+							"content": "<strong>Feature Three</strong> — description of the third feature"
+						}
+					}
+				]
 			}
 		]
 	},

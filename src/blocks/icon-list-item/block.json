@@ -5,7 +5,7 @@
 	"version": "1.0.0",
 	"title": "Icon List Item",
 	"category": "designsetgo",
-	"description": "A single item in an icon list with icon, title, and description.",
+	"description": "A single item in an icon list, with an icon beside its content.",
 	"keywords": [
 		"icon",
 		"list item",
@@ -56,6 +56,19 @@
 			"type": "string",
 			"default": ""
 		}
+	},
+	"example": {
+		"attributes": {
+			"icon": "check"
+		},
+		"innerBlocks": [
+			{
+				"name": "core/paragraph",
+				"attributes": {
+					"content": "A list item with its own icon"
+				}
+			}
+		]
 	},
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",

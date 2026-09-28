@@ -298,7 +298,7 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 									focalPoint: { x: 0.5, y: 0.5 },
 								})
 							}
-							isShownByDefault={false}
+							isShownByDefault
 						>
 							<FocalPointPicker
 								label={__('Focal point', 'designsetgo')}
@@ -388,7 +388,7 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 						onDeselect={() =>
 							setAttributes({ href: '', linkTarget: '', rel: '' })
 						}
-						isShownByDefault={false}
+						isShownByDefault
 					>
 						<TextControl
 							label={__('Link URL', 'designsetgo')}
@@ -404,7 +404,7 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 							label={__('Open in', 'designsetgo')}
 							hasValue={() => linkTarget !== ''}
 							onDeselect={() => setAttributes({ linkTarget: '' })}
-							isShownByDefault={false}
+							isShownByDefault
 						>
 							<SelectControl
 								label={__('Open in', 'designsetgo')}
@@ -424,7 +424,7 @@ export default function Edit({ attributes, setAttributes, clientId, context }) {
 							label={__('Rel attribute', 'designsetgo')}
 							hasValue={() => rel !== ''}
 							onDeselect={() => setAttributes({ rel: '' })}
-							isShownByDefault={false}
+							isShownByDefault
 						>
 							<SelectControl
 								label={__('Rel attribute', 'designsetgo')}

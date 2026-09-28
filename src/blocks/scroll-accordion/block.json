@@ -51,6 +51,62 @@
 			"allowEditing": false
 		}
 	},
+	"example": {
+		"innerBlocks": [
+			{
+				"name": "designsetgo/scroll-accordion-item",
+				"attributes": {
+					"style": {
+						"color": {
+							"background": "#1e293b",
+							"text": "#ffffff"
+						}
+					}
+				},
+				"innerBlocks": [
+					{
+						"name": "core/heading",
+						"attributes": {
+							"level": 3,
+							"content": "First card"
+						}
+					},
+					{
+						"name": "core/paragraph",
+						"attributes": {
+							"content": "Cards stack on top of each other as the page scrolls."
+						}
+					}
+				]
+			},
+			{
+				"name": "designsetgo/scroll-accordion-item",
+				"attributes": {
+					"style": {
+						"color": {
+							"background": "#334155",
+							"text": "#ffffff"
+						}
+					}
+				},
+				"innerBlocks": [
+					{
+						"name": "core/heading",
+						"attributes": {
+							"level": 3,
+							"content": "Second card"
+						}
+					},
+					{
+						"name": "core/paragraph",
+						"attributes": {
+							"content": "Each card sticks until the next one covers it."
+						}
+					}
+				]
+			}
+		]
+	},
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
 	"style": "file:./style-index.css",

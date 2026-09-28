@@ -211,4 +211,40 @@ class Map_Embed_Render_Test extends WP_UnitTestCase {
 			$this->assertStringNotContainsString( 'dsgo-map__iframe', $html, $provider );
 		}
 	}
+
+	/**
+	 * A map still on the editor's "find a location" placeholder (0,0 with no
+	 * address) renders nothing rather than a map of the open ocean.
+	 */
+	public function test_map_without_a_location_renders_nothing() {
+		foreach ( array( 'openstreetmap', 'googlemaps', 'googlemaps-embed' ) as $provider ) {
+			$html = $this->render(
+				array(
+					'dsgoProvider'  => $provider,
+					'dsgoLatitude'  => 0,
+					'dsgoLongitude' => 0,
+				)
+			);
+
+			$this->assertSame( '', trim( $html ), $provider );
+		}
+	}
+
+	/**
+	 * Address-only maps (0,0 plus an address, as the patterns ship them) and
+	 * maps on the default coordinates still render.
+	 */
+	public function test_address_only_and_default_maps_still_render() {
+		$address_only = $this->render(
+			array(
+				'dsgoLatitude'  => 0,
+				'dsgoLongitude' => 0,
+				'dsgoAddress'   => '1 Main St',
+			)
+		);
+		$defaults     = $this->render( array( 'dsgoProvider' => 'openstreetmap' ) );
+
+		$this->assertStringContainsString( 'dsgo-map__container', $address_only );
+		$this->assertStringContainsString( 'dsgo-map__container', $defaults );
+	}
 }

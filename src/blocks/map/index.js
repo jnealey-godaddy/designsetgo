@@ -37,6 +37,26 @@ registerBlockType(metadata.name, {
 		),
 		foreground: ICON_COLOR,
 	},
+	// The inserter creates maps at 0,0 so a new block opens on the "find a
+	// location" placeholder instead of silently showing the New York default.
+	// It has to be a variation, not a new attribute default: WordPress omits
+	// default-valued attributes from the block comment, so every existing map
+	// that relies on the 40.7128 / -74.006 defaults would move too. Explicit
+	// 0s serialize, so only blocks inserted from here on carry them, while
+	// createBlock() calls (patterns, transforms) keep the defaults.
+	//
+	// No title or description: the inserter shows a default variation's own
+	// text in place of the block's, and `metadata` here is the untranslated
+	// block.json. Left out, the inserter falls back to the block type's
+	// server-translated title and description.
+	variations: [
+		{
+			name: 'map',
+			isDefault: true,
+			scope: ['inserter'],
+			attributes: { dsgoLatitude: 0, dsgoLongitude: 0 },
+		},
+	],
 	deprecated,
 	edit: Edit,
 	save: Save,

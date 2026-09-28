@@ -11,7 +11,7 @@
 			{
 				"name": "designsetgo/row",
 				"title": "Row",
-				"description": "Flexible horizontal or vertical layouts with wrapping",
+				"description": "Flexible horizontal layouts with wrapping",
 				"performance": "low"
 			},
 			{

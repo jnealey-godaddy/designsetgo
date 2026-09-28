@@ -9830,8 +9830,8 @@ msgstr "Item de lista com ícone"
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
 msgctxt "block description"
-msgid "A single item in an icon list with icon, title, and description."
-msgstr "Um único item em uma lista de ícones com ícone, título e descrição."
+msgid "A single item in an icon list, with an icon beside its content."
+msgstr "Um único item em uma lista de ícones, com um ícone ao lado do seu conteúdo."
 
 #: build/blocks/icon-list-item/block.json
 #: src/blocks/icon-list-item/block.json
@@ -9957,13 +9957,13 @@ msgstr "portfólio"
 #, fuzzy
 msgctxt "block title"
 msgid "Map"
-msgstr "Espaçamento"
+msgstr "Mapa"
 
 #: build/blocks/map/block.json
 #: src/blocks/map/block.json
 msgctxt "block description"
 msgid "Display an interactive map using OpenStreetMap or Google Maps."
-msgstr ""
+msgstr "Exibe um mapa interativo usando o OpenStreetMap ou o Google Maps."
 
 #: build/blocks/map/block.json
 #: src/blocks/map/block.json
@@ -10166,8 +10166,8 @@ msgstr "Linhas"
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
 msgctxt "block description"
-msgid "Flexible horizontal or vertical layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
-msgstr "Layouts horizontais ou verticais flexíveis com quebra. Perfeito para grupos de botões, seções hero e layouts de cartão responsivos."
+msgid "Flexible horizontal layouts with wrapping. Perfect for button groups, hero sections, and responsive card layouts."
+msgstr "Layouts horizontais flexíveis com quebra. Perfeito para grupos de botões, seções hero e layouts de cartão responsivos."
 
 #: build/blocks/row/block.json
 #: src/blocks/row/block.json
@@ -10515,8 +10515,8 @@ msgid "Heading text…"
 msgstr ""
 
 #: includes/admin/blocks-registry-i18n.php:35
-msgid "Flexible horizontal or vertical layouts with wrapping"
-msgstr ""
+msgid "Flexible horizontal layouts with wrapping"
+msgstr "Layouts horizontais flexíveis com quebra"
 
 #: includes/admin/blocks-registry-i18n.php:37
 msgid "Vertical stacking container for sections and content areas"

@@ -7,6 +7,7 @@
  */
 
 import { createBlock } from '@wordpress/blocks';
+import { transformLayout } from '../../utils/transform-layout';
 
 const transforms = {
 	from: [
@@ -19,6 +20,11 @@ const transforms = {
 					{
 						// Transfer all attributes from legacy Flex block
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(
+							attributes.layout,
+							'horizontal'
+						),
 					},
 					innerBlocks
 				);
@@ -31,8 +37,13 @@ const transforms = {
 				return createBlock(
 					'designsetgo/row',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(
+							attributes.layout,
+							'horizontal'
+						),
 						// mobileStack doesn't exist in Stack/Section, default to false
 						mobileStack: false,
 					},
@@ -47,8 +58,13 @@ const transforms = {
 				return createBlock(
 					'designsetgo/row',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(
+							attributes.layout,
+							'horizontal'
+						),
 						// Remove Grid-specific attributes
 						desktopColumns: undefined,
 						tabletColumns: undefined,
@@ -73,8 +89,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/section',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, 'vertical'),
 						// Remove mobileStack (Row-specific)
 						mobileStack: undefined,
 					},
@@ -89,8 +107,10 @@ const transforms = {
 				return createBlock(
 					'designsetgo/grid',
 					{
-						// Preserve all attributes including layout
+						// Preserve all attributes
 						...attributes,
+						// Orientation belongs to the target block; see transformLayout().
+						layout: transformLayout(attributes.layout, null),
 						// Remove mobileStack (Row-specific)
 						mobileStack: undefined,
 						// Set Grid-specific defaults

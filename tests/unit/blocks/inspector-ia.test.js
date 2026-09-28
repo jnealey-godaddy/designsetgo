@@ -134,6 +134,7 @@ const MIGRATED_BLOCKS = [
 	'countdown-timer',
 	'dynamic-image',
 	'star-rating',
+	'icon-list-item',
 ];
 
 // Blocks whose inspector items live in sub-components under
@@ -152,6 +153,7 @@ const COMPOSITE_INSPECTOR_BLOCKS = new Set([
 	'product-showcase-hero',
 	'map',
 	'countdown-timer',
+	'icon-list-item',
 ]);
 
 describe('Theme 3 — Inspector IA migration', () => {
