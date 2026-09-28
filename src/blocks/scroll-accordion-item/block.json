@@ -80,7 +80,12 @@
 				"name": "core/heading",
 				"attributes": {
 					"level": 3,
-					"content": "Scroll card"
+					"content": "Scroll card",
+					"style": {
+						"color": {
+							"text": "#ffffff"
+						}
+					}
 				}
 			},
 			{

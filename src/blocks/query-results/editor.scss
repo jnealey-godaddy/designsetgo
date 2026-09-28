@@ -50,17 +50,27 @@
 
 		.dsgo-query-results__ghost-image {
 			aspect-ratio: 4 / 3;
-			background: linear-gradient(
-				135deg,
-				var(--wp--preset--color--contrast-2, rgba(0, 0, 0, 0.06)) 0%,
-				var(--wp--preset--color--contrast-3, rgba(0, 0, 0, 0.12)) 100%
-			);
+			// Tints of the text colour (see skeletons.scss); the rgba()
+			// values are for browsers without color-mix().
+			background:
+				linear-gradient(
+					135deg,
+					rgba(0, 0, 0, 0.06) 0%,
+					rgba(0, 0, 0, 0.12) 100%
+				);
+			background:
+				linear-gradient(
+					135deg,
+					color-mix(in srgb, currentcolor 6%, transparent) 0%,
+					color-mix(in srgb, currentcolor 12%, transparent) 100%
+				);
 			border-radius: $dsgo-radius-small;
 		}
 
 		.dsgo-query-results__ghost-line {
 			height: 0.75rem;
-			background: var(--wp--preset--color--contrast-2, rgba(0, 0, 0, 0.08));
+			background: rgba(0, 0, 0, 0.08);
+			background: color-mix(in srgb, currentcolor 8%, transparent);
 			border-radius: $dsgo-radius-small;
 
 			&--title {

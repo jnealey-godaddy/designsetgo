@@ -18,7 +18,9 @@
 
 		&:hover,
 		&:focus {
-			background-color: var(--wp--preset--color--contrast-2, #e0e0e0);
+			// Matches style.scss's hover tint.
+			background-color: #e0e0e0;
+			background-color: color-mix(in srgb, currentcolor 12%, transparent);
 			outline: 2px solid var(--wp-admin-theme-color, #007cba);
 			outline-offset: -2px;
 		}

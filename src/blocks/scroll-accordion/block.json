@@ -68,7 +68,12 @@
 						"name": "core/heading",
 						"attributes": {
 							"level": 3,
-							"content": "First card"
+							"content": "First card",
+							"style": {
+								"color": {
+									"text": "#ffffff"
+								}
+							}
 						}
 					},
 					{
@@ -94,7 +99,12 @@
 						"name": "core/heading",
 						"attributes": {
 							"level": 3,
-							"content": "Second card"
+							"content": "Second card",
+							"style": {
+								"color": {
+									"text": "#ffffff"
+								}
+							}
 						}
 					},
 					{

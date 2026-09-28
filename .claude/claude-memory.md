@@ -524,13 +524,25 @@ needs its own direct `@use '../../styles/variables' as *;` if it references `$ds
 this by grepping every changed file for `$dsgo-` / `@include below(` against its own `@use`
 lines before building — cheaper than a full build cycle to catch a missing-variable Sass error.
 
-**WordPress's `.alignleft`/`.alignright` are NOT direction-aware — core never flips them for
-RTL.** So a block's OWN legacy align-class CSS (Icon Button's pre-justification-wrapper v9
-markup, Blobs, Scroll Accordion Item) should NOT convert single-sided `margin-right: auto` /
-`margin-left: auto` to `margin-inline-start/end: auto` — that WOULD flip in RTL while every
-other WP block's `.alignleft` stays physically put, a new inconsistency, not a fix. Only the
-BOTH-sides-auto (centering) case is safe to convert to `margin-inline: auto`, since centering is
-direction-symmetric regardless.
+**RTL is handled by the build, not by hand.** wp-scripts emits an rtlcss-flipped
+`*-rtl.css` beside every stylesheet, and `register_block_style_handle()` serves it on RTL sites
+(`wp_style_add_data( $handle, 'rtl', 'replace' )`). So a physical `margin-right: auto` or
+`text-align: right` already mirrors in RTL; converting to logical properties changes nothing
+rendered there. Core's own block-library RTL stylesheet flips `.alignleft` (`float: right`)
+too. Logical properties are still fine for new code — just don't expect them to fix, or
+break, RTL. To test RTL without an RTL language installed, set
+`$GLOBALS['wp_locale']->text_direction = 'rtl'` on `after_setup_theme` from a throwaway
+mu-plugin, then compare the rendered page against main.
+(Corrected in review of PR #594: this note first said core never flips `.alignleft` in RTL.)
+
+**`contrast-2` / `contrast-3` are text greys, not light backgrounds.** Twenty Twenty-Four
+defines them as #636363 / #A4A4A4, and DSGo's own patterns use them as text and border
+colours. Using them as fallbacks for placeholder or skeleton backgrounds turned the Query
+loading shimmer into a dark bar and dropped the Fifty Fifty placeholder to ~2.4:1 contrast.
+For neutral tints that suit light and dark themes, use
+`color-mix(in srgb, currentcolor N%, transparent)` with the fixed grey declared first as the
+fallback. Likewise `contrast` is near-white on dark style variations, so it is not a safe
+"dark overlay" default.
 
 **Fifty Fifty / Product Showcase Hero's media-left/media-right margin-auto stays physical too**,
 for an unrelated reason: it has to track the sibling `padding-left`/`padding-right` pair on
