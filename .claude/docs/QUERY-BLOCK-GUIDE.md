@@ -66,7 +66,7 @@ designsetgo/query-no-results  →  usesContext: ["designsetgo/queryId"]
 
 Siblings use `queryId` to stamp their output HTML with `data-dsgo-query-id` so the Interactivity API store knows which container to refresh.
 
-**When to set it manually:** if you need two queries on one page that should share a filter (unusual), set both blocks to the same `queryId`. Otherwise leave it auto-generated.
+**Keep it unique.** The editor regenerates a `queryId` that duplicates another Query's on the same page, and URL params are scoped by it — see "Params are scoped per Query" below. To make one filter drive every Query on a page, use the `designsetgo_query_scope_params` filter, not a shared id.
 
 **Frontend data contract:** the block's outer wrapper carries `data-dsgo-query-id="{queryId}"`. A hidden `<div data-dsgo-blobs-for="{queryId}">` inside the region carries the query's **signed refresh source**: `data-dsgo-refresh-source` (base64 JSON of the attributes, serialized inner blocks, and the post whose content holds the query) and `data-dsgo-signature` (an HMAC keyed to the site's `AUTH_SALT`). The IAPI load-more and filter actions send the pair back verbatim; the REST route renders only a definition whose signature verifies. It's base64 in an attribute, not JSON in a `<script>`, because it passes through `the_content`, and filters there (`capital_P_dangit()`, for one) rewrite script text — which would break the signature.
 
@@ -262,6 +262,25 @@ Woo's filter blocks navigate by URL rather than targeting a `queryId`, which is 
 
 Only the whitelisted params above are extracted from `$_GET` by `designsetgo_query_extract_params_from_request()`. Extend the whitelist via the `designsetgo_query_url_params` filter if you need custom params.
 
+### Params are scoped per Query
+
+On a page with two or more Queries, filter controls write keys scoped to their own Query — `filter_category__{queryId}`, `q__{queryId}`, `sort__{queryId}` — so using one Query's filters never changes another's results. On a page with one Query they write plain keys (`?q=shoes`), which keeps URLs readable and site-search analytics that look for `q` working.
+
+Every reader follows the same rules — `designsetgo_query_owned_request_params()` in `src/blocks/query/param-scoping.php`, mirrored in the browser by `src/blocks/query/url-scope.js`:
+
+1. A key scoped for this Query wins over the same bare key.
+2. A key scoped for another Query is never read or changed.
+3. A bare key (`?filter_category=news` from a bookmark, menu link, or WooCommerce's filter blocks, which can't know a `queryId`) applies to every Query. Controls seed from it, so ticking another term adds to the bookmarked one.
+4. To clear an inherited bare value for one Query only, that Query writes an **empty** scoped key (`filter_category__{queryId}[]=`), which hides the bare value from it and leaves the other Queries alone. Chips and Reset do this too.
+
+Only the text after the last `__` can be a Query id, and only when it is one: the caller's own id, an id on the current page, or a generated id (`q` + 8 hex from the editor, `q-` + 10 hex from a template import). So a taxonomy like `filter_my__tax` stays an ordinary bare key.
+
+**Pagination:** numbered pagination uses WordPress's `paged` on a one-Query page and `qpage__{queryId}` when there are several, so paging one Query doesn't page the others. A Query reads its own `qpage__{queryId}` first, then `paged` / `page`. Changing a filter sends only that Query back to page 1.
+
+**No-JS forms** carry the rest of the URL (other Queries' keys, `page_id` with plain permalinks) as hidden inputs, and chip and Reset links change only their own Query's keys. With JS, controls, chips and Reset compute the new URL from the live address bar at click time.
+
+**Opting out:** `add_filter( 'designsetgo_query_scope_params', '__return_false' )` makes controls write plain keys on every page, so one filter drives every Query again, as before 2.8.3. Scoped keys already in URLs are still read.
+
 ### query-filter variations
 
 | Variation | `filterKind` | Default `paramName` | HTML output |
@@ -365,8 +384,9 @@ POST /wp-json/designsetgo/v1/query/render
 | `source` | string | yes | `data-dsgo-refresh-source` from the region, verbatim |
 | `signature` | string | yes | `data-dsgo-signature` from the region, verbatim |
 | `page` | integer | no (default 1) | Page number to render |
-| `params` | object | no | URL params (`q`, `sort`, `filter_*`) |
-| `currentUrl` | string | no | Page URL, for chip/reset links |
+| `params` | object | no | URL params (`q`, `sort`, `filter_*`), keys as collected from the URL, bare or scoped (`filter_category__{queryId}`); see "Params are scoped per Query" above |
+| `currentUrl` | string | no | Page URL, for chip/reset links and the no-JS forms' hidden inputs |
+| `multiQuery` | boolean | no (default false) | Whether the page holds other Queries, so the re-rendered controls and pagination use scoped keys |
 
 The editor preview uses `POST /wp-json/designsetgo/v1/query/render-preview` instead, which takes `attributes` + `innerBlocks` directly, requires `edit_posts` + nonce, only renders post types the user can see or edit, and never emits a signed source.
 

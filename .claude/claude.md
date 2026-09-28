@@ -58,7 +58,7 @@ For sibling blocks that already exist and meet the "1–3 attribute difference +
 - Per-item context: `postId` + `postType` for Posts (matches core blocks); `designsetgo/currentItemId` + `designsetgo/currentItemType` for users/terms.
 - IAPI store: `'designsetgo/query'`. Actions: `loadMore`, `setFilter`, `setFilterDebounced`, `toggleFilter`, `removeActiveFilter`, `resetAll`.
 - Filter hooks: `designsetgo_query_args` (all sources), `designsetgo/query/{queryId}/args` (scoped — fires after the global hook).
-- URL params: `q`, `sort`, `filter_<taxonomy>`. Extend via `designsetgo_query_url_params` filter.
+- URL params: `q`, `sort`, `filter_<taxonomy>`. Extend via `designsetgo_query_url_params` filter. Scoped per Query on multi-Query pages — see "URL param scoping" below.
 - Frontend data contract: `[data-dsgo-query-id]` on the wrapper; `[data-dsgo-blobs-for]` carries a **signed refresh source** (`data-dsgo-refresh-source`, base64 of attributes + innerBlocks + source post, and an HMAC `data-dsgo-signature`). The public `/query/render` route renders only a definition whose signature verifies — never caller-supplied settings — so it works wherever the query sits (post content, template, template part, synced pattern, widget). A query inside a post's content is limited to people who can see that post. `DesignSetGo\Blocks\Query\RefreshSource` owns signing, verification and the `the_content` source tracking. Editor previews use `/query/render-preview` (`edit_posts`, post type must be viewable or editable by the user) and must never emit a signed source. Visitors get no REST nonce (a stale one on a cached page is rejected by core before the route runs).
 - See [QUERY-BLOCK-GUIDE.md](docs/QUERY-BLOCK-GUIDE.md) for recipes + extension points.
 
@@ -100,6 +100,16 @@ For sibling blocks that already exist and meet the "1–3 attribute difference +
 - `<ClauseGroupShell>` (`src/blocks/query/components/ClauseGroupShell.js`) — shared recursive group chrome (relation selector, + Clause, + Group, Remove group). Used by both TaxQueryBuilder and MetaQueryBuilder via `renderClause` render prop.
 - Query Monitor panel: `includes/class-query-qm-collector.php` + `includes/class-query-qm-output.php`. Loaded only when `defined('QM_VERSION')`. Collects data via `designsetgo_query_did_render` action fired from `render-posts.php` after each WP_Query.
 - Dynamic CSS style bindings: `dsgoStyleBinding` global attribute (`src/extensions/style-binding/filters.js`) maps CSS property names (including custom properties `--foo`) → binding source+key. PHP: `DesignSetGo\StyleBinding` (`includes/features/class-style-binding.php`) resolves via `designsetgo_style_binding_resolve` filter and injects via `WP_HTML_Tag_Processor`. Honours `$GLOBALS['designsetgo_parent_stack']` for nested loop context. Dangerous values (`url(`, `expression(`, `javascript:`) rejected.
+
+### Query block family — URL param scoping (2.8.3)
+
+- With 2+ Queries on a page, filter controls write `{key}__{queryId}` (`q__qa1b2c3d4`, `filter_category__qa1b2c3d4[]`); with one they write plain keys. JS decides from the page's distinct `[data-dsgo-query-region]` count; PHP from `designsetgo_query_known_ids()` (current post content + resolved template + Queries rendered so far). REST refresh gets the page's answer as `multiQuery`.
+- One rule set, two mirrors: `src/blocks/query/param-scoping.php` (key rules, `designsetgo_query_owned_request_params()`, page param) + `filter-links.php` (no-JS hidden inputs, chip/Reset hrefs) ↔ `src/blocks/query/url-scope.js`. Change one, change the other. Scoped for this Query wins; scoped for another is never read; bare applies to every Query; an EMPTY scoped key hides a bare value from one Query only.
+- `designsetgo_query_split_param_key()` treats the text after the last `__` as a Query id only if it's the caller's id, a known id, or generated-shaped (`q`+8 hex, `q-`+10 hex) — so `filter_my__tax` stays bare.
+- Pagination: `qpage__{queryId}` on multi-Query pages, WordPress `paged` otherwise. `designsetgo_query_current_page()` reads own `qpage` first.
+- JS computes every control/chip/Reset URL from `window.location` at click time (`dsgoFilterUrl()` in view.js) and writes it with `replaceState` BEFORE the fetch, so a second Query's interaction mid-flight doesn't overwrite the first. Server chip/Reset hrefs are no-JS fallbacks only. WordPress pagination links write `filter_x[0]=`; `normalizeListKeys()` / `collectParams()` accept it.
+- Opt-out: `designsetgo_query_scope_params` → false makes controls write bare keys everywhere (shared filters, pre-2.8.3 behaviour); scoped keys are still read.
+- Both new PHP files are in the webpack copy patterns WITHOUT `noErrorOnMissing`: render-helpers.php and query-filter/render.php require them unconditionally.
 
 ### WooCommerce surface (Plan 8)
 

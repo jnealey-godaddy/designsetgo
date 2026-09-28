@@ -33,12 +33,14 @@ if ( function_exists( 'wp_enqueue_script_module' ) ) {
 	wp_enqueue_script_module( 'designsetgo-query-view-script-module' );
 }
 
-$designsetgo_page = max( 1, absint( get_query_var( 'paged' ) ) );
-if ( 1 === $designsetgo_page ) {
-	$designsetgo_page = max( 1, absint( get_query_var( 'page' ) ) );
-}
-
 $designsetgo_query_id = isset( $attributes['queryId'] ) ? sanitize_key( (string) $attributes['queryId'] ) : '';
+
+// Registered before rendering, so this Query's own filters and pagination
+// already count it when deciding whether the page holds several Queries.
+designsetgo_query_register_rendered_id( $designsetgo_query_id );
+
+// `qpage__{queryId}` when several Queries share the page, else `paged`.
+$designsetgo_page = designsetgo_query_current_page( $designsetgo_query_id );
 
 $designsetgo_parsed_children = isset( $block->parsed_block['innerBlocks'] )
 	? (array) $block->parsed_block['innerBlocks']

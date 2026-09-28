@@ -177,21 +177,26 @@ if ( ! function_exists( 'designsetgo_render_query_pagination' ) ) {
 			return;
 		}
 
-		// Numbered pagination.
-		$current = max( 1, (int) get_query_var( 'paged' ) );
-		if ( 1 === $current ) {
-			// Singular-post paginator uses 'page' not 'paged'.
-			$current = max( 1, (int) get_query_var( 'page' ) );
+		// Numbered pagination. The page this Query actually rendered, so a
+		// REST refresh (always page 1) and first paint agree.
+		$current = isset( $state['page'] ) ? max( 1, (int) $state['page'] ) : designsetgo_query_current_page( $query_id );
+
+		$paginate_args = array(
+			'total'     => (int) $state['totalPages'],
+			'current'   => $current,
+			'type'      => 'array',
+			'prev_next' => $show_prev_next,
+		);
+		// With several Queries on the page, WordPress's shared `paged` would
+		// page all of them; each pages by its own `qpage__{queryId}` instead.
+		$page_param = designsetgo_query_page_param_name( $query_id );
+		if ( 'paged' !== $page_param ) {
+			// paginate_links() escapes each link it builds from this base.
+			$paginate_args['base']   = add_query_arg( $page_param, '%#%' );
+			$paginate_args['format'] = '';
 		}
 
-		$links = paginate_links(
-			array(
-				'total'     => (int) $state['totalPages'],
-				'current'   => $current,
-				'type'      => 'array',
-				'prev_next' => $show_prev_next,
-			)
-		);
+		$links = paginate_links( $paginate_args );
 
 		if ( empty( $links ) || ! is_array( $links ) ) {
 			return;

@@ -36,6 +36,9 @@ parameters:
 	# limit. scanFiles registers the symbols without executing them.
 	scanFiles:
 		- vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+		# The REST controller loads this from build/ at runtime; scan the source
+		# so PHPStan knows its functions.
+		- src/blocks/query/param-scoping.php
 
 	ignoreErrors:
 		# WordPress globals

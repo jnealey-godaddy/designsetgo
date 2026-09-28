@@ -66,6 +66,12 @@ class Controller {
 						'default'           => '',
 						'sanitize_callback' => 'esc_url_raw',
 					),
+					// Whether the page holds other Queries, so the rendered
+					// controls and pagination use per-Query URL keys.
+					'multiQuery' => array(
+						'type'    => 'boolean',
+						'default' => false,
+					),
 				),
 			)
 		);
@@ -632,7 +638,7 @@ class Controller {
 	 * @param int|null         $source_post_id Post holding the query (0 outside
 	 *                                         post content), or null to emit
 	 *                                         no refresh source.
-	 * @return \WP_REST_Response
+	 * @return \WP_REST_Response|\WP_Error
 	 */
 	private function render_request( array $attributes, $query_id, $inner_html, \WP_REST_Request $request, $source_post_id ) {
 		$page        = max( 1, (int) $request->get_param( 'page' ) );
@@ -651,10 +657,23 @@ class Controller {
 		// (eats `+`, collapses whitespace) and this value is only ever restored
 		// to the superglobal, never echoed or used in HTML.
 		$original_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- restore-only, see comment above.
+		$scoping      = DESIGNSETGO_PATH . 'build/blocks/query/param-scoping.php';
+		if ( ! file_exists( $scoping ) ) {
+			return new \WP_Error( 'designsetgo_query_unavailable', __( 'Query rendering is unavailable.', 'designsetgo' ), array( 'status' => 500 ) );
+		}
+		require_once $scoping; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.UsingVariable -- build artifact; path resolved from plugin directory
+
 		$allowed_keys = apply_filters( 'designsetgo_query_url_params', array( 'q', 'sort' ) );
+		$own_id       = sanitize_key( (string) $query_id );
 		foreach ( $params as $key => $value ) {
 			$key = (string) $key;
-			if ( in_array( $key, $allowed_keys, true ) || 0 === strpos( $key, 'filter_' ) ) {
+			// Per-Query keys (`q__{queryId}`) resolve by their bare name, the
+			// same way designsetgo_query_owned_request_params() reads them back.
+			// Other Queries' filter_* keys pass through so this render's
+			// controls and chips see the whole URL, as on first paint.
+			list( $bare, $scope ) = designsetgo_query_split_param_key( sanitize_key( $key ), $own_id );
+			$allowed              = in_array( $bare, $allowed_keys, true ) || 0 === strpos( $bare, 'filter_' );
+			if ( $allowed && ( '' === $scope || $scope === $own_id || 0 === strpos( $bare, 'filter_' ) ) ) {
 				// REST-supplied values are sanitized downstream before use in
 				// WP_Query / SQL / HTML, but nested block renders may pass
 				// through filter hooks or third-party code that reads $_GET
@@ -666,6 +685,9 @@ class Controller {
 				}
 			}
 		}
+		// The browser can see the whole page; this render sees one Query.
+		$original_multi                           = $GLOBALS['designsetgo_query_force_multi'] ?? null;
+		$GLOBALS['designsetgo_query_force_multi'] = (bool) $request->get_param( 'multiQuery' );
 		if ( '' !== $current_url ) {
 			$parsed = wp_parse_url( $current_url );
 			if ( is_array( $parsed ) && isset( $parsed['path'] ) ) {
@@ -696,6 +718,11 @@ class Controller {
 		} finally {
 			$_GET                   = $original_get; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$_SERVER['REQUEST_URI'] = $original_uri;
+			if ( null === $original_multi ) {
+				unset( $GLOBALS['designsetgo_query_force_multi'] );
+			} else {
+				$GLOBALS['designsetgo_query_force_multi'] = $original_multi;
+			}
 		}
 
 		return rest_ensure_response( $result );

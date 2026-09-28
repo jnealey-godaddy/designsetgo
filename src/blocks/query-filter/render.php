@@ -17,6 +17,9 @@
 
 defined( 'ABSPATH' ) || exit;
 
+// Shared with the Query block (per-Query URL keys, chip and Reset links).
+require_once dirname( __DIR__ ) . '/query/filter-links.php';
+
 // ---------------------------------------------------------------------------
 // Helper renderers (one per filterKind) — defined FIRST so the dispatcher
 // below can call them on the first render (conditional function defs only
@@ -76,6 +79,58 @@ if ( ! function_exists( 'designsetgo_query_filter_collect_term_scope' ) ) :
 
 endif;
 
+if ( ! function_exists( 'designsetgo_query_filter_current_value' ) ) :
+
+	/**
+	 * A filter's current value for its Query: the Query's own scoped key if
+	 * present (even empty, which clears an inherited bare value), else the
+	 * bare key. See designsetgo_query_owned_request_params().
+	 *
+	 * @param string $param_name Bare URL parameter name.
+	 * @param string $query_id   Sanitized queryId this filter belongs to.
+	 * @return string|array Unslashed, unsanitized value; '' when absent.
+	 */
+	function designsetgo_query_filter_current_value( $param_name, $query_id ) {
+		$owned = designsetgo_query_owned_request_params( $query_id );
+		return isset( $owned[ $param_name ] ) ? wp_unslash( $owned[ $param_name ]['value'] ) : '';
+	}
+
+endif;
+
+if ( ! function_exists( 'designsetgo_query_filter_field' ) ) :
+
+	/**
+	 * The name, id and carried-over hidden inputs for a filter's form field.
+	 *
+	 * The field writes the scoped key only when the page holds several
+	 * Queries. The hidden inputs keep the rest of the URL (other Queries'
+	 * filters, `page_id`) through a no-JS submission.
+	 *
+	 * @param string $param_name Bare URL parameter name.
+	 * @param string $query_id   Sanitized queryId this filter belongs to.
+	 * @param bool   $is_array   Whether the field submits `name[]`.
+	 * @return array{name:string,id:string,hidden:string}
+	 */
+	function designsetgo_query_filter_field( $param_name, $query_id, $is_array = false ) {
+		$scoped = $param_name . '__' . $query_id;
+		$multi  = designsetgo_query_page_is_multi();
+		$name   = $multi ? $scoped : $param_name;
+		// With several Queries the bare key stays for the others; with one,
+		// the field replaces it.
+		$hidden = designsetgo_query_preserved_inputs( $query_id, $multi ? array( $scoped ) : array( $param_name, $scoped ) );
+		// An unticked list must still override a bare value this Query inherited.
+		if ( $is_array && $multi ) {
+			$hidden .= sprintf( '<input type="hidden" name="%s[]" value="" />', esc_attr( $scoped ) );
+		}
+		return array(
+			'name'   => $name,
+			'id'     => 'dsgo-filter-' . sanitize_html_class( $scoped ),
+			'hidden' => $hidden,
+		);
+	}
+
+endif;
+
 if ( ! function_exists( 'designsetgo_query_filter_render_search' ) ) :
 
 	/**
@@ -85,27 +140,30 @@ if ( ! function_exists( 'designsetgo_query_filter_render_search' ) ) :
 	 * @param string $param_name  URL parameter name (usually 'q').
 	 * @param string $label       Optional visible label.
 	 * @param string $placeholder Input placeholder text.
+	 * @param string $query_id    Sanitized queryId this filter belongs to.
 	 */
-	function designsetgo_query_filter_render_search( $wrapper, $param_name, $label, $placeholder ) {
+	function designsetgo_query_filter_render_search( $wrapper, $param_name, $label, $placeholder, $query_id = '' ) {
 		// $param_name is already sanitize_key()'d at the call site. Coerce array
 		// GET (?q[]=value) to a scalar so the input doesn't render "Array".
-		$raw     = isset( $_GET[ $param_name ] ) ? wp_unslash( $_GET[ $param_name ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw     = designsetgo_query_filter_current_value( $param_name, $query_id );
 		$raw     = is_array( $raw ) ? ( isset( $raw[0] ) ? $raw[0] : '' ) : $raw;
 		$current = sanitize_text_field( (string) $raw );
 
-		$input_id   = 'dsgo-filter-' . sanitize_html_class( $param_name );
+		$field      = designsetgo_query_filter_field( $param_name, $query_id );
+		$input_id   = $field['id'];
 		$aria_label = $label ? '' : ' aria-label="' . esc_attr__( 'Search', 'designsetgo' ) . '"';
 
 		printf(
-			'<form %1$s method="get" action="" role="search" data-wp-on--submit="actions.setFilter">%2$s<div class="dsgo-query-filter__search-row"><input type="search" id="%7$s" name="%3$s" value="%4$s" placeholder="%5$s" class="dsgo-query-filter__search-input"%8$s /><button type="submit" class="dsgo-query-filter__submit">%6$s</button></div></form>',
+			'<form %1$s method="get" action="" role="search" data-wp-on--submit="actions.setFilter">%9$s%2$s<div class="dsgo-query-filter__search-row"><input type="search" id="%7$s" name="%3$s" value="%4$s" placeholder="%5$s" class="dsgo-query-filter__search-input"%8$s /><button type="submit" class="dsgo-query-filter__submit">%6$s</button></div></form>',
 			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() output + appended data-wp-context JSON (sanitized values + wp_json_encode with JSON_HEX_APOS).
 			$label ? '<label for="' . esc_attr( $input_id ) . '" class="dsgo-query-filter__label">' . esc_html( $label ) . '</label>' : '',
-			esc_attr( $param_name ),
+			esc_attr( $field['name'] ),
 			esc_attr( $current ),
 			esc_attr( $placeholder ? $placeholder : __( 'Search…', 'designsetgo' ) ),
 			esc_html__( 'Search', 'designsetgo' ),
 			esc_attr( $input_id ),
-			$aria_label // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr__ used inside.
+			$aria_label, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr__ used inside.
+			$field['hidden'] // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr() per input in designsetgo_query_preserved_inputs().
 		);
 	}
 
@@ -120,9 +178,10 @@ if ( ! function_exists( 'designsetgo_query_filter_render_sort' ) ) :
 	 * @param string $param_name URL parameter name (usually 'sort').
 	 * @param string $label      Optional visible label.
 	 * @param array  $options    Array of {value, label} option definitions.
+	 * @param string $query_id   Sanitized queryId this filter belongs to.
 	 */
-	function designsetgo_query_filter_render_sort( $wrapper, $param_name, $label, array $options ) {
-		$raw     = isset( $_GET[ $param_name ] ) ? wp_unslash( $_GET[ $param_name ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	function designsetgo_query_filter_render_sort( $wrapper, $param_name, $label, array $options, $query_id = '' ) {
+		$raw     = designsetgo_query_filter_current_value( $param_name, $query_id );
 		// Coerce array GET (?sort[]=value) to a scalar so `selected()` compares
 		// a string, not the literal "Array".
 		$raw     = is_array( $raw ) ? ( isset( $raw[0] ) ? $raw[0] : '' ) : $raw;
@@ -140,19 +199,21 @@ if ( ! function_exists( 'designsetgo_query_filter_render_sort' ) ) :
 			);
 		}
 
-		$select_id  = 'dsgo-filter-' . sanitize_html_class( $param_name );
+		$field      = designsetgo_query_filter_field( $param_name, $query_id );
+		$select_id  = $field['id'];
 		$aria_label = $label ? '' : ' aria-label="' . esc_attr__( 'Sort', 'designsetgo' ) . '"';
 
 		printf(
-			'<form %1$s method="get" action="">%2$s<select id="%7$s" name="%3$s" class="dsgo-query-filter__sort" data-wp-on--change="actions.setFilter"%8$s><option value="">%4$s</option>%5$s</select><noscript><button type="submit" class="dsgo-query-filter__nojs-submit">%6$s</button></noscript></form>',
+			'<form %1$s method="get" action="">%9$s%2$s<select id="%7$s" name="%3$s" class="dsgo-query-filter__sort" data-wp-on--change="actions.setFilter"%8$s><option value="">%4$s</option>%5$s</select><noscript><button type="submit" class="dsgo-query-filter__nojs-submit">%6$s</button></noscript></form>',
 			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$label ? '<label for="' . esc_attr( $select_id ) . '" class="dsgo-query-filter__label">' . esc_html( $label ) . '</label>' : '',
-			esc_attr( $param_name ),
+			esc_attr( $field['name'] ),
 			esc_html__( 'Default order', 'designsetgo' ),
 			$opts_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each option is escaped per-attribute above.
 			esc_html__( 'Apply filter', 'designsetgo' ),
 			esc_attr( $select_id ),
-			$aria_label // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr__ used inside.
+			$aria_label, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr__ used inside.
+			$field['hidden'] // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr() per input in designsetgo_query_preserved_inputs().
 		);
 	}
 
@@ -172,8 +233,9 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 	 * @param string $post_type       Optional post-type scope for counts.
 	 * @param array  $term_include    Term IDs the parent query allows, if any.
 	 * @param array  $term_exclude    Term IDs the parent query excludes, if any.
+	 * @param string $query_id        Sanitized queryId this filter belongs to.
 	 */
-	function designsetgo_query_filter_render_select( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '', $term_include = array(), $term_exclude = array() ) {
+	function designsetgo_query_filter_render_select( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '', $term_include = array(), $term_exclude = array(), $query_id = '' ) {
 		if ( ! taxonomy_exists( $filter_taxonomy ) ) {
 			return;
 		}
@@ -195,7 +257,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 			return;
 		}
 
-		$raw     = isset( $_GET[ $param_name ] ) ? wp_unslash( $_GET[ $param_name ] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$raw     = designsetgo_query_filter_current_value( $param_name, $query_id );
 		// Coerce array GET to scalar for the single-select variation.
 		$raw     = is_array( $raw ) ? ( isset( $raw[0] ) ? $raw[0] : '' ) : $raw;
 		$current = sanitize_title( (string) $raw );
@@ -234,19 +296,21 @@ if ( ! function_exists( 'designsetgo_query_filter_render_select' ) ) :
 			);
 		}
 
-		$select_id  = 'dsgo-filter-' . sanitize_html_class( $param_name );
+		$field      = designsetgo_query_filter_field( $param_name, $query_id );
+		$select_id  = $field['id'];
 		$aria_label = $label ? '' : ' aria-label="' . esc_attr( $filter_taxonomy ) . '"';
 
 		printf(
-			'<form %1$s method="get" action="">%2$s<select id="%7$s" name="%3$s" class="dsgo-query-filter__select" data-wp-on--change="actions.setFilter"%8$s><option value="">%4$s</option>%5$s</select><noscript><button type="submit" class="dsgo-query-filter__nojs-submit">%6$s</button></noscript></form>',
+			'<form %1$s method="get" action="">%9$s%2$s<select id="%7$s" name="%3$s" class="dsgo-query-filter__select" data-wp-on--change="actions.setFilter"%8$s><option value="">%4$s</option>%5$s</select><noscript><button type="submit" class="dsgo-query-filter__nojs-submit">%6$s</button></noscript></form>',
 			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			$label ? '<label for="' . esc_attr( $select_id ) . '" class="dsgo-query-filter__label">' . esc_html( $label ) . '</label>' : '',
-			esc_attr( $param_name ),
+			esc_attr( $field['name'] ),
 			esc_html__( 'All', 'designsetgo' ),
 			$opts_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each option is escaped above.
 			esc_html__( 'Apply filter', 'designsetgo' ),
 			esc_attr( $select_id ),
-			$aria_label // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr used inside.
+			$aria_label, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr used inside.
+			$field['hidden'] // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr() per input in designsetgo_query_preserved_inputs().
 		);
 	}
 
@@ -268,8 +332,9 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 	 * @param string $style           Visual style variant.
 	 * @param array  $term_include    Term IDs the parent query allows, if any.
 	 * @param array  $term_exclude    Term IDs the parent query excludes, if any.
+	 * @param string $query_id        Sanitized queryId this filter belongs to.
 	 */
-	function designsetgo_query_filter_render_checkbox( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '', $orientation = 'vertical', $style = 'default', $term_include = array(), $term_exclude = array() ) {
+	function designsetgo_query_filter_render_checkbox( $wrapper, $param_name, $label, $filter_taxonomy, $show_counts = false, $active_filters = array(), $post_type = '', $orientation = 'vertical', $style = 'default', $term_include = array(), $term_exclude = array(), $query_id = '' ) {
 		if ( ! taxonomy_exists( $filter_taxonomy ) ) {
 			return;
 		}
@@ -292,13 +357,10 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 		}
 
 		// Support both ?filter_category[]=slug and ?filter_category=slug,slug.
-		$selected_raw = array();
-		if ( isset( $_GET[ $param_name ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$raw_input    = wp_unslash( $_GET[ $param_name ] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$selected_raw = is_array( $raw_input )
-				? array_map( 'sanitize_title', $raw_input )
-				: array_filter( array_map( 'sanitize_title', explode( ',', (string) $raw_input ) ) );
-		}
+		$raw_input    = designsetgo_query_filter_current_value( $param_name, $query_id );
+		$selected_raw = is_array( $raw_input )
+			? array_map( 'sanitize_title', $raw_input )
+			: array_filter( array_map( 'sanitize_title', explode( ',', (string) $raw_input ) ) );
 
 		// Resolve per-option counts from the filter index if requested.
 		$counts = array();
@@ -317,6 +379,8 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 			);
 		}
 
+		$field = designsetgo_query_filter_field( $param_name, $query_id, true );
+
 		$items_html = '';
 		foreach ( $terms as $term ) {
 			$checked    = in_array( $term->slug, $selected_raw, true ) ? 'checked' : '';
@@ -326,7 +390,7 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 			}
 			$items_html .= sprintf(
 				'<label class="dsgo-query-filter__checkbox-item"><input type="checkbox" name="%1$s[]" value="%2$s" %3$s data-wp-on--change="actions.toggleFilter" /><span>%4$s</span></label>',
-				esc_attr( $param_name ),
+				esc_attr( $field['name'] ),
 				esc_attr( $term->slug ),
 				esc_attr( $checked ),
 				$name_label // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() on term->name + our own <span> markup.
@@ -353,174 +417,24 @@ if ( ! function_exists( 'designsetgo_query_filter_render_checkbox' ) ) :
 		$list_class = implode( ' ', $list_class_parts );
 		if ( $label ) {
 			printf(
-				'<form %1$s method="get" action=""><fieldset class="dsgo-query-filter__fieldset"><legend class="dsgo-query-filter__label">%2$s</legend><div class="%5$s">%3$s</div></fieldset>%4$s</form>',
+				'<form %1$s method="get" action="">%6$s<fieldset class="dsgo-query-filter__fieldset"><legend class="dsgo-query-filter__label">%2$s</legend><div class="%5$s">%3$s</div></fieldset>%4$s</form>',
 				$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				esc_html( $label ),
 				$items_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- per-field escaped above.
 				$designsetgo_nojs_btn, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
-				esc_attr( $list_class )
+				esc_attr( $list_class ),
+				$field['hidden'] // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr() per input in designsetgo_query_preserved_inputs().
 			);
 		} else {
 			printf(
-				'<form %1$s method="get" action=""><div class="%4$s">%2$s</div>%3$s</form>',
+				'<form %1$s method="get" action="">%5$s<div class="%4$s">%2$s</div>%3$s</form>',
 				$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				$items_html, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				$designsetgo_nojs_btn, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() used inside.
-				esc_attr( $list_class )
+				esc_attr( $list_class ),
+				$field['hidden'] // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_attr() per input in designsetgo_query_preserved_inputs().
 			);
 		}
-	}
-
-endif;
-
-if ( ! function_exists( 'designsetgo_query_filter_render_active' ) ) :
-
-	/**
-	 * Render the active-filters chip strip.
-	 *
-	 * Each chip links to the current URL with that specific filter value
-	 * removed, providing an accessible no-JS fallback.
-	 *
-	 * @param string $wrapper Pre-computed wrapper attributes string.
-	 * @param string $label   Optional visible label.
-	 */
-	function designsetgo_query_filter_render_active( $wrapper, $label ) {
-		$active_params = array();
-		foreach ( (array) $_GET as $k => $v ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$k = sanitize_key( (string) $k );
-			if ( '' === $k ) {
-				continue;
-			}
-			if ( 0 === strpos( $k, 'filter_' ) || 'q' === $k || 'sort' === $k ) {
-				$values = is_array( $v ) ? $v : array( $v );
-				foreach ( $values as $val ) {
-					$val = sanitize_text_field( wp_unslash( (string) $val ) );
-					if ( '' !== $val ) {
-						$active_params[] = array(
-							'key'   => $k,
-							'value' => $val,
-						);
-					}
-				}
-			}
-		}
-
-		if ( empty( $active_params ) ) {
-			return;
-		}
-
-		$chips_html  = '';
-		$current_url = add_query_arg( array() );
-		$qs          = wp_parse_url( $current_url, PHP_URL_QUERY );
-		parse_str( (string) $qs, $parsed_base );
-		$base        = strtok( $current_url, '?' );
-
-		foreach ( $active_params as $p ) {
-			// Clone and remove this specific key/value.
-			$parsed = $parsed_base;
-			if ( isset( $parsed[ $p['key'] ] ) ) {
-				if ( is_array( $parsed[ $p['key'] ] ) ) {
-					$parsed[ $p['key'] ] = array_values(
-						array_diff( $parsed[ $p['key'] ], array( $p['value'] ) )
-					);
-					if ( empty( $parsed[ $p['key'] ] ) ) {
-						unset( $parsed[ $p['key'] ] );
-					}
-				} else {
-					unset( $parsed[ $p['key'] ] );
-				}
-			}
-
-			// Fix 3 (PHP): strip both WordPress pagination params from chip hrefs.
-			unset( $parsed['paged'], $parsed['page'] );
-
-			// Fix 5: use http_build_query so nested associative arrays (e.g.
-			// foo[bar]=baz) are preserved correctly, then normalize only our known
-			// filter-related keys' numeric-indexed brackets (filter_foo[0]=x →
-			// filter_foo[]=x) without corrupting arbitrary nested params.
-			$qs_encoded = http_build_query( $parsed );
-			$qs_encoded = preg_replace_callback(
-				'/(^|&)((?:filter_[a-z0-9_-]+|q|sort))%5B\d+%5D=/i',
-				function ( $m ) {
-					return $m[1] . $m[2] . '%5B%5D=';
-				},
-				$qs_encoded
-			);
-			$new_url = $qs_encoded ? $base . '?' . $qs_encoded : $base;
-			// Derive a human dimension label from the URL key: "filter_post_tag" → "post tag".
-			$designsetgo_dimension = 'q' === $p['key']
-				? __( 'search', 'designsetgo' )
-				: str_replace( array( 'filter_', '_' ), array( '', ' ' ), $p['key'] );
-			$chips_html .= sprintf(
-				'<a href="%1$s" role="button" class="dsgo-query-filter__chip" data-wp-on--click="actions.removeActiveFilter" data-dsgo-filter-key="%2$s" data-dsgo-filter-value="%3$s">%4$s<span aria-hidden="true"> &times;</span><span class="screen-reader-text">%5$s</span></a>',
-				esc_url( $new_url ),
-				esc_attr( $p['key'] ),
-				esc_attr( $p['value'] ),
-				esc_html( $p['value'] ),
-				esc_html(
-					sprintf(
-						/* translators: 1: filter dimension name (e.g. "category"), 2: filter value (e.g. "photography") */
-						__( 'Remove %1$s: %2$s', 'designsetgo' ),
-						$designsetgo_dimension,
-						$p['value']
-					)
-				)
-			);
-		}
-
-		printf(
-			'<div %1$s>%2$s%3$s</div>',
-			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			$label ? '<span class="dsgo-query-filter__label">' . esc_html( $label ) . '</span>' : '',
-			$chips_html // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- each chip escaped above.
-		);
-	}
-
-endif;
-
-if ( ! function_exists( 'designsetgo_query_filter_render_reset' ) ) :
-
-	/**
-	 * Render the reset-all-filters button.
-	 *
-	 * The href strips filter_*, q, sort, and paged from the URL so the
-	 * no-JS fallback works: clicking the link navigates to a clean URL.
-	 *
-	 * @param string $wrapper Pre-computed wrapper attributes string.
-	 * @param string $label   Optional button text (default "Reset filters").
-	 */
-	function designsetgo_query_filter_render_reset( $wrapper, $label ) {
-		$current_url = add_query_arg( array() );
-		$qs          = wp_parse_url( $current_url, PHP_URL_QUERY );
-		parse_str( (string) $qs, $parsed );
-
-		foreach ( array_keys( $parsed ) as $k ) {
-			// Fix 3 (PHP): strip both WordPress pagination params.
-			if ( 0 === strpos( (string) $k, 'filter_' ) || 'q' === $k || 'sort' === $k || 'paged' === $k || 'page' === $k ) {
-				unset( $parsed[ $k ] );
-			}
-		}
-
-		$base       = strtok( $current_url, '?' );
-		// Fix 5: use http_build_query to handle nested associative arrays correctly,
-		// then normalize only filter-related numeric brackets to empty brackets.
-		$qs_encoded = http_build_query( $parsed );
-		$qs_encoded = preg_replace_callback(
-			'/(^|&)((?:filter_[a-z0-9_-]+|q|sort))%5B\d+%5D=/i',
-			function ( $m ) {
-				return $m[1] . $m[2] . '%5B%5D=';
-			},
-			$qs_encoded
-		);
-		$reset_url  = $qs_encoded ? $base . '?' . $qs_encoded : $base;
-		$btn_label = $label ? $label : __( 'Reset filters', 'designsetgo' );
-
-		printf(
-			'<div %1$s><a href="%2$s" role="button" class="dsgo-query-filter__reset" data-wp-on--click="actions.resetAll">%3$s</a></div>',
-			$wrapper, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			esc_url( $reset_url ),
-			esc_html( $btn_label )
-		);
 	}
 
 endif;
@@ -586,21 +500,17 @@ $designsetgo_show_counts = ! isset( $attributes['showCounts'] ) || (bool) $attri
 // Extract active filters from $_GET so count queries respect the current
 // filter state. On the REST-refresh path, $_GET has been overlaid by the
 // REST controller with the incoming params, so this is always up-to-date.
+// Resolved for THIS query (designsetgo_query_owned_request_params()), so a
+// sibling query's scoped selection never skews these counts, while a bare
+// key — which filters this query too — still does.
 $designsetgo_active_filters = array();
-foreach ( (array) $_GET as $designsetgo_k => $designsetgo_v ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$designsetgo_k = sanitize_key( (string) $designsetgo_k );
-	if ( '' === $designsetgo_k ) {
+foreach ( designsetgo_query_owned_request_params( $designsetgo_query_id ) as $designsetgo_k => $designsetgo_entry ) {
+	if ( 0 !== strpos( (string) $designsetgo_k, 'filter_' ) ) {
 		continue;
 	}
-	if ( 0 === strpos( $designsetgo_k, 'filter_' ) ) {
-		if ( is_array( $designsetgo_v ) ) {
-			$designsetgo_active_filters[ $designsetgo_k ] = array_map( 'sanitize_text_field', wp_unslash( $designsetgo_v ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		} else {
-			$designsetgo_val = sanitize_text_field( wp_unslash( (string) $designsetgo_v ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			if ( '' !== $designsetgo_val ) {
-				$designsetgo_active_filters[ $designsetgo_k ] = array( $designsetgo_val );
-			}
-		}
+	$designsetgo_vals = array_filter( array_map( 'sanitize_text_field', (array) wp_unslash( $designsetgo_entry['value'] ) ), 'strlen' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized by the array_map().
+	if ( $designsetgo_vals ) {
+		$designsetgo_active_filters[ $designsetgo_k ] = array_values( $designsetgo_vals );
 	}
 }
 
@@ -659,15 +569,19 @@ $designsetgo_counts_enabled = $designsetgo_show_counts
 	&& class_exists( '\DesignSetGo\Blocks\Query\FilterIndex' )
 	&& \DesignSetGo\Blocks\Query\FilterIndex::is_available( $designsetgo_filter_taxonomy );
 
-$designsetgo_filter_wrapper = get_block_wrapper_attributes(
-	array(
-		'class'                 => 'dsgo-query-filter dsgo-query-filter--' . esc_attr( $designsetgo_filter_kind ),
-		'data-wp-interactive'   => 'designsetgo/query',
-		'data-dsgo-query-id'    => $designsetgo_query_id,
-		'data-dsgo-filter-kind' => $designsetgo_filter_kind,
-		'data-dsgo-param'       => $designsetgo_filter_param,
-	)
+$designsetgo_filter_wrapper_attrs = array(
+	'class'                 => 'dsgo-query-filter dsgo-query-filter--' . esc_attr( $designsetgo_filter_kind ),
+	'data-wp-interactive'   => 'designsetgo/query',
+	'data-dsgo-query-id'    => $designsetgo_query_id,
+	'data-dsgo-filter-kind' => $designsetgo_filter_kind,
+	'data-dsgo-param'       => $designsetgo_filter_param,
 );
+// Present when controls may write per-Query keys; view.js writes them only
+// once it also sees another Query on the page.
+if ( designsetgo_query_scoping_enabled() ) {
+	$designsetgo_filter_wrapper_attrs['data-dsgo-scoped'] = '1';
+}
+$designsetgo_filter_wrapper = get_block_wrapper_attributes( $designsetgo_filter_wrapper_attrs );
 // Seed IAPI context so `getContext()` inside setFilter / toggleFilter /
 // removeActiveFilter / resetAll resolves ctx.queryId. Appended
 // outside get_block_wrapper_attributes() because that helper runs esc_attr()
@@ -690,23 +604,23 @@ $designsetgo_filter_wrapper .= sprintf(
 
 switch ( $designsetgo_filter_kind ) {
 	case 'search':
-		designsetgo_query_filter_render_search( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_placeholder );
+		designsetgo_query_filter_render_search( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_placeholder, $designsetgo_query_id );
 		break;
 	case 'sort':
 		$designsetgo_sort_options = isset( $attributes['sortOptions'] ) ? (array) $attributes['sortOptions'] : array();
-		designsetgo_query_filter_render_sort( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_sort_options );
+		designsetgo_query_filter_render_sort( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_sort_options, $designsetgo_query_id );
 		break;
 	case 'select':
-		designsetgo_query_filter_render_select( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type, $designsetgo_term_include, $designsetgo_term_exclude );
+		designsetgo_query_filter_render_select( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type, $designsetgo_term_include, $designsetgo_term_exclude, $designsetgo_query_id );
 		break;
 	case 'active':
-		designsetgo_query_filter_render_active( $designsetgo_filter_wrapper, $designsetgo_filter_label );
+		designsetgo_query_filter_render_active( $designsetgo_filter_wrapper, $designsetgo_filter_label, $designsetgo_query_id );
 		break;
 	case 'reset':
-		designsetgo_query_filter_render_reset( $designsetgo_filter_wrapper, $designsetgo_filter_label );
+		designsetgo_query_filter_render_reset( $designsetgo_filter_wrapper, $designsetgo_filter_label, $designsetgo_query_id );
 		break;
 	case 'checkbox':
 	default:
-		designsetgo_query_filter_render_checkbox( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type, $designsetgo_filter_orientation, $designsetgo_filter_style, $designsetgo_term_include, $designsetgo_term_exclude );
+		designsetgo_query_filter_render_checkbox( $designsetgo_filter_wrapper, $designsetgo_filter_param, $designsetgo_filter_label, $designsetgo_filter_taxonomy, $designsetgo_counts_enabled, $designsetgo_active_filters_by_key, $designsetgo_query_post_type, $designsetgo_filter_orientation, $designsetgo_filter_style, $designsetgo_term_include, $designsetgo_term_exclude, $designsetgo_query_id );
 		break;
 }

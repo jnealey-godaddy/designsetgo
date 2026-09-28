@@ -35,6 +35,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once __DIR__ . '/param-scoping.php';
+
 if ( ! function_exists( 'designsetgo_safe_css_value' ) ) :
 
 	/**
@@ -550,13 +552,38 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 	}
 
 	/**
-	 * Whitelisted URL params that influence query/filter output. Limited to
-	 * `q`, `sort`, plus any `filter_<taxonomy>` key (Task 14). Extensible via
-	 * the `designsetgo_query_url_params` filter.
+	 * Sanitize a single raw $_GET value the way
+	 * designsetgo_query_extract_params_from_request() always has: array
+	 * values map sanitize_text_field() over each entry, scalars coerce to
+	 * string first.
 	 *
+	 * @param mixed $value Raw, unslashed-pending value from $_GET.
+	 * @return string|string[]
+	 */
+	function designsetgo_query_sanitize_param_value( $value ) {
+		if ( is_array( $value ) ) {
+			return array_map( 'sanitize_text_field', wp_unslash( $value ) );
+		}
+		return sanitize_text_field( wp_unslash( (string) $value ) );
+	}
+
+	/**
+	 * Whitelisted URL params that influence query/filter output: `q`, `sort`,
+	 * any `filter_<taxonomy>` / `query_type_<attr>` key, and WooCommerce's
+	 * filter-block params. Extensible via the `designsetgo_query_url_params`
+	 * filter.
+	 *
+	 * Keys are resolved per Query by designsetgo_query_owned_request_params()
+	 * (param-scoping.php): `{key}__{queryId}` wins over a bare `{key}`, a key
+	 * scoped for another Query is never read, and a bare key still reaches
+	 * every Query (menu links, bookmarks, WooCommerce's filter blocks, which
+	 * can't know a queryId).
+	 *
+	 * @param string $query_id Sanitized queryId this extraction is for. Empty
+	 *                         reads bare keys only.
 	 * @return array
 	 */
-	function designsetgo_query_extract_params_from_request() {
+	function designsetgo_query_extract_params_from_request( $query_id = '' ) {
 		// `filter_*` is accepted wildcard-style below. The rest are WooCommerce's
 		// own filter-block query vars, read from its source: min_price/max_price
 		// (ProductFilterPrice), rating_filter (RatingFilter), and query_type_<attr>
@@ -571,21 +598,19 @@ if ( ! function_exists( 'designsetgo_query_render' ) ) :
 			return $params;
 		}
 
-		foreach ( (array) $_GET as $key => $value ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$key = sanitize_key( (string) $key );
-			if ( '' === $key ) {
-				continue;
-			}
+		foreach ( designsetgo_query_owned_request_params( sanitize_key( (string) $query_id ) ) as $key => $entry ) {
+			$key = (string) $key;
 			if ( ! in_array( $key, $allowed, true )
 				&& 0 !== strpos( $key, 'filter_' )
 				&& 0 !== strpos( $key, 'query_type_' ) ) {
 				continue;
 			}
-			if ( is_array( $value ) ) {
-				$params[ $key ] = array_map( 'sanitize_text_field', wp_unslash( $value ) );
-			} else {
-				$params[ $key ] = sanitize_text_field( wp_unslash( (string) $value ) );
+			$value = designsetgo_query_sanitize_param_value( $entry['value'] );
+			// An empty scoped value means "this Query clears the bare one".
+			if ( '' === $value || array() === array_filter( (array) $value, 'strlen' ) ) {
+				continue;
 			}
+			$params[ $key ] = is_array( $value ) ? array_values( array_filter( $value, 'strlen' ) ) : $value;
 		}
 
 		return $params;
@@ -824,7 +849,7 @@ if ( ! function_exists( 'designsetgo_query_render_container' ) ) :
 				'page'            => (int) $page,
 				'inner_html'      => $template_html,
 				'full_inner_html' => $template_html,
-				'params'          => designsetgo_query_extract_params_from_request(),
+				'params'          => designsetgo_query_extract_params_from_request( $query_id ),
 				'wrapper_attrs'   => null,
 			);
 
