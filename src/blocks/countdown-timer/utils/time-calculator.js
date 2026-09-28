@@ -13,19 +13,22 @@ import { resolveTargetTimestamp } from './timezone';
  * `targetDateTime` that already carries an explicit offset is respected
  * as-is. See `./timezone.js` for the conversion itself.
  *
- * @param {string} targetDateTime - Datetime string (timezoneless wall-clock,
- *                                or ISO 8601 with an explicit offset).
- * @param {string} timezone       - IANA timezone name, or '' to use
- *                                `siteTimezone`.
- * @param {string} siteTimezone   - Resolved WordPress site timezone (IANA
- *                                name or fixed offset like "+05:30"), used
- *                                only when `timezone` is empty.
+ * @param {string}      targetDateTime - Datetime string (timezoneless wall-clock,
+ *                                     or ISO 8601 with an explicit offset).
+ * @param {string}      timezone       - IANA timezone name, or '' to use
+ *                                     `siteTimezone`.
+ * @param {string|null} siteTimezone   - Resolved WordPress site timezone
+ *                                     (IANA name or fixed offset like
+ *                                     "+05:30"), used when `timezone` is
+ *                                     empty or unusable. Null when unknown,
+ *                                     which reads the wall clock in the
+ *                                     browser's zone (see resolveTargetTimestamp).
  * @return {Object} Object containing days, hours, minutes, seconds, and isComplete flag
  */
 export function calculateTimeRemaining(
 	targetDateTime,
 	timezone = '',
-	siteTimezone = ''
+	siteTimezone = null
 ) {
 	if (!targetDateTime) {
 		return {

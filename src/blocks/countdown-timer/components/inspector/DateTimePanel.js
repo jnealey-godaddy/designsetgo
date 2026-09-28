@@ -1,10 +1,17 @@
 /**
  * WordPress dependencies
  */
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { DateTimePicker, SelectControl, Notice } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../../components/shared';
 import { getEditorSiteTimezone } from '../../utils/time-calculator';
+import {
+	formatInZone,
+	hasExplicitOffset,
+	isUsableZone,
+	resolveTargetTimestamp,
+	wallClockInZone,
+} from '../../utils/timezone';
 
 /**
  * Common timezone options - WordPress standard timezones
@@ -94,6 +101,53 @@ export default function DateTimePanel({ attributes, setAttributes }) {
 	// on "WordPress Default".
 	const wpTimezone = getEditorSiteTimezone();
 
+	// The zone the countdown actually uses: the block's own, else the site's
+	// (resolveTargetTimestamp applies the same order).
+	const blockZoneUsable = isUsableZone(timezone);
+	const effectiveZone = blockZoneUsable ? timezone : wpTimezone;
+	const overridesSiteZone = blockZoneUsable && timezone !== wpTimezone;
+
+	// A target saved as a fixed instant (with `Z` or an offset) is shown in
+	// the effective zone, so picking a date keeps the digits the author sees
+	// instead of re-reading browser-local digits in another zone.
+	const isFixedInstant = hasExplicitOffset(targetDateTime);
+	const targetInstant = resolveTargetTimestamp(
+		targetDateTime,
+		timezone,
+		wpTimezone
+	);
+	const pickerValue = isFixedInstant
+		? wallClockInZone(targetInstant, effectiveZone)
+		: targetDateTime;
+
+	const timezoneHelp = (() => {
+		if (timezone && !blockZoneUsable) {
+			return sprintf(
+				/* translators: %s: WordPress site timezone, e.g. America/New_York. */
+				__(
+					'This timezone is not recognised, so the WordPress site timezone (%s) is used.',
+					'designsetgo'
+				),
+				wpTimezone
+			);
+		}
+		if (timezone) {
+			return sprintf(
+				/* translators: %s: WordPress site timezone, e.g. America/New_York. */
+				__(
+					'Overrides the WordPress site timezone (%s).',
+					'designsetgo'
+				),
+				wpTimezone
+			);
+		}
+		return sprintf(
+			/* translators: %s: WordPress site timezone, e.g. America/New_York. */
+			__('Uses the WordPress site timezone (%s).', 'designsetgo'),
+			wpTimezone
+		);
+	})();
+
 	return (
 		<>
 			<DsgoInspectorPanel.Item
@@ -108,19 +162,50 @@ export default function DateTimePanel({ attributes, setAttributes }) {
 						'designsetgo'
 					)}
 				</Notice>
-				<div style={{ marginTop: '12px', marginBottom: '12px' }}>
+				<div
+					className={
+						overridesSiteZone
+							? 'dsgo-countdown-datetime dsgo-countdown-datetime--block-zone'
+							: 'dsgo-countdown-datetime'
+					}
+					style={{ marginTop: '12px', marginBottom: '12px' }}
+				>
 					<DateTimePicker
-						currentDate={targetDateTime || null}
+						currentDate={pickerValue || null}
 						onChange={(newDateTime) =>
 							setAttributes({ targetDateTime: newDateTime })
 						}
 						is12Hour={true}
 					/>
+					{overridesSiteZone && (
+						// The picker's own timezone badge always names the
+						// site zone; it is hidden here (editor.scss) and this
+						// line names the zone the time is actually in.
+						<p className="components-base-control__help">
+							{sprintf(
+								/* translators: %s: timezone, e.g. Europe/London. */
+								__('Time is in %s.', 'designsetgo'),
+								effectiveZone
+							)}
+						</p>
+					)}
 				</div>
-				{targetDateTime && (
+				{targetDateTime && Number.isFinite(targetInstant) && (
 					<Notice status="success" isDismissible={false}>
-						{__('Target date set!', 'designsetgo')}{' '}
-						{new Date(targetDateTime).toLocaleString()}
+						{sprintf(
+							/* translators: 1: date and time, 2: timezone, e.g. Europe/London. */
+							__('Countdown ends %1$s (%2$s).', 'designsetgo'),
+							formatInZone(targetInstant, effectiveZone),
+							effectiveZone
+						)}
+					</Notice>
+				)}
+				{isFixedInstant && (
+					<Notice status="info" isDismissible={false}>
+						{__(
+							'This date was saved as a fixed moment, so the timezone setting does not change it. Pick the date again to have it follow the timezone below.',
+							'designsetgo'
+						)}
 					</Notice>
 				)}
 			</DsgoInspectorPanel.Item>
@@ -138,11 +223,7 @@ export default function DateTimePanel({ attributes, setAttributes }) {
 					onChange={(newTimezone) =>
 						setAttributes({ timezone: newTimezone })
 					}
-					help={
-						__('WordPress site timezone:', 'designsetgo') +
-						' ' +
-						wpTimezone
-					}
+					help={timezoneHelp}
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>

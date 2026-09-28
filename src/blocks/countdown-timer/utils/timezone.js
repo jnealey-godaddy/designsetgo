@@ -18,8 +18,10 @@
  */
 
 // Matches an ISO-ish datetime whose time portion ends with `Z` or an
-// explicit `+HH:MM` / `-HH:MM` (colon optional) offset.
-const EXPLICIT_OFFSET_RE = /T\d{2}:\d{2}:\d{2}(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})$/;
+// explicit `+HH:MM` / `-HH:MM` (colon optional) offset. Seconds are
+// optional: a value set through a binding or an ability may omit them.
+const EXPLICIT_OFFSET_RE =
+	/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(Z|([+-])(\d{2}):?(\d{2}))$/;
 
 // A fixed UTC offset written as `+HH:MM` / `-HH:MM` (colon optional), the
 // shape WordPress's `wp_timezone_string()` / `wp_timezone()->getName()`
@@ -27,9 +29,45 @@ const EXPLICIT_OFFSET_RE = /T\d{2}:\d{2}:\d{2}(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})$/;
 // "UTC+5:30"-style offset).
 const FIXED_OFFSET_RE = /^([+-])(\d{2}):?(\d{2})$/;
 
-// The timezoneless wall-clock shape the DateTimePicker stores.
+// The timezoneless wall-clock shape the DateTimePicker stores. Seconds and
+// the whole time part are optional, so `2026-10-01T18:00` and a date-only
+// `2026-10-01` (midnight) are read in the zone too, instead of falling
+// through to native parsing, which reads them in the browser's zone or as
+// UTC depending on the shape.
 const WALL_CLOCK_RE =
-	/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?$/;
+	/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?)?$/;
+
+/**
+ * Epoch ms for a datetime string that carries its own offset.
+ *
+ * Parsed by hand rather than with `new Date()`: engines disagree on offsets
+ * written without a colon (`+0530`), and Safari rejects them, which showed
+ * the timer as already finished.
+ *
+ * @param {string} dateTimeString - Datetime with a `Z` or numeric offset.
+ * @return {number} Epoch milliseconds, or NaN when it doesn't match.
+ */
+function parseExplicitOffset(dateTimeString) {
+	const match = EXPLICIT_OFFSET_RE.exec(dateTimeString);
+	if (!match) {
+		return NaN;
+	}
+	const [, y, mo, d, h, mi, sec, frac, zulu, sign, oh, om] = match;
+	const wallAsUtc = Date.UTC(
+		parseInt(y, 10),
+		parseInt(mo, 10) - 1,
+		parseInt(d, 10),
+		parseInt(h, 10),
+		parseInt(mi, 10),
+		parseInt(sec || '0', 10),
+		parseInt((frac || '0').padEnd(3, '0').slice(0, 3), 10)
+	);
+	if (zulu === 'Z') {
+		return wallAsUtc;
+	}
+	const offsetMinutes = parseInt(oh, 10) * 60 + parseInt(om, 10);
+	return wallAsUtc - (sign === '-' ? -1 : 1) * offsetMinutes * 60000;
+}
 
 /**
  * Whether a datetime string already carries an explicit UTC offset (or `Z`).
@@ -117,6 +155,32 @@ function getZoneOffsetMinutes(utcGuessMs, zone) {
 }
 
 /**
+ * Numeric parts of a WALL_CLOCK_RE match; a missing time reads as midnight.
+ *
+ * @param {Array} match - WALL_CLOCK_RE match.
+ * @return {number[]} Year, month (1-12), day, hour, minute, second.
+ */
+function wallClockParts(match) {
+	return match.slice(1, 7).map((part) => parseInt(part || '0', 10));
+}
+
+/**
+ * Whether `zone` can be used to read a wall clock: a fixed `+HH:MM` offset
+ * or a timezone name Intl recognizes.
+ *
+ * @param {string} zone - Candidate zone.
+ * @return {boolean} True when the zone is usable.
+ */
+export function isUsableZone(zone) {
+	if (typeof zone !== 'string' || zone.trim() === '') {
+		return false;
+	}
+	return (
+		parseFixedOffsetMinutes(zone) !== null || isValidIanaZone(zone.trim())
+	);
+}
+
+/**
  * Convert a timezoneless wall-clock string to an absolute instant (epoch
  * ms), interpreting it as local time in `zone`.
  *
@@ -135,13 +199,7 @@ export function wallClockToUtc(wallClockString, zone) {
 		return new Date(wallClockString).getTime();
 	}
 
-	const [, yStr, moStr, dStr, hStr, miStr, sStr] = match;
-	const y = parseInt(yStr, 10);
-	const mo = parseInt(moStr, 10);
-	const d = parseInt(dStr, 10);
-	const h = parseInt(hStr, 10);
-	const mi = parseInt(miStr, 10);
-	const s = parseInt(sStr, 10);
+	const [y, mo, d, h, mi, s] = wallClockParts(match);
 	const wallAsUtc = Date.UTC(y, mo - 1, d, h, mi, s);
 
 	const fixedOffsetMinutes = parseFixedOffsetMinutes(zone || '');
@@ -173,12 +231,26 @@ export function wallClockToUtc(wallClockString, zone) {
 /**
  * Resolve the absolute target instant (epoch ms) for the countdown.
  *
- * @param {string} targetDateTime - Stored `targetDateTime` attribute value.
- * @param {string} timezone       - Block's `timezone` attribute (IANA name,
- *                                or '' for "use the site timezone").
- * @param {string} siteTimezone   - The resolved WordPress site timezone
- *                                (IANA name or fixed offset), used when
- *                                `timezone` is empty.
+ * The wall clock is read in the first usable zone of: the block's own
+ * `timezone`, then the site timezone. An unrecognised block zone therefore
+ * falls back to the site zone rather than skipping it.
+ *
+ * When the site timezone is unknown (`null`, `undefined` or ''), the wall
+ * clock is read in the browser's zone, as before this fix. That is the case
+ * for markup that never went through the render filter which stamps
+ * `data-site-timezone`: pages served from a full-page or CDN cache built
+ * before the update, or headless front ends using raw content. Reading them
+ * as UTC would move every such countdown by the site's offset until the
+ * cache is purged. Only a site timezone that is present but unusable falls
+ * back to UTC.
+ *
+ * @param {string}      targetDateTime - Stored `targetDateTime` value.
+ * @param {string}      timezone       - Block's `timezone` attribute (IANA
+ *                                     name, or '' for "use the site
+ *                                     timezone").
+ * @param {string|null} siteTimezone   - Resolved WordPress site timezone
+ *                                     (IANA name or fixed offset), or null
+ *                                     when unknown.
  * @return {number} Epoch milliseconds, or `NaN` when `targetDateTime` is
  *                   empty/unparseable.
  */
@@ -188,13 +260,71 @@ export function resolveTargetTimestamp(targetDateTime, timezone, siteTimezone) {
 	}
 
 	if (hasExplicitOffset(targetDateTime)) {
-		return new Date(targetDateTime).getTime();
+		return parseExplicitOffset(targetDateTime);
 	}
 
-	const zone =
-		(timezone && timezone.trim()) ||
-		(siteTimezone && siteTimezone.trim()) ||
-		'UTC';
+	const zone = [timezone, siteTimezone].find(isUsableZone);
+	if (zone) {
+		return wallClockToUtc(targetDateTime, zone.trim());
+	}
 
-	return wallClockToUtc(targetDateTime, zone);
+	if (!siteTimezone) {
+		const match = WALL_CLOCK_RE.exec(targetDateTime);
+		if (!match) {
+			return NaN;
+		}
+		const [y, mo, d, h, mi, s] = wallClockParts(match);
+		return new Date(y, mo - 1, d, h, mi, s).getTime();
+	}
+
+	return wallClockToUtc(targetDateTime, 'UTC');
+}
+
+/**
+ * The wall clock an instant shows in a zone, as a timezoneless string.
+ *
+ * Used by the editor to show a target that was saved as a fixed instant
+ * (with a `Z` or offset) in the zone that now applies, so picking a new
+ * date keeps the digits the author sees.
+ *
+ * @param {number} instantMs - Epoch milliseconds.
+ * @param {string} zone      - IANA name or fixed offset.
+ * @return {string} `YYYY-MM-DDTHH:MM:SS`, or '' when `instantMs` is invalid.
+ */
+export function wallClockInZone(instantMs, zone) {
+	if (!Number.isFinite(instantMs)) {
+		return '';
+	}
+	const fixed = parseFixedOffsetMinutes(zone || '');
+	let offsetMinutes = 0;
+	if (fixed !== null) {
+		offsetMinutes = fixed;
+	} else if (isValidIanaZone(zone)) {
+		offsetMinutes = getZoneOffsetMinutes(instantMs, zone);
+	}
+	return new Date(instantMs + offsetMinutes * 60000)
+		.toISOString()
+		.slice(0, 19);
+}
+
+/**
+ * A readable date and time for an instant, in a zone.
+ *
+ * @param {number} instantMs - Epoch milliseconds.
+ * @param {string} zone      - IANA name or fixed offset.
+ * @return {string} Localised date and time, or '' when `instantMs` is invalid.
+ */
+export function formatInZone(instantMs, zone) {
+	if (!Number.isFinite(instantMs)) {
+		return '';
+	}
+	// Intl has no fixed-offset zones, so shift the instant and format as UTC.
+	const fixed = parseFixedOffsetMinutes(zone || '');
+	const iana = fixed === null && isValidIanaZone(zone) ? zone : 'UTC';
+	const shifted = fixed === null ? instantMs : instantMs + fixed * 60000;
+	return new Intl.DateTimeFormat(undefined, {
+		dateStyle: 'medium',
+		timeStyle: 'short',
+		timeZone: iana,
+	}).format(new Date(shifted));
 }

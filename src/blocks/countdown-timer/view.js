@@ -74,25 +74,35 @@ function handleCompletion(timer) {
 }
 
 /**
+ * Time left for a timer, read the same way everywhere it is shown.
+ *
+ * `timezone` is the block's own timezone attribute (empty means "use the
+ * WordPress site timezone"). `siteTimezone` is stamped onto the markup at
+ * render time (includes/features/class-countdown-timer-timezone.php),
+ * because PHP is the only place `timezone_string` / `gmt_offset` live. It is
+ * passed through as-is: when the attribute is missing (cached or raw HTML)
+ * the resolver keeps the old browser-local reading instead of assuming UTC.
+ *
+ * @param {Element} timer - Timer element.
+ * @return {Object} calculateTimeRemaining() result.
+ */
+function getTimeData(timer) {
+	return calculateTimeRemaining(
+		timer.dataset.targetDatetime,
+		timer.dataset.timezone || '',
+		timer.dataset.siteTimezone ?? null
+	);
+}
+
+/**
  * Initialize a countdown timer
  *
  * @param {Element} timer - Timer element
  */
 function initCountdownTimer(timer) {
-	const targetDateTime = timer.dataset.targetDatetime;
-
-	if (!targetDateTime) {
+	if (!timer.dataset.targetDatetime) {
 		return;
 	}
-
-	// `timezone` is the block's own timezone attribute (empty means "use
-	// the WordPress site timezone"). `siteTimezone` is stamped onto the
-	// markup at render time — see
-	// includes/features/class-countdown-timer-timezone.php — because PHP is
-	// the only place `timezone_string` / `gmt_offset` live; the frontend has
-	// no other way to know the site's configured timezone.
-	const timezone = timer.dataset.timezone || '';
-	const siteTimezone = timer.dataset.siteTimezone || '';
 
 	// Check for reduced motion preference
 	const prefersReducedMotion = window.matchMedia(
@@ -100,11 +110,7 @@ function initCountdownTimer(timer) {
 	).matches;
 
 	// Initial update
-	let timeData = calculateTimeRemaining(
-		targetDateTime,
-		timezone,
-		siteTimezone
-	);
+	let timeData = getTimeData(timer);
 	updateCountdownDisplay(timer, timeData);
 
 	if (timeData.isComplete) {
@@ -115,11 +121,7 @@ function initCountdownTimer(timer) {
 	// Update every second
 	const interval = setInterval(
 		() => {
-			timeData = calculateTimeRemaining(
-				targetDateTime,
-				timezone,
-				siteTimezone
-			);
+			timeData = getTimeData(timer);
 			updateCountdownDisplay(timer, timeData);
 
 			if (timeData.isComplete) {
@@ -153,11 +155,10 @@ function initAllCountdownTimers() {
 		// save() stores untranslated literals, and a timer below the fold
 		// would otherwise show them until it scrolls into view. Only the
 		// ticking waits for the observer.
-		const targetDateTime = timer.dataset.targetDatetime;
 		updateCountdownDisplay(
 			timer,
-			targetDateTime
-				? calculateTimeRemaining(targetDateTime)
+			timer.dataset.targetDatetime
+				? getTimeData(timer)
 				: { days: 0, hours: 0, minutes: 0, seconds: 0 }
 		);
 

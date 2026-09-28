@@ -8,6 +8,8 @@
  * @package
  */
 
+import { wallClockInZone } from '../../../src/blocks/countdown-timer/utils/timezone';
+
 /**
  * Create a countdown timer DOM fixture.
  *
@@ -382,6 +384,39 @@ describe('Countdown Timer - Frontend', () => {
 
 			expect(getUnitNumber(timer, 'days')).toBe('05');
 			expect(jest.getTimerCount()).toBeGreaterThan(0);
+		});
+	});
+	describe('Timezone on the first render', () => {
+		// A timezoneless wall clock must be read in the site zone from the
+		// very first render, before the observer starts the ticking: a timer
+		// below the fold otherwise shows a UTC reading until it is scrolled to.
+		test('reads a timezoneless target in data-site-timezone before intersecting', () => {
+			const instant = Date.now() + (5 * 3600 + 30) * 1000;
+			const timer = createTimerFixture({
+				targetDatetime: wallClockInZone(instant, 'Asia/Kolkata'),
+			});
+			timer.dataset.siteTimezone = 'Asia/Kolkata';
+
+			loadView();
+
+			expect(getUnitNumber(timer, 'hours')).toBe('05');
+		});
+
+		// Markup without the attribute (a page cached before the update)
+		// keeps the old browser-local reading instead of assuming UTC.
+		test('keeps the browser-local reading when data-site-timezone is missing', () => {
+			const local = new Date(Date.now() + (5 * 3600 + 30) * 1000);
+			const pad = (n) => String(n).padStart(2, '0');
+			const wall = `${local.getFullYear()}-${pad(local.getMonth() + 1)}-${pad(
+				local.getDate()
+			)}T${pad(local.getHours())}:${pad(local.getMinutes())}:${pad(
+				local.getSeconds()
+			)}`;
+			const timer = createTimerFixture({ targetDatetime: wall });
+
+			loadView();
+
+			expect(getUnitNumber(timer, 'hours')).toBe('05');
 		});
 	});
 });

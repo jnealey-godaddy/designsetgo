@@ -536,13 +536,15 @@ but silently discarded (`// reserved for future use`).
 
 Fix: new pure module `src/blocks/countdown-timer/utils/timezone.js` —
 `resolveTargetTimestamp(targetDateTime, timezone, siteTimezone)`. If `targetDateTime` already
-carries an explicit offset/Z (regex on the tail after `T\d{2}:\d{2}:\d{2}`), respects it as-is.
-Otherwise treats it as wall-clock in `timezone || siteTimezone || 'UTC'` and converts via the
-standard Intl.DateTimeFormat fixed-point trick (format a UTC guess in the target zone, diff the
-read-back wall-clock against the guess, iterate twice — handles DST both directions). Fixed
-offsets like `+05:30`/`-05:00` (what `wp_timezone()->getName()` returns for manual-offset sites)
-are special-cased before hitting Intl. Invalid/unrecognized zone → falls back to treating the
-wall clock AS UTC (deterministic across visitors, not browser-local).
+carries an explicit offset/Z, respects it as-is (parsed by hand, milliseconds included: Safari
+rejects `+0530`). Otherwise reads it as a wall clock in the first USABLE zone of block
+`timezone`, then `siteTimezone` (`isUsableZone`: fixed `+HH:MM` or an Intl-known name), and
+converts via the Intl.DateTimeFormat fixed-point trick (two passes, handles DST both ways; a
+fall-back hour's ambiguous wall clock resolves to the first occurrence). Values without seconds
+and date-only values are read in the zone too. If NO site timezone is known (`data-site-timezone`
+missing: page cached before the update, raw/headless content) it keeps the old browser-local
+reading instead of UTC, so cached pages don't jump by the site's offset. Only a site timezone
+that is present but unusable falls back to UTC.
 
 `siteTimezone` (the "WordPress Default" value) has no frontend source of truth — PHP owns
 `timezone_string`/`gmt_offset`. Delivered via a NEW `render_block_designsetgo/countdown-timer`
@@ -562,6 +564,16 @@ and frontend agree. Left `getUnitLabel`/`updateCountdownDisplay`/`handleCompleti
 code untouched — other concurrent sessions (a11y: role=timer + live region; perf: visibilitychange
 pause) are editing those same functions in this file, scope was kept to target-time computation
 only per instructions.
+
+Review fixes (PR #591, after rebasing on #588): #588 added an immediate
+`updateCountdownDisplay(timer, calculateTimeRemaining(target))` call in `initAllCountdownTimers`
+with no timezone args, so a below-the-fold timer showed a UTC reading until scrolled to. Every
+reading in `view.js` now goes through `getTimeData(timer)`. `DateTimePanel` names the zone
+actually in use: the DateTimePicker's own badge always names the SITE zone, so it is hidden
+(`.dsgo-countdown-datetime--block-zone` in editor.scss, which does reach the sidebar) when the
+block sets its own zone. A target saved as a fixed instant is shown in the effective zone
+(`wallClockInZone`) so picking a date doesn't shift it. CHANGELOG `[Unreleased] > Fixed` carries
+the timing change for site owners.
 
 Behavior change for EXISTING content: any countdown that already had a non-default `timezone`
 selected now actually honors it (previously silently ignored) — this is the fix, not a

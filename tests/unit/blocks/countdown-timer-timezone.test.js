@@ -15,7 +15,10 @@ import {
 	setSettings as setWpDateSettings,
 } from '@wordpress/date';
 import {
+	formatInZone,
 	hasExplicitOffset,
+	isUsableZone,
+	wallClockInZone,
 	wallClockToUtc,
 	resolveTargetTimestamp,
 } from '../../../src/blocks/countdown-timer/utils/timezone';
@@ -163,9 +166,70 @@ describe('Countdown Timer - resolveTargetTimestamp', () => {
 		);
 	});
 
-	test('falls back to UTC when both timezone and siteTimezone are empty', () => {
-		const ms = resolveTargetTimestamp('2025-06-15T10:00:00', '', '');
-		expect(ms).toBe(Date.UTC(2025, 5, 15, 10, 0, 0));
+	// No site timezone means markup that never went through the render
+	// filter (a page cached before the update, raw content): keep the old
+	// browser-local reading rather than moving it by the site's offset.
+	test('reads the wall clock in the browser zone when the site timezone is unknown', () => {
+		const local = new Date(2025, 5, 15, 10, 0, 0).getTime();
+		expect(resolveTargetTimestamp('2025-06-15T10:00:00', '', '')).toBe(
+			local
+		);
+		expect(resolveTargetTimestamp('2025-06-15T10:00:00', '', null)).toBe(
+			local
+		);
+		expect(
+			resolveTargetTimestamp('2025-06-15T10:00:00', '', undefined)
+		).toBe(local);
+	});
+
+	test('still honours the block timezone when the site timezone is unknown', () => {
+		expect(
+			resolveTargetTimestamp('2025-06-15T10:00:00', 'Asia/Kolkata', null)
+		).toBe(Date.UTC(2025, 5, 15, 4, 30, 0));
+	});
+
+	test('falls back to the site timezone when the block timezone is unrecognised', () => {
+		expect(
+			resolveTargetTimestamp(
+				'2025-06-15T10:00:00',
+				'Not/AZone',
+				'Asia/Kolkata'
+			)
+		).toBe(Date.UTC(2025, 5, 15, 4, 30, 0));
+	});
+
+	test('falls back to UTC only when a site timezone is present but unusable', () => {
+		expect(
+			resolveTargetTimestamp(
+				'2025-06-15T10:00:00',
+				'Bad/Zone',
+				'Also/Bad'
+			)
+		).toBe(Date.UTC(2025, 5, 15, 10, 0, 0));
+	});
+
+	test('reads a wall clock without seconds in the zone', () => {
+		expect(
+			resolveTargetTimestamp('2025-06-15T10:00', '', 'Asia/Kolkata')
+		).toBe(Date.UTC(2025, 5, 15, 4, 30, 0));
+	});
+
+	test('reads a date-only value as midnight in the zone', () => {
+		expect(resolveTargetTimestamp('2025-06-15', '', '+05:30')).toBe(
+			Date.UTC(2025, 5, 14, 18, 30, 0)
+		);
+	});
+
+	test('parses an explicit offset written without a colon', () => {
+		expect(
+			resolveTargetTimestamp('2025-06-15T10:00:00+0530', '', 'UTC')
+		).toBe(Date.UTC(2025, 5, 15, 4, 30, 0));
+	});
+
+	test('parses an explicit Z offset without seconds', () => {
+		expect(resolveTargetTimestamp('2025-06-15T10:00Z', '', 'UTC')).toBe(
+			Date.UTC(2025, 5, 15, 10, 0, 0)
+		);
 	});
 
 	test('returns NaN for an empty targetDateTime', () => {
@@ -356,5 +420,43 @@ describe('Countdown Timer - default targetDateTime generation (edit.js)', () => 
 		// author's Timezone dropdown selection actually changes what it
 		// resolves to, which is the bug this fix addresses.
 		expect(resolvedAsNewYork).not.toBe(resolvedAsTokyo);
+	});
+});
+
+describe('Countdown Timer - zone helpers', () => {
+	test('isUsableZone accepts IANA names and fixed offsets only', () => {
+		expect(isUsableZone('Europe/London')).toBe(true);
+		expect(isUsableZone('+05:30')).toBe(true);
+		expect(isUsableZone('-0930')).toBe(true);
+		expect(isUsableZone('')).toBe(false);
+		expect(isUsableZone(null)).toBe(false);
+		expect(isUsableZone('Not/AZone')).toBe(false);
+	});
+
+	test('wallClockInZone shows an instant as a wall clock in the zone', () => {
+		const instant = Date.UTC(2025, 5, 15, 4, 30, 0);
+		expect(wallClockInZone(instant, 'Asia/Kolkata')).toBe(
+			'2025-06-15T10:00:00'
+		);
+		expect(wallClockInZone(instant, '-05:00')).toBe('2025-06-14T23:30:00');
+		expect(wallClockInZone(NaN, 'UTC')).toBe('');
+	});
+
+	// Outside a DST fall-back hour, where a wall clock names two instants
+	// and the resolver documents that it picks the first.
+	test('wallClockInZone round-trips through resolveTargetTimestamp', () => {
+		const instant = Date.UTC(2025, 10, 2, 12, 30, 0);
+		const wall = wallClockInZone(instant, 'America/New_York');
+		expect(resolveTargetTimestamp(wall, 'America/New_York', null)).toBe(
+			instant
+		);
+	});
+
+	test('formatInZone formats a fixed-offset zone by shifting the instant', () => {
+		const instant = Date.UTC(2025, 5, 15, 4, 30, 0);
+		expect(formatInZone(instant, '+05:30')).toBe(
+			formatInZone(Date.UTC(2025, 5, 15, 10, 0, 0), 'UTC')
+		);
+		expect(formatInZone(NaN, 'UTC')).toBe('');
 	});
 });
