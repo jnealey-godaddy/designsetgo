@@ -433,6 +433,33 @@ describe('Accordion - Frontend', () => {
 			).toBe(true);
 		});
 
+		test('a dsgo-reveal event opens the items around its target', () => {
+			// A Table of Contents link scrolls by itself and updates the URL
+			// with replaceState, so no hashchange fires; it sends this instead.
+			const accordion = createAccordion({ initiallyOpen: [0] });
+			const items = accordion.querySelectorAll('.dsgo-accordion-item');
+			const heading = document.createElement('h3');
+			items[2]
+				.querySelector('.dsgo-accordion-item__content')
+				.appendChild(heading);
+			loadView();
+			Element.prototype.scrollIntoView.mockClear();
+
+			heading.dispatchEvent(
+				new window.CustomEvent('dsgo-reveal', { bubbles: true })
+			);
+
+			expect(
+				items[2].querySelector('.dsgo-accordion-item__panel').hidden
+			).toBe(false);
+			// Single-open mode still holds.
+			expect(
+				items[0].classList.contains('dsgo-accordion-item--open')
+			).toBe(false);
+			// The sender scrolls; the accordion must not scroll too.
+			expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
+		});
+
 		test('ignores a hash that matches nothing', () => {
 			const accordion = createAccordion({ initiallyOpen: [0] });
 			window.history.replaceState(null, '', '#nope');

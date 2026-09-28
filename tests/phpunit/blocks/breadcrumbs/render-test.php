@@ -270,6 +270,36 @@ class DesignSetGo_Breadcrumbs_Render_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'application/ld+json', $again, 'Only the first breadcrumbs block prints schema.' );
 	}
 
+	public function test_schema_names_are_decoded_text() {
+		// WordPress stores and returns these HTML-encoded (`It&#8217;s`,
+		// `A &amp; B`); JSON-LD is read literally, so they must be decoded.
+		$category = self::factory()->category->create( array( 'name' => 'Arts & Crafts' ) );
+		$post_id  = self::factory()->post->create( array( 'post_title' => "It's a test & more" ) );
+		wp_set_post_categories( $post_id, array( $category ) );
+		$this->go_to( get_permalink( $post_id ) );
+
+		$html = $this->render( array( 'showCurrent' => true ), $this->block_with_context( array( 'postId' => $post_id ) ) );
+
+		$this->assertSame( 1, preg_match( '#<script type="application/ld\+json">(.*?)</script>#s', $html, $match ) );
+		$names = wp_list_pluck( json_decode( $match[1], true )['itemListElement'], 'name' );
+
+		$this->assertContains( 'Arts & Crafts', $names );
+		$this->assertContains( "It\u{2019}s a test & more", $names, 'wptexturize() curls the apostrophe; the entity must not survive.' );
+		$this->assertStringNotContainsString( '&#', $match[1] );
+		$this->assertStringNotContainsString( '&amp;', $match[1] );
+	}
+
+	public function test_schema_can_be_turned_off_for_seo_plugins() {
+		$page_id = self::factory()->post->create( array( 'post_type' => 'page' ) );
+		$this->go_to( get_permalink( $page_id ) );
+		add_filter( 'designsetgo_breadcrumbs_schema_enabled', '__return_false' );
+
+		$html = $this->render( array( 'showCurrent' => true ), $this->block_with_context( array( 'postId' => $page_id ) ) );
+
+		$this->assertStringContainsString( 'dsgo-breadcrumbs', $html, 'The visible trail still renders.' );
+		$this->assertStringNotContainsString( 'application/ld+json', $html );
+	}
+
 	public function test_skips_schema_for_a_loop_item_that_is_not_the_viewed_post() {
 		$page_id  = self::factory()->post->create( array( 'post_type' => 'page' ) );
 		$other_id = self::factory()->post->create( array( 'post_title' => 'Some Loop Item' ) );

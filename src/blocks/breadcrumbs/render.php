@@ -108,6 +108,21 @@ if ( ! function_exists( 'designsetgo_render_breadcrumbs_schema' ) ) {
 			return;
 		}
 
+		/**
+		 * Whether the Breadcrumbs block prints BreadcrumbList JSON-LD.
+		 *
+		 * SEO plugins such as Yoast SEO and Rank Math print their own; return
+		 * false to leave it to them.
+		 *
+		 * @since 2.8.3
+		 *
+		 * @param bool  $enabled Default true.
+		 * @param array $trail   Breadcrumb items (title, url).
+		 */
+		if ( ! apply_filters( 'designsetgo_breadcrumbs_schema_enabled', true, $trail ) ) {
+			return;
+		}
+
 		$schema = designsetgo_get_breadcrumb_schema( $trail );
 		$json   = $schema ? wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) : false;
 

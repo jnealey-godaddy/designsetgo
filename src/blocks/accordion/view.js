@@ -161,23 +161,14 @@ function getPanel(item) {
 }
 
 /**
- * Open the item a URL hash points at.
+ * Open every accordion item around an element, outermost first, so the
+ * element can be seen. Nested accordions work too.
  *
- * The hash may name an item's anchor, its trigger or panel, or anything
- * inside its panel — a heading a Table of Contents links to, say. Every
- * accordion item around the target opens, so nested accordions work too.
- *
- * @param {boolean} animate Whether to animate and scroll the target into view.
+ * @param {Element} target  Element to reveal.
+ * @param {boolean} animate Whether to animate the panels opening.
+ * @return {boolean} Whether any item had to open.
  */
-function openFromHash(animate) {
-	let target = null;
-	try {
-		const id = decodeURIComponent(window.location.hash.slice(1));
-		target = id ? document.getElementById(id) : null;
-	} catch (error) {
-		return;
-	}
-
+function openItemsAround(target, animate) {
 	let item = target?.closest('.dsgo-accordion-item');
 	const toOpen = [];
 	while (item) {
@@ -204,9 +195,29 @@ function openFromHash(animate) {
 		opened = true;
 	});
 
+	return opened;
+}
+
+/**
+ * Open the item a URL hash points at.
+ *
+ * The hash may name an item's anchor, its trigger or panel, or anything
+ * inside its panel — a heading a Table of Contents links to, say.
+ *
+ * @param {boolean} animate Whether to animate and scroll the target into view.
+ */
+function openFromHash(animate) {
+	let target = null;
+	try {
+		const id = decodeURIComponent(window.location.hash.slice(1));
+		target = id ? document.getElementById(id) : null;
+	} catch (error) {
+		return;
+	}
+
 	// The browser's own jump found nothing to scroll to: the target was
 	// inside a hidden panel.
-	if (opened) {
+	if (target && openItemsAround(target, animate)) {
 		target.scrollIntoView({
 			behavior: animate && !prefersReducedMotion ? 'smooth' : 'auto',
 			block: 'start',
@@ -215,6 +226,14 @@ function openFromHash(animate) {
 }
 
 window.addEventListener('hashchange', () => openFromHash(true));
+
+// Another script is about to scroll to an element — a Table of Contents
+// link, which moves by itself and updates the URL with replaceState, so no
+// hashchange fires. Open the panels around it first, without animation, so
+// the element has a position to scroll to. The caller does the scrolling.
+document.addEventListener('dsgo-reveal', (event) => {
+	openItemsAround(event.target, false);
+});
 
 function openPanel(item, panel, animate = true, scrollIntoView = false) {
 	// Update classes

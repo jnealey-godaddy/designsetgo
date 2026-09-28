@@ -282,6 +282,10 @@ class DSGTableOfContents {
 	}
 
 	scrollToTarget(target) {
+		// Let a closed Accordion (or anything else that hides content) reveal
+		// the target first; a hidden element has no position to scroll to.
+		target.dispatchEvent(new CustomEvent('dsgo-reveal', { bubbles: true }));
+
 		const rect = target.getBoundingClientRect();
 		const targetPosition = window.scrollY + rect.top - this.scrollOffset;
 
@@ -358,8 +362,11 @@ class DSGTableOfContents {
 					if (link) {
 						this.updateActiveLink(link);
 						// Update URL hash when scrolling through sections
-						// (but not during initial hash navigation to prevent override)
+						// (but not during initial hash navigation to prevent override).
+						// Highlighting runs for every TOC; rewriting the URL as the
+						// reader scrolls stays tied to Smooth Scroll, as it always was.
 						if (
+							this.scrollSmooth &&
 							!this.isInitialHashNavigation &&
 							!this.isManualNavigation &&
 							window.history.replaceState

@@ -83,4 +83,80 @@ describe('Table of Contents - Frontend', () => {
 		);
 		expect(active.getAttribute('href')).toBe(`#${heading.id}`);
 	});
+
+	describe('URL updates while scrolling', () => {
+		afterEach(() => {
+			window.history.replaceState(null, '', window.location.pathname);
+		});
+
+		test.each([
+			[true, true],
+			[false, false],
+		])(
+			'with smooth scroll %s, scroll spy rewrites the URL: %s',
+			(scrollSmooth, rewrites) => {
+				createToc({ scrollSmooth });
+				loadView();
+
+				const heading = document.querySelectorAll('h2')[1];
+				observers[0].simulateIntersection([
+					{ isIntersecting: true, target: heading },
+				]);
+
+				expect(window.location.hash).toBe(
+					rewrites ? `#${heading.id}` : ''
+				);
+			}
+		);
+	});
+
+	test('a link click asks hidden content to reveal its target first', () => {
+		const toc = createToc({ scrollSmooth: false });
+		loadView();
+
+		const heading = document.querySelectorAll('h2')[1];
+		const revealed = jest.fn();
+		heading.addEventListener('dsgo-reveal', revealed);
+
+		toc.querySelectorAll('.dsgo-table-of-contents__link')[1].click();
+
+		expect(revealed).toHaveBeenCalledTimes(1);
+	});
+
+	test('a link to a heading in a closed accordion panel opens it', () => {
+		// Both scripts together, as on a real page.
+		const accordion = document.createElement('div');
+		accordion.className = 'dsgo-accordion';
+		const item = document.createElement('div');
+		item.className = 'dsgo-accordion-item';
+		const trigger = document.createElement('button');
+		trigger.className = 'dsgo-accordion-item__trigger';
+		const panel = document.createElement('div');
+		panel.className = 'dsgo-accordion-item__panel';
+		panel.hidden = true;
+		const content = document.createElement('div');
+		content.className = 'dsgo-accordion-item__content';
+		const heading = document.createElement('h2');
+		heading.textContent = 'Hidden details';
+		content.appendChild(heading);
+		panel.appendChild(content);
+		item.append(trigger, panel);
+		accordion.appendChild(item);
+
+		const toc = createToc({ scrollSmooth: false });
+		toc.parentElement.appendChild(accordion);
+		window.HTMLElement.prototype.scrollIntoView = jest.fn();
+		jest.isolateModules(() => {
+			require('../../../src/blocks/accordion/view.js');
+		});
+		loadView();
+
+		const link = [
+			...toc.querySelectorAll('.dsgo-table-of-contents__link'),
+		].find((a) => a.textContent === 'Hidden details');
+		link.click();
+
+		expect(panel.hidden).toBe(false);
+		expect(item.classList.contains('dsgo-accordion-item--open')).toBe(true);
+	});
 });

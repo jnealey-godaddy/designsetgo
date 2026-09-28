@@ -219,13 +219,18 @@ if ( ! function_exists( 'designsetgo_get_breadcrumb_schema' ) ) {
 	 * @return array BreadcrumbList, or an empty array when the trail is empty.
 	 */
 	function designsetgo_get_breadcrumb_schema( array $trail ) {
+		// Titles and term names arrive HTML-encoded (`It&#8217;s`, `A &amp; B`)
+		// and JSON-LD never decodes them, so search results would show the
+		// codes. The schema builders' normaliser strips tags, then decodes.
+		require_once DESIGNSETGO_PATH . 'includes/features/schema-builders.php';
+
 		$elements = array();
 
 		foreach ( array_values( $trail ) as $index => $item ) {
 			$element = array(
 				'@type'    => 'ListItem',
 				'position' => $index + 1,
-				'name'     => wp_strip_all_tags( (string) $item['title'] ),
+				'name'     => designsetgo_schema_normalize_text( (string) $item['title'] ),
 			);
 
 			if ( ! empty( $item['url'] ) ) {
