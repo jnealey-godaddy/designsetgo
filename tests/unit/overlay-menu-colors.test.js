@@ -15,10 +15,12 @@ describe('overlay menu palette', () => {
 	it.each([
 		['pairs base-2 with contrast-2', {}, 'rgb(25, 51, 65)', '#fff'],
 		[
-			'falls back to contrast when contrast-2 is missing',
+			// contrast (#000) is unreadable on this dark surface, so it is
+			// skipped for white rather than kept.
+			'skips an unreadable contrast when contrast-2 is missing',
 			{ '--wp--preset--color--contrast-2': '' },
 			'rgb(25, 51, 65)',
-			'#000',
+			'#fff',
 		],
 		[
 			'does not use contrast-2 for the legacy white surface',
@@ -30,7 +32,43 @@ describe('overlay menu palette', () => {
 			'does not use contrast-2 without base-2',
 			{ '--wp--preset--color--base-2': '' },
 			'rgb(25, 51, 65)',
-			'#000',
+			'#fff',
+		],
+		[
+			// Twenty Twenty-Five's Evening: no base-2, so the surface is
+			// base, and its light contrast reads on it.
+			'uses contrast on a dark base surface',
+			{
+				'--dsgo-overlay-menu-surface': '#1B1B1B',
+				'--wp--preset--color--base-2': '',
+				'--wp--preset--color--contrast-2': '',
+				'--wp--preset--color--contrast': '#F0F0F0',
+			},
+			'rgb(27, 27, 27)',
+			'#F0F0F0',
+		],
+		[
+			// Twenty Twenty-Four: base-2 white with a grey contrast-2 (5.9:1).
+			'keeps a readable contrast-2 on base-2',
+			{
+				'--dsgo-overlay-menu-surface': '#ffffff',
+				'--wp--preset--color--base-2': '#ffffff',
+				'--wp--preset--color--contrast-2': '#636363',
+				'--wp--preset--color--contrast': '#111111',
+			},
+			'rgb(255, 255, 255)',
+			'#636363',
+		],
+		[
+			'skips an unreadable contrast-2 for contrast',
+			{
+				'--dsgo-overlay-menu-surface': '#ffffff',
+				'--wp--preset--color--base-2': '#ffffff',
+				'--wp--preset--color--contrast-2': '#cccccc',
+				'--wp--preset--color--contrast': '#111111',
+			},
+			'rgb(255, 255, 255)',
+			'#111111',
 		],
 		[
 			'uses white on a dark surface without contrast tokens',

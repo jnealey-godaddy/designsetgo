@@ -329,12 +329,12 @@ body:not(.block-editor-page).dsgo-page-overlay-header header.wp-block-template-p
 	transition: background-color var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out,
 		box-shadow var(--dsgo-sticky-header-transition-speed, 300ms) ease-in-out;
 
-	// Use the normal menu surface, independently of the header's scroll colors.
-	--dsgo-overlay-menu-surface: #fff;
-
-	@supports #{$dsgo-color-mix-support} {
-		--dsgo-overlay-menu-surface: var(--wp--preset--color--base-2, #fff);
-	}
+	// The menu surface, independently of the header's scroll colors: the
+	// theme's secondary surface, else its page background, else white. base
+	// before white matters on dark palettes without base-2 (Twenty
+	// Twenty-Five's), whose text colors are light. overlay-menu-colors.js
+	// picks readable text for whichever one resolves.
+	--dsgo-overlay-menu-surface: var(--wp--preset--color--base-2, var(--wp--preset--color--base, #fff));
 
 	.wp-block-navigation :is(.wp-block-navigation__submenu-container, .wp-block-navigation__responsive-container.is-menu-open) {
 

@@ -65,6 +65,19 @@ describe('overlay menu colors', () => {
 		expect(menuRules()).toContain('.wp-block-navigation-item__label');
 	});
 
+	it('falls back from base-2 to base before white for the menu surface', () => {
+		// Dark palettes without base-2 (Twenty Twenty-Five's) have a light
+		// contrast color, so a white fallback surface left the menu unreadable.
+		const overlay = extractRule(
+			source,
+			'body:not(.block-editor-page).dsgo-page-overlay-header header.wp-block-template-part'
+		).body;
+
+		expect(overlay).toMatch(
+			/--dsgo-overlay-menu-surface:\s*var\(--wp--preset--color--base-2,\s*var\(--wp--preset--color--base,\s*#fff\)\);/
+		);
+	});
+
 	it('applies both automatic colors only when neither color is authored', () => {
 		const automatic = extractRule(menuRules(), AUTHORED_GUARD);
 
