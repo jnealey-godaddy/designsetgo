@@ -118,10 +118,10 @@
       "probe": "Probe"
     },
     "separator": {
-      "probe": ","
+      "probe": "."
     },
     "decimal": {
-      "probe": "."
+      "probe": ","
     },
     "prefix": {
       "probe": "$"
@@ -738,6 +738,9 @@
           "minimal",
           "fullbleed"
         ]
+      },
+      "transitionEasing": {
+        "probe": "linear"
       }
     },
     "designsetgo/star-rating": {
@@ -781,6 +784,11 @@
           "rtl",
           "reverse"
         ]
+      }
+    },
+    "designsetgo/timeline": {
+      "itemSpacing": {
+        "probe": "3rem"
       }
     },
     "designsetgo/timeline-item": {

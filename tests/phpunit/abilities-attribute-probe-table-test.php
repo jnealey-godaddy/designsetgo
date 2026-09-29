@@ -8,7 +8,8 @@
  *
  * - An attribute with no derivable probe and no declaration fails. Adding an
  *   attribute to a block.json therefore forces a decision - supply a probe, or
- *   write down why the attribute has nothing to prove.
+ *   write down why the attribute has nothing to prove. A probe equal to the
+ *   attribute's default counts as none, since it flips nothing.
  * - A declaration naming an attribute the registry no longer has fails too.
  *   Without that half, the table would rot into a list of things that used to
  *   be true, and a `skip` written for a deleted attribute would sit there
@@ -103,77 +104,16 @@ class Abilities_Attribute_Probe_Table_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Attribute names this plugin declares, from block.json and the extension
-	 * configs.
-	 *
-	 * WordPress injects attributes of its own onto every block - `style`,
-	 * `className`, `lock`, `metadata`, `align`, the colour and typography
-	 * presets - and WHICH ones it injects changes between WordPress versions.
-	 * CI runs WordPress trunk while the fixtures are generated against the
-	 * version .wp-env.json pins, so demanding a declaration for core's
-	 * attributes would fail the build whenever core changed, for a reason that
-	 * has nothing to do with this plugin.
-	 *
-	 * Core's attributes are still PROBED wherever the heuristics can derive a
-	 * value; they are simply not required to be declared. Everything the plugin
-	 * owns - which is everything a change here can break - still is.
-	 *
-	 * Ownership is per BLOCK, not per attribute name. `anchor` is the case that
-	 * proves why: designsetgo/tab declares it in its own block.json, while every
-	 * other block gets it from core's anchor support - which only exists in PHP
-	 * from WordPress 7.0, so trunk registers it and the pinned 6.9 does not.
-	 * Treating the NAME as owned made every block on trunk demand a probe for an
-	 * attribute the plugin never declared there.
-	 *
-	 * @return array{blocks: array<string, array<string, bool>>, extensions: array<string, bool>}
-	 */
-	private function plugin_owned_attributes(): array {
-		$by_block   = array();
-		$extensions = array();
-
-		foreach ( glob( dirname( __DIR__, 2 ) . '/src/blocks/*/block.json' ) ?: array() as $path ) {
-			$json = json_decode( (string) file_get_contents( $path ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- Reading a source file in a test.
-			$name = (string) ( $json['name'] ?? '' );
-
-			if ( '' === $name ) {
-				continue;
-			}
-
-			foreach ( array_keys( (array) ( $json['attributes'] ?? array() ) ) as $attribute ) {
-				$by_block[ $name ][ (string) $attribute ] = true;
-			}
-		}
-
-		// Extension attributes are injected uniformly by Extension_Attributes
-		// rather than declared per block, so they are owned wherever they appear.
-		foreach ( glob( dirname( __DIR__, 2 ) . '/includes/extension-configs/*.php' ) ?: array() as $path ) {
-			$config = require $path;
-
-			foreach ( array_keys( (array) ( $config['attributes'] ?? array() ) ) as $attribute ) {
-				$extensions[ (string) $attribute ] = true;
-			}
-		}
-
-		return array(
-			'blocks'     => $by_block,
-			'extensions' => $extensions,
-		);
-	}
-
-	/**
 	 * Every attribute the plugin declares must resolve to a probe or a skip.
 	 */
 	public function test_every_covered_attribute_is_probeable_or_declared() {
 		$table   = $this->table();
-		$owned   = $this->plugin_owned_attributes();
+		$owned   = Attribute_Probe_Generator::plugin_owned_attributes();
 		$missing = array();
 
 		foreach ( $this->covered_attributes() as $block => $attributes ) {
 			foreach ( $attributes as $attribute => $definition ) {
-				$is_owned = isset( $owned['blocks'][ $block ][ (string) $attribute ] )
-					|| isset( $owned['extensions'][ (string) $attribute ] );
-
-				if ( ! $is_owned ) {
+				if ( ! Attribute_Probe_Generator::is_plugin_owned( $owned, $block, (string) $attribute ) ) {
 					continue;
 				}
 
@@ -194,9 +134,10 @@ class Abilities_Attribute_Probe_Table_Test extends WP_UnitTestCase {
 		$this->assertSame(
 			array(),
 			$missing,
-			"These attributes have no derivable probe and no declaration in\n"
-				. "tests/fixtures/attribute-probes.json. Add either a \"probe\" value or a\n"
-				. "\"skip\" with a reason:\n  " . implode( "\n  ", $missing )
+			"These attributes have no usable probe. None can be derived, or every\n"
+				. "declared or derived value equals the default, so the matrix would never\n"
+				. "flip them. In tests/fixtures/attribute-probes.json add a \"probe\" that\n"
+				. "differs from the default, or a \"skip\" with a reason:\n  " . implode( "\n  ", $missing )
 		);
 	}
 
