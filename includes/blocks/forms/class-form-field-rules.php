@@ -6,8 +6,8 @@
  * attributes (`minlength`, `maxlength`, `pattern`, `min`, `max`, `step`).
  * The browser enforces those, but only the browser: a devtools edit or a
  * direct POST skips them. This class reads the same attributes from the
- * saved form and re-applies them, using HTML's own semantics so the server
- * never rejects a value the browser accepted.
+ * saved form and re-applies them. Custom patterns use a conservative shared
+ * HTML-v / PCRE syntax boundary; unsupported syntax stays browser-only.
  *
  * @package DesignSetGo
  * @since   2.8.3
@@ -18,6 +18,8 @@ namespace DesignSetGo\Blocks;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
+
+require_once __DIR__ . '/class-form-pattern-compatibility.php';
 
 /**
  * Extracts and enforces per-field value rules for form submissions.
@@ -161,7 +163,7 @@ class Form_Field_Rules {
 		if ( isset( $rules['maxLength'] ) && $length > $rules['maxLength'] ) {
 			return self::error();
 		}
-		if ( isset( $rules['pattern'] ) && ! self::matches_pattern( $value, $rules['pattern'] ) ) {
+		if ( isset( $rules['pattern'] ) && ! Form_Pattern_Compatibility::matches( $value, $rules['pattern'] ) ) {
 			return self::error();
 		}
 
@@ -198,43 +200,6 @@ class Form_Field_Rules {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Whether a value fully matches an HTML `pattern` attribute.
-	 *
-	 * HTML anchors the pattern to the whole value. A pattern PCRE cannot
-	 * compile (JavaScript-only syntax) is ignored, as browsers ignore a pattern
-	 * they cannot compile — the server must not be stricter than the page.
-	 * The reverse gap remains: browsers compile with the `v` flag, which
-	 * rejects a few patterns PCRE accepts (an unescaped `-` or `(` inside a
-	 * character class), and such a pattern is enforced here but not there.
-	 *
-	 * Only a pattern that fails to compile is ignored. A match that fails at
-	 * run time (backtrack or JIT limit, malformed UTF-8) is a mismatch:
-	 * otherwise a value built to exhaust backtracking would skip the check.
-	 *
-	 * @param string $value   Submitted value.
-	 * @param string $pattern HTML pattern attribute.
-	 * @return bool
-	 */
-	private static function matches_pattern( $value, $pattern ) {
-		// \x01 as delimiter: it cannot appear in an authored pattern, so the
-		// pattern needs no escaping to be embedded. D stops `$` matching
-		// before a trailing newline, as a JavaScript `$` never does.
-		$regex = "\x01^(?:" . $pattern . ")$\x01uD";
-		// An uncompilable author pattern is expected input: swallow the
-		// compile warning and read the false return instead.
-		set_error_handler( '__return_true' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Scoped to these preg_match() calls.
-		// Matching the empty string only compiles the pattern; its result is
-		// false solely when compilation fails.
-		$compiles = false !== preg_match( $regex, '' );
-		$result   = $compiles ? preg_match( $regex, $value ) : false;
-		restore_error_handler();
-		if ( ! $compiles ) {
-			return true;
-		}
-		return 1 === $result;
 	}
 
 	/**

@@ -5,6 +5,7 @@
  */
 
 @use '../../styles/variables' as *;
+@use './surface' as *;
 @use '../../styles/mixins' as *;
 
 // Modal Container
@@ -62,18 +63,8 @@
 	// Modal Content
 	&__content {
 		position: relative;
-		// Default dialog surface. A background set on the block (block supports,
-		// moved onto this element by transferStylesToContent) wins; otherwise the
-		// theme owns it:
-		//   1. --wp--custom--designsetgo--modal--background — theme.json /
-		//      Style Kit token.
-		//   2. The theme's base (page background) preset, so text that inherits
-		//      the theme's foreground color stays readable on dark themes.
-		//   3. #fff — the historical baked-in default.
-		background: var(
-			--wp--custom--designsetgo--modal--background,
-			var(--wp--preset--color--base, #fff)
-		);
+		// Explicit block support styles win over the shared legacy-safe default.
+		background: $dsgo-modal-background;
 		border-radius: $dsgo-radius-medium;
 		overflow: auto; // Allows scrolling in both directions
 		max-height: 90vh;
@@ -100,7 +91,8 @@
 		border: none;
 		border-radius: $dsgo-radius-none;
 		cursor: pointer;
-		color: var(--wp--preset--color--contrast, #000);
+		// Match the legacy white surface; an authored close color wins inline.
+		color: #000;
 		transition: all 0.2s ease;
 		display: flex;
 		align-items: center;

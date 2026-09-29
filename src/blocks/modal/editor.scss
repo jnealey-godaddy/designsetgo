@@ -5,6 +5,7 @@
  */
 
 @use '../../styles/variables' as *;
+@use './surface' as *;
 
 .dsgo-modal-editor-preview {
 	position: relative;
@@ -42,11 +43,7 @@
 		position: relative;
 		margin: 0 auto;
 		padding: 24px;
-		// Mirror the frontend content surface (style.scss).
-		background: var(
-			--wp--custom--designsetgo--modal--content-background,
-			var(--wp--preset--color--base, #fff)
-		);
+		background: $dsgo-modal-background;
 		border: 1px solid #ddd;
 		border-radius: $dsgo-radius-medium;
 	}
