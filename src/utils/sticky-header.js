@@ -14,6 +14,7 @@
 
 // Import SCSS so webpack extracts build/utils/sticky-header.css
 import './sticky-header.scss';
+import { applyOverlayMenuColors } from './overlay-menu-colors';
 
 (function () {
 	'use strict';
@@ -512,6 +513,10 @@ import './sticky-header.scss';
 			} else {
 				header.style.removeProperty('--dsgo-sticky-scroll-text-color');
 			}
+		}
+
+		if (document.body.classList.contains('dsgo-page-overlay-header')) {
+			applyOverlayMenuColors(header);
 		}
 	}
 
