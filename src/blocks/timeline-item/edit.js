@@ -31,14 +31,8 @@ import { DsgoInspectorPanel } from '../../components/shared';
 
 // Marker shape SVGs
 const MarkerShapes = {
-	circle: ({ size, fillColor, borderColor }) => (
-		<svg
-			width={size}
-			height={size}
-			viewBox="0 0 24 24"
-			fill="none"
-			xmlns="http://www.w3.org/2000/svg"
-		>
+	circle: ({ fillColor, borderColor }) => (
+		<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 			<circle
 				cx="12"
 				cy="12"
@@ -49,14 +43,8 @@ const MarkerShapes = {
 			/>
 		</svg>
 	),
-	square: ({ size, fillColor, borderColor }) => (
-		<svg
-			width={size}
-			height={size}
-			viewBox="0 0 24 24"
-			fill="none"
-			xmlns="http://www.w3.org/2000/svg"
-		>
+	square: ({ fillColor, borderColor }) => (
+		<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 			<rect
 				x="2"
 				y="2"
@@ -69,14 +57,8 @@ const MarkerShapes = {
 			/>
 		</svg>
 	),
-	diamond: ({ size, fillColor, borderColor }) => (
-		<svg
-			width={size}
-			height={size}
-			viewBox="0 0 24 24"
-			fill="none"
-			xmlns="http://www.w3.org/2000/svg"
-		>
+	diamond: ({ fillColor, borderColor }) => (
+		<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 			<rect
 				x="12"
 				y="2"
@@ -113,7 +95,6 @@ export default function TimelineItemEdit({
 
 	// Get context from parent timeline
 	const markerStyle = context['designsetgo/timeline/markerStyle'] || 'circle';
-	const markerSize = context['designsetgo/timeline/markerSize'] || 16;
 	const markerColor = context['designsetgo/timeline/markerColor'] || '';
 	const markerBorderColor =
 		context['designsetgo/timeline/markerBorderColor'] || '';
@@ -411,8 +392,6 @@ export default function TimelineItemEdit({
 							alt=""
 							className="dsgo-timeline-item__marker-image"
 							style={{
-								width: markerSize,
-								height: markerSize,
 								borderRadius:
 									markerStyle === 'circle' ? '50%' : '4px',
 								objectFit: 'cover',
@@ -420,7 +399,6 @@ export default function TimelineItemEdit({
 						/>
 					) : (
 						<MarkerShape
-							size={markerSize}
 							fillColor={effectiveMarkerColor}
 							borderColor={effectiveBorderColor}
 						/>

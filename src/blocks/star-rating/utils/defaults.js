@@ -5,6 +5,11 @@
  * block.json; `tests/unit/blocks/star-rating.test.js` asserts they agree, so a
  * default changed in one place cannot quietly survive in the other.
  *
+ * `iconSize` and `iconStyle` are deliberately absent: they have no default so
+ * an unset value inherits the theme tokens (settings.custom.designsetgo.
+ * starRating.defaultSize and icon.defaultStyle). Resetting them means
+ * `undefined`, not a number.
+ *
  * @since 2.8.0
  */
 
@@ -13,8 +18,6 @@ export const DEFAULTS = {
 	maxRating: 5,
 	precision: 'half',
 	icon: 'star',
-	iconStyle: 'filled',
-	iconSize: 24,
 	iconGap: 4,
 	ratingColor: '',
 	trackColor: '',

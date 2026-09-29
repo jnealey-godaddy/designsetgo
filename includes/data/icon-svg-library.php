@@ -327,17 +327,17 @@ function designsetgo_accordion_render_icon( $icon_style, $is_open ) {
 	switch ( $icon_style ) {
 		case 'plus-minus':
 			if ( $is_open ) {
-				$icon_svg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 8h8v1H4z" /></svg>';
+				$icon_svg = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 8h8v1H4z" /></svg>';
 			} else {
-				$icon_svg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4v8M4 8h8" stroke="currentColor" stroke-width="1" fill="none" /></svg>';
+				$icon_svg = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4v8M4 8h8" stroke="currentColor" stroke-width="1" fill="none" /></svg>';
 			}
 			break;
 		case 'caret':
-			$icon_svg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6 7l2 2 2-2z" /></svg>';
+			$icon_svg = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M6 7l2 2 2-2z" /></svg>';
 			break;
 		case 'chevron':
 		default:
-			$icon_svg = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 6.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 6H4.604a.25.25 0 00-.177.427z" /></svg>';
+			$icon_svg = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M4.427 6.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 6H4.604a.25.25 0 00-.177.427z" /></svg>';
 	}
 
 	return '<span class="dsgo-accordion-item__icon" aria-hidden="true">' . $icon_svg . '</span>';

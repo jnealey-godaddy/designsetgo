@@ -258,4 +258,24 @@ class Star_Rating_Test extends WP_UnitTestCase {
 	public function test_star_rating_is_in_the_builder_map() {
 		$this->assertContains( 'designsetgo/star-rating', \DesignSetGo\SchemaOutput::supported_blocks() );
 	}
+
+	/**
+	 * An unset icon size is not baked into the markup, so the theme token
+	 * (settings.custom.designsetgo.starRating.defaultSize) stays in charge.
+	 */
+	public function test_unset_icon_size_inherits_the_theme_default() {
+		$html = do_blocks( '<!-- wp:designsetgo/star-rating /-->' );
+
+		$this->assertStringContainsString( 'dsgo-star-rating__inner', $html );
+		$this->assertStringNotContainsString( '--dsgo-star-rating-size', $html );
+	}
+
+	/**
+	 * An explicit icon size is an author override and is written inline.
+	 */
+	public function test_explicit_icon_size_is_written_inline() {
+		$html = do_blocks( '<!-- wp:designsetgo/star-rating {"iconSize":32} /-->' );
+
+		$this->assertStringContainsString( '--dsgo-star-rating-size:32px', $html );
+	}
 }

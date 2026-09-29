@@ -32,15 +32,26 @@
 		align-items: center;
 		justify-content: center;
 
-		// Marker image styling
+		// Neither the SVG nor the image carries a size in the markup; both
+		// follow the parent's --dsgo-timeline-marker-size (an explicit Marker
+		// Size, or the theme token — see timeline/style.scss). The image's
+		// size is !important: content saved before this change
+		// stores it inline (style="width:16px;height:16px"), which a stylesheet
+		// can't otherwise beat. Those images ignored the Marker Size and theme
+		// token until the post was re-saved, while the SVG markers beside them
+		// followed it.
 		.dsgo-timeline-item__marker-image {
 			display: block;
+			width: var(--dsgo-timeline-marker-size, 16px) !important;
+			height: var(--dsgo-timeline-marker-size, 16px) !important;
 			border: 2px solid var(--dsgo-timeline-marker-border-color, var(--wp--preset--color--primary, #2563eb));
 			background-color: var(--wp--preset--color--base, #fff);
 		}
 
 		svg {
 			display: block;
+			width: var(--dsgo-timeline-marker-size, 16px);
+			height: var(--dsgo-timeline-marker-size, 16px);
 		}
 	}
 

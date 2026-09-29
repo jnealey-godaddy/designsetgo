@@ -37,8 +37,8 @@ The **Star Rating Block** shows a rating as a row of icons — from a fixed valu
 ### Style
 
 - **Icon**: any icon from the shared icon picker (`icon`, default `star`).
-- **Icon style**: Filled / Outlined (`iconStyle`, default `filled`).
-- **Icon size**: 12–96px (`iconSize`, default `24`).
+- **Icon style**: Filled / Outlined (`iconStyle`). Unset follows the site-wide `icon.defaultStyle` token, which is `filled` unless the theme sets it.
+- **Icon size**: 12–96px (`iconSize`). Unset follows the theme's `starRating.defaultSize` token, which is `24` unless the theme sets it. See [Icon and Marker Size Tokens](../guides/DESIGN-SYSTEM.md#icon-and-marker-size-tokens).
 - **Icon gap**: 0–24px (`iconGap`, default `4`).
 
 ### Color

@@ -13,13 +13,13 @@ import classnames from 'classnames';
 
 // Icon components for different styles
 const ChevronIcon = () => (
-	<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+	<svg viewBox="0 0 16 16" fill="currentColor">
 		<path d="M4.427 6.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 6H4.604a.25.25 0 00-.177.427z" />
 	</svg>
 );
 
 const PlusMinusIcon = ({ isOpen }) => (
-	<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+	<svg viewBox="0 0 16 16" fill="currentColor">
 		{isOpen ? (
 			<path d="M4 8h8v1H4z" />
 		) : (
@@ -36,7 +36,7 @@ const PlusMinusIcon = ({ isOpen }) => (
 );
 
 const CaretIcon = () => (
-	<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+	<svg viewBox="0 0 16 16" fill="currentColor">
 		<path d="M6 7l2 2 2-2z" />
 	</svg>
 );

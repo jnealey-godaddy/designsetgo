@@ -1,21 +1,28 @@
 /**
  * Counter Block - Icon Settings Panel Component
  *
- * Renders DsgoInspectorPanel.Item entries for icon show/hide, type, and
- * position. Meant to be composed inside the Settings DsgoInspectorPanel
- * in counter/edit.js.
+ * Renders DsgoInspectorPanel.Item entries for icon show/hide, type,
+ * position, and size. Size is an optional override: left unset it inherits
+ * the theme token (settings.custom.designsetgo.counter.defaultSize). Meant to be
+ * composed inside the Settings DsgoInspectorPanel in counter/edit.js.
  *
  * @since 1.0.0
  */
 
-import { __ } from '@wordpress/i18n';
-import { ToggleControl, SelectControl } from '@wordpress/components';
+import { __, sprintf } from '@wordpress/i18n';
+import {
+	ToggleControl,
+	SelectControl,
+	RangeControl,
+} from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../../../components/shared';
 
 export const IconSettingsPanel = ({
 	showIcon,
 	icon,
 	iconPosition,
+	iconSize,
+	inheritedIconSize,
 	setAttributes,
 }) => {
 	return (
@@ -107,6 +114,45 @@ export const IconSettingsPanel = ({
 						]}
 						onChange={(value) =>
 							setAttributes({ iconPosition: value })
+						}
+						__next40pxDefaultSize
+						__nextHasNoMarginBottom
+					/>
+				</DsgoInspectorPanel.Item>
+			)}
+
+			{showIcon && (
+				<DsgoInspectorPanel.Item
+					label={__('Icon Size', 'designsetgo')}
+					hasValue={() => typeof iconSize === 'number'}
+					onDeselect={() => setAttributes({ iconSize: undefined })}
+					isShownByDefault
+				>
+					<RangeControl
+						label={__('Icon Size', 'designsetgo')}
+						value={iconSize}
+						onChange={(value) =>
+							setAttributes({
+								iconSize:
+									typeof value === 'number'
+										? value
+										: undefined,
+							})
+						}
+						min={16}
+						max={128}
+						allowReset
+						placeholder={inheritedIconSize}
+						help={
+							typeof iconSize !== 'number' &&
+							sprintf(
+								/* translators: %d: inherited icon size in pixels. */
+								__(
+									'Inheriting theme default (%dpx).',
+									'designsetgo'
+								),
+								inheritedIconSize
+							)
 						}
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom

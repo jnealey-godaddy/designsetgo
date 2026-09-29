@@ -14,8 +14,9 @@ import {
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
 } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import { DsgoInspectorPanel } from '../../../components/shared';
+import { useIconDefaults } from '../../../hooks';
 import { IconPicker } from '../../icon/components/IconPicker';
 import { DEFAULTS } from '../utils/defaults';
 
@@ -29,6 +30,14 @@ import { DEFAULTS } from '../utils/defaults';
 export default function StylePanel({ attributes, setAttributes, clientId }) {
 	const { icon, iconStyle, iconSize, iconGap } = attributes;
 
+	// iconStyle / iconSize stay unset until the author overrides them, and
+	// then inherit the theme tokens. The controls show the inherited value so
+	// "unset" never looks like "nothing".
+	const iconDefaults = useIconDefaults({
+		sizeKey: 'starRating',
+		sizeFallback: 24,
+	});
+
 	return (
 		<DsgoInspectorPanel
 			title={__('Style', 'designsetgo')}
@@ -37,8 +46,8 @@ export default function StylePanel({ attributes, setAttributes, clientId }) {
 			resetAll={() =>
 				setAttributes({
 					icon: DEFAULTS.icon,
-					iconStyle: DEFAULTS.iconStyle,
-					iconSize: DEFAULTS.iconSize,
+					iconStyle: undefined,
+					iconSize: undefined,
 					iconGap: DEFAULTS.iconGap,
 				})
 			}
@@ -57,15 +66,13 @@ export default function StylePanel({ attributes, setAttributes, clientId }) {
 
 			<DsgoInspectorPanel.Item
 				label={__('Icon style', 'designsetgo')}
-				hasValue={() => iconStyle !== DEFAULTS.iconStyle}
-				onDeselect={() =>
-					setAttributes({ iconStyle: DEFAULTS.iconStyle })
-				}
+				hasValue={() => iconStyle !== undefined}
+				onDeselect={() => setAttributes({ iconStyle: undefined })}
 				isShownByDefault
 			>
 				<ToggleGroupControl
 					label={__('Icon style', 'designsetgo')}
-					value={iconStyle}
+					value={iconStyle || iconDefaults.style}
 					onChange={(value) => setAttributes({ iconStyle: value })}
 					isBlock
 					__nextHasNoMarginBottom
@@ -83,10 +90,8 @@ export default function StylePanel({ attributes, setAttributes, clientId }) {
 
 			<DsgoInspectorPanel.Item
 				label={__('Icon size', 'designsetgo')}
-				hasValue={() => iconSize !== DEFAULTS.iconSize}
-				onDeselect={() =>
-					setAttributes({ iconSize: DEFAULTS.iconSize })
-				}
+				hasValue={() => typeof iconSize === 'number'}
+				onDeselect={() => setAttributes({ iconSize: undefined })}
 				isShownByDefault
 			>
 				<RangeControl
@@ -95,13 +100,24 @@ export default function StylePanel({ attributes, setAttributes, clientId }) {
 					onChange={(value) =>
 						setAttributes({
 							iconSize:
-								typeof value === 'number'
-									? value
-									: DEFAULTS.iconSize,
+								typeof value === 'number' ? value : undefined,
 						})
 					}
 					min={12}
 					max={96}
+					allowReset
+					placeholder={iconDefaults.size}
+					help={
+						typeof iconSize !== 'number' &&
+						sprintf(
+							/* translators: %d: inherited icon size in pixels. */
+							__(
+								'Inheriting theme default (%dpx).',
+								'designsetgo'
+							),
+							iconDefaults.size
+						)
+					}
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
 				/>

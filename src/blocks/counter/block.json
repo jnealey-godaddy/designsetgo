@@ -98,6 +98,9 @@
 			"type": "string",
 			"default": "top"
 		},
+		"iconSize": {
+			"type": "number"
+		},
 		"overrideAnimation": {
 			"type": "boolean",
 			"default": false

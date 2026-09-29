@@ -1,3 +1,21 @@
+/**
+ * Timeline Item Block - Deprecations
+ *
+ * v1: save() before the marker size moved out of the markup. The marker SVG
+ * carried width/height attributes and a marker image an inline width/height,
+ * both taken from the parent timeline's markerSize context. save() never
+ * receives block context, so every stored item was written at the 16px
+ * fallback whatever the parent's Marker Size said — the frontend marker never
+ * followed the setting. The current save() writes no size; style.scss sizes
+ * the marker from --dsgo-timeline-marker-size, which the parent sets.
+ *
+ * Markup-only change with an unchanged attribute schema, so no isEligible:
+ * stored HTML no longer matches the current save(), and this frozen copy
+ * reproduces it.
+ *
+ * @package
+ */
+
 import {
 	useBlockProps,
 	useInnerBlocksProps,
@@ -5,13 +23,14 @@ import {
 } from '@wordpress/block-editor';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import metadata from './block.json';
 
 /**
  * Validates URL protocol to prevent javascript: and other dangerous protocols.
  * @param {string} url - The URL to validate.
  * @return {string|null} - The safe URL or null if invalid.
  */
-const getSafeUrl = (url) => {
+const getSafeUrlV1 = (url) => {
 	if (!url) {
 		return null;
 	}
@@ -31,13 +50,12 @@ const getSafeUrl = (url) => {
 	}
 };
 
-// Marker shape SVGs - same as edit.js. No width/height: style.scss sizes the
-// marker from --dsgo-timeline-marker-size, which the parent timeline sets.
-// (save() gets no block context, so a size here could only ever be the 16px
-// fallback.) Changing this markup needs a deprecation.
-const MarkerShapes = {
-	circle: ({ fillColor, borderColor }) => (
+// Marker shape SVGs - same as edit.js
+const MarkerShapesV1 = {
+	circle: ({ size, fillColor, borderColor }) => (
 		<svg
+			width={size}
+			height={size}
 			viewBox="0 0 24 24"
 			fill="none"
 			xmlns="http://www.w3.org/2000/svg"
@@ -53,8 +71,10 @@ const MarkerShapes = {
 			/>
 		</svg>
 	),
-	square: ({ fillColor, borderColor }) => (
+	square: ({ size, fillColor, borderColor }) => (
 		<svg
+			width={size}
+			height={size}
 			viewBox="0 0 24 24"
 			fill="none"
 			xmlns="http://www.w3.org/2000/svg"
@@ -72,8 +92,10 @@ const MarkerShapes = {
 			/>
 		</svg>
 	),
-	diamond: ({ fillColor, borderColor }) => (
+	diamond: ({ size, fillColor, borderColor }) => (
 		<svg
+			width={size}
+			height={size}
 			viewBox="0 0 24 24"
 			fill="none"
 			xmlns="http://www.w3.org/2000/svg"
@@ -94,7 +116,7 @@ const MarkerShapes = {
 	),
 };
 
-export default function TimelineItemSave({ attributes, context }) {
+function saveV1({ attributes, context }) {
 	const {
 		date,
 		title,
@@ -108,6 +130,7 @@ export default function TimelineItemSave({ attributes, context }) {
 	// Get context from parent timeline
 	const markerStyle =
 		context?.['designsetgo/timeline/markerStyle'] || 'circle';
+	const markerSize = context?.['designsetgo/timeline/markerSize'] || 16;
 	const markerColor = context?.['designsetgo/timeline/markerColor'] || '';
 	const markerBorderColor =
 		context?.['designsetgo/timeline/markerBorderColor'] || '';
@@ -120,10 +143,10 @@ export default function TimelineItemSave({ attributes, context }) {
 	const effectiveBorderColor = markerBorderColor || effectiveMarkerColor;
 
 	// Get the marker shape component
-	const MarkerShape = MarkerShapes[markerStyle] || MarkerShapes.circle;
+	const MarkerShape = MarkerShapesV1[markerStyle] || MarkerShapesV1.circle;
 
 	// Validate URL protocol for security
-	const safeUrl = getSafeUrl(linkUrl);
+	const safeUrl = getSafeUrlV1(linkUrl);
 
 	// Build class names - must match edit.js
 	const itemClasses = classnames('dsgo-timeline-item', {
@@ -158,12 +181,15 @@ export default function TimelineItemSave({ attributes, context }) {
 					alt=""
 					className="dsgo-timeline-item__marker-image"
 					style={{
+						width: markerSize,
+						height: markerSize,
 						borderRadius: markerStyle === 'circle' ? '50%' : '4px',
 						objectFit: 'cover',
 					}}
 				/>
 			) : (
 				<MarkerShape
+					size={markerSize}
 					fillColor={effectiveMarkerColor}
 					borderColor={effectiveBorderColor}
 				/>
@@ -221,3 +247,12 @@ export default function TimelineItemSave({ attributes, context }) {
 		</div>
 	);
 }
+
+const v1 = {
+	apiVersion: 3,
+	attributes: metadata.attributes,
+	supports: metadata.supports,
+	save: saveV1,
+};
+
+export default [v1];
