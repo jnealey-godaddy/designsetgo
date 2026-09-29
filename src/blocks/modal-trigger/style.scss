@@ -16,7 +16,9 @@
 	padding: 12px 24px;
 	border: 2px solid transparent;
 	background: var(--wp--preset--color--primary, #0073aa);
-	color: var(--wp--preset--color--base, #fff);
+	// White, not the base preset, on every primary fill in this file: base
+	// is a page background, and on a dark theme it is ~3.3:1 on #0073aa.
+	color: #fff;
 	font-size: var(--wp--preset--font-size--medium, 16px);
 	font-weight: 500;
 	line-height: 1.5;
@@ -161,13 +163,13 @@
 	// that should override Global Styles defaults
 	&--fill {
 		background: var(--wp--preset--color--primary, #0073aa);
-		color: var(--wp--preset--color--base, #fff);
+		color: #fff;
 		border-color: transparent;
 
 		&:hover,
 		&:focus {
 			background: var(--wp--preset--color--primary-dark, #005a87);
-			color: var(--wp--preset--color--base, #fff);
+			color: #fff;
 		}
 	}
 
@@ -180,7 +182,7 @@
 		&:hover,
 		&:focus {
 			background: var(--wp--preset--color--primary, #0073aa);
-			color: var(--wp--preset--color--base, #fff);
+			color: #fff;
 		}
 	}
 
@@ -230,7 +232,7 @@
 		border: 2px solid transparent;
 		border-radius: var(--wp--custom--button--border--radius, $dsgo-radius-small);
 		background: var(--wp--preset--color--primary, #0073aa);
-		color: var(--wp--preset--color--base, #fff);
+		color: #fff;
 		font-size: var(--wp--preset--font-size--medium, 16px);
 		font-weight: 500;
 		line-height: 1.5;

@@ -123,9 +123,10 @@
 		width: 100%;
 	}
 
-	// Card style variant (optional enhancement). Wrapped in :where() so a
-	// theme.json style targeting this block can still win on source order.
-	:where(&.is-style-card) {
+	// Card style variant (optional enhancement). Not wrapped in :where():
+	// at zero specificity the base `.dsgo-accordion { padding: 0 }` wins and
+	// the card loses its inner padding.
+	&.is-style-card {
 		border: 1px solid var(--dsgo-accordion-border-color);
 		box-shadow: var(--dsgo-accordion-shadow);
 		border-radius: var(--dsgo-accordion-border-radius);
