@@ -101,6 +101,11 @@ export default function FormBuilderEdit({
 		redirectUrl,
 	} = attributes;
 
+	const turnstileConfigured = Boolean(
+		typeof window !== 'undefined' &&
+			window.dsgoIntegrations?.turnstileConfigured
+	);
+
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 
@@ -925,22 +930,74 @@ export default function FormBuilderEdit({
 						}
 						isShownByDefault
 					>
+						{!turnstileConfigured && (
+							<Notice
+								status="warning"
+								isDismissible={false}
+								className="dsgo-form-builder__turnstile-config-notice"
+							>
+								{__(
+									'Turnstile needs both a site key and a secret key before it can protect this form.',
+									'designsetgo'
+								)}{' '}
+								<a
+									href={
+										window.designSetGoAdmin?.adminUrl +
+										'admin.php?page=designsetgo-settings'
+									}
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={__(
+										'Settings → Integrations (opens in new tab)',
+										'designsetgo'
+									)}
+								>
+									{__(
+										'Settings → Integrations',
+										'designsetgo'
+									)}
+								</a>
+							</Notice>
+						)}
 						<ToggleControl
 							label={__(
 								'Enable Cloudflare Turnstile',
 								'designsetgo'
 							)}
 							checked={enableTurnstile}
-							onChange={(value) =>
-								setAttributes({ enableTurnstile: value })
+							disabled={!turnstileConfigured && !enableTurnstile}
+							onChange={(value) => {
+								if (value && !turnstileConfigured) {
+									return;
+								}
+								setAttributes({ enableTurnstile: value });
+							}}
+							help={
+								turnstileConfigured
+									? __(
+											'Privacy-friendly CAPTCHA alternative',
+											'designsetgo'
+										)
+									: __(
+											'Configure both Turnstile keys in Settings → Integrations first.',
+											'designsetgo'
+										)
 							}
-							help={__(
-								'Privacy-friendly CAPTCHA alternative',
-								'designsetgo'
-							)}
 							__nextHasNoMarginBottom
 						/>
-						{enableTurnstile && (
+						{enableTurnstile && !turnstileConfigured && (
+							<Notice
+								status="error"
+								isDismissible={false}
+								className="dsgo-form-builder__turnstile-active-misconfig"
+							>
+								{__(
+									'Turnstile is enabled on this form, but keys are incomplete. Submissions will be rejected until both keys are set.',
+									'designsetgo'
+								)}
+							</Notice>
+						)}
+						{enableTurnstile && turnstileConfigured && (
 							<p className="dsgo-form-builder__turnstile-note">
 								{__(
 									'Configure your Turnstile keys in',

@@ -113,6 +113,9 @@ function initFormBuilder() {
 			typeof dsgoIntegrations !== 'undefined'
 				? dsgoIntegrations.turnstileSiteKey
 				: null;
+		const turnstileConfigured =
+			typeof dsgoIntegrations !== 'undefined' &&
+			Boolean(dsgoIntegrations.turnstileConfigured);
 		let turnstileTokenField = null;
 
 		if (turnstileEnabled) {
@@ -122,8 +125,14 @@ function initFormBuilder() {
 			formElement.appendChild(turnstileTokenField);
 		}
 
-		// Initialize Turnstile if enabled
-		if (turnstileEnabled && turnstileContainer && turnstileSiteKey) {
+		// Only render the widget when both site and secret keys are configured.
+		// A site-key-only setup would show a challenge that the server cannot verify.
+		if (
+			turnstileEnabled &&
+			turnstileContainer &&
+			turnstileSiteKey &&
+			turnstileConfigured
+		) {
 			loadTurnstileScript()
 				.then(() => {
 					if (!window.turnstile) {

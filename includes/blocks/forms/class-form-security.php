@@ -180,16 +180,23 @@ class Form_Security {
 			? $settings['integrations']['turnstile_secret_key']
 			: '';
 
-		// If no secret key configured, skip verification (graceful degradation).
+		// Fail closed: a missing secret cannot validate a presented token.
 		if ( empty( $secret_key ) ) {
-			return true;
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'DesignSetGo Turnstile: Secret key is not configured' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+
+			return new WP_Error(
+				'turnstile_not_configured',
+				__( 'Security verification is unavailable. Please try again later.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		// 3s timeout is intentional. Turnstile runs on Cloudflare's edge network and
 		// should respond in well under a second; this verification call blocks the
 		// form submission response, so a generous timeout directly penalises customer
-		// experience. On timeout, wp_remote_post() returns a WP_Error and we degrade
-		// gracefully (let the submission through) rather than punish the user.
+		// experience. On timeout we fail closed — never accept an unverified token.
 		$response = wp_remote_post(
 			// phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Server-side Turnstile verification API endpoint, not an offloaded asset. The sniff matches any `cloudflare.com` host in any string; no image, script, style or other content is loaded from it.
 			'https://challenges.cloudflare.com/turnstile/v0/siteverify',
@@ -203,12 +210,16 @@ class Form_Security {
 			)
 		);
 
-		// Handle HTTP errors (graceful degradation).
 		if ( is_wp_error( $response ) ) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'DesignSetGo Turnstile: HTTP error - ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
-			return true;
+
+			return new WP_Error(
+				'turnstile_http_error',
+				__( 'Security verification failed. Please try again.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		$body = wp_remote_retrieve_body( $response );
@@ -218,7 +229,12 @@ class Form_Security {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'DesignSetGo Turnstile: Invalid response from Cloudflare' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
-			return true;
+
+			return new WP_Error(
+				'turnstile_invalid_response',
+				__( 'Security verification failed. Please try again.', 'designsetgo' ),
+				array( 'status' => 403 )
+			);
 		}
 
 		if ( ! isset( $data['success'] ) || true !== $data['success'] ) {
