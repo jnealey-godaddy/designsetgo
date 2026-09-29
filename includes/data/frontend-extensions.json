@@ -1,31 +1,37 @@
 {
   "block-animations": {
     "needles": [ "has-dsgo-animation", "data-dsgo-animation-enabled", "data-dsgo-svg-draw" ],
+    "attributes": [ "dsgoAnimationEnabled", "dsgoSvgDraw" ],
     "scripts": [ "src/extensions/block-animations/frontend.js", "src/extensions/block-animations/svg-draw.js" ],
     "style": "src/extensions/block-animations/animations.scss"
   },
   "background-video": {
     "needles": [ "dsgo-has-video-background" ],
+    "attributes": [ "dsgoVideoUrl" ],
     "scripts": [ "src/extensions/background-video/frontend.js" ],
     "style": "src/extensions/background-video/style.scss"
   },
   "clickable-group": {
     "needles": [ "dsgo-clickable" ],
+    "attributes": [ "dsgoLinkUrl" ],
     "scripts": [ "src/extensions/clickable-group/frontend.js" ],
     "style": "src/extensions/clickable-group/styles.scss"
   },
   "text-reveal": {
     "needles": [ "has-dsgo-text-reveal", "data-dsgo-text-reveal-enabled" ],
+    "attributes": [ "dsgoTextRevealEnabled" ],
     "scripts": [ "src/extensions/text-reveal/frontend.js" ],
     "style": "src/extensions/text-reveal/style.scss"
   },
   "expanding-background": {
     "needles": [ "has-dsgo-expanding-background", "data-dsgo-expanding-bg-enabled" ],
+    "attributes": [ "dsgoExpandingBgEnabled" ],
     "scripts": [ "src/extensions/expanding-background/frontend.js" ],
     "style": "src/extensions/expanding-background/style.scss"
   },
   "vertical-scroll-parallax": {
     "needles": [ "data-dsgo-parallax-enabled" ],
+    "attributes": [ "dsgoParallaxEnabled" ],
     "scripts": [ "src/extensions/vertical-scroll-parallax/frontend.js" ]
   },
   "hover-effects": {
@@ -34,10 +40,12 @@
   },
   "reveal-control": {
     "needles": [ "dsgo-has-reveal" ],
+    "attributes": [ "dsgoRevealOnHover" ],
     "style": "src/extensions/reveal-control/styles.scss"
   },
   "svg-patterns": {
     "needles": [ "has-dsgo-svg-pattern" ],
+    "attributes": [ "dsgoSvgPatternEnabled" ],
     "style": "src/extensions/svg-patterns/style.scss"
   },
   "grid-span": {
@@ -50,6 +58,7 @@
   },
   "interactions": {
     "needles": [ "data-dsgo-interactions" ],
+    "attributes": [ "dsgoInteractions" ],
     "style": "src/extensions/interactions/style.scss"
   }
 }

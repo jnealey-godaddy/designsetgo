@@ -100,6 +100,34 @@ class DesignSetGo_Static_Block_Images_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'loading=', $out );
 	}
 
+	public function test_images_rendered_after_first_paint_are_lazy() {
+		add_filter( 'designsetgo_static_images_render_late', '__return_true' );
+
+		$background = $this->images->render_card(
+			'<div class="dsgo-card__background" style="background-image:url(' . $this->url( 'photo-1024x683.jpg' ) . ')"></div>',
+			array( 'attrs' => array( 'imageId' => $this->attachment_id ) )
+		);
+		$hotspot    = $this->images->render_hotspot(
+			'<div><img class="dsgo-hotspot__image" src="' . $this->url() . '" alt=""/></div>',
+			array( 'attrs' => array( 'imageId' => $this->attachment_id ) )
+		);
+		$authored   = $this->images->render_card(
+			'<div><img src="' . $this->url( 'photo-768x512.jpg' ) . '" alt="" class="dsgo-card__image" loading="eager"/></div>',
+			array( 'attrs' => array( 'imageId' => $this->attachment_id ) )
+		);
+
+		remove_filter( 'designsetgo_static_images_render_late', '__return_true' );
+
+		// Core's content filter never sees REST-rendered results, so nothing
+		// else would choose a strategy for them.
+		$this->assertStringContainsString( 'class="dsgo-card__background-image"', $background );
+		$this->assertStringContainsString( '<img loading="lazy" decoding="async" ', $background );
+		$this->assertStringContainsString( 'width="1024"', $background );
+		$this->assertStringContainsString( 'loading="lazy"', $hotspot );
+		$this->assertStringContainsString( 'loading="eager"', $authored, 'An explicit loading attribute is kept.' );
+		$this->assertStringNotContainsString( 'loading="lazy"', $authored );
+	}
+
 	public function test_card_background_rejects_unsafe_url() {
 		$html = '<div class="dsgo-card__background" style="background-image:url(javascript:alert(1))"></div>';
 

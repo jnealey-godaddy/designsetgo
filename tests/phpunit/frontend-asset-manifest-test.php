@@ -119,6 +119,17 @@ class DesignSetGo_Frontend_Asset_Manifest_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'wp-hooks', $manifest['scripts'] );
 	}
 
+	public function test_icon_injector_and_shared_stylesheet_are_listed() {
+		$manifest = \DesignSetGo\Frontend_Asset_Manifest::build();
+		$icons    = self::trigger( $manifest, 'selector', '[data-icon-name], [data-icon]' );
+		$shared   = self::trigger( $manifest, 'selector', '[class*="wp-block-designsetgo-"]' );
+
+		// A page with no icon block never enqueued the injector.
+		$this->assertSame( array( 'designsetgo-icon-injector' ), $icons['scripts'] );
+		$this->assertStringContainsString( 'dsgoIconsRest', $manifest['scripts']['designsetgo-icon-injector']['before'] );
+		$this->assertSame( array( 'designsetgo-frontend' ), $shared['styles'] );
+	}
+
 	public function test_query_script_module_is_not_listed() {
 		$query = self::trigger( \DesignSetGo\Frontend_Asset_Manifest::build(), 'selector', '.wp-block-designsetgo-query' );
 
@@ -161,6 +172,25 @@ class DesignSetGo_Frontend_Asset_Manifest_Test extends WP_UnitTestCase {
 		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
 
 		$this->assertStringContainsString( 'window.dsgoAssets = {', $this->print_as( $editor ) );
+	}
+
+	/**
+	 * A page with no DesignSetGo block never enqueued the runtime, so without
+	 * this an Airo edit that adds the first block would have no loader.
+	 */
+	public function test_runtime_is_enqueued_for_editors_on_pages_without_blocks() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+
+		( new \DesignSetGo\Frontend_Asset_Manifest() )->print_manifest();
+
+		$this->assertTrue( wp_script_is( 'designsetgo-frontend', 'enqueued' ) );
+		$this->assertStringContainsString( 'window.dsgoAssets = {', (string) wp_scripts()->get_inline_script_data( 'designsetgo-frontend', 'before' ) );
+	}
+
+	public function test_runtime_is_not_enqueued_for_visitors_on_pages_without_blocks() {
+		( new \DesignSetGo\Frontend_Asset_Manifest() )->print_manifest();
+
+		$this->assertFalse( wp_script_is( 'designsetgo-frontend', 'enqueued' ) );
 	}
 
 	public function test_integrations_can_opt_in_through_the_filter() {

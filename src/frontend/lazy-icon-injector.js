@@ -15,10 +15,18 @@
 
 /**
  * Names already asked of the REST route, so each is fetched at most once.
+ * A failed request releases its names after RETRY_DELAY.
  *
  * @type {Set<string>}
  */
 const requestedIcons = new Set();
+
+/**
+ * How long a failed icon request waits before its names can be asked again.
+ *
+ * @type {number}
+ */
+const RETRY_DELAY = 30000;
 
 /**
  * Normalize an icon name the same way PHP's designsetgo_sanitize_icon_slug()
@@ -56,7 +64,12 @@ function fetchMissingIcons(names) {
 	url.searchParams.set('ver', rest.version || '');
 
 	fetch(url.toString(), { credentials: 'omit' })
-		.then((response) => (response.ok ? response.json() : {}))
+		.then((response) => {
+			if (!response.ok) {
+				throw new Error(`HTTP ${response.status}`);
+			}
+			return response.json();
+		})
 		.then((icons) => {
 			if (!icons || typeof icons !== 'object') {
 				return;
@@ -70,8 +83,13 @@ function fetchMissingIcons(names) {
 			initIconInjection();
 		})
 		.catch(() => {
-			// Offline or blocked: those icons stay empty, as they would
-			// have before on-demand loading existed.
+			// Offline, rate limited or a server error: allow one retry per
+			// RETRY_DELAY. Retrying at once would refetch on every DOM
+			// mutation, and a ticking countdown mutates once a second.
+			setTimeout(
+				() => toFetch.forEach((name) => requestedIcons.delete(name)),
+				RETRY_DELAY
+			);
 		});
 }
 

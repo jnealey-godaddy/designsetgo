@@ -109,7 +109,38 @@ class Static_Block_Images {
 	private static function add_attachment_attrs( $img, $attachment_id ) {
 		$img = wp_img_tag_add_width_and_height_attr( $img, 'the_content', $attachment_id );
 
-		return wp_img_tag_add_srcset_and_sizes_attr( $img, 'the_content', $attachment_id );
+		return self::lazy_when_late( wp_img_tag_add_srcset_and_sizes_attr( $img, 'the_content', $attachment_id ) );
+	}
+
+	/**
+	 * Lazy-load images rendered for a REST request.
+	 *
+	 * Query "load more" and filter results are rendered by a REST route and
+	 * never pass through core's content filter, so nothing would choose a
+	 * loading strategy for them. They arrive after first paint, below the
+	 * content already on screen, so lazy is the right default.
+	 *
+	 * @param string $img `<img>` tag.
+	 * @return string `<img>` tag.
+	 */
+	private static function lazy_when_late( $img ) {
+		/**
+		 * Whether blocks are being rendered after first paint.
+		 *
+		 * True for REST requests. Other late-render paths (a theme's AJAX
+		 * loader) can opt in so their Card and Hotspot images lazy-load too.
+		 *
+		 * @param bool $late Whether this render arrives after first paint.
+		 */
+		$late = (bool) apply_filters( 'designsetgo_static_images_render_late', wp_is_serving_rest_request() );
+
+		if ( ! $late || false !== strpos( $img, ' loading=' ) ) {
+			return $img;
+		}
+
+		$attrs = ' loading="lazy"' . ( false === strpos( $img, ' decoding=' ) ? ' decoding="async"' : '' );
+
+		return preg_replace( '/^<img\b/', '<img' . $attrs, $img, 1 );
 	}
 
 	/**

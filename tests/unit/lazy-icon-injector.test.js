@@ -89,4 +89,33 @@ describe('lazy icon injector', () => {
 		window.dsgoInjectIcons();
 		expect(global.fetch).toHaveBeenCalledTimes(1);
 	});
+
+	test('retries a failed request, but only after the retry delay', async () => {
+		global.fetch = jest.fn(() =>
+			Promise.resolve({ ok: false, status: 503, json: () => ({}) })
+		);
+		jest.useFakeTimers();
+		try {
+			placeholder('star');
+			load();
+			expect(global.fetch).toHaveBeenCalledTimes(1);
+
+			// Let the rejected chain settle.
+			for (let i = 0; i < 10; i++) {
+				await Promise.resolve();
+			}
+			// A failure is not an answer: nothing is recorded as unknown.
+			expect(window.dsgoIcons.star).toBeUndefined();
+
+			// A DOM mutation right away must not refetch.
+			window.dsgoInjectIcons();
+			expect(global.fetch).toHaveBeenCalledTimes(1);
+
+			jest.advanceTimersByTime(30000);
+			window.dsgoInjectIcons();
+			expect(global.fetch).toHaveBeenCalledTimes(2);
+		} finally {
+			jest.useRealTimers();
+		}
+	});
 });

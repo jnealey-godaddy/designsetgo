@@ -200,6 +200,30 @@ describe('Countdown Timer - Frontend', () => {
 			expect(getUnitNumber(timer, 'seconds')).toBe('55');
 			expect(setIntervalSpy).toHaveBeenCalledTimes(1);
 		});
+
+		test('stops ticking and listening once the timer leaves the page', () => {
+			const timer = createTimerFixture({
+				targetDatetime: futureDate({ minutes: 10 }),
+			});
+			const observer = loadView();
+			simulateIntersection(observer, timer);
+
+			const removeSpy = jest.spyOn(document, 'removeEventListener');
+			// A soft navigation swaps the content out.
+			timer.remove();
+			jest.advanceTimersByTime(1000);
+
+			expect(removeSpy).toHaveBeenCalledWith(
+				'visibilitychange',
+				expect.any(Function)
+			);
+
+			// Returning to the tab must not restart it.
+			const setIntervalSpy = jest.spyOn(global, 'setInterval');
+			setHidden(true);
+			setHidden(false);
+			expect(setIntervalSpy).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('Time display', () => {

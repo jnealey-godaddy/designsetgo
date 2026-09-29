@@ -53,7 +53,7 @@ class Extension_Bundles {
 	/**
 	 * Read the feature manifest.
 	 *
-	 * @return array<string,array{needles:string[],scripts?:string[],style?:string}> Features by name.
+	 * @return array<string,array{needles:string[],attributes?:string[],scripts?:string[],style?:string}> Features by name.
 	 */
 	public static function get_features() {
 		static $features = null;
@@ -135,9 +135,14 @@ class Extension_Bundles {
 			return $block_content;
 		}
 
-		$haystack = $block_content;
+		$haystack       = $block_content;
+		$template_attrs = array();
 		if ( isset( $block['blockName'] ) && 'designsetgo/query' === $block['blockName'] && ! empty( $block['innerBlocks'] ) ) {
 			$haystack .= serialize_blocks( $block['innerBlocks'] );
+			// Dynamic blocks get some markers (parallax, interactions) only
+			// when they render, so the stored template lacks them. The
+			// attributes that switch a feature on are there either way.
+			$template_attrs = self::enabled_attributes( $block['innerBlocks'] );
 		}
 
 		if ( false === strpos( $haystack, 'dsgo' ) ) {
@@ -145,7 +150,13 @@ class Extension_Bundles {
 		}
 
 		foreach ( $features as $name => $feature ) {
-			if ( isset( $this->enqueued[ $name ] ) || ! self::contains_any( $haystack, $feature['needles'] ) ) {
+			if ( isset( $this->enqueued[ $name ] ) ) {
+				continue;
+			}
+			if (
+				! self::contains_any( $haystack, $feature['needles'] )
+				&& ! array_intersect( (array) ( $feature['attributes'] ?? array() ), $template_attrs )
+			) {
 				continue;
 			}
 
@@ -212,6 +223,28 @@ class Extension_Bundles {
 			}
 			if ( ! empty( $inner['innerBlocks'] ) ) {
 				$names += array_fill_keys( self::block_names( $inner['innerBlocks'] ), true );
+			}
+		}
+
+		return array_keys( $names );
+	}
+
+	/**
+	 * Attribute names set to a non-empty value anywhere in a block tree.
+	 *
+	 * @param array $blocks Parsed blocks.
+	 * @return string[] Attribute names.
+	 */
+	private static function enabled_attributes( array $blocks ) {
+		$names = array();
+		foreach ( $blocks as $inner ) {
+			foreach ( (array) ( $inner['attrs'] ?? array() ) as $attribute => $value ) {
+				if ( ! empty( $value ) ) {
+					$names[ (string) $attribute ] = true;
+				}
+			}
+			if ( ! empty( $inner['innerBlocks'] ) ) {
+				$names += array_fill_keys( self::enabled_attributes( $inner['innerBlocks'] ), true );
 			}
 		}
 

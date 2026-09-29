@@ -87,6 +87,34 @@ class DesignSetGo_Extension_Bundles_Test extends WP_UnitTestCase {
 		$this->assertTrue( wp_script_is( 'designsetgo-ext-clickable-group', 'enqueued' ) );
 	}
 
+	public function test_query_template_matches_enabling_attributes() {
+		// Dynamic blocks: parallax and interactions markers are added only
+		// when they render, so the stored template carries just the attributes.
+		$block = parse_blocks(
+			'<!-- wp:designsetgo/query --><!-- wp:designsetgo/dynamic-image {"dsgoParallaxEnabled":true,"dsgoInteractions":[{"trigger":"click"}],"dsgoTextRevealEnabled":false} /--><!-- /wp:designsetgo/query -->'
+		)[0];
+
+		$this->bundles->maybe_enqueue( '<div class="wp-block-designsetgo-query"></div>', $block );
+
+		$this->assertTrue( wp_script_is( 'designsetgo-ext-vertical-scroll-parallax', 'enqueued' ) );
+		$this->assertTrue( wp_style_is( 'designsetgo-ext-interactions', 'enqueued' ) );
+		$this->assertFalse( wp_script_is( 'designsetgo-ext-text-reveal', 'enqueued' ), 'A feature switched off is not enqueued.' );
+	}
+
+	public function test_manifest_attributes_are_registered_extension_attributes() {
+		$registered = array();
+		foreach ( glob( DESIGNSETGO_PATH . 'includes/extension-configs/*.php' ) as $path ) {
+			$config     = require $path;
+			$registered = array_merge( $registered, array_keys( (array) ( $config['attributes'] ?? array() ) ) );
+		}
+
+		foreach ( \DesignSetGo\Extension_Bundles::get_features() as $name => $feature ) {
+			foreach ( (array) ( $feature['attributes'] ?? array() ) as $attribute ) {
+				$this->assertContains( $attribute, $registered, "$name lists an attribute no extension registers." );
+			}
+		}
+	}
+
 	public function test_query_template_block_assets_are_enqueued() {
 		wp_register_script( 'designsetgo-tabs-view-script', 'https://example.com/tabs.js', array(), '1', true );
 		wp_register_style( 'designsetgo-tabs-style', 'https://example.com/tabs.css', array(), '1' );

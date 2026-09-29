@@ -161,6 +161,21 @@ describe('soft-navigation asset loader', () => {
 		).toBeNull();
 	});
 
+	test('ignores needles that appear only inside a script', async () => {
+		// The manifest itself is an inline script in the body, and it lists
+		// every extension's needles.
+		document.body.innerHTML =
+			'<p>No animation here.</p><script>window.dsgoAssets = {"triggers":[{"needles":["has-dsgo-animation"]}]};</script>';
+		const done = loadMissingAssets();
+		await settle();
+		await done;
+
+		expect(
+			document.getElementById('designsetgo-ext-block-animations-js')
+		).toBeNull();
+		expect(dispatched).toEqual([]);
+	});
+
 	test('skips a script whose dependency cannot be satisfied', async () => {
 		document.body.innerHTML =
 			'<div class="wp-block-designsetgo-map"></div>';

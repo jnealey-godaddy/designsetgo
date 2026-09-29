@@ -40,6 +40,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Frontend_Asset_Manifest {
 
 	/**
+	 * Assets that belong to no single block or extension bundle.
+	 *
+	 * The shared stylesheet, which a page with no DesignSetGo block lacks, and
+	 * the icon injector, enqueued only once an icon block renders (icons the
+	 * page never inlined are fetched from the REST route).
+	 *
+	 * @var array<int,array{match:array<string,string>,scripts:string[],styles:string[]}>
+	 */
+	private const SHARED_CANDIDATES = array(
+		array(
+			'match'   => array( 'selector' => '[class*="wp-block-designsetgo-"]' ),
+			'scripts' => array(),
+			'styles'  => array( 'designsetgo-frontend' ),
+		),
+		array(
+			'match'   => array( 'selector' => '[data-icon-name], [data-icon]' ),
+			'scripts' => array( 'designsetgo-icon-injector' ),
+			'styles'  => array(),
+		),
+	);
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -52,10 +74,6 @@ class Frontend_Asset_Manifest {
 	 * Attach the manifest to the shared frontend runtime.
 	 */
 	public function print_manifest() {
-		if ( ! wp_script_is( 'designsetgo-frontend', 'enqueued' ) ) {
-			return;
-		}
-
 		/**
 		 * Whether to print the soft-navigation asset manifest on this page.
 		 *
@@ -63,6 +81,15 @@ class Frontend_Asset_Manifest {
 		 */
 		if ( ! apply_filters( 'designsetgo_frontend_asset_manifest', current_user_can( 'edit_posts' ) ) ) {
 			return;
+		}
+
+		// The runtime (and loader) only enqueues when a DesignSetGo block
+		// renders, so a page an Airo edit gives its first block has none.
+		if ( ! wp_script_is( 'designsetgo-frontend', 'enqueued' ) ) {
+			if ( ! wp_script_is( 'designsetgo-frontend', 'registered' ) ) {
+				return;
+			}
+			wp_enqueue_script( 'designsetgo-frontend' );
 		}
 
 		$manifest = self::build();
@@ -130,7 +157,7 @@ class Frontend_Asset_Manifest {
 	 * @return array<int,array{match:array<string,mixed>,scripts:string[],styles:string[]}>
 	 */
 	private static function candidates() {
-		$candidates = array();
+		$candidates = self::SHARED_CANDIDATES;
 
 		foreach ( Extension_Bundles::get_features() as $name => $feature ) {
 			$handle       = Extension_Bundles::HANDLE_PREFIX . $name;

@@ -161,13 +161,23 @@ function initCountdownTimer(timer) {
 		interval = null;
 	};
 
+	// A soft navigation can remove the timer; stop ticking and listening
+	// rather than keep updating a detached element.
+	const detach = () => {
+		stop();
+		document.removeEventListener('visibilitychange', onVisibility);
+	};
+
 	const tick = () => {
+		if (!timer.isConnected) {
+			detach();
+			return;
+		}
 		timeData = getTimeData(timer);
 		updateCountdownDisplay(timer, timeData);
 
 		if (timeData.isComplete) {
-			stop();
-			document.removeEventListener('visibilitychange', onVisibility);
+			detach();
 			handleCompletion(timer, true);
 		}
 	};
@@ -188,7 +198,7 @@ function initCountdownTimer(timer) {
 			return;
 		}
 		tick();
-		if (!timeData.isComplete) {
+		if (timer.isConnected && !timeData.isComplete) {
 			start();
 		}
 	}

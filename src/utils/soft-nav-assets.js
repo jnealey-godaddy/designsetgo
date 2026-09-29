@@ -165,10 +165,17 @@ export function loadMissingAssets() {
 		return Promise.resolve();
 	}
 
+	// Script text is left out: the manifest itself is an inline script in the
+	// body that lists every extension's needles, so matching against it would
+	// load every bundle whether the content needs it or not.
 	let html = null;
 	const getHtml = () => {
 		if (html === null) {
-			html = document.body.innerHTML;
+			const body = document.body.cloneNode(true);
+			body.querySelectorAll('script').forEach((script) =>
+				script.remove()
+			);
+			html = body.innerHTML;
 		}
 		return html;
 	};
