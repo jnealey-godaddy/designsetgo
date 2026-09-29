@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Improved
 
+- Release packages now include the seven runtime images used by bundled patterns, while excluding development tooling and duplicate marketing assets. Existing pattern image URLs are unchanged.
+
 - **Icon and marker sizes follow your theme.** Counter icons, Comparison Table check and cross icons, Timeline markers and Star Rating stars no longer store a fixed size in your content. They use your theme's size (`counter.defaultSize`, `comparisonTable.defaultSize`, `timeline.defaultSize`, `starRating.defaultSize` under `settings.custom.designsetgo` in theme.json, or a Style Kit) unless you set one on the block. Default sizes are unchanged. Counter gains an **Icon Size** setting. A Star Rating with no style chosen now follows the site-wide icon style, like the other icon blocks.
 - **New Maps start with a location search.** A Map added from the inserter opens on an address search instead of showing New York. Existing maps are unchanged, and a map published without a location shows nothing rather than an empty patch of ocean.
 - **More block transforms.** Details blocks turn into an Accordion (and back), Columns into a Grid (and back), and an image Media & Text into a Fifty Fifty (and back), keeping their content, colours and borders. Details that open one at a time make an accordion that does too.
@@ -32,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Slider drag listeners exist only while dragging**, instead of staying on `document` for the lifetime of the page. The resize listeners in Tabs, Grid, and the sticky header are now passive.
 
 ### Security
+
+- Public Markdown and generated excerpts now respect block visibility as a logged-out visitor, including nested blocks and administrator-triggered exports. Existing Markdown caches and exported files are invalidated when the repair is first installed.
+- Dynamic Query refresh templates stay on the server behind signed opaque references bound to the issuing viewer; hidden block content no longer appears in page-source data. Purge full-page caches after installing this repair because older refresh sources are rejected.
 
 - **Cloudflare Turnstile now blocks submissions it can't verify.** Before, a form with Turnstile switched on accepted any response to the challenge when the secret key was missing, and let submissions through whenever Cloudflare couldn't be reached. Now a submission goes through only when Cloudflare confirms the visitor passed.
   - **If a form has Turnstile on but your keys are incomplete, it will stop accepting submissions** until you add both the site key and the secret key under DesignSetGo → Settings → Integrations, or turn Turnstile off for that form. The editor shows an error on those forms, and Turnstile can't be switched on until both keys are set.

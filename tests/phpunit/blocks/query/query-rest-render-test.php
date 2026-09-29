@@ -148,12 +148,15 @@ class DesignSetGo_Query_Rest_Test extends WP_UnitTestCase {
 	public function test_public_refresh_hides_a_private_source_from_a_subscriber() {
 		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
 		wp_set_current_user( $editor );
-		$page   = self::factory()->post->create_and_get( array( 'post_type' => 'page', 'post_status' => 'private', 'post_content' => $this->query_markup( 'private-source' ) ) );
+		$page   = self::factory()->post->create_and_get( array( 'post_type' => 'page', 'post_status' => 'private', 'post_author' => self::factory()->user->create( array( 'role' => 'administrator' ) ), 'post_content' => $this->query_markup( 'private-source' ) ) );
 		$source = $this->refresh_source( $this->render_as_content( $page ), 'private-source' );
 
 		$this->assertSame( 200, $this->refresh( 'private-source', $source )->get_status(), 'Someone who can read the page can refresh its query.' );
 
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+		// Keep the issuing viewer, but remove their permission to read private pages.
+		( new WP_User( $editor ) )->set_role( 'subscriber' );
+		wp_set_current_user( 0 );
+		wp_set_current_user( $editor );
 		$this->assertSame( 404, $this->refresh( 'private-source', $source )->get_status() );
 	}
 

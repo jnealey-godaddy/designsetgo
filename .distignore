@@ -6,6 +6,7 @@
 /.git
 /.gitignore
 /.gitattributes
+/.distignore
 
 # ===================
 # GitHub/CI
@@ -33,6 +34,10 @@ package-lock.json
 webpack.config.js
 tsconfig.json
 lint-staged.config.js
+jest.config.js
+/scripts
+/tools
+/.nvmrc
 
 # ===================
 # Testing
@@ -43,18 +48,24 @@ lint-staged.config.js
 /.playwright
 playwright.config.js
 phpunit.xml
+phpunit.xml.dist
 /.phpunit.result.cache
 
 # ===================
 # WordPress Dev Environment
 # ===================
-/.wp-env.json
+/.wp-env*.json
 /wordpress
 
 # ===================
 # Claude AI
 # ===================
 /.claude
+/.agents
+/.codex
+/.Codex
+/.superpowers
+/.coderabbit.yaml
 
 # ===================
 # Documentation
@@ -68,9 +79,7 @@ phpunit.xml
 # ===================
 composer.json
 composer.lock
-/vendor/bin
-/vendor/phpstan
-/vendor/phpunit
+/vendor
 
 # ===================
 # Linting/Formatting
@@ -81,8 +90,10 @@ composer.lock
 .prettierrc*
 .prettierignore
 .editorconfig
+phpcs.xml
 phpcs.xml.dist
 phpstan.neon
+phpstan-constants.php
 psalm.xml
 
 # ===================
@@ -130,6 +141,7 @@ npm-debug.log*
 # ===================
 /bin
 /deployment-package
+/*.zip
 
 # ===================
 # Environment
@@ -138,9 +150,14 @@ npm-debug.log*
 .env.*
 
 # ===================
-# WordPress.org Assets (handled by .wordpress-org)
+# Marketing Assets (deployed separately to SVN assets)
 # ===================
-/assets
+/.wordpress-org
+/images
+/assets/banner-*
+/assets/icon-*
+/assets/screenshot-*
+# Keep assets/images/patterns/ because registered patterns use these URLs.
 
 # ===================
 # Translation Sources

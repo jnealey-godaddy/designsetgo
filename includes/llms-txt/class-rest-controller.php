@@ -391,8 +391,8 @@ class REST_Controller {
 			);
 		}
 
-		// Reject password-protected or otherwise non-public posts.
-		if ( post_password_required( $post ) || ! is_post_publicly_viewable( $post ) ) {
+		// Public exports cannot inherit a browser's unlocked post-password cookie.
+		if ( '' !== $post->post_password || ! is_post_publicly_viewable( $post ) ) {
 			return new \WP_Error(
 				'not_public',
 				__( 'Post is not publicly accessible.', 'designsetgo' ),
@@ -418,7 +418,8 @@ class REST_Controller {
 			);
 		}
 
-		$cache_key = 'designsetgo_llms_md_' . $post_id;
+		Public_Export_Repair::run( $this->file_manager );
+		$cache_key = 'designsetgo_llms_md_public_' . $post_id;
 		$cached    = get_transient( $cache_key );
 
 		if ( false !== $cached ) {

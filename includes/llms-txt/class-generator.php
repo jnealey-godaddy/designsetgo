@@ -58,6 +58,7 @@ class Generator {
 	 * @return string Generated content.
 	 */
 	public function generate_content(): string {
+		$exports_safe = Public_Export_Repair::run( $this->file_manager );
 		$settings      = \DesignSetGo\Admin\Settings::get_settings();
 		$llms_settings = wp_parse_args(
 			$settings['llms_txt'] ?? array(),
@@ -103,7 +104,7 @@ class Generator {
 				$url   = get_permalink( $post );
 
 				// Use static file URL if it exists, otherwise fall back to API.
-				if ( $this->file_manager->file_exists( $post->ID ) ) {
+				if ( $exports_safe && $this->file_manager->file_exists( $post->ID ) ) {
 					$markdown_url = $this->file_manager->get_url( $post->ID );
 				} else {
 					$markdown_url = rest_url( 'designsetgo/v1/llms-txt/markdown/' . $post->ID );
@@ -156,6 +157,7 @@ class Generator {
 	 * @return string Generated full content.
 	 */
 	public function generate_full_content(): string {
+		$exports_safe = Public_Export_Repair::run( $this->file_manager );
 		$settings      = \DesignSetGo\Admin\Settings::get_settings();
 		$llms_settings = wp_parse_args(
 			$settings['llms_txt'] ?? array(),
@@ -199,7 +201,7 @@ class Generator {
 			foreach ( $posts as $post ) {
 				// Read from static file if available, otherwise convert on the fly.
 				$markdown = '';
-				if ( $this->file_manager->file_exists( $post->ID ) ) {
+				if ( $exports_safe && $this->file_manager->file_exists( $post->ID ) ) {
 					$file_path = $this->file_manager->get_directory() . '/' . $this->file_manager->get_filename( $post ) . '.md';
 					$real_path = realpath( $file_path );
 					$real_dir  = realpath( $this->file_manager->get_directory() );
@@ -266,7 +268,11 @@ class Generator {
 		$excerpt = $post->post_excerpt;
 
 		if ( empty( $excerpt ) ) {
-			$excerpt = wp_trim_words( wp_strip_all_tags( $post->post_content ), 25, '...' );
+			$converter = new \DesignSetGo\Markdown\Converter();
+			$blocks = $converter->convert( $post );
+			// Drop the generated title before deriving the description.
+			$body = substr( $blocks, strpos( $blocks, "\n" ) + 1 );
+			$excerpt = wp_trim_words( wp_strip_all_tags( $body ), 25, '...' );
 		}
 
 		if ( empty( $excerpt ) ) {

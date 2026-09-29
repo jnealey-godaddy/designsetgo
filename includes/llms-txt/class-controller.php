@@ -16,6 +16,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-public-export-repair.php';
+
 /**
  * Controller Class
  *
@@ -108,6 +110,10 @@ class Controller {
 		$this->negotiation_handler = new Negotiation_Handler( $this->file_manager, $this->generator );
 		$this->negotiation_handler->register();
 
+		// Remove legacy public exports before any output/regen hook can read them.
+		add_action( 'init', array( $this, 'maybe_repair_exports' ), 1 );
+		add_action( 'admin_notices', array( Public_Export_Repair::class, 'notice' ) );
+
 		// Register hooks.
 		add_action( 'init', array( $this, 'add_rewrite_rule' ) );
 		add_filter( 'query_vars', array( $this, 'add_query_var' ) );
@@ -123,6 +129,11 @@ class Controller {
 		add_action( 'admin_notices', array( $this->conflict_detector, 'maybe_show_notice' ) );
 		add_action( 'admin_init', array( $this->conflict_detector, 'handle_dismiss_action' ) );
 		add_filter( 'robots_txt', array( $this, 'add_to_robots_txt' ), 10, 2 ); // phpcs:ignore WordPressVIPMinimum.Hooks.RestrictedHooks.robots_txt -- llms.txt is a static file pointer; cache flush is done on llms-txt settings save
+	}
+
+	/** Invalidate pre-visibility public exports without requiring a version bump. */
+	public function maybe_repair_exports(): void {
+		Public_Export_Repair::run( $this->file_manager );
 	}
 
 	/**
@@ -339,6 +350,7 @@ class Controller {
 
 		if ( $post_id && is_numeric( $post_id ) ) {
 			delete_transient( 'designsetgo_llms_md_' . absint( $post_id ) );
+			delete_transient( 'designsetgo_llms_md_public_' . absint( $post_id ) );
 		}
 	}
 

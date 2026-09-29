@@ -343,6 +343,7 @@ class File_Manager {
 	 * @return bool|\WP_Error True on success, WP_Error on failure.
 	 */
 	public function generate_file( int $post_id ) {
+		Public_Export_Repair::run( $this );
 		$post = get_post( $post_id );
 
 		if ( ! $post ) {
@@ -354,8 +355,8 @@ class File_Manager {
 			return new \WP_Error( 'not_published', __( 'Post is not published.', 'designsetgo' ) );
 		}
 
-		// Reject password-protected or otherwise non-public posts.
-		if ( post_password_required( $post ) || ! is_post_publicly_viewable( $post ) ) {
+		// Public exports cannot inherit a browser's unlocked post-password cookie.
+		if ( '' !== $post->post_password || ! is_post_publicly_viewable( $post ) ) {
 			$this->delete_file( $post_id );
 			return new \WP_Error( 'not_public', __( 'Post is not publicly accessible.', 'designsetgo' ) );
 		}
