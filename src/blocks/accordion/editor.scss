@@ -5,6 +5,7 @@
 
 // Import all frontend styles so they appear in editor
 @use './style.scss' as *;
+@use '../../styles/variables' as *;
 
 // Editor-specific overrides and enhancements
 .editor-styles-wrapper,
@@ -57,7 +58,7 @@
 				color: var(--wp--preset--color--primary, #007cba);
 				background: rgba(0, 124, 186, 0.1);
 				padding: 0.25rem 0.5rem;
-				border-radius: 4px;
+				border-radius: $dsgo-radius-small;
 				pointer-events: none;
 			}
 		}

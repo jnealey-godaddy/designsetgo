@@ -3,6 +3,7 @@
  * Enhanced UI/UX with smooth animations and better visual feedback
  */
 
+@use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
 
 .dsgo-accordion-item {
@@ -12,7 +13,7 @@
 	position: relative;
 
 	// Smooth transition for all state changes
-	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	transition: all $dsgo-duration-normal cubic-bezier(0.4, 0, 0.2, 1);
 
 	// Header container
 	.dsgo-accordion-item__header {
@@ -39,7 +40,7 @@
 		color: inherit;
 		// Smooth transitions with better easing
 		transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-		border-radius: 0;
+		border-radius: $dsgo-radius-none;
 		position: relative;
 
 		// Subtle hover effect
@@ -77,7 +78,7 @@
 			flex-direction: row;
 
 			.dsgo-accordion-item__icon {
-				margin-right: var(--wp--preset--spacing--30, 0.75rem);
+				margin-inline-end: var(--wp--preset--spacing--30, 0.75rem);
 				order: -1;
 			}
 		}
@@ -86,7 +87,7 @@
 			flex-direction: row;
 
 			.dsgo-accordion-item__icon {
-				margin-left: var(--wp--preset--spacing--30, 0.75rem);
+				margin-inline-start: var(--wp--preset--spacing--30, 0.75rem);
 				order: 1;
 			}
 		}
@@ -195,7 +196,7 @@
 }
 
 // Mobile optimizations
-@media (max-width: 768px) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-accordion-item {
 
@@ -206,8 +207,7 @@
 		}
 
 		.dsgo-accordion-item__panel .dsgo-accordion-item__content {
-			padding-left: var(--wp--preset--spacing--40, 1rem);
-			padding-right: var(--wp--preset--spacing--40, 1rem);
+			padding-inline: var(--wp--preset--spacing--40, 1rem);
 		}
 	}
 }

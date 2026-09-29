@@ -4,6 +4,9 @@
  * Styles for the map block container, privacy overlay, and responsive behavior.
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-map {
 	position: relative;
 	width: 100%;
@@ -138,7 +141,7 @@
 		color: #d63638;
 		background: #fef7f7;
 		border: 1px solid #f0c0c0;
-		border-radius: 4px;
+		border-radius: $dsgo-radius-small;
 	}
 
 	// Ensure map respects border radius from block supports
@@ -156,7 +159,7 @@
 	}
 
 	// Responsive adjustments
-	@media (max-width: 768px) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		&__privacy-content {
 			padding: 1.5rem;
@@ -172,6 +175,7 @@
 		}
 	}
 
+	// 480px is a small-phone tier with no dedicated token; kept literal.
 	@media (max-width: 480px) {
 
 		&__privacy-content {

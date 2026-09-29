@@ -4,6 +4,9 @@
  * @since 1.0.0
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-form-builder {
 	// CSS Custom Properties. These are the inherited defaults: each reads a
 	// theme.json custom property (settings.custom.designsetgo.form.*, which a
@@ -36,9 +39,12 @@
 		--wp--custom--designsetgo--form--border-color,
 		color-mix(in srgb, currentcolor 20%, transparent)
 	);
+	// Radius uses the shared token scale instead of a bare literal so it moves
+	// with the rest of the design system. Was 0.375rem (6px); the 6-8px token
+	// bucket maps to medium (8px), a <=2px drift.
 	--dsgo-form-border-radius: var(
 		--wp--custom--designsetgo--form--border-radius,
-		0.375rem
+		#{$dsgo-radius-medium}
 	);
 	--dsgo-form-focus-color: var(
 		--wp--custom--designsetgo--form--focus-color,
@@ -172,7 +178,7 @@
 		margin-top: 1rem;
 		padding: 1rem;
 		border-radius: var(--dsgo-form-border-radius);
-		font-size: 0.875rem;
+		font-size: var(--wp--preset--font-size--small, 0.875rem);
 		line-height: 1.5;
 
 		&--success {
@@ -240,7 +246,7 @@
 		max-width: none !important;
 
 		// Mobile: force full width so the button wraps to a new line
-		@media (max-width: 768px) {
+		@media (max-width: #{$breakpoint-mobile}) {
 			flex-basis: 100% !important;
 		}
 	}
@@ -254,7 +260,7 @@
 		// 0.5rem "label gap compensation" lifted the button out of alignment.
 
 		// Mobile: stack below the field with spacing
-		@media (max-width: 768px) {
+		@media (max-width: #{$breakpoint-mobile}) {
 			margin-top: 0.5rem;
 		}
 	}
@@ -277,7 +283,7 @@
 }
 
 // Responsive adjustments
-@media (max-width: 768px) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-form__submit {
 		width: 100%; // Full width on mobile for easier tapping

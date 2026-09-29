@@ -246,7 +246,9 @@ class Abilities_Attribute_Matrix_Fixture_Test extends WP_UnitTestCase {
 		// environment CAN generate is byte-identical to the committed one. A
 		// serializer bug changes markup; it does not make an attribute vanish
 		// from the registry. test_matrix_covers_the_registry() separately
-		// guarantees the set has not collapsed.
+		// guarantees the set has not collapsed, and
+		// test_fixture_covers_every_plugin_attribute() that no attribute the
+		// plugin declares is missing from it.
 		$shared = array_intersect_key( $generated, $fixture );
 
 		$this->assertGreaterThan(
@@ -259,6 +261,50 @@ class Abilities_Attribute_Matrix_Fixture_Test extends WP_UnitTestCase {
 			$shared,
 			array_intersect_key( $fixture, $shared ),
 			'Generated markup drifted from the matrix fixture. Regenerate with `npm run fixtures:update`, then run the JS suite to confirm the new markup still validates against save().'
+		);
+	}
+
+	/**
+	 * Every payload for an attribute the plugin declares is in the fixture.
+	 *
+	 * The comparison above only checks payloads the committed fixture already
+	 * has, so an attribute added without regenerating it is never compared.
+	 * That is how Form Builder's fieldFocusColor, fieldErrorColor and
+	 * fieldSuccessColor shipped with a PHP serializer that ignored them: every
+	 * agent-inserted form with one failed block validation while this suite
+	 * stayed green.
+	 *
+	 * Attributes WordPress injects vary between versions (see
+	 * Attribute_Probe_Generator::plugin_owned_attributes()), so only the ones
+	 * the plugin declares are required. Those do not change with core.
+	 */
+	public function test_fixture_covers_every_plugin_attribute(): void {
+		if ( getenv( 'DSGO_UPDATE_FIXTURES' ) ) {
+			$this->addToAssertionCount( 1 );
+			return;
+		}
+
+		$fixture = json_decode( (string) file_get_contents( $this->fixture_path() ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- Test fixture.
+		$fixture = is_array( $fixture ) ? $fixture : array();
+		$owned   = Attribute_Probe_Generator::plugin_owned_attributes();
+		$missing = array();
+
+		foreach ( $this->payloads() as $label => $payload ) {
+			if ( isset( $fixture[ $label ] ) ) {
+				continue;
+			}
+
+			if ( Attribute_Probe_Generator::is_plugin_owned( $owned, $payload['name'], (string) key( $payload['attributes'] ) ) ) {
+				$missing[] = $label;
+			}
+		}
+
+		$this->assertSame(
+			array(),
+			$missing,
+			"The matrix fixture has no entry for these payloads, so their markup is never\n"
+				. "checked against save(). Run `npm run fixtures:update`, commit these entries,\n"
+				. "then run the JS suite:\n  " . implode( "\n  ", $missing )
 		);
 	}
 

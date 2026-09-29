@@ -4,11 +4,13 @@
  * @package DesignSetGo
  */
 
+@use '../../styles/variables' as *;
+
 .dsgo-modal-editor-preview {
 	position: relative;
 	padding: 20px;
 	border: 2px dashed #ddd;
-	border-radius: 4px;
+	border-radius: $dsgo-radius-small;
 	background: #f9f9f9;
 	min-height: 200px;
 
@@ -19,7 +21,7 @@
 		right: 0;
 		bottom: 0;
 		pointer-events: none;
-		border-radius: 4px;
+		border-radius: $dsgo-radius-small;
 		// Mirror the frontend default scrim (style.scss): inline author color
 		// wins, else theme token, else the historical black.
 		background-color: var(
@@ -40,9 +42,13 @@
 		position: relative;
 		margin: 0 auto;
 		padding: 24px;
-		background: #fff;
+		// Mirror the frontend content surface (style.scss).
+		background: var(
+			--wp--custom--designsetgo--modal--content-background,
+			var(--wp--preset--color--base, #fff)
+		);
 		border: 1px solid #ddd;
-		border-radius: 8px;
+		border-radius: $dsgo-radius-medium;
 	}
 
 	.dsgo-modal__close {
@@ -50,7 +56,7 @@
 		z-index: 2;
 		background: transparent;
 		border: none;
-		border-radius: 0;
+		border-radius: $dsgo-radius-none;
 		cursor: not-allowed;
 		color: #666;
 		transition: all 0.2s ease;

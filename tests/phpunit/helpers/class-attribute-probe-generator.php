@@ -86,8 +86,10 @@ class Attribute_Probe_Generator {
 	 * @param string              $name       Attribute name.
 	 * @param array<string,mixed> $definition Attribute definition from the registry.
 	 * @param array<string,mixed> $table      Decoded attribute-probes.json.
-	 * @return array<int, mixed>|null Probe values, or null when undeclared and
-	 *                                underivable - which is a test failure.
+	 * @return array<int, mixed>|null Probe values; an empty array only for an
+	 *                                explicit skip; null when undeclared and
+	 *                                underivable, or when every candidate equals
+	 *                                the default - which is a test failure.
 	 */
 	public static function resolve( string $block, string $name, array $definition, array $table ) {
 		// Order matters. byBlock is a deliberate statement about THIS attribute
@@ -136,17 +138,106 @@ class Attribute_Probe_Generator {
 
 			// A declared probe equal to the attribute's default would not flip
 			// anything: the payload would prove nothing while reporting green.
-			return array_values(
-				array_filter(
-					$values,
-					static function ( $value ) use ( $definition ) {
-						return ( $definition['default'] ?? null ) !== $value;
-					}
+			return self::null_if_empty(
+				array_values(
+					array_filter(
+						$values,
+						static function ( $value ) use ( $definition ) {
+							return ( $definition['default'] ?? null ) !== $value;
+						}
+					)
 				)
 			);
 		}
 
-		return self::derive( $name, $definition );
+		$derived = self::derive( $name, $definition );
+
+		return null === $derived ? null : self::null_if_empty( $derived );
+	}
+
+	/**
+	 * Treat "every candidate equals the default" as underivable.
+	 *
+	 * Only an explicit `skip` may leave an attribute with no probes. An empty
+	 * list from filtering used to pass as covered while producing no payload:
+	 * counter-group's separator and decimal declared their own defaults, and
+	 * slider's transitionEasing and timeline's itemSpacing defaulted to the
+	 * heuristic's only value. Returning null makes the probe table test demand
+	 * a real probe or a reasoned skip.
+	 *
+	 * @param array<int, mixed> $values Probe values.
+	 * @return array<int, mixed>|null
+	 */
+	private static function null_if_empty( array $values ) {
+		return array() === $values ? null : $values;
+	}
+
+	/**
+	 * Attribute names this plugin declares, from block.json and the extension
+	 * configs.
+	 *
+	 * WordPress injects attributes of its own onto every block - `style`,
+	 * `className`, `lock`, `metadata`, `align`, the colour and typography
+	 * presets - and WHICH ones it injects changes between WordPress versions.
+	 * CI runs WordPress trunk while the fixtures are generated against the
+	 * version .wp-env.json pins, so a check on core's attributes would fail the
+	 * build whenever core changed, for a reason unrelated to this plugin.
+	 *
+	 * Ownership is per BLOCK, not per attribute name. `anchor` is the case that
+	 * proves why: designsetgo/tab declares it in its own block.json, while every
+	 * other block gets it from core's anchor support - which only exists in PHP
+	 * from WordPress 7.0, so trunk registers it and the pinned 6.9 does not.
+	 *
+	 * @return array{blocks: array<string, array<string, bool>>, extensions: array<string, bool>}
+	 */
+	public static function plugin_owned_attributes(): array {
+		$by_block   = array();
+		$extensions = array();
+		$root       = dirname( __DIR__, 3 );
+
+		$block_files = glob( $root . '/src/blocks/*/block.json' );
+
+		foreach ( is_array( $block_files ) ? $block_files : array() as $path ) {
+			$json = json_decode( (string) file_get_contents( $path ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- Reading a source file in a test.
+			$name = (string) ( $json['name'] ?? '' );
+
+			if ( '' === $name ) {
+				continue;
+			}
+
+			foreach ( array_keys( (array) ( $json['attributes'] ?? array() ) ) as $attribute ) {
+				$by_block[ $name ][ (string) $attribute ] = true;
+			}
+		}
+
+		// Extension attributes are injected uniformly by Extension_Attributes
+		// rather than declared per block, so they are owned wherever they appear.
+		$config_files = glob( $root . '/includes/extension-configs/*.php' );
+
+		foreach ( is_array( $config_files ) ? $config_files : array() as $path ) {
+			$config = require $path;
+
+			foreach ( array_keys( (array) ( $config['attributes'] ?? array() ) ) as $attribute ) {
+				$extensions[ (string) $attribute ] = true;
+			}
+		}
+
+		return array(
+			'blocks'     => $by_block,
+			'extensions' => $extensions,
+		);
+	}
+
+	/**
+	 * Whether the plugin owns an attribute on a block.
+	 *
+	 * @param array{blocks: array<string, array<string, bool>>, extensions: array<string, bool>} $owned     From plugin_owned_attributes().
+	 * @param string                                                                             $block     Block name.
+	 * @param string                                                                             $attribute Attribute name.
+	 * @return bool
+	 */
+	public static function is_plugin_owned( array $owned, string $block, string $attribute ): bool {
+		return isset( $owned['blocks'][ $block ][ $attribute ] ) || isset( $owned['extensions'][ $attribute ] );
 	}
 
 	/**

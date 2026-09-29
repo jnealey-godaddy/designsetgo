@@ -8,6 +8,8 @@
 
 // Import the main frontend styles for base styling
 @use './style' as *;
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
 
 // Editor-specific overrides and enhancements
 .editor-styles-wrapper {
@@ -38,7 +40,7 @@
 			color: inherit;
 			background-color: var(--dsgo-form-field-bg, var(--wp--preset--color--base, #fff));
 			border: 1px solid var(--dsgo-field-border-color, var(--dsgo-form-border-color, #d1d5db));
-			border-radius: var(--dsgo-field-border-radius, var(--dsgo-form-border-radius, 0.375rem));
+			border-radius: var(--dsgo-field-border-radius, var(--dsgo-form-border-radius, $dsgo-radius-medium));
 		}
 	}
 
@@ -67,7 +69,7 @@
 			max-width: none !important;
 
 			// Mirror the frontend's mobile stacking.
-			@media (max-width: 768px) {
+			@media (max-width: #{$breakpoint-mobile}) {
 				flex-basis: 100% !important;
 			}
 		}

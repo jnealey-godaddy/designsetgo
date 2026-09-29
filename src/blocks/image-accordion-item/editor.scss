@@ -55,16 +55,16 @@
 		position: relative;
 		z-index: 2;
 		// Default padding: L (top/bottom), M (left/right) - MUST MATCH style.scss
-		padding-top: var(--wp--preset--spacing--large, 2rem);
-		padding-bottom: var(--wp--preset--spacing--large, 2rem);
-		padding-left: var(--wp--preset--spacing--medium, 1.5rem);
-		padding-right: var(--wp--preset--spacing--medium, 1.5rem);
+		padding-block: var(--wp--preset--spacing--large, 2rem);
+		padding-inline: var(--wp--preset--spacing--medium, 1.5rem);
 		min-height: 150px;
 		display: flex;
 		flex-direction: column;
 		// Use alignment from attributes - MUST MATCH style.scss
 		justify-content: var(--dsgo-vertical-alignment, center);
 		align-items: var(--dsgo-horizontal-alignment, center);
+		// Fixed white - MUST MATCH style.scss (see its comment: text sits over
+		// an author photo + scrim, not a themed surface).
 		color: #fff;
 
 		// Make all text white for readability
