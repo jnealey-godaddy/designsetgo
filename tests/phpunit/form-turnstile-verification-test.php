@@ -3,7 +3,7 @@
  * Tests for Cloudflare Turnstile verification.
  *
  * Verification fails closed: a token is accepted only when Cloudflare says it
- * passed. See docs/reviews/2026-09-25-turnstile-verification-finding.md.
+ * passed.
  *
  * @package DesignSetGo
  */
