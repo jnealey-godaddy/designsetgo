@@ -169,27 +169,59 @@ class Form_Security {
 	}
 
 	/**
+	 * Whether both Turnstile keys are configured.
+	 *
+	 * The widget needs the site key and verification needs the secret, so a
+	 * form is only protected when both are set. The editor, the frontend and
+	 * the submission handler all ask this one question.
+	 *
+	 * @return bool
+	 */
+	public static function is_turnstile_configured(): bool {
+		$keys = self::turnstile_keys();
+
+		return '' !== $keys['site'] && '' !== $keys['secret'];
+	}
+
+	/**
+	 * The stored Turnstile keys, trimmed.
+	 *
+	 * @return array{site:string,secret:string}
+	 */
+	private static function turnstile_keys(): array {
+		$settings     = get_option( 'designsetgo_settings', array() );
+		$integrations = is_array( $settings ) && isset( $settings['integrations'] ) && is_array( $settings['integrations'] )
+			? $settings['integrations']
+			: array();
+
+		return array(
+			'site'   => isset( $integrations['turnstile_site_key'] ) && is_string( $integrations['turnstile_site_key'] ) ? trim( $integrations['turnstile_site_key'] ) : '',
+			'secret' => isset( $integrations['turnstile_secret_key'] ) && is_string( $integrations['turnstile_secret_key'] ) ? trim( $integrations['turnstile_secret_key'] ) : '',
+		);
+	}
+
+	/**
 	 * Verify Cloudflare Turnstile token.
+	 *
+	 * Fails closed: a token is accepted only when Cloudflare explicitly
+	 * reports success. A missing secret, an HTTP error, a timeout and an
+	 * unreadable response are all failures, since none of them proves the
+	 * visitor passed the challenge.
 	 *
 	 * @param string $token The Turnstile response token from the frontend.
 	 * @return true|WP_Error True on success, WP_Error on verification failure.
 	 */
 	public function verify_turnstile( string $token ) {
-		$settings   = get_option( 'designsetgo_settings', array() );
-		$secret_key = isset( $settings['integrations']['turnstile_secret_key'] )
-			? $settings['integrations']['turnstile_secret_key']
-			: '';
+		$secret_key = self::turnstile_keys()['secret'];
 
-		// If no secret key configured, skip verification (graceful degradation).
-		if ( empty( $secret_key ) ) {
-			return true;
+		if ( '' === $secret_key ) {
+			return self::turnstile_error( 'turnstile_not_configured', 'Secret key is not configured' );
 		}
 
 		// 3s timeout is intentional. Turnstile runs on Cloudflare's edge network and
 		// should respond in well under a second; this verification call blocks the
 		// form submission response, so a generous timeout directly penalises customer
-		// experience. On timeout, wp_remote_post() returns a WP_Error and we degrade
-		// gracefully (let the submission through) rather than punish the user.
+		// experience.
 		$response = wp_remote_post(
 			// phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- Server-side Turnstile verification API endpoint, not an offloaded asset. The sniff matches any `cloudflare.com` host in any string; no image, script, style or other content is loaded from it.
 			'https://challenges.cloudflare.com/turnstile/v0/siteverify',
@@ -203,39 +235,61 @@ class Form_Security {
 			)
 		);
 
-		// Handle HTTP errors (graceful degradation).
-		if ( is_wp_error( $response ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'DesignSetGo Turnstile: HTTP error - ' . $response->get_error_message() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			}
-			return true;
-		}
+		$code = wp_remote_retrieve_response_code( $response );
+		$data = is_wp_error( $response ) ? null : json_decode( wp_remote_retrieve_body( $response ), true );
 
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( ! is_array( $data ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'DesignSetGo Turnstile: Invalid response from Cloudflare' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		if ( is_wp_error( $response ) || $code >= 500 || ! is_array( $data ) ) {
+			/**
+			 * Whether to accept a submission when Turnstile can't be reached.
+			 *
+			 * Off by default: an HTTP error, a timeout or an unreadable reply
+			 * proves nothing about the visitor, so the submission is rejected.
+			 * A site that prefers availability during a Cloudflare outage can
+			 * return true. A missing secret or a token Cloudflare rejects is
+			 * never accepted.
+			 *
+			 * @since 2.8.3
+			 * @param bool           $accept   Default false.
+			 * @param array|WP_Error $response The siteverify response.
+			 */
+			if ( apply_filters( 'designsetgo_turnstile_accept_when_unavailable', false, $response ) ) {
+				return true;
 			}
-			return true;
+
+			$detail = is_wp_error( $response ) ? 'HTTP error - ' . $response->get_error_message() : 'Invalid response from Cloudflare (HTTP ' . $code . ')';
+
+			return self::turnstile_error( 'turnstile_unavailable', $detail );
 		}
 
 		if ( ! isset( $data['success'] ) || true !== $data['success'] ) {
-			$error_codes = isset( $data['error-codes'] ) ? implode( ', ', $data['error-codes'] ) : 'unknown';
+			$error_codes = isset( $data['error-codes'] ) && is_array( $data['error-codes'] ) ? implode( ', ', $data['error-codes'] ) : 'unknown';
 
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'DesignSetGo Turnstile: Verification failed - ' . $error_codes ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			}
-
-			return new WP_Error(
-				'turnstile_failed',
-				__( 'Security verification failed. Please try again.', 'designsetgo' ),
-				array( 'status' => 403 )
-			);
+			return self::turnstile_error( 'turnstile_failed', 'Verification failed - ' . $error_codes );
 		}
 
 		return true;
+	}
+
+	/**
+	 * A failed Turnstile verification, logged when debugging.
+	 *
+	 * Visitors get one generic message for every cause, so the response does
+	 * not reveal whether the site's keys or Cloudflare are at fault.
+	 *
+	 * @param string $code   Error code.
+	 * @param string $detail Debug log detail.
+	 * @return WP_Error
+	 */
+	private static function turnstile_error( string $code, string $detail ): WP_Error {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'DesignSetGo Turnstile: ' . $detail ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		}
+
+		return new WP_Error(
+			$code,
+			__( 'Security verification failed. Please try again.', 'designsetgo' ),
+			array( 'status' => 403 )
+		);
 	}
 
 	/**

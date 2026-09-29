@@ -113,6 +113,10 @@ function initFormBuilder() {
 			typeof dsgoIntegrations !== 'undefined'
 				? dsgoIntegrations.turnstileSiteKey
 				: null;
+		// Localized as "1" / "" (wp_localize_script stringifies booleans).
+		const turnstileConfigured =
+			typeof dsgoIntegrations !== 'undefined' &&
+			Boolean(dsgoIntegrations.turnstileConfigured);
 		let turnstileTokenField = null;
 
 		if (turnstileEnabled) {
@@ -122,8 +126,15 @@ function initFormBuilder() {
 			formElement.appendChild(turnstileTokenField);
 		}
 
-		// Initialize Turnstile if enabled
-		if (turnstileEnabled && turnstileContainer && turnstileSiteKey) {
+		// Render the widget only when the server can verify its token too. With
+		// just a site key it would show a challenge nothing checks; the server
+		// then turns the form away with a message instead.
+		if (
+			turnstileEnabled &&
+			turnstileContainer &&
+			turnstileSiteKey &&
+			turnstileConfigured
+		) {
 			loadTurnstileScript()
 				.then(() => {
 					if (!window.turnstile) {

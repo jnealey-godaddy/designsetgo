@@ -924,7 +924,7 @@ class Plugin {
 				array(
 					'googleMapsApiKey'    => ! empty( $integrations_settings['google_maps_api_key'] ) ? esc_js( $integrations_settings['google_maps_api_key'] ) : '',
 					'turnstileSiteKey'    => ! empty( $integrations_settings['turnstile_site_key'] ) ? esc_js( $integrations_settings['turnstile_site_key'] ) : '',
-					'turnstileConfigured' => ! empty( $integrations_settings['turnstile_site_key'] ) && ! empty( $integrations_settings['turnstile_secret_key'] ),
+					'turnstileConfigured' => \DesignSetGo\Blocks\Form_Security::is_turnstile_configured(),
 				)
 			);
 		}

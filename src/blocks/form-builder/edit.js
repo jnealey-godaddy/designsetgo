@@ -37,6 +37,7 @@ import {
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
 import { validateCSSLength } from '../../utils/css-generator';
 import FormBuilderPlaceholder from './components/FormBuilderPlaceholder';
+import TurnstileSettings from './components/TurnstileSettings';
 
 // Non-default submitButtonVariation values from block.json. Allowlisted before
 // interpolation into the class name. MUST MATCH save.js.
@@ -931,51 +932,12 @@ export default function FormBuilderEdit({
 						}
 						isShownByDefault
 					>
-						<ToggleControl
-							label={__(
-								'Enable Cloudflare Turnstile',
-								'designsetgo'
-							)}
-							checked={enableTurnstile}
+						<TurnstileSettings
+							enabled={enableTurnstile}
 							onChange={(value) =>
 								setAttributes({ enableTurnstile: value })
 							}
-							help={__(
-								'Privacy-friendly CAPTCHA alternative',
-								'designsetgo'
-							)}
-							__nextHasNoMarginBottom
 						/>
-						{enableTurnstile && (
-							<p className="dsgo-form-builder__turnstile-note">
-								{__(
-									'Configure your Turnstile keys in',
-									'designsetgo'
-								)}{' '}
-								<a
-									href={
-										window.designSetGoAdmin?.adminUrl +
-										'admin.php?page=designsetgo-settings'
-									}
-									target="_blank"
-									rel="noopener noreferrer"
-									aria-label={__(
-										'Settings → Integrations (opens in new tab)',
-										'designsetgo'
-									)}
-								>
-									{__(
-										'Settings → Integrations',
-										'designsetgo'
-									)}
-								</a>
-								.{' '}
-								{__(
-									'Widget mode (Managed, Non-interactive, Invisible) is configured in your Cloudflare dashboard.',
-									'designsetgo'
-								)}
-							</p>
-						)}
 					</DsgoInspectorPanel.Item>
 
 					<DsgoInspectorPanel.Item

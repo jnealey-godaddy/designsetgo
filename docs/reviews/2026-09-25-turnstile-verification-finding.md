@@ -1,6 +1,6 @@
 # Turnstile verification can succeed without a server secret
 
-**Status:** Fix proposed in [#611](https://github.com/jnealey-godaddy/designsetgo/pull/611) · **Severity:** Medium · **Scan issue ID:** `e41cd356-b6c6-4bca-ac42-c332554afa51`
+**Status:** Fixed in [#610](https://github.com/jnealey-godaddy/designsetgo/pull/610) · **Severity:** Medium · **Scan issue ID:** `e41cd356-b6c6-4bca-ac42-c332554afa51`
 
 ## Finding
 
@@ -41,3 +41,17 @@ Cover the change with server-side tests for:
 - a successful Cloudflare response.
 
 Also confirm that a form with Turnstile disabled keeps the existing public submission flow.
+
+## Resolution
+
+Fixed in [#610](https://github.com/jnealey-godaddy/designsetgo/pull/610), which follows the approach proposed in [#611](https://github.com/jnealey-godaddy/designsetgo/pull/611).
+
+- **Fail closed.** `verify_turnstile()` accepts a token only when Cloudflare reports `success: true`. A missing secret, an HTTP error, a timeout, a 5xx and an unreadable reply all fail.
+- **One configuration check.** `Form_Security::is_turnstile_configured()` requires both keys, whitespace trimmed. The submission handler and both localizations (frontend and editor) use it.
+- **Honest rejection.** A Turnstile form with incomplete keys is turned away before any Cloudflare call, with a 503 and "This form can't accept submissions right now". It no longer asks the visitor to complete a challenge that isn't there.
+- **Only Turnstile forms verify.** A token sent to a form without Turnstile is ignored, so those forms never depend on Cloudflare.
+- **Editor.** Turnstile can't be switched on until both keys are set. A form already switched on with incomplete keys shows an error notice, and can still be switched off.
+- **Frontend.** The widget renders only when the server can verify its token.
+- **Outage trade-off.** Rejection during a Cloudflare outage is the default. `designsetgo_turnstile_accept_when_unavailable` lets a site accept submissions while Cloudflare is unreachable. It never covers a rejected token or a missing secret.
+- **Release notes.** The changelog tells site owners that forms with Turnstile on and incomplete keys will stop accepting submissions.
+- **Tests.** Server-side coverage for a missing secret, a forged token, HTTP and malformed failures, a 5xx, success, the outage filter, a misconfigured form and a stray token on a form without Turnstile. Jest covers the editor toggle and the frontend widget gate.
