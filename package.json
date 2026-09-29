@@ -143,7 +143,7 @@
     "websocket-driver": "^0.7.5",
     "seroval": "^1.5.6",
     "postcss": "^8.5.23",
-    "markdown-it": "^14.3.0",
+    "markdown-it": "^14.3.2",
     "linkify-it": "^6.1.0",
     "colord": "^2.9.4"
   }
