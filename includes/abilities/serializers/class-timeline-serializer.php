@@ -37,7 +37,9 @@ class Timeline_Serializer {
 		$line_thickness     = Serializer_Support::numeric_attribute( $attributes['lineThickness'] ?? 2, 2 );
 		$connector_style    = isset( $attributes['connectorStyle'] ) ? (string) $attributes['connectorStyle'] : 'solid';
 		$marker_style       = isset( $attributes['markerStyle'] ) ? (string) $attributes['markerStyle'] : 'circle';
-		$marker_size        = Serializer_Support::numeric_attribute( $attributes['markerSize'] ?? 16, 16 );
+		$marker_size        = isset( $attributes['markerSize'] ) && is_numeric( $attributes['markerSize'] )
+			? Serializer_Support::numeric_attribute( $attributes['markerSize'] )
+			: null;
 		$marker_color       = isset( $attributes['markerColor'] ) ? (string) $attributes['markerColor'] : '';
 		$marker_border      = isset( $attributes['markerBorderColor'] ) ? (string) $attributes['markerBorderColor'] : '';
 		$item_spacing       = isset( $attributes['itemSpacing'] ) ? (string) $attributes['itemSpacing'] : '2rem';
@@ -48,16 +50,23 @@ class Timeline_Serializer {
 		$timeline_layout    = isset( $attributes['layout'] ) ? $attributes['layout'] : 'alternating';
 
 		// save.js writes every custom property unconditionally, falling
-		// back to the same literals used here.
+		// back to the same literals used here — except the marker size,
+		// which is written only for an explicit markerSize so an unset one
+		// inherits the theme token. Order matches save.js.
 		$timeline_styles = array(
 			'--dsgo-timeline-line-color:' . ( '' !== $line_color ? $line_color : 'var(--wp--preset--color--contrast, #e5e7eb)' ),
 			'--dsgo-timeline-line-thickness:' . $line_thickness . 'px',
 			'--dsgo-timeline-connector-style:' . $connector_style,
-			'--dsgo-timeline-marker-size:' . $marker_size . 'px',
+		);
+		if ( null !== $marker_size ) {
+			$timeline_styles[] = '--dsgo-timeline-marker-size:' . $marker_size . 'px';
+		}
+		array_push(
+			$timeline_styles,
 			'--dsgo-timeline-marker-color:' . ( '' !== $marker_color ? $marker_color : 'var(--wp--preset--color--primary, #2563eb)' ),
 			'--dsgo-timeline-marker-border-color:' . ( '' !== $marker_border ? $marker_border : ( '' !== $marker_color ? $marker_color : 'var(--wp--preset--color--primary, #2563eb)' ) ),
 			'--dsgo-timeline-item-spacing:' . $item_spacing,
-			'--dsgo-timeline-animation-duration:' . $animation_duration . 'ms',
+			'--dsgo-timeline-animation-duration:' . $animation_duration . 'ms'
 		);
 
 		$class_parts = array( 'wp-block-designsetgo-timeline' );

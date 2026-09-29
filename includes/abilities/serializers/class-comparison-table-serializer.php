@@ -158,12 +158,12 @@ class Comparison_Table_Serializer {
 					'<div class="dsgo-comparison-table__cell-content">';
 
 				if ( 'check' === $cell_type ) {
-					$body_rows .= '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none"' .
+					$body_rows .= '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"' .
 						' stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"' .
 						' class="dsgo-comparison-table__icon dsgo-comparison-table__icon--check" aria-label="Yes" role="img">' .
 						'<polyline points="20 6 9 17 4 12"></polyline></svg>';
 				} elseif ( 'cross' === $cell_type ) {
-					$body_rows .= '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none"' .
+					$body_rows .= '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"' .
 						' stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"' .
 						' class="dsgo-comparison-table__icon dsgo-comparison-table__icon--cross" aria-label="No" role="img">' .
 						'<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';

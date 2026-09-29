@@ -29,8 +29,18 @@
 		color: currentcolor;
 		opacity: 0.9;
 
+		// The SVG carries no width/height attributes. Size resolves from:
+		//   1. --dsgo-counter-icon-size — an explicit iconSize, written inline
+		//      on this element by save() only when the author sets one.
+		//   2. --wp--custom--designsetgo--counter--icon-size — theme.json
+		//      settings.custom.designsetgo.counter.iconSize (unitless).
+		//   3. 48 — literal fallback.
+		// height: auto follows the square viewBox.
 		svg {
-			width: 48px;
+			width: var(
+				--dsgo-counter-icon-size,
+				calc(var(--wp--custom--designsetgo--counter--icon-size, 48) * 1px)
+			);
 			max-width: 100%;
 			height: auto;
 		}
@@ -129,9 +139,13 @@
 			font-size: 2.5em;
 		}
 
+		// The inherited size shrinks to three quarters on phones (48 → 36 by
+		// default). An explicit iconSize is the author's call and is kept.
 		&__icon svg {
-			width: 36px;
-			height: 36px;
+			width: var(
+				--dsgo-counter-icon-size,
+				calc(var(--wp--custom--designsetgo--counter--icon-size, 48) * 0.75px)
+			);
 		}
 	}
 }

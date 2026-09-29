@@ -105,9 +105,23 @@ if ( ! function_exists( 'designsetgo_render_star_rating' ) ) {
 		$precision = isset( $attributes['precision'] ) ? (string) $attributes['precision'] : 'half';
 		$fill      = designsetgo_star_rating_fill_percent( $raw, $max, $precision );
 
+		// iconStyle and iconSize have no block.json default: left unset, they
+		// inherit the theme tokens. Style falls back to the site-wide
+		// settings.custom.designsetgo.icon.defaultStyle; size is simply not
+		// written, so style.scss's --wp--custom--designsetgo--star-rating--default-size
+		// applies. Only an explicit author choice is baked into the markup.
+		$default_style = 'filled';
+		if ( class_exists( '\\DesignSetGo\\Icon_Injector' ) ) {
+			$default_style = \DesignSetGo\Icon_Injector::get_icon_defaults()['style'];
+		}
+
 		$icon       = ! empty( $attributes['icon'] ) ? (string) $attributes['icon'] : 'star';
-		$icon_style = ( isset( $attributes['iconStyle'] ) && 'outlined' === $attributes['iconStyle'] ) ? 'outlined' : 'filled';
-		$icon_size  = isset( $attributes['iconSize'] ) ? (int) $attributes['iconSize'] : 24;
+		$icon_style = isset( $attributes['iconStyle'] ) && in_array( $attributes['iconStyle'], array( 'filled', 'outlined' ), true )
+			? (string) $attributes['iconStyle']
+			: $default_style;
+		$icon_size  = isset( $attributes['iconSize'] ) && is_numeric( $attributes['iconSize'] )
+			? max( 1, (int) $attributes['iconSize'] ) . 'px'
+			: '';
 		$icon_gap   = isset( $attributes['iconGap'] ) ? (int) $attributes['iconGap'] : 4;
 
 		$show_value = ! empty( $attributes['showValue'] );
@@ -130,7 +144,7 @@ if ( ! function_exists( 'designsetgo_render_star_rating' ) ) {
 		// numbers and colours, so there is no finite class set to emit.
 		$vars = array(
 			'--dsgo-star-rating-fill'        => $fill . '%',
-			'--dsgo-star-rating-size'        => max( 1, $icon_size ) . 'px',
+			'--dsgo-star-rating-size'        => $icon_size,
 			'--dsgo-star-rating-gap'         => max( 0, $icon_gap ) . 'px',
 			'--dsgo-star-rating-color'       => $rating_color,
 			'--dsgo-star-rating-track-color' => $track_color,

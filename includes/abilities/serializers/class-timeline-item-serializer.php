@@ -68,12 +68,14 @@ class Timeline_Item_Serializer {
 			? ' style="' . esc_attr( '--dsgo-timeline-item-marker-color:' . Serializer_Support::convert_color_value_to_css_var( $item_marker_col ) ) . '"'
 			: '';
 
-		// Marker: an image when set, otherwise the default circle SVG.
+		// Marker: an image when set, otherwise the default circle SVG. No
+		// size in the markup — style.scss sizes both from the parent's
+		// --dsgo-timeline-marker-size, as save.js expects.
 		if ( '' !== $item_image_url ) {
 			$marker_inner = '<img src="' . esc_url( $item_image_url ) . '" alt="" class="dsgo-timeline-item__marker-image"' .
-				' style="' . esc_attr( 'width:16px;height:16px;border-radius:50%;object-fit:cover' ) . '"/>';
+				' style="' . esc_attr( 'border-radius:50%;object-fit:cover' ) . '"/>';
 		} else {
-			$marker_inner = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' .
+			$marker_inner = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' .
 				'<circle cx="12" cy="12" r="10" fill="' . esc_attr( $effective_marker ) . '"' .
 				' stroke="' . esc_attr( $effective_marker ) . '" stroke-width="2"></circle></svg>';
 		}

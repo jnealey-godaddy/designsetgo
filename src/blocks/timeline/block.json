@@ -62,8 +62,7 @@
 			]
 		},
 		"markerSize": {
-			"type": "number",
-			"default": 16
+			"type": "number"
 		},
 		"markerColor": {
 			"type": "string",
@@ -95,7 +94,6 @@
 		"designsetgo/timeline/layout": "layout",
 		"designsetgo/timeline/lineColor": "lineColor",
 		"designsetgo/timeline/markerStyle": "markerStyle",
-		"designsetgo/timeline/markerSize": "markerSize",
 		"designsetgo/timeline/markerColor": "markerColor",
 		"designsetgo/timeline/markerBorderColor": "markerBorderColor",
 		"designsetgo/timeline/animateOnScroll": "animateOnScroll"

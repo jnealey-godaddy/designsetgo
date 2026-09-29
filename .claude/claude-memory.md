@@ -1,5 +1,18 @@
 # Claude Memory - DesignSetGo
 
+## Inherited icon/marker sizes — `claude/icon-size-inherit` (session 4935f33d)
+
+Follow-up to the July icon-token work (icon, icon-button, icon-list, modal-trigger, divider, tab). Five more blocks stopped baking a size into stored markup:
+
+- **Star Rating** (dynamic): `iconSize`/`iconStyle` have no default. render.php writes `--dsgo-star-rating-size` only for an explicit size, falls back to `settings.custom.designsetgo.starRating.defaultSize` (24) via style.scss, and resolves style from `Icon_Injector::get_icon_defaults()`. No deprecation needed.
+- **Counter**: new optional `iconSize` (inline `--dsgo-counter-icon-size`); token `counter.iconSize` (48, ×0.75 on phones when inherited). save() now uses `utils/icon-library.js` (no width/height, adds `aria-hidden`). v1 deprecation.
+- **Accordion Item**: SVG width/height dropped (CSS already sized it at 1.5rem). v1 deprecation.
+- **Comparison Table**: SVG width/height dropped; token `comparisonTable.iconSize` (20). The existing v1 (2.8.2 markup) already covers released content — current save() was unreleased.
+- **Timeline + Timeline Item**: `markerSize` has no default; timeline save() writes `--dsgo-timeline-marker-size` only when explicit (token `timeline.markerSize`, 16). Item SVG/image are sized by CSS from that var. Timeline v1 `migrate()` drops the implicit 16. This also fixed a real bug: item save() read markerSize from context, which save() never gets, so every stored marker was 16px whatever the setting.
+- **Not fixed, same root cause:** accordion items always store the chevron and timeline items always store circles. Parent `iconStyle`/`markerStyle` come from context in save(), and nothing on the frontend swaps them.
+- **Pattern regeneration:** `tools/regenerate-patterns.js` re-serializes whole comments (reorders attrs, drops HTML-sourced `label`, rewrites `\\u002d`). For markup-only changes, do surgical string replacements instead, then validate by dumping evaluated pattern content with `wp eval-file` and parsing each region in Jest (assert isValid and no console.info = no deprecation used).
+- **Attribute-matrix fixture on WP 7.x:** regenerating adds `::anchor::` probes (6.9 has no anchor support). Merge only the touched blocks' keys, and insert new keys in generator order — the PHP test's `assertSame` is order-sensitive.
+
 ## Progress Bar stock-binding recipe — `progress-bar` + `--dsgo-progress` (branch `claude/progress-bar-binding`, PR #590)
 
 The CLAUDE.md recipe (a stock bar = `progress-bar` + `--dsgo-progress` bound to `woo-stock-quantity`) now works. What to know before touching it:

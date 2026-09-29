@@ -1,8 +1,9 @@
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	useBlockProps,
 	useInnerBlocksProps,
 	InspectorControls,
+	useSettings,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
@@ -39,6 +40,17 @@ export default function TimelineEdit({ attributes, setAttributes, clientId }) {
 		staggerDelay,
 	} = attributes;
 
+	// Inherited marker size (theme.json settings.custom.designsetgo.timeline.markerSize),
+	// shown in the inspector while markerSize is unset.
+	const [themeMarkerSize] = useSettings(
+		'custom.designsetgo.timeline.markerSize'
+	);
+	const parsedThemeMarkerSize = Number.parseInt(themeMarkerSize, 10);
+	const inheritedMarkerSize =
+		Number.isFinite(parsedThemeMarkerSize) && parsedThemeMarkerSize > 0
+			? parsedThemeMarkerSize
+			: 16;
+
 	// Get theme color palette
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
 
@@ -48,7 +60,10 @@ export default function TimelineEdit({ attributes, setAttributes, clientId }) {
 			lineColor || 'var(--wp--preset--color--contrast, #e5e7eb)',
 		'--dsgo-timeline-line-thickness': `${lineThickness}px`,
 		'--dsgo-timeline-connector-style': connectorStyle,
-		'--dsgo-timeline-marker-size': `${markerSize}px`,
+		// Must match save.js: only an explicit Marker Size is written inline.
+		...(typeof markerSize === 'number' && {
+			'--dsgo-timeline-marker-size': `${markerSize}px`,
+		}),
 		'--dsgo-timeline-marker-color':
 			markerColor || 'var(--wp--preset--color--primary, #2563eb)',
 		'--dsgo-timeline-marker-border-color':
@@ -121,7 +136,7 @@ export default function TimelineEdit({ attributes, setAttributes, clientId }) {
 							lineThickness: 2,
 							connectorStyle: 'solid',
 							markerStyle: 'circle',
-							markerSize: 16,
+							markerSize: undefined,
 							itemSpacing: '2rem',
 							animateOnScroll: true,
 							animationDuration: 600,
@@ -312,18 +327,38 @@ export default function TimelineEdit({ attributes, setAttributes, clientId }) {
 
 					<DsgoInspectorPanel.Item
 						label={__('Marker Size', 'designsetgo')}
-						hasValue={() => markerSize !== 16}
-						onDeselect={() => setAttributes({ markerSize: 16 })}
+						hasValue={() => typeof markerSize === 'number'}
+						onDeselect={() =>
+							setAttributes({ markerSize: undefined })
+						}
 						isShownByDefault
 					>
 						<RangeControl
 							label={__('Marker Size', 'designsetgo')}
 							value={markerSize}
 							onChange={(value) =>
-								setAttributes({ markerSize: value })
+								setAttributes({
+									markerSize:
+										typeof value === 'number'
+											? value
+											: undefined,
+								})
 							}
 							min={8}
 							max={48}
+							allowReset
+							placeholder={inheritedMarkerSize}
+							help={
+								typeof markerSize !== 'number' &&
+								sprintf(
+									/* translators: %d: inherited marker size in pixels. */
+									__(
+										'Inheriting theme default (%dpx).',
+										'designsetgo'
+									),
+									inheritedMarkerSize
+								)
+							}
 							__next40pxDefaultSize
 							__nextHasNoMarginBottom
 						/>

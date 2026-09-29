@@ -87,12 +87,10 @@
     },
     "iconStyle": {
       "type": "string",
-      "enum": [ "filled", "outlined" ],
-      "default": "filled"
+      "enum": [ "filled", "outlined" ]
     },
     "iconSize": {
-      "type": "number",
-      "default": 24
+      "type": "number"
     },
     "iconGap": {
       "type": "number",

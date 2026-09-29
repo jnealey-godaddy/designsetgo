@@ -39,6 +39,15 @@
 			background-color: var(--wp--preset--color--base, #fff);
 		}
 
+		// Neither the SVG nor the image carries a size in the markup; both
+		// follow the parent's --dsgo-timeline-marker-size (an explicit Marker
+		// Size, or the theme token — see timeline/style.scss).
+		svg,
+		.dsgo-timeline-item__marker-image {
+			width: var(--dsgo-timeline-marker-size, 16px);
+			height: var(--dsgo-timeline-marker-size, 16px);
+		}
+
 		svg {
 			display: block;
 		}

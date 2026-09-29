@@ -73,7 +73,6 @@
 		"designsetgo/timeline/layout",
 		"designsetgo/timeline/lineColor",
 		"designsetgo/timeline/markerStyle",
-		"designsetgo/timeline/markerSize",
 		"designsetgo/timeline/markerColor",
 		"designsetgo/timeline/markerBorderColor",
 		"designsetgo/timeline/animateOnScroll"

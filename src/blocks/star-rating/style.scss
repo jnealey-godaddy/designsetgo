@@ -13,7 +13,10 @@
 
 .dsgo-star-rating {
 	// Icons are sized from a custom property so the two rows cannot disagree.
-	--dsgo-star-rating-size: 24px;
+	// render.php writes it inline on __inner only for an explicit iconSize;
+	// otherwise it resolves from theme.json
+	// settings.custom.designsetgo.starRating.defaultSize (a unitless number).
+	--dsgo-star-rating-size: calc(var(--wp--custom--designsetgo--star-rating--default-size, 24) * 1px);
 	--dsgo-star-rating-gap: 4px;
 	--dsgo-star-rating-fill: 0%;
 

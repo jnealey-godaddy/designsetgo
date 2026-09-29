@@ -65,12 +65,29 @@ export default function CounterEdit({
 		showIcon,
 		icon,
 		iconPosition,
+		iconSize,
 		overrideAnimation,
 		customDuration,
 		customDelay,
 		customEasing,
 		hoverColor,
 	} = attributes;
+
+	// Inherited icon size (theme.json settings.custom.designsetgo.counter.iconSize),
+	// shown in the inspector while iconSize is unset. The canvas needs no
+	// resolving: style.scss falls through to the same token.
+	const [themeIconSize] = useSettings('custom.designsetgo.counter.iconSize');
+	const parsedThemeIconSize = Number.parseInt(themeIconSize, 10);
+	const inheritedIconSize =
+		Number.isFinite(parsedThemeIconSize) && parsedThemeIconSize > 0
+			? parsedThemeIconSize
+			: 48;
+
+	// Must match save.js: size is inline only for an explicit iconSize.
+	const iconSizeStyle =
+		typeof iconSize === 'number'
+			? { '--dsgo-counter-icon-size': `${iconSize}px` }
+			: undefined;
 
 	// Get theme color palette and gradient settings
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();
@@ -176,6 +193,7 @@ export default function CounterEdit({
 							showIcon: false,
 							icon: 'star',
 							iconPosition: 'top',
+							iconSize: undefined,
 							overrideAnimation: false,
 							customDuration: 2,
 							customDelay: 0,
@@ -201,6 +219,8 @@ export default function CounterEdit({
 						showIcon={showIcon}
 						icon={icon}
 						iconPosition={iconPosition}
+						iconSize={iconSize}
+						inheritedIconSize={inheritedIconSize}
 						setAttributes={setAttributes}
 					/>
 
@@ -221,7 +241,10 @@ export default function CounterEdit({
 			<div {...blockProps}>
 				{/* Icon (if enabled and position is top) */}
 				{showIcon && iconPosition === 'top' && (
-					<div className="dsgo-counter__icon dsgo-counter__icon--top">
+					<div
+						className="dsgo-counter__icon dsgo-counter__icon--top"
+						style={iconSizeStyle}
+					>
 						{getIconSvg(icon)}
 					</div>
 				)}
@@ -229,7 +252,10 @@ export default function CounterEdit({
 				<div className={`dsgo-counter__content icon-${iconPosition}`}>
 					{/* Icon (if enabled and position is left) */}
 					{showIcon && iconPosition === 'left' && (
-						<div className="dsgo-counter__icon dsgo-counter__icon--left">
+						<div
+							className="dsgo-counter__icon dsgo-counter__icon--left"
+							style={iconSizeStyle}
+						>
 							{getIconSvg(icon)}
 						</div>
 					)}
@@ -239,7 +265,10 @@ export default function CounterEdit({
 
 					{/* Icon (if enabled and position is right) */}
 					{showIcon && iconPosition === 'right' && (
-						<div className="dsgo-counter__icon dsgo-counter__icon--right">
+						<div
+							className="dsgo-counter__icon dsgo-counter__icon--right"
+							style={iconSizeStyle}
+						>
 							{getIconSvg(icon)}
 						</div>
 					)}
