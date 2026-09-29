@@ -46,8 +46,6 @@
     "test:install": "playwright install --with-deps",
     "wp-env": "wp-env",
     "wp-env:start": "wp-env start",
-    "wp-env:start:7": "shx cp .wp-env.7.override.json .wp-env.override.json && wp-env start --update",
-    "wp-env:stop:7": "wp-env stop && shx rm -f .wp-env.override.json",
     "wp-env:stop": "wp-env stop",
     "wp-env:clean": "wp-env clean",
     "security:audit": "npm audit && npm run check-licenses",
@@ -146,6 +144,7 @@
     "seroval": "^1.5.6",
     "postcss": "^8.5.23",
     "markdown-it": "^14.3.0",
-    "linkify-it": "^6.1.0"
+    "linkify-it": "^6.1.0",
+    "colord": "^2.9.4"
   }
 }
