@@ -35,7 +35,12 @@ import {
 	__experimentalGetShadowClassesAndStyles as getShadowClassesAndStyles,
 	getTypographyClassesAndStyles,
 } from '@wordpress/block-editor';
-import { ToolbarButton, Popover, ToggleControl } from '@wordpress/components';
+import {
+	ToolbarButton,
+	Popover,
+	ToggleControl,
+	TextControl,
+} from '@wordpress/components';
 import clsx from 'clsx';
 import { DsgoInspectorPanel } from '../../components/shared';
 import DsgoJustificationToolbar from '../../components/shared/DsgoJustificationToolbar';
@@ -89,7 +94,17 @@ export default function IconButtonEdit({
 		hoverTextColor,
 		style,
 		modalCloseId,
+		ariaLabel,
 	} = attributes;
+
+	// An empty RichText value (or one that is only markup) leaves the button
+	// with no accessible name unless ariaLabel is set. DOMParser reads the
+	// text safely (no script execution, handles malformed tags), matching
+	// slider/edit.js.
+	const isIconOnly = !(
+		new window.DOMParser().parseFromString(text || '', 'text/html').body
+			.textContent || ''
+	).trim();
 
 	// Theme-level icon defaults inherited when size/style are left unset.
 	const iconDefaults = useIconDefaults({
@@ -379,6 +394,7 @@ export default function IconButtonEdit({
 							hoverAnimation: 'none',
 							modalCloseId: '',
 							fullWidth: false,
+							ariaLabel: '',
 						})
 					}
 				>
@@ -408,6 +424,33 @@ export default function IconButtonEdit({
 							checked={!!fullWidth}
 							onChange={(value) =>
 								setAttributes({ fullWidth: value })
+							}
+						/>
+					</DsgoInspectorPanel.Item>
+					<DsgoInspectorPanel.Item
+						label={__('Accessible label', 'designsetgo')}
+						hasValue={() => !!ariaLabel}
+						onDeselect={() => setAttributes({ ariaLabel: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+							label={__('Accessible label', 'designsetgo')}
+							value={ariaLabel}
+							onChange={(value) =>
+								setAttributes({ ariaLabel: value })
+							}
+							help={
+								isIconOnly
+									? __(
+											'Required: this button has no visible text, so screen readers need a label, e.g. "Open menu".',
+											'designsetgo'
+										)
+									: __(
+											'Optional. Replaces the visible text for screen readers.',
+											'designsetgo'
+										)
 							}
 						/>
 					</DsgoInspectorPanel.Item>

@@ -14,6 +14,8 @@
 
 /* global requestAnimationFrame, ResizeObserver */
 
+import { __, sprintf } from '@wordpress/i18n';
+
 import { parseSliderConfig, slidesPerViewFor } from './view/config';
 import {
 	buildArrows,
@@ -587,9 +589,12 @@ class DSGSlider {
 		}
 		const total =
 			this.cloneCount > 0 ? this.realSlideCount : this.slides.length;
-		this.announcer.textContent = `Slide ${
-			this.getRealIndex(this.currentIndex) + 1
-		} of ${total}`;
+		this.announcer.textContent = sprintf(
+			/* translators: 1: current slide number, 2: total number of slides */
+			__('Slide %1$d of %2$d', 'designsetgo'),
+			this.getRealIndex(this.currentIndex) + 1,
+			total
+		);
 	}
 
 	updateArrows() {

@@ -30,7 +30,7 @@ const {
 
 import metadata from '../../src/blocks/progress-bar/block.json';
 import save from '../../src/blocks/progress-bar/save';
-import deprecated from '../../src/blocks/progress-bar/deprecated';
+import deprecated, * as deprecatedEntries from '../../src/blocks/progress-bar/deprecated';
 
 // The custom 'designsetgo' category isn't registered in jest; category is
 // irrelevant to parse/validation, so use a built-in one to avoid an unrelated
@@ -51,7 +51,8 @@ const register = (saveFn, deprecations) =>
  * @return {string} Legacy block markup.
  */
 function legacyMarkup(attrs = {}) {
-	register(deprecated[deprecated.length - 1].save);
+	// By name, not position: the array order changes as entries are added.
+	register(deprecatedEntries.v2.save);
 	const block = createBlock(metadata.name, attrs);
 	const markup = serialize(block);
 	unregisterBlockType(metadata.name);

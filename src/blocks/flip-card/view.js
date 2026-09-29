@@ -3,8 +3,54 @@
  *
  * Handles flip interactions on the frontend based on trigger type.
  *
+ * Keyboard and screen-reader access goes through a real <button> injected
+ * as the card's first child. It overlays the card (transparent, and
+ * pointer-events: none so mouse clicks still reach links inside the faces)
+ * and draws the focus ring. The card itself stays a plain container, so the
+ * face content is read normally rather than flattened into a button name.
+ * The hidden face is `inert`, so it is neither tabbable nor announced.
+ *
  * @since 1.0.0
  */
+
+import { __ } from '@wordpress/i18n';
+
+/**
+ * Apply a flip state: class, inert face, and toggle label.
+ *
+ * @param {HTMLElement} card    Flip card element.
+ * @param {boolean}     flipped Whether the back face should show.
+ */
+function setFlipped(card, flipped) {
+	card.classList.toggle('is-flipped', flipped);
+
+	const front = card.querySelector(
+		':scope > .dsgo-flip-card__container > .dsgo-flip-card__front'
+	);
+	const back = card.querySelector(
+		':scope > .dsgo-flip-card__container > .dsgo-flip-card__back'
+	);
+	const hidden = flipped ? front : back;
+	const shown = flipped ? back : front;
+	if (hidden) {
+		hidden.setAttribute('inert', '');
+		hidden.setAttribute('aria-hidden', 'true');
+	}
+	if (shown) {
+		shown.removeAttribute('inert');
+		shown.removeAttribute('aria-hidden');
+	}
+
+	const toggle = card.querySelector(':scope > .dsgo-flip-card__toggle');
+	if (toggle) {
+		toggle.setAttribute(
+			'aria-label',
+			flipped
+				? __('Show front of card', 'designsetgo')
+				: __('Show back of card', 'designsetgo')
+		);
+	}
+}
 
 function initFlipCards() {
 	const flipCards = document.querySelectorAll('.dsgo-flip-card');
@@ -17,66 +63,42 @@ function initFlipCards() {
 		card.dataset.dsgoInitialized = 'true';
 
 		const flipTrigger = card.getAttribute('data-flip-trigger');
+		if (flipTrigger !== 'click' && flipTrigger !== 'hover') {
+			return;
+		}
+
+		const toggle = document.createElement('button');
+		toggle.type = 'button';
+		toggle.className = 'dsgo-flip-card__toggle';
+		toggle.addEventListener('click', () => {
+			setFlipped(card, !card.classList.contains('is-flipped'));
+		});
+		card.insertBefore(toggle, card.firstChild);
+		setFlipped(card, card.classList.contains('is-flipped'));
 
 		if (flipTrigger === 'click') {
 			// Click trigger: toggle flip state
 			card.addEventListener('click', function (e) {
 				// Don't trigger if clicking on a link or button inside the card
-				const isInteractive =
-					e.target.tagName === 'A' ||
-					e.target.tagName === 'BUTTON' ||
-					e.target.closest('a') ||
-					e.target.closest('button');
-
-				if (!isInteractive) {
-					card.classList.toggle('is-flipped');
+				// (the injected toggle handles its own clicks).
+				if (e.target.closest('a, button, input, select, textarea')) {
+					return;
 				}
+				setFlipped(card, !card.classList.contains('is-flipped'));
 			});
-
-			// Add keyboard support for accessibility
-			card.setAttribute('tabindex', '0');
-			card.setAttribute('role', 'button');
-			card.setAttribute('aria-label', 'Flip card to reveal content');
-
-			card.addEventListener('keydown', function (e) {
-				// Space or Enter key
-				if (e.key === ' ' || e.key === 'Enter') {
-					e.preventDefault();
-					card.classList.toggle('is-flipped');
-
-					// Update aria-label based on state
-					const isFlipped = card.classList.contains('is-flipped');
-					card.setAttribute(
-						'aria-label',
-						isFlipped
-							? 'Flip card back to front'
-							: 'Flip card to reveal content'
-					);
-				}
-			});
-		} else if (flipTrigger === 'hover') {
+		} else {
 			// Hover trigger: add/remove flip class on hover
 			card.addEventListener('mouseenter', function () {
-				card.classList.add('is-flipped');
+				setFlipped(card, true);
 			});
 
 			card.addEventListener('mouseleave', function () {
-				card.classList.remove('is-flipped');
-			});
-
-			// Keyboard support for hover cards
-			card.setAttribute('tabindex', '0');
-			card.setAttribute(
-				'aria-label',
-				'Flip card - hover or focus to reveal content'
-			);
-
-			card.addEventListener('focus', function () {
-				card.classList.add('is-flipped');
-			});
-
-			card.addEventListener('blur', function () {
-				card.classList.remove('is-flipped');
+				// Keep the back face up while keyboard focus is inside it, or
+				// making it inert would drop that focus.
+				if (card.contains(card.ownerDocument.activeElement)) {
+					return;
+				}
+				setFlipped(card, false);
 			});
 		}
 	});
