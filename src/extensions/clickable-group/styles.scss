@@ -21,17 +21,21 @@
 	}
 
 	// Keyboard/screen-reader link injected by frontend.js. Visually hidden;
-	// the group itself draws the focus ring below.
+	// the group itself draws the focus ring below. !important, as in core's
+	// .screen-reader-text: container blocks position their direct children
+	// (Section's `> *:not(...)` rule made this link `relative`, and clip only
+	// applies to absolutely positioned boxes, so it showed as a stray square).
 	> .dsgo-clickable__link {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border: 0;
+		position: absolute !important;
+		width: 1px !important;
+		height: 1px !important;
+		padding: 0 !important;
+		margin: -1px !important;
+		overflow: hidden !important;
+		clip: rect(0, 0, 0, 0) !important;
+		clip-path: inset(50%) !important;
+		white-space: nowrap !important;
+		border: 0 !important;
 	}
 
 	&:has(> .dsgo-clickable__link:focus-visible) {

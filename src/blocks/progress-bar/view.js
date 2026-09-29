@@ -58,18 +58,41 @@ export function resolveTargetPercent(fill, fallbackPercentage) {
 }
 
 /**
+ * Announce the value the bar actually shows.
+ *
+ * save() writes aria-valuenow from the static `percentage` attribute, but a
+ * `dsgoStyleBinding` on `--dsgo-progress` can drive the fill to another value
+ * (a stock bar reading 12 of 20). Resolve it the same way the fill does so
+ * the announced value matches what sighted visitors see.
+ *
+ * @param {Element} track The `[role="progressbar"]` track element.
+ */
+export function syncAriaValue(track) {
+	const fill = track.querySelector('.dsgo-progress-bar__fill');
+	const saved = parseFloat(track.getAttribute('aria-valuenow'));
+	if (!fill || Number.isNaN(saved)) {
+		return;
+	}
+	track.setAttribute(
+		'aria-valuenow',
+		String(Math.round(resolveTargetPercent(fill, saved)))
+	);
+}
+
+/**
  * Initialize progress bars with scroll animations
  */
 function initProgressBars() {
-	// A progressbar needs an accessible name. save() writes the author's
-	// labelText; without one, name it here so the fallback is translated at
-	// runtime rather than baked into post content.
 	document
-		.querySelectorAll(
-			'.dsgo-progress-bar__container[role="progressbar"]:not([aria-label])'
-		)
+		.querySelectorAll('.dsgo-progress-bar__container[role="progressbar"]')
 		.forEach((track) => {
-			track.setAttribute('aria-label', __('Progress', 'designsetgo'));
+			syncAriaValue(track);
+			// A progressbar needs an accessible name. save() writes the
+			// author's labelText; without one, name it here so the fallback
+			// is translated at runtime rather than baked into post content.
+			if (!track.hasAttribute('aria-label')) {
+				track.setAttribute('aria-label', __('Progress', 'designsetgo'));
+			}
 		});
 
 	const progressBars = document.querySelectorAll(

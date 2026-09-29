@@ -18,7 +18,10 @@
  * @package
  */
 
-import { resolveTargetPercent } from '../../src/blocks/progress-bar/view';
+import {
+	resolveTargetPercent,
+	syncAriaValue,
+} from '../../src/blocks/progress-bar/view';
 
 /**
  * Mocks `getComputedStyle` (as resolveTargetPercent() calls it — the bare
@@ -110,5 +113,50 @@ describe('progress-bar view.js - resolveTargetPercent', () => {
 			'--dsgo-progress-max': 'not-a-number',
 		});
 		expect(resolveTargetPercent(el, 75)).toBe(5);
+	});
+});
+
+describe('progress-bar view.js - syncAriaValue', () => {
+	afterEach(() => {
+		jest.restoreAllMocks();
+	});
+
+	/**
+	 * A track as save() writes it, with a fill inside.
+	 *
+	 * @param {number} valueNow The saved aria-valuenow.
+	 * @return {HTMLElement} Track element.
+	 */
+	function track(valueNow) {
+		const el = document.createElement('div');
+		el.className = 'dsgo-progress-bar__container';
+		el.setAttribute('role', 'progressbar');
+		el.setAttribute('aria-valuenow', String(valueNow));
+		const fill = document.createElement('div');
+		fill.className = 'dsgo-progress-bar__fill';
+		el.appendChild(fill);
+		return el;
+	}
+
+	it('announces the bound value, not the saved percentage', () => {
+		// A stock bar: 12 of 20 shows 60%, whatever `percentage` was saved.
+		mockComputedCustomProps({
+			'--dsgo-progress': '12',
+			'--dsgo-progress-max': '20',
+		});
+		const el = track(50);
+
+		syncAriaValue(el);
+
+		expect(el.getAttribute('aria-valuenow')).toBe('60');
+	});
+
+	it('keeps the saved value for an unbound bar', () => {
+		mockComputedCustomProps({});
+		const el = track(35);
+
+		syncAriaValue(el);
+
+		expect(el.getAttribute('aria-valuenow')).toBe('35');
 	});
 });

@@ -61,8 +61,11 @@
 
 	// Ensure content is above all overlays
 	// NOTE: This is overridden for overlay blocks (z-index: 2 on .dsgo-stack__inner)
-	// IMPORTANT: Exclude shape dividers - they need position: absolute to stay at edges
-	> *:not(.dsgo-stack__inner):not(.dsgo-shape-divider) {
+	// IMPORTANT: Exclude shape dividers - they need position: absolute to stay at edges.
+	// Same for the background-video play/pause button, which sits in a corner:
+	// this rule outranks the extension's own, and made it a flow element that
+	// its right/bottom offsets pushed half off the page.
+	> *:not(.dsgo-stack__inner):not(.dsgo-shape-divider):not(.dsgo-video-background__toggle) {
 		position: relative;
 		z-index: 3;
 	}
