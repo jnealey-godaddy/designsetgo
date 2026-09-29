@@ -11,11 +11,6 @@
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	// Lets the `@container` rules below react to the card's own rendered
-	// width — the horizontal layouts stack even on a wide viewport when the
-	// card itself sits in a narrow column (a three-up grid cell, a sidebar).
-	container-type: inline-size;
-	container-name: dsgo-card;
 
 	// CRITICAL: Ensure borders and padding are included in the total width
 	// Prevents cards from overflowing grid cells when borders are applied
@@ -253,22 +248,8 @@
 		padding: 1.5rem;
 	}
 
-	// Stack on mobile (viewport fallback)
+	// Stack on mobile
 	@media (max-width: #{$breakpoint-mobile}) {
-
-		.dsgo-card__inner {
-			flex-direction: column;
-		}
-
-		.dsgo-card__image-wrapper {
-			flex: 1;
-			max-width: 100%;
-		}
-	}
-
-	// Stack when the card itself is narrow (e.g. a grid cell), independent
-	// of viewport width.
-	@container dsgo-card (max-width: 480px) {
 
 		.dsgo-card__inner {
 			flex-direction: column;
@@ -301,22 +282,8 @@
 		padding: 1.5rem;
 	}
 
-	// Stack on mobile (viewport fallback)
+	// Stack on mobile
 	@media (max-width: #{$breakpoint-mobile}) {
-
-		.dsgo-card__inner {
-			flex-direction: column;
-		}
-
-		.dsgo-card__image-wrapper {
-			flex: 1;
-			max-width: 100%;
-		}
-	}
-
-	// Stack when the card itself is narrow (e.g. a grid cell), independent
-	// of viewport width.
-	@container dsgo-card (max-width: 480px) {
 
 		.dsgo-card__inner {
 			flex-direction: column;
