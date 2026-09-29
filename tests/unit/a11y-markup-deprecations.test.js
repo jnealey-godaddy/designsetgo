@@ -10,6 +10,11 @@
  * The legacy fixtures under __fixtures__/a11y-legacy/ were serialized by the
  * pre-change save() functions (not by the deprecations under test), so a
  * frozen deprecation copy that drifted from the real old markup fails here.
+ * Two sets per block: `{block}.html` from before 2.8 (older markup that an
+ * earlier deprecation still has to carry), and `{block}.main.html` from the
+ * save() that shipped right before this change — what most sites store.
+ * The `.main` set was produced by re-serializing the older set, plus extra
+ * cases, with that release's own registry, never by hand.
  *
  * Icon Button gained an optional `ariaLabel` attribute that must not change
  * markup when unset — so existing buttons need no deprecation at all.
@@ -47,11 +52,14 @@ import iconButtonMeta from '../../src/blocks/icon-button/block.json';
 import iconButtonSave from '../../src/blocks/icon-button/save';
 import iconButtonDeprecated from '../../src/blocks/icon-button/deprecated';
 
-const fixture = (name) =>
+const readFixture = (name) =>
 	fs.readFileSync(
 		path.join(__dirname, '__fixtures__/a11y-legacy', `${name}.html`),
 		'utf8'
 	);
+
+// Both fixture sets for a block, concatenated.
+const fixture = (name) => readFixture(name) + readFixture(`${name}.main`);
 
 const BLOCKS = [
 	{

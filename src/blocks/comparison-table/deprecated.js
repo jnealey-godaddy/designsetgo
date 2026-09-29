@@ -7,16 +7,22 @@
  * schema unchanged), so no isEligible: stored HTML no longer matches the
  * current save(), and this frozen copy reproduces it.
  *
+ * It is 2.8.2's save(), which reads the badge and CTA fallback labels back
+ * from the stored markup (featuredBadgeText, savedCtaTexts) so tables saved
+ * in another editor language, or with custom labels, still match. Earlier
+ * tables used the same markup with default labels, so this one entry covers
+ * them too.
+ *
  * @package
  */
 
-import { __ } from '@wordpress/i18n';
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
+import { getCtaFallback, getFeaturedBadgeText } from './utils/fallback-labels';
 import metadata from './block.json';
 
 /**
- * v1 save: frozen copy of the pre-header-semantics markup.
+ * v1 save: frozen copy of 2.8.2's save(), before header semantics.
  *
  * @param {Object} props            - Component props
  * @param {Object} props.attributes - Block attributes
@@ -33,7 +39,12 @@ function saveV1({ attributes }) {
 		headerTextColor,
 		showCtaButtons,
 		ctaStyle,
+		featuredBadgeText,
+		savedCtaTexts,
 	} = attributes;
+
+	// Fallback labels are read back from the stored markup, so opening the
+	// post in another editor language keeps the block valid.
 
 	const blockProps = useBlockProps.save({
 		className: [
@@ -87,7 +98,9 @@ function saveV1({ attributes }) {
 								>
 									{col.featured && (
 										<span className="dsgo-comparison-table__featured-badge">
-											{__('Popular', 'designsetgo')}
+											{getFeaturedBadgeText(
+												featuredBadgeText
+											)}
 										</span>
 									)}
 
@@ -104,9 +117,10 @@ function saveV1({ attributes }) {
 											rel="noopener noreferrer"
 										>
 											{col.linkText ||
-												__(
-													'Get Started',
-													'designsetgo'
+												getCtaFallback(
+													columns,
+													savedCtaTexts,
+													colIndex
 												)}
 										</a>
 									)}
