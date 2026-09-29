@@ -1014,8 +1014,8 @@ if ( ! function_exists( 'designsetgo_query_render_blobs' ) ) :
 	 * Build the hidden, signed refresh source embedded in the query region.
 	 *
 	 * The view script sends it back verbatim on filter / sort / Load more, and
-	 * the public REST route renders only a definition whose signature verifies
-	 * — see DesignSetGo\Blocks\Query\RefreshSource.
+	 * the public REST route resolves the server-held definition only after
+	 * signature and viewer verification — see DesignSetGo\Blocks\Query\RefreshSource.
 	 *
 	 * @param string   $query_id        Sanitized queryId.
 	 * @param array    $attributes      Query attributes (already defaulted).

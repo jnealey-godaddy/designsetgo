@@ -265,9 +265,9 @@ export function announceResultCount(
 /**
  * Read the signed refresh source a query region carries.
  *
- * First paint embeds the query's definition and an HMAC signature; the
- * public REST route renders only a definition whose signature verifies, so
- * the pair is sent back verbatim.
+ * First paint carries a signed opaque reference to a server-held definition.
+ * The public REST route verifies the reference and viewer before rendering,
+ * so the pair is sent back verbatim.
  *
  * @param {Element|null} blobsHost The region's `[data-dsgo-blobs-for]` element.
  * @return {{source: string, signature: string}|null} Signed source, or null.

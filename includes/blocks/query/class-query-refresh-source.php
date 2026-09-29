@@ -7,11 +7,14 @@
  * itself put on a page, wherever it was placed — post content, a template or
  * template part, a synced pattern, a widget, or another query's item.
  *
- * So first paint embeds the query's definition (attributes + inner blocks)
- * with an HMAC signature, and the route renders only a definition whose
- * signature verifies. The payload is base64 in a data attribute because it
- * passes through the_content: filters like capital_P_dangit() rewrite text
- * inside inline <script> JSON, and any rewrite would break the signature.
+ * First paint embeds an opaque, signed reference to a server-held definition.
+ * Encoding the template itself would expose blocks hidden by visibility rules.
+ * Definitions bind to the issuing viewer (user ID, or 0 for all visitors).
+ * This prevents replay of a member-only query or ancestor across viewers.
+ * WordPress transients retain each definition/viewer pair for 30 days; missing
+ * records fail closed. Purge page/CDN caches when upgrading from plaintext
+ * sources or clearing transients. Keep page-cache lifetimes below 30 days.
+ * Base64 protects the envelope from the_content text filters, not from readers.
  *
  * @package DesignSetGo
  * @since 2.7.4
@@ -29,7 +32,10 @@ class RefreshSource {
 	/**
 	 * Payload format version.
 	 */
-	const VERSION = 1;
+	const VERSION = 2;
+
+	/** Maximum storage lifetime; page caches must expire sooner. */
+	const LIFETIME = 30 * DAY_IN_SECONDS;
 
 	/**
 	 * Post IDs whose content is being rendered, innermost last.
@@ -102,7 +108,7 @@ class RefreshSource {
 	}
 
 	/**
-	 * Encode and sign a query definition.
+	 * Store a query definition and sign its opaque reference.
 	 *
 	 * @param string $query_id       Sanitized query ID.
 	 * @param array  $attributes     Query block attributes.
@@ -111,14 +117,25 @@ class RefreshSource {
 	 * @return array{source: string, signature: string}
 	 */
 	public static function sign( $query_id, array $attributes, $inner_blocks, $source_post_id ) {
+		$definition = array(
+			'queryId'      => (string) $query_id,
+			'sourcePostId' => absint( $source_post_id ),
+			'viewerId'     => get_current_user_id(),
+			'attributes'   => $attributes,
+			'innerBlocks'  => (string) $inner_blocks,
+		);
+		$reference  = self::reference( $definition );
+		$key        = 'dsgo_query_source_' . $reference;
+		// Reuse one record and renew its TTL for every freshly rendered page.
+		// WordPress skips unchanged option values; only expiry needs updating.
+		set_transient( $key, $definition, self::LIFETIME );
 		$source = base64_encode( // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- transport encoding, see class docblock.
 			(string) wp_json_encode(
 				array(
 					'v'            => self::VERSION,
-					'queryId'      => (string) $query_id,
-					'sourcePostId' => absint( $source_post_id ),
-					'attributes'   => $attributes,
-					'innerBlocks'  => (string) $inner_blocks,
+					'queryId'      => $definition['queryId'],
+					'sourcePostId' => $definition['sourcePostId'],
+					'ref'          => $reference,
 				)
 			)
 		);
@@ -149,28 +166,37 @@ class RefreshSource {
 		$data = json_decode( (string) base64_decode( $source, true ), true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode -- transport encoding, see class docblock.
 		if (
 			! is_array( $data ) ||
-			! isset( $data['v'], $data['queryId'] ) ||
+			! isset( $data['v'], $data['queryId'], $data['sourcePostId'], $data['ref'] ) ||
 			self::VERSION !== $data['v'] ||
 			$data['queryId'] !== (string) $query_id ||
-			! is_array( $data['attributes'] ?? null ) ||
-			! is_string( $data['innerBlocks'] ?? null )
+			! is_int( $data['sourcePostId'] ) ||
+			! is_string( $data['ref'] ) ||
+			! preg_match( '/^[a-f0-9]{64}$/D', $data['ref'] )
 		) {
 			return null;
 		}
 
-		return array(
-			'queryId'      => (string) $data['queryId'],
-			'sourcePostId' => absint( $data['sourcePostId'] ?? 0 ),
-			'attributes'   => $data['attributes'],
-			'innerBlocks'  => $data['innerBlocks'],
-		);
+		$definition = get_transient( 'dsgo_query_source_' . $data['ref'] );
+		if (
+			! is_array( $definition ) ||
+			( $definition['queryId'] ?? null ) !== $data['queryId'] ||
+			( $definition['sourcePostId'] ?? null ) !== $data['sourcePostId'] ||
+			( $definition['viewerId'] ?? null ) !== get_current_user_id() ||
+			! is_array( $definition['attributes'] ?? null ) ||
+			! is_string( $definition['innerBlocks'] ?? null ) ||
+			! hash_equals( self::reference( $definition ), $data['ref'] )
+		) {
+			return null;
+		}
+
+		return $definition;
 	}
 
 	/**
 	 * Whether the current user may see the post a query was placed in.
 	 *
-	 * A query outside any post content (sourcePostId 0) rendered for whoever
-	 * loaded that template, pattern or widget, so it stays public.
+	 * A query outside post content (sourcePostId 0) has no additional post gate.
+	 * Its issuing-viewer binding has already been checked by verify().
 	 *
 	 * @param int $source_post_id Post whose content holds the query, or 0.
 	 * @return bool
@@ -186,6 +212,16 @@ class RefreshSource {
 		}
 
 		return is_post_publicly_viewable( $post ) || current_user_can( 'read_post', $post->ID );
+	}
+
+	/**
+	 * Stable, unguessable key for an unchanged definition/viewer on this site.
+	 *
+	 * @param array $definition Query definition, kept entirely server-side.
+	 * @return string Hex reference.
+	 */
+	private static function reference( array $definition ) {
+		return hash_hmac( 'sha256', 'designsetgo/query-template|' . get_current_blog_id() . '|' . wp_json_encode( $definition ), wp_salt( 'auth' ) );
 	}
 
 	/**

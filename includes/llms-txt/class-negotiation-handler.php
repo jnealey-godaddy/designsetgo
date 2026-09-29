@@ -257,7 +257,7 @@ class Negotiation_Handler {
 	 * @return string Markdown body (empty string on failure).
 	 */
 	private function read_markdown( \WP_Post $post ): string {
-		if ( $this->file_manager->file_exists( $post->ID ) ) {
+		if ( Public_Export_Repair::run( $this->file_manager ) && $this->file_manager->file_exists( $post->ID ) ) {
 			$filename = $this->file_manager->get_filename( $post );
 			if ( '' !== $filename ) {
 				$directory     = $this->file_manager->get_directory();
