@@ -30,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Countdown pauses in background tabs** and resyncs from the clock when you come back. Its `beforeunload` listener is gone, which also lets the page use the browser's back/forward cache.
 - **Slider drag listeners exist only while dragging**, instead of staying on `document` for the lifetime of the page. The resize listeners in Tabs, Grid, and the sticky header are now passive.
 
+### Security
+
+- **Cloudflare Turnstile now blocks submissions it can't verify.** Before, a form with Turnstile switched on accepted any response to the challenge when the secret key was missing, and let submissions through whenever Cloudflare couldn't be reached. Now a submission goes through only when Cloudflare confirms the visitor passed.
+  - **If a form has Turnstile on but your keys are incomplete, it will stop accepting submissions** until you add both the site key and the secret key under DesignSetGo → Settings → Integrations, or turn Turnstile off for that form. The editor shows an error on those forms, and Turnstile can't be switched on until both keys are set.
+  - While Cloudflare is unreachable, Turnstile forms reject submissions. A site that would rather accept them during an outage can return true from the `designsetgo_turnstile_accept_when_unavailable` filter. That never lets through a response Cloudflare rejects, or a form whose secret key is missing.
+  - Forms without Turnstile are unaffected, and never contact Cloudflare.
+
 ### Fixed
 
 - **The Map block's name was translated as "Spacing" in every bundled language** (for example "Abstand" in German and "Espacement" in French). It now reads "Karte", "Carte", and so on, and its description is translated too.

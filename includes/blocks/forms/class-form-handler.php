@@ -341,17 +341,33 @@ class Form_Handler {
 			}
 		}
 
-		// Turnstile verification.
-		// If the block requires Turnstile, reject submissions without a valid token.
-		$turnstile_token = $request->get_param( 'turnstile_token' );
-		if ( $turnstile_required && empty( $turnstile_token ) ) {
-			return new WP_Error(
-				'turnstile_required',
-				__( 'Security verification is required. Please complete the challenge and try again.', 'designsetgo' ),
-				array( 'status' => 403 )
-			);
-		}
-		if ( ! empty( $turnstile_token ) ) {
+		// Turnstile verification. Only a form that requires Turnstile checks a
+		// token: a stray one on any other form is ignored rather than
+		// verified, so that form never depends on Cloudflare being reachable.
+		if ( $turnstile_required ) {
+			// Without both keys the widget can't render, or the server can't
+			// check what it returns. Say so plainly instead of asking the
+			// visitor to complete a challenge that isn't there.
+			if ( ! Form_Security::is_turnstile_configured() ) {
+				/** This action is documented below. */
+				do_action( 'designsetgo_form_turnstile_failed', $form_id, $this->security->get_client_ip(), 'turnstile_not_configured' );
+
+				return new WP_Error(
+					'turnstile_not_configured',
+					__( 'This form can\'t accept submissions right now. Please contact the site owner.', 'designsetgo' ),
+					array( 'status' => 503 )
+				);
+			}
+
+			$turnstile_token = (string) $request->get_param( 'turnstile_token' );
+			if ( '' === $turnstile_token ) {
+				return new WP_Error(
+					'turnstile_required',
+					__( 'Security verification is required. Please complete the challenge and try again.', 'designsetgo' ),
+					array( 'status' => 403 )
+				);
+			}
+
 			$turnstile_result = $this->security->verify_turnstile( $turnstile_token );
 			if ( is_wp_error( $turnstile_result ) ) {
 				/**
@@ -884,7 +900,10 @@ class Form_Handler {
 			$handle,
 			'dsgoIntegrations',
 			array(
-				'turnstileSiteKey' => ! empty( $integrations_settings['turnstile_site_key'] ) ? esc_js( $integrations_settings['turnstile_site_key'] ) : '',
+				'turnstileSiteKey'    => ! empty( $integrations_settings['turnstile_site_key'] ) ? esc_js( $integrations_settings['turnstile_site_key'] ) : '',
+				// wp_localize_script() stringifies booleans ("1" / ""), so read
+				// it as truthy in JS, never with `=== true`.
+				'turnstileConfigured' => Form_Security::is_turnstile_configured(),
 			)
 		);
 	}

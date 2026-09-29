@@ -29,6 +29,8 @@ describe('form-builder Turnstile widget', () => {
 			.forEach((script) => script.remove());
 		global.dsgoIntegrations = {
 			turnstileSiteKey: '1x00000000000000000000AA',
+			// wp_localize_script sends booleans as "1" / "".
+			turnstileConfigured: '1',
 		};
 		global.designsetgoForm = {
 			restUrl: '/wp-json/designsetgo/v1/form/submit',
@@ -70,5 +72,21 @@ describe('form-builder Turnstile widget', () => {
 		);
 		expect(options['response-field']).toBe(false);
 		expect(typeof options.callback).toBe('function');
+	});
+
+	it('does not render a widget the server cannot verify', () => {
+		// A site key without the secret: the challenge would check nothing.
+		global.dsgoIntegrations.turnstileConfigured = '';
+		mountForm();
+		jest.isolateModules(() => {
+			require('../../../src/blocks/form-builder/view.js');
+		});
+		document.dispatchEvent(new Event('dsgo-content-loaded'));
+
+		expect(
+			document.head.querySelector(
+				'script[src*="challenges.cloudflare.com/turnstile"]'
+			)
+		).toBeNull();
 	});
 });
