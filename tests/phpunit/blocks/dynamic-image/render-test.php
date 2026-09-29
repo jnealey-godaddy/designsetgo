@@ -58,6 +58,42 @@ class DesignSetGo_Dynamic_Image_Render_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'https://example.com/fallback.jpg', $html );
 	}
 
+	public function test_attachment_image_gets_srcset_and_sizes() {
+		$id = self::factory()->attachment->create(
+			array(
+				'post_mime_type' => 'image/jpeg',
+				'file'           => '2026/09/hero.jpg',
+			)
+		);
+		update_post_meta( $id, '_wp_attached_file', '2026/09/hero.jpg' );
+		wp_update_attachment_metadata(
+			$id,
+			array(
+				'width'  => 2400,
+				'height' => 1600,
+				'file'   => '2026/09/hero.jpg',
+				'sizes'  => array(
+					'medium' => array( 'file' => 'hero-300x200.jpg', 'width' => 300, 'height' => 200, 'mime-type' => 'image/jpeg' ),
+					'large'  => array( 'file' => 'hero-1024x683.jpg', 'width' => 1024, 'height' => 683, 'mime-type' => 'image/jpeg' ),
+				),
+			)
+		);
+
+		$html = $this->render( array( 'fallbackId' => $id ) );
+
+		$this->assertStringContainsString( 'hero-1024x683.jpg 1024w', $html );
+		$this->assertStringContainsString( 'sizes="', $html );
+		$this->assertStringContainsString( 'width="2400"', $html );
+		$this->assertStringContainsString( 'decoding="async"', $html );
+	}
+
+	public function test_fallback_url_without_dimensions_stays_lazy() {
+		$html = $this->render( array( 'fallbackUrl' => 'https://example.com/fallback.jpg' ) );
+
+		$this->assertStringContainsString( 'loading="lazy"', $html );
+		$this->assertStringNotContainsString( 'srcset=', $html );
+	}
+
 	public function test_renders_nothing_without_source_or_fallback() {
 		$html = $this->render( array() );
 

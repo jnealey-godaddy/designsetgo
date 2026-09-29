@@ -167,6 +167,65 @@ describe('Countdown Timer - Frontend', () => {
 		cleanup();
 	});
 
+	describe('Hidden tab', () => {
+		const setHidden = (hidden) => {
+			Object.defineProperty(document, 'hidden', {
+				configurable: true,
+				get: () => hidden,
+			});
+			document.dispatchEvent(new Event('visibilitychange'));
+		};
+
+		afterEach(() => {
+			delete document.hidden;
+		});
+
+		test('stops ticking while hidden and catches up on return', () => {
+			const timer = createTimerFixture({
+				targetDatetime: futureDate({ minutes: 10 }),
+			});
+			const observer = loadView();
+			simulateIntersection(observer, timer);
+			expect(getUnitNumber(timer, 'seconds')).toBe('00');
+
+			setHidden(true);
+			const setIntervalSpy = jest.spyOn(global, 'setInterval');
+			jest.advanceTimersByTime(5000);
+			// Nothing ticked while hidden, so the display is stale.
+			expect(getUnitNumber(timer, 'minutes')).toBe('10');
+
+			setHidden(false);
+			// Recomputed from the clock straight away, then ticking resumes.
+			expect(getUnitNumber(timer, 'minutes')).toBe('09');
+			expect(getUnitNumber(timer, 'seconds')).toBe('55');
+			expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+		});
+
+		test('stops ticking and listening once the timer leaves the page', () => {
+			const timer = createTimerFixture({
+				targetDatetime: futureDate({ minutes: 10 }),
+			});
+			const observer = loadView();
+			simulateIntersection(observer, timer);
+
+			const removeSpy = jest.spyOn(document, 'removeEventListener');
+			// A soft navigation swaps the content out.
+			timer.remove();
+			jest.advanceTimersByTime(1000);
+
+			expect(removeSpy).toHaveBeenCalledWith(
+				'visibilitychange',
+				expect.any(Function)
+			);
+
+			// Returning to the tab must not restart it.
+			const setIntervalSpy = jest.spyOn(global, 'setInterval');
+			setHidden(true);
+			setHidden(false);
+			expect(setIntervalSpy).not.toHaveBeenCalled();
+		});
+	});
+
 	describe('Time display', () => {
 		test('displays correct time for a future date', () => {
 			const target = futureDate({

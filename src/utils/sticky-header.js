@@ -675,19 +675,23 @@ import './sticky-header.scss';
 
 		// Handle resize for mobile breakpoint changes
 		let resizeTimeout;
-		window.addEventListener('resize', () => {
-			clearTimeout(resizeTimeout);
-			resizeTimeout = setTimeout(() => {
-				refreshAll();
-				forEachLiveHeader((header) => {
-					// Re-measure logos only when not currently scrolled so we
-					// capture the true natural size, not the shrunk size.
-					if (!header.classList.contains('dsgo-scrolled')) {
-						measureLogos(header);
-					}
-				});
-			}, 150);
-		});
+		window.addEventListener(
+			'resize',
+			() => {
+				clearTimeout(resizeTimeout);
+				resizeTimeout = setTimeout(() => {
+					refreshAll();
+					forEachLiveHeader((header) => {
+						// Re-measure logos only when not currently scrolled so we
+						// capture the true natural size, not the shrunk size.
+						if (!header.classList.contains('dsgo-scrolled')) {
+							measureLogos(header);
+						}
+					});
+				}, 150);
+			},
+			{ passive: true }
+		);
 	}
 
 	/**
