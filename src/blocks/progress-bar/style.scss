@@ -89,10 +89,12 @@
 		}
 
 		&--inside {
+			// White, not the base preset: the label sits on the fill (primary or
+			// the author's color), and a dark theme's base is ~3:1 on #2563eb.
 			color: #fff;
 			font-weight: 600;
 			white-space: nowrap;
-			padding-right: 0.5rem;
+			padding-inline-end: 0.5rem;
 		}
 	}
 }

@@ -4,6 +4,8 @@
  * @since 1.0.0
  */
 
+@use '../../styles/variables' as *;
+
 .dsgo-icon-list-item {
 	// Layout styles (display, flex-direction, align-items) applied via inline
 	// styles. The icon↔content gap is owned here (not inline) so Style Kits and
@@ -17,7 +19,7 @@
 		--dsgo-icon-list-gap,
 		var(--wp--custom--designsetgo--icon-list--gap, 16px)
 	);
-	transition: opacity 0.2s ease;
+	transition: opacity $dsgo-duration-fast $dsgo-easing;
 
 	&__icon {
 		// Layout constants. These used to be serialized into every saved item
@@ -158,8 +160,8 @@
 	&__link-indicator {
 		position: absolute;
 		top: 4px;
-		right: 4px;
-		font-size: 12px;
+		inset-inline-end: 4px;
+		font-size: 0.75rem; // 12px
 		opacity: 0.3;
 	}
 

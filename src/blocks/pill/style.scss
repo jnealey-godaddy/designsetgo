@@ -8,6 +8,8 @@
  * `.dsgo-pill__content` in render.php.
  */
 
+@use '../../styles/variables' as *;
+
 // Default text size. A pill is a badge, so it reads small unless the author says
 // otherwise. `:where()` drops it to zero specificity so any explicit choice wins.
 :where(.dsgo-pill) {
@@ -16,8 +18,8 @@
 
 .dsgo-pill__content {
 	display: inline-block;
-	border-radius: 999px;
-	transition: all 0.2s ease-in-out;
+	border-radius: $dsgo-radius-full;
+	transition: all $dsgo-duration-fast ease-in-out;
 	white-space: nowrap;
 	padding: 0.5em 1em;
 	background-color: var(--wp--preset--color--primary, #2563eb);

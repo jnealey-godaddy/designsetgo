@@ -3,6 +3,9 @@
  * Supports 6 layout presets: standard, horizontal-left, horizontal-right, background, minimal, featured
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-card {
 	position: relative;
 	display: flex;
@@ -246,7 +249,7 @@
 	}
 
 	// Stack on mobile
-	@media (max-width: 768px) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		.dsgo-card__inner {
 			flex-direction: column;
@@ -280,7 +283,7 @@
 	}
 
 	// Stack on mobile
-	@media (max-width: 768px) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		.dsgo-card__inner {
 			flex-direction: column;
@@ -337,7 +340,7 @@
 	}
 
 	// Reduce min-height on mobile
-	@media (max-width: 768px) {
+	@media (max-width: #{$breakpoint-mobile}) {
 		min-height: 300px;
 
 		.dsgo-card__inner {
@@ -360,7 +363,7 @@
 		align-items: center;
 	}
 
-	@media (max-width: 768px) {
+	@media (max-width: #{$breakpoint-mobile}) {
 
 		.dsgo-card__inner {
 			padding: 1.5rem;
@@ -397,6 +400,8 @@
 // ========================================
 // Responsive adjustments
 // ========================================
+// 480px is block-specific (a small-phone type-scale step, not one of the
+// shared breakpoints), so it stays a literal.
 @media (max-width: 480px) {
 
 	.dsgo-card__title {

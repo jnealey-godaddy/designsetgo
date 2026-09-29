@@ -635,3 +635,26 @@ Behavior change for EXISTING content: any countdown that already had a non-defau
 selected now actually honors it (previously silently ignored) — this is the fix, not a
 regression. Content left on "WordPress Default" now resolves consistently to the site's real
 configured timezone instead of each visitor's browser zone.
+
+## Content-block design token pass (PR #597, branch `claude/design-content-blocks`)
+
+Applied #584's shared breakpoint/radius/duration SCSS tokens, `color-mix()` neutrals and logical
+properties to 18 content-block stylesheets. CSS only; every media query compiles to its original
+width (where a literal `max-width` equalled a token, the rule uses the token directly, since
+`below()` subtracts 1px).
+
+- **No `container-type` on a block root.** It was tried on Card and Comparison Table and
+  removed in review: size containment makes the box's content width 0, so any shrink-to-fit
+  context collapses it. A horizontal Card in a core flex Group rendered 2px wide, and a
+  Comparison Table in a DSGo Row 0px. It also traps `position: fixed` children, which is why
+  Tabs never got one. A container needs an inner element whose width comes from its parent,
+  which means a markup change and deprecations.
+- **Physical vs logical makes no RTL difference here.** wp-scripts emits rtlcss-flipped
+  `*-rtl.css` and core serves it, so `left`/`right` already mirror. Card's `--content--left/right`
+  and badge positions, counter icon margins, counter-group and advanced-heading alignment were
+  left physical to avoid churn, not to stop RTL flipping them.
+- **Text on a primary/author fill stays `#fff` or a `settings.custom` token, never `base`.** A
+  dark theme's base is about 3:1 on the `#2563eb` fallback (progress-bar inside label; see the
+  comparison-table featured-text token).
+- **Chart's SVG `font-size` (14px / donut 20px) stays literal**: user-space units in a 600-unit
+  viewBox, not screen pixels.

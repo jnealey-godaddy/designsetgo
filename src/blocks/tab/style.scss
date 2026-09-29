@@ -6,13 +6,14 @@
 	// Let WordPress handle natural block spacing and typography
 	// No custom overrides - child blocks inherit from theme/body naturally
 
-	// Alignment support for tab content
+	// Alignment support for tab content. Logical properties so "start"/"end"
+	// track the reading direction instead of always meaning physical left/right.
 	&.alignleft {
-		text-align: left;
+		text-align: start;
 
 		.dsgo-tab__content > * {
-			margin-left: 0;
-			margin-right: auto;
+			margin-inline-start: 0;
+			margin-inline-end: auto;
 		}
 	}
 
@@ -20,17 +21,17 @@
 		text-align: center;
 
 		.dsgo-tab__content > * {
-			margin-left: auto;
-			margin-right: auto;
+			margin-inline-start: auto;
+			margin-inline-end: auto;
 		}
 	}
 
 	&.alignright {
-		text-align: right;
+		text-align: end;
 
 		.dsgo-tab__content > * {
-			margin-left: auto;
-			margin-right: 0;
+			margin-inline-start: auto;
+			margin-inline-end: 0;
 		}
 	}
 }

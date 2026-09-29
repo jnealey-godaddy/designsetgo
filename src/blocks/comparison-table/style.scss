@@ -5,6 +5,9 @@
  * Uses BEM naming convention with .dsgo-comparison-table prefix.
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-comparison-table {
 	box-sizing: border-box;
 	max-width: 100%;
@@ -89,8 +92,10 @@
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		padding: 0.2em 0.6em;
-		border-radius: 100px;
-		background-color: rgba(255, 255, 255, 0.2);
+		border-radius: $dsgo-radius-full;
+		// currentcolor is the featured header's text token, so the chip tints
+		// with it rather than with the page background.
+		background-color: color-mix(in srgb, currentcolor 20%, transparent);
 		margin-bottom: 0.5rem;
 	}
 
@@ -102,11 +107,11 @@
 		padding: 0.5em 1.25em;
 		font-size: 0.85em;
 		font-weight: 600;
-		border-radius: 6px;
+		border-radius: $dsgo-radius-medium;
 		text-decoration: none;
 		cursor: pointer;
-		transition: background-color 0.2s ease, color 0.2s ease,
-			box-shadow 0.2s ease;
+		transition: background-color $dsgo-duration-fast $dsgo-easing, color $dsgo-duration-fast $dsgo-easing,
+			box-shadow $dsgo-duration-fast $dsgo-easing;
 		line-height: 1.4;
 
 		// Filled = the header colors inverted. `currentcolor` can't express
@@ -163,25 +168,25 @@
 	&__body {
 
 		tr {
-			border-bottom: 1px solid rgba(128, 128, 128, 0.2);
-			transition: background-color 0.15s ease;
+			border-bottom: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
+			transition: background-color $dsgo-duration-fast $dsgo-easing;
 
 			&:last-child {
 				border-bottom: none;
 			}
 
 			&:hover {
-				background-color: rgba(128, 128, 128, 0.05);
+				background-color: color-mix(in srgb, currentcolor 5%, transparent);
 			}
 		}
 	}
 
 	// Alternating row colors
 	&--alternating &__body tr:nth-child(even) {
-		background-color: rgba(128, 128, 128, 0.04);
+		background-color: color-mix(in srgb, currentcolor 4%, transparent);
 
 		&:hover {
-			background-color: rgba(128, 128, 128, 0.08);
+			background-color: color-mix(in srgb, currentcolor 8%, transparent);
 		}
 	}
 
@@ -249,7 +254,7 @@
 		}
 
 		&--cross {
-			color: rgba(128, 128, 128, 0.6);
+			color: color-mix(in srgb, currentcolor 60%, transparent);
 		}
 	}
 
@@ -275,20 +280,23 @@
 		font-weight: 700;
 		line-height: 1;
 		border-radius: 50%;
-		background-color: rgba(128, 128, 128, 0.15);
+		background-color: color-mix(in srgb, currentcolor 15%, transparent);
 		color: inherit;
 		opacity: 0.6;
 		cursor: help;
 		flex-shrink: 0;
 		position: relative;
-		transition: opacity 0.2s ease;
+		transition: opacity $dsgo-duration-fast $dsgo-easing;
 
 		&:hover {
 			opacity: 1;
 		}
 	}
 
-	// Frontend tooltip popup (positioned by view.js)
+	// Frontend tooltip popup (positioned by view.js). Deliberately a fixed
+	// dark bubble with light text — like a native browser tooltip — rather
+	// than themed, so it stays legible regardless of the light/dark theme
+	// variation or surrounding section color underneath it.
 	&__tooltip {
 		position: absolute;
 		z-index: 100;
@@ -299,11 +307,11 @@
 		line-height: 1.4;
 		color: #fff;
 		background-color: rgba(0, 0, 0, 0.85);
-		border-radius: 6px;
+		border-radius: $dsgo-radius-medium;
 		pointer-events: none;
 		opacity: 0;
 		transform: translateY(4px);
-		transition: opacity 0.15s ease, transform 0.15s ease;
+		transition: opacity $dsgo-duration-fast $dsgo-easing, transform $dsgo-duration-fast $dsgo-easing;
 		white-space: normal;
 
 		&.is-visible {
@@ -329,7 +337,7 @@
 
 	&--responsive-stack {
 
-		@media (max-width: 767px) {
+		@include below($breakpoint-mobile) {
 
 			.dsgo-comparison-table__table,
 			.dsgo-comparison-table__header,
@@ -373,7 +381,7 @@
 				grid-template-columns: 1fr;
 				gap: 0;
 				padding: 0.75rem 0;
-				border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+				border-bottom: 1px solid color-mix(in srgb, currentcolor 20%, transparent);
 			}
 
 			.dsgo-comparison-table__cell {
@@ -413,15 +421,15 @@
 					display: none;
 				}
 
-				background-color: rgba(128, 128, 128, 0.04);
-				border-radius: 4px;
+				background-color: color-mix(in srgb, currentcolor 4%, transparent);
+				border-radius: $dsgo-radius-small;
 			}
 		}
 	}
 
 	// --- General Mobile Adjustments ---
 
-	@media (max-width: 767px) {
+	@include below($breakpoint-mobile) {
 
 		&__column-name {
 			font-size: 1.1em;

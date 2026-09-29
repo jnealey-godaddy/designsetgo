@@ -3,6 +3,9 @@
  * Professional timeline with vertical/horizontal layouts and scroll animations
  */
 
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
 .dsgo-timeline {
 	// CSS Custom Properties with fallbacks
 	--dsgo-timeline-line-color: var(--wp--preset--color--contrast, #e5e7eb);
@@ -126,7 +129,7 @@
 	// ===================
 	&.dsgo-timeline--horizontal {
 		// Only apply horizontal styles on larger screens
-		@media (min-width: 769px) {
+		@media (min-width: #{$breakpoint-mobile + 1px}) {
 			overflow-x: auto;
 			padding-bottom: var(--wp--preset--spacing--40, 1rem);
 
@@ -156,7 +159,7 @@
 		}
 
 		// Mobile: use vertical layout styles instead
-		@media (max-width: 768px) {
+		@media (max-width: #{$breakpoint-mobile}) {
 			// Inherit vertical-right layout behavior
 			--dsgo-timeline-edge-inset: calc(var(--dsgo-timeline-marker-size) / 2 + 0.25rem);
 
@@ -299,7 +302,7 @@
 // ===================
 // RESPONSIVE STYLES
 // ===================
-@media (max-width: 768px) {
+@media (max-width: #{$breakpoint-mobile}) {
 
 	.dsgo-timeline {
 		// Simplify alternating to single-side on mobile
