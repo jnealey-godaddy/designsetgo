@@ -3,7 +3,6 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 	InspectorControls,
-	useSettings,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 	__experimentalColorGradientSettingsDropdown as ColorGradientSettingsDropdown,
 	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
@@ -17,6 +16,7 @@ import {
 	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import { useIconDefaults } from '../../hooks';
 import classnames from 'classnames';
 import {
 	encodeColorValue,
@@ -40,16 +40,12 @@ export default function TimelineEdit({ attributes, setAttributes, clientId }) {
 		staggerDelay,
 	} = attributes;
 
-	// Inherited marker size (theme.json settings.custom.designsetgo.timeline.markerSize),
+	// Inherited marker size (theme.json settings.custom.designsetgo.timeline.defaultSize),
 	// shown in the inspector while markerSize is unset.
-	const [themeMarkerSize] = useSettings(
-		'custom.designsetgo.timeline.markerSize'
-	);
-	const parsedThemeMarkerSize = Number.parseInt(themeMarkerSize, 10);
-	const inheritedMarkerSize =
-		Number.isFinite(parsedThemeMarkerSize) && parsedThemeMarkerSize > 0
-			? parsedThemeMarkerSize
-			: 16;
+	const { size: inheritedMarkerSize } = useIconDefaults({
+		sizeKey: 'timeline',
+		sizeFallback: 16,
+	});
 
 	// Get theme color palette
 	const colorGradientSettings = useMultipleOriginColorsAndGradients();

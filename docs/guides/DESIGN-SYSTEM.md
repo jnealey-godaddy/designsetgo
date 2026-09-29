@@ -119,6 +119,37 @@ style: {
 }
 ```
 
+#### Icon and Marker Size Tokens
+
+Blocks with icons don't bake a size into saved content. An icon uses its block's own size setting when the author picks one. Otherwise it uses the theme token below, and otherwise the default shown. Set them in theme.json under `settings.custom.designsetgo`, or from a Style Kit. Values are **unitless pixel numbers** (`32`, not `"32px"`). The stylesheets multiply them by `1px`, so a unit makes the rule invalid.
+
+| theme.json key | CSS variable | Default | Sizes |
+|---|---|---|---|
+| `icon.defaultSize` | `--wp--custom--designsetgo--icon--default-size` | 48 | Icon, and the icons in Divider and Tab |
+| `iconButton.defaultSize` | `--wp--custom--designsetgo--icon-button--default-size` | 20 | Icon Button |
+| `iconList.defaultSize` | `--wp--custom--designsetgo--icon-list--default-size` | 32 | Icon List items |
+| `modalTrigger.defaultSize` | `--wp--custom--designsetgo--modal-trigger--default-size` | 20 | Modal Trigger |
+| `starRating.defaultSize` | `--wp--custom--designsetgo--star-rating--default-size` | 24 | Star Rating stars |
+| `counter.defaultSize` | `--wp--custom--designsetgo--counter--default-size` | 48 | Counter icons (three quarters on phones) |
+| `comparisonTable.defaultSize` | `--wp--custom--designsetgo--comparison-table--default-size` | 20 | Comparison Table check and cross icons |
+| `timeline.defaultSize` | `--wp--custom--designsetgo--timeline--default-size` | 16 | Timeline markers, including image markers |
+
+`icon.defaultStyle` (`filled` or `outlined`) sets the icon style site-wide. It applies to every icon block, and to Star Rating, when the author hasn't chosen a style.
+
+```json
+{
+  "settings": {
+    "custom": {
+      "designsetgo": {
+        "counter": { "defaultSize": 56 },
+        "timeline": { "defaultSize": 20 },
+        "icon": { "defaultStyle": "outlined" }
+      }
+    }
+  }
+}
+```
+
 ### 3. **Block Style Variations**
 
 Style variations provide pre-designed styles for your blocks that users can select with one click.

@@ -4,7 +4,7 @@
  * v1: save() before icon size became inheritable. Every icon SVG carried
  * hard-coded width="48" height="48" attributes (and no aria-hidden); the
  * current save() drops them so the size comes from the stylesheet (the
- * theme token --wp--custom--designsetgo--counter--icon-size) unless the author
+ * theme token --wp--custom--designsetgo--counter--default-size) unless the author
  * sets an explicit iconSize. Markup-only change for existing content, so no
  * isEligible: stored HTML no longer matches the current save(), and this
  * frozen copy reproduces it. The attribute schema is the current one — the

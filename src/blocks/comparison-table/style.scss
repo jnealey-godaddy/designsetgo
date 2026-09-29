@@ -244,9 +244,9 @@
 		flex-shrink: 0;
 		// The SVGs carry no width/height attributes, so no size is baked into
 		// stored markup. Themes tune it via theme.json
-		// settings.custom.designsetgo.comparisonTable.iconSize (unitless).
-		width: calc(var(--wp--custom--designsetgo--comparison-table--icon-size, 20) * 1px);
-		height: calc(var(--wp--custom--designsetgo--comparison-table--icon-size, 20) * 1px);
+		// settings.custom.designsetgo.comparisonTable.defaultSize (unitless).
+		width: calc(var(--wp--custom--designsetgo--comparison-table--default-size, 20) * 1px);
+		height: calc(var(--wp--custom--designsetgo--comparison-table--default-size, 20) * 1px);
 
 		// Check and cross differ by shape, so color is decoration, not meaning.
 		// Core's vivid-green-cyan (#00d084) was only 2:1 against white; the

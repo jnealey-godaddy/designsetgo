@@ -12,8 +12,8 @@
 	--dsgo-timeline-line-thickness: 2px;
 	--dsgo-timeline-connector-style: solid;
 	// save() writes this inline only for an explicit Marker Size; otherwise
-	// theme.json settings.custom.designsetgo.timeline.markerSize (unitless).
-	--dsgo-timeline-marker-size: calc(var(--wp--custom--designsetgo--timeline--marker-size, 16) * 1px);
+	// theme.json settings.custom.designsetgo.timeline.defaultSize (unitless).
+	--dsgo-timeline-marker-size: calc(var(--wp--custom--designsetgo--timeline--default-size, 16) * 1px);
 	--dsgo-timeline-marker-color: var(--wp--preset--color--primary, #2563eb);
 	--dsgo-timeline-marker-border-color: var(--wp--preset--color--primary, #2563eb);
 	--dsgo-timeline-item-spacing: 2rem;

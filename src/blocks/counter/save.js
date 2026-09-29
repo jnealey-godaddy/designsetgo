@@ -54,7 +54,7 @@ export default function CounterSave({ attributes, context }) {
 
 	// Icon size is written inline ONLY when the author sets an explicit
 	// iconSize. Left unset, style.scss sizes the icon from the theme token
-	// (--wp--custom--designsetgo--counter--icon-size), so no size is baked
+	// (--wp--custom--designsetgo--counter--default-size), so no size is baked
 	// into stored markup. Must match edit.js.
 	const iconSizeStyle =
 		typeof iconSize === 'number'

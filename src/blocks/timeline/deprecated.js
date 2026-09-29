@@ -6,7 +6,7 @@
  * theme could never change the default marker size. markerSize now has no
  * default; save() writes the custom property only for an explicit size, and
  * style.scss otherwise resolves it from the theme token
- * (settings.custom.designsetgo.timeline.markerSize).
+ * (settings.custom.designsetgo.timeline.defaultSize).
  *
  * No isEligible: a timeline saved at the old default no longer matches the
  * current save() (it carries the inline 16px), and this frozen copy — parsed

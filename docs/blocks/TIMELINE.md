@@ -63,8 +63,8 @@ Commonly used for company histories, project roadmaps, event chronologies, and m
 - **`diamond`**: Diamond (rotated square) marker.
 
 **Marker Size**
-- Size of the marker in pixels.
-- **Default**: `16`
+- Size of the marker in pixels, for icon and image markers too.
+- **Default**: unset. The marker follows the theme's `settings.custom.designsetgo.timeline.defaultSize` token, which is `16` unless the theme sets it. See [Icon and Marker Size Tokens](../guides/DESIGN-SYSTEM.md#icon-and-marker-size-tokens).
 - **Range**: 8 -- 48
 
 ### Animation Settings
@@ -105,7 +105,7 @@ Accessible under the **Color** inspector group:
 | `lineThickness` | `number` | `2` | Thickness of the connector line in pixels. |
 | `connectorStyle` | `string` | `"solid"` | Line style. Enum: `solid`, `dashed`, `dotted`. |
 | `markerStyle` | `string` | `"circle"` | Shape of the timeline markers. Enum: `circle`, `square`, `diamond`. |
-| `markerSize` | `number` | `16` | Size of the markers in pixels. |
+| `markerSize` | `number` | none | Size of the markers in pixels. Unset inherits the theme token (16). |
 | `markerColor` | `string` | `""` | Fill color of the markers. |
 | `markerBorderColor` | `string` | `""` | Border color of the markers. |
 | `itemSpacing` | `string` | `"2rem"` | Spacing between timeline items. |
@@ -189,12 +189,11 @@ The parent Timeline block provides the following values to child Timeline Item b
 - `designsetgo/timeline/layout`
 - `designsetgo/timeline/lineColor`
 - `designsetgo/timeline/markerStyle`
-- `designsetgo/timeline/markerSize`
 - `designsetgo/timeline/markerColor`
 - `designsetgo/timeline/markerBorderColor`
 - `designsetgo/timeline/animateOnScroll`
 
-This means child items automatically inherit their parent's visual configuration without requiring duplicate settings.
+This means child items automatically inherit their parent's visual configuration without requiring duplicate settings. Marker size is not passed as context: items size their markers from the parent's `--dsgo-timeline-marker-size` CSS variable, since `save()` receives no block context.
 
 ## CSS Custom Properties
 
@@ -205,7 +204,7 @@ The block exposes the following CSS custom properties for advanced theme integra
 | `--dsgo-timeline-line-color` | `lineColor` | `--wp--preset--color--contrast` or `#e5e7eb` |
 | `--dsgo-timeline-line-thickness` | `lineThickness` | `2px` |
 | `--dsgo-timeline-connector-style` | `connectorStyle` | `solid` |
-| `--dsgo-timeline-marker-size` | `markerSize` | `16px` |
+| `--dsgo-timeline-marker-size` | `markerSize` | `--wp--custom--designsetgo--timeline--default-size` or `16` (px) |
 | `--dsgo-timeline-marker-color` | `markerColor` | `--wp--preset--color--primary` or `#2563eb` |
 | `--dsgo-timeline-marker-border-color` | `markerBorderColor` | Marker color value |
 | `--dsgo-timeline-item-spacing` | `itemSpacing` | `2rem` |

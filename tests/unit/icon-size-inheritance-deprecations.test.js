@@ -26,6 +26,9 @@ import {
 	// eslint-disable-next-line import/no-unresolved
 } from '@wordpress/block-editor/node_modules/@wordpress/blocks';
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 import { registerDesignSetGoBlock } from '../../tools/regenerate-patterns';
 import counterDeprecated from '../../src/blocks/counter/deprecated';
 
@@ -48,6 +51,7 @@ const timelineMarkup = (comment, markerSize) =>
 beforeAll(() => {
 	[
 		'designsetgo/accordion-item',
+		'designsetgo/comparison-table',
 		'designsetgo/counter',
 		'designsetgo/timeline',
 		'designsetgo/timeline-item',
@@ -169,5 +173,31 @@ describe('current save() writes a size only for an explicit override', () => {
 		],
 	])('%s writes an explicit size', (name, attributes, expected) => {
 		expect(serialize(createBlock(name, attributes))).toContain(expected);
+	});
+});
+
+describe('comparison table saved by main after the header-semantics change', () => {
+	// Real stored markup, saved from main's editor before this change: header
+	// scope attributes plus width="20" height="20" on every check/cross icon.
+	// It never shipped in a release, but sites running main store it.
+	const MAIN_MARKUP = readFileSync(
+		join(
+			__dirname,
+			'__fixtures__/icon-size-legacy/comparison-table.main.html'
+		),
+		'utf8'
+	).trim();
+
+	it('migrates silently and drops the icon width/height', () => {
+		expect(MAIN_MARKUP).toContain('width="20" height="20"');
+
+		const [block] = parse(MAIN_MARKUP);
+
+		expect(console).toHaveInformed();
+		expect(block.isValid).toBe(true);
+
+		const serialized = serialize(block);
+		expect(serialized).toContain('scope="row"');
+		expect(serialized).not.toContain('width="20"');
 	});
 });

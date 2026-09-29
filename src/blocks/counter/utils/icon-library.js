@@ -5,7 +5,7 @@
  *
  * No width/height attributes: style.scss sizes the SVG from
  * --dsgo-counter-icon-size (an explicit iconSize) or the theme token
- * --wp--custom--designsetgo--counter--icon-size, so nothing size-related is
+ * --wp--custom--designsetgo--counter--default-size, so nothing size-related is
  * baked into stored markup. Changing this markup changes save() output —
  * add a deprecation (see deprecated.js).
  *

@@ -3,7 +3,7 @@
  *
  * Renders DsgoInspectorPanel.Item entries for icon show/hide, type,
  * position, and size. Size is an optional override: left unset it inherits
- * the theme token (settings.custom.designsetgo.counter.iconSize). Meant to be
+ * the theme token (settings.custom.designsetgo.counter.defaultSize). Meant to be
  * composed inside the Settings DsgoInspectorPanel in counter/edit.js.
  *
  * @since 1.0.0

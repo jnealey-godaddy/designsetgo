@@ -24,6 +24,7 @@ import { useEffect } from '@wordpress/element';
 
 // Extracted Inspector Panel Components
 import { DsgoInspectorPanel } from '../../components/shared';
+import { useIconDefaults } from '../../hooks';
 import { CounterSettingsPanel } from './components/inspector/CounterSettingsPanel';
 import { LabelSettingsPanel } from './components/inspector/LabelSettingsPanel';
 import { IconSettingsPanel } from './components/inspector/IconSettingsPanel';
@@ -73,15 +74,13 @@ export default function CounterEdit({
 		hoverColor,
 	} = attributes;
 
-	// Inherited icon size (theme.json settings.custom.designsetgo.counter.iconSize),
+	// Inherited icon size (theme.json settings.custom.designsetgo.counter.defaultSize),
 	// shown in the inspector while iconSize is unset. The canvas needs no
 	// resolving: style.scss falls through to the same token.
-	const [themeIconSize] = useSettings('custom.designsetgo.counter.iconSize');
-	const parsedThemeIconSize = Number.parseInt(themeIconSize, 10);
-	const inheritedIconSize =
-		Number.isFinite(parsedThemeIconSize) && parsedThemeIconSize > 0
-			? parsedThemeIconSize
-			: 48;
+	const { size: inheritedIconSize } = useIconDefaults({
+		sizeKey: 'counter',
+		sizeFallback: 48,
+	});
 
 	// Must match save.js: size is inline only for an explicit iconSize.
 	const iconSizeStyle =
