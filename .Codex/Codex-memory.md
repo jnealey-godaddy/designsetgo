@@ -23,3 +23,10 @@
 - Unsupported custom JS patterns remain browser-only; all independent native/required field checks stay in place. No saved markup or version change.
 - Verified 4,274 JS tests, 1,962 PHP tests/7,515 assertions, build/lint/PHPStan and packaged Chrome checks: 162 AJAX icons, actual old saved content, custom pattern parity, theme token parity and 390px Modal viewport.
 - Broader intentional upgrade behavior remains in the release audit. See docs/reviews/2026-09-29-regression-fixes.md for boundaries; no production deployment.
+
+## Codex-01a0ef09-2026-09-29-release-2.9.0
+
+- Prepare 2.9.0 on Codex/release-2-9-0 from merged main 4546b1c9; align all version fields and document intentional upgrade/cache/export behavior.
+- Fresh build, JS/CSS/PHP checks, 4,274 JS tests and 1,962 PHP tests/7,515 assertions passed; main's 20 WordPress/PHP combinations, CodeQL and Plugin Check passed.
+- Versioned ZIP includes seven pattern images and excludes development files. Full six-profile browser run and live Turnstile/storage/inbox checks remain pending; no tag or customer publication.
+- Live Turnstile has both keys configured. Do not move production secrets to local/browser storage. Current evidence and remaining gates: docs/reviews/2026-09-29-release-2.9.0.md.

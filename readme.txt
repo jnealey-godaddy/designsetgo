@@ -4,7 +4,7 @@ Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.8.2
+Stable tag: 2.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -105,6 +105,24 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 7. Slider with arrows and dots, and a multi-slide slider below it
 
 == Changelog ==
+
+= 2.9.0 - 2026-09-29 =
+
+* **Security:** Public Markdown, excerpts and generated exports respect visibility for logged-out visitors. Old plugin-owned caches and static exports are invalidated on update. If cleanup cannot write to the filesystem, resolve the administrator notice before regenerating exports.
+* **Security:** Dynamic Query refresh templates stay on the server behind signed, viewer-bound opaque references; hidden block content no longer appears in page-source data.
+* **Security:** Turnstile-enabled forms accept submissions only after successful Cloudflare verification. Missing keys and verification outages stop submissions; forms without Turnstile are unchanged.
+* **Performance:** Load only the icons and extension assets a page uses. Blocks, extensions and icons added by Query load-more or an authorized live refresh initialize without a full page reload.
+* **Performance:** Responsive images and image dimensions reduce unnecessary downloads and layout shift. Countdown updates pause in background tabs; Slider drag listeners exist only while dragging.
+* **Improved:** More native block transforms preserve content and settings. Section and Row orientation changes no longer replace the block automatically. New Maps start with a location search.
+* **Improved:** Clearer block inspectors, a Scroll Accordion Add Item toolbar control, theme-driven icon and marker sizes, and refreshed translations in all nine bundled locales.
+* **Fix:** Browser-valid custom form patterns no longer receive a conflicting PHP interpretation. Supported shared patterns remain enforced on the server; unsupported custom syntax stays browser-only, alongside native field limits.
+* **Fix:** Dynamic icon requests are split into batches of at most 100 names. Incomplete and failed answers remain retryable, so large updates retain every icon.
+* **Fix:** Existing Modals retain their historical white surface and dark default close icon when unset. Editor and frontend use the same explicit background token; authored colors take precedence.
+* **Fix:** Multiple Dynamic Query blocks keep their controls scoped independently, and Timeline marker sizes apply on the published page.
+* **Fix:** Countdown deadlines honor the selected or WordPress site timezone consistently for all visitors.
+* **Packaging:** Include all seven runtime pattern images; exclude development tooling and duplicate marketing assets.
+* **Before updating:** Check countdown deadlines/site timezone and Turnstile keys. Saving/importing blocks without the `edit_css` capability can remove their per-block custom CSS. Unset visual values can follow theme defaults.
+* **After updating:** Purge page/CDN and Markdown caches. Open WordPress/admin, confirm export cleanup completed, and regenerate static Markdown/llms files if needed. Old cached Query pages need fresh references; keep page-cache lifetimes below 30 days and purge affected pages if Query source transients are cleared.
 
 = 2.8.2 - 2026-09-23 =
 
@@ -259,6 +277,9 @@ For the full version history, see [CHANGELOG.md](https://github.com/jnealey-goda
 
 == Upgrade Notice ==
 
+= 2.9.0 =
+Security, performance and compatibility update. Purge page/CDN and Markdown caches; check export cleanup, countdown timezones and Turnstile keys. Editing without edit_css can remove per-block custom CSS. Regenerate static exports after cleanup.
+
 = 2.8.2 =
 Fixes DesignSetGo blocks showing as unsupported in the editor after an update, and makes the extension switches on the Blocks & Extensions screen take effect.
 
@@ -266,7 +287,7 @@ Fixes DesignSetGo blocks showing as unsupported in the editor after an update, a
 Fixes overlay headers on 2.8.0 leaving a band of empty space above the hero instead of sitting over it.
 
 = 2.8.0 =
-Fixes Timeline scroll animations and other blocks that were receiving editor-only styling on the published page, and fixes overlay headers covering the top of the hero as a page loads. Form notification emails now reach the right recipient when two forms share an ID. Adds Section Content Position and Box Width, and uneven Grid columns.
+Fixes Timeline/frontend styling and overlay headers covering heroes. Form emails reach the correct recipient when forms share an ID. Adds Section Content Position, Box Width and uneven Grid columns.
 
 = 2.7.5 =
 Fixes WordPress updates timing out in wp-admin on hosts where DesignSetGo couldn't create its Dynamic Query database table. Also fixes shape dividers and background effects on blocks added by an AI assistant.

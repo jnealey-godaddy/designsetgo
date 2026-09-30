@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-09-29
+
+### Upgrade Notes
+
+- Purge full-page/CDN caches and externally cached Markdown after updating. Older Dynamic Query refresh references are rejected; fresh pages generate secure references. Keep page-cache lifetimes below 30 days, and purge affected page caches if Query source transients are cleared.
+- Open WordPress/admin after updating to run public-export cleanup. Confirm there is no pending cleanup notice, then regenerate plugin-owned static Markdown/llms files if needed. If file permissions prevent cleanup, restore write access or remove only the plugin-owned legacy exports before regenerating; PHP cannot stop a web server from serving an old static file.
+- Check every live countdown's intended deadline and the site's timezone. Timers now honor the selected or site timezone instead of each visitor's browser timezone.
+- Turnstile-enabled forms need both valid keys and a successful Cloudflare response. Missing keys or unavailable verification stop submissions. Forms without Turnstile are unchanged.
+- Saving or importing blocks as a user without `edit_css` can remove their per-block custom CSS. Check editing roles before those users resave styled content.
+- Controls on multi-Query pages now apply to their own Query. Unset visual values may follow theme defaults; existing content is not promised identical appearance across themes.
+
 ### New Features
 
 - **Section content position**: align a width-constrained content column to the left, centre, or right within its Section. This is separate from the alignment of blocks inside the column; centred remains the default.
