@@ -1,0 +1,4 @@
+// Shared editor/frontend surface. Keep the historical white fallback: old
+// modal content may contain explicitly dark text. Themes can opt into another
+// surface with this token; per-instance block support colors still win.
+$dsgo-modal-background: var(--wp--custom--designsetgo--modal--background, #fff);

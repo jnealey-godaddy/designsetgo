@@ -16,3 +16,10 @@
 - Both ZIP and SVN filters preserve all seven assets/images/patterns files; SVN excludes dev tooling and duplicate marketing images.
 - Verified 4,262 JS tests, 1,925 PHP tests/7,477 assertions, build/lint/PHPStan/licenses and packaged WordPress browser checks. Packaged Plugin Check has zero errors and the existing old upgrade-notice warning.
 - Packaged local fixture is on localhost:9452; production, release tags and the version are unchanged. See docs/reviews/2026-09-29-release-fixes.md for operational limits.
+
+## Codex-01a0ef09-2026-09-29-existing-user-regressions
+
+- Branch Codex/existing-user-regressions fixes REG01–04 after PR617: conservative HTML-v/PCRE pattern admission, serial 100-name icon batches, legacy Modal white surface/black close icon, and matching editor/frontend background token.
+- Unsupported custom JS patterns remain browser-only; all independent native/required field checks stay in place. No saved markup or version change.
+- Verified 4,274 JS tests, 1,962 PHP tests/7,515 assertions, build/lint/PHPStan and packaged Chrome checks: 162 AJAX icons, actual old saved content, custom pattern parity, theme token parity and 390px Modal viewport.
+- Broader intentional upgrade behavior remains in the release audit. See docs/reviews/2026-09-29-regression-fixes.md for boundaries; no production deployment.

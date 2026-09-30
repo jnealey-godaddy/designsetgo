@@ -13,20 +13,9 @@
 
 /* global DOMParser, MutationObserver, Node, requestAnimationFrame, cancelAnimationFrame */
 
-/**
- * Names already asked of the REST route, so each is fetched at most once.
- * A failed request releases its names after RETRY_DELAY.
- *
- * @type {Set<string>}
- */
-const requestedIcons = new Set();
+import { createIconRestLoader } from './icon-rest-loader';
 
-/**
- * How long a failed icon request waits before its names can be asked again.
- *
- * @type {number}
- */
-const RETRY_DELAY = 30000;
+const fetchMissingIcons = createIconRestLoader(() => initIconInjection());
 
 /**
  * Normalize an icon name the same way PHP's designsetgo_sanitize_icon_slug()
@@ -42,55 +31,6 @@ function normalizeIconName(name) {
 				.toLowerCase()
 				.replace(/[^a-z0-9-]/g, '')
 		: '';
-}
-
-/**
- * Fetch icons the page did not render on first paint, then inject them.
- *
- * @param {string[]} names Normalized icon names missing from the library.
- */
-function fetchMissingIcons(names) {
-	const rest = window.dsgoIconsRest;
-	const toFetch = names.filter((name) => !requestedIcons.has(name));
-
-	if (!rest || !rest.url || toFetch.length === 0) {
-		return;
-	}
-
-	toFetch.forEach((name) => requestedIcons.add(name));
-
-	const url = new URL(rest.url, window.location.href);
-	url.searchParams.set('names', toFetch.sort().join(','));
-	url.searchParams.set('ver', rest.version || '');
-
-	fetch(url.toString(), { credentials: 'omit' })
-		.then((response) => {
-			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}`);
-			}
-			return response.json();
-		})
-		.then((icons) => {
-			if (!icons || typeof icons !== 'object') {
-				return;
-			}
-			// Record every requested name, found or not, so an unknown
-			// name is not fetched again on the next mutation.
-			toFetch.forEach((name) => {
-				window.dsgoIcons[name] =
-					typeof icons[name] === 'string' ? icons[name] : '';
-			});
-			initIconInjection();
-		})
-		.catch(() => {
-			// Offline, rate limited or a server error: allow one retry per
-			// RETRY_DELAY. Retrying at once would refetch on every DOM
-			// mutation, and a ticking countdown mutates once a second.
-			setTimeout(
-				() => toFetch.forEach((name) => requestedIcons.delete(name)),
-				RETRY_DELAY
-			);
-		});
 }
 
 /**

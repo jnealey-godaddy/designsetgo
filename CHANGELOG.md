@@ -45,6 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Custom form patterns no longer reject browser-valid values because PHP interprets JavaScript regex syntax differently. Portable patterns stay enforced on the server; unsupported custom syntax stays browser-only, while native field limits remain enforced.
+- Dynamic icon loading now splits requests into batches of at most 100 names, so large Query or soft-navigation updates render every icon. Incomplete and failed responses remain retryable.
+- Existing Modals keep their historical white surface and dark default close icon when colors are unset. The editor and frontend now use the same explicit theme background token; authored colors still win.
+
 - **Timeline's Marker Size now applies on the published page.** Markers always showed at 16px there, whatever the setting. A timeline with a different Marker Size will now show its markers at that size, image markers included.
 - **The Map block's name was translated as "Spacing" in every bundled language** (for example "Abstand" in German and "Espacement" in French). It now reads "Karte", "Carte", and so on, and its description is translated too.
 - **Two Dynamic Query blocks on one page no longer filter each other.** Ticking a category, searching, or sorting in one Dynamic Query used to filter every other Dynamic Query on the page too, including ones with no filters of their own. Each one's filters, active-filter chips, Reset button, and page numbers now apply only to it. Links from menus and bookmarks (`?filter_category=news`, `?q=…`) still filter every Dynamic Query on the page, and adding or removing a filter keeps the linked one instead of replacing it. Filters also work without JavaScript on these pages, and no longer drop the page or the other Dynamic Query's filters. A page with a single Dynamic Query keeps its plain URLs (`?q=shoes`). To make one set of filters drive every Dynamic Query on a page, as before, add `add_filter( 'designsetgo_query_scope_params', '__return_false' );`.
