@@ -100,11 +100,26 @@
 	right: 0;
 	padding: 0 6px;
 	border-radius: 2px;
-	background: var(--wp-admin-theme-color, #3858e9);
+	background: #1e1e1e;
 	color: #fff;
 	font-size: 11px;
 	line-height: 18px;
+	// Overlaps the label's box: let clicks reach the label underneath.
 	pointer-events: none;
+}
+
+// Rule summary for screen readers (a tooltip can't be reached through
+// pointer-events: none).
+.dsgo-conditional-badge__summary {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
 }
 
 .dsgo-field-conditions__rule {

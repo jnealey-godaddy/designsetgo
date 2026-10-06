@@ -4,7 +4,7 @@
  * @since 2.10.0
  */
 
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 import {
 	Button,
 	Notice,
@@ -85,10 +85,11 @@ export default function FieldConditionsControl({
 		const source = sources.find((field) => field.name === fieldName);
 		const ops = opsForType(source?.type).map((op) => op.value);
 		const current = rules[index];
+		// A value typed for one field rarely means anything for another.
 		updateRule(index, {
 			field: fieldName,
 			op: ops.includes(current.op) ? current.op : ops[0],
-			value: ops.includes(current.op) ? current.value : '',
+			value: '',
 		});
 	};
 
@@ -122,7 +123,16 @@ export default function FieldConditionsControl({
 				);
 				const ops = opsForType(source?.type);
 				return (
-					<div className="dsgo-field-conditions__rule" key={index}>
+					<div
+						className="dsgo-field-conditions__rule"
+						key={index}
+						role="group"
+						aria-label={sprintf(
+							/* translators: %d: rule number, starting at 1 */
+							__('Rule %d', 'designsetgo'),
+							index + 1
+						)}
+					>
 						{rule.field && !source && (
 							<Notice
 								status="warning"

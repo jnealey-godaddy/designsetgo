@@ -98,6 +98,32 @@ describe('collectFormFields', () => {
 	});
 });
 
+describe('collectFormFields labels', () => {
+	it('strips HTML from RichText labels', () => {
+		const blocks = [
+			{
+				clientId: 'c',
+				name: 'designsetgo/form-checkbox-field',
+				attributes: {
+					fieldName: 'terms',
+					label: 'I agree to the <a href="/terms">terms</a> &amp; <strong>privacy</strong>',
+				},
+				innerBlocks: [],
+			},
+			{
+				clientId: 'e',
+				name: 'designsetgo/form-text-field',
+				attributes: { fieldName: 'empty', label: '<em></em>' },
+				innerBlocks: [],
+			},
+		];
+		expect(collectFormFields(blocks).map((field) => field.label)).toEqual([
+			'I agree to the terms & privacy',
+			'empty',
+		]);
+	});
+});
+
 describe('FieldConditionsControl', () => {
 	it('adds a rule, and removing the last rule yields null', () => {
 		const onChange = jest.fn();
@@ -165,6 +191,48 @@ describe('FieldConditionsControl', () => {
 			operator: 'AND',
 			rules: [{ field: 'agree', op: 'not_empty', value: '' }],
 		});
+	});
+
+	it('clears the value when the source field changes, keeping a supported operator', () => {
+		const onChange = jest.fn();
+		render(
+			<FieldConditionsControl
+				value={{
+					operator: 'AND',
+					rules: [{ field: 'name', op: 'is', value: 'x' }],
+				}}
+				onChange={onChange}
+				fields={fields}
+				currentName="company"
+			/>
+		);
+		fireEvent.change(screen.getByLabelText(/^field$/i), {
+			target: { value: 'qty' },
+		});
+		expect(onChange).toHaveBeenLastCalledWith({
+			operator: 'AND',
+			rules: [{ field: 'qty', op: 'is', value: '' }],
+		});
+	});
+
+	it('groups each rule row under a numbered accessible name', () => {
+		render(
+			<FieldConditionsControl
+				value={{
+					operator: 'AND',
+					rules: [
+						{ field: 'name', op: 'is', value: 'x' },
+						{ field: 'qty', op: 'gt', value: '2' },
+					],
+				}}
+				onChange={jest.fn()}
+				fields={fields}
+				currentName="company"
+			/>
+		);
+		const second = screen.getByRole('group', { name: 'Rule 2' });
+		expect(screen.getByRole('group', { name: 'Rule 1' })).toBeTruthy();
+		expect(second.querySelector('input').value).toBe('2');
 	});
 
 	it('warns about a rule whose source no longer exists', () => {

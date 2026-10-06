@@ -26,6 +26,21 @@ const TYPE_BY_BLOCK = {
 };
 
 /**
+ * Plain text of a label that may hold RichText HTML (`I agree to the <a>terms</a>`).
+ * DOMParser documents are inert: nothing in them loads or runs.
+ *
+ * @param {string} html Label markup.
+ * @return {string} Text content.
+ */
+function stripHTML(html) {
+	if (!html || !/[<&]/.test(html)) {
+		return html || '';
+	}
+	const doc = new window.DOMParser().parseFromString(html, 'text/html');
+	return (doc.body.textContent || '').trim();
+}
+
+/**
  * @param {Array}  blocks          Block tree.
  * @param {string} excludeClientId Block to leave out (the field being edited).
  * @return {Array} Fields in document order.
@@ -40,7 +55,7 @@ export function collectFormFields(blocks, excludeClientId) {
 				out.push({
 					clientId: block.clientId,
 					name,
-					label: block.attributes.label || name,
+					label: stripHTML(block.attributes.label) || name,
 					type,
 					options: Array.isArray(block.attributes.options)
 						? block.attributes.options
