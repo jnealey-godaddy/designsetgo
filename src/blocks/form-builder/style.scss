@@ -687,3 +687,19 @@
 		transform: none;
 	}
 }
+
+// Conditional fields: hidden until the view script has applied the rules,
+// but only when scripting is available — without JavaScript every field
+// shows and the server drops answers to fields whose rules aren't met.
+@media (scripting: enabled) {
+
+	.dsgo-form-builder:not([data-dsgo-conditions-ready]) .dsgo-form-field--conditional {
+		display: none;
+	}
+}
+
+// Author `display` rules on .dsgo-form-field beat the UA [hidden] rule;
+// class + attribute specificity restores it without !important.
+.dsgo-form-field[hidden] {
+	display: none;
+}

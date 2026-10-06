@@ -7,6 +7,7 @@
  */
 
 import { __ } from '@wordpress/i18n';
+import { initFormConditions } from './conditions-dom';
 
 /* global designsetgoForm, dsgoIntegrations, sessionStorage */
 
@@ -73,6 +74,13 @@ function initFormBuilder() {
 			return;
 		}
 		formContainer.dataset.dsgoInitialized = 'true';
+
+		// Conditional fields first, so they're correct before anything else
+		// (and the ready flag the CSS waits for is always set).
+		initFormConditions(
+			formContainer,
+			formContainer.querySelector('.dsgo-form')
+		);
 
 		const formElement = formContainer.querySelector('.dsgo-form');
 		const submitButton = formElement?.querySelector('.dsgo-form__submit');
