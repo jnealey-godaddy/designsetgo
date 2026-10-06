@@ -663,6 +663,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/field-render-helpers.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-security.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-field-rules.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-conditions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhook-status.php';
