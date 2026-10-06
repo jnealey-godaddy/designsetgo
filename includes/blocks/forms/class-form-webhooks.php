@@ -41,12 +41,7 @@ class Form_Webhooks {
 	public function __construct() {
 		add_action( 'designsetgo_form_submitted', array( $this, 'handle_submission' ), 10, 4 );
 		add_action( self::RETRY_HOOK, array( $this, 'retry' ) );
-		add_action(
-			'designsetgo_cleanup_old_submissions',
-			function () {
-				$this->reschedule_stranded(); // Wrapped: action callbacks must not return a value.
-			}
-		);
+		add_action( 'designsetgo_cleanup_old_submissions', array( $this, 'run_stranded_sweep' ) );
 	}
 
 	/**
@@ -82,7 +77,8 @@ class Form_Webhooks {
 	 * Make the first attempt for queued submissions, after the response is sent.
 	 * Deferred to `shutdown` so a slow receiver never delays the visitor. The
 	 * status stays `pending` until then; if PHP dies first, reschedule_stranded()
-	 * recovers it. The response is flushed early on PHP-FPM and LiteSpeed only.
+	 * recovers it. The response is flushed early on PHP-FPM and LiteSpeed only;
+	 * after that, output from later shutdown callbacks no longer reaches the visitor.
 	 */
 	public function deliver_queued(): void {
 		if ( empty( $this->queue ) ) {
@@ -104,12 +100,16 @@ class Form_Webhooks {
 		}
 	}
 
+	/** Daily cron entry point; action callbacks must not return a value. */
+	public function run_stranded_sweep(): void {
+		$this->reschedule_stranded();
+	}
+
 	/**
 	 * Schedule a retry for submissions stuck in `pending` with none scheduled.
 	 *
 	 * Recovers deliveries lost to PHP dying mid-call or a deactivated plugin.
-	 * Runs on the daily cleanup cron; submissions under ten minutes old are
-	 * skipped so an in-flight delivery isn't double-queued.
+	 * Submissions under ten minutes old are skipped (in-flight deliveries).
 	 *
 	 * @return int Number of retries scheduled.
 	 */
@@ -127,7 +127,7 @@ class Form_Webhooks {
 				'date_query'     => array(
 					array(
 						'column' => 'post_date_gmt',
-						'before' => '10 minutes ago',
+						'before' => gmdate( 'Y-m-d H:i:s', time() - 10 * MINUTE_IN_SECONDS ), // UTC, matching the column.
 					),
 				),
 			)

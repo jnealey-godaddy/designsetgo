@@ -79,7 +79,8 @@ class Form_Webhooks_Admin {
 			'failed'    => '#dc3232',
 			'pending'   => '#996800',
 		);
-		$color  = isset( $colors[ Form_Webhook_Status::get_status( (int) $post_id ) ] ) ? $colors[ Form_Webhook_Status::get_status( (int) $post_id ) ] : 'inherit';
+		$status = Form_Webhook_Status::get_status( (int) $post_id );
+		$color  = isset( $colors[ $status ] ) ? $colors[ $status ] : 'inherit';
 		echo '<span style="color: ' . esc_attr( $color ) . ';">' . esc_html( $label ) . '</span>';
 	}
 

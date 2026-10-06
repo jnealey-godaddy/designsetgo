@@ -62,6 +62,7 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		delete_option( Settings::OPTION_NAME );
 		Settings::invalidate_cache();
 		wp_unschedule_hook( Form_Webhooks::RETRY_HOOK );
+		delete_option( 'timezone_string' );
 		parent::tear_down();
 	}
 
@@ -108,6 +109,23 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		$this->webhooks->handle_submission( $id, 'contact-a1', array(), array( 'webhookUrl' => $url ) );
 		// PHPUnit never fires `shutdown`, so run the deferred first attempt by hand.
 		$this->webhooks->deliver_queued();
+	}
+
+	/**
+	 * Back-date a submission by an exact number of seconds (UTC and local columns).
+	 *
+	 * @param int $id      Submission ID.
+	 * @param int $seconds Age in seconds.
+	 */
+	private function set_age( $id, $seconds ) {
+		$gmt = gmdate( 'Y-m-d H:i:s', time() - $seconds );
+		wp_update_post(
+			array(
+				'ID'            => $id,
+				'post_date'     => get_date_from_gmt( $gmt ),
+				'post_date_gmt' => $gmt,
+			)
+		);
 	}
 
 	private function set_secret( $secret ) {
@@ -385,14 +403,10 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		}
 		update_post_meta( $ok, '_dsg_webhook_status', 'delivered' );
 
-		$recent = gmdate( 'Y-m-d H:i:s', time() - 120 );
-		wp_update_post(
-			array(
-				'ID'            => $new,
-				'post_date'     => get_date_from_gmt( $recent ),
-				'post_date_gmt' => $recent,
-			)
-		);
+		$this->set_age( $old, HOUR_IN_SECONDS );
+		$this->set_age( $had, HOUR_IN_SECONDS );
+		$this->set_age( $ok, HOUR_IN_SECONDS );
+		$this->set_age( $new, 120 );
 		wp_schedule_single_event( time() + 500, Form_Webhooks::RETRY_HOOK, array( $had ) );
 		$existing = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $had ) );
 
@@ -430,5 +444,55 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		remove_filter( 'designsetgo_form_webhook_retry_delays', $delays );
 		$this->assertCount( 3, $this->requests );
 		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	/**
+	 * @dataProvider timezones
+	 *
+	 * @param string $timezone Site timezone.
+	 */
+	public function test_stranded_age_guard_is_utc_in_any_site_timezone( $timezone ) {
+		update_option( 'timezone_string', $timezone );
+
+		$fresh = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$stale = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		foreach ( array( $fresh, $stale ) as $id ) {
+			update_post_meta( $id, '_dsg_webhook_status', 'pending' );
+		}
+		$this->set_age( $fresh, 120 );
+		$this->set_age( $stale, HOUR_IN_SECONDS );
+
+		$this->assertSame( 1, $this->webhooks->reschedule_stranded() );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $fresh ) ) );
+		$this->assertNotFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $stale ) ) );
+	}
+
+	public function timezones() {
+		return array(
+			'east of UTC' => array( 'Europe/Berlin' ),
+			'west of UTC' => array( 'America/Chicago' ),
+		);
+	}
+
+	public function test_sweep_is_hooked_to_the_cleanup_cron() {
+		$this->assertNotFalse( has_action( 'designsetgo_cleanup_old_submissions', array( $this->webhooks, 'run_stranded_sweep' ) ) );
+	}
+
+	public function test_plugin_instance_defers_delivery_through_the_real_hook() {
+		$plugin = \DesignSetGo\Plugin::instance();
+		$this->assertInstanceOf( Form_Webhooks::class, $plugin->form_webhooks );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		do_action( 'designsetgo_form_submitted', $id, 'contact-a1', array(), array( 'webhookUrl' => self::URL ) );
+
+		$this->assertNotFalse( has_action( 'shutdown', array( $plugin->form_webhooks, 'deliver_queued' ) ) );
+		$this->assertSame( 'pending', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertCount( 0, $this->requests );
+
+		$plugin->form_webhooks->deliver_queued();
+		remove_action( 'shutdown', array( $plugin->form_webhooks, 'deliver_queued' ), PHP_INT_MAX );
+
+		$this->assertCount( 1, $this->requests );
+		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
 	}
 }
