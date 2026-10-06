@@ -106,6 +106,12 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 == Changelog ==
 
+= Unreleased =
+
+* **New:** Export form submissions to CSV from the Form Submissions screen, filtered by form and date range. Columns use your field labels.
+* **New:** Send each form submission to a webhook (Zapier, Make, a CRM…). Set the URL in the form's Settings panel and a signing secret under Settings → Integrations. Failed deliveries retry automatically, and each submission shows its delivery status with a Resend option.
+* **Fix:** Checkbox groups and multi-select answers now display correctly on the submission screen.
+
 = 2.9.0 - 2026-09-29 =
 
 * **Security:** Public Markdown, excerpts and generated exports respect visibility for logged-out visitors. Old plugin-owned caches and static exports are invalidated on update. If cleanup cannot write to the filesystem, resolve the administrator notice before regenerating exports.
