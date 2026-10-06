@@ -3,6 +3,7 @@
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from '@wordpress/element';
+import { createReduxStore, register } from '@wordpress/data';
 import {
 	createBlock,
 	parse,
@@ -17,6 +18,17 @@ import { createHash } from 'crypto';
 import metadata from '../../src/blocks/form-select-field/block.json';
 import Edit from '../../src/blocks/form-select-field/edit';
 import save from '../../src/blocks/form-select-field/save';
+
+// The conditions panel lists sibling fields through these block-editor selectors.
+register(
+	createReduxStore('core/block-editor', {
+		reducer: (state = {}) => state,
+		selectors: {
+			getBlockParentsByBlockName: () => [],
+			getBlocks: () => [],
+		},
+	})
+);
 
 // The editor shell owns block selection and inspector portals, not field behavior.
 jest.mock('@wordpress/block-editor', () => ({
