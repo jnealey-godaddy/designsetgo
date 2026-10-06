@@ -57,6 +57,16 @@ class Form_Conditions_Submission {
 		}
 		$fields = array_values( $canonical );
 
+		// A hidden-type field's value is fixed by the form, so rules read the
+		// saved value: a client can't blank or change it to flip visibility.
+		$types       = isset( $definition['field_types'] ) ? (array) $definition['field_types'] : array();
+		$constraints = isset( $definition['constraints'] ) ? (array) $definition['constraints'] : array();
+		foreach ( $types as $name => $type ) {
+			if ( 'hidden' === $type && isset( $constraints[ $name ][0] ) ) {
+				$values[ $name ] = (string) $constraints[ $name ][0];
+			}
+		}
+
 		$hidden = array_flip(
 			array_diff( $conditions['fields'], Form_Conditions::visible_fields( $conditions['fields'], $conditions['conditions'], $values ) )
 		);
@@ -64,7 +74,6 @@ class Form_Conditions_Submission {
 			return array( $fields, $required );
 		}
 
-		$types     = isset( $definition['field_types'] ) ? (array) $definition['field_types'] : array();
 		$is_hidden = function ( $name ) use ( $hidden, $types ) {
 			if ( isset( $types[ $name ] ) && 'country_code' === $types[ $name ] ) {
 				$name = substr( $name, 0, -strlen( '_country_code' ) );

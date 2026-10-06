@@ -193,6 +193,54 @@ class Test_Form_Conditions_Submission extends WP_UnitTestCase {
 		$this->assertSame( array( 'type' ), array_keys( $stored ) );
 	}
 
+	/**
+	 * Publish a form whose conditions read a hidden field's saved value.
+	 *
+	 * Fields: source (hidden, value "partner"), partner_code (text, required,
+	 * shown when source is partner), referral (text, shown when source is not partner).
+	 *
+	 * @param string $form_id Form ID.
+	 * @return int Post ID.
+	 */
+	private function publish_hidden_source_form( $form_id ) {
+		return self::factory()->post->create(
+			array(
+				'post_status'  => 'publish',
+				'post_content' => wp_slash(
+					'<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '","enableEmail":false} --><div class="wp-block-designsetgo-form-builder">'
+					. '<!-- wp:designsetgo/form-hidden-field {"fieldName":"source","value":"partner"} /-->'
+					. '<!-- wp:designsetgo/form-text-field {"fieldName":"partner_code","required":true,"dsgoConditions":{"rules":[{"field":"source","op":"is","value":"partner"}]}} /-->'
+					. '<!-- wp:designsetgo/form-text-field {"fieldName":"referral","dsgoConditions":{"rules":[{"field":"source","op":"is_not","value":"partner"}]}} /-->'
+					. '</div><!-- /wp:designsetgo/form-builder -->'
+				),
+			)
+		);
+	}
+
+	public function test_omitted_hidden_source_cannot_hide_a_required_field() {
+		$post   = $this->publish_hidden_source_form( 'cond10' );
+		$result = $this->submit( 'cond10', $post, array() );
+		$this->assertWPError( $result );
+		$this->assertSame( 'required_field_missing', $result->get_error_code() );
+	}
+
+	public function test_faked_hidden_source_cannot_reveal_a_hidden_field() {
+		$post   = $this->publish_hidden_source_form( 'cond11' );
+		$stored = $this->stored(
+			$this->submit(
+				'cond11',
+				$post,
+				array(
+					array( 'name' => 'source', 'value' => '', 'type' => 'hidden' ),
+					array( 'name' => 'partner_code', 'value' => 'P-1', 'type' => 'text' ),
+					array( 'name' => 'referral', 'value' => 'Smuggled', 'type' => 'text' ),
+				)
+			)
+		);
+		$this->assertArrayHasKey( 'partner_code', $stored );
+		$this->assertArrayNotHasKey( 'referral', $stored );
+	}
+
 	public function test_definition_cache_keys_were_bumped() {
 		$this->assertSame( 'dsgo_form_definition_v5_', Form_Handler::DEFINITION_CACHE_PREFIX );
 		$this->assertSame( 'dsgo_form_external_definitions_v4', Form_Handler::EXTERNAL_DEFINITIONS_CACHE );
