@@ -109,7 +109,7 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 = Unreleased =
 
 * **New:** Export form submissions to CSV from the Form Submissions screen, filtered by form and date range. Columns use your field labels.
-* **New:** Send each form submission to a webhook (Zapier, Make, a CRM…). Set the URL in the form's Settings panel and a signing secret under Settings → Integrations. Failed deliveries retry automatically, and each submission shows its delivery status with a Resend option.
+* **New:** Send each form submission to a webhook (Zapier, Make, a CRM…). Set the URL in the form's Settings panel and a signing secret under DesignSetGo → Settings → Integrations. Failed deliveries retry automatically, and each submission shows its delivery status with a Resend option.
 * **Improved:** The submission details screen now shows each field's label alongside its field name.
 
 = 2.9.0 - 2026-09-29 =

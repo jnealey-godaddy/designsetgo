@@ -105,13 +105,14 @@ class Form_Handler {
 	 * Bump the version whenever the definition shape changes, so a cached
 	 * definition missing a newer key never skips that key's checks.
 	 */
-	const EXTERNAL_DEFINITIONS_CACHE = 'dsgo_form_external_definitions_v2';
+	const EXTERNAL_DEFINITIONS_CACHE = 'dsgo_form_external_definitions_v3';
 
 	/**
 	 * Transient prefix for a single form definition resolved from wp_posts.
 	 *
 	 * Version 3 adds `rules`, and drops definitions v2 cached from
-	 * password-protected posts. Bump alongside EXTERNAL_DEFINITIONS_CACHE.
+	 * password-protected posts; v4 (and EXTERNAL_DEFINITIONS_CACHE v3) add `labels`.
+	 * Bump alongside EXTERNAL_DEFINITIONS_CACHE.
 	 */
 	const DEFINITION_CACHE_PREFIX = 'dsgo_form_definition_v4_';
 

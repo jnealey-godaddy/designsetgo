@@ -36,6 +36,7 @@ class Form_Webhooks_Admin {
 		add_action( 'add_meta_boxes_dsgo_form_submission', array( $this, 'maybe_add_meta_box' ) );
 		add_action( 'admin_post_' . Form_Webhooks::RESEND_ACTION, array( $this, 'handle_resend' ) );
 		add_action( 'admin_notices', array( $this, 'resend_notice' ) );
+		add_filter( 'removable_query_args', array( $this, 'removable_query_args' ) );
 	}
 
 	/**
@@ -115,19 +116,22 @@ class Form_Webhooks_Admin {
 	 * @param \WP_Post $post Submission.
 	 */
 	public function render_meta_box( $post ) {
-		$id    = (int) $post->ID;
-		$host  = (string) wp_parse_url( (string) get_post_meta( $id, '_dsg_webhook_url', true ), PHP_URL_HOST );
-		$code  = (int) get_post_meta( $id, '_dsg_webhook_last_code', true );
-		$error = (string) get_post_meta( $id, '_dsg_webhook_last_error', true );
-		$date  = (string) get_post_meta( $id, '_dsg_webhook_delivered_date', true );
-		$rows  = array(
-			__( 'Status', 'designsetgo' )    => Form_Webhooks::status_label( $id ),
-			__( 'Receiver', 'designsetgo' )  => $host,
-			__( 'Attempts', 'designsetgo' )  => (string) (int) get_post_meta( $id, '_dsg_webhook_attempts', true ),
-			__( 'Signature', 'designsetgo' ) => 'yes' === get_post_meta( $id, '_dsg_webhook_signed', true )
-				? __( 'Signed', 'designsetgo' )
-				: __( 'Unsigned — no webhook secret configured', 'designsetgo' ),
+		$id     = (int) $post->ID;
+		$host   = (string) wp_parse_url( (string) get_post_meta( $id, '_dsg_webhook_url', true ), PHP_URL_HOST );
+		$code   = (int) get_post_meta( $id, '_dsg_webhook_last_code', true );
+		$error  = (string) get_post_meta( $id, '_dsg_webhook_last_error', true );
+		$date   = (string) get_post_meta( $id, '_dsg_webhook_delivered_date', true );
+		$rows   = array(
+			__( 'Status', 'designsetgo' )   => Form_Webhooks::status_label( $id ),
+			__( 'Receiver', 'designsetgo' ) => $host,
+			__( 'Attempts', 'designsetgo' ) => (string) (int) get_post_meta( $id, '_dsg_webhook_attempts', true ),
 		);
+		$signed = (string) get_post_meta( $id, '_dsg_webhook_signed', true );
+		if ( '' !== $signed ) {
+			$rows[ __( 'Signature', 'designsetgo' ) ] = 'yes' === $signed
+				? __( 'Signed', 'designsetgo' )
+				: __( 'Unsigned — no webhook secret configured', 'designsetgo' );
+		}
 		if ( $code ) {
 			/* translators: %d: HTTP status code */
 			$rows[ __( 'Last response', 'designsetgo' ) ] = sprintf( __( 'HTTP %d', 'designsetgo' ), $code );
@@ -136,7 +140,7 @@ class Form_Webhooks_Admin {
 			$rows[ __( 'Last error', 'designsetgo' ) ] = $error;
 		}
 		if ( '' !== $date ) {
-			$rows[ __( 'Delivered', 'designsetgo' ) ] = $date;
+			$rows[ __( 'Delivered', 'designsetgo' ) ] = mysql2date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $date );
 		}
 
 		echo '<table class="widefat striped"><tbody>';
@@ -164,6 +168,18 @@ class Form_Webhooks_Admin {
 
 		wp_safe_redirect( add_query_arg( 'dsgo_webhook_resent', $result, $referer ? $referer : $fallback ) );
 		exit;
+	}
+
+	/**
+	 * Let WordPress strip the resend flag from the URL so the notice does not persist.
+	 *
+	 * @param string[] $args Removable query args.
+	 * @return string[] Args.
+	 */
+	public function removable_query_args( $args ) {
+		$args   = (array) $args;
+		$args[] = 'dsgo_webhook_resent';
+		return $args;
 	}
 
 	/**

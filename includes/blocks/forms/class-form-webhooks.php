@@ -76,7 +76,7 @@ class Form_Webhooks {
 	public function retry( $submission_id ) {
 		$submission_id = absint( $submission_id );
 
-		if ( ! self::is_submission( $submission_id ) || 'pending' !== self::get_status( $submission_id ) ) {
+		if ( ! self::is_submission( $submission_id ) || 'pending' !== self::get_status( $submission_id ) || 'trash' === get_post_status( $submission_id ) ) {
 			return;
 		}
 
@@ -276,9 +276,16 @@ class Form_Webhooks {
 		$attempts = (int) get_post_meta( $submission_id, '_dsg_webhook_attempts', true );
 
 		if ( $retryable && $attempts >= 1 && $attempts <= count( $delays ) ) {
-			wp_schedule_single_event( time() + $delays[ $attempts - 1 ], self::RETRY_HOOK, array( $submission_id ) );
-			update_post_meta( $submission_id, '_dsg_webhook_status', 'pending' );
-			return 'pending';
+			$scheduled = wp_schedule_single_event( time() + $delays[ $attempts - 1 ], self::RETRY_HOOK, array( $submission_id ), true );
+			if ( true === $scheduled ) {
+				update_post_meta( $submission_id, '_dsg_webhook_status', 'pending' );
+				return 'pending';
+			}
+
+			$reason = $scheduled->get_error_message();
+			/* translators: %s: reason the scheduler gave, may be empty */
+			$error = trim( sprintf( __( 'Could not schedule a retry. %s', 'designsetgo' ), $reason ) );
+			update_post_meta( $submission_id, '_dsg_webhook_last_error', wp_slash( mb_substr( $error, 0, 500 ) ) );
 		}
 
 		update_post_meta( $submission_id, '_dsg_webhook_status', 'failed' );

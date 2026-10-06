@@ -250,6 +250,8 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
 		$this->submit( $id );
 		for ( $i = 0; $i < 4; $i++ ) {
+			// Cron removes an event as it runs it; core refuses a second identical event within 10 minutes.
+			wp_clear_scheduled_hook( Form_Webhooks::RETRY_HOOK, array( $id ) );
 			$this->webhooks->retry( $id );
 		}
 
@@ -277,6 +279,35 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		$this->assertSame( self::URL, $this->requests[1][0] );
 		$this->assertSame( $this->requests[0][1]['headers']['X-DSGo-Delivery'], $this->requests[1][1]['headers']['X-DSGo-Delivery'] );
 		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	public function test_retry_for_trashed_submission_is_a_noop() {
+		$this->response = array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() );
+		$id             = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+		wp_trash_post( $id );
+
+		$this->webhooks->retry( $id );
+		$this->assertCount( 1, $this->requests );
+	}
+
+	public function test_schedule_failure_marks_failed_and_fires_action() {
+		$this->response = array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() );
+		$failed         = array();
+		$listener       = function ( $submission_id, $form_id, $error ) use ( &$failed ) {
+			$failed[] = $error;
+		};
+		add_action( 'designsetgo_form_webhook_failed', $listener, 10, 3 );
+		add_filter( 'pre_schedule_event', '__return_false' );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+
+		remove_filter( 'pre_schedule_event', '__return_false' );
+		remove_action( 'designsetgo_form_webhook_failed', $listener, 10 );
+		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertStringContainsString( 'Could not schedule a retry', (string) get_post_meta( $id, '_dsg_webhook_last_error', true ) );
+		$this->assertCount( 1, $failed );
 	}
 
 	public function test_retry_for_deleted_submission_is_a_noop() {
