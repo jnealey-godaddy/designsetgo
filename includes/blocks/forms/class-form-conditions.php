@@ -224,12 +224,26 @@ class Form_Conditions {
 			return array( $fields, $required );
 		}
 
-		$values = array();
+		// Canonicalize first, so the value evaluated is the value the submit
+		// loop validates and stores: valid entries only, last one per name wins.
+		$canonical = array();
 		foreach ( $fields as $field ) {
-			if ( is_array( $field ) && isset( $field['name'] ) && array_key_exists( 'value', $field ) ) {
-				$values[ sanitize_text_field( (string) $field['name'] ) ] = is_scalar( $field['value'] ) ? $field['value'] : '';
+			if ( ! is_array( $field ) || ! isset( $field['name'], $field['value'] ) || ! is_scalar( $field['name'] ) ) {
+				continue;
 			}
+			if ( ! is_string( $field['value'] ) && ! is_int( $field['value'] ) && ! is_float( $field['value'] ) ) {
+				continue;
+			}
+			$name = sanitize_text_field( $field['name'] );
+			unset( $canonical[ $name ] );
+			$canonical[ $name ] = $field;
 		}
+
+		$values = array();
+		foreach ( $canonical as $name => $field ) {
+			$values[ $name ] = $field['value'];
+		}
+		$fields = array_values( $canonical );
 
 		$hidden = array_flip(
 			array_diff( $conditions['fields'], self::visible_fields( $conditions['fields'], $conditions['conditions'], $values ) )
@@ -248,7 +262,7 @@ class Form_Conditions {
 
 		$kept = array();
 		foreach ( $fields as $field ) {
-			$name = is_array( $field ) && isset( $field['name'] ) ? sanitize_text_field( (string) $field['name'] ) : '';
+			$name = sanitize_text_field( $field['name'] );
 			if ( '' === $name || ! $is_hidden( $name ) ) {
 				$kept[] = $field;
 			}

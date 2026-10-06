@@ -138,6 +138,61 @@ class Test_Form_Conditions_Submission extends WP_UnitTestCase {
 		$this->assertSame( 'required_field_missing', $result->get_error_code() );
 	}
 
+	public function test_null_duplicate_cannot_hide_a_required_field() {
+		$post   = $this->publish_form( 'cond6' );
+		$result = $this->submit(
+			'cond6',
+			$post,
+			array(
+				array( 'name' => 'type', 'value' => 'business', 'type' => 'select' ),
+				array( 'name' => 'type', 'value' => null, 'type' => 'select' ),
+			)
+		);
+		$this->assertWPError( $result );
+		$this->assertSame( 'required_field_missing', $result->get_error_code() );
+	}
+
+	public function test_null_duplicate_cannot_keep_a_hidden_field_visible() {
+		$post   = $this->publish_form( 'cond7' );
+		$stored = $this->stored(
+			$this->submit(
+				'cond7',
+				$post,
+				array(
+					array( 'name' => 'type', 'value' => 'personal', 'type' => 'select' ),
+					array( 'name' => 'type', 'value' => null, 'type' => 'select' ),
+					array( 'name' => 'company', 'value' => 'Smuggled', 'type' => 'text' ),
+				)
+			)
+		);
+		$this->assertSame( array( 'type' ), array_keys( $stored ) );
+		$this->assertSame( 'personal', $stored['type']['value'] );
+	}
+
+	public function test_boolean_source_value_is_ignored() {
+		$post   = $this->publish_form( 'cond8' );
+		$result = $this->submit( 'cond8', $post, array( array( 'name' => 'type', 'value' => true, 'type' => 'select' ) ) );
+		// A boolean is not a value: type is missing, so the required select fails.
+		$this->assertWPError( $result );
+		$this->assertSame( 'required_field_missing', $result->get_error_code() );
+	}
+
+	public function test_malformed_entries_are_ignored_without_warnings() {
+		$post   = $this->publish_form( 'cond9' );
+		$stored = $this->stored(
+			$this->submit(
+				'cond9',
+				$post,
+				array(
+					'not-an-array',
+					array( 'name' => array( 'x' ), 'value' => 'a', 'type' => 'text' ),
+					array( 'name' => 'type', 'value' => 'personal', 'type' => 'select' ),
+				)
+			)
+		);
+		$this->assertSame( array( 'type' ), array_keys( $stored ) );
+	}
+
 	public function test_definition_cache_keys_were_bumped() {
 		$this->assertSame( 'dsgo_form_definition_v5_', Form_Handler::DEFINITION_CACHE_PREFIX );
 		$this->assertSame( 'dsgo_form_external_definitions_v4', Form_Handler::EXTERNAL_DEFINITIONS_CACHE );
