@@ -235,8 +235,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Gate on runtime `dependencies`, the code bundled into the plugin.
+      # Dev tooling (wp-env, wp-scripts) never ships; Dependabot and the
+      # Dependency Review job track its advisories. Some can't be fixed
+      # without breaking the tool, e.g. simple-git 4 drops the default
+      # export that @wordpress/env 11.x still calls.
       - name: Run npm audit
-        run: npm audit --audit-level=critical
+        run: npm audit --omit=dev --audit-level=critical
 
   # ─── Dependency review (PR only) ─────────────────────────────
   dependency-review:
