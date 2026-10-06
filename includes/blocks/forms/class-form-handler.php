@@ -459,7 +459,7 @@ class Form_Handler {
 		$submission_id = $this->store_submission(
 			$form_id,
 			$sanitized_fields,
-			isset( $form_definition['labels'] ) && is_array( $form_definition['labels'] ) ? $form_definition['labels'] : array()
+			isset( $form_definition['labels'] ) ? $form_definition['labels'] : array()
 		);
 
 		if ( is_wp_error( $submission_id ) ) {
@@ -1321,7 +1321,7 @@ class Form_Handler {
 	 *
 	 * @param string $form_id        Form identifier to look up.
 	 * @param int    $source_post_id Page the form was submitted from, or 0.
-	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[], rules: array}|null Form definition or null.
+	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[], rules: array, labels?: array<string, string>}|null Form definition or null.
 	 */
 	private function get_form_definition( $form_id, $source_post_id = 0 ) {
 		if ( ! is_string( $form_id ) || '' === $form_id ) {
