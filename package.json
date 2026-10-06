@@ -142,10 +142,13 @@
     "serialize-javascript": "^7.0.5",
     "minimatch": "^3.1.4",
     "websocket-driver": "^0.7.5",
-    "seroval": "^1.5.6",
+    "seroval": "^1.6.3",
     "postcss": "^8.5.23",
     "markdown-it": "^14.3.2",
     "linkify-it": "^6.1.0",
-    "colord": "^2.9.4"
+    "colord": "^2.9.4",
+    "proxy-addr": "^2.0.8",
+    "shell-quote": "^1.10.1",
+    "@simple-git/argv-parser": "^2.0.1"
   }
 }
