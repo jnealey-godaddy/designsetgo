@@ -1190,7 +1190,7 @@ export default function FormBuilderEdit({
 							type="url"
 							placeholder="https://hooks.example.com/…"
 							help={__(
-								'Each submission is also sent here as JSON (for Zapier, Make, a CRM…). Requests are signed with the secret in DesignSetGo → Settings → Integrations via the X-DSGo-Signature header. Anyone who can edit this page can see this URL.',
+								'Each submission is also sent here as JSON (for Zapier, Make, a CRM…). When a signing secret is set in DesignSetGo → Settings → Integrations, requests carry an X-DSGo-Signature header. Anyone who can edit this page can see this URL.',
 								'designsetgo'
 							)}
 							__next40pxDefaultSize
