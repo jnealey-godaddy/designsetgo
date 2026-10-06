@@ -148,6 +148,7 @@ class Settings {
 				'google_maps_api_key'  => '',
 				'turnstile_site_key'   => '',
 				'turnstile_secret_key' => '',
+				'form_webhook_secret'  => '',
 			),
 			'sticky_header'       => array(
 				'enable'                    => true,
@@ -537,7 +538,7 @@ class Settings {
 					),
 					'integrations'        => array(
 						'type'        => 'object',
-						'description' => __( 'Third-party integration keys (google_maps_api_key, turnstile_site_key, turnstile_secret_key).', 'designsetgo' ),
+						'description' => __( 'Third-party integration keys (google_maps_api_key, turnstile_site_key, turnstile_secret_key, form_webhook_secret).', 'designsetgo' ),
 					),
 					'sticky_header'       => array(
 						'type'        => 'object',
@@ -649,7 +650,7 @@ class Settings {
 	 */
 	private static function write_only_secret_keys(): array {
 		return array(
-			'integrations' => array( 'turnstile_secret_key' ),
+			'integrations' => array( 'turnstile_secret_key', 'form_webhook_secret' ),
 		);
 	}
 
@@ -897,6 +898,7 @@ class Settings {
 				'google_maps_api_key'  => 'text',
 				'turnstile_site_key'   => 'text',
 				'turnstile_secret_key' => 'text',
+				'form_webhook_secret'  => 'text',
 			),
 			'sticky_header'       => array(
 				'enable'                    => 'bool',

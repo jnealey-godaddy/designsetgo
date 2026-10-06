@@ -5,15 +5,31 @@
  */
 
 import { __ } from '@wordpress/i18n';
+import { useState } from '@wordpress/element';
 import {
 	Card,
 	CardHeader,
 	CardBody,
 	TextControl,
 	ExternalLink,
+	Button,
+	Notice,
 } from '@wordpress/components';
 
+/**
+ * A 32-byte random secret, hex-encoded.
+ *
+ * @return {string} 64 hex characters.
+ */
+const generateSecret = () => {
+	const bytes = new Uint8Array(32);
+	window.crypto.getRandomValues(bytes);
+	return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+};
+
 const IntegrationsPanel = ({ settings, updateSetting }) => {
+	const [generatedSecret, setGeneratedSecret] = useState('');
+
 	return (
 		<Card className="designsetgo-settings-panel">
 			<CardHeader>
@@ -185,6 +201,68 @@ const IntegrationsPanel = ({ settings, updateSetting }) => {
 								</li>
 							</ol>
 						</div>
+					</div>
+					<div className="designsetgo-settings-section">
+						<h3 className="designsetgo-section-heading">
+							{__('Form Webhooks', 'designsetgo')}
+						</h3>
+
+						<p className="designsetgo-section-description">
+							{__(
+								'Forms with a webhook URL send each submission to it as JSON. Receivers can verify the X-DSGo-Signature header with this secret.',
+								'designsetgo'
+							)}
+						</p>
+
+						<TextControl
+							label={__('Signing Secret', 'designsetgo')}
+							help={__(
+								'Used to sign webhook requests (HMAC-SHA256). It is hidden after you save, so copy it into your receiver first.',
+								'designsetgo'
+							)}
+							type="password"
+							value={
+								settings?.integrations?.form_webhook_secret ||
+								''
+							}
+							onChange={(value) => {
+								setGeneratedSecret('');
+								updateSetting(
+									'integrations',
+									'form_webhook_secret',
+									value
+								);
+							}}
+							autoComplete="off"
+							__nextHasNoMarginBottom
+							__next40pxDefaultSize
+						/>
+
+						<Button
+							variant="secondary"
+							onClick={() => {
+								const secret = generateSecret();
+								setGeneratedSecret(secret);
+								updateSetting(
+									'integrations',
+									'form_webhook_secret',
+									secret
+								);
+							}}
+							__next40pxDefaultSize
+						>
+							{__('Generate secret', 'designsetgo')}
+						</Button>
+
+						{generatedSecret && (
+							<Notice status="warning" isDismissible={false}>
+								{__(
+									'Copy this secret into your webhook receiver now, then save. It will be hidden afterwards:',
+									'designsetgo'
+								)}{' '}
+								<code>{generatedSecret}</code>
+							</Notice>
+						)}
 					</div>
 				</form>
 			</CardBody>
