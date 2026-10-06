@@ -669,6 +669,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhook-request.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhooks-admin.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions-export-columns.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions-export.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions-list-filters.php';
 		// --- Blocks: Modal ---

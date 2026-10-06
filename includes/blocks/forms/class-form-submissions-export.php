@@ -120,7 +120,7 @@ class Form_Submissions_Export {
 			}
 		);
 
-		$columns = $this->columns( array_keys( $names ), $labels, $args );
+		$columns = Form_Submissions_Export_Columns::build( array_keys( $names ), $labels, $args );
 		$this->put_row( $handle, array_values( $columns ) );
 
 		$keys = array_keys( $columns );
@@ -130,7 +130,7 @@ class Form_Submissions_Export {
 				$fields = $this->stored_fields( $id );
 				$row    = array();
 				foreach ( $keys as $key ) {
-					$row[] = (string) apply_filters( 'designsetgo_form_export_cell', $this->cell( $key, $id, $fields ), $key, $id );
+					$row[] = Form_Submissions_Export_Columns::value( $key, $id, $fields );
 				}
 				$this->put_row( $handle, $row );
 			}
@@ -164,76 +164,6 @@ class Form_Submissions_Export {
 		$this->write_csv( $out, $args );
 		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 		exit;
-	}
-
-	/**
-	 * Column map: key => header. Fields are keyed "field:{name}".
-	 *
-	 * @param string[] $names  Field names in first-seen order.
-	 * @param array    $labels Latest label per field.
-	 * @param array    $args   Filter args.
-	 * @return array<string, string> Columns.
-	 */
-	private function columns( array $names, array $labels, array $args ): array {
-		$counts = array_count_values( array_values( $labels ) );
-
-		$columns = array(
-			'id'         => __( 'Submission ID', 'designsetgo' ),
-			'date'       => __( 'Date', 'designsetgo' ),
-			'form_id'    => __( 'Form ID', 'designsetgo' ),
-			'source_url' => __( 'Source URL', 'designsetgo' ),
-		);
-		foreach ( $names as $name ) {
-			$label = isset( $labels[ $name ] ) ? $labels[ $name ] : (string) $name;
-			if ( isset( $labels[ $name ] ) && $counts[ $label ] > 1 ) {
-				$label = sprintf( '%s (%s)', $label, $name );
-			}
-			$columns[ 'field:' . $name ] = $label;
-		}
-		$columns['email_status']   = __( 'Email status', 'designsetgo' );
-		$columns['webhook_status'] = __( 'Webhook status', 'designsetgo' );
-
-		return (array) apply_filters( 'designsetgo_form_export_columns', $columns, $args );
-	}
-
-	/**
-	 * One cell's value.
-	 *
-	 * @param string $key    Column key.
-	 * @param int    $id     Submission ID.
-	 * @param array  $fields Stored fields.
-	 * @return string Value.
-	 */
-	private function cell( string $key, int $id, array $fields ): string {
-		if ( 0 === strpos( $key, 'field:' ) ) {
-			$name = substr( $key, 6 );
-			return isset( $fields[ $name ]['value'] ) ? Form_Submissions::format_field_value( $fields[ $name ]['value'] ) : '';
-		}
-
-		switch ( $key ) {
-			case 'id':
-				return (string) $id;
-			case 'date':
-				return (string) get_post_field( 'post_date', $id );
-			case 'form_id':
-				return (string) get_post_meta( $id, '_dsg_form_id', true );
-			case 'source_url':
-				return (string) get_post_meta( $id, '_dsg_submission_referer', true );
-			case 'email_status':
-				$sent = get_post_meta( $id, '_dsg_email_sent', true );
-				if ( '' === $sent ) {
-					return '';
-				}
-				return 'yes' === $sent ? __( 'Sent', 'designsetgo' ) : __( 'Not sent', 'designsetgo' );
-			case 'webhook_status':
-				return Form_Webhooks::status_label( $id );
-			case 'ip':
-				return (string) get_post_meta( $id, '_dsg_submission_ip', true );
-			case 'user_agent':
-				return (string) get_post_meta( $id, '_dsg_submission_user_agent', true );
-			default:
-				return '';
-		}
 	}
 
 	/**

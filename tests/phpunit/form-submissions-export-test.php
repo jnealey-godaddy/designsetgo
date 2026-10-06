@@ -245,4 +245,21 @@ class Test_Form_Submissions_Export extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_headers_colliding_with_builtin_or_each_other_are_disambiguated() {
+		$this->make_submission(
+			'f9',
+			'2026-10-01 10:00:00',
+			array(
+				'when'  => array( 'value' => 'soon', 'type' => 'text', 'label' => 'Date' ),
+				'Name'  => array( 'value' => 'A', 'type' => 'text' ),
+				'first' => array( 'value' => 'B', 'type' => 'text', 'label' => 'Name' ),
+			)
+		);
+
+		$rows = $this->export_rows( array( 'form_id' => 'f9' ) );
+		$this->assertSame(
+			array( 'Submission ID', 'Date', 'Form ID', 'Source URL', 'Date (when)', 'Name (Name)', 'Name (first)', 'Email status', 'Webhook status' ),
+			$rows[0]
+		);
+	}
 }
