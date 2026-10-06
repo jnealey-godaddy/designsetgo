@@ -112,6 +112,9 @@ function designsetgo_deactivate() {
 		wp_unschedule_event( $timestamp, 'designsetgo_cleanup_old_submissions' );
 	}
 
+	// Drop any pending webhook retries.
+	wp_unschedule_hook( 'designsetgo_form_webhook_retry' );
+
 	// Remove physical llms.txt if we wrote it. Only clear the ownership option when
 	// the delete actually succeeds — if the filesystem is unavailable (e.g. FTP host
 	// without credentials), leave the option intact so the plugin still knows it owns

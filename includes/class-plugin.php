@@ -362,6 +362,13 @@ class Plugin {
 	public $form_submissions;
 
 	/**
+	 * Form webhook delivery instance.
+	 *
+	 * @var Blocks\Form_Webhooks
+	 */
+	public $form_webhooks;
+
+	/**
 	 * Patterns Loader instance.
 	 *
 	 * @var Patterns\Loader
@@ -637,6 +644,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-field-rules.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhooks.php';
 		// --- Blocks: Modal ---
 		require_once DESIGNSETGO_PATH . 'includes/blocks/modal/class-modal-hooks.php';
 		// --- Blocks: Query engine ---
@@ -780,6 +788,7 @@ class Plugin {
 		$this->modal_hooks      = new Blocks\Modal_Hooks();
 		$this->form_handler     = new Blocks\Form_Handler();
 		$this->form_submissions = new Blocks\Form_Submissions();
+		$this->form_webhooks    = new Blocks\Form_Webhooks();
 		$this->query_controller = new Blocks\Query\Controller();
 		add_action( 'rest_api_init', array( 'DesignSetGo\Blocks\Query\Template_Controller', 'register_routes' ) );
 		add_action( 'rest_api_init', array( 'DesignSetGo\Blocks\Text_Path\Controller', 'register_routes' ) );

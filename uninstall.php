@@ -135,6 +135,7 @@ designsetgo_uninstall_step(
 		if ( $timestamp ) {
 			wp_unschedule_event( $timestamp, 'designsetgo_cleanup_old_submissions' );
 		}
+		wp_unschedule_hook( 'designsetgo_form_webhook_retry' );
 	}
 );
 
