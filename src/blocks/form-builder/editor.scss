@@ -88,3 +88,28 @@
 		border-radius: var(--dsgo-form-border-radius);
 	}
 }
+
+// Conditional-logic badge on form fields (editor only).
+.dsgo-form-field:has(> .dsgo-conditional-badge) {
+	position: relative;
+}
+
+.dsgo-conditional-badge {
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: 0 6px;
+	border-radius: 2px;
+	background: var(--wp-admin-theme-color, #3858e9);
+	color: #fff;
+	font-size: 11px;
+	line-height: 18px;
+	pointer-events: none;
+}
+
+.dsgo-field-conditions__rule {
+	display: grid;
+	gap: 8px;
+	padding: 8px 0;
+	border-bottom: 1px solid #ddd;
+}

@@ -12,6 +12,8 @@ import {
 	SelectControl,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import FieldConditionsItem from '../form-builder/components/FieldConditionsItem';
+import ConditionalBadge from '../form-builder/components/ConditionalBadge';
 import { useEffect } from '@wordpress/element';
 import classnames from 'classnames';
 import { convertColorToCSSVar } from '../../utils/convert-preset-to-css-var';
@@ -79,6 +81,7 @@ export default function FormURLFieldEdit({
 					resetAll={() =>
 						setAttributes({
 							fieldName: '',
+							dsgoConditions: null,
 							label: 'Website URL',
 							placeholder: 'https://example.com',
 							helpText: '',
@@ -241,10 +244,19 @@ export default function FormURLFieldEdit({
 							__nextHasNoMarginBottom
 						/>
 					</DsgoInspectorPanel.Item>
+					<FieldConditionsItem
+						attributes={attributes}
+						setAttributes={setAttributes}
+						clientId={clientId}
+					/>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>
+				<ConditionalBadge
+					conditions={attributes.dsgoConditions}
+					clientId={clientId}
+				/>
 				<label htmlFor={fieldId} className="dsgo-form-field__label">
 					{label}
 					{required && (
