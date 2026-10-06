@@ -211,4 +211,38 @@ class Test_Form_Submissions_Export extends WP_UnitTestCase {
 		$this->expectOutputString( '' );
 		$this->export->maybe_export();
 	}
+	/**
+	 * Export spanning several batches lists every row once, in order.
+	 *
+	 * @dataProvider batch_sizes
+	 *
+	 * @param int $count Number of submissions.
+	 */
+	public function test_export_pages_through_batches( $count ) {
+		for ( $i = 1; $i <= $count; $i++ ) {
+			$this->make_submission(
+				'batch' . $count,
+				gmdate( 'Y-m-d H:i:s', 1790000000 + $i * 60 ),
+				array( 'n' => array( 'value' => (string) $i, 'type' => 'text' ) )
+			);
+		}
+
+		$rows = $this->export_rows( array( 'form_id' => 'batch' . $count ) );
+		$this->assertCount( $count + 1, $rows );
+		$this->assertSame( array_map( 'strval', range( 1, $count ) ), wp_list_pluck( array_slice( $rows, 1 ), 4 ) );
+		$this->assertCount( $count, array_unique( wp_list_pluck( array_slice( $rows, 1 ), 0 ) ) );
+	}
+
+	/**
+	 * Batch boundary sizes.
+	 *
+	 * @return array
+	 */
+	public function batch_sizes() {
+		return array(
+			'exactly one batch' => array( Form_Submissions_Export::BATCH ),
+			'one over'          => array( Form_Submissions_Export::BATCH + 1 ),
+		);
+	}
+
 }
