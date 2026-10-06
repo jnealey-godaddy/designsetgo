@@ -61,11 +61,7 @@ if ( ! function_exists( 'designsetgo_render_form_checkbox_field' ) ) {
 		$inner  = '<div class="dsgo-form-field__checkbox-wrapper">' . $input . $label_html . '</div>';
 		$inner .= designsetgo_form_field_help_html( $field_id, $help_text );
 
-		$wrapper = get_block_wrapper_attributes(
-			array(
-				'class' => 'dsgo-form-field dsgo-form-field--checkbox',
-			)
-		);
+		$wrapper = designsetgo_form_field_wrapper_attributes( $attributes, 'checkbox' );
 
 		echo '<div ' . $wrapper . '>' . $inner . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}

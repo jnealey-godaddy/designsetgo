@@ -63,12 +63,7 @@ if ( ! function_exists( 'designsetgo_render_form_date_field' ) ) {
 		$inner .= $input;
 		$inner .= designsetgo_form_field_help_html( $field_id, $help_text );
 
-		$wrapper = get_block_wrapper_attributes(
-			array(
-				'class' => 'dsgo-form-field dsgo-form-field--date',
-				'style' => designsetgo_form_field_width_style( $field_width ),
-			)
-		);
+		$wrapper = designsetgo_form_field_wrapper_attributes( $attributes, 'date', designsetgo_form_field_width_style( $field_width ) );
 
 		echo '<div ' . $wrapper . '>' . $inner . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}

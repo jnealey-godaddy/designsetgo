@@ -262,6 +262,12 @@
         }
       }
     },
+    "dsgoConditions": {
+      "probe": {
+        "operator": "AND",
+        "rules": [ { "field": "other_field", "op": "not_empty", "value": "" } ]
+      }
+    },
     "dsgoVisibility": {
       "probe": {
         "operator": "AND",

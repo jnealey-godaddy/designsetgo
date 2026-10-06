@@ -32,6 +32,10 @@
 		"designsetgo/form/formId"
 	],
 	"attributes": {
+		"dsgoConditions": {
+			"type": "object",
+			"default": null
+		},
 		"fieldName": {
 			"type": "string",
 			"default": ""

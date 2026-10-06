@@ -24,6 +24,10 @@
 		"reusable": false
 	},
 	"attributes": {
+		"dsgoConditions": {
+			"type": "object",
+			"default": null
+		},
 		"fieldName": {
 			"type": "string",
 			"default": ""

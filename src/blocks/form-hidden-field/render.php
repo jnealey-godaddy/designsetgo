@@ -31,11 +31,7 @@ if ( ! function_exists( 'designsetgo_render_form_hidden_field' ) ) {
 
 		$inner = '<input type="hidden" name="' . esc_attr( $field_name ) . '" value="' . esc_attr( $value ) . '" data-field-type="hidden"/>';
 
-		$wrapper = get_block_wrapper_attributes(
-			array(
-				'class' => 'dsgo-form-field dsgo-form-field--hidden',
-			)
-		);
+		$wrapper = designsetgo_form_field_wrapper_attributes( $attributes, 'hidden' );
 
 		echo '<div ' . $wrapper . '>' . $inner . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}

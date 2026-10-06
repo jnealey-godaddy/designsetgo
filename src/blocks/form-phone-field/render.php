@@ -109,12 +109,7 @@ if ( ! function_exists( 'designsetgo_render_form_phone_field' ) ) {
 		$inner .= $phone_wrapper;
 		$inner .= designsetgo_form_field_help_html( $field_id, $help_text );
 
-		$wrapper = get_block_wrapper_attributes(
-			array(
-				'class' => 'dsgo-form-field dsgo-form-field--phone',
-				'style' => designsetgo_form_field_width_style( $field_width ),
-			)
-		);
+		$wrapper = designsetgo_form_field_wrapper_attributes( $attributes, 'phone', designsetgo_form_field_width_style( $field_width ) );
 
 		echo '<div ' . $wrapper . '>' . $inner . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}

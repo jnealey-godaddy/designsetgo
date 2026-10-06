@@ -30,6 +30,10 @@
 		"designsetgo/form/fieldBorderColor"
 	],
 	"attributes": {
+		"dsgoConditions": {
+			"type": "object",
+			"default": null
+		},
 		"fieldName": {
 			"type": "string",
 			"default": ""
