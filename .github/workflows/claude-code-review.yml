@@ -37,12 +37,22 @@ jobs:
       # `github.event.before` can be unreachable (force-push that orphans it),
       # so verify both SHAs resolve and that the range is non-empty before
       # trusting it. Any doubt falls back to the full-diff review.
+      #
+      # The same step sizes the reviewed range to pick a tier. A single pass
+      # approved every 1,500+ line PR in the 586–621 range with zero findings,
+      # and those PRs are where the shipped regressions came from (#612's
+      # Attempt Recovery, #609's icon batch cap, #621's echoed webhook secret).
+      # `deep` splits Pass 1 across focused subagents; `docs` drops to a
+      # cheaper model. If the diff can't be sized, fall back to `standard`
+      # rather than letting an empty count read as docs-only.
       - name: Determine review scope
         id: scope
         env:
           ACTION: ${{ github.event.action }}
           BEFORE: ${{ github.event.before }}
           AFTER: ${{ github.event.after }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           scope=full
           range=""
@@ -54,9 +64,32 @@ jobs:
             scope=incremental
             range="${BEFORE}...${AFTER}"
           fi
+          if [ "$scope" = "incremental" ]; then
+            sizing="$range"
+          else
+            sizing="${BASE_SHA}...${HEAD_SHA}"
+          fi
+          # Generated files add lines without adding review surface.
+          numstat="$(git diff --numstat --no-renames "$sizing" -- . \
+            ':!build' ':!package-lock.json' ':!composer.lock' ':!languages' \
+            ':!*.min.js' ':!*.min.css' 2>/dev/null || true)"
+          lines="$(printf '%s\n' "$numstat" | awk '$1 != "-" && NF { n += $1 + $2 } END { print n + 0 }')"
+          code_files="$(printf '%s\n' "$numstat" | awk 'NF { print $3 }' \
+            | grep -Evc '(\.md$|^docs/|^readme\.txt$)' || true)"
+          if [ -z "$numstat" ]; then
+            tier=standard; model=opus
+          elif [ "$code_files" -eq 0 ]; then
+            tier=docs; model=sonnet
+          elif [ "$lines" -ge 800 ]; then
+            tier=deep; model=opus
+          else
+            tier=standard; model=opus
+          fi
           echo "scope=$scope" >> "$GITHUB_OUTPUT"
           echo "range=$range" >> "$GITHUB_OUTPUT"
-          echo "Review scope: $scope ${range}"
+          echo "tier=$tier" >> "$GITHUB_OUTPUT"
+          echo "model=$model" >> "$GITHUB_OUTPUT"
+          echo "Review scope: $scope ${range}; ${lines} changed lines, ${code_files} code files; tier: $tier ($model)"
 
       - name: Run Claude Code Review
         id: claude-review
@@ -76,8 +109,12 @@ jobs:
             PR NUMBER: ${{ github.event.pull_request.number }}
             REVIEW SCOPE: ${{ steps.scope.outputs.scope }}
             DIFF RANGE: ${{ steps.scope.outputs.range }}
+            REVIEW TIER: ${{ steps.scope.outputs.tier }}
+            BASE SHA: ${{ github.event.pull_request.base.sha }}
 
-            You are reviewing a WordPress plugin codebase.
+            You are reviewing a WordPress plugin codebase. The repository's
+            `.claude/CLAUDE.md` is part of the review criteria, not background:
+            a diff that breaks one of its rules is a finding.
 
             This is a READ-ONLY review. Explore with `gh pr diff/view`, `gh api`
             (GET only), `git diff/log/show/status`, and read tools only. Do NOT
@@ -122,6 +159,30 @@ jobs:
 
             Read every changed file carefully, in full — not just the diff hunks.
 
+            ## Review tier
+
+            - `docs`: only documentation changed. Check that what it says
+              matches the code it describes (names, hooks, attributes, commands,
+              defaults). Skip the Pass 1 checklists below; Pass 2 does not apply.
+            - `standard`: do Pass 1 yourself.
+            - `deep`: a large diff. One pass over this much code misses things,
+              so split Pass 1. Launch these three subagents IN PARALLEL with the
+              Task tool (general-purpose). Give each one the diff command from
+              Step 1, the BASE SHA, and its section of Pass 1 below. Tell each one that
+              it is read-only, must NOT post anything to GitHub, and must return
+              a list of findings with file, line, severity and failure scenario:
+              1. **Security and disclosure**: the Security list, plus
+                 "Consumers and sibling paths" as it applies to data exposure.
+              2. **Existing content**: the "WordPress blocks and existing
+                 content" list, plus "Consumers and sibling paths" for
+                 client/server and editor/frontend contracts.
+              3. **Correctness and tests**: the Correctness, WordPress
+                 correctness and Tests lists.
+              While they run, read the diff yourself. When they return, verify
+              every finding against the code before filing it: subagent output is
+              a lead, not a finding. Drop anything already in Step 0's list, merge
+              duplicates, and then do Pass 2 yourself.
+
             ## Pass 1 — Security and correctness (MANDATORY, do this first and completely)
 
             This pass is the reason the review exists. Finish it before you look
@@ -135,6 +196,11 @@ jobs:
               trashed), `current_user_can()`, and post-type `public`/`viewable`
               flags on ANY code that reads post content, meta, or user data and
               emits it to the page or an API response
+            - Secrets (API keys, webhook secrets, nonces meant for one user):
+              never returned in a REST/AJAX response (including the response
+              to SAVING a setting), localized into `window.*`, rendered into
+              markup, or logged. Stored secrets must not go through a sanitizer
+              that alters them, such as `sanitize_text_field()`
             - XSS: unescaped output, missing esc_html/esc_attr/esc_url/wp_kses
             - SQL injection: variable interpolation in queries, missing $wpdb->prepare()
             - CSRF: missing nonce verification on forms/AJAX/REST
@@ -156,9 +222,65 @@ jobs:
             - Script/style enqueueing
             - Translation function usage and text domain
 
+            **Consumers and sibling paths**: the defect is often in the file
+            that reads the change, not the line that changed
+            - When the diff changes something another file reads (a REST response
+              shape, a limit or cap, a block attribute, a CSS custom property, a
+              localized script variable, a settings field, a filter's return),
+              find every reader with grep and confirm it still agrees. A server
+              cap the client does not batch around, or a JS mirror of PHP rules
+              that drifts (`param-scoping.php` ↔ `url-scope.js`,
+              `BlockVisibility::matches()` ↔ `evaluateRules.js`, server form
+              validation ↔ the browser's), is a finding.
+            - When the diff adds a guard (visibility, capability, escaping,
+              secret redaction) to one path, find the other paths that emit
+              the same data (REST routes, exports, the signed Query refresh,
+              save responses, editor previews) and check that they get it too.
+            - A value with no reader cannot take effect. Neither can a new
+              option nobody reads, or an attribute `save()`/`render.php` ignores.
+
+            **WordPress blocks and existing content**: sites already store
+            markup written by today's code, and a change must not break it
+            - If a block's `save()`, its markup or its attribute schema changed,
+              there must be a deprecation whose `save()` reproduces the markup the
+              BASE SHA's `save()` produces, not only the last release's. Compare
+              with `git show <BASE SHA>:src/blocks/<block>/save.js`. A missing or
+              non-matching deprecation means "Attempt Recovery" for every
+              existing block, and is High.
+            - Every deprecation entry redeclares `apiVersion` and the FULL
+              `attributes` and `supports` that version had (typography uses the
+              `__experimental*` keys). Every `migrate()` lands on the current
+              schema. `isEligible` must not be keyed on an attribute being absent.
+            - A changed default, design token or CSS rule that changes how
+              blocks ALREADY on a site look (surface or text colour, size,
+              spacing, contrast) is a finding unless the PR description says it is
+              intended. Check the Modal, form and icon blocks in particular.
+            - Editor and front end must match: front-end rules go in
+              `style.scss`, editor-only selectors (`.is-selected`,
+              `.block-editor-*`, placeholders) only in `editor.scss`, and
+              `block.json` `style` points at `style-index.css`.
+            - New PHP under `src/blocks/query/` must be in the webpack copy
+              patterns, or it is silently inert in production.
+
+            **Tests**
+            - A new or changed test that claims to verify this PR's behaviour
+              but would still pass with the change reverted is a Medium finding:
+              the behaviour it names is unverified. Check by reading the
+              assertion against the code path, for example a capability test
+              that never runs as a user lacking the capability, or a nonce test
+              that sends no nonce. A test asserting that new behaviour is ABSENT
+              is exempt.
+            - Missing tests on their own are not a finding.
+
             For every finding in this pass, state a concrete failure scenario:
             the input or state that triggers it, and the wrong result. If you
             cannot describe how it actually breaks, it is not a Pass 1 finding.
+
+            Before filing anything as Critical or High, check that WordPress
+            core (6.7+) does not already block it: REST controller permission
+            checks, KSES, `map_meta_cap`, core's own nonce handling. If core
+            already blocks it, it can be Low/Medium hardening at most. Say what
+            you checked.
 
             ## Pass 2 — Code quality (OPTIONAL — skip it unless something genuinely warrants it)
 
@@ -209,7 +331,7 @@ jobs:
             Then post one summary comment with
             `gh pr comment ${{ github.event.pull_request.number }}`:
             - Which scope you reviewed (incremental vs full), and for incremental,
-              the commits covered
+              the commits covered, plus the review tier
             - Count of findings by severity
             - Any still-unfixed Critical/High from previous runs (one line each)
             - Overall assessment
@@ -230,6 +352,11 @@ jobs:
             - Only Medium findings worth noting, nothing blocking → comment:
               `gh pr review ${{ github.event.pull_request.number }} --comment --body "your summary"`
 
+            Do not repeat an approval. If your verdict is approve, this run filed
+            no findings, and the most recent review from Step 0 by this bot is
+            already an approval, skip `gh pr review`. Say "approval stands" in
+            the summary comment instead.
+
           # Allowlist must cover read-only exploration (git diff/log/show,
           # cat/ls/find/grep, LS) in addition to the PR-posting tools —
           # otherwise the reviewer burns its turn budget on denied commands and
@@ -241,6 +368,13 @@ jobs:
           # them. They are scoped to this PR's own comment/review endpoints; the
           # workflow token already carries pull-requests:write for `gh pr
           # comment`, so this grants no new reach.
+          #
+          # `Task`/`Agent` (the same subagent tool under its old and new names)
+          # is for the deep tier's parallel Pass 1. Subagents inherit this
+          # allowlist; the prompt keeps posting to the coordinator. The model
+          # is chosen per tier in the scope step instead of left to the
+          # action's default.
           claude_args: |
+            --model ${{ steps.scope.outputs.model }}
             --max-turns 100
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Read,Grep,Glob,LS"
+            --allowedTools "Task,Agent,mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Read,Grep,Glob,LS"
