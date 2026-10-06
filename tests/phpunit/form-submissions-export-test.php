@@ -1,0 +1,214 @@
+<?php
+/**
+ * CSV export of form submissions.
+ *
+ * @package DesignSetGo
+ */
+
+namespace DesignSetGo\Tests;
+
+use WP_UnitTestCase;
+use WPDieException;
+use DesignSetGo\Blocks\Form_Submissions_Export;
+
+/**
+ * Submissions export test case.
+ */
+class Test_Form_Submissions_Export extends WP_UnitTestCase {
+
+	/**
+	 * Exporter under test.
+	 *
+	 * @var Form_Submissions_Export
+	 */
+	private $export;
+
+	public function set_up() {
+		parent::set_up();
+		$this->export = new Form_Submissions_Export();
+	}
+
+	public function tear_down() {
+		unset( $_GET['dsgo_export'], $_GET['post_type'], $_REQUEST[ Form_Submissions_Export::NONCE_NAME ] );
+		parent::tear_down();
+	}
+
+	private function make_submission( $form_id, $date, array $fields, array $meta = array() ) {
+		$id = self::factory()->post->create(
+			array(
+				'post_type'   => 'dsgo_form_submission',
+				'post_status' => 'private',
+				'post_date'   => $date,
+			)
+		);
+		update_post_meta( $id, '_dsg_form_id', $form_id );
+		update_post_meta( $id, '_dsg_form_fields', wp_slash( $fields ) );
+		update_post_meta( $id, '_dsg_submission_referer', 'https://example.com/contact/' );
+		update_post_meta( $id, '_dsg_submission_ip', '198.51.100.7' );
+		foreach ( $meta as $key => $value ) {
+			update_post_meta( $id, $key, $value );
+		}
+		return $id;
+	}
+
+	/**
+	 * Run write_csv into memory and parse it back.
+	 *
+	 * @param array $args Export args.
+	 * @return array Rows (header first), BOM stripped.
+	 */
+	private function export_rows( array $args ) {
+		$handle = fopen( 'php://memory', 'w+' );
+		$this->export->write_csv( $handle, array_merge( array( 'form_id' => '', 'from' => '', 'to' => '' ), $args ) );
+		rewind( $handle );
+		$bom = fread( $handle, 3 );
+		$this->assertSame( "\xEF\xBB\xBF", $bom );
+		$rows = array();
+		while ( false !== ( $row = fgetcsv( $handle, 0, ',', '"', '' ) ) ) {
+			$rows[] = $row;
+		}
+		fclose( $handle );
+		return $rows;
+	}
+
+	public function test_headers_use_labels_with_name_fallback_and_disambiguation() {
+		$this->make_submission(
+			'f1',
+			'2026-10-01 10:00:00',
+			array(
+				'first'  => array( 'value' => 'Pat', 'type' => 'text', 'label' => 'Name' ),
+				'last'   => array( 'value' => 'Lee', 'type' => 'text', 'label' => 'Name' ),
+				'legacy' => array( 'value' => 'x', 'type' => 'text' ),
+			)
+		);
+
+		$rows = $this->export_rows( array( 'form_id' => 'f1' ) );
+		$this->assertSame(
+			array( 'Submission ID', 'Date', 'Form ID', 'Source URL', 'Name (first)', 'Name (last)', 'legacy', 'Email status', 'Webhook status' ),
+			$rows[0]
+		);
+		$this->assertSame( array( 'Pat', 'Lee', 'x' ), array_slice( $rows[1], 4, 3 ) );
+		$this->assertSame( '2026-10-01 10:00:00', $rows[1][1] );
+		$this->assertNotContains( '198.51.100.7', $rows[1], 'IP is excluded by default.' );
+	}
+
+	public function test_union_of_fields_across_changed_form_latest_label_wins() {
+		$this->make_submission( 'f2', '2026-10-01 10:00:00', array( 'a' => array( 'value' => '1', 'type' => 'text', 'label' => 'Old A' ) ) );
+		$this->make_submission( 'f2', '2026-10-02 10:00:00', array( 'a' => array( 'value' => '2', 'type' => 'text', 'label' => 'New A' ), 'b' => array( 'value' => 'B', 'type' => 'text', 'label' => 'B' ) ) );
+
+		$rows = $this->export_rows( array( 'form_id' => 'f2' ) );
+		$this->assertSame( array( 'New A', 'B' ), array_slice( $rows[0], 4, 2 ) );
+		$this->assertSame( array( '1', '' ), array_slice( $rows[1], 4, 2 ), 'Missing field is an empty cell.' );
+		$this->assertSame( array( '2', 'B' ), array_slice( $rows[2], 4, 2 ) );
+	}
+
+	public function test_form_and_inclusive_date_filters() {
+		$this->make_submission( 'f3', '2026-09-30 23:59:00', array( 'a' => array( 'value' => 'before', 'type' => 'text' ) ) );
+		$this->make_submission( 'f3', '2026-10-01 00:00:00', array( 'a' => array( 'value' => 'start', 'type' => 'text' ) ) );
+		$this->make_submission( 'f3', '2026-10-02 23:30:00', array( 'a' => array( 'value' => 'late-on-to-day', 'type' => 'text' ) ) );
+		$this->make_submission( 'f3', '2026-10-03 00:00:01', array( 'a' => array( 'value' => 'after', 'type' => 'text' ) ) );
+		$this->make_submission( 'other', '2026-10-01 12:00:00', array( 'a' => array( 'value' => 'other-form', 'type' => 'text' ) ) );
+
+		$rows   = $this->export_rows( array( 'form_id' => 'f3', 'from' => '2026-10-01', 'to' => '2026-10-02' ) );
+		$values = wp_list_pluck( array_slice( $rows, 1 ), 4 );
+		$this->assertSame( array( 'start', 'late-on-to-day' ), $values );
+	}
+
+	public function test_values_round_trip_and_arrays_join() {
+		$tricky = "He said \"hi\", then C:\\path\nnew line — ✓";
+		$this->make_submission(
+			'f4',
+			'2026-10-01 10:00:00',
+			array(
+				'note'   => array( 'value' => $tricky, 'type' => 'textarea', 'label' => 'Note' ),
+				'topics' => array( 'value' => array( 'News', 'Offers' ), 'type' => 'checkbox', 'label' => 'Topics' ),
+			)
+		);
+
+		$rows = $this->export_rows( array( 'form_id' => 'f4' ) );
+		$this->assertSame( $tricky, $rows[1][4] );
+		$this->assertSame( 'News, Offers', $rows[1][5] );
+	}
+
+	/**
+	 * @dataProvider formula_values
+	 *
+	 * @param string $value Dangerous leading character value.
+	 */
+	public function test_formula_injection_is_neutralised( $value ) {
+		$this->assertSame( "'" . $value, Form_Submissions_Export::escape_cell( $value ) );
+	}
+
+	public function formula_values() {
+		return array(
+			array( '=HYPERLINK("http://x")' ),
+			array( '+1+1' ),
+			array( '-2+3' ),
+			array( '@SUM(A1)' ),
+			array( "\tcmd" ),
+			array( "\rcmd" ),
+		);
+	}
+
+	public function test_formula_injection_applies_to_headers_and_cells() {
+		$this->make_submission( 'f5', '2026-10-01 10:00:00', array( 'x' => array( 'value' => '=1+1', 'type' => 'text', 'label' => '=Label' ) ) );
+		$rows = $this->export_rows( array( 'form_id' => 'f5' ) );
+		$this->assertSame( "'=Label", $rows[0][4] );
+		$this->assertSame( "'=1+1", $rows[1][4] );
+		$this->assertSame( 'safe', Form_Submissions_Export::escape_cell( 'safe' ) );
+	}
+
+	public function test_columns_filter_can_add_ip() {
+		$add_ip = function ( $columns ) {
+			$columns['ip'] = 'IP address';
+			return $columns;
+		};
+		add_filter( 'designsetgo_form_export_columns', $add_ip );
+		$this->make_submission( 'f6', '2026-10-01 10:00:00', array( 'a' => array( 'value' => '1', 'type' => 'text' ) ) );
+
+		$rows = $this->export_rows( array( 'form_id' => 'f6' ) );
+		remove_filter( 'designsetgo_form_export_columns', $add_ip );
+
+		$this->assertSame( 'IP address', end( $rows[0] ) );
+		$this->assertSame( '198.51.100.7', end( $rows[1] ) );
+	}
+
+	public function test_status_columns_for_old_and_new_submissions() {
+		$this->make_submission( 'f7', '2026-10-01 10:00:00', array( 'a' => array( 'value' => '1', 'type' => 'text' ) ) );
+		$this->make_submission( 'f7', '2026-10-02 10:00:00', array( 'a' => array( 'value' => '2', 'type' => 'text' ) ), array( '_dsg_email_sent' => 'yes', '_dsg_webhook_status' => 'delivered' ) );
+
+		$rows = $this->export_rows( array( 'form_id' => 'f7' ) );
+		$this->assertSame( array( '', '' ), array_slice( $rows[1], -2 ) );
+		$this->assertSame( array( 'Sent', 'Delivered' ), array_slice( $rows[2], -2 ) );
+	}
+
+	public function test_request_args_reject_bad_dates() {
+		$args = Form_Submissions_Export::request_args( array( 'dsgo_form' => 'f1', 'dsgo_from' => '2026-13-40', 'dsgo_to' => 'yesterday' ) );
+		$this->assertSame( array( 'form_id' => 'f1', 'from' => '', 'to' => '' ), $args );
+	}
+
+	public function test_export_requires_nonce() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$_GET['dsgo_export'] = '1';
+		$_GET['post_type']   = 'dsgo_form_submission';
+
+		$this->expectException( WPDieException::class );
+		$this->export->maybe_export();
+	}
+
+	public function test_export_requires_manage_options() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+		$_GET['dsgo_export']                              = '1';
+		$_GET['post_type']                                = 'dsgo_form_submission';
+		$_REQUEST[ Form_Submissions_Export::NONCE_NAME ] = wp_create_nonce( Form_Submissions_Export::NONCE_ACTION );
+
+		$this->expectException( WPDieException::class );
+		$this->export->maybe_export();
+	}
+
+	public function test_maybe_export_ignores_other_screens() {
+		$_GET['post_type'] = 'post';
+		$this->expectOutputString( '' );
+		$this->export->maybe_export();
+	}
+}
