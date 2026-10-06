@@ -369,6 +369,13 @@ class Plugin {
 	public $form_webhooks;
 
 	/**
+	 * Form webhook admin UI instance.
+	 *
+	 * @var Blocks\Form_Webhooks_Admin
+	 */
+	public $form_webhooks_admin;
+
+	/**
 	 * Patterns Loader instance.
 	 *
 	 * @var Patterns\Loader
@@ -645,6 +652,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhooks.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhooks-admin.php';
 		// --- Blocks: Modal ---
 		require_once DESIGNSETGO_PATH . 'includes/blocks/modal/class-modal-hooks.php';
 		// --- Blocks: Query engine ---
@@ -785,11 +793,12 @@ class Plugin {
 		$this->schema_output          = new SchemaOutput();
 		$this->block_bindings_support = new Block_Bindings_Support();
 		$this->block_bindings_support->register();
-		$this->modal_hooks      = new Blocks\Modal_Hooks();
-		$this->form_handler     = new Blocks\Form_Handler();
-		$this->form_submissions = new Blocks\Form_Submissions();
-		$this->form_webhooks    = new Blocks\Form_Webhooks();
-		$this->query_controller = new Blocks\Query\Controller();
+		$this->modal_hooks         = new Blocks\Modal_Hooks();
+		$this->form_handler        = new Blocks\Form_Handler();
+		$this->form_submissions    = new Blocks\Form_Submissions();
+		$this->form_webhooks       = new Blocks\Form_Webhooks();
+		$this->form_webhooks_admin = new Blocks\Form_Webhooks_Admin( $this->form_webhooks );
+		$this->query_controller    = new Blocks\Query\Controller();
 		add_action( 'rest_api_init', array( 'DesignSetGo\Blocks\Query\Template_Controller', 'register_routes' ) );
 		add_action( 'rest_api_init', array( 'DesignSetGo\Blocks\Text_Path\Controller', 'register_routes' ) );
 		$this->query_bindings = new Blocks\Query\Bindings();
