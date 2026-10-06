@@ -72,6 +72,10 @@
 			"type": "string",
 			"default": ""
 		},
+		"webhookUrl": {
+			"type": "string",
+			"default": ""
+		},
 		"fieldSpacing": {
 			"type": "string",
 			"default": ""

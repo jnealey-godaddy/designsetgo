@@ -103,6 +103,7 @@ export default function FormBuilderEdit({
 		emailReplyTo,
 		emailBody,
 		redirectUrl,
+		webhookUrl,
 	} = attributes;
 
 	// Get theme color palette and gradient settings
@@ -308,6 +309,7 @@ export default function FormBuilderEdit({
 							errorMessage:
 								'There was an error submitting the form. Please try again.',
 							redirectUrl: '',
+							webhookUrl: '',
 							fieldSpacing: '',
 							inputHeight: '',
 							inputPadding: '',
@@ -1172,6 +1174,29 @@ export default function FormBuilderEdit({
 							/>
 						</DsgoInspectorPanel.Item>
 					)}
+
+					<DsgoInspectorPanel.Item
+						label={__('Webhook URL', 'designsetgo')}
+						hasValue={() => webhookUrl !== ''}
+						onDeselect={() => setAttributes({ webhookUrl: '' })}
+						isShownByDefault
+					>
+						<TextControl
+							label={__('Webhook URL', 'designsetgo')}
+							value={webhookUrl}
+							onChange={(value) =>
+								setAttributes({ webhookUrl: value.trim() })
+							}
+							type="url"
+							placeholder="https://hooks.example.com/…"
+							help={__(
+								'Anyone who can edit this page can see this URL. Each submission is also sent here as JSON (for Zapier, Make, a CRM…). To sign requests, set a secret in DesignSetGo → Settings → Integrations.',
+								'designsetgo'
+							)}
+							__next40pxDefaultSize
+							__nextHasNoMarginBottom
+						/>
+					</DsgoInspectorPanel.Item>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 

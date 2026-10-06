@@ -149,6 +149,7 @@ class Settings_Schema {
 						'google_maps_api_key'  => array( 'type' => 'string' ),
 						'turnstile_site_key'   => array( 'type' => 'string' ),
 						'turnstile_secret_key' => array( 'type' => 'string' ),
+						'form_webhook_secret'  => array( 'type' => 'string' ),
 					),
 				),
 				'sticky_header'       => array(

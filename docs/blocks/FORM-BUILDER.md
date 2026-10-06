@@ -199,6 +199,9 @@ document.querySelector('[name="utm_source"]').value =
 ### Form Data Storage
 Form submissions are stored in the WordPress database. Access via **Tools > Form Submissions** (if enabled in plugin settings).
 
+### Webhooks
+Set a **Webhook URL** in the form's Settings panel to send each submission to that URL as JSON (Zapier, Make, a CRM…). Set a signing secret under **DesignSetGo → Settings → Integrations** to sign requests. Delivery status, retries and a Resend action appear under **DesignSetGo → Form Submissions**, which can also export submissions as CSV. Receiver contract, signature verification and hooks: [FORM-WEBHOOKS.md](../api/FORM-WEBHOOKS.md).
+
 ### Custom Events (Developers)
 Listen for form submission events:
 ```javascript

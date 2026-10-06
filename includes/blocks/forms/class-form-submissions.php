@@ -119,29 +119,35 @@ class Form_Submissions {
 
 		echo '<table class="widefat striped">';
 		echo '<thead><tr>';
-		echo '<th>' . esc_html__( 'Field Name', 'designsetgo' ) . '</th>';
+		echo '<th>' . esc_html__( 'Field', 'designsetgo' ) . '</th>';
 		echo '<th>' . esc_html__( 'Value', 'designsetgo' ) . '</th>';
 		echo '<th>' . esc_html__( 'Type', 'designsetgo' ) . '</th>';
 		echo '</tr></thead>';
 		echo '<tbody>';
 
 		foreach ( $fields as $field_name => $field_data ) {
-			$value = isset( $field_data['value'] ) ? $field_data['value'] : '';
+			$raw   = isset( $field_data['value'] ) ? $field_data['value'] : '';
+			$text  = self::format_field_value( $raw );
 			$type  = isset( $field_data['type'] ) ? $field_data['type'] : 'text';
+			$label = isset( $field_data['label'] ) && '' !== $field_data['label'] ? (string) $field_data['label'] : '';
 
 			// Format value based on type.
-			if ( 'email' === $type ) {
-				$value = '<a href="mailto:' . esc_attr( $value ) . '">' . esc_html( $value ) . '</a>';
-			} elseif ( 'url' === $type ) {
-				$value = '<a href="' . esc_url( $value ) . '" target="_blank" rel="noopener">' . esc_html( $value ) . '</a>';
+			if ( 'email' === $type && is_string( $raw ) ) {
+				$value = '<a href="mailto:' . esc_attr( $raw ) . '">' . esc_html( $raw ) . '</a>';
+			} elseif ( 'url' === $type && is_string( $raw ) ) {
+				$value = '<a href="' . esc_url( $raw ) . '" target="_blank" rel="noopener">' . esc_html( $raw ) . '</a>';
 			} elseif ( 'textarea' === $type ) {
-				$value = '<div style="white-space: pre-wrap;">' . esc_html( $value ) . '</div>';
+				$value = '<div style="white-space: pre-wrap;">' . esc_html( $text ) . '</div>';
 			} else {
-				$value = esc_html( $value );
+				$value = esc_html( $text );
 			}
 
+			$name_cell = '' !== $label
+				? '<strong>' . esc_html( $label ) . '</strong><br><code>' . esc_html( $field_name ) . '</code>'
+				: '<strong>' . esc_html( $field_name ) . '</strong>';
+
 			echo '<tr>';
-			echo '<td><strong>' . esc_html( $field_name ) . '</strong></td>';
+			echo '<td>' . $name_cell . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above.
 			echo '<td>' . $value . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			echo '<td><code>' . esc_html( $type ) . '</code></td>';
 			echo '</tr>';
@@ -149,6 +155,22 @@ class Form_Submissions {
 
 		echo '</tbody>';
 		echo '</table>';
+	}
+
+	/**
+	 * Flatten a stored field value to display text.
+	 *
+	 * Checkbox groups and multi-selects store arrays; only scalar members are kept.
+	 *
+	 * @param mixed $value Stored value.
+	 * @return string Text.
+	 */
+	public static function format_field_value( $value ): string {
+		if ( is_array( $value ) ) {
+			return implode( ', ', array_map( 'strval', array_filter( $value, 'is_scalar' ) ) );
+		}
+
+		return is_scalar( $value ) ? (string) $value : '';
 	}
 
 	/**

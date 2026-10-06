@@ -1,0 +1,729 @@
+<?php
+/**
+ * Webhook delivery for form submissions.
+ *
+ * @package DesignSetGo
+ */
+
+namespace DesignSetGo\Tests;
+
+use WP_UnitTestCase;
+use WP_Error;
+use DesignSetGo\Admin\Settings;
+use DesignSetGo\Blocks\Form_Webhooks;
+use DesignSetGo\Blocks\Form_Webhook_Recovery;
+use DesignSetGo\Blocks\Form_Webhook_Request;
+use DesignSetGo\Blocks\Form_Webhook_Status;
+
+/**
+ * Form webhooks test case.
+ */
+class Test_Form_Webhooks extends WP_UnitTestCase {
+
+	/**
+	 * A public IP literal: passes wp_http_validate_url() without DNS (newer WP rejects TEST-NET ranges).
+	 */
+	const URL = 'https://93.184.216.34/hook';
+
+	/**
+	 * Service under test.
+	 *
+	 * @var Form_Webhooks
+	 */
+	private $webhooks;
+
+	/**
+	 * Captured outbound requests: list of [ url, args ].
+	 *
+	 * @var array
+	 */
+	private $requests = array();
+
+	/**
+	 * Response the fake transport returns (array or WP_Error).
+	 *
+	 * @var mixed
+	 */
+	private $response;
+
+	public function set_up() {
+		parent::set_up();
+		$this->webhooks = new Form_Webhooks();
+		$this->requests = array();
+		$this->response = array(
+			'response' => array( 'code' => 200, 'message' => 'OK' ),
+			'body'     => '',
+			'headers'  => array(),
+		);
+		add_filter( 'pre_http_request', array( $this, 'fake_transport' ), 10, 3 );
+		// The CLI has no fastcgi_finish_request(); exercise the send-at-shutdown path by default.
+		add_filter( 'designsetgo_form_webhook_send_after_response', '__return_true' );
+		Settings::invalidate_cache();
+	}
+
+	public function tear_down() {
+		remove_filter( 'pre_http_request', array( $this, 'fake_transport' ), 10 );
+		remove_filter( 'designsetgo_form_webhook_send_after_response', '__return_true' );
+		delete_option( Settings::OPTION_NAME );
+		Settings::invalidate_cache();
+		wp_unschedule_hook( Form_Webhooks::RETRY_HOOK );
+		delete_option( 'timezone_string' );
+		parent::tear_down();
+	}
+
+	/**
+	 * Fake HTTP transport.
+	 *
+	 * @param mixed  $pre  Short-circuit value.
+	 * @param array  $args Request args.
+	 * @param string $url  URL.
+	 * @return mixed
+	 */
+	public function fake_transport( $pre, $args, $url ) {
+		$this->requests[] = array( $url, $args );
+		return $this->response;
+	}
+
+	/**
+	 * Create a stored submission like Form_Handler::store_submission() does.
+	 *
+	 * @param array $fields name => [ value, type, label? ].
+	 * @return int Submission ID.
+	 */
+	private function make_submission( array $fields ) {
+		$id = self::factory()->post->create(
+			array(
+				'post_type'   => 'dsgo_form_submission',
+				'post_status' => 'private',
+				'post_date'   => '2026-10-06 09:15:00',
+			)
+		);
+		update_post_meta( $id, '_dsg_form_id', 'contact-a1' );
+		update_post_meta( $id, '_dsg_form_fields', wp_slash( $fields ) );
+		update_post_meta( $id, '_dsg_submission_referer', 'https://example.com/contact/' );
+		return $id;
+	}
+
+	/**
+	 * Fire the submitted hook the way Form_Handler does.
+	 *
+	 * @param int    $id  Submission ID.
+	 * @param string $url Webhook URL attribute.
+	 */
+	private function submit( $id, $url = self::URL ) {
+		$this->webhooks->handle_submission( $id, 'contact-a1', array(), array( 'webhookUrl' => $url ) );
+		// PHPUnit never fires `shutdown`, so run the deferred first attempt by hand.
+		$this->webhooks->deliver_queued();
+	}
+
+	/**
+	 * Back-date a submission by an exact number of seconds (UTC and local columns).
+	 *
+	 * @param int $id      Submission ID.
+	 * @param int $seconds Age in seconds.
+	 */
+	private function set_age( $id, $seconds ) {
+		$gmt = gmdate( 'Y-m-d H:i:s', time() - $seconds );
+		wp_update_post(
+			array(
+				'ID'            => $id,
+				'post_date'     => get_date_from_gmt( $gmt ),
+				'post_date_gmt' => $gmt,
+			)
+		);
+	}
+
+	private function set_secret( $secret ) {
+		update_option( Settings::OPTION_NAME, array( 'integrations' => array( 'form_webhook_secret' => $secret ) ) );
+		Settings::invalidate_cache();
+	}
+
+	public function test_no_request_without_webhook_url() {
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id, '' );
+
+		$this->assertCount( 0, $this->requests );
+		$this->assertSame( '', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertSame( '', Form_Webhook_Status::label( $id ) );
+	}
+
+	public function test_signed_delivery_payload_and_headers() {
+		$this->set_secret( 's3cret' );
+		$id = $this->make_submission(
+			array(
+				'your_name' => array( 'value' => 'Pat "P" O\'Neil, C:\\Users\\pat', 'type' => 'text', 'label' => 'Your name' ),
+				'topics'    => array( 'value' => array( 'a', 'b' ), 'type' => 'checkbox' ),
+				'note'      => array( 'value' => "Line 1\nLíne 2 — ✓", 'type' => 'textarea', 'label' => 'Note' ),
+			)
+		);
+
+		$this->submit( $id );
+
+		$this->assertCount( 1, $this->requests );
+		list( $url, $args ) = $this->requests[0];
+		$this->assertSame( self::URL, $url );
+		$this->assertSame( 0, $args['redirection'] );
+		$this->assertTrue( $args['reject_unsafe_urls'], 'Sent with wp_safe_remote_post(), which re-checks the address.' );
+
+		$headers = $args['headers'];
+		$this->assertSame( 'application/json', $headers['Content-Type'] );
+		$this->assertSame( 'form.submitted', $headers['X-DSGo-Event'] );
+		$this->assertSame( get_post_meta( $id, '_dsg_webhook_delivery_id', true ), $headers['X-DSGo-Delivery'] );
+		$this->assertSame(
+			'sha256=' . hash_hmac( 'sha256', $headers['X-DSGo-Timestamp'] . '.' . $args['body'], 's3cret' ),
+			$headers['X-DSGo-Signature']
+		);
+
+		$payload = json_decode( $args['body'], true );
+		$this->assertSame( 1, $payload['version'] );
+		$this->assertSame( 'form.submitted', $payload['event'] );
+		$this->assertSame( 'contact-a1', $payload['form_id'] );
+		$this->assertSame( $id, $payload['submission_id'] );
+		$this->assertSame( 'https://example.com/contact/', $payload['source_url'] );
+		$this->assertSame( 'Pat "P" O\'Neil, C:\\Users\\pat', $payload['fields']['your_name'] );
+		$this->assertSame( "Line 1\nLíne 2 — ✓", $payload['fields']['note'] );
+		$this->assertSame( array( 'a', 'b' ), $payload['fields']['topics'] );
+		$this->assertSame( 'Your name', $payload['labels']['your_name'] );
+		$this->assertSame( 'topics', $payload['labels']['topics'], 'No stored label falls back to the field name.' );
+		$this->assertMatchesRegularExpression( '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/', $payload['submitted_at'] );
+
+		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertSame( 'yes', get_post_meta( $id, '_dsg_webhook_signed', true ) );
+		$this->assertNotEmpty( get_post_meta( $id, '_dsg_webhook_delivered_date', true ) );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) ) );
+	}
+
+	public function test_unsigned_without_secret() {
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+
+		$this->assertArrayNotHasKey( 'X-DSGo-Signature', $this->requests[0][1]['headers'] );
+		$this->assertSame( 'no', get_post_meta( $id, '_dsg_webhook_signed', true ) );
+		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	/**
+	 * @dataProvider rejected_urls
+	 *
+	 * @param string $url Rejected URL.
+	 */
+	public function test_rejected_url_fails_without_request_or_retry( $url ) {
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id, $url );
+
+		$this->assertCount( 0, $this->requests );
+		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertNotEmpty( get_post_meta( $id, '_dsg_webhook_last_error', true ) );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) ) );
+	}
+
+	public function rejected_urls() {
+		return array(
+			'loopback'       => array( 'http://127.0.0.1/hook' ),
+			'private 192'    => array( 'http://192.168.1.5/hook' ),
+			'private 10'     => array( 'http://10.0.0.8/hook' ),
+			'private 172'    => array( 'http://172.16.4.2/hook' ),
+			'cloud metadata' => array( 'http://169.254.169.254/latest/meta-data/' ),
+			'credentials'    => array( 'https://user:pass@93.184.216.34/hook' ),
+			'odd port'       => array( 'https://93.184.216.34:2375/hook' ),
+			'not a url'      => array( 'javascript:alert(1)' ),
+			'file scheme'    => array( 'file:///etc/passwd' ),
+		);
+	}
+
+	public function test_url_filter_can_block_a_destination() {
+		$block = function () {
+			return '';
+		};
+		add_filter( 'designsetgo_form_webhook_url', $block );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+
+		remove_filter( 'designsetgo_form_webhook_url', $block );
+		$this->assertCount( 0, $this->requests );
+		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	/**
+	 * @dataProvider failing_responses
+	 *
+	 * @param mixed $response Fake transport response.
+	 */
+	public function test_failure_schedules_a_retry( $response ) {
+		$this->response = $response;
+		$id             = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+
+		$before = time();
+		$this->submit( $id );
+
+		$this->assertSame( 'pending', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertSame( '1', (string) get_post_meta( $id, '_dsg_webhook_attempts', true ) );
+		$next = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) );
+		$this->assertGreaterThanOrEqual( $before + 60, $next );
+		$this->assertLessThanOrEqual( time() + 60, $next );
+	}
+
+	public function failing_responses() {
+		return array(
+			'500'     => array( array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() ) ),
+			'408'     => array( array( 'response' => array( 'code' => 408, 'message' => 'Request Timeout' ), 'body' => '', 'headers' => array() ) ),
+			'429'     => array( array( 'response' => array( 'code' => 429, 'message' => 'Too Many Requests' ), 'body' => '', 'headers' => array() ) ),
+			'timeout' => array( new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' ) ),
+		);
+	}
+
+	/**
+	 * @dataProvider permanent_responses
+	 *
+	 * @param int $code HTTP code.
+	 */
+	public function test_permanent_response_fails_at_once( $code ) {
+		$this->response = array( 'response' => array( 'code' => $code, 'message' => '' ), 'body' => '', 'headers' => array( 'location' => 'http://127.0.0.1/' ) );
+		$failed         = 0;
+		$listener       = function () use ( &$failed ) {
+			++$failed;
+		};
+		add_action( 'designsetgo_form_webhook_failed', $listener );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+
+		remove_action( 'designsetgo_form_webhook_failed', $listener );
+		$this->assertCount( 1, $this->requests );
+		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertSame( (string) $code, (string) get_post_meta( $id, '_dsg_webhook_last_code', true ) );
+		$this->assertStringContainsString( (string) $code, (string) get_post_meta( $id, '_dsg_webhook_last_error', true ) );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) ) );
+		$this->assertSame( 1, $failed );
+	}
+
+	public function permanent_responses() {
+		return array(
+			'redirect'     => array( 302 ),
+			'moved'        => array( 301 ),
+			'bad request'  => array( 400 ),
+			'unauthorized' => array( 401 ),
+			'not found'    => array( 404 ),
+			'gone'         => array( 410 ),
+		);
+	}
+
+	public function test_default_retry_schedule() {
+		$this->response = array( 'response' => array( 'code' => 503, 'message' => 'Unavailable' ), 'body' => '', 'headers' => array() );
+		$id             = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+
+		$delays = array();
+		$this->submit( $id );
+		for ( $i = 0; $i < 4; $i++ ) {
+			$next     = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) );
+			$delays[] = $next - (int) get_post_meta( $id, '_dsg_webhook_last_attempt', true );
+			wp_clear_scheduled_hook( Form_Webhooks::RETRY_HOOK, array( $id ) );
+			$this->webhooks->retry( $id );
+		}
+
+		// last_attempt is stamped just before the request, so allow a second of drift.
+		foreach ( array( 60, 300, 1800, 7200 ) as $i => $expected ) {
+			$this->assertEqualsWithDelta( $expected, $delays[ $i ], 1, "Retry $i" );
+		}
+		$this->assertCount( 5, $this->requests );
+		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	public function test_delivered_action_fires_once_with_code() {
+		$this->response = array( 'response' => array( 'code' => 202, 'message' => 'Accepted' ), 'body' => '', 'headers' => array() );
+		$calls          = array();
+		$listener       = function ( $submission_id, $form_id, $code ) use ( &$calls ) {
+			$calls[] = array( $submission_id, $form_id, $code );
+		};
+		add_action( 'designsetgo_form_webhook_delivered', $listener, 10, 3 );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+
+		remove_action( 'designsetgo_form_webhook_delivered', $listener, 10 );
+		$this->assertSame( array( array( $id, 'contact-a1', 202 ) ), $calls );
+	}
+
+	public function test_payload_filter_non_array_is_ignored() {
+		$bad = function () {
+			return 'nope';
+		};
+		add_filter( 'designsetgo_form_webhook_payload', $bad );
+
+		$id      = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$payload = Form_Webhook_Request::build_payload( $id );
+
+		remove_filter( 'designsetgo_form_webhook_payload', $bad );
+		$this->assertSame( 'form.submitted', $payload['event'] );
+		$this->assertSame( $id, $payload['submission_id'] );
+	}
+
+	public function test_empty_fields_encode_as_json_objects() {
+		$id = $this->make_submission( array() );
+		$this->submit( $id );
+
+		$body = $this->requests[0][1]['body'];
+		$this->assertStringContainsString( '"fields":{}', $body );
+		$this->assertStringContainsString( '"labels":{}', $body );
+	}
+
+	public function test_secret_is_trimmed_before_signing() {
+		$this->set_secret( "  s3cret \n" );
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+
+		$headers = $this->requests[0][1]['headers'];
+		$this->assertSame(
+			'sha256=' . hash_hmac( 'sha256', $headers['X-DSGo-Timestamp'] . '.' . $this->requests[0][1]['body'], 's3cret' ),
+			$headers['X-DSGo-Signature']
+		);
+	}
+
+	/**
+	 * @dataProvider timeouts
+	 *
+	 * @param mixed $filtered Filter return.
+	 * @param int   $expected Timeout sent.
+	 */
+	public function test_timeout_filter_is_clamped( $filtered, $expected ) {
+		$timeout = function () use ( $filtered ) {
+			return $filtered;
+		};
+		add_filter( 'designsetgo_form_webhook_timeout', $timeout );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+
+		remove_filter( 'designsetgo_form_webhook_timeout', $timeout );
+		$this->assertSame( $expected, $this->requests[0][1]['timeout'] );
+	}
+
+	public function timeouts() {
+		return array(
+			'default kept' => array( 5, 5 ),
+			'zero'         => array( 0, 1 ),
+			'too long'     => array( 600, 30 ),
+		);
+	}
+
+	public function test_first_attempt_goes_to_cron_when_the_response_cannot_be_flushed() {
+		remove_filter( 'designsetgo_form_webhook_send_after_response', '__return_true' );
+		add_filter( 'designsetgo_form_webhook_send_after_response', '__return_false' );
+
+		$id     = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$before = time();
+		$this->submit( $id );
+
+		remove_filter( 'designsetgo_form_webhook_send_after_response', '__return_false' );
+		$to_receiver = array_filter(
+			$this->requests,
+			function ( $request ) {
+				return self::URL === $request[0];
+			}
+		);
+		$this->assertCount( 0, $to_receiver, 'The visitor\'s request never waits on the receiver.' );
+		$this->assertSame( 'pending', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertGreaterThanOrEqual( $before, wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) ) );
+		$this->assertLessThanOrEqual( time(), wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) ) );
+
+		// The cron run makes the first attempt.
+		wp_clear_scheduled_hook( Form_Webhooks::RETRY_HOOK, array( $id ) );
+		$this->webhooks->retry( $id );
+		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertSame( '1', (string) get_post_meta( $id, '_dsg_webhook_attempts', true ) );
+	}
+
+	public function test_cron_hand_off_falls_back_to_sending_when_the_scheduler_refuses() {
+		remove_filter( 'designsetgo_form_webhook_send_after_response', '__return_true' );
+		add_filter( 'designsetgo_form_webhook_send_after_response', '__return_false' );
+		add_filter( 'pre_schedule_event', '__return_false' );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+
+		remove_filter( 'pre_schedule_event', '__return_false' );
+		remove_filter( 'designsetgo_form_webhook_send_after_response', '__return_false' );
+		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	public function test_final_attempt_marks_failed_and_fires_action() {
+		$this->response = array( 'response' => array( 'code' => 503, 'message' => 'Unavailable' ), 'body' => '', 'headers' => array() );
+		$failed         = array();
+		$listener       = function ( $submission_id, $form_id, $error ) use ( &$failed ) {
+			$failed[] = array( $submission_id, $form_id, $error );
+		};
+		add_action( 'designsetgo_form_webhook_failed', $listener, 10, 3 );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+		for ( $i = 0; $i < 4; $i++ ) {
+			// Cron removes an event as it runs it; core refuses a second identical event within 10 minutes.
+			wp_clear_scheduled_hook( Form_Webhooks::RETRY_HOOK, array( $id ) );
+			$this->webhooks->retry( $id );
+		}
+
+		remove_action( 'designsetgo_form_webhook_failed', $listener, 10 );
+		$this->assertCount( 5, $this->requests );
+		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertSame( '503', (string) get_post_meta( $id, '_dsg_webhook_last_code', true ) );
+		$this->assertCount( 1, $failed );
+		$this->assertSame( 'contact-a1', $failed[0][1] );
+		$this->assertSame( 'Failed', Form_Webhook_Status::label( $id ) );
+
+		// A stray retry after failure does nothing.
+		$this->webhooks->retry( $id );
+		$this->assertCount( 5, $this->requests );
+	}
+
+	public function test_all_retries_share_the_delivery_id_and_stored_url() {
+		$this->response = array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() );
+		$id             = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+
+		$this->response = array( 'response' => array( 'code' => 204, 'message' => 'No Content' ), 'body' => '', 'headers' => array() );
+		$this->webhooks->retry( $id );
+
+		$this->assertSame( self::URL, $this->requests[1][0] );
+		$this->assertSame( $this->requests[0][1]['headers']['X-DSGo-Delivery'], $this->requests[1][1]['headers']['X-DSGo-Delivery'] );
+		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	public function test_retry_for_trashed_submission_is_a_noop() {
+		$this->response = array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() );
+		$id             = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+		wp_trash_post( $id );
+
+		$this->webhooks->retry( $id );
+		$this->assertCount( 1, $this->requests );
+	}
+
+	public function test_schedule_failure_marks_failed_and_fires_action() {
+		$this->response = array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() );
+		$failed         = array();
+		$listener       = function ( $submission_id, $form_id, $error ) use ( &$failed ) {
+			$failed[] = $error;
+		};
+		add_action( 'designsetgo_form_webhook_failed', $listener, 10, 3 );
+		add_filter( 'pre_schedule_event', '__return_false' );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+
+		remove_filter( 'pre_schedule_event', '__return_false' );
+		remove_action( 'designsetgo_form_webhook_failed', $listener, 10 );
+		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertStringContainsString( 'Could not schedule a retry', (string) get_post_meta( $id, '_dsg_webhook_last_error', true ) );
+		$this->assertCount( 1, $failed );
+	}
+
+	public function test_retry_for_deleted_submission_is_a_noop() {
+		$this->response = array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() );
+		$id             = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+		wp_delete_post( $id, true );
+
+		$this->webhooks->retry( $id );
+		$this->assertCount( 1, $this->requests );
+	}
+
+	public function test_resend_resets_attempts_and_clears_scheduled_retry() {
+		$this->response = array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() );
+		$id             = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+		$this->assertNotFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) ) );
+
+		$this->response = array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => '', 'headers' => array() );
+		$this->assertSame( 'delivered', $this->webhooks->resend( $id ) );
+		$this->assertSame( '1', (string) get_post_meta( $id, '_dsg_webhook_attempts', true ) );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) ) );
+		$this->assertNotSame(
+			$this->requests[0][1]['headers']['X-DSGo-Delivery'],
+			$this->requests[1][1]['headers']['X-DSGo-Delivery'],
+			'A manual resend is a new delivery, so receivers that de-duplicate accept it.'
+		);
+	}
+
+	public function test_resend_without_stored_url_is_invalid() {
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->assertSame( 'invalid', $this->webhooks->resend( $id ) );
+		$this->assertCount( 0, $this->requests );
+	}
+
+	public function test_retry_delays_are_filterable() {
+		$delays = function () {
+			return array( 10 );
+		};
+		add_filter( 'designsetgo_form_webhook_retry_delays', $delays );
+		$this->response = array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$this->submit( $id );
+		$this->webhooks->retry( $id );
+
+		remove_filter( 'designsetgo_form_webhook_retry_delays', $delays );
+		$this->assertCount( 2, $this->requests );
+		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	public function test_first_attempt_is_deferred_until_shutdown() {
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+
+		$this->webhooks->handle_submission( $id, 'contact-a1', array(), array( 'webhookUrl' => self::URL ) );
+
+		$this->assertCount( 0, $this->requests );
+		$this->assertSame( 'pending', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertNotFalse( has_action( 'shutdown', array( $this->webhooks, 'deliver_queued' ) ) );
+
+		$this->webhooks->deliver_queued();
+		$this->assertCount( 1, $this->requests );
+		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
+
+		$this->webhooks->deliver_queued();
+		$this->assertCount( 1, $this->requests, 'The queue is cleared after delivery.' );
+	}
+
+	public function test_reschedule_stranded_queues_old_pending_only() {
+		$old = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$had = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$ok  = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$new = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+
+		foreach ( array( $old, $had, $new ) as $id ) {
+			update_post_meta( $id, '_dsg_webhook_status', 'pending' );
+		}
+		update_post_meta( $ok, '_dsg_webhook_status', 'delivered' );
+
+		$this->set_age( $old, HOUR_IN_SECONDS );
+		$this->set_age( $had, HOUR_IN_SECONDS );
+		$this->set_age( $ok, HOUR_IN_SECONDS );
+		$this->set_age( $new, 120 );
+		wp_schedule_single_event( time() + 500, Form_Webhooks::RETRY_HOOK, array( $had ) );
+		$existing = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $had ) );
+
+		$this->assertSame( 1, Form_Webhook_Recovery::reschedule_stranded() );
+		$this->assertNotFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $old ) ) );
+		$this->assertSame( $existing, wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $had ) ) );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $ok ) ) );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $new ) ) );
+		$this->assertSame( 0, Form_Webhook_Recovery::reschedule_stranded(), 'A second sweep finds nothing new.' );
+	}
+
+	public function test_sweep_skips_recent_attempts_and_spaces_out_retries() {
+		$ids = array();
+		for ( $i = 0; $i < 3; $i++ ) {
+			$ids[] = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		}
+		foreach ( $ids as $n => $id ) {
+			update_post_meta( $id, '_dsg_webhook_status', 'pending' );
+			$this->set_age( $id, DAY_IN_SECONDS - $n * HOUR_IN_SECONDS ); // $ids[0] is the oldest.
+		}
+		update_post_meta( $ids[1], '_dsg_webhook_last_attempt', time() - 60 ); // A retry may be in flight.
+
+		$now = time();
+		$this->assertSame( 2, Form_Webhook_Recovery::reschedule_stranded() );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $ids[1] ) ) );
+
+		$first  = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $ids[0] ) );
+		$second = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $ids[2] ) );
+		$this->assertLessThanOrEqual( time(), $first, 'The oldest goes first, now.' );
+		$this->assertGreaterThanOrEqual( $now + Form_Webhook_Recovery::SWEEP_SPACING, $second );
+	}
+
+	public function test_sweep_is_capped() {
+		for ( $i = 0; $i < Form_Webhook_Recovery::SWEEP_LIMIT + 2; $i++ ) {
+			$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+			update_post_meta( $id, '_dsg_webhook_status', 'pending' );
+			$this->set_age( $id, DAY_IN_SECONDS );
+		}
+
+		$this->assertSame( Form_Webhook_Recovery::SWEEP_LIMIT, Form_Webhook_Recovery::reschedule_stranded() );
+	}
+
+	public function test_each_attempt_records_its_time() {
+		$id     = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$before = time();
+		$this->submit( $id );
+
+		$this->assertGreaterThanOrEqual( $before, (int) get_post_meta( $id, '_dsg_webhook_last_attempt', true ) );
+	}
+
+	public function test_zero_retry_delay_is_kept() {
+		$delays = function () {
+			return array( 0, 60 );
+		};
+		add_filter( 'designsetgo_form_webhook_retry_delays', $delays );
+		$this->response = array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() );
+
+		$id     = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$before = time();
+		$this->submit( $id );
+		$first = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) );
+		$this->assertGreaterThanOrEqual( $before, $first );
+		$this->assertLessThanOrEqual( time(), $first );
+
+		wp_clear_scheduled_hook( Form_Webhooks::RETRY_HOOK, array( $id ) );
+		$this->webhooks->retry( $id );
+		$second = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) );
+		$this->assertGreaterThanOrEqual( $before + 60, $second );
+		$this->assertLessThanOrEqual( time() + 60, $second );
+
+		wp_clear_scheduled_hook( Form_Webhooks::RETRY_HOOK, array( $id ) );
+		$this->webhooks->retry( $id );
+
+		remove_filter( 'designsetgo_form_webhook_retry_delays', $delays );
+		$this->assertCount( 3, $this->requests );
+		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	/**
+	 * @dataProvider timezones
+	 *
+	 * @param string $timezone Site timezone.
+	 */
+	public function test_stranded_age_guard_is_utc_in_any_site_timezone( $timezone ) {
+		update_option( 'timezone_string', $timezone );
+
+		$fresh = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$stale = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		foreach ( array( $fresh, $stale ) as $id ) {
+			update_post_meta( $id, '_dsg_webhook_status', 'pending' );
+		}
+		$this->set_age( $fresh, 120 );
+		$this->set_age( $stale, HOUR_IN_SECONDS );
+
+		$this->assertSame( 1, Form_Webhook_Recovery::reschedule_stranded() );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $fresh ) ) );
+		$this->assertNotFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $stale ) ) );
+	}
+
+	public function timezones() {
+		return array(
+			'east of UTC' => array( 'Europe/Berlin' ),
+			'west of UTC' => array( 'America/Chicago' ),
+		);
+	}
+
+	public function test_sweep_is_hooked_to_the_cleanup_cron() {
+		$this->assertNotFalse( has_action( 'designsetgo_cleanup_old_submissions', array( $this->webhooks, 'run_stranded_sweep' ) ) );
+	}
+
+	public function test_plugin_instance_defers_delivery_through_the_real_hook() {
+		$plugin = \DesignSetGo\Plugin::instance();
+		$this->assertInstanceOf( Form_Webhooks::class, $plugin->form_webhooks );
+
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		do_action( 'designsetgo_form_submitted', $id, 'contact-a1', array(), array( 'webhookUrl' => self::URL ) );
+
+		$this->assertNotFalse( has_action( 'shutdown', array( $plugin->form_webhooks, 'deliver_queued' ) ) );
+		$this->assertSame( 'pending', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertCount( 0, $this->requests );
+
+		$plugin->form_webhooks->deliver_queued();
+		remove_action( 'shutdown', array( $plugin->form_webhooks, 'deliver_queued' ), PHP_INT_MAX );
+
+		$this->assertCount( 1, $this->requests );
+		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+}
