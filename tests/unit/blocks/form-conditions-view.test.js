@@ -11,6 +11,7 @@ const checked = JSON.stringify({
 });
 
 function mount() {
+	// Field markup mirrors what each field's render.php outputs.
 	document.body.innerHTML = `
 	<div class="dsgo-form-builder">
 		<form class="dsgo-form">
@@ -26,13 +27,27 @@ function mount() {
 				<label class="dsgo-form-field__label">Phone</label>
 				<input name="phone" type="tel"><select name="phone_country_code"><option value="+1">+1</option></select>
 			</div>
-			<div class="dsgo-form-field" data-dsgo-field="agree">
-				<label class="dsgo-form-field__label">I agree</label>
-				<input name="agree" type="checkbox" value="1">
+			<div class="dsgo-form-field dsgo-form-field--checkbox dsgo-form-field--conditional" data-dsgo-field="invoice" data-dsgo-conditions='${business}'>
+				<div class="dsgo-form-field__checkbox-wrapper">
+					<input type="checkbox" id="field-invoice" name="invoice" class="dsgo-form-field__checkbox-input" value="1" required aria-required="true" data-field-type="checkbox"/>
+					<label for="field-invoice" class="dsgo-form-field__checkbox-label"><span>Send an <a href="/invoices">invoice</a></span><span class="dsgo-form-field__required" aria-label="required"> *</span></label>
+				</div>
+			</div>
+			<div class="dsgo-form-field dsgo-form-field--text dsgo-form-field--conditional" data-dsgo-field="vat_number" data-dsgo-conditions='${business}'>
+				<input name="vat_number" type="text">
+			</div>
+			<div class="dsgo-form-field dsgo-form-field--hidden dsgo-form-field--conditional" data-dsgo-field="campaign" data-dsgo-conditions='${business}'>
+				<input type="hidden" name="campaign" value="spring" data-field-type="hidden"/>
+			</div>
+			<div class="dsgo-form-field dsgo-form-field--checkbox" data-dsgo-field="agree">
+				<div class="dsgo-form-field__checkbox-wrapper">
+					<input type="checkbox" id="field-agree" name="agree" class="dsgo-form-field__checkbox-input" value="1" data-field-type="checkbox"/>
+					<label for="field-agree" class="dsgo-form-field__checkbox-label"><span>I agree</span></label>
+				</div>
 			</div>
 			<div class="dsgo-form-field dsgo-form-field--conditional" data-dsgo-field="note" data-dsgo-conditions='${checked}'>
 				<label class="dsgo-form-field__label">Note</label>
-				<textarea name="note" disabled data-other="1"></textarea>
+				<textarea name="note"></textarea>
 			</div>
 		</form>
 	</div>`;
@@ -41,6 +56,10 @@ function mount() {
 }
 
 const wrapper = (name) => document.querySelector(`[data-dsgo-field="${name}"]`);
+
+function change(control) {
+	control.dispatchEvent(new Event('change', { bubbles: true }));
+}
 
 describe('initFormConditions', () => {
 	beforeEach(() => jest.useFakeTimers());
@@ -88,11 +107,45 @@ describe('initFormConditions', () => {
 		const { container, form } = mount();
 		initFormConditions(container, form);
 		form.elements.agree.checked = true;
-		form.elements.agree.dispatchEvent(
-			new Event('change', { bubbles: true })
-		);
+		change(form.elements.agree);
+		expect(form.elements.note.disabled).toBe(false);
+
+		// Another script disables the visible control after init.
+		form.elements.note.disabled = true;
+		form.elements.agree.checked = false;
+		change(form.elements.agree);
+		expect(wrapper('note').hidden).toBe(true);
+		form.elements.agree.checked = true;
+		change(form.elements.agree);
 		expect(wrapper('note').hidden).toBe(false);
 		expect(form.elements.note.disabled).toBe(true);
+	});
+
+	it('announces checkbox fields, falls back to the field name, and skips hidden-type fields', () => {
+		const { container, form } = mount();
+		initFormConditions(container, form);
+		const region = container.querySelector('[aria-live="polite"]');
+
+		form.elements.type.value = 'business';
+		change(form.elements.type);
+		jest.runAllTimers();
+		expect(region.textContent).toBe(
+			'Shown: Company name, Phone, Send an invoice, vat_number.'
+		);
+		expect(region.textContent).not.toContain('campaign');
+	});
+
+	it('announces a field that toggled within the debounce window only in its final state', () => {
+		const { container, form } = mount();
+		initFormConditions(container, form);
+		const region = container.querySelector('[aria-live="polite"]');
+
+		form.elements.agree.checked = true;
+		change(form.elements.agree);
+		form.elements.agree.checked = false;
+		change(form.elements.agree);
+		jest.runAllTimers();
+		expect(region.textContent).toBe('Hidden: Note.');
 	});
 
 	it('re-evaluates after reset', () => {

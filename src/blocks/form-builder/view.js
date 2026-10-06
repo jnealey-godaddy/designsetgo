@@ -69,6 +69,24 @@ function initFormBuilder() {
 	const forms = document.querySelectorAll('.dsgo-form-builder');
 
 	forms.forEach((formContainer) => {
+		// Isolate each form: one form's error must not leave later forms
+		// uninitialised (their conditional fields would stay pre-hidden while
+		// still required). Rethrown async so it still reaches the console.
+		try {
+			initForm(formContainer);
+		} catch (error) {
+			setTimeout(() => {
+				throw error;
+			}, 0);
+		}
+	});
+
+	/**
+	 * Wire up one form: conditional fields, anti-spam fields, submission.
+	 *
+	 * @param {HTMLElement} formContainer .dsgo-form-builder wrapper.
+	 */
+	function initForm(formContainer) {
 		// Guard against duplicate initialization (e.g. bfcache restore)
 		if (formContainer.dataset.dsgoInitialized) {
 			return;
@@ -680,7 +698,7 @@ function initFormBuilder() {
 				}
 			}
 		});
-	});
+	}
 
 	/**
 	 * Show message to user
@@ -754,5 +772,11 @@ function initFormBuilder() {
 	}
 }
 
-document.addEventListener('DOMContentLoaded', initFormBuilder);
+// Run now if the script loads after parsing (deferred, late or injected),
+// otherwise once the DOM is ready.
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', initFormBuilder);
+} else {
+	initFormBuilder();
+}
 document.addEventListener('dsgo-content-loaded', initFormBuilder);

@@ -29,16 +29,33 @@ function readValue(wrapper) {
 	return control.value;
 }
 
+/**
+ * The text a screen reader hears for a field: its label without the required
+ * marker, else its field name. Hidden-type fields (only `<input type="hidden">`)
+ * have nothing to perceive, so they are never announced.
+ *
+ * @param {HTMLElement} wrapper Field wrapper.
+ * @return {string} Label text, or '' when the field isn't announced.
+ */
 function labelText(wrapper) {
-	const label = wrapper.querySelector('.dsgo-form-field__label');
-	if (!label) {
+	const label = wrapper.querySelector(
+		'.dsgo-form-field__label, .dsgo-form-field__checkbox-label'
+	);
+	if (label) {
+		const clone = label.cloneNode(true);
+		clone
+			.querySelectorAll('.dsgo-form-field__required')
+			.forEach((el) => el.remove());
+		const text = clone.textContent.trim();
+		if (text) {
+			return text;
+		}
+	}
+	const controls = Array.from(wrapper.querySelectorAll(CONTROLS));
+	if (controls.length && controls.every((el) => el.type === 'hidden')) {
 		return '';
 	}
-	const clone = label.cloneNode(true);
-	clone
-		.querySelectorAll('.dsgo-form-field__required')
-		.forEach((el) => el.remove());
-	return clone.textContent.trim();
+	return wrapper.dataset.dsgoField || '';
 }
 
 function setVisible(wrapper, visible) {
@@ -108,10 +125,17 @@ function setUp(container, form, wrappers) {
 	region.setAttribute('aria-live', 'polite');
 	container.appendChild(region);
 
-	let shown = [];
-	let hidden = [];
+	// Field name => { label, show }: a field that toggles within the debounce
+	// window is announced once, in its final state.
+	let pending = new Map();
 	let timer = null;
 	const announce = () => {
+		const shown = [];
+		const hidden = [];
+		pending.forEach(({ label, show }) => {
+			(show ? shown : hidden).push(label);
+		});
+		pending = new Map();
 		const parts = [];
 		if (shown.length) {
 			/* translators: %s: comma-separated field labels */
@@ -124,8 +148,6 @@ function setUp(container, form, wrappers) {
 			parts.push(sprintf(hiddenText, hidden.join(', ')));
 		}
 		region.textContent = parts.join(' ');
-		shown = [];
-		hidden = [];
 	};
 
 	const apply = (fromUser) => {
@@ -142,10 +164,10 @@ function setUp(container, form, wrappers) {
 			setVisible(wrapper, show);
 			const label = labelText(wrapper);
 			if (fromUser && label) {
-				(show ? shown : hidden).push(label);
+				pending.set(wrapper.dataset.dsgoField, { label, show });
 			}
 		});
-		if (fromUser && (shown.length || hidden.length)) {
+		if (fromUser && pending.size) {
 			clearTimeout(timer);
 			timer = setTimeout(announce, ANNOUNCE_DELAY);
 		}
