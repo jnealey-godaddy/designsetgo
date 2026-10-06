@@ -103,7 +103,8 @@ export function initFormConditions(container, form) {
  * @param {HTMLElement[]} wrappers  Field wrappers in document order.
  */
 function setUp(container, form, wrappers) {
-	const conditions = {};
+	// Null-prototype maps, so a field named `__proto__` keeps its rules and value.
+	const conditions = Object.create(null);
 	wrappers.forEach((wrapper) => {
 		const raw = wrapper.dataset.dsgoConditions;
 		if (!raw) {
@@ -118,6 +119,16 @@ function setUp(container, form, wrappers) {
 	if (!Object.keys(conditions).length) {
 		return;
 	}
+
+	// No field ever renders `disabled`, so any found now was restored by the
+	// browser on reload (Firefox keeps script-set state but not our marker)
+	// and would strand a shown field disabled. Clear it before the first pass.
+	wrappers.forEach((wrapper) => {
+		wrapper.querySelectorAll(CONTROLS).forEach((control) => {
+			control.disabled = false;
+			delete control.dataset.dsgoCondDisabled;
+		});
+	});
 
 	const names = wrappers.map((wrapper) => wrapper.dataset.dsgoField);
 	const region = document.createElement('div');
@@ -151,7 +162,7 @@ function setUp(container, form, wrappers) {
 	};
 
 	const apply = (fromUser) => {
-		const values = {};
+		const values = Object.create(null);
 		wrappers.forEach((wrapper) => {
 			values[wrapper.dataset.dsgoField] = readValue(wrapper);
 		});

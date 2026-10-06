@@ -121,6 +121,26 @@ describe('initFormConditions', () => {
 		expect(form.elements.note.disabled).toBe(true);
 	});
 
+	it('clears disabled state a browser restored on reload', () => {
+		const { container, form } = mount();
+		// Firefox restores script-set `disabled` without our marker attribute;
+		// no field's render.php ever outputs `disabled`.
+		form.elements.type.value = 'business';
+		form.elements.company.disabled = true;
+		form.elements.note.disabled = true;
+		form.elements.note.dataset.dsgoCondDisabled = '1';
+		initFormConditions(container, form);
+
+		expect(wrapper('company').hidden).toBe(false);
+		expect(form.elements.company.disabled).toBe(false);
+
+		// A hidden field's restored `disabled` is ours again, so showing it re-enables it.
+		expect(wrapper('note').hidden).toBe(true);
+		form.elements.agree.checked = true;
+		change(form.elements.agree);
+		expect(form.elements.note.disabled).toBe(false);
+	});
+
 	it('announces checkbox fields, falls back to the field name, and skips hidden-type fields', () => {
 		const { container, form } = mount();
 		initFormConditions(container, form);
@@ -146,6 +166,41 @@ describe('initFormConditions', () => {
 		change(form.elements.agree);
 		jest.runAllTimers();
 		expect(region.textContent).toBe('Hidden: Note.');
+	});
+
+	it('keeps rules and values for a field named __proto__', () => {
+		const proIs = JSON.stringify({
+			rules: [{ field: 'plan', op: 'is', value: 'pro' }],
+		});
+		const protoFilled = JSON.stringify({
+			rules: [{ field: '__proto__', op: 'not_empty', value: '' }],
+		});
+		document.body.innerHTML = `
+		<div class="dsgo-form-builder">
+			<form class="dsgo-form">
+				<div class="dsgo-form-field" data-dsgo-field="plan">
+					<input name="plan" value="">
+				</div>
+				<div class="dsgo-form-field dsgo-form-field--conditional" data-dsgo-field="__proto__" data-dsgo-conditions='${proIs}'>
+					<input name="__proto__" value="">
+				</div>
+				<div class="dsgo-form-field dsgo-form-field--conditional" data-dsgo-field="extra" data-dsgo-conditions='${protoFilled}'>
+					<input name="extra" value="">
+				</div>
+			</form>
+		</div>`;
+		const container = document.querySelector('.dsgo-form-builder');
+		const form = container.querySelector('form');
+		const control = (name) => form.querySelector(`[name="${name}"]`);
+		initFormConditions(container, form);
+		expect(wrapper('__proto__').hidden).toBe(true);
+		expect(wrapper('extra').hidden).toBe(true);
+
+		control('plan').value = 'pro';
+		control('__proto__').value = 'x';
+		change(control('plan'));
+		expect(wrapper('__proto__').hidden).toBe(false);
+		expect(wrapper('extra').hidden).toBe(false);
 	});
 
 	it('re-evaluates after reset', () => {
