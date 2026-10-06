@@ -44,6 +44,9 @@ class Test_Form_Conditions extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * Normalization keeps only the known shape.
+	 */
 	public function test_normalize_rules_keeps_known_shape_only() {
 		$this->assertSame(
 			array(
@@ -66,6 +69,9 @@ class Test_Form_Conditions extends WP_UnitTestCase {
 		$this->assertNull( Form_Conditions::normalize_rules( array( 'rules' => array() ) ) );
 	}
 
+	/**
+	 * extract() walks nested blocks in document order.
+	 */
 	public function test_extract_reads_field_blocks_recursively_in_document_order() {
 		$blocks = parse_blocks(
 			'<!-- wp:designsetgo/form-text-field {"fieldName":"first"} /-->'

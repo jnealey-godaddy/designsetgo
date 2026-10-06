@@ -70,7 +70,7 @@ class Form_Conditions {
 				continue;
 			}
 			$rules[] = array(
-				'field' => sanitize_text_field( $rule['field'] ),
+				'field' => $rule['field'],
 				'op'    => $rule['op'],
 				'value' => self::to_text( isset( $rule['value'] ) ? $rule['value'] : '' ),
 			);
@@ -216,7 +216,7 @@ class Form_Conditions {
 		foreach ( $blocks as $block ) {
 			$name  = isset( $block['blockName'] ) ? $block['blockName'] : '';
 			$attrs = isset( $block['attrs'] ) && is_array( $block['attrs'] ) ? $block['attrs'] : array();
-			$field = isset( $attrs['fieldName'] ) ? sanitize_text_field( (string) $attrs['fieldName'] ) : '';
+			$field = isset( $attrs['fieldName'] ) && is_scalar( $attrs['fieldName'] ) ? sanitize_text_field( (string) $attrs['fieldName'] ) : '';
 
 			if ( '' !== $field && in_array( $name, self::FIELD_BLOCKS, true ) ) {
 				$result['fields'][] = $field;

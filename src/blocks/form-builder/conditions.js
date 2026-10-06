@@ -23,6 +23,19 @@ const NUMERIC_RE = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}(:\d{2})?$/;
 
+/**
+ * Read an own property only, so names like "constructor" never hit the prototype.
+ *
+ * @param {Object} obj Source object.
+ * @param {string} key Property name.
+ * @return {*} The value, or undefined when not an own property.
+ */
+function own(obj, key) {
+	return obj && Object.prototype.hasOwnProperty.call(obj, key)
+		? obj[key]
+		: undefined;
+}
+
 function toText(value) {
 	if (typeof value === 'string') {
 		return value.replace(TRIM_RE, '');
@@ -150,11 +163,11 @@ export function evaluateRule(rule, actual) {
  */
 export function visibleFields(fieldNames, conditions, values) {
 	const known = new Set(fieldNames);
-	const visible = {};
-	const active = {};
+	const visible = Object.create(null);
+	const active = Object.create(null);
 	fieldNames.forEach((name) => {
 		visible[name] = true;
-		const normalized = normalizeRules(conditions ? conditions[name] : null);
+		const normalized = normalizeRules(own(conditions, name));
 		if (!normalized) {
 			return;
 		}
@@ -166,7 +179,7 @@ export function visibleFields(fieldNames, conditions, values) {
 		}
 	});
 
-	const read = (field) => (visible[field] && values ? values[field] : '');
+	const read = (field) => (visible[field] ? own(values, field) : '');
 
 	for (let pass = 0; pass < fieldNames.length; pass++) {
 		let changed = false;
