@@ -57,8 +57,8 @@ function setVisible(wrapper, visible) {
 /**
  * Wire conditional logic for one form.
  *
- * @param {HTMLElement}          container .dsgo-form-builder wrapper.
- * @param {HTMLFormElement|null} form      The form element.
+ * @param {HTMLElement}      container .dsgo-form-builder wrapper.
+ * @param {HTMLElement|null} form      The form element.
  */
 export function initFormConditions(container, form) {
 	let wrappers = [];
@@ -81,9 +81,9 @@ export function initFormConditions(container, form) {
 /**
  * Parse rules, apply initial visibility and listen for changes.
  *
- * @param {HTMLElement}     container .dsgo-form-builder wrapper.
- * @param {HTMLFormElement} form      The form element.
- * @param {HTMLElement[]}   wrappers  Field wrappers in document order.
+ * @param {HTMLElement}   container .dsgo-form-builder wrapper.
+ * @param {HTMLElement}   form      The form element.
+ * @param {HTMLElement[]} wrappers  Field wrappers in document order.
  */
 function setUp(container, form, wrappers) {
 	const conditions = {};
