@@ -388,7 +388,7 @@ class Form_Handler {
 		// Conditional logic: fields the visitor couldn't see neither block the
 		// submission nor carry values (a hidden field's value is dropped even if
 		// a client sends one).
-		list( $fields, $form_definition['required_fields'] ) = Form_Conditions::filter_submission( $form_definition, (array) $fields );
+		list( $fields, $form_definition['required_fields'] ) = Form_Conditions_Submission::filter_submission( $form_definition, (array) $fields );
 
 		// Sanitize and validate all fields.
 		$form_field_types  = $form_definition['field_types'];
