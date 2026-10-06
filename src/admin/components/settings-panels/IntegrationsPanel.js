@@ -6,6 +6,7 @@
 
 import { __ } from '@wordpress/i18n';
 import { useState } from '@wordpress/element';
+import { useCopyToClipboard } from '@wordpress/compose';
 import {
 	Card,
 	CardHeader,
@@ -29,6 +30,10 @@ const generateSecret = () => {
 
 const IntegrationsPanel = ({ settings, updateSetting }) => {
 	const [generatedSecret, setGeneratedSecret] = useState('');
+	const [secretCopied, setSecretCopied] = useState(false);
+	const copySecretRef = useCopyToClipboard(generatedSecret, () =>
+		setSecretCopied(true)
+	);
 
 	return (
 		<Card className="designsetgo-settings-panel">
@@ -209,7 +214,7 @@ const IntegrationsPanel = ({ settings, updateSetting }) => {
 
 						<p className="designsetgo-section-description">
 							{__(
-								'Forms with a webhook URL send each submission to it as JSON. Receivers can verify the X-DSGo-Signature header with this secret.',
+								'Forms with a webhook URL send each submission to it as JSON. With a secret set, each request has an X-DSGo-Signature header: "sha256=" plus the HMAC-SHA256 of the X-DSGo-Timestamp header, a period, and the raw request body. Without one, requests are unsigned.',
 								'designsetgo'
 							)}
 						</p>
@@ -227,6 +232,7 @@ const IntegrationsPanel = ({ settings, updateSetting }) => {
 							}
 							onChange={(value) => {
 								setGeneratedSecret('');
+								setSecretCopied(false);
 								updateSetting(
 									'integrations',
 									'form_webhook_secret',
@@ -243,6 +249,7 @@ const IntegrationsPanel = ({ settings, updateSetting }) => {
 							onClick={() => {
 								const secret = generateSecret();
 								setGeneratedSecret(secret);
+								setSecretCopied(false);
 								updateSetting(
 									'integrations',
 									'form_webhook_secret',
@@ -260,7 +267,16 @@ const IntegrationsPanel = ({ settings, updateSetting }) => {
 									'Copy this secret into your webhook receiver now, then save. It will be hidden afterwards:',
 									'designsetgo'
 								)}{' '}
-								<code>{generatedSecret}</code>
+								<code>{generatedSecret}</code>{' '}
+								<Button
+									variant="secondary"
+									size="small"
+									ref={copySecretRef}
+								>
+									{secretCopied
+										? __('Copied', 'designsetgo')
+										: __('Copy secret', 'designsetgo')}
+								</Button>
 							</Notice>
 						)}
 					</div>

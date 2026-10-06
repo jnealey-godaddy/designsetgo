@@ -701,6 +701,7 @@ class Settings {
 	 * changed; all other existing settings are preserved. Nested groups are
 	 * merged field-by-field so sending { "forms": { "retention_days": 60 } }
 	 * updates only that field without resetting the rest of the forms group.
+	 * The returned settings are redacted like the GET response.
 	 *
 	 * @param \WP_REST_Request $request Request object.
 	 * @return \WP_REST_Response|\WP_Error
@@ -709,7 +710,7 @@ class Settings {
 		return rest_ensure_response(
 			array(
 				'success'  => true,
-				'settings' => self::update_settings( (array) $request->get_json_params() ),
+				'settings' => self::redact_secrets( self::update_settings( (array) $request->get_json_params() ) ),
 			)
 		);
 	}
@@ -857,6 +858,8 @@ class Settings {
 	 * - 'bool'       — Cast to boolean.
 	 * - 'absint'     — Unsigned integer via absint().
 	 * - 'text'       — sanitize_text_field().
+	 * - 'secret'     — Trimmed, control characters removed, otherwise verbatim
+	 *                  (sanitize_text_field() would alter %xx, <…> and spacing).
 	 * - 'textarea'   — sanitize_textarea_field() (preserves newlines).
 	 * - 'hex_color'  — sanitize_hex_color().
 	 * - 'key'        — sanitize_key().
@@ -898,7 +901,7 @@ class Settings {
 				'google_maps_api_key'  => 'text',
 				'turnstile_site_key'   => 'text',
 				'turnstile_secret_key' => 'text',
-				'form_webhook_secret'  => 'text',
+				'form_webhook_secret'  => 'secret',
 			),
 			'sticky_header'       => array(
 				'enable'                    => 'bool',
@@ -962,6 +965,8 @@ class Settings {
 				return absint( $value );
 			case 'text':
 				return sanitize_text_field( $value );
+			case 'secret':
+				return is_scalar( $value ) ? trim( (string) preg_replace( '/[\x00-\x1F\x7F]/', '', (string) $value ) ) : $fallback;
 			case 'css_selector':
 				return self::sanitize_css_selector( $value );
 			case 'textarea':
