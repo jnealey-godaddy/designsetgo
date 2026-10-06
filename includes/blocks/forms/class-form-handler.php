@@ -113,7 +113,7 @@ class Form_Handler {
 	 * Version 3 adds `rules`, and drops definitions v2 cached from
 	 * password-protected posts. Bump alongside EXTERNAL_DEFINITIONS_CACHE.
 	 */
-	const DEFINITION_CACHE_PREFIX = 'dsgo_form_definition_v3_';
+	const DEFINITION_CACHE_PREFIX = 'dsgo_form_definition_v4_';
 
 	/**
 	 * Constructor.
@@ -456,7 +456,11 @@ class Form_Handler {
 		}
 
 		// Store submission.
-		$submission_id = $this->store_submission( $form_id, $sanitized_fields );
+		$submission_id = $this->store_submission(
+			$form_id,
+			$sanitized_fields,
+			isset( $form_definition['labels'] ) && is_array( $form_definition['labels'] ) ? $form_definition['labels'] : array()
+		);
 
 		if ( is_wp_error( $submission_id ) ) {
 			return new WP_Error(
@@ -476,7 +480,8 @@ class Form_Handler {
 		}
 
 		// Trigger action hook for email notifications, integrations, etc.
-		do_action( 'designsetgo_form_submitted', $submission_id, $form_id, $sanitized_fields );
+		// The fourth argument is the form's server-resolved block attributes.
+		do_action( 'designsetgo_form_submitted', $submission_id, $form_id, $sanitized_fields, $block_attrs );
 
 		return new WP_REST_Response(
 			array(
@@ -803,9 +808,16 @@ class Form_Handler {
 	 *
 	 * @param string $form_id Form ID.
 	 * @param array  $fields Sanitized fields array.
+	 * @param array  $labels Field labels keyed by name.
 	 * @return int|WP_Error Post ID on success, WP_Error on failure.
 	 */
-	private function store_submission( $form_id, $fields ) {
+	private function store_submission( $form_id, $fields, array $labels = array() ) {
+		foreach ( $fields as $name => $data ) {
+			if ( isset( $labels[ $name ] ) ) {
+				$fields[ $name ]['label'] = $labels[ $name ];
+			}
+		}
+
 		$post_id = wp_insert_post(
 			array(
 				'post_type'   => 'dsgo_form_submission',
@@ -1409,17 +1421,29 @@ class Form_Handler {
 	 * Build the server-owned definition for a parsed form block.
 	 *
 	 * @param array $form_block Parsed designsetgo/form-builder block.
-	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[], rules: array} Form definition.
+	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[], rules: array, labels: array<string, string>} Form definition.
 	 */
 	private function build_form_definition( array $form_block ) {
 		$inner_blocks = isset( $form_block['innerBlocks'] ) ? $form_block['innerBlocks'] : array();
+		$field_types  = $this->extract_field_types_from_blocks( $inner_blocks );
+		$labels       = $this->extract_field_labels_from_blocks( $inner_blocks );
+
+		// The phone field's companion country-code select has no label of its own.
+		foreach ( $field_types as $name => $type ) {
+			$base = substr( $name, 0, -strlen( '_country_code' ) );
+			if ( 'country_code' === $type && isset( $labels[ $base ] ) ) {
+				/* translators: %s: phone field label */
+				$labels[ $name ] = sprintf( __( '%s (country code)', 'designsetgo' ), $labels[ $base ] );
+			}
+		}
 
 		return array(
 			'attributes'      => $this->apply_form_block_defaults( $form_block['attrs'] ),
-			'field_types'     => $this->extract_field_types_from_blocks( $inner_blocks ),
+			'field_types'     => $field_types,
 			'constraints'     => $this->extract_field_value_constraints_from_blocks( $inner_blocks ),
 			'required_fields' => $this->extract_required_field_names_from_blocks( $inner_blocks ),
 			'rules'           => Form_Field_Rules::extract( $inner_blocks ),
+			'labels'          => $labels,
 		);
 	}
 
@@ -1768,6 +1792,54 @@ class Form_Handler {
 		}
 
 		return $field_types;
+	}
+
+	/**
+	 * Extract each field's visible label from a form's inner blocks.
+	 *
+	 * A label left at its block.json default is absent from the block comment,
+	 * so the registered default is used. Labels are stored as plain text.
+	 *
+	 * @param array $blocks Parsed inner blocks.
+	 * @return array<string, string> Labels keyed by field name.
+	 */
+	private function extract_field_labels_from_blocks( $blocks ) {
+		$labels = array();
+
+		foreach ( $blocks as $block ) {
+			$block_name = isset( $block['blockName'] ) ? $block['blockName'] : '';
+			$attrs      = isset( $block['attrs'] ) && is_array( $block['attrs'] ) ? $block['attrs'] : array();
+			$field_name = isset( $attrs['fieldName'] ) ? sanitize_text_field( $attrs['fieldName'] ) : '';
+
+			if ( $field_name && $this->map_block_name_to_field_type( $block_name ) ) {
+				$label = isset( $attrs['label'] ) && is_string( $attrs['label'] ) ? $attrs['label'] : $this->default_field_label( $block_name );
+				$label = trim( html_entity_decode( wp_strip_all_tags( $label ), ENT_QUOTES, 'UTF-8' ) );
+
+				if ( '' !== $label ) {
+					$labels[ $field_name ] = $label;
+				}
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$labels = array_merge( $labels, $this->extract_field_labels_from_blocks( $block['innerBlocks'] ) );
+			}
+		}
+
+		return $labels;
+	}
+
+	/**
+	 * Registered default label for a field block.
+	 *
+	 * @param string $block_name Block name.
+	 * @return string Default label, or '' when the block has none.
+	 */
+	private function default_field_label( $block_name ) {
+		$block_type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
+
+		return ( $block_type && isset( $block_type->attributes['label']['default'] ) && is_string( $block_type->attributes['label']['default'] ) )
+			? $block_type->attributes['label']['default']
+			: '';
 	}
 
 	/**
