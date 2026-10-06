@@ -76,9 +76,10 @@ class Form_Webhooks {
 	/**
 	 * Make the first attempt for queued submissions, after the response is sent.
 	 * Deferred to `shutdown` so a slow receiver never delays the visitor. The
-	 * status stays `pending` until then; if PHP dies first, reschedule_stranded()
-	 * recovers it. The response is flushed early on PHP-FPM and LiteSpeed only;
-	 * after that, output from later shutdown callbacks no longer reaches the visitor.
+	 * status stays `pending` until then; if PHP dies first, Form_Webhook_Recovery
+	 * recovers it. Only PHP-FPM and LiteSpeed can flush the response early;
+	 * elsewhere the attempt is handed to WP-Cron instead. After the flush,
+	 * output from later shutdown callbacks no longer reaches the visitor.
 	 */
 	public function deliver_queued(): void {
 		if ( empty( $this->queue ) ) {
@@ -87,6 +88,19 @@ class Form_Webhooks {
 
 		$queued      = $this->queue;
 		$this->queue = array(); // Cleared first so a re-entrant call can't double-send.
+
+		/**
+		 * Filters whether the first attempt is sent at shutdown, after the
+		 * response is flushed. When false it is handed to WP-Cron.
+		 *
+		 * @since 2.10.0
+		 *
+		 * @param bool $after_response Default: whether the server can flush early.
+		 */
+		if ( ! apply_filters( 'designsetgo_form_webhook_send_after_response', function_exists( 'fastcgi_finish_request' ) || function_exists( 'litespeed_finish_request' ) ) ) {
+			$this->hand_off_to_cron( $queued );
+			return;
+		}
 
 		ignore_user_abort( true );
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
@@ -100,48 +114,32 @@ class Form_Webhooks {
 		}
 	}
 
-	/** Daily cron entry point; action callbacks must not return a value. */
-	public function run_stranded_sweep(): void {
-		$this->reschedule_stranded();
-	}
-
 	/**
-	 * Schedule a retry for submissions stuck in `pending` with none scheduled.
+	 * Schedule first attempts on WP-Cron so the visitor never waits on the receiver.
 	 *
-	 * Recovers deliveries lost to PHP dying mid-call or a deactivated plugin.
-	 * Submissions under ten minutes old are skipped (in-flight deliveries).
-	 *
-	 * @return int Number of retries scheduled.
+	 * @param int[] $queued Submission IDs.
 	 */
-	public function reschedule_stranded(): int {
-		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- Bounded daily sweep.
-		$ids = get_posts(
-			array(
-				'post_type'      => 'dsgo_form_submission',
-				'post_status'    => 'any',
-				'fields'         => 'ids',
-				'posts_per_page' => 100,
-				'no_found_rows'  => true,
-				'meta_key'       => '_dsg_webhook_status', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Bounded daily sweep.
-				'meta_value'     => 'pending', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Bounded daily sweep.
-				'date_query'     => array(
-					array(
-						'column' => 'post_date_gmt',
-						'before' => gmdate( 'Y-m-d H:i:s', time() - 10 * MINUTE_IN_SECONDS ), // UTC, matching the column.
-					),
-				),
-			)
-		);
-
-		$scheduled = 0;
-		foreach ( $ids as $id ) {
-			$args = array( (int) $id );
-			if ( false === wp_next_scheduled( self::RETRY_HOOK, $args ) && wp_schedule_single_event( time(), self::RETRY_HOOK, $args ) ) {
-				++$scheduled;
+	private function hand_off_to_cron( array $queued ): void {
+		$spawn = false;
+		foreach ( $queued as $submission_id ) {
+			if ( true === wp_schedule_single_event( time(), self::RETRY_HOOK, array( $submission_id ), true ) ) {
+				$spawn = true;
+				continue;
 			}
+			$this->deliver( $submission_id ); // The scheduler refused: send now rather than lose it.
 		}
 
-		return $scheduled;
+		// spawn_cron() redirects under ALTERNATE_WP_CRON, which can't work after output.
+		$alternate = defined( 'ALTERNATE_WP_CRON' ) && ALTERNATE_WP_CRON;
+		$disabled  = defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON;
+		if ( $spawn && ! $alternate && ! $disabled && ! wp_doing_cron() ) {
+			spawn_cron();
+		}
+	}
+
+	/** Daily cron entry point; action callbacks must not return a value. */
+	public function run_stranded_sweep(): void {
+		Form_Webhook_Recovery::reschedule_stranded();
 	}
 
 	/**
@@ -160,7 +158,8 @@ class Form_Webhooks {
 	}
 
 	/**
-	 * Manually resend: reset attempts and deliver now.
+	 * Manually resend: reset attempts and deliver now. Gets a new delivery ID,
+	 * so a receiver that de-duplicates on X-DSGo-Delivery accepts it.
 	 *
 	 * @param int $submission_id Submission post ID.
 	 * @return string 'delivered', 'pending', 'failed', or 'invalid' when there is nothing to resend.
@@ -171,6 +170,7 @@ class Form_Webhooks {
 		}
 
 		wp_clear_scheduled_hook( self::RETRY_HOOK, array( $submission_id ) );
+		update_post_meta( $submission_id, '_dsg_webhook_delivery_id', wp_generate_uuid4() );
 		update_post_meta( $submission_id, '_dsg_webhook_attempts', 0 );
 		update_post_meta( $submission_id, '_dsg_webhook_status', 'pending' );
 
@@ -185,7 +185,7 @@ class Form_Webhooks {
 	 */
 	public function deliver( int $submission_id ): string {
 		$form_id = (string) get_post_meta( $submission_id, '_dsg_form_id', true );
-		$url     = $this->allowed_url( (string) get_post_meta( $submission_id, '_dsg_webhook_url', true ), $form_id, $submission_id );
+		$url     = Form_Webhook_Request::allowed_url( (string) get_post_meta( $submission_id, '_dsg_webhook_url', true ), $form_id, $submission_id );
 
 		if ( '' === $url ) {
 			return $this->record_failure( $submission_id, $form_id, 0, __( 'The webhook URL is not a valid public http(s) address, or it was blocked by a filter.', 'designsetgo' ), false );
@@ -194,35 +194,31 @@ class Form_Webhooks {
 		$request = Form_Webhook_Request::build( $submission_id );
 
 		update_post_meta( $submission_id, '_dsg_webhook_attempts', (int) get_post_meta( $submission_id, '_dsg_webhook_attempts', true ) + 1 );
+		update_post_meta( $submission_id, '_dsg_webhook_last_attempt', time() );
 		update_post_meta( $submission_id, '_dsg_webhook_signed', $request['signed'] ? 'yes' : 'no' );
 
-		$response = wp_safe_remote_post(
-			$url,
-			array(
-				'timeout'     => (int) apply_filters( 'designsetgo_form_webhook_timeout', 5 ),
-				'redirection' => 0,
-				'headers'     => $request['headers'],
-				'body'        => $request['body'],
-			)
-		);
-
-		$code = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+		$result = Form_Webhook_Request::send( $url, $request );
+		$code   = $result['code'];
 		update_post_meta( $submission_id, '_dsg_webhook_last_code', $code );
 
 		if ( $code >= 200 && $code < 300 ) {
 			update_post_meta( $submission_id, '_dsg_webhook_status', 'delivered' );
 			update_post_meta( $submission_id, '_dsg_webhook_delivered_date', current_time( 'mysql' ) );
 			delete_post_meta( $submission_id, '_dsg_webhook_last_error' );
+			/**
+			 * Fires after a webhook delivery succeeds.
+			 *
+			 * @since 2.10.0
+			 *
+			 * @param int    $submission_id Submission post ID.
+			 * @param string $form_id       Form ID.
+			 * @param int    $code          HTTP status code.
+			 */
 			do_action( 'designsetgo_form_webhook_delivered', $submission_id, $form_id, $code );
 			return 'delivered';
 		}
 
-		$error = is_wp_error( $response )
-			? $response->get_error_message()
-			/* translators: %d: HTTP status code */
-			: sprintf( __( 'The receiver responded with HTTP %d.', 'designsetgo' ), $code );
-
-		return $this->record_failure( $submission_id, $form_id, $code, $error, true );
+		return $this->record_failure( $submission_id, $form_id, $code, $result['error'], Form_Webhook_Request::is_retryable( $code ) );
 	}
 
 	/**
@@ -255,6 +251,17 @@ class Form_Webhooks {
 		}
 
 		update_post_meta( $submission_id, '_dsg_webhook_status', 'failed' );
+		/**
+		 * Fires when a webhook delivery gives up: retries are exhausted, the
+		 * error is permanent, or the URL is not allowed.
+		 *
+		 * @since 2.10.0
+		 *
+		 * @param int    $submission_id Submission post ID.
+		 * @param string $form_id       Form ID.
+		 * @param string $error         Last error message.
+		 * @param int    $code          Last HTTP code, 0 without a response.
+		 */
 		do_action( 'designsetgo_form_webhook_failed', $submission_id, $form_id, $error, $code );
 		return 'failed';
 	}
@@ -265,27 +272,17 @@ class Form_Webhooks {
 	 * @return int[] Delays.
 	 */
 	private function retry_delays(): array {
+		/**
+		 * Filters the seconds before each retry. The count is the number of
+		 * retries; an empty array disables them.
+		 *
+		 * @since 2.10.0
+		 *
+		 * @param int[] $delays Delays. Default 60, 300, 1800, 7200.
+		 */
 		$delays = apply_filters( 'designsetgo_form_webhook_retry_delays', self::DEFAULT_RETRY_DELAYS );
 
 		return array_values( array_map( 'absint', (array) $delays ) );
-	}
-
-	/**
-	 * Validate the stored URL and run it through the allowlist filter.
-	 *
-	 * @param string $url           Stored URL.
-	 * @param string $form_id       Form ID.
-	 * @param int    $submission_id Submission post ID.
-	 * @return string URL, or '' when not allowed.
-	 */
-	private function allowed_url( string $url, string $form_id, int $submission_id ): string {
-		if ( '' === $url || ! wp_http_validate_url( $url ) ) {
-			return '';
-		}
-
-		$url = apply_filters( 'designsetgo_form_webhook_url', $url, $form_id, $submission_id );
-
-		return ( is_string( $url ) && '' !== $url && wp_http_validate_url( $url ) ) ? $url : '';
 	}
 
 	/**

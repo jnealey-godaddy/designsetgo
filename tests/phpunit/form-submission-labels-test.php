@@ -155,4 +155,63 @@ class Test_Form_Submission_Labels extends WP_UnitTestCase {
 		$this->assertFalse( $captured['enableEmail'] );
 		$this->assertArrayHasKey( 'successMessage', $captured, 'Defaults are merged in.' );
 	}
+
+	/**
+	 * End to end: the webhook URL comes from the saved block, never from the request.
+	 */
+	public function test_webhook_url_comes_from_the_saved_form_not_the_request() {
+		$plugin   = \DesignSetGo\Plugin::instance();
+		$sent     = array();
+		$fake     = function ( $pre, $args, $url ) use ( &$sent ) {
+			$sent[] = $url;
+			return array(
+				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'body'     => '',
+				'headers'  => array(),
+			);
+		};
+		add_filter( 'pre_http_request', $fake, 10, 3 );
+		add_filter( 'designsetgo_form_webhook_send_after_response', '__return_true' );
+
+		$post_id = $this->publish_form( 'hook1', '<!-- wp:designsetgo/form-text-field {"fieldName":"a"} /-->', ',"webhookUrl":"https://93.184.216.34/saved"' );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
+		$request->set_param( 'formId', 'hook1' );
+		$request->set_param( 'fields', array( array( 'name' => 'a', 'value' => 'x', 'type' => 'text' ) ) );
+		$request->set_param( 'honeypot', '' );
+		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'sourcePostId', $post_id );
+		$request->set_param( 'webhookUrl', 'https://93.184.216.35/attacker' );
+		$result = $this->handler->handle_form_submission( $request );
+
+		$plugin->form_webhooks->deliver_queued();
+		remove_action( 'shutdown', array( $plugin->form_webhooks, 'deliver_queued' ), PHP_INT_MAX );
+		remove_filter( 'designsetgo_form_webhook_send_after_response', '__return_true' );
+		remove_filter( 'pre_http_request', $fake, 10 );
+
+		$this->assertNotWPError( $result );
+		$submission_id = $result->get_data()['submissionId'];
+		$this->assertSame( 'https://93.184.216.34/saved', get_post_meta( $submission_id, '_dsg_webhook_url', true ) );
+		$this->assertSame( array( 'https://93.184.216.34/saved' ), $sent );
+		$this->assertSame( 'delivered', get_post_meta( $submission_id, '_dsg_webhook_status', true ) );
+	}
+
+	/**
+	 * A form without a webhook URL records no webhook state, whatever the request says.
+	 */
+	public function test_form_without_webhook_url_ignores_a_request_url() {
+		$post_id = $this->publish_form( 'hook2', '<!-- wp:designsetgo/form-text-field {"fieldName":"a"} /-->' );
+		$request = new WP_REST_Request( 'POST', '/designsetgo/v1/form/submit' );
+		$request->set_param( 'formId', 'hook2' );
+		$request->set_param( 'fields', array( array( 'name' => 'a', 'value' => 'x', 'type' => 'text' ) ) );
+		$request->set_param( 'honeypot', '' );
+		$request->set_param( 'timestamp', '' );
+		$request->set_param( 'sourcePostId', $post_id );
+		$request->set_param( 'webhookUrl', 'https://93.184.216.35/attacker' );
+		$result = $this->handler->handle_form_submission( $request );
+
+		$this->assertNotWPError( $result );
+		$submission_id = $result->get_data()['submissionId'];
+		$this->assertSame( '', get_post_meta( $submission_id, '_dsg_webhook_url', true ) );
+		$this->assertSame( '', get_post_meta( $submission_id, '_dsg_webhook_status', true ) );
+	}
 }
