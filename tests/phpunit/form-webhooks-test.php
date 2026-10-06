@@ -11,6 +11,7 @@ use WP_UnitTestCase;
 use WP_Error;
 use DesignSetGo\Admin\Settings;
 use DesignSetGo\Blocks\Form_Webhooks;
+use DesignSetGo\Blocks\Form_Webhook_Status;
 
 /**
  * Form webhooks test case.
@@ -105,6 +106,8 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 	 */
 	private function submit( $id, $url = self::URL ) {
 		$this->webhooks->handle_submission( $id, 'contact-a1', array(), array( 'webhookUrl' => $url ) );
+		// PHPUnit never fires `shutdown`, so run the deferred first attempt by hand.
+		$this->webhooks->deliver_queued();
 	}
 
 	private function set_secret( $secret ) {
@@ -118,7 +121,7 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 
 		$this->assertCount( 0, $this->requests );
 		$this->assertSame( '', get_post_meta( $id, '_dsg_webhook_status', true ) );
-		$this->assertSame( '', Form_Webhooks::status_label( $id ) );
+		$this->assertSame( '', Form_Webhook_Status::label( $id ) );
 	}
 
 	public function test_signed_delivery_payload_and_headers() {
@@ -261,7 +264,7 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 		$this->assertSame( '503', (string) get_post_meta( $id, '_dsg_webhook_last_code', true ) );
 		$this->assertCount( 1, $failed );
 		$this->assertSame( 'contact-a1', $failed[0][1] );
-		$this->assertSame( 'Failed', Form_Webhooks::status_label( $id ) );
+		$this->assertSame( 'Failed', Form_Webhook_Status::label( $id ) );
 
 		// A stray retry after failure does nothing.
 		$this->webhooks->retry( $id );
@@ -351,6 +354,81 @@ class Test_Form_Webhooks extends WP_UnitTestCase {
 
 		remove_filter( 'designsetgo_form_webhook_retry_delays', $delays );
 		$this->assertCount( 2, $this->requests );
+		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
+	}
+
+	public function test_first_attempt_is_deferred_until_shutdown() {
+		$id = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+
+		$this->webhooks->handle_submission( $id, 'contact-a1', array(), array( 'webhookUrl' => self::URL ) );
+
+		$this->assertCount( 0, $this->requests );
+		$this->assertSame( 'pending', get_post_meta( $id, '_dsg_webhook_status', true ) );
+		$this->assertNotFalse( has_action( 'shutdown', array( $this->webhooks, 'deliver_queued' ) ) );
+
+		$this->webhooks->deliver_queued();
+		$this->assertCount( 1, $this->requests );
+		$this->assertSame( 'delivered', get_post_meta( $id, '_dsg_webhook_status', true ) );
+
+		$this->webhooks->deliver_queued();
+		$this->assertCount( 1, $this->requests, 'The queue is cleared after delivery.' );
+	}
+
+	public function test_reschedule_stranded_queues_old_pending_only() {
+		$old = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$had = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$ok  = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$new = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+
+		foreach ( array( $old, $had, $new ) as $id ) {
+			update_post_meta( $id, '_dsg_webhook_status', 'pending' );
+		}
+		update_post_meta( $ok, '_dsg_webhook_status', 'delivered' );
+
+		$recent = gmdate( 'Y-m-d H:i:s', time() - 120 );
+		wp_update_post(
+			array(
+				'ID'            => $new,
+				'post_date'     => get_date_from_gmt( $recent ),
+				'post_date_gmt' => $recent,
+			)
+		);
+		wp_schedule_single_event( time() + 500, Form_Webhooks::RETRY_HOOK, array( $had ) );
+		$existing = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $had ) );
+
+		$this->assertSame( 1, $this->webhooks->reschedule_stranded() );
+		$this->assertNotFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $old ) ) );
+		$this->assertSame( $existing, wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $had ) ) );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $ok ) ) );
+		$this->assertFalse( wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $new ) ) );
+		$this->assertSame( 0, $this->webhooks->reschedule_stranded(), 'A second sweep finds nothing new.' );
+	}
+
+	public function test_zero_retry_delay_is_kept() {
+		$delays = function () {
+			return array( 0, 60 );
+		};
+		add_filter( 'designsetgo_form_webhook_retry_delays', $delays );
+		$this->response = array( 'response' => array( 'code' => 500, 'message' => 'Error' ), 'body' => '', 'headers' => array() );
+
+		$id     = $this->make_submission( array( 'a' => array( 'value' => 'x', 'type' => 'text' ) ) );
+		$before = time();
+		$this->submit( $id );
+		$first = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) );
+		$this->assertGreaterThanOrEqual( $before, $first );
+		$this->assertLessThanOrEqual( time(), $first );
+
+		wp_clear_scheduled_hook( Form_Webhooks::RETRY_HOOK, array( $id ) );
+		$this->webhooks->retry( $id );
+		$second = wp_next_scheduled( Form_Webhooks::RETRY_HOOK, array( $id ) );
+		$this->assertGreaterThanOrEqual( $before + 60, $second );
+		$this->assertLessThanOrEqual( time() + 60, $second );
+
+		wp_clear_scheduled_hook( Form_Webhooks::RETRY_HOOK, array( $id ) );
+		$this->webhooks->retry( $id );
+
+		remove_filter( 'designsetgo_form_webhook_retry_delays', $delays );
+		$this->assertCount( 3, $this->requests );
 		$this->assertSame( 'failed', get_post_meta( $id, '_dsg_webhook_status', true ) );
 	}
 }

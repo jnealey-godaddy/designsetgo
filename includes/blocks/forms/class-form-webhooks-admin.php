@@ -69,7 +69,7 @@ class Form_Webhooks_Admin {
 		if ( 'dsgo_webhook' !== $column ) {
 			return;
 		}
-		$label = Form_Webhooks::status_label( (int) $post_id );
+		$label = Form_Webhook_Status::label( (int) $post_id );
 		if ( '' === $label ) {
 			echo '<span style="color: #999;">—</span>';
 			return;
@@ -79,7 +79,7 @@ class Form_Webhooks_Admin {
 			'failed'    => '#dc3232',
 			'pending'   => '#996800',
 		);
-		$color  = isset( $colors[ Form_Webhooks::get_status( (int) $post_id ) ] ) ? $colors[ Form_Webhooks::get_status( (int) $post_id ) ] : 'inherit';
+		$color  = isset( $colors[ Form_Webhook_Status::get_status( (int) $post_id ) ] ) ? $colors[ Form_Webhook_Status::get_status( (int) $post_id ) ] : 'inherit';
 		echo '<span style="color: ' . esc_attr( $color ) . ';">' . esc_html( $label ) . '</span>';
 	}
 
@@ -94,7 +94,7 @@ class Form_Webhooks_Admin {
 		if ( ! $post instanceof \WP_Post || 'dsgo_form_submission' !== $post->post_type || ! $this->has_webhook( $post->ID ) ) {
 			return $actions;
 		}
-		$actions['dsgo_resend_webhook'] = '<a href="' . esc_url( Form_Webhooks::resend_url( $post->ID ) ) . '">' . esc_html__( 'Resend webhook', 'designsetgo' ) . '</a>';
+		$actions['dsgo_resend_webhook'] = '<a href="' . esc_url( Form_Webhook_Status::resend_url( $post->ID ) ) . '">' . esc_html__( 'Resend webhook', 'designsetgo' ) . '</a>';
 		return $actions;
 	}
 
@@ -122,7 +122,7 @@ class Form_Webhooks_Admin {
 		$error  = (string) get_post_meta( $id, '_dsg_webhook_last_error', true );
 		$date   = (string) get_post_meta( $id, '_dsg_webhook_delivered_date', true );
 		$rows   = array(
-			__( 'Status', 'designsetgo' )   => Form_Webhooks::status_label( $id ),
+			__( 'Status', 'designsetgo' )   => Form_Webhook_Status::label( $id ),
 			__( 'Receiver', 'designsetgo' ) => $host,
 			__( 'Attempts', 'designsetgo' ) => (string) (int) get_post_meta( $id, '_dsg_webhook_attempts', true ),
 		);
@@ -148,7 +148,7 @@ class Form_Webhooks_Admin {
 			echo '<tr><th scope="row">' . esc_html( $label ) . '</th><td>' . esc_html( $value ) . '</td></tr>';
 		}
 		echo '</tbody></table>';
-		echo '<p><a class="button" href="' . esc_url( Form_Webhooks::resend_url( $id ) ) . '">' . esc_html__( 'Resend webhook', 'designsetgo' ) . '</a></p>';
+		echo '<p><a class="button" href="' . esc_url( Form_Webhook_Status::resend_url( $id ) ) . '">' . esc_html__( 'Resend webhook', 'designsetgo' ) . '</a></p>';
 	}
 
 	/**

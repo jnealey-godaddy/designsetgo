@@ -19,20 +19,21 @@ defined( 'ABSPATH' ) || exit;
  */
 class Form_Webhooks {
 
-	/**
-	 * WP-Cron hook for scheduled retries.
-	 */
+	/** WP-Cron hook for scheduled retries. */
 	const RETRY_HOOK = 'designsetgo_form_webhook_retry';
 
-	/**
-	 * Admin-post action for a manual resend.
-	 */
+	/** Admin-post action for a manual resend. */
 	const RESEND_ACTION = 'designsetgo_resend_webhook';
 
-	/**
-	 * Seconds to wait before attempts 2, 3, 4 and 5.
-	 */
+	/** Seconds to wait before attempts 2, 3, 4 and 5. */
 	const DEFAULT_RETRY_DELAYS = array( 60, 300, 1800, 7200 );
+
+	/**
+	 * Submission IDs whose first attempt is waiting for the shutdown hook.
+	 *
+	 * @var int[]
+	 */
+	private $queue = array();
 
 	/**
 	 * Constructor.
@@ -40,6 +41,12 @@ class Form_Webhooks {
 	public function __construct() {
 		add_action( 'designsetgo_form_submitted', array( $this, 'handle_submission' ), 10, 4 );
 		add_action( self::RETRY_HOOK, array( $this, 'retry' ) );
+		add_action(
+			'designsetgo_cleanup_old_submissions',
+			function () {
+				$this->reschedule_stranded(); // Wrapped: action callbacks must not return a value.
+			}
+		);
 	}
 
 	/**
@@ -65,7 +72,76 @@ class Form_Webhooks {
 		update_post_meta( $submission_id, '_dsg_webhook_attempts', 0 );
 		update_post_meta( $submission_id, '_dsg_webhook_status', 'pending' );
 
-		$this->deliver( $submission_id );
+		$this->queue[] = $submission_id;
+		if ( ! has_action( 'shutdown', array( $this, 'deliver_queued' ) ) ) {
+			add_action( 'shutdown', array( $this, 'deliver_queued' ), PHP_INT_MAX );
+		}
+	}
+
+	/**
+	 * Make the first attempt for queued submissions, after the response is sent.
+	 * Deferred to `shutdown` so a slow receiver never delays the visitor. The
+	 * status stays `pending` until then; if PHP dies first, reschedule_stranded()
+	 * recovers it. The response is flushed early on PHP-FPM and LiteSpeed only.
+	 */
+	public function deliver_queued(): void {
+		if ( empty( $this->queue ) ) {
+			return;
+		}
+
+		$queued      = $this->queue;
+		$this->queue = array(); // Cleared first so a re-entrant call can't double-send.
+
+		ignore_user_abort( true );
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			fastcgi_finish_request();
+		} elseif ( function_exists( 'litespeed_finish_request' ) ) {
+			litespeed_finish_request();
+		}
+
+		foreach ( $queued as $submission_id ) {
+			$this->deliver( $submission_id );
+		}
+	}
+
+	/**
+	 * Schedule a retry for submissions stuck in `pending` with none scheduled.
+	 *
+	 * Recovers deliveries lost to PHP dying mid-call or a deactivated plugin.
+	 * Runs on the daily cleanup cron; submissions under ten minutes old are
+	 * skipped so an in-flight delivery isn't double-queued.
+	 *
+	 * @return int Number of retries scheduled.
+	 */
+	public function reschedule_stranded(): int {
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- Bounded daily sweep.
+		$ids = get_posts(
+			array(
+				'post_type'      => 'dsgo_form_submission',
+				'post_status'    => 'any',
+				'fields'         => 'ids',
+				'posts_per_page' => 100,
+				'no_found_rows'  => true,
+				'meta_key'       => '_dsg_webhook_status', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Bounded daily sweep.
+				'meta_value'     => 'pending', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Bounded daily sweep.
+				'date_query'     => array(
+					array(
+						'column' => 'post_date_gmt',
+						'before' => '10 minutes ago',
+					),
+				),
+			)
+		);
+
+		$scheduled = 0;
+		foreach ( $ids as $id ) {
+			$args = array( (int) $id );
+			if ( false === wp_next_scheduled( self::RETRY_HOOK, $args ) && wp_schedule_single_event( time(), self::RETRY_HOOK, $args ) ) {
+				++$scheduled;
+			}
+		}
+
+		return $scheduled;
 	}
 
 	/**
@@ -76,7 +152,7 @@ class Form_Webhooks {
 	public function retry( $submission_id ) {
 		$submission_id = absint( $submission_id );
 
-		if ( ! self::is_submission( $submission_id ) || 'pending' !== self::get_status( $submission_id ) || 'trash' === get_post_status( $submission_id ) ) {
+		if ( ! self::is_submission( $submission_id ) || 'pending' !== Form_Webhook_Status::get_status( $submission_id ) || 'trash' === get_post_status( $submission_id ) ) {
 			return;
 		}
 
@@ -115,30 +191,18 @@ class Form_Webhooks {
 			return $this->record_failure( $submission_id, $form_id, 0, __( 'The webhook URL is not a valid public http(s) address, or it was blocked by a filter.', 'designsetgo' ), false );
 		}
 
-		$body      = (string) wp_json_encode( $this->build_payload( $submission_id ) );
-		$timestamp = time();
-		$secret    = self::get_secret();
-		$headers   = array(
-			'Content-Type'     => 'application/json',
-			'User-Agent'       => 'DesignSetGo/' . DESIGNSETGO_VERSION . '; ' . home_url( '/' ),
-			'X-DSGo-Event'     => 'form.submitted',
-			'X-DSGo-Delivery'  => (string) get_post_meta( $submission_id, '_dsg_webhook_delivery_id', true ),
-			'X-DSGo-Timestamp' => (string) $timestamp,
-		);
-		if ( '' !== $secret ) {
-			$headers['X-DSGo-Signature'] = 'sha256=' . hash_hmac( 'sha256', $timestamp . '.' . $body, $secret );
-		}
+		$request = Form_Webhook_Request::build( $submission_id );
 
 		update_post_meta( $submission_id, '_dsg_webhook_attempts', (int) get_post_meta( $submission_id, '_dsg_webhook_attempts', true ) + 1 );
-		update_post_meta( $submission_id, '_dsg_webhook_signed', '' !== $secret ? 'yes' : 'no' );
+		update_post_meta( $submission_id, '_dsg_webhook_signed', $request['signed'] ? 'yes' : 'no' );
 
 		$response = wp_safe_remote_post(
 			$url,
 			array(
 				'timeout'     => (int) apply_filters( 'designsetgo_form_webhook_timeout', 5 ),
 				'redirection' => 0,
-				'headers'     => $headers,
-				'body'        => $body,
+				'headers'     => $request['headers'],
+				'body'        => $request['body'],
 			)
 		);
 
@@ -159,104 +223,6 @@ class Form_Webhooks {
 			: sprintf( __( 'The receiver responded with HTTP %d.', 'designsetgo' ), $code );
 
 		return $this->record_failure( $submission_id, $form_id, $code, $error, true );
-	}
-
-	/**
-	 * Build the JSON payload from the stored submission.
-	 *
-	 * @param int $submission_id Submission post ID.
-	 * @return array Payload.
-	 */
-	public function build_payload( int $submission_id ): array {
-		$form_id = (string) get_post_meta( $submission_id, '_dsg_form_id', true );
-		$stored  = get_post_meta( $submission_id, '_dsg_form_fields', true );
-		$fields  = array();
-		$labels  = array();
-
-		foreach ( is_array( $stored ) ? $stored : array() as $name => $data ) {
-			if ( ! is_array( $data ) ) {
-				continue;
-			}
-			$fields[ $name ] = isset( $data['value'] ) ? $data['value'] : '';
-			$labels[ $name ] = isset( $data['label'] ) && '' !== $data['label'] ? (string) $data['label'] : (string) $name;
-		}
-
-		$payload = array(
-			'event'         => 'form.submitted',
-			'form_id'       => $form_id,
-			'submission_id' => $submission_id,
-			'submitted_at'  => (string) get_post_time( 'c', true, $submission_id ),
-			'source_url'    => (string) get_post_meta( $submission_id, '_dsg_submission_referer', true ),
-			'fields'        => (object) $fields,
-			'labels'        => (object) $labels,
-		);
-
-		return (array) apply_filters( 'designsetgo_form_webhook_payload', $payload, $submission_id, $form_id );
-	}
-
-	/**
-	 * The site-wide signing secret.
-	 *
-	 * @return string Secret, or '' when none is configured.
-	 */
-	public static function get_secret(): string {
-		if ( ! class_exists( '\DesignSetGo\Admin\Settings' ) ) {
-			return '';
-		}
-		$settings = \DesignSetGo\Admin\Settings::get_settings();
-		$secret   = isset( $settings['integrations']['form_webhook_secret'] ) ? $settings['integrations']['form_webhook_secret'] : '';
-
-		return is_string( $secret ) ? trim( $secret ) : '';
-	}
-
-	/**
-	 * Delivery status.
-	 *
-	 * @param int $submission_id Submission post ID.
-	 * @return string '', 'pending', 'delivered' or 'failed'.
-	 */
-	public static function get_status( int $submission_id ): string {
-		return (string) get_post_meta( $submission_id, '_dsg_webhook_status', true );
-	}
-
-	/**
-	 * Human-readable delivery status.
-	 *
-	 * @param int $submission_id Submission post ID.
-	 * @return string Label, or '' when the submission has no webhook.
-	 */
-	public static function status_label( int $submission_id ): string {
-		switch ( self::get_status( $submission_id ) ) {
-			case 'delivered':
-				return __( 'Delivered', 'designsetgo' );
-			case 'failed':
-				return __( 'Failed', 'designsetgo' );
-			case 'pending':
-				$attempts = (int) get_post_meta( $submission_id, '_dsg_webhook_attempts', true );
-				/* translators: %d: number of delivery attempts so far */
-				return sprintf( _n( 'Pending (%d attempt)', 'Pending (%d attempts)', $attempts, 'designsetgo' ), $attempts );
-			default:
-				return '';
-		}
-	}
-
-	/**
-	 * Nonced admin URL that resends a submission's webhook.
-	 *
-	 * @param int $submission_id Submission post ID.
-	 * @return string URL.
-	 */
-	public static function resend_url( int $submission_id ): string {
-		return wp_nonce_url(
-			add_query_arg(
-				array(
-					'action'     => self::RESEND_ACTION,
-					'submission' => $submission_id,
-				),
-				admin_url( 'admin-post.php' )
-			),
-			self::RESEND_ACTION . '_' . $submission_id
-		);
 	}
 
 	/**
@@ -294,14 +260,14 @@ class Form_Webhooks {
 	}
 
 	/**
-	 * Retry delays in seconds; the count sets how many retries happen.
+	 * Seconds before each retry; 0 retries on the next cron run. The count sets how many retries happen.
 	 *
 	 * @return int[] Delays.
 	 */
 	private function retry_delays(): array {
 		$delays = apply_filters( 'designsetgo_form_webhook_retry_delays', self::DEFAULT_RETRY_DELAYS );
 
-		return array_values( array_filter( array_map( 'absint', (array) $delays ) ) );
+		return array_values( array_map( 'absint', (array) $delays ) );
 	}
 
 	/**

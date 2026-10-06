@@ -665,6 +665,8 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-field-rules.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhook-status.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhook-request.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhooks.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhooks-admin.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions-export.php';
