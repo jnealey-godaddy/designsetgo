@@ -30,6 +30,7 @@ class Test_Form_Submissions_Export extends WP_UnitTestCase {
 
 	public function tear_down() {
 		unset( $_GET['dsgo_export'], $_GET['post_type'], $_REQUEST[ Form_Submissions_Export::NONCE_NAME ] );
+		delete_option( 'timezone_string' );
 		parent::tear_down();
 	}
 
@@ -147,7 +148,77 @@ class Test_Form_Submissions_Export extends WP_UnitTestCase {
 			array( '@SUM(A1)' ),
 			array( "\tcmd" ),
 			array( "\rcmd" ),
+			array( '+15551234567' ),
+			array( '-' ),
+			array( '-1e3' ),
+			array( "-5\n=1+1" ),
+			array( "-5\n" ),
 		);
+	}
+
+	/**
+	 * @dataProvider negative_numbers
+	 *
+	 * @param string $value Plain negative number.
+	 */
+	public function test_plain_negative_numbers_are_not_prefixed( $value ) {
+		$this->assertSame( $value, Form_Submissions_Export::escape_cell( $value ) );
+	}
+
+	public function negative_numbers() {
+		return array(
+			array( '-5' ),
+			array( '-12.50' ),
+		);
+	}
+
+	public function test_submission_arriving_mid_export_is_left_out() {
+		$this->make_submission( 'f10', '2026-10-01 10:00:00', array( 'a' => array( 'value' => 'old', 'type' => 'text' ) ) );
+		$late    = 0;
+		$arrives = function ( $columns ) use ( &$late ) {
+			// Runs between the header pass and the row pass.
+			$late = self::factory()->post->create( array( 'post_type' => 'dsgo_form_submission', 'post_status' => 'private' ) );
+			update_post_meta( $late, '_dsg_form_id', 'f10' );
+			update_post_meta( $late, '_dsg_form_fields', array( 'b' => array( 'value' => 'new', 'type' => 'text' ) ) );
+			return $columns;
+		};
+		add_filter( 'designsetgo_form_export_columns', $arrives );
+
+		$rows = $this->export_rows( array( 'form_id' => 'f10' ) );
+
+		remove_filter( 'designsetgo_form_export_columns', $arrives );
+		$this->assertNotSame( 0, $late );
+		$this->assertCount( 2, $rows, 'Only the submission that existed when the export started.' );
+		$this->assertSame( 'old', $rows[1][4] );
+	}
+
+	public function test_date_filters_use_local_days_in_a_non_utc_timezone() {
+		update_option( 'timezone_string', 'America/Chicago' );
+		$in    = $this->make_submission( 'f11', '2026-10-01 23:30:00', array( 'a' => array( 'value' => 'in', 'type' => 'text' ) ) );
+		$this->make_submission( 'f11', '2026-10-02 00:30:00', array( 'a' => array( 'value' => 'out', 'type' => 'text' ) ) );
+		$this->make_submission( 'f11', '2026-09-30 23:59:59', array( 'a' => array( 'value' => 'out', 'type' => 'text' ) ) );
+
+		$rows = $this->export_rows( array( 'form_id' => 'f11', 'from' => '2026-10-01', 'to' => '2026-10-01' ) );
+		$this->assertCount( 2, $rows );
+		$this->assertSame( (string) $in, $rows[1][0] );
+	}
+
+	public function test_one_sided_and_inverted_date_ranges() {
+		$this->make_submission( 'f12', '2026-09-01 10:00:00', array( 'a' => array( 'value' => 'sep', 'type' => 'text' ) ) );
+		$this->make_submission( 'f12', '2026-10-01 10:00:00', array( 'a' => array( 'value' => 'oct', 'type' => 'text' ) ) );
+
+		$this->assertSame( 'oct', $this->export_rows( array( 'form_id' => 'f12', 'from' => '2026-09-15' ) )[1][4] );
+		$this->assertSame( 'sep', $this->export_rows( array( 'form_id' => 'f12', 'to' => '2026-09-15' ) )[1][4] );
+		$this->assertCount( 1, $this->export_rows( array( 'form_id' => 'f12', 'from' => '2026-10-15', 'to' => '2026-09-01' ) ), 'Header only.' );
+	}
+
+	public function test_trashed_submissions_are_not_exported() {
+		$this->make_submission( 'f13', '2026-10-01 10:00:00', array( 'a' => array( 'value' => 'kept', 'type' => 'text' ) ) );
+		wp_trash_post( $this->make_submission( 'f13', '2026-10-01 11:00:00', array( 'a' => array( 'value' => 'trashed', 'type' => 'text' ) ) ) );
+
+		$rows = $this->export_rows( array( 'form_id' => 'f13' ) );
+		$this->assertCount( 2, $rows );
+		$this->assertSame( 'kept', $rows[1][4] );
 	}
 
 	public function test_formula_injection_applies_to_headers_and_cells() {
@@ -193,6 +264,7 @@ class Test_Form_Submissions_Export extends WP_UnitTestCase {
 		$_GET['post_type']   = 'dsgo_form_submission';
 
 		$this->expectException( WPDieException::class );
+		$this->expectExceptionMessage( 'The link you followed has expired.' );
 		$this->export->maybe_export();
 	}
 
@@ -203,6 +275,7 @@ class Test_Form_Submissions_Export extends WP_UnitTestCase {
 		$_REQUEST[ Form_Submissions_Export::NONCE_NAME ] = wp_create_nonce( Form_Submissions_Export::NONCE_ACTION );
 
 		$this->expectException( WPDieException::class );
+		$this->expectExceptionMessage( 'not allowed to export submissions' );
 		$this->export->maybe_export();
 	}
 

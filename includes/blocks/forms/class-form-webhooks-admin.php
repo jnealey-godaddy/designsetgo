@@ -71,12 +71,13 @@ class Form_Webhooks_Admin {
 		}
 		$label = Form_Webhook_Status::label( (int) $post_id );
 		if ( '' === $label ) {
-			echo '<span style="color: #999;">—</span>';
+			echo '<span aria-hidden="true" style="color: #646970;">—</span><span class="screen-reader-text">' . esc_html__( 'No webhook', 'designsetgo' ) . '</span>';
 			return;
 		}
+		// All at least 4.5:1 on the white and striped list-table rows.
 		$colors = array(
-			'delivered' => '#46b450',
-			'failed'    => '#dc3232',
+			'delivered' => '#007017',
+			'failed'    => '#d63638',
 			'pending'   => '#996800',
 		);
 		$status = Form_Webhook_Status::get_status( (int) $post_id );
@@ -95,7 +96,13 @@ class Form_Webhooks_Admin {
 		if ( ! $post instanceof \WP_Post || 'dsgo_form_submission' !== $post->post_type || ! $this->has_webhook( $post->ID ) ) {
 			return $actions;
 		}
-		$actions['dsgo_resend_webhook'] = '<a href="' . esc_url( Form_Webhook_Status::resend_url( $post->ID ) ) . '">' . esc_html__( 'Resend webhook', 'designsetgo' ) . '</a>';
+		$actions['dsgo_resend_webhook'] = sprintf(
+			'<a href="%1$s" aria-label="%2$s">%3$s</a>',
+			esc_url( Form_Webhook_Status::resend_url( $post->ID ) ),
+			/* translators: %d: submission ID */
+			esc_attr( sprintf( __( 'Resend webhook for submission %d', 'designsetgo' ), $post->ID ) ),
+			esc_html__( 'Resend webhook', 'designsetgo' )
+		);
 		return $actions;
 	}
 
@@ -194,16 +201,18 @@ class Form_Webhooks_Admin {
 			return;
 		}
 
+		// Type, ARIA role (a full page load is otherwise not announced), message.
 		$messages = array(
-			'delivered' => array( 'success', __( 'Webhook delivered.', 'designsetgo' ) ),
-			'pending'   => array( 'warning', __( 'Webhook delivery failed; it will be retried automatically.', 'designsetgo' ) ),
-			'failed'    => array( 'error', __( 'Webhook delivery failed. See the submission for details.', 'designsetgo' ) ),
-			'invalid'   => array( 'error', __( 'This submission has no webhook to resend.', 'designsetgo' ) ),
+			'delivered' => array( 'success', 'status', __( 'Webhook delivered.', 'designsetgo' ) ),
+			'pending'   => array( 'warning', 'status', __( 'Webhook delivery failed; it will be retried automatically.', 'designsetgo' ) ),
+			'failed'    => array( 'error', 'alert', __( 'Webhook delivery failed. See the submission for details.', 'designsetgo' ) ),
+			'invalid'   => array( 'error', 'alert', __( 'This submission has no webhook to resend.', 'designsetgo' ) ),
 		);
 		if ( ! isset( $messages[ $result ] ) ) {
 			return;
 		}
-		printf( '<div class="notice notice-%1$s is-dismissible"><p>%2$s</p></div>', esc_attr( $messages[ $result ][0] ), esc_html( $messages[ $result ][1] ) );
+		list( $type, $role, $message ) = $messages[ $result ];
+		printf( '<div class="notice notice-%1$s is-dismissible" role="%2$s"><p>%3$s</p></div>', esc_attr( $type ), esc_attr( $role ), esc_html( $message ) );
 	}
 
 	/**

@@ -30,7 +30,8 @@ class Test_Form_Webhooks_Admin extends WP_UnitTestCase {
 	}
 
 	public function tear_down() {
-		unset( $_GET['submission'], $_GET['_wpnonce'], $_REQUEST['_wpnonce'] );
+		unset( $_GET['submission'], $_GET['_wpnonce'], $_REQUEST['_wpnonce'], $_GET['dsgo_webhook_resent'] );
+		set_current_screen( 'front' );
 		parent::tear_down();
 	}
 
@@ -57,7 +58,75 @@ class Test_Form_Webhooks_Admin extends WP_UnitTestCase {
 		$id = $this->make_submission( false );
 		ob_start();
 		$this->admin->render_column( 'dsgo_webhook', $id );
-		$this->assertStringContainsString( '—', ob_get_clean() );
+		$html = ob_get_clean();
+		$this->assertStringContainsString( '<span aria-hidden="true" style="color: #646970;">—</span>', $html );
+		$this->assertStringContainsString( '<span class="screen-reader-text">No webhook</span>', $html );
+	}
+
+	public function test_column_status_is_text_in_an_accessible_colour() {
+		$id = $this->make_submission( true );
+		update_post_meta( $id, '_dsg_webhook_status', 'delivered' );
+		ob_start();
+		$this->admin->render_column( 'dsgo_webhook', $id );
+		$this->assertSame( '<span style="color: #007017;">Delivered</span>', ob_get_clean() );
+	}
+
+	public function test_row_action_names_the_submission() {
+		$id      = $this->make_submission( true );
+		$actions = $this->admin->row_actions( array(), get_post( $id ) );
+		$this->assertStringContainsString( 'aria-label="Resend webhook for submission ' . $id . '"', $actions['dsgo_resend_webhook'] );
+	}
+
+	/**
+	 * @dataProvider notices
+	 *
+	 * @param string $result Resend result flag.
+	 * @param string $class  Notice class.
+	 * @param string $role   ARIA role.
+	 */
+	public function test_resend_notice_is_announced( $result, $class, $role ) {
+		set_current_screen( 'edit-dsgo_form_submission' );
+		$_GET['dsgo_webhook_resent'] = $result;
+		ob_start();
+		$this->admin->resend_notice();
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'notice-' . $class, $html );
+		$this->assertStringContainsString( 'role="' . $role . '"', $html );
+	}
+
+	public function notices() {
+		return array(
+			'delivered' => array( 'delivered', 'success', 'status' ),
+			'pending'   => array( 'pending', 'warning', 'status' ),
+			'failed'    => array( 'failed', 'error', 'alert' ),
+			'invalid'   => array( 'invalid', 'error', 'alert' ),
+		);
+	}
+
+	public function test_resend_notice_ignores_unknown_flags_and_other_screens() {
+		set_current_screen( 'edit-dsgo_form_submission' );
+		$_GET['dsgo_webhook_resent'] = 'bogus';
+		ob_start();
+		$this->admin->resend_notice();
+		$this->assertSame( '', ob_get_clean() );
+
+		set_current_screen( 'edit-post' );
+		$_GET['dsgo_webhook_resent'] = 'delivered';
+		ob_start();
+		$this->admin->resend_notice();
+		$this->assertSame( '', ob_get_clean() );
+	}
+
+	public function test_meta_box_registered_only_for_webhook_submissions() {
+		global $wp_meta_boxes;
+		$wp_meta_boxes = array();
+
+		$this->admin->maybe_add_meta_box( get_post( $this->make_submission( false ) ) );
+		$this->assertEmpty( $wp_meta_boxes );
+
+		$this->admin->maybe_add_meta_box( get_post( $this->make_submission( true ) ) );
+		$this->assertArrayHasKey( 'dsgo_webhook_delivery', $wp_meta_boxes['dsgo_form_submission']['side']['default'] );
 	}
 
 	public function test_row_action_only_when_webhook_configured() {
@@ -114,6 +183,19 @@ class Test_Form_Webhooks_Admin extends WP_UnitTestCase {
 		$_REQUEST['_wpnonce'] = 'bad';
 
 		$this->expectException( WPDieException::class );
+		$this->expectExceptionMessage( 'The link you followed has expired.' );
+		$this->admin->handle_resend();
+	}
+
+	public function test_resend_nonce_is_bound_to_its_submission() {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		$a                    = $this->make_submission( true );
+		$b                    = $this->make_submission( true );
+		$_GET['submission']   = $b;
+		$_REQUEST['_wpnonce'] = wp_create_nonce( Form_Webhooks::RESEND_ACTION . '_' . $a );
+
+		$this->expectException( WPDieException::class );
+		$this->expectExceptionMessage( 'The link you followed has expired.' );
 		$this->admin->handle_resend();
 	}
 
@@ -124,6 +206,7 @@ class Test_Form_Webhooks_Admin extends WP_UnitTestCase {
 		$_REQUEST['_wpnonce'] = wp_create_nonce( Form_Webhooks::RESEND_ACTION . '_' . $id );
 
 		$this->expectException( WPDieException::class );
+		$this->expectExceptionMessage( 'not allowed to resend webhooks' );
 		$this->admin->handle_resend();
 	}
 }

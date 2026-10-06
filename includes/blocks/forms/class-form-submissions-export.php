@@ -50,6 +50,7 @@ class Form_Submissions_Export {
 	 * WP_Query arguments for the filters.
 	 *
 	 * Dates are inclusive whole days in the site's timezone (post_date is local).
+	 * An optional `until` (local Y-m-d H:i:s) caps the newest submission.
 	 *
 	 * @param array $args Filter args from request_args().
 	 * @return array Query args.
@@ -74,15 +75,23 @@ class Form_Submissions_Export {
 			// Array form so WP_Date_Query fills the time with 23:59:59 for an inclusive "before".
 			$date['before'] = self::date_parts( $args['to'] );
 		}
-		if ( count( $date ) > 1 ) {
-			$query['date_query'] = array( $date );
+		$clauses = count( $date ) > 1 ? array( $date ) : array();
+		if ( ! empty( $args['until'] ) ) {
+			$clauses[] = array(
+				'before'    => $args['until'],
+				'inclusive' => true,
+			);
+		}
+		if ( $clauses ) {
+			$query['date_query'] = $clauses;
 		}
 
 		return $query;
 	}
 
 	/**
-	 * Neutralise spreadsheet formula injection.
+	 * Neutralise spreadsheet formula injection. A plain negative number is
+	 * left alone: a spreadsheet reads it as the number it is.
 	 *
 	 * @param mixed $value Cell value.
 	 * @return string Safe cell.
@@ -90,7 +99,11 @@ class Form_Submissions_Export {
 	public static function escape_cell( $value ): string {
 		$value = (string) $value;
 
-		return ( '' !== $value && in_array( $value[0], self::FORMULA_PREFIXES, true ) ) ? "'" . $value : $value;
+		if ( '' === $value || ! in_array( $value[0], self::FORMULA_PREFIXES, true ) || preg_match( '/^-\d+(\.\d+)?\z/', $value ) ) {
+			return $value;
+		}
+
+		return "'" . $value;
 	}
 
 	/**
@@ -98,12 +111,15 @@ class Form_Submissions_Export {
 	 *
 	 * Two passes over the matching IDs, in batches: the first collects every
 	 * field name (so the header is complete), the second writes rows. Memory
-	 * stays flat however many submissions there are.
+	 * stays flat however many submissions there are. Both passes stop at the
+	 * export's start time, so a submission arriving mid-export can't add a
+	 * row whose fields have no column.
 	 *
 	 * @param resource $handle Writable stream.
 	 * @param array    $args   Filter args from request_args().
 	 */
 	public function write_csv( $handle, array $args ): void {
+		$args['until'] = wp_date( 'Y-m-d H:i:s', time() - 1 );
 		fwrite( $handle, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite -- Streaming to the response.
 
 		$names  = array();
@@ -155,6 +171,12 @@ class Form_Submissions_Export {
 
 		$args     = self::request_args( $_GET );
 		$filename = 'submissions-' . ( '' !== $args['form_id'] ? sanitize_file_name( $args['form_id'] ) : 'all' ) . '-' . wp_date( 'Y-m-d' ) . '.csv';
+
+		// A timeout mid-stream would leave a silently truncated file.
+		wp_raise_memory_limit( 'admin' );
+		if ( function_exists( 'set_time_limit' ) ) {
+			set_time_limit( 0 );
+		}
 
 		nocache_headers();
 		header( 'Content-Type: text/csv; charset=utf-8' );

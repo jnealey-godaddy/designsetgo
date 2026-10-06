@@ -35,20 +35,12 @@ class Form_Submissions_List_Filters {
 			return;
 		}
 
-		global $wpdb;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Admin-only distinct list; no API for distinct meta values.
-		$forms = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT pm.meta_value AS form_id, COUNT(*) AS total FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_type = %s GROUP BY pm.meta_value ORDER BY pm.meta_value",
-				'_dsg_form_id',
-				Form_Submissions_Export::POST_TYPE
-			)
-		);
+		$forms   = self::forms();
 		$current = Form_Submissions_Export::request_args( $_GET ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only list filter.
 
 		echo '<label class="screen-reader-text" for="dsgo-form-filter">' . esc_html__( 'Filter by form', 'designsetgo' ) . '</label>';
 		echo '<select name="dsgo_form" id="dsgo-form-filter"><option value="">' . esc_html__( 'All forms', 'designsetgo' ) . '</option>';
-		foreach ( (array) $forms as $form ) {
+		foreach ( $forms as $form ) {
 			printf(
 				'<option value="%1$s"%2$s>%3$s (%4$d)</option>',
 				esc_attr( $form->form_id ),
@@ -61,14 +53,42 @@ class Form_Submissions_List_Filters {
 
 		printf(
 			'<label for="dsgo-from">%1$s</label> <input type="date" id="dsgo-from" name="dsgo_from" value="%2$s"> <label for="dsgo-to">%3$s</label> <input type="date" id="dsgo-to" name="dsgo_to" value="%4$s">',
-			esc_html__( 'From', 'designsetgo' ),
+			esc_html__( 'From date', 'designsetgo' ),
 			esc_attr( $current['from'] ),
-			esc_html__( 'To', 'designsetgo' ),
+			esc_html__( 'To date', 'designsetgo' ),
 			esc_attr( $current['to'] )
 		);
 
 		wp_nonce_field( Form_Submissions_Export::NONCE_ACTION, Form_Submissions_Export::NONCE_NAME, false );
 		echo '<button type="submit" name="dsgo_export" value="1" class="button">' . esc_html__( 'Export CSV', 'designsetgo' ) . '</button>';
+	}
+
+	/**
+	 * Form IDs with their submission counts. Cached until any post or post
+	 * meta changes (core bumps the `posts` last-changed stamp for both).
+	 *
+	 * @return object[] Rows with form_id and total.
+	 */
+	private static function forms(): array {
+		global $wpdb;
+
+		$key   = 'dsgo_submission_forms:' . wp_cache_get_last_changed( 'posts' );
+		$forms = wp_cache_get( $key, 'designsetgo' );
+		if ( is_array( $forms ) ) {
+			return $forms;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- No API for distinct meta values; cached above.
+		$forms = (array) $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT pm.meta_value AS form_id, COUNT(*) AS total FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = %s AND p.post_type = %s GROUP BY pm.meta_value ORDER BY pm.meta_value",
+				'_dsg_form_id',
+				Form_Submissions_Export::POST_TYPE
+			)
+		);
+		wp_cache_set( $key, $forms, 'designsetgo' );
+
+		return $forms;
 	}
 
 	/**
