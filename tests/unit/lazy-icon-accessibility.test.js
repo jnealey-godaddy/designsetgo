@@ -97,5 +97,4 @@ describe('lazy icon injector', () => {
 			other.querySelector('svg').getAttribute('aria-hidden')
 		).toBeNull();
 	});
-
 });
