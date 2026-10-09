@@ -112,6 +112,7 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 = Unreleased =
 
+* **Fix:** Forms now send when a visitor's browser has JavaScript turned off or blocked, and show your success or error message afterwards. Before, the answers were lost.
 * **Fix:** Hotspot markers in the editor now sit exactly where they appear on your site. Before, every marker after the first was shown lower than its real position.
 * **Fix:** An Advanced Heading's font size, line height and letter spacing now apply to the heading, instead of being overridden by your theme's heading styles.
 * **Fix:** Form message boxes, date pickers and dropdowns use your theme's font instead of the browser's default.
