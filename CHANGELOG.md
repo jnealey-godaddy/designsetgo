@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Upgrade Notes
+
+- Check mobile layouts on existing Grids configured with two or more mobile columns. Saved column spans now remain in effect, capped at the available columns, instead of every child being forced to one column. A child spanning two columns in a two-column mobile Grid now fills the row. Single-column mobile Grids continue to stack.
+
 ## [2.9.0] - 2026-09-29
 
 ### Upgrade Notes
