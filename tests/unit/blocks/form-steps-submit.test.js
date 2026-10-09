@@ -18,14 +18,17 @@ function step(n, title, name, required = false) {
 	</div>`;
 }
 
-function mount(ajax) {
+function mount(ajax, { steps = true } = {}) {
+	const fields = steps
+		? step(1, 'About you', 'name', true) +
+			step(2, 'Details', 'city') +
+			step(3, 'Finish', 'note')
+		: '<div class="dsgo-form-field" data-dsgo-field="name"><input name="name" type="text" required></div>';
 	document.body.innerHTML = `
 	<div class="dsgo-form-builder" data-form-id="steps-${ajax}" data-ajax-submit="${ajax}">
 		<form class="dsgo-form" method="post" novalidate>
 			<div class="dsgo-form__fields">
-				${step(1, 'About you', 'name', true)}
-				${step(2, 'Details', 'city')}
-				${step(3, 'Finish', 'note')}
+				${fields}
 			</div>
 			<div class="dsgo-form__footer"><button type="submit" class="dsgo-form__submit">Send</button></div>
 			<div class="dsgo-form__message" role="status" style="display:none"></div>
@@ -116,6 +119,71 @@ describe('multi-step form submission', () => {
 				false
 			);
 			expect(stepEl(2).hidden).toBe(false);
+		});
+
+		it('after success, scrolls to and focuses the message once step 1 is back', async () => {
+			global.fetch.mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: async () => ({ success: true, message: 'Thanks' }),
+			});
+			const form = mount('true');
+			const message = form.querySelector('.dsgo-form__message');
+			message.getBoundingClientRect = () => ({
+				top: -200,
+				left: 0,
+				bottom: -150,
+				right: 100,
+			});
+			const seen = [];
+			message.scrollIntoView = jest.fn(() => {
+				seen.push({
+					step1Shown: !stepEl(1).hidden,
+					focused: document.activeElement === message,
+				});
+			});
+
+			form.elements.name.value = 'Ann';
+			document.querySelector('.dsgo-form-steps__next').click();
+			document.querySelector('.dsgo-form-steps__next').click();
+			submit(form);
+			for (let i = 0; i < 5; i++) {
+				await flush();
+			}
+
+			expect(global.fetch).toHaveBeenCalledTimes(1);
+			expect(message.textContent).toContain('Thanks');
+			expect(stepEl(1).hidden).toBe(false);
+			expect(message.getAttribute('tabindex')).toBe('-1');
+			expect(document.activeElement).toBe(message);
+			expect(seen).toEqual([{ step1Shown: true, focused: true }]);
+		});
+
+		it('leaves the single-page success path as it was', async () => {
+			global.fetch.mockResolvedValue({
+				ok: true,
+				status: 200,
+				json: async () => ({ success: true, message: 'Thanks' }),
+			});
+			const form = mount('true', { steps: false });
+			const message = form.querySelector('.dsgo-form__message');
+			message.getBoundingClientRect = () => ({
+				top: -200,
+				left: 0,
+				bottom: -150,
+				right: 100,
+			});
+			message.scrollIntoView = jest.fn();
+
+			form.elements.name.value = 'Ann';
+			submit(form);
+			for (let i = 0; i < 5; i++) {
+				await flush();
+			}
+
+			expect(message.scrollIntoView).toHaveBeenCalledTimes(1);
+			expect(message.hasAttribute('tabindex')).toBe(false);
+			expect(document.activeElement).not.toBe(message);
 		});
 	});
 });

@@ -681,11 +681,27 @@ function initFormBuilder() {
 					}
 
 					// Scroll to message if not visible
-					if (!isElementInViewport(messageContainer)) {
-						messageContainer.scrollIntoView({
-							behavior: 'smooth',
-							block: 'nearest',
-						});
+					const revealMessage = () => {
+						if (!isElementInViewport(messageContainer)) {
+							messageContainer.scrollIntoView({
+								behavior: 'smooth',
+								block: 'nearest',
+							});
+						}
+					};
+					if (steps.isMultiStep) {
+						// reset() sends the steps back to step 1 on a timer, and
+						// hides the focused submit button. Measure and scroll
+						// after that, with focus on the message.
+						setTimeout(() => {
+							if (!messageContainer.hasAttribute('tabindex')) {
+								messageContainer.setAttribute('tabindex', '-1');
+							}
+							messageContainer.focus({ preventScroll: true });
+							revealMessage();
+						}, 0);
+					} else {
+						revealMessage();
 					}
 				} else {
 					throw new Error(result.message || errorMessage);
