@@ -1,5 +1,5 @@
 === DesignSetGo ===
-Contributors: justinnealey, ziontrooper
+Contributors: justinnealey, ziontrooper, vnovakovic
 Tags: blocks, gutenberg, form-builder, query-loop, animations
 Requires at least: 6.7
 Tested up to: 7.1
