@@ -2,7 +2,8 @@
  * Form Step — editor.
  *
  * Steps stack in the canvas: a header with the step number and an inline
- * title, then the step's fields.
+ * title, then the step's fields. The title is edited only on the canvas: a
+ * second, plain-text editor would store `&` differently from the RichText.
  *
  * @since 2.10.0
  */
@@ -14,11 +15,9 @@ import {
 	InnerBlocks,
 	RichText,
 	BlockControls,
-	InspectorControls,
 } from '@wordpress/block-editor';
-import { TextControl } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
-import { DsgoInspectorPanel, DsgoChildToolbar } from '../../components/shared';
+import { DsgoChildToolbar } from '../../components/shared';
 import { FORM_FIELD_BLOCKS } from '../form-builder/utils/field-blocks';
 
 export default function FormStepEdit({ attributes, setAttributes, clientId }) {
@@ -62,35 +61,6 @@ export default function FormStepEdit({ attributes, setAttributes, clientId }) {
 					disableRemove={siblingCount <= 1}
 				/>
 			</BlockControls>
-			<InspectorControls>
-				<DsgoInspectorPanel
-					title={__('Settings', 'designsetgo')}
-					panelName="settings"
-					panelId={clientId}
-					resetAll={() => setAttributes({ title: '' })}
-				>
-					<DsgoInspectorPanel.Item
-						label={__('Title', 'designsetgo')}
-						hasValue={() => title !== ''}
-						onDeselect={() => setAttributes({ title: '' })}
-						isShownByDefault
-					>
-						<TextControl
-							label={__('Title', 'designsetgo')}
-							value={title}
-							onChange={(value) =>
-								setAttributes({ title: value })
-							}
-							help={__(
-								'Shown as the step heading and in the progress indicator. Leave empty for "Step N".',
-								'designsetgo'
-							)}
-							__next40pxDefaultSize
-							__nextHasNoMarginBottom
-						/>
-					</DsgoInspectorPanel.Item>
-				</DsgoInspectorPanel>
-			</InspectorControls>
 			<div {...blockProps}>
 				<div className="dsgo-form-step__header">
 					<span className="dsgo-form-step__number">

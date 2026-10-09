@@ -11,10 +11,10 @@ function field(name, { required = false, extra = '' } = {}) {
 }
 
 function step(n, title, fields) {
-	return `<section class="dsgo-form-step" data-dsgo-step="${n}" aria-labelledby="t${n}">
+	return `<div class="dsgo-form-step" data-dsgo-step="${n}" role="group" aria-labelledby="t${n}">
 		<h3 class="dsgo-form-step__title" id="t${n}" tabindex="-1">${title}</h3>
 		<div class="dsgo-form-step__fields">${fields}</div>
-	</section>`;
+	</div>`;
 }
 
 function mount({ progress = '', steps = true } = {}) {

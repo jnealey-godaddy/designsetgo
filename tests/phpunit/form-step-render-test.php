@@ -34,9 +34,16 @@ class Test_Form_Step_Render extends WP_UnitTestCase {
 	public function test_step_markup_heading_and_fields() {
 		$html = do_blocks( $this->form( 'ms1' ) );
 
-		$this->assertSame( 2, preg_match_all( '/<section[^>]*\bdata-dsgo-step="(\d+)"/', $html, $m ) );
+		// A labelled group per step, not a region landmark per step.
+		$this->assertStringNotContainsString( '<section', $html );
+		$this->assertSame( 2, preg_match_all( '/<div[^>]*\bdata-dsgo-step="(\d+)"/', $html, $m ) );
 		$this->assertSame( array( '1', '2' ), $m[1] );
-		$this->assertMatchesRegularExpression( '/<section[^>]*class="[^"]*dsgo-form-step[^"]*"/', $html );
+		preg_match_all( '/<div[^>]*\bdata-dsgo-step="\d+"[^>]*>/', $html, $tags );
+		foreach ( $tags[0] as $tag ) {
+			$this->assertMatchesRegularExpression( '/\bclass="[^"]*\bdsgo-form-step\b/', $tag );
+			$this->assertStringContainsString( 'role="group"', $tag );
+			$this->assertStringContainsString( 'aria-labelledby="', $tag );
+		}
 
 		// Title: tags stripped, escaped; heading id paired with aria-labelledby.
 		$this->assertMatchesRegularExpression( '/<h3 class="dsgo-form-step__title" id="([^"]+)" tabindex="-1">Your details &amp; more<\/h3>/', $html );
@@ -44,6 +51,12 @@ class Test_Form_Step_Render extends WP_UnitTestCase {
 		preg_match_all( '/<h3 class="dsgo-form-step__title" id="([^"]+)"/', $html, $ids );
 		$this->assertSame( $ids[1], $labelled[1] );
 		$this->assertCount( 2, array_unique( $ids[1] ) );
+		// Salted per request, so a form fetched later over REST (Query load
+		// more / refresh) can't repeat an id already on the page.
+		foreach ( $ids[1] as $id ) {
+			$this->assertMatchesRegularExpression( '/^dsgo-form-step-[0-9a-f]{6}-\d+$/', $id );
+		}
+		$this->assertSame( 1, count( array_unique( array_map( static fn( $id ) => preg_replace( '/-\d+$/', '', $id ), $ids[1] ) ) ), 'One salt per request.' );
 
 		// Untitled step falls back to "Step 2".
 		$this->assertStringContainsString( '>Step 2</h3>', $html );
@@ -51,6 +64,25 @@ class Test_Form_Step_Render extends WP_UnitTestCase {
 		// Fields render inside the step's field container.
 		$this->assertMatchesRegularExpression( '/<div class="dsgo-form-step__fields">.*data-dsgo-field="name"/s', $html );
 		$this->assertStringNotContainsString( '<script', $html );
+	}
+
+	public function test_title_entities_are_not_double_encoded() {
+		$form = static function ( $title_json ) {
+			return '<!-- wp:designsetgo/form-builder {"formId":"amp","enableEmail":false} --><div class="wp-block-designsetgo-form-builder dsgo-form-builder">'
+				. '<!-- wp:designsetgo/form-step {"title":' . $title_json . '} -->'
+				. '<!-- wp:designsetgo/form-text-field {"fieldName":"a"} /-->'
+				. '<!-- /wp:designsetgo/form-step -->'
+				. '</div><!-- /wp:designsetgo/form-builder -->';
+		};
+
+		// The canvas RichText stores HTML, so "&" arrives as "&amp;".
+		$html = do_blocks( $form( '"Q\\u0026amp;A"' ) );
+		$this->assertStringContainsString( '>Q&amp;A</h3>', $html );
+		$this->assertStringNotContainsString( '&amp;amp;', $html );
+
+		// A plain-text title (e.g. from the Abilities API) is escaped once.
+		$html = do_blocks( $form( '"Q\\u0026A"' ) );
+		$this->assertStringContainsString( '>Q&amp;A</h3>', $html );
 	}
 
 	public function test_numbering_restarts_for_each_form() {
