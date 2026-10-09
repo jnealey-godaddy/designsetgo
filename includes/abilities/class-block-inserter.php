@@ -1394,12 +1394,59 @@ class Block_Inserter {
 				continue;
 			}
 
+			// A form is single-page (fields) or multi-step (steps only), as the
+			// editor enforces. A mix has no layout the view script can show.
+			if ( 'designsetgo/form-builder' === $block_name && self::mixes_form_steps( $children ) ) {
+				$invalid[] = array(
+					'path'   => $child_path,
+					'block'  => $block_name,
+					'reason' => __( 'a form is either single-page (fields only) or multi-step (designsetgo/form-step blocks only). Put every field inside a designsetgo/form-step, or leave the steps out.', 'designsetgo' ),
+				);
+			}
+
 			if ( ! empty( $children ) ) {
 				$invalid = array_merge( $invalid, self::find_invalid_child_placements( $children, $child_path ) );
 			}
 		}
 
 		return $invalid;
+	}
+
+	/**
+	 * Names of a definition list's direct children.
+	 *
+	 * @param array<int, mixed> $children Child definitions.
+	 * @return array<int, string> Block names ('' for a nameless entry).
+	 */
+	private static function child_block_names( array $children ): array {
+		return array_map(
+			static function ( $child ) {
+				return is_array( $child ) ? self::read_definition_name( $child ) : '';
+			},
+			$children
+		);
+	}
+
+	/**
+	 * Whether a form's children are steps.
+	 *
+	 * @param array<int, mixed> $children Child definitions.
+	 * @return bool
+	 */
+	private static function has_form_steps( array $children ): bool {
+		return in_array( 'designsetgo/form-step', self::child_block_names( $children ), true );
+	}
+
+	/**
+	 * Whether a form's children mix steps with other blocks.
+	 *
+	 * @param array<int, mixed> $children Child definitions.
+	 * @return bool
+	 */
+	private static function mixes_form_steps( array $children ): bool {
+		$names = self::child_block_names( $children );
+		return in_array( 'designsetgo/form-step', $names, true )
+			&& array() !== array_diff( $names, array( 'designsetgo/form-step' ) );
 	}
 
 	/**
@@ -1784,6 +1831,11 @@ class Block_Inserter {
 
 		// Coerce attribute types and normalize defaults.
 		$attrs = self::coerce_attribute_types( $block_name, $attributes );
+		// The inline submit button sits outside every step, so a multi-step
+		// form can't use it. The editor switches it to below on split; so do we.
+		if ( 'designsetgo/form-builder' === $block_name && 'inline' === ( $attrs['submitButtonPosition'] ?? null ) && self::has_form_steps( $inner_blocks ) ) {
+			$attrs['submitButtonPosition'] = 'below';
+		}
 		$attrs = self::normalize_block_attributes( $block_name, $attrs );
 		// Apply block.json defaults so the HTML we build matches what save()
 		// would emit from the same parsed attributes, preventing block

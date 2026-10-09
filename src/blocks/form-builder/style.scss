@@ -725,6 +725,80 @@
 
 // Author `display` rules on .dsgo-form-field beat the UA [hidden] rule;
 // class + attribute specificity restores it without !important.
-.dsgo-form-field[hidden] {
+.dsgo-form-field[hidden],
+.dsgo-form-steps__progress[hidden] {
 	display: none;
+}
+
+// Multi-step forms: progress + navigation (built by steps-dom.js).
+:where(.dsgo-form-steps__progress) {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.5rem;
+	margin: 0 0 var(--dsgo-form-field-spacing, 1.5rem);
+	padding: 0;
+	list-style: none;
+	counter-reset: dsgo-step;
+}
+
+:where(.dsgo-form-steps__item) {
+	counter-increment: dsgo-step;
+	opacity: 0.7;
+
+	&::before {
+		content: counter(dsgo-step) ". ";
+	}
+
+	&.is-complete::before {
+		content: "✓ ";
+		content: "✓ " / "";
+	}
+
+	&[aria-current="step"] {
+		font-weight: 600;
+		opacity: 1;
+	}
+}
+
+:where(.dsgo-form-steps__bar) {
+	margin: 0 0 var(--dsgo-form-field-spacing, 1.5rem);
+
+	[role="progressbar"] {
+		height: 0.5rem;
+		margin-top: 0.25rem;
+		background: color-mix(in srgb, currentcolor 15%, transparent);
+		border-radius: 999px;
+		overflow: hidden;
+	}
+}
+
+:where(.dsgo-form-steps__bar-fill) {
+	display: block;
+	height: 100%;
+	background: currentcolor;
+}
+
+:where(.dsgo-form-steps__nav) {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-top: var(--dsgo-form-field-spacing, 1.5rem);
+}
+
+:where(.dsgo-form-steps__nav) :where(.dsgo-form-steps__next) {
+	margin-inline-start: auto;
+}
+
+:where(.dsgo-form-steps__back) {
+	background: none;
+	border: 0;
+	padding: 0;
+	color: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+:where(.dsgo-form-step__title:focus) {
+	outline: 2px solid currentcolor;
+	outline-offset: 2px;
 }

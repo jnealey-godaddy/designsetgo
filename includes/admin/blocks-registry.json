@@ -393,6 +393,12 @@
 				"performance": "high"
 			},
 			{
+				"name": "designsetgo/form-step",
+				"title": "Form Step",
+				"description": "A step of a multi-step form",
+				"performance": "low"
+			},
+			{
 				"name": "designsetgo/form-text-field",
 				"title": "Text Field",
 				"description": "Text input field",

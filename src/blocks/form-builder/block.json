@@ -72,6 +72,11 @@
 			"type": "string",
 			"default": ""
 		},
+		"stepProgress": {
+			"type": "string",
+			"enum": [ "steps", "bar", "none" ],
+			"default": "steps"
+		},
 		"webhookUrl": {
 			"type": "string",
 			"default": ""
