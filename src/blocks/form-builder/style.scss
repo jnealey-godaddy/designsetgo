@@ -7,6 +7,12 @@
 @use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
 
+// Form controls ignore the page font by default (textarea and date/time
+// inputs fall back to the browser's monospace/system font). Inherit it.
+:where(.dsgo-form-builder) :where(input, select, textarea, button) {
+	font-family: inherit;
+}
+
 .dsgo-form-builder {
 	// CSS Custom Properties. These are the inherited defaults: each reads a
 	// theme.json custom property (settings.custom.designsetgo.form.*, which a
