@@ -87,6 +87,32 @@ class DesignSetGo_Icon_Render_Test extends WP_UnitTestCase {
 		return '';
 	}
 
+	public function test_nested_svg_is_hidden_but_named_link_and_rating_remain_accessible() {
+		foreach ( array( 'filled', 'outlined' ) as $style ) {
+			foreach ( array( 'Contact us', '5 out of 5 stars' ) as $label ) {
+				$html = $this->render( array( 'icon' => 'star', 'iconStyle' => $style, 'ariaLabel' => $label, 'linkUrl' => '/contact' ) );
+				$processor = new WP_HTML_Tag_Processor( $html );
+				$this->assertTrue( $processor->next_tag( array( 'class_name' => 'dsgo-icon__wrapper' ) ) );
+				$this->assertSame( 'img', $processor->get_attribute( 'role' ) );
+				$this->assertSame( $label, $processor->get_attribute( 'aria-label' ) );
+				$this->assertNull( $processor->get_attribute( 'aria-hidden' ) );
+				$this->assertTrue( $processor->next_tag( 'svg' ) );
+				$this->assertSame( 'true', $processor->get_attribute( 'aria-hidden' ) );
+				$this->assertSame( 'false', $processor->get_attribute( 'focusable' ) );
+			}
+		}
+	}
+
+	public function test_decorative_icon_keeps_hidden_wrapper_and_svg() {
+		$html = $this->render( array( 'icon' => 'star', 'isDecorative' => true ) );
+		$processor = new WP_HTML_Tag_Processor( $html );
+		$this->assertTrue( $processor->next_tag( array( 'class_name' => 'dsgo-icon__wrapper' ) ) );
+		$this->assertSame( 'true', $processor->get_attribute( 'aria-hidden' ) );
+		$this->assertTrue( $processor->next_tag( 'svg' ) );
+		$this->assertSame( 'true', $processor->get_attribute( 'aria-hidden' ) );
+		$this->assertSame( 'false', $processor->get_attribute( 'focusable' ) );
+	}
+
 	public function test_wrapper_carries_the_justification_class() {
 		$html = $this->render(
 			array(

@@ -131,6 +131,29 @@ function initIconInjection(container = document) {
 				}
 			});
 
+			// Standalone icons already have a named/decorative wrapper. List
+			// icons accompany text in their own item; hide only that drawing.
+			// Leave other consumers and empty icon-only links unchanged.
+			const standalone = placeholder.closest('.dsgo-icon__wrapper');
+			const listContent = placeholder.classList.contains(
+				'dsgo-icon-list-item__icon'
+			)
+				? placeholder
+						.closest('.dsgo-icon-list-item')
+						?.querySelector('.dsgo-icon-list-item__content')
+				: null;
+			const namedStandalone =
+				standalone &&
+				(standalone.getAttribute('aria-hidden') === 'true' ||
+					(standalone.getAttribute('role') === 'img' &&
+						standalone.getAttribute('aria-label')?.trim()));
+			if (namedStandalone || listContent?.textContent.trim()) {
+				svgElement.setAttribute('aria-hidden', 'true');
+				svgElement.setAttribute('focusable', 'false');
+				svgElement.removeAttribute('role');
+				svgElement.removeAttribute('aria-label');
+			}
+
 			// For outlined style, wrap with styling span
 			if (iconStyle === 'outlined') {
 				const wrapper = document.createElement('span');

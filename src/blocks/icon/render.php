@@ -88,6 +88,15 @@ if ( ! function_exists( 'designsetgo_render_icon' ) ) {
 			return '';
 		}
 
+		// The wrapper below owns the accessible name (or decorative state).
+		// Its nested SVG is only the drawing, not a second unnamed image.
+		$svg_processor = new WP_HTML_Tag_Processor( $svg );
+		while ( $svg_processor->next_tag( 'svg' ) ) {
+			$svg_processor->set_attribute( 'aria-hidden', 'true' );
+			$svg_processor->set_attribute( 'focusable', 'false' );
+		}
+		$svg = $svg_processor->get_updated_html();
+
 		// Wrapper inline styles. Width/height are baked inline only when the author
 		// set an explicit iconSize; left unset, sizing falls to the kit-tunable
 		// `--wp--custom--designsetgo--icon--default-size` CSS var (see style.scss),
