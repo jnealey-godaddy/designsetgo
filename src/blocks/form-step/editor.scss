@@ -1,0 +1,26 @@
+.editor-styles-wrapper .dsgo-form-step {
+	padding: 12px;
+	border: 1px dashed rgba(0, 0, 0, 0.2);
+	border-radius: 4px;
+}
+
+.dsgo-form-step__header {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.dsgo-form-step__number {
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: #1e1e1e;
+	opacity: 0.7;
+	white-space: nowrap;
+}
+
+.dsgo-form-step__header .dsgo-form-step__title {
+	margin: 0;
+	flex: 1 1 auto;
+}

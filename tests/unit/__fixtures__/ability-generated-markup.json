@@ -25,6 +25,7 @@
     "defaults::designsetgo/form-number-field": "<!-- wp:designsetgo/form-number-field /-->",
     "defaults::designsetgo/form-phone-field": "<!-- wp:designsetgo/form-phone-field /-->",
     "defaults::designsetgo/form-select-field": "<!-- wp:designsetgo/form-select-field /-->",
+    "defaults::designsetgo/form-step": "<!-- wp:designsetgo/form-step /-->",
     "defaults::designsetgo/form-text-field": "<!-- wp:designsetgo/form-text-field /-->",
     "defaults::designsetgo/form-textarea-field": "<!-- wp:designsetgo/form-textarea-field /-->",
     "defaults::designsetgo/form-time-field": "<!-- wp:designsetgo/form-time-field /-->",

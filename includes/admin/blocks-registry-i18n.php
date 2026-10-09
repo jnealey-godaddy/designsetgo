@@ -163,6 +163,8 @@ __( 'Full-width hero for a single WooCommerce product', 'designsetgo' );
 // Form Blocks.
 __( 'Form Builder', 'designsetgo' );
 __( 'Complete form with AJAX submission', 'designsetgo' );
+__( 'Form Step', 'designsetgo' );
+__( 'A step of a multi-step form', 'designsetgo' );
 __( 'Text Field', 'designsetgo' );
 __( 'Text input field', 'designsetgo' );
 __( 'Email Field', 'designsetgo' );

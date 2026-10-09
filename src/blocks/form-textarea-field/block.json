@@ -16,7 +16,8 @@
 	"textdomain": "designsetgo",
 	"icon": "edit-page",
 	"parent": [
-		"designsetgo/form-builder"
+		"designsetgo/form-builder",
+		"designsetgo/form-step"
 	],
 	"attributes": {
 		"dsgoConditions": {
