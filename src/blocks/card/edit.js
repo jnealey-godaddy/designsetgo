@@ -20,6 +20,7 @@ import {
 	Button,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import { ChildLayoutControls } from '../../extensions/layout/controls';
 import {
 	encodeColorValue,
 	decodeColorValue,
@@ -33,9 +34,15 @@ import { useBlockColors } from '../../hooks';
  * @param {Object}   props.attributes    - Block attributes
  * @param {Function} props.setAttributes - Function to set attributes
  * @param {string}   props.clientId      - Block client ID
+ * @param {boolean}  props.isSelected    - Whether the block is selected
  * @return {Element} Edit component
  */
-export default function CardEdit({ attributes, setAttributes, clientId }) {
+export default function CardEdit({
+	attributes,
+	setAttributes,
+	clientId,
+	isSelected,
+}) {
 	const {
 		layoutPreset,
 		imageUrl,
@@ -343,6 +350,7 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 					panelId={clientId}
 					resetAll={() =>
 						setAttributes({
+							dsgoLayout: undefined,
 							layoutPreset: 'standard',
 							visualStyle: 'default',
 							imageId: 0,
@@ -939,6 +947,10 @@ export default function CardEdit({ attributes, setAttributes, clientId }) {
 							__nextHasNoMarginBottom
 						/>
 					</DsgoInspectorPanel.Item>
+					<ChildLayoutControls
+						name="designsetgo/card"
+						{...{ attributes, setAttributes, clientId, isSelected }}
+					/>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 

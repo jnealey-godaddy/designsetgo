@@ -88,6 +88,9 @@
 	// Inner container handles all grid styling
 	// With two-div structure: .dsgo-grid > .dsgo-grid__inner
 	.dsgo-grid__inner {
+		// Each grid owns its responsive tracks; never inherit a parent template.
+		--dsgo-grid-columns-tablet: initial;
+		--dsgo-grid-columns-mobile: initial;
 		// CRITICAL: Prevent grid items from overflowing their cells
 		// Grid items automatically fill their grid cell, so we only need to prevent overflow
 		> * {
@@ -133,7 +136,7 @@
 			width: 100%;
 		}
 
-		.dsgo-grid__inner {
+		&:where(:not([class*="dsgo-layout-"])) > .dsgo-grid__inner {
 			max-width: none !important;
 			margin-inline: 0 !important;
 		}
@@ -146,7 +149,7 @@
 	&.alignfull.dsgo-no-width-constraint > .dsgo-grid__inner[class*="wp-container-"] {
 		// Target all direct children that aren't explicitly aligned
 		// Exclude blocks with explicit max-width set via our extension
-		> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width):not(.dsgo-stack--has-box-width) {
+		> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width):not(.dsgo-stack--has-box-width):where(:not([class*="dsgo-layout-"])) {
 			max-width: none !important;
 			margin-inline: 0 !important;
 		}
@@ -161,8 +164,8 @@
 	@media (max-width: #{$breakpoint-tablet}) {
 
 		@for $i from 1 through 12 {
-			&.dsgo-grid-cols-tablet-#{$i} .dsgo-grid__inner {
-				grid-template-columns: repeat(#{$i}, 1fr) !important;
+			&.dsgo-grid-cols-tablet-#{$i} > .dsgo-grid__inner {
+				grid-template-columns: var(--dsgo-grid-columns-tablet, repeat(#{$i}, 1fr)) !important;
 			}
 		}
 	}
@@ -171,8 +174,8 @@
 	@include below($breakpoint-mobile) {
 
 		@for $i from 1 through 12 {
-			&.dsgo-grid-cols-mobile-#{$i} .dsgo-grid__inner {
-				grid-template-columns: repeat(#{$i}, 1fr) !important;
+			&.dsgo-grid-cols-mobile-#{$i} > .dsgo-grid__inner {
+				grid-template-columns: var(--dsgo-grid-columns-mobile, repeat(#{$i}, 1fr)) !important;
 			}
 		}
 	}
@@ -230,12 +233,15 @@
 // Must be outside .dsgo-grid scope for proper specificity
 // With two-div structure: target .dsgo-grid__inner children
 @include below($breakpoint-mobile) {
-	// Force all grid items with column spans to span 1 on mobile
-	// High specificity to override inline styles
-	.dsgo-grid__inner > [style*="grid-column"],
-	.dsgo-grid__inner > [data-block][style*="grid-column"],
-	.dsgo-grid__inner > [data-block] {
-		grid-column: span 1 !important;
+	// Single-column defaults must override saved spans in the editor as well.
+	// Authored mobile templates and multi-column counts retain their spans;
+	// frontend view.js clamps them against the actual rendered track count.
+	:where(.dsgo-grid-cols-mobile-1) > .dsgo-grid__inner:not([style*="--dsgo-grid-columns-mobile"]) {
+
+		> [style*="grid-column"],
+		> [data-block] {
+			grid-column: span 1 !important;
+		}
 	}
 
 	// Force nested layouts inside grid items to stack

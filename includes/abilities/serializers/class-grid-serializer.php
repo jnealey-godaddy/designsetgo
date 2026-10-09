@@ -93,6 +93,12 @@ class Grid_Serializer {
 			'row-gap:' . $row_gap,
 			'column-gap:' . $column_gap,
 		);
+		foreach ( array( 'tablet', 'mobile' ) as $breakpoint ) {
+			$template = $attributes[ $breakpoint . 'ColumnTemplate' ] ?? '';
+			if ( is_string( $template ) && '' !== trim( $template ) ) {
+				$inner_styles[] = '--dsgo-grid-columns-' . $breakpoint . ':' . trim( $template );
+			}
+		}
 		if ( $constrain_width ) {
 			$max_width      = $content_width ? $content_width : 'var(--wp--style--global--content-size, 1140px)';
 			$inner_styles[] = 'max-width:' . esc_attr( $max_width );

@@ -37,6 +37,9 @@ import './extensions/grid-span';
 // Grid Mobile Order - adds mobile reordering control to blocks inside Grid containers
 import './extensions/grid-mobile-order';
 
+// Responsive composition - typed container and immediate-child overrides
+import './extensions/layout';
+
 // Text Alignment Inheritance - sets text-align based on parent container's alignItems
 import './extensions/text-alignment-inheritance';
 
@@ -93,66 +96,9 @@ import './extensions/section-styles-editor-preview';
 // Text Style - adds inline text styling (color, gradient, size) to selected text
 import './formats/text-style';
 
-// ===== DEFAULT PADDING FOR ROOT CONTAINERS =====
-// Set default padding for container blocks, but only when inserted at root level
-import { addFilter } from '@wordpress/hooks';
-import { select } from '@wordpress/data';
-
-/**
- * Set default padding for container blocks at root level
- * Top/Bottom: xxxl (64px), Left/Right: md (16px)
- */
-addFilter(
-	'blocks.getBlockAttributes',
-	'designsetgo/set-container-default-padding',
-	(attributes, blockType, clientId) => {
-		// Only apply to container blocks
-		const containerBlocks = [
-			'designsetgo/stack', // Legacy - will be deprecated
-			'designsetgo/flex', // Legacy - will be deprecated
-			'designsetgo/grid',
-			'designsetgo/section', // New name for stack
-			'designsetgo/row', // New name for flex
-		];
-		if (!containerBlocks.includes(blockType.name)) {
-			return attributes;
-		}
-
-		// Check if block already has padding set
-		if (attributes?.style?.spacing?.padding) {
-			return attributes;
-		}
-
-		// Check if this is a root-level block (no parent)
-		const blockEditor = select('core/block-editor');
-		if (!blockEditor || !clientId) {
-			return attributes;
-		}
-
-		const parents = blockEditor.getBlockParents(clientId);
-
-		// If block has no parents, it's root-level - set default padding
-		if (parents.length === 0) {
-			return {
-				...attributes,
-				style: {
-					...attributes?.style,
-					spacing: {
-						...attributes?.style?.spacing,
-						padding: {
-							top: 'var(--wp--preset--spacing--70)',
-							bottom: 'var(--wp--preset--spacing--70)',
-							left: 'var(--wp--preset--spacing--30)',
-							right: 'var(--wp--preset--spacing--30)',
-						},
-					},
-				},
-			};
-		}
-
-		return attributes;
-	}
-);
+// Container defaults are declared in block.json. Do not mutate attributes during
+// blocks.getBlockAttributes: its third argument is saved HTML, not a client ID,
+// and adding padding there invalidates existing/generator-authored markup.
 
 // ===== CUSTOM BLOCKS (Primary Architecture) =====
 // Blocks are loaded via block.json (editorScript: "file:./index.js")

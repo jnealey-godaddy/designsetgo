@@ -1,28 +1,19 @@
 /**
  * Grid Span Extension - Frontend Styles
  *
- * Frontend styles for grid column span functionality.
- * Ensures column span doesn't exceed available columns on smaller screens.
+ * CSS-only fallback for grids using responsive column counts. Template-based
+ * grids are measured by view.js. Each fallback owns only its direct children,
+ * and stays below Align Rows in specificity.
  *
  * @package DesignSetGo
  */
 
-/**
- * Responsive Column Span Constraints
- *
- * On mobile/tablet, if the grid has fewer columns than the span,
- * the span should be constrained to the max available columns.
- * This prevents blocks from spanning more columns than exist.
- */
+@mixin dsgo-grid-span-fallback($device) {
+	// Twelve columns cannot be exceeded by a valid span (1–12). Ending at 11
+	// also prevents Sass from generating a descending 13-through-12 loop.
+	@for $cols from 1 through 11 {
+		:where(.dsgo-grid-cols-#{$device}-#{$cols} > .dsgo-grid__inner:not([style*="--dsgo-grid-columns-#{$device}"])) > * {
 
-// Generate responsive constraints for each grid column configuration
-// Tablet breakpoint (≤ 1024px)
-@media (max-width: 1024px) {
-
-	@for $cols from 1 through 12 {
-		.dsgo-grid-cols-tablet-#{$cols} .dsgo-grid__inner > * {
-			// If span exceeds available columns, constrain it
-			// CRITICAL: Be specific - look for grid-column or gridColumn in style attribute
 			@for $span from ($cols + 1) through 12 {
 				&[style*="grid-column: span #{$span}"],
 				&[style*="grid-column:span #{$span}"],
@@ -37,23 +28,13 @@
 	}
 }
 
-// Mobile breakpoint (≤ 767px)
+// Tablet fallback must not constrain a mobile template or mobile column count.
+@media (min-width: 768px) and (max-width: 1024px) {
+
+	@include dsgo-grid-span-fallback(tablet);
+}
+
 @media (max-width: 767px) {
 
-	@for $cols from 1 through 12 {
-		.dsgo-grid-cols-mobile-#{$cols} .dsgo-grid__inner > * {
-			// If span exceeds available columns, constrain it
-			// CRITICAL: Be specific - look for grid-column or gridColumn in style attribute
-			@for $span from ($cols + 1) through 12 {
-				&[style*="grid-column: span #{$span}"],
-				&[style*="grid-column:span #{$span}"],
-				&[style*="grid-column:span#{$span}"],
-				&[style*="gridColumn: span #{$span}"],
-				&[style*="gridColumn:span #{$span}"],
-				&[style*="gridColumn:span#{$span}"] {
-					grid-column: span #{$cols} !important;
-				}
-			}
-		}
-	}
+	@include dsgo-grid-span-fallback(mobile);
 }

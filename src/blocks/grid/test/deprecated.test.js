@@ -88,9 +88,13 @@ describe('grid deprecations - style-kit overlay variation migration', () => {
 		).toBe(false);
 	});
 
-	test('migrate is a passthrough', () => {
+	test('migration preserves existing values and adds responsive defaults', () => {
 		const attrs = { className: 'is-style-overlay-dark', overlayColor: '' };
-		expect(styleVariationClassesDeprecation.migrate(attrs)).toBe(attrs);
+		expect(styleVariationClassesDeprecation.migrate(attrs)).toEqual({
+			...attrs,
+			tabletColumnTemplate: '',
+			mobileColumnTemplate: '',
+		});
 	});
 });
 
@@ -143,12 +147,16 @@ describe('grid deprecations - style-kit hover variation migration', () => {
 		).toBe(false);
 	});
 
-	test('migrate is a passthrough', () => {
+	test('migration preserves existing values and adds responsive defaults', () => {
 		const attrs = {
 			className: 'is-style-hover-text-light',
 			hoverTextColor: '',
 		};
-		expect(styleVariationClassesDeprecation.migrate(attrs)).toBe(attrs);
+		expect(styleVariationClassesDeprecation.migrate(attrs)).toEqual({
+			...attrs,
+			tabletColumnTemplate: '',
+			mobileColumnTemplate: '',
+		});
 	});
 });
 
@@ -244,5 +252,29 @@ describe('grid deprecations - fixed columnMinWidth track migration', () => {
 
 		expect(block.isValid).toBe(true);
 		expect(getBlockContent(block)).toContain('repeat(3, 1fr)');
+	});
+});
+
+describe('grid deprecations - optional responsive template compatibility', () => {
+	test('all historical migrations supply responsive defaults', () => {
+		deprecated.slice(1).forEach((entry) => {
+			const migrated = entry.migrate({});
+			const attributes = Array.isArray(migrated) ? migrated[0] : migrated;
+			expect(attributes.tabletColumnTemplate).toBe('');
+			expect(attributes.mobileColumnTemplate).toBe('');
+		});
+	});
+
+	test('a modern empty-template block remains valid without an eager migration', () => {
+		const markup = serialize(createBlock(metadata.name));
+		const [block] = parse(markup);
+		expect(block.isValid).toBe(true);
+		expect(serialize(block)).toBe(markup);
+		expect(typeof deprecated[0].isEligible).toBe('function');
+		expect(
+			deprecated[0].isEligible(block.attributes, [], {
+				innerHTML: markup,
+			})
+		).toBe(false);
 	});
 });

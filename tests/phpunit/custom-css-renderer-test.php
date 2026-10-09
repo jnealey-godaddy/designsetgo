@@ -65,6 +65,19 @@ class Test_Custom_CSS_Renderer extends WP_UnitTestCase {
 		$this->assertMatchesRegularExpression( '/^[0-9a-z]+$/', $hash1 );
 	}
 
+	/** CSS selectors match JavaScript UTF-16 hashes, with or without mbstring. */
+	public function test_hash_matches_js_utf16(): void {
+		$cases = array(
+			'selector { color: red; }'                 => 'fgu4nc',
+			'selector::before { content: "café"; }'     => '64qku7',
+			'selector::before { content: "東京"; }'     => '7yd8op',
+			'selector::before { content: "🌟"; }'       => 'cochxb',
+		);
+		foreach ( $cases as $css => $expected ) {
+			$this->assertSame( $expected, $this->call_private_method( $this->renderer, 'hash_code', array( $css . 'core/paragraph' ) ) );
+		}
+	}
+
 	/**
 	 * Test replace_selector replaces selector keyword
 	 */
@@ -178,8 +191,8 @@ class Test_Custom_CSS_Renderer extends WP_UnitTestCase {
 
 		$result = $this->renderer->collect_custom_css( $block_content, $block );
 
-		// Should return original content.
-		$this->assertEquals( $block_content, $result );
+		// The renderer attaches the selector class, including to dynamic roots.
+		$this->assertStringContainsString( 'class="wp-block-test dsgo-custom-css-6ngqdb"', $result );
 
 		// CSS should be collected (check by triggering output).
 		ob_start();
@@ -202,7 +215,7 @@ class Test_Custom_CSS_Renderer extends WP_UnitTestCase {
 
 		$result = $this->renderer->collect_custom_css( $block_content, $block );
 
-		// Should return original content.
+		// Blocks without CSS pass through unchanged.
 		$this->assertEquals( $block_content, $result );
 
 		// No CSS should be output.

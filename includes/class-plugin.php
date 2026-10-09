@@ -743,6 +743,11 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-block-migrator.php';
 		require_once DESIGNSETGO_PATH . 'includes/admin/class-query-filter-index-admin.php';
 		// --- Render-time features ---
+		require_once DESIGNSETGO_PATH . 'includes/class-custom-css-support.php';
+		require_once DESIGNSETGO_PATH . 'includes/class-layout-expression.php';
+		require_once DESIGNSETGO_PATH . 'includes/class-layout-values.php';
+		require_once DESIGNSETGO_PATH . 'includes/class-layout-support.php';
+		require_once DESIGNSETGO_PATH . 'includes/features/class-layout-renderer.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-custom-css-renderer.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-section-styles.php';
 		require_once DESIGNSETGO_PATH . 'includes/features/class-icon-button-styles.php';
@@ -834,6 +839,7 @@ class Plugin {
 		$this->block_manager       = new Admin\Block_Manager();
 		$this->gdpr_compliance     = new Admin\GDPR_Compliance();
 		$this->custom_css_renderer = new Custom_CSS_Renderer();
+		new Layout_Renderer();
 		$this->section_styles      = new Section_Styles();
 		$this->section_styles->init();
 		$this->icon_button_styles = new Icon_Button_Styles();

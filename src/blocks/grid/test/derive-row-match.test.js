@@ -29,6 +29,18 @@ describe('effectiveColumnsForDevice', () => {
 });
 
 describe('deriveRowMatch', () => {
+	test('responsive templates use rendered tracks instead of configured counts', () => {
+		expect(
+			deriveRowMatch({
+				matchRowHeights: true,
+				cardChildCounts: [4, 4],
+				deviceType: 'Mobile',
+				...COLS,
+				renderedColumns: 2,
+			}).isActive
+		).toBe(true);
+	});
+
 	test('inactive when the toggle is off', () => {
 		expect(
 			deriveRowMatch({

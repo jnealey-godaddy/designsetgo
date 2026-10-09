@@ -1,0 +1,518 @@
+[
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "clamp(20rem, 60vw, 70rem)"
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-f7d813e38cfd52f85b51416e44b4b1c5",
+    "css": ".dsgo-layout-f7d813e38cfd52f85b51416e44b4b1c5.dsgo-layout-f7d813e38cfd52f85b51416e44b4b1c5{width:clamp(20rem, 60vw, 70rem)!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "calc((100% - 24px) / 2)"
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-52ac2a7b83c775c3c6f1964bba20c6a0",
+    "css": ".dsgo-layout-52ac2a7b83c775c3c6f1964bba20c6a0.dsgo-layout-52ac2a7b83c775c3c6f1964bba20c6a0{width:calc((100% - 24px) / 2)!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "maxWidth": "none"
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-f2d4942d24d80d7e43b4d314ec2d620b",
+    "css": ".dsgo-layout-f2d4942d24d80d7e43b4d314ec2d620b.dsgo-layout-f2d4942d24d80d7e43b4d314ec2d620b{max-width:none!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "var(--wp--style--global--content-size, 1140px)"
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-37723e7acc15b40610f02026598d3ef8",
+    "css": ".dsgo-layout-37723e7acc15b40610f02026598d3ef8.dsgo-layout-37723e7acc15b40610f02026598d3ef8{width:var(--wp--style--global--content-size, 1140px)!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "repeat(2, minmax(0, 1fr))"
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-48d3a89e39dcb7bfa80e9a530e67d478",
+    "css": ".dsgo-layout-48d3a89e39dcb7bfa80e9a530e67d478.dsgo-layout-48d3a89e39dcb7bfa80e9a530e67d478 > .dsgo-grid__inner{grid-template-rows:repeat(2, minmax(0, 1fr))!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "auto minmax(10rem, 1fr)"
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-a919f07b780813d775044eb6e88d373e",
+    "css": ".dsgo-layout-a919f07b780813d775044eb6e88d373e.dsgo-layout-a919f07b780813d775044eb6e88d373e > .dsgo-grid__inner{grid-template-rows:auto minmax(10rem, 1fr)!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateAreas": "\"a a b\" \"c d b\""
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-ccfeca548e8107887d8c8b8164c8c50f",
+    "css": ".dsgo-layout-ccfeca548e8107887d8c8b8164c8c50f.dsgo-layout-ccfeca548e8107887d8c8b8164c8c50f > .dsgo-grid__inner{grid-template-areas:\"a a b\" \"c d b\"!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridColumn": "2 / span 2"
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-5a7db6a9c4c58ebcebc0a4fd33225bc7",
+    "css": ".dsgo-layout-5a7db6a9c4c58ebcebc0a4fd33225bc7.dsgo-layout-5a7db6a9c4c58ebcebc0a4fd33225bc7:not(.dsgo-grid--match-rows > .dsgo-grid__inner > *){grid-column:2 / span 2!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "flexGrow": 0.125
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-07143a30e439b9deba35696e91df4a43",
+    "css": ".dsgo-layout-07143a30e439b9deba35696e91df4a43.dsgo-layout-07143a30e439b9deba35696e91df4a43{flex-grow:0.125!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "flexGrow": 0.0001
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-6e9a16fe7c6aa8aca39da045eab15b0b",
+    "css": ".dsgo-layout-6e9a16fe7c6aa8aca39da045eab15b0b.dsgo-layout-6e9a16fe7c6aa8aca39da045eab15b0b{flex-grow:0.0001!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "flexGrow": 0
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-4c0cf86418b07bc40de916d9a96c9d16",
+    "css": ".dsgo-layout-4c0cf86418b07bc40de916d9a96c9d16.dsgo-layout-4c0cf86418b07bc40de916d9a96c9d16{flex-grow:0!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "zIndex": 3
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-a589f683c3020f98eca6e7c4e57b2c77",
+    "css": ".dsgo-layout-a589f683c3020f98eca6e7c4e57b2c77.dsgo-layout-a589f683c3020f98eca6e7c4e57b2c77{z-index:3!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "var(1px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "calc(1px +)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "calc(1px+2px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "calc(10px * 2px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "calc(10px / 0)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "clamp(10px, 20px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "none"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "20"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": " 10px"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "url(x)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "10px;display:none"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gap": "-2px"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "paddingTop": "-4px"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "repeat(0, 1fr)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "1fr + 2fr"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateAreas": "\"a b\" \"b a\""
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateAreas": "\"auto\""
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridColumn": "revert-layer"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "flexGrow": 1e-06
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "flexGrow": true
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "zIndex": 1.5
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "repeat(auto-fill, 1fr)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "repeat(2, repeat(3, 1fr))"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "minmax(-10px, 1fr)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gap": "fit-content(10px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "paddingTop": "fit-content(10px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "top": "fit-content(10px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "fit-content(10px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "fit-content(10px)"
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-f08a4c47947e894a3bcffee7fb591093",
+    "css": ".dsgo-layout-f08a4c47947e894a3bcffee7fb591093.dsgo-layout-f08a4c47947e894a3bcffee7fb591093 > .dsgo-grid__inner{grid-template-rows:fit-content(10px)!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gap": "-.5px"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "paddingTop": "-.5px"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "fit-content(-.5px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "minmax(0, fit-content(10px))"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "minmax(fit-content(10px), 1fr)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "min(0, 20px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "width": "clamp(0, 50vw, 70rem)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateAreas": "\"a\nb\""
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateAreas": "\"a\rb\""
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateAreas": "\"a\"\n\"b\""
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-69fdc76f4f43921720ceeac1d062acf6",
+    "css": ".dsgo-layout-69fdc76f4f43921720ceeac1d062acf6.dsgo-layout-69fdc76f4f43921720ceeac1d062acf6 > .dsgo-grid__inner{grid-template-areas:\"a\"\n\"b\"!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateAreas": "\"a\tb\""
+      }
+    },
+    "valid": true,
+    "className": "dsgo-layout-a7228ceb6002c78d32c01898e5796114",
+    "css": ".dsgo-layout-a7228ceb6002c78d32c01898e5796114.dsgo-layout-a7228ceb6002c78d32c01898e5796114 > .dsgo-grid__inner{grid-template-areas:\"a\tb\"!important}"
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "fit-content( -10px)"
+      }
+    },
+    "valid": false
+  },
+  {
+    "name": "designsetgo/grid",
+    "layout": {
+      "desktop": {
+        "gridTemplateRows": "fit-content( -.5px )"
+      }
+    },
+    "valid": false
+  }
+]

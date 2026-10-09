@@ -1,39 +1,22 @@
 # DesignSetGo Abilities API Guide
 
+For installed generation discovery, serialization without drafts, responsive Grid templates and residual CSS, see the [native generation contract](GENERATION-CONTRACT.md).
+
 ## Overview
 
 The DesignSetGo Abilities API provides AI-native endpoints for programmatically creating and modifying WordPress content using DesignSetGo blocks.
 
-## Important Note: Block Validation
+## Block validation
 
-**Blocks inserted via REST API will show "unexpected or invalid content" warnings in the WordPress editor until the post is saved.**
+The plugin's PHP serializers mirror the supported blocks' JavaScript `save()`
+output. Supported native trees should open as valid, editable blocks without a
+recovery step. Use `list-blocks` to check serializer coverage and
+`serialize-blocks` to prepare content before writing it. Unsupported static
+blocks are refused instead of saved as invalid comments.
 
-### Why This Happens
-
-This is a WordPress architectural limitation:
-
-1. **Block save functions are in JavaScript** (client-side)
-2. **REST API inserts happen in PHP** (server-side)
-3. **Server cannot execute client-side save functions**
-4. **WordPress expects saved HTML** to match current save function output
-
-When blocks are inserted via REST API, they contain only attributes (data), not the rendered HTML that WordPress expects. This causes validation warnings.
-
-### How to Resolve
-
-**Option 1: Save in Editor (Recommended for Production)**
-1. Insert blocks via REST API
-2. Open the post in WordPress editor
-3. WordPress will show "Attempt recovery" buttons
-4. Click "Attempt recovery" on each block (or save the post)
-5. WordPress calls the save functions and generates proper HTML
-6. Validation warnings disappear
-
-**Option 2: Publish Without Editor (For AI/Automation)**
-- Blocks WILL render correctly on the frontend despite validation warnings
-- The warnings only appear in the editor
-- Content displays properly to site visitors
-- Suitable for fully automated workflows where human review isn't required
+Validate representative generated content in the editor and on the frontend.
+Structural validation alone cannot prove visual equivalence or cover every
+combination of attributes.
 
 ### Verification
 

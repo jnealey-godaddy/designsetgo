@@ -177,7 +177,7 @@ $inline-block-data-types: (
 
 		// Only strip inner constraints when the nested section itself has no width constraint
 		// Sections with constrainWidth enabled need their max-width + margin:auto preserved
-		&.dsgo-no-width-constraint > .dsgo-stack__inner {
+		&.dsgo-no-width-constraint:where(:not([class*="dsgo-layout-"])) > .dsgo-stack__inner {
 			max-width: none !important;
 			margin-left: 0 !important;
 			margin-right: 0 !important;
@@ -197,7 +197,7 @@ $inline-block-data-types: (
 	// CRITICAL: In editor, blocks are wrapped in [data-block] elements inside .dsgo-stack__inner
 	// NOTE: .is-layout-flex is on the dsgo-stack__inner element, not the outer wrapper
 	// ONLY apply when section has NO width constraints (dsgo-no-width-constraint class)
-	&.dsgo-no-width-constraint .dsgo-stack__inner.is-layout-flex > [data-block] {
+	&.dsgo-no-width-constraint .dsgo-stack__inner.is-layout-flex > [data-block]:where(:not([class*="dsgo-layout-"])) {
 		// Auto width by default for alignment to work
 		width: auto;
 		max-width: 100%;
@@ -334,7 +334,7 @@ $inline-block-data-types: (
 
 		> .dsgo-counter,
 		> .wp-block-designsetgo-counter,
-		> .wp-block-button {
+		> .wp-block-button:where(:not([class*="dsgo-layout-"])) {
 			width: auto !important;
 			max-width: none !important;
 		}
@@ -359,7 +359,7 @@ $inline-block-data-types: (
 	> [data-type="designsetgo/icon"],
 	> [data-type="designsetgo/counter"],
 	> [data-type="designsetgo/pill"],
-	> [data-type="core/button"] {
+	> [data-type="core/button"]:where(:not([class*="dsgo-layout-"])) {
 		flex-grow: 0 !important;
 		height: auto !important;
 	}
@@ -475,7 +475,7 @@ $inline-block-data-types: (
 			.wp-block-designsetgo-icon-button,
 			.wp-block-designsetgo-pill,
 			.wp-block-designsetgo-counter
-		).aligncenter {
+		).aligncenter:where(:not([class*="dsgo-layout-"])) {
 			align-self: center !important;
 		}
 
@@ -484,7 +484,7 @@ $inline-block-data-types: (
 			.wp-block-designsetgo-icon-button,
 			.wp-block-designsetgo-pill,
 			.wp-block-designsetgo-counter
-		).alignleft {
+		).alignleft:where(:not([class*="dsgo-layout-"])) {
 			align-self: flex-start !important;
 		}
 
@@ -493,12 +493,12 @@ $inline-block-data-types: (
 			.wp-block-designsetgo-icon-button,
 			.wp-block-designsetgo-pill,
 			.wp-block-designsetgo-counter
-		).alignright {
+		).alignright:where(:not([class*="dsgo-layout-"])) {
 			align-self: flex-end !important;
 		}
 
 		// Editor: [data-block] wrappers WITH explicit alignment on inner block
-		> [data-block]:has(> .aligncenter:where(
+		> [data-block]:where(:not([class*="dsgo-layout-"])):has(> .aligncenter:where(
 			.wp-block-designsetgo-icon,
 			.wp-block-designsetgo-icon-button,
 			.wp-block-designsetgo-pill,
@@ -509,7 +509,7 @@ $inline-block-data-types: (
 			align-self: center !important;
 		}
 
-		> [data-block]:has(> .alignleft:where(
+		> [data-block]:where(:not([class*="dsgo-layout-"])):has(> .alignleft:where(
 			.wp-block-designsetgo-icon,
 			.wp-block-designsetgo-icon-button,
 			.wp-block-designsetgo-pill,
@@ -520,7 +520,7 @@ $inline-block-data-types: (
 			align-self: flex-start !important;
 		}
 
-		> [data-block]:has(> .alignright:where(
+		> [data-block]:where(:not([class*="dsgo-layout-"])):has(> .alignright:where(
 			.wp-block-designsetgo-icon,
 			.wp-block-designsetgo-icon-button,
 			.wp-block-designsetgo-pill,
@@ -532,15 +532,15 @@ $inline-block-data-types: (
 		}
 
 		// Block-level elements WITH explicit alignment
-		> .aligncenter:not(.wp-block-designsetgo-icon):not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-pill):not(.wp-block-designsetgo-counter) {
+		> .aligncenter:not(.wp-block-designsetgo-icon):not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-pill):not(.wp-block-designsetgo-counter):where(:not([class*="dsgo-layout-"])) {
 			align-self: center !important;
 		}
 
-		> .alignright:not(.wp-block-designsetgo-icon):not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-pill):not(.wp-block-designsetgo-counter) {
+		> .alignright:not(.wp-block-designsetgo-icon):not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-pill):not(.wp-block-designsetgo-counter):where(:not([class*="dsgo-layout-"])) {
 			align-self: flex-end !important;
 		}
 
-		> .alignleft:not(.wp-block-designsetgo-icon):not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-pill):not(.wp-block-designsetgo-counter) {
+		> .alignleft:not(.wp-block-designsetgo-icon):not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-pill):not(.wp-block-designsetgo-counter):where(:not([class*="dsgo-layout-"])) {
 			align-self: flex-start !important;
 		}
 
@@ -549,8 +549,8 @@ $inline-block-data-types: (
 		// start of the cross axis, silently defeating the justification the
 		// author set on THIS parent. Its own `width: 100%` is inline, so
 		// nothing is lost by opting it out of both declarations here.
-		> .alignwide:not(.dsgo-stack--has-box-width),
-		> .alignfull:not(.dsgo-stack--has-box-width) {
+		> .alignwide:not(.dsgo-stack--has-box-width):where(:not([class*="dsgo-layout-"])),
+		> .alignfull:not(.dsgo-stack--has-box-width):where(:not([class*="dsgo-layout-"])) {
 			align-self: stretch !important;
 			width: 100% !important;
 		}
@@ -569,7 +569,7 @@ $inline-block-data-types: (
 	// Target all direct children that aren't explicitly aligned
 	// In editor, children are wrapped in [data-block] elements
 	// Nested sections with their own box width opt out (must match style.scss).
-	> [data-block]:not(.alignleft):not(.alignright):not(.dsgo-stack--has-box-width) {
+	> [data-block]:not(.alignleft):not(.alignright):not(.dsgo-stack--has-box-width):where(:not([class*="dsgo-layout-"])) {
 		max-width: none !important;
 		margin-left: 0 !important;
 		margin-right: 0 !important;

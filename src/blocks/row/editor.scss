@@ -101,7 +101,7 @@
 			width: 100%;
 		}
 
-		.dsgo-flex__inner {
+		&:where(:not([class*="dsgo-layout-"])) > .dsgo-flex__inner {
 			max-width: none !important;
 			margin-left: 0 !important;
 			margin-right: 0 !important;

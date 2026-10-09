@@ -1,0 +1,1275 @@
+{
+  "referenceBaseCSS": "*{box-sizing:border-box}html{font-size:16px}body{margin:0}.ref-root{width:calc(100% - 48px);max-width:960px;margin:48px auto}.ref-layout{width:100%}.ref-item{min-width:0;min-height:0;background:#e6ebef}",
+  "designs": [
+    {
+      "name": "split-hero",
+      "blocks": [
+        {
+          "attributes": {
+            "align": "full",
+            "anchor": "split-hero",
+            "constrainWidth": false,
+            "style": {
+              "spacing": {
+                "padding": {
+                  "top": "0px",
+                  "right": "0px",
+                  "bottom": "0px",
+                  "left": "0px"
+                },
+                "margin": {
+                  "top": "48px",
+                  "bottom": "48px",
+                  "left": "auto",
+                  "right": "auto"
+                },
+                "blockGap": "0px"
+              }
+            },
+            "dsgoLayout": {
+              "desktop": {
+                "width": "calc(100% - 48px)",
+                "maxWidth": "960px",
+                "gap": "24px"
+              },
+              "tablet": {
+                "direction": "column"
+              },
+              "mobile": {
+                "gap": "12px"
+              }
+            }
+          },
+          "block_name": "designsetgo/row",
+          "inner_blocks": [
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "split-hero-a",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "flexBasis": "0px",
+                    "flexGrow": 1,
+                    "height": "180px"
+                  },
+                  "tablet": {
+                    "flexBasis": "auto",
+                    "flexGrow": 0
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "A",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "split-hero-b",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "flexBasis": "0px",
+                    "flexGrow": 1,
+                    "height": "180px"
+                  },
+                  "tablet": {
+                    "flexBasis": "auto",
+                    "flexGrow": 0
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "B",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "referenceHTML": "<section class=\"ref-root split-hero\"><div class=\"ref-layout\"><div class=\"ref-item a\" data-ref=\"a\">A</div><div class=\"ref-item b\" data-ref=\"b\">B</div></div></section>",
+      "referenceCSS": ".split-hero .ref-layout{display:flex;gap:24px}.split-hero .ref-item{flex:1 1 0px;height:180px}@media(max-width:1024px){.split-hero .ref-layout{flex-direction:column}.split-hero .ref-item{flex-basis:auto}}@media(max-width:767px){.split-hero .ref-layout{gap:12px}}",
+      "measure": [
+        "root",
+        "a",
+        "b"
+      ]
+    },
+    {
+      "name": "editorial-areas",
+      "blocks": [
+        {
+          "attributes": {
+            "align": "full",
+            "anchor": "editorial-areas",
+            "constrainWidth": false,
+            "style": {
+              "spacing": {
+                "padding": {
+                  "top": "0px",
+                  "right": "0px",
+                  "bottom": "0px",
+                  "left": "0px"
+                },
+                "margin": {
+                  "top": "48px",
+                  "bottom": "48px",
+                  "left": "auto",
+                  "right": "auto"
+                },
+                "blockGap": "0px"
+              }
+            },
+            "dsgoLayout": {
+              "desktop": {
+                "width": "calc(100% - 48px)",
+                "maxWidth": "960px",
+                "gridTemplateRows": "160px 120px",
+                "gridTemplateAreas": "\"a b\" \"c b\"",
+                "gap": "16px"
+              },
+              "mobile": {
+                "gridTemplateRows": "160px 120px 120px",
+                "gridTemplateAreas": "\"a\" \"b\" \"c\""
+              }
+            },
+            "desktopColumns": 2,
+            "tabletColumns": 2,
+            "mobileColumns": 1,
+            "columnTemplate": "minmax(0, 2fr) minmax(0, 1fr)",
+            "tabletColumnTemplate": "minmax(0, 2fr) minmax(0, 1fr)",
+            "mobileColumnTemplate": "minmax(0, 1fr)"
+          },
+          "block_name": "designsetgo/grid",
+          "inner_blocks": [
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "editorial-areas-a",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "gridArea": "a"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "A",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "editorial-areas-b",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "gridArea": "b"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "B",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "editorial-areas-c",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "gridArea": "c"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "C",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "referenceHTML": "<section class=\"ref-root editorial-areas\"><div class=\"ref-layout\"><div class=\"ref-item a\" data-ref=\"a\">A</div><div class=\"ref-item b\" data-ref=\"b\">B</div><div class=\"ref-item c\" data-ref=\"c\">C</div></div></section>",
+      "referenceCSS": ".editorial-areas .ref-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);grid-template-rows:160px 120px;grid-template-areas:\"a b\" \"c b\";gap:16px}.editorial-areas .a{grid-area:a}.editorial-areas .b{grid-area:b}.editorial-areas .c{grid-area:c}@media(max-width:767px){.editorial-areas .ref-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:160px 120px 120px;grid-template-areas:\"a\" \"b\" \"c\"}}",
+      "measure": [
+        "root",
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    {
+      "name": "asymmetric-mosaic",
+      "blocks": [
+        {
+          "attributes": {
+            "align": "full",
+            "anchor": "asymmetric-mosaic",
+            "constrainWidth": false,
+            "style": {
+              "spacing": {
+                "padding": {
+                  "top": "0px",
+                  "right": "0px",
+                  "bottom": "0px",
+                  "left": "0px"
+                },
+                "margin": {
+                  "top": "48px",
+                  "bottom": "48px",
+                  "left": "auto",
+                  "right": "auto"
+                },
+                "blockGap": "0px"
+              }
+            },
+            "dsgoLayout": {
+              "desktop": {
+                "width": "calc(100% - 48px)",
+                "maxWidth": "960px",
+                "gridTemplateRows": "120px 120px",
+                "gridTemplateAreas": "\"a a b\" \"c d b\"",
+                "gap": "16px"
+              },
+              "mobile": {
+                "gridTemplateRows": "120px 120px 120px",
+                "gridTemplateAreas": "\"a a\" \"b b\" \"c d\""
+              }
+            },
+            "desktopColumns": 3,
+            "tabletColumns": 3,
+            "mobileColumns": 2,
+            "columnTemplate": "repeat(3, minmax(0, 1fr))",
+            "tabletColumnTemplate": "repeat(3, minmax(0, 1fr))",
+            "mobileColumnTemplate": "repeat(2, minmax(0, 1fr))"
+          },
+          "block_name": "designsetgo/grid",
+          "inner_blocks": [
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "asymmetric-mosaic-a",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "gridArea": "a"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "A",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "asymmetric-mosaic-b",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "gridArea": "b"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "B",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "asymmetric-mosaic-c",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "gridArea": "c"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "C",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "asymmetric-mosaic-d",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "gridArea": "d"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "D",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "referenceHTML": "<section class=\"ref-root asymmetric-mosaic\"><div class=\"ref-layout\"><div class=\"ref-item a\" data-ref=\"a\">A</div><div class=\"ref-item b\" data-ref=\"b\">B</div><div class=\"ref-item c\" data-ref=\"c\">C</div><div class=\"ref-item d\" data-ref=\"d\">D</div></div></section>",
+      "referenceCSS": ".asymmetric-mosaic .ref-layout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:120px 120px;grid-template-areas:\"a a b\" \"c d b\";gap:16px}.asymmetric-mosaic .a{grid-area:a}.asymmetric-mosaic .b{grid-area:b}.asymmetric-mosaic .c{grid-area:c}.asymmetric-mosaic .d{grid-area:d}@media(max-width:767px){.asymmetric-mosaic .ref-layout{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:120px 120px 120px;grid-template-areas:\"a a\" \"b b\" \"c d\"}}",
+      "measure": [
+        "root",
+        "a",
+        "b",
+        "c",
+        "d"
+      ]
+    },
+    {
+      "name": "overlap-story",
+      "blocks": [
+        {
+          "attributes": {
+            "align": "full",
+            "anchor": "overlap-story",
+            "constrainWidth": false,
+            "style": {
+              "spacing": {
+                "padding": {
+                  "top": "0px",
+                  "right": "0px",
+                  "bottom": "0px",
+                  "left": "0px"
+                },
+                "margin": {
+                  "top": "48px",
+                  "bottom": "48px",
+                  "left": "auto",
+                  "right": "auto"
+                },
+                "blockGap": "0px"
+              }
+            },
+            "dsgoLayout": {
+              "desktop": {
+                "width": "calc(100% - 48px)",
+                "maxWidth": "960px",
+                "height": "340px",
+                "position": "relative"
+              }
+            }
+          },
+          "block_name": "designsetgo/section",
+          "inner_blocks": [
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "overlap-story-a",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "width": "70%",
+                    "height": "240px"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "A",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "overlap-story-b",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "position": "absolute",
+                    "left": "50%",
+                    "top": "120px",
+                    "width": "45%",
+                    "height": "160px",
+                    "zIndex": 3
+                  },
+                  "mobile": {
+                    "left": "15%",
+                    "width": "80%",
+                    "top": "150px"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "B",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "referenceHTML": "<section class=\"ref-root overlap-story\"><div class=\"ref-layout\"><div class=\"ref-item a\" data-ref=\"a\">A</div><div class=\"ref-item b\" data-ref=\"b\">B</div></div></section>",
+      "referenceCSS": ".overlap-story{height:340px;position:relative}.overlap-story .ref-layout{position:relative;height:100%}.overlap-story .a{width:70%;height:240px}.overlap-story .b{position:absolute;left:50%;top:120px;width:45%;height:160px;z-index:3}@media(max-width:767px){.overlap-story .b{left:15%;width:80%;top:150px}}",
+      "measure": [
+        "root",
+        "a",
+        "b"
+      ]
+    },
+    {
+      "name": "fluid-features",
+      "blocks": [
+        {
+          "attributes": {
+            "align": "full",
+            "anchor": "fluid-features",
+            "constrainWidth": false,
+            "style": {
+              "spacing": {
+                "padding": {
+                  "top": "0px",
+                  "right": "0px",
+                  "bottom": "0px",
+                  "left": "0px"
+                },
+                "margin": {
+                  "top": "48px",
+                  "bottom": "48px",
+                  "left": "auto",
+                  "right": "auto"
+                },
+                "blockGap": "0px"
+              }
+            },
+            "dsgoLayout": {
+              "desktop": {
+                "width": "calc(100% - 48px)",
+                "maxWidth": "960px",
+                "gap": "16px",
+                "wrap": "wrap"
+              },
+              "mobile": {
+                "gap": "8px"
+              }
+            },
+            "mobileStack": false
+          },
+          "block_name": "designsetgo/row",
+          "inner_blocks": [
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "fluid-features-a",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "flexBasis": "clamp(9rem, 18vw, 16rem)",
+                    "flexGrow": 1,
+                    "height": "120px"
+                  },
+                  "mobile": {
+                    "flexBasis": "100%"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "A",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "fluid-features-b",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "flexBasis": "clamp(9rem, 18vw, 16rem)",
+                    "flexGrow": 1,
+                    "height": "120px"
+                  },
+                  "mobile": {
+                    "flexBasis": "100%"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "B",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "fluid-features-c",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "flexBasis": "clamp(9rem, 18vw, 16rem)",
+                    "flexGrow": 1,
+                    "height": "120px"
+                  },
+                  "mobile": {
+                    "flexBasis": "100%"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "C",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "referenceHTML": "<section class=\"ref-root fluid-features\"><div class=\"ref-layout\"><div class=\"ref-item a\" data-ref=\"a\">A</div><div class=\"ref-item b\" data-ref=\"b\">B</div><div class=\"ref-item c\" data-ref=\"c\">C</div></div></section>",
+      "referenceCSS": ".fluid-features .ref-layout{display:flex;flex-wrap:wrap;gap:16px}.fluid-features .ref-item{flex:1 1 clamp(9rem,18vw,16rem);height:120px}@media(max-width:767px){.fluid-features .ref-layout{gap:8px}.fluid-features .ref-item{flex-basis:100%}}",
+      "measure": [
+        "root",
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    {
+      "name": "mobile-reorder",
+      "blocks": [
+        {
+          "attributes": {
+            "align": "full",
+            "anchor": "mobile-reorder",
+            "constrainWidth": false,
+            "style": {
+              "spacing": {
+                "padding": {
+                  "top": "0px",
+                  "right": "0px",
+                  "bottom": "0px",
+                  "left": "0px"
+                },
+                "margin": {
+                  "top": "48px",
+                  "bottom": "48px",
+                  "left": "auto",
+                  "right": "auto"
+                },
+                "blockGap": "0px"
+              }
+            },
+            "dsgoLayout": {
+              "desktop": {
+                "width": "calc(100% - 48px)",
+                "maxWidth": "960px",
+                "gridTemplateRows": "200px",
+                "gridTemplateAreas": "\"a b\"",
+                "gap": "20px"
+              },
+              "mobile": {
+                "gridTemplateRows": "160px 120px",
+                "gridTemplateAreas": "\"b\" \"a\""
+              }
+            },
+            "desktopColumns": 2,
+            "tabletColumns": 2,
+            "mobileColumns": 1,
+            "columnTemplate": "repeat(2, minmax(0, 1fr))",
+            "tabletColumnTemplate": "repeat(2, minmax(0, 1fr))",
+            "mobileColumnTemplate": "minmax(0, 1fr)"
+          },
+          "block_name": "designsetgo/grid",
+          "inner_blocks": [
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "mobile-reorder-a",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "gridArea": "a"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "A",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "mobile-reorder-b",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "gridArea": "b"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "B",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "referenceHTML": "<section class=\"ref-root mobile-reorder\"><div class=\"ref-layout\"><div class=\"ref-item a\" data-ref=\"a\">A</div><div class=\"ref-item b\" data-ref=\"b\">B</div></div></section>",
+      "referenceCSS": ".mobile-reorder .ref-layout{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:200px;grid-template-areas:\"a b\";gap:20px}.mobile-reorder .a{grid-area:a}.mobile-reorder .b{grid-area:b}@media(max-width:767px){.mobile-reorder .ref-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:160px 120px;grid-template-areas:\"b\" \"a\"}}",
+      "measure": [
+        "root",
+        "a",
+        "b"
+      ]
+    },
+    {
+      "name": "clipped-frame",
+      "blocks": [
+        {
+          "attributes": {
+            "align": "full",
+            "anchor": "clipped-frame",
+            "constrainWidth": false,
+            "style": {
+              "spacing": {
+                "padding": {
+                  "top": "0px",
+                  "right": "0px",
+                  "bottom": "0px",
+                  "left": "0px"
+                },
+                "margin": {
+                  "top": "48px",
+                  "bottom": "48px",
+                  "left": "auto",
+                  "right": "auto"
+                },
+                "blockGap": "0px"
+              }
+            },
+            "dsgoLayout": {
+              "desktop": {
+                "width": "calc(100% - 48px)",
+                "maxWidth": "960px",
+                "height": "220px",
+                "overflow": "hidden"
+              },
+              "mobile": {
+                "height": "180px"
+              }
+            }
+          },
+          "block_name": "designsetgo/section",
+          "inner_blocks": [
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "clipped-frame-a",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "width": "120%",
+                    "height": "180px",
+                    "flexShrink": 0,
+                    "position": "relative",
+                    "left": "-10%",
+                    "top": "24px"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "A",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "referenceHTML": "<section class=\"ref-root clipped-frame\"><div class=\"ref-layout\"><div class=\"ref-item a\" data-ref=\"a\">A</div></div></section>",
+      "referenceCSS": ".clipped-frame{height:220px;overflow:hidden}.clipped-frame .ref-layout{position:relative}.clipped-frame .a{width:120%;height:180px;position:relative;left:-10%;top:24px}@media(max-width:767px){.clipped-frame{height:180px}}",
+      "measure": [
+        "root",
+        "a"
+      ]
+    },
+    {
+      "name": "inset-column",
+      "blocks": [
+        {
+          "attributes": {
+            "align": "full",
+            "anchor": "inset-column",
+            "constrainWidth": true,
+            "style": {
+              "spacing": {
+                "padding": {
+                  "top": "0px",
+                  "right": "0px",
+                  "bottom": "0px",
+                  "left": "0px"
+                },
+                "margin": {
+                  "top": "48px",
+                  "bottom": "48px",
+                  "left": "auto",
+                  "right": "auto"
+                },
+                "blockGap": "0px"
+              }
+            },
+            "dsgoLayout": {
+              "desktop": {
+                "width": "calc(100% - 48px)",
+                "maxWidth": "960px",
+                "paddingTop": "24px",
+                "paddingRight": "24px",
+                "paddingBottom": "24px",
+                "paddingLeft": "24px",
+                "contentWidth": "70%"
+              },
+              "tablet": {
+                "contentWidth": "85%"
+              },
+              "mobile": {
+                "contentWidth": "100%",
+                "paddingLeft": "12px",
+                "paddingRight": "12px"
+              }
+            },
+            "contentPosition": "left"
+          },
+          "block_name": "designsetgo/section",
+          "inner_blocks": [
+            {
+              "name": "designsetgo/section",
+              "attributes": {
+                "anchor": "inset-column-a",
+                "constrainWidth": false,
+                "style": {
+                  "spacing": {
+                    "padding": {
+                      "top": "0px",
+                      "right": "0px",
+                      "bottom": "0px",
+                      "left": "0px"
+                    },
+                    "blockGap": "0px"
+                  },
+                  "color": {
+                    "background": "#e6ebef"
+                  }
+                },
+                "dsgoLayout": {
+                  "desktop": {
+                    "height": "120px"
+                  }
+                }
+              },
+              "inner_blocks": [
+                {
+                  "name": "core/paragraph",
+                  "attributes": {
+                    "content": "A",
+                    "style": {
+                      "spacing": {
+                        "margin": {
+                          "top": "0px",
+                          "right": "0px",
+                          "bottom": "0px",
+                          "left": "0px"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "referenceHTML": "<section class=\"ref-root inset-column\"><div class=\"ref-layout\"><div class=\"ref-item a\" data-ref=\"a\">A</div></div></section>",
+      "referenceCSS": ".inset-column{padding:24px}.inset-column .ref-layout{max-width:70%}.inset-column .a{height:120px}@media(max-width:1024px){.inset-column .ref-layout{max-width:85%}}@media(max-width:767px){.inset-column{padding-left:12px;padding-right:12px}.inset-column .ref-layout{max-width:100%}}",
+      "measure": [
+        "root",
+        "a"
+      ]
+    }
+  ]
+}

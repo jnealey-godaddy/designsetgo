@@ -13,6 +13,7 @@ namespace DesignSetGo\Abilities\Inserters;
 
 use DesignSetGo\Abilities\Abstract_Ability;
 use DesignSetGo\Abilities\Block_Inserter;
+use DesignSetGo\Abilities\Layout_Updater;
 use WP_Error;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -155,6 +156,12 @@ class Add_Tab extends Abstract_Ability {
 		// Check permission for this specific post.
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return $this->permission_error();
+		}
+		if ( is_array( $inner_blocks ) && Layout_Updater::has_layout_fields( $inner_blocks ) ) {
+			return $this->error(
+				'designsetgo_unsupported_layout',
+				__( 'The add-tab child builder does not support layout fields. Use add-child-block or serialize-blocks to create composed layout children.', 'designsetgo' )
+			);
 		}
 
 		// Parse blocks.

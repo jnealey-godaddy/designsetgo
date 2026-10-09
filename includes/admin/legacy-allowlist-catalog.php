@@ -99,6 +99,7 @@ return array(
 		'clickable-group',
 		'custom-css',
 		'grid-span',
+		'layout',
 		'max-width',
 		'responsive',
 		'reveal-control',

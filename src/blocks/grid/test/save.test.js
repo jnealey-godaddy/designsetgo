@@ -21,6 +21,37 @@ setCategories([{ slug: 'designsetgo', title: 'DesignSetGo' }]);
 
 registerBlockType(metadata.name, { ...metadata, save });
 
+describe('grid save - responsive track templates', () => {
+	test('keeps templates on the inner layout element', () => {
+		const html = serialize(
+			createBlock(metadata.name, {
+				tabletColumnTemplate: 'minmax(0, 2fr) minmax(0, 1fr)',
+				mobileColumnTemplate: '1fr 1fr',
+			})
+		);
+		expect(html).toContain(
+			'--dsgo-grid-columns-tablet:minmax(0, 2fr) minmax(0, 1fr)'
+		);
+		expect(html).toContain('--dsgo-grid-columns-mobile:1fr 1fr');
+		expect(html).toMatch(
+			/class="dsgo-grid__inner" style="[^"]*--dsgo-grid-columns-tablet/
+		);
+	});
+
+	test('empty responsive templates preserve existing markup', () => {
+		const baseline = serialize(createBlock(metadata.name));
+		expect(
+			serialize(
+				createBlock(metadata.name, {
+					tabletColumnTemplate: '',
+					mobileColumnTemplate: '',
+				})
+			)
+		).toBe(baseline);
+		expect(baseline).not.toContain('--dsgo-grid-columns-');
+	});
+});
+
 describe('grid save - overlay class', () => {
 	test('no overlay by default', () => {
 		const html = serialize(createBlock(metadata.name));

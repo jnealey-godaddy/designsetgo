@@ -1,0 +1,332 @@
+{
+  "devices": {
+    "desktop": 0,
+    "tablet": 1024,
+    "mobile": 767
+  },
+  "blocks": {
+    "designsetgo/section": {
+      "role": "flex",
+      "inner": ".dsgo-stack__inner"
+    },
+    "designsetgo/row": {
+      "role": "flex",
+      "inner": ".dsgo-flex__inner"
+    },
+    "designsetgo/grid": {
+      "role": "grid",
+      "inner": ".dsgo-grid__inner"
+    },
+    "core/group": {
+      "role": "item",
+      "inner": ""
+    },
+    "core/paragraph": {
+      "role": "item",
+      "inner": ""
+    },
+    "core/heading": {
+      "role": "item",
+      "inner": ""
+    },
+    "core/image": {
+      "role": "item",
+      "inner": ""
+    },
+    "core/buttons": {
+      "role": "item",
+      "inner": ""
+    },
+    "core/button": {
+      "role": "item",
+      "inner": ""
+    },
+    "core/separator": {
+      "role": "item",
+      "inner": ""
+    },
+    "core/spacer": {
+      "role": "item",
+      "inner": ""
+    },
+    "designsetgo/icon-button": {
+      "role": "item",
+      "inner": ""
+    },
+    "designsetgo/card": {
+      "role": "item",
+      "inner": ""
+    },
+    "designsetgo/dynamic-image": {
+      "role": "item",
+      "inner": ""
+    }
+  },
+  "properties": {
+    "width": {
+      "css": "width",
+      "type": "size",
+      "scope": "all",
+      "target": "root"
+    },
+    "minWidth": {
+      "css": "min-width",
+      "type": "size",
+      "scope": "all",
+      "target": "root"
+    },
+    "maxWidth": {
+      "css": "max-width",
+      "type": "size",
+      "scope": "all",
+      "target": "root"
+    },
+    "height": {
+      "css": "height",
+      "type": "size",
+      "scope": "all",
+      "target": "root"
+    },
+    "minHeight": {
+      "css": "min-height",
+      "type": "size",
+      "scope": "all",
+      "target": "root"
+    },
+    "maxHeight": {
+      "css": "max-height",
+      "type": "size",
+      "scope": "all",
+      "target": "root"
+    },
+    "aspectRatio": {
+      "css": "aspect-ratio",
+      "type": "ratio",
+      "scope": "all",
+      "target": "root"
+    },
+    "overflow": {
+      "css": "overflow",
+      "type": "enum",
+      "scope": "all",
+      "target": "root",
+      "values": [
+        "visible",
+        "hidden",
+        "clip",
+        "auto",
+        "scroll"
+      ]
+    },
+    "position": {
+      "css": "position",
+      "type": "enum",
+      "scope": "all",
+      "target": "root",
+      "values": [
+        "static",
+        "relative",
+        "absolute"
+      ]
+    },
+    "top": {
+      "css": "top",
+      "type": "offset",
+      "scope": "all",
+      "target": "root"
+    },
+    "right": {
+      "css": "right",
+      "type": "offset",
+      "scope": "all",
+      "target": "root"
+    },
+    "bottom": {
+      "css": "bottom",
+      "type": "offset",
+      "scope": "all",
+      "target": "root"
+    },
+    "left": {
+      "css": "left",
+      "type": "offset",
+      "scope": "all",
+      "target": "root"
+    },
+    "zIndex": {
+      "css": "z-index",
+      "type": "integer",
+      "scope": "all",
+      "target": "root"
+    },
+    "direction": {
+      "css": "flex-direction",
+      "type": "enum",
+      "scope": "flex",
+      "target": "inner",
+      "values": [
+        "row",
+        "column",
+        "row-reverse",
+        "column-reverse"
+      ]
+    },
+    "wrap": {
+      "css": "flex-wrap",
+      "type": "enum",
+      "scope": "flex",
+      "target": "inner",
+      "values": [
+        "nowrap",
+        "wrap",
+        "wrap-reverse"
+      ]
+    },
+    "justifyContent": {
+      "css": "justify-content",
+      "type": "enum",
+      "scope": "container",
+      "target": "inner",
+      "values": [
+        "normal",
+        "start",
+        "end",
+        "center",
+        "flex-start",
+        "flex-end",
+        "space-between",
+        "space-around",
+        "space-evenly"
+      ]
+    },
+    "alignItems": {
+      "css": "align-items",
+      "type": "enum",
+      "scope": "container",
+      "target": "inner",
+      "values": [
+        "normal",
+        "stretch",
+        "start",
+        "end",
+        "center",
+        "flex-start",
+        "flex-end",
+        "baseline"
+      ]
+    },
+    "gap": {
+      "css": "gap",
+      "type": "gap",
+      "scope": "container",
+      "target": "inner"
+    },
+    "rowGap": {
+      "css": "row-gap",
+      "type": "gap",
+      "scope": "container",
+      "target": "inner"
+    },
+    "columnGap": {
+      "css": "column-gap",
+      "type": "gap",
+      "scope": "container",
+      "target": "inner"
+    },
+    "paddingTop": {
+      "css": "padding-top",
+      "type": "length",
+      "scope": "container",
+      "target": "root"
+    },
+    "paddingRight": {
+      "css": "padding-right",
+      "type": "length",
+      "scope": "container",
+      "target": "root"
+    },
+    "paddingBottom": {
+      "css": "padding-bottom",
+      "type": "length",
+      "scope": "container",
+      "target": "root"
+    },
+    "paddingLeft": {
+      "css": "padding-left",
+      "type": "length",
+      "scope": "container",
+      "target": "root"
+    },
+    "contentWidth": {
+      "css": "max-width",
+      "type": "size",
+      "scope": "container",
+      "target": "inner"
+    },
+    "gridTemplateRows": {
+      "css": "grid-template-rows",
+      "type": "tracks",
+      "scope": "grid",
+      "target": "inner"
+    },
+    "gridTemplateAreas": {
+      "css": "grid-template-areas",
+      "type": "areas",
+      "scope": "grid",
+      "target": "inner"
+    },
+    "flexBasis": {
+      "css": "flex-basis",
+      "type": "size",
+      "scope": "all",
+      "target": "root"
+    },
+    "flexGrow": {
+      "css": "flex-grow",
+      "type": "number",
+      "scope": "all",
+      "target": "root"
+    },
+    "flexShrink": {
+      "css": "flex-shrink",
+      "type": "number",
+      "scope": "all",
+      "target": "root"
+    },
+    "alignSelf": {
+      "css": "align-self",
+      "type": "enum",
+      "scope": "all",
+      "target": "root",
+      "values": [
+        "auto",
+        "normal",
+        "stretch",
+        "start",
+        "end",
+        "center",
+        "flex-start",
+        "flex-end",
+        "baseline"
+      ]
+    },
+    "gridColumn": {
+      "css": "grid-column",
+      "type": "line",
+      "scope": "all",
+      "target": "root"
+    },
+    "gridRow": {
+      "css": "grid-row",
+      "type": "line",
+      "scope": "all",
+      "target": "root"
+    },
+    "gridArea": {
+      "css": "grid-area",
+      "type": "identifier",
+      "scope": "all",
+      "target": "root"
+    }
+  }
+}

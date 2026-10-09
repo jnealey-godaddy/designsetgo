@@ -18,6 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once __DIR__ . '/class-layout-updater.php';
+
 /**
  * Block Configurator helper class.
  */
@@ -130,6 +132,23 @@ class Block_Configurator {
 	 * @return array<string, mixed>|WP_Error Success data or error.
 	 */
 	public static function update_block_attributes( int $post_id, string $block_name, array $attributes, ?string $client_id = null, bool $update_all = false ) {
+		return self::transform_block_attributes( $post_id, $block_name, static fn( $existing ) => $attributes, $client_id, $update_all ); // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable -- Callback signature.
+	}
+
+	/**
+	 * Apply an attribute patch computed separately for each matching block.
+	 *
+	 * Selection, permission checks and the single content write match update_block_attributes().
+	 * Callbacks receive existing attributes and must return a sanitized patch.
+	 *
+	 * @param int         $post_id Post ID.
+	 * @param string      $block_name Block type to match.
+	 * @param callable    $transform Existing attributes to sanitized patch.
+	 * @param string|null $client_id Optional stored client ID.
+	 * @param bool        $update_all Whether to update all matches.
+	 * @return array<string, mixed>|WP_Error Result or failure.
+	 */
+	public static function transform_block_attributes( int $post_id, string $block_name, callable $transform, ?string $client_id = null, bool $update_all = false ) {
 		// Validate post.
 		$post = get_post( $post_id );
 		if ( ! $post ) {
@@ -155,11 +174,16 @@ class Block_Configurator {
 		// Track if any blocks were updated.
 		$updated_count = 0;
 		$found_first   = false;
+		$last_patch    = array();
+		$layout_error  = null;
 
 		// Update blocks.
 		$blocks = self::walk_blocks(
 			$blocks,
-			function ( $block ) use ( $block_name, $attributes, $client_id, $update_all, &$updated_count, &$found_first ) {
+			function ( $block ) use ( $block_name, $transform, $client_id, $update_all, &$updated_count, &$found_first, &$last_patch, &$layout_error ) {
+				if ( null !== $layout_error ) {
+					return $block;
+				}
 				// Check if this block matches.
 				if ( $block['blockName'] === $block_name ) {
 					// If client_id is specified, check if it matches.
@@ -175,8 +199,14 @@ class Block_Configurator {
 						return $block;
 					}
 
-					// Merge attributes.
-					$block['attrs'] = array_merge( $block['attrs'] ?? array(), $attributes );
+					$attributes = $transform( $block['attrs'] ?? array() );
+					$synced     = Layout_Updater::apply( $block, $attributes );
+					if ( is_wp_error( $synced ) ) {
+						$layout_error = $synced;
+						return $block;
+					}
+					$block      = $synced;
+					$last_patch = $attributes;
 
 					// Also update the saved HTML markup (data-* attributes and CSS variables).
 					$block = self::update_block_markup( $block, $attributes, $block_name );
@@ -188,6 +218,10 @@ class Block_Configurator {
 				return $block;
 			}
 		);
+
+		if ( null !== $layout_error ) {
+			return $layout_error;
+		}
 
 		if ( 0 === $updated_count ) {
 			return new WP_Error(
@@ -222,7 +256,7 @@ class Block_Configurator {
 			'post_id'        => $post->ID,
 			'updated_count'  => $updated_count,
 			'block_name'     => $block_name,
-			'new_attributes' => $attributes,
+			'new_attributes' => $last_patch,
 		);
 	}
 
@@ -315,7 +349,15 @@ class Block_Configurator {
 		$sanitized = array();
 
 		foreach ( $attributes as $key => $value ) {
+			if ( in_array( $key, Layout_Updater::ATTRIBUTES, true ) ) {
+				$sanitized[ $key ] = $value; // Target-aware validation refuses unsafe raw input.
+				continue;
+			}
 			if ( is_string( $value ) ) {
+				if ( 'dsgoCustomCSS' === $key ) {
+					$sanitized[ $key ] = CSS_Sanitizer::sanitize( $value );
+					continue;
+				}
 				// RichText content is HTML. Preserve safe inline markup and explicit
 				// breaks without decoding escaped text into executable markup.
 				// A declared per-block policy wins over the generic key list,
@@ -693,6 +735,7 @@ class Block_Configurator {
 		$counter      = 0;
 		$updated      = false;
 		$matched_name = '';
+		$layout_error = null;
 
 		$blocks = self::walk_blocks_with_index(
 			$blocks,
@@ -701,8 +744,13 @@ class Block_Configurator {
 			$expected_block_name,
 			$counter,
 			$updated,
-			$matched_name
+			$matched_name,
+			$layout_error
 		);
+
+		if ( null !== $layout_error ) {
+			return $layout_error;
+		}
 
 		if ( ! $updated ) {
 			if ( ! empty( $matched_name ) && '' !== $expected_block_name && $matched_name !== $expected_block_name ) {
@@ -770,9 +818,10 @@ class Block_Configurator {
 	 * @param int                              $counter             Current counter (by reference).
 	 * @param bool                             $updated             Whether a block was updated (by reference).
 	 * @param string                           $matched_name        Name of block found at index (by reference).
+	 * @param WP_Error|null                    $layout_error        Atomic validation failure (by reference).
 	 * @return array<int, array<string, mixed>> Modified blocks.
 	 */
-	private static function walk_blocks_with_index( array $blocks, int $target_index, array $attributes, string $expected_block_name, int &$counter, bool &$updated, string &$matched_name ): array {
+	private static function walk_blocks_with_index( array $blocks, int $target_index, array $attributes, string $expected_block_name, int &$counter, bool &$updated, string &$matched_name, ?WP_Error &$layout_error ): array {
 		$modified = array();
 
 		foreach ( $blocks as $block ) {
@@ -790,8 +839,12 @@ class Block_Configurator {
 						continue;
 					}
 
-					// Merge attributes.
-					$block['attrs'] = array_merge( $block['attrs'] ?? array(), $attributes );
+					$synced = Layout_Updater::apply( $block, $attributes );
+					if ( is_wp_error( $synced ) ) {
+						$layout_error = $synced;
+						return $blocks;
+					}
+					$block          = $synced;
 					$updated        = true;
 				}
 
@@ -807,7 +860,8 @@ class Block_Configurator {
 					$expected_block_name,
 					$counter,
 					$updated,
-					$matched_name
+					$matched_name,
+					$layout_error
 				);
 			}
 
@@ -866,6 +920,19 @@ class Block_Configurator {
 				),
 				array( 'status' => 400 )
 			);
+		}
+
+		$layout_error = Layout_Updater::validate_tree(
+			array(
+				array(
+					'name'        => $block_name,
+					'attributes'  => $attributes,
+					'innerBlocks' => $inner_blocks,
+				),
+			)
+		);
+		if ( null !== $layout_error ) {
+			return $layout_error;
 		}
 
 		// Build the new block using Block_Inserter markup generation then parse it.
@@ -1399,6 +1466,16 @@ class Block_Configurator {
 	 * @return array<string, mixed> Block with updated markup.
 	 */
 	public static function update_block_markup( array $block, array $attributes, string $block_name ): array {
+		if ( array_key_exists( 'dsgoCustomCSS', $attributes ) ) {
+			$class              = empty( $attributes['dsgoCustomCSS'] ) ? '' : 'dsgo-custom-css-' . \DesignSetGo\Custom_CSS_Support::hash_code( $attributes['dsgoCustomCSS'] . $block_name );
+			$block['innerHTML'] = \DesignSetGo\Custom_CSS_Support::apply_class( $block['innerHTML'] ?? '', $class );
+			foreach ( $block['innerContent'] ?? array() as $index => $fragment ) {
+				if ( is_string( $fragment ) && '' !== trim( $fragment ) ) {
+					$block['innerContent'][ $index ] = \DesignSetGo\Custom_CSS_Support::apply_class( $fragment, $class );
+					break;
+				}
+			}
+		}
 		// Skip if no innerHTML to update.
 		if ( empty( $block['innerHTML'] ) ) {
 			return $block;

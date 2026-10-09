@@ -14,6 +14,7 @@ namespace DesignSetGo\Abilities\Configurators;
 
 use DesignSetGo\Abilities\Abstract_Ability;
 use DesignSetGo\Abilities\Block_Configurator;
+use DesignSetGo\Abilities\Layout_Updater;
 use WP_Error;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -213,6 +214,9 @@ class Batch_Update extends Abstract_Ability {
 
 			// Apply updates.
 			$result = $this->update_blocks_by_name( $blocks, $block_name, $attributes, $filter );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
 			$blocks = $result['blocks'];
 
 			$operation_results[] = array(
@@ -256,9 +260,9 @@ class Batch_Update extends Abstract_Ability {
 	 * @param string                           $block_name Block name to match.
 	 * @param array<string, mixed>             $attributes Attributes to set.
 	 * @param array<string, mixed>|null        $filter     Optional filter criteria.
-	 * @return array{blocks: array, updated: int}
+	 * @return array{blocks: array, updated: int}|WP_Error
 	 */
-	private function update_blocks_by_name( array $blocks, string $block_name, array $attributes, ?array $filter = null ): array {
+	private function update_blocks_by_name( array $blocks, string $block_name, array $attributes, ?array $filter = null ) {
 		$updated = 0;
 
 		foreach ( $blocks as &$block ) {
@@ -269,8 +273,11 @@ class Batch_Update extends Abstract_Ability {
 					continue;
 				}
 
-				// Merge attributes.
-				$block['attrs'] = array_merge( $block['attrs'] ?? array(), $attributes );
+				$synced = Layout_Updater::apply( $block, $attributes );
+				if ( is_wp_error( $synced ) ) {
+					return $synced;
+				}
+				$block = $synced;
 
 				// Update saved HTML markup to reflect new attributes.
 				$block = Block_Configurator::update_block_markup( $block, $attributes, $block_name );
@@ -280,6 +287,9 @@ class Batch_Update extends Abstract_Ability {
 			// Process inner blocks.
 			if ( ! empty( $block['innerBlocks'] ) ) {
 				$result               = $this->update_blocks_by_name( $block['innerBlocks'], $block_name, $attributes, $filter );
+				if ( is_wp_error( $result ) ) {
+					return $result;
+				}
 				$block['innerBlocks'] = $result['blocks'];
 				$updated             += $result['updated'];
 			}

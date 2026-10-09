@@ -1,0 +1,59 @@
+{
+  "blocks": [
+    {
+      "block_name": "designsetgo/grid",
+      "attributes": {
+        "columnTemplate": "minmax(0, 3fr) minmax(0, 2fr)",
+        "tabletColumnTemplate": "minmax(0, 2fr) minmax(0, 1fr)",
+        "mobileColumnTemplate": "minmax(0, 1fr)",
+        "rowGap": "1px",
+        "columnGap": "1px",
+        "style": {
+          "spacing": {
+            "blockGap": {
+              "top": "24px",
+              "left": "40px"
+            }
+          }
+        }
+      },
+      "inner_blocks": [
+        {
+          "name": "core/paragraph",
+          "attributes": {
+            "content": "Generated <strong>native</strong> content"
+          }
+        },
+        {
+          "name": "designsetgo/grid",
+          "attributes": {
+            "desktopColumns": 3,
+            "tabletColumns": 3,
+            "mobileColumns": 2,
+            "style": {
+              "spacing": {
+                "blockGap": "8px"
+              }
+            }
+          },
+          "inner_blocks": [
+            {
+              "name": "core/paragraph",
+              "attributes": {
+                "content": "Nested one",
+                "dsgoColumnSpan": 3
+              }
+            },
+            {
+              "name": "designsetgo/icon-button",
+              "attributes": {
+                "text": "Our <em>work</em>",
+                "url": "#work"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

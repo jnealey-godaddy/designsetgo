@@ -36,6 +36,7 @@ export function effectiveColumnsForDevice(
  * @param {number}   opts.desktopColumns  Desktop column count.
  * @param {number}   opts.tabletColumns   Tablet column count.
  * @param {number}   opts.mobileColumns   Mobile column count.
+ * @param {number}   opts.renderedColumns Actual measured tracks, when available.
  * @return {{isActive: boolean, rowCount: number}} Activation + published row count.
  */
 export function deriveRowMatch({
@@ -45,6 +46,7 @@ export function deriveRowMatch({
 	desktopColumns,
 	tabletColumns,
 	mobileColumns,
+	renderedColumns,
 }) {
 	if (!matchRowHeights) {
 		return { isActive: false, rowCount: 0 };
@@ -54,11 +56,13 @@ export function deriveRowMatch({
 		(max, count) => Math.max(max, count || 0),
 		0
 	);
-	const effectiveColumns = effectiveColumnsForDevice(deviceType, {
-		desktop: desktopColumns,
-		tablet: tabletColumns,
-		mobile: mobileColumns,
-	});
+	const effectiveColumns =
+		renderedColumns ??
+		effectiveColumnsForDevice(deviceType, {
+			desktop: desktopColumns,
+			tablet: tabletColumns,
+			mobile: mobileColumns,
+		});
 
 	return { isActive: effectiveColumns > 1 && rowCount > 0, rowCount };
 }

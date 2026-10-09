@@ -184,6 +184,14 @@ describe('grid view.js - rendered column count gates row matching', () => {
 		expect(grid.getRenderedColumns(3)).toBe(2);
 	});
 
+	test('named grid lines do not inflate the measured track count', () => {
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			gridTemplateColumns: '[start first] 300px [middle] 300px [end]',
+		});
+		const grid = new DSGGrid(buildGrid());
+		expect(grid.getRenderedColumns(3)).toBe(2);
+	});
+
 	test('falls back to the configured count when the track list is unreadable', () => {
 		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
 			gridTemplateColumns: 'none',
@@ -236,5 +244,55 @@ describe('grid view.js - measurement is skipped without Align Rows', () => {
 		const spy = jest.spyOn(grid, 'getRenderedColumns');
 		grid.handleResize();
 		expect(spy).toHaveBeenCalled();
+	});
+});
+
+describe('grid view.js - responsive templates constrain actual tracks', () => {
+	const initialWidth = window.innerWidth;
+	afterEach(() => {
+		document.body.innerHTML = '';
+		jest.restoreAllMocks();
+		window.innerWidth = initialWidth;
+	});
+
+	test('a mobile two-track template retains a two-column span', () => {
+		window.innerWidth = 600;
+		jest.spyOn(window, 'getComputedStyle').mockReturnValue({
+			gridTemplateColumns: '300px 300px',
+		});
+		const element = buildGrid({ match: false, mobile: 1 });
+		const inner = element.querySelector('.dsgo-grid__inner');
+		inner.style.setProperty('--dsgo-grid-columns-mobile', '1fr 1fr');
+		inner.children[0].style.gridColumn = 'span 2';
+		new DSGGrid(element);
+		expect(inner.children[0].style.gridColumn).toBe('span 2');
+	});
+
+	test('an oversized span cannot create an implicit track that defeats the constraint', () => {
+		window.innerWidth = 600;
+		jest.spyOn(window, 'getComputedStyle').mockImplementation((inner) => ({
+			gridTemplateColumns:
+				inner.children[0].style.gridColumn === 'span 3'
+					? '200px 200px 200px'
+					: '300px 300px',
+		}));
+		const element = buildGrid({ match: false, mobile: 1 });
+		const inner = element.querySelector('.dsgo-grid__inner');
+		inner.style.setProperty('--dsgo-grid-columns-mobile', '1fr 1fr');
+		inner.children[0].style.gridColumn = 'span 3';
+		new DSGGrid(element);
+		expect(inner.children[0].style.gridColumn).toBe('span 2');
+	});
+
+	test('spans are restored when widening after a mobile constraint', () => {
+		window.innerWidth = 600;
+		const element = buildGrid({ match: false, mobile: 1 });
+		const inner = element.querySelector('.dsgo-grid__inner');
+		inner.children[0].style.gridColumn = 'span 3';
+		const grid = new DSGGrid(element);
+		expect(inner.children[0].style.gridColumn).toBe('span 1');
+		window.innerWidth = 1200;
+		grid.handleResize();
+		expect(inner.children[0].style.gridColumn).toBe('span 3');
 	});
 });

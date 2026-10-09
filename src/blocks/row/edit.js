@@ -30,6 +30,7 @@ import {
 	__experimentalUseCustomUnits as useCustomUnits,
 } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import LayoutControls from '../../extensions/layout/controls';
 import { useFixedOrientation } from '../../hooks';
 import { useSelect } from '@wordpress/data';
 import { useEffect } from '@wordpress/element';
@@ -253,6 +254,7 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 							mobileStack: false,
 							constrainWidth: false,
 							contentWidth: '',
+							dsgoLayout: undefined,
 						})
 					}
 				>
@@ -353,6 +355,12 @@ export default function RowEdit({ attributes, setAttributes, clientId }) {
 							/>
 						</DsgoInspectorPanel.Item>
 					)}
+					<LayoutControls
+						name="designsetgo/row"
+						attributes={attributes}
+						setAttributes={setAttributes}
+						clientId={clientId}
+					/>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 

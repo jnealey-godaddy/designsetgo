@@ -58,28 +58,7 @@ class Serializer_Support {
 	 * @return string Base-36 hash, matching the JavaScript output.
 	 */
 	public static function js_hash_code( string $value ): string {
-		$hash  = 0;
-		$utf16 = function_exists( 'mb_convert_encoding' )
-			? (string) mb_convert_encoding( $value, 'UTF-16LE', 'UTF-8' )
-			: $value;
-		$length = strlen( $utf16 );
-		$step   = function_exists( 'mb_convert_encoding' ) ? 2 : 1;
-
-		for ( $i = 0; $i + $step - 1 < $length; $i += $step ) {
-			$char = 2 === $step
-				? ( ord( $utf16[ $i ] ) | ( ord( $utf16[ $i + 1 ] ) << 8 ) )
-				: ord( $utf16[ $i ] );
-
-			$hash = ( $hash << 5 ) - $hash + $char;
-
-			// Truncate to 32 bits, then reinterpret as signed.
-			$hash = $hash & 0xFFFFFFFF;
-			if ( $hash & 0x80000000 ) {
-				$hash -= 0x100000000;
-			}
-		}
-
-		return base_convert( (string) abs( $hash ), 10, 36 );
+		return \DesignSetGo\Custom_CSS_Support::hash_code( $value );
 	}
 
 	/**

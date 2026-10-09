@@ -183,7 +183,7 @@ class Schema_Output_Test extends WP_UnitTestCase {
 	 */
 	public function test_closing_script_tag_in_content_cannot_break_out() {
 		$head = $this->head_for(
-			$this->accordion_markup( 'faq', '</script><script>alert(1)</script>', 'Answer.' )
+			$this->accordion_markup( 'faq', 'Question? </script><script>alert(1)</script>', 'Answer.' )
 		);
 
 		$this->assertStringNotContainsString( '</script><script>alert(1)', $head );

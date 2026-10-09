@@ -15,6 +15,7 @@ namespace DesignSetGo\Abilities\Inserters;
 
 use DesignSetGo\Abilities\Abstract_Ability;
 use DesignSetGo\Abilities\Block_Inserter;
+use DesignSetGo\Abilities\Block_Batch;
 use WP_Error;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -25,16 +26,6 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Add Blocks ability class.
  */
 class Add_Blocks extends Abstract_Ability {
-
-	/**
-	 * Most blocks one call may insert; a page's worth of top-level sections.
-	 */
-	private const MAX_BLOCKS = 50;
-
-	/**
-	 * Keys a top-level definition may carry.
-	 */
-	private const DEFINITION_KEYS = array( 'block_name', 'attributes', 'inner_blocks' );
 
 	/**
 	 * Get ability name.
@@ -82,32 +73,7 @@ class Add_Blocks extends Abstract_Ability {
 					'type'        => 'integer',
 					'description' => __( 'Target post ID', 'designsetgo' ),
 				),
-				'blocks'   => array(
-					'type'        => 'array',
-					'description' => __( 'Blocks to add, in document order.', 'designsetgo' ),
-					'minItems'    => 1,
-					'maxItems'    => self::MAX_BLOCKS,
-					'items'       => array(
-						'type'                 => 'object',
-						'properties'           => array(
-							'block_name'   => array(
-								'type'        => 'string',
-								'description' => __( 'Block type to add (e.g., "designsetgo/section", "core/paragraph")', 'designsetgo' ),
-							),
-							'attributes'   => array(
-								'type'        => 'object',
-								'description' => __( 'Attributes for the new block', 'designsetgo' ),
-								'default'     => array(),
-							),
-							'inner_blocks' => array_merge(
-								Block_Inserter::get_inner_blocks_schema(),
-								array( 'default' => array() )
-							),
-						),
-						'required'             => array( 'block_name' ),
-						'additionalProperties' => false,
-					),
-				),
+				'blocks'   => Block_Batch::schema(),
 				'position' => array(
 					'type'        => 'integer',
 					'description' => __( 'Position of the first block in the post. -1 appends to end (default), 0 prepends, or specify an index.', 'designsetgo' ),
@@ -185,106 +151,11 @@ class Add_Blocks extends Abstract_Ability {
 			return $this->permission_error();
 		}
 
-		if ( ! is_array( $blocks ) || empty( $blocks ) ) {
-			return $this->error(
-				'designsetgo_invalid_input',
-				__( 'blocks must be a non-empty array of block definitions.', 'designsetgo' )
-			);
-		}
-
-		if ( count( $blocks ) > self::MAX_BLOCKS ) {
-			return $this->error(
-				'designsetgo_invalid_input',
-				sprintf(
-					/* translators: %d: maximum number of blocks */
-					__( 'blocks may hold at most %d entries; split the insert into several calls.', 'designsetgo' ),
-					self::MAX_BLOCKS
-				)
-			);
-		}
-
-		$definitions = array();
-		foreach ( array_values( $blocks ) as $index => $block ) {
-			$definition = $this->prepare_entry( $index, $block );
-			if ( isset( $definition['success'] ) ) {
-				return $definition;
-			}
-			$definitions[] = $definition;
+		$definitions = Block_Batch::prepare( $blocks );
+		if ( is_wp_error( $definitions ) || isset( $definitions['success'] ) ) {
+			return $definitions;
 		}
 
 		return Block_Inserter::insert_blocks( $post_id, $definitions, $position );
-	}
-
-	/**
-	 * Validate, screen and sanitize one entry of `blocks`.
-	 *
-	 * Every refusal is returned as a diagnostic array rather than a WP_Error so
-	 * the entry index survives the MCP bridge, which replaces WP_Error messages
-	 * with a fixed string. See Abstract_Ability::run().
-	 *
-	 * @param int   $index Entry index, named in every diagnostic.
-	 * @param mixed $block Requested definition.
-	 * @return array<string, mixed> Sanitized definition, or a diagnostic payload with `success` false.
-	 */
-	private function prepare_entry( int $index, $block ): array {
-		if ( ! is_array( $block ) ) {
-			return $this->entry_diagnostic( $index, __( 'must be an object with block_name, attributes and inner_blocks.', 'designsetgo' ) );
-		}
-
-		$unknown = array_diff( array_keys( $block ), self::DEFINITION_KEYS );
-		if ( ! empty( $unknown ) ) {
-			return $this->entry_diagnostic(
-				$index,
-				sprintf(
-					/* translators: %s: comma-separated unknown keys */
-					__( 'has unsupported keys: %s. Use block_name, attributes and inner_blocks.', 'designsetgo' ),
-					implode( ', ', $unknown )
-				)
-			);
-		}
-
-		$block_name = sanitize_text_field( (string) ( $block['block_name'] ?? '' ) );
-		if ( ! preg_match( Block_Inserter::BLOCK_NAME_PATTERN, $block_name ) ) {
-			return $this->entry_diagnostic(
-				$index,
-				__( 'block_name must be in "namespace/block-name" format (lowercase alphanumeric and hyphens).', 'designsetgo' )
-			);
-		}
-
-		$attributes   = $block['attributes'] ?? array();
-		$inner_blocks = $block['inner_blocks'] ?? array();
-		$definition   = Block_Inserter::prepare_block_definition(
-			$block_name,
-			is_array( $attributes ) ? $attributes : array(),
-			is_array( $inner_blocks ) ? $inner_blocks : array()
-		);
-
-		if ( isset( $definition['success'] ) ) {
-			$definition['block_index'] = $index;
-			$definition['message']     = sprintf( 'blocks[%d]: %s', $index, $definition['message'] );
-		}
-
-		return $definition;
-	}
-
-	/**
-	 * A refusal that names the offending entry.
-	 *
-	 * @param int    $index  Entry index.
-	 * @param string $reason What is wrong with it.
-	 * @return array<string, mixed> Diagnostic payload.
-	 */
-	private function entry_diagnostic( int $index, string $reason ): array {
-		return array(
-			'success'     => false,
-			'error_code'  => 'designsetgo_invalid_input',
-			'message'     => sprintf(
-				/* translators: 1: index within blocks, 2: explanation */
-				__( 'Nothing was changed. blocks[%1$d] %2$s', 'designsetgo' ),
-				$index,
-				$reason
-			),
-			'block_index' => $index,
-		);
 	}
 }

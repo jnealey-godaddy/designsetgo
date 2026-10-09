@@ -121,7 +121,7 @@
 
 		// Only strip inner constraints when the nested section itself has no width constraint
 		// Sections with constrainWidth enabled need their max-width + margin:auto preserved
-		&.dsgo-no-width-constraint > .dsgo-stack__inner {
+		&.dsgo-no-width-constraint:where(:not([class*="dsgo-layout-"])) > .dsgo-stack__inner {
 			max-width: none !important;
 			margin-left: 0 !important;
 			margin-right: 0 !important;
@@ -194,34 +194,34 @@
 		> :where(
 			.wp-block-designsetgo-icon-button,
 			.wp-block-designsetgo-counter
-		).aligncenter {
+		).aligncenter:where(:not([class*="dsgo-layout-"])) {
 			align-self: center !important;
 		}
 
 		> :where(
 			.wp-block-designsetgo-icon-button,
 			.wp-block-designsetgo-counter
-		).alignleft {
+		).alignleft:where(:not([class*="dsgo-layout-"])) {
 			align-self: flex-start !important;
 		}
 
 		> :where(
 			.wp-block-designsetgo-icon-button,
 			.wp-block-designsetgo-counter
-		).alignright {
+		).alignright:where(:not([class*="dsgo-layout-"])) {
 			align-self: flex-end !important;
 		}
 
 		// Block-level elements WITH explicit alignment
-		> .aligncenter:not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-counter) {
+		> .aligncenter:not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-counter):where(:not([class*="dsgo-layout-"])) {
 			align-self: center !important;
 		}
 
-		> .alignright:not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-counter) {
+		> .alignright:not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-counter):where(:not([class*="dsgo-layout-"])) {
 			align-self: flex-end !important;
 		}
 
-		> .alignleft:not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-counter) {
+		> .alignleft:not(.wp-block-designsetgo-icon-button):not(.wp-block-designsetgo-counter):where(:not([class*="dsgo-layout-"])) {
 			align-self: flex-start !important;
 		}
 
@@ -230,8 +230,8 @@
 		// start of the cross axis, silently defeating the justification the
 		// author set on THIS parent. Its own `width: 100%` is inline, so
 		// nothing is lost by opting it out of both declarations here.
-		> .alignwide:not(.dsgo-stack--has-box-width),
-		> .alignfull:not(.dsgo-stack--has-box-width) {
+		> .alignwide:not(.dsgo-stack--has-box-width):where(:not([class*="dsgo-layout-"])),
+		> .alignfull:not(.dsgo-stack--has-box-width):where(:not([class*="dsgo-layout-"])) {
 			align-self: stretch !important;
 			width: 100% !important;
 		}
@@ -251,6 +251,8 @@
 		}
 	}
 
+	// Authored layout roots opt out of legacy forced sizing; unchanged children
+	// retain the same selectors and specificity.
 	// ONLY apply full-width forcing when section has NO width constraints
 	&.dsgo-no-width-constraint .dsgo-stack__inner.is-layout-flex {
 
@@ -268,7 +270,7 @@
 		// core/button are untouched (unaffected by that refactor).
 		> .dsgo-counter,
 		> .wp-block-designsetgo-counter,
-		> .wp-block-button {
+		> .wp-block-button:where(:not([class*="dsgo-layout-"])) {
 			align-self: flex-start; // Override to allow alignment
 			width: auto !important; // Shrink to content
 			max-width: none !important; // Remove WordPress's 1200px contentSize constraint
@@ -305,17 +307,17 @@
 			.wp-block-designsetgo-accordion,
 			.dsgo-scroll-marquee,
 			.wp-block-designsetgo-scroll-marquee
-		):not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide):not(.dsgo-stack--has-box-width),
+		):not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide):not(.dsgo-stack--has-box-width):where(:not([class*="dsgo-layout-"])),
 		// Old group structure (pre-6.0) with __inner-container
 		> :where(.wp-block-group, .wp-block-designsetgo-stack, .dsgo-stack)
-			:not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide)
+			:not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide):where(:not([class*="dsgo-layout-"]))
 			> .wp-block-group__inner-container,
 		// is-layout-constrained group variant, pre-6.0 shape
 		> :where(.wp-block-group, .dsgo-stack, .wp-block-designsetgo-stack)
-			:is(.is-layout-constrained, .wp-block-group-is-layout-constrained)
+			:is(.is-layout-constrained, .wp-block-group-is-layout-constrained):where(:not([class*="dsgo-layout-"]))
 			> .wp-block-group__inner-container,
 		// Modern group structure (6.0+) without __inner-container
-		> .wp-block-group:not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide) {
+		> .wp-block-group:not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide):where(:not([class*="dsgo-layout-"])) {
 			width: 100% !important;
 			max-width: none !important;
 			margin-left: 0 !important;
@@ -324,7 +326,7 @@
 
 		// Modern groups also need min-width forced — a plain group can otherwise
 		// shrink to its content's intrinsic width inside the flex column.
-		> .wp-block-group:not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide) {
+		> .wp-block-group:not(.alignleft):not(.alignright):not(.alignfull):not(.alignwide):where(:not([class*="dsgo-layout-"])) {
 			min-width: 100% !important;
 		}
 
@@ -341,7 +343,7 @@
 		// `justify-content` can position the visible element inside it.
 		> .dsgo-counter,
 		> .wp-block-designsetgo-counter,
-		> .wp-block-button {
+		> .wp-block-button:where(:not([class*="dsgo-layout-"])) {
 			align-self: flex-start;
 			width: auto !important;
 		}
@@ -485,7 +487,7 @@
 
 	> .dsgo-counter,
 	> .wp-block-designsetgo-counter,
-	> .wp-block-button {
+	> .wp-block-button:where(:not([class*="dsgo-layout-"])) {
 		width: auto !important;
 		max-width: none !important;
 	}
@@ -504,7 +506,7 @@
 	// sections that set their OWN box width (`.dsgo-stack--has-box-width`) —
 	// their inline cap/centering is the author's explicit intent and an
 	// `!important` declaration here would silently defeat it.
-	> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width):not(.dsgo-stack--has-box-width) {
+	> :not(.alignleft):not(.alignright):not(.dsgo-has-max-width):not(.dsgo-stack--has-box-width):where(:not([class*="dsgo-layout-"])) {
 		max-width: none !important;
 		margin-left: 0 !important;
 		margin-right: 0 !important;

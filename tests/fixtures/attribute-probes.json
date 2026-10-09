@@ -217,6 +217,12 @@
     "dsgoCustomCSS": {
       "probe": "color: red;"
     },
+    "dsgoLayout": {
+      "probe": {
+        "desktop": { "width": "clamp(10rem, 50vw, 60rem)" },
+        "mobile": { "width": "100%", "minHeight": "12rem" }
+      }
+    },
     "dsgoInteractions": {
       "probe": [
         {
@@ -407,6 +413,12 @@
       },
       "columnTemplate": {
         "probe": "minmax(0, .7fr) minmax(0, 1.3fr)"
+      },
+      "tabletColumnTemplate": {
+        "probe": "minmax(0, 2fr) minmax(0, 1fr)"
+      },
+      "mobileColumnTemplate": {
+        "probe": "minmax(0, 1fr)"
       }
     },
     "designsetgo/heading-segment": {

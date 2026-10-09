@@ -14,7 +14,7 @@ namespace DesignSetGo\Abilities\Configurators;
 
 use DesignSetGo\Abilities\Abstract_Ability;
 use DesignSetGo\Abilities\Block_Configurator;
-use DesignSetGo\Abilities\CSS_Sanitizer;
+use DesignSetGo\Abilities\Responsive_CSS;
 use WP_Error;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -53,7 +53,7 @@ class Configure_Custom_CSS extends Abstract_Ability {
 				'readonly'     => false,
 				'destructive'  => false,
 				'idempotent'   => true,
-				'instructions' => 'Sets per-block custom CSS, replacing whatever was there for the targeted breakpoint. Prefer this over update-block for the custom-css extension: it sanitizes the CSS before storing it. For site-wide CSS use update-global-css instead.',
+				'instructions' => 'Writes the canonical dsgoCustomCSS attribute. Desktop is the base CSS at all widths; tablet applies up to 1024px and mobile up to 767px. Replaces supplied breakpoint rules and preserves omitted ones. Empty strings clear supplied rules. enabled:false clears all custom CSS; enabling again does not restore it. Prefer this over update-block for the custom-css extension: it sanitizes the CSS before storing it. For site-wide CSS use update-global-css instead.',
 			),
 		);
 	}
@@ -73,12 +73,13 @@ class Configure_Custom_CSS extends Abstract_Ability {
 				array(
 					'block_name' => array(
 						'type'        => 'string',
-						'description' => __( 'Block type to configure (any block type supported)', 'designsetgo' ),
+						'description' => __( 'Registered block type supporting the custom CSS extension', 'designsetgo' ),
 					),
 					'css'        => array(
-						'type'        => 'object',
-						'description' => __( 'Custom CSS settings', 'designsetgo' ),
-						'properties'  => array(
+						'type'                 => 'object',
+						'description'          => __( 'Custom CSS settings', 'designsetgo' ),
+						'additionalProperties' => false,
+						'properties'           => array(
 							'enabled' => array(
 								'type'        => 'boolean',
 								'description' => __( 'Enable custom CSS', 'designsetgo' ),
@@ -86,15 +87,15 @@ class Configure_Custom_CSS extends Abstract_Ability {
 							),
 							'desktop' => array(
 								'type'        => 'string',
-								'description' => __( 'CSS for desktop (use "selector" as placeholder for block selector)', 'designsetgo' ),
+								'description' => __( 'Base CSS at all widths (use "selector" as placeholder). Empty string clears base rules.', 'designsetgo' ),
 							),
 							'tablet'  => array(
 								'type'        => 'string',
-								'description' => __( 'CSS for tablet breakpoint', 'designsetgo' ),
+								'description' => __( 'CSS up to 1024px, including mobile. Empty string clears tablet rules.', 'designsetgo' ),
 							),
 							'mobile'  => array(
 								'type'        => 'string',
-								'description' => __( 'CSS for mobile breakpoint', 'designsetgo' ),
+								'description' => __( 'CSS up to 767px. Empty string clears mobile rules.', 'designsetgo' ),
 							),
 						),
 					),
@@ -111,7 +112,7 @@ class Configure_Custom_CSS extends Abstract_Ability {
 	 * @return bool
 	 */
 	public function check_permission_callback(): bool {
-		return $this->check_permission( 'edit_posts' );
+		return $this->check_permission( 'edit_posts' ) && $this->check_permission( 'edit_css' );
 	}
 
 	/**
@@ -121,6 +122,10 @@ class Configure_Custom_CSS extends Abstract_Ability {
 	 * @return array<string, mixed>|WP_Error
 	 */
 	public function execute( array $input ) {
+		if ( ! $this->check_permission_callback() ) {
+			return $this->permission_error();
+		}
+
 		$post_id         = (int) ( $input['post_id'] ?? 0 );
 		$block_client_id = $input['block_client_id'] ?? null;
 		$update_all      = (bool) ( $input['update_all'] ?? false );
@@ -142,26 +147,24 @@ class Configure_Custom_CSS extends Abstract_Ability {
 			);
 		}
 
-		// Sanitize CSS using comprehensive CSS_Sanitizer to prevent XSS attacks.
-		$sanitized_css = array();
-		if ( isset( $css['enabled'] ) ) {
-			$sanitized_css['dsgoCustomCssEnabled'] = (bool) $css['enabled'];
+		if ( ! is_array( $css ) || ! is_string( $block_name ) || '' === $block_name ) {
+			return $this->error( 'designsetgo_invalid_input', __( 'A block name and CSS settings object are required.', 'designsetgo' ) );
 		}
-		if ( ! empty( $css['desktop'] ) ) {
-			$sanitized_css['dsgoCustomCss'] = CSS_Sanitizer::sanitize( $css['desktop'] );
+		$type = \WP_Block_Type_Registry::get_instance()->get_registered( $block_name );
+		if ( ! $type || ! isset( $type->attributes['dsgoCustomCSS'] ) ) {
+			return $this->error( 'designsetgo_invalid_input', __( 'This block does not support the custom CSS extension.', 'designsetgo' ) );
 		}
-		if ( ! empty( $css['tablet'] ) ) {
-			$sanitized_css['dsgoCustomCssTablet'] = CSS_Sanitizer::sanitize( $css['tablet'] );
-		}
-		if ( ! empty( $css['mobile'] ) ) {
-			$sanitized_css['dsgoCustomCssMobile'] = CSS_Sanitizer::sanitize( $css['mobile'] );
+		$valid = rest_validate_value_from_schema( $css, $this->get_input_schema()['properties']['css'], 'css' );
+		if ( is_wp_error( $valid ) ) {
+			return $valid;
 		}
 
-		// Apply the configuration.
-		return Block_Configurator::configure_block(
+		return Block_Configurator::transform_block_attributes(
 			$post_id,
 			$block_name,
-			$sanitized_css,
+			static function ( $existing ) use ( $css ) {
+				return array( 'dsgoCustomCSS' => Responsive_CSS::merge( $existing['dsgoCustomCSS'] ?? '', $css ) );
+			},
 			$block_client_id,
 			$update_all
 		);

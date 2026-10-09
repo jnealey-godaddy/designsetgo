@@ -19,6 +19,21 @@ use DesignSetGo\Abilities\Block_Inserter;
 class Abilities_Grid_Column_Template_Test extends WP_UnitTestCase {
 
 	/**
+	 * Responsive templates are emitted only on the inner layout element.
+	 */
+	public function test_responsive_templates_reach_the_inner_element(): void {
+		$markup = Block_Inserter::build_block_markup(
+			'designsetgo/grid',
+			array(
+				'tabletColumnTemplate' => '2fr 1fr',
+				'mobileColumnTemplate' => '1fr 1fr',
+			)
+		);
+		$this->assertStringContainsString( '--dsgo-grid-columns-tablet:2fr 1fr', $this->inner_style( $markup ) );
+		$this->assertStringContainsString( '--dsgo-grid-columns-mobile:1fr 1fr', $this->inner_style( $markup ) );
+	}
+
+	/**
 	 * Style attribute of the grid's inner element.
 	 *
 	 * @param string $markup Serialized block markup.
@@ -87,18 +102,19 @@ class Abilities_Grid_Column_Template_Test extends WP_UnitTestCase {
 	 * @param string $template The template under test.
 	 */
 	public function test_unsafe_template_is_reported( string $template ): void {
-		$problems = Block_Inserter::find_invalid_attribute_values(
-			array(
+		foreach ( array( 'columnTemplate', 'tabletColumnTemplate', 'mobileColumnTemplate' ) as $attribute ) {
+			$problems = Block_Inserter::find_invalid_attribute_values(
 				array(
-					'name'       => 'designsetgo/grid',
-					'attributes' => array( 'columnTemplate' => $template ),
-				),
-			)
-		);
-
-		$this->assertCount( 1, $problems );
-		$this->assertSame( 'designsetgo/grid', $problems[0]['block'] );
-		$this->assertStringContainsString( 'columnTemplate', $problems[0]['reason'] );
+					array(
+						'name'       => 'designsetgo/grid',
+						'attributes' => array( $attribute => $template ),
+					),
+				)
+			);
+			$this->assertCount( 1, $problems );
+			$this->assertSame( 'designsetgo/grid', $problems[0]['block'] );
+			$this->assertStringContainsString( $attribute, $problems[0]['reason'] );
+		}
 	}
 
 	/**

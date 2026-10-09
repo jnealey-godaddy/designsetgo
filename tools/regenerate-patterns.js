@@ -106,6 +106,9 @@ import '../src/extensions/expanding-background';
 import '../src/extensions/svg-patterns';
 // eslint-disable-next-line import/no-unresolved
 import '../src/extensions/text-reveal';
+// Responsive composition uses the same optional save-class filter as the API.
+// eslint-disable-next-line import/no-unresolved
+import '../src/extensions/layout';
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 

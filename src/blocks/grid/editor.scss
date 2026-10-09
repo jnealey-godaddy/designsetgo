@@ -73,6 +73,9 @@
 	// With two-div structure: .dsgo-grid > .dsgo-grid__inner
 	// Must be duplicated from style.scss for editor/frontend parity
 	.dsgo-grid__inner {
+		// Each grid owns its responsive tracks; never inherit a parent template.
+		--dsgo-grid-columns-tablet: initial;
+		--dsgo-grid-columns-mobile: initial;
 		// Ensure inner container doesn't create positioning context for absolute children
 		position: static;
 
@@ -209,7 +212,7 @@
 			width: 100%;
 		}
 
-		.dsgo-grid__inner {
+		&:where(:not([class*="dsgo-layout-"])) > .dsgo-grid__inner {
 			max-width: none !important;
 			margin-left: 0 !important;
 			margin-right: 0 !important;
@@ -234,8 +237,8 @@
 	@media (max-width: #{$breakpoint-tablet}) {
 
 		@for $i from 1 through 12 {
-			&.dsgo-grid-cols-tablet-#{$i} .dsgo-grid__inner {
-				grid-template-columns: repeat(#{$i}, 1fr) !important;
+			&.dsgo-grid-cols-tablet-#{$i} > .dsgo-grid__inner {
+				grid-template-columns: var(--dsgo-grid-columns-tablet, repeat(#{$i}, 1fr)) !important;
 			}
 		}
 	}
@@ -244,8 +247,8 @@
 	@include below($breakpoint-mobile) {
 
 		@for $i from 1 through 12 {
-			&.dsgo-grid-cols-mobile-#{$i} .dsgo-grid__inner {
-				grid-template-columns: repeat(#{$i}, 1fr) !important;
+			&.dsgo-grid-cols-mobile-#{$i} > .dsgo-grid__inner {
+				grid-template-columns: var(--dsgo-grid-columns-mobile, repeat(#{$i}, 1fr)) !important;
 			}
 		}
 	}
@@ -305,12 +308,15 @@
 // MUST be duplicated from style.scss for editor/frontend parity
 // With two-div structure: target .dsgo-grid__inner children
 @include below($breakpoint-mobile) {
-	// Force all grid items with column spans to span 1 on mobile
-	// High specificity to override inline styles with data-block selectors
-	.dsgo-grid__inner > [style*="grid-column"],
-	.dsgo-grid__inner > [data-block][style*="grid-column"],
-	.dsgo-grid__inner > [data-block] {
-		grid-column: span 1 !important;
+	// Single-column defaults must override saved spans in the editor as well.
+	// Authored mobile templates and multi-column counts retain their spans;
+	// frontend view.js clamps them against the actual rendered track count.
+	:where(.dsgo-grid-cols-mobile-1) > .dsgo-grid__inner:not([style*="--dsgo-grid-columns-mobile"]) {
+
+		> [style*="grid-column"],
+		> [data-block] {
+			grid-column: span 1 !important;
+		}
 	}
 
 	// Force nested layouts inside grid items to stack

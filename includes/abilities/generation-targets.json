@@ -1,0 +1,98 @@
+{
+  "designsetgo/grid": {
+    "targets": {
+      "wrapper": ".wp-block-designsetgo-grid",
+      "appearance": ".wp-block-designsetgo-grid",
+      "layout": ".wp-block-designsetgo-grid > .dsgo-grid__inner",
+      "content": ".wp-block-designsetgo-grid > .dsgo-grid__inner"
+    },
+    "styleOwnership": {
+      "gap": {
+        "attribute": "style.spacing.blockGap",
+        "fallbackAttributes": [
+          "rowGap",
+          "columnGap"
+        ]
+      },
+      "columns": {
+        "attributes": [
+          "columnTemplate",
+          "tabletColumnTemplate",
+          "mobileColumnTemplate"
+        ],
+        "fallbackAttributes": [
+          "desktopColumns",
+          "tabletColumns",
+          "mobileColumns"
+        ]
+      },
+      "contentWidth": {
+        "attribute": "contentWidth",
+        "enabledBy": "constrainWidth"
+      },
+      "appearance": {
+        "attribute": "style",
+        "target": "appearance"
+      }
+    }
+  },
+  "designsetgo/section": {
+    "targets": {
+      "wrapper": ".wp-block-designsetgo-section",
+      "appearance": ".wp-block-designsetgo-section",
+      "layout": ".wp-block-designsetgo-section > .dsgo-stack__inner",
+      "content": ".wp-block-designsetgo-section > .dsgo-stack__inner"
+    },
+    "styleOwnership": {
+      "gap": {
+        "attribute": "style.spacing.blockGap"
+      },
+      "contentWidth": {
+        "attribute": "contentWidth",
+        "enabledBy": "constrainWidth"
+      },
+      "boxWidth": {
+        "attribute": "boxWidth",
+        "target": "wrapper"
+      },
+      "appearance": {
+        "attribute": "style",
+        "target": "appearance"
+      }
+    }
+  },
+  "designsetgo/row": {
+    "targets": {
+      "wrapper": ".wp-block-designsetgo-row",
+      "appearance": ".wp-block-designsetgo-row",
+      "layout": ".wp-block-designsetgo-row > .dsgo-flex__inner",
+      "content": ".wp-block-designsetgo-row > .dsgo-flex__inner"
+    },
+    "styleOwnership": {
+      "gap": {
+        "attribute": "style.spacing.blockGap"
+      },
+      "appearance": {
+        "attribute": "style",
+        "target": "appearance"
+      }
+    }
+  },
+  "designsetgo/icon-button": {
+    "targets": {
+      "wrapper": ".wp-block-designsetgo-icon-button",
+      "appearance": ".wp-block-designsetgo-icon-button .dsgo-icon-button",
+      "content": ".wp-block-designsetgo-icon-button .dsgo-icon-button__text"
+    },
+    "styleOwnership": {
+      "appearance": {
+        "attribute": "style",
+        "target": "appearance"
+      },
+      "horizontalPosition": {
+        "attribute": "justification",
+        "target": "wrapper"
+      }
+    }
+  }
+}

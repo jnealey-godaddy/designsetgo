@@ -145,6 +145,9 @@ class Custom_CSS_Renderer {
 			 */
 			$class_name = apply_filters( 'designsetgo/custom_css_class_name', 'dsgo-custom-css-' . $hash, $hash, $block['blockName'], $custom_css );
 
+			// Dynamic blocks have no saved root; synchronize the rendered selector too.
+			$block_content = Custom_CSS_Support::apply_class( $block_content, $class_name, false );
+
 			// Store CSS with hash as key to avoid duplicates.
 			$this->custom_css[ $hash ] = array(
 				'css'   => $custom_css,
@@ -363,15 +366,6 @@ class Custom_CSS_Renderer {
 	 * @return string Hash string.
 	 */
 	private function hash_code( $str ) {
-		$hash = 0;
-		$len  = strlen( $str );
-
-		for ( $i = 0; $i < $len; $i++ ) {
-			$char = ord( $str[ $i ] );
-			$hash = ( ( $hash << 5 ) - $hash ) + $char;
-			$hash = $hash & 0xFFFFFFFF; // Convert to 32bit integer.
-		}
-
-		return base_convert( (string) abs( $hash ), 10, 36 );
+		return Custom_CSS_Support::hash_code( $str );
 	}
 }

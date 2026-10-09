@@ -277,6 +277,11 @@ class Settings {
 				'description' => __( 'Grid layout span controls', 'designsetgo' ),
 			),
 			array(
+				'name'        => 'layout',
+				'title'       => __( 'Layout Composition', 'designsetgo' ),
+				'description' => __( 'Responsive sizing, spacing, Grid placement and layering', 'designsetgo' ),
+			),
+			array(
 				'name'        => 'max-width',
 				'title'       => __( 'Max Width', 'designsetgo' ),
 				'description' => __( 'Content width constraints', 'designsetgo' ),
