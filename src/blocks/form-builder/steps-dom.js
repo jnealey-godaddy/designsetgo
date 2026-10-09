@@ -10,40 +10,15 @@
  */
 
 import { __, sprintf } from '@wordpress/i18n';
+import {
+	stepTitle,
+	isActive,
+	firstInvalid,
+	forgetGrownSteps,
+} from './steps-state';
 
-const CONTROLS = 'input, select, textarea';
 const PROGRESS_STYLES = ['steps', 'bar', 'none'];
 const NOOP = { isMultiStep: false, beforeSubmit: () => true, reset() {} };
-
-function stepTitle(step) {
-	const heading = step.querySelector('.dsgo-form-step__title');
-	return heading ? heading.textContent.trim() : '';
-}
-
-/**
- * A step is active when at least one of its fields is visible.
- *
- * @param {HTMLElement} step Step section.
- * @return {boolean} Whether the step should be shown.
- */
-function isActive(step) {
-	return Array.from(step.querySelectorAll('[data-dsgo-field]')).some(
-		(wrapper) => !wrapper.hidden
-	);
-}
-
-function checkableControls(step) {
-	return Array.from(step.querySelectorAll(CONTROLS)).filter(
-		(el) =>
-			!el.disabled &&
-			el.type !== 'hidden' &&
-			!el.closest('[data-dsgo-field][hidden]')
-	);
-}
-
-function firstInvalid(step) {
-	return checkableControls(step).find((el) => !el.checkValidity()) || null;
-}
 
 function makeButton(label, className) {
 	const button = document.createElement('button');
@@ -141,6 +116,7 @@ function setUp(container, form, steps) {
 
 	let current = steps[0];
 	const completed = new Set();
+	const fieldCounts = new Map();
 
 	const activeSteps = () => {
 		const list = steps.filter(isActive);
@@ -188,6 +164,7 @@ function setUp(container, form, steps) {
 	};
 
 	const render = ({ focus = false, announce = false } = {}) => {
+		forgetGrownSteps(steps, fieldCounts, completed);
 		const list = activeSteps();
 		if (!list.includes(current)) {
 			// The current step was skipped: move to the nearest active one after it, else before it.
@@ -290,6 +267,12 @@ function setUp(container, form, steps) {
 					invalid.reportValidity();
 					return false;
 				}
+			}
+			// A step that appeared (or grew) behind the visitor hasn't been seen.
+			const unseen = list.slice(0, -1).find((s) => !completed.has(s));
+			if (unseen) {
+				goTo(unseen);
+				return false;
 			}
 			return true;
 		},

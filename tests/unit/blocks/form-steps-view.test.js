@@ -171,6 +171,50 @@ describe('initFormSteps', () => {
 		expect(items()).toHaveLength(3);
 	});
 
+	it('sends the final submit to a skipped step that a later answer revealed', () => {
+		const { container, form } = mount();
+		const c = initFormSteps(container, form);
+		const city = document.querySelector('[data-dsgo-field="city"]');
+		city.hidden = true;
+		form.dispatchEvent(new Event('change', { bubbles: true }));
+		form.elements.name.value = 'Ann';
+		nextBtn().click();
+		expect(stepEl(3).hidden).toBe(false);
+
+		// An answer on step 3 brings step 2 back, behind the visitor.
+		city.hidden = false;
+		form.dispatchEvent(new Event('change', { bubbles: true }));
+		expect(c.beforeSubmit()).toBe(false);
+		expect(stepEl(2).hidden).toBe(false);
+		expect(stepEl(3).hidden).toBe(true);
+		expect(status()).toBe('Step 2 of 3: Details');
+
+		// Once step 2 is completed the submit goes through.
+		nextBtn().click();
+		expect(stepEl(3).hidden).toBe(false);
+		expect(c.beforeSubmit()).toBe(true);
+	});
+
+	it('un-completes a step whose visible fields grew', () => {
+		const { container, form } = mount();
+		stepEl(2)
+			.querySelector('.dsgo-form-step__fields')
+			.insertAdjacentHTML('beforeend', field('company', { extra: '' }));
+		const company = document.querySelector('[data-dsgo-field="company"]');
+		company.hidden = true;
+		const c = initFormSteps(container, form);
+		form.elements.name.value = 'Ann';
+		nextBtn().click();
+		nextBtn().click();
+		expect(items()[1].classList.contains('is-complete')).toBe(true);
+
+		company.hidden = false;
+		form.dispatchEvent(new Event('change', { bubbles: true }));
+		expect(items()[1].classList.contains('is-complete')).toBe(false);
+		expect(c.beforeSubmit()).toBe(false);
+		expect(stepEl(2).hidden).toBe(false);
+	});
+
 	it('renders a progress bar or nothing per the setting', () => {
 		let m = mount({ progress: 'bar' });
 		initFormSteps(m.container, m.form);
