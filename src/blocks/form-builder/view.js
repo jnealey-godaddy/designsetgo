@@ -410,6 +410,16 @@ function initFormBuilder() {
 		if (!ajaxEnabled) {
 			ensureNativePostFields();
 
+			// Multi-step: Enter on an earlier step advances instead of posting
+			// the whole form, and an invalid field on another step is shown there.
+			if (steps.isMultiStep) {
+				formElement.addEventListener('submit', (e) => {
+					if (!steps.beforeSubmit()) {
+						e.preventDefault();
+					}
+				});
+			}
+
 			return;
 		}
 
