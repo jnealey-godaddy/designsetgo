@@ -217,17 +217,26 @@ describe('initFormSteps', () => {
 		expect(document.querySelector('.is-complete')).toBeNull();
 	});
 
-	it('fails open when setup throws', () => {
+	it('fails open when the first render throws, and stays open on input', () => {
 		const { container, form } = mount();
-		form.querySelector = () => {
-			throw new Error('boom');
-		};
+		const spy = jest
+			.spyOn(window.HTMLLIElement.prototype, 'setAttribute')
+			.mockImplementation(() => {
+				throw new Error('boom');
+			});
 		let c;
 		expect(() => {
 			c = initFormSteps(container, form);
 		}).not.toThrow();
+		spy.mockRestore();
 		expect(c.isMultiStep).toBe(false);
 		expect(container.dataset.dsgoStepsReady).toBe('1');
+		expect(document.querySelector('.dsgo-form-steps__nav')).toBeNull();
+		expect(document.querySelector('.dsgo-form-steps__progress')).toBeNull();
+		expect(footer().hidden).toBe(false);
+		[1, 2, 3].forEach((n) => expect(stepEl(n).hidden).toBe(false));
+
+		form.dispatchEvent(new Event('input', { bubbles: true }));
 		[1, 2, 3].forEach((n) => expect(stepEl(n).hidden).toBe(false));
 	});
 });

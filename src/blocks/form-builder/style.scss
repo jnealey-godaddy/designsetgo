@@ -725,7 +725,8 @@
 
 // Author `display` rules on .dsgo-form-field beat the UA [hidden] rule;
 // class + attribute specificity restores it without !important.
-.dsgo-form-field[hidden] {
+.dsgo-form-field[hidden],
+.dsgo-form-steps__progress[hidden] {
 	display: none;
 }
 
@@ -750,6 +751,7 @@
 
 	&.is-complete::before {
 		content: "✓ ";
+		content: "✓ " / "";
 	}
 
 	&[aria-current="step"] {

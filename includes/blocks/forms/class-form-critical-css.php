@@ -40,7 +40,7 @@ class Form_Critical_CSS {
 	 * `display:flex` otherwise beats the UA rule until the deferred form
 	 * stylesheet loads, flashing fields the view script has already hidden.
 	 */
-	const CSS = '.dsgo-form-field[hidden],[data-dsgo-step][hidden],.dsgo-form-steps__nav[hidden],.dsgo-form-steps__nav [hidden],.dsgo-form__footer[hidden],[data-dsgo-turnstile-container][hidden]{display:none}'
+	const CSS = '.dsgo-form-field[hidden],[data-dsgo-step][hidden],.dsgo-form-steps__nav[hidden],.dsgo-form-steps__nav [hidden],.dsgo-form__footer[hidden],.dsgo-form__submit--inline[hidden],.dsgo-form-steps__progress[hidden],[data-dsgo-turnstile-container][hidden]{display:none}'
 		. '@media (scripting:enabled){'
 		. '.dsgo-form-builder:not([data-dsgo-conditions-ready]) .dsgo-form-field--conditional{animation:dsgo-conditions-pending 4s}'
 		. '.dsgo-form-builder:not([data-dsgo-steps-ready]) [data-dsgo-step]~[data-dsgo-step]{animation:dsgo-conditions-pending 4s}'

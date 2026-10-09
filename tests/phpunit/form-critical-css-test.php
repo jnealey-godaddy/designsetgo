@@ -79,6 +79,8 @@ class Test_Form_Critical_CSS extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'data-dsgo-steps-ready', $html );
 		$this->assertStringContainsString( '[data-dsgo-step]~[data-dsgo-step]', $html );
 		$this->assertStringContainsString( '.dsgo-form__footer[hidden]', $html );
+		$this->assertStringContainsString( '.dsgo-form-steps__progress[hidden]', $html );
+		$this->assertStringContainsString( '.dsgo-form__submit--inline[hidden]', $html );
 	}
 
 	public function test_footer_has_rule_pre_hide_is_its_own_rule() {

@@ -251,6 +251,10 @@ function setUp(container, form, steps) {
 		return true;
 	};
 
+	// Listeners come after the first render succeeds, so a failed init (which
+	// fails open) can't be undone by the next input event.
+	render();
+
 	next.addEventListener('click', advance);
 	back.addEventListener('click', () => {
 		const list = activeSteps();
@@ -268,8 +272,6 @@ function setUp(container, form, steps) {
 		render();
 	};
 	form.addEventListener('reset', () => setTimeout(reset, 0));
-
-	render();
 
 	return {
 		isMultiStep: true,
