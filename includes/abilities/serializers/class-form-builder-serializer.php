@@ -183,6 +183,10 @@ class Form_Builder_Serializer {
 		if ( ! empty( $attributes['redirectUrl'] ) && is_string( $attributes['redirectUrl'] ) ) {
 			$data_attrs[] = 'data-redirect-url="' . esc_url( $attributes['redirectUrl'] ) . '"';
 		}
+		// Multi-step progress style - must match save.js (non-default only).
+		if ( isset( $attributes['stepProgress'] ) && in_array( $attributes['stepProgress'], array( 'bar', 'none' ), true ) ) {
+			$data_attrs[] = 'data-dsgo-step-progress="' . esc_attr( $attributes['stepProgress'] ) . '"';
+		}
 		$data_str = implode( ' ', $data_attrs );
 
 		// Build button style - must match save.js order.
