@@ -697,6 +697,11 @@ function initFormBuilder() {
 							if (!messageContainer.hasAttribute('tabindex')) {
 								messageContainer.setAttribute('tabindex', '-1');
 							}
+							// Focus reads the message itself, so silence the
+							// duplicate announcement copy inside it.
+							messageContainer
+								.querySelector('.screen-reader-text')
+								?.setAttribute('aria-hidden', 'true');
 							messageContainer.focus({ preventScroll: true });
 							revealMessage();
 						}, 0);

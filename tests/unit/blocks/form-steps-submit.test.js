@@ -156,6 +156,11 @@ describe('multi-step form submission', () => {
 			expect(stepEl(1).hidden).toBe(false);
 			expect(message.getAttribute('tabindex')).toBe('-1');
 			expect(document.activeElement).toBe(message);
+			expect(
+				message
+					.querySelector('.screen-reader-text')
+					.getAttribute('aria-hidden')
+			).toBe('true');
 			expect(seen).toEqual([{ step1Shown: true, focused: true }]);
 		});
 
