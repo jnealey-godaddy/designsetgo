@@ -14,9 +14,16 @@ export function stepTitle(step) {
 	return heading ? heading.textContent.trim() : '';
 }
 
+// A Hidden field's wrapper is hidden by a class, never the attribute, and the
+// visitor never sees it, so it doesn't make a step worth showing.
+function isHiddenType(wrapper) {
+	const controls = Array.from(wrapper.querySelectorAll(CONTROLS));
+	return controls.length > 0 && controls.every((el) => el.type === 'hidden');
+}
+
 function visibleFieldCount(step) {
 	return Array.from(step.querySelectorAll('[data-dsgo-field]')).filter(
-		(wrapper) => !wrapper.hidden
+		(wrapper) => !wrapper.hidden && !isHiddenType(wrapper)
 	).length;
 }
 

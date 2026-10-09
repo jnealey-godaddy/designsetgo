@@ -171,6 +171,25 @@ describe('initFormSteps', () => {
 		expect(items()).toHaveLength(3);
 	});
 
+	it('does not count Hidden fields when deciding whether a step is active', () => {
+		const { container, form } = mount();
+		document.querySelector('[data-dsgo-field="city"]').insertAdjacentHTML(
+			'afterend',
+			`<div class="dsgo-form-field dsgo-form-field--hidden" data-dsgo-field="utm_source">
+					<input name="utm_source" type="hidden" value="ad">
+				</div>`
+		);
+		initFormSteps(container, form);
+		expect(items()).toHaveLength(3);
+		document.querySelector('[data-dsgo-field="city"]').hidden = true;
+		form.dispatchEvent(new Event('change', { bubbles: true }));
+		expect(items()).toHaveLength(2);
+		form.elements.name.value = 'Ann';
+		nextBtn().click();
+		expect(stepEl(2).hidden).toBe(true);
+		expect(stepEl(3).hidden).toBe(false);
+	});
+
 	it('sends the final submit to a skipped step that a later answer revealed', () => {
 		const { container, form } = mount();
 		const c = initFormSteps(container, form);
