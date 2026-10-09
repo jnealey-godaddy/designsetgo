@@ -29,7 +29,7 @@ class Test_Form_Submission_Contract extends WP_UnitTestCase {
 	/**
 	 * Names form-builder/view.js strips before it sends the field list.
 	 */
-	const CLIENT_SKIPPED_NAMES = array( 'dsg_website', 'dsg_form_id', 'dsg_timestamp', 'dsg_turnstile_token' );
+	const CLIENT_SKIPPED_NAMES = array( 'dsg_website', 'dsg_form_id', 'dsg_timestamp', 'dsg_turnstile_token', 'action', '_wpnonce' );
 
 	/**
 	 * Form handler under test.
