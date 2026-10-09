@@ -125,7 +125,8 @@ class Test_Block_Bindings_Support extends WP_UnitTestCase {
 			'Bound <em>question</em><script>alert(1)</script>'
 		);
 
-		$this->assertStringContainsString( '<span class="dsgo-accordion-item__title">Bound <em>question</em>alert(1)</span>', $html );
+		// Core may discard disallowed script contents as well as their tags.
+		$this->assertMatchesRegularExpression( '#<span class="dsgo-accordion-item__title">Bound <em>question</em>(?:alert\(1\))?</span>#', $html );
 		$this->assertStringNotContainsString( 'Stored', $html );
 		$this->assertStringNotContainsString( '<script>', $html );
 		$this->assertStringContainsString( '<p>Body</p>', $html, 'Only the title element changes.' );
