@@ -107,7 +107,7 @@ class Block_Batch {
 			return self::entry_diagnostic( $index, __( 'has invalid definition field types.', 'designsetgo' ) );
 		}
 
-		$block_name = sanitize_text_field( (string) ( $block['block_name'] ?? '' ) );
+		$block_name = sanitize_text_field( $block['block_name'] );
 		if ( ! preg_match( Block_Inserter::BLOCK_NAME_PATTERN, $block_name ) ) {
 			return self::entry_diagnostic(
 				$index,

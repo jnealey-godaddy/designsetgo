@@ -226,7 +226,7 @@ class List_Blocks extends Abstract_Ability {
 				'category'    => $block_type->category ?? '',
 				'group'       => self::get_block_group( $block_type->name ),
 				'supports'    => $this->format_supports( $block_type->supports ?? array() ),
-				'selectors'   => $block_type->selectors ?? array(),
+				'selectors'   => $block_type->selectors,
 				'generation'  => Generation_Contract::for_block( $block_type ),
 				'blockStyles' => Generation_Contract::block_styles( $block_type->name ),
 				'parent'      => $block_type->parent ?? null,

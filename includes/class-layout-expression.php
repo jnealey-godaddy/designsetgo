@@ -55,7 +55,7 @@ class Layout_Expression {
 			return 1 === count( $args ) && 1 === self::math( $args[0] );
 		}
 		$count = count( $args );
-		if ( ( 'clamp' === $match[1] && 3 !== $count ) || ( 'fit-content' === $match[1] && 1 !== $count ) ) {
+		if ( 'clamp' === $match[1] && 3 !== $count ) {
 			return false;
 		}
 		foreach ( $args as $arg ) {
