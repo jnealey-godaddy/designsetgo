@@ -387,12 +387,20 @@ class Form_Handler {
 
 		// Conditional logic: fields the visitor couldn't see neither block the
 		// submission nor carry values (a hidden field's value is dropped even if
-		// a client sends one). Rules read each value as the loop below will
-		// sanitize and store it.
+		// a client sends one). Rules read text-like values as the loop below
+		// will sanitize and store them, so markup or %xx octets can't make a
+		// rule see one answer while another is stored. Blank values and the
+		// number/url/email/tel types stay raw: their sanitizers rewrite blanks
+		// and formats ('' → 0, example.com → http://example.com), which would
+		// diverge from the browser's evaluation, and validate_field() already
+		// rejects malformed values of those types.
 		list( $fields, $form_definition['required_fields'] ) = Form_Conditions_Submission::filter_submission(
 			$form_definition,
 			(array) $fields,
 			function ( $value, $type ) {
+				if ( '' === trim( (string) $value ) || in_array( $type, array( 'number', 'url', 'email', 'tel' ), true ) ) {
+					return $value;
+				}
 				return $this->sanitize_field( $value, $type );
 			}
 		);

@@ -324,6 +324,68 @@ class Test_Form_Conditions_Submission extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'praise', $stored );
 	}
 
+	/**
+	 * Publish a form whose conditions read an optional number field.
+	 *
+	 * Fields: guests (number), guest_names (text, required, shown when guests
+	 * is not empty), solo_note (text, shown when guests is empty).
+	 *
+	 * @param string $form_id Form ID.
+	 * @return int Post ID.
+	 */
+	private function publish_number_source_form( $form_id ) {
+		return self::factory()->post->create(
+			array(
+				'post_status'  => 'publish',
+				'post_content' => wp_slash(
+					'<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '","enableEmail":false} --><div class="wp-block-designsetgo-form-builder">'
+					. '<!-- wp:designsetgo/form-number-field {"fieldName":"guests"} /-->'
+					. '<!-- wp:designsetgo/form-text-field {"fieldName":"guest_names","required":true,"dsgoConditions":{"rules":[{"field":"guests","op":"not_empty","value":""}]}} /-->'
+					. '<!-- wp:designsetgo/form-text-field {"fieldName":"solo_note","dsgoConditions":{"rules":[{"field":"guests","op":"empty","value":""}]}} /-->'
+					. '</div><!-- /wp:designsetgo/form-builder -->'
+				),
+			)
+		);
+	}
+
+	/**
+	 * A blank optional number source stays blank for the rules (the browser
+	 * sends '' from FormData), so it neither demands a field the visitor
+	 * couldn't see nor drops an answer to one they could.
+	 */
+	public function test_blank_number_source_reads_as_empty() {
+		$post   = $this->publish_number_source_form( 'cond14' );
+		$stored = $this->stored(
+			$this->submit(
+				'cond14',
+				$post,
+				array(
+					array( 'name' => 'guests', 'value' => '', 'type' => 'number' ),
+					array( 'name' => 'solo_note', 'value' => 'Just me', 'type' => 'text' ),
+				)
+			)
+		);
+		$this->assertArrayHasKey( 'solo_note', $stored );
+		$this->assertArrayNotHasKey( 'guest_names', $stored );
+	}
+
+	/**
+	 * A filled number source still reveals (and requires) its dependant.
+	 */
+	public function test_filled_number_source_reveals_its_dependant() {
+		$post   = $this->publish_number_source_form( 'cond15' );
+		$result = $this->submit(
+			'cond15',
+			$post,
+			array(
+				array( 'name' => 'guests', 'value' => '2', 'type' => 'number' ),
+				array( 'name' => 'solo_note', 'value' => 'Smuggled', 'type' => 'text' ),
+			)
+		);
+		$this->assertWPError( $result );
+		$this->assertSame( 'required_field_missing', $result->get_error_code() );
+	}
+
 	public function test_definition_cache_keys_were_bumped() {
 		$this->assertSame( 'dsgo_form_definition_v5_', Form_Handler::DEFINITION_CACHE_PREFIX );
 		$this->assertSame( 'dsgo_form_external_definitions_v4', Form_Handler::EXTERNAL_DEFINITIONS_CACHE );
