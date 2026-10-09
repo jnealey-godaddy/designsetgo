@@ -127,8 +127,11 @@ copilot.txt
 failed-check.txt
 tasks.txt
 
-#Claude
-.claude/claude-memory.md
+# Agent memory / scratch notes (Claude, Codex, other coding agents).
+# Local-only working notes for one session or machine: never commit them.
+.claude/*memory*.md
+.Codex/*memory*.md
+.codex/*memory*.md
 .worktrees/
 
 # Security audit output. These enumerate unpatched findings with exploit paths,

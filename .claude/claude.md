@@ -334,6 +334,7 @@ Branch prefixes should start with `claude/`
 ## Memory
 
 As you work on an issue, add notes to memory, .claude/claude-memory.md, create an agent ID or session ID so as to not confuse other agents.
+This file is local-only (gitignored): never commit it or any other agent memory/scratch notes (e.g. `.Codex/Codex-memory.md`).
 ---
 
 **Updated**: 2026-09-16 | **Plugin**: 2.7.5 | **Requires**: WP 6.7+, PHP 7.4+
