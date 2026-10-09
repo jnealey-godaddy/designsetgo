@@ -44,7 +44,7 @@ installPublishedPageCleanup(test);
 // Local placeholder assets all live under this path; every resolved token
 // points here, so a single substring match validates editor + frontend images.
 const ASSET_PATH = 'designsetgo/assets/images/patterns/';
-const TOKEN_PREFIX = '{{dsgo:placeholder-';
+const TOKEN_PREFIX = '{{dsgo:';
 
 // Blocks whose saved markup carries the swapped image references. The token
 // swap and the parallax-attribute fix must not invalidate these; unrelated

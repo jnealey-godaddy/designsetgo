@@ -384,7 +384,7 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#6b7280"}},"fontSize":"small"} -->
-<p class="has-text-color has-small-font-size" style="color:#6b7280">Frontend Developer at Google</p>
+<p class="has-text-color has-small-font-size" style="color:#6b7280">Frontend Developer at Northwind</p>
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/row --></div></div>
@@ -412,7 +412,7 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#6b7280"}},"fontSize":"small"} -->
-<p class="has-text-color has-small-font-size" style="color:#6b7280">Data Analyst at Amazon</p>
+<p class="has-text-color has-small-font-size" style="color:#6b7280">Data Analyst at Riverbend</p>
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/row --></div></div>
@@ -440,7 +440,7 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"color":{"text":"#6b7280"}},"fontSize":"small"} -->
-<p class="has-text-color has-small-font-size" style="color:#6b7280">Senior UX Designer at Microsoft</p>
+<p class="has-text-color has-small-font-size" style="color:#6b7280">Senior UX Designer at Cobalt Labs</p>
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/section --></div></div>
 <!-- /wp:designsetgo/row --></div></div>

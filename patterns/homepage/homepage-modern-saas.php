@@ -46,23 +46,23 @@ return array(
 
 <!-- wp:designsetgo/row {"style":{"spacing":{"blockGap":"var:preset|spacing|60","padding":{"top":"0","bottom":"0","left":"0","right":"0"}}},"layout":{"type":"flex","justifyContent":"center","flexWrap":"wrap"}} -->
 <div class="wp-block-designsetgo-row alignfull dsgo-flex dsgo-no-width-constraint" style="padding-top:0;padding-right:0;padding-bottom:0;padding-left:0"><div class="dsgo-flex__inner" style="display:flex;justify-content:center;flex-wrap:wrap;gap:var(--wp--preset--spacing--60)"><!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700","letterSpacing":"2px"},"color":{"text":"#94a3b8"}},"fontSize":"medium"} -->
-<p class="has-text-color has-medium-font-size" style="color:#94a3b8;font-style:normal;font-weight:700;letter-spacing:2px">STRIPE</p>
+<p class="has-text-color has-medium-font-size" style="color:#94a3b8;font-style:normal;font-weight:700;letter-spacing:2px">LUMINA</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700","letterSpacing":"2px"},"color":{"text":"#94a3b8"}},"fontSize":"medium"} -->
-<p class="has-text-color has-medium-font-size" style="color:#94a3b8;font-style:normal;font-weight:700;letter-spacing:2px">NOTION</p>
+<p class="has-text-color has-medium-font-size" style="color:#94a3b8;font-style:normal;font-weight:700;letter-spacing:2px">FERNHILL</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700","letterSpacing":"2px"},"color":{"text":"#94a3b8"}},"fontSize":"medium"} -->
-<p class="has-text-color has-medium-font-size" style="color:#94a3b8;font-style:normal;font-weight:700;letter-spacing:2px">FIGMA</p>
+<p class="has-text-color has-medium-font-size" style="color:#94a3b8;font-style:normal;font-weight:700;letter-spacing:2px">PIXELFORGE</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700","letterSpacing":"2px"},"color":{"text":"#94a3b8"}},"fontSize":"medium"} -->
-<p class="has-text-color has-medium-font-size" style="color:#94a3b8;font-style:normal;font-weight:700;letter-spacing:2px">VERCEL</p>
+<p class="has-text-color has-medium-font-size" style="color:#94a3b8;font-style:normal;font-weight:700;letter-spacing:2px">VANTAGE</p>
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"700","letterSpacing":"2px"},"color":{"text":"#94a3b8"}},"fontSize":"medium"} -->
-<p class="has-text-color has-medium-font-size" style="color:#94a3b8;font-style:normal;font-weight:700;letter-spacing:2px">LINEAR</p>
+<p class="has-text-color has-medium-font-size" style="color:#94a3b8;font-style:normal;font-weight:700;letter-spacing:2px">CASCADE</p>
 <!-- /wp:paragraph --></div></div>
 <!-- /wp:designsetgo/row --></div></div>
 <!-- /wp:designsetgo/section -->

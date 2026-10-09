@@ -42,13 +42,34 @@ function designsetgo_get_placeholder_map() {
 }
 
 /**
- * Replace placeholder tokens in pattern content with real URLs.
+ * Get the target date for countdown timers in bundled patterns.
+ *
+ * A hardcoded date expires, and an inserted pattern then opens on "The
+ * countdown has ended!". Resolving the date at registration keeps every
+ * countdown pattern live. Midnight UTC keeps the value stable for a whole
+ * day, so pattern content doesn't change on every request.
+ *
+ * @param int|null $now Unix timestamp to count from. Defaults to the current time.
+ * @return string ISO 8601 UTC datetime 30 days ahead, in the countdown block's format.
+ */
+function designsetgo_get_pattern_countdown_target( $now = null ) {
+	$now = null === $now ? time() : (int) $now;
+
+	return gmdate( 'Y-m-d\T00:00:00.000\Z', $now + 30 * DAY_IN_SECONDS );
+}
+
+/**
+ * Replace placeholder tokens in pattern content with real values.
  *
  * Tokens use the format: {{dsgo:placeholder-type}}
  * e.g. {{dsgo:placeholder-avatar}}, {{dsgo:placeholder-landscape}}
  *
+ * {{dsgo:countdown-target}} becomes a datetime 30 days ahead, for countdown
+ * timers. Use it for both the `targetDateTime` attribute and the saved
+ * `data-target-datetime` so the block stays valid.
+ *
  * @param string $content Pattern content string.
- * @return string Content with tokens replaced by local image URLs.
+ * @return string Content with tokens replaced.
  */
 function designsetgo_replace_pattern_placeholders( $content ) {
 	$base_url = DESIGNSETGO_URL . 'assets/images/patterns/';
@@ -58,6 +79,8 @@ function designsetgo_replace_pattern_placeholders( $content ) {
 	foreach ( $map as $type => $file ) {
 		$replacements[ '{{dsgo:placeholder-' . $type . '}}' ] = esc_url( $base_url . $file );
 	}
+
+	$replacements['{{dsgo:countdown-target}}'] = designsetgo_get_pattern_countdown_target();
 
 	return str_replace( array_keys( $replacements ), array_values( $replacements ), $content );
 }

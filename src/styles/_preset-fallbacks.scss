@@ -1,0 +1,24 @@
+/**
+ * Preset color fallbacks
+ *
+ * Bundled patterns give outline buttons `"backgroundColor":"transparent"`,
+ * which saves the class `has-transparent-background-color`. WordPress only
+ * emits a `.has-{slug}-background-color` rule for slugs in the theme's
+ * palette, and almost no theme (Twenty Twenty-Five included) has a
+ * `transparent` slug. With no rule, the theme's default button background
+ * shows through, and on most themes that is the same color as the button text,
+ * so the label disappears.
+ *
+ * This mirrors the rule core would generate for the slug, `!important`
+ * included, so it behaves exactly like any other preset class. Hover
+ * background rules are `!important` with higher specificity and still win.
+ *
+ * Styling the class (rather than rewriting the patterns) also repairs content
+ * that was already inserted from those patterns.
+ *
+ * @package DesignSetGo
+ */
+
+.has-transparent-background-color {
+	background-color: transparent !important;
+}

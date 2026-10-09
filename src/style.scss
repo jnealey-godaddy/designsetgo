@@ -21,6 +21,10 @@
 // Pill, Icon, Icon Button, and Modal Trigger (see src/styles/_justification.scss).
 @use './styles/justification' as justification;
 
+// Fallback for the `transparent` color preset that bundled patterns use but
+// themes rarely define (see src/styles/_preset-fallbacks.scss).
+@use './styles/preset-fallbacks';
+
 // Block extensions (frontend)
 // Only max-width stays global: its class goes on any block, so it has no
 // cheaper marker than the style itself.

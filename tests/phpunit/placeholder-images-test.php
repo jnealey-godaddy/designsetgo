@@ -107,4 +107,58 @@ class Test_Placeholder_Images extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( 'placeholder-portrait.jpg', $result );
 	}
+
+	/**
+	 * Test the countdown target is midnight UTC, 30 days ahead.
+	 */
+	public function test_countdown_target_is_thirty_days_ahead() {
+		$now = gmmktime( 15, 42, 7, 10, 9, 2026 );
+
+		$this->assertSame( '2026-11-08T00:00:00.000Z', designsetgo_get_pattern_countdown_target( $now ) );
+	}
+
+	/**
+	 * Test the countdown token resolves to the same future date everywhere.
+	 *
+	 * The countdown block stores the date in its comment attribute and in
+	 * the saved data attribute; both must match or the block is invalid.
+	 */
+	public function test_countdown_token_replaced_consistently() {
+		$content = '<!-- wp:designsetgo/countdown-timer {"targetDateTime":"{{dsgo:countdown-target}}"} --><div data-target-datetime="{{dsgo:countdown-target}}"></div>';
+		$result  = designsetgo_replace_pattern_placeholders( $content );
+
+		$this->assertStringNotContainsString( '{{dsgo:', $result );
+		$this->assertSame( 1, preg_match( '/"targetDateTime":"([^"]+)"/', $result, $attr ) );
+		$this->assertSame( 1, preg_match( '/data-target-datetime="([^"]+)"/', $result, $data ) );
+		$this->assertSame( $attr[1], $data[1] );
+		$this->assertGreaterThan( time(), strtotime( $attr[1] ) );
+	}
+
+	/**
+	 * Test no bundled pattern hardcodes a countdown date, which would expire.
+	 */
+	public function test_bundled_countdown_patterns_use_the_token() {
+		$files = glob( DESIGNSETGO_PATH . 'patterns/*/*.php' );
+
+		$this->assertNotEmpty( $files );
+
+		foreach ( $files as $file ) {
+			$source = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Reading a local plugin file in a test.
+
+			if ( false === strpos( $source, 'targetDateTime' ) ) {
+				continue;
+			}
+
+			$this->assertDoesNotMatchRegularExpression(
+				'/"targetDateTime":"\d{4}-/',
+				$source,
+				basename( $file ) . ' hardcodes a countdown date; use {{dsgo:countdown-target}}.'
+			);
+			$this->assertDoesNotMatchRegularExpression(
+				'/data-target-datetime="\d{4}-/',
+				$source,
+				basename( $file ) . ' hardcodes a countdown date; use {{dsgo:countdown-target}}.'
+			);
+		}
+	}
 }

@@ -46,7 +46,7 @@ installPublishedPageCleanup(test);
 
 const PATTERNS = listDesignSetGoPatterns();
 
-const TOKEN_PREFIX = '{{dsgo:placeholder-';
+const TOKEN_PREFIX = '{{dsgo:';
 
 // Patterns whose inserted blocks are known to fail save() validation. Each
 // entry is tracked debt — fix the pattern's saved markup (or the underlying

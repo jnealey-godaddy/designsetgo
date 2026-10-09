@@ -111,6 +111,56 @@
 	}
 }
 
+// Typography supports are saved on the wrapper <div>, but the theme's
+// `elements.hN` styles hit the inner heading directly and win. Inherit each
+// property only when the wrapper actually carries it (preset class or inline
+// style), otherwise the heading would lose the theme size to the parent's.
+// Specificity beats element rules; a segment's own typography is set on the
+// segment <span>, a descendant, so it still wins.
+.dsgo-advanced-heading[class*="-font-size"] > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[style*="font-size"] > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[class*="-font-size"] > .dsgo-advanced-heading__link > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[style*="font-size"] > .dsgo-advanced-heading__link > .dsgo-advanced-heading__inner {
+	font-size: inherit;
+}
+
+.dsgo-advanced-heading[class*="-font-family"] > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[style*="font-family"] > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[class*="-font-family"] > .dsgo-advanced-heading__link > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[style*="font-family"] > .dsgo-advanced-heading__link > .dsgo-advanced-heading__inner {
+	font-family: inherit;
+}
+
+.dsgo-advanced-heading[style*="line-height"] > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[style*="line-height"] > .dsgo-advanced-heading__link > .dsgo-advanced-heading__inner {
+	line-height: inherit;
+}
+
+.dsgo-advanced-heading[style*="letter-spacing"] > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[style*="letter-spacing"] > .dsgo-advanced-heading__link > .dsgo-advanced-heading__inner {
+	letter-spacing: inherit;
+}
+
+.dsgo-advanced-heading[style*="font-weight"] > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[style*="font-weight"] > .dsgo-advanced-heading__link > .dsgo-advanced-heading__inner {
+	font-weight: inherit;
+}
+
+.dsgo-advanced-heading[style*="font-style"] > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[style*="font-style"] > .dsgo-advanced-heading__link > .dsgo-advanced-heading__inner {
+	font-style: inherit;
+}
+
+.dsgo-advanced-heading[style*="text-transform"] > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[style*="text-transform"] > .dsgo-advanced-heading__link > .dsgo-advanced-heading__inner {
+	text-transform: inherit;
+}
+
+.dsgo-advanced-heading[style*="text-decoration"] > .dsgo-advanced-heading__inner,
+.dsgo-advanced-heading[style*="text-decoration"] > .dsgo-advanced-heading__link > .dsgo-advanced-heading__inner {
+	text-decoration: inherit;
+}
+
 // Text alignment support
 .dsgo-advanced-heading.has-text-align-left .dsgo-advanced-heading__inner {
 	text-align: left;
