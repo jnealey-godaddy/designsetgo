@@ -110,14 +110,21 @@ function initFormBuilder() {
 			return;
 		}
 
-		// Add timestamp field dynamically (not in save.js to avoid validation errors)
-		// Set at init time so server can verify user spent >= 3s on page (anti-spam).
+		// Timestamp for the server's "too fast" check (anti-spam). Not in
+		// save.js, to avoid validation errors; the server renders one for
+		// visitors without JavaScript, so reuse it rather than post two.
+		// Set at init time so server can verify user spent >= 3s on page.
 		// Re-set on bfcache restore so stale timestamps don't cause false rejections.
-		const timestampField = document.createElement('input');
-		timestampField.type = 'hidden';
-		timestampField.name = 'dsg_timestamp';
+		let timestampField = formElement.querySelector(
+			'input[name="dsg_timestamp"]'
+		);
+		if (!timestampField) {
+			timestampField = document.createElement('input');
+			timestampField.type = 'hidden';
+			timestampField.name = 'dsg_timestamp';
+			formElement.appendChild(timestampField);
+		}
 		timestampField.value = Date.now();
-		formElement.appendChild(timestampField);
 
 		window.addEventListener('pageshow', function (e) {
 			if (e.persisted) {
@@ -382,7 +389,18 @@ function initFormBuilder() {
 			window.HTMLFormElement.prototype.submit.call(formElement);
 		}
 
+		// A result the server printed for visitors without JavaScript. Shown
+		// again below from the URL (replacing it, so it never appears twice),
+		// or hidden: without the URL params it came from a page cache.
+		const hasServerMessage = messageContainer.hasAttribute(
+			'data-dsgo-server-message'
+		);
+		messageContainer.removeAttribute('data-dsgo-server-message');
+
 		const shownFromRedirect = showRedirectStatus();
+		if (hasServerMessage && !shownFromRedirect) {
+			hideMessage(messageContainer);
+		}
 
 		// Restore confirmation message persisted from a previous submission (one-time)
 		if (!shownFromRedirect) {
@@ -433,12 +451,15 @@ function initFormBuilder() {
 			const fields = [];
 
 			for (const [name, value] of formData.entries()) {
-				// Skip honeypot and system fields
+				// Skip honeypot and system fields (`action` and `_wpnonce` are
+				// the admin-post fields rendered for visitors without JS)
 				if (
 					name === 'dsg_website' ||
 					name === 'dsg_form_id' ||
 					name === 'dsg_timestamp' ||
-					name === 'dsg_turnstile_token'
+					name === 'dsg_turnstile_token' ||
+					name === 'action' ||
+					name === '_wpnonce'
 				) {
 					continue;
 				}
