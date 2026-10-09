@@ -43,6 +43,7 @@ class Test_Form_Conditions_Critical_CSS extends WP_UnitTestCase {
 		$this->assertNotFalse( $style );
 		$this->assertLessThan( strpos( $html, 'dsgo-form-builder' ), $style );
 		$this->assertStringContainsString( 'dsgo-conditions-pending', $html );
+		$this->assertStringContainsString( '.dsgo-form-field[hidden]', $html );
 		$this->assertMatchesRegularExpression( '/scripting:\s*enabled/', $html );
 	}
 

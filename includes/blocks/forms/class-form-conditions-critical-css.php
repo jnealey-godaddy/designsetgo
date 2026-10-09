@@ -28,8 +28,12 @@ class Form_Conditions_Critical_CSS {
 	 * errored, failed to load), the fields show after 4s instead of staying
 	 * hidden while still required. Browsers that can't animate `display`
 	 * don't pre-hide.
+	 *
+	 * `[hidden]` is included because the fields' inline per-block
+	 * `display:flex` otherwise beats the UA rule until the deferred form
+	 * stylesheet loads, flashing fields the view script has already hidden.
 	 */
-	const CSS = '@media (scripting:enabled){.dsgo-form-builder:not([data-dsgo-conditions-ready]) .dsgo-form-field--conditional{animation:dsgo-conditions-pending 4s}}@keyframes dsgo-conditions-pending{0%,99.9%{display:none}}';
+	const CSS = '.dsgo-form-field[hidden]{display:none}@media (scripting:enabled){.dsgo-form-builder:not([data-dsgo-conditions-ready]) .dsgo-form-field--conditional{animation:dsgo-conditions-pending 4s}}@keyframes dsgo-conditions-pending{0%,99.9%{display:none}}';
 
 	/**
 	 * Whether the style has been printed in this request.
