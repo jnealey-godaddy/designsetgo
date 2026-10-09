@@ -105,16 +105,17 @@ class Form_Handler {
 	 * Bump the version whenever the definition shape changes, so a cached
 	 * definition missing a newer key never skips that key's checks.
 	 */
-	const EXTERNAL_DEFINITIONS_CACHE = 'dsgo_form_external_definitions_v3';
+	const EXTERNAL_DEFINITIONS_CACHE = 'dsgo_form_external_definitions_v4';
 
 	/**
 	 * Transient prefix for a single form definition resolved from wp_posts.
 	 *
 	 * Version 3 adds `rules`, and drops definitions v2 cached from
-	 * password-protected posts; v4 (and EXTERNAL_DEFINITIONS_CACHE v3) add `labels`.
+	 * password-protected posts; v4 (and EXTERNAL_DEFINITIONS_CACHE v3) add
+	 * `labels`; v5 (and EXTERNAL_DEFINITIONS_CACHE v4) add `conditions`.
 	 * Bump alongside EXTERNAL_DEFINITIONS_CACHE.
 	 */
-	const DEFINITION_CACHE_PREFIX = 'dsgo_form_definition_v4_';
+	const DEFINITION_CACHE_PREFIX = 'dsgo_form_definition_v5_';
 
 	/**
 	 * Constructor.
@@ -383,6 +384,26 @@ class Form_Handler {
 				return $turnstile_result;
 			}
 		}
+
+		// Conditional logic: fields the visitor couldn't see neither block the
+		// submission nor carry values (a hidden field's value is dropped even if
+		// a client sends one). Rules read text-like values as the loop below
+		// will sanitize and store them, so markup or %xx octets can't make a
+		// rule see one answer while another is stored. Blank values and the
+		// number/url/email/tel types stay raw: their sanitizers rewrite blanks
+		// and formats ('' → 0, example.com → http://example.com), which would
+		// diverge from the browser's evaluation, and validate_field() already
+		// rejects malformed values of those types.
+		list( $fields, $form_definition['required_fields'] ) = Form_Conditions_Submission::filter_submission(
+			$form_definition,
+			(array) $fields,
+			function ( $value, $type ) {
+				if ( '' === trim( (string) $value ) || in_array( $type, array( 'number', 'url', 'email', 'tel' ), true ) ) {
+					return $value;
+				}
+				return $this->sanitize_field( $value, $type );
+			}
+		);
 
 		// Sanitize and validate all fields.
 		$form_field_types  = $form_definition['field_types'];
@@ -1322,7 +1343,7 @@ class Form_Handler {
 	 *
 	 * @param string $form_id        Form identifier to look up.
 	 * @param int    $source_post_id Page the form was submitted from, or 0.
-	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[], rules: array, labels?: array<string, string>}|null Form definition or null.
+	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[], rules: array, labels?: array<string, string>, conditions?: array{fields: string[], conditions: array<string, array>}}|null Form definition or null.
 	 */
 	private function get_form_definition( $form_id, $source_post_id = 0 ) {
 		if ( ! is_string( $form_id ) || '' === $form_id ) {
@@ -1422,7 +1443,7 @@ class Form_Handler {
 	 * Build the server-owned definition for a parsed form block.
 	 *
 	 * @param array $form_block Parsed designsetgo/form-builder block.
-	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[], rules: array, labels: array<string, string>} Form definition.
+	 * @return array{attributes: array, field_types: array, constraints: array, required_fields: string[], rules: array, labels: array<string, string>, conditions: array{fields: string[], conditions: array<string, array>}} Form definition.
 	 */
 	private function build_form_definition( array $form_block ) {
 		$inner_blocks = isset( $form_block['innerBlocks'] ) ? $form_block['innerBlocks'] : array();
@@ -1445,6 +1466,7 @@ class Form_Handler {
 			'required_fields' => $this->extract_required_field_names_from_blocks( $inner_blocks ),
 			'rules'           => Form_Field_Rules::extract( $inner_blocks ),
 			'labels'          => $labels,
+			'conditions'      => Form_Conditions::extract( $inner_blocks ),
 		);
 	}
 

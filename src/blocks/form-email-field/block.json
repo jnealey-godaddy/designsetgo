@@ -18,6 +18,10 @@
 		"designsetgo/form-builder"
 	],
 	"attributes": {
+		"dsgoConditions": {
+			"type": "object",
+			"default": null
+		},
 		"fieldName": {
 			"type": "string",
 			"default": ""

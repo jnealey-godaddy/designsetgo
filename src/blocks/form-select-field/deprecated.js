@@ -162,6 +162,7 @@ const vStatic = {
 		return {
 			...attributes,
 			placeholder: attributes.placeholder ?? '',
+			dsgoConditions: null,
 		};
 	},
 };
@@ -227,7 +228,8 @@ const v2 = {
 		);
 	},
 	migrate(attributes) {
-		return attributes;
+		// Land on the current schema (dsgoConditions postdates this version).
+		return { ...attributes, dsgoConditions: null };
 	},
 
 	save({ attributes }) {
@@ -443,7 +445,8 @@ const v1 = {
 	},
 
 	migrate(attributes) {
-		return attributes;
+		// Land on the current schema (dsgoConditions postdates this version).
+		return { ...attributes, dsgoConditions: null };
 	},
 };
 

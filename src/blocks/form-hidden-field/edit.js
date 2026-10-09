@@ -8,6 +8,8 @@ import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import { TextControl, Notice } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import FieldConditionsItem from '../form-builder/components/FieldConditionsItem';
+import ConditionalBadge from '../form-builder/components/ConditionalBadge';
 import { useEffect } from '@wordpress/element';
 
 export default function FormHiddenFieldEdit({
@@ -38,6 +40,7 @@ export default function FormHiddenFieldEdit({
 					resetAll={() =>
 						setAttributes({
 							fieldName: '',
+							dsgoConditions: null,
 							value: '',
 						})
 					}
@@ -91,10 +94,19 @@ export default function FormHiddenFieldEdit({
 							__nextHasNoMarginBottom
 						/>
 					</DsgoInspectorPanel.Item>
+					<FieldConditionsItem
+						attributes={attributes}
+						setAttributes={setAttributes}
+						clientId={clientId}
+					/>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>
+				<ConditionalBadge
+					conditions={attributes.dsgoConditions}
+					clientId={clientId}
+				/>
 				<Notice status="info" isDismissible={false}>
 					<strong>{__('Hidden Field:', 'designsetgo')}</strong>{' '}
 					{fieldName} = {value || __('(empty)', 'designsetgo')}

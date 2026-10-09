@@ -12,6 +12,8 @@ import {
 } from '@wordpress/block-editor';
 import { TextControl, ToggleControl } from '@wordpress/components';
 import { DsgoInspectorPanel } from '../../components/shared';
+import FieldConditionsItem from '../form-builder/components/FieldConditionsItem';
+import ConditionalBadge from '../form-builder/components/ConditionalBadge';
 import { useEffect } from '@wordpress/element';
 import classnames from 'classnames';
 
@@ -54,6 +56,7 @@ export default function FormCheckboxFieldEdit({
 					resetAll={() =>
 						setAttributes({
 							fieldName: '',
+							dsgoConditions: null,
 							label: DEFAULT_LABEL,
 							helpText: '',
 							required: false,
@@ -168,10 +171,19 @@ export default function FormCheckboxFieldEdit({
 							__nextHasNoMarginBottom
 						/>
 					</DsgoInspectorPanel.Item>
+					<FieldConditionsItem
+						attributes={attributes}
+						setAttributes={setAttributes}
+						clientId={clientId}
+					/>
 				</DsgoInspectorPanel>
 			</InspectorControls>
 
 			<div {...blockProps}>
+				<ConditionalBadge
+					conditions={attributes.dsgoConditions}
+					clientId={clientId}
+				/>
 				<div className="dsgo-form-field__checkbox-wrapper">
 					<input
 						type="checkbox"

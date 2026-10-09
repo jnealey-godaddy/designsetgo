@@ -65,6 +65,41 @@ if ( ! function_exists( 'designsetgo_form_field_width_style' ) ) {
 	}
 }
 
+if ( ! function_exists( 'designsetgo_form_field_wrapper_attributes' ) ) {
+	/**
+	 * Build a form field's wrapper attributes.
+	 *
+	 * Adds `data-dsgo-field` (the field name) to every field and, when the
+	 * field has conditional logic, the `dsgo-form-field--conditional` class and
+	 * its sanitized rules as `data-dsgo-conditions` for the view script.
+	 * get_block_wrapper_attributes() escapes every value.
+	 *
+	 * @param array  $attributes Block attributes.
+	 * @param string $type       Field type slug for the BEM modifier (e.g. 'text').
+	 * @param string $style      Inline style ('' for none).
+	 * @return string Wrapper attributes.
+	 */
+	function designsetgo_form_field_wrapper_attributes( array $attributes, $type, $style = '' ) {
+		$extra = array( 'class' => 'dsgo-form-field dsgo-form-field--' . $type );
+		if ( '' !== $style ) {
+			$extra['style'] = $style;
+		}
+
+		$field_name = isset( $attributes['fieldName'] ) ? (string) $attributes['fieldName'] : '';
+		if ( '' !== $field_name ) {
+			$extra['data-dsgo-field'] = $field_name;
+		}
+
+		$rules = \DesignSetGo\Blocks\Form_Conditions::normalize_rules( isset( $attributes['dsgoConditions'] ) ? $attributes['dsgoConditions'] : null );
+		if ( null !== $rules ) {
+			$extra['class']               .= ' dsgo-form-field--conditional';
+			$extra['data-dsgo-conditions'] = wp_json_encode( $rules );
+		}
+
+		return get_block_wrapper_attributes( $extra );
+	}
+}
+
 if ( ! function_exists( 'designsetgo_form_field_label_html' ) ) {
 	/**
 	 * Build a field <label> with the optional required marker.

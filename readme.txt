@@ -111,6 +111,7 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 * **New:** Export form submissions to CSV from the Form Submissions screen, filtered by form and date range. Columns use your field labels (submissions received before this update use field names).
 * **New:** Send each form submission to a webhook (Zapier, Make, a CRM…). Set the URL in the form's Settings panel and a signing secret under DesignSetGo → Settings → Integrations. Failed deliveries retry automatically, and each submission shows its delivery status with a Resend option.
 * **Improved:** The submission details screen now shows each field's label alongside its field name.
+* **New:** Form fields can show or hide based on other answers ("Show Company name when Customer type is Business"). Set it under a field's Settings → Conditional logic. Hidden fields are skipped when the form is submitted, even if they're required.
 
 = 2.9.0 - 2026-09-29 =
 
@@ -254,24 +255,11 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 * **New:** Section shape dividers — six new layered, tonal divider shapes: Triangle Layered, Triangle Layered Extra, Curvy Triangle Layered, Symmetric Waves Layered, Side Triangle Layered, and Side Triangle Layered Extra. Each paints as a soft two- or three-tone band that inherits your theme's color by default and can be overridden per section.
 * **Fix:** Section shape-divider spacing is now author-defined, so patterns that set the content clearance with a theme spacing token no longer show an "Attempt Recovery" prompt. A new "Content Clearance" control sets the gap between your content and the divider; existing dividers migrate silently, and a divider with no clearance set automatically reserves space to match its own height.
 
-= 2.5.0 - 2026-07-21 =
-
-* **New:** Grid — an "Align Rows" option that lines up each row of card content (image, heading, text, button) across columns, so cards with different amounts of text stay aligned with no ragged whitespace. Works with Section, Row, and Group cards, and is off by default so existing grids are unchanged.
-* **New:** Form Builder — the submit button now has a Button Style control (Default, Secondary, or Outline), so a form placed on a colored background can use a matching button. Your theme's button style variations apply to it too, and AI-assisted form inserts respect the chosen style.
-* **Fix:** Blocks whose on-screen text is changed by a site translation (or other content tools) no longer show an "Attempt Recovery" prompt. Icon Button, Modal Trigger, Accordion, Timeline, Counter, Card, Table of Contents, Form Builder, and Countdown Timer now treat their visible label as the single source of truth, so translating the text keeps the block valid — and existing content migrates silently.
-* **Fix:** Forms and responsive grids on AI-generated sites no longer show an "Attempt Recovery" prompt. Their saved markup differed slightly from what the current blocks produce; the affected forms and grids now migrate silently and keep their design.
-* **Fix:** Modal — the overlay (backdrop) color now inherits from your theme and can be restyled by a Style Kit, instead of always being baked to black. Modals saved from patterns no longer show an "Attempt Recovery" prompt.
-* **Fix:** Form Builder — an inline (side-by-side) submit button now lines up level with the field beside it, in both the editor and on the frontend, and the loading spinner now shows correctly on styled submit buttons.
-* **Fix:** Cloudflare Turnstile now accepts its tokens. Previously, turning Turnstile on silently broke the form — every protected submission was rejected before it reached the handler.
-* **Fix:** Excluding a third-party block from DesignSetGo's controls now takes effect in the editor. Excluded blocks (such as Gravity Forms) no longer receive DesignSetGo panels or show an "invalid block attributes" error.
-* **Fix:** Query Monitor no longer causes a site error on every page load when its debugging panel is active.
-* **Fix:** Draft Mode — publishing a draft no longer deletes custom fields that were intentionally kept out of the draft copy, so integrations that store their own bookkeeping data keep it across publishes.
-* **Security:** Hardened Draft Mode's post-copy against maliciously deep data and closed a window where a stale, still-open settings form could overwrite a saved API key with its masking placeholder. These strengthen existing protections — no known exploit was involved.
-
-= Earlier releases (2.4.0 and earlier) =
+= Earlier releases (2.5.0 and earlier) =
 
 For the full version history, see [CHANGELOG.md](https://github.com/jnealey-godaddy/designsetgo/blob/main/CHANGELOG.md) in the GitHub repository. Highlights:
 
+* **2.5.0** — Grid "Align Rows" option, a Button Style control for the Form Builder submit button, a Modal overlay color that follows your theme, working Cloudflare Turnstile tokens, and fixes for "Attempt Recovery" prompts on translated and AI-generated sites.
 * **2.4.0** — Section Divider block, Fill / Outline icons, theme-driven defaults for icons, forms, maps and SVG patterns, a new Justify control for Pill, Icon, Icon Button and Modal Trigger, safer form notification emails, and many editor and frontend fixes.
 * **2.3.0** — Theme section styles for Section, Row and Grid, site-wide default shape dividers, and redesigned shape dividers.
 * **2.2.0** — Column Min Width for Grid and Icon List, Scrolling Gallery image fit and size controls, silent upgrades for older block markup, and PHP 7.4 support.

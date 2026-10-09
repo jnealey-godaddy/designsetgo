@@ -231,6 +231,17 @@
 	}
 }
 
+// Sizing for the field that shares its row with an inline submit button.
+@mixin dsgo-form-inline-last-field {
+	flex: 1 1 0 !important;
+	max-width: none !important;
+
+	// Mobile: force full width so the button wraps to a new line
+	@media (max-width: #{$breakpoint-mobile}) {
+		flex-basis: 100% !important;
+	}
+}
+
 // Inline button mode (for subscribe forms)
 .dsgo-form-builder--button-inline {
 
@@ -242,13 +253,16 @@
 	// Overrides any explicit field width so users don't need to manually
 	// shrink the last field when switching to inline mode.
 	.dsgo-form-field:last-of-type {
-		flex: 1 1 0 !important;
-		max-width: none !important;
 
-		// Mobile: force full width so the button wraps to a new line
-		@media (max-width: #{$breakpoint-mobile}) {
-			flex-basis: 100% !important;
-		}
+		@include dsgo-form-inline-last-field;
+	}
+
+	// A conditional last field can be hidden, so the field that actually
+	// shares the button's row is the last *visible* one. Kept as a separate
+	// rule: browsers without :has() drop only this one and keep the rule above.
+	.dsgo-form-field:not([hidden]):not(:has(~ .dsgo-form-field:not([hidden]))) {
+
+		@include dsgo-form-inline-last-field;
 	}
 
 	.dsgo-form__submit--inline {
@@ -686,4 +700,25 @@
 		opacity: 1;
 		transform: none;
 	}
+}
+
+// Live regions (conditional-field and submit announcements) must stay
+// visually hidden even when a theme dequeues core's `.screen-reader-text`.
+/* stylelint-disable-next-line selector-class-pattern */
+.dsgo-form-builder .screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+
+// Author `display` rules on .dsgo-form-field beat the UA [hidden] rule;
+// class + attribute specificity restores it without !important.
+.dsgo-form-field[hidden] {
+	display: none;
 }

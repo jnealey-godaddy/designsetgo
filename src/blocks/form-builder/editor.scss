@@ -88,3 +88,43 @@
 		border-radius: var(--dsgo-form-border-radius);
 	}
 }
+
+// Conditional-logic badge on form fields (editor only).
+.dsgo-form-field:has(> .dsgo-conditional-badge) {
+	position: relative;
+}
+
+.dsgo-conditional-badge {
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: 0 6px;
+	border-radius: 2px;
+	background: #1e1e1e;
+	color: #fff;
+	font-size: 11px;
+	line-height: 18px;
+	// Overlaps the label's box: let clicks reach the label underneath.
+	pointer-events: none;
+}
+
+// Rule summary for screen readers (a tooltip can't be reached through
+// pointer-events: none).
+.dsgo-conditional-badge__summary {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}
+
+.dsgo-field-conditions__rule {
+	display: grid;
+	gap: 8px;
+	padding: 8px 0;
+	border-bottom: 1px solid #ddd;
+}
