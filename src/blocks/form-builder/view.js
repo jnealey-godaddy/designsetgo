@@ -8,6 +8,7 @@
 
 import { __ } from '@wordpress/i18n';
 import { initFormConditions } from './conditions-dom';
+import { initFormSteps } from './steps-dom';
 
 /* global designsetgoForm, dsgoIntegrations, sessionStorage */
 
@@ -96,6 +97,14 @@ function initFormBuilder() {
 		// Conditional fields first, so they're correct before anything else
 		// (and the ready flag the CSS waits for is always set).
 		initFormConditions(
+			formContainer,
+			formContainer.querySelector('.dsgo-form')
+		);
+
+		// Steps next: they read the conditions' field visibility. Must run
+		// before the early return below so the ready flag is always set.
+		// eslint-disable-next-line @wordpress/no-unused-vars-before-return
+		const steps = initFormSteps(
 			formContainer,
 			formContainer.querySelector('.dsgo-form')
 		);
@@ -415,6 +424,12 @@ function initFormBuilder() {
 			// Clear previous messages and any persisted confirmation state
 			hideMessage(messageContainer);
 			clearConfirmation();
+
+			// Multi-step: Enter on an earlier step advances instead of
+			// submitting, and an invalid field on another step is shown there.
+			if (!steps.beforeSubmit()) {
+				return;
+			}
 
 			// Validate form using HTML5 validation
 			if (!formElement.checkValidity()) {
