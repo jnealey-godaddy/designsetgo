@@ -30,3 +30,12 @@
 - Fresh build, JS/CSS/PHP checks, 4,274 JS tests and 1,962 PHP tests/7,515 assertions passed; main's 20 WordPress/PHP combinations, CodeQL and Plugin Check passed.
 - Versioned ZIP includes seven pattern images and excludes development files. Full six-profile browser run and live Turnstile/storage/inbox checks remain pending; no tag or customer publication.
 - Live Turnstile has both keys configured. Do not move production secrets to local/browser storage. Current evidence and remaining gates: docs/reviews/2026-09-29-release-2.9.0.md.
+
+## Codex-2026-10-09-dependabot-critical-high
+
+- Worktree `.worktrees/dependabot-critical-high`, branch `Codex/dependabot-critical-high`, base `a4e8a1eb`.
+- Live open critical/high alerts: simple-git #159/#160/#161 and http-cache-semantics #154. Override simple-git to ^4.0.2 and http-cache-semantics to ^4.3.0; lockfile has one copy of each, outside every reported critical/high affected range.
+- simple-git 4 removed its callable CommonJS default. Postinstall patches both @wordpress/env Git imports to named simpleGit; fails explicitly if upstream source changes. Remove patch when wp-env supports the named export.
+- Added real local wp-env clone/fetch/checkout/reset regression test; confirmed it fails with the old import and passes with the patch. Existing 4,274 unit tests, the new integration test, build and JS/CSS lint passed. PHP lint unavailable because Composer is not installed in the host shell; no PHP changed.
+- http-cache-semantics maintainer disputes CVE-2026-93748 in https://github.com/kornelski/http-cache-semantics/issues/56. Version 4.3.0 is outside the published <=4.2.0 range; do not claim a proven fix for the disputed behavior. Shared private-response storable() guard verified separately.
+- npm audit upload was rejected by automatic approval review; user approval requested. No audit result or GitHub alert closure claimed. Alerts close after default-branch merge and GitHub rescanning; no merge or publication performed.
