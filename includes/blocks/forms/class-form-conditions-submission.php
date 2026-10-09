@@ -25,11 +25,16 @@ class Form_Conditions_Submission {
 	 * nor carries a value into storage, email, webhooks or exports. The phone
 	 * field's `{name}_country_code` companion follows its phone field.
 	 *
-	 * @param array $definition Server-resolved form definition.
-	 * @param array $fields     Submitted list of { name, value, type }.
+	 * Rules read each value the way it will be stored: `$sanitize` (the submit
+	 * loop's per-type sanitizer) is applied first, so markup or %xx octets in a
+	 * text source can't make a rule see one answer while another is stored.
+	 *
+	 * @param array         $definition Server-resolved form definition.
+	 * @param array         $fields     Submitted list of { name, value, type }.
+	 * @param callable|null $sanitize   Sanitizer `( $value, $type ): mixed`; null reads raw values.
 	 * @return array{0: array, 1: string[]} Filtered fields and required field names.
 	 */
-	public static function filter_submission( array $definition, array $fields ): array {
+	public static function filter_submission( array $definition, array $fields, ?callable $sanitize = null ): array {
 		$required   = isset( $definition['required_fields'] ) ? (array) $definition['required_fields'] : array();
 		$conditions = isset( $definition['conditions'] ) && is_array( $definition['conditions'] ) ? $definition['conditions'] : array();
 		if ( empty( $conditions['conditions'] ) || empty( $conditions['fields'] ) ) {
@@ -51,15 +56,16 @@ class Form_Conditions_Submission {
 			$canonical[ $name ] = $field;
 		}
 
+		$types  = isset( $definition['field_types'] ) ? (array) $definition['field_types'] : array();
 		$values = array();
 		foreach ( $canonical as $name => $field ) {
-			$values[ $name ] = $field['value'];
+			$type            = isset( $types[ $name ] ) ? $types[ $name ] : 'text';
+			$values[ $name ] = null !== $sanitize ? call_user_func( $sanitize, $field['value'], $type ) : $field['value'];
 		}
 		$fields = array_values( $canonical );
 
 		// A hidden-type field's value is fixed by the form, so rules read the
 		// saved value: a client can't blank or change it to flip visibility.
-		$types       = isset( $definition['field_types'] ) ? (array) $definition['field_types'] : array();
 		$constraints = isset( $definition['constraints'] ) ? (array) $definition['constraints'] : array();
 		foreach ( $types as $name => $type ) {
 			if ( 'hidden' === $type && isset( $constraints[ $name ][0] ) ) {

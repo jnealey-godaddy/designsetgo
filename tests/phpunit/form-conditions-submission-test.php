@@ -241,6 +241,89 @@ class Test_Form_Conditions_Submission extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'referral', $stored );
 	}
 
+	/**
+	 * Publish a form whose conditions read a free-text field.
+	 *
+	 * Fields: has_issue (text), details (text, required, shown when has_issue
+	 * is "yes"), praise (text, shown when has_issue is not "yes").
+	 *
+	 * @param string $form_id Form ID.
+	 * @return int Post ID.
+	 */
+	private function publish_text_source_form( $form_id ) {
+		return self::factory()->post->create(
+			array(
+				'post_status'  => 'publish',
+				'post_content' => wp_slash(
+					'<!-- wp:designsetgo/form-builder {"formId":"' . $form_id . '","enableEmail":false} --><div class="wp-block-designsetgo-form-builder">'
+					. '<!-- wp:designsetgo/form-text-field {"fieldName":"has_issue"} /-->'
+					. '<!-- wp:designsetgo/form-text-field {"fieldName":"details","required":true,"dsgoConditions":{"rules":[{"field":"has_issue","op":"is","value":"yes"}]}} /-->'
+					. '<!-- wp:designsetgo/form-text-field {"fieldName":"praise","dsgoConditions":{"rules":[{"field":"has_issue","op":"is_not","value":"yes"}]}} /-->'
+					. '</div><!-- /wp:designsetgo/form-builder -->'
+				),
+			)
+		);
+	}
+
+	/**
+	 * Values a client can send that only become "yes" once sanitized for storage.
+	 *
+	 * @return array
+	 */
+	public function values_that_sanitize_to_yes() {
+		return array(
+			'tags'         => array( '<b>yes</b>' ),
+			'octets'       => array( 'y%41es' ),
+			'trailing tab' => array( "yes\t" ),
+		);
+	}
+
+	/**
+	 * Rules read the value as it will be stored, so markup or octets in a text
+	 * source can't hide a field the stored answer requires.
+	 *
+	 * @dataProvider values_that_sanitize_to_yes
+	 *
+	 * @param string $raw Submitted value.
+	 */
+	public function test_text_source_is_evaluated_as_stored( $raw ) {
+		$post = $this->publish_text_source_form( 'cond12' . md5( $raw ) );
+
+		$result = $this->submit(
+			'cond12' . md5( $raw ),
+			$post,
+			array(
+				array( 'name' => 'has_issue', 'value' => $raw, 'type' => 'text' ),
+				array( 'name' => 'praise', 'value' => 'Smuggled', 'type' => 'text' ),
+			)
+		);
+
+		// Stored as "yes", so details is visible and required, and praise is hidden.
+		$this->assertWPError( $result );
+		$this->assertSame( 'required_field_missing', $result->get_error_code() );
+	}
+
+	/**
+	 * With the required field filled, the stored record matches the rules.
+	 */
+	public function test_text_source_stored_record_matches_rules() {
+		$post   = $this->publish_text_source_form( 'cond13' );
+		$stored = $this->stored(
+			$this->submit(
+				'cond13',
+				$post,
+				array(
+					array( 'name' => 'has_issue', 'value' => '<b>yes</b>', 'type' => 'text' ),
+					array( 'name' => 'details', 'value' => 'It broke', 'type' => 'text' ),
+					array( 'name' => 'praise', 'value' => 'Smuggled', 'type' => 'text' ),
+				)
+			)
+		);
+		$this->assertSame( 'yes', $stored['has_issue']['value'] );
+		$this->assertArrayHasKey( 'details', $stored );
+		$this->assertArrayNotHasKey( 'praise', $stored );
+	}
+
 	public function test_definition_cache_keys_were_bumped() {
 		$this->assertSame( 'dsgo_form_definition_v5_', Form_Handler::DEFINITION_CACHE_PREFIX );
 		$this->assertSame( 'dsgo_form_external_definitions_v4', Form_Handler::EXTERNAL_DEFINITIONS_CACHE );
