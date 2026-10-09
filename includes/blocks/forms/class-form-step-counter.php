@@ -2,8 +2,8 @@
 /**
  * Numbers form steps per form, for the "Step N" heading fallback.
  *
- * render_block_data fires for the form block before its inner blocks render,
- * so the count restarts for every form on a page.
+ * The render_block_data filter fires for the form block before its inner blocks
+ * render, so the count restarts for every form on a page.
  *
  * @package DesignSetGo
  * @since 2.10.0
