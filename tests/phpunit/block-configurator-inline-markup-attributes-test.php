@@ -18,6 +18,8 @@
 use DesignSetGo\Abilities\Block_Configurator;
 use DesignSetGo\Abilities\Block_Inserter;
 
+require_once __DIR__ . '/helpers/html-tokens.php';
+
 /**
  * @group abilities
  */
@@ -37,7 +39,10 @@ class Block_Configurator_Inline_Markup_Attributes_Test extends WP_UnitTestCase {
 	public function test_link_keeps_class_id_target_aria_and_data_attributes() {
 		$value = 'See the <a class="sd-text-link" id="menu-link" href="/menu/" title="Menu" target="_blank" rel="noopener" aria-label="Full menu" aria-current="page" aria-describedby="menu-note" data-track="menu">full menu</a> today.';
 
-		$this->assertSame( $value, $this->sanitize_content( $value ) );
+		$this->assertSame(
+			designsetgo_test_html_tokens( $value ),
+			designsetgo_test_html_tokens( $this->sanitize_content( $value ) )
+		);
 	}
 
 	public function test_plain_link_with_class_is_unchanged() {
@@ -49,7 +54,10 @@ class Block_Configurator_Inline_Markup_Attributes_Test extends WP_UnitTestCase {
 	public function test_span_keeps_class_id_aria_hidden_and_data_attributes() {
 		$value = 'Price <span class="sd-accent" id="price" aria-hidden="true" data-role="price">$12</span>';
 
-		$this->assertSame( $value, $this->sanitize_content( $value ) );
+		$this->assertSame(
+			designsetgo_test_html_tokens( $value ),
+			designsetgo_test_html_tokens( $this->sanitize_content( $value ) )
+		);
 	}
 
 	/**
@@ -116,7 +124,10 @@ class Block_Configurator_Inline_Markup_Attributes_Test extends WP_UnitTestCase {
 	public function test_blank_target_with_other_rel_appends_noopener() {
 		$clean = $this->sanitize_content( '<a href="https://example.com" target="_blank" rel="nofollow">x</a>' );
 
-		$this->assertSame( '<a href="https://example.com" target="_blank" rel="nofollow noopener">x</a>', $clean );
+		$this->assertSame(
+			designsetgo_test_html_tokens( '<a href="https://example.com" target="_blank" rel="nofollow noopener">x</a>' ),
+			designsetgo_test_html_tokens( $clean )
+		);
 	}
 
 	public function test_self_target_is_left_alone() {

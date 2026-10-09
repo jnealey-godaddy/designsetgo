@@ -22,6 +22,8 @@
 use DesignSetGo\Abilities\Block_Configurator;
 use DesignSetGo\Abilities\Block_Inserter;
 
+require_once __DIR__ . '/helpers/html-tokens.php';
+
 /**
  * Generated-markup fixture test.
  */
@@ -1565,9 +1567,10 @@ class Abilities_Generated_Markup_Fixture_Test extends WP_UnitTestCase {
 
 		$fixture = json_decode( file_get_contents( $path ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- Test fixture.
 
+		// Compare structure and content; core may reorder HTML attributes.
 		$this->assertSame(
-			$generated,
-			$fixture,
+			array_map( 'designsetgo_test_html_tokens', $generated ),
+			array_map( 'designsetgo_test_html_tokens', $fixture ),
 			'Generated markup drifted from the fixture. Regenerate with DSGO_UPDATE_FIXTURES=1, then run the JS suite to confirm the new markup still validates against save().'
 		);
 	}
