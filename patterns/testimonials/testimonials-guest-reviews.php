@@ -35,7 +35,7 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"600"},"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"small"} -->
-<p class="has-small-font-size" style="margin-top:var(--wp--preset--spacing--20);font-style:normal;font-weight:600">- Michael R., via Google</p>
+<p class="has-small-font-size" style="margin-top:var(--wp--preset--spacing--20);font-style:normal;font-weight:600">- Michael R., via Guest Reviews</p>
 <!-- /wp:paragraph --></div>
 <!-- /wp:group -->
 
@@ -49,7 +49,7 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"600"},"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"small"} -->
-<p class="has-small-font-size" style="margin-top:var(--wp--preset--spacing--20);font-style:normal;font-weight:600">- Sarah T., via Yelp</p>
+<p class="has-small-font-size" style="margin-top:var(--wp--preset--spacing--20);font-style:normal;font-weight:600">- Sarah T., via Diner Reviews</p>
 <!-- /wp:paragraph --></div>
 <!-- /wp:group -->
 
@@ -63,7 +63,7 @@ return array(
 <!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"style":{"typography":{"fontStyle":"normal","fontWeight":"600"},"spacing":{"margin":{"top":"var:preset|spacing|20"}}},"fontSize":"small"} -->
-<p class="has-small-font-size" style="margin-top:var(--wp--preset--spacing--20);font-style:normal;font-weight:600">- James L., via TripAdvisor</p>
+<p class="has-small-font-size" style="margin-top:var(--wp--preset--spacing--20);font-style:normal;font-weight:600">- James L., via Travel Reviews</p>
 <!-- /wp:paragraph --></div>
 <!-- /wp:group --></div></div>
 <!-- /wp:designsetgo/grid --></div></div>
