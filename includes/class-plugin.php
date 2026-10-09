@@ -355,11 +355,11 @@ class Plugin {
 	public $form_handler;
 
 	/**
-	 * Form conditional-field critical CSS instance.
+	 * Form critical CSS instance (conditional fields and steps).
 	 *
-	 * @var Blocks\Form_Conditions_Critical_CSS
+	 * @var Blocks\Form_Critical_CSS
 	 */
-	public $form_conditions_critical_css;
+	public $form_critical_css;
 
 	/**
 	 * Form step counter instance.
@@ -679,7 +679,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-field-rules.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-conditions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-conditions-submission.php';
-		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-conditions-critical-css.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-critical-css.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-step-counter.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
@@ -839,7 +839,7 @@ class Plugin {
 		$this->modal_hooks                   = new Blocks\Modal_Hooks();
 		$this->form_handler                  = new Blocks\Form_Handler();
 		$this->form_submissions              = new Blocks\Form_Submissions();
-		$this->form_conditions_critical_css  = new Blocks\Form_Conditions_Critical_CSS();
+		$this->form_critical_css             = new Blocks\Form_Critical_CSS();
 		$this->form_step_counter             = new Blocks\Form_Step_Counter();
 		$this->form_webhooks                 = new Blocks\Form_Webhooks();
 		$this->form_webhooks_admin           = new Blocks\Form_Webhooks_Admin( $this->form_webhooks );
