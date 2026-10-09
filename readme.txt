@@ -96,13 +96,17 @@ Yes to both. DesignSetGo blocks work in the Site Editor, templates, and template
 
 == Screenshots ==
 
-1. Scrolling Gallery block with rows of images moving across the page
-2. Scroll Slides block with a topic list that changes the content as you scroll
-3. Grid of feature cards with icons
-4. Slider block showing three slides at a time
-5. Timeline block laying out steps in order
-6. Quick animation controls in the block toolbar
-7. Slider with arrows and dots, and a multi-slide slider below it
+1. A hero section with a morphing image blob, a two-tone heading and animated counters
+2. Hotspot block: pins on a photo that open product details on click
+3. Image Accordion block: photo panels that expand on hover
+4. Dynamic Query block: a filterable post grid with topic buttons, search and live results
+5. Charts, counters and progress bars in a report layout
+6. Flip cards for a team section, with one card turned to show its back
+7. Circular text on a path above image rows that slide as you scroll
+8. Comparison Table block with a highlighted "Most popular" plan
+9. Timeline block with photo markers on alternating sides
+10. Form Builder block: a booking form with side-by-side fields next to a photo card
+11. Editing chart data right in the block settings sidebar
 
 == Changelog ==
 
