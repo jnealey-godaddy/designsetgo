@@ -355,6 +355,13 @@ class Plugin {
 	public $form_handler;
 
 	/**
+	 * Form conditional-field critical CSS instance.
+	 *
+	 * @var Blocks\Form_Conditions_Critical_CSS
+	 */
+	public $form_conditions_critical_css;
+
+	/**
 	 * Form Submissions instance.
 	 *
 	 * @var Blocks\Form_Submissions
@@ -665,6 +672,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-field-rules.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-conditions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-conditions-submission.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-conditions-critical-css.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhook-status.php';
@@ -823,6 +831,7 @@ class Plugin {
 		$this->modal_hooks                   = new Blocks\Modal_Hooks();
 		$this->form_handler                  = new Blocks\Form_Handler();
 		$this->form_submissions              = new Blocks\Form_Submissions();
+		$this->form_conditions_critical_css  = new Blocks\Form_Conditions_Critical_CSS();
 		$this->form_webhooks                 = new Blocks\Form_Webhooks();
 		$this->form_webhooks_admin           = new Blocks\Form_Webhooks_Admin( $this->form_webhooks );
 		$this->form_submissions_export       = new Blocks\Form_Submissions_Export();

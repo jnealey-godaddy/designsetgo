@@ -688,27 +688,6 @@
 	}
 }
 
-// Conditional fields: hidden until the view script has applied the rules,
-// but only when scripting is available — without JavaScript every field
-// shows and the server drops answers to fields whose rules aren't met.
-// The pre-hide expires: if the view script never runs (blocked, errored,
-// failed to load), the fields show after 4s instead of staying hidden while
-// still required. Browsers that can't animate `display` don't pre-hide.
-@media (scripting: enabled) {
-
-	.dsgo-form-builder:not([data-dsgo-conditions-ready]) .dsgo-form-field--conditional {
-		animation: dsgo-conditions-pending 4s;
-	}
-}
-
-@keyframes dsgo-conditions-pending {
-
-	0%,
-	99.9% {
-		display: none;
-	}
-}
-
 // Live regions (conditional-field and submit announcements) must stay
 // visually hidden even when a theme dequeues core's `.screen-reader-text`.
 /* stylelint-disable-next-line selector-class-pattern */
