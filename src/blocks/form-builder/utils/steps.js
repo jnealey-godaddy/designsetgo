@@ -5,7 +5,6 @@
  */
 
 import { createBlock, cloneBlock } from '@wordpress/blocks';
-import { __ } from '@wordpress/i18n';
 
 export const STEP_BLOCK = 'designsetgo/form-step';
 
@@ -21,9 +20,10 @@ export function hasStepChildren(blocks) {
  */
 export function splitIntoSteps(blocks) {
 	return [
+		// Untitled: the server numbers it "Step N", the same as any later step.
 		createBlock(
 			STEP_BLOCK,
-			{ title: __('Step 1', 'designsetgo') },
+			{ title: '' },
 			(blocks || []).map((block) => cloneBlock(block))
 		),
 	];

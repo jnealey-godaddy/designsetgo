@@ -45,7 +45,8 @@ describe('form steps editor helpers', () => {
 		const [step, ...rest] = splitIntoSteps([field('a'), field('b')]);
 		expect(rest).toHaveLength(0);
 		expect(step.name).toBe(STEP_BLOCK);
-		expect(step.attributes.title).toBe('Step 1');
+		// Untitled, so the server's "Step N" fallback numbers it.
+		expect(step.attributes.title).toBe('');
 		expect(step.innerBlocks.map((b) => b.attributes.fieldName)).toEqual([
 			'a',
 			'b',
@@ -102,7 +103,9 @@ describe('field collection across steps', () => {
 
 	it('useFormFields lets a step-2 field see step-1 fields', () => {
 		global.__fakeSelect = () => ({
-			getBlockParentsByBlockName: () => ['s2', 'form'],
+			// Called with the form-builder name, so only form-builder parents come back.
+			getBlockParentsByBlockName: (id, name) =>
+				name === 'designsetgo/form-builder' ? ['form'] : [],
 			getBlocks: (id) => (id === 'form' ? tree : []),
 		});
 		expect(useFormFields('second').map((f) => f.name)).toEqual(['first']);
