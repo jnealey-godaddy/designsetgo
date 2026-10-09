@@ -588,9 +588,27 @@ class Form_Handler {
 	 * Processes standard form POST and redirects back with a status query param.
 	 */
 	public function handle_post_submission() {
-		// Verify nonce.
-		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'designsetgo_form_submit' ) ) {
-			wp_die( esc_html__( 'Security verification failed.', 'designsetgo' ), '', array( 'response' => 403 ) );
+		// CSRF: a logged-in visitor must send a valid nonce, so no other site
+		// can submit a form in their name.
+		//
+		// A logged-out visitor's nonce protects nothing: it is the same for
+		// every anonymous visitor and printed in public page HTML, and the
+		// REST endpoint already takes anonymous submissions with no nonce at
+		// all. It is also the one that goes stale, because full-page caches
+		// serve anonymous visitors markup that can be older than a nonce's
+		// ~24h life. Requiring it turned every submission from such a page
+		// into a dead end. Anonymous submissions still pass the honeypot,
+		// timing, rate-limit and Turnstile checks below.
+		$nonce = isset( $_POST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) : '';
+		if ( is_user_logged_in() && ! wp_verify_nonce( $nonce, Form_No_JS_Submit::ACTION ) ) {
+			wp_die(
+				esc_html__( 'Security verification failed. Please go back, reload the page and try again.', 'designsetgo' ),
+				'',
+				array(
+					'response'  => 403,
+					'back_link' => true,
+				)
+			);
 		}
 
 		$referer = wp_get_referer();
@@ -646,25 +664,21 @@ class Form_Handler {
 
 		$result = $this->handle_form_submission( $request );
 
-		if ( is_wp_error( $result ) ) {
+		$redirect = is_wp_error( $result ) ? '' : $this->get_success_redirect_url( $form_id, $request );
+
+		if ( '' === $redirect ) {
 			$redirect = add_query_arg(
 				array(
-					'dsgo_form_status' => 'error',
+					'dsgo_form_status' => is_wp_error( $result ) ? 'error' : 'success',
 					'dsgo_form_id'     => $form_id,
 				),
 				$referer
 			);
-		} else {
-			$redirect = $this->get_success_redirect_url( $form_id, $request );
 
-			if ( '' === $redirect ) {
-				$redirect = add_query_arg(
-					array(
-						'dsgo_form_status' => 'success',
-						'dsgo_form_id'     => $form_id,
-					),
-					$referer
-				);
+			// Land on the result Form_No_JS_Submit prints, not the page top.
+			$anchor = Form_No_JS_Submit::message_anchor( $form_id );
+			if ( '' !== $anchor && false === strpos( $redirect, '#' ) ) {
+				$redirect .= '#' . $anchor;
 			}
 		}
 

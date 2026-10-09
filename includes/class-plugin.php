@@ -369,6 +369,13 @@ class Plugin {
 	public $form_step_counter;
 
 	/**
+	 * Form submission without JavaScript (admin-post fields and result message).
+	 *
+	 * @var Blocks\Form_No_JS_Submit
+	 */
+	public $form_no_js_submit;
+
+	/**
 	 * Form Submissions instance.
 	 *
 	 * @var Blocks\Form_Submissions
@@ -681,6 +688,7 @@ class Plugin {
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-conditions-submission.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-critical-css.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-step-counter.php';
+		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-no-js-submit.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-handler.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-submissions.php';
 		require_once DESIGNSETGO_PATH . 'includes/blocks/forms/class-form-webhook-status.php';
@@ -841,6 +849,7 @@ class Plugin {
 		$this->form_submissions              = new Blocks\Form_Submissions();
 		$this->form_critical_css             = new Blocks\Form_Critical_CSS();
 		$this->form_step_counter             = new Blocks\Form_Step_Counter();
+		$this->form_no_js_submit             = new Blocks\Form_No_JS_Submit();
 		$this->form_webhooks                 = new Blocks\Form_Webhooks();
 		$this->form_webhooks_admin           = new Blocks\Form_Webhooks_Admin( $this->form_webhooks );
 		$this->form_submissions_export       = new Blocks\Form_Submissions_Export();
