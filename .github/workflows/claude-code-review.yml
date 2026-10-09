@@ -1,9 +1,8 @@
 name: Claude Code Review
 
-# Uses `pull_request` (not `pull_request_target`). The Claude GitHub App's OIDC
-# trust policy rejects tokens whose `sub` claim references `pull_request_target`,
-# so the app-token exchange fails with "401 Invalid OIDC token" under that
-# trigger. Fork PRs are not supported by this workflow.
+# Use the scoped workflow token for GitHub access. The App's OIDC exchange
+# silently skips reviews when this workflow differs from the default branch.
+# Keep secrets restricted to same-repository pull_request events.
 on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
@@ -11,16 +10,12 @@ on:
 jobs:
   claude-review:
     runs-on: ubuntu-latest
-    # Fork PRs never get an OIDC token from GitHub (it's withheld for pull_request
-    # events from forks, independent of the id-token permission below), so the
-    # app-token exchange always fails before any review can happen. Skip cleanly
-    # instead of failing loudly on something this workflow cannot do.
+    # Fork pull_request events do not receive the Claude OAuth secret.
     if: github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       pull-requests: write
       issues: read
-      id-token: write
 
     steps:
       - name: Checkout repository
@@ -48,6 +43,9 @@ jobs:
       - name: Determine review scope
         id: scope
         env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           ACTION: ${{ github.event.action }}
           BEFORE: ${{ github.event.before }}
           AFTER: ${{ github.event.after }}
@@ -63,6 +61,14 @@ jobs:
             && [ -n "$(git rev-list -n 1 "${BEFORE}..${AFTER}" 2>/dev/null)" ]; then
             scope=incremental
             range="${BEFORE}...${AFTER}"
+          fi
+          # A successful action can finish without publishing any review.
+          # Until Claude has submitted one, retry the entire feature diff.
+          reviews="$(gh api "repos/${GH_REPO}/pulls/${PR_NUMBER}/reviews" --paginate \
+            --jq '.[] | select(.state != "PENDING" and (.user.login == "claude[bot]" or (.user.login == "github-actions[bot]" and (.body | contains("<!-- dsgo-claude-review -->"))))) | .id' 2>/dev/null || true)"
+          if [ -z "$reviews" ]; then
+            scope=full
+            range=""
           fi
           if [ "$scope" = "incremental" ]; then
             sizing="$range"
@@ -89,6 +95,7 @@ jobs:
           echo "range=$range" >> "$GITHUB_OUTPUT"
           echo "tier=$tier" >> "$GITHUB_OUTPUT"
           echo "model=$model" >> "$GITHUB_OUTPUT"
+          echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           echo "Review scope: $scope ${range}; ${lines} changed lines, ${code_files} code files; tier: $tier ($model)"
 
       - name: Run Claude Code Review
@@ -96,6 +103,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
           # track_progress makes the action manage a single "progress" comment
           # and instructs the agent to ONLY update it ("never create new
           # comments"), which conflicts with the review flow below (inline
@@ -167,7 +175,12 @@ jobs:
             - `standard`: do Pass 1 yourself.
             - `deep`: a large diff. One pass over this much code misses things,
               so split Pass 1. Launch these three subagents IN PARALLEL with the
-              Task tool (general-purpose). Give each one the diff command from
+              Task/Agent tool (general-purpose), using foreground calls with
+              `run_in_background: false`. Do not end your session with agents
+              still running: the action ends execution on your final response.
+              If an agent was launched in the background, wait for its result
+              with blocking TaskOutput before continuing or replying. Give
+              each one the diff command from
               Step 1, the BASE SHA, and its section of Pass 1 below. Tell each one that
               it is read-only, must NOT post anything to GitHub, and must return
               a list of findings with file, line, severity and failure scenario:
@@ -323,6 +336,10 @@ jobs:
 
             ## Output format
 
+            Include `<!-- dsgo-claude-review -->` in the summary comment and
+            formal review body so the workflow can verify your output. GitHub
+            access uses the workflow token, so posts appear as github-actions[bot].
+
             For each finding:
             1. Use `mcp__github_inline_comment__create_inline_comment` on the specific line
             2. State SEVERITY (Critical/High/Medium/Low), the concrete failure
@@ -357,6 +374,12 @@ jobs:
             already an approval, skip `gh pr review`. Say "approval stands" in
             the summary comment instead.
 
+            Before your final response, finish all reviewer tasks and publish
+            the summary and verdict (or the explicit "approval stands" summary).
+            A status update such as "agents are still running" is not a review
+            result. If you cannot complete the review, state the exact blocker
+            in your final response; never present an unfinished review as clean.
+
           # Allowlist must cover read-only exploration (git diff/log/show,
           # cat/ls/find/grep, LS) in addition to the PR-posting tools —
           # otherwise the reviewer burns its turn budget on denied commands and
@@ -377,4 +400,53 @@ jobs:
           claude_args: |
             --model ${{ steps.scope.outputs.model }}
             --max-turns 100
-            --allowedTools "Task,Agent,mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Read,Grep,Glob,LS"
+            --allowedTools "Task,Agent,TaskOutput,mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments:*),Bash(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),Bash(cat:*),Bash(ls:*),Bash(find:*),Bash(head:*),Bash(tail:*),Bash(wc:*),Bash(grep:*),Read,Grep,Glob,LS"
+
+      - name: Verify Claude published its review
+        if: ${{ always() && steps.claude-review.outcome != 'skipped' }}
+        uses: actions/github-script@v8
+        env:
+          EXECUTION_FILE: ${{ steps.claude-review.outputs.execution_file }}
+          REVIEW_STARTED_AT: ${{ steps.scope.outputs.started_at }}
+        with:
+          script: |
+            const fs = require('fs');
+            const executionFile = process.env.EXECUTION_FILE;
+            if (executionFile && fs.existsSync(executionFile)) {
+              const messages = JSON.parse(fs.readFileSync(executionFile, 'utf8'));
+              const result = messages.findLast(message => message.type === 'result');
+              // Report the final answer and denied tool names, never tool inputs
+              // or execution results that could contain credentials.
+              if (result?.result) core.info(`Claude final response:\n${result.result}`);
+              const denied = result?.permission_denials?.map(item => item.tool_name) ?? [];
+              if (denied.length) core.warning(`Denied tools: ${[...new Set(denied)].join(', ')}`);
+            }
+            const pull = context.payload.pull_request;
+            const started = Date.parse(process.env.REVIEW_STARTED_AT);
+            if (!pull || !Number.isFinite(started)) {
+              core.setFailed('Cannot verify a published review without PR context and a start time.');
+              return;
+            }
+            const params = { ...context.repo, per_page: 100 };
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              ...params, pull_number: pull.number
+            });
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              ...params, issue_number: pull.number
+            });
+            const claude = item => item.user?.login === 'claude[bot]' || (
+              item.user?.login === 'github-actions[bot]' && item.body?.includes('<!-- dsgo-claude-review -->')
+            );
+            const submitted = reviews.filter(item => claude(item) && item.state !== 'PENDING');
+            const freshReview = submitted.some(item =>
+              item.commit_id === pull.head.sha && Date.parse(item.submitted_at) >= started
+            );
+            const latest = submitted.at(-1);
+            const approvalStands = latest?.state === 'APPROVED' && comments.some(item =>
+              claude(item) && Date.parse(item.created_at) >= started && /approval stands/i.test(item.body)
+            );
+            if (!freshReview && !approvalStands) {
+              core.setFailed('Claude finished without publishing a review for this run. Inspect its final response above.');
+            } else {
+              core.info('Confirmed Claude published its review or explicitly retained its prior approval.');
+            }
